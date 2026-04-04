@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu | 케이에듀</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C;display:flex;flex-direction:column}
+
+/* TOP BAR */
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;justify-content:flex-end;padding:0 28px;gap:10px}
+.class-input{width:144px;height:34px;padding:0 14px;border:1.5px solid #E2E8F0;border-radius:50px;font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.class-input:focus{border-color:#5B8EF8}
+.class-input::placeholder{color:#A0AEC0}
+.btn-enter{height:34px;padding:0 16px;background:#5B8EF8;color:#fff;border:none;border-radius:50px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn-enter:hover{opacity:.85}
+.btn-enter:disabled{opacity:.5;cursor:not-allowed}
+
+/* 닉네임 표시 */
+.nickname-chip{display:none;align-items:center;gap:6px;padding:4px 12px;background:#EBF4FF;border-radius:50px;font-size:13px;color:#2B6CB0;font-weight:500}
+.nickname-chip .chip-name{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nickname-chip .chip-out{background:none;border:none;color:#A0AEC0;cursor:pointer;font-size:12px;margin-left:2px}
+.nickname-chip .chip-out:hover{color:#E53E3E}
+
+/* MAIN */
+main{flex:1;max-width:900px;margin:0 auto;padding:36px 24px 48px;width:100%}
+
+/* SCREENS */
+.screen{display:none}
+.screen.active{display:block;animation:fadeUp .3s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO LOGO */
+.hero{text-align:center;margin-bottom:44px}
+.hero-title{font-family:'Jua',sans-serif;font-size:64px;letter-spacing:-2px;line-height:1;background:linear-gradient(135deg,#5B8EF8 0%,#FF85A1 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-family:'Jua',sans-serif;font-size:15px;color:#A0AEC0;letter-spacing:2px;margin-top:4px}
+
+/* PAGE TITLE */
+.page-title{font-family:'Jua',sans-serif;font-size:24px;color:#1A202C;margin-bottom:28px;display:flex;align-items:center;gap:10px}
+.page-title .accent{color:#5B8EF8}
+
+/* BREADCRUMB */
+.bc{font-size:13px;color:#A0AEC0;margin-bottom:28px;display:flex;align-items:center;gap:6px}
+.bc-btn{background:none;border:none;font-size:13px;color:#A0AEC0;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.bc-btn:hover{color:#1A202C}
+.bc-sep{color:#E2E8F0}
+
+/* GRADE GRID */
+.section-label{font-family:'Jua',sans-serif;font-size:18px;color:#718096;text-align:center;margin-bottom:20px}
+.grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grade-card{background:#fff;border-radius:20px;padding:28px 16px 22px;text-align:center;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s;box-shadow:0 2px 16px rgba(0,0,0,.07)}
+.grade-card::after{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:var(--c);border-radius:20px 20px 0 0}
+.grade-card:hover{transform:translateY(-6px);border-color:var(--c);box-shadow:0 12px 36px rgba(0,0,0,.12)}
+.grade-icon{font-size:30px;margin-bottom:10px}
+.grade-num{font-family:'Jua',sans-serif;font-size:52px;line-height:1;color:var(--c);margin-bottom:4px}
+.grade-label{font-size:14px;color:#718096;font-weight:500}
+
+/* SEMESTER */
+.sem-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:460px;margin:0 auto}
+.sem-card{background:#fff;border-radius:20px;padding:40px 20px;text-align:center;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:transform .18s,border-color .18s,box-shadow .18s}
+.sem-card:hover{transform:translateY(-6px);box-shadow:0 12px 36px rgba(0,0,0,.12)}
+.sem-num{font-family:'Jua',sans-serif;font-size:56px;color:#5B8EF8;line-height:1;margin-bottom:8px}
+.sem-label{font-size:15px;color:#718096;font-weight:500}
+.sem-saved{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:12px;color:#38A169;background:#F0FFF4;padding:3px 10px;border-radius:50px}
+
+/* SUBJECT */
+.grade-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 16px;border-radius:50px;font-family:'Jua',sans-serif;font-size:15px;color:#fff;margin-bottom:22px}
+.subject-grid{display:grid;gap:14px}
+.subject-card{background:#fff;border-radius:20px;padding:26px 10px 22px;text-align:center;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:transform .18s,border-color .18s,box-shadow .18s}
+.subject-card:hover{transform:translateY(-6px);border-color:var(--cs);box-shadow:0 12px 36px rgba(0,0,0,.12)}
+.subject-icon{font-size:36px;margin-bottom:10px}
+.subject-name{font-family:'Jua',sans-serif;font-size:17px}
+.back-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#A0AEC0;cursor:pointer;padding:0;margin-bottom:18px;transition:color .15s}
+.back-btn:hover{color:#1A202C}
+
+/* FOOTER */
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0;letter-spacing:.3px}
+.footer-text strong{color:#718096;font-weight:500}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:24px;padding:36px 32px;width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h2{font-family:'Jua',sans-serif;font-size:22px;margin-bottom:6px}
+.modal p{font-size:14px;color:#718096;margin-bottom:24px;line-height:1.6}
+.modal input{width:100%;height:48px;border:2px solid #E2E8F0;border-radius:12px;padding:0 16px;font-size:16px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s;text-align:center}
+.modal input:focus{border-color:#5B8EF8}
+.modal-btn{width:100%;height:48px;background:#5B8EF8;color:#fff;border:none;border-radius:12px;font-family:'Jua',sans-serif;font-size:18px;cursor:pointer;margin-top:14px;transition:opacity .15s}
+.modal-btn:hover{opacity:.88}
+.modal-btn:disabled{opacity:.5;cursor:not-allowed}
+.modal-err{font-size:13px;color:#E53E3E;margin-top:10px;min-height:18px}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1A202C;color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+@media(max-width:600px){
+  .hero-title{font-size:48px}
+  .grade-grid{grid-template-columns:repeat(2,1fr)}
+  .subject-grid{grid-template-columns:repeat(3,1fr)!important}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="nickname-chip" id="nickname-chip">
+    <span>🐾</span>
+    <span class="chip-name" id="chip-name"></span>
+    <button class="chip-out" onclick="logout()" title="나가기">✕</button>
+  </div>
+  <input class="class-input" id="class-input" type="text" placeholder="🔑 학급코드 입력" maxlength="6">
+  <button class="btn-enter" id="btn-enter" onclick="enterClass()">입장하기</button>
+</div>
+
+<main>
+
+  <!-- S1: 학년 선택 -->
+  <div class="screen active" id="s-grade">
+    <div class="hero">
+      <div class="hero-title">K-edu</div>
+      <div class="hero-sub">케이에듀 · 초등 학습 플랫폼</div>
+    </div>
+    <div class="section-label">몇 학년인가요? 👇</div>
+    <div class="grade-grid">
+      <div class="grade-card" style="--c:#FF85A1" onclick="pickGrade(1,'#FF85A1','🌸')">
+        <div class="grade-icon">🌸</div><div class="grade-num">1</div><div class="grade-label">1학년</div>
+      </div>
+      <div class="grade-card" style="--c:#FFB347" onclick="pickGrade(2,'#FFB347','🌻')">
+        <div class="grade-icon">🌻</div><div class="grade-num">2</div><div class="grade-label">2학년</div>
+      </div>
+      <div class="grade-card" style="--c:#3BAB72" onclick="pickGrade(3,'#3BAB72','🍀')">
+        <div class="grade-icon">🍀</div><div class="grade-num">3</div><div class="grade-label">3학년</div>
+      </div>
+      <div class="grade-card" style="--c:#FF7043" onclick="pickGrade(4,'#FF7043','🔥')">
+        <div class="grade-icon">🔥</div><div class="grade-num">4</div><div class="grade-label">4학년</div>
+      </div>
+      <div class="grade-card" style="--c:#3D90F0" onclick="pickGrade(5,'#3D90F0','🌊')">
+        <div class="grade-icon">🌊</div><div class="grade-num">5</div><div class="grade-label">5학년</div>
+      </div>
+      <div class="grade-card" style="--c:#7E57C2" onclick="pickGrade(6,'#7E57C2','🚀')">
+        <div class="grade-icon">🚀</div><div class="grade-num">6</div><div class="grade-label">6학년</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: 학기 선택 -->
+  <div class="screen" id="s-semester">
+    <div class="bc">
+      <span>K-edu</span><span class="bc-sep">›</span>
+      <button class="bc-btn" onclick="goTo('s-grade')">학년 선택</button>
+      <span class="bc-sep">›</span><span id="bc-grade">1학년</span>
+    </div>
+    <button class="back-btn" onclick="goTo('s-grade')">← 학년 다시 선택</button>
+    <div class="page-title"><span class="accent">몇 학기</span>를 공부하고 있나요?</div>
+    <div class="sem-grid">
+      <div class="sem-card" onclick="pickSemester(1)">
+        <div class="sem-num">1</div>
+        <div class="sem-label">1학기</div>
+        <div class="sem-saved" id="saved-1" style="display:none">✓ 저장됨</div>
+      </div>
+      <div class="sem-card" onclick="pickSemester(2)">
+        <div class="sem-num">2</div>
+        <div class="sem-label">2학기</div>
+        <div class="sem-saved" id="saved-2" style="display:none">✓ 저장됨</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: 과목 선택 -->
+  <div class="screen" id="s-subject">
+    <div class="bc">
+      <span>K-edu</span><span class="bc-sep">›</span>
+      <button class="bc-btn" onclick="goTo('s-grade')">학년 선택</button>
+      <span class="bc-sep">›</span>
+      <button class="bc-btn" onclick="goTo('s-semester')">학기 선택</button>
+      <span class="bc-sep">›</span><span>과목 선택</span>
+    </div>
+    <button class="back-btn" onclick="goTo('s-semester')">← 학기 다시 선택</button>
+    <div id="grade-badge" class="grade-badge"></div>
+    <div class="page-title">어떤 <span class="accent">과목</span>을 공부할까요?</div>
+    <div class="subject-grid" id="subject-grid"></div>
+  </div>
+
+</main>
+
+<footer>
+  <p class="footer-text">
+    Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  </p>
+</footer>
+
+<!-- 닉네임 모달 -->
+<div class="modal-bg" id="modal" style="display:none">
+  <div class="modal">
+    <h2>👋 반가워요!</h2>
+    <p id="modal-desc">학급에 입장합니다.<br>사용할 닉네임을 입력해주세요.</p>
+    <input id="nickname-input" type="text" placeholder="닉네임 입력 (예: 김민준)" maxlength="10">
+    <div class="modal-err" id="modal-err"></div>
+    <button class="modal-btn" id="modal-btn" onclick="confirmNickname()">입장하기 🐾</button>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// Supabase 초기화
+// =============================================
+const SUPABASE_URL = 'https://fesxtgyhfpucazpenksp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlc3h0Z3loZnB1Y2F6cGVua3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjQzMDUsImV4cCI6MjA5MDg0MDMwNX0.H2HlS91yagFavrp70xz3QA5JodRcGOe3iUJWsR4An1g';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// =============================================
+// 상수
+// =============================================
+const GRADE_DATA = {
+  1:{c:'#FF85A1',e:'🌸'}, 2:{c:'#FFB347',e:'🌻'}, 3:{c:'#3BAB72',e:'🍀'},
+  4:{c:'#FF7043',e:'🔥'}, 5:{c:'#3D90F0',e:'🌊'}, 6:{c:'#7E57C2',e:'🚀'}
+};
+const SUB_LOW = [
+  {id:'korean',n:'국어',i:'📖',c:'#E53E3E'},
+  {id:'math',  n:'수학',i:'🔢',c:'#2B6CB0'}
+];
+const SUB_HIGH = [
+  ...SUB_LOW,
+  {id:'social',  n:'사회',i:'🌏',c:'#276749'},
+  {id:'science', n:'과학',i:'🔬',c:'#C05621'}
+];
+const SUB_ENG = {id:'english',n:'영어',i:'🔤',c:'#B7791F'};
+
+// =============================================
+// 상태
+// =============================================
+let grade=null, gradeColor=null, gradeEmoji=null, semester=null;
+let pendingCode=null; // 입장 대기 중인 학급코드
+
+// =============================================
+// 초기화
+// =============================================
+(async function init(){
+  const savedGrade    = localStorage.getItem('kedu_grade');
+  const savedSemester = localStorage.getItem('kedu_semester');
+  const savedCode     = localStorage.getItem('kedu_class_code');
+  const savedNick     = localStorage.getItem('kedu_nickname');
+  const savedStudentId= localStorage.getItem('kedu_student_id');
+
+  // 학급코드 input 복원
+  if(savedCode) document.getElementById('class-input').value = savedCode;
+
+  // 닉네임 칩 복원
+  if(savedNick && savedStudentId){
+    showNicknameChip(savedNick);
+    // Supabase에서 학생 존재 확인 (백그라운드)
+    verifyStudent(savedStudentId);
+  }
+
+  // 학기 저장 배지
+  if(savedSemester){
+    document.getElementById('saved-'+savedSemester).style.display='inline-flex';
+  }
+
+  // 학년+학기 있으면 과목 화면으로 바로
+  if(savedGrade && savedSemester){
+    grade = +savedGrade;
+    gradeColor = GRADE_DATA[grade].c;
+    gradeEmoji = GRADE_DATA[grade].e;
+    semester = +savedSemester;
+    document.getElementById('bc-grade').textContent = grade+'학년';
+    showSubject();
+  }
+})();
+
+// =============================================
+// 학생 존재 확인 (재접속)
+// =============================================
+async function verifyStudent(studentId){
+  try {
+    const { data, error } = await db
+      .from('students')
+      .select('id, nickname')
+      .eq('id', studentId)
+      .single();
+    if(error || !data){
+      // 학생 데이터 없으면 초기화
+      clearStudentSession();
+    } else {
+      // last_seen_at 업데이트
+      await db.from('students').update({last_seen_at: new Date().toISOString()}).eq('id', studentId);
+    }
+  } catch(e){ /* 오프라인 등 무시 */ }
+}
+
+// =============================================
+// 화면 전환
+// =============================================
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// =============================================
+// 학년 선택
+// =============================================
+function pickGrade(g, c, e){
+  grade=+g; gradeColor=c; gradeEmoji=e;
+  localStorage.setItem('kedu_grade', g);
+  document.getElementById('bc-grade').textContent = g+'학년';
+  [1,2].forEach(n => document.getElementById('saved-'+n).style.display='none');
+  const s = localStorage.getItem('kedu_semester');
+  if(s) document.getElementById('saved-'+s).style.display='inline-flex';
+  goTo('s-semester');
+}
+
+// =============================================
+// 학기 선택
+// =============================================
+function pickSemester(s){
+  semester = s;
+  localStorage.setItem('kedu_semester', s);
+  showSubject();
+}
+
+// =============================================
+// 과목 화면
+// =============================================
+function showSubject(){
+  const badge = document.getElementById('grade-badge');
+  badge.textContent = `${gradeEmoji} ${grade}학년 ${semester}학기`;
+  badge.style.background = gradeColor;
+  const list = [...(grade<=2 ? SUB_LOW : SUB_HIGH), SUB_ENG];
+  document.getElementById('subject-grid').style.gridTemplateColumns = `repeat(${list.length},1fr)`;
+  document.getElementById('subject-grid').innerHTML = list.map(s=>`
+    <div class="subject-card" style="--cs:${s.c}" onclick="goContent('${s.id}')">
+      <div class="subject-icon">${s.i}</div>
+      <div class="subject-name" style="color:${s.c}">${s.n}</div>
+    </div>`).join('');
+  goTo('s-subject');
+}
+
+// =============================================
+// 콘텐츠 이동
+// =============================================
+function goContent(subject){
+  if(subject === 'english'){
+    window.location.href = 'english/index.html';
+    return;
+  }
+  window.location.href = `grade${grade}/${subject}/index.html`;
+}
+
+// =============================================
+// 학급코드 입장 (Supabase 검증)
+// =============================================
+async function enterClass(){
+  const code = document.getElementById('class-input').value.trim().toUpperCase();
+  if(code.length < 4){ showToast('올바른 학급코드를 입력해주세요.'); return; }
+
+  const btn = document.getElementById('btn-enter');
+  btn.disabled = true;
+  btn.textContent = '확인 중...';
+
+  try {
+    // Supabase에서 학급코드 검증
+    const { data, error } = await db
+      .from('class_codes')
+      .select('id, label, grade, semester')
+      .eq('code', code)
+      .eq('is_active', true)
+      .single();
+
+    if(error || !data){
+      showToast('❌ 존재하지 않는 학급코드입니다.');
+      btn.disabled=false; btn.textContent='입장하기';
+      return;
+    }
+
+    // 코드 유효 → 닉네임 모달
+    pendingCode = { code, id: data.id, label: data.label };
+    const nick = localStorage.getItem('kedu_nickname');
+    document.getElementById('modal-desc').innerHTML =
+      `<b>${data.label}</b> (${code}) 학급에 입장합니다.<br>사용할 닉네임을 입력해주세요.`;
+    document.getElementById('nickname-input').value = nick || '';
+    document.getElementById('modal-err').textContent = '';
+    document.getElementById('modal').style.display = 'flex';
+    setTimeout(()=>document.getElementById('nickname-input').focus(), 100);
+
+  } catch(e){
+    showToast('네트워크 오류가 발생했습니다.');
+  }
+
+  btn.disabled=false; btn.textContent='입장하기';
+}
+
+// =============================================
+// 닉네임 확인 + Supabase 학생 등록
+// =============================================
+async function confirmNickname(){
+  const nick = document.getElementById('nickname-input').value.trim();
+  if(!nick){ document.getElementById('modal-err').textContent='닉네임을 입력해주세요.'; return; }
+  if(!pendingCode){ return; }
+
+  const btn = document.getElementById('modal-btn');
+  btn.disabled=true; btn.textContent='입장 중...';
+  document.getElementById('modal-err').textContent='';
+
+  try {
+    // 기존 학생 확인 (같은 학급 + 닉네임)
+    const { data: existing } = await db
+      .from('students')
+      .select('id, nickname')
+      .eq('class_code_id', pendingCode.id)
+      .eq('nickname', nick)
+      .single();
+
+    let studentId;
+
+    if(existing){
+      // 이미 있으면 재사용
+      studentId = existing.id;
+      await db.from('students').update({last_seen_at: new Date().toISOString()}).eq('id', studentId);
+    } else {
+      // 신규 등록
+      const { data: newStudent, error: insErr } = await db
+        .from('students')
+        .insert({ class_code_id: pendingCode.id, nickname: nick, last_seen_at: new Date().toISOString() })
+        .select('id')
+        .single();
+
+      if(insErr){
+        document.getElementById('modal-err').textContent = '이미 사용 중인 닉네임이에요. 다른 이름을 써볼까요?';
+        btn.disabled=false; btn.textContent='입장하기 🐾';
+        return;
+      }
+      studentId = newStudent.id;
+    }
+
+    // localStorage 저장
+    localStorage.setItem('kedu_class_code', pendingCode.code);
+    localStorage.setItem('kedu_class_code_id', pendingCode.id);
+    localStorage.setItem('kedu_nickname', nick);
+    localStorage.setItem('kedu_student_id', studentId);
+
+    // 학급코드 input 업데이트
+    document.getElementById('class-input').value = pendingCode.code;
+
+    document.getElementById('modal').style.display='none';
+    showNicknameChip(nick);
+    showToast(`🐾 ${nick}님, ${pendingCode.label}에 입장했어요!`);
+
+  } catch(e){
+    document.getElementById('modal-err').textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+  }
+
+  btn.disabled=false; btn.textContent='입장하기 🐾';
+}
+
+// =============================================
+// 닉네임 칩 표시
+// =============================================
+function showNicknameChip(nick){
+  document.getElementById('chip-name').textContent = nick;
+  document.getElementById('nickname-chip').style.display='inline-flex';
+  document.getElementById('class-input').style.display='none';
+  document.getElementById('btn-enter').style.display='none';
+}
+
+// =============================================
+// 로그아웃 (학생 세션 초기화)
+// =============================================
+function logout(){
+  clearStudentSession();
+  document.getElementById('nickname-chip').style.display='none';
+  document.getElementById('class-input').style.display='';
+  document.getElementById('btn-enter').style.display='';
+  showToast('학급에서 나왔어요.');
+}
+
+function clearStudentSession(){
+  ['kedu_class_code','kedu_class_code_id','kedu_nickname','kedu_student_id'].forEach(k=>localStorage.removeItem(k));
+  document.getElementById('class-input').value='';
+}
+
+// =============================================
+// 토스트
+// =============================================
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// =============================================
+// 모달 외부 클릭 닫기
+// =============================================
+document.getElementById('modal').addEventListener('click', function(e){
+  if(e.target===this) this.style.display='none';
+});
+document.getElementById('nickname-input').addEventListener('keydown', function(e){
+  if(e.key==='Enter') confirmNickname();
+});
+</script>
+</body>
+</html>
