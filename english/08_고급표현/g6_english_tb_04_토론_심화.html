@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 6학년 영어 | 토론 심화</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}
+.topbar-title{font-size:15px;font-weight:700;color:var(--primary);}
+.kedu-logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative;}
+.kedu-logo::after{content:'⭐';position:absolute;top:-2px;right:-2px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;}
+.slide.active{opacity:1;pointer-events:auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:calc(100vh - 120px);overflow-y:auto;}
+.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:2px 10px;border-radius:20px;}
+.concept-box{background:var(--primary-light);border-radius:12px;padding:18px;margin:12px 0;font-size:18px;line-height:1.7;}
+.concept-box strong{color:var(--primary);}
+.example-box{background:#F1F5F9;border-left:4px solid var(--secondary);padding:14px 18px;border-radius:0 12px 12px 0;margin:12px 0;font-size:17px;line-height:1.8;}
+.q-text{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.5;}
+.q-sub{font-size:18px;color:var(--subtext);margin-bottom:14px;}
+.choices{display:flex;flex-direction:column;gap:10px;}
+.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;color:var(--text);}
+.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light);}
+.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .3s;}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.choice-btn.disabled{pointer-events:none;opacity:.7;}
+.choices-row{display:flex;flex-wrap:wrap;gap:10px;}
+.choices-row .choice-btn{flex:1;min-width:45%;text-align:center;font-size:20px;}
+.feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;}
+.feedback.show{display:block;}
+.feedback.correct{background:var(--green-light);color:var(--green);}
+.feedback.wrong{background:var(--red-light);color:var(--red);}
+.passage{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:17px;line-height:2;margin:12px 0;}
+.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--primary);text-align:center;font-size:18px;font-weight:700;color:var(--secondary);padding:4px 8px;margin:0 4px;min-height:32px;vertical-align:bottom;}
+.blank-box.filled{border-color:var(--green);color:var(--green);}
+.ox-row{display:flex;gap:14px;justify-content:center;margin:10px 0;}
+.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:#fff;font-size:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}
+.match-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:16px;cursor:pointer;transition:all .2s;}
+.match-item.selected{border-color:var(--secondary);background:var(--primary-light);}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.toggle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;}
+.toggle-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:17px;cursor:pointer;transition:all .2s;}
+.toggle-item.on{background:var(--primary-light);border-color:var(--secondary);}
+.order-zone{display:flex;flex-direction:column;gap:8px;margin:12px 0;min-height:60px;padding:12px;border:2px dashed var(--border);border-radius:12px;}
+.order-item{background:var(--primary-light);border:2px solid var(--secondary);border-radius:10px;padding:10px 16px;font-size:16px;cursor:pointer;transition:all .2s;}
+.order-item.placed{opacity:.4;pointer-events:none;}
+.drop-zone{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.drop-slot{background:#F1F5F9;border:2px dashed var(--border);border-radius:10px;padding:10px 16px;font-size:16px;min-height:44px;display:flex;align-items:center;}
+.drop-slot.filled{background:var(--primary-light);border-color:var(--secondary);border-style:solid;}
+.tts-btn{background:none;border:none;cursor:pointer;font-size:22px;vertical-align:middle;}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:18px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}
+.nav-btn:hover{background:var(--secondary);}
+.nav-btn:disabled{background:var(--border);cursor:default;}
+.nav-info{font-size:15px;color:var(--subtext);}
+.result-card{text-align:center;}
+.result-score{font-size:64px;font-weight:900;color:var(--primary);margin:12px 0;}
+.result-msg{font-size:22px;color:var(--subtext);margin:8px 0;}
+.result-detail{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap;}
+.result-item{background:var(--primary-light);border-radius:12px;padding:14px 24px;text-align:center;}
+.result-item .label{font-size:14px;color:var(--subtext);}
+.result-item .val{font-size:28px;font-weight:900;color:var(--primary);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+    <span class="topbar-title">6학년 영어 · 토론 심화</span>
+  </div>
+  <div class="kedu-logo">K</div>
+</div>
+<div class="slide-area" id="slideArea">
+
+<!-- S0: Concept - 3단 논증 -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎤 3단 논증 구조 <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    토론에서 설득력 있게 말하려면 <strong>3단 논증</strong>을 사용해요:<br><br>
+    🔹 <strong>1단: 주장 (Claim)</strong> — I believe that ~<br>
+    🔹 <strong>2단: 근거 (Reason)</strong> — This is because ~<br>
+    🔹 <strong>3단: 예시/증거 (Evidence)</strong> — For example, ~
+  </div>
+  <div class="example-box">
+    <button class="tts-btn" onclick="speak('I believe that students should wear school uniforms. This is because uniforms reduce bullying based on clothing. For example, a study showed that schools with uniforms had thirty percent fewer bullying cases.')">🔊</button>
+    "I believe that students should wear school uniforms. This is because uniforms reduce bullying based on clothing. For example, a study showed that schools with uniforms had 30% fewer bullying cases."
+  </div>
+</div>
+</div>
+
+<!-- S1: Concept - 전환어 체계 -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🔗 토론 전환어 체계 (Transition Words)</div>
+  <div class="concept-box">
+    <strong>주장 추가:</strong> Furthermore, / Moreover, / In addition,<br>
+    <strong>반론:</strong> However, / On the other hand, / Nevertheless,<br>
+    <strong>예시:</strong> For instance, / For example, / Such as ~<br>
+    <strong>결론:</strong> In conclusion, / Therefore, / To sum up,<br>
+    <strong>양보:</strong> Although ~, / Even though ~, / Despite ~,
+  </div>
+  <div style="font-size:16px;color:var(--subtext);margin-top:10px;">💡 전환어를 쓰면 논리적 흐름이 훨씬 좋아져요!</div>
+</div>
+</div>
+
+<!-- S2: Q1 - 전환어 역할 매칭 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q1 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">전환어와 역할을 매칭하세요.</div>
+  <div class="match-grid" id="matchGrid1">
+    <div class="match-item" data-pair="A" data-side="L" onclick="matchClick(this,'m1')">Furthermore</div>
+    <div class="match-item" data-pair="A" data-side="R" onclick="matchClick(this,'m1')">주장 추가</div>
+    <div class="match-item" data-pair="B" data-side="L" onclick="matchClick(this,'m1')">However</div>
+    <div class="match-item" data-pair="B" data-side="R" onclick="matchClick(this,'m1')">반론 제시</div>
+    <div class="match-item" data-pair="C" data-side="L" onclick="matchClick(this,'m1')">In conclusion</div>
+    <div class="match-item" data-pair="C" data-side="R" onclick="matchClick(this,'m1')">결론 정리</div>
+  </div>
+  <div class="feedback" id="fb_m1"></div>
+</div>
+</div>
+
+<!-- S3: Q2 - 빈칸 (However) -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q2 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 전환어를 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('Some people say homework helps students learn. Blank, too much homework can cause stress and reduce free time.')">🔊</button>
+    Some people say homework helps students learn. <span class="blank-box" id="blank2"></span>, too much homework can cause stress and reduce free time.
+  </div>
+  <div class="choices-row" id="q2">
+    <button class="choice-btn" onclick="fillBlank(this,'Furthermore','blank2','q2',1)">Furthermore</button>
+    <button class="choice-btn" onclick="fillBlank(this,'However','blank2','q2',1)">However</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Therefore','blank2','q2',1)">Therefore</button>
+    <button class="choice-btn" onclick="fillBlank(this,'For example','blank2','q2',1)">For example</button>
+  </div>
+  <div class="feedback" id="fb_q2"></div>
+</div>
+</div>
+
+<!-- S4: Q3 - O/X (3단 논증 완성도) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q3 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">다음은 올바른 3단 논증인가요?</div>
+  <div class="passage" style="font-size:16px;">
+    <button class="tts-btn" onclick="speak('I believe pets should be allowed in school. This is because pets help reduce stress. For example, many hospitals use therapy dogs to calm patients.')">🔊</button>
+    "I believe pets should be allowed in school. This is because pets help reduce stress. For example, many hospitals use therapy dogs to calm patients."
+  </div>
+  <div class="ox-row" id="q3">
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">❌</button>
+  </div>
+  <div class="feedback" id="fb_q3"></div>
+</div>
+</div>
+
+<!-- S5: Q4 - 3단 논증 순서 배열 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q4 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">3단 논증의 올바른 순서로 배열하세요.</div>
+  <div class="drop-zone" id="dropZone4">
+    <div class="drop-slot" data-idx="0">1. <span class="slot-text"></span></div>
+    <div class="drop-slot" data-idx="1">2. <span class="slot-text"></span></div>
+    <div class="drop-slot" data-idx="2">3. <span class="slot-text"></span></div>
+  </div>
+  <div class="order-zone" id="orderPool4"></div>
+  <div class="feedback" id="fb_q4"></div>
+</div>
+</div>
+
+<!-- S6: Q5 - 토글 (반론 표현 골라내기) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q5 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">아래에서 <strong>반론(opposing view)</strong>을 나타내는 표현을 모두 고르세요.</div>
+  <div class="toggle-grid" id="q5">
+    <div class="toggle-item" data-opp="1" onclick="toggleItem(this)">However</div>
+    <div class="toggle-item" data-opp="0" onclick="toggleItem(this)">Furthermore</div>
+    <div class="toggle-item" data-opp="1" onclick="toggleItem(this)">On the other hand</div>
+    <div class="toggle-item" data-opp="0" onclick="toggleItem(this)">In addition</div>
+    <div class="toggle-item" data-opp="1" onclick="toggleItem(this)">Nevertheless</div>
+    <div class="toggle-item" data-opp="0" onclick="toggleItem(this)">Therefore</div>
+  </div>
+  <button class="nav-btn" style="margin-top:14px;" onclick="checkToggle5()">확인하기</button>
+  <div class="feedback" id="fb_q5"></div>
+</div>
+</div>
+
+<!-- S7: Passage (토론문) -->
+<div class="slide" data-type="passage">
+<div class="card">
+  <div class="slide-title">📖 토론문 읽기</div>
+  <div class="passage" style="font-size:16px;line-height:2;">
+    <button class="tts-btn" onclick="speak('I strongly believe that students should learn coding in elementary school. First of all, coding develops logical thinking skills. Furthermore, it prepares students for future careers in technology. For instance, many jobs in 2030 will require basic programming knowledge. Some people argue that elementary students are too young to learn coding. However, studies have shown that children can understand coding concepts as early as age seven. In conclusion, teaching coding in elementary school is essential for our future.')">🔊</button>
+    I strongly believe that students should learn coding in elementary school. First of all, coding develops logical thinking skills. Furthermore, it prepares students for future careers in technology. For instance, many jobs in 2030 will require basic programming knowledge. Some people argue that elementary students are too young to learn coding. However, studies have shown that children can understand coding concepts as early as age 7. In conclusion, teaching coding in elementary school is essential for our future.
+  </div>
+</div>
+</div>
+
+<!-- S8: Q6 - 지문 주장 파악 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q6 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">위 토론문에서 글쓴이의 주장(claim)은?</div>
+  <div class="choices" id="q6">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q6')">초등학생도 코딩을 배워야 한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q6')">코딩은 어른만 할 수 있다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q6')">2030년에는 일자리가 없어진다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q6')">논리적 사고력은 중요하지 않다</button>
+  </div>
+  <div class="feedback" id="fb_q6"></div>
+</div>
+</div>
+
+<!-- S9: Q7 - 반론 인식 -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+<div class="card">
+  <div class="slide-title">Q7 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">글쓴이가 언급한 반론(opposing view)은?</div>
+  <div class="choices" id="q7">
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Coding is not useful for future jobs.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Children do not like computers.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Elementary students are too young to learn coding.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Schools do not have enough computers.</button>
+  </div>
+  <div class="feedback" id="fb_q7"></div>
+</div>
+</div>
+
+<!-- S10: Q8 - 전환어 역할 추론 -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+<div class="card">
+  <div class="slide-title">Q8 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">글에서 "Furthermore"가 하는 역할은?</div>
+  <div class="choices" id="q8">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q8')">반대 의견을 소개한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q8')">첫 번째 근거에 추가 근거를 더한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q8')">구체적 예시를 제공한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q8')">결론을 정리한다</button>
+  </div>
+  <div class="feedback" id="fb_q8"></div>
+</div>
+</div>
+
+<!-- S11: Q9 - 빈칸 (결론 완성) -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+<div class="card">
+  <div class="slide-title">Q9 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 결론 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('We have discussed the benefits and drawbacks of online learning. Blank, I believe that a balanced approach combining online and offline learning is the best solution.')">🔊</button>
+    We have discussed the benefits and drawbacks of online learning. <span class="blank-box" id="blank9"></span>, I believe that a balanced approach combining online and offline learning is the best solution.
+  </div>
+  <div class="choices-row" id="q9">
+    <button class="choice-btn" onclick="fillBlank(this,'Furthermore','blank9','q9',2)">Furthermore</button>
+    <button class="choice-btn" onclick="fillBlank(this,'However','blank9','q9',2)">However</button>
+    <button class="choice-btn" onclick="fillBlank(this,'In conclusion','blank9','q9',2)">In conclusion</button>
+    <button class="choice-btn" onclick="fillBlank(this,'For example','blank9','q9',2)">For example</button>
+  </div>
+  <div class="feedback" id="fb_q9"></div>
+</div>
+</div>
+
+<!-- S12: Result -->
+<div class="slide" data-type="result">
+<div class="card result-card">
+  <div class="slide-title" style="justify-content:center;">🎯 학습 결과</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-msg" id="finalMsg">점</div>
+  <div class="result-detail">
+    <div class="result-item"><div class="label">맞힌 문제</div><div class="val" id="correctCnt">0</div></div>
+    <div class="result-item"><div class="label">총 문항</div><div class="val">9</div></div>
+  </div>
+  <button class="nav-btn" style="margin-top:18px;" onclick="location.reload()">다시 풀기 🔄</button>
+</div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button>
+  <span class="nav-info" id="navInfo">1 / 13</span>
+  <button class="nav-btn" id="nextBtn" onclick="go(1)">다음 ▶</button>
+</div>
+
+<script>
+let cur=0,totalScore=0,correctCount=0,soundOn=true;
+const slides=document.querySelectorAll('.slide');const total=slides.length;let audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('navInfo').textContent=`${n+1} / ${total}`;document.getElementById('prevBtn').disabled=n===0;if(n===total-1)showResult();}
+function go(d){const n=cur+d;if(n>=0&&n<total){cur=n;showSlide(cur);}}
+function checkAnswer(btn,correct,qid){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .choice-btn`);const idx=[...btns].indexOf(btn);btns.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(idx===correct){btn.classList.add('correct');playCorrect();totalScore+=parseInt(btn.closest('.slide').dataset.score)||50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{btn.classList.add('wrong');btns[correct].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';}}
+function checkOX(btn,correct,qid){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .ox-btn`);const clicked=btn.textContent.trim()==='⭕'?'O':'X';btns.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(clicked===correct){btn.classList.add('correct');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 맞아요! 주장→근거→예시 순서가 완벽한 3단 논증이에요!';}else{btn.classList.add('wrong');const ci=correct==='O'?0:1;btns[ci].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ Claim→Reason→Evidence 구조를 갖추고 있어요!';}}
+function fillBlank(btn,text,blankId,qid,correct){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .choice-btn`);const idx=[...btns].indexOf(btn);btns.forEach(b=>b.classList.add('disabled'));document.getElementById(blankId).textContent=text;const fb=document.getElementById('fb_'+qid);if(idx===correct){document.getElementById(blankId).classList.add('filled');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';btns[correct].style.border='3px solid var(--green)';}}
+function toggleItem(el){playClick();el.classList.toggle('on');}
+function checkToggle5(){const items=document.querySelectorAll('#q5 .toggle-item');let ok=true;items.forEach(it=>{if((it.dataset.opp==='1')!==it.classList.contains('on'))ok=false;});items.forEach(it=>it.style.pointerEvents='none');const fb=document.getElementById('fb_q5');if(ok){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 반론 표현: However, On the other hand, Nevertheless';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ Furthermore/In addition은 추가, Therefore는 결론이에요!';}}
+// Match Q1
+let matchSel=null,matchCount=0;
+function matchClick(el,mid){if(el.classList.contains('matched'))return;playClick();if(!matchSel){matchSel=el;el.classList.add('selected');}else{if(matchSel===el){matchSel.classList.remove('selected');matchSel=null;return;}
+if(matchSel.dataset.pair===el.dataset.pair&&matchSel.dataset.side!==el.dataset.side){matchSel.classList.remove('selected');matchSel.classList.add('matched');el.classList.add('matched');matchCount++;playCorrect();if(matchCount===3){totalScore+=50;correctCount++;const fb=document.getElementById('fb_'+mid);fb.className='feedback show correct';fb.textContent='✅ 모두 매칭 성공!';}}else{matchSel.classList.remove('selected');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);playWrong();}matchSel=null;}}
+// Order Q4
+const orderData4=['I believe that school lunches should be free for all students.','This is because many families cannot afford healthy meals.','For example, in Finland, free school lunches improved student health by 25%.'];
+let orderAns4=[];
+function initOrder4(){const pool=document.getElementById('orderPool4');const shuf=[...orderData4].sort(()=>Math.random()-.5);shuf.forEach(t=>{const d=document.createElement('div');d.className='order-item';d.textContent=t;d.dataset.orig=orderData4.indexOf(t);d.onclick=()=>placeOrder4(d);pool.appendChild(d);});}
+function placeOrder4(el){if(el.classList.contains('placed'))return;playClick();const slots=document.querySelectorAll('#dropZone4 .drop-slot');for(let s of slots){if(!s.classList.contains('filled')){s.querySelector('.slot-text').textContent=el.textContent;s.classList.add('filled');s.dataset.val=el.dataset.orig;el.classList.add('placed');orderAns4.push(parseInt(el.dataset.orig));break;}}
+if(orderAns4.length===3){const fb=document.getElementById('fb_q4');if(orderAns4.every((v,i)=>v===i)){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ Claim → Reason → Evidence 완벽!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 주장(I believe) → 근거(This is because) → 예시(For example) 순서예요!';}}}
+initOrder4();
+function showResult(){document.getElementById('finalScore').textContent=totalScore;document.getElementById('correctCnt').textContent=correctCount;let msg='';if(correctCount>=8)msg='🏆 토론 챔피언! 논리적 사고력 최고!';else if(correctCount>=5)msg='👍 잘했어요! 전환어를 더 연습해 봐요!';else msg='📚 다시 복습해 보세요!';document.getElementById('finalMsg').textContent=msg;}
+let tx=0;
+document.getElementById('slideArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?go(1):go(-1);}});
+showSlide(0);
+</script>
+</body>
+</html>

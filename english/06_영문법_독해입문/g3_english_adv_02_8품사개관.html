@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 심화 02 — 8품사 개관</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#F5F3FF; --card:#FFFFFF; --primary:#7C3AED; --primary-light:#EDE9FE; --secondary:#8B5CF6; --green:#16A34A; --green-light:#DCFCE7; --red:#DC2626; --red-light:#FEE2E2; --yellow:#CA8A04; --yellow-light:#FEF9C3; --text:#0F172A; --subtext:#475569; --border:#E2E8F0; --shadow:0 2px 12px rgba(0,0,0,0.08); --radius:16px; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:14px 16px;margin:6px 0}
+.rule-formula{font-size:32px;font-weight:900;letter-spacing:1px;margin:6px 0;text-align:center}
+.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px;text-align:center}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}
+.stars{color:#FCD34D}
+.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.blank-box{display:inline-block;font-size:36px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px;transition:all .3s}
+.blank-box.filled{animation:fb .4s}
+@keyframes fb{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:28px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:22px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}
+.token:hover{border-color:var(--primary);transform:scale(1.04)}
+.token.correct{background:var(--green-light);border-color:var(--green)}
+.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.pos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.pos-card{border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:transform .2s}
+.pos-card:hover{transform:scale(1.03)}
+.pos-card .emoji{font-size:32px}
+.pos-card .name{font-size:22px;font-weight:900;margin:4px 0}
+.pos-card .desc{font-size:16px;color:var(--subtext)}
+.tf-btns{display:flex;gap:16px;justify-content:center;margin-top:14px}
+.tf-btn{padding:14px 40px;border-radius:14px;font-size:28px;font-weight:900;cursor:pointer;border:3px solid #CBD5E1;background:white;transition:all .2s}
+.tf-btn:hover{transform:scale(1.05)}
+.tf-btn.correct{background:var(--green-light);border-color:var(--green)}
+.tf-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.highlight{color:var(--primary);font-weight:900}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 13</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- S0: 인트로 -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">🏷️</div>
+    <div class="slide-title">3학년 심화 · 02차시</div>
+    <div class="rule-formula" style="font-size:36px;color:var(--primary)">8품사 개관</div>
+    <div class="rule-sub" style="font-size:22px;margin-top:10px">영어 단어는 딱 <b>8가지 종류</b>로 나뉘어요!</div>
+  </div>
+</div>
+
+<!-- S1: 8품사 한눈에 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📋 8품사 한눈에 보기</div>
+    <div class="pos-grid">
+      <div class="pos-card" style="background:#DBEAFE"><div class="emoji">🧑</div><div class="name">명사 Noun</div><div class="desc">사람·사물 이름</div></div>
+      <div class="pos-card" style="background:#EDE9FE"><div class="emoji">👉</div><div class="name">대명사 Pronoun</div><div class="desc">명사 대신</div></div>
+      <div class="pos-card" style="background:#FEE2E2"><div class="emoji">🏃</div><div class="name">동사 Verb</div><div class="desc">행동·상태</div></div>
+      <div class="pos-card" style="background:#FEF3C7"><div class="emoji">🎨</div><div class="name">형용사 Adjective</div><div class="desc">명사 꾸밈</div></div>
+      <div class="pos-card" style="background:#DCFCE7"><div class="emoji">⚡</div><div class="name">부사 Adverb</div><div class="desc">동사·형용사 꾸밈</div></div>
+      <div class="pos-card" style="background:#F3E8FF"><div class="emoji">📍</div><div class="name">전치사 Preposition</div><div class="desc">위치·방향</div></div>
+      <div class="pos-card" style="background:#FFF7ED"><div class="emoji">🔗</div><div class="name">접속사 Conjunction</div><div class="desc">단어·문장 연결</div></div>
+      <div class="pos-card" style="background:#FDF2F8"><div class="emoji">😲</div><div class="name">감탄사 Interjection</div><div class="desc">감정 표현</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: 명사·대명사 설명 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">🧑 명사 & 👉 대명사</div>
+    <div class="rule-box" style="background:#DBEAFE">
+      <div style="font-size:24px;font-weight:900;color:#1E40AF">명사 (Noun) — 이름을 가진 모든 것!</div>
+      <div class="rule-ex" onclick="speakWord('dog, school, Tom, love')">🐕 dog &nbsp; 🏫 school &nbsp; 👦 Tom &nbsp; 💕 love</div>
+    </div>
+    <div class="rule-box" style="background:#EDE9FE">
+      <div style="font-size:24px;font-weight:900;color:#6B21A8">대명사 (Pronoun) — 명사를 대신!</div>
+      <div class="rule-ex" onclick="speakWord('I, you, he, she, it, we, they')">I, you, he, she, it, we, they</div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: 동사·형용사·부사 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">🏃 동사 · 🎨 형용사 · ⚡ 부사</div>
+    <div class="rule-box" style="background:#FEE2E2">
+      <div style="font-size:22px;font-weight:900;color:#B91C1C">동사 — 행동·상태</div>
+      <div class="rule-ex" onclick="speakWord('run, eat, is, have')">run, eat, is, have</div>
+    </div>
+    <div class="rule-box" style="background:#FEF3C7">
+      <div style="font-size:22px;font-weight:900;color:#92400E">형용사 — 명사를 꾸밈</div>
+      <div class="rule-ex" onclick="speakWord('big, happy, red, tall')">big, happy, red, tall → a <b>big</b> dog</div>
+    </div>
+    <div class="rule-box" style="background:#DCFCE7">
+      <div style="font-size:22px;font-weight:900;color:#15803D">부사 — 동사·형용사를 꾸밈</div>
+      <div class="rule-ex" onclick="speakWord('very, quickly, always')">very, quickly, always → run <b>quickly</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- S4: Q1 ⭐ 명사 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐</span></span>
+    <div class="question-text">다음 중 <b>명사(Noun)</b>는?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">run</button>
+      <button class="choice-btn" onclick="answer(this,1)">quickly</button>
+      <button class="choice-btn" onclick="answer(this,2)">school</button>
+      <button class="choice-btn" onclick="answer(this,3)">happy</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q2 ⭐ 동사 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐</span></span>
+    <div class="question-text">다음 중 <b>동사(Verb)</b>는?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">she</button>
+      <button class="choice-btn" onclick="answer(this,1)">eats</button>
+      <button class="choice-btn" onclick="answer(this,2)">big</button>
+      <button class="choice-btn" onclick="answer(this,3)">and</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q3 ⭐ 빈칸 — 형용사 -->
+<div class="slide" data-type="q" data-score="15">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐</span></span>
+    <div class="question-text">"a <span class="highlight">tall</span> boy"에서 tall은?</div>
+    <div style="text-align:center;margin:10px 0"><span class="blank-box" id="blank6">___</span></div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','명사',0,1)">명사</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','형용사',1,1)">형용사</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','부사',2,1)">부사</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q4 ⭐⭐ OX — 대명사 -->
+<div class="slide" data-type="q" data-score="15">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"<b>They</b> are students."에서<br>They는 <b>명사</b>이다?</div>
+    <div class="tf-btns">
+      <button class="tf-btn" onclick="tfAnswer(this,7,false,'They는 명사를 대신하는 대명사예요!')">⭕</button>
+      <button class="tf-btn" onclick="tfAnswer(this,7,true,'맞아요! They는 대명사(Pronoun)!')">❌</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q5 ⭐⭐ 부사 찾기 -->
+<div class="slide" data-type="q" data-correct="3" data-score="20">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"She runs <span class="highlight">very fast</span>."에서<br><b>very</b>는 무슨 품사?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">형용사</button>
+      <button class="choice-btn" onclick="answer(this,1)">전치사</button>
+      <button class="choice-btn" onclick="answer(this,2)">동사</button>
+      <button class="choice-btn" onclick="answer(this,3)">부사</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q6 ⭐⭐ 전치사·접속사·감탄사 -->
+<div class="slide" data-type="q" data-correct="0" data-score="20">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"The book is <span class="highlight">on</span> the table."<br>on은 무슨 품사?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">전치사</button>
+      <button class="choice-btn" onclick="answer(this,1)">접속사</button>
+      <button class="choice-btn" onclick="answer(this,2)">부사</button>
+      <button class="choice-btn" onclick="answer(this,3)">형용사</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q7 도전 ⭐⭐⭐ 분류 -->
+<div class="slide" data-type="q" data-score="30">
+  <div class="card">
+    <span class="question-label">Q7 도전! <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">단어를 올바른 품사에 연결하세요!</div>
+    <div id="matchQ10"></div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q8 도전 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="30">
+  <div class="card">
+    <span class="question-label">Q8 도전! <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">"Wow! She quickly ate a <b>big</b> apple and smiled."<br>이 문장에 등장하는 품사는 모두 몇 가지?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">5가지</button>
+      <button class="choice-btn" onclick="answer(this,1)">7가지</button>
+      <button class="choice-btn" onclick="answer(this,2)">6가지</button>
+      <button class="choice-btn" onclick="answer(this,3)">8가지</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: 결과 -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🎉</div>
+    <div style="font-size:32px;font-weight:900;margin:10px 0">학습 완료!</div>
+    <div style="font-size:22px;color:var(--subtext)">8품사 개관</div>
+    <div style="margin:16px 0">
+      <span style="font-size:48px;font-weight:900;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:22px;color:var(--subtext)">점</span>
+    </div>
+    <div id="resultStars" style="font-size:36px">⭐⭐⭐</div>
+    <button class="nav-btn" style="margin-top:18px;padding:14px 40px;font-size:22px" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=140?'⭐⭐⭐⭐⭐':score>=100?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=140?'🏆':'🎉'}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||15;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function tfAnswer(btn,si,isCorrect,msg){if(answered[si])return;playClick();const pts=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||15;if(isCorrect){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ '+msg+' +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,1200)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,msg,false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+
+// Q7 matching
+(function(){
+  const pairs=[{w:'cat',a:'명사'},{w:'quickly',a:'부사'},{w:'and',a:'접속사'},{w:'Wow!',a:'감탄사'}];
+  const labels=['명사','부사','접속사','감탄사'];
+  const c=document.getElementById('matchQ10');
+  let matched=0,selW=null;
+  const wr=document.createElement('div');wr.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px';
+  pairs.forEach((p,i)=>{const b=document.createElement('button');b.className='token';b.textContent=p.w;b.dataset.ans=p.a;b.onclick=function(){if(answered[10])return;document.querySelectorAll('#matchQ10 .token').forEach(t=>t.style.outline='');this.style.outline='3px solid var(--primary)';selW=this;playClick()};wr.appendChild(b)});
+  c.appendChild(wr);
+  const lr=document.createElement('div');lr.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center';
+  labels.forEach(lb=>{const b=document.createElement('button');b.className='choice-btn';b.style.fontSize='20px';b.style.padding='8px 16px';b.textContent=lb;b.onclick=function(){if(!selW||answered[10])return;if(selW.dataset.ans===lb){selW.classList.add('correct');selW.style.outline='';matched++;playCorrect();if(matched===4){addScore(30);setFB('fb10','✅ 완벽! 품사 분류 완료! +30점',true);answered[10]=true;setTimeout(nextSlide,1200)}}else{selW.classList.add('wrong');playWrong();combo=0;setFB('fb10','다시 생각해봐! 💡',false);setTimeout(()=>selW.classList.remove('wrong'),500)}selW=null};lr.appendChild(b)});
+  c.appendChild(lr);
+})();
+
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.outline=''});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled')});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.tf-btn').forEach(b=>b.className='tf-btn');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let touchStartX=0;
+document.getElementById('slidesWrap').addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});
+document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=touchStartX-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>

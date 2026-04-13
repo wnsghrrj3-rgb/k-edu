@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 6학년 영어 심화 35 — 특목고 영어면접 기초</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --primary: #1E3A5F;
+  --primary-light: #DBEAFE;
+  --secondary: #2563EB;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E2E8F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --radius: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'Noto Sans KR',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  user-select:none;
+}
+
+/* TOPBAR */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 20px; background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0;
+}
+.sound-btn { background:none; border:none; cursor:pointer; font-size:24px; padding:4px 8px; border-radius:10px; transition:background .2s; }
+.sound-btn:hover { background:var(--primary-light); }
+.topbar-title { font-size:15px; font-weight:700; color:var(--primary); }
+.logo { width:32px; height:32px; background:var(--secondary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:14px; position:relative; }
+.logo::after { content:'✦'; position:absolute; top:-2px; right:-2px; font-size:10px; color:var(--yellow); }
+
+/* PROGRESS */
+.progress-wrap { padding:6px 20px; background:#fff; border-bottom:1px solid var(--border); flex-shrink:0; }
+.progress-bar { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--secondary); transition:width .4s; border-radius:2px; }
+.progress-text { font-size:12px; color:var(--subtext); text-align:right; margin-top:2px; }
+
+/* SLIDES */
+.slide-area { flex:1; overflow:hidden; position:relative; }
+.slide { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px; opacity:0; pointer-events:none; transition:opacity .35s, transform .35s; transform:translateX(40px); }
+.slide.active { opacity:1; pointer-events:auto; transform:translateX(0); }
+
+.card {
+  background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:24px 32px; max-width:800px; width:100%; max-height:85vh; overflow-y:auto;
+}
+
+/* TYPOGRAPHY */
+.slide-title { font-size:20px; font-weight:900; color:var(--primary); margin-bottom:12px; }
+.slide-sub { font-size:18px; color:var(--subtext); margin-bottom:16px; }
+.concept-text { font-size:18px; line-height:1.7; color:var(--text); margin-bottom:12px; }
+.concept-highlight { background:var(--primary-light); padding:16px 20px; border-radius:12px; border-left:4px solid var(--secondary); margin:12px 0; font-size:17px; line-height:1.7; }
+.question-text { font-size:22px; font-weight:700; color:var(--text); margin-bottom:16px; line-height:1.5; }
+.passage { background:#F1F5F9; padding:20px; border-radius:12px; font-size:18px; line-height:1.8; margin-bottom:16px; color:var(--text); }
+.passage em { font-style:normal; text-decoration:underline; text-decoration-color:var(--secondary); }
+
+/* BADGE */
+.badge { display:inline-block; background:var(--yellow-light); color:var(--yellow); font-size:13px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px; }
+
+/* BUTTONS */
+.choice-grid { display:flex; flex-direction:column; gap:10px; }
+.choice-btn {
+  background:#fff; border:2px solid var(--border); border-radius:12px;
+  padding:14px 20px; font-size:20px; cursor:pointer; text-align:left;
+  transition:all .2s; font-family:'Noto Sans KR',sans-serif; line-height:1.4;
+}
+.choice-btn:hover { border-color:var(--secondary); background:var(--primary-light); }
+.choice-btn.correct { border-color:var(--green); background:var(--green-light); }
+.choice-btn.wrong { border-color:var(--red); background:var(--red-light); animation:shake .4s; }
+.choice-btn.disabled { pointer-events:none; opacity:.7; }
+
+/* CARD MATCH */
+.match-area { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.match-left, .match-right { display:flex; flex-direction:column; gap:8px; }
+.match-item {
+  background:#fff; border:2px solid var(--border); border-radius:10px;
+  padding:12px 16px; font-size:17px; cursor:pointer; transition:all .2s; text-align:center;
+}
+.match-item:hover { border-color:var(--secondary); }
+.match-item.selected { border-color:var(--secondary); background:var(--primary-light); }
+.match-item.matched { border-color:var(--green); background:var(--green-light); pointer-events:none; }
+.match-item.wrong-match { border-color:var(--red); background:var(--red-light); animation:shake .4s; }
+
+/* ORDER */
+.order-area { display:flex; flex-direction:column; gap:8px; }
+.order-item {
+  background:#fff; border:2px solid var(--border); border-radius:10px;
+  padding:12px 16px; font-size:17px; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:10px;
+}
+.order-item .num { background:var(--primary); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
+.order-item:hover { border-color:var(--secondary); }
+.order-item.placed { border-color:var(--secondary); background:var(--primary-light); }
+
+/* OX */
+.ox-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.ox-btn {
+  border:2px solid var(--border); border-radius:14px; padding:20px;
+  font-size:36px; cursor:pointer; background:#fff; transition:all .2s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.ox-btn span { font-size:16px; }
+.ox-btn:hover { border-color:var(--secondary); }
+.ox-btn.correct { border-color:var(--green); background:var(--green-light); }
+.ox-btn.wrong { border-color:var(--red); background:var(--red-light); animation:shake .4s; }
+
+/* BLANK */
+.blank-sentence { font-size:20px; line-height:2; margin-bottom:16px; }
+.blank-box { display:inline-block; min-width:120px; border-bottom:3px solid var(--secondary); text-align:center; font-size:20px; font-weight:700; color:var(--secondary); padding:2px 8px; margin:0 4px; min-height:32px; }
+.blank-options { display:flex; flex-wrap:wrap; gap:8px; }
+.blank-opt {
+  background:#fff; border:2px solid var(--border); border-radius:10px;
+  padding:10px 18px; font-size:18px; cursor:pointer; transition:all .2s;
+}
+.blank-opt:hover { border-color:var(--secondary); background:var(--primary-light); }
+.blank-opt.correct { border-color:var(--green); background:var(--green-light); }
+.blank-opt.wrong { border-color:var(--red); background:var(--red-light); animation:shake .4s; }
+.blank-opt.disabled { pointer-events:none; opacity:.6; }
+
+/* FEEDBACK */
+.feedback { margin-top:12px; padding:12px 16px; border-radius:10px; font-size:16px; display:none; line-height:1.5; }
+.feedback.show { display:block; }
+.feedback.correct-fb { background:var(--green-light); color:#166534; }
+.feedback.wrong-fb { background:var(--red-light); color:#991B1B; }
+
+/* NAV */
+.nav-bar {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 20px; background:#fff; border-top:1px solid var(--border); flex-shrink:0;
+}
+.nav-btn {
+  background:var(--primary); color:#fff; border:none; border-radius:10px;
+  padding:10px 24px; font-size:16px; font-weight:700; cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif; transition:background .2s;
+}
+.nav-btn:hover { background:var(--secondary); }
+.nav-btn:disabled { background:var(--border); color:var(--subtext); cursor:default; }
+.score-display { font-size:15px; font-weight:700; color:var(--primary); }
+
+/* RESULT */
+.result-score { font-size:72px; font-weight:900; color:var(--primary); text-align:center; margin:20px 0; }
+.result-grade { font-size:24px; text-align:center; margin-bottom:16px; }
+.result-detail { font-size:16px; color:var(--subtext); line-height:1.8; }
+
+/* TOGGLE GRID */
+.toggle-grid { display:flex; flex-direction:column; gap:10px; }
+.toggle-row { display:flex; align-items:center; gap:12px; background:#fff; border:2px solid var(--border); border-radius:10px; padding:12px 16px; cursor:pointer; transition:all .2s; }
+.toggle-row:hover { border-color:var(--secondary); }
+.toggle-indicator { width:48px; height:28px; background:var(--border); border-radius:14px; position:relative; transition:background .3s; flex-shrink:0; }
+.toggle-indicator::after { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; background:#fff; border-radius:50%; transition:transform .3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.toggle-row.on .toggle-indicator { background:var(--secondary); }
+.toggle-row.on .toggle-indicator::after { transform:translateX(20px); }
+.toggle-label { font-size:17px; line-height:1.4; }
+.toggle-row.correct-toggle { border-color:var(--green); background:var(--green-light); }
+.toggle-row.wrong-toggle { border-color:var(--red); background:var(--red-light); }
+
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="topbar-title">특목고 영어면접 기초</div>
+  <div class="logo">K</div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">1 / 12</div>
+</div>
+
+<!-- SLIDES -->
+<div class="slide-area" id="slideArea">
+
+  <!-- S0: INTRO -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 특목고 대비</div>
+      <div class="slide-title">🎤 특목고 영어면접 기초</div>
+      <div class="concept-text">특목고(외국어고·국제고·자사고) 영어면접에서는 <strong>영어로 자기소개, 지원동기, 학업계획</strong>을 유창하게 말해야 합니다.</div>
+      <div class="concept-highlight">
+        📌 <strong>면접의 3대 필수 질문</strong><br><br>
+        1️⃣ <strong>Self-Introduction</strong> — Tell me about yourself.<br>
+        2️⃣ <strong>Motivation</strong> — Why do you want to attend this school?<br>
+        3️⃣ <strong>Academic Plan</strong> — What are your academic goals?
+      </div>
+      <div class="concept-text" style="margin-top:12px">이번 차시에서는 각 질문에 대한 <strong>답변 구조(framework)</strong>를 배우고, 실전 연습을 합니다.</div>
+    </div>
+  </div>
+
+  <!-- S1: CONCEPT — Self-Introduction Framework -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📋 자기소개 답변 구조</div>
+      <div class="concept-highlight">
+        <strong>4단계 프레임워크 (SNAP)</strong><br><br>
+        🔹 <strong>S</strong>tart — 이름, 학교, 학년<br>
+        &nbsp;&nbsp;&nbsp;"My name is ___. I'm a 6th grader at ___ Elementary School."<br><br>
+        🔹 <strong>N</strong>otable strength — 나의 강점/특기<br>
+        &nbsp;&nbsp;&nbsp;"I'm passionate about ___ and have been ___."<br><br>
+        🔹 <strong>A</strong>chievement — 구체적 성과/경험<br>
+        &nbsp;&nbsp;&nbsp;"Last year, I participated in ___ and learned ___."<br><br>
+        🔹 <strong>P</strong>urpose — 지원 연결<br>
+        &nbsp;&nbsp;&nbsp;"This experience inspired me to apply to your school."
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: Q1 — 순서배열: SNAP 순서 맞추기 -->
+  <div class="slide" data-type="q" data-correct="" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 순서 배열</div>
+      <div class="question-text">Q1. 자기소개 SNAP 프레임워크의 올바른 순서를 만드세요.</div>
+      <div class="concept-text">아래 항목을 올바른 순서로 클릭하세요.</div>
+      <div class="order-area" id="q1Area"></div>
+      <div class="feedback" id="q1Fb"></div>
+    </div>
+  </div>
+
+  <!-- S3: Q2 — 빈칸 채우기: Self-intro opening -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 빈칸 채우기</div>
+      <div class="question-text">Q2. 자기소개 시작 문장의 빈칸을 채우세요.</div>
+      <div class="blank-sentence">"My name is Jimin. I'm a 6th grader <span class="blank-box" id="blank2"></span> Hanbit Elementary School."</div>
+      <div class="blank-options" id="q2Opts"></div>
+      <div class="feedback" id="q2Fb"></div>
+    </div>
+  </div>
+
+  <!-- S4: CONCEPT — Motivation Framework -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📋 지원동기 답변 구조</div>
+      <div class="concept-highlight">
+        <strong>3단계 구조 (WHY Framework)</strong><br><br>
+        🔹 <strong>W</strong>hat drew you — 관심을 갖게 된 계기<br>
+        &nbsp;&nbsp;&nbsp;"I first became interested in your school when I heard about ___."<br><br>
+        🔹 <strong>H</strong>ow it fits — 나의 목표와의 연결<br>
+        &nbsp;&nbsp;&nbsp;"Your school's ___ program perfectly matches my goal of ___."<br><br>
+        🔹 <strong>Y</strong>our contribution — 내가 기여할 점<br>
+        &nbsp;&nbsp;&nbsp;"I believe I can contribute to ___ with my experience in ___."
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: Q3 — 카드매칭: 면접 질문 ↔ 적절한 답변 -->
+  <div class="slide" data-type="q" data-correct="" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 카드 매칭</div>
+      <div class="question-text">Q3. 면접 질문과 가장 적절한 답변을 연결하세요.</div>
+      <div class="match-area">
+        <div class="match-left" id="matchLeft3"></div>
+        <div class="match-right" id="matchRight3"></div>
+      </div>
+      <div class="feedback" id="q3Fb"></div>
+    </div>
+  </div>
+
+  <!-- S6: Q4 — O/X: 면접 매너 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ O/X 판단</div>
+      <div class="question-text">Q4. 면접에서 아래 답변은 적절할까요?</div>
+      <div class="passage">"Why do you want to attend this school?"<br><br>"Because my parents told me to apply here."</div>
+      <div class="ox-grid" id="q4Ox"></div>
+      <div class="feedback" id="q4Fb"></div>
+    </div>
+  </div>
+
+  <!-- S7: Q5 — 선택형: 지원동기 Best Answer -->
+  <div class="slide" data-type="q" data-correct="2" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 선택형</div>
+      <div class="question-text">Q5. 지원동기 질문에 대한 가장 좋은 답변은?</div>
+      <div class="passage">"Why do you want to attend Seoul Foreign Language High School?"</div>
+      <div class="choice-grid" id="q5Choices"></div>
+      <div class="feedback" id="q5Fb"></div>
+    </div>
+  </div>
+
+  <!-- S8: CONCEPT — Academic Plan -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📋 학업계획 답변 구조</div>
+      <div class="concept-highlight">
+        <strong>SMART Goal 구조</strong><br><br>
+        🔹 <strong>S</strong>pecific — 구체적 목표<br>
+        &nbsp;&nbsp;&nbsp;"I plan to focus on improving my English debate skills."<br><br>
+        🔹 <strong>M</strong>easurable — 측정 가능한 기준<br>
+        &nbsp;&nbsp;&nbsp;"My goal is to participate in at least two debate competitions."<br><br>
+        🔹 <strong>A</strong>ctionable — 실행 계획<br>
+        &nbsp;&nbsp;&nbsp;"I will join the English debate club and practice every week."<br><br>
+        🔹 <strong>R</strong>elevant — 장기 목표 연결<br>
+        &nbsp;&nbsp;&nbsp;"This will prepare me for my dream of becoming a diplomat."<br><br>
+        🔹 <strong>T</strong>imeline — 시간 계획<br>
+        &nbsp;&nbsp;&nbsp;"By the end of my first year, I aim to ___."
+      </div>
+    </div>
+  </div>
+
+  <!-- S9: Q6 — 토글 판단: 좋은 학업계획 vs 나쁜 학업계획 -->
+  <div class="slide" data-type="q" data-correct="" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 토글 판단</div>
+      <div class="question-text">Q6. 학업계획으로 적절한 문장을 모두 ON 하세요.</div>
+      <div class="toggle-grid" id="q6Toggles"></div>
+      <button class="nav-btn" style="margin-top:16px;width:100%" onclick="checkQ6()">확인</button>
+      <div class="feedback" id="q6Fb"></div>
+    </div>
+  </div>
+
+  <!-- S10: Q7 — 빈칸: 학업계획 핵심 표현 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 빈칸 채우기</div>
+      <div class="question-text">Q7. 학업계획 문장의 빈칸을 채우세요.</div>
+      <div class="blank-sentence">"My goal is to <span class="blank-box" id="blank7"></span> in at least two English speech contests during my first year."</div>
+      <div class="blank-options" id="q7Opts"></div>
+      <div class="feedback" id="q7Fb"></div>
+    </div>
+  </div>
+
+  <!-- S11: Q8 — 선택형: 면접 전체 흐름 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 선택형</div>
+      <div class="question-text">Q8. 면접관이 "What makes you different from other applicants?"라고 물었을 때, SNAP 프레임워크에서 가장 관련 있는 단계는?</div>
+      <div class="choice-grid" id="q8Choices"></div>
+      <div class="feedback" id="q8Fb"></div>
+    </div>
+  </div>
+
+  <!-- S12: Q9 — O/X: 학업계획 적절성 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ O/X 판단</div>
+      <div class="question-text">Q9. 다음 학업계획 답변은 SMART 기준에 맞을까요?</div>
+      <div class="passage">"I plan to join the English debate club, participate in two competitions this year, and improve my critical thinking skills to prepare for a career in international relations."</div>
+      <div class="ox-grid" id="q9Ox"></div>
+      <div class="feedback" id="q9Fb"></div>
+    </div>
+  </div>
+
+  <!-- S13: Q10 — 순서배열: 면접 답변 문장 순서 -->
+  <div class="slide" data-type="q" data-correct="" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 순서 배열</div>
+      <div class="question-text">Q10. 자기소개 답변을 올바른 순서로 배열하세요.</div>
+      <div class="order-area" id="q10Area"></div>
+      <div class="feedback" id="q10Fb"></div>
+    </div>
+  </div>
+
+  <!-- S14: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">🎤 면접 기초 완료!</div>
+      <div class="result-score" id="finalScore">0</div>
+      <div class="result-grade" id="finalGrade"></div>
+      <div class="result-detail" id="finalDetail"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>← 이전</button>
+  <div class="score-display">점수: <span id="scoreSpan">0</span></div>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button>
+</div>
+
+<script>
+// ── AUDIO ──
+let soundOn = true, audioCtx;
+function getAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function playTone(freq,type,dur){
+  if(!soundOn) return;
+  const ctx = getAudioCtx();
+  ctx.resume().then(()=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type; o.frequency.value=freq;
+    g.gain.value=.15; g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+dur);
+  });
+}
+function playCorrect(){ playTone(523,'sine',.12); setTimeout(()=>playTone(659,'sine',.12),120); setTimeout(()=>playTone(784,'sine',.2),240); }
+function playWrong(){ playTone(220,'sawtooth',.15); setTimeout(()=>playTone(196,'sawtooth',.2),150); }
+function playClick(){ playTone(880,'sine',.06); }
+function toggleSound(){ soundOn=!soundOn; document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'; }
+function speak(text){ if(!soundOn) return; const u=new SpeechSynthesisUtterance(text); u.lang='en-US'; u.rate=0.8; speechSynthesis.speak(u); }
+
+// ── SLIDE NAV ──
+const slides = document.querySelectorAll('.slide');
+let cur = 0, score = 0, answered = {};
+function showSlide(n){
+  slides.forEach((s,i)=>{ s.classList.toggle('active',i===n); });
+  cur = n;
+  document.getElementById('prevBtn').disabled = n===0;
+  document.getElementById('nextBtn').textContent = n===slides.length-1?'완료':'다음 →';
+  document.getElementById('nextBtn').disabled = n===slides.length-1;
+  const total = slides.length;
+  document.getElementById('progressFill').style.width = ((n+1)/total*100)+'%';
+  document.getElementById('progressText').textContent = (n+1)+' / '+total;
+}
+function nextSlide(){
+  if(cur<slides.length-1){ showSlide(cur+1); if(slides[cur+1].dataset.type==='result') showResult(); }
+}
+function prevSlide(){ if(cur>0) showSlide(cur-1); }
+
+// Swipe
+let touchX=0;
+document.getElementById('slideArea').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;});
+document.getElementById('slideArea').addEventListener('touchend',e=>{
+  const diff=e.changedTouches[0].clientX-touchX;
+  if(diff>50) prevSlide(); else if(diff<-50) nextSlide();
+});
+
+function addScore(pts,qId){
+  if(answered[qId]) return false;
+  answered[qId]=true; score+=pts;
+  document.getElementById('scoreSpan').textContent=score;
+  return true;
+}
+
+function showFeedback(id,correct,msg){
+  const fb=document.getElementById(id);
+  fb.className='feedback show '+(correct?'correct-fb':'wrong-fb');
+  fb.textContent=msg;
+}
+
+// ── Q1: 순서 배열 (SNAP) ──
+(function(){
+  const items = [
+    {id:'S', text:'Start — 이름·학교·학년 소개'},
+    {id:'N', text:'Notable strength — 강점/특기'},
+    {id:'A', text:'Achievement — 구체적 성과'},
+    {id:'P', text:'Purpose — 지원 연결'}
+  ];
+  const shuffled = [...items].sort(()=>Math.random()-.5);
+  const area = document.getElementById('q1Area');
+  let selected = [];
+  shuffled.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'order-item';
+    div.innerHTML = '<div class="num">?</div><span>'+item.text+'</span>';
+    div.onclick = function(){
+      if(answered['q1'] || div.classList.contains('placed')) return;
+      playClick();
+      selected.push(item.id);
+      div.classList.add('placed');
+      div.querySelector('.num').textContent = selected.length;
+      if(selected.length === 4){
+        const correct = selected.join('')==='SNAP';
+        if(correct){ addScore(50,'q1'); playCorrect(); showFeedback('q1Fb',true,'정답! S → N → A → P 순서가 맞습니다.'); }
+        else{ playWrong(); showFeedback('q1Fb',false,'순서가 틀렸습니다. 올바른 순서: Start → Notable strength → Achievement → Purpose'); answered['q1']=true; }
+      }
+    };
+    area.appendChild(div);
+  });
+})();
+
+// ── Q2: 빈칸 ──
+(function(){
+  const opts = ['at','in','from','to'];
+  const container = document.getElementById('q2Opts');
+  opts.forEach((o,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'blank-opt'; btn.textContent = o;
+    btn.onclick = function(){
+      if(answered['q2']) return;
+      playClick();
+      document.getElementById('blank2').textContent = o;
+      if(i===0){
+        addScore(50,'q2'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q2Fb',true,'정답! "a 6th grader at ~ School"이 올바른 표현입니다.');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q2Fb',false,'"at + 학교 이름"이 올바른 전치사입니다.');
+        answered['q2']=true;
+      }
+      container.querySelectorAll('.blank-opt').forEach(b=>b.classList.add('disabled'));
+    };
+    container.appendChild(btn);
+  });
+})();
+
+// ── Q3: 카드 매칭 ──
+(function(){
+  const pairs = [
+    {q:'Tell me about yourself.', a:'My name is Jimin. I love science and won a science fair last year.'},
+    {q:'Why this school?', a:'Your global leadership program matches my goal of becoming a diplomat.'},
+    {q:'What are your goals?', a:'I plan to join the debate club and compete in two tournaments.'}
+  ];
+  const leftDiv = document.getElementById('matchLeft3');
+  const rightDiv = document.getElementById('matchRight3');
+  const shuffledRight = [...pairs].sort(()=>Math.random()-.5);
+  let selLeft=null, matchCount=0;
+
+  pairs.forEach((p,i) => {
+    const div = document.createElement('div');
+    div.className='match-item'; div.textContent=p.q; div.dataset.idx=String(i);
+    div.onclick=function(){
+      if(div.classList.contains('matched')) return;
+      playClick();
+      leftDiv.querySelectorAll('.match-item').forEach(m=>m.classList.remove('selected'));
+      div.classList.add('selected');
+      selLeft=i;
+    };
+    leftDiv.appendChild(div);
+  });
+
+  shuffledRight.forEach((p) => {
+    const origIdx = pairs.findIndex(pp=>pp.a===p.a);
+    const div = document.createElement('div');
+    div.className='match-item'; div.textContent=p.a; div.dataset.origIdx=String(origIdx);
+    div.onclick=function(){
+      if(selLeft===null || div.classList.contains('matched')) return;
+      playClick();
+      if(selLeft===origIdx){
+        div.classList.add('matched');
+        leftDiv.querySelectorAll('.match-item')[selLeft].classList.add('matched');
+        matchCount++; playCorrect();
+        if(matchCount===3){ addScore(50,'q3'); showFeedback('q3Fb',true,'모두 정확하게 매칭했습니다!'); }
+      } else {
+        div.classList.add('wrong-match');
+        setTimeout(()=>div.classList.remove('wrong-match'),500);
+        playWrong();
+      }
+      selLeft=null;
+      leftDiv.querySelectorAll('.match-item').forEach(m=>m.classList.remove('selected'));
+    };
+    rightDiv.appendChild(div);
+  });
+})();
+
+// ── Q4: O/X ──
+(function(){
+  const grid = document.getElementById('q4Ox');
+  [{label:'X',val:1,emoji:'❌'},{label:'O',val:0,emoji:'⭕'}].forEach(item => {
+    const btn = document.createElement('button');
+    btn.className='ox-btn';
+    btn.innerHTML=item.emoji+'<span>'+item.label+'</span>';
+    btn.onclick=function(){
+      if(answered['q4']) return;
+      playClick();
+      if(item.val===1){
+        addScore(50,'q4'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q4Fb',true,'정답! 부모님 때문이라는 답변은 주체적이지 않아 감점 요소입니다. 본인의 동기를 말해야 합니다.');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q4Fb',false,'"Because my parents told me"는 주체성이 부족한 답변입니다.');
+        answered['q4']=true;
+      }
+      grid.querySelectorAll('.ox-btn').forEach(b=>{ if(b!==btn) b.style.opacity='.5'; b.style.pointerEvents='none'; });
+    };
+    grid.appendChild(btn);
+  });
+})();
+
+// ── Q5: 선택형 ──
+(function(){
+  const choices = [
+    "I want to go there because it is a famous school.",
+    "My friend goes there, so I want to go too.",
+    "I'm deeply interested in global studies, and your school's international exchange program will help me develop cross-cultural communication skills for my future career in diplomacy.",
+    "I heard the school has a nice building."
+  ];
+  const container = document.getElementById('q5Choices');
+  choices.forEach((c,i) => {
+    const btn = document.createElement('button');
+    btn.className='choice-btn'; btn.textContent=c;
+    btn.onclick=function(){
+      if(answered['q5']) return;
+      playClick();
+      if(i===2){
+        addScore(100,'q5'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q5Fb',true,'훌륭합니다! 구체적 프로그램 + 본인의 목표를 연결한 모범 답변입니다.');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q5Fb',false,'지원동기는 학교의 구체적 프로그램과 본인의 목표를 연결해야 합니다.');
+        answered['q5']=true;
+      }
+      container.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
+    };
+    container.appendChild(btn);
+  });
+})();
+
+// ── Q6: 토글 판단 ──
+(function(){
+  const items = [
+    {text:'"I plan to study hard." (구체적 계획 없음)', good:false},
+    {text:'"I will join the English debate club and compete in two tournaments by December."', good:true},
+    {text:'"I want to get good grades." (측정 기준 없음)', good:false},
+    {text:'"I aim to read 20 English books this year to build my vocabulary for the TOEFL."', good:true},
+    {text:'"I will improve my writing skills by submitting one essay per month to the school journal."', good:true}
+  ];
+  const container = document.getElementById('q6Toggles');
+  items.forEach((item,i) => {
+    const row = document.createElement('div');
+    row.className='toggle-row';
+    row.innerHTML='<div class="toggle-indicator"></div><div class="toggle-label">'+item.text+'</div>';
+    row.dataset.good = item.good;
+    row.dataset.on = 'false';
+    row.onclick=function(){
+      if(answered['q6']) return;
+      playClick();
+      const isOn = row.dataset.on==='true';
+      row.dataset.on = isOn?'false':'true';
+      row.classList.toggle('on',!isOn);
+    };
+    container.appendChild(row);
+  });
+})();
+function checkQ6(){
+  if(answered['q6']) return;
+  const rows = document.querySelectorAll('#q6Toggles .toggle-row');
+  let allCorrect = true;
+  rows.forEach(r => {
+    const isOn = r.dataset.on==='true';
+    const shouldBeOn = r.dataset.good==='true';
+    if(isOn===shouldBeOn){ r.classList.add('correct-toggle'); }
+    else { r.classList.add('wrong-toggle'); allCorrect=false; }
+  });
+  if(allCorrect){ addScore(100,'q6'); playCorrect(); showFeedback('q6Fb',true,'완벽합니다! SMART 기준에 맞는 계획을 정확히 구분했습니다.'); }
+  else { playWrong(); showFeedback('q6Fb',false,'구체적(Specific) + 측정 가능(Measurable) + 실행 계획(Actionable)이 있는 문장만 적절합니다.'); }
+  answered['q6']=true;
+}
+
+// ── Q7: 빈칸 ──
+(function(){
+  const opts = ['participate','participating','participated','participation'];
+  const container = document.getElementById('q7Opts');
+  opts.forEach((o,i) => {
+    const btn = document.createElement('button');
+    btn.className='blank-opt'; btn.textContent=o;
+    btn.onclick=function(){
+      if(answered['q7']) return;
+      playClick();
+      document.getElementById('blank7').textContent=o;
+      if(i===0){
+        addScore(50,'q7'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q7Fb',true,'정답! "to + 동사원형"이 올바른 형태입니다. (to participate)');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q7Fb',false,'"My goal is to + 동사원형" 구조입니다. participate가 정답입니다.');
+        answered['q7']=true;
+      }
+      container.querySelectorAll('.blank-opt').forEach(b=>b.classList.add('disabled'));
+    };
+    container.appendChild(btn);
+  });
+})();
+
+// ── Q8: 선택형 ──
+(function(){
+  const choices = [
+    "S — Start (이름·학교 소개)",
+    "N — Notable strength (강점/특기)",
+    "A — Achievement (구체적 성과)",
+    "P — Purpose (지원 연결)"
+  ];
+  const container = document.getElementById('q8Choices');
+  choices.forEach((c,i) => {
+    const btn = document.createElement('button');
+    btn.className='choice-btn'; btn.textContent=c;
+    btn.onclick=function(){
+      if(answered['q8']) return;
+      playClick();
+      if(i===1){
+        addScore(100,'q8'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q8Fb',true,'정답! "What makes you different"는 나의 강점·특기(Notable strength)를 묻는 질문입니다.');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q8Fb',false,'"다른 지원자와의 차별점"은 Notable strength 단계에서 답합니다.');
+        answered['q8']=true;
+      }
+      container.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'));
+    };
+    container.appendChild(btn);
+  });
+})();
+
+// ── Q9: O/X ──
+(function(){
+  const grid = document.getElementById('q9Ox');
+  [{label:'O',val:0,emoji:'⭕'},{label:'X',val:1,emoji:'❌'}].forEach(item => {
+    const btn = document.createElement('button');
+    btn.className='ox-btn';
+    btn.innerHTML=item.emoji+'<span>'+item.label+'</span>';
+    btn.onclick=function(){
+      if(answered['q9']) return;
+      playClick();
+      if(item.val===0){
+        addScore(50,'q9'); playCorrect(); btn.classList.add('correct');
+        showFeedback('q9Fb',true,'정답! 구체적(debate club) + 측정 가능(two competitions) + 목표 연결(international relations) — SMART 기준 충족!');
+      } else {
+        playWrong(); btn.classList.add('wrong');
+        showFeedback('q9Fb',false,'이 답변은 SMART 기준을 모두 충족합니다: Specific, Measurable, Actionable, Relevant, Timeline.');
+        answered['q9']=true;
+      }
+      grid.querySelectorAll('.ox-btn').forEach(b=>{ if(b!==btn) b.style.opacity='.5'; b.style.pointerEvents='none'; });
+    };
+    grid.appendChild(btn);
+  });
+})();
+
+// ── Q10: 순서배열 — 자기소개 문장 순서 ──
+(function(){
+  const sentences = [
+    {id:0, text:'My name is Soyeon, and I am a 6th grader at Hanbit Elementary.'},
+    {id:1, text:'I have a strong passion for science, especially environmental research.'},
+    {id:2, text:'Last year, I led a recycling project that reduced our school\'s waste by 30%.'},
+    {id:3, text:'This experience inspired me to apply to your school\'s environmental science program.'}
+  ];
+  const shuffled = [...sentences].sort(()=>Math.random()-.5);
+  const area = document.getElementById('q10Area');
+  let selected = [];
+  shuffled.forEach(item => {
+    const div = document.createElement('div');
+    div.className='order-item';
+    div.innerHTML='<div class="num">?</div><span>'+item.text+'</span>';
+    div.onclick=function(){
+      if(answered['q10'] || div.classList.contains('placed')) return;
+      playClick();
+      selected.push(item.id);
+      div.classList.add('placed');
+      div.querySelector('.num').textContent=selected.length;
+      if(selected.length===4){
+        const correct = selected.join('')==='0123';
+        if(correct){ addScore(100,'q10'); playCorrect(); showFeedback('q10Fb',true,'완벽! SNAP 구조 그대로: Start → Notable → Achievement → Purpose'); }
+        else { playWrong(); showFeedback('q10Fb',false,'SNAP 순서를 기억하세요: 소개 → 강점 → 성과 → 지원 연결'); answered['q10']=true; }
+      }
+    };
+    area.appendChild(div);
+  });
+})();
+
+// ── RESULT ──
+function showResult(){
+  const maxScore = 700;
+  const pct = Math.round(score/maxScore*100);
+  document.getElementById('finalScore').textContent = score + '점';
+  let grade='', detail='';
+  if(pct>=90){ grade='🏆 Outstanding!'; detail='면접 기초가 탄탄합니다. 심화편으로 넘어가세요!'; }
+  else if(pct>=70){ grade='👏 Great Job!'; detail='대부분 잘 이해했습니다. SNAP과 SMART 프레임워크를 복습하면 완벽!'; }
+  else if(pct>=50){ grade='💪 Good Effort!'; detail='프레임워크 구조를 한 번 더 정리하고 다시 도전해보세요.'; }
+  else { grade='📚 Keep Practicing!'; detail='개념 슬라이드를 다시 읽고 천천히 풀어보세요.'; }
+  document.getElementById('finalGrade').textContent=grade;
+  document.getElementById('finalDetail').textContent=detail+' ('+pct+'%)';
+}
+
+showSlide(0);
+</script>
+</body>
+</html>

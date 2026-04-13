@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 2학년 영어 심화 02 - 접두사 un·re·pre</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F8FF;--card:#FFFFFF;--primary:#4A90D9;--primary-light:#D6EAFF;--secondary:#6BB3FF;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#C8DDF0;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}
+.topbar-title{font-size:20px;color:var(--primary);}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#2196F3,#1565C0);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;position:relative;}
+.logo::after{content:'⭐';position:absolute;top:-2px;right:-4px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}
+.slide.left{transform:translateX(-60px);}
+.slide.right{transform:translateX(60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px;max-width:600px;width:100%;text-align:center;max-height:calc(100vh - 130px);overflow-y:auto;}
+.slide-title{font-size:22px;color:var(--primary);margin-bottom:14px;}
+.badge{display:inline-block;background:var(--yellow-light);color:#E6A000;padding:4px 12px;border-radius:20px;font-size:18px;margin-bottom:10px;}
+.big-word{font-size:64px;color:var(--primary);margin:14px 0;line-height:1.2;}
+.prefix-highlight{color:var(--red);border-bottom:4px solid var(--red);}
+.desc{font-size:24px;color:var(--text);margin:10px 0;line-height:1.5;}
+.desc-sub{font-size:22px;color:var(--subtext);margin:6px 0;}
+.emoji-big{font-size:80px;margin:10px 0;}
+.options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;}
+.opt-btn{font-family:'Jua',sans-serif;font-size:48px;padding:14px 24px;border-radius:16px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;min-width:100px;}
+.opt-btn:active{transform:scale(0.95);}
+.opt-btn.correct{border-color:var(--green);background:var(--green-light);}
+.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.opt-btn.disabled{pointer-events:none;opacity:.6;}
+.opt-btn-sm{font-size:30px;padding:10px 20px;}
+.col-options{display:flex;flex-direction:column;gap:10px;margin-top:14px;align-items:center;}
+.col-btn{font-family:'Jua',sans-serif;font-size:26px;padding:12px 24px;border-radius:14px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;width:90%;max-width:400px;}
+.col-btn:active{transform:scale(0.97);}
+.col-btn.correct{border-color:var(--green);background:var(--green-light);}
+.col-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.col-btn.disabled{pointer-events:none;opacity:.6;}
+.col-btn.toggle-on{border-color:var(--primary);background:var(--primary-light);}
+.ox-row{display:flex;gap:16px;justify-content:center;margin-top:14px;}
+.ox-btn{font-family:'Jua',sans-serif;font-size:64px;width:100px;height:100px;border-radius:50%;border:4px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.blank-box{display:inline-block;min-width:100px;border-bottom:4px solid var(--primary);font-size:48px;padding:4px 8px;margin:0 4px;color:var(--primary);min-height:56px;}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.match-item{font-family:'Jua',sans-serif;font-size:26px;padding:12px;border-radius:14px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;text-align:center;}
+.match-item.selected{border-color:var(--primary);background:var(--primary-light);}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.match-item.wrong-match{animation:shake .4s;}
+.feedback{margin-top:12px;font-size:22px;padding:10px;border-radius:14px;display:none;}
+.feedback.show{display:block;}
+.feedback.correct-fb{background:var(--green-light);color:var(--green);}
+.feedback.wrong-fb{background:var(--red-light);color:var(--red);}
+.char-speech{display:flex;align-items:flex-start;gap:12px;text-align:left;margin:12px 0;padding:14px;background:var(--primary-light);border-radius:16px;}
+.char-img{font-size:48px;flex-shrink:0;}
+.char-text{font-size:24px;line-height:1.5;}
+.tts-btn{font-family:'Jua',sans-serif;font-size:22px;padding:8px 16px;border-radius:12px;border:2px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;margin:6px 4px;}
+.prefix-card{display:inline-flex;flex-direction:column;align-items:center;background:var(--primary-light);border-radius:16px;padding:16px 24px;margin:8px;}
+.prefix-card .pf{font-size:56px;color:var(--primary);}
+.prefix-card .meaning{font-size:22px;color:var(--subtext);margin-top:4px;}
+.word-build{display:flex;align-items:center;justify-content:center;gap:4px;margin:12px 0;font-size:42px;}
+.word-build .pf-part{background:var(--red-light);padding:6px 14px;border-radius:12px;color:var(--red);}
+.word-build .root-part{background:var(--primary-light);padding:6px 14px;border-radius:12px;color:var(--primary);}
+.word-build .plus{font-size:36px;color:var(--subtext);}
+.score-display{font-size:28px;margin:14px 0;}
+.score-bar{width:100%;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:8px 0;}
+.score-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:10px;transition:width .5s;}
+.result-emoji{font-size:100px;margin:14px 0;}
+.result-msg{font-size:30px;margin:8px 0;}
+.result-detail{font-size:22px;color:var(--subtext);}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}
+.nav-btn{font-family:'Jua',sans-serif;font-size:22px;padding:10px 24px;border-radius:14px;border:none;cursor:pointer;transition:all .2s;}
+.nav-prev{background:var(--primary-light);color:var(--primary);}
+.nav-next{background:var(--primary);color:#fff;}
+.nav-btn:disabled{opacity:.3;cursor:default;}
+.page-info{font-size:18px;color:var(--subtext);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeUp .5s ease-out;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+    <span class="topbar-title">접두사 un·re·pre</span>
+  </div>
+  <div class="logo">K</div>
+</div>
+<div class="slide-area" id="slideArea"></div>
+<div class="nav">
+  <button class="nav-btn nav-prev" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button>
+  <span class="page-info" id="pageInfo">1 / 14</span>
+  <button class="nav-btn nav-next" id="nextBtn" onclick="go(1)">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.06);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+let cur=0,score=0,total=0,answered={};
+const slides=[];
+
+function buildSlides(){
+const area=document.getElementById('slideArea');
+const data=[
+// 0: Title
+{type:'concept',html:`<div class="card animate-in">
+  <div class="emoji-big">🔧</div>
+  <div class="big-word" style="font-size:48px;">접두사를 배워요!</div>
+  <div class="desc">un · re · pre</div>
+  <div class="char-speech"><div class="char-img">🐶</div><div class="char-text">단어 앞에 붙는 마법 조각! 접두사를 알면 새로운 단어를 쉽게 이해할 수 있어! 🐾</div></div>
+</div>`},
+
+// 1: Concept un-
+{type:'concept',html:`<div class="card animate-in">
+  <div class="slide-title">🚫 un- = "~이 아닌" (반대)</div>
+  <div class="prefix-card"><div class="pf">un-</div><div class="meaning">반대로!</div></div>
+  <div class="word-build"><span class="pf-part">un</span><span class="plus">+</span><span class="root-part">happy</span></div>
+  <div class="desc">행복한 → <b>un</b>happy = 행복하지 않은 😢</div>
+  <div class="word-build"><span class="pf-part">un</span><span class="plus">+</span><span class="root-part">kind</span></div>
+  <div class="desc">친절한 → <b>un</b>kind = 불친절한 😠</div>
+  <button class="tts-btn" onclick="speak('unhappy')">🔊 unhappy</button>
+  <button class="tts-btn" onclick="speak('unkind')">🔊 unkind</button>
+</div>`},
+
+// 2: Concept re-
+{type:'concept',html:`<div class="card animate-in">
+  <div class="slide-title">🔄 re- = "다시"</div>
+  <div class="prefix-card"><div class="pf">re-</div><div class="meaning">다시!</div></div>
+  <div class="word-build"><span class="pf-part">re</span><span class="plus">+</span><span class="root-part">do</span></div>
+  <div class="desc">하다 → <b>re</b>do = 다시 하다 🔄</div>
+  <div class="word-build"><span class="pf-part">re</span><span class="plus">+</span><span class="root-part">play</span></div>
+  <div class="desc">재생 → <b>re</b>play = 다시 재생 🎬</div>
+  <button class="tts-btn" onclick="speak('redo')">🔊 redo</button>
+  <button class="tts-btn" onclick="speak('replay')">🔊 replay</button>
+</div>`},
+
+// 3: Concept pre-
+{type:'concept',html:`<div class="card animate-in">
+  <div class="slide-title">⏩ pre- = "미리, 전에"</div>
+  <div class="prefix-card"><div class="pf">pre-</div><div class="meaning">미리!</div></div>
+  <div class="word-build"><span class="pf-part">pre</span><span class="plus">+</span><span class="root-part">view</span></div>
+  <div class="desc">보다 → <b>pre</b>view = 미리보기 👀</div>
+  <div class="word-build"><span class="pf-part">pre</span><span class="plus">+</span><span class="root-part">pay</span></div>
+  <div class="desc">내다 → <b>pre</b>pay = 미리 내다 💰</div>
+  <button class="tts-btn" onclick="speak('preview')">🔊 preview</button>
+  <button class="tts-btn" onclick="speak('prepay')">🔊 prepay</button>
+</div>`},
+
+// 4: Q1 ⭐ 버튼선택
+{type:'q',correct:1,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q1. "unhappy"의 뜻은?</div>
+  <div class="big-word" style="font-size:56px;"><span class="prefix-highlight">un</span>happy</div>
+  <button class="tts-btn" onclick="speak('unhappy')">🔊 듣기</button>
+  <div class="options" id="q1opts"></div>
+  <div class="feedback" id="q1fb"></div>
+</div>`},
+
+// 5: Q2 ⭐ O/X
+{type:'q',correct:0,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q2. O/X 퀴즈!</div>
+  <div class="desc" style="font-size:28px;background:var(--yellow-light);padding:14px;border-radius:14px;">"redo"는 "다시 하다"라는 뜻이다</div>
+  <button class="tts-btn" onclick="speak('redo')">🔊 redo</button>
+  <div class="ox-row" id="q2ox"></div>
+  <div class="feedback" id="q2fb"></div>
+</div>`},
+
+// 6: Q3 ⭐ 버튼선택
+{type:'q',correct:2,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q3. "preview"에서 "pre"의 뜻은?</div>
+  <div class="big-word" style="font-size:52px;"><span class="prefix-highlight">pre</span>view</div>
+  <div class="options" id="q3opts"></div>
+  <div class="feedback" id="q3fb"></div>
+</div>`},
+
+// 7: Q4 ⭐⭐ 카드매칭
+{type:'q',correct:-1,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q4. 접두사와 뜻을 연결해요!</div>
+  <div class="match-grid" id="q4match"></div>
+  <div class="feedback" id="q4fb"></div>
+</div>`},
+
+// 8: Q5 ⭐⭐ 빈칸채우기
+{type:'q',correct:0,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q5. 빈칸에 알맞은 접두사는?</div>
+  <div class="desc">kind → <span class="blank-box" id="q5blank"></span>kind</div>
+  <div class="desc-sub">"불친절한"을 만들려면?</div>
+  <div class="options" id="q5opts"></div>
+  <div class="feedback" id="q5fb"></div>
+</div>`},
+
+// 9: Q6 ⭐⭐ 터치토글 - re- 단어 모두 고르기
+{type:'q',correct:-1,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q6. "re-"가 붙은 단어를 모두 골라요!</div>
+  <div class="options" id="q6opts" style="flex-wrap:wrap;"></div>
+  <div style="margin-top:10px;"><button class="tts-btn" onclick="checkQ6()">✅ 확인</button></div>
+  <div class="feedback" id="q6fb"></div>
+</div>`},
+
+// 10: Q7 ⭐⭐⭐ 비교추론
+{type:'q',correct:1,score:50,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">Q7. 문장에 알맞은 단어는?</div>
+  <div class="desc" style="background:var(--primary-light);padding:14px;border-radius:14px;font-size:26px;">"I didn't like the test. I want to ______ it."</div>
+  <div class="desc-sub">시험이 마음에 안 들어서 다시 하고 싶대요!</div>
+  <div class="col-options" id="q7opts"></div>
+  <div class="feedback" id="q7fb"></div>
+</div>`},
+
+// 11: Q8 ⭐⭐⭐ 역방향 추론
+{type:'q',correct:2,score:50,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">Q8. 어떤 접두사가 들어갈까?</div>
+  <div class="desc">영화를 보기 전에 <b>미리보기</b>를 봐요</div>
+  <div class="desc">= I watched the ____view.</div>
+  <div class="options" id="q8opts"></div>
+  <div class="feedback" id="q8fb"></div>
+</div>`},
+
+// 12: Q9 ⭐⭐⭐⭐ 상황판단
+{type:'q',correct:1,score:100,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐⭐ 최심화</div>
+  <div class="slide-title">Q9. 상황에 맞는 단어는?</div>
+  <div class="char-speech"><div class="char-img">🐱</div><div class="char-text">Tom이 이야기를 읽었어요.<br>하지만 이해가 안 돼서 <b>다시 읽고</b> 싶대요.<br>그리고 이번에는 모르는 단어를 <b>미리 찾아보려</b> 해요.</div></div>
+  <div class="desc">Tom will ______ the story after he ______ the words.</div>
+  <div class="col-options" id="q9opts"></div>
+  <div class="feedback" id="q9fb"></div>
+</div>`},
+
+// 13: Result
+{type:'result',html:`<div class="card animate-in">
+  <div class="slide-title">🎉 학습 완료!</div>
+  <div class="result-emoji" id="resultEmoji">🌟</div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div class="score-display">점수: <b id="finalScore">0</b>점</div>
+  <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+  <div class="result-detail" id="resultDetail"></div>
+  <div class="char-speech" style="margin-top:14px;"><div class="char-img">🐶</div><div class="char-text" id="resultKay"></div></div>
+</div>`}
+];
+
+data.forEach((d,i)=>{
+  const div=document.createElement('div');
+  div.className='slide'+(i===0?' active':'');
+  div.dataset.type=d.type;
+  if(d.score!==undefined){div.dataset.score=d.score;total+=d.score;}
+  div.innerHTML=d.html;
+  area.appendChild(div);
+  slides.push(div);
+});
+initQuestions();
+updateNav();
+}
+
+function initQuestions(){
+  // Q1
+  const q1=document.getElementById('q1opts');
+  ['매우 행복한','행복하지 않은','행복하게'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=t;
+    b.onclick=()=>checkBtn(4,b,i,1,'q1fb','un=반대! unhappy=행복하지 않은 😢','맞아! un+happy=행복하지 않은! 😢');
+    q1.appendChild(b);
+  });
+
+  // Q2 O/X
+  const q2=document.getElementById('q2ox');
+  ['⭕','❌'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='ox-btn';b.textContent=t;
+    b.onclick=()=>checkOX(5,b,i,0,'q2fb','re=다시, do=하다, redo=다시 하다! 맞아요!','맞아! re+do=다시 하다! 🔄');
+    q2.appendChild(b);
+  });
+
+  // Q3
+  const q3=document.getElementById('q3opts');
+  ['반대로','다시','미리'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=t;
+    b.onclick=()=>checkBtn(6,b,i,2,'q3fb','pre=미리! preview=미리보기! 👀','정답! pre=미리! 👀');
+    q3.appendChild(b);
+  });
+
+  // Q4 매칭
+  initQ4();
+
+  // Q5 빈칸
+  const q5=document.getElementById('q5opts');
+  ['un-','re-','pre-'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=t;
+    b.onclick=()=>{document.getElementById('q5blank').textContent=t.replace('-','');checkBtn(8,b,i,0,'q5fb','un=반대! unkind=불친절한!','맞아! un+kind=unkind=불친절한! 😤');};
+    q5.appendChild(b);
+  });
+
+  // Q6 터치토글
+  const q6words=[{w:'replay',has:true},{w:'unkind',has:false},{w:'rewrite',has:true},{w:'preview',has:false},{w:'reopen',has:true},{w:'unhappy',has:false}];
+  const q6=document.getElementById('q6opts');
+  q6words.forEach((wd,i)=>{
+    const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=wd.w;b.dataset.has=wd.has;b.dataset.on='0';
+    b.onclick=()=>{playClick();if(b.dataset.on==='0'){b.dataset.on='1';b.classList.add('toggle-on');}else{b.dataset.on='0';b.classList.remove('toggle-on');}};
+    q6.appendChild(b);
+  });
+
+  // Q7
+  const q7=document.getElementById('q7opts');
+  ['undo it','redo it','preview it'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='col-btn';b.textContent=t;
+    b.onclick=()=>checkCol(10,b,i,1,'q7fb','다시 하고 싶다 = redo! 🔄','정답! redo = 다시 하다! 🔄');
+    q7.appendChild(b);
+  });
+
+  // Q8
+  const q8=document.getElementById('q8opts');
+  ['un','re','pre'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=t+'-';
+    b.onclick=()=>checkBtn(11,b,i,2,'q8fb','미리보기 = preview! pre=미리!','맞아! preview = 미리보기! 👀');
+    q8.appendChild(b);
+  });
+
+  // Q9
+  const q9=document.getElementById('q9opts');
+  ['undo / preview','reread / preview','reread / undo'].forEach((t,i)=>{
+    const b=document.createElement('button');b.className='col-btn';b.textContent=t;
+    b.onclick=()=>checkCol(12,b,i,1,'q9fb','다시 읽다=reread, 미리 찾아보다=preview!','완벽! reread(다시 읽다) + preview(미리 보다)! 🎉');
+    q9.appendChild(b);
+  });
+}
+
+function initQ4(){
+  const grid=document.getElementById('q4match');
+  const pairs=[{l:'un-',r:'반대로'},{l:'re-',r:'다시'},{l:'pre-',r:'미리'}];
+  const rights=['다시','미리','반대로'];
+  let selL=null,matched=0;
+  pairs.forEach((p,i)=>{
+    const lD=document.createElement('div');lD.className='match-item';lD.textContent=p.l;lD.dataset.idx=i;lD.dataset.side='l';
+    lD.onclick=()=>{if(lD.classList.contains('matched'))return;document.querySelectorAll('#q4match .match-item[data-side="l"]').forEach(e=>e.classList.remove('selected'));lD.classList.add('selected');selL=i;};
+    const rD=document.createElement('div');rD.className='match-item';rD.textContent=rights[i];rD.dataset.rval=rights[i];rD.dataset.side='r';
+    rD.onclick=()=>{
+      if(rD.classList.contains('matched')||selL===null)return;
+      if(rights[i]===pairs[selL].r){playCorrect();rD.classList.add('matched');document.querySelector(`#q4match .match-item[data-idx="${selL}"][data-side="l"]`).classList.add('matched');matched++;selL=null;
+        if(matched===3){if(!answered[7]){score+=25;answered[7]=true;}showFB('q4fb',true,'완벽! 모두 연결! 🎉');}
+      }else{playWrong();rD.classList.add('wrong-match');setTimeout(()=>rD.classList.remove('wrong-match'),400);}
+    };
+    grid.appendChild(lD);grid.appendChild(rD);
+  });
+}
+
+function checkQ6(){
+  if(answered[9])return;
+  const btns=document.querySelectorAll('#q6opts .opt-btn-sm');
+  let ok=true;
+  btns.forEach(b=>{
+    const isRe=b.dataset.has==='true';const sel=b.dataset.on==='1';
+    if(isRe&&sel)b.classList.add('correct');
+    else if(!isRe&&!sel){}
+    else{ok=false;if(sel&&!isRe)b.classList.add('wrong');if(!sel&&isRe)b.style.border='3px solid var(--yellow)';}
+  });
+  if(ok){playCorrect();score+=25;answered[9]=true;showFB('q6fb',true,'완벽! replay, rewrite, reopen 모두 re-! 🔄');}
+  else{playWrong();showFB('q6fb',false,'re-가 붙은 건 replay, rewrite, reopen이에요!');answered[9]=true;}
+}
+
+function checkBtn(si,btn,picked,correct,fbId,wrongMsg,rightMsg){
+  if(answered[si])return;playClick();
+  if(picked===correct){playCorrect();btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn,.opt-btn-sm').forEach(b=>b.classList.add('disabled'));score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fbId,true,rightMsg);}
+  else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fbId,false,wrongMsg);}
+}
+function checkOX(si,btn,picked,correct,fbId,wrongMsg,rightMsg){
+  if(answered[si])return;playClick();
+  if(picked===correct){playCorrect();btn.classList.add('correct');score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fbId,true,rightMsg);}
+  else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fbId,false,wrongMsg);}
+}
+function checkCol(si,btn,picked,correct,fbId,wrongMsg,rightMsg){
+  if(answered[si])return;playClick();
+  if(picked===correct){playCorrect();btn.classList.add('correct');btn.parentElement.querySelectorAll('.col-btn').forEach(b=>b.classList.add('disabled'));score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fbId,true,rightMsg);}
+  else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fbId,false,wrongMsg);}
+}
+function showFB(id,ok,msg){const f=document.getElementById(id);f.textContent=msg;f.className='feedback show '+(ok?'correct-fb':'wrong-fb');}
+
+function go(d){const prev=cur;cur=Math.max(0,Math.min(slides.length-1,cur+d));if(cur===prev)return;slides[prev].classList.remove('active');slides[prev].classList.add(d>0?'left':'right');slides[cur].classList.remove('left','right');slides[cur].classList.add('active');if(cur===slides.length-1)showResult();updateNav();}
+function updateNav(){document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===slides.length-1;document.getElementById('pageInfo').textContent=`${cur+1} / ${slides.length}`;}
+function showResult(){
+  const pct=Math.round(score/total*100);
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('scoreFill').style.width=pct+'%';
+  let e='🌟',m='잘했어요!',k='다음에 더 잘할 수 있어!';
+  if(pct>=90){e='🏆';m='완벽해요!';k='접두사 마스터! 🐾';}
+  else if(pct>=70){e='🌟';m='훌륭해요!';k='거의 다 맞았어! 대단해!';}
+  else if(pct>=50){e='💪';m='좋아요!';k='복습하면 더 잘할 수 있어!';}
+  else{e='🤗';m='괜찮아요!';k='다시 한번 해보자! 💪';}
+  document.getElementById('resultEmoji').textContent=e;
+  document.getElementById('resultMsg').textContent=m;
+  document.getElementById('resultDetail').textContent=`총점: ${score}/${total}점 (${pct}%)`;
+  document.getElementById('resultKay').textContent=k;
+}
+let sx=0;
+document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?go(1):go(-1);}});
+buildSlides();
+</script>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 5학년 영어 심화 17 — 심경·분위기 파악</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --primary: #1D4ED8;
+  --primary-light: #DBEAFE;
+  --secondary: #2563EB;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E2E8F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --radius: 14px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; background: #fff;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05); flex-shrink: 0;
+}
+.sound-btn { background: none; border: none; cursor: pointer; font-size: 22px; padding: 4px 8px; border-radius: 8px; transition: background .15s; }
+.sound-btn:hover { background: var(--primary-light); }
+.progress-wrap { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0 14px; }
+.progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 99px; transition: width .4s ease; }
+.page-info { font-size: 15px; color: var(--subtext); white-space: nowrap; }
+.score-badge { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 3px 12px; font-size: 16px; font-weight: 700; color: var(--yellow); }
+.kedu-logo { display: flex; align-items: center; gap: 5px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 12px; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.slides { flex: 1; position: relative; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px; opacity: 0; transform: translateX(50px); transition: opacity .3s ease, transform .3s ease; pointer-events: none; overflow-y: auto; }
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+.slide.out { opacity: 0; transform: translateX(-50px); }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 24px 32px; width: 100%; max-width: 800px; }
+.slide-title { font-size: 20px; color: var(--subtext); text-align: center; margin-bottom: 10px; font-weight: 700; }
+.passage { background: #F8FAFC; border-radius: 12px; padding: 18px 22px; font-size: 19px; line-height: 1.8; margin: 10px 0; border-left: 4px solid var(--primary); color: var(--text); }
+.choices { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 10px; }
+.choice-btn { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 20px; font-family: 'Noto Sans KR', sans-serif; font-size: 24px; font-weight: 700; cursor: pointer; transition: border-color .15s, background .15s; }
+.choice-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.choice-btn.correct { background: var(--green-light); border-color: var(--green); }
+.choice-btn.wrong { background: var(--red-light); border-color: var(--red); }
+.choices.col { flex-direction: column; align-items: center; }
+.choices.col .choice-btn { font-size: 20px; width: 100%; max-width: 620px; padding: 10px 20px; }
+.blank-box { display: inline-block; font-size: 44px; font-weight: 900; border-bottom: 4px solid var(--text); min-width: 70px; text-align: center; color: var(--primary); line-height: 1.2; margin: 0 5px; }
+.feedback { font-size: 18px; text-align: center; margin-top: 10px; min-height: 26px; border-radius: 8px; padding: 5px 14px; font-weight: 700; }
+.feedback.ok { color: var(--green); background: var(--green-light); }
+.feedback.err { color: var(--red); background: var(--red-light); }
+.question-label { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 14px; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.stars { color: #FCD34D; }
+.question-text { font-size: 22px; text-align: center; margin: 8px 0 12px; line-height: 1.6; font-weight: 700; }
+.nav { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 20px; background: #fff; border-top: 1px solid var(--border); flex-shrink: 0; }
+.nav-btn { background: var(--primary); color: white; border: none; border-radius: 10px; padding: 10px 28px; font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+.nav-btn:disabled { opacity: .3; cursor: default; }
+.nav-btn:not(:disabled):hover { opacity: .85; }
+.combo-toast { position: fixed; top: 65px; left: 50%; transform: translateX(-50%) scale(0); background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 6px 20px; font-size: 20px; font-weight: 700; color: var(--yellow); z-index: 99; transition: transform .3s; }
+.combo-toast.show { transform: translateX(-50%) scale(1); }
+.rule-box { background: var(--primary-light); border-radius: 14px; padding: 16px 18px; margin: 8px 0; }
+.rule-formula { font-size: 28px; font-weight: 900; letter-spacing: 1px; margin: 6px 0; color: var(--primary); }
+.rule-sub { font-size: 18px; color: var(--subtext); margin-top: 4px; }
+.emotion-tag { display: inline-block; background: var(--primary-light); color: var(--primary); border-radius: 99px; padding: 4px 14px; font-size: 17px; font-weight: 700; margin: 3px; }
+.result-box { text-align: center; }
+.result-box .big { font-size: 48px; font-weight: 900; color: var(--primary); }
+.result-box .sub { font-size: 20px; color: var(--subtext); margin-top: 8px; }
+</style>
+</head>
+<body>
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreVal">0</span></span>
+  <div class="kedu-logo">K✦</div>
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- SLIDE 0: 개념 -->
+<div class="slide active" data-correct="-1" data-score="0">
+  <div class="card">
+    <div class="slide-title">📖 심경·분위기 파악이란?</div>
+    <div class="rule-box">
+      <div class="rule-formula">Mood & Emotion Reading</div>
+      <div class="rule-sub">글에서 등장인물의 감정 변화나 글 전체의 분위기를 파악하는 유형</div>
+    </div>
+    <div style="margin-top:14px; font-size:19px; line-height:1.7;">
+      <b>핵심 전략:</b><br>
+      ① 감정 단어(형용사·부사)에 밑줄 긋기<br>
+      ② 상황 묘사 → 어떤 감정을 유발하는지 추론<br>
+      ③ 감정의 <b>변화</b>에 주목 (처음 vs 나중)
+    </div>
+    <div style="margin-top:12px;">
+      <span class="emotion-tag">nervous 긴장한</span>
+      <span class="emotion-tag">relieved 안도한</span>
+      <span class="emotion-tag">frustrated 좌절한</span>
+      <span class="emotion-tag">delighted 기뻐하는</span>
+      <span class="emotion-tag">anxious 불안한</span>
+      <span class="emotion-tag">grateful 감사하는</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 1: 개념2 - 감정 단어 분류 -->
+<div class="slide" data-correct="-1" data-score="0">
+  <div class="card">
+    <div class="slide-title">🎭 감정 단어 Map</div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px;">
+      <div style="flex:1; min-width:200px;">
+        <div style="background:var(--green-light); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:20px; font-weight:900; color:var(--green);">😊 Positive</div>
+          <div style="font-size:17px; margin-top:8px; line-height:1.7;">
+            excited · relieved · proud<br>
+            grateful · cheerful · hopeful<br>
+            pleased · confident · thrilled
+          </div>
+        </div>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <div style="background:var(--red-light); border-radius:12px; padding:14px; text-align:center;">
+          <div style="font-size:20px; font-weight:900; color:var(--red);">😟 Negative</div>
+          <div style="font-size:17px; margin-top:8px; line-height:1.7;">
+            anxious · frustrated · lonely<br>
+            embarrassed · disappointed<br>
+            terrified · jealous · ashamed
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px; font-size:18px; color:var(--subtext); text-align:center;">
+      수능에서는 <b>감정 변화</b>를 묻는 문제가 자주 출제됩니다.<br>
+      예: nervous → relieved (긴장 → 안도)
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: Q1 감정 단어 매칭 ⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q1</div>
+    <div class="question-text">"She couldn't stop smiling as she held the trophy."<br>이 문장에서 느껴지는 심경은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① anxious (불안한)</button>
+      <button class="choice-btn" onclick="answer(this,1)">② disappointed (실망한)</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ proud and delighted (자랑스럽고 기쁜)</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ embarrassed (당황한)</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Q2 지문 + 분위기 파악 ⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q2</div>
+    <div class="passage" style="font-size:17px;">
+      The wind howled through the empty streets. Dark clouds covered the sky, and the last streetlight flickered on and off. Jake pulled his jacket tighter and walked faster, glancing behind him every few steps.
+    </div>
+    <div class="question-text">글의 전체적인 분위기(mood)로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① cheerful and bright</button>
+      <button class="choice-btn" onclick="answer(this,1)">② tense and uneasy</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ peaceful and calm</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ exciting and joyful</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Q3 감정 변화 추론 ⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q3</div>
+    <div class="passage" style="font-size:17px;">
+      Mina stared at the math test paper. She had studied for weeks, but the first three questions made no sense. Her hands trembled. Then she turned the page — the rest were topics she knew well. She took a deep breath and began writing confidently.
+    </div>
+    <div class="question-text">Mina의 심경 변화로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① panicked → relieved</button>
+      <button class="choice-btn" onclick="answer(this,1)">② bored → excited</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ confident → disappointed</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ angry → guilty</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Q4 단서 찾기 ⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q4</div>
+    <div class="passage" style="font-size:17px;">
+      The audience clapped politely, but Tom noticed their eyes wandering to their phones. He forgot his next line and stood frozen under the bright stage lights. His face turned red, and he wished the floor would swallow him up.
+    </div>
+    <div class="question-text">Tom의 심경으로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① grateful (감사하는)</button>
+      <button class="choice-btn" onclick="answer(this,1)">② indifferent (무관심한)</button>
+      <button class="choice-btn" onclick="answer(this,2)">② proud (자랑스러운)</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ humiliated (굴욕적인)</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Q5 빈칸 - 감정 단어 채우기 ⭐⭐⭐ -->
+<div class="slide" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q5</div>
+    <div class="question-text">"After waiting three hours in the rain, she felt completely ___."<br>빈칸에 들어갈 감정 단어는?</div>
+    <div style="text-align:center; margin:10px 0;">
+      <span class="blank-box" id="blank6">___</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','delighted',1,0)">delighted</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','frustrated',0,0)">frustrated</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank6','curious',2,0)">curious</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Q6 긴 지문 + 변화 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q6</div>
+    <div class="passage" style="font-size:16px;">
+      Sarah checked her email for the tenth time. The scholarship results were supposed to come today. Her stomach twisted with worry. At 3 p.m., a new message appeared. She clicked it with shaking fingers. "Congratulations! You have been selected..." She screamed and ran to tell her mother.
+    </div>
+    <div class="question-text">Sarah의 심경 변화로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① excited → disappointed</button>
+      <button class="choice-btn" onclick="answer(this,1)">② calm → angry</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ anxious → overjoyed</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ bored → confused</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Q7 단서 문장 고르기 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q7</div>
+    <div class="passage" style="font-size:16px;">
+      (A) The garden was silent except for the sound of birds singing softly.<br>
+      (B) He clenched his fists and kicked the chair across the room.<br>
+      (C) She laughed so hard that tears rolled down her cheeks.<br>
+      (D) The children ran through the fields under a golden sunset.
+    </div>
+    <div class="question-text">위 문장 중 '분노(anger)'의 분위기를 나타내는 것은?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">(A)</button>
+      <button class="choice-btn" onclick="answer(this,1)">(B)</button>
+      <button class="choice-btn" onclick="answer(this,2)">(C)</button>
+      <button class="choice-btn" onclick="answer(this,3)">(D)</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Q8 분위기 묘사 단어 고르기 ⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q8</div>
+    <div class="question-text">다음 중 '평화로운 분위기'를 만드는 묘사로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① Thunder crashed and lightning split the sky.</button>
+      <button class="choice-btn" onclick="answer(this,1)">② The alarm blared and people rushed for the exit.</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ Sunlight filtered through the leaves as a gentle breeze blew.</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ The clock ticked loudly in the empty, dark hallway.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Q9 종합 지문 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q9</div>
+    <div class="passage" style="font-size:16px;">
+      Leo had been preparing his speech for a month. When his name was called, his legs felt like jelly. He walked to the stage, heart pounding. But as he began to speak, the words flowed naturally. The audience nodded along, and when he finished, the room erupted in applause. Leo grinned from ear to ear.
+    </div>
+    <div class="question-text">Leo의 심경 변화를 가장 잘 표현한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① hopeful → regretful</button>
+      <button class="choice-btn" onclick="answer(this,1)">② indifferent → angry</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ confused → lonely</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ nervous → triumphant</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- SLIDE 11: 결과 -->
+<div class="slide" data-correct="-1" data-score="0">
+  <div class="card result-box">
+    <div class="slide-title">🏁 학습 완료!</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="sub">총점</div>
+    <div style="font-size:36px; margin:12px 0;" id="resultStars">⭐⭐⭐</div>
+    <div style="font-size:18px; color:var(--subtext); margin-top:8px;">
+      심경·분위기 파악의 핵심: <b>감정 단어</b>와 <b>상황 묘사</b>에 주목!
+    </div>
+    <button class="nav-btn" style="margin-top:16px;" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let audioCtx = null, soundOn = true, currentSlide = 0, score = 0, combo = 0, answered = {};
+const TOTAL_SLIDES = 12;
+
+function getCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playTone(freq,type,dur,gain=0.3){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);o.start();o.stop(audioCtx.currentTime+dur);});}
+function playCorrect(){if(!soundOn)return;getCtx();[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){if(!soundOn)return;getCtx();[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){if(!soundOn)return;getCtx();playTone(880,'sine',.08,0.2);}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function speakWord(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.85;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),350);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=500?'⭐⭐⭐⭐⭐':score>=350?'⭐⭐⭐⭐':score>=200?'⭐⭐⭐':'⭐⭐';
+  }
+}
+
+function addScore(pts){
+  const bonus=combo>=3?Math.floor(pts*0.5):0;
+  score+=pts+bonus;combo++;
+  document.getElementById('scoreVal').textContent=score;
+  if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}
+}
+
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;
+  playClick();speakWord(text);
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+updateUI();
+</script>
+</body>
+</html>

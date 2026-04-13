@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 영어 심화 26차시 — 독해종합챌린지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--shadow:0 2px 12px rgba(0,0,0,0.08);--radius:16px;--accent:#7C3AED;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px;}.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s ease;}.page-info{font-size:16px;color:var(--subtext);white-space:nowrap;}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow);}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow-y:auto;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px;}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700;}
+.passage{background:#F8FAFC;border-radius:12px;padding:14px 18px;font-size:19px;line-height:1.85;margin:8px 0;border-left:4px solid var(--primary);color:var(--text);}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:10px;}.stars{color:#FCD34D;}
+.strat-tag{display:inline-block;background:var(--accent);color:white;border-radius:8px;padding:2px 10px;font-size:14px;font-weight:700;margin-left:6px;}
+.question-text{font-size:24px;text-align:center;margin:6px 0 12px;line-height:1.6;font-weight:700;}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:8px;}.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:10px 20px;font-family:'Noto Sans KR',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,0.06);}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{font-size:20px;width:100%;max-width:560px;padding:10px 18px;}
+.feedback{font-size:18px;text-align:center;margin-top:8px;min-height:26px;border-radius:10px;padding:4px 12px;font-weight:700;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.token-area{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:6px 14px;font-size:20px;font-weight:700;cursor:pointer;transition:all .2s;}.token:hover{border-color:var(--primary);transform:scale(1.04);}.token.correct{background:var(--green-light);border-color:var(--green);pointer-events:none;}.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}
+.blank-box{display:inline-block;font-size:28px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s;}.blank-box.filled{animation:fbounce .4s;}@keyframes fbounce{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0;}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s;}.nav-btn:disabled{opacity:.3;cursor:default;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.challenge-badge{background:linear-gradient(135deg,var(--primary),var(--accent));color:white;border-radius:14px;padding:14px 20px;text-align:center;margin:8px 0;}
+.result-bar{height:12px;border-radius:99px;margin:4px 0;transition:width .8s ease;}
+.target-word{background:var(--accent);color:white;padding:1px 8px;border-radius:6px;font-weight:900;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1 / 14</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+
+<div class="slides">
+
+<!-- S0: 인트로 -->
+<div class="slide active" id="s0">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">🏆 26차시 — 독해 종합 챌린지</div>
+    <div class="challenge-badge">
+      <div style="font-size:32px;">🏅 READING MASTER CHALLENGE 🏅</div>
+      <div style="font-size:18px;margin-top:6px;">10가지 독해 전략을 모두 사용하는 종합 테스트!</div>
+    </div>
+    <div style="margin-top:12px;font-size:18px;color:var(--subtext);line-height:1.7;">
+      🎯 주제찾기 · 🔍 세부정보 · 📋 순서배열 · 🔗 원인결과<br>
+      ⚖️ 비교대조 · 🔮 추론 · 🔎 어휘추론 · 🎯 글의목적 · 🎭 분위기
+    </div>
+    <div style="margin-top:14px;font-size:20px;font-weight:700;color:var(--primary);">
+      만점: 500점 · 문항: 10개 · 준비됐나요? 💪
+    </div>
+  </div>
+</div>
+
+<!-- S1: 지문 A — 공통 지문 (Q1~Q4) -->
+<div class="slide" id="s1">
+  <div class="card">
+    <div class="slide-title">📖 지문 A — The School Garden</div>
+    <div class="passage" style="font-size:18px;">
+      Last spring, Ms. Lee's class started a school garden. <b>First</b>, they chose a sunny spot behind the school. <b>Then</b>, they dug the soil and planted seeds. <b>Next</b>, the students watered the plants every day. <b>Finally</b>, after two months, beautiful flowers and fresh vegetables grew.
+
+      The garden was popular <b>because</b> everyone could pick tomatoes and strawberries. <b>However</b>, taking care of the garden was not easy. <b>Unlike</b> indoor plants, outdoor plants needed more water and sunlight. <b>Both</b> teachers and students worked hard together, <b>so</b> the garden became the best part of the school.
+    </div>
+    <div style="text-align:center;font-size:18px;color:var(--subtext);margin-top:8px;">이 지문으로 Q1~Q4를 풀어요! ▶ 다음</div>
+  </div>
+</div>
+
+<!-- S2: Q1 주제찾기 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25" id="s2">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐⭐</span><span class="strat-tag">주제찾기</span></span>
+    <div class="passage" style="font-size:16px;padding:10px 14px;line-height:1.7;">Last spring, Ms. Lee's class started a school garden... the garden became the best part of the school.</div>
+    <div class="question-text">이 글의 Main Idea는?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Students watered plants every day.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Tomatoes and strawberries grew.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Ms. Lee's class made a successful school garden.</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 세부정보 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25" id="s3">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐⭐</span><span class="strat-tag">세부정보</span></span>
+    <div class="question-text">What did the students do <b>first</b>?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">They planted seeds.</button>
+      <button class="choice-btn" onclick="answer(this,1)">They chose a sunny spot.</button>
+      <button class="choice-btn" onclick="answer(this,2)">They watered the plants.</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 원인결과 ⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="50" id="s4">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐⭐</span><span class="strat-tag">원인결과</span></span>
+    <div class="question-text">Why was the garden popular?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Because everyone could pick tomatoes and strawberries.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Because it was behind the school.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Because Ms. Lee told them to like it.</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 비교대조 ⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="50" id="s5">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐⭐</span><span class="strat-tag">비교대조</span></span>
+    <div class="question-text">How are outdoor plants <b>different</b> from indoor plants?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Indoor plants are bigger.</button>
+      <button class="choice-btn" onclick="answer(this,1)">They are exactly the same.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Outdoor plants need more water and sunlight.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: 지문 B -->
+<div class="slide" id="s6">
+  <div class="card">
+    <div class="slide-title">📖 지문 B — The Lost Kitten</div>
+    <div class="passage" style="font-size:18px;">
+      It was a dark and rainy evening. Emma heard a tiny cry outside her window. She opened the door and found a small, <span class="target-word">trembling</span> kitten on the doorstep. Its fur was wet and it looked <span class="target-word">miserable</span>.
+
+      Emma carefully picked up the kitten and wrapped it in a warm towel. She gave it some milk. Soon, the kitten stopped shaking and started purring softly. Emma smiled and said, "I'll call you Lucky."
+    </div>
+    <div style="text-align:center;font-size:18px;color:var(--subtext);margin-top:8px;">이 지문으로 Q5~Q8을 풀어요! ▶ 다음</div>
+  </div>
+</div>
+
+<!-- S7: Q5 분위기 변화 ⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="50" id="s7">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐⭐</span><span class="strat-tag">분위기</span></span>
+    <div class="question-text">글의 분위기가 어떻게 변했나요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">😊 Happy → 😢 Sad</button>
+      <button class="choice-btn" onclick="answer(this,1)">😢 Sad/Dark → 😊 Warm/Happy</button>
+      <button class="choice-btn" onclick="answer(this,2)">😨 Scary → 😤 Angry</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q6 어휘추론 ⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="50" id="s8">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐</span><span class="strat-tag">어휘추론</span></span>
+    <div class="question-text">"<span class="target-word">trembling</span>"은 무슨 뜻일까요?</div>
+    <div style="font-size:18px;color:var(--subtext);text-align:center;margin-bottom:8px;">단서: wet fur, rainy, dark</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">떨고 있는 (shaking)</button>
+      <button class="choice-btn" onclick="answer(this,1)">뛰어다니는 (running)</button>
+      <button class="choice-btn" onclick="answer(this,2)">잠자는 (sleeping)</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q7 추론 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100" id="s9">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span><span class="strat-tag">추론</span></span>
+    <div class="question-text">What can you infer about Emma? 🕵️</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">She doesn't like animals.</button>
+      <button class="choice-btn" onclick="answer(this,1)">She already has many cats.</button>
+      <button class="choice-btn" onclick="answer(this,2)">She is kind and caring.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q8 순서배열 ⭐⭐⭐ -->
+<div class="slide" data-score="50" id="s10">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐</span><span class="strat-tag">순서배열</span></span>
+    <div class="question-text">이야기 순서를 맞추세요!</div>
+    <div id="orderSlots">
+      <div class="order-slot" id="slot0" style="background:var(--primary-light);border:2px dashed #CBD5E1;border-radius:12px;padding:8px 14px;margin:5px 0;min-height:38px;display:flex;align-items:center;gap:8px;">
+        <span style="background:var(--primary);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;">1</span>
+        <span id="slotText0" style="font-size:17px;font-weight:700;"></span>
+      </div>
+      <div class="order-slot" id="slot1" style="background:var(--primary-light);border:2px dashed #CBD5E1;border-radius:12px;padding:8px 14px;margin:5px 0;min-height:38px;display:flex;align-items:center;gap:8px;">
+        <span style="background:var(--primary);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;">2</span>
+        <span id="slotText1" style="font-size:17px;font-weight:700;"></span>
+      </div>
+      <div class="order-slot" id="slot2" style="background:var(--primary-light);border:2px dashed #CBD5E1;border-radius:12px;padding:8px 14px;margin:5px 0;min-height:38px;display:flex;align-items:center;gap:8px;">
+        <span style="background:var(--primary);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;">3</span>
+        <span id="slotText2" style="font-size:17px;font-weight:700;"></span>
+      </div>
+      <div class="order-slot" id="slot3" style="background:var(--primary-light);border:2px dashed #CBD5E1;border-radius:12px;padding:8px 14px;margin:5px 0;min-height:38px;display:flex;align-items:center;gap:8px;">
+        <span style="background:var(--primary);color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;">4</span>
+        <span id="slotText3" style="font-size:17px;font-weight:700;"></span>
+      </div>
+    </div>
+    <div class="token-area" style="margin-top:10px;">
+      <button class="token" style="font-size:16px;" onclick="orderQ(this,2,'Gave it milk')" data-order="2">Gave it milk</button>
+      <button class="token" style="font-size:16px;" onclick="orderQ(this,0,'Heard a tiny cry')" data-order="0">Heard a tiny cry</button>
+      <button class="token" style="font-size:16px;" onclick="orderQ(this,3,'Named it Lucky')" data-order="3">Named it Lucky</button>
+      <button class="token" style="font-size:16px;" onclick="orderQ(this,1,'Wrapped in a towel')" data-order="1">Wrapped in a towel</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: 지문 C (Q9~Q10) -->
+<div class="slide" id="s11">
+  <div class="card">
+    <div class="slide-title">📖 지문 C — Save the Sea Turtles!</div>
+    <div class="passage" style="font-size:18px;">
+      Sea turtles are in danger. Every year, thousands of sea turtles die because of plastic in the ocean. They eat plastic bags, thinking they are jellyfish. This makes them very sick.
+
+      We must help save sea turtles! You should stop using plastic bags. Use cloth bags instead. Also, if you visit the beach, always pick up your trash. Together, we can make the ocean safe for sea turtles.
+    </div>
+    <div style="text-align:center;font-size:18px;color:var(--subtext);margin-top:8px;">마지막 2문제! ▶ 다음</div>
+  </div>
+</div>
+
+<!-- S12: Q9 글의목적 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100" id="s12">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span><span class="strat-tag">글의목적</span></span>
+    <div class="question-text">이 글의 <b>주된</b> 목적은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">📚 Inform — 바다거북 정보 전달</button>
+      <button class="choice-btn" onclick="answer(this,1)">📢 Persuade — 플라스틱 사용을 줄이자고 설득</button>
+      <button class="choice-btn" onclick="answer(this,2)">🎭 Entertain — 재미있는 거북이 이야기</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- S13: Q10 종합 (원인결과 + 어휘 + 추론) ⭐⭐⭐⭐ -->
+<div class="slide" data-score="100" id="s13">
+  <div class="card">
+    <span class="question-label">Q10 <span class="stars">⭐⭐⭐⭐</span><span class="strat-tag">종합</span></span>
+    <div class="question-text">3가지 질문에 모두 답하세요!</div>
+    <div style="margin-top:6px;">
+      <div style="display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap;justify-content:center;" id="fq0">
+        <span style="font-size:16px;flex:1;"><b>원인:</b> Why do turtles eat plastic?</span>
+        <button class="choice-btn" onclick="finalQ(0,'correct',this)" style="font-size:15px;padding:5px 12px;">They think it's jellyfish</button>
+        <button class="choice-btn" onclick="finalQ(0,'wrong',this)" style="font-size:15px;padding:5px 12px;">They like the taste</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap;justify-content:center;" id="fq1">
+        <span style="font-size:16px;flex:1;"><b>어휘:</b> "in danger" means?</span>
+        <button class="choice-btn" onclick="finalQ(1,'wrong',this)" style="font-size:15px;padding:5px 12px;">안전한</button>
+        <button class="choice-btn" onclick="finalQ(1,'correct',this)" style="font-size:15px;padding:5px 12px;">위험에 처한</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap;justify-content:center;" id="fq2">
+        <span style="font-size:16px;flex:1;"><b>추론:</b> The author cares about?</span>
+        <button class="choice-btn" onclick="finalQ(2,'wrong',this)" style="font-size:15px;padding:5px 12px;">Making money</button>
+        <button class="choice-btn" onclick="finalQ(2,'correct',this)" style="font-size:15px;padding:5px 12px;">The environment</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb13"></div>
+  </div>
+</div>
+
+<!-- S14: 최종 결과 -->
+<div class="slide" id="s14">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px;" id="resultEmoji">🏆</div>
+    <div style="font-size:28px;font-weight:900;margin:8px 0;">독해 종합 챌린지 완료!</div>
+    <div style="font-size:48px;font-weight:900;color:var(--primary);margin:12px 0;" id="finalScore">0</div>
+    <div style="font-size:20px;color:var(--subtext);margin-bottom:8px;">/ 500점</div>
+    <div style="font-size:28px;" id="resultStars">⭐⭐⭐</div>
+    <div id="resultMsg" style="font-size:20px;font-weight:700;margin:10px 0;color:var(--primary);"></div>
+    <div style="background:var(--primary-light);border-radius:12px;padding:12px 16px;margin:10px 0;text-align:left;font-size:16px;line-height:1.8;" id="stratReport">
+    </div>
+    <button class="nav-btn" onclick="restart()" style="margin-top:14px;font-size:22px;">🔄 다시 도전</button>
+  </div>
+</div>
+
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=15;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+// Track strategy scores
+let stratScores={주제찾기:0,세부정보:0,원인결과:0,비교대조:0,분위기:0,어휘추론:0,추론:0,순서배열:0,글의목적:0,종합:0};
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    let stars,emoji,msg;
+    if(score>=450){stars='⭐⭐⭐⭐⭐';emoji='🏆';msg='READING MASTER! 독해의 달인!';}
+    else if(score>=350){stars='⭐⭐⭐⭐';emoji='🥇';msg='Excellent! 훌륭해요!';}
+    else if(score>=200){stars='⭐⭐⭐';emoji='🥈';msg='Good job! 잘했어요!';}
+    else{stars='⭐⭐';emoji='💪';msg='Keep going! 더 연습하면 돼요!';}
+    document.getElementById('resultStars').textContent=stars;
+    document.getElementById('resultEmoji').textContent=emoji;
+    document.getElementById('resultMsg').textContent=msg;
+    // Strategy report
+    let report='<b>📊 전략별 성적:</b><br>';
+    const stratList=[
+      ['🎯 주제찾기',stratScores.주제찾기,25],
+      ['🔍 세부정보',stratScores.세부정보,25],
+      ['🔗 원인결과',stratScores.원인결과,50],
+      ['⚖️ 비교대조',stratScores.비교대조,50],
+      ['🎭 분위기',stratScores.분위기,50],
+      ['🔎 어휘추론',stratScores.어휘추론,50],
+      ['🔮 추론',stratScores.추론,100],
+      ['📋 순서배열',stratScores.순서배열,50],
+      ['🎯 글의목적',stratScores.글의목적,100],
+    ];
+    stratList.forEach(([name,got,max])=>{
+      const pct=Math.round(got/max*100);
+      const color=pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)';
+      report+=name+': '+got+'/'+max+' '+(pct>=80?'✅':pct>=50?'🔶':'❌')+'<br>';
+    });
+    document.getElementById('stratReport').innerHTML=report;
+  }
+}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+const stratMap={2:'주제찾기',3:'세부정보',4:'원인결과',5:'비교대조',7:'분위기',8:'어휘추론',9:'추론',12:'글의목적'};
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    if(stratMap[currentSlide])stratScores[stratMap[currentSlide]]=pts;
+    setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+// Q8 순서배열
+let orderNext=0;
+function orderQ(btn,correctOrder,text){
+  if(orderNext>=4||btn.classList.contains('correct'))return;playClick();
+  if(parseInt(btn.dataset.order)===orderNext){
+    btn.classList.add('correct');
+    document.getElementById('slotText'+orderNext).textContent=text;
+    document.getElementById('slot'+orderNext).style.borderStyle='solid';
+    document.getElementById('slot'+orderNext).style.borderColor='var(--primary)';
+    orderNext++;
+    if(orderNext===4){playCorrect();addScore(50);stratScores.순서배열=50;setFB('fb10','✅ 완벽한 순서! +50점',true);answered[10]=true;setTimeout(nextSlide,900);}
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb10',(orderNext+1)+'번째를 먼저 찾아보세요!',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+// Q10 종합 3문제
+let fqState={},fqCorr=0;
+function finalQ(idx,choice,btn){
+  if(fqState[idx])return;playClick();fqState[idx]=true;
+  const row=document.getElementById('fq'+idx);
+  if(choice==='correct'){btn.classList.add('correct');playCorrect();fqCorr++;}
+  else{btn.classList.add('wrong');playWrong();combo=0;}
+  row.querySelectorAll('.choice-btn').forEach(b=>{if(b!==btn)b.style.opacity='.3';b.style.pointerEvents='none';});
+  if(Object.keys(fqState).length===3){
+    const pts=fqCorr>=3?100:fqCorr*33;
+    addScore(pts);stratScores.종합=pts;
+    if(fqCorr===3)setFB('fb13','✅ 종합 3문제 전부 정답! +100점',true);
+    else setFB('fb13',fqCorr+'/3 정답! +'+pts+'점',fqCorr>=2);
+    answered[13]=true;setTimeout(nextSlide,1200);
+  }
+}
+
+function restart(){
+  score=0;combo=0;answered={};orderNext=0;fqState={};fqCorr=0;
+  stratScores={주제찾기:0,세부정보:0,원인결과:0,비교대조:0,분위기:0,어휘추론:0,추론:0,순서배열:0,글의목적:0,종합:0};
+  document.querySelectorAll('.choice-btn').forEach(b=>{b.className='choice-btn';b.style.opacity='';b.style.pointerEvents='';});
+  document.querySelectorAll('.token').forEach(t=>t.className='token');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  for(let i=0;i<4;i++){document.getElementById('slotText'+i).textContent='';document.getElementById('slot'+i).style.borderStyle='dashed';document.getElementById('slot'+i).style.borderColor='#CBD5E1';}
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide();});
+updateUI();
+</script>
+</body>
+</html>

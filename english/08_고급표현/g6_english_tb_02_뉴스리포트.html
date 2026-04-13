@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 6학년 영어 | 뉴스리포트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:8px;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}
+.topbar-title{font-size:15px;font-weight:700;color:var(--primary);}
+.kedu-logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative;}
+.kedu-logo::after{content:'⭐';position:absolute;top:-2px;right:-2px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;}
+.slide.active{opacity:1;pointer-events:auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:calc(100vh - 120px);overflow-y:auto;}
+.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:2px 10px;border-radius:20px;}
+.concept-box{background:var(--primary-light);border-radius:12px;padding:18px;margin:12px 0;font-size:18px;line-height:1.7;}
+.concept-box strong{color:var(--primary);}
+.example-box{background:#F1F5F9;border-left:4px solid var(--secondary);padding:14px 18px;border-radius:0 12px 12px 0;margin:12px 0;font-size:17px;line-height:1.8;}
+.q-text{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.5;}
+.q-sub{font-size:18px;color:var(--subtext);margin-bottom:14px;}
+.choices{display:flex;flex-direction:column;gap:10px;}
+.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;color:var(--text);}
+.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light);}
+.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .3s;}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.choice-btn.disabled{pointer-events:none;opacity:.7;}
+.choices-row{display:flex;flex-wrap:wrap;gap:10px;}
+.choices-row .choice-btn{flex:1;min-width:45%;text-align:center;font-size:20px;}
+.feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;}
+.feedback.show{display:block;}
+.feedback.correct{background:var(--green-light);color:var(--green);}
+.feedback.wrong{background:var(--red-light);color:var(--red);}
+.passage{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:17px;line-height:2;margin:12px 0;}
+.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--primary);text-align:center;font-size:18px;font-weight:700;color:var(--secondary);padding:4px 8px;margin:0 4px;min-height:32px;vertical-align:bottom;}
+.blank-box.filled{border-color:var(--green);color:var(--green);}
+.ox-row{display:flex;gap:14px;justify-content:center;margin:10px 0;}
+.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:#fff;font-size:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
+.toggle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;}
+.toggle-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:17px;cursor:pointer;transition:all .2s;}
+.toggle-item.on{background:var(--primary-light);border-color:var(--secondary);}
+.order-zone{display:flex;flex-direction:column;gap:8px;margin:12px 0;min-height:60px;padding:12px;border:2px dashed var(--border);border-radius:12px;}
+.order-item{background:var(--primary-light);border:2px solid var(--secondary);border-radius:10px;padding:10px 16px;font-size:16px;cursor:pointer;transition:all .2s;}
+.order-item.placed{opacity:.4;pointer-events:none;}
+.drop-zone{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.drop-slot{background:#F1F5F9;border:2px dashed var(--border);border-radius:10px;padding:10px 16px;font-size:16px;min-height:44px;display:flex;align-items:center;}
+.drop-slot.filled{background:var(--primary-light);border-color:var(--secondary);border-style:solid;}
+.tts-btn{background:none;border:none;cursor:pointer;font-size:22px;vertical-align:middle;}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:18px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}
+.nav-btn:hover{background:var(--secondary);}
+.nav-btn:disabled{background:var(--border);cursor:default;}
+.nav-info{font-size:15px;color:var(--subtext);}
+.result-card{text-align:center;}
+.result-score{font-size:64px;font-weight:900;color:var(--primary);margin:12px 0;}
+.result-msg{font-size:22px;color:var(--subtext);margin:8px 0;}
+.result-detail{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap;}
+.result-item{background:var(--primary-light);border-radius:12px;padding:14px 24px;text-align:center;}
+.result-item .label{font-size:14px;color:var(--subtext);}
+.result-item .val{font-size:28px;font-weight:900;color:var(--primary);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+    <span class="topbar-title">6학년 영어 · 뉴스리포트</span>
+  </div>
+  <div class="kedu-logo">K</div>
+</div>
+<div class="slide-area" id="slideArea">
+
+<!-- S0: Concept - 뉴스 보도 표현 -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="slide-title">📰 뉴스 보도 표현 <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    뉴스에서 사실을 <strong>객관적</strong>으로 전달할 때 쓰는 표현들:<br><br>
+    📌 <strong>It was reported that ~</strong> — ~라고 보도되었다<br>
+    📌 <strong>According to ~</strong> — ~에 따르면<br>
+    📌 <strong>Experts say that ~</strong> — 전문가들은 ~라고 말한다<br>
+    📌 <strong>The study found that ~</strong> — 연구에 따르면 ~
+  </div>
+  <div class="example-box">
+    <button class="tts-btn" onclick="speak('According to scientists, the global temperature has risen by one point five degrees.')">🔊</button>
+    "According to scientists, the global temperature has risen by 1.5 degrees."
+  </div>
+</div>
+</div>
+
+<!-- S1: Concept - 간접화법 -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🗣️ 간접화법 (Reported Speech) <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    다른 사람의 말을 전달할 때 <strong>시제를 한 단계 과거</strong>로 바꿔요:<br><br>
+    🔹 직접: He <strong>said</strong>, "I <strong>am</strong> happy."<br>
+    🔹 간접: He <strong>said that</strong> he <strong>was</strong> happy.<br><br>
+    🔹 직접: She <strong>said</strong>, "I <strong>will</strong> come."<br>
+    🔹 간접: She <strong>said that</strong> she <strong>would</strong> come.
+  </div>
+  <div style="font-size:16px;color:var(--subtext);margin-top:10px;">💡 뉴스에서는 간접화법이 매우 자주 사용돼요!</div>
+</div>
+</div>
+
+<!-- S2: Q1 - 간접화법 시제 전환 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q1 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">직접화법을 간접화법으로 바르게 바꾼 것은?</div>
+  <div class="q-sub">직접: The mayor said, "I <strong>am</strong> planning a new park."</div>
+  <div class="choices" id="q1">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q1')">The mayor said that he am planning a new park.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q1')">The mayor said that he was planning a new park.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q1')">The mayor said that he is planning a new park.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q1')">The mayor said that I was planning a new park.</button>
+  </div>
+  <div class="feedback" id="fb_q1"></div>
+</div>
+</div>
+
+<!-- S3: Q2 - 빈칸 (보도 표현) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q2 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 뉴스 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('Blank the health department, the number of flu cases has decreased this month.')">🔊</button>
+    <span class="blank-box" id="blank2"></span> the health department, the number of flu cases has decreased this month.
+  </div>
+  <div class="choices-row" id="q2">
+    <button class="choice-btn" onclick="fillBlank(this,'According to','blank2','q2',0)">According to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Because of','blank2','q2',0)">Because of</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Thanks to','blank2','q2',0)">Thanks to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Instead of','blank2','q2',0)">Instead of</button>
+  </div>
+  <div class="feedback" id="fb_q2"></div>
+</div>
+</div>
+
+<!-- S4: Q3 - O/X -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q3 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">다음 간접화법 문장이 올바른지 판단하세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('The teacher said that the students should study harder.')">🔊</button>
+    "The teacher said that the students should study harder."
+  </div>
+  <div class="q-sub">원래: The teacher said, "The students should study harder."</div>
+  <div class="ox-row" id="q3">
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">❌</button>
+  </div>
+  <div class="feedback" id="fb_q3"></div>
+</div>
+</div>
+
+<!-- S5: Q4 - 토글 (뉴스 표현 고르기) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q4 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">뉴스 보도에서 쓸 수 있는 객관적 표현을 <strong>모두</strong> 고르세요.</div>
+  <div class="toggle-grid" id="q4">
+    <div class="toggle-item" data-news="1" onclick="toggleItem(this)">It was reported that</div>
+    <div class="toggle-item" data-news="0" onclick="toggleItem(this)">I think that</div>
+    <div class="toggle-item" data-news="1" onclick="toggleItem(this)">According to experts</div>
+    <div class="toggle-item" data-news="0" onclick="toggleItem(this)">In my opinion</div>
+    <div class="toggle-item" data-news="1" onclick="toggleItem(this)">The study found that</div>
+    <div class="toggle-item" data-news="0" onclick="toggleItem(this)">I feel like</div>
+  </div>
+  <button class="nav-btn" style="margin-top:14px;" onclick="checkToggle('q4','news')">확인하기</button>
+  <div class="feedback" id="fb_q4"></div>
+</div>
+</div>
+
+<!-- S6: Q5 - 순서 배열 (뉴스 기사 구조) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q5 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">뉴스 기사의 올바른 순서로 배열하세요.</div>
+  <div class="drop-zone" id="dropZone5">
+    <div class="drop-slot" data-idx="0">1. <span class="slot-text"></span></div>
+    <div class="drop-slot" data-idx="1">2. <span class="slot-text"></span></div>
+    <div class="drop-slot" data-idx="2">3. <span class="slot-text"></span></div>
+    <div class="drop-slot" data-idx="3">4. <span class="slot-text"></span></div>
+  </div>
+  <div class="order-zone" id="orderPool5"></div>
+  <div class="feedback" id="fb_q5"></div>
+</div>
+</div>
+
+<!-- S7: Q6 - 지문 읽기 -->
+<div class="slide" data-type="passage">
+<div class="card">
+  <div class="slide-title">📖 뉴스 기사 읽기</div>
+  <div class="passage" style="font-size:16px;line-height:2;">
+    <button class="tts-btn" onclick="speak('A new science museum opened in downtown Sejong City last Friday. According to the city government, the museum was built to inspire young students to explore science and technology. The mayor said that he hoped the museum would become a center for learning. Experts say that hands-on exhibits are the best way for children to learn scientific concepts. It was reported that over three thousand visitors came on the opening day.')">🔊</button>
+    A new science museum opened in downtown Sejong City last Friday. According to the city government, the museum was built to inspire young students to explore science and technology. The mayor said that he hoped the museum would become a center for learning. Experts say that hands-on exhibits are the best way for children to learn scientific concepts. It was reported that over 3,000 visitors came on the opening day.
+  </div>
+  <div style="font-size:15px;color:var(--subtext);">⬅➡ 다음 페이지에서 이 기사에 대한 문제를 풀어요.</div>
+</div>
+</div>
+
+<!-- S8: Q6 - 기사 내용 파악 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+<div class="card">
+  <div class="slide-title">Q6 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">위 기사에서 시장(mayor)이 한 말은?</div>
+  <div class="choices" id="q6">
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q6')">The museum was too expensive to build.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q6')">Over 3,000 visitors came on the first day.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q6')">He hoped the museum would become a center for learning.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q6')">Hands-on exhibits are the best way to learn.</button>
+  </div>
+  <div class="feedback" id="fb_q6"></div>
+</div>
+</div>
+
+<!-- S9: Q7 - 기사 내용 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="100">
+<div class="card">
+  <div class="slide-title">Q7 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">기사에서 "According to the city government"의 역할은?</div>
+  <div class="choices" id="q7">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q7')">정보의 출처를 밝혀 객관성을 높인다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q7')">기자의 개인 의견을 강조한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q7')">독자에게 반론을 제시한다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q7')">이전 문장을 요약한다</button>
+  </div>
+  <div class="feedback" id="fb_q7"></div>
+</div>
+</div>
+
+<!-- S10: Q8 - 간접화법 변환 고난도 -->
+<div class="slide" data-type="q" data-correct="3" data-score="100">
+<div class="card">
+  <div class="slide-title">Q8 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">직접화법을 간접화법으로 바르게 바꾼 것은?</div>
+  <div class="q-sub">직접: She said, "I <strong>will visit</strong> the museum <strong>tomorrow</strong>."</div>
+  <div class="choices" id="q8">
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q8')">She said that she will visit the museum tomorrow.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q8')">She said that I would visit the museum the next day.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q8')">She said that she will visited the museum the next day.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q8')">She said that she would visit the museum the next day.</button>
+  </div>
+  <div class="feedback" id="fb_q8"></div>
+</div>
+</div>
+
+<!-- S11: Q9 - 빈칸 (간접화법 뉴스) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q9 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('The principal blank the school festival would be held next month.')">🔊</button>
+    The principal <span class="blank-box" id="blank9"></span> the school festival would be held next month.
+  </div>
+  <div class="choices-row" id="q9">
+    <button class="choice-btn" onclick="fillBlank(this,'said that','blank9','q9',0)">said that</button>
+    <button class="choice-btn" onclick="fillBlank(this,'say to','blank9','q9',0)">say to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'told to','blank9','q9',0)">told to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'saying','blank9','q9',0)">saying</button>
+  </div>
+  <div class="feedback" id="fb_q9"></div>
+</div>
+</div>
+
+<!-- S12: Result -->
+<div class="slide" data-type="result">
+<div class="card result-card">
+  <div class="slide-title" style="justify-content:center;">🎯 학습 결과</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-msg" id="finalMsg">점</div>
+  <div class="result-detail">
+    <div class="result-item"><div class="label">맞힌 문제</div><div class="val" id="correctCnt">0</div></div>
+    <div class="result-item"><div class="label">총 문항</div><div class="val">9</div></div>
+  </div>
+  <button class="nav-btn" style="margin-top:18px;" onclick="location.reload()">다시 풀기 🔄</button>
+</div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button>
+  <span class="nav-info" id="navInfo">1 / 13</span>
+  <button class="nav-btn" id="nextBtn" onclick="go(1)">다음 ▶</button>
+</div>
+
+<script>
+let cur=0,totalScore=0,correctCount=0,soundOn=true;
+const slides=document.querySelectorAll('.slide');const total=slides.length;let audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('navInfo').textContent=`${n+1} / ${total}`;document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===total-1?'완료':'다음 ▶';if(n===total-1)showResult();}
+function go(d){const n=cur+d;if(n>=0&&n<total){cur=n;showSlide(cur);}}
+function checkAnswer(btn,correct,qid){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .choice-btn`);const idx=[...btns].indexOf(btn);btns.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(idx===correct){btn.classList.add('correct');playCorrect();totalScore+=parseInt(btn.closest('.slide').dataset.score)||50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{btn.classList.add('wrong');btns[correct].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';}}
+function checkOX(btn,correct,qid){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .ox-btn`);const clicked=btn.textContent.trim()==='⭕'?'O':'X';btns.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(clicked===correct){btn.classList.add('correct');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 맞아요! should는 간접화법에서 시제가 바뀌지 않아요!';}else{btn.classList.add('wrong');const ci=correct==='O'?0:1;btns[ci].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ should는 조동사의 과거형이 따로 없어서 그대로 유지돼요!';}}
+function fillBlank(btn,text,blankId,qid,correct){if(btn.classList.contains('disabled'))return;playClick();const btns=document.querySelectorAll(`#${qid} .choice-btn`);const idx=[...btns].indexOf(btn);btns.forEach(b=>b.classList.add('disabled'));document.getElementById(blankId).textContent=text;const fb=document.getElementById('fb_'+qid);if(idx===correct){document.getElementById(blankId).classList.add('filled');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';btns[correct].style.border='3px solid var(--green)';}}
+function toggleItem(el){playClick();el.classList.toggle('on');}
+function checkToggle(qid,attr){const items=document.querySelectorAll(`#${qid} .toggle-item`);let ok=true;items.forEach(it=>{if((it.dataset[attr]==='1')!==it.classList.contains('on'))ok=false;});items.forEach(it=>it.style.pointerEvents='none');const fb=document.getElementById('fb_'+qid);if(ok){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답! 뉴스에서는 주관적 표현(I think, In my opinion 등) 대신 객관적 표현을 사용해요.';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 객관적 표현: "It was reported that", "According to experts", "The study found that"';}}
+// Order Q5
+const orderData5=['A new science museum has opened in Sejong City.','According to the city government, it aims to inspire students.','The mayor said that he hoped it would become a learning center.','Over 3,000 visitors were reported on the opening day.'];
+let orderAns5=[];
+function initOrder5(){const pool=document.getElementById('orderPool5');const shuf=[...orderData5].sort(()=>Math.random()-.5);shuf.forEach(t=>{const d=document.createElement('div');d.className='order-item';d.textContent=t;d.dataset.orig=orderData5.indexOf(t);d.onclick=()=>placeOrder5(d);pool.appendChild(d);});}
+function placeOrder5(el){if(el.classList.contains('placed'))return;playClick();const slots=document.querySelectorAll('#dropZone5 .drop-slot');for(let s of slots){if(!s.classList.contains('filled')){s.querySelector('.slot-text').textContent=el.textContent;s.classList.add('filled');s.dataset.val=el.dataset.orig;el.classList.add('placed');orderAns5.push(parseInt(el.dataset.orig));break;}}
+if(orderAns5.length===4){const fb=document.getElementById('fb_q5');if(orderAns5.every((v,i)=>v===i)){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 완벽한 순서! 헤드라인 → 출처 → 인용 → 결과 순이에요!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 뉴스는 보통 핵심 사실 → 출처·배경 → 인용 → 추가 정보 순으로 작성돼요.';}}}
+initOrder5();
+function showResult(){document.getElementById('finalScore').textContent=totalScore;document.getElementById('correctCnt').textContent=correctCount;let msg='';if(correctCount>=8)msg='🏆 뉴스 앵커 수준! 완벽해요!';else if(correctCount>=5)msg='👍 잘했어요! 간접화법을 더 연습해 봐요!';else msg='📚 다시 복습해 보세요!';document.getElementById('finalMsg').textContent=msg;}
+let tx=0;
+document.getElementById('slideArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?go(1):go(-1);}});
+showSlide(0);
+</script>
+</body>
+</html>

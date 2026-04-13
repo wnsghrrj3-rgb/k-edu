@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 심화 07 — 현재진행 vs 현재</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F9FF;--card:#FFFFFF;--primary:#0369A1;--primary-light:#BAE6FD;--secondary:#0891B2;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.08);--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:14px 16px;margin:8px 0;text-align:center}.rule-formula{font-size:28px;font-weight:900;margin:6px 0;text-align:center}.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px;text-align:center}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.blank-box{display:inline-block;font-size:36px;font-weight:900;border-bottom:4px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px;transition:all .3s}.blank-box.filled{animation:fb .4s}@keyframes fb{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:28px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06)}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:22px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}.token:hover{border-color:var(--primary);transform:scale(1.04)}.token.correct{background:var(--green-light);border-color:var(--green)}.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.tf-btns{display:flex;gap:16px;justify-content:center;margin-top:14px}.tf-btn{padding:14px 40px;border-radius:14px;font-size:28px;font-weight:900;cursor:pointer;border:3px solid #CBD5E1;background:white;transition:all .2s}.tf-btn:hover{transform:scale(1.05)}.tf-btn.correct{background:var(--green-light);border-color:var(--green)}.tf-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.highlight{color:var(--primary);font-weight:900}
+.vs-box{display:flex;gap:12px;margin:10px 0}.vs-half{flex:1;border-radius:14px;padding:14px;text-align:center}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/14</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<div class="slide active" data-type="concept"><div class="card" style="text-align:center">
+  <div style="font-size:48px;margin-bottom:8px">🔄</div>
+  <div class="slide-title">3학년 심화 · 07차시</div>
+  <div class="rule-formula" style="font-size:32px;color:var(--primary)">현재진행 vs 현재</div>
+  <div class="rule-sub" style="font-size:20px;margin-top:10px">"지금 하고 있는 것" vs "평소에 하는 것"<br>상태동사는 진행형 불가!</div>
+</div></div>
+
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">📏 현재 시제 vs 현재진행형</div>
+  <div class="vs-box">
+    <div class="vs-half" style="background:#DBEAFE">
+      <div style="font-size:22px;font-weight:900;color:#1E40AF">📅 현재 시제</div>
+      <div style="font-size:18px;margin-top:8px"><b>습관, 사실, 반복</b></div>
+      <div style="font-size:20px;margin-top:6px;cursor:pointer" onclick="speakWord('I play soccer every day')">I <b>play</b> soccer every day.</div>
+      <div style="font-size:16px;color:var(--subtext);margin-top:4px">단서: always, usually, every day</div>
+    </div>
+    <div class="vs-half" style="background:var(--primary-light)">
+      <div style="font-size:22px;font-weight:900;color:var(--primary)">⏳ 현재진행형</div>
+      <div style="font-size:18px;margin-top:8px"><b>지금 이 순간 진행 중</b></div>
+      <div style="font-size:20px;margin-top:6px;cursor:pointer" onclick="speakWord('I am playing soccer now')">I <b>am playing</b> soccer now.</div>
+      <div style="font-size:16px;color:var(--subtext);margin-top:4px">단서: now, right now, at the moment</div>
+    </div>
+  </div>
+</div></div>
+
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">⚠️ 상태동사 = 진행형 불가!</div>
+  <div class="rule-box" style="background:#FEE2E2">
+    <div style="font-size:22px;font-weight:900;color:#DC2626">이 동사들은 -ing 못 붙여요!</div>
+    <div style="font-size:24px;margin-top:8px;cursor:pointer" onclick="speakWord('know, like, love, want, need, have, believe')">
+      know · like · love · want · need<br>have(소유) · believe · understand
+    </div>
+  </div>
+  <div style="font-size:20px;text-align:center;margin-top:8px">
+    ❌ I am knowing → ⭕ I <b>know</b><br>
+    ❌ She is liking → ⭕ She <b>likes</b>
+  </div>
+</div></div>
+
+<!-- Q1 ⭐ -->
+<div class="slide" data-type="q" data-score="10"><div class="card">
+  <span class="question-label">Q1 <span class="stars">⭐</span></span>
+  <div class="question-text">Look! She <span class="blank-box" id="b3">___</span> right now.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="fillBlank(this,'b3','runs',0,1)">runs</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b3','is running',1,1)">is running</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b3','run',2,1)">run</button>
+  </div>
+  <div class="feedback" id="fb3"></div>
+</div></div>
+
+<!-- Q2 ⭐ -->
+<div class="slide" data-type="q" data-score="10"><div class="card">
+  <span class="question-label">Q2 <span class="stars">⭐</span></span>
+  <div class="question-text">He <span class="blank-box" id="b4">___</span> to school every day.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="fillBlank(this,'b4','is walking',0,1)">is walking</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b4','walks',1,1)">walks</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b4','walk',2,1)">walk</button>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div></div>
+
+<!-- Q3 ⭐ 상태동사 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10"><div class="card">
+  <span class="question-label">Q3 <span class="stars">⭐</span></span>
+  <div class="question-text">I _____ the answer. (know)</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">am knowing</button>
+    <button class="choice-btn" onclick="answer(this,1)">knowing</button>
+    <button class="choice-btn" onclick="answer(this,2)">know</button>
+  </div>
+  <div class="feedback" id="fb5"></div>
+</div></div>
+
+<!-- Q4 ⭐⭐ 단서어 판단 -->
+<div class="slide" data-type="q" data-correct="0" data-score="15"><div class="card">
+  <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">They _____ TV <b>at the moment</b>.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">are watching</button>
+    <button class="choice-btn" onclick="answer(this,1)">watch</button>
+    <button class="choice-btn" onclick="answer(this,2)">watches</button>
+  </div>
+  <div class="feedback" id="fb6"></div>
+</div></div>
+
+<!-- Q5 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="15"><div class="card">
+  <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">She <b>always</b> _____ breakfast at 7.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">is eating</button>
+    <button class="choice-btn" onclick="answer(this,1)">eats</button>
+    <button class="choice-btn" onclick="answer(this,2)">eating</button>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div></div>
+
+<!-- Q6 ⭐⭐ OX -->
+<div class="slide" data-type="q" data-score="20"><div class="card">
+  <span class="question-label">Q6 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">"I am having a car."는<br>올바른 문장이다?</div>
+  <div class="tf-btns">
+    <button class="tf-btn" onclick="tfAnswer(this,8,false,'have(소유)는 상태동사! I have a car.')">⭕</button>
+    <button class="tf-btn" onclick="tfAnswer(this,8,true,'맞아! have(소유)는 진행형 불가!')">❌</button>
+  </div>
+  <div class="feedback" id="fb8"></div>
+</div></div>
+
+<!-- Q7 ⭐⭐ 분류 -->
+<div class="slide" data-type="q" data-score="20"><div class="card">
+  <span class="question-label">Q7 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">진행형(-ing)이 <b>가능한</b> 동사를 고르세요!</div>
+  <div id="multiQ9" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px"></div>
+  <div style="text-align:center;margin-top:12px"><button class="nav-btn" onclick="checkMulti9()" style="font-size:18px;padding:8px 24px">✔ 확인</button></div>
+  <div class="feedback" id="fb9"></div>
+</div></div>
+
+<!-- Q8 도전 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card">
+  <span class="question-label">Q8 도전! <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">틀린 문장을 찾아라!</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">She is reading a book now.</button>
+    <button class="choice-btn" onclick="answer(this,1)">I am wanting some water.</button>
+    <button class="choice-btn" onclick="answer(this,2)">They play soccer every Sunday.</button>
+    <button class="choice-btn" onclick="answer(this,3)">He usually walks to school.</button>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div></div>
+
+<!-- Q9 도전 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="30"><div class="card">
+  <span class="question-label">Q9 도전! <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">A: "What are you doing?"<br>B: "_____"</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">I do my homework.</button>
+    <button class="choice-btn" onclick="answer(this,1)">I am know the answer.</button>
+    <button class="choice-btn" onclick="answer(this,2)">I'm doing my homework.</button>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div></div>
+
+<div class="slide" data-type="result"><div class="card" style="text-align:center">
+  <div id="resultEmoji" style="font-size:64px">🎉</div>
+  <div style="font-size:32px;font-weight:900;margin:10px 0">학습 완료!</div>
+  <div style="font-size:22px;color:var(--subtext)">현재진행 vs 현재</div>
+  <div style="margin:16px 0"><span style="font-size:48px;font-weight:900;color:var(--primary)" id="finalScore">0</span><span style="font-size:22px;color:var(--subtext)">점</span></div>
+  <div id="resultStars" style="font-size:36px">⭐⭐⭐</div>
+  <button class="nav-btn" style="margin-top:18px;padding:14px 40px;font-size:22px" onclick="restart()">🔄 다시 풀기</button>
+</div></div>
+
+</div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=140?'⭐⭐⭐⭐⭐':score>=100?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=140?'🏆':'🎉'}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function tfAnswer(btn,si,isCorrect,msg){if(answered[si])return;playClick();const pts=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||15;if(isCorrect){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ '+msg+' +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,1200)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,msg,false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+
+// Q7 multi-select
+(function(){
+  const words=[{w:'run',ok:true},{w:'know',ok:false},{w:'eat',ok:true},{w:'love',ok:false},{w:'swim',ok:true},{w:'believe',ok:false}];
+  const c=document.getElementById('multiQ9');
+  words.forEach(wd=>{const b=document.createElement('button');b.className='token';b.textContent=wd.w;b.dataset.ok=wd.ok;b.dataset.sel='false';b.onclick=function(){if(answered[9])return;playClick();if(this.dataset.sel==='false'){this.dataset.sel='true';this.style.outline='3px solid var(--primary)';this.style.background='var(--primary-light)'}else{this.dataset.sel='false';this.style.outline='';this.style.background=''}};c.appendChild(b)});
+})();
+function checkMulti9(){if(answered[9])return;const tokens=document.querySelectorAll('#multiQ9 .token');let ok=true;tokens.forEach(t=>{const isOk=t.dataset.ok==='true';const isSel=t.dataset.sel==='true';if(isOk&&isSel)t.classList.add('correct');else if(!isOk&&isSel){t.classList.add('wrong');ok=false}else if(isOk&&!isSel)ok=false});if(ok){playCorrect();addScore(20);setFB('fb9','✅ run, eat, swim은 행동동사라 -ing 가능! +20점',true);answered[9]=true;setTimeout(nextSlide,1200)}else{playWrong();combo=0;setFB('fb9','행동동사만 -ing 가능! know, love, believe는 상태동사! 💪',false);setTimeout(()=>{tokens.forEach(t=>{t.classList.remove('correct','wrong');t.dataset.sel='false';t.style.outline='';t.style.background=''})},800)}}
+
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.outline='';t.style.background='';if(t.dataset)t.dataset.sel='false'});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled')});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.tf-btn').forEach(b=>b.className='tf-btn');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let tx=0;document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>

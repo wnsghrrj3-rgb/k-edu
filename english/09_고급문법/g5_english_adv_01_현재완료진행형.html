@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 5학년 영어 심화 01 — 현재완료진행형</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:background .15s}
+.sound-btn:hover{background:var(--primary-light)}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s ease}
+.page-info{font-size:15px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s ease,transform .3s ease;pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 32px;width:100%;max-width:800px}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}
+.rule-formula{font-size:28px;font-weight:900;letter-spacing:1px;margin:6px 0;color:var(--primary)}
+.rule-sub{font-size:18px;color:var(--subtext);margin-top:4px}
+.rule-ex{font-size:20px;margin-top:8px;cursor:pointer;transition:transform .2s}
+.rule-ex:hover{transform:scale(1.02)}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:24px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}
+.choice-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green)}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:20px;width:100%;max-width:620px;padding:10px 20px}
+.blank-box{display:inline-block;font-size:44px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.token-area{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:20px;font-weight:700;cursor:pointer;transition:all .2s}
+.token:hover{border-color:var(--primary);transform:scale(1.04)}
+.token.correct{background:var(--green-light);border-color:var(--green)}
+.token.wrong{background:var(--red-light);border-color:var(--red)}
+.ox-wrap{display:flex;gap:20px;justify-content:center;margin-top:14px}
+.ox-btn{width:100px;height:100px;border-radius:50%;border:3px solid var(--border);font-size:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--card);transition:all .2s;font-weight:900}
+.ox-btn:hover{border-color:var(--primary);transform:scale(1.08)}
+.ox-btn.correct{background:var(--green-light);border-color:var(--green)}
+.ox-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.compare-box{display:flex;gap:12px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.compare-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:14px 20px;flex:1;min-width:200px;max-width:350px;text-align:center}
+.compare-card h3{font-size:20px;color:var(--primary);margin-bottom:6px}
+.compare-card p{font-size:17px;color:var(--subtext);line-height:1.5}
+.sentence-build{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0;min-height:50px;border:2px dashed var(--border);border-radius:12px;padding:12px}
+.sentence-build .token{font-size:18px}
+.order-slot{background:var(--primary-light);border-radius:10px;padding:10px;margin:6px 0;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--primary);cursor:pointer;transition:all .2s}
+.order-slot:hover{background:var(--primary);color:white}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <div class="kedu-logo" style="margin-left:10px">🔵 K ✦</div>
+</div>
+
+<div class="slides">
+
+<!-- SLIDE 0: CONCEPT 1 -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📘 개념 학습 — 현재완료진행형</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">S + have/has been + V-ing</div>
+      <div class="rule-sub">= 과거에 시작해서 <b>지금까지 계속</b>하고 있는 동작</div>
+    </div>
+    <div class="rule-ex" onclick="speakWord('I have been studying English for 3 years.')">
+      🔊 I <b>have been studying</b> English <b>for</b> 3 years.
+    </div>
+    <div class="rule-sub" style="margin-top:12px">나는 영어를 3년 동안 <b>계속 공부해오고 있다</b>.</div>
+    <div class="compare-box" style="margin-top:16px">
+      <div class="compare-card">
+        <h3>for + 기간</h3>
+        <p>for 2 hours<br>for 5 years<br>for a long time</p>
+      </div>
+      <div class="compare-card">
+        <h3>since + 시점</h3>
+        <p>since 2020<br>since Monday<br>since I was 7</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 1: CONCEPT 2 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📘 현재완료 vs 현재완료진행형</div>
+    <div class="compare-box">
+      <div class="compare-card" style="border-color:var(--secondary)">
+        <h3>현재완료 (have + p.p.)</h3>
+        <p style="font-size:18px"><b>결과·완료</b>에 초점<br>"I have read 3 books."<br>→ 3권을 <u>읽었다</u> (완료)</p>
+      </div>
+      <div class="compare-card" style="border-color:var(--primary)">
+        <h3>현재완료진행 (have been ~ing)</h3>
+        <p style="font-size:18px"><b>계속·진행</b>에 초점<br>"I have been reading for 2 hours."<br>→ 2시간째 <u>읽고 있다</u> (진행 중)</p>
+      </div>
+    </div>
+    <div class="rule-sub" style="text-align:center;margin-top:12px">💡 "지금도 하고 있다"는 느낌이면 → <b>have been ~ing</b></div>
+  </div>
+</div>
+
+<!-- SLIDE 2: Q1 버튼선택 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 확인 1</div>
+    <div class="question-text">빈칸에 알맞은 것은?<br>"She ___ for 30 minutes."</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">has run</button>
+      <button class="choice-btn" onclick="answer(this,1)">is running</button>
+      <button class="choice-btn" onclick="answer(this,2)">has been running</button>
+      <button class="choice-btn" onclick="answer(this,3)">was running</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Q2 O/X ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 확인 2</div>
+    <div class="question-text">다음 문장이 맞으면 ⭕, 틀리면 ❌<br><span style="font-size:20px">"They have been waited for the bus since 3 PM."</span></div>
+    <div class="ox-wrap">
+      <div class="ox-btn" onclick="oxAnswer(this,3,0)">⭕</div>
+      <div class="ox-btn" onclick="oxAnswer(this,3,1)">❌</div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Q3 빈칸 채우기 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 확인 3</div>
+    <div class="question-text">빈칸에 들어갈 단어는?<br>"He has been playing piano ___ 2019."</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank4','for',1,0)">for</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank4','since',1,1)">since</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank4','during',1,2)">during</button>
+    </div>
+    <div style="text-align:center;margin-top:14px;font-size:22px">He has been playing piano <span class="blank-box" id="blank4">___</span> 2019.</div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Q4 카드매칭(for vs since 분류) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 확인 4</div>
+    <div class="question-text">각 표현을 <b>for</b> 또는 <b>since</b>로 분류하세요</div>
+    <div class="compare-box">
+      <div class="compare-card" id="forBox" style="border-color:var(--secondary);min-height:80px"><h3>for</h3><div id="forItems"></div></div>
+      <div class="compare-card" id="sinceBox" style="border-color:var(--primary);min-height:80px"><h3>since</h3><div id="sinceItems"></div></div>
+    </div>
+    <div class="token-area" id="sortTokens"></div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Q5 문장완성 순서배치 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> 도전 1</div>
+    <div class="question-text">단어를 올바른 순서로 배열하세요</div>
+    <div class="sentence-build" id="builtSentence6"></div>
+    <div class="token-area" id="wordBank6"></div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Q6 비교 추론 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> 도전 2</div>
+    <div class="question-text">어떤 문장이 "지금도 계속하고 있다"는 의미인가요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">She has been teaching for 10 years.</button>
+      <button class="choice-btn" onclick="answer(this,1)">She has taught at 3 different schools.</button>
+      <button class="choice-btn" onclick="answer(this,2)">She taught English last year.</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Q7 상황판단 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> 도전 3</div>
+    <div class="question-text">상황: Tom의 눈이 빨갛다. 왜?<br>가장 자연스러운 문장은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">He cried yesterday.</button>
+      <button class="choice-btn" onclick="answer(this,1)">He has cried.</button>
+      <button class="choice-btn" onclick="answer(this,2)">He has been crying.</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Q8 역방향 — 한→영 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> 도전 4</div>
+    <div class="question-text">"우리는 아침부터 기다려오고 있다"를 영어로?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">We waited since morning.</button>
+      <button class="choice-btn" onclick="answer(this,1)">We have been waiting since morning.</button>
+      <button class="choice-btn" onclick="answer(this,2)">We are waiting from morning.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Q9 분해합성 ⭐⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> 최고 도전</div>
+    <div class="question-text">다음 대화의 빈칸에 들어갈 말은?<br><span style="font-size:18px">A: "You look tired."<br>B: "Yes, I ___. I need some rest."</span></div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">have been worked all day</button>
+      <button class="choice-btn" onclick="answer(this,1)">am working all day</button>
+      <button class="choice-btn" onclick="answer(this,2)">have been working all day</button>
+      <button class="choice-btn" onclick="answer(this,3)">worked all day long</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- SLIDE 11: RESULT -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div style="font-size:64px" id="resultEmoji">🎉</div>
+    <div style="font-size:28px;font-weight:900;margin:10px 0">학습 완료!</div>
+    <div style="font-size:22px;margin:8px 0">총 점수: <b id="finalScore">0</b>점</div>
+    <div style="font-size:28px;margin:8px 0" id="resultStars">⭐⭐</div>
+    <button class="nav-btn" style="margin-top:16px" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2);})});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,c.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.25);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.25);})});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.07);o.start();o.stop(c.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;const s=score;document.getElementById('resultStars').textContent=s>=400?'⭐⭐⭐⭐⭐':s>=300?'⭐⭐⭐⭐':s>=200?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=s>=400?'🏆':'🎉';}}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+function oxAnswer(btn,slideIdx,idx){if(answered[slideIdx])return;const slide=document.querySelectorAll('.slide')[slideIdx];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ 정답! waited → waiting이 맞아요! +'+pts+'점',true);answered[slideIdx]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+slideIdx,'have been 다음에는 V-ing! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+// ── SORT GAME (slide 5) ──
+const sortData=[{word:'3 hours',cat:'for'},{word:'Monday',cat:'since'},{word:'a long time',cat:'for'},{word:'2020',cat:'since'},{word:'10 minutes',cat:'for'},{word:'last summer',cat:'since'}];
+let sortCount=0,sortTotal=sortData.length;
+function initSort(){const area=document.getElementById('sortTokens');area.innerHTML='';sortData.sort(()=>Math.random()-0.5).forEach((d,i)=>{const t=document.createElement('div');t.className='token';t.textContent=d.word;t.onclick=function(){showSortChoice(this,d);};area.appendChild(t);});}
+function showSortChoice(tokenEl,data){if(tokenEl.classList.contains('correct'))return;const forBox=document.getElementById('forBox');const sinceBox=document.getElementById('sinceBox');
+const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:8px;justify-content:center;margin-top:8px';
+const bFor=document.createElement('button');bFor.className='choice-btn';bFor.style.fontSize='18px';bFor.textContent='for';bFor.onclick=()=>{checkSort(tokenEl,data,'for');wrap.remove();};
+const bSince=document.createElement('button');bSince.className='choice-btn';bSince.style.fontSize='18px';bSince.textContent='since';bSince.onclick=()=>{checkSort(tokenEl,data,'since');wrap.remove();};
+wrap.append(bFor,bSince);tokenEl.after(wrap);}
+function checkSort(tokenEl,data,choice){playClick();if(choice===data.cat){tokenEl.classList.add('correct');playCorrect();sortCount++;const target=data.cat==='for'?document.getElementById('forItems'):document.getElementById('sinceItems');const p=document.createElement('div');p.style.cssText='font-size:17px;margin:3px 0;font-weight:700';p.textContent=data.word;target.appendChild(p);if(sortCount===sortTotal){addScore(50);setFB('fb5','✅ 완벽 분류! +50점',true);answered[5]=true;setTimeout(nextSlide,900);}}else{tokenEl.classList.add('wrong');playWrong();combo=0;setFB('fb5','다시 생각해보세요! 💪',false);setTimeout(()=>tokenEl.classList.remove('wrong'),500);}}
+
+// ── WORD ORDER (slide 6) ──
+const correctOrder6=['We','have','been','living','here','since','2015'];
+let placed6=[];
+function initWordOrder(){const bank=document.getElementById('wordBank6');const built=document.getElementById('builtSentence6');bank.innerHTML='';built.innerHTML='';placed6=[];
+const shuffled=[...correctOrder6].sort(()=>Math.random()-0.5);
+shuffled.forEach(w=>{const t=document.createElement('div');t.className='token';t.textContent=w;t.onclick=function(){placeWord6(this,w);};bank.appendChild(t);});}
+function placeWord6(el,w){playClick();el.style.display='none';placed6.push(w);const built=document.getElementById('builtSentence6');const t=document.createElement('div');t.className='token';t.style.background='var(--primary-light)';t.textContent=w;t.onclick=function(){removeWord6(this,el,w);};built.appendChild(t);
+if(placed6.length===correctOrder6.length){if(placed6.join(' ')===correctOrder6.join(' ')){playCorrect();addScore(50);setFB('fb6','✅ 완벽한 문장! +50점',true);answered[6]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb6','순서를 다시 확인! 💪',false);setTimeout(()=>{placed6=[];built.innerHTML='';document.querySelectorAll('#wordBank6 .token').forEach(t=>t.style.display='');},800);}}}
+function removeWord6(builtEl,origEl,w){if(answered[6])return;builtEl.remove();origEl.style.display='';placed6=placed6.filter(x=>x!==w);}
+
+function restart(){score=0;combo=0;answered={};sortCount=0;
+document.querySelectorAll('.choice-btn,.ox-btn,.token').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());
+document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';});
+document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
+initSort();initWordOrder();updateUI();}
+
+// ── SWIPE ──
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+
+initSort();initWordOrder();updateUI();
+</script>
+</body>
+</html>

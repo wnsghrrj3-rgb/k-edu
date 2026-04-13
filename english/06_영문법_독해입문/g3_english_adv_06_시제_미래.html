@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 심화 06 — 시제: 미래</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF7ED;--card:#FFFFFF;--primary:#C2410C;--primary-light:#FFEDD5;--secondary:#EA580C;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.08);--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}.rule-formula{font-size:30px;font-weight:900;letter-spacing:1px;margin:6px 0;text-align:center}.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px;text-align:center}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.blank-box{display:inline-block;font-size:36px;font-weight:900;border-bottom:4px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px;transition:all .3s}.blank-box.filled{animation:fb .4s}@keyframes fb{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:28px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06)}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:22px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.tf-btns{display:flex;gap:16px;justify-content:center;margin-top:14px}.tf-btn{padding:14px 40px;border-radius:14px;font-size:28px;font-weight:900;cursor:pointer;border:3px solid #CBD5E1;background:white;transition:all .2s}.tf-btn:hover{transform:scale(1.05)}.tf-btn.correct{background:var(--green-light);border-color:var(--green)}.tf-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.highlight{color:var(--primary);font-weight:900}
+.vs-box{display:flex;gap:12px;margin:10px 0}.vs-half{flex:1;border-radius:14px;padding:16px;text-align:center}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}.token:hover{border-color:var(--primary);transform:scale(1.04)}.token.correct{background:var(--green-light);border-color:var(--green)}.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/14</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- S0 인트로 -->
+<div class="slide active" data-type="concept"><div class="card" style="text-align:center">
+  <div style="font-size:48px;margin-bottom:8px">🚀</div>
+  <div class="slide-title">3학년 심화 · 06차시</div>
+  <div class="rule-formula" style="font-size:34px;color:var(--primary)">시제: 미래</div>
+  <div class="rule-sub" style="font-size:20px;margin-top:10px">will vs be going to — 뉘앙스 차이까지!</div>
+</div></div>
+
+<!-- S1 will -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">⚡ will + 동사원형</div>
+  <div class="rule-box" style="background:var(--primary-light)">
+    <div class="rule-formula" style="color:var(--primary);font-size:28px">주어 + will + 동사원형</div>
+  </div>
+  <div style="font-size:22px;margin-top:8px;text-align:center;cursor:pointer" onclick="speakWord('I will go to the park tomorrow')">
+    I <b>will go</b> to the park tomorrow. 🏞️
+  </div>
+  <div style="font-size:20px;color:var(--subtext);text-align:center;margin-top:8px">
+    💡 <b>will</b> = 그 자리에서 결정, 예측, 약속<br>
+    "비 올 것 같아!" → It <b>will</b> rain.
+  </div>
+</div></div>
+
+<!-- S2 be going to -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">📋 be going to + 동사원형</div>
+  <div class="rule-box" style="background:#DBEAFE">
+    <div class="rule-formula" style="color:#1E40AF;font-size:26px">주어 + am/is/are + going to + 동사원형</div>
+  </div>
+  <div style="font-size:22px;margin-top:8px;text-align:center;cursor:pointer" onclick="speakWord('I am going to study English tonight')">
+    I <b>am going to study</b> English tonight. 📚
+  </div>
+  <div style="font-size:20px;color:var(--subtext);text-align:center;margin-top:8px">
+    💡 <b>be going to</b> = 이미 계획한 것, 확실한 징조<br>
+    "오늘 밤 공부하기로 했어!" → 미리 계획!
+  </div>
+</div></div>
+
+<!-- S3 will vs be going to 비교 -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">🔍 will vs be going to</div>
+  <div class="vs-box">
+    <div class="vs-half" style="background:var(--primary-light)">
+      <div style="font-size:24px;font-weight:900;color:var(--primary)">⚡ will</div>
+      <div style="font-size:18px;margin-top:8px">즉석 결정 · 예측</div>
+      <div style="font-size:18px;margin-top:4px;font-style:italic">"전화 왔다!" → "I'll get it!"</div>
+    </div>
+    <div class="vs-half" style="background:#DBEAFE">
+      <div style="font-size:24px;font-weight:900;color:#1E40AF">📋 be going to</div>
+      <div style="font-size:18px;margin-top:8px">미리 계획 · 확실한 징조</div>
+      <div style="font-size:18px;margin-top:4px;font-style:italic">"내일 여행 가기로 했어"</div>
+    </div>
+  </div>
+  <div class="rule-sub">부정: will not (won't) / am not going to<br>의문: Will you~? / Are you going to~?</div>
+</div></div>
+
+<!-- S4 Q1 ⭐ will 빈칸 -->
+<div class="slide" data-type="q" data-score="10"><div class="card">
+  <span class="question-label">Q1 <span class="stars">⭐</span></span>
+  <div class="question-text">I <span class="blank-box" id="b4">___</span> help you.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="fillBlank(this,'b4','will',0,0)">will</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b4','going to',1,0)">going to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b4','am will',2,0)">am will</button>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div></div>
+
+<!-- S5 Q2 ⭐ be going to -->
+<div class="slide" data-type="q" data-score="10"><div class="card">
+  <span class="question-label">Q2 <span class="stars">⭐</span></span>
+  <div class="question-text">She <span class="blank-box" id="b5">___</span> visit her grandma.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="fillBlank(this,'b5','will to',0,1)">will to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b5','is going to',1,1)">is going to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'b5','are going to',2,1)">are going to</button>
+  </div>
+  <div class="feedback" id="fb5"></div>
+</div></div>
+
+<!-- S6 Q3 ⭐ won't -->
+<div class="slide" data-type="q" data-correct="1" data-score="10"><div class="card">
+  <span class="question-label">Q3 <span class="stars">⭐</span></span>
+  <div class="question-text">"I will not go." 의 축약형은?</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">I willn't go.</button>
+    <button class="choice-btn" onclick="answer(this,1)">I won't go.</button>
+    <button class="choice-btn" onclick="answer(this,2)">I don't will go.</button>
+  </div>
+  <div class="feedback" id="fb6"></div>
+</div></div>
+
+<!-- S7 Q4 ⭐⭐ 뉘앙스 구분 -->
+<div class="slide" data-type="q" data-correct="0" data-score="15"><div class="card">
+  <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">전화벨이 울린다! 🔔<br>"내가 받을게!"는 영어로?</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">I'll get it!</button>
+    <button class="choice-btn" onclick="answer(this,1)">I'm going to get it!</button>
+    <button class="choice-btn" onclick="answer(this,2)">I get it!</button>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div></div>
+
+<!-- S8 Q5 ⭐⭐ 뉘앙스 -->
+<div class="slide" data-type="q" data-correct="1" data-score="15"><div class="card">
+  <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">이미 여행 계획을 세워둔 상황:<br>"나 내일 부산 가."</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">I will go to Busan tomorrow.</button>
+    <button class="choice-btn" onclick="answer(this,1)">I'm going to go to Busan tomorrow.</button>
+  </div>
+  <div class="feedback" id="fb8"></div>
+</div></div>
+
+<!-- S9 Q6 ⭐⭐ 의문문 -->
+<div class="slide" data-type="q" data-correct="2" data-score="15"><div class="card">
+  <span class="question-label">Q6 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">"Will you come to the party?"에<br>올바른 대답은?</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">Yes, I do.</button>
+    <button class="choice-btn" onclick="answer(this,1)">Yes, I am.</button>
+    <button class="choice-btn" onclick="answer(this,2)">Yes, I will.</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div></div>
+
+<!-- S10 Q7 ⭐⭐ OX -->
+<div class="slide" data-type="q" data-score="20"><div class="card">
+  <span class="question-label">Q7 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">"Are you going to plays soccer?"는<br>올바른 문장이다?</div>
+  <div class="tf-btns">
+    <button class="tf-btn" onclick="tfAnswer(this,10,false,'going to 뒤는 동사원형! plays → play')">⭕</button>
+    <button class="tf-btn" onclick="tfAnswer(this,10,true,'맞아! going to play가 정답!')">❌</button>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div></div>
+
+<!-- S11 Q8 도전 ⭐⭐⭐ 분류 -->
+<div class="slide" data-type="q" data-score="25"><div class="card">
+  <span class="question-label">Q8 도전! <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">will이 더 자연스러운 상황은?<br>모두 골라보세요!</div>
+  <div id="multiQ11" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px"></div>
+  <div style="text-align:center;margin-top:12px"><button class="nav-btn" id="checkBtn11" onclick="checkMulti11()" style="font-size:18px;padding:8px 24px">✔ 확인</button></div>
+  <div class="feedback" id="fb11"></div>
+</div></div>
+
+<!-- S12 Q9 도전 ⭐⭐⭐ 종합 -->
+<div class="slide" data-type="q" data-correct="2" data-score="30"><div class="card">
+  <span class="question-label">Q9 도전! <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">하늘에 먹구름이 잔뜩! ⛈️<br>"비 올 것 같아."는?</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">It will rain.</button>
+    <button class="choice-btn" onclick="answer(this,1)">It rains.</button>
+    <button class="choice-btn" onclick="answer(this,2)">It's going to rain.</button>
+  </div>
+  <div class="feedback" id="fb12"></div>
+</div></div>
+
+<!-- S13 결과 -->
+<div class="slide" data-type="result"><div class="card" style="text-align:center">
+  <div id="resultEmoji" style="font-size:64px">🎉</div>
+  <div style="font-size:32px;font-weight:900;margin:10px 0">학습 완료!</div>
+  <div style="font-size:22px;color:var(--subtext)">시제: 미래</div>
+  <div style="margin:16px 0"><span style="font-size:48px;font-weight:900;color:var(--primary)" id="finalScore">0</span><span style="font-size:22px;color:var(--subtext)">점</span></div>
+  <div id="resultStars" style="font-size:36px">⭐⭐⭐</div>
+  <button class="nav-btn" style="margin-top:18px;padding:14px 40px;font-size:22px" onclick="restart()">🔄 다시 풀기</button>
+</div></div>
+
+</div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=14;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=130?'⭐⭐⭐⭐⭐':score>=95?'⭐⭐⭐⭐':score>=55?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=130?'🏆':'🎉'}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function tfAnswer(btn,si,isCorrect,msg){if(answered[si])return;playClick();const pts=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||15;if(isCorrect){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ '+msg+' +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,1200)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,msg,false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+
+// Q8 multi-select: will이 자연스러운 상황
+(function(){
+  const items=[
+    {t:'갑자기 배고파! "나 피자 시킬래"',w:true},
+    {t:'내일 치과 예약했어',w:false},
+    {t:'전화벨! "내가 받을게!"',w:true},
+    {t:'이번 여름에 제주도 가기로 했어',w:false},
+    {t:'약속할게: "다시는 안 늦을게!"',w:true}
+  ];
+  const c=document.getElementById('multiQ11');
+  items.forEach((it,i)=>{
+    const b=document.createElement('button');b.className='token';b.style.fontSize='18px';b.style.borderRadius='12px';b.style.padding='10px 14px';b.textContent=it.t;b.dataset.w=it.w;b.dataset.sel='false';
+    b.onclick=function(){if(answered[11])return;playClick();if(this.dataset.sel==='false'){this.dataset.sel='true';this.style.outline='3px solid var(--primary)';this.style.background='var(--primary-light)'}else{this.dataset.sel='false';this.style.outline='';this.style.background=''}};
+    c.appendChild(b);
+  });
+})();
+function checkMulti11(){
+  if(answered[11])return;
+  const tokens=document.querySelectorAll('#multiQ11 .token');let ok=true;
+  tokens.forEach(t=>{const isW=t.dataset.w==='true';const isSel=t.dataset.sel==='true';if(isW&&isSel)t.classList.add('correct');else if(!isW&&isSel){t.classList.add('wrong');ok=false}else if(isW&&!isSel)ok=false});
+  if(ok){playCorrect();addScore(25);setFB('fb11','✅ 즉석 결정·예측·약속 = will! +25점',true);answered[11]=true;setTimeout(nextSlide,1200)}
+  else{playWrong();combo=0;setFB('fb11','will = 즉석결정·예측·약속! 다시 💪',false);setTimeout(()=>{tokens.forEach(t=>{t.classList.remove('correct','wrong');t.dataset.sel='false';t.style.outline='';t.style.background=''})},800)}
+}
+
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.outline='';t.style.background='';t.dataset.sel='false'});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled')});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.tf-btn').forEach(b=>b.className='tf-btn');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let tx=0;document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>

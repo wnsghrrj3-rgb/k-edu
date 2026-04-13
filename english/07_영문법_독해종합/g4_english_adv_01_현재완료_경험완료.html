@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 4학년 영어 심화 01 — 현재완료: 경험·완료</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F9FF;--card:#FFFFFF;--primary:#0369A1;--primary-light:#BAE6FD;--secondary:#0891B2;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--shadow:0 2px 12px rgba(0,0,0,0.08);--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}
+.rule-formula{font-size:28px;font-weight:900;margin:6px 0;letter-spacing:.5px}
+.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}
+.stars{color:#FCD34D}
+.question-text{font-size:24px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:left;line-height:1.5}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{width:100%;max-width:600px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.blank-box{display:inline-block;font-size:36px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s}
+.blank-box.filled{animation:fbounce .4s}
+@keyframes fbounce{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}
+.token:hover{border-color:var(--primary);transform:scale(1.04)}
+.token.correct{background:var(--green-light);border-color:var(--green);pointer-events:none}
+.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.example-box{background:var(--primary-light);border-radius:12px;padding:12px 16px;margin:8px 0;font-size:21px;line-height:1.8}
+.example-box b{color:var(--primary)}
+.gram-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:20px}
+.gram-table th{background:var(--primary);color:#fff;padding:8px 10px;text-align:center}
+.gram-table td{padding:8px 10px;border-bottom:1px solid #E2E8F0;text-align:center;font-size:19px}
+.gram-table tr:nth-child(even) td{background:#F8FAFC}
+.hl{color:var(--primary);font-weight:900}
+.vs-box{display:flex;gap:12px;margin:10px 0;flex-wrap:wrap;justify-content:center}
+.vs-card{flex:1;min-width:200px;border:2px solid #CBD5E1;border-radius:14px;padding:12px;text-align:center}
+.vs-card h3{font-size:18px;margin-bottom:6px}
+.result-box{text-align:center}
+.result-box .emoji{font-size:80px}
+.result-box .msg{font-size:28px;font-weight:900;margin:10px 0}
+.result-box .detail{font-size:22px;color:var(--subtext)}
+.restart-btn{margin-top:16px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 36px;font-size:22px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K✦edu</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0: 개념 - 현재완료란? -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 현재완료 (Present Perfect)란?</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">have / has + 과거분사(p.p.)</div>
+      <div class="rule-sub">과거에 시작되어 현재와 연결되는 시제!</div>
+    </div>
+    <div class="example-box">
+      🔑 <b>핵심:</b> 과거에 했는데, 지금도 관련 있는 일!<br><br>
+      과거: "I <b>ate</b> sushi." (먹었다 — 끝난 사실)<br>
+      현재완료: "I <b>have eaten</b> sushi." (먹어 본 적 있다 — 경험)
+    </div>
+    <div class="gram-table" style="margin-top:10px">
+      <tr><th>주어</th><th>have/has</th><th>예시</th></tr>
+      <tr><td>I / You / We / They</td><td class="hl">have</td><td>I <b>have</b> visited Japan.</td></tr>
+      <tr><td>He / She / It</td><td class="hl">has</td><td>She <b>has</b> visited Japan.</td></tr>
+    </div>
+  </div>
+</div>
+
+<!-- S1: 개념 - 경험 용법 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 용법 1: 경험 (Experience) 🌍</div>
+    <div class="rule-box" style="background:#DBEAFE">
+      <div class="rule-formula">"~해 본 적 있다"</div>
+      <div class="rule-sub">키워드: <b>ever, never, before, once, twice, ~ times</b></div>
+    </div>
+    <div class="example-box">
+      ✅ "I <b>have visited</b> Jeju Island <b>twice</b>." (제주도에 두 번 가봤어요)<br>
+      ✅ "<b>Have</b> you <b>ever</b> eaten Indian food?" (인도 음식 먹어본 적 있어?)<br>
+      ✅ "She <b>has never</b> seen snow <b>before</b>." (그녀는 눈을 본 적이 없다)
+    </div>
+    <div class="gram-table" style="margin-top:8px">
+      <tr><th>형태</th><th>구조</th></tr>
+      <tr><td>긍정</td><td>I <b>have eaten</b> sushi.</td></tr>
+      <tr><td>부정</td><td>I <b>have never eaten</b> sushi.</td></tr>
+      <tr><td>의문</td><td><b>Have</b> you <b>ever eaten</b> sushi?</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- S2: 개념 - 완료 용법 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 용법 2: 완료 (Completion) ✅</div>
+    <div class="rule-box" style="background:#DCFCE7">
+      <div class="rule-formula">"이미/방금 ~했다"</div>
+      <div class="rule-sub">키워드: <b>just, already, yet, recently</b></div>
+    </div>
+    <div class="example-box">
+      ✅ "I <b>have just finished</b> my homework." (방금 숙제를 끝냈어요)<br>
+      ✅ "She <b>has already left</b>." (그녀는 이미 떠났어요)<br>
+      ✅ "Have you done it <b>yet</b>?" (아직 안 했어?) — <b>yet</b>은 부정/의문에!<br>
+      ✅ "I <b>haven't eaten</b> lunch <b>yet</b>." (아직 점심 안 먹었어)
+    </div>
+    <div class="vs-box">
+      <div class="vs-card" style="border-color:var(--primary)">
+        <h3>🔵 already (이미)</h3>
+        <div style="font-size:18px">긍정문에서 사용<br>"I have <b>already</b> done it."</div>
+      </div>
+      <div class="vs-card" style="border-color:var(--secondary)">
+        <h3>🟢 yet (아직)</h3>
+        <div style="font-size:18px">부정·의문에서 사용<br>"Have you done it <b>yet</b>?"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: 개념 - 불규칙 과거분사 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 꼭 외우자! 불규칙 과거분사 (p.p.) 🔥</div>
+    <div class="gram-table">
+      <tr><th>원형</th><th>과거</th><th>과거분사(p.p.)</th></tr>
+      <tr><td>go</td><td>went</td><td class="hl">gone</td></tr>
+      <tr><td>eat</td><td>ate</td><td class="hl">eaten</td></tr>
+      <tr><td>see</td><td>saw</td><td class="hl">seen</td></tr>
+      <tr><td>do</td><td>did</td><td class="hl">done</td></tr>
+      <tr><td>take</td><td>took</td><td class="hl">taken</td></tr>
+      <tr><td>write</td><td>wrote</td><td class="hl">written</td></tr>
+      <tr><td>give</td><td>gave</td><td class="hl">given</td></tr>
+      <tr><td>break</td><td>broke</td><td class="hl">broken</td></tr>
+      <tr><td>speak</td><td>spoke</td><td class="hl">spoken</td></tr>
+      <tr><td>make</td><td>made</td><td class="hl">made</td></tr>
+    </div>
+  </div>
+</div>
+
+<!-- S4: Q1 ⭐ have vs has -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q1 확인</div>
+    <div class="question-text">"She ___ visited Paris before."</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">have</button>
+      <button class="choice-btn" onclick="answer(this,1)">has</button>
+      <button class="choice-btn" onclick="answer(this,2)">had</button>
+      <button class="choice-btn" onclick="answer(this,3)">is</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q2 ⭐ 과거분사 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q2 확인</div>
+    <div class="question-text">"I have ___ this movie three times."<br>(see의 과거분사)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">saw</button>
+      <button class="choice-btn" onclick="answer(this,1)">see</button>
+      <button class="choice-btn" onclick="answer(this,2)">seen</button>
+      <button class="choice-btn" onclick="answer(this,3)">seeing</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q3 ⭐⭐ 경험 vs 완료 구분 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q3 확인</div>
+    <div class="question-text">경험🌍 인가요, 완료✅ 인가요? 빠른 판단!</div>
+    <div id="useArea" style="text-align:center;margin:10px 0">
+      <div id="useSent" style="font-size:22px;font-weight:900;margin:10px 0;line-height:1.6"></div>
+      <div id="useCount" style="font-size:17px;color:var(--subtext);margin-bottom:8px"></div>
+      <div style="display:flex;gap:14px;justify-content:center">
+        <button class="choice-btn" style="font-size:24px;padding:12px 24px" onclick="useAnswer('exp')">🌍 경험</button>
+        <button class="choice-btn" style="font-size:24px;padding:12px 24px" onclick="useAnswer('comp')">✅ 완료</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q4 ⭐⭐ 빈칸 - ever/never/just/already/yet -->
+<div class="slide" data-type="q" data-correct="3" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q4 확인</div>
+    <div class="question-text">빈칸에 알맞은 단어를 고르세요.<br>"Have you <span class="blank-box" id="bl7" style="font-size:28px;min-width:60px">___</span> been to Busan?"</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'bl7','just',0,3)">just</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl7','already',1,3)">already</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl7','yet',2,3)">yet</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl7','ever',3,3)">ever</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q5 ⭐⭐ already vs yet -->
+<div class="slide" data-type="q" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q5 확인</div>
+    <div class="question-text">"I haven't finished my project ___."</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">already</button>
+      <button class="choice-btn" onclick="answer(this,1)">yet</button>
+      <button class="choice-btn" onclick="answer(this,2)">ever</button>
+      <button class="choice-btn" onclick="answer(this,3)">never</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q6 ⭐⭐⭐ 과거 vs 현재완료 구분 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q6 도전</div>
+    <div class="question-text">어법상 <b>올바른 문장</b>은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">I have never eaten durian before.</button>
+      <button class="choice-btn" onclick="answer(this,1)">I have ate durian yesterday.</button>
+      <button class="choice-btn" onclick="answer(this,2)">She have visited London twice.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Have you ever went to Japan?</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q7 ⭐⭐⭐ 부정문 만들기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q7 도전</div>
+    <div class="question-text">"He has finished the test."의<br><b>부정문</b>으로 올바른 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">He has not finish the test.</button>
+      <button class="choice-btn" onclick="answer(this,1)">He don't has finished the test.</button>
+      <button class="choice-btn" onclick="answer(this,2)">He has not finished the test yet.</button>
+      <button class="choice-btn" onclick="answer(this,3)">He not has finished the test.</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q8 ⭐⭐⭐⭐ 대화 완성 -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q8 도전</div>
+    <div class="question-text">대화의 빈칸에 가장 적절한 것은?</div>
+    <div class="example-box" style="font-size:20px">
+      A: "Let's go to that new Italian restaurant!"<br>
+      B: "I <span class="blank-box" id="bl11" style="font-size:24px;min-width:90px">___</span> there twice. The pasta is amazing!"
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="fillBlank(this,'bl11','went already',0,1)">went already</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl11','have already been',1,1)">have already been</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl11','am already going',2,1)">am already going</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl11','was already been',3,1)">was already been</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: Q9 ⭐⭐⭐⭐ 문장 배열 -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q9 도전</div>
+    <div class="question-text">단어를 올바른 순서로 배열하면?<br><small>[ you / have / ridden / ever / a horse ]</small></div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">You have ever ridden a horse?</button>
+      <button class="choice-btn" onclick="answer(this,1)">Ever have you ridden a horse?</button>
+      <button class="choice-btn" onclick="answer(this,2)">Have you ever ridden a horse?</button>
+      <button class="choice-btn" onclick="answer(this,3)">Have ever you ridden a horse?</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- S13: 결과 -->
+<div class="slide" data-type="result">
+  <div class="card">
+    <div class="result-box">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div class="msg">학습 완료!</div>
+      <div class="detail">
+        총 점수: <b><span id="finalScore">0</span>점</b><br>
+        <span id="resultStars">⭐⭐</span>
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=400?'⭐⭐⭐⭐⭐':score>=280?'⭐⭐⭐⭐':score>=140?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=400?'🏆':'🎉';
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Usage quiz (Q3 - slide 6)
+const usageItems=[
+  {sent:'I have visited London twice.',type:'exp'},
+  {sent:'She has just finished her homework.',type:'comp'},
+  {sent:'Have you ever tried kimchi?',type:'exp'},
+  {sent:'He has already left the office.',type:'comp'},
+  {sent:'We have never seen a whale before.',type:'exp'},
+];
+let uIdx=0,uScore=0;
+function initUsage(){uIdx=0;uScore=0;showUsage();}
+function showUsage(){
+  if(uIdx>=usageItems.length){
+    answered[6]=true;
+    if(uScore>=3){playCorrect();addScore(25);setFB('fb6','✅ '+uScore+'/'+usageItems.length+' 맞힘! +25점',true);}
+    else setFB('fb6',uScore+'/'+usageItems.length+' — 경험과 완료를 다시 복습하세요!',false);
+    setTimeout(nextSlide,1200);return;
+  }
+  document.getElementById('useSent').textContent=usageItems[uIdx].sent;
+  document.getElementById('useCount').textContent=(uIdx+1)+' / '+usageItems.length;
+}
+function useAnswer(type){
+  if(answered[6])return;playClick();
+  if(type===usageItems[uIdx].type){uScore++;setFB('fb6','✅ 맞아요!',true);playCorrect();}
+  else{setFB('fb6','❌ '+(usageItems[uIdx].type==='exp'?'경험🌍':'완료✅')+'이에요!',false);playWrong();combo=0;}
+  uIdx++;setTimeout(()=>{setFB('fb6','',true);showUsage();},800);
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.token').forEach(t=>t.className='token');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
+  initUsage();updateUI();
+}
+
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+
+initUsage();updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 1학년 영어 01 - 인사표현</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF9F0;
+  --card: #FFFFFF;
+  --primary: #FF6B9D;
+  --primary-light: #FFE0EB;
+  --secondary: #FFB347;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+  --blue: #42A5F5;
+  --blue-light: #E3F2FD;
+  --purple: #AB47BC;
+  --purple-light: #F3E5F5;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Jua', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex-shrink: 0;
+  z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.sound-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 24px; padding: 4px 8px; border-radius: 10px;
+  transition: background .2s;
+}
+.sound-btn:hover { background: var(--primary-light); }
+.topbar-title { font-size: 20px; color: var(--primary); }
+.page-info { font-size: 18px; color: var(--subtext); }
+.logo {
+  width: 32px; height: 32px; background: #2196F3; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: bold;
+  position: relative;
+}
+.logo::after {
+  content: '⭐'; position: absolute; top: -4px; right: -4px; font-size: 10px;
+}
+
+/* ── SLIDE AREA ── */
+.slide-container {
+  flex: 1; position: relative; overflow: hidden;
+}
+.slide {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform: translateX(60px);
+}
+.slide.active {
+  opacity: 1; pointer-events: auto; transform: translateX(0);
+}
+.slide.exit {
+  opacity: 0; transform: translateX(-60px);
+}
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 28px 24px;
+  max-width: 600px; width: 100%;
+  text-align: center;
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
+}
+.card::-webkit-scrollbar { display: none; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; font-size: 22px; padding: 4px 14px;
+  border-radius: 30px; margin-bottom: 12px;
+}
+.badge-star1 { background: var(--yellow-light); color: #F59E0B; }
+.badge-star2 { background: var(--blue-light); color: #2196F3; }
+.badge-star3 { background: var(--purple-light); color: var(--purple); }
+.badge-star4 { background: var(--red-light); color: var(--red); }
+
+/* ── SLIDE TITLE ── */
+.slide-title { font-size: 26px; margin-bottom: 16px; color: var(--primary); }
+
+/* ── BIG CHARACTER ── */
+.big-char {
+  font-size: 220px; line-height: 1.1; margin: 10px 0;
+  animation: cpop 0.6s ease;
+}
+@keyframes cpop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── WORD DISPLAY ── */
+.word-display {
+  font-size: 64px; margin: 12px 0; color: var(--primary);
+  cursor: pointer; transition: transform 0.2s;
+}
+.word-display:hover { transform: scale(1.08); }
+.word-display:active { transform: scale(0.95); }
+
+.word-sub { font-size: 26px; color: var(--subtext); margin-bottom: 8px; }
+
+/* ── CHARACTER SPEECH ── */
+.character-area {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--primary-light); border-radius: 16px;
+  padding: 14px 18px; margin: 12px 0; text-align: left;
+}
+.character-emoji { font-size: 52px; flex-shrink: 0; }
+.character-speech { font-size: 24px; line-height: 1.5; }
+
+/* ── TTS BUTTON ── */
+.tts-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 40px;
+  padding: 12px 28px; font-family: 'Jua', sans-serif;
+  font-size: 24px; cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin: 8px 4px;
+}
+.tts-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(255,107,157,0.3); }
+.tts-btn:active { transform: scale(0.95); }
+.tts-btn.blue { background: var(--blue); }
+
+/* ── CHOICE BUTTONS ── */
+.choices { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 16px; }
+.choice-btn {
+  background: #fff; border: 3px solid var(--border);
+  border-radius: 16px; padding: 14px 24px;
+  font-family: 'Jua', sans-serif; font-size: 48px;
+  cursor: pointer; transition: all 0.2s;
+  min-width: 120px;
+}
+.choice-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.choice-btn:active { transform: scale(0.95); }
+.choice-btn.correct {
+  border-color: var(--green); background: var(--green-light);
+  animation: bounceIn 0.4s ease;
+}
+.choice-btn.wrong {
+  border-color: var(--red); background: var(--red-light);
+  animation: shake 0.4s ease;
+}
+.choice-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+/* ── VERTICAL CHOICES ── */
+.choices-col {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 14px; align-items: center;
+}
+.choice-btn-col {
+  background: #fff; border: 3px solid var(--border);
+  border-radius: 16px; padding: 12px 20px;
+  font-family: 'Jua', sans-serif; font-size: 28px;
+  cursor: pointer; transition: all 0.2s;
+  width: 100%; max-width: 400px; text-align: center;
+}
+.choice-btn-col:hover { border-color: var(--primary); background: var(--primary-light); }
+.choice-btn-col:active { transform: scale(0.97); }
+.choice-btn-col.correct {
+  border-color: var(--green); background: var(--green-light);
+  animation: bounceIn 0.4s ease;
+}
+.choice-btn-col.wrong {
+  border-color: var(--red); background: var(--red-light);
+  animation: shake 0.4s ease;
+}
+.choice-btn-col.disabled { pointer-events: none; opacity: 0.6; }
+
+/* ── OX BUTTONS ── */
+.ox-choices {
+  display: flex; gap: 20px; justify-content: center; margin-top: 16px;
+}
+.ox-btn {
+  width: 120px; height: 120px; border-radius: 50%;
+  border: 4px solid var(--border); background: #fff;
+  font-size: 64px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.ox-btn:hover { transform: scale(1.1); }
+.ox-btn:active { transform: scale(0.9); }
+.ox-btn.correct { border-color: var(--green); background: var(--green-light); }
+.ox-btn.wrong { border-color: var(--red); background: var(--red-light); animation: shake 0.4s; }
+.ox-btn.disabled { pointer-events: none; opacity: 0.5; }
+
+/* ── MATCHING CARDS ── */
+.match-area {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px;
+}
+.match-card {
+  background: #fff; border: 3px solid var(--border);
+  border-radius: 14px; padding: 12px 18px;
+  font-size: 28px; cursor: pointer;
+  transition: all 0.2s; min-width: 100px;
+}
+.match-card:hover { border-color: var(--primary); }
+.match-card.selected { border-color: var(--secondary); background: #FFF3E0; transform: scale(1.05); }
+.match-card.matched { border-color: var(--green); background: var(--green-light); pointer-events: none; }
+.match-card.wrong-flash { border-color: var(--red); background: var(--red-light); animation: shake 0.4s; }
+
+/* ── SITUATION CARD ── */
+.situation-card {
+  background: var(--yellow-light); border-radius: 16px;
+  padding: 16px; margin: 12px 0; font-size: 26px;
+  border: 2px dashed var(--yellow);
+}
+.situation-emoji { font-size: 64px; margin-bottom: 8px; }
+
+/* ── STORY ── */
+.story-box {
+  background: #FFF8F0; border-radius: 16px; padding: 18px;
+  font-size: 26px; line-height: 1.8; text-align: left;
+  margin: 12px 0; border: 2px solid var(--border);
+}
+.story-blank {
+  display: inline-block; min-width: 100px; height: 40px;
+  border-bottom: 3px solid var(--primary);
+  text-align: center; font-size: 26px; color: var(--primary);
+  vertical-align: bottom; padding: 0 8px;
+}
+
+/* ── QUESTION TEXT ── */
+.q-text { font-size: 26px; margin-bottom: 12px; line-height: 1.5; }
+
+/* ── FEEDBACK ── */
+.feedback {
+  margin-top: 12px; padding: 10px 16px;
+  border-radius: 12px; font-size: 24px;
+  display: none;
+}
+.feedback.show { display: block; animation: cpop 0.3s ease; }
+.feedback.correct-fb { background: var(--green-light); color: #2E7D32; }
+.feedback.wrong-fb { background: var(--red-light); color: #C62828; }
+
+/* ── NAVIGATION ── */
+.nav-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; background: #fff;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06); flex-shrink: 0;
+}
+.nav-btn {
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 40px; padding: 12px 28px;
+  font-family: 'Jua', sans-serif; font-size: 22px;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-btn:hover { transform: scale(1.05); }
+.nav-btn:active { transform: scale(0.95); }
+.nav-btn:disabled { background: #ddd; color: #aaa; cursor: not-allowed; transform: none; }
+.nav-btn.next { background: var(--green); }
+.progress-text { font-size: 18px; color: var(--subtext); }
+
+/* ── RESULT ── */
+.result-score { font-size: 72px; color: var(--primary); margin: 12px 0; }
+.result-stars { font-size: 48px; margin: 8px 0; }
+.result-msg { font-size: 26px; margin: 8px 0; }
+.result-detail { font-size: 22px; color: var(--subtext); margin-top: 8px; }
+.retry-btn {
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 40px; padding: 14px 36px;
+  font-family: 'Jua', sans-serif; font-size: 24px;
+  cursor: pointer; margin-top: 16px;
+  transition: transform 0.2s;
+}
+.retry-btn:hover { transform: scale(1.05); }
+
+/* ── ANIMATIONS ── */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-8px); }
+  40%,80% { transform: translateX(8px); }
+}
+@keyframes bounceIn {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.float { animation: float 2s ease-in-out infinite; }
+
+/* ── ORDER ITEMS ── */
+.order-area {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 14px;
+  align-items: center;
+}
+.order-item {
+  background: #fff; border: 3px solid var(--border);
+  border-radius: 14px; padding: 12px 18px;
+  font-size: 26px; cursor: grab; width: 100%; max-width: 380px;
+  transition: all 0.2s; text-align: center;
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+}
+.order-item:active { cursor: grabbing; }
+.order-item.selected-order { border-color: var(--secondary); background: #FFF3E0; }
+.order-item.placed {
+  border-color: var(--green); background: var(--green-light);
+  pointer-events: none;
+}
+.order-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--primary-light); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+    <span class="topbar-title">인사표현</span>
+  </div>
+  <span class="page-info" id="pageInfo">1 / 12</span>
+  <div class="logo">K</div>
+</div>
+
+<!-- SLIDES -->
+<div class="slide-container" id="slideContainer">
+
+  <!-- SLIDE 0: TITLE -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="big-char">👋</div>
+      <div class="slide-title" style="font-size:32px;">영어로 인사해 보자!</div>
+      <div class="character-area">
+        <div class="character-emoji">🐕</div>
+        <div class="character-speech">안녕! 나는 <b>Kay</b>야!<br>오늘은 영어로 인사하는 법을 배워보자! 🎉</div>
+      </div>
+      <div class="character-area" style="background: var(--blue-light);">
+        <div class="character-emoji">🐩</div>
+        <div class="character-speech">나는 <b>Dew</b>! 같이 재밌게 배워보자! 💕</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 1: CONCEPT - Hello / Hi -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">만났을 때 하는 인사</div>
+      <div class="word-display" onclick="speak('Hello')">Hello!</div>
+      <div class="word-sub">헬로우 — 안녕!</div>
+      <button class="tts-btn" onclick="speak('Hello')">🔊 Hello 듣기</button>
+      <div style="margin-top: 20px;">
+        <div class="word-display" onclick="speak('Hi')" style="color: var(--secondary);">Hi!</div>
+        <div class="word-sub">하이 — 안녕! (친한 사이)</div>
+        <button class="tts-btn blue" onclick="speak('Hi')">🔊 Hi 듣기</button>
+      </div>
+      <div class="character-area" style="margin-top: 16px;">
+        <div class="character-emoji">🐕</div>
+        <div class="character-speech"><b>Hello</b>는 누구에게나, <b>Hi</b>는 친구한테! 둘 다 만났을 때 써요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: CONCEPT - Goodbye / See you -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">헤어질 때 하는 인사</div>
+      <div class="word-display" onclick="speak('Goodbye')" style="color: var(--purple);">Goodbye!</div>
+      <div class="word-sub">굿바이 — 안녕히 가세요!</div>
+      <button class="tts-btn" style="background:var(--purple);" onclick="speak('Goodbye')">🔊 Goodbye 듣기</button>
+      <div style="margin-top: 20px;">
+        <div class="word-display" onclick="speak('See you')" style="color: var(--green); font-size: 56px;">See you!</div>
+        <div class="word-sub">씨유 — 또 봐!</div>
+        <button class="tts-btn" style="background:var(--green);" onclick="speak('See you')">🔊 See you 듣기</button>
+      </div>
+      <div class="character-area" style="background: var(--purple-light);">
+        <div class="character-emoji">🐩</div>
+        <div class="character-speech"><b>Goodbye</b>는 정중하게, <b>See you</b>는 친구한테! 헤어질 때 써요!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Q1 ⭐ 듣기선택 - Hello를 듣고 맞는 뜻 고르기 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="badge badge-star1">⭐ 기본</div>
+      <div class="slide-title">듣고 골라보자!</div>
+      <button class="tts-btn" onclick="speak('Hello')" style="font-size: 28px; margin-bottom: 16px;">🔊 들어보기</button>
+      <div class="q-text">지금 들은 말의 뜻은?</div>
+      <div class="choices" id="q1choices">
+        <button class="choice-btn" onclick="checkAnswer(3, this, 0)">안녕!</button>
+        <button class="choice-btn" onclick="checkAnswer(3, this, 1)">잘 자!</button>
+        <button class="choice-btn" onclick="checkAnswer(3, this, 2)">고마워!</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Q2 ⭐ 상황카드매칭 - 만났을 때 인사 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="badge badge-star1">⭐ 기본</div>
+      <div class="situation-card">
+        <div class="situation-emoji">🏫</div>
+        아침에 학교에서 친구를 만났어요!
+      </div>
+      <div class="q-text">뭐라고 인사할까?</div>
+      <div class="choices-col" id="q2choices">
+        <button class="choice-btn-col" onclick="checkAnswer(4, this, 0)">🙋 Goodbye!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(4, this, 1)">🙋 Hi!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(4, this, 2)">🙋 See you!</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Q3 ⭐⭐ O·X - Goodbye는 만났을 때? -->
+  <div class="slide" data-type="q" data-correct="0" data-score="25">
+    <div class="card">
+      <div class="badge badge-star2">⭐⭐ 발전</div>
+      <div class="slide-title">O · X 퀴즈!</div>
+      <div class="character-area" style="margin-bottom: 16px;">
+        <div class="character-emoji">🐕</div>
+        <div class="character-speech">친구를 만났을 때<br><b>"Goodbye!"</b>라고 인사해요.</div>
+      </div>
+      <div class="q-text">맞으면 ⭕, 틀리면 ❌!</div>
+      <div class="ox-choices" id="q3choices">
+        <button class="ox-btn" onclick="checkOX(5, this, 'O')">⭕</button>
+        <button class="ox-btn" onclick="checkOX(5, this, 'X')">❌</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Q4 ⭐⭐ 순서배치 - 대화 순서 맞추기 -->
+  <div class="slide" data-type="q" data-correct="order" data-score="25">
+    <div class="card">
+      <div class="badge badge-star2">⭐⭐ 발전</div>
+      <div class="slide-title">대화 순서를 맞춰보자!</div>
+      <div class="q-text">Kay와 Dew의 인사를 순서대로 눌러봐!</div>
+      <div class="order-area" id="orderArea">
+        <!-- filled by JS -->
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Q5 ⭐⭐ 카드매칭 - 한국어↔영어 -->
+  <div class="slide" data-type="q" data-correct="match" data-score="25">
+    <div class="card">
+      <div class="badge badge-star2">⭐⭐ 발전</div>
+      <div class="slide-title">짝을 찾아보자!</div>
+      <div class="q-text">같은 뜻끼리 연결해봐! 🔗</div>
+      <div class="match-area" id="matchKor">
+        <!-- filled by JS -->
+      </div>
+      <div style="font-size: 28px; margin: 10px 0;">⬇️</div>
+      <div class="match-area" id="matchEng">
+        <!-- filled by JS -->
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Q6 ⭐⭐⭐ 상황판단 -->
+  <div class="slide" data-type="q" data-correct="2" data-score="50">
+    <div class="card">
+      <div class="badge badge-star3">⭐⭐⭐ 심화</div>
+      <div class="situation-card">
+        <div class="situation-emoji">🌙</div>
+        학교가 끝나고 집에 갈 때,<br>선생님께 인사해요!
+      </div>
+      <div class="q-text">어떻게 인사할까?</div>
+      <div class="choices-col" id="q6choices">
+        <button class="choice-btn-col" onclick="checkAnswer(8, this, 0)">🙋 Hi, teacher!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(8, this, 1)">🙋 Hello, teacher!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(8, this, 2)">🙋 Goodbye, teacher!</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Q7 ⭐⭐⭐ 스토리형 빈칸 -->
+  <div class="slide" data-type="q" data-correct="story" data-score="50">
+    <div class="card">
+      <div class="badge badge-star3">⭐⭐⭐ 심화</div>
+      <div class="slide-title">이야기 속 빈칸을 채워보자! 📖</div>
+      <div class="story-box" id="storyBox">
+        🐕 Kay가 아침에 학교에 갔어요.<br>
+        친구 Dew를 만났어요!<br><br>
+        🐕 Kay: "<span class="story-blank" id="blank1">?</span>"<br>
+        🐩 Dew: "Hi, Kay!"<br><br>
+        수업이 끝나고 집에 갈 시간이에요.<br><br>
+        🐩 Dew: "<span class="story-blank" id="blank2">?</span>, Kay!"<br>
+        🐕 Kay: "See you, Dew!"
+      </div>
+      <div class="q-text" id="storyQ">첫 번째 빈칸에 들어갈 말은?</div>
+      <div class="choices" id="storyChoices">
+        <!-- filled by JS -->
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Q8 ⭐⭐⭐⭐ 종합 상황판단 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="100">
+    <div class="card">
+      <div class="badge badge-star4">⭐⭐⭐⭐ 최심화</div>
+      <div class="slide-title">생각해보자! 🤔</div>
+      <div class="situation-card" style="background: var(--purple-light); border-color: var(--purple);">
+        <div class="situation-emoji">🌍</div>
+        외국에서 온 새 친구가<br>우리 반에 왔어요!<br>처음 만나는 친구예요.
+      </div>
+      <div class="q-text">가장 알맞은 인사는?</div>
+      <div class="choices-col" id="q8choices">
+        <button class="choice-btn-col" onclick="checkAnswer(10, this, 0)">👋 See you!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(10, this, 1)">👋 Hello!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(10, this, 2)">👋 Goodbye!</button>
+        <button class="choice-btn-col" onclick="checkAnswer(10, this, 3)">👋 Hi! Bye!</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card">
+      <div class="slide-title" style="font-size: 30px;">🎉 학습 완료!</div>
+      <div class="result-score" id="resultScore">0점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="result-msg" id="resultMsg">잘했어!</div>
+      <div class="result-detail" id="resultDetail"></div>
+      <div class="character-area" style="margin-top: 16px;">
+        <div class="character-emoji">🐕</div>
+        <div class="character-speech" id="resultKay">대단해! 영어 인사 완벽!</div>
+      </div>
+      <button class="retry-btn" onclick="retry()">🔄 다시 해보기</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="goSlide(-1)" disabled>◀ 이전</button>
+  <span class="progress-text" id="progressText">1 / 12</span>
+  <button class="nav-btn next" id="nextBtn" onclick="goSlide(1)">다음 ▶</button>
+</div>
+
+<script>
+// ── AUDIO ──
+let soundOn = true;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSound(type) {
+  if (!soundOn) return;
+  const ctx = getAudioCtx();
+  ctx.resume().then(() => {
+    if (type === 'correct') {
+      [523,659,784].forEach((f,i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.15, ctx.currentTime + i*0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.12 + 0.3);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + i*0.12); o.stop(ctx.currentTime + i*0.12 + 0.3);
+      });
+    } else if (type === 'wrong') {
+      [220,196].forEach((f,i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.1, ctx.currentTime + i*0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.15 + 0.25);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + i*0.15); o.stop(ctx.currentTime + i*0.15 + 0.25);
+      });
+    } else if (type === 'click') {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.1, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.08);
+    }
+  });
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundToggle').textContent = soundOn ? '🔊' : '🔇';
+}
+function speak(text) {
+  if (!soundOn) return;
+  if (audioCtx) audioCtx.resume();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.75;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+// ── SLIDE NAVIGATION ──
+let cur = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let score = 0;
+let answered = new Set();
+let nextLocked = new Set(); // slides that need answering before next
+
+// Question slides that must be answered
+[3,4,5,6,7,8,9,10].forEach(i => nextLocked.add(i));
+
+function goSlide(dir) {
+  playSound('click');
+  const next = cur + dir;
+  if (next < 0 || next >= total) return;
+  if (dir > 0 && nextLocked.has(cur) && !answered.has(cur)) return;
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('exit');
+  setTimeout(() => slides[cur].classList.remove('exit'), 400);
+  cur = next;
+  slides[cur].classList.add('active');
+  updateNav();
+  if (cur === total - 1) showResult();
+}
+function updateNav() {
+  document.getElementById('pageInfo').textContent = `${cur+1} / ${total}`;
+  document.getElementById('progressText').textContent = `${cur+1} / ${total}`;
+  document.getElementById('prevBtn').disabled = cur === 0;
+  const nb = document.getElementById('nextBtn');
+  if (cur === total - 1) {
+    nb.disabled = true;
+  } else if (nextLocked.has(cur) && !answered.has(cur)) {
+    nb.disabled = true;
+  } else {
+    nb.disabled = false;
+  }
+}
+
+// ── SWIPE ──
+let touchStartX = 0;
+document.getElementById('slideContainer').addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].clientX;
+}, {passive: true});
+document.getElementById('slideContainer').addEventListener('touchend', e => {
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 60) {
+    if (diff > 0) goSlide(-1); else goSlide(1);
+  }
+}, {passive: true});
+
+// ── GENERIC ANSWER CHECK (button choice) ──
+const correctAnswers = { 3: 0, 4: 1, 8: 2, 10: 1 };
+const feedbackCorrect = {
+  3: '🎉 맞아! Hello는 "안녕!"이라는 뜻이야!',
+  4: '🎉 맞아! 만났을 때는 Hi! 라고 인사해!',
+  8: '🎉 맞아! 헤어질 때는 Goodbye!',
+  10: '🎉 맞아! 처음 만나는 친구에게는 Hello!가 가장 알맞아!'
+};
+const feedbackWrong = {
+  3: '🤔 다시 생각해봐! Hello는 만났을 때 하는 인사야.',
+  4: '🤔 만났을 때는 Hi! 또는 Hello! 라고 해봐!',
+  8: '🤔 집에 갈 때는 헤어지는 거지? Goodbye를 써봐!',
+  10: '🤔 처음 만나면 정중하게! Hello가 더 어울려.'
+};
+const scoreMap = { 3: 10, 4: 10, 5: 25, 6: 25, 7: 25, 8: 50, 9: 50, 10: 100 };
+
+function checkAnswer(slideIdx, btn, chosen) {
+  if (answered.has(slideIdx)) return;
+  playSound('click');
+  const correct = correctAnswers[slideIdx];
+  const fb = document.getElementById('fb' + slideIdx);
+  const parent = btn.parentElement;
+  const btns = parent.querySelectorAll('button');
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    fb.textContent = feedbackCorrect[slideIdx];
+    fb.className = 'feedback show correct-fb';
+    playSound('correct');
+    score += scoreMap[slideIdx];
+    answered.add(slideIdx);
+    btns.forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+    setTimeout(() => updateNav(), 300);
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = feedbackWrong[slideIdx];
+    fb.className = 'feedback show wrong-fb';
+    playSound('wrong');
+    setTimeout(() => { btn.classList.remove('wrong'); fb.classList.remove('show'); }, 1200);
+  }
+}
+
+// ── OX QUIZ (slide 5) ──
+function checkOX(slideIdx, btn, val) {
+  if (answered.has(slideIdx)) return;
+  playSound('click');
+  // Goodbye는 만났을 때 인사? → X가 정답
+  const correctVal = 'X';
+  const fb = document.getElementById('fb' + slideIdx);
+  const btns = btn.parentElement.querySelectorAll('.ox-btn');
+
+  if (val === correctVal) {
+    btn.classList.add('correct');
+    fb.textContent = '🎉 맞아! Goodbye는 헤어질 때 하는 인사야!';
+    fb.className = 'feedback show correct-fb';
+    playSound('correct');
+    score += scoreMap[slideIdx];
+    answered.add(slideIdx);
+    btns.forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+    setTimeout(() => updateNav(), 300);
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '🤔 Goodbye는 헤어질 때 쓰는 말이야! 다시 생각해봐!';
+    fb.className = 'feedback show wrong-fb';
+    playSound('wrong');
+    setTimeout(() => { btn.classList.remove('wrong'); fb.classList.remove('show'); }, 1200);
+  }
+}
+
+// ── ORDER QUIZ (slide 6) ──
+const orderCorrect = [
+  '🐕 Kay: "Hello, Dew!"',
+  '🐩 Dew: "Hi, Kay!"',
+  '🐕 Kay: "See you, Dew!"',
+  '🐩 Dew: "Goodbye, Kay!"'
+];
+let orderItems = [];
+let orderPlaced = [];
+
+function initOrder() {
+  const area = document.getElementById('orderArea');
+  area.innerHTML = '';
+  // Shuffle
+  const shuffled = [...orderCorrect];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  orderItems = shuffled;
+  orderPlaced = [];
+  shuffled.forEach((text, idx) => {
+    const div = document.createElement('div');
+    div.className = 'order-item';
+    div.innerHTML = `<span class="order-num">&nbsp;</span><span>${text}</span>`;
+    div.onclick = () => placeOrder(idx, div);
+    area.appendChild(div);
+  });
+}
+function placeOrder(idx, div) {
+  if (answered.has(6)) return;
+  if (div.classList.contains('placed')) return;
+  playSound('click');
+  const nextPos = orderPlaced.length;
+  const expected = orderCorrect[nextPos];
+  const chosen = orderItems[idx];
+
+  if (chosen === expected) {
+    div.classList.add('placed');
+    div.querySelector('.order-num').textContent = nextPos + 1;
+    orderPlaced.push(chosen);
+    playSound('correct');
+    if (orderPlaced.length === orderCorrect.length) {
+      const fb = document.getElementById('fb6');
+      fb.textContent = '🎉 완벽해! 인사 순서를 잘 맞췄어!';
+      fb.className = 'feedback show correct-fb';
+      score += scoreMap[6];
+      answered.add(6);
+      setTimeout(() => updateNav(), 300);
+    }
+  } else {
+    div.classList.add('wrong');
+    div.style.animation = 'shake 0.4s';
+    playSound('wrong');
+    const fb = document.getElementById('fb6');
+    fb.textContent = '🤔 만나면 먼저 인사하고, 헤어질 때 또 인사해! 순서를 생각해봐!';
+    fb.className = 'feedback show wrong-fb';
+    setTimeout(() => {
+      div.classList.remove('wrong');
+      div.style.animation = '';
+      fb.classList.remove('show');
+    }, 1200);
+  }
+}
+
+// ── MATCHING (slide 7) ──
+const matchPairs = [
+  { kor: '안녕!', eng: 'Hello' },
+  { kor: '또 봐!', eng: 'See you' },
+  { kor: '잘 가!', eng: 'Goodbye' }
+];
+let matchSelected = null; // {type, idx, el}
+let matchCount = 0;
+
+function initMatch() {
+  const korArea = document.getElementById('matchKor');
+  const engArea = document.getElementById('matchEng');
+  korArea.innerHTML = ''; engArea.innerHTML = '';
+
+  const korOrder = [0,1,2];
+  const engOrder = [0,1,2];
+  // shuffle eng
+  for (let i = engOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [engOrder[i], engOrder[j]] = [engOrder[j], engOrder[i]];
+  }
+
+  korOrder.forEach(i => {
+    const c = document.createElement('div');
+    c.className = 'match-card';
+    c.textContent = matchPairs[i].kor;
+    c.dataset.pairIdx = i;
+    c.onclick = () => selectMatch('kor', i, c);
+    korArea.appendChild(c);
+  });
+  engOrder.forEach(i => {
+    const c = document.createElement('div');
+    c.className = 'match-card';
+    c.textContent = matchPairs[i].eng;
+    c.dataset.pairIdx = i;
+    c.onclick = () => selectMatch('eng', i, c);
+    engArea.appendChild(c);
+  });
+}
+function selectMatch(type, idx, el) {
+  if (answered.has(7)) return;
+  if (el.classList.contains('matched')) return;
+  playSound('click');
+
+  if (!matchSelected) {
+    matchSelected = {type, idx, el};
+    el.classList.add('selected');
+  } else {
+    if (matchSelected.type === type) {
+      matchSelected.el.classList.remove('selected');
+      matchSelected = {type, idx, el};
+      el.classList.add('selected');
+    } else {
+      // Check match
+      if (matchSelected.idx === idx) {
+        matchSelected.el.classList.remove('selected');
+        matchSelected.el.classList.add('matched');
+        el.classList.add('matched');
+        playSound('correct');
+        matchCount++;
+        matchSelected = null;
+        if (matchCount === matchPairs.length) {
+          const fb = document.getElementById('fb7');
+          fb.textContent = '🎉 짝을 모두 찾았어! 대단해!';
+          fb.className = 'feedback show correct-fb';
+          score += scoreMap[7];
+          answered.add(7);
+          setTimeout(() => updateNav(), 300);
+        }
+      } else {
+        el.classList.add('wrong-flash');
+        matchSelected.el.classList.add('wrong-flash');
+        playSound('wrong');
+        const prevEl = matchSelected.el;
+        matchSelected = null;
+        setTimeout(() => {
+          el.classList.remove('wrong-flash','selected');
+          prevEl.classList.remove('wrong-flash','selected');
+        }, 600);
+      }
+    }
+  }
+}
+
+// ── STORY QUIZ (slide 9) ──
+let storyStep = 0; // 0 = first blank, 1 = second blank
+const storyAnswers = ['Hello', 'Goodbye'];
+const storyOptions = [
+  ['Hello', 'See you', 'Goodbye'],
+  ['Hi', 'Goodbye', 'Hello']
+];
+const storyCorrectIdx = [0, 1];
+
+function initStory() {
+  storyStep = 0;
+  renderStoryChoices();
+}
+function renderStoryChoices() {
+  const area = document.getElementById('storyChoices');
+  const qText = document.getElementById('storyQ');
+  area.innerHTML = '';
+  if (storyStep === 0) {
+    qText.textContent = '첫 번째 빈칸에 들어갈 말은?';
+  } else {
+    qText.textContent = '두 번째 빈칸에 들어갈 말은?';
+  }
+  storyOptions[storyStep].forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.style.fontSize = '36px';
+    btn.onclick = () => checkStory(btn, i);
+    area.appendChild(btn);
+  });
+}
+function checkStory(btn, idx) {
+  if (storyStep >= 2) return;
+  playSound('click');
+  const fb = document.getElementById('fb9');
+  if (idx === storyCorrectIdx[storyStep]) {
+    btn.classList.add('correct');
+    playSound('correct');
+    const blankId = storyStep === 0 ? 'blank1' : 'blank2';
+    document.getElementById(blankId).textContent = storyAnswers[storyStep];
+    document.getElementById(blankId).style.color = 'var(--green)';
+    document.getElementById(blankId).style.borderColor = 'var(--green)';
+
+    if (storyStep === 0) {
+      fb.textContent = '🎉 맞아! 만났을 때는 Hello!';
+      fb.className = 'feedback show correct-fb';
+      storyStep = 1;
+      setTimeout(() => {
+        fb.classList.remove('show');
+        renderStoryChoices();
+      }, 1200);
+    } else {
+      fb.textContent = '🎉 완벽해! 이야기를 완성했어!';
+      fb.className = 'feedback show correct-fb';
+      score += scoreMap[9];
+      answered.add(9);
+      const btns = document.getElementById('storyChoices').querySelectorAll('button');
+      btns.forEach(b => b.classList.add('disabled'));
+      setTimeout(() => updateNav(), 300);
+    }
+  } else {
+    btn.classList.add('wrong');
+    playSound('wrong');
+    if (storyStep === 0) {
+      fb.textContent = '🤔 Kay가 친구를 만났을 때는... Hello!';
+    } else {
+      fb.textContent = '🤔 Dew가 헤어질 때는... Goodbye!';
+    }
+    fb.className = 'feedback show wrong-fb';
+    setTimeout(() => { btn.classList.remove('wrong'); fb.classList.remove('show'); }, 1200);
+  }
+}
+
+// ── RESULT ──
+function showResult() {
+  const maxScore = 10+10+25+25+25+50+50+100; // 295
+  const pct = Math.round(score / maxScore * 100);
+  document.getElementById('resultScore').textContent = score + '점';
+
+  let stars = '', msg = '', kayMsg = '';
+  if (pct >= 90) { stars = '⭐⭐⭐'; msg = '🏆 완벽해! 영어 인사 마스터!'; kayMsg = '우와! 너무 잘했어! 인사 천재야! 🐕✨'; }
+  else if (pct >= 70) { stars = '⭐⭐'; msg = '👏 아주 잘했어!'; kayMsg = '멋져! 조금만 더 연습하면 완벽해! 🐕💪'; }
+  else if (pct >= 40) { stars = '⭐'; msg = '💪 잘하고 있어!'; kayMsg = '괜찮아! 다시 해보면 더 잘할 수 있어! 🐕❤️'; }
+  else { stars = '☆'; msg = '🌱 한 번 더 도전해보자!'; kayMsg = '걱정 마! 천천히 다시 해보자! 🐕🌈'; }
+
+  document.getElementById('resultStars').textContent = stars;
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('resultDetail').textContent = `총점: ${score}점 / ${maxScore}점 (${pct}%)`;
+  document.getElementById('resultKay').textContent = kayMsg;
+}
+
+function retry() {
+  score = 0;
+  answered.clear();
+  // Reset all buttons
+  document.querySelectorAll('.choice-btn, .choice-btn-col, .ox-btn, .match-card, .order-item').forEach(el => {
+    el.classList.remove('correct','wrong','disabled','matched','placed','selected','wrong-flash','selected-order');
+    el.style.animation = '';
+  });
+  document.querySelectorAll('.order-num').forEach(n => n.innerHTML = '&nbsp;');
+  document.querySelectorAll('.feedback').forEach(fb => { fb.className = 'feedback'; fb.textContent = ''; });
+  document.getElementById('blank1').textContent = '?';
+  document.getElementById('blank1').style.color = '';
+  document.getElementById('blank1').style.borderColor = '';
+  document.getElementById('blank2').textContent = '?';
+  document.getElementById('blank2').style.color = '';
+  document.getElementById('blank2').style.borderColor = '';
+
+  matchCount = 0; matchSelected = null;
+  initOrder(); initMatch(); initStory();
+
+  slides[cur].classList.remove('active');
+  cur = 0;
+  slides[0].classList.add('active');
+  updateNav();
+}
+
+// ── INIT ──
+initOrder();
+initMatch();
+initStory();
+updateNav();
+</script>
+</body>
+</html>

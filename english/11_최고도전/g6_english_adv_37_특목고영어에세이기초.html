@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 6학년 영어 심화 37 — 특목고 영어에세이 기초</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F8FAFC;--card:#FFFFFF;--primary:#0F4C75;--primary-light:#DBEAFE;
+  --secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;
+  --red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;
+  --subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.sound-btn:hover{background:var(--primary-light)}
+.topbar-title{font-size:15px;font-weight:700;color:var(--primary)}
+.logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative}
+.logo::after{content:'✦';position:absolute;top:-2px;right:-2px;font-size:10px;color:var(--yellow)}
+.progress-wrap{padding:6px 20px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:var(--secondary);transition:width .4s;border-radius:2px}
+.progress-text{font-size:12px;color:var(--subtext);text-align:right;margin-top:2px}
+.slide-area{flex:1;overflow:hidden;position:relative}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;transform:translateX(40px)}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:85vh;overflow-y:auto}
+.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:12px}
+.concept-text{font-size:18px;line-height:1.7;color:var(--text);margin-bottom:12px}
+.concept-highlight{background:var(--primary-light);padding:16px 20px;border-radius:12px;border-left:4px solid var(--secondary);margin:12px 0;font-size:17px;line-height:1.7}
+.question-text{font-size:22px;font-weight:700;color:var(--text);margin-bottom:16px;line-height:1.5}
+.passage{background:#F1F5F9;padding:20px;border-radius:12px;font-size:18px;line-height:1.8;margin-bottom:16px;color:var(--text)}
+.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.choice-grid{display:flex;flex-direction:column;gap:10px}
+.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;text-align:left;transition:all .2s;font-family:'Noto Sans KR',sans-serif;line-height:1.4}
+.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light)}
+.choice-btn.correct{border-color:var(--green);background:var(--green-light)}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.choice-btn.disabled{pointer-events:none;opacity:.7}
+.ox-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ox-btn{border:2px solid var(--border);border-radius:14px;padding:20px;font-size:36px;cursor:pointer;background:#fff;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.ox-btn span{font-size:16px}
+.ox-btn:hover{border-color:var(--secondary)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.blank-sentence{font-size:20px;line-height:2;margin-bottom:16px}
+.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--secondary);text-align:center;font-size:20px;font-weight:700;color:var(--secondary);padding:2px 8px;margin:0 4px;min-height:32px}
+.blank-options{display:flex;flex-wrap:wrap;gap:8px}
+.blank-opt{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:18px;cursor:pointer;transition:all .2s}
+.blank-opt:hover{border-color:var(--secondary);background:var(--primary-light)}
+.blank-opt.correct{border-color:var(--green);background:var(--green-light)}
+.blank-opt.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.blank-opt.disabled{pointer-events:none;opacity:.6}
+.order-area{display:flex;flex-direction:column;gap:8px}
+.order-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px 16px;font-size:17px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.order-item .num{background:var(--primary);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.order-item:hover{border-color:var(--secondary)}
+.order-item.placed{border-color:var(--secondary);background:var(--primary-light)}
+.match-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.match-left,.match-right{display:flex;flex-direction:column;gap:8px}
+.match-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px 16px;font-size:17px;cursor:pointer;transition:all .2s;text-align:center}
+.match-item:hover{border-color:var(--secondary)}
+.match-item.selected{border-color:var(--secondary);background:var(--primary-light)}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none}
+.match-item.wrong-match{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.toggle-grid{display:flex;flex-direction:column;gap:10px}
+.toggle-row{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:all .2s}
+.toggle-row:hover{border-color:var(--secondary)}
+.toggle-indicator{width:48px;height:28px;background:var(--border);border-radius:14px;position:relative;transition:background .3s;flex-shrink:0}
+.toggle-indicator::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-row.on .toggle-indicator{background:var(--secondary)}
+.toggle-row.on .toggle-indicator::after{transform:translateX(20px)}
+.toggle-label{font-size:17px;line-height:1.4}
+.toggle-row.correct-toggle{border-color:var(--green);background:var(--green-light)}
+.toggle-row.wrong-toggle{border-color:var(--red);background:var(--red-light)}
+.feedback{margin-top:12px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;line-height:1.5}
+.feedback.show{display:block}
+.feedback.correct-fb{background:var(--green-light);color:#166534}
+.feedback.wrong-fb{background:var(--red-light);color:#991B1B}
+.nav-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:background .2s}
+.nav-btn:hover{background:var(--secondary)}
+.nav-btn:disabled{background:var(--border);color:var(--subtext);cursor:default}
+.score-display{font-size:15px;font-weight:700;color:var(--primary)}
+.result-score{font-size:72px;font-weight:900;color:var(--primary);text-align:center;margin:20px 0}
+.result-grade{font-size:24px;text-align:center;margin-bottom:16px}
+.result-detail{font-size:16px;color:var(--subtext);line-height:1.8}
+.essay-structure{display:grid;gap:8px;margin:12px 0}
+.essay-part{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px 16px;font-size:16px;line-height:1.6}
+.essay-part strong{color:var(--primary)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="topbar-title">특목고 영어에세이 기초</div>
+  <div class="logo">K</div>
+</div>
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">1 / 14</div>
+</div>
+<div class="slide-area" id="slideArea">
+
+  <!-- S0: INTRO -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 특목고 대비</div>
+      <div class="slide-title">✍️ 영어 에세이 기초 — Prompt 분석 → 개요 → 초안</div>
+      <div class="concept-text">특목고 에세이 시험에서는 <strong>주어진 Prompt(주제문)를 정확히 분석</strong>하고, <strong>개요를 잡은 뒤</strong>, <strong>논리적인 초안</strong>을 작성해야 합니다.</div>
+      <div class="concept-highlight">
+        📌 <strong>에세이 작성 3단계</strong><br><br>
+        1️⃣ <strong>Prompt Analysis</strong> — 주제문에서 핵심 요구 파악<br>
+        2️⃣ <strong>Outline</strong> — 서론·본론·결론 개요 작성<br>
+        3️⃣ <strong>Draft</strong> — 개요를 바탕으로 초안 작성
+      </div>
+    </div>
+  </div>
+
+  <!-- S1: CONCEPT — Prompt Analysis -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">🔍 Step 1: Prompt 분석법</div>
+      <div class="concept-highlight">
+        Prompt를 읽으면 3가지를 찾으세요:<br><br>
+        🔹 <strong>Topic</strong> — 무엇에 대해 쓰는가?<br>
+        🔹 <strong>Task</strong> — 무엇을 해야 하는가? (agree/disagree, compare, explain...)<br>
+        🔹 <strong>Scope</strong> — 범위 제한이 있는가? (학교, 학생, 기술 등)
+      </div>
+      <div class="passage" style="margin-top:12px">
+        <strong>예시 Prompt:</strong><br>
+        "Do you agree or disagree that students should wear school uniforms? Support your opinion with specific reasons and examples."
+      </div>
+      <div class="essay-structure">
+        <div class="essay-part">📍 <strong>Topic:</strong> school uniforms</div>
+        <div class="essay-part">📍 <strong>Task:</strong> agree or disagree (의견 제시)</div>
+        <div class="essay-part">📍 <strong>Scope:</strong> students, specific reasons and examples</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: Q1 — 선택형: Prompt에서 Task 찾기 -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 선택형</div>
+      <div class="question-text">Q1. 다음 Prompt의 Task(요구 사항)는?</div>
+      <div class="passage">"Compare the advantages and disadvantages of online learning versus traditional classroom learning."</div>
+      <div class="choice-grid" id="q1Choices"></div>
+      <div class="feedback" id="q1Fb"></div>
+    </div>
+  </div>
+
+  <!-- S3: Q2 — 카드매칭: Prompt 요소 분석 -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 카드 매칭</div>
+      <div class="question-text">Q2. Prompt 요소를 올바르게 연결하세요.</div>
+      <div class="passage" style="font-size:16px">"Explain why reading books is more beneficial than watching TV for teenagers."</div>
+      <div class="match-area">
+        <div class="match-left" id="matchLeft2"></div>
+        <div class="match-right" id="matchRight2"></div>
+      </div>
+      <div class="feedback" id="q2Fb"></div>
+    </div>
+  </div>
+
+  <!-- S4: CONCEPT — Essay Structure -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📐 Step 2: 에세이 구조 (5-Paragraph Essay)</div>
+      <div class="concept-highlight">
+        <strong>Introduction (서론)</strong><br>
+        → Hook(흥미 유발) + Background + <strong>Thesis Statement(주장)</strong><br><br>
+        <strong>Body 1 (본론 1)</strong><br>
+        → Topic Sentence + Supporting Detail + Example<br><br>
+        <strong>Body 2 (본론 2)</strong><br>
+        → Topic Sentence + Supporting Detail + Example<br><br>
+        <strong>Body 3 (본론 3, 선택)</strong><br>
+        → 추가 근거 또는 반론 인정(Counter-argument)<br><br>
+        <strong>Conclusion (결론)</strong><br>
+        → Thesis 재진술 + Summary + Final Thought
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: Q3 — 순서배열: 에세이 구조 순서 -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 순서 배열</div>
+      <div class="question-text">Q3. 에세이의 올바른 구조 순서를 만드세요.</div>
+      <div class="order-area" id="q3Area"></div>
+      <div class="feedback" id="q3Fb"></div>
+    </div>
+  </div>
+
+  <!-- S6: Q4 — 선택형: Thesis Statement 고르기 -->
+  <div class="slide" data-type="q" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 선택형</div>
+      <div class="question-text">Q4. 가장 좋은 Thesis Statement(주장문)은?</div>
+      <div class="passage" style="font-size:16px">Prompt: "Should schools teach coding as a required subject?"</div>
+      <div class="choice-grid" id="q4Choices"></div>
+      <div class="feedback" id="q4Fb"></div>
+    </div>
+  </div>
+
+  <!-- S7: Q5 — O/X: Thesis Statement 판단 -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ O/X 판단</div>
+      <div class="question-text">Q5. 다음은 좋은 Thesis Statement일까요?</div>
+      <div class="passage">"Coding is good."</div>
+      <div class="ox-grid" id="q5Ox"></div>
+      <div class="feedback" id="q5Fb"></div>
+    </div>
+  </div>
+
+  <!-- S8: CONCEPT — Outline 작성법 -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📝 Step 2b: Outline(개요) 작성법</div>
+      <div class="concept-highlight">
+        Prompt: "Should schools ban junk food?"<br><br>
+        <strong>I. Introduction</strong><br>
+        &nbsp;&nbsp;- Hook: childhood obesity statistics<br>
+        &nbsp;&nbsp;- Thesis: Schools should ban junk food because...<br><br>
+        <strong>II. Body 1:</strong> Health benefits<br>
+        &nbsp;&nbsp;- Detail: reduces obesity risk<br>
+        &nbsp;&nbsp;- Example: a school in Seoul...<br><br>
+        <strong>III. Body 2:</strong> Better concentration<br>
+        &nbsp;&nbsp;- Detail: sugar crashes affect focus<br>
+        &nbsp;&nbsp;- Example: research shows...<br><br>
+        <strong>IV. Conclusion</strong><br>
+        &nbsp;&nbsp;- Restate thesis + call to action
+      </div>
+    </div>
+  </div>
+
+  <!-- S9: Q6 — 토글: Outline에 포함되어야 할 요소 -->
+  <div class="slide" data-type="q" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 토글 판단</div>
+      <div class="question-text">Q6. 에세이 Outline에 반드시 포함되어야 할 요소를 모두 ON 하세요.</div>
+      <div class="toggle-grid" id="q6Toggles"></div>
+      <button class="nav-btn" style="margin-top:16px;width:100%" onclick="checkQ6()">확인</button>
+      <div class="feedback" id="q6Fb"></div>
+    </div>
+  </div>
+
+  <!-- S10: Q7 — 빈칸: Topic Sentence -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ 빈칸 채우기</div>
+      <div class="question-text">Q7. Body 1의 Topic Sentence 빈칸을 채우세요.</div>
+      <div class="passage" style="font-size:16px">에세이 주제: "Schools should teach coding."</div>
+      <div class="blank-sentence">"<span class="blank-box" id="blank7"></span>, coding develops critical thinking and problem-solving skills."</div>
+      <div class="blank-options" id="q7Opts"></div>
+      <div class="feedback" id="q7Fb"></div>
+    </div>
+  </div>
+
+  <!-- S11: Q8 — 순서배열: Introduction 문장 순서 -->
+  <div class="slide" data-type="q" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 순서 배열</div>
+      <div class="question-text">Q8. 서론(Introduction)의 문장을 올바른 순서로 배열하세요.</div>
+      <div class="order-area" id="q8Area"></div>
+      <div class="feedback" id="q8Fb"></div>
+    </div>
+  </div>
+
+  <!-- S12: Q9 — 선택형: Conclusion 문장 -->
+  <div class="slide" data-type="q" data-score="100">
+    <div class="card">
+      <div class="badge">⭐⭐⭐⭐ 선택형</div>
+      <div class="question-text">Q9. 에세이 결론으로 가장 적절한 문장은?</div>
+      <div class="passage" style="font-size:16px">주제: "Schools should ban junk food."</div>
+      <div class="choice-grid" id="q9Choices"></div>
+      <div class="feedback" id="q9Fb"></div>
+    </div>
+  </div>
+
+  <!-- S13: Q10 — O/X: 에세이 실수 판단 -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="card">
+      <div class="badge">⭐⭐⭐ O/X 판단</div>
+      <div class="question-text">Q10. 아래 에세이 습관은 올바를까요?</div>
+      <div class="passage">"에세이를 쓸 때 Outline 없이 바로 초안을 작성하면 시간을 절약할 수 있다."</div>
+      <div class="ox-grid" id="q10Ox"></div>
+      <div class="feedback" id="q10Fb"></div>
+    </div>
+  </div>
+
+  <!-- S14: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">✍️ 에세이 기초 완료!</div>
+      <div class="result-score" id="finalScore">0</div>
+      <div class="result-grade" id="finalGrade"></div>
+      <div class="result-detail" id="finalDetail"></div>
+    </div>
+  </div>
+
+</div>
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>← 이전</button>
+  <div class="score-display">점수: <span id="scoreSpan">0</span></div>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button>
+</div>
+
+<script>
+let soundOn=true,audioCtx;
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function playTone(f,t,d){if(!soundOn)return;const c=getAudioCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;g.gain.value=.15;g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d)})}
+function playCorrect(){playTone(523,'sine',.12);setTimeout(()=>playTone(659,'sine',.12),120);setTimeout(()=>playTone(784,'sine',.2),240)}
+function playWrong(){playTone(220,'sawtooth',.15);setTimeout(()=>playTone(196,'sawtooth',.2),150)}
+function playClick(){playTone(880,'sine',.06)}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+
+const slides=document.querySelectorAll('.slide');
+let cur=0,score=0,answered={};
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));cur=n;document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===slides.length-1?'완료':'다음 →';document.getElementById('nextBtn').disabled=n===slides.length-1;document.getElementById('progressFill').style.width=((n+1)/slides.length*100)+'%';document.getElementById('progressText').textContent=(n+1)+' / '+slides.length}
+function nextSlide(){if(cur<slides.length-1){showSlide(cur+1);if(slides[cur+1].dataset.type==='result')showResult()}}
+function prevSlide(){if(cur>0)showSlide(cur-1)}
+let touchX=0;
+document.getElementById('slideArea').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX});
+document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-touchX;if(d>50)prevSlide();else if(d<-50)nextSlide()});
+function addScore(pts,qId){if(answered[qId])return false;answered[qId]=true;score+=pts;document.getElementById('scoreSpan').textContent=score;return true}
+function showFeedback(id,ok,msg){const fb=document.getElementById(id);fb.className='feedback show '+(ok?'correct-fb':'wrong-fb');fb.textContent=msg}
+
+// Q1: 선택형 — Task 찾기
+(function(){
+  const choices=["Agree or disagree (의견 제시)","Compare (비교)","Explain (설명)","Describe (묘사)"];
+  const c=document.getElementById('q1Choices');
+  choices.forEach((ch,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.textContent=ch;
+    btn.onclick=function(){if(answered['q1'])return;playClick();
+      if(i===1){addScore(50,'q1');playCorrect();btn.classList.add('correct');showFeedback('q1Fb',true,'정답! "Compare the advantages and disadvantages"는 비교(Compare) 유형입니다.')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q1Fb',false,'"Compare"가 핵심 키워드입니다. 장단점 비교를 요구하고 있어요.');answered['q1']=true}
+      c.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'))};
+    c.appendChild(btn)});
+})();
+
+// Q2: 카드매칭 — Prompt 분석
+(function(){
+  const pairs=[
+    {q:'Topic',a:'reading vs watching TV'},
+    {q:'Task',a:'explain why'},
+    {q:'Scope',a:'teenagers'}
+  ];
+  const leftDiv=document.getElementById('matchLeft2'),rightDiv=document.getElementById('matchRight2');
+  const shuffledR=[...pairs].sort(()=>Math.random()-.5);
+  let selLeft=null,mc=0;
+  pairs.forEach((p,i)=>{const div=document.createElement('div');div.className='match-item';div.textContent=p.q;div.dataset.idx=String(i);
+    div.onclick=function(){if(div.classList.contains('matched'))return;playClick();leftDiv.querySelectorAll('.match-item').forEach(m=>m.classList.remove('selected'));div.classList.add('selected');selLeft=i};leftDiv.appendChild(div)});
+  shuffledR.forEach(p=>{const oi=pairs.findIndex(pp=>pp.a===p.a);const div=document.createElement('div');div.className='match-item';div.textContent=p.a;
+    div.onclick=function(){if(selLeft===null||div.classList.contains('matched'))return;playClick();
+      if(selLeft===oi){div.classList.add('matched');leftDiv.querySelectorAll('.match-item')[selLeft].classList.add('matched');mc++;playCorrect();if(mc===3){addScore(50,'q2');showFeedback('q2Fb',true,'완벽! Topic·Task·Scope를 정확히 파악했습니다.')}}
+      else{div.classList.add('wrong-match');setTimeout(()=>div.classList.remove('wrong-match'),500);playWrong()}
+      selLeft=null;leftDiv.querySelectorAll('.match-item').forEach(m=>m.classList.remove('selected'))};rightDiv.appendChild(div)});
+})();
+
+// Q3: 순서배열 — 에세이 구조
+(function(){
+  const items=[
+    {id:0,text:'Introduction — Hook + Background + Thesis'},
+    {id:1,text:'Body 1 — First supporting reason + example'},
+    {id:2,text:'Body 2 — Second supporting reason + example'},
+    {id:3,text:'Conclusion — Restate thesis + summary + final thought'}
+  ];
+  const shuffled=[...items].sort(()=>Math.random()-.5);
+  const area=document.getElementById('q3Area');let sel=[];
+  shuffled.forEach(item=>{const div=document.createElement('div');div.className='order-item';div.innerHTML='<div class="num">?</div><span>'+item.text+'</span>';
+    div.onclick=function(){if(answered['q3']||div.classList.contains('placed'))return;playClick();sel.push(item.id);div.classList.add('placed');div.querySelector('.num').textContent=sel.length;
+      if(sel.length===4){const ok=sel.join('')==='0123';if(ok){addScore(50,'q3');playCorrect();showFeedback('q3Fb',true,'정답! Introduction → Body 1 → Body 2 → Conclusion')}else{playWrong();showFeedback('q3Fb',false,'에세이 구조: 서론 → 본론1 → 본론2 → 결론');answered['q3']=true}}};
+    area.appendChild(div)});
+})();
+
+// Q4: 선택형 — Thesis Statement
+(function(){
+  const choices=[
+    "Coding is interesting.",
+    "Schools should teach coding as a required subject because it develops logical thinking, prepares students for future careers, and enhances creativity.",
+    "Some people think coding is important.",
+    "I like coding a lot."
+  ];
+  const c=document.getElementById('q4Choices');
+  choices.forEach((ch,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.textContent=ch;
+    btn.onclick=function(){if(answered['q4'])return;playClick();
+      if(i===1){addScore(100,'q4');playCorrect();btn.classList.add('correct');showFeedback('q4Fb',true,'훌륭합니다! 주장 + 3가지 이유가 명확한 Thesis Statement입니다.')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q4Fb',false,'Thesis Statement는 주장 + 구체적 이유를 포함해야 합니다.');answered['q4']=true}
+      c.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'))};
+    c.appendChild(btn)});
+})();
+
+// Q5: O/X
+(function(){
+  const grid=document.getElementById('q5Ox');
+  [{label:'X',val:1,emoji:'❌'},{label:'O',val:0,emoji:'⭕'}].forEach(item=>{
+    const btn=document.createElement('button');btn.className='ox-btn';btn.innerHTML=item.emoji+'<span>'+item.label+'</span>';
+    btn.onclick=function(){if(answered['q5'])return;playClick();
+      if(item.val===1){addScore(50,'q5');playCorrect();btn.classList.add('correct');showFeedback('q5Fb',true,'정답! "Coding is good"은 너무 막연합니다. 구체적 이유와 범위가 필요합니다.')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q5Fb',false,'"Coding is good"은 구체적 이유가 없어 약한 Thesis입니다.');answered['q5']=true}
+      grid.querySelectorAll('.ox-btn').forEach(b=>{if(b!==btn)b.style.opacity='.5';b.style.pointerEvents='none'})};
+    grid.appendChild(btn)});
+})();
+
+// Q6: 토글
+(function(){
+  const items=[
+    {text:'Thesis Statement (주장문)',good:true},
+    {text:'개인적인 일기 내용',good:false},
+    {text:'각 Body 단락의 Topic Sentence',good:true},
+    {text:'Supporting Details & Examples',good:true},
+    {text:'좋아하는 음식 목록',good:false},
+    {text:'Conclusion의 핵심 메시지',good:true}
+  ];
+  const c=document.getElementById('q6Toggles');
+  items.forEach(item=>{const row=document.createElement('div');row.className='toggle-row';
+    row.innerHTML='<div class="toggle-indicator"></div><div class="toggle-label">'+item.text+'</div>';
+    row.dataset.good=item.good;row.dataset.on='false';
+    row.onclick=function(){if(answered['q6'])return;playClick();const isOn=row.dataset.on==='true';row.dataset.on=isOn?'false':'true';row.classList.toggle('on',!isOn)};
+    c.appendChild(row)});
+})();
+function checkQ6(){
+  if(answered['q6'])return;
+  const rows=document.querySelectorAll('#q6Toggles .toggle-row');let ok=true;
+  rows.forEach(r=>{const isOn=r.dataset.on==='true';const should=r.dataset.good==='true';if(isOn===should)r.classList.add('correct-toggle');else{r.classList.add('wrong-toggle');ok=false}});
+  if(ok){addScore(100,'q6');playCorrect();showFeedback('q6Fb',true,'완벽! Outline의 필수 요소를 정확히 알고 있습니다.')}
+  else{playWrong();showFeedback('q6Fb',false,'Outline에는 Thesis, Topic Sentences, Supporting Details, Conclusion 메시지가 포함됩니다.')}
+  answered['q6']=true;
+}
+
+// Q7: 빈칸
+(function(){
+  const opts=['First of all','However','In conclusion','On the other hand'];
+  const c=document.getElementById('q7Opts');
+  opts.forEach((o,i)=>{const btn=document.createElement('button');btn.className='blank-opt';btn.textContent=o;
+    btn.onclick=function(){if(answered['q7'])return;playClick();document.getElementById('blank7').textContent=o;
+      if(i===0){addScore(50,'q7');playCorrect();btn.classList.add('correct');showFeedback('q7Fb',true,'정답! "First of all"은 Body 1의 Topic Sentence를 시작하는 전형적 표현입니다.')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q7Fb',false,'Body 1을 시작할 때는 "First of all", "To begin with" 등의 표현을 씁니다.');answered['q7']=true}
+      c.querySelectorAll('.blank-opt').forEach(b=>b.classList.add('disabled'))};
+    c.appendChild(btn)});
+})();
+
+// Q8: 순서배열 — Introduction 문장
+(function(){
+  const items=[
+    {id:0,text:'Hook: "In today\'s digital age, technology is transforming every aspect of our lives."'},
+    {id:1,text:'Background: "Education is no exception, as schools worldwide are adopting new tools."'},
+    {id:2,text:'Thesis: "I believe coding should be a required subject because it builds logical thinking, prepares students for careers, and fosters creativity."'}
+  ];
+  const shuffled=[...items].sort(()=>Math.random()-.5);
+  const area=document.getElementById('q8Area');let sel=[];
+  shuffled.forEach(item=>{const div=document.createElement('div');div.className='order-item';div.innerHTML='<div class="num">?</div><span>'+item.text+'</span>';
+    div.onclick=function(){if(answered['q8']||div.classList.contains('placed'))return;playClick();sel.push(item.id);div.classList.add('placed');div.querySelector('.num').textContent=sel.length;
+      if(sel.length===3){const ok=sel.join('')==='012';if(ok){addScore(100,'q8');playCorrect();showFeedback('q8Fb',true,'완벽! Hook → Background → Thesis 순서가 정확합니다.')}else{playWrong();showFeedback('q8Fb',false,'Introduction 순서: Hook(흥미유발) → Background(배경) → Thesis(주장)');answered['q8']=true}}};
+    area.appendChild(div)});
+})();
+
+// Q9: 선택형 — Conclusion
+(function(){
+  const choices=[
+    "In conclusion, junk food is bad.",
+    "To sum up, junk food should be banned, and also we should talk about climate change.",
+    "In conclusion, schools should ban junk food to protect students' health and improve academic performance. By making this change, we can build a healthier future for the next generation.",
+    "That's all I have to say about junk food."
+  ];
+  const c=document.getElementById('q9Choices');
+  choices.forEach((ch,i)=>{const btn=document.createElement('button');btn.className='choice-btn';btn.textContent=ch;
+    btn.onclick=function(){if(answered['q9'])return;playClick();
+      if(i===2){addScore(100,'q9');playCorrect();btn.classList.add('correct');showFeedback('q9Fb',true,'훌륭합니다! Thesis 재진술 + 요약 + Final Thought까지 갖춘 모범적 결론입니다.')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q9Fb',false,'결론은 Thesis 재진술 + 본론 요약 + 마무리 메시지로 구성합니다.');answered['q9']=true}
+      c.querySelectorAll('.choice-btn').forEach(b=>b.classList.add('disabled'))};
+    c.appendChild(btn)});
+})();
+
+// Q10: O/X
+(function(){
+  const grid=document.getElementById('q10Ox');
+  [{label:'X',val:1,emoji:'❌'},{label:'O',val:0,emoji:'⭕'}].forEach(item=>{
+    const btn=document.createElement('button');btn.className='ox-btn';btn.innerHTML=item.emoji+'<span>'+item.label+'</span>';
+    btn.onclick=function(){if(answered['q10'])return;playClick();
+      if(item.val===1){addScore(50,'q10');playCorrect();btn.classList.add('correct');showFeedback('q10Fb',true,'정답! Outline 없이 쓰면 논리가 흐트러지고 수정에 더 많은 시간이 듭니다. Outline을 먼저 잡는 것이 핵심!')}
+      else{playWrong();btn.classList.add('wrong');showFeedback('q10Fb',false,'Outline은 시간 낭비가 아닙니다. 오히려 논리적 글을 더 빠르게 완성하게 해줍니다.');answered['q10']=true}
+      grid.querySelectorAll('.ox-btn').forEach(b=>{if(b!==btn)b.style.opacity='.5';b.style.pointerEvents='none'})};
+    grid.appendChild(btn)});
+})();
+
+function showResult(){
+  const max=700,pct=Math.round(score/max*100);
+  document.getElementById('finalScore').textContent=score+'점';
+  let g='',d='';
+  if(pct>=90){g='🏆 Essay Expert!';d='에세이 구조를 완벽히 이해했습니다. 심화편에서 실전 작성을 연습하세요!'}
+  else if(pct>=70){g='👏 Strong Writer!';d='기본 구조를 잘 알고 있습니다. Thesis Statement 작성을 더 연습하면 완벽!'}
+  else if(pct>=50){g='💪 Getting There!';d='Prompt 분석과 Outline 작성을 한 번 더 복습하세요.'}
+  else{g='📚 Review Needed';d='개념 슬라이드를 다시 읽고 에세이 구조를 익히세요.'}
+  document.getElementById('finalGrade').textContent=g;
+  document.getElementById('finalDetail').textContent=d+' ('+pct+'%)';
+}
+showSlide(0);
+</script>
+</body>
+</html>

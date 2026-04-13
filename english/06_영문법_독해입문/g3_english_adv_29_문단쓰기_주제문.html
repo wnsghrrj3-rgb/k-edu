@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 3학년 영어 심화 29 — 문단 쓰기: 주제문</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0FDF4;
+  --card: #FFFFFF;
+  --primary: #15803D;
+  --primary-light: #DCFCE7;
+  --secondary: #22C55E;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s ease}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}
+.rule-formula{font-size:30px;font-weight:900;letter-spacing:1px;margin:6px 0}
+.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}
+.stars{color:#FCD34D}
+.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:left;line-height:1.5}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{width:100%;max-width:600px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:8px 14px;font-size:20px;font-weight:700;cursor:pointer;transition:all .2s;line-height:1.5}
+.token:hover{border-color:var(--primary);transform:scale(1.02)}
+.token.correct{background:var(--green-light);border-color:var(--green);pointer-events:none}
+.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.token.placed{opacity:.3;pointer-events:none}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.para-box{border-radius:14px;padding:16px 18px;margin:8px 0;font-size:22px;line-height:1.8}
+.para-topic{background:var(--primary-light);border-left:5px solid var(--primary);padding:10px 14px;border-radius:0 12px 12px 0;font-weight:900;font-size:24px;margin:6px 0}
+.para-support{background:#F8FAFC;border-left:5px solid #94A3B8;padding:10px 14px;border-radius:0 12px 12px 0;font-size:22px;margin:4px 0}
+.para-label{font-size:14px;font-weight:900;color:var(--primary);display:inline-block;margin-bottom:2px}
+.para-label.sup{color:#64748B}
+.order-slot{min-height:52px;border:3px dashed #CBD5E1;border-radius:12px;margin:6px 0;padding:10px 14px;font-size:20px;font-weight:700;display:flex;align-items:center;transition:all .3s;cursor:pointer}
+.order-slot.filled{border-style:solid;border-color:var(--primary);background:var(--primary-light)}
+.order-slot .slot-num{background:var(--primary);color:#fff;border-radius:99px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;margin-right:10px;flex-shrink:0}
+.example-box{background:var(--primary-light);border-radius:12px;padding:12px 16px;margin:8px 0;font-size:22px;line-height:1.7}
+.example-box b{color:var(--primary)}
+.result-box{text-align:center}
+.result-box .emoji{font-size:80px}
+.result-box .msg{font-size:28px;font-weight:900;margin:10px 0}
+.result-box .detail{font-size:22px;color:var(--subtext)}
+.restart-btn{margin-top:16px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 36px;font-size:22px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 13</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K✦edu</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0: 개념 - 문단이란? -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 Paragraph (문단)이란?</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">문단 = 하나의 주제에 대한 문장 묶음 📝</div>
+      <div class="rule-sub">영어 문단은 보통 4~6문장으로 이루어져요!</div>
+    </div>
+    <div style="margin-top:12px">
+      <div class="para-label">🟢 Topic Sentence (주제문)</div>
+      <div class="para-topic">I love summer vacation.</div>
+      <div class="para-label sup">🔵 Supporting Sentence 1 (뒷받침 문장)</div>
+      <div class="para-support">I can go to the beach every day.</div>
+      <div class="para-label sup">🔵 Supporting Sentence 2</div>
+      <div class="para-support">I eat ice cream with my friends.</div>
+      <div class="para-label sup">🔵 Supporting Sentence 3</div>
+      <div class="para-support">I also read many fun books.</div>
+    </div>
+  </div>
+</div>
+
+<!-- S1: 개념 - Topic Sentence 규칙 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 Topic Sentence 작성 규칙</div>
+    <div class="rule-box" style="background:#FEF3C7">
+      <div class="rule-formula">주제문 = 주제 + 의견/감정 ✍️</div>
+      <div class="rule-sub">문단 전체의 내용을 한 문장으로 요약!</div>
+    </div>
+    <div class="example-box">
+      ✅ <b>좋은 주제문:</b><br>
+      "Dogs are the <b>best</b> pets." (주제: dogs / 의견: best pets)<br>
+      "My school has <b>many fun</b> activities." (주제: school / 의견: many fun)<br><br>
+      ❌ <b>나쁜 주제문:</b><br>
+      "Dogs." (문장이 아님!)<br>
+      "I have a dog. He is brown." (두 문장 = 주제문 아님)
+    </div>
+  </div>
+</div>
+
+<!-- S2: 개념 - Supporting Sentences -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 Supporting Sentences 뒷받침 문장</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">뒷받침 = 이유 + 예시 + 설명 💪</div>
+      <div class="rule-sub">주제문을 구체적으로 증명하는 문장들!</div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="para-topic" style="font-size:22px">🟢 "Pizza is my favorite food."</div>
+      <div class="para-support">🔵 <b>First,</b> I love the taste of melted cheese.</div>
+      <div class="para-support">🔵 <b>Also,</b> there are many different toppings to choose from.</div>
+      <div class="para-support">🔵 <b>Finally,</b> I can share a big pizza with my family.</div>
+    </div>
+    <div class="example-box" style="margin-top:10px">
+      💡 연결어를 쓰면 문장이 매끄러워요!<br>
+      <b>First, Also, In addition, Finally, For example</b>
+    </div>
+  </div>
+</div>
+
+<!-- S3: Q1 ⭐ 주제문 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q1 확인</div>
+    <div class="question-text">다음 중 <b>좋은 주제문</b>은? 🟢</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Cats.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Reading books is a great hobby.</button>
+      <button class="choice-btn" onclick="answer(this,2)">I like apples. They are red.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Because it is fun.</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q2 ⭐ 주제문 vs 뒷받침 문장 구분 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q2 확인</div>
+    <div class="question-text">이 문단의 <b>주제문</b>은 어느 것? 🟢</div>
+    <div class="para-box" style="background:#F8FAFC;border:2px solid #E2E8F0">
+      <div style="margin:4px 0">① First, the rooms are very clean.</div>
+      <div style="margin:4px 0">② Also, the food at the restaurant is delicious.</div>
+      <div style="margin:4px 0;font-weight:700">③ The Grand Hotel is the best hotel in the city.</div>
+      <div style="margin:4px 0">④ Finally, the staff is always friendly.</div>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">①</button>
+      <button class="choice-btn" onclick="answer(this,1)">②</button>
+      <button class="choice-btn" onclick="answer(this,2)">③</button>
+      <button class="choice-btn" onclick="answer(this,3)">④</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q3 ⭐⭐ 뒷받침 문장이 아닌 것 고르기 -->
+<div class="slide" data-type="q" data-correct="3" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q3 확인</div>
+    <div class="question-text">주제문: <b>"My dog is very smart."</b><br>다음 중 <b>뒷받침 문장이 아닌 것</b>은? ❌</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">He can open the door by himself.</button>
+      <button class="choice-btn" onclick="answer(this,1)">He knows ten different tricks.</button>
+      <button class="choice-btn" onclick="answer(this,2)">He always comes when I call his name.</button>
+      <button class="choice-btn" onclick="answer(this,3)">My cat likes to sleep on the sofa.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q4 ⭐⭐ 연결어 빈칸 채우기 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q4 확인</div>
+    <div class="question-text">알맞은 <b>연결어</b>를 골라 빈칸을 채우세요!</div>
+    <div style="font-size:21px;line-height:2;margin:8px 0">
+      <div class="para-topic" style="font-size:20px;margin-bottom:8px">🟢 "Exercise is important for our health."</div>
+      <div><span class="blank-box" id="bl6a" style="font-size:24px;min-width:60px">___</span>, it makes our body strong.</div>
+      <div><span class="blank-box" id="bl6b" style="font-size:24px;min-width:60px">___</span>, it helps us sleep well.</div>
+      <div><span class="blank-box" id="bl6c" style="font-size:24px;min-width:60px">___</span>, it makes us feel happy.</div>
+    </div>
+    <div class="choices" id="connTokens">
+      <button class="token" onclick="fillConn(this,'Finally')">Finally</button>
+      <button class="token" onclick="fillConn(this,'First')">First</button>
+      <button class="token" onclick="fillConn(this,'Also')">Also</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q5 ⭐⭐ 문장 순서 배열 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q5 확인</div>
+    <div class="question-text">문장을 올바른 순서로 배열하세요! 📝<br><small>카드를 순서대로 눌러요</small></div>
+    <div id="orderSlots">
+      <div class="order-slot" id="os0"><span class="slot-num">1</span><span id="ot0"></span></div>
+      <div class="order-slot" id="os1"><span class="slot-num">2</span><span id="ot1"></span></div>
+      <div class="order-slot" id="os2"><span class="slot-num">3</span><span id="ot2"></span></div>
+      <div class="order-slot" id="os3"><span class="slot-num">4</span><span id="ot3"></span></div>
+    </div>
+    <div class="choices col" id="orderTokens" style="margin-top:8px">
+      <button class="token" onclick="placeOrder(this,0)" data-idx="0" style="text-align:left;width:100%;max-width:600px">Also, the water is warm and clear.</button>
+      <button class="token" onclick="placeOrder(this,1)" data-idx="1" style="text-align:left;width:100%;max-width:600px">Jeju Island is a wonderful place to visit.</button>
+      <button class="token" onclick="placeOrder(this,2)" data-idx="2" style="text-align:left;width:100%;max-width:600px">Finally, the food, especially black pork, is amazing.</button>
+      <button class="token" onclick="placeOrder(this,3)" data-idx="3" style="text-align:left;width:100%;max-width:600px">First, the nature there is very beautiful.</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q6 ⭐⭐⭐ 주제문 완성하기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q6 도전</div>
+    <div class="question-text">뒷받침 문장을 읽고, 가장 적절한 <b>주제문</b>은? 🟢</div>
+    <div style="font-size:20px;line-height:1.8;margin:8px 0">
+      <div class="para-support">🔵 First, she always helps me with my homework.</div>
+      <div class="para-support">🔵 Also, she tells funny jokes that make me laugh.</div>
+      <div class="para-support">🔵 Finally, she never tells my secrets to others.</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">I have a big family.</button>
+      <button class="choice-btn" onclick="answer(this,1)">My best friend Mina is the kindest person I know.</button>
+      <button class="choice-btn" onclick="answer(this,2)">School is very fun.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Homework is difficult.</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q7 ⭐⭐⭐ 관련 없는 문장 찾기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q7 도전</div>
+    <div class="question-text">문단에서 <b>관련 없는 문장</b>을 찾으세요! ❌</div>
+    <div style="margin:8px 0">
+      <div class="para-topic" style="font-size:20px">🟢 "Learning English is useful in many ways."</div>
+      <div class="choices col" style="margin-top:8px">
+        <button class="choice-btn" onclick="answer(this,0)">① First, you can talk to people from other countries.</button>
+        <button class="choice-btn" onclick="answer(this,1)">② Also, many good books are written in English.</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ My brother likes to play soccer after school.</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ Finally, it can help you get a good job in the future.</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q8 ⭐⭐⭐⭐ 문단 구조 분석 -->
+<div class="slide" data-type="q" data-correct="3" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q8 도전</div>
+    <div class="question-text">이 문단에 가장 적절한 <b>마지막 뒷받침 문장</b>은?</div>
+    <div style="font-size:20px;line-height:1.8;margin:8px 0">
+      <div class="para-topic" style="font-size:19px">🟢 "Recycling is important for our planet."</div>
+      <div class="para-support" style="font-size:19px">🔵 First, it reduces the amount of trash in the ocean.</div>
+      <div class="para-support" style="font-size:19px">🔵 Also, it saves trees because we reuse paper.</div>
+      <div class="para-support" style="font-size:19px">🔵 <b>Finally, ___________________________</b></div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">I went to school yesterday.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Plastic is made from oil.</button>
+      <button class="choice-btn" onclick="answer(this,2)">My mom told me to clean my room.</button>
+      <button class="choice-btn" onclick="answer(this,3)">it helps save energy and protects animals' homes.</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q9 ⭐⭐⭐⭐ 문단 조립 (전체) -->
+<div class="slide" data-type="q" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q9 도전</div>
+    <div class="question-text">문장을 올바른 순서로 배열하여<br>완벽한 문단을 만드세요! ✍️</div>
+    <div id="finalSlots">
+      <div class="order-slot" id="fs0"><span class="slot-num">1</span><span id="ft0"></span></div>
+      <div class="order-slot" id="fs1"><span class="slot-num">2</span><span id="ft1"></span></div>
+      <div class="order-slot" id="fs2"><span class="slot-num">3</span><span id="ft2"></span></div>
+      <div class="order-slot" id="fs3"><span class="slot-num">4</span><span id="ft3"></span></div>
+    </div>
+    <div id="finalTokenArea" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;align-items:center"></div>
+    <div style="text-align:center;margin-top:8px">
+      <button class="choice-btn" style="font-size:18px;padding:8px 20px" onclick="resetFinal()">🔄 다시</button>
+      <button class="choice-btn" style="font-size:18px;padding:8px 20px;background:var(--green-light);border-color:var(--green)" onclick="checkFinal()">✅ 확인</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: 결과 -->
+<div class="slide" data-type="result">
+  <div class="card">
+    <div class="result-box">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div class="msg">학습 완료!</div>
+      <div class="detail">
+        총 점수: <b><span id="finalScore">0</span>점</b><br>
+        <span id="resultStars">⭐⭐</span>
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=350?'⭐⭐⭐⭐⭐':score>=250?'⭐⭐⭐⭐':score>=120?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=350?'🏆':'🎉';
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Connector fill (Q4 - slide 6)
+const connOrder=['First','Also','Finally'];
+let connIdx=0;
+function fillConn(btn,word){
+  if(answered[6])return;playClick();
+  const blanks=['bl6a','bl6b','bl6c'];
+  if(word===connOrder[connIdx]){
+    document.getElementById(blanks[connIdx]).textContent=word;
+    document.getElementById(blanks[connIdx]).classList.add('filled');
+    btn.classList.add('correct');speakWord(word);connIdx++;
+    if(connIdx===3){playCorrect();addScore(25);setFB('fb6','✅ 연결어 완성! +25점',true);answered[6]=true;setTimeout(nextSlide,900);}
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb6','순서를 생각해보세요! First → Also → Finally',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+// Order (Q5 - slide 7)
+const orderCorrect=[1,3,0,2]; // Jeju→First→Also→Finally
+let orderIdx=0;
+function placeOrder(btn,origIdx){
+  if(answered[7]||btn.classList.contains('placed'))return;
+  playClick();
+  document.getElementById('ot'+orderIdx).textContent=btn.textContent;
+  document.getElementById('os'+orderIdx).classList.add('filled');
+  btn.classList.add('placed');
+  orderIdx++;
+  if(orderIdx===4){
+    // check
+    const placed=[];
+    for(let i=0;i<4;i++) placed.push(document.getElementById('ot'+i).textContent);
+    const texts=['Also, the water is warm and clear.','Jeju Island is a wonderful place to visit.','Finally, the food, especially black pork, is amazing.','First, the nature there is very beautiful.'];
+    const correctOrder=[texts[1],texts[3],texts[0],texts[2]];
+    let allRight=true;
+    for(let i=0;i<4;i++) if(placed[i]!==correctOrder[i]) allRight=false;
+    if(allRight){playCorrect();addScore(25);setFB('fb7','✅ 완벽한 순서! +25점',true);answered[7]=true;setTimeout(nextSlide,900);}
+    else{playWrong();combo=0;setFB('fb7','순서가 틀렸어요! 주제문부터 시작하세요 💪',false);
+      // reset
+      orderIdx=0;
+      for(let i=0;i<4;i++){document.getElementById('ot'+i).textContent='';document.getElementById('os'+i).classList.remove('filled');}
+      document.querySelectorAll('#orderTokens .token').forEach(t=>t.classList.remove('placed'));
+    }
+  }
+}
+
+// Final paragraph assembly (Q9 - slide 11)
+const finalSentences=[
+  {text:'Cooking is a fun and useful skill to learn.',idx:0},
+  {text:'First, you can make your favorite food anytime.',idx:1},
+  {text:'Also, cooking saves money because eating out is expensive.',idx:2},
+  {text:'Finally, sharing food you made makes your friends happy.',idx:3}
+];
+let finalPlaced=[],finalSlotIdx=0;
+function initFinal(){
+  finalPlaced=[];finalSlotIdx=0;
+  for(let i=0;i<4;i++){document.getElementById('ft'+i).textContent='';document.getElementById('fs'+i).classList.remove('filled');}
+  const area=document.getElementById('finalTokenArea');area.innerHTML='';
+  const shuffled=[...finalSentences].sort(()=>Math.random()-.5);
+  shuffled.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='token';btn.style.textAlign='left';btn.style.width='100%';btn.style.maxWidth='600px';
+    btn.textContent=s.text;btn.dataset.idx=s.idx;
+    btn.onclick=()=>placeFinal(btn,s.idx);
+    area.appendChild(btn);
+  });
+}
+function placeFinal(btn,idx){
+  if(answered[11]||btn.classList.contains('placed'))return;
+  playClick();
+  document.getElementById('ft'+finalSlotIdx).textContent=btn.textContent;
+  document.getElementById('fs'+finalSlotIdx).classList.add('filled');
+  btn.classList.add('placed');
+  finalPlaced.push(idx);finalSlotIdx++;
+}
+function resetFinal(){
+  if(answered[11])return;
+  finalPlaced=[];finalSlotIdx=0;
+  for(let i=0;i<4;i++){document.getElementById('ft'+i).textContent='';document.getElementById('fs'+i).classList.remove('filled');}
+  document.querySelectorAll('#finalTokenArea .token').forEach(t=>t.classList.remove('placed'));
+  setFB('fb11','',true);
+}
+function checkFinal(){
+  if(answered[11]||finalSlotIdx<4)return;
+  const correct=finalPlaced[0]===0&&finalPlaced[1]===1&&finalPlaced[2]===2&&finalPlaced[3]===3;
+  if(correct){playCorrect();addScore(100);setFB('fb11','✅ 완벽한 문단! +100점',true);answered[11]=true;setTimeout(nextSlide,1200);}
+  else{playWrong();combo=0;setFB('fb11','주제문(Topic Sentence)이 맨 앞에 와야 해요! 다시 해보세요 💪',false);
+    resetFinal();
+  }
+}
+
+function restart(){
+  score=0;combo=0;answered={};connIdx=0;orderIdx=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.opacity='1';t.style.pointerEvents='auto';});
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.order-slot').forEach(s=>{s.classList.remove('filled');});
+  for(let i=0;i<4;i++){
+    const el=document.getElementById('ot'+i);if(el)el.textContent='';
+  }
+  document.querySelectorAll('#orderTokens .token').forEach(t=>t.classList.remove('placed'));
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
+  initFinal();updateUI();
+}
+
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+
+initFinal();updateUI();
+</script>
+</body>
+</html>

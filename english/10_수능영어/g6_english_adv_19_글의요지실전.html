@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>G6 영어 심화 B-2 | 19차시 글의 요지 실전</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1D4ED8;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:background .15s}
+.sound-btn:hover{background:var(--primary-light)}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s ease}
+.page-info{font-size:15px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 32px;width:100%;max-width:800px}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:24px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}
+.choice-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green)}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:20px;width:100%;max-width:620px;padding:10px 20px}
+.blank-box{display:inline-block;font-size:44px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:19px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text)}
+.navbar{display:flex;justify-content:center;gap:16px;padding:12px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:10px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,#F59E0B,#D97706);color:white;padding:6px 18px;border-radius:99px;font-size:18px;font-weight:900;opacity:0;transition:opacity .3s,transform .3s;z-index:999;pointer-events:none}
+.combo-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.result-card{text-align:center}
+.result-card .emoji{font-size:60px}
+.result-card .score-big{font-size:48px;font-weight:900;color:var(--primary);margin:10px 0}
+.result-card .stars-big{font-size:32px}
+.restart-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:12px 32px;font-size:20px;font-weight:700;cursor:pointer;margin-top:16px}
+.ox-choices{display:flex;gap:16px;justify-content:center;margin-top:12px}
+.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:var(--card);font-size:36px;font-weight:900;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ox-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.ox-btn.correct{background:var(--green-light);border-color:var(--green)}
+.ox-btn.wrong{background:var(--red-light);border-color:var(--red)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <div class="score-badge">💎 <span id="scoreDisp">0</span></div>
+  <div class="kedu-logo">⭐ K-edu</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+  <!-- S0: INTRO -->
+  <div class="slide active" data-type="concept">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">📖 수능 독해 전유형 완성</div>
+      <div style="font-size:28px;font-weight:900;color:var(--primary);margin:16px 0">19차시 — 글의 요지 실전</div>
+      <div style="font-size:18px;color:var(--subtext);line-height:1.7">
+        수능 22번형 — 글이 전달하려는 <strong>핵심 메시지</strong>를 파악하는 유형<br><br>
+        핵심 전략: <strong>①</strong> 주제문(topic sentence) 찾기 — 보통 첫 문장 or 마지막 문장<br>
+        <strong>②</strong> 예시·부연은 건너뛰고 핵심만 포착<br>
+        <strong>③</strong> 요지 = "그래서 필자가 뭘 말하고 싶은 거지?"
+      </div>
+      <div style="margin-top:14px;font-size:16px;color:var(--yellow)">⭐⭐⭐ ~ ⭐⭐⭐⭐</div>
+    </div>
+  </div>
+
+  <!-- S1: CONCEPT -->
+  <div class="slide" data-type="concept">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">🧠 요지 vs 주제 vs 주장 — 차이점</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;font-size:16px">
+        <div style="background:var(--primary-light);padding:12px;border-radius:10px"><strong>요지 (22번)</strong><br>"글의 핵심 메시지"<br>→ 한국어로 요약</div>
+        <div style="background:var(--yellow-light);padding:12px;border-radius:10px"><strong>주제 (23번)</strong><br>"글이 다루는 대상"<br>→ 영어 명사구</div>
+        <div style="background:var(--green-light);padding:12px;border-radius:10px"><strong>주장 (20번)</strong><br>"필자가 원하는 행동"<br>→ ~해야 한다</div>
+      </div>
+      <div style="margin-top:12px;font-size:16px;color:var(--subtext)">
+        예) "실패는 성공의 밑거름이다" = <strong>요지</strong><br>
+        "실패의 교육적 가치" = <strong>주제</strong><br>
+        "실패를 두려워하지 말아야 한다" = <strong>주장</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: PASSAGE A -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage A</div>
+      <div class="passage">
+        Many people believe that talent alone determines success. However, countless studies have shown that consistent practice plays a far more significant role than natural ability. A pianist who practices four hours a day will almost always outperform a naturally gifted person who rarely touches the keys. The truth is that effort and dedication are more reliable paths to excellence than talent alone.
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: Q1 — 요지 파악 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="question-label">Q1 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">위 글의 요지로 가장 적절한 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 꾸준한 노력이 타고난 재능보다 성공에 더 중요하다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 피아니스트가 되려면 하루 4시간 이상 연습해야 한다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 재능은 타고나는 것이므로 노력으로 극복할 수 없다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 성공한 사람들은 모두 특별한 재능을 가지고 있다</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- S4: Q2 — 주제문 찾기 -->
+  <div class="slide" data-type="q" data-correct="3" data-score="50">
+    <div class="card">
+      <div class="question-label">Q2 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">Passage A에서 요지를 직접 드러내는 문장은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① Many people believe that talent alone determines success.</button>
+        <button class="choice-btn" onclick="answer(this,1)">② countless studies have shown…</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ A pianist who practices four hours a day…</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ effort and dedication are more reliable paths to excellence</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- S5: Q3 — O/X: 요지 vs 세부사항 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q3 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">"하루 4시간 피아노 연습이 중요하다"는 이 글의 <strong>요지</strong>이다.</div>
+      <div class="ox-choices">
+        <button class="ox-btn" onclick="answerOX(this,5,0)">⭕</button>
+        <button class="ox-btn" onclick="answerOX(this,5,1)">❌</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- S6: PASSAGE B -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage B</div>
+      <div class="passage">
+        Social media platforms are designed to keep users engaged for as long as possible. Algorithms prioritize content that triggers strong emotional reactions — outrage, fear, or excitement — because such content generates more clicks and shares. As a result, people are increasingly exposed to extreme viewpoints while moderate, balanced perspectives are pushed aside. This creates a distorted picture of reality that can deepen social divisions.
+      </div>
+    </div>
+  </div>
+
+  <!-- S7: Q4 — 요지 파악 -->
+  <div class="slide" data-type="q" data-correct="2" data-score="50">
+    <div class="card">
+      <div class="question-label">Q4 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">위 글의 요지로 가장 적절한 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 소셜 미디어는 뉴스를 빠르게 전달한다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 알고리즘은 사용자 경험을 개선한다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 소셜 미디어 알고리즘이 극단적 콘텐츠를 부추겨 사회 분열을 심화시킨다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 클릭 수가 많을수록 좋은 콘텐츠이다</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- S8: Q5 — 빈칸: 요지 핵심어 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q5 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">Passage B의 요지를 한 문장으로: "소셜 미디어 알고리즘은 <span class="blank-box" id="blank8" style="font-size:24px;min-width:100px">___</span>을/를 왜곡한다."</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="fillBlank(this,'blank8','알고리즘',1,0)">알고리즘</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank8','현실 인식',1,1)">현실 인식</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank8','수익 구조',1,2)">수익 구조</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank8','개인정보',1,3)">개인정보</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- S9: PASSAGE C (고난도) -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage C (고난도)</div>
+      <div class="passage">
+        When we make decisions, we tend to give more weight to information that confirms what we already believe and dismiss evidence that contradicts it. This tendency, known as confirmation bias, is not a sign of stupidity — it affects everyone, including experts. The real danger lies not in having biases but in being unaware of them. Only by actively seeking out opposing viewpoints can we hope to make truly informed decisions.
+      </div>
+    </div>
+  </div>
+
+  <!-- S10: Q6 — 요지 파악 (고난도) -->
+  <div class="slide" data-type="q" data-correct="1" data-score="60">
+    <div class="card">
+      <div class="question-label">Q6 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">위 글의 요지로 가장 적절한 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 전문가는 편향에 영향을 받지 않는다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 확증 편향을 인식하고 반대 의견을 찾아야 올바른 결정을 할 수 있다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 편향은 어리석음의 증거이다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 결정을 내릴 때 직관을 믿어야 한다</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- S11: Q7 — 요지 vs 세부사항 구별 -->
+  <div class="slide" data-type="q" data-correct="2" data-score="60">
+    <div class="card">
+      <div class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">다음 중 Passage C의 '요지'가 아닌 '세부 설명'은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 편향을 인식하지 못하는 것이 진짜 위험이다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 반대 의견을 적극적으로 찾아야 한다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 이 경향은 확증 편향(confirmation bias)이라고 불린다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 올바른 결정을 위해 편향을 극복해야 한다</button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- S12: Q8 — 종합 실전 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="80">
+    <div class="card">
+      <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">다음 글의 요지로 가장 적절한 것은?</div>
+      <div class="passage" style="font-size:16px;line-height:1.7">
+        Schools typically reward students who answer questions correctly and quickly. But this approach overlooks an important truth: making mistakes is a crucial part of learning. When students struggle with a problem and get it wrong, their brains form stronger connections than when they get it right on the first try. Encouraging students to embrace errors rather than fear them can lead to deeper understanding and long-term retention.
+      </div>
+      <div class="choices col" style="margin-top:8px">
+        <button class="choice-btn" onclick="answer(this,0)">① 실수는 학습에 필수적이므로 학생들이 실수를 두려워하지 않도록 해야 한다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 빠르게 정답을 맞히는 학생이 더 뛰어나다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 학교의 보상 체계를 완전히 폐지해야 한다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 뇌 과학 연구에 더 많은 투자가 필요하다</button>
+      </div>
+      <div class="feedback" id="fb12"></div>
+    </div>
+  </div>
+
+  <!-- S13: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:22px;font-weight:700;margin:8px 0">학습 완료!</div>
+      <div class="score-big" id="finalScore">0</div>
+      <div style="font-size:16px;color:var(--subtext)">점</div>
+      <div class="stars-big" id="resultStars">⭐⭐⭐</div>
+      <div style="font-size:16px;color:var(--subtext);margin-top:12px">
+        💡 <strong>Tip:</strong> 요지 = "결국 필자가 하고 싶은 말." 예시·세부 설명에 속지 말고 핵심 메시지를 잡으세요!
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playTone(f,t,d,g=0.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),ga=audioCtx.createGain();o.connect(ga);ga.connect(audioCtx.destination);o.type=t;o.frequency.value=f;ga.gain.setValueAtTime(g,audioCtx.currentTime);ga.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d)})}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80))}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100))}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,0.2)}
+function speakWord(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{for(let s of sl)s.classList.remove('out')},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=380?'⭐⭐⭐⭐⭐':score>=280?'⭐⭐⭐⭐':score>=170?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=380?'🏆':'🎉';
+  }
+}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'핵심 메시지를 다시 찾아보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function answerOX(btn,si,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! 이것은 예시이지 요지가 아닙니다! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'구체적인 예시와 핵심 메시지를 구별하세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;
+  playClick();
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "distorted picture of reality" = 현실 인식 왜곡! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'마지막 문장을 다시 읽어보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.ox-btn').forEach(b=>b.className='ox-btn');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___'});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d>0?prevSlide():nextSlide()}});
+updateUI();
+</script>
+</body>
+</html>

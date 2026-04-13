@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 영어 심화 17차시 — 주제찾기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0F9FF;
+  --card: #FFFFFF;
+  --primary: #1D4ED8;
+  --primary-light: #DBEAFE;
+  --secondary: #0891B2;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:24px; padding:4px 8px; border-radius:10px; transition:background .2s; }
+.sound-btn:hover { background:var(--primary-light); }
+.progress-wrap { display:flex; align-items:center; gap:10px; flex:1; margin:0 14px; }
+.progress-bar { flex:1; height:8px; background:#E2E8F0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s ease; }
+.page-info { font-size:16px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:18px; font-weight:700; color:var(--yellow); }
+.kedu-logo { display:flex; align-items:center; gap:5px; background:var(--primary); color:white; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 22px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px 28px; width:100%; max-width:740px; }
+.slide-title { font-size:22px; color:var(--subtext); text-align:center; margin-bottom:10px; font-weight:700; }
+.rule-box { border-radius:14px; padding:16px 18px; margin:8px 0; }
+.rule-formula { font-size:32px; font-weight:900; letter-spacing:1px; margin:6px 0; }
+.rule-sub { font-size:20px; color:var(--subtext); margin-top:4px; }
+.passage { background:#F8FAFC; border-radius:12px; padding:16px 20px; font-size:20px; line-height:1.9; margin:10px 0; border-left:4px solid var(--primary); color:var(--text); }
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:white; border-radius:99px; padding:5px 16px; font-size:18px; font-weight:700; margin-bottom:12px; }
+.stars { color:#FCD34D; }
+.question-text { font-size:26px; text-align:center; margin:8px 0 14px; line-height:1.6; font-weight:700; }
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choice-btn { background:var(--card); border:2px solid #CBD5E1; border-radius:12px; padding:12px 22px; font-family:'Noto Sans KR',sans-serif; font-size:28px; font-weight:700; cursor:pointer; transition:all .2s; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { font-size:22px; width:100%; max-width:560px; padding:11px 20px; }
+.feedback { font-size:20px; text-align:center; margin-top:10px; min-height:28px; border-radius:10px; padding:5px 14px; font-weight:700; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+.token-area { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:10px; }
+.token { background:var(--card); border:2px solid #CBD5E1; border-radius:99px; padding:7px 16px; font-size:22px; font-weight:700; cursor:pointer; transition:all .2s; }
+.token:hover { border-color:var(--primary); transform:scale(1.04); }
+.token.correct { background:var(--green-light); border-color:var(--green); pointer-events:none; }
+.token.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #E2E8F0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:white; border:none; border-radius:12px; padding:10px 28px; font-family:'Noto Sans KR',sans-serif; font-size:20px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.nav-btn:not(:disabled):hover { opacity:.85; }
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:22px; font-weight:700; color:var(--yellow); z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+.highlight { background:var(--yellow-light); padding:2px 6px; border-radius:6px; font-weight:700; }
+.drop-zone { min-height:50px; border:2px dashed #CBD5E1; border-radius:12px; padding:10px; margin:8px 0; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; transition:border-color .2s; }
+.drop-zone.over { border-color:var(--primary); background:var(--primary-light); }
+.drop-label { font-size:18px; color:var(--subtext); font-weight:700; margin-bottom:4px; text-align:center; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+
+<!-- SLIDES -->
+<div class="slides">
+
+<!-- S0: 개념 도입 -->
+<div class="slide active" id="s0">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">📖 17차시 — 주제찾기 (Finding the Main Idea)</div>
+    <div class="rule-box" style="background:var(--primary-light);">
+      <div class="rule-formula">Main Idea 🎯</div>
+      <div class="rule-sub">글이 <b>가장 말하고 싶은 한 문장</b>이에요!</div>
+    </div>
+    <div class="rule-box" style="background:var(--yellow-light); margin-top:10px;">
+      <div style="font-size:24px; font-weight:700;">Main Idea vs Supporting Details</div>
+      <div class="rule-sub" style="margin-top:8px;">
+        🎯 <b>Main Idea</b> = 글의 중심 생각 (한 문장)<br>
+        📎 <b>Supporting Details</b> = 중심 생각을 도와주는 구체적 정보
+      </div>
+    </div>
+    <div style="margin-top:14px; font-size:20px; color:var(--subtext);">
+      💡 팁: Main Idea는 보통 <b>첫 문장</b> 또는 <b>마지막 문장</b>에 있어요!
+    </div>
+  </div>
+</div>
+
+<!-- S1: 개념 예시 -->
+<div class="slide" id="s1">
+  <div class="card">
+    <div class="slide-title">💡 예시로 이해하기</div>
+    <div class="passage">
+      <b>Dogs are great pets.</b> They are friendly and loyal. They can learn many tricks. They also keep you safe at home.
+    </div>
+    <div style="margin-top:14px; text-align:center;">
+      <div style="font-size:22px; font-weight:700; color:var(--primary);">🎯 Main Idea:</div>
+      <div style="font-size:26px; font-weight:900; margin:6px 0;">"Dogs are great pets."</div>
+      <div style="font-size:22px; font-weight:700; color:var(--secondary); margin-top:10px;">📎 Supporting Details:</div>
+      <div style="font-size:20px; color:var(--subtext); line-height:1.7;">
+        ① friendly and loyal<br>② can learn tricks<br>③ keep you safe
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Q1 ⭐ 기본 — 4지선다 -->
+<div class="slide" data-correct="1" data-score="10" id="s2">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      Cats are very clean animals. They wash themselves every day. They also keep their sleeping area tidy. Cats do not like dirty places.
+    </div>
+    <div class="question-text">이 글의 Main Idea는?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Cats wash themselves.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Cats are very clean animals.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Cats do not like dirty places.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Cats sleep a lot.</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 ⭐ 기본 — Main Idea vs Detail 분류 -->
+<div class="slide" data-score="10" id="s3">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      <b>Reading is fun and helpful.</b> You can learn new words. You can visit amazing places in stories. Reading also makes your brain stronger.
+    </div>
+    <div class="question-text">Main Idea인 것을 골라요! 🎯</div>
+    <div class="token-area">
+      <button class="token" onclick="classifyQ2(this,'main')">Reading is fun and helpful.</button>
+      <button class="token" onclick="classifyQ2(this,'detail')">You can learn new words.</button>
+      <button class="token" onclick="classifyQ2(this,'detail')">Reading makes your brain stronger.</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 ⭐⭐ — 4지선다 -->
+<div class="slide" data-correct="2" data-score="25" id="s4">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      My grandmother makes the best cookies. She uses butter, sugar, and chocolate chips. She bakes them for 15 minutes. Everyone in my family loves her cookies.
+    </div>
+    <div class="question-text">What is the main idea?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">She uses butter and sugar.</button>
+      <button class="choice-btn" onclick="answer(this,1)">She bakes cookies for 15 minutes.</button>
+      <button class="choice-btn" onclick="answer(this,2)">My grandmother makes the best cookies.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Everyone loves chocolate chips.</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 ⭐⭐ — Supporting Detail 고르기 -->
+<div class="slide" data-score="25" id="s5">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      <b>Exercise is important for your health.</b> It makes your heart strong. It helps you sleep better. It also makes you feel happy.
+    </div>
+    <div class="question-text">Supporting Detail이 <b>아닌</b> 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answerQ5(this,0)">It makes your heart strong.</button>
+      <button class="choice-btn" onclick="answerQ5(this,1)">It helps you sleep better.</button>
+      <button class="choice-btn" onclick="answerQ5(this,2)">Exercise is important for your health.</button>
+      <button class="choice-btn" onclick="answerQ5(this,3)">It makes you feel happy.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q5 ⭐⭐ — 드래그 분류 (클릭 방식) -->
+<div class="slide" data-score="25" id="s6">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+    <div class="passage" style="font-size:18px;">
+      <b>Winter is a cold season.</b> Snow falls from the sky. People wear warm coats. Lakes and rivers can freeze.
+    </div>
+    <div class="question-text">각 문장을 분류하세요!</div>
+    <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; justify-content:center;">
+      <div style="flex:1; min-width:200px;">
+        <div class="drop-label">🎯 Main Idea</div>
+        <div class="drop-zone" id="mainZone6"></div>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <div class="drop-label">📎 Supporting Details</div>
+        <div class="drop-zone" id="detailZone6"></div>
+      </div>
+    </div>
+    <div class="token-area" id="tokens6" style="margin-top:12px;">
+      <button class="token" onclick="classify6(this,'main','Winter is a cold season.')">Winter is a cold season.</button>
+      <button class="token" onclick="classify6(this,'detail','Snow falls from the sky.')">Snow falls from the sky.</button>
+      <button class="token" onclick="classify6(this,'detail','People wear warm coats.')">People wear warm coats.</button>
+      <button class="token" onclick="classify6(this,'detail','Lakes and rivers can freeze.')">Lakes and rivers can freeze.</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q6 ⭐⭐⭐ — Main Idea가 마지막에 오는 패턴 -->
+<div class="slide" data-correct="3" data-score="50" id="s7">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      Some people like to swim. Others enjoy running or cycling. Many children play soccer after school. There are so many ways to exercise.
+    </div>
+    <div class="question-text">What is the main idea of this passage?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Some people like to swim.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Children play soccer after school.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Running is the best exercise.</button>
+      <button class="choice-btn" onclick="answer(this,3)">There are many ways to exercise.</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q7 ⭐⭐⭐ — 직접 Main Idea 작성 (빈칸) -->
+<div class="slide" data-score="50" id="s8">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      Bees make honey. They also help flowers grow. Without bees, many plants would die. Bees are very important for nature.
+    </div>
+    <div class="question-text">Main Idea의 빈칸을 채우세요!</div>
+    <div style="text-align:center; font-size:26px; font-weight:900; margin:10px 0;">
+      Bees are very <span class="blank-box" id="blank8" style="font-size:36px;">___</span> for nature.
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','dangerous',0,1)" style="font-size:24px;">dangerous</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','important',1,1)" style="font-size:24px;">important</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','small',2,1)" style="font-size:24px;">small</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q8 ⭐⭐⭐ — Main Idea가 없는 글에서 추론 -->
+<div class="slide" data-correct="1" data-score="50" id="s9">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐</span></span>
+    <div class="passage" style="font-size:19px;">
+      The sun gives us light and heat. Plants need sunlight to grow. Animals need the sun to stay warm. People use solar energy to power their homes.
+    </div>
+    <div class="question-text">이 글에 직접 쓰여있진 않지만, Main Idea는?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Plants need sunlight to grow.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The sun is important for all living things.</button>
+      <button class="choice-btn" onclick="answer(this,2)">People use solar energy.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Animals need warmth.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q9 ⭐⭐⭐⭐ — 긴 지문 + 주제문 위치 찾기 -->
+<div class="slide" data-correct="0" data-score="100" id="s10">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <div class="passage" style="font-size:18px;">
+      <span id="sent0" style="cursor:pointer;" onclick="pickSentence(0)">① Water is essential for life on Earth.</span>
+      <span id="sent1" style="cursor:pointer;" onclick="pickSentence(1)">② People drink water every day to stay healthy.</span>
+      <span id="sent2" style="cursor:pointer;" onclick="pickSentence(2)">③ Farmers use water to grow crops.</span>
+      <span id="sent3" style="cursor:pointer;" onclick="pickSentence(3)">④ Fish and other sea animals live in water.</span>
+      <span id="sent4" style="cursor:pointer;" onclick="pickSentence(4)">⑤ Without water, nothing could survive.</span>
+    </div>
+    <div class="question-text">Main Idea 문장을 직접 <b>클릭</b>하세요! 🎯</div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: 결과 -->
+<div class="slide" id="s11">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px;" id="resultEmoji">🎉</div>
+    <div style="font-size:28px; font-weight:900; margin:10px 0;">17차시 완료!</div>
+    <div style="font-size:22px; color:var(--subtext);">주제찾기 — Finding the Main Idea</div>
+    <div style="font-size:48px; font-weight:900; color:var(--primary); margin:16px 0;" id="finalScore">0</div>
+    <div style="font-size:28px;" id="resultStars">⭐⭐⭐</div>
+    <button class="nav-btn" onclick="restart()" style="margin-top:18px; font-size:22px;">🔄 다시 도전</button>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true, currentSlide=0, score=0, combo=0, answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=250?'⭐⭐⭐⭐⭐':score>=170?'⭐⭐⭐⭐':score>=90?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=250?'🏆':'🎉';}
+}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q2 분류
+function classifyQ2(btn,type){
+  if(answered[3])return; playClick();
+  if(type==='main'){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb3','✅ 맞아요! 그게 Main Idea! +10점',true);answered[3]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb3','그건 Supporting Detail이에요!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q4 — Detail이 아닌 것 = Main Idea (index 2)
+function answerQ5(btn,idx){
+  if(answered[5])return; playClick();
+  if(idx===2){btn.classList.add('correct');playCorrect();addScore(25);setFB('fb5','✅ 맞아요! 그건 Main Idea지 Detail이 아니에요! +25점',true);answered[5]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb5','그건 Supporting Detail이에요!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q5 분류
+let classify6Count=0, classify6Correct=0;
+function classify6(btn,type,text){
+  if(btn.classList.contains('correct'))return;
+  playClick();
+  const zone=type==='main'?document.getElementById('mainZone6'):document.getElementById('detailZone6');
+  const clone=document.createElement('span');clone.className='token correct';clone.textContent=text;clone.style.pointerEvents='none';
+  zone.appendChild(clone);
+  btn.classList.add('correct');classify6Count++;classify6Correct++;
+  if(classify6Count===4){addScore(25);playCorrect();setFB('fb6','✅ 완벽한 분류! +25점',true);answered[6]=true;setTimeout(nextSlide,900);}
+}
+
+// Q9 문장 클릭
+function pickSentence(idx){
+  if(answered[10])return; playClick();
+  for(let i=0;i<5;i++){document.getElementById('sent'+i).style.background='';}
+  document.getElementById('sent'+idx).style.background=idx===0?'var(--green-light)':'var(--red-light)';
+  if(idx===0){playCorrect();addScore(100);setFB('fb10','✅ 정확해요! 첫 문장이 Main Idea! +100점',true);answered[10]=true;setTimeout(nextSlide,900);document.getElementById('sent0').style.background='var(--green-light)';}
+  else{playWrong();combo=0;setFB('fb10','다시 찾아보세요! 🔍',false);setTimeout(()=>{document.getElementById('sent'+idx).style.background='';},600);}
+}
+
+function restart(){
+  score=0;combo=0;answered={};classify6Count=0;classify6Correct=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.pointerEvents='';});
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  document.getElementById('mainZone6').innerHTML='';document.getElementById('detailZone6').innerHTML='';
+  for(let i=0;i<5;i++){document.getElementById('sent'+i).style.background='';}
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+// Swipe
+let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide();});
+updateUI();
+</script>
+</body>
+</html>

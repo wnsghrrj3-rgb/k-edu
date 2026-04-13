@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 6학년 영어 | 글로벌이슈</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}.topbar-left{display:flex;align-items:center;gap:8px;}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}.topbar-title{font-size:15px;font-weight:700;color:var(--primary);}.kedu-logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative;}.kedu-logo::after{content:'⭐';position:absolute;top:-2px;right:-2px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;}.slide.active{opacity:1;pointer-events:auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:calc(100vh - 120px);overflow-y:auto;}.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;}.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:2px 10px;border-radius:20px;}
+.concept-box{background:var(--primary-light);border-radius:12px;padding:18px;margin:12px 0;font-size:18px;line-height:1.7;}.concept-box strong{color:var(--primary);}.example-box{background:#F1F5F9;border-left:4px solid var(--secondary);padding:14px 18px;border-radius:0 12px 12px 0;margin:12px 0;font-size:17px;line-height:1.8;}
+.q-text{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.5;}.q-sub{font-size:18px;color:var(--subtext);margin-bottom:14px;}.choices{display:flex;flex-direction:column;gap:10px;}.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;color:var(--text);}.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light);}.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .3s;}.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}.choice-btn.disabled{pointer-events:none;opacity:.7;}
+.choices-row{display:flex;flex-wrap:wrap;gap:10px;}.choices-row .choice-btn{flex:1;min-width:45%;text-align:center;font-size:20px;}
+.feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;}.feedback.show{display:block;}.feedback.correct{background:var(--green-light);color:var(--green);}.feedback.wrong{background:var(--red-light);color:var(--red);}
+.passage{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:17px;line-height:2;margin:12px 0;}.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--primary);text-align:center;font-size:18px;font-weight:700;color:var(--secondary);padding:4px 8px;margin:0 4px;min-height:32px;vertical-align:bottom;}.blank-box.filled{border-color:var(--green);color:var(--green);}
+.ox-row{display:flex;gap:14px;justify-content:center;margin:10px 0;}.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:#fff;font-size:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}.ox-btn.correct{border-color:var(--green);background:var(--green-light);}.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}.match-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:16px;cursor:pointer;transition:all .2s;}.match-item.selected{border-color:var(--secondary);background:var(--primary-light);}.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.toggle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;}.toggle-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:17px;cursor:pointer;transition:all .2s;}.toggle-item.on{background:var(--primary-light);border-color:var(--secondary);}
+.tts-btn{background:none;border:none;cursor:pointer;font-size:22px;vertical-align:middle;}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:18px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}.nav-btn:hover{background:var(--secondary);}.nav-btn:disabled{background:var(--border);cursor:default;}.nav-info{font-size:15px;color:var(--subtext);}
+.result-card{text-align:center;}.result-score{font-size:64px;font-weight:900;color:var(--primary);margin:12px 0;}.result-msg{font-size:22px;color:var(--subtext);margin:8px 0;}.result-detail{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap;}.result-item{background:var(--primary-light);border-radius:12px;padding:14px 24px;text-align:center;}.result-item .label{font-size:14px;color:var(--subtext);}.result-item .val{font-size:28px;font-weight:900;color:var(--primary);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-left"><button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button><span class="topbar-title">6학년 영어 · 글로벌이슈</span></div><div class="kedu-logo">K</div></div>
+<div class="slide-area" id="slideArea">
+
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="slide-title">🌍 글로벌 이슈 어휘 <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    세계적 이슈를 영어로 이야기할 때 쓰는 핵심 어휘:<br><br>
+    🌡️ <strong>climate change</strong> — 기후 변화<br>
+    💰 <strong>poverty</strong> — 빈곤<br>
+    📚 <strong>education</strong> — 교육<br>
+    🌊 <strong>pollution</strong> — 오염<br>
+    🤝 <strong>equality</strong> — 평등<br>
+    ♻️ <strong>sustainability</strong> — 지속가능성
+  </div>
+</div>
+</div>
+
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">💬 의견 표현 (Opinion Expressions)</div>
+  <div class="concept-box">
+    📌 <strong>I strongly believe that ~</strong> — 나는 ~을 강하게 믿는다<br>
+    📌 <strong>It is important to ~</strong> — ~하는 것이 중요하다<br>
+    📌 <strong>We should take action to ~</strong> — 우리는 ~하기 위해 행동해야 한다<br>
+    📌 <strong>One of the biggest challenges is ~</strong> — 가장 큰 도전 중 하나는 ~이다
+  </div>
+  <div class="example-box">
+    <button class="tts-btn" onclick="speak('I strongly believe that every child deserves access to quality education. It is important to invest in schools and teachers.')">🔊</button>
+    "I strongly believe that every child deserves access to quality education. It is important to invest in schools and teachers."
+  </div>
+</div>
+</div>
+
+<!-- Q1: 매칭 (이슈 ↔ 영어 어휘) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q1 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">글로벌 이슈와 영어 어휘를 매칭하세요.</div>
+  <div class="match-grid" id="matchGrid1">
+    <div class="match-item" data-pair="A" data-side="L" onclick="matchClick(this,'m1')">기후 변화</div>
+    <div class="match-item" data-pair="A" data-side="R" onclick="matchClick(this,'m1')">climate change</div>
+    <div class="match-item" data-pair="B" data-side="L" onclick="matchClick(this,'m1')">빈곤</div>
+    <div class="match-item" data-pair="B" data-side="R" onclick="matchClick(this,'m1')">poverty</div>
+    <div class="match-item" data-pair="C" data-side="L" onclick="matchClick(this,'m1')">지속가능성</div>
+    <div class="match-item" data-pair="C" data-side="R" onclick="matchClick(this,'m1')">sustainability</div>
+  </div>
+  <div class="feedback" id="fb_m1"></div>
+</div>
+</div>
+
+<!-- Q2: 빈칸 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+<div class="card">
+  <div class="slide-title">Q2 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('Blank the biggest challenges facing our planet is climate change.')">🔊</button>
+    <span class="blank-box" id="blank2"></span> the biggest challenges facing our planet is climate change.
+  </div>
+  <div class="choices-row" id="q2">
+    <button class="choice-btn" onclick="fillBlank(this,'One','blank2','q2',2)">One</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Some of','blank2','q2',2)">Some of</button>
+    <button class="choice-btn" onclick="fillBlank(this,'One of','blank2','q2',2)">One of</button>
+    <button class="choice-btn" onclick="fillBlank(this,'The one','blank2','q2',2)">The one</button>
+  </div>
+  <div class="feedback" id="fb_q2"></div>
+</div>
+</div>
+
+<!-- Q3: O/X -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q3 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">다음 문장이 의견(opinion)인지 사실(fact)인지 판단하세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('The Earth s average temperature has risen by about one degree Celsius since 1900.')">🔊</button>
+    "The Earth's average temperature has risen by about 1°C since 1900."
+  </div>
+  <div class="q-sub">이것은 사실(Fact)인가요?</div>
+  <div class="ox-row" id="q3">
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">❌</button>
+  </div>
+  <div class="feedback" id="fb_q3"></div>
+</div>
+</div>
+
+<!-- Q4: 토글 (의견 표현 고르기) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q4 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text"><strong>의견(Opinion)</strong>을 나타내는 문장을 모두 고르세요.</div>
+  <div class="toggle-grid" id="q4">
+    <div class="toggle-item" data-op="1" onclick="toggleItem(this)">I believe we should reduce plastic use.</div>
+    <div class="toggle-item" data-op="0" onclick="toggleItem(this)">CO₂ levels have increased by 50%.</div>
+    <div class="toggle-item" data-op="1" onclick="toggleItem(this)">It is important to protect rainforests.</div>
+    <div class="toggle-item" data-op="0" onclick="toggleItem(this)">Over 800 million people lack clean water.</div>
+    <div class="toggle-item" data-op="1" onclick="toggleItem(this)">We should take action to fight poverty.</div>
+  </div>
+  <button class="nav-btn" style="margin-top:14px;" onclick="chkTog('q4','op')">확인하기</button>
+  <div class="feedback" id="fb_q4"></div>
+</div>
+</div>
+
+<!-- Q5: 빈칸 (should) -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q5 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('We blank take action to reduce air pollution before it gets worse.')">🔊</button>
+    We <span class="blank-box" id="blank5"></span> take action to reduce air pollution before it gets worse.
+  </div>
+  <div class="choices-row" id="q5">
+    <button class="choice-btn" onclick="fillBlank(this,'can','blank5','q5',1)">can</button>
+    <button class="choice-btn" onclick="fillBlank(this,'should','blank5','q5',1)">should</button>
+    <button class="choice-btn" onclick="fillBlank(this,'might','blank5','q5',1)">might</button>
+    <button class="choice-btn" onclick="fillBlank(this,'would','blank5','q5',1)">would</button>
+  </div>
+  <div class="feedback" id="fb_q5"></div>
+</div>
+</div>
+
+<!-- Passage -->
+<div class="slide" data-type="passage">
+<div class="card">
+  <div class="slide-title">📖 지문 읽기</div>
+  <div class="passage" style="font-size:16px;line-height:2;">
+    <button class="tts-btn" onclick="speak('Access to clean water is one of the most serious global issues today. According to the United Nations, over two billion people worldwide do not have safe drinking water. This problem is especially severe in parts of Africa and South Asia. Lack of clean water causes diseases and prevents children from attending school. I strongly believe that all nations should work together to solve this crisis. For example, investing in water purification systems and building wells can make a big difference. If we take action now, we can save millions of lives.')">🔊</button>
+    Access to clean water is one of the most serious global issues today. According to the United Nations, over 2 billion people worldwide do not have safe drinking water. This problem is especially severe in parts of Africa and South Asia. Lack of clean water causes diseases and prevents children from attending school. I strongly believe that all nations should work together to solve this crisis. For example, investing in water purification systems and building wells can make a big difference. If we take action now, we can save millions of lives.
+  </div>
+</div>
+</div>
+
+<!-- Q6: 내용 일치 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q6 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">지문의 내용과 일치하는 것은?</div>
+  <div class="choices" id="q6">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">All people in Africa lack clean water.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">Over 2 billion people lack safe drinking water.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">Clean water problems exist only in South Asia.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">Building schools is the best solution.</button>
+  </div>
+  <div class="feedback" id="fb_q6"></div>
+</div>
+</div>
+
+<!-- Q7: Fact vs Opinion 구분 -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+<div class="card">
+  <div class="slide-title">Q7 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">지문에서 글쓴이의 <strong>의견(opinion)</strong>에 해당하는 문장은?</div>
+  <div class="choices" id="q7">
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Over 2 billion people do not have safe drinking water.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">Lack of clean water causes diseases.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">All nations should work together to solve this crisis.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">This problem is especially severe in Africa and South Asia.</button>
+  </div>
+  <div class="feedback" id="fb_q7"></div>
+</div>
+</div>
+
+<!-- Q8: 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="100">
+<div class="card">
+  <div class="slide-title">Q8 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">글쓴이가 이 글을 쓴 주된 목적은?</div>
+  <div class="choices" id="q8">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">물 문제의 심각성을 알리고 해결을 촉구하려고</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">아프리카 여행을 소개하려고</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">정수기 회사를 홍보하려고</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">학교 출석의 중요성을 강조하려고</button>
+  </div>
+  <div class="feedback" id="fb_q8"></div>
+</div>
+</div>
+
+<!-- Q9: 선택 -->
+<div class="slide" data-type="q" data-correct="3" data-score="50">
+<div class="card">
+  <div class="slide-title">Q9 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">"sustainability"의 뜻에 가장 가까운 것은?</div>
+  <div class="choices" id="q9">
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q9')">환경을 파괴하면서 성장하는 것</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q9')">모든 자원을 빠르게 사용하는 것</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q9')">과거의 방식을 그대로 유지하는 것</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q9')">미래 세대를 위해 자원을 보존하며 발전하는 것</button>
+  </div>
+  <div class="feedback" id="fb_q9"></div>
+</div>
+</div>
+
+<div class="slide" data-type="result">
+<div class="card result-card">
+  <div class="slide-title" style="justify-content:center;">🎯 학습 결과</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-msg" id="finalMsg">점</div>
+  <div class="result-detail"><div class="result-item"><div class="label">맞힌 문제</div><div class="val" id="correctCnt">0</div></div><div class="result-item"><div class="label">총 문항</div><div class="val">9</div></div></div>
+  <button class="nav-btn" style="margin-top:18px;" onclick="location.reload()">다시 풀기 🔄</button>
+</div>
+</div>
+</div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button><span class="nav-info" id="navInfo">1 / 13</span><button class="nav-btn" id="nextBtn" onclick="go(1)">다음 ▶</button></div>
+<script>
+let cur=0,totalScore=0,correctCount=0,soundOn=true;const slides=document.querySelectorAll('.slide');const total=slides.length;let audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('navInfo').textContent=`${n+1} / ${total}`;document.getElementById('prevBtn').disabled=n===0;if(n===total-1)showResult();}
+function go(d){const n=cur+d;if(n>=0&&n<total){cur=n;showSlide(cur);}}
+function checkAnswer(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(i===c){btn.classList.add('correct');playCorrect();totalScore+=parseInt(btn.closest('.slide').dataset.score)||50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{btn.classList.add('wrong');bs[c].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';}}
+function checkOX(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .ox-btn`);const cl=btn.textContent.trim()==='⭕'?'O':'X';bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(cl===c){btn.classList.add('correct');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 맞아요! 과학적으로 측정된 데이터이므로 사실(Fact)이에요!';}else{btn.classList.add('wrong');bs[c==='O'?0:1].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 이것은 측정된 데이터이므로 사실(Fact)이에요!';}}
+function fillBlank(btn,t,bid,qid,c){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));document.getElementById(bid).textContent=t;const fb=document.getElementById('fb_'+qid);if(i===c){document.getElementById(bid).classList.add('filled');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';bs[c].style.border='3px solid var(--green)';}}
+function toggleItem(el){playClick();el.classList.toggle('on');}
+function chkTog(qid,attr){const its=document.querySelectorAll(`#${qid} .toggle-item`);let ok=true;its.forEach(it=>{if((it.dataset[attr]==='1')!==it.classList.contains('on'))ok=false;});its.forEach(it=>it.style.pointerEvents='none');const fb=document.getElementById('fb_'+qid);if(ok){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 의견은 "believe", "should", "important to" 같은 표현이 단서예요!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 사실(Fact)은 숫자·데이터, 의견(Opinion)은 주관적 판단이에요!';}}
+let matchSel=null,matchCount=0;
+function matchClick(el,mid){if(el.classList.contains('matched'))return;playClick();if(!matchSel){matchSel=el;el.classList.add('selected');}else{if(matchSel===el){matchSel.classList.remove('selected');matchSel=null;return;}if(matchSel.dataset.pair===el.dataset.pair&&matchSel.dataset.side!==el.dataset.side){matchSel.classList.remove('selected');matchSel.classList.add('matched');el.classList.add('matched');matchCount++;playCorrect();if(matchCount===3){totalScore+=50;correctCount++;document.getElementById('fb_'+mid).className='feedback show correct';document.getElementById('fb_'+mid).textContent='✅ 모두 매칭 성공!';}}else{matchSel.classList.remove('selected');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);playWrong();}matchSel=null;}}
+function showResult(){document.getElementById('finalScore').textContent=totalScore;document.getElementById('correctCnt').textContent=correctCount;let m='';if(correctCount>=8)m='🏆 글로벌 리더 수준!';else if(correctCount>=5)m='👍 잘했어요!';else m='📚 다시 복습해 보세요!';document.getElementById('finalMsg').textContent=m;}
+let tx=0;document.getElementById('slideArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?go(1):go(-1);}});showSlide(0);
+</script>
+</body>
+</html>

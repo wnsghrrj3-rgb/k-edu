@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 5학년 영어 심화 | Problem-Solution Essay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#0F4C75;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px;}.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s;}.page-info{font-size:15px;color:var(--subtext);}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow);}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s,transform .3s;pointer-events:none;overflow-y:auto;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-50px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 28px;width:100%;max-width:800px;}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700;}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px;}.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:21px;font-weight:700;cursor:pointer;transition:all .15s;}.choice-btn:hover{border-color:var(--primary);background:var(--primary-light);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);}.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{font-size:19px;width:100%;max-width:620px;padding:10px 20px;text-align:left;}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px;}.stars{color:#FCD34D;}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700;}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:18px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;}.nav-btn:disabled{opacity:.3;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:20px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.flow-box{display:flex;align-items:center;justify-content:center;gap:0;margin:14px 0;flex-wrap:wrap;}
+.flow-step{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:14px 16px;text-align:center;min-width:140px;}.flow-step strong{color:var(--primary);font-size:18px;display:block;margin-bottom:4px;}.flow-step span{font-size:15px;color:var(--subtext);}
+.flow-arrow{font-size:28px;color:var(--primary);margin:0 6px;}
+.struct-box{border:2px solid var(--primary);border-radius:14px;overflow:hidden;margin:10px 0;}.struct-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);}.struct-row:last-child{border-bottom:none;}.struct-label{background:var(--primary);color:white;font-weight:900;font-size:15px;padding:12px 14px;min-width:110px;display:flex;align-items:center;justify-content:center;text-align:center;}.struct-content{padding:12px 16px;font-size:16px;line-height:1.6;flex:1;}.struct-content strong{color:var(--primary);}
+.order-item{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:17px;font-weight:700;cursor:pointer;transition:all .15s;margin:4px 0;}.order-item:hover{border-color:var(--primary);background:var(--primary-light);}.order-item.placed{background:var(--green-light);border-color:var(--green);pointer-events:none;}.order-item.wrong{background:var(--red-light);border-color:var(--red);}
+.drop-zone{min-height:44px;border:2px dashed var(--border);border-radius:10px;padding:8px;margin:4px 0;display:flex;align-items:center;font-size:16px;color:var(--subtext);}.drop-zone.filled{border-style:solid;border-color:var(--green);background:var(--green-light);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1 / 12</span></div>
+  <span class="score-badge">💎 <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">⭐ K-edu</span>
+</div>
+<div class="slides">
+
+<!-- S0 -->
+<div class="slide active">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">✍️ 5학년 영어 심화 · 36차시</div>
+    <h1 style="font-size:28px;margin:14px 0;">Problem-Solution Essay</h1>
+    <p style="font-size:19px;color:var(--subtext);line-height:1.7;"><strong>문제 제시 → 원인 → 해결 → 기대효과</strong><br>4단계 구조를 배웁니다.</p>
+    <div style="margin:18px 0;font-size:18px;color:var(--subtext);">난이도: <span class="stars">⭐⭐⭐</span> ~ <span class="stars">⭐⭐⭐⭐</span></div>
+    <button class="nav-btn" onclick="nextSlide()" style="font-size:22px;padding:14px 40px;">학습 시작 →</button>
+  </div>
+</div>
+
+<!-- S1: CONCEPT — 흐름도 -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">📐 Problem-Solution 구조</div>
+    <div class="flow-box">
+      <div class="flow-step"><strong>① Problem</strong><span>문제 제시</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>② Cause</strong><span>원인 분석</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>③ Solution</strong><span>해결 방안</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><strong>④ Effect</strong><span>기대 효과</span></div>
+    </div>
+    <div class="struct-box" style="margin-top:14px;">
+      <div class="struct-row"><div class="struct-label">핵심 표현</div><div class="struct-content">
+        <strong>Problem:</strong> One serious problem is ~ / A major issue is ~<br>
+        <strong>Cause:</strong> This is caused by ~ / The main reason is ~<br>
+        <strong>Solution:</strong> To solve this, ~ / One effective solution is ~<br>
+        <strong>Effect:</strong> As a result, ~ / This would lead to ~
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Q1 — 순서 맞추기 -->
+<div class="slide" data-score="50">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">올바른 에세이 순서를 맞추세요.</p>
+    <div id="orderZones">
+      <div class="drop-zone" id="z0">① ___</div>
+      <div class="drop-zone" id="z1">② ___</div>
+      <div class="drop-zone" id="z2">③ ___</div>
+      <div class="drop-zone" id="z3">④ ___</div>
+    </div>
+    <div id="orderPool" style="margin-top:10px;">
+      <div class="order-item" onclick="placeOrder(this,0)">Solution (해결 방안)</div>
+      <div class="order-item" onclick="placeOrder(this,1)">Problem (문제 제시)</div>
+      <div class="order-item" onclick="placeOrder(this,2)">Expected Effect (기대 효과)</div>
+      <div class="order-item" onclick="placeOrder(this,3)">Cause (원인 분석)</div>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 — 파트 분류 -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">다음 문장은 어느 파트?</p>
+    <div class="passage">"To solve this problem, schools should provide free healthy lunches to all students."</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">Problem</button>
+      <button class="choice-btn" onclick="answer(this,1)">Cause</button>
+      <button class="choice-btn" onclick="answer(this,2)">Solution</button>
+      <button class="choice-btn" onclick="answer(this,3)">Effect</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 — 연결어 고르기 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 알맞은 연결어는?</p>
+    <div class="passage">Many students skip breakfast. ______, they cannot concentrate in class and their grades suffer.</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">As a result</button>
+      <button class="choice-btn" onclick="answer(this,1)">To solve this</button>
+      <button class="choice-btn" onclick="answer(this,2)">The main reason is</button>
+      <button class="choice-btn" onclick="answer(this,3)">One serious problem</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 — Problem 문장 고르기 -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">주제 "학교 왕따"에 대해<br>Problem 문장으로 가장 적합한 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Bullying can be solved by talking.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Bullying is a serious problem in many schools, causing emotional harm to thousands of students.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Schools should hire more counselors.</button>
+      <button class="choice-btn" onclick="answer(this,3)">As a result, students feel safer.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q5 — Cause vs Effect 판단 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">이 문장은 원인(Cause)? 기대효과(Effect)?</p>
+    <div class="passage">"This is mainly caused by a lack of physical education classes and too much screen time."</div>
+    <div class="choices">
+      <button class="choice-btn" style="font-size:24px;padding:14px 36px;" onclick="answer(this,0)">🔍 Cause</button>
+      <button class="choice-btn" style="font-size:24px;padding:14px 36px;" onclick="answer(this,1)">✨ Effect</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q6 — 빠진 파트 찾기 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="100">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">빠진 [Effect] 파트로 적절한 것은?</p>
+    <div class="passage" style="font-size:16px;">
+      <strong>[Problem]</strong> Air pollution is getting worse in big cities.<br>
+      <strong>[Cause]</strong> This is caused by too many cars and factories.<br>
+      <strong>[Solution]</strong> Cities should invest in public transportation and green energy.<br>
+      <strong>[Effect]</strong> ___
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Air pollution is a big problem.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Cars produce CO₂ emissions.</button>
+      <button class="choice-btn" onclick="answer(this,2)">The government should make new laws.</button>
+      <button class="choice-btn" onclick="answer(this,3)">As a result, air quality would improve and citizens would enjoy healthier lives.</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q7 — 에세이 문장 순서 배열 ⭐⭐⭐⭐ -->
+<div class="slide" data-score="100">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">문장을 올바른 에세이 순서로 배열하세요.</p>
+    <div id="essayZones">
+      <div class="drop-zone" id="ez0">① ___</div>
+      <div class="drop-zone" id="ez1">② ___</div>
+      <div class="drop-zone" id="ez2">③ ___</div>
+      <div class="drop-zone" id="ez3">④ ___</div>
+    </div>
+    <div id="essayPool" style="margin-top:10px;">
+      <div class="order-item" onclick="placeEssay(this,0)" style="font-size:15px;">One effective solution is to create more recycling programs in every neighborhood.</div>
+      <div class="order-item" onclick="placeEssay(this,1)" style="font-size:15px;">This would lead to cleaner streets and a healthier environment for future generations.</div>
+      <div class="order-item" onclick="placeEssay(this,2)" style="font-size:15px;">A serious problem in our city is the increasing amount of plastic waste.</div>
+      <div class="order-item" onclick="placeEssay(this,3)" style="font-size:15px;">The main reason is that people use single-use plastic products every day.</div>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q8 — 오류 찾기 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">이 에세이의 구조적 문제점은?</p>
+    <div class="passage" style="font-size:16px;">
+      Students are stressed about exams. The main reason is too much homework. To solve this, students should play more games. As a result, everyone will be happy and get perfect scores.
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">문제 제시가 부족하다</button>
+      <button class="choice-btn" onclick="answer(this,1)">원인 분석이 없다</button>
+      <button class="choice-btn" onclick="answer(this,2)">해결 방안이 비현실적이고, 기대 효과가 과장되었다</button>
+      <button class="choice-btn" onclick="answer(this,3)">연결어가 틀렸다</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q9 — 종합: 주제에 맞는 Solution 고르기 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">주제: "학생들의 수면 부족"<br>가장 효과적인 Solution은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Students should just sleep more.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Schools could start classes 30 minutes later, and parents could limit screen time before bed.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Sleep is important for health.</button>
+      <button class="choice-btn" onclick="answer(this,3)">The problem is that students don't sleep enough.</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: RESULT -->
+<div class="slide">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px;margin-bottom:10px;" id="resultEmoji">🏆</div>
+    <h2 style="font-size:26px;margin-bottom:10px;">학습 완료!</h2>
+    <p style="font-size:22px;margin:8px 0;">총 점수: <strong id="finalScore">0</strong>점</p>
+    <p style="font-size:26px;" id="resultStars">⭐⭐⭐</p>
+    <p style="font-size:18px;color:var(--subtext);margin:14px 0;line-height:1.6;">Problem-Solution 4단계 마스터!<br><strong>문제→원인→해결→효과</strong><br>다음: 요약문 쓰기 ✍️</p>
+    <button class="nav-btn" onclick="restart()" style="font-size:20px;padding:12px 36px;">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=500?'⭐⭐⭐⭐⭐':score>=350?'⭐⭐⭐⭐':score>=200?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=500?'🏆':'🎉';}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+// Order Q1
+const orderCorrect=[1,3,0,2];
+let orderStep=0;
+function placeOrder(el,idx){if(answered[currentSlide])return;playClick();if(idx===orderCorrect[orderStep]){el.classList.add('placed');document.getElementById('z'+orderStep).textContent='✅ '+el.textContent;document.getElementById('z'+orderStep).classList.add('filled');orderStep++;if(orderStep===4){addScore(50);setFB('fb2','✅ 순서 완벽! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}}else{el.classList.add('wrong');playWrong();combo=0;setFB('fb2','순서를 다시!',false);setTimeout(()=>el.classList.remove('wrong'),500);}}
+
+// Essay order Q7
+const essayCorrect=[2,3,0,1];
+let essayStep=0;
+function placeEssay(el,idx){if(answered[currentSlide])return;playClick();if(idx===essayCorrect[essayStep]){el.classList.add('placed');const z=document.getElementById('ez'+essayStep);z.textContent='✅ '+el.textContent;z.style.fontSize='14px';z.classList.add('filled');essayStep++;if(essayStep===4){addScore(100);setFB('fb8','✅ 에세이 순서 완벽! +100점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}}else{el.classList.add('wrong');playWrong();combo=0;setFB('fb8','구조를 떠올려보세요!',false);setTimeout(()=>el.classList.remove('wrong'),500);}}
+
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+
+function restart(){score=0;combo=0;answered={};orderStep=0;essayStep=0;
+document.querySelectorAll('.choice-btn,.order-item').forEach(b=>{b.className=b.className.replace(/correct|wrong|placed/g,'').trim();});
+document.querySelectorAll('.drop-zone').forEach((z,i)=>{z.classList.remove('filled');z.style.fontSize='';});
+['z0','z1','z2','z3'].forEach((id,i)=>document.getElementById(id).textContent=(i+1)+' ___');
+['ez0','ez1','ez2','ez3'].forEach((id,i)=>document.getElementById(id).textContent=(i+1)+' ___');
+document.querySelectorAll('.order-item').forEach(o=>o.className='order-item');
+document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>G6 영어 심화 B-2 | 15차시 글의 목적 실전</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --primary: #1D4ED8;
+  --primary-light: #DBEAFE;
+  --secondary: #2563EB;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E2E8F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --radius: 14px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; background: #fff;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05); flex-shrink: 0;
+}
+.sound-btn { background: none; border: none; cursor: pointer; font-size: 22px; padding: 4px 8px; border-radius: 8px; transition: background .15s; }
+.sound-btn:hover { background: var(--primary-light); }
+.progress-wrap { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0 14px; }
+.progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 99px; transition: width .4s ease; }
+.page-info { font-size: 15px; color: var(--subtext); white-space: nowrap; }
+.score-badge { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 3px 12px; font-size: 16px; font-weight: 700; color: var(--yellow); }
+.kedu-logo { display: flex; align-items: center; gap: 5px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 12px; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+
+/* ── SLIDES ── */
+.slides { flex: 1; position: relative; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px; opacity: 0; transform: translateX(50px); transition: opacity .3s ease, transform .3s ease; pointer-events: none; overflow-y: auto; }
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+.slide.out { opacity: 0; transform: translateX(-50px); }
+
+/* ── CARD ── */
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 24px 32px; width: 100%; max-width: 800px; }
+.slide-title { font-size: 20px; color: var(--subtext); text-align: center; margin-bottom: 10px; font-weight: 700; }
+
+/* ── CHOICE BUTTONS ── */
+.choices { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 10px; }
+.choice-btn { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 20px; font-family: 'Noto Sans KR', sans-serif; font-size: 24px; font-weight: 700; cursor: pointer; transition: border-color .15s, background .15s; }
+.choice-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.choice-btn.correct { background: var(--green-light); border-color: var(--green); }
+.choice-btn.wrong { background: var(--red-light); border-color: var(--red); }
+.choices.col { flex-direction: column; align-items: center; }
+.choices.col .choice-btn { font-size: 20px; width: 100%; max-width: 620px; padding: 10px 20px; }
+
+/* ── BLANK BOX ── */
+.blank-box { display: inline-block; font-size: 44px; font-weight: 900; border-bottom: 4px solid var(--text); min-width: 70px; text-align: center; color: var(--primary); line-height: 1.2; margin: 0 5px; }
+
+/* ── FEEDBACK ── */
+.feedback { font-size: 18px; text-align: center; margin-top: 10px; min-height: 26px; border-radius: 8px; padding: 5px 14px; font-weight: 700; }
+.feedback.ok { color: var(--green); background: var(--green-light); }
+.feedback.err { color: var(--red); background: var(--red-light); }
+
+/* ── QUESTION ── */
+.question-label { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 14px; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.stars { color: #FCD34D; }
+.question-text { font-size: 22px; text-align: center; margin: 8px 0 12px; line-height: 1.6; font-weight: 700; }
+
+/* ── READING PASSAGE ── */
+.passage { background: #F8FAFC; border-radius: 12px; padding: 18px 22px; font-size: 19px; line-height: 1.8; margin: 10px 0; border-left: 4px solid var(--primary); color: var(--text); }
+
+/* ── NAV ── */
+.navbar { display: flex; justify-content: center; gap: 16px; padding: 12px 20px; background: #fff; border-top: 1px solid var(--border); flex-shrink: 0; }
+.nav-btn { background: var(--primary); color: white; border: none; border-radius: 10px; padding: 10px 28px; font-family: 'Noto Sans KR', sans-serif; font-size: 18px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.nav-btn:disabled { opacity: .3; cursor: default; }
+.nav-btn:not(:disabled):hover { opacity: .85; }
+
+/* ── COMBO TOAST ── */
+.combo-toast { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-20px); background: linear-gradient(135deg, #F59E0B, #D97706); color: white; padding: 6px 18px; border-radius: 99px; font-size: 18px; font-weight: 900; opacity: 0; transition: opacity .3s, transform .3s; z-index: 999; pointer-events: none; }
+.combo-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── RESULT ── */
+.result-card { text-align: center; }
+.result-card .emoji { font-size: 60px; }
+.result-card .score-big { font-size: 48px; font-weight: 900; color: var(--primary); margin: 10px 0; }
+.result-card .stars-big { font-size: 32px; }
+.restart-btn { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 12px 32px; font-size: 20px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+
+/* ── OX BUTTONS ── */
+.ox-choices { display: flex; gap: 16px; justify-content: center; margin-top: 12px; }
+.ox-btn { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--border); background: var(--card); font-size: 36px; font-weight: 900; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+.ox-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.ox-btn.correct { background: var(--green-light); border-color: var(--green); }
+.ox-btn.wrong { background: var(--red-light); border-color: var(--red); }
+
+/* ── DRAG SORT ── */
+.sort-area { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.sort-item { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 18px; font-weight: 700; cursor: grab; display: flex; align-items: center; gap: 10px; transition: background .15s; }
+.sort-item:active { cursor: grabbing; background: var(--primary-light); }
+.sort-item .num { background: var(--primary); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.sort-item.correct { background: var(--green-light); border-color: var(--green); }
+.sort-item.wrong { background: var(--red-light); border-color: var(--red); }
+
+/* ── HIGHLIGHT ── */
+.highlight-btn { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 17px; cursor: pointer; transition: all .15s; margin: 3px; display: inline-block; }
+.highlight-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.highlight-btn.selected { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.highlight-btn.correct { background: var(--green-light); border-color: var(--green); }
+.highlight-btn.wrong { background: var(--red-light); border-color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <div class="score-badge">💎 <span id="scoreDisp">0</span></div>
+  <div class="kedu-logo">⭐ K-edu</div>
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<!-- SLIDES -->
+<div class="slides">
+
+  <!-- SLIDE 0: INTRO -->
+  <div class="slide active" data-type="concept">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">📖 수능 독해 전유형 완성</div>
+      <div style="font-size:28px; font-weight:900; color:var(--primary); margin:16px 0;">15차시 — 글의 목적 실전</div>
+      <div style="font-size:18px; color:var(--subtext); line-height:1.7;">
+        수능 18번형 — 편지·안내문의 <strong>목적</strong>을 파악하는 유형<br>
+        핵심 전략: <strong>①</strong> 첫 문장에서 상황 파악 → <strong>②</strong> 요청·감사·불만 등 핵심 동사 포착 → <strong>③</strong> 마지막 문장에서 목적 확인
+      </div>
+      <div style="margin-top:14px; font-size:16px; color:var(--yellow);">⭐⭐⭐ ~ ⭐⭐⭐⭐</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 1: PASSAGE 1 — Complaint Letter -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage A</div>
+      <div class="passage">
+        Dear Manager,<br><br>
+        I am writing to express my dissatisfaction with the service I received at your restaurant last Friday evening. Despite having made a reservation two weeks in advance, my family and I were kept waiting for over forty minutes before being seated. Furthermore, when our meals finally arrived, two of the dishes were incorrect. Although the waiter apologized, no effort was made to correct the situation promptly. I would appreciate it if you could address these issues and ensure that future customers do not experience similar problems.
+      </div>
+      <div style="font-size:15px; color:var(--subtext); text-align:center; margin-top:8px;">🔊 지문을 천천히 읽고 핵심 단서를 찾아보세요</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Q1 — 목적 파악 (4지선다) -->
+  <div class="slide" data-type="q" data-correct="2" data-score="50">
+    <div class="card">
+      <div class="question-label">Q1 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">위 글의 목적으로 가장 적절한 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 레스토랑을 추천하려고</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 예약 방법을 문의하려고</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 불만족스러운 서비스에 항의하려고</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 새로운 메뉴를 제안하려고</button>
+      </div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Q2 — 핵심 단서 문장 고르기 (하이라이트) -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="question-label">Q2 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">글의 목적을 가장 직접적으로 드러내는 표현은?</div>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-top:10px;">
+        <button class="highlight-btn" onclick="answerHighlight(this,2,0)">express my dissatisfaction</button>
+        <button class="highlight-btn" onclick="answerHighlight(this,2,1)">made a reservation</button>
+        <button class="highlight-btn" onclick="answerHighlight(this,2,2)">the waiter apologized</button>
+        <button class="highlight-btn" onclick="answerHighlight(this,2,3)">meals finally arrived</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: PASSAGE 2 — Thank-you Letter -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage B</div>
+      <div class="passage">
+        Dear Dr. Kim,<br><br>
+        I wanted to take a moment to thank you for your incredible support during my recovery. When I first came to your clinic, I was barely able to walk without assistance. Over the past six months, your expertise and encouragement have helped me regain not only my physical strength but also my confidence. I truly believe that without your dedication, my progress would not have been possible. I hope this letter conveys even a fraction of the gratitude I feel.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Q3 — 목적 파악 O/X -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="question-label">Q3 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">이 글의 목적은 "감사를 표현하기 위해서"이다.</div>
+      <div class="ox-choices">
+        <button class="ox-btn" onclick="answerOX(this,5,0)">⭕</button>
+        <button class="ox-btn" onclick="answerOX(this,5,1)">❌</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Q4 — 빈칸 (핵심 동사 포착) -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q4 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">Passage B에서 글쓴이의 목적을 드러내는 핵심 동사: "I wanted to <span class="blank-box" id="blank6">___</span> you"</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="fillBlank(this,'blank6','blame',1,0)">blame</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank6','thank',1,1)">thank</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank6','visit',1,2)">visit</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank6','ask',1,3)">ask</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: PASSAGE 3 — Event Announcement -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage C</div>
+      <div class="passage">
+        Dear Parents and Guardians,<br><br>
+        We are pleased to announce that Greenfield Elementary School will be hosting its annual Science Fair on March 15th. Students from all grades are encouraged to participate by presenting their science projects. The event will take place in the school gymnasium from 10 a.m. to 3 p.m. Light refreshments will be provided. We kindly ask that each family confirm their child's participation by March 8th. We look forward to seeing you there!
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Q5 — 목적 파악 (4지선다) -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q5 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">위 글의 목적으로 가장 적절한 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 과학 프로젝트 주제를 제안하려고</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 과학 박람회 참가를 안내하려고</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 체육관 공사 일정을 알리려고</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 급식 메뉴 변경을 공지하려고</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: Q6 — 목적 유형 분류 (카드 매칭) -->
+  <div class="slide" data-type="q" data-correct="0" data-score="60">
+    <div class="card">
+      <div class="question-label">Q6 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">각 지문의 글 유형을 올바르게 짝지은 것은?</div>
+      <div style="font-size:17px; color:var(--subtext); text-align:center; margin-bottom:8px;">A = 불만 편지 / B = 감사 편지 / C = 행사 안내문</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① A-불만 / B-감사 / C-안내</button>
+        <button class="choice-btn" onclick="answer(this,1)">② A-감사 / B-불만 / C-안내</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ A-안내 / B-감사 / C-불만</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ A-불만 / B-안내 / C-감사</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Q7 — 전략 적용: 첫 문장 단서 (하이라이트) -->
+  <div class="slide" data-type="q" data-correct="0" data-score="60">
+    <div class="card">
+      <div class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">수능 18번 전략 — 아래 첫 문장만 보고 글의 목적을 추론하세요.<br><br>
+        <span style="font-size:18px; color:var(--text); font-weight:400;">"I am writing to <strong>request</strong> a full refund for the defective laptop I purchased on your website."</span>
+      </div>
+      <div class="choices col" style="margin-top:14px;">
+        <button class="choice-btn" onclick="answer(this,0)">① 환불을 요청하려고</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 노트북을 추천하려고</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 배송 일정을 확인하려고</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 웹사이트 가입 방법을 문의하려고</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: Q8 — 고난도 변형: 간접적 목적 추론 -->
+  <div class="slide" data-type="q" data-correct="3" data-score="80">
+    <div class="card">
+      <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">다음 편지의 숨겨진 목적으로 가장 적절한 것은?</div>
+      <div class="passage" style="font-size:17px; line-height:1.7;">
+        Dear Neighbor,<br>
+        I hope you and your family are doing well. I noticed that the tree in your yard has grown quite tall, and some of its branches now extend over our fence. While I understand that trees naturally grow in unpredictable ways, a few branches have begun blocking sunlight to our garden. I was wondering if we could find a convenient time to discuss this matter.
+      </div>
+      <div class="choices col" style="margin-top:10px;">
+        <button class="choice-btn" onclick="answer(this,0)">① 이웃의 안부를 물으려고</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 나무의 성장 과정을 설명하려고</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 정원 가꾸기 팁을 공유하려고</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 나뭇가지 정리를 정중히 요청하려고</button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:22px; font-weight:700; margin:8px 0;">학습 완료!</div>
+      <div class="score-big" id="finalScore">0</div>
+      <div style="font-size:16px; color:var(--subtext);">점</div>
+      <div class="stars-big" id="resultStars">⭐⭐⭐</div>
+      <div style="font-size:16px; color:var(--subtext); margin-top:12px;">
+        💡 <strong>Tip:</strong> 첫 문장의 핵심 동사(express, request, thank, inform 등)가 목적을 결정합니다!
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+// ── STATE ──
+let soundOn = true, currentSlide = 0, score = 0, combo = 0, answered = {};
+const TOTAL_SLIDES = 13;
+let audioCtx = null;
+function getCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+
+function toggleSound() { soundOn = !soundOn; document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+
+function playTone(freq, type, dur, gain=0.3) {
+  getCtx(); audioCtx.resume().then(() => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  });
+}
+function playCorrect() { if(!soundOn) return; [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80)); }
+function playWrong() { if(!soundOn) return; [220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100)); }
+function playClick() { if(!soundOn) return; playTone(880,'sine',.08,0.2); }
+
+function speakWord(text) {
+  if (!soundOn) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.8;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+// ── NAVIGATION ──
+function goSlide(n) {
+  const sl = document.querySelectorAll('.slide');
+  sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out');
+  setTimeout(() => { for(let s of sl) s.classList.remove('out'); }, 400);
+  currentSlide = n; sl[currentSlide].classList.add('active'); updateUI();
+}
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+// ── UI ──
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+  if (currentSlide === TOTAL_SLIDES-1) {
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('resultStars').textContent = score>=350?'⭐⭐⭐⭐⭐':score>=250?'⭐⭐⭐⭐':score>=150?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent = score>=350?'🏆':'🎉';
+  }
+}
+
+// ── SCORE ──
+function addScore(pts) {
+  const bonus = combo >= 3 ? Math.floor(pts * 0.5) : 0;
+  score += pts + bonus; combo++;
+  document.getElementById('scoreDisp').textContent = score;
+  if (combo >= 2) {
+    const t = document.getElementById('comboToast');
+    t.textContent = '🔥 '+combo+' 콤보!';
+    t.classList.add('show');
+    clearTimeout(addScore._t);
+    addScore._t = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+}
+
+function setFB(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.className = 'feedback '+(ok?'ok':'err'); }
+}
+
+// ── ANSWER (4지선다) ──
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||50;
+  playClick();
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, '✅ 정답! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+currentSlide, '다시 생각해보세요! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ── ANSWER O/X ──
+function answerOX(btn, slideIdx, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||50;
+  playClick();
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+slideIdx, '✅ 정답! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+slideIdx, '다시 한번! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ── ANSWER HIGHLIGHT ──
+function answerHighlight(btn, slideIdx, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||50;
+  playClick();
+  if (idx === 0) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+slideIdx, '✅ 정답! "express my dissatisfaction"이 핵심! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+slideIdx, '목적을 직접 드러내는 표현을 찾아보세요! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ── FILL BLANK ──
+function fillBlank(btn, blankId, text, ci, mi) {
+  if (answered[currentSlide]) return;
+  const b = document.getElementById(blankId);
+  b.textContent = text;
+  playClick(); speakWord(text);
+  const pts = parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;
+  if (mi === ci) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, '✅ "'+text+'" 정답! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    b.textContent = '___';
+    setFB('fb'+currentSlide, '다시 도전! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ── RESTART ──
+function restart() {
+  score = 0; combo = 0; answered = {};
+  document.querySelectorAll('.choice-btn').forEach(b => b.className = 'choice-btn');
+  document.querySelectorAll('.highlight-btn').forEach(b => { b.className = 'highlight-btn'; });
+  document.querySelectorAll('.ox-btn').forEach(b => { b.className = 'ox-btn'; });
+  document.querySelectorAll('.blank-box').forEach(b => { b.textContent = '___'; });
+  document.querySelectorAll('.feedback').forEach(f => { f.textContent = ''; f.className = 'feedback'; });
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active','out'));
+  currentSlide = 0; document.querySelectorAll('.slide')[0].classList.add('active'); updateUI();
+}
+
+// ── SWIPE ──
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
+document.querySelector('.slides').addEventListener('touchend', e => {
+  const diff = e.changedTouches[0].clientX - tx;
+  if (Math.abs(diff) > 50) { diff > 0 ? prevSlide() : nextSlide(); }
+});
+
+updateUI();
+</script>
+</body>
+</html>

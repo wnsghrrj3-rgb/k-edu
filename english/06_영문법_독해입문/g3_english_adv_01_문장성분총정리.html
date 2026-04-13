@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 심화 01 — 문장 성분 총정리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0F9FF;
+  --card: #FFFFFF;
+  --primary: #0369A1;
+  --primary-light: #BAE6FD;
+  --secondary: #0891B2;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E2E8F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; user-select: none; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex-shrink: 0; }
+.sound-btn { background: none; border: none; cursor: pointer; font-size: 24px; padding: 4px 8px; border-radius: 10px; transition: background .2s; }
+.sound-btn:hover { background: var(--primary-light); }
+.progress-wrap { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0 14px; }
+.progress-bar { flex: 1; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 99px; transition: width .5s ease; }
+.page-info { font-size: 16px; color: var(--subtext); white-space: nowrap; }
+.score-badge { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 3px 12px; font-size: 18px; font-weight: 700; color: var(--yellow); }
+.kedu-logo { display: flex; align-items: center; gap: 5px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 12px; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.slides { flex: 1; position: relative; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 22px; opacity: 0; transform: translateX(60px); transition: all .4s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+.slide.out { opacity: 0; transform: translateX(-60px); }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 28px; width: 100%; max-width: 740px; }
+.slide-title { font-size: 22px; color: var(--subtext); text-align: center; margin-bottom: 10px; font-weight: 700; }
+.rule-box { border-radius: 14px; padding: 16px 18px; margin: 8px 0; }
+.rule-formula { font-size: 32px; font-weight: 900; letter-spacing: 1px; margin: 6px 0; text-align: center; }
+.rule-sub { font-size: 20px; color: var(--subtext); margin-top: 4px; }
+.rule-ex { font-size: 24px; margin-top: 8px; cursor: pointer; transition: transform .2s; text-align: center; }
+.rule-ex:hover { transform: scale(1.02); }
+.question-label { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; border-radius: 99px; padding: 5px 16px; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.stars { color: #FCD34D; }
+.question-text { font-size: 26px; text-align: center; margin: 8px 0 14px; line-height: 1.6; font-weight: 700; }
+.blank-box { display: inline-block; font-size: 52px; font-weight: 900; border-bottom: 5px solid var(--text); min-width: 80px; text-align: center; color: var(--primary); line-height: 1.2; margin: 0 5px; transition: all .3s; }
+.blank-box.filled { animation: fill-bounce .4s; }
+@keyframes fill-bounce { 0%{transform:scale(1.3)} 100%{transform:scale(1)} }
+.choices { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
+.choice-btn { background: var(--card); border: 2px solid #CBD5E1; border-radius: 12px; padding: 12px 22px; font-family: 'Noto Sans KR', sans-serif; font-size: 28px; font-weight: 700; cursor: pointer; transition: all .2s; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.choice-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+.choice-btn.correct { background: var(--green-light); border-color: var(--green); animation: cpop .4s; }
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+.choice-btn.wrong { background: var(--red-light); border-color: var(--red); animation: shake .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+.choices.col { flex-direction: column; align-items: center; }
+.choices.col .choice-btn { font-size: 22px; width: 100%; max-width: 560px; padding: 11px 20px; }
+.feedback { font-size: 20px; text-align: center; margin-top: 10px; min-height: 28px; border-radius: 10px; padding: 5px 14px; font-weight: 700; }
+.feedback.ok { color: var(--green); background: var(--green-light); }
+.feedback.err { color: var(--red); background: var(--red-light); }
+.token-area { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.token { background: var(--card); border: 2px solid #CBD5E1; border-radius: 99px; padding: 7px 16px; font-size: 22px; font-weight: 700; cursor: pointer; transition: all .2s; }
+.token:hover { border-color: var(--primary); transform: scale(1.04); }
+.token.correct { background: var(--green-light); border-color: var(--green); }
+.token.wrong { background: var(--red-light); border-color: var(--red); animation: shake .4s; }
+.nav { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 20px; background: #fff; border-top: 1px solid #E2E8F0; flex-shrink: 0; }
+.nav-btn { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 10px 28px; font-family: 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+.nav-btn:disabled { opacity: .3; cursor: default; }
+.nav-btn:not(:disabled):hover { opacity: .85; }
+.combo-toast { position: fixed; top: 65px; left: 50%; transform: translateX(-50%) scale(0); background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 6px 20px; font-size: 22px; font-weight: 700; color: var(--yellow); z-index: 99; transition: transform .3s; }
+.combo-toast.show { transform: translateX(-50%) scale(1); }
+/* Sentence diagram */
+.sent-box { background: #F0F9FF; border-radius: 14px; padding: 18px; margin: 10px 0; text-align: center; }
+.sent-word { display: inline-block; padding: 6px 14px; margin: 4px; border-radius: 10px; font-size: 28px; font-weight: 700; cursor: pointer; transition: all .2s; }
+.sent-word:hover { transform: scale(1.05); }
+.sw-s { background: #DBEAFE; color: #1E40AF; }
+.sw-v { background: #FEE2E2; color: #B91C1C; }
+.sw-o { background: #DCFCE7; color: #15803D; }
+.sw-c { background: #FEF3C7; color: #92400E; }
+.sw-m { background: #F3E8FF; color: #6B21A8; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 18px; font-weight: 700; }
+.legend-dot { width: 16px; height: 16px; border-radius: 50%; }
+/* Drop zone */
+.drop-zones { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 10px 0; }
+.drop-zone { min-width: 100px; min-height: 50px; border: 3px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px 14px; font-size: 20px; font-weight: 700; color: var(--subtext); transition: all .2s; }
+.drop-zone.filled { border-style: solid; border-color: var(--primary); background: var(--primary-light); color: var(--text); }
+.drop-zone.correct-zone { border-color: var(--green); background: var(--green-light); }
+.drop-zone.wrong-zone { border-color: var(--red); background: var(--red-light); }
+/* TF buttons */
+.tf-btns { display: flex; gap: 16px; justify-content: center; margin-top: 14px; }
+.tf-btn { padding: 14px 40px; border-radius: 14px; font-size: 28px; font-weight: 900; cursor: pointer; border: 3px solid #CBD5E1; background: white; transition: all .2s; }
+.tf-btn:hover { transform: scale(1.05); }
+.tf-btn.correct { background: var(--green-light); border-color: var(--green); }
+.tf-btn.wrong { background: var(--red-light); border-color: var(--red); }
+.highlight { color: var(--primary); font-weight: 900; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- SLIDE 0: 인트로 -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:10px">📝</div>
+    <div class="slide-title">3학년 심화 · 01차시</div>
+    <div class="rule-formula" style="font-size:36px;color:var(--primary)">문장 성분 총정리</div>
+    <div class="rule-sub" style="font-size:22px;margin-top:12px">영어 문장을 이루는 5가지 부품을 알아보자!</div>
+    <div class="legend" style="margin-top:18px">
+      <div class="legend-item"><div class="legend-dot" style="background:#DBEAFE"></div>주어(S)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FEE2E2"></div>동사(V)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#DCFCE7"></div>목적어(O)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FEF3C7"></div>보어(C)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#F3E8FF"></div>수식어(M)</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 1: 주어 개념 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">🧩 주어 (Subject)</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula" style="color:#1E40AF">주어 = 누가? 무엇이?</div>
+      <div class="rule-sub" style="text-align:center">문장에서 <b>행동하는 주인공</b>이에요!</div>
+    </div>
+    <div class="sent-box">
+      <span class="sent-word sw-s" onclick="speakWord('Tom')">Tom</span>
+      <span class="sent-word sw-v" onclick="speakWord('plays')">plays</span>
+      <span class="sent-word sw-o" onclick="speakWord('soccer')">soccer</span>
+    </div>
+    <div class="rule-ex">👆 <b style="color:#1E40AF">Tom</b>이 주어! "누가 축구를 하니?" → Tom!</div>
+  </div>
+</div>
+
+<!-- SLIDE 2: 동사·목적어·보어·수식어 개념 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">🧩 나머지 4가지 성분</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+      <div class="rule-box" style="background:#FEE2E2;text-align:center">
+        <div style="font-size:24px;font-weight:900;color:#B91C1C">동사 (V)</div>
+        <div style="font-size:18px;color:#475569">어떻게 한다?<br>plays, is, runs</div>
+      </div>
+      <div class="rule-box" style="background:#DCFCE7;text-align:center">
+        <div style="font-size:24px;font-weight:900;color:#15803D">목적어 (O)</div>
+        <div style="font-size:18px;color:#475569">무엇을?<br>soccer, books</div>
+      </div>
+      <div class="rule-box" style="background:#FEF3C7;text-align:center">
+        <div style="font-size:24px;font-weight:900;color:#92400E">보어 (C)</div>
+        <div style="font-size:18px;color:#475569">~이다, ~한 상태<br>happy, a teacher</div>
+      </div>
+      <div class="rule-box" style="background:#F3E8FF;text-align:center">
+        <div style="font-size:24px;font-weight:900;color:#6B21A8">수식어 (M)</div>
+        <div style="font-size:18px;color:#475569">언제? 어디서?<br>today, at school</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Q1 객관식 — 주어 찾기 ⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐</span></span>
+    <div class="question-text">"<span class="highlight">She</span> reads books every day."<br>밑줄 친 <b>She</b>는 무슨 성분일까?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">동사</button>
+      <button class="choice-btn" onclick="answer(this,1)">주어</button>
+      <button class="choice-btn" onclick="answer(this,2)">목적어</button>
+      <button class="choice-btn" onclick="answer(this,3)">보어</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Q2 객관식 — 동사 찾기 ⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐</span></span>
+    <div class="question-text">"Tom <span class="highlight">eats</span> an apple."<br>밑줄 친 <b>eats</b>는?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">주어</button>
+      <button class="choice-btn" onclick="answer(this,1)">목적어</button>
+      <button class="choice-btn" onclick="answer(this,2)">동사</button>
+      <button class="choice-btn" onclick="answer(this,3)">수식어</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Q3 빈칸 — 목적어 찾기 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="15">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐</span></span>
+    <div class="question-text">"I like <span class="highlight">music</span>."에서<br>music의 문장 성분은?</div>
+    <div style="text-align:center;margin:10px 0">
+      <span class="blank-box" id="blank5">___</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank5','목적어(O)',0,0)">목적어(O)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank5','보어(C)',1,0)">보어(C)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank5','주어(S)',2,0)">주어(S)</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Q4 OX — 보어 이해 ⭐⭐ -->
+<div class="slide" data-type="q" data-score="15">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"She is <b>happy</b>."에서<br>happy는 <b>목적어</b>이다?</div>
+    <div class="tf-btns">
+      <button class="tf-btn" onclick="tfAnswer(this,6,false)">⭕ 맞다</button>
+      <button class="tf-btn" onclick="tfAnswer(this,6,true)">❌ 틀리다</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Q5 분류 — 문장 성분 분류 ⭐⭐ -->
+<div class="slide" data-type="q" data-score="20">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"Tom plays soccer <b>at school</b>."<br><b>at school</b>은 무슨 성분?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">목적어</button>
+      <button class="choice-btn" onclick="answer(this,1)">보어</button>
+      <button class="choice-btn" onclick="answer(this,2)">수식어</button>
+      <button class="choice-btn" onclick="answer(this,3)">주어</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Q6 빈칸 — 보어 vs 목적어 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">"He became <b>a doctor</b>."에서<br>a doctor는?</div>
+    <div style="text-align:center;margin:10px 0">
+      <span class="blank-box" id="blank8">___</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','목적어(O)',0,1)">목적어(O)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','보어(C)',1,1)">보어(C)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'blank8','수식어(M)',2,1)">수식어(M)</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Q7 도전 — 전체 분석 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-score="30">
+  <div class="card">
+    <span class="question-label">Q7 도전! <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">"My sister reads books <b>every day</b>."<br>each word의 성분을 맞춰보세요!</div>
+    <div id="sortQ9" style="margin-top:10px"></div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Q8 도전 — 문장 완성 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="30">
+  <div class="card">
+    <span class="question-label">Q8 도전! <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">주어 + 동사 + <span class="blank-box" id="blank10" style="font-size:32px;min-width:60px">___</span> 순서가 맞는 문장은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Soccer plays Tom.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Happy she is.</button>
+      <button class="choice-btn" onclick="answer(this,2)">I drink water.</button>
+      <button class="choice-btn" onclick="answer(this,3)">Books reads she.</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- SLIDE 11: 결과 -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🎉</div>
+    <div style="font-size:32px;font-weight:900;margin:10px 0">학습 완료!</div>
+    <div style="font-size:22px;color:var(--subtext)">문장 성분 총정리</div>
+    <div style="margin:16px 0">
+      <span style="font-size:48px;font-weight:900;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:22px;color:var(--subtext)">점</span>
+    </div>
+    <div id="resultStars" style="font-size:36px">⭐⭐⭐</div>
+    <button class="nav-btn" style="margin-top:18px;padding:14px 40px;font-size:22px" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+// ── STATE ──
+let soundOn = true, currentSlide = 0, score = 0, combo = 0, answered = {};
+const TOTAL_SLIDES = 12;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function toggleSound() { soundOn = !soundOn; document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+function playCorrect() { if (!soundOn) return; audioCtx.resume().then(() => { [523,659,784].forEach((f,i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = f; o.type = 'sine'; g.gain.setValueAtTime(.25, audioCtx.currentTime + i*.12); g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.12 + .2); o.start(audioCtx.currentTime + i*.12); o.stop(audioCtx.currentTime + i*.12 + .2); }); }); }
+function playWrong() { if (!soundOn) return; audioCtx.resume().then(() => { [220,196].forEach((f,i) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = f; o.type = 'sawtooth'; g.gain.setValueAtTime(.2, audioCtx.currentTime + i*.15); g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.15 + .25); o.start(audioCtx.currentTime + i*.15); o.stop(audioCtx.currentTime + i*.15 + .25); }); }); }
+function playClick() { if (!soundOn) return; audioCtx.resume().then(() => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 880; o.type = 'sine'; g.gain.setValueAtTime(.12, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .07); o.start(); o.stop(audioCtx.currentTime + .07); }); }
+function speakWord(w) { if (!soundOn) return; playClick(); const u = new SpeechSynthesisUtterance(w); u.lang = 'en-US'; u.rate = 0.8; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+
+function goSlide(n) { const sl = document.querySelectorAll('.slide'); sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out'); setTimeout(() => { sl.forEach(s => s.classList.remove('out')); }, 400); currentSlide = n; sl[currentSlide].classList.add('active'); updateUI(); }
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+  if (currentSlide === TOTAL_SLIDES-1) {
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('resultStars').textContent = score>=140?'⭐⭐⭐⭐⭐':score>=100?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent = score>=140?'🏆':'🎉';
+  }
+}
+function addScore(pts) { score += pts; combo++; document.getElementById('scoreDisp').textContent = score; if (combo >= 2) { const t = document.getElementById('comboToast'); t.textContent = '🔥 '+combo+' 콤보!'; t.classList.add('show'); clearTimeout(addScore._t); addScore._t = setTimeout(() => t.classList.remove('show'), 1400); } }
+function setFB(id, msg, ok) { const el = document.getElementById(id); if (el) { el.textContent = msg; el.className = 'feedback '+(ok?'ok':'err'); } }
+
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||10;
+  playClick();
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, '✅ 정답! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+currentSlide, '다시 한번! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+function fillBlank(btn, blankId, text, ci, mi) {
+  if (answered[currentSlide]) return;
+  const b = document.getElementById(blankId);
+  b.textContent = text; b.classList.add('filled');
+  playClick();
+  const pts = parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||15;
+  if (mi === ci) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, '✅ 정답! +'+pts+'점', true);
+    answered[currentSlide] = true; setTimeout(nextSlide, 900);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    b.textContent = '___'; b.classList.remove('filled');
+    setFB('fb'+currentSlide, '다시 도전! 💪', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// OX (True/False)
+function tfAnswer(btn, slideIdx, isCorrectAnswer) {
+  if (answered[slideIdx]) return;
+  playClick();
+  const pts = parseInt(document.querySelectorAll('.slide')[slideIdx].dataset.score)||15;
+  if (isCorrectAnswer) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+slideIdx, '✅ 맞아요! happy는 보어(C)예요! +'+pts+'점', true);
+    answered[slideIdx] = true; setTimeout(nextSlide, 1200);
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+slideIdx, 'is 뒤에 나오는 상태 표현은 보어(C)! 💡', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// Q7: Sorting challenge — click word then click label
+(function initQ9() {
+  const words = [
+    {w:'My sister', ans:'S'}, {w:'reads', ans:'V'}, {w:'books', ans:'O'}, {w:'every day', ans:'M'}
+  ];
+  const labels = ['S 주어','V 동사','O 목적어','M 수식어'];
+  const container = document.getElementById('sortQ9');
+  let matched = 0;
+  // build word buttons
+  const wordRow = document.createElement('div');
+  wordRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px';
+  words.forEach((wd,i) => {
+    const b = document.createElement('button');
+    b.className = 'token'; b.textContent = wd.w; b.dataset.idx = i; b.dataset.ans = wd.ans;
+    b.onclick = function() { selectWord(this); };
+    wordRow.appendChild(b);
+  });
+  container.appendChild(wordRow);
+  // build label buttons
+  const labelRow = document.createElement('div');
+  labelRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;justify-content:center';
+  labels.forEach(lb => {
+    const b = document.createElement('button');
+    b.className = 'choice-btn'; b.style.fontSize = '20px'; b.style.padding = '8px 16px';
+    b.textContent = lb; b.dataset.code = lb[0];
+    b.onclick = function() { selectLabel(this); };
+    labelRow.appendChild(b);
+  });
+  container.appendChild(labelRow);
+
+  let selectedWord = null;
+  function selectWord(btn) {
+    if (answered[9]) return;
+    document.querySelectorAll('#sortQ9 .token').forEach(t => t.style.outline = '');
+    btn.style.outline = '3px solid var(--primary)';
+    selectedWord = btn;
+    playClick();
+  }
+  function selectLabel(btn) {
+    if (!selectedWord || answered[9]) return;
+    const correct = selectedWord.dataset.ans === btn.dataset.code;
+    if (correct) {
+      selectedWord.classList.add('correct');
+      selectedWord.style.outline = '';
+      btn.classList.add('correct');
+      matched++;
+      playCorrect();
+      if (matched === 4) {
+        addScore(30);
+        setFB('fb9', '✅ 완벽! 모든 성분 분석 완료! +30점', true);
+        answered[9] = true;
+        setTimeout(nextSlide, 1200);
+      }
+    } else {
+      selectedWord.classList.add('wrong'); playWrong(); combo = 0;
+      setFB('fb9', '다시 생각해봐! 💡', false);
+      setTimeout(() => selectedWord.classList.remove('wrong'), 500);
+    }
+    selectedWord = null;
+  }
+})();
+
+// Slide 7 (index 7) correct = 2 (수식어)
+// Override data-correct
+document.querySelectorAll('.slide')[7].dataset.correct = '2';
+
+function restart() {
+  score = 0; combo = 0; answered = {};
+  document.querySelectorAll('.choice-btn').forEach(b => b.className = 'choice-btn');
+  document.querySelectorAll('.token').forEach(t => { t.className = 'token'; t.style.outline = ''; });
+  document.querySelectorAll('.blank-box').forEach(b => { b.textContent = '___'; b.classList.remove('filled'); });
+  document.querySelectorAll('.feedback').forEach(f => { f.textContent = ''; f.className = 'feedback'; });
+  document.querySelectorAll('.tf-btn').forEach(b => { b.className = 'tf-btn'; });
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active','out'));
+  currentSlide = 0; document.querySelectorAll('.slide')[0].classList.add('active'); updateUI();
+}
+
+// Swipe support
+let touchStartX = 0;
+document.getElementById('slidesWrap').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+document.getElementById('slidesWrap').addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
+});
+
+updateUI();
+</script>
+</body>
+</html>

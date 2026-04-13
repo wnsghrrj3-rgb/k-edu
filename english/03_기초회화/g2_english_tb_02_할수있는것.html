@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 2학년 영어 02 - 할 수 있는 것</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F7FF;--card:#FFFFFF;--primary:#4A90D9;--primary-light:#D6EAFF;--secondary:#64B5F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E4F5;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.sound-btn:hover{background:var(--primary-light)}
+.topbar-title{font-size:20px;font-weight:700}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#2196F3,#1565C0);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;position:relative}
+.logo::after{content:'⭐';position:absolute;top:-4px;right:-4px;font-size:10px}
+.slide-area{flex:1;overflow:hidden;position:relative}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+.slide.left{transform:translateX(-60px)}.slide.right{transform:translateX(60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px;max-width:600px;width:100%;text-align:center;max-height:80vh;overflow-y:auto}
+.slide-title{font-size:22px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 12px;border-radius:20px;font-size:16px;margin-bottom:12px}
+.concept-big{font-size:72px;margin:16px 0;line-height:1.2;color:var(--primary)}
+.concept-sub{font-size:28px;color:var(--subtext);margin-bottom:8px}
+.concept-example{background:var(--primary-light);border-radius:16px;padding:16px;margin:12px 0;font-size:26px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.character{font-size:60px;margin:8px 0}
+.options{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.options.row{flex-direction:row;flex-wrap:wrap;justify-content:center}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:14px 20px;font-size:28px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.choice-btn:active{transform:scale(.96)}
+.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .4s}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+@keyframes cpop{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.feedback{margin-top:12px;font-size:24px;min-height:36px}
+.feedback.correct{color:var(--green)}.feedback.wrong{color:var(--red)}
+.tts-btn{background:var(--primary-light);border:none;border-radius:12px;padding:8px 16px;font-size:22px;cursor:pointer;font-family:'Jua',sans-serif;margin:4px}
+.tts-btn:active{transform:scale(.95)}
+.ox-row{display:flex;gap:16px;justify-content:center;margin-top:16px}
+.ox-btn{width:100px;height:100px;border-radius:50%;border:4px solid var(--border);font-size:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;transition:all .2s}
+.ox-btn:active{transform:scale(.92)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light)}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.match-item{background:#fff;border:3px solid var(--border);border-radius:16px;padding:14px;font-size:24px;cursor:pointer;transition:all .2s;text-align:center}
+.match-item.selected{border-color:var(--primary);background:var(--primary-light)}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none}
+.match-item.wrong-match{animation:shake .4s}
+.sentence-build{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0;min-height:60px;background:var(--primary-light);border-radius:16px;padding:14px}
+.sentence-build .word{background:var(--primary);color:#fff;border-radius:12px;padding:8px 16px;font-size:26px;cursor:pointer}
+.word-bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.word-bank .word{background:#fff;border:3px solid var(--border);border-radius:12px;padding:8px 16px;font-size:26px;cursor:pointer;transition:all .2s}
+.word-bank .word.used{opacity:.3;pointer-events:none}
+.img-card{font-size:56px;background:var(--primary-light);border-radius:16px;padding:12px 20px;display:inline-block}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}
+.nav-btn:disabled{opacity:.4;cursor:default}
+.nav-btn:active:not(:disabled){transform:scale(.95)}
+.page-info{font-size:18px;color:var(--subtext)}
+.result-score{font-size:72px;color:var(--primary);margin:16px 0}
+.result-msg{font-size:28px;margin:8px 0}
+.result-stars{font-size:48px;margin:12px 0}
+.dialog-box{background:var(--primary-light);border-radius:16px;padding:16px;margin:12px 0;font-size:24px;text-align:left;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+    <div class="topbar-title">할 수 있는 것 💪</div>
+  </div>
+  <div class="logo">K</div>
+</div>
+
+<div class="slide-area" id="slideArea">
+
+<!-- S0: Concept - I can -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 개념 학습</div>
+    <div class="character">🐶</div>
+    <div class="concept-big">I can ~</div>
+    <div class="concept-sub">나는 ~할 수 있어요</div>
+    <div class="concept-example">
+      <span>🏃</span>
+      <span>"I can run."</span>
+      <button class="tts-btn" onclick="speak('I can run')">🔊</button>
+    </div>
+    <div class="concept-example">
+      <span>🎹</span>
+      <span>"I can play the piano."</span>
+      <button class="tts-btn" onclick="speak('I can play the piano')">🔊</button>
+    </div>
+  </div>
+</div>
+
+<!-- S1: Concept - Can you ~? -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 개념 학습</div>
+    <div class="character">🐱</div>
+    <div class="concept-big" style="font-size:60px">Can you ~?</div>
+    <div class="concept-sub">너는 ~할 수 있니?</div>
+    <div class="concept-example">
+      <span>🏊</span>
+      <span>"Can you swim?"</span>
+      <button class="tts-btn" onclick="speak('Can you swim?')">🔊</button>
+    </div>
+    <div style="font-size:26px;margin-top:12px">
+      대답: <span style="color:var(--green)">Yes, I can.</span> / <span style="color:var(--red)">No, I can't.</span>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+      <button class="tts-btn" onclick="speak('Yes, I can.')">🔊 Yes</button>
+      <button class="tts-btn" onclick="speak('No, I can\'t.')">🔊 No</button>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Q1 ⭐ 듣고 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q1. 듣고 맞는 그림을 골라요!</div>
+    <button class="tts-btn" onclick="speak('I can swim')" style="font-size:26px;margin-bottom:16px">🔊 문장 듣기</button>
+    <div class="options row">
+      <div class="choice-btn" onclick="checkAnswer(2,this,0)" style="font-size:52px;padding:20px 30px">🎨</div>
+      <div class="choice-btn" onclick="checkAnswer(2,this,1)" style="font-size:52px;padding:20px 30px">🚴</div>
+      <div class="choice-btn" onclick="checkAnswer(2,this,2)" style="font-size:52px;padding:20px 30px">🏊</div>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 ⭐ O/X -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q2. 그림과 문장이 맞나요?</div>
+    <div class="img-card" style="font-size:72px;margin:12px 0">🎤</div>
+    <div style="font-size:28px;margin:12px 0">"I can dance."</div>
+    <button class="tts-btn" onclick="speak('I can dance')">🔊 듣기</button>
+    <div class="ox-row">
+      <div class="ox-btn" onclick="checkAnswer(3,this,0)">⭕</div>
+      <div class="ox-btn" onclick="checkAnswer(3,this,1)">❌</div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 ⭐ 카드 매칭 -->
+<div class="slide" data-type="q" data-correct="-1" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q3. 그림과 문장을 연결해요!</div>
+    <div style="font-size:20px;color:var(--subtext);margin-bottom:8px">왼쪽 → 오른쪽 순서로 눌러요</div>
+    <div class="match-grid" id="matchGrid">
+      <div class="match-item" data-match="a" onclick="matchClick(this,'left')">🏊 swim</div>
+      <div class="match-item" data-match="b" onclick="matchClick(this,'right')">I can sing.</div>
+      <div class="match-item" data-match="b" onclick="matchClick(this,'left')">🎤 sing</div>
+      <div class="match-item" data-match="c" onclick="matchClick(this,'right')">I can cook.</div>
+      <div class="match-item" data-match="c" onclick="matchClick(this,'left')">🍳 cook</div>
+      <div class="match-item" data-match="a" onclick="matchClick(this,'right')">I can swim.</div>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 ⭐⭐ 빈칸 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q4. 빈칸에 알맞은 말은?</div>
+    <div style="font-size:52px;margin:8px 0">🚲</div>
+    <div style="font-size:28px;margin:12px 0">I <span style="border-bottom:4px solid var(--primary);padding:0 24px;font-size:32px;color:var(--primary)">____</span> ride a bike.</div>
+    <div class="options">
+      <div class="choice-btn" onclick="checkAnswer(5,this,0)">💪 can</div>
+      <div class="choice-btn" onclick="checkAnswer(5,this,1)">❓ do</div>
+      <div class="choice-btn" onclick="checkAnswer(5,this,2)">💕 like</div>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q5 ⭐⭐ 대답 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q5. 알맞은 대답은?</div>
+    <button class="tts-btn" onclick="speak('Can you fly?')" style="font-size:26px;margin-bottom:12px">🔊 "Can you fly?"</button>
+    <div style="font-size:56px;margin:8px 0">🧒❓🦅</div>
+    <div class="options">
+      <div class="choice-btn" onclick="checkAnswer(6,this,0)">Yes, I can. ✈️</div>
+      <div class="choice-btn" onclick="checkAnswer(6,this,1)">No, I can't. 😅</div>
+      <div class="choice-btn" onclick="checkAnswer(6,this,2)">I like flying. 💕</div>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q6 ⭐⭐ 상황 판단 -->
+<div class="slide" data-type="q" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q6. 어떤 말이 맞을까요?</div>
+    <div class="dialog-box">
+      수진이는 피아노 학원에 다녀요. 🎹<br>
+      매일 열심히 연습해요.<br>
+      피아노를 아주 잘 쳐요! 🎶
+    </div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,0)">I can't play the piano.</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,1)">Can you play the piano?</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,2)">I can play the piano! 🎹</div>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q7 ⭐⭐⭐ 문장 순서 배치 -->
+<div class="slide" data-type="q" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">Q7. 단어를 순서대로 놓아봐요!</div>
+    <div style="font-size:20px;color:var(--subtext);margin-bottom:8px">"너 요리할 수 있니?" 라는 질문을 만들어요 🍳</div>
+    <div class="sentence-build" id="sentBuild7"></div>
+    <div class="word-bank" id="wordBank7"></div>
+    <button class="tts-btn" onclick="checkSentence(7)" style="margin-top:12px;background:var(--green);color:#fff">✅ 확인</button>
+    <button class="tts-btn" onclick="resetSentence(7)" style="margin-top:8px">🔄 다시</button>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q8 ⭐⭐⭐ 대화 완성 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">Q8. 대화를 완성해요!</div>
+    <div class="dialog-box">
+      🧒 A: Can you ride a bike? 🚲<br>
+      👧 B: <span style="border-bottom:3px solid var(--primary);padding:0 30px">______</span><br>
+      🧒 A: Wow! Let's ride together!
+    </div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(9,this,0)">No, I can't. 😢</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(9,this,1)">Yes, I can! 🚲💨</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(9,this,2)">I like bikes. 💕</div>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q9 ⭐⭐⭐⭐ 종합 -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="badge">⭐⭐⭐⭐ 최심화</div>
+    <div class="slide-title">Q9. 알맞은 대화를 골라요!</div>
+    <div class="dialog-box" style="font-size:22px">
+      민호는 축구를 아주 잘 해요. ⚽<br>
+      하지만 농구는 해본 적이 없어요. 🏀<br>
+      친구가 "농구 같이 하자!"라고 말했어요.
+    </div>
+    <div style="font-size:22px;margin:8px 0">민호는 영어로 뭐라고 할까요?</div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:20px" onclick="checkAnswer(10,this,0)">I can play basketball! Let's go!</div>
+      <div class="choice-btn" style="font-size:20px" onclick="checkAnswer(10,this,1)">I can play soccer, but I can't play basketball.</div>
+      <div class="choice-btn" style="font-size:20px" onclick="checkAnswer(10,this,2)">I don't like soccer and basketball.</div>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Result -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">🏆 학습 완료!</div>
+    <div class="character">🎉</div>
+    <div class="result-score" id="finalScore">0점</div>
+    <div class="result-stars" id="finalStars"></div>
+    <div class="result-msg" id="finalMsg"></div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="moveSlide(-1)" disabled>◀ 이전</button>
+  <div class="page-info" id="pageInfo">1 / 12</div>
+  <button class="nav-btn" id="nextBtn" onclick="moveSlide(1)">다음 ▶</button>
+</div>
+
+<script>
+let audioCtx,soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playSound(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.13;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.75;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+const slides=document.querySelectorAll('.slide');
+let cur=0,score=0,answered=new Set();
+function showSlide(n){slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i===n)s.classList.add('active');else if(i<n)s.classList.add('left');else s.classList.add('right')});document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;document.getElementById('prevBtn').disabled=n===0;if(n===slides.length-1)showResult()}
+function moveSlide(d){const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);playSound('click')}}
+
+const feedbacks={
+  2:{c:'맞아요! 🏊 수영! I can swim! 🎉',w:'다시 들어봐요! swim은 수영이에요 🏊'},
+  3:{c:'맞아요! 🎤은 노래지, 춤이 아니에요! dance는 춤! ❌',w:'dance는 "춤추다"라는 뜻이에요. 그림은 🎤 노래! 🤔'},
+  5:{c:'맞아요! I can ride a bike! 자전거를 탈 수 있어요! 🚲',w:'~할 수 있다는 can이에요! 💪'},
+  6:{c:'맞아요! 사람은 날 수 없으니까 No, I can\'t! 😅',w:'사람이 날 수 있을까요? 🤔'},
+  7:{c:'맞아요! 잘 치니까 I can play the piano! 🎹🎶',w:'피아노를 잘 친다고 했어요! 할 수 있다 = can! 🎹'},
+  9:{c:'맞아요! 같이 타자고 했으니 Yes, I can! 🚲💨',w:'A가 "같이 타자!"라고 했으니 B는 탈 수 있는 거예요!'},
+  10:{c:'대단해요! 축구는 can, 농구는 can\'t! 완벽! ⚽🏀',w:'축구는 잘 하고, 농구는 못 한다고 했어요! 🤔'}
+};
+
+function checkAnswer(si,el,ch){
+  if(answered.has(si))return;
+  const s=slides[si],c=parseInt(s.dataset.correct),sc=parseInt(s.dataset.score);
+  const fb=document.getElementById('fb'+si),info=feedbacks[si];
+  if(ch===c){el.classList.add('correct');playSound('correct');fb.textContent=info.c;fb.className='feedback correct';score+=sc;answered.add(si)}
+  else{el.classList.add('wrong');playSound('wrong');fb.textContent=info.w;fb.className='feedback wrong';setTimeout(()=>el.classList.remove('wrong'),600)}
+}
+
+let matchLeft=null,matchCount=0;
+function matchClick(el,side){
+  if(el.classList.contains('matched'))return;
+  if(side==='left'){document.querySelectorAll('#matchGrid .match-item').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');matchLeft=el}
+  else if(matchLeft){
+    if(matchLeft.dataset.match===el.dataset.match){matchLeft.classList.add('matched');el.classList.add('matched');matchLeft.classList.remove('selected');matchLeft=null;matchCount++;playSound('correct');
+      if(matchCount===3){document.getElementById('fb4').textContent='완벽하게 연결했어요! 🎉';document.getElementById('fb4').className='feedback correct';score+=10;answered.add(4)}}
+    else{el.classList.add('wrong-match');playSound('wrong');setTimeout(()=>{el.classList.remove('wrong-match');matchLeft.classList.remove('selected');matchLeft=null},500)}
+  }
+}
+
+const sentData={7:{words:['Can','you','cook?'],answer:'Can you cook?'}};
+function initSentence(id){const d=sentData[id],bank=document.getElementById('wordBank'+id);const sh=[...d.words].sort(()=>Math.random()-.5);bank.innerHTML='';sh.forEach(w=>{const s=document.createElement('span');s.className='word';s.textContent=w;s.onclick=()=>{s.classList.add('used');const b=document.getElementById('sentBuild'+id);const ns=document.createElement('span');ns.className='word';ns.textContent=w;ns.onclick=()=>{ns.remove();s.classList.remove('used')};b.appendChild(ns);playSound('click')};bank.appendChild(s)})}
+function checkSentence(id){const b=document.getElementById('sentBuild'+id);const w=[...b.querySelectorAll('.word')].map(w=>w.textContent).join(' ');const fb=document.getElementById('fb8');if(w===sentData[id].answer){playSound('correct');fb.textContent='완벽! Can you cook? 요리할 수 있니? 🍳🎉';fb.className='feedback correct';score+=50;answered.add(8)}else{playSound('wrong');fb.textContent='질문이니까 Can으로 시작! Can + you + cook? 🤔';fb.className='feedback wrong'}}
+function resetSentence(id){document.getElementById('sentBuild'+id).innerHTML='';document.querySelectorAll('#wordBank'+id+' .word').forEach(w=>w.classList.remove('used'));document.getElementById('fb8').textContent=''}
+
+function showResult(){const mx=10+10+10+25+25+25+50+50+100,pct=Math.round(score/mx*100);document.getElementById('finalScore').textContent=score+'점';let s='',m='';if(pct>=90){s='⭐⭐⭐';m='최고예요! You can do it! 💪'}else if(pct>=70){s='⭐⭐';m='잘했어요! 조금만 더! 💪'}else if(pct>=40){s='⭐';m='좋아요! 다시 도전! 🔄'}else{s='💪';m='괜찮아요! 다시 한번! 🔄'};document.getElementById('finalStars').textContent=s;document.getElementById('finalMsg').textContent=m}
+
+initSentence(7);showSlide(0);
+let tx=0;
+document.querySelector('.slide-area').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.querySelector('.slide-area').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){if(d<0)moveSlide(1);else moveSlide(-1)}});
+</script>
+</body>
+</html>

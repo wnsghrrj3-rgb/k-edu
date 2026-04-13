@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 6학년 영어 | 문학감상</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#0F4C75;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}.topbar-left{display:flex;align-items:center;gap:8px;}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}.topbar-title{font-size:15px;font-weight:700;color:var(--primary);}.kedu-logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative;}.kedu-logo::after{content:'⭐';position:absolute;top:-2px;right:-2px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;}.slide.active{opacity:1;pointer-events:auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:calc(100vh - 120px);overflow-y:auto;}.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;}.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:2px 10px;border-radius:20px;}
+.concept-box{background:var(--primary-light);border-radius:12px;padding:18px;margin:12px 0;font-size:18px;line-height:1.7;}.concept-box strong{color:var(--primary);}.example-box{background:#F1F5F9;border-left:4px solid var(--secondary);padding:14px 18px;border-radius:0 12px 12px 0;margin:12px 0;font-size:17px;line-height:1.8;}
+.q-text{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.5;}.q-sub{font-size:18px;color:var(--subtext);margin-bottom:14px;}.choices{display:flex;flex-direction:column;gap:10px;}.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;color:var(--text);}.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light);}.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .3s;}.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}.choice-btn.disabled{pointer-events:none;opacity:.7;}
+.choices-row{display:flex;flex-wrap:wrap;gap:10px;}.choices-row .choice-btn{flex:1;min-width:45%;text-align:center;font-size:20px;}
+.feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;}.feedback.show{display:block;}.feedback.correct{background:var(--green-light);color:var(--green);}.feedback.wrong{background:var(--red-light);color:var(--red);}
+.passage{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:17px;line-height:2;margin:12px 0;}.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--primary);text-align:center;font-size:18px;font-weight:700;color:var(--secondary);padding:4px 8px;margin:0 4px;min-height:32px;vertical-align:bottom;}.blank-box.filled{border-color:var(--green);color:var(--green);}
+.ox-row{display:flex;gap:14px;justify-content:center;margin:10px 0;}.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:#fff;font-size:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}.ox-btn.correct{border-color:var(--green);background:var(--green-light);}.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}.match-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:16px;cursor:pointer;transition:all .2s;}.match-item.selected{border-color:var(--secondary);background:var(--primary-light);}.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.toggle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;}.toggle-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:17px;cursor:pointer;transition:all .2s;}.toggle-item.on{background:var(--primary-light);border-color:var(--secondary);}
+.tts-btn{background:none;border:none;cursor:pointer;font-size:22px;vertical-align:middle;}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:18px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}.nav-btn:hover{background:var(--secondary);}.nav-btn:disabled{background:var(--border);cursor:default;}.nav-info{font-size:15px;color:var(--subtext);}
+.result-card{text-align:center;}.result-score{font-size:64px;font-weight:900;color:var(--primary);margin:12px 0;}.result-msg{font-size:22px;color:var(--subtext);margin:8px 0;}.result-detail{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap;}.result-item{background:var(--primary-light);border-radius:12px;padding:14px 24px;text-align:center;}.result-item .label{font-size:14px;color:var(--subtext);}.result-item .val{font-size:28px;font-weight:900;color:var(--primary);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-left"><button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button><span class="topbar-title">6학년 영어 · 문학감상</span></div><div class="kedu-logo">K</div></div>
+<div class="slide-area" id="slideArea">
+
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="slide-title">📖 문학 분석 기초 용어 <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    문학 작품을 분석할 때 쓰는 핵심 용어들:<br><br>
+    📌 <strong>theme</strong> — 주제 (작품이 전달하는 큰 메시지)<br>
+    📌 <strong>symbol</strong> — 상징 (다른 의미를 나타내는 사물/이미지)<br>
+    📌 <strong>metaphor</strong> — 은유 (A를 B에 직접 비유)<br>
+    📌 <strong>moral</strong> — 교훈 (이야기가 가르치는 교훈)
+  </div>
+  <div class="example-box">
+    <button class="tts-btn" onclick="speak('In many stories, a dove is a symbol of peace. The theme of the story is that kindness is more powerful than anger.')">🔊</button>
+    "In many stories, a dove is a <strong>symbol</strong> of peace. The <strong>theme</strong> of the story is that kindness is more powerful than anger."
+  </div>
+</div>
+</div>
+
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎭 은유 vs 직유</div>
+  <div class="concept-box">
+    <strong>Metaphor (은유)</strong> — like/as 없이 직접 비유<br>
+    → "Time is money." (시간은 돈이다)<br><br>
+    <strong>Simile (직유)</strong> — like/as를 사용한 비유<br>
+    → "Her smile was like sunshine." (그녀의 미소는 햇빛과 같았다)<br><br>
+    💡 둘 다 <strong>figurative language(비유적 표현)</strong>이에요!
+  </div>
+</div>
+</div>
+
+<!-- Q1: 매칭 (용어 ↔ 정의) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q1 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">문학 용어와 정의를 매칭하세요.</div>
+  <div class="match-grid" id="matchGrid1">
+    <div class="match-item" data-pair="A" data-side="L" onclick="matchClick(this,'m1')">Theme</div>
+    <div class="match-item" data-pair="A" data-side="R" onclick="matchClick(this,'m1')">작품의 중심 메시지</div>
+    <div class="match-item" data-pair="B" data-side="L" onclick="matchClick(this,'m1')">Symbol</div>
+    <div class="match-item" data-pair="B" data-side="R" onclick="matchClick(this,'m1')">다른 의미를 나타내는 사물</div>
+    <div class="match-item" data-pair="C" data-side="L" onclick="matchClick(this,'m1')">Moral</div>
+    <div class="match-item" data-pair="C" data-side="R" onclick="matchClick(this,'m1')">이야기의 교훈</div>
+  </div>
+  <div class="feedback" id="fb_m1"></div>
+</div>
+</div>
+
+<!-- Q2: Metaphor vs Simile 구분 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q2 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">"The world is a stage."는 어떤 비유법인가요?</div>
+  <div class="choices-row" id="q2">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q2')">Metaphor (은유)</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q2')">Simile (직유)</button>
+  </div>
+  <div class="feedback" id="fb_q2"></div>
+</div>
+</div>
+
+<!-- Q3: 토글 (Simile 고르기) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q3 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text"><strong>Simile(직유)</strong>에 해당하는 문장을 모두 고르세요.</div>
+  <div class="toggle-grid" id="q3">
+    <div class="toggle-item" data-s="1" onclick="toggleItem(this)">He runs like the wind.</div>
+    <div class="toggle-item" data-s="0" onclick="toggleItem(this)">Life is a journey.</div>
+    <div class="toggle-item" data-s="1" onclick="toggleItem(this)">Her voice was as soft as silk.</div>
+    <div class="toggle-item" data-s="0" onclick="toggleItem(this)">Time is money.</div>
+    <div class="toggle-item" data-s="1" onclick="toggleItem(this)">The stars were like diamonds.</div>
+  </div>
+  <button class="nav-btn" style="margin-top:14px;" onclick="chkTog('q3','s')">확인하기</button>
+  <div class="feedback" id="fb_q3"></div>
+</div>
+</div>
+
+<!-- Q4: O/X (symbol) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q4 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">"In the story, the broken mirror symbolizes bad luck." — 여기서 mirror는 symbol인가요?</div>
+  <div class="ox-row" id="q4">
+    <button class="ox-btn" onclick="checkOX(this,'O','q4')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,'O','q4')">❌</button>
+  </div>
+  <div class="feedback" id="fb_q4"></div>
+</div>
+</div>
+
+<!-- Q5: 빈칸 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q5 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 문학 용어를 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('The blank of the story is that honesty is always the best policy.')">🔊</button>
+    The <span class="blank-box" id="blank5"></span> of the story is that honesty is always the best policy.
+  </div>
+  <div class="choices-row" id="q5">
+    <button class="choice-btn" onclick="fillBlank(this,'symbol','blank5','q5',1)">symbol</button>
+    <button class="choice-btn" onclick="fillBlank(this,'moral','blank5','q5',1)">moral</button>
+    <button class="choice-btn" onclick="fillBlank(this,'metaphor','blank5','q5',1)">metaphor</button>
+    <button class="choice-btn" onclick="fillBlank(this,'simile','blank5','q5',1)">simile</button>
+  </div>
+  <div class="feedback" id="fb_q5"></div>
+</div>
+</div>
+
+<!-- Passage -->
+<div class="slide" data-type="passage">
+<div class="card">
+  <div class="slide-title">📖 단편 이야기 읽기</div>
+  <div class="passage" style="font-size:16px;line-height:2;">
+    <button class="tts-btn" onclick="speak('Once, there was a young tree standing alone on a hill. Every winter, the cold wind tried to break its branches. But the tree bent with the wind instead of fighting against it. Years passed, and the tree grew tall and strong. The old oak trees nearby, which had stood stiff against the storms, had all fallen. The young tree, now the tallest on the hill, whispered to the wind: Thank you for teaching me. The tree in this story is a symbol of resilience, and the wind represents the challenges we face in life.')">🔊</button>
+    Once, there was a young tree standing alone on a hill. Every winter, the cold wind tried to break its branches. But the tree bent with the wind instead of fighting against it. Years passed, and the tree grew tall and strong. The old oak trees nearby, which had stood stiff against the storms, had all fallen. The young tree, now the tallest on the hill, whispered to the wind: "Thank you for teaching me."
+  </div>
+  <div style="font-size:15px;color:var(--subtext);">⬅➡ 다음 페이지에서 이 이야기에 대한 문제를 풀어요.</div>
+</div>
+</div>
+
+<!-- Q6: theme 파악 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q6 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">이 이야기의 theme(주제)에 가장 가까운 것은?</div>
+  <div class="choices" id="q6">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">나무를 심는 것이 중요하다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">유연하게 대처하는 것이 강인함이다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">겨울은 위험한 계절이다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q6')">큰 나무는 항상 이긴다</button>
+  </div>
+  <div class="feedback" id="fb_q6"></div>
+</div>
+</div>
+
+<!-- Q7: symbol 추론 -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+<div class="card">
+  <div class="slide-title">Q7 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">이야기에서 "cold wind"가 상징(symbol)하는 것은?</div>
+  <div class="choices" id="q7">
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">아름다운 자연</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">시간의 흐름</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">삶에서 마주하는 어려움과 도전</button>
+    <button class="choice-btn" onclick="checkAnswer(this,2,'q7')">다른 나무들의 질투</button>
+  </div>
+  <div class="feedback" id="fb_q7"></div>
+</div>
+</div>
+
+<!-- Q8: moral 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="100">
+<div class="card">
+  <div class="slide-title">Q8 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">이 이야기의 moral(교훈)에 가장 가까운 것은?</div>
+  <div class="choices" id="q8">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">Flexibility is stronger than resistance.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">Trees are the most important living things.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">Winter is the best season for growth.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">Talking to the wind makes you strong.</button>
+  </div>
+  <div class="feedback" id="fb_q8"></div>
+</div>
+</div>
+
+<!-- Q9: 비유 표현 구분 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q9 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">"Her eyes were like two bright stars."에서 사용된 비유법은?</div>
+  <div class="choices-row" id="q9">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q9')">Metaphor</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q9')">Simile</button>
+  </div>
+  <div class="feedback" id="fb_q9"></div>
+</div>
+</div>
+
+<div class="slide" data-type="result">
+<div class="card result-card">
+  <div class="slide-title" style="justify-content:center;">🎯 학습 결과</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-msg" id="finalMsg">점</div>
+  <div class="result-detail"><div class="result-item"><div class="label">맞힌 문제</div><div class="val" id="correctCnt">0</div></div><div class="result-item"><div class="label">총 문항</div><div class="val">9</div></div></div>
+  <button class="nav-btn" style="margin-top:18px;" onclick="location.reload()">다시 풀기 🔄</button>
+</div>
+</div>
+</div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button><span class="nav-info" id="navInfo">1 / 13</span><button class="nav-btn" id="nextBtn" onclick="go(1)">다음 ▶</button></div>
+<script>
+let cur=0,totalScore=0,correctCount=0,soundOn=true;const slides=document.querySelectorAll('.slide');const total=slides.length;let audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('navInfo').textContent=`${n+1} / ${total}`;document.getElementById('prevBtn').disabled=n===0;if(n===total-1)showResult();}
+function go(d){const n=cur+d;if(n>=0&&n<total){cur=n;showSlide(cur);}}
+function checkAnswer(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(i===c){btn.classList.add('correct');playCorrect();totalScore+=parseInt(btn.closest('.slide').dataset.score)||50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{btn.classList.add('wrong');bs[c].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';}}
+function checkOX(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .ox-btn`);const cl=btn.textContent.trim()==='⭕'?'O':'X';bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(cl===c){btn.classList.add('correct');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ "symbolizes"라는 표현이 직접적으로 상징 관계를 나타내요!';}else{btn.classList.add('wrong');bs[c==='O'?0:1].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ mirror가 bad luck을 상징하므로 symbol이 맞아요!';}}
+function fillBlank(btn,t,bid,qid,c){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));document.getElementById(bid).textContent=t;const fb=document.getElementById('fb_'+qid);if(i===c){document.getElementById(bid).classList.add('filled');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ moral은 이야기가 전달하는 교훈이에요!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ "honesty is the best policy"는 이야기의 교훈(moral)이에요!';bs[c].style.border='3px solid var(--green)';}}
+function toggleItem(el){playClick();el.classList.toggle('on');}
+function chkTog(qid,attr){const its=document.querySelectorAll(`#${qid} .toggle-item`);let ok=true;its.forEach(it=>{if((it.dataset[attr]==='1')!==it.classList.contains('on'))ok=false;});its.forEach(it=>it.style.pointerEvents='none');const fb=document.getElementById('fb_'+qid);if(ok){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ Simile은 like 또는 as를 사용한 비유예요!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ like/as가 있으면 Simile, 없으면 Metaphor!';}}
+let matchSel=null,matchCount=0;
+function matchClick(el,mid){if(el.classList.contains('matched'))return;playClick();if(!matchSel){matchSel=el;el.classList.add('selected');}else{if(matchSel===el){matchSel.classList.remove('selected');matchSel=null;return;}if(matchSel.dataset.pair===el.dataset.pair&&matchSel.dataset.side!==el.dataset.side){matchSel.classList.remove('selected');matchSel.classList.add('matched');el.classList.add('matched');matchCount++;playCorrect();if(matchCount===3){totalScore+=50;correctCount++;document.getElementById('fb_'+mid).className='feedback show correct';document.getElementById('fb_'+mid).textContent='✅ 모두 매칭 성공!';}}else{matchSel.classList.remove('selected');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);playWrong();}matchSel=null;}}
+function showResult(){document.getElementById('finalScore').textContent=totalScore;document.getElementById('correctCnt').textContent=correctCount;let m='';if(correctCount>=8)m='🏆 문학 비평가 수준!';else if(correctCount>=5)m='👍 잘했어요!';else m='📚 다시 복습해 보세요!';document.getElementById('finalMsg').textContent=m;}
+let tx=0;document.getElementById('slideArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?go(1):go(-1);}});showSlide(0);
+</script>
+</body>
+</html>

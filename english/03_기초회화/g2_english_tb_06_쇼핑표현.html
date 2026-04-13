@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 2학년 영어 06 - 쇼핑 표현</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3E5F5;--card:#FFFFFF;--primary:#9C27B0;--primary-light:#F3E5F5;--secondary:#CE93D8;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#E1BEE7;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.topbar-title{font-size:20px;font-weight:700}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#2196F3,#1565C0);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;position:relative}
+.logo::after{content:'⭐';position:absolute;top:-4px;right:-4px;font-size:10px}
+.slide-area{flex:1;overflow:hidden;position:relative}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+.slide.left{transform:translateX(-60px)}.slide.right{transform:translateX(60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 20px;max-width:600px;width:100%;text-align:center;max-height:82vh;overflow-y:auto}
+.slide-title{font-size:22px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 12px;border-radius:20px;font-size:16px;margin-bottom:12px}
+.concept-big{font-size:52px;margin:10px 0;line-height:1.2;color:var(--primary)}
+.concept-sub{font-size:26px;color:var(--subtext);margin-bottom:8px}
+.concept-example{background:var(--primary-light);border-radius:16px;padding:14px;margin:10px 0;font-size:24px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.character{font-size:52px;margin:6px 0}
+.options{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.options.row{flex-direction:row;flex-wrap:wrap;justify-content:center}
+.choice-btn{background:#fff;border:3px solid var(--border);border-radius:16px;padding:14px 20px;font-size:28px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.choice-btn:active{transform:scale(.96)}
+.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .4s}
+.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+@keyframes cpop{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.feedback{margin-top:12px;font-size:22px;min-height:32px}
+.feedback.correct{color:var(--green)}.feedback.wrong{color:var(--red)}
+.tts-btn{background:var(--primary-light);border:none;border-radius:12px;padding:8px 16px;font-size:22px;cursor:pointer;font-family:'Jua',sans-serif;margin:4px}
+.tts-btn:active{transform:scale(.95)}
+.ox-row{display:flex;gap:16px;justify-content:center;margin-top:16px}
+.ox-btn{width:100px;height:100px;border-radius:50%;border:4px solid var(--border);font-size:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff;transition:all .2s}
+.ox-btn:active{transform:scale(.92)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light)}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.match-item{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px;font-size:22px;cursor:pointer;transition:all .2s;text-align:center}
+.match-item.selected{border-color:var(--primary);background:var(--primary-light)}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none}
+.match-item.wrong-match{animation:shake .4s}
+.sentence-build{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0;min-height:56px;background:var(--primary-light);border-radius:16px;padding:12px}
+.sentence-build .word{background:var(--primary);color:#fff;border-radius:12px;padding:8px 14px;font-size:24px;cursor:pointer}
+.word-bank{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.word-bank .word{background:#fff;border:3px solid var(--border);border-radius:12px;padding:8px 14px;font-size:24px;cursor:pointer;transition:all .2s}
+.word-bank .word.used{opacity:.3;pointer-events:none}
+.price-tag{display:inline-block;background:var(--yellow-light);border:3px solid var(--yellow);border-radius:16px;padding:10px 20px;font-size:32px;margin:8px;font-weight:bold;color:#F57F17}
+.shop-item{display:inline-flex;flex-direction:column;align-items:center;background:var(--primary-light);border-radius:16px;padding:12px 18px;margin:6px}
+.shop-item .emoji{font-size:48px}
+.shop-item .price{font-size:20px;color:var(--primary);font-weight:bold;margin-top:4px}
+.dialog-box{background:var(--primary-light);border-radius:16px;padding:14px;margin:10px 0;font-size:22px;text-align:left;line-height:1.8}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,.06);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}
+.nav-btn:disabled{opacity:.4;cursor:default}
+.nav-btn:active:not(:disabled){transform:scale(.95)}
+.page-info{font-size:18px;color:var(--subtext)}
+.result-score{font-size:72px;color:var(--primary);margin:16px 0}
+.result-msg{font-size:28px;margin:8px 0}
+.result-stars{font-size:48px;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+    <div class="topbar-title">쇼핑 표현 🛒</div>
+  </div>
+  <div class="logo">K</div>
+</div>
+<div class="slide-area">
+
+<!-- S0: Concept 1 - I want ~ -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 개념 학습 (1)</div>
+    <div class="character">🐶</div>
+    <div class="concept-big">I want ~</div>
+    <div class="concept-sub">나는 ~을(를) 원해요</div>
+    <div class="concept-example">
+      <span>🍦</span>
+      <span>"I want ice cream."</span>
+      <button class="tts-btn" onclick="speak('I want ice cream')">🔊</button>
+    </div>
+    <div class="concept-example">
+      <span>🧸</span>
+      <span>"I want a teddy bear."</span>
+      <button class="tts-btn" onclick="speak('I want a teddy bear')">🔊</button>
+    </div>
+  </div>
+</div>
+
+<!-- S1: Concept 2 - How much is it? -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 개념 학습 (2)</div>
+    <div class="character">🐱</div>
+    <div class="concept-big" style="font-size:44px">How much is it?</div>
+    <div class="concept-sub">이거 얼마예요?</div>
+    <button class="tts-btn" onclick="speak('How much is it?')" style="font-size:26px">🔊 듣기</button>
+    <div class="concept-example" style="flex-direction:column">
+      <div style="font-size:22px">🧒 How much is it?</div>
+      <div style="font-size:22px">🏪 It's five dollars. 💵</div>
+      <button class="tts-btn" onclick="speak('It\'s five dollars')">🔊</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px">
+      <div class="shop-item"><div class="emoji">🍎</div><div class="price">$2</div></div>
+      <div class="shop-item"><div class="emoji">📚</div><div class="price">$10</div></div>
+      <div class="shop-item"><div class="emoji">🧸</div><div class="price">$15</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Q1 ⭐ 듣고 고르기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q1. 듣고 원하는 것을 골라요!</div>
+    <button class="tts-btn" onclick="speak('I want a banana')" style="font-size:26px;margin-bottom:16px">🔊 문장 듣기</button>
+    <div class="options row">
+      <div class="choice-btn" onclick="checkAnswer(2,this,0)" style="font-size:52px;padding:16px 24px">🍌</div>
+      <div class="choice-btn" onclick="checkAnswer(2,this,1)" style="font-size:52px;padding:16px 24px">🍎</div>
+      <div class="choice-btn" onclick="checkAnswer(2,this,2)" style="font-size:52px;padding:16px 24px">🍇</div>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 ⭐ O/X -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q2. 맞으면 ⭕, 틀리면 ❌!</div>
+    <div style="font-size:28px;margin:12px 0">"How much is it?" =</div>
+    <div style="font-size:28px">"이거 뭐예요?"</div>
+    <div class="ox-row">
+      <div class="ox-btn" onclick="checkAnswer(3,this,0)">⭕</div>
+      <div class="ox-btn" onclick="checkAnswer(3,this,1)">❌</div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 ⭐ 카드 매칭 -->
+<div class="slide" data-type="q" data-correct="-1" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">Q3. 영어와 뜻을 연결해요!</div>
+    <div style="font-size:16px;color:var(--subtext);margin-bottom:8px">왼쪽 → 오른쪽</div>
+    <div class="match-grid" id="matchGrid">
+      <div class="match-item" data-match="a" onclick="matchClick(this,'left')">I want ~</div>
+      <div class="match-item" data-match="b" onclick="matchClick(this,'right')">얼마예요? 💰</div>
+      <div class="match-item" data-match="b" onclick="matchClick(this,'left')">How much?</div>
+      <div class="match-item" data-match="c" onclick="matchClick(this,'right')">여기요! 🙋</div>
+      <div class="match-item" data-match="c" onclick="matchClick(this,'left')">Here you are.</div>
+      <div class="match-item" data-match="a" onclick="matchClick(this,'right')">~원해요 🙏</div>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 ⭐⭐ 빈칸 -->
+<div class="slide" data-type="q" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q4. 빈칸에 알맞은 말은?</div>
+    <div style="font-size:48px;margin:8px 0">🍕</div>
+    <div style="font-size:26px;margin:12px 0">I <span style="border-bottom:4px solid var(--primary);padding:0 24px;font-size:30px;color:var(--primary)">____</span> pizza.</div>
+    <div style="font-size:20px;color:var(--subtext)">피자를 원해요!</div>
+    <div class="options">
+      <div class="choice-btn" onclick="checkAnswer(5,this,0)">like</div>
+      <div class="choice-btn" onclick="checkAnswer(5,this,1)">want</div>
+      <div class="choice-btn" onclick="checkAnswer(5,this,2)">can</div>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q5 ⭐⭐ 가격 듣고 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q5. 듣고 가격을 골라요!</div>
+    <button class="tts-btn" onclick="speak('It\'s three dollars')" style="font-size:26px;margin-bottom:16px">🔊 문장 듣기</button>
+    <div class="options row">
+      <div class="choice-btn" onclick="checkAnswer(6,this,0)"><div class="price-tag" style="font-size:28px">$5</div></div>
+      <div class="choice-btn" onclick="checkAnswer(6,this,1)"><div class="price-tag" style="font-size:28px">$13</div></div>
+      <div class="choice-btn" onclick="checkAnswer(6,this,2)"><div class="price-tag" style="font-size:28px">$3</div></div>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q6 ⭐⭐ 대화 완성 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">Q6. 알맞은 대답을 골라요!</div>
+    <div class="dialog-box">
+      🧒 손님: How much is this? 🧸<br>
+      🏪 주인: <span style="border-bottom:3px solid var(--primary);padding:0 20px">______</span>
+    </div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,0)">It's ten dollars. 💵</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,1)">I want a teddy bear. 🧸</div>
+      <div class="choice-btn" style="font-size:24px" onclick="checkAnswer(7,this,2)">Thank you! 😊</div>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q7 ⭐⭐⭐ 문장 배치 -->
+<div class="slide" data-type="q" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">Q7. 단어를 순서대로 놓아봐요!</div>
+    <div style="font-size:18px;color:var(--subtext);margin-bottom:8px">"이거 얼마예요?" 라는 질문! 💰</div>
+    <div class="sentence-build" id="sentBuild7"></div>
+    <div class="word-bank" id="wordBank7"></div>
+    <button class="tts-btn" onclick="checkSentence(7)" style="margin-top:12px;background:var(--green);color:#fff">✅ 확인</button>
+    <button class="tts-btn" onclick="resetSentence(7)" style="margin-top:8px">🔄 다시</button>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q8 ⭐⭐⭐ 쇼핑 역할극 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">Q8. 쇼핑 대화를 완성해요!</div>
+    <div class="dialog-box" style="font-size:20px">
+      🧒: I want this, please. 🎨<br>
+      🏪: OK! It's seven dollars.<br>
+      🧒: Here you are! 💵<br>
+      🏪: <span style="border-bottom:3px solid var(--primary);padding:0 20px">______</span>
+    </div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:22px" onclick="checkAnswer(9,this,0)">How much is it?</div>
+      <div class="choice-btn" style="font-size:22px" onclick="checkAnswer(9,this,1)">I want seven dollars.</div>
+      <div class="choice-btn" style="font-size:22px" onclick="checkAnswer(9,this,2)">Thank you! Here you go! 🎨</div>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q9 ⭐⭐⭐⭐ 종합 -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="badge">⭐⭐⭐⭐ 최심화</div>
+    <div class="slide-title">Q9. 알맞은 대화 순서를 골라요!</div>
+    <div style="font-size:18px;background:var(--primary-light);border-radius:16px;padding:14px;margin:10px 0;line-height:1.8;text-align:left">
+      가게에서 🍦 아이스크림을 사려고 해요.<br>
+      대화 순서가 맞는 것은?
+    </div>
+    <div class="options">
+      <div class="choice-btn" style="font-size:18px;text-align:left" onclick="checkAnswer(10,this,0)">① Thank you! → ② How much? → ③ I want ice cream.</div>
+      <div class="choice-btn" style="font-size:18px;text-align:left" onclick="checkAnswer(10,this,1)">① I want ice cream. → ② How much is it? → ③ It's $3. Here you are!</div>
+      <div class="choice-btn" style="font-size:18px;text-align:left" onclick="checkAnswer(10,this,2)">① How much? → ② I want ice cream. → ③ Goodbye!</div>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Result -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">🏆 학습 완료!</div>
+    <div class="character">🎉</div>
+    <div class="result-score" id="finalScore">0점</div>
+    <div class="result-stars" id="finalStars"></div>
+    <div class="result-msg" id="finalMsg"></div>
+  </div>
+</div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="moveSlide(-1)" disabled>◀ 이전</button>
+  <div class="page-info" id="pageInfo">1 / 12</div>
+  <button class="nav-btn" id="nextBtn" onclick="moveSlide(1)">다음 ▶</button>
+</div>
+
+<script>
+let audioCtx,soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playSound(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.13;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else{let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.75;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+const slides=document.querySelectorAll('.slide');
+let cur=0,score=0,answered=new Set();
+function showSlide(n){slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i===n)s.classList.add('active');else if(i<n)s.classList.add('left');else s.classList.add('right')});document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;document.getElementById('prevBtn').disabled=n===0;if(n===slides.length-1)showResult()}
+function moveSlide(d){const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);playSound('click')}}
+
+const feedbacks={
+  2:{c:'맞아요! 🍌 banana! I want a banana! 🎉',w:'다시 들어봐요! banana = 바나나 🍌'},
+  3:{c:'맞아요! How much = 얼마, "뭐예요"가 아니에요! ❌',w:'How much is it? = 이거 얼마예요? (가격!) 💰'},
+  5:{c:'맞아요! 원해요 = want! I want pizza! 🍕',w:'원하다 = want! like는 좋아하다! 🤔'},
+  6:{c:'맞아요! three dollars = 3달러! $3! 💵🎉',w:'다시 들어봐요! three = 3 🔊'},
+  7:{c:'맞아요! 가격을 물으면 가격을 대답! It\'s ten dollars! 💵',w:'How much? 라고 물으면 가격을 말해야 해요! 💰'},
+  9:{c:'맞아요! 돈을 받고 물건을 주면서 Thank you! 🎨',w:'돈을 받은 다음에는 감사하고 물건을 주죠! 🤔'},
+  10:{c:'대단해요! 원하는 것 말하기 → 가격 묻기 → 사기! 완벽한 순서! 🛒🏆',w:'먼저 원하는 걸 말하고, 가격을 물어보고, 사는 순서예요! 🤔'}
+};
+
+function checkAnswer(si,el,ch){if(answered.has(si))return;const s=slides[si],c=parseInt(s.dataset.correct),sc=parseInt(s.dataset.score);const fb=document.getElementById('fb'+si),info=feedbacks[si];if(ch===c){el.classList.add('correct');playSound('correct');fb.textContent=info.c;fb.className='feedback correct';score+=sc;answered.add(si)}else{el.classList.add('wrong');playSound('wrong');fb.textContent=info.w;fb.className='feedback wrong';setTimeout(()=>el.classList.remove('wrong'),600)}}
+
+let matchLeft=null,matchCount=0;
+function matchClick(el,side){if(el.classList.contains('matched'))return;if(side==='left'){document.querySelectorAll('#matchGrid .match-item').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');matchLeft=el}else if(matchLeft){if(matchLeft.dataset.match===el.dataset.match){matchLeft.classList.add('matched');el.classList.add('matched');matchLeft.classList.remove('selected');matchLeft=null;matchCount++;playSound('correct');if(matchCount===3){document.getElementById('fb4').textContent='쇼핑 영어 완벽 연결! 🛒🎉';document.getElementById('fb4').className='feedback correct';score+=10;answered.add(4)}}else{el.classList.add('wrong-match');playSound('wrong');setTimeout(()=>{el.classList.remove('wrong-match');matchLeft.classList.remove('selected');matchLeft=null},500)}}}
+
+const sentData={7:{words:['How','much','is','it?'],answer:'How much is it?'}};
+function initSentence(id){const d=sentData[id],bank=document.getElementById('wordBank'+id);const sh=[...d.words].sort(()=>Math.random()-.5);bank.innerHTML='';sh.forEach(w=>{const s=document.createElement('span');s.className='word';s.textContent=w;s.onclick=()=>{s.classList.add('used');const b=document.getElementById('sentBuild'+id);const ns=document.createElement('span');ns.className='word';ns.textContent=w;ns.onclick=()=>{ns.remove();s.classList.remove('used')};b.appendChild(ns);playSound('click')};bank.appendChild(s)})}
+function checkSentence(id){const b=document.getElementById('sentBuild'+id);const w=[...b.querySelectorAll('.word')].map(w=>w.textContent).join(' ');const fb=document.getElementById('fb8');if(w===sentData[id].answer){playSound('correct');fb.textContent='완벽! How much is it? 얼마예요? 💰🎉';fb.className='feedback correct';score+=50;answered.add(8)}else{playSound('wrong');fb.textContent='How로 시작! How much is it? 🤔';fb.className='feedback wrong'}}
+function resetSentence(id){document.getElementById('sentBuild'+id).innerHTML='';document.querySelectorAll('#wordBank'+id+' .word').forEach(w=>w.classList.remove('used'));document.getElementById('fb8').textContent=''}
+
+function showResult(){const mx=305,pct=Math.round(score/mx*100);document.getElementById('finalScore').textContent=score+'점';let s='',m='';if(pct>=90){s='⭐⭐⭐';m='쇼핑 마스터! 🛒🏆'}else if(pct>=70){s='⭐⭐';m='잘했어요! 💪'}else if(pct>=40){s='⭐';m='좋아요! 다시 도전! 🔄'}else{s='💪';m='괜찮아요! 🔄'};document.getElementById('finalStars').textContent=s;document.getElementById('finalMsg').textContent=m}
+
+initSentence(7);showSlide(0);
+let tx=0;document.querySelector('.slide-area').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.querySelector('.slide-area').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){if(d<0)moveSlide(1);else moveSlide(-1)}});
+</script>
+</body>
+</html>

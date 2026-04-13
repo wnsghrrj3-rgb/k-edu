@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 5학년 영어 심화 | 수능어휘 1~200</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --primary: #1E40AF;
+  --primary-light: #DBEAFE;
+  --secondary: #3B82F6;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E2E8F0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --radius: 14px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; user-select: none; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #fff; border-bottom: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.05); flex-shrink: 0; }
+.sound-btn { background: none; border: none; cursor: pointer; font-size: 22px; padding: 4px 8px; border-radius: 8px; transition: background .15s; }
+.sound-btn:hover { background: var(--primary-light); }
+.progress-wrap { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0 14px; }
+.progress-bar { flex: 1; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 99px; transition: width .4s ease; }
+.page-info { font-size: 15px; color: var(--subtext); white-space: nowrap; }
+.score-badge { background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 3px 12px; font-size: 16px; font-weight: 700; color: var(--yellow); }
+.kedu-logo { display: flex; align-items: center; gap: 5px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 12px; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.slides { flex: 1; position: relative; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px; opacity: 0; transform: translateX(50px); transition: opacity .3s ease, transform .3s ease; pointer-events: none; }
+.slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+.slide.out { opacity: 0; transform: translateX(-50px); }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 24px 32px; width: 100%; max-width: 800px; }
+.slide-title { font-size: 20px; color: var(--subtext); text-align: center; margin-bottom: 10px; font-weight: 700; }
+.choices { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; margin-top: 10px; }
+.choice-btn { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 20px; font-family: 'Noto Sans KR', sans-serif; font-size: 22px; font-weight: 700; cursor: pointer; transition: border-color .15s, background .15s; }
+.choice-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+.choice-btn.correct { background: var(--green-light); border-color: var(--green); }
+.choice-btn.wrong { background: var(--red-light); border-color: var(--red); }
+.choices.col { flex-direction: column; align-items: center; }
+.choices.col .choice-btn { font-size: 20px; width: 100%; max-width: 620px; padding: 10px 20px; }
+.blank-box { display: inline-block; font-size: 44px; font-weight: 900; border-bottom: 4px solid var(--text); min-width: 70px; text-align: center; color: var(--primary); line-height: 1.2; margin: 0 5px; }
+.blank-box.filled { animation: fbounce .4s; }
+@keyframes fbounce { 0%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.feedback { font-size: 18px; text-align: center; margin-top: 10px; min-height: 26px; border-radius: 8px; padding: 5px 14px; font-weight: 700; }
+.feedback.ok { color: var(--green); background: var(--green-light); }
+.feedback.err { color: var(--red); background: var(--red-light); }
+.question-label { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: white; border-radius: 99px; padding: 4px 14px; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.stars { color: #FCD34D; }
+.question-text { font-size: 22px; text-align: center; margin: 8px 0 12px; line-height: 1.6; font-weight: 700; }
+.passage { background: #F8FAFC; border-radius: 12px; padding: 18px 22px; font-size: 19px; line-height: 1.8; margin: 10px 0; border-left: 4px solid var(--primary); color: var(--text); }
+.nav { display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 20px; background: #fff; border-top: 1px solid var(--border); flex-shrink: 0; }
+.nav-btn { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 10px 28px; font-family: 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+.nav-btn:disabled { opacity: .3; cursor: default; }
+.nav-btn:not(:disabled):hover { opacity: .85; }
+.combo-toast { position: fixed; top: 65px; left: 50%; transform: translateX(-50%) scale(0); background: var(--yellow-light); border: 2px solid var(--yellow); border-radius: 99px; padding: 6px 20px; font-size: 20px; font-weight: 700; color: var(--yellow); z-index: 99; transition: transform .3s; }
+.combo-toast.show { transform: translateX(-50%) scale(1); }
+.word-card { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 10px 0; }
+.word-main { font-size: 38px; font-weight: 900; color: var(--primary); cursor: pointer; }
+.word-main:hover { text-decoration: underline; }
+.word-pron { font-size: 18px; color: var(--subtext); }
+.word-mean { font-size: 22px; font-weight: 700; }
+.context-sent { font-size: 20px; color: var(--text); background: var(--primary-light); border-radius: 10px; padding: 12px 16px; margin: 8px 0; line-height: 1.6; text-align: center; }
+.context-sent em { font-style: normal; color: var(--primary); font-weight: 900; text-decoration: underline; }
+.input-area { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.type-input { font-family: 'Noto Sans KR', sans-serif; font-size: 24px; font-weight: 700; text-align: center; border: 2px solid var(--border); border-radius: 10px; padding: 10px 16px; width: 240px; outline: none; transition: border-color .2s; }
+.type-input:focus { border-color: var(--primary); }
+.submit-btn { background: var(--primary); color: white; border: none; border-radius: 10px; padding: 10px 22px; font-family: 'Noto Sans KR', sans-serif; font-size: 20px; font-weight: 700; cursor: pointer; }
+.match-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; max-width: 600px; margin: 10px auto; }
+.match-item { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 20px; font-weight: 700; text-align: center; cursor: pointer; transition: all .15s; }
+.match-item:hover { border-color: var(--primary); background: var(--primary-light); }
+.match-item.selected { border-color: var(--secondary); background: var(--primary-light); }
+.match-item.matched { background: var(--green-light); border-color: var(--green); cursor: default; }
+.match-arrow { font-size: 20px; color: var(--subtext); text-align: center; }
+.hint-btn { background: none; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 16px; color: var(--subtext); cursor: pointer; margin-top: 6px; }
+.hint-text { font-size: 17px; color: var(--subtext); margin-top: 6px; font-style: italic; }
+.drag-zone { min-height: 48px; border: 2px dashed var(--border); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; justify-content: center; align-items: center; margin: 8px 0; }
+.drag-zone.over { border-color: var(--primary); background: var(--primary-light); }
+.drag-item { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 20px; font-weight: 700; cursor: grab; transition: all .15s; }
+.drag-item:active { cursor: grabbing; }
+.drag-item.placed { opacity: .4; cursor: default; }
+</style>
+</head>
+<body>
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">💎 <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">⭐ K-edu</span>
+</div>
+
+<!-- SLIDES -->
+<div class="slides">
+
+<!-- S0: INTRO -->
+<div class="slide active" id="s0">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">📘 5학년 영어 심화 · 29차시</div>
+    <h1 style="font-size:28px; margin:14px 0;">수능 필수 어휘 1~200</h1>
+    <p style="font-size:19px; color:var(--subtext); line-height:1.7;">수능에 자주 출제되는 핵심 어휘를<br><strong>문맥 속에서</strong> 학습합니다.</p>
+    <div style="margin:18px 0; font-size:18px; color:var(--subtext);">
+      난이도: <span class="stars">⭐⭐⭐</span> ~ <span class="stars">⭐⭐⭐⭐</span>
+    </div>
+    <button class="nav-btn" onclick="nextSlide()" style="font-size:22px; padding:14px 40px;">학습 시작 →</button>
+  </div>
+</div>
+
+<!-- S1: CONCEPT — 어휘 학습 (문맥 제시) -->
+<div class="slide" id="s1">
+  <div class="card">
+    <div class="slide-title">📖 핵심 어휘 미리보기</div>
+    <p style="font-size:17px; color:var(--subtext); text-align:center; margin-bottom:12px;">단어를 클릭하면 발음을 들을 수 있어요</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('obtain')"><em>obtain</em><br><span style="font-size:17px;">얻다, 획득하다</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('require')"><em>require</em><br><span style="font-size:17px;">요구하다, 필요로 하다</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('demonstrate')"><em>demonstrate</em><br><span style="font-size:17px;">보여주다, 증명하다</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('eliminate')"><em>eliminate</em><br><span style="font-size:17px;">제거하다, 없애다</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('significant')"><em>significant</em><br><span style="font-size:17px;">중요한, 의미 있는</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('apparent')"><em>apparent</em><br><span style="font-size:17px;">분명한, 명백한</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('essential')"><em>essential</em><br><span style="font-size:17px;">필수적인, 본질적인</span></div>
+      <div class="context-sent" style="cursor:pointer;" onclick="speakWord('decline')"><em>decline</em><br><span style="font-size:17px;">감소하다, 거절하다</span></div>
+    </div>
+    <p style="text-align:center; margin-top:14px; font-size:17px; color:var(--subtext);">충분히 익혔다면 다음으로 넘어가세요 →</p>
+  </div>
+</div>
+
+<!-- S2: 문맥 빈칸 (4지선다) -->
+<div class="slide" id="s2" data-correct="2" data-score="50">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 알맞은 단어를 고르세요.</p>
+    <div class="context-sent" style="font-size:21px;">
+      Students must <em>______</em> a permission slip<br>before going on the field trip.
+    </div>
+    <div class="choices col" style="margin-top:14px;">
+      <button class="choice-btn" onclick="answer(this,0)">eliminate</button>
+      <button class="choice-btn" onclick="answer(this,1)">decline</button>
+      <button class="choice-btn" onclick="answer(this,2)">obtain</button>
+      <button class="choice-btn" onclick="answer(this,3)">demonstrate</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: 영→한 의미 고르기 -->
+<div class="slide" id="s3" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐⭐⭐</span></span>
+    <div class="word-card">
+      <span class="word-main" onclick="speakWord('demonstrate')">demonstrate 🔊</span>
+    </div>
+    <p class="question-text">위 단어의 뜻으로 가장 알맞은 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">감소하다</button>
+      <button class="choice-btn" onclick="answer(this,1)">보여주다, 증명하다</button>
+      <button class="choice-btn" onclick="answer(this,2)">요구하다</button>
+      <button class="choice-btn" onclick="answer(this,3)">제거하다</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: 한→영 빈칸 채우기 (타이핑) -->
+<div class="slide" id="s4" data-score="50">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">뜻을 보고 영어 단어를 직접 입력하세요.</p>
+    <div class="word-card">
+      <span style="font-size:28px; font-weight:900;">필수적인, 본질적인</span>
+    </div>
+    <div class="context-sent">Water is ______ for all living things.</div>
+    <div class="input-area">
+      <input type="text" class="type-input" id="typeInput4" placeholder="영어 단어 입력" autocomplete="off" onkeydown="if(event.key==='Enter')checkType(4,'essential')">
+      <button class="submit-btn" onclick="checkType(4,'essential')">확인</button>
+    </div>
+    <button class="hint-btn" onclick="showHint(4,'e_s_n_i_l')">💡 힌트 보기</button>
+    <div class="hint-text" id="hint4" style="display:none;"></div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: 문맥 추론 (문장 속 의미) ⭐⭐⭐⭐ -->
+<div class="slide" id="s5" data-correct="0" data-score="100">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">밑줄 친 단어와 의미가 가장 가까운 것은?</p>
+    <div class="passage">
+      The number of endangered species has shown a <u style="font-weight:900;">significant</u> increase over the past decade, alarming environmentalists worldwide.
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">considerable (상당한)</button>
+      <button class="choice-btn" onclick="answer(this,1)">gradual (점진적인)</button>
+      <button class="choice-btn" onclick="answer(this,2)">temporary (일시적인)</button>
+      <button class="choice-btn" onclick="answer(this,3)">minor (사소한)</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: 매칭 (drag/click) -->
+<div class="slide" id="s6" data-score="50">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">영어 단어와 뜻을 짝지어 보세요.<br><span style="font-size:17px; color:var(--subtext);">왼쪽 → 오른쪽 순서로 클릭!</span></p>
+    <div class="match-grid" id="matchGrid">
+      <div class="match-item" data-side="left" data-pair="0" onclick="matchClick(this)">obtain</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="2" onclick="matchClick(this)">감소하다</div>
+
+      <div class="match-item" data-side="left" data-pair="1" onclick="matchClick(this)">require</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="0" onclick="matchClick(this)">얻다</div>
+
+      <div class="match-item" data-side="left" data-pair="2" onclick="matchClick(this)">decline</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="3" onclick="matchClick(this)">제거하다</div>
+
+      <div class="match-item" data-side="left" data-pair="3" onclick="matchClick(this)">eliminate</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="1" onclick="matchClick(this)">요구하다</div>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: 문맥 빈칸 (보기 드래그) -->
+<div class="slide" id="s7" data-score="50">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">알맞은 단어를 빈칸에 넣으세요.</p>
+    <div class="context-sent" style="font-size:20px; line-height:1.8;">
+      ① The scientist <em>______</em> that the theory was correct through experiments.<br>
+      ② It was <em>______</em> that he had no intention of apologizing.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center; margin:14px 0; flex-wrap:wrap;">
+      <button class="choice-btn" onclick="fillTwo(this,0)" data-val="demonstrated">demonstrated</button>
+      <button class="choice-btn" onclick="fillTwo(this,1)" data-val="apparent">apparent</button>
+      <button class="choice-btn" onclick="fillTwo(this,2)" data-val="essential">essential</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: O/X 빠른 판단 -->
+<div class="slide" id="s8" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">다음 문장에서 밑줄 친 단어의 사용이 올바르면 O, 틀리면 X</p>
+    <div class="context-sent" style="font-size:21px;">
+      She <em style="text-decoration:underline;">obtained</em> the invitation politely,<br>saying she had other plans.
+    </div>
+    <p style="font-size:17px; color:var(--subtext); text-align:center; margin:8px 0;">obtain = 얻다 / 여기서는 "거절했다"는 의미</p>
+    <div class="choices">
+      <button class="choice-btn" style="font-size:32px; padding:14px 40px;" onclick="answer(this,0)">⭕</button>
+      <button class="choice-btn" style="font-size:32px; padding:14px 40px;" onclick="answer(this,1)">❌</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: 유의어 고르기 ⭐⭐⭐⭐ -->
+<div class="slide" id="s9" data-correct="2" data-score="100">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">다음 중 <strong>"require"</strong>와 유의어 관계인 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">reject (거부하다)</button>
+      <button class="choice-btn" onclick="answer(this,1)">remove (제거하다)</button>
+      <button class="choice-btn" onclick="answer(this,2)">demand (요구하다)</button>
+      <button class="choice-btn" onclick="answer(this,3)">reveal (드러내다)</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: 문장 완성 (빈칸 2개) ⭐⭐⭐⭐ -->
+<div class="slide" id="s10" data-score="100">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 들어갈 단어를 순서대로 고르세요.</p>
+    <div class="passage" style="font-size:20px;">
+      The company decided to <strong>(A)</strong> all outdated products and focus on developing <strong>(B)</strong> technologies for the future.
+    </div>
+    <p style="text-align:center; font-size:18px; color:var(--subtext); margin:8px 0;">(A), (B) 순서</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answerPair(this,0)">eliminate — significant</button>
+      <button class="choice-btn" onclick="answerPair(this,1)">obtain — apparent</button>
+      <button class="choice-btn" onclick="answerPair(this,2)">decline — essential</button>
+      <button class="choice-btn" onclick="answerPair(this,3)">require — demonstrate</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: RESULT -->
+<div class="slide" id="s11">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px; margin-bottom:10px;" id="resultEmoji">🏆</div>
+    <h2 style="font-size:26px; margin-bottom:10px;">학습 완료!</h2>
+    <p style="font-size:22px; margin:8px 0;">총 점수: <strong id="finalScore">0</strong>점</p>
+    <p style="font-size:26px;" id="resultStars">⭐⭐⭐</p>
+    <p style="font-size:18px; color:var(--subtext); margin:14px 0; line-height:1.6;">
+      수능 필수 어휘 1~200의 핵심 8단어를<br>문맥 속에서 학습했어요!<br>다음 차시에서 201~400을 만나봐요.
+    </p>
+    <button class="nav-btn" onclick="restart()" style="font-size:20px; padding:12px 36px;">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<!-- COMBO TOAST -->
+<div class="combo-toast" id="comboToast"></div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button>
+</div>
+
+<script>
+let soundOn=true, currentSlide=0, score=0, combo=0, answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=450?'⭐⭐⭐⭐⭐':score>=300?'⭐⭐⭐⭐':score>=150?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=450?'🏆':'🎉';
+  }
+}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q9 pair answer
+function answerPair(btn,idx){
+  if(answered[currentSlide])return;
+  const pts=100; playClick();
+  if(idx===0){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb10','✅ eliminate — significant 정답! +100점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb10','다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Typing check
+function checkType(qn,ans){
+  if(answered[currentSlide])return;
+  const inp=document.getElementById('typeInput'+qn);
+  const val=inp.value.trim().toLowerCase();
+  playClick();
+  if(val===ans.toLowerCase()){
+    playCorrect();addScore(50);setFB('fb'+qn,'✅ "'+ans+'" 정답! +50점',true);
+    inp.style.borderColor='var(--green)';inp.style.background='var(--green-light)';
+    answered[currentSlide]=true;setTimeout(nextSlide,900);
+  } else {
+    playWrong();combo=0;setFB('fb'+qn,'다시 입력해보세요! 💪',false);
+    inp.style.borderColor='var(--red)';
+    setTimeout(()=>{inp.style.borderColor='var(--border)';},500);
+    inp.value='';inp.focus();
+  }
+}
+
+function showHint(qn,h){
+  const el=document.getElementById('hint'+qn);
+  el.textContent='힌트: '+h;el.style.display='block';
+}
+
+// Matching
+let matchSel=null, matchCount=0;
+function matchClick(el){
+  if(el.classList.contains('matched'))return;
+  if(!matchSel){matchSel=el;el.classList.add('selected');playClick();return;}
+  if(el.dataset.side===matchSel.dataset.side){matchSel.classList.remove('selected');matchSel=el;el.classList.add('selected');playClick();return;}
+  playClick();
+  if(el.dataset.pair===matchSel.dataset.pair){
+    el.classList.add('matched');el.classList.remove('selected');
+    matchSel.classList.add('matched');matchSel.classList.remove('selected');
+    matchCount++;playCorrect();
+    if(matchCount===4){addScore(50);setFB('fb6','✅ 모두 맞췄어요! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  } else {
+    el.classList.add('wrong');matchSel.classList.add('wrong');playWrong();combo=0;
+    setFB('fb6','다시 짝지어보세요!',false);
+    const a=el,b=matchSel;
+    setTimeout(()=>{a.classList.remove('wrong','selected');b.classList.remove('wrong','selected');},500);
+  }
+  matchSel=null;
+}
+
+// Fill two blanks
+let fillState={filled:0, answers:['demonstrated','apparent']};
+function fillTwo(btn,idx){
+  if(answered[currentSlide])return;
+  const vals=['demonstrated','apparent','essential'];
+  playClick();
+  if(fillState.filled===0){
+    if(vals[idx]===fillState.answers[0]){
+      btn.classList.add('correct');btn.style.pointerEvents='none';fillState.filled=1;
+      playCorrect();setFB('fb7','✅ ①번 정답! ②번도 골라보세요.',true);
+    } else {
+      btn.classList.add('wrong');playWrong();combo=0;setFB('fb7','①번부터 맞춰보세요!',false);
+      setTimeout(()=>btn.classList.remove('wrong'),500);
+    }
+  } else if(fillState.filled===1){
+    if(vals[idx]===fillState.answers[1]){
+      btn.classList.add('correct');addScore(50);setFB('fb7','✅ 모두 정답! +50점',true);
+      answered[currentSlide]=true;setTimeout(nextSlide,900);
+    } else {
+      btn.classList.add('wrong');playWrong();combo=0;setFB('fb7','②번을 다시 골라보세요!',false);
+      setTimeout(()=>btn.classList.remove('wrong'),500);
+    }
+  }
+}
+
+// Touch swipe
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+
+function restart(){
+  score=0;combo=0;answered={};matchSel=null;matchCount=0;fillState={filled:0,answers:['demonstrated','apparent']};
+  document.querySelectorAll('.choice-btn').forEach(b=>{b.className='choice-btn';b.style.pointerEvents='';});
+  document.querySelectorAll('.match-item').forEach(m=>{m.className='match-item';});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.type-input').forEach(i=>{i.value='';i.style.borderColor='var(--border)';i.style.background='';});
+  document.querySelectorAll('.hint-text').forEach(h=>h.style.display='none');
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+updateUI();
+</script>
+</body>
+</html>

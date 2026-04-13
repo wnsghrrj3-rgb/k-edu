@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 5학년 영어 심화 | 수능 어법판단 기초</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px;}.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s;}.page-info{font-size:15px;color:var(--subtext);}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow);}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s,transform .3s;pointer-events:none;overflow-y:auto;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-50px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 28px;width:100%;max-width:800px;}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700;}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px;}.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:all .15s;}.choice-btn:hover{border-color:var(--primary);background:var(--primary-light);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);}.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{font-size:18px;width:100%;max-width:640px;padding:10px 18px;text-align:left;}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px;}.stars{color:#FCD34D;}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700;}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:18px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;}.nav-btn:disabled{opacity:.3;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:20px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.rule-box{background:var(--primary-light);border:2px solid var(--primary);border-radius:14px;padding:16px 20px;margin:10px 0;}
+.rule-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:8px;}
+.rule-content{font-size:17px;line-height:1.7;}
+.rule-content strong{color:var(--primary);}
+.rule-ex{font-size:18px;background:white;border-radius:8px;padding:10px 14px;margin-top:8px;border-left:3px solid var(--secondary);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1 / 14</span></div>
+  <span class="score-badge">💎 <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">⭐ K-edu</span>
+</div>
+<div class="slides">
+
+<!-- S0 -->
+<div class="slide active">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">📝 5학년 영어 심화 · 40차시</div>
+    <h1 style="font-size:28px;margin:14px 0;">수능 어법판단 기초</h1>
+    <p style="font-size:19px;color:var(--subtext);line-height:1.7;"><strong>주어-동사 수일치</strong>와<br><strong>능동/수동 판단</strong>을 훈련합니다.</p>
+    <div style="margin:18px 0;font-size:18px;color:var(--subtext);">난이도: <span class="stars">⭐⭐⭐</span> ~ <span class="stars">⭐⭐⭐⭐</span></div>
+    <button class="nav-btn" onclick="nextSlide()" style="font-size:22px;padding:14px 40px;">학습 시작 →</button>
+  </div>
+</div>
+
+<!-- S1: 수일치 규칙 -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">📐 규칙 1: 주어-동사 수일치</div>
+    <div class="rule-box">
+      <div class="rule-title">핵심 원리</div>
+      <div class="rule-content">주어가 <strong>단수</strong>이면 동사도 <strong>단수</strong> (+ s/es)<br>주어가 <strong>복수</strong>이면 동사도 <strong>복수</strong> (원형)</div>
+      <div class="rule-ex">✅ The student <strong>studies</strong> hard. (단수)<br>✅ The students <strong>study</strong> hard. (복수)</div>
+    </div>
+    <div class="rule-box">
+      <div class="rule-title">⚠️ 함정 패턴</div>
+      <div class="rule-content">
+        • 전치사구 삽입: The price <strong>of the tickets</strong> <u>is</u> high. (주어=price)<br>
+        • Every/Each + 단수: Every student <u>has</u> a book.<br>
+        • The number of ~ + 단수 vs A number of ~ + 복수
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: 능동/수동 규칙 -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">📐 규칙 2: 능동태 vs 수동태</div>
+    <div class="rule-box">
+      <div class="rule-title">판단 기준</div>
+      <div class="rule-content">주어가 <strong>행위자</strong>면 → <strong>능동태</strong> (V / V-s)<br>주어가 <strong>대상</strong>이면 → <strong>수동태</strong> (be + p.p.)</div>
+      <div class="rule-ex">✅ He <strong>wrote</strong> the letter. (능동: 그가 씀)<br>✅ The letter <strong>was written</strong> by him. (수동: 편지가 쓰여짐)</div>
+    </div>
+    <div class="rule-box">
+      <div class="rule-title">⚠️ 자동사는 수동 불가!</div>
+      <div class="rule-content">happen, occur, appear, rise, fall → 수동태 ❌<br>❌ The accident <s>was happened</s>. → ✅ The accident <strong>happened</strong>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q1: 수일치 기본 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어법상 올바른 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">The number of students <strong>is</strong> increasing.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The number of students <strong>are</strong> increasing.</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- Q2: 수일치 삽입구 -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 알맞은 것은?</p>
+    <div class="passage">The quality of these products ______ excellent.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">are</button>
+      <button class="choice-btn" onclick="answer(this,1)">is</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- Q3: 능동/수동 기본 -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어법상 올바른 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">The window <strong>broke</strong> by the children.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The window <strong>was broken</strong> by the children.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- Q4: 자동사 수동 함정 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어법상 올바른 것은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">The problem <strong>occurred</strong> during the experiment.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The problem <strong>was occurred</strong> during the experiment.</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- Q5: Every + 단수 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 알맞은 것은?</p>
+    <div class="passage">Every student in the school ______ required to wear a uniform.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">is</button>
+      <button class="choice-btn" onclick="answer(this,1)">are</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- Q6: 수능형 — 밑줄 어법 판단 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">밑줄 친 부분 중 어법상 틀린 것은?</p>
+    <div class="passage" style="font-size:17px;">
+      The books on the shelf <u><strong>(A) were</strong></u> donated by a local author. Each of them <u><strong>(B) contain</strong></u> a handwritten message. The collection <u><strong>(C) is</strong></u> now available to all students.
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">(A) were</button>
+      <button class="choice-btn" onclick="answer(this,1)">(B) contain → contains</button>
+      <button class="choice-btn" onclick="answer(this,2)">(C) is</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- Q7: 수능형 — 능동/수동 판단 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">밑줄 친 부분 중 어법상 틀린 것은?</p>
+    <div class="passage" style="font-size:17px;">
+      The new bridge <u><strong>(A) was designed</strong></u> by a famous architect. It <u><strong>(B) was completed</strong></u> last year. Since then, many changes <u><strong>(C) have been happened</strong></u> in the neighborhood.
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">(A) was designed</button>
+      <button class="choice-btn" onclick="answer(this,1)">(B) was completed</button>
+      <button class="choice-btn" onclick="answer(this,2)">(C) have been happened → have happened</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- Q8: A number of vs The number of ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 알맞은 것은?</p>
+    <div class="passage">A number of tourists ______ visiting the museum this summer.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">is</button>
+      <button class="choice-btn" onclick="answer(this,1)">are</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- Q9: 종합 어법 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="100">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">어법상 모두 올바른 문장은?</p>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">The results of the survey were published last week, and each participant was given a copy.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The results of the survey was published last week, and each participant were given a copy.</button>
+      <button class="choice-btn" onclick="answer(this,2)">The results of the survey were published last week, and each participant were given a copy.</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="slide">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px;margin-bottom:10px;" id="resultEmoji">🏆</div>
+    <h2 style="font-size:26px;margin-bottom:10px;">학습 완료!</h2>
+    <p style="font-size:22px;margin:8px 0;">총 점수: <strong id="finalScore">0</strong>점</p>
+    <p style="font-size:26px;" id="resultStars">⭐⭐⭐</p>
+    <p style="font-size:18px;color:var(--subtext);margin:14px 0;line-height:1.6;">수능 어법판단의 핵심 2가지 마스터!<br><strong>수일치 + 능동/수동</strong><br>다음: 수능독해 실전연습 📝</p>
+    <button class="nav-btn" onclick="restart()" style="font-size:20px;padding:12px 36px;">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">← 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=14;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=550?'⭐⭐⭐⭐⭐':score>=400?'⭐⭐⭐⭐':score>=250?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=550?'🏆':'🎉';}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

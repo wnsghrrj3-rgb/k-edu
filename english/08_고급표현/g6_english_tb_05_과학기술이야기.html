@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 6학년 영어 | 과학기술이야기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E3A5F;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}.topbar-left{display:flex;align-items:center;gap:8px;}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}.topbar-title{font-size:15px;font-weight:700;color:var(--primary);}.kedu-logo{width:32px;height:32px;background:var(--secondary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;position:relative;}.kedu-logo::after{content:'⭐';position:absolute;top:-2px;right:-2px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .35s;}.slide.active{opacity:1;pointer-events:auto;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 32px;max-width:800px;width:100%;max-height:calc(100vh - 120px);overflow-y:auto;}.slide-title{font-size:20px;font-weight:900;color:var(--primary);margin-bottom:16px;display:flex;align-items:center;gap:8px;}.badge{display:inline-block;background:var(--yellow-light);color:var(--yellow);font-size:13px;font-weight:700;padding:2px 10px;border-radius:20px;}
+.concept-box{background:var(--primary-light);border-radius:12px;padding:18px;margin:12px 0;font-size:18px;line-height:1.7;}.concept-box strong{color:var(--primary);}.example-box{background:#F1F5F9;border-left:4px solid var(--secondary);padding:14px 18px;border-radius:0 12px 12px 0;margin:12px 0;font-size:17px;line-height:1.8;}
+.q-text{font-size:22px;font-weight:700;margin-bottom:16px;line-height:1.5;}.q-sub{font-size:18px;color:var(--subtext);margin-bottom:14px;}.choices{display:flex;flex-direction:column;gap:10px;}.choice-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:20px;cursor:pointer;transition:all .2s;text-align:left;font-family:inherit;color:var(--text);}.choice-btn:hover{border-color:var(--secondary);background:var(--primary-light);}.choice-btn.correct{border-color:var(--green);background:var(--green-light);animation:cpop .3s;}.choice-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}.choice-btn.disabled{pointer-events:none;opacity:.7;}
+.choices-row{display:flex;flex-wrap:wrap;gap:10px;}.choices-row .choice-btn{flex:1;min-width:45%;text-align:center;font-size:20px;}
+.feedback{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:16px;display:none;}.feedback.show{display:block;}.feedback.correct{background:var(--green-light);color:var(--green);}.feedback.wrong{background:var(--red-light);color:var(--red);}
+.passage{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:18px;font-size:17px;line-height:2;margin:12px 0;}.blank-box{display:inline-block;min-width:140px;border-bottom:3px solid var(--primary);text-align:center;font-size:18px;font-weight:700;color:var(--secondary);padding:4px 8px;margin:0 4px;min-height:32px;vertical-align:bottom;}.blank-box.filled{border-color:var(--green);color:var(--green);}
+.ox-row{display:flex;gap:14px;justify-content:center;margin:10px 0;}.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:#fff;font-size:36px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}.ox-btn.correct{border-color:var(--green);background:var(--green-light);}.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}.match-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:16px;cursor:pointer;transition:all .2s;}.match-item.selected{border-color:var(--secondary);background:var(--primary-light);}.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.toggle-grid{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;}.toggle-item{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 18px;font-size:17px;cursor:pointer;transition:all .2s;}.toggle-item.on{background:var(--primary-light);border-color:var(--secondary);}
+.tts-btn{background:none;border:none;cursor:pointer;font-size:22px;vertical-align:middle;}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 28px;font-size:18px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}.nav-btn:hover{background:var(--secondary);}.nav-btn:disabled{background:var(--border);cursor:default;}.nav-info{font-size:15px;color:var(--subtext);}
+.result-card{text-align:center;}.result-score{font-size:64px;font-weight:900;color:var(--primary);margin:12px 0;}.result-msg{font-size:22px;color:var(--subtext);margin:8px 0;}.result-detail{display:flex;justify-content:center;gap:24px;margin:16px 0;flex-wrap:wrap;}.result-item{background:var(--primary-light);border-radius:12px;padding:14px 24px;text-align:center;}.result-item .label{font-size:14px;color:var(--subtext);}.result-item .val{font-size:28px;font-weight:900;color:var(--primary);}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-left"><button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button><span class="topbar-title">6학년 영어 · 과학기술이야기</span></div><div class="kedu-logo">K</div></div>
+<div class="slide-area" id="slideArea">
+
+<!-- S0: Concept -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="slide-title">🔬 과학기술 서술 표현 <span class="badge">⭐⭐⭐</span></div>
+  <div class="concept-box">
+    과학기술을 설명할 때 쓰는 핵심 표현들:<br><br>
+    📌 <strong>~ was invented by + 사람</strong> — ~이 …에 의해 발명되었다<br>
+    📌 <strong>It enables us to ~</strong> — 그것은 우리가 ~할 수 있게 해준다<br>
+    📌 <strong>Thanks to ~</strong> — ~ 덕분에<br>
+    📌 <strong>~ has changed the way we ~</strong> — ~은 우리가 …하는 방식을 바꿨다
+  </div>
+  <div class="example-box">
+    <button class="tts-btn" onclick="speak('The internet was developed in the late twentieth century. Thanks to the internet, we can access information from anywhere in the world.')">🔊</button>
+    "The internet was developed in the late 20th century. Thanks to the internet, we can access information from anywhere in the world."
+  </div>
+</div>
+</div>
+
+<!-- S1: Concept 2 -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">⚙️ 과학 서술 구조</div>
+  <div class="concept-box">
+    과학기술 소개 글은 보통 이 순서로 구성돼요:<br><br>
+    🔹 <strong>1. 발명/발견 사실</strong> — ~ was invented/discovered<br>
+    🔹 <strong>2. 작동 원리/기능</strong> — It works by ~/It enables ~<br>
+    🔹 <strong>3. 영향/결과</strong> — As a result, ~/Thanks to ~<br>
+    🔹 <strong>4. 미래 전망</strong> — In the future, ~/It will ~
+  </div>
+</div>
+</div>
+
+<!-- S2: Q1 - 빈칸 (was invented) -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+<div class="card">
+  <div class="slide-title">Q1 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('The telephone blank by Alexander Graham Bell in 1876.')">🔊</button>
+    The telephone <span class="blank-box" id="blank1"></span> by Alexander Graham Bell in 1876.
+  </div>
+  <div class="choices-row" id="q1">
+    <button class="choice-btn" onclick="fillBlank(this,'invented','blank1','q1',1)">invented</button>
+    <button class="choice-btn" onclick="fillBlank(this,'was invented','blank1','q1',1)">was invented</button>
+    <button class="choice-btn" onclick="fillBlank(this,'has invented','blank1','q1',1)">has invented</button>
+    <button class="choice-btn" onclick="fillBlank(this,'is invented','blank1','q1',1)">is invented</button>
+  </div>
+  <div class="feedback" id="fb_q1"></div>
+</div>
+</div>
+
+<!-- S3: Q2 - 매칭 (발명품 ↔ 표현) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q2 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">알맞은 짝을 매칭하세요.</div>
+  <div class="match-grid" id="matchGrid2">
+    <div class="match-item" data-pair="A" data-side="L" onclick="matchClick(this,'m2')">📱 Smartphone</div>
+    <div class="match-item" data-pair="A" data-side="R" onclick="matchClick(this,'m2')">enables us to communicate instantly</div>
+    <div class="match-item" data-pair="B" data-side="L" onclick="matchClick(this,'m2')">🚗 Electric car</div>
+    <div class="match-item" data-pair="B" data-side="R" onclick="matchClick(this,'m2')">has changed the way we travel</div>
+    <div class="match-item" data-pair="C" data-side="L" onclick="matchClick(this,'m2')">🤖 AI</div>
+    <div class="match-item" data-pair="C" data-side="R" onclick="matchClick(this,'m2')">was developed to solve complex problems</div>
+  </div>
+  <div class="feedback" id="fb_m2"></div>
+</div>
+</div>
+
+<!-- S4: Q3 - O/X -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q3 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">다음 문장이 문법적으로 올바른가요?</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('Thanks to solar panels, many homes can now use clean energy.')">🔊</button>
+    "Thanks to solar panels, many homes can now use clean energy."
+  </div>
+  <div class="ox-row" id="q3">
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,'O','q3')">❌</button>
+  </div>
+  <div class="feedback" id="fb_q3"></div>
+</div>
+</div>
+
+<!-- S5: Q4 - 토글 (수동태 표현 골라내기) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q4 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">아래에서 <strong>수동태</strong> 문장을 모두 고르세요.</div>
+  <div class="toggle-grid" id="q4">
+    <div class="toggle-item" data-p="1" onclick="toggleItem(this)">The light bulb was invented by Edison.</div>
+    <div class="toggle-item" data-p="0" onclick="toggleItem(this)">Scientists discovered a new planet.</div>
+    <div class="toggle-item" data-p="1" onclick="toggleItem(this)">The vaccine was developed in 2020.</div>
+    <div class="toggle-item" data-p="0" onclick="toggleItem(this)">Technology changes our daily lives.</div>
+    <div class="toggle-item" data-p="1" onclick="toggleItem(this)">Robots are used in many factories.</div>
+  </div>
+  <button class="nav-btn" style="margin-top:14px;" onclick="chkTog('q4','p')">확인하기</button>
+  <div class="feedback" id="fb_q4"></div>
+</div>
+</div>
+
+<!-- S6: Q5 - 빈칸 (enables us to) -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+<div class="card">
+  <div class="slide-title">Q5 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('GPS technology blank find our way without a map.')">🔊</button>
+    GPS technology <span class="blank-box" id="blank5"></span> find our way without a map.
+  </div>
+  <div class="choices-row" id="q5">
+    <button class="choice-btn" onclick="fillBlank(this,'is enabled to','blank5','q5',2)">is enabled to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'enable to us','blank5','q5',2)">enable to us</button>
+    <button class="choice-btn" onclick="fillBlank(this,'enables us to','blank5','q5',2)">enables us to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'enabling us','blank5','q5',2)">enabling us</button>
+  </div>
+  <div class="feedback" id="fb_q5"></div>
+</div>
+</div>
+
+<!-- S7: Passage -->
+<div class="slide" data-type="passage">
+<div class="card">
+  <div class="slide-title">📖 지문 읽기</div>
+  <div class="passage" style="font-size:16px;line-height:2;">
+    <button class="tts-btn" onclick="speak('Three D printing technology was first developed in the 1980s. It enables us to create physical objects from digital designs. Thanks to three D printing, doctors can now make custom artificial bones for patients. Furthermore, architects use it to build models of buildings quickly and cheaply. In the future, scientists believe that three D printing will be used to construct houses and even print human organs. This technology has truly changed the way we create things.')">🔊</button>
+    3D printing technology was first developed in the 1980s. It enables us to create physical objects from digital designs. Thanks to 3D printing, doctors can now make custom artificial bones for patients. Furthermore, architects use it to build models of buildings quickly and cheaply. In the future, scientists believe that 3D printing will be used to construct houses and even print human organs. This technology has truly changed the way we create things.
+  </div>
+</div>
+</div>
+
+<!-- S8: Q6 - 내용 일치 -->
+<div class="slide" data-type="q" data-correct="3" data-score="50">
+<div class="card">
+  <div class="slide-title">Q6 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">지문의 내용과 일치하는 것은?</div>
+  <div class="choices" id="q6">
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q6')">3D printing was developed in 2020.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q6')">Only doctors use 3D printing technology.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q6')">3D printing can already construct entire houses.</button>
+    <button class="choice-btn" onclick="checkAnswer(this,3,'q6')">Doctors use 3D printing to make artificial bones.</button>
+  </div>
+  <div class="feedback" id="fb_q6"></div>
+</div>
+</div>
+
+<!-- S9: Q7 - 추론 -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+<div class="card">
+  <div class="slide-title">Q7 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">"has changed the way we create things"의 의미에 가장 가까운 것은?</div>
+  <div class="choices" id="q7">
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q7')">물건을 만드는 것이 더 어려워졌다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q7')">물건을 만드는 방식이 근본적으로 달라졌다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q7')">물건을 만드는 사람이 줄어들었다</button>
+    <button class="choice-btn" onclick="checkAnswer(this,1,'q7')">물건을 만드는 것이 불가능해졌다</button>
+  </div>
+  <div class="feedback" id="fb_q7"></div>
+</div>
+</div>
+
+<!-- S10: Q8 - 글의 구조 파악 -->
+<div class="slide" data-type="q" data-correct="0" data-score="100">
+<div class="card">
+  <div class="slide-title">Q8 <span class="badge">⭐⭐⭐⭐</span></div>
+  <div class="q-text">이 글의 전체 구조를 가장 잘 설명한 것은?</div>
+  <div class="choices" id="q8">
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">발명 사실 → 기능 → 현재 활용 → 미래 전망</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">문제 제기 → 해결책 → 반론 → 결론</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">비교 → 대조 → 분석 → 요약</button>
+    <button class="choice-btn" onclick="checkAnswer(this,0,'q8')">주장 → 근거 → 예시 → 결론</button>
+  </div>
+  <div class="feedback" id="fb_q8"></div>
+</div>
+</div>
+
+<!-- S11: Q9 - 빈칸 (Thanks to) -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+<div class="card">
+  <div class="slide-title">Q9 <span class="badge">⭐⭐⭐</span></div>
+  <div class="q-text">빈칸에 알맞은 표현을 고르세요.</div>
+  <div class="passage">
+    <button class="tts-btn" onclick="speak('Blank renewable energy, many countries have reduced air pollution significantly.')">🔊</button>
+    <span class="blank-box" id="blank9"></span> renewable energy, many countries have reduced air pollution significantly.
+  </div>
+  <div class="choices-row" id="q9">
+    <button class="choice-btn" onclick="fillBlank(this,'Thanks to','blank9','q9',0)">Thanks to</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Because','blank9','q9',0)">Because</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Although','blank9','q9',0)">Although</button>
+    <button class="choice-btn" onclick="fillBlank(this,'Despite','blank9','q9',0)">Despite</button>
+  </div>
+  <div class="feedback" id="fb_q9"></div>
+</div>
+</div>
+
+<!-- S12: Result -->
+<div class="slide" data-type="result">
+<div class="card result-card">
+  <div class="slide-title" style="justify-content:center;">🎯 학습 결과</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-msg" id="finalMsg">점</div>
+  <div class="result-detail"><div class="result-item"><div class="label">맞힌 문제</div><div class="val" id="correctCnt">0</div></div><div class="result-item"><div class="label">총 문항</div><div class="val">9</div></div></div>
+  <button class="nav-btn" style="margin-top:18px;" onclick="location.reload()">다시 풀기 🔄</button>
+</div>
+</div>
+</div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button><span class="nav-info" id="navInfo">1 / 13</span><button class="nav-btn" id="nextBtn" onclick="go(1)">다음 ▶</button></div>
+<script>
+let cur=0,totalScore=0,correctCount=0,soundOn=true;const slides=document.querySelectorAll('.slide');const total=slides.length;let audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.05);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));document.getElementById('navInfo').textContent=`${n+1} / ${total}`;document.getElementById('prevBtn').disabled=n===0;if(n===total-1)showResult();}
+function go(d){const n=cur+d;if(n>=0&&n<total){cur=n;showSlide(cur);}}
+function checkAnswer(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(i===c){btn.classList.add('correct');playCorrect();totalScore+=parseInt(btn.closest('.slide').dataset.score)||50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{btn.classList.add('wrong');bs[c].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';}}
+function checkOX(btn,c,qid){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .ox-btn`);const cl=btn.textContent.trim()==='⭕'?'O':'X';bs.forEach(b=>b.classList.add('disabled'));const fb=document.getElementById('fb_'+qid);if(cl===c){btn.classList.add('correct');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 맞아요! "Thanks to + 명사"는 올바른 표현이에요!';}else{btn.classList.add('wrong');bs[c==='O'?0:1].classList.add('correct');playWrong();fb.className='feedback show wrong';fb.textContent='❌ "Thanks to"는 "~ 덕분에"라는 뜻으로 올바른 표현이에요!';}}
+function fillBlank(btn,t,bid,qid,c){if(btn.classList.contains('disabled'))return;playClick();const bs=document.querySelectorAll(`#${qid} .choice-btn`);const i=[...bs].indexOf(btn);bs.forEach(b=>b.classList.add('disabled'));document.getElementById(bid).textContent=t;const fb=document.getElementById('fb_'+qid);if(i===c){document.getElementById(bid).classList.add('filled');playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 정답!';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 오답! 정답을 확인하세요.';bs[c].style.border='3px solid var(--green)';}}
+function toggleItem(el){playClick();el.classList.toggle('on');}
+function chkTog(qid,attr){const its=document.querySelectorAll(`#${qid} .toggle-item`);let ok=true;its.forEach(it=>{if((it.dataset[attr]==='1')!==it.classList.contains('on'))ok=false;});its.forEach(it=>it.style.pointerEvents='none');const fb=document.getElementById('fb_'+qid);if(ok){playCorrect();totalScore+=50;correctCount++;fb.className='feedback show correct';fb.textContent='✅ 수동태: was invented, was developed, are used';}else{playWrong();fb.className='feedback show wrong';fb.textContent='❌ 수동태는 "be + 과거분사" 형태예요!';}}
+let matchSel=null,matchCount=0;
+function matchClick(el,mid){if(el.classList.contains('matched'))return;playClick();if(!matchSel){matchSel=el;el.classList.add('selected');}else{if(matchSel===el){matchSel.classList.remove('selected');matchSel=null;return;}if(matchSel.dataset.pair===el.dataset.pair&&matchSel.dataset.side!==el.dataset.side){matchSel.classList.remove('selected');matchSel.classList.add('matched');el.classList.add('matched');matchCount++;playCorrect();if(matchCount===3){totalScore+=50;correctCount++;document.getElementById('fb_'+mid).className='feedback show correct';document.getElementById('fb_'+mid).textContent='✅ 모두 매칭 성공!';}}else{matchSel.classList.remove('selected');el.classList.add('wrong');setTimeout(()=>el.classList.remove('wrong'),400);playWrong();}matchSel=null;}}
+function showResult(){document.getElementById('finalScore').textContent=totalScore;document.getElementById('correctCnt').textContent=correctCount;let m='';if(correctCount>=8)m='🏆 과학기술 전문가!';else if(correctCount>=5)m='👍 잘했어요!';else m='📚 다시 복습해 보세요!';document.getElementById('finalMsg').textContent=m;}
+let tx=0;document.getElementById('slideArea').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.getElementById('slideArea').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?go(1):go(-1);}});showSlide(0);
+</script>
+</body>
+</html>

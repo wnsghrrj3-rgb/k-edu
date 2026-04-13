@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 4학년 영어 B-1 | 05. 시제 — 과거</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3FF;
+  --card: #FFFFFF;
+  --primary: #7C3AED;
+  --primary-light: #EDE9FE;
+  --secondary: #8B5CF6;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:24px; padding:4px 8px; border-radius:10px; transition:background .2s; }
+.sound-btn:hover { background:var(--primary-light); }
+.progress-wrap { display:flex; align-items:center; gap:10px; flex:1; margin:0 14px; }
+.progress-bar { flex:1; height:8px; background:#E2E8F0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s ease; }
+.page-info { font-size:16px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:18px; font-weight:700; color:var(--yellow); }
+.kedu-logo { display:flex; align-items:center; gap:5px; background:var(--primary); color:white; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px 22px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px 28px; width:100%; max-width:740px; }
+.slide-title { font-size:22px; color:var(--subtext); text-align:center; margin-bottom:10px; font-weight:700; }
+.rule-box { border-radius:14px; padding:16px 18px; margin:8px 0; }
+.rule-formula { font-size:32px; font-weight:900; letter-spacing:1px; margin:6px 0; }
+.rule-sub { font-size:20px; color:var(--subtext); margin-top:4px; }
+.ex-sentence { font-size:24px; line-height:1.7; margin:6px 0; cursor:pointer; padding:6px 10px; border-radius:10px; transition:background .2s; }
+.ex-sentence:hover { background:var(--primary-light); }
+.highlight { color:var(--primary); font-weight:900; }
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:white; border-radius:99px; padding:5px 16px; font-size:18px; font-weight:700; margin-bottom:12px; }
+.stars { color:#FCD34D; }
+.question-text { font-size:26px; text-align:center; margin:8px 0 14px; line-height:1.6; font-weight:700; }
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choice-btn { background:var(--card); border:2px solid #CBD5E1; border-radius:12px; padding:12px 22px; font-family:'Noto Sans KR',sans-serif; font-size:28px; font-weight:700; cursor:pointer; transition:all .2s; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { font-size:22px; width:100%; max-width:560px; padding:11px 20px; }
+.feedback { font-size:20px; text-align:center; margin-top:10px; min-height:28px; border-radius:10px; padding:5px 14px; font-weight:700; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+.blank-box { display:inline-block; font-size:52px; font-weight:900; border-bottom:5px solid var(--text); min-width:80px; text-align:center; color:var(--primary); line-height:1.2; margin:0 5px; transition:all .3s; }
+.blank-box.filled { animation:fill-bounce .4s; }
+@keyframes fill-bounce { 0%{transform:scale(1.3)} 100%{transform:scale(1)} }
+.token-area { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:10px; }
+.token { background:var(--card); border:2px solid #CBD5E1; border-radius:99px; padding:7px 16px; font-size:22px; font-weight:700; cursor:pointer; transition:all .2s; }
+.token:hover { border-color:var(--primary); transform:scale(1.04); }
+.token.correct { background:var(--green-light); border-color:var(--green); pointer-events:none; }
+.token.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #E2E8F0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:white; border:none; border-radius:12px; padding:10px 28px; font-family:'Noto Sans KR',sans-serif; font-size:20px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.nav-btn:not(:disabled):hover { opacity:.85; }
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:22px; font-weight:700; color:var(--yellow); z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+.irreg-table { width:100%; border-collapse:collapse; margin:10px 0; font-size:20px; }
+.irreg-table th { background:var(--primary); color:#fff; padding:8px; border-radius:0; }
+.irreg-table th:first-child { border-radius:10px 0 0 0; }
+.irreg-table th:last-child { border-radius:0 10px 0 0; }
+.irreg-table td { padding:8px 10px; border-bottom:1px solid #E2E8F0; text-align:center; cursor:pointer; }
+.irreg-table tr:hover td { background:var(--primary-light); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 13</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K-edu ⭐</span>
+</div>
+
+<div class="slides">
+
+<!-- S0: TITLE -->
+<div class="slide active" data-correct="-1">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:120px; margin-bottom:10px;">⏰</div>
+    <h1 style="font-size:32px; font-weight:900; margin-bottom:8px;">시제 — 과거</h1>
+    <p style="font-size:22px; color:var(--subtext);">규칙 -ed · 불규칙 과거 · did 의문·부정</p>
+    <p style="font-size:18px; color:var(--primary); margin-top:12px;">4학년 Track B-1 · 05차시</p>
+  </div>
+</div>
+
+<!-- S1: CONCEPT — 규칙 과거 -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 1 — 규칙 과거형 (-ed)</div>
+    <div class="rule-box" style="background:var(--primary-light);">
+      <div class="rule-formula">동사 + <span class="highlight">ed</span></div>
+      <div class="rule-sub">대부분의 동사는 <b>-ed</b>를 붙여 과거를 만들어요</div>
+    </div>
+    <div class="ex-sentence" onclick="speakWord('I played soccer yesterday.')">⚽ play → play<span class="highlight">ed</span></div>
+    <div class="ex-sentence" onclick="speakWord('She liked the movie.')">🎬 like → lik<span class="highlight">ed</span> (e로 끝나면 -d만)</div>
+    <div class="ex-sentence" onclick="speakWord('He stopped the car.')">🚗 stop → stop<span class="highlight">ped</span> (단모음+단자음 → 자음 2번)</div>
+    <div class="ex-sentence" onclick="speakWord('We studied math.')">📚 study → stud<span class="highlight">ied</span> (자음+y → ied)</div>
+  </div>
+</div>
+
+<!-- S2: CONCEPT — 불규칙 과거 -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 2 — 불규칙 과거형 (꼭 외워야 해요!)</div>
+    <table class="irreg-table">
+      <tr><th>원형</th><th>과거형</th><th>뜻</th></tr>
+      <tr onclick="speakWord('go went')"><td>go</td><td class="highlight">went</td><td>가다</td></tr>
+      <tr onclick="speakWord('eat ate')"><td>eat</td><td class="highlight">ate</td><td>먹다</td></tr>
+      <tr onclick="speakWord('see saw')"><td>see</td><td class="highlight">saw</td><td>보다</td></tr>
+      <tr onclick="speakWord('come came')"><td>come</td><td class="highlight">came</td><td>오다</td></tr>
+      <tr onclick="speakWord('have had')"><td>have</td><td class="highlight">had</td><td>가지다</td></tr>
+      <tr onclick="speakWord('make made')"><td>make</td><td class="highlight">made</td><td>만들다</td></tr>
+      <tr onclick="speakWord('take took')"><td>take</td><td class="highlight">took</td><td>가져가다</td></tr>
+      <tr onclick="speakWord('write wrote')"><td>write</td><td class="highlight">wrote</td><td>쓰다</td></tr>
+      <tr onclick="speakWord('run ran')"><td>run</td><td class="highlight">ran</td><td>달리다</td></tr>
+      <tr onclick="speakWord('give gave')"><td>give</td><td class="highlight">gave</td><td>주다</td></tr>
+    </table>
+    <div style="font-size:18px; color:var(--subtext); text-align:center;">🔊 줄을 터치하면 발음을 들을 수 있어요!</div>
+  </div>
+</div>
+
+<!-- S3: CONCEPT — did 의문·부정 -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 3 — did 의문문·부정문</div>
+    <div class="rule-box" style="background:var(--primary-light);">
+      <div class="rule-formula"><span class="highlight">Did</span> + 주어 + 동사원형?</div>
+      <div class="rule-sub">과거 의문문: Did you eat breakfast?</div>
+    </div>
+    <div class="rule-box" style="background:var(--red-light);">
+      <div class="rule-formula">주어 + <span style="color:var(--red);">didn't</span> + 동사원형</div>
+      <div class="rule-sub">과거 부정문: I didn't eat breakfast.</div>
+    </div>
+    <div class="ex-sentence" onclick="speakWord('Did she go to school?')">❓ <b>Did</b> she <b>go</b> to school? (went ❌ → go ✅)</div>
+    <div class="ex-sentence" onclick="speakWord('They didn\'t play outside.')">🚫 They <b>didn't play</b> outside. (played ❌ → play ✅)</div>
+  </div>
+</div>
+
+<!-- S4: Q1 ⭐ — 규칙 과거형 -->
+<div class="slide" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="question-label">Q1 <span class="stars">⭐</span></div>
+    <div class="question-text">I ___ (watch) a movie last night.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">watches</button>
+      <button class="choice-btn" onclick="answer(this,1)">watched</button>
+      <button class="choice-btn" onclick="answer(this,2)">watching</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q2 ⭐ — 불규칙 과거형 -->
+<div class="slide" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label">Q2 <span class="stars">⭐</span></div>
+    <div class="question-text">She ___ (go) to the park yesterday.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">goed</button>
+      <button class="choice-btn" onclick="answer(this,1)">goes</button>
+      <button class="choice-btn" onclick="answer(this,2)">went</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q3 ⭐⭐ — did 부정문 -->
+<div class="slide" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label">Q3 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">He ___ finish his homework.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">didn't</button>
+      <button class="choice-btn" onclick="answer(this,1)">doesn't</button>
+      <button class="choice-btn" onclick="answer(this,2)">don't</button>
+      <button class="choice-btn" onclick="answer(this,3)">wasn't</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q4 ⭐⭐ — 불규칙 매칭 (빈칸) -->
+<div class="slide" data-correct="-1" data-score="25">
+  <div class="card">
+    <div class="question-label">Q4 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">불규칙 과거형을 맞춰보세요!</div>
+    <div id="matchArea" style="display:flex; flex-direction:column; gap:8px; align-items:center; margin:10px 0;">
+      <div class="ex-sentence" id="mq0">eat → <span class="blank-box" id="mb0" style="font-size:32px; min-width:60px;">___</span></div>
+      <div class="ex-sentence" id="mq1">see → <span class="blank-box" id="mb1" style="font-size:32px; min-width:60px;">___</span></div>
+      <div class="ex-sentence" id="mq2">come → <span class="blank-box" id="mb2" style="font-size:32px; min-width:60px;">___</span></div>
+    </div>
+    <div class="token-area" id="matchTokens">
+      <span class="token" onclick="matchFill(this,'came',2)">came</span>
+      <span class="token" onclick="matchFill(this,'ate',0)">ate</span>
+      <span class="token" onclick="matchFill(this,'saw',1)">saw</span>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q5 ⭐⭐ — did 의문문 -->
+<div class="slide" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="question-label">Q5 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">___ you see the rainbow yesterday?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">Do</button>
+      <button class="choice-btn" onclick="answer(this,1)">Did</button>
+      <button class="choice-btn" onclick="answer(this,2)">Does</button>
+      <button class="choice-btn" onclick="answer(this,3)">Were</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q6 ⭐⭐⭐ — 오류 문장 찾기 -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label">Q6 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">다음 중 <span style="color:var(--red);">틀린</span> 문장은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">I played tennis last Sunday.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Did she eat lunch?</button>
+      <button class="choice-btn" onclick="answer(this,2)">He didn't went to school.</button>
+      <button class="choice-btn" onclick="answer(this,3)">They watched a movie together.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q7 ⭐⭐⭐ — 규칙 vs 불규칙 분류 -->
+<div class="slide" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="question-label">Q7 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">규칙 vs 불규칙 분류하기!</div>
+    <div style="font-size:18px; color:var(--subtext); text-align:center; margin-bottom:6px;">동사를 터치하세요</div>
+    <div style="display:flex; gap:14px; margin:6px 0;">
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:18px; font-weight:700; color:var(--primary); margin-bottom:4px;">📗 규칙 (-ed)</div>
+        <div class="token-area" id="regZone" style="min-height:44px; border:2px dashed #CBD5E1; border-radius:12px; padding:6px;"></div>
+      </div>
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:18px; font-weight:700; color:var(--red); margin-bottom:4px;">📕 불규칙</div>
+        <div class="token-area" id="irregZone" style="min-height:44px; border:2px dashed #CBD5E1; border-radius:12px; padding:6px;"></div>
+      </div>
+    </div>
+    <div class="token-area" id="classTokens">
+      <span class="token" onclick="classify(this,'reg')">walk</span>
+      <span class="token" onclick="classify(this,'irreg')">run</span>
+      <span class="token" onclick="classify(this,'reg')">clean</span>
+      <span class="token" onclick="classify(this,'irreg')">write</span>
+      <span class="token" onclick="classify(this,'reg')">open</span>
+      <span class="token" onclick="classify(this,'irreg')">take</span>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q8 ⭐⭐⭐⭐ — 문맥 기반 과거 시제 완성 -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+    <div class="question-text">"Last summer, my family ___ to Busan. We ___ the beach and ___ fresh seafood."</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">go / visit / eat</button>
+      <button class="choice-btn" onclick="answer(this,1)">went / visited / ate</button>
+      <button class="choice-btn" onclick="answer(this,2)">went / visited / eated</button>
+      <button class="choice-btn" onclick="answer(this,3)">goed / visited / ate</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: RESULT -->
+<div class="slide" data-correct="-1">
+  <div class="card" style="text-align:center;">
+    <div id="resultEmoji" style="font-size:80px;">🎉</div>
+    <h2 style="font-size:28px; margin:10px 0;">학습 완료!</h2>
+    <p style="font-size:36px; font-weight:900; color:var(--primary);" id="finalScore">0</p>
+    <p style="font-size:20px; color:var(--subtext);">점</p>
+    <div id="resultStars" style="font-size:36px; margin:10px 0;">⭐⭐⭐</div>
+    <button class="nav-btn" onclick="restart()" style="margin-top:14px;">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=250?'⭐⭐⭐⭐⭐':score>=180?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=250?'🏆':'🎉';}
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Match fill (slide 7)
+let matchCount=0;
+function matchFill(tk,word,idx){
+  if(tk.classList.contains('correct'))return;
+  playClick();
+  tk.classList.add('correct');
+  const b=document.getElementById('mb'+idx);
+  b.textContent=word;b.classList.add('filled');
+  speakWord(word);
+  matchCount++;
+  if(matchCount>=3){addScore(25);setFB('fb7','✅ 완벽! +25점',true);answered[7]=true;setTimeout(nextSlide,900);}
+}
+
+// Classify (slide 10)
+let classCount=0;
+function classify(tk,type){
+  if(tk.classList.contains('correct'))return;
+  playClick();tk.classList.add('correct');
+  document.getElementById(type==='reg'?'regZone':'irregZone').appendChild(tk);
+  classCount++;
+  if(classCount>=6){addScore(50);setFB('fb10','✅ 완벽 분류! +50점',true);answered[10]=true;setTimeout(nextSlide,900);}
+}
+
+function restart(){
+  score=0;combo=0;answered={};matchCount=0;classCount=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.token').forEach(t=>t.className='token');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  // Reset tokens
+  ['matchTokens','classTokens'].forEach(id=>{
+    const c=document.getElementById(id);
+    if(c) document.querySelectorAll('#regZone .token, #irregZone .token').forEach(t=>c.appendChild(t));
+  });
+  const mt=document.getElementById('matchTokens');
+  document.querySelectorAll('#matchArea .token').forEach(t=>mt&&mt.appendChild(t));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+updateUI();
+</script>
+</body>
+</html>

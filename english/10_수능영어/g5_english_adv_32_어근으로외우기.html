@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 5학년 영어 심화 | 어근으로 외우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1E40AF;--primary-light:#DBEAFE;--secondary:#3B82F6;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;}.sound-btn:hover{background:var(--primary-light);}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px;}.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s ease;}
+.page-info{font-size:15px;color:var(--subtext);white-space:nowrap;}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow);}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;flex-shrink:0;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;overflow-y:auto;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-50px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 28px;width:100%;max-width:800px;}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700;}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px;}.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;}.choice-btn:hover{border-color:var(--primary);background:var(--primary-light);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);}.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{font-size:20px;width:100%;max-width:620px;padding:10px 20px;}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px;}.stars{color:#FCD34D;}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700;}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:19px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s;}.nav-btn:disabled{opacity:.3;cursor:default;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:20px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.context-sent{font-size:20px;color:var(--text);background:var(--primary-light);border-radius:10px;padding:12px 16px;margin:8px 0;line-height:1.6;text-align:center;}.context-sent em{font-style:normal;color:var(--primary);font-weight:900;text-decoration:underline;}
+.root-card{background:linear-gradient(135deg,var(--primary-light),#EFF6FF);border:2px solid var(--primary);border-radius:14px;padding:16px 20px;margin:8px 0;text-align:center;}
+.root-main{font-size:34px;font-weight:900;color:var(--primary);}
+.root-mean{font-size:20px;color:var(--subtext);margin:4px 0;}
+.root-examples{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;}
+.root-ex{background:white;border:1.5px solid var(--border);border-radius:8px;padding:8px 14px;font-size:18px;font-weight:700;cursor:pointer;transition:all .15s;}
+.root-ex:hover{border-color:var(--primary);background:var(--primary-light);}
+.root-ex strong{color:var(--primary);}
+.input-area{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:10px;flex-wrap:wrap;}.type-input{font-family:'Noto Sans KR',sans-serif;font-size:24px;font-weight:700;text-align:center;border:2px solid var(--border);border-radius:10px;padding:10px 16px;width:240px;outline:none;}.type-input:focus{border-color:var(--primary);}
+.submit-btn{background:var(--primary);color:white;border:none;border-radius:10px;padding:10px 22px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;}
+.hint-btn{background:none;border:1.5px solid var(--border);border-radius:8px;padding:6px 14px;font-size:16px;color:var(--subtext);cursor:pointer;margin-top:6px;}.hint-text{font-size:17px;color:var(--subtext);margin-top:6px;font-style:italic;}
+.match-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;max-width:620px;margin:10px auto;}.match-item{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:19px;font-weight:700;text-align:center;cursor:pointer;transition:all .15s;}.match-item:hover{border-color:var(--primary);background:var(--primary-light);}.match-item.selected{border-color:var(--secondary);background:var(--primary-light);}.match-item.matched{background:var(--green-light);border-color:var(--green);cursor:default;}.match-item.wrong{background:var(--red-light);border-color:var(--red);}.match-arrow{font-size:18px;color:var(--subtext);text-align:center;}
+.root-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+.root-mini{background:white;border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.root-mini-title{font-size:22px;font-weight:900;color:var(--primary);}
+.root-mini-mean{font-size:16px;color:var(--subtext);margin:2px 0 6px;}
+.root-mini-ex{font-size:17px;color:var(--text);line-height:1.5;}
+.root-mini-ex strong{color:var(--primary);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1 / 14</span></div>
+  <span class="score-badge">💎 <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">⭐ K-edu</span>
+</div>
+
+<div class="slides">
+
+<!-- S0: INTRO -->
+<div class="slide active">
+  <div class="card" style="text-align:center;">
+    <div class="slide-title">📘 5학년 영어 심화 · 32차시</div>
+    <h1 style="font-size:28px;margin:14px 0;">어근으로 외우기 🌱</h1>
+    <p style="font-size:19px;color:var(--subtext);line-height:1.7;">하나의 어근을 알면<br><strong>수십 개의 단어</strong>가 열립니다!</p>
+    <div style="margin:18px 0;font-size:18px;color:var(--subtext);">난이도: <span class="stars">⭐⭐⭐</span> ~ <span class="stars">⭐⭐⭐⭐</span></div>
+    <button class="nav-btn" onclick="nextSlide()" style="font-size:22px;padding:14px 40px;">학습 시작 →</button>
+  </div>
+</div>
+
+<!-- S1: CONCEPT 1 — spect, port, ject -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">🌱 핵심 어근 그룹 ①</div>
+    <div class="root-grid">
+      <div class="root-mini">
+        <div class="root-mini-title">spect</div>
+        <div class="root-mini-mean">= 보다 (look/see)</div>
+        <div class="root-mini-ex"><strong>in</strong>spect 검사하다<br><strong>re</strong>spect 존경하다<br><strong>pro</strong>spect 전망</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">port</div>
+        <div class="root-mini-mean">= 나르다 (carry)</div>
+        <div class="root-mini-ex"><strong>trans</strong>port 운송하다<br><strong>ex</strong>port 수출하다<br><strong>im</strong>port 수입하다</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">ject</div>
+        <div class="root-mini-mean">= 던지다 (throw)</div>
+        <div class="root-mini-ex"><strong>re</strong>ject 거부하다<br><strong>in</strong>ject 주입하다<br><strong>pro</strong>ject 투사하다</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">duc(t)</div>
+        <div class="root-mini-mean">= 이끌다 (lead)</div>
+        <div class="root-mini-ex"><strong>con</strong>duct 수행하다<br><strong>pro</strong>duce 생산하다<br><strong>re</strong>duce 줄이다</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:17px;color:var(--subtext);margin-top:10px;">접두사 + 어근 = 단어의 의미!</p>
+  </div>
+</div>
+
+<!-- S2: CONCEPT 2 — scrib, struct, mit, cred -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">🌱 핵심 어근 그룹 ②</div>
+    <div class="root-grid">
+      <div class="root-mini">
+        <div class="root-mini-title">scrib/script</div>
+        <div class="root-mini-mean">= 쓰다 (write)</div>
+        <div class="root-mini-ex"><strong>de</strong>scribe 묘사하다<br><strong>pre</strong>scribe 처방하다<br>in<strong>script</strong>ion 비문</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">struct</div>
+        <div class="root-mini-mean">= 쌓다 (build)</div>
+        <div class="root-mini-ex"><strong>con</strong>struct 건설하다<br><strong>de</strong>struct 파괴하다<br><strong>in</strong>struct 지시하다</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">mit/miss</div>
+        <div class="root-mini-mean">= 보내다 (send)</div>
+        <div class="root-mini-ex"><strong>trans</strong>mit 전송하다<br><strong>sub</strong>mit 제출하다<br><strong>per</strong>mit 허가하다</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">cred</div>
+        <div class="root-mini-mean">= 믿다 (believe)</div>
+        <div class="root-mini-ex"><strong>in</strong>credible 믿기 힘든<br><strong>cred</strong>ible 믿을 만한<br><strong>cred</strong>it 신용</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: Q1 어근 의미 고르기 -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <span class="question-label">Q1 <span class="stars">⭐⭐⭐</span></span>
+    <div class="root-card">
+      <div class="root-main">spect</div>
+    </div>
+    <p class="question-text">이 어근의 의미는?</p>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">쓰다</button>
+      <button class="choice-btn" onclick="answer(this,1)">던지다</button>
+      <button class="choice-btn" onclick="answer(this,2)">보다</button>
+      <button class="choice-btn" onclick="answer(this,3)">나르다</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q2 어근+접두사 → 단어 뜻 추론 -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">Q2 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어근의 의미를 활용해 뜻을 추론하세요.</p>
+    <div class="root-card">
+      <span style="font-size:20px;color:var(--subtext);">ex- (밖으로) + </span><span class="root-main">port</span><span style="font-size:20px;color:var(--subtext);"> (나르다)</span>
+      <div style="font-size:28px;font-weight:900;margin-top:8px;">export = ?</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">수입하다 (안으로 나르다)</button>
+      <button class="choice-btn" onclick="answer(this,1)">수출하다 (밖으로 나르다)</button>
+      <button class="choice-btn" onclick="answer(this,2)">운송하다 (건너서 나르다)</button>
+      <button class="choice-btn" onclick="answer(this,3)">지원하다 (아래서 나르다)</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q3 단어 → 어근 찾기 -->
+<div class="slide" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">Q3 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">"<strong>construct</strong>"에 포함된 어근은?</p>
+    <p style="text-align:center;font-size:18px;color:var(--subtext);">construct = con(함께) + ?</p>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">struct (쌓다)</button>
+      <button class="choice-btn" onclick="answer(this,1)">ject (던지다)</button>
+      <button class="choice-btn" onclick="answer(this,2)">mit (보내다)</button>
+      <button class="choice-btn" onclick="answer(this,3)">scrib (쓰다)</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q4 매칭 — 어근 ↔ 의미 -->
+<div class="slide" data-score="50">
+  <div class="card">
+    <span class="question-label">Q4 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어근과 의미를 짝지으세요.</p>
+    <div class="match-grid" id="matchGrid">
+      <div class="match-item" data-side="left" data-pair="0" onclick="matchClick(this)">ject</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="2" onclick="matchClick(this)">보내다</div>
+      <div class="match-item" data-side="left" data-pair="1" onclick="matchClick(this)">duc(t)</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="3" onclick="matchClick(this)">믿다</div>
+      <div class="match-item" data-side="left" data-pair="2" onclick="matchClick(this)">mit/miss</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="0" onclick="matchClick(this)">던지다</div>
+      <div class="match-item" data-side="left" data-pair="3" onclick="matchClick(this)">cred</div>
+      <div class="match-arrow">↔</div>
+      <div class="match-item" data-side="right" data-pair="1" onclick="matchClick(this)">이끌다</div>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q5 어근으로 단어 뜻 추론 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <span class="question-label">Q5 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">어근 지식으로 추론하세요!</p>
+    <div class="root-card">
+      <span style="font-size:18px;color:var(--subtext);">in- (안에/~않는) + </span><span class="root-main">cred</span><span style="font-size:18px;color:var(--subtext);"> (믿다) + -ible (할 수 있는)</span>
+      <div style="font-size:28px;font-weight:900;margin-top:8px;">incredible = ?</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">매우 믿을 만한</button>
+      <button class="choice-btn" onclick="answer(this,1)">신용이 좋은</button>
+      <button class="choice-btn" onclick="answer(this,2)">믿을 수 없는 (놀라운)</button>
+      <button class="choice-btn" onclick="answer(this,3)">믿음이 강한</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q6 타이핑 — 어근으로 단어 완성 -->
+<div class="slide" data-score="50">
+  <div class="card">
+    <span class="question-label">Q6 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">어근을 활용해 단어를 완성하세요.</p>
+    <div class="root-card">
+      <div style="font-size:18px;color:var(--subtext);">re- (다시) + ject (던지다) = 거부하다</div>
+      <div style="font-size:18px;color:var(--subtext);margin-top:8px;">sub- (아래에) + mit (보내다) = 제출하다</div>
+    </div>
+    <p style="text-align:center;font-size:20px;margin:12px 0;"><strong>de-</strong> (아래로) + <strong>struct</strong> (쌓다) = <strong>파괴하다</strong></p>
+    <p style="text-align:center;font-size:18px;color:var(--subtext);">이 단어를 입력하세요:</p>
+    <div class="input-area">
+      <input type="text" class="type-input" id="typeInput8" placeholder="영어 단어 입력" autocomplete="off" onkeydown="if(event.key==='Enter')checkType(8,'destruct')">
+      <button class="submit-btn" onclick="checkType(8,'destruct')">확인</button>
+    </div>
+    <button class="hint-btn" onclick="showHint(8,'de_tr_ct')">💡 힌트</button>
+    <div class="hint-text" id="hint8" style="display:none;"></div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q7 문맥 속 어근 활용 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="100">
+  <div class="card">
+    <span class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">빈칸에 들어갈 단어를 어근으로 추론하세요.</p>
+    <div class="passage" style="font-size:20px;">The doctor ______ a new medicine for the patient's condition. The word contains the root <strong>scrib</strong> (= write).</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">described (묘사했다)</button>
+      <button class="choice-btn" onclick="answer(this,1)">inscribed (새겼다)</button>
+      <button class="choice-btn" onclick="answer(this,2)">subscribed (구독했다)</button>
+      <button class="choice-btn" onclick="answer(this,3)">prescribed (처방했다)</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q8 접두사+어근 조합 완성 -->
+<div class="slide" data-score="50">
+  <div class="card">
+    <span class="question-label">Q8 <span class="stars">⭐⭐⭐</span></span>
+    <p class="question-text">설명에 맞는 접두사+어근 조합을 고르세요.</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:10px 0;">
+      <div class="context-sent" style="font-size:19px;">
+        ① "안으로 + 보다" → 검사하다 = <strong id="combo1">___</strong>
+      </div>
+      <div class="context-sent" style="font-size:19px;">
+        ② "앞으로 + 이끌다" → 생산하다 = <strong id="combo2">___</strong>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="choice-btn" onclick="fillCombo(this,0)" style="font-size:20px;">inspect</button>
+      <button class="choice-btn" onclick="fillCombo(this,1)" style="font-size:20px;">produce</button>
+      <button class="choice-btn" onclick="fillCombo(this,2)" style="font-size:20px;">transmit</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q9 종합 추론 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <span class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <p class="question-text">어근 지식을 총동원!</p>
+    <div class="passage" style="font-size:19px;">
+      The engineer had to <u style="font-weight:900;">re-</u><u style="font-weight:900;">construct</u> the entire bridge after the earthquake, because the old <u style="font-weight:900;">struct</u>ure was completely <u style="font-weight:900;">de</u>stroyed.
+    </div>
+    <p style="text-align:center;font-size:18px;color:var(--subtext);margin:8px 0;">이 문장에서 어근 <strong>struct (쌓다)</strong>가 포함된 단어가 등장하는 횟수는?</p>
+    <div class="choices">
+      <button class="choice-btn" style="font-size:28px;padding:14px 30px;" onclick="answer(this,0)">1개</button>
+      <button class="choice-btn" style="font-size:28px;padding:14px 30px;" onclick="answer(this,1)">2개</button>
+      <button class="choice-btn" style="font-size:28px;padding:14px 30px;" onclick="answer(this,2)">3개</button>
+      <button class="choice-btn" style="font-size:28px;padding:14px 30px;" onclick="answer(this,3)">4개</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: CONCEPT 3 — 나머지 어근 요약 -->
+<div class="slide">
+  <div class="card">
+    <div class="slide-title">🌱 추가 어근 모음</div>
+    <div class="root-grid" style="font-size:16px;">
+      <div class="root-mini">
+        <div class="root-mini-title">vis/vid</div>
+        <div class="root-mini-mean">보다 (see)</div>
+        <div class="root-mini-ex">visible, video, vision</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">ven/vent</div>
+        <div class="root-mini-mean">오다 (come)</div>
+        <div class="root-mini-ex">event, prevent, invent</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">pos/pon</div>
+        <div class="root-mini-mean">놓다 (place)</div>
+        <div class="root-mini-ex">expose, compose, postpone</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">form</div>
+        <div class="root-mini-mean">형태 (shape)</div>
+        <div class="root-mini-ex">inform, reform, transform</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">cap/cep</div>
+        <div class="root-mini-mean">잡다 (take)</div>
+        <div class="root-mini-ex">capture, accept, perceive</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">voc/vok</div>
+        <div class="root-mini-mean">부르다 (call)</div>
+        <div class="root-mini-ex">vocal, provoke, invoke</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">rupt</div>
+        <div class="root-mini-mean">깨다 (break)</div>
+        <div class="root-mini-ex">interrupt, corrupt, erupt</div>
+      </div>
+      <div class="root-mini">
+        <div class="root-mini-title">fer</div>
+        <div class="root-mini-mean">나르다 (carry)</div>
+        <div class="root-mini-ex">transfer, prefer, refer</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:17px;color:var(--subtext);margin-top:10px;">총 20개 어근 학습 완료! 이 어근들로 200+ 단어를 추론할 수 있어요.</p>
+  </div>
+</div>
+
+<!-- S13: RESULT -->
+<div class="slide">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:60px;margin-bottom:10px;" id="resultEmoji">🏆</div>
+    <h2 style="font-size:26px;margin-bottom:10px;">학습 완료!</h2>
+    <p style="font-size:22px;margin:8px 0;">총 점수: <strong id="finalScore">0</strong>점</p>
+    <p style="font-size:26px;" id="resultStars">⭐⭐⭐</p>
+    <p style="font-size:18px;color:var(--subtext);margin:14px 0;line-height:1.6;">20개 어근을 마스터했어요!<br>다음 차시: 600단어 어휘종합챌린지 🏆</p>
+    <button class="nav-btn" onclick="restart()" style="font-size:20px;padding:12px 36px;">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 →</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.85;speechSynthesis.speak(u);}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=500?'⭐⭐⭐⭐⭐':score>=350?'⭐⭐⭐⭐':score>=200?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=500?'🏆':'🎉';}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function checkType(qn,ans){if(answered[currentSlide])return;const inp=document.getElementById('typeInput'+qn);const val=inp.value.trim().toLowerCase();playClick();if(val===ans.toLowerCase()){playCorrect();addScore(50);setFB('fb'+qn,'✅ "'+ans+'" 정답! +50점',true);inp.style.borderColor='var(--green)';inp.style.background='var(--green-light)';answered[currentSlide]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb'+qn,'다시 입력해보세요! 💪',false);inp.style.borderColor='var(--red)';setTimeout(()=>inp.style.borderColor='var(--border)',500);inp.value='';inp.focus();}}
+function showHint(qn,h){const el=document.getElementById('hint'+qn);el.textContent='힌트: '+h;el.style.display='block';}
+
+// Matching
+let matchSel=null,matchCount=0;
+function matchClick(el){if(el.classList.contains('matched'))return;if(!matchSel){matchSel=el;el.classList.add('selected');playClick();return;}if(el.dataset.side===matchSel.dataset.side){matchSel.classList.remove('selected');matchSel=el;el.classList.add('selected');playClick();return;}playClick();if(el.dataset.pair===matchSel.dataset.pair){el.classList.add('matched');el.classList.remove('selected');matchSel.classList.add('matched');matchSel.classList.remove('selected');matchCount++;playCorrect();if(matchCount===4){addScore(50);setFB('fb6','✅ 모두 맞췄어요! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}}else{el.classList.add('wrong');matchSel.classList.add('wrong');playWrong();combo=0;setFB('fb6','다시 짝지어보세요!',false);const a=el,b=matchSel;setTimeout(()=>{a.classList.remove('wrong','selected');b.classList.remove('wrong','selected');},500);}matchSel=null;}
+
+// Combo fill
+let comboState={filled:0};
+function fillCombo(btn,idx){
+  if(answered[currentSlide])return;
+  playClick();
+  if(comboState.filled===0){
+    if(idx===0){btn.classList.add('correct');btn.style.pointerEvents='none';comboState.filled=1;document.getElementById('combo1').textContent='inspect';playCorrect();setFB('fb10','✅ ①번 정답! ②번도!',true);}
+    else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb10','①번부터 맞춰보세요!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+  } else {
+    if(idx===1){btn.classList.add('correct');document.getElementById('combo2').textContent='produce';addScore(50);setFB('fb10','✅ 모두 정답! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+    else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb10','②번을 다시!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+  }
+}
+
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
+
+function restart(){score=0;combo=0;answered={};matchSel=null;matchCount=0;comboState={filled:0};
+document.querySelectorAll('.choice-btn').forEach(b=>{b.className='choice-btn';b.style.pointerEvents='';});
+document.querySelectorAll('.match-item').forEach(m=>m.className='match-item');
+document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+document.querySelectorAll('.type-input').forEach(i=>{i.value='';i.style.borderColor='var(--border)';i.style.background='';});
+document.querySelectorAll('.hint-text').forEach(h=>h.style.display='none');
+document.getElementById('combo1').textContent='___';document.getElementById('combo2').textContent='___';
+document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

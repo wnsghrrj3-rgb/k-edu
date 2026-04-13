@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 4학년 영어 B-2 | 19. 순서 배열</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0FDF4;--card:#FFFFFF;--primary:#15803D;--primary-light:#DCFCE7;--secondary:#16A34A;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--shadow:0 2px 12px rgba(0,0,0,.08);--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:16px;color:var(--subtext)}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}.rule-formula{font-size:30px;font-weight:900;margin:6px 0}.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px}.highlight{color:var(--primary);font-weight:900}
+.passage{background:#F0FDF9;border-radius:12px;padding:16px 20px;font-size:21px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);cursor:pointer}
+.passage:hover{background:var(--primary-light)}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:28px;font-weight:700;cursor:pointer;transition:all .2s}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:22px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.seq-badge{display:inline-block;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:22px;font-weight:900;margin:3px}
+.order-item{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:10px 16px;margin:4px 0;font-size:20px;font-weight:700;cursor:pointer;transition:all .2s;text-align:left}.order-item:hover{border-color:var(--primary);transform:translateX(4px)}.order-item.placed{background:var(--green-light);border-color:var(--green);pointer-events:none}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div><span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K-edu ⭐</span></div>
+<div class="slides">
+
+<div class="slide active" data-correct="-1"><div class="card" style="text-align:center"><div style="font-size:120px;margin-bottom:10px">📋</div><h1 style="font-size:32px;font-weight:900;margin-bottom:8px">독해 전략 3 — 순서 배열</h1><p style="font-size:22px;color:var(--subtext)">First · Then · Next · Finally</p><p style="font-size:18px;color:var(--primary);margin-top:12px">4학년 Track B-2 · 19차시</p></div></div>
+
+<!-- S1 CONCEPT -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 — 순서 신호어 (Sequence Words)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0">
+      <span class="seq-badge">First 먼저</span>
+      <span class="seq-badge">Then 그 다음</span>
+      <span class="seq-badge">Next 그 후에</span>
+      <span class="seq-badge">After that 그 후에</span>
+      <span class="seq-badge">Finally 마지막으로</span>
+    </div>
+    <div class="passage" onclick="speakWord('First, I wake up. Then, I brush my teeth. Next, I eat breakfast. Finally, I go to school.')">
+      <b>First</b>, I wake up. <b>Then</b>, I brush my teeth. <b>Next</b>, I eat breakfast. <b>Finally</b>, I go to school.
+    </div>
+    <div class="rule-box" style="background:var(--yellow-light)">
+      <div class="rule-sub">💡 이 단어들이 보이면 "시간 순서"로 정리하세요!</div>
+    </div>
+  </div>
+</div>
+
+<!-- S2 Q1 ⭐ -->
+<div class="slide" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="question-label">Q1 <span class="stars">⭐</span></div>
+    <div class="passage">___, wash your hands. Then, set the table. Next, serve the food. Finally, enjoy your meal!</div>
+    <div class="question-text">빈칸에 알맞은 것은?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">First</button>
+      <button class="choice-btn" onclick="answer(this,1)">Finally</button>
+      <button class="choice-btn" onclick="answer(this,2)">Then</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3 Q2 ⭐ -->
+<div class="slide" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label">Q2 <span class="stars">⭐</span></div>
+    <div class="passage">First, she put on her shoes. Then, she opened the door. Next, she walked to the bus stop. ___, the bus arrived.</div>
+    <div class="question-text">빈칸에 알맞은 것은?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">First</button>
+      <button class="choice-btn" onclick="answer(this,1)">Next</button>
+      <button class="choice-btn" onclick="answer(this,2)">Finally</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4 Q3 ⭐⭐ — 순서 맞추기 -->
+<div class="slide" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="question-label">Q3 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">아침 준비 순서로 올바른 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Eat → Wake up → Brush teeth → Go</button>
+      <button class="choice-btn" onclick="answer(this,1)">Wake up → Brush teeth → Eat → Go</button>
+      <button class="choice-btn" onclick="answer(this,2)">Go → Wake up → Eat → Brush teeth</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5 Q4 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="question-label">Q4 <span class="stars">⭐⭐</span></div>
+    <div class="passage" style="font-size:19px">How to make a sandwich: First, get two slices of bread. Then, put cheese and ham on one slice. Next, add lettuce and tomato. Finally, put the other slice on top.</div>
+    <div class="question-text">What do you do after adding ham and cheese?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Get two slices of bread.</button>
+      <button class="choice-btn" onclick="answer(this,1)">Put the other slice on top.</button>
+      <button class="choice-btn" onclick="answer(this,2)">Add lettuce and tomato.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6 Q5 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label">Q5 <span class="stars">⭐⭐</span></div>
+    <div class="passage" style="font-size:19px">Mina planted a flower. First, she dug a hole. Then, she put the seed in. Next, she covered it with soil. After that, she watered it. Finally, she waited for it to grow.</div>
+    <div class="question-text">What did Mina do right BEFORE watering?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Covered it with soil</button>
+      <button class="choice-btn" onclick="answer(this,1)">Dug a hole</button>
+      <button class="choice-btn" onclick="answer(this,2)">Waited for it to grow</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7 Q6 ⭐⭐⭐ — 섞인 문장 순서 -->
+<div class="slide" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label">Q6 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">올바른 순서로 배열하면?</div>
+    <div style="margin:8px 0">
+      <div class="order-item">A) Then, he brushed his teeth.</div>
+      <div class="order-item">B) Finally, he went to school.</div>
+      <div class="order-item">C) First, Jiho woke up at 7.</div>
+      <div class="order-item">D) Next, he ate breakfast.</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">A → C → D → B</button>
+      <button class="choice-btn" onclick="answer(this,1)">C → D → A → B</button>
+      <button class="choice-btn" onclick="answer(this,2)">C → A → D → B</button>
+      <button class="choice-btn" onclick="answer(this,3)">B → C → A → D</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8 Q7 ⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label">Q7 <span class="stars">⭐⭐⭐</span></div>
+    <div class="passage" style="font-size:18px">Tom wanted to bake a cake. First, he mixed flour, sugar, and eggs. Then, he poured the batter into a pan. Next, he baked it in the oven for 30 minutes. Finally, he decorated it with frosting.</div>
+    <div class="question-text">What was the LAST step?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">Baked it in the oven</button>
+      <button class="choice-btn" onclick="answer(this,1)">Decorated it with frosting</button>
+      <button class="choice-btn" onclick="answer(this,2)">Mixed the ingredients</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9 Q8 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="100">
+  <div class="card">
+    <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+    <div class="question-text">문장을 올바른 순서로 배열하세요.</div>
+    <div style="margin:8px 0;font-size:18px">
+      <div class="order-item">A) After that, they set up the tent near a stream.</div>
+      <div class="order-item">B) First, the family drove to the campsite.</div>
+      <div class="order-item">C) Finally, they roasted marshmallows by the fire.</div>
+      <div class="order-item">D) Then, they unpacked their bags from the car.</div>
+      <div class="order-item">E) Next, they collected firewood from the forest.</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">B → D → A → E → C</button>
+      <button class="choice-btn" onclick="answer(this,1)">B → A → D → C → E</button>
+      <button class="choice-btn" onclick="answer(this,2)">A → B → D → E → C</button>
+      <button class="choice-btn" onclick="answer(this,3)">B → D → E → A → C</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<div class="slide" data-correct="-1"><div class="card" style="text-align:center"><div id="resultEmoji" style="font-size:80px">🎉</div><h2 style="font-size:28px;margin:10px 0">학습 완료!</h2><p style="font-size:36px;font-weight:900;color:var(--primary)" id="finalScore">0</p><p style="font-size:20px;color:var(--subtext)">점</p><div id="resultStars" style="font-size:36px;margin:10px 0">⭐⭐⭐</div><button class="nav-btn" onclick="restart()" style="margin-top:14px">🔄 다시 풀기</button></div></div>
+
+</div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+<div class="combo-toast" id="comboToast"></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=12;const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=250?'⭐⭐⭐⭐⭐':score>=180?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=250?'🏆':'🎉'}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide()}});updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu | 3학년 영어 심화 30 — 문단 쓰기: 묘사문</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF7ED;
+  --card: #FFFFFF;
+  --primary: #C2410C;
+  --primary-light: #FFEDD5;
+  --secondary: #EA580C;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s ease}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}
+.rule-formula{font-size:28px;font-weight:900;letter-spacing:1px;margin:6px 0}
+.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}
+.stars{color:#FCD34D}
+.question-text{font-size:24px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:left;line-height:1.5}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{width:100%;max-width:600px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.blank-box{display:inline-block;font-size:36px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s}
+.blank-box.filled{animation:fbounce .4s}
+@keyframes fbounce{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:8px 14px;font-size:20px;font-weight:700;cursor:pointer;transition:all .2s;line-height:1.5}
+.token:hover{border-color:var(--primary);transform:scale(1.02)}
+.token.correct{background:var(--green-light);border-color:var(--green);pointer-events:none}
+.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.token.placed{opacity:.3;pointer-events:none}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.example-box{background:var(--primary-light);border-radius:12px;padding:12px 16px;margin:8px 0;font-size:21px;line-height:1.8}
+.example-box b{color:var(--primary)}
+.para-topic{background:var(--primary-light);border-left:5px solid var(--primary);padding:10px 14px;border-radius:0 12px 12px 0;font-weight:900;font-size:22px;margin:6px 0}
+.para-support{background:#F8FAFC;border-left:5px solid #94A3B8;padding:10px 14px;border-radius:0 12px 12px 0;font-size:20px;margin:4px 0;line-height:1.6}
+.sense-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.sense-card{background:#F8FAFC;border:2px solid #E2E8F0;border-radius:12px;padding:10px;text-align:center;font-size:18px;font-weight:700;cursor:pointer;transition:all .2s}
+.sense-card:hover{border-color:var(--primary);background:var(--primary-light)}
+.sense-card .emoji{font-size:28px;display:block;margin-bottom:4px}
+.order-slot{min-height:48px;border:3px dashed #CBD5E1;border-radius:12px;margin:5px 0;padding:8px 14px;font-size:19px;font-weight:700;display:flex;align-items:center;transition:all .3s;cursor:pointer}
+.order-slot.filled{border-style:solid;border-color:var(--primary);background:var(--primary-light)}
+.order-slot .slot-num{background:var(--primary);color:#fff;border-radius:99px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;margin-right:8px;flex-shrink:0}
+.result-box{text-align:center}
+.result-box .emoji{font-size:80px}
+.result-box .msg{font-size:28px;font-weight:900;margin:10px 0}
+.result-box .detail{font-size:22px;color:var(--subtext)}
+.restart-btn{margin-top:16px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 36px;font-size:22px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.desc-type{display:inline-block;background:var(--primary);color:#fff;border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;margin:3px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K✦edu</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0: 개념 - 묘사문이란? -->
+<div class="slide active" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 Descriptive Paragraph (묘사문)이란?</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">묘사문 = 오감으로 그리는 글 ✍️🎨</div>
+      <div class="rule-sub">사물·장소·인물의 모습을 생생하게 표현!</div>
+    </div>
+    <div style="margin-top:10px">
+      <span class="desc-type">🏠 장소 묘사</span>
+      <span class="desc-type">🧸 사물 묘사</span>
+      <span class="desc-type">👤 인물 묘사</span>
+    </div>
+    <div class="example-box" style="margin-top:10px">
+      💡 묘사문의 핵심: 읽는 사람이 <b>머릿속으로 그림을 그릴 수 있게</b> 쓰는 것!<br>
+      → 색깔, 크기, 모양, 소리, 냄새, 느낌 등을 구체적으로!
+    </div>
+  </div>
+</div>
+
+<!-- S1: 개념 - 오감 표현 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 Five Senses (오감) 표현법</div>
+    <div class="sense-grid">
+      <div class="sense-card" onclick="speakWord('I can see colorful flowers')">
+        <span class="emoji">👀</span>Sight (시각)<br><small>big, red, round</small>
+      </div>
+      <div class="sense-card" onclick="speakWord('I can hear birds singing')">
+        <span class="emoji">👂</span>Sound (청각)<br><small>loud, quiet, chirping</small>
+      </div>
+      <div class="sense-card" onclick="speakWord('It smells like fresh bread')">
+        <span class="emoji">👃</span>Smell (후각)<br><small>sweet, fresh, smoky</small>
+      </div>
+      <div class="sense-card" onclick="speakWord('The cake tastes delicious')">
+        <span class="emoji">👅</span>Taste (미각)<br><small>salty, sweet, sour</small>
+      </div>
+      <div class="sense-card" onclick="speakWord('The blanket feels soft and warm')">
+        <span class="emoji">🤚</span>Touch (촉각)<br><small>soft, rough, warm</small>
+      </div>
+    </div>
+    <div class="example-box">
+      💡 좋은 묘사문 = <b>최소 2~3가지 감각</b>을 사용!
+    </div>
+  </div>
+</div>
+
+<!-- S2: 개념 - 묘사문 예시 -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">📖 묘사문 예시: 우리 교실 🏫</div>
+    <div class="para-topic">🟢 My classroom is a bright and cheerful place.</div>
+    <div class="para-support">🔵 <b>First,</b> the walls are covered with <b>colorful</b> drawings and posters.</div>
+    <div class="para-support">🔵 <b>Also,</b> there are <b>big windows</b> that let in warm sunlight.</div>
+    <div class="para-support">🔵 <b>In addition,</b> you can always <b>hear</b> students laughing and talking happily.</div>
+    <div class="para-support">🔵 <b>Finally,</b> the desks are arranged in groups, so we can work together.</div>
+    <div class="example-box" style="margin-top:8px">
+      👀 시각: colorful, big windows, sunlight<br>
+      👂 청각: hear students laughing<br>
+      → 2가지 감각 사용! ✅
+    </div>
+  </div>
+</div>
+
+<!-- S3: Q1 ⭐ 묘사 형용사 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q1 확인</div>
+    <div class="question-text">다음 중 <b>묘사에 쓸 수 있는 형용사</b>가 아닌 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">tiny — 아주 작은</button>
+      <button class="choice-btn" onclick="answer(this,1)">fluffy — 복슬복슬한</button>
+      <button class="choice-btn" onclick="answer(this,2)">because — 왜냐하면</button>
+      <button class="choice-btn" onclick="answer(this,3)">shiny — 빛나는</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q2 ⭐ 오감 분류 -->
+<div class="slide" data-type="q" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> Q2 확인</div>
+    <div class="question-text">각 표현은 어떤 감각인가요? 🖐️</div>
+    <div id="senseArea" style="text-align:center;margin:10px 0">
+      <div id="senseWord" style="font-size:28px;font-weight:900;margin:10px 0"></div>
+      <div id="senseCount" style="font-size:18px;color:var(--subtext);margin-bottom:8px"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="choice-btn" style="font-size:24px;padding:10px 18px" onclick="senseAnswer('sight')">👀</button>
+        <button class="choice-btn" style="font-size:24px;padding:10px 18px" onclick="senseAnswer('sound')">👂</button>
+        <button class="choice-btn" style="font-size:24px;padding:10px 18px" onclick="senseAnswer('smell')">👃</button>
+        <button class="choice-btn" style="font-size:24px;padding:10px 18px" onclick="senseAnswer('taste')">👅</button>
+        <button class="choice-btn" style="font-size:24px;padding:10px 18px" onclick="senseAnswer('touch')">🤚</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q3 ⭐⭐ 주제문에 맞는 묘사 문장 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q3 확인</div>
+    <div class="question-text">주제문에 어울리는 <b>묘사 문장</b>은?</div>
+    <div class="para-topic" style="font-size:20px">🟢 "My grandmother's kitchen is always warm and inviting."</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">She goes to the market every Saturday.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The sweet smell of fresh cookies fills the air.</button>
+      <button class="choice-btn" onclick="answer(this,2)">My grandmother is 72 years old.</button>
+      <button class="choice-btn" onclick="answer(this,3)">I do my homework after dinner.</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q4 ⭐⭐ 빈칸 - 묘사 형용사 채우기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q4 확인</div>
+    <div class="question-text">빈칸에 가장 어울리는 <b>묘사 표현</b>은?</div>
+    <div class="example-box">
+      "The old tree in the park has <span class="blank-box" id="bl6" style="font-size:28px;min-width:80px">___</span> branches that reach toward the sky like giant arms."
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="fillBlank(this,'bl6','long, twisted',0,0)">long, twisted (길고 구불구불한)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl6','some',1,0)">some (몇몇의)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl6','good',2,0)">good (좋은)</button>
+      <button class="choice-btn" onclick="fillBlank(this,'bl6','many',3,0)">many (많은)</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q5 ⭐⭐ 인물 묘사 - 외모+성격 분류 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> Q5 확인</div>
+    <div class="question-text">인물 묘사: <b>외모 vs 성격</b> 분류! 👤</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin:8px 0;flex-wrap:wrap">
+      <div style="min-width:140px;border:2px solid var(--primary);border-radius:14px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--primary);margin-bottom:6px">👀 외모 (Appearance)</div>
+        <div id="appItems" style="min-height:30px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center"></div>
+      </div>
+      <div style="min-width:140px;border:2px solid var(--secondary);border-radius:14px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:900;color:var(--secondary);margin-bottom:6px">💛 성격 (Personality)</div>
+        <div id="perItems" style="min-height:30px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center"></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:6px" id="traitTokens">
+      <button class="token" onclick="sortTrait(this,'app','tall')">tall</button>
+      <button class="token" onclick="sortTrait(this,'per','kind')">kind</button>
+      <button class="token" onclick="sortTrait(this,'app','curly hair')">curly hair</button>
+      <button class="token" onclick="sortTrait(this,'per','brave')">brave</button>
+      <button class="token" onclick="sortTrait(this,'app','blue eyes')">blue eyes</button>
+      <button class="token" onclick="sortTrait(this,'per','funny')">funny</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q6 ⭐⭐⭐ 더 생생한 문장 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q6 도전</div>
+    <div class="question-text">더 <b>생생한 묘사 문장</b>은 어느 쪽? 🎨</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">A) The beach was nice. The water was blue.</button>
+      <button class="choice-btn" onclick="answer(this,1)">B) The golden sand felt warm under my feet, and the crystal-clear water sparkled in the sunlight.</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q7 ⭐⭐⭐ 묘사문에서 관련 없는 문장 찾기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q7 도전</div>
+    <div class="question-text">묘사문에서 <b>관련 없는 문장</b>을 찾으세요! ❌</div>
+    <div style="margin:8px 0">
+      <div class="para-topic" style="font-size:19px">🟢 "My puppy Coco is the cutest dog in the world."</div>
+      <div class="choices col" style="margin-top:8px">
+        <button class="choice-btn" onclick="answer(this,0)">① She has soft, golden fur that feels like a warm blanket.</button>
+        <button class="choice-btn" onclick="answer(this,1)">② Her big brown eyes always look happy and excited.</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ Dogs need to eat twice a day for good health.</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ When she wags her little tail, everyone smiles.</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q8 ⭐⭐⭐⭐ 문장 업그레이드 -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q8 도전</div>
+    <div class="question-text">"The room was dark." 이 문장을<br>가장 잘 <b>업그레이드</b>한 것은? ✨</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">The room was very dark and big.</button>
+      <button class="choice-btn" onclick="answer(this,1)">The room was dark. It was night.</button>
+      <button class="choice-btn" onclick="answer(this,2)">The room was so dark that I could barely see my own hands, and the only sound was the quiet ticking of the old clock on the wall.</button>
+      <button class="choice-btn" onclick="answer(this,3)">The dark room had a door.</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q9 ⭐⭐⭐⭐ 묘사 문단 조립 -->
+<div class="slide" data-type="q" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q9 도전</div>
+    <div class="question-text">문장을 순서대로 배열하여<br>완벽한 <b>장소 묘사문</b>을 만드세요! 🏖️</div>
+    <div id="finalSlots">
+      <div class="order-slot" id="fs0"><span class="slot-num">1</span><span id="ft0"></span></div>
+      <div class="order-slot" id="fs1"><span class="slot-num">2</span><span id="ft1"></span></div>
+      <div class="order-slot" id="fs2"><span class="slot-num">3</span><span id="ft2"></span></div>
+      <div class="order-slot" id="fs3"><span class="slot-num">4</span><span id="ft3"></span></div>
+    </div>
+    <div id="finalTokenArea" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;align-items:center"></div>
+    <div style="text-align:center;margin-top:6px">
+      <button class="choice-btn" style="font-size:16px;padding:6px 16px" onclick="resetFinal()">🔄 다시</button>
+      <button class="choice-btn" style="font-size:16px;padding:6px 16px;background:var(--green-light);border-color:var(--green)" onclick="checkFinal()">✅ 확인</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: Q10 ⭐⭐⭐ 주제문 → 첫 번째 뒷받침 문장 고르기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐</span> Q10 도전</div>
+    <div class="question-text">주제문에 어울리는 <b>첫 번째 묘사 문장</b>은?</div>
+    <div class="para-topic" style="font-size:19px">🟢 "The night sky in the countryside is truly breathtaking."</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">First, thousands of tiny stars twinkle like diamonds against the dark velvet sky.</button>
+      <button class="choice-btn" onclick="answer(this,1)">First, I usually go to bed at 9 o'clock.</button>
+      <button class="choice-btn" onclick="answer(this,2)">First, the countryside is far from the city.</button>
+      <button class="choice-btn" onclick="answer(this,3)">First, people in the countryside grow vegetables.</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- S13: 결과 -->
+<div class="slide" data-type="result">
+  <div class="card">
+    <div class="result-box">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div class="msg">학습 완료!</div>
+      <div class="detail">
+        총 점수: <b><span id="finalScore">0</span>점</b><br>
+        <span id="resultStars">⭐⭐</span>
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2);});});}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25);});});}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07);});}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=400?'⭐⭐⭐⭐⭐':score>=280?'⭐⭐⭐⭐':score>=140?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=400?'🏆':'🎉';
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Sense quiz (Q2 - slide 4)
+const senseItems=[
+  {word:'"shiny golden ring"',ans:'sight'},
+  {word:'"birds chirping loudly"',ans:'sound'},
+  {word:'"fresh baked bread"',ans:'smell'},
+  {word:'"sour lemon juice"',ans:'taste'},
+  {word:'"smooth silk fabric"',ans:'touch'},
+];
+let senseIdx=0,senseScore=0;
+function initSense(){senseIdx=0;senseScore=0;showSense();}
+function showSense(){
+  if(senseIdx>=senseItems.length){
+    answered[4]=true;
+    if(senseScore>=3){playCorrect();addScore(10);setFB('fb4','✅ '+senseScore+'/'+senseItems.length+' 맞힘! +10점',true);}
+    else setFB('fb4',senseScore+'/'+senseItems.length+' — 오감 표현을 복습하세요!',false);
+    setTimeout(nextSlide,1200);return;
+  }
+  document.getElementById('senseWord').textContent=senseItems[senseIdx].word;
+  document.getElementById('senseCount').textContent=(senseIdx+1)+' / '+senseItems.length;
+}
+function senseAnswer(type){
+  if(answered[4])return;playClick();
+  const emojiMap={sight:'👀',sound:'👂',smell:'👃',taste:'👅',touch:'🤚'};
+  if(type===senseItems[senseIdx].ans){senseScore++;setFB('fb4','✅ '+emojiMap[type]+' 맞아요!',true);playCorrect();}
+  else{setFB('fb4','❌ '+emojiMap[senseItems[senseIdx].ans]+' '+senseItems[senseIdx].ans+'이에요!',false);playWrong();combo=0;}
+  senseIdx++;setTimeout(()=>{setFB('fb4','',true);showSense();},800);
+}
+
+// Trait sort (Q5 - slide 7)
+let traitDone=0;
+function sortTrait(btn,type,word){
+  if(btn.classList.contains('correct'))return;
+  playClick();
+  const target=type==='app'?'appItems':'perItems';
+  const item=document.createElement('span');
+  item.style.cssText='font-size:16px;font-weight:700;padding:3px 8px;border-radius:8px;background:'+(type==='app'?'var(--primary-light)':'#FEF3C7')+';color:'+(type==='app'?'var(--primary)':'var(--yellow)');
+  item.textContent=word;
+  document.getElementById(target).appendChild(item);
+  btn.classList.add('correct');traitDone++;
+  if(traitDone===6){playCorrect();addScore(25);setFB('fb7','✅ 모두 분류 완료! +25점',true);answered[7]=true;setTimeout(nextSlide,900);}
+}
+
+// Final paragraph assembly (Q9 - slide 11)
+const finalSentences=[
+  {text:'The small café on the corner is my favorite place in town.',idx:0},
+  {text:'First, the rich aroma of freshly brewed coffee fills the whole room.',idx:1},
+  {text:'Also, soft jazz music plays quietly in the background.',idx:2},
+  {text:'Finally, the cozy wooden chairs and warm lighting make me feel right at home.',idx:3}
+];
+let finalPlaced=[],finalSlotIdx=0;
+function initFinal(){
+  finalPlaced=[];finalSlotIdx=0;
+  for(let i=0;i<4;i++){document.getElementById('ft'+i).textContent='';document.getElementById('fs'+i).classList.remove('filled');}
+  const area=document.getElementById('finalTokenArea');area.innerHTML='';
+  const shuffled=[...finalSentences].sort(()=>Math.random()-.5);
+  shuffled.forEach(s=>{
+    const btn=document.createElement('button');
+    btn.className='token';btn.style.cssText='text-align:left;width:100%;max-width:600px;font-size:18px';
+    btn.textContent=s.text;btn.dataset.idx=s.idx;
+    btn.onclick=()=>placeFinal(btn,s.idx);
+    area.appendChild(btn);
+  });
+}
+function placeFinal(btn,idx){
+  if(answered[11]||btn.classList.contains('placed'))return;
+  playClick();
+  document.getElementById('ft'+finalSlotIdx).textContent=btn.textContent;
+  document.getElementById('fs'+finalSlotIdx).classList.add('filled');
+  btn.classList.add('placed');
+  finalPlaced.push(idx);finalSlotIdx++;
+}
+function resetFinal(){
+  if(answered[11])return;
+  finalPlaced=[];finalSlotIdx=0;
+  for(let i=0;i<4;i++){document.getElementById('ft'+i).textContent='';document.getElementById('fs'+i).classList.remove('filled');}
+  document.querySelectorAll('#finalTokenArea .token').forEach(t=>t.classList.remove('placed'));
+  setFB('fb11','',true);
+}
+function checkFinal(){
+  if(answered[11]||finalSlotIdx<4)return;
+  const correct=finalPlaced[0]===0&&finalPlaced[1]===1&&finalPlaced[2]===2&&finalPlaced[3]===3;
+  if(correct){playCorrect();addScore(100);setFB('fb11','✅ 완벽한 묘사문! +100점 🎨',true);answered[11]=true;setTimeout(nextSlide,1200);}
+  else{playWrong();combo=0;setFB('fb11','주제문 → First → Also → Finally 순서예요! 💪',false);resetFinal();}
+}
+
+function restart(){
+  score=0;combo=0;answered={};traitDone=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.opacity='1';t.style.pointerEvents='auto';});
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});
+  document.querySelectorAll('.order-slot').forEach(s=>s.classList.remove('filled'));
+  document.getElementById('appItems').innerHTML='';document.getElementById('perItems').innerHTML='';
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
+  initSense();initFinal();updateUI();
+}
+
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+
+initSense();initFinal();updateUI();
+</script>
+</body>
+</html>

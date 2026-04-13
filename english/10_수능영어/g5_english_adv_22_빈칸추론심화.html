@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 5학년 영어 심화 22 — 빈칸 추론 심화</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1D4ED8;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:background .15s;}.sound-btn:hover{background:var(--primary-light);}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px;}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s ease;}
+.page-info{font-size:15px;color:var(--subtext);white-space:nowrap;}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow);}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;flex-shrink:0;}
+.slides{flex:1;position:relative;overflow:hidden;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;overflow-y:auto;}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-50px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 32px;width:100%;max-width:800px;}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700;}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:18px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text);}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px;}
+.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s;}
+.choice-btn:hover{border-color:var(--primary);background:var(--primary-light);}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);}
+.choices.col{flex-direction:column;align-items:center;}
+.choices.col .choice-btn{font-size:18px;width:100%;max-width:640px;padding:10px 20px;}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700;}
+.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px;}
+.stars{color:#FCD34D;}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700;}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:10px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.nav-btn:disabled{opacity:.3;cursor:default;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:20px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s;}
+.combo-toast.show{transform:translateX(-50%) scale(1);}
+.rule-box{background:var(--primary-light);border-radius:14px;padding:16px 18px;margin:8px 0;}
+.rule-formula{font-size:26px;font-weight:900;letter-spacing:1px;margin:6px 0;color:var(--primary);}
+.rule-sub{font-size:18px;color:var(--subtext);margin-top:4px;}
+.result-box{text-align:center;}.result-box .big{font-size:48px;font-weight:900;color:var(--primary);}.result-box .sub{font-size:20px;color:var(--subtext);margin-top:8px;}
+.blank-inline{display:inline-block;border-bottom:3px solid var(--primary);min-width:140px;text-align:center;color:var(--primary);font-weight:900;font-size:inherit;}
+.warn-box{background:var(--red-light);border:1.5px solid var(--red);border-radius:12px;padding:14px 18px;margin:10px 0;font-size:17px;line-height:1.7;color:var(--red);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div>
+  <span class="score-badge">⭐ <span id="scoreVal">0</span></span>
+  <div class="kedu-logo">K✦</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0: 개념 -->
+<div class="slide active" data-correct="-1" data-score="0">
+  <div class="card">
+    <div class="slide-title">🧠 빈칸 추론 심화</div>
+    <div class="rule-box">
+      <div class="rule-formula">Abstract Blank Inference</div>
+      <div class="rule-sub">추상적 개념이 빈칸에 들어가는 고난도 유형 — 수능 31~33번 고득점 구간</div>
+    </div>
+    <div style="margin-top:14px;font-size:19px;line-height:1.7;">
+      <b>심화 전략:</b><br>
+      ① 구체적 예시 → <b>추상적 원리</b>로 일반화<br>
+      ② 비유·은유 표현 해석하기<br>
+      ③ 선택지가 모두 그럴듯할 때: <b>글 전체 주제</b>와 연결되는 것 선택
+    </div>
+    <div class="warn-box">
+      ⚠️ 심화 빈칸은 선택지가 <b>모두 문법적으로 맞고, 부분적으로 관련</b> 있어 보입니다.<br>
+      핵심은 <b>"글 전체의 논지"</b>에 가장 잘 맞는 것을 고르는 것!
+    </div>
+  </div>
+</div>
+
+<!-- S1: 개념2 -->
+<div class="slide" data-correct="-1" data-score="0">
+  <div class="card">
+    <div class="slide-title">🔬 구체 → 추상 사고법</div>
+    <div style="font-size:18px;line-height:1.8;margin-top:8px;">
+      <b>예시:</b><br>
+      구체: "A child who plays with blocks learns to balance, plan, and fix mistakes."<br>
+      추상 빈칸: "Play teaches children to <span class="blank-inline">__________</span>."<br><br>
+      ❌ "stack blocks" → 너무 구체적<br>
+      ❌ "become engineers" → 비약<br>
+      ✅ "<b>develop problem-solving skills</b>" → 구체 → 추상 정확히 일반화<br><br>
+      <b>핵심: 구체적 사례를 한 단계 올려서 일반적 원리로 표현!</b>
+    </div>
+  </div>
+</div>
+
+<!-- S2: Q1 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q1</div>
+    <div class="passage" style="font-size:16px;">
+      When we read a novel, we step into someone else's life. We feel their joy, share their pain, and understand their choices — even if those choices are very different from our own. In this way, reading fiction helps us <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① memorize vocabulary faster</button>
+      <button class="choice-btn" onclick="answer(this,1)">② improve our writing style</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ develop empathy for others</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ prefer fiction over nonfiction</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- S3: Q2 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q2</div>
+    <div class="passage" style="font-size:16px;">
+      A seed must crack open before it can grow. A caterpillar must dissolve inside its cocoon before it becomes a butterfly. Similarly, personal growth often requires us to <span class="blank-inline">__________</span> before we can become something greater.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① stay exactly as we are</button>
+      <button class="choice-btn" onclick="answer(this,1)">② go through discomfort and change</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ study biology and science</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ plant more trees in gardens</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- S4: Q3 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q3</div>
+    <div class="passage" style="font-size:16px;">
+      In the past, people trusted information simply because it was printed in a book or newspaper. Today, anyone can publish anything online. This means that <span class="blank-inline">__________</span> has become one of the most important skills of the 21st century.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① fast typing</button>
+      <button class="choice-btn" onclick="answer(this,1)">② social media marketing</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ book publishing</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ critical evaluation of sources</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q4 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q4</div>
+    <div class="passage" style="font-size:16px;">
+      When artists copy the masters, they learn technique. When scientists replicate experiments, they confirm results. But true innovation begins only when one moves beyond imitation and starts to <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① ask original questions</button>
+      <button class="choice-btn" onclick="answer(this,1)">② follow established rules</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ memorize existing methods</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ repeat what others have done</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q5 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q5</div>
+    <div class="passage" style="font-size:16px;">
+      A compass does not tell you where to go — it only shows you which direction you are facing. Likewise, values and principles do not give you specific answers to life's problems. Instead, they serve as <span class="blank-inline">__________</span> that help you make decisions when the path is unclear.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① strict rules that must be obeyed</button>
+      <button class="choice-btn" onclick="answer(this,1)">② detailed maps with exact routes</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ internal guides for direction</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ obstacles that slow you down</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q6 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q6</div>
+    <div class="passage" style="font-size:15px;">
+      The most effective teachers are not those who simply deliver information. They are the ones who create an environment where students feel safe enough to make mistakes, curious enough to ask questions, and motivated enough to keep trying. In short, great teachers don't just teach content — they <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① give the highest test scores</button>
+      <button class="choice-btn" onclick="answer(this,1)">② build the conditions for learning</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ assign the most homework</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ lecture without stopping</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q7 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="3" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q7</div>
+    <div class="passage" style="font-size:15px;">
+      We tend to judge the quality of a decision by its outcome. If a risky investment pays off, we call it brilliant; if it fails, we call it foolish. But the truth is, a decision can be well-reasoned even if the result is bad. Judging decisions only by outcomes is misleading because it ignores <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① how much money was invested</button>
+      <button class="choice-btn" onclick="answer(this,1)">② when the decision was made</button>
+      <button class="choice-btn" onclick="answer(this,2)">② who made the decision</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ the reasoning process behind it</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q8 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q8</div>
+    <div class="passage" style="font-size:15px;">
+      Silence in a conversation is often seen as awkward. People rush to fill every pause with words. But in many cultures, silence is a sign of respect and thoughtfulness. It gives both speakers time to reflect. Sometimes, the most powerful thing you can say is <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① nothing at all</button>
+      <button class="choice-btn" onclick="answer(this,1)">② the loudest opinion</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ a long explanation</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ someone else's words</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q9 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q9</div>
+    <div class="passage" style="font-size:15px;">
+      Technology has made it easier than ever to access knowledge. Yet access alone does not guarantee wisdom. A person can read a thousand articles about leadership without ever leading anyone. Knowledge becomes meaningful only when it is <span class="blank-inline">__________</span>.
+    </div>
+    <div class="question-text">빈칸에 들어갈 말로 가장 적절한 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">① stored in a database</button>
+      <button class="choice-btn" onclick="answer(this,1)">① shared on social media</button>
+      <button class="choice-btn" onclick="answer(this,2)">③ applied through experience</button>
+      <button class="choice-btn" onclick="answer(this,3)">④ tested on an exam</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: 결과 -->
+<div class="slide" data-correct="-1" data-score="0">
+  <div class="card result-box">
+    <div class="slide-title">🏁 학습 완료!</div>
+    <div class="big" id="finalScore">0</div>
+    <div class="sub">총점</div>
+    <div style="font-size:36px;margin:12px 0;" id="resultStars">⭐⭐⭐</div>
+    <div style="font-size:18px;color:var(--subtext);margin-top:8px;">
+      심화 빈칸 핵심: <b>구체 → 추상</b> 사고 + <b>글 전체 논지</b>와 연결!
+    </div>
+    <button class="nav-btn" style="margin-top:16px;" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let audioCtx=null,soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playTone(f,t,d,g=0.3){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){if(!soundOn)return;getCtx();[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){if(!soundOn)return;getCtx();[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){if(!soundOn)return;getCtx();playTone(880,'sine',.08,0.2);}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),350);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=750?'⭐⭐⭐⭐⭐':score>=550?'⭐⭐⭐⭐':score>=350?'⭐⭐⭐':'⭐⭐';}}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||100;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

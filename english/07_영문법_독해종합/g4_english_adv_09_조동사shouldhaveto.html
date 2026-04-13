@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 4학년 영어 B-1 | 09. 조동사 should · have to</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3FF;
+  --card: #FFFFFF;
+  --primary: #7C3AED;
+  --primary-light: #EDE9FE;
+  --secondary: #8B5CF6;
+  --green: #16A34A;
+  --green-light: #DCFCE7;
+  --red: #DC2626;
+  --red-light: #FEE2E2;
+  --yellow: #CA8A04;
+  --yellow-light: #FEF9C3;
+  --text: #0F172A;
+  --subtext: #475569;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;transition:background .2s}
+.sound-btn:hover{background:var(--primary-light)}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s ease}
+.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.rule-box{border-radius:14px;padding:16px 18px;margin:8px 0}
+.rule-formula{font-size:32px;font-weight:900;letter-spacing:1px;margin:6px 0}
+.rule-sub{font-size:20px;color:var(--subtext);margin-top:4px}
+.highlight{color:var(--primary);font-weight:900}
+.ex-sentence{font-size:24px;line-height:1.7;margin:6px 0;cursor:pointer;padding:6px 10px;border-radius:10px;transition:background .2s}
+.ex-sentence:hover{background:var(--primary-light)}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}
+.stars{color:#FCD34D}
+.question-text{font-size:26px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:28px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:22px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.vs-box{display:flex;gap:14px;margin:10px 0}
+.vs-card{flex:1;border-radius:14px;padding:14px;text-align:center}
+.vs-card h3{font-size:22px;margin-bottom:6px}
+.vs-card p{font-size:20px;line-height:1.5}
+.token-area{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.token{background:var(--card);border:2px solid #CBD5E1;border-radius:99px;padding:7px 16px;font-size:22px;font-weight:700;cursor:pointer;transition:all .2s}
+.token:hover{border-color:var(--primary);transform:scale(1.04)}
+.token.correct{background:var(--green-light);border-color:var(--green);pointer-events:none}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.scenario-box{background:var(--primary-light);border-radius:14px;padding:14px 18px;margin:10px 0;font-size:22px;line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 13</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K-edu ⭐</span>
+</div>
+
+<div class="slides">
+
+<!-- S0: TITLE -->
+<div class="slide active" data-correct="-1">
+  <div class="card" style="text-align:center">
+    <div style="font-size:120px;margin-bottom:10px">⚖️</div>
+    <h1 style="font-size:32px;font-weight:900;margin-bottom:8px">조동사 should · have to</h1>
+    <p style="font-size:22px;color:var(--subtext)">조언 vs 의무 · don't have to vs must not</p>
+    <p style="font-size:18px;color:var(--primary);margin-top:12px">4학년 Track B-1 · 09차시</p>
+  </div>
+</div>
+
+<!-- S1: CONCEPT — should -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 1 — should (조언·충고)</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">should + 동사원형</div>
+      <div class="rule-sub">💡 "~하는 게 좋겠어" — 부드러운 조언</div>
+    </div>
+    <div class="ex-sentence" onclick="speakWord('You should drink more water.')">💧 You <b>should</b> drink more water.</div>
+    <div class="ex-sentence" onclick="speakWord('She should study harder.')">📚 She <b>should</b> study harder.</div>
+    <div class="ex-sentence" onclick="speakWord('You shouldn\'t eat too much candy.')">🍬 You <b>shouldn't</b> eat too much candy.</div>
+    <div class="rule-box" style="background:var(--yellow-light)">
+      <div class="rule-sub">should는 <b>조언</b>이에요. 안 해도 벌 받지 않아요! 😊</div>
+    </div>
+  </div>
+</div>
+
+<!-- S2: CONCEPT — have to -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 2 — have to (외부 의무)</div>
+    <div class="rule-box" style="background:var(--primary-light)">
+      <div class="rule-formula">have to / has to + 동사원형</div>
+      <div class="rule-sub">📋 규칙·법·상황 때문에 "~해야 한다"</div>
+    </div>
+    <div class="ex-sentence" onclick="speakWord('I have to wake up at 7.')">⏰ I <b>have to</b> wake up at 7. (학교 규칙)</div>
+    <div class="ex-sentence" onclick="speakWord('She has to wear glasses.')">👓 She <b>has to</b> wear glasses. (시력 때문에)</div>
+    <div class="rule-box" style="background:var(--yellow-light)">
+      <div class="rule-sub">⚡ 3인칭 단수: have to → <b>has to</b> (He/She/It)</div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: CONCEPT — don't have to vs must not -->
+<div class="slide" data-correct="-1">
+  <div class="card">
+    <div class="slide-title">📖 개념 3 — 핵심 비교!</div>
+    <div class="vs-box">
+      <div class="vs-card" style="background:var(--green-light)">
+        <h3 style="color:var(--green)">✅ don't have to</h3>
+        <p><b>~안 해도 된다</b><br>(자유!)<br>"You don't have to come."<br>= 안 와도 괜찮아</p>
+      </div>
+      <div class="vs-card" style="background:var(--red-light)">
+        <h3 style="color:var(--red)">🚫 must not</h3>
+        <p><b>~하면 안 된다</b><br>(금지!)<br>"You must not run."<br>= 절대 뛰면 안 돼!</p>
+      </div>
+    </div>
+    <div class="rule-box" style="background:var(--yellow-light)">
+      <div class="rule-sub">⚠️ 이 둘은 완전히 다른 뜻! 시험에 자주 나와요!</div>
+    </div>
+  </div>
+</div>
+
+<!-- S4: Q1 ⭐ -->
+<div class="slide" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="question-label">Q1 <span class="stars">⭐</span></div>
+    <div class="question-text">You look tired. You ___ go to bed early.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">have to</button>
+      <button class="choice-btn" onclick="answer(this,1)">should</button>
+      <button class="choice-btn" onclick="answer(this,2)">must not</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5: Q2 ⭐ -->
+<div class="slide" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="question-label">Q2 <span class="stars">⭐</span></div>
+    <div class="question-text">Students ___ wear uniforms. (학교 규칙)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">have to</button>
+      <button class="choice-btn" onclick="answer(this,1)">should</button>
+      <button class="choice-btn" onclick="answer(this,2)">can</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6: Q3 ⭐⭐ — has to -->
+<div class="slide" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="question-label">Q3 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">He ___ finish his project by Friday.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">have to</button>
+      <button class="choice-btn" onclick="answer(this,1)">should to</button>
+      <button class="choice-btn" onclick="answer(this,2)">has to</button>
+      <button class="choice-btn" onclick="answer(this,3)">must to</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7: Q4 ⭐⭐ — don't have to vs must not -->
+<div class="slide" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label">Q4 <span class="stars">⭐⭐</span></div>
+    <div class="scenario-box">📅 "내일은 공휴일이라 학교에 안 가도 돼."</div>
+    <div class="question-text">You ___ go to school tomorrow.</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">don't have to</button>
+      <button class="choice-btn" onclick="answer(this,1)">must not</button>
+      <button class="choice-btn" onclick="answer(this,2)">shouldn't</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8: Q5 ⭐⭐ — 오류 찾기 -->
+<div class="slide" data-correct="3" data-score="25">
+  <div class="card">
+    <div class="question-label">Q5 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">다음 중 <span style="color:var(--red)">틀린</span> 문장은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">You should eat breakfast.</button>
+      <button class="choice-btn" onclick="answer(this,1)">She has to go now.</button>
+      <button class="choice-btn" onclick="answer(this,2)">We don't have to run.</button>
+      <button class="choice-btn" onclick="answer(this,3)">He should to study more.</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9: Q6 ⭐⭐⭐ — 분류 -->
+<div class="slide" data-correct="-1" data-score="50">
+  <div class="card">
+    <div class="question-label">Q6 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">조언 vs 의무 vs 금지 분류!</div>
+    <div style="display:flex;gap:8px;margin:6px 0">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:16px;font-weight:700;color:var(--primary);margin-bottom:4px">💡 조언</div>
+        <div class="token-area" id="zAdv" style="min-height:40px;border:2px dashed #CBD5E1;border-radius:12px;padding:6px"></div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:16px;font-weight:700;color:var(--yellow);margin-bottom:4px">📋 의무</div>
+        <div class="token-area" id="zObl" style="min-height:40px;border:2px dashed #CBD5E1;border-radius:12px;padding:6px"></div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:16px;font-weight:700;color:var(--red);margin-bottom:4px">🚫 금지</div>
+        <div class="token-area" id="zPro" style="min-height:40px;border:2px dashed #CBD5E1;border-radius:12px;padding:6px"></div>
+      </div>
+    </div>
+    <div class="token-area" id="sortTokens">
+      <span class="token" onclick="sortTk(this,'adv')" style="font-size:17px">You should rest.</span>
+      <span class="token" onclick="sortTk(this,'obl')" style="font-size:17px">I have to go.</span>
+      <span class="token" onclick="sortTk(this,'pro')" style="font-size:17px">You must not lie.</span>
+      <span class="token" onclick="sortTk(this,'adv')" style="font-size:17px">She should try it.</span>
+      <span class="token" onclick="sortTk(this,'obl')" style="font-size:17px">He has to study.</span>
+      <span class="token" onclick="sortTk(this,'pro')" style="font-size:17px">You must not cheat.</span>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10: Q7 ⭐⭐⭐ — should vs have to vs must not -->
+<div class="slide" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label">Q7 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">"You ___ bring your own lunch."<br>= "도시락 안 가져와도 돼" (급식이 있으니까)</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">must not</button>
+      <button class="choice-btn" onclick="answer(this,1)">don't have to</button>
+      <button class="choice-btn" onclick="answer(this,2)">shouldn't</button>
+      <button class="choice-btn" onclick="answer(this,3)">can't</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11: Q8 ⭐⭐⭐⭐ -->
+<div class="slide" data-correct="2" data-score="100">
+  <div class="card">
+    <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+    <div class="scenario-box">👨‍⚕️ 의사가 환자에게:<br>"You ___ exercise more. (조언)<br>You ___ take this medicine every day. (반드시)<br>You ___ skip meals. (금지)"</div>
+    <div class="question-text">빈칸에 들어갈 순서는?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">have to / should / must not</button>
+      <button class="choice-btn" onclick="answer(this,1)">should / must not / have to</button>
+      <button class="choice-btn" onclick="answer(this,2)">should / have to / must not</button>
+      <button class="choice-btn" onclick="answer(this,3)">must not / should / have to</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12: RESULT -->
+<div class="slide" data-correct="-1">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:80px">🎉</div>
+    <h2 style="font-size:28px;margin:10px 0">학습 완료!</h2>
+    <p style="font-size:36px;font-weight:900;color:var(--primary)" id="finalScore">0</p>
+    <p style="font-size:20px;color:var(--subtext)">점</p>
+    <div id="resultStars" style="font-size:36px;margin:10px 0">⭐⭐⭐</div>
+    <button class="nav-btn" onclick="restart()" style="margin-top:14px">🔄 다시 풀기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=250?'⭐⭐⭐⭐⭐':score>=180?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=250?'🏆':'🎉'}}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+let sortCount=0;
+function sortTk(tk,type){if(tk.classList.contains('correct'))return;playClick();tk.classList.add('correct');const z={adv:'zAdv',obl:'zObl',pro:'zPro'};document.getElementById(z[type]).appendChild(tk);sortCount++;if(sortCount>=6){addScore(50);setFB('fb9','✅ 완벽 분류! +50점',true);answered[9]=true;setTimeout(nextSlide,900)}}
+function restart(){score=0;combo=0;answered={};sortCount=0;document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>t.className='token');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));const st=document.getElementById('sortTokens');document.querySelectorAll('#zAdv .token,#zObl .token,#zPro .token').forEach(t=>st.appendChild(t));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>

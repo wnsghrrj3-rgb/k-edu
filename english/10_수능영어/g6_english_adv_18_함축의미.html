@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>G6 영어 심화 B-2 | 18차시 함축 의미</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--primary:#1D4ED8;--primary-light:#DBEAFE;--secondary:#2563EB;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.07);--radius:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;border-bottom:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,0.05);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:background .15s}
+.sound-btn:hover{background:var(--primary-light)}
+.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}
+.progress-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .4s ease}
+.page-info{font-size:15px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;color:var(--yellow)}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:15px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 24px;opacity:0;transform:translateX(50px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px 32px;width:100%;max-width:800px}
+.slide-title{font-size:20px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.choices{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 20px;font-family:'Noto Sans KR',sans-serif;font-size:24px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}
+.choice-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green)}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:20px;width:100%;max-width:620px;padding:10px 20px}
+.blank-box{display:inline-block;font-size:44px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px}
+.feedback{font-size:18px;text-align:center;margin-top:10px;min-height:26px;border-radius:8px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:4px 14px;font-size:16px;font-weight:700;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:22px;text-align:center;margin:8px 0 12px;line-height:1.6;font-weight:700}
+.passage{background:#F8FAFC;border-radius:12px;padding:18px 22px;font-size:19px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary);color:var(--text)}
+.underline-text{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:4px;font-weight:700;color:var(--primary)}
+.navbar{display:flex;justify-content:center;gap:16px;padding:12px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:10px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,#F59E0B,#D97706);color:white;padding:6px 18px;border-radius:99px;font-size:18px;font-weight:900;opacity:0;transition:opacity .3s,transform .3s;z-index:999;pointer-events:none}
+.combo-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.result-card{text-align:center}
+.result-card .emoji{font-size:60px}
+.result-card .score-big{font-size:48px;font-weight:900;color:var(--primary);margin:10px 0}
+.result-card .stars-big{font-size:32px}
+.restart-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:12px 32px;font-size:20px;font-weight:700;cursor:pointer;margin-top:16px}
+.ox-choices{display:flex;gap:16px;justify-content:center;margin-top:12px}
+.ox-btn{width:80px;height:80px;border-radius:50%;border:3px solid var(--border);background:var(--card);font-size:36px;font-weight:900;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ox-btn:hover{border-color:var(--primary);background:var(--primary-light)}
+.ox-btn.correct{background:var(--green-light);border-color:var(--green)}
+.ox-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.tip-box{background:var(--yellow-light);border:1.5px solid var(--yellow);border-radius:10px;padding:12px 16px;font-size:16px;margin-top:10px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <div class="score-badge">💎 <span id="scoreDisp">0</span></div>
+  <div class="kedu-logo">⭐ K-edu</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+  <!-- S0: INTRO -->
+  <div class="slide active" data-type="concept">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">📖 수능 독해 전유형 완성</div>
+      <div style="font-size:28px;font-weight:900;color:var(--primary);margin:16px 0">18차시 — 함축 의미 파악</div>
+      <div style="font-size:18px;color:var(--subtext);line-height:1.7">
+        수능 21번형 — <span class="underline-text">밑줄 친 부분</span>이 의미하는 바를 추론하는 유형<br>
+        <strong>최고난도</strong> — 정답률 20~30%대의 킬러 문항!<br><br>
+        핵심 전략: <strong>①</strong> 밑줄 앞뒤 문맥 집중 → <strong>②</strong> 비유·은유 해석 → <strong>③</strong> 글 전체 논지와 연결
+      </div>
+      <div style="margin-top:14px;font-size:16px;color:var(--yellow)">⭐⭐⭐⭐</div>
+    </div>
+  </div>
+
+  <!-- S1: CONCEPT — 비유 표현 유형 -->
+  <div class="slide" data-type="concept">
+    <div class="card" style="text-align:center">
+      <div class="slide-title">🧠 함축 의미 — 비유 표현 유형</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;font-size:17px">
+        <div style="background:var(--primary-light);padding:12px;border-radius:10px"><strong>은유 (Metaphor)</strong><br>"Time is money."<br>→ 시간 = 돈처럼 소중함</div>
+        <div style="background:var(--yellow-light);padding:12px;border-radius:10px"><strong>관용 표현</strong><br>"hit the nail on the head"<br>→ 정확히 맞추다</div>
+        <div style="background:var(--green-light);padding:12px;border-radius:10px"><strong>추상적 진술</strong><br>"the map is not the territory"<br>→ 이론 ≠ 현실</div>
+        <div style="background:var(--red-light);padding:12px;border-radius:10px"><strong>⚠️ 함정</strong><br>밑줄의 <em>글자 그대로</em> 해석은<br>거의 항상 오답!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: PASSAGE A -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage A</div>
+      <div class="passage">
+        A young artist spent years perfecting her technique by copying the masters. Her reproductions were flawless — every brushstroke identical to the originals. Yet when she finally held her own exhibition, critics were unimpressed. One reviewer wrote, "She has built a beautiful cage and locked herself inside it." It was only after she abandoned imitation and began experimenting with her own style that her work gained recognition.
+      </div>
+      <div class="tip-box">💡 밑줄: <span class="underline-text">"She has built a beautiful cage and locked herself inside it."</span></div>
+    </div>
+  </div>
+
+  <!-- S3: Q1 — 함축 의미 파악 -->
+  <div class="slide" data-type="q" data-correct="2" data-score="60">
+    <div class="card">
+      <div class="question-label">Q1 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">밑줄 친 "built a beautiful cage and locked herself inside it"이 의미하는 바는?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 아름다운 작업실을 만들었다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 비평가들에게 인정받았다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 완벽한 모방 기술에 갇혀 자신만의 창의성을 잃었다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 전시회를 성공적으로 개최했다</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- S4: Q2 — cage의 비유 대상 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q2 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">"cage(새장)"가 비유하는 대상은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 전시회장</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 완벽한 모방 기술</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 비평가의 리뷰</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 붓질의 정확성</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- S5: PASSAGE B -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage B</div>
+      <div class="passage">
+        When a new employee joins a company, they are often given a detailed handbook explaining every rule and procedure. While this provides a sense of security, it can also prevent them from thinking independently. As one manager put it, <span class="underline-text">"We hand them a compass but take away their ability to read the stars."</span> True growth in any organization comes when individuals learn to navigate uncertainty on their own.
+      </div>
+    </div>
+  </div>
+
+  <!-- S6: Q3 — 함축 의미 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="60">
+    <div class="card">
+      <div class="question-label">Q3 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">"hand them a compass but take away their ability to read the stars"가 의미하는 바는?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 규칙은 알려주지만 스스로 판단하는 능력은 키워주지 않는다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 나침반을 주고 천문학을 가르치지 않는다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 매뉴얼이 너무 두꺼워서 읽기 어렵다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 회사가 직원에게 장비를 충분히 제공한다</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- S7: Q4 — compass vs stars 대응 -->
+  <div class="slide" data-type="q" data-correct="0" data-score="50">
+    <div class="card">
+      <div class="question-label">Q4 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">비유 대응을 올바르게 짝지은 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① compass = 규칙/매뉴얼, stars = 독립적 판단력</button>
+        <button class="choice-btn" onclick="answer(this,1)">② compass = 급여, stars = 승진</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ compass = 경험, stars = 학력</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ compass = 상사의 지시, stars = 동료의 조언</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- S8: Q5 — 글자 그대로 해석 함정 O/X -->
+  <div class="slide" data-type="q" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">Q5 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">Passage B의 밑줄 표현은 <strong>실제 나침반과 별</strong>에 대해 이야기하고 있다.</div>
+      <div class="ox-choices">
+        <button class="ox-btn" onclick="answerOX(this,8,0)">⭕</button>
+        <button class="ox-btn" onclick="answerOX(this,8,1)">❌</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- S9: PASSAGE C -->
+  <div class="slide" data-type="passage">
+    <div class="card">
+      <div class="slide-title">📖 지문 읽기 — Passage C (고난도)</div>
+      <div class="passage">
+        Scientists often warn that relying on a single measurement to evaluate a complex system is dangerous. A country's GDP, for example, may rise while its citizens' quality of life declines. As one economist noted, <span class="underline-text">"We are counting the trees but losing sight of the forest."</span> Without a broader set of indicators, policymakers risk making decisions that look good on paper but fail in practice.
+      </div>
+    </div>
+  </div>
+
+  <!-- S10: Q6 — 함축 의미 (고난도) -->
+  <div class="slide" data-type="q" data-correct="1" data-score="80">
+    <div class="card">
+      <div class="question-label">Q6 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">"counting the trees but losing sight of the forest"가 의미하는 바는?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">① 환경 보호를 위해 나무를 세고 있다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 세부 수치에 집중하느라 전체적인 상황을 놓치고 있다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 숲을 개발하기 위해 나무 수를 파악하고 있다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ GDP 통계를 더 정확하게 측정해야 한다</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- S11: Q7 — 빈칸: 함축 의미 완성 -->
+  <div class="slide" data-type="q" data-correct="1" data-score="60">
+    <div class="card">
+      <div class="question-label">Q7 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">다음 밑줄 표현의 함축 의미를 완성하세요.<br><br>
+        <span style="font-size:17px;font-weight:400">"You can't build a house by only drawing blueprints."</span><br>
+        → <span class="blank-box" id="blank11" style="font-size:24px;min-width:120px">___</span>만으로는 부족하고, 실천이 필요하다.</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="fillBlank(this,'blank11','건축',1,0)">건축</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank11','계획',1,1)">계획</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank11','그림',1,2)">그림</button>
+        <button class="choice-btn" onclick="fillBlank(this,'blank11','도구',1,3)">도구</button>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- S12: Q8 — 종합: 밑줄 해석 실전 -->
+  <div class="slide" data-type="q" data-correct="3" data-score="80">
+    <div class="card">
+      <div class="question-label">Q8 <span class="stars">⭐⭐⭐⭐</span></div>
+      <div class="question-text">다음 글의 밑줄 친 부분이 의미하는 바로 가장 적절한 것은?</div>
+      <div class="passage" style="font-size:16px;line-height:1.7">
+        People often assume that having more choices leads to greater satisfaction. However, psychologists have found the opposite: when faced with too many options, people become paralyzed and less happy with their final decision. In other words, <span class="underline-text">the buffet of endless possibilities can leave us hungrier than a simple meal ever would.</span>
+      </div>
+      <div class="choices col" style="margin-top:8px">
+        <button class="choice-btn" onclick="answer(this,0)">① 뷔페에서는 많이 먹어야 만족한다</button>
+        <button class="choice-btn" onclick="answer(this,1)">② 간단한 식사가 건강에 더 좋다</button>
+        <button class="choice-btn" onclick="answer(this,2)">③ 심리학 연구에 더 많은 참가자가 필요하다</button>
+        <button class="choice-btn" onclick="answer(this,3)">④ 선택지가 너무 많으면 오히려 더 불만족스러워질 수 있다</button>
+      </div>
+      <div class="feedback" id="fb12"></div>
+    </div>
+  </div>
+
+  <!-- S13: RESULT -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:22px;font-weight:700;margin:8px 0">학습 완료!</div>
+      <div class="score-big" id="finalScore">0</div>
+      <div style="font-size:16px;color:var(--subtext)">점</div>
+      <div class="stars-big" id="resultStars">⭐⭐⭐</div>
+      <div style="font-size:16px;color:var(--subtext);margin-top:12px">
+        💡 <strong>Tip:</strong> 밑줄 표현을 글자 그대로 해석하면 함정! 비유가 가리키는 '진짜 의미'를 글 전체 논지에서 찾으세요.
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playTone(f,t,d,g=0.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),ga=audioCtx.createGain();o.connect(ga);ga.connect(audioCtx.destination);o.type=t;o.frequency.value=f;ga.gain.setValueAtTime(g,audioCtx.currentTime);ga.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d)})}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80))}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100))}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,0.2)}
+function speakWord(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.8;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{for(let s of sl)s.classList.remove('out')},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('resultStars').textContent=score>=400?'⭐⭐⭐⭐⭐':score>=300?'⭐⭐⭐⭐':score>=180?'⭐⭐⭐':'⭐⭐';
+    document.getElementById('resultEmoji').textContent=score>=400?'🏆':'🎉';
+  }
+}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'비유의 진짜 의미를 생각해보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function answerOX(btn,si,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! 비유적 표현이지 실제 나침반/별이 아닙니다! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'글자 그대로 해석하면 함정! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function fillBlank(btn,blankId,text,ci,mi){
+  if(answered[currentSlide])return;
+  const b=document.getElementById(blankId);b.textContent=text;
+  playClick();
+  const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ blueprint = 계획! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'blueprint가 비유하는 것을 생각해보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.ox-btn').forEach(b=>b.className='ox-btn');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___'});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d>0?prevSlide():nextSlide()}});
+updateUI();
+</script>
+</body>
+</html>

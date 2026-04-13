@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>K-edu 3학년 심화 16 — 중1 문법 종합테스트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F9FF;--card:#FFFFFF;--primary:#1E40AF;--primary-light:#DBEAFE;--secondary:#3B82F6;--green:#16A34A;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--yellow:#CA8A04;--yellow-light:#FEF9C3;--text:#0F172A;--subtext:#475569;--border:#E2E8F0;--shadow:0 2px 12px rgba(0,0,0,0.08);--radius:16px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:10px;flex:1;margin:0 14px}.progress-bar{flex:1;height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:16px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:var(--yellow)}.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 22px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 28px;width:100%;max-width:740px}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:10px;font-weight:700}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:12px}.stars{color:#FCD34D}.question-text{font-size:24px;text-align:center;margin:8px 0 14px;line-height:1.6;font-weight:700}
+.blank-box{display:inline-block;font-size:32px;font-weight:900;border-bottom:4px solid var(--text);min-width:70px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s}.blank-box.filled{animation:fb .4s}@keyframes fb{0%{transform:scale(1.2)}100%{transform:scale(1)}}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}.choice-btn{background:var(--card);border:2px solid #CBD5E1;border-radius:12px;padding:12px 22px;font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.06)}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:20px;width:100%;max-width:560px;padding:11px 20px}
+.feedback{font-size:20px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px;font-weight:700}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E2E8F0;flex-shrink:0}.nav-btn{background:var(--primary);color:white;border:none;border-radius:12px;padding:10px 28px;font-family:'Noto Sans KR',sans-serif;font-size:20px;font-weight:700;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:var(--yellow);z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.highlight{color:var(--primary);font-weight:900}
+.topic-tag{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:3px 12px;font-size:14px;font-weight:700;margin-bottom:6px}
+/* Result detail */
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;text-align:left}
+.result-item{background:#F8FAFC;border-radius:10px;padding:10px;font-size:16px;display:flex;align-items:center;gap:8px}
+.result-item .ri-icon{font-size:20px}
+.result-item .ri-label{font-weight:700}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/13</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🔵 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- S0 인트로 -->
+<div class="slide active" data-type="concept"><div class="card" style="text-align:center">
+  <div style="font-size:56px;margin-bottom:8px">🏆</div>
+  <div class="slide-title">3학년 심화 · 16차시</div>
+  <div style="font-size:32px;font-weight:900;color:var(--primary)">중1 문법 종합테스트</div>
+  <div style="font-size:20px;color:var(--subtext);margin-top:10px">01~15차시 전체 문법 통합 평가!<br>11문항 · 총 200점 만점</div>
+  <div style="margin-top:14px;font-size:18px;color:var(--primary);font-weight:700">
+    📋 범위: 문장성분 · 품사 · be동사 · 일반동사<br>
+    시제(현재/과거/미래/진행) · 조동사 · 비교급<br>
+    접속사 · 의문사 · There is · 동명사/to부정사 · 대명사
+  </div>
+</div></div>
+
+<!-- Q1: be동사 (03) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="15"><div class="card">
+  <div class="topic-tag">be동사</div>
+  <span class="question-label">Q1 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">They _____ at the park yesterday.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">are</button>
+    <button class="choice-btn" onclick="answer(this,1)">was</button>
+    <button class="choice-btn" onclick="answer(this,2)">were</button>
+    <button class="choice-btn" onclick="answer(this,3)">is</button>
+  </div>
+  <div class="feedback" id="fb1"></div>
+</div></div>
+
+<!-- Q2: 일반동사 3인칭 (04) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="15"><div class="card">
+  <div class="topic-tag">일반동사</div>
+  <span class="question-label">Q2 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">She _____ English every day.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">study</button>
+    <button class="choice-btn" onclick="answer(this,1)">studies</button>
+    <button class="choice-btn" onclick="answer(this,2)">studys</button>
+    <button class="choice-btn" onclick="answer(this,3)">studying</button>
+  </div>
+  <div class="feedback" id="fb2"></div>
+</div></div>
+
+<!-- Q3: 과거시제 (05) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="15"><div class="card">
+  <div class="topic-tag">과거시제</div>
+  <span class="question-label">Q3 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">"He didn't _____ to school."<br>(go의 올바른 형태)</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">go</button>
+    <button class="choice-btn" onclick="answer(this,1)">went</button>
+    <button class="choice-btn" onclick="answer(this,2)">goes</button>
+    <button class="choice-btn" onclick="answer(this,3)">going</button>
+  </div>
+  <div class="feedback" id="fb3"></div>
+</div></div>
+
+<!-- Q4: 미래시제 (06) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="15"><div class="card">
+  <div class="topic-tag">미래시제</div>
+  <span class="question-label">Q4 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">하늘에 먹구름! ⛈️<br>"비 올 것 같아." = It _____ rain.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">will</button>
+    <button class="choice-btn" onclick="answer(this,1)">rains</button>
+    <button class="choice-btn" onclick="answer(this,2)">is going to</button>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div></div>
+
+<!-- Q5: 현재진행 vs 현재 (07) ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="15"><div class="card">
+  <div class="topic-tag">현재진행 vs 현재</div>
+  <span class="question-label">Q5 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">I _____ the answer. (know)<br>⚠️ 상태동사 주의!</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">am knowing</button>
+    <button class="choice-btn" onclick="answer(this,1)">know</button>
+    <button class="choice-btn" onclick="answer(this,2)">knowing</button>
+  </div>
+  <div class="feedback" id="fb5"></div>
+</div></div>
+
+<!-- Q6: 조동사 (08-09) ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="20"><div class="card">
+  <div class="topic-tag">조동사</div>
+  <span class="question-label">Q6 <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">"내일 안 와도 돼." (선택 사항)<br>= You _____ come tomorrow.</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">don't have to</button>
+    <button class="choice-btn" onclick="answer(this,1)">must not</button>
+    <button class="choice-btn" onclick="answer(this,2)">can't</button>
+  </div>
+  <div class="feedback" id="fb6"></div>
+</div></div>
+
+<!-- Q7: 비교급 (10) ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="20"><div class="card">
+  <div class="topic-tag">비교급·최상급</div>
+  <span class="question-label">Q7 <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">틀린 문장을 찾아라!</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">She is taller than me.</button>
+    <button class="choice-btn" onclick="answer(this,1)">He is the best player.</button>
+    <button class="choice-btn" onclick="answer(this,2)">This is more bigger than that.</button>
+    <button class="choice-btn" onclick="answer(this,3)">Mt. Everest is the highest mountain.</button>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div></div>
+
+<!-- Q8: 접속사 (11) ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20"><div class="card">
+  <div class="topic-tag">접속사</div>
+  <span class="question-label">Q8 <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">I stayed home _____ it was raining.</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">so</button>
+    <button class="choice-btn" onclick="answer(this,1)">because</button>
+    <button class="choice-btn" onclick="answer(this,2)">but</button>
+    <button class="choice-btn" onclick="answer(this,3)">and</button>
+  </div>
+  <div class="feedback" id="fb8"></div>
+</div></div>
+
+<!-- Q9: 의문사 (12) ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20"><div class="card">
+  <div class="topic-tag">의문사</div>
+  <span class="question-label">Q9 <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">"Where does she _____?"</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">lives</button>
+    <button class="choice-btn" onclick="answer(this,1)">live</button>
+    <button class="choice-btn" onclick="answer(this,2)">living</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div></div>
+
+<!-- Q10: There is + 동명사/to부정사 (13-14) ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="20"><div class="card">
+  <div class="topic-tag">There is + 동명사</div>
+  <span class="question-label">Q10 <span class="stars">⭐⭐⭐</span></span>
+  <div class="question-text">_____ any milk in the fridge.<br>I enjoy _____ coffee.</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">There isn't / drinking</button>
+    <button class="choice-btn" onclick="answer(this,1)">There aren't / to drink</button>
+    <button class="choice-btn" onclick="answer(this,2)">There isn't / to drink</button>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div></div>
+
+<!-- Q11: 대명사 종합 (15) ⭐⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card">
+  <div class="topic-tag">대명사 종합</div>
+  <span class="question-label">Q11 <span class="stars">⭐⭐⭐⭐</span></span>
+  <div class="question-text">A: "Is this _____ book?" (you)<br>B: "No, it's not _____. Ask _____." (I / he)</div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">you / my / he</button>
+    <button class="choice-btn" onclick="answer(this,1)">your / mine / him</button>
+    <button class="choice-btn" onclick="answer(this,2)">yours / me / his</button>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div></div>
+
+<!-- 결과 -->
+<div class="slide" data-type="result"><div class="card" style="text-align:center">
+  <div id="resultEmoji" style="font-size:64px">🏆</div>
+  <div style="font-size:32px;font-weight:900;margin:10px 0">종합테스트 완료!</div>
+  <div style="font-size:20px;color:var(--subtext)">중1 핵심 문법 16차시 마스터</div>
+  <div style="margin:16px 0">
+    <span style="font-size:56px;font-weight:900;color:var(--primary)" id="finalScore">0</span>
+    <span style="font-size:22px;color:var(--subtext)"> / 200점</span>
+  </div>
+  <div id="resultStars" style="font-size:40px;margin-bottom:10px">⭐⭐⭐</div>
+  <div id="resultMsg" style="font-size:20px;color:var(--subtext);margin-bottom:14px"></div>
+  <div id="resultDetail" class="result-grid"></div>
+  <button class="nav-btn" style="margin-top:18px;padding:14px 40px;font-size:22px" onclick="restart()">🔄 다시 도전</button>
+</div></div>
+
+</div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+const topics=['','be동사','일반동사','과거시제','미래시제','현재진행vs현재','조동사','비교급','접속사','의문사','There is+동명사','대명사'];
+const topicResult={};
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    const pct=score/200*100;
+    let stars,emoji,msg;
+    if(pct>=90){stars='⭐⭐⭐⭐⭐';emoji='🏆';msg='완벽! 중1 문법 마스터!';}
+    else if(pct>=75){stars='⭐⭐⭐⭐';emoji='🎉';msg='훌륭해! 거의 다 맞췄어!';}
+    else if(pct>=50){stars='⭐⭐⭐';emoji='💪';msg='잘했어! 틀린 부분만 복습하자!';}
+    else{stars='⭐⭐';emoji='📚';msg='괜찮아! 복습하고 다시 도전!';}
+    document.getElementById('resultStars').textContent=stars;
+    document.getElementById('resultEmoji').textContent=emoji;
+    document.getElementById('resultMsg').textContent=msg;
+    // Detail
+    const d=document.getElementById('resultDetail');d.innerHTML='';
+    for(let i=1;i<=11;i++){
+      const t=topics[i]||('Q'+i);
+      const ok=topicResult[i];
+      const item=document.createElement('div');item.className='result-item';
+      item.innerHTML='<span class="ri-icon">'+(ok?'✅':'❌')+'</span><span class="ri-label">'+t+'</span>';
+      d.appendChild(item);
+    }
+  }
+}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  const qNum=currentSlide; // Q number = slide index (1-indexed topic)
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);
+    topicResult[qNum]=true;
+    answered[currentSlide]=true;setTimeout(nextSlide,900);
+  }else{
+    btn.classList.add('wrong');playWrong();combo=0;
+    topicResult[qNum]=false;
+    setFB('fb'+currentSlide,'오답! 정답을 확인해봐! 💪',false);
+    // 종합테스트는 한 번에 채점 — 오답도 기록 후 다음으로
+    answered[currentSlide]=true;
+    setTimeout(()=>{
+      // 정답 표시
+      const btns=slide.querySelectorAll('.choice-btn');
+      btns[correct].classList.add('correct');
+      setTimeout(nextSlide,1200);
+    },600);
+  }
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  for(let k in topicResult)delete topicResult[k];
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled')});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+let tx=0;
+document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>

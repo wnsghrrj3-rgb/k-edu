@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 2학년 영어 심화 07 - 영어동화읽기 초급</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFFBF0;--card:#FFFFFF;--primary:#D4A017;--primary-light:#FFF5D6;--secondary:#F0C040;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#E8D8B0;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px;}
+.topbar-title{font-size:20px;color:var(--primary);}
+.logo{width:32px;height:32px;background:linear-gradient(135deg,#2196F3,#1565C0);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;position:relative;}
+.logo::after{content:'⭐';position:absolute;top:-2px;right:-4px;font-size:10px;}
+.slide-area{flex:1;overflow:hidden;position:relative;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;}
+.slide.active{opacity:1;pointer-events:auto;}
+.slide.left{transform:translateX(-60px);}.slide.right{transform:translateX(60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 20px;max-width:600px;width:100%;text-align:center;max-height:calc(100vh - 130px);overflow-y:auto;}
+.slide-title{font-size:22px;color:var(--primary);margin-bottom:12px;}
+.badge{display:inline-block;background:var(--yellow-light);color:#E6A000;padding:4px 12px;border-radius:20px;font-size:18px;margin-bottom:10px;}
+.desc{font-size:24px;margin:10px 0;line-height:1.5;}
+.desc-sub{font-size:22px;color:var(--subtext);margin:6px 0;}
+.emoji-big{font-size:80px;margin:10px 0;}
+.story-box{background:var(--primary-light);border-radius:16px;padding:16px;margin:12px 0;text-align:left;line-height:2;}
+.story-line{font-size:26px;margin:4px 0;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .2s;}
+.story-line:hover{background:rgba(212,160,23,0.15);}
+.story-line.highlight{background:rgba(212,160,23,0.25);}
+.options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;}
+.opt-btn{font-family:'Jua',sans-serif;font-size:48px;padding:14px 24px;border-radius:16px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;min-width:100px;}
+.opt-btn:active{transform:scale(0.95);}
+.opt-btn.correct{border-color:var(--green);background:var(--green-light);}
+.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.opt-btn.disabled{pointer-events:none;opacity:.6;}
+.opt-btn-sm{font-size:28px;padding:10px 18px;}
+.col-options{display:flex;flex-direction:column;gap:10px;margin-top:14px;align-items:center;}
+.col-btn{font-family:'Jua',sans-serif;font-size:24px;padding:12px 22px;border-radius:14px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;width:90%;max-width:420px;text-align:left;}
+.col-btn:active{transform:scale(0.97);}
+.col-btn.correct{border-color:var(--green);background:var(--green-light);}
+.col-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.col-btn.disabled{pointer-events:none;opacity:.6;}
+.ox-row{display:flex;gap:16px;justify-content:center;margin-top:14px;}
+.ox-btn{font-family:'Jua',sans-serif;font-size:64px;width:100px;height:100px;border-radius:50%;border:4px solid var(--border);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.feedback{margin-top:12px;font-size:22px;padding:10px;border-radius:14px;display:none;}
+.feedback.show{display:block;}
+.feedback.correct-fb{background:var(--green-light);color:var(--green);}
+.feedback.wrong-fb{background:var(--red-light);color:var(--red);}
+.char-speech{display:flex;align-items:flex-start;gap:12px;text-align:left;margin:12px 0;padding:14px;background:var(--primary-light);border-radius:16px;}
+.char-img{font-size:48px;flex-shrink:0;}
+.char-text{font-size:24px;line-height:1.5;}
+.tts-btn{font-family:'Jua',sans-serif;font-size:22px;padding:8px 16px;border-radius:12px;border:2px solid var(--primary);background:var(--primary-light);color:var(--primary);cursor:pointer;margin:6px 4px;}
+.read-btn{font-family:'Jua',sans-serif;font-size:26px;padding:12px 28px;border-radius:16px;border:none;background:var(--primary);color:#fff;cursor:pointer;margin:10px;}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.match-item{font-family:'Jua',sans-serif;font-size:24px;padding:12px;border-radius:14px;border:3px solid var(--border);background:#fff;cursor:pointer;transition:all .2s;text-align:center;}
+.match-item.selected{border-color:var(--primary);background:var(--primary-light);}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none;}
+.match-item.wrong-match{animation:shake .4s;}
+.score-bar{width:100%;height:20px;background:#eee;border-radius:10px;overflow:hidden;margin:8px 0;}
+.score-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:10px;transition:width .5s;}
+.result-emoji{font-size:100px;margin:14px 0;}
+.result-msg{font-size:30px;margin:8px 0;}
+.result-detail{font-size:22px;color:var(--subtext);}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#fff;box-shadow:0 -2px 8px rgba(0,0,0,0.06);flex-shrink:0;}
+.nav-btn{font-family:'Jua',sans-serif;font-size:22px;padding:10px 24px;border-radius:14px;border:none;cursor:pointer;}
+.nav-prev{background:var(--primary-light);color:var(--primary);}
+.nav-next{background:var(--primary);color:#fff;}
+.nav-btn:disabled{opacity:.3;cursor:default;}
+.page-info{font-size:18px;color:var(--subtext);}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeUp .5s ease-out;}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="topbar-left"><button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button><span class="topbar-title">영어동화 초급 📖</span></div><div class="logo">K</div></div>
+<div class="slide-area" id="slideArea"></div>
+<div class="nav"><button class="nav-btn nav-prev" id="prevBtn" onclick="go(-1)" disabled>◀ 이전</button><span class="page-info" id="pageInfo">1/14</span><button class="nav-btn nav-next" id="nextBtn" onclick="go(1)">다음 ▶</button></div>
+<script>
+let soundOn=true,audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function playCorrect(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.12;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const c=getCtx();audioCtx.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.06);});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+function speak(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function speakAll(lines,idx){if(idx>=lines.length||!soundOn)return;const els=document.querySelectorAll('.slide.active .story-line');els.forEach(e=>e.classList.remove('highlight'));if(els[idx])els[idx].classList.add('highlight');const u=new SpeechSynthesisUtterance(lines[idx]);u.lang='en-US';u.rate=0.75;u.onend=()=>setTimeout(()=>speakAll(lines,idx+1),300);speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+let cur=0,score=0,total=0,answered={};const slides=[];
+
+const story=[
+'Once upon a time, there was a little ant.',
+'The ant worked very hard every day.',
+'She carried food to her home.',
+'One day, a grasshopper came to visit.',
+'"Why do you work so hard?" asked the grasshopper.',
+'"I am saving food for winter," said the ant.',
+'The grasshopper laughed and played all day.',
+'When winter came, the grasshopper had no food.',
+'He was very cold and hungry.',
+'The kind ant shared her food with him.',
+'The grasshopper learned an important lesson.',
+'"I will work hard next time!" he said.'
+];
+
+function buildSlides(){
+const area=document.getElementById('slideArea');
+const data=[
+{type:'concept',html:`<div class="card animate-in">
+  <div class="emoji-big">📚</div>
+  <div class="slide-title" style="font-size:28px;">영어 동화 읽기!</div>
+  <div class="desc">유명한 이솝우화를 영어로 읽어봐요!</div>
+  <div class="char-speech"><div class="char-img">🐶</div><div class="char-text">오늘은 <b>개미와 베짱이</b> 이야기야! 🐜🦗<br>문장을 터치하면 읽어줄게!</div></div>
+</div>`},
+
+// Story part 1 (1-6)
+{type:'concept',html:`<div class="card animate-in">
+  <div class="slide-title">📖 The Ant and the Grasshopper (1/2)</div>
+  <div class="story-box">${story.slice(0,6).map(l=>`<div class="story-line" onclick="speak('${l.replace(/'/g,"\\'")}')">${l}</div>`).join('')}</div>
+  <button class="read-btn" onclick="speakAll(${JSON.stringify(story.slice(0,6))},0)">🔊 듣기</button>
+  <div class="desc-sub">🐜 개미는 열심히 일하고 있어요!</div>
+</div>`},
+
+// Story part 2 (7-12)
+{type:'concept',html:`<div class="card animate-in">
+  <div class="slide-title">📖 The Ant and the Grasshopper (2/2)</div>
+  <div class="story-box">${story.slice(6).map(l=>`<div class="story-line" onclick="speak('${l.replace(/'/g,"\\'")}')">${l}</div>`).join('')}</div>
+  <button class="read-btn" onclick="speakAll(${JSON.stringify(story.slice(6))},0)">🔊 듣기</button>
+  <div class="desc-sub">🦗 겨울이 오자 베짱이는...</div>
+</div>`},
+
+// Q1 ⭐
+{type:'q',correct:0,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q1. 개미는 매일 무엇을 했나요?</div>
+  <div class="options" id="q1opts"></div>
+  <div class="feedback" id="q1fb"></div>
+</div>`},
+
+// Q2 ⭐ O/X
+{type:'q',correct:1,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q2. O/X 퀴즈!</div>
+  <div class="desc" style="background:var(--yellow-light);padding:14px;border-radius:14px;">"베짱이는 여름에 열심히 일했다"</div>
+  <div class="ox-row" id="q2ox"></div>
+  <div class="feedback" id="q2fb"></div>
+</div>`},
+
+// Q3 ⭐
+{type:'q',correct:1,score:10,html:`<div class="card animate-in">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">Q3. 개미는 왜 음식을 모았나요?</div>
+  <div class="options" id="q3opts"></div>
+  <div class="feedback" id="q3fb"></div>
+</div>`},
+
+// Q4 ⭐⭐ 매칭
+{type:'q',correct:-1,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q4. 단어와 뜻을 연결해요!</div>
+  <div class="match-grid" id="q4match"></div>
+  <div class="feedback" id="q4fb"></div>
+</div>`},
+
+// Q5 ⭐⭐ 순서
+{type:'q',correct:1,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q5. 이야기 순서를 맞춰요!</div>
+  <div class="col-options" id="q5opts"></div>
+  <div class="feedback" id="q5fb"></div>
+</div>`},
+
+// Q6 ⭐⭐ 빈칸
+{type:'q',correct:2,score:25,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">Q6. 빈칸을 채워요!</div>
+  <div class="desc" style="background:var(--primary-light);padding:14px;border-radius:14px;">"The kind ant ______ her food with him."</div>
+  <div class="options" id="q6opts"></div>
+  <div class="feedback" id="q6fb"></div>
+</div>`},
+
+// Q7 ⭐⭐⭐ 추론
+{type:'q',correct:0,score:50,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">Q7. 베짱이는 왜 배가 고팠을까?</div>
+  <div class="col-options" id="q7opts"></div>
+  <div class="feedback" id="q7fb"></div>
+</div>`},
+
+// Q8 ⭐⭐⭐ 성격 비교
+{type:'q',correct:2,score:50,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">Q8. 개미와 베짱이의 성격은?</div>
+  <div class="col-options" id="q8opts"></div>
+  <div class="feedback" id="q8fb"></div>
+</div>`},
+
+// Q9 ⭐⭐⭐⭐ 교훈
+{type:'q',correct:1,score:100,html:`<div class="card animate-in">
+  <div class="badge">⭐⭐⭐⭐ 최심화</div>
+  <div class="slide-title">Q9. 이 이야기의 교훈은?</div>
+  <div class="char-speech"><div class="char-img">🐱</div><div class="char-text">베짱이는 "다음에는 열심히 일하겠다!"고 했어요.<br>이 이야기가 우리에게 알려주는 것은?</div></div>
+  <div class="col-options" id="q9opts"></div>
+  <div class="feedback" id="q9fb"></div>
+</div>`},
+
+{type:'result',html:`<div class="card animate-in">
+  <div class="slide-title">🎉 학습 완료!</div>
+  <div class="result-emoji" id="resultEmoji">🌟</div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div style="font-size:28px;margin:14px 0;">점수: <b id="finalScore">0</b>점</div>
+  <div class="score-bar"><div class="score-fill" id="scoreFill" style="width:0%"></div></div>
+  <div class="result-detail" id="resultDetail"></div>
+  <div class="char-speech" style="margin-top:14px;"><div class="char-img">🐶</div><div class="char-text" id="resultKay"></div></div>
+</div>`}
+];
+data.forEach((d,i)=>{const div=document.createElement('div');div.className='slide'+(i===0?' active':'');div.dataset.type=d.type;if(d.score!==undefined){div.dataset.score=d.score;total+=d.score;}div.innerHTML=d.html;area.appendChild(div);slides.push(div);});
+initQ();updateNav();
+}
+
+function initQ(){
+  mkBtns('q1opts',['열심히 일했다 🐜','놀았다 🎵','잠을 잤다 😴'],3,0,'q1fb','worked very hard every day!','맞아! 매일 열심히 일했어! 🐜');
+  const q2=document.getElementById('q2ox');['⭕','❌'].forEach((t,i)=>{const b=document.createElement('button');b.className='ox-btn';b.textContent=t;b.onclick=()=>checkOX(4,b,i,1,'q2fb','베짱이는 놀기만 했어! laughed and played!','맞아! 베짱이는 놀기만 했어! 🦗🎵');q2.appendChild(b);});
+  mkBtns('q3opts',['팔려고 💰','겨울 대비 ❄️','친구 주려고 🎁'],5,1,'q3fb','saving food for winter! 겨울 대비!','맞아! 겨울을 위해 저축! ❄️');
+
+  const grid=document.getElementById('q4match');
+  const pairs=[{l:'carried',r:'운반했다'},{l:'hungry',r:'배고픈'},{l:'shared',r:'나누었다'},{l:'lesson',r:'교훈'}];
+  const rights=['배고픈','나누었다','교훈','운반했다'];
+  let selL=null,matched=0;
+  pairs.forEach((p,i)=>{
+    const lD=document.createElement('div');lD.className='match-item';lD.textContent=p.l;lD.dataset.idx=i;lD.dataset.side='l';
+    lD.onclick=()=>{if(lD.classList.contains('matched'))return;document.querySelectorAll('#q4match .match-item[data-side="l"]').forEach(e=>e.classList.remove('selected'));lD.classList.add('selected');selL=i;};
+    const rD=document.createElement('div');rD.className='match-item';rD.textContent=rights[i];rD.dataset.rval=rights[i];rD.dataset.side='r';
+    rD.onclick=()=>{if(rD.classList.contains('matched')||selL===null)return;if(rights[i]===pairs[selL].r){playCorrect();rD.classList.add('matched');document.querySelector(`#q4match .match-item[data-idx="${selL}"][data-side="l"]`).classList.add('matched');matched++;selL=null;if(matched===4){if(!answered[7]){score+=25;answered[7]=true;}showFB('q4fb',true,'완벽! 🎉');}}else{playWrong();rD.classList.add('wrong-match');setTimeout(()=>rD.classList.remove('wrong-match'),400);}};
+    grid.appendChild(lD);grid.appendChild(rD);
+  });
+
+  mkCol('q5opts',['개미가 일함→베짱이가 놀음→겨울→개미가 나눔','베짱이가 놀음→개미가 일함→겨울→배고픔','겨울→개미가 일함→베짱이가 놀음→나눔'],8,0,'q5fb','개미 일→베짱이 놀기→겨울→나눔!','정답! 순서 완벽! 👏');
+  mkBtns('q6opts',['ate 🍽️','gave 🎁','shared 🤝'],9,2,'q6fb','shared=나누었다!','맞아! shared=나누었다! 🤝');
+  mkCol('q7opts',['여름에 놀기만 하고 음식을 안 모았으니까','음식이 너무 비싸서','개미가 안 줘서'],10,0,'q7fb','놀기만 했으니까 음식이 없어!','맞아! 준비 안 했으니까! 🦗❄️');
+  mkCol('q8opts',['둘 다 게으르다','둘 다 부지런하다','개미=부지런, 베짱이=게으름'],11,2,'q8fb','개미는 worked hard, 베짱이는 played all day!','맞아! 정반대 성격! 🐜💪 vs 🦗🎵');
+  mkCol('q9opts',['놀기만 하는 게 좋다','미리 준비하고 열심히 일해야 한다','친구에게 도움을 구하면 된다'],12,1,'q9fb','미리 준비하는 것이 중요해!','대단해! 🎉 열심히 준비하는 것의 중요성!');
+}
+
+function mkBtns(id,opts,si,c,fb,wm,rm){const el=document.getElementById(id);opts.forEach((t,i)=>{const b=document.createElement('button');b.className='opt-btn opt-btn-sm';b.textContent=t;b.onclick=()=>checkBtn(si,b,i,c,fb,wm,rm);el.appendChild(b);});}
+function mkCol(id,opts,si,c,fb,wm,rm){const el=document.getElementById(id);opts.forEach((t,i)=>{const b=document.createElement('button');b.className='col-btn';b.textContent=t;b.onclick=()=>checkCol(si,b,i,c,fb,wm,rm);el.appendChild(b);});}
+function checkBtn(si,btn,p,c,fb,wm,rm){if(answered[si])return;playClick();if(p===c){playCorrect();btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn,.opt-btn-sm').forEach(b=>b.classList.add('disabled'));score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fb,true,rm);}else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fb,false,wm);}}
+function checkOX(si,btn,p,c,fb,wm,rm){if(answered[si])return;playClick();if(p===c){playCorrect();btn.classList.add('correct');score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fb,true,rm);}else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fb,false,wm);}}
+function checkCol(si,btn,p,c,fb,wm,rm){if(answered[si])return;playClick();if(p===c){playCorrect();btn.classList.add('correct');btn.parentElement.querySelectorAll('.col-btn').forEach(b=>b.classList.add('disabled'));score+=parseInt(slides[si].dataset.score);answered[si]=true;showFB(fb,true,rm);}else{playWrong();btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);showFB(fb,false,wm);}}
+function showFB(id,ok,msg){const f=document.getElementById(id);f.textContent=msg;f.className='feedback show '+(ok?'correct-fb':'wrong-fb');}
+function go(d){const prev=cur;cur=Math.max(0,Math.min(slides.length-1,cur+d));if(cur===prev)return;slides[prev].classList.remove('active');slides[prev].classList.add(d>0?'left':'right');slides[cur].classList.remove('left','right');slides[cur].classList.add('active');if(cur===slides.length-1)showResult();updateNav();}
+function updateNav(){document.getElementById('prevBtn').disabled=cur===0;document.getElementById('nextBtn').disabled=cur===slides.length-1;document.getElementById('pageInfo').textContent=`${cur+1} / ${slides.length}`;}
+function showResult(){const pct=Math.round(score/total*100);document.getElementById('finalScore').textContent=score;document.getElementById('scoreFill').style.width=pct+'%';let e='🌟',m='잘했어요!',k='동화 잘 읽었어!';if(pct>=90){e='🏆';m='완벽해요!';k='동화 마스터! 📖';}else if(pct>=70){e='🌟';m='훌륭해요!';k='잘 읽었어!';}else if(pct>=50){e='💪';m='좋아요!';k='복습하면 완벽!';}else{e='🤗';m='괜찮아요!';k='다시 읽어보자!';}document.getElementById('resultEmoji').textContent=e;document.getElementById('resultMsg').textContent=m;document.getElementById('resultDetail').textContent=`총점: ${score}/${total}점 (${pct}%)`;document.getElementById('resultKay').textContent=k;}
+let sx=0;document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>50){dx<0?go(1):go(-1);}});
+buildSlides();
+</script>
+</body>
+</html>

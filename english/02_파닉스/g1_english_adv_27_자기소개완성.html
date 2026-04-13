@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 자기소개완성</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF0F5;--card:#FFFFFF;--primary:#E91E63;--primary-light:#FCE4EC;--secondary:#F06292;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F8BBD0;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:26px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:10px;background:var(--primary-light);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:5px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;width:100%;max-width:640px}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:28px;text-align:center;margin:6px 0 12px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px}
+.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:14px 28px;font-family:'Jua',sans-serif;font-size:44px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,0.06)}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choice-btn.sm{font-size:28px;padding:10px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:26px;width:100%;max-width:520px;padding:12px 20px}
+.blank-box{display:inline-block;font-size:52px;font-weight:900;border-bottom:5px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 5px;transition:all .3s}
+.blank-box.filled{animation:fill-bounce .4s}
+@keyframes fill-bounce{0%{transform:scale(1.3)}100%{transform:scale(1)}}
+.sentence-box{font-size:28px;text-align:center;background:var(--primary-light);border-radius:16px;padding:16px 20px;margin:10px 0;line-height:1.8}
+.feedback{font-size:22px;text-align:center;margin-top:8px;min-height:30px;border-radius:12px;padding:6px 14px}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.match-area{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.match-col{display:flex;flex-direction:column;gap:10px}
+.match-item{background:var(--card);border:3px solid #ddd;border-radius:14px;padding:10px 20px;font-size:28px;cursor:pointer;transition:all .2s;text-align:center;min-width:110px}
+.match-item:hover{border-color:var(--primary)}
+.match-item.selected{border-color:var(--primary);background:var(--primary-light)}
+.match-item.matched{border-color:var(--green);background:var(--green-light);pointer-events:none}
+.match-item.wrong-match{animation:shake .4s;border-color:var(--red)}
+.ox-area{display:flex;gap:20px;justify-content:center;margin:10px 0}
+.ox-btn{font-size:80px;cursor:pointer;transition:transform .2s;padding:10px 30px;border-radius:20px;border:3px solid transparent}
+.ox-btn:hover{transform:scale(1.1)}
+.ox-btn.correct{background:var(--green-light);border-color:var(--green)}
+.ox-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.dialog-box{background:var(--primary-light);border-radius:20px;padding:18px;margin:8px 0;position:relative}
+.dialog-line{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:26px}
+.dialog-char{font-size:36px;flex-shrink:0}
+.dialog-bubble{background:#fff;border-radius:16px;padding:10px 16px;box-shadow:0 2px 6px rgba(0,0,0,0.06);cursor:pointer}
+.dialog-bubble:hover{background:var(--yellow-light)}
+.tts-btn{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:12px;padding:8px 16px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;margin:8px auto;display:block}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:24px;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-box{text-align:center}.result-emoji{font-size:80px}.result-score{font-size:48px;color:var(--primary);margin:10px 0}.result-stars{font-size:36px}.result-msg{font-size:24px;color:var(--subtext);margin:8px 0}
+.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:16px;padding:14px 40px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+.char-area{font-size:26px;text-align:center;margin:6px 0;color:var(--subtext)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/14</span></div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo">K-edu ⭐</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="slides">
+
+<!-- S0 타이틀 -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div style="font-size:32px;margin-bottom:6px">👋 자기소개 완성!</div>
+    <div class="char-area">🐶 Kay: "영어로 나를 소개하는 3문장을 배워보자!"</div>
+    <div style="font-size:60px;margin:12px 0">🙋‍♂️🙋‍♀️</div>
+    <div style="font-size:22px;color:var(--subtext)">이름 · 나이 · 좋아하는 것</div>
+  </div>
+</div>
+
+<!-- S1 개념 ① 이름 -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이름 말하기</div>
+    <div class="dialog-box">
+      <div class="dialog-line"><span class="dialog-char">🐶</span><div class="dialog-bubble" onclick="speakSentence('My name is Kay.')">My name is Kay. 🔊</div></div>
+      <div class="dialog-line"><span class="dialog-char">🦦</span><div class="dialog-bubble" onclick="speakSentence('Hello! I am Dew.')">Hello! I am Dew. 🔊</div></div>
+    </div>
+    <div class="sentence-box" style="font-size:24px">
+      <b>My name is ~.</b> = 내 이름은 ~이야.<br>
+      <b>I am ~.</b> = 나는 ~이야.
+    </div>
+    <div class="char-area">두 가지 표현 모두 쓸 수 있어!</div>
+  </div>
+</div>
+
+<!-- S2 개념 ② 나이 -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 나이 말하기</div>
+    <div class="dialog-box">
+      <div class="dialog-line"><span class="dialog-char">🧑</span><div class="dialog-bubble" onclick="speakSentence('How old are you?')">How old are you? 🔊</div></div>
+      <div class="dialog-line"><span class="dialog-char">🐶</span><div class="dialog-bubble" onclick="speakSentence('I am seven years old.')">I am seven years old. 🔊</div></div>
+    </div>
+    <div class="sentence-box" style="font-size:24px">
+      <b>How old are you?</b> = 몇 살이야?<br>
+      <b>I am seven years old.</b> = 나는 7살이야.
+    </div>
+  </div>
+</div>
+
+<!-- S3 개념 ③ 좋아하는 것 -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 좋아하는 것 말하기</div>
+    <div class="dialog-box">
+      <div class="dialog-line"><span class="dialog-char">🧑</span><div class="dialog-bubble" onclick="speakSentence('What do you like?')">What do you like? 🔊</div></div>
+      <div class="dialog-line"><span class="dialog-char">🦦</span><div class="dialog-bubble" onclick="speakSentence('I like swimming.')">I like swimming. 🔊</div></div>
+      <div class="dialog-line"><span class="dialog-char">🐶</span><div class="dialog-bubble" onclick="speakSentence('I like pizza and dogs.')">I like pizza and dogs. 🔊</div></div>
+    </div>
+    <div class="sentence-box" style="font-size:24px">
+      <b>I like ~.</b> = 나는 ~을 좋아해.
+    </div>
+  </div>
+</div>
+
+<!-- S4 Q1 ⭐ "이름" 표현 고르기 -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label">Q1 <span class="stars">⭐</span></div>
+    <div class="question-text">"내 이름은 수진이야" 를 영어로 하면?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">I like Sujin.</button>
+      <button class="choice-btn" onclick="answer(this,1)">How old is Sujin?</button>
+      <button class="choice-btn" onclick="answer(this,2)">My name is Sujin.</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5 Q2 ⭐ OX -->
+<div class="slide" data-type="q" data-score="10">
+  <div class="card">
+    <div class="question-label">Q2 <span class="stars">⭐</span></div>
+    <div class="question-text">
+      <div class="sentence-box" style="font-size:26px">"I am eight years old."</div>
+      이 문장의 뜻은 "나는 8살이야" 이다?
+    </div>
+    <div class="ox-area">
+      <div class="ox-btn" onclick="oxAnswer(this,5,true,true)">⭕</div>
+      <div class="ox-btn" onclick="oxAnswer(this,5,false,true)">❌</div>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6 Q3 ⭐ 듣고 상황 고르기 -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="question-label">Q3 <span class="stars">⭐</span></div>
+    <div class="question-text">🔊 이 문장을 듣고, 어떤 질문의 대답인지 골라봐!</div>
+    <button class="tts-btn" onclick="speakSentence('I like soccer.')">🔊 "I like soccer." 듣기</button>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">How old are you?</button>
+      <button class="choice-btn" onclick="answer(this,1)">What do you like?</button>
+      <button class="choice-btn" onclick="answer(this,2)">What is your name?</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7 Q4 ⭐⭐ 빈칸 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label">Q4 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">빈칸에 알맞은 단어를 골라봐!</div>
+    <div class="sentence-box">
+      <span class="blank-box" id="blank7" style="font-size:44px">___</span> name is Minho.
+    </div>
+    <div class="choices">
+      <button class="choice-btn sm" onclick="fillBlank(this,'blank7','My',0,0)">My</button>
+      <button class="choice-btn sm" onclick="fillBlank(this,'blank7','I',0,1)">I</button>
+      <button class="choice-btn sm" onclick="fillBlank(this,'blank7','You',0,2)">You</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8 Q5 ⭐⭐ 매칭 — 질문↔대답 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label">Q5 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">질문과 대답을 짝지어봐!</div>
+    <div class="match-area">
+      <div class="match-col" id="matchL8">
+        <div class="match-item" data-pair="A" onclick="selectMatch(this,'L',8)" style="font-size:22px">What is your name?</div>
+        <div class="match-item" data-pair="B" onclick="selectMatch(this,'L',8)" style="font-size:22px">How old are you?</div>
+        <div class="match-item" data-pair="C" onclick="selectMatch(this,'L',8)" style="font-size:22px">What do you like?</div>
+      </div>
+      <div class="match-col" id="matchR8">
+        <div class="match-item" data-pair="B" onclick="selectMatch(this,'R',8)" style="font-size:22px">I am seven.</div>
+        <div class="match-item" data-pair="C" onclick="selectMatch(this,'R',8)" style="font-size:22px">I like cats.</div>
+        <div class="match-item" data-pair="A" onclick="selectMatch(this,'R',8)" style="font-size:22px">My name is Kay.</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9 Q6 ⭐⭐ 대화 순서 배열 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="card">
+    <div class="question-label">Q6 <span class="stars">⭐⭐</span></div>
+    <div class="question-text">대화 순서를 맞춰봐! 순서대로 터치!</div>
+    <div class="sentence-box" id="orderResult9" style="min-height:60px;font-size:22px;line-height:2"> </div>
+    <div class="choices col" id="orderPool9">
+      <button class="choice-btn" onclick="orderWord(this,9)" style="font-size:22px">I am seven years old.</button>
+      <button class="choice-btn" onclick="orderWord(this,9)" style="font-size:22px">Hello! My name is Jina.</button>
+      <button class="choice-btn" onclick="orderWord(this,9)" style="font-size:22px">I like drawing.</button>
+    </div>
+    <div style="text-align:center;margin-top:6px"><button class="choice-btn sm" onclick="resetOrder(9)" style="font-size:20px;border-color:var(--subtext)">↩️ 다시</button></div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10 Q7 ⭐⭐⭐ 빈칸 2개 — 자기소개 완성 -->
+<div class="slide" data-type="q" data-score="50">
+  <div class="card">
+    <div class="question-label">Q7 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">자기소개를 완성해봐!</div>
+    <div class="sentence-box" style="font-size:22px;line-height:2.2">
+      My name is Tom.<br>
+      I am
+      <span class="blank-box" id="blank10a" style="font-size:36px">___</span>
+      years old.<br>
+      I
+      <span class="blank-box" id="blank10b" style="font-size:36px">___</span>
+      soccer.
+    </div>
+    <div class="choices">
+      <button class="choice-btn sm" onclick="fillDouble(this,'like',10)">like</button>
+      <button class="choice-btn sm" onclick="fillDouble(this,'eight',10)">eight</button>
+      <button class="choice-btn sm" onclick="fillDouble(this,'name',10)">name</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11 Q8 ⭐⭐⭐ 상황 판단 -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="question-label">Q8 <span class="stars">⭐⭐⭐</span></div>
+    <div class="question-text">친구가 "What do you like?" 라고 물었어. 가장 알맞은 대답은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">My name is Mina.</button>
+      <button class="choice-btn" onclick="answer(this,1)">I like ice cream and books.</button>
+      <button class="choice-btn" onclick="answer(this,2)">I am seven years old.</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12 Q9 ⭐⭐⭐⭐ 전체 자기소개 순서 -->
+<div class="slide" data-type="q" data-score="100">
+  <div class="card">
+    <div class="question-label">Q9 <span class="stars">⭐⭐⭐⭐</span></div>
+    <div class="question-text">완벽한 자기소개! 3문장을 올바른 순서로 배열해봐!</div>
+    <div class="sentence-box" id="orderResult12" style="min-height:80px;font-size:22px;line-height:2"> </div>
+    <div class="choices col" id="orderPool12">
+      <button class="choice-btn" onclick="orderWord(this,12)" style="font-size:22px">I like music and dancing.</button>
+      <button class="choice-btn" onclick="orderWord(this,12)" style="font-size:22px">I am eight years old.</button>
+      <button class="choice-btn" onclick="orderWord(this,12)" style="font-size:22px">Hello! My name is Yuna.</button>
+    </div>
+    <div style="text-align:center;margin-top:6px"><button class="choice-btn sm" onclick="resetOrder(12)" style="font-size:20px;border-color:var(--subtext)">↩️ 다시</button></div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- S13 결과 -->
+<div class="slide" data-type="result">
+  <div class="card result-box">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div style="font-size:28px;margin:6px 0">자기소개 완성!</div>
+    <div class="result-score">🏆 <span id="finalScore">0</span>점</div>
+    <div class="result-stars" id="resultStars">⭐⭐</div>
+    <div class="result-msg">🐶 Kay: "이제 영어로 멋지게 자기소개할 수 있어!"</div>
+    <button class="restart-btn" onclick="restart()">🔄 다시 도전!</button>
+  </div>
+</div>
+
+</div>
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL=14;let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playTone(f,type,dur,gain=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type=type;o.frequency.value=f;g.gain.setValueAtTime(gain,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.start();o.stop(audioCtx.currentTime+dur);});}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,.2);}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function speakSentence(s){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(s);u.lang='en-US';u.rate=0.7;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;const s=score;document.getElementById('resultStars').textContent=s>=300?'⭐⭐⭐⭐⭐':s>=200?'⭐⭐⭐⭐':s>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=s>=300?'🏆':'🎉';}}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function oxAnswer(btn,si,isO,cO){if(answered[si])return;playClick();if(isO===cO){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb'+si,'✅ 맞아! +10점',true);answered[si]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+let matchState={};
+function selectMatch(el,side,si){if(answered[si]||el.classList.contains('matched'))return;playClick();const k='m'+si;if(!matchState[k])matchState[k]={count:0,total:3};const st=matchState[k];document.querySelectorAll('#match'+(side==='L'?'L':'R')+si+' .match-item').forEach(m=>m.classList.remove('selected'));el.classList.add('selected');st[side]=el;if(st.L&&st.R){if(st.L.dataset.pair===st.R.dataset.pair){st.L.classList.remove('selected');st.R.classList.remove('selected');st.L.classList.add('matched');st.R.classList.add('matched');playCorrect();st.count++;if(st.count>=st.total){addScore(25);setFB('fb'+si,'✅ 완벽! +25점',true);answered[si]=true;setTimeout(nextSlide,900);}}else{st.L.classList.add('wrong-match');st.R.classList.add('wrong-match');playWrong();combo=0;setTimeout(()=>{st.L.classList.remove('selected','wrong-match');st.R.classList.remove('selected','wrong-match');},500);}st.L=null;st.R=null;}}
+
+// ORDER (대화/문장 순서)
+let orderState={};
+function orderWord(btn,si){if(answered[si])return;const k='o'+si;
+  const corrects={9:['Hello! My name is Jina.','I am seven years old.','I like drawing.'],12:['Hello! My name is Yuna.','I am eight years old.','I like music and dancing.']};
+  if(!orderState[k])orderState[k]={words:[],correct:corrects[si]};
+  const st=orderState[k];playClick();
+  speakSentence(btn.textContent);
+  st.words.push(btn.textContent);btn.style.opacity='.3';btn.style.pointerEvents='none';
+  document.getElementById('orderResult'+si).innerHTML=st.words.map((w,i)=>'<div>'+(i+1)+'. '+w+'</div>').join('');
+  if(st.words.length===st.correct.length){
+    if(JSON.stringify(st.words)===JSON.stringify(st.correct)){
+      const pts=si===12?100:25;playCorrect();addScore(pts);setFB('fb'+si,'✅ 완벽한 자기소개! +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,900);
+    }else{playWrong();combo=0;setFB('fb'+si,'이름→나이→좋아하는것 순서! 💪',false);setTimeout(()=>resetOrder(si),1000);}
+  }
+}
+function resetOrder(si){const k='o'+si;const corrects={9:['Hello! My name is Jina.','I am seven years old.','I like drawing.'],12:['Hello! My name is Yuna.','I am eight years old.','I like music and dancing.']};orderState[k]={words:[],correct:corrects[si]};document.getElementById('orderResult'+si).innerHTML=' ';document.querySelectorAll('#orderPool'+si+' .choice-btn').forEach(b=>{b.style.opacity='1';b.style.pointerEvents='auto';});setFB('fb'+si,'',true);}
+
+let dblState={};
+function fillDouble(btn,word,si){if(answered[si])return;const k='d'+si;if(!dblState[k])dblState[k]={step:0,correct:['eight','like']};const st=dblState[k];playClick();speakWord(word);if(word===st.correct[st.step]){btn.classList.add('correct');btn.style.pointerEvents='none';const bid=st.step===0?'blank10a':'blank10b';document.getElementById(bid).textContent=word;document.getElementById(bid).classList.add('filled');playCorrect();st.step++;if(st.step>=2){addScore(50);setFB('fb'+si,'✅ 자기소개 완성! +50점',true);answered[si]=true;setTimeout(nextSlide,900);}}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'순서에 맞게! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+function restart(){score=0;combo=0;answered={};matchState={};dblState={};orderState={};document.querySelectorAll('.choice-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim();b.style.opacity='1';b.style.pointerEvents='auto';});document.querySelectorAll('.match-item').forEach(m=>m.classList.remove('matched','selected','wrong-match'));document.querySelectorAll('.ox-btn').forEach(b=>b.classList.remove('correct','wrong'));document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));['orderResult9','orderResult12'].forEach(id=>document.getElementById(id).innerHTML=' ');currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>
