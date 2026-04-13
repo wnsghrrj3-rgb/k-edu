@@ -91,6 +91,16 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); ov
 .drag-item:active { cursor:grabbing; transform:scale(1.1); }
 .compare-box { display:flex; align-items:center; gap:16px; justify-content:center; margin:16px 0; }
 .compare-num { font-size:88px; color:var(--primary); }
+.text-input-wrap { display:flex; align-items:center; justify-content:center; gap:12px; margin:12px 0; }
+.text-input { width:120px; height:80px; border:4px solid var(--border); border-radius:16px; font-size:48px; font-family:'Jua',sans-serif; text-align:center; color:var(--primary); background:var(--card); outline:none; transition:border-color 0.3s; }
+.text-input:focus { border-color:var(--primary); }
+.text-input.correct { border-color:var(--green); background:var(--green-light); }
+.text-input.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.submit-btn { background:var(--primary); color:#fff; border:none; border-radius:16px; padding:12px 24px; font-size:24px; font-family:'Jua',sans-serif; cursor:pointer; transition:all 0.2s; }
+.submit-btn:active { transform:scale(0.95); }
+.submit-btn:disabled { opacity:0.4; cursor:default; }
+.hint-box { background:var(--yellow-light); border-radius:16px; padding:16px; max-width:500px; width:100%; margin:8px 0; font-size:22px; line-height:1.6; text-align:left; }
+.hint-box .hint-icon { margin-right:4px; }
 @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
 @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
@@ -410,7 +420,185 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); ov
     <div class="feedback" id="fb15"></div>
   </div>
 
-  <!-- 슬라이드 17: 결과 -->
+  <!-- ===== 추가 문항 Q11~Q20 ===== -->
+
+  <!-- 슬라이드 17: Q11 객관식 - 숫자 읽기 ⭐ -->
+  <div class="slide" data-type="q" data-score="10">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">"삼"은 숫자로 몇일까요?</div>
+    <div class="concept-box">
+      <div style="font-size:64px; color:var(--secondary);">삼</div>
+      <div style="font-size:22px; color:var(--subtext); margin-top:8px;">한글 이름을 보고 숫자를 골라요</div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn" onclick="checkAnswer(this,16,false)">1</button>
+      <button class="opt-btn" onclick="checkAnswer(this,16,false)">2</button>
+      <button class="opt-btn" onclick="checkAnswer(this,16,true)">3</button>
+      <button class="opt-btn" onclick="checkAnswer(this,16,false)">5</button>
+    </div>
+    <div class="feedback" id="fb16"></div>
+  </div>
+
+  <!-- 슬라이드 18: Q12 서술형 - 세어서 입력 ⭐ -->
+  <div class="slide" data-type="q" data-score="10">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">세어서 숫자를 써 봐요!</div>
+    <div class="objects-row" style="font-size:48px;">
+      <div class="obj-item" style="font-size:40px;">🍊</div>
+      <div class="obj-item" style="font-size:40px;">🍊</div>
+      <div class="obj-item" style="font-size:40px;">🍊</div>
+      <div class="obj-item" style="font-size:40px;">🍊</div>
+    </div>
+    <div style="font-size:24px; margin:8px 0;">귤은 모두 몇 개인가요?</div>
+    <div class="text-input-wrap">
+      <input type="number" class="text-input" id="textInput17" min="0" max="9" inputmode="numeric" placeholder="?">
+      <button class="submit-btn" id="submitBtn17" onclick="checkTextInput(17,'4')">확인!</button>
+    </div>
+    <div class="feedback" id="fb17"></div>
+  </div>
+
+  <!-- 슬라이드 19: Q13 객관식 - 순서 찾기 ⭐ -->
+  <div class="slide" data-type="q" data-score="10">
+    <div class="badge">⭐ 기본</div>
+    <div class="slide-title">다음에 올 수는?</div>
+    <div class="concept-box">
+      <div style="font-size:48px; letter-spacing:16px; color:var(--primary);">1 &nbsp; 2 &nbsp; ?</div>
+      <div style="font-size:22px; color:var(--subtext); margin-top:12px;">순서대로 세어 봐요!</div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn" onclick="checkAnswer(this,18,false)">1</button>
+      <button class="opt-btn" onclick="checkAnswer(this,18,true)">3</button>
+      <button class="opt-btn" onclick="checkAnswer(this,18,false)">5</button>
+      <button class="opt-btn" onclick="checkAnswer(this,18,false)">4</button>
+    </div>
+    <div class="feedback" id="fb18"></div>
+  </div>
+
+  <!-- 슬라이드 20: Q14 서술형 - 그림 보고 수 입력 ⭐⭐ -->
+  <div class="slide" data-type="q" data-score="25">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">직접 숫자를 써 봐요!</div>
+    <div style="display:flex; align-items:center; gap:8px; margin:8px 0;">
+      <img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" style="width:48px;height:48px;" alt="듀">
+      <div class="speech-bubble" style="font-size:20px;">듀가 별을 모았어! 몇 개인지 세어 봐!</div>
+    </div>
+    <div class="objects-row" style="font-size:48px;">
+      <div class="obj-item" style="font-size:40px;">⭐</div>
+      <div class="obj-item" style="font-size:40px;">⭐</div>
+    </div>
+    <div class="text-input-wrap">
+      <input type="number" class="text-input" id="textInput19" min="0" max="9" inputmode="numeric" placeholder="?">
+      <button class="submit-btn" id="submitBtn19" onclick="checkTextInput(19,'2')">확인!</button>
+    </div>
+    <div class="feedback" id="fb19"></div>
+  </div>
+
+  <!-- 슬라이드 21: Q15 객관식 - 스토리형 ⭐⭐ -->
+  <div class="slide" data-type="q" data-score="25">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">이야기를 읽고 맞혀 봐요</div>
+    <div class="story-scene">
+      나무에 새가 🐦🐦🐦🐦🐦 앉아 있었어요.<br>
+      그런데 🐦🐦 두 마리가 날아갔어요!<br>
+      나무에 남은 새는 몇 마리일까요?
+    </div>
+    <div class="options-row">
+      <button class="opt-btn" onclick="checkAnswer(this,20,false)">5</button>
+      <button class="opt-btn" onclick="checkAnswer(this,20,false)">2</button>
+      <button class="opt-btn" onclick="checkAnswer(this,20,true)">3</button>
+      <button class="opt-btn" onclick="checkAnswer(this,20,false)">4</button>
+    </div>
+    <div class="feedback" id="fb20"></div>
+  </div>
+
+  <!-- 슬라이드 22: Q16 서술형 - 빈칸 수열 ⭐⭐ -->
+  <div class="slide" data-type="q" data-score="25">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">빈칸에 들어갈 수를 써 봐요</div>
+    <div class="concept-box">
+      <div style="font-size:44px; letter-spacing:12px; color:var(--primary);">
+        3 &nbsp; 4 &nbsp; <span style="border-bottom:4px solid var(--primary); padding:0 12px;">?</span>
+      </div>
+      <div style="font-size:22px; color:var(--subtext); margin-top:12px;">숫자가 하나씩 커져요!</div>
+    </div>
+    <div class="text-input-wrap">
+      <input type="number" class="text-input" id="textInput21" min="0" max="9" inputmode="numeric" placeholder="?">
+      <button class="submit-btn" id="submitBtn21" onclick="checkTextInput(21,'5')">확인!</button>
+    </div>
+    <div class="feedback" id="fb21"></div>
+  </div>
+
+  <!-- 슬라이드 23: Q17 객관식 - 크기비교 ⭐⭐ -->
+  <div class="slide" data-type="q" data-score="25">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="slide-title">더 작은 수는?</div>
+    <div class="compare-box">
+      <div class="compare-num">2</div>
+      <div style="font-size:36px; color:var(--subtext);">와</div>
+      <div class="compare-num">5</div>
+    </div>
+    <div style="font-size:24px; margin:8px 0;">둘 중에 더 작은 수를 골라요</div>
+    <div class="options-row">
+      <button class="opt-btn" onclick="checkAnswer(this,22,true)">2</button>
+      <button class="opt-btn" onclick="checkAnswer(this,22,false)">5</button>
+    </div>
+    <div class="feedback" id="fb22"></div>
+  </div>
+
+  <!-- 슬라이드 24: Q18 서술형 - 조건 추론 ⭐⭐⭐ -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">조건을 읽고 수를 써 봐요</div>
+    <div class="hint-box">
+      <span class="hint-icon">💡</span> 나는 1보다 크고 4보다 작아요.<br>
+      <span class="hint-icon">💡</span> 나는 짝수가 아니에요.
+    </div>
+    <div style="font-size:22px; margin:12px 0;">나는 누구일까요? 숫자를 써 봐요!</div>
+    <div class="text-input-wrap">
+      <input type="number" class="text-input" id="textInput23" min="0" max="9" inputmode="numeric" placeholder="?">
+      <button class="submit-btn" id="submitBtn23" onclick="checkTextInput(23,'3')">확인!</button>
+    </div>
+    <div class="feedback" id="fb23"></div>
+  </div>
+
+  <!-- 슬라이드 25: Q19 객관식 - 복합추론 ⭐⭐⭐ -->
+  <div class="slide" data-type="q" data-score="50">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="slide-title">생각해서 풀어 봐요!</div>
+    <div class="concept-box">
+      <div style="font-size:22px; line-height:1.8;">
+        케이가 사탕 🍬🍬🍬을 가지고 있어요.<br>
+        듀가 케이보다 <strong>2개 더 적게</strong> 가지고 있어요.<br>
+        듀의 사탕은 몇 개일까요?
+      </div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn" onclick="checkAnswer(this,24,true)">1</button>
+      <button class="opt-btn" onclick="checkAnswer(this,24,false)">3</button>
+      <button class="opt-btn" onclick="checkAnswer(this,24,false)">5</button>
+      <button class="opt-btn" onclick="checkAnswer(this,24,false)">2</button>
+    </div>
+    <div class="feedback" id="fb24"></div>
+  </div>
+
+  <!-- 슬라이드 26: Q20 서술형 - 종합 문장제 ⭐⭐⭐⭐ -->
+  <div class="slide" data-type="q" data-score="100">
+    <div class="badge">⭐⭐⭐⭐ 최고 도전</div>
+    <div class="slide-title">도전! 스스로 풀어 봐요!</div>
+    <div class="story-scene">
+      바구니에 사과가 있어요.<br>
+      🍎 하나를 먹었더니 <strong>4개</strong>가 남았어요.<br>
+      처음에 바구니에 사과가 몇 개 있었을까요?
+    </div>
+    <div style="font-size:22px; margin:8px 0;">숫자를 직접 써 봐요!</div>
+    <div class="text-input-wrap">
+      <input type="number" class="text-input" id="textInput25" min="0" max="9" inputmode="numeric" placeholder="?">
+      <button class="submit-btn" id="submitBtn25" onclick="checkTextInput(25,'5')">확인!</button>
+    </div>
+    <div class="feedback" id="fb25"></div>
+  </div>
+
+  <!-- 슬라이드 27: 결과 -->
   <div class="slide" data-type="result">
     <div class="result-card">
       <div style="font-size:28px; margin-bottom:8px;">학습 완료!</div>
@@ -603,6 +791,37 @@ function fillBlank(btn, slideIdx, val, isCorrect) {
   }
 }
 
+// ===== 서술형 입력 체크 =====
+function checkTextInput(slideIdx, correctAnswer) {
+  if(answered[slideIdx]) return;
+  const input = document.getElementById('textInput'+slideIdx);
+  const fb = document.getElementById('fb'+slideIdx);
+  const btn = document.getElementById('submitBtn'+slideIdx);
+  const val = input.value.trim();
+  if(val === '') { fb.textContent = '숫자를 써 주세요!'; fb.className = 'feedback bad'; return; }
+  if(val === correctAnswer) {
+    answered[slideIdx] = true;
+    input.classList.add('correct');
+    input.readOnly = true;
+    btn.disabled = true;
+    playSound('correct');
+    correctCount++;
+    const sc = parseInt(slides[slideIdx].dataset.score)||10;
+    score += sc;
+    fb.textContent = '정답이에요! 아주 잘했어요! 🌟';
+    fb.className = 'feedback good';
+    updateCombo(true);
+    totalQ++;
+  } else {
+    input.classList.add('wrong');
+    playSound('wrong');
+    fb.textContent = '다시 생각해 봐요! 힌트를 잘 읽어 봐요.';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { input.classList.remove('wrong'); input.value=''; input.focus(); }, 600);
+  }
+}
+
 // ===== 터치 세기 =====
 let touchCounts = {};
 function touchCount(el, slideIdx) {
@@ -665,11 +884,11 @@ function showResult() {
   totalQ = correctCount > 0 ? Object.keys(answered).length : 0;
   document.getElementById('resultScore').textContent = score;
   document.getElementById('resultCombo').textContent = `최대 콤보: 🔥 ${maxCombo}`;
-  document.getElementById('resultCorrect').textContent = `맞힌 문제: ${correctCount} / 10`;
+  document.getElementById('resultCorrect').textContent = `맞힌 문제: ${correctCount} / 20`;
   let msg = '', speech = '';
-  if(score >= 200) { msg = '🏆 완벽해요!'; speech = '숫자 천재! 정말 대단해!'; }
-  else if(score >= 120) { msg = '🎉 아주 잘했어요!'; speech = '멋져! 거의 다 맞혔어!'; }
-  else if(score >= 60) { msg = '👍 잘했어요!'; speech = '잘했어! 조금만 더 연습하자!'; }
+  if(score >= 400) { msg = '🏆 완벽해요!'; speech = '숫자 천재! 정말 대단해!'; }
+  else if(score >= 250) { msg = '🎉 아주 잘했어요!'; speech = '멋져! 거의 다 맞혔어!'; }
+  else if(score >= 120) { msg = '👍 잘했어요!'; speech = '잘했어! 조금만 더 연습하자!'; }
   else { msg = '💪 다시 도전해 봐요!'; speech = '괜찮아! 다시 해보면 잘할 수 있어!'; }
   document.getElementById('resultMsg').textContent = msg;
   document.getElementById('resultSpeech').textContent = speech;
