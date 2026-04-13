@@ -5,7 +5,11 @@
 const KEDU_SUPABASE_URL = 'https://fesxtgyhfpucazpenksp.supabase.co';
 const KEDU_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlc3h0Z3loZnB1Y2F6cGVua3NwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjQzMDUsImV4cCI6MjA5MDg0MDMwNX0.H2HlS91yagFavrp70xz3QA5JodRcGOe3iUJWsR4An1g';
 
-// Supabase 클라이언트 초기화 (CDN 사용 시)
-// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-// 위 스크립트 로드 후 아래 사용:
-// const supabase = supabase.createClient(KEDU_SUPABASE_URL, KEDU_SUPABASE_ANON_KEY);
+// 싱글턴 클라이언트 (중복 생성 방지)
+let _keduDb = null;
+function getKeduDb() {
+  if (!_keduDb) {
+    _keduDb = window.supabase.createClient(KEDU_SUPABASE_URL, KEDU_SUPABASE_ANON_KEY);
+  }
+  return _keduDb;
+}

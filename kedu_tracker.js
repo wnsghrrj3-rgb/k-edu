@@ -14,13 +14,13 @@
   // Supabase 준비 대기
   function init(){
     if(typeof window.supabase === 'undefined' ||
-       typeof KEDU_SUPABASE_URL === 'undefined') {
+       typeof getKeduDb === 'undefined') {
       setTimeout(init, 200);
       return;
     }
 
     try {
-      const client = window.supabase.createClient(KEDU_SUPABASE_URL, KEDU_SUPABASE_ANON_KEY);
+      const client = getKeduDb();
       const path = location.pathname;
 
       // ==========================================
