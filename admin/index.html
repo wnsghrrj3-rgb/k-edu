@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 슈퍼 어드민</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
+  --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#7E57C2;
+  --bg:#F0F2F5;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
+  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text)}
+
+/* NAV */
+.nav{background:linear-gradient(135deg,#1A202C,#2D3748);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{font-family:'Jua',sans-serif;font-size:22px;display:flex;align-items:center;gap:8px;text-decoration:none;color:#fff}
+.nav-logo .logo-text{background:linear-gradient(135deg,#5B8EF8,#FF85A1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-badge{font-size:10px;background:var(--red);color:#fff;padding:3px 10px;border-radius:50px;font-weight:700;letter-spacing:.5px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-name{font-size:13px;color:rgba(255,255,255,.7)}
+.nav-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;font-size:13px;color:rgba(255,255,255,.8);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.nav-btn:hover{background:rgba(255,255,255,.2)}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:24px}
+.login-card{background:var(--card);border-radius:24px;padding:48px 40px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.1);text-align:center}
+.login-logo{font-family:'Jua',sans-serif;font-size:36px;margin-bottom:4px}
+.login-logo span{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.login-sub{font-size:14px;color:var(--sub);margin-bottom:8px}
+.login-warn{font-size:12px;color:var(--red);background:#FFF5F5;padding:8px 14px;border-radius:8px;margin-bottom:24px}
+.form-group{margin-bottom:16px;text-align:left}
+.form-label{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:6px;display:block}
+.form-input{width:100%;height:48px;border:2px solid var(--border);border-radius:12px;padding:0 16px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--primary)}
+.form-btn{width:100%;height:50px;background:linear-gradient(135deg,#1A202C,#2D3748);color:#fff;border:none;border-radius:12px;font-family:'Jua',sans-serif;font-size:18px;cursor:pointer;margin-top:8px;transition:opacity .15s}
+.form-btn:hover{opacity:.9}
+.form-btn:disabled{opacity:.5;cursor:not-allowed}
+.form-err{font-size:13px;color:var(--red);margin-top:10px;min-height:20px}
+
+/* DASHBOARD */
+.dash{display:none;max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+.dash.active{display:block}
+.section-title{font-family:'Jua',sans-serif;font-size:20px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* STAT CARDS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .15s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--sc,var(--primary))}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.stat-change{font-size:12px;font-weight:600;padding:3px 8px;border-radius:50px}
+.stat-change.up{color:var(--green);background:#F0FFF4}
+.stat-change.neutral{color:var(--sub);background:var(--bg)}
+.stat-num{font-family:'Jua',sans-serif;font-size:32px;color:var(--text);line-height:1.1}
+.stat-label{font-size:13px;color:var(--sub);margin-top:4px}
+
+/* CHART */
+.chart-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;margin-bottom:32px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.chart-header h3{font-family:'Jua',sans-serif;font-size:18px}
+.chart-tabs{display:flex;gap:4px;background:var(--bg);border-radius:8px;padding:3px}
+.chart-tab{padding:6px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;background:transparent;color:var(--sub);transition:all .15s}
+.chart-tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.chart-area{position:relative;height:220px;display:flex;align-items:flex-end;gap:0;padding:0 0 28px}
+.chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+.chart-bar{width:60%;max-width:48px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,var(--primary),#85B0FF);min-height:4px;transition:height .5s cubic-bezier(.4,0,.2,1);position:relative;cursor:pointer}
+.chart-bar:hover{opacity:.85}
+.chart-bar .tooltip{position:absolute;top:-32px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:11px;padding:4px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.chart-bar:hover .tooltip{opacity:1}
+.chart-bar.today{background:linear-gradient(180deg,var(--pink),#FFB3C6)}
+.chart-label{font-size:11px;color:var(--sub);margin-top:8px;position:absolute;bottom:-24px}
+.chart-zero{position:absolute;bottom:28px;left:0;right:0;border-bottom:1px dashed var(--border)}
+
+/* TABS for content sections */
+.content-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.content-tab{padding:8px 18px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;background:var(--card);color:var(--sub);transition:all .15s}
+.content-tab.active{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+
+/* TABLE */
+.table-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:32px}
+.table-header{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.table-header h3{font-family:'Jua',sans-serif;font-size:18px}
+.table-actions{display:flex;gap:8px;align-items:center}
+.table-search{height:36px;padding:0 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;width:200px}
+.table-search:focus{border-color:var(--primary)}
+.table-badge{font-size:12px;padding:4px 10px;border-radius:50px;font-weight:600}
+.table-badge.free{background:#F0FFF4;color:var(--green)}
+.table-badge.premium{background:#FFF5F5;color:var(--red)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th{text-align:left;padding:12px 20px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;background:var(--bg);border-bottom:1px solid var(--border)}
+td{padding:12px 20px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFC}
+
+/* TOGGLE */
+.toggle{position:relative;width:44px;height:24px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:var(--border);border-radius:24px;transition:background .2s}
+.toggle .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle input:checked+.slider{background:var(--primary)}
+.toggle input:checked+.slider::before{transform:translateX(20px)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 20px;color:var(--sub)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .4s ease both}
+
+/* TEACHER LIST */
+.teacher-row{display:flex;align-items:center;gap:12px}
+.teacher-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary)}
+.admin-tag{font-size:10px;background:var(--red);color:#fff;padding:2px 8px;border-radius:50px;font-weight:700}
+
+@media(max-width:768px){
+  .stats{grid-template-columns:1fr 1fr}
+  .nav{padding:0 16px}
+  .dash{padding:24px 16px 48px}
+  .chart-area{height:160px}
+}
+@media(max-width:480px){
+  .stats{grid-template-columns:1fr}
+  .login-card{padding:32px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="../index.html">
+    <span class="logo-text">K-edu</span>
+    <span class="nav-badge">ADMIN</span>
+  </a>
+  <div class="nav-right" id="nav-right" style="display:none">
+    <span class="nav-name" id="nav-name"></span>
+    <a class="nav-btn" href="../teacher/index.html">교사 대시보드</a>
+    <button class="nav-btn" onclick="doLogout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><span>K-edu</span></div>
+    <div class="login-sub">슈퍼 어드민</div>
+    <div class="login-warn">⚠️ 관리자 권한이 필요합니다</div>
+    <div class="form-group">
+      <label class="form-label">이메일</label>
+      <input class="form-input" type="email" id="login-email" placeholder="admin@keduclass.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input class="form-input" type="password" id="login-pw" placeholder="비밀번호">
+    </div>
+    <button class="form-btn" id="login-btn" onclick="doLogin()">관리자 로그인</button>
+    <div class="form-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dashboard">
+
+  <!-- STATS -->
+  <div class="section-title fade-up">📊 오늘의 현황</div>
+  <div class="stats">
+    <div class="stat-card fade-up" style="--sc:var(--primary)">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:var(--primary-light)">👀</div>
+        <span class="stat-change neutral" id="visit-change">-</span>
+      </div>
+      <div class="stat-num" id="stat-visits-today">-</div>
+      <div class="stat-label">오늘 방문자</div>
+    </div>
+    <div class="stat-card fade-up" style="--sc:var(--green)">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:#F0FFF4">👨‍🎓</div>
+      </div>
+      <div class="stat-num" id="stat-total-students">-</div>
+      <div class="stat-label">전체 학생</div>
+    </div>
+    <div class="stat-card fade-up" style="--sc:var(--orange)">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:#FFFAF0">👩‍🏫</div>
+      </div>
+      <div class="stat-num" id="stat-total-teachers">-</div>
+      <div class="stat-label">전체 교사</div>
+    </div>
+    <div class="stat-card fade-up" style="--sc:var(--purple)">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:#F5F0FF">📚</div>
+      </div>
+      <div class="stat-num" id="stat-total-classes">-</div>
+      <div class="stat-label">활성 학급</div>
+    </div>
+  </div>
+
+  <!-- VISITOR CHART -->
+  <div class="chart-wrap fade-up">
+    <div class="chart-header">
+      <h3>📈 방문자 추이</h3>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="loadChart(7)">7일</button>
+        <button class="chart-tab" onclick="loadChart(14)">14일</button>
+        <button class="chart-tab" onclick="loadChart(30)">30일</button>
+      </div>
+    </div>
+    <div style="position:relative">
+      <div class="chart-zero"></div>
+      <div class="chart-area" id="chart-area">
+        <!-- bars dynamically generated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT MANAGEMENT -->
+  <div class="section-title fade-up">📦 콘텐츠 관리</div>
+  <div class="content-tabs" id="content-tabs">
+    <button class="content-tab active" data-cat="all" onclick="filterContent('all',this)">전체</button>
+    <button class="content-tab" data-cat="korean" onclick="filterContent('korean',this)">국어</button>
+    <button class="content-tab" data-cat="math" onclick="filterContent('math',this)">수학</button>
+    <button class="content-tab" data-cat="english" onclick="filterContent('english',this)">영어</button>
+    <button class="content-tab" data-cat="premium" onclick="filterContent('premium',this)">프리미엄만</button>
+  </div>
+  <div class="table-wrap fade-up">
+    <div class="table-header">
+      <h3>콘텐츠 목록</h3>
+      <div class="table-actions">
+        <input class="table-search" type="text" placeholder="🔍 검색..." id="content-search" oninput="searchContent()">
+        <span class="table-badge free" id="content-count">0개</span>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>제목</th>
+          <th>카테고리</th>
+          <th>학년</th>
+          <th>난이도</th>
+          <th>프리미엄</th>
+          <th>상태</th>
+        </tr></thead>
+        <tbody id="content-body">
+          <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📦</div><p>contents 테이블에 데이터를 등록해주세요.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TEACHER LIST -->
+  <div class="section-title fade-up">👩‍🏫 교사 목록</div>
+  <div class="table-wrap fade-up">
+    <div class="table-header">
+      <h3>등록된 교사</h3>
+      <span class="table-badge free" id="teacher-count">0명</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th>이름</th>
+          <th>이메일</th>
+          <th>학급코드</th>
+          <th>학생 수</th>
+          <th>가입일</th>
+          <th>권한</th>
+        </tr></thead>
+        <tbody id="teacher-body">
+          <tr><td colspan="6"><div class="empty-state"><p>등록된 교사가 없습니다.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// Supabase
+// =============================================
+const db = window.supabase.createClient(KEDU_SUPABASE_URL, KEDU_SUPABASE_ANON_KEY);
+let currentAdmin = null;
+let allContents = [];
+let currentFilter = 'all';
+
+// =============================================
+// 로그인
+// =============================================
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if(!email || !pw){ setErr('이메일과 비밀번호를 입력해주세요.'); return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled=true; btn.textContent='확인 중...';
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+
+  if(error){
+    setErr('이메일 또는 비밀번호가 올바르지 않습니다.');
+    btn.disabled=false; btn.textContent='관리자 로그인';
+    return;
+  }
+
+  // 관리자 권한 확인
+  const { data: teacher } = await db.from('teachers')
+    .select('*')
+    .eq('user_id', data.user.id)
+    .single();
+
+  if(!teacher || !teacher.is_admin){
+    setErr('관리자 권한이 없습니다.');
+    await db.auth.signOut();
+    btn.disabled=false; btn.textContent='관리자 로그인';
+    return;
+  }
+
+  currentAdmin = teacher;
+  await initDashboard();
+}
+
+async function doLogout(){
+  await db.auth.signOut();
+  currentAdmin = null;
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('nav-right').style.display = 'none';
+}
+
+// =============================================
+// 대시보드 초기화
+// =============================================
+async function initDashboard(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+  document.getElementById('nav-right').style.display = 'flex';
+  document.getElementById('nav-name').textContent = currentAdmin.name + ' (관리자)';
+
+  // 병렬 로드
+  await Promise.all([
+    loadStats(),
+    loadChart(7),
+    loadContents(),
+    loadTeachers()
+  ]);
+}
+
+// =============================================
+// 통계 카드
+// =============================================
+async function loadStats(){
+  const today = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+
+  // 오늘 방문자
+  const { count: todayVisits } = await db.from('page_visits')
+    .select('*', { count: 'exact', head: true })
+    .gte('visited_at', today + 'T00:00:00')
+    .lt('visited_at', today + 'T23:59:59');
+
+  // 어제 방문자 (비교용)
+  const { count: yesterdayVisits } = await db.from('page_visits')
+    .select('*', { count: 'exact', head: true })
+    .gte('visited_at', yesterday + 'T00:00:00')
+    .lt('visited_at', yesterday + 'T23:59:59');
+
+  document.getElementById('stat-visits-today').textContent = todayVisits || 0;
+
+  // 변화율
+  const change = document.getElementById('visit-change');
+  if(yesterdayVisits && yesterdayVisits > 0){
+    const diff = ((todayVisits - yesterdayVisits) / yesterdayVisits * 100).toFixed(0);
+    if(diff > 0){
+      change.className = 'stat-change up';
+      change.textContent = '▲ ' + diff + '%';
+    } else if(diff < 0){
+      change.className = 'stat-change';
+      change.style.cssText = 'color:var(--red);background:#FFF5F5';
+      change.textContent = '▼ ' + Math.abs(diff) + '%';
+    } else {
+      change.textContent = '→ 동일';
+    }
+  }
+
+  // 전체 학생
+  const { count: totalStudents } = await db.from('students')
+    .select('*', { count: 'exact', head: true });
+  document.getElementById('stat-total-students').textContent = totalStudents || 0;
+
+  // 전체 교사
+  const { count: totalTeachers } = await db.from('teachers')
+    .select('*', { count: 'exact', head: true });
+  document.getElementById('stat-total-teachers').textContent = totalTeachers || 0;
+
+  // 활성 학급
+  const { count: totalClasses } = await db.from('class_codes')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  document.getElementById('stat-total-classes').textContent = totalClasses || 0;
+}
+
+// =============================================
+// 방문자 차트
+// =============================================
+async function loadChart(days){
+  // 탭 활성화
+  document.querySelectorAll('.chart-tab').forEach(t => {
+    t.classList.toggle('active', parseInt(t.textContent) === days);
+  });
+
+  const chartArea = document.getElementById('chart-area');
+  const dates = [];
+  const now = new Date();
+
+  for(let i = days-1; i >= 0; i--){
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+
+  // 기간 내 방문 데이터 조회
+  const startDate = dates[0] + 'T00:00:00';
+  const { data: visits } = await db.from('page_visits')
+    .select('visited_at')
+    .gte('visited_at', startDate);
+
+  // 날짜별 카운트
+  const counts = {};
+  dates.forEach(d => counts[d] = 0);
+
+  (visits || []).forEach(v => {
+    const day = v.visited_at.slice(0,10);
+    if(counts[day] !== undefined) counts[day]++;
+  });
+
+  const values = dates.map(d => counts[d]);
+  const maxVal = Math.max(...values, 1);
+  const todayStr = now.toISOString().slice(0,10);
+
+  chartArea.innerHTML = dates.map((d, i) => {
+    const pct = (values[i] / maxVal * 100);
+    const height = Math.max(pct * 1.8, 4); // scale to chart height
+    const isToday = d === todayStr;
+    const dayLabel = days <= 14
+      ? new Date(d).toLocaleDateString('ko-KR', { month:'numeric', day:'numeric' })
+      : (i % Math.ceil(days/10) === 0 ? new Date(d).toLocaleDateString('ko-KR', { month:'numeric', day:'numeric' }) : '');
+
+    return `<div class="chart-bar-wrap">
+      <div class="chart-bar ${isToday?'today':''}" style="height:${height}px">
+        <div class="tooltip">${d.slice(5)} · ${values[i]}명</div>
+      </div>
+      ${dayLabel ? `<span class="chart-label">${dayLabel}</span>` : '<span class="chart-label"></span>'}
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// 콘텐츠 관리
+// =============================================
+async function loadContents(){
+  const { data } = await db.from('contents')
+    .select('*')
+    .order('category')
+    .order('grade')
+    .order('file_path');
+
+  allContents = data || [];
+  renderContents();
+}
+
+function renderContents(){
+  let filtered = allContents;
+  const search = (document.getElementById('content-search')?.value || '').toLowerCase();
+
+  if(currentFilter === 'premium'){
+    filtered = filtered.filter(c => c.is_premium);
+  } else if(currentFilter !== 'all'){
+    filtered = filtered.filter(c => c.category === currentFilter);
+  }
+
+  if(search){
+    filtered = filtered.filter(c =>
+      c.title.toLowerCase().includes(search) ||
+      c.file_path.toLowerCase().includes(search) ||
+      (c.sub_category || '').toLowerCase().includes(search)
+    );
+  }
+
+  document.getElementById('content-count').textContent = filtered.length + '개';
+
+  const tbody = document.getElementById('content-body');
+
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>해당 조건의 콘텐츠가 없습니다.</p></div></td></tr>';
+    return;
+  }
+
+  const catNames = { korean:'국어', math:'수학', english:'영어', science:'과학', social:'사회' };
+  const stars = n => '⭐'.repeat(n);
+
+  tbody.innerHTML = filtered.map(c => `
+    <tr>
+      <td><strong>${c.title}</strong><br><span style="font-size:11px;color:var(--sub)">${c.file_path}</span></td>
+      <td>${catNames[c.category] || c.category}</td>
+      <td>${c.grade ? c.grade + '학년' : '전체'}</td>
+      <td>${stars(c.difficulty)}</td>
+      <td>
+        <label class="toggle">
+          <input type="checkbox" ${c.is_premium?'checked':''} onchange="togglePremium(${c.id}, this.checked)">
+          <span class="slider"></span>
+        </label>
+      </td>
+      <td><span class="table-badge ${c.is_active?'free':'premium'}">${c.is_active?'활성':'비활성'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function filterContent(cat, el){
+  currentFilter = cat;
+  document.querySelectorAll('.content-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderContents();
+}
+
+function searchContent(){ renderContents(); }
+
+async function togglePremium(id, checked){
+  const { error } = await db.from('contents').update({ is_premium: checked }).eq('id', id);
+
+  if(error){
+    showToast('❌ 변경 실패: ' + error.message);
+    return;
+  }
+
+  // 로컬 데이터 업데이트
+  const item = allContents.find(c => c.id === id);
+  if(item) item.is_premium = checked;
+
+  showToast(checked ? '🔒 프리미엄으로 변경' : '🔓 무료로 변경');
+}
+
+// =============================================
+// 교사 목록
+// =============================================
+async function loadTeachers(){
+  const { data: teachers } = await db.from('teachers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if(!teachers || teachers.length === 0){
+    document.getElementById('teacher-count').textContent = '0명';
+    return;
+  }
+
+  document.getElementById('teacher-count').textContent = teachers.length + '명';
+
+  // 각 교사의 학급코드와 학생 수 조회
+  const tbody = document.getElementById('teacher-body');
+  let html = '';
+
+  for(const t of teachers){
+    const { data: codes } = await db.from('class_codes')
+      .select('code, id')
+      .eq('teacher_id', t.id)
+      .eq('is_active', true)
+      .limit(1);
+
+    let studentCount = 0;
+    let codeStr = '-';
+    if(codes && codes.length > 0){
+      codeStr = codes[0].code;
+      const { count } = await db.from('students')
+        .select('*', { count:'exact', head:true })
+        .eq('class_code_id', codes[0].id);
+      studentCount = count || 0;
+    }
+
+    const initial = t.name.charAt(0);
+    const created = new Date(t.created_at).toLocaleDateString('ko-KR');
+
+    html += `<tr>
+      <td><div class="teacher-row"><div class="teacher-avatar">${initial}</div><strong>${t.name}</strong></div></td>
+      <td style="font-size:12px;color:var(--sub)">${t.user_id ? t.user_id.slice(0,8)+'...' : '-'}</td>
+      <td><code style="background:var(--bg);padding:2px 8px;border-radius:4px;font-size:13px">${codeStr}</code></td>
+      <td>${studentCount}명</td>
+      <td>${created}</td>
+      <td>${t.is_admin ? '<span class="admin-tag">ADMIN</span>' : '교사'}</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = html;
+}
+
+// =============================================
+// 유틸
+// =============================================
+function setErr(msg){ document.getElementById('login-err').textContent = msg; }
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// =============================================
+// 초기화
+// =============================================
+(async()=>{
+  const { data: { session } } = await db.auth.getSession();
+  if(session?.user){
+    const { data: teacher } = await db.from('teachers')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if(teacher?.is_admin){
+      currentAdmin = teacher;
+      await initDashboard();
+    }
+  }
+
+  document.getElementById('login-pw').addEventListener('keydown', e=>{
+    if(e.key==='Enter') doLogin();
+  });
+})();
+</script>
+</body>
+</html>
