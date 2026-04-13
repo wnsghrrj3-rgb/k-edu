@@ -28,6 +28,17 @@
 .result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px;max-width:500px;width:100%;text-align:center;}.result-score{font-size:64px;color:var(--primary);margin:12px 0;}.result-msg{font-size:28px;margin:8px 0;}.star-row{font-size:40px;margin:8px 0;}.combo-display{font-size:22px;color:var(--secondary);}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.anim-fadeUp{animation:fadeUp .5s ease both;}
 @media(max-width:480px){.q-title{font-size:21px}.opt-btn{font-size:26px;padding:10px 14px;}.char-bubble{font-size:20px;}}
+
+.text-input-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}
+.text-input{width:120px;height:80px;border:4px solid var(--border);border-radius:16px;font-size:48px;font-family:'Jua',sans-serif;text-align:center;color:var(--primary);background:var(--card);outline:none;transition:border-color .3s}
+.text-input:focus{border-color:var(--primary)}
+.text-input.correct{border-color:var(--green);background:var(--green-light)}
+.text-input.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.submit-btn{background:var(--primary);color:#fff;border:none;border-radius:16px;padding:12px 24px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}
+.submit-btn:active{transform:scale(.95)}
+.submit-btn:disabled{opacity:.4;cursor:default}
+.hint-box{background:var(--yellow-light);border-radius:16px;padding:16px;max-width:500px;width:100%;margin:8px 0;font-size:22px;line-height:1.6;text-align:left}
+.hint-box .hint-icon{margin-right:4px}
 </style>
 </head>
 <body>
@@ -62,6 +73,112 @@
 <div class="slide" data-type="q" data-correct="0" data-score="50"><div class="card"><div class="badge">⭐⭐⭐</div><div class="q-title">📏 가=클립7, 나=클립4, 다=클립9<br>가와 나의 차이와<br>다와 가의 차이 중 어느 것이 더 클까요?</div><div style="font-size:20px;color:var(--subtext);">가-나=? vs 다-가=?</div><div class="options"><button class="opt-btn" style="font-size:22px;" onclick="check(this,8,0)">가와 나의 차이</button><button class="opt-btn" style="font-size:22px;" onclick="check(this,8,0)">다와 가의 차이</button><button class="opt-btn" style="font-size:22px;" onclick="check(this,8,0)">같아요</button></div><div class="feedback" id="fb8"></div></div></div>
 
 <!-- 결과 -->
+
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐</div>
+  <div class="q-title">간접 비교: 가>나, 나>다이면 가장 짧은 것은?</div>
+  <div class="options">
+    <button class="opt-btn" onclick="check(this,9,0)">다</button>
+    <button class="opt-btn" onclick="check(this,9,0)">가</button>
+    <button class="opt-btn" onclick="check(this,9,0)">나</button>
+  </div>
+  <div class="feedback" id="fb9"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐</div>
+  <div class="q-title">단위 비교: 가 = 블록 10개, 나 = 블록 7개. 가가 나보다 몇 개 더 길어요?</div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput10" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn10" onclick="checkTextInput(10,'3')">확인!</button>
+  </div>
+  <div class="feedback" id="fb10"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
+  <div class="q-title">추론: 같은 컵 5번 = 통 가, 같은 컵 9번 = 통 나. 더 큰 통은?</div>
+  <div class="options">
+    <button class="opt-btn" onclick="check(this,11,0)">통 나</button>
+    <button class="opt-btn" onclick="check(this,11,0)">통 가</button>
+    <button class="opt-btn" onclick="check(this,11,0)">같다</button>
+  </div>
+  <div class="feedback" id="fb11"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐</div>
+  <div class="q-title">무게 계산: 귤 2개 = 사과 1개. 귤 8개 = 사과 몇 개?</div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput12" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn12" onclick="checkTextInput(12,'4')">확인!</button>
+  </div>
+  <div class="feedback" id="fb12"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="60">
+  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
+  <div class="q-title">넓이 추론: 가 = 12칸, 나 = 12칸이면 넓이는?</div>
+  <div class="options">
+    <button class="opt-btn" onclick="check(this,13,0)">같다</button>
+    <button class="opt-btn" onclick="check(this,13,0)">가가 넓다</button>
+    <button class="opt-btn" onclick="check(this,13,0)">나가 넓다</button>
+  </div>
+  <div class="feedback" id="fb13"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐</div>
+  <div class="q-title">비교 계산: 키: 민수 = 블록 9개, 지호 = 블록 6개. 차이는?</div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput14" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn14" onclick="checkTextInput(14,'3')">확인!</button>
+  </div>
+  <div class="feedback" id="fb14"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="60">
+  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
+  <div class="q-title">논리: 가>나>다, 다보다 긴 것은 몇 개?</div>
+  <div class="options">
+    <button class="opt-btn" onclick="check(this,15,0)">2</button>
+    <button class="opt-btn" onclick="check(this,15,0)">1</button>
+    <button class="opt-btn" onclick="check(this,15,0)">3</button>
+  </div>
+  <div class="feedback" id="fb15"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-score="60">
+  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
+  <div class="q-title">역추론: 연필+지우개 = 블록 10개, 연필 = 블록 7개. 지우개 = 블록 몇 개?</div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput16" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn16" onclick="checkTextInput(16,'3')">확인!</button>
+  </div>
+  <div class="feedback" id="fb16"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card"><div class="badge">⭐⭐⭐</div>
+  <div class="q-title">담기: 작은 컵 3번=큰 컵 1번이면, 작은 컵 9번=큰 컵 몇 번?</div>
+  <div class="options">
+    <button class="opt-btn" onclick="check(this,17,0)">3번</button>
+    <button class="opt-btn" onclick="check(this,17,0)">6번</button>
+    <button class="opt-btn" onclick="check(this,17,0)">9번</button>
+  </div>
+  <div class="feedback" id="fb17"></div></div>
+</div>
+
+<div class="slide" data-type="q" data-score="70">
+  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
+  <div class="q-title">종합: 가 줄넘기=블록 15개, 나 줄넘기=블록 11개. 차이는?</div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput18" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn18" onclick="checkTextInput(18,'4')">확인!</button>
+  </div>
+  <div class="feedback" id="fb18"></div></div>
+</div>
+
 <div class="slide" data-type="result"><div class="result-card anim-fadeUp"><div class="track-badge">Track B · 심화</div><div style="font-size:28px;color:var(--primary);">심화 완료!</div><div style="font-size:56px;margin:8px;">🧠🏆</div><div class="result-score" id="finalScore">0점</div><div class="star-row" id="finalStars"></div><div class="result-msg" id="finalMsg"></div><div class="combo-display" id="finalCombo"></div></div></div>
 
 </div>
@@ -76,11 +193,30 @@ const slides=document.querySelectorAll('.slide');let cur=0,score=0,combo=0,maxCo
 function showSlide(n){slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i<n)s.classList.add('left');else if(i>n)s.classList.add('right');else s.classList.add('active');});document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===slides.length-1?'끝':'다음';document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;if(n===slides.length-1)showResult();}
 function move(d){playSound('click');const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);}}
 let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?move(1):move(-1);}});
-const cM={1:'가>나>다>라, 라가 가장 짧아요! 👏',2:'고양이<토끼<강아지, 강아지가 무거워요! 🐶',3:'라는 나와 다 사이! 가→나→라→다 🎉',4:'사탕3=초콜릿1이니 6÷3=2개! 🍫',5:'둘 다 12칸! 같아요! 🎉',6:'가(5컵)<나(8컵)이니 아직 안 차요! 💧',7:'가방>공>모자, 가방이 더 무거워요! 🎒',8:'7-4=3 vs 9-7=2, 가와 나 차이가 더 커요! 🧮'};
-const wM={1:'가>나>다>라에서 가장 끝은?',2:'가벼운→무거운 순서를 생각해요!',3:'라는 나보다 짧고 다보다 길어요!',4:'사탕 3개=초콜릿 1개, 6개면?',5:'12와 12를 비교하면?',6:'5컵을 8컵 통에 부으면?',7:'가방>공>모자 관계를 따져보세요!',8:'7-4와 9-7을 각각 계산해 보세요!'};
+const cM={1:'가>나>다>라, 라가 가장 짧아요! 👏',2:'고양이<토끼<강아지, 강아지가 무거워요! 🐶',3:'라는 나와 다 사이! 가→나→라→다 🎉',4:'사탕3=초콜릿1이니 6÷3=2개! 🍫',5:'둘 다 12칸! 같아요! 🎉',6:'가(5컵)<나(8컵)이니 아직 안 차요! 💧',7:'가방>공>모자, 가방이 더 무거워요! 🎒',8:'7-4=3 vs 9-7=2, 가와 나 차이가 더 커요! 🧮',9:'다 맞아요! 👏',11:'통 나 맞아요! 👏',13:'같다 맞아요! 👏',15:'2 맞아요! 👏',17:'3번 맞아요! 👏'};
+const wM={1:'가>나>다>라에서 가장 끝은?',2:'가벼운→무거운 순서를 생각해요!',3:'라는 나보다 짧고 다보다 길어요!',4:'사탕 3개=초콜릿 1개, 6개면?',5:'12와 12를 비교하면?',6:'5컵을 8컵 통에 부으면?',7:'가방>공>모자 관계를 따져보세요!',8:'7-4와 9-7을 각각 계산해 보세요!',9:'다시 생각해 보세요!',11:'다시 생각해 보세요!',13:'다시 생각해 보세요!',15:'다시 생각해 보세요!',17:'다시 생각해 보세요!'};
 function check(btn,si,ci){if(answered.has(si))return;const bs=btn.parentElement.querySelectorAll('.opt-btn');const idx=Array.from(bs).indexOf(btn);const fb=document.getElementById('fb'+si);if(idx===ci){btn.classList.add('correct');bs.forEach(b=>{if(b!==btn)b.classList.add('disabled');});fb.innerHTML='<span class="fb-correct">'+(cM[si]||'정답!')+'</span>';playSound('correct');addScore(si);}else{btn.classList.add('wrong');fb.innerHTML='<span class="fb-wrong">'+(wM[si]||'다시!')+'</span>';playSound('wrong');setTimeout(()=>{btn.classList.remove('wrong');fb.innerHTML='';},1200);}}
 function addScore(si){if(answered.has(si))return;answered.add(si);score+=parseInt(slides[si].dataset.score)||0;combo++;if(combo>maxCombo)maxCombo=combo;}
-function showResult(){const total=400,pct=Math.round(score/total*100);document.getElementById('finalScore').textContent=score+'점';let s='';if(pct>=90)s='⭐⭐⭐';else if(pct>=70)s='⭐⭐';else if(pct>=40)s='⭐';document.getElementById('finalStars').textContent=s;let m='';if(pct>=90)m='심화 마스터! 🏆';else if(pct>=70)m='대단해요! 💪';else if(pct>=40)m='잘하고 있어요!';else m='다시 도전! 😊';document.getElementById('finalMsg').textContent=m;document.getElementById('finalCombo').textContent=maxCombo>1?'최대 콤보: '+maxCombo+'🔥':'';}
+
+function checkTextInput(si, correct) {
+  if(answered.has(si)) return;
+  const inp = document.getElementById('textInput'+si);
+  const fb = document.getElementById('fb'+si);
+  const btn = document.getElementById('submitBtn'+si);
+  const val = inp.value.trim();
+  if(val === '') { fb.innerHTML = '<span class="fb-wrong">답을 써 주세요!</span>'; return; }
+  if(val === correct) {
+    inp.classList.add('correct'); inp.readOnly = true; btn.disabled = true;
+    fb.innerHTML = '<span class="fb-correct">정답! 🌟</span>';
+    playSound('correct'); addScore(si);
+  } else {
+    inp.classList.add('wrong'); playSound('wrong');
+    fb.innerHTML = '<span class="fb-wrong">다시 생각해 봐요!</span>';
+    setTimeout(() => { inp.classList.remove('wrong'); fb.innerHTML = ''; }, 1200);
+  }
+}
+
+function showResult(){const total=950,pct=Math.round(score/total*100);document.getElementById('finalScore').textContent=score+'점';let s='';if(pct>=90)s='⭐⭐⭐';else if(pct>=70)s='⭐⭐';else if(pct>=40)s='⭐';document.getElementById('finalStars').textContent=s;let m='';if(pct>=90)m='심화 마스터! 🏆';else if(pct>=70)m='대단해요! 💪';else if(pct>=40)m='잘하고 있어요!';else m='다시 도전! 😊';document.getElementById('finalMsg').textContent=m;document.getElementById('finalCombo').textContent=maxCombo>1?'최대 콤보: '+maxCombo+'🔥':'';}
 showSlide(0);
 </script>
 </body>
