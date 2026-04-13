@@ -125,6 +125,14 @@ tr:hover td{background:#FAFBFC}
 .teacher-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--primary)}
 .admin-tag{font-size:10px;background:var(--red);color:#fff;padding:2px 8px;border-radius:50px;font-weight:700}
 
+/* SESSION */
+.form-check{display:flex;align-items:center;gap:8px;margin:12px 0 4px;justify-content:flex-start}
+.form-check input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);cursor:pointer}
+.form-check label{font-size:13px;color:var(--sub);cursor:pointer;user-select:none}
+.session-bar{background:rgba(91,142,248,.1);border-bottom:1px solid rgba(91,142,248,.2);padding:6px 28px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--primary);font-weight:500;display:none}
+.session-bar.active{display:flex}
+.session-bar .timer{font-family:'Jua',sans-serif;font-size:13px}
+
 @media(max-width:768px){
   .stats{grid-template-columns:1fr 1fr}
   .nav{padding:0 16px}
@@ -167,8 +175,17 @@ tr:hover td{background:#FAFBFC}
       <input class="form-input" type="password" id="login-pw" placeholder="비밀번호">
     </div>
     <button class="form-btn" id="login-btn" onclick="doLogin()">관리자 로그인</button>
+    <div class="form-check">
+      <input type="checkbox" id="remember-me">
+      <label for="remember-me">로그인 유지</label>
+    </div>
     <div class="form-err" id="login-err"></div>
   </div>
+</div>
+
+<!-- SESSION BAR -->
+<div class="session-bar" id="session-bar">
+  🔒 세션 유지 중 · 남은 시간: <span class="timer" id="session-countdown">30:00</span>
 </div>
 
 <!-- DASHBOARD -->
@@ -329,16 +346,30 @@ async function doLogin(){
     return;
   }
 
+  // remember-me 처리
+  const remember = document.getElementById('remember-me').checked;
+  if(remember){
+    localStorage.setItem('kedu_admin_remember', 'true');
+  } else {
+    localStorage.removeItem('kedu_admin_remember');
+    sessionStorage.setItem('kedu_admin_session', 'true');
+  }
+
   currentAdmin = teacher;
   await initDashboard();
+  startSessionTimer();
 }
 
 async function doLogout(){
+  stopSessionTimer();
   await db.auth.signOut();
   currentAdmin = null;
+  localStorage.removeItem('kedu_admin_remember');
+  sessionStorage.removeItem('kedu_admin_session');
   document.getElementById('dashboard').classList.remove('active');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('nav-right').style.display = 'none';
+  document.getElementById('session-bar').classList.remove('active');
 }
 
 // =============================================
@@ -619,19 +650,80 @@ function showToast(msg){
 }
 
 // =============================================
+// 세션 타이머 (30분 비활동 시 자동 로그아웃)
+// =============================================
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30분
+let sessionTimerId = null;
+let countdownId = null;
+let sessionExpiry = 0;
+
+function startSessionTimer(){
+  const remember = localStorage.getItem('kedu_admin_remember') === 'true';
+  if(remember){
+    document.getElementById('session-bar').classList.remove('active');
+    return;
+  }
+  sessionExpiry = Date.now() + SESSION_TIMEOUT;
+  document.getElementById('session-bar').classList.add('active');
+  updateCountdown();
+  countdownId = setInterval(updateCountdown, 1000);
+  sessionTimerId = setTimeout(()=>{
+    showToast('⏰ 30분 비활동으로 자동 로그아웃됩니다.');
+    setTimeout(()=> doLogout(), 1500);
+  }, SESSION_TIMEOUT);
+}
+
+function stopSessionTimer(){
+  if(sessionTimerId){ clearTimeout(sessionTimerId); sessionTimerId = null; }
+  if(countdownId){ clearInterval(countdownId); countdownId = null; }
+}
+
+function resetActivity(){
+  if(!sessionTimerId) return;
+  stopSessionTimer();
+  startSessionTimer();
+}
+
+function updateCountdown(){
+  const remaining = Math.max(0, sessionExpiry - Date.now());
+  const min = Math.floor(remaining / 60000);
+  const sec = Math.floor((remaining % 60000) / 1000);
+  const el = document.getElementById('session-countdown');
+  if(el) el.textContent = String(min).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  if(remaining <= 0) stopSessionTimer();
+}
+
+function checkSession(){
+  const remember = localStorage.getItem('kedu_admin_remember') === 'true';
+  if(remember) return true;
+  return sessionStorage.getItem('kedu_admin_session') === 'true';
+}
+
+// 사용자 활동 감지 → 타이머 리셋
+['click','keydown','mousemove','scroll','touchstart'].forEach(evt => {
+  document.addEventListener(evt, ()=> resetActivity(), { passive: true });
+});
+
+// =============================================
 // 초기화
 // =============================================
 (async()=>{
   const { data: { session } } = await db.auth.getSession();
   if(session?.user){
-    const { data: teacher } = await db.from('teachers')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .single();
+    const remember = localStorage.getItem('kedu_admin_remember') === 'true';
+    if(remember || sessionStorage.getItem('kedu_admin_session') === 'true'){
+      const { data: teacher } = await db.from('teachers')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
 
-    if(teacher?.is_admin){
-      currentAdmin = teacher;
-      await initDashboard();
+      if(teacher?.is_admin){
+        currentAdmin = teacher;
+        await initDashboard();
+        startSessionTimer();
+      }
+    } else {
+      await db.auth.signOut();
     }
   }
 
