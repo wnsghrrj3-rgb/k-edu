@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 1학년 국어 47차시 - 이야기 속 인물 상상하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F0FF;--card:#FFFFFF;--primary:#9B6DD7;--primary-light:#EDE0FF;--secondary:#B68AE8;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#DDD0F0;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px;width:100%;max-width:620px}
+.slide-title{font-size:24px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:28px;text-align:center;margin:8px 0 14px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:28px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{width:100%;max-width:500px;padding:11px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:12px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.story-box{background:linear-gradient(135deg,#F5F0FF,#EDE0FF);border-radius:16px;padding:16px 20px;margin:10px 0;border-left:5px solid var(--primary);font-size:26px;line-height:1.8;text-align:left}
+.story-scene{font-size:48px;text-align:center;margin:8px 0}
+.desc{font-size:26px;text-align:center;color:var(--subtext);margin:6px 0;line-height:1.5}
+.thought-bubble{background:var(--primary-light);border-radius:20px;padding:14px 20px;font-size:26px;text-align:center;margin:10px auto;max-width:400px;position:relative;line-height:1.6}
+.thought-bubble::after{content:'💭';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:24px}
+.emoji-choices{display:flex;gap:14px;justify-content:center;margin-top:10px}
+.emoji-btn{font-size:56px;background:var(--card);border:3px solid var(--border);border-radius:16px;padding:10px 18px;cursor:pointer;transition:all .2s}
+.emoji-btn:hover{border-color:var(--primary);transform:scale(1.1)}
+.emoji-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.emoji-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.write-area{font-family:'Jua',sans-serif;font-size:26px;border:3px solid var(--border);border-radius:14px;padding:12px;width:100%;min-height:60px;resize:none;outline:none;text-align:center}
+.write-area:focus{border-color:var(--primary)}
+.submit-btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:8px 20px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:8px}
+.result-card{text-align:center;padding:20px}
+.result-card h2{font-size:36px;margin:10px 0}
+.result-card .emoji{font-size:80px}
+.result-card .score-big{font-size:48px;color:var(--primary)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.bounce{animation:bounce .6s ease infinite}
+.listen-btn{background:var(--primary-light);border:3px solid var(--primary);border-radius:50%;width:60px;height:60px;font-size:30px;cursor:pointer;font-family:'Jua';transition:transform .2s}
+.listen-btn:hover{transform:scale(1.1)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1/13</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreDisp">0</span></div>
+  <div class="kedu-logo">K✦</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0 인트로 -->
+<div class="slide active">
+  <div class="card" style="text-align:center">
+    <div style="font-size:80px">🐻💭</div>
+    <h1 style="font-size:34px;color:var(--primary);margin:10px 0">이야기 속 인물 상상하기</h1>
+    <p class="desc">이야기 속 인물의 마음을<br>상상해 볼까요? 🐕 Kay와 함께!</p>
+  </div>
+</div>
+
+<!-- S1 이야기 장면 1 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (1)</div>
+    <div class="story-scene">🐻🎒</div>
+    <div class="story-box">
+      아기 곰 <b>뭉치</b>는 처음으로<br>
+      숲속 학교에 가는 날이에요.<br>
+      "학교에 가면 뭘 할까?" 🤔
+    </div>
+    <button class="listen-btn" onclick="speakKo('아기 곰 뭉치는 처음으로 숲속 학교에 가는 날이에요. 학교에 가면 뭘 할까?')">🔊</button>
+  </div>
+</div>
+
+<!-- S2 이야기 장면 2 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (2)</div>
+    <div class="story-scene">🐻😰🏫</div>
+    <div class="story-box">
+      학교에 도착하니 모르는 친구들뿐이에요.<br>
+      뭉치는 구석에 혼자 서 있었어요.<br>
+      "아무도 나한테 말을 안 해…" 😢
+    </div>
+    <button class="listen-btn" onclick="speakKo('학교에 도착하니 모르는 친구들뿐이에요. 뭉치는 구석에 혼자 서 있었어요. 아무도 나한테 말을 안 해.')">🔊</button>
+  </div>
+</div>
+
+<!-- S3 이야기 장면 3 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (3)</div>
+    <div class="story-scene">🦊🐻</div>
+    <div class="story-box">
+      그때 여우 <b>별이</b>가 다가왔어요.<br>
+      "안녕! 나는 별이야. 같이 놀래?" 😊<br>
+      뭉치는 눈이 동그래졌어요.
+    </div>
+    <button class="listen-btn" onclick="speakKo('그때 여우 별이가 다가왔어요. 안녕! 나는 별이야. 같이 놀래? 뭉치는 눈이 동그래졌어요.')">🔊</button>
+  </div>
+</div>
+
+<!-- S4 이야기 장면 4 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (4)</div>
+    <div class="story-scene">🐻🦊😄</div>
+    <div class="story-box">
+      뭉치와 별이는 함께 공놀이를 했어요.<br>
+      "학교는 정말 재미있는 곳이구나!"<br>
+      뭉치는 활짝 웃었답니다. 😄🎉
+    </div>
+    <button class="listen-btn" onclick="speakKo('뭉치와 별이는 함께 공놀이를 했어요. 학교는 정말 재미있는 곳이구나! 뭉치는 활짝 웃었답니다.')">🔊</button>
+  </div>
+</div>
+
+<!-- S5 Q1: 인물 파악 ⭐ -->
+<div class="slide" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> 문제 1</div>
+    <div class="question-text">이 이야기의 주인공은 누구인가요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">🐻 아기 곰 뭉치</button>
+      <button class="choice-btn" onclick="answer(this,1)">🦊 여우 별이</button>
+      <button class="choice-btn" onclick="answer(this,2)">🐰 토끼 솜이</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6 Q2: 표정 고르기 ⭐ -->
+<div class="slide" data-score="10">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐</span> 문제 2</div>
+    <div class="question-text">학교에서 혼자 있을 때<br>뭉치의 표정은?</div>
+    <div class="emoji-choices">
+      <button class="emoji-btn" onclick="emojiQ(this,0,2)">😄</button>
+      <button class="emoji-btn" onclick="emojiQ(this,1,2)">😠</button>
+      <button class="emoji-btn" onclick="emojiQ(this,2,2)">😢</button>
+      <button class="emoji-btn" onclick="emojiQ(this,3,2)">😴</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7 Q3: 마음 풍선 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 3</div>
+    <div class="question-text">별이가 다가왔을 때<br>뭉치의 생각 풍선에<br>어떤 말이 들어갈까요? 💭</div>
+    <div class="thought-bubble" id="thought7">???</div>
+    <div class="choices col" style="margin-top:24px">
+      <button class="choice-btn" onclick="fillThought(this,0,'나 지금 졸려...',false)">나 지금 졸려...</button>
+      <button class="choice-btn" onclick="fillThought(this,1,'나한테 말을 걸어주다니 기뻐!',true)">나한테 말을 걸어주다니 기뻐!</button>
+      <button class="choice-btn" onclick="fillThought(this,2,'빨리 집에 가고 싶어.',false)">빨리 집에 가고 싶어.</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8 Q4: 행동 상상 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 4</div>
+    <div class="question-text">별이가 "같이 놀래?"라고 했을 때<br>뭉치는 어떤 행동을 했을까요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">🏃 도망갔어요</button>
+      <button class="choice-btn" onclick="answer(this,1)">😤 싫다고 했어요</button>
+      <button class="choice-btn" onclick="answer(this,2)">😊 고개를 끄덕이며 웃었어요</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9 Q5: 내가 뭉치라면? ⭐⭐ -->
+<div class="slide" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 5</div>
+    <div class="question-text">내가 뭉치라면<br>학교에서 어떻게 했을까요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="freeAnswer(this,9)">🙋 먼저 친구에게 말을 걸어요</button>
+      <button class="choice-btn" onclick="freeAnswer(this,9)">⏳ 누가 와줄 때까지 기다려요</button>
+      <button class="choice-btn" onclick="freeAnswer(this,9)">📖 책을 꺼내 읽어요</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10 Q6: 별이의 마음 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 6</div>
+    <div class="question-text">별이는 왜 뭉치에게<br>먼저 말을 걸었을까요?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">🤗 혼자 있는 뭉치가 걱정돼서</button>
+      <button class="choice-btn" onclick="answer(this,1)">🍬 뭉치 과자가 먹고 싶어서</button>
+      <button class="choice-btn" onclick="answer(this,2)">📝 선생님이 시켜서</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11 Q7: 인물에게 한마디 ⭐⭐ -->
+<div class="slide" data-score="25">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 7</div>
+    <div class="question-text">뭉치에게 하고 싶은 말을<br>한 문장으로 써 보세요! ✉️</div>
+    <div style="font-size:48px;margin:8px 0">🐻💌</div>
+    <textarea class="write-area" id="writeArea" rows="2" placeholder="예: 뭉치야, 학교 즐겁게 다녀!"></textarea>
+    <button class="submit-btn" onclick="checkWrite()">✉️ 보내기!</button>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12 결과 -->
+<div class="slide">
+  <div class="card result-card">
+    <div class="emoji bounce" id="resultEmoji">🎉</div>
+    <h2>학습 완료!</h2>
+    <div class="score-big" id="finalScore">0</div>
+    <div style="font-size:28px;margin:10px 0" id="resultStars">⭐⭐⭐</div>
+    <p class="desc">인물의 마음을 잘 상상했어요!</p>
+    <button class="nav-btn" onclick="restart()" style="margin-top:14px;font-size:24px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua';cursor:pointer">🔄 다시 하기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playTone(f,t,d,g=.25){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d)})}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80))}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100))}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,.2)}
+function speakKo(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=.75;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{for(let s of sl)s.classList.remove('out')},400);currentSlide=n;sl[n].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score+'점';document.getElementById('resultStars').textContent=score>=150?'⭐⭐⭐⭐⭐':score>=100?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=150?'🏆':'🎉'}
+}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const sl=document.querySelectorAll('.slide')[currentSlide];
+  const c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;
+  playClick();
+  if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function emojiQ(btn,idx,correct){
+  if(answered[6])return;playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb6','✅ 맞아요! 뭉치는 슬펐어요. +10점',true);answered[6]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb6','뭉치의 마음을 다시 생각해 보세요!',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function fillThought(btn,idx,text,correct){
+  if(answered[7])return;
+  document.getElementById('thought7').textContent=text;playClick();
+  if(correct){btn.classList.add('correct');playCorrect();addScore(25);setFB('fb7','✅ 뭉치는 정말 기뻤을 거예요! +25점',true);answered[7]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('thought7').textContent='???';setFB('fb7','뭉치의 마음을 다시 상상해 보세요!',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function freeAnswer(btn,slideIdx){
+  if(answered[slideIdx])return;
+  playClick();btn.classList.add('correct');playCorrect();addScore(25);
+  setFB('fb'+slideIdx,'✅ 멋진 상상이에요! +25점',true);
+  answered[slideIdx]=true;setTimeout(nextSlide,900);
+}
+
+function checkWrite(){
+  if(answered[11])return;
+  const v=document.getElementById('writeArea').value.trim();
+  if(v.length<3){setFB('fb11','조금 더 써 보세요! ✉️',false);return}
+  playCorrect();addScore(25);setFB('fb11','✅ 뭉치에게 멋진 편지예요! +25점',true);answered[11]=true;setTimeout(nextSlide,900);
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn,.emoji-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim()});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('thought7').textContent='???';
+  document.getElementById('writeArea').value='';
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide()});
+updateUI();
+</script>
+</body>
+</html>

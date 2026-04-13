@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K✦edu · 어느 것이 더 길까요</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF5F7;--card:#FFFFFF;
+  --primary:#EC407A;--primary-light:#FCE4EC;
+  --secondary:#F48FB1;
+  --green:#4CAF50;--green-light:#E8F5E9;
+  --red:#F44336;--red-light:#FFEBEE;
+  --yellow:#FFC107;--yellow-light:#FFF8E1;
+  --text:#333;--subtext:#888;--border:#F0D0DD;
+  --shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-user-select:none;}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}
+.logo-s{font-size:10px;color:#F59E0B;}
+.logo-e{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
+.sound-btn{position:fixed;top:12px;left:80px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.slide-container{width:100%;height:100vh;position:relative;overflow:hidden;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}
+.slide.left{transform:translateX(-60px);}
+.slide.right{transform:translateX(60px);}
+.nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:998;}
+.nav button{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:12px 28px;font-family:'Jua';font-size:22px;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s;}
+.nav button:active{transform:scale(.95);}
+.nav button:disabled{background:#ccc;cursor:default;}
+.page-info{position:fixed;bottom:24px;right:20px;font-size:18px;color:var(--subtext);z-index:998;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px;max-width:600px;width:100%;text-align:center;}
+.q-title{font-size:26px;margin-bottom:16px;line-height:1.4;}
+.badge{display:inline-block;background:var(--yellow-light);color:#e6a000;padding:2px 10px;border-radius:12px;font-size:16px;margin-bottom:8px;}
+.char-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0;}
+.char-img{width:56px;height:56px;border-radius:50%;}
+.char-bubble{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:24px;line-height:1.4;max-width:420px;position:relative;}
+.char-bubble::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light);}
+.options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px;}
+.opt-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:14px 24px;font-family:'Jua';font-size:48px;cursor:pointer;transition:all .2s;min-width:100px;}
+.opt-btn:hover{border-color:var(--primary);background:var(--primary-light);}
+.opt-btn.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s;}
+.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.opt-btn.disabled{pointer-events:none;opacity:.6;}
+.feedback{margin-top:12px;font-size:22px;min-height:30px;}
+.fb-correct{color:var(--green);}
+.fb-wrong{color:var(--red);}
+/* Color bars */
+.bar-area{display:flex;flex-direction:column;gap:14px;align-items:flex-start;margin:16px auto;padding:0 10px;width:100%;max-width:520px;}
+.bar-row{display:flex;align-items:center;gap:10px;width:100%;}
+.bar-label{font-size:28px;min-width:40px;text-align:center;}
+.bar{height:36px;border-radius:8px;transition:width .6s ease;cursor:pointer;position:relative;}
+.bar.selected{outline:4px solid var(--primary);outline-offset:2px;}
+.bar-unit{position:absolute;top:0;left:0;height:100%;display:flex;}
+.bar-unit span{border-right:1px dashed rgba(255,255,255,.4);height:100%;display:block;}
+/* Order drag area */
+.order-zone{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:12px;min-height:80px;padding:8px;border:3px dashed var(--border);border-radius:16px;}
+.order-item{background:var(--card);border:3px solid var(--border);border-radius:14px;padding:10px 18px;font-size:26px;cursor:grab;transition:transform .2s;display:flex;align-items:center;gap:8px;}
+.order-item:active{cursor:grabbing;transform:scale(1.08);}
+.order-item .mini-bar{height:20px;border-radius:4px;display:inline-block;}
+.drop-slots{display:flex;gap:12px;justify-content:center;margin-top:12px;}
+.drop-slot{width:100px;height:70px;border:3px dashed var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--subtext);transition:background .2s;}
+.drop-slot.filled{border-style:solid;background:var(--primary-light);}
+/* Scale simulation */
+.scale-wrap{margin:16px auto;text-align:center;}
+.scale-svg{max-width:340px;width:100%;}
+/* Grid comparison */
+.grid-wrap{display:flex;gap:20px;justify-content:center;margin:16px auto;flex-wrap:wrap;}
+.grid-box{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.grid-box .label{font-size:26px;}
+.grid{display:inline-grid;gap:2px;}
+.grid-cell{width:28px;height:28px;border-radius:4px;border:1px solid #ddd;}
+.grid-cell.filled{background:var(--primary-light);border-color:var(--primary);}
+/* Result slide */
+.result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px;max-width:500px;width:100%;text-align:center;}
+.result-score{font-size:64px;color:var(--primary);margin:12px 0;}
+.result-msg{font-size:28px;margin:8px 0;}
+.star-row{font-size:40px;margin:8px 0;}
+.combo-display{font-size:22px;color:var(--secondary);}
+/* animations */
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.anim-fadeUp{animation:fadeUp .5s ease both;}
+.anim-d1{animation-delay:.1s}.anim-d2{animation-delay:.2s}.anim-d3{animation-delay:.3s}.anim-d4{animation-delay:.4s}
+/* Responsive */
+@media(max-width:480px){
+  .q-title{font-size:22px}.opt-btn{font-size:40px;padding:10px 18px;}
+  .char-bubble{font-size:20px;padding:10px 14px;}
+  .bar{height:28px;}.bar-label{font-size:24px;}
+}
+</style>
+</head>
+<body>
+<!-- Logo -->
+<div class="logo">
+  <span class="logo-k">K</span><span class="logo-s">✦</span><span class="logo-e">edu</span>
+</div>
+<button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+<div class="slide-container" id="slideContainer">
+
+<!-- ============ SLIDE 0: 타이틀 ============ -->
+<div class="slide active" data-type="concept">
+  <div class="card anim-fadeUp">
+    <div style="font-size:20px;color:var(--primary);margin-bottom:4px;">4단원 · 비교하기</div>
+    <div style="font-size:52px;color:var(--primary);margin:12px 0;">📏</div>
+    <div style="font-size:36px;margin:8px 0;">어느 것이 더 길까요</div>
+    <div class="char-row" style="margin-top:16px;">
+      <img class="char-img" src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" alt="케이">
+      <div class="char-bubble">길이를 비교하는 방법을<br>함께 알아보자!</div>
+    </div>
+    <div style="font-size:20px;color:var(--subtext);margin-top:16px;">다음 버튼을 눌러 시작해요!</div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 1: 개념 - 직접 비교 ============ -->
+<div class="slide" data-type="concept">
+  <div class="card anim-fadeUp">
+    <div style="font-size:20px;color:var(--primary);">개념 학습 ①</div>
+    <div class="q-title" style="margin-top:8px;">길이를 비교하려면<br>한쪽 끝을 맞추어 놓아요!</div>
+    <div class="bar-area" style="margin:20px auto;">
+      <div class="bar-row">
+        <div class="bar-label">🖍️</div>
+        <div class="bar" id="c1bar1" style="width:0;background:linear-gradient(90deg,#FF8A80,#FF5252);border-radius:8px;" data-target="280"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">🖍️</div>
+        <div class="bar" id="c1bar2" style="width:0;background:linear-gradient(90deg,#82B1FF,#448AFF);border-radius:8px;" data-target="180"></div>
+      </div>
+    </div>
+    <div class="char-row">
+      <img class="char-img" src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" alt="듀">
+      <div class="char-bubble">빨간 색연필이 더 <b>길어</b>요!<br>파란 색연필이 더 <b>짧아</b>요!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 2: 개념 - 간접 비교 ============ -->
+<div class="slide" data-type="concept">
+  <div class="card anim-fadeUp">
+    <div style="font-size:20px;color:var(--primary);">개념 학습 ②</div>
+    <div class="q-title">직접 대기 어려울 때는<br>다른 물건으로 비교해요!</div>
+    <div style="margin:16px auto;text-align:center;">
+      <div style="font-size:64px;margin:8px;">📎📎📎📎📎</div>
+      <div style="font-size:24px;color:var(--primary);">책상 = 클립 5개</div>
+      <div style="font-size:64px;margin:8px;">📎📎📎</div>
+      <div style="font-size:24px;color:var(--secondary);">필통 = 클립 3개</div>
+    </div>
+    <div class="char-row">
+      <img class="char-img" src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" alt="케이">
+      <div class="char-bubble">클립 5개 > 클립 3개<br>그래서 <b>책상이 더 길어</b>요!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 3: Q1 색막대 비교 (비교선택) ⭐ ============ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="q-title">더 긴 색막대를 골라 보세요!</div>
+    <div class="bar-area">
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">가</div>
+        <div class="bar q3-bar" data-idx="0" onclick="selectBar(this,3)" style="width:320px;background:linear-gradient(90deg,#F48FB1,#EC407A);cursor:pointer;"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">나</div>
+        <div class="bar q3-bar" data-idx="1" onclick="selectBar(this,3)" style="width:200px;background:linear-gradient(90deg,#90CAF9,#42A5F5);cursor:pointer;"></div>
+      </div>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 4: Q2 세 개 중 가장 긴 것 (카드선택) ⭐ ============ -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="q-title">가장 긴 것은 어느 것일까요?</div>
+    <div class="bar-area">
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">가</div>
+        <div class="bar" style="width:160px;background:linear-gradient(90deg,#FFE082,#FFC107);"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">나</div>
+        <div class="bar" style="width:240px;background:linear-gradient(90deg,#A5D6A7,#66BB6A);"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">다</div>
+        <div class="bar" style="width:340px;background:linear-gradient(90deg,#CE93D8,#AB47BC);"></div>
+      </div>
+    </div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,4,2)">가</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,4,2)">나</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,4,2)">다</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 5: Q3 가장 짧은 것 (카드선택) ⭐ ============ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="q-title">가장 <span style="color:var(--primary);">짧은</span> 것은?</div>
+    <div class="bar-area">
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">가</div>
+        <div class="bar" style="width:120px;background:linear-gradient(90deg,#FFAB91,#FF7043);"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">나</div>
+        <div class="bar" style="width:280px;background:linear-gradient(90deg,#80CBC4,#26A69A);"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label" style="font-size:24px;">다</div>
+        <div class="bar" style="width:200px;background:linear-gradient(90deg,#9FA8DA,#5C6BC0);"></div>
+      </div>
+    </div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,5,0)">가</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,5,0)">나</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,5,0)">다</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 6: Q4 O·X 판단 ⭐ ============ -->
+<div class="slide" data-type="q" data-correct="1" data-score="10">
+  <div class="card">
+    <div class="badge">⭐ 기본</div>
+    <div class="q-title">두 물건을 비교할 때<br>한쪽 끝을 맞추지 않아도 될까요?</div>
+    <div style="font-size:56px;margin:12px 0;">🤔</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:48px;" onclick="checkChoice(this,6,1)">⭕</button>
+      <button class="opt-btn" style="font-size:48px;" onclick="checkChoice(this,6,1)">❌</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 7: Q5 간접비교 (카드선택) ⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="q-title">연필로 재었더니<br>🧸 곰인형 = 연필 4자루<br>🐰 토끼인형 = 연필 6자루<br><br>더 긴 것은?</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,7,1)">🧸 곰인형</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,7,1)">🐰 토끼인형</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 8: Q6 순서 배치 ⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="-1" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="q-title">긴 것부터 순서대로 놓아 보세요!</div>
+    <div id="orderItems" class="order-zone"></div>
+    <div style="font-size:20px;color:var(--subtext);margin:8px 0;">👆 하나씩 눌러 순서대로 놓아요</div>
+    <div id="orderSlots" class="drop-slots"></div>
+    <button id="orderReset" onclick="resetOrder()" style="margin-top:10px;background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 20px;font-family:'Jua';font-size:20px;cursor:pointer;">다시 놓기</button>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 9: Q7 상황판단 ⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="q-title">지우의 리본은 클립 7개 길이이고<br>하나의 리본은 클립 5개 길이예요.<br><br>누구의 리본이 더 길까요?</div>
+    <div style="font-size:48px;margin:8px;">🎀</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,9,0)">지우</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,9,0)">하나</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 10: Q8 스토리형 ⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="badge">⭐⭐ 발전</div>
+    <div class="q-title">민수는 뱀 3마리의 길이를 재었어요.<br>🐍 초록뱀 = 블록 8개<br>🐍 노란뱀 = 블록 5개<br>🐍 파란뱀 = 블록 10개<br><br>가장 긴 뱀은?</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:30px;" onclick="checkChoice(this,10,2)">초록뱀</button>
+      <button class="opt-btn" style="font-size:30px;" onclick="checkChoice(this,10,2)">노란뱀</button>
+      <button class="opt-btn" style="font-size:30px;" onclick="checkChoice(this,10,2)">파란뱀</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 11: Q9 역방향추론 ⭐⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="q-title">가 막대는 나 막대보다 길고,<br>나 막대는 다 막대보다 길어요.<br><br>가장 짧은 것은?</div>
+    <div style="font-size:22px;color:var(--subtext);margin:4px 0;">가 > 나 > 다</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,11,1)">가</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,11,1)">나</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,11,1)">다</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 12: Q10 논리추론 ⭐⭐⭐ ============ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card">
+    <div class="badge">⭐⭐⭐ 심화</div>
+    <div class="q-title">연필 = 지우개 3개 길이<br>볼펜 = 지우개 5개 길이<br><br>연필과 볼펜 중 어느 것이<br>더 짧을까요?</div>
+    <div class="options">
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,12,0)">✏️ 연필</button>
+      <button class="opt-btn" style="font-size:36px;" onclick="checkChoice(this,12,0)">🖊️ 볼펜</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- ============ SLIDE 13: 결과 ============ -->
+<div class="slide" data-type="result">
+  <div class="result-card anim-fadeUp">
+    <div style="font-size:28px;color:var(--primary);">학습 완료!</div>
+    <div style="font-size:56px;margin:8px;">🎉</div>
+    <div class="result-score" id="finalScore">0점</div>
+    <div class="star-row" id="finalStars"></div>
+    <div class="result-msg" id="finalMsg"></div>
+    <div class="combo-display" id="finalCombo"></div>
+    <div style="margin-top:16px;">
+      <img class="char-img" src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" alt="케이">
+    </div>
+  </div>
+</div>
+
+</div><!-- /slide-container -->
+
+<!-- Navigation -->
+<div class="nav">
+  <button id="prevBtn" onclick="move(-1)" disabled>이전</button>
+  <button id="nextBtn" onclick="move(1)">다음</button>
+</div>
+<div class="page-info" id="pageInfo">1 / 14</div>
+
+<script>
+// ====== AUDIO ======
+let audioCtx=null, soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function playSound(type){
+  if(!soundOn)return;initAudio();
+  audioCtx.resume().then(()=>{
+    if(type==='correct'){
+      [523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.13;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.12);});
+    }else if(type==='wrong'){
+      [220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.15);});
+    }else{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06);
+    }
+  });
+}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+
+// ====== SLIDES ======
+const slides=document.querySelectorAll('.slide');
+let cur=0, score=0, combo=0, maxCombo=0;
+const answered=new Set();
+
+function showSlide(n){
+  slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i<n)s.classList.add('left');else if(i>n)s.classList.add('right');else s.classList.add('active');});
+  document.getElementById('prevBtn').disabled=n===0;
+  document.getElementById('nextBtn').textContent=n===slides.length-1?'끝':'다음';
+  document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;
+  // animate concept bars on slide 1
+  if(n===1){setTimeout(()=>{document.getElementById('c1bar1').style.width='280px';document.getElementById('c1bar2').style.width='180px';},200);}
+  // init order slide
+  if(n===8 && !orderInit){initOrder();}
+  // result
+  if(n===slides.length-1){showResult();}
+}
+function move(d){playSound('click');const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);}}
+
+// Swipe
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?move(1):move(-1);}});
+
+// ====== Q: Bar select (slide 3) ======
+function selectBar(el,slideIdx){
+  if(answered.has(slideIdx))return;
+  const idx=parseInt(el.dataset.idx);
+  const correct=parseInt(slides[slideIdx].dataset.correct);
+  const fb=document.getElementById('fb'+slideIdx);
+  document.querySelectorAll('.q3-bar').forEach(b=>b.classList.remove('selected'));
+  if(idx===correct){
+    el.classList.add('selected');
+    el.style.outline='4px solid var(--green)';
+    fb.innerHTML='<span class="fb-correct">정답! 가 막대가 더 길어요! 👏</span>';
+    playSound('correct');addScore(slideIdx);
+  }else{
+    el.style.outline='4px solid var(--red)';el.style.animation='shake .4s';
+    fb.innerHTML='<span class="fb-wrong">다시 생각해 보세요! 어느 쪽이 더 길까요?</span>';
+    playSound('wrong');setTimeout(()=>{el.style.outline='';el.style.animation='';},500);
+  }
+}
+
+// ====== Q: Choice ======
+function checkChoice(btn,slideIdx,correctIdx){
+  if(answered.has(slideIdx))return;
+  const btns=btn.parentElement.querySelectorAll('.opt-btn');
+  const idx=Array.from(btns).indexOf(btn);
+  const fb=document.getElementById('fb'+slideIdx);
+  const msgs={
+    4:['','','맞아요! 다 막대가 가장 길어요! 🎉'],
+    5:['잘 찾았어요! 가가 가장 짧아요! 👍','',''],
+    6:['','아니에요! 한쪽 끝을 꼭 맞춰야 해요! ❌ 맞아요!'],
+    7:['','연필 6자루 > 4자루, 토끼인형이 더 길어요! 🐰',''],
+    9:['맞아요! 클립 7개 > 5개, 지우가 더 길어요! 🎀',''],
+    10:['','','블록 10개! 파란뱀이 가장 길어요! 🐍'],
+    11:['','',''],
+    12:['지우개 3개 < 5개, 연필이 더 짧아요! ✏️','']
+  };
+  if(idx===correctIdx){
+    btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled');});
+    fb.innerHTML='<span class="fb-correct">'+(msgs[slideIdx]?.[correctIdx]||'정답이에요! 👏')+'</span>';
+    playSound('correct');addScore(slideIdx);
+  }else{
+    btn.classList.add('wrong');
+    const wrongMsgs={
+      4:'다시 보세요! 어느 막대가 가장 긴가요?',
+      5:'가장 짧은 것을 찾아보세요!',
+      6:'길이를 비교하려면 한쪽 끝을 반드시 맞춰야 해요!',
+      7:'연필 수를 비교해 보세요!',
+      9:'클립 수를 비교해 보세요!',
+      10:'블록 수가 가장 큰 뱀은?',
+      11:'가 > 나 > 다 에서 가장 짧은 것은?',
+      12:'지우개 수가 적은 것이 더 짧아요!'
+    };
+    fb.innerHTML='<span class="fb-wrong">'+(wrongMsgs[slideIdx]||'다시 생각해 보세요!')+'</span>';
+    playSound('wrong');setTimeout(()=>{btn.classList.remove('wrong');fb.innerHTML='';},1200);
+  }
+}
+
+// ====== Q6: Order (slide 8) ======
+let orderInit=false, orderItems=[], orderSelected=[], orderCorrect=['다','가','나'];
+function initOrder(){
+  orderInit=true;
+  const items=[{name:'가',w:60,color:'#F48FB1'},{name:'나',w:30,color:'#90CAF9'},{name:'다',w:90,color:'#A5D6A7'}];
+  // shuffle
+  const shuffled=[...items].sort(()=>Math.random()-.5);
+  const container=document.getElementById('orderItems');
+  container.innerHTML='';
+  shuffled.forEach(it=>{
+    const div=document.createElement('div');div.className='order-item';div.dataset.name=it.name;
+    div.innerHTML=`<span class="mini-bar" style="width:${it.w}px;background:${it.color};"></span> ${it.name}`;
+    div.onclick=()=>pickOrder(it.name,div);
+    container.appendChild(div);
+  });
+  const slots=document.getElementById('orderSlots');
+  slots.innerHTML='';
+  ['1번','2번','3번'].forEach((_,i)=>{
+    const s=document.createElement('div');s.className='drop-slot';s.textContent=(i+1)+'번';
+    slots.appendChild(s);
+  });
+  orderSelected=[];
+}
+function pickOrder(name,el){
+  if(answered.has(8))return;
+  if(orderSelected.length>=3)return;
+  el.style.opacity='.4';el.style.pointerEvents='none';
+  orderSelected.push(name);
+  const slots=document.querySelectorAll('.drop-slot');
+  slots[orderSelected.length-1].textContent=name;
+  slots[orderSelected.length-1].classList.add('filled');
+  playSound('click');
+  if(orderSelected.length===3){
+    const fb=document.getElementById('fb8');
+    if(orderSelected[0]==='다'&&orderSelected[1]==='가'&&orderSelected[2]==='나'){
+      fb.innerHTML='<span class="fb-correct">완벽해요! 다 > 가 > 나 순서 맞아요! 🎉</span>';
+      playSound('correct');addScore(8);
+    }else{
+      fb.innerHTML='<span class="fb-wrong">긴 것부터 다 → 가 → 나 순서예요! 다시 해 보세요!</span>';
+      playSound('wrong');setTimeout(()=>{resetOrder();fb.innerHTML='';},1500);
+    }
+  }
+}
+function resetOrder(){
+  orderSelected=[];
+  document.querySelectorAll('.order-item').forEach(el=>{el.style.opacity='1';el.style.pointerEvents='auto';});
+  document.querySelectorAll('.drop-slot').forEach((s,i)=>{s.textContent=(i+1)+'번';s.classList.remove('filled');});
+}
+
+// ====== SCORE ======
+function addScore(slideIdx){
+  if(answered.has(slideIdx))return;
+  answered.add(slideIdx);
+  const s=parseInt(slides[slideIdx].dataset.score)||0;
+  score+=s;combo++;if(combo>maxCombo)maxCombo=combo;
+}
+
+function showResult(){
+  const total=240; // 10*4 + 25*4 + 50*2
+  const pct=Math.round(score/total*100);
+  document.getElementById('finalScore').textContent=score+'점';
+  let stars='';
+  if(pct>=90)stars='⭐⭐⭐';else if(pct>=70)stars='⭐⭐';else if(pct>=40)stars='⭐';
+  document.getElementById('finalStars').textContent=stars;
+  let msg='';
+  if(pct>=90)msg='길이 비교 완벽해요! 🏆';
+  else if(pct>=70)msg='잘했어요! 조금만 더 연습해요! 💪';
+  else if(pct>=40)msg='좋은 시작이에요! 다시 도전해 봐요!';
+  else msg='한 번 더 해 볼까요? 화이팅! 😊';
+  document.getElementById('finalMsg').textContent=msg;
+  document.getElementById('finalCombo').textContent=maxCombo>1?'최대 콤보: '+maxCombo+'🔥':'';
+}
+
+// Init
+showSlide(0);
+</script>
+</body>
+</html>

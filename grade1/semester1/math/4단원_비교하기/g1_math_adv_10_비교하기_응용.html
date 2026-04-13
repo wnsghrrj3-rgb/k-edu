@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K✦edu · 비교하기 응용</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF5F7;--card:#FFFFFF;--primary:#EC407A;--primary-light:#FCE4EC;--secondary:#F48FB1;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F0D0DD;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-user-select:none;}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}
+.logo-s{font-size:10px;color:#F59E0B;}.logo-e{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
+.sound-btn{position:fixed;top:12px;left:80px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.slide-container{width:100%;height:100vh;position:relative;overflow:hidden;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;}
+.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}.slide.left{transform:translateX(-60px);}.slide.right{transform:translateX(60px);}
+.nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:998;}
+.nav button{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:12px 28px;font-family:'Jua';font-size:22px;cursor:pointer;box-shadow:var(--shadow);}.nav button:disabled{background:#ccc;}
+.page-info{position:fixed;bottom:24px;right:20px;font-size:18px;color:var(--subtext);z-index:998;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;max-width:600px;width:100%;text-align:center;}
+.q-title{font-size:26px;margin-bottom:12px;line-height:1.4;}
+.badge{display:inline-block;background:var(--yellow-light);color:#e6a000;padding:2px 10px;border-radius:12px;font-size:16px;margin-bottom:8px;}
+.track-badge{display:inline-block;background:var(--primary);color:#fff;padding:2px 12px;border-radius:12px;font-size:14px;margin-bottom:4px;}
+.char-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0;}
+.char-img{width:56px;height:56px;border-radius:50%;}
+.char-bubble{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:24px;line-height:1.4;max-width:420px;position:relative;}
+.char-bubble::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light);}
+.options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;}
+.opt-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:14px 24px;font-family:'Jua';font-size:48px;cursor:pointer;transition:all .2s;min-width:100px;}
+.opt-btn:hover{border-color:var(--primary);background:var(--primary-light);}
+.opt-btn.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s;}
+.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
+.opt-btn.disabled{pointer-events:none;opacity:.6;}
+.feedback{margin-top:10px;font-size:22px;min-height:30px;}
+.fb-correct{color:var(--green);}.fb-wrong{color:var(--red);}
+.result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px;max-width:500px;width:100%;text-align:center;}
+.result-score{font-size:64px;color:var(--primary);margin:12px 0;}
+.result-msg{font-size:28px;margin:8px 0;}.star-row{font-size:40px;margin:8px 0;}.combo-display{font-size:22px;color:var(--secondary);}
+.order-zone{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0;}
+.order-item{background:var(--card);border:3px solid var(--border);border-radius:14px;padding:10px 16px;font-size:24px;cursor:pointer;transition:all .2s;}
+.order-item:hover{border-color:var(--primary);background:var(--primary-light);}.order-item.placed{opacity:.3;pointer-events:none;}
+.order-slots{display:flex;gap:10px;justify-content:center;margin:8px 0;}
+.order-slot{width:72px;height:52px;border:3px dashed var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--subtext);}
+.order-slot.filled{border-style:solid;background:var(--primary-light);font-size:22px;color:var(--text);}
+.reset-btn{margin-top:6px;background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:6px 18px;font-family:'Jua';font-size:18px;cursor:pointer;}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.anim-fadeUp{animation:fadeUp .5s ease both;}
+@media(max-width:480px){.q-title{font-size:22px}.opt-btn{font-size:36px;padding:10px 14px;}.char-bubble{font-size:20px;}}
+</style>
+</head>
+<body>
+<div class="logo"><span class="logo-k">K</span><span class="logo-s">✦</span><span class="logo-e">edu</span></div>
+<button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+<div class="slide-container">
+
+<div class="slide active" data-type="concept"><div class="card anim-fadeUp"><div class="track-badge">Track B · 심화</div><div style="font-size:20px;color:var(--primary);">4단원 · 비교하기</div><div style="font-size:52px;margin:12px 0;">🏅</div><div style="font-size:34px;margin:8px 0;">비교하기 응용</div><div class="badge" style="font-size:18px;">⭐⭐ 발전</div><div class="char-row"><img class="char-img" src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" alt="케이"><div class="char-bubble">3개 이상을 비교하고<br>순서를 정해보자!</div></div></div></div>
+
+<div class="slide" data-type="concept"><div class="card anim-fadeUp"><div style="font-size:20px;color:var(--primary);">핵심 복습</div><div class="q-title">여러 개를 비교할 때는<br>같은 단위로 재서 수를 비교해요!</div><div style="font-size:22px;margin:12px 0;line-height:1.6;">📏 길이 → 클립, 뼘으로<br>⚖️ 무게 → 바둑알, 구슬로<br>📐 넓이 → 같은 칸으로<br>🫗 들이 → 같은 컵으로</div></div></div>
+
+<div class="slide" data-type="q" data-correct="-1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📏 긴 것부터 순서대로!</div><div style="font-size:18px;color:var(--subtext);">가=클립4 · 나=클립9 · 다=클립6</div><div class="order-zone" id="o1items"></div><div class="order-slots" id="o1slots"></div><button class="reset-btn" onclick="resetO(1)">다시 놓기</button><div class="feedback" id="fb2"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="-1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">⚖️ 가벼운 것부터 순서대로!</div><div style="font-size:16px;color:var(--subtext);">🍎사과=바둑알5 · 🍇포도=바둑알2 · 🍉수박=바둑알9 · 🍊귤=바둑알3</div><div class="order-zone" id="o2items"></div><div class="order-slots" id="o2slots"></div><button class="reset-btn" onclick="resetO(2)">다시 놓기</button><div class="feedback" id="fb3"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">민수는 연필로, 지우는 클립으로<br>책상 길이를 쟀어요.<br>결과를 바로 비교할 수 있을까요?</div><div class="options"><button class="opt-btn" style="font-size:32px;" onclick="check(this,4,1)">⭕ 가능</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,4,1)">❌ 불가</button></div><div class="feedback" id="fb4"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📐 같은 색종이로 덮었어요.<br>🟥가=12장 · 🟦나=8장 · 🟩다=15장<br>가장 넓은 책상은?</div><div class="options"><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟩 다</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟥 가</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟦 나</button></div><div class="feedback" id="fb5"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">🫗 양동이=컵10 · 주전자=컵6 · 밥그릇=컵3<br>적게 담기는 것부터 순서는?</div><div class="options"><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">양동이→주전자→밥그릇</button><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">주전자→밥그릇→양동이</button><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">밥그릇→주전자→양동이</button></div><div class="feedback" id="fb6"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">⚖️ 사과>귤>딸기 순으로 무거워요.<br>가장 가벼운 과일은?</div><div class="options"><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍎 사과</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍓 딸기</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍊 귤</button></div><div class="feedback" id="fb7"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📏 빨간>파란>노란 리본 순으로 길어요.<br>노란 리본보다 긴 리본은 몇 개?</div><div class="options"><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">1개</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">2개</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">3개</button></div><div class="feedback" id="fb8"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📐 가 종이=14칸 · 나 종이=9칸<br>가가 나보다 몇 칸 더 넓을까요?</div><div class="options"><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">3칸</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">5칸</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">7칸</button></div><div class="feedback" id="fb9"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">🫗 가 통에 컵 7번으로 가득 차요.<br>나 통에 7번 부었는데 안 찼어요.<br>어떤 통이 더 많이 담길까요?</div><div class="options"><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">나 통</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">가 통</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">같아요</button></div><div class="feedback" id="fb10"></div></div></div>
+
+<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">비교 방법이 잘못된 것은?</div><div class="options"><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">📏 끝 맞추고 길이 비교</button><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">⚖️ 저울로 무게 비교</button><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">📐 다른 크기 칸으로 넓이 비교</button></div><div class="feedback" id="fb11"></div></div></div>
+
+<div class="slide" data-type="result"><div class="result-card anim-fadeUp"><div class="track-badge">Track B · 심화</div><div style="font-size:28px;color:var(--primary);">응용 완료!</div><div style="font-size:56px;margin:8px;">🏅</div><div class="result-score" id="finalScore">0점</div><div class="star-row" id="finalStars"></div><div class="result-msg" id="finalMsg"></div><div class="combo-display" id="finalCombo"></div></div></div>
+
+</div>
+<div class="nav"><button id="prevBtn" onclick="move(-1)" disabled>이전</button><button id="nextBtn" onclick="move(1)">다음</button></div>
+<div class="page-info" id="pageInfo">1 / 13</div>
+<script>
+let audioCtx=null,soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function playSound(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.13;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.12);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.15);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06);}});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
+const slides=document.querySelectorAll('.slide');let cur=0,score=0,combo=0,maxCombo=0;const answered=new Set();
+function showSlide(n){slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i<n)s.classList.add('left');else if(i>n)s.classList.add('right');else s.classList.add('active');});document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===slides.length-1?'끝':'다음';document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;if(n===2&&!oInits[1])initO(1);if(n===3&&!oInits[2])initO(2);if(n===slides.length-1)showResult();}
+function move(d){playSound('click');const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);}}
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?move(1):move(-1);}});
+const oInits={},oSels={};
+const oCfg={1:{items:['나(9)','다(6)','가(4)'],correct:['나(9)','다(6)','가(4)'],si:2,fi:2,ok:'나(9)→다(6)→가(4) 맞아요! 🎉',no:'큰 것부터: 9→6→4'},2:{items:['🍇(2)','🍊(3)','🍎(5)','🍉(9)'],correct:['🍇(2)','🍊(3)','🍎(5)','🍉(9)'],si:3,fi:3,ok:'🍇→🍊→🍎→🍉 맞아요! 🎉',no:'가벼운 것부터: 2→3→5→9'}};
+function initO(id){oInits[id]=true;oSels[id]=[];const c=oCfg[id],sh=[...c.items].sort(()=>Math.random()-.5);const el=document.getElementById('o'+id+'items');el.innerHTML='';sh.forEach(n=>{const d=document.createElement('div');d.className='order-item';d.textContent=n;d.onclick=()=>pickO(id,n,d);el.appendChild(d);});const sl=document.getElementById('o'+id+'slots');sl.innerHTML='';c.correct.forEach((_,i)=>{const s=document.createElement('div');s.className='order-slot';s.textContent=(i+1);sl.appendChild(s);});}
+function pickO(id,name,el){const c=oCfg[id];if(answered.has(c.si)||oSels[id].length>=c.correct.length)return;el.classList.add('placed');oSels[id].push(name);playSound('click');const slots=document.querySelectorAll('#o'+id+'slots .order-slot');slots[oSels[id].length-1].textContent=name;slots[oSels[id].length-1].classList.add('filled');if(oSels[id].length===c.correct.length){const fb=document.getElementById('fb'+c.fi);if(JSON.stringify(oSels[id])===JSON.stringify(c.correct)){fb.innerHTML='<span class="fb-correct">'+c.ok+'</span>';playSound('correct');addScore(c.si);}else{fb.innerHTML='<span class="fb-wrong">'+c.no+'</span>';playSound('wrong');setTimeout(()=>{resetO(id);fb.innerHTML='';},1500);}}}
+function resetO(id){oSels[id]=[];document.querySelectorAll('#o'+id+'items .order-item').forEach(e=>e.classList.remove('placed'));document.querySelectorAll('#o'+id+'slots .order-slot').forEach((s,i)=>{s.textContent=(i+1);s.classList.remove('filled');});}
+const cM={4:'다른 단위로 재면 비교 불가! ❌',5:'15장! 다 책상이 가장 넓어요! 🟩',6:'3→6→10 맞아요! 🎉',7:'딸기가 가장 가벼워요! 🍓',8:'빨간+파란, 2개! ✌️',9:'14-9=5칸! 🧮',10:'7번 부어도 안 차면 더 큰 통! 👏',11:'넓이는 같은 크기 칸으로! ❌'};
+const wM={4:'같은 도구로 재야 비교 가능!',5:'색종이 수 비교!',6:'컵 수 작은 것부터!',7:'순서 잘 보세요!',8:'빨간>파란>노란, 노란보다 긴 것은?',9:'14-9를 계산!',10:'같은 7번인데 안 찼으면?',11:'넓이 비교의 조건은?'};
+function check(btn,si,ci){if(answered.has(si))return;const bs=btn.parentElement.querySelectorAll('.opt-btn');const idx=Array.from(bs).indexOf(btn);const fb=document.getElementById('fb'+si);if(idx===ci){btn.classList.add('correct');bs.forEach(b=>{if(b!==btn)b.classList.add('disabled');});fb.innerHTML='<span class="fb-correct">'+(cM[si]||'정답! 👏')+'</span>';playSound('correct');addScore(si);}else{btn.classList.add('wrong');fb.innerHTML='<span class="fb-wrong">'+(wM[si]||'다시!')+'</span>';playSound('wrong');setTimeout(()=>{btn.classList.remove('wrong');fb.innerHTML='';},1200);}}
+function addScore(si){if(answered.has(si))return;answered.add(si);score+=parseInt(slides[si].dataset.score)||0;combo++;if(combo>maxCombo)maxCombo=combo;}
+function showResult(){const total=250,pct=Math.round(score/total*100);document.getElementById('finalScore').textContent=score+'점';let s='';if(pct>=90)s='⭐⭐⭐';else if(pct>=70)s='⭐⭐';else if(pct>=40)s='⭐';document.getElementById('finalStars').textContent=s;let m='';if(pct>=90)m='응용 완벽! 🏆';else if(pct>=70)m='잘했어요! 💪';else if(pct>=40)m='좋아요!';else m='다시 도전! 😊';document.getElementById('finalMsg').textContent=m;document.getElementById('finalCombo').textContent=maxCombo>1?'최대 콤보: '+maxCombo+'🔥':'';}
+showSlide(0);
+</script>
+</body>
+</html>

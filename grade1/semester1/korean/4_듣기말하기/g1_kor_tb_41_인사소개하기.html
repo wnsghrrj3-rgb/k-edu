@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>인사하기와 소개하기 - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF8E1;--card:#FFFFFF;--primary:#FF8F00;--primary-light:#FFF8E1;--secondary:#FFB300;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#FFE082;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}.progress-bar{flex:1;height:10px;background:#FFE0B2;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;width:100%;max-width:640px;border:1px solid var(--border)}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 12px;line-height:1.6}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}.choice-btn{background:var(--card);border:2.5px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:24px;width:100%;max-width:520px;padding:12px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:8px 0}.char-emoji{font-size:48px}.bubble{background:var(--primary-light);border-radius:18px 18px 18px 4px;padding:12px 16px;font-size:22px;max-width:400px;line-height:1.5}
+.greeting-cards{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px 0}.greeting-card{background:#fff;border:3px solid var(--border);border-radius:16px;padding:12px 16px;text-align:center;cursor:pointer;transition:all .2s;min-width:140px}.greeting-card:hover{border-color:var(--primary);transform:scale(1.05)}.greeting-card .icon{font-size:40px}.greeting-card .txt{font-size:20px;margin-top:4px}.greeting-card.correct{border-color:var(--green);background:var(--green-light)}.greeting-card.wrong{border-color:var(--red);background:var(--red-light)}
+.builder{background:#FFF9E8;border-radius:16px;padding:14px;margin:10px 0;text-align:center;font-size:28px;line-height:1.8;border:2px solid var(--border)}.slot{color:var(--primary);border-bottom:3px solid var(--primary);padding:0 4px;min-width:60px;display:inline-block}.slot.filled{color:var(--text);border-bottom-color:var(--green)}
+.pick-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}.pick-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:8px 16px;font-family:'Jua';font-size:24px;cursor:pointer;transition:all .2s}.pick-btn:hover{border-color:var(--primary)}.pick-btn.used{opacity:.4;pointer-events:none}.pick-btn.correct{background:var(--green-light);border-color:var(--green)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}.result-card .trophy{font-size:80px}.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}.result-card .result-stars{font-size:40px;margin:8px 0}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div><span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K✦</span></div>
+<div class="slides" id="slidesContainer">
+
+<div class="slide active" data-type="concept"><div class="card">
+<div class="slide-title">👋 인사하기와 소개하기!</div>
+<div class="char-bubble"><span class="char-emoji">🐕</span><div class="bubble">상황에 맞는 인사말을 배우고<br>나를 소개하는 법을 알아보자!</div></div>
+<div class="greeting-cards">
+<div class="greeting-card" onclick="speakKo('안녕하세요')"><div class="icon">🌅</div><div class="txt">안녕하세요</div></div>
+<div class="greeting-card" onclick="speakKo('감사합니다')"><div class="icon">🙏</div><div class="txt">감사합니다</div></div>
+<div class="greeting-card" onclick="speakKo('미안합니다')"><div class="icon">😔</div><div class="txt">미안합니다</div></div>
+<div class="greeting-card" onclick="speakKo('다녀오겠습니다')"><div class="icon">🚶</div><div class="txt">다녀오겠습니다</div></div>
+</div>
+<div style="text-align:center;font-size:20px;color:var(--subtext)">👆 인사말을 눌러 들어 봐!</div>
+</div></div>
+
+<div class="slide" data-type="concept"><div class="card">
+<div class="slide-title">📝 자기소개 패턴</div>
+<div style="background:#FFF3C4;border-radius:14px;padding:14px;margin:10px 0;font-size:24px;line-height:2">
+<div>✏️ <b>"저는 ___입니다."</b></div>
+<div>✏️ <b>"좋아하는 것은 ___입니다."</b></div>
+<div>✏️ <b>"잘 부탁합니다!"</b></div>
+</div>
+<div class="char-bubble" style="justify-content:flex-end"><span class="char-emoji">🦦</span><div class="bubble" style="border-radius:18px 18px 4px 18px;background:#E8F5E9">이 세 가지만 기억하면<br>멋진 자기소개를 할 수 있어! ✨</div></div>
+</div></div>
+
+<!-- Q1: 상황별 인사말 매칭 ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 1 <span class="stars">⭐</span></div>
+<div class="question-text">🌅 아침에 선생님을 만났을 때?</div>
+<div class="greeting-cards">
+<div class="greeting-card" onclick="greetA(this,2,true)"><div class="icon">🌅</div><div class="txt">안녕하세요!</div></div>
+<div class="greeting-card" onclick="greetA(this,2,false)"><div class="icon">👋</div><div class="txt">안녕히 가세요!</div></div>
+<div class="greeting-card" onclick="greetA(this,2,false)"><div class="icon">😔</div><div class="txt">미안합니다!</div></div>
+</div><div class="feedback" id="fb2"></div></div></div>
+
+<!-- Q2 ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 2 <span class="stars">⭐</span></div>
+<div class="question-text">🎁 선물을 받았을 때?</div>
+<div class="greeting-cards">
+<div class="greeting-card" onclick="greetA(this,3,false)"><div class="icon">🚶</div><div class="txt">다녀오겠습니다</div></div>
+<div class="greeting-card" onclick="greetA(this,3,true)"><div class="icon">🙏</div><div class="txt">감사합니다!</div></div>
+<div class="greeting-card" onclick="greetA(this,3,false)"><div class="icon">🌅</div><div class="txt">안녕하세요!</div></div>
+</div><div class="feedback" id="fb3"></div></div></div>
+
+<!-- Q3 ⭐ -->
+<div class="slide" data-correct="2" data-score="10"><div class="card">
+<div class="question-label">문제 3 <span class="stars">⭐</span></div>
+<div class="question-text">😔 친구의 장난감을 깨뜨렸을 때?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">안녕히 계세요!</button>
+<button class="choice-btn" onclick="answer(this,1)">감사합니다!</button>
+<button class="choice-btn" onclick="answer(this,2)">미안해, 일부러 그런 게 아니야.</button>
+</div><div class="feedback" id="fb4"></div></div></div>
+
+<!-- Q4: 헤어질 때 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25"><div class="card">
+<div class="question-label">문제 4 <span class="stars">⭐⭐</span></div>
+<div class="question-text">🏫 학교 끝나고 선생님께?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">다녀오겠습니다!</button>
+<button class="choice-btn" onclick="answer(this,1)">안녕히 계세요!</button>
+<button class="choice-btn" onclick="answer(this,2)">미안합니다!</button>
+</div><div class="feedback" id="fb5"></div></div></div>
+
+<!-- Q5: 자기소개 빌더 ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 5 <span class="stars">⭐⭐</span></div>
+<div class="question-text">자기소개를 만들어 봐!</div>
+<div class="builder">저는 <span class="slot" id="s6a">?</span>입니다.<br>좋아하는 것은 <span class="slot" id="s6b">?</span>입니다.</div>
+<div style="text-align:center;font-size:20px;color:var(--subtext);margin:4px 0">① 이름 → ② 좋아하는 것</div>
+<div class="pick-row" id="intro6"></div>
+<div class="feedback" id="fb6"></div></div></div>
+
+<!-- Q6: 역할극 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25"><div class="card">
+<div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+<div class="question-text">🏠 밖에 나갈 때 부모님께?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">다녀오겠습니다!</button>
+<button class="choice-btn" onclick="answer(this,1)">안녕히 가세요!</button>
+<button class="choice-btn" onclick="answer(this,2)">(아무 말 없이 나간다)</button>
+</div><div class="feedback" id="fb7"></div></div></div>
+
+<!-- Q7: 상황 매칭 퀴즈 ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 7 <span class="stars">⭐⭐</span></div>
+<div class="question-text">각 상황에 맞는 인사말을 골라!</div>
+<div id="matchArea8"></div>
+<div class="feedback" id="fb8"></div></div></div>
+
+<!-- Q8: 자기소개 + 잘부탁 ⭐⭐⭐ -->
+<div class="slide" data-score="50"><div class="card">
+<div class="question-label">문제 8 <span class="stars">⭐⭐⭐</span></div>
+<div class="question-text">전학 온 날! 자기소개를 완성해 봐!</div>
+<div class="builder" style="font-size:24px">저는 <span class="slot" id="s9a">?</span>입니다.<br>좋아하는 것은 <span class="slot" id="s9b">?</span>입니다.<br><span class="slot" id="s9c">?</span></div>
+<div class="pick-row" id="intro9"></div>
+<div class="feedback" id="fb9"></div></div></div>
+
+<!-- Q9: 종합 ⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="50"><div class="card">
+<div class="question-label">문제 9 <span class="stars">⭐⭐⭐</span></div>
+<div class="question-text">아래 중 자기소개로 알맞은 것은?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">나 민준이야. 뭐 볼 거야?</button>
+<button class="choice-btn" onclick="answer(this,1)">안녕하세요. 저는 민준입니다. 축구를 좋아합니다. 잘 부탁합니다!</button>
+<button class="choice-btn" onclick="answer(this,2)">... (아무 말도 안 한다)</button>
+</div><div class="feedback" id="fb10"></div></div></div>
+
+<div class="slide" data-type="result"><div class="card result-card">
+<div class="trophy" id="resultEmoji">🎉</div><div style="font-size:32px;margin:8px 0">학습 완료!</div>
+<div class="final-score"><span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div>
+<div class="char-bubble" style="justify-content:center"><span class="char-emoji">🐕</span><div class="bubble">인사와 소개를 잘 배웠어!<br>만나는 사람에게 밝게 인사하자! 👋</div></div>
+<button class="restart-btn" onclick="restart()">🔄 다시 하기</button></div></div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakKo(t,r){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=r||.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=200?'⭐⭐⭐⭐⭐':score>=140?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=200?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function greetA(card,si,ok){if(answered[si])return;playClick();const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;if(ok){card.classList.add('correct');playCorrect();addScore(p);setFB('fb'+si,'✅ 정답! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}else{card.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'상황을 다시 생각해 봐! 💪',false);setTimeout(()=>card.classList.remove('wrong'),500)}}
+
+// 자기소개 빌더 S6
+let s6step=0;
+function initS6(){s6step=0;document.getElementById('s6a').textContent='?';document.getElementById('s6a').classList.remove('filled');document.getElementById('s6b').textContent='?';document.getElementById('s6b').classList.remove('filled');
+const p=document.getElementById('intro6');p.innerHTML='';
+const l=document.createElement('div');l.style.cssText='width:100%;text-align:center;font-size:18px;color:var(--subtext)';l.textContent='① 이름을 골라!';l.id='s6label';p.appendChild(l);
+['민준','서연','지호','하은'].forEach(n=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=n;b.dataset.step='1';b.onclick=function(){s6Pick(this,n)};p.appendChild(b)});
+['축구 ⚽','그림 🎨','읽기 📖','음악 🎵'].forEach(n=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=n;b.dataset.step='2';b.style.display='none';b.onclick=function(){s6Pick(this,n)};p.appendChild(b)})}
+function s6Pick(btn,text){if(answered[6])return;playClick();
+if(s6step===0){btn.classList.add('correct');document.getElementById('s6a').textContent=text;document.getElementById('s6a').classList.add('filled');s6step=1;document.getElementById('s6label').textContent='② 좋아하는 것을 골라!';document.querySelectorAll('#intro6 [data-step="1"]').forEach(b=>b.style.display='none');document.querySelectorAll('#intro6 [data-step="2"]').forEach(b=>b.style.display='')}
+else{btn.classList.add('correct');document.getElementById('s6b').textContent=text;document.getElementById('s6b').classList.add('filled');playCorrect();addScore(25);setFB('fb6','✅ 멋진 자기소개! +25점',true);answered[6]=true;const name=document.getElementById('s6a').textContent;speakKo('저는 '+name+'입니다. 좋아하는 것은 '+text.replace(/[^\uAC00-\uD7A3]/g,'')+'입니다.',.8);setTimeout(nextSlide,1500)}}
+initS6();
+
+// 매칭 S8
+const matchData8=[{q:'🌅 아침 만남',a:'안녕하세요'},{q:'🎁 선물 받음',a:'감사합니다'},{q:'😔 실수했을 때',a:'미안합니다'}];
+let matchDone8=0;
+function initMatch8(){matchDone8=0;const area=document.getElementById('matchArea8');area.innerHTML='';
+matchData8.forEach((item,i)=>{const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;margin:8px 0;justify-content:center;flex-wrap:wrap';
+row.innerHTML=`<span style="font-size:24px;min-width:140px;text-align:right">${item.q}</span><div style="display:flex;gap:6px">
+<button class="choice-btn" style="font-size:20px;padding:8px 14px" onclick="match8(this,${i},'안녕하세요')">안녕하세요</button>
+<button class="choice-btn" style="font-size:20px;padding:8px 14px" onclick="match8(this,${i},'감사합니다')">감사합니다</button>
+<button class="choice-btn" style="font-size:20px;padding:8px 14px" onclick="match8(this,${i},'미안합니다')">미안합니다</button></div>`;
+area.appendChild(row)})}
+function match8(btn,idx,val){if(btn.classList.contains('correct'))return;playClick();
+if(val===matchData8[idx].a){btn.classList.add('correct');matchDone8++;if(matchDone8===3&&!answered[8]){playCorrect();addScore(25);setFB('fb8','✅ 모두 정답! +25점',true);answered[8]=true;setTimeout(nextSlide,900)}}
+else{btn.classList.add('wrong');playWrong();combo=0;setTimeout(()=>btn.classList.remove('wrong'),500)}}
+initMatch8();
+
+// 자기소개 3단계 S9
+let s9step=0;
+function initS9(){s9step=0;['s9a','s9b','s9c'].forEach(id=>{document.getElementById(id).textContent='?';document.getElementById(id).classList.remove('filled')});
+const p=document.getElementById('intro9');p.innerHTML='';
+const l=document.createElement('div');l.style.cssText='width:100%;text-align:center;font-size:18px;color:var(--subtext)';l.textContent='① 이름';l.id='s9label';p.appendChild(l);
+const steps=[{s:'1',items:['서윤','태민','유나']},{s:'2',items:['동물 🐾','수영 🏊','요리 🍳']},{s:'3',items:['잘 부탁합니다!','반갑습니다!','친하게 지내요!']}];
+steps.forEach(st=>st.items.forEach(t=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=t;b.dataset.step=st.s;if(st.s!=='1')b.style.display='none';b.onclick=function(){s9Pick(this,t,st.s)};p.appendChild(b)}))}
+function s9Pick(btn,text,step){if(answered[9])return;playClick();btn.classList.add('correct');
+if(step==='1'&&s9step===0){document.getElementById('s9a').textContent=text;document.getElementById('s9a').classList.add('filled');s9step=1;document.getElementById('s9label').textContent='② 좋아하는 것';document.querySelectorAll('#intro9 [data-step="1"]').forEach(b=>b.style.display='none');document.querySelectorAll('#intro9 [data-step="2"]').forEach(b=>b.style.display='')}
+else if(step==='2'&&s9step===1){document.getElementById('s9b').textContent=text;document.getElementById('s9b').classList.add('filled');s9step=2;document.getElementById('s9label').textContent='③ 마무리 인사';document.querySelectorAll('#intro9 [data-step="2"]').forEach(b=>b.style.display='none');document.querySelectorAll('#intro9 [data-step="3"]').forEach(b=>b.style.display='')}
+else if(step==='3'&&s9step===2){document.getElementById('s9c').textContent=text;document.getElementById('s9c').classList.add('filled');playCorrect();addScore(50);setFB('fb9','✅ 완벽한 자기소개! +50점',true);answered[9]=true;setTimeout(nextSlide,1200)}}
+initS9();
+
+let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+function restart(){score=0;combo=0;answered={};s6step=0;s9step=0;matchDone8=0;document.querySelectorAll('.choice-btn,.greeting-card,.pick-btn').forEach(b=>b.className=b.className.replace(/correct|wrong|used/g,'').trim());document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});initS6();initMatch8();initS9();document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 1학년 국어 48차시 - 이야기 속 장면을 다양하게 표현하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF5F5;--card:#FFFFFF;--primary:#E85D75;--primary-light:#FFE0E6;--secondary:#F08090;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F0D0D8;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px;width:100%;max-width:620px}
+.slide-title{font-size:24px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:28px;text-align:center;margin:8px 0 14px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}
+.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:28px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{width:100%;max-width:500px;padding:11px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:12px;padding:5px 14px;font-weight:700}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.story-box{background:linear-gradient(135deg,#FFF5F5,#FFE0E6);border-radius:16px;padding:16px 20px;margin:10px 0;border-left:5px solid var(--primary);font-size:26px;line-height:1.8;text-align:left}
+.story-scene{font-size:48px;text-align:center;margin:8px 0}
+.desc{font-size:26px;text-align:center;color:var(--subtext);margin:6px 0;line-height:1.5}
+.write-area{font-family:'Jua',sans-serif;font-size:26px;border:3px solid var(--border);border-radius:14px;padding:12px;width:100%;min-height:60px;resize:none;outline:none;text-align:center}
+.write-area:focus{border-color:var(--primary)}
+.submit-btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:8px 20px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:8px}
+.result-card{text-align:center;padding:20px}
+.result-card h2{font-size:36px;margin:10px 0}
+.result-card .emoji{font-size:80px}
+.result-card .score-big{font-size:48px;color:var(--primary)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.bounce{animation:bounce .6s ease infinite}
+.listen-btn{background:var(--primary-light);border:3px solid var(--primary);border-radius:50%;width:60px;height:60px;font-size:30px;cursor:pointer;font-family:'Jua';transition:transform .2s}
+.listen-btn:hover{transform:scale(1.1)}
+.scene-card{background:var(--primary-light);border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;border:3px solid transparent;font-size:24px}
+.scene-card:hover{border-color:var(--primary)}
+.scene-card.selected{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1/13</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreDisp">0</span></div>
+  <div class="kedu-logo">K✦</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- S0 인트로 -->
+<div class="slide active">
+  <div class="card" style="text-align:center">
+    <div style="font-size:80px">🎨✨</div>
+    <h1 style="font-size:32px;color:var(--primary);margin:10px 0">이야기 속 장면을<br>다양하게 표현하기</h1>
+    <p class="desc">이야기의 장면을<br>여러 가지 방법으로 표현해요!</p>
+  </div>
+</div>
+
+<!-- S1 이야기 장면 1 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (1)</div>
+    <div class="story-scene">🐢🌊</div>
+    <div class="story-box">
+      바다 속 작은 거북이 <b>파도</b>는<br>
+      넓은 바다를 여행하고 싶었어요.<br>
+      "저 먼 곳엔 뭐가 있을까?" 🌅
+    </div>
+    <button class="listen-btn" onclick="speakKo('바다 속 작은 거북이 파도는 넓은 바다를 여행하고 싶었어요. 저 먼 곳엔 뭐가 있을까?')">🔊</button>
+  </div>
+</div>
+
+<!-- S2 이야기 장면 2 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (2)</div>
+    <div class="story-scene">🐢🐡🐠</div>
+    <div class="story-box">
+      파도는 용기를 내어 헤엄쳐 나갔어요.<br>
+      물고기 친구들이 반겨 주었어요.<br>
+      "안녕! 같이 헤엄치자!" 🎶
+    </div>
+    <button class="listen-btn" onclick="speakKo('파도는 용기를 내어 헤엄쳐 나갔어요. 물고기 친구들이 반겨 주었어요. 안녕! 같이 헤엄치자!')">🔊</button>
+  </div>
+</div>
+
+<!-- S3 이야기 장면 3 -->
+<div class="slide">
+  <div class="card" style="text-align:center">
+    <div class="slide-title">📖 이야기 읽기 (3)</div>
+    <div class="story-scene">🐢🏝️✨</div>
+    <div class="story-box">
+      파도는 아름다운 산호초 섬을 발견했어요!<br>
+      반짝반짝 빛나는 바다 속 세상!<br>
+      "세상은 정말 넓고 아름답구나!" 🤩
+    </div>
+    <button class="listen-btn" onclick="speakKo('파도는 아름다운 산호초 섬을 발견했어요! 반짝반짝 빛나는 바다 속 세상! 세상은 정말 넓고 아름답구나!')">🔊</button>
+  </div>
+</div>
+
+<!-- S4 Q1: 인상적인 장면 고르기 ⭐ -->
+<div class="slide" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> 문제 1</div>
+    <div class="question-text">가장 마음에 드는 장면은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="freeAnswer(this,4)">🐢 파도가 여행을 결심한 장면</button>
+      <button class="choice-btn" onclick="freeAnswer(this,4)">🐠 물고기 친구들을 만난 장면</button>
+      <button class="choice-btn" onclick="freeAnswer(this,4)">🏝️ 산호초 섬을 발견한 장면</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- S5 Q2: 한 문장으로 표현 ⭐⭐ -->
+<div class="slide" data-score="25">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 2</div>
+    <div class="question-text">좋아하는 장면을<br>한 문장으로 표현해 보세요! ✏️</div>
+    <div style="background:var(--primary-light);border-radius:12px;padding:10px;font-size:22px;margin-bottom:10px">
+      💡 예: "파도가 용기를 내서 멋졌어요!"
+    </div>
+    <textarea class="write-area" id="w5" rows="2" placeholder="한 문장으로 써 보세요..."></textarea>
+    <button class="submit-btn" onclick="checkW('w5','fb5',5)">✏️ 완료!</button>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- S6 Q3: 의성어·의태어 넣어 표현 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 3</div>
+    <div class="question-text">빈칸에 어울리는<br>의성어·의태어는?</div>
+    <div style="background:var(--primary-light);border-radius:14px;padding:14px;font-size:26px;line-height:1.8;text-align:center;margin:8px 0">
+      파도가 바다를<br>
+      <span style="border-bottom:3px solid var(--primary);color:var(--primary);min-width:80px;display:inline-block" id="blank6">___</span><br>
+      헤엄쳐 갔어요.
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank(this,0,'둥둥',false)">둥둥</button>
+      <button class="choice-btn" onclick="fillBlank(this,1,'쿵쿵',false)">쿵쿵</button>
+      <button class="choice-btn" onclick="fillBlank(this,2,'스윽스윽',true)">스윽스윽</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- S7 Q4: 소리 넣어 문장 완성 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 4</div>
+    <div class="question-text">물고기들이 반기는 소리를<br>넣어 볼까요?</div>
+    <div style="background:var(--primary-light);border-radius:14px;padding:14px;font-size:26px;text-align:center;margin:8px 0;line-height:1.8">
+      물고기들이<br>
+      <span style="border-bottom:3px solid var(--primary);color:var(--primary)" id="blank7">___</span><br>
+      뛰어올랐어요! 🐟
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="fillBlank7(this,0,'멍멍',false)">멍멍</button>
+      <button class="choice-btn" onclick="fillBlank7(this,1,'퐁퐁',true)">퐁퐁</button>
+      <button class="choice-btn" onclick="fillBlank7(this,2,'쨍쨍',false)">쨍쨍</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- S8 Q5: 다른 표현 방법 고르기 ⭐ -->
+<div class="slide" data-correct="2" data-score="10">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐</span> 문제 5</div>
+    <div class="question-text">이야기를 다르게 표현하는<br>방법이 아닌 것은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">🎵 노래로 부르기</button>
+      <button class="choice-btn" onclick="answer(this,1)">🎨 그림으로 그리기</button>
+      <button class="choice-btn" onclick="answer(this,2)">🗑️ 책을 버리기</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- S9 Q6: 뒷이야기 상상 선택 ⭐⭐ -->
+<div class="slide" data-score="25">
+  <div class="card">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 6</div>
+    <div class="question-text">🐢 파도의 뒷이야기를 상상해요!<br>산호초 섬 다음에 무슨 일이?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="freeAnswer(this,9)">🐙 새 친구 문어를 만나요</button>
+      <button class="choice-btn" onclick="freeAnswer(this,9)">🏠 집으로 돌아와 이야기해요</button>
+      <button class="choice-btn" onclick="freeAnswer(this,9)">🗺️ 더 먼 곳으로 모험을 떠나요</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- S10 Q7: 뒷이야기 쓰기 ⭐⭐ -->
+<div class="slide" data-score="25">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐⭐</span> 문제 7</div>
+    <div class="question-text">뒷이야기를 1~2문장으로<br>써 보세요! 🐢✨</div>
+    <div style="font-size:22px;color:var(--subtext);margin-bottom:8px">💡 "파도는 그 다음에..."로 시작해 보세요!</div>
+    <textarea class="write-area" id="w10" rows="2" placeholder="파도는 그 다음에..."></textarea>
+    <button class="submit-btn" onclick="checkW('w10','fb10',10)">✏️ 완료!</button>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- S11 Q8: 내 표현 감상 ⭐ -->
+<div class="slide" data-score="10">
+  <div class="card" style="text-align:center">
+    <div class="question-label"><span class="stars">⭐</span> 문제 8</div>
+    <div class="question-text">내가 표현한 것 중에서<br>가장 재미있었던 활동은?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="freeAnswer(this,11)">✏️ 한 문장으로 표현하기</button>
+      <button class="choice-btn" onclick="freeAnswer(this,11)">🔊 의성어·의태어 넣기</button>
+      <button class="choice-btn" onclick="freeAnswer(this,11)">📝 뒷이야기 상상하기</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- S12 결과 -->
+<div class="slide">
+  <div class="card result-card">
+    <div class="emoji bounce" id="resultEmoji">🎉</div>
+    <h2>학습 완료!</h2>
+    <div class="score-big" id="finalScore">0</div>
+    <div style="font-size:28px;margin:10px 0" id="resultStars">⭐⭐⭐</div>
+    <p class="desc">장면을 멋지게 표현했어요!</p>
+    <button class="nav-btn" onclick="restart()" style="margin-top:14px;font-size:24px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua';cursor:pointer">🔄 다시 하기</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL=13;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playTone(f,t,d,g=.25){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d)})}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80))}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100))}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,.2)}
+function speakKo(t){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=.75;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{for(let s of sl)s.classList.remove('out')},400);currentSlide=n;sl[n].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score+'점';document.getElementById('resultStars').textContent=score>=150?'⭐⭐⭐⭐⭐':score>=100?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=150?'🏆':'🎉'}
+}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const sl=document.querySelectorAll('.slide')[currentSlide];
+  const c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;
+  playClick();
+  if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function freeAnswer(btn,si){
+  if(answered[si])return;playClick();btn.classList.add('correct');playCorrect();addScore(10);
+  setFB('fb'+si,'✅ 좋은 생각이에요! +10점',true);answered[si]=true;setTimeout(nextSlide,900);
+}
+
+function fillBlank(btn,idx,text,correct){
+  if(answered[6])return;document.getElementById('blank6').textContent=text;playClick();
+  if(correct){btn.classList.add('correct');playCorrect();addScore(25);setFB('fb6','✅ 맞아요! 스윽스윽! +25점',true);answered[6]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank6').textContent='___';setFB('fb6','거북이가 헤엄치는 모습을 떠올려 보세요!',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+function fillBlank7(btn,idx,text,correct){
+  if(answered[7])return;document.getElementById('blank7').textContent=text;playClick();
+  if(correct){btn.classList.add('correct');playCorrect();addScore(25);setFB('fb7','✅ 물고기가 퐁퐁! +25점',true);answered[7]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank7').textContent='___';setFB('fb7','물고기가 뛰어오르는 소리를 생각해 보세요!',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function checkW(tid,fid,si){
+  if(answered[si])return;
+  const v=document.getElementById(tid).value.trim();
+  if(v.length<4){setFB(fid,'조금 더 써 보세요! ✏️',false);return}
+  playCorrect();addScore(25);setFB(fid,'✅ 멋진 표현이에요! +25점',true);answered[si]=true;setTimeout(nextSlide,900);
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim()});
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('blank6').textContent='___';document.getElementById('blank7').textContent='___';
+  document.querySelectorAll('.write-area').forEach(w=>w.value='');
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+let tx=0;
+document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide()});
+updateUI();
+</script>
+</body>
+</html>

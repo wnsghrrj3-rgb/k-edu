@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>입체도형 응용 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8F5FF;--card:#FFF;--primary:#7C4DFF;--primary-light:#EDE7F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#E0D6F0;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}.logo-star{font-size:10px;color:#F59E0B}.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100vh;padding:60px 16px 80px;text-align:center;position:absolute;top:0;left:0}.slide.active{display:flex}.slide.active>*{animation:fadeIn .5s ease}
+.st{font-size:26px;color:var(--primary);margin-bottom:10px}.badge{display:inline-block;font-size:18px;background:var(--yellow-light);padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.cb{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);max-width:600px;width:100%;margin:8px 0}
+.ci{width:64px;height:64px;border-radius:50%}.sb{background:var(--card);border-radius:20px;padding:14px 18px;font-size:22px;box-shadow:var(--shadow);max-width:420px;position:relative;margin:8px 0}.sb::after{content:'';position:absolute;bottom:-10px;left:40px;border-width:10px 10px 0;border-style:solid;border-color:var(--card) transparent transparent}
+.or{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0}.ob{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:10px 20px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}.ob:active{transform:scale(.95)}.ob.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s}.ob.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}.ob.disabled{pointer-events:none;opacity:.6}
+.oxr{display:flex;gap:16px;justify-content:center;margin:12px 0}.oxb{width:84px;height:84px;border-radius:50%;border:4px solid var(--border);background:var(--card);font-size:46px;cursor:pointer;display:flex;align-items:center;justify-content:center}.oxb.correct{border-color:var(--green);background:var(--green-light)}.oxb.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.fb{font-size:22px;margin-top:8px;min-height:30px}.fb.good{color:var(--green)}.fb.bad{color:var(--red)}
+.story{background:var(--primary-light);border-radius:var(--radius);padding:16px;max-width:500px;width:100%;margin:10px 0;font-size:21px;line-height:1.6}
+.build-area{display:flex;flex-direction:column;align-items:center;gap:2px;margin:12px 0;padding:12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);max-width:360px;width:100%}
+.build-row{display:flex;gap:3px;justify-content:center}.build-block{width:48px;height:42px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff}
+.bb-box{background:linear-gradient(135deg,#CE93D8,#AB47BC)}.bb-cyl{background:linear-gradient(135deg,#90CAF9,#42A5F5);border-radius:20px}.bb-ball{background:radial-gradient(circle at 35% 35%,#FFE082,#FFC107);border-radius:50%;width:42px}.bb-hide{background:var(--border);color:var(--border);font-size:28px}
+.combo-display{position:fixed;top:60px;right:16px;font-size:20px;z-index:99;background:var(--yellow-light);padding:4px 12px;border-radius:16px}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:rgba(248,245,255,.95);z-index:99}.nb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:10px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer}.nb:disabled{opacity:.3}.pi{font-size:18px;color:var(--subtext)}
+.rc{background:var(--card);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);max-width:400px;width:100%}.rs{font-size:64px;color:var(--primary)}.rm{font-size:26px;margin:12px 0}.rd{font-size:20px;color:var(--subtext);margin:4px 0}.rb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:14px 40px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;margin-top:16px}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+<div class="combo-display" id="comboDisplay" style="display:none">🔥 0 콤보</div>
+
+<div class="slide active" data-type="concept">
+  <div class="badge">Track B 심화</div><div class="st">입체도형 응용</div>
+  <div class="cb"><div style="font-size:26px;margin-bottom:12px">⭐⭐ 응용 문제!</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" alt="케이">
+      <div class="sb">숨은 모양, 다른 방향에서 보기!<br>공간 감각을 키워 보자!</div></div></div>
+</div>
+
+<!-- Q1 숨은 모양 세기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">보이지 않는 것 포함, 상자는 총 몇 개?</div>
+  <div class="build-area"><div class="build-row"><div class="build-block bb-box">📦</div></div><div class="build-row"><div class="build-block bb-box">📦</div><div class="build-block bb-box">📦</div></div><div class="build-row"><div class="build-block bb-box">📦</div><div class="build-block bb-box">📦</div><div class="build-block bb-hide">?</div></div></div>
+  <div style="font-size:18px;color:var(--subtext)">뒤에 숨겨진 상자가 있을 수도!</div>
+  <div class="or"><button class="ob" onclick="chk(this,1,false)">5개</button><button class="ob" onclick="chk(this,1,true)">6개</button><button class="ob" onclick="chk(this,1,false)">7개</button></div><div class="fb" id="fb1"></div>
+</div>
+
+<!-- Q2 위에서 본 모양 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">위에서 내려다보면?</div>
+  <div class="build-area"><div class="build-row"><div class="build-block bb-cyl">🥫</div></div><div class="build-row"><div class="build-block bb-box">📦</div><div class="build-block bb-box">📦</div></div></div>
+  <div style="font-size:20px;margin:8px 0">이 구조물을 위에서 보면 어떤 모양이 보일까요?</div>
+  <div class="or"><button class="ob" onclick="chk(this,2,true)">⭕ + ⬜⬜</button><button class="ob" onclick="chk(this,2,false)">⬜⬜⬜</button><button class="ob" onclick="chk(this,2,false)">⭕⭕⭕</button></div><div class="fb" id="fb2"></div>
+</div>
+
+<!-- Q3 앞에서 본 모양 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">앞에서 보면?</div>
+  <div class="build-area"><div class="build-row"><div class="build-block bb-ball">⚽</div></div><div class="build-row"><div class="build-block bb-box">📦</div></div></div>
+  <div style="font-size:20px;margin:8px 0">앞에서 보면 어떤 모양?</div>
+  <div class="or"><button class="ob" onclick="chk(this,3,true)">⭕ 위에 ⬜</button><button class="ob" onclick="chk(this,3,false)">⬜ 위에 ⬜</button><button class="ob" onclick="chk(this,3,false)">⭕만</button></div><div class="fb" id="fb3"></div>
+</div>
+
+<!-- Q4 O·X -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">맞으면 O, 틀리면 X</div>
+  <div class="cb"><div style="font-size:22px">"상자 모양을 위에서 보면<br>동그란 모양이 보인다"</div></div>
+  <div class="oxr"><button class="oxb" onclick="ox(this,4,false)">⭕</button><button class="oxb" onclick="ox(this,4,true,'맞아요! 네모 모양이 보여요!')">❌</button></div><div class="fb" id="fb4"></div>
+</div>
+
+<!-- Q5 모양별 개수 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">둥근기둥은 몇 개 쓰였나요?</div>
+  <div class="build-area"><div class="build-row"><div class="build-block bb-ball">⚽</div></div><div class="build-row"><div class="build-block bb-cyl">🥫</div><div class="build-block bb-cyl">🥫</div></div><div class="build-row"><div class="build-block bb-box">📦</div><div class="build-block bb-cyl">🥫</div><div class="build-block bb-box">📦</div></div></div>
+  <div class="or"><button class="ob" onclick="chk(this,5,false)">2개</button><button class="ob" onclick="chk(this,5,true)">3개</button><button class="ob" onclick="chk(this,5,false)">4개</button></div><div class="fb" id="fb5"></div>
+</div>
+
+<!-- Q6 숨은 모양 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">천으로 덮인 물건의 모양은?</div>
+  <div class="story">케이가 천으로 물건을 덮었어요.<br>🔍 굴러가지 않아요<br>🔍 평평한 면 위에 잘 서 있어요<br>🔍 꼭짓점이 있어요<br>천 아래 숨겨진 모양은?</div>
+  <div class="or"><button class="ob" onclick="chk(this,6,true)">📦 상자</button><button class="ob" onclick="chk(this,6,false)">⚽ 공</button><button class="ob" onclick="chk(this,6,false)">🥫 둥근기둥</button></div><div class="fb" id="fb6"></div>
+</div>
+
+<!-- Q7 분류 기준 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">같은 기준으로 묶인 것은?</div>
+  <div class="cb"><div style="font-size:20px">A그룹: 📦 🧱 🎁<br>B그룹: ⚽ 🏀 🔮<br><br>어떤 기준으로 나누었을까요?</div></div>
+  <div class="or"><button class="ob" style="font-size:20px" onclick="chk(this,7,false)">크기별</button><button class="ob" style="font-size:20px" onclick="chk(this,7,true)">모양별 (상자/공)</button><button class="ob" style="font-size:20px" onclick="chk(this,7,false)">색깔별</button></div><div class="fb" id="fb7"></div>
+</div>
+
+<!-- Q8 옆에서 본 모양 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">둥근기둥을 옆에서 보면?</div>
+  <div class="cb"><div style="font-size:20px">🥫 둥근기둥을 세워놓고<br>옆에서 보면 어떤 모양이 보일까요?</div></div>
+  <div class="or"><button class="ob" onclick="chk(this,8,false)">⭕ 동그라미</button><button class="ob" onclick="chk(this,8,true)">⬜ 네모</button><button class="ob" onclick="chk(this,8,false)">△ 세모</button></div><div class="fb" id="fb8"></div>
+</div>
+
+<!-- Q9 복합 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">구조물에 쓰인 모양 종류!</div>
+  <div class="build-area"><div class="build-row"><div class="build-block bb-ball">⚽</div></div><div class="build-row"><div class="build-block bb-cyl">🥫</div></div><div class="build-row"><div class="build-block bb-box">📦</div><div class="build-block bb-box">📦</div></div></div>
+  <div style="font-size:20px">쓰인 모양의 종류는 몇 가지?</div>
+  <div class="or"><button class="ob" onclick="chk(this,9,false)">2가지</button><button class="ob" onclick="chk(this,9,true)">3가지</button><button class="ob" onclick="chk(this,9,false)">4가지</button></div><div class="fb" id="fb9"></div>
+</div>
+
+<!-- Q10 논리 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="badge">⭐⭐</div><div class="st">조건 추론!</div>
+  <div class="cb"><div style="font-size:20px;line-height:1.8">🔍 위에서 보면 ⭕ 모양이에요<br>🔍 앞에서 보면 ⭕ 모양이에요<br>🔍 옆에서 보면 ⭕ 모양이에요<br>어느 방향에서 봐도 동그라미!</div></div>
+  <div class="or"><button class="ob" onclick="chk(this,10,false)">📦</button><button class="ob" onclick="chk(this,10,false)">🥫</button><button class="ob" onclick="chk(this,10,true)">⚽</button></div><div class="fb" id="fb10"></div>
+</div>
+
+<div class="slide" data-type="result"><div class="rc"><div style="font-size:28px;margin-bottom:8px">응용 완료!</div><div class="rs" id="rScore">0</div><div style="font-size:22px;color:var(--subtext)">점</div><div class="rm" id="rMsg"></div><div class="rd" id="rCombo"></div><div class="rd" id="rCorr"></div><button class="rb" onclick="location.reload()">다시 하기</button></div></div>
+
+<div class="nav-bar"><button class="nb" id="prevBtn" onclick="go(-1)" disabled>이전</button><span class="pi" id="pageInfo">1 / 12</span><button class="nb" id="nextBtn" onclick="go(1)">다음</button></div>
+
+<script>
+let audioCtx=null,soundOn=true;function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)}function ps(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+let cur=0;const sls=document.querySelectorAll('.slide'),tot=sls.length;let sc=0,cmb=0,mxC=0,cc=0;const ans={};
+function show(i){sls.forEach((s,x)=>s.classList.toggle('active',x===i));document.getElementById('prevBtn').disabled=i===0;document.getElementById('nextBtn').disabled=i===tot-1;document.getElementById('pageInfo').textContent=`${i+1} / ${tot}`;if(sls[i].dataset.type==='result')showR()}
+function go(d){ps('click');const n=cur+d;if(n>=0&&n<tot){cur=n;show(cur)}}
+let tsx=0;document.addEventListener('touchstart',e=>{tsx=e.touches[0].clientX},{passive:true});document.addEventListener('touchend',e=>{const d=tsx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(1):go(-1)}},{passive:true});
+function uc(ok){const cd=document.getElementById('comboDisplay');if(ok){cmb++;if(cmb>mxC)mxC=cmb}else cmb=0;cmb>=2?(cd.style.display='block',cd.textContent=`🔥 ${cmb} 콤보`):cd.style.display='none'}
+function chk(btn,si,ok){if(ans[si])return;const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');if(ok){ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=25;fb.textContent='정답! 👏';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+function ox(btn,si,ok,msg){if(ans[si])return;const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.oxb');if(ok){ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.style.pointerEvents='none'});ps('correct');cc++;sc+=25;fb.textContent=msg||'정답!';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+function showR(){document.getElementById('rScore').textContent=sc;document.getElementById('rCombo').textContent=`최대 콤보: 🔥 ${mxC}`;document.getElementById('rCorr').textContent=`맞힌 문제: ${cc} / 10`;let m;if(sc>=225)m='🏆 공간감각 최고!';else if(sc>=150)m='🎉 아주 잘했어요!';else if(sc>=100)m='👍 잘했어요!';else m='💪 다시 도전!';document.getElementById('rMsg').textContent=m}
+show(0);
+</script>
+</body>
+</html>

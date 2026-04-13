@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>덧셈과 뺄셈을 해 볼까요 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0FDFA;--card:#FFFFFF;--primary:#26A69A;--primary-light:#E0F2F1;--secondary:#4DB6AC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E8E4;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}.logo span:first-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}.logo span:nth-child(2){font-size:10px;color:#F59E0B;}.logo span:last-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;transform:translateX(60px);}.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}.slide.exit{opacity:0;transform:translateX(-60px);}
+.title{font-size:28px;color:var(--primary);margin-bottom:8px;text-align:center;}
+.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 14px;border-radius:20px;font-size:16px;margin-bottom:10px;}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;width:100%;max-width:560px;text-align:center;}
+.cr{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px;}.ci{width:56px;height:56px;border-radius:50%;}.sp{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:22px;max-width:380px;text-align:left;position:relative;}.sp::before{content:'';position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:var(--primary-light);}
+.br{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
+.b{padding:10px 22px;border-radius:16px;border:3px solid var(--border);background:var(--card);font-family:'Jua',sans-serif;font-size:44px;cursor:pointer;transition:all .2s;min-width:60px;}.b:hover{border-color:var(--primary);background:var(--primary-light);}.b.correct{background:var(--green-light)!important;border-color:var(--green)!important;animation:pop .3s;}.b.wrong{background:var(--red-light)!important;border-color:var(--red)!important;animation:shake .4s;}
+.bs{font-size:24px;padding:8px 16px;}
+.bl{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border:3px dashed var(--primary);border-radius:12px;font-size:40px;color:var(--primary);background:var(--primary-light);margin:0 4px;transition:all .3s;}.bl.filled{border-style:solid;background:var(--green-light);border-color:var(--green);color:var(--green);}
+.eq{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0;font-size:48px;}
+.fb{margin-top:10px;font-size:22px;min-height:28px;text-align:center;}.ok{color:var(--green);}.no{color:var(--red);}
+.ox{width:76px;height:76px;border-radius:50%;font-size:38px;border:4px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}.ox.correct{border-color:var(--green);background:var(--green-light);}.ox.wrong{border-color:var(--red);background:var(--red-light);}
+.speed-bar{width:100%;height:14px;background:var(--border);border-radius:7px;overflow:hidden;margin:6px 0;}.speed-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));border-radius:7px;transition:width .3s;}
+.nav{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:100;}.nb{padding:10px 28px;border-radius:30px;border:none;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;}.np{background:var(--card);color:var(--text);border:2px solid var(--border);}.nn{background:var(--primary);color:#fff;}.nb:disabled{opacity:.4;cursor:default;}
+.pi{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--subtext);}
+.combo{display:inline-block;background:linear-gradient(135deg,#FF6B6B,#FFE66D);color:#fff;padding:6px 18px;border-radius:20px;font-size:20px;margin:6px 0;}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+</style>
+</head>
+<body>
+<div class="logo"><span>K</span><span>✦</span><span>edu</span></div>
+<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+<div id="sc" style="width:100%;height:100vh;position:relative;overflow:hidden;"></div>
+<div class="nav"><button class="nb np" id="prevBtn" onclick="prev()">◀ 이전</button><button class="nb nn" id="nextBtn" onclick="next()">다음 ▶</button></div>
+<div class="pi" id="pi"></div>
+
+<script>
+const KAY="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA";
+const DEW="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA";
+
+let audioCtx,soundOn=true,cur=0,score=0,combo=0,maxCombo=0;
+function initA(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function ps(t){if(!soundOn)return;initA();audioCtx.resume().then(()=>{const n=audioCtx.currentTime;if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.15,n+i*.12);g.gain.exponentialRampToValueAtTime(.01,n+i*.12+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.12);o.stop(n+i*.12+.2);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(.1,n+i*.15);g.gain.exponentialRampToValueAtTime(.01,n+i*.15+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.15);o.stop(n+i*.15+.2);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.01,n+.08);o.connect(g);g.connect(audioCtx.destination);o.start(n);o.stop(n+.08);}});}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function stars(s){if(s<=10)return'⭐ 기본';if(s<=25)return'⭐⭐ 발전';if(s<=50)return'⭐⭐⭐ 심화';return'⭐⭐⭐⭐ 최심화';}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+const S=[];
+S.push({t:'c',h:`<div class="title" style="font-size:32px;">3단원: 덧셈과 뺄셈</div><div style="font-size:26px;color:var(--secondary);margin-bottom:16px;">덧셈과 뺄셈을 해 볼까요</div><div class="card"><div class="cr"><img src="${DEW}" class="ci" alt="듀"><div class="sp">덧셈과 뺄셈을 <b>섞어서</b> 풀어 볼 거야! 기호를 잘 보자!</div></div><div style="font-size:48px;margin:14px 0;">➕ 🔀 ➖</div><div style="font-size:22px;color:var(--subtext);">+인지 −인지 잘 확인하고 풀어요!</div></div>`});
+
+// Q1 덧셈 ⭐
+S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div><div class="title">혼합 계산</div><div class="card"><div class="eq"><span>3</span><span style="color:#2E7D32;">+</span><span>4</span><span style="color:#1565C0;">=</span><div class="bl" id="bl${i}">?</div></div><div class="br">${shuf([6,7,8,1]).map(n=>`<button class="b" onclick="chkB(${i},this,${n},7)">${n}</button>`).join('')}</div><div class="fb" id="f${i}"></div></div>`;}});
+// Q2 뺄셈 ⭐
+S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div><div class="title">혼합 계산</div><div class="card"><div class="eq"><span>9</span><span style="color:#C62828;">−</span><span>5</span><span style="color:#1565C0;">=</span><div class="bl" id="bl${i}">?</div></div><div class="br">${shuf([3,4,5,14]).map(n=>`<button class="b" onclick="chkB(${i},this,${n},4)">${n}</button>`).join('')}</div><div class="fb" id="f${i}"></div></div>`;}});
+// Q3 기호 선택 ⭐
+S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div><div class="title">기호를 넣으세요!</div><div class="card"><div class="eq"><span>6</span><div class="bl" id="bl${i}" style="font-size:36px;">?</div><span>2</span><span style="color:#1565C0;">=</span><span>8</span></div><div class="br"><button class="b" onclick="chkSym(${i},this,'+','+')" style="font-size:44px;width:66px;">+</button><button class="b" onclick="chkSym(${i},this,'-','+')" style="font-size:44px;width:66px;">−</button></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q4 기호 선택 ⭐
+S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div><div class="title">기호를 넣으세요!</div><div class="card"><div class="eq"><span>7</span><div class="bl" id="bl${i}" style="font-size:36px;">?</div><span>3</span><span style="color:#1565C0;">=</span><span>4</span></div><div class="br"><button class="b" onclick="chkSym(${i},this,'+','-')" style="font-size:44px;width:66px;">+</button><button class="b" onclick="chkSym(${i},this,'-','-')" style="font-size:44px;width:66px;">−</button></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q5 상황판단 ⭐⭐
+S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div><div class="title">이야기 → 식</div><div class="card"><div class="cr"><img src="${KAY}" class="ci" alt="케이"><div class="sp" style="font-size:20px;">새 5마리가 나무에 앉아 있어요. 3마리가 더 날아왔어요. 모두 몇 마리?</div></div><div class="br"><button class="b bs" onclick="chk(${i},this,0,0)">5 + 3 = 8</button><button class="b bs" onclick="chk(${i},this,1,0)">5 − 3 = 2</button><button class="b bs" onclick="chk(${i},this,2,0)">8 − 5 = 3</button></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q6 상황판단 ⭐⭐
+S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div><div class="title">이야기 → 식</div><div class="card"><div class="cr"><img src="${DEW}" class="ci" alt="듀"><div class="sp" style="font-size:20px;">딸기 8개가 있었어요. 6개를 먹었어요. 몇 개 남았나요?</div></div><div class="br"><button class="b bs" onclick="chk(${i},this,0,1)">8 + 6 = 14</button><button class="b bs" onclick="chk(${i},this,1,1)">8 − 6 = 2</button><button class="b bs" onclick="chk(${i},this,2,1)">6 − 8 = 2</button></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q7 O·X ⭐
+S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div><div class="title">O·X 판단</div><div class="card"><div style="font-size:28px;margin-bottom:16px;">4 + 5 = 8</div><div class="br"><button class="ox" onclick="chkOX(${i},this,false,true)">⭕</button><button class="ox" onclick="chkOX(${i},this,true,true)">❌</button></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q8 속도챌린지 ⭐⭐
+S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div><div class="title">혼합 속도 챌린지 ⏱️</div><div class="card"><div class="speed-bar"><div class="speed-fill" id="sb${i}" style="width:100%;"></div></div><div id="sq${i}" style="font-size:38px;margin:8px 0;"></div><div class="br" id="b${i}"></div><div style="font-size:20px;margin-top:6px;" id="ss${i}">0/8</div><div class="fb" id="f${i}"></div></div>`;}});
+// Q9 역추론 ⭐⭐
+S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div><div class="title">빈칸과 기호 모두!</div><div class="card"><div id="mix${i}"></div><div class="br" id="b${i}"></div><div class="fb" id="f${i}"></div></div>`;}});
+// Q10 종합 ⭐⭐⭐
+S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div><div class="title">덧셈·뺄셈 종합 퍼즐 🧩</div><div class="card"><div id="pz${i}"></div><div class="fb" id="f${i}"></div></div>`;}});
+
+S.push({t:'result'});
+
+function render(){const c=document.getElementById('sc');c.innerHTML='';S.forEach((s,i)=>{const d=document.createElement('div');d.className='slide'+(i===0?' active':'');d.id='s'+i;if(s.t==='c')d.innerHTML=s.h;else if(s.t==='q'&&s.r)d.innerHTML=s.r(i);else d.innerHTML='<div class="card" style="max-width:480px;"><div class="title">🎉</div></div>';c.appendChild(d);});updNav();}
+
+function chk(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 정답! +${s.sc}점 ${combo>1?'🔥x'+combo:''}</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 생각해 보세요!</span>`;}}
+function chkB(i,el,v,c){const s=S[i];if(s.done)return;ps('click');const bl=document.getElementById('bl'+i);if(v===c){s.done=true;bl.textContent=c;bl.classList.add('filled');el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 맞았어요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">+인지 −인지 확인!</span>`;}}
+function chkSym(i,el,v,c){const s=S[i];if(s.done)return;ps('click');const bl=document.getElementById('bl'+i);if(v===c){s.done=true;bl.textContent=v==='+'?'+':'−';bl.classList.add('filled');el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 맞았어요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">양쪽 수와 결과를 비교해 보세요!</span>`;}}
+function chkOX(i,el,isO,isX){const s=S[i];if(s.done)return;ps('click');// 4+5=9, not 8, so X correct
+if(isX){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 4+5=9이에요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">4+5를 계산해 보세요!</span>`;}}
+
+// Speed
+let spd={};
+function initSpd(i){if(spd[i])return;const qs=[[3,'+',2,5],[7,'-',3,4],[5,'+',4,9],[9,'-',6,3],[2,'+',6,8],[8,'-',5,3],[1,'+',8,9],[6,'-',6,0]];spd[i]={qs,ci:0,ok:0,tl:100,tm:null};renderSpd(i);spd[i].tm=setInterval(()=>{spd[i].tl-=1.2;document.getElementById('sb'+i).style.width=Math.max(0,spd[i].tl)+'%';if(spd[i].tl<=0){clearInterval(spd[i].tm);endSpd(i);}},300);}
+function renderSpd(i){const d=spd[i];if(d.ci>=d.qs.length){endSpd(i);return;}const[a,op,b,ans]=d.qs[d.ci];document.getElementById('sq'+i).textContent=`${a} ${op} ${b} = ?`;document.getElementById('b'+i).innerHTML=shuf([ans-1,ans,ans+1,ans+2].filter(n=>n>=0&&n<=9)).map(n=>`<button class="b" onclick="ansSpd(${i},this,${n},${ans})">${n}</button>`).join('');}
+function ansSpd(i,el,v,c){ps('click');if(v===c){el.classList.add('correct');spd[i].ok++;}else{el.classList.add('wrong');ps('wrong');}spd[i].ci++;document.getElementById('ss'+i).textContent=`${spd[i].ok}/${spd[i].qs.length}`;setTimeout(()=>renderSpd(i),300);}
+function endSpd(i){const s=S[i],d=spd[i];if(d.tm)clearInterval(d.tm);if(s.done)return;s.done=true;if(d.ok>=5){combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${d.ok}/${d.qs.length} 맞힘! +${s.sc}점</span>`;}else{combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">${d.ok}/${d.qs.length} 맞힘. 다시 도전!</span>`;}}
+
+// Q9 mix blanks
+let mix={};
+function initMix(i){if(mix[i])return;mix[i]={qs:[{q:'□ + 4 = 9',a:5,ch:[4,5,6]},{q:'8 − □ = 3',a:5,ch:[4,5,6]},{q:'3 □ 5 = 8',a:'+',ch:['+','−']},{q:'7 □ 2 = 5',a:'−',ch:['+','−']}],ci:0};renderMix(i);}
+function renderMix(i){const d=mix[i];if(d.ci>=d.qs.length){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 맞았어요! +${S[i].sc}점</span>`;return;}
+const q=d.qs[d.ci];document.getElementById('mix'+i).innerHTML=`<div style="font-size:22px;margin:6px 0;">(${d.ci+1}/${d.qs.length})</div><div style="font-size:36px;margin:8px 0;">${q.q}</div>`;
+document.getElementById('b'+i).innerHTML=q.ch.map(c=>`<button class="b" onclick="ansMix(${i},this,'${c}','${q.a}')">${c}</button>`).join('');}
+function ansMix(i,el,v,c){ps('click');if(v===c){el.classList.add('correct');mix[i].ci++;setTimeout(()=>renderMix(i),400);}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 생각!</span>`;}}
+
+// Q10 puzzle
+let pzd={};
+function initPz(i){if(pzd[i])return;pzd[i]={qs:[{q:'2 + 5 = ?',a:7,ch:[6,7,8]},{q:'9 − 3 = ?',a:6,ch:[5,6,7]},{q:'□ + 1 = 4',a:3,ch:[2,3,4]},{q:'6 − □ = 0',a:6,ch:[0,3,6]},{q:'0 + 8 = ?',a:8,ch:[0,8,7]}],ci:0};renderPz(i);}
+function renderPz(i){const d=pzd[i];if(d.ci>=d.qs.length){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 종합 퍼즐 완성! +${S[i].sc}점</span>`;return;}
+const q=d.qs[d.ci];document.getElementById('pz'+i).innerHTML=`<div style="font-size:22px;margin:6px 0;">(${d.ci+1}/${d.qs.length})</div><div style="font-size:36px;margin:8px 0;">${q.q}</div><div class="br">${q.ch.map(n=>`<button class="b" onclick="ansPz(${i},this,${n},${q.a})">${n}</button>`).join('')}</div>`;}
+function ansPz(i,el,v,c){ps('click');if(v===c){el.classList.add('correct');pzd[i].ci++;setTimeout(()=>renderPz(i),400);}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 계산!</span>`;}}
+
+function showResult(){const d=document.getElementById('s'+(S.length-1));const total=S.filter(s=>s.t==='q').reduce((a,s)=>a+s.sc,0);const pct=Math.round(score/total*100);let msg=pct>=90?'🏆 연산 마스터!':pct>=70?'👏 잘했어요!':pct>=50?'💪 좋은 시작!':'🌱 다시 도전!';d.innerHTML=`<div class="card" style="max-width:480px;"><div style="font-size:32px;color:var(--primary);margin-bottom:8px;">🎉 학습 완료!</div><div style="font-size:64px;color:var(--primary);">${score}<span style="font-size:28px;color:var(--subtext);">/${total}</span></div><div style="font-size:28px;margin:8px 0;">${msg}</div>${maxCombo>1?`<div class="combo">🔥 최대 콤보 x${maxCombo}</div>`:''}<div style="font-size:20px;color:var(--subtext);margin-top:12px;">덧셈·뺄셈 혼합 연습 완료!<br>3단원 형성평가에 도전해 봐요!</div><button class="b" style="font-size:24px;margin-top:16px;padding:10px 28px;background:var(--primary);color:#fff;border-color:var(--primary);" onclick="location.reload()">다시 하기 🔄</button></div>`;}
+
+function updNav(){document.getElementById('prevBtn').disabled=(cur===0);document.getElementById('nextBtn').textContent=cur===S.length-2?'결과 보기 🏆':'다음 ▶';document.getElementById('pi').textContent=`${cur+1} / ${S.length}`;}
+function go(n){if(n<0||n>=S.length)return;document.getElementById('s'+cur).classList.remove('active');document.getElementById('s'+cur).classList.add('exit');cur=n;setTimeout(()=>{document.querySelectorAll('.slide').forEach(s=>s.classList.remove('exit'));document.getElementById('s'+cur).classList.add('active');updNav();if(cur===8)initSpd(cur);if(cur===9)initMix(cur);if(cur===10)initPz(cur);if(S[cur].t==='result')showResult();},200);}
+function prev(){go(cur-1);}function next(){go(cur+1);}
+let tx=0;document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX;},{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-tx;if(Math.abs(d)>50){d>0?prev():next();}},{passive:true});
+render();
+</script>
+</body>
+</html>

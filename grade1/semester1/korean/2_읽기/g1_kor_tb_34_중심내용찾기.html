@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>짧은 글 읽고 중심 내용 찾기 - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F0FF;--card:#FFFFFF;--primary:#7C4DFF;--primary-light:#EDE7F6;--secondary:#B388FF;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D1C4E9;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:10px;background:var(--primary-light);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;width:100%;max-width:640px;border:1px solid var(--border)}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:26px;text-align:center;margin:8px 0 12px;line-height:1.6}
+
+.passage{background:#F8F5FF;border-radius:14px;padding:16px 18px;font-size:26px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary)}
+.passage .tts-btn{background:none;border:none;font-size:20px;cursor:pointer;vertical-align:middle}
+
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.choice-btn{background:var(--card);border:2.5px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:24px;width:100%;max-width:520px;padding:12px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}
+.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:10px 0}
+.char-emoji{font-size:56px}
+.bubble{background:var(--primary-light);border-radius:18px 18px 18px 4px;padding:14px 18px;font-size:24px;max-width:420px;line-height:1.5}
+
+/* 밑줄 긋기 */
+.underline-text{font-size:26px;line-height:2;text-align:center;margin:10px 0}
+.underline-text .word{cursor:pointer;padding:2px 4px;border-radius:6px;transition:all .2s}
+.underline-text .word:hover{background:var(--primary-light)}
+.underline-text .word.marked{border-bottom:3px solid var(--primary);background:var(--primary-light)}
+.underline-text .word.correct-mark{border-bottom:3px solid var(--green);background:var(--green-light)}
+
+.echo-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:16px;padding:10px 24px;font-family:'Jua';font-size:24px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.confirm-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 24px;font-family:'Jua';font-size:22px;cursor:pointer;margin-top:8px}
+
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}
+.result-card .trophy{font-size:80px}
+.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}
+.result-card .result-stars{font-size:40px;margin:8px 0}
+.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div><span class="page-info" id="pageInfo">1/12</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K✦</span>
+</div>
+<div class="slides" id="slidesContainer">
+
+  <!-- S0: 개념 -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📖 중심 내용을 찾아봐요!</div>
+      <div class="char-bubble"><span class="char-emoji">🐕</span><div class="bubble">짧은 글을 읽고 "가장 중요한 내용"을<br>찾는 연습을 해 볼 거야!</div></div>
+      <div style="background:var(--primary-light);border-radius:14px;padding:14px;margin:12px 0;font-size:24px;line-height:1.8">
+        <div>🔍 <b>중심 내용</b>이란?</div>
+        <div style="margin-top:6px">글에서 가장 중요한 이야기!</div>
+        <div style="margin-top:6px">"이 글은 무엇에 대한 글인가?"<br>를 생각하면 찾을 수 있어!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S1: 개념 + 예시 -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">🔍 같이 읽어 보자!</div>
+      <div class="passage" onclick="speakKo('강아지는 꼬리를 흔든다. 기분이 좋을 때 꼬리를 흔든다. 강아지의 꼬리는 마음을 보여 준다.',0.8)" style="cursor:pointer">
+        🐕 강아지는 꼬리를 흔든다. 기분이 좋을 때 꼬리를 흔든다. 강아지의 꼬리는 마음을 보여 준다.
+        <div style="font-size:18px;color:var(--subtext);margin-top:4px">👆 눌러서 들어 봐!</div>
+      </div>
+      <div class="char-bubble" style="justify-content:flex-end"><div class="bubble" style="border-radius:18px 18px 4px 18px;background:#E8F5E9">이 글의 중심 내용은?<br>→ <b>"강아지 꼬리는 마음을 보여 준다"</b>야!</div><span class="char-emoji">🦦</span></div>
+    </div>
+  </div>
+
+  <!-- S2: Q1 글 읽고 중심내용 ⭐ -->
+  <div class="slide" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="passage" onclick="speakKo('봄이 왔다. 꽃이 핀다. 나비가 날아다닌다. 봄은 참 아름답다.',0.8)" style="cursor:pointer;font-size:24px">
+        🌸 봄이 왔다. 꽃이 핀다. 나비가 날아다닌다. 봄은 참 아름답다.
+      </div>
+      <div class="question-text" style="font-size:24px">이 글의 중심 내용은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">나비가 날아다닌다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">봄은 아름답다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">꽃이 핀다.</button>
+      </div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- S3: Q2 글 읽고 중심내용 ⭐ -->
+  <div class="slide" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="passage" onclick="speakKo('우유는 하얀색이다. 우유에는 칼슘이 들어 있다. 칼슘은 뼈를 튼튼하게 한다. 우유는 몸에 좋다.',0.8)" style="cursor:pointer;font-size:24px">
+        🥛 우유는 하얀색이다. 우유에는 칼슘이 들어 있다. 칼슘은 뼈를 튼튼하게 한다. 우유는 몸에 좋다.
+      </div>
+      <div class="question-text" style="font-size:24px">이 글의 중심 내용은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">우유는 몸에 좋다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">우유는 하얀색이다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">칼슘은 뼈를 만든다.</button>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- S4: Q3 중요한 낱말 밑줄 긋기 ⭐⭐ -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐⭐</span></div>
+      <div class="question-text" style="font-size:24px">글에서 가장 중요한 낱말 2개에<br>밑줄을 그어 보세요!</div>
+      <div class="passage" style="font-size:24px">🐈 고양이는 귀가 좋다. 작은 소리도 잘 듣는다. 고양이의 귀는 아주 뛰어나다.</div>
+      <div class="underline-text" id="ulText4"></div>
+      <div style="text-align:center"><button class="confirm-btn" onclick="checkUL(4)">✅ 확인</button></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- S5: Q4 글 읽고 중심내용 ⭐⭐ -->
+  <div class="slide" data-correct="2" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐⭐</span></div>
+      <div class="passage" onclick="speakKo('비가 오면 우산을 쓴다. 장화를 신는다. 비옷을 입기도 한다. 비 오는 날에는 준비를 해야 한다.',0.8)" style="cursor:pointer;font-size:24px">
+        🌧️ 비가 오면 우산을 쓴다. 장화를 신는다. 비옷을 입기도 한다. 비 오는 날에는 준비를 해야 한다.
+      </div>
+      <div class="question-text" style="font-size:24px">이 글의 중심 내용은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">장화를 신어야 한다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">우산을 꼭 써야 한다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">비 오는 날에는 준비를 해야 한다.</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- S6: Q5 듣고 중심내용 ⭐⭐ -->
+  <div class="slide" data-correct="1" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐⭐</span></div>
+      <div class="question-text" style="font-size:24px">🔊 글을 듣고 중심 내용을 고르세요!</div>
+      <div style="text-align:center;margin:8px 0"><button class="echo-btn" onclick="speakKo('토끼는 귀가 길다. 토끼는 뒷다리가 크다. 그래서 토끼는 높이 뛸 수 있다. 토끼의 몸은 뛰기에 알맞다.',0.8)">🔊 다시 듣기</button></div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">토끼 귀가 길다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">토끼 몸은 뛰기에 알맞다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">토끼 뒷다리가 크다.</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- S7: Q6 중심 문장 찾기 ⭐⭐ -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+      <div class="question-text" style="font-size:24px">중심 문장을 눌러 봐!</div>
+      <div id="sentenceSelect7" style="margin:10px 0"></div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- S8: Q7 글 읽고 내용 맞는지 O/X ⭐⭐ -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 7 <span class="stars">⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">🌳 나무는 우리에게 산소를 준다. 나무 그늘에서 쉴 수도 있다. 나무로 종이를 만들기도 한다. 나무는 우리에게 꼭 필요하다.</div>
+      <div class="question-text" style="font-size:24px">"나무로 음식을 만든다"가 이 글의 내용인가요?</div>
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:12px">
+        <button class="choice-btn" style="font-size:56px;width:100px;height:100px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center" onclick="oxA(this,8,false)">⭕</button>
+        <button class="choice-btn" style="font-size:56px;width:100px;height:100px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center" onclick="oxA(this,8,true)">❌</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- S9: Q8 한 문장으로 요약 ⭐⭐⭐ -->
+  <div class="slide" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 8 <span class="stars">⭐⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">🐜 개미는 아주 작다. 하지만 개미는 자기 몸보다 무거운 것을 들 수 있다. 개미는 여럿이 함께 일한다. 개미는 작지만 힘이 세다.</div>
+      <div class="question-text" style="font-size:24px">이 글을 한 문장으로 말하면?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">개미는 아주 작다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">개미는 작지만 힘이 세다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">개미는 여럿이 함께 일한다.</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- S10: Q9 종합 ⭐⭐⭐ -->
+  <div class="slide" data-correct="2" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 9 <span class="stars">⭐⭐⭐</span></div>
+      <div class="passage" onclick="speakKo('손을 자주 씻어야 한다. 손에는 눈에 보이지 않는 세균이 많다. 밥 먹기 전, 화장실 다녀온 후에 꼭 손을 씻자. 깨끗한 손이 건강을 지켜 준다.',0.8)" style="cursor:pointer;font-size:22px">
+        🧼 손을 자주 씻어야 한다. 손에는 눈에 보이지 않는 세균이 많다. 밥 먹기 전, 화장실 다녀온 후에 꼭 손을 씻자. 깨끗한 손이 건강을 지켜 준다.
+      </div>
+      <div class="question-text" style="font-size:24px">이 글의 중심 내용은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">세균은 눈에 보이지 않는다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">밥 먹기 전에만 손을 씻는다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">깨끗한 손이 건강을 지켜 준다.</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- S11: 결과 -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="trophy" id="resultEmoji">🎉</div>
+      <div style="font-size:32px;margin:8px 0">학습 완료!</div>
+      <div class="final-score"><span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="char-bubble" style="justify-content:center"><span class="char-emoji">🐕</span><div class="bubble">중심 내용 찾기를 잘했어!<br>글을 읽을 때 "이 글은 뭐에 대한 글일까?"<br>항상 생각해 봐! 🔍</div></div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+    </div>
+  </div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakKo(t,r){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=r||.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=220?'⭐⭐⭐⭐⭐':score>=150?'⭐⭐⭐⭐':score>=80?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=220?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+
+// 밑줄 긋기 (S4)
+const ulWords4=['고양이는','귀가','좋다.','작은','소리도','잘','듣는다.','고양이의','귀는','아주','뛰어나다.'];
+const ulCorrect4=['고양이는','귀'];
+function initUL(){
+  const area=document.getElementById('ulText4');area.innerHTML='';
+  ulWords4.forEach((w,i)=>{const s=document.createElement('span');s.className='word';s.textContent=w+' ';s.onclick=function(){if(!answered[4]){playClick();this.classList.toggle('marked')}};area.appendChild(s)});
+}
+function checkUL(si){
+  if(answered[si])return;
+  const marked=[];document.querySelectorAll('#ulText4 .word.marked').forEach(w=>marked.push(w.textContent.trim()));
+  const hasAll=ulCorrect4.every(c=>marked.some(m=>m.includes(c)));
+  if(hasAll&&marked.length<=3){playCorrect();addScore(25);setFB('fb4','✅ 중요한 낱말을 잘 찾았어! +25점',true);answered[4]=true;document.querySelectorAll('#ulText4 .word.marked').forEach(w=>w.classList.add('correct-mark'));setTimeout(nextSlide,900)}
+  else{playWrong();combo=0;setFB('fb4','"고양이"와 "귀"가 핵심이야! 💪',false)}
+}
+initUL();
+
+// 중심 문장 찾기 (S7)
+const sentences7=['🌻 해바라기는 해를 따라 고개를 돌린다.','해바라기는 노란색이다.','해바라기는 키가 크다.','해바라기는 해를 좋아하는 꽃이다.'];
+const correctSentence7=3;
+function initSS7(){
+  const area=document.getElementById('sentenceSelect7');area.innerHTML='';
+  sentences7.forEach((s,i)=>{const d=document.createElement('div');d.style.cssText='background:#F8F5FF;border:2px solid var(--border);border-radius:12px;padding:12px 16px;margin:6px 0;font-size:24px;cursor:pointer;transition:all .2s';d.textContent=s;d.onmouseover=function(){if(!answered[7])this.style.borderColor='var(--primary)'};d.onmouseout=function(){if(!answered[7]&&!this.classList.contains('correct'))this.style.borderColor='var(--border)'};d.onclick=function(){ssSelect(this,i)};area.appendChild(d)});
+}
+function ssSelect(el,idx){
+  if(answered[7])return;playClick();
+  if(idx===correctSentence7){el.style.background='var(--green-light)';el.style.borderColor='var(--green)';el.classList.add('correct');playCorrect();addScore(25);setFB('fb7','✅ 중심 문장을 잘 찾았어! +25점',true);answered[7]=true;setTimeout(nextSlide,900)}
+  else{el.style.background='var(--red-light)';el.style.borderColor='var(--red)';playWrong();combo=0;setFB('fb7','글 전체를 아우르는 문장을 찾아 봐! 💪',false);setTimeout(()=>{el.style.background='#F8F5FF';el.style.borderColor='var(--border)'},600)}
+}
+initSS7();
+
+// O/X (S8)
+function oxA(btn,si,isCorrect){
+  if(answered[si])return;playClick();
+  if(isCorrect){btn.classList.add('correct');playCorrect();addScore(25);setFB('fb'+si,'✅ 맞아! 글에 그런 내용은 없어! +25점',true);answered[si]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'글을 다시 읽어 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+
+function restart(){score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  initUL();initSS7();
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+updateUI();
+</script>
+</body>
+</html>

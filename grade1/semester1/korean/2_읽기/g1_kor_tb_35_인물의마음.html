@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>인물의 마음 짐작하기 - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF5F5;--card:#FFFFFF;--primary:#EF5350;--primary-light:#FFEBEE;--secondary:#EF9A9A;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#FFCDD2;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:10px;background:var(--primary-light);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;width:100%;max-width:640px;border:1px solid var(--border)}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:26px;text-align:center;margin:8px 0 12px;line-height:1.6}
+.passage{background:#FFF8F8;border-radius:14px;padding:16px 18px;font-size:24px;line-height:1.8;margin:10px 0;border-left:4px solid var(--primary)}
+.passage.clickable{cursor:pointer;transition:transform .2s}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.choice-btn{background:var(--card);border:2.5px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:24px;width:100%;max-width:520px;padding:12px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}
+.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:10px 0}
+.char-emoji{font-size:56px}
+.bubble{background:var(--primary-light);border-radius:18px 18px 18px 4px;padding:14px 18px;font-size:24px;max-width:420px;line-height:1.5}
+
+.emotion-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.emotion-card{background:#fff;border:3px solid var(--border);border-radius:16px;padding:14px 20px;text-align:center;cursor:pointer;transition:all .2s;min-width:100px}
+.emotion-card:hover{border-color:var(--primary);transform:scale(1.05)}
+.emotion-card .em{font-size:56px}
+.emotion-card .label{font-size:20px;margin-top:4px}
+.emotion-card.correct{border-color:var(--green);background:var(--green-light)}
+.emotion-card.wrong{border-color:var(--red);background:var(--red-light)}
+
+.echo-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:16px;padding:10px 24px;font-family:'Jua';font-size:24px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}
+.result-card .trophy{font-size:80px}
+.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}
+.result-card .result-stars{font-size:40px;margin:8px 0}
+.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div><span class="page-info" id="pageInfo">1/12</span></div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K✦</span>
+</div>
+<div class="slides" id="slidesContainer">
+
+  <!-- S0: 개념 -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="slide-title">💭 인물의 마음을 짐작해 봐요!</div>
+      <div class="char-bubble"><span class="char-emoji">🐕</span><div class="bubble">이야기 속 인물이 어떤 마음인지<br>생각해 보는 거야! 🤔</div></div>
+      <div class="emotion-row" style="margin:16px 0">
+        <div class="emotion-card" onclick="speakKo('기쁜 마음')"><div class="em">😊</div><div class="label">기쁜</div></div>
+        <div class="emotion-card" onclick="speakKo('슬픈 마음')"><div class="em">😢</div><div class="label">슬픈</div></div>
+        <div class="emotion-card" onclick="speakKo('화난 마음')"><div class="em">😠</div><div class="label">화난</div></div>
+        <div class="emotion-card" onclick="speakKo('놀란 마음')"><div class="em">😲</div><div class="label">놀란</div></div>
+      </div>
+      <div style="text-align:center;font-size:22px;color:var(--subtext)">👆 감정 카드를 눌러 봐!</div>
+    </div>
+  </div>
+
+  <!-- S1: 개념 + 예시 -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📖 같이 읽어 보자!</div>
+      <div class="passage clickable" onclick="speakKo('민수는 생일 선물을 받았다. 상자를 열어 보니 로봇 장난감이 들어 있었다. 민수는 펄쩍 뛰며 좋아했다.',0.8)">
+        🎁 민수는 생일 선물을 받았다. 상자를 열어 보니 로봇 장난감이 들어 있었다. 민수는 펄쩍 뛰며 좋아했다.
+      </div>
+      <div class="char-bubble" style="justify-content:flex-end"><div class="bubble" style="border-radius:18px 18px 4px 18px;background:#E8F5E9">민수의 마음은? → <b>기쁜 마음!</b> 😊<br>"펄쩍 뛰며 좋아했다"가 힌트야!</div><span class="char-emoji">🦦</span></div>
+    </div>
+  </div>
+
+  <!-- S2: Q1 감정 고르기 ⭐ -->
+  <div class="slide" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="passage" style="font-size:22px">🐶 지수의 강아지가 아팠다. 병원에 갔더니 곧 나을 거라고 했다. 지수는 안심이 되었다.</div>
+      <div class="question-text" style="font-size:24px">지수의 마음은?</div>
+      <div class="emotion-row">
+        <div class="emotion-card" onclick="emAnswer(this,2,0,false)"><div class="em">😠</div><div class="label">화난</div></div>
+        <div class="emotion-card" onclick="emAnswer(this,2,1,true)"><div class="em">😌</div><div class="label">안심된</div></div>
+        <div class="emotion-card" onclick="emAnswer(this,2,2,false)"><div class="em">😢</div><div class="label">슬픈</div></div>
+      </div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- S3: Q2 감정 고르기 ⭐ -->
+  <div class="slide" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="passage" style="font-size:22px">🎨 하은이는 그림 그리기 대회에서 상을 받았다. 하은이는 친구들 앞에서 활짝 웃었다.</div>
+      <div class="question-text" style="font-size:24px">하은이의 마음은?</div>
+      <div class="emotion-row">
+        <div class="emotion-card" onclick="emAnswer(this,3,0,true)"><div class="em">😊</div><div class="label">기쁜</div></div>
+        <div class="emotion-card" onclick="emAnswer(this,3,1,false)"><div class="em">😲</div><div class="label">놀란</div></div>
+        <div class="emotion-card" onclick="emAnswer(this,3,2,false)"><div class="em">😰</div><div class="label">걱정되는</div></div>
+      </div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- S4: Q3 이유 고르기 ⭐⭐ -->
+  <div class="slide" data-correct="1" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">🌧️ 현우는 소풍 날 아침에 일어났다. 창밖을 보니 비가 내리고 있었다. 현우는 고개를 떨구었다.</div>
+      <div class="question-text" style="font-size:24px">현우가 슬픈 까닭은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">아침에 늦게 일어나서</button>
+        <button class="choice-btn" onclick="answer(this,1)">소풍 날인데 비가 와서</button>
+        <button class="choice-btn" onclick="answer(this,2)">친구가 안 와서</button>
+      </div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- S5: Q4 이유 고르기 ⭐⭐ -->
+  <div class="slide" data-correct="2" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">🎂 서준이는 깜짝 생일 파티를 열어 주었다. 친구들이 갑자기 나타났다. 서준이는 눈이 커지며 입을 벌렸다.</div>
+      <div class="question-text" style="font-size:24px">서준이가 놀란 까닭은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">무서운 일이 생겨서</button>
+        <button class="choice-btn" onclick="answer(this,1)">선물을 안 받아서</button>
+        <button class="choice-btn" onclick="answer(this,2)">예상 못한 깜짝 파티여서</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- S6: Q5 나라면? ⭐⭐ -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">🐱 은서가 키우던 고양이가 이사 간 친구에게 갔다. 은서는 고양이가 보고 싶었다.</div>
+      <div class="question-text" style="font-size:24px">나라면 어떤 마음이 들까?</div>
+      <div class="emotion-row">
+        <div class="emotion-card" onclick="meAnswer(this,6,'슬프고 보고 싶은')"><div class="em">😢</div><div class="label">슬프고 보고 싶은</div></div>
+        <div class="emotion-card" onclick="meAnswer(this,6,'기쁜')"><div class="em">😊</div><div class="label">기쁜</div></div>
+        <div class="emotion-card" onclick="meAnswer(this,6,'화난')"><div class="em">😠</div><div class="label">화난</div></div>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- S7: Q6 감정 고르기 + 이유 ⭐⭐ -->
+  <div class="slide" data-correct="0" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+      <div class="passage" style="font-size:22px">📚 수아는 시험 공부를 열심히 했다. 시험 결과 100점을 받았다. 수아는 신이 나서 집으로 뛰어갔다.</div>
+      <div class="question-text" style="font-size:24px">수아의 마음을 가장 잘 나타낸 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">열심히 한 보람이 있어 뿌듯하다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">시험이 무서워서 떨린다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">집에 빨리 가고 싶다.</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- S8: Q7 두 인물의 마음 비교 ⭐⭐⭐ -->
+  <div class="slide" data-correct="2" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 7 <span class="stars">⭐⭐⭐</span></div>
+      <div class="passage" style="font-size:20px">🏃 체육 시간에 달리기를 했다. 준영이는 1등을 했다. 태민이는 넘어져서 꼴찌를 했다. 준영이는 웃으며 달려갔고, 태민이는 고개를 숙였다.</div>
+      <div class="question-text" style="font-size:22px">준영이와 태민이의 마음은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">둘 다 기쁘다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">둘 다 슬프다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">준영이는 기쁘고, 태민이는 속상하다.</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- S9: Q8 인물에게 한마디 ⭐⭐⭐ -->
+  <div class="slide" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 8 <span class="stars">⭐⭐⭐</span></div>
+      <div class="passage" style="font-size:20px">🌸 유나는 전학을 왔다. 아는 친구가 없어서 쉬는 시간에 혼자 앉아 있었다. 유나는 외로워 보였다.</div>
+      <div class="question-text" style="font-size:22px">유나에게 뭐라고 말해 줄까?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="msgAnswer(this,9,'같이 놀자!','같이 놀자고 해 주는 너, 정말 따뜻해!')">😊 "같이 놀자!"</button>
+        <button class="choice-btn" onclick="msgAnswer(this,9,'괜찮아, 금방 친해질 거야!','응원해 주는 마음이 멋져!')">💪 "괜찮아, 금방 친해질 거야!"</button>
+        <button class="choice-btn" onclick="msgAnswer(this,9,'우리 반에 온 걸 환영해!','환영 인사를 해 주다니 대단해!')">🎉 "우리 반에 온 걸 환영해!"</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- S10: Q9 한 문장으로 마음 쓰기 ⭐⭐⭐ -->
+  <div class="slide" data-correct="1" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 9 <span class="stars">⭐⭐⭐</span></div>
+      <div class="passage" style="font-size:20px">🎪 시우는 처음으로 놀이공원에 갔다. 롤러코스터를 타기 전에 다리가 떨렸다. 하지만 타고 나서는 "한 번 더!"라고 소리쳤다.</div>
+      <div class="question-text" style="font-size:22px">시우의 마음 변화를 잘 나타낸 것은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">처음부터 끝까지 무서웠다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">무서웠지만 타고 나니 재미있었다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">처음부터 전혀 무섭지 않았다.</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- S11: 결과 -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="trophy" id="resultEmoji">🎉</div>
+      <div style="font-size:32px;margin:8px 0">학습 완료!</div>
+      <div class="final-score"><span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="char-bubble" style="justify-content:center"><span class="char-emoji">🦦</span><div class="bubble">인물의 마음을 잘 짐작했어!<br>이야기를 읽을 때 인물의 마음을<br>늘 생각해 보자! 💕</div></div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+    </div>
+  </div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakKo(t,r){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=r||.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=240?'⭐⭐⭐⭐⭐':score>=160?'⭐⭐⭐⭐':score>=80?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=240?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+
+function emAnswer(card,si,idx,isCorrect){
+  if(answered[si])return;playClick();
+  if(isCorrect){card.classList.add('correct');playCorrect();const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;addScore(p);setFB('fb'+si,'✅ 정답! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}
+  else{card.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'인물의 행동을 다시 살펴봐! 💪',false);setTimeout(()=>card.classList.remove('wrong'),500)}
+}
+
+function meAnswer(card,si,feeling){
+  if(answered[si])return;playClick();
+  card.classList.add('correct');playCorrect();
+  const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||25;
+  addScore(p);setFB('fb'+si,'✅ '+feeling+' 마음이구나! 공감 능력이 대단해! +'+p+'점',true);
+  answered[si]=true;setTimeout(nextSlide,1200);
+}
+
+function msgAnswer(btn,si,msg,fb){
+  if(answered[si])return;playClick();
+  btn.classList.add('correct');playCorrect();
+  addScore(50);setFB('fb'+si,'✅ '+fb+' +50점',true);
+  answered[si]=true;speakKo(msg,.8);setTimeout(nextSlide,1200);
+}
+
+let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+
+function restart(){score=0;combo=0;answered={};
+  document.querySelectorAll('.choice-btn,.emotion-card').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+updateUI();
+</script>
+</body>
+</html>

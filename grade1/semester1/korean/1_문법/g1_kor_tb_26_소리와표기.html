@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu | 1학년 국어 26차시 — 소리와 표기가 다른 낱말</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FEF9F0;--card:#FFF;--primary:#D97706;--primary-light:#FEF3C7;--secondary:#F59E0B;--green:#16A34A;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#FDE68A;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:26px;padding:4px 8px;border-radius:10px;}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px;}.progress-bar{flex:1;height:10px;background:var(--primary-light);border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s;}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap;}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A000;}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;width:100%;max-width:600px;text-align:center;}.slide-title{font-size:24px;color:var(--subtext);margin-bottom:8px;}.char-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;}.mascot{font-size:48px;}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:10px;}.stars{color:#FCD34D;}.question-text{font-size:28px;text-align:center;margin:8px 0 12px;line-height:1.5;}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;}.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 24px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06);min-width:70px;}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}.choice-btn.sm{font-size:30px;padding:10px 18px;}.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{width:100%;max-width:420px;font-size:28px;padding:10px 18px;}
+.blank-box{display:inline-block;font-size:72px;font-weight:900;border-bottom:5px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s;}.blank-box.filled{animation:cpop .4s;}
+.feedback{font-size:24px;text-align:center;margin-top:8px;min-height:32px;border-radius:12px;padding:6px 14px;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 16px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s;}.nav-btn:disabled{opacity:.3;cursor:default;}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:24px;color:#E6A000;z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.result-card{text-align:center;}.result-emoji{font-size:80px;margin:10px 0;}.result-score{font-size:48px;color:var(--primary);margin:8px 0;}.result-stars{font-size:36px;margin:8px 0;}.result-msg{font-size:24px;color:var(--subtext);margin:6px 0;}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:10px;}
+.compare-box{display:inline-flex;flex-direction:column;align-items:center;background:var(--primary-light);border:3px solid var(--border);border-radius:16px;padding:10px 18px;margin:6px;cursor:pointer;transition:all .2s;min-width:120px;}.compare-box:hover{border-color:var(--primary);transform:scale(1.03);}
+.compare-box .word{font-size:40px;color:var(--primary);}.compare-box .sound{font-size:20px;color:var(--subtext);}.compare-box .label{font-size:16px;color:var(--red);margin-top:2px;}
+.table-row{display:flex;justify-content:center;gap:8px;margin:4px 0;}.table-cell{background:var(--primary-light);border-radius:10px;padding:6px 14px;font-size:22px;min-width:100px;text-align:center;}.table-cell.header{background:var(--primary);color:#fff;font-size:18px;}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/14</span></div><span class="score-badge">⭐ <span id="scoreVal">0</span></span><div class="kedu-logo">K✦</div></div>
+<div class="slides" id="slidesWrap">
+
+<!-- S0 -->
+<div class="slide active" data-type="concept"><div class="card">
+  <div class="char-row"><span class="mascot">🐕</span><span class="slide-title">26차시</span><span class="mascot">🐩</span></div>
+  <div class="question-text">소리와 표기가<br>다른 낱말!</div>
+  <p style="font-size:22px;color:var(--subtext);margin-top:8px;">들리는 소리와 쓰는 글자가<br>다를 수 있어! 😮</p>
+  <div style="font-size:20px;color:var(--primary);margin-top:10px;">🐕 케이: "소리대로 쓰면 틀릴 수 있어!"</div>
+</div></div>
+
+<!-- S1 개념: 소리 변화 예시 -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">🔊 소리 vs 📝 표기</div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0;">
+    <div class="compare-box" onclick="speakKo('같이')"><div class="word">같이</div><div class="sound">🔊 [가치]</div><div class="label">소리 변화!</div></div>
+    <div class="compare-box" onclick="speakKo('맛있다')"><div class="word">맛있다</div><div class="sound">🔊 [마싣따]</div><div class="label">소리 변화!</div></div>
+  </div>
+  <p style="font-size:22px;color:var(--subtext);margin-top:8px;">소리는 바뀌어도<br><b>쓸 때는 원래 글자</b>로!</p>
+</div></div>
+
+<!-- S2 개념: 비교표 -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">📊 소리 vs 표기 비교</div>
+  <div class="table-row"><div class="table-cell header">낱말</div><div class="table-cell header">소리</div><div class="table-cell header">바른 표기</div></div>
+  <div class="table-row"><div class="table-cell">같이</div><div class="table-cell">[가치]</div><div class="table-cell" style="color:var(--green);">같이 ✅</div></div>
+  <div class="table-row"><div class="table-cell">꽃이</div><div class="table-cell">[꼬치]</div><div class="table-cell" style="color:var(--green);">꽃이 ✅</div></div>
+  <div class="table-row"><div class="table-cell">밭에</div><div class="table-cell">[바테]</div><div class="table-cell" style="color:var(--green);">밭에 ✅</div></div>
+  <p style="font-size:18px;color:var(--subtext);margin-top:8px;">🐩 듀: "소리대로 쓰면 틀려! 원래 글자로 써야 해!"</p>
+</div></div>
+
+<!-- S3 Q1 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q1</div>
+  <div class="question-text">'같이'를 소리 내면?</div>
+  <div style="font-size:64px;color:var(--primary);margin:6px 0;">같이</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">[가치]</button><button class="choice-btn" onclick="answer(this,1)">[같이]</button><button class="choice-btn" onclick="answer(this,2)">[갓이]</button></div>
+  <div class="feedback" id="fb3"></div>
+</div></div>
+
+<!-- S4 Q2 ⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q2</div>
+  <div class="question-text">[가치]라고 들리는 낱말의<br>바른 표기는?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">가치</button><button class="choice-btn" onclick="answer(this,1)">같이</button><button class="choice-btn" onclick="answer(this,2)">갓이</button></div>
+  <div class="feedback" id="fb4"></div>
+</div></div>
+
+<!-- S5 Q3 ⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q3</div>
+  <div class="question-text">🌸 '꽃이'의 소리는?</div>
+  <button class="choice-btn sm" style="margin:8px auto;display:block;background:var(--primary-light);font-size:22px;" onclick="speakKo('꽃이')">🔊 듣기</button>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">[꽃이]</button><button class="choice-btn" onclick="answer(this,1)">[꼳이]</button><button class="choice-btn" onclick="answer(this,2)">[꼬치]</button></div>
+  <div class="feedback" id="fb5"></div>
+</div></div>
+
+<!-- S6 Q4 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q4</div>
+  <div class="question-text">'맛있다'를 바르게 쓴 것은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">맛있다</button><button class="choice-btn" onclick="answer(this,1)">마싣따</button><button class="choice-btn" onclick="answer(this,2)">맛잇다</button></div>
+  <div class="feedback" id="fb6"></div>
+</div></div>
+
+<!-- S7 Q5 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q5</div>
+  <div class="question-text">[바테]라고 들리는 낱말의<br>바른 표기는?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">바테</button><button class="choice-btn" onclick="answer(this,1)">밭에</button><button class="choice-btn" onclick="answer(this,2)">밧에</button></div>
+  <div class="feedback" id="fb7"></div>
+</div></div>
+
+<!-- S8 Q6 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q6</div>
+  <div class="question-text">다음 중 소리와 표기가<br><b>같은</b> 낱말은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">같이 [가치]</button><button class="choice-btn" onclick="answer(this,1)">꽃이 [꼬치]</button><button class="choice-btn" onclick="answer(this,2)">나무 [나무]</button></div>
+  <div class="feedback" id="fb8"></div>
+</div></div>
+
+<!-- S9 Q7 연속 퀴즈 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q7</div>
+  <div class="question-text">바른 표기를 골라!</div>
+  <div style="font-size:28px;color:var(--primary);margin:6px 0;" id="spWord">소리: [꼬치]</div>
+  <div class="choices col" id="spChoices">
+    <button class="choice-btn" onclick="spAnswer(this,'꼬치')">꼬치</button>
+    <button class="choice-btn" onclick="spAnswer(this,'꽃이')">꽃이</button>
+  </div>
+  <div style="font-size:18px;color:var(--subtext);" id="spProg">1 / 4</div>
+  <div class="feedback" id="fb9"></div>
+</div></div>
+
+<!-- S10 Q8 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q8</div>
+  <div class="question-text">'해돋이'를 소리 내면<br>어떻게 들릴까?</div>
+  <div style="font-size:48px;color:var(--primary);margin:6px 0;">해돋이</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">[해돋이]</button><button class="choice-btn" onclick="answer(this,1)">[해도지]</button><button class="choice-btn" onclick="answer(this,2)">[해돗이]</button></div>
+  <div class="feedback" id="fb10"></div>
+</div></div>
+
+<!-- S11 Q9 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q9</div>
+  <div class="question-text">소리대로 쓰면 안 되는 이유는?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">원래 글자의 뜻을 알 수 있으니까</button><button class="choice-btn" onclick="answer(this,1)">소리가 더 예쁘니까</button><button class="choice-btn" onclick="answer(this,2)">쓰기 더 쉬우니까</button></div>
+  <div class="feedback" id="fb11"></div>
+</div></div>
+
+<!-- S12 Q10 ⭐⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="100"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q10</div>
+  <div class="question-text">'꽃잎'의 바른 표기와<br>소리를 올바르게 짝지은 것은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">표기: 꼬칩, 소리: [꼬칩]</button><button class="choice-btn" onclick="answer(this,1)">표기: 꽃잎, 소리: [꽃잎]</button><button class="choice-btn" onclick="answer(this,2)">표기: 꽃잎, 소리: [꼰닙]</button></div>
+  <div class="feedback" id="fb12"></div>
+</div></div>
+
+<!-- S13 결과 -->
+<div class="slide" data-type="result"><div class="card result-card">
+  <div class="result-emoji" id="resultEmoji">🎉</div><div style="font-size:28px;">소리와 표기 마스터!</div>
+  <div class="result-score">⭐ <span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div>
+  <div class="result-msg">🐩 듀: "바른 표기로 쓸 수 있어!"</div>
+  <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+</div></div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+
+<script>
+let audioCtx=null,soundOn=true;function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}function playTone(f,t,d,g=.3){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}function playCorrect(){if(!soundOn)return;getCtx();[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}function playWrong(){if(!soundOn)return;getCtx();[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}function playClick(){if(!soundOn)return;getCtx();playTone(880,'sine',.08,.2);}function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}function speakKo(t){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+let currentSlide=0,score=0,combo=0,answered={};const TOTAL=14;
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const s=document.querySelectorAll('.slide')[currentSlide];const c=parseInt(s.dataset.correct),p=parseInt(s.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+// Q7 연속
+const spData=[{q:'소리: [꼬치]',a:'꽃이',opts:['꼬치','꽃이']},{q:'소리: [가치]',a:'같이',opts:['가치','같이']},{q:'소리: [바테]',a:'밭에',opts:['바테','밭에']},{q:'소리: [마싣따]',a:'맛있다',opts:['마싣따','맛있다']}];
+let spIdx=0,spOk=0;
+function spAnswer(btn,w){if(answered[9])return;playClick();if(w===spData[spIdx].a){spOk++;btn.classList.add('correct');playCorrect();setFB('fb9','✅ '+w+' 맞아!',true);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb9','❌ 바른 표기: '+spData[spIdx].a,false);}spIdx++;document.getElementById('spProg').textContent=spIdx+' / '+spData.length;if(spIdx<spData.length){setTimeout(()=>{document.getElementById('spWord').textContent=spData[spIdx].q;const btns=document.querySelectorAll('#spChoices .choice-btn');spData[spIdx].opts.forEach((o,i)=>{btns[i].textContent=o;btns[i].className='choice-btn';btns[i].onclick=function(){spAnswer(this,o);};});setFB('fb9','',true);},700);}else{answered[9]=true;if(spOk>=3)addScore(50);setTimeout(()=>{setFB('fb9',spOk+'/4!'+(spOk>=3?' +50점':''),spOk>=3);setTimeout(nextSlide,800);},700);}}
+
+let tx=0;document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+function restart(){score=0;combo=0;answered={};spIdx=0;spOk=0;document.getElementById('spWord').textContent=spData[0].q;document.getElementById('spProg').textContent='1 / '+spData.length;const btns=document.querySelectorAll('#spChoices .choice-btn');spData[0].opts.forEach((o,i)=>{btns[i].textContent=o;btns[i].className='choice-btn';btns[i].onclick=function(){spAnswer(this,o);};});document.querySelectorAll('.choice-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim();b.style.pointerEvents='';});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

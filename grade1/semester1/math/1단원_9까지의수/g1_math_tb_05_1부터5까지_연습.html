@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>1부터 5까지 연습 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF9F0;--card:#FFFFFF;--primary:#FF8C42;--primary-light:#FFE8D6;--secondary:#FFB347;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F0E0D0;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}
+.logo-star{font-size:10px;color:#F59E0B}
+.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100vh;padding:60px 20px 80px;text-align:center;position:absolute;top:0;left:0}
+.slide.active{display:flex}
+.slide.active>*{animation:fadeIn .5s ease}
+.slide-title{font-size:28px;color:var(--primary);margin-bottom:12px}
+.badge{display:inline-block;font-size:18px;background:var(--yellow-light);padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.concept-box{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);max-width:600px;width:100%;margin:8px 0}
+.char-img{width:64px;height:64px;border-radius:50%}
+.speech-bubble{background:var(--card);border-radius:20px;padding:16px 20px;font-size:22px;box-shadow:var(--shadow);max-width:400px;position:relative;margin:8px 0}
+.speech-bubble::after{content:'';position:absolute;bottom:-10px;left:40px;border-width:10px 10px 0;border-style:solid;border-color:var(--card) transparent transparent}
+.options-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+.opt-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 28px;font-size:52px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s;min-width:80px}
+.opt-btn:active{transform:scale(.95)}
+.opt-btn.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s}
+.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.opt-btn.disabled{pointer-events:none;opacity:.6}
+.blank-box{display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border:4px dashed var(--primary);border-radius:16px;font-size:72px;color:var(--primary);margin:0 8px;vertical-align:middle}
+.ox-row{display:flex;gap:20px;justify-content:center;margin:12px 0}
+.ox-btn{width:100px;height:100px;border-radius:50%;border:4px solid var(--border);background:var(--card);font-size:56px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ox-btn:active{transform:scale(.9)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.feedback{font-size:24px;margin-top:12px;min-height:36px}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+.objects-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+.obj-item{width:56px;height:56px;background:var(--primary-light);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:36px}
+.ten-frame{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:320px;margin:12px auto}
+.ten-cell{width:56px;height:56px;border:3px solid var(--border);border-radius:12px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.ten-cell.filled{background:var(--primary);border-color:var(--primary)}
+.ten-cell.filled::after{content:'●';color:#fff;font-size:28px}
+/* 순서배치 */
+.order-zone{display:flex;gap:12px;justify-content:center;margin:12px 0;flex-wrap:wrap;min-height:80px}
+.order-slot{width:72px;height:72px;border:3px dashed var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--card);transition:all .2s}
+.order-slot.filled{border-style:solid;border-color:var(--primary);background:var(--primary-light)}
+.order-slot.correct-slot{border-color:var(--green);background:var(--green-light)}
+.order-slot.wrong-slot{border-color:var(--red);animation:shake .4s}
+.order-pick{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.order-card{width:72px;height:72px;background:var(--card);border:3px solid var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer;transition:all .2s}
+.order-card:active{transform:scale(.9)}
+.order-card.used{opacity:.3;pointer-events:none}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;max-width:500px;width:100%;margin:12px 0}
+.card-item{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:16px;font-size:48px;cursor:pointer;transition:all .2s;text-align:center}
+.card-item.correct{border-color:var(--green);background:var(--green-light)}
+.card-item.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.story-scene{background:var(--primary-light);border-radius:var(--radius);padding:20px;max-width:500px;width:100%;margin:12px 0;font-size:24px;line-height:1.6}
+.num-display{font-size:100px;color:var(--primary);line-height:1}
+.combo-display{position:fixed;top:60px;right:16px;font-size:20px;z-index:99;background:var(--yellow-light);padding:4px 12px;border-radius:16px}
+.result-card{background:var(--card);border-radius:var(--radius);padding:32px;box-shadow:var(--shadow);max-width:400px;width:100%}
+.result-score{font-size:64px;color:var(--primary)}
+.result-msg{font-size:26px;margin:12px 0}
+.result-detail{font-size:20px;color:var(--subtext);margin:4px 0}
+.retry-btn{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:14px 40px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;margin-top:16px}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:rgba(255,249,240,0.95);z-index:99}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:10px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.page-info{font-size:18px;color:var(--subtext)}
+.speed-timer{font-size:36px;color:var(--primary);margin:8px 0}
+.speed-q{font-size:56px;margin:8px 0}
+.speed-opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.speed-btn{width:72px;height:72px;border-radius:16px;border:3px solid var(--border);background:var(--card);font-size:40px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .15s}
+.speed-btn.correct{background:var(--green-light);border-color:var(--green)}
+.speed-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .3s}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+<div class="combo-display" id="comboDisplay" style="display:none">🔥 0 콤보</div>
+
+<!-- 슬라이드 1: 타이틀 -->
+<div class="slide active" data-type="concept">
+  <div class="slide-title">1단원: 9까지의 수</div>
+  <div class="concept-box">
+    <div style="font-size:32px;margin-bottom:16px">1부터 5까지 연습</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+      <img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" alt="듀">
+      <div class="speech-bubble">1부터 5까지 잘 기억하고 있니?<br>연습해 보자!</div>
+    </div>
+  </div>
+</div>
+
+<!-- 슬라이드 2: 개념 복습 -->
+<div class="slide" data-type="concept">
+  <div class="badge">복습</div>
+  <div class="concept-box">
+    <div style="font-size:24px;margin-bottom:16px">1부터 5까지 한눈에!</div>
+    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+      <div style="text-align:center"><div class="num-display" style="font-size:80px">1</div><div style="font-size:20px">하나</div></div>
+      <div style="text-align:center"><div class="num-display" style="font-size:80px">2</div><div style="font-size:20px">둘</div></div>
+      <div style="text-align:center"><div class="num-display" style="font-size:80px">3</div><div style="font-size:20px">셋</div></div>
+      <div style="text-align:center"><div class="num-display" style="font-size:80px">4</div><div style="font-size:20px">넷</div></div>
+      <div style="text-align:center"><div class="num-display" style="font-size:80px">5</div><div style="font-size:20px">다섯</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Q1: 빈칸채우기 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">빈칸에 알맞은 수는?</div>
+  <div class="concept-box">
+    <div style="font-size:36px">1, 2, <span class="blank-box" id="blank2">?</span>, 4, 5</div>
+  </div>
+  <div class="options-row">
+    <button class="opt-btn" onclick="fillBlank(this,2,'3',true)">3</button>
+    <button class="opt-btn" onclick="fillBlank(this,2,'6',false)">6</button>
+    <button class="opt-btn" onclick="fillBlank(this,2,'0',false)">0</button>
+  </div>
+  <div class="feedback" id="fb2"></div>
+</div>
+
+<!-- Q2: 빈칸채우기 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">빈칸에 알맞은 수는?</div>
+  <div class="concept-box">
+    <div style="font-size:36px"><span class="blank-box" id="blank3">?</span>, 2, 3, 4, 5</div>
+  </div>
+  <div class="options-row">
+    <button class="opt-btn" onclick="fillBlank(this,3,'0',false)">0</button>
+    <button class="opt-btn" onclick="fillBlank(this,3,'1',true)">1</button>
+    <button class="opt-btn" onclick="fillBlank(this,3,'5',false)">5</button>
+  </div>
+  <div class="feedback" id="fb3"></div>
+</div>
+
+<!-- Q3: 순서배치 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">순서대로 놓아 보자!</div>
+  <div style="font-size:22px;margin-bottom:8px">작은 수부터 차례대로 카드를 놓아요</div>
+  <div class="order-zone" id="orderZone4">
+    <div class="order-slot" id="slot4_0"></div>
+    <div class="order-slot" id="slot4_1"></div>
+    <div class="order-slot" id="slot4_2"></div>
+    <div class="order-slot" id="slot4_3"></div>
+    <div class="order-slot" id="slot4_4"></div>
+  </div>
+  <div class="order-pick" id="orderPick4">
+    <div class="order-card" onclick="pickOrder(this,4,'3')">3</div>
+    <div class="order-card" onclick="pickOrder(this,4,'1')">1</div>
+    <div class="order-card" onclick="pickOrder(this,4,'5')">5</div>
+    <div class="order-card" onclick="pickOrder(this,4,'2')">2</div>
+    <div class="order-card" onclick="pickOrder(this,4,'4')">4</div>
+  </div>
+  <div class="feedback" id="fb4"></div>
+</div>
+
+<!-- Q4: O·X ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="badge">⭐ 기본</div>
+  <div class="slide-title">맞으면 O, 틀리면 X</div>
+  <div class="concept-box">
+    <div class="objects-row">
+      <div class="obj-item" style="font-size:40px">🍊</div>
+      <div class="obj-item" style="font-size:40px">🍊</div>
+      <div class="obj-item" style="font-size:40px">🍊</div>
+      <div class="obj-item" style="font-size:40px">🍊</div>
+      <div class="obj-item" style="font-size:40px">🍊</div>
+    </div>
+    <div style="font-size:28px;margin-top:12px">귤이 <span style="color:var(--primary);font-size:36px">5</span>개 있다</div>
+  </div>
+  <div class="ox-row">
+    <button class="ox-btn" onclick="checkOX(this,5,true,'맞아요! 5개예요! 👏')">⭕</button>
+    <button class="ox-btn" onclick="checkOX(this,5,false,'')">❌</button>
+  </div>
+  <div class="feedback" id="fb5"></div>
+</div>
+
+<!-- Q5: 십배열판 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">십배열판에 3을 만들어 봐요!</div>
+  <div class="ten-frame" id="tenFrame6">
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+    <div class="ten-cell" onclick="toggleChip(this,6)"></div>
+  </div>
+  <div style="font-size:28px">채운 칩: <span id="chipCount6" style="color:var(--primary);font-size:36px">0</span>개</div>
+  <button class="nav-btn" style="margin-top:8px;font-size:20px" onclick="checkTenFrame(6,3)">확인하기</button>
+  <div class="feedback" id="fb6"></div>
+</div>
+
+<!-- Q6: 카드매칭 수↔한글 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">"넷"은 숫자로 몇일까요?</div>
+  <div class="concept-box" style="padding:16px">
+    <div style="font-size:64px;color:var(--primary)">넷</div>
+  </div>
+  <div class="card-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="card-item" onclick="checkCard(this,7,false)">2</div>
+    <div class="card-item" onclick="checkCard(this,7,false)">3</div>
+    <div class="card-item" onclick="checkCard(this,7,true)">4</div>
+    <div class="card-item" onclick="checkCard(this,7,false)">5</div>
+  </div>
+  <div class="feedback" id="fb7"></div>
+</div>
+
+<!-- Q7: 스토리형 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">이야기 속 수를 찾아요</div>
+  <div class="story-scene">
+    케이가 산책 중에 나비를 만났어요.<br>
+    🦋🦋 두 마리가 꽃에 앉아 있었고,<br>
+    🦋🦋 두 마리가 하늘에서 날고 있었어요.<br>
+    나비는 모두 몇 마리일까요?
+  </div>
+  <div class="options-row">
+    <button class="opt-btn" onclick="checkAnswer(this,8,false)">3</button>
+    <button class="opt-btn" onclick="checkAnswer(this,8,true)">4</button>
+    <button class="opt-btn" onclick="checkAnswer(this,8,false)">5</button>
+    <button class="opt-btn" onclick="checkAnswer(this,8,false)">2</button>
+  </div>
+  <div class="feedback" id="fb8"></div>
+</div>
+
+<!-- Q8: 거꾸로 빈칸 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 발전</div>
+  <div class="slide-title">거꾸로 세어 봐요!</div>
+  <div class="concept-box">
+    <div style="font-size:36px">5, 4, <span class="blank-box" id="blank9">?</span>, 2, 1</div>
+  </div>
+  <div class="options-row">
+    <button class="opt-btn" onclick="fillBlank(this,9,'3',true)">3</button>
+    <button class="opt-btn" onclick="fillBlank(this,9,'0',false)">0</button>
+    <button class="opt-btn" onclick="fillBlank(this,9,'5',false)">5</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div>
+
+<!-- Q9: 속도챌린지 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">빠르게 수를 찾아요!</div>
+  <div style="font-size:22px">제한시간 안에 맞혀 봐요!</div>
+  <div class="speed-timer" id="speedTimer10">⏱ 15초</div>
+  <div class="speed-q" id="speedQ10"></div>
+  <div class="speed-opts" id="speedOpts10"></div>
+  <div style="font-size:24px;margin-top:8px">맞힌 수: <span id="speedScore10" style="color:var(--green)">0</span> / 5</div>
+  <button class="nav-btn" style="margin-top:8px;font-size:20px" id="speedStart10" onclick="startSpeed(10)">시작!</button>
+  <div class="feedback" id="fb10"></div>
+</div>
+
+<!-- Q10: 논리추론 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="slide-title">조건을 잘 읽고 찾아봐요!</div>
+  <div class="concept-box">
+    <div style="font-size:24px;line-height:1.8">
+      🔍 나는 1부터 5 사이의 수예요<br>
+      🔍 나는 3보다 작아요<br>
+      🔍 나는 1이 아니에요
+    </div>
+  </div>
+  <div class="options-row">
+    <button class="opt-btn" onclick="checkAnswer(this,11,false)">1</button>
+    <button class="opt-btn" onclick="checkAnswer(this,11,true)">2</button>
+    <button class="opt-btn" onclick="checkAnswer(this,11,false)">3</button>
+    <button class="opt-btn" onclick="checkAnswer(this,11,false)">4</button>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div>
+
+<!-- 결과 -->
+<div class="slide" data-type="result">
+  <div class="result-card">
+    <div style="font-size:28px;margin-bottom:8px">연습 완료!</div>
+    <div class="result-score" id="resultScore">0</div>
+    <div style="font-size:22px;color:var(--subtext)">점</div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-detail" id="resultCombo"></div>
+    <div class="result-detail" id="resultCorrect"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+      <img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" style="width:48px;height:48px" alt="듀">
+      <div class="speech-bubble" style="font-size:20px" id="resultSpeech">잘했어!</div>
+    </div>
+    <button class="retry-btn" onclick="location.reload()">다시 하기</button>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>이전</button>
+  <span class="page-info" id="pageInfo">1 / 14</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">다음</button>
+</div>
+
+<script>
+let audioCtx=null,soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)}
+function playSound(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else if(t==='click'){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+
+let current=0;const slides=document.querySelectorAll('.slide');const total=slides.length;
+let score=0,combo=0,maxCombo=0,correctCount=0;const answered={};
+
+function showSlide(i){slides.forEach((s,idx)=>s.classList.toggle('active',idx===i));document.getElementById('prevBtn').disabled=i===0;document.getElementById('nextBtn').disabled=i===total-1;document.getElementById('pageInfo').textContent=`${i+1} / ${total}`;if(slides[i].dataset.type==='result')showResult()}
+function changeSlide(d){playSound('click');const n=current+d;if(n>=0&&n<total){current=n;showSlide(current)}}
+let touchStartX=0;
+document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{const d=touchStartX-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?changeSlide(1):changeSlide(-1)}},{passive:true});
+
+function updateCombo(ok){const cd=document.getElementById('comboDisplay');if(ok){combo++;if(combo>maxCombo)maxCombo=combo}else{combo=0}if(combo>=2){cd.style.display='block';cd.textContent=`🔥 ${combo} 콤보`}else{cd.style.display='none'}}
+
+function checkAnswer(btn,si,ok){if(answered[si])return;const fb=document.getElementById('fb'+si);const btns=btn.parentElement.querySelectorAll('.opt-btn');if(ok){answered[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});playSound('correct');correctCount++;score+=parseInt(slides[si].dataset.score)||10;fb.textContent='정답이에요! 👏';fb.className='feedback good';updateCombo(true)}else{btn.classList.add('wrong');playSound('wrong');fb.textContent='다시 생각해 봐요!';fb.className='feedback bad';updateCombo(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+
+function fillBlank(btn,si,val,ok){if(answered[si])return;const blank=document.getElementById('blank'+si);const fb=document.getElementById('fb'+si);const btns=btn.parentElement.querySelectorAll('.opt-btn');blank.textContent=val;if(ok){answered[si]=true;btn.classList.add('correct');blank.style.borderColor='var(--green)';blank.style.color='var(--green)';btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});playSound('correct');correctCount++;score+=parseInt(slides[si].dataset.score)||10;fb.textContent='정답! 🌟';fb.className='feedback good';updateCombo(true)}else{btn.classList.add('wrong');playSound('wrong');fb.textContent='다시 생각해 봐요!';fb.className='feedback bad';updateCombo(false);setTimeout(()=>{btn.classList.remove('wrong');blank.textContent='?'},600)}}
+
+function checkOX(btn,si,ok,msg){if(answered[si])return;const fb=document.getElementById('fb'+si);const btns=btn.parentElement.querySelectorAll('.ox-btn');if(ok){answered[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.style.pointerEvents='none'});playSound('correct');correctCount++;score+=parseInt(slides[si].dataset.score)||10;fb.textContent=msg||'정답! 👏';fb.className='feedback good';updateCombo(true)}else{btn.classList.add('wrong');playSound('wrong');fb.textContent='다시 세어 봐요!';fb.className='feedback bad';updateCombo(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+
+function checkCard(c,si,ok){if(answered[si])return;const fb=document.getElementById('fb'+si);if(ok){answered[si]=true;c.classList.add('correct');c.parentElement.querySelectorAll('.card-item').forEach(x=>{if(x!==c)x.style.pointerEvents='none'});playSound('correct');correctCount++;score+=parseInt(slides[si].dataset.score)||25;fb.textContent='잘 찾았어요! 🎉';fb.className='feedback good';updateCombo(true)}else{c.classList.add('wrong');playSound('wrong');fb.textContent='다시 생각해 봐요!';fb.className='feedback bad';updateCombo(false);setTimeout(()=>c.classList.remove('wrong'),600)}}
+
+function toggleChip(cell,si){if(answered[si])return;playSound('click');cell.classList.toggle('filled');const f=document.getElementById('tenFrame'+si);document.getElementById('chipCount'+si).textContent=f.querySelectorAll('.filled').length}
+function checkTenFrame(si,target){if(answered[si])return;const f=document.getElementById('tenFrame'+si);const cnt=f.querySelectorAll('.filled').length;const fb=document.getElementById('fb'+si);if(cnt===target){answered[si]=true;playSound('correct');correctCount++;score+=25;fb.textContent=`정답! ${target}개를 잘 채웠어요! 🎯`;fb.className='feedback good';updateCombo(true)}else{playSound('wrong');fb.textContent=`${target}개를 채워야 해요!`;fb.className='feedback bad';updateCombo(false)}}
+
+// 순서 배치
+const orderState={};
+function pickOrder(card,si,val){
+  if(answered[si])return;
+  if(!orderState[si])orderState[si]={placed:0,correct:[1,2,3,4,5]};
+  const st=orderState[si];
+  const slotIdx=st.placed;
+  const slot=document.getElementById('slot'+si+'_'+slotIdx);
+  const expected=st.correct[slotIdx];
+  playSound('click');
+  if(parseInt(val)===expected){
+    slot.textContent=val;slot.classList.add('filled','correct-slot');
+    card.classList.add('used');st.placed++;
+    if(st.placed===5){answered[si]=true;playSound('correct');correctCount++;score+=10;
+    document.getElementById('fb'+si).textContent='순서대로 잘 놓았어요! 🎊';document.getElementById('fb'+si).className='feedback good';updateCombo(true)}
+  }else{
+    slot.textContent=val;slot.classList.add('wrong-slot');
+    playSound('wrong');document.getElementById('fb'+si).textContent='작은 수부터 차례대로!';document.getElementById('fb'+si).className='feedback bad';
+    updateCombo(false);setTimeout(()=>{slot.textContent='';slot.classList.remove('wrong-slot')},600)
+  }
+}
+
+// 속도챌린지
+let speedData={};
+function startSpeed(si){
+  if(answered[si])return;
+  document.getElementById('speedStart'+si).style.display='none';
+  speedData[si]={round:0,correct:0,timer:15,questions:[]};
+  // 5문제 생성: 수↔한글 매칭
+  const pairs=[{q:'하나는?',a:1},{q:'셋은?',a:3},{q:'다섯은?',a:5},{q:'둘은?',a:2},{q:'넷은?',a:4}];
+  speedData[si].questions=pairs;
+  nextSpeedQ(si);
+  speedData[si].interval=setInterval(()=>{
+    speedData[si].timer--;
+    document.getElementById('speedTimer'+si).textContent=`⏱ ${speedData[si].timer}초`;
+    if(speedData[si].timer<=0){clearInterval(speedData[si].interval);endSpeed(si)}
+  },1000);
+}
+function nextSpeedQ(si){
+  const sd=speedData[si];if(sd.round>=5){clearInterval(sd.interval);endSpeed(si);return}
+  const q=sd.questions[sd.round];
+  document.getElementById('speedQ'+si).textContent=q.q;
+  const opts=document.getElementById('speedOpts'+si);opts.innerHTML='';
+  let choices=[q.a];while(choices.length<4){const r=Math.floor(Math.random()*5)+1;if(!choices.includes(r))choices.push(r)}
+  choices.sort(()=>Math.random()-.5);
+  choices.forEach(c=>{const b=document.createElement('button');b.className='speed-btn';b.textContent=c;b.onclick=()=>checkSpeedA(si,b,c===q.a);opts.appendChild(b)});
+}
+function checkSpeedA(si,btn,ok){
+  const sd=speedData[si];
+  if(ok){btn.classList.add('correct');playSound('correct');sd.correct++;document.getElementById('speedScore'+si).textContent=sd.correct}
+  else{btn.classList.add('wrong');playSound('wrong')}
+  sd.round++;setTimeout(()=>nextSpeedQ(si),400);
+}
+function endSpeed(si){
+  const sd=speedData[si];answered[si]=true;
+  if(sd.correct>=4){score+=50;correctCount++;updateCombo(true);document.getElementById('fb'+si).textContent=`대단해요! ${sd.correct}/5 맞혔어요! 🏆`;document.getElementById('fb'+si).className='feedback good'}
+  else if(sd.correct>=2){score+=25;correctCount++;updateCombo(true);document.getElementById('fb'+si).textContent=`${sd.correct}/5 맞혔어요! 👍`;document.getElementById('fb'+si).className='feedback good'}
+  else{updateCombo(false);document.getElementById('fb'+si).textContent=`${sd.correct}/5 다시 도전! 💪`;document.getElementById('fb'+si).className='feedback bad'}
+}
+
+function showResult(){
+  document.getElementById('resultScore').textContent=score;
+  document.getElementById('resultCombo').textContent=`최대 콤보: 🔥 ${maxCombo}`;
+  document.getElementById('resultCorrect').textContent=`맞힌 문제: ${correctCount} / 10`;
+  let msg,sp;
+  if(score>=200){msg='🏆 완벽해요!';sp='1부터 5까지 완전 정복!'}
+  else if(score>=120){msg='🎉 아주 잘했어요!';sp='거의 다 맞혔어! 대단해!'}
+  else if(score>=60){msg='👍 잘했어요!';sp='조금만 더 연습하면 완벽!'}
+  else{msg='💪 다시 도전!';sp='괜찮아! 다시 해보자!'}
+  document.getElementById('resultMsg').textContent=msg;
+  document.getElementById('resultSpeech').textContent=sp;
+}
+showSlide(0);
+</script>
+</body>
+</html>

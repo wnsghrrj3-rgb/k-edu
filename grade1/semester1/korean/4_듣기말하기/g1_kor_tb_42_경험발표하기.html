@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>자신의 경험 발표하기 - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E3F2FD;--card:#FFFFFF;--primary:#1565C0;--primary-light:#E3F2FD;--secondary:#42A5F5;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#90CAF9;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}.progress-bar{flex:1;height:10px;background:#BBDEFB;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;width:100%;max-width:640px;border:1px solid var(--border)}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 12px;line-height:1.6}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}.choice-btn{background:var(--card);border:2.5px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:24px;width:100%;max-width:520px;padding:12px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:8px 0}.char-emoji{font-size:48px}.bubble{background:var(--primary-light);border-radius:18px 18px 18px 4px;padding:12px 16px;font-size:22px;max-width:400px;line-height:1.5}
+.builder{background:#F0F7FF;border-radius:16px;padding:14px;margin:10px 0;text-align:center;font-size:26px;line-height:1.8;border:2px solid var(--border)}.slot{color:var(--primary);border-bottom:3px solid var(--primary);padding:0 4px;min-width:60px;display:inline-block}.slot.filled{color:var(--text);border-bottom-color:var(--green)}
+.pick-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}.pick-btn{background:#fff;border:2px solid var(--border);border-radius:12px;padding:8px 16px;font-family:'Jua';font-size:24px;cursor:pointer;transition:all .2s}.pick-btn:hover{border-color:var(--primary)}.pick-btn.correct{background:var(--green-light);border-color:var(--green)}
+.order-cards{display:flex;flex-direction:column;gap:8px;margin:10px 0;align-items:center}.order-slot{background:#F0F7FF;border:2px dashed var(--border);border-radius:12px;padding:10px 18px;font-size:24px;min-height:48px;width:100%;max-width:500px;text-align:center}.order-slot.filled{background:var(--primary-light);border-style:solid;border-color:var(--primary)}
+.order-picks{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}.order-pick{background:#fff;border:2px solid var(--border);border-radius:12px;padding:10px 18px;font-size:24px;cursor:pointer;transition:all .2s}.order-pick:hover{border-color:var(--primary)}.order-pick.used{opacity:.4;pointer-events:none}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}.result-card .trophy{font-size:80px}.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}.result-card .result-stars{font-size:40px;margin:8px 0}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div><span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K✦</span></div>
+<div class="slides" id="slidesContainer">
+
+<div class="slide active" data-type="concept"><div class="card">
+<div class="slide-title">🎤 경험을 발표해 봐요!</div>
+<div class="char-bubble"><span class="char-emoji">🐕</span><div class="bubble">내가 겪은 일을 친구들 앞에서<br>발표하는 방법을 배울 거야!</div></div>
+<div style="background:var(--primary-light);border-radius:14px;padding:14px;margin:10px 0;font-size:24px;line-height:1.8">
+<div>🎤 발표할 때 바른 자세</div>
+<div style="margin-top:6px">1️⃣ 바르게 서서 말해요 🧍</div>
+<div>2️⃣ 또박또박 큰 목소리로 🗣️</div>
+<div>3️⃣ 친구들 눈을 보며 👀</div>
+</div></div></div>
+
+<div class="slide" data-type="concept"><div class="card">
+<div class="slide-title">📝 발표 순서를 정리해요!</div>
+<div style="background:#FFF3C4;border-radius:14px;padding:14px;margin:10px 0;font-size:24px;line-height:2">
+<div>📋 경험 발표 순서</div>
+<div style="margin-top:6px">1️⃣ <b>언제?</b> → 어제, 지난 주말…</div>
+<div>2️⃣ <b>어디서?</b> → 공원에서, 집에서…</div>
+<div>3️⃣ <b>무엇을?</b> → 자전거를 탔다…</div>
+<div>4️⃣ <b>느낌은?</b> → 재미있었다!</div>
+</div></div></div>
+
+<!-- Q1: 바른 발표 자세 ⭐ -->
+<div class="slide" data-correct="1" data-score="10"><div class="card">
+<div class="question-label">문제 1 <span class="stars">⭐</span></div>
+<div class="question-text">발표할 때 바른 자세는?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">고개를 숙이고 작은 소리로 말한다</button>
+<button class="choice-btn" onclick="answer(this,1)">바르게 서서 큰 소리로 또박또박 말한다</button>
+<button class="choice-btn" onclick="answer(this,2)">앉아서 빨리빨리 말한다</button>
+</div><div class="feedback" id="fb2"></div></div></div>
+
+<!-- Q2: 발표 순서 카드 배열 ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 2 <span class="stars">⭐⭐</span></div>
+<div class="question-text">발표 순서대로 눌러 봐!</div>
+<div class="order-cards" id="os3"></div><div class="order-picks" id="op3"></div>
+<div class="feedback" id="fb3"></div></div></div>
+
+<!-- Q3: 경험 떠올리기 빌더 ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 3 <span class="stars">⭐</span></div>
+<div class="question-text">"언제?"를 골라 봐!</div>
+<div class="builder">📅 <span class="slot" id="s4a">?</span>에</div>
+<div class="pick-row">
+<button class="pick-btn" onclick="pickA(this,4,'s4a','어제')">어제</button>
+<button class="pick-btn" onclick="pickA(this,4,'s4a','지난 주말')">지난 주말</button>
+<button class="pick-btn" onclick="pickA(this,4,'s4a','오늘 아침')">오늘 아침</button>
+</div><div class="feedback" id="fb4"></div></div></div>
+
+<!-- Q4: 어디서? ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 4 <span class="stars">⭐</span></div>
+<div class="question-text">"어디서?"를 골라 봐!</div>
+<div class="builder">📍 <span class="slot" id="s5a">?</span>에서</div>
+<div class="pick-row">
+<button class="pick-btn" onclick="pickA(this,5,'s5a','공원')">공원 🏞️</button>
+<button class="pick-btn" onclick="pickA(this,5,'s5a','학교')">학교 🏫</button>
+<button class="pick-btn" onclick="pickA(this,5,'s5a','집')">집 🏠</button>
+</div><div class="feedback" id="fb5"></div></div></div>
+
+<!-- Q5: 무엇을? ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 5 <span class="stars">⭐⭐</span></div>
+<div class="question-text">"무엇을?"을 골라 봐!</div>
+<div class="builder">🎯 <span class="slot" id="s6a">?</span>을/를 했다.</div>
+<div class="pick-row">
+<button class="pick-btn" onclick="pickA(this,6,'s6a','자전거 타기 🚲')">자전거 타기 🚲</button>
+<button class="pick-btn" onclick="pickA(this,6,'s6a','축구 ⚽')">축구 ⚽</button>
+<button class="pick-btn" onclick="pickA(this,6,'s6a','요리 🍳')">요리 🍳</button>
+</div><div class="feedback" id="fb6"></div></div></div>
+
+<!-- Q6: 느낌은? ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+<div class="question-text">"느낌은?"을 골라 봐!</div>
+<div class="builder">💭 <span class="slot" id="s7a">?</span></div>
+<div class="pick-row">
+<button class="pick-btn" onclick="pickA(this,7,'s7a','정말 재미있었다! 😊')">정말 재미있었다! 😊</button>
+<button class="pick-btn" onclick="pickA(this,7,'s7a','신기했다! 🤩')">신기했다! 🤩</button>
+<button class="pick-btn" onclick="pickA(this,7,'s7a','뿌듯했다! 💪')">뿌듯했다! 💪</button>
+</div><div class="feedback" id="fb7"></div></div></div>
+
+<!-- Q7: 발표문 완성 ⭐⭐⭐ -->
+<div class="slide" data-score="50"><div class="card">
+<div class="question-label">문제 7 <span class="stars">⭐⭐⭐</span></div>
+<div class="question-text">발표문을 완성해 봐! (4단계)</div>
+<div class="builder" style="font-size:22px" id="speech8"></div>
+<div class="pick-row" id="sp8picks"></div>
+<div class="feedback" id="fb8"></div></div></div>
+
+<!-- Q8: 알맞은 발표문 고르기 ⭐⭐⭐ -->
+<div class="slide" data-correct="0" data-score="50"><div class="card">
+<div class="question-label">문제 8 <span class="stars">⭐⭐⭐</span></div>
+<div class="question-text">가장 잘 정리된 발표문은?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">지난 주말에 할머니 댁에 갔습니다. 할머니와 떡을 만들었습니다. 정말 재미있었습니다.</button>
+<button class="choice-btn" onclick="answer(this,1)">떡 만들었어요. 할머니.</button>
+<button class="choice-btn" onclick="answer(this,2)">할머니 댁 갔어요 떡도요 재미 이상.</button>
+</div><div class="feedback" id="fb9"></div></div></div>
+
+<!-- Q9: 발표 쓰기 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25"><div class="card">
+<div class="question-label">문제 9 <span class="stars">⭐⭐</span></div>
+<div class="question-text">발표문에 꼭 들어가야 할 것은?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">친구 이름</button>
+<button class="choice-btn" onclick="answer(this,1)">점심 메뉴</button>
+<button class="choice-btn" onclick="answer(this,2)">언제, 어디서, 무엇을, 느낌</button>
+</div><div class="feedback" id="fb10"></div></div></div>
+
+<div class="slide" data-type="result"><div class="card result-card">
+<div class="trophy" id="resultEmoji">🎉</div><div style="font-size:32px;margin:8px 0">학습 완료!</div>
+<div class="final-score"><span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div>
+<div class="char-bubble" style="justify-content:center"><span class="char-emoji">🦦</span><div class="bubble">발표 준비를 잘 배웠어!<br>바른 자세로 자신있게 발표하자! 🎤</div></div>
+<button class="restart-btn" onclick="restart()">🔄 다시 하기</button></div></div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakKo(t,r){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=r||.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=200?'⭐⭐⭐⭐⭐':score>=140?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=200?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function pickA(btn,si,slotId,text){if(answered[si])return;playClick();btn.classList.add('correct');document.getElementById(slotId).textContent=text;document.getElementById(slotId).classList.add('filled');const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;playCorrect();addScore(p);setFB('fb'+si,'✅ 좋아! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}
+
+// 순서 배열 S3
+const orderCorrect3=['📅 언제?','📍 어디서?','🎯 무엇을?','💭 느낌은?'];
+let orderState3=[];
+function initOrder3(){orderState3=[];const slots=document.getElementById('os3');const picks=document.getElementById('op3');slots.innerHTML='';picks.innerHTML='';
+for(let i=0;i<4;i++){const s=document.createElement('div');s.className='order-slot';s.id='os3_'+i;s.textContent=(i+1)+'번째:';slots.appendChild(s)}
+['🎯 무엇을?','💭 느낌은?','📅 언제?','📍 어디서?'].forEach(t=>{const b=document.createElement('div');b.className='order-pick';b.textContent=t;b.onclick=function(){orderSel3(this,t)};picks.appendChild(b)})}
+function orderSel3(btn,text){if(answered[3]||btn.classList.contains('used'))return;playClick();btn.classList.add('used');const idx=orderState3.length;orderState3.push(text);document.getElementById('os3_'+idx).textContent=text;document.getElementById('os3_'+idx).classList.add('filled');
+if(orderState3.length===4){if(orderState3.join('|')===orderCorrect3.join('|')){playCorrect();addScore(25);setFB('fb3','✅ 순서 정답! +25점',true);answered[3]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb3','순서를 다시 생각해 봐! 💪',false);setTimeout(()=>initOrder3(),800)}}}
+initOrder3();
+
+// 발표문 빌더 S8
+let sp8step=0;
+const sp8Answers=['지난 일요일에','바다에서','수영을 했습니다.','정말 시원하고 재미있었습니다!'];
+function initSp8(){sp8step=0;const area=document.getElementById('speech8');
+area.innerHTML='📅 <span class="slot" id="sp8a">?</span><br>📍 <span class="slot" id="sp8b">?</span><br>🎯 <span class="slot" id="sp8c">?</span><br>💭 <span class="slot" id="sp8d">?</span>';
+const p=document.getElementById('sp8picks');p.innerHTML='';
+const l=document.createElement('div');l.style.cssText='width:100%;text-align:center;font-size:18px;color:var(--subtext)';l.textContent='① 언제?';l.id='sp8label';p.appendChild(l);
+const steps=[[' 지난 일요일에','어제','토요일에'],['바다에서','산에서','공원에서'],['수영을 했습니다.','등산을 했습니다.','놀았습니다.'],['정말 시원하고 재미있었습니다!','힘들었습니다.','좋았습니다!']];
+steps.forEach((opts,si)=>opts.forEach(t=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=t.trim();b.dataset.step=si;if(si>0)b.style.display='none';b.onclick=function(){sp8Pick(this,t.trim(),si)};p.appendChild(b)}))}
+function sp8Pick(btn,text,step){if(answered[8]||step!==sp8step)return;playClick();btn.classList.add('correct');
+const ids=['sp8a','sp8b','sp8c','sp8d'];const labels=['② 어디서?','③ 무엇을?','④ 느낌은?',''];
+document.getElementById(ids[sp8step]).textContent=text;document.getElementById(ids[sp8step]).classList.add('filled');sp8step++;
+if(sp8step<4){document.getElementById('sp8label').textContent=labels[sp8step-1];document.querySelectorAll('#sp8picks [data-step="'+(sp8step-1)+'"]').forEach(b=>b.style.display='none');document.querySelectorAll('#sp8picks [data-step="'+sp8step+'"]').forEach(b=>b.style.display='')}
+else{playCorrect();addScore(50);setFB('fb8','✅ 멋진 발표문! +50점',true);answered[8]=true;setTimeout(nextSlide,1200)}}
+initSp8();
+
+let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+function restart(){score=0;combo=0;answered={};orderState3=[];sp8step=0;document.querySelectorAll('.choice-btn,.pick-btn').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slot').forEach(s=>{s.textContent='?';s.classList.remove('filled')});initOrder3();initSp8();document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+updateUI();
+</script>
+</body>
+</html>

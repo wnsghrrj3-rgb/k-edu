@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu 1학년 국어 58차시 - 헷갈리는 낱말 바로 알기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EFF6FF;--card:#FFFFFF;--primary:#2563EB;--primary-light:#DBEAFE;--secondary:#3B82F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#BFDBFE;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}.progress-bar{flex:1;height:8px;background:var(--border);border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A800}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-60px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px;width:100%;max-width:620px}.slide-title{font-size:24px;color:var(--subtext);text-align:center;margin-bottom:8px}.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:10px}.stars{color:#FCD34D}.question-text{font-size:28px;text-align:center;margin:8px 0 14px;line-height:1.5}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px}.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:28px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06)}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{width:100%;max-width:500px;padding:11px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:12px;padding:5px 14px;font-weight:700}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;font-weight:700;color:#E6A800;z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.desc{font-size:26px;text-align:center;color:var(--subtext);margin:6px 0;line-height:1.5}
+.compare-box{display:flex;gap:12px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.meaning-card{background:var(--primary-light);border-radius:16px;padding:14px 18px;text-align:center;font-size:24px;line-height:1.6;flex:1;min-width:140px}
+.meaning-card .emoji{font-size:48px}
+.write-area{font-family:'Jua',sans-serif;font-size:26px;border:3px solid var(--border);border-radius:14px;padding:12px;width:100%;min-height:60px;resize:none;outline:none;text-align:center}.write-area:focus{border-color:var(--primary)}.submit-btn{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:8px 20px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:8px}
+.result-card{text-align:center;padding:20px}.result-card h2{font-size:36px;margin:10px 0}.result-card .emoji{font-size:80px}.result-card .score-big{font-size:48px;color:var(--primary)}@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}.bounce{animation:bounce .6s ease infinite}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div><div class="score-badge">⭐ <span id="scoreDisp">0</span></div><div class="kedu-logo">K✦</div></div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="slides">
+
+<div class="slide active"><div class="card" style="text-align:center"><div style="font-size:80px">🔍🔤</div><h1 style="font-size:34px;color:var(--primary);margin:10px 0">헷갈리는 낱말<br>바로 알기</h1><p class="desc">소리는 같지만 뜻이 다른 낱말,<br>헷갈리는 표기를 알아볼까요?</p></div></div>
+
+<!-- S1 개념: 동음이의어 -->
+<div class="slide"><div class="card" style="text-align:center"><div class="slide-title">📖 동음이의어란?</div><div style="font-size:36px;margin:8px 0;color:var(--primary)">소리는 같지만 뜻이 달라요!</div>
+<div style="font-size:64px;margin:10px 0">🍐</div>
+<div class="compare-box"><div class="meaning-card"><div class="emoji">🍐</div><b>배</b> = 과일</div><div class="meaning-card"><div class="emoji">🚢</div><b>배</b> = 탈것</div><div class="meaning-card"><div class="emoji">🤰</div><b>배</b> = 몸</div></div></div></div>
+
+<!-- S2 Q1: 배 뜻 구별 ⭐ -->
+<div class="slide" data-correct="1" data-score="10"><div class="card"><div class="question-label"><span class="stars">⭐</span> 문제 1</div><div class="question-text">"바다에서 <b>배</b>를 탔어요."<br>여기서 "배"는?</div><div class="choices col"><button class="choice-btn" onclick="answer(this,0)">🍐 과일</button><button class="choice-btn" onclick="answer(this,1)">🚢 탈것</button><button class="choice-btn" onclick="answer(this,2)">🤰 몸의 일부</button></div><div class="feedback" id="fb2"></div></div></div>
+
+<!-- S3 눈 소개 -->
+<div class="slide"><div class="card" style="text-align:center"><div class="slide-title">📖 또 다른 동음이의어</div>
+<div class="compare-box"><div class="meaning-card"><div class="emoji">👁️</div><b>눈</b> = 보는 곳</div><div class="meaning-card"><div class="emoji">❄️</div><b>눈</b> = 하늘에서 내리는 것</div></div></div></div>
+
+<!-- S4 Q2: 눈 구별 ⭐ -->
+<div class="slide" data-correct="0" data-score="10"><div class="card"><div class="question-label"><span class="stars">⭐</span> 문제 2</div><div class="question-text">"겨울에 하얀 <b>눈</b>이 왔어요."<br>여기서 "눈"은?</div><div class="choices"><button class="choice-btn" onclick="answer(this,0)">❄️ 날씨</button><button class="choice-btn" onclick="answer(this,1)">👁️ 신체</button></div><div class="feedback" id="fb4"></div></div></div>
+
+<!-- S5 Q3: 문장 속 뜻 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25"><div class="card"><div class="question-label"><span class="stars">⭐⭐</span> 문제 3</div><div class="question-text">"할머니가 맛있는 <b>밤</b>을<br>까 주셨어요."<br>여기서 "밤"은?</div><div class="choices col"><button class="choice-btn" onclick="answer(this,0)">🌙 어두운 시간</button><button class="choice-btn" onclick="answer(this,1)">👊 발로 차는 것</button><button class="choice-btn" onclick="answer(this,2)">🌰 먹는 열매</button></div><div class="feedback" id="fb5"></div></div></div>
+
+<!-- S6 Q4: 헷갈리는 표기 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25"><div class="card"><div class="question-label"><span class="stars">⭐⭐</span> 문제 4</div><div class="question-text">바른 표기를 고르세요!</div><div style="background:var(--primary-light);border-radius:14px;padding:14px;font-size:26px;text-align:center;margin:8px 0">어제 친구를 ___.</div><div class="choices"><button class="choice-btn" onclick="answer(this,0)">만났어요 ✅</button><button class="choice-btn" onclick="answer(this,1)">만나써요 ❌</button></div><div class="feedback" id="fb6"></div></div></div>
+
+<!-- S7 Q5: 헷갈리는 표기 2 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25"><div class="card"><div class="question-label"><span class="stars">⭐⭐</span> 문제 5</div><div class="question-text">바른 표기를 고르세요!</div><div style="background:var(--primary-light);border-radius:14px;padding:14px;font-size:26px;text-align:center;margin:8px 0">밥이 정말 ___.</div><div class="choices"><button class="choice-btn" onclick="answer(this,0)">마싰어요</button><button class="choice-btn" onclick="answer(this,1)">맛있어요</button></div><div class="feedback" id="fb7"></div></div></div>
+
+<!-- S8 Q6: 헷갈리는 표기 3 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25"><div class="card"><div class="question-label"><span class="stars">⭐⭐</span> 문제 6</div><div class="question-text">바른 표기를 고르세요!</div><div style="background:var(--primary-light);border-radius:14px;padding:14px;font-size:26px;text-align:center;margin:8px 0">함께 ___을 먹었어요.</div><div class="choices"><button class="choice-btn" onclick="answer(this,0)">떡볶이</button><button class="choice-btn" onclick="answer(this,1)">떡뽁이</button></div><div class="feedback" id="fb8"></div></div></div>
+
+<!-- S9 Q7: 바른 낱말로 문장 쓰기 ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card" style="text-align:center"><div class="question-label"><span class="stars">⭐⭐</span> 문제 7</div><div class="question-text">"배"를 사용하여<br>문장을 써 보세요! ✏️</div><div style="background:var(--primary-light);border-radius:12px;padding:10px;font-size:22px;margin-bottom:8px">💡 "배"의 뜻(과일/탈것/몸) 중 하나를 골라 써 보세요!</div><textarea class="write-area" id="w9" rows="2" placeholder="배를 사용한 문장..."></textarea><button class="submit-btn" onclick="checkW()">✏️ 완료!</button><div class="feedback" id="fb9"></div></div></div>
+
+<!-- S10 Q8: 종합 퀴즈 ⭐ -->
+<div class="slide" data-correct="1" data-score="10"><div class="card"><div class="question-label"><span class="stars">⭐</span> 문제 8</div><div class="question-text">동음이의어란<br>무엇일까요?</div><div class="choices col"><button class="choice-btn" onclick="answer(this,0)">뜻이 같은 낱말</button><button class="choice-btn" onclick="answer(this,1)">소리는 같지만 뜻이 다른 낱말</button><button class="choice-btn" onclick="answer(this,2)">글자가 긴 낱말</button></div><div class="feedback" id="fb10"></div></div></div>
+
+<div class="slide"><div class="card result-card"><div class="emoji bounce" id="resultEmoji">🎉</div><h2>학습 완료!</h2><div class="score-big" id="finalScore">0</div><div style="font-size:28px;margin:10px 0" id="resultStars">⭐⭐⭐</div><p class="desc">헷갈리는 낱말을 잘 구별했어요!</p><button class="nav-btn" onclick="restart()" style="margin-top:14px;font-size:24px;background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua';cursor:pointer">🔄 다시 하기</button></div></div>
+
+</div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playTone(f,t,d,g=.25){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d)})}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80))}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100))}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,.2)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{for(let s of sl)s.classList.remove('out')},400);currentSlide=n;sl[n].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1)}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score+'점';document.getElementById('resultStars').textContent=score>=160?'⭐⭐⭐⭐⭐':score>=110?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=160?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide];const c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function checkW(){if(answered[9])return;const v=document.getElementById('w9').value.trim();if(v.length<4||!v.includes('배')){setFB('fb9','"배"를 넣어서 문장을 써 보세요!',false);return}playCorrect();addScore(25);setFB('fb9','✅ 잘 썼어요! +25점',true);answered[9]=true;setTimeout(nextSlide,900)}
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim()});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.write-area').forEach(w=>w.value='');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide()});
+updateUI();
+</script>
+</body>
+</html>

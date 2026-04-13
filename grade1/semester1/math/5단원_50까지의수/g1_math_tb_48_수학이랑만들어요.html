@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>수학이랑 만들어요 (5단원) - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F7FF;--card:#FFFFFF;--primary:#42A5F5;--primary-light:#E3F2FD;--secondary:#64B5F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E4F7;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;-webkit-user-select:none;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}
+.logo-star{font-size:10px;color:#F59E0B}
+.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide-container{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:600px;text-align:center;gap:10px;animation:fadeIn .4s}
+.slide.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes flip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px var(--primary)}50%{box-shadow:0 0 24px var(--primary)}}
+.card{background:var(--card);border-radius:var(--radius);padding:22px 18px;width:100%;box-shadow:var(--shadow)}
+.title{font-size:26px;color:var(--primary);margin-bottom:4px}
+.desc{font-size:20px;line-height:1.5}
+.char-img{width:52px;height:52px;border-radius:50%}
+.char-row{display:flex;align-items:center;justify-content:center;gap:10px}
+.speech{background:var(--primary-light);border-radius:16px;padding:10px 14px;font-size:20px;position:relative;max-width:400px;text-align:left}
+.speech::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light)}
+.feedback{font-size:19px;min-height:24px;margin-top:2px}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+.nav-row{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.nav-btn{padding:10px 24px;font-size:22px;font-family:'Jua',sans-serif;border:none;border-radius:30px;cursor:pointer;color:#FFF;background:var(--primary)}
+.nav-btn:active{transform:scale(.95)}
+.nav-btn:disabled{opacity:.4}
+.page-info{font-size:18px;color:var(--subtext)}
+/* 게임 카드 */
+.game-area{display:flex;flex-direction:column;align-items:center;gap:12px;margin:8px 0}
+.digit-cards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.d-card{width:64px;height:80px;border-radius:14px;font-size:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;border:3px solid var(--border);background:var(--card)}
+.d-card:active{transform:scale(.9)}
+.d-card.selected{border-color:var(--primary);background:var(--primary-light);animation:pop .2s;box-shadow:0 0 12px rgba(66,165,245,.3)}
+.d-card.used{opacity:.3;pointer-events:none}
+.slots{display:flex;gap:8px;justify-content:center;align-items:center}
+.slot{width:64px;height:80px;border-radius:14px;border:3px dashed var(--primary);font-size:40px;display:flex;align-items:center;justify-content:center;background:var(--card);transition:all .2s}
+.slot.filled{border-style:solid;background:var(--primary-light);animation:pop .3s}
+.slot-label{font-size:16px;color:var(--subtext);margin-top:2px}
+.vs{font-size:36px;color:var(--yellow);margin:0 8px}
+.game-info{font-size:22px;color:var(--primary);padding:8px 16px;background:var(--primary-light);border-radius:12px;margin:4px 0}
+.score-display{font-size:28px;color:var(--primary);margin:4px 0}
+.round-badge{font-size:18px;color:var(--subtext);margin-bottom:4px}
+.btn-row{display:flex;gap:8px;justify-content:center;margin-top:4px}
+.game-btn{padding:10px 24px;font-size:22px;font-family:'Jua',sans-serif;border:3px solid var(--primary);border-radius:14px;background:var(--card);cursor:pointer;color:var(--primary);transition:all .2s}
+.game-btn:active{transform:scale(.95)}
+.game-btn.active{background:var(--primary);color:#FFF}
+/* 속도 챌린지 */
+.speed-num{font-size:80px;color:var(--primary);animation:glow 1s infinite}
+.speed-opts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.speed-btn{width:64px;height:64px;border-radius:14px;font-size:28px;border:3px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Jua'}
+.speed-btn:active{transform:scale(.9)}
+.speed-btn.correct{background:var(--green-light);border-color:var(--green)}
+.speed-btn.wrong{background:var(--red-light);border-color:var(--red)}
+.timer-bar{width:100%;height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:4px 0}
+.timer-fill{height:100%;background:var(--primary);transition:width .1s linear}
+.result-card{background:linear-gradient(135deg,var(--primary-light),#BBDEFB);border-radius:var(--radius);padding:28px 20px;width:100%;text-align:center}
+.result-score{font-size:56px;color:var(--primary)}
+.result-msg{font-size:24px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+
+<div class="slide-container">
+
+<!-- 1: 타이틀 -->
+<div class="slide active" data-type="intro">
+<div class="card">
+<div style="font-size:19px;color:var(--primary)">📘 5단원 · 50까지의 수</div>
+<div class="title">수학이랑 만들어요</div>
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" style="width:72px;height:72px;border-radius:50%;margin:10px auto">
+<div class="desc">재미있는 수 게임으로<br>5단원을 마무리해요!</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">게임 시작! →</button></div>
+</div>
+
+<!-- 2: 게임1 - 큰 수 만들기 (5라운드) -->
+<div class="slide" data-type="game">
+<div class="card">
+<div class="title" style="font-size:22px">게임 1. 큰 수 만들기!</div>
+<div class="round-badge" id="g1Round">1 / 5 라운드</div>
+<div class="desc" style="font-size:18px">카드 2장을 골라서<br><b>가장 큰 두 자리 수</b>를 만들어요!</div>
+<div class="digit-cards" id="g1Cards"></div>
+<div class="slots" style="margin-top:10px">
+<div class="slot" id="g1Slot0"></div>
+<div class="slot" id="g1Slot1"></div>
+</div>
+<div style="display:flex;gap:4px;justify-content:center"><div class="slot-label">십의 자리</div><div class="slot-label" style="margin-left:52px">일의 자리</div></div>
+<div class="btn-row">
+<button class="game-btn" id="g1Submit" onclick="submitG1()">확인!</button>
+<button class="game-btn" id="g1Reset" onclick="resetG1()">다시 고르기</button>
+</div>
+<div class="feedback" id="g1Fb"></div>
+<div class="score-display" id="g1Score">점수: 0</div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="g1Next" onclick="goNext()" disabled>다음 게임 →</button></div>
+</div>
+
+<!-- 3: 게임2 - 속도 챌린지 -->
+<div class="slide" data-type="game">
+<div class="card">
+<div class="title" style="font-size:22px">게임 2. 속도 챌린지!</div>
+<div class="desc" style="font-size:18px">수를 보고 알맞은 설명을 빠르게 눌러요!</div>
+<div class="timer-bar"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+<div class="speed-num" id="speedNum">?</div>
+<div class="desc" style="font-size:16px" id="speedQ"></div>
+<div class="speed-opts" id="speedOpts"></div>
+<div class="feedback" id="g2Fb"></div>
+<div class="score-display" id="g2Score">맞힌 수: 0 / 8</div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="g2Next" onclick="goNext()" disabled>다음 게임 →</button></div>
+</div>
+
+<!-- 4: 게임3 - 수 빙고 -->
+<div class="slide" data-type="game">
+<div class="card">
+<div class="title" style="font-size:22px">게임 3. 수 퀴즈 빙고!</div>
+<div class="desc" style="font-size:18px" id="bingoQ">문제를 맞히면 빙고칸이 열려요!</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:210px;margin:8px auto" id="bingoGrid"></div>
+<div class="btn-row" id="bingoOpts"></div>
+<div class="feedback" id="g3Fb"></div>
+<div class="score-display" id="g3Score">빙고: 0줄</div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="g3Next" onclick="goNext()" disabled>결과 보기 →</button></div>
+</div>
+
+<!-- 5: 결과 -->
+<div class="slide" data-type="result">
+<div class="result-card">
+<div class="title">게임 완료!</div>
+<div class="result-score" id="finalScore">0점</div>
+<div class="result-msg" id="finalMsg"></div>
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" style="width:72px;height:72px;border-radius:50%;margin:12px auto">
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="location.reload()">다시 하기</button></div>
+</div>
+
+</div>
+<div class="page-info" style="position:fixed;bottom:10px;width:100%;text-align:center" id="pageInfo">1 / 5</div>
+
+<script>
+let current=0,totalScore=0,soundOn=true;
+const slides=document.querySelectorAll('.slide');const total=slides.length;
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.12);o.stop(a.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[220,196].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.15);o.stop(a.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.05);});}
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));current=n;document.getElementById('pageInfo').textContent=`${n+1} / ${total}`;}
+function goNext(){if(current<total-1){showSlide(current+1);initSlide(current);}}
+
+function initSlide(n){
+  if(n===1)initG1();
+  if(n===2)startSpeed();
+  if(n===3)initBingo();
+  if(n===4)showFinalResult();
+}
+
+// ========== 게임1: 큰 수 만들기 ==========
+let g1Round=0,g1Score=0,g1Selected=[];
+function initG1(){g1Round=0;g1Score=0;nextG1Round();}
+function nextG1Round(){
+  g1Round++;
+  if(g1Round>5){document.getElementById('g1Next').disabled=false;document.getElementById('g1Submit').style.display='none';document.getElementById('g1Reset').style.display='none';document.getElementById('g1Fb').textContent='게임 끝! '+g1Score+'점 획득!';document.getElementById('g1Fb').className='feedback good';totalScore+=g1Score;return;}
+  document.getElementById('g1Round').textContent=g1Round+' / 5 라운드';
+  const nums=[];while(nums.length<4){const n=Math.floor(Math.random()*10);if(!nums.includes(n))nums.push(n);}
+  const area=document.getElementById('g1Cards');area.innerHTML='';
+  g1Selected=[];
+  document.getElementById('g1Slot0').textContent='';document.getElementById('g1Slot0').classList.remove('filled');
+  document.getElementById('g1Slot1').textContent='';document.getElementById('g1Slot1').classList.remove('filled');
+  document.getElementById('g1Fb').textContent='';
+  nums.forEach(n=>{
+    const c=document.createElement('div');c.className='d-card';c.textContent=n;c.dataset.val=n;
+    c.onclick=function(){
+      playClick();
+      if(this.classList.contains('selected')){this.classList.remove('selected');g1Selected=g1Selected.filter(v=>v!==+this.dataset.val);updateG1Slots();return;}
+      if(g1Selected.length>=2)return;
+      this.classList.add('selected');g1Selected.push(+this.dataset.val);updateG1Slots();
+    };
+    area.appendChild(c);
+  });
+}
+function updateG1Slots(){
+  document.getElementById('g1Slot0').textContent=g1Selected[0]!==undefined?g1Selected[0]:'';
+  document.getElementById('g1Slot0').classList.toggle('filled',g1Selected[0]!==undefined);
+  document.getElementById('g1Slot1').textContent=g1Selected[1]!==undefined?g1Selected[1]:'';
+  document.getElementById('g1Slot1').classList.toggle('filled',g1Selected[1]!==undefined);
+}
+function resetG1(){
+  g1Selected=[];
+  document.querySelectorAll('#g1Cards .d-card').forEach(c=>c.classList.remove('selected'));
+  updateG1Slots();document.getElementById('g1Fb').textContent='';
+}
+function submitG1(){
+  if(g1Selected.length!==2){document.getElementById('g1Fb').textContent='카드 2장을 골라주세요!';document.getElementById('g1Fb').className='feedback bad';return;}
+  const made=g1Selected[0]*10+g1Selected[1];
+  const allCards=[...document.querySelectorAll('#g1Cards .d-card')].map(c=>+c.dataset.val);
+  let maxNum=0;
+  for(let i=0;i<allCards.length;i++)for(let j=0;j<allCards.length;j++){if(i!==j){const v=allCards[i]*10+allCards[j];if(v>maxNum&&v<=50)maxNum=v;}}
+  if(maxNum===0){for(let i=0;i<allCards.length;i++)for(let j=0;j<allCards.length;j++){if(i!==j){const v=allCards[i]*10+allCards[j];if(v>maxNum)maxNum=v;}}}
+  const fb=document.getElementById('g1Fb');
+  if(made===maxNum){playCorrect();fb.textContent='최고! '+made+'가 가장 큰 수!';fb.className='feedback good';g1Score+=20;}
+  else if(made>maxNum*0.8){playCorrect();fb.textContent='잘했어요! '+made+'! (최대: '+maxNum+')';fb.className='feedback good';g1Score+=10;}
+  else{playWrong();fb.textContent=made+'! 더 큰 수를 만들 수 있었어요! ('+maxNum+')';fb.className='feedback bad';g1Score+=5;}
+  document.getElementById('g1Score').textContent='점수: '+g1Score;
+  setTimeout(nextG1Round,1200);
+}
+
+// ========== 게임2: 속도 챌린지 ==========
+let speedIdx=0,speedCorrect=0,speedTimer=null;
+const speedQs=[
+  {num:34,q:'십의 자리 수는?',ans:3,opts:[3,4,7]},
+  {num:27,q:'일의 자리 수는?',ans:7,opts:[2,7,9]},
+  {num:45,q:'10개 묶음은 몇 개?',ans:4,opts:[4,5,9]},
+  {num:19,q:'10 + ? = 19',ans:9,opts:[1,9,8]},
+  {num:50,q:'10이 몇 개?',ans:5,opts:[5,10,50]},
+  {num:38,q:'30보다 크다? (O/X)',ans:'O',opts:['O','X']},
+  {num:41,q:'바로 앞의 수는?',ans:40,opts:[40,42,39]},
+  {num:16,q:'가르면 10과 ?',ans:6,opts:[6,5,1]},
+];
+function startSpeed(){speedIdx=0;speedCorrect=0;nextSpeedQ();}
+function nextSpeedQ(){
+  if(speedIdx>=speedQs.length){endSpeed();return;}
+  const q=speedQs[speedIdx];
+  document.getElementById('speedNum').textContent=q.num;
+  document.getElementById('speedQ').textContent=q.q;
+  const opts=document.getElementById('speedOpts');opts.innerHTML='';
+  document.getElementById('g2Fb').textContent='';
+  const shuffled=[...q.opts].sort(()=>Math.random()-.5);
+  shuffled.forEach(v=>{
+    const b=document.createElement('div');b.className='speed-btn';b.textContent=v;
+    b.onclick=function(){
+      clearInterval(speedTimer);
+      if(v===q.ans){playCorrect();this.classList.add('correct');speedCorrect++;document.getElementById('g2Fb').textContent='정답!';document.getElementById('g2Fb').className='feedback good';}
+      else{playWrong();this.classList.add('wrong');document.getElementById('g2Fb').textContent='정답: '+q.ans;document.getElementById('g2Fb').className='feedback bad';}
+      document.getElementById('g2Score').textContent='맞힌 수: '+speedCorrect+' / '+speedQs.length;
+      opts.querySelectorAll('.speed-btn').forEach(b=>b.onclick=null);
+      speedIdx++;setTimeout(nextSpeedQ,800);
+    };
+    opts.appendChild(b);
+  });
+  // 타이머
+  let timeLeft=100;
+  document.getElementById('timerFill').style.width='100%';
+  clearInterval(speedTimer);
+  speedTimer=setInterval(()=>{
+    timeLeft-=2;document.getElementById('timerFill').style.width=timeLeft+'%';
+    if(timeLeft<=0){clearInterval(speedTimer);document.getElementById('g2Fb').textContent='시간 초과! 정답: '+q.ans;document.getElementById('g2Fb').className='feedback bad';opts.querySelectorAll('.speed-btn').forEach(b=>b.onclick=null);speedIdx++;setTimeout(nextSpeedQ,800);}
+  },100);
+}
+function endSpeed(){
+  clearInterval(speedTimer);
+  const pts=speedCorrect*10;totalScore+=pts;
+  document.getElementById('speedNum').textContent='끝!';
+  document.getElementById('speedQ').textContent='';
+  document.getElementById('speedOpts').innerHTML='';
+  document.getElementById('g2Fb').textContent=speedCorrect+'/'+speedQs.length+' 정답! '+pts+'점 획득!';
+  document.getElementById('g2Fb').className='feedback good';
+  document.getElementById('g2Next').disabled=false;
+}
+
+// ========== 게임3: 빙고 퀴즈 ==========
+let bingoState=[0,0,0,0,0,0,0,0,0];let bingoQIdx=0;
+const bingoQs=[
+  {q:'10+7=?',ans:17,opts:[17,16,18]},
+  {q:'30보다 1 큰 수는?',ans:31,opts:[31,29,30]},
+  {q:'48을 가르면 10묶음 ?개',ans:4,opts:[4,8,48]},
+  {q:'이십오=?',ans:25,opts:[25,52,15]},
+  {q:'39 ○ 42, ○에 들어갈 기호는?',ans:'＜',opts:['＜','＞']},
+  {q:'10이 5개=?',ans:50,opts:[50,15,5]},
+  {q:'46의 십의 자리는?',ans:4,opts:[4,6,46]},
+  {q:'19 다음 수는?',ans:20,opts:[20,18,21]},
+  {q:'10+0=?',ans:10,opts:[10,0,1]},
+];
+function initBingo(){
+  bingoQIdx=0;bingoState=[0,0,0,0,0,0,0,0,0];
+  const grid=document.getElementById('bingoGrid');grid.innerHTML='';
+  for(let i=0;i<9;i++){
+    const c=document.createElement('div');
+    c.style.cssText='width:60px;height:60px;border-radius:10px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--card);transition:all .3s';
+    c.id='bCell'+i;c.textContent='?';
+    grid.appendChild(c);
+  }
+  nextBingoQ();
+}
+function nextBingoQ(){
+  if(bingoQIdx>=9){endBingo();return;}
+  const q=bingoQs[bingoQIdx];
+  document.getElementById('bingoQ').textContent=(bingoQIdx+1)+'. '+q.q;
+  const opts=document.getElementById('bingoOpts');opts.innerHTML='';
+  document.getElementById('g3Fb').textContent='';
+  q.opts.sort(()=>Math.random()-.5).forEach(v=>{
+    const b=document.createElement('button');b.className='speed-btn';b.style.width='auto';b.style.padding='8px 16px';b.textContent=v;
+    b.onclick=function(){
+      if(v===q.ans){
+        playCorrect();bingoState[bingoQIdx]=1;
+        const cell=document.getElementById('bCell'+bingoQIdx);
+        cell.textContent='⭐';cell.style.background='var(--green-light)';cell.style.borderColor='var(--green)';
+        document.getElementById('g3Fb').textContent='정답!';document.getElementById('g3Fb').className='feedback good';
+        totalScore+=10;
+      } else {
+        playWrong();
+        const cell=document.getElementById('bCell'+bingoQIdx);
+        cell.textContent='✕';cell.style.background='var(--red-light)';cell.style.borderColor='var(--red)';
+        document.getElementById('g3Fb').textContent='정답: '+q.ans;document.getElementById('g3Fb').className='feedback bad';
+      }
+      opts.querySelectorAll('.speed-btn').forEach(b=>b.onclick=null);
+      const bingos=countBingo();
+      document.getElementById('g3Score').textContent='빙고: '+bingos+'줄';
+      bingoQIdx++;setTimeout(nextBingoQ,700);
+    };
+    opts.appendChild(b);
+  });
+}
+function countBingo(){
+  const s=bingoState;let cnt=0;
+  [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].forEach(line=>{
+    if(line.every(i=>s[i]===1))cnt++;
+  });return cnt;
+}
+function endBingo(){
+  const bingos=countBingo();totalScore+=bingos*20;
+  document.getElementById('bingoQ').textContent='빙고 완료! '+bingos+'줄 빙고! +'+(bingos*20)+'점';
+  document.getElementById('bingoOpts').innerHTML='';
+  document.getElementById('g3Next').disabled=false;
+}
+
+function showFinalResult(){
+  document.getElementById('finalScore').textContent=totalScore+'점';
+  let msg=totalScore>=150?'대단해요! 수학 천재! 🌟':totalScore>=100?'잘했어요! 멋진 실력! 😊':totalScore>=60?'좋아요! 재미있었죠? 💪':'다시 도전해 봐요! 🔄';
+  document.getElementById('finalMsg').textContent=msg;
+}
+
+document.addEventListener('touchstart',e=>{},{passive:true});initSlide(0);
+</script>
+</body>
+</html>

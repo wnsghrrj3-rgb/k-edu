@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>문장 따라 쓰기 ① - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0FFF0;--card:#FFFFFF;--primary:#66BB6A;--primary-light:#E8F5E9;--secondary:#81C784;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#C8E6C9;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}
+.progress-bar{flex:1;height:10px;background:#C8E6C9;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-50px)}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px 28px;width:100%;max-width:640px;border:1px solid var(--border)}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}
+.stars{color:#FCD34D}
+.question-text{font-size:28px;text-align:center;margin:8px 0 14px;line-height:1.6}
+
+.sentence-box{font-size:40px;text-align:center;padding:18px;background:#F8FFF8;border-radius:16px;margin:10px 0;line-height:1.5;border:2px solid var(--border)}
+.sentence-box.clickable{cursor:pointer;transition:transform .2s}
+.sentence-box.clickable:hover{transform:scale(1.02)}
+
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+.choice-btn{background:var(--card);border:2.5px solid #B8D8B8;border-radius:16px;padding:14px 28px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.choices.col{flex-direction:column;align-items:center}
+.choices.col .choice-btn{font-size:28px;width:100%;max-width:520px;padding:12px 20px}
+
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}
+.feedback.ok{color:var(--green);background:var(--green-light)}
+.feedback.err{color:var(--red);background:var(--red-light)}
+
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:10px 0}
+.char-emoji{font-size:56px}
+.bubble{background:var(--primary-light);border-radius:18px 18px 18px 4px;padding:14px 18px;font-size:26px;max-width:420px;line-height:1.5}
+
+.echo-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:16px;padding:12px 28px;font-family:'Jua';font-size:26px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.echo-btn:hover{background:var(--primary);color:#fff}
+
+/* 낱말 카드 배열 */
+.word-tokens{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.word-token{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:10px 18px;font-size:32px;cursor:pointer;transition:all .2s}
+.word-token:hover{border-color:var(--primary);transform:scale(1.05)}
+.word-token.placed{opacity:.4;pointer-events:none}
+.drop-zone{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:60px;padding:12px;background:#F8FFF8;border:2px dashed var(--border);border-radius:14px;margin:10px 0}
+.drop-item{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:10px 18px;font-size:32px;cursor:pointer}
+
+/* 그림 카드 */
+.img-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.img-card{background:#fff;border:3px solid var(--border);border-radius:16px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;min-width:120px}
+.img-card:hover{border-color:var(--primary);transform:scale(1.05)}
+.img-card .emoji{font-size:64px}
+.img-card .label{font-size:22px;margin-top:6px}
+.img-card.correct{border-color:var(--green);background:var(--green-light)}
+.img-card.wrong{border-color:var(--red);background:var(--red-light)}
+
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}
+.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}
+.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}
+.result-card .trophy{font-size:80px}
+.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}
+.result-card .result-stars{font-size:40px;margin:8px 0}
+.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">K✦</span>
+</div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- Slide 0: 개념 -->
+  <div class="slide active" data-type="concept">
+    <div class="card">
+      <div class="slide-title">✏️ 문장을 따라 써 봐요!</div>
+      <div class="char-bubble">
+        <span class="char-emoji">🐕</span>
+        <div class="bubble">오늘은 짧은 문장을 바르게<br>따라 쓰는 연습을 할 거야! ✨</div>
+      </div>
+      <div style="text-align:center;margin:14px 0;font-size:26px;line-height:1.8">
+        <div>📝 문장을 쓸 때 기억할 것!</div>
+        <div style="background:var(--primary-light);border-radius:14px;padding:14px;margin-top:10px;text-align:left">
+          <div style="margin:6px 0">1️⃣ 낱말 사이를 <b>띄어</b> 써요</div>
+          <div style="margin:6px 0">2️⃣ 문장 끝에 <b>마침표(.)</b>를 써요</div>
+          <div style="margin:6px 0">3️⃣ <b>또박또박</b> 바르게 써요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 1: 개념 - 따라 읽고 쓰기 시범 -->
+  <div class="slide" data-type="concept">
+    <div class="card">
+      <div class="slide-title">📖 먼저 읽고, 따라 써 봐요!</div>
+      <div class="sentence-box clickable" onclick="speakKo('꽃이 핀다.',0.8)" style="font-size:48px">
+        꽃이 핀다.
+      </div>
+      <div style="text-align:center;font-size:22px;color:var(--subtext)">👆 눌러서 소리를 듣고 따라 읽어 봐!</div>
+      <div class="sentence-box clickable" onclick="speakKo('비가 온다.',0.8)" style="font-size:48px">
+        비가 온다.
+      </div>
+      <div class="char-bubble" style="justify-content:flex-end">
+        <div class="bubble" style="border-radius:18px 18px 4px 18px;background:#FFF8E1">짧은 문장부터 시작하면<br>금방 잘 쓸 수 있어! 👍</div>
+        <span class="char-emoji">🦦</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 2: Q1 2어절 낱말 배열 ⭐ -->
+  <div class="slide" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">낱말 카드를 순서대로 눌러<br>문장을 만들어 보세요!</div>
+      <div class="sentence-box" style="font-size:24px;color:var(--subtext)">힌트: 꽃이 활짝 피었어요 🌸</div>
+      <div class="drop-zone" id="drop2"></div>
+      <div class="word-tokens" id="tokens2"></div>
+      <div class="feedback" id="fb2"></div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Q2 2어절 낱말 배열 ⭐ -->
+  <div class="slide" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">낱말 카드를 순서대로 눌러<br>문장을 만들어 보세요!</div>
+      <div class="sentence-box" style="font-size:24px;color:var(--subtext)">힌트: 밖에서 비가 내려요 🌧️</div>
+      <div class="drop-zone" id="drop3"></div>
+      <div class="word-tokens" id="tokens3"></div>
+      <div class="feedback" id="fb3"></div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Q3 3어절 낱말 배열 ⭐⭐ -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 3 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">낱말 카드를 순서대로 눌러<br>문장을 만들어 보세요!</div>
+      <div class="drop-zone" id="drop4"></div>
+      <div class="word-tokens" id="tokens4"></div>
+      <div class="feedback" id="fb4"></div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Q4 그림 보고 알맞은 문장 고르기 ⭐ -->
+  <div class="slide" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 4 <span class="stars">⭐</span></div>
+      <div class="question-text">그림에 맞는 문장을 고르세요!</div>
+      <div style="text-align:center;font-size:80px;margin:10px 0">🐕💨</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">고양이가 잔다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">강아지가 뛴다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">새가 날아간다.</button>
+      </div>
+      <div class="feedback" id="fb5"></div>
+    </div>
+  </div>
+
+  <!-- Slide 6: Q5 그림 보고 알맞은 문장 고르기 ⭐ -->
+  <div class="slide" data-correct="2" data-score="10">
+    <div class="card">
+      <div class="question-label">문제 5 <span class="stars">⭐</span></div>
+      <div class="question-text">그림에 맞는 문장을 고르세요!</div>
+      <div style="text-align:center;font-size:80px;margin:10px 0">👧📖</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">아이가 놀이터에서 논다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">아이가 밥을 먹는다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">아이가 책을 읽는다.</button>
+      </div>
+      <div class="feedback" id="fb6"></div>
+    </div>
+  </div>
+
+  <!-- Slide 7: Q6 띄어쓰기 바른 문장 고르기 ⭐⭐ -->
+  <div class="slide" data-correct="0" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">띄어쓰기가 바른 문장은?</div>
+      <div class="choices col">
+        <button class="choice-btn" onclick="answer(this,0)">나는 사과를 먹는다.</button>
+        <button class="choice-btn" onclick="answer(this,1)">나는사과를 먹는다.</button>
+        <button class="choice-btn" onclick="answer(this,2)">나 는 사과를먹는다.</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- Slide 8: Q7 빈칸 채워 문장 완성 ⭐⭐ -->
+  <div class="slide" data-correct="1" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 7 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">빈칸에 알맞은 낱말을 골라<br>문장을 완성하세요!</div>
+      <div class="sentence-box" style="font-size:36px"><span id="blank8" style="color:var(--primary)">___</span>이 파랗다.</div>
+      <div class="choices">
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,8,'바다',0)">바다</button>
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,8,'하늘',1)">하늘</button>
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,8,'사과',2)">사과</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- Slide 9: Q8 빈칸 채워 문장 완성 ⭐⭐ -->
+  <div class="slide" data-correct="2" data-score="25">
+    <div class="card">
+      <div class="question-label">문제 8 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">빈칸에 알맞은 낱말을 골라<br>문장을 완성하세요!</div>
+      <div class="sentence-box" style="font-size:36px">엄마가 <span id="blank9" style="color:var(--primary)">___</span>을 한다.</div>
+      <div class="choices">
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,9,'공부',0)">공부</button>
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,9,'노래',1)">노래</button>
+        <button class="choice-btn" style="font-size:32px" onclick="fillBlankSimple(this,9,'밥',2)">밥</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- Slide 10: Q9 3어절 문장 배열 + 쓰기 ⭐⭐⭐ -->
+  <div class="slide" data-score="50">
+    <div class="card">
+      <div class="question-label">문제 9 <span class="stars">⭐⭐⭐</span></div>
+      <div class="question-text">🔊 듣고 낱말 카드를 순서대로 눌러<br>문장을 만들어 보세요!</div>
+      <div style="text-align:center;margin:8px 0">
+        <button class="echo-btn" onclick="speakKo('동생이 우유를 마신다.',0.8)">🔊 다시 듣기</button>
+      </div>
+      <div class="drop-zone" id="drop10"></div>
+      <div class="word-tokens" id="tokens10"></div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- Slide 11: 결과 -->
+  <div class="slide" data-type="result">
+    <div class="card result-card">
+      <div class="trophy" id="resultEmoji">🎉</div>
+      <div style="font-size:32px;margin:8px 0">학습 완료!</div>
+      <div class="final-score"><span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="char-bubble" style="justify-content:center">
+        <span class="char-emoji">🦦</span>
+        <div class="bubble">문장 따라 쓰기 잘했어!<br>매일 한 문장씩 써 보면 실력이 쑥쑥! ✏️</div>
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+
+function speakKo(text,rate){if(!soundOn)return;const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=rate||0.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=180?'⭐⭐⭐⭐⭐':score>=120?'⭐⭐⭐⭐':score>=60?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=180?'🏆':'🎉'}
+}
+
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+function fillBlankSimple(btn,slideIdx,text,idx){
+  if(answered[slideIdx])return;
+  const slide=document.querySelectorAll('.slide')[slideIdx];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||25;
+  document.getElementById('blank'+slideIdx).textContent=text;
+  playClick();
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ 정답! +'+pts+'점',true);answered[slideIdx]=true;setTimeout(nextSlide,900)}
+  else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank'+slideIdx).textContent='___';setFB('fb'+slideIdx,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}
+}
+
+// 낱말 카드 배열 문제
+const orderQuestions={
+  2:{words:['꽃이','핀다.'],shuffled:[1,0]},
+  3:{words:['비가','온다.'],shuffled:[1,0]},
+  4:{words:['나는','사과를','먹는다.'],shuffled:[2,0,1]},
+  10:{words:['동생이','우유를','마신다.'],shuffled:[1,2,0]}
+};
+let orderState={};
+
+function initOrder(slideIdx){
+  const q=orderQuestions[slideIdx];
+  const shuffled=q.shuffled.map(i=>q.words[i]);
+  const tokensEl=document.getElementById('tokens'+slideIdx);
+  const dropEl=document.getElementById('drop'+slideIdx);
+  tokensEl.innerHTML='';dropEl.innerHTML='';
+  orderState[slideIdx]={placed:[],correct:q.words};
+  shuffled.forEach((w,i)=>{
+    const btn=document.createElement('div');
+    btn.className='word-token';btn.textContent=w;
+    btn.onclick=function(){placeWord(this,slideIdx)};
+    tokensEl.appendChild(btn);
+  });
+}
+
+function placeWord(btn,slideIdx){
+  if(answered[slideIdx]||btn.classList.contains('placed'))return;
+  playClick();
+  btn.classList.add('placed');
+  const st=orderState[slideIdx];
+  st.placed.push(btn.textContent);
+  const item=document.createElement('div');
+  item.className='drop-item';item.textContent=btn.textContent;
+  item.onclick=function(){st.placed.pop();this.remove();btn.classList.remove('placed')};
+  document.getElementById('drop'+slideIdx).appendChild(item);
+  
+  if(st.placed.length===st.correct.length){
+    const pts=parseInt(document.querySelectorAll('.slide')[slideIdx].dataset.score)||10;
+    if(st.placed.join(' ')===st.correct.join(' ')){
+      playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ 정답! +'+pts+'점',true);answered[slideIdx]=true;
+      speakKo(st.correct.join(' '),0.8);setTimeout(nextSlide,1200);
+    }else{
+      playWrong();combo=0;setFB('fb'+slideIdx,'순서를 다시 생각해 봐! 💪',false);
+      setTimeout(()=>{
+        st.placed=[];
+        document.getElementById('drop'+slideIdx).innerHTML='';
+        document.getElementById('tokens'+slideIdx).querySelectorAll('.word-token').forEach(t=>t.classList.remove('placed'));
+      },800);
+    }
+  }
+}
+
+[2,3,4,10].forEach(i=>initOrder(i));
+
+// Swipe
+let tx=0;
+document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});
+document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+
+function restart(){
+  score=0;combo=0;answered={};orderState={};
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  [8,9].forEach(i=>{const b=document.getElementById('blank'+i);if(b)b.textContent='___'});
+  [2,3,4,10].forEach(i=>initOrder(i));
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+updateUI();
+</script>
+</body>
+</html>

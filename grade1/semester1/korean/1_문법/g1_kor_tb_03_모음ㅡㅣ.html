@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 1학년 국어 3차시 - 모음 ㅡ, ㅣ 알기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFF5F5;--card:#FFFFFF;--primary:#D35F8D;--primary-light:#FCE4EC;--secondary:#E88FAB;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333333;--subtext:#888888;--border:#F8BBD0;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;gap:8px;}
+.sound-btn{background:none;border:none;cursor:pointer;font-size:26px;padding:4px 8px;border-radius:12px;transition:background .2s;}.sound-btn:hover{background:var(--primary-light);}
+.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 8px;}
+.progress-bar{flex:1;height:10px;background:var(--border);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s ease;}
+.page-info{font-size:18px;color:var(--subtext);white-space:nowrap;}
+.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 14px;font-size:20px;font-weight:700;color:#e6a800;}
+.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:white;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0;}
+.kedu-logo .logo-circle{width:22px;height:22px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:13px;font-weight:900;}
+.slides{flex:1;position:relative;overflow:hidden;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 24px;width:100%;max-width:640px;text-align:center;}
+.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px;}
+.badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:8px;}
+.big-vowel{font-size:220px;line-height:1;color:var(--primary);margin:10px 0;animation:vowelPop .6s ease;text-shadow:3px 3px 0 var(--primary-light);}
+@keyframes vowelPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.vowel-pair{display:flex;justify-content:center;gap:40px;margin:10px 0;}
+.vowel-pair .v-item{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.vowel-pair .v-char{font-size:140px;line-height:1;color:var(--primary);cursor:pointer;transition:transform .2s;text-shadow:2px 2px 0 var(--primary-light);}
+.vowel-pair .v-char:hover{transform:scale(1.1);}
+.vowel-pair .v-name{font-size:26px;color:var(--subtext);}
+.concept-text{font-size:26px;line-height:1.7;margin:8px 0;}
+.highlight{color:var(--primary);font-size:30px;}
+.kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:14px 18px;margin:10px 0;text-align:left;}
+.kay-icon{font-size:48px;flex-shrink:0;}
+.kay-text{font-size:24px;line-height:1.5;}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:white;border-radius:99px;padding:5px 16px;font-size:18px;font-weight:700;margin-bottom:10px;}
+.stars{color:#FCD34D;}
+.question-text{font-size:28px;text-align:center;margin:8px 0 14px;line-height:1.5;}
+.choices{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:10px;}
+.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:14px 28px;font-family:'Jua',sans-serif;font-size:52px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+.choice-btn:hover{border-color:var(--primary);transform:translateY(-3px);}
+.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.choice-btn.small{font-size:32px;padding:10px 20px;}
+.stroke-demo{display:flex;flex-direction:column;align-items:center;gap:8px;margin:10px 0;}
+.stroke-step{display:flex;gap:20px;align-items:center;font-size:26px;}
+.stroke-num{width:36px;height:36px;background:var(--primary);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.write-area{position:relative;width:280px;height:280px;margin:10px auto;border:4px dashed var(--primary);border-radius:20px;background:#FFF5F5;cursor:crosshair;touch-action:none;}
+.write-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:200px;color:rgba(211,95,141,0.12);pointer-events:none;}
+.write-canvas{position:absolute;inset:0;border-radius:16px;}
+.write-btns{display:flex;gap:10px;justify-content:center;margin-top:8px;}
+.write-btn{background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:8px 20px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;color:var(--primary);transition:all .2s;}
+.write-btn:hover{background:var(--primary);color:white;}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:30px;border-radius:12px;padding:6px 14px;font-weight:700;}
+.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}
+.nav-btn{background:var(--primary);color:white;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s;}
+.nav-btn:disabled{opacity:.3;cursor:default;}.nav-btn:not(:disabled):hover{opacity:.85;}
+.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 22px;font-size:24px;font-weight:700;color:#e6a800;z-index:99;transition:transform .3s;}
+.combo-toast.show{transform:translateX(-50%) scale(1);}
+.result-box{text-align:center;}
+.result-emoji{font-size:80px;margin:10px 0;animation:bounce 1s infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.result-score{font-size:48px;color:var(--primary);margin:8px 0;}
+.result-stars{font-size:40px;margin:8px 0;}
+.result-msg{font-size:24px;color:var(--subtext);margin:6px 0;}
+.restart-btn{background:var(--primary);color:white;border:none;border-radius:16px;padding:14px 40px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px;transition:transform .2s;}.restart-btn:hover{transform:scale(1.05);}
+
+/* CARD MATCHING GAME */
+.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0;max-width:400px;}
+.memo-card{aspect-ratio:1;background:var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:42px;color:white;cursor:pointer;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.memo-card.flipped{background:var(--card);color:var(--primary);border:3px solid var(--primary);}
+.memo-card.matched{background:var(--green-light);color:var(--green);border:3px solid var(--green);pointer-events:none;}
+.memo-card .card-back{font-size:32px;}
+
+/* 6모음 정리표 */
+.vowel-table{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0;}
+.vt-cell{background:var(--primary-light);border-radius:14px;padding:12px;text-align:center;cursor:pointer;transition:transform .2s;}
+.vt-cell:hover{transform:scale(1.05);}
+.vt-vowel{font-size:56px;color:var(--primary);}
+.vt-sound{font-size:22px;color:var(--subtext);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <div class="score-badge">⭐ <span id="scoreVal">0</span></div>
+  <div class="kedu-logo"><div class="logo-circle">K</div> edu</div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesContainer">
+
+  <!-- S0: 표지 -->
+  <div class="slide active">
+    <div class="card">
+      <div class="badge">1학년 국어 · 3차시</div>
+      <div class="vowel-pair">
+        <div class="v-item"><div class="v-char" onclick="speakKo('으')">ㅡ</div></div>
+        <div class="v-item"><div class="v-char" onclick="speakKo('이')">ㅣ</div></div>
+      </div>
+      <div class="concept-text">모음 <span class="highlight">ㅡ</span>와 <span class="highlight">ㅣ</span>를 배워요!</div>
+      <div class="kay-says">
+        <div class="kay-icon">🐕</div>
+        <div class="kay-text">오늘로 기본 모음 6개를 모두 배우게 돼! 💪</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S1: 개념 - ㅡ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 개념 학습</div>
+      <div class="big-vowel" onclick="speakKo('으')" style="cursor:pointer;">ㅡ</div>
+      <div class="concept-text">
+        <span class="highlight">ㅡ</span>는 <b>가로줄 하나</b>! —<br>
+        입을 옆으로 벌리고 <b>"으~"</b>
+      </div>
+      <div class="kay-says">
+        <div class="kay-icon">🐕</div>
+        <div class="kay-text"><b>으</b>악! 무서울 때 나오는 소리 😱<br>하늘의 <b>하늘</b>에도 ㅡ가 있어!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: 개념 - ㅣ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 개념 학습</div>
+      <div class="big-vowel" onclick="speakKo('이')" style="cursor:pointer;color:#A0406E;">ㅣ</div>
+      <div class="concept-text">
+        <span class="highlight" style="color:#A0406E;">ㅣ</span>는 <b>세로줄 하나</b>! |<br>
+        입을 옆으로 길게 벌리고 <b>"이~"</b>
+      </div>
+      <div class="kay-says">
+        <div class="kay-icon">🦦</div>
+        <div class="kay-text">웃을 때 <b>"이~"</b> 😁<br><b>이</b>불, <b>이</b>름에도 들어있어!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: 비교 -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">📖 ㅡ와 ㅣ 비교하기</div>
+      <div class="vowel-pair">
+        <div class="v-item">
+          <div class="v-char" onclick="speakKo('으')">ㅡ</div>
+          <div class="v-name">가로줄 —</div>
+        </div>
+        <div class="v-item">
+          <div class="v-char" onclick="speakKo('이')" style="color:#A0406E;">ㅣ</div>
+          <div class="v-name">세로줄 |</div>
+        </div>
+      </div>
+      <div class="concept-text" style="font-size:24px;">
+        ㅡ는 <b>눕혀 놓은 선</b> ➖<br>
+        ㅣ는 <b>세워 놓은 선</b> |
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: 6모음 총정리 -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">🌟 기본 모음 6개 총정리!</div>
+      <div class="vowel-table">
+        <div class="vt-cell" onclick="speakKo('아')"><div class="vt-vowel">ㅏ</div><div class="vt-sound">"아"</div></div>
+        <div class="vt-cell" onclick="speakKo('어')"><div class="vt-vowel">ㅓ</div><div class="vt-sound">"어"</div></div>
+        <div class="vt-cell" onclick="speakKo('오')"><div class="vt-vowel">ㅗ</div><div class="vt-sound">"오"</div></div>
+        <div class="vt-cell" onclick="speakKo('우')"><div class="vt-vowel">ㅜ</div><div class="vt-sound">"우"</div></div>
+        <div class="vt-cell" onclick="speakKo('으')"><div class="vt-vowel">ㅡ</div><div class="vt-sound">"으"</div></div>
+        <div class="vt-cell" onclick="speakKo('이')"><div class="vt-vowel">ㅣ</div><div class="vt-sound">"이"</div></div>
+      </div>
+      <div class="kay-says">
+        <div class="kay-icon">🐕</div>
+        <div class="kay-text">터치하면 소리가 나와! 모두 눌러봐! 🔊</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: 쓰기 - ㅡ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✏️ 따라 써 보자! — ㅡ</div>
+      <div class="stroke-demo">
+        <div class="stroke-step"><div class="stroke-num">1</div> 왼쪽에서 오른쪽으로 → 한 획!</div>
+      </div>
+      <div class="write-area" id="writeArea1">
+        <div class="write-guide">ㅡ</div>
+        <canvas class="write-canvas" id="writeCanvas1"></canvas>
+      </div>
+      <div class="write-btns">
+        <button class="write-btn" onclick="clearCanvas('writeCanvas1')">🗑️ 지우기</button>
+        <button class="write-btn" onclick="speakKo('으')">🔊 소리 듣기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6: 쓰기 - ㅣ -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-title">✏️ 따라 써 보자! — ㅣ</div>
+      <div class="stroke-demo">
+        <div class="stroke-step"><div class="stroke-num">1</div> 위에서 아래로 ↓ 한 획!</div>
+      </div>
+      <div class="write-area" id="writeArea2">
+        <div class="write-guide">ㅣ</div>
+        <canvas class="write-canvas" id="writeCanvas2"></canvas>
+      </div>
+      <div class="write-btns">
+        <button class="write-btn" onclick="clearCanvas('writeCanvas2')">🗑️ 지우기</button>
+        <button class="write-btn" onclick="speakKo('이')">🔊 소리 듣기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7: 확인1 -->
+  <div class="slide" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 소리를 듣고 맞는 모음을 골라요!</div>
+      <button class="write-btn" onclick="speakKo('으')" style="margin-bottom:12px;font-size:26px;">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">ㅡ</button>
+        <button class="choice-btn" onclick="answer(this,1)">ㅣ</button>
+      </div>
+      <div class="feedback" id="fb7"></div>
+    </div>
+  </div>
+
+  <!-- S8: 확인2 -->
+  <div class="slide" data-correct="1" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 소리를 듣고 맞는 모음을 골라요!</div>
+      <button class="write-btn" onclick="speakKo('이')" style="margin-bottom:12px;font-size:26px;">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">ㅡ</button>
+        <button class="choice-btn" onclick="answer(this,1)">ㅣ</button>
+      </div>
+      <div class="feedback" id="fb8"></div>
+    </div>
+  </div>
+
+  <!-- S9: 확인3 - 가로 vs 세로 -->
+  <div class="slide" data-correct="0" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 3 <span class="stars">⭐</span></div>
+      <div class="question-text"><b>가로줄</b> 하나로 된 모음은?</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="answer(this,0)">ㅡ</button>
+        <button class="choice-btn" onclick="answer(this,1)">ㅣ</button>
+        <button class="choice-btn" onclick="answer(this,2)">ㅏ</button>
+      </div>
+      <div class="feedback" id="fb9"></div>
+    </div>
+  </div>
+
+  <!-- S10: 확인4 - 6모음 듣기 -->
+  <div class="slide" data-correct="2" data-score="10">
+    <div class="card">
+      <div class="question-label">확인 문제 4 <span class="stars">⭐</span></div>
+      <div class="question-text">🔊 듣고 맞는 모음을 골라요!</div>
+      <button class="write-btn" onclick="speakKo('오')" style="margin-bottom:12px;font-size:26px;">🔊 소리 듣기</button>
+      <div class="choices">
+        <button class="choice-btn small" onclick="answer(this,0)">ㅏ</button>
+        <button class="choice-btn small" onclick="answer(this,1)">ㅓ</button>
+        <button class="choice-btn small" onclick="answer(this,2)">ㅗ</button>
+        <button class="choice-btn small" onclick="answer(this,3)">ㅜ</button>
+        <button class="choice-btn small" onclick="answer(this,4)">ㅡ</button>
+        <button class="choice-btn small" onclick="answer(this,5)">ㅣ</button>
+      </div>
+      <div class="feedback" id="fb10"></div>
+    </div>
+  </div>
+
+  <!-- S11: 도전1 - 6모음 분류 -->
+  <div class="slide" data-score="25">
+    <div class="card">
+      <div class="question-label">도전 문제 1 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">소리를 듣고 6개 모음 중 골라요!</div>
+      <div style="margin:10px 0;">
+        <button class="write-btn" id="sortSoundBtn" onclick="playSortSound()" style="font-size:26px;margin-bottom:10px;">🔊 소리 듣기</button>
+        <div style="font-size:20px;color:var(--subtext);margin-bottom:8px;" id="sortProgress"></div>
+        <div class="choices" id="sortChoices">
+          <button class="choice-btn small" onclick="sortAnswer(0)">ㅏ</button>
+          <button class="choice-btn small" onclick="sortAnswer(1)">ㅓ</button>
+          <button class="choice-btn small" onclick="sortAnswer(2)">ㅗ</button>
+          <button class="choice-btn small" onclick="sortAnswer(3)">ㅜ</button>
+          <button class="choice-btn small" onclick="sortAnswer(4)">ㅡ</button>
+          <button class="choice-btn small" onclick="sortAnswer(5)">ㅣ</button>
+        </div>
+      </div>
+      <div class="feedback" id="fb11"></div>
+    </div>
+  </div>
+
+  <!-- S12: 도전2 - 카드 매칭 -->
+  <div class="slide" data-score="50">
+    <div class="card">
+      <div class="question-label">도전 문제 2 <span class="stars">⭐⭐</span></div>
+      <div class="question-text">같은 모음 카드를 찾아 짝을 맞춰요!</div>
+      <div class="card-grid" id="memoGrid"></div>
+      <div style="font-size:20px;color:var(--subtext);margin-top:6px;">남은 짝: <span id="memoRemain">4</span></div>
+      <div class="feedback" id="fb12"></div>
+    </div>
+  </div>
+
+  <!-- S13: 결과 -->
+  <div class="slide">
+    <div class="card result-box">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <div style="font-size:28px;">학습 완료!</div>
+      <div class="result-score">⭐ <span id="finalScore">0</span>점</div>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <div class="result-msg">기본 모음 6개를 모두 배웠어요! 🎊</div>
+      <div class="kay-says">
+        <div class="kay-icon">🐕</div>
+        <div class="kay-text">ㅏ ㅓ ㅗ ㅜ ㅡ ㅣ 완벽! 🌈<br>다음에는 6개 모음 복습 놀이를 하자!</div>
+      </div>
+      <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()" disabled>◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}
+function playCorrect(){if(!soundOn)return;[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
+function playWrong(){if(!soundOn)return;[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
+function playClick(){if(!soundOn)return;playTone(880,'sine',.08,.2);}
+function speakKo(text){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'));},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1);}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreVal').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;const s=score;document.getElementById('resultStars').textContent=s>=120?'⭐⭐⭐⭐⭐':s>=90?'⭐⭐⭐⭐':s>=50?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=s>=120?'🏆':'🎉';}
+  if(currentSlide===11&&!sortInited)initSort();
+  if(currentSlide===12&&!memoInited)initMemo();
+}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+// ── SORT: 6모음 듣기 퀴즈 ──
+const vowels=['아','어','오','우','으','이'];
+const sortQuiz=[{sound:'우',correct:3},{sound:'이',correct:5},{sound:'아',correct:0},{sound:'으',correct:4}];
+let sortIdx=0,sortScore=0,sortInited=false;
+function initSort(){sortInited=true;sortIdx=0;sortScore=0;showSort();}
+function showSort(){
+  if(sortIdx>=sortQuiz.length){answered[11]=true;if(sortScore===sortQuiz.length){addScore(25);setFB('fb11','✅ 모두 맞혔어! +25점',true);}else setFB('fb11','✅ 완료! '+sortScore+'/'+sortQuiz.length,true);setTimeout(nextSlide,1200);return;}
+  document.getElementById('sortProgress').textContent=(sortIdx+1)+' / '+sortQuiz.length;
+  document.querySelectorAll('#sortChoices .choice-btn').forEach(b=>b.className='choice-btn small');
+}
+function playSortSound(){if(sortIdx<sortQuiz.length)speakKo(sortQuiz[sortIdx].sound);}
+function sortAnswer(idx){if(sortIdx>=sortQuiz.length||answered[11])return;playClick();const correct=sortQuiz[sortIdx].correct;const btns=document.querySelectorAll('#sortChoices .choice-btn');if(idx===correct){btns[idx].classList.add('correct');playCorrect();sortScore++;}else{btns[idx].classList.add('wrong');playWrong();combo=0;}sortIdx++;setTimeout(showSort,800);}
+
+// ── MEMO CARD MATCHING ──
+let memoInited=false,memoCards=[],flipped=[],memoMatched=0,memoLocked=false;
+function initMemo(){
+  memoInited=true;memoMatched=0;
+  const pairs=['ㅏ','ㅓ','ㅗ','ㅜ'];
+  memoCards=[...pairs,...pairs];
+  // shuffle
+  for(let i=memoCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[memoCards[i],memoCards[j]]=[memoCards[j],memoCards[i]];}
+  const grid=document.getElementById('memoGrid');
+  grid.innerHTML='';
+  memoCards.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.className='memo-card';d.dataset.idx=i;d.dataset.val=v;
+    d.innerHTML='<span class="card-back">❓</span>';
+    d.addEventListener('click',()=>flipCard(d));
+    grid.appendChild(d);
+  });
+  document.getElementById('memoRemain').textContent=pairs.length;
+}
+function flipCard(card){
+  if(memoLocked||card.classList.contains('flipped')||card.classList.contains('matched'))return;
+  playClick();
+  card.classList.add('flipped');card.innerHTML=card.dataset.val;
+  flipped.push(card);
+  if(flipped.length===2){
+    memoLocked=true;
+    const[a,b]=flipped;
+    if(a.dataset.val===b.dataset.val){
+      setTimeout(()=>{a.classList.add('matched');b.classList.add('matched');playCorrect();memoMatched++;document.getElementById('memoRemain').textContent=4-memoMatched;flipped=[];memoLocked=false;
+        if(memoMatched===4){answered[12]=true;addScore(50);setFB('fb12','✅ 모든 짝을 찾았어! +50점',true);setTimeout(nextSlide,1200);}
+      },400);
+    }else{
+      playWrong();combo=0;
+      setTimeout(()=>{a.classList.remove('flipped');a.innerHTML='<span class="card-back">❓</span>';b.classList.remove('flipped');b.innerHTML='<span class="card-back">❓</span>';flipped=[];memoLocked=false;},800);
+    }
+  }
+}
+
+// ── CANVAS ──
+function initCanvas(id){const c=document.getElementById(id);const rect=c.parentElement.getBoundingClientRect();c.width=rect.width;c.height=rect.height;const ctx=c.getContext('2d');ctx.strokeStyle='#D35F8D';ctx.lineWidth=6;ctx.lineCap='round';ctx.lineJoin='round';let drawing=false;function getPos(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}c.addEventListener('mousedown',e=>{drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);});c.addEventListener('mousemove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();});c.addEventListener('mouseup',()=>drawing=false);c.addEventListener('mouseleave',()=>drawing=false);c.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);},{passive:false});c.addEventListener('touchmove',e=>{e.preventDefault();if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();},{passive:false});c.addEventListener('touchend',()=>drawing=false);}
+function clearCanvas(id){document.getElementById(id).getContext('2d').clearRect(0,0,999,999);}
+
+// ── SWIPE ──
+let touchStartX=0;
+document.getElementById('slidesContainer').addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;});
+document.getElementById('slidesContainer').addEventListener('touchend',e=>{const diff=e.changedTouches[0].clientX-touchStartX;if(Math.abs(diff)>50){diff>0?prevSlide():nextSlide();}});
+
+function restart(){score=0;combo=0;answered={};sortInited=false;sortIdx=0;sortScore=0;memoInited=false;memoCards=[];flipped=[];memoMatched=0;memoLocked=false;document.querySelectorAll('.choice-btn').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').replace(/\s+/g,' ').trim());document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+window.addEventListener('load',()=>{setTimeout(()=>{initCanvas('writeCanvas1');initCanvas('writeCanvas2');},500);});
+</script>
+</body>
+</html>

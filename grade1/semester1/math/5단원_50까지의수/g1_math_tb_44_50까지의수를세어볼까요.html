@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>50까지의 수를 세어 볼까요 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F7FF;--card:#FFFFFF;--primary:#42A5F5;--primary-light:#E3F2FD;--secondary:#64B5F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E4F7;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;-webkit-user-select:none;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}
+.logo-star{font-size:10px;color:#F59E0B}
+.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide-container{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:620px;text-align:center;gap:10px;animation:fadeIn .4s}
+.slide.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+.card{background:var(--card);border-radius:var(--radius);padding:20px 16px;width:100%;box-shadow:var(--shadow)}
+.title{font-size:26px;color:var(--primary);margin-bottom:4px}
+.desc{font-size:20px;line-height:1.5}
+.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:3px 10px;border-radius:30px;font-size:17px;margin-bottom:4px}
+.char-row{display:flex;align-items:center;justify-content:center;gap:10px}
+.char-img{width:52px;height:52px;border-radius:50%}
+.speech{background:var(--primary-light);border-radius:16px;padding:10px 14px;font-size:20px;position:relative;max-width:400px;text-align:left}
+.speech::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:4px}
+.opt-btn{padding:10px 20px;font-size:36px;font-family:'Jua',sans-serif;border:3px solid var(--border);border-radius:14px;background:var(--card);cursor:pointer;transition:all .2s;min-width:60px}
+.opt-btn:active{transform:scale(.95)}
+.opt-btn.correct{background:var(--green-light);border-color:var(--green);animation:bounce .4s}
+.opt-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.opt-btn.sm{font-size:24px;padding:8px 14px;min-width:48px}
+.ox-row{display:flex;gap:14px;justify-content:center}
+.ox-btn{width:80px;height:80px;border-radius:50%;font-size:42px;border:4px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ox-btn:active{transform:scale(.9)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light)}
+.feedback{font-size:19px;min-height:24px;margin-top:2px}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+.nav-row{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.nav-btn{padding:10px 24px;font-size:22px;font-family:'Jua',sans-serif;border:none;border-radius:30px;cursor:pointer;color:#FFF;background:var(--primary)}
+.nav-btn:active{transform:scale(.95)}
+.nav-btn:disabled{opacity:.4;cursor:default}
+.page-info{font-size:18px;color:var(--subtext)}
+.blank-box{display:inline-flex;width:48px;height:42px;border:3px dashed var(--primary);border-radius:10px;align-items:center;justify-content:center;font-size:28px;color:var(--primary);background:var(--card);margin:0 3px;transition:all .3s}
+.blank-box.filled{border-style:solid;background:var(--primary-light);animation:pop .3s}
+.expr{font-size:26px;color:var(--primary);margin:6px 0}
+/* 수배열표 */
+.num-table{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;max-width:420px;margin:8px auto;background:var(--border);padding:2px;border-radius:10px}
+.nt-cell{background:var(--card);padding:4px 0;font-size:18px;text-align:center;border-radius:4px;transition:all .2s;min-height:28px}
+.nt-cell.header{background:var(--primary);color:#FFF;font-size:14px}
+.nt-cell.highlight{background:var(--primary-light);color:var(--primary);font-weight:bold}
+.nt-cell.blank{background:#FFF;border:2px dashed var(--primary);cursor:pointer;color:transparent}
+.nt-cell.blank.revealed{color:var(--primary);background:var(--primary-light);border-style:solid;animation:pop .3s}
+.model-row{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.block-ten{padding:5px 14px;border-radius:8px;background:var(--primary);color:#FFF;font-size:18px;border:2px solid #1565C0}
+.block-one{width:26px;height:26px;border-radius:6px;background:var(--secondary);display:flex;align-items:center;justify-content:center;color:#FFF;font-size:12px;border:2px solid #1976D2}
+.result-card{background:linear-gradient(135deg,var(--primary-light),#BBDEFB);border-radius:var(--radius);padding:28px 20px;width:100%;text-align:center}
+.result-score{font-size:56px;color:var(--primary)}
+.result-msg{font-size:24px;margin-top:6px}
+.combo-text{font-size:20px;color:#F57F17;margin-top:4px}
+.read-table{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:300px;margin:8px auto}
+.rt-cell{padding:8px;border-radius:10px;font-size:22px;text-align:center}
+.rt-num{background:var(--primary-light);color:var(--primary)}
+.rt-read{background:var(--yellow-light);color:#F57F17}
+</style>
+</head>
+<body>
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+
+<div class="slide-container">
+
+<!-- 1: 타이틀 -->
+<div class="slide active" data-type="intro">
+<div class="card">
+<div style="font-size:19px;color:var(--primary)">📘 5단원 · 50까지의 수</div>
+<div class="title">50까지의 수를<br>세어 볼까요</div>
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" style="width:72px;height:72px;border-radius:50%;margin:10px auto">
+<div class="desc">20, 30, 40, 50!<br>큰 수를 세고 읽어 볼까요?</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">시작하기 →</button></div>
+</div>
+
+<!-- 2: 개념 - 십의 자리 수 -->
+<div class="slide" data-type="concept">
+<div class="card">
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+<div class="speech">10이 2개면 <b>20(이십)</b>,<br>10이 3개면 <b>30(삼십)</b>이야!</div>
+</div>
+<div class="read-table">
+<div class="rt-cell rt-num">20</div><div class="rt-cell rt-read">이십 / 스물</div>
+<div class="rt-cell rt-num">30</div><div class="rt-cell rt-read">삼십 / 서른</div>
+<div class="rt-cell rt-num">40</div><div class="rt-cell rt-read">사십 / 마흔</div>
+<div class="rt-cell rt-num">50</div><div class="rt-cell rt-read">오십 / 쉰</div>
+</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">다음 →</button></div>
+</div>
+
+<!-- 3: 개념 - 두 자리 수 읽기 -->
+<div class="slide" data-type="concept">
+<div class="card">
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" alt="듀">
+<div class="speech">두 자리 수는<br><b>십의 자리</b>와 <b>일의 자리</b>로 되어 있어!</div>
+</div>
+<div style="margin:10px 0;font-size:24px">
+<div style="margin-bottom:6px"><b style="color:var(--primary);font-size:36px">34</b> → 삼십사 / 서른넷</div>
+<div><b style="color:var(--primary);font-size:36px">47</b> → 사십칠 / 마흔일곱</div>
+</div>
+<div class="desc" style="font-size:18px;color:var(--subtext)">십의 자리 × 10 + 일의 자리 = 수</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">다음 →</button></div>
+</div>
+
+<!-- 4: Q1 - 수 인식 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 1. 수 모형 읽기</div>
+<div class="desc" style="font-size:18px">10모형 2개와 낱개 5개 → 몇?</div>
+<div class="model-row">
+<div class="block-ten">10</div><div class="block-ten">10</div>
+<div style="display:flex;gap:3px"><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div></div>
+</div>
+<div class="btn-row">
+<button class="opt-btn" onclick="chk(this,25,1)">25</button>
+<button class="opt-btn" onclick="chk(this,35,1)">35</button>
+<button class="opt-btn" onclick="chk(this,15,1)">15</button>
+</div>
+<div class="feedback" id="fb1"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next1" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 5: Q2 - 읽기 매칭 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 2. 읽기 매칭</div>
+<div class="desc" style="font-size:22px">"삼십이"는 어떤 수?</div>
+<div class="btn-row" style="margin-top:12px">
+<button class="opt-btn" onclick="chk(this,32,2)">32</button>
+<button class="opt-btn" onclick="chk(this,23,2)">23</button>
+<button class="opt-btn" onclick="chk(this,30,2)">30</button>
+</div>
+<div class="feedback" id="fb2"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next2" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 6: Q3 - OX ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 3. O·X 판단</div>
+<div class="desc" style="font-size:22px">"40은 사십이라고 읽는다"</div>
+<div class="ox-row" style="margin:14px 0">
+<button class="ox-btn" onclick="oxChk(this,'O',3)">⭕</button>
+<button class="ox-btn" onclick="oxChk(this,'X',3)">❌</button>
+</div>
+<div class="feedback" id="fb3"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next3" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 7: Q4 - 수세기 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 4. 수 모형 읽기</div>
+<div class="desc" style="font-size:18px">10모형 4개와 낱개 1개 → 몇?</div>
+<div class="model-row">
+<div class="block-ten">10</div><div class="block-ten">10</div><div class="block-ten">10</div><div class="block-ten">10</div>
+<div style="display:flex;gap:3px"><div class="block-one"></div></div>
+</div>
+<div class="btn-row">
+<button class="opt-btn" onclick="chk(this,41,4)">41</button>
+<button class="opt-btn" onclick="chk(this,14,4)">14</button>
+<button class="opt-btn" onclick="chk(this,40,4)">40</button>
+</div>
+<div class="feedback" id="fb4"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next4" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 8: Q5 - 수배열표 빈칸 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 5. 수배열표 완성</div>
+<div class="desc" style="font-size:18px">빈칸에 알맞은 수를 골라 넣어요!</div>
+<div class="num-table" id="numTable5"></div>
+<div class="btn-row" id="ntBtns5"></div>
+<div class="feedback" id="fb5"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next5" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 9: Q6 - 읽기 매칭 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 6. 읽기 매칭</div>
+<div class="desc" style="font-size:22px">"마흔여섯"은 어떤 수?</div>
+<div class="btn-row" style="margin-top:12px">
+<button class="opt-btn" onclick="chk(this,46,6)">46</button>
+<button class="opt-btn" onclick="chk(this,36,6)">36</button>
+<button class="opt-btn" onclick="chk(this,40,6)">40</button>
+</div>
+<div class="feedback" id="fb6"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next6" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 10: Q7 - 빈칸 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 7. 빈칸 채우기</div>
+<div class="expr">10이 <span class="blank-box" id="blank7">?</span>개이면 50</div>
+<div class="btn-row">
+<button class="opt-btn sm" onclick="blkChk(this,5,7)">5</button>
+<button class="opt-btn sm" onclick="blkChk(this,4,7)">4</button>
+<button class="opt-btn sm" onclick="blkChk(this,10,7)">10</button>
+</div>
+<div class="feedback" id="fb7"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next7" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 11: Q8 - 스토리 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 8. 이야기 속 수학</div>
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" alt="듀">
+<div class="speech" style="font-size:18px">듀네 반 학생이 <b>서른여덟</b> 명이에요.<br>서른여덟을 숫자로 쓰면?</div>
+</div>
+<div class="btn-row" style="margin-top:10px">
+<button class="opt-btn" onclick="chk(this,38,8)">38</button>
+<button class="opt-btn" onclick="chk(this,28,8)">28</button>
+<button class="opt-btn" onclick="chk(this,48,8)">48</button>
+</div>
+<div class="feedback" id="fb8"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next8" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 12: Q9 - 수배열표 규칙 ⭐⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="50">
+<div class="card">
+<div class="badge">⭐⭐⭐ 심화</div>
+<div class="title" style="font-size:22px">문제 9. 수배열표 규칙</div>
+<div class="desc" style="font-size:18px">수배열표에서 빈칸 3개를 채워요!</div>
+<div class="num-table" id="numTable9"></div>
+<div class="btn-row" id="ntBtns9"></div>
+<div class="feedback" id="fb9"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next9" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 13: Q10 - 종합 ⭐⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="50">
+<div class="card">
+<div class="badge">⭐⭐⭐ 심화</div>
+<div class="title" style="font-size:22px">문제 10. 종합 도전</div>
+<div class="desc" style="font-size:18px">십의 자리가 3이고 일의 자리가 9인<br>수를 골라보세요!</div>
+<div class="btn-row" style="margin-top:12px">
+<button class="opt-btn" onclick="chk(this,39,10)">39</button>
+<button class="opt-btn" onclick="chk(this,93,10)">93</button>
+<button class="opt-btn" onclick="chk(this,30,10)">30</button>
+<button class="opt-btn" onclick="chk(this,29,10)">29</button>
+</div>
+<div class="feedback" id="fb10"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next10" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 14: 결과 -->
+<div class="slide" data-type="result">
+<div class="result-card">
+<div class="title">학습 완료!</div>
+<div class="result-score" id="finalScore">0점</div>
+<div class="result-msg" id="finalMsg"></div>
+<div class="combo-text" id="finalCombo"></div>
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" style="width:64px;height:64px;border-radius:50%;margin:10px auto">
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="location.reload()">다시 하기</button></div>
+</div>
+
+</div>
+<div class="page-info" style="position:fixed;bottom:10px;width:100%;text-align:center" id="pageInfo">1 / 14</div>
+
+<script>
+let current=0,score=0,combo=0,maxCombo=0,soundOn=true;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.12);o.stop(a.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[220,196].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.15);o.stop(a.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.05);});}
+
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));current=n;document.getElementById('pageInfo').textContent=`${n+1} / ${total}`;}
+function goNext(){if(current<total-1){showSlide(current+1);initSlide(current);}}
+function addScore(pts){score+=pts;combo++;if(combo>maxCombo)maxCombo=combo;}
+
+function initSlide(n){
+  if(n===7)initTable5();
+  if(n===11)initTable9();
+  if(n===13)showResult();
+}
+
+// 일반 체크
+const ans={1:25,2:32,4:41,6:46,8:38,10:39};
+const sc={1:10,2:10,4:10,6:25,8:25,10:50};
+const fbG={1:'정답! 20+5=25!',2:'정답! 삼십이=32!',4:'정답! 40+1=41!',6:'정답! 마흔여섯=46!',8:'정답! 서른여덟=38!',10:'정답! 십의자리 3, 일의자리 9 → 39!'};
+const fbB={1:'10모형 2개=20, +5는?',2:'삼십=30, 이=2, 합하면?',4:'10모형 4개=40, +1은?',6:'마흔=40, 여섯=6!',8:'서른=30, 여덟=8!',10:'십의 자리가 3이면 30~39!'};
+function chk(btn,v,qn){
+  const fb=document.getElementById('fb'+qn);
+  if(v===ans[qn]){playCorrect();fb.textContent=fbG[qn];fb.className='feedback good';btn.classList.add('correct');addScore(sc[qn]);document.getElementById('next'+qn).disabled=false;btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent=fbB[qn];fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// OX
+function oxChk(btn,ans,qn){
+  const fb=document.getElementById('fb'+qn);
+  if(ans==='O'){playCorrect();fb.textContent='정답! 40은 사십(또는 마흔)!';fb.className='feedback good';btn.classList.add('correct');addScore(10);document.getElementById('next'+qn).disabled=false;btn.parentElement.querySelectorAll('.ox-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent='10이 4개이면 사십이에요!';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// 빈칸
+function blkChk(btn,v,qn){
+  const fb=document.getElementById('fb'+qn);const blank=document.getElementById('blank'+qn);
+  if(v===5){playCorrect();fb.textContent='정답! 10×5=50!';fb.className='feedback good';blank.textContent='5';blank.classList.add('filled');btn.classList.add('correct');addScore(25);document.getElementById('next'+qn).disabled=false;btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent='10+10+10+10+10=?';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q5: 수배열표 (21~30, 빈칸 2개)
+function initTable5(){
+  const t=document.getElementById('numTable5');t.innerHTML='';
+  const nums=[21,22,23,24,25,26,27,28,29,30];
+  const blanks=[23,27]; // 빈칸 위치
+  let filled=0;
+  nums.forEach(n=>{
+    const c=document.createElement('div');
+    if(blanks.includes(n)){c.className='nt-cell blank';c.textContent=n;c.dataset.val=n;}
+    else{c.className='nt-cell';c.textContent=n;}
+    t.appendChild(c);
+  });
+  const btns=document.getElementById('ntBtns5');btns.innerHTML='';
+  const opts=[23,27,25].sort(()=>Math.random()-.5);
+  opts.forEach(n=>{
+    const b=document.createElement('button');b.className='opt-btn sm';b.textContent=n;
+    b.onclick=function(){
+      playClick();
+      const cell=[...t.children].find(c=>c.classList.contains('blank')&&+c.dataset.val===n);
+      if(cell){cell.classList.add('revealed');filled++;b.style.visibility='hidden';
+        if(filled===2){playCorrect();document.getElementById('fb5').textContent='잘했어요! 수배열표를 완성했어요!';document.getElementById('fb5').className='feedback good';addScore(25);document.getElementById('next5').disabled=false;}
+      } else {
+        playWrong();document.getElementById('fb5').textContent='빈칸에 맞는 수를 골라봐요!';document.getElementById('fb5').className='feedback bad';
+        b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),500);
+      }
+    };
+    btns.appendChild(b);
+  });
+}
+
+// Q9: 수배열표 31~50, 빈칸 3개
+function initTable9(){
+  const t=document.getElementById('numTable9');t.innerHTML='';
+  const blanks=[34,42,48];let filled=0;
+  for(let i=31;i<=50;i++){
+    const c=document.createElement('div');
+    if(blanks.includes(i)){c.className='nt-cell blank';c.textContent=i;c.dataset.val=i;}
+    else{c.className='nt-cell';c.textContent=i;}
+    t.appendChild(c);
+  }
+  const btns=document.getElementById('ntBtns9');btns.innerHTML='';
+  [48,34,42].sort(()=>Math.random()-.5).forEach(n=>{
+    const b=document.createElement('button');b.className='opt-btn sm';b.textContent=n;
+    b.onclick=function(){
+      playClick();
+      const cell=[...t.children].find(c=>c.classList.contains('blank')&&!c.classList.contains('revealed')&&+c.dataset.val===n);
+      if(cell){cell.classList.add('revealed');filled++;b.style.visibility='hidden';
+        if(filled===3){playCorrect();document.getElementById('fb9').textContent='완벽! 수배열표 마스터!';document.getElementById('fb9').className='feedback good';addScore(50);document.getElementById('next9').disabled=false;}
+      } else {
+        playWrong();document.getElementById('fb9').textContent='빈칸의 위치를 잘 살펴봐요!';document.getElementById('fb9').className='feedback bad';
+        b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),500);
+      }
+    };
+    btns.appendChild(b);
+  });
+}
+
+function showResult(){
+  document.getElementById('finalScore').textContent=score+'점';
+  const max=10*4+25*4+50*2;const pct=score/max*100;
+  let msg=pct>=90?'완벽해요! 50까지의 수 최고! 🌟':pct>=70?'잘했어요! 거의 다 맞혔어요! 😊':pct>=50?'좋아요! 조금만 더! 💪':'다시 도전해 봐요! 🔄';
+  document.getElementById('finalMsg').textContent=msg;
+  if(maxCombo>=3)document.getElementById('finalCombo').textContent='🔥 최대 연속 정답: '+maxCombo+'개!';
+}
+
+document.addEventListener('touchstart',e=>{},{passive:true});
+initSlide(0);
+</script>
+</body>
+</html>

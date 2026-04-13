@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>말차례를 지키며 대화하기 - K-edu 1학년 국어</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E8F5E9;--card:#FFFFFF;--primary:#2E7D32;--primary-light:#E8F5E9;--secondary:#4CAF50;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#A5D6A7;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0}.sound-btn{background:none;border:none;cursor:pointer;font-size:24px;padding:4px 8px;border-radius:10px}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px}.progress-bar{flex:1;height:10px;background:#C8E6C9;border-radius:99px;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:18px;font-weight:700;color:#E6A800}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700}
+.slides{flex:1;position:relative;overflow:hidden}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;opacity:0;transform:translateX(50px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}.slide.active{opacity:1;transform:translateX(0);pointer-events:all}.slide.out{opacity:0;transform:translateX(-50px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 26px;width:100%;max-width:640px;border:1px solid var(--border)}.slide-title{font-size:22px;color:var(--subtext);text-align:center;margin-bottom:8px}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin-bottom:10px}.stars{color:#FCD34D}.question-text{font-size:26px;text-align:center;margin:8px 0 12px;line-height:1.6}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}.choice-btn{background:var(--card);border:2.5px solid var(--border);border-radius:16px;padding:12px 22px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,.06);min-width:80px;text-align:center}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px)}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}.choices.col{flex-direction:column;align-items:center}.choices.col .choice-btn{font-size:24px;width:100%;max-width:520px;padding:12px 20px}
+@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.feedback{font-size:22px;text-align:center;margin-top:10px;min-height:28px;border-radius:10px;padding:5px 14px}.feedback.ok{color:var(--green);background:var(--green-light)}.feedback.err{color:var(--red);background:var(--red-light)}
+.char-bubble{display:flex;align-items:flex-end;gap:12px;margin:8px 0}.char-emoji{font-size:48px}.bubble{border-radius:18px 18px 18px 4px;padding:12px 16px;font-size:22px;max-width:400px;line-height:1.5}
+.bubble-left{background:#E3F2FD;border-radius:18px 18px 18px 4px}.bubble-right{background:#FFF3E0;border-radius:18px 18px 4px 18px}
+.chat-sim{background:#F5F5F5;border-radius:16px;padding:14px;margin:10px 0;max-height:220px;overflow-y:auto}
+.chat-row{display:flex;align-items:flex-end;gap:8px;margin:6px 0}.chat-row.right{justify-content:flex-end}
+.chat-name{font-size:16px;color:var(--subtext);margin-bottom:2px}
+.compare-row{display:flex;gap:12px;margin:10px 0;justify-content:center;flex-wrap:wrap}.compare-card{background:#fff;border:3px solid var(--border);border-radius:14px;padding:14px;text-align:center;flex:1;min-width:240px;cursor:pointer;transition:all .2s;font-size:22px;line-height:1.5}.compare-card:hover{border-color:var(--primary)}.compare-card.correct{border-color:var(--green);background:var(--green-light)}.compare-card.wrong{border-color:var(--red);background:var(--red-light)}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid var(--border);flex-shrink:0}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s}.nav-btn:disabled{opacity:.3;cursor:default}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:22px;color:#E6A800;z-index:99;transition:transform .3s}.combo-toast.show{transform:translateX(-50%) scale(1)}
+.result-card{text-align:center}.result-card .trophy{font-size:80px}.result-card .final-score{font-size:64px;color:var(--primary);margin:8px 0}.result-card .result-stars{font-size:40px;margin:8px 0}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/12</span></div><span class="score-badge">⭐ <span id="scoreDisp">0</span></span><span class="kedu-logo">K✦</span></div>
+<div class="slides" id="slidesContainer">
+
+<div class="slide active" data-type="concept"><div class="card">
+<div class="slide-title">🗣️ 말차례를 지키며 대화해요!</div>
+<div class="char-bubble"><span class="char-emoji">🐕</span><div class="bubble bubble-left">대화할 때는 상대 말을<br>끝까지 듣고 내가 말해야 해!</div></div>
+<div style="background:#E8F5E9;border-radius:14px;padding:14px;margin:10px 0;font-size:24px;line-height:1.8">
+<div>✅ 좋은 대화 습관</div>
+<div style="margin-top:6px">1️⃣ 상대 말을 <b>끝까지</b> 들어요</div>
+<div>2️⃣ 내 차례가 되면 말해요</div>
+<div>3️⃣ 상대 눈을 보며 들어요 👀</div>
+</div></div></div>
+
+<div class="slide" data-type="concept"><div class="card">
+<div class="slide-title">🆚 좋은 대화 vs 나쁜 대화</div>
+<div class="compare-row" style="cursor:default">
+<div class="compare-card" style="border-color:#C8E6C9;cursor:default">
+<div style="font-size:18px;color:var(--green);margin-bottom:6px">⭕ 좋은 대화</div>
+<div class="chat-sim" style="background:#F0FFF0">
+<div class="chat-row"><span class="char-emoji" style="font-size:32px">👧</span><div class="bubble bubble-left" style="font-size:20px">"나 어제 영화 봤어!"</div></div>
+<div class="chat-row right"><div class="bubble bubble-right" style="font-size:20px">"진짜? 무슨 영화?"</div><span class="char-emoji" style="font-size:32px">👦</span></div>
+</div></div>
+<div class="compare-card" style="border-color:#FFCDD2;cursor:default">
+<div style="font-size:18px;color:var(--red);margin-bottom:6px">❌ 나쁜 대화</div>
+<div class="chat-sim" style="background:#FFF5F5">
+<div class="chat-row"><span class="char-emoji" style="font-size:32px">👧</span><div class="bubble bubble-left" style="font-size:20px">"나 어제 영화—"</div></div>
+<div class="chat-row right"><div class="bubble bubble-right" style="font-size:20px">"나도! 나도 봤어!"</div><span class="char-emoji" style="font-size:32px">👦</span></div>
+</div></div>
+</div></div></div>
+
+<!-- Q1: 좋은 대화 고르기 ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 1 <span class="stars">⭐</span></div>
+<div class="question-text">말차례를 잘 지킨 대화는?</div>
+<div class="compare-row">
+<div class="compare-card" onclick="compareA(this,2,true)">👧 "오늘 급식 맛있었어!"<br>👦 "맞아, 나도 좋았어!"</div>
+<div class="compare-card" onclick="compareA(this,2,false)">👧 "오늘 급식—"<br>👦 "어, 나 먼저 말할래!"</div>
+</div><div class="feedback" id="fb2"></div></div></div>
+
+<!-- Q2: 좋은 대화 고르기 ⭐ -->
+<div class="slide" data-score="10"><div class="card">
+<div class="question-label">문제 2 <span class="stars">⭐</span></div>
+<div class="question-text">말차례를 잘 지킨 대화는?</div>
+<div class="compare-row">
+<div class="compare-card" onclick="compareA(this,3,false)">👩‍🏫 "오늘은—"<br>👧 "선생님! 저요저요!"</div>
+<div class="compare-card" onclick="compareA(this,3,true)">👩‍🏫 "오늘은 그림을 그릴 거예요."<br>👧 (손 들고) "네, 알겠습니다!"</div>
+</div><div class="feedback" id="fb3"></div></div></div>
+
+<!-- Q3: 대화 시뮬레이션 ⭐⭐ -->
+<div class="slide" data-correct="1" data-score="25"><div class="card">
+<div class="question-label">문제 3 <span class="stars">⭐⭐</span></div>
+<div class="chat-sim">
+<div class="chat-row"><span class="char-emoji" style="font-size:36px">👦</span><div class="bubble bubble-left" style="font-size:22px">"나 어제 공원에서 자전거 탔어!"</div></div>
+</div>
+<div class="question-text" style="font-size:22px">친구의 말 다음에 뭐라고 하면 좋을까?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">그게 뭐, 나도 탔는데.</button>
+<button class="choice-btn" onclick="answer(this,1)">와, 재미있었겠다! 어디서 탔어?</button>
+<button class="choice-btn" onclick="answer(this,2)">(무시하고 다른 이야기를 한다)</button>
+</div><div class="feedback" id="fb4"></div></div></div>
+
+<!-- Q4: 대화 시뮬레이션 ⭐⭐ -->
+<div class="slide" data-correct="2" data-score="25"><div class="card">
+<div class="question-label">문제 4 <span class="stars">⭐⭐</span></div>
+<div class="chat-sim">
+<div class="chat-row"><span class="char-emoji" style="font-size:36px">👩‍🏫</span><div class="bubble bubble-left" style="font-size:22px">"지금부터 발표할 사람?"</div></div>
+</div>
+<div class="question-text" style="font-size:22px">어떻게 하면 좋을까?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">큰 소리로 "저요!" 외친다.</button>
+<button class="choice-btn" onclick="answer(this,1)">옆 친구랑 장난친다.</button>
+<button class="choice-btn" onclick="answer(this,2)">손을 들고 차례를 기다린다.</button>
+</div><div class="feedback" id="fb5"></div></div></div>
+
+<!-- Q5: 바른 행동 고르기 ⭐ -->
+<div class="slide" data-correct="0" data-score="10"><div class="card">
+<div class="question-label">문제 5 <span class="stars">⭐</span></div>
+<div class="question-text">대화할 때 바른 행동은?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">상대 눈을 보며 듣는다 👀</button>
+<button class="choice-btn" onclick="answer(this,1)">딴 곳을 보며 듣는다 👀</button>
+<button class="choice-btn" onclick="answer(this,2)">말하는 중에 끼어든다 🗣️</button>
+</div><div class="feedback" id="fb6"></div></div></div>
+
+<!-- Q6: O/X ⭐⭐ -->
+<div class="slide" data-score="25"><div class="card">
+<div class="question-label">문제 6 <span class="stars">⭐⭐</span></div>
+<div class="question-text">"친구가 말할 때 끼어들어도 괜찮다"<br>맞을까요?</div>
+<div style="display:flex;gap:16px;justify-content:center;margin-top:12px">
+<button class="choice-btn" style="font-size:56px;width:100px;height:100px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center" onclick="oxA(this,7,false)">⭕</button>
+<button class="choice-btn" style="font-size:56px;width:100px;height:100px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center" onclick="oxA(this,7,true)">❌</button>
+</div><div class="feedback" id="fb7"></div></div></div>
+
+<!-- Q7: 대화 시뮬레이션 ⭐⭐ -->
+<div class="slide" data-correct="0" data-score="25"><div class="card">
+<div class="question-label">문제 7 <span class="stars">⭐⭐</span></div>
+<div class="chat-sim">
+<div class="chat-row"><span class="char-emoji" style="font-size:36px">👧</span><div class="bubble bubble-left" style="font-size:22px">"나 오늘 슬픈 일이 있었어..."</div></div>
+</div>
+<div class="question-text" style="font-size:22px">어떻게 대답하면 좋을까?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">무슨 일이야? 이야기해 봐.</button>
+<button class="choice-btn" onclick="answer(this,1)">그래? 나도 슬픈 일 있어!</button>
+<button class="choice-btn" onclick="answer(this,2)">별거 아니겠지~</button>
+</div><div class="feedback" id="fb8"></div></div></div>
+
+<!-- Q8: 종합 시뮬레이션 ⭐⭐⭐ -->
+<div class="slide" data-correct="1" data-score="50"><div class="card">
+<div class="question-label">문제 8 <span class="stars">⭐⭐⭐</span></div>
+<div class="chat-sim">
+<div class="chat-row"><span class="char-emoji" style="font-size:32px">👦</span><div class="bubble bubble-left" style="font-size:20px">"우리 같이 놀이터 갈래?"</div></div>
+<div class="chat-row right"><div class="bubble bubble-right" style="font-size:20px">"좋아! 근데 먼저 숙제—"</div><span class="char-emoji" style="font-size:32px">👧</span></div>
+<div class="chat-row"><span class="char-emoji" style="font-size:32px">👦</span><div class="bubble bubble-left" style="font-size:20px">"아 빨리 가자!"</div></div>
+</div>
+<div class="question-text" style="font-size:22px">이 대화에서 잘못된 점은?</div>
+<div class="choices col">
+<button class="choice-btn" onclick="answer(this,0)">놀이터에 가자고 한 것</button>
+<button class="choice-btn" onclick="answer(this,1)">친구 말이 끝나기 전에 끼어든 것</button>
+<button class="choice-btn" onclick="answer(this,2)">숙제 이야기를 한 것</button>
+</div><div class="feedback" id="fb9"></div></div></div>
+
+<!-- Q9: 다짐 쓰기 ⭐⭐⭐ -->
+<div class="slide" data-score="50"><div class="card">
+<div class="question-label">문제 9 <span class="stars">⭐⭐⭐</span></div>
+<div class="question-text">대화 예절 다짐을 골라 봐!</div>
+<div class="choices col">
+<button class="choice-btn" onclick="pledgeA(this,10,'친구 말을 끝까지 듣겠습니다!')">👂 친구 말을 끝까지 듣겠습니다!</button>
+<button class="choice-btn" onclick="pledgeA(this,10,'말차례를 지키겠습니다!')">🤝 말차례를 지키겠습니다!</button>
+<button class="choice-btn" onclick="pledgeA(this,10,'상대를 보며 이야기하겠습니다!')">👀 상대를 보며 이야기하겠습니다!</button>
+</div><div class="feedback" id="fb10"></div></div></div>
+
+<div class="slide" data-type="result"><div class="card result-card">
+<div class="trophy" id="resultEmoji">🎉</div><div style="font-size:32px;margin:8px 0">학습 완료!</div>
+<div class="final-score"><span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div>
+<div class="char-bubble" style="justify-content:center"><span class="char-emoji">🐕</span><div class="bubble bubble-left">말차례를 지키면 대화가 더 즐거워!<br>오늘부터 실천하자! 🤝</div></div>
+<button class="restart-btn" onclick="restart()">🔄 다시 하기</button></div></div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL_SLIDES=12;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;audioCtx.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,audioCtx.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.12+.2);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;audioCtx.resume().then(()=>{[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,audioCtx.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+i*.15+.25);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.07);o.start();o.stop(audioCtx.currentTime+.07)})}
+function speakKo(t,r){if(!soundOn)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=r||.85;speechSynthesis.cancel();speechSynthesis.speak(u)}
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>document.querySelectorAll('.slide.out').forEach(s=>s.classList.remove('out')),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=200?'⭐⭐⭐⭐⭐':score>=140?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=200?'🏆':'🎉'}}
+function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function compareA(card,si,ok){if(answered[si])return;playClick();const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;if(ok){card.classList.add('correct');playCorrect();addScore(p);setFB('fb'+si,'✅ 좋은 대화야! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}else{card.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'이건 말차례를 안 지킨 거야! 💪',false);setTimeout(()=>card.classList.remove('wrong'),500)}}
+function oxA(btn,si,ok){if(answered[si])return;playClick();const p=25;if(ok){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+si,'✅ 맞아! 끼어들면 안 돼! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'상대 말을 끝까지 들어야 해! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function pledgeA(btn,si,text){if(answered[si])return;playClick();btn.classList.add('correct');playCorrect();addScore(50);setFB('fb'+si,'✅ 멋진 다짐이야! +50점',true);answered[si]=true;speakKo(text,.8);setTimeout(nextSlide,1200)}
+let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});
+function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn,.compare-card').forEach(b=>b.className=b.className.replace(/correct|wrong/g,'').trim());document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
+updateUI();
+</script>
+</body>
+</html>

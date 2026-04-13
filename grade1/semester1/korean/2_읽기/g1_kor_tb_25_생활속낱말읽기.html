@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu | 1학년 국어 25차시 — 생활 속 낱말 읽기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0FDFA;--card:#FFF;--primary:#14B8A6;--primary-light:#CCFBF1;--secondary:#2DD4BF;--green:#16A34A;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#99F6E4;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;}
+*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:26px;padding:4px 8px;border-radius:10px;}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px;}.progress-bar{flex:1;height:10px;background:var(--primary-light);border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s;}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap;}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A000;}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;}
+.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-60px);}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;width:100%;max-width:600px;text-align:center;}.slide-title{font-size:24px;color:var(--subtext);margin-bottom:8px;}.char-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;}.mascot{font-size:48px;}
+.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:10px;}.stars{color:#FCD34D;}.question-text{font-size:28px;text-align:center;margin:8px 0 12px;line-height:1.5;}
+.choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;}.choice-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:12px 24px;font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06);min-width:70px;}.choice-btn:hover{border-color:var(--primary);transform:translateY(-2px);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}.choice-btn.sm{font-size:30px;padding:10px 18px;}.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{width:100%;max-width:420px;font-size:28px;padding:10px 18px;}
+.blank-box{display:inline-block;font-size:72px;font-weight:900;border-bottom:5px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s;}.blank-box.filled{animation:cpop .4s;}
+.feedback{font-size:24px;text-align:center;margin-top:8px;min-height:32px;border-radius:12px;padding:6px 14px;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
+.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 16px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:10px 28px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s;}.nav-btn:disabled{opacity:.3;cursor:default;}
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:24px;color:#E6A000;z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
+.result-card{text-align:center;}.result-emoji{font-size:80px;margin:10px 0;}.result-score{font-size:48px;color:var(--primary);margin:8px 0;}.result-stars{font-size:36px;margin:8px 0;}.result-msg{font-size:24px;color:var(--subtext);margin:6px 0;}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:10px;}
+.word-card{display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);border:3px solid var(--border);border-radius:18px;padding:10px 18px;margin:5px;cursor:pointer;transition:all .2s;}.word-card:hover{border-color:var(--primary);transform:scale(1.04);}.word-card .emoji{font-size:40px;}.word-card .text{font-size:28px;color:var(--primary);}
+.place-tag{display:inline-block;background:var(--primary);color:#fff;border-radius:99px;padding:4px 14px;font-size:18px;margin:4px 0;}
+.token{background:var(--card);border:2px solid var(--border);border-radius:99px;padding:8px 14px;font-size:24px;cursor:pointer;transition:all .2s;display:inline-block;margin:4px;}.token:hover{border-color:var(--primary);transform:scale(1.05);}.token.correct{background:var(--green-light);border-color:var(--green);}.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}.token.placed{opacity:.4;pointer-events:none;}
+.drop-zone{background:var(--primary-light);border:3px dashed var(--primary);border-radius:16px;padding:8px 12px;min-width:120px;min-height:60px;text-align:center;display:inline-block;margin:4px;}.drop-title{font-size:18px;color:var(--primary);margin-bottom:4px;}.drop-items{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:32px;}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/14</span></div><span class="score-badge">⭐ <span id="scoreVal">0</span></span><div class="kedu-logo">K✦</div></div>
+<div class="slides" id="slidesWrap">
+
+<!-- S0 -->
+<div class="slide active" data-type="concept"><div class="card">
+  <div class="char-row"><span class="mascot">🐕</span><span class="slide-title">25차시</span><span class="mascot">🐩</span></div>
+  <div class="question-text">생활 속 낱말 읽기!</div>
+  <p style="font-size:22px;color:var(--subtext);margin-top:8px;">학교, 집, 밖에서 볼 수 있는<br>낱말을 읽어 보자! 🏫🏠</p>
+  <div style="font-size:20px;color:var(--primary);margin-top:10px;">🐩 듀: "우리 주변은 낱말 천국!"</div>
+</div></div>
+
+<!-- S1 개념: 교실 물건 -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">🏫 교실 물건 이름</div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <div class="word-card" onclick="speakKo('칠판')"><span class="emoji">📋</span><span class="text">칠판</span></div>
+    <div class="word-card" onclick="speakKo('책상')"><span class="emoji">🪑</span><span class="text">책상</span></div>
+    <div class="word-card" onclick="speakKo('의자')"><span class="emoji">💺</span><span class="text">의자</span></div>
+    <div class="word-card" onclick="speakKo('창문')"><span class="emoji">🪟</span><span class="text">창문</span></div>
+  </div>
+  <p style="font-size:18px;color:var(--subtext);margin-top:6px;">눌러서 소리를 들어 봐!</p>
+</div></div>
+
+<!-- S2 개념: 학용품 + 음식 -->
+<div class="slide" data-type="concept"><div class="card">
+  <div class="slide-title">✏️ 학용품 & 🍚 음식</div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <div class="word-card" onclick="speakKo('연필')"><span class="emoji">✏️</span><span class="text">연필</span></div>
+    <div class="word-card" onclick="speakKo('지우개')"><span class="emoji">🧹</span><span class="text">지우개</span></div>
+    <div class="word-card" onclick="speakKo('공책')"><span class="emoji">📓</span><span class="text">공책</span></div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;margin-top:6px;">
+    <div class="word-card" onclick="speakKo('밥')"><span class="emoji">🍚</span><span class="text">밥</span></div>
+    <div class="word-card" onclick="speakKo('국')"><span class="emoji">🍲</span><span class="text">국</span></div>
+    <div class="word-card" onclick="speakKo('김치')"><span class="emoji">🥬</span><span class="text">김치</span></div>
+    <div class="word-card" onclick="speakKo('우유')"><span class="emoji">🥛</span><span class="text">우유</span></div>
+  </div>
+</div></div>
+
+<!-- S3 Q1 ⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q1</div>
+  <div class="question-text">📋 이것은?</div>
+  <div style="font-size:90px;margin:6px 0;">📋</div>
+  <div class="choices"><button class="choice-btn sm" onclick="answer(this,0)">책상</button><button class="choice-btn sm" onclick="answer(this,1)">창문</button><button class="choice-btn sm" onclick="answer(this,2)">칠판</button></div>
+  <div class="feedback" id="fb3"></div>
+</div></div>
+
+<!-- S4 Q2 ⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q2</div>
+  <div class="question-text">🔊 듣고 맞는 낱말!</div>
+  <button class="choice-btn sm" style="margin:8px auto;display:block;background:var(--primary-light);font-size:22px;" onclick="speakKo('공책')">🔊 다시 듣기</button>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">공원</button><button class="choice-btn" onclick="answer(this,1)">공책</button><button class="choice-btn" onclick="answer(this,2)">공기</button></div>
+  <div class="feedback" id="fb4"></div>
+</div></div>
+
+<!-- S5 Q3 ⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10"><div class="card">
+  <div class="question-label"><span class="stars">⭐</span> Q3</div>
+  <div class="question-text">🍲 따뜻하게 먹는 국물 음식!</div>
+  <div style="font-size:90px;margin:6px 0;">🍲</div>
+  <div class="choices"><button class="choice-btn sm" onclick="answer(this,0)">국</button><button class="choice-btn sm" onclick="answer(this,1)">밥</button><button class="choice-btn sm" onclick="answer(this,2)">김치</button></div>
+  <div class="feedback" id="fb5"></div>
+</div></div>
+
+<!-- S6 Q4 장소별 분류 ⭐⭐ -->
+<div class="slide" data-type="q" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q4</div>
+  <div class="question-text">교실 vs 급식실 — 분류해 봐!</div>
+  <div style="display:flex;gap:12px;justify-content:center;margin:8px 0;flex-wrap:wrap;">
+    <div class="drop-zone" id="zClass" onclick="placeCat('class')"><div class="drop-title">🏫 교실</div><div class="drop-items" id="classItems"></div></div>
+    <div class="drop-zone" id="zFood" onclick="placeCat('food')"><div class="drop-title">🍽️ 급식실</div><div class="drop-items" id="foodItems"></div></div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;" id="catTokens"></div>
+  <div class="feedback" id="fb6"></div>
+</div></div>
+
+<!-- S7 Q5 빈칸 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q5</div>
+  <div class="question-text">✏️ 연<span class="blank-box" id="blank7" style="font-size:56px;">___</span></div>
+  <div class="choices"><button class="choice-btn" onclick="fillBlank(this,'blank7','필',1,0)">펄</button><button class="choice-btn" onclick="fillBlank(this,'blank7','필',1,1)">필</button><button class="choice-btn" onclick="fillBlank(this,'blank7','필',1,2)">핀</button></div>
+  <div class="feedback" id="fb7"></div>
+</div></div>
+
+<!-- S8 Q6 ⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐</span> Q6</div>
+  <div class="question-text">🥛 '우유'와 같은 장소에서<br>먹는 것은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">칠판</button><button class="choice-btn" onclick="answer(this,1)">의자</button><button class="choice-btn" onclick="answer(this,2)">김치</button></div>
+  <div class="feedback" id="fb8"></div>
+</div></div>
+
+<!-- S9 Q7 연속 매칭 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q7</div>
+  <div class="question-text">그림에 맞는 낱말을 골라!</div>
+  <div style="font-size:80px;" id="seqEmoji">🪟</div>
+  <div class="choices" id="seqChoices">
+    <button class="choice-btn sm" onclick="seqAnswer(this,'창문')">창문</button>
+    <button class="choice-btn sm" onclick="seqAnswer(this,'의자')">의자</button>
+    <button class="choice-btn sm" onclick="seqAnswer(this,'책상')">책상</button>
+  </div>
+  <div style="font-size:18px;color:var(--subtext);" id="seqProg">1 / 4</div>
+  <div class="feedback" id="fb9"></div>
+</div></div>
+
+<!-- S10 Q8 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q8</div>
+  <div class="question-text">다음 중 '학용품'이<br>아닌 것은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">김치</button><button class="choice-btn" onclick="answer(this,1)">연필</button><button class="choice-btn" onclick="answer(this,2)">가위</button><button class="choice-btn" onclick="answer(this,3)">공책</button></div>
+  <div class="feedback" id="fb10"></div>
+</div></div>
+
+<!-- S11 Q9 ⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐</span> Q9</div>
+  <div class="question-text">🔊 듣고 맞는 낱말!</div>
+  <button class="choice-btn sm" style="margin:8px auto;display:block;background:var(--primary-light);font-size:22px;" onclick="speakKo('지우개')">🔊 다시 듣기</button>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">지우게</button><button class="choice-btn" onclick="answer(this,1)">지우개</button><button class="choice-btn" onclick="answer(this,2)">지우기</button></div>
+  <div class="feedback" id="fb11"></div>
+</div></div>
+
+<!-- S12 Q10 ⭐⭐⭐⭐ -->
+<div class="slide" data-type="q" data-correct="2" data-score="100"><div class="card">
+  <div class="question-label"><span class="stars">⭐⭐⭐⭐</span> Q10</div>
+  <div class="question-text">교실·급식실·학용품<br>세 분류에 모두 해당하지 않는 것은?</div>
+  <div class="choices col"><button class="choice-btn" onclick="answer(this,0)">칠판</button><button class="choice-btn" onclick="answer(this,1)">우유</button><button class="choice-btn" onclick="answer(this,2)">자동차</button></div>
+  <div class="feedback" id="fb12"></div>
+</div></div>
+
+<!-- S13 결과 -->
+<div class="slide" data-type="result"><div class="card result-card">
+  <div class="result-emoji" id="resultEmoji">🎉</div><div style="font-size:28px;">생활 낱말 읽기 완료!</div>
+  <div class="result-score">⭐ <span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div>
+  <div class="result-msg">🐕 케이: "우리 주변 낱말 박사!"</div>
+  <button class="restart-btn" onclick="restart()">🔄 다시 하기</button>
+</div></div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+
+<script>
+let audioCtx=null,soundOn=true;function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}function playTone(f,t,d,g=.3){audioCtx.resume().then(()=>{const o=audioCtx.createOscillator(),gn=audioCtx.createGain();o.connect(gn);gn.connect(audioCtx.destination);o.type=t;o.frequency.value=f;gn.gain.setValueAtTime(g,audioCtx.currentTime);gn.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d);o.start();o.stop(audioCtx.currentTime+d);});}function playCorrect(){if(!soundOn)return;getCtx();[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}function playWrong(){if(!soundOn)return;getCtx();[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}function playClick(){if(!soundOn)return;getCtx();playTone(880,'sine',.08,.2);}function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}function speakKo(t){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=.85;speechSynthesis.cancel();speechSynthesis.speak(u);}
+
+let currentSlide=0,score=0,combo=0,answered={};const TOTAL=14;
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>sl[currentSlide<n?currentSlide:n].classList.remove('out'),400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
+function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
+function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
+function addScore(pts){const bonus=combo>=3?Math.floor(pts*.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
+function answer(btn,idx){if(answered[currentSlide])return;const s=document.querySelectorAll('.slide')[currentSlide];const c=parseInt(s.dataset.correct),p=parseInt(s.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const p=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+
+// Q4 분류
+const catData=[{w:'칠판',c:'class'},{w:'밥',c:'food'},{w:'책상',c:'class'},{w:'김치',c:'food'},{w:'의자',c:'class'},{w:'우유',c:'food'}];
+let catPlaced=0,catOk=0,selCatToken=null;
+function initCat(){const area=document.getElementById('catTokens');area.innerHTML='';[...catData].sort(()=>Math.random()-.5).forEach(d=>{const t=document.createElement('span');t.className='token';t.textContent=d.w;t.onclick=function(){selCatToken={el:t,d};document.querySelectorAll('#catTokens .token').forEach(x=>x.style.outline='');t.style.outline='3px solid var(--primary)';playClick();};area.appendChild(t);});}
+function placeCat(zone){if(!selCatToken||answered[6])return;const{el,d}=selCatToken;const tid=zone==='class'?'classItems':'foodItems';if(d.c===zone){el.classList.add('placed','correct');const s=document.createElement('span');s.textContent=d.w;s.style.cssText='font-size:20px;margin:2px 4px;';document.getElementById(tid).appendChild(s);catOk++;playCorrect();}else{el.classList.add('wrong');playWrong();combo=0;setFB('fb6','❌ '+d.w+'은(는) '+(d.c==='class'?'교실':'급식실')+'!',false);setTimeout(()=>el.classList.remove('wrong'),500);}el.style.outline='';selCatToken=null;catPlaced++;if(catPlaced>=catData.length){answered[6]=true;if(catOk>=4)addScore(25);setTimeout(()=>{setFB('fb6','분류 완료! '+catOk+'/'+catData.length,catOk>=4);setTimeout(nextSlide,800);},500);}}
+initCat();
+
+// Q7 연속 매칭
+const seqData=[{e:'🪟',a:'창문'},{e:'💺',a:'의자'},{e:'📓',a:'공책'},{e:'🥬',a:'김치'}];
+const seqOpts=[['창문','의자','책상'],['의자','창문','칠판'],['공책','연필','가위'],['김치','밥','우유']];
+let sIdx=0,sOk=0;
+function seqAnswer(btn,w){if(answered[9])return;playClick();if(w===seqData[sIdx].a){sOk++;btn.classList.add('correct');playCorrect();}else{btn.classList.add('wrong');playWrong();combo=0;}sIdx++;document.getElementById('seqProg').textContent=sIdx+' / '+seqData.length;if(sIdx<seqData.length){setTimeout(()=>{document.getElementById('seqEmoji').textContent=seqData[sIdx].e;const btns=document.querySelectorAll('#seqChoices .choice-btn');seqOpts[sIdx].forEach((o,i)=>{btns[i].textContent=o;btns[i].className='choice-btn sm';btns[i].onclick=function(){seqAnswer(this,o);};});},600);}else{answered[9]=true;if(sOk>=3)addScore(50);setTimeout(()=>{setFB('fb9',sOk+'/4!'+(sOk>=3?' +50점':''),sOk>=3);setTimeout(nextSlide,800);},600);}}
+
+let tx=0;document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+
+function restart(){score=0;combo=0;answered={};catPlaced=0;catOk=0;selCatToken=null;sIdx=0;sOk=0;document.getElementById('seqEmoji').textContent=seqData[0].e;document.getElementById('seqProg').textContent='1 / '+seqData.length;document.getElementById('classItems').innerHTML='';document.getElementById('foodItems').innerHTML='';initCat();const btns=document.querySelectorAll('#seqChoices .choice-btn');seqOpts[0].forEach((o,i)=>{btns[i].textContent=o;btns[i].className='choice-btn sm';btns[i].onclick=function(){seqAnswer(this,o);};});document.querySelectorAll('.choice-btn').forEach(b=>{b.className=b.className.replace(/correct|wrong/g,'').trim();b.style.pointerEvents='';});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
+updateUI();
+</script>
+</body>
+</html>

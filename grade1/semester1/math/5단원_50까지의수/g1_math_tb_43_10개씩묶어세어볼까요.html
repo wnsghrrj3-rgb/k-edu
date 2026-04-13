@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>10개씩 묶어 세어 볼까요 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F0F7FF;--card:#FFFFFF;--primary:#42A5F5;--primary-light:#E3F2FD;--secondary:#64B5F6;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E4F7;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;-webkit-user-select:none;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}
+.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}
+.logo-star{font-size:10px;color:#F59E0B}
+.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide-container{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:600px;text-align:center;gap:12px;animation:fadeIn .4s}
+.slide.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+.card{background:var(--card);border-radius:var(--radius);padding:22px 18px;width:100%;box-shadow:var(--shadow)}
+.title{font-size:26px;color:var(--primary);margin-bottom:4px}
+.desc{font-size:21px;line-height:1.5}
+.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 12px;border-radius:30px;font-size:18px;margin-bottom:4px}
+.char-row{display:flex;align-items:center;justify-content:center;gap:10px}
+.char-img{width:52px;height:52px;border-radius:50%}
+.speech{background:var(--primary-light);border-radius:16px;padding:10px 14px;font-size:20px;position:relative;max-width:400px;text-align:left}
+.speech::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light)}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:4px}
+.opt-btn{padding:10px 22px;font-size:38px;font-family:'Jua',sans-serif;border:3px solid var(--border);border-radius:16px;background:var(--card);cursor:pointer;transition:all .2s;min-width:64px}
+.opt-btn:active{transform:scale(.95)}
+.opt-btn.correct{background:var(--green-light);border-color:var(--green);animation:bounce .4s}
+.opt-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s}
+.opt-btn.sm{font-size:26px;padding:8px 16px;min-width:52px}
+.ox-row{display:flex;gap:14px;justify-content:center}
+.ox-btn{width:84px;height:84px;border-radius:50%;font-size:44px;border:4px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ox-btn:active{transform:scale(.9)}
+.ox-btn.correct{border-color:var(--green);background:var(--green-light)}
+.ox-btn.wrong{border-color:var(--red);background:var(--red-light)}
+.feedback{font-size:20px;min-height:26px;margin-top:2px}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+.nav-row{display:flex;gap:12px;justify-content:center;margin-top:6px}
+.nav-btn{padding:10px 24px;font-size:22px;font-family:'Jua',sans-serif;border:none;border-radius:30px;cursor:pointer;color:#FFF;background:var(--primary)}
+.nav-btn:active{transform:scale(.95)}
+.nav-btn:disabled{opacity:.4;cursor:default}
+.page-info{font-size:18px;color:var(--subtext)}
+.blank-box{display:inline-flex;width:52px;height:46px;border:3px dashed var(--primary);border-radius:12px;align-items:center;justify-content:center;font-size:30px;color:var(--primary);background:var(--card);margin:0 4px;transition:all .3s}
+.blank-box.filled{border-style:solid;background:var(--primary-light);animation:pop .3s}
+.expr{font-size:28px;color:var(--primary);margin:6px 0}
+/* 묶음 시각화 */
+.bundle-area{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0}
+.chip{width:32px;height:32px;border-radius:50%;background:var(--secondary);display:flex;align-items:center;justify-content:center;font-size:14px;color:#FFF;border:2px solid #1976D2;transition:all .2s;cursor:pointer}
+.chip.grouped{background:var(--primary);border-color:#1565C0}
+.bundle-group{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border:3px solid var(--primary);border-radius:14px;background:var(--primary-light);max-width:180px;justify-content:center;position:relative}
+.bundle-group::after{content:'10';position:absolute;top:-12px;right:-8px;background:var(--primary);color:#FFF;border-radius:10px;padding:1px 8px;font-size:14px}
+.loose-chips{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border:3px dashed var(--border);border-radius:14px;max-width:120px;justify-content:center}
+.model-row{display:flex;align-items:center;gap:16px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.block-ten{padding:6px 16px;border-radius:10px;background:var(--primary);color:#FFF;font-size:20px;border:2px solid #1565C0}
+.block-one{width:30px;height:30px;border-radius:8px;background:var(--secondary);display:flex;align-items:center;justify-content:center;color:#FFF;font-size:14px;border:2px solid #1976D2}
+.result-card{background:linear-gradient(135deg,var(--primary-light),#BBDEFB);border-radius:var(--radius);padding:28px 20px;width:100%;text-align:center}
+.result-score{font-size:60px;color:var(--primary)}
+.result-msg{font-size:24px;margin-top:6px}
+.combo-text{font-size:20px;color:#F57F17;margin-top:4px}
+.group-interact{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0;max-width:360px;margin-left:auto;margin-right:auto}
+.gi-chip{width:36px;height:36px;border-radius:50%;background:var(--primary-light);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s}
+.gi-chip.selected{background:var(--primary);color:#FFF;border-color:#1565C0;transform:scale(1.1)}
+.gi-chip.bundled{background:var(--primary);color:#FFF;border-color:#1565C0;opacity:.7;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
+
+<div class="slide-container">
+
+<!-- 1: 타이틀 -->
+<div class="slide active" data-type="intro">
+<div class="card">
+<div style="font-size:19px;color:var(--primary)">📘 5단원 · 50까지의 수</div>
+<div class="title">10개씩 묶어<br>세어 볼까요</div>
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" style="width:72px;height:72px;border-radius:50%;margin:10px auto">
+<div class="desc">많은 것을 셀 때,<br>10개씩 묶으면 쉬워요!</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">시작하기 →</button></div>
+</div>
+
+<!-- 2: 개념 - 10개씩 묶기 -->
+<div class="slide" data-type="concept">
+<div class="card">
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+<div class="speech">바둑돌이 23개 있어!<br><b>10개씩 묶으면</b> 더 쉽게 셀 수 있어!</div>
+</div>
+<div class="model-row">
+<div class="bundle-group">
+<div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div>
+<div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div>
+</div>
+<div class="bundle-group">
+<div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div>
+<div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div><div class="chip grouped"></div>
+</div>
+<div class="loose-chips">
+<div class="chip"></div><div class="chip"></div><div class="chip"></div>
+</div>
+</div>
+<div class="desc" style="font-size:24px"><b>2</b>묶음과 낱개 <b>3</b>개 → <b>23</b>!</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">다음 →</button></div>
+</div>
+
+<!-- 3: 개념 - 묶음과 낱개 정리 -->
+<div class="slide" data-type="concept">
+<div class="card">
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="char-img" alt="듀">
+<div class="speech">10개 묶음이 <b>몇 개</b>인지,<br>남은 낱개가 <b>몇 개</b>인지 보면 돼!</div>
+</div>
+<div style="margin:12px 0">
+<div class="desc" style="font-size:22px;margin-bottom:8px">10개 묶음 <b style="color:var(--primary);font-size:32px">3</b>개, 낱개 <b style="color:var(--secondary);font-size:32px">5</b>개</div>
+<div class="desc" style="font-size:36px;color:var(--primary)">→ 35</div>
+</div>
+<div class="desc" style="font-size:20px;color:var(--subtext)">묶음 수 × 10 + 낱개 = 전체 수!</div>
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="goNext()">다음 →</button></div>
+</div>
+
+<!-- 4: Q1 - 묶기 인터랙션 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 1. 10개씩 묶어보기</div>
+<div class="desc" style="font-size:18px">바둑돌을 10개씩 눌러 묶어보세요!<br>(10개 누르면 자동으로 묶여요)</div>
+<div class="group-interact" id="gi1"></div>
+<div class="desc" style="font-size:20px" id="gi1Info">묶음: 0 / 낱개: 0</div>
+<div class="btn-row" id="q1Btns" style="display:none">
+<button class="opt-btn sm" onclick="checkA(24,1)">24</button>
+<button class="opt-btn sm" onclick="checkA(23,1)">23</button>
+<button class="opt-btn sm" onclick="checkA(22,1)">22</button>
+</div>
+<div class="feedback" id="fb1"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next1" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 5: Q2 - 수 변환 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 2. 묶음과 낱개 → 수</div>
+<div class="desc" style="font-size:20px">10개 묶음 3개, 낱개 7개<br>→ 모두 몇 개?</div>
+<div class="model-row">
+<div class="block-ten">10</div><div class="block-ten">10</div><div class="block-ten">10</div>
+<div style="display:flex;gap:3px"><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div><div class="block-one"></div></div>
+</div>
+<div class="btn-row">
+<button class="opt-btn" onclick="checkA(37,2)">37</button>
+<button class="opt-btn" onclick="checkA(36,2)">36</button>
+<button class="opt-btn" onclick="checkA(27,2)">27</button>
+</div>
+<div class="feedback" id="fb2"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next2" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 6: Q3 - OX ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 3. O·X 판단</div>
+<div class="desc" style="font-size:22px">"10개 묶음 4개는 40이다"</div>
+<div class="ox-row" style="margin:14px 0">
+<button class="ox-btn" onclick="checkOX(this,'O',3)">⭕</button>
+<button class="ox-btn" onclick="checkOX(this,'X',3)">❌</button>
+</div>
+<div class="feedback" id="fb3"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next3" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 7: Q4 - 카드 선택 ⭐ -->
+<div class="slide" data-type="quiz" data-score="10">
+<div class="card">
+<div class="badge">⭐ 기본</div>
+<div class="title" style="font-size:22px">문제 4. 개수 세기</div>
+<div class="desc" style="font-size:20px">10개 묶음 2개, 낱개 6개<br>→ 모두 몇 개?</div>
+<div class="btn-row" style="margin-top:12px">
+<button class="opt-btn" onclick="checkA(26,4)">26</button>
+<button class="opt-btn" onclick="checkA(16,4)">16</button>
+<button class="opt-btn" onclick="checkA(28,4)">28</button>
+</div>
+<div class="feedback" id="fb4"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next4" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 8: Q5 - 빈칸 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 5. 빈칸 채우기</div>
+<div class="expr">10개 묶음 <span class="blank-box" id="blank5">?</span>개, 낱개 2개 → 32</div>
+<div class="btn-row">
+<button class="opt-btn sm" onclick="checkBlank(this,3,5)">3</button>
+<button class="opt-btn sm" onclick="checkBlank(this,2,5)">2</button>
+<button class="opt-btn sm" onclick="checkBlank(this,4,5)">4</button>
+</div>
+<div class="feedback" id="fb5"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next5" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 9: Q6 - 역방향 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 6. 수 → 묶음과 낱개</div>
+<div class="desc" style="font-size:22px">45는 10개 묶음 몇 개,<br>낱개 몇 개일까요?</div>
+<div class="expr">묶음 <span class="blank-box" id="blank6a">?</span>개, 낱개 <span class="blank-box" id="blank6b">?</span>개</div>
+<div class="desc" style="font-size:18px;color:var(--subtext)">먼저 묶음 수를 골라보세요!</div>
+<div class="btn-row" id="btns6a">
+<button class="opt-btn sm" onclick="checkDual6(this,4,'a')">4</button>
+<button class="opt-btn sm" onclick="checkDual6(this,3,'a')">3</button>
+<button class="opt-btn sm" onclick="checkDual6(this,5,'a')">5</button>
+</div>
+<div class="btn-row" id="btns6b" style="display:none">
+<button class="opt-btn sm" onclick="checkDual6(this,5,'b')">5</button>
+<button class="opt-btn sm" onclick="checkDual6(this,4,'b')">4</button>
+<button class="opt-btn sm" onclick="checkDual6(this,6,'b')">6</button>
+</div>
+<div class="feedback" id="fb6"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next6" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 10: Q7 - 스토리 ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 7. 이야기 속 수학</div>
+<div class="char-row">
+<img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+<div class="speech" style="font-size:18px">케이가 사탕을 10개씩 봉지에 담아요.<br><b>봉지 3개</b>를 만들고 <b>8개</b>가 남았어요.<br>사탕은 모두 몇 개?</div>
+</div>
+<div class="btn-row" style="margin-top:10px">
+<button class="opt-btn" onclick="checkA(38,7)">38</button>
+<button class="opt-btn" onclick="checkA(31,7)">31</button>
+<button class="opt-btn" onclick="checkA(18,7)">18</button>
+</div>
+<div class="feedback" id="fb7"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next7" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 11: Q8 - OX ⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="25">
+<div class="card">
+<div class="badge">⭐⭐ 발전</div>
+<div class="title" style="font-size:22px">문제 8. O·X 판단</div>
+<div class="desc" style="font-size:22px">"10개 묶음 2개와 낱개 15개는<br>35이다"</div>
+<div class="ox-row" style="margin:14px 0">
+<button class="ox-btn" onclick="checkOX(this,'O',8)">⭕</button>
+<button class="ox-btn" onclick="checkOX(this,'X',8)">❌</button>
+</div>
+<div class="feedback" id="fb8"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next8" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 12: Q9 - 퍼즐 ⭐⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="50">
+<div class="card">
+<div class="badge">⭐⭐⭐ 심화</div>
+<div class="title" style="font-size:22px">문제 9. 묶음 퍼즐</div>
+<div class="desc" style="font-size:18px">낱개 10개가 모이면 묶음 1개가 돼요!<br>묶음 2개와 낱개 14개는<br>묶음 몇 개와 낱개 몇 개일까요?</div>
+<div class="expr">묶음 <span class="blank-box" id="blank9a">?</span>개, 낱개 <span class="blank-box" id="blank9b">?</span>개</div>
+<div class="btn-row" id="btns9a">
+<button class="opt-btn sm" onclick="checkDual9(this,3,'a')">3</button>
+<button class="opt-btn sm" onclick="checkDual9(this,4,'a')">4</button>
+<button class="opt-btn sm" onclick="checkDual9(this,2,'a')">2</button>
+</div>
+<div class="btn-row" id="btns9b" style="display:none">
+<button class="opt-btn sm" onclick="checkDual9(this,4,'b')">4</button>
+<button class="opt-btn sm" onclick="checkDual9(this,6,'b')">6</button>
+<button class="opt-btn sm" onclick="checkDual9(this,14,'b')">14</button>
+</div>
+<div class="feedback" id="fb9"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next9" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 13: Q10 - 상황판단 ⭐⭐⭐ -->
+<div class="slide" data-type="quiz" data-score="50">
+<div class="card">
+<div class="badge">⭐⭐⭐ 심화</div>
+<div class="title" style="font-size:22px">문제 10. 상황 판단</div>
+<div class="desc" style="font-size:18px">달걀이 50개 있어요.<br>10개씩 상자에 담으면<br>상자 몇 개가 필요하고<br>남는 달걀은 몇 개일까요?</div>
+<div class="expr">상자 <span class="blank-box" id="blank10a">?</span>개, 남는 달걀 <span class="blank-box" id="blank10b">?</span>개</div>
+<div class="btn-row" id="btns10a">
+<button class="opt-btn sm" onclick="checkDual10(this,5,'a')">5</button>
+<button class="opt-btn sm" onclick="checkDual10(this,4,'a')">4</button>
+<button class="opt-btn sm" onclick="checkDual10(this,10,'a')">10</button>
+</div>
+<div class="btn-row" id="btns10b" style="display:none">
+<button class="opt-btn sm" onclick="checkDual10(this,0,'b')">0</button>
+<button class="opt-btn sm" onclick="checkDual10(this,5,'b')">5</button>
+<button class="opt-btn sm" onclick="checkDual10(this,10,'b')">10</button>
+</div>
+<div class="feedback" id="fb10"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="next10" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 14: 결과 -->
+<div class="slide" data-type="result">
+<div class="result-card">
+<div class="title">학습 완료!</div>
+<div class="result-score" id="finalScore">0점</div>
+<div class="result-msg" id="finalMsg"></div>
+<div class="combo-text" id="finalCombo"></div>
+<img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" style="width:64px;height:64px;border-radius:50%;margin:10px auto">
+</div>
+<div class="nav-row"><button class="nav-btn" onclick="location.reload()">다시 하기</button></div>
+</div>
+
+</div>
+<div class="page-info" style="position:fixed;bottom:10px;width:100%;text-align:center" id="pageInfo">1 / 14</div>
+
+<script>
+let current=0,score=0,combo=0,maxCombo=0,soundOn=true;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let audioCtx=null;
+function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function playCorrect(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.12);o.stop(a.currentTime+i*.12+.12);});});}
+function playWrong(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{[220,196].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(a.destination);o.start(a.currentTime+i*.15);o.stop(a.currentTime+i*.15+.15);});});}
+function playClick(){if(!soundOn)return;const a=getAudio();a.resume().then(()=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.05);});}
+
+function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));current=n;document.getElementById('pageInfo').textContent=`${n+1} / ${total}`;}
+function goNext(){if(current<total-1){showSlide(current+1);initSlide(current);}}
+function addScore(pts){score+=pts;combo++;if(combo>maxCombo)maxCombo=combo;}
+
+function initSlide(n){
+  if(n===3)initGrouping();
+  if(n===13)showResult();
+}
+
+// Q1: 묶기 인터랙션
+function initGrouping(){
+  const area=document.getElementById('gi1');area.innerHTML='';
+  const total=23;let selected=[];let bundles=0;
+  for(let i=0;i<total;i++){
+    const c=document.createElement('div');c.className='gi-chip';c.textContent='●';c.dataset.idx=i;
+    c.onclick=function(){
+      if(this.classList.contains('bundled'))return;
+      playClick();
+      if(this.classList.contains('selected')){this.classList.remove('selected');selected=selected.filter(x=>x!==i);}
+      else{this.classList.add('selected');selected.push(i);}
+      if(selected.length===10){
+        selected.forEach(idx=>{area.children[idx].classList.remove('selected');area.children[idx].classList.add('bundled');});
+        bundles++;selected=[];
+        updateGI1(bundles,area);
+      }
+      document.getElementById('gi1Info').textContent=`묶음: ${bundles} / 선택: ${selected.length}`;
+    };
+    area.appendChild(c);
+  }
+}
+function updateGI1(bundles,area){
+  const remaining=[...area.children].filter(c=>!c.classList.contains('bundled')).length;
+  document.getElementById('gi1Info').textContent=`묶음: ${bundles}개 / 낱개: ${remaining}개`;
+  if(bundles===2){
+    document.getElementById('gi1Info').textContent=`묶음: 2개 / 낱개: 3개 → 모두 몇 개?`;
+    document.getElementById('q1Btns').style.display='flex';
+  }
+}
+
+// 일반 체크
+const ans={1:23,2:37,4:26,7:38};
+const sc={1:10,2:10,4:10,7:25};
+const fbG={1:'정답! 묶음 2개(20)+낱개 3개=23!',2:'정답! 30+7=37!',4:'정답! 20+6=26!',7:'정답! 30+8=38!'};
+const fbB={1:'묶음×10+낱개를 계산해봐요!',2:'묶음 3개는 30, +7은?',4:'묶음 2개는 20, +6은?',7:'봉지 3개=30, +8은?'};
+function checkA(v,qn){
+  const fb=document.getElementById('fb'+qn);
+  const btns=event.target.parentElement;
+  if(v===ans[qn]){playCorrect();fb.textContent=fbG[qn];fb.className='feedback good';event.target.classList.add('correct');addScore(sc[qn]);document.getElementById('next'+qn).disabled=false;btns.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent=fbB[qn];fb.className='feedback bad';event.target.classList.add('wrong');setTimeout(()=>event.target.classList.remove('wrong'),500);}
+}
+
+// OX
+function checkOX(btn,ans,qn){
+  const fb=document.getElementById('fb'+qn);
+  const correct=qn===3?'O':'O';
+  const goodMsg=qn===3?'정답! 10×4=40이에요!':'정답! 20+15=35, 낱개 15는 묶음1+낱개5이니 35가 맞아요!';
+  const badMsg=qn===3?'10이 4개이면 10+10+10+10=?':'20+15를 생각해봐요!';
+  if(ans===correct){playCorrect();fb.textContent=goodMsg;fb.className='feedback good';btn.classList.add('correct');addScore(qn===3?10:25);document.getElementById('next'+qn).disabled=false;btn.parentElement.querySelectorAll('.ox-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent=badMsg;fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// 빈칸
+function checkBlank(btn,v,qn){
+  const fb=document.getElementById('fb'+qn);
+  const blank=document.getElementById('blank'+qn);
+  if(v===3){playCorrect();fb.textContent='정답! 묶음 3개(30)+낱개2=32!';fb.className='feedback good';blank.textContent='3';blank.classList.add('filled');btn.classList.add('correct');addScore(25);document.getElementById('next'+qn).disabled=false;btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);}
+  else{playWrong();fb.textContent='32에서 낱개 2를 빼면 30, 30은 묶음 몇 개?';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q6 듀얼
+function checkDual6(btn,v,part){
+  const fb=document.getElementById('fb6');
+  if(part==='a'&&v===4){playCorrect();document.getElementById('blank6a').textContent='4';document.getElementById('blank6a').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);document.getElementById('btns6b').style.display='flex';fb.textContent='좋아요! 이제 낱개를 골라봐요!';fb.className='feedback good';}
+  else if(part==='b'&&v===5){playCorrect();document.getElementById('blank6b').textContent='5';document.getElementById('blank6b').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);fb.textContent='완벽! 45=묶음4+낱개5!';fb.className='feedback good';addScore(25);document.getElementById('next6').disabled=false;}
+  else{playWrong();fb.textContent=part==='a'?'45에서 10씩 빼봐요!':'40을 빼면 남는 수는?';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q9 듀얼
+function checkDual9(btn,v,part){
+  const fb=document.getElementById('fb9');
+  if(part==='a'&&v===3){playCorrect();document.getElementById('blank9a').textContent='3';document.getElementById('blank9a').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);document.getElementById('btns9b').style.display='flex';fb.textContent='맞아요! 낱개 14에서 10을 묶으면 묶음+1! 낱개는?';fb.className='feedback good';}
+  else if(part==='b'&&v===4){playCorrect();document.getElementById('blank9b').textContent='4';document.getElementById('blank9b').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);fb.textContent='완벽! 2묶음+14낱개=3묶음+4낱개=34!';fb.className='feedback good';addScore(50);document.getElementById('next9').disabled=false;}
+  else{playWrong();fb.textContent=part==='a'?'낱개 14개 중 10개를 묶으면?':'14에서 10을 빼면?';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+// Q10 듀얼
+function checkDual10(btn,v,part){
+  const fb=document.getElementById('fb10');
+  if(part==='a'&&v===5){playCorrect();document.getElementById('blank10a').textContent='5';document.getElementById('blank10a').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);document.getElementById('btns10b').style.display='flex';fb.textContent='맞아요! 이제 남는 달걀은?';fb.className='feedback good';}
+  else if(part==='b'&&v===0){playCorrect();document.getElementById('blank10b').textContent='0';document.getElementById('blank10b').classList.add('filled');btn.classList.add('correct');btn.parentElement.querySelectorAll('.opt-btn').forEach(b=>b.onclick=null);fb.textContent='완벽! 50=10×5+0, 딱 떨어져요!';fb.className='feedback good';addScore(50);document.getElementById('next10').disabled=false;}
+  else{playWrong();fb.textContent=part==='a'?'50÷10=?':'50-50=?';fb.className='feedback bad';btn.classList.add('wrong');setTimeout(()=>btn.classList.remove('wrong'),500);}
+}
+
+function showResult(){
+  document.getElementById('finalScore').textContent=score+'점';
+  const max=10*4+25*4+50*2;const pct=score/max*100;
+  let msg=pct>=90?'완벽해요! 묶어 세기 최고! 🌟':pct>=70?'잘했어요! 거의 다 맞혔어요! 😊':pct>=50?'좋아요! 조금만 더! 💪':'다시 도전해 봐요! 🔄';
+  document.getElementById('finalMsg').textContent=msg;
+  if(maxCombo>=3)document.getElementById('finalCombo').textContent='🔥 최대 연속 정답: '+maxCombo+'개!';
+}
+
+document.addEventListener('touchstart',e=>{},{passive:true});
+document.addEventListener('touchend',e=>{},{passive:true});
+initSlide(0);
+</script>
+</body>
+</html>
