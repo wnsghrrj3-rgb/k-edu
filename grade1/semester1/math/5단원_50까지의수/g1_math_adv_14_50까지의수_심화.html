@@ -58,13 +58,22 @@ const qs=[
 {bg:'⭐⭐⭐',t:'8. 스토리 퍼즐',d:'케이가 생각한 수는<br>40보다 작고, 5씩 뛰어세기에 나오고,<br>십의 자리가 3인 수야!',ans:35,opts:[35,30,25],fb:'35! (＜40, 5씩, 십의자리3)'},
 {bg:'⭐⭐⭐',t:'9. 조건부 배열',d:'15, ?, 25, 30<br>규칙적인 배열이에요. ?는?',ans:20,opts:[20,18,22],fb:'5씩 커져요! 15→20→25→30!'},
 {bg:'⭐⭐⭐',t:'10. 종합 추론',d:'나는 40보다 크고 50보다 작아.<br>일의 자리는 짝수야.<br>나를 가르면 10묶음 4개와 낱개야.<br>나는?',ans:42,opts:[42,44,46,48],multi:true,exactAns:[42,44,46,48].filter(n=>n>40&&n<50&&n%2===0),fb:'42, 44, 46, 48 모두 조건에 맞아요!'},
+// --- ADDED_BY_SCRIPT: 11~18 ---
+{bg:'⭐⭐⭐',t:'11. 자릿수 합 퍼즐',d:'두 자리 수야. 십의 자리와 일의 자리를<br>더하면 10이야. 십의 자리가 더 커.<br>나는 누구?',multi:true,ans:[64,73,82,91],opts:[46,64,73,82,91,55],fb:'64, 73, 82, 91! (자릿수 합=10, 십의자리>일의자리)'},
+{bg:'⭐⭐⭐',t:'12. 규칙 추론',d:'3, 5, 9, 15, 23, ?<br>차이: 2, 4, 6, 8, ?',ans:33,opts:[33,31,35],fb:'차이가 2씩 커져요! 23+10=33!'},
+{bg:'⭐⭐⭐',t:'13. 조건 결합',d:'2씩 뛰어세기에 나오는 수 중<br>십의 자리가 2인 수를 모두 골라요!',multi:true,ans:[20,22,24,26,28],opts:[20,21,22,24,26,28],fb:'20, 22, 24, 26, 28! (짝수이면서 십의자리 2)'},
+{bg:'⭐⭐⭐',t:'14. 수 비교 추론',d:'△는 ○보다 12 커요.<br>○이 15이면 △는?',ans:27,opts:[27,23,30],fb:'15+12=27!'},
+{bg:'⭐⭐⭐',t:'15. 거꾸로 추론',d:'어떤 수에서 10을 빼면 23이 돼요.<br>어떤 수에 5를 더하면?',ans:38,opts:[38,33,28],hint:'어떤 수 = 23+10 = 33!',fb:'33+5=38!'},
+{bg:'⭐⭐⭐',t:'16. 수배열 규칙',d:'10, 13, 17, 22, ?<br>차이를 찾아봐요!',ans:28,opts:[28,27,26],hint:'차이: 3, 4, 5, 6!',fb:'차이가 1씩 커져요! 22+6=28!'},
+{bg:'⭐⭐⭐',t:'17. 조건 만족 수',d:'3씩 뛰어세기에 나오면서<br>30보다 크고 40보다 작은 수를 모두 골라요!<br>(3, 6, 9, 12, ...)',multi:true,ans:[33,36,39],opts:[30,33,35,36,39],fb:'33, 36, 39! (3의 배수이면서 30~40 사이)'},
+{bg:'⭐⭐⭐',t:'18. 종합 퍼즐',d:'나는 두 자리 수야.<br>일의 자리는 십의 자리의 2배야.<br>나는 50보다 작아. 나는 누구?',multi:true,ans:[12,24,36,48],opts:[12,24,36,48,13],fb:'12, 24, 36, 48! (일의자리 = 십의자리×2)'},
 ];
 
 function render(n){
   const sl=document.getElementById('sl');
   if(n===0){
     sl.innerHTML=`<div class="s a"><div class="cd"><div style="font-size:19px;color:var(--primary)">📘 5단원 심화</div><div class="tt">50까지의 수 심화</div><div class="bg">⭐⭐⭐ 심화</div><img src="${KAY}" style="width:64px;height:64px;border-radius:50%;margin:8px auto"><div class="ds">조건을 만족하는 수를 찾고<br>수 퍼즐을 풀어봐요!</div></div><div class="nr"><button class="nb" onclick="nxt()">시작! →</button></div></div>`;
-  } else if(n<=10){
+  } else if(n<=18){
     const q=qs[n-1];
     let h=`<div class="s a"><div class="cd"><div class="bg">${q.bg}</div><div class="tt">${q.t}</div><div class="ds" style="font-size:18px">${q.d}</div>`;
     if(q.hint)h+=`<div class="ds" style="font-size:15px;color:var(--subtext);margin-top:4px">힌트: ${q.hint}</div>`;
@@ -83,7 +92,7 @@ function render(n){
       opts.appendChild(b);
     });
   } else showResult();
-  document.getElementById('pg').textContent=`${n+1}/12`;
+  document.getElementById('pg').textContent=`${n+1}/20`;
 }
 
 function submitMulti(qi){
@@ -98,7 +107,7 @@ function submitMulti(qi){
 function nxt(){cur++;render(cur);}
 function showResult(){
   const sl=document.getElementById('sl');
-  const pct=sc/500*100;
+  const pct=sc/900*100;
   let msg=pct>=90?'수 퍼즐 마스터! 🌟':pct>=70?'잘했어요! 😊':pct>=50?'좋아요! 💪':'다시 도전! 🔄';
   sl.innerHTML=`<div class="s a"><div class="rc"><div class="tt" style="color:var(--primary)">심화 완료!</div><div class="rs">${sc}점</div><div class="rm">${msg}</div>${mx>=3?`<div style="font-size:20px;color:#F57F17;margin-top:4px">🔥 최대 연속: ${mx}개!</div>`:''}<img src="${KAY}" style="width:64px;height:64px;border-radius:50%;margin:10px auto"></div><div class="nr"><button class="nb" onclick="location.reload()">다시 하기</button></div></div>`;
 }
