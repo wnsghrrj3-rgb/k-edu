@@ -53,7 +53,7 @@ function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').text
 
 const S=[];
 // Title
-S.push({t:'c',h:`<div class="title" style="font-size:32px;">📝 수학이랑 확인해요</div><div style="font-size:24px;color:var(--secondary);margin-bottom:16px;">3단원 형성평가</div><div class="card"><div class="cr"><img src="${KAY}" class="ci" alt="케이"><div class="sp">3단원에서 배운 것을 확인해 볼까? 10문제를 풀어 보자!</div></div><div style="font-size:22px;color:var(--subtext);">덧셈·뺄셈·모으기·가르기 종합!</div><div class="star-row"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div></div>`});
+S.push({t:'c',h:`<div class="title" style="font-size:32px;">📝 수학이랑 확인해요</div><div style="font-size:24px;color:var(--secondary);margin-bottom:16px;">3단원 형성평가</div><div class="card"><div class="cr"><img src="${KAY}" class="ci" alt="케이"><div class="sp">3단원에서 배운 것을 확인해 볼까? 20문제를 풀어 보자!</div></div><div style="font-size:22px;color:var(--subtext);">덧셈·뺄셈·모으기·가르기 종합!</div><div class="star-row"><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span></div></div>`});
 
 const qs=[
 // 1. 모으기 ⭐
@@ -75,7 +75,28 @@ const qs=[
 // 9. 같은수빼기 ⭐⭐
 {q:'6 − 6 = ?',a:0,ch:[0,6,1,12],sc:25,hint:'같은 수끼리 빼면?'},
 // 10. 종합 ⭐⭐⭐
-{q:'□ − 2 = 5, □는?',a:7,ch:[3,5,7,9],sc:50,hint:'5에서 2를 더해 보세요!'}
+{q:'□ − 2 = 5, □는?',a:7,ch:[3,5,7,9],sc:50,hint:'5에서 2를 더해 보세요!'},
+// --- ADDED_BY_SCRIPT: Q11~Q20 ---
+// 11. 모으기 ⭐
+{q:'2와 5를 모으면?',a:7,ch:[6,7,8,9],sc:10,hint:'2에 5를 더해요!'},
+// 12. 가르기 ⭐
+{q:'7을 가르면 4와?',a:3,ch:[2,3,4,5],sc:10,hint:'7에서 4를 빼 보세요!'},
+// 13. 뺄셈 ⭐
+{q:'8 − 1 = ?',a:7,ch:[6,7,8,9],sc:10,hint:'8에서 1만큼 빼요!'},
+// 14. 0연산 ⭐
+{q:'5 − 0 = ?',a:5,ch:[0,4,5,6],sc:10,hint:'0을 빼면 그대로!'},
+// 15. 이야기→식 ⭐⭐
+{q:'빵 4개에 3개 더 사면?',a:'4+3=7',ch:['4+3=7','4−3=1','3+3=6'],sc:25,hint:'"더 사면"은 덧셈!'},
+// 16. 기호넣기 ⭐⭐
+{q:'9 □ 3 = 6, □는?',a:'−',ch:['+','−'],sc:25,hint:'결과가 더 작으면?'},
+// 17. 역방향 ⭐⭐
+{q:'8 − □ = 2, □는?',a:6,ch:[4,5,6,7],sc:25,hint:'8에서 뭘 빼야 2가 될까?'},
+// 18. 같은수모으기 ⭐⭐
+{q:'4 + 4 = ?',a:8,ch:[6,7,8,9],sc:25,hint:'같은 수끼리 더해요!'},
+// 19. 종합 ⭐⭐⭐
+{q:'□ + □ = 9, □에 들어갈 수 두 개는?',a:'4+5=9',ch:['3+5=9','4+5=9','6+2=9'],sc:50,hint:'합이 9가 되는 짝을 찾으세요!'},
+// 20. 이야기종합 ⭐⭐⭐
+{q:'사과 8개 중 친구에게 3개 주고 동생에게 2개 주면?',a:3,ch:[2,3,4,5],sc:50,hint:'8−3−2를 차례로 해 보세요!'}
 ];
 
 // Build slides from questions
@@ -86,7 +107,7 @@ qs.forEach((q,idx)=>{
   S.push({t:'q',sc,done:false,r(i){
     const isStr=typeof q.a==='string';
     return`<div class="badge">${st}</div>
-    <div class="title"><span class="qnum">${num}</span> / 10</div>
+    <div class="title"><span class="qnum">${num}</span> / ${qs.length}</div>
     <div class="card">
       <div style="font-size:28px;margin-bottom:14px;">${q.q}</div>
       <div class="br">${q.ch.map(c=>{
@@ -114,7 +135,7 @@ else{msg='🌱 다시 복습해 봐요!';starCount=2;}
 d.innerHTML=`<div class="card" style="max-width:480px;">
 <div style="font-size:30px;color:var(--primary);margin-bottom:6px;">📝 3단원 형성평가 결과</div>
 <div style="font-size:64px;color:var(--primary);">${score}<span style="font-size:28px;color:var(--subtext);">/${total}</span></div>
-<div style="font-size:24px;color:var(--subtext);">${correct}/10 문항 정답</div>
+<div style="font-size:24px;color:var(--subtext);">${correct}/${S.filter(s=>s.t==='q').length} 문항 정답</div>
 <div class="star-row">${'<span class="star">⭐</span>'.repeat(starCount)}${'<span class="star" style="opacity:.2;">⭐</span>'.repeat(5-starCount)}</div>
 <div style="font-size:28px;margin:8px 0;">${msg}</div>
 ${maxCombo>1?`<div class="combo">🔥 최대 콤보 x${maxCombo}</div>`:''}
