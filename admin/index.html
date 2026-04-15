@@ -133,6 +133,44 @@ tr:hover td{background:#FAFBFC}
 .session-bar.active{display:flex}
 .session-bar .timer{font-family:'Jua',sans-serif;font-size:13px}
 
+/* ANALYTICS SECTIONS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:32px}
+.analytics-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;overflow:hidden}
+.analytics-card h3{font-family:'Jua',sans-serif;font-size:17px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.analytics-card.full{grid-column:1/-1}
+
+/* POPULAR PAGES TABLE */
+.pop-table{width:100%;border-collapse:collapse;font-size:13px}
+.pop-table th{text-align:left;padding:8px 12px;font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border)}
+.pop-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.pop-table tr:last-child td{border-bottom:none}
+.pop-table tr:hover td{background:#FAFBFC}
+.pop-rank{font-family:'Jua',sans-serif;font-size:16px;color:var(--primary)}
+.pop-path{font-size:12px;color:var(--sub);margin-top:2px}
+
+/* CATEGORY BARS */
+.cat-bar-wrap{margin-bottom:12px}
+.cat-bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;font-weight:500}
+.cat-bar-track{height:24px;background:var(--bg);border-radius:8px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:#fff;min-width:30px;transition:width .6s ease}
+
+/* HOURLY CHART */
+.hourly-chart{display:flex;align-items:flex-end;gap:2px;height:140px;padding-bottom:24px;position:relative}
+.hourly-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end}
+.hourly-bar{width:100%;max-width:20px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--primary),#85B0FF);min-height:2px;transition:height .4s ease;cursor:pointer;position:relative}
+.hourly-bar:hover{opacity:.8}
+.hourly-bar .h-tip{position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.hourly-bar:hover .h-tip{opacity:1}
+.hourly-label{font-size:9px;color:var(--sub);position:absolute;bottom:-18px}
+.hourly-peak{background:linear-gradient(180deg,var(--pink),#FFB3C6)!important}
+
+/* STAT CARD 5th */
+.stats{grid-template-columns:repeat(5,1fr)}
+
+@media(max-width:900px){
+  .analytics-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
 @media(max-width:768px){
   .stats{grid-template-columns:1fr 1fr}
   .nav{padding:0 16px}
@@ -223,6 +261,13 @@ tr:hover td{background:#FAFBFC}
       <div class="stat-num" id="stat-total-classes">-</div>
       <div class="stat-label">활성 학급</div>
     </div>
+    <div class="stat-card fade-up" style="--sc:var(--pink)">
+      <div class="stat-top">
+        <div class="stat-icon" style="background:#FFF0F3">🔗</div>
+      </div>
+      <div class="stat-num" id="stat-unique-sessions">-</div>
+      <div class="stat-label">오늘 유니크 세션</div>
+    </div>
   </div>
 
   <!-- VISITOR CHART -->
@@ -239,6 +284,39 @@ tr:hover td{background:#FAFBFC}
       <div class="chart-zero"></div>
       <div class="chart-area" id="chart-area">
         <!-- bars dynamically generated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS: POPULAR PAGES + CATEGORY -->
+  <div class="section-title fade-up">🔍 방문 분석 (최근 30일)</div>
+  <div class="analytics-grid">
+    <!-- A. 인기 페이지 TOP 10 -->
+    <div class="analytics-card full fade-up">
+      <h3>🏆 인기 페이지 TOP 10</h3>
+      <div class="table-scroll">
+        <table class="pop-table">
+          <thead><tr><th>순위</th><th>페이지</th><th>조회수</th><th>유니크 방문자</th></tr></thead>
+          <tbody id="popular-body">
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--sub)">로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- B. 과목별 방문 비율 -->
+    <div class="analytics-card fade-up">
+      <h3>📚 과목별 방문 비율</h3>
+      <div id="category-bars">
+        <p style="text-align:center;color:var(--sub);padding:24px 0">로딩 중...</p>
+      </div>
+    </div>
+
+    <!-- C. 시간대별 방문 패턴 -->
+    <div class="analytics-card fade-up">
+      <h3>🕐 시간대별 방문 패턴</h3>
+      <div class="hourly-chart" id="hourly-chart">
+        <p style="text-align:center;color:var(--sub);padding:24px 0;width:100%">로딩 중...</p>
       </div>
     </div>
   </div>
@@ -385,6 +463,9 @@ async function initDashboard(){
   await Promise.all([
     loadStats(),
     loadChart(7),
+    loadPopularPages(),
+    loadCategoryStats(),
+    loadHourlyPattern(),
     loadContents(),
     loadTeachers()
   ]);
@@ -442,6 +523,14 @@ async function loadStats(){
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true);
   document.getElementById('stat-total-classes').textContent = totalClasses || 0;
+
+  // 오늘 유니크 세션
+  const { data: todaySessions } = await db.from('page_visits')
+    .select('session_id')
+    .gte('visited_at', today + 'T00:00:00')
+    .lt('visited_at', today + 'T23:59:59');
+  const uniqueSessions = new Set((todaySessions || []).map(v => v.session_id)).size;
+  document.getElementById('stat-unique-sessions').textContent = uniqueSessions;
 }
 
 // =============================================
@@ -495,6 +584,157 @@ async function loadChart(days){
         <div class="tooltip">${d.slice(5)} · ${values[i]}명</div>
       </div>
       ${dayLabel ? `<span class="chart-label">${dayLabel}</span>` : '<span class="chart-label"></span>'}
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// 인기 페이지 TOP 10
+// =============================================
+async function loadPopularPages(){
+  const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
+  const { data } = await db.from('page_visits')
+    .select('page_path, session_id')
+    .gte('visited_at', thirtyDaysAgo);
+
+  if(!data || data.length === 0){
+    document.getElementById('popular-body').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--sub)">최근 30일 방문 데이터가 없습니다.</td></tr>';
+    return;
+  }
+
+  // page_path별 집계
+  const stats = {};
+  data.forEach(v => {
+    if(!stats[v.page_path]) stats[v.page_path] = { views: 0, sessions: new Set() };
+    stats[v.page_path].views++;
+    if(v.session_id) stats[v.page_path].sessions.add(v.session_id);
+  });
+
+  // 상위 10개
+  const sorted = Object.entries(stats)
+    .map(([path, s]) => ({ path, views: s.views, unique: s.sessions.size }))
+    .sort((a,b) => b.views - a.views)
+    .slice(0, 10);
+
+  document.getElementById('popular-body').innerHTML = sorted.map((item, i) => {
+    const nice = parsePagePath(item.path);
+    return `<tr>
+      <td><span class="pop-rank">${i+1}</span></td>
+      <td><strong>${nice.title}</strong><div class="pop-path">${item.path}</div></td>
+      <td>${item.views.toLocaleString()}</td>
+      <td>${item.unique.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+function parsePagePath(path){
+  // /grade1/semester1/korean/1_문법/g1_kor_tb_01_모음ㅏㅓ.html → 1학년 국어 · 모음ㅏㅓ
+  const gradeMatch = path.match(/grade(\d)/);
+  const grade = gradeMatch ? gradeMatch[1] + '학년' : '';
+
+  const catMap = { korean:'국어', math:'수학', science:'과학', social:'사회' };
+  let subject = '';
+  for(const [key, val] of Object.entries(catMap)){
+    if(path.includes('/' + key + '/') || path.includes('/' + key)){
+      subject = val; break;
+    }
+  }
+  if(path.includes('/english/')) subject = '영어';
+
+  // 파일명에서 제목 추출
+  const fileName = path.split('/').pop().replace('.html','');
+  const parts = fileName.split('_');
+  // 마지막 파트가 한글 제목인 경우가 많음
+  let title = parts.filter(p => /[가-힣]/.test(p)).join(' ') || fileName;
+
+  if(grade && subject) return { title: `${grade} ${subject} · ${title}` };
+  if(path === '/' || path === '/index.html') return { title: '메인 허브' };
+  if(path.includes('/english/index')) return { title: '영어 허브' };
+  if(path.includes('/admin/')) return { title: '관리자 페이지' };
+  if(path.includes('/teacher/')) return { title: '교사 대시보드' };
+  if(path.includes('/auth/')) return { title: '로그인' };
+  return { title: title || path };
+}
+
+// =============================================
+// 과목별 방문 비율
+// =============================================
+async function loadCategoryStats(){
+  const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
+  const { data } = await db.from('page_visits')
+    .select('page_path')
+    .gte('visited_at', thirtyDaysAgo);
+
+  if(!data || data.length === 0){
+    document.getElementById('category-bars').innerHTML = '<p style="text-align:center;color:var(--sub);padding:24px 0">데이터가 없습니다.</p>';
+    return;
+  }
+
+  const cats = { '국어': 0, '수학': 0, '영어': 0, '기타': 0 };
+  data.forEach(v => {
+    const p = v.page_path;
+    if(p.includes('/korean/') || p.includes('/korean')) cats['국어']++;
+    else if(p.includes('/math/') || p.includes('/math')) cats['수학']++;
+    else if(p.includes('/english/') || p.includes('/english')) cats['영어']++;
+    else cats['기타']++;
+  });
+
+  const total = data.length;
+  const colors = { '국어':'var(--primary)', '수학':'var(--green)', '영어':'var(--orange)', '기타':'var(--sub)' };
+  const icons = { '국어':'📖', '수학':'🔢', '영어':'🔤', '기타':'📁' };
+
+  // 기타 0이면 제외
+  const entries = Object.entries(cats).filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]);
+
+  document.getElementById('category-bars').innerHTML = entries.map(([name, count]) => {
+    const pct = (count / total * 100).toFixed(1);
+    return `<div class="cat-bar-wrap">
+      <div class="cat-bar-label">
+        <span>${icons[name]} ${name}</span>
+        <span>${count.toLocaleString()}회 (${pct}%)</span>
+      </div>
+      <div class="cat-bar-track">
+        <div class="cat-bar-fill" style="width:${pct}%;background:${colors[name]}">${pct}%</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =============================================
+// 시간대별 방문 패턴 (24시간, KST)
+// =============================================
+async function loadHourlyPattern(){
+  const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString();
+  const { data } = await db.from('page_visits')
+    .select('visited_at')
+    .gte('visited_at', thirtyDaysAgo);
+
+  if(!data || data.length === 0){
+    document.getElementById('hourly-chart').innerHTML = '<p style="text-align:center;color:var(--sub);padding:24px 0;width:100%">데이터가 없습니다.</p>';
+    return;
+  }
+
+  // 시간대별 집계 (KST = UTC+9)
+  const hours = new Array(24).fill(0);
+  data.forEach(v => {
+    const d = new Date(v.visited_at);
+    const kstHour = (d.getUTCHours() + 9) % 24;
+    hours[kstHour]++;
+  });
+
+  const maxVal = Math.max(...hours, 1);
+  const peakHour = hours.indexOf(maxVal);
+
+  document.getElementById('hourly-chart').innerHTML = hours.map((count, h) => {
+    const pct = (count / maxVal * 100);
+    const height = Math.max(pct * 1.2, 2);
+    const isPeak = h === peakHour && count > 0;
+    const showLabel = h % 3 === 0;
+    return `<div class="hourly-bar-wrap">
+      <div class="hourly-bar ${isPeak ? 'hourly-peak' : ''}" style="height:${height}px">
+        <div class="h-tip">${h}시 · ${count}회</div>
+      </div>
+      ${showLabel ? `<span class="hourly-label">${h}시</span>` : ''}
     </div>`;
   }).join('');
 }
