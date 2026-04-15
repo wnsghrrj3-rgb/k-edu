@@ -138,10 +138,69 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflo
 <div class="feedback" id="g3Fb"></div>
 <div class="score-display" id="g3Score">빙고: 0줄</div>
 </div>
-<div class="nav-row"><button class="nav-btn" id="g3Next" onclick="goNext()" disabled>결과 보기 →</button></div>
+<div class="nav-row"><button class="nav-btn" id="g3Next" onclick="goNext()" disabled>종합문제 →</button></div>
 </div>
 
-<!-- 5: 결과 -->
+<!-- --- ADDED_BY_SCRIPT: Q1~Q3 --- -->
+
+<!-- 5: 종합 Q1 ⭐ 묶음+낱개 -->
+<div class="slide" data-type="quiz">
+<div class="card">
+<div style="font-size:15px;color:var(--primary)">⭐ 종합문제 1</div>
+<div class="desc" style="font-size:20px;margin:8px 0">
+🔟🔟🔟🔟 와 🟡🟡🟡🟡🟡🟡🟡<br><br>
+<b>10개씩 묶음</b> 4개와<br><b>낱개</b> 7개는<br>모두 얼마일까요?
+</div>
+<div class="game-area">
+<div class="slots">
+<input type="number" id="q1Ans" style="width:80px;height:60px;font-size:36px;text-align:center;border:3px solid var(--primary);border-radius:14px;font-family:'Jua';outline:none" placeholder="?">
+</div>
+<div class="btn-row"><button class="game-btn" onclick="chkQ1()">확인!</button></div>
+</div>
+<div class="feedback" id="q1Fb"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="q1Next" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 6: 종합 Q2 ⭐⭐ 큰 수부터 순서 -->
+<div class="slide" data-type="quiz">
+<div class="card">
+<div style="font-size:15px;color:var(--primary)">⭐⭐ 종합문제 2</div>
+<div class="desc" style="font-size:20px;margin:8px 0">
+<b>큰 수부터</b> 차례로 눌러 보세요!
+</div>
+<div class="game-area">
+<div class="digit-cards" id="q2Cards"></div>
+<div style="margin-top:8px;font-size:18px;color:var(--subtext)">순서:</div>
+<div class="slots" id="q2Slots" style="min-height:50px;flex-wrap:wrap"></div>
+<div class="btn-row">
+<button class="game-btn" onclick="resetQ2()">다시</button>
+</div>
+</div>
+<div class="feedback" id="q2Fb"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="q2Next" onclick="goNext()" disabled>다음 →</button></div>
+</div>
+
+<!-- 7: 종합 Q3 ⭐⭐⭐ 수배열표 빈칸 -->
+<div class="slide" data-type="quiz">
+<div class="card">
+<div style="font-size:15px;color:var(--primary)">⭐⭐⭐ 종합문제 3</div>
+<div class="desc" style="font-size:18px;margin:6px 0">
+수 배열표의 <b>빈칸</b>을 모두 채워요!<br>
+<span style="font-size:14px;color:var(--subtext)">빈칸을 누르고 알맞은 수를 골라요</span>
+</div>
+<div class="game-area">
+<div id="q3Table" style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;max-width:320px;margin:0 auto"></div>
+<div style="margin-top:8px;font-size:16px;color:var(--subtext)" id="q3Hint"></div>
+<div class="digit-cards" id="q3Opts" style="margin-top:6px"></div>
+</div>
+<div class="feedback" id="q3Fb"></div>
+</div>
+<div class="nav-row"><button class="nav-btn" id="q3Next" onclick="goNext()" disabled>결과 보기 →</button></div>
+</div>
+
+<!-- 8: 결과 -->
 <div class="slide" data-type="result">
 <div class="result-card">
 <div class="title">게임 완료!</div>
@@ -171,7 +230,9 @@ function initSlide(n){
   if(n===1)initG1();
   if(n===2)startSpeed();
   if(n===3)initBingo();
-  if(n===4)showFinalResult();
+  if(n===5)initQ2();
+  if(n===6)initQ3();
+  if(n===7)showFinalResult();
 }
 
 // ========== 게임1: 큰 수 만들기 ==========
@@ -343,9 +404,103 @@ function endBingo(){
   document.getElementById('g3Next').disabled=false;
 }
 
+// ========== 종합문제 Q1: 묶음+낱개 ==========
+function chkQ1(){
+  const v=parseInt(document.getElementById('q1Ans').value);
+  const fb=document.getElementById('q1Fb');
+  if(isNaN(v)){fb.textContent='숫자를 입력해 주세요!';fb.className='feedback bad';return;}
+  if(v===47){playCorrect();fb.textContent='정답! 10×4+7=47 🎉';fb.className='feedback good';totalScore+=10;document.getElementById('q1Next').disabled=false;document.getElementById('q1Ans').disabled=true;}
+  else{playWrong();fb.textContent='다시 생각해 봐요! 10이 4개면 40, 낱개 7이면...';fb.className='feedback bad';}
+}
+
+// ========== 종합문제 Q2: 큰 수부터 순서 ==========
+let q2Nums=[24,42,31],q2Correct=[42,31,24],q2Picked=[];
+function initQ2(){
+  q2Picked=[];
+  const area=document.getElementById('q2Cards');area.innerHTML='';
+  const slots=document.getElementById('q2Slots');slots.innerHTML='';
+  document.getElementById('q2Fb').textContent='';
+  [24,42,31].sort(()=>Math.random()-.5).forEach(n=>{
+    const c=document.createElement('div');c.className='d-card';c.style.cssText='width:72px;height:72px;font-size:32px';c.textContent=n;c.dataset.val=n;
+    c.onclick=function(){
+      if(this.classList.contains('used'))return;
+      playClick();this.classList.add('used');
+      q2Picked.push(+this.dataset.val);
+      const s=document.createElement('div');s.className='slot filled';s.style.cssText='width:72px;height:72px;font-size:32px';s.textContent=n;
+      slots.appendChild(s);
+      if(q2Picked.length===3)checkQ2();
+    };
+    area.appendChild(c);
+  });
+}
+function resetQ2(){initQ2();}
+function checkQ2(){
+  const fb=document.getElementById('q2Fb');
+  if(q2Picked[0]===42&&q2Picked[1]===31&&q2Picked[2]===24){
+    playCorrect();fb.textContent='정답! 42 > 31 > 24 🎉';fb.className='feedback good';totalScore+=25;document.getElementById('q2Next').disabled=false;
+    document.querySelectorAll('#q2Cards .d-card').forEach(c=>c.onclick=null);
+  } else {
+    playWrong();fb.textContent='큰 수부터 다시 눌러 보세요!';fb.className='feedback bad';
+    setTimeout(initQ2,1000);
+  }
+}
+
+// ========== 종합문제 Q3: 수배열표 빈칸 ==========
+let q3Blanks={},q3Active=null,q3Solved=0,q3Total=4;
+function initQ3(){
+  /* 수배열표 31~50 (4행5열), 빈칸: 34, 39, 43, 48 */
+  const nums=[31,32,33,null,35,36,37,38,null,40,41,42,null,44,45,46,47,null,49,50];
+  q3Blanks={3:34,8:39,12:43,17:48};q3Solved=0;q3Active=null;q3Total=4;
+  const grid=document.getElementById('q3Table');grid.innerHTML='';
+  nums.forEach((n,i)=>{
+    const c=document.createElement('div');
+    c.style.cssText='width:58px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;transition:all .2s';
+    if(n===null){
+      c.style.border='3px dashed var(--primary)';c.style.background='var(--primary-light)';c.style.cursor='pointer';
+      c.textContent='?';c.id='q3C'+i;
+      c.onclick=function(){
+        document.querySelectorAll('#q3Table div').forEach(d=>{if(d.style.borderStyle==='dashed')d.style.boxShadow='none';});
+        this.style.boxShadow='0 0 12px var(--primary)';q3Active=i;
+        document.getElementById('q3Hint').textContent='이 칸에 들어갈 수를 골라요!';
+        showQ3Opts(i);
+      };
+    } else {
+      c.style.border='2px solid var(--border)';c.style.background='var(--card)';c.textContent=n;
+    }
+    grid.appendChild(c);
+  });
+  document.getElementById('q3Hint').textContent='빈칸(?)을 눌러 시작해요!';
+  document.getElementById('q3Opts').innerHTML='';
+  document.getElementById('q3Fb').textContent='';
+}
+function showQ3Opts(idx){
+  const ans=q3Blanks[idx];if(!ans)return;
+  const opts=[ans,ans-2,ans+3].sort(()=>Math.random()-.5);
+  const area=document.getElementById('q3Opts');area.innerHTML='';
+  opts.forEach(v=>{
+    const b=document.createElement('div');b.className='d-card';b.style.cssText='width:58px;height:50px;font-size:24px';b.textContent=v;
+    b.onclick=function(){
+      const cell=document.getElementById('q3C'+idx);
+      if(v===ans){
+        playCorrect();cell.textContent=ans;cell.style.borderStyle='solid';cell.style.background='var(--green-light)';cell.style.borderColor='var(--green)';cell.style.boxShadow='none';cell.onclick=null;
+        q3Solved++;area.innerHTML='';
+        document.getElementById('q3Hint').textContent=q3Solved<q3Total?'좋아요! 다음 빈칸을 눌러요!':'';
+        if(q3Solved===q3Total){
+          totalScore+=50;document.getElementById('q3Fb').textContent='완벽해요! 수배열표 완성! 🌟';document.getElementById('q3Fb').className='feedback good';
+          document.getElementById('q3Next').disabled=false;
+        }
+      } else {
+        playWrong();b.style.opacity='.3';b.onclick=null;
+        document.getElementById('q3Fb').textContent='다시 생각해 봐요!';document.getElementById('q3Fb').className='feedback bad';
+      }
+    };
+    area.appendChild(b);
+  });
+}
+
 function showFinalResult(){
   document.getElementById('finalScore').textContent=totalScore+'점';
-  let msg=totalScore>=150?'대단해요! 수학 천재! 🌟':totalScore>=100?'잘했어요! 멋진 실력! 😊':totalScore>=60?'좋아요! 재미있었죠? 💪':'다시 도전해 봐요! 🔄';
+  let msg=totalScore>=200?'대단해요! 수학 천재! 🌟':totalScore>=130?'잘했어요! 멋진 실력! 😊':totalScore>=80?'좋아요! 재미있었죠? 💪':'다시 도전해 봐요! 🔄';
   document.getElementById('finalMsg').textContent=msg;
 }
 
