@@ -213,7 +213,39 @@ choices:['4개','6개','5개','3개'],answer:2},
 // 12: Q10 - 종합 퍼즐 ⭐⭐⭐
 {type:'q',correct:null,score:50,qtype:'puzzle',answered:false},
 
-// 13: 결과
+// --- ADDED_BY_SCRIPT: Q11~Q20 ---
+
+// 14: Q11 - 모으기 세기2 ⭐
+{type:'q',correct:null,score:10,qtype:'moeugi_count',a:3,b:4,answered:false},
+
+// 15: Q12 - 가르기 선택2 ⭐
+{type:'q',correct:null,score:10,qtype:'gareugi_select',total:8,pairs:[[2,5],[3,5],[4,3],[6,3]],correctIdx:1,answered:false},
+
+// 16: Q13 - OX 판단2 ⭐
+{type:'q',correct:null,score:10,qtype:'ox2',statement:'3과 4를 모으면 8',isCorrect:false,correctMsg:'3과 4를 모으면 7이에요!',answered:false},
+
+// 17: Q14 - 모으기 카드2 ⭐
+{type:'q',correct:null,score:10,qtype:'card_select',a:5,b:2,answer:7,nums:[6,7,8,9],answered:false},
+
+// 18: Q15 - 모으기 빈칸2 ⭐⭐
+{type:'q',correct:null,score:25,qtype:'moeugi_blank',a:5,b:4,answered:false},
+
+// 19: Q16 - 가르기 역추론2 ⭐⭐
+{type:'q',correct:null,score:25,qtype:'gareugi_reverse',total:9,part:6,answered:false},
+
+// 20: Q17 - 다단계 모으기·가르기 ⭐⭐
+{type:'q',correct:null,score:25,qtype:'multi_step2',answered:false},
+
+// 21: Q18 - 속도 챌린지 ⭐⭐
+{type:'q',correct:null,score:25,qtype:'speed2',answered:false},
+
+// 22: Q19 - 이야기 만들기 ⭐⭐⭐
+{type:'q',correct:null,score:50,qtype:'story_build2',answered:false},
+
+// 23: Q20 - 종합 퍼즐2 ⭐⭐⭐
+{type:'q',correct:null,score:50,qtype:'puzzle2',answered:false},
+
+// 24: 결과
 {type:'result'}
 ];
 
@@ -370,6 +402,45 @@ function renderQuestion(s,idx){
     h+=`<div class="slide-title">모으기·가르기 퍼즐 🧩</div><div class="card">
       <div style="font-size:22px;margin-bottom:10px;">빈칸을 모두 채우세요!</div>
       <div id="puzzleArea${idx}" style="font-size:20px;"></div>
+      <div class="feedback" id="fb${idx}"></div>
+    </div>`;
+  }
+  // --- ADDED_BY_SCRIPT: 새 qtype 분기 ---
+  else if(s.qtype==='ox2'){
+    h+=`<div class="slide-title">O·X 판단</div><div class="card">
+      <div style="font-size:26px;margin-bottom:16px;">"${s.statement}"</div>
+      <div class="btn-row">
+        <button class="ox-btn" onclick="checkOXg2(${idx},this,true,${s.isCorrect})">⭕</button>
+        <button class="ox-btn" onclick="checkOXg2(${idx},this,false,${s.isCorrect})">❌</button>
+      </div>
+      <div class="feedback" id="fb${idx}"></div>
+    </div>`;
+  }
+  else if(s.qtype==='multi_step2'){
+    h+=`<div class="slide-title">다단계 모으기·가르기 🔢</div><div class="card">
+      <div style="font-size:22px;margin-bottom:10px;">단계별로 풀어 보세요!</div>
+      <div id="msArea${idx}"></div>
+      <div class="feedback" id="fb${idx}"></div>
+    </div>`;
+  }
+  else if(s.qtype==='speed2'){
+    h+=`<div class="slide-title">속도 챌린지 ⏱️</div><div class="card">
+      <div style="font-size:22px;margin-bottom:10px;">빠르게 풀어 보세요!</div>
+      <div id="spdArea${idx}"></div>
+      <div class="feedback" id="fb${idx}"></div>
+    </div>`;
+  }
+  else if(s.qtype==='story_build2'){
+    h+=`<div class="slide-title">이야기 만들기 📖</div><div class="card">
+      <div style="font-size:22px;margin-bottom:10px;">수를 골라 이야기를 완성하세요!</div>
+      <div id="sbArea${idx}"></div>
+      <div class="feedback" id="fb${idx}"></div>
+    </div>`;
+  }
+  else if(s.qtype==='puzzle2'){
+    h+=`<div class="slide-title">종합 퍼즐2 🧩</div><div class="card">
+      <div style="font-size:22px;margin-bottom:10px;">빈칸을 모두 채우세요!</div>
+      <div id="pzArea2${idx}" style="font-size:20px;"></div>
       <div class="feedback" id="fb${idx}"></div>
     </div>`;
   }
@@ -549,6 +620,197 @@ function checkPuzzle(idx,el,val,correct){
   }
 }
 
+// --- ADDED_BY_SCRIPT: 새 인터랙션 함수 ---
+
+// checkOXg2 — 일반화된 OX 판단
+function checkOXg2(idx,el,chosen,isCorrect){
+  const s=slides[idx];if(s.answered)return;
+  playSound('click');
+  if(chosen===isCorrect){
+    s.answered=true;el.classList.add('correct');playSound('correct');combo++;if(combo>maxCombo)maxCombo=combo;
+    score+=s.score;answered[idx]=true;
+    const reason=isCorrect?'맞는 말이에요!':s.correctMsg||'틀린 말이에요!';
+    document.getElementById('fb'+idx).innerHTML=`<span class="ok">🎉 ${reason} +${s.score}점</span>`;
+  }else{
+    el.classList.add('wrong');playSound('wrong');combo=0;
+    setTimeout(()=>el.classList.remove('wrong'),500);
+    document.getElementById('fb'+idx).innerHTML=`<span class="no">다시 생각해 보세요! 🤔</span>`;
+  }
+}
+
+// multi_step2 — 다단계 모으기·가르기
+let msData={};
+function initMultiStep2(idx){
+  const area=document.getElementById('msArea'+idx);
+  if(!area||area.dataset.init)return;
+  area.dataset.init='1';
+  msData[idx]={step:0,steps:[
+    {text:'6을 3과 □로 가르면?',answer:3,hint:'6 - 3 = ?'},
+    {text:'□와 2를 모으면?',answer:5,hint:'3 + 2 = ?'},
+    {text:'8을 가르면 5와 □',answer:3,hint:'8 - 5 = ?'}
+  ],total:3};
+  renderMsStep(idx);
+}
+function renderMsStep(idx){
+  const d=msData[idx],area=document.getElementById('msArea'+idx);
+  if(d.step>=d.total){
+    slides[idx].answered=true;playSound('correct');combo++;if(combo>maxCombo)maxCombo=combo;
+    score+=slides[idx].score;answered[idx]=true;
+    document.getElementById('fb'+idx).innerHTML=`<span class="ok">🎉 모든 단계 완료! +${slides[idx].score}점</span>`;
+    area.innerHTML='<div style="font-size:28px;margin:12px 0;">🏆 모두 맞혔어요!</div>';
+    return;
+  }
+  const st=d.steps[d.step],ans=st.answer;
+  const choices=[ans-1,ans,ans+1,ans+2].filter(n=>n>=0&&n<=9);
+  // shuffle
+  for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
+  area.innerHTML=`<div style="font-size:24px;margin-bottom:12px;">(${d.step+1}/${d.total}) ${st.text}</div>
+    <div style="font-size:16px;color:var(--subtext);margin-bottom:10px;">힌트: ${st.hint}</div>
+    <div class="btn-row">${choices.map(c=>`<button class="btn" style="font-size:40px;" onclick="stepMs(${idx},this,${c},${ans})">${c}</button>`).join('')}</div>`;
+}
+function stepMs(idx,el,val,correct){
+  playSound('click');
+  if(val===correct){
+    el.classList.add('correct');msData[idx].step++;
+    setTimeout(()=>renderMsStep(idx),500);
+  }else{
+    el.classList.add('wrong');playSound('wrong');combo=0;
+    setTimeout(()=>el.classList.remove('wrong'),500);
+    document.getElementById('fb'+idx).innerHTML=`<span class="no">다시 생각해 보세요!</span>`;
+  }
+}
+
+// speed2 — 속도 챌린지
+let spdData={};
+function initSpeed2(idx){
+  const area=document.getElementById('spdArea'+idx);
+  if(!area||area.dataset.init)return;
+  area.dataset.init='1';
+  spdData[idx]={cur:0,correct:0,total:4,start:Date.now(),
+    qs:[
+      {text:'2와 5를 모으면?',answer:7,choices:[6,7,8]},
+      {text:'9를 가르면 4와?',answer:5,choices:[4,5,6]},
+      {text:'1과 6을 모으면?',answer:7,choices:[7,8,9]},
+      {text:'7을 가르면 2와?',answer:5,choices:[4,5,6]}
+    ]};
+  renderSpdQ(idx);
+}
+function renderSpdQ(idx){
+  const d=spdData[idx],area=document.getElementById('spdArea'+idx);
+  if(d.cur>=d.total){finishSpd(idx);return;}
+  const q=d.qs[d.cur];
+  const elapsed=Math.round((Date.now()-d.start)/1000);
+  area.innerHTML=`<div style="font-size:18px;color:var(--subtext);margin-bottom:6px;">⏱ ${elapsed}초 | ${d.cur+1}/${d.total}</div>
+    <div style="font-size:26px;margin-bottom:14px;">${q.text}</div>
+    <div class="btn-row">${q.choices.map(c=>`<button class="btn" style="font-size:40px;" onclick="ansSpd(${idx},this,${c},${q.answer})">${c}</button>`).join('')}</div>`;
+}
+function ansSpd(idx,el,val,correct){
+  playSound('click');
+  const d=spdData[idx];
+  if(val===correct){el.classList.add('correct');d.correct++;d.cur++;setTimeout(()=>renderSpdQ(idx),400);}
+  else{el.classList.add('wrong');playSound('wrong');combo=0;setTimeout(()=>{el.classList.remove('wrong');},400);}
+}
+function finishSpd(idx){
+  const d=spdData[idx],elapsed=Math.round((Date.now()-d.start)/1000);
+  const area=document.getElementById('spdArea'+idx);
+  if(d.correct===d.total){
+    slides[idx].answered=true;playSound('correct');combo++;if(combo>maxCombo)maxCombo=combo;
+    score+=slides[idx].score;answered[idx]=true;
+    area.innerHTML=`<div style="font-size:28px;">🏆 ${d.total}문제 모두 정답!</div><div style="font-size:22px;color:var(--subtext);">⏱ ${elapsed}초</div>`;
+    document.getElementById('fb'+idx).innerHTML=`<span class="ok">🎉 완벽! +${slides[idx].score}점</span>`;
+  }else{
+    area.innerHTML=`<div style="font-size:24px;">${d.correct}/${d.total} 정답 (⏱ ${elapsed}초)</div>
+      <button class="btn" style="font-size:22px;margin-top:12px;padding:8px 20px;" onclick="retrySpdQ(${idx})">다시 도전 🔄</button>`;
+    document.getElementById('fb'+idx).innerHTML=`<span class="no">모두 맞혀야 통과!</span>`;
+  }
+}
+function retrySpdQ(idx){spdData[idx].cur=0;spdData[idx].correct=0;spdData[idx].start=Date.now();renderSpdQ(idx);document.getElementById('fb'+idx).innerHTML='';}
+
+// story_build2 — 이야기 만들기
+let sbData={};
+function initStoryBuild2(idx){
+  const area=document.getElementById('sbArea'+idx);
+  if(!area||area.dataset.init)return;
+  area.dataset.init='1';
+  sbData[idx]={step:0,vals:[]};
+  renderSbStep(idx);
+}
+function renderSbStep(idx){
+  const d=sbData[idx],area=document.getElementById('sbArea'+idx);
+  if(d.step===0){
+    area.innerHTML=`<div class="char-row"><img src="${KAY}" class="char-img" alt="케이">
+      <div class="speech" style="font-size:20px;">케이가 사탕을 가지고 있어요. 몇 개일까요?</div></div>
+      <div class="btn-row" style="margin-top:14px;">${[3,4,5].map(n=>`<button class="btn" style="font-size:36px;" onclick="sbStep(${idx},${n})">${n}개</button>`).join('')}</div>`;
+  }else if(d.step===1){
+    const v1=d.vals[0];
+    area.innerHTML=`<div class="char-row"><img src="${DEW}" class="char-img" alt="듀">
+      <div class="speech" style="font-size:20px;">듀가 사탕을 더 가져왔어요! 몇 개?</div></div>
+      <div style="font-size:20px;margin:8px 0;">케이: ${v1}개 🍬</div>
+      <div class="btn-row" style="margin-top:10px;">${[2,3,4].map(n=>`<button class="btn" style="font-size:36px;" onclick="sbStep(${idx},${n})">${n}개</button>`).join('')}</div>`;
+  }else if(d.step===2){
+    const v1=d.vals[0],v2=d.vals[1],total=v1+v2;
+    area.innerHTML=`<div style="font-size:22px;margin-bottom:10px;">케이 ${v1}개 + 듀 ${v2}개 = 모두 몇 개?</div>
+      <div class="btn-row">${[total-1,total,total+1].map(n=>`<button class="btn" style="font-size:40px;" onclick="sbFinal(${idx},this,${n},${total})">${n}</button>`).join('')}</div>`;
+  }
+}
+function sbStep(idx,val){
+  playSound('click');sbData[idx].vals.push(val);sbData[idx].step++;renderSbStep(idx);
+}
+function sbFinal(idx,el,val,correct){
+  const s=slides[idx];if(s.answered)return;
+  playSound('click');
+  if(val===correct){
+    s.answered=true;el.classList.add('correct');playSound('correct');combo++;if(combo>maxCombo)maxCombo=combo;
+    score+=s.score;answered[idx]=true;
+    const d=sbData[idx];
+    document.getElementById('sbArea'+idx).innerHTML=`<div style="font-size:24px;margin:12px 0;">📖 케이 ${d.vals[0]}개 + 듀 ${d.vals[1]}개 = <b>${correct}개!</b></div>
+      <div style="font-size:20px;color:var(--subtext);">멋진 이야기를 만들었어요!</div>`;
+    document.getElementById('fb'+idx).innerHTML=`<span class="ok">🎉 이야기 완성! +${s.score}점</span>`;
+  }else{
+    el.classList.add('wrong');playSound('wrong');combo=0;
+    setTimeout(()=>el.classList.remove('wrong'),500);
+    document.getElementById('fb'+idx).innerHTML=`<span class="no">다시 계산해 보세요!</span>`;
+  }
+}
+
+// puzzle2 — 종합 퍼즐2
+let pzData2={};
+function initPuzzle2(idx){
+  const area=document.getElementById('pzArea2'+idx);
+  if(!area||area.dataset.init)return;
+  area.dataset.init='1';
+  pzData2[idx]={puzzles:[
+    {q:'4과 5를 모으면?',answer:9,choices:[8,9,10]},
+    {q:'7을 가르면 2와?',answer:5,choices:[4,5,6]},
+    {q:'□과 3을 모으면 8',answer:5,choices:[4,5,6]}
+  ],solved:0,total:3};
+  renderPzSub2(idx);
+}
+function renderPzSub2(idx){
+  const pd=pzData2[idx],area=document.getElementById('pzArea2'+idx);
+  if(pd.solved>=pd.total){
+    slides[idx].answered=true;playSound('correct');combo++;if(combo>maxCombo)maxCombo=combo;
+    score+=slides[idx].score;answered[idx]=true;
+    document.getElementById('fb'+idx).innerHTML=`<span class="ok">🎉 퍼즐 완성! +${slides[idx].score}점</span>`;
+    area.innerHTML='<div style="font-size:28px;margin:12px 0;">🏆 모두 맞혔어요!</div>';
+    return;
+  }
+  const p=pd.puzzles[pd.solved];
+  area.innerHTML=`<div style="font-size:24px;margin-bottom:12px;">(${pd.solved+1}/${pd.total}) ${p.q}</div>
+    <div class="btn-row">${p.choices.map(c=>`<button class="btn" style="font-size:40px;" onclick="checkPz2(${idx},this,${c},${p.answer})">${c}</button>`).join('')}</div>`;
+}
+function checkPz2(idx,el,val,correct){
+  playSound('click');
+  if(val===correct){
+    el.classList.add('correct');pzData2[idx].solved++;
+    setTimeout(()=>renderPzSub2(idx),500);
+  }else{
+    el.classList.add('wrong');playSound('wrong');combo=0;
+    setTimeout(()=>el.classList.remove('wrong'),500);
+    document.getElementById('fb'+idx).innerHTML=`<span class="no">다시 생각해 보세요!</span>`;
+  }
+}
+
 // Result
 function showResult(){
   const d=document.getElementById('slide'+(slides.length-1));
@@ -583,8 +845,12 @@ function goSlide(n){
     prev.classList.remove('exit');
     next.classList.add('active');
     updateNav();
-    // Init puzzle if needed
+    // Init interactive qtypes
     if(slides[current].qtype==='puzzle')initPuzzle(current);
+    if(slides[current].qtype==='multi_step2')initMultiStep2(current);
+    if(slides[current].qtype==='speed2')initSpeed2(current);
+    if(slides[current].qtype==='story_build2')initStoryBuild2(current);
+    if(slides[current].qtype==='puzzle2')initPuzzle2(current);
     if(slides[current].type==='result')showResult();
   },200);
 }
