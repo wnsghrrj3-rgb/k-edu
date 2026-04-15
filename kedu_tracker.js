@@ -25,22 +25,17 @@
 
       // ==========================================
       // [임시 비활성화] 보호 경로 체크 (로그인 필요)
-      // 로그인 기능 재활성화 시 아래 주석 해제
       // ==========================================
       /*
       const PROTECTED = /^\/(grade[1-6]|english)\/.+/;
-
       if(PROTECTED.test(path)){
-        // 비동기 세션 체크
         client.auth.getSession().then(function(result){
           var session = result.data.session;
           if(!session){
-            // 미로그인 → /auth/ 로 리다이렉트 (현재 URL 보존)
             var returnUrl = encodeURIComponent(location.href);
             location.replace('/auth/?redirect=' + returnUrl);
             return;
           }
-          // 로그인 상태 → last_seen_at 업데이트 (실패해도 무시)
           client.from('student_profiles')
             .update({ last_seen_at: new Date().toISOString() })
             .eq('user_id', session.user.id)
@@ -65,13 +60,23 @@
       if(sessionStorage.getItem(pageKey)) return;
       sessionStorage.setItem(pageKey, '1');
 
-      // 방문 기록 (로그인 사용자면 user_id도 포함)
+      // referrer (외부 유입만 기록)
+      var ref = document.referrer || null;
+      if(ref && ref.includes(location.hostname)) ref = null;
+
+      // 디바이스 타입
+      var ua = navigator.userAgent || '';
+      var deviceType = /Mobile|Android|iPhone|iPad/i.test(ua) ? 'mobile' : 'desktop';
+
+      // Supabase에 방문 기록
       client.auth.getSession().then(function(result){
         var userId = result.data.session ? result.data.session.user.id : null;
         client.from('page_visits').insert({
           page_path: path,
           session_id: sessionId,
-          user_id: userId
+          user_id: userId,
+          referrer: ref,
+          user_agent: deviceType
         }).then(function(){}).catch(function(){});
       });
 
