@@ -19,29 +19,36 @@ main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
 .page-header{text-align:center;margin-bottom:36px}
 .page-title{font-family:'Jua',sans-serif;font-size:32px;margin-bottom:6px}
 .page-desc{font-size:14px;color:#718096}
-.unit-section{margin-bottom:24px}
-.unit-toggle{display:flex;align-items:center;gap:10px;padding:16px 20px;background:#fff;border-radius:16px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;border:2px solid transparent;transition:all .15s;width:100%}
-.unit-toggle:hover{border-color:var(--uc);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
-.unit-emoji{font-size:28px}
-.unit-info{flex:1;text-align:left}
-.unit-name{font-family:'Jua',sans-serif;font-size:17px}
-.unit-desc{font-size:12px;color:#718096;margin-top:2px}
-.unit-meta{text-align:right}
-.unit-star{font-size:12px}
-.unit-count{font-size:12px;color:#A0AEC0}
-.unit-arrow{font-size:18px;color:#CBD5E0;transition:transform .2s}
-.unit-arrow.open{transform:rotate(90deg)}
-.lesson-list{display:none;flex-direction:column;gap:6px;padding:10px 0 0 0}
+.grade-section{margin-bottom:20px}
+.grade-toggle{display:flex;align-items:center;gap:12px;padding:16px 20px;background:#fff;border-radius:16px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;border:2px solid transparent;transition:all .15s;width:100%}
+.grade-toggle:hover{border-color:var(--gc);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.grade-emoji{font-size:32px}
+.grade-info{flex:1;text-align:left}
+.grade-name{font-family:'Jua',sans-serif;font-size:18px}
+.grade-desc{font-size:12px;color:#718096;margin-top:2px}
+.grade-count{font-size:12px;color:#A0AEC0;text-align:right}
+.grade-arrow{font-size:20px;color:#CBD5E0;transition:transform .2s}
+.grade-arrow.open{transform:rotate(90deg)}
+.grade-body{display:none;padding:8px 0 0 0}
+.grade-body.open{display:block}
+.area-block{margin:6px 0 14px 0}
+.area-header{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:14px;font-weight:700;color:var(--gc);cursor:pointer;border-radius:10px;transition:background .15s}
+.area-header:hover{background:rgba(0,0,0,.03)}
+.area-emoji{font-size:18px}
+.area-count{font-size:12px;color:#A0AEC0;font-weight:400;margin-left:auto}
+.area-arrow{font-size:14px;color:#CBD5E0;transition:transform .2s}
+.area-arrow.open{transform:rotate(90deg)}
+.lesson-list{display:none;flex-direction:column;gap:5px;padding:4px 0 0 8px}
 .lesson-list.open{display:flex}
-.lesson-card{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 1px 4px rgba(0,0,0,.04);cursor:pointer;text-decoration:none;color:#1A202C;border:1.5px solid transparent;transition:all .12s}
-.lesson-card:hover{border-color:var(--uc);transform:translateX(4px)}
-.lesson-num{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:13px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-card{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;text-decoration:none;color:#1A202C;border:1.5px solid transparent;transition:all .12s}
+.lesson-card:hover{border-color:var(--gc);transform:translateX(4px)}
+.lesson-num{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:12px;color:#fff;background:var(--gc);flex-shrink:0}
 .lesson-title{font-size:13px;font-weight:500;flex:1}
-.lesson-arrow{color:#CBD5E0;font-size:14px}
+.lesson-arrow{color:#CBD5E0;font-size:13px}
 footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
 .footer-text{font-size:12px;color:#A0AEC0}
 .footer-text strong{color:#718096;font-weight:500}
-@media(max-width:600px){.page-title{font-size:26px}.lesson-card{padding:10px 12px}}
+@media(max-width:600px){.page-title{font-size:26px}.lesson-card{padding:8px 10px}}
 </style>
 <script src="/kedu_ga.js"></script>
 </head>
@@ -54,7 +61,7 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
 <main>
   <div class="page-header">
     <div class="page-title">🔤 English</div>
-    <div class="page-desc">난이도별로 차근차근, 나에게 맞는 레벨부터 시작하세요!</div>
+    <div class="page-desc">학년별로 차근차근, 나에게 맞는 학년부터 시작하세요!</div>
   </div>
   <div id="content"></div>
 </main>
@@ -62,381 +69,450 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
   <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.</p>
 </footer>
 <script>
-const UNITS = [
+const GRADES = [
   {
-    name:"첫걸음", emoji:"👶", color:"#FF85A1", desc:"기본 인사·숫자·색깔·동물", star:"⭐",
-    lessons: [
-      {n:1,file:"01_첫걸음/g1_english_tb_01_인사표현.html",title:"인사표현"},
-      {n:2,file:"01_첫걸음/g1_english_tb_02_이름말하기.html",title:"이름말하기"},
-      {n:3,file:"01_첫걸음/g1_english_tb_03_기분표현.html",title:"기분표현"},
-      {n:4,file:"01_첫걸음/g1_english_tb_04_감사와사과.html",title:"감사와사과"},
-      {n:5,file:"01_첫걸음/g1_english_tb_05_숫자1-10.html",title:"숫자1-10"},
-      {n:6,file:"01_첫걸음/g1_english_tb_06_색깔.html",title:"색깔"},
-      {n:7,file:"01_첫걸음/g1_english_tb_07_과일.html",title:"과일"},
-      {n:8,file:"01_첫걸음/g1_english_tb_08_동물.html",title:"동물"},
-      {n:9,file:"01_첫걸음/g1_english_tb_09_가족.html",title:"가족"},
-      {n:10,file:"01_첫걸음/g1_english_tb_10_신체부위.html",title:"신체부위"},
-      {n:11,file:"01_첫걸음/g1_english_tb_11_교실물건.html",title:"교실물건"},
-      {n:12,file:"01_첫걸음/g1_english_tb_12_음식.html",title:"음식"},
-      {n:13,file:"01_첫걸음/g1_english_tb_13_날씨.html",title:"날씨"},
-      {n:14,file:"01_첫걸음/g1_english_tb_14_요일.html",title:"요일"},
-      {n:15,file:"01_첫걸음/g1_english_tb_15_종합복습.html",title:"종합복습"}
+    name:"1학년", emoji:"👶", color:"#FF85A1", desc:"파닉스·기초 회화·첫 영어",
+    areas: [
+      {name:"읽기기초", emoji:"🔤",
+       lessons: [
+        {n:1,file:"g1/phonics/g1_english_adv_01_파닉스_단모음aei.html",title:"단모음aei"},
+        {n:2,file:"g1/phonics/g1_english_adv_02_파닉스_단모음ou.html",title:"단모음ou"},
+        {n:3,file:"g1/phonics/g1_english_adv_03_파닉스_자음bcdf.html",title:"자음bcdf"},
+        {n:4,file:"g1/phonics/g1_english_adv_04_파닉스_자음ghjk.html",title:"자음ghjk"},
+        {n:5,file:"g1/phonics/g1_english_adv_05_파닉스_자음lmnp.html",title:"자음lmnp"},
+        {n:6,file:"g1/phonics/g1_english_adv_06_파닉스_자음qrst.html",title:"자음qrst"},
+        {n:7,file:"g1/phonics/g1_english_adv_07_파닉스_자음vwxyz.html",title:"자음vwxyz"},
+        {n:8,file:"g1/phonics/g1_english_adv_08_파닉스_CVC단어읽기.html",title:"CVC단어읽기"},
+        {n:9,file:"g1/phonics/g1_english_adv_09_파닉스_자음연쇄blclfl.html",title:"자음연쇄blclfl"},
+        {n:10,file:"g1/phonics/g1_english_adv_10_파닉스_자음연쇄brcrdrfrgr.html",title:"자음연쇄brcrdrfrgr"},
+        {n:11,file:"g1/phonics/g1_english_adv_11_파닉스_자음연쇄plslsmsnspst.html",title:"자음연쇄plslsmsnspst"},
+        {n:12,file:"g1/phonics/g1_english_adv_12_파닉스_이중자음chshthwh.html",title:"이중자음chshthwh"},
+        {n:13,file:"g1/phonics/g1_english_adv_13_파닉스_장모음a_e_i_e.html",title:"장모음a e i e"},
+        {n:14,file:"g1/phonics/g1_english_adv_14_파닉스_장모음o_e_u_e.html",title:"장모음o e u e"},
+        {n:15,file:"g1/phonics/g1_english_adv_15_파닉스_장모음aiayeeea.html",title:"장모음aiayeeea"},
+        {n:16,file:"g1/phonics/g1_english_adv_16_파닉스_장모음oaowieigh.html",title:"장모음oaowieigh"},
+        {n:17,file:"g1/phonics/g1_english_adv_17_파닉스_R통제모음.html",title:"R통제모음"},
+        {n:18,file:"g1/phonics/g1_english_adv_18_파닉스_이중모음.html",title:"이중모음"},
+        {n:19,file:"g1/phonics/g1_english_adv_19_파닉스_묵음과예외.html",title:"묵음과예외"},
+        {n:20,file:"g1/phonics/g1_english_adv_20_파닉스_종합챌린지.html",title:"종합챌린지"},
+        {n:21,file:"g1/phonics/g1_english_adv_21_사이트워드1단계.html",title:"사이트워드1단계"},
+        {n:22,file:"g1/phonics/g1_english_adv_22_사이트워드2단계.html",title:"사이트워드2단계"},
+        {n:23,file:"g1/phonics/g1_english_adv_23_사이트워드3단계.html",title:"사이트워드3단계"},
+        {n:24,file:"g1/phonics/g1_english_adv_24_사이트워드4단계.html",title:"사이트워드4단계"},
+        {n:25,file:"g1/phonics/g1_english_adv_25_사이트워드5단계.html",title:"사이트워드5단계"},
+        {n:26,file:"g1/phonics/g1_english_adv_26_사이트워드종합챌린지.html",title:"사이트워드종합챌린지"},
+       ]
+      },
+      {name:"회화·표현", emoji:"💬",
+       lessons: [
+        {n:1,file:"g1/conversation/g1_english_adv_27_자기소개완성.html",title:"자기소개완성"},
+        {n:2,file:"g1/conversation/g1_english_adv_28_교실영어.html",title:"교실영어"},
+        {n:3,file:"g1/conversation/g1_english_adv_29_일상대화_요청과허락.html",title:"일상대화 요청과허락"},
+        {n:4,file:"g1/conversation/g1_english_tb_01_인사표현.html",title:"인사표현"},
+        {n:5,file:"g1/conversation/g1_english_tb_02_이름말하기.html",title:"이름말하기"},
+        {n:6,file:"g1/conversation/g1_english_tb_03_기분표현.html",title:"기분표현"},
+        {n:7,file:"g1/conversation/g1_english_tb_04_감사와사과.html",title:"감사와사과"},
+        {n:8,file:"g1/conversation/g1_english_tb_05_숫자1-10.html",title:"숫자1-10"},
+        {n:9,file:"g1/conversation/g1_english_tb_06_색깔.html",title:"색깔"},
+        {n:10,file:"g1/conversation/g1_english_tb_07_과일.html",title:"과일"},
+        {n:11,file:"g1/conversation/g1_english_tb_08_동물.html",title:"동물"},
+        {n:12,file:"g1/conversation/g1_english_tb_09_가족.html",title:"가족"},
+        {n:13,file:"g1/conversation/g1_english_tb_10_신체부위.html",title:"신체부위"},
+        {n:14,file:"g1/conversation/g1_english_tb_11_교실물건.html",title:"교실물건"},
+        {n:15,file:"g1/conversation/g1_english_tb_12_음식.html",title:"음식"},
+        {n:16,file:"g1/conversation/g1_english_tb_13_날씨.html",title:"날씨"},
+        {n:17,file:"g1/conversation/g1_english_tb_14_요일.html",title:"요일"},
+        {n:18,file:"g1/conversation/g1_english_tb_15_종합복습.html",title:"종합복습"},
+       ]
+      },
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g1/grammar/g1_english_adv_30_1학년종합평가.html",title:"1학년종합평가"},
+       ]
+      },
     ]
   },
   {
-    name:"파닉스", emoji:"🔤", color:"#FFB347", desc:"알파벳 소리부터 읽기까지", star:"⭐",
-    lessons: [
-      {n:1,file:"02_파닉스/g1_english_adv_01_파닉스_단모음aei.html",title:"파닉스 단모음aei"},
-      {n:2,file:"02_파닉스/g1_english_adv_02_파닉스_단모음ou.html",title:"파닉스 단모음ou"},
-      {n:3,file:"02_파닉스/g1_english_adv_03_파닉스_자음bcdf.html",title:"파닉스 자음bcdf"},
-      {n:4,file:"02_파닉스/g1_english_adv_04_파닉스_자음ghjk.html",title:"파닉스 자음ghjk"},
-      {n:5,file:"02_파닉스/g1_english_adv_05_파닉스_자음lmnp.html",title:"파닉스 자음lmnp"},
-      {n:6,file:"02_파닉스/g1_english_adv_06_파닉스_자음qrst.html",title:"파닉스 자음qrst"},
-      {n:7,file:"02_파닉스/g1_english_adv_07_파닉스_자음vwxyz.html",title:"파닉스 자음vwxyz"},
-      {n:8,file:"02_파닉스/g1_english_adv_08_파닉스_CVC단어읽기.html",title:"파닉스 CVC단어읽기"},
-      {n:9,file:"02_파닉스/g1_english_adv_09_파닉스_자음연쇄blclfl.html",title:"파닉스 자음연쇄blclfl"},
-      {n:10,file:"02_파닉스/g1_english_adv_10_파닉스_자음연쇄brcrdrfrgr.html",title:"파닉스 자음연쇄brcrdrfrgr"},
-      {n:11,file:"02_파닉스/g1_english_adv_11_파닉스_자음연쇄plslsmsnspst.html",title:"파닉스 자음연쇄plslsmsnspst"},
-      {n:12,file:"02_파닉스/g1_english_adv_12_파닉스_이중자음chshthwh.html",title:"파닉스 이중자음chshthwh"},
-      {n:13,file:"02_파닉스/g1_english_adv_13_파닉스_장모음a_e_i_e.html",title:"파닉스 장모음a e i e"},
-      {n:14,file:"02_파닉스/g1_english_adv_14_파닉스_장모음o_e_u_e.html",title:"파닉스 장모음o e u e"},
-      {n:15,file:"02_파닉스/g1_english_adv_15_파닉스_장모음aiayeeea.html",title:"파닉스 장모음aiayeeea"},
-      {n:16,file:"02_파닉스/g1_english_adv_16_파닉스_장모음oaowieigh.html",title:"파닉스 장모음oaowieigh"},
-      {n:17,file:"02_파닉스/g1_english_adv_17_파닉스_R통제모음.html",title:"파닉스 R통제모음"},
-      {n:18,file:"02_파닉스/g1_english_adv_18_파닉스_이중모음.html",title:"파닉스 이중모음"},
-      {n:19,file:"02_파닉스/g1_english_adv_19_파닉스_묵음과예외.html",title:"파닉스 묵음과예외"},
-      {n:20,file:"02_파닉스/g1_english_adv_20_파닉스_종합챌린지.html",title:"파닉스 종합챌린지"},
-      {n:21,file:"02_파닉스/g1_english_adv_21_사이트워드1단계.html",title:"사이트워드1단계"},
-      {n:22,file:"02_파닉스/g1_english_adv_22_사이트워드2단계.html",title:"사이트워드2단계"},
-      {n:23,file:"02_파닉스/g1_english_adv_23_사이트워드3단계.html",title:"사이트워드3단계"},
-      {n:24,file:"02_파닉스/g1_english_adv_24_사이트워드4단계.html",title:"사이트워드4단계"},
-      {n:25,file:"02_파닉스/g1_english_adv_25_사이트워드5단계.html",title:"사이트워드5단계"},
-      {n:26,file:"02_파닉스/g1_english_adv_26_사이트워드종합챌린지.html",title:"사이트워드종합챌린지"},
-      {n:27,file:"02_파닉스/g1_english_adv_27_자기소개완성.html",title:"자기소개완성"},
-      {n:28,file:"02_파닉스/g1_english_adv_28_교실영어.html",title:"교실영어"},
-      {n:29,file:"02_파닉스/g1_english_adv_29_일상대화_요청과허락.html",title:"일상대화 요청과허락"},
-      {n:30,file:"02_파닉스/g1_english_adv_30_1학년종합평가.html",title:"1학년종합평가"}
+    name:"2학년", emoji:"📝", color:"#FFB347", desc:"읽기 확장·기초 문법·첫 쓰기",
+    areas: [
+      {name:"읽기기초", emoji:"🔤",
+       lessons: [
+        {n:1,file:"g2/phonics/g2_english_adv_01_다음절단어읽기.html",title:"다음절단어읽기"},
+        {n:2,file:"g2/phonics/g2_english_adv_02_접두사.html",title:"접두사"},
+        {n:3,file:"g2/phonics/g2_english_adv_03_접미사.html",title:"접미사"},
+        {n:4,file:"g2/phonics/g2_english_adv_04_복합어.html",title:"복합어"},
+        {n:5,file:"g2/phonics/g2_english_adv_05_유창성훈련AC.html",title:"유창성훈련AC"},
+        {n:6,file:"g2/phonics/g2_english_adv_06_유창성훈련DF.html",title:"유창성훈련DF"},
+        {n:7,file:"g2/phonics/g2_english_adv_07_영어동화초급.html",title:"영어동화초급"},
+        {n:8,file:"g2/phonics/g2_english_adv_08_영어동화중급.html",title:"영어동화중급"},
+       ]
+      },
+      {name:"회화·표현", emoji:"💬",
+       lessons: [
+        {n:1,file:"g2/conversation/g2_english_tb_01_좋아하는것.html",title:"좋아하는것"},
+        {n:2,file:"g2/conversation/g2_english_tb_02_할수있는것.html",title:"할수있는것"},
+        {n:3,file:"g2/conversation/g2_english_tb_03_위치표현.html",title:"위치표현"},
+        {n:4,file:"g2/conversation/g2_english_tb_04_시간표현.html",title:"시간표현"},
+        {n:5,file:"g2/conversation/g2_english_tb_05_날짜와월.html",title:"날짜와월"},
+        {n:6,file:"g2/conversation/g2_english_tb_06_쇼핑표현.html",title:"쇼핑표현"},
+        {n:7,file:"g2/conversation/g2_english_tb_07_길안내.html",title:"길안내"},
+        {n:8,file:"g2/conversation/g2_english_tb_08_하루일과.html",title:"하루일과"},
+        {n:9,file:"g2/conversation/g2_english_tb_09_비교표현기초.html",title:"비교표현기초"},
+        {n:10,file:"g2/conversation/g2_english_tb_10_과거표현기초.html",title:"과거표현기초"},
+        {n:11,file:"g2/conversation/g2_english_tb_11_미래표현기초.html",title:"미래표현기초"},
+        {n:12,file:"g2/conversation/g2_english_tb_12_전화표현.html",title:"전화표현"},
+        {n:13,file:"g2/conversation/g2_english_tb_13_초대와약속.html",title:"초대와약속"},
+        {n:14,file:"g2/conversation/g2_english_tb_14_건강표현.html",title:"건강표현"},
+        {n:15,file:"g2/conversation/g2_english_tb_15_종합복습.html",title:"종합복습"},
+       ]
+      },
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g2/grammar/g2_english_adv_09_명사와관사.html",title:"명사와관사"},
+        {n:2,file:"g2/grammar/g2_english_adv_10_복수형.html",title:"복수형"},
+        {n:3,file:"g2/grammar/g2_english_adv_11_인칭대명사.html",title:"인칭대명사"},
+        {n:4,file:"g2/grammar/g2_english_adv_12_be동사.html",title:"be동사"},
+        {n:5,file:"g2/grammar/g2_english_adv_13_일반동사현재.html",title:"일반동사현재"},
+        {n:6,file:"g2/grammar/g2_english_adv_14_현재진행형.html",title:"현재진행형"},
+        {n:7,file:"g2/grammar/g2_english_adv_15_조동사can.html",title:"조동사can"},
+        {n:8,file:"g2/grammar/g2_english_adv_16_형용사기초.html",title:"형용사기초"},
+        {n:9,file:"g2/grammar/g2_english_adv_17_전치사기초.html",title:"전치사기초"},
+        {n:10,file:"g2/grammar/g2_english_adv_18_문장5형식.html",title:"문장5형식"},
+        {n:11,file:"g2/grammar/g2_english_adv_22_종합평가.html",title:"종합평가"},
+       ]
+      },
+      {name:"독해·쓰기", emoji:"📖",
+       lessons: [
+        {n:1,file:"g2/reading/g2_english_adv_19_문장쓰기기초.html",title:"문장쓰기기초"},
+        {n:2,file:"g2/reading/g2_english_adv_20_일기쓰기.html",title:"일기쓰기"},
+        {n:3,file:"g2/reading/g2_english_adv_21_편지쓰기.html",title:"편지쓰기"},
+       ]
+      },
     ]
   },
   {
-    name:"기초회화", emoji:"💬", color:"#3BAB72", desc:"일상 대화 표현 익히기", star:"⭐⭐",
-    lessons: [
-      {n:1,file:"03_기초회화/g2_english_tb_01_좋아하는것.html",title:"좋아하는것"},
-      {n:2,file:"03_기초회화/g2_english_tb_02_할수있는것.html",title:"할수있는것"},
-      {n:3,file:"03_기초회화/g2_english_tb_03_위치표현.html",title:"위치표현"},
-      {n:4,file:"03_기초회화/g2_english_tb_04_시간표현.html",title:"시간표현"},
-      {n:5,file:"03_기초회화/g2_english_tb_05_날짜와월.html",title:"날짜와월"},
-      {n:6,file:"03_기초회화/g2_english_tb_06_쇼핑표현.html",title:"쇼핑표현"},
-      {n:7,file:"03_기초회화/g2_english_tb_07_길안내.html",title:"길안내"},
-      {n:8,file:"03_기초회화/g2_english_tb_08_하루일과.html",title:"하루일과"},
-      {n:9,file:"03_기초회화/g2_english_tb_09_비교표현기초.html",title:"비교표현기초"},
-      {n:10,file:"03_기초회화/g2_english_tb_10_과거표현기초.html",title:"과거표현기초"},
-      {n:11,file:"03_기초회화/g2_english_tb_11_미래표현기초.html",title:"미래표현기초"},
-      {n:12,file:"03_기초회화/g2_english_tb_12_전화표현.html",title:"전화표현"},
-      {n:13,file:"03_기초회화/g2_english_tb_13_초대와약속.html",title:"초대와약속"},
-      {n:14,file:"03_기초회화/g2_english_tb_14_건강표현.html",title:"건강표현"},
-      {n:15,file:"03_기초회화/g2_english_tb_15_종합복습.html",title:"종합복습"}
+    name:"3학년", emoji:"📖", color:"#3BAB72", desc:"핵심 문법·독해 입문·실용 표현",
+    areas: [
+      {name:"회화·표현", emoji:"💬",
+       lessons: [
+        {n:1,file:"g3/conversation/g3_english_tb_01_자기소개확장.html",title:"자기소개확장"},
+        {n:2,file:"g3/conversation/g3_english_tb_02_이것저것사물묘사.html",title:"이것저것사물묘사"},
+        {n:3,file:"g3/conversation/g3_english_tb_03_좋아하는것심화.html",title:"좋아하는것심화"},
+        {n:4,file:"g3/conversation/g3_english_tb_04_몇개있니.html",title:"몇개있니"},
+        {n:5,file:"g3/conversation/g3_english_tb_05_어디에.html",title:"어디에"},
+        {n:6,file:"g3/conversation/g3_english_tb_06_뭐하고있니.html",title:"뭐하고있니"},
+        {n:7,file:"g3/conversation/g3_english_tb_07_하고싶은것.html",title:"하고싶은것"},
+        {n:8,file:"g3/conversation/g3_english_tb_08_날씨와계절.html",title:"날씨와계절"},
+        {n:9,file:"g3/conversation/g3_english_tb_09_일과표현.html",title:"일과표현"},
+        {n:10,file:"g3/conversation/g3_english_tb_10_과거표현.html",title:"과거표현"},
+        {n:11,file:"g3/conversation/g3_english_tb_11_미래표현.html",title:"미래표현"},
+        {n:12,file:"g3/conversation/g3_english_tb_12_비교표현.html",title:"비교표현"},
+        {n:13,file:"g3/conversation/g3_english_tb_13_규칙과의무.html",title:"규칙과의무"},
+        {n:14,file:"g3/conversation/g3_english_tb_14_초대와제안.html",title:"초대와제안"},
+        {n:15,file:"g3/conversation/g3_english_tb_15_종합복습.html",title:"종합복습"},
+       ]
+      },
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g3/grammar/g3_english_adv_01_문장성분총정리.html",title:"문장성분총정리"},
+        {n:2,file:"g3/grammar/g3_english_adv_02_8품사개관.html",title:"8품사개관"},
+        {n:3,file:"g3/grammar/g3_english_adv_03_be동사_concept.html",title:"be동사 concept"},
+        {n:4,file:"g3/grammar/g3_english_adv_03_be동사_완전정복.html",title:"be동사 완전정복"},
+        {n:5,file:"g3/grammar/g3_english_adv_04_일반동사_현재완전정복.html",title:"일반동사 현재완전정복"},
+        {n:6,file:"g3/grammar/g3_english_adv_05_시제_과거.html",title:"시제 과거"},
+        {n:7,file:"g3/grammar/g3_english_adv_06_시제_미래.html",title:"시제 미래"},
+        {n:8,file:"g3/grammar/g3_english_adv_07_시제_현재진행vs현재.html",title:"시제 현재진행vs현재"},
+        {n:9,file:"g3/grammar/g3_english_adv_08_조동사_can_may_must.html",title:"조동사 can may must"},
+        {n:10,file:"g3/grammar/g3_english_adv_09_조동사_should_have_to.html",title:"조동사 should have to"},
+        {n:11,file:"g3/grammar/g3_english_adv_10_비교급과최상급.html",title:"비교급과최상급"},
+        {n:12,file:"g3/grammar/g3_english_adv_11_접속사.html",title:"접속사"},
+        {n:13,file:"g3/grammar/g3_english_adv_12_의문사총정리.html",title:"의문사총정리"},
+        {n:14,file:"g3/grammar/g3_english_adv_13_There_is_are.html",title:"There is are"},
+        {n:15,file:"g3/grammar/g3_english_adv_14_동명사와to부정사_기초.html",title:"동명사와to부정사 기초"},
+        {n:16,file:"g3/grammar/g3_english_adv_15_대명사심화.html",title:"대명사심화"},
+        {n:17,file:"g3/grammar/g3_english_adv_16_중1문법_종합테스트.html",title:"중1문법 종합테스트"},
+       ]
+      },
+      {name:"독해·쓰기", emoji:"📖",
+       lessons: [
+        {n:1,file:"g3/reading/g3_english_adv_17_주제찾기.html",title:"주제찾기"},
+        {n:2,file:"g3/reading/g3_english_adv_18_세부정보파악.html",title:"세부정보파악"},
+        {n:3,file:"g3/reading/g3_english_adv_19_순서배열.html",title:"순서배열"},
+        {n:4,file:"g3/reading/g3_english_adv_20_원인과결과.html",title:"원인과결과"},
+        {n:5,file:"g3/reading/g3_english_adv_21_비교와대조.html",title:"비교와대조"},
+        {n:6,file:"g3/reading/g3_english_adv_22_추론하기.html",title:"추론하기"},
+        {n:7,file:"g3/reading/g3_english_adv_23_어휘추론.html",title:"어휘추론"},
+        {n:8,file:"g3/reading/g3_english_adv_24_글의목적파악.html",title:"글의목적파악"},
+        {n:9,file:"g3/reading/g3_english_adv_25_글의분위기.html",title:"글의분위기"},
+        {n:10,file:"g3/reading/g3_english_adv_26_독해종합챌린지.html",title:"독해종합챌린지"},
+        {n:11,file:"g3/reading/g3_english_adv_27_어휘_동의어반의어.html",title:"어휘 동의어반의어"},
+        {n:12,file:"g3/reading/g3_english_adv_28_어휘_어근과접사심화.html",title:"어휘 어근과접사심화"},
+        {n:13,file:"g3/reading/g3_english_adv_29_문단쓰기_주제문.html",title:"문단쓰기 주제문"},
+        {n:14,file:"g3/reading/g3_english_adv_30_문단쓰기_묘사문.html",title:"문단쓰기 묘사문"},
+        {n:15,file:"g3/reading/g3_english_adv_31_3학년_종합평가.html",title:"3학년 종합평가"},
+       ]
+      },
     ]
   },
   {
-    name:"기초문법·읽기쓰기", emoji:"📝", color:"#3D90F0", desc:"첫 영문법 + 동화 읽기", star:"⭐⭐",
-    lessons: [
-      {n:1,file:"04_기초문법_읽기쓰기/g2_english_adv_01_다음절단어읽기.html",title:"다음절단어읽기"},
-      {n:2,file:"04_기초문법_읽기쓰기/g2_english_adv_02_접두사.html",title:"접두사"},
-      {n:3,file:"04_기초문법_읽기쓰기/g2_english_adv_03_접미사.html",title:"접미사"},
-      {n:4,file:"04_기초문법_읽기쓰기/g2_english_adv_04_복합어.html",title:"복합어"},
-      {n:5,file:"04_기초문법_읽기쓰기/g2_english_adv_05_유창성훈련AC.html",title:"유창성훈련AC"},
-      {n:6,file:"04_기초문법_읽기쓰기/g2_english_adv_06_유창성훈련DF.html",title:"유창성훈련DF"},
-      {n:7,file:"04_기초문법_읽기쓰기/g2_english_adv_07_영어동화초급.html",title:"영어동화초급"},
-      {n:8,file:"04_기초문법_읽기쓰기/g2_english_adv_08_영어동화중급.html",title:"영어동화중급"},
-      {n:9,file:"04_기초문법_읽기쓰기/g2_english_adv_09_명사와관사.html",title:"명사와관사"},
-      {n:10,file:"04_기초문법_읽기쓰기/g2_english_adv_10_복수형.html",title:"복수형"},
-      {n:11,file:"04_기초문법_읽기쓰기/g2_english_adv_11_인칭대명사.html",title:"인칭대명사"},
-      {n:12,file:"04_기초문법_읽기쓰기/g2_english_adv_12_be동사.html",title:"be동사"},
-      {n:13,file:"04_기초문법_읽기쓰기/g2_english_adv_13_일반동사현재.html",title:"일반동사현재"},
-      {n:14,file:"04_기초문법_읽기쓰기/g2_english_adv_14_현재진행형.html",title:"현재진행형"},
-      {n:15,file:"04_기초문법_읽기쓰기/g2_english_adv_15_조동사can.html",title:"조동사can"},
-      {n:16,file:"04_기초문법_읽기쓰기/g2_english_adv_16_형용사기초.html",title:"형용사기초"},
-      {n:17,file:"04_기초문법_읽기쓰기/g2_english_adv_17_전치사기초.html",title:"전치사기초"},
-      {n:18,file:"04_기초문법_읽기쓰기/g2_english_adv_18_문장5형식.html",title:"문장5형식"},
-      {n:19,file:"04_기초문법_읽기쓰기/g2_english_adv_19_문장쓰기기초.html",title:"문장쓰기기초"},
-      {n:20,file:"04_기초문법_읽기쓰기/g2_english_adv_20_일기쓰기.html",title:"일기쓰기"},
-      {n:21,file:"04_기초문법_읽기쓰기/g2_english_adv_21_편지쓰기.html",title:"편지쓰기"},
-      {n:22,file:"04_기초문법_읽기쓰기/g2_english_adv_22_종합평가.html",title:"종합평가"}
+    name:"4학년", emoji:"📚", color:"#3D90F0", desc:"문법 종합·독해 확장·어휘 심화",
+    areas: [
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g4/grammar/g4_english_adv_01_현재완료_경험완료.html",title:"현재완료 경험완료"},
+        {n:2,file:"g4/grammar/g4_english_adv_02_현재완료_계속결과.html",title:"현재완료 계속결과"},
+        {n:3,file:"g4/grammar/g4_english_adv_03_과거진행형.html",title:"과거진행형"},
+        {n:4,file:"g4/grammar/g4_english_adv_04_일반동사현재.html",title:"일반동사현재"},
+        {n:5,file:"g4/grammar/g4_english_adv_05_시제과거.html",title:"시제과거"},
+        {n:6,file:"g4/grammar/g4_english_adv_06_시제미래.html",title:"시제미래"},
+        {n:7,file:"g4/grammar/g4_english_adv_07_현재진행vs현재.html",title:"현재진행vs현재"},
+        {n:8,file:"g4/grammar/g4_english_adv_08_조동사canmaymust.html",title:"조동사canmaymust"},
+        {n:9,file:"g4/grammar/g4_english_adv_09_조동사shouldhaveto.html",title:"조동사shouldhaveto"},
+        {n:10,file:"g4/grammar/g4_english_adv_10_비교급최상급.html",title:"비교급최상급"},
+        {n:11,file:"g4/grammar/g4_english_adv_11_접속사.html",title:"접속사"},
+        {n:12,file:"g4/grammar/g4_english_adv_12_의문사총정리.html",title:"의문사총정리"},
+        {n:13,file:"g4/grammar/g4_english_adv_13_thereisare.html",title:"thereisare"},
+        {n:14,file:"g4/grammar/g4_english_adv_14_동명사to부정사.html",title:"동명사to부정사"},
+        {n:15,file:"g4/grammar/g4_english_adv_15_대명사심화.html",title:"대명사심화"},
+        {n:16,file:"g4/grammar/g4_english_adv_16_중1문법종합테스트.html",title:"중1문법종합테스트"},
+       ]
+      },
+      {name:"독해·쓰기", emoji:"📖",
+       lessons: [
+        {n:1,file:"g4/reading/g4_english_adv_17_주제찾기.html",title:"주제찾기"},
+        {n:2,file:"g4/reading/g4_english_adv_18_세부정보파악.html",title:"세부정보파악"},
+        {n:3,file:"g4/reading/g4_english_adv_19_순서배열.html",title:"순서배열"},
+        {n:4,file:"g4/reading/g4_english_adv_20_원인과결과.html",title:"원인과결과"},
+        {n:5,file:"g4/reading/g4_english_adv_21_비교와대조.html",title:"비교와대조"},
+        {n:6,file:"g4/reading/g4_english_adv_22_추론하기.html",title:"추론하기"},
+        {n:7,file:"g4/reading/g4_english_adv_23_어휘추론.html",title:"어휘추론"},
+        {n:8,file:"g4/reading/g4_english_adv_24_글의목적파악.html",title:"글의목적파악"},
+        {n:9,file:"g4/reading/g4_english_adv_25_글의분위기.html",title:"글의분위기"},
+        {n:10,file:"g4/reading/g4_english_adv_26_독해종합챌린지.html",title:"독해종합챌린지"},
+        {n:11,file:"g4/reading/g4_english_adv_27_동의어반의어.html",title:"동의어반의어"},
+        {n:12,file:"g4/reading/g4_english_adv_28_어근과접사심화.html",title:"어근과접사심화"},
+        {n:13,file:"g4/reading/g4_english_adv_29_문단쓰기주제문.html",title:"문단쓰기주제문"},
+        {n:14,file:"g4/reading/g4_english_adv_30_문단쓰기묘사문.html",title:"문단쓰기묘사문"},
+        {n:15,file:"g4/reading/g4_english_adv_31_4학년종합평가.html",title:"4학년종합평가"},
+       ]
+      },
     ]
   },
   {
-    name:"실용영어", emoji:"🌍", color:"#FF7043", desc:"다양한 상황별 영어 표현", star:"⭐⭐⭐",
-    lessons: [
-      {n:1,file:"05_실용영어/g3_english_tb_01_자기소개확장.html",title:"자기소개확장"},
-      {n:2,file:"05_실용영어/g3_english_tb_02_이것저것사물묘사.html",title:"이것저것사물묘사"},
-      {n:3,file:"05_실용영어/g3_english_tb_03_좋아하는것심화.html",title:"좋아하는것심화"},
-      {n:4,file:"05_실용영어/g3_english_tb_04_몇개있니.html",title:"몇개있니"},
-      {n:5,file:"05_실용영어/g3_english_tb_05_어디에.html",title:"어디에"},
-      {n:6,file:"05_실용영어/g3_english_tb_06_뭐하고있니.html",title:"뭐하고있니"},
-      {n:7,file:"05_실용영어/g3_english_tb_07_하고싶은것.html",title:"하고싶은것"},
-      {n:8,file:"05_실용영어/g3_english_tb_08_날씨와계절.html",title:"날씨와계절"},
-      {n:9,file:"05_실용영어/g3_english_tb_09_일과표현.html",title:"일과표현"},
-      {n:10,file:"05_실용영어/g3_english_tb_10_과거표현.html",title:"과거표현"},
-      {n:11,file:"05_실용영어/g3_english_tb_11_미래표현.html",title:"미래표현"},
-      {n:12,file:"05_실용영어/g3_english_tb_12_비교표현.html",title:"비교표현"},
-      {n:13,file:"05_실용영어/g3_english_tb_13_규칙과의무.html",title:"규칙과의무"},
-      {n:14,file:"05_실용영어/g3_english_tb_14_초대와제안.html",title:"초대와제안"},
-      {n:15,file:"05_실용영어/g3_english_tb_15_종합복습.html",title:"종합복습"}
+    name:"5학년", emoji:"🧠", color:"#7E57C2", desc:"고급 문법·수능 독해·에세이",
+    areas: [
+      {name:"회화·표현", emoji:"💬",
+       lessons: [
+        {n:1,file:"g5/conversation/g5_english_tb_01_꿈과장래희망.html",title:"꿈과장래희망"},
+        {n:2,file:"g5/conversation/g5_english_tb_02_경험나누기심화.html",title:"경험나누기심화"},
+        {n:3,file:"g5/conversation/g5_english_tb_03_뉴스와미디어.html",title:"뉴스와미디어"},
+        {n:4,file:"g5/conversation/g5_english_tb_04_문화비교.html",title:"문화비교"},
+        {n:5,file:"g5/conversation/g5_english_tb_05_토론찬반.html",title:"토론찬반"},
+        {n:6,file:"g5/conversation/g5_english_tb_06_과학실험보고.html",title:"과학실험보고"},
+        {n:7,file:"g5/conversation/g5_english_tb_07_역사이야기.html",title:"역사이야기"},
+        {n:8,file:"g5/conversation/g5_english_tb_08_가정과상상.html",title:"가정과상상"},
+        {n:9,file:"g5/conversation/g5_english_tb_09_광고분석.html",title:"광고분석"},
+        {n:10,file:"g5/conversation/g5_english_tb_10_편지쓰기심화.html",title:"편지쓰기심화"},
+        {n:11,file:"g5/conversation/g5_english_tb_11_프레젠테이션.html",title:"프레젠테이션"},
+        {n:12,file:"g5/conversation/g5_english_tb_12_사회문제.html",title:"사회문제"},
+        {n:13,file:"g5/conversation/g5_english_tb_13_독서감상.html",title:"독서감상"},
+        {n:14,file:"g5/conversation/g5_english_tb_14_진로탐색.html",title:"진로탐색"},
+        {n:15,file:"g5/conversation/g5_english_tb_15_종합복습.html",title:"종합복습"},
+       ]
+      },
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g5/grammar/g5_english_adv_01_현재완료진행형.html",title:"현재완료진행형"},
+        {n:2,file:"g5/grammar/g5_english_adv_02_과거완료.html",title:"과거완료"},
+        {n:3,file:"g5/grammar/g5_english_adv_03_분사.html",title:"분사"},
+        {n:4,file:"g5/grammar/g5_english_adv_04_분사구문기초.html",title:"분사구문기초"},
+        {n:5,file:"g5/grammar/g5_english_adv_05_가정법과거.html",title:"가정법과거"},
+        {n:6,file:"g5/grammar/g5_english_adv_06_가정법과거완료.html",title:"가정법과거완료"},
+        {n:7,file:"g5/grammar/g5_english_adv_07_관계부사.html",title:"관계부사"},
+        {n:8,file:"g5/grammar/g5_english_adv_08_사역동사.html",title:"사역동사"},
+        {n:9,file:"g5/grammar/g5_english_adv_09_지각동사.html",title:"지각동사"},
+        {n:10,file:"g5/grammar/g5_english_adv_10_접속사고급.html",title:"접속사고급"},
+        {n:11,file:"g5/grammar/g5_english_adv_11_수동태심화.html",title:"수동태심화"},
+        {n:12,file:"g5/grammar/g5_english_adv_12_it가주어가목적어.html",title:"it가주어가목적어"},
+        {n:13,file:"g5/grammar/g5_english_adv_13_강조도치.html",title:"강조도치"},
+        {n:14,file:"g5/grammar/g5_english_adv_14_시제일치화법전환.html",title:"시제일치화법전환"},
+        {n:15,file:"g5/grammar/g5_english_adv_15_전치사고급.html",title:"전치사고급"},
+        {n:16,file:"g5/grammar/g5_english_adv_16_중3문법종합테스트.html",title:"중3문법종합테스트"},
+       ]
+      },
+      {name:"독해·쓰기", emoji:"📖",
+       lessons: [
+        {n:1,file:"g5/reading/g5_english_adv_17_심경분위기파악.html",title:"심경분위기파악"},
+        {n:2,file:"g5/reading/g5_english_adv_18_글의목적파악.html",title:"글의목적파악"},
+        {n:3,file:"g5/reading/g5_english_adv_19_요지주제파악.html",title:"요지주제파악"},
+        {n:4,file:"g5/reading/g5_english_adv_20_제목찾기.html",title:"제목찾기"},
+        {n:5,file:"g5/reading/g5_english_adv_21_빈칸추론기초.html",title:"빈칸추론기초"},
+        {n:6,file:"g5/reading/g5_english_adv_22_빈칸추론심화.html",title:"빈칸추론심화"},
+        {n:7,file:"g5/reading/g5_english_adv_23_지칭추론.html",title:"지칭추론"},
+        {n:8,file:"g5/reading/g5_english_adv_24_글의순서배열.html",title:"글의순서배열"},
+        {n:9,file:"g5/reading/g5_english_adv_25_문장삽입.html",title:"문장삽입"},
+        {n:10,file:"g5/reading/g5_english_adv_26_함축의미파악.html",title:"함축의미파악"},
+        {n:11,file:"g5/reading/g5_english_adv_27_장문독해.html",title:"장문독해"},
+        {n:12,file:"g5/reading/g5_english_adv_28_독해종합모의.html",title:"독해종합모의"},
+        {n:13,file:"g5/reading/g5_english_adv_29_수능어휘1.html",title:"수능어휘1"},
+        {n:14,file:"g5/reading/g5_english_adv_30_수능어휘2.html",title:"수능어휘2"},
+        {n:15,file:"g5/reading/g5_english_adv_31_수능어휘3.html",title:"수능어휘3"},
+        {n:16,file:"g5/reading/g5_english_adv_32_어근으로외우기.html",title:"어근으로외우기"},
+        {n:17,file:"g5/reading/g5_english_adv_33_어휘종합챌린지.html",title:"어휘종합챌린지"},
+        {n:18,file:"g5/reading/g5_english_adv_34_OpinionEssay.html",title:"OpinionEssay"},
+        {n:19,file:"g5/reading/g5_english_adv_35_CompareContrast.html",title:"CompareContrast"},
+        {n:20,file:"g5/reading/g5_english_adv_36_ProblemSolution.html",title:"ProblemSolution"},
+        {n:21,file:"g5/reading/g5_english_adv_37_요약문쓰기.html",title:"요약문쓰기"},
+        {n:22,file:"g5/reading/g5_english_adv_38_서평쓰기.html",title:"서평쓰기"},
+        {n:23,file:"g5/reading/g5_english_adv_39_종합평가.html",title:"종합평가"},
+        {n:24,file:"g5/reading/g5_english_adv_40_수능어법판단.html",title:"수능어법판단"},
+        {n:25,file:"g5/reading/g5_english_adv_41_수능독해실전1.html",title:"수능독해실전1"},
+        {n:26,file:"g5/reading/g5_english_adv_42_수능독해실전2.html",title:"수능독해실전2"},
+        {n:27,file:"g5/reading/g5_english_adv_43_최종평가.html",title:"최종평가"},
+       ]
+      },
     ]
   },
   {
-    name:"영문법·독해 입문", emoji:"📖", color:"#7E57C2", desc:"핵심 문법 + 독해 첫걸음", star:"⭐⭐⭐",
-    lessons: [
-      {n:1,file:"06_영문법_독해입문/g3_english_adv_01_문장성분총정리.html",title:"문장성분총정리"},
-      {n:2,file:"06_영문법_독해입문/g3_english_adv_02_8품사개관.html",title:"8품사개관"},
-      {n:3,file:"06_영문법_독해입문/g3_english_adv_03_be동사_완전정복.html",title:"be동사 완전정복"},
-      {n:4,file:"06_영문법_독해입문/g3_english_adv_04_일반동사_현재완전정복.html",title:"일반동사 현재완전정복"},
-      {n:5,file:"06_영문법_독해입문/g3_english_adv_05_시제_과거.html",title:"시제 과거"},
-      {n:6,file:"06_영문법_독해입문/g3_english_adv_06_시제_미래.html",title:"시제 미래"},
-      {n:7,file:"06_영문법_독해입문/g3_english_adv_07_시제_현재진행vs현재.html",title:"시제 현재진행vs현재"},
-      {n:8,file:"06_영문법_독해입문/g3_english_adv_08_조동사_can_may_must.html",title:"조동사 can may must"},
-      {n:9,file:"06_영문법_독해입문/g3_english_adv_09_조동사_should_have_to.html",title:"조동사 should have to"},
-      {n:10,file:"06_영문법_독해입문/g3_english_adv_10_비교급과최상급.html",title:"비교급과최상급"},
-      {n:11,file:"06_영문법_독해입문/g3_english_adv_11_접속사.html",title:"접속사"},
-      {n:12,file:"06_영문법_독해입문/g3_english_adv_12_의문사총정리.html",title:"의문사총정리"},
-      {n:13,file:"06_영문법_독해입문/g3_english_adv_13_There_is_are.html",title:"There is are"},
-      {n:14,file:"06_영문법_독해입문/g3_english_adv_14_동명사와to부정사_기초.html",title:"동명사와to부정사 기초"},
-      {n:15,file:"06_영문법_독해입문/g3_english_adv_15_대명사심화.html",title:"대명사심화"},
-      {n:16,file:"06_영문법_독해입문/g3_english_adv_16_중1문법_종합테스트.html",title:"중1문법 종합테스트"},
-      {n:17,file:"06_영문법_독해입문/g3_english_adv_17_주제찾기.html",title:"주제찾기"},
-      {n:18,file:"06_영문법_독해입문/g3_english_adv_18_세부정보파악.html",title:"세부정보파악"},
-      {n:19,file:"06_영문법_독해입문/g3_english_adv_19_순서배열.html",title:"순서배열"},
-      {n:20,file:"06_영문법_독해입문/g3_english_adv_20_원인과결과.html",title:"원인과결과"},
-      {n:21,file:"06_영문법_독해입문/g3_english_adv_21_비교와대조.html",title:"비교와대조"},
-      {n:22,file:"06_영문법_독해입문/g3_english_adv_22_추론하기.html",title:"추론하기"},
-      {n:23,file:"06_영문법_독해입문/g3_english_adv_23_어휘추론.html",title:"어휘추론"},
-      {n:24,file:"06_영문법_독해입문/g3_english_adv_24_글의목적파악.html",title:"글의목적파악"},
-      {n:25,file:"06_영문법_독해입문/g3_english_adv_25_글의분위기.html",title:"글의분위기"},
-      {n:26,file:"06_영문법_독해입문/g3_english_adv_26_독해종합챌린지.html",title:"독해종합챌린지"},
-      {n:27,file:"06_영문법_독해입문/g3_english_adv_27_어휘_동의어반의어.html",title:"어휘 동의어반의어"},
-      {n:28,file:"06_영문법_독해입문/g3_english_adv_28_어휘_어근과접사심화.html",title:"어휘 어근과접사심화"},
-      {n:29,file:"06_영문법_독해입문/g3_english_adv_29_문단쓰기_주제문.html",title:"문단쓰기 주제문"},
-      {n:30,file:"06_영문법_독해입문/g3_english_adv_30_문단쓰기_묘사문.html",title:"문단쓰기 묘사문"},
-      {n:31,file:"06_영문법_독해입문/g3_english_adv_31_3학년_종합평가.html",title:"3학년 종합평가"}
+    name:"6학년", emoji:"🏆", color:"#E53E3E", desc:"문법 완성·수능 실전·특목고 대비",
+    areas: [
+      {name:"회화·표현", emoji:"💬",
+       lessons: [
+        {n:1,file:"g6/conversation/g6_english_tb_01_자기소개_공식버전.html",title:"자기소개 공식버전"},
+        {n:2,file:"g6/conversation/g6_english_tb_02_뉴스리포트.html",title:"뉴스리포트"},
+        {n:3,file:"g6/conversation/g6_english_tb_03_문화유산소개.html",title:"문화유산소개"},
+        {n:4,file:"g6/conversation/g6_english_tb_04_토론_심화.html",title:"토론 심화"},
+        {n:5,file:"g6/conversation/g6_english_tb_05_과학기술이야기.html",title:"과학기술이야기"},
+        {n:6,file:"g6/conversation/g6_english_tb_06_글로벌이슈.html",title:"글로벌이슈"},
+        {n:7,file:"g6/conversation/g6_english_tb_07_직업탐구_심화.html",title:"직업탐구 심화"},
+        {n:8,file:"g6/conversation/g6_english_tb_08_문학감상.html",title:"문학감상"},
+        {n:9,file:"g6/conversation/g6_english_tb_09_영어편지_공식.html",title:"영어편지 공식"},
+        {n:10,file:"g6/conversation/g6_english_tb_10_봉사와나눔.html",title:"봉사와나눔"},
+        {n:11,file:"g6/conversation/g6_english_tb_11_미래사회.html",title:"미래사회"},
+        {n:12,file:"g6/conversation/g6_english_tb_12_자기소개서.html",title:"자기소개서"},
+        {n:13,file:"g6/conversation/g6_english_tb_13_면접영어기초.html",title:"면접영어기초"},
+        {n:14,file:"g6/conversation/g6_english_tb_14_졸업스피치.html",title:"졸업스피치"},
+        {n:15,file:"g6/conversation/g6_english_tb_15_종합복습.html",title:"종합복습"},
+       ]
+      },
+      {name:"문법", emoji:"📐",
+       lessons: [
+        {n:1,file:"g6/grammar/g6_english_adv_01_시제태통합정리.html",title:"시제태통합정리"},
+        {n:2,file:"g6/grammar/g6_english_adv_02_준동사통합정리.html",title:"준동사통합정리"},
+        {n:3,file:"g6/grammar/g6_english_adv_03_관계사통합정리.html",title:"관계사통합정리"},
+        {n:4,file:"g6/grammar/g6_english_adv_04_가정법통합정리.html",title:"가정법통합정리"},
+        {n:5,file:"g6/grammar/g6_english_adv_05_특수구문통합정리.html",title:"특수구문통합정리"},
+        {n:6,file:"g6/grammar/g6_english_adv_06_비교구문완성.html",title:"비교구문완성"},
+        {n:7,file:"g6/grammar/g6_english_adv_07_명사관사대명사완성.html",title:"명사관사대명사완성"},
+        {n:8,file:"g6/grammar/g6_english_adv_08_형용사부사완성.html",title:"형용사부사완성"},
+        {n:9,file:"g6/grammar/g6_english_adv_09_접속사전치사완성.html",title:"접속사전치사완성"},
+        {n:10,file:"g6/grammar/g6_english_adv_10_어법빈출패턴30선.html",title:"어법빈출패턴30선"},
+        {n:11,file:"g6/grammar/g6_english_adv_11_어법주어동사수일치.html",title:"어법주어동사수일치"},
+        {n:12,file:"g6/grammar/g6_english_adv_12_어법혼동표현.html",title:"어법혼동표현"},
+        {n:13,file:"g6/grammar/g6_english_adv_13_어법실전연습1.html",title:"어법실전연습1"},
+        {n:14,file:"g6/grammar/g6_english_adv_14_어법실전연습2.html",title:"어법실전연습2"},
+       ]
+      },
+      {name:"독해·쓰기", emoji:"📖",
+       lessons: [
+        {n:1,file:"g6/reading/g6_english_adv_15_글의목적실전.html",title:"글의목적실전"},
+        {n:2,file:"g6/reading/g6_english_adv_16_심경변화.html",title:"심경변화"},
+        {n:3,file:"g6/reading/g6_english_adv_17_필자의주장실전.html",title:"필자의주장실전"},
+        {n:4,file:"g6/reading/g6_english_adv_18_함축의미.html",title:"함축의미"},
+        {n:5,file:"g6/reading/g6_english_adv_19_글의요지실전.html",title:"글의요지실전"},
+        {n:6,file:"g6/reading/g6_english_adv_20_글의주제실전.html",title:"글의주제실전"},
+        {n:7,file:"g6/reading/g6_english_adv_21_제목추론실전.html",title:"제목추론실전"},
+        {n:8,file:"g6/reading/g6_english_adv_22_도표이해실전.html",title:"도표이해실전"},
+        {n:9,file:"g6/reading/g6_english_adv_23_내용일치실전.html",title:"내용일치실전"},
+        {n:10,file:"g6/reading/g6_english_adv_24_어법성판단실전.html",title:"어법성판단실전"},
+        {n:11,file:"g6/reading/g6_english_adv_25_어휘추론실전.html",title:"어휘추론실전"},
+        {n:12,file:"g6/reading/g6_english_adv_26_빈칸추론고난도.html",title:"빈칸추론고난도"},
+        {n:13,file:"g6/reading/g6_english_adv_27_무관한문장실전.html",title:"무관한문장실전"},
+        {n:14,file:"g6/reading/g6_english_adv_28_순서배열실전.html",title:"순서배열실전"},
+        {n:15,file:"g6/reading/g6_english_adv_29_문장삽입실전.html",title:"문장삽입실전"},
+        {n:16,file:"g6/reading/g6_english_adv_30_요약문완성실전.html",title:"요약문완성실전"},
+        {n:17,file:"g6/reading/g6_english_adv_31_장문독해1지문2문항.html",title:"장문독해1지문2문항"},
+        {n:18,file:"g6/reading/g6_english_adv_32_장문독해1지문3문항.html",title:"장문독해1지문3문항"},
+        {n:19,file:"g6/reading/g6_english_adv_33_수능독해실전모의1.html",title:"수능독해실전모의1"},
+        {n:20,file:"g6/reading/g6_english_adv_34_수능독해실전모의2.html",title:"수능독해실전모의2"},
+        {n:21,file:"g6/reading/g6_english_adv_35_특목고영어면접기초.html",title:"특목고영어면접기초"},
+        {n:22,file:"g6/reading/g6_english_adv_36_특목고영어면접심화.html",title:"특목고영어면접심화"},
+        {n:23,file:"g6/reading/g6_english_adv_37_특목고영어에세이기초.html",title:"특목고영어에세이기초"},
+        {n:24,file:"g6/reading/g6_english_adv_38_특목고영어에세이심화.html",title:"특목고영어에세이심화"},
+        {n:25,file:"g6/reading/g6_english_adv_39_특목고영어독해고난도1.html",title:"특목고영어독해고난도1"},
+        {n:26,file:"g6/reading/g6_english_adv_40_특목고영어독해고난도2.html",title:"특목고영어독해고난도2"},
+        {n:27,file:"g6/reading/g6_english_adv_41_특목고어휘완성.html",title:"특목고어휘완성"},
+        {n:28,file:"g6/reading/g6_english_adv_42_특목고문법완성.html",title:"특목고문법완성"},
+        {n:29,file:"g6/reading/g6_english_adv_43_특목고실전모의1.html",title:"특목고실전모의1"},
+        {n:30,file:"g6/reading/g6_english_adv_44_특목고실전모의2.html",title:"특목고실전모의2"},
+        {n:31,file:"g6/reading/g6_english_adv_45_영영사전활용법.html",title:"영영사전활용법"},
+        {n:32,file:"g6/reading/g6_english_adv_46_영어원서읽기전략.html",title:"영어원서읽기전략"},
+        {n:33,file:"g6/reading/g6_english_adv_47_영어일기블로그쓰기.html",title:"영어일기블로그쓰기"},
+        {n:34,file:"g6/reading/g6_english_adv_48_영어미디어활용법.html",title:"영어미디어활용법"},
+        {n:35,file:"g6/reading/g6_english_adv_49_6학년최종평가.html",title:"6학년최종평가"},
+       ]
+      },
     ]
   },
-  {
-    name:"영문법·독해 종합", emoji:"📚", color:"#0097A7", desc:"문법·독해 실력 키우기", star:"⭐⭐⭐",
-    lessons: [
-      {n:1,file:"07_영문법_독해종합/g4_english_adv_01_현재완료_경험완료.html",title:"현재완료 경험완료"},
-      {n:2,file:"07_영문법_독해종합/g4_english_adv_02_현재완료_계속결과.html",title:"현재완료 계속결과"},
-      {n:3,file:"07_영문법_독해종합/g4_english_adv_03_과거진행형.html",title:"과거진행형"},
-      {n:4,file:"07_영문법_독해종합/g4_english_adv_04_일반동사현재.html",title:"일반동사현재"},
-      {n:5,file:"07_영문법_독해종합/g4_english_adv_05_시제과거.html",title:"시제과거"},
-      {n:6,file:"07_영문법_독해종합/g4_english_adv_06_시제미래.html",title:"시제미래"},
-      {n:7,file:"07_영문법_독해종합/g4_english_adv_07_현재진행vs현재.html",title:"현재진행vs현재"},
-      {n:8,file:"07_영문법_독해종합/g4_english_adv_08_조동사canmaymust.html",title:"조동사canmaymust"},
-      {n:9,file:"07_영문법_독해종합/g4_english_adv_09_조동사shouldhaveto.html",title:"조동사shouldhaveto"},
-      {n:10,file:"07_영문법_독해종합/g4_english_adv_10_비교급최상급.html",title:"비교급최상급"},
-      {n:11,file:"07_영문법_독해종합/g4_english_adv_11_접속사.html",title:"접속사"},
-      {n:12,file:"07_영문법_독해종합/g4_english_adv_12_의문사총정리.html",title:"의문사총정리"},
-      {n:13,file:"07_영문법_독해종합/g4_english_adv_13_thereisare.html",title:"thereisare"},
-      {n:14,file:"07_영문법_독해종합/g4_english_adv_14_동명사to부정사.html",title:"동명사to부정사"},
-      {n:15,file:"07_영문법_독해종합/g4_english_adv_15_대명사심화.html",title:"대명사심화"},
-      {n:16,file:"07_영문법_독해종합/g4_english_adv_16_중1문법종합테스트.html",title:"중1문법종합테스트"},
-      {n:17,file:"07_영문법_독해종합/g4_english_adv_17_주제찾기.html",title:"주제찾기"},
-      {n:18,file:"07_영문법_독해종합/g4_english_adv_18_세부정보파악.html",title:"세부정보파악"},
-      {n:19,file:"07_영문법_독해종합/g4_english_adv_19_순서배열.html",title:"순서배열"},
-      {n:20,file:"07_영문법_독해종합/g4_english_adv_20_원인과결과.html",title:"원인과결과"},
-      {n:21,file:"07_영문법_독해종합/g4_english_adv_21_비교와대조.html",title:"비교와대조"},
-      {n:22,file:"07_영문법_독해종합/g4_english_adv_22_추론하기.html",title:"추론하기"},
-      {n:23,file:"07_영문법_독해종합/g4_english_adv_23_어휘추론.html",title:"어휘추론"},
-      {n:24,file:"07_영문법_독해종합/g4_english_adv_24_글의목적파악.html",title:"글의목적파악"},
-      {n:25,file:"07_영문법_독해종합/g4_english_adv_25_글의분위기.html",title:"글의분위기"},
-      {n:26,file:"07_영문법_독해종합/g4_english_adv_26_독해종합챌린지.html",title:"독해종합챌린지"},
-      {n:27,file:"07_영문법_독해종합/g4_english_adv_27_동의어반의어.html",title:"동의어반의어"},
-      {n:28,file:"07_영문법_독해종합/g4_english_adv_28_어근과접사심화.html",title:"어근과접사심화"},
-      {n:29,file:"07_영문법_독해종합/g4_english_adv_29_문단쓰기주제문.html",title:"문단쓰기주제문"},
-      {n:30,file:"07_영문법_독해종합/g4_english_adv_30_문단쓰기묘사문.html",title:"문단쓰기묘사문"},
-      {n:31,file:"07_영문법_독해종합/g4_english_adv_31_4학년종합평가.html",title:"4학년종합평가"}
-    ]
-  },
-  {
-    name:"고급표현", emoji:"🎤", color:"#E53E3E", desc:"토론·발표·에세이 쓰기", star:"⭐⭐⭐⭐",
-    lessons: [
-      {n:1,file:"08_고급표현/g5_english_tb_01_꿈과장래희망.html",title:"꿈과장래희망"},
-      {n:2,file:"08_고급표현/g5_english_tb_02_경험나누기심화.html",title:"경험나누기심화"},
-      {n:3,file:"08_고급표현/g5_english_tb_03_뉴스와미디어.html",title:"뉴스와미디어"},
-      {n:4,file:"08_고급표현/g5_english_tb_04_문화비교.html",title:"문화비교"},
-      {n:5,file:"08_고급표현/g5_english_tb_05_토론찬반.html",title:"토론찬반"},
-      {n:6,file:"08_고급표현/g5_english_tb_06_과학실험보고.html",title:"과학실험보고"},
-      {n:7,file:"08_고급표현/g5_english_tb_07_역사이야기.html",title:"역사이야기"},
-      {n:8,file:"08_고급표현/g5_english_tb_08_가정과상상.html",title:"가정과상상"},
-      {n:9,file:"08_고급표현/g5_english_tb_09_광고분석.html",title:"광고분석"},
-      {n:10,file:"08_고급표현/g5_english_tb_10_편지쓰기심화.html",title:"편지쓰기심화"},
-      {n:11,file:"08_고급표현/g5_english_tb_11_프레젠테이션.html",title:"프레젠테이션"},
-      {n:12,file:"08_고급표현/g5_english_tb_12_사회문제.html",title:"사회문제"},
-      {n:13,file:"08_고급표현/g5_english_tb_13_독서감상.html",title:"독서감상"},
-      {n:14,file:"08_고급표현/g5_english_tb_14_진로탐색.html",title:"진로탐색"},
-      {n:15,file:"08_고급표현/g5_english_tb_15_종합복습.html",title:"종합복습"},
-      {n:16,file:"08_고급표현/g6_english_tb_01_자기소개_공식버전.html",title:"자기소개 공식버전"},
-      {n:17,file:"08_고급표현/g6_english_tb_02_뉴스리포트.html",title:"뉴스리포트"},
-      {n:18,file:"08_고급표현/g6_english_tb_03_문화유산소개.html",title:"문화유산소개"},
-      {n:19,file:"08_고급표현/g6_english_tb_04_토론_심화.html",title:"토론 심화"},
-      {n:20,file:"08_고급표현/g6_english_tb_05_과학기술이야기.html",title:"과학기술이야기"},
-      {n:21,file:"08_고급표현/g6_english_tb_06_글로벌이슈.html",title:"글로벌이슈"},
-      {n:22,file:"08_고급표현/g6_english_tb_07_직업탐구_심화.html",title:"직업탐구 심화"},
-      {n:23,file:"08_고급표현/g6_english_tb_08_문학감상.html",title:"문학감상"},
-      {n:24,file:"08_고급표현/g6_english_tb_09_영어편지_공식.html",title:"영어편지 공식"},
-      {n:25,file:"08_고급표현/g6_english_tb_10_봉사와나눔.html",title:"봉사와나눔"},
-      {n:26,file:"08_고급표현/g6_english_tb_11_미래사회.html",title:"미래사회"},
-      {n:27,file:"08_고급표현/g6_english_tb_12_자기소개서.html",title:"자기소개서"},
-      {n:28,file:"08_고급표현/g6_english_tb_13_면접영어기초.html",title:"면접영어기초"},
-      {n:29,file:"08_고급표현/g6_english_tb_14_졸업스피치.html",title:"졸업스피치"},
-      {n:30,file:"08_고급표현/g6_english_tb_15_종합복습.html",title:"종합복습"}
-    ]
-  },
-  {
-    name:"고급문법", emoji:"🧠", color:"#6B46C1", desc:"고급 영문법 완전 정복", star:"⭐⭐⭐⭐",
-    lessons: [
-      {n:1,file:"09_고급문법/g5_english_adv_01_현재완료진행형.html",title:"현재완료진행형"},
-      {n:2,file:"09_고급문법/g5_english_adv_02_과거완료.html",title:"과거완료"},
-      {n:3,file:"09_고급문법/g5_english_adv_03_분사.html",title:"분사"},
-      {n:4,file:"09_고급문법/g5_english_adv_04_분사구문기초.html",title:"분사구문기초"},
-      {n:5,file:"09_고급문법/g5_english_adv_05_가정법과거.html",title:"가정법과거"},
-      {n:6,file:"09_고급문법/g5_english_adv_06_가정법과거완료.html",title:"가정법과거완료"},
-      {n:7,file:"09_고급문법/g5_english_adv_07_관계부사.html",title:"관계부사"},
-      {n:8,file:"09_고급문법/g5_english_adv_08_사역동사.html",title:"사역동사"},
-      {n:9,file:"09_고급문법/g5_english_adv_09_지각동사.html",title:"지각동사"},
-      {n:10,file:"09_고급문법/g5_english_adv_10_접속사고급.html",title:"접속사고급"},
-      {n:11,file:"09_고급문법/g5_english_adv_11_수동태심화.html",title:"수동태심화"},
-      {n:12,file:"09_고급문법/g5_english_adv_12_it가주어가목적어.html",title:"it가주어가목적어"},
-      {n:13,file:"09_고급문법/g5_english_adv_13_강조도치.html",title:"강조도치"},
-      {n:14,file:"09_고급문법/g5_english_adv_14_시제일치화법전환.html",title:"시제일치화법전환"},
-      {n:15,file:"09_고급문법/g5_english_adv_15_전치사고급.html",title:"전치사고급"},
-      {n:16,file:"09_고급문법/g5_english_adv_16_중3문법종합테스트.html",title:"중3문법종합테스트"}
-    ]
-  },
-  {
-    name:"수능영어", emoji:"🎯", color:"#2D3748", desc:"수능 전 유형 완벽 대비", star:"⭐⭐⭐⭐",
-    lessons: [
-      {n:1,file:"10_수능영어/g5_english_adv_17_심경분위기파악.html",title:"심경분위기파악"},
-      {n:2,file:"10_수능영어/g5_english_adv_18_글의목적파악.html",title:"글의목적파악"},
-      {n:3,file:"10_수능영어/g5_english_adv_19_요지주제파악.html",title:"요지주제파악"},
-      {n:4,file:"10_수능영어/g5_english_adv_20_제목찾기.html",title:"제목찾기"},
-      {n:5,file:"10_수능영어/g5_english_adv_21_빈칸추론기초.html",title:"빈칸추론기초"},
-      {n:6,file:"10_수능영어/g5_english_adv_22_빈칸추론심화.html",title:"빈칸추론심화"},
-      {n:7,file:"10_수능영어/g5_english_adv_23_지칭추론.html",title:"지칭추론"},
-      {n:8,file:"10_수능영어/g5_english_adv_24_글의순서배열.html",title:"글의순서배열"},
-      {n:9,file:"10_수능영어/g5_english_adv_25_문장삽입.html",title:"문장삽입"},
-      {n:10,file:"10_수능영어/g5_english_adv_26_함축의미파악.html",title:"함축의미파악"},
-      {n:11,file:"10_수능영어/g5_english_adv_27_장문독해.html",title:"장문독해"},
-      {n:12,file:"10_수능영어/g5_english_adv_28_독해종합모의.html",title:"독해종합모의"},
-      {n:13,file:"10_수능영어/g5_english_adv_29_수능어휘1.html",title:"수능어휘1"},
-      {n:14,file:"10_수능영어/g5_english_adv_30_수능어휘2.html",title:"수능어휘2"},
-      {n:15,file:"10_수능영어/g5_english_adv_31_수능어휘3.html",title:"수능어휘3"},
-      {n:16,file:"10_수능영어/g5_english_adv_32_어근으로외우기.html",title:"어근으로외우기"},
-      {n:17,file:"10_수능영어/g5_english_adv_33_어휘종합챌린지.html",title:"어휘종합챌린지"},
-      {n:18,file:"10_수능영어/g5_english_adv_34_OpinionEssay.html",title:"OpinionEssay"},
-      {n:19,file:"10_수능영어/g5_english_adv_35_CompareContrast.html",title:"CompareContrast"},
-      {n:20,file:"10_수능영어/g5_english_adv_36_ProblemSolution.html",title:"ProblemSolution"},
-      {n:21,file:"10_수능영어/g5_english_adv_37_요약문쓰기.html",title:"요약문쓰기"},
-      {n:22,file:"10_수능영어/g5_english_adv_38_서평쓰기.html",title:"서평쓰기"},
-      {n:23,file:"10_수능영어/g5_english_adv_39_종합평가.html",title:"종합평가"},
-      {n:24,file:"10_수능영어/g5_english_adv_40_수능어법판단.html",title:"수능어법판단"},
-      {n:25,file:"10_수능영어/g5_english_adv_41_수능독해실전1.html",title:"수능독해실전1"},
-      {n:26,file:"10_수능영어/g5_english_adv_42_수능독해실전2.html",title:"수능독해실전2"},
-      {n:27,file:"10_수능영어/g5_english_adv_43_최종평가.html",title:"최종평가"},
-      {n:28,file:"10_수능영어/g6_english_adv_01_시제태통합정리.html",title:"시제태통합정리"},
-      {n:29,file:"10_수능영어/g6_english_adv_02_준동사통합정리.html",title:"준동사통합정리"},
-      {n:30,file:"10_수능영어/g6_english_adv_03_관계사통합정리.html",title:"관계사통합정리"},
-      {n:31,file:"10_수능영어/g6_english_adv_04_가정법통합정리.html",title:"가정법통합정리"},
-      {n:32,file:"10_수능영어/g6_english_adv_05_특수구문통합정리.html",title:"특수구문통합정리"},
-      {n:33,file:"10_수능영어/g6_english_adv_06_비교구문완성.html",title:"비교구문완성"},
-      {n:34,file:"10_수능영어/g6_english_adv_07_명사관사대명사완성.html",title:"명사관사대명사완성"},
-      {n:35,file:"10_수능영어/g6_english_adv_08_형용사부사완성.html",title:"형용사부사완성"},
-      {n:36,file:"10_수능영어/g6_english_adv_09_접속사전치사완성.html",title:"접속사전치사완성"},
-      {n:37,file:"10_수능영어/g6_english_adv_10_어법빈출패턴30선.html",title:"어법빈출패턴30선"},
-      {n:38,file:"10_수능영어/g6_english_adv_11_어법주어동사수일치.html",title:"어법주어동사수일치"},
-      {n:39,file:"10_수능영어/g6_english_adv_12_어법혼동표현.html",title:"어법혼동표현"},
-      {n:40,file:"10_수능영어/g6_english_adv_13_어법실전연습1.html",title:"어법실전연습1"},
-      {n:41,file:"10_수능영어/g6_english_adv_14_어법실전연습2.html",title:"어법실전연습2"},
-      {n:42,file:"10_수능영어/g6_english_adv_15_글의목적실전.html",title:"글의목적실전"},
-      {n:43,file:"10_수능영어/g6_english_adv_16_심경변화.html",title:"심경변화"},
-      {n:44,file:"10_수능영어/g6_english_adv_17_필자의주장실전.html",title:"필자의주장실전"},
-      {n:45,file:"10_수능영어/g6_english_adv_18_함축의미.html",title:"함축의미"},
-      {n:46,file:"10_수능영어/g6_english_adv_19_글의요지실전.html",title:"글의요지실전"},
-      {n:47,file:"10_수능영어/g6_english_adv_20_글의주제실전.html",title:"글의주제실전"},
-      {n:48,file:"10_수능영어/g6_english_adv_21_제목추론실전.html",title:"제목추론실전"},
-      {n:49,file:"10_수능영어/g6_english_adv_22_도표이해실전.html",title:"도표이해실전"},
-      {n:50,file:"10_수능영어/g6_english_adv_23_내용일치실전.html",title:"내용일치실전"},
-      {n:51,file:"10_수능영어/g6_english_adv_24_어법성판단실전.html",title:"어법성판단실전"},
-      {n:52,file:"10_수능영어/g6_english_adv_25_어휘추론실전.html",title:"어휘추론실전"},
-      {n:53,file:"10_수능영어/g6_english_adv_26_빈칸추론고난도.html",title:"빈칸추론고난도"},
-      {n:54,file:"10_수능영어/g6_english_adv_27_무관한문장실전.html",title:"무관한문장실전"},
-      {n:55,file:"10_수능영어/g6_english_adv_28_순서배열실전.html",title:"순서배열실전"},
-      {n:56,file:"10_수능영어/g6_english_adv_29_문장삽입실전.html",title:"문장삽입실전"},
-      {n:57,file:"10_수능영어/g6_english_adv_30_요약문완성실전.html",title:"요약문완성실전"},
-      {n:58,file:"10_수능영어/g6_english_adv_31_장문독해1지문2문항.html",title:"장문독해1지문2문항"},
-      {n:59,file:"10_수능영어/g6_english_adv_32_장문독해1지문3문항.html",title:"장문독해1지문3문항"},
-      {n:60,file:"10_수능영어/g6_english_adv_33_수능독해실전모의1.html",title:"수능독해실전모의1"},
-      {n:61,file:"10_수능영어/g6_english_adv_34_수능독해실전모의2.html",title:"수능독해실전모의2"}
-    ]
-  },
-  {
-    name:"최고도전", emoji:"🏆", color:"#B7791F", desc:"특목고·자기주도 학습", star:"⭐⭐⭐⭐",
-    lessons: [
-      {n:1,file:"11_최고도전/g6_english_adv_35_특목고영어면접기초.html",title:"특목고영어면접기초"},
-      {n:2,file:"11_최고도전/g6_english_adv_36_특목고영어면접심화.html",title:"특목고영어면접심화"},
-      {n:3,file:"11_최고도전/g6_english_adv_37_특목고영어에세이기초.html",title:"특목고영어에세이기초"},
-      {n:4,file:"11_최고도전/g6_english_adv_38_특목고영어에세이심화.html",title:"특목고영어에세이심화"},
-      {n:5,file:"11_최고도전/g6_english_adv_39_특목고영어독해고난도1.html",title:"특목고영어독해고난도1"},
-      {n:6,file:"11_최고도전/g6_english_adv_40_특목고영어독해고난도2.html",title:"특목고영어독해고난도2"},
-      {n:7,file:"11_최고도전/g6_english_adv_41_특목고어휘완성.html",title:"특목고어휘완성"},
-      {n:8,file:"11_최고도전/g6_english_adv_42_특목고문법완성.html",title:"특목고문법완성"},
-      {n:9,file:"11_최고도전/g6_english_adv_43_특목고실전모의1.html",title:"특목고실전모의1"},
-      {n:10,file:"11_최고도전/g6_english_adv_44_특목고실전모의2.html",title:"특목고실전모의2"},
-      {n:11,file:"11_최고도전/g6_english_adv_45_영영사전활용법.html",title:"영영사전활용법"},
-      {n:12,file:"11_최고도전/g6_english_adv_46_영어원서읽기전략.html",title:"영어원서읽기전략"},
-      {n:13,file:"11_최고도전/g6_english_adv_47_영어일기블로그쓰기.html",title:"영어일기블로그쓰기"},
-      {n:14,file:"11_최고도전/g6_english_adv_48_영어미디어활용법.html",title:"영어미디어활용법"},
-      {n:15,file:"11_최고도전/g6_english_adv_49_6학년최종평가.html",title:"6학년최종평가"}
-    ]
-  }
 ];
 
 const content = document.getElementById('content');
-UNITS.forEach((unit, i) => {
+GRADES.forEach((grade, gi) => {
+  const totalLessons = grade.areas.reduce((s,a) => s + a.lessons.length, 0);
+  const gradeId = 'grade-' + gi;
   const section = document.createElement('div');
-  section.className = 'unit-section';
-  const id = 'level-' + i;
+  section.className = 'grade-section';
+
+  let areasHTML = '';
+  grade.areas.forEach((area, ai) => {
+    const areaId = `area-${gi}-${ai}`;
+    const lessonsHTML = area.lessons.map(l => `
+      <a class="lesson-card" href="${l.file}" style="--gc:${grade.color}">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <div class="lesson-arrow">›</div>
+      </a>
+    `).join('');
+
+    areasHTML += `
+      <div class="area-block">
+        <div class="area-header" style="--gc:${grade.color}" onclick="toggleArea('${areaId}')">
+          <span class="area-emoji">${area.emoji}</span>
+          <span>${area.name}</span>
+          <span class="area-count">${area.lessons.length}개</span>
+          <span class="area-arrow" id="arrow-${areaId}">›</span>
+        </div>
+        <div class="lesson-list" id="${areaId}">
+          ${lessonsHTML}
+        </div>
+      </div>
+    `;
+  });
+
   section.innerHTML = `
-    <div class="unit-toggle" style="--uc:${unit.color}" onclick="toggleLevel('${id}',this)">
-      <div class="unit-emoji">${unit.emoji}</div>
-      <div class="unit-info">
-        <div class="unit-name" style="color:${unit.color}">Level ${i+1} · ${unit.name}</div>
-        <div class="unit-desc">${unit.desc}</div>
+    <div class="grade-toggle" style="--gc:${grade.color}" onclick="toggleGrade('${gradeId}')">
+      <div class="grade-emoji">${grade.emoji}</div>
+      <div class="grade-info">
+        <div class="grade-name" style="color:${grade.color}">${grade.name}</div>
+        <div class="grade-desc">${grade.desc}</div>
       </div>
-      <div class="unit-meta">
-        <div class="unit-star">${unit.star}</div>
-        <div class="unit-count">${unit.lessons.length}개</div>
-      </div>
-      <div class="unit-arrow" id="arrow-${id}">›</div>
+      <div class="grade-count">${totalLessons}개</div>
+      <div class="grade-arrow" id="arrow-${gradeId}">›</div>
     </div>
-    <div class="lesson-list" id="${id}">
-      ${unit.lessons.map(l => `
-        <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
-          <div class="lesson-num">${l.n}</div>
-          <div class="lesson-title">${l.title}</div>
-          <div class="lesson-arrow">›</div>
-        </a>
-      `).join('')}
+    <div class="grade-body" id="${gradeId}">
+      ${areasHTML}
     </div>
   `;
   content.appendChild(section);
 });
 
-function toggleLevel(id, el) {
-  const list = document.getElementById(id);
-  const arrow = document.getElementById('arrow-' + id);
-  list.classList.toggle('open');
-  arrow.classList.toggle('open');
+function toggleGrade(id) {
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById('arrow-' + id).classList.toggle('open');
+}
+function toggleArea(id) {
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById('arrow-' + id).classList.toggle('open');
 }
 </script>
 </body>
