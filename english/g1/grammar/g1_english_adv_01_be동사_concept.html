@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 1학년 문법 01 — be동사 개념편</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF5F0;
+  --card: #FFFFFF;
+  --primary: #FF6B6B;
+  --primary-light: #FFE0E0;
+  --secondary: #FF9E7A;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #4A9EFF;
+  --blue-light: #E0F0FF;
+  --purple: #9C88FF;
+  --purple-light: #EDE7FF;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:26px; padding:4px 8px; border-radius:10px; }
+.progress-wrap { display:flex; align-items:center; gap:8px; flex:1; margin:0 12px; }
+.progress-bar { flex:1; height:10px; background:#FFE0D0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s; }
+.page-info { font-size:18px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:20px; font-weight:700; color:#E6A800; }
+.kedu-logo { display:flex; align-items:center; gap:4px; background:var(--primary); color:#fff; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 18px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; overflow-y:auto; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:640px; }
+.slide-title { font-size:24px; color:var(--text); text-align:center; margin-bottom:10px; line-height:1.4; }
+.slide-chip { display:inline-block; background:var(--primary); color:#fff; border-radius:99px; padding:4px 14px; font-size:16px; margin-bottom:8px; }
+
+/* Hook(왜?) */
+.hook-q { font-size:32px; text-align:center; color:var(--primary); margin:14px 0; line-height:1.5; }
+.hook-emoji { font-size:72px; text-align:center; margin:6px 0; }
+
+/* 케이 말풍선 — 1학년 대표 캐릭터 */
+.kay-bubble { display:flex; align-items:flex-start; gap:10px; background:var(--yellow-light); border:3px solid var(--yellow); border-radius:18px; padding:14px; margin:14px 0; }
+.kay-icon { font-size:44px; flex-shrink:0; }
+.kay-text { font-size:19px; line-height:1.55; flex:1; text-align:left; }
+.kay-text b { color:var(--primary); }
+
+/* 한국어 vs 영어 대비 */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.compare-box { padding:16px 10px; border-radius:14px; text-align:center; }
+.compare-box.ko { background:var(--blue-light); border:3px solid var(--blue); }
+.compare-box.en { background:var(--primary-light); border:3px solid var(--primary); }
+.compare-label { font-size:16px; margin-bottom:8px; }
+.compare-text { font-size:22px; line-height:1.5; }
+.compare-text b { color:var(--red); }
+
+/* 등호 비유 */
+.equation { display:flex; align-items:center; justify-content:center; gap:10px; margin:20px 0; flex-wrap:wrap; }
+.eq-box { background:var(--primary-light); border:3px solid var(--primary); border-radius:14px; padding:14px 18px; font-size:28px; text-align:center; min-width:80px; color:var(--primary); }
+.eq-sign { font-size:44px; color:var(--primary); }
+
+/* 짝꿍 행 */
+.pair-row { display:grid; grid-template-columns:2fr auto 1fr; gap:10px; align-items:center; margin:10px 0; padding:12px 14px; background:var(--primary-light); border-radius:14px; border:2px solid var(--primary); }
+.pair-subject { font-size:24px; }
+.pair-arrow { font-size:26px; color:var(--primary); }
+.pair-be { font-size:30px; color:var(--primary); text-align:center; }
+.pair-example { grid-column:1/-1; font-size:18px; color:var(--text); text-align:center; margin-top:6px; background:#fff; border-radius:10px; padding:8px; cursor:pointer; transition:transform .2s; }
+.pair-example:hover { transform:scale(1.02); }
+.pair-example b { color:var(--primary); }
+.pair-example .ko-meaning { display:block; font-size:14px; color:var(--subtext); margin-top:2px; }
+
+/* 맞는 것/틀린 것 */
+.good-bad { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.gb-box { border-radius:14px; padding:16px 10px; text-align:center; font-size:22px; line-height:1.5; }
+.gb-good { background:var(--green-light); border:3px solid var(--green); color:var(--green); }
+.gb-bad { background:var(--red-light); border:3px solid var(--red); color:var(--red); }
+.gb-label { display:block; font-size:15px; margin-bottom:6px; }
+
+/* 체험: 문장 조립기 */
+.builder-display { background:var(--primary-light); border:3px dashed var(--primary); border-radius:16px; padding:20px; margin:14px 0; text-align:center; font-size:32px; color:var(--primary); min-height:80px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; line-height:1.4; }
+.builder-slot { display:inline-block; min-width:80px; padding:4px 10px; }
+.builder-slot.empty { color:#BBB; border-bottom:4px dashed var(--primary); }
+.builder-slot.filled { background:#fff; border-radius:10px; padding:6px 14px; }
+.builder-label { font-size:18px; color:var(--subtext); margin-top:10px; margin-bottom:8px; text-align:center; }
+.builder-btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.builder-btn { background:#fff; border:3px solid #E0D0C0; border-radius:14px; padding:12px 22px; font-family:'Jua',sans-serif; font-size:26px; cursor:pointer; transition:all .2s; min-width:80px; }
+.builder-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.builder-btn.correct-flash { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.builder-btn.wrong-flash { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+/* 확인 문제 */
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border-radius:99px; padding:5px 16px; font-size:20px; margin-bottom:10px; }
+.stars { color:#FCD34D; }
+.question-text { font-size:26px; text-align:center; margin:8px 0 14px; line-height:1.5; }
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { width:100%; max-width:500px; }
+.choice-btn { background:var(--card); border:3px solid #E0D0C0; border-radius:14px; padding:12px 22px; font-family:'Jua',sans-serif; font-size:24px; cursor:pointer; transition:all .2s; }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+.feedback { font-size:20px; text-align:center; margin-top:12px; min-height:28px; border-radius:12px; padding:5px 14px; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+
+/* 스피커 아이콘 */
+.speaker { display:inline-block; cursor:pointer; font-size:20px; margin-left:6px; }
+
+/* 정리 */
+.summary-box { background:var(--primary-light); border-radius:16px; padding:18px; margin:14px 0; }
+.summary-item { display:flex; gap:10px; align-items:flex-start; margin:10px 0; font-size:20px; line-height:1.5; text-align:left; }
+.summary-num { background:var(--primary); color:#fff; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; margin-top:2px; }
+.summary-item b { color:var(--primary); }
+
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #F0E0D0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:14px; padding:12px 32px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.practice-link { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; border:none; border-radius:16px; padding:14px 28px; font-family:'Jua',sans-serif; font-size:24px; cursor:pointer; box-shadow:0 4px 14px rgba(255,107,107,0.3); margin-top:14px; transition:transform .2s; }
+.practice-link:hover { transform:translateY(-2px); }
+
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:24px; color:#E6A800; z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 10</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🐶 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- ============================================================ -->
+<!-- S0 · 왜? (원칙 3) -->
+<!-- ============================================================ -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">왜 배워야 해?</span>
+    <div class="hook-emoji">🤔</div>
+    <div class="hook-q">"나 행복해"를<br>영어로 어떻게 말할까?</div>
+    <div class="good-bad" style="margin-top:16px">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 이러면 안 돼</span>
+        I happy
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 이렇게!</span>
+        I <u>am</u> happy
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">안녕! 나는 <b>케이</b>야!<br>"I happy"라고 하면 이상해.<br><b>"am"</b>이 꼭 있어야 돼!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S1 · 한국어 vs 영어 앵커 (원칙 1) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">한국어랑 뭐가 달라?</span>
+    <div class="slide-title">🇰🇷 vs 🇺🇸</div>
+    <div class="compare-grid">
+      <div class="compare-box ko">
+        <div class="compare-label">🇰🇷 한국어</div>
+        <div class="compare-text">나 행복<b>해</b><br>나 학생<b>이야</b></div>
+      </div>
+      <div class="compare-box en">
+        <div class="compare-label">🇺🇸 영어</div>
+        <div class="compare-text">I <b>am</b> happy<br>I <b>am</b> a student</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">한국어는 <b>"~해, ~이야"</b>가 뒤에 붙어!<br>영어는 그 자리에 <b>am, is, are</b>를 써!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S2 · 비유 — 등호(=) (원칙 2) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">쉽게 기억하기</span>
+    <div class="slide-title">🟰 <b style="color:var(--primary)">am / is / are</b>는<br><b style="color:var(--primary)">=표시</b> 같은 거야!</div>
+    <div class="equation">
+      <div class="eq-box">I</div>
+      <div class="eq-sign">=</div>
+      <div class="eq-box">happy</div>
+    </div>
+    <div style="font-size:22px; color:var(--text); margin:14px 0; line-height:1.6">
+      "나 = 행복해"<br>
+      이렇게 <b style="color:var(--primary)">이어주는 다리</b>야!
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">왼쪽이랑 오른쪽을 <b>=표시</b>로 이어주는 친구!<br>이름은 <b>am, is, are</b> 셋이야!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S3 · am / is / are 세 친구 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">세 친구를 만나보자</span>
+    <div class="slide-title">📦 <b style="color:var(--primary)">3명</b>밖에 없어!</div>
+    <div style="display:flex;justify-content:center;gap:12px;margin:20px 0;flex-wrap:wrap">
+      <div class="eq-box" style="font-size:30px;padding:18px 24px;cursor:pointer" onclick="speakWord('am')">am <span class="speaker">🔊</span></div>
+      <div class="eq-box" style="font-size:30px;padding:18px 24px;cursor:pointer" onclick="speakWord('is')">is <span class="speaker">🔊</span></div>
+      <div class="eq-box" style="font-size:30px;padding:18px 24px;cursor:pointer" onclick="speakWord('are')">are <span class="speaker">🔊</span></div>
+    </div>
+    <div style="font-size:20px; color:var(--subtext); margin:10px 0">👆 눌러서 들어봐!</div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>누가</b> 말하느냐에 따라<br>셋 중 <b>하나</b>를 골라 쓰는 거야!<br>지금부터 짝을 알려줄게 💪</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S4 · 짝꿍 1: I → am -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">짝꿍 1</span>
+    <div class="slide-title">👤 <b style="color:var(--primary)">I (나)</b>는 <b style="color:var(--primary)">am</b>!</div>
+    <div class="pair-row">
+      <div class="pair-subject">I (나)</div>
+      <div class="pair-arrow">→</div>
+      <div class="pair-be">am</div>
+      <div class="pair-example" onclick="speakWord('I am happy')">
+        🔊 I <b>am</b> happy.
+        <span class="ko-meaning">나는 행복해.</span>
+      </div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-subject">I (나)</div>
+      <div class="pair-arrow">→</div>
+      <div class="pair-be">am</div>
+      <div class="pair-example" onclick="speakWord('I am Kay')">
+        🔊 I <b>am</b> Kay.
+        <span class="ko-meaning">나는 케이야.</span>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>"나"</b>는 세상에 한 명!<br>그래서 <b>am</b>이랑만 붙어 다녀!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S5 · 짝꿍 2: You → are, She/He/It → is -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">짝꿍 2</span>
+    <div class="slide-title">👥 <b style="color:var(--primary)">You</b>는 <b style="color:var(--primary)">are</b>!<br>👦 <b style="color:var(--primary)">He / She / It</b>은 <b style="color:var(--primary)">is</b>!</div>
+    <div class="pair-row" style="background:var(--blue-light);border-color:var(--blue)">
+      <div class="pair-subject" style="color:var(--blue)">You (너)</div>
+      <div class="pair-arrow" style="color:var(--blue)">→</div>
+      <div class="pair-be" style="color:var(--blue)">are</div>
+      <div class="pair-example" onclick="speakWord('You are kind')">
+        🔊 You <b style="color:var(--blue)">are</b> kind.
+        <span class="ko-meaning">너는 착해.</span>
+      </div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-subject">She (그녀)</div>
+      <div class="pair-arrow">→</div>
+      <div class="pair-be">is</div>
+      <div class="pair-example" onclick="speakWord('She is pretty')">
+        🔊 She <b>is</b> pretty.
+        <span class="ko-meaning">그녀는 예뻐.</span>
+      </div>
+    </div>
+    <div class="pair-row">
+      <div class="pair-subject">It (그것)</div>
+      <div class="pair-arrow">→</div>
+      <div class="pair-be">is</div>
+      <div class="pair-example" onclick="speakWord('It is a cat')">
+        🔊 It <b>is</b> a cat.
+        <span class="ko-meaning">그건 고양이야.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S6 · 오개념 (원칙 6) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">조심! 많이 틀려</span>
+    <div class="slide-title">⚠️ <b style="color:var(--red)">짝</b>을 틀리면 안 돼!</div>
+    <div class="good-bad">
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        I <u>am</u> happy.
+      </div>
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        I <u>is</u> happy.
+      </div>
+    </div>
+    <div class="good-bad">
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        She <u>is</u> kind.
+      </div>
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        She <u>am</u> kind.
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>I</b>는 무조건 <b>am</b>!<br><b>She / He / It</b>은 무조건 <b>is</b>!<br>짝을 꼭 지키자!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S7 · 체험: 문장 조립기 (원칙 7) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="20">
+  <div class="card">
+    <span class="question-label">체험하기 <span class="stars">⭐</span></span>
+    <div class="slide-title">🎮 빈칸에 들어갈 친구는?</div>
+    <div id="builderStage">
+      <div class="builder-label" id="builderQPrompt">1/3 — "나는 행복해"</div>
+      <div class="builder-display">
+        <span id="slotSubj" class="builder-slot filled">I</span>
+        <span id="slotBe" class="builder-slot empty">___</span>
+        <span id="slotRest" class="builder-slot filled">happy.</span>
+      </div>
+      <div class="builder-label">👇 눌러서 골라봐!</div>
+      <div class="builder-btns" id="builderBtns">
+        <button class="builder-btn" onclick="builderPick(this,'am')">am</button>
+        <button class="builder-btn" onclick="builderPick(this,'is')">is</button>
+        <button class="builder-btn" onclick="builderPick(this,'are')">are</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S8 · 확인 문제 (1개만!) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20">
+  <div class="card">
+    <span class="question-label">확인 문제 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">빈칸에 알맞은 건?<br><br><b style="font-size:30px">She ___ pretty.</b><br><span style="font-size:18px;color:var(--subtext)">(그녀는 예뻐)</span></div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">am</button>
+      <button class="choice-btn" onclick="answer(this,1)">is</button>
+      <button class="choice-btn" onclick="answer(this,2)">are</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S9 · 정리 + 실전편 링크 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🎯</div>
+    <div style="font-size:30px;margin:6px 0;color:var(--primary)">개념편 완료!</div>
+    <div style="font-size:18px;color:var(--subtext)">am / is / are</div>
+    <div style="margin:14px 0">
+      <span style="font-size:44px;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:20px;color:var(--subtext)">점</span>
+      <div id="resultStars" style="font-size:30px;margin-top:4px">⭐⭐⭐</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-item"><div class="summary-num">1</div><div><b>am / is / are</b>는 <b>=표시</b>야!</div></div>
+      <div class="summary-item"><div class="summary-num">2</div><div><b>I</b> → <b>am</b> &nbsp; <b>You</b> → <b>are</b></div></div>
+      <div class="summary-item"><div class="summary-num">3</div><div><b>He / She / It</b> → <b>is</b></div></div>
+    </div>
+    <button class="practice-link" onclick="goPractice()">
+      🎮 문제 풀러 가기 →
+    </button>
+    <div style="margin-top:10px">
+      <button class="nav-btn" style="padding:8px 20px;font-size:16px;background:var(--subtext)" onclick="restart()">🔄 다시 보기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=10;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,c.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.25);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.07);o.start();o.stop(c.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    const rs=document.getElementById('resultStars');
+    const re=document.getElementById('resultEmoji');
+    if(score>=35){rs.textContent='⭐⭐⭐⭐⭐';re.textContent='🏆'}
+    else if(score>=20){rs.textContent='⭐⭐⭐⭐';re.textContent='🎉'}
+    else if(score>=10){rs.textContent='⭐⭐⭐';re.textContent='🎯'}
+    else{rs.textContent='⭐⭐';re.textContent='💪'}
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    setFB('fb'+currentSlide,'✅ 정답! She는 is랑 짝! +'+pts+'점',true);
+    answered[currentSlide]=true;
+    setTimeout(nextSlide,1400);
+  } else {
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,'다시! She의 짝을 떠올려봐 💪',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== 체험(슬라이드 7): 문장 조립기 — 3문제 ==== */
+const builderQs=[
+  {prompt:'1/3 — "나는 행복해"',subj:'I',right:'am',rest:'happy.',speak:'I am happy'},
+  {prompt:'2/3 — "너는 착해"',subj:'You',right:'are',rest:'kind.',speak:'You are kind'},
+  {prompt:'3/3 — "그녀는 예뻐"',subj:'She',right:'is',rest:'pretty.',speak:'She is pretty'}
+];
+let builderStep=0;
+function builderPick(btn,val){
+  if(answered[7])return;
+  const q=builderQs[builderStep];
+  if(val===q.right){
+    btn.classList.add('correct-flash');playCorrect();
+    document.getElementById('slotBe').textContent=val;
+    document.getElementById('slotBe').classList.remove('empty');
+    document.getElementById('slotBe').classList.add('filled');
+    speakWord(q.speak);
+    builderStep++;
+    if(builderStep>=builderQs.length){
+      addScore(20);
+      setFB('fb7','✅ 완벽! am/is/are 마스터! +20점',true);
+      answered[7]=true;
+      setTimeout(nextSlide,1800);
+    } else {
+      setTimeout(()=>{
+        const next=builderQs[builderStep];
+        document.getElementById('builderQPrompt').textContent=next.prompt;
+        document.getElementById('slotSubj').textContent=next.subj;
+        document.getElementById('slotRest').textContent=next.rest;
+        document.getElementById('slotBe').textContent='___';
+        document.getElementById('slotBe').classList.add('empty');
+        document.getElementById('slotBe').classList.remove('filled');
+        document.querySelectorAll('#builderBtns .builder-btn').forEach(b=>b.classList.remove('correct-flash','wrong-flash'));
+      },1000);
+    }
+  } else {
+    btn.classList.add('wrong-flash');playWrong();combo=0;
+    setFB('fb7','다시! "'+q.subj+'"의 짝은? 💪',false);
+    setTimeout(()=>btn.classList.remove('wrong-flash'),500);
+  }
+}
+
+function goPractice(){
+  location.href='g1_english_adv_01_practice_01.html';
+}
+
+function restart(){
+  score=0;combo=0;answered={};builderStep=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.builder-btn').forEach(b=>b.className='builder-btn');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('slotBe').textContent='___';
+  document.getElementById('slotBe').className='builder-slot empty';
+  document.getElementById('slotSubj').textContent=builderQs[0].subj;
+  document.getElementById('slotRest').textContent=builderQs[0].rest;
+  document.getElementById('builderQPrompt').textContent=builderQs[0].prompt;
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+let touchStartX=0;
+document.getElementById('slidesWrap').addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});
+document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=touchStartX-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+updateUI();
+</script>
+</body>
+</html>
