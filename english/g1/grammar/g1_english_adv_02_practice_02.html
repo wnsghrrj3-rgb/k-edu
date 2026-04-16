@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 1학년 문법 02 — This/That + a/an 실전편 2 (심화)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF5F0;
+  --card: #FFFFFF;
+  --primary: #FF6B6B;
+  --primary-light: #FFE0E0;
+  --secondary: #FF9E7A;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #4A9EFF;
+  --blue-light: #E0F0FF;
+  --purple: #9C88FF;
+  --purple-light: #EDE7FF;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:26px; padding:4px 8px; border-radius:10px; }
+.progress-wrap { display:flex; align-items:center; gap:8px; flex:1; margin:0 12px; }
+.progress-bar { flex:1; height:10px; background:#FFE0D0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s; }
+.page-info { font-size:18px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:20px; font-weight:700; color:#E6A800; }
+.kedu-logo { display:flex; align-items:center; gap:4px; background:var(--primary); color:#fff; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 18px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; overflow-y:auto; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:640px; }
+
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border-radius:99px; padding:5px 16px; font-size:20px; margin-bottom:10px; }
+.review-tag { display:inline-block; background:var(--yellow); color:#fff; border-radius:99px; padding:3px 10px; font-size:14px; margin-left:6px; vertical-align:middle; }
+.stars { color:#FCD34D; }
+.question-text { font-size:24px; text-align:center; margin:8px 0 14px; line-height:1.5; }
+.question-sub { font-size:17px; text-align:center; color:var(--subtext); margin-bottom:14px; }
+
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { width:100%; max-width:500px; }
+.choice-btn { background:var(--card); border:3px solid #E0D0C0; border-radius:14px; padding:12px 18px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; text-align:center; }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+.feedback { font-size:18px; text-align:center; margin-top:12px; min-height:28px; border-radius:12px; padding:5px 14px; line-height:1.5; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+
+.scene-box { background:var(--purple-light); border:3px solid var(--purple); border-radius:14px; padding:14px; margin:10px 0; font-size:20px; line-height:1.6; text-align:center; }
+.scene-box b { color:var(--purple); }
+.scene-box .ko { display:block; font-size:15px; color:var(--subtext); margin-top:6px; }
+
+/* 비교 2개 (a cat vs an cat) */
+.compare-choose { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+.cc-btn { background:#fff; border:4px solid #E0D0C0; border-radius:16px; padding:18px 10px; cursor:pointer; font-family:'Jua',sans-serif; font-size:26px; text-align:center; transition:all .2s; }
+.cc-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.cc-btn .cc-emoji { font-size:36px; display:block; margin-bottom:6px; }
+.cc-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.cc-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+/* 순서 배치 (드래그 대신 탭으로 순서 선택) */
+.order-stage { background:var(--primary-light); border:3px dashed var(--primary); border-radius:14px; padding:16px; margin:12px 0; min-height:56px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; }
+.order-slot { background:#fff; border:2px solid var(--primary); border-radius:10px; padding:8px 14px; font-size:20px; animation:cpop .3s; }
+.order-empty { color:#BBB; font-size:18px; }
+.order-pool { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
+.order-chip { background:#fff; border:3px solid #E0D0C0; border-radius:12px; padding:10px 18px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; }
+.order-chip:hover { border-color:var(--primary); transform:translateY(-2px); }
+.order-chip.used { opacity:.3; pointer-events:none; }
+.order-reset { background:var(--subtext); color:#fff; border:none; border-radius:10px; padding:6px 14px; font-family:'Jua',sans-serif; font-size:16px; cursor:pointer; margin-top:6px; }
+
+/* 빈칸 2개 */
+.fill-sentence { font-size:24px; text-align:center; margin:14px 0; line-height:1.8; }
+.fill-blank { display:inline-block; min-width:60px; padding:4px 10px; border-bottom:4px solid var(--primary); color:var(--primary); }
+.fill-blank.filled { background:#fff; border-radius:8px; border:2px solid var(--primary); }
+.fill-pair { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:10px; }
+
+/* 1단원 누적 뱃지 */
+.cum-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:10px; padding:6px 10px; font-size:14px; color:#A67C00; display:inline-block; margin-bottom:8px; }
+
+/* TTS 카드 */
+.tts-card { background:var(--yellow-light); border:3px solid var(--yellow); border-radius:14px; padding:14px; margin:10px 0; text-align:center; cursor:pointer; transition:transform .2s; }
+.tts-card:hover { transform:scale(1.02); }
+.tts-card .tts-icon { font-size:38px; }
+
+/* 오답 4개 분석 */
+.err-list { display:flex; flex-direction:column; gap:8px; margin:14px 0; }
+.err-item { background:#fff; border:3px solid #E0D0C0; border-radius:12px; padding:10px 14px; font-size:20px; cursor:pointer; text-align:center; transition:all .2s; }
+.err-item:hover { border-color:var(--primary); transform:translateY(-2px); }
+.err-item.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.err-item.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+/* 대화 완성 */
+.dialog-bubble { border-radius:14px; padding:14px; margin:8px 0; font-size:20px; line-height:1.5; }
+.dialog-bubble.me { background:var(--blue-light); border:3px solid var(--blue); text-align:right; }
+.dialog-bubble.you { background:var(--primary-light); border:3px solid var(--primary); text-align:left; }
+.dialog-bubble b { color:var(--primary); }
+.dialog-blank { display:inline-block; min-width:55px; padding:2px 10px; border-bottom:3px solid var(--primary); color:var(--primary); font-weight:700; }
+
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #F0E0D0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:14px; padding:12px 32px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.practice-link { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; border:none; border-radius:16px; padding:14px 28px; font-family:'Jua',sans-serif; font-size:24px; cursor:pointer; box-shadow:0 4px 14px rgba(255,107,107,0.3); margin-top:14px; transition:transform .2s; }
+.practice-link:hover { transform:translateY(-2px); }
+
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:24px; color:#E6A800; z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+
+/* 스피커 */
+.speaker { display:inline-block; cursor:pointer; font-size:22px; margin-left:6px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 10</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🐶 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- ============================================================ -->
+<!-- Q1 · 비교 — a cat vs an cat (⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide active" data-type="q" data-score="25">
+  <div class="card">
+    <span class="question-label">문제 1 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">둘 중 <b style="color:var(--primary)">맞는 것</b>은?</div>
+    <div class="compare-choose">
+      <button class="cc-btn" onclick="q1pick(this,'a')">
+        <span class="cc-emoji">🐱</span>
+        a cat
+      </button>
+      <button class="cc-btn" onclick="q1pick(this,'an')">
+        <span class="cc-emoji">🐱</span>
+        an cat
+      </button>
+    </div>
+    <div class="feedback" id="fb0"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q2 · 순서 배치 — "This is an apple" (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 2 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">🧩 조각을 눌러서 문장 만들기!</div>
+    <div class="question-sub">"이건 사과야" 🍎</div>
+    <div class="order-stage" id="order1Stage">
+      <span class="order-empty" id="order1Empty">👆 아래에서 순서대로 눌러주세요</span>
+    </div>
+    <div class="order-pool" id="order1Pool">
+      <button class="order-chip" onclick="orderPick(1,this,'apple')">apple</button>
+      <button class="order-chip" onclick="orderPick(1,this,'This')">This</button>
+      <button class="order-chip" onclick="orderPick(1,this,'an')">an</button>
+      <button class="order-chip" onclick="orderPick(1,this,'is')">is</button>
+    </div>
+    <div style="text-align:center">
+      <button class="order-reset" onclick="orderReset(1)">🔄 다시</button>
+    </div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q3 · 빈칸 2개 — That / a book (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 3 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">📘 두 개의 빈칸 채우기!</div>
+    <div class="question-sub">저 멀리 있는 책 한 권 📖</div>
+    <div class="fill-sentence">
+      <span class="fill-blank" id="fill3_1">___</span> is
+      <span class="fill-blank" id="fill3_2">___</span> book.
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:17px;text-align:center;color:var(--subtext);margin-bottom:6px">첫 번째 빈칸:</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="fill3pick('1','This')">This</button>
+        <button class="choice-btn" onclick="fill3pick('1','That')">That</button>
+      </div>
+      <div style="font-size:17px;text-align:center;color:var(--subtext);margin:10px 0 6px">두 번째 빈칸:</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="fill3pick('2','a')">a</button>
+        <button class="choice-btn" onclick="fill3pick('2','an')">an</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q4 · 1단원 누적 — This [is] an orange (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 4 <span class="stars">⭐⭐⭐</span></span>
+    <span class="cum-badge">🔁 1단원 복습 포함</span>
+    <div class="question-text">빈칸에 알맞은 be동사는?</div>
+    <div class="scene-box">
+      This <b>___</b> an orange.<span class="ko">(이건 오렌지야)</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">am</button>
+      <button class="choice-btn" onclick="answer(this,1)">is</button>
+      <button class="choice-btn" onclick="answer(this,2)">are</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q5 · 스토리 — 친구 이름 (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 5 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">📖 상황에 맞는 문장 고르기!</div>
+    <div class="scene-box">
+      👦 케이가 옆에 서 있어요.<br>
+      나: <b>"이 친구는 케이야!"</b>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">This is a Kay</button>
+      <button class="choice-btn" onclick="answer(this,1)">That is an Kay</button>
+      <button class="choice-btn" onclick="answer(this,2)">This is Kay</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q6 · 순서 배치 — "That is an egg" (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 6 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">🧩 조각으로 문장 만들기!</div>
+    <div class="question-sub">저 멀리 달걀 한 개 🥚</div>
+    <div class="order-stage" id="order6Stage">
+      <span class="order-empty" id="order6Empty">👆 아래에서 순서대로 눌러주세요</span>
+    </div>
+    <div class="order-pool" id="order6Pool">
+      <button class="order-chip" onclick="orderPick(6,this,'egg')">egg</button>
+      <button class="order-chip" onclick="orderPick(6,this,'is')">is</button>
+      <button class="order-chip" onclick="orderPick(6,this,'That')">That</button>
+      <button class="order-chip" onclick="orderPick(6,this,'an')">an</button>
+    </div>
+    <div style="text-align:center">
+      <button class="order-reset" onclick="orderReset(6)">🔄 다시</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q7 · 함정 — "This is Kay" 이름 앞엔 a/an 안 붙임 (⭐⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="0" data-score="100">
+  <div class="card">
+    <span class="question-label">문제 7 <span class="stars">⭐⭐⭐⭐</span></span>
+    <div class="question-text">🔥 함정 문제! 맞는 것은?</div>
+    <div class="scene-box">
+      옆에 있는 친구를 소개해요.<br>친구 이름은 <b>Dew</b>.
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">This is Dew.</button>
+      <button class="choice-btn" onclick="answer(this,1)">This is a Dew.</button>
+      <button class="choice-btn" onclick="answer(this,2)">This is an Dew.</button>
+      <button class="choice-btn" onclick="answer(this,3)">That is Dew.</button>
+    </div>
+    <div class="feedback" id="fb6"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q8 · 오답 분석 — 하나만 맞음 (⭐⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="100">
+  <div class="card">
+    <span class="question-label">문제 8 <span class="stars">⭐⭐⭐⭐</span></span>
+    <div class="question-text">🕵️ 4개 중 <b style="color:var(--primary)">딱 하나</b>만 맞아!</div>
+    <div class="question-sub">맞는 것을 찾아봐</div>
+    <div class="err-list">
+      <div class="err-item" onclick="q8pick(this,false,'That is a elephant','elephant는 E(모음) → an')">That is a elephant.</div>
+      <div class="err-item" onclick="q8pick(this,false,'This am an apple','This 뒤엔 is! (am X)')">This am an apple.</div>
+      <div class="err-item" onclick="q8pick(this,true,'','')">That is an orange.</div>
+      <div class="err-item" onclick="q8pick(this,false,'This is an cat','cat는 C(자음) → a')">This is an cat.</div>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Q9 · 대화 완성 — A(am) + B(This) (⭐⭐⭐⭐) 1단원 누적 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="100">
+  <div class="card">
+    <span class="question-label">문제 9 <span class="stars">⭐⭐⭐⭐</span></span>
+    <span class="cum-badge">🔁 1단원 복습 포함</span>
+    <div class="question-text">💬 대화 빈칸 채우기!</div>
+    <div class="dialog-bubble you">
+      <b>Hi!</b> 👋 What's your name?
+    </div>
+    <div class="dialog-bubble me">
+      I <span class="dialog-blank" id="dlgA">___</span> Kay! 🐶<br>
+      <span style="font-size:14px;color:var(--subtext)">(나는 케이야)</span>
+    </div>
+    <div class="dialog-bubble you">
+      <span class="dialog-blank" id="dlgB">___</span> is a cat! 🐱<br>
+      <span style="font-size:14px;color:var(--subtext)">(얘는 고양이야)</span>
+    </div>
+    <div style="margin-top:12px">
+      <div style="font-size:17px;text-align:center;color:var(--subtext);margin-bottom:6px">빈칸 A (나는 ___ 케이야):</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="dlgPick('A','am')">am</button>
+        <button class="choice-btn" onclick="dlgPick('A','is')">is</button>
+        <button class="choice-btn" onclick="dlgPick('A','are')">are</button>
+      </div>
+      <div style="font-size:17px;text-align:center;color:var(--subtext);margin:10px 0 6px">빈칸 B (얘는 고양이야):</div>
+      <div class="choices">
+        <button class="choice-btn" onclick="dlgPick('B','This')">This</button>
+        <button class="choice-btn" onclick="dlgPick('B','That')">That</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 결과 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🎯</div>
+    <div style="font-size:30px;margin:6px 0;color:var(--primary)">2단원 완주!</div>
+    <div style="font-size:18px;color:var(--subtext)">This/That + a/an 심화편</div>
+    <div style="margin:14px 0">
+      <span style="font-size:44px;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:20px;color:var(--subtext)">점</span>
+      <div id="resultStars" style="font-size:30px;margin-top:4px">⭐⭐⭐</div>
+    </div>
+    <div style="font-size:19px;color:var(--text);margin:14px 0;line-height:1.6">
+      🎉 <b style="color:var(--primary)">be동사 + This/That + a/an</b> 마스터!<br>
+      다음은 <b>형용사와 색깔</b>이야!<br>
+      <span style="font-size:16px;color:var(--subtext)">"This is a <b>red</b> apple!"</span>
+    </div>
+    <button class="practice-link" onclick="goHome()">
+      🏠 영어 메뉴로
+    </button>
+    <div style="margin-top:10px">
+      <button class="nav-btn" style="padding:8px 20px;font-size:16px;background:var(--subtext)" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=10;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,c.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.25);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.07);o.start();o.stop(c.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.7;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    const rs=document.getElementById('resultStars');
+    const re=document.getElementById('resultEmoji');
+    if(score>=450){rs.textContent='⭐⭐⭐⭐⭐';re.textContent='🏆'}
+    else if(score>=300){rs.textContent='⭐⭐⭐⭐';re.textContent='🎉'}
+    else if(score>=150){rs.textContent='⭐⭐⭐';re.textContent='🎯'}
+    else{rs.textContent='⭐⭐';re.textContent='💪'}
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+const feedbackMap={
+  3:{ok:'✅ 정답! This는 한 개 → is! (1단원 복습 ✓) (다음 버튼)', err:'다시! This/That은 한 개 주어. 짝꿍 be동사는?'},
+  4:{ok:'✅ 완벽! 사람 이름 앞엔 a/an 안 붙여! (다음 버튼)', err:'다시! 이름은 특별해. 앞에 뭘 붙여야 할까?'},
+  6:{ok:'✅ 완벽! 이름 앞엔 a/an 안 붙여! (다음 버튼)', err:'다시! Dew는 사람 이름이야. 이름 앞엔?'}
+};
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  const fb=feedbackMap[currentSlide]||{ok:'✅ 정답! +'+pts+'점',err:'다시 생각해봐! 💪'};
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    setFB('fb'+currentSlide,fb.ok.replace('(다음 버튼)','+'+pts+'점 (아래 다음 버튼 눌러 계속)'),true);
+    answered[currentSlide]=true;
+  } else {
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,fb.err,false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== Q1: a cat vs an cat ==== */
+function q1pick(btn,val){
+  if(answered[0])return;
+  playClick();
+  if(val==='a'){
+    btn.classList.add('correct');playCorrect();addScore(25);
+    setFB('fb0','✅ 맞아! cat은 C(자음) → a cat! +25점 (아래 다음 버튼 눌러 계속)',true);
+    answered[0]=true;
+  } else {
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb0','다시! cat의 첫 글자는 C. 자음일까 모음일까? 💪',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== Q2 / Q6: 순서 배치 ==== */
+const orderConfigs={
+  1:{answer:['This','is','an','apple'],stage:'order1Stage',empty:'order1Empty',fb:'fb1',slide:1,pts:50,hint:'This(이거) + is(한 개) + an(모음 앞) + apple',ok:'✅ 완벽! This is an apple!'},
+  6:{answer:['That','is','an','egg'],stage:'order6Stage',empty:'order6Empty',fb:'fb5',slide:5,pts:50,hint:'That(저거) + is + an(모음) + egg',ok:'✅ 완벽! That is an egg!'}
+};
+const orderPicked={1:[],6:[]};
+function orderPick(qid,btn,word){
+  const cfg=orderConfigs[qid];
+  if(answered[cfg.slide])return;
+  playClick();
+  orderPicked[qid].push(word);
+  btn.classList.add('used');
+  const stage=document.getElementById(cfg.stage);
+  const emptyEl=document.getElementById(cfg.empty);
+  if(emptyEl)emptyEl.style.display='none';
+  const chip=document.createElement('span');
+  chip.className='order-slot';
+  chip.textContent=word;
+  stage.appendChild(chip);
+  if(orderPicked[qid].length===cfg.answer.length){
+    const isCorrect=orderPicked[qid].every((w,i)=>w===cfg.answer[i]);
+    if(isCorrect){
+      playCorrect();addScore(cfg.pts);
+      speakWord(cfg.answer.join(' '));
+      setFB(cfg.fb,cfg.ok+' +'+cfg.pts+'점 (아래 다음 버튼 눌러 계속)',true);
+      answered[cfg.slide]=true;
+    } else {
+      playWrong();combo=0;
+      setFB(cfg.fb,'순서가 틀려! 힌트: '+cfg.hint+' 💪 "다시" 버튼 눌러봐',false);
+      stage.querySelectorAll('.order-slot').forEach(s=>{s.style.background='var(--red-light)';s.style.borderColor='var(--red)'});
+    }
+  }
+}
+function orderReset(qid){
+  if(answered[orderConfigs[qid].slide])return;
+  orderPicked[qid]=[];
+  const cfg=orderConfigs[qid];
+  const stage=document.getElementById(cfg.stage);
+  stage.innerHTML='<span class="order-empty" id="'+cfg.empty+'">👆 아래에서 순서대로 눌러주세요</span>';
+  document.querySelectorAll('#order'+qid+'Pool .order-chip').forEach(b=>b.classList.remove('used'));
+  setFB(cfg.fb,'',true);
+  document.getElementById(cfg.fb).className='feedback';
+}
+
+/* ==== Q3: 빈칸 2개 (That / a book) ==== */
+const q3answers={'1':'That','2':'a'};
+const q3picked={};
+function fill3pick(blank,val){
+  if(answered[2])return;
+  playClick();
+  q3picked[blank]=val;
+  document.getElementById('fill3_'+blank).textContent=val;
+  document.getElementById('fill3_'+blank).classList.add('filled');
+  if(q3picked['1']&&q3picked['2']){
+    if(q3picked['1']===q3answers['1']&&q3picked['2']===q3answers['2']){
+      playCorrect();addScore(50);
+      setFB('fb2','✅ 완벽! That is a book! (멀리+자음) +50점 (아래 다음 버튼 눌러 계속)',true);
+      answered[2]=true;
+    } else {
+      playWrong();combo=0;
+      const hint=[];
+      if(q3picked['1']!==q3answers['1'])hint.push('첫 빈칸: "저 멀리"니까?');
+      if(q3picked['2']!==q3answers['2'])hint.push('둘째 빈칸: book은 B(자음)');
+      setFB('fb2','다시! '+hint.join(' / '),false);
+      q3picked['1']=null;q3picked['2']=null;
+      document.getElementById('fill3_1').textContent='___';document.getElementById('fill3_1').classList.remove('filled');
+      document.getElementById('fill3_2').textContent='___';document.getElementById('fill3_2').classList.remove('filled');
+    }
+  } else {
+    setFB('fb2','👍 '+val+' 선택! 나머지 빈칸도 채워봐',true);
+  }
+}
+
+/* ==== Q8: 오답 4개 중 하나 맞음 ==== */
+function q8pick(el,isCorrect,sentence,reason){
+  if(answered[7])return;
+  playClick();
+  if(isCorrect){
+    el.classList.add('correct');playCorrect();addScore(100);
+    setFB('fb7','✅ 완벽! "That is an orange" — 멀리+모음(O)! +100점 (아래 다음 버튼 눌러 계속)',true);
+    answered[7]=true;
+  } else {
+    el.classList.add('wrong');playWrong();combo=0;
+    setFB('fb7','❌ "'+sentence+'" 틀림! 이유: '+reason+' 다시 찾아봐!',false);
+    setTimeout(()=>el.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== Q9: 대화 완성 (am + This) ==== */
+const q9answers={'A':'am','B':'This'};
+const q9picked={};
+function dlgPick(blank,val){
+  if(answered[8])return;
+  playClick();
+  q9picked[blank]=val;
+  document.getElementById('dlg'+blank).textContent=val;
+  document.getElementById('dlg'+blank).style.background='var(--yellow-light)';
+  if(q9picked['A']&&q9picked['B']){
+    if(q9picked['A']===q9answers['A']&&q9picked['B']===q9answers['B']){
+      playCorrect();addScore(100);
+      setFB('fb8','✅ 완벽! "I am Kay / This is a cat"! +100점 (아래 다음 버튼 눌러 계속)',true);
+      answered[8]=true;
+    } else {
+      playWrong();combo=0;
+      const hint=[];
+      if(q9picked['A']!==q9answers['A'])hint.push('A: I의 짝꿍 be동사는?');
+      if(q9picked['B']!==q9answers['B'])hint.push('B: 옆에 있는 고양이면 This/That 중?');
+      setFB('fb8','다시! '+hint.join(' / '),false);
+      q9picked['A']=null;q9picked['B']=null;
+      document.getElementById('dlgA').textContent='___';document.getElementById('dlgA').style.background='';
+      document.getElementById('dlgB').textContent='___';document.getElementById('dlgB').style.background='';
+    }
+  } else {
+    setFB('fb8','👍 '+val+' 선택! 나머지도 채워봐',true);
+  }
+}
+
+function goHome(){
+  location.href='/english/index.html';
+}
+
+function restart(){
+  score=0;combo=0;answered={};
+  orderPicked[1]=[];orderPicked[6]=[];
+  q3picked['1']=null;q3picked['2']=null;
+  q9picked['A']=null;q9picked['B']=null;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.cc-btn').forEach(b=>b.className='cc-btn');
+  document.querySelectorAll('.err-item').forEach(b=>b.className='err-item');
+  document.querySelectorAll('.order-chip').forEach(b=>b.classList.remove('used'));
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('order1Stage').innerHTML='<span class="order-empty" id="order1Empty">👆 아래에서 순서대로 눌러주세요</span>';
+  document.getElementById('order6Stage').innerHTML='<span class="order-empty" id="order6Empty">👆 아래에서 순서대로 눌러주세요</span>';
+  document.getElementById('fill3_1').textContent='___';document.getElementById('fill3_1').classList.remove('filled');
+  document.getElementById('fill3_2').textContent='___';document.getElementById('fill3_2').classList.remove('filled');
+  document.getElementById('dlgA').textContent='___';document.getElementById('dlgA').style.background='';
+  document.getElementById('dlgB').textContent='___';document.getElementById('dlgB').style.background='';
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+/* 스와이프 제거 — 1학년 오작동 방지. "다음 ▶" 버튼만으로 진행 */
+updateUI();
+</script>
+</body>
+</html>
