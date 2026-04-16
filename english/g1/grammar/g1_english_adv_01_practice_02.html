@@ -380,9 +380,8 @@ function answer(btn,idx){
   playClick();
   if(idx===correct){
     btn.classList.add('correct');playCorrect();addScore(pts);
-    setFB('fb'+currentSlide,goodMsg()+' +'+pts+'점',true);
+    setFB('fb'+currentSlide,goodMsg()+' +'+pts+'점 (아래 다음 버튼 눌러 계속)',true);
     answered[currentSlide]=true;
-    setTimeout(nextSlide,1400);
   } else {
     btn.classList.add('wrong');playWrong();combo=0;
     setFB('fb'+currentSlide,'다시! 주어의 짝을 생각해봐 💪',false);
@@ -402,9 +401,8 @@ function chipPick(chip,slideIdx,val){
     chip.classList.add('used');
     blank.textContent=val;blank.classList.add('filled');
     playCorrect();addScore(pts);
-    setFB('fb'+(slideIdx-1),goodMsg()+' +'+pts+'점',true);
+    setFB('fb'+(slideIdx-1),goodMsg()+' +'+pts+'점 (아래 다음 버튼 눌러 계속)',true);
     answered[slideIdx]=true;
-    setTimeout(nextSlide,1400);
   } else {
     chip.style.animation='shake .4s';
     setTimeout(()=>chip.style.animation='',500);
@@ -430,9 +428,8 @@ function orderPick(btn,word){
     const isCorrect=orderFilled.every((w,i)=>w===correctOrder[i]);
     if(isCorrect){
       playCorrect();addScore(50);
-      setFB('fb7','✅ 완벽한 순서! +50점',true);
+      setFB('fb7','✅ 완벽한 순서! +50점 (아래 다음 버튼 눌러 계속)',true);
       answered[7]=true;
-      setTimeout(nextSlide,1600);
     } else {
       playWrong();combo=0;
       setFB('fb7','다시! 주어 → be동사 → 나머지 순서야 💪',false);
@@ -460,9 +457,7 @@ function restart(){
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
 }
 
-let touchStartX=0;
-document.getElementById('slidesWrap').addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});
-document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=touchStartX-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+/* 스와이프 제거 — 1학년 오작동 방지. "다음 ▶" 버튼만으로 진행 */
 updateUI();
 </script>
 </body>

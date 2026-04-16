@@ -233,11 +233,11 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
     <div class="ko-hint">한쪽 누르고 → 반대쪽 누르기</div>
     <div class="match-grid" id="matchGrid">
       <div class="match-item" data-side="L" data-key="I" onclick="matchClick(this)">I</div>
-      <div class="match-item" data-side="R" data-key="is" onclick="matchClick(this)">is</div>
-      <div class="match-item" data-side="L" data-key="He" onclick="matchClick(this)">He</div>
       <div class="match-item" data-side="R" data-key="are" onclick="matchClick(this)">are</div>
       <div class="match-item" data-side="L" data-key="You" onclick="matchClick(this)">You</div>
       <div class="match-item" data-side="R" data-key="am" onclick="matchClick(this)">am</div>
+      <div class="match-item" data-side="L" data-key="He" onclick="matchClick(this)">He</div>
+      <div class="match-item" data-side="R" data-key="is" onclick="matchClick(this)">is</div>
     </div>
     <div class="feedback" id="fb5"></div>
   </div>
@@ -380,9 +380,8 @@ function answer(btn,idx){
   playClick();
   if(idx===correct){
     btn.classList.add('correct');playCorrect();addScore(pts);
-    setFB('fb'+currentSlide,goodMsg()+' +'+pts+'점',true);
+    setFB('fb'+currentSlide,goodMsg()+' +'+pts+'점 (아래 다음 버튼 눌러 계속)',true);
     answered[currentSlide]=true;
-    setTimeout(nextSlide,1400);
   } else {
     btn.classList.add('wrong');playWrong();combo=0;
     setFB('fb'+currentSlide,'다시 한번! 주어의 짝을 생각해봐 💪',false);
@@ -415,9 +414,8 @@ function matchClick(el){
     playCorrect();matchDone++;matchSel=null;
     if(matchDone===3){
       addScore(25);
-      setFB('fb5','✅ 완벽! 모든 짝 연결! +25점',true);
+      setFB('fb5','✅ 완벽! 모든 짝 연결! +25점 (아래 다음 버튼 눌러 계속)',true);
       answered[5]=true;
-      setTimeout(nextSlide,1400);
     }
   } else {
     L.classList.add('wrong');R.classList.add('wrong');
@@ -457,9 +455,8 @@ function sortPlace(bucket){
     playCorrect();sortDone++;sortSel=null;
     if(sortDone===sortTotal){
       addScore(50);
-      setFB('fb7','✅ 완벽! 분류 완성! +50점',true);
+      setFB('fb7','✅ 완벽! 분류 완성! +50점 (아래 다음 버튼 눌러 계속)',true);
       answered[7]=true;
-      setTimeout(nextSlide,1600);
     }
   } else {
     sortSel.classList.add('wrong');
@@ -499,9 +496,7 @@ function restart(){
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
 }
 
-let touchStartX=0;
-document.getElementById('slidesWrap').addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});
-document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=touchStartX-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?nextSlide():prevSlide()}});
+/* 스와이프 제거 — 1학년 오작동 방지. "다음 ▶" 버튼만으로 진행 */
 updateUI();
 </script>
 </body>
