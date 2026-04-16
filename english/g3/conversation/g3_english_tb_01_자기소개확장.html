@@ -350,17 +350,17 @@ function updateUI(){
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,bid,txt,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=txt;b.classList.add('filled');playClick();speakWord(txt);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,bid,txt,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=txt;b.classList.add('filled');playClick();speakWord(txt);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // O/X (S4: "She like" is wrong → ❌ is correct)
-function answerOX(btn,si,isCorrect){if(answered[si])return;playClick();if(isCorrect){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb'+si,'✅ 틀린 문장! She likes가 맞아요! +10점',true);answered[si]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'He/She 뒤에는 likes! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answerOX(btn,si,isCorrect){if(answered[si])return;playClick();if(isCorrect){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb'+si,'✅ 틀린 문장! She likes가 맞아요! +10점',true);answered[si]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'He/She 뒤에는 likes! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Matching S5
 let ms={};
 function selM(el,side,si){if(answered[si])return;if(!ms[si])ms[si]={l:null,r:null,m:0};const s=ms[si];playClick();
   if(side==='left'){if(s.l)s.l.classList.remove('selected');s.l=el;el.classList.add('selected');}else{if(s.r)s.r.classList.remove('selected');s.r=el;el.classList.add('selected');}
-  if(s.l&&s.r){if(s.l.dataset.pair===s.r.dataset.pair){s.l.classList.remove('selected');s.r.classList.remove('selected');s.l.classList.add('matched');s.r.classList.add('matched');s.m++;playCorrect();s.l=null;s.r=null;if(s.m===3){addScore(25);setFB('fb'+si,'✅ 모두 연결! +25점',true);answered[si]=true;setTimeout(nextSlide,900);}}else{s.l.classList.add('wrong-flash');s.r.classList.add('wrong-flash');playWrong();combo=0;const a=s.l,b=s.r;setTimeout(()=>{a.classList.remove('selected','wrong-flash');b.classList.remove('selected','wrong-flash');},500);s.l=null;s.r=null;setFB('fb'+si,'다시 연결! 💪',false);}}}
+  if(s.l&&s.r){if(s.l.dataset.pair===s.r.dataset.pair){s.l.classList.remove('selected');s.r.classList.remove('selected');s.l.classList.add('matched');s.r.classList.add('matched');s.m++;playCorrect();s.l=null;s.r=null;if(s.m===3){addScore(25);setFB('fb'+si,'✅ 모두 연결! +25점',true);answered[si]=true;}}else{s.l.classList.add('wrong-flash');s.r.classList.add('wrong-flash');playWrong();combo=0;const a=s.l,b=s.r;setTimeout(()=>{a.classList.remove('selected','wrong-flash');b.classList.remove('selected','wrong-flash');},500);s.l=null;s.r=null;setFB('fb'+si,'다시 연결! 💪',false);}}}
 
 // Order S7
 const introLines=['Hello! My name is Jiwon.','I am nine years old.','I like playing soccer.','I can run very fast.'];
@@ -368,7 +368,7 @@ let orderState=[];
 function initOrder(){const sl=document.getElementById('orderSlots7'),tk=document.getElementById('orderTokens7');sl.innerHTML='';tk.innerHTML='';orderState=[];
   introLines.forEach(()=>{const s=document.createElement('div');s.className='order-slot';s.style.width='auto';s.style.minWidth='200px';s.style.height='auto';s.style.padding='6px 12px';s.style.fontSize='17px';sl.appendChild(s);});
   [...introLines].sort(()=>Math.random()-.5).forEach(l=>{const t=document.createElement('div');t.className='token';t.style.fontSize='17px';t.textContent=l;t.onclick=()=>pickOrder(t,l);tk.appendChild(t);});}
-function pickOrder(t,line){if(answered[7])return;playClick();if(line===introLines[orderState.length]){t.classList.add('correct');t.style.pointerEvents='none';orderState.push(line);const s=document.getElementById('orderSlots7').children[orderState.length-1];s.textContent=line;s.classList.add('filled');playCorrect();if(orderState.length===introLines.length){addScore(25);setFB('fb7','✅ 완벽한 자기소개 순서! +25점',true);answered[7]=true;document.querySelectorAll('#orderSlots7 .order-slot').forEach(s=>s.classList.add('correct-all'));setTimeout(nextSlide,900);}}else{t.classList.add('wrong');playWrong();combo=0;setFB('fb7','자기소개 순서를 다시 생각해 보세요! 💪',false);setTimeout(()=>t.classList.remove('wrong'),500);}}
+function pickOrder(t,line){if(answered[7])return;playClick();if(line===introLines[orderState.length]){t.classList.add('correct');t.style.pointerEvents='none';orderState.push(line);const s=document.getElementById('orderSlots7').children[orderState.length-1];s.textContent=line;s.classList.add('filled');playCorrect();if(orderState.length===introLines.length){addScore(25);setFB('fb7','✅ 완벽한 자기소개 순서! +25점',true);answered[7]=true;document.querySelectorAll('#orderSlots7 .order-slot').forEach(s=>s.classList.add('correct-all'));}}else{t.classList.add('wrong');playWrong();combo=0;setFB('fb7','자기소개 순서를 다시 생각해 보세요! 💪',false);setTimeout(()=>t.classList.remove('wrong'),500);}}
 
 // Auto TTS
 let autoPlayed={};
@@ -384,8 +384,7 @@ function restart(){score=0;combo=0;answered={};ms={};autoPlayed={};orderState=[]
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');initOrder();updateUI();}
 
 initOrder();updateUI();
-let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+else if(d<-50)nextSlide();});
 </script>
 </body>
 </html>

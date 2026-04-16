@@ -331,10 +331,10 @@ function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textC
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
 
 // ── STANDARD ANSWER ──
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;if(currentSlide===5)document.getElementById('hint5').style.display='block';setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);if(currentSlide===5)document.getElementById('hint5').style.display='block';setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;if(currentSlide===5)document.getElementById('hint5').style.display='block';}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);if(currentSlide===5)document.getElementById('hint5').style.display='block';setTimeout(()=>btn.classList.remove('wrong'),500)}}
 
 // ── Q3: MATCHING ──
-function checkMatch3(){if(answered[3])return;const a=document.getElementById('sel3a').value,b=document.getElementById('sel3b').value,c=document.getElementById('sel3c').value;if(a&&b&&c){if(a==='2'&&b==='1'&&c==='3'){playCorrect();addScore(50);setFB('fb3','✅ 완벽! +50점',true);answered[3]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb3','다시 확인해보세요 💪',false)}}}
+function checkMatch3(){if(answered[3])return;const a=document.getElementById('sel3a').value,b=document.getElementById('sel3b').value,c=document.getElementById('sel3c').value;if(a&&b&&c){if(a==='2'&&b==='1'&&c==='3'){playCorrect();addScore(50);setFB('fb3','✅ 완벽! +50점',true);answered[3]=true;}else{playWrong();combo=0;setFB('fb3','다시 확인해보세요 💪',false)}}}
 
 // ── Q4: TOKEN ORDERING ──
 const q4Tokens=["The","letter","had","been","sent","before","noon"];
@@ -343,19 +343,17 @@ function initQ4(){const bank=document.getElementById('tokenBank4');const shuffle
 function addToken4(w,el){q4Order.push(w);el.classList.add('used');renderDrop4()}
 function removeLastToken4(){if(q4Order.length===0)return;const removed=q4Order.pop();document.querySelectorAll('#tokenBank4 .token').forEach(t=>{if(t.textContent===removed&&t.classList.contains('used')){t.classList.remove('used');return}});renderDrop4()}
 function renderDrop4(){const z=document.getElementById('dropZone4');z.innerHTML=q4Order.map(w=>'<span class="token" style="cursor:default">'+w+'</span>').join(' ')}
-function checkOrder4(){if(answered[4])return;const attempt=q4Order.join(' ');if(attempt==='The letter had been sent before noon'){playCorrect();addScore(50);setFB('fb4','✅ 완벽한 과거완료 수동태! +50점',true);answered[4]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb4','순서를 다시 확인! 💪',false);q4Order=[];renderDrop4();document.querySelectorAll('#tokenBank4 .token').forEach(t=>t.classList.remove('used'))}}
+function checkOrder4(){if(answered[4])return;const attempt=q4Order.join(' ');if(attempt==='The letter had been sent before noon'){playCorrect();addScore(50);setFB('fb4','✅ 완벽한 과거완료 수동태! +50점',true);answered[4]=true;}else{playWrong();combo=0;setFB('fb4','순서를 다시 확인! 💪',false);q4Order=[];renderDrop4();document.querySelectorAll('#tokenBank4 .token').forEach(t=>t.classList.remove('used'))}}
 initQ4();
 
 // ── Q7: VOICE MATCHING ──
-function checkMatch7(){if(answered[7])return;const a=document.getElementById('sel7a').value,b=document.getElementById('sel7b').value,c=document.getElementById('sel7c').value;if(a&&b&&c){if(a==='P'&&b==='A'&&c==='P'){playCorrect();addScore(50);setFB('fb7','✅ 정확! +50점',true);answered[7]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb7','다시 생각해보세요 💪',false)}}}
+function checkMatch7(){if(answered[7])return;const a=document.getElementById('sel7a').value,b=document.getElementById('sel7b').value,c=document.getElementById('sel7c').value;if(a&&b&&c){if(a==='P'&&b==='A'&&c==='P'){playCorrect();addScore(50);setFB('fb7','✅ 정확! +50점',true);answered[7]=true;}else{playWrong();combo=0;setFB('fb7','다시 생각해보세요 💪',false)}}}
 
 // ── Q8: TEXT INPUT ──
-function checkInput8(){if(answered[8])return;const v=document.getElementById('input8').value.trim().toLowerCase().replace(/\s+/g,' ');if(v==='will be delivered'){playCorrect();addScore(100);setFB('fb8','✅ 완벽! +100점',true);answered[8]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb8','힌트: will + be + p.p. 💪',false)}}
+function checkInput8(){if(answered[8])return;const v=document.getElementById('input8').value.trim().toLowerCase().replace(/\s+/g,' ');if(v==='will be delivered'){playCorrect();addScore(100);setFB('fb8','✅ 완벽! +100점',true);answered[8]=true;}else{playWrong();combo=0;setFB('fb8','힌트: will + be + p.p. 💪',false)}}
 
 // ── SWIPE ──
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide()},{passive:true});
+if(d<-50)nextSlide()},{passive:true});
 
 // ── RESTART ──
 function restart(){score=0;combo=0;answered={};q4Order=[];document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>t.classList.remove('used','correct','wrong'));document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);document.getElementById('input8').value='';if(document.getElementById('hint5'))document.getElementById('hint5').style.display='none';initQ4();currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}

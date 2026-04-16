@@ -291,11 +291,11 @@ function updateUI(){document.getElementById('progressFill').style.width=(current
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);let msg='✅ 정답! +'+pts+'점';if(currentSlide===10)msg='✅ had ate → had eaten이 맞아요! +'+pts+'점';setFB('fb'+currentSlide,msg,true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);let msg='✅ 정답! +'+pts+'점';if(currentSlide===10)msg='✅ had ate → had eaten이 맞아요! +'+pts+'점';setFB('fb'+currentSlide,msg,true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
-function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
-function oxAnswer(btn,slideIdx,idx,okMsg,hint){if(answered[slideIdx])return;const slide=document.querySelectorAll('.slide')[slideIdx];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ '+okMsg+' +'+pts+'점',true);answered[slideIdx]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+slideIdx,hint+' 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function oxAnswer(btn,slideIdx,idx,okMsg,hint){if(answered[slideIdx])return;const slide=document.querySelectorAll('.slide')[slideIdx];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ '+okMsg+' +'+pts+'점',true);answered[slideIdx]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+slideIdx,hint+' 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // ── SORT GAME (slide 6) ──
 const sortData6=[{word:'went',cat:'past'},{word:'had gone',cat:'pp'},{word:'saw',cat:'past'},{word:'had seen',cat:'pp'},{word:'ate',cat:'past'},{word:'had eaten',cat:'pp'}];
@@ -306,7 +306,7 @@ function showSortChoice6(tokenEl,data){if(tokenEl.classList.contains('correct'))
 const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:8px;justify-content:center;margin-top:6px';
 ['past','pp'].forEach(cat=>{const b=document.createElement('button');b.className='choice-btn';b.style.fontSize='16px';b.textContent=cat==='past'?'과거':'과거완료';b.onclick=()=>{checkSort6(tokenEl,data,cat);wrap.remove();};wrap.appendChild(b);});
 tokenEl.after(wrap);}
-function checkSort6(tokenEl,data,choice){playClick();if(choice===data.cat){tokenEl.classList.add('correct');playCorrect();sortCount6++;const target=data.cat==='past'?document.getElementById('pastItems'):document.getElementById('ppItems');const p=document.createElement('div');p.style.cssText='font-size:17px;margin:3px 0;font-weight:700';p.textContent=data.word;target.appendChild(p);if(sortCount6===sortData6.length){addScore(50);setFB('fb6','✅ 완벽 분류! +50점',true);answered[6]=true;setTimeout(nextSlide,900);}}else{tokenEl.classList.add('wrong');playWrong();combo=0;setFB('fb6','다시 생각해보세요! 💪',false);setTimeout(()=>tokenEl.classList.remove('wrong'),500);}}
+function checkSort6(tokenEl,data,choice){playClick();if(choice===data.cat){tokenEl.classList.add('correct');playCorrect();sortCount6++;const target=data.cat==='past'?document.getElementById('pastItems'):document.getElementById('ppItems');const p=document.createElement('div');p.style.cssText='font-size:17px;margin:3px 0;font-weight:700';p.textContent=data.word;target.appendChild(p);if(sortCount6===sortData6.length){addScore(50);setFB('fb6','✅ 완벽 분류! +50점',true);answered[6]=true;}}else{tokenEl.classList.add('wrong');playWrong();combo=0;setFB('fb6','다시 생각해보세요! 💪',false);setTimeout(()=>tokenEl.classList.remove('wrong'),500);}}
 
 // ── WORD ORDER (slide 7) ──
 const correctOrder7=['She','had','already','left','when','I','called'];
@@ -314,7 +314,7 @@ let placed7=[];
 function initWordOrder7(){const bank=document.getElementById('wordBank7');const built=document.getElementById('builtSentence7');bank.innerHTML='';built.innerHTML='';placed7=[];
 [...correctOrder7].sort(()=>Math.random()-0.5).forEach(w=>{const t=document.createElement('div');t.className='token';t.textContent=w;t.onclick=function(){placeWord7(this,w);};bank.appendChild(t);});}
 function placeWord7(el,w){playClick();el.style.display='none';placed7.push(w);const built=document.getElementById('builtSentence7');const t=document.createElement('div');t.className='token';t.style.background='var(--primary-light)';t.textContent=w;t.onclick=function(){removeWord7(this,el,w);};built.appendChild(t);
-if(placed7.length===correctOrder7.length){if(placed7.join(' ')===correctOrder7.join(' ')){playCorrect();addScore(50);setFB('fb7','✅ 완벽한 문장! +50점',true);answered[7]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb7','순서를 다시 확인! 💪',false);setTimeout(()=>{placed7=[];built.innerHTML='';document.querySelectorAll('#wordBank7 .token').forEach(t=>t.style.display='');},800);}}}
+if(placed7.length===correctOrder7.length){if(placed7.join(' ')===correctOrder7.join(' ')){playCorrect();addScore(50);setFB('fb7','✅ 완벽한 문장! +50점',true);answered[7]=true;}else{playWrong();combo=0;setFB('fb7','순서를 다시 확인! 💪',false);setTimeout(()=>{placed7=[];built.innerHTML='';document.querySelectorAll('#wordBank7 .token').forEach(t=>t.style.display='');},800);}}}
 function removeWord7(builtEl,origEl,w){if(answered[7])return;builtEl.remove();origEl.style.display='';placed7=placed7.filter((_,i)=>i!==placed7.lastIndexOf(w));}
 
 function restart(){score=0;combo=0;answered={};
@@ -325,9 +325,6 @@ document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'
 currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
 initSort6();initWordOrder7();updateUI();}
 
-let tx=0;
-document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
 
 initSort6();initWordOrder7();updateUI();
 </script>

@@ -282,10 +282,10 @@ function updateUI(){document.getElementById('progressFill').style.width=(current
 function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;const h=document.getElementById('hint'+currentSlide);if(h)h.style.display='block';setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);const h=document.getElementById('hint'+currentSlide);if(h)h.style.display='block';setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;const h=document.getElementById('hint'+currentSlide);if(h)h.style.display='block';}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);const h=document.getElementById('hint'+currentSlide);if(h)h.style.display='block';setTimeout(()=>btn.classList.remove('wrong'),500)}}
 
 // Q3
-function checkQ3(){if(answered[3])return;const a=document.getElementById('sel3a').value,b=document.getElementById('sel3b').value,c=document.getElementById('sel3c').value;if(a&&b&&c){if(a==='G'&&b==='T'&&c==='B'){playCorrect();addScore(50);setFB('fb3','✅ 완벽! +50점',true);answered[3]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb3','다시 확인! avoid→V-ing, want→to-V, remember→둘 다',false)}}}
+function checkQ3(){if(answered[3])return;const a=document.getElementById('sel3a').value,b=document.getElementById('sel3b').value,c=document.getElementById('sel3c').value;if(a&&b&&c){if(a==='G'&&b==='T'&&c==='B'){playCorrect();addScore(50);setFB('fb3','✅ 완벽! +50점',true);answered[3]=true;}else{playWrong();combo=0;setFB('fb3','다시 확인! avoid→V-ing, want→to-V, remember→둘 다',false)}}}
 
 // Q6 token ordering
 const q6Tokens=["Having","finished","her","homework","she","went","outside"];
@@ -293,16 +293,14 @@ let q6Order=[];
 function initQ6(){const bank=document.getElementById('bank6');const sh=[...q6Tokens].sort(()=>Math.random()-.5);bank.innerHTML='';sh.forEach(w=>{const t=document.createElement('span');t.className='token';t.textContent=w;t.onclick=()=>{q6Order.push(w);t.classList.add('used');renderDrop6()};bank.appendChild(t)})}
 function removeLast6(){if(!q6Order.length)return;const r=q6Order.pop();document.querySelectorAll('#bank6 .token').forEach(t=>{if(t.textContent===r&&t.classList.contains('used')){t.classList.remove('used')}});renderDrop6()}
 function renderDrop6(){document.getElementById('dropZone6').innerHTML=q6Order.map(w=>'<span class="token" style="cursor:default">'+w+'</span>').join(' ')}
-function checkQ6(){if(answered[6])return;const a=q6Order.join(' ').replace(/,/g,'');if(a==='Having finished her homework she went outside'){playCorrect();addScore(100);setFB('fb6','✅ 완벽한 분사구문! +100점',true);answered[6]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb6','"Having finished her homework, she went outside" 💪',false);q6Order=[];renderDrop6();document.querySelectorAll('#bank6 .token').forEach(t=>t.classList.remove('used'))}}
+function checkQ6(){if(answered[6])return;const a=q6Order.join(' ').replace(/,/g,'');if(a==='Having finished her homework she went outside'){playCorrect();addScore(100);setFB('fb6','✅ 완벽한 분사구문! +100점',true);answered[6]=true;}else{playWrong();combo=0;setFB('fb6','"Having finished her homework, she went outside" 💪',false);q6Order=[];renderDrop6();document.querySelectorAll('#bank6 .token').forEach(t=>t.classList.remove('used'))}}
 initQ6();
 
 // Q9
-function checkQ9(){if(answered[9])return;const v=document.getElementById('input9').value.trim().toLowerCase();if(v==='meeting'){playCorrect();addScore(100);setFB('fb9','✅ 정답! +100점',true);answered[9]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;document.getElementById('hint9').style.display='block';setFB('fb9','to는 전치사 → V-ing 💪',false)}}
+function checkQ9(){if(answered[9])return;const v=document.getElementById('input9').value.trim().toLowerCase();if(v==='meeting'){playCorrect();addScore(100);setFB('fb9','✅ 정답! +100점',true);answered[9]=true;}else{playWrong();combo=0;document.getElementById('hint9').style.display='block';setFB('fb9','to는 전치사 → V-ing 💪',false)}}
 
 // SWIPE
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide()},{passive:true});
+if(d<-50)nextSlide()},{passive:true});
 
 function restart(){score=0;combo=0;answered={};q6Order=[];document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>t.classList.remove('used'));document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);document.getElementById('input9').value='';document.querySelectorAll('[id^=hint]').forEach(h=>h.style.display='none');initQ6();currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
 updateUI();

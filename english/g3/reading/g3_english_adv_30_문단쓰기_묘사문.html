@@ -406,14 +406,14 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
   playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 function fillBlank(btn,blankId,text,ci,mi){
   if(answered[currentSlide])return;
   const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
   const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
-  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -432,7 +432,7 @@ function showSense(){
     answered[4]=true;
     if(senseScore>=3){playCorrect();addScore(10);setFB('fb4','✅ '+senseScore+'/'+senseItems.length+' 맞힘! +10점',true);}
     else setFB('fb4',senseScore+'/'+senseItems.length+' — 오감 표현을 복습하세요!',false);
-    setTimeout(nextSlide,1200);return;
+    return;
   }
   document.getElementById('senseWord').textContent=senseItems[senseIdx].word;
   document.getElementById('senseCount').textContent=(senseIdx+1)+' / '+senseItems.length;
@@ -456,7 +456,7 @@ function sortTrait(btn,type,word){
   item.textContent=word;
   document.getElementById(target).appendChild(item);
   btn.classList.add('correct');traitDone++;
-  if(traitDone===6){playCorrect();addScore(25);setFB('fb7','✅ 모두 분류 완료! +25점',true);answered[7]=true;setTimeout(nextSlide,900);}
+  if(traitDone===6){playCorrect();addScore(25);setFB('fb7','✅ 모두 분류 완료! +25점',true);answered[7]=true;}
 }
 
 // Final paragraph assembly (Q9 - slide 11)
@@ -498,7 +498,7 @@ function resetFinal(){
 function checkFinal(){
   if(answered[11]||finalSlotIdx<4)return;
   const correct=finalPlaced[0]===0&&finalPlaced[1]===1&&finalPlaced[2]===2&&finalPlaced[3]===3;
-  if(correct){playCorrect();addScore(100);setFB('fb11','✅ 완벽한 묘사문! +100점 🎨',true);answered[11]=true;setTimeout(nextSlide,1200);}
+  if(correct){playCorrect();addScore(100);setFB('fb11','✅ 완벽한 묘사문! +100점 🎨',true);answered[11]=true;}
   else{playWrong();combo=0;setFB('fb11','주제문 → First → Also → Finally 순서예요! 💪',false);resetFinal();}
 }
 
@@ -515,9 +515,7 @@ function restart(){
   initSense();initFinal();updateUI();
 }
 
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+else if(d<-50)nextSlide();});
 
 initSense();initFinal();updateUI();
 </script>

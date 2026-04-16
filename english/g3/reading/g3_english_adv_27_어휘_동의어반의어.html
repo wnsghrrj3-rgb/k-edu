@@ -397,7 +397,7 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
   playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -405,7 +405,7 @@ function fillBlank(btn,blankId,text,ci,mi){
   if(answered[currentSlide])return;
   const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
   const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
-  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -422,7 +422,7 @@ function sortPair(btn,type,label){
   document.getElementById(bucketId).appendChild(item);
   btn.classList.add('correct');
   sortCorrect++;
-  if(sortCorrect===4){playCorrect();addScore(25);setFB('fb5','✅ 모두 분류 완료! +25점',true);answered[5]=true;setTimeout(nextSlide,900);}
+  if(sortCorrect===4){playCorrect();addScore(25);setFB('fb5','✅ 모두 분류 완료! +25점',true);answered[5]=true;}
 }
 
 // Match (Q5)
@@ -435,7 +435,7 @@ function matchWord(btn,word){
     if(!s.classList.contains('filled')&&s.dataset.ans===word){
       s.textContent=word;s.classList.add('filled');btn.classList.add('correct');
       speakWord(word);matchDone++;
-      if(matchDone===3){playCorrect();addScore(25);setFB('fb6','✅ 모두 연결! +25점',true);answered[6]=true;setTimeout(nextSlide,900);}
+      if(matchDone===3){playCorrect();addScore(25);setFB('fb6','✅ 모두 연결! +25점',true);answered[6]=true;}
       return;
     }
   }
@@ -463,7 +463,7 @@ function showOxPair(){
     answered[9]=true;
     if(oxScore>=4){playCorrect();addScore(100);setFB('fb9','✅ '+oxScore+'/'+oxPairs.length+' 맞힘! +100점',true);}
     else{setFB('fb9',''+oxScore+'/'+oxPairs.length+' — 다음엔 더 잘할 수 있어!',false);}
-    setTimeout(nextSlide,1200);return;
+    return;
   }
   const p=oxPairs[oxIdx];
   document.getElementById('oxPair').textContent=p.a+' — '+p.b;
@@ -491,9 +491,7 @@ function restart(){
 }
 
 // Swipe
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+else if(d<-50)nextSlide();});
 
 initOx();updateUI();
 </script>

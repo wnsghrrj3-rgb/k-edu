@@ -379,18 +379,18 @@ function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textCon
 
 function answer(btn,idx){
   if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 function answerOX(btn,idx,si){
   if(answered[si])return;const slide=document.querySelectorAll('.slide')[si];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();currentSlide=si;
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 function fillBlank(btn,blankId,text,myIdx,correctIdx,si){
   if(answered[si])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
   const pts=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;currentSlide=si;
-  if(myIdx===correctIdx){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;setTimeout(nextSlide,900);}
+  if(myIdx===correctIdx){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+si,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -400,7 +400,7 @@ function sortToken(el,si){if(answered[si])return;playClick();let cur=sortCycle.i
 function checkSort(si){
   if(answered[si])return;currentSlide=si;const tokens=document.querySelectorAll('#sortArea'+si+' .token');let allCorrect=true;
   tokens.forEach(t=>{const ans=t.dataset.ans;const sel=[...t.classList].find(c=>c.startsWith('sel-'));if(sortMap[sel]===ans)t.classList.add('correct');else{t.classList.add('wrong');allCorrect=false;}});
-  if(allCorrect){playCorrect();addScore(25);setFB('fb'+si,'✅ 모두 정답! +25점',true);answered[si]=true;setTimeout(nextSlide,1200);}
+  if(allCorrect){playCorrect();addScore(25);setFB('fb'+si,'✅ 모두 정답! +25점',true);answered[si]=true;}
   else{playWrong();combo=0;setFB('fb'+si,'틀린 것이 있어요! 다시 해봐요 💪',false);setTimeout(()=>{tokens.forEach(t=>t.classList.remove('correct','wrong'));},800);}
 }
 
@@ -409,7 +409,7 @@ function matchClick(el,si){
   if(answered[si]||el.classList.contains('matched'))return;playClick();currentSlide=si;
   if(matchState.selected){
     if(matchState.selected===el){matchState.selected.classList.remove('selected');matchState.selected=null;return;}
-    if(matchState.selected.dataset.pair===el.dataset.pair){matchState.selected.classList.remove('selected');matchState.selected.classList.add('matched');el.classList.add('matched');matchState.matched++;matchState.selected=null;playCorrect();if(matchState.matched===2){addScore(25);setFB('fb'+si,'✅ 모두 맞췄어요! +25점',true);answered[si]=true;setTimeout(nextSlide,900);}}
+    if(matchState.selected.dataset.pair===el.dataset.pair){matchState.selected.classList.remove('selected');matchState.selected.classList.add('matched');el.classList.add('matched');matchState.matched++;matchState.selected=null;playCorrect();if(matchState.matched===2){addScore(25);setFB('fb'+si,'✅ 모두 맞췄어요! +25점',true);answered[si]=true;}}
     else{matchState.selected.classList.add('wrong');el.classList.add('wrong');const prev=matchState.selected;setTimeout(()=>{prev.classList.remove('selected','wrong');el.classList.remove('wrong');},500);matchState.selected=null;playWrong();combo=0;}
   }else{el.classList.add('selected');matchState.selected=el;}
 }
@@ -419,7 +419,7 @@ function buildWord(btn,letter,si){
   if(answered[si])return;playClick();currentSlide=si;btn.style.visibility='hidden';buildBuf[si].push(letter);
   document.getElementById('buildArea'+si).textContent=buildBuf[si].join('');speakWord(letter);
   if(buildBuf[si].length===3){const word=buildBuf[si].join('');
-    if(word===buildTarget[si]){playCorrect();addScore(50);setFB('fb'+si,'✅ "'+word+'" 완성! +50점',true);answered[si]=true;speakWord(word);setTimeout(nextSlide,1200);}
+    if(word===buildTarget[si]){playCorrect();addScore(50);setFB('fb'+si,'✅ "'+word+'" 완성! +50점',true);answered[si]=true;speakWord(word);}
     else{playWrong();combo=0;setFB('fb'+si,'순서가 달라요! 다시 해봐요 💪',false);setTimeout(()=>{buildBuf[si]=[];document.getElementById('buildArea'+si).textContent='';document.querySelectorAll('#buildLetters'+si+' .choice-btn').forEach(b=>b.style.visibility='visible');},800);}
   }
 }
@@ -434,9 +434,7 @@ function restart(){
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
 }
 
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx>50)prevSlide();else if(dx<-50)nextSlide();});
+else if(dx<-50)nextSlide();});
 updateUI();
 </script>
 </body>

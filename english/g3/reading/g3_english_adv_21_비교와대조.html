@@ -329,8 +329,8 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Q5 벤 다이어그램 (3항목)
 let vennCount=0;
@@ -341,7 +341,7 @@ function vennQ(btn,zone,text){
   if(el.textContent==='?')el.textContent='';
   const sp=document.createElement('div');sp.textContent=text;sp.style.fontSize='15px';el.appendChild(sp);el.classList.add('filled');
   btn.classList.add('correct');vennCount++;
-  if(vennCount===3){playCorrect();addScore(25);setFB('fb6','✅ 벤 다이어그램 완성! +25점',true);answered[6]=true;setTimeout(nextSlide,900);}
+  if(vennCount===3){playCorrect();addScore(25);setFB('fb6','✅ 벤 다이어그램 완성! +25점',true);answered[6]=true;}
 }
 
 // Q7 Same/Different (4항목)
@@ -354,7 +354,7 @@ function sdAnswer(idx,isCorrect,btn){
   if(Object.keys(sdAnswered).length===4){
     if(sdCorrect===4){addScore(50);setFB('fb8','✅ 전부 정답! +50점',true);}
     else{addScore(sdCorrect*12);setFB('fb8',sdCorrect+'/4 정답! +'+sdCorrect*12+'점',sdCorrect>=3);}
-    answered[8]=true;setTimeout(nextSlide,1200);
+    answered[8]=true;
   }
 }
 
@@ -367,7 +367,7 @@ function venn2Q(btn,zone,text){
   if(el.textContent==='?')el.textContent='';
   const sp=document.createElement('div');sp.textContent=text;sp.style.fontSize='14px';el.appendChild(sp);el.classList.add('filled');
   btn.classList.add('correct');venn2Count++;
-  if(venn2Count===5){playCorrect();addScore(100);setFB('fb10','✅ 완벽한 벤 다이어그램! +100점',true);answered[10]=true;setTimeout(nextSlide,900);}
+  if(venn2Count===5){playCorrect();addScore(100);setFB('fb10','✅ 완벽한 벤 다이어그램! +100점',true);answered[10]=true;}
 }
 
 // Q10 T/F
@@ -380,7 +380,7 @@ function tfAns(idx,isCorrect,btn){
   if(Object.keys(tfAnsState).length===4){
     if(tfCorr===4){addScore(100);setFB('fb11','✅ 전부 정답! +100점',true);}
     else{addScore(tfCorr*25);setFB('fb11',tfCorr+'/4 정답! +'+tfCorr*25+'점',tfCorr>=3);}
-    answered[11]=true;setTimeout(nextSlide,1200);
+    answered[11]=true;
   }
 }
 
@@ -394,8 +394,7 @@ function restart(){
   document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
 }
-let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide();});
+if(d<-50)nextSlide();});
 updateUI();
 </script>
 </body>

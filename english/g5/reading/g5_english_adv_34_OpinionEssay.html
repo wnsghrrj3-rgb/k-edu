@@ -317,7 +317,7 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=500?'⭐⭐⭐⭐⭐':score>=350?'⭐⭐⭐⭐':score>=200?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=500?'🏆':'🎉';}}
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Order — Q1 structure
 const orderCorrect=[2,3,1,0]; // Intro, Body1, Body2, Conclusion
@@ -330,7 +330,7 @@ function placeOrder(el,idx){
     const zone=document.getElementById('zone'+orderStep);
     zone.textContent='✅ '+el.textContent;zone.classList.add('filled');
     orderStep++;
-    if(orderStep===4){addScore(50);setFB('fb3','✅ 순서 완벽! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+    if(orderStep===4){addScore(50);setFB('fb3','✅ 순서 완벽! +50점',true);answered[currentSlide]=true;}
   } else {
     el.classList.add('wrong');playWrong();combo=0;setFB('fb3','순서를 다시 생각해보세요!',false);
     setTimeout(()=>el.classList.remove('wrong'),500);
@@ -348,14 +348,13 @@ function placeEssay(el,idx){
     const zone=document.getElementById('ez'+essayStep);
     zone.textContent='✅ '+el.textContent;zone.style.fontSize='15px';zone.classList.add('filled');
     essayStep++;
-    if(essayStep===4){addScore(100);setFB('fb10','✅ 에세이 순서 완벽! +100점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+    if(essayStep===4){addScore(100);setFB('fb10','✅ 에세이 순서 완벽! +100점',true);answered[currentSlide]=true;}
   } else {
     el.classList.add('wrong');playWrong();combo=0;setFB('fb10','에세이 구조를 떠올려보세요!',false);
     setTimeout(()=>el.classList.remove('wrong'),500);
   }
 }
 
-let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
 
 function restart(){score=0;combo=0;answered={};orderStep=0;essayStep=0;
 document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');

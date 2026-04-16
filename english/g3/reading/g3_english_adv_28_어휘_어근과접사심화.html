@@ -382,14 +382,14 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
   playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 function fillBlank(btn,blankId,text,ci,mi){
   if(answered[currentSlide])return;
   const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
   const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
-  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -405,7 +405,7 @@ function showClassify(){
     answered[6]=true;
     if(clScore>=4){playCorrect();addScore(25);setFB('fb6','✅ '+clScore+'/'+classifyItems.length+' 맞힘! +25점',true);}
     else{setFB('fb6',''+clScore+'/'+classifyItems.length+' — 다시 복습해보자!',false);}
-    setTimeout(nextSlide,1200);return;
+    return;
   }
   document.getElementById('classifyWord').textContent=classifyItems[clIdx].word;
   document.getElementById('classifyCount').textContent=(clIdx+1)+' / '+classifyItems.length;
@@ -430,7 +430,7 @@ function showBuild(){
     answered[10]=true;
     if(buildDone>=2){playCorrect();addScore(100);setFB('fb10','✅ '+buildDone+'/'+buildTasks.length+' 성공! +100점',true);}
     else{setFB('fb10',''+buildDone+'/'+buildTasks.length+' — 접사를 더 연습하자!',false);}
-    setTimeout(nextSlide,1200);return;
+    return;
   }
   const t=buildTasks[buildIdx];
   document.getElementById('buildTarget').textContent='💡 뜻: '+t.hint+' ('+(buildIdx+1)+'/'+buildTasks.length+')';
@@ -472,9 +472,7 @@ function restart(){
   initClassify();initBuild();updateUI();
 }
 
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+else if(d<-50)nextSlide();});
 
 initClassify();initBuild();updateUI();
 </script>

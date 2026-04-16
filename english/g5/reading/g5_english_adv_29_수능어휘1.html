@@ -370,7 +370,7 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;
   playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -378,7 +378,7 @@ function answer(btn,idx){
 function answerPair(btn,idx){
   if(answered[currentSlide])return;
   const pts=100; playClick();
-  if(idx===0){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb10','✅ eliminate — significant 정답! +100점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===0){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb10','✅ eliminate — significant 정답! +100점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb10','다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -391,7 +391,7 @@ function checkType(qn,ans){
   if(val===ans.toLowerCase()){
     playCorrect();addScore(50);setFB('fb'+qn,'✅ "'+ans+'" 정답! +50점',true);
     inp.style.borderColor='var(--green)';inp.style.background='var(--green-light)';
-    answered[currentSlide]=true;setTimeout(nextSlide,900);
+    answered[currentSlide]=true;
   } else {
     playWrong();combo=0;setFB('fb'+qn,'다시 입력해보세요! 💪',false);
     inp.style.borderColor='var(--red)';
@@ -416,7 +416,7 @@ function matchClick(el){
     el.classList.add('matched');el.classList.remove('selected');
     matchSel.classList.add('matched');matchSel.classList.remove('selected');
     matchCount++;playCorrect();
-    if(matchCount===4){addScore(50);setFB('fb6','✅ 모두 맞췄어요! +50점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+    if(matchCount===4){addScore(50);setFB('fb6','✅ 모두 맞췄어요! +50점',true);answered[currentSlide]=true;}
   } else {
     el.classList.add('wrong');matchSel.classList.add('wrong');playWrong();combo=0;
     setFB('fb6','다시 짝지어보세요!',false);
@@ -443,7 +443,7 @@ function fillTwo(btn,idx){
   } else if(fillState.filled===1){
     if(vals[idx]===fillState.answers[1]){
       btn.classList.add('correct');addScore(50);setFB('fb7','✅ 모두 정답! +50점',true);
-      answered[currentSlide]=true;setTimeout(nextSlide,900);
+      answered[currentSlide]=true;
     } else {
       btn.classList.add('wrong');playWrong();combo=0;setFB('fb7','②번을 다시 골라보세요!',false);
       setTimeout(()=>btn.classList.remove('wrong'),500);
@@ -452,9 +452,6 @@ function fillTwo(btn,idx){
 }
 
 // Touch swipe
-let tx=0;
-document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
 
 function restart(){
   score=0;combo=0;answered={};matchSel=null;matchCount=0;fillState={filled:0,answers:['demonstrated','apparent']};

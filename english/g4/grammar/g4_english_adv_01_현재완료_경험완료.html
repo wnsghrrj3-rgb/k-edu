@@ -372,14 +372,14 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
   playClick();
-  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 function fillBlank(btn,blankId,text,ci,mi){
   if(answered[currentSlide])return;
   const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);
   const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||25;
-  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}
+  if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -398,7 +398,7 @@ function showUsage(){
     answered[6]=true;
     if(uScore>=3){playCorrect();addScore(25);setFB('fb6','✅ '+uScore+'/'+usageItems.length+' 맞힘! +25점',true);}
     else setFB('fb6',uScore+'/'+usageItems.length+' — 경험과 완료를 다시 복습하세요!',false);
-    setTimeout(nextSlide,1200);return;
+    return;
   }
   document.getElementById('useSent').textContent=usageItems[uIdx].sent;
   document.getElementById('useCount').textContent=(uIdx+1)+' / '+usageItems.length;
@@ -421,9 +421,7 @@ function restart(){
   initUsage();updateUI();
 }
 
-let tx=0;
-document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});
+else if(d<-50)nextSlide();});
 
 initUsage();updateUI();
 </script>

@@ -286,14 +286,14 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'문맥 단서를 다시 읽어보세요! 🔍',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'문맥 단서를 다시 읽어보세요! 🔍',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Q4 단서 찾기
 let clue4=0;
 function clueQ4(btn,isClue){
   if(btn.classList.contains('correct')||btn.classList.contains('wrong')||answered[5])return;playClick();
   if(isClue){btn.classList.add('correct');playCorrect();clue4++;
-    if(clue4===2){addScore(25);setFB('fb5','✅ 단서 2개 모두 찾았어요! anxious = 불안한! +25점',true);answered[5]=true;setTimeout(nextSlide,900);}
+    if(clue4===2){addScore(25);setFB('fb5','✅ 단서 2개 모두 찾았어요! anxious = 불안한! +25점',true);answered[5]=true;}
   }else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb5','그건 감정 단서가 아니에요!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -303,7 +303,7 @@ function vocabMatch(btn,slot,text){
   if(btn.classList.contains('correct'))return;playClick();
   document.getElementById('match'+slot).textContent=text;
   btn.classList.add('correct');vmCount++;
-  if(vmCount===3){playCorrect();addScore(100);setFB('fb11','✅ 어휘 3개 완벽 매칭! +100점',true);answered[11]=true;setTimeout(nextSlide,900);}
+  if(vmCount===3){playCorrect();addScore(100);setFB('fb11','✅ 어휘 3개 완벽 매칭! +100점',true);answered[11]=true;}
 }
 
 function restart(){
@@ -315,8 +315,7 @@ function restart(){
   document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
   currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
 }
-let tx=0;document.querySelector('.slides').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.querySelector('.slides').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>50)prevSlide();if(d<-50)nextSlide();});
+if(d<-50)nextSlide();});
 updateUI();
 </script>
 </body>

@@ -296,11 +296,11 @@ function updateUI(){document.getElementById('progressFill').style.width=(current
 function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
-function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
-function oxAnswer(btn,slideIdx,idx){if(answered[slideIdx])return;const slide=document.querySelectorAll('.slide')[slideIdx];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ 정답! waited → waiting이 맞아요! +'+pts+'점',true);answered[slideIdx]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+slideIdx,'have been 다음에는 V-ing! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function oxAnswer(btn,slideIdx,idx){if(answered[slideIdx])return;const slide=document.querySelectorAll('.slide')[slideIdx];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+slideIdx,'✅ 정답! waited → waiting이 맞아요! +'+pts+'점',true);answered[slideIdx]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+slideIdx,'have been 다음에는 V-ing! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // ── SORT GAME (slide 5) ──
 const sortData=[{word:'3 hours',cat:'for'},{word:'Monday',cat:'since'},{word:'a long time',cat:'for'},{word:'2020',cat:'since'},{word:'10 minutes',cat:'for'},{word:'last summer',cat:'since'}];
@@ -311,7 +311,7 @@ const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:8p
 const bFor=document.createElement('button');bFor.className='choice-btn';bFor.style.fontSize='18px';bFor.textContent='for';bFor.onclick=()=>{checkSort(tokenEl,data,'for');wrap.remove();};
 const bSince=document.createElement('button');bSince.className='choice-btn';bSince.style.fontSize='18px';bSince.textContent='since';bSince.onclick=()=>{checkSort(tokenEl,data,'since');wrap.remove();};
 wrap.append(bFor,bSince);tokenEl.after(wrap);}
-function checkSort(tokenEl,data,choice){playClick();if(choice===data.cat){tokenEl.classList.add('correct');playCorrect();sortCount++;const target=data.cat==='for'?document.getElementById('forItems'):document.getElementById('sinceItems');const p=document.createElement('div');p.style.cssText='font-size:17px;margin:3px 0;font-weight:700';p.textContent=data.word;target.appendChild(p);if(sortCount===sortTotal){addScore(50);setFB('fb5','✅ 완벽 분류! +50점',true);answered[5]=true;setTimeout(nextSlide,900);}}else{tokenEl.classList.add('wrong');playWrong();combo=0;setFB('fb5','다시 생각해보세요! 💪',false);setTimeout(()=>tokenEl.classList.remove('wrong'),500);}}
+function checkSort(tokenEl,data,choice){playClick();if(choice===data.cat){tokenEl.classList.add('correct');playCorrect();sortCount++;const target=data.cat==='for'?document.getElementById('forItems'):document.getElementById('sinceItems');const p=document.createElement('div');p.style.cssText='font-size:17px;margin:3px 0;font-weight:700';p.textContent=data.word;target.appendChild(p);if(sortCount===sortTotal){addScore(50);setFB('fb5','✅ 완벽 분류! +50점',true);answered[5]=true;}}else{tokenEl.classList.add('wrong');playWrong();combo=0;setFB('fb5','다시 생각해보세요! 💪',false);setTimeout(()=>tokenEl.classList.remove('wrong'),500);}}
 
 // ── WORD ORDER (slide 6) ──
 const correctOrder6=['We','have','been','living','here','since','2015'];
@@ -320,7 +320,7 @@ function initWordOrder(){const bank=document.getElementById('wordBank6');const b
 const shuffled=[...correctOrder6].sort(()=>Math.random()-0.5);
 shuffled.forEach(w=>{const t=document.createElement('div');t.className='token';t.textContent=w;t.onclick=function(){placeWord6(this,w);};bank.appendChild(t);});}
 function placeWord6(el,w){playClick();el.style.display='none';placed6.push(w);const built=document.getElementById('builtSentence6');const t=document.createElement('div');t.className='token';t.style.background='var(--primary-light)';t.textContent=w;t.onclick=function(){removeWord6(this,el,w);};built.appendChild(t);
-if(placed6.length===correctOrder6.length){if(placed6.join(' ')===correctOrder6.join(' ')){playCorrect();addScore(50);setFB('fb6','✅ 완벽한 문장! +50점',true);answered[6]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb6','순서를 다시 확인! 💪',false);setTimeout(()=>{placed6=[];built.innerHTML='';document.querySelectorAll('#wordBank6 .token').forEach(t=>t.style.display='');},800);}}}
+if(placed6.length===correctOrder6.length){if(placed6.join(' ')===correctOrder6.join(' ')){playCorrect();addScore(50);setFB('fb6','✅ 완벽한 문장! +50점',true);answered[6]=true;}else{playWrong();combo=0;setFB('fb6','순서를 다시 확인! 💪',false);setTimeout(()=>{placed6=[];built.innerHTML='';document.querySelectorAll('#wordBank6 .token').forEach(t=>t.style.display='');},800);}}}
 function removeWord6(builtEl,origEl,w){if(answered[6])return;builtEl.remove();origEl.style.display='';placed6=placed6.filter(x=>x!==w);}
 
 function restart(){score=0;combo=0;answered={};sortCount=0;
@@ -332,9 +332,6 @@ currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');
 initSort();initWordOrder();updateUI();}
 
 // ── SWIPE ──
-let tx=0;
-document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d<0?nextSlide():prevSlide();}});
 
 initSort();initWordOrder();updateUI();
 </script>

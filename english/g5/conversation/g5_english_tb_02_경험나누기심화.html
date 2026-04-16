@@ -297,13 +297,13 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;document.getElementById(bid).textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById(bid).textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;document.getElementById(bid).textContent=text;playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||50;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ "'+text+'" 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById(bid).textContent='___';setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // O/X
 function tfAnswer(btn,si,isCorrectAnswer){
   if(answered[si])return;playClick();
-  if(isCorrectAnswer){btn.classList.add('correct');playCorrect();addScore(50);setFB('fb'+si,'✅ 맞아요! swim → swimming이 되어야 해요. +50점',true);answered[si]=true;setTimeout(nextSlide,900);}
+  if(isCorrectAnswer){btn.classList.add('correct');playCorrect();addScore(50);setFB('fb'+si,'✅ 맞아요! swim → swimming이 되어야 해요. +50점',true);answered[si]=true;}
   else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'been 뒤에는 ~ing가 와야 해요!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -320,7 +320,7 @@ function tfAnswer(btn,si,isCorrectAnswer){
       placed++;if(placed===items.length)setTimeout(()=>{
         if(answered[4])return;
         let ok=true;items.forEach(it=>{const inA=[...document.getElementById('catA4').querySelectorAll('.token')].map(x=>x.textContent);const inB=[...document.getElementById('catB4').querySelectorAll('.token')].map(x=>x.textContent);if(it.cat==='a'&&!inA.includes(it.text))ok=false;if(it.cat==='b'&&!inB.includes(it.text))ok=false;});
-        if(ok){playCorrect();addScore(50);setFB('fb4','✅ 완벽한 분류! +50점',true);answered[4]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb4','터치하면 칸을 바꿀 수 있어요! 💪',false);}
+        if(ok){playCorrect();addScore(50);setFB('fb4','✅ 완벽한 분류! +50점',true);answered[4]=true;}else{playWrong();combo=0;setFB('fb4','터치하면 칸을 바꿀 수 있어요! 💪',false);}
       },300);
     };area.appendChild(t);
   });
@@ -332,7 +332,7 @@ function tfAnswer(btn,si,isCorrectAnswer){
   const shuffled=[...words].sort(()=>Math.random()-0.5);
   const area=document.getElementById('tokens6'),drop=document.getElementById('drop6');
   let selected=[];
-  shuffled.forEach(w=>{const t=document.createElement('span');t.className='token';t.textContent=w;t.onclick=()=>{if(answered[6]||t.classList.contains('used'))return;playClick();t.classList.add('used');selected.push(w);drop.textContent=selected.join(' ');if(selected.length===words.length){if(selected.join(' ')===words.join(' ')){playCorrect();addScore(50);setFB('fb6','✅ 완벽! +50점',true);answered[6]=true;setTimeout(nextSlide,900);}else{playWrong();combo=0;setFB('fb6','다시 시도! 💪',false);selected=[];drop.textContent='';area.querySelectorAll('.token').forEach(tk=>tk.classList.remove('used'));}}};area.appendChild(t);});
+  shuffled.forEach(w=>{const t=document.createElement('span');t.className='token';t.textContent=w;t.onclick=()=>{if(answered[6]||t.classList.contains('used'))return;playClick();t.classList.add('used');selected.push(w);drop.textContent=selected.join(' ');if(selected.length===words.length){if(selected.join(' ')===words.join(' ')){playCorrect();addScore(50);setFB('fb6','✅ 완벽! +50점',true);answered[6]=true;}else{playWrong();combo=0;setFB('fb6','다시 시도! 💪',false);selected=[];drop.textContent='';area.querySelectorAll('.token').forEach(tk=>tk.classList.remove('used'));}}};area.appendChild(t);});
 })();
 
 // Q9 타이핑
@@ -340,14 +340,12 @@ function checkType10(){
   if(answered[10])return;
   const v=document.getElementById('input10').value.trim().toLowerCase().replace(/[.!]/g,'');
   if(v.includes('doing taekwondo')||v.includes('practicing taekwondo')){
-    playCorrect();addScore(100);setFB('fb10','✅ 훌륭해요! +100점',true);answered[10]=true;setTimeout(nextSlide,900);
+    playCorrect();addScore(100);setFB('fb10','✅ 훌륭해요! +100점',true);answered[10]=true;
   }else{playWrong();combo=0;setFB('fb10','힌트: doing taekwondo 또는 practicing taekwondo 💪',false);}
 }
 
 // swipe
-let tx=0;
-document.getElementById('slidesWrap').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});
-document.getElementById('slidesWrap').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(d>60)prevSlide();else if(d<-60)nextSlide();});
+else if(d<-60)nextSlide();});
 
 function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn,.tf-btn').forEach(b=>b.className=b.className.replace(/ correct| wrong/g,''));document.querySelectorAll('.token').forEach(t=>{t.className='token';delete t.dataset.placed;});document.querySelectorAll('.blank-box').forEach(b=>b.textContent='___');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('input').forEach(i=>i.value='');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
 updateUI();
