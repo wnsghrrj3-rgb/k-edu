@@ -330,7 +330,7 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
       <button class="choice-btn" onclick="answer(this,1)">t</button>
       <button class="choice-btn" onclick="answer(this,2)">q</button>
     </div>
-    <div class="feedback" id="fb9"></div>
+    <div class="feedback" id="fb8"></div>
   </div>
 </div>
 
@@ -344,7 +344,7 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
       <button class="choice-btn" onclick="answer(this,1)">트</button>
       <button class="choice-btn" onclick="answer(this,2)">쿠</button>
     </div>
-    <div class="feedback" id="fb10"></div>
+    <div class="feedback" id="fb9"></div>
   </div>
 </div>
 
@@ -373,7 +373,7 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
         </div>
       </div>
     </div>
-    <div class="feedback" id="fb11"></div>
+    <div class="feedback" id="fb10"></div>
   </div>
 </div>
 
@@ -412,7 +412,7 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
     <div class="sort-check">
       <button class="sort-check-btn" onclick="checkSort()">채점하기 ✓</button>
     </div>
-    <div class="feedback" id="fb12"></div>
+    <div class="feedback" id="fb11"></div>
   </div>
 </div>
 
@@ -426,7 +426,7 @@ body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); he
       <button class="choice-btn" onclick="answer(this,1)">👑 queen</button>
       <button class="choice-btn" onclick="answer(this,2)">🐯 tiger</button>
     </div>
-    <div class="feedback" id="fb13"></div>
+    <div class="feedback" id="fb12"></div>
   </div>
 </div>
 
@@ -498,9 +498,9 @@ function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').t
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
 
 const feedbackMap={
-  9:{ok:'✅ 정답! queen = qu 👑 (다음 버튼)', err:'다시! q는 항상 u랑 짝! "쿠~"'},
-  10:{ok:'✅ 정답! t = 트 🐯 (다음 버튼)', err:'다시! 혀끝 터뜨리기 "트!"'},
-  13:{ok:'✅ 정답! rabbit 🐰 (다음 버튼)', err:'다시! "ㄹ르~" r은 혀 안 닿음!'}
+  8:{ok:'✅ 정답! queen = qu 👑 (다음 버튼)', err:'다시! q는 항상 u랑 짝! "쿠~"'},
+  9:{ok:'✅ 정답! t = 트 🐯 (다음 버튼)', err:'다시! 혀끝 터뜨리기 "트!"'},
+  12:{ok:'✅ 정답! rabbit 🐰 (다음 버튼)', err:'다시! "ㄹ르~" r은 혀 안 닿음!'}
 };
 
 function answer(btn,idx){
@@ -544,17 +544,17 @@ function matchPick(el,side,id){
     matchedCount++;
     if(matchedCount>=4){
       addScore(25);
-      setFB('fb11','✅ 완벽! 4개 모두 짝! +25점 (아래 다음 버튼)',true);
-      answered[11]=true;
+      setFB('fb10','✅ 완벽! 4개 모두 짝! +25점 (아래 다음 버튼)',true);
+      answered[10]=true;
     } else {
-      setFB('fb11','👍 '+matchedCount+'/4 짝!',true);
+      setFB('fb10','👍 '+matchedCount+'/4 짝!',true);
     }
     matchSelected=null;
   } else {
     matchSelected.el.classList.add('wrong-flash');
     el.classList.add('wrong-flash');
     playWrong();combo=0;
-    setFB('fb11','다시!',false);
+    setFB('fb10','다시!',false);
     setTimeout(()=>{
       document.querySelectorAll('.match-item.wrong-flash').forEach(x=>x.classList.remove('wrong-flash'));
       if(matchSelected)matchSelected.el.classList.remove('selected');
@@ -573,7 +573,7 @@ function pickToken(el,word){
   selectedToken={el,word};
 }
 function dropToBin(bin){
-  if(!selectedToken||answered[12])return;
+  if(!selectedToken||answered[11])return;
   const {el,word}=selectedToken;
   const binIdMap={q:'binQ',r:'binR',s:'binS',t:'binT'};
   const binEl=document.getElementById(binIdMap[bin]);
@@ -588,17 +588,17 @@ function dropToBin(bin){
   playClick();
 }
 function checkSort(){
-  if(answered[12])return;
+  if(answered[11])return;
   const tokens=document.querySelectorAll('.sort-bin-4 .sort-token');
-  if(tokens.length<8){setFB('fb12','⚠️ 8개 모두!',false);return;}
+  if(tokens.length<8){setFB('fb11','⚠️ 8개 모두!',false);return;}
   let correct=0;
   tokens.forEach(t=>{if(sortAnswers[t.dataset.word]===t.dataset.bin)correct++});
   if(correct===8){
     addScore(50);
     tokens.forEach(t=>{t.style.background='var(--green-light)'});
     playCorrect();
-    setFB('fb12','✅ 완벽! 8/8 +50점 (다음)',true);
-    answered[12]=true;
+    setFB('fb11','✅ 완벽! 8/8 +50점 (다음)',true);
+    answered[11]=true;
   } else {
     playWrong();combo=0;
     tokens.forEach(t=>{
@@ -606,7 +606,7 @@ function checkSort(){
         t.style.background='var(--red-light)';t.style.borderColor='var(--red)';
       }
     });
-    setFB('fb12',correct+'/8 맞음',false);
+    setFB('fb11',correct+'/8 맞음',false);
     setTimeout(()=>{
       document.querySelectorAll('.sort-bin-4 .sort-token').forEach(t=>{
         if(sortAnswers[t.dataset.word]!==t.dataset.bin){
