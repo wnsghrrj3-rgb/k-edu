@@ -6,88 +6,754 @@
 <script src="/kedu_tracker.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>K-edu | 파닉스 R통제모음 ar·or·er·ir·ur</title>
+<title>K-edu 1학년 파닉스 17 — R통제모음 ar / or / er / ir / ur (bossy r 👑)</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="phonics-common.css">
 <style>
-:root{--bg:#FDF4FF;--card:#FFF;--primary:#9333EA;--primary-light:#F3E8FF;--secondary:#C084FC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;}
-*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}.sound-btn{background:none;border:none;cursor:pointer;font-size:26px;padding:4px 8px;border-radius:10px;}.progress-wrap{display:flex;align-items:center;gap:8px;flex:1;margin:0 12px;}.progress-bar{flex:1;height:10px;background:#F3E8FF;border-radius:99px;overflow:hidden;}.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:99px;transition:width .5s;}.page-info{font-size:18px;color:var(--subtext);white-space:nowrap;}.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700;color:#E6A800;}.kedu-logo{display:flex;align-items:center;gap:4px;background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;flex-shrink:0;}
-.slides{flex:1;position:relative;overflow:hidden;}.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 18px;opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;}.slide.active{opacity:1;transform:translateX(0);pointer-events:all;}.slide.out{opacity:0;transform:translateX(-60px);}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 20px;width:100%;max-width:640px;text-align:center;}.slide-title{font-size:22px;color:var(--subtext);margin-bottom:6px;}
-.question-label{display:inline-flex;align-items:center;gap:6px;background:var(--primary);color:#fff;border-radius:99px;padding:5px 16px;font-size:20px;margin-bottom:8px;}.stars{color:#FCD34D;}.question-text{font-size:24px;text-align:center;margin:4px 0 10px;line-height:1.5;}
-.choices{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}.choice-btn{background:var(--card);border:3px solid #E0D0F0;border-radius:16px;padding:10px 20px;font-family:'Jua',sans-serif;font-size:38px;cursor:pointer;transition:all .2s;min-width:65px;}.choice-btn:hover{border-color:var(--primary);transform:translateY(-3px);}.choice-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}.choice-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}.choice-btn.sm{font-size:26px;padding:9px 14px;}
-@keyframes cpop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-.choices.col{flex-direction:column;align-items:center;}.choices.col .choice-btn{font-size:26px;width:100%;max-width:500px;padding:10px 18px;}
-.blank-box{display:inline-block;font-size:60px;font-weight:900;border-bottom:5px solid var(--text);min-width:80px;text-align:center;color:var(--primary);line-height:1.2;margin:0 4px;transition:all .3s;}.blank-box.filled{animation:cpop .4s;}
-.feedback{font-size:22px;text-align:center;margin-top:6px;min-height:28px;border-radius:12px;padding:4px 12px;}.feedback.ok{color:var(--green);background:var(--green-light);}.feedback.err{color:var(--red);background:var(--red-light);}
-.ox-row{display:flex;gap:16px;justify-content:center;margin-top:10px;}.ox-btn{font-size:60px;background:var(--card);border:3px solid #E0D0F0;border-radius:20px;padding:8px 26px;cursor:pointer;transition:all .2s;}.ox-btn:hover{transform:scale(1.08);}.ox-btn.correct{background:var(--green-light);border-color:var(--green);animation:cpop .4s;}.ox-btn.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}
-.token-area{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;}.token{background:var(--card);border:3px solid #E0D0F0;border-radius:99px;padding:6px 14px;font-size:28px;cursor:pointer;transition:all .2s;}.token:hover{border-color:var(--primary);transform:scale(1.06);}.token.sel-ar{background:#FECDD3;border-color:#E11D48;}.token.sel-or{background:#DBEAFE;border-color:#2563EB;}.token.sel-er{background:#FEF3C7;border-color:#D97706;}.token.sel-ir{background:#D1FAE5;border-color:#059669;}.token.sel-ur{background:#F3E8FF;border-color:#9333EA;}.token.correct{background:var(--green-light);border-color:var(--green);}.token.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}
-.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;max-width:500px;}.match-item{background:var(--card);border:3px solid #E0D0F0;border-radius:14px;padding:8px;font-size:30px;text-align:center;cursor:pointer;transition:all .2s;}.match-item:hover{border-color:var(--primary);}.match-item.selected{border-color:var(--primary);background:var(--primary-light);}.match-item.matched{background:var(--green-light);border-color:var(--green);pointer-events:none;}.match-item.wrong{background:var(--red-light);border-color:var(--red);animation:shake .4s;}
-.nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 20px;background:#fff;border-top:1px solid #E0D0F0;flex-shrink:0;}.nav-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 32px;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:opacity .2s;}.nav-btn:disabled{opacity:.3;cursor:default;}
-.combo-toast{position:fixed;top:65px;left:50%;transform:translateX(-50%) scale(0);background:var(--yellow-light);border:2px solid var(--yellow);border-radius:99px;padding:6px 20px;font-size:24px;color:#E6A800;z-index:99;transition:transform .3s;}.combo-toast.show{transform:translateX(-50%) scale(1);}
-.result-box{text-align:center;}.result-emoji{font-size:80px;}.result-score{font-size:48px;color:var(--primary);margin:10px 0;}.result-stars{font-size:36px;}.result-msg{font-size:24px;color:var(--subtext);margin:8px 0;}.restart-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:12px 36px;font-family:'Jua',sans-serif;font-size:24px;cursor:pointer;margin-top:10px;}
-.word-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0;}.word-card{border-radius:14px;padding:8px 12px;font-size:36px;cursor:pointer;transition:transform .2s;}.word-card:hover{transform:scale(1.05);}
-.vp{display:inline-block;padding:4px 12px;border-radius:10px;font-size:38px;cursor:pointer;margin:3px;}
+/* ═══ 17강 로컬 (R통제모음 ar/or/er/ir/ur) — 공용은 phonics-common.css ═══ */
+:root {
+  /* 17강 신규: 3종 소리별 색 계열 (같은 소리 = 같은 색) */
+  --c-ar: #BF360C; --c-ar-light: #FBE9E7;    /* 딥 오렌지레드 "아r" (단독) */
+  --c-or: #F57F17; --c-or-light: #FFF8E1;    /* 머스터드 "오r" (단독) */
+  --c-er: #455A64; --c-er-light: #ECEFF1;    /* 슬레이트 "어r" (3형제) */
+  --c-ir: #546E7A; --c-ir-light: #CFD8DC;    /* 블루그레이 "어r" */
+  --c-ur: #607D8B; --c-ur-light: #B0BEC5;    /* 라이트 블루그레이 "어r" */
+  --c-trio: #455A64; --c-trio-light: #ECEFF1; /* "어r" 3형제 통합 색 */
+}
+
+/* 17강 칩 그라디언트 — 5팀 지배자 */
+.slide-chip.bossy { background:linear-gradient(90deg,var(--c-ar),var(--c-ur)); }
+.slide-chip.alert2 { background:#D32F2F; }
+
+/* ═══ slide 0: Hook — bossy-r-demo (car 분해, r이 왕관) ═══ */
+.bossy-r-demo { display:flex; justify-content:center; align-items:flex-end; gap:8px; margin:20px 0 14px; flex-wrap:wrap; }
+.brd-letter { font-size:54px; font-weight:700; color:var(--c-cons); padding:6px 10px; line-height:1; }
+.brd-vowel { font-size:54px; font-weight:700; padding:6px 10px; line-height:1; color:var(--c-a); opacity:.55; transition:all .4s; position:relative; }
+.brd-vowel.ruled { color:var(--c-ar); opacity:1; background:var(--c-ar-light); border-radius:10px; }
+.brd-king { position:relative; display:inline-flex; align-items:flex-end; padding-top:24px; }
+.brd-king::before { content:'👑'; position:absolute; top:-4px; left:50%; transform:translateX(-50%); font-size:26px; animation:crownFloat 1.8s ease-in-out infinite; }
+.brd-r { font-size:58px; font-weight:700; color:var(--c-ar); padding:6px 10px; line-height:1; text-shadow:0 0 0 transparent; animation:rGlow 2s ease-in-out infinite; }
+@keyframes crownFloat { 0%,100%{transform:translateX(-50%) translateY(0) rotate(-3deg)} 50%{transform:translateX(-50%) translateY(-6px) rotate(3deg)} }
+@keyframes rGlow { 0%,100%{text-shadow:0 0 0 transparent} 50%{text-shadow:0 0 12px var(--c-ar),0 0 20px var(--c-ar)} }
+
+/* ═══ slide 1: frame-shift — 🤝 팀 vs 👑 bossy r 좌우 대비 ═══ */
+.frame-shift { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+.fs-card { border:4px solid; border-radius:18px; padding:14px 10px; text-align:center; }
+.fs-card.team { background:#E3F2FD; border-color:#1976D2; }
+.fs-card.bossy { background:var(--c-ar-light); border-color:var(--c-ar); }
+.fs-icon { font-size:42px; margin-bottom:4px; }
+.fs-title { font-size:19px; font-weight:700; margin-bottom:6px; }
+.fs-card.team .fs-title { color:#1976D2; }
+.fs-card.bossy .fs-title { color:var(--c-ar); }
+.fs-ex { font-size:24px; font-weight:700; margin:6px 0; letter-spacing:1px; }
+.fs-card.team .fs-ex { color:#1976D2; }
+.fs-card.bossy .fs-ex { color:var(--c-ar); }
+.fs-desc { font-size:14px; color:var(--subtext); line-height:1.4; margin-top:4px; }
+
+/* ═══ slide 2: king-r — 왕관 쓴 r이 앞 모음 지배 (광선) ═══ */
+.king-r { display:flex; justify-content:center; align-items:center; gap:14px; margin:18px 0; background:var(--c-ar-light); border:3px dashed var(--c-ar); border-radius:20px; padding:20px 14px; cursor:pointer; }
+.kr-vowel { font-size:62px; font-weight:700; color:var(--c-ar); background:#fff; border-radius:14px; padding:8px 18px; animation:vowelRuled 2.4s ease-in-out infinite; line-height:1; min-width:90px; text-align:center; }
+@keyframes vowelRuled { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08); box-shadow:0 0 18px var(--c-ar)} }
+.kr-beam { font-size:38px; color:var(--c-ar); animation:beamPulse 1s ease-in-out infinite; }
+@keyframes beamPulse { 0%,100%{opacity:.4; transform:scaleX(.8)} 50%{opacity:1; transform:scaleX(1.15)} }
+.kr-king { position:relative; padding-top:30px; }
+.kr-king::before { content:'👑'; position:absolute; top:-2px; left:50%; transform:translateX(-50%); font-size:32px; animation:crownFloat 1.8s ease-in-out infinite; }
+.kr-r { font-size:72px; font-weight:700; color:var(--c-ar); background:#fff; border-radius:14px; padding:8px 22px; line-height:1; min-width:100px; text-align:center; text-shadow:0 0 14px var(--c-ar); }
+
+.king-r-compare { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.krc-card { border:3px solid; border-radius:14px; padding:12px 8px; text-align:center; cursor:pointer; transition:transform .2s; }
+.krc-card:hover { transform:translateY(-3px); }
+.krc-card.before { background:var(--c-a-light); border-color:var(--c-a); }
+.krc-card.after { background:var(--c-ar-light); border-color:var(--c-ar); }
+.krc-label { font-size:14px; font-weight:700; margin-bottom:4px; }
+.krc-card.before .krc-label { color:var(--c-a); }
+.krc-card.after .krc-label { color:var(--c-ar); }
+.krc-word { font-size:36px; font-weight:700; letter-spacing:1px; margin:4px 0; }
+.krc-card.before .krc-word { color:var(--c-a); }
+.krc-card.after .krc-word { color:var(--c-ar); }
+.krc-sound { font-size:17px; font-weight:700; margin-top:4px; }
+
+/* ═══ slide 3~7: family 공용 (16강 패턴 계승, 17강 5색 추가) ═══ */
+.family-title { display:inline-block; font-size:28px; font-weight:700; padding:6px 18px; border-radius:14px; margin:4px auto 12px; }
+.family-title.ar { background:var(--c-ar-light); color:var(--c-ar); }
+.family-title.or { background:var(--c-or-light); color:var(--c-or); }
+.family-title.er { background:var(--c-er-light); color:var(--c-er); }
+.family-title.ir { background:var(--c-ir-light); color:var(--c-ir); }
+.family-title.ur { background:var(--c-ur-light); color:var(--c-ur); }
+.family-words { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:10px 0; }
+.family-word { background:#fff; border:3px solid #C0D0D0; border-radius:14px; padding:10px 14px; cursor:pointer; transition:all .2s; display:flex; flex-direction:column; align-items:center; min-width:92px; }
+.family-word:hover { transform:translateY(-3px); }
+.family-word .fw-emoji { font-size:34px; }
+.family-word .fw-letters { font-size:22px; font-weight:700; margin-top:4px; letter-spacing:1px; }
+.family-word .fw-letters .cons { color:var(--c-cons); }
+.family-word.ar { border-color:var(--c-ar); background:var(--c-ar-light); }
+.family-word.ar .fw-letters .ruler { color:var(--c-ar); }
+.family-word.or { border-color:var(--c-or); background:var(--c-or-light); }
+.family-word.or .fw-letters .ruler { color:var(--c-or); }
+.family-word.er { border-color:var(--c-er); background:var(--c-er-light); }
+.family-word.er .fw-letters .ruler { color:var(--c-er); }
+.family-word.ir { border-color:var(--c-ir); background:var(--c-ir-light); }
+.family-word.ir .fw-letters .ruler { color:var(--c-ir); }
+.family-word.ur { border-color:var(--c-ur); background:var(--c-ur-light); }
+.family-word.ur .fw-letters .ruler { color:var(--c-ur); }
+.family-hint { background:var(--yellow-light); border:2px dashed var(--yellow); border-radius:12px; padding:10px; margin:10px 0; font-size:17px; text-align:center; line-height:1.5; }
+.family-hint b { color:var(--primary); }
+
+/* ═══ slide 5: ar vs or 대비 (16강 team-compare 변형) ═══ */
+.sound-compare { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0; }
+.sc-card { border:4px solid; border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer; transition:transform .2s; }
+.sc-card:hover { transform:translateY(-3px); }
+.sc-card.ar { background:var(--c-ar-light); border-color:var(--c-ar); color:var(--c-ar); }
+.sc-card.or { background:var(--c-or-light); border-color:var(--c-or); color:var(--c-or); }
+.sc-emoji { font-size:36px; }
+.sc-word { font-size:32px; font-weight:700; margin:4px 0; letter-spacing:1px; }
+.sc-sound { font-size:20px; font-weight:700; margin-top:4px; }
+
+/* ═══ slide 8: same-sound-trio — er/ir/ur "어r" 3형제 킬러 ═══ */
+.trio-warning { background:linear-gradient(135deg,#FFEBEE,#FFF3E0); border:3px solid #D32F2F; border-radius:16px; padding:14px; margin:12px 0; }
+.trio-warning-title { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:700; color:#D32F2F; margin-bottom:6px; }
+.trio-warning-text { font-size:16px; line-height:1.55; color:var(--text); }
+.trio-warning-text b { color:var(--c-trio); }
+.same-sound-trio { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:14px 0; position:relative; }
+.trio-card { border:4px solid; border-radius:16px; padding:12px 6px; text-align:center; cursor:pointer; transition:transform .2s; }
+.trio-card:hover { transform:translateY(-3px); }
+.trio-card.er { background:var(--c-er-light); border-color:var(--c-er); color:var(--c-er); }
+.trio-card.ir { background:var(--c-ir-light); border-color:var(--c-ir); color:var(--c-ir); }
+.trio-card.ur { background:var(--c-ur-light); border-color:var(--c-ur); color:var(--c-ur); }
+.trio-letters { font-size:28px; font-weight:700; letter-spacing:1px; }
+.trio-emoji { font-size:28px; margin:4px 0; }
+.trio-word { font-size:19px; font-weight:700; }
+.trio-converge { background:var(--c-trio-light); border:3px dashed var(--c-trio); border-radius:16px; padding:14px; margin-top:10px; text-align:center; }
+.trio-converge-label { font-size:16px; color:var(--c-trio); font-weight:700; margin-bottom:4px; }
+.trio-converge-sound { font-size:42px; font-weight:700; color:var(--c-trio); animation:trioPulse 1.6s ease-in-out infinite; }
+@keyframes trioPulse { 0%,100%{transform:scale(1); text-shadow:0 0 0 transparent} 50%{transform:scale(1.08); text-shadow:0 0 14px var(--c-trio)} }
+.trio-arrows { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; font-size:22px; color:var(--c-trio); text-align:center; margin-top:4px; }
+
+/* ═══ 매칭 5팀 × 5단어 (common.css .match-grid 재활용, 17강은 5개씩) ═══ */
+.match-list { display:flex; flex-direction:column; gap:8px; }
+
+/* ═══ 새 단어 박스 (16강 snow 패턴 계승) ═══ */
+.new-word-box { background:var(--primary-light); border:3px solid var(--primary); border-radius:18px; padding:16px; margin:12px 0; text-align:center; }
+.new-word-label { font-size:15px; color:var(--primary); margin-bottom:6px; }
+.new-word-blend { display:flex; justify-content:center; align-items:baseline; gap:6px; font-size:54px; font-weight:700; margin:8px 0; line-height:1; }
+.new-word-st { color:var(--c-sl); } /* st = 자음연쇄 11강 (sl과 같은 자음연쇄 계열 색 재활용) */
+.new-word-plus { font-size:36px; color:var(--subtext); }
+.new-word-ar { color:var(--c-ar); }
+.new-word-try { font-size:16px; margin-top:8px; color:var(--text); }
+
+/* ═══ 전체 위치 규칙(5팀 지도) — slide 4 보조 ═══ */
+.d-map { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:14px 0; }
+.d-box { padding:12px 4px; border-radius:12px; text-align:center; border:3px solid; cursor:pointer; transition:transform .2s; }
+.d-box:hover { transform:translateY(-3px); }
+.d-box .db-cluster { font-size:22px; font-weight:700; line-height:1; }
+.d-box .db-ex { font-size:12px; margin-top:4px; opacity:.9; }
+.d-box.ar { background:var(--c-ar-light); border-color:var(--c-ar); color:var(--c-ar); }
+.d-box.or { background:var(--c-or-light); border-color:var(--c-or); color:var(--c-or); }
+.d-box.er { background:var(--c-er-light); border-color:var(--c-er); color:var(--c-er); }
+.d-box.ir { background:var(--c-ir-light); border-color:var(--c-ir); color:var(--c-ir); }
+.d-box.ur { background:var(--c-ur-light); border-color:var(--c-ur); color:var(--c-ur); }
 </style>
 </head>
 <body>
-<div class="topbar"><button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div><span class="page-info" id="pageInfo">1/15</span></div><div class="score-badge">⭐ <span id="scoreVal">0</span></div><div class="kedu-logo">K★edu</div></div>
-<div class="slides">
-  <div class="slide active" data-type="concept"><div class="card"><div style="font-size:28px;margin-bottom:4px;">🦦 Dew와 함께!</div><div style="font-size:34px;color:var(--primary);margin:8px 0;">R통제모음 ar·or·er·ir·ur</div><div style="font-size:20px;margin-bottom:6px;">모음 뒤에 r이 오면 소리가 변해요!</div><div class="word-row"><span class="word-card" style="background:#FECDD3;" onclick="speakWord('car')">🚗 car</span><span class="word-card" style="background:#DBEAFE;" onclick="speakWord('fork')">🍴 fork</span><span class="word-card" style="background:#FEF3C7;" onclick="speakWord('her')">👩 her</span><span class="word-card" style="background:#D1FAE5;" onclick="speakWord('bird')">🐦 bird</span><span class="word-card" style="background:#F3E8FF;" onclick="speakWord('burn')">🔥 burn</span></div></div></div>
 
-  <div class="slide" data-type="concept"><div class="card"><div class="slide-title">📖 ar · or</div><div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;"><div><div class="vp" style="background:#FECDD3;color:#E11D48;">ar</div><div style="font-size:18px;margin-top:4px;">"아르~" 소리!<br>🚗 c<b>ar</b> &nbsp; ⭐ st<b>ar</b> &nbsp; 🌙 d<b>ar</b>k</div></div><div><div class="vp" style="background:#DBEAFE;color:#2563EB;">or</div><div style="font-size:18px;margin-top:4px;">"오르~" 소리!<br>🍴 f<b>or</b>k &nbsp; 🌽 c<b>or</b>n &nbsp; 🐴 h<b>or</b>se</div></div></div></div></div>
-
-  <div class="slide" data-type="concept"><div class="card"><div class="slide-title">📖 er · ir · ur</div><div style="font-size:20px;margin-bottom:6px;">세 개 모두 같은 "어r~" 소리!</div><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;"><div><div class="vp" style="background:#FEF3C7;color:#D97706;font-size:32px;">er</div><div style="font-size:16px;">👩 h<b>er</b><br>🧈 butt<b>er</b></div></div><div><div class="vp" style="background:#D1FAE5;color:#059669;font-size:32px;">ir</div><div style="font-size:16px;">🐦 b<b>ir</b>d<br>👧 g<b>ir</b>l</div></div><div><div class="vp" style="background:#F3E8FF;color:#9333EA;font-size:32px;">ur</div><div style="font-size:16px;">🔥 b<b>ur</b>n<br>🐢 t<b>ur</b>tle</div></div></div><div style="font-size:18px;color:var(--subtext);margin-top:6px;">🐶 Kay: "er, ir, ur 소리가 똑같아!"</div></div></div>
-
-  <div class="slide" data-type="concept"><div class="card"><div class="slide-title">📖 정리</div><div style="font-size:20px;line-height:2;max-width:400px;margin:0 auto;text-align:left;"><div>🔴 <b>ar</b> = "아르~" 🚗</div><div>🔵 <b>or</b> = "오르~" 🍴</div><div>🟡 <b>er</b> = "어r~" 👩</div><div>🟢 <b>ir</b> = "어r~" 🐦 (er과 같은 소리!)</div><div>🟣 <b>ur</b> = "어r~" 🔥 (er과 같은 소리!)</div></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="0" data-score="10"><div class="card"><div class="question-label">Q1 <span class="stars">⭐</span></div><div class="question-text">"car" 🚗 의 ar은?</div><div style="font-size:52px;margin:6px 0;cursor:pointer;" onclick="speakWord('car')">🔊 car</div><div class="choices"><button class="choice-btn sm" onclick="answer(this,0)">"아르~"</button><button class="choice-btn sm" onclick="answer(this,1)">"오르~"</button><button class="choice-btn sm" onclick="answer(this,2)">"어r~"</button></div><div class="feedback" id="fb4"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="0" data-score="10"><div class="card"><div class="question-label">Q2 <span class="stars">⭐</span></div><div class="question-text">er, ir, ur은 모두<br>같은 소리가 난다?</div><div class="ox-row"><button class="ox-btn" onclick="answerOX(this,0,5)">⭕</button><button class="ox-btn" onclick="answerOX(this,1,5)">❌</button></div><div class="feedback" id="fb5"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="1" data-score="10"><div class="card"><div class="question-label">Q3 <span class="stars">⭐</span></div><div class="question-text">🍴 빈칸에 알맞은 것은?</div><div style="font-size:60px;margin:6px 0;">f <span class="blank-box" style="font-size:52px;" id="blank6">___</span> k</div><div class="choices"><button class="choice-btn sm" onclick="fillBlank(this,'blank6','ar',0,1,6)">ar</button><button class="choice-btn sm" onclick="fillBlank(this,'blank6','or',1,1,6)">or</button><button class="choice-btn sm" onclick="fillBlank(this,'blank6','ur',2,1,6)">ur</button></div><div class="feedback" id="fb6"></div></div></div>
-
-  <div class="slide" data-type="q" data-score="25"><div class="card"><div class="question-label">Q4 <span class="stars">⭐⭐</span></div><div class="question-text">그림과 R통제모음을 짝지어요!</div><div class="match-grid" id="matchGrid7"><div class="match-item" data-pair="A" onclick="matchClick(this,7)">🚗</div><div class="match-item" data-pair="B" onclick="matchClick(this,7)">ir</div><div class="match-item" data-pair="A" onclick="matchClick(this,7)">ar</div><div class="match-item" data-pair="B" onclick="matchClick(this,7)">🐦</div></div><div class="feedback" id="fb7"></div></div></div>
-
-  <div class="slide" data-type="q" data-score="25"><div class="card"><div class="question-label">Q5 <span class="stars">⭐⭐</span></div><div class="question-text">R통제모음을 골라 터치!<br><span style="font-size:14px;color:var(--subtext);">🔴ar 🔵or 🟡er 🟢ir 🟣ur</span></div><div class="token-area" id="sortArea8"><div class="token" data-ans="ar" onclick="sortToken(this,8)">⭐ star</div><div class="token" data-ans="ur" onclick="sortToken(this,8)">🐢 turtle</div><div class="token" data-ans="or" onclick="sortToken(this,8)">🌽 corn</div><div class="token" data-ans="ir" onclick="sortToken(this,8)">👧 girl</div></div><div style="margin-top:6px;"><button class="choice-btn sm" onclick="checkSort(8)" style="font-size:22px;">✅ 확인</button></div><div class="feedback" id="fb8"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card"><div class="question-label">Q6 <span class="stars">⭐⭐</span></div><div class="question-text">소리를 듣고 맞는 단어를 골라요!</div><div style="margin:8px 0;"><button class="choice-btn" style="font-size:48px;border-color:var(--primary);" onclick="speakWord('bird')">🔊 듣기</button></div><div class="choices"><button class="choice-btn sm" onclick="answer(this,0)">🐦 bird</button><button class="choice-btn sm" onclick="answer(this,1)">🚗 car</button><button class="choice-btn sm" onclick="answer(this,2)">🍴 fork</button></div><div class="feedback" id="fb9"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="2" data-score="50"><div class="card"><div class="question-label">Q7 <span class="stars">⭐⭐⭐</span></div><div class="question-text">🔥 "burn"의 R통제모음은?</div><div style="font-size:48px;margin:6px 0;cursor:pointer;" onclick="speakWord('burn')">🔊 burn</div><div class="choices"><button class="choice-btn sm" onclick="answer(this,0)">ar</button><button class="choice-btn sm" onclick="answer(this,1)">er</button><button class="choice-btn sm" onclick="answer(this,2)">ur</button></div><div class="feedback" id="fb10"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="0" data-score="50"><div class="card"><div class="question-label">Q8 <span class="stars">⭐⭐⭐</span></div><div class="question-text">🐴 빈칸에 들어갈 것은?</div><div style="font-size:60px;margin:6px 0;">h <span class="blank-box" style="font-size:52px;" id="blank11">___</span> se</div><div class="choices"><button class="choice-btn sm" onclick="fillBlank(this,'blank11','or',0,0,11)">or</button><button class="choice-btn sm" onclick="fillBlank(this,'blank11','ar',1,0,11)">ar</button><button class="choice-btn sm" onclick="fillBlank(this,'blank11','ir',2,0,11)">ir</button></div><div class="feedback" id="fb11"></div></div></div>
-
-  <div class="slide" data-type="q" data-score="50"><div class="card"><div class="question-label">Q9 <span class="stars">⭐⭐⭐</span></div><div class="question-text">⭐ 글자를 순서대로!<br>"star"를 만들어요!</div><div style="font-size:64px;margin:6px 0;min-height:76px;" id="buildArea12"></div><div class="choices" id="buildLetters12"><button class="choice-btn" style="font-size:40px;" onclick="buildWord(this,'r',12)">r</button><button class="choice-btn" style="font-size:40px;" onclick="buildWord(this,'s',12)">s</button><button class="choice-btn" style="font-size:40px;" onclick="buildWord(this,'a',12)">a</button><button class="choice-btn" style="font-size:40px;" onclick="buildWord(this,'t',12)">t</button></div><div class="feedback" id="fb12"></div></div></div>
-
-  <div class="slide" data-type="q" data-correct="2" data-score="100"><div class="card"><div class="question-label">Q10 <span class="stars">⭐⭐⭐⭐</span></div><div class="question-text">Dew: "I can see a<br><span class="blank-box" style="font-size:40px;min-width:50px;" id="blank13">___</span> in the sky!"<br>밤하늘에 반짝이는 것!</div><div style="font-size:48px;margin:4px 0;">🌌⭐✨</div><div class="choices col"><button class="choice-btn" onclick="answer(this,0)">🚗 car</button><button class="choice-btn" onclick="answer(this,1)">🐦 bird</button><button class="choice-btn" onclick="answer(this,2)">⭐ star</button></div><div class="feedback" id="fb13"></div></div></div>
-
-  <div class="slide" data-type="result"><div class="card result-box"><div class="result-emoji" id="resultEmoji">🎉</div><div style="font-size:26px;margin:6px 0;">R통제모음 ar·or·er·ir·ur 완료!</div><div class="result-score">🏆 <span id="finalScore">0</span>점</div><div class="result-stars" id="resultStars">⭐⭐⭐</div><div class="result-msg">Dew: "다음은 이중모음!" 🦦</div><button class="restart-btn" onclick="restart()">🔄 다시 도전!</button></div></div>
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 15</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🐶 K ✦</span>
 </div>
 <div class="combo-toast" id="comboToast"></div>
-<div class="nav"><button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button><button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- ═════════════════ slide 0: Hook (car 분해 — r이 왕관) ═════════════════ -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip bossy">👑 R통제모음 시작!</span>
+    <div class="slide-title">🚨 이번엔 <b style="color:var(--c-ar)">r이 왕</b>! 👑</div>
+    <div class="bossy-r-demo" onclick="speakWord('car')">
+      <div class="brd-letter">c</div>
+      <div class="brd-king">
+        <div class="brd-vowel ruled">a</div>
+        <div class="brd-r">r</div>
+      </div>
+    </div>
+    <div style="font-size:30px;color:var(--c-ar);font-weight:700;margin-top:8px;cursor:pointer" onclick="speakWord('car')">car 🚗 "카r"</div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>"자동차"</b>는 영어로 car! 🚗<br>그런데 <b>a</b>가 "아"가 아니라 <b style="color:var(--c-ar)">"아r"</b>?! 🤔<br>뒤에 있는 <b>r이 왕</b>처럼 앞 모음을 <b>지배</b>해! 👑</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 1: 🆕 프레임 전환 — 팀 🤝 → 지배자 👑 ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip alert2">🆕 프레임 대전환!</span>
+    <div class="slide-title">15·16강은 <b style="color:#1976D2">팀 🤝</b>, 17강은 <b style="color:var(--c-ar)">지배자 👑</b>!</div>
+    <div class="frame-shift">
+      <div class="fs-card team" onclick="speakWord('boat')">
+        <div class="fs-icon">🤝</div>
+        <div class="fs-title">15·16강 — 모음 팀</div>
+        <div class="fs-ex">b <span style="color:#1976D2">o<span style="opacity:.45">a</span></span> t</div>
+        <div class="fs-desc">두 <b>모음</b>이 손잡고 팀!<br>첫 모음만 말함, 뒤 모음은 조용 🤫</div>
+      </div>
+      <div class="fs-card bossy" onclick="speakWord('car')">
+        <div class="fs-icon">👑</div>
+        <div class="fs-title">17강 — bossy r</div>
+        <div class="fs-ex">c <span style="color:var(--c-ar)">a<b>r</b></span></div>
+        <div class="fs-desc"><b>r(자음)</b>이 왕처럼<br>앞 <b>모음 소리를 바꿈</b>! ⚡</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">지금까지는 <b>모음끼리</b> 팀이었어! 🤝<br>근데 이제는 <b>r(자음)</b>이 <b>모음을 지배</b>해! 👑<br>완전히 <b>새로운 원리</b>야!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 2: king-r 원리 (앞 모음 지배 시각화) ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">👑 r의 <b style="color:var(--c-ar)">지배</b> 원리! ⚡</div>
+    <div class="king-r" onclick="speakWord('car')">
+      <div class="kr-vowel">a</div>
+      <div class="kr-beam">⚡⚡⚡</div>
+      <div class="kr-king">
+        <div class="kr-r">r</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:19px;margin:10px 0;line-height:1.5">
+      👉 r이 <b style="color:var(--c-ar)">왕관</b>을 쓰고 앞 모음에게 "내 소리로 바꿔!" ⚡
+    </div>
+    <div class="king-r-compare">
+      <div class="krc-card before" onclick="speakWord('cat')">
+        <div class="krc-label">🙈 r 없을 때</div>
+        <div class="krc-word">cat</div>
+        <div class="krc-sound">"캣" (단모음 "애")</div>
+      </div>
+      <div class="krc-card after" onclick="speakWord('car')">
+        <div class="krc-label">👑 r이 지배!</div>
+        <div class="krc-word">c<b>ar</b></div>
+        <div class="krc-sound">"카r" (변형 "아r")</div>
+      </div>
+    </div>
+    <div class="family-hint">
+      🪄 <b>r 하나</b> 붙었을 뿐인데 모음 소리가 <b>완전히 달라져</b>!
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 3: ar family ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div style="text-align:center">
+      <span class="family-title ar">ar — "아r"</span>
+    </div>
+    <div class="slide-title" style="font-size:20px">🚗 입을 크게 벌리고 "아r"!</div>
+    <div class="family-words">
+      <div class="family-word ar" onclick="speakWord('car')">
+        <div class="fw-emoji">🚗</div>
+        <div class="fw-letters"><span class="cons">c</span><span class="ruler">ar</span></div>
+      </div>
+      <div class="family-word ar" onclick="speakWord('park')">
+        <div class="fw-emoji">🌳</div>
+        <div class="fw-letters"><span class="cons">p</span><span class="ruler">ar</span><span class="cons">k</span></div>
+      </div>
+      <div class="family-word ar" onclick="speakWord('star')">
+        <div class="fw-emoji">⭐</div>
+        <div class="fw-letters"><span class="cons">st</span><span class="ruler">ar</span></div>
+      </div>
+      <div class="family-word ar" onclick="speakWord('dark')">
+        <div class="fw-emoji">🌙</div>
+        <div class="fw-letters"><span class="cons">d</span><span class="ruler">ar</span><span class="cons">k</span></div>
+      </div>
+    </div>
+    <div class="family-hint">
+      🎨 ar은 <b style="color:var(--c-ar)">딥 오렌지레드</b> — 입 크게 벌려 "<b>아r</b>"!
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 4: or family + 5팀 지도 ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div style="text-align:center">
+      <span class="family-title or">or — "오r"</span>
+    </div>
+    <div class="slide-title" style="font-size:20px">📯 입을 동그랗게 모아 "오r"!</div>
+    <div class="family-words">
+      <div class="family-word or" onclick="speakWord('horn')">
+        <div class="fw-emoji">📯</div>
+        <div class="fw-letters"><span class="cons">h</span><span class="ruler">or</span><span class="cons">n</span></div>
+      </div>
+      <div class="family-word or" onclick="speakWord('corn')">
+        <div class="fw-emoji">🌽</div>
+        <div class="fw-letters"><span class="cons">c</span><span class="ruler">or</span><span class="cons">n</span></div>
+      </div>
+      <div class="family-word or" onclick="speakWord('fort')">
+        <div class="fw-emoji">🏰</div>
+        <div class="fw-letters"><span class="cons">f</span><span class="ruler">or</span><span class="cons">t</span></div>
+      </div>
+      <div class="family-word or" onclick="speakWord('fork')">
+        <div class="fw-emoji">🍴</div>
+        <div class="fw-letters"><span class="cons">f</span><span class="ruler">or</span><span class="cons">k</span></div>
+      </div>
+    </div>
+    <div class="slide-title" style="font-size:18px;margin-top:14px">🗺️ 오늘의 5팀 한눈에!</div>
+    <div class="d-map">
+      <div class="d-box ar" onclick="speakWord('car')"><div class="db-cluster">ar</div><div class="db-ex">car 🚗</div></div>
+      <div class="d-box or" onclick="speakWord('horn')"><div class="db-cluster">or</div><div class="db-ex">horn 📯</div></div>
+      <div class="d-box er" onclick="speakWord('her')"><div class="db-cluster">er</div><div class="db-ex">her 👩</div></div>
+      <div class="d-box ir" onclick="speakWord('bird')"><div class="db-cluster">ir</div><div class="db-ex">ir bird 🐦</div></div>
+      <div class="d-box ur" onclick="speakWord('turn')"><div class="db-cluster">ur</div><div class="db-ex">turn ↪️</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 5: 🎯 ar vs or 대비 ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div class="slide-title">🎯 <b style="color:var(--c-ar)">ar</b> vs <b style="color:var(--c-or)">or</b> — 소리 완전 달라!</div>
+    <div class="sound-compare">
+      <div class="sc-card ar" onclick="speakWord('car')">
+        <div class="sc-emoji">🚗</div>
+        <div class="sc-word">c<b>ar</b></div>
+        <div class="sc-sound">"아r" — 입 크게</div>
+      </div>
+      <div class="sc-card or" onclick="speakWord('corn')">
+        <div class="sc-emoji">🌽</div>
+        <div class="sc-word">c<b>or</b>n</div>
+        <div class="sc-sound">"오r" — 입 동그랗게</div>
+      </div>
+    </div>
+    <div class="sound-compare" style="margin-top:10px">
+      <div class="sc-card ar" onclick="speakWord('park')">
+        <div class="sc-emoji">🌳</div>
+        <div class="sc-word">p<b>ar</b>k</div>
+        <div class="sc-sound">"파r크"</div>
+      </div>
+      <div class="sc-card or" onclick="speakWord('fork')">
+        <div class="sc-emoji">🍴</div>
+        <div class="sc-word">f<b>or</b>k</div>
+        <div class="sc-sound">"포r크"</div>
+      </div>
+    </div>
+    <div class="family-hint">
+      🎤 <b>ar</b>=입 크게 "아", <b>or</b>=입 동그랗게 "오" — 두 소리 구별!
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 6: er family ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div style="text-align:center">
+      <span class="family-title er">er — "어r"</span>
+    </div>
+    <div class="slide-title" style="font-size:20px">👩 입에 힘 빼고 "어r"!</div>
+    <div class="family-words">
+      <div class="family-word er" onclick="speakWord('her')">
+        <div class="fw-emoji">👩</div>
+        <div class="fw-letters"><span class="cons">h</span><span class="ruler">er</span></div>
+      </div>
+      <div class="family-word er" onclick="speakWord('water')">
+        <div class="fw-emoji">💧</div>
+        <div class="fw-letters"><span class="cons">wat</span><span class="ruler">er</span></div>
+      </div>
+      <div class="family-word er" onclick="speakWord('sister')">
+        <div class="fw-emoji">👭</div>
+        <div class="fw-letters"><span class="cons">sist</span><span class="ruler">er</span></div>
+      </div>
+      <div class="family-word er" onclick="speakWord('teacher')">
+        <div class="fw-emoji">👩‍🏫</div>
+        <div class="fw-letters"><span class="cons">teach</span><span class="ruler">er</span></div>
+      </div>
+    </div>
+    <div class="family-hint">
+      💡 er은 단어 <b>끝</b>에 자주 옴! (물=water, 누나=sister, 선생님=teacher)
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 7: ir family (er과 같은 소리!) ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <div style="text-align:center">
+      <span class="family-title ir">ir — "어r"</span>
+    </div>
+    <div class="slide-title" style="font-size:20px">🐦 ir도 "어r"?! er과 <b style="color:var(--c-trio)">똑같은 소리</b>!</div>
+    <div class="family-words">
+      <div class="family-word ir" onclick="speakWord('bird')">
+        <div class="fw-emoji">🐦</div>
+        <div class="fw-letters"><span class="cons">b</span><span class="ruler">ir</span><span class="cons">d</span></div>
+      </div>
+      <div class="family-word ir" onclick="speakWord('girl')">
+        <div class="fw-emoji">👧</div>
+        <div class="fw-letters"><span class="cons">g</span><span class="ruler">ir</span><span class="cons">l</span></div>
+      </div>
+      <div class="family-word ir" onclick="speakWord('first')">
+        <div class="fw-emoji">🥇</div>
+        <div class="fw-letters"><span class="cons">f</span><span class="ruler">ir</span><span class="cons">st</span></div>
+      </div>
+      <div class="family-word ir" onclick="speakWord('shirt')">
+        <div class="fw-emoji">👕</div>
+        <div class="fw-letters"><span class="cons">sh</span><span class="ruler">ir</span><span class="cons">t</span></div>
+      </div>
+    </div>
+    <div class="family-hint">
+      🤔 글자는 <b>ir</b>이지만 소리는 <b style="color:var(--c-trio)">er과 똑같이 "어r"</b>! 🧐<br>(다음 장에서 자세히!)
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 8: 🔥 er/ir/ur "어r" 3형제 통합 킬러 ═════════════════ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip alert">⚠️ 최고 난이도 개념!</span>
+    <div class="slide-title">🔥 <b style="color:var(--c-trio)">er · ir · ur</b> — 다 "어r"! 같은 소리!</div>
+    <div class="trio-warning">
+      <div class="trio-warning-title">⚠️ 철자는 달라도 소리는 똑같아!</div>
+      <div class="trio-warning-text">영어는 <b>e</b>r / <b>i</b>r / <b>u</b>r 세 가지로 쓰지만<br>발음은 모두 <b>"어r"</b> 하나! 🎤<br>단어마다 어떤 철자인지 <b>외워야 함</b>!</div>
+    </div>
+    <div class="same-sound-trio">
+      <div class="trio-card er" onclick="speakWord('her')">
+        <div class="trio-letters">er</div>
+        <div class="trio-emoji">👩</div>
+        <div class="trio-word">her</div>
+      </div>
+      <div class="trio-card ir" onclick="speakWord('bird')">
+        <div class="trio-letters">ir</div>
+        <div class="trio-emoji">🐦</div>
+        <div class="trio-word">bird</div>
+      </div>
+      <div class="trio-card ur" onclick="speakWord('turn')">
+        <div class="trio-letters">ur</div>
+        <div class="trio-emoji">↪️</div>
+        <div class="trio-word">turn</div>
+      </div>
+    </div>
+    <div class="trio-arrows">
+      <div>⬇️</div><div>⬇️</div><div>⬇️</div>
+    </div>
+    <div class="trio-converge">
+      <div class="trio-converge-label">🎤 세 팀 모두 같은 소리:</div>
+      <div class="trio-converge-sound">"어r"</div>
+    </div>
+    <div class="family-words" style="margin-top:12px">
+      <div class="family-word ur" onclick="speakWord('hurt')">
+        <div class="fw-emoji">🤕</div>
+        <div class="fw-letters"><span class="cons">h</span><span class="ruler">ur</span><span class="cons">t</span></div>
+      </div>
+      <div class="family-word ur" onclick="speakWord('church')">
+        <div class="fw-emoji">⛪</div>
+        <div class="fw-letters"><span class="cons">ch</span><span class="ruler">ur</span><span class="cons">ch</span></div>
+      </div>
+      <div class="family-word ur" onclick="speakWord('nurse')">
+        <div class="fw-emoji">👩‍⚕️</div>
+        <div class="fw-letters"><span class="cons">n</span><span class="ruler">ur</span><span class="cons">se</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 9: 문제1 ⭐ — ar 소리 고르기 ═════════════════ -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+  <div class="card">
+    <span class="question-label">문제 1 <span class="stars">⭐</span></span>
+    <div class="question-text">"ar" 소리 "<b style="color:var(--c-ar)">아r</b>"가 나는 단어는? 🚗</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0);speakWord('car')">🚗 car</button>
+      <button class="choice-btn" onclick="answer(this,1);speakWord('bed')">🛏️ bed</button>
+      <button class="choice-btn" onclick="answer(this,2);speakWord('bird')">🐦 bird</button>
+      <button class="choice-btn" onclick="answer(this,3);speakWord('ant')">🐜 ant</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 10: 문제2 ⭐ — 듣고 ir 고르기 ═════════════════ -->
+<div class="slide" data-type="q" data-correct="3" data-score="10">
+  <div class="card">
+    <span class="question-label">문제 2 <span class="stars">⭐</span></span>
+    <div class="question-text">🔊 잘 들어봐! 어떤 단어일까?</div>
+    <div class="tts-big" onclick="speakWord('bird')">🔊 듣기 (bird)</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0);speakWord('bed')">bed 🛏️</button>
+      <button class="choice-btn" onclick="answer(this,1);speakWord('bad')">bad 😠</button>
+      <button class="choice-btn" onclick="answer(this,2);speakWord('bard')">bard 🎭</button>
+      <button class="choice-btn" onclick="answer(this,3);speakWord('bird')">bird 🐦</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 11: 문제3 ⭐⭐ — 매칭 5팀 × 5단어 (+30점) ═════════════════ -->
+<div class="slide" data-type="q">
+  <div class="card">
+    <span class="question-label">문제 3 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">🤝 같은 <b>팀</b>끼리 연결! (5팀 모두 맞추면 +30점)</div>
+    <div class="match-grid">
+      <div class="match-col">
+        <div class="match-col-title">👑 5팀</div>
+        <div class="match-item" data-key="ar" onclick="matchPick(this,'L')">ar</div>
+        <div class="match-item" data-key="or" onclick="matchPick(this,'L')">or</div>
+        <div class="match-item" data-key="er" onclick="matchPick(this,'L')">er</div>
+        <div class="match-item" data-key="ir" onclick="matchPick(this,'L')">ir</div>
+        <div class="match-item" data-key="ur" onclick="matchPick(this,'L')">ur</div>
+      </div>
+      <div class="match-col">
+        <div class="match-col-title">📚 대표 단어</div>
+        <div class="match-item" data-key="ir" onclick="matchPick(this,'R')">🐦 bird</div>
+        <div class="match-item" data-key="ar" onclick="matchPick(this,'R')">🚗 car</div>
+        <div class="match-item" data-key="ur" onclick="matchPick(this,'R')">↪️ turn</div>
+        <div class="match-item" data-key="or" onclick="matchPick(this,'R')">📯 horn</div>
+        <div class="match-item" data-key="er" onclick="matchPick(this,'R')">👩 her</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 12: 문제4 ⭐⭐⭐ — 새 단어 star (st + ar) ═════════════════ -->
+<div class="slide" data-type="q" data-correct="2" data-score="50">
+  <div class="card">
+    <span class="question-label">문제 4 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">🎯 <b>⭐ 별</b>을 영어로 뭐라고 할까? (st + ar 결합!)</div>
+    <div class="new-word-box">
+      <div class="new-word-label">🧩 11강 자음연쇄 + 17강 ar 결합!</div>
+      <div class="new-word-blend">
+        <span class="new-word-st">st</span>
+        <span class="new-word-plus">+</span>
+        <span class="new-word-ar">ar</span>
+      </div>
+      <div class="new-word-try">😮 "스뜨" + "아r" = ?</div>
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0);speakWord('stor')">stor</button>
+      <button class="choice-btn" onclick="answer(this,1);speakWord('ster')">ster</button>
+      <button class="choice-btn" onclick="answer(this,2);speakWord('star')">star ⭐</button>
+      <button class="choice-btn" onclick="answer(this,3);speakWord('stur')">stur</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 13: 문제5 ⭐⭐⭐⭐ — 극혼동 bird (bed/bad/bird/bard) ═════════════════ -->
+<div class="slide" data-type="q" data-correct="2" data-score="100">
+  <div class="card">
+    <span class="question-label">문제 5 <span class="stars">⭐⭐⭐⭐</span></span>
+    <div class="question-text">🔥 <b>최종 도전</b>! 🐦 새를 영어로?</div>
+    <div class="tts-big" onclick="speakWord('bird')">🔊 듣기 (🐦)</div>
+    <div style="font-size:15px;text-align:center;color:var(--subtext);margin:6px 0;line-height:1.5">
+      💡 단모음 <b>e/a</b>? 아니면 <b>bossy r</b>이 지배한 <b>ar/ir</b>?
+    </div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0);speakWord('bed')">🛏️ bed ("베드")</button>
+      <button class="choice-btn" onclick="answer(this,1);speakWord('bad')">😠 bad ("배드")</button>
+      <button class="choice-btn" onclick="answer(this,2);speakWord('bird')">🐦 bird ("버r드")</button>
+      <button class="choice-btn" onclick="answer(this,3);speakWord('bard')">🎭 bard ("바r드")</button>
+    </div>
+    <div class="feedback" id="fb13"></div>
+  </div>
+</div>
+
+<!-- ═════════════════ slide 14: 결과 ═════════════════ -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div style="font-size:62px">👑</div>
+    <div style="font-size:28px;font-weight:700;margin:8px 0;color:var(--c-ar)">17강 완성! bossy r 정복! 🎉</div>
+    <div id="resultStars" style="font-size:36px;margin:10px 0"></div>
+    <div style="font-size:22px;margin:8px 0">최종 점수: <b style="color:var(--primary);font-size:32px" id="finalScore">0</b>점</div>
+    <div class="summary-box">
+      <div class="summary-item"><span class="summary-num">1</span><div>👑 r은 <b>왕</b> — 앞 모음을 지배해서 소리를 바꿈!</div></div>
+      <div class="summary-item"><span class="summary-num">2</span><div>5팀이지만 소리는 3종: <b style="color:var(--c-ar)">ar "아r"</b> / <b style="color:var(--c-or)">or "오r"</b> / <b style="color:var(--c-trio)">er·ir·ur "어r"</b></div></div>
+      <div class="summary-item"><span class="summary-num">3</span><div>"어r" 3형제(er·ir·ur)는 <b>같은 소리</b>, 철자는 단어마다 외워!</div></div>
+    </div>
+    <button class="practice-link" onclick="alert('실전편 준비중! 🎯')">🎯 실전편으로 문제 풀기!</button>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
 <script>
-let soundOn=true,currentSlide=0,score=0,combo=0,answered={};const TOTAL=15;let audioCtx=null;
-function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
-function playTone(f,type,dur,gain=.3){const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type;o.frequency.value=f;g.gain.setValueAtTime(gain,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);});}
-function playCorrect(){if(!soundOn)return;getCtx();[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}function playWrong(){if(!soundOn)return;getCtx();[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}function playClick(){if(!soundOn)return;getCtx();playTone(880,'sine',.08,.2);}
-function speakWord(t){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=0.75;speechSynthesis.cancel();speechSynthesis.speak(u);}
-function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'));},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI();}
-function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
-function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
-function addScore(pts){const bonus=combo>=3?Math.floor(pts*.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
-function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function answerOX(btn,idx,si){if(answered[si])return;const slide=document.querySelectorAll('.slide')[si];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();currentSlide=si;if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,blankId,text,myIdx,correctIdx,si){if(answered[si])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();speakWord(text);const pts=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;currentSlide=si;if(myIdx===correctIdx){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ 정답! +'+pts+'점',true);answered[si]=true;}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+si,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-const sortCycle=['','sel-ar','sel-or','sel-er','sel-ir','sel-ur'];const sortMap={'sel-ar':'ar','sel-or':'or','sel-er':'er','sel-ir':'ir','sel-ur':'ur'};
-function sortToken(el,si){if(answered[si])return;playClick();let cur=sortCycle.indexOf([...el.classList].find(c=>c.startsWith('sel-'))||'');el.classList.remove(...sortCycle.slice(1));cur=(cur+1)%sortCycle.length;if(sortCycle[cur])el.classList.add(sortCycle[cur]);}
-function checkSort(si){if(answered[si])return;currentSlide=si;const tokens=document.querySelectorAll('#sortArea'+si+' .token');let ok=true;tokens.forEach(t=>{const ans=t.dataset.ans;const sel=[...t.classList].find(c=>c.startsWith('sel-'));if(sortMap[sel]===ans)t.classList.add('correct');else{t.classList.add('wrong');ok=false;}});if(ok){playCorrect();addScore(25);setFB('fb'+si,'✅ +25점',true);answered[si]=true;}else{playWrong();combo=0;setFB('fb'+si,'틀린 것이 있어요! 💪',false);setTimeout(()=>{tokens.forEach(t=>t.classList.remove('correct','wrong'));},800);}}
-let matchState={selected:null,matched:0};
-function matchClick(el,si){if(answered[si]||el.classList.contains('matched'))return;playClick();currentSlide=si;if(matchState.selected){if(matchState.selected===el){matchState.selected.classList.remove('selected');matchState.selected=null;return;}if(matchState.selected.dataset.pair===el.dataset.pair){matchState.selected.classList.remove('selected');matchState.selected.classList.add('matched');el.classList.add('matched');matchState.matched++;matchState.selected=null;playCorrect();if(matchState.matched===2){addScore(25);setFB('fb'+si,'✅ +25점',true);answered[si]=true;}}else{matchState.selected.classList.add('wrong');el.classList.add('wrong');const p=matchState.selected;setTimeout(()=>{p.classList.remove('selected','wrong');el.classList.remove('wrong');},500);matchState.selected=null;playWrong();combo=0;}}else{el.classList.add('selected');matchState.selected=el;}}
-let buildBuf={12:[]};const buildTarget={12:'star'};
-function buildWord(btn,letter,si){if(answered[si])return;playClick();currentSlide=si;btn.style.visibility='hidden';buildBuf[si].push(letter);document.getElementById('buildArea'+si).textContent=buildBuf[si].join('');speakWord(letter);if(buildBuf[si].length===4){const w=buildBuf[si].join('');if(w===buildTarget[si]){playCorrect();addScore(50);setFB('fb'+si,'✅ "'+w+'" 완성! +50점',true);answered[si]=true;speakWord(w);}else{playWrong();combo=0;setFB('fb'+si,'순서가 달라요! 💪',false);setTimeout(()=>{buildBuf[si]=[];document.getElementById('buildArea'+si).textContent='';document.querySelectorAll('#buildLetters'+si+' .choice-btn').forEach(b=>b.style.visibility='visible');},800);}}}
-function restart(){score=0;combo=0;answered={};matchState={selected:null,matched:0};buildBuf={12:[]};document.querySelectorAll('.choice-btn,.ox-btn,.token,.match-item').forEach(b=>{b.className=b.className.replace(/correct|wrong|selected|matched|sel-ar|sel-or|sel-er|sel-ir|sel-ur/g,'').trim();b.style.visibility='visible';});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.getElementById('buildArea12').textContent='';document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();}
-else if(dx<-50)nextSlide();});updateUI();
+// ═══ STATE ═══
+let soundOn = true, currentSlide = 0, score = 0, combo = 0, answered = {};
+const TOTAL_SLIDES = 15;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// ═══ SOUND ═══
+function toggleSound() { soundOn = !soundOn; document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+function playCorrect() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [523,659,784].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(.25, audioCtx.currentTime + i*.12);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.12 + .2);
+      o.start(audioCtx.currentTime + i*.12); o.stop(audioCtx.currentTime + i*.12 + .2);
+    });
+  });
+}
+function playWrong() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [220,196].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      g.gain.setValueAtTime(.2, audioCtx.currentTime + i*.15);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.15 + .25);
+      o.start(audioCtx.currentTime + i*.15); o.stop(audioCtx.currentTime + i*.15 + .25);
+    });
+  });
+}
+function playClick() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .07);
+    o.start(); o.stop(audioCtx.currentTime + .07);
+  });
+}
+function speakWord(w) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'en-US'; u.rate = 0.75;
+  speechSynthesis.speak(u);
+}
+
+// ═══ NAVIGATION ═══
+function goSlide(n) {
+  const sl = document.querySelectorAll('.slide');
+  sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out');
+  setTimeout(() => sl[currentSlide < n ? currentSlide : n].classList.remove('out'), 400);
+  currentSlide = n; sl[currentSlide].classList.add('active'); updateUI();
+  if (n === 14) showResult();
+}
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+// ═══ UI ═══
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+}
+
+// ═══ SCORE & COMBO ═══
+function addScore(pts) {
+  score += pts; combo++;
+  document.getElementById('scoreDisp').textContent = score;
+  if (combo >= 2) {
+    const t = document.getElementById('comboToast');
+    t.textContent = '🔥 '+combo+' 콤보!';
+    t.classList.add('show');
+    clearTimeout(addScore._t);
+    addScore._t = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+}
+
+// ═══ FEEDBACK ═══
+const feedbackMap = {
+  9:  { ok:'✅ 정답! car는 "카r" — ar "아r" 소리! 🚗 +10점', err:'bed/bird/ant는 ar 소리 아니야. car만 "아r"! 🚗' },
+  10: { ok:'✅ 정답! bird는 "버r드" — ir "어r" 소리! 🐦 +10점', err:'잘 들어봐! "버r드" = b + ir + d 🐦' },
+  12: { ok:'✅ 정답! star = st + ar! ⭐ +50점 🎉', err:'ar(아r) 찾아봐! st + ar = "스타r"! ⭐' },
+  13: { ok:'🎉 최고! bird = b + ir + d — bossy r 완전 정복! 🔥 +100점', err:'💡 "버r드"! ir이 지배! 단모음 e/a 아니야!' }
+};
+function setFB(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.className = 'feedback '+(ok?'ok':'err'); }
+}
+
+// ═══ ANSWER ═══
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||10;
+  playClick();
+  const fbKey = currentSlide;
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    const msg = feedbackMap[fbKey]?.ok || ('✅ 정답! +'+pts+'점');
+    setFB('fb'+currentSlide, msg+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    const msg = feedbackMap[fbKey]?.err || '다시 한번! 💪';
+    setFB('fb'+currentSlide, msg, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ MATCH (slide 11: 5팀 × 5단어, matchedCount>=5, +30점) ═══
+let mLeft = null, mRight = null, matchedCount = 0;
+function matchPick(el, side) {
+  if (el.classList.contains('matched') || answered[11]) return;
+  playClick();
+  if (side === 'L') {
+    if (mLeft) mLeft.classList.remove('selected');
+    mLeft = el; el.classList.add('selected');
+  } else {
+    if (mRight) mRight.classList.remove('selected');
+    mRight = el; el.classList.add('selected');
+  }
+  if (mLeft && mRight) {
+    if (mLeft.dataset.key === mRight.dataset.key) {
+      mLeft.classList.remove('selected'); mRight.classList.remove('selected');
+      mLeft.classList.add('matched'); mRight.classList.add('matched');
+      playCorrect(); matchedCount++;
+      if (matchedCount >= 5) {
+        addScore(30);
+        setFB('fb11','🎉 5팀 모두 정답! +30점 (아래 다음 ▶)', true);
+        answered[11] = true;
+      } else {
+        setFB('fb11','✅ 맞았어! ('+matchedCount+'/5)', true);
+      }
+    } else {
+      mLeft.classList.add('wrong-flash'); mRight.classList.add('wrong-flash');
+      playWrong(); combo = 0;
+      setFB('fb11','다시! 같은 팀끼리 연결해봐 💪', false);
+      const L = mLeft, R = mRight;
+      setTimeout(() => {
+        L.classList.remove('selected','wrong-flash');
+        R.classList.remove('selected','wrong-flash');
+      }, 500);
+    }
+    mLeft = null; mRight = null;
+  }
+}
+
+// ═══ RESULT ═══
+function showResult() {
+  document.getElementById('finalScore').textContent = score;
+  const starsEl = document.getElementById('resultStars');
+  // 총점 200: 200=⭐⭐⭐⭐⭐, 170+=⭐⭐⭐⭐, 120+=⭐⭐⭐, 70+=⭐⭐, else ⭐
+  let stars = '⭐';
+  if (score >= 200) stars = '⭐⭐⭐⭐⭐';
+  else if (score >= 170) stars = '⭐⭐⭐⭐';
+  else if (score >= 120) stars = '⭐⭐⭐';
+  else if (score >= 70) stars = '⭐⭐';
+  starsEl.textContent = stars;
+}
+
+updateUI();
 </script>
 </body>
 </html>
