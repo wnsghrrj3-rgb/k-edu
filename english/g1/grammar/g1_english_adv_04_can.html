@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 1학년 문법 04 — can 맛보기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF5F0;
+  --card: #FFFFFF;
+  --primary: #FF6B6B;
+  --primary-light: #FFE0E0;
+  --secondary: #FF9E7A;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #4A9EFF;
+  --blue-light: #E0F0FF;
+  --purple: #9C88FF;
+  --purple-light: #EDE7FF;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:26px; padding:4px 8px; border-radius:10px; }
+.progress-wrap { display:flex; align-items:center; gap:8px; flex:1; margin:0 12px; }
+.progress-bar { flex:1; height:10px; background:#FFE0D0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s; }
+.page-info { font-size:18px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:20px; font-weight:700; color:#E6A800; }
+.kedu-logo { display:flex; align-items:center; gap:4px; background:var(--primary); color:#fff; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 18px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; overflow-y:auto; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:640px; }
+.slide-title { font-size:24px; color:var(--text); text-align:center; margin-bottom:10px; line-height:1.4; }
+.slide-chip { display:inline-block; background:var(--primary); color:#fff; border-radius:99px; padding:4px 14px; font-size:16px; margin-bottom:8px; }
+
+.hook-q { font-size:30px; text-align:center; color:var(--primary); margin:14px 0; line-height:1.5; }
+.hook-emoji { font-size:72px; text-align:center; margin:6px 0; }
+
+.kay-bubble { display:flex; align-items:flex-start; gap:10px; background:var(--yellow-light); border:3px solid var(--yellow); border-radius:18px; padding:14px; margin:14px 0; }
+.kay-icon { font-size:44px; flex-shrink:0; }
+.kay-text { font-size:19px; line-height:1.55; flex:1; text-align:left; }
+.kay-text b { color:var(--primary); }
+
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.compare-box { padding:16px 10px; border-radius:14px; text-align:center; }
+.compare-box.ko { background:var(--blue-light); border:3px solid var(--blue); }
+.compare-box.en { background:var(--primary-light); border:3px solid var(--primary); }
+.compare-label { font-size:16px; margin-bottom:8px; }
+.compare-text { font-size:22px; line-height:1.5; }
+.compare-text b { color:var(--red); }
+
+/* 능력 배지 */
+.power-hero { text-align:center; margin:14px 0; }
+.power-hero .hero-emoji { font-size:80px; display:block; }
+.power-hero .power-badge { display:inline-block; background:linear-gradient(135deg,#FFD700,#FFA500); color:#fff; padding:6px 18px; border-radius:99px; font-size:22px; margin-top:6px; box-shadow:0 4px 12px rgba(255,165,0,0.4); }
+
+/* 공식 박스 */
+.formula-box { background:var(--primary-light); border:3px solid var(--primary); border-radius:14px; padding:16px; margin:14px 0; text-align:center; font-size:24px; line-height:1.8; }
+.formula-box .fm-piece { display:inline-block; background:#fff; border:2px solid var(--primary); border-radius:10px; padding:6px 14px; margin:4px; }
+.formula-box .fm-piece.subj { border-color:var(--blue); color:var(--blue); }
+.formula-box .fm-piece.can { border-color:var(--primary); color:var(--primary); }
+.formula-box .fm-piece.verb { border-color:var(--purple); color:var(--purple); }
+
+/* 예시 */
+.ex-row { display:flex; align-items:center; gap:10px; background:var(--primary-light); border-radius:12px; padding:10px 14px; margin:8px 0; font-size:20px; cursor:pointer; transition:transform .2s; }
+.ex-row:hover { transform:scale(1.02); }
+.ex-row b { color:var(--primary); }
+.ex-emoji { font-size:32px; flex-shrink:0; }
+.ex-text { flex:1; }
+.ex-ko { display:block; font-size:14px; color:var(--subtext); margin-top:2px; }
+
+/* 동작 버튼 */
+.action-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+.action-box { background:#fff; border:3px solid var(--primary-light); border-radius:14px; padding:14px 6px; text-align:center; cursor:pointer; transition:transform .2s; }
+.action-box:hover { transform:scale(1.05); border-color:var(--primary); }
+.action-box .ac-emoji { font-size:40px; display:block; }
+.action-box .ac-en { font-size:20px; color:var(--primary); margin-top:4px; }
+.action-box .ac-ko { font-size:13px; color:var(--subtext); }
+
+/* 맞는 것/틀린 것 */
+.good-bad { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.gb-box { border-radius:14px; padding:16px 10px; text-align:center; font-size:22px; line-height:1.5; }
+.gb-good { background:var(--green-light); border:3px solid var(--green); color:var(--green); }
+.gb-bad { background:var(--red-light); border:3px solid var(--red); color:var(--red); }
+.gb-label { display:block; font-size:15px; margin-bottom:6px; }
+
+/* 확인 문제 */
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border-radius:99px; padding:5px 16px; font-size:20px; margin-bottom:10px; }
+.stars { color:#FCD34D; }
+.question-text { font-size:24px; text-align:center; margin:8px 0 14px; line-height:1.5; }
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { width:100%; max-width:500px; }
+.choice-btn { background:var(--card); border:3px solid #E0D0C0; border-radius:14px; padding:12px 22px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+.feedback { font-size:19px; text-align:center; margin-top:12px; min-height:28px; border-radius:12px; padding:5px 14px; line-height:1.5; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+
+.scene-box { background:var(--purple-light); border:3px solid var(--purple); border-radius:14px; padding:14px; margin:10px 0; font-size:20px; line-height:1.6; text-align:center; }
+.scene-box b { color:var(--purple); }
+.scene-box .ko { display:block; font-size:15px; color:var(--subtext); margin-top:6px; }
+
+.review-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:12px; padding:10px 14px; margin:12px 0; font-size:17px; color:#A67C00; display:flex; align-items:center; gap:8px; }
+.review-badge .rb-icon { font-size:26px; }
+
+/* OX */
+.ox-wrap { display:flex; justify-content:center; gap:30px; margin:20px 0; }
+.ox-btn { width:110px; height:110px; border-radius:50%; border:5px solid #E0D0C0; background:#fff; font-size:58px; cursor:pointer; font-family:'Jua',sans-serif; transition:all .2s; }
+.ox-btn:hover { transform:scale(1.05); }
+.ox-btn.o { color:var(--green); }
+.ox-btn.x { color:var(--red); }
+.ox-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.ox-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+/* 순서 배치 */
+.order-stage { background:var(--primary-light); border:3px dashed var(--primary); border-radius:14px; padding:16px; margin:12px 0; min-height:56px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; }
+.order-slot { background:#fff; border:2px solid var(--primary); border-radius:10px; padding:8px 14px; font-size:20px; animation:cpop .3s; }
+.order-empty { color:#BBB; font-size:18px; }
+.order-pool { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
+.order-chip { background:#fff; border:3px solid #E0D0C0; border-radius:12px; padding:10px 18px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; }
+.order-chip:hover { border-color:var(--primary); transform:translateY(-2px); }
+.order-chip.used { opacity:.3; pointer-events:none; }
+.order-reset { background:var(--subtext); color:#fff; border:none; border-radius:10px; padding:6px 14px; font-family:'Jua',sans-serif; font-size:16px; cursor:pointer; margin-top:6px; }
+
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+.summary-box { background:var(--primary-light); border-radius:16px; padding:18px; margin:14px 0; }
+.summary-item { display:flex; gap:10px; align-items:flex-start; margin:10px 0; font-size:20px; line-height:1.5; text-align:left; }
+.summary-num { background:var(--primary); color:#fff; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; margin-top:2px; }
+.summary-item b { color:var(--primary); }
+
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #F0E0D0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:14px; padding:12px 32px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.practice-link { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; border:none; border-radius:16px; padding:14px 28px; font-family:'Jua',sans-serif; font-size:24px; cursor:pointer; box-shadow:0 4px 14px rgba(255,107,107,0.3); margin-top:14px; transition:transform .2s; }
+.practice-link:hover { transform:translateY(-2px); }
+
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:24px; color:#E6A800; z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+
+.speaker { display:inline-block; cursor:pointer; font-size:20px; margin-left:6px; }
+
+.finale-text { font-size:22px; text-align:center; line-height:1.7; color:var(--primary); margin:18px 0; padding:16px; background:linear-gradient(135deg,var(--yellow-light),var(--primary-light)); border-radius:16px; border:3px solid var(--primary); }
+.finale-text b { font-size:26px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 14</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🐶 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- ============================================================ -->
+<!-- S0 · 왜? "할 수 있어" -->
+<!-- ============================================================ -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">왜 배워야 해?</span>
+    <div class="hook-emoji">💪</div>
+    <div class="hook-q">"나 점프 <b>할 수 있어</b>!"<br>영어로 어떻게?</div>
+    <div class="good-bad" style="margin-top:16px">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 빠졌어</span>
+        I jump.
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ "할 수 있어"</span>
+        I <u>can</u> jump.
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">오늘의 주인공은 <b>can</b>!<br>"할 수 있어"라는 뜻이야!<br>문장에 <b>힘</b>을 불어넣어 줄 거야!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S1 · 앵커: 한국어 "~할 수 있어" -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">한국어랑 비교</span>
+    <div class="slide-title">🇰🇷 ↔ 🇺🇸</div>
+    <div class="compare-grid">
+      <div class="compare-box ko">
+        <div class="compare-label">🇰🇷 한국어</div>
+        <div class="compare-text">나 점프<b>할 수 있어</b><br>나 수영<b>할 수 있어</b><br>나 달리기<b>할 수 있어</b></div>
+      </div>
+      <div class="compare-box en">
+        <div class="compare-label">🇺🇸 영어</div>
+        <div class="compare-text">I <b>can</b> jump<br>I <b>can</b> swim<br>I <b>can</b> run</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">한국어 <b>"~할 수 있어"</b>가<br>영어에서는 딱 한 단어! <b>can</b>!<br>간단하지?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S2 · 비유: can = 능력 배지 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">쉽게 기억하기</span>
+    <div class="slide-title">🦸 <b style="color:var(--primary)">can</b>은 능력 배지!</div>
+    <div class="power-hero">
+      <span class="hero-emoji">🦸</span>
+      <div class="power-badge">⚡ CAN ⚡</div>
+    </div>
+    <div style="font-size:19px; color:var(--text); margin:14px 0; line-height:1.6; text-align:center">
+      동사 앞에 <b style="color:var(--primary)">can</b>을 딱 달면!<br>
+      "나 이거 할 수 있어!" 💪
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>can</b>은 슈퍼파워 배지 같은 거야!<br>내가 할 수 있는 일에 <b>딱!</b> 붙여봐!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S3 · 공식: 주어 + can + 동사 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">외우기 쉬운 공식</span>
+    <div class="slide-title">📐 <b style="color:var(--primary)">can 공식</b></div>
+    <div class="formula-box">
+      <span class="fm-piece subj">주어</span>
+      <span>+</span>
+      <span class="fm-piece can">can</span>
+      <span>+</span>
+      <span class="fm-piece verb">동사</span>
+    </div>
+    <div class="ex-row" onclick="speakWord('I can jump')">
+      <div class="ex-emoji">🤸</div>
+      <div class="ex-text">I <b>can</b> jump. 🔊<span class="ex-ko">나는 점프할 수 있어.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('You can run')">
+      <div class="ex-emoji">🏃</div>
+      <div class="ex-text">You <b>can</b> run. 🔊<span class="ex-ko">너는 달릴 수 있어.</span></div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">주어가 뭐든 상관 없이<br><b>can</b>은 항상 똑같아!<br>I, You, He, She, We 다 <b>can</b>!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S4 · 중요 규칙: can 뒤는 기본형 동사 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">중요 규칙 ⚠️</span>
+    <div class="slide-title">🎯 <b style="color:var(--primary)">can 뒤는 그냥 동사!</b></div>
+    <div class="review-badge">
+      <span class="rb-icon">💡</span>
+      <div>1단원에서 "She <b>is</b>"처럼 배웠지?<br>근데 can 뒤엔 is / am / are 안 와!</div>
+    </div>
+    <div class="good-bad">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        I can <u>is</u> jump.
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        I can jump.
+      </div>
+    </div>
+    <div class="good-bad">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        She can <u>runs</u>.
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        She can run.
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>can</b> 뒤에는 동사 원래 모양!<br>runs ❌ / run ✅<br>be동사도 오지 않아!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S5 · 동사 배우기 (jump, swim, run, fly, sing, dance) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">동사 6가지</span>
+    <div class="slide-title">🏃 can과 쓰는 동사들</div>
+    <div class="action-grid">
+      <div class="action-box" onclick="speakWord('jump')">
+        <span class="ac-emoji">🤸</span>
+        <div class="ac-en">jump 🔊</div>
+        <div class="ac-ko">점프하다</div>
+      </div>
+      <div class="action-box" onclick="speakWord('run')">
+        <span class="ac-emoji">🏃</span>
+        <div class="ac-en">run 🔊</div>
+        <div class="ac-ko">달리다</div>
+      </div>
+      <div class="action-box" onclick="speakWord('swim')">
+        <span class="ac-emoji">🏊</span>
+        <div class="ac-en">swim 🔊</div>
+        <div class="ac-ko">수영하다</div>
+      </div>
+      <div class="action-box" onclick="speakWord('fly')">
+        <span class="ac-emoji">🦅</span>
+        <div class="ac-en">fly 🔊</div>
+        <div class="ac-ko">날다</div>
+      </div>
+      <div class="action-box" onclick="speakWord('sing')">
+        <span class="ac-emoji">🎤</span>
+        <div class="ac-en">sing 🔊</div>
+        <div class="ac-ko">노래하다</div>
+      </div>
+      <div class="action-box" onclick="speakWord('dance')">
+        <span class="ac-emoji">💃</span>
+        <div class="ac-en">dance 🔊</div>
+        <div class="ac-ko">춤추다</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">👆 눌러서 소리 들어봐!<br>이 6개로 엄청 많은 문장을 만들 수 있어!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S6 · 다양한 주어로 예시 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">주어가 바뀌어도 can은 그대로!</span>
+    <div class="ex-row" onclick="speakWord('A bird can fly')">
+      <div class="ex-emoji">🦅</div>
+      <div class="ex-text">A bird <b>can</b> fly. 🔊<span class="ex-ko">새는 날 수 있어.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('A fish can swim')">
+      <div class="ex-emoji">🐟</div>
+      <div class="ex-text">A fish <b>can</b> swim. 🔊<span class="ex-ko">물고기는 수영할 수 있어.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('Kay can sing')">
+      <div class="ex-emoji">🐶</div>
+      <div class="ex-text">Kay <b>can</b> sing. 🔊<span class="ex-ko">케이는 노래할 수 있어.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('We can dance')">
+      <div class="ex-emoji">💃🕺</div>
+      <div class="ex-text">We <b>can</b> dance. 🔊<span class="ex-ko">우리는 춤출 수 있어.</span></div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">주어가 A bird든, A fish든, Kay든, We든<br><b>can</b>은 항상 <b>can</b>!<br>모양 안 바뀌어!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S7 · 확인 문제 1 (⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20">
+  <div class="card">
+    <span class="question-label">확인 문제 1 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">빈칸에 알맞은 건?</div>
+    <div class="scene-box">
+      I <b>___</b> swim.<span class="ko">(나는 수영할 수 있어)</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">am</button>
+      <button class="choice-btn" onclick="answer(this,1)">can</button>
+      <button class="choice-btn" onclick="answer(this,2)">is</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S8 · 확인 문제 2: OX (⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20">
+  <div class="card">
+    <span class="question-label">확인 문제 2 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">이 문장 맞을까?</div>
+    <div class="scene-box" style="font-size:24px">
+      "She can <b>is</b> dance." 💃
+    </div>
+    <div class="ox-wrap">
+      <button class="ox-btn o" onclick="answer(this,0)">O</button>
+      <button class="ox-btn x" onclick="answer(this,1)">X</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S9 · 확인 문제 3: 문장 고르기 (⭐⭐⭐) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="0" data-score="50">
+  <div class="card">
+    <span class="question-label">확인 문제 3 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">🦅 "새는 날 수 있어"는?</div>
+    <div class="choices col">
+      <button class="choice-btn" onclick="answer(this,0)">A bird can fly.</button>
+      <button class="choice-btn" onclick="answer(this,1)">A bird can is fly.</button>
+      <button class="choice-btn" onclick="answer(this,2)">A bird is can fly.</button>
+      <button class="choice-btn" onclick="answer(this,3)">A bird can flies.</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S10 · 순서 배치 (⭐⭐⭐) — "I can sing" -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="50">
+  <div class="card">
+    <span class="question-label">확인 문제 4 <span class="stars">⭐⭐⭐</span></span>
+    <div class="question-text">🧩 "나는 노래할 수 있어" 조립!</div>
+    <div class="order-stage" id="order10Stage">
+      <span class="order-empty" id="order10Empty">👆 아래에서 순서대로 눌러주세요</span>
+    </div>
+    <div class="order-pool" id="order10Pool">
+      <button class="order-chip" onclick="orderPick(10,this,'sing')">sing</button>
+      <button class="order-chip" onclick="orderPick(10,this,'I')">I</button>
+      <button class="order-chip" onclick="orderPick(10,this,'can')">can</button>
+    </div>
+    <div style="text-align:center">
+      <button class="order-reset" onclick="orderReset(10)">🔄 다시</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S11 · 최종 누적 문제 (⭐⭐⭐⭐) — That + a big red apple + can eat -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="100">
+  <div class="card">
+    <span class="question-label">최종 도전 <span class="stars">⭐⭐⭐⭐</span></span>
+    <div class="question-text">🏆 지금까지 배운 거 총출동!</div>
+    <div class="scene-box" style="font-size:18px">
+      저 멀리 큰 빨간 사과가 있어요. 나는 그걸 먹을 수 있어요.<br><br>
+      <span style="color:var(--primary);font-size:14px">(That is a big red apple. I ___ eat it.)</span>
+    </div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">am</button>
+      <button class="choice-btn" onclick="answer(this,1)">can</button>
+      <button class="choice-btn" onclick="answer(this,2)">is</button>
+      <button class="choice-btn" onclick="answer(this,3)">are</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S12 · 1학년 문법 4단원 완주 축하 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">🎊 대단해!</span>
+    <div style="font-size:64px">🏆</div>
+    <div class="slide-title"><b style="color:var(--primary)">1학년 문법 4단원</b><br>완주했어!</div>
+    <div class="finale-text">
+      <b>That is a big red apple.</b><br>
+      <b>I can eat it.</b>
+      <div style="font-size:15px;color:var(--subtext);margin-top:10px">
+        (저건 크고 빨간 사과야.<br>나는 그걸 먹을 수 있어.)
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">봐봐! 이 문장 전부 네가 만들 수 있어!<br><b>be동사 · This/That · a/an · 형용사 · can</b><br>1학년인데 이미 문장을 만들어! 👏</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S13 · 정리 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🏆</div>
+    <div style="font-size:30px;margin:6px 0;color:var(--primary)">4단원 완주!</div>
+    <div style="font-size:18px;color:var(--subtext)">can 맛보기</div>
+    <div style="margin:14px 0">
+      <span style="font-size:44px;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:20px;color:var(--subtext)">점</span>
+      <div id="resultStars" style="font-size:30px;margin-top:4px">⭐⭐⭐</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-item"><div class="summary-num">1</div><div><b>can</b> = "~할 수 있어" (능력 배지 🦸)</div></div>
+      <div class="summary-item"><div class="summary-num">2</div><div>공식: <b>주어 + can + 동사</b></div></div>
+      <div class="summary-item"><div class="summary-num">3</div><div>주어 바뀌어도 <b>can은 그대로</b>!</div></div>
+      <div class="summary-item"><div class="summary-num">4</div><div>can 뒤엔 동사 원래 모양 (runs ❌ / run ✅)</div></div>
+    </div>
+    <button class="practice-link" onclick="goHome()">
+      🏠 영어 메뉴로
+    </button>
+    <div style="margin-top:10px">
+      <button class="nav-btn" style="padding:8px 20px;font-size:16px;background:var(--subtext)" onclick="restart()">🔄 다시 보기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=14;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,c.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.25);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.07);o.start();o.stop(c.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.7;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    const rs=document.getElementById('resultStars');
+    const re=document.getElementById('resultEmoji');
+    if(score>=200){rs.textContent='⭐⭐⭐⭐⭐';re.textContent='🏆'}
+    else if(score>=130){rs.textContent='⭐⭐⭐⭐';re.textContent='🎉'}
+    else if(score>=70){rs.textContent='⭐⭐⭐';re.textContent='🎯'}
+    else{rs.textContent='⭐⭐';re.textContent='💪'}
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+const feedbackMap={
+  7:{ok:'✅ 정답! "I can swim" — 수영할 수 있어! (다음 버튼)', err:'다시! "할 수 있어"는 어떤 단어? 💪'},
+  8:{ok:'✅ 맞아, X! can 뒤엔 is가 오면 안 돼! "She can dance"가 맞음! (다음 버튼)', err:'다시 봐봐! can 뒤에 is가 있는데... 규칙 기억해?'},
+  9:{ok:'✅ 정답! A bird can fly! can 뒤엔 그냥 동사! (다음 버튼)', err:'다시! can 뒤엔 be동사도, -s도 안 와!'},
+  11:{ok:'✅ 완벽! "I can eat it" — 1학년 문법 끝! 🏆 (다음 버튼)', err:'다시! "먹을 수 있어" → 능력 배지 단어는?'}
+};
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  const fb=feedbackMap[currentSlide]||{ok:'✅ 정답! +'+pts+'점',err:'다시 생각해봐! 💪'};
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    setFB('fb'+currentSlide,fb.ok.replace('(다음 버튼)','+'+pts+'점 (아래 다음 버튼 눌러 계속)'),true);
+    answered[currentSlide]=true;
+  } else {
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,fb.err,false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== Q10: 순서 (I can sing) ==== */
+const orderConfigs={
+  10:{answer:['I','can','sing'],stage:'order10Stage',empty:'order10Empty',fb:'fb10',slide:10,pts:50,hint:'주어(I) + can + 동사(sing)',ok:'✅ 완벽! I can sing!'}
+};
+const orderPicked={10:[]};
+function orderPick(qid,btn,word){
+  const cfg=orderConfigs[qid];
+  if(answered[cfg.slide])return;
+  playClick();
+  orderPicked[qid].push(word);
+  btn.classList.add('used');
+  const stage=document.getElementById(cfg.stage);
+  const emptyEl=document.getElementById(cfg.empty);
+  if(emptyEl)emptyEl.style.display='none';
+  const chip=document.createElement('span');
+  chip.className='order-slot';
+  chip.textContent=word;
+  stage.appendChild(chip);
+  if(orderPicked[qid].length===cfg.answer.length){
+    const isCorrect=orderPicked[qid].every((w,i)=>w===cfg.answer[i]);
+    if(isCorrect){
+      playCorrect();addScore(cfg.pts);
+      speakWord(cfg.answer.join(' '));
+      setFB(cfg.fb,cfg.ok+' +'+cfg.pts+'점 (아래 다음 버튼 눌러 계속)',true);
+      answered[cfg.slide]=true;
+    } else {
+      playWrong();combo=0;
+      setFB(cfg.fb,'순서가 틀려! 힌트: '+cfg.hint+' 💪 "다시" 버튼 눌러봐',false);
+      stage.querySelectorAll('.order-slot').forEach(s=>{s.style.background='var(--red-light)';s.style.borderColor='var(--red)'});
+    }
+  }
+}
+function orderReset(qid){
+  if(answered[orderConfigs[qid].slide])return;
+  orderPicked[qid]=[];
+  const cfg=orderConfigs[qid];
+  const stage=document.getElementById(cfg.stage);
+  stage.innerHTML='<span class="order-empty" id="'+cfg.empty+'">👆 아래에서 순서대로 눌러주세요</span>';
+  document.querySelectorAll('#order'+qid+'Pool .order-chip').forEach(b=>b.classList.remove('used'));
+  setFB(cfg.fb,'',true);
+  document.getElementById(cfg.fb).className='feedback';
+}
+
+function goHome(){
+  location.href='/english/index.html';
+}
+
+function restart(){
+  score=0;combo=0;answered={};orderPicked[10]=[];
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.ox-btn').forEach(b=>{const cls=b.classList.contains('o')?'o':'x';b.className='ox-btn '+cls});
+  document.querySelectorAll('.order-chip').forEach(b=>b.classList.remove('used'));
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('order10Stage').innerHTML='<span class="order-empty" id="order10Empty">👆 아래에서 순서대로 눌러주세요</span>';
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+/* 스와이프 제거 — 1학년 오작동 방지. "다음 ▶" 버튼만으로 진행 */
+updateUI();
+</script>
+</body>
+</html>

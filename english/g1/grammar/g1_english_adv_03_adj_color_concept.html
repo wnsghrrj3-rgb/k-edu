@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>K-edu 1학년 문법 03 — 형용사·색깔 개념편</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FFF5F0;
+  --card: #FFFFFF;
+  --primary: #FF6B6B;
+  --primary-light: #FFE0E0;
+  --secondary: #FF9E7A;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #4A9EFF;
+  --blue-light: #E0F0FF;
+  --purple: #9C88FF;
+  --purple-light: #EDE7FF;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; user-select:none; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.08); flex-shrink:0; }
+.sound-btn { background:none; border:none; cursor:pointer; font-size:26px; padding:4px 8px; border-radius:10px; }
+.progress-wrap { display:flex; align-items:center; gap:8px; flex:1; margin:0 12px; }
+.progress-bar { flex:1; height:10px; background:#FFE0D0; border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--secondary)); border-radius:99px; transition:width .5s; }
+.page-info { font-size:18px; color:var(--subtext); white-space:nowrap; }
+.score-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:3px 12px; font-size:20px; font-weight:700; color:#E6A800; }
+.kedu-logo { display:flex; align-items:center; gap:4px; background:var(--primary); color:#fff; border-radius:99px; padding:4px 12px; font-size:16px; font-weight:700; flex-shrink:0; }
+
+.slides { flex:1; position:relative; overflow:hidden; }
+.slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px 18px; opacity:0; transform:translateX(60px); transition:all .4s cubic-bezier(.4,0,.2,1); pointer-events:none; overflow-y:auto; }
+.slide.active { opacity:1; transform:translateX(0); pointer-events:all; }
+.slide.out { opacity:0; transform:translateX(-60px); }
+
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px 22px; width:100%; max-width:640px; }
+.slide-title { font-size:24px; color:var(--text); text-align:center; margin-bottom:10px; line-height:1.4; }
+.slide-chip { display:inline-block; background:var(--primary); color:#fff; border-radius:99px; padding:4px 14px; font-size:16px; margin-bottom:8px; }
+
+.hook-q { font-size:30px; text-align:center; color:var(--primary); margin:14px 0; line-height:1.5; }
+.hook-emoji { font-size:72px; text-align:center; margin:6px 0; }
+
+.kay-bubble { display:flex; align-items:flex-start; gap:10px; background:var(--yellow-light); border:3px solid var(--yellow); border-radius:18px; padding:14px; margin:14px 0; }
+.kay-icon { font-size:44px; flex-shrink:0; }
+.kay-text { font-size:19px; line-height:1.55; flex:1; text-align:left; }
+.kay-text b { color:var(--primary); }
+
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.compare-box { padding:16px 10px; border-radius:14px; text-align:center; }
+.compare-box.ko { background:var(--blue-light); border:3px solid var(--blue); }
+.compare-box.en { background:var(--primary-light); border:3px solid var(--primary); }
+.compare-label { font-size:16px; margin-bottom:8px; }
+.compare-text { font-size:22px; line-height:1.5; }
+.compare-text b { color:var(--red); }
+
+/* 색깔 팔레트 */
+.color-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+.color-chip { border-radius:14px; padding:16px 8px; text-align:center; cursor:pointer; transition:transform .2s; border:3px solid transparent; }
+.color-chip:hover { transform:scale(1.05); }
+.color-chip .c-swatch { width:50px; height:50px; border-radius:50%; margin:0 auto 8px; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+.color-chip .c-en { font-size:20px; font-weight:700; }
+.color-chip .c-ko { font-size:14px; color:var(--subtext); }
+.color-chip.red { background:#FFE8E8; } .color-chip.red .c-swatch { background:#F44336; }
+.color-chip.blue { background:#E0F0FF; } .color-chip.blue .c-swatch { background:#4A9EFF; }
+.color-chip.yellow { background:#FFF8E1; } .color-chip.yellow .c-swatch { background:#FFC107; }
+.color-chip.green { background:#E8F5E9; } .color-chip.green .c-swatch { background:#4CAF50; }
+.color-chip.black { background:#E0E0E0; } .color-chip.black .c-swatch { background:#222; }
+.color-chip.white { background:#F5F5F5; } .color-chip.white .c-swatch { background:#fff; border:3px solid #888; }
+
+/* 형용사 예시 (크다/작다/키가큰 등) */
+.adj-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.adj-box { background:#fff; border:3px solid var(--primary-light); border-radius:14px; padding:14px 10px; text-align:center; cursor:pointer; transition:transform .2s; }
+.adj-box:hover { transform:scale(1.03); border-color:var(--primary); }
+.adj-box .adj-emoji { font-size:40px; }
+.adj-box .adj-en { font-size:22px; color:var(--primary); margin:4px 0; }
+.adj-box .adj-ko { font-size:15px; color:var(--subtext); }
+
+/* 어순 박스 */
+.order-sentence { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin:14px 0; padding:14px; background:var(--primary-light); border-radius:14px; }
+.order-piece { background:#fff; border:3px solid var(--primary); border-radius:10px; padding:8px 14px; font-size:22px; }
+.order-piece.adj { border-color:var(--purple); color:var(--purple); background:var(--purple-light); }
+.order-piece.noun { border-color:var(--blue); color:var(--blue); background:var(--blue-light); }
+.order-arrow { font-size:24px; color:var(--primary); }
+
+/* 예시 문장 */
+.ex-row { display:flex; align-items:center; gap:10px; background:var(--primary-light); border-radius:12px; padding:10px 14px; margin:8px 0; font-size:20px; cursor:pointer; transition:transform .2s; }
+.ex-row:hover { transform:scale(1.02); }
+.ex-row b { color:var(--primary); }
+.ex-emoji { font-size:32px; flex-shrink:0; }
+.ex-text { flex:1; }
+.ex-ko { display:block; font-size:14px; color:var(--subtext); margin-top:2px; }
+
+/* 맞는 것/틀린 것 */
+.good-bad { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.gb-box { border-radius:14px; padding:16px 10px; text-align:center; font-size:22px; line-height:1.5; }
+.gb-good { background:var(--green-light); border:3px solid var(--green); color:var(--green); }
+.gb-bad { background:var(--red-light); border:3px solid var(--red); color:var(--red); }
+.gb-label { display:block; font-size:15px; margin-bottom:6px; }
+
+/* 체험: 문장 조립 (주어 + be + 형용사) */
+.builder-display { background:var(--primary-light); border:3px dashed var(--primary); border-radius:16px; padding:20px; margin:14px 0; text-align:center; font-size:26px; color:var(--primary); min-height:80px; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; line-height:1.4; }
+.builder-slot { display:inline-block; min-width:70px; padding:4px 10px; }
+.builder-slot.empty { color:#BBB; border-bottom:4px dashed var(--primary); }
+.builder-slot.filled { background:#fff; border-radius:10px; padding:6px 14px; }
+.builder-label { font-size:18px; color:var(--subtext); margin-top:10px; margin-bottom:8px; text-align:center; }
+.builder-btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.builder-btn { background:#fff; border:3px solid #E0D0C0; border-radius:14px; padding:12px 22px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; min-width:70px; }
+.builder-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.builder-btn.correct-flash { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.builder-btn.wrong-flash { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+
+@keyframes cpop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+/* 확인 문제 */
+.question-label { display:inline-flex; align-items:center; gap:6px; background:var(--primary); color:#fff; border-radius:99px; padding:5px 16px; font-size:20px; margin-bottom:10px; }
+.stars { color:#FCD34D; }
+.question-text { font-size:24px; text-align:center; margin:8px 0 14px; line-height:1.5; }
+.choices { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.choices.col { flex-direction:column; align-items:center; }
+.choices.col .choice-btn { width:100%; max-width:500px; }
+.choice-btn { background:var(--card); border:3px solid #E0D0C0; border-radius:14px; padding:12px 22px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:all .2s; }
+.choice-btn:hover { border-color:var(--primary); transform:translateY(-2px); }
+.choice-btn.correct { background:var(--green-light); border-color:var(--green); animation:cpop .4s; }
+.choice-btn.wrong { background:var(--red-light); border-color:var(--red); animation:shake .4s; }
+.feedback { font-size:19px; text-align:center; margin-top:12px; min-height:28px; border-radius:12px; padding:5px 14px; }
+.feedback.ok { color:var(--green); background:var(--green-light); }
+.feedback.err { color:var(--red); background:var(--red-light); }
+
+.speaker { display:inline-block; cursor:pointer; font-size:20px; margin-left:6px; }
+
+.review-badge { background:var(--yellow-light); border:2px solid var(--yellow); border-radius:12px; padding:10px 14px; margin:12px 0; font-size:17px; color:#A67C00; display:flex; align-items:center; gap:8px; }
+.review-badge .rb-icon { font-size:26px; }
+
+.summary-box { background:var(--primary-light); border-radius:16px; padding:18px; margin:14px 0; }
+.summary-item { display:flex; gap:10px; align-items:flex-start; margin:10px 0; font-size:20px; line-height:1.5; text-align:left; }
+.summary-num { background:var(--primary); color:#fff; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; margin-top:2px; }
+.summary-item b { color:var(--primary); }
+
+.nav { display:flex; justify-content:center; align-items:center; gap:16px; padding:10px 20px; background:#fff; border-top:1px solid #F0E0D0; flex-shrink:0; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:14px; padding:12px 32px; font-family:'Jua',sans-serif; font-size:22px; cursor:pointer; transition:opacity .2s; }
+.nav-btn:disabled { opacity:.3; cursor:default; }
+.practice-link { background:linear-gradient(135deg,var(--primary),var(--secondary)); color:#fff; border:none; border-radius:16px; padding:14px 28px; font-family:'Jua',sans-serif; font-size:24px; cursor:pointer; box-shadow:0 4px 14px rgba(255,107,107,0.3); margin-top:14px; transition:transform .2s; }
+.practice-link:hover { transform:translateY(-2px); }
+
+.combo-toast { position:fixed; top:65px; left:50%; transform:translateX(-50%) scale(0); background:var(--yellow-light); border:2px solid var(--yellow); border-radius:99px; padding:6px 20px; font-size:24px; color:#E6A800; z-index:99; transition:transform .3s; }
+.combo-toast.show { transform:translateX(-50%) scale(1); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="page-info" id="pageInfo">1 / 12</span>
+  </div>
+  <span class="score-badge">⭐ <span id="scoreDisp">0</span></span>
+  <span class="kedu-logo">🐶 K ✦</span>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides" id="slidesWrap">
+
+<!-- ============================================================ -->
+<!-- S0 · 왜? -->
+<!-- ============================================================ -->
+<div class="slide active" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">왜 배워야 해?</span>
+    <div class="hook-emoji">🍎</div>
+    <div class="hook-q">사과를 봤는데...<br><b>"빨간 사과"</b>는 어떻게?</div>
+    <div class="good-bad" style="margin-top:16px">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 색깔이 없음</span>
+        a apple
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 이렇게!</span>
+        a <u>red</u> apple
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">오늘은 <b>"어떤"</b> 고양이인지,<br><b>"어떤"</b> 사과인지<br>꾸며주는 말 — <b>형용사</b>!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S1 · 앵커: 한국어도 꾸며준다 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">한국어랑 비교</span>
+    <div class="slide-title">🇰🇷 ↔ 🇺🇸</div>
+    <div class="compare-grid">
+      <div class="compare-box ko">
+        <div class="compare-label">🇰🇷 한국어</div>
+        <div class="compare-text"><b>빨간</b> 사과<br><b>큰</b> 고양이<br><b>귀여운</b> 강아지</div>
+      </div>
+      <div class="compare-box en">
+        <div class="compare-label">🇺🇸 영어</div>
+        <div class="compare-text"><b>red</b> apple<br><b>big</b> cat<br><b>cute</b> dog</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">한국어의 <b>"빨간, 큰, 귀여운"</b>이<br>영어에서는 <b>red, big, cute</b>!<br>이런 말을 <b>형용사</b>라고 해!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S2 · 비유: 형용사 = 스티커 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card" style="text-align:center">
+    <span class="slide-chip">쉽게 기억하기</span>
+    <div class="slide-title">🏷️ 형용사는 <b style="color:var(--primary)">"이름표"</b>야!</div>
+    <div style="font-size:60px; margin:14px 0">🍎</div>
+    <div style="font-size:22px; margin:10px 0">
+      🏷️ <b style="color:var(--red)">red</b> &nbsp; 🏷️ <b style="color:var(--primary)">big</b> &nbsp; 🏷️ <b style="color:var(--green)">sweet</b>
+    </div>
+    <div style="font-size:18px; color:var(--text); margin:14px 0; line-height:1.6">
+      하나의 사과에<br><b>여러 개의 이름표</b>를 붙일 수 있어!<br>"빨간, 큰, 달콤한 사과"처럼!
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">형용사는 명사에 붙이는 <b>이름표</b>!<br>"어떤"지 알려주는 말이야!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S3 · 색깔 6가지 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">색깔 6가지</span>
+    <div class="slide-title">🌈 <b style="color:var(--primary)">색깔</b> 영어로!</div>
+    <div class="color-grid">
+      <div class="color-chip red" onclick="speakWord('red')">
+        <div class="c-swatch"></div>
+        <div class="c-en">red 🔊</div>
+        <div class="c-ko">빨강</div>
+      </div>
+      <div class="color-chip blue" onclick="speakWord('blue')">
+        <div class="c-swatch"></div>
+        <div class="c-en">blue 🔊</div>
+        <div class="c-ko">파랑</div>
+      </div>
+      <div class="color-chip yellow" onclick="speakWord('yellow')">
+        <div class="c-swatch"></div>
+        <div class="c-en">yellow 🔊</div>
+        <div class="c-ko">노랑</div>
+      </div>
+      <div class="color-chip green" onclick="speakWord('green')">
+        <div class="c-swatch"></div>
+        <div class="c-en">green 🔊</div>
+        <div class="c-ko">초록</div>
+      </div>
+      <div class="color-chip black" onclick="speakWord('black')">
+        <div class="c-swatch"></div>
+        <div class="c-en">black 🔊</div>
+        <div class="c-ko">검정</div>
+      </div>
+      <div class="color-chip white" onclick="speakWord('white')">
+        <div class="c-swatch"></div>
+        <div class="c-en">white 🔊</div>
+        <div class="c-ko">하양</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">👆 눌러서 소리 들어봐!<br>이 6개만 먼저 익혀도 충분해!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S4 · 다른 형용사들 (big, small, tall, short, cute) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">색깔 말고 다른 형용사</span>
+    <div class="slide-title">📏 크기·모습 형용사</div>
+    <div class="adj-grid">
+      <div class="adj-box" onclick="speakWord('big')">
+        <div class="adj-emoji">🐘</div>
+        <div class="adj-en">big 🔊</div>
+        <div class="adj-ko">큰</div>
+      </div>
+      <div class="adj-box" onclick="speakWord('small')">
+        <div class="adj-emoji">🐭</div>
+        <div class="adj-en">small 🔊</div>
+        <div class="adj-ko">작은</div>
+      </div>
+      <div class="adj-box" onclick="speakWord('tall')">
+        <div class="adj-emoji">🦒</div>
+        <div class="adj-en">tall 🔊</div>
+        <div class="adj-ko">키가 큰</div>
+      </div>
+      <div class="adj-box" onclick="speakWord('short')">
+        <div class="adj-emoji">🐧</div>
+        <div class="adj-en">short 🔊</div>
+        <div class="adj-ko">키가 작은</div>
+      </div>
+      <div class="adj-box" onclick="speakWord('cute')">
+        <div class="adj-emoji">🐶</div>
+        <div class="adj-en">cute 🔊</div>
+        <div class="adj-ko">귀여운</div>
+      </div>
+      <div class="adj-box" onclick="speakWord('happy')">
+        <div class="adj-emoji">😊</div>
+        <div class="adj-en">happy 🔊</div>
+        <div class="adj-ko">행복한</div>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">형용사는 정말 많아!<br>오늘은 이 정도만 알아두면 충분 👍</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S5 · 규칙 ①: 어순 — 형용사 + 명사 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">중요 규칙 ①</span>
+    <div class="slide-title">📝 형용사는 <b style="color:var(--primary)">명사 앞</b>!</div>
+    <div class="order-sentence">
+      <div class="order-piece adj">red</div>
+      <div class="order-arrow">→</div>
+      <div class="order-piece noun">apple</div>
+    </div>
+    <div style="font-size:18px; color:var(--subtext); text-align:center; margin:6px 0">꾸며주는 말 → 꾸밈 받는 말</div>
+    <div class="good-bad">
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        <b>red</b> apple
+      </div>
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        apple <b>red</b>
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">한국어도 <b>"빨간 사과"</b>지 <b>"사과 빨간"</b>이 아니잖아!<br>영어도 똑같아!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S6 · 규칙 ②: a/an + 형용사 + 명사 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">중요 규칙 ②</span>
+    <div class="slide-title">🎫 <b style="color:var(--primary)">a/an</b>은 맨 앞!</div>
+    <div class="order-sentence">
+      <div class="order-piece">a</div>
+      <div class="order-arrow">+</div>
+      <div class="order-piece adj">red</div>
+      <div class="order-arrow">+</div>
+      <div class="order-piece noun">apple</div>
+    </div>
+    <div class="ex-row" onclick="speakWord('a red apple')">
+      <div class="ex-emoji">🍎</div>
+      <div class="ex-text">a <b>red</b> apple 🔊<span class="ex-ko">빨간 사과 한 개</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('a big cat')">
+      <div class="ex-emoji">🐈</div>
+      <div class="ex-text">a <b>big</b> cat 🔊<span class="ex-ko">큰 고양이 한 마리</span></div>
+    </div>
+    <div class="review-badge">
+      <span class="rb-icon">💡</span>
+      <div>2단원에서 배웠지?<br><b>모음</b>(A/E/I/O/U) 앞에선 <b>an</b>!</div>
+    </div>
+    <div class="ex-row" onclick="speakWord('an old book')">
+      <div class="ex-emoji">📖</div>
+      <div class="ex-text"><b>an</b> <b>old</b> book 🔊<span class="ex-ko">오래된 책 한 권 (old = O로 시작)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S7 · 규칙 ③: be + 형용사 (I am tall) -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">중요 규칙 ③</span>
+    <div class="slide-title">🔗 <b style="color:var(--primary)">be동사</b> 뒤에도 형용사!</div>
+    <div class="review-badge">
+      <span class="rb-icon">💡</span>
+      <div>1단원에서 배운 be동사 기억나?<br><b>am / is / are</b>!</div>
+    </div>
+    <div class="order-sentence">
+      <div class="order-piece" style="border-color:var(--blue);color:var(--blue);background:var(--blue-light)">I</div>
+      <div class="order-piece">am</div>
+      <div class="order-piece adj">tall</div>
+    </div>
+    <div class="ex-row" onclick="speakWord('I am tall')">
+      <div class="ex-emoji">🧍</div>
+      <div class="ex-text">I am <b>tall</b>. 🔊<span class="ex-ko">나는 키가 커.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('She is happy')">
+      <div class="ex-emoji">😊</div>
+      <div class="ex-text">She is <b>happy</b>. 🔊<span class="ex-ko">그녀는 행복해.</span></div>
+    </div>
+    <div class="ex-row" onclick="speakWord('The cat is cute')">
+      <div class="ex-emoji">🐱</div>
+      <div class="ex-text">The cat is <b>cute</b>. 🔊<span class="ex-ko">그 고양이는 귀여워.</span></div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>"주어 + be + 형용사"</b>는 최고의 공식!<br>"나는 ___해" 구조를 다 만들어!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S8 · 대비: 명사 앞 vs be 뒤 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">두 자리 정리</span>
+    <div class="slide-title">🎯 형용사는 <b style="color:var(--primary)">2가지</b> 자리!</div>
+    <div class="order-sentence">
+      <div class="order-piece">a</div>
+      <div class="order-piece adj">red</div>
+      <div class="order-piece noun">apple</div>
+    </div>
+    <div style="text-align:center;font-size:16px;color:var(--subtext);margin:4px 0">① 명사 <b>앞</b>에 붙여서 꾸미기</div>
+    <div style="font-size:30px;text-align:center;margin:14px 0;color:var(--primary)">⬇</div>
+    <div class="order-sentence">
+      <div class="order-piece" style="border-color:var(--blue);color:var(--blue);background:var(--blue-light)">It</div>
+      <div class="order-piece">is</div>
+      <div class="order-piece adj">red</div>
+    </div>
+    <div style="text-align:center;font-size:16px;color:var(--subtext);margin:4px 0">② be동사 <b>뒤</b>에 놓기</div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text">같은 형용사 <b>red</b>가 두 자리!<br><b>a red apple</b> = "빨간 사과"<br><b>It is red</b> = "이건 빨개"<br>둘 다 가능!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S9 · 오개념 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="concept">
+  <div class="card">
+    <span class="slide-chip">⚠️ 자주 틀려!</span>
+    <div class="slide-title">🚨 헷갈리는 지점</div>
+    <div class="good-bad">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        a apple red
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        a red apple
+      </div>
+    </div>
+    <div class="good-bad">
+      <div class="gb-box gb-bad">
+        <span class="gb-label">❌ 틀림</span>
+        I tall.
+      </div>
+      <div class="gb-box gb-good">
+        <span class="gb-label">✅ 맞음</span>
+        I <u>am</u> tall.
+      </div>
+    </div>
+    <div class="kay-bubble">
+      <div class="kay-icon">🐶</div>
+      <div class="kay-text"><b>be동사 빼먹지 마!</b><br>"나 키가 커"는 "I tall"이 아니야!<br>반드시 <b>am</b>이 있어야 돼!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S10 · 체험: 문장 조립 3문제 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-score="20">
+  <div class="card">
+    <span class="question-label">체험하기 <span class="stars">⭐</span></span>
+    <div class="slide-title">🎮 빈칸에 들어갈 건?</div>
+    <div id="builderStage">
+      <div class="builder-label" id="builderQPrompt">1/3 — "빨간 사과 한 개"</div>
+      <div class="builder-display">
+        <span id="slot1" class="builder-slot filled">a</span>
+        <span id="slot2" class="builder-slot empty">___</span>
+        <span id="slot3" class="builder-slot filled">apple.</span>
+      </div>
+      <div class="builder-label">👇 눌러서 골라봐!</div>
+      <div class="builder-btns" id="builderBtns">
+        <button class="builder-btn" onclick="builderPick(this,'red')">red</button>
+        <button class="builder-btn" onclick="builderPick(this,'apple')">apple</button>
+        <button class="builder-btn" onclick="builderPick(this,'is')">is</button>
+      </div>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S11 · 확인 문제 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="q" data-correct="1" data-score="20">
+  <div class="card">
+    <span class="question-label">확인 문제 <span class="stars">⭐⭐</span></span>
+    <div class="question-text">빈칸에 알맞은 건?<br><br><b style="font-size:26px">I ___ happy.</b><br><span style="font-size:17px;color:var(--subtext)">(나는 행복해)</span></div>
+    <div class="choices">
+      <button class="choice-btn" onclick="answer(this,0)">is</button>
+      <button class="choice-btn" onclick="answer(this,1)">am</button>
+      <button class="choice-btn" onclick="answer(this,2)">are</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- S12 · 정리 -->
+<!-- ============================================================ -->
+<div class="slide" data-type="result">
+  <div class="card" style="text-align:center">
+    <div id="resultEmoji" style="font-size:64px">🎯</div>
+    <div style="font-size:30px;margin:6px 0;color:var(--primary)">개념편 완료!</div>
+    <div style="font-size:18px;color:var(--subtext)">형용사·색깔</div>
+    <div style="margin:14px 0">
+      <span style="font-size:44px;color:var(--primary)" id="finalScore">0</span>
+      <span style="font-size:20px;color:var(--subtext)">점</span>
+      <div id="resultStars" style="font-size:30px;margin-top:4px">⭐⭐⭐</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-item"><div class="summary-num">1</div><div>형용사 = <b>"어떤"</b>을 알려주는 이름표 🏷️</div></div>
+      <div class="summary-item"><div class="summary-num">2</div><div><b>명사 앞</b>에 붙이기: a <b>red</b> apple</div></div>
+      <div class="summary-item"><div class="summary-num">3</div><div><b>be동사 뒤</b>에도: I am <b>tall</b></div></div>
+      <div class="summary-item"><div class="summary-num">4</div><div>색깔 6가지: red, blue, yellow, green, black, white</div></div>
+    </div>
+    <button class="practice-link" onclick="goPractice()">
+      🎮 문제 풀러 가기 →
+    </button>
+    <div style="margin-top:10px">
+      <button class="nav-btn" style="padding:8px 20px;font-size:16px;background:var(--subtext)" onclick="restart()">🔄 다시 보기</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+let soundOn=true,currentSlide=0,score=0,combo=0,answered={};
+const TOTAL_SLIDES=13;
+let audioCtx=null;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function playCorrect(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[523,659,784].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.25,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2)})})}
+function playWrong(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{[220,196].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.2,c.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.15+.25);o.start(c.currentTime+i*.15);o.stop(c.currentTime+i*.15+.25)})})}
+function playClick(){if(!soundOn)return;const c=getCtx();c.resume().then(()=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.07);o.start();o.stop(c.currentTime+.07)})}
+function speakWord(w){if(!soundOn)return;playClick();const u=new SpeechSynthesisUtterance(w);u.lang='en-US';u.rate=0.7;speechSynthesis.cancel();speechSynthesis.speak(u)}
+
+function goSlide(n){const sl=document.querySelectorAll('.slide');sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');setTimeout(()=>{sl.forEach(s=>s.classList.remove('out'))},400);currentSlide=n;sl[currentSlide].classList.add('active');updateUI()}
+function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}
+function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1)}
+function updateUI(){
+  document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled=currentSlide===0;
+  document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent=score;
+  if(currentSlide===TOTAL_SLIDES-1){
+    document.getElementById('finalScore').textContent=score;
+    const rs=document.getElementById('resultStars');
+    const re=document.getElementById('resultEmoji');
+    if(score>=35){rs.textContent='⭐⭐⭐⭐⭐';re.textContent='🏆'}
+    else if(score>=20){rs.textContent='⭐⭐⭐⭐';re.textContent='🎉'}
+    else if(score>=10){rs.textContent='⭐⭐⭐';re.textContent='🎯'}
+    else{rs.textContent='⭐⭐';re.textContent='💪'}
+  }
+}
+function addScore(pts){score+=pts;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
+function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
+
+function answer(btn,idx){
+  if(answered[currentSlide])return;
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;
+  playClick();
+  if(idx===correct){
+    btn.classList.add('correct');playCorrect();addScore(pts);
+    setFB('fb'+currentSlide,'✅ 정답! I의 짝꿍은 am! +'+pts+'점 (아래 다음 버튼 눌러 계속)',true);
+    answered[currentSlide]=true;
+  } else {
+    btn.classList.add('wrong');playWrong();combo=0;
+    setFB('fb'+currentSlide,'다시! I랑 짝을 이루는 be동사는? 1단원 복습! 💪',false);
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+  }
+}
+
+/* ==== 체험(S10): 빨간 사과 → 키 큰 나 → 행복한 고양이 ==== */
+const builderQs=[
+  {prompt:'1/3 — "빨간 사과 한 개"',slot1:'a',right:'red',slot3:'apple.',speak:'a red apple',hint:'빨간색은 영어로?'},
+  {prompt:'2/3 — "나는 키가 커"',slot1:'I',right:'am',slot3:'tall.',speak:'I am tall',hint:'I의 짝 be동사는?'},
+  {prompt:'3/3 — "고양이는 행복해"',slot1:'The cat',right:'is',slot3:'happy.',speak:'The cat is happy',hint:'한 마리니까? am/is/are 중?'}
+];
+let builderStep=0;
+const builderChoices=[
+  [['red','apple','is'],'red'],
+  [['am','is','are'],'am'],
+  [['am','is','are'],'is']
+];
+
+function builderPick(btn,val){
+  if(answered[10])return;
+  const q=builderQs[builderStep];
+  if(val===q.right){
+    btn.classList.add('correct-flash');playCorrect();
+    document.getElementById('slot2').textContent=val;
+    document.getElementById('slot2').classList.remove('empty');
+    document.getElementById('slot2').classList.add('filled');
+    speakWord(q.speak);
+    builderStep++;
+    if(builderStep>=builderQs.length){
+      addScore(20);
+      setFB('fb10','✅ 완벽! 형용사 마스터! +20점 (아래 다음 버튼 눌러 계속)',true);
+      answered[10]=true;
+    } else {
+      setTimeout(()=>{
+        const next=builderQs[builderStep];
+        document.getElementById('builderQPrompt').textContent=next.prompt;
+        document.getElementById('slot1').textContent=next.slot1;
+        document.getElementById('slot3').textContent=next.slot3;
+        document.getElementById('slot2').textContent='___';
+        document.getElementById('slot2').classList.add('empty');
+        document.getElementById('slot2').classList.remove('filled');
+        // 버튼 교체
+        const btns=document.getElementById('builderBtns');
+        btns.innerHTML='';
+        const [choices,_right]=builderChoices[builderStep];
+        choices.forEach(c=>{
+          const b=document.createElement('button');
+          b.className='builder-btn';
+          b.textContent=c;
+          b.onclick=function(){builderPick(b,c)};
+          btns.appendChild(b);
+        });
+      },1000);
+    }
+  } else {
+    btn.classList.add('wrong-flash');playWrong();combo=0;
+    setFB('fb10','다시! '+q.hint+' 💪',false);
+    setTimeout(()=>btn.classList.remove('wrong-flash'),500);
+  }
+}
+
+function goPractice(){
+  location.href='g1_english_adv_03_practice_01.html';
+}
+
+function restart(){
+  score=0;combo=0;answered={};builderStep=0;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');
+  document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});
+  document.getElementById('slot1').textContent=builderQs[0].slot1;
+  document.getElementById('slot2').textContent='___';
+  document.getElementById('slot2').className='builder-slot empty';
+  document.getElementById('slot3').textContent=builderQs[0].slot3;
+  document.getElementById('builderQPrompt').textContent=builderQs[0].prompt;
+  const btns=document.getElementById('builderBtns');
+  btns.innerHTML='';
+  ['red','apple','is'].forEach(c=>{
+    const b=document.createElement('button');
+    b.className='builder-btn';
+    b.textContent=c;
+    b.onclick=function(){builderPick(b,c)};
+    btns.appendChild(b);
+  });
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));
+  currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI();
+}
+
+/* 스와이프 제거 — 1학년 오작동 방지. "다음 ▶" 버튼만으로 진행 */
+updateUI();
+</script>
+</body>
+</html>
