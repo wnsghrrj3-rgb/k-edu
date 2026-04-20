@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 회화 16강: 📍 위치</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../phonics/phonics-common.css">
+<style>
+:root{
+  --bg:#EEF2FF;--card:#FFFFFF;--primary:#3730A3;--primary-light:#E0E7FF;--secondary:#6366F1;
+  --green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;
+  --yellow:#FFC107;--yellow-light:#FFF8E1;
+  --text:#222;--subtext:#6B7280;--border:#C7D2FE;
+  --shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;
+  /* places 메인 인디고 (16강) — 12강 로열블루(#1E40AF)와 hue 구분 */
+  --c-place:#3730A3;--c-place-light:#E0E7FF;--c-place-deep:#1E1B4B;
+  /* 전치사 노랑/앰버 (in·on·under·next to) */
+  --prep-yellow:#F59E0B;--prep-yellow-light:#FEF3C7;--prep-yellow-deep:#78350F;
+  /* 가구 갈색 (table·box·chair·bed) */
+  --furn-brown:#92400E;--furn-brown-light:#FED7AA;--furn-brown-deep:#451A03;
+  /* 경고 */
+  --place-warn:#DC2626;--place-warn-light:#FEE2E2;
+  /* 이전 단계 참조 */
+  --c-conv1-ref:#10B981;--c-conv2-ref:#059669;--c-conv3-ref:#047857;
+  --c-conv4-ref:#F59E0B;--c-conv5-ref:#EA580C;--c-conv6-ref:#0EA5E9;
+  --c-conv7-ref:#2563EB;--c-conv8-ref:#16A34A;--c-conv-boss:#F59E0B;
+  --c-conv11-ref:#EA580C;--c-conv12-ref:#1E40AF;--c-conv13-ref:#0284C7;
+  --c-conv14-ref:#EC4899;--c-conv15-ref:#22C55E;
+}
+body{background:var(--bg)}
+.topbar{background:#fff}
+.progress-bar{background:var(--c-place-light)}
+.progress-fill{background:linear-gradient(90deg,var(--c-place),var(--prep-yellow),var(--furn-brown))!important}
+.kedu-logo,.logo{background:var(--c-place)}
+.score-pill,.score-badge{background:var(--yellow-light);border:2px solid var(--yellow);color:#B45309;border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700}
+.topleft,.topright{display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:2px;color:#fff;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;font-family:'Nunito',sans-serif}
+.logo-k{font-size:18px}.logo-star{color:#FCD34D}
+.progress-wrap{flex:1;margin:0 12px;height:10px;background:var(--c-place-light);border-radius:99px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s;width:0}
+.page-info{font-size:17px;color:var(--subtext);white-space:nowrap}
+
+/* ═══ COMBO TOAST ═══ */
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,var(--c-place),var(--prep-yellow),var(--furn-brown));color:#fff;padding:10px 24px;border-radius:99px;font-size:22px;font-weight:700;opacity:0;transition:all .3s;z-index:999;box-shadow:0 6px 20px rgba(55,48,163,0.4);pointer-events:none}
+.combo-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══ HOOK ═══ */
+.hook-wrap{text-align:center;padding:10px 0}
+.hook-badge-stage{display:inline-block;background:linear-gradient(135deg,var(--c-place),var(--prep-yellow));color:#fff;border-radius:99px;padding:6px 18px;font-size:19px;font-weight:700;margin-bottom:12px;box-shadow:0 3px 8px rgba(55,48,163,0.4);font-family:'Nunito',sans-serif}
+.hook-title{font-size:30px;color:var(--c-place-deep);margin-bottom:8px;font-weight:700}
+.hook-sub{font-size:22px;color:var(--text);line-height:1.6;margin-bottom:14px}
+.hook-place-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.hook-place{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:72px;padding:8px 4px;background:#fff;border:3px solid var(--c-place);border-radius:14px;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s;box-shadow:0 3px 8px rgba(55,48,163,0.15)}
+.hook-place:hover{transform:translateY(-3px) scale(1.05);background:var(--c-place-light)}
+.hook-place.prep{border-color:var(--prep-yellow);box-shadow:0 3px 8px rgba(245,158,11,0.2)}
+.hook-place.prep:hover{background:var(--prep-yellow-light)}
+.hook-place.furn{border-color:var(--furn-brown);box-shadow:0 3px 8px rgba(146,64,14,0.2)}
+.hook-place.furn:hover{background:var(--furn-brown-light)}
+.hook-place-emoji{font-size:32px;line-height:1}
+.hook-place-word{font-size:12px;font-weight:800;color:var(--c-place-deep);margin-top:3px}
+.hook-place.prep .hook-place-word{color:var(--prep-yellow-deep)}
+.hook-place.furn .hook-place-word{color:var(--furn-brown-deep)}
+.hook-note{margin-top:18px;font-size:21px;color:var(--subtext)}
+
+/* ═══ 20단계 ROADMAP ═══ */
+.roadmap-20{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:620px;margin:14px auto 0;padding:10px;background:var(--c-place-light);border-radius:16px;border:2px dashed var(--c-place)}
+.rm-dot{aspect-ratio:1/1;border-radius:50%;background:#fff;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#9CA3AF}
+.rm-dot.done1{background:var(--c-conv1-ref);border-color:#065F46;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done2{background:var(--c-conv2-ref);border-color:#065F46;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done3{background:var(--c-conv3-ref);border-color:#064E3B;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done4{background:var(--c-conv4-ref);border-color:#78350F;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done5{background:var(--c-conv5-ref);border-color:#7C2D12;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done6{background:var(--c-conv6-ref);border-color:#0C4A6E;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done7{background:var(--c-conv7-ref);border-color:#1E3A8A;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done8{background:var(--c-conv7-ref);border-color:#1E3A8A;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done9{background:var(--c-conv8-ref);border-color:#14532D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done-boss{background:linear-gradient(135deg,#FDE047,#F59E0B,#DC2626);border-color:#78350F;color:#fff;font-family:'Nunito',sans-serif;font-size:13px;box-shadow:0 2px 6px rgba(245,158,11,0.4)}
+.rm-dot.done11{background:var(--c-conv11-ref);border-color:#7C2D12;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done12{background:var(--c-conv12-ref);border-color:#1E3A8A;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done13{background:var(--c-conv13-ref);border-color:#0C4A6E;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done14{background:var(--c-conv14-ref);border-color:#9D174D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done15{background:var(--c-conv15-ref);border-color:#14532D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.now{background:var(--c-place);border-color:var(--c-place-deep);color:#fff;transform:scale(1.25);box-shadow:0 3px 10px rgba(55,48,163,0.5);font-family:'Nunito',sans-serif}
+.rm-dot.done-place{background:var(--c-place);border-color:var(--c-place-deep);color:#fff;font-family:'Nunito',sans-serif}
+
+/* ═══ DIALOG SCENE ═══ */
+.dialog-scene{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.dialog-line{display:flex;align-items:flex-start;gap:10px}
+.dialog-line.right{flex-direction:row-reverse}
+.dialog-char{font-size:46px;flex-shrink:0;padding-top:4px}
+.dialog-bubble{background:var(--c-place-light);border:2.5px solid var(--c-place);border-radius:18px;padding:12px 18px;font-size:23px;color:var(--c-place-deep);cursor:pointer;max-width:82%;position:relative;font-weight:700;transition:transform .15s}
+.dialog-bubble:hover{transform:scale(1.02)}
+.dialog-bubble.q-b{background:var(--prep-yellow-light);border-color:var(--prep-yellow);color:var(--prep-yellow-deep)}
+.dialog-bubble.a-b{background:var(--c-place-light);border-color:var(--c-place);color:var(--c-place-deep)}
+.dialog-bubble.cheer-b{background:var(--furn-brown-light);border-color:var(--furn-brown);color:var(--furn-brown-deep)}
+.dialog-ko{display:block;font-size:16px;color:var(--subtext);font-weight:400;margin-top:4px}
+.big-place{font-size:90px;display:block;text-align:center;margin:8px 0;line-height:1}
+
+/* ═══ EXPRESSION CARDS ═══ */
+.expr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.expr-card{background:#fff;border:2.5px solid var(--c-place);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.expr-card:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(55,48,163,0.3)}
+.expr-emoji{font-size:32px;margin-bottom:4px}
+.expr-en{font-size:19px;font-weight:700;color:var(--c-place-deep);font-family:'Nunito',sans-serif;line-height:1.2}
+.expr-ko{font-size:14px;color:var(--subtext);margin-top:4px}
+.expr-card.where-is{border-color:var(--c-place);background:var(--c-place-light)}
+.expr-card.where-is .expr-en{color:var(--c-place-deep)}
+.expr-card.it-is-prep{border-color:var(--prep-yellow);background:var(--prep-yellow-light)}
+.expr-card.it-is-prep .expr-en{color:var(--prep-yellow-deep)}
+.expr-card.subj-is{border-color:var(--furn-brown);background:var(--furn-brown-light)}
+.expr-card.subj-is .expr-en{color:var(--furn-brown-deep)}
+.expr-card.look-there{border-color:var(--yellow);background:var(--yellow-light)}
+.expr-card.look-there .expr-en{color:#78350F}
+
+/* ═══ PLACE GRID (8개, 전치사 4 + 가구 4) ═══ */
+.place-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.place-card{background:#fff;border:3px solid var(--c-place);border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.place-card:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(55,48,163,0.3);background:var(--c-place-light)}
+.place-card.prep-card{border-color:var(--prep-yellow)}
+.place-card.prep-card:hover{background:var(--prep-yellow-light);box-shadow:0 6px 14px rgba(245,158,11,0.3)}
+.place-card.furn-card{border-color:var(--furn-brown)}
+.place-card.furn-card:hover{background:var(--furn-brown-light);box-shadow:0 6px 14px rgba(146,64,14,0.3)}
+.p-emoji{font-size:32px;line-height:1}
+.p-en{font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;color:var(--c-place-deep);margin-top:4px;line-height:1.1}
+.place-card.prep-card .p-en{color:var(--prep-yellow-deep)}
+.place-card.furn-card .p-en{color:var(--furn-brown-deep)}
+.p-ko{font-size:12px;color:var(--subtext);margin-top:2px;line-height:1.1}
+.p-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;margin-top:3px;font-weight:700;font-family:'Jua',sans-serif}
+.p-tag.prep-tag{background:var(--prep-yellow-light);color:var(--prep-yellow-deep);border:1px solid var(--prep-yellow)}
+.p-tag.furn-tag{background:var(--furn-brown-light);color:var(--furn-brown-deep);border:1px solid var(--furn-brown)}
+
+/* ═══ KILLER 1: 3분할 in vs on vs under ═══ */
+.prep-3split{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
+.p3-zone{border-radius:14px;padding:10px 6px;text-align:center;box-shadow:0 4px 12px rgba(55,48,163,0.15)}
+.p3-zone.in-z{background:var(--prep-yellow-light);border:3px solid var(--prep-yellow)}
+.p3-zone.on-z{background:var(--c-place-light);border:3px solid var(--c-place)}
+.p3-zone.under-z{background:var(--furn-brown-light);border:3px solid var(--furn-brown)}
+.p3-head{font-size:22px;font-weight:700;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.p3-zone.in-z .p3-head{color:var(--prep-yellow-deep)}
+.p3-zone.on-z .p3-head{color:var(--c-place-deep)}
+.p3-zone.under-z .p3-head{color:var(--furn-brown-deep)}
+.p3-ko{font-size:13px;color:var(--subtext);margin-bottom:4px}
+.p3-pic{font-size:42px;line-height:1;margin:4px 0}
+.p3-ex{background:#fff;border-radius:10px;padding:6px;font-size:14px;color:var(--text);font-weight:700;cursor:pointer;transition:transform .15s;font-family:'Nunito',sans-serif;margin-top:4px;line-height:1.3}
+.p3-ex:hover{transform:scale(1.03)}
+.p3-ex-ko{display:block;font-size:11px;color:var(--subtext);font-weight:400;margin-top:2px}
+.next-to-bonus{margin-top:10px;background:linear-gradient(135deg,var(--yellow-light),var(--prep-yellow-light));border:2.5px solid var(--prep-yellow);border-radius:12px;padding:10px 12px;text-align:center;cursor:pointer;transition:transform .15s}
+.next-to-bonus:hover{transform:scale(1.02)}
+.ntb-head{font-size:18px;font-weight:800;color:var(--prep-yellow-deep);font-family:'Nunito',sans-serif}
+.ntb-pic{font-size:32px;margin:4px 0;line-height:1}
+.ntb-ex{font-size:15px;color:var(--text);font-weight:700;font-family:'Nunito',sans-serif}
+.ntb-ex small{display:block;font-size:12px;color:var(--subtext);font-weight:400;margin-top:2px}
+.p3-note{background:var(--place-warn-light);border:2px solid var(--place-warn);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:16px;color:#7F1D1D;line-height:1.5;text-align:left}
+.p3-note b{color:var(--place-warn)}
+.p3-note .ok-txt{color:var(--c-place-deep)}
+
+/* ═══ SWAP DRILL ═══ */
+.swap-box{background:var(--c-place-light);border:3px solid var(--c-place);border-radius:16px;padding:14px;margin:10px 0;text-align:center}
+.swap-sentence{font-size:30px;font-weight:800;color:var(--c-place-deep);font-family:'Nunito',sans-serif;margin-bottom:8px;line-height:1.3}
+.swap-blank{display:inline-block;min-width:120px;padding:3px 10px;background:var(--prep-yellow-light);border-bottom:3px solid var(--prep-yellow);color:var(--prep-yellow-deep);border-radius:6px;font-size:32px}
+.swap-preview{font-size:54px;margin:6px 0;display:block;line-height:1}
+.swap-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.swap-tab{background:#fff;border:2px solid var(--c-place);border-radius:10px;padding:7px 12px;font-size:17px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--c-place-deep);cursor:pointer;transition:all .15s}
+.swap-tab:hover{background:var(--c-place-light)}
+.swap-tab.active{background:var(--c-place);color:#fff;transform:scale(1.05)}
+.swap-hint{font-size:16px;color:var(--subtext);margin-top:8px;line-height:1.5}
+
+/* ═══ FLASH DRILL ═══ */
+.fd-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
+.fd-card{width:260px;height:180px;perspective:1000px;cursor:pointer}
+.fd-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.fd-card.flipped .fd-inner{transform:rotateY(180deg)}
+.fd-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;padding:14px;box-shadow:0 6px 18px rgba(55,48,163,0.2)}
+.fd-front{background:linear-gradient(135deg,var(--c-place-light),#fff);border:3px solid var(--c-place)}
+.fd-back{background:linear-gradient(135deg,var(--prep-yellow-light),#fff);border:3px solid var(--prep-yellow);transform:rotateY(180deg);color:var(--prep-yellow-deep);font-size:28px;font-weight:700;font-family:'Jua',sans-serif}
+.fd-emoji{font-size:72px;line-height:1}
+.fd-word{font-size:32px;font-weight:800;color:var(--c-place-deep);font-family:'Nunito',sans-serif;margin-top:6px}
+.fd-note{font-size:16px;color:var(--subtext);margin-top:8px;text-align:center;font-weight:400}
+.fd-controls{display:flex;gap:10px;align-items:center}
+.fd-btn{background:var(--c-place);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:17px;font-weight:700;cursor:pointer;font-family:'Jua',sans-serif;transition:background .15s}
+.fd-btn:hover{background:var(--c-place-deep)}
+.fd-btn.shuffle{background:var(--prep-yellow)}
+.fd-btn.shuffle:hover{background:var(--prep-yellow-deep)}
+.fd-counter{font-size:17px;font-weight:700;color:var(--c-place-deep);font-family:'Nunito',sans-serif;min-width:60px;text-align:center}
+
+/* ═══ MIS-STACK (Killer 2) ═══ */
+.mis-stack{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.mis-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;border:2px solid;background:#fff}
+.mis-row.ok{border-color:#16A34A;background:#F0FDF4}
+.mis-row.err{border-color:var(--place-warn);background:var(--place-warn-light)}
+.mis-mark{font-size:26px;flex-shrink:0}
+.mis-sent{font-size:20px;font-weight:700;color:var(--text);font-family:'Nunito',sans-serif;cursor:pointer;flex:1;line-height:1.35}
+.mis-sent:hover{color:var(--c-place)}
+.mis-emph{color:var(--c-place);font-size:24px;font-weight:900;background:var(--c-place-light);padding:0 4px;border-radius:4px}
+.mis-row.err .mis-emph{color:var(--place-warn);background:var(--place-warn-light);text-decoration:line-through}
+.mis-reason{display:block;font-size:15px;color:var(--subtext);font-weight:400;margin-top:4px;font-family:'Jua',sans-serif}
+
+/* ═══ DIALOG-Q (mini dialog slide 8) ═══ */
+.dialog-q{background:var(--c-place-light);border:3px dashed var(--c-place);border-radius:16px;padding:14px;margin:10px 0}
+.dq-line{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dq-char{font-size:42px}
+.dq-bubble{background:var(--prep-yellow-light);border:2.5px solid var(--prep-yellow);border-radius:18px;padding:10px 16px;font-size:22px;color:var(--prep-yellow-deep);font-weight:700;font-family:'Nunito',sans-serif}
+.dq-pic{font-size:62px;text-align:center;margin:6px 0;line-height:1}
+.dq-reply{text-align:center;font-size:17px;color:var(--subtext);margin:8px 0}
+.dq-me-bubble{background:var(--c-place-light);border:2.5px solid var(--c-place);border-radius:18px;padding:10px 16px;font-size:20px;color:var(--c-place-deep);font-weight:700;font-family:'Nunito',sans-serif;display:none}
+.dq-me-bubble.show{display:block;animation:fadeInUp .4s}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ Q LABEL ═══ */
+.q-title{font-size:22px;font-weight:700;color:var(--c-place-deep);text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.q-label{background:var(--c-place);color:#fff;border-radius:99px;padding:2px 12px;font-size:16px;font-family:'Jua',sans-serif}
+.stars{font-size:18px;color:#F59E0B}
+.q-prompt{font-size:22px;text-align:center;color:var(--text);font-weight:700;margin:8px 0;line-height:1.45}
+.q-prompt .em{color:var(--c-place);font-size:26px}
+.q-hint{font-size:15px;color:var(--subtext);text-align:center;margin-top:8px;font-weight:400}
+.choices{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.choices.row{flex-direction:row}
+.choices.col{flex-direction:column;align-items:center}
+.choice-btn{background:#fff;border:2.5px solid var(--border);border-radius:12px;padding:10px 18px;font-size:20px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--text);cursor:pointer;transition:all .15s}
+.choices.col .choice-btn{width:100%;max-width:520px;text-align:left;padding:11px 18px;font-size:19px}
+.choice-btn:hover{border-color:var(--c-place);background:var(--c-place-light)}
+.choice-btn.correct{background:#DCFCE7;border-color:#16A34A;color:#14532D;animation:correctPulse .5s}
+.choice-btn.wrong{background:var(--place-warn-light);border-color:var(--place-warn);color:var(--place-warn);animation:shake .4s}
+@keyframes correctPulse{0%{transform:scale(1)}50%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{padding:10px 14px;border-radius:10px;font-size:17px;margin-top:8px;line-height:1.5;min-height:24px}
+.feedback.ok{background:#DCFCE7;color:#14532D}
+.feedback.err{background:var(--place-warn-light);color:var(--place-warn)}
+
+/* ═══ LISTEN (Q2) ═══ */
+.listen-big{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
+.listen-big-btn{background:var(--c-place);color:#fff;border:none;border-radius:99px;padding:14px 30px;font-size:24px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 12px rgba(55,48,163,0.3);transition:transform .15s}
+.listen-big-btn:hover{transform:scale(1.05);background:var(--c-place-deep)}
+.listen-hint{font-size:16px;color:var(--subtext)}
+.listen-img-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.listen-img-btn{background:#fff;border:3px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;font-size:42px;width:74px;height:74px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Nunito',sans-serif}
+.listen-img-btn:hover{border-color:var(--c-place);transform:scale(1.05)}
+.listen-img-btn.correct{background:#DCFCE7;border-color:#16A34A;animation:correctPulse .5s}
+.listen-img-btn.wrong{background:var(--place-warn-light);border-color:var(--place-warn);animation:shake .4s}
+
+/* ═══ MATCH (slide 11) ═══ */
+.match-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.match-col{display:flex;flex-direction:column;gap:6px}
+.match-col-title{font-size:18px;font-weight:700;color:var(--c-place-deep);text-align:center;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.match-item{background:#fff;border:2.5px solid var(--border);border-radius:10px;padding:10px;font-size:18px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;font-family:'Nunito',sans-serif}
+.match-item:hover{border-color:var(--c-place);background:var(--c-place-light)}
+.match-item.selected{background:var(--yellow-light);border-color:#F59E0B;transform:scale(1.03)}
+.match-item.matched{background:#DCFCE7;border-color:#16A34A;color:#14532D;cursor:default;opacity:.75}
+
+/* ═══ BLANK FILL (Q3) ═══ */
+.blank-box{text-align:center;margin:10px 0}
+.blank-pic{font-size:90px;line-height:1;margin:6px 0}
+.blank-sentence{font-size:26px;color:var(--text);font-weight:700;margin:8px 0;font-family:'Nunito',sans-serif;line-height:1.4}
+.blank-slot{display:inline-block;min-width:140px;padding:4px 14px;background:var(--prep-yellow-light);border-bottom:4px solid var(--prep-yellow);color:var(--prep-yellow-deep);border-radius:8px;font-size:30px;font-weight:900;margin:0 4px}
+.blank-slot.filled{background:#DCFCE7;border-color:#16A34A;color:#14532D}
+
+/* ═══ SIT-BOX (Q4) ═══ */
+.sit-box{background:linear-gradient(135deg,var(--c-place-light),var(--prep-yellow-light));border:3px solid var(--c-place);border-radius:16px;padding:12px;margin:10px 0;text-align:center}
+.sit-title{font-size:20px;font-weight:700;color:var(--c-place-deep);margin-bottom:6px;font-family:'Nunito',sans-serif}
+.sit-emoji{font-size:62px;line-height:1;margin:6px 0}
+.sit-desc{font-size:18px;color:var(--text);font-weight:700;margin:6px 0;line-height:1.45}
+.sit-ask{font-size:20px;color:var(--c-place-deep);font-weight:800;margin-top:8px;font-family:'Nunito',sans-serif}
+
+/* ═══ RESULT ═══ */
+.result-wrap{text-align:center;padding:10px 0}
+.result-emoji{font-size:72px;line-height:1;margin-bottom:8px}
+.result-title{font-size:34px;color:var(--c-place-deep);font-weight:800;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.result-score{font-size:24px;color:var(--c-place-deep);font-weight:700;margin-bottom:12px}
+.result-score span{font-size:36px;color:var(--c-place);font-family:'Nunito',sans-serif}
+.place-badge{background:linear-gradient(135deg,var(--c-place),var(--prep-yellow),var(--furn-brown));color:#fff;border-radius:18px;padding:14px 20px;margin:12px 0;box-shadow:0 6px 18px rgba(55,48,163,0.4)}
+.place-title-badge{font-size:24px;font-weight:800;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.place-sub-badge{font-size:17px;line-height:1.55;opacity:.95}
+.result-msg{font-size:20px;color:var(--text);margin:12px 0;line-height:1.6}
+.result-roadmap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:560px;margin:14px auto;padding:10px;background:var(--c-place-light);border-radius:14px}
+.next-btn{background:linear-gradient(135deg,var(--c-place),var(--prep-yellow));color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:20px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(55,48,163,0.4);transition:transform .15s}
+.next-btn:hover{transform:scale(1.05)}
+
+/* ═══ BASE LAYOUT ═══ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;-webkit-tap-highlight-color:transparent}
+.topbar{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.sound-btn{background:none;border:none;font-size:22px;cursor:pointer;padding:3px 8px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transform:translateX(40px);transition:opacity .35s,transform .35s;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-40px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:16px 18px;width:100%;max-width:780px;max-height:100%}
+.slide-title{font-size:26px;color:var(--c-place-deep);text-align:center;margin-bottom:6px;font-weight:700}
+.navbar{display:flex;gap:10px;padding:10px 14px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;justify-content:center}
+.nav-btn{background:var(--c-place);color:#fff;border:none;border-radius:12px;padding:9px 26px;font-size:19px;font-weight:700;font-family:'Jua',sans-serif;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topleft">
+    <div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span>edu</span></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="page-info" id="pageInfo">1 / 15</div>
+  <div class="topright">
+    <span class="score-pill">⭐ <span id="scoreDisp">0</span></span>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  </div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- ── 0. HOOK ── -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="hook-wrap">
+    <div class="hook-badge-stage">🎉 actions 단계 졸업 · places 단계 시작</div>
+    <div class="hook-title">📍 어디에 있어?</div>
+    <div class="hook-sub">안·위·아래·옆…<br>물건 위치 영어로 말해보자 🔍</div>
+    <div class="hook-place-row">
+      <div class="hook-place prep" onclick="speakWord('in')"><span class="hook-place-emoji">📥</span><span class="hook-place-word">in</span></div>
+      <div class="hook-place prep" onclick="speakWord('on')"><span class="hook-place-emoji">⬆️</span><span class="hook-place-word">on</span></div>
+      <div class="hook-place prep" onclick="speakWord('under')"><span class="hook-place-emoji">⬇️</span><span class="hook-place-word">under</span></div>
+      <div class="hook-place prep" onclick="speakSentence('next to')"><span class="hook-place-emoji">↔️</span><span class="hook-place-word">next to</span></div>
+      <div class="hook-place furn" onclick="speakWord('table')"><span class="hook-place-emoji">🟫</span><span class="hook-place-word">table</span></div>
+      <div class="hook-place furn" onclick="speakWord('box')"><span class="hook-place-emoji">📦</span><span class="hook-place-word">box</span></div>
+      <div class="hook-place furn" onclick="speakWord('chair')"><span class="hook-place-emoji">🪑</span><span class="hook-place-word">chair</span></div>
+      <div class="hook-place furn" onclick="speakWord('bed')"><span class="hook-place-emoji">🛏️</span><span class="hook-place-word">bed</span></div>
+    </div>
+    <div class="hook-note">💡 카드 탭해서 들어봐!</div>
+    <div class="roadmap-20">
+      <span class="rm-dot done1">1</span>
+      <span class="rm-dot done2">2</span>
+      <span class="rm-dot done3">3</span>
+      <span class="rm-dot done4">4</span>
+      <span class="rm-dot done5">5</span>
+      <span class="rm-dot done6">6</span>
+      <span class="rm-dot done7">7</span>
+      <span class="rm-dot done8">8</span>
+      <span class="rm-dot done9">9</span>
+      <span class="rm-dot done-boss">🏆</span>
+      <span class="rm-dot done11">11</span>
+      <span class="rm-dot done12">12</span>
+      <span class="rm-dot done13">13</span>
+      <span class="rm-dot done14">14</span>
+      <span class="rm-dot done15">15</span>
+      <span class="rm-dot now">16</span>
+      <span class="rm-dot">17</span>
+      <span class="rm-dot">18</span>
+      <span class="rm-dot">19</span>
+      <span class="rm-dot">🎓</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 1. DIALOG (상황극: 책 찾기) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🔍 책이 어디 있을까?</div>
+  <span class="big-place">📚</span>
+  <div class="dialog-scene">
+    <div class="dialog-line">
+      <span class="dialog-char">🧒</span>
+      <div class="dialog-bubble q-b" onclick="speakSentence('Where is my book?')">
+        Where is my book?
+        <span class="dialog-ko">내 책 어디 있어?</span>
+      </div>
+    </div>
+    <div class="dialog-line right">
+      <span class="dialog-char">👧</span>
+      <div class="dialog-bubble a-b" onclick="speakSentence('It is on the table!')">
+        It is on the table!
+        <span class="dialog-ko">테이블 위에 있어! 🟫📚</span>
+      </div>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-char">🧒</span>
+      <div class="dialog-bubble cheer-b" onclick="speakSentence('Oh! Thank you!')">
+        Oh! Thank you!
+        <span class="dialog-ko">오! 고마워! 🎉</span>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:17px;color:var(--subtext);text-align:center;margin-top:6px">💡 말풍선 탭해서 들어봐!</p>
+</div>
+</div>
+
+<!-- ── 2. 핵심 표현 4개 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">💬 핵심 표현 4개</div>
+  <div class="expr-grid">
+    <div class="expr-card where-is" onclick="speakSentence('Where is my book?')">
+      <div class="expr-emoji">🔍</div>
+      <div class="expr-en">Where is ~?</div>
+      <div class="expr-ko">~ 어디 있어?</div>
+    </div>
+    <div class="expr-card it-is-prep" onclick="speakSentence('It is in the box.')">
+      <div class="expr-emoji">📥</div>
+      <div class="expr-en">It is in the ~.</div>
+      <div class="expr-ko">~ 안에 있어</div>
+    </div>
+    <div class="expr-card subj-is" onclick="speakSentence('The book is on the table.')">
+      <div class="expr-emoji">📚</div>
+      <div class="expr-en">The ~ is on the ~.</div>
+      <div class="expr-ko">~는 ~ 위에 있어</div>
+    </div>
+    <div class="expr-card look-there" onclick="speakSentence('Look! Over there!')">
+      <div class="expr-emoji">👀</div>
+      <div class="expr-en">Look! Over there!</div>
+      <div class="expr-ko">봐! 저기!</div>
+    </div>
+  </div>
+  <p style="font-size:17px;color:var(--subtext);text-align:center;margin-top:8px">💡 카드 탭해서 들어봐!</p>
+</div>
+</div>
+
+<!-- ── 3. 단어 8개 (전치사 4 + 가구 4) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">📍 위치 8단어 배우기</div>
+  <p style="font-size:15px;color:var(--subtext);text-align:center;margin:6px 0 10px"><span style="color:var(--prep-yellow-deep);font-weight:700">📥 전치사 4</span> · <span style="color:var(--furn-brown-deep);font-weight:700">🟫 가구 4</span></p>
+  <div class="place-grid">
+    <div class="place-card prep-card" onclick="speakWord('in')">
+      <div class="p-emoji">📥</div>
+      <div class="p-en">in</div>
+      <div class="p-ko">안에</div>
+      <span class="p-tag prep-tag">전치사</span>
+    </div>
+    <div class="place-card prep-card" onclick="speakWord('on')">
+      <div class="p-emoji">⬆️</div>
+      <div class="p-en">on</div>
+      <div class="p-ko">위에</div>
+      <span class="p-tag prep-tag">전치사</span>
+    </div>
+    <div class="place-card prep-card" onclick="speakWord('under')">
+      <div class="p-emoji">⬇️</div>
+      <div class="p-en">under</div>
+      <div class="p-ko">아래에</div>
+      <span class="p-tag prep-tag">전치사</span>
+    </div>
+    <div class="place-card prep-card" onclick="speakSentence('next to')">
+      <div class="p-emoji">↔️</div>
+      <div class="p-en">next to</div>
+      <div class="p-ko">옆에</div>
+      <span class="p-tag prep-tag">전치사</span>
+    </div>
+    <div class="place-card furn-card" onclick="speakWord('table')">
+      <div class="p-emoji">🟫</div>
+      <div class="p-en">table</div>
+      <div class="p-ko">테이블</div>
+      <span class="p-tag furn-tag">가구</span>
+    </div>
+    <div class="place-card furn-card" onclick="speakWord('box')">
+      <div class="p-emoji">📦</div>
+      <div class="p-en">box</div>
+      <div class="p-ko">상자</div>
+      <span class="p-tag furn-tag">가구</span>
+    </div>
+    <div class="place-card furn-card" onclick="speakWord('chair')">
+      <div class="p-emoji">🪑</div>
+      <div class="p-en">chair</div>
+      <div class="p-ko">의자</div>
+      <span class="p-tag furn-tag">가구</span>
+    </div>
+    <div class="place-card furn-card" onclick="speakWord('bed')">
+      <div class="p-emoji">🛏️</div>
+      <div class="p-en">bed</div>
+      <div class="p-ko">침대</div>
+      <span class="p-tag furn-tag">가구</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 4. 🚨 Killer 1: in vs on vs under (3분할 신규!) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🚨 포인트 1 — in·on·under 위치 3형제!</div>
+  <p style="font-size:17px;color:var(--text);text-align:center;margin:6px 0 10px">위치 전치사는 <b style="color:var(--c-place-deep)">in(안)·on(위)·under(아래)</b> 3형제!</p>
+  <div class="prep-3split">
+    <div class="p3-zone in-z">
+      <div class="p3-head">📥 in</div>
+      <div class="p3-ko">안에</div>
+      <div class="p3-pic">📦📖</div>
+      <div class="p3-ex" onclick="speakSentence('in the box')">
+        in the box
+        <span class="p3-ex-ko">상자 안에</span>
+      </div>
+    </div>
+    <div class="p3-zone on-z">
+      <div class="p3-head">⬆️ on</div>
+      <div class="p3-ko">위에</div>
+      <div class="p3-pic">📚🟫</div>
+      <div class="p3-ex" onclick="speakSentence('on the table')">
+        on the table
+        <span class="p3-ex-ko">테이블 위에</span>
+      </div>
+    </div>
+    <div class="p3-zone under-z">
+      <div class="p3-head">⬇️ under</div>
+      <div class="p3-ko">아래에</div>
+      <div class="p3-pic">🪑🐱</div>
+      <div class="p3-ex" onclick="speakSentence('under the chair')">
+        under the chair
+        <span class="p3-ex-ko">의자 아래에</span>
+      </div>
+    </div>
+  </div>
+  <div class="next-to-bonus" onclick="speakSentence('next to the chair')">
+    <div class="ntb-head">➕ BONUS: next to (옆에)</div>
+    <div class="ntb-pic">🧒↔️🪑</div>
+    <div class="ntb-ex">next to the chair<small>의자 옆에 (나란히!)</small></div>
+  </div>
+  <div class="p3-note">💡 <span class="ok-txt"><b>in</b>은 들어가 있고, <b>on</b>은 닿아서 위에, <b>under</b>는 아래!</span><br>⚠️ 전치사 뒤엔 <b>the + 명사</b> 꼭! "in box" ❌ / "in the box" ⭕</div>
+</div>
+</div>
+
+<!-- ── 5. SWAP DRILL ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🔄 "The book is ___ the table." — 전치사 바꿔가며!</div>
+  <div class="swap-box">
+    <div class="swap-sentence">The book is <span class="swap-blank" id="swapSlot">on</span> the table.</div>
+    <span class="swap-preview" id="swapPreview">📚🟫</span>
+    <div class="swap-tabs">
+      <button class="swap-tab active" onclick="swapSet('on', this)">on ⬆️</button>
+      <button class="swap-tab" onclick="swapSet('in', this)">in 📥</button>
+      <button class="swap-tab" onclick="swapSet('under', this)">under ⬇️</button>
+      <button class="swap-tab" onclick="swapSet('next to', this)">next to ↔️</button>
+    </div>
+    <div class="swap-hint">🎯 탭하면 자동으로 읽어줘!<br>"Where is the book?" 질문엔 "It is ___ the table."로 답해!</div>
+    <button class="fd-btn" style="margin-top:10px" onclick="swapSpeak()">🔊 다시 듣기</button>
+  </div>
+</div>
+</div>
+
+<!-- ── 6. FLASH DRILL ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎴 단어 플래시 카드 8장</div>
+  <div class="fd-wrap">
+    <div class="fd-card" id="fdCard" onclick="fdFlip()">
+      <div class="fd-inner">
+        <div class="fd-face fd-front">
+          <div class="fd-emoji" id="fdEmoji">📥</div>
+          <div class="fd-word" id="fdWord">in</div>
+        </div>
+        <div class="fd-face fd-back" id="fdBack">
+          <div>안에</div>
+          <div class="fd-note">상자 안! 📦</div>
+        </div>
+      </div>
+    </div>
+    <div class="fd-controls">
+      <button class="fd-btn" onclick="fdPrev()">◀ 이전</button>
+      <span class="fd-counter" id="fdCounter">1 / 8</span>
+      <button class="fd-btn" onclick="fdNext()">다음 ▶</button>
+    </div>
+    <button class="fd-btn shuffle" onclick="fdShuffle()">🔀 섞기</button>
+    <p style="font-size:16px;color:var(--subtext);text-align:center;margin-top:6px">💡 카드 탭하면 뜻 보여줘!</p>
+  </div>
+</div>
+</div>
+
+<!-- ── 7. 🚨 Killer 2: be동사 + 전치사 + the + 명사 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🚨 포인트 2 — 위치 문장은 4박자!</div>
+  <p style="font-size:17px;color:var(--text);text-align:center;margin:6px 0 10px">주어 + <b style="color:var(--c-place-deep)">be동사</b> + <b style="color:var(--prep-yellow-deep)">전치사</b> + <b style="color:var(--furn-brown-deep)">the + 명사</b> 순서!</p>
+  <div class="mis-stack">
+    <div class="mis-row ok">
+      <span class="mis-mark">⭕</span>
+      <span class="mis-sent" onclick="speakSentence('The book is on the table.')">
+        The book <span class="mis-emph">is on the</span> table.
+        <span class="mis-reason">💡 is + on + the + table = 4박자 완벽! 📚🟫</span>
+      </span>
+    </div>
+    <div class="mis-row ok">
+      <span class="mis-mark">⭕</span>
+      <span class="mis-sent" onclick="speakSentence('The cat is under the chair.')">
+        The cat <span class="mis-emph">is under the</span> chair.
+        <span class="mis-reason">💡 is + under + the + chair = 완벽! 🐱🪑</span>
+      </span>
+    </div>
+    <div class="mis-row err">
+      <span class="mis-mark">❌</span>
+      <span class="mis-sent">
+        Book <span class="mis-emph">on table</span>.
+        <span class="mis-reason">💡 be동사 is 빠짐! the도 빠짐! "The book is on the table" ⭕</span>
+      </span>
+    </div>
+    <div class="mis-row err">
+      <span class="mis-mark">❌</span>
+      <span class="mis-sent">
+        The book is <span class="mis-emph">on table</span>.
+        <span class="mis-reason">💡 on 뒤에 the 빠짐! "on the table" ⭕</span>
+      </span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 8. 미니 대화 (친구가 연필 찾기) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">💬 미니 대화 — 친구가 물어봐!</div>
+  <div class="dialog-q">
+    <div class="dq-line">
+      <span class="dq-char">👧</span>
+      <div class="dq-bubble" onclick="speakSentence('Where is my pencil?')">Where is my pencil?</div>
+    </div>
+    <div class="dq-pic">📦✏️</div>
+    <div class="dq-reply">친구가 연필이 어디 있냐고 물어! (연필은 상자 안!) 뭐라고 답할까? 👇</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="miniPick(this,0)">① Pencil in box.</button>
+      <button class="choice-btn" onclick="miniPick(this,1)">② It is in the box!</button>
+      <button class="choice-btn" onclick="miniPick(this,2)">③ The pencil on the box.</button>
+    </div>
+    <div class="dq-line" style="margin-top:10px">
+      <span class="dq-char">🧒</span>
+      <div class="dq-me-bubble" id="miniReply">🎉 Found it! Thank you!</div>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+</div>
+
+<!-- ── 9. Q1 (10점, correct=3) ── -->
+<div class="slide" data-type="q" data-correct="3" data-score="10">
+<div class="card">
+  <div class="q-title"><span class="q-label">문제 1</span><span class="stars">⭐</span> 빈칸 고르기</div>
+  <div class="q-prompt">"📦 <b class="em">안에</b>" = 영어로?</div>
+  <div class="choices row">
+    <button class="choice-btn" onclick="answer(this,0)">on</button>
+    <button class="choice-btn" onclick="answer(this,1)">under</button>
+    <button class="choice-btn" onclick="answer(this,2)">next to</button>
+    <button class="choice-btn" onclick="answer(this,3)">in</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div>
+</div>
+
+<!-- ── 10. Q2 듣기 (10점, correct=2) ── -->
+<div class="slide" data-type="q" data-correct="2" data-score="10">
+<div class="card">
+  <div class="q-title"><span class="q-label">문제 2</span><span class="stars">⭐</span> 듣기</div>
+  <div class="listen-big">
+    <button class="listen-big-btn" onclick="speakSentence('The book is on the table.')">🔊 들어보기</button>
+    <div class="listen-hint">책이 어디에? 맞는 그림 골라!</div>
+    <div class="listen-img-row">
+      <button class="listen-img-btn" onclick="answer(this,0)">📦📖</button>
+      <button class="listen-img-btn" onclick="answer(this,1)">🪑📖</button>
+      <button class="listen-img-btn" onclick="answer(this,2)">🟫📚</button>
+      <button class="listen-img-btn" onclick="answer(this,3)">🛏️📖</button>
+    </div>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div>
+</div>
+
+<!-- ── 11. Q 매칭 (30점, 6쌍) ── -->
+<div class="slide" data-type="q" data-correct="-" data-score="30">
+<div class="card">
+  <div class="q-title"><span class="q-label">매칭</span><span class="stars">⭐⭐</span> 6쌍 짝짓기</div>
+  <div class="q-prompt">왼쪽 영어 ↔ 오른쪽 한국어 연결!</div>
+  <div class="match-box">
+    <div class="match-col">
+      <div class="match-col-title">영어</div>
+      <div class="match-item" data-key="in" onclick="matchPick(this,'L')">📥 in</div>
+      <div class="match-item" data-key="on" onclick="matchPick(this,'L')">⬆️ on</div>
+      <div class="match-item" data-key="under" onclick="matchPick(this,'L')">⬇️ under</div>
+      <div class="match-item" data-key="next to" onclick="matchPick(this,'L')">↔️ next to</div>
+      <div class="match-item" data-key="table" onclick="matchPick(this,'L')">🟫 table</div>
+      <div class="match-item" data-key="chair" onclick="matchPick(this,'L')">🪑 chair</div>
+    </div>
+    <div class="match-col">
+      <div class="match-col-title">한국어</div>
+      <div class="match-item" data-key="chair" onclick="matchPick(this,'R')">의자</div>
+      <div class="match-item" data-key="in" onclick="matchPick(this,'R')">안에</div>
+      <div class="match-item" data-key="under" onclick="matchPick(this,'R')">아래에</div>
+      <div class="match-item" data-key="table" onclick="matchPick(this,'R')">테이블</div>
+      <div class="match-item" data-key="next to" onclick="matchPick(this,'R')">옆에</div>
+      <div class="match-item" data-key="on" onclick="matchPick(this,'R')">위에</div>
+    </div>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div>
+</div>
+
+<!-- ── 12. Q3 빈칸 (45점, correct=0) ── -->
+<div class="slide" data-type="q" data-correct="0" data-score="45">
+<div class="card">
+  <div class="q-title"><span class="q-label">문제 3</span><span class="stars">⭐⭐⭐</span> 빈칸 채우기</div>
+  <div class="blank-box">
+    <div class="blank-pic">🪑🐱</div>
+    <div class="blank-sentence">"The cat is <span class="blank-slot" id="blank12">___</span> the chair."</div>
+  </div>
+  <div class="choices row">
+    <button class="choice-btn" onclick="fillAnswer(this,0,'under')">under</button>
+    <button class="choice-btn" onclick="fillAnswer(this,1,'in')">in</button>
+    <button class="choice-btn" onclick="fillAnswer(this,2,'on')">on</button>
+    <button class="choice-btn" onclick="fillAnswer(this,3,'next to')">next to</button>
+  </div>
+  <div class="q-hint">💡 그림 봐봐! 고양이가 의자 🪑 <b>아래</b>에 있어! 🐱</div>
+  <div class="feedback" id="fb12"></div>
+</div>
+</div>
+
+<!-- ── 13. Q4 상황 (70점, correct=1) ── -->
+<div class="slide" data-type="q" data-correct="1" data-score="70">
+<div class="card">
+  <div class="q-title"><span class="q-label">문제 4</span><span class="stars">⭐⭐⭐⭐</span> 상황 판단</div>
+  <div class="sit-box">
+    <div class="sit-title">📚 친구가 책을 찾아!</div>
+    <div class="sit-emoji">👧 "Where is the book?"</div>
+    <div class="sit-desc">책은 🟫📚 <b style="color:var(--c-place-deep)">테이블 위</b>에 있어!<br>가장 자연스럽고 정확한 답은?</div>
+    <div class="sit-ask">완벽한 4박자 문장은?</div>
+  </div>
+  <div class="choices col">
+    <button class="choice-btn" onclick="answer(this,0)">① Book on table.</button>
+    <button class="choice-btn" onclick="answer(this,1)">② It is on the table.</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ The book on the table is.</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ Book the table on.</button>
+  </div>
+  <div class="feedback" id="fb13"></div>
+</div>
+</div>
+
+<!-- ── 14. RESULT ── -->
+<div class="slide" data-type="result">
+<div class="card">
+  <div class="result-wrap">
+    <div class="result-emoji">📍</div>
+    <div class="result-title">16강 완료!</div>
+    <div class="result-score"><span id="finalScore">0</span> / 165 점</div>
+
+    <div class="place-badge">
+      <div class="place-title-badge">📍 places 단계 진입!</div>
+      <div class="place-sub-badge">actions(15) 이어 <b>places(16) 완료</b>!<br>📥 ⬆️ ⬇️ ↔️ 🟫 📦 🪑 🛏️ 다 알게 됐어!</div>
+    </div>
+
+    <div class="result-msg">🔍 <b>Where is ~?</b> (어디 있어? 묻기)<br>📦 <b>It is in the box.</b> (안에 있어 답하기)<br>📚 <b>The book is on the table.</b> (위치 기술)<br>👀 <b>Look! Over there!</b> (저기 가리키기)<br>모두 마스터! 🎊</div>
+
+    <div class="result-roadmap">
+      <span class="rm-dot done1">1</span>
+      <span class="rm-dot done2">2</span>
+      <span class="rm-dot done3">3</span>
+      <span class="rm-dot done4">4</span>
+      <span class="rm-dot done5">5</span>
+      <span class="rm-dot done6">6</span>
+      <span class="rm-dot done7">7</span>
+      <span class="rm-dot done8">8</span>
+      <span class="rm-dot done9">9</span>
+      <span class="rm-dot done-boss">🏆</span>
+      <span class="rm-dot done11">11</span>
+      <span class="rm-dot done12">12</span>
+      <span class="rm-dot done13">13</span>
+      <span class="rm-dot done14">14</span>
+      <span class="rm-dot done15">15</span>
+      <span class="rm-dot done-place">16</span>
+    </div>
+
+    <div class="result-msg">🌅 <b>다음 17강은 하루!</b><br>morning·afternoon·evening·night 배워보자!</div>
+
+    <button class="next-btn" onclick="goToNext()">🌅 17강 하루 예고</button>
+  </div>
+</div>
+</div>
+
+</div><!-- /slides -->
+
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+const TOTAL_SLIDES = 15;
+let currentSlide = 0, score = 0, combo = 0, soundOn = true;
+const answered = {};
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// ═══ SOUND ═══
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+}
+function playCorrect() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [523,659,784].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(.15, audioCtx.currentTime + i*.1);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.1 + .2);
+      o.start(audioCtx.currentTime + i*.1); o.stop(audioCtx.currentTime + i*.1 + .2);
+    });
+  });
+}
+function playWrong() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [220,196].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      g.gain.setValueAtTime(.2, audioCtx.currentTime + i*.15);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.15 + .25);
+      o.start(audioCtx.currentTime + i*.15); o.stop(audioCtx.currentTime + i*.15 + .25);
+    });
+  });
+}
+function playClick() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .07);
+    o.start(); o.stop(audioCtx.currentTime + .07);
+  });
+}
+function speakWord(w) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'en-US'; u.rate = 0.8;
+  speechSynthesis.speak(u);
+}
+function speakSentence(s) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(s);
+  u.lang = 'en-US'; u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+// ═══ NAVIGATION ═══
+function goSlide(n) {
+  const sl = document.querySelectorAll('.slide');
+  sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out');
+  setTimeout(() => sl[currentSlide < n ? currentSlide : n].classList.remove('out'), 400);
+  currentSlide = n; sl[currentSlide].classList.add('active'); updateUI();
+  if (currentSlide === 14) document.getElementById('finalScore').textContent = score;
+}
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+// ═══ UI ═══
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+}
+
+// ═══ SCORE & COMBO ═══
+function addScore(pts) {
+  score += pts; combo++;
+  document.getElementById('scoreDisp').textContent = score;
+  if (combo >= 2) {
+    const t = document.getElementById('comboToast');
+    t.textContent = '🔥 '+combo+' 콤보!';
+    t.classList.add('show');
+    clearTimeout(addScore._t);
+    addScore._t = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+}
+
+// ═══ FEEDBACK ═══
+const feedbackMap = {
+  9:  { ok:'✅ 정답! 📦 안에 = <b>in</b>! "in the box" 상자 안에! +10점',
+        err:'💡 on(위)·under(아래)·next to(옆)는 다른 위치! 📦 안에 들어가면 <b>in</b>! 👉 <b>in</b>' },
+  10: { ok:'✅ 정답! <b>The book is on the table</b> = 📚 책이 🟫 테이블 위에! +10점',
+        err:'💡 "on the table" = 테이블 <b>위</b>에! 📦📖(in box)·🪑📖(on chair)·🛏️📖(on bed)과 달라! 👉 <b>🟫📚 on the table</b>' },
+  12: { ok:'🎉 정답! 🐱 고양이가 🪑 의자 <b>아래</b> = <b>under</b>! "The cat is under the chair." +45점',
+        err:'💡 그림 힌트: 🪑 의자 <b>밑</b>에 🐱! in(안)·on(위)·next to(옆)가 아니야! 👉 <b>under</b>' },
+  13: { ok:'🏆 완벽! "It is on the table." — is + on + the + table 4박자 완벽! +70점',
+        err:'💡 위치 문장은 <b>주어 + be동사 + 전치사 + the + 명사</b> 4박자! "Book on table"(be, the 빠짐), "The book on the table is"(어순), "Book the table on"(엉망). 👉 <b>It is on the table.</b>' }
+};
+function setFB(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = msg; el.className = 'feedback '+(ok?'ok':'err'); }
+}
+
+// ═══ ANSWER (🚨 자동이동 절대 금지) ═══
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||10;
+  playClick();
+  const fbKey = currentSlide;
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    const msg = feedbackMap[fbKey]?.ok || ('✅ 정답! +'+pts+'점');
+    setFB('fb'+currentSlide, msg+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    const msg = feedbackMap[fbKey]?.err || '다시 한번! 💪';
+    setFB('fb'+currentSlide, msg, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ FILL ANSWER (slide 12) ═══
+function fillAnswer(btn, idx, text) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||45;
+  playClick(); speakSentence(text);
+  const blank = document.getElementById('blank12');
+  if (idx === correct) {
+    blank.textContent = text; blank.classList.add('filled');
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, feedbackMap[12].ok+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+currentSlide, feedbackMap[12].err, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ MATCH (slide 11: 6쌍, +30점) ═══
+let mLeft = null, mRight = null, matchedCount = 0;
+function matchPick(el, side) {
+  if (el.classList.contains('matched') || answered[11]) return;
+  playClick();
+  if (side === 'L') {
+    if (mLeft) mLeft.classList.remove('selected');
+    mLeft = el; el.classList.add('selected');
+  } else {
+    if (mRight) mRight.classList.remove('selected');
+    mRight = el; el.classList.add('selected');
+  }
+  if (mLeft && mRight) {
+    if (mLeft.dataset.key === mRight.dataset.key) {
+      mLeft.classList.remove('selected'); mRight.classList.remove('selected');
+      mLeft.classList.add('matched'); mRight.classList.add('matched');
+      playCorrect(); matchedCount++;
+      speakSentence(mLeft.dataset.key);
+      if (matchedCount >= 6) {
+        addScore(30);
+        setFB('fb11','🎉 6쌍 모두 정답! 전치사·가구 6단어 마스터! +30점 (아래 다음 ▶)', true);
+        answered[11] = true;
+      } else {
+        setFB('fb11', '✅ '+matchedCount+' / 6 매칭! 계속 💪', true);
+      }
+      mLeft = null; mRight = null;
+    } else {
+      playWrong();
+      const L = mLeft, R = mRight;
+      setTimeout(() => {
+        L.classList.remove('selected'); R.classList.remove('selected');
+      }, 400);
+      setFB('fb11', '다른 짝이야! 다시 골라봐 💪', false);
+      mLeft = null; mRight = null;
+    }
+  }
+}
+
+// ═══ SWAP DRILL (slide 5) ═══
+const swapPlaceMap = {
+  'on':      { emoji:'📚🟫' },
+  'in':      { emoji:'📦📖' },
+  'under':   { emoji:'🟫↓📚' },
+  'next to': { emoji:'🟫↔️📚' }
+};
+let swapCurrent = 'on';
+function swapSet(w, btn) {
+  swapCurrent = w;
+  document.getElementById('swapSlot').textContent = w;
+  document.getElementById('swapPreview').textContent = swapPlaceMap[w].emoji;
+  document.querySelectorAll('.swap-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  speakSentence('The book is '+w+' the table');
+}
+function swapSpeak() { speakSentence('The book is '+swapCurrent+' the table'); }
+
+// ═══ FLASH DRILL (slide 6) ═══
+const flashPlace = [
+  { emoji:'📥', w:'in',      k:'안에',     note:'박스 안! 📦' },
+  { emoji:'⬆️', w:'on',      k:'위에',     note:'테이블 위! 🟫' },
+  { emoji:'⬇️', w:'under',   k:'아래에',   note:'침대 밑! 🛏️' },
+  { emoji:'↔️', w:'next to', k:'옆에',     note:'나란히! 🧒🪑' },
+  { emoji:'🟫', w:'table',   k:'테이블',   note:'밥 먹는 곳!' },
+  { emoji:'📦', w:'box',     k:'상자',     note:'물건 담는 통!' },
+  { emoji:'🪑', w:'chair',   k:'의자',     note:'앉는 자리!' },
+  { emoji:'🛏️', w:'bed',     k:'침대',     note:'자는 곳! 🌙' }
+];
+let fdIdx = 0;
+function fdUpdate() {
+  const f = flashPlace[fdIdx];
+  document.getElementById('fdEmoji').textContent = f.emoji;
+  document.getElementById('fdWord').textContent = f.w;
+  document.getElementById('fdBack').innerHTML = '<div>'+f.k+'</div><div class="fd-note">'+f.note+'</div>';
+  document.getElementById('fdCounter').textContent = (fdIdx+1)+' / '+flashPlace.length;
+  document.getElementById('fdCard').classList.remove('flipped');
+}
+function fdFlip() {
+  const c = document.getElementById('fdCard');
+  c.classList.toggle('flipped');
+  playClick();
+  if (!c.classList.contains('flipped')) speakSentence(flashPlace[fdIdx].w);
+}
+function fdNext() {
+  fdIdx = (fdIdx+1) % flashPlace.length;
+  fdUpdate(); playClick(); speakSentence(flashPlace[fdIdx].w);
+}
+function fdPrev() {
+  fdIdx = (fdIdx-1+flashPlace.length) % flashPlace.length;
+  fdUpdate(); playClick(); speakSentence(flashPlace[fdIdx].w);
+}
+function fdShuffle() {
+  for (let i = flashPlace.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [flashPlace[i], flashPlace[j]] = [flashPlace[j], flashPlace[i]];
+  }
+  fdIdx = 0; fdUpdate(); playClick();
+}
+
+// ═══ MINI DIALOG (slide 8) ═══
+function miniPick(btn, idx) {
+  if (answered[8]) return;
+  playClick();
+  if (idx === 1) {
+    btn.classList.add('correct'); playCorrect();
+    speakSentence('It is in the box!');
+    setFB('fb8', '✅ 정답! 친구가 "Found it! Thank you!"라고 답해! 🎉 완벽한 4박자 "It is in the box."!', true);
+    document.getElementById('miniReply').classList.add('show');
+    answered[8] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong();
+    setFB('fb8', '💡 <b>완벽한 4박자</b>로! "Pencil in box"(be·the 빠짐), "The pencil on the box"(in → on 틀림, is 빠짐). 👉 <b>It is in the box!</b>', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ NEXT LESSON ═══
+function goToNext() {
+  window.location.href = 'g1_english_conv_17_하루.html';
+}
+
+// ═══ INIT ═══
+fdUpdate();
+updateUI();
+</script>
+</body>
+</html>
