@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 회화 20강: 🎓 졸업챌린지</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../phonics/phonics-common.css">
+<style>
+:root{
+  --bg:#FAF8FF;--card:#FFFFFF;--primary:#6A1B9A;--primary-light:#F3E5F5;--secondary:#BA68C8;
+  --green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;
+  --yellow:#FFC107;--yellow-light:#FFF8E1;
+  --text:#222;--subtext:#6B7280;--border:#E1BEE7;
+  --shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;
+  /* 🎓 회화 졸업 — 로열 퍼플 + 골드 (파닉스 졸업 20강과 동일 톤, 일관성) */
+  --c-final:#6A1B9A;--c-final-light:#F3E5F5;--c-final-deep:#4A148C;
+  --c-gold:#FFB300;--c-gold-light:#FFF8E1;--c-gold-deep:#E65100;
+  /* 15단계 누적 참조 15색 (회화 1~19강 대표색) */
+  --c-greet:#10B981;
+  --c-self:#F59E0B;
+  --c-family:#0EA5E9;
+  --c-number:#2563EB;
+  --c-color:#16A34A;
+  --c-animal:#8B5CF6;
+  --c-food:#EA580C;
+  --c-school:#1E40AF;
+  --c-weather:#0284C7;
+  --c-feeling:#EC4899;
+  --c-action:#22C55E;
+  --c-place:#3730A3;
+  --c-day:#F97316;
+  --c-play:#FACC15;
+  --c-thank:#F43F5E;
+  /* 메달 */
+  --medal-gold:#FFB300;--medal-silver:#C0C0C0;--medal-bronze:#CD7F32;
+  /* 경고 */
+  --grad-warn:#DC2626;--grad-warn-light:#FEE2E2;
+}
+body{background:var(--bg)}
+.topbar{background:#fff}
+.progress-bar{background:var(--c-final-light)}
+.progress-fill{background:linear-gradient(90deg,var(--c-final),var(--c-gold),var(--c-final))!important}
+.kedu-logo,.logo{background:var(--c-final);color:#fff}
+.score-pill,.score-badge{background:var(--c-final-light);border:2px solid var(--c-final);color:var(--c-final-deep);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700}
+.topleft,.topright{display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:2px;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;font-family:'Nunito',sans-serif}
+.logo-k{font-size:18px}.logo-star{color:#FDE047}
+.progress-wrap{flex:1;margin:0 12px;height:10px;background:var(--c-final-light);border-radius:99px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s;width:0}
+.page-info{font-size:17px;color:var(--subtext);white-space:nowrap}
+
+/* ═══ COMBO TOAST ═══ */
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,var(--c-final),var(--c-gold));color:#fff;padding:10px 24px;border-radius:99px;font-size:22px;font-weight:700;opacity:0;transition:all .3s;z-index:999;box-shadow:0 6px 20px rgba(106,27,154,0.4);pointer-events:none}
+.combo-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══ HOOK (졸업 인트로) ═══ */
+.hook-wrap{text-align:center;padding:10px 0}
+.hook-badge-grad{display:inline-block;background:linear-gradient(135deg,var(--c-greet),var(--c-self),var(--c-family),var(--c-animal),var(--c-feeling),var(--c-play),var(--c-thank));color:#fff;border-radius:99px;padding:7px 20px;font-size:19px;font-weight:800;margin-bottom:12px;box-shadow:0 3px 10px rgba(106,27,154,0.4);font-family:'Nunito',sans-serif;animation:gradPulse 2.8s infinite}
+@keyframes gradPulse{0%,100%{transform:scale(1);box-shadow:0 3px 10px rgba(106,27,154,0.4)}50%{transform:scale(1.04);box-shadow:0 6px 18px rgba(255,179,0,0.5)}}
+.hook-title{font-size:30px;color:var(--c-final-deep);margin-bottom:8px;font-weight:700}
+.hook-sub{font-size:22px;color:var(--text);line-height:1.6;margin-bottom:14px}
+.rainbow-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-width:520px;margin:10px auto}
+.rainbow-pill{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;padding:6px 2px;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:11px;box-shadow:0 2px 6px rgba(0,0,0,0.12);cursor:pointer;transition:transform .15s;line-height:1.1}
+.rainbow-pill:hover{transform:translateY(-2px) scale(1.05)}
+.rainbow-pill .rp-emoji{font-size:22px;line-height:1;margin-bottom:2px}
+.rainbow-pill.s1{background:var(--c-greet)}
+.rainbow-pill.s2{background:var(--c-self)}
+.rainbow-pill.s3{background:var(--c-family)}
+.rainbow-pill.s4{background:var(--c-number)}
+.rainbow-pill.s5{background:var(--c-color)}
+.rainbow-pill.s6{background:var(--c-animal)}
+.rainbow-pill.s7{background:var(--c-food)}
+.rainbow-pill.s8{background:var(--c-school)}
+.rainbow-pill.s9{background:var(--c-weather)}
+.rainbow-pill.s10{background:var(--c-feeling)}
+.rainbow-pill.s11{background:var(--c-action)}
+.rainbow-pill.s12{background:var(--c-place)}
+.rainbow-pill.s13{background:var(--c-day)}
+.rainbow-pill.s14{background:var(--c-play);color:#713F12}
+.rainbow-pill.s15{background:var(--c-thank)}
+.hook-note{margin-top:14px;font-size:20px;color:var(--c-final-deep);font-weight:700}
+
+/* ═══ 20단계 ROADMAP ═══ */
+.roadmap-20{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:620px;margin:14px auto 0;padding:10px;background:var(--c-final-light);border-radius:16px;border:2px dashed var(--c-final)}
+.rm-dot{aspect-ratio:1/1;border-radius:50%;background:#fff;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#9CA3AF}
+.rm-dot.done1{background:var(--c-greet);border-color:#065F46;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done2{background:#059669;border-color:#065F46;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done3{background:#047857;border-color:#064E3B;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done4{background:var(--c-self);border-color:#78350F;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done5{background:#EA580C;border-color:#7C2D12;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done6{background:var(--c-family);border-color:#0C4A6E;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done7{background:var(--c-number);border-color:#1E3A8A;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done8{background:var(--c-color);border-color:#14532D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done9{background:var(--c-animal);border-color:#4C1D95;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done-boss{background:linear-gradient(135deg,#FDE047,#F59E0B,#DC2626);border-color:#78350F;color:#fff;font-family:'Nunito',sans-serif;font-size:13px;box-shadow:0 2px 6px rgba(245,158,11,0.4)}
+.rm-dot.done11{background:var(--c-food);border-color:#7C2D12;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done12{background:var(--c-school);border-color:#1E3A8A;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done13{background:var(--c-weather);border-color:#0C4A6E;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done14{background:var(--c-feeling);border-color:#9D174D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done15{background:var(--c-action);border-color:#14532D;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done16{background:var(--c-place);border-color:#1E1B4B;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done-day{background:var(--c-day);border-color:#7C2D12;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.done-play{background:var(--c-play);border-color:#713F12;color:#713F12;font-family:'Nunito',sans-serif}
+.rm-dot.done-thank{background:var(--c-thank);border-color:#881337;color:#fff;font-family:'Nunito',sans-serif}
+.rm-dot.now{background:linear-gradient(135deg,var(--c-final),var(--c-gold));border-color:var(--c-final-deep);color:#fff;transform:scale(1.3);box-shadow:0 3px 12px rgba(106,27,154,0.5);font-family:'Nunito',sans-serif;font-size:13px}
+.rm-dot.done-grad{background:linear-gradient(135deg,var(--c-final),var(--c-gold),var(--c-final-deep));border-color:var(--c-gold-deep);color:#fff;font-family:'Nunito',sans-serif;box-shadow:0 2px 8px rgba(255,179,0,0.5)}
+
+/* ═══ CONV-MAP-15 (5×3 여정 지도) ═══ */
+.conv-map-15{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0;max-width:720px;margin-left:auto;margin-right:auto}
+.conv-map-cell{background:#fff;border:2.5px solid var(--border);border-radius:12px;padding:7px 4px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:86px}
+.conv-map-cell:hover{transform:translateY(-2px) scale(1.03)}
+.conv-map-cell.c1{border-color:var(--c-greet);background:linear-gradient(180deg,#ECFDF5,#fff)}
+.conv-map-cell.c1:hover{background:#D1FAE5}
+.conv-map-cell.c2{border-color:var(--c-self);background:linear-gradient(180deg,#FEF3C7,#fff)}
+.conv-map-cell.c2:hover{background:#FDE68A}
+.conv-map-cell.c3{border-color:var(--c-family);background:linear-gradient(180deg,#E0F2FE,#fff)}
+.conv-map-cell.c3:hover{background:#BAE6FD}
+.conv-map-cell.c4{border-color:var(--c-number);background:linear-gradient(180deg,#DBEAFE,#fff)}
+.conv-map-cell.c4:hover{background:#BFDBFE}
+.conv-map-cell.c5{border-color:var(--c-color);background:linear-gradient(180deg,#D1FAE5,#fff)}
+.conv-map-cell.c5:hover{background:#A7F3D0}
+.conv-map-cell.c6{border-color:var(--c-animal);background:linear-gradient(180deg,#EDE9FE,#fff)}
+.conv-map-cell.c6:hover{background:#DDD6FE}
+.conv-map-cell.c7{border-color:var(--c-food);background:linear-gradient(180deg,#FFEDD5,#fff)}
+.conv-map-cell.c7:hover{background:#FED7AA}
+.conv-map-cell.c8{border-color:var(--c-school);background:linear-gradient(180deg,#DBEAFE,#fff)}
+.conv-map-cell.c8:hover{background:#BFDBFE}
+.conv-map-cell.c9{border-color:var(--c-weather);background:linear-gradient(180deg,#E0F2FE,#fff)}
+.conv-map-cell.c9:hover{background:#BAE6FD}
+.conv-map-cell.c10{border-color:var(--c-feeling);background:linear-gradient(180deg,#FCE7F3,#fff)}
+.conv-map-cell.c10:hover{background:#FBCFE8}
+.conv-map-cell.c11{border-color:var(--c-action);background:linear-gradient(180deg,#DCFCE7,#fff)}
+.conv-map-cell.c11:hover{background:#BBF7D0}
+.conv-map-cell.c12{border-color:var(--c-place);background:linear-gradient(180deg,#E0E7FF,#fff)}
+.conv-map-cell.c12:hover{background:#C7D2FE}
+.conv-map-cell.c13{border-color:var(--c-day);background:linear-gradient(180deg,#FFEDD5,#fff)}
+.conv-map-cell.c13:hover{background:#FED7AA}
+.conv-map-cell.c14{border-color:var(--c-play);background:linear-gradient(180deg,#FEF9C3,#fff)}
+.conv-map-cell.c14:hover{background:#FEF08A}
+.conv-map-cell.c15{border-color:var(--c-thank);background:linear-gradient(180deg,#FFE4E6,#fff)}
+.conv-map-cell.c15:hover{background:#FECDD3}
+.cmc-num{font-size:11px;font-weight:800;color:var(--subtext);font-family:'Nunito',sans-serif;line-height:1}
+.cmc-emoji{font-size:22px;line-height:1;margin:2px 0}
+.cmc-topic{font-size:11px;font-weight:700;color:var(--text);font-family:'Nunito',sans-serif;line-height:1.15}
+.cmc-ex{font-size:10px;color:var(--subtext);margin-top:2px;line-height:1.1}
+
+/* ═══ KILLER RECAP (5규칙) ═══ */
+.killer-recap{background:var(--c-final-light);border:3px solid var(--c-final);border-radius:16px;padding:12px;margin:10px 0}
+.kr-title{font-size:20px;font-weight:800;color:var(--c-final-deep);text-align:center;margin-bottom:10px;font-family:'Nunito',sans-serif}
+.kr-row{display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:9px 12px;margin-bottom:6px;cursor:pointer;transition:transform .15s,background .15s;border-left:5px solid var(--c-final)}
+.kr-row:hover{transform:translateX(3px);background:var(--c-gold-light)}
+.kr-row.r1{border-left-color:var(--c-play)}
+.kr-row.r2{border-left-color:var(--c-thank)}
+.kr-row.r3{border-left-color:var(--c-day)}
+.kr-row.r4{border-left-color:var(--c-feeling)}
+.kr-row.r5{border-left-color:var(--c-place)}
+.kr-icon{font-size:26px;line-height:1;flex-shrink:0}
+.kr-body{flex:1;min-width:0}
+.kr-title-sm{font-size:16px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif;line-height:1.2}
+.kr-title-sm b{color:var(--c-final-deep)}
+.kr-ex{font-size:13px;color:var(--subtext);margin-top:2px;line-height:1.3}
+.kr-from{display:inline-block;font-size:10px;background:var(--c-final);color:#fff;border-radius:99px;padding:1px 7px;margin-left:6px;font-family:'Nunito',sans-serif;font-weight:800;vertical-align:middle}
+
+/* ═══ STAGE-FLASH (slide 3, 3탭) ═══ */
+.stage-flash{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0}
+.stage-flash-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.stage-flash-tab{background:#fff;border:2.5px solid var(--c-final);border-radius:12px;padding:7px 14px;font-size:15px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--c-final-deep);cursor:pointer;transition:all .15s}
+.stage-flash-tab:hover{background:var(--c-final-light)}
+.stage-flash-tab.active{transform:scale(1.05);color:#fff;box-shadow:0 3px 10px rgba(106,27,154,0.3)}
+.stage-flash-tab.t1.active{background:var(--c-greet);border-color:#065F46}
+.stage-flash-tab.t2.active{background:var(--c-feeling);border-color:#9D174D}
+.stage-flash-tab.t3.active{background:var(--c-thank);border-color:#881337}
+.fd-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:6px 0}
+.fd-card{width:260px;height:172px;perspective:1000px;cursor:pointer}
+.fd-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.fd-card.flipped .fd-inner{transform:rotateY(180deg)}
+.fd-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;padding:14px;box-shadow:0 6px 18px rgba(106,27,154,0.2)}
+.fd-front{background:linear-gradient(135deg,var(--c-final-light),#fff);border:3px solid var(--c-final)}
+.fd-back{background:linear-gradient(135deg,var(--c-gold-light),#fff);border:3px solid var(--c-gold);transform:rotateY(180deg);color:var(--c-gold-deep);font-size:26px;font-weight:700;font-family:'Jua',sans-serif}
+.fd-emoji{font-size:68px;line-height:1}
+.fd-word{font-size:30px;font-weight:800;color:var(--c-final-deep);font-family:'Nunito',sans-serif;margin-top:6px}
+.fd-note{font-size:15px;color:var(--subtext);margin-top:8px;text-align:center;font-weight:400}
+.fd-controls{display:flex;gap:10px;align-items:center}
+.fd-btn{background:var(--c-final);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Jua',sans-serif;transition:background .15s}
+.fd-btn:hover{background:var(--c-final-deep)}
+.fd-btn.shuffle{background:var(--c-gold);color:#fff}
+.fd-btn.shuffle:hover{background:var(--c-gold-deep)}
+.fd-counter{font-size:17px;font-weight:700;color:var(--c-final-deep);font-family:'Nunito',sans-serif;min-width:60px;text-align:center}
+
+/* ═══ ROLE PLAY (slide 4) ═══ */
+.role-scene{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.role-row{background:#fff;border-radius:14px;padding:10px 12px;border:2.5px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.role-row.morning{border-color:var(--c-day);background:linear-gradient(180deg,#FFEDD5,#fff)}
+.role-row.lunch{border-color:var(--c-food);background:linear-gradient(180deg,#FFF7ED,#fff)}
+.role-row.night{border-color:var(--c-place);background:linear-gradient(180deg,#E0E7FF,#fff)}
+.role-head{font-size:17px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:6px}
+.role-head .re{font-size:22px}
+.role-bubbles{display:flex;flex-direction:column;gap:6px;padding-left:8px}
+.role-b{background:#fff;border:2px solid var(--c-final);border-radius:16px;padding:7px 14px;font-size:17px;font-weight:700;color:var(--c-final-deep);font-family:'Nunito',sans-serif;cursor:pointer;transition:transform .15s;align-self:flex-start;max-width:92%}
+.role-b:hover{transform:scale(1.03);background:var(--c-final-light)}
+.role-b.a{align-self:flex-end;background:var(--c-gold-light);border-color:var(--c-gold);color:var(--c-gold-deep)}
+.role-b small{display:block;font-size:12px;color:var(--subtext);font-weight:400;margin-top:2px;font-family:'Jua',sans-serif}
+
+/* ═══ BIG REVIEW (slide 5) ═══ */
+.expr-mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.emg-card{background:#fff;border:2.5px solid var(--c-final);border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;min-height:68px;display:flex;flex-direction:column;justify-content:center}
+.emg-card:hover{transform:translateY(-2px);background:var(--c-final-light);box-shadow:0 4px 10px rgba(106,27,154,0.25)}
+.emg-en{font-size:14px;font-weight:800;color:var(--c-final-deep);font-family:'Nunito',sans-serif;line-height:1.2}
+.emg-ko{font-size:11px;color:var(--subtext);margin-top:3px;line-height:1.1}
+
+/* ═══ CHALLENGE INTRO (slide 6) ═══ */
+.chal-intro{text-align:center;padding:10px 0}
+.chal-big{font-size:78px;line-height:1;margin:8px 0}
+.chal-title{font-size:28px;font-weight:800;color:var(--c-final-deep);font-family:'Nunito',sans-serif;margin-bottom:8px}
+.chal-sub{font-size:20px;color:var(--text);line-height:1.55;margin-bottom:14px}
+.medal-preview{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+.mp-item{background:#fff;border:2.5px solid var(--border);border-radius:14px;padding:10px 14px;min-width:90px;text-align:center;box-shadow:0 3px 8px rgba(0,0,0,0.08)}
+.mp-item.gold{border-color:var(--medal-gold);background:var(--c-gold-light)}
+.mp-item.silver{border-color:var(--medal-silver);background:#F4F4F5}
+.mp-item.bronze{border-color:var(--medal-bronze);background:#FEF3C7}
+.mp-icon{font-size:34px;line-height:1}
+.mp-label{font-size:14px;font-weight:800;color:var(--text);margin-top:4px;font-family:'Nunito',sans-serif}
+.mp-req{font-size:11px;color:var(--subtext);margin-top:2px}
+.chal-cheer{background:linear-gradient(135deg,var(--c-final-light),var(--c-gold-light));border:2px solid var(--c-final);border-radius:14px;padding:10px 14px;margin-top:10px;font-size:18px;color:var(--c-final-deep);font-weight:700;line-height:1.5}
+
+/* ═══ WARMUP OX (slide 7, 점수 없음) ═══ */
+.ox-box{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.ox-row{background:#fff;border:2.5px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ox-q{flex:1;min-width:200px;font-size:18px;font-weight:700;color:var(--text);font-family:'Nunito',sans-serif}
+.ox-btns{display:flex;gap:6px}
+.ox-btn{background:#fff;border:2px solid var(--border);border-radius:10px;padding:6px 16px;font-size:20px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;color:var(--text)}
+.ox-btn:hover{border-color:var(--c-final);transform:scale(1.05)}
+.ox-btn.correct{background:#DCFCE7;border-color:#16A34A;color:#14532D;animation:correctPulse .5s}
+.ox-btn.wrong{background:var(--grad-warn-light);border-color:var(--grad-warn);color:var(--grad-warn);animation:shake .4s}
+.ox-fb{font-size:22px;font-weight:800;min-width:26px;text-align:center}
+
+/* ═══ MEDAL PREVIEW DETAIL (slide 8) ═══ */
+.medal-detail{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.md-row{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:10px 14px;border:2px solid var(--border)}
+.md-row.gold{border-color:var(--medal-gold);background:linear-gradient(90deg,var(--c-gold-light),#fff)}
+.md-row.silver{border-color:var(--medal-silver);background:linear-gradient(90deg,#F4F4F5,#fff)}
+.md-row.bronze{border-color:var(--medal-bronze);background:linear-gradient(90deg,#FEF3C7,#fff)}
+.md-big{font-size:48px;line-height:1;flex-shrink:0}
+.md-body{flex:1}
+.md-name{font-size:18px;font-weight:800;color:var(--text);font-family:'Nunito',sans-serif}
+.md-desc{font-size:14px;color:var(--subtext);margin-top:2px;line-height:1.4}
+.md-start{text-align:center;font-size:20px;font-weight:800;color:var(--c-final-deep);margin-top:14px;font-family:'Nunito',sans-serif}
+
+/* ═══ CHOICES (Q1·Q2·Q3·Q4) ═══ */
+.choices{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.choices.row{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
+.choice-btn{background:#fff;border:2.5px solid var(--border);border-radius:12px;padding:11px 16px;font-size:19px;font-weight:700;cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;color:var(--text);transition:all .15s;line-height:1.3}
+.choice-btn:hover{border-color:var(--c-final);background:var(--c-final-light);transform:scale(1.02)}
+.choice-btn.correct{background:#DCFCE7;border-color:#16A34A;color:#14532D;animation:correctPulse .5s}
+.choice-btn.wrong{background:var(--grad-warn-light);border-color:var(--grad-warn);color:var(--grad-warn);animation:shake .4s}
+@keyframes correctPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:17px;margin-top:10px;padding:10px 12px;border-radius:12px;line-height:1.5;display:none}
+.feedback.ok{background:#DCFCE7;color:#14532D;border:2px solid #16A34A;display:block}
+.feedback.err{background:var(--grad-warn-light);color:var(--grad-warn);border:2px solid var(--grad-warn);display:block}
+.question-label{display:inline-block;background:var(--c-final);color:#fff;border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;margin-bottom:8px}
+.stars{color:#FCD34D;margin-left:4px}
+.question-text{font-size:22px;color:var(--text);margin:8px 0;font-weight:700;line-height:1.45}
+.question-prompt{font-size:24px;color:var(--c-final-deep);font-weight:800;margin:6px 0;font-family:'Nunito',sans-serif;text-align:center}
+.q-emoji-big{font-size:68px;text-align:center;line-height:1;margin:6px 0}
+
+/* ═══ Q2 LISTEN ═══ */
+.listen-big{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
+.listen-big-btn{background:var(--c-final);color:#fff;border:none;border-radius:99px;padding:14px 30px;font-size:24px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 12px rgba(106,27,154,0.3);transition:transform .15s}
+.listen-big-btn:hover{transform:scale(1.05);background:var(--c-final-deep)}
+.listen-hint{font-size:16px;color:var(--subtext)}
+
+/* ═══ MATCH (slide 11) ═══ */
+.match-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.match-col{display:flex;flex-direction:column;gap:6px}
+.match-col-title{font-size:18px;font-weight:700;color:var(--c-final-deep);text-align:center;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.match-item{background:#fff;border:2.5px solid var(--border);border-radius:10px;padding:9px 6px;font-size:17px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;font-family:'Nunito',sans-serif;color:var(--text);line-height:1.25}
+.match-item:hover{border-color:var(--c-final);background:var(--c-final-light)}
+.match-item.selected{background:var(--yellow-light);border-color:#F59E0B;transform:scale(1.03)}
+.match-item.matched{background:#DCFCE7;border-color:#16A34A;color:#14532D;cursor:default;opacity:.75}
+
+/* ═══ BLANK FILL (Q3) ═══ */
+.blank-box{text-align:center;margin:10px 0}
+.blank-pic{font-size:80px;line-height:1;margin:6px 0}
+.blank-sentence{font-size:26px;color:var(--text);font-weight:700;margin:8px 0;font-family:'Nunito',sans-serif;line-height:1.4}
+.blank-slot{display:inline-block;min-width:130px;padding:4px 14px;background:var(--c-gold-light);border-bottom:4px solid var(--c-gold);color:var(--c-gold-deep);border-radius:8px;font-size:30px;font-weight:900;margin:0 4px}
+.blank-slot.filled{background:#DCFCE7;border-color:#16A34A;color:#14532D}
+
+/* ═══ SIT-BOX (Q4) ═══ */
+.sit-box{background:linear-gradient(135deg,var(--c-final-light),var(--c-gold-light));border:3px solid var(--c-final);border-radius:16px;padding:12px;margin:10px 0;text-align:center}
+.sit-title{font-size:20px;font-weight:700;color:var(--c-final-deep);margin-bottom:6px;font-family:'Nunito',sans-serif}
+.sit-emoji{font-size:58px;line-height:1;margin:6px 0}
+.sit-desc{font-size:17px;color:var(--text);font-weight:700;margin:6px 0;line-height:1.45}
+.sit-ask{font-size:19px;color:var(--c-final-deep);font-weight:800;margin-top:8px;font-family:'Nunito',sans-serif}
+
+/* ═══ RESULT (졸업장) ═══ */
+.result-wrap{text-align:center;padding:10px 0}
+.result-emoji{font-size:72px;line-height:1;margin-bottom:8px;animation:gradPulse 2.4s infinite}
+.result-title{font-size:32px;color:var(--c-final-deep);font-weight:800;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.result-score{font-size:22px;color:var(--c-final-deep);font-weight:700;margin-bottom:10px}
+.result-score span{font-size:34px;color:var(--c-gold-deep);font-family:'Nunito',sans-serif}
+.medal-box{display:flex;align-items:center;justify-content:center;gap:10px;border-radius:16px;padding:12px 16px;margin:10px auto;max-width:460px;font-size:22px;font-weight:800;font-family:'Nunito',sans-serif;box-shadow:0 5px 14px rgba(0,0,0,0.12)}
+.medal-box.medal-gold{background:linear-gradient(135deg,#FEF3C7,#FBBF24);border:3px solid var(--medal-gold);color:var(--c-gold-deep)}
+.medal-box.medal-silver{background:linear-gradient(135deg,#F4F4F5,#D4D4D8);border:3px solid var(--medal-silver);color:#404040}
+.medal-box.medal-bronze{background:linear-gradient(135deg,#FEF3C7,#B45309);border:3px solid var(--medal-bronze);color:#7C2D12}
+.medal-box.medal-practice{background:linear-gradient(135deg,var(--c-final-light),#fff);border:3px solid var(--c-final);color:var(--c-final-deep)}
+.cert-box{background:linear-gradient(135deg,var(--c-final-light),var(--c-gold-light));border:4px double var(--c-gold-deep);border-radius:16px;padding:14px 16px;margin:12px auto;max-width:540px;text-align:center;box-shadow:0 6px 18px rgba(255,179,0,0.25)}
+.cert-title{font-size:22px;font-weight:800;color:var(--c-final-deep);font-family:'Nunito',sans-serif;margin-bottom:8px}
+.cert-body{font-size:16px;color:var(--text);line-height:1.55;margin:6px 0}
+.cert-stages{font-size:14px;color:var(--c-final-deep);font-weight:700;line-height:1.5;margin-top:8px;background:#fff;border-radius:10px;padding:8px 10px}
+.cert-date{font-size:15px;color:var(--subtext);margin-top:8px;font-family:'Nunito',sans-serif}
+.result-roadmap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:560px;margin:14px auto;padding:10px;background:var(--c-final-light);border-radius:14px}
+.result-msg{font-size:19px;color:var(--text);margin:12px 0;line-height:1.6}
+.result-msg b{color:var(--c-final-deep)}
+.next-btn{background:linear-gradient(135deg,var(--c-final),var(--c-gold));color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:20px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(106,27,154,0.4);transition:transform .15s}
+.next-btn:hover{transform:scale(1.05)}
+.next-btn.hub-btn{background:linear-gradient(135deg,var(--c-greet),var(--c-color))}
+
+/* ═══ BASE LAYOUT ═══ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;-webkit-tap-highlight-color:transparent}
+.topbar{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.sound-btn{background:none;border:none;font-size:22px;cursor:pointer;padding:3px 8px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transform:translateX(40px);transition:opacity .35s,transform .35s;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-40px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:16px 18px;width:100%;max-width:780px;max-height:100%}
+.slide-title{font-size:26px;color:var(--c-final-deep);text-align:center;margin-bottom:6px;font-weight:700}
+.navbar{display:flex;gap:10px;padding:10px 14px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;justify-content:center}
+.nav-btn{background:var(--c-final);color:#fff;border:none;border-radius:12px;padding:9px 26px;font-size:19px;font-weight:700;font-family:'Jua',sans-serif;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topleft">
+    <div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span>edu</span></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="page-info" id="pageInfo">1 / 15</div>
+  <div class="topright">
+    <span class="score-pill">⭐ <span id="scoreDisp">0</span></span>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  </div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- ── 0. HOOK (졸업 인트로) ── -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="hook-wrap">
+    <div class="hook-badge-grad">🎓 1학년 영어 회화 졸업전!</div>
+    <div class="hook-title">🎓 15단계 종합 마스터!</div>
+    <div class="hook-sub">인사부터 감사까지<br>모두 배운 걸 확인해보자! 🏆</div>
+    <div class="rainbow-row">
+      <div class="rainbow-pill s1" onclick="speakWord('Hello')"><span class="rp-emoji">👋</span><span>greet</span></div>
+      <div class="rainbow-pill s2" onclick="speakWord('name')"><span class="rp-emoji">🙋</span><span>self</span></div>
+      <div class="rainbow-pill s3" onclick="speakWord('family')"><span class="rp-emoji">👨‍👩‍👧</span><span>family</span></div>
+      <div class="rainbow-pill s4" onclick="speakWord('seven')"><span class="rp-emoji">🔢</span><span>number</span></div>
+      <div class="rainbow-pill s5" onclick="speakWord('red')"><span class="rp-emoji">🎨</span><span>color</span></div>
+      <div class="rainbow-pill s6" onclick="speakWord('dog')"><span class="rp-emoji">🐶</span><span>animal</span></div>
+      <div class="rainbow-pill s7" onclick="speakWord('apple')"><span class="rp-emoji">🍕</span><span>food</span></div>
+      <div class="rainbow-pill s8" onclick="speakWord('school')"><span class="rp-emoji">🏫</span><span>school</span></div>
+      <div class="rainbow-pill s9" onclick="speakWord('sunny')"><span class="rp-emoji">☀️</span><span>weather</span></div>
+      <div class="rainbow-pill s10" onclick="speakWord('happy')"><span class="rp-emoji">🙂</span><span>feeling</span></div>
+      <div class="rainbow-pill s11" onclick="speakWord('run')"><span class="rp-emoji">🏃</span><span>action</span></div>
+      <div class="rainbow-pill s12" onclick="speakWord('in')"><span class="rp-emoji">📍</span><span>place</span></div>
+      <div class="rainbow-pill s13" onclick="speakWord('morning')"><span class="rp-emoji">🌅</span><span>day</span></div>
+      <div class="rainbow-pill s14" onclick="speakWord('play')"><span class="rp-emoji">🎲</span><span>play</span></div>
+      <div class="rainbow-pill s15" onclick="speakWord('thanks')"><span class="rp-emoji">🙏</span><span>thanks</span></div>
+    </div>
+    <div class="hook-note">15색 = 15단계! 탭해서 발음 들어봐 🎧</div>
+    <div class="roadmap-20">
+      <span class="rm-dot done1">1</span>
+      <span class="rm-dot done2">2</span>
+      <span class="rm-dot done3">3</span>
+      <span class="rm-dot done4">4</span>
+      <span class="rm-dot done5">5</span>
+      <span class="rm-dot done6">6</span>
+      <span class="rm-dot done7">7</span>
+      <span class="rm-dot done8">8</span>
+      <span class="rm-dot done9">9</span>
+      <span class="rm-dot done-boss">🏆</span>
+      <span class="rm-dot done11">11</span>
+      <span class="rm-dot done12">12</span>
+      <span class="rm-dot done13">13</span>
+      <span class="rm-dot done14">14</span>
+      <span class="rm-dot done15">15</span>
+      <span class="rm-dot done16">16</span>
+      <span class="rm-dot done-day">17</span>
+      <span class="rm-dot done-play">18</span>
+      <span class="rm-dot done-thank">19</span>
+      <span class="rm-dot now">🎓</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 1. CONV-MAP-15 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🗺️ 회화 여정 한눈에!</div>
+  <div style="text-align:center;color:var(--subtext);font-size:15px;margin-bottom:6px">각 칸을 탭하면 대표 표현을 들을 수 있어! 🎧</div>
+  <div class="conv-map-15">
+    <div class="conv-map-cell c1" onclick="speakSentence('Hi!')">
+      <div class="cmc-num">1-3</div><div class="cmc-emoji">👋</div><div class="cmc-topic">인사</div><div class="cmc-ex">Hi!</div>
+    </div>
+    <div class="conv-map-cell c2" onclick="speakSentence(&quot;I'm Kay.&quot;)">
+      <div class="cmc-num">4-5</div><div class="cmc-emoji">🙋</div><div class="cmc-topic">자기소개</div><div class="cmc-ex">I'm Kay.</div>
+    </div>
+    <div class="conv-map-cell c3" onclick="speakSentence('My family.')">
+      <div class="cmc-num">6</div><div class="cmc-emoji">👨‍👩‍👧</div><div class="cmc-topic">가족</div><div class="cmc-ex">mom·dad</div>
+    </div>
+    <div class="conv-map-cell c4" onclick="speakSentence(&quot;I'm seven.&quot;)">
+      <div class="cmc-num">7</div><div class="cmc-emoji">🔢</div><div class="cmc-topic">숫자·나이</div><div class="cmc-ex">I'm 7.</div>
+    </div>
+    <div class="conv-map-cell c5" onclick="speakSentence('I like red.')">
+      <div class="cmc-num">8</div><div class="cmc-emoji">🎨</div><div class="cmc-topic">색깔</div><div class="cmc-ex">red·blue</div>
+    </div>
+    <div class="conv-map-cell c6" onclick="speakSentence('I see a dog.')">
+      <div class="cmc-num">9</div><div class="cmc-emoji">🐶</div><div class="cmc-topic">동물</div><div class="cmc-ex">dog·cat</div>
+    </div>
+    <div class="conv-map-cell c7" onclick="speakSentence('I like apples.')">
+      <div class="cmc-num">11</div><div class="cmc-emoji">🍕</div><div class="cmc-topic">음식</div><div class="cmc-ex">apple·milk</div>
+    </div>
+    <div class="conv-map-cell c8" onclick="speakSentence('I go to school.')">
+      <div class="cmc-num">12</div><div class="cmc-emoji">🏫</div><div class="cmc-topic">학교</div><div class="cmc-ex">school·friend</div>
+    </div>
+    <div class="conv-map-cell c9" onclick="speakSentence(&quot;It's sunny.&quot;)">
+      <div class="cmc-num">13</div><div class="cmc-emoji">☀️</div><div class="cmc-topic">날씨</div><div class="cmc-ex">sunny·rain</div>
+    </div>
+    <div class="conv-map-cell c10" onclick="speakSentence(&quot;I'm happy.&quot;)">
+      <div class="cmc-num">14</div><div class="cmc-emoji">🙂</div><div class="cmc-topic">기분</div><div class="cmc-ex">happy·sad</div>
+    </div>
+    <div class="conv-map-cell c11" onclick="speakSentence('I can run.')">
+      <div class="cmc-num">15</div><div class="cmc-emoji">🏃</div><div class="cmc-topic">동작</div><div class="cmc-ex">run·jump</div>
+    </div>
+    <div class="conv-map-cell c12" onclick="speakSentence('It is on the table.')">
+      <div class="cmc-num">16</div><div class="cmc-emoji">📍</div><div class="cmc-topic">위치</div><div class="cmc-ex">in·on·under</div>
+    </div>
+    <div class="conv-map-cell c13" onclick="speakSentence('Good morning!')">
+      <div class="cmc-num">17</div><div class="cmc-emoji">🌅</div><div class="cmc-topic">하루</div><div class="cmc-ex">morning·night</div>
+    </div>
+    <div class="conv-map-cell c14" onclick="speakSentence(&quot;Let's play!&quot;)">
+      <div class="cmc-num">18</div><div class="cmc-emoji">🎲</div><div class="cmc-topic">놀이</div><div class="cmc-ex">play·game</div>
+    </div>
+    <div class="conv-map-cell c15" onclick="speakSentence('Thank you!')">
+      <div class="cmc-num">19</div><div class="cmc-emoji">🙏</div><div class="cmc-topic">감사</div><div class="cmc-ex">thanks·sorry</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 2. KILLER RECAP (5규칙) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🚨 기억해야 할 5가지 핵심 규칙!</div>
+  <div class="killer-recap">
+    <div class="kr-title">🎯 5 Killer 총복습</div>
+    <div class="kr-row r1" onclick="speakSentence(&quot;Let's play together!&quot;)">
+      <div class="kr-icon">🎲</div>
+      <div class="kr-body">
+        <div class="kr-title-sm"><b>Let's + 동사원형!</b> <span class="kr-from">18강</span></div>
+        <div class="kr-ex">Let's play! ⭕ / Let's to play ❌ / Let's playing ❌</div>
+      </div>
+    </div>
+    <div class="kr-row r2" onclick="speakSentence(&quot;I'm sorry. You're welcome.&quot;)">
+      <div class="kr-icon">🙏</div>
+      <div class="kr-body">
+        <div class="kr-title-sm"><b>I'm sorry · You're welcome</b> — be동사 필수! <span class="kr-from">19강</span></div>
+        <div class="kr-ex">I'm sorry. ⭕ / I sorry. ❌ · You're welcome. ⭕ / You welcome. ❌</div>
+      </div>
+    </div>
+    <div class="kr-row r3" onclick="speakSentence('in the morning, at night.')">
+      <div class="kr-icon">🌅</div>
+      <div class="kr-body">
+        <div class="kr-title-sm"><b>in the morning · at night</b> (night만 in the 안 붙음!) <span class="kr-from">17강</span></div>
+        <div class="kr-ex">in the morning / in the afternoon / in the evening / <b>at night</b></div>
+      </div>
+    </div>
+    <div class="kr-row r4" onclick="speakSentence(&quot;Don't be sad. How are you?&quot;)">
+      <div class="kr-icon">🙂</div>
+      <div class="kr-body">
+        <div class="kr-title-sm"><b>Don't be sad! · How are you?</b> — 의문·부정문 be동사! <span class="kr-from">14강</span></div>
+        <div class="kr-ex">Don't sad ❌ / How you ❌ → be동사 꼭 넣기!</div>
+      </div>
+    </div>
+    <div class="kr-row r5" onclick="speakSentence('in, on, under, next to.')">
+      <div class="kr-icon">📍</div>
+      <div class="kr-body">
+        <div class="kr-title-sm"><b>in / on / under / next to</b> — 위치 전치사! <span class="kr-from">16강</span></div>
+        <div class="kr-ex">in (안) · on (위) · under (아래) · next to (옆)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 3. STAGE-FLASH (3탭 30단어) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎴 3영역 단어 플래시!</div>
+  <div class="stage-flash">
+    <div class="stage-flash-tabs">
+      <button class="stage-flash-tab t1 active" onclick="stageSet(this,'greet')">👋 인사·소개 (10)</button>
+      <button class="stage-flash-tab t2" onclick="stageSet(this,'feel')">🙂 감정·동작 (10)</button>
+      <button class="stage-flash-tab t3" onclick="stageSet(this,'thank')">🙏 예절·감사 (10)</button>
+    </div>
+    <div class="fd-wrap">
+      <div class="fd-card" id="fdCard" onclick="fdFlip()">
+        <div class="fd-inner">
+          <div class="fd-face fd-front">
+            <div class="fd-emoji" id="fdEmoji">👋</div>
+            <div class="fd-word" id="fdWord">Hello</div>
+            <div class="fd-note">탭 → 뒤집기</div>
+          </div>
+          <div class="fd-face fd-back" id="fdBack"><div>안녕</div><div class="fd-note">만날 때!</div></div>
+        </div>
+      </div>
+      <div class="fd-controls">
+        <button class="fd-btn" onclick="fdPrev()">◀</button>
+        <span class="fd-counter" id="fdCounter">1 / 10</span>
+        <button class="fd-btn" onclick="fdNext()">▶</button>
+        <button class="fd-btn shuffle" onclick="fdShuffle()">🎲</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 4. ROLE PLAY ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎭 역할놀이 — 아침부터 밤까지!</div>
+  <div style="text-align:center;color:var(--subtext);font-size:14px;margin-bottom:4px">각 말풍선을 탭해서 들어봐! 🔊</div>
+  <div class="role-scene">
+    <div class="role-row morning">
+      <div class="role-head"><span class="re">🌅</span>morning — 아침</div>
+      <div class="role-bubbles">
+        <div class="role-b" onclick="speakSentence('Good morning!')">Good morning! <small>좋은 아침!</small></div>
+        <div class="role-b a" onclick="speakSentence('How are you?')">How are you? <small>어떻게 지내?</small></div>
+        <div class="role-b" onclick="speakSentence(&quot;I'm happy!&quot;)">I'm happy! <small>행복해!</small></div>
+      </div>
+    </div>
+    <div class="role-row lunch">
+      <div class="role-head"><span class="re">🍱</span>lunch — 점심</div>
+      <div class="role-bubbles">
+        <div class="role-b" onclick="speakSentence(&quot;Let's eat!&quot;)">Let's eat! <small>먹자!</small></div>
+        <div class="role-b a" onclick="speakSentence('Thank you for the food!')">Thank you for the food! <small>음식 고마워!</small></div>
+      </div>
+    </div>
+    <div class="role-row night">
+      <div class="role-head"><span class="re">🌙</span>night — 밤</div>
+      <div class="role-bubbles">
+        <div class="role-b" onclick="speakSentence(&quot;I'm sleepy.&quot;)">I'm sleepy. <small>졸려.</small></div>
+        <div class="role-b a" onclick="speakSentence('Good night!')">Good night! <small>잘 자!</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 5. BIG REVIEW ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">💬 핵심 표현 12개 총정리!</div>
+  <div style="text-align:center;color:var(--subtext);font-size:14px;margin-bottom:6px">탭해서 발음·뜻 확인! 🎧</div>
+  <div class="expr-mini-grid">
+    <div class="emg-card" onclick="speakSentence('Hello!')"><div class="emg-en">Hello!</div><div class="emg-ko">안녕!</div></div>
+    <div class="emg-card" onclick="speakSentence('Thank you!')"><div class="emg-en">Thank you!</div><div class="emg-ko">고마워!</div></div>
+    <div class="emg-card" onclick="speakSentence(&quot;I'm sorry.&quot;)"><div class="emg-en">I'm sorry.</div><div class="emg-ko">미안해.</div></div>
+    <div class="emg-card" onclick="speakSentence('Please help me.')"><div class="emg-en">Please help me.</div><div class="emg-ko">도와줘.</div></div>
+    <div class="emg-card" onclick="speakSentence(&quot;Let's go!&quot;)"><div class="emg-en">Let's go!</div><div class="emg-ko">가자!</div></div>
+    <div class="emg-card" onclick="speakSentence(&quot;I'm happy!&quot;)"><div class="emg-en">I'm happy!</div><div class="emg-ko">행복해!</div></div>
+    <div class="emg-card" onclick="speakSentence('I can run.')"><div class="emg-en">I can run.</div><div class="emg-ko">달릴 수 있어.</div></div>
+    <div class="emg-card" onclick="speakSentence('Good morning!')"><div class="emg-en">Good morning!</div><div class="emg-ko">좋은 아침!</div></div>
+    <div class="emg-card" onclick="speakSentence('How are you?')"><div class="emg-en">How are you?</div><div class="emg-ko">어떻게 지내?</div></div>
+    <div class="emg-card" onclick="speakSentence('Yes, I do.')"><div class="emg-en">Yes, I do.</div><div class="emg-ko">응, 맞아.</div></div>
+    <div class="emg-card" onclick="speakSentence('It is fun!')"><div class="emg-en">It is fun!</div><div class="emg-ko">재밌어!</div></div>
+    <div class="emg-card" onclick="speakSentence(&quot;You're welcome!&quot;)"><div class="emg-en">You're welcome!</div><div class="emg-ko">천만에!</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ── 6. CHALLENGE INTRO ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="chal-intro">
+    <div class="chal-big">🏆</div>
+    <div class="chal-title">이제 본격 챌린지!</div>
+    <div class="chal-sub">5문제 · 240점 만점<br>🥇 200점 이상 금메달 획득!</div>
+    <div class="medal-preview">
+      <div class="mp-item gold"><div class="mp-icon">🥇</div><div class="mp-label">금메달</div><div class="mp-req">200+</div></div>
+      <div class="mp-item silver"><div class="mp-icon">🥈</div><div class="mp-label">은메달</div><div class="mp-req">150+</div></div>
+      <div class="mp-item bronze"><div class="mp-icon">🥉</div><div class="mp-label">동메달</div><div class="mp-req">100+</div></div>
+    </div>
+    <div class="chal-cheer">💪 천천히 풀어봐! 넌 이미 <b>19단계 마스터</b>야!</div>
+  </div>
+</div>
+</div>
+
+<!-- ── 7. WARMUP OX (점수 없음) ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎯 워밍업 — 이거부터!</div>
+  <div style="text-align:center;color:var(--subtext);font-size:15px;margin-bottom:8px">⭕ 또는 ❌ 골라봐! (점수 없음, 연습용)</div>
+  <div class="ox-box">
+    <div class="ox-row">
+      <div class="ox-q">1. "Good morning!"은 아침 인사일까?</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="oxPick(this,0,1)">⭕</button>
+        <button class="ox-btn" onclick="oxPick(this,0,0)">❌</button>
+      </div>
+      <span class="ox-fb" id="ox-fb-0"></span>
+    </div>
+    <div class="ox-row">
+      <div class="ox-q">2. "Thank you!"는 사과할 때 쓰는 말일까?</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="oxPick(this,1,1)">⭕</button>
+        <button class="ox-btn" onclick="oxPick(this,1,0)">❌</button>
+      </div>
+      <span class="ox-fb" id="ox-fb-1"></span>
+    </div>
+    <div class="ox-row">
+      <div class="ox-q">3. "Let's play!"는 "같이 놀자!" 뜻일까?</div>
+      <div class="ox-btns">
+        <button class="ox-btn" onclick="oxPick(this,2,1)">⭕</button>
+        <button class="ox-btn" onclick="oxPick(this,2,0)">❌</button>
+      </div>
+      <span class="ox-fb" id="ox-fb-2"></span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 8. MEDAL PREVIEW DETAIL ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🏅 메달 3단계 — 목표 정하기!</div>
+  <div class="medal-detail">
+    <div class="md-row gold">
+      <div class="md-big">🥇</div>
+      <div class="md-body">
+        <div class="md-name">금메달 — 200점 이상</div>
+        <div class="md-desc">최고의 마스터! 5문제 거의 다 맞아야 달성!</div>
+      </div>
+    </div>
+    <div class="md-row silver">
+      <div class="md-big">🥈</div>
+      <div class="md-body">
+        <div class="md-name">은메달 — 150점 이상</div>
+        <div class="md-desc">훌륭한 실력! 어려운 문제 2개만 맞으면 가능!</div>
+      </div>
+    </div>
+    <div class="md-row bronze">
+      <div class="md-big">🥉</div>
+      <div class="md-body">
+        <div class="md-name">동메달 — 100점 이상</div>
+        <div class="md-desc">잘 해냈어! 포기하지 않으면 꼭 받을 수 있어!</div>
+      </div>
+    </div>
+  </div>
+  <div class="md-start">자, 시작해보자! ⬇️</div>
+</div>
+</div>
+
+<!-- ── 9. Q1 (15점, correct="3") ── -->
+<div class="slide" data-type="q" data-correct="3" data-score="15">
+<div class="card">
+  <span class="question-label">문제 1 <span class="stars">⭐</span></span>
+  <div class="question-text">🌅 아침에 친구 만나서 뭐라고 해?</div>
+  <div class="q-emoji-big">🌅👋</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">① Good night!</button>
+    <button class="choice-btn" onclick="answer(this,1)">② I am tired.</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ How are you sleep?</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ Good morning!</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div>
+</div>
+
+<!-- ── 10. Q2 듣기 (15점, correct="0") ── -->
+<div class="slide" data-type="q" data-correct="0" data-score="15">
+<div class="card">
+  <span class="question-label">문제 2 <span class="stars">⭐</span></span>
+  <div class="listen-big">
+    <button class="listen-big-btn" onclick="speakSentence('How are you?')">🔊 How are you?</button>
+    <div class="listen-hint">'How are you?' — 뭐라고 답하지?</div>
+  </div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">① I'm happy!</button>
+    <button class="choice-btn" onclick="answer(this,1)">② Good morning!</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ Please help me!</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ Let's play!</button>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div>
+</div>
+
+<!-- ── 11. Q 매칭 (30점, 6쌍) ── -->
+<div class="slide" data-type="q" data-score="30">
+<div class="card">
+  <span class="question-label">매칭 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">🔗 영어 표현과 한국어 뜻을 연결해봐!</div>
+  <div class="match-box">
+    <div class="match-col">
+      <div class="match-col-title">🇺🇸 영어</div>
+      <div class="match-item" data-key="hello" onclick="matchPick(this,'L')">Hello</div>
+      <div class="match-item" data-key="thank-you" onclick="matchPick(this,'L')">Thank you</div>
+      <div class="match-item" data-key="sorry" onclick="matchPick(this,'L')">I'm sorry</div>
+      <div class="match-item" data-key="lets-play" onclick="matchPick(this,'L')">Let's play</div>
+      <div class="match-item" data-key="morning" onclick="matchPick(this,'L')">Good morning</div>
+      <div class="match-item" data-key="goodbye" onclick="matchPick(this,'L')">Goodbye</div>
+    </div>
+    <div class="match-col">
+      <div class="match-col-title">🇰🇷 한국어</div>
+      <div class="match-item" data-key="goodbye" onclick="matchPick(this,'R')">잘 가!</div>
+      <div class="match-item" data-key="lets-play" onclick="matchPick(this,'R')">같이 놀자</div>
+      <div class="match-item" data-key="hello" onclick="matchPick(this,'R')">안녕! (만날 때)</div>
+      <div class="match-item" data-key="thank-you" onclick="matchPick(this,'R')">고마워</div>
+      <div class="match-item" data-key="morning" onclick="matchPick(this,'R')">좋은 아침</div>
+      <div class="match-item" data-key="sorry" onclick="matchPick(this,'R')">미안해</div>
+    </div>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div>
+</div>
+
+<!-- ── 12. Q3 빈칸 (60점, correct="1") ── -->
+<div class="slide" data-type="q" data-correct="1" data-score="60">
+<div class="card">
+  <span class="question-label">문제 3 <span class="stars">⭐⭐⭐</span></span>
+  <div class="blank-box">
+    <div class="blank-pic">🎲🤝</div>
+    <div class="blank-sentence">"<span class="blank-slot" id="blank12">___</span> play together!"</div>
+    <div style="font-size:16px;color:var(--subtext);margin-top:4px">💡 '같이 ~하자!'는? (18강 Killer 1)</div>
+  </div>
+  <div class="choices row">
+    <button class="choice-btn" onclick="fillAnswer(this,0,'Let')">① Let</button>
+    <button class="choice-btn" onclick="fillAnswer(this,1,&quot;Let's&quot;)">② Let's</button>
+    <button class="choice-btn" onclick="fillAnswer(this,2,'Let is')">③ Let is</button>
+    <button class="choice-btn" onclick="fillAnswer(this,3,'Lets')">④ Lets</button>
+  </div>
+  <div class="feedback" id="fb12"></div>
+</div>
+</div>
+
+<!-- ── 13. Q4 최종 상황 (120점, correct="2") ── -->
+<div class="slide" data-type="q" data-correct="2" data-score="120">
+<div class="card">
+  <span class="question-label">문제 4 <span class="stars">⭐⭐⭐⭐ 졸업 최종</span></span>
+  <div class="sit-box">
+    <div class="sit-title">🎁 친구가 선물 주면서 도와줬어!</div>
+    <div class="sit-emoji">🎁🤝✨</div>
+    <div class="sit-desc">생일 선물도 주고 <b>어려운 숙제도 도와줬어!</b> 🎁🤝<br>가장 완벽한 영어 대답은?</div>
+    <div class="sit-ask">1학년 회화 마스터라면 어떻게 답할까?</div>
+  </div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">① I sorry gift. Please help.</button>
+    <button class="choice-btn" onclick="answer(this,1)">② Thank welcome you!</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ Thank you for the gift and your help! You're the best!</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ Let's Thank you!</button>
+  </div>
+  <div class="feedback" id="fb13"></div>
+</div>
+</div>
+
+<!-- ── 14. RESULT (졸업장) ── -->
+<div class="slide" data-type="result">
+<div class="card">
+  <div class="result-wrap">
+    <div class="result-emoji">🎓</div>
+    <div class="result-title">1학년 영어 회화 졸업!</div>
+    <div class="result-score"><span id="finalScore">0</span> / 240점</div>
+    <div class="medal-box medal-practice" id="medalBox">💪 참가 메달 — 끝까지 완주!</div>
+    <div class="cert-box">
+      <div class="cert-title">🎓 K-edu 1학년 영어 회화 수료증</div>
+      <div class="cert-body">이 학생은 1학년 영어 회화<br><b>20강 전 과정</b>을 수료하였음을 증명합니다.</div>
+      <div class="cert-stages">✨ 인사 · 자기소개 · 가족 · 숫자 · 색깔 · 동물 · 음식 · 학교 · 날씨 · 기분 · 동작 · 위치 · 하루 · 놀이 · 감사<br>— 15단계 마스터 —</div>
+      <div class="cert-date" id="certDate">📅 수료일: 오늘</div>
+    </div>
+    <div class="result-roadmap">
+      <span class="rm-dot done1">1</span>
+      <span class="rm-dot done2">2</span>
+      <span class="rm-dot done3">3</span>
+      <span class="rm-dot done4">4</span>
+      <span class="rm-dot done5">5</span>
+      <span class="rm-dot done6">6</span>
+      <span class="rm-dot done7">7</span>
+      <span class="rm-dot done8">8</span>
+      <span class="rm-dot done9">9</span>
+      <span class="rm-dot done-boss">🏆</span>
+      <span class="rm-dot done11">11</span>
+      <span class="rm-dot done12">12</span>
+      <span class="rm-dot done13">13</span>
+      <span class="rm-dot done14">14</span>
+      <span class="rm-dot done15">15</span>
+      <span class="rm-dot done16">16</span>
+      <span class="rm-dot done-day">17</span>
+      <span class="rm-dot done-play">18</span>
+      <span class="rm-dot done-thank">19</span>
+      <span class="rm-dot done-grad">🎓</span>
+    </div>
+    <div class="result-msg">🎉 <b>1학년 영어 전체 완결!</b><br>문법 ✅ · 파닉스 🎓 · 회화 🎓<br>2학년이 기다리고 있어! 🚀</div>
+    <button class="next-btn hub-btn" onclick="goHub()">🏠 영어 허브로!</button>
+  </div>
+</div>
+</div>
+
+</div><!-- /slides -->
+
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+const TOTAL_SLIDES = 15;
+const FINAL_TOTAL = 240;
+let currentSlide = 0, score = 0, combo = 0, soundOn = true;
+const answered = {};
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// ═══ SOUND ═══
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+}
+function playCorrect() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [523,659,784].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(.15, audioCtx.currentTime + i*.1);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.1 + .2);
+      o.start(audioCtx.currentTime + i*.1); o.stop(audioCtx.currentTime + i*.1 + .2);
+    });
+  });
+}
+function playWrong() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [220,196].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      g.gain.setValueAtTime(.2, audioCtx.currentTime + i*.15);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.15 + .25);
+      o.start(audioCtx.currentTime + i*.15); o.stop(audioCtx.currentTime + i*.15 + .25);
+    });
+  });
+}
+function playClick() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .07);
+    o.start(); o.stop(audioCtx.currentTime + .07);
+  });
+}
+function speakWord(w) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'en-US'; u.rate = 0.8;
+  speechSynthesis.speak(u);
+}
+function speakSentence(s) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(s);
+  u.lang = 'en-US'; u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+// ═══ NAVIGATION ═══
+function goSlide(n) {
+  const sl = document.querySelectorAll('.slide');
+  sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out');
+  setTimeout(() => sl[currentSlide < n ? currentSlide : n].classList.remove('out'), 400);
+  currentSlide = n; sl[currentSlide].classList.add('active'); updateUI();
+  if (currentSlide === 14) {
+    document.getElementById('finalScore').textContent = score;
+    renderMedal();
+  }
+}
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+// ═══ UI ═══
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+}
+
+// ═══ SCORE & COMBO ═══
+function addScore(pts) {
+  score += pts; combo++;
+  document.getElementById('scoreDisp').textContent = score;
+  if (combo >= 2) {
+    const t = document.getElementById('comboToast');
+    t.textContent = '🔥 '+combo+' 콤보!';
+    t.classList.add('show');
+    clearTimeout(addScore._t);
+    addScore._t = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+}
+
+// ═══ FEEDBACK ═══
+const feedbackMap = {
+  9:  { ok:'✅ 정답! 🌅 아침엔 <b>Good morning!</b>! +15점',
+        err:'💡 🌅 아침엔 <b>Good morning!</b>! night(밤)·tired(피곤)·"How are you sleep?"(어법 깨짐)와 달라!' },
+  10: { ok:'✅ 정답! <b>How are you?</b>엔 <b>I\'m happy!</b>(기분) 대답! +15점',
+        err:'💡 <b>How are you?</b>는 어떻게 지내? 기분 대답! Good morning은 아침인사·Please는 부탁·Let\'s는 제안!' },
+  12: { ok:'🎉 정답! <b>Let\'s play together!</b> — Let\'s + 동사원형! +60점',
+        err:'💡 "Let us" → <b>Let\'s</b>! apostrophe 꼭! Let·Let is·Lets 모두 ❌' },
+  13: { ok:'🏆 <b>완벽!</b> Thank you for + 대상 + be동사 + 칭찬! 졸업 실력! +120점 🎓',
+        err:'💡 감사엔 <b>Thank you for + 대상</b>! sorry는 사과 상황·"Thank welcome"은 엉망·"Let\'s Thank"는 Let\'s 오용. 👉 Thank you for the gift and your help!' }
+};
+function setFB(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = msg; el.className = 'feedback '+(ok?'ok':'err'); }
+}
+
+// ═══ ANSWER (🚨 자동이동 절대 금지) ═══
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||15;
+  playClick();
+  const fbKey = currentSlide;
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    const msg = feedbackMap[fbKey]?.ok || ('✅ 정답! +'+pts+'점');
+    setFB('fb'+currentSlide, msg+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    const msg = feedbackMap[fbKey]?.err || '다시 한번! 💪';
+    setFB('fb'+currentSlide, msg, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ FILL ANSWER (slide 12) ═══
+function fillAnswer(btn, idx, text) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||60;
+  playClick(); speakSentence(text+' play together!');
+  const blank = document.getElementById('blank12');
+  if (idx === correct) {
+    blank.textContent = text; blank.classList.add('filled');
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, feedbackMap[12].ok+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+currentSlide, feedbackMap[12].err, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ MATCH (slide 11: 6쌍, +30점) ═══
+let mLeft = null, mRight = null, matchedCount = 0;
+function matchPick(el, side) {
+  if (el.classList.contains('matched') || answered[11]) return;
+  playClick();
+  if (side === 'L') {
+    if (mLeft) mLeft.classList.remove('selected');
+    mLeft = el; el.classList.add('selected');
+  } else {
+    if (mRight) mRight.classList.remove('selected');
+    mRight = el; el.classList.add('selected');
+  }
+  if (mLeft && mRight) {
+    if (mLeft.dataset.key === mRight.dataset.key) {
+      mLeft.classList.remove('selected'); mRight.classList.remove('selected');
+      mLeft.classList.add('matched'); mRight.classList.add('matched');
+      playCorrect(); matchedCount++;
+      speakWord(mLeft.textContent.trim());
+      if (matchedCount >= 6) {
+        addScore(30);
+        setFB('fb11','🎉 6쌍 모두 정답! 6표현 마스터! +30점 (아래 다음 ▶)', true);
+        answered[11] = true;
+      } else {
+        setFB('fb11', '✅ '+matchedCount+' / 6 매칭! 계속 💪', true);
+      }
+      mLeft = null; mRight = null;
+    } else {
+      playWrong();
+      const L = mLeft, R = mRight;
+      setTimeout(() => {
+        L.classList.remove('selected'); R.classList.remove('selected');
+      }, 400);
+      setFB('fb11', '다른 짝이야! 다시 골라봐 💪', false);
+      mLeft = null; mRight = null;
+    }
+  }
+}
+
+// ═══ STAGE-FLASH (slide 3, 3탭 30단어) ═══
+const flashStages = {
+  'greet': [
+    { emoji:'👋', w:'Hello',    k:'안녕',      note:'만날 때!' },
+    { emoji:'🌅', w:'morning',  k:'아침',      note:'Good morning!' },
+    { emoji:'👋', w:'Goodbye',  k:'잘 가',    note:'헤어질 때!' },
+    { emoji:'🙋', w:'name',     k:'이름',      note:'My name is ~!' },
+    { emoji:'👨‍👩‍👧', w:'family',k:'가족',    note:'mom·dad·brother!' },
+    { emoji:'🔢', w:'seven',    k:'7살',      note:'I am seven!' },
+    { emoji:'🎨', w:'red',      k:'빨강',      note:'I like red!' },
+    { emoji:'🐶', w:'dog',      k:'강아지',    note:'조림이!' },
+    { emoji:'🍕', w:'apple',    k:'사과',      note:'I like apples!' },
+    { emoji:'🏫', w:'friend',   k:'친구',      note:'I have friends!' }
+  ],
+  'feel': [
+    { emoji:'🙂', w:'happy',    k:'행복',      note:'I am happy!' },
+    { emoji:'😢', w:'sad',      k:'슬픔',      note:"Don't be sad!" },
+    { emoji:'😠', w:'angry',    k:'화남',      note:'화 내지 마!' },
+    { emoji:'😴', w:'tired',    k:'피곤',      note:'졸려!' },
+    { emoji:'🏃', w:'run',      k:'달리다',    note:'I can run!' },
+    { emoji:'🦘', w:'jump',     k:'뛰다',      note:"Let's jump!" },
+    { emoji:'☀️', w:'sunny',   k:'맑음',      note:'It is sunny!' },
+    { emoji:'📍', w:'in',       k:'~ 안에',    note:'in the box!' },
+    { emoji:'🌙', w:'night',    k:'밤',        note:'Good night!' },
+    { emoji:'🎲', w:'play',     k:'놀다',      note:"Let's play!" }
+  ],
+  'thank': [
+    { emoji:'🙏', w:'thanks',   k:'고마움',    note:'Thank you!' },
+    { emoji:'🎁', w:'gift',     k:'선물',      note:'예쁜 선물!' },
+    { emoji:'🫂', w:'hug',      k:'안기',      note:'따뜻하게!' },
+    { emoji:'🤝', w:'help',     k:'도움',      note:'같이 해줘!' },
+    { emoji:'🙏', w:'please',   k:'부탁',      note:'공손하게!' },
+    { emoji:'😔', w:'sorry',    k:'미안',      note:"I'm sorry!" },
+    { emoji:'👐', w:'welcome',  k:'천만에',    note:"You're welcome!" },
+    { emoji:'🤲', w:'share',    k:'나누기',    note:'같이 나눠!' },
+    { emoji:'💝', w:'heart',    k:'마음',      note:'마음 깊이!' },
+    { emoji:'🎉', w:'fun',      k:'재미',      note:'It is fun!' }
+  ]
+};
+let currentStage = 'greet';
+let fdIdx = 0;
+function stageSet(tab, st) {
+  currentStage = st; fdIdx = 0;
+  document.querySelectorAll('.stage-flash-tab').forEach(b => b.classList.remove('active'));
+  tab.classList.add('active');
+  playClick();
+  fdUpdate();
+}
+function fdUpdate() {
+  const arr = flashStages[currentStage];
+  const f = arr[fdIdx];
+  document.getElementById('fdEmoji').textContent = f.emoji;
+  document.getElementById('fdWord').textContent = f.w;
+  document.getElementById('fdBack').innerHTML = '<div>'+f.k+'</div><div class="fd-note">'+f.note+'</div>';
+  document.getElementById('fdCounter').textContent = (fdIdx+1)+' / '+arr.length;
+  document.getElementById('fdCard').classList.remove('flipped');
+}
+function fdFlip() {
+  const c = document.getElementById('fdCard');
+  c.classList.toggle('flipped');
+  playClick();
+  if (!c.classList.contains('flipped')) speakWord(flashStages[currentStage][fdIdx].w);
+}
+function fdNext() {
+  const arr = flashStages[currentStage];
+  fdIdx = (fdIdx+1) % arr.length;
+  fdUpdate(); playClick(); speakWord(arr[fdIdx].w);
+}
+function fdPrev() {
+  const arr = flashStages[currentStage];
+  fdIdx = (fdIdx-1+arr.length) % arr.length;
+  fdUpdate(); playClick(); speakWord(arr[fdIdx].w);
+}
+function fdShuffle() {
+  const arr = flashStages[currentStage];
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  fdIdx = 0; fdUpdate(); playClick();
+}
+
+// ═══ WARMUP OX (slide 7, 점수 없음) ═══
+const oxDone = {};
+function oxPick(btn, q, correct) {
+  if (oxDone[q]) return;
+  oxDone[q] = true;
+  playClick();
+  // 정답: 0(아침 인사 ⭕=1), 1(사과 ❌=0), 2(같이 놀자 ⭕=1)
+  const expected = [1,0,1][q];
+  if (correct === expected) {
+    btn.classList.add('correct'); playCorrect();
+    document.getElementById('ox-fb-'+q).textContent = '✅';
+  } else {
+    btn.classList.add('wrong'); playWrong();
+    document.getElementById('ox-fb-'+q).textContent = '❌';
+  }
+}
+
+// ═══ MEDAL (slide 14) ═══
+function renderMedal() {
+  const mb = document.getElementById('medalBox');
+  let cls = 'medal-practice', text = '💪 참가 메달 — 끝까지 완주!';
+  if (score >= 200) { cls = 'medal-gold';    text = '🥇 금메달 — 최고의 마스터!'; }
+  else if (score >= 150) { cls = 'medal-silver'; text = '🥈 은메달 — 훌륭한 실력!'; }
+  else if (score >= 100) { cls = 'medal-bronze'; text = '🥉 동메달 — 잘 해냈어!'; }
+  mb.className = 'medal-box '+cls;
+  mb.innerHTML = text;
+  const d = new Date();
+  document.getElementById('certDate').textContent =
+    '📅 수료일: '+d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';
+}
+
+// ═══ HUB LINK (slide 14, 다음 강 대신 영어 허브로) ═══
+function goHub() {
+  window.location.href = '/english/index.html';
+}
+
+// ═══ INIT ═══
+fdUpdate();
+updateUI();
+</script>
+</body>
+</html>
