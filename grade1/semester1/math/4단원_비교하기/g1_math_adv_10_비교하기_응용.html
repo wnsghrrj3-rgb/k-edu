@@ -5,246 +5,577 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>K✦edu · 비교하기 응용</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>비교하기 응용 - K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#FFF5F7;--card:#FFFFFF;--primary:#EC407A;--primary-light:#FCE4EC;--secondary:#F48FB1;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F0D0DD;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-user-select:none;}
-.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}
-.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}
-.logo-s{font-size:10px;color:#F59E0B;}.logo-e{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
-.sound-btn{position:fixed;top:12px;left:80px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.slide-container{width:100%;height:100vh;position:relative;overflow:hidden;}
-.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;}
-.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}.slide.left{transform:translateX(-60px);}.slide.right{transform:translateX(60px);}
-.nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:998;}
-.nav button{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:12px 28px;font-family:'Jua';font-size:22px;cursor:pointer;box-shadow:var(--shadow);}.nav button:disabled{background:#ccc;}
-.page-info{position:fixed;bottom:24px;right:20px;font-size:18px;color:var(--subtext);z-index:998;}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;max-width:600px;width:100%;text-align:center;}
-.q-title{font-size:26px;margin-bottom:12px;line-height:1.4;}
-.badge{display:inline-block;background:var(--yellow-light);color:#e6a000;padding:2px 10px;border-radius:12px;font-size:16px;margin-bottom:8px;}
-.track-badge{display:inline-block;background:var(--primary);color:#fff;padding:2px 12px;border-radius:12px;font-size:14px;margin-bottom:4px;}
-.char-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0;}
-.char-img{width:56px;height:56px;border-radius:50%;}
-.char-bubble{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:24px;line-height:1.4;max-width:420px;position:relative;}
-.char-bubble::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);border:8px solid transparent;border-right-color:var(--primary-light);}
-.options{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px;}
-.opt-btn{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:14px 24px;font-family:'Jua';font-size:48px;cursor:pointer;transition:all .2s;min-width:100px;}
-.opt-btn:hover{border-color:var(--primary);background:var(--primary-light);}
-.opt-btn.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s;}
-.opt-btn.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s;}
-.opt-btn.disabled{pointer-events:none;opacity:.6;}
-.feedback{margin-top:10px;font-size:22px;min-height:30px;}
-.fb-correct{color:var(--green);}.fb-wrong{color:var(--red);}
-.result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px;max-width:500px;width:100%;text-align:center;}
-.result-score{font-size:64px;color:var(--primary);margin:12px 0;}
-.result-msg{font-size:28px;margin:8px 0;}.star-row{font-size:40px;margin:8px 0;}.combo-display{font-size:22px;color:var(--secondary);}
-.order-zone{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0;}
-.order-item{background:var(--card);border:3px solid var(--border);border-radius:14px;padding:10px 16px;font-size:24px;cursor:pointer;transition:all .2s;}
-.order-item:hover{border-color:var(--primary);background:var(--primary-light);}.order-item.placed{opacity:.3;pointer-events:none;}
-.order-slots{display:flex;gap:10px;justify-content:center;margin:8px 0;}
-.order-slot{width:72px;height:52px;border:3px dashed var(--primary);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--subtext);}
-.order-slot.filled{border-style:solid;background:var(--primary-light);font-size:22px;color:var(--text);}
-.reset-btn{margin-top:6px;background:var(--primary-light);border:2px solid var(--primary);border-radius:12px;padding:6px 18px;font-family:'Jua';font-size:18px;cursor:pointer;}
-@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.anim-fadeUp{animation:fadeUp .5s ease both;}
-@media(max-width:480px){.q-title{font-size:22px}.opt-btn{font-size:36px;padding:10px 14px;}.char-bubble{font-size:20px;}}
-
+:root{--bg:#FFF5F7;--card:#FFFFFF;--primary:#EC407A;--primary-light:#FCE4EC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#F0D0DD;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}.logo-star{font-size:10px;color:#F59E0B}.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100vh;padding:60px 16px 80px;text-align:center;position:absolute;top:0;left:0}.slide.active{display:flex}.slide.active>*{animation:fadeIn .5s ease}
+.st{font-size:26px;color:var(--primary);margin-bottom:10px}.badge{display:inline-block;font-size:18px;background:var(--yellow-light);padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.cb{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);max-width:600px;width:100%;margin:8px 0}
+.ci{width:64px;height:64px;border-radius:50%}.sb{background:var(--card);border-radius:20px;padding:14px 18px;font-size:22px;box-shadow:var(--shadow);max-width:420px;position:relative;margin:8px 0}.sb::after{content:'';position:absolute;bottom:-10px;left:40px;border-width:10px 10px 0;border-style:solid;border-color:var(--card) transparent transparent}
+.or{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0}.ob{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:10px 22px;font-size:30px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s;min-width:68px}.ob:active{transform:scale(.95)}.ob.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s}.ob.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}.ob.disabled{pointer-events:none;opacity:.6}
+.bb{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:64px;border:4px dashed var(--primary);border-radius:16px;font-size:44px;color:var(--primary);margin:0 4px;vertical-align:middle;padding:0 10px}
+.fb{font-size:22px;margin-top:8px;min-height:30px}.fb.good{color:var(--green)}.fb.bad{color:var(--red)}
+.story{background:var(--primary-light);border-radius:var(--radius);padding:16px;max-width:500px;width:100%;margin:10px 0;font-size:22px;line-height:1.6}
+.num-row{display:flex;justify-content:center;gap:6px;margin:12px 0;flex-wrap:wrap}.num-box{min-width:56px;height:56px;border-radius:12px;border:3px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:30px;transition:all .2s;padding:0 8px}.num-box.highlight{background:var(--yellow-light);border-color:var(--yellow)}.num-box.blank{border:3px dashed var(--primary);font-size:28px;color:var(--primary)}.num-box.done{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.order-pick{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}.order-card{min-width:56px;height:56px;padding:0 14px;background:var(--card);border:3px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer}.order-card.used{opacity:.3;pointer-events:none}
+.combo-display{position:fixed;top:60px;right:16px;font-size:20px;z-index:99;background:var(--yellow-light);padding:4px 12px;border-radius:16px}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:rgba(255,245,247,.95);z-index:99}.nb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:10px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer}.nb:disabled{opacity:.3}.pi{font-size:18px;color:var(--subtext)}
+.rc{background:var(--card);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);max-width:400px;width:100%}.rs{font-size:64px;color:var(--primary)}.rm{font-size:26px;margin:12px 0}.rd{font-size:20px;color:var(--subtext);margin:4px 0}.rb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:14px 40px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;margin-top:16px}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .text-input-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}
-.text-input{width:120px;height:80px;border:4px solid var(--border);border-radius:16px;font-size:48px;font-family:'Jua',sans-serif;text-align:center;color:var(--primary);background:var(--card);outline:none;transition:border-color .3s}
+.text-input{width:130px;height:80px;border:4px solid var(--border);border-radius:16px;font-size:44px;font-family:'Jua',sans-serif;text-align:center;color:var(--primary);background:var(--card);outline:none;transition:border-color .3s}
 .text-input:focus{border-color:var(--primary)}
 .text-input.correct{border-color:var(--green);background:var(--green-light)}
 .text-input.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
 .submit-btn{background:var(--primary);color:#fff;border:none;border-radius:16px;padding:12px 24px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}
 .submit-btn:active{transform:scale(.95)}
 .submit-btn:disabled{opacity:.4;cursor:default}
-.hint-box{background:var(--yellow-light);border-radius:16px;padding:16px;max-width:500px;width:100%;margin:8px 0;font-size:22px;line-height:1.6;text-align:left}
-.hint-box .hint-icon{margin-right:4px}
+.eq{display:flex;align-items:center;justify-content:center;gap:4px;margin:12px 0;font-size:36px;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<div class="logo"><span class="logo-k">K</span><span class="logo-s">✦</span><span class="logo-e">edu</span></div>
-<button class="sound-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
-<div class="slide-container">
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+<div class="combo-display" id="comboDisplay" style="display:none">🔥 0 콤보</div>
 
-<div class="slide active" data-type="concept"><div class="card anim-fadeUp"><div class="track-badge">Track B · 심화</div><div style="font-size:20px;color:var(--primary);">4단원 · 비교하기</div><div style="font-size:52px;margin:12px 0;">🏅</div><div style="font-size:34px;margin:8px 0;">비교하기 응용</div><div class="badge" style="font-size:18px;">⭐⭐ 발전</div><div class="char-row"><img class="char-img" src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" alt="케이"><div class="char-bubble">3개 이상을 비교하고<br>순서를 정해보자!</div></div></div></div>
+<!-- 타이틀 -->
+<div class="slide active" data-type="concept">
+  <div class="badge">Track B 응용</div>
+  <div class="st">비교하기 응용</div>
+  <div class="cb">
+    <div style="font-size:28px;margin-bottom:12px">⭐⭐ 길이·무게·넓이·양 비교!</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" alt="케이">
+      <div class="sb">길이·무게·넓이·담을 양,<br>모든 비교 응용에 도전!</div>
+    </div>
+  </div>
+</div>
 
-<div class="slide" data-type="concept"><div class="card anim-fadeUp"><div style="font-size:20px;color:var(--primary);">핵심 복습</div><div class="q-title">여러 개를 비교할 때는<br>같은 단위로 재서 수를 비교해요!</div><div style="font-size:22px;margin:12px 0;line-height:1.6;">📏 길이 → 클립, 뼘으로<br>⚖️ 무게 → 바둑알, 구슬로<br>📐 넓이 → 같은 칸으로<br>🫗 들이 → 같은 컵으로</div></div></div>
-
-<div class="slide" data-type="q" data-correct="-1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📏 긴 것부터 순서대로!</div><div style="font-size:18px;color:var(--subtext);">가=클립4 · 나=클립9 · 다=클립6</div><div class="order-zone" id="o1items"></div><div class="order-slots" id="o1slots"></div><button class="reset-btn" onclick="resetO(1)">다시 놓기</button><div class="feedback" id="fb2"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="-1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">⚖️ 가벼운 것부터 순서대로!</div><div style="font-size:16px;color:var(--subtext);">🍎사과=바둑알5 · 🍇포도=바둑알2 · 🍉수박=바둑알9 · 🍊귤=바둑알3</div><div class="order-zone" id="o2items"></div><div class="order-slots" id="o2slots"></div><button class="reset-btn" onclick="resetO(2)">다시 놓기</button><div class="feedback" id="fb3"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">민수는 연필로, 지우는 클립으로<br>책상 길이를 쟀어요.<br>결과를 바로 비교할 수 있을까요?</div><div class="options"><button class="opt-btn" style="font-size:32px;" onclick="check(this,4,1)">⭕ 가능</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,4,1)">❌ 불가</button></div><div class="feedback" id="fb4"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📐 같은 색종이로 덮었어요.<br>🟥가=12장 · 🟦나=8장 · 🟩다=15장<br>가장 넓은 책상은?</div><div class="options"><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟩 다</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟥 가</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,5,0)">🟦 나</button></div><div class="feedback" id="fb5"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">🫗 양동이=컵10 · 주전자=컵6 · 밥그릇=컵3<br>적게 담기는 것부터 순서는?</div><div class="options"><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">양동이→주전자→밥그릇</button><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">주전자→밥그릇→양동이</button><button class="opt-btn" style="font-size:18px;padding:10px;" onclick="check(this,6,2)">밥그릇→주전자→양동이</button></div><div class="feedback" id="fb6"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">⚖️ 사과>귤>딸기 순으로 무거워요.<br>가장 가벼운 과일은?</div><div class="options"><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍎 사과</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍓 딸기</button><button class="opt-btn" style="font-size:32px;" onclick="check(this,7,1)">🍊 귤</button></div><div class="feedback" id="fb7"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📏 빨간>파란>노란 리본 순으로 길어요.<br>노란 리본보다 긴 리본은 몇 개?</div><div class="options"><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">1개</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">2개</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,8,1)">3개</button></div><div class="feedback" id="fb8"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="1" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">📐 가 종이=14칸 · 나 종이=9칸<br>가가 나보다 몇 칸 더 넓을까요?</div><div class="options"><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">3칸</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">5칸</button><button class="opt-btn" style="font-size:36px;" onclick="check(this,9,1)">7칸</button></div><div class="feedback" id="fb9"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="0" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">🫗 가 통에 컵 7번으로 가득 차요.<br>나 통에 7번 부었는데 안 찼어요.<br>어떤 통이 더 많이 담길까요?</div><div class="options"><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">나 통</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">가 통</button><button class="opt-btn" style="font-size:28px;" onclick="check(this,10,0)">같아요</button></div><div class="feedback" id="fb10"></div></div></div>
-
-<div class="slide" data-type="q" data-correct="2" data-score="25"><div class="card"><div class="badge">⭐⭐</div><div class="q-title">비교 방법이 잘못된 것은?</div><div class="options"><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">📏 끝 맞추고 길이 비교</button><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">⚖️ 저울로 무게 비교</button><button class="opt-btn" style="font-size:18px;padding:10px 12px;" onclick="check(this,11,2)">📐 다른 크기 칸으로 넓이 비교</button></div><div class="feedback" id="fb11"></div></div></div>
-
-
+<!-- Q1 ⭐⭐ 3자 길이 비교 -->
 <div class="slide" data-type="q" data-correct="0" data-score="25">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">길이 비교: 연필 A는 블록 7개, 연필 B는 블록 5개 길이예요. 어느 것이 더 길까요?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,12,0)">연필 A</button>
-    <button class="opt-btn" onclick="check(this,12,0)">연필 B</button>
-    <button class="opt-btn" onclick="check(this,12,0)">같다</button>
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">가장 긴 것과 가장 짧은 것!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.8;margin-bottom:10px">
+      ✏️ 연필 &lt; 📏 자 &lt; 🪑 책상
+    </div>
+    <div style="font-size:24px;line-height:1.8">
+      가장 긴 것: <span class="bb" id="s1_0">?</span><br>
+      가장 짧은 것: <span class="bb" id="s1_1">?</span>
+    </div>
   </div>
-  <div class="feedback" id="fb12"></div></div>
+  <div class="order-pick">
+    <div class="order-card" onclick="fillSeq(this,1,'책상')">책상</div>
+    <div class="order-card" onclick="fillSeq(this,1,'자')">자</div>
+    <div class="order-card" onclick="fillSeq(this,1,'연필')">연필</div>
+  </div>
+  <div class="fb" id="fb1"></div>
 </div>
 
+<!-- Q2 ⭐⭐ 단위 환산 2칸 -->
 <div class="slide" data-type="q" data-correct="0" data-score="25">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">무게 비교: 저울에서 수박이 아래로 내려가요. 무엇이 더 무거운가요?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,13,0)">수박</button>
-    <button class="opt-btn" onclick="check(this,13,0)">사과</button>
-    <button class="opt-btn" onclick="check(this,13,0)">같다</button>
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">단위 환산!</div>
+  <div class="cb">
+    <div style="font-size:20px;line-height:1.8;margin-bottom:10px">
+      🪜 못 3개 = ✏️ 연필 1자루<br>
+      ✏️ 연필 2자루 = 📏 자 1개
+    </div>
+    <div style="font-size:24px;line-height:1.8">
+      자 1개 = 못 <span class="bb" id="bb2">?</span>개<br>
+      자 2개 = 연필 <span class="bb" id="bb2b">?</span>자루
+    </div>
   </div>
-  <div class="feedback" id="fb13"></div></div>
+  <div class="or">
+    <button class="ob" onclick="fillD(this,2,'6',0)">6</button>
+    <button class="ob" onclick="fillD(this,2,'4',1)">4</button>
+    <button class="ob" onclick="fillD(this,2,'3',0)">3</button>
+    <button class="ob" onclick="fillD(this,2,'8',0)">8</button>
+  </div>
+  <div class="fb" id="fb2"></div>
 </div>
 
-<div class="slide" data-type="q" data-score="25">
-  <div class="card"><div class="badge">⭐⭐</div>
-  <div class="q-title">넓이 비교: 색종이 가는 8칸, 나는 6칸이에요. 가는 나보다 몇 칸 더 넓어요?</div>
-  <div class="text-input-wrap">
-    <input type="text" class="text-input" id="textInput14" inputmode="numeric" placeholder="?" autocomplete="off">
-    <button class="submit-btn" id="submitBtn14" onclick="checkTextInput(14,'2')">확인!</button>
-  </div>
-  <div class="feedback" id="fb14"></div></div>
-</div>
-
+<!-- Q3 ⭐⭐ multiPick 무거운 동물 -->
 <div class="slide" data-type="q" data-correct="0" data-score="25">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">담기 비교: 컵 5번 부어서 찬 통 A, 컵 8번 부어서 찬 통 B. 더 많이 담는 것은?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,15,0)">통 B</button>
-    <button class="opt-btn" onclick="check(this,15,0)">통 A</button>
-    <button class="opt-btn" onclick="check(this,15,0)">같다</button>
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">🐘 코끼리보다 무거운 동물은?</div>
+  <div class="story">
+    🐘 코끼리보다 무거운 동물을 <b>모두</b> 골라봐! (3개)
   </div>
-  <div class="feedback" id="fb15"></div></div>
+  <div class="or" id="multiOpts3">
+    <button class="ob" onclick="multiPick(this,3,false)">🐰 토끼</button>
+    <button class="ob" onclick="multiPick(this,3,true)">🐋 고래</button>
+    <button class="ob" onclick="multiPick(this,3,false)">🐱 고양이</button>
+    <button class="ob" onclick="multiPick(this,3,true)">🦕 공룡</button>
+    <button class="ob" onclick="multiPick(this,3,true)">🏢 빌딩</button>
+    <button class="ob" onclick="multiPick(this,3,false)">🐶 강아지</button>
+  </div>
+  <button class="submit-btn" onclick="checkMulti(3,3)">정답 확인</button>
+  <div class="fb" id="fb3"></div>
 </div>
 
-<div class="slide" data-type="q" data-score="30">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">간접 비교: 가 막대 = 블록 6개, 나 막대 = 블록 9개. 차이는 블록 몇 개?</div>
-  <div class="text-input-wrap">
-    <input type="text" class="text-input" id="textInput16" inputmode="numeric" placeholder="?" autocomplete="off">
-    <button class="submit-btn" id="submitBtn16" onclick="checkTextInput(16,'3')">확인!</button>
-  </div>
-  <div class="feedback" id="fb16"></div></div>
-</div>
-
-<div class="slide" data-type="q" data-correct="0" data-score="30">
-  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
-  <div class="q-title">추론: 같은 크기 컵으로 재야 비교할 수 있는 이유는?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,17,0)">기준이 같아야 공정함</button>
-    <button class="opt-btn" onclick="check(this,17,0)">큰 컵이 정확함</button>
-    <button class="opt-btn" onclick="check(this,17,0)">작은 컵이 좋음</button>
-  </div>
-  <div class="feedback" id="fb17"></div></div>
-</div>
-
-<div class="slide" data-type="q" data-score="25">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">높이 비교: 탑 가는 블록 5개, 탑 나는 블록 8개예요. 나는 가보다 블록 몇 개 더 높아요?</div>
-  <div class="text-input-wrap">
-    <input type="text" class="text-input" id="textInput18" inputmode="numeric" placeholder="?" autocomplete="off">
-    <button class="submit-btn" id="submitBtn18" onclick="checkTextInput(18,'3')">확인!</button>
-  </div>
-  <div class="feedback" id="fb18"></div></div>
-</div>
-
+<!-- Q4 ⭐⭐ multiPick 더 많이 담기는 것 -->
 <div class="slide" data-type="q" data-correct="0" data-score="25">
-  <div class="card"><div class="badge">⭐⭐⭐</div>
-  <div class="q-title">무게 추론: 사탕 3개 = 지우개 1개. 사탕 6개 = 지우개 몇 개?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,19,0)">2개</button>
-    <button class="opt-btn" onclick="check(this,19,0)">3개</button>
-    <button class="opt-btn" onclick="check(this,19,0)">1개</button>
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">🥛 컵보다 더 많이 담기는 것은?</div>
+  <div class="story">
+    🥛 유리컵보다 더 많이 담을 수 있는 그릇을 <b>모두</b> 골라봐! (3개)
   </div>
-  <div class="feedback" id="fb19"></div></div>
+  <div class="or" id="multiOpts4">
+    <button class="ob" onclick="multiPick(this,4,true)">🫖 주전자</button>
+    <button class="ob" onclick="multiPick(this,4,false)">🥄 숟가락</button>
+    <button class="ob" onclick="multiPick(this,4,true)">🪣 양동이</button>
+    <button class="ob" onclick="multiPick(this,4,false)">💧 물방울</button>
+    <button class="ob" onclick="multiPick(this,4,true)">🏺 항아리</button>
+    <button class="ob" onclick="multiPick(this,4,false)">🍵 찻잔</button>
+  </div>
+  <button class="submit-btn" onclick="checkMulti(4,3)">정답 확인</button>
+  <div class="fb" id="fb4"></div>
 </div>
 
-<div class="slide" data-type="q" data-score="30">
-  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
-  <div class="q-title">종합: 리본 가 = 클립 12개, 리본 나 = 클립 8개. 가가 나보다 클립 몇 개 길어요?</div>
+<!-- Q5 ⭐⭐ pickRev 긴 순서 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">긴 순서대로 뽑기!</div>
+  <div class="cb">
+    <div style="font-size:22px;margin-bottom:10px">
+      아래 물건을 <b>긴 순서</b>로 뽑아봐!
+    </div>
+    <div class="num-row">
+      <div class="num-box blank" id="rv5_0">?</div>
+      <div class="num-box blank" id="rv5_1">?</div>
+      <div class="num-box blank" id="rv5_2">?</div>
+      <div class="num-box blank" id="rv5_3">?</div>
+      <div class="num-box blank" id="rv5_4">?</div>
+    </div>
+  </div>
+  <div class="order-pick">
+    <div class="order-card" onclick="pickRev(this,5,'바늘')">바늘</div>
+    <div class="order-card" onclick="pickRev(this,5,'밧줄')">밧줄</div>
+    <div class="order-card" onclick="pickRev(this,5,'책')">책</div>
+    <div class="order-card" onclick="pickRev(this,5,'숟가락')">숟가락</div>
+    <div class="order-card" onclick="pickRev(this,5,'줄자')">줄자</div>
+  </div>
+  <div class="fb" id="fb5"></div>
+</div>
+
+<!-- Q6 ⭐⭐ fill 시소 환산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">🍎 시소 비교!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.8;margin-bottom:10px">
+      🍎 사과 3개 = 🍊 오렌지 1개 (무게)
+    </div>
+    <div style="font-size:26px;line-height:1.8">
+      🍊 오렌지 2개 = 🍎 <span class="bb" id="bb6">?</span>개
+    </div>
+  </div>
+  <div class="or">
+    <button class="ob" onclick="fill(this,6,'3',false)">3</button>
+    <button class="ob" onclick="fill(this,6,'5',false)">5</button>
+    <button class="ob" onclick="fill(this,6,'6',true)">6</button>
+    <button class="ob" onclick="fill(this,6,'9',false)">9</button>
+  </div>
+  <div class="fb" id="fb6"></div>
+</div>
+
+<!-- Q7 ⭐⭐ 시소 3자 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">가장 무거운 친구는?</div>
+  <div class="story">
+    🐻 곰돌이네 세 친구가 시소를 탔어!<br>
+    ✅ 지우가 민호보다 <b>더 무거워</b><br>
+    ✅ 민호가 하은이보다 <b>더 무거워</b><br>
+    그럼 셋 중 <b>가장 무거운</b> 친구는?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,7,true)">지우</button>
+    <button class="ob" onclick="chk(this,7,false)">민호</button>
+    <button class="ob" onclick="chk(this,7,false)">하은</button>
+  </div>
+  <div class="fb" id="fb7"></div>
+</div>
+
+<!-- Q8 ⭐⭐ fillSeq 넓이 3단계 환산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">넓이 환산 연속!</div>
+  <div class="cb">
+    <div style="font-size:20px;line-height:1.8;margin-bottom:10px">
+      🟨 작은판 4장 = 🟧 중간판 1장<br>
+      🟧 중간판 3장 = 🟥 큰판 1장
+    </div>
+    <div style="font-size:22px;line-height:1.8">
+      큰판 1장 = 작은판 <span class="bb" id="s8_0">?</span>장<br>
+      큰판 2장 = 작은판 <span class="bb" id="s8_1">?</span>장<br>
+      작은판 48장 = 큰판 <span class="bb" id="s8_2">?</span>장
+    </div>
+  </div>
+  <div class="order-pick">
+    <div class="order-card" onclick="fillSeq(this,8,'12')">12</div>
+    <div class="order-card" onclick="fillSeq(this,8,'24')">24</div>
+    <div class="order-card" onclick="fillSeq(this,8,'4')">4</div>
+    <div class="order-card" onclick="fillSeq(this,8,'6')">6</div>
+    <div class="order-card" onclick="fillSeq(this,8,'36')">36</div>
+  </div>
+  <div class="fb" id="fb8"></div>
+</div>
+
+<!-- Q9 ⭐⭐ 붙인 종이 넓이 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">종이 붙이기!</div>
+  <div class="story">
+    📄 도화지 A4 <b>2장</b>을 서로 겹치지 않게 붙였어!<br>
+    이 넓이는 A4 <b>몇 장</b>의 넓이와 같을까?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,9,false)">1장</button>
+    <button class="ob" onclick="chk(this,9,true)">2장</button>
+    <button class="ob" onclick="chk(this,9,false)">3장</button>
+    <button class="ob" onclick="chk(this,9,false)">4장</button>
+  </div>
+  <div class="fb" id="fb9"></div>
+</div>
+
+<!-- Q10 ⭐⭐ 담을 양 체인 환산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">항아리엔 컵 몇 개?</div>
+  <div class="story">
+    🥤 컵 3개 = 🫖 주전자 1개<br>
+    🫖 주전자 2개 = 🏺 항아리 1개<br>
+    그럼 🏺 항아리 1개 = 컵 몇 개?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,10,false)">3개</button>
+    <button class="ob" onclick="chk(this,10,false)">5개</button>
+    <button class="ob" onclick="chk(this,10,true)">6개</button>
+    <button class="ob" onclick="chk(this,10,false)">9개</button>
+  </div>
+  <div class="fb" id="fb10"></div>
+</div>
+
+<!-- Q11 ⭐⭐ 길이 환산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">연필 몇 자루?</div>
+  <div class="story">
+    🪜 못 6개 = ✏️ 연필 1자루 길이<br>
+    🪜 못 <b>18개</b> = 연필 몇 자루?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,11,false)">1자루</button>
+    <button class="ob" onclick="chk(this,11,false)">2자루</button>
+    <button class="ob" onclick="chk(this,11,true)">3자루</button>
+    <button class="ob" onclick="chk(this,11,false)">6자루</button>
+  </div>
+  <div class="fb" id="fb11"></div>
+</div>
+
+<!-- Q12 ⭐⭐⭐ 3자 무게 추론 (역방향) -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">가장 가벼운 친구는?</div>
+  <div class="story">
+    🏋️ 무게 시소 결과!<br>
+    ✅ A가 B보다 <b>더 무거워</b><br>
+    ✅ C가 A보다 <b>더 무거워</b><br>
+    그럼 셋 중 <b>가장 가벼운</b> 건?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,12,false)">A</button>
+    <button class="ob" onclick="chk(this,12,true)">B</button>
+    <button class="ob" onclick="chk(this,12,false)">C</button>
+    <button class="ob" onclick="chk(this,12,false)">모두 같다</button>
+  </div>
+  <div class="fb" id="fb12"></div>
+</div>
+
+<!-- Q13 ⭐⭐ textInput 테이프 길이 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">테이프 이어붙이기!</div>
+  <div class="story">
+    🎀 1m(100cm) 테이프를 <b>3개</b> 이어붙였어!<br>
+    전체 길이는 몇 cm?
+  </div>
   <div class="text-input-wrap">
-    <input type="text" class="text-input" id="textInput20" inputmode="numeric" placeholder="?" autocomplete="off">
-    <button class="submit-btn" id="submitBtn20" onclick="checkTextInput(20,'4')">확인!</button>
+    <input type="text" inputmode="numeric" class="text-input" id="textInput13" maxlength="4" onkeydown="if(event.key==='Enter')checkTextInput(13,'300')">
+    <span style="font-size:30px">cm</span>
+    <button class="submit-btn" id="submitBtn13" onclick="checkTextInput(13,'300')">확인</button>
   </div>
-  <div class="feedback" id="fb20"></div></div>
+  <div class="fb" id="fb13"></div>
 </div>
 
-<div class="slide" data-type="q" data-correct="0" data-score="40">
-  <div class="card"><div class="badge">⭐⭐⭐⭐</div>
-  <div class="q-title">비교 원리: 서로 다른 크기의 블록으로 재면 어떻게 될까요?</div>
-  <div class="options">
-    <button class="opt-btn" onclick="check(this,21,0)">정확한 비교 불가</button>
-    <button class="opt-btn" onclick="check(this,21,0)">큰 블록이 정확</button>
-    <button class="opt-btn" onclick="check(this,21,0)">상관없다</button>
+<!-- Q14 ⭐⭐⭐ 주스병-컵 환산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">주스병 2개 = 컵 몇 개?</div>
+  <div class="story">
+    🥤 컵 5개 = 🧃 주스병 1병<br>
+    🧃 주스병 <b>2병</b> = 컵 몇 개?
   </div>
-  <div class="feedback" id="fb21"></div></div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,14,false)">5개</button>
+    <button class="ob" onclick="chk(this,14,false)">7개</button>
+    <button class="ob" onclick="chk(this,14,true)">10개</button>
+    <button class="ob" onclick="chk(this,14,false)">15개</button>
+  </div>
+  <div class="fb" id="fb14"></div>
 </div>
 
-<div class="slide" data-type="result"><div class="result-card anim-fadeUp"><div class="track-badge">Track B · 심화</div><div style="font-size:28px;color:var(--primary);">응용 완료!</div><div style="font-size:56px;margin:8px;">🏅</div><div class="result-score" id="finalScore">0점</div><div class="star-row" id="finalStars"></div><div class="result-msg" id="finalMsg"></div><div class="combo-display" id="finalCombo"></div></div></div>
-
+<!-- Q15 ⭐⭐ textInput 지우개-연필 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">지우개 몇 개?</div>
+  <div class="story">
+    🧹 지우개 4개 = ✏️ 연필 1자루 길이<br>
+    연필 <b>3자루</b> 길이 = 지우개 몇 개?
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" inputmode="numeric" class="text-input" id="textInput15" maxlength="3" onkeydown="if(event.key==='Enter')checkTextInput(15,'12')">
+    <span style="font-size:30px">개</span>
+    <button class="submit-btn" id="submitBtn15" onclick="checkTextInput(15,'12')">확인</button>
+  </div>
+  <div class="fb" id="fb15"></div>
 </div>
-<div class="nav"><button id="prevBtn" onclick="move(-1)" disabled>이전</button><button id="nextBtn" onclick="move(1)">다음</button></div>
-<div class="page-info" id="pageInfo">1 / 13</div>
+
+<!-- Q16 ⭐⭐ 추이율 추론 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">길이 추론!</div>
+  <div class="story">
+    ✅ 책상 &gt; 의자 (책상이 더 길어)<br>
+    ✅ 의자 &gt; 연필 (의자가 더 길어)<br>
+    아래 중 <b>확실히 맞는</b> 것은?
+  </div>
+  <div class="or" style="flex-direction:column;gap:10px">
+    <button class="ob" onclick="chk(this,16,false)" style="font-size:22px">책상 &lt; 연필</button>
+    <button class="ob" onclick="chk(this,16,true)" style="font-size:22px">책상 &gt; 연필</button>
+    <button class="ob" onclick="chk(this,16,false)" style="font-size:22px">책상 = 연필</button>
+    <button class="ob" onclick="chk(this,16,false)" style="font-size:22px">알 수 없다</button>
+  </div>
+  <div class="fb" id="fb16"></div>
+</div>
+
+<!-- Q17 ⭐⭐⭐⭐ 저울 균형 4변수 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐⭐ 올림피아드</div>
+  <div class="st">저울 균형!</div>
+  <div class="story">
+    ⚖️ 저울이 평형이야!<br>
+    🍎 + 🍊 = 🍌 + 🍐<br>
+    🍎 = 3, 🍊 = 5, 🍐 = 4<br>
+    그럼 🍌 = ?
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" inputmode="numeric" class="text-input" id="textInput17" maxlength="2" onkeydown="if(event.key==='Enter')checkTextInput(17,'4')">
+    <button class="submit-btn" id="submitBtn17" onclick="checkTextInput(17,'4')">확인</button>
+  </div>
+  <div class="fb" id="fb17"></div>
+</div>
+
+<!-- Q18 ⭐⭐ 가장 넓은 칸 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">가장 넓은 직사각형의 칸 수는?</div>
+  <div class="story">
+    🟨 A: 2 × 3 (2줄, 한 줄에 3칸)<br>
+    🟥 B: 3 × 3 (3줄, 한 줄에 3칸)<br>
+    🟦 C: 2 × 4 (2줄, 한 줄에 4칸)<br>
+    가장 넓은 것의 <b>칸 수</b>는?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,18,false)">6</button>
+    <button class="ob" onclick="chk(this,18,false)">8</button>
+    <button class="ob" onclick="chk(this,18,true)">9</button>
+    <button class="ob" onclick="chk(this,18,false)">12</button>
+  </div>
+  <div class="fb" id="fb18"></div>
+</div>
+
+<!-- Q19 ⭐⭐⭐ 무게 단위 체인 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">강아지 무게 = 토끼 몇 마리?</div>
+  <div class="story">
+    🐰 토끼 2마리 = 🐱 고양이 1마리<br>
+    🐱 고양이 3마리 = 🐶 강아지 1마리<br>
+    그럼 🐶 강아지 1마리 = 🐰 토끼 몇 마리?
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" inputmode="numeric" class="text-input" id="textInput19" maxlength="2" onkeydown="if(event.key==='Enter')checkTextInput(19,'6')">
+    <span style="font-size:30px">마리</span>
+    <button class="submit-btn" id="submitBtn19" onclick="checkTextInput(19,'6')">확인</button>
+  </div>
+  <div class="fb" id="fb19"></div>
+</div>
+
+<!-- Q20 ⭐⭐⭐⭐ 3변수 연립 무게 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐⭐ 올림피아드</div>
+  <div class="st">가장 무거운 것의 무게는?</div>
+  <div class="story">
+    🏋️ 세 상자 A, B, C 무게!<br>
+    🔍 A + B = 10<br>
+    🔍 B + C = 15<br>
+    🔍 A + C = 13<br>
+    C의 무게는?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,20,false)">6</button>
+    <button class="ob" onclick="chk(this,20,false)">7</button>
+    <button class="ob" onclick="chk(this,20,false)">8</button>
+    <button class="ob" onclick="chk(this,20,true)">9</button>
+  </div>
+  <div class="fb" id="fb20"></div>
+</div>
+
+
+<!-- 결과 -->
+<div class="slide" data-type="result">
+  <div class="rc">
+    <div style="font-size:28px;margin-bottom:8px">응용 완료!</div>
+    <div class="rs" id="rScore">0</div><div style="font-size:22px;color:var(--subtext)">점</div>
+    <div class="rm" id="rMsg"></div><div class="rd" id="rCombo"></div><div class="rd" id="rCorr"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" style="width:48px;height:48px" alt="케이">
+      <div class="sb" style="font-size:20px" id="rSp">잘했어!</div>
+    </div>
+    <button class="rb" onclick="location.reload()">다시 하기</button>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nb" id="prevBtn" onclick="go(-1)" disabled>이전</button>
+  <span class="pi" id="pageInfo">1 / 22</span>
+  <button class="nb" id="nextBtn" onclick="go(1)">다음</button>
+</div>
+
 <script>
 let audioCtx=null,soundOn=true;
-function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function playSound(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.13;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.12);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.15);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06);}});}
-function toggleSound(){soundOn=!soundOn;document.getElementById('soundToggle').textContent=soundOn?'🔊':'🔇';}
-const slides=document.querySelectorAll('.slide');let cur=0,score=0,combo=0,maxCombo=0;const answered=new Set();
-function showSlide(n){slides.forEach((s,i)=>{s.classList.remove('active','left','right');if(i<n)s.classList.add('left');else if(i>n)s.classList.add('right');else s.classList.add('active');});document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===slides.length-1?'끝':'다음';document.getElementById('pageInfo').textContent=`${n+1} / ${slides.length}`;if(n===2&&!oInits[1])initO(1);if(n===3&&!oInits[2])initO(2);if(n===slides.length-1)showResult();}
-function move(d){playSound('click');const next=cur+d;if(next>=0&&next<slides.length){cur=next;showSlide(cur);}}
-let tx=0;document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;});document.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>50){dx<0?move(1):move(-1);}});
-const oInits={},oSels={};
-const oCfg={1:{items:['나(9)','다(6)','가(4)'],correct:['나(9)','다(6)','가(4)'],si:2,fi:2,ok:'나(9)→다(6)→가(4) 맞아요! 🎉',no:'큰 것부터: 9→6→4'},2:{items:['🍇(2)','🍊(3)','🍎(5)','🍉(9)'],correct:['🍇(2)','🍊(3)','🍎(5)','🍉(9)'],si:3,fi:3,ok:'🍇→🍊→🍎→🍉 맞아요! 🎉',no:'가벼운 것부터: 2→3→5→9'}};
-function initO(id){oInits[id]=true;oSels[id]=[];const c=oCfg[id],sh=[...c.items].sort(()=>Math.random()-.5);const el=document.getElementById('o'+id+'items');el.innerHTML='';sh.forEach(n=>{const d=document.createElement('div');d.className='order-item';d.textContent=n;d.onclick=()=>pickO(id,n,d);el.appendChild(d);});const sl=document.getElementById('o'+id+'slots');sl.innerHTML='';c.correct.forEach((_,i)=>{const s=document.createElement('div');s.className='order-slot';s.textContent=(i+1);sl.appendChild(s);});}
-function pickO(id,name,el){const c=oCfg[id];if(answered.has(c.si)||oSels[id].length>=c.correct.length)return;el.classList.add('placed');oSels[id].push(name);playSound('click');const slots=document.querySelectorAll('#o'+id+'slots .order-slot');slots[oSels[id].length-1].textContent=name;slots[oSels[id].length-1].classList.add('filled');if(oSels[id].length===c.correct.length){const fb=document.getElementById('fb'+c.fi);if(JSON.stringify(oSels[id])===JSON.stringify(c.correct)){fb.innerHTML='<span class="fb-correct">'+c.ok+'</span>';playSound('correct');addScore(c.si);}else{fb.innerHTML='<span class="fb-wrong">'+c.no+'</span>';playSound('wrong');setTimeout(()=>{resetO(id);fb.innerHTML='';},1500);}}}
-function resetO(id){oSels[id]=[];document.querySelectorAll('#o'+id+'items .order-item').forEach(e=>e.classList.remove('placed'));document.querySelectorAll('#o'+id+'slots .order-slot').forEach((s,i)=>{s.textContent=(i+1);s.classList.remove('filled');});}
-const cM={4:'다른 단위로 재면 비교 불가! ❌',5:'15장! 다 책상이 가장 넓어요! 🟩',6:'3→6→10 맞아요! 🎉',7:'딸기가 가장 가벼워요! 🍓',8:'빨간+파란, 2개! ✌️',9:'14-9=5칸! 🧮',10:'7번 부어도 안 차면 더 큰 통! 👏',11:'넓이는 같은 크기 칸으로! ❌',11:'연필 A 맞아요! 👏',12:'수박 맞아요! 👏',14:'통 B 맞아요! 👏',16:'기준이 같아야 공정함 맞아요! 👏',18:'2개 맞아요! 👏',20:'정확한 비교 불가 맞아요! 👏'};
-const wM={4:'같은 도구로 재야 비교 가능!',5:'색종이 수 비교!',6:'컵 수 작은 것부터!',7:'순서 잘 보세요!',8:'빨간>파란>노란, 노란보다 긴 것은?',9:'14-9를 계산!',10:'같은 7번인데 안 찼으면?',11:'넓이 비교의 조건은?',11:'다시 생각해 보세요!',12:'다시 생각해 보세요!',14:'다시 생각해 보세요!',16:'다시 생각해 보세요!',18:'다시 생각해 보세요!',20:'다시 생각해 보세요!'};
-function check(btn,si,ci){if(answered.has(si))return;const bs=btn.parentElement.querySelectorAll('.opt-btn');const idx=Array.from(bs).indexOf(btn);const fb=document.getElementById('fb'+si);if(idx===ci){btn.classList.add('correct');bs.forEach(b=>{if(b!==btn)b.classList.add('disabled');});fb.innerHTML='<span class="fb-correct">'+(cM[si]||'정답! 👏')+'</span>';playSound('correct');addScore(si);}else{btn.classList.add('wrong');fb.innerHTML='<span class="fb-wrong">'+(wM[si]||'다시!')+'</span>';playSound('wrong');setTimeout(()=>{btn.classList.remove('wrong');fb.innerHTML='';},1200);}}
-function addScore(si){if(answered.has(si))return;answered.add(si);score+=parseInt(slides[si].dataset.score)||0;combo++;if(combo>maxCombo)maxCombo=combo;}
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)}
+function ps(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+let cur=0;const sls=document.querySelectorAll('.slide'),tot=sls.length;
+let sc=0,cmb=0,mxC=0,cc=0;const ans={};
+function show(i){sls.forEach((s,x)=>s.classList.toggle('active',x===i));document.getElementById('prevBtn').disabled=i===0;document.getElementById('nextBtn').disabled=i===tot-1;document.getElementById('pageInfo').textContent=`${i+1} / ${tot}`;if(sls[i].dataset.type==='result')showR()}
+function go(d){ps('click');const n=cur+d;if(n>=0&&n<tot){cur=n;show(cur)}}
+let tsx=0;document.addEventListener('touchstart',e=>{tsx=e.touches[0].clientX},{passive:true});document.addEventListener('touchend',e=>{const d=tsx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(1):go(-1)}},{passive:true});
+function uc(ok){const cd=document.getElementById('comboDisplay');if(ok){cmb++;if(cmb>mxC)mxC=cmb}else cmb=0;cmb>=2?(cd.style.display='block',cd.textContent=`🔥 ${cmb} 콤보`):cd.style.display='none'}
+
+function chk(btn,si,ok){if(ans[si])return;const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');if(ok){ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=25;fb.textContent='정답! 👏';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
 
 function checkTextInput(si, correct) {
-  if(answered.has(si)) return;
+  if(ans[si]) return;
   const inp = document.getElementById('textInput'+si);
   const fb = document.getElementById('fb'+si);
   const btn = document.getElementById('submitBtn'+si);
   const val = inp.value.trim();
-  if(val === '') { fb.innerHTML = '<span class="fb-wrong">답을 써 주세요!</span>'; return; }
+  if(val === '') { fb.textContent = '답을 써 주세요!'; fb.className = 'fb bad'; return; }
   if(val === correct) {
-    inp.classList.add('correct'); inp.readOnly = true; btn.disabled = true;
-    fb.innerHTML = '<span class="fb-correct">정답! 🌟</span>';
-    playSound('correct'); addScore(si);
+    ans[si] = true; inp.classList.add('correct'); inp.readOnly = true; btn.disabled = true;
+    ps('correct'); cc++; sc += 25;
+    fb.textContent = '정답! 🌟'; fb.className = 'fb good'; uc(true);
   } else {
-    inp.classList.add('wrong'); playSound('wrong');
-    fb.innerHTML = '<span class="fb-wrong">다시 생각해 봐요!</span>';
-    setTimeout(() => { inp.classList.remove('wrong'); fb.innerHTML = ''; }, 1200);
+    inp.classList.add('wrong'); ps('wrong');
+    fb.textContent = '다시 생각해 봐요!'; fb.className = 'fb bad'; uc(false);
+    setTimeout(() => inp.classList.remove('wrong'), 600);
   }
 }
 
-function showResult(){const total=530,pct=Math.round(score/total*100);document.getElementById('finalScore').textContent=score+'점';let s='';if(pct>=90)s='⭐⭐⭐';else if(pct>=70)s='⭐⭐';else if(pct>=40)s='⭐';document.getElementById('finalStars').textContent=s;let m='';if(pct>=90)m='응용 완벽! 🏆';else if(pct>=70)m='잘했어요! 💪';else if(pct>=40)m='좋아요!';else m='다시 도전! 😊';document.getElementById('finalMsg').textContent=m;document.getElementById('finalCombo').textContent=maxCombo>1?'최대 콤보: '+maxCombo+'🔥':'';}
-showSlide(0);
+function fill(btn,si,val,ok){if(ans[si])return;const bl=document.getElementById('bb'+si),fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');bl.textContent=val;if(ok){ans[si]=true;btn.classList.add('correct');bl.style.borderColor='var(--green)';bl.style.color='var(--green)';btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=25;fb.textContent='정답! 🌟';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>{btn.classList.remove('wrong');bl.textContent='?'},600)}}
+
+// 빈칸 두 개
+let dSt={};
+function fillD(btn,si,val,idx){
+  if(ans[si])return;if(!dSt[si])dSt[si]={step:0,a:['6','4'],b:['bb2','bb2b']};
+  const st=dSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(val===st.a[st.step]){document.getElementById(st.b[st.step]).textContent=val;document.getElementById(st.b[st.step]).style.borderColor='var(--green)';document.getElementById(st.b[st.step]).style.color='var(--green)';btn.classList.add('correct','disabled');st.step++;if(st.step>=2){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='완성! 🌟';fb.className='fb good';uc(true)}else{fb.textContent='좋아요! 다음도!';fb.className='fb good'}}
+  else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 계산해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+
+// 순서 채우기
+let seqSt={};
+function fillSeq(card,si,val){
+  if(ans[si])return;
+  if(!seqSt[si]){
+    if(si===1)seqSt[si]={step:0,a:['책상','연필'],b:['s1_0','s1_1']};
+    else if(si===8)seqSt[si]={step:0,a:['12','24','4'],b:['s8_0','s8_1','s8_2']};
+  }
+  const st=seqSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(val===st.a[st.step]){
+    document.getElementById(st.b[st.step]).textContent=val;
+    document.getElementById(st.b[st.step]).style.borderStyle='solid';
+    document.getElementById(st.b[st.step]).style.borderColor='var(--green)';
+    document.getElementById(st.b[st.step]).style.color='var(--green)';
+    document.getElementById(st.b[st.step]).style.background='var(--green-light)';
+    card.classList.add('used');st.step++;
+    if(st.step>=st.a.length){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='완성! 🎊';fb.className='fb good';uc(true)}
+    else{fb.textContent='좋아요! 다음 빈칸도!';fb.className='fb good'}
+  }else{ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false)}
+}
+
+// 긴 순서 배치
+let revSt={};
+function pickRev(card,si,val){
+  if(ans[si])return;
+  if(!revSt[si])revSt[si]={step:0,a:['밧줄','줄자','책','숟가락','바늘']};
+  const st=revSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(val===st.a[st.step]){
+    document.getElementById('rv'+si+'_'+st.step).textContent=val;
+    document.getElementById('rv'+si+'_'+st.step).classList.remove('blank');
+    document.getElementById('rv'+si+'_'+st.step).classList.add('done');
+    card.classList.add('used');st.step++;
+    if(st.step>=5){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='긴 순서대로 완벽! 🏆';fb.className='fb good';uc(true)}
+    else{fb.textContent='좋아요! 다음!';fb.className='fb good'}
+  }else{ps('wrong');fb.textContent='길이를 다시 비교해 봐요!';fb.className='fb bad';uc(false)}
+}
+
+// 다중선택
+let multiSel={};
+function multiPick(btn,si,isCorrect){
+  if(ans[si])return;ps('click');
+  if(!multiSel[si])multiSel[si]={picked:new Set(),correct:new Set()};
+  const ms=multiSel[si];
+  if(btn.classList.contains('correct')){btn.classList.remove('correct');ms.picked.delete(btn)}
+  else{btn.classList.add('correct');ms.picked.add(btn)}
+  if(isCorrect)ms.correct.add(btn);
+}
+function checkMulti(si,expectedCount){
+  if(ans[si])return;
+  const ms=multiSel[si]||{picked:new Set(),correct:new Set()};
+  const fb=document.getElementById('fb'+si);
+  const allBtns=[...document.getElementById('multiOpts'+si).querySelectorAll('.ob')];
+  let allCorrect=true;
+  allBtns.forEach(b=>{
+    const isPicked=ms.picked.has(b);
+    const shouldPick=ms.correct.has(b);
+    if(isPicked!==shouldPick)allCorrect=false;
+  });
+  if(allCorrect&&ms.picked.size===expectedCount){
+    ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='모두 맞혔어요! 🎉';fb.className='fb good';uc(true);
+    allBtns.forEach(b=>b.classList.add('disabled'));
+  }else{
+    ps('wrong');fb.textContent='조건을 다시 확인해 봐요!';fb.className='fb bad';uc(false);
+    allBtns.forEach(b=>b.classList.remove('correct'));ms.picked.clear();
+  }
+}
+
+function showR(){
+  document.getElementById('rScore').textContent=sc;
+  document.getElementById('rCombo').textContent=`최대 콤보: 🔥 ${mxC}`;
+  document.getElementById('rCorr').textContent=`맞힌 문제: ${cc} / 20`;
+  let m,s;if(sc>=450){m='🏆 응용 완벽!';s='비교의 달인, 대단해!'}else if(sc>=300){m='🎉 아주 잘했어요!';s='응용력이 뛰어나!'}else if(sc>=200){m='👍 잘했어요!';s='조금 더 연습하면 완벽!'}else{m='💪 다시 도전!';s='괜찮아! 다시 해보자!'}
+  document.getElementById('rMsg').textContent=m;document.getElementById('rSp').textContent=s}
+show(0);
 </script>
 </body>
 </html>
