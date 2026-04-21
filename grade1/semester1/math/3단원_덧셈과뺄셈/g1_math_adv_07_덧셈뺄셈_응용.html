@@ -5,101 +5,540 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>덧셈뺄셈 응용 - K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#F0FDFA;--card:#FFFFFF;--primary:#26A69A;--primary-light:#E0F2F1;--secondary:#4DB6AC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E8E4;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
-*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;}
-.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}.logo span:first-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}.logo span:nth-child(2){font-size:10px;color:#F59E0B;}.logo span:last-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
-.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;}
-.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;transform:translateX(60px);}.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}.slide.exit{opacity:0;transform:translateX(-60px);}
-.title{font-size:28px;color:var(--primary);margin-bottom:8px;text-align:center;}
-.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 14px;border-radius:20px;font-size:16px;margin-bottom:10px;}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;width:100%;max-width:560px;text-align:center;}
-.cr{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px;}.ci{width:56px;height:56px;border-radius:50%;}.sp{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:22px;max-width:380px;text-align:left;position:relative;}.sp::before{content:'';position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:var(--primary-light);}
-.br{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
-.b{padding:10px 22px;border-radius:16px;border:3px solid var(--border);background:var(--card);font-family:'Jua',sans-serif;font-size:44px;cursor:pointer;transition:all .2s;min-width:60px;}.b:hover{border-color:var(--primary);background:var(--primary-light);}.b.correct{background:var(--green-light)!important;border-color:var(--green)!important;animation:pop .3s;}.b.wrong{background:var(--red-light)!important;border-color:var(--red)!important;animation:shake .4s;}
-.bs{font-size:24px;padding:8px 16px;}
-.bl{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border:3px dashed var(--primary);border-radius:12px;font-size:40px;color:var(--primary);background:var(--primary-light);margin:0 4px;transition:all .3s;}.bl.filled{border-style:solid;background:var(--green-light);border-color:var(--green);color:var(--green);}
-.eq{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0;font-size:44px;flex-wrap:wrap;}
-.fb{margin-top:10px;font-size:22px;min-height:28px;text-align:center;}.ok{color:var(--green);}.no{color:var(--red);}
-.nav{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:100;}.nb{padding:10px 28px;border-radius:30px;border:none;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;}.np{background:var(--card);color:var(--text);border:2px solid var(--border);}.nn{background:var(--primary);color:#fff;}.nb:disabled{opacity:.4;cursor:default;}
-.pi{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--subtext);}
-.combo{display:inline-block;background:linear-gradient(135deg,#FF6B6B,#FFE66D);color:#fff;padding:6px 18px;border-radius:20px;font-size:20px;margin:6px 0;}
-.track-badge{display:inline-block;background:#FF6B6B;color:#fff;padding:4px 12px;border-radius:12px;font-size:14px;margin-bottom:8px;}
-@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+:root{--bg:#F0FDFA;--card:#FFF;--primary:#26A69A;--primary-light:#E0F2F1;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E8E4;--shadow:0 4px 16px rgba(0,0,0,.08);--radius:20px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none}
+.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999}.logo-k{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8}.logo-star{font-size:10px;color:#F59E0B}.logo-edu{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333}
+.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.slide{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100vh;padding:60px 16px 80px;text-align:center;position:absolute;top:0;left:0}.slide.active{display:flex}.slide.active>*{animation:fadeIn .5s ease}
+.st{font-size:26px;color:var(--primary);margin-bottom:10px}.badge{display:inline-block;font-size:18px;background:var(--yellow-light);padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.cb{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);max-width:600px;width:100%;margin:8px 0}
+.ci{width:64px;height:64px;border-radius:50%}.sb{background:var(--card);border-radius:20px;padding:14px 18px;font-size:22px;box-shadow:var(--shadow);max-width:420px;position:relative;margin:8px 0}.sb::after{content:'';position:absolute;bottom:-10px;left:40px;border-width:10px 10px 0;border-style:solid;border-color:var(--card) transparent transparent}
+.or{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0}.ob{background:var(--card);border:3px solid var(--border);border-radius:16px;padding:10px 22px;font-size:44px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s;min-width:68px}.ob:active{transform:scale(.95)}.ob.correct{border-color:var(--green);background:var(--green-light);animation:pop .4s}.ob.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}.ob.disabled{pointer-events:none;opacity:.6}
+.bb{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border:4px dashed var(--primary);border-radius:16px;font-size:48px;color:var(--primary);margin:0 4px;vertical-align:middle}
+.fb{font-size:22px;margin-top:8px;min-height:30px}.fb.good{color:var(--green)}.fb.bad{color:var(--red)}
+.story{background:var(--primary-light);border-radius:var(--radius);padding:16px;max-width:500px;width:100%;margin:10px 0;font-size:22px;line-height:1.6}
+.num-row{display:flex;justify-content:center;gap:6px;margin:12px 0;flex-wrap:wrap}.num-box{width:52px;height:52px;border-radius:12px;border:3px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:32px;transition:all .2s}.num-box.highlight{background:var(--yellow-light);border-color:var(--yellow)}.num-box.blank{border:3px dashed var(--primary);font-size:28px;color:var(--primary)}.num-box.done{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.order-pick{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0}.order-card{width:56px;height:56px;background:var(--card);border:3px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer}.order-card.used{opacity:.3;pointer-events:none}
+.combo-display{position:fixed;top:60px;right:16px;font-size:20px;z-index:99;background:var(--yellow-light);padding:4px 12px;border-radius:16px}
+.nav-bar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:rgba(240,253,250,.95);z-index:99}.nb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:10px 28px;font-size:22px;font-family:'Jua',sans-serif;cursor:pointer}.nb:disabled{opacity:.3}.pi{font-size:18px;color:var(--subtext)}
+.rc{background:var(--card);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);max-width:400px;width:100%}.rs{font-size:64px;color:var(--primary)}.rm{font-size:26px;margin:12px 0}.rd{font-size:20px;color:var(--subtext);margin:4px 0}.rb{background:var(--primary);color:#fff;border:none;border-radius:30px;padding:14px 40px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;margin-top:16px}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+.text-input-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0}
+.text-input{width:120px;height:80px;border:4px solid var(--border);border-radius:16px;font-size:48px;font-family:'Jua',sans-serif;text-align:center;color:var(--primary);background:var(--card);outline:none;transition:border-color .3s}
+.text-input:focus{border-color:var(--primary)}
+.text-input.correct{border-color:var(--green);background:var(--green-light)}
+.text-input.wrong{border-color:var(--red);background:var(--red-light);animation:shake .4s}
+.submit-btn{background:var(--primary);color:#fff;border:none;border-radius:16px;padding:12px 24px;font-size:24px;font-family:'Jua',sans-serif;cursor:pointer;transition:all .2s}
+.submit-btn:active{transform:scale(.95)}
+.submit-btn:disabled{opacity:.4;cursor:default}
+.eq{display:flex;align-items:center;justify-content:center;gap:4px;margin:12px 0;font-size:44px;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<div class="logo"><span>K</span><span>✦</span><span>edu</span></div>
-<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
-<div id="sc" style="width:100%;height:100vh;position:relative;overflow:hidden;"></div>
-<div class="nav"><button class="nb np" id="prevBtn" onclick="prev()">◀ 이전</button><button class="nb nn" id="nextBtn" onclick="next()">다음 ▶</button></div>
-<div class="pi" id="pi"></div>
+<div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+<div class="combo-display" id="comboDisplay" style="display:none">🔥 0 콤보</div>
+
+<!-- 타이틀 -->
+<div class="slide active" data-type="concept">
+  <div class="badge">Track B 심화</div>
+  <div class="st">덧셈뺄셈 응용</div>
+  <div class="cb">
+    <div style="font-size:28px;margin-bottom:12px">⭐⭐ 응용 문제에 도전!</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" alt="케이">
+      <div class="sb">덧셈과 뺄셈을 자유롭게!<br>가르기·역산·조건 추론까지!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Q1 ⭐⭐ 8 가르기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">8을 두 가지 방법으로 갈라요!</div>
+  <div class="cb">
+    <div style="font-size:30px;line-height:1.6">
+      8 = 3 + <span class="bb" id="m1_0">?</span><br>
+      8 = <span class="bb" id="m1_1">?</span> + 6
+    </div>
+  </div>
+  <div class="order-pick">
+    <div class="order-card" onclick="fillSeq(this,1,'2')">2</div>
+    <div class="order-card" onclick="fillSeq(this,1,'5')">5</div>
+    <div class="order-card" onclick="fillSeq(this,1,'4')">4</div>
+  </div>
+  <div class="fb" id="fb1"></div>
+</div>
+
+<!-- Q2 ⭐⭐ 뺄셈 두 개 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">뺄셈 2개를 차례대로!</div>
+  <div class="cb">
+    <div style="font-size:30px;line-height:1.6">
+      9 − 1 = <span class="bb" id="bb2">?</span><br>
+      9 − 3 = <span class="bb" id="bb2b">?</span>
+    </div>
+  </div>
+  <div class="or" id="dO2">
+    <button class="ob" style="font-size:36px" onclick="fillD(this,2,'8',0)">8</button>
+    <button class="ob" style="font-size:36px" onclick="fillD(this,2,'6',1)">6</button>
+    <button class="ob" style="font-size:36px" onclick="fillD(this,2,'7',2)">7</button>
+  </div>
+  <div class="fb" id="fb2"></div>
+</div>
+
+<!-- Q3 ⭐⭐ 답이 5인 식 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">답이 5인 식을 모두 찾아요!</div>
+  <div class="cb">
+    <div style="font-size:20px;color:var(--subtext)">(여러 개 선택 가능)</div>
+  </div>
+  <div class="or" id="multiOpts3">
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,true)">2+3</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,true)">9−4</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,false)">1+3</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,true)">6−1</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,false)">8−2</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,3,true)">4+1</button>
+  </div>
+  <button class="nb" style="margin-top:8px;font-size:18px" onclick="checkMulti(3,4)">확인하기</button>
+  <div class="fb" id="fb3"></div>
+</div>
+
+<!-- Q4 ⭐⭐ 합이 9인 식 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">합이 9인 덧셈식 모두!</div>
+  <div class="cb">
+    <div style="font-size:20px;color:var(--subtext)">(여러 개 선택 가능)</div>
+  </div>
+  <div class="or" id="multiOpts4">
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,true)">3+6</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,false)">2+6</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,true)">1+8</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,false)">7+1</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,true)">4+5</button>
+    <button class="ob" style="font-size:28px" onclick="multiPick(this,4,false)">5+3</button>
+  </div>
+  <button class="nb" style="margin-top:8px;font-size:18px" onclick="checkMulti(4,3)">확인하기</button>
+  <div class="fb" id="fb4"></div>
+</div>
+
+<!-- Q5 ⭐⭐ 큰 순 배열 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">덧셈 결과가 큰 순서대로!</div>
+  <div class="num-row" id="revZone5">
+    <div class="num-box blank" id="rv5_0">?</div><div class="num-box blank" id="rv5_1">?</div>
+    <div class="num-box blank" id="rv5_2">?</div><div class="num-box blank" id="rv5_3">?</div>
+    <div class="num-box blank" id="rv5_4">?</div>
+  </div>
+  <div class="order-pick">
+    <div class="order-card" style="font-size:22px;width:auto;padding:0 12px" onclick="pickRev(this,5,'8')">5+3=8</div>
+    <div class="order-card" style="font-size:22px;width:auto;padding:0 12px" onclick="pickRev(this,5,'6')">3+3=6</div>
+    <div class="order-card" style="font-size:22px;width:auto;padding:0 12px" onclick="pickRev(this,5,'4')">1+3=4</div>
+    <div class="order-card" style="font-size:22px;width:auto;padding:0 12px" onclick="pickRev(this,5,'7')">4+3=7</div>
+    <div class="order-card" style="font-size:22px;width:auto;padding:0 12px" onclick="pickRev(this,5,'5')">2+3=5</div>
+  </div>
+  <div class="fb" id="fb5"></div>
+</div>
+
+<!-- Q6 ⭐⭐ 빈칸 채우기 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">빈칸에 들어갈 수는?</div>
+  <div class="cb"><div style="font-size:40px">3 + <span class="bb" id="bb6">?</span> = 5</div></div>
+  <div class="or">
+    <button class="ob" onclick="fill(this,6,'1',false)">1</button>
+    <button class="ob" onclick="fill(this,6,'2',true)">2</button>
+    <button class="ob" onclick="fill(this,6,'3',false)">3</button>
+  </div>
+  <div class="fb" id="fb6"></div>
+</div>
+
+<!-- Q7 ⭐⭐ 스토리 세 묶음 합 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">이야기 속 모두 몇 개?</div>
+  <div class="story">
+    🍬 첫째 주머니에 사탕 3개<br>
+    🍬 둘째 주머니에 사탕 2개<br>
+    🍬 셋째 주머니에 사탕 1개<br>
+    사탕은 모두 몇 개일까요?
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,7,false)">5</button>
+    <button class="ob" onclick="chk(this,7,true)">6</button>
+    <button class="ob" onclick="chk(this,7,false)">7</button>
+  </div>
+  <div class="fb" id="fb7"></div>
+</div>
+
+<!-- Q8 ⭐⭐ 뺄셈 연속 3개 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">빈칸 3개를 차례대로 채워요!</div>
+  <div class="cb">
+    <div style="font-size:26px;line-height:1.7">
+      9 − 1 = <span class="bb" id="sq8_0" style="width:48px;height:48px;font-size:32px">?</span><br>
+      9 − 3 = <span class="bb" id="sq8_1" style="width:48px;height:48px;font-size:32px">?</span><br>
+      9 − 4 = <span class="bb" id="sq8_2" style="width:48px;height:48px;font-size:32px">?</span>
+    </div>
+  </div>
+  <div class="order-pick">
+    <div class="order-card" onclick="fillSeq(this,8,'5')">5</div>
+    <div class="order-card" onclick="fillSeq(this,8,'6')">6</div>
+    <div class="order-card" onclick="fillSeq(this,8,'8')">8</div>
+    <div class="order-card" onclick="fillSeq(this,8,'7')">7</div>
+  </div>
+  <div class="fb" id="fb8"></div>
+</div>
+
+<!-- Q9 ⭐⭐ 합·차 조건 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">합 8, 차 2인 두 수 중 큰 수!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.8">
+      🔍 두 수를 더하면 8<br>
+      🔍 두 수의 차는 2<br>
+      두 수 중 <b>큰 수</b>는?
+    </div>
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,9,false)">3</button>
+    <button class="ob" onclick="chk(this,9,false)">4</button>
+    <button class="ob" onclick="chk(this,9,true)">5</button>
+    <button class="ob" onclick="chk(this,9,false)">6</button>
+  </div>
+  <div class="fb" id="fb9"></div>
+</div>
+
+<!-- Q10 ⭐⭐ 어떤 수 찾기 연속 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">어떤 수를 찾아 다음 식!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.8">
+      🔍 어떤 수 + 3 = 7<br>
+      그 어떤 수 + 2 = ?
+    </div>
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,10,false)">5</button>
+    <button class="ob" onclick="chk(this,10,true)">6</button>
+    <button class="ob" onclick="chk(this,10,false)">7</button>
+    <button class="ob" onclick="chk(this,10,false)">4</button>
+  </div>
+  <div class="fb" id="fb10"></div>
+</div>
+
+<!-- Q11 ⭐⭐ 역산 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">□의 값을 찾아요!</div>
+  <div class="cb"><div style="font-size:36px">□ − 4 = 3</div></div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,11,false)">6</button>
+    <button class="ob" onclick="chk(this,11,true)">7</button>
+    <button class="ob" onclick="chk(this,11,false)">8</button>
+    <button class="ob" onclick="chk(this,11,false)">9</button>
+  </div>
+  <div class="fb" id="fb11"></div>
+</div>
+
+<!-- Q12 ⭐⭐⭐ 0의 성질 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">0의 성질!</div>
+  <div class="cb"><div style="font-size:36px">5 − 5 + 0 = ?</div></div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,12,true)">0</button>
+    <button class="ob" onclick="chk(this,12,false)">5</button>
+    <button class="ob" onclick="chk(this,12,false)">10</button>
+    <button class="ob" onclick="chk(this,12,false)">1</button>
+  </div>
+  <div class="fb" id="fb12"></div>
+</div>
+
+<!-- Q13 ⭐⭐ 서술형 역산 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">□를 써 봐요!</div>
+  <div class="cb"><div style="font-size:32px">□ − 3 = 2</div></div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput13" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn13" onclick="checkTextInput(13,'5')">확인!</button>
+  </div>
+  <div class="fb" id="fb13"></div>
+</div>
+
+<!-- Q14 ⭐⭐⭐ 합이 9인 짝 개수 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">1~9 중 합이 9인 짝 개수</div>
+  <div class="cb">
+    <div style="font-size:20px;line-height:1.7">
+      1, 2, 3, ... 9 중에서<br>
+      두 수를 더해 9가 되는 짝은 몇 쌍?<br>
+      <span style="font-size:16px;color:var(--subtext)">(예: 1+8, 2+7 ...)</span>
+    </div>
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,14,false)">3</button>
+    <button class="ob" onclick="chk(this,14,true)">4</button>
+    <button class="ob" onclick="chk(this,14,false)">5</button>
+    <button class="ob" onclick="chk(this,14,false)">2</button>
+  </div>
+  <div class="fb" id="fb14"></div>
+</div>
+
+<!-- Q15 ⭐⭐ 스토리 뺄셈 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">이야기 뺄셈!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.7">
+      🐥 병아리 8마리가 있었어요.<br>
+      그 중 3마리가 엄마 닭에게 갔어요.<br>
+      남은 병아리는 몇 마리?
+    </div>
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput15" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn15" onclick="checkTextInput(15,'5')">확인!</button>
+  </div>
+  <div class="fb" id="fb15"></div>
+</div>
+
+<!-- Q16 ⭐⭐ 뺄셈 기본 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">차이를 구해요!</div>
+  <div class="cb"><div style="font-size:40px">8 − 4 = ?</div></div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,16,true)">4</button>
+    <button class="ob" onclick="chk(this,16,false)">3</button>
+    <button class="ob" onclick="chk(this,16,false)">5</button>
+    <button class="ob" onclick="chk(this,16,false)">2</button>
+  </div>
+  <div class="fb" id="fb16"></div>
+</div>
+
+<!-- Q17 ⭐⭐⭐⭐ 조건 추론 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="badge">⭐⭐⭐⭐ 도전</div>
+  <div class="st">조건을 모두 만족하는 수!</div>
+  <div class="cb">
+    <div style="font-size:20px;line-height:1.8;text-align:left;padding:0 10px">
+      🔍 나 + 3은 짝수<br>
+      🔍 나는 4보다 크고 7보다 작아요<br>
+      🔍 나는 홀수<br>
+      <span style="font-size:16px;color:var(--subtext)">(힌트: 4보다 크고 7보다 작은 홀수를 찾아봐!)</span>
+    </div>
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput17" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn17" onclick="checkTextInput(17,'5')">확인!</button>
+  </div>
+  <div class="fb" id="fb17"></div>
+</div>
+
+<!-- Q18 ⭐⭐ 뺄셈 기본 2 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐ 응용</div>
+  <div class="st">차이를 구해요!</div>
+  <div class="cb"><div style="font-size:40px">7 − 3 = ?</div></div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,18,true)">4</button>
+    <button class="ob" onclick="chk(this,18,false)">3</button>
+    <button class="ob" onclick="chk(this,18,false)">5</button>
+    <button class="ob" onclick="chk(this,18,false)">2</button>
+  </div>
+  <div class="fb" id="fb18"></div>
+</div>
+
+<!-- Q19 ⭐⭐⭐ 같은 수 덧셈 -->
+<div class="slide" data-type="q" data-score="25">
+  <div class="badge">⭐⭐⭐ 심화</div>
+  <div class="st">같은 수를 두 번 더했어요!</div>
+  <div class="cb">
+    <div style="font-size:30px;line-height:1.6">
+      □ + □ = 8<br>
+      <span style="font-size:22px;color:var(--subtext)">□는 같은 수예요.</span>
+    </div>
+  </div>
+  <div class="text-input-wrap">
+    <input type="text" class="text-input" id="textInput19" inputmode="numeric" placeholder="?" autocomplete="off">
+    <button class="submit-btn" id="submitBtn19" onclick="checkTextInput(19,'4')">확인!</button>
+  </div>
+  <div class="fb" id="fb19"></div>
+</div>
+
+<!-- Q20 ⭐⭐⭐⭐ 두 식 연립 -->
+<div class="slide" data-type="q" data-correct="0" data-score="25">
+  <div class="badge">⭐⭐⭐⭐ 도전</div>
+  <div class="st">두 조건을 동시에!</div>
+  <div class="cb">
+    <div style="font-size:22px;line-height:1.8">
+      🔍 A = B + 2<br>
+      🔍 A + B = 6<br>
+      A는?
+    </div>
+  </div>
+  <div class="or">
+    <button class="ob" onclick="chk(this,20,false)">3</button>
+    <button class="ob" onclick="chk(this,20,true)">4</button>
+    <button class="ob" onclick="chk(this,20,false)">5</button>
+    <button class="ob" onclick="chk(this,20,false)">2</button>
+  </div>
+  <div class="fb" id="fb20"></div>
+</div>
+
+
+<!-- 결과 -->
+<div class="slide" data-type="result">
+  <div class="rc">
+    <div style="font-size:28px;margin-bottom:8px">응용 완료!</div>
+    <div class="rs" id="rScore">0</div><div style="font-size:22px;color:var(--subtext)">점</div>
+    <div class="rm" id="rMsg"></div><div class="rd" id="rCombo"></div><div class="rd" id="rCorr"></div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" style="width:48px;height:48px" alt="케이">
+      <div class="sb" style="font-size:20px" id="rSp">잘했어!</div>
+    </div>
+    <button class="rb" onclick="location.reload()">다시 하기</button>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nb" id="prevBtn" onclick="go(-1)" disabled>이전</button>
+  <span class="pi" id="pageInfo">1 / 22</span>
+  <button class="nb" id="nextBtn" onclick="go(1)">다음</button>
+</div>
 
 <script>
-const KAY="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA";
-const DEW="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA";
+let audioCtx=null,soundOn=true;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)}
+function ps(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.value=.15;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.12);o.stop(audioCtx.currentTime+i*.12+.15)})}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime+i*.15);o.stop(audioCtx.currentTime+i*.15+.18)})}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.value=.1;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.06)}})}
+function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+let cur=0;const sls=document.querySelectorAll('.slide'),tot=sls.length;
+let sc=0,cmb=0,mxC=0,cc=0;const ans={};
+function show(i){sls.forEach((s,x)=>s.classList.toggle('active',x===i));document.getElementById('prevBtn').disabled=i===0;document.getElementById('nextBtn').disabled=i===tot-1;document.getElementById('pageInfo').textContent=`${i+1} / ${tot}`;if(sls[i].dataset.type==='result')showR()}
+function go(d){ps('click');const n=cur+d;if(n>=0&&n<tot){cur=n;show(cur)}}
+let tsx=0;document.addEventListener('touchstart',e=>{tsx=e.touches[0].clientX},{passive:true});document.addEventListener('touchend',e=>{const d=tsx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(1):go(-1)}},{passive:true});
+function uc(ok){const cd=document.getElementById('comboDisplay');if(ok){cmb++;if(cmb>mxC)mxC=cmb}else cmb=0;cmb>=2?(cd.style.display='block',cd.textContent=`🔥 ${cmb} 콤보`):cd.style.display='none'}
 
-let audioCtx,soundOn=true,cur=0,score=0,combo=0,maxCombo=0;
-function initA(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function ps(t){if(!soundOn)return;initA();audioCtx.resume().then(()=>{const n=audioCtx.currentTime;if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.15,n+i*.12);g.gain.exponentialRampToValueAtTime(.01,n+i*.12+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.12);o.stop(n+i*.12+.2);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(.1,n+i*.15);g.gain.exponentialRampToValueAtTime(.01,n+i*.15+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.15);o.stop(n+i*.15+.2);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.01,n+.08);o.connect(g);g.connect(audioCtx.destination);o.start(n);o.stop(n+.08);}});}
-function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
+function chk(btn,si,ok){if(ans[si])return;const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');if(ok){ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=25;fb.textContent='정답! 👏';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
 
-const S=[];
-S.push({t:'c',h:`<div class="track-badge">Track B 심화</div><div class="title" style="font-size:30px;">덧셈뺄셈 응용 ⭐⭐</div><div class="card"><div class="cr"><img src="${KAY}" class="ci" alt="케이"><div class="sp">기본을 넘어서 더 어려운 문제에 도전해 보자!</div></div><div style="font-size:22px;color:var(--subtext);">빈칸 역추론 · 연속 계산 · 상황 문제</div></div>`});
+function checkTextInput(si, correct) {
+  if(ans[si]) return;
+  const inp = document.getElementById('textInput'+si);
+  const fb = document.getElementById('fb'+si);
+  const btn = document.getElementById('submitBtn'+si);
+  const val = inp.value.trim();
+  if(val === '') { fb.textContent = '답을 써 주세요!'; fb.className = 'fb bad'; return; }
+  if(val === correct) {
+    ans[si] = true; inp.classList.add('correct'); inp.readOnly = true; btn.disabled = true;
+    ps('correct'); cc++; sc += 25;
+    fb.textContent = '정답! 🌟'; fb.className = 'fb good'; uc(true);
+  } else {
+    inp.classList.add('wrong'); ps('wrong');
+    fb.textContent = '다시 생각해 봐요!'; fb.className = 'fb bad'; uc(false);
+    setTimeout(() => inp.classList.remove('wrong'), 600);
+  }
+}
 
-const qs=[
-{q:'□ + 3 = 7',a:4,ch:[3,4,5,2],sc:25,hint:'7에서 3을 빼면?'},
-{q:'8 − □ = 5',a:3,ch:[2,3,4,5],sc:25,hint:'8에서 5를 빼면?'},
-{q:'2 + 3 + 1 = ?',a:6,ch:[5,6,7,8],sc:25,hint:'먼저 2+3=5, 다음 5+1=?'},
-{q:'9 − 2 − 3 = ?',a:4,ch:[3,4,5,6],sc:25,hint:'먼저 9−2=7, 다음 7−3=?'},
-{q:'□ + □ = 6 (두 수가 같을 때)',a:3,ch:[2,3,4,6],sc:25,hint:'같은 수를 두 번 더해서 6?'},
-{q:'사과 □개가 있었는데 2개를 먹어서 5개 남았어요. □는?',a:7,ch:[3,5,7,9],sc:25,hint:'5+2를 해 보세요!'},
-{q:'3 + □ = 9 − 1',a:5,ch:[4,5,6,7],sc:50,hint:'먼저 9−1=8, 그다음 8−3=?'},
-{q:'□ − 4 = 2 + 1',a:7,ch:[5,6,7,8],sc:50,hint:'먼저 2+1=3, 그다음 3+4=?'},
-{q:'1 + 2 + 3 + □ = 9',a:3,ch:[2,3,4,5],sc:50,hint:'1+2+3=6, 9−6=?'},
-{q:'케이가 가진 수 + 듀가 가진 수 = 9. 케이가 4라면 듀는?',a:5,ch:[4,5,6,3],sc:25,hint:'9−4=?'},
-// --- ADDED_BY_SCRIPT: 11~20 ---
-{q:'6 − □ = 2',a:4,ch:[2,3,4,5],sc:25,hint:'6에서 2를 빼면 4!'},
-{q:'□ + 5 = 8',a:3,ch:[2,3,4,5],sc:25,hint:'8에서 5를 빼면?'},
-{q:'4 + 2 + 3 = ?',a:9,ch:[7,8,9,6],sc:25,hint:'먼저 4+2=6, 다음 6+3=?'},
-{q:'8 − 3 − 1 = ?',a:4,ch:[3,4,5,6],sc:25,hint:'먼저 8−3=5, 다음 5−1=?'},
-{q:'연필 □자루와 3자루를 합하면 8자루. □는?',a:5,ch:[3,4,5,6],sc:25,hint:'8−3을 해 보세요!'},
-{q:'□ + □ = 8 (두 수가 같을 때)',a:4,ch:[2,3,4,5],sc:25,hint:'같은 수를 두 번 더해서 8?'},
-{q:'7 − □ = 2 + 1',a:4,ch:[3,4,5,6],sc:50,hint:'먼저 2+1=3, 그다음 7−3=?'},
-{q:'□ + 2 = 6 − 1',a:3,ch:[2,3,4,5],sc:50,hint:'먼저 6−1=5, 그다음 5−2=?'},
-{q:'2 + 3 + □ = 8',a:3,ch:[2,3,4,5],sc:50,hint:'2+3=5, 8−5=?'},
-{q:'듀가 사탕 9개 중 □개를 먹어 3개 남았어요. □는?',a:6,ch:[4,5,6,7],sc:25,hint:'9−3을 해 보세요!'}
-];
+function fill(btn,si,val,ok){if(ans[si])return;const bl=document.getElementById('bb'+si),fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');bl.textContent=val;if(ok){ans[si]=true;btn.classList.add('correct');bl.style.borderColor='var(--green)';bl.style.color='var(--green)';btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=25;fb.textContent='정답! 🌟';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>{btn.classList.remove('wrong');bl.textContent='?'},600)}}
 
-qs.forEach((q,idx)=>{
-  S.push({t:'q',sc:q.sc,done:false,r(i){
-    return`<div class="badge">⭐⭐ ${q.sc>=50?'도전':'응용'}</div>
-    <div class="title" style="font-size:24px;">${idx+1}/20</div>
-    <div class="card">
-      <div style="font-size:30px;margin-bottom:14px;">${q.q}</div>
-      <div class="br">${q.ch.map(c=>`<button class="b" onclick="chk(${i},this,${c},${q.a},'${q.hint}')">${c}</button>`).join('')}</div>
-      <div class="fb" id="f${i}"></div>
-    </div>`;
-  }});
-});
+// 빈칸 두 개
+let dSt={};
+function fillD(btn,si,val,idx){
+  if(ans[si])return;if(!dSt[si])dSt[si]={step:0,a:['8','6'],b:['bb2','bb2b']};
+  const st=dSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(val===st.a[st.step]){document.getElementById(st.b[st.step]).textContent=val;document.getElementById(st.b[st.step]).style.borderColor='var(--green)';document.getElementById(st.b[st.step]).style.color='var(--green)';btn.classList.add('correct','disabled');st.step++;if(st.step>=2){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='완성! 🌟';fb.className='fb good';uc(true)}else{fb.textContent='좋아요! 다음도!';fb.className='fb good'}}
+  else{btn.classList.add('wrong');ps('wrong');fb.textContent='다시 계산해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
 
-S.push({t:'result'});
+// 순서 채우기
+let seqSt={};
+function fillSeq(card,si,val){
+  if(ans[si])return;
+  if(!seqSt[si]){
+    if(si===1)seqSt[si]={step:0,a:['5','2'],b:['m1_0','m1_1']};
+    else if(si===8)seqSt[si]={step:0,a:['8','6','5'],b:['sq8_0','sq8_1','sq8_2']};
+  }
+  const st=seqSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(val===st.a[st.step]){
+    document.getElementById(st.b[st.step]).textContent=val;
+    document.getElementById(st.b[st.step]).style.borderStyle='solid';
+    document.getElementById(st.b[st.step]).style.borderColor='var(--green)';
+    document.getElementById(st.b[st.step]).style.color='var(--green)';
+    document.getElementById(st.b[st.step]).style.background='var(--green-light)';
+    card.classList.add('used');st.step++;
+    if(st.step>=st.a.length){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='완성! 🎊';fb.className='fb good';uc(true)}
+    else{fb.textContent='좋아요! 다음 빈칸도!';fb.className='fb good'}
+  }else{ps('wrong');fb.textContent='다시 생각해 봐요!';fb.className='fb bad';uc(false)}
+}
 
-function render(){const c=document.getElementById('sc');c.innerHTML='';S.forEach((s,i)=>{const d=document.createElement('div');d.className='slide'+(i===0?' active':'');d.id='s'+i;if(s.t==='c')d.innerHTML=s.h;else if(s.t==='q'&&s.r)d.innerHTML=s.r(i);else d.innerHTML='<div class="card" style="max-width:480px;"><div class="title">🎉</div></div>';c.appendChild(d);});updNav();}
+// 역순배치 (큰 순)
+let revSt={};
+function pickRev(card,si,val){
+  if(ans[si])return;
+  if(!revSt[si])revSt[si]={step:0,a:[8,7,6,5,4]};
+  const st=revSt[si],fb=document.getElementById('fb'+si);ps('click');
+  if(parseInt(val)===st.a[st.step]){
+    document.getElementById('rv'+si+'_'+st.step).textContent=val;
+    document.getElementById('rv'+si+'_'+st.step).classList.remove('blank');
+    document.getElementById('rv'+si+'_'+st.step).classList.add('done');
+    card.classList.add('used');st.step++;
+    if(st.step>=5){ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='큰 수부터 완벽! 🏆';fb.className='fb good';uc(true)}
+    else{fb.textContent='좋아요! 다음!';fb.className='fb good'}
+  }else{ps('wrong');fb.textContent='계산값을 비교해 봐요!';fb.className='fb bad';uc(false)}
+}
 
-function chk(i,el,v,c,hint){const s=S[i];if(s.done)return;ps('click');if(v===c){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 정답! +${s.sc}점 ${combo>1?'🔥x'+combo:''}</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">${hint}</span>`;}}
+// 다중선택
+let multiSel={};
+function multiPick(btn,si,isCorrect){
+  if(ans[si])return;ps('click');
+  if(!multiSel[si])multiSel[si]={picked:new Set(),correct:new Set()};
+  const ms=multiSel[si];
+  if(btn.classList.contains('correct')){btn.classList.remove('correct');ms.picked.delete(btn)}
+  else{btn.classList.add('correct');ms.picked.add(btn)}
+  if(isCorrect)ms.correct.add(btn);
+}
+function checkMulti(si,expectedCount){
+  if(ans[si])return;
+  const ms=multiSel[si]||{picked:new Set(),correct:new Set()};
+  const fb=document.getElementById('fb'+si);
+  const allBtns=[...document.getElementById('multiOpts'+si).querySelectorAll('.ob')];
+  let allCorrect=true;
+  allBtns.forEach(b=>{
+    const isPicked=ms.picked.has(b);
+    const shouldPick=ms.correct.has(b);
+    if(isPicked!==shouldPick)allCorrect=false;
+  });
+  if(allCorrect&&ms.picked.size===expectedCount){
+    ans[si]=true;ps('correct');cc++;sc+=25;fb.textContent='모두 맞혔어요! 🎉';fb.className='fb good';uc(true);
+    allBtns.forEach(b=>b.classList.add('disabled'));
+  }else{
+    ps('wrong');fb.textContent='조건을 다시 확인해 봐요!';fb.className='fb bad';uc(false);
+    allBtns.forEach(b=>b.classList.remove('correct'));ms.picked.clear();
+  }
+}
 
-function showResult(){const d=document.getElementById('s'+(S.length-1));const total=S.filter(s=>s.t==='q').reduce((a,s)=>a+s.sc,0);const pct=Math.round(score/total*100);let msg=pct>=90?'🏆 응용 마스터!':pct>=70?'👏 잘했어요!':pct>=50?'💪 좋은 실력!':'🌱 다시 도전!';d.innerHTML=`<div class="card" style="max-width:480px;"><div class="track-badge">Track B 심화</div><div style="font-size:32px;color:var(--primary);margin-bottom:8px;">⭐⭐ 응용 완료!</div><div style="font-size:64px;color:var(--primary);">${score}<span style="font-size:28px;color:var(--subtext);">/${total}</span></div><div style="font-size:28px;margin:8px 0;">${msg}</div>${maxCombo>1?`<div class="combo">🔥 최대 콤보 x${maxCombo}</div>`:''}<div style="font-size:20px;color:var(--subtext);margin-top:12px;">빈칸 역추론과 연속 계산을 연습했어요!</div><button class="b bs" style="margin-top:16px;background:var(--primary);color:#fff;border-color:var(--primary);" onclick="location.reload()">다시 하기 🔄</button></div>`;}
-
-function updNav(){document.getElementById('prevBtn').disabled=(cur===0);document.getElementById('nextBtn').textContent=cur===S.length-2?'결과 보기 🏆':'다음 ▶';document.getElementById('pi').textContent=`${cur+1} / ${S.length}`;}
-function go(n){if(n<0||n>=S.length)return;document.getElementById('s'+cur).classList.remove('active');document.getElementById('s'+cur).classList.add('exit');cur=n;setTimeout(()=>{document.querySelectorAll('.slide').forEach(s=>s.classList.remove('exit'));document.getElementById('s'+cur).classList.add('active');updNav();if(S[cur].t==='result')showResult();},200);}
-function prev(){go(cur-1);}function next(){go(cur+1);}
-let tx=0;document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX;},{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-tx;if(Math.abs(d)>50){d>0?prev():next();}},{passive:true});
-render();
+function showR(){
+  document.getElementById('rScore').textContent=sc;
+  document.getElementById('rCombo').textContent=`최대 콤보: 🔥 ${mxC}`;
+  document.getElementById('rCorr').textContent=`맞힌 문제: ${cc} / 20`;
+  let m,s;if(sc>=450){m='🏆 응용 완벽!';s='덧셈뺄셈 자유자재! 대단해!'}else if(sc>=300){m='🎉 아주 잘했어요!';s='응용력이 뛰어나!'}else if(sc>=200){m='👍 잘했어요!';s='조금 더 연습하면 완벽!'}else{m='💪 다시 도전!';s='괜찮아! 다시 해보자!'}
+  document.getElementById('rMsg').textContent=m;document.getElementById('rSp').textContent=s}
+show(0);
 </script>
 </body>
 </html>
