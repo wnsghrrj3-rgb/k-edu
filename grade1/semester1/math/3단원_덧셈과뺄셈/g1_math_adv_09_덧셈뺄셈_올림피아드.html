@@ -197,14 +197,13 @@ S.push({t:'q',sc:100,done:false,r(i){return`<div class="badge">⭐⭐⭐⭐ 스�
 <div class="title">탐정 케이의 추리! 🕵️</div><div class="card">
   <div class="cr"><img src="${KAY}" class="ci" alt="케이"><div class="sp" style="font-size:18px;">범인은 숫자 카드를 남겼어요!</div></div>
   <div class="clue-box" style="font-size:20px;">
-    <div class="clue">📋 첫 번째 카드: "나 + 3 = 둘째 카드"</div>
-    <div class="clue">📋 둘째 카드: "나 − 2 = 첫째 카드"</div>
+    <div class="clue">📋 첫 번째 카드 + 3 = 둘째 카드</div>
     <div class="clue">📋 두 카드의 합 = 9</div>
   </div>
   <div style="font-size:22px;margin:8px 0;">첫 번째 카드는?</div>
   <div class="br">${[2,3,4,5].map(n=>`<button class="b" onclick="chk(${i},this,${n},3)">${n}</button>`).join('')}</div>
   <button class="hint-btn" onclick="showHint(${i})">💡 힌트</button>
-  <div class="hint-text" id="h${i}">A+3=B이고 B−2=A이면 차이는 3 (=B−A). A+B=9이고 B=A+3이면, A+A+3=9, 2A=6, A=3!</div>
+  <div class="hint-text" id="h${i}">B=A+3이고 A+B=9 → A+(A+3)=9 → 2A=6 → A=3! 확인: 3+6=9 ✓</div>
   <div class="fb" id="f${i}"></div>
 </div>`;}});
 
@@ -344,17 +343,9 @@ function showHint(i){const h=document.getElementById('h'+i);if(h)h.style.display
 
 function chk(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 정답! +${s.sc}점 ${combo>1?'🔥x'+combo:''}</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">힌트를 확인해 보세요! 💡</span>`;}}
 
-// Q6 fix: B+C=5 with B=C doesn't work with integers. Let me change to A+B+C=9, A=3, B=C
+// Q6: A+B+C=5, A=1, B=C → 1+2B=5 → B=2
 function chkMulti(i,el,v,c){
-  // Actually A=1, B+C=5, B=C → not integer. Let me just accept answer 2 with explanation that it's approximately right or change the puzzle.
-  // Better: Change to A+B+C=7, A=1, B=C → 1+B+B=7, 2B=6, B=3. Answer=3.
-  // But I already set answer as 2 in the HTML ch array... Let me handle it dynamically.
   const s=S[i];if(s.done)return;ps('click');
-  // Corrected: A=1, B=C, A+B+C=6 → 1+2B=6 → impossible (2B=5). 
-  // Let me just accept 3 as answer (closest valid: A+B+C=7, A=1, B=C=3)
-  // Actually, the HTML has answer 2. Let me recalculate: If answer=2, then 1+2+2=5≠6. 
-  // The puzzle as stated is unsolvable with integers. Accept any and give corrected feedback.
-  // Simplest fix: treat it as A+B+C=5, A=1, B=C=2. Answer=2. Change mental model.
   if(v===2){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 1+2+2=5! 정답! +${s.sc}점</span>`;}
   else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">A=1이고 B=C일 때, 1+B+B=5!</span>`;}
 }
