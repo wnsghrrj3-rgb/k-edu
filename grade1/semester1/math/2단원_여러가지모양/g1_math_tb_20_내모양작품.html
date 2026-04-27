@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>내 모양 작품 - K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/grade1/semester1/math/math-common.css">
+<style>
+:root {
+  --bg: #FFF9F0;
+  --card: #FFFFFF;
+  --primary: #FF8C42;
+  --primary-light: #FFE8D6;
+  --secondary: #FFB347;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #42A5F5;
+  --blue-light: #E3F2FD;
+  --purple: #AB47BC;
+  --purple-light: #F3E5F5;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #F0E0D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+  /* tb_20 자유 창작 신규 */
+  --free-glow: #FFD54F;
+  --free-glow-light: #FFF8E1;
+  --gallery-bg: #FFFAEC;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; height:100vh; width:100vw; user-select:none; }
+.logo { display:flex; align-items:center; gap:2px; position:fixed; top:12px; left:16px; z-index:999; }
+.logo-k { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:#1D4ED8; }
+.logo-star { font-size:10px; color:#F59E0B; }
+.logo-edu { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:#333; }
+.sound-btn { position:fixed; top:12px; right:16px; z-index:999; background:var(--primary-light); border:none; border-radius:50%; width:40px; height:40px; font-size:var(--fs-caption); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.slide-container { width:100vw; height:100vh; position:relative; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:60px 20px 80px; text-align:center; position:absolute; top:0; left:0; overflow-y:auto; }
+.slide.active { display:flex; }
+.slide-title { font-size:var(--fs-title); color:var(--primary); margin-bottom:14px; line-height:1.3; }
+.slide-sub { font-size:var(--fs-heading); color:var(--text); margin-bottom:16px; line-height:1.4; }
+.concept-box { background:var(--card); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow); max-width:min(820px, 96vw); width:100%; margin:8px 0; }
+.char-img { width:min(80px, 18vw); height:min(80px, 18vw); border-radius:50%; }
+.speech-bubble { background:var(--card); border-radius:20px; padding:16px 20px; font-size:var(--fs-body); box-shadow:var(--shadow); max-width:min(760px, 96vw); position:relative; margin:8px 0; }
+.speech-bubble::after { content:''; position:absolute; bottom:-10px; left:40px; border-width:10px 10px 0; border-style:solid; border-color:var(--card) transparent transparent; }
+.options-row { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin:12px 0; }
+.opt-btn { background:var(--card); border:3px solid var(--border); border-radius:16px; padding:10px 24px; font-size:var(--fs-title); font-family:'Jua',sans-serif; cursor:pointer; transition:all 0.2s; min-width:110px; color:var(--text); }
+.opt-btn:active { transform:scale(0.95); }
+.opt-btn.correct { border-color:var(--green); background:var(--green-light); animation:pop 0.4s; }
+.opt-btn.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.opt-btn.disabled { pointer-events:none; opacity:0.6; }
+.opt-btn.large { font-size:var(--em-md); min-width:190px; }
+.opt-btn.small { font-size:var(--fs-body); padding:10px 18px; min-width:80px; }
+.opt-btn.pic { font-size:var(--em-sm); min-width:130px; padding:14px 18px; line-height:1.1; }
+.opt-btn.word { font-size:var(--fs-body); min-width:190px; padding:12px 18px; }
+.opt-btn.num { font-size:var(--em-sm); min-width:95px; padding:12px 20px; }
+.badge { display:inline-block; font-size:var(--fs-caption); background:var(--yellow-light); padding:4px 12px; border-radius:20px; margin-bottom:8px; color:var(--text); }
+.badge.problem { background:var(--blue-light); color:#1976D2; }
+.badge.check { background:var(--purple-light); color:#7B1FA2; }
+.feedback { font-size:var(--fs-body); margin-top:12px; min-height:36px; }
+.feedback.good { color:var(--green); }
+.feedback.bad { color:var(--red); }
+.nav-bar { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:12px 24px; background:rgba(255,249,240,0.95); z-index:99; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:30px; padding:10px 28px; font-size:var(--fs-body); font-family:'Jua',sans-serif; cursor:pointer; transition:opacity 0.2s; }
+.nav-btn:disabled { opacity:0.3; cursor:default; }
+.nav-btn:active { transform:scale(0.95); }
+.page-info { font-size:var(--fs-caption); color:var(--subtext); }
+.combo-display { position:fixed; top:60px; right:16px; font-size:var(--fs-caption); z-index:99; background:var(--yellow-light); padding:4px 12px; border-radius:16px; }
+.result-card { background:var(--card); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow); max-width:min(760px, 96vw); width:100%; }
+.result-score { font-size:var(--em-md); color:var(--primary); }
+.result-msg { font-size:var(--fs-heading); margin:12px 0; }
+.result-detail { font-size:var(--fs-caption); color:var(--subtext); margin:4px 0; }
+.retry-btn { background:var(--primary); color:#fff; border:none; border-radius:30px; padding:14px 40px; font-size:var(--fs-body); font-family:'Jua',sans-serif; cursor:pointer; margin-top:16px; }
+
+/* ===== 입체도형 공통 컴포넌트 (tb_15 계승) ===== */
+.shape-display { display:flex; flex-direction:column; align-items:center; gap:8px; margin:14px 0; }
+.shape-big { font-size:var(--em-lg); line-height:1; }
+.shape-big.box { color:var(--primary); }
+.shape-big.cyl { color:var(--purple); }
+.shape-big.ball { color:var(--blue); }
+.shape-name-big { font-size:var(--fs-heading); padding:6px 18px; border-radius:30px; font-family:'Jua',sans-serif; }
+.shape-name-big.box { background:var(--primary-light); color:var(--primary); border:3px solid var(--primary); }
+.shape-name-big.cyl { background:var(--purple-light); color:var(--purple); border:3px solid var(--purple); }
+.shape-name-big.ball { background:var(--blue-light); color:var(--blue); border:3px solid var(--blue); }
+
+.shape-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--shadow); min-width:190px; display:flex; flex-direction:column; align-items:center; gap:6px; border:3px solid var(--border); }
+.shape-card.box { border-color:var(--primary); }
+.shape-card.cyl { border-color:var(--purple); }
+.shape-card.ball { border-color:var(--blue); }
+.shape-card .pic { font-size:var(--fs-title); line-height:1; }
+.shape-card .label { font-size:var(--fs-caption); color:var(--subtext); }
+
+.items-row { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin:12px 0; }
+
+.compare-row { display:flex; gap:24px; justify-content:center; align-items:center; margin:12px 0; flex-wrap:wrap; }
+.compare-side { display:flex; flex-direction:column; align-items:center; gap:6px; background:var(--card); border-radius:14px; padding:18px 22px; box-shadow:var(--shadow); cursor:pointer; transition:all 0.2s; border:3px solid transparent; min-width:190px; }
+.compare-side:active { transform:scale(0.95); }
+.compare-side.correct { border-color:var(--green); background:var(--green-light); }
+.compare-side.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.compare-side.disabled { pointer-events:none; opacity:0.6; }
+.compare-side .pic { font-size:var(--em-md); }
+.compare-side .label { font-size:var(--fs-caption); color:var(--subtext); }
+
+.pond { background:var(--blue-light); border-radius:20px; padding:24px; max-width:min(720px, 96vw); width:100%; margin:12px 0; position:relative; min-height:240px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; }
+.fish { background:var(--card); border:3px solid var(--blue); border-radius:50%; width:min(92px, 19vw); height:min(92px, 19vw); display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:pointer; transition:all 0.3s; text-align:center; line-height:1.1; padding:4px; }
+.fish:active { transform:scale(0.9); }
+.fish.caught { background:var(--green); border-color:var(--green); transform:scale(1.15); animation:pop 0.4s; }
+.fish.wrong { background:var(--red-light); border-color:var(--red); animation:shake 0.4s; }
+.fish.caught-wrong { opacity:0.3; pointer-events:none; }
+
+.sort-area { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:min(760px, 96vw); margin:10px 0; }
+.sort-source { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; background:var(--yellow-light); border-radius:16px; padding:12px 16px; min-height:80px; width:100%; }
+.sort-item { width:min(80px, 18vw); height:min(80px, 18vw); background:var(--card); border:3px solid var(--border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:grab; transition:transform 0.2s; user-select:none; }
+.sort-item:active { cursor:grabbing; transform:scale(1.1); }
+.sort-item.used { opacity:0.3; pointer-events:none; transform:scale(0.9); }
+.sort-bins { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; width:100%; }
+.sort-bin { flex:1; min-width:190px; background:var(--card); border:3px dashed var(--border); border-radius:16px; padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; transition:all 0.2s; }
+.sort-bin.flat { border-color:var(--primary); background:var(--primary-light); }
+.sort-bin.round { border-color:var(--blue); background:var(--blue-light); }
+.sort-bin.over { border-style:solid; transform:scale(1.03); }
+.sort-bin.wrong { animation:shake 0.4s; }
+.sort-bin .bin-label { font-size:var(--fs-caption); font-family:'Jua',sans-serif; text-align:center; line-height:1.3; }
+.sort-bin.flat .bin-label { color:var(--primary); }
+.sort-bin.round .bin-label { color:var(--blue); }
+.sort-bin .bin-slot { min-height:50px; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; align-items:center; font-size:var(--fs-body); padding:4px; width:100%; }
+
+.c-box { color:var(--primary); }
+.c-cyl { color:var(--purple); }
+.c-ball { color:var(--blue); }
+
+.tap-counter { font-size:var(--fs-body); color:var(--text); font-family:'Jua',sans-serif; }
+.tap-counter b { color:var(--primary); font-size:var(--fs-body); }
+
+/* ===== tb_17 신규: 행동 비교 카드 (쌓기/구르기 ✓✗) ===== */
+.compare-action { display:flex; gap:14px; justify-content:center; align-items:flex-start; flex-wrap:wrap; margin:10px 0; }
+.action-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:8px; border:3px solid var(--border); min-width:180px; }
+.action-card .shape-row { display:flex; gap:6px; justify-content:center; align-items:flex-end; min-height:90px; }
+.action-card .shape-row .e { font-size:var(--em-md); line-height:1; }
+.action-card .verdict { font-size:var(--fs-caption); padding:5px 12px; border-radius:14px; font-family:'Jua',sans-serif; }
+.action-card.ok { border-color:var(--green); }
+.action-card.ok .verdict { background:var(--green-light); color:var(--green); }
+.action-card.no { border-color:var(--red); }
+.action-card.no .verdict { background:var(--red-light); color:var(--red); }
+.action-card .why { font-size:var(--fs-label); color:var(--subtext); line-height:1.4; }
+
+/* ===== tb_17 신규: 기둥 두 자세 (세움/눕힘) ===== */
+.cyl-twoface { display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap; margin:10px 0; }
+.cyl-pose { background:var(--card); border-radius:16px; padding:14px 18px; box-shadow:var(--shadow); border:3px solid var(--purple); display:flex; flex-direction:column; align-items:center; gap:6px; min-width:160px; }
+.cyl-pose .e { font-size:var(--em-lg); line-height:1; color:var(--purple); }
+.cyl-pose.lay .e { transform:rotate(90deg); display:inline-block; }
+.cyl-pose .label { font-size:var(--fs-caption); color:var(--purple); font-family:'Jua',sans-serif; }
+.cyl-pose .effect { font-size:var(--fs-label); color:var(--subtext); line-height:1.4; }
+
+/* ===== tb_17 신규: 작품 갤러리 ===== */
+.gallery-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:12px 0; }
+.gallery-card { background:var(--card); border-radius:16px; padding:14px 18px; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:6px; border:3px solid var(--border); min-width:140px; }
+.gallery-card .product { font-size:var(--em-md); line-height:1; }
+.gallery-card .name { font-size:var(--fs-caption); font-family:'Jua',sans-serif; color:var(--text); }
+.gallery-card .recipe { font-size:var(--fs-label); color:var(--subtext); }
+
+/* ===== tb_17 신규: Q5 탭 그리드 (9칸 그리드에서 공만 잡기) ===== */
+.tap-grid-wrap { background:var(--blue-light); border-radius:18px; padding:14px; max-width:var(--mw-sm); width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.tap-grid { display:grid; grid-template-columns:repeat(3, min(80px, 22vw)); gap:8px; justify-content:center; }
+.tap-cell { width:min(80px, 22vw); height:min(80px, 22vw); background:var(--card); border:3px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:pointer; transition:all 0.2s; }
+.tap-cell:active { transform:scale(0.9); }
+.tap-cell.tapped { background:var(--green-light); border-color:var(--green); animation:pop 0.4s; pointer-events:none; }
+.tap-cell.miss { animation:shake 0.4s; border-color:var(--red); }
+.tap-counter b.cnt-blue { color:var(--blue); }
+
+/* ===== tb_17 신규: 드래그 조립 (build) ===== */
+.build-area { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:var(--mw-md); margin:10px 0; }
+.build-canvas { background:var(--yellow-light); border-radius:18px; padding:18px 14px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.build-task { font-size:var(--fs-caption); color:var(--text); font-family:'Jua',sans-serif; line-height:1.4; }
+.build-product { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.build-row { display:flex; gap:10px; justify-content:center; align-items:center; }
+.build-slot { background:var(--card); border:3px dashed var(--border); border-radius:14px; width:min(80px, 18vw); height:min(80px, 18vw); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:all 0.2s; padding:4px; }
+.build-slot.body { width:min(140px, 32vw); border-color:var(--primary); }
+.build-slot.head { border-color:var(--blue); border-radius:50%; width:min(90px, 22vw); height:min(90px, 22vw); }
+.build-slot.wheel { border-color:var(--purple); border-radius:50%; }
+.build-slot.over { transform:scale(1.05); border-style:solid; }
+.build-slot.filled { border-style:solid; background:var(--green-light); border-color:var(--green); animation:pop 0.4s; }
+.build-slot.wrong { animation:shake 0.4s; border-color:var(--red); }
+.build-slot .hint { font-size:var(--fs-label); color:var(--subtext); font-family:'Jua',sans-serif; line-height:1.2; text-align:center; }
+.build-slot .placed { font-size:var(--em-md); line-height:1; }
+.build-pool { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:12px; background:var(--card); border-radius:14px; min-height:80px; width:100%; box-shadow:var(--shadow); }
+.build-piece { width:min(80px, 18vw); height:min(80px, 18vw); background:var(--card); border:3px solid var(--border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:grab; transition:transform 0.2s; user-select:none; }
+.build-piece.box { border-color:var(--primary); }
+.build-piece.cyl { border-color:var(--purple); }
+.build-piece.ball { border-color:var(--blue); }
+.build-piece:active { cursor:grabbing; transform:scale(1.1); }
+.build-piece.used { opacity:0.3; pointer-events:none; transform:scale(0.9); }
+
+/* ===== tb_18 신규: 매칭 (match) - 사물↔모양 짝짓기 ===== */
+.match-area { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:var(--mw-md); margin:10px 0; }
+.match-counter { font-size:var(--fs-caption); color:var(--text); font-family:'Jua',sans-serif; }
+.match-counter b { color:var(--green); }
+.match-row { display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; }
+.match-col-title { font-size:var(--fs-label); font-family:'Jua',sans-serif; padding:3px 12px; border-radius:12px; }
+.match-col-title.obj { background:var(--yellow-light); color:var(--text); }
+.match-col-title.shape { background:var(--primary-light); color:var(--primary); }
+.match-cards { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.match-card { background:var(--card); border:3px solid var(--border); border-radius:14px; padding:8px 4px; width:min(78px, 18vw); min-height:min(76px, 17vw); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:all 0.2s; }
+.match-card:active { transform:scale(0.95); }
+.match-card .e { font-size:var(--em-sm); line-height:1; }
+.match-card .label { font-size:var(--fs-label); color:var(--subtext); line-height:1.2; text-align:center; }
+.match-card.selected { border-color:var(--blue); background:var(--blue-light); transform:scale(1.05); }
+.match-card.matched { border-color:var(--green); background:var(--green-light); animation:pop 0.4s; opacity:0.6; pointer-events:none; }
+.match-card.flash-ok { animation:pop 0.4s; border-color:var(--green); }
+.match-card.shake { animation:shake 0.4s; border-color:var(--red); }
+
+/* ===== tb_20 신규: 자유 build (free) + 작품 모음 ===== */
+.build-slot.free { border-color:var(--free-glow); background:var(--free-glow-light); }
+.build-slot.free.filled { border-color:var(--green); background:var(--green-light); border-style:solid; animation:pop 0.4s; }
+.build-slot.free.complete { box-shadow:0 0 12px var(--free-glow); }
+.work-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(120px, 38vw), 1fr)); gap:10px; max-width:var(--mw-md); width:100%; margin:8px 0; }
+.work-card { background:var(--card); border-radius:14px; padding:10px 6px; box-shadow:var(--shadow); border:2px solid var(--free-glow); display:flex; flex-direction:column; align-items:center; gap:4px; }
+.work-shapes { font-size:var(--em-sm); letter-spacing:2px; line-height:1.1; }
+.work-name { font-size:var(--fs-label); color:var(--text); font-family:'Jua',sans-serif; text-align:center; line-height:1.2; }
+.work-empty { font-size:var(--fs-body); color:var(--subtext); padding:24px; text-align:center; }
+.stamp-area { display:flex; flex-direction:column; align-items:center; gap:10px; margin:10px 0; }
+.stamp-circle { width:min(140px, 32vw); height:min(140px, 32vw); border:4px dashed var(--free-glow); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:var(--em-md); cursor:pointer; transition:all 0.3s; background:var(--card); }
+.stamp-circle:active { transform:scale(0.95); }
+.stamp-circle.stamped { border-style:solid; border-color:var(--green); background:var(--green-light); animation:pop 0.4s; }
+.stamp-label { font-size:var(--fs-body); color:var(--text); }
+
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.slide.active > * { animation:fadeIn 0.5s ease; }
+</style>
+</head>
+<body>
+
+<div class="logo">
+  <span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span>
+</div>
+
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+<div class="combo-display" id="comboDisplay" style="display:none;">🔥 0 콤보</div>
+
+<div class="slide-container" id="slideContainer">
+
+  <!-- ======== 개념 파트 (7 슬라이드) ======== -->
+
+  <!-- 1. 타이틀 -->
+  <div class="slide active" data-type="concept">
+    <div class="slide-title">2단원: 여러 가지 모양</div>
+    <div class="concept-box">
+      <div style="font-size:var(--fs-heading); margin-bottom:16px;">내 모양 <b>작품!</b> 🎨</div>
+      <div style="display:flex; justify-content:center; gap:20px; align-items:center; margin:16px 0;">
+        <div style="font-size:var(--em-md);">🐶</div>
+        <div style="font-size:var(--em-md);">🚗</div>
+        <div style="font-size:var(--em-md);">🏰</div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
+        <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+        <div class="speech-bubble">2단원 마지막 시간!<br><b>내가 만드는 작품!</b></div>
+      </div>
+      <div style="font-size:var(--fs-caption); color:var(--subtext); margin-top:12px;">아래 <b>다음 ▶</b> 버튼으로 넘겨요</div>
+    </div>
+  </div>
+
+  <!-- 2. 단원 흐름 — 5차시 → 오늘 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">단원 흐름</div>
+    <div class="slide-title">2단원, <b>여기까지 왔어!</b></div>
+    <div style="display:flex; flex-direction:column; gap:6px; align-items:center; max-width:min(720px, 96vw); margin:10px auto;">
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:6px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">①</div>
+        <div style="font-size:var(--fs-body); flex:1;">모양 <b>찾기</b> 🔍</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:6px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">②</div>
+        <div style="font-size:var(--fs-body); flex:1;">모양 <b>알아보기</b> 🔬</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:6px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">③</div>
+        <div style="font-size:var(--fs-body); flex:1;">모양 합치기 🚗</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:6px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">④</div>
+        <div style="font-size:var(--fs-body); flex:1;">찾기 놀이 🛋</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:6px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">⑤</div>
+        <div style="font-size:var(--fs-body); flex:1;">도전! 🎯</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--free-glow-light); border:3px solid var(--free-glow); border-radius:14px; padding:8px 14px; width:100%;">
+        <div style="font-size:var(--fs-body);">⑥</div>
+        <div style="font-size:var(--fs-body); flex:1; color:var(--text);"><b>오늘 — 내 작품 만들기 🎨</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 모양 3친구 복습 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">모양 친구들</div>
+    <div class="slide-title">📚 <b>세 모양 친구</b> 다시 만나기</div>
+    <div class="items-row">
+      <div class="shape-card box">
+        <div class="pic">📦</div>
+        <div class="label">상자 모양</div>
+        <div class="label" style="font-size:var(--fs-label); color:var(--primary);">잘 쌓여요</div>
+      </div>
+      <div class="shape-card cyl">
+        <div class="pic">🥫</div>
+        <div class="label">둥근 기둥</div>
+        <div class="label" style="font-size:var(--fs-label); color:var(--purple);">세우면 쌓이고<br>눕히면 굴러요</div>
+      </div>
+      <div class="shape-card ball">
+        <div class="pic">⚽</div>
+        <div class="label">공 모양</div>
+        <div class="label" style="font-size:var(--fs-label); color:var(--blue);">잘 굴러가요</div>
+      </div>
+    </div>
+    <div style="font-size:var(--fs-caption); color:var(--text); line-height:1.5; max-width:min(720px, 96vw); margin-top:8px;">
+      이 세 친구로 <b>너만의 작품</b>을 만들어 봐!
+    </div>
+  </div>
+
+  <!-- 4. 자유 창작 메시지 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">오늘의 약속</div>
+    <div class="slide-title">🎨 <b>정답이 없어!</b></div>
+    <div class="concept-box" style="font-size:var(--fs-body); line-height:1.7; max-width:min(720px, 96vw); background:var(--free-glow-light); border:3px solid var(--free-glow);">
+      어떤 모양을 어디에 놓아도 <b>괜찮아!</b><br>
+      <span style="font-size:var(--fs-caption); color:var(--text);">머리에 상자? 몸통에 공?<br><b>내가 정한 게 정답이야 ✨</b></span>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px;">
+      <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+      <div class="speech-bubble">망친 작품은 없어 💛</div>
+    </div>
+  </div>
+
+  <!-- 5. 사용법 안내 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">사용법</div>
+    <div class="slide-title">🛠 <b>이렇게</b> 만들어!</div>
+    <div style="display:flex; flex-direction:column; gap:8px; align-items:center; max-width:min(720px, 96vw); margin:10px auto;">
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:8px 14px; width:100%;">
+        <div style="font-size:var(--em-sm);">①</div>
+        <div style="font-size:var(--fs-body); flex:1;">아래 <b>모양 친구</b>를 골라요 🟧 🟪 🔵</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--card); border:2px solid var(--border); border-radius:14px; padding:8px 14px; width:100%;">
+        <div style="font-size:var(--em-sm);">②</div>
+        <div style="font-size:var(--fs-body); flex:1;">위 <b>슬롯 4칸</b>으로 끌어 놓아요 ✋</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center; background:var(--free-glow-light); border:3px solid var(--free-glow); border-radius:14px; padding:8px 14px; width:100%;">
+        <div style="font-size:var(--em-sm);">③</div>
+        <div style="font-size:var(--fs-body); flex:1;"><b>4칸이 다 차면</b> 작품 완성! 🎉</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 5작품 미리보기 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">오늘의 작품</div>
+    <div class="slide-title">🎨 <b>5개</b> 작품을 만들 거야!</div>
+    <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; max-width:min(720px, 96vw); margin:10px auto;">
+      <div style="background:var(--card); border:2px solid var(--free-glow); border-radius:14px; padding:8px 4px; text-align:center;">
+        <div style="font-size:var(--em-sm); line-height:1;">🐶</div>
+        <div style="font-size:var(--fs-label); color:var(--text); margin-top:4px;">강아지</div>
+      </div>
+      <div style="background:var(--card); border:2px solid var(--free-glow); border-radius:14px; padding:8px 4px; text-align:center;">
+        <div style="font-size:var(--em-sm); line-height:1;">🚗</div>
+        <div style="font-size:var(--fs-label); color:var(--text); margin-top:4px;">자동차</div>
+      </div>
+      <div style="background:var(--card); border:2px solid var(--free-glow); border-radius:14px; padding:8px 4px; text-align:center;">
+        <div style="font-size:var(--em-sm); line-height:1;">🏰</div>
+        <div style="font-size:var(--fs-label); color:var(--text); margin-top:4px;">성</div>
+      </div>
+      <div style="background:var(--card); border:2px solid var(--free-glow); border-radius:14px; padding:8px 4px; text-align:center;">
+        <div style="font-size:var(--em-sm); line-height:1;">🤖</div>
+        <div style="font-size:var(--fs-label); color:var(--text); margin-top:4px;">로봇</div>
+      </div>
+      <div style="background:var(--card); border:2px solid var(--free-glow); border-radius:14px; padding:8px 4px; text-align:center;">
+        <div style="font-size:var(--em-sm); line-height:1;">⭐</div>
+        <div style="font-size:var(--fs-label); color:var(--text); margin-top:4px;">자유</div>
+      </div>
+    </div>
+    <div style="font-size:var(--fs-caption); color:var(--text); line-height:1.5; max-width:min(720px, 96vw); margin-top:8px;">
+      다 만들면 <b>작품 모음</b>에 모일 거야! ✨
+    </div>
+  </div>
+
+  <!-- 7. 워밍업 + 모양 친구 마지막 인사 -->
+  <div class="slide" data-type="concept">
+    <div class="badge">시작 전</div>
+    <div class="slide-title">🌟 <b>준비됐지?</b></div>
+    <div class="concept-box" style="font-size:var(--fs-body); line-height:1.7; max-width:min(720px, 96vw);">
+      먼저 <b>모양 회상</b> 문제 몇 개로 가볍게 풀고,<br>
+      그다음 <b>5작품 만들기</b>로 갈 거야!<br>
+      <span style="font-size:var(--fs-caption); color:var(--subtext);">잘하지 않아도 돼.<br><b>너만의 작품</b>이면 충분해 💛</span>
+    </div>
+    <div class="items-row" style="margin-top:14px;">
+      <div class="shape-card box">
+        <div class="pic">📦</div>
+        <div class="label" style="color:var(--primary);">상자</div>
+      </div>
+      <div class="shape-card cyl">
+        <div class="pic">🥫</div>
+        <div class="label" style="color:var(--purple);">기둥</div>
+      </div>
+      <div class="shape-card ball">
+        <div class="pic">⚽</div>
+        <div class="label" style="color:var(--blue);">공</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== 문항 파트 (15 슬라이드) ======== -->
+
+  <!-- Q1 (slide idx 7). 책상 위 책은? -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 1</div>
+    <div class="slide-title">📕 책상 위 <b>책</b>은?</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,7,true)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,7,false)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,7,false)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+
+  <!-- Q2 (slide idx 8). 음료수 캔은? -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 2</div>
+    <div class="slide-title">🥫 음료수 <b>캔</b>은?</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,8,false)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,8,true)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,8,false)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+
+  <!-- Q3 (slide idx 9). 농구공은? -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 3</div>
+    <div class="slide-title">🏀 <b>농구공</b>은?</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,9,false)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,9,false)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,9,true)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+
+  <!-- Q4 (slide idx 10). compare: 살짝 밀면 잘 굴러가는? -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 4</div>
+    <div class="slide-title">살짝 밀면 <b>또르르</b><br>잘 굴러가는 것은?</div>
+    <div class="compare-row">
+      <div class="compare-side" onclick="checkCompare(this,10,false)">
+        <div class="pic">📕</div>
+        <div class="label">책</div>
+      </div>
+      <div class="compare-side" onclick="checkCompare(this,10,true)">
+        <div class="pic">🍎</div>
+        <div class="label">사과</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+
+  <!-- Q5 (slide idx 11). 놀이: 탭 그리드 - 굴러가는 모양 4개 모두 찾기 -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">문제 5 (놀이)</div>
+    <div class="slide-title">⚽ <b class="c-ball">잘 굴러가는 모양</b>을<br>모두 찾아 탭!</div>
+    <div class="tap-grid-wrap">
+      <div class="tap-grid" id="tapGrid"></div>
+      <div class="tap-counter">찾은 공: <b class="cnt-blue" id="tapBallCount">0</b> / 4</div>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+
+  <!-- Q6 (slide idx 12). 놀이: 드래그 분류 - 쌓기 vs 구르기 (사물 기준) -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">문제 6 (놀이)</div>
+    <div class="slide-title"><b class="c-box">쌓이는</b> 사물 vs <b class="c-ball">굴러가는</b> 사물</div>
+    <div class="sort-area">
+      <div class="sort-source" id="sortSource"></div>
+      <div class="sort-bins" id="sortBins">
+        <div class="sort-bin flat" data-kind="stack"
+             ondragover="sortOver(event)" ondragleave="sortLeave(event)" ondrop="sortDrop(event,12)">
+          <div class="bin-label">🏗 잘 쌓여요</div>
+          <div class="bin-slot" id="binStack"></div>
+        </div>
+        <div class="sort-bin round" data-kind="roll"
+             ondragover="sortOver(event)" ondragleave="sortLeave(event)" ondrop="sortDrop(event,12)">
+          <div class="bin-label">🎳 잘 굴러요</div>
+          <div class="bin-slot" id="binRoll"></div>
+        </div>
+      </div>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+
+  <!-- Q7 (slide idx 13). 놀이: 드래그 조립 (확장) - 로봇 만들기 4슬롯 -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">문제 7 (놀이)</div>
+    <div class="slide-title">🤖 <b>로봇</b>을 만들어 봐!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task"><b class="c-ball">머리=공</b> · <b class="c-box">몸통=상자</b> · <b class="c-cyl">팔/다리=기둥</b></div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot head" data-want="ball" data-id="head"
+                 ondragover="buildOver(event)" ondragleave="buildLeave(event)" ondrop="buildDrop(event)">
+              <div class="hint">머리</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot wheel" data-want="cyl" data-id="armL"
+                 ondragover="buildOver(event)" ondragleave="buildLeave(event)" ondrop="buildDrop(event)">
+              <div class="hint">팔</div>
+            </div>
+            <div class="build-slot body" data-want="box" data-id="body"
+                 ondragover="buildOver(event)" ondragleave="buildLeave(event)" ondrop="buildDrop(event)">
+              <div class="hint">몸통</div>
+            </div>
+            <div class="build-slot wheel" data-want="cyl" data-id="armR"
+                 ondragover="buildOver(event)" ondragleave="buildLeave(event)" ondrop="buildDrop(event)">
+              <div class="hint">팔</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool" id="buildPool"></div>
+    </div>
+    <div class="feedback" id="fb13"></div>
+  </div>
+
+  <!-- Q8 (slide idx 14). 로봇 머리로 어울리는 모양 -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 8</div>
+    <div class="slide-title">🤖 <b>로봇 머리</b>로 어울리는 모양은?</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,14,false)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,14,false)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,14,true)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+    </div>
+    <div class="feedback" id="fb14"></div>
+  </div>
+
+  <!-- Q9 (slide idx 15). 놀이: 운동장에서 공 모양 모두 찾기 (3개) -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">문제 9 (놀이)</div>
+    <div class="slide-title">⚽ <b>운동장</b>에서 <b class="c-ball">공 모양</b>만<br>모두 찾아 잡기!</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-bottom:6px;">찾은 공: <b id="fishCaught">0</b> / 3</div>
+    <div class="pond" id="pond"></div>
+    <div class="feedback" id="fb15"></div>
+  </div>
+
+  <!-- Q10 (slide idx 16). 풍선은? -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">문제 10</div>
+    <div class="slide-title">🎈 <b>풍선</b>은?</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,16,false)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,16,false)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,16,true)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+    </div>
+    <div class="feedback" id="fb16"></div>
+  </div>
+
+  <!-- Q11 (slide idx 17). 작품 ① 강아지 🐶 -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">작품 ① 🐶 강아지</div>
+    <div class="slide-title">너만의 <b>강아지</b>를 만들어 봐!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task">슬롯 4칸을 자유롭게 채우면 완성! 🎨</div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot free" data-slot="0"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">머리</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="1"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">몸통</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="2"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">다리</div>
+            </div>
+            <div class="build-slot free" data-slot="3"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">다리</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool">
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="📦"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">📦</div>
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="🎁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎁</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥫"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥫</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥁</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="⚽"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">⚽</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="🎾"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎾</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb17"></div>
+  </div>
+
+  <!-- Q12 (slide idx 18). 작품 ② 자동차 🚗 -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">작품 ② 🚗 자동차</div>
+    <div class="slide-title">너만의 <b>자동차</b>를 만들어 봐!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task">슬롯 4칸을 자유롭게 채우면 완성! 🎨</div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot free" data-slot="0"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">지붕</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="1"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">차체</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="2"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">바퀴</div>
+            </div>
+            <div class="build-slot free" data-slot="3"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">바퀴</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool">
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="📦"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">📦</div>
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="🎁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎁</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥫"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥫</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥁</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="⚽"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">⚽</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="🎾"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎾</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb18"></div>
+  </div>
+
+  <!-- Q13 (slide idx 19). 작품 ③ 성/탑 🏰 -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">작품 ③ 🏰 성</div>
+    <div class="slide-title">너만의 <b>성/탑</b>을 쌓아 봐!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task">위로 쌓아 4칸을 채우면 완성! 🎨</div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot free" data-slot="0"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">꼭대기</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="1"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">3단</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="2"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">2단</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="3"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">1단</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool">
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="📦"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">📦</div>
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="🎁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎁</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥫"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥫</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥁</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="⚽"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">⚽</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="🎾"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎾</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb19"></div>
+  </div>
+
+  <!-- Q14 (slide idx 20). 작품 ④ 로봇 🤖 -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">작품 ④ 🤖 로봇</div>
+    <div class="slide-title">너만의 <b>로봇</b>을 만들어 봐!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task">슬롯 4칸을 자유롭게 채우면 완성! 🎨</div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot free" data-slot="0"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">머리</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="1"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">팔</div>
+            </div>
+            <div class="build-slot free" data-slot="2"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">몸통</div>
+            </div>
+            <div class="build-slot free" data-slot="3"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">팔</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool">
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="📦"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">📦</div>
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="🎁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎁</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥫"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥫</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥁</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="⚽"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">⚽</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="🎾"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎾</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb20"></div>
+  </div>
+
+  <!-- Q15 (slide idx 21). 작품 ⑤ 자유 ⭐ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">작품 ⑤ ⭐ 자유</div>
+    <div class="slide-title">완전 <b>자유</b>! 가장 자랑스러운 작품!</div>
+    <div class="build-area">
+      <div class="build-canvas">
+        <div class="build-task">어떤 모양 어디에든! 4칸 다 채우면 완성! 🌟</div>
+        <div class="build-product">
+          <div class="build-row">
+            <div class="build-slot free" data-slot="0"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">①</div>
+            </div>
+            <div class="build-slot free" data-slot="1"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">②</div>
+            </div>
+          </div>
+          <div class="build-row">
+            <div class="build-slot free" data-slot="2"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">③</div>
+            </div>
+            <div class="build-slot free" data-slot="3"
+                 ondragover="freeBuildOver(event)" ondragleave="freeBuildLeave(event)" ondrop="freeBuildDrop(event)">
+              <div class="hint">④</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="build-pool">
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="📦"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">📦</div>
+        <div class="build-piece box" draggable="true" data-shape="box" data-emoji="🎁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎁</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥫"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥫</div>
+        <div class="build-piece cyl" draggable="true" data-shape="cyl" data-emoji="🥁"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🥁</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="⚽"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">⚽</div>
+        <div class="build-piece ball" draggable="true" data-shape="ball" data-emoji="🎾"
+             ondragstart="freeBuildDragStart(event, this)"
+             ontouchstart="freeBuildTouchStart(event, this)" ontouchmove="freeBuildTouchMove(event)" ontouchend="freeBuildTouchEnd(event)">🎾</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb21"></div>
+  </div>
+
+  <!-- ======== 확인 파트 (7 슬라이드) ======== -->
+
+  <!-- C1 (slide idx 22). 작품 갤러리 -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">작품 모음 ✨</div>
+    <div class="slide-title">🎨 내가 만든 <b>작품 모음</b></div>
+    <div id="workGalleryContainer" class="work-grid"></div>
+    <div style="font-size:var(--fs-caption); color:var(--text); line-height:1.5; max-width:min(720px, 96vw); margin-top:8px;">
+      너의 작품들이야! <b>모두 멋져!</b> 💛
+    </div>
+    <div class="options-row" style="margin-top:10px;">
+      <button class="opt-btn large" onclick="checkAnswer(this,22,true)">내 작품에 <b>만족!</b> 🌟</button>
+    </div>
+    <div class="feedback" id="fb22"></div>
+  </div>
+
+  <!-- C2 (slide idx 23). 작품 이름 짓기 1 (강아지) -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">이름 짓기 ①</div>
+    <div class="slide-title">🐶 강아지 작품 이름은?</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-bottom:8px;">마음에 드는 이름을 골라!</div>
+    <div class="options-row">
+      <button class="opt-btn word" onclick="checkAnswer(this,23,true)">멍멍이 🐾</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,23,true)">코코</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,23,true)">뽀삐</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,23,true)">조림이 🌟</button>
+    </div>
+    <div class="feedback" id="fb23"></div>
+  </div>
+
+  <!-- C3 (slide idx 24). 작품 이름 짓기 2 (자동차) -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">이름 짓기 ②</div>
+    <div class="slide-title">🚗 자동차 작품 이름은?</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-bottom:8px;">마음에 드는 이름을 골라!</div>
+    <div class="options-row">
+      <button class="opt-btn word" onclick="checkAnswer(this,24,true)">번개카 ⚡</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,24,true)">슈퍼카 🏎</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,24,true)">행복카 💛</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,24,true)">멋있는차 ✨</button>
+    </div>
+    <div class="feedback" id="fb24"></div>
+  </div>
+
+  <!-- C4 (slide idx 25). 자가평가: 가장 많이 쓴 모양은? -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">돌아보기</div>
+    <div class="slide-title">내 작품에 <b>가장 많이</b> 쓴 모양은?</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-bottom:8px;">아무 답이나 골라도 정답!</div>
+    <div class="options-row">
+      <button class="opt-btn pic" onclick="checkAnswer(this,25,true)">📦<br><span style="font-size:var(--fs-label); color:var(--subtext);">상자</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,25,true)">🥫<br><span style="font-size:var(--fs-label); color:var(--subtext);">기둥</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,25,true)">⚽<br><span style="font-size:var(--fs-label); color:var(--subtext);">공</span></button>
+      <button class="opt-btn pic" onclick="checkAnswer(this,25,true)">🎨<br><span style="font-size:var(--fs-label); color:var(--subtext);">비슷</span></button>
+    </div>
+    <div class="feedback" id="fb25"></div>
+  </div>
+
+  <!-- C5 (slide idx 26). 자유 창작 메시지 회상 -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">기억하기</div>
+    <div class="slide-title">⚽ <b>공</b>은 어디에 놓아도 됐을까?</div>
+    <div class="options-row" style="flex-direction:column; gap:8px;">
+      <button class="opt-btn word" onclick="checkAnswer(this,26,false)">머리에만</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,26,false)">다리에만</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,26,true)"><b>어디든 좋아!</b> 💛</button>
+      <button class="opt-btn word" onclick="checkAnswer(this,26,false)">잘 모르겠어</button>
+    </div>
+    <div class="feedback" id="fb26"></div>
+  </div>
+
+  <!-- C6 (slide idx 27). 단원 클로저 도장 -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">단원 클로저</div>
+    <div class="slide-title">🎉 1학년 수학 <b>2단원 끝!</b></div>
+    <div style="font-size:var(--fs-body); color:var(--text); line-height:1.6; max-width:min(720px, 96vw);">
+      여섯 번의 모양 여행, <b>모두 마쳤어!</b><br>
+      <span style="font-size:var(--fs-caption); color:var(--subtext);">아래 도장을 꾹! 눌러줘 ✨</span>
+    </div>
+    <div class="stamp-area">
+      <div class="stamp-circle" id="stamp27" onclick="stampClick(this,27)">
+        <span class="stamp-label">🏆<br>클리어</span>
+      </div>
+    </div>
+    <div class="feedback" id="fb27"></div>
+  </div>
+
+  <!-- C7 (slide idx 28). 다음 단원 미리보기 -->
+  <div class="slide" data-type="check" data-score="10">
+    <div class="badge check">다음 여행</div>
+    <div class="slide-title">🚀 다음은 <b>3단원!</b></div>
+    <div class="concept-box" style="font-size:var(--fs-body); line-height:1.7; max-width:min(720px, 96vw);">
+      다음엔 <b>덧셈과 뺄셈</b>을 배울 거야!<br>
+      <span style="font-size:var(--fs-caption); color:var(--subtext);">숫자 친구들이 기다리고 있어!<br><b>준비됐지?</b></span>
+    </div>
+    <div class="options-row" style="margin-top:14px;">
+      <button class="opt-btn large" onclick="checkAnswer(this,28,true)">응! <b>준비됐어!</b> 💪</button>
+    </div>
+    <div class="feedback" id="fb28"></div>
+  </div>
+
+  <!-- ======== 결과 (slide idx 29) ======== -->
+  <div class="slide" data-type="result">
+    <div class="result-card">
+      <div style="font-size:var(--em-sm);">🏆</div>
+      <div class="result-score"><span id="resultScore">0</span>점</div>
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="result-detail" id="resultCorrect"></div>
+      <div class="result-detail" id="resultCombo"></div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px;">
+        <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+        <div class="speech-bubble" id="resultSpeech"></div>
+      </div>
+      <button class="retry-btn" onclick="location.reload()">다시 풀기</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 네비게이션 -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>◀ 이전</button>
+  <span class="page-info" id="pageInfo">1 / 30</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">다음 ▶</button>
+</div>
+
+<script>
+// ===== 오디오 =====
+let audioCtx = null;
+let soundOn = true;
+function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function playSound(type) {
+  if(!soundOn) return;
+  initAudio();
+  audioCtx.resume().then(() => {
+    if(type==='correct') {
+      [523,659,784].forEach((f,i) => { const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f; g.gain.value=0.15; o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime+i*0.12); o.stop(audioCtx.currentTime+i*0.12+0.15); });
+    } else if(type==='wrong') {
+      [220,196].forEach((f,i) => { const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.value=f; g.gain.value=0.1; o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime+i*0.15); o.stop(audioCtx.currentTime+i*0.15+0.18); });
+    } else if(type==='click') {
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.value=0.1; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.06);
+    }
+  });
+}
+function toggleSound() { soundOn=!soundOn; document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'; }
+
+// ===== 슬라이드 =====
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let score = 0, combo = 0, maxCombo = 0, correctCount = 0;
+const answered = {};
+const TOTAL_QUESTIONS = 22;
+
+function showSlide(idx) {
+  slides.forEach((s,i) => { s.classList.toggle('active', i===idx); });
+  document.getElementById('prevBtn').disabled = idx===0;
+  document.getElementById('nextBtn').disabled = idx===total-1;
+  document.getElementById('pageInfo').textContent = `${idx+1} / ${total}`;
+  if(slides[idx].dataset.type==='result') showResult();
+  if(idx===22) renderWorkGallery();
+}
+
+function changeSlide(dir) {
+  playSound('click');
+  const next = current + dir;
+  if(next >= 0 && next < total) { current = next; showSlide(current); }
+}
+
+// ===== 콤보 =====
+function updateCombo(isCorrect) {
+  const cd = document.getElementById('comboDisplay');
+  if(isCorrect) { combo++; if(combo > maxCombo) maxCombo = combo; }
+  else { combo = 0; }
+  if(combo >= 2) { cd.style.display='block'; cd.textContent=`🔥 ${combo} 콤보`; }
+  else { cd.style.display='none'; }
+}
+
+function addScore(slideIdx) {
+  const sc = parseInt(slides[slideIdx].dataset.score)||10;
+  score += sc;
+  correctCount++;
+}
+
+function checkAnswer(btn, slideIdx, isCorrect) {
+  if(answered[slideIdx]) return;
+  const fb = document.getElementById('fb'+slideIdx);
+  const btns = btn.parentElement.querySelectorAll('.opt-btn');
+  if(isCorrect) {
+    answered[slideIdx] = true;
+    btn.classList.add('correct');
+    btns.forEach(b => { if(b!==btn) b.classList.add('disabled'); });
+    playSound('correct');
+    addScore(slideIdx);
+    fb.innerHTML = '<b>정답이에요!</b> 👏';
+    fb.className = 'feedback good';
+    updateCombo(true);
+  } else {
+    btn.classList.add('wrong');
+    playSound('wrong');
+    fb.innerHTML = '다시 생각해 봐요!';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { btn.classList.remove('wrong'); }, 600);
+  }
+}
+
+function checkCompare(el, slideIdx, isCorrect) {
+  if(answered[slideIdx]) return;
+  const fb = document.getElementById('fb'+slideIdx);
+  const sides = el.parentElement.querySelectorAll('.compare-side');
+  if(isCorrect) {
+    answered[slideIdx] = true;
+    el.classList.add('correct');
+    sides.forEach(s => { if(s!==el) s.classList.add('disabled'); });
+    playSound('correct');
+    addScore(slideIdx);
+    fb.innerHTML = '<b>맞아요!</b> 👍';
+    fb.className = 'feedback good';
+    updateCombo(true);
+  } else {
+    el.classList.add('wrong');
+    playSound('wrong');
+    fb.innerHTML = '다시 생각해 봐요!';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('wrong'); }, 600);
+  }
+}
+
+// ===== 탭 그리드: 거실에서 상자 모양 3개 찾기 (Q5) =====
+const tapGridData = [
+  {emoji:'⚽', target:true},
+  {emoji:'🏀', target:true},
+  {emoji:'🎾', target:true},
+  {emoji:'🥫', target:true},
+  {emoji:'📦', target:false},
+  {emoji:'📕', target:false},
+  {emoji:'🎁', target:false},
+  {emoji:'🧱', target:false},
+  {emoji:'📺', target:false}
+];
+const TAP_BALL_SLIDE = 11;
+const TAP_BALL_TARGET = 4;
+let tapBallCount = 0;
+function initTap() {
+  const grid = document.getElementById('tapGrid');
+  if(!grid) return;
+  const arr = [...tapGridData];
+  for(let i=arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  grid.innerHTML = '';
+  arr.forEach(item => {
+    const c = document.createElement('div');
+    c.className = 'tap-cell';
+    c.textContent = item.emoji;
+    c.onclick = () => tapCell(c, item);
+    grid.appendChild(c);
+  });
+}
+function tapCell(el, item) {
+  if(answered[TAP_BALL_SLIDE]) return;
+  if(el.classList.contains('tapped')) return;
+  if(item.target) {
+    el.classList.add('tapped');
+    el.textContent = '✓';
+    playSound('correct');
+    tapBallCount++;
+    document.getElementById('tapBallCount').textContent = tapBallCount;
+    if(tapBallCount === TAP_BALL_TARGET) {
+      answered[TAP_BALL_SLIDE] = true;
+      addScore(TAP_BALL_SLIDE);
+      const fb = document.getElementById('fb'+TAP_BALL_SLIDE);
+      fb.innerHTML = '<b>굴러가는 모양 다 찾았어요!</b> ⚽🥫💨';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    el.classList.add('miss');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+TAP_BALL_SLIDE);
+    fb.innerHTML = `${item.emoji}는 잘 못 굴러가요!`;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('miss'); }, 500);
+  }
+}
+
+// ===== 낚시: 잘 굴러가는 공만 잡기 (Q9) =====
+const pondItems = [
+  {label:'⚽', kind:'ball', shape:'공'},
+  {label:'📦', kind:'box', shape:'상자'},
+  {label:'🥫', kind:'cyl', shape:'둥근 기둥'},
+  {label:'🎾', kind:'ball', shape:'공'},
+  {label:'🎁', kind:'box', shape:'상자'},
+  {label:'🥤', kind:'cyl', shape:'둥근 기둥'},
+  {label:'🏀', kind:'ball', shape:'공'},
+  {label:'🎲', kind:'box', shape:'상자'},
+  {label:'🕯️', kind:'cyl', shape:'둥근 기둥'}
+];
+let fishCaught = 0;
+const POND_SLIDE = 15;
+const POND_TARGET = 3;
+function initPond() {
+  const pond = document.getElementById('pond');
+  if(!pond) return;
+  pond.innerHTML = '';
+  pondItems.forEach(item => {
+    const f = document.createElement('div');
+    f.className = 'fish';
+    f.textContent = item.label;
+    f.dataset.kind = item.kind;
+    f.dataset.label = item.label;
+    f.dataset.shape = item.shape;
+    f.onclick = () => catchFish(f, item.kind, item.label, item.shape);
+    pond.appendChild(f);
+  });
+}
+function catchFish(el, kind, label, shape) {
+  if(answered[POND_SLIDE]) return;
+  if(el.classList.contains('caught') || el.classList.contains('caught-wrong')) return;
+  if(kind === 'ball') {
+    el.classList.add('caught');
+    playSound('correct');
+    fishCaught++;
+    document.getElementById('fishCaught').textContent = fishCaught;
+    if(fishCaught === POND_TARGET) {
+      answered[POND_SLIDE] = true;
+      addScore(POND_SLIDE);
+      const fb = document.getElementById('fb'+POND_SLIDE);
+      fb.innerHTML = '<b>공을 모두 찾았어요!</b> ⚽✨';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    el.classList.add('wrong');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+POND_SLIDE);
+    fb.innerHTML = `${label}는 <b>${shape} 모양</b>! 공이 아니에요!`;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('wrong'); el.classList.add('caught-wrong'); }, 500);
+  }
+}
+
+// ===== 드래그 분류: 쌓기(stack) vs 구르기(roll) (Q6) =====
+const sortItems = [
+  {label:'📕', kind:'stack'},
+  {label:'🎁', kind:'stack'},
+  {label:'📺', kind:'stack'},
+  {label:'⚽', kind:'roll'},
+  {label:'🍊', kind:'roll'},
+  {label:'🥫', kind:'roll'}
+];
+let sortDragEl = null;
+let sortCorrect = 0;
+const SORT_TOTAL = 6;
+const SORT_SLIDE = 12;
+
+function initSort() {
+  const src = document.getElementById('sortSource');
+  if(!src) return;
+  const arr = [...sortItems];
+  for(let i=arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  src.innerHTML = '';
+  arr.forEach((item,i) => {
+    const el = document.createElement('div');
+    el.className = 'sort-item';
+    el.textContent = item.label;
+    el.dataset.kind = item.kind;
+    el.dataset.label = item.label;
+    el.draggable = true;
+    el.ondragstart = (e) => {
+      sortDragEl = el;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.kind);
+    };
+    el.ontouchstart = (e) => sortTouchStart(e, el);
+    el.ontouchmove = sortTouchMove;
+    el.ontouchend = sortTouchEnd;
+    src.appendChild(el);
+  });
+}
+
+function sortOver(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function sortLeave(e) { e.currentTarget.classList.remove('over'); }
+function sortDrop(e, slideIdx) {
+  e.preventDefault();
+  const bin = e.currentTarget;
+  bin.classList.remove('over');
+  if(!sortDragEl || answered[slideIdx]) return;
+  const itemKind = sortDragEl.dataset.kind;
+  const binKind = bin.dataset.kind;
+  if(itemKind === binKind) {
+    const slotId = 'bin' + binKind.charAt(0).toUpperCase() + binKind.slice(1);
+    const slot = document.getElementById(slotId);
+    const clone = document.createElement('span');
+    clone.textContent = sortDragEl.dataset.label;
+    slot.appendChild(clone);
+    sortDragEl.classList.add('used');
+    playSound('correct');
+    sortCorrect++;
+    if(sortCorrect === SORT_TOTAL) {
+      answered[slideIdx] = true;
+      addScore(slideIdx);
+      const fb = document.getElementById('fb'+slideIdx);
+      fb.innerHTML = '<b>모두 잘 나누었어요!</b> 🎯';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    bin.classList.add('wrong');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+slideIdx);
+    fb.innerHTML = '다른 바구니에 넣어봐요!';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { bin.classList.remove('wrong'); }, 500);
+  }
+  sortDragEl = null;
+}
+
+// 터치 드래그
+let sortTouchGhost = null;
+let sortTouchEl = null;
+function sortTouchStart(e, el) {
+  sortTouchEl = el;
+  const rect = el.getBoundingClientRect();
+  sortTouchGhost = el.cloneNode(true);
+  sortTouchGhost.style.position = 'fixed';
+  sortTouchGhost.style.left = rect.left+'px';
+  sortTouchGhost.style.top = rect.top+'px';
+  sortTouchGhost.style.width = rect.width+'px';
+  sortTouchGhost.style.height = rect.height+'px';
+  sortTouchGhost.style.opacity = '0.7';
+  sortTouchGhost.style.pointerEvents = 'none';
+  sortTouchGhost.style.zIndex = '9999';
+  document.body.appendChild(sortTouchGhost);
+}
+function sortTouchMove(e) {
+  if(!sortTouchGhost) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  sortTouchGhost.style.left = (t.clientX - sortTouchGhost.offsetWidth/2)+'px';
+  sortTouchGhost.style.top = (t.clientY - sortTouchGhost.offsetHeight/2)+'px';
+}
+function sortTouchEnd(e) {
+  if(!sortTouchGhost || !sortTouchEl) return;
+  const t = e.changedTouches[0];
+  sortTouchGhost.style.display = 'none';
+  const below = document.elementFromPoint(t.clientX, t.clientY);
+  const bin = below ? below.closest('.sort-bin') : null;
+  document.body.removeChild(sortTouchGhost);
+  sortTouchGhost = null;
+  if(bin && !answered[SORT_SLIDE]) {
+    const itemKind = sortTouchEl.dataset.kind;
+    const binKind = bin.dataset.kind;
+    if(itemKind === binKind) {
+      const slotId = 'bin' + binKind.charAt(0).toUpperCase() + binKind.slice(1);
+      const slot = document.getElementById(slotId);
+      const clone = document.createElement('span');
+      clone.textContent = sortTouchEl.dataset.label;
+      slot.appendChild(clone);
+      sortTouchEl.classList.add('used');
+      playSound('correct');
+      sortCorrect++;
+      if(sortCorrect === SORT_TOTAL) {
+        answered[SORT_SLIDE] = true;
+        addScore(SORT_SLIDE);
+        const fb = document.getElementById('fb'+SORT_SLIDE);
+        fb.innerHTML = '<b>모두 잘 나누었어요!</b> 🎯';
+        fb.className = 'feedback good';
+        updateCombo(true);
+      }
+    } else {
+      bin.classList.add('wrong');
+      playSound('wrong');
+      const fb = document.getElementById('fb'+SORT_SLIDE);
+      fb.innerHTML = '다른 바구니에 넣어봐요!';
+      fb.className = 'feedback bad';
+      updateCombo(false);
+      setTimeout(() => { bin.classList.remove('wrong'); }, 500);
+    }
+  }
+  sortTouchEl = null;
+}
+
+// ===== 매칭: 사물 ↔ 모양 짝짓기 (Q7, 신규) =====
+const buildPool = [
+  {id:'p1', kind:'box', emoji:'📦'},
+  {id:'p2', kind:'box', emoji:'🎁'},
+  {id:'p3', kind:'cyl', emoji:'🥫'},
+  {id:'p4', kind:'cyl', emoji:'🥫'},
+  {id:'p5', kind:'ball', emoji:'⚽'},
+  {id:'p6', kind:'ball', emoji:'🎾'}
+];
+let buildDragEl = null;
+const BUILD_SLIDE = 13;
+const BUILD_TOTAL = 4;
+let buildFilled = 0;
+function initBuild() {
+  const pool = document.getElementById('buildPool');
+  if(!pool) return;
+  const arr = [...buildPool];
+  for(let i=arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  pool.innerHTML = '';
+  arr.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'build-piece ' + item.kind;
+    el.textContent = item.emoji;
+    el.dataset.kind = item.kind;
+    el.dataset.emoji = item.emoji;
+    el.draggable = true;
+    el.ondragstart = (e) => {
+      buildDragEl = el;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', item.kind);
+    };
+    el.ontouchstart = (e) => buildTouchStart(e, el);
+    el.ontouchmove = buildTouchMove;
+    el.ontouchend = buildTouchEnd;
+    pool.appendChild(el);
+  });
+}
+function buildOver(e) {
+  e.preventDefault();
+  const slot = e.currentTarget;
+  if(slot.classList.contains('filled')) return;
+  slot.classList.add('over');
+}
+function buildLeave(e) { e.currentTarget.classList.remove('over'); }
+function buildDrop(e) {
+  e.preventDefault();
+  const slot = e.currentTarget;
+  slot.classList.remove('over');
+  if(!buildDragEl || answered[BUILD_SLIDE]) return;
+  if(slot.classList.contains('filled')) return;
+  buildPlace(buildDragEl, slot);
+  buildDragEl = null;
+}
+function buildPlace(piece, slot) {
+  const want = slot.dataset.want;
+  const kind = piece.dataset.kind;
+  if(want === kind) {
+    slot.classList.add('filled');
+    slot.innerHTML = '<div class="placed">'+piece.dataset.emoji+'</div>';
+    piece.classList.add('used');
+    playSound('correct');
+    buildFilled++;
+    if(buildFilled === BUILD_TOTAL) {
+      answered[BUILD_SLIDE] = true;
+      addScore(BUILD_SLIDE);
+      const fb = document.getElementById('fb'+BUILD_SLIDE);
+      fb.innerHTML = '<b>로봇 완성!</b> 🤖✨';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    slot.classList.add('wrong');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+BUILD_SLIDE);
+    let why = '';
+    if(want==='ball' && kind==='box') why = '머리는 둥근 <b class="c-ball">⚽ 공</b>이 어울려!';
+    else if(want==='ball' && kind==='cyl') why = '머리는 동글동글 <b class="c-ball">⚽ 공</b>이야!';
+    else if(want==='box' && kind==='cyl') why = '몸통은 평평한 <b class="c-box">📦 상자</b>가 어울려!';
+    else if(want==='box' && kind==='ball') why = '몸통이 공이면 굴러가버려!';
+    else if(want==='cyl' && kind==='box') why = '팔은 길쭉한 <b class="c-cyl">🥫 기둥</b>이야!';
+    else if(want==='cyl' && kind==='ball') why = '팔이 공이면 모양이 안 잡혀!';
+    else why = '다른 자리에 어울려!';
+    fb.innerHTML = why;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { slot.classList.remove('wrong'); }, 500);
+  }
+}
+// build 터치 (sort 터치 패턴 차용)
+let buildTouchGhost = null;
+let buildTouchEl = null;
+function buildTouchStart(e, el) {
+  buildTouchEl = el;
+  const rect = el.getBoundingClientRect();
+  buildTouchGhost = el.cloneNode(true);
+  buildTouchGhost.style.position = 'fixed';
+  buildTouchGhost.style.left = rect.left+'px';
+  buildTouchGhost.style.top = rect.top+'px';
+  buildTouchGhost.style.width = rect.width+'px';
+  buildTouchGhost.style.height = rect.height+'px';
+  buildTouchGhost.style.opacity = '0.7';
+  buildTouchGhost.style.pointerEvents = 'none';
+  buildTouchGhost.style.zIndex = '9999';
+  document.body.appendChild(buildTouchGhost);
+}
+function buildTouchMove(e) {
+  if(!buildTouchGhost) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  buildTouchGhost.style.left = (t.clientX - buildTouchGhost.offsetWidth/2)+'px';
+  buildTouchGhost.style.top = (t.clientY - buildTouchGhost.offsetHeight/2)+'px';
+}
+function buildTouchEnd(e) {
+  if(!buildTouchGhost || !buildTouchEl) return;
+  const t = e.changedTouches[0];
+  buildTouchGhost.style.display = 'none';
+  const below = document.elementFromPoint(t.clientX, t.clientY);
+  const slot = below ? below.closest('.build-slot') : null;
+  document.body.removeChild(buildTouchGhost);
+  buildTouchGhost = null;
+  if(slot && !slot.classList.contains('filled') && !answered[BUILD_SLIDE]) {
+    buildPlace(buildTouchEl, slot);
+  }
+  buildTouchEl = null;
+}
+
+// ===== tb_20 신규: 자유 build (slide 17~21) + 갤러리 + 도장 =====
+const FREE_BUILD_SLIDES = [17,18,19,20,21];
+const FREE_BUILD_TOTAL = 4;
+const freeBuildFilled = {17:0, 18:0, 19:0, 20:0, 21:0};
+const galleryItems = []; // {slideIdx, shapes:[...], emojis:[...], theme}
+const FREE_THEME = {
+  17: {emoji:'🐶', name:'강아지'},
+  18: {emoji:'🚗', name:'자동차'},
+  19: {emoji:'🏰', name:'성'},
+  20: {emoji:'🤖', name:'로봇'},
+  21: {emoji:'⭐', name:'자유작품'}
+};
+let freeBuildDragEl = null;
+
+function freeBuildDragStart(e, el) {
+  freeBuildDragEl = el;
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', el.dataset.shape);
+}
+function freeBuildOver(e) {
+  e.preventDefault();
+  const slot = e.currentTarget;
+  if(slot.classList.contains('filled')) return;
+  slot.classList.add('over');
+}
+function freeBuildLeave(e) { e.currentTarget.classList.remove('over'); }
+function freeBuildDrop(e) {
+  e.preventDefault();
+  const slot = e.currentTarget;
+  slot.classList.remove('over');
+  if(!freeBuildDragEl) return;
+  if(slot.classList.contains('filled')) return;
+  const slideEl = slot.closest('.slide');
+  const slideIdx = Array.from(slides).indexOf(slideEl);
+  if(answered[slideIdx]) return;
+  freeBuildPlace(freeBuildDragEl, slot, slideIdx);
+  freeBuildDragEl = null;
+}
+function freeBuildPlace(piece, slot, slideIdx) {
+  // 자유 배치: wrong 없음, 모든 배치 OK
+  slot.classList.add('filled');
+  slot.dataset.shape = piece.dataset.shape;
+  slot.dataset.emoji = piece.dataset.emoji;
+  slot.innerHTML = '<div class="placed">'+piece.dataset.emoji+'</div>';
+  playSound('correct');
+  freeBuildFilled[slideIdx]++;
+  if(freeBuildFilled[slideIdx] === FREE_BUILD_TOTAL) {
+    answered[slideIdx] = true;
+    addScore(slideIdx);
+    updateCombo(true);
+    // 황금 글로우
+    const slideEl = slot.closest('.slide');
+    slideEl.querySelectorAll('.build-slot.free').forEach(s => s.classList.add('complete'));
+    // 갤러리 누적
+    const slots = slideEl.querySelectorAll('.build-slot.free');
+    const shapes = Array.from(slots).map(s => s.dataset.shape || '?');
+    const emojis = Array.from(slots).map(s => s.dataset.emoji || '?');
+    galleryItems.push({
+      slideIdx,
+      shapes,
+      emojis,
+      theme: FREE_THEME[slideIdx]
+    });
+    // 피드백
+    const fb = document.getElementById('fb'+slideIdx);
+    if(fb) {
+      fb.innerHTML = '🎨 <b>'+FREE_THEME[slideIdx].name+' 완성!</b> 작품 모음에 추가됐어!';
+      fb.className = 'feedback good';
+    }
+  }
+}
+// 자유 build 터치 (build 터치 패턴 차용)
+let freeTouchGhost = null;
+let freeTouchEl = null;
+function freeBuildTouchStart(e, el) {
+  freeTouchEl = el;
+  freeBuildDragEl = el; // 데스크 dragstart 호환
+  const rect = el.getBoundingClientRect();
+  freeTouchGhost = el.cloneNode(true);
+  freeTouchGhost.style.position = 'fixed';
+  freeTouchGhost.style.left = rect.left+'px';
+  freeTouchGhost.style.top = rect.top+'px';
+  freeTouchGhost.style.width = rect.width+'px';
+  freeTouchGhost.style.height = rect.height+'px';
+  freeTouchGhost.style.opacity = '0.7';
+  freeTouchGhost.style.pointerEvents = 'none';
+  freeTouchGhost.style.zIndex = '9999';
+  document.body.appendChild(freeTouchGhost);
+}
+function freeBuildTouchMove(e) {
+  if(!freeTouchGhost) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  freeTouchGhost.style.left = (t.clientX - freeTouchGhost.offsetWidth/2)+'px';
+  freeTouchGhost.style.top = (t.clientY - freeTouchGhost.offsetHeight/2)+'px';
+}
+function freeBuildTouchEnd(e) {
+  if(!freeTouchGhost || !freeTouchEl) return;
+  const t = e.changedTouches[0];
+  freeTouchGhost.style.display = 'none';
+  const below = document.elementFromPoint(t.clientX, t.clientY);
+  const slot = below ? below.closest('.build-slot.free') : null;
+  document.body.removeChild(freeTouchGhost);
+  freeTouchGhost = null;
+  if(slot && !slot.classList.contains('filled')) {
+    const slideEl = slot.closest('.slide');
+    const slideIdx = Array.from(slides).indexOf(slideEl);
+    if(!answered[slideIdx]) {
+      freeBuildPlace(freeTouchEl, slot, slideIdx);
+    }
+  }
+  freeTouchEl = null;
+  freeBuildDragEl = null;
+}
+
+// 갤러리 렌더링 (slide 22 진입 시)
+function renderWorkGallery() {
+  const container = document.getElementById('workGalleryContainer');
+  if(!container) return;
+  if(galleryItems.length === 0) {
+    container.innerHTML = '<div class="work-empty">아직 작품이 없어 — 앞으로 돌아가서 만들어 봐!</div>';
+    return;
+  }
+  container.innerHTML = galleryItems.map(item => {
+    const emojiStr = item.emojis.join(' ');
+    return '<div class="work-card"><div style="font-size:var(--em-sm); line-height:1;">'+item.theme.emoji+'</div><div class="work-shapes">'+emojiStr+'</div><div class="work-name">'+item.theme.name+'</div></div>';
+  }).join('');
+}
+
+// 단원 클로저 도장
+function stampClick(el, slideIdx) {
+  if(answered[slideIdx]) return;
+  el.classList.add('stamped');
+  el.querySelector('.stamp-label').innerHTML = '✅<br>완료!';
+  answered[slideIdx] = true;
+  addScore(slideIdx);
+  updateCombo(true);
+  playSound('correct');
+  const fb = document.getElementById('fb'+slideIdx);
+  if(fb) {
+    fb.innerHTML = '🏆 <b>2단원 클리어!</b> 정말 잘했어!';
+    fb.className = 'feedback good';
+  }
+}
+
+// ===== 결과 =====
+function showResult() {
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultCombo').textContent = `최대 콤보: 🔥 ${maxCombo}`;
+  document.getElementById('resultCorrect').textContent = `맞힌 문제: ${correctCount} / ${TOTAL_QUESTIONS} · 작품 ${galleryItems.length}/5`;
+  let msg = '', speech = '';
+  const works = galleryItems.length;
+  if(works === 5) { msg = '🏆 5작품 모두 완성!'; speech = '완벽한 창작가야!'; }
+  else if(works >= 3) { msg = '🎨 멋진 작품가!'; speech = '다음엔 5작품 다 도전!'; }
+  else if(works >= 1) { msg = '🌱 작품을 더 만들어 봐!'; speech = '천천히 다시 와도 좋아!'; }
+  else { msg = '💛 너만의 작품, 기다릴게'; speech = '돌아가서 만들어 봐!'; }
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('resultSpeech').textContent = speech;
+}
+
+initTap();
+initPond();
+initSort();
+initBuild();
+showSlide(0);
+</script>
+</body>
+</html>
