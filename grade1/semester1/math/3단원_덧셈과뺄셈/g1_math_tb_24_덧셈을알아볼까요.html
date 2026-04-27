@@ -5,600 +5,1183 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_tracker.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>덧셈을 알아볼까요 - K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/grade1/semester1/math/math-common.css">
 <style>
-:root{--bg:#F0FDFA;--card:#FFFFFF;--primary:#26A69A;--primary-light:#E0F2F1;--secondary:#4DB6AC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E8E4;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-user-select:none;}
-.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}
-.logo span:first-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}
-.logo span:nth-child(2){font-size:10px;color:#F59E0B;}
-.logo span:last-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
-.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;}
-.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;transform:translateX(60px);}
-.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}
-.slide.exit{opacity:0;transform:translateX(-60px);}
-.slide-title{font-size:28px;color:var(--primary);margin-bottom:8px;text-align:center;}
-.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 14px;border-radius:20px;font-size:16px;margin-bottom:10px;}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;width:100%;max-width:560px;text-align:center;}
-.char-row{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px;}
-.char-img{width:56px;height:56px;border-radius:50%;}
-.speech{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:22px;max-width:380px;text-align:left;position:relative;}
-.speech::before{content:'';position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:var(--primary-light);}
-.btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
-.btn{padding:12px 24px;border-radius:16px;border:3px solid var(--border);background:var(--card);font-family:'Jua',sans-serif;font-size:48px;cursor:pointer;transition:all .2s;min-width:70px;}
-.btn:hover{border-color:var(--primary);background:var(--primary-light);}
-.btn.correct{background:var(--green-light)!important;border-color:var(--green)!important;animation:pop .3s;}
-.btn.wrong{background:var(--red-light)!important;border-color:var(--red)!important;animation:shake .4s;}
-.btn-sm{font-size:28px;padding:10px 20px;}
-.blank{display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border:4px dashed var(--primary);border-radius:16px;font-size:56px;color:var(--primary);background:var(--primary-light);margin:0 4px;transition:all .3s;vertical-align:middle;}
-.blank.filled{border-style:solid;background:var(--green-light);border-color:var(--green);color:var(--green);}
-.blank-sm{width:56px;height:56px;font-size:40px;}
-.eq-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0;font-size:52px;flex-wrap:wrap;}
-.feedback{margin-top:12px;font-size:22px;min-height:30px;text-align:center;}
-.ok{color:var(--green);}
-.no{color:var(--red);}
-.cube{width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:22px;}
-.c1{background:#FFCDD2;border:2px solid #EF9A9A;}
-.c2{background:#C8E6C9;border:2px solid #A5D6A7;}
-.symbol-box{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;font-size:40px;font-weight:bold;margin:0 6px;}
-.sym-plus{background:#E8F5E9;color:#2E7D32;border:3px solid #A5D6A7;}
-.sym-eq{background:#E3F2FD;color:#1565C0;border:3px solid #90CAF9;}
-.ox-btn{width:80px;height:80px;border-radius:50%;font-size:40px;border:4px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
-.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
-.scene{background:linear-gradient(135deg,#E0F7FA,#FFF9C4);border-radius:20px;padding:16px;margin:10px 0;font-size:48px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;min-height:70px;}
-.num-card{display:inline-flex;align-items:center;justify-content:center;width:60px;height:76px;border:3px solid var(--border);border-radius:14px;font-size:44px;background:var(--card);cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.num-card:hover{border-color:var(--primary);transform:translateY(-3px);}
-.num-card.sel{border-color:var(--primary);background:var(--primary-light);}
-.num-card.correct{border-color:var(--green);background:var(--green-light);}
-.num-card.wrong{border-color:var(--red);background:var(--red-light);}
-.nav{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:100;}
-.nav-btn{padding:10px 28px;border-radius:30px;border:none;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;transition:all .2s;}
-.nav-prev{background:var(--card);color:var(--text);border:2px solid var(--border);}
-.nav-next{background:var(--primary);color:#fff;}
-.nav-btn:disabled{opacity:.4;cursor:default;}
-.page-info{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--subtext);}
-.combo-badge{display:inline-block;background:linear-gradient(135deg,#FF6B6B,#FFE66D);color:#fff;padding:6px 18px;border-radius:20px;font-size:20px;margin:6px 0;}
-@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+:root {
+  --bg: #F0FDF4;
+  --card: #FFFFFF;
+  --primary: #E11D48;
+  --primary-light: #FFE4E6;
+  --secondary: #FB7185;
+  --green: #4CAF50;
+  --green-light: #E8F5E9;
+  --red: #F44336;
+  --red-light: #FFEBEE;
+  --yellow: #FFC107;
+  --yellow-light: #FFF8E1;
+  --blue: #42A5F5;
+  --blue-light: #E3F2FD;
+  --purple: #AB47BC;
+  --purple-light: #F3E5F5;
+  --text: #333333;
+  --subtext: #888888;
+  --border: #BBF7D0;
+  --shadow: 0 4px 16px rgba(0,0,0,0.08);
+  --radius: 20px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:'Jua',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; height:100vh; width:100vw; user-select:none; }
+.logo { display:flex; align-items:center; gap:2px; position:fixed; top:12px; left:16px; z-index:999; }
+.logo-k { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:#1D4ED8; }
+.logo-star { font-size:10px; color:#F59E0B; }
+.logo-edu { font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-caption); color:#333; }
+.sound-btn { position:fixed; top:12px; right:16px; z-index:999; background:var(--primary-light); border:none; border-radius:50%; width:40px; height:40px; font-size:var(--fs-caption); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.slide-container { width:100vw; height:100vh; position:relative; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:60px 20px 80px; text-align:center; position:absolute; top:0; left:0; overflow-y:auto; }
+.slide.active { display:flex; }
+.slide-title { font-size:var(--fs-title); color:var(--primary); margin-bottom:14px; line-height:1.3; }
+.slide-sub { font-size:var(--fs-heading); color:var(--text); margin-bottom:16px; line-height:1.4; }
+.concept-box { background:var(--card); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow); max-width:min(820px, 96vw); width:100%; margin:8px 0; }
+.char-img { width:min(80px, 18vw); height:min(80px, 18vw); border-radius:50%; }
+.speech-bubble { background:var(--card); border-radius:20px; padding:16px 20px; font-size:var(--fs-body); box-shadow:var(--shadow); max-width:min(760px, 96vw); position:relative; margin:8px 0; }
+.speech-bubble::after { content:''; position:absolute; bottom:-10px; left:40px; border-width:10px 10px 0; border-style:solid; border-color:var(--card) transparent transparent; }
+.options-row { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin:12px 0; }
+.opt-btn { background:var(--card); border:3px solid var(--border); border-radius:16px; padding:10px 24px; font-size:var(--fs-title); font-family:'Jua',sans-serif; cursor:pointer; transition:all 0.2s; min-width:110px; color:var(--text); }
+.opt-btn:active { transform:scale(0.95); }
+.opt-btn.correct { border-color:var(--green); background:var(--green-light); animation:pop 0.4s; }
+.opt-btn.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.opt-btn.disabled { pointer-events:none; opacity:0.6; }
+.opt-btn.large { font-size:var(--em-md); min-width:190px; }
+.opt-btn.small { font-size:var(--fs-body); padding:10px 18px; min-width:80px; }
+.opt-btn.pic { font-size:var(--em-sm); min-width:130px; padding:14px 18px; line-height:1.1; }
+.opt-btn.word { font-size:var(--fs-body); min-width:190px; padding:12px 18px; }
+.opt-btn.num { font-size:var(--em-sm); min-width:95px; padding:12px 20px; }
+.badge { display:inline-block; font-size:var(--fs-caption); background:var(--yellow-light); padding:4px 12px; border-radius:20px; margin-bottom:8px; color:var(--text); }
+.badge.problem { background:var(--blue-light); color:#1976D2; }
+.badge.check { background:var(--purple-light); color:#7B1FA2; }
+.feedback { font-size:var(--fs-body); margin-top:12px; min-height:36px; }
+.feedback.good { color:var(--green); }
+.feedback.bad { color:var(--red); }
+.nav-bar { position:fixed; bottom:0; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:12px 24px; background:rgba(240,253,244,0.95); z-index:99; }
+.nav-btn { background:var(--primary); color:#fff; border:none; border-radius:30px; padding:10px 28px; font-size:var(--fs-body); font-family:'Jua',sans-serif; cursor:pointer; transition:opacity 0.2s; }
+.nav-btn:disabled { opacity:0.3; cursor:default; }
+.nav-btn:active { transform:scale(0.95); }
+.page-info { font-size:var(--fs-caption); color:var(--subtext); }
+.combo-display { position:fixed; top:60px; right:16px; font-size:var(--fs-caption); z-index:99; background:var(--yellow-light); padding:4px 12px; border-radius:16px; }
+.result-card { background:var(--card); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow); max-width:min(760px, 96vw); width:100%; }
+.result-score { font-size:var(--em-md); color:var(--primary); }
+.result-msg { font-size:var(--fs-heading); margin:12px 0; }
+.result-detail { font-size:var(--fs-caption); color:var(--subtext); margin:4px 0; }
+.retry-btn { background:var(--primary); color:#fff; border:none; border-radius:30px; padding:14px 40px; font-size:var(--fs-body); font-family:'Jua',sans-serif; cursor:pointer; margin-top:16px; }
+
+/* ===== 입체도형 공통 컴포넌트 (tb_15 계승) ===== */
+.shape-display { display:flex; flex-direction:column; align-items:center; gap:8px; margin:14px 0; }
+.shape-big { font-size:var(--em-lg); line-height:1; }
+.shape-big.box { color:var(--primary); }
+.shape-big.cyl { color:var(--purple); }
+.shape-big.ball { color:var(--blue); }
+.shape-name-big { font-size:var(--fs-heading); padding:6px 18px; border-radius:30px; font-family:'Jua',sans-serif; }
+.shape-name-big.box { background:var(--primary-light); color:var(--primary); border:3px solid var(--primary); }
+.shape-name-big.cyl { background:var(--purple-light); color:var(--purple); border:3px solid var(--purple); }
+.shape-name-big.ball { background:var(--blue-light); color:var(--blue); border:3px solid var(--blue); }
+
+.shape-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--shadow); min-width:190px; display:flex; flex-direction:column; align-items:center; gap:6px; border:3px solid var(--border); }
+.shape-card.box { border-color:var(--primary); }
+.shape-card.cyl { border-color:var(--purple); }
+.shape-card.ball { border-color:var(--blue); }
+.shape-card .pic { font-size:var(--fs-title); line-height:1; }
+.shape-card .label { font-size:var(--fs-caption); color:var(--subtext); }
+
+.items-row { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin:12px 0; }
+
+.compare-row { display:flex; gap:24px; justify-content:center; align-items:center; margin:12px 0; flex-wrap:wrap; }
+.compare-side { display:flex; flex-direction:column; align-items:center; gap:6px; background:var(--card); border-radius:14px; padding:18px 22px; box-shadow:var(--shadow); cursor:pointer; transition:all 0.2s; border:3px solid transparent; min-width:190px; }
+.compare-side:active { transform:scale(0.95); }
+.compare-side.correct { border-color:var(--green); background:var(--green-light); }
+.compare-side.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.compare-side.disabled { pointer-events:none; opacity:0.6; }
+.compare-side .pic { font-size:var(--em-md); }
+.compare-side .label { font-size:var(--fs-caption); color:var(--subtext); }
+
+.pond { background:var(--blue-light); border-radius:20px; padding:24px; max-width:min(720px, 96vw); width:100%; margin:12px 0; position:relative; min-height:240px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; }
+.fish { background:var(--card); border:3px solid var(--blue); border-radius:50%; width:min(92px, 19vw); height:min(92px, 19vw); display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:pointer; transition:all 0.3s; text-align:center; line-height:1.1; padding:4px; }
+.fish:active { transform:scale(0.9); }
+.fish.caught { background:var(--green); border-color:var(--green); transform:scale(1.15); animation:pop 0.4s; }
+.fish.wrong { background:var(--red-light); border-color:var(--red); animation:shake 0.4s; }
+.fish.caught-wrong { opacity:0.3; pointer-events:none; }
+
+.tap-counter { font-size:var(--fs-body); color:var(--text); font-family:'Jua',sans-serif; }
+.tap-counter b { color:var(--primary); font-size:var(--fs-body); }
+
+/* ===== tb_17 신규: 행동 비교 카드 (쌓기/구르기 ✓✗) ===== */
+.compare-action { display:flex; gap:14px; justify-content:center; align-items:flex-start; flex-wrap:wrap; margin:10px 0; }
+.action-card { background:var(--card); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:8px; border:3px solid var(--border); min-width:180px; }
+.action-card .shape-row { display:flex; gap:6px; justify-content:center; align-items:flex-end; min-height:90px; }
+.action-card .shape-row .e { font-size:var(--em-md); line-height:1; }
+.action-card .verdict { font-size:var(--fs-caption); padding:5px 12px; border-radius:14px; font-family:'Jua',sans-serif; }
+.action-card.ok { border-color:var(--green); }
+.action-card.ok .verdict { background:var(--green-light); color:var(--green); }
+.action-card.no { border-color:var(--red); }
+.action-card.no .verdict { background:var(--red-light); color:var(--red); }
+.action-card .why { font-size:var(--fs-label); color:var(--subtext); line-height:1.4; }
+
+/* ===== tb_17 신규: 기둥 두 자세 (세움/눕힘) ===== */
+.cyl-twoface { display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap; margin:10px 0; }
+.cyl-pose { background:var(--card); border-radius:16px; padding:14px 18px; box-shadow:var(--shadow); border:3px solid var(--purple); display:flex; flex-direction:column; align-items:center; gap:6px; min-width:160px; }
+.cyl-pose .e { font-size:var(--em-lg); line-height:1; color:var(--purple); }
+.cyl-pose.lay .e { transform:rotate(90deg); display:inline-block; }
+.cyl-pose .label { font-size:var(--fs-caption); color:var(--purple); font-family:'Jua',sans-serif; }
+.cyl-pose .effect { font-size:var(--fs-label); color:var(--subtext); line-height:1.4; }
+
+/* ===== tb_17 신규: 작품 갤러리 ===== */
+.gallery-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:12px 0; }
+.gallery-card { background:var(--card); border-radius:16px; padding:14px 18px; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:6px; border:3px solid var(--border); min-width:140px; }
+.gallery-card .product { font-size:var(--em-md); line-height:1; }
+.gallery-card .name { font-size:var(--fs-caption); font-family:'Jua',sans-serif; color:var(--text); }
+.gallery-card .recipe { font-size:var(--fs-label); color:var(--subtext); }
+
+/* ===== tb_17 신규: Q5 탭 그리드 (9칸 그리드에서 공만 잡기) ===== */
+.tap-grid-wrap { background:var(--blue-light); border-radius:18px; padding:14px; max-width:var(--mw-sm); width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.tap-grid { display:grid; grid-template-columns:repeat(3, min(80px, 22vw)); gap:8px; justify-content:center; }
+.tap-cell { width:min(80px, 22vw); height:min(80px, 22vw); background:var(--card); border:3px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:pointer; transition:all 0.2s; }
+.tap-cell:active { transform:scale(0.9); }
+.tap-cell.tapped { background:var(--green-light); border-color:var(--green); animation:pop 0.4s; pointer-events:none; }
+.tap-cell.miss { animation:shake 0.4s; border-color:var(--red); }
+.tap-counter b.cnt-blue { color:var(--blue); }
+
+/* ===== tb_17 신규: 드래그 조립 (build) ===== */
+.build-area { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:var(--mw-md); margin:10px 0; }
+.build-canvas { background:var(--yellow-light); border-radius:18px; padding:18px 14px; width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; }
+.build-task { font-size:var(--fs-caption); color:var(--text); font-family:'Jua',sans-serif; line-height:1.4; }
+.build-product { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.build-row { display:flex; gap:10px; justify-content:center; align-items:center; }
+.build-slot { background:var(--card); border:3px dashed var(--border); border-radius:14px; width:min(80px, 18vw); height:min(80px, 18vw); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:all 0.2s; padding:4px; }
+.build-slot.body { width:min(140px, 32vw); border-color:var(--primary); }
+.build-slot.wheel { border-color:var(--purple); border-radius:50%; }
+.build-slot.over { transform:scale(1.05); border-style:solid; }
+.build-slot.filled { border-style:solid; background:var(--green-light); border-color:var(--green); animation:pop 0.4s; }
+.build-slot.wrong { animation:shake 0.4s; border-color:var(--red); }
+.build-slot .hint { font-size:var(--fs-label); color:var(--subtext); font-family:'Jua',sans-serif; line-height:1.2; text-align:center; }
+.build-slot .placed { font-size:var(--em-md); line-height:1; }
+.build-pool { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:12px; background:var(--card); border-radius:14px; min-height:80px; width:100%; box-shadow:var(--shadow); }
+.build-piece { width:min(80px, 18vw); height:min(80px, 18vw); background:var(--card); border:3px solid var(--border); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:var(--em-sm); cursor:grab; transition:transform 0.2s; user-select:none; }
+.build-piece.box { border-color:var(--primary); }
+.build-piece.cyl { border-color:var(--purple); }
+.build-piece.ball { border-color:var(--blue); }
+.build-piece:active { cursor:grabbing; transform:scale(1.1); }
+.build-piece.used { opacity:0.3; pointer-events:none; transform:scale(0.9); }
+
+/* ===== tb_18 신규: 매칭 (match) - 사물↔모양 짝짓기 ===== */
+.match-area { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; max-width:var(--mw-md); margin:10px 0; }
+.match-counter { font-size:var(--fs-caption); color:var(--text); font-family:'Jua',sans-serif; }
+.match-counter b { color:var(--green); }
+.match-row { display:flex; flex-direction:column; gap:8px; align-items:center; width:100%; }
+.match-col-title { font-size:var(--fs-label); font-family:'Jua',sans-serif; padding:3px 12px; border-radius:12px; }
+.match-col-title.obj { background:var(--yellow-light); color:var(--text); }
+.match-col-title.shape { background:var(--primary-light); color:var(--primary); }
+.match-cards { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.match-card { background:var(--card); border:3px solid var(--border); border-radius:14px; padding:8px 4px; width:min(78px, 18vw); min-height:min(76px, 17vw); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; transition:all 0.2s; }
+.match-card:active { transform:scale(0.95); }
+.match-card .e { font-size:var(--em-sm); line-height:1; }
+.match-card .label { font-size:var(--fs-label); color:var(--subtext); line-height:1.2; text-align:center; }
+.match-card.selected { border-color:var(--blue); background:var(--blue-light); transform:scale(1.05); }
+.match-card.matched { border-color:var(--green); background:var(--green-light); animation:pop 0.4s; opacity:0.6; pointer-events:none; }
+.match-card.flash-ok { animation:pop 0.4s; border-color:var(--green); }
+.match-card.shake { animation:shake 0.4s; border-color:var(--red); }
+
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.slide.active > * { animation:fadeIn 0.5s ease; }
+
+/* ===== tb_21 신규: 모으기 (gather) ===== */
+.gather-row { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; margin:12px 0; max-width:min(700px, 96vw); }
+.gather-pile { background:var(--primary-light); border-radius:18px; padding:12px 14px; min-width:90px; box-shadow:var(--shadow); display:flex; flex-direction:column; align-items:center; gap:4px; }
+.gather-pile.b { background:var(--blue-light); }
+.gather-pile.y { background:var(--yellow-light); }
+.gather-pile .emo { font-size:var(--em-sm); line-height:1.05; }
+.gather-pile .num { font-size:var(--fs-heading); color:var(--text); font-family:'Jua',sans-serif; }
+.gather-op { font-size:var(--em-md); color:var(--primary); font-family:'Jua',sans-serif; }
+.gather-result { background:var(--green-light); border:3px solid var(--green); border-radius:18px; padding:12px 14px; min-width:90px; display:flex; flex-direction:column; align-items:center; gap:4px; box-shadow:var(--shadow); }
+.gather-result .emo { font-size:var(--em-sm); line-height:1.05; }
+.gather-result .num { font-size:var(--em-sm); color:var(--green); font-family:'Jua',sans-serif; }
+.gather-result.q { background:var(--card); border-color:var(--primary); border-style:dashed; }
+.gather-result.q .num { color:var(--primary); }
+
+/* 가르기·합 표 (작은 표) */
+.pair-table { display:grid; grid-template-columns:repeat(3, auto); gap:6px 14px; justify-content:center; align-items:center; font-family:'Jua',sans-serif; font-size:var(--fs-body); margin:10px 0; }
+.pair-table .left { color:var(--blue); }
+.pair-table .op { color:var(--subtext); }
+.pair-table .right { color:var(--primary); }
+.pair-table .eq { color:var(--subtext); }
+.pair-table .sum { color:var(--green); font-size:var(--fs-heading); }
+
+/* 비교 (compare): 두 식 중 답 고르기 */
+.compare-row { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:14px 0; }
+.compare-side { background:var(--card); border:3px solid var(--border); border-radius:16px; padding:14px 20px; font-size:var(--fs-heading); font-family:'Jua',sans-serif; cursor:pointer; transition:all 0.2s; min-width:140px; color:var(--text); }
+.compare-side:active { transform:scale(0.95); }
+.compare-side.correct { border-color:var(--green); background:var(--green-light); animation:pop 0.4s; }
+.compare-side.wrong { border-color:var(--red); background:var(--red-light); animation:shake 0.4s; }
+.compare-side.disabled { pointer-events:none; opacity:0.6; }
+
+/* 탭 그리드: 합 9 짝 모두 잡기 */
+.tap-grid { display:grid; grid-template-columns:repeat(3, minmax(80px, 1fr)); gap:10px; max-width:min(420px, 92vw); width:100%; margin:14px 0; }
+.tap-cell { background:var(--card); border:3px solid var(--border); border-radius:14px; padding:10px 6px; cursor:pointer; transition:all 0.2s; display:flex; flex-direction:column; align-items:center; gap:4px; min-height:90px; justify-content:center; font-family:'Jua',sans-serif; }
+.tap-cell:active { transform:scale(0.95); }
+.tap-cell.hit { background:var(--green-light); border-color:var(--green); animation:pop 0.4s; pointer-events:none; }
+.tap-cell.miss { background:var(--red-light); border-color:var(--red); animation:shake 0.4s; }
+.tap-cell .pair { font-size:var(--fs-heading); }
+.tap-cell .lbl { font-size:var(--fs-label); color:var(--subtext); }
+
+/* 풀 (pond): 떠다니는 짝 잡기 */
+.pond-area { background:var(--blue-light); border-radius:20px; padding:18px; max-width:min(560px, 96vw); width:100%; margin:10px 0; display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.pond-fish { background:var(--card); border:3px solid var(--border); border-radius:14px; padding:14px 10px; cursor:pointer; font-family:'Jua',sans-serif; font-size:var(--fs-heading); transition:transform 0.2s; user-select:none; text-align:center; }
+.pond-fish:active { transform:scale(0.95); }
+.pond-fish.caught { background:var(--green-light); border-color:var(--green); animation:pop 0.4s; pointer-events:none; }
+.pond-fish.wrong { animation:shake 0.4s; border-color:var(--red); background:var(--red-light); }
+.pond-fish.caught-wrong { opacity:0.4; pointer-events:none; }
+
+/* 매칭: 식 ↔ 합 */
+.match-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; max-width:min(640px, 96vw); width:100%; margin:10px 0; }
+.match-col { display:flex; flex-direction:column; gap:8px; }
+.match-col h4 { font-size:var(--fs-body); color:var(--subtext); font-family:'Jua',sans-serif; margin-bottom:4px; }
+.match-card { background:var(--card); border:3px solid var(--border); border-radius:14px; padding:12px 14px; font-size:var(--fs-heading); font-family:'Jua',sans-serif; cursor:pointer; transition:all 0.2s; text-align:center; }
+.match-card:active { transform:scale(0.95); }
+.match-card.selected { border-color:var(--primary); background:var(--primary-light); }
+.match-card.matched { background:var(--green-light); border-color:var(--green); pointer-events:none; }
+.match-card.wrong { animation:shake 0.4s; border-color:var(--red); background:var(--red-light); }
 </style>
 </head>
 <body>
-<div class="logo"><span>K</span><span>✦</span><span>edu</span></div>
-<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
-<div id="sc" style="width:100%;height:100vh;position:relative;overflow:hidden;"></div>
-<div class="nav"><button class="nav-btn nav-prev" id="prevBtn" onclick="prev()">◀ 이전</button><button class="nav-btn nav-next" id="nextBtn" onclick="next()">다음 ▶</button></div>
-<div class="page-info" id="pi"></div>
+
+<div class="logo">
+  <span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span>
+</div>
+
+<button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+<div class="combo-display" id="comboDisplay" style="display:none;">🔥 0 콤보</div>
+
+<div class="slide-container" id="slideContainer">
+  <!-- ============ idx 0: 인트로 ============ -->
+  <div class="slide active" data-type="concept">
+    <div class="slide-title">3단원: 덧셈을 알아볼까요</div>
+    <div class="concept-box">
+      <div style="font-size:var(--fs-heading); margin-bottom:14px;">오늘은 <b>+</b> 와 <b>=</b> 로 식을 써볼까?</div>
+      <div class="gather-row">
+        <div class="gather-pile"><div class="emo">🍎</div><div class="num">2</div></div>
+        <div class="gather-op">+</div>
+        <div class="gather-pile b"><div class="emo">🍎🍎🍎</div><div class="num">3</div></div>
+        <div class="gather-op">=</div>
+        <div class="gather-result"><div class="emo">🍎🍎🍎🍎🍎</div><div class="num">5</div></div>
+      </div>
+      <div style="font-size:var(--fs-heading); color:var(--primary); margin-top:10px;"><b>2 + 3 = 5</b></div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px;">
+        <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y8bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+        <div class="speech-bubble">모으기를 <b>식</b>으로<br>쓰는 약속이야!</div>
+      </div>
+      <div style="font-size:var(--fs-caption); color:var(--subtext); margin-top:12px;">아래 <b>다음 ▶</b> 버튼으로 넘겨요</div>
+    </div>
+  </div>
+
+  <!-- ============ idx 1: 개념 — + 와 = 기호 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="badge">개념</div>
+    <div class="slide-title"><b>+</b> 는 <b>더하기</b>, <b>=</b> 는 <b>같다</b></div>
+    <div class="concept-box">
+      <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:14px;">
+        <div style="background:var(--primary-light); border-radius:14px; padding:14px 22px;">
+          <div style="font-size:48px; color:var(--primary); line-height:1;"><b>+</b></div>
+          <div style="font-size:var(--fs-body); color:var(--text); margin-top:6px;"><b>더하기</b></div>
+          <div style="font-size:var(--fs-caption); color:var(--subtext);">두 수를 모으자</div>
+        </div>
+        <div style="background:var(--blue-light); border-radius:14px; padding:14px 22px;">
+          <div style="font-size:48px; color:var(--blue); line-height:1;"><b>=</b></div>
+          <div style="font-size:var(--fs-body); color:var(--text); margin-top:6px;"><b>같다</b></div>
+          <div style="font-size:var(--fs-caption); color:var(--subtext);">결과는 이거야</div>
+        </div>
+      </div>
+      <div style="font-size:var(--fs-body); color:var(--text);"><b>1 + 2 = 3</b> &nbsp;⟶&nbsp; <b style="color:var(--primary);">"1 더하기 2는 3과 같다"</b></div>
+    </div>
+  </div>
+
+  <!-- ============ idx 2: 개념 — 모으기 → 식 변환 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="badge">개념</div>
+    <div class="slide-title">모으기를 <b>덧셈 식</b>으로 써봐</div>
+    <div class="concept-box">
+      <div class="gather-row">
+        <div class="gather-pile"><div class="emo">🔵🔵</div><div class="num">2</div></div>
+        <div class="gather-op">+</div>
+        <div class="gather-pile b"><div class="emo">🔴🔴🔴</div><div class="num">3</div></div>
+        <div class="gather-op">=</div>
+        <div class="gather-result"><div class="emo">🔵🔵🔴🔴🔴</div><div class="num">5</div></div>
+      </div>
+      <div style="display:flex; gap:18px; justify-content:center; align-items:center; margin-top:12px; flex-wrap:wrap;">
+        <div style="background:var(--purple-light); border-radius:12px; padding:8px 14px;">
+          <div style="font-size:var(--fs-caption); color:var(--subtext);">짝 표기</div>
+          <div style="font-size:var(--fs-body); color:var(--purple);"><b>2 와 3 으로 5</b></div>
+        </div>
+        <div style="font-size:24px; color:var(--primary);">⟶</div>
+        <div style="background:var(--primary-light); border-radius:12px; padding:8px 14px;">
+          <div style="font-size:var(--fs-caption); color:var(--subtext);">덧셈 식</div>
+          <div style="font-size:var(--fs-body); color:var(--primary);"><b>2 + 3 = 5</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ idx 3: 개념 — 합이 5, 6인 식 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="badge">개념</div>
+    <div class="slide-title">합이 <b style="color:var(--blue);">5</b>, <b style="color:var(--primary);">6</b> 인 덧셈 식</div>
+    <div class="concept-box">
+      <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+        <div style="background:var(--blue-light); border-radius:14px; padding:12px 18px;">
+          <div style="font-size:var(--fs-body); color:var(--blue); margin-bottom:6px;">합이 <b>5</b></div>
+          <div class="pair-table">
+            <span class="left">1</span><span class="op">+</span><span class="right">4</span><span style="color:var(--blue);">=5</span>
+            <span class="left">2</span><span class="op">+</span><span class="right">3</span><span style="color:var(--blue);">=5</span>
+            <span class="left">3</span><span class="op">+</span><span class="right">2</span><span style="color:var(--blue);">=5</span>
+            <span class="left">4</span><span class="op">+</span><span class="right">1</span><span style="color:var(--blue);">=5</span>
+          </div>
+        </div>
+        <div style="background:var(--primary-light); border-radius:14px; padding:12px 18px;">
+          <div style="font-size:var(--fs-body); color:var(--primary); margin-bottom:6px;">합이 <b>6</b></div>
+          <div class="pair-table">
+            <span class="left">1</span><span class="op">+</span><span class="right">5</span><span style="color:var(--primary);">=6</span>
+            <span class="left">2</span><span class="op">+</span><span class="right">4</span><span style="color:var(--primary);">=6</span>
+            <span class="left">3</span><span class="op">+</span><span class="right">3</span><span style="color:var(--primary);">=6</span>
+            <span class="left">4</span><span class="op">+</span><span class="right">2</span><span style="color:var(--primary);">=6</span>
+            <span class="left">5</span><span class="op">+</span><span class="right">1</span><span style="color:var(--primary);">=6</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ idx 4: 개념 — 합이 7인 식 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="badge">개념</div>
+    <div class="slide-title">합이 <b style="color:var(--green);">7</b> 인 덧셈 식</div>
+    <div class="concept-box">
+      <div class="pair-table" style="font-size:var(--fs-heading);">
+        <span class="left">1</span><span class="op">+</span><span class="right">6</span><span style="color:var(--green);">=7</span>
+        <span class="left">2</span><span class="op">+</span><span class="right">5</span><span style="color:var(--green);">=7</span>
+        <span class="left">3</span><span class="op">+</span><span class="right">4</span><span style="color:var(--green);">=7</span>
+        <span class="left">4</span><span class="op">+</span><span class="right">3</span><span style="color:var(--green);">=7</span>
+        <span class="left">5</span><span class="op">+</span><span class="right">2</span><span style="color:var(--green);">=7</span>
+        <span class="left">6</span><span class="op">+</span><span class="right">1</span><span style="color:var(--green);">=7</span>
+      </div>
+      <div style="font-size:var(--fs-body); color:var(--subtext); margin-top:10px;">왼쪽 두 수를 더하면 모두 <b style="color:var(--green);">7</b></div>
+    </div>
+  </div>
+
+  <!-- ============ idx 5: 개념 — 합이 8, 9인 식 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="badge">개념</div>
+    <div class="slide-title">합이 <b>8</b> , <b style="color:var(--purple);">9</b> 인 덧셈 식</div>
+    <div class="concept-box">
+      <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+        <div style="background:var(--yellow-light); border-radius:14px; padding:12px 18px;">
+          <div style="font-size:var(--fs-body); color:var(--text); margin-bottom:6px;">합이 <b>8</b></div>
+          <div class="pair-table">
+            <span class="left">1</span><span class="op">+</span><span class="right">7</span><span>=8</span>
+            <span class="left">2</span><span class="op">+</span><span class="right">6</span><span>=8</span>
+            <span class="left">3</span><span class="op">+</span><span class="right">5</span><span>=8</span>
+            <span class="left">4</span><span class="op">+</span><span class="right">4</span><span>=8</span>
+          </div>
+        </div>
+        <div style="background:var(--purple-light); border-radius:14px; padding:12px 18px;">
+          <div style="font-size:var(--fs-body); color:var(--purple); margin-bottom:6px;">합이 <b>9</b></div>
+          <div class="pair-table">
+            <span class="left">1</span><span class="op">+</span><span class="right">8</span><span style="color:var(--purple);">=9</span>
+            <span class="left">2</span><span class="op">+</span><span class="right">7</span><span style="color:var(--purple);">=9</span>
+            <span class="left">3</span><span class="op">+</span><span class="right">6</span><span style="color:var(--purple);">=9</span>
+            <span class="left">4</span><span class="op">+</span><span class="right">5</span><span style="color:var(--purple);">=9</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ idx 6: 개념 — 함께 풀어볼까? ============ -->
+  <div class="slide" data-type="concept">
+    <div class="slide-title">이제 <b>덧셈 식</b>으로 풀어볼까?</div>
+    <div class="concept-box">
+      <div style="font-size:var(--em-md); margin:14px 0;">🚀</div>
+      <div style="font-size:var(--fs-heading); color:var(--text); margin-bottom:10px;">총 <b>22문제</b> · <b>260점</b></div>
+      <div style="font-size:var(--fs-body); color:var(--subtext);">⭐⭐⭐ 도전 문제 4개 포함!</div>
+      <div style="font-size:var(--fs-body); color:var(--primary); margin-top:14px;"><b>준비됐어?</b> 다음 ▶</div>
+    </div>
+  </div>
+
+  <!-- ============ idx 7: Q1 ⭐1 — 1 + 2 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 1</div>
+    <div class="slide-title"><b>1 + 2 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">⚪</div><div class="num">1</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">⚪⚪</div><div class="num">2</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 7, false)">2</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 7, true)">3</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 7, false)">4</button>
+    </div>
+    <div class="feedback" id="fb7"></div>
+  </div>
+
+  <!-- ============ idx 8: Q2 ⭐1 — 2 + 3 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 2</div>
+    <div class="slide-title"><b>2 + 3 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🔵🔵</div><div class="num">2</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🔴🔴🔴</div><div class="num">3</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 8, false)">4</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 8, true)">5</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 8, false)">6</button>
+    </div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+
+  <!-- ============ idx 9: Q3 ⭐1 — 🍎 1 + 3 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 3</div>
+    <div class="slide-title">🍎 사과 <b>1 + 3 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🍎</div><div class="num">1</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🍎🍎🍎</div><div class="num">3</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 9, false)">3</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 9, true)">4</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 9, false)">5</button>
+    </div>
+    <div class="feedback" id="fb9"></div>
+  </div>
+
+  <!-- ============ idx 10: Q4 ⭐1 — 점 2 + 3 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 4</div>
+    <div class="slide-title">점 <b>2 + 3 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🔵🔵</div><div class="num">2</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🔵🔵🔵</div><div class="num">3</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 10, false)">4</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 10, true)">5</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 10, false)">6</button>
+    </div>
+    <div class="feedback" id="fb10"></div>
+  </div>
+
+  <!-- ============ idx 11: Q5 ⭐1 — ⭐ 3 + 4 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 5</div>
+    <div class="slide-title">⭐ 별 <b>3 + 4 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">⭐⭐⭐</div><div class="num">3</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">⭐⭐⭐⭐</div><div class="num">4</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 11, false)">6</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 11, true)">7</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 11, false)">8</button>
+    </div>
+    <div class="feedback" id="fb11"></div>
+  </div>
+
+  <!-- ============ idx 12: Q6 ⭐1 — 손가락 4 + 2 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 6</div>
+    <div class="slide-title">손가락 <b>4 + 2 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">✋</div><div class="num">4</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">✌️</div><div class="num">2</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 12, false)">5</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 12, true)">6</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 12, false)">7</button>
+    </div>
+    <div class="feedback" id="fb12"></div>
+  </div>
+
+  <!-- ============ idx 13: Q7 ⭐1 — 3 + 5 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 7</div>
+    <div class="slide-title"><b>3 + 5 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🟢🟢🟢</div><div class="num">3</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🟡🟡🟡🟡🟡</div><div class="num">5</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 13, false)">7</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 13, true)">8</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 13, false)">9</button>
+    </div>
+    <div class="feedback" id="fb13"></div>
+  </div>
+
+  <!-- ============ idx 14: Q8 ⭐1 — 🐶🐱 2 + 5 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 8</div>
+    <div class="slide-title">🐶 <b>2</b> + 🐱 <b>5</b> = <b>?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🐶🐶</div><div class="num">2</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🐱🐱🐱🐱🐱</div><div class="num">5</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 14, false)">6</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 14, true)">7</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 14, false)">8</button>
+    </div>
+    <div class="feedback" id="fb14"></div>
+  </div>
+
+  <!-- ============ idx 15: Q9 ⭐1 — 🎈 4 + 5 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 9</div>
+    <div class="slide-title">🎈 빨강 <b>4</b> + 파랑 <b>5</b> = <b>?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🎈🎈🎈🎈</div><div class="num">4</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🔵🔵🔵🔵🔵</div><div class="num">5</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 15, false)">8</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 15, true)">9</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 15, false)">10</button>
+    </div>
+    <div class="feedback" id="fb15"></div>
+  </div>
+
+  <!-- ============ idx 16: Q10 ⭐1 — 두 그릇 3 + 5 = ? ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 10</div>
+    <div class="slide-title">🥣 두 그릇 <b>3 + 5 = ?</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">🟠🟠🟠</div><div class="num">3</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">🟣🟣🟣🟣🟣</div><div class="num">5</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num">?</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 16, false)">7</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 16, true)">8</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 16, false)">9</button>
+    </div>
+    <div class="feedback" id="fb16"></div>
+  </div>
+
+  <!-- ============ idx 17: Q11 ⭐1 — ▢ + 3 = 5 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 11</div>
+    <div class="slide-title"><span style="color:var(--primary);">▢</span> <b>+ 3 = 5</b></div>
+    <div style="font-size:var(--fs-body); color:var(--subtext); margin:10px 0;">▢ 자리에 들어갈 수는?</div>
+    <div class="gather-row">
+      <div class="gather-result q"><div class="emo">?</div><div class="num" style="color:var(--primary);">▢</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">⚪⚪⚪</div><div class="num">3</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result"><div class="emo">⚪⚪⚪⚪⚪</div><div class="num">5</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 17, false)">1</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 17, true)">2</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 17, false)">3</button>
+    </div>
+    <div class="feedback" id="fb17"></div>
+  </div>
+
+  <!-- ============ idx 18: Q12 ⭐1 — 3 + ▢ = 8 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 12</div>
+    <div class="slide-title"><b>3 +</b> <span style="color:var(--primary);">▢</span> <b>= 8</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">⚪⚪⚪</div><div class="num">3</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num" style="color:var(--primary);">▢</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result"><div class="emo">⚪⚪⚪⚪⚪⚪⚪⚪</div><div class="num">8</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 18, false)">4</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 18, true)">5</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 18, false)">6</button>
+    </div>
+    <div class="feedback" id="fb18"></div>
+  </div>
+
+  <!-- ============ idx 19: Q13 ⭐1 — 5 + ▢ = 9 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 13</div>
+    <div class="slide-title"><b>5 +</b> <span style="color:var(--primary);">▢</span> <b>= 9</b></div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">⚪⚪⚪⚪⚪</div><div class="num">5</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num" style="color:var(--primary);">▢</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result"><div class="emo">⚪⚪⚪⚪⚪⚪⚪⚪⚪</div><div class="num">9</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 19, false)">3</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 19, true)">4</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 19, false)">5</button>
+    </div>
+    <div class="feedback" id="fb19"></div>
+  </div>
+
+  <!-- ============ idx 20: Q14 ⭐1 — ▢ + 3 = 9 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 14</div>
+    <div class="slide-title"><span style="color:var(--primary);">▢</span> <b>+ 3 = 9</b></div>
+    <div class="gather-row">
+      <div class="gather-result q"><div class="emo">?</div><div class="num" style="color:var(--primary);">▢</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">⚪⚪⚪</div><div class="num">3</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result"><div class="emo">⚪⚪⚪⚪⚪⚪⚪⚪⚪</div><div class="num">9</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 20, false)">5</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 20, true)">6</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 20, false)">7</button>
+    </div>
+    <div class="feedback" id="fb20"></div>
+  </div>
+
+  <!-- ============ idx 21: Q15 ⭐1 — 합 6인 짝 찾기 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 15</div>
+    <div class="slide-title">합이 <b style="color:var(--green);">6</b>인 짝을 찾아 봐!</div>
+    <div class="options-row">
+      <button class="opt-btn word" onclick="checkAnswer(this, 21, false)">2 + 3</button>
+      <button class="opt-btn word" onclick="checkAnswer(this, 21, true)">4 + 2</button>
+      <button class="opt-btn word" onclick="checkAnswer(this, 21, false)">3 + 4</button>
+    </div>
+    <div class="feedback" id="fb21"></div>
+  </div>
+
+  <!-- ============ idx 22: Q16 ⭐1 — 비교 5+1 vs 4+2 (compare-side) ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 16</div>
+    <div class="slide-title"><b>5+1</b>과 <b>4+2</b> — 합이 같을까?</div>
+    <div class="compare-row">
+      <div class="compare-side" onclick="checkCompare(this, 22, true)">📐 같다</div>
+      <div class="compare-side" onclick="checkCompare(this, 22, false)">❓ 다르다</div>
+    </div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-top:6px;">힌트: 5+1=6, 4+2=6</div>
+    <div class="feedback" id="fb22"></div>
+  </div>
+
+  <!-- ============ idx 23: Q17 ⭐1 — 비교 3+5 vs 4+4 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 17</div>
+    <div class="slide-title"><b>3+5</b>와 <b>4+4</b> — 합이 같을까?</div>
+    <div class="compare-row">
+      <div class="compare-side" onclick="checkCompare(this, 23, true)">📐 같다</div>
+      <div class="compare-side" onclick="checkCompare(this, 23, false)">❓ 다르다</div>
+    </div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext); margin-top:6px;">힌트: 둘 다 8?</div>
+    <div class="feedback" id="fb23"></div>
+  </div>
+
+  <!-- ============ idx 24: Q18 ⭐1 — 합 7인 짝 ============ -->
+  <div class="slide" data-type="problem" data-score="10">
+    <div class="badge problem">⭐ 문제 18</div>
+    <div class="slide-title">합이 <b style="color:var(--green);">7</b>인 짝을 찾아 봐!</div>
+    <div class="options-row">
+      <button class="opt-btn word" onclick="checkAnswer(this, 24, true)">3 + 4</button>
+      <button class="opt-btn word" onclick="checkAnswer(this, 24, false)">2 + 4</button>
+      <button class="opt-btn word" onclick="checkAnswer(this, 24, false)">6 + 2</button>
+    </div>
+    <div class="feedback" id="fb24"></div>
+  </div>
+
+  <!-- ============ idx 25: 도전 안내 ============ -->
+  <div class="slide" data-type="concept">
+    <div class="slide-title"><b>⭐⭐⭐ 도전</b> 시작!</div>
+    <div class="concept-box">
+      <div style="font-size:var(--em-sm); margin:14px 0;">🚀</div>
+      <div style="font-size:var(--fs-heading);">탭 게임 → 풀 게임 → 매칭 → 종합!</div>
+      <div style="font-size:var(--fs-body); color:var(--subtext); margin-top:8px;">한 문제당 <b style="color:var(--primary);">20점</b> 짜리 큰 문제예요</div>
+    </div>
+  </div>
+
+  <!-- ============ idx 25: Q19 ⭐3 — TAP: 합 9 짝 모두 잡기 ============ -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">⭐⭐⭐ 문제 19</div>
+    <div class="slide-title">합이 <b style="color:var(--green);">9</b>인 짝을 <b>모두</b> 탭!</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext);">정답 4개를 모두 찾으면 성공!</div>
+    <div class="tap-counter">찾은 짝: <b id="tapBallCount">0</b> / 4</div>
+    <div class="tap-grid" id="tapGrid"></div>
+    <div class="feedback" id="fb26"></div>
+  </div>
+
+  <!-- ============ idx 26: Q20 ⭐3 — POND: 합 8 짝 잡기 ============ -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">⭐⭐⭐ 문제 20</div>
+    <div class="slide-title">🎣 풀에서 합이 <b style="color:var(--green);">8</b>인 짝만 잡아!</div>
+    <div style="font-size:var(--fs-caption); color:var(--subtext);">엉뚱한 짝을 잡으면 점수가 줄어요</div>
+    <div class="tap-counter">잡은 짝: <b id="fishCaught">0</b> / 4</div>
+    <div class="pond-area" id="pondArea"></div>
+    <div class="feedback" id="fb27"></div>
+  </div>
+
+  <!-- ============ idx 27: Q21 ⭐3 — 매칭: 식 ↔ 합 4쌍 ============ -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">⭐⭐⭐ 문제 21</div>
+    <div class="slide-title">왼쪽 <b>식</b>과 오른쪽 <b>합</b>을 짝지어!</div>
+    <div class="tap-counter">짝지은 수: <b id="matchCount">0</b> / 4</div>
+    <div class="match-grid">
+      <div class="match-col">
+        <h4>식</h4>
+        <div id="matchObjects"></div>
+      </div>
+      <div class="match-col">
+        <h4>합</h4>
+        <div id="matchShapes"></div>
+      </div>
+    </div>
+    <div class="feedback" id="fb28"></div>
+  </div>
+
+  <!-- ============ idx 28: Q22 ⭐3 — 종합 3+▢+2=8 ============ -->
+  <div class="slide" data-type="problem" data-score="20">
+    <div class="badge problem">⭐⭐⭐ 문제 22</div>
+    <div class="slide-title"><b>3</b> + <span style="color:var(--primary);">▢</span> + <b>2</b> = <b style="color:var(--green);">8</b></div>
+    <div style="font-size:var(--fs-body); color:var(--subtext); margin:10px 0;">▢ 자리에 들어갈 수는?</div>
+    <div class="gather-row">
+      <div class="gather-pile"><div class="emo">⚪⚪⚪</div><div class="num">3</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-result q"><div class="emo">?</div><div class="num" style="color:var(--primary);">▢</div></div>
+      <div class="gather-op">+</div>
+      <div class="gather-pile b"><div class="emo">⚪⚪</div><div class="num">2</div></div>
+      <div class="gather-op">=</div>
+      <div class="gather-result"><div class="emo">⚪⚪⚪⚪⚪⚪⚪⚪</div><div class="num">8</div></div>
+    </div>
+    <div class="options-row">
+      <button class="opt-btn large" onclick="checkAnswer(this, 29, false)">2</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 29, true)">3</button>
+      <button class="opt-btn large" onclick="checkAnswer(this, 29, false)">4</button>
+    </div>
+    <div class="feedback" id="fb29"></div>
+  </div>
+
+  <!-- ============ idx 30: 결과 카드 ============ -->
+  <div class="slide" data-type="result">
+    <div class="result-card">
+      <div style="font-size:var(--em-sm);">🏆</div>
+      <div class="result-score"><span id="resultScore">0</span>점</div>
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="result-detail" id="resultCorrect"></div>
+      <div class="result-detail" id="resultCombo"></div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-top:16px;">
+        <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y8bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="char-img" alt="케이">
+        <div class="speech-bubble" id="resultSpeech"></div>
+      </div>
+      <button class="retry-btn" onclick="location.reload()">다시 풀기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 네비게이션 -->
+<div class="nav-bar">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>◀ 이전</button>
+  <span class="page-info" id="pageInfo">1 / 31</span>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">다음 ▶</button>
+</div>
 
 <script>
-const KAY="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA";
-const DEW="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA";
-
-let audioCtx,soundOn=true,cur=0,score=0,combo=0,maxCombo=0;
-function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function ps(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{const n=audioCtx.currentTime;if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.15,n+i*.12);g.gain.exponentialRampToValueAtTime(.01,n+i*.12+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.12);o.stop(n+i*.12+.2);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(.1,n+i*.15);g.gain.exponentialRampToValueAtTime(.01,n+i*.15+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.15);o.stop(n+i*.15+.2);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.01,n+.08);o.connect(g);g.connect(audioCtx.destination);o.start(n);o.stop(n+.08);}});}
-function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
-function stars(s){if(s<=10)return'⭐ 기본';if(s<=25)return'⭐⭐ 발전';if(s<=50)return'⭐⭐⭐ 심화';return'⭐⭐⭐⭐ 최심화';}
-function cubes(n,c){return Array.from({length:n}).map(()=>`<span class="cube ${c}">■</span>`).join('');}
-
-const S=[];
-
-// 0: Title
-S.push({t:'c',h:`
-<div class="slide-title" style="font-size:32px;">3단원: 덧셈과 뺄셈</div>
-<div style="font-size:26px;color:var(--secondary);margin-bottom:16px;">덧셈을 알아볼까요</div>
-<div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이"><div class="speech">오늘은 <b>더하기(+)</b>와 <b>같다(=)</b> 기호를 배울 거야!</div></div>
-  <div style="margin:16px 0;">
-    <span class="symbol-box sym-plus" style="font-size:56px;">+</span>
-    <span class="symbol-box sym-eq" style="font-size:56px;">=</span>
-  </div>
-  <div style="font-size:22px;color:var(--subtext);">모으기를 기호로 쓰는 방법을 알아보아요!</div>
-</div>`});
-
-// 1: Concept - + 기호
-S.push({t:'c',h:`
-<div class="slide-title">더하기 기호 + 🟢</div>
-<div class="card">
-  <div class="char-row"><img src="${DEW}" class="char-img" alt="듀"><div class="speech"><b>+</b>는 "더하기"라고 읽어! 두 수를 합칠 때 써요.</div></div>
-  <div style="margin:16px 0;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
-      <div style="display:flex;gap:4px;">${cubes(3,'c1')}</div>
-      <span class="symbol-box sym-plus">+</span>
-      <div style="display:flex;gap:4px;">${cubes(2,'c2')}</div>
-    </div>
-    <div style="font-size:32px;margin-top:12px;">3 <span class="symbol-box sym-plus" style="width:44px;height:44px;font-size:28px;">+</span> 2</div>
-    <div style="font-size:22px;color:var(--subtext);margin-top:6px;">"3 더하기 2" 라고 읽어요!</div>
-  </div>
-</div>`});
-
-// 2: Concept - = 기호
-S.push({t:'c',h:`
-<div class="slide-title">같다 기호 = 🔵</div>
-<div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이"><div class="speech"><b>=</b>는 "같다"라고 읽어! 결과를 쓸 때 써요.</div></div>
-  <div style="margin:16px 0;">
-    <div class="eq-row">
-      <span>3</span>
-      <span class="symbol-box sym-plus" style="width:44px;height:44px;font-size:28px;">+</span>
-      <span>2</span>
-      <span class="symbol-box sym-eq" style="width:44px;height:44px;font-size:28px;">=</span>
-      <span style="color:var(--primary);font-size:64px;">5</span>
-    </div>
-    <div style="font-size:24px;margin-top:8px;">"3 더하기 2는 5와 같습니다"</div>
-    <div style="font-size:20px;color:var(--subtext);margin-top:4px;">줄여서 "3 더하기 2는 5" 라고 읽어요!</div>
-  </div>
-</div>`});
-
-// 3: Concept - 덧셈식 완성
-S.push({t:'c',h:`
-<div class="slide-title">덧셈식 만들기 ✏️</div>
-<div class="card">
-  <div class="char-row"><img src="${DEW}" class="char-img" alt="듀"><div class="speech">모으기를 기호로 쓰면 <b>덧셈식</b>이 돼!</div></div>
-  <div style="margin:16px 0;">
-    <div style="font-size:22px;margin-bottom:8px;">모으기: 4와 1을 모으면 5</div>
-    <div style="font-size:20px;color:var(--subtext);margin-bottom:8px;">⬇️ 기호로 바꾸면</div>
-    <div class="eq-row" style="font-size:56px;">
-      <span>4</span><span style="color:#2E7D32;">+</span><span>1</span><span style="color:#1565C0;">=</span><span style="color:var(--primary);">5</span>
-    </div>
-    <div style="font-size:22px;margin-top:8px;">이것이 바로 <b style="color:var(--primary);">덧셈식</b>이에요!</div>
-  </div>
-</div>`});
-
-// Q1: 기호 매칭 - + 고르기 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">기호를 골라요!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:12px;">두 수를 합칠 때 사용하는 기호는?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn" onclick="chk(${i},this,'+','+')" style="font-size:56px;width:80px;">+</button>
-    <button class="btn" onclick="chk(${i},this,'-','+')" style="font-size:56px;width:80px;">-</button>
-    <button class="btn" onclick="chk(${i},this,'=','+')" style="font-size:56px;width:80px;">=</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q2: 식 읽기 - 카드선택 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">덧셈식 읽기</div><div class="card">
-  <div class="eq-row" style="font-size:48px;margin-bottom:14px;">2 + 3 = 5</div>
-  <div style="font-size:22px;margin-bottom:12px;">이 식을 올바르게 읽은 것은?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,0)">2 더하기 3은 5</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,0)">2 빼기 3은 5</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,0)">5 더하기 3은 2</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q3: 수량→식 변환 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">블록을 식으로!</div><div class="card">
-  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
-    <div style="display:flex;gap:4px;">${cubes(4,'c1')}</div>
-    <span style="font-size:36px;color:#2E7D32;">+</span>
-    <div style="display:flex;gap:4px;">${cubes(3,'c2')}</div>
-  </div>
-  <div style="font-size:22px;margin-bottom:10px;">알맞은 덧셈식은?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,1)">3 + 4 = 7</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,1)">4 + 3 = 7</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,1)">4 + 3 = 8</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q4: 빈칸 - 기호 넣기 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">빈칸에 기호를!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:10px;">빈칸에 알맞은 기호를 넣으세요</div>
-  <div class="eq-row">
-    <span>5</span>
-    <div class="blank blank-sm" id="bl${i}">?</div>
-    <span>4</span>
-    <span style="color:#1565C0;">=</span>
-    <span>9</span>
-  </div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn" onclick="chkBl(${i},this,'+','+')" style="font-size:48px;width:70px;">+</button>
-    <button class="btn" onclick="chkBl(${i},this,'-','+')" style="font-size:48px;width:70px;">-</button>
-    <button class="btn" onclick="chkBl(${i},this,'=','+')" style="font-size:48px;width:70px;">=</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q5: 식 쓰기 - 다단계 ⭐⭐
-S.push({t:'q',sc:25,done:false,step:0,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">덧셈식을 완성해요!</div><div class="card">
-  <div class="scene" style="font-size:42px;">🍎🍎🍎 + 🍎🍎🍎🍎🍎</div>
-  <div style="font-size:22px;margin:8px 0;">사과 3개와 5개를 합치면?</div>
-  <div class="eq-row">
-    <div class="blank blank-sm" id="s1_${i}">?</div>
-    <span style="color:#2E7D32;">+</span>
-    <div class="blank blank-sm" id="s2_${i}">?</div>
-    <span style="color:#1565C0;">=</span>
-    <div class="blank blank-sm" id="s3_${i}">?</div>
-  </div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q6: O·X ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">O·X 판단</div><div class="card">
-  <div style="font-size:28px;margin-bottom:16px;">1 + 6 = 8</div>
-  <div class="btn-row">
-    <button class="ox-btn" onclick="chkOX(${i},this,false)">⭕</button>
-    <button class="ox-btn" onclick="chkOX(${i},this,true)">❌</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q7: 수 카드로 식 만들기 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">수 카드 덧셈 🃏</div><div class="card">
-  <div style="font-size:22px;margin-bottom:10px;">수 카드 2장을 골라 합이 7이 되게 하세요!</div>
-  <div id="cards${i}" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0;"></div>
-  <div style="font-size:20px;margin:8px 0;" id="sel${i}">선택: ?  +  ? = 7</div>
-  <button class="btn btn-sm" onclick="chkCards(${i})" id="cc${i}" style="margin-top:8px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q8: 그림→식 변환 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">그림을 식으로 바꿔요!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">연결 모형을 보고 덧셈식을 고르세요</div>
-  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0;">
-    <div style="display:flex;gap:3px;">${cubes(2,'c1')}</div>
-    <span style="font-size:28px;color:#2E7D32;">+</span>
-    <div style="display:flex;gap:3px;">${cubes(6,'c2')}</div>
-    <span style="font-size:28px;color:#1565C0;">=</span>
-    <span style="font-size:36px;">?</span>
-  </div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,0)">2 + 6 = 8</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,0)">6 + 2 = 9</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,0)">2 + 6 = 7</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q9: 역방향 - 결과에서 식 찾기 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">어떤 덧셈일까? 🔍</div><div class="card">
-  <div style="font-size:24px;margin-bottom:12px;">결과가 <span style="font-size:48px;color:var(--primary);">6</span>인 덧셈식을 모두 골라요!</div>
-  <div id="multi${i}" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
-  <button class="btn btn-sm" onclick="chkMulti(${i})" style="margin-top:10px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q10: 상황 문제 - 식 세우기 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">이야기를 식으로! 🌟</div><div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이">
-    <div class="speech" style="font-size:20px;">듀가 연필 3자루를 가지고 있어요. 케이가 4자루를 더 주었어요. 이것을 덧셈식으로 쓰면?</div>
-  </div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,1)" style="font-size:24px;">3 + 4 = 7</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,1)" style="font-size:24px;">4 + 3 = 8</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,1)" style="font-size:24px;">7 - 4 = 3</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,3,1)" style="font-size:24px;">3 + 3 = 6</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// --- ADDED_BY_SCRIPT: Q11~Q20 ---
-
-// Q11: = 기호 고르기 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">기호를 골라요!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:12px;">결과를 나타낼 때 사용하는 기호는?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn" onclick="chk(${i},this,'+','=')" style="font-size:56px;width:80px;">+</button>
-    <button class="btn" onclick="chk(${i},this,'-','=')" style="font-size:56px;width:80px;">-</button>
-    <button class="btn" onclick="chk(${i},this,'=','=')" style="font-size:56px;width:80px;">=</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q12: 식 읽기 4+5=9 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">덧셈식 읽기</div><div class="card">
-  <div class="eq-row" style="font-size:48px;margin-bottom:14px;">4 + 5 = 9</div>
-  <div style="font-size:22px;margin-bottom:12px;">이 식을 올바르게 읽은 것은?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,1)">4 빼기 5는 9</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,1)">4 더하기 5는 9</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,1)">9 더하기 4는 5</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q13: 블록→식 5+2=7 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">블록을 식으로!</div><div class="card">
-  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
-    <div style="display:flex;gap:4px;">${cubes(5,'c1')}</div>
-    <span style="font-size:36px;color:#2E7D32;">+</span>
-    <div style="display:flex;gap:4px;">${cubes(2,'c2')}</div>
-  </div>
-  <div style="font-size:22px;margin-bottom:10px;">알맞은 덧셈식은?</div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,0)">5 + 2 = 7</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,0)">2 + 5 = 8</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,0)">5 + 3 = 7</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q14: OX "2+3=6" → X ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">O·X 판단</div><div class="card">
-  <div style="font-size:28px;margin-bottom:16px;">2 + 3 = 6</div>
-  <div class="btn-row">
-    <button class="ox-btn" onclick="chkOXg(${i},this,true,false,'2+3=5예요, 6이 아니에요!','맞아요! 2+3=5이지 6이 아니에요!')">⭕</button>
-    <button class="ox-btn" onclick="chkOXg(${i},this,false,false,'2+3=5예요, 6이 아니에요!','맞아요! 2+3=5이지 6이 아니에요!')">❌</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q15: 빈칸 기호 3□2=5→+ ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">빈칸에 기호를!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:10px;">빈칸에 알맞은 기호를 넣으세요</div>
-  <div class="eq-row">
-    <span>3</span>
-    <div class="blank blank-sm" id="bl${i}">?</div>
-    <span>2</span>
-    <span style="color:#1565C0;">=</span>
-    <span>5</span>
-  </div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn" onclick="chkBl(${i},this,'+','+')" style="font-size:48px;width:70px;">+</button>
-    <button class="btn" onclick="chkBl(${i},this,'-','+')" style="font-size:48px;width:70px;">-</button>
-    <button class="btn" onclick="chkBl(${i},this,'=','+')" style="font-size:48px;width:70px;">=</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q16: 이야기→식 사과5+2=7 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">이야기를 식으로! 🌟</div><div class="card">
-  <div class="char-row"><img src="${DEW}" class="char-img" alt="듀">
-    <div class="speech" style="font-size:20px;">바구니에 사과 5개가 있어요. 2개를 더 넣었어요. 이것을 덧셈식으로 쓰면?</div>
-  </div>
-  <div class="btn-row" id="b${i}">
-    <button class="btn btn-sm" onclick="chk(${i},this,0,1)" style="font-size:24px;">5 + 2 = 7</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,1,1)" style="font-size:24px;">5 + 3 = 8</button>
-    <button class="btn btn-sm" onclick="chk(${i},this,2,1)" style="font-size:24px;">7 - 2 = 5</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q17: 수 카드 합이 8 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">수 카드 덧셈 🃏</div><div class="card">
-  <div style="font-size:22px;margin-bottom:10px;">수 카드 2장을 골라 합이 8이 되게 하세요!</div>
-  <div id="cards2_${i}" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0;"></div>
-  <div style="font-size:20px;margin:8px 0;" id="sel2_${i}">선택: ?  +  ? = 8</div>
-  <button class="btn btn-sm" onclick="chkCards2(${i})" style="margin-top:8px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q18: 속도 챌린지 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">⚡ 속도 챌린지!</div><div class="card">
-  <div style="font-size:20px;margin-bottom:6px;">덧셈식을 빠르게 읽고 답을 골라요!</div>
-  <div id="spd2_${i}"></div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q19: 합이 같은 식2 합=8 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">합이 같은 식 찾기! 🧠</div><div class="card">
-  <div style="font-size:24px;margin-bottom:12px;">결과가 <span style="font-size:48px;color:var(--primary);">8</span>인 덧셈식을 모두 골라요!</div>
-  <div id="multi2_${i}" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
-  <button class="btn btn-sm" onclick="chkMulti2(${i})" style="margin-top:10px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q20: 다단계 식 쓰기2 (2+7=9) ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,step:0,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">덧셈식을 완성해요!</div><div class="card">
-  <div class="scene" style="font-size:42px;">🌟🌟 + 🌟🌟🌟🌟🌟🌟🌟</div>
-  <div style="font-size:22px;margin:8px 0;">별 2개와 7개를 합치면?</div>
-  <div class="eq-row">
-    <div class="blank blank-sm" id="s21_${i}">?</div>
-    <span style="color:#2E7D32;">+</span>
-    <div class="blank blank-sm" id="s22_${i}">?</div>
-    <span style="color:#1565C0;">=</span>
-    <div class="blank blank-sm" id="s23_${i}">?</div>
-  </div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Result
-S.push({t:'result'});
-
-function render(){
-  const c=document.getElementById('sc');c.innerHTML='';
-  S.forEach((s,i)=>{
-    const d=document.createElement('div');d.className='slide'+(i===0?' active':'');d.id='s'+i;
-    if(s.t==='c')d.innerHTML=s.h;
-    else if(s.t==='q'&&s.r)d.innerHTML=s.r(i);
-    else d.innerHTML='<div class="card" style="max-width:480px;"><div class="slide-title">🎉</div></div>';
-    c.appendChild(d);
+// ===== 오디오 =====
+let audioCtx = null;
+let soundOn = true;
+function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function playSound(type) {
+  if(!soundOn) return;
+  initAudio();
+  audioCtx.resume().then(() => {
+    if(type==='correct') {
+      [523,659,784].forEach((f,i) => { const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f; g.gain.value=0.15; o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime+i*0.12); o.stop(audioCtx.currentTime+i*0.12+0.15); });
+    } else if(type==='wrong') {
+      [220,196].forEach((f,i) => { const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.value=f; g.gain.value=0.1; o.connect(g); g.connect(audioCtx.destination); o.start(audioCtx.currentTime+i*0.15); o.stop(audioCtx.currentTime+i*0.15+0.18); });
+    } else if(type==='click') {
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.value=0.1; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.06);
+    }
   });
-  updNav();
+}
+function toggleSound() { soundOn=!soundOn; document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'; }
+
+// ===== 슬라이드 =====
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let score = 0, combo = 0, maxCombo = 0, correctCount = 0;
+const answered = {};
+const TOTAL_QUESTIONS = 22;
+
+function showSlide(idx) {
+  slides.forEach((s,i) => { s.classList.toggle('active', i===idx); });
+  document.getElementById('prevBtn').disabled = idx===0;
+  document.getElementById('nextBtn').disabled = idx===total-1;
+  document.getElementById('pageInfo').textContent = `${idx+1} / ${total}`;
+  if(slides[idx].dataset.type==='result') showResult();
 }
 
-function chk(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 정답! +${s.sc}점 ${combo>1?'🔥x'+combo:''}</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 생각해 보세요!</span>`;}}
-
-function chkBl(i,el,v,c){const s=S[i];if(s.done)return;ps('click');const bl=document.getElementById('bl'+i);if(v===c){s.done=true;bl.textContent='+';bl.classList.add('filled');el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 +는 더하기! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">합칠 때 쓰는 기호를 골라요!</span>`;}}
-
-function chkOX(i,el,isX){const s=S[i];if(s.done)return;ps('click');if(isX){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 1+6=7이에요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">1+6은 7이에요, 8이 아니에요!</span>`;}}
-
-// Q5: Multi-step
-function initStep(i){const s=S[i];if(s.stepInit)return;s.stepInit=true;s.step=0;renderStep(i);}
-function renderStep(i){
-  const s=S[i],b=document.getElementById('b'+i);
-  if(s.step===0)b.innerHTML=[2,3,4,5].map(n=>`<button class="btn" onclick="doStep(${i},this,${n},3)">${n}</button>`).join('');
-  else if(s.step===1)b.innerHTML=[4,5,6,3].map(n=>`<button class="btn" onclick="doStep(${i},this,${n},5)">${n}</button>`).join('');
-  else b.innerHTML=[7,8,9,6].map(n=>`<button class="btn" onclick="doStep(${i},this,${n},8)">${n}</button>`).join('');
-}
-function doStep(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){el.classList.add('correct');if(s.step===0){document.getElementById('s1_'+i).textContent='3';document.getElementById('s1_'+i).classList.add('filled');}else if(s.step===1){document.getElementById('s2_'+i).textContent='5';document.getElementById('s2_'+i).classList.add('filled');}else{document.getElementById('s3_'+i).textContent='8';document.getElementById('s3_'+i).classList.add('filled');s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 3 + 5 = 8! +${s.sc}점</span>`;return;}s.step++;setTimeout(()=>renderStep(i),400);}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">그림을 다시 세어 보세요!</span>`;}}
-
-// Q7: Card selection
-let cardSel={};
-function initCards(i){
-  if(cardSel[i])return;
-  cardSel[i]={sel:[]};
-  const nums=[1,2,3,4,5,6];
-  document.getElementById('cards'+i).innerHTML=nums.map(n=>`<div class="num-card" id="nc${i}_${n}" onclick="tapCard(${i},${n})">${n}</div>`).join('');
-}
-function tapCard(i,n){
-  ps('click');const cs=cardSel[i];
-  const el=document.getElementById('nc'+i+'_'+n);
-  const idx=cs.sel.indexOf(n);
-  if(idx>-1){cs.sel.splice(idx,1);el.classList.remove('sel');}
-  else if(cs.sel.length<2){cs.sel.push(n);el.classList.add('sel');}
-  const t=cs.sel.length===2?cs.sel[0]+' + '+cs.sel[1]+' = '+(cs.sel[0]+cs.sel[1]):'? + ? = 7';
-  document.getElementById('sel'+i).textContent='선택: '+t;
-}
-function chkCards(i){
-  const s=S[i];if(s.done)return;const cs=cardSel[i];
-  if(cs.sel.length!==2){document.getElementById('f'+i).innerHTML=`<span class="no">카드 2장을 골라주세요!</span>`;return;}
-  if(cs.sel[0]+cs.sel[1]===7){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;cs.sel.forEach(n=>document.getElementById('nc'+i+'_'+n).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${cs.sel[0]} + ${cs.sel[1]} = 7! +${s.sc}점</span>`;}
-  else{ps('wrong');combo=0;cs.sel.forEach(n=>{const e=document.getElementById('nc'+i+'_'+n);e.classList.add('wrong');e.classList.remove('sel');setTimeout(()=>e.classList.remove('wrong'),500);});cs.sel=[];document.getElementById('f'+i).innerHTML=`<span class="no">합이 7이 되게 골라 보세요!</span>`;}
+function changeSlide(dir) {
+  playSound('click');
+  const next = current + dir;
+  if(next >= 0 && next < total) { current = next; showSlide(current); }
 }
 
-// Q9: Multi select
-let multiSel={};
-function initMulti(i){
-  if(multiSel[i])return;
-  const opts=[{t:'1 + 5',v:6},{t:'2 + 4',v:6},{t:'3 + 4',v:7},{t:'4 + 2',v:6},{t:'5 + 3',v:8}];
-  multiSel[i]={opts,sel:new Set()};
-  document.getElementById('multi'+i).innerHTML=opts.map((o,j)=>`<button class="btn btn-sm" id="mo${i}_${j}" onclick="tapMulti(${i},${j})">${o.t}</button>`).join('');
-}
-function tapMulti(i,j){
-  ps('click');const ms=multiSel[i],el=document.getElementById('mo'+i+'_'+j);
-  if(ms.sel.has(j)){ms.sel.delete(j);el.style.borderColor='var(--border)';el.style.background='var(--card)';}
-  else{ms.sel.add(j);el.style.borderColor='var(--primary)';el.style.background='var(--primary-light)';}
-}
-function chkMulti(i){
-  const s=S[i];if(s.done)return;const ms=multiSel[i];
-  const correct=ms.opts.map((o,j)=>o.v===6?j:-1).filter(j=>j>=0);
-  const sel=Array.from(ms.sel).sort().join(',');
-  const cor=correct.sort().join(',');
-  if(sel===cor){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;correct.forEach(j=>document.getElementById('mo'+i+'_'+j).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 찾았어요! +${s.sc}점</span>`;}
-  else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">합이 6이 되는 식을 모두 골라 보세요!</span>`;}
+// ===== 콤보 =====
+function updateCombo(isCorrect) {
+  const cd = document.getElementById('comboDisplay');
+  if(isCorrect) { combo++; if(combo > maxCombo) maxCombo = combo; }
+  else { combo = 0; }
+  if(combo >= 2) { cd.style.display='block'; cd.textContent=`🔥 ${combo} 콤보`; }
+  else { cd.style.display='none'; }
 }
 
-// --- ADDED_BY_SCRIPT: new functions for Q11~Q20 ---
-
-// chkOXg: 일반화된 OX 체크
-function chkOXg(i,el,picked,correct,okMsg,noMsg){const s=S[i];if(s.done)return;ps('click');if(picked===correct){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${okMsg} +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">${noMsg}</span>`;}}
-
-// Q17: 수 카드2 (합=8)
-let cardSel2={};
-function initCards2(i){
-  if(cardSel2[i])return;
-  cardSel2[i]={sel:[]};
-  const nums=[2,3,4,5,6,7];
-  document.getElementById('cards2_'+i).innerHTML=nums.map(n=>`<div class="num-card" id="nc2${i}_${n}" onclick="tapCard2(${i},${n})">${n}</div>`).join('');
-}
-function tapCard2(i,n){
-  ps('click');const cs=cardSel2[i];
-  const el=document.getElementById('nc2'+i+'_'+n);
-  const idx=cs.sel.indexOf(n);
-  if(idx>-1){cs.sel.splice(idx,1);el.classList.remove('sel');}
-  else if(cs.sel.length<2){cs.sel.push(n);el.classList.add('sel');}
-  const t=cs.sel.length===2?cs.sel[0]+' + '+cs.sel[1]+' = '+(cs.sel[0]+cs.sel[1]):'? + ? = 8';
-  document.getElementById('sel2_'+i).textContent='선택: '+t;
-}
-function chkCards2(i){
-  const s=S[i];if(s.done)return;const cs=cardSel2[i];
-  if(cs.sel.length!==2){document.getElementById('f'+i).innerHTML=`<span class="no">카드 2장을 골라주세요!</span>`;return;}
-  if(cs.sel[0]+cs.sel[1]===8){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;cs.sel.forEach(n=>document.getElementById('nc2'+i+'_'+n).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${cs.sel[0]} + ${cs.sel[1]} = 8! +${s.sc}점</span>`;}
-  else{ps('wrong');combo=0;cs.sel.forEach(n=>{const e=document.getElementById('nc2'+i+'_'+n);e.classList.add('wrong');e.classList.remove('sel');setTimeout(()=>e.classList.remove('wrong'),500);});cs.sel=[];document.getElementById('f'+i).innerHTML=`<span class="no">합이 8이 되게 골라 보세요!</span>`;}}
-
-// Q18: 속도 챌린지2
-let spd2={};
-function initSpd2(i){
-  if(spd2[i])return;
-  spd2[i]={qs:[{q:'1+4=',a:5},{q:'3+6=',a:9},{q:'2+5=',a:7},{q:'4+4=',a:8},{q:'1+8=',a:9}],ci:0,ok:0,t0:null};
-  renderSpd2(i);
-}
-function renderSpd2(i){
-  const d=spd2[i];if(d.ci>=d.qs.length){endSpd2(i);return;}
-  if(!d.t0)d.t0=Date.now();
-  const q=d.qs[d.ci];
-  document.getElementById('spd2_'+i).innerHTML=`<div style="font-size:22px;color:var(--subtext);margin-bottom:6px;">${d.ci+1}/${d.qs.length}</div><div class="eq-row" style="font-size:44px;"><span>${q.q}</span><span class="blank" style="font-size:36px;">?</span></div>`;
-  const a=q.a;document.getElementById('b'+i).innerHTML=[a-1,a,a+1,a+2].filter(n=>n>=0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansSpd2(${i},${n})">${n}</button>`).join('');
-}
-function ansSpd2(i,v){ps('click');const d=spd2[i],q=d.qs[d.ci];if(v===q.a){d.ok++;d.ci++;ps('correct');renderSpd2(i);}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">다시 풀어요!</span>`;}}
-function endSpd2(i){const d=spd2[i],sec=((Date.now()-d.t0)/1000).toFixed(1);S[i].done=true;combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('spd2_'+i).innerHTML=`<div style="font-size:28px;">⏱ ${sec}초</div>`;document.getElementById('b'+i).innerHTML='';document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${d.ok}/${d.qs.length} 정답! +${S[i].sc}점</span>`;}
-
-// Q19: 합이 같은 식2 (합=8)
-let multiSel2={};
-function initMulti2(i){
-  if(multiSel2[i])return;
-  const opts=[{t:'1 + 7',v:8},{t:'3 + 5',v:8},{t:'4 + 3',v:7},{t:'2 + 6',v:8},{t:'5 + 4',v:9},{t:'6 + 2',v:8}];
-  multiSel2[i]={opts,sel:new Set()};
-  document.getElementById('multi2_'+i).innerHTML=opts.map((o,j)=>`<button class="btn btn-sm" id="m2${i}_${j}" onclick="tapMulti2(${i},${j})">${o.t}</button>`).join('');
-}
-function tapMulti2(i,j){
-  ps('click');const ms=multiSel2[i],el=document.getElementById('m2'+i+'_'+j);
-  if(ms.sel.has(j)){ms.sel.delete(j);el.style.borderColor='var(--border)';el.style.background='var(--card)';}
-  else{ms.sel.add(j);el.style.borderColor='var(--primary)';el.style.background='var(--primary-light)';}
-}
-function chkMulti2(i){
-  const s=S[i];if(s.done)return;const ms=multiSel2[i];
-  const correct=ms.opts.map((o,j)=>o.v===8?j:-1).filter(j=>j>=0);
-  const sel=Array.from(ms.sel).sort().join(',');
-  const cor=correct.sort().join(',');
-  if(sel===cor){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;correct.forEach(j=>document.getElementById('m2'+i+'_'+j).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 찾았어요! +${s.sc}점</span>`;}
-  else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">합이 8이 되는 식을 모두 골라 보세요!</span>`;}}
-
-// Q20: 다단계 식 쓰기2 (2+7=9)
-function initStep2(i){const s=S[i];if(s.stepInit2)return;s.stepInit2=true;s.step=0;renderStep2(i);}
-function renderStep2(i){
-  const s=S[i],b=document.getElementById('b'+i);
-  if(s.step===0)b.innerHTML=[1,2,3,4].map(n=>`<button class="btn" onclick="doStep2(${i},this,${n},2)">${n}</button>`).join('');
-  else if(s.step===1)b.innerHTML=[5,6,7,8].map(n=>`<button class="btn" onclick="doStep2(${i},this,${n},7)">${n}</button>`).join('');
-  else b.innerHTML=[7,8,9,6].map(n=>`<button class="btn" onclick="doStep2(${i},this,${n},9)">${n}</button>`).join('');
-}
-function doStep2(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){el.classList.add('correct');if(s.step===0){document.getElementById('s21_'+i).textContent='2';document.getElementById('s21_'+i).classList.add('filled');}else if(s.step===1){document.getElementById('s22_'+i).textContent='7';document.getElementById('s22_'+i).classList.add('filled');}else{document.getElementById('s23_'+i).textContent='9';document.getElementById('s23_'+i).classList.add('filled');s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 2 + 7 = 9! +${s.sc}점</span>`;return;}s.step++;setTimeout(()=>renderStep2(i),400);}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">그림을 다시 세어 보세요!</span>`;}}
-
-function showResult(){
-  const d=document.getElementById('s'+(S.length-1));
-  const total=S.filter(s=>s.t==='q').reduce((a,s)=>a+s.sc,0);
-  const pct=Math.round(score/total*100);
-  let msg=pct>=90?'🏆 덧셈 마스터!':pct>=70?'👏 잘했어요!':pct>=50?'💪 좋은 시작!':'🌱 다시 도전!';
-  d.innerHTML=`<div class="card" style="max-width:480px;">
-    <div style="font-size:32px;color:var(--primary);margin-bottom:8px;">🎉 학습 완료!</div>
-    <div style="font-size:64px;color:var(--primary);">${score}<span style="font-size:28px;color:var(--subtext);">/${total}</span></div>
-    <div style="font-size:28px;margin:8px 0;">${msg}</div>
-    ${maxCombo>1?`<div class="combo-badge">🔥 최대 콤보 x${maxCombo}</div>`:''}
-    <div style="font-size:20px;color:var(--subtext);margin-top:12px;">+와 = 기호를 배우고 덧셈식을 읽고 쓸 수 있게 되었어요!<br>다음 시간에는 직접 덧셈을 풀어 봐요!</div>
-    <button class="btn" style="font-size:24px;margin-top:16px;padding:10px 28px;background:var(--primary);color:#fff;border-color:var(--primary);" onclick="location.reload()">다시 하기 🔄</button>
-  </div>`;
+function addScore(slideIdx) {
+  const sc = parseInt(slides[slideIdx].dataset.score)||10;
+  score += sc;
+  correctCount++;
 }
 
-function updNav(){document.getElementById('prevBtn').disabled=(cur===0);document.getElementById('nextBtn').textContent=cur===S.length-2?'결과 보기 🏆':'다음 ▶';document.getElementById('pi').textContent=`${cur+1} / ${S.length}`;}
+function checkAnswer(btn, slideIdx, isCorrect) {
+  if(answered[slideIdx]) return;
+  const fb = document.getElementById('fb'+slideIdx);
+  const btns = btn.parentElement.querySelectorAll('.opt-btn');
+  if(isCorrect) {
+    answered[slideIdx] = true;
+    btn.classList.add('correct');
+    btns.forEach(b => { if(b!==btn) b.classList.add('disabled'); });
+    playSound('correct');
+    addScore(slideIdx);
+    fb.innerHTML = '<b>정답이에요!</b> 👏';
+    fb.className = 'feedback good';
+    updateCombo(true);
+  } else {
+    btn.classList.add('wrong');
+    playSound('wrong');
+    fb.innerHTML = '다시 생각해 봐요!';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { btn.classList.remove('wrong'); }, 600);
+  }
+}
 
-function go(n){if(n<0||n>=S.length)return;document.getElementById('s'+cur).classList.remove('active');document.getElementById('s'+cur).classList.add('exit');cur=n;setTimeout(()=>{document.querySelectorAll('.slide').forEach(s=>s.classList.remove('exit'));document.getElementById('s'+cur).classList.add('active');updNav();if(cur===8)initStep(cur);if(cur===10)initCards(cur);if(cur===12)initMulti(cur);if(cur===20)initCards2(cur);if(cur===21)initSpd2(cur);if(cur===22)initMulti2(cur);if(cur===23)initStep2(cur);if(S[cur].t==='result')showResult();},200);}
-function prev(){go(cur-1);}function next(){go(cur+1);}
+function checkCompare(el, slideIdx, isCorrect) {
+  if(answered[slideIdx]) return;
+  const fb = document.getElementById('fb'+slideIdx);
+  const sides = el.parentElement.querySelectorAll('.compare-side');
+  if(isCorrect) {
+    answered[slideIdx] = true;
+    el.classList.add('correct');
+    sides.forEach(s => { if(s!==el) s.classList.add('disabled'); });
+    playSound('correct');
+    addScore(slideIdx);
+    fb.innerHTML = '<b>맞아요!</b> 👍';
+    fb.className = 'feedback good';
+    updateCombo(true);
+  } else {
+    el.classList.add('wrong');
+    playSound('wrong');
+    fb.innerHTML = '다시 생각해 봐요!';
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('wrong'); }, 600);
+  }
+}
 
-let tx=0;
-document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX;},{passive:true});
-document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-tx;if(Math.abs(d)>50){d>0?prev():next();}},{passive:true});
+// ===== 탭 그리드: 합이 9인 짝 4개 모두 잡기 (Q19) =====
+const tapGridData = [
+  {pair:'1+8', target:true},
+  {pair:'2+7', target:true},
+  {pair:'3+6', target:true},
+  {pair:'4+5', target:true},
+  {pair:'2+5', target:false},
+  {pair:'3+5', target:false},
+  {pair:'4+4', target:false},
+  {pair:'1+5', target:false},
+  {pair:'6+2', target:false}
+];
+const TAP_BALL_SLIDE = 26;
+const TAP_BALL_TARGET = 4;
+let tapBallCount = 0;
+function initTap() {
+  const grid = document.getElementById('tapGrid');
+  if(!grid) return;
+  const arr = [...tapGridData];
+  for(let i=arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  grid.innerHTML = '';
+  arr.forEach(item => {
+    const c = document.createElement('div');
+    c.className = 'tap-cell';
+    c.textContent = item.pair;
+    c.onclick = () => tapCell(c, item);
+    grid.appendChild(c);
+  });
+}
+function tapCell(el, item) {
+  if(answered[TAP_BALL_SLIDE]) return;
+  if(el.classList.contains('tapped')) return;
+  if(item.target) {
+    el.classList.add('tapped');
+    el.textContent = item.pair + ' ✓';
+    playSound('correct');
+    tapBallCount++;
+    const cnt = document.getElementById('tapBallCount');
+    if(cnt) cnt.textContent = tapBallCount;
+    if(tapBallCount === TAP_BALL_TARGET) {
+      answered[TAP_BALL_SLIDE] = true;
+      addScore(TAP_BALL_SLIDE);
+      const fb = document.getElementById('fb'+TAP_BALL_SLIDE);
+      fb.innerHTML = '<b>합 9인 짝을 모두 찾았어요!</b> 🎯';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    el.classList.add('miss');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+TAP_BALL_SLIDE);
+    fb.innerHTML = `<b>${item.pair}</b>은 합이 9가 아니에요!`;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('miss'); }, 500);
+  }
+}
 
-render();
+// ===== 풀 잡기: 합이 8인 짝만 잡기 (Q20) =====
+const pondItems = [
+  {pair:'1+7', target:true},
+  {pair:'2+6', target:true},
+  {pair:'3+5', target:true},
+  {pair:'4+4', target:true},
+  {pair:'2+5', target:false},
+  {pair:'3+4', target:false},
+  {pair:'1+6', target:false},
+  {pair:'5+5', target:false},
+  {pair:'2+9', target:false}
+];
+let fishCaught = 0;
+const POND_SLIDE = 27;
+const POND_TARGET = 4;
+function initPond() {
+  const pond = document.getElementById('pondArea');
+  if(!pond) return;
+  pond.innerHTML = '';
+  pondItems.forEach(item => {
+    const f = document.createElement('div');
+    f.className = 'pond-fish';
+    f.textContent = item.pair;
+    f.dataset.target = item.target;
+    f.dataset.pair = item.pair;
+    f.onclick = () => catchFish(f, item.target, item.pair);
+    pond.appendChild(f);
+  });
+}
+function catchFish(el, isTarget, pair) {
+  if(answered[POND_SLIDE]) return;
+  if(el.classList.contains('caught') || el.classList.contains('caught-wrong')) return;
+  if(isTarget) {
+    el.classList.add('caught');
+    playSound('correct');
+    fishCaught++;
+    const cnt = document.getElementById('fishCaught');
+    if(cnt) cnt.textContent = fishCaught;
+    if(fishCaught === POND_TARGET) {
+      answered[POND_SLIDE] = true;
+      addScore(POND_SLIDE);
+      const fb = document.getElementById('fb'+POND_SLIDE);
+      fb.innerHTML = '<b>합 8인 짝을 모두 잡았어요!</b> 🎣✨';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    el.classList.add('wrong');
+    playSound('wrong');
+    const fb = document.getElementById('fb'+POND_SLIDE);
+    fb.innerHTML = `<b>${pair}</b>은 합이 8이 아니에요!`;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+    setTimeout(() => { el.classList.remove('wrong'); el.classList.add('caught-wrong'); }, 500);
+  }
+}
+
+// ===== SORT 블록은 덧셈에서 사용 안 함 (제거됨) =====
+
+// ===== 매칭: 식 ↔ 합 짝짓기 (Q21) =====
+const matchObjects = [
+  {id:'e1', expr:'1+2', sum:3},
+  {id:'e2', expr:'2+3', sum:5},
+  {id:'e3', expr:'3+4', sum:7},
+  {id:'e4', expr:'4+4', sum:8}
+];
+const matchShapes = [
+  {emoji:'3', sum:3},
+  {emoji:'5', sum:5},
+  {emoji:'7', sum:7},
+  {emoji:'8', sum:8}
+];
+const MATCH_SLIDE = 28;
+const MATCH_TOTAL = 4;
+let matchSelectedObj = null;
+let matchCount = 0;
+
+function initMatch() {
+  const objRow = document.getElementById('matchObjects');
+  const shapeRow = document.getElementById('matchShapes');
+  if(!objRow || !shapeRow) return;
+  // 식 셔플
+  const objs = [...matchObjects];
+  for(let i=objs.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [objs[i], objs[j]] = [objs[j], objs[i]];
+  }
+  objRow.innerHTML = '';
+  objs.forEach(o => {
+    const c = document.createElement('div');
+    c.className = 'match-card obj';
+    c.textContent = o.expr;
+    c.dataset.sum = o.sum;
+    c.dataset.id = o.id;
+    c.onclick = () => matchObjClick(c);
+    objRow.appendChild(c);
+  });
+  // 합 셔플
+  const shapes = [...matchShapes];
+  for(let i=shapes.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [shapes[i], shapes[j]] = [shapes[j], shapes[i]];
+  }
+  shapeRow.innerHTML = '';
+  shapes.forEach(s => {
+    const c = document.createElement('div');
+    c.className = 'match-card shape';
+    c.textContent = s.emoji;
+    c.dataset.sum = s.sum;
+    c.onclick = () => matchShapeClick(c);
+    shapeRow.appendChild(c);
+  });
+}
+
+function matchObjClick(card) {
+  if(answered[MATCH_SLIDE]) return;
+  if(card.classList.contains('matched')) return;
+  if(matchSelectedObj === card) {
+    card.classList.remove('selected');
+    matchSelectedObj = null;
+    return;
+  }
+  document.querySelectorAll('#matchObjects .match-card.selected').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  matchSelectedObj = card;
+}
+
+function matchShapeClick(shapeCard) {
+  if(answered[MATCH_SLIDE]) return;
+  if(!matchSelectedObj) {
+    const fb = document.getElementById('fb'+MATCH_SLIDE);
+    fb.innerHTML = '먼저 위에서 <b>식</b>을 골라봐!';
+    fb.className = 'feedback bad';
+    return;
+  }
+  const objSum = matchSelectedObj.dataset.sum;
+  const shapeSum = shapeCard.dataset.sum;
+  if(objSum === shapeSum) {
+    matchSelectedObj.classList.remove('selected');
+    matchSelectedObj.classList.add('matched');
+    shapeCard.classList.add('flash-ok');
+    setTimeout(() => shapeCard.classList.remove('flash-ok'), 400);
+    playSound('correct');
+    matchSelectedObj = null;
+    matchCount++;
+    const cnt = document.getElementById('matchCount');
+    if(cnt) cnt.textContent = matchCount;
+    if(matchCount === MATCH_TOTAL) {
+      answered[MATCH_SLIDE] = true;
+      addScore(MATCH_SLIDE);
+      const fb = document.getElementById('fb'+MATCH_SLIDE);
+      fb.innerHTML = '<b>덧셈 마스터!</b> 식과 합을 모두 짝지었어! ✨';
+      fb.className = 'feedback good';
+      updateCombo(true);
+    }
+  } else {
+    matchSelectedObj.classList.add('shake');
+    shapeCard.classList.add('shake');
+    playSound('wrong');
+    const wrongObj = matchSelectedObj;
+    setTimeout(() => {
+      wrongObj.classList.remove('shake');
+      shapeCard.classList.remove('shake');
+    }, 500);
+    const fb = document.getElementById('fb'+MATCH_SLIDE);
+    fb.innerHTML = `이 식의 합은 <b>${shapeCard.textContent}</b>이 아니에요!`;
+    fb.className = 'feedback bad';
+    updateCombo(false);
+  }
+}
+
+// ===== 결과 =====
+function showResult() {
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultCombo').textContent = `최대 콤보: 🔥 ${maxCombo}`;
+  document.getElementById('resultCorrect').textContent = `맞힌 문제: ${correctCount} / ${TOTAL_QUESTIONS}`;
+  let msg = '', speech = '';
+  const rate = correctCount / TOTAL_QUESTIONS;
+  if(rate >= 0.9) { msg = '🏆 완벽해요!'; speech = '덧셈 마스터 등극!'; }
+  else if(rate >= 0.7) { msg = '🎉 아주 잘했어요!'; speech = '식을 척척 푸는 솜씨!'; }
+  else if(rate >= 0.5) { msg = '👍 잘했어요!'; speech = '조금만 더 연습해봐!'; }
+  else { msg = '💪 다시 도전해 봐요!'; speech = '괜찮아!'; }
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('resultSpeech').textContent = speech;
+}
+
+initTap();
+initPond();
+initMatch();
+showSlide(0);
 </script>
 </body>
 </html>
