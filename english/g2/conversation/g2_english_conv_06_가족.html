@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>K-edu | 2학년 회화 6강: 👨‍👩‍👧‍👦 가족 (Family)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../phonics/phonics-common.css">
+<style>
+:root{
+  --bg:#FFF1F2;--card:#FFFFFF;--primary:#E11D48;--primary-light:#FFE4E6;--secondary:#9F1239;
+  --green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;
+  --yellow:#FFC107;--yellow-light:#FFF8E1;
+  --text:#222;--subtext:#6B7280;--border:#FECDD3;
+  --shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;
+  /* 가족 rose — This is my mom · I love my family */
+  --c-family:#E11D48;--c-family-light:#FFE4E6;--c-family-deep:#881337;
+  /* 직계 amber — mom·dad·sister·brother */
+  --grade-amber:#F59E0B;--grade-amber-light:#FEF3C7;--grade-amber-deep:#92400E;
+  /* 확대·정서 sky — grandma·grandpa·family·love */
+  --like-sky:#0EA5E9;--like-sky-light:#E0F2FE;--like-sky-deep:#0C4A6E;
+  /* 경고 */
+  --ui-warn:#DC2626;--ui-warn-light:#FEE2E2;
+}
+body{background:var(--bg)}
+.topbar{background:#fff}
+.progress-bar{background:var(--c-family-light)}
+.progress-fill{background:linear-gradient(90deg,var(--c-family),var(--grade-amber),var(--like-sky))!important}
+.kedu-logo,.logo{background:var(--c-family);color:#fff}
+.score-pill,.score-badge{background:var(--c-family-light);border:2px solid var(--c-family);color:var(--c-family-deep);border-radius:99px;padding:3px 12px;font-size:20px;font-weight:700}
+.topleft,.topright{display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:2px;border-radius:99px;padding:4px 12px;font-size:16px;font-weight:700;font-family:'Nunito',sans-serif}
+.logo-k{font-size:18px}.logo-star{color:#FDE047}
+.progress-wrap{flex:1;margin:0 12px;height:10px;background:var(--c-family-light);border-radius:99px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s;width:0}
+.page-info{font-size:17px;color:var(--subtext);white-space:nowrap}
+
+/* ═══ COMBO TOAST ═══ */
+.combo-toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,var(--c-family),var(--grade-amber),var(--like-sky));color:#fff;padding:10px 24px;border-radius:99px;font-size:22px;font-weight:700;opacity:0;transition:all .3s;z-index:999;box-shadow:0 6px 20px rgba(225,29,72,0.4);pointer-events:none}
+.combo-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══ HOOK ═══ */
+.hook-wrap{text-align:center;padding:10px 0}
+.hook-badge-stage{display:inline-block;background:linear-gradient(135deg,var(--c-family),var(--grade-amber));color:#fff;border-radius:99px;padding:6px 18px;font-size:19px;font-weight:700;margin-bottom:12px;box-shadow:0 3px 8px rgba(225,29,72,0.4);font-family:'Nunito',sans-serif}
+.hook-title{font-size:30px;color:var(--c-family-deep);margin-bottom:8px;font-weight:700}
+.hook-sub{font-size:22px;color:var(--text);line-height:1.6;margin-bottom:14px}
+.hook-intro-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.hook-intro-card{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:72px;padding:8px 4px;background:#fff;border:3px solid var(--c-family);border-radius:14px;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s;box-shadow:0 3px 8px rgba(225,29,72,0.15)}
+.hook-intro-card:hover{transform:translateY(-3px) scale(1.05);background:var(--c-family-light)}
+.hook-intro-card.greet{border-color:var(--c-family)}
+.hook-intro-card.greet:hover{background:var(--c-family-light)}
+.hook-intro-card.welcome{border-color:var(--grade-amber)}
+.hook-intro-card.welcome:hover{background:var(--grade-amber-light)}
+.hook-intro-card.bye{border-color:var(--like-sky)}
+.hook-intro-card.bye:hover{background:var(--like-sky-light)}
+.hook-intro-emoji{font-size:32px;line-height:1}
+.hook-intro-word{font-size:12px;font-weight:800;color:var(--c-family-deep);margin-top:3px}
+.hook-intro-card.welcome .hook-intro-word{color:var(--grade-amber-deep)}
+.hook-intro-card.bye .hook-intro-word{color:var(--like-sky-deep)}
+.hook-note{margin-top:18px;font-size:21px;color:var(--subtext)}
+
+/* ═══ 20단계 ROADMAP (2학년) ═══ */
+.roadmap-20{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:620px;margin:14px auto 0;padding:10px;background:var(--c-family-light);border-radius:16px;border:2px dashed var(--c-family)}
+.rm-dot{aspect-ratio:1/1;border-radius:50%;background:#fff;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#9CA3AF}
+.rm-dot.now{background:var(--c-family);border-color:var(--c-family-deep);color:#fff;transform:scale(1.25);box-shadow:0 3px 10px rgba(225,29,72,0.5);font-family:'Nunito',sans-serif}
+.rm-dot.done{background:var(--grade-amber-light);border-color:var(--grade-amber);color:var(--grade-amber-deep)}
+
+/* ═══ DIALOG SCENE ═══ */
+.dialog-scene{display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.dialog-line{display:flex;align-items:flex-start;gap:10px}
+.dialog-line.right{flex-direction:row-reverse}
+.dialog-char{font-size:46px;flex-shrink:0;padding-top:4px}
+.dialog-bubble{background:var(--c-family-light);border:2.5px solid var(--c-family);border-radius:18px;padding:12px 18px;font-size:22px;color:var(--c-family-deep);cursor:pointer;max-width:82%;position:relative;font-weight:700;transition:transform .15s;line-height:1.35}
+.dialog-bubble:hover{transform:scale(1.02)}
+.dialog-bubble.q-b{background:var(--grade-amber-light);border-color:var(--grade-amber);color:var(--grade-amber-deep)}
+.dialog-bubble.a-b{background:var(--c-family-light);border-color:var(--c-family);color:var(--c-family-deep)}
+.dialog-bubble.like-b{background:var(--like-sky-light);border-color:var(--like-sky);color:var(--like-sky-deep)}
+.dialog-ko{display:block;font-size:15px;color:var(--subtext);font-weight:400;margin-top:4px}
+.big-intro{font-size:88px;display:block;text-align:center;margin:8px 0;line-height:1}
+
+/* ═══ EXPRESSION CARDS (4개) ═══ */
+.expr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}
+.expr-card{background:#fff;border:2.5px solid var(--c-family);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.expr-card:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(225,29,72,0.3)}
+.expr-emoji{font-size:32px;margin-bottom:4px}
+.expr-en{font-size:18px;font-weight:700;color:var(--c-family-deep);font-family:'Nunito',sans-serif;line-height:1.25}
+.expr-ko{font-size:14px;color:var(--subtext);margin-top:4px}
+.expr-card.nice-meet{border-color:var(--c-family);background:var(--c-family-light)}
+.expr-card.nice-meet .expr-en{color:var(--c-family-deep)}
+.expr-card.how-do{border-color:var(--c-family-deep);background:var(--c-family-light)}
+.expr-card.how-do .expr-en{color:var(--c-family-deep)}
+.expr-card.see-later{border-color:var(--grade-amber);background:var(--grade-amber-light)}
+.expr-card.see-later .expr-en{color:var(--grade-amber-deep)}
+.expr-card.take-care{border-color:var(--like-sky);background:var(--like-sky-light)}
+.expr-card.take-care .expr-en{color:var(--like-sky-deep)}
+
+/* ═══ MEET GRID (8단어) ═══ */
+.intro-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.intro-card{background:#fff;border:3px solid var(--c-family);border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer;transition:transform .15s;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.intro-card:hover{transform:translateY(-3px);box-shadow:0 6px 14px rgba(225,29,72,0.3);background:var(--c-family-light)}
+.intro-card.grade-card{border-color:var(--c-family)}
+.intro-card.grade-card:hover{background:var(--c-family-light);box-shadow:0 6px 14px rgba(225,29,72,0.3)}
+.intro-card.like-card{border-color:var(--like-sky)}
+.intro-card.like-card:hover{background:var(--like-sky-light);box-shadow:0 6px 14px rgba(99,102,241,0.3)}
+.mt-emoji{font-size:32px;line-height:1}
+.mt-en{font-size:15px;font-weight:800;font-family:'Nunito',sans-serif;color:var(--c-family-deep);margin-top:4px;line-height:1.1}
+.intro-card.like-card .mt-en{color:var(--like-sky-deep)}
+.mt-ko{font-size:12px;color:var(--subtext);margin-top:2px;line-height:1.1}
+.mt-tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;margin-top:3px;font-weight:700;font-family:'Jua',sans-serif}
+.mt-tag.grade-tag{background:var(--c-family-light);color:var(--c-family-deep);border:1px solid var(--c-family)}
+.mt-tag.like-tag{background:var(--like-sky-light);color:var(--like-sky-deep);border:1px solid var(--like-sky)}
+
+/* ═══ KILLER 1: years vs year (복수 -s) ═══ */
+.intro-killer-split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.ms-zone{border-radius:14px;padding:10px 8px;text-align:center;box-shadow:0 4px 12px rgba(225,29,72,0.15)}
+.ms-zone.first-z{background:var(--c-family-light);border:3px solid var(--c-family)}
+.ms-zone.again-z{background:var(--grade-amber-light);border:3px solid var(--grade-amber)}
+.ms-head{font-size:22px;font-weight:700;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.ms-zone.first-z .ms-head{color:var(--c-family-deep)}
+.ms-zone.again-z .ms-head{color:var(--grade-amber-deep)}
+.ms-ko{font-size:13px;color:var(--subtext);margin-bottom:4px}
+.ms-pic{font-size:42px;line-height:1;margin:4px 0}
+.ms-ex{background:#fff;border-radius:10px;padding:6px;font-size:15px;color:var(--text);font-weight:700;cursor:pointer;transition:transform .15s;font-family:'Nunito',sans-serif;margin-top:4px;line-height:1.35}
+.ms-ex:hover{transform:scale(1.03)}
+.ms-ex-ko{display:block;font-size:11px;color:var(--subtext);font-weight:400;margin-top:2px}
+.ms-note{background:var(--ui-warn-light);border:2px solid var(--ui-warn);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:16px;color:#7F1D1D;line-height:1.5;text-align:left}
+.ms-note b{color:var(--ui-warn)}
+.ms-note .ok-txt{color:var(--c-family-deep)}
+
+/* ═══ SWAP DRILL ═══ */
+.swap-box{background:var(--c-family-light);border:3px solid var(--c-family);border-radius:16px;padding:14px;margin:10px 0;text-align:center}
+.swap-sentence{font-size:26px;font-weight:800;color:var(--c-family-deep);font-family:'Nunito',sans-serif;margin-bottom:8px;line-height:1.3}
+.swap-blank{display:inline-block;min-width:120px;padding:3px 10px;background:var(--grade-amber-light);border-bottom:3px solid var(--grade-amber);color:var(--grade-amber-deep);border-radius:6px;font-size:30px}
+.swap-preview{font-size:54px;margin:6px 0;display:block;line-height:1}
+.swap-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.swap-tab{background:#fff;border:2px solid var(--c-family);border-radius:10px;padding:7px 12px;font-size:17px;font-weight:700;font-family:'Nunito',sans-serif;color:var(--c-family-deep);cursor:pointer;transition:all .15s}
+.swap-tab:hover{background:var(--c-family-light)}
+.swap-tab.active{background:var(--c-family);color:#fff;transform:scale(1.05)}
+.swap-hint{font-size:15px;color:var(--subtext);margin-top:8px;line-height:1.5}
+
+/* ═══ FLASH DRILL ═══ */
+.fd-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
+.fd-card{width:260px;height:180px;perspective:1000px;cursor:pointer}
+.fd-inner{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.fd-card.flipped .fd-inner{transform:rotateY(180deg)}
+.fd-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:18px;padding:14px;box-shadow:0 6px 18px rgba(225,29,72,0.2)}
+.fd-front{background:linear-gradient(135deg,var(--c-family-light),#fff);border:3px solid var(--c-family)}
+.fd-back{background:linear-gradient(135deg,var(--grade-amber-light),#fff);border:3px solid var(--grade-amber);transform:rotateY(180deg);color:var(--grade-amber-deep);font-size:26px;font-weight:700;font-family:'Jua',sans-serif}
+.fd-emoji{font-size:68px;line-height:1}
+.fd-word{font-size:30px;font-weight:800;color:var(--c-family-deep);font-family:'Nunito',sans-serif;margin-top:6px}
+.fd-note{font-size:15px;color:var(--subtext);margin-top:8px;text-align:center;font-weight:400}
+.fd-controls{display:flex;gap:10px;align-items:center}
+.fd-btn{background:var(--c-family);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:17px;font-weight:700;cursor:pointer;font-family:'Jua',sans-serif;transition:background .15s}
+.fd-btn:hover{background:var(--c-family-deep)}
+.fd-btn.shuffle{background:var(--grade-amber)}
+.fd-btn.shuffle:hover{background:var(--grade-amber-deep)}
+.fd-counter{font-size:17px;font-weight:700;color:var(--c-family-deep);font-family:'Nunito',sans-serif;min-width:60px;text-align:center}
+
+/* ═══ MIS-STACK (Killer 2) ═══ */
+.mis-stack{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.mis-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;border:2px solid;background:#fff}
+.mis-row.ok{border-color:#16A34A;background:#F0FDF4}
+.mis-row.err{border-color:var(--ui-warn);background:var(--ui-warn-light)}
+.mis-mark{font-size:26px;flex-shrink:0}
+.mis-sent{font-size:19px;font-weight:700;color:var(--text);font-family:'Nunito',sans-serif;cursor:pointer;flex:1;line-height:1.35}
+.mis-sent:hover{color:var(--c-family-deep)}
+.mis-emph{color:var(--c-family-deep);font-size:22px;font-weight:900;background:var(--c-family-light);padding:0 4px;border-radius:4px}
+.mis-row.err .mis-emph{color:var(--ui-warn);background:var(--ui-warn-light);text-decoration:line-through}
+.mis-reason{display:block;font-size:14px;color:var(--subtext);font-weight:400;margin-top:4px;font-family:'Jua',sans-serif}
+
+/* ═══ DIALOG-Q (mini dialog slide 8) ═══ */
+.dialog-q{background:var(--c-family-light);border:3px dashed var(--c-family);border-radius:16px;padding:14px;margin:10px 0}
+.dq-line{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dq-char{font-size:42px}
+.dq-bubble{background:var(--grade-amber-light);border:2.5px solid var(--grade-amber);border-radius:18px;padding:10px 16px;font-size:20px;color:var(--grade-amber-deep);font-weight:700;font-family:'Nunito',sans-serif}
+.dq-pic{font-size:62px;text-align:center;margin:6px 0;line-height:1}
+.dq-reply{text-align:center;font-size:17px;color:var(--subtext);margin:8px 0}
+.dq-me-bubble{background:var(--c-family-light);border:2.5px solid var(--c-family);border-radius:18px;padding:10px 16px;font-size:20px;color:var(--c-family-deep);font-weight:700;font-family:'Nunito',sans-serif;display:none}
+.dq-me-bubble.show{display:block;animation:fadeInUp .4s}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ CHOICES ═══ */
+.choices{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.choices.row{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
+.choice-btn{background:#fff;border:2.5px solid var(--border);border-radius:12px;padding:11px 16px;font-size:19px;font-weight:700;cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;color:var(--text);transition:all .15s;line-height:1.3}
+.choice-btn:hover{border-color:var(--c-family);background:var(--c-family-light);transform:scale(1.02)}
+.choice-btn.correct{background:#DCFCE7;border-color:#16A34A;color:#14532D;animation:correctPulse .5s}
+.choice-btn.wrong{background:var(--ui-warn-light);border-color:var(--ui-warn);color:var(--ui-warn);animation:shake .4s}
+@keyframes correctPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.feedback{font-size:16px;margin-top:10px;padding:10px 12px;border-radius:12px;line-height:1.5;display:none}
+.feedback.ok{background:#DCFCE7;color:#14532D;border:2px solid #16A34A;display:block}
+.feedback.err{background:var(--ui-warn-light);color:var(--ui-warn);border:2px solid var(--ui-warn);display:block}
+.question-label{display:inline-block;background:var(--c-family);color:#fff;border-radius:99px;padding:3px 12px;font-size:16px;font-weight:700;margin-bottom:8px}
+.stars{color:#FCD34D;margin-left:4px}
+.question-text{font-size:21px;color:var(--text);margin:8px 0;font-weight:700;line-height:1.45}
+.q-emoji-big{font-size:68px;text-align:center;line-height:1;margin:6px 0}
+
+/* ═══ Q2 LISTEN ═══ */
+.listen-big{display:flex;flex-direction:column;align-items:center;gap:10px;margin:10px 0}
+.listen-big-btn{background:var(--c-family);color:#fff;border:none;border-radius:99px;padding:14px 30px;font-size:22px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:0 4px 12px rgba(225,29,72,0.3);transition:transform .15s}
+.listen-big-btn:hover{transform:scale(1.05);background:var(--c-family-deep)}
+.listen-hint{font-size:16px;color:var(--subtext)}
+
+/* ═══ MATCH (slide 11) ═══ */
+.match-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.match-col{display:flex;flex-direction:column;gap:6px}
+.match-col-title{font-size:18px;font-weight:700;color:var(--c-family-deep);text-align:center;margin-bottom:4px;font-family:'Nunito',sans-serif}
+.match-item{background:#fff;border:2.5px solid var(--border);border-radius:10px;padding:10px;font-size:17px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;font-family:'Nunito',sans-serif;line-height:1.25}
+.match-item:hover{border-color:var(--c-family);background:var(--c-family-light)}
+.match-item.selected{background:var(--yellow-light);border-color:#E11D48;transform:scale(1.03)}
+.match-item.matched{background:#DCFCE7;border-color:#16A34A;color:#14532D;cursor:default;opacity:.75}
+
+/* ═══ BLANK FILL (Q3) ═══ */
+.blank-box{text-align:center;margin:10px 0}
+.blank-pic{font-size:82px;line-height:1;margin:6px 0}
+.blank-sentence{font-size:24px;color:var(--text);font-weight:700;margin:8px 0;font-family:'Nunito',sans-serif;line-height:1.45}
+.blank-slot{display:inline-block;min-width:130px;padding:4px 14px;background:var(--grade-amber-light);border-bottom:4px solid var(--grade-amber);color:var(--grade-amber-deep);border-radius:8px;font-size:28px;font-weight:900;margin:0 4px}
+.blank-slot.filled{background:#DCFCE7;border-color:#16A34A;color:#14532D}
+
+/* ═══ SIT-BOX (Q4) ═══ */
+.sit-box{background:linear-gradient(135deg,var(--grade-amber-light),var(--c-family-light));border:3px solid var(--grade-amber);border-radius:16px;padding:12px;margin:10px 0;text-align:center}
+.sit-title{font-size:19px;font-weight:700;color:var(--grade-amber-deep);margin-bottom:6px;font-family:'Nunito',sans-serif}
+.sit-emoji{font-size:58px;line-height:1;margin:6px 0}
+.sit-desc{font-size:17px;color:var(--text);font-weight:700;margin:6px 0;line-height:1.5}
+.sit-ask{font-size:19px;color:var(--grade-amber-deep);font-weight:800;margin-top:8px;font-family:'Nunito',sans-serif}
+
+/* ═══ RESULT ═══ */
+.result-wrap{text-align:center;padding:10px 0}
+.result-emoji{font-size:70px;line-height:1;margin-bottom:8px}
+.result-title{font-size:32px;color:var(--c-family-deep);font-weight:800;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.result-score{font-size:22px;color:var(--c-family-deep);font-weight:700;margin-bottom:12px}
+.result-score span{font-size:34px;color:var(--c-family-deep);font-family:'Nunito',sans-serif}
+.intro-badge{background:linear-gradient(135deg,var(--c-family),var(--grade-amber),var(--like-sky));color:#fff;border-radius:18px;padding:14px 20px;margin:12px 0;box-shadow:0 6px 18px rgba(225,29,72,0.4)}
+.intro-title-badge{font-size:22px;font-weight:800;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.intro-sub-badge{font-size:16px;line-height:1.55;opacity:.95}
+.result-msg{font-size:19px;color:var(--text);margin:12px 0;line-height:1.6}
+.result-roadmap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;max-width:560px;margin:14px auto;padding:10px;background:var(--c-family-light);border-radius:14px}
+.next-btn{background:linear-gradient(135deg,var(--c-family),var(--grade-amber));color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:20px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:10px;box-shadow:0 4px 14px rgba(225,29,72,0.4);transition:transform .15s}
+.next-btn:hover{transform:scale(1.05)}
+
+/* ═══ BASE LAYOUT ═══ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Jua',sans-serif;color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none;-webkit-tap-highlight-color:transparent}
+.topbar{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px}
+.sound-btn{background:none;border:none;font-size:22px;cursor:pointer;padding:3px 8px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;opacity:0;transform:translateX(40px);transition:opacity .35s,transform .35s;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-40px)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:16px 18px;width:100%;max-width:780px;max-height:100%}
+.slide-title{font-size:26px;color:var(--c-family-deep);text-align:center;margin-bottom:6px;font-weight:700}
+.navbar{display:flex;gap:10px;padding:10px 14px;background:#fff;border-top:1px solid var(--border);flex-shrink:0;justify-content:center}
+.nav-btn{background:var(--c-family);color:#fff;border:none;border-radius:12px;padding:9px 26px;font-size:19px;font-weight:700;font-family:'Jua',sans-serif;cursor:pointer;transition:opacity .2s}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.nav-btn:not(:disabled):hover{opacity:.85}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topleft">
+    <div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span>edu</span></div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="page-info" id="pageInfo">1 / 15</div>
+  <div class="topright">
+    <span class="score-pill">⭐ <span id="scoreDisp">0</span></span>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  </div>
+</div>
+<div class="combo-toast" id="comboToast"></div>
+
+<div class="slides">
+
+<!-- ── 0. HOOK ── -->
+<div class="slide active" data-type="concept">
+<div class="card">
+  <div class="hook-wrap">
+    <div class="hook-badge-stage">👨‍👩‍👧‍👦 2학년 회화 · 6강 가족</div>
+    <div class="hook-title">👨‍👩‍👧‍👦 This is my family!</div>
+    <div class="hook-sub">우리 가족을 영어로 소개해 봐!<br>This is my mom. I have a brother. I love my family! 💕</div>
+    <div class="hook-intro-row">
+      <div class="hook-intro-card greet" onclick="speakWord('mom')"><span class="hook-intro-emoji">👩</span><span class="hook-intro-word">mom</span></div>
+      <div class="hook-intro-card greet" onclick="speakWord('dad')"><span class="hook-intro-emoji">👨</span><span class="hook-intro-word">dad</span></div>
+      <div class="hook-intro-card greet" onclick="speakWord('sister')"><span class="hook-intro-emoji">👧</span><span class="hook-intro-word">sister</span></div>
+      <div class="hook-intro-card greet" onclick="speakWord('brother')"><span class="hook-intro-emoji">👦</span><span class="hook-intro-word">brother</span></div>
+      <div class="hook-intro-card welcome" onclick="speakWord('grandma')"><span class="hook-intro-emoji">👵</span><span class="hook-intro-word">grandma</span></div>
+      <div class="hook-intro-card welcome" onclick="speakWord('grandpa')"><span class="hook-intro-emoji">👴</span><span class="hook-intro-word">grandpa</span></div>
+      <div class="hook-intro-card bye" onclick="speakWord('family')"><span class="hook-intro-emoji">👨‍👩‍👧‍👦</span><span class="hook-intro-word">family</span></div>
+      <div class="hook-intro-card bye" onclick="speakWord('love')"><span class="hook-intro-emoji">💕</span><span class="hook-intro-word">love</span></div>
+    </div>
+    <div class="hook-note">탭하면 발음 들을 수 있어 🎧</div>
+    <div class="roadmap-20">
+      <span class="rm-dot done">1</span><span class="rm-dot done">2</span><span class="rm-dot done">3</span><span class="rm-dot done">4</span>
+      <span class="rm-dot done">5</span>
+      <span class="rm-dot now">6</span><span class="rm-dot">7</span><span class="rm-dot">8</span><span class="rm-dot">9</span>
+      <span class="rm-dot">🏆</span>
+      <span class="rm-dot">11</span><span class="rm-dot">12</span><span class="rm-dot">13</span><span class="rm-dot">14</span>
+      <span class="rm-dot">15</span><span class="rm-dot">16</span><span class="rm-dot">17</span><span class="rm-dot">18</span>
+      <span class="rm-dot">19</span><span class="rm-dot">🎓</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 1. DIALOG SCENE ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎬 케이와 친구의 가족 대화</div>
+  <span class="big-intro">👨‍👩‍👧‍👦</span>
+  <div class="dialog-scene">
+    <div class="dialog-line">
+      <span class="dialog-char">🐶</span>
+      <div class="dialog-bubble a-b" onclick="speakSentence(&quot;Who is this?&quot;)">Who is this?<span class="dialog-ko">이 사람은 누구야?</span></div>
+    </div>
+    <div class="dialog-line right">
+      <span class="dialog-char">👦</span>
+      <div class="dialog-bubble q-b" onclick="speakSentence('This is my mom.')">This is my mom.<span class="dialog-ko">이 사람은 우리 엄마야.</span></div>
+    </div>
+    <div class="dialog-line">
+      <span class="dialog-char">🐶</span>
+      <div class="dialog-bubble a-b" onclick="speakSentence('Cool! Do you have a brother?')">Cool! Do you have a brother?<span class="dialog-ko">멋지다! 너 형/오빠 있어?</span></div>
+    </div>
+    <div class="dialog-line right">
+      <span class="dialog-char">👦</span>
+      <div class="dialog-bubble like-b" onclick="speakSentence('Yes! I have a brother. I love my family.')">Yes! I have a brother. I love my family.<span class="dialog-ko">응! 형 있어. 난 우리 가족이 좋아.</span></div>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:15px;color:var(--subtext);margin-top:6px">말풍선 탭하면 듣기 🔊</div>
+</div>
+</div>
+
+<!-- ── 2. 표현 4개 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">💬 핵심 표현 4개</div>
+  <div class="expr-grid">
+    <div class="expr-card nice-meet" onclick="speakSentence('This is my mom.')">
+      <div class="expr-emoji">👩</div>
+      <div class="expr-en">This is my mom.</div>
+      <div class="expr-ko">이 사람은 우리 엄마야.</div>
+    </div>
+    <div class="expr-card how-do" onclick="speakSentence('I have a brother.')">
+      <div class="expr-emoji">👦</div>
+      <div class="expr-en">I have a brother.</div>
+      <div class="expr-ko">나는 형/오빠가 있어.</div>
+    </div>
+    <div class="expr-card see-later" onclick="speakSentence('I love my family.')">
+      <div class="expr-emoji">💕</div>
+      <div class="expr-en">I love my family.</div>
+      <div class="expr-ko">난 우리 가족을 사랑해.</div>
+    </div>
+    <div class="expr-card take-care" onclick="speakSentence('She is kind.')">
+      <div class="expr-emoji">😊</div>
+      <div class="expr-en">She is kind.</div>
+      <div class="expr-ko">그녀(엄마/누나)는 친절해.</div>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:15px;color:var(--subtext);margin-top:8px">
+    🌹 분홍 = 가족 소개·사랑 · 🟡 노랑 = 직계(mom·dad·sister·brother) · 🩵 하늘 = 확대(grandma·grandpa·family·love)
+  </div>
+</div>
+</div>
+
+<!-- ── 3. 단어 8개 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">👨‍👩‍👧‍👦 8단어 마스터</div>
+  <div class="intro-grid">
+    <div class="intro-card grade-card" onclick="speakWord('mom')">
+      <div class="mt-emoji">👩</div><div class="mt-en">mom</div><div class="mt-ko">엄마</div>
+      <span class="mt-tag grade-tag">직계</span>
+    </div>
+    <div class="intro-card grade-card" onclick="speakWord('dad')">
+      <div class="mt-emoji">👨</div><div class="mt-en">dad</div><div class="mt-ko">아빠</div>
+      <span class="mt-tag grade-tag">직계</span>
+    </div>
+    <div class="intro-card grade-card" onclick="speakWord('sister')">
+      <div class="mt-emoji">👧</div><div class="mt-en">sister</div><div class="mt-ko">누나/언니/여동생</div>
+      <span class="mt-tag grade-tag">직계</span>
+    </div>
+    <div class="intro-card grade-card" onclick="speakWord('brother')">
+      <div class="mt-emoji">👦</div><div class="mt-en">brother</div><div class="mt-ko">형/오빠/남동생</div>
+      <span class="mt-tag grade-tag">직계</span>
+    </div>
+    <div class="intro-card like-card" onclick="speakWord('grandma')">
+      <div class="mt-emoji">👵</div><div class="mt-en">grandma</div><div class="mt-ko">할머니</div>
+      <span class="mt-tag like-tag">확대</span>
+    </div>
+    <div class="intro-card like-card" onclick="speakWord('grandpa')">
+      <div class="mt-emoji">👴</div><div class="mt-en">grandpa</div><div class="mt-ko">할아버지</div>
+      <span class="mt-tag like-tag">확대</span>
+    </div>
+    <div class="intro-card like-card" onclick="speakWord('family')">
+      <div class="mt-emoji">👨‍👩‍👧‍👦</div><div class="mt-en">family</div><div class="mt-ko">가족</div>
+      <span class="mt-tag like-tag">전체</span>
+    </div>
+    <div class="intro-card like-card" onclick="speakWord('love')">
+      <div class="mt-emoji">💕</div><div class="mt-en">love</div><div class="mt-ko">사랑</div>
+      <span class="mt-tag like-tag">정서</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 4. KILLER 1 This is + 사람 ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🚨 Killer 1 — "This is my mom" — 사람 소개엔 This is!</div>
+  <div style="text-align:center;font-size:16px;color:var(--text);margin-bottom:6px">
+    가족·친구를 <b>소개할 때</b>는 반드시 <b>This is</b>! 한국어 "이 사람은 ~야"는 영어로 <b>This is ~</b>!
+  </div>
+  <div class="intro-killer-split">
+    <div class="ms-zone first-z">
+      <div class="ms-head">⭕ 맞아</div>
+      <div class="ms-ko">This is + my + 가족</div>
+      <div class="ms-pic">👩💕</div>
+      <div class="ms-ex" onclick="speakSentence('This is my mom.')">
+        <b>This is</b> my mom.
+        <span class="ms-ex-ko">이 사람은 우리 엄마야. (사람 소개 = This is)</span>
+      </div>
+    </div>
+    <div class="ms-zone again-z">
+      <div class="ms-head">❌ 어색해</div>
+      <div class="ms-ko">She is·He is로 시작</div>
+      <div class="ms-pic">🚫📛</div>
+      <div class="ms-ex">
+        She is my mom.
+        <span class="ms-ex-ko">→ 처음 소개할 땐 어색! "She is"는 이미 누군지 알 때만!</span>
+      </div>
+    </div>
+  </div>
+  <div class="ms-note">
+    💡 <b class="ok-txt">This is my ~</b> = 가족·친구 첫 소개! This is my <b>dad</b>. ⭕ / This is my <b>sister</b>. ⭕ / This is my <b>brother</b>. ⭕ — 모두 가능! "Here is my mom" ❌ — 가족 소개엔 This is!
+  </div>
+</div>
+</div>
+
+<!-- ── 5. SWAP DRILL ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🔄 This is my ___! 바꿔보기</div>
+  <div class="swap-box">
+    <div class="swap-sentence">This is my <span class="swap-blank" id="swapSlot">mom</span>.</div>
+    <span class="swap-preview" id="swapPreview">👩</span>
+    <div class="swap-tabs">
+      <button class="swap-tab active" onclick="swapSet('mom',this)">👩 mom</button>
+      <button class="swap-tab" onclick="swapSet('dad',this)">👨 dad</button>
+      <button class="swap-tab" onclick="swapSet('sister',this)">👧 sister</button>
+      <button class="swap-tab" onclick="swapSet('brother',this)">👦 brother</button>
+    </div>
+    <button class="fd-btn" onclick="swapSpeak()" style="margin-top:10px">🔊 듣기</button>
+    <div class="swap-hint">💡 "This is my + 가족!" 한 문장으로 누구든 소개 완성!</div>
+  </div>
+</div>
+</div>
+
+<!-- ── 6. FLASH DRILL ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎴 8단어 플래시 카드</div>
+  <div class="fd-wrap">
+    <div class="fd-card" id="fdCard" onclick="fdFlip()">
+      <div class="fd-inner">
+        <div class="fd-face fd-front">
+          <div class="fd-emoji" id="fdEmoji">👩</div>
+          <div class="fd-word" id="fdWord">mom</div>
+          <div class="fd-note">탭 → 뒤집기</div>
+        </div>
+        <div class="fd-face fd-back" id="fdBack"><div>엄마</div><div class="fd-note">This is my mom.</div></div>
+      </div>
+    </div>
+    <div class="fd-controls">
+      <button class="fd-btn" onclick="fdPrev()">◀</button>
+      <span class="fd-counter" id="fdCounter">1 / 8</span>
+      <button class="fd-btn" onclick="fdNext()">▶</button>
+      <button class="fd-btn shuffle" onclick="fdShuffle()">🎲</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 7. KILLER 2 I have ~ — 가족은 have ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🚨 Killer 2 — "I have a brother" — 가족은 have!</div>
+  <div style="text-align:center;font-size:16px;color:var(--text);margin-bottom:8px">
+    가족이 <b>있다</b>를 영어로? 반드시 <b>I have ~</b>! "I am a brother" ❌, "There is a brother" ❌!
+  </div>
+  <div class="mis-stack">
+    <div class="mis-row ok">
+      <span class="mis-mark">⭕</span>
+      <span class="mis-sent" onclick="speakSentence('I have a brother.')">
+        I <span class="mis-emph">have</span> a brother. (나는 형/오빠가 있어)
+        <small class="mis-reason">가족·형제 = have! 한국어 "있다"는 영어로 have!</small>
+      </span>
+    </div>
+    <div class="mis-row err">
+      <span class="mis-mark">❌</span>
+      <span class="mis-sent">
+        I am a brother.
+        <small class="mis-reason">"나는 형이다"라는 뜻이 됨! 누구의 형인지 모호 — 의미 어색!</small>
+      </span>
+    </div>
+    <div class="mis-row err">
+      <span class="mis-mark">❌</span>
+      <span class="mis-sent">
+        There is a brother.
+        <small class="mis-reason">"형 한 명이 있다"는 누군가 다른 사람을 가리킴 — 내 가족 표현 X!</small>
+      </span>
+    </div>
+    <div class="mis-row ok">
+      <span class="mis-mark">⭕</span>
+      <span class="mis-sent" onclick="speakSentence('I have a sister and a brother.')">
+        I <span class="mis-emph">have</span> a sister and a brother. (누나/언니랑 형이 있어)
+        <small class="mis-reason">여러 가족도 have로! and로 이어주면 자연스러움!</small>
+      </span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ── 8. MINI DIALOG ── -->
+<div class="slide" data-type="concept">
+<div class="card">
+  <div class="slide-title">🎭 미니 대화 — 너라면?</div>
+  <div class="dialog-q">
+    <div class="dq-line">
+      <span class="dq-char">👧</span>
+      <div class="dq-bubble" onclick="speakSentence(&quot;Hi! Do you have a brother or a sister?&quot;)">Hi! Do you have a brother or a sister?</div>
+    </div>
+    <div class="dq-pic">🤔💭</div>
+    <div class="dq-reply">너에게 형제·자매가 있다면 어떻게 답할까?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="miniPick(this,0)">① I am a sister. My family.</button>
+      <button class="choice-btn" onclick="miniPick(this,1)">② There is brother. Sister too.</button>
+      <button class="choice-btn" onclick="miniPick(this,2)">③ Yes, I have a sister. This is my sister.</button>
+    </div>
+    <div class="dq-me-bubble" id="miniReply">😊 짧게 "Yes, I do!"만 해도 OK! 더 멋지게는 "Yes, I have a sister. This is my sister."처럼 이어 말하기!</div>
+    <div class="feedback" id="fb8"></div>
+  </div>
+</div>
+</div>
+
+<!-- ── 9. Q1 (10점, correct="0") ── -->
+<div class="slide" data-type="q" data-correct="0" data-score="10">
+<div class="card">
+  <span class="question-label">문제 1 <span class="stars">⭐</span></span>
+  <div class="question-text">👩 "이 사람은 우리 엄마야"는 영어로?</div>
+  <div class="q-emoji-big">👩💕</div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">① This is my mom.</button>
+    <button class="choice-btn" onclick="answer(this,1)">② I am my mom.</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ Mom I have.</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ Mom is here.</button>
+  </div>
+  <div class="feedback" id="fb9"></div>
+</div>
+</div>
+
+<!-- ── 10. Q2 매칭 (30점, 6쌍) ── -->
+<div class="slide" data-type="q" data-score="30">
+<div class="card">
+  <span class="question-label">매칭 <span class="stars">⭐⭐</span></span>
+  <div class="question-text">🔗 영어 단어 ↔ 한국어 뜻 연결!</div>
+  <div class="match-box">
+    <div class="match-col">
+      <div class="match-col-title">🇺🇸 영어</div>
+      <div class="match-item" data-key="mom" onclick="matchPick(this,'L')">mom</div>
+      <div class="match-item" data-key="dad" onclick="matchPick(this,'L')">dad</div>
+      <div class="match-item" data-key="sister" onclick="matchPick(this,'L')">sister</div>
+      <div class="match-item" data-key="brother" onclick="matchPick(this,'L')">brother</div>
+      <div class="match-item" data-key="grandma" onclick="matchPick(this,'L')">grandma</div>
+      <div class="match-item" data-key="family" onclick="matchPick(this,'L')">family</div>
+    </div>
+    <div class="match-col">
+      <div class="match-col-title">🇰🇷 한국어</div>
+      <div class="match-item" data-key="family" onclick="matchPick(this,'R')">가족</div>
+      <div class="match-item" data-key="dad" onclick="matchPick(this,'R')">아빠</div>
+      <div class="match-item" data-key="brother" onclick="matchPick(this,'R')">형/오빠</div>
+      <div class="match-item" data-key="mom" onclick="matchPick(this,'R')">엄마</div>
+      <div class="match-item" data-key="grandma" onclick="matchPick(this,'R')">할머니</div>
+      <div class="match-item" data-key="sister" onclick="matchPick(this,'R')">누나/언니</div>
+    </div>
+  </div>
+  <div class="feedback" id="fb10"></div>
+</div>
+</div>
+
+<!-- ── 11. Q3 (10점, correct="3") — KILLER 2 강화 ── -->
+<div class="slide" data-type="q" data-correct="3" data-score="10">
+<div class="card">
+  <span class="question-label">문제 3 <span class="stars">⭐</span></span>
+  <div class="question-text">📝 "I _____ a sister." 빈칸에 들어갈 말은?</div>
+  <div class="q-emoji-big">👧✏️</div>
+  <div style="text-align:center;font-size:15px;color:var(--subtext);margin-top:-4px">💡 가족이 "있다" → 영어로? (Killer 2 복습)</div>
+  <div class="choices row">
+    <button class="choice-btn" onclick="answer(this,0)">① am</button>
+    <button class="choice-btn" onclick="answer(this,1)">② is</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ are</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ have</button>
+  </div>
+  <div class="feedback" id="fb11"></div>
+</div>
+</div>
+
+<!-- ── 12. Q4 빈칸 (45점, correct="1") — KILLER 1 ── -->
+<div class="slide" data-type="q" data-correct="1" data-score="45">
+<div class="card">
+  <span class="question-label">문제 4 <span class="stars">⭐⭐⭐</span></span>
+  <div class="blank-box">
+    <div class="blank-pic">👨💕</div>
+    <div class="blank-sentence"><span class="blank-slot" id="blank12">___</span> my dad.<br><span style="font-size:16px;color:var(--subtext);font-weight:400">— 친구한테 우리 아빠를 처음 소개하려면?</span></div>
+    <div style="font-size:15px;color:var(--subtext);margin-top:4px">💡 사람 첫 소개 = ___ + my + 가족! (Killer 1 복습)</div>
+  </div>
+  <div class="choices row">
+    <button class="choice-btn" onclick="fillAnswer(this,0,'I am')">① I am</button>
+    <button class="choice-btn" onclick="fillAnswer(this,1,'This is')">② This is</button>
+    <button class="choice-btn" onclick="fillAnswer(this,2,'He is')">③ He is</button>
+    <button class="choice-btn" onclick="fillAnswer(this,3,'My is')">④ My is</button>
+  </div>
+  <div class="feedback" id="fb12"></div>
+</div>
+</div>
+
+<!-- ── 13. Q5 상황 (70점, correct="2") ── -->
+<div class="slide" data-type="q" data-correct="2" data-score="70">
+<div class="card">
+  <span class="question-label">문제 5 <span class="stars">⭐⭐⭐⭐</span></span>
+  <div class="sit-box">
+    <div class="sit-title">👨‍👩‍👧‍👦 친구가 우리 집에 놀러 왔어!</div>
+    <div class="sit-emoji">👧👨‍👩‍👧‍👦💕</div>
+    <div class="sit-desc">친구한테 우리 가족을 처음 소개해야 해.<br>엄마가 옆에 있고, 형도 있어. <b>가장 자연스럽게</b> 소개하려면?</div>
+    <div class="sit-ask">2학년 마스터라면?</div>
+  </div>
+  <div class="choices">
+    <button class="choice-btn" onclick="answer(this,0)">① I am a brother. Mom too.</button>
+    <button class="choice-btn" onclick="answer(this,1)">② There is my mom. Have brother.</button>
+    <button class="choice-btn" onclick="answer(this,2)">③ This is my mom. I have a brother. I love my family.</button>
+    <button class="choice-btn" onclick="answer(this,3)">④ My mom is family. Brother love.</button>
+  </div>
+  <div class="feedback" id="fb13"></div>
+</div>
+</div>
+
+<!-- ── 14. RESULT ── -->
+<div class="slide" data-type="result">
+<div class="card">
+  <div class="result-wrap">
+    <div class="result-emoji">👨‍👩‍👧‍👦</div>
+    <div class="result-title">6강 가족 마스터!</div>
+    <div class="result-score"><span id="finalScore">0</span> / 165점</div>
+    <div class="intro-badge">
+      <div class="intro-title-badge">💕 2학년 가족 완성!</div>
+      <div class="intro-sub-badge">This is my mom · I have a brother<br>I love my family · She is kind<br>4개 표현 + This is·have 마스터 ✨</div>
+    </div>
+    <div class="result-roadmap">
+      <span class="rm-dot done">1</span><span class="rm-dot done">2</span><span class="rm-dot done">3</span><span class="rm-dot done">4</span>
+      <span class="rm-dot done">5</span>
+      <span class="rm-dot now">6</span><span class="rm-dot">7</span><span class="rm-dot">8</span><span class="rm-dot">9</span>
+      <span class="rm-dot">🏆</span>
+      <span class="rm-dot">11</span><span class="rm-dot">12</span><span class="rm-dot">13</span><span class="rm-dot">14</span>
+      <span class="rm-dot">15</span><span class="rm-dot">16</span><span class="rm-dot">17</span><span class="rm-dot">18</span>
+      <span class="rm-dot">19</span><span class="rm-dot">🎓</span>
+    </div>
+    <div class="result-msg">🚀 <b>다음 7강으로!</b><br>새로운 표현을 만나러 가자!</div>
+    <button class="next-btn" onclick="goToNext()">🚀 7강으로 →</button>
+  </div>
+</div>
+</div>
+
+</div><!-- /slides -->
+
+<div class="navbar">
+  <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전</button>
+  <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 ▶</button>
+</div>
+
+<script>
+const TOTAL_SLIDES = 15;
+let currentSlide = 0, score = 0, combo = 0, soundOn = true;
+const answered = {};
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// ═══ SOUND ═══
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('soundBtn').textContent = soundOn ? '🔊' : '🔇';
+}
+function playCorrect() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [523,659,784].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(.15, audioCtx.currentTime + i*.1);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.1 + .2);
+      o.start(audioCtx.currentTime + i*.1); o.stop(audioCtx.currentTime + i*.1 + .2);
+    });
+  });
+}
+function playWrong() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    [220,196].forEach((f,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = f; o.type = 'sawtooth';
+      g.gain.setValueAtTime(.2, audioCtx.currentTime + i*.15);
+      g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + i*.15 + .25);
+      o.start(audioCtx.currentTime + i*.15); o.stop(audioCtx.currentTime + i*.15 + .25);
+    });
+  });
+}
+function playClick() {
+  if (!soundOn) return;
+  audioCtx.resume().then(() => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(.12, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, audioCtx.currentTime + .07);
+    o.start(); o.stop(audioCtx.currentTime + .07);
+  });
+}
+function speakWord(w) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(w);
+  u.lang = 'en-US'; u.rate = 0.8;
+  speechSynthesis.speak(u);
+}
+function speakSentence(s) {
+  if (!soundOn) return;
+  playClick();
+  const u = new SpeechSynthesisUtterance(s);
+  u.lang = 'en-US'; u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+
+// ═══ NAVIGATION ═══
+function goSlide(n) {
+  const sl = document.querySelectorAll('.slide');
+  sl[currentSlide].classList.remove('active'); sl[currentSlide].classList.add('out');
+  setTimeout(() => sl[currentSlide < n ? currentSlide : n].classList.remove('out'), 400);
+  currentSlide = n; sl[currentSlide].classList.add('active'); updateUI();
+  if (currentSlide === 14) document.getElementById('finalScore').textContent = score;
+}
+function nextSlide() { if (currentSlide < TOTAL_SLIDES-1) goSlide(currentSlide+1); }
+function prevSlide() { if (currentSlide > 0) goSlide(currentSlide-1); }
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (currentSlide/(TOTAL_SLIDES-1)*100)+'%';
+  document.getElementById('pageInfo').textContent = (currentSlide+1)+' / '+TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = currentSlide === 0;
+  document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES-1;
+  document.getElementById('scoreDisp').textContent = score;
+}
+
+// ═══ SCORE & COMBO ═══
+function addScore(pts) {
+  score += pts; combo++;
+  document.getElementById('scoreDisp').textContent = score;
+  if (combo >= 2) {
+    const t = document.getElementById('comboToast');
+    t.textContent = '🔥 '+combo+' 콤보!';
+    t.classList.add('show');
+    clearTimeout(addScore._t);
+    addScore._t = setTimeout(() => t.classList.remove('show'), 1400);
+  }
+}
+
+// ═══ FEEDBACK ═══
+const feedbackMap = {
+  9:  { ok:'✅ 정답! <b>This is my mom.</b> = "이 사람은 우리 엄마야"! +10점',
+        err:'💡 사람 첫 소개 = <b>This is my ~</b>! "I am my mom"(나=엄마 ❌) / "Mom I have"(어순 X) / "Mom is here"(소개 X)와 달라!' },
+  11: { ok:'✅ 정답! <b>I have a sister.</b> = "누나/언니/여동생이 있어"! +10점',
+        err:'💡 가족이 "있다" = <b>have</b>! "I am a sister"(나=누나 ❌) / "I is/are a sister"(주어 일치 X) — 가족·소유는 무조건 have!' },
+  12: { ok:'🎉 정답! <b>This is my dad.</b> — 사람 첫 소개 = This is + my + 가족! Killer 1 마스터! +45점',
+        err:'💡 사람 첫 소개엔 <b>This is</b>! "I am my dad"(나=아빠 ❌) / "He is my dad"(이미 알 때만) / "My is"(어순 X) — 정답은 ② This is!' },
+  13: { ok:'🏆 완벽! <b>This is my mom. I have a brother. I love my family.</b> — Killer 1(This is) + Killer 2(have) + 사랑까지! +70점',
+        err:'💡 ① "I am a brother"(나=형 ❌) ② "There is my mom"(가족 표현 X) ④ "My mom is family"(어순 어색) — 정답 ③: This is + have + love 모두 자연!' }
+};
+function setFB(id, msg, ok) {
+  const el = document.getElementById(id);
+  if (el) { el.innerHTML = msg; el.className = 'feedback '+(ok?'ok':'err'); }
+}
+
+// ═══ ANSWER ═══
+function answer(btn, idx) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||10;
+  playClick();
+  const fbKey = currentSlide;
+  if (idx === correct) {
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    const msg = feedbackMap[fbKey]?.ok || ('✅ 정답! +'+pts+'점');
+    setFB('fb'+currentSlide, msg+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    const msg = feedbackMap[fbKey]?.err || '다시 한번! 💪';
+    setFB('fb'+currentSlide, msg, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ FILL ANSWER (slide 12) ═══
+function fillAnswer(btn, idx, text) {
+  if (answered[currentSlide]) return;
+  const slide = document.querySelectorAll('.slide')[currentSlide];
+  const correct = parseInt(slide.dataset.correct), pts = parseInt(slide.dataset.score)||45;
+  playClick(); speakSentence(text+" my dad.");
+  const blank = document.getElementById('blank12');
+  if (idx === correct) {
+    blank.textContent = text; blank.classList.add('filled');
+    btn.classList.add('correct'); playCorrect(); addScore(pts);
+    setFB('fb'+currentSlide, feedbackMap[12].ok+' (아래 다음 ▶)', true);
+    answered[currentSlide] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong(); combo = 0;
+    setFB('fb'+currentSlide, feedbackMap[12].err, false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ MATCH ═══
+let mLeft = null, mRight = null, matchedCount = 0;
+function matchPick(el, side) {
+  if (el.classList.contains('matched') || answered[10]) return;
+  playClick();
+  if (side === 'L') {
+    if (mLeft) mLeft.classList.remove('selected');
+    mLeft = el; el.classList.add('selected');
+  } else {
+    if (mRight) mRight.classList.remove('selected');
+    mRight = el; el.classList.add('selected');
+  }
+  if (mLeft && mRight) {
+    if (mLeft.dataset.key === mRight.dataset.key) {
+      mLeft.classList.remove('selected'); mRight.classList.remove('selected');
+      mLeft.classList.add('matched'); mRight.classList.add('matched');
+      playCorrect(); matchedCount++;
+      speakWord(mLeft.textContent.trim());
+      if (matchedCount >= 6) {
+        addScore(30);
+        setFB('fb10','🎉 6쌍 모두 정답! 가족 단어 마스터! +30점 (아래 다음 ▶)', true);
+        answered[10] = true;
+      } else {
+        setFB('fb10', '✅ '+matchedCount+' / 6 매칭! 계속 💪', true);
+      }
+      mLeft = null; mRight = null;
+    } else {
+      playWrong();
+      const L = mLeft, R = mRight;
+      setTimeout(() => {
+        L.classList.remove('selected'); R.classList.remove('selected');
+      }, 400);
+      setFB('fb10', '다른 짝이야! 다시 골라봐 💪', false);
+      mLeft = null; mRight = null;
+    }
+  }
+}
+
+// ═══ SWAP DRILL ═══
+const swapFamilyMap = {
+  'mom':     { emoji:'👩', ko:'엄마' },
+  'dad':     { emoji:'👨', ko:'아빠' },
+  'sister':  { emoji:'👧', ko:'누나/언니' },
+  'brother': { emoji:'👦', ko:'형/오빠' }
+};
+let swapCurrent = 'mom';
+function swapSet(w, btn) {
+  swapCurrent = w;
+  document.getElementById('swapSlot').textContent = w;
+  document.getElementById('swapPreview').textContent = swapFamilyMap[w].emoji;
+  document.querySelectorAll('.swap-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  speakSentence("This is my "+w+".");
+}
+function swapSpeak() { speakSentence("This is my "+swapCurrent+"."); }
+
+// ═══ FLASH DRILL ═══
+const flashFamily = [
+  { emoji:'👩',          w:'mom',     k:'엄마',         note:'This is my mom.' },
+  { emoji:'👨',          w:'dad',     k:'아빠',         note:'This is my dad.' },
+  { emoji:'👧',          w:'sister',  k:'누나/언니',    note:'I have a sister.' },
+  { emoji:'👦',          w:'brother', k:'형/오빠',      note:'I have a brother.' },
+  { emoji:'👵',          w:'grandma', k:'할머니',       note:'This is my grandma.' },
+  { emoji:'👴',          w:'grandpa', k:'할아버지',     note:'This is my grandpa.' },
+  { emoji:'👨‍👩‍👧‍👦', w:'family',  k:'가족',         note:'I love my family.' },
+  { emoji:'💕',          w:'love',    k:'사랑',         note:'I love you.' }
+];
+let fdIdx = 0;
+function fdUpdate() {
+  const f = flashFamily[fdIdx];
+  document.getElementById('fdEmoji').textContent = f.emoji;
+  document.getElementById('fdWord').textContent = f.w;
+  document.getElementById('fdBack').innerHTML = '<div>'+f.k+'</div><div class="fd-note">'+f.note+'</div>';
+  document.getElementById('fdCounter').textContent = (fdIdx+1)+' / '+flashFamily.length;
+  document.getElementById('fdCard').classList.remove('flipped');
+}
+function fdFlip() {
+  const c = document.getElementById('fdCard');
+  c.classList.toggle('flipped');
+  playClick();
+  if (!c.classList.contains('flipped')) speakWord(flashFamily[fdIdx].w);
+}
+function fdNext() {
+  fdIdx = (fdIdx+1) % flashFamily.length;
+  fdUpdate(); playClick(); speakWord(flashFamily[fdIdx].w);
+}
+function fdPrev() {
+  fdIdx = (fdIdx-1+flashFamily.length) % flashFamily.length;
+  fdUpdate(); playClick(); speakWord(flashFamily[fdIdx].w);
+}
+function fdShuffle() {
+  for (let i = flashFamily.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [flashFamily[i], flashFamily[j]] = [flashFamily[j], flashFamily[i]];
+  }
+  fdIdx = 0; fdUpdate(); playClick();
+}
+
+// ═══ MINI DIALOG ═══
+function miniPick(btn, idx) {
+  if (answered[8]) return;
+  playClick();
+  if (idx === 2) {
+    btn.classList.add('correct'); playCorrect();
+    speakSentence("Yes, I have a sister. This is my sister.");
+    setFB('fb8', '✅ 정답! <b>Yes, I have a sister. This is my sister.</b> — Killer 1·2 둘 다 자연스러움! 🎉', true);
+    document.getElementById('miniReply').classList.add('show');
+    answered[8] = true;
+  } else {
+    btn.classList.add('wrong'); playWrong();
+    setFB('fb8', '💡 정답은 <b>"Yes, I have a sister. This is my sister."</b>! ① "I am a sister"(나=누나 ❌) ② "There is brother"(가족 표현 X)! ❌', false);
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+}
+
+// ═══ NEXT LESSON ═══
+function goToNext() {
+  window.location.href = 'g2_english_conv_07_요일.html';
+}
+
+// ═══ INIT ═══
+fdUpdate();
+updateUI();
+</script>
+</body>
+</html>
