@@ -35,10 +35,29 @@ CREATE TABLE IF NOT EXISTS data_requests (
   requested_at timestamptz NOT NULL DEFAULT now(),
   processed_at timestamptz,
   processed_by uuid REFERENCES teachers(id),
-  -- 10일 이내 처리 의무 자동 계산 (개인정보 보호법 제38조)
-  due_at timestamptz GENERATED ALWAYS AS (requested_at + interval '10 days') STORED,
+  -- 10일 이내 처리 의무 자동 추적 (개인정보 보호법 제38조)
+  -- ※ timestamptz + interval은 timezone 의존이라 IMMUTABLE 아님 → GENERATED 사용 불가.
+  --   일반 컬럼 + INSERT 시 DEFAULT + 트리거로 requested_at 변경 시 동기화.
+  due_at timestamptz NOT NULL DEFAULT (now() + interval '10 days'),
   created_at timestamptz DEFAULT now()
 );
+
+-- requested_at 변경 시 due_at 자동 동기화 트리거
+CREATE OR REPLACE FUNCTION sync_data_request_due_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.due_at := NEW.requested_at + interval '10 days';
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS dr_due_at_sync ON data_requests;
+CREATE TRIGGER dr_due_at_sync
+  BEFORE INSERT OR UPDATE OF requested_at ON data_requests
+  FOR EACH ROW EXECUTE FUNCTION sync_data_request_due_at();
+
+-- (기존 row가 있다면 due_at 정합성 보정 — 멱등)
+UPDATE data_requests SET due_at = requested_at + interval '10 days'
+  WHERE due_at IS DISTINCT FROM (requested_at + interval '10 days');
 
 CREATE INDEX IF NOT EXISTS idx_dr_target_student ON data_requests(target_student_id);
 CREATE INDEX IF NOT EXISTS idx_dr_status ON data_requests(status);
