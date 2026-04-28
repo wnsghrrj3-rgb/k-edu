@@ -330,6 +330,12 @@ END $$;
 -- 처리 순서 주의: data_requests INSERT/UPDATE를 student_profiles DELETE보다 먼저.
 --   → INSERT 시점에는 profile 살아있음(FK 검증 통과) → DELETE 시 ON DELETE SET NULL 발동.
 -- =============================================
+-- 사이클 ㉞ 함수 시그니처 확장 정리:
+-- 사이클 ㉝(3-인자) → 사이클 ㉞(4-인자)로 시그니처 변경. PostgreSQL은 시그니처가 다른 함수를
+-- 다른 함수로 보므로 옛 3-인자 버전이 그대로 살아남는다 → 호출 모호성 위험.
+-- 옛 시그니처 명시적 정리 (멱등: IF EXISTS).
+DROP FUNCTION IF EXISTS delete_student_data(uuid, bigint, text);
+
 CREATE OR REPLACE FUNCTION delete_student_data(
   p_student_id uuid,
   p_request_id bigint DEFAULT NULL,
