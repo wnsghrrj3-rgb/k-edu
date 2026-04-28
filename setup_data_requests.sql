@@ -315,18 +315,26 @@ END $$;
 
 
 -- =============================================
--- [SECTION 5] 학생 데이터 일괄 삭제 헬퍼 — T09
--- 한 학생의 모든 학습 데이터를 단일 트랜잭션에서 삭제 + 닉네임 익명화 + 이력 자동 기록.
+-- [SECTION 5] 학생 데이터 일괄 삭제 헬퍼 — T09 (사이클 ㉞: p_full_delete 추가)
+-- 한 학생의 모든 학습 데이터를 단일 트랜잭션에서 삭제 + 이력 자동 기록.
 -- 호출자: 담임 교사 또는 어드민 (함수 내부에서 권한 재검증).
--- 반환: jsonb { deleted: {...}, profile_anonymized: bool, request_id }
+-- 반환: jsonb { deleted: {...}, profile_action: text, profile_anonymized: bool, request_id }
 --
--- 삭제 정책: student_profiles 자체는 보존 (감사 추적용), 닉네임만 익명화.
--- 닉네임 패턴: '[삭제됨_xxxxxxxx]' (uuid 앞 8자) — 식별 불가.
+-- 삭제 모드 (p_full_delete 파라미터로 선택, 처리방침 v2.1 제8조 5항):
+--  · false (기본): 학습 데이터 삭제 + 닉네임 익명화('[삭제됨_xxxxxxxx]') + 처리정지.
+--                   student_profiles row는 감사 추적용으로 보존, 식별 불가.
+--  · true (완전 삭제): 위 처리에 더해 student_profiles row를 DELETE.
+--                   data_requests.target_student_id가 ON DELETE SET NULL로 자동 정리됨
+--                   → 처리 이력 row는 보존되되 학생 식별자는 NULL.
+--
+-- 처리 순서 주의: data_requests INSERT/UPDATE를 student_profiles DELETE보다 먼저.
+--   → INSERT 시점에는 profile 살아있음(FK 검증 통과) → DELETE 시 ON DELETE SET NULL 발동.
 -- =============================================
 CREATE OR REPLACE FUNCTION delete_student_data(
   p_student_id uuid,
   p_request_id bigint DEFAULT NULL,
-  p_note text DEFAULT NULL
+  p_note text DEFAULT NULL,
+  p_full_delete boolean DEFAULT false
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -341,6 +349,8 @@ DECLARE
   v_class_code_id uuid;
   v_teacher_id uuid;
   v_is_admin boolean;
+  v_profile_action text;
+  v_default_note text;
 BEGIN
   -- 학생 학급 조회
   SELECT sp.class_code_id INTO v_class_code_id
@@ -363,6 +373,11 @@ BEGIN
 
   SELECT id INTO v_teacher_id FROM teachers WHERE user_id = auth.uid() LIMIT 1;
 
+  v_default_note := CASE WHEN p_full_delete
+    THEN '권리 행사 — 완전 삭제 요청 (법정대리인 명시 요청)'
+    ELSE '권리 행사 — 데이터 삭제 요청 (기본 익명화 모드)'
+  END;
+
   -- 학습 데이터 삭제 (FK ON DELETE CASCADE 미지원 테이블 우선)
   DELETE FROM scores WHERE student_id = p_student_id;
     GET DIAGNOSTICS c_scores = ROW_COUNT;
@@ -379,15 +394,7 @@ BEGIN
     WHERE claimed_by = p_student_id;
     GET DIAGNOSTICS c_seats = ROW_COUNT;
 
-  -- student_profiles 닉네임 익명화 + 처리정지 (감사 추적용 row 보존)
-  UPDATE student_profiles
-    SET nickname = '[삭제됨_' || left(id::text, 8) || ']',
-        is_active = false,
-        deactivated_at = now(),
-        deactivation_reason = COALESCE(p_note, '권리 행사 — 데이터 삭제 요청')
-    WHERE id = p_student_id;
-
-  -- data_requests 이력
+  -- data_requests 이력 (student_profiles 처리보다 먼저 — full_delete 시 ON DELETE SET NULL 발동 순서 의존)
   IF p_request_id IS NOT NULL THEN
     UPDATE data_requests
       SET status = 'completed',
@@ -403,8 +410,27 @@ BEGIN
       'delete',
       CASE WHEN v_is_admin THEN 'admin' ELSE 'teacher' END,
       auth.uid(),
-      p_student_id, 'completed', now(), v_teacher_id, p_note
+      p_student_id, 'completed', now(), v_teacher_id,
+      COALESCE(p_note, v_default_note)
     );
+  END IF;
+
+  -- student_profiles 처리: 분기
+  IF p_full_delete THEN
+    -- 완전 삭제: 학생 프로필 row 자체 제거.
+    -- data_requests.target_student_id는 ON DELETE SET NULL로 자동 NULL 처리.
+    -- 처리 이력 row 자체는 「개인정보 보호법」 제38조 처리 통보 의무·감사 로그를 위해 보존.
+    DELETE FROM student_profiles WHERE id = p_student_id;
+    v_profile_action := 'deleted';
+  ELSE
+    -- 기본 익명화: 닉네임 변경 + 처리정지 + 감사 추적용 row 보존
+    UPDATE student_profiles
+      SET nickname = '[삭제됨_' || left(id::text, 8) || ']',
+          is_active = false,
+          deactivated_at = now(),
+          deactivation_reason = COALESCE(p_note, v_default_note)
+      WHERE id = p_student_id;
+    v_profile_action := 'anonymized';
   END IF;
 
   RETURN jsonb_build_object(
@@ -416,7 +442,8 @@ BEGIN
       'parent_links', c_links,
       'seats_unclaimed', c_seats
     ),
-    'profile_anonymized', true,
+    'profile_action', v_profile_action,         -- 'anonymized' | 'deleted'
+    'profile_anonymized', NOT p_full_delete,    -- 호환성 유지 (FE 기존 분기 영향 없음)
     'request_id', p_request_id
   );
 END $$;
@@ -581,7 +608,8 @@ WHERE dr.status IN ('pending', 'in_progress');
 --
 -- (4) 함수 호출 시뮬레이션 (실제 학생 ID 대입)
 --     -- SELECT toggle_student_processing('학생-uuid'::uuid, false, NULL, '학부모 처리정지 요청');
---     -- SELECT delete_student_data('학생-uuid'::uuid, NULL, '학부모 동의 철회');
+--     -- SELECT delete_student_data('학생-uuid'::uuid, NULL, '학부모 동의 철회');                          -- 기본 익명화
+--     -- SELECT delete_student_data('학생-uuid'::uuid, NULL, '학부모 명시 완전 삭제 요청', true);          -- 완전 삭제
 --
 -- (5) 미처리 요청 확인
 --     -- SELECT * FROM data_requests_overdue ORDER BY urgency DESC, days_remaining;
