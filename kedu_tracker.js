@@ -147,12 +147,12 @@
     var row = {
       student_id:   state.profile.id,
       lesson_id:    state.lessonId,
-      lesson_path:  location.pathname,
+      unit_id:      location.pathname,
       question_id:  String(questionId),
       is_correct:   !!isCorrect,
       time_spent_sec: Number(timeSpentSec) || 0,
       score:        isCorrect ? 1 : 0,
-      total:        1
+      max_score:    1
     };
     if(conceptId) row.concept_id = conceptId;
 
@@ -217,11 +217,11 @@
     state.client.from('scores').insert({
       student_id:   state.profile.id,
       lesson_id:    state.lessonId,
-      lesson_path:  location.pathname,
+      unit_id:      location.pathname,
       question_id:  '_lesson_summary_',
       is_correct:   null,
       score:        Number(score) || 0,
-      total:        Number(total) || 0,
+      max_score:    Number(total) || 0,
       time_spent_sec: totalSec
     }).then(function(){}).catch(function(){});
   };

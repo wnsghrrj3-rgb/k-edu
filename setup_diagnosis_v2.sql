@@ -18,13 +18,15 @@
 -- 현재 레포 SQL 4개에 scores 정의가 없음 (Supabase 대시보드에만 존재 가정).
 -- 만약 이미 있으면 IF NOT EXISTS로 무시. 없으면 최소 골격 생성.
 
+-- 기존 K-edu DB의 scores 컬럼: id(uuid), student_id, unit_id, score, max_score, earned_at
+-- 이름 그대로 fallback 정의 (멱등 + 빈 DB 호환).
 CREATE TABLE IF NOT EXISTS scores (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id uuid REFERENCES student_profiles(id) ON DELETE CASCADE,
-  lesson_path text NOT NULL,
+  unit_id text,
   score int DEFAULT 0,
-  total int DEFAULT 0,
-  created_at timestamptz DEFAULT now()
+  max_score int DEFAULT 0,
+  earned_at timestamptz DEFAULT now()
 );
 
 ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
@@ -405,7 +407,7 @@ SELECT
     ELSE 'supplement'
   END                                                             AS status,
   SUM(s.time_spent_sec)::int                                      AS total_time_sec,
-  MAX(s.created_at)                                               AS last_attempt_at
+  MAX(s.earned_at)                                                AS last_attempt_at
 FROM scores s
 WHERE s.student_id IS NOT NULL
   AND s.lesson_id  IS NOT NULL
