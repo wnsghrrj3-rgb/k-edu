@@ -66,6 +66,72 @@ END $$;
 
 
 -- =============================================
+-- [SECTION 1.5] 신설 테이블 — parent_student_links (선행 의존성)
+-- 학부모-자녀 검증 매핑. parent_id는 auth.users.id 직접 참조.
+-- 이후 wrong_answers / homework_* / scores의 학부모 RLS 정책이 본 테이블을 참조하므로
+-- 반드시 먼저 정의되어야 함.
+-- =============================================
+CREATE TABLE IF NOT EXISTS parent_student_links (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  parent_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  student_id uuid NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
+  verified_at timestamptz,           -- NULL이면 검증 대기
+  verified_by uuid REFERENCES teachers(id),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(parent_id, student_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_psl_parent ON parent_student_links(parent_id);
+CREATE INDEX IF NOT EXISTS idx_psl_student ON parent_student_links(student_id);
+
+ALTER TABLE parent_student_links ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  -- 학부모: 본인 매핑만 SELECT
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_parent_read') THEN
+    CREATE POLICY "psl_parent_read" ON parent_student_links
+      FOR SELECT USING (parent_id = auth.uid());
+  END IF;
+  -- 학부모: 본인 매핑 신청 INSERT (verified_at은 NULL로 들어감)
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_parent_insert') THEN
+    CREATE POLICY "psl_parent_insert" ON parent_student_links
+      FOR INSERT WITH CHECK (parent_id = auth.uid() AND verified_at IS NULL);
+  END IF;
+  -- 교사: 본인 학급 학생 매핑 검증 (UPDATE verified_at)
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_teacher_verify') THEN
+    CREATE POLICY "psl_teacher_verify" ON parent_student_links
+      FOR UPDATE USING (
+        student_id IN (
+          SELECT sp.id FROM student_profiles sp
+          JOIN class_codes cc ON sp.class_code_id = cc.id
+          JOIN teachers t ON cc.teacher_id = t.id
+          WHERE t.user_id = auth.uid()
+        )
+      );
+  END IF;
+  -- 교사: 본인 학급 학생 매핑 SELECT (검증 대기 목록 표시용)
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_teacher_read') THEN
+    CREATE POLICY "psl_teacher_read" ON parent_student_links
+      FOR SELECT USING (
+        student_id IN (
+          SELECT sp.id FROM student_profiles sp
+          JOIN class_codes cc ON sp.class_code_id = cc.id
+          JOIN teachers t ON cc.teacher_id = t.id
+          WHERE t.user_id = auth.uid()
+        )
+      );
+  END IF;
+  -- 어드민
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_admin_all') THEN
+    CREATE POLICY "psl_admin_all" ON parent_student_links
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM teachers t WHERE t.user_id = auth.uid() AND t.is_admin = true)
+      );
+  END IF;
+END $$;
+
+
+-- =============================================
 -- [SECTION 2] 신설 테이블 — wrong_answers (오답노트)
 -- 학급코드 학생만 누적. 정답 시 resolved_at 기록.
 -- =============================================
@@ -268,67 +334,10 @@ END $$;
 
 
 -- =============================================
--- [SECTION 5] 신설 테이블 — parent_student_links
--- 학부모-자녀 검증 매핑. parent_id는 auth.users.id 직접 참조.
+-- [SECTION 5] (이동) parent_student_links는 의존성 때문에 SECTION 1.5로 이동됨.
+--   wrong_answers·homework_*·scores의 학부모 RLS 정책이 본 테이블을 참조하므로
+--   본 테이블이 먼저 존재해야 함.
 -- =============================================
-CREATE TABLE IF NOT EXISTS parent_student_links (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  parent_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  student_id uuid NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
-  verified_at timestamptz,           -- NULL이면 검증 대기
-  verified_by uuid REFERENCES teachers(id),
-  created_at timestamptz DEFAULT now(),
-  UNIQUE(parent_id, student_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_psl_parent ON parent_student_links(parent_id);
-CREATE INDEX IF NOT EXISTS idx_psl_student ON parent_student_links(student_id);
-
-ALTER TABLE parent_student_links ENABLE ROW LEVEL SECURITY;
-
-DO $$ BEGIN
-  -- 학부모: 본인 매핑만 SELECT
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_parent_read') THEN
-    CREATE POLICY "psl_parent_read" ON parent_student_links
-      FOR SELECT USING (parent_id = auth.uid());
-  END IF;
-  -- 학부모: 본인 매핑 신청 INSERT (verified_at은 NULL로 들어감)
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_parent_insert') THEN
-    CREATE POLICY "psl_parent_insert" ON parent_student_links
-      FOR INSERT WITH CHECK (parent_id = auth.uid() AND verified_at IS NULL);
-  END IF;
-  -- 교사: 본인 학급 학생 매핑 검증 (UPDATE verified_at)
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_teacher_verify') THEN
-    CREATE POLICY "psl_teacher_verify" ON parent_student_links
-      FOR UPDATE USING (
-        student_id IN (
-          SELECT sp.id FROM student_profiles sp
-          JOIN class_codes cc ON sp.class_code_id = cc.id
-          JOIN teachers t ON cc.teacher_id = t.id
-          WHERE t.user_id = auth.uid()
-        )
-      );
-  END IF;
-  -- 교사: 본인 학급 학생 매핑 SELECT (검증 대기 목록 표시용)
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_teacher_read') THEN
-    CREATE POLICY "psl_teacher_read" ON parent_student_links
-      FOR SELECT USING (
-        student_id IN (
-          SELECT sp.id FROM student_profiles sp
-          JOIN class_codes cc ON sp.class_code_id = cc.id
-          JOIN teachers t ON cc.teacher_id = t.id
-          WHERE t.user_id = auth.uid()
-        )
-      );
-  END IF;
-  -- 어드민
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='parent_student_links' AND policyname='psl_admin_all') THEN
-    CREATE POLICY "psl_admin_all" ON parent_student_links
-      FOR ALL USING (
-        EXISTS (SELECT 1 FROM teachers t WHERE t.user_id = auth.uid() AND t.is_admin = true)
-      );
-  END IF;
-END $$;
 
 
 -- =============================================
