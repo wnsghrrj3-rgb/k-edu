@@ -64,6 +64,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;d
 .step-nickname h2{margin-bottom:8px}
 .step-nickname p{font-size:14px;color:#718096;text-align:center;margin-bottom:20px;line-height:1.5}
 
+/* 동의 체크박스 (T05) */
+.consent-box{margin:18px 0 8px;padding:14px 14px;background:#F7FAFC;border:1px solid #E2E8F0;border-radius:12px}
+.consent-row{display:flex;align-items:flex-start;gap:9px;font-size:13px;color:#2D3748;line-height:1.55;cursor:pointer;padding:5px 0}
+.consent-row + .consent-row{border-top:1px solid #EDF2F7;margin-top:4px;padding-top:9px}
+.consent-row input[type="checkbox"]{margin-top:3px;width:16px;height:16px;flex-shrink:0;accent-color:#5B8EF8;cursor:pointer}
+.consent-row strong{color:#E53E3E;font-weight:700;margin-right:4px}
+.consent-row a{color:#5B8EF8;text-decoration:underline}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed;background:#A0AEC0}
+
+/* FOOTER */
+footer{margin-top:32px;text-align:center;padding:14px 24px;font-size:12px;color:#A0AEC0;letter-spacing:.3px}
+footer a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+footer a:hover{text-decoration:underline}
+footer strong{color:#718096;font-weight:500}
+
 /* 토스트 */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1A202C;color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.show{opacity:1}
@@ -137,7 +152,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;d
         <label>학교명</label>
         <input type="text" id="signup-teacher-school" placeholder="소속 학교" maxlength="30">
       </div>
-      <button class="submit-btn" id="btn-signup" onclick="doSignup()">회원가입</button>
+
+      <!-- 동의 체크박스 (T05 — 처리방침 v2 시행 가능 조건) -->
+      <div class="consent-box">
+        <label class="consent-row">
+          <input type="checkbox" id="consent-privacy" onchange="updateSignupBtn()">
+          <span><strong>[필수]</strong> <a href="/privacy/" target="_blank">개인정보 처리방침</a>의 수집·이용에 동의합니다.</span>
+        </label>
+        <label class="consent-row">
+          <input type="checkbox" id="consent-overseas" onchange="updateSignupBtn()">
+          <span><strong>[필수]</strong> 개인정보 처리업무 위탁 및 국외 이전(미국 Supabase, 글로벌 Vercel)에 동의합니다.</span>
+        </label>
+      </div>
+
+      <button class="submit-btn" id="btn-signup" onclick="doSignup()" disabled>회원가입</button>
       <div class="msg" id="signup-msg"></div>
     </div>
   </div>
@@ -156,6 +184,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;d
   <div class="bottom-link" id="link-home">
     <a href="/">← K-edu 홈으로</a>
   </div>
+
+  <footer>
+    <p>
+      Copyright © 2025 <strong>K-edu</strong> · All rights reserved.
+      <a href="/privacy/">개인정보 처리방침</a>
+    </p>
+  </footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -195,6 +230,7 @@ function switchTab(tab){
   document.getElementById('tab-signup').classList.toggle('active', tab==='signup');
   document.getElementById('form-login').style.display = tab==='login' ? 'block' : 'none';
   document.getElementById('form-signup').style.display = tab==='signup' ? 'block' : 'none';
+  if(tab==='signup') updateSignupBtn();
   clearMsgs();
 }
 
@@ -239,6 +275,15 @@ async function doLogin(){
 }
 
 // =============================================
+// 동의 체크박스 토글 (T05)
+// =============================================
+function updateSignupBtn(){
+  const p = document.getElementById('consent-privacy').checked;
+  const o = document.getElementById('consent-overseas').checked;
+  document.getElementById('btn-signup').disabled = !(p && o);
+}
+
+// =============================================
 // 회원가입
 // =============================================
 async function doSignup(){
@@ -247,6 +292,14 @@ async function doSignup(){
 
   if(!email || !pw){ showMsg('signup-msg','이메일과 비밀번호를 입력해주세요.','error'); return; }
   if(pw.length < 6){ showMsg('signup-msg','비밀번호는 6자 이상이어야 합니다.','error'); return; }
+
+  // 동의 검증 (T05 — 처리방침 v2 시행 가능 조건)
+  const consentPrivacy = document.getElementById('consent-privacy').checked;
+  const consentOverseas = document.getElementById('consent-overseas').checked;
+  if(!consentPrivacy || !consentOverseas){
+    showMsg('signup-msg','개인정보 처리방침 및 국외 이전에 모두 동의해주세요.','error');
+    return;
+  }
 
   if(selectedRole === 'student'){
     const nick = document.getElementById('signup-nickname').value.trim();
