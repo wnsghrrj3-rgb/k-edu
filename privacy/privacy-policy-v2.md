@@ -304,13 +304,13 @@
 |---|---|---|
 | v1.0 | 2026-04-27 | 최초 작성 (학교 단위 도입 트랙 A 단독 운영 기준) |
 | v2.0 | 2026-04-28 | ① 학생 실명 미수집(익명 닉네임) 원칙 명문화 ② 「학습 진단 데이터 처리」 조항(제3조) 신설 ③ 학년 와이프 시점 변경(3/1 → 2/28 자정) + 1주일 전 PDF 알림 절차 신설 ④ 4단 RLS 권한(학생/학부모/교사/운영자) 명문화 ⑤ 학부모 회원·`parent_student_links` 매핑 절차 신설 ⑥ 숙제·오답노트·진단 결과 처리 절차 신설 ⑦ 무로그인 INSERT 차단(`auth_insert_visits`) 명시 ⑧ 자존감 보호 조치(학생 화면 정량 비공개, 오답노트 본문 비공개) 명시 |
-| v2.1 | 2026-04-29 | 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 추가 반영 (정보주체 잊혀질 권리 강화). |
+| v2.1 | 2026-04-29 | 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 추가 반영 (정보주체 잊혀질 권리 강화). + 부록 2 검증표: 사이클 ㊳ 학년 와이프 자동화(`wipe_student_data_yearly()` + pg_cron `kedu-yearly-wipe-kst` 등록 완료) 반영 — 본문 변경 없음, 표기 정합 갱신. |
 
 ---
 
 ## [부록 2] 본 처리방침과 코드의 일치 검증
 
-본 처리방침 v2.1은 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 + 사이클 ㉝ 권리 행사 채널 BE + 사이클 ㉞ 삭제 모드 분기):
+본 처리방침 v2.1은 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 + 사이클 ㉝ 권리 행사 채널 BE + 사이클 ㉞ 삭제 모드 분기 + 사이클 ㊳ 학년 와이프 자동화):
 
 | 처리방침 조항 | 대응 코드 |
 |---|---|
@@ -318,7 +318,8 @@
 | 제2조 2) 학부모 자녀 매핑 | `parent_student_links` 테이블 |
 | 제3조 학습 진단 데이터 | `scores` 테이블(question_id, concept_id, time_spent_sec 컬럼), `wrong_answers`, `student_lesson_progress` 뷰 |
 | 제3조 숙제 시스템 | `homework_assignments`, `homework_completions` 테이블 |
-| 제4조 학년 와이프 | `wipe_student_data()` 함수 (Supabase pg_cron 등록 예정) |
+| 제4조 학년 와이프 | `wipe_student_data_yearly()` 함수 + `pg_cron` 등록 완료(`kedu-yearly-wipe-kst`, 매년 2/28 15:00 UTC = KST 평년 3/1 00:00 / 윤년 2/29 00:00). 부분 와이프 admin 도구 `wipe_student_data()` 함수 공존(`setup_yearly_wipe.sql` + `setup_diagnosis_v2.sql`) |
+| 제4조 와이프 1주일 전 알림 | 교사 대시보드 D-day 카운트다운 배너 (D-7 이내 표시, D-2 이내 warn 톤, D-0 critical 톤; `teacher/index.html` `.wipe-banner` + `nextYearlyWipeUtcMs()`). 학부모 배너 + PDF 출력은 별도 사이클 |
 | 제8조 1) 열람 요구 | `student_data_summary` 뷰 + 교사 RLS SELECT 정책 (`setup_data_requests.sql` S7) |
 | 제8조 1) 정정 요구 | `sp_teacher_update_class` RLS UPDATE 정책 |
 | 제8조 5항 1) 기본 익명화 모드 | `delete_student_data(p_full_delete=false)` (기본값) — 닉네임 `[삭제됨_xxxxxxxx]` + `is_active=false` + 학습 데이터 일괄 삭제 |
