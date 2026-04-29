@@ -190,6 +190,38 @@ tr:hover td{background:#FAFBFC}
 .modal-actions .rights-export-btn{flex:1;justify-content:center;min-width:130px}
 .modal-note{font-size:12px;color:var(--sub);margin-top:14px;padding:10px 12px;background:var(--bg);border-radius:8px;line-height:1.55}
 .modal-note b{color:var(--text)}
+
+/* T11b·T09b — 처리정지·삭제 모달 + 위험 액션 */
+.rights-action-btn.danger{color:#C53030;border-color:#FBB}
+.rights-action-btn.danger:hover:not(:disabled){background:#C53030;color:#fff;border-color:#C53030}
+.rights-action-btn.warn{color:#B7791F;border-color:#F6E05E}
+.rights-action-btn.warn:hover:not(:disabled){background:#D69E2E;color:#fff;border-color:#D69E2E}
+.rights-export-btn.ghost{border-color:var(--border);color:var(--sub);background:#fff}
+.rights-export-btn.ghost:hover:not(:disabled){background:var(--bg);color:var(--text);border-color:var(--border)}
+.rights-export-btn.warn{border-color:#D69E2E;color:#B7791F}
+.rights-export-btn.warn:hover:not(:disabled){background:#D69E2E;color:#fff}
+.rights-export-btn.red{border-color:#C53030;color:#C53030}
+.rights-export-btn.red:hover:not(:disabled){background:#C53030;color:#fff}
+.modal-warn{background:#FFFBEA;border:1px solid #F6E05E;border-radius:10px;padding:12px 14px;font-size:13px;color:#7A5A1A;line-height:1.6;margin-bottom:14px}
+.modal-warn.red{background:#FFF5F5;border-color:#FBB;color:#9B2C2C}
+.modal-warn.ok{background:#F0FFF4;border-color:#9AE6B4;color:#2F855A}
+.modal-warn b{color:inherit}
+.modal-warn small{display:block;margin-top:6px;font-size:12px;color:var(--sub);font-weight:400}
+.modal-field-label{display:block;font-size:13px;font-weight:600;color:var(--text);margin:14px 0 6px}
+.modal-field-label .required{color:#C53030;margin-left:2px}
+.modal-textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:13px;resize:vertical;line-height:1.5;background:#fff;color:var(--text);box-sizing:border-box}
+.modal-textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.modal-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:14px;background:#fff;color:var(--text);box-sizing:border-box}
+.modal-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.modal-radio-group{display:flex;flex-direction:column;gap:10px}
+.modal-radio{display:flex;gap:10px;padding:12px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;align-items:flex-start;font-size:13px;background:#fff}
+.modal-radio:hover{border-color:var(--primary)}
+.modal-radio input{margin-top:3px;flex-shrink:0;cursor:pointer}
+.modal-radio.selected{border-color:var(--primary);background:var(--primary-light)}
+.modal-radio b{font-size:14px;color:var(--text)}
+.modal-radio .note{display:block;color:var(--sub);font-size:12px;line-height:1.55;margin-top:3px}
+.modal-radio .badge{display:inline-block;padding:2px 8px;border-radius:50px;background:var(--primary-light);color:var(--primary-dark);font-size:11px;font-weight:600;margin-left:4px}
+.modal-radio.selected .badge{background:#fff}
 @media(max-width:600px){
   .modal-meta{grid-template-columns:repeat(2,1fr)}
   .rights-table-wrap th,.rights-table-wrap td{padding:10px 10px;font-size:12px}
@@ -310,7 +342,7 @@ tr:hover td{background:#FAFBFC}
     </div>
   </div>
 
-  <!-- RIGHTS CHANNEL — T08b·T10b (열람·CSV) / T11b·T09b 자리 마련 -->
+  <!-- RIGHTS CHANNEL — T08b·T10b·T11b·T09b (열람·CSV·처리정지·삭제) -->
   <div class="rights-section fade-up">
     <div class="rights-header">
       <div class="section-title">🔐 권리 행사 채널</div>
@@ -343,6 +375,32 @@ tr:hover td{background:#FAFBFC}
     </div>
     <div class="modal-body" id="student-detail-body">
       <!-- 동적으로 채워짐 -->
+    </div>
+  </div>
+</div>
+
+<!-- 학생 처리정지/재활성화 모달 (T11b) -->
+<div class="modal-backdrop" id="stop-modal" onclick="if(event.target===this)closeStopModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="stop-modal-title">
+    <div class="modal-header">
+      <div class="modal-title" id="stop-modal-title">⏸️ 학생 처리정지</div>
+      <button class="modal-close" onclick="closeStopModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="stop-modal-body">
+      <!-- 동적으로 채워짐 -->
+    </div>
+  </div>
+</div>
+
+<!-- 학생 데이터 삭제 모달 (T09b — 2단계 확인) -->
+<div class="modal-backdrop" id="delete-modal" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+    <div class="modal-header">
+      <div class="modal-title" id="delete-modal-title">🗑️ 학생 데이터 삭제</div>
+      <button class="modal-close" onclick="closeDeleteModal()" aria-label="닫기">✕</button>
+    </div>
+    <div class="modal-body" id="delete-modal-body">
+      <!-- 단계별 동적 -->
     </div>
   </div>
 </div>
@@ -819,6 +877,8 @@ async function loadRightsChannel(){
     const acc = fmtAccuracy(r.correct_questions, r.total_questions);
     const isActive = r.is_active !== false;
     const lastSeen = r.last_seen_at ? new Date(r.last_seen_at).toLocaleDateString('ko-KR') : '-';
+    const stopLabel = isActive ? '처리정지' : '재활성화';
+    const stopClass = isActive ? 'warn' : 'primary';
 
     html += `<tr>
       <td><b>${escapeHtml(r.nickname)}</b></td>
@@ -833,8 +893,8 @@ async function loadRightsChannel(){
         <div class="rights-row-actions" style="justify-content:flex-end">
           <button class="rights-action-btn primary" onclick="openStudentDetail('${r.student_id}')">열람</button>
           <button class="rights-action-btn" onclick="exportStudentCSV('${r.student_id}')">CSV</button>
-          <button class="rights-action-btn" data-soon disabled title="다음 사이클에서 활성화">처리정지</button>
-          <button class="rights-action-btn" data-soon disabled title="다음 사이클에서 활성화">삭제</button>
+          <button class="rights-action-btn ${stopClass}" onclick="openStopModal('${r.student_id}')">${stopLabel}</button>
+          <button class="rights-action-btn danger" onclick="openDeleteModal('${r.student_id}')">삭제</button>
         </div>
       </td>
     </tr>`;
@@ -937,12 +997,15 @@ function closeStudentDetail(){
   document.body.style.overflow = '';
 }
 
-// ESC로 모달 닫기
+// ESC로 모달 닫기 (세 모달 공용)
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape'){
-    const m = document.getElementById('student-detail-modal');
-    if(m && m.classList.contains('show')) closeStudentDetail();
-  }
+  if(e.key !== 'Escape') return;
+  const detail = document.getElementById('student-detail-modal');
+  const stop = document.getElementById('stop-modal');
+  const del = document.getElementById('delete-modal');
+  if(del && del.classList.contains('show')) closeDeleteModal();
+  else if(stop && stop.classList.contains('show')) closeStopModal();
+  else if(detail && detail.classList.contains('show')) closeStudentDetail();
 });
 
 // =============================================
@@ -1043,6 +1106,269 @@ function exportStudentCSV(studentId){
   const safeName = (r.nickname || 'student').replace(/[\\/:*?"<>|]/g, '_');
   downloadCsv(csv, `kedu_${safeName}_${todayStamp()}.csv`);
   showToast(`${r.nickname} CSV 다운로드 완료`);
+}
+
+// =============================================
+// 처리정지 토글 모달 (T11b)
+// 활성 ↔ 처리정지 전환. setup_data_requests.sql 트리거가 학생 본인 자가 재활성화 차단.
+// 교사·어드민이 호출하면 supabase-js가 JWT 자동 첨부 — RPC SECURITY INVOKER + 함수 내 권한 검증.
+// =============================================
+let _stopTargetId = null;
+
+function openStopModal(studentId){
+  const r = rightsCache.find(x => x.student_id === studentId);
+  if(!r){ showToast('학생 데이터를 찾지 못했어요.'); return; }
+
+  _stopTargetId = studentId;
+  const isActive = r.is_active !== false;
+  const titleEl = document.getElementById('stop-modal-title');
+  const body = document.getElementById('stop-modal-body');
+
+  if(isActive){
+    titleEl.innerHTML = `⏸️ ${escapeHtml(r.nickname)} 처리정지`;
+    body.innerHTML = `
+      <div class="modal-warn">
+        <b>⚠️ 처리정지하면</b> ${escapeHtml(r.nickname)} 학생은 더 이상 학습 데이터(점수·오답·숙제)를 새로 저장할 수 없어요. 기존 데이터는 보존되며, 언제든 재활성화할 수 있습니다.
+      </div>
+      <label class="modal-field-label">처리정지 사유 <span class="required">*</span></label>
+      <textarea id="stop-reason" class="modal-textarea" rows="3" maxlength="300" placeholder="예: 학부모 명시 요청 (2026-04-29)"></textarea>
+      <div class="modal-note">
+        📌 본 행위는 <code>data_requests</code> 테이블에 <b>요청 유형: stop</b>으로 자동 기록됩니다.<br>
+        📌 처리방침 v2.1 제8조 1) 처리정지 요구권에 따른 처리입니다.
+      </div>
+      <div class="modal-actions">
+        <button class="rights-export-btn ghost" onclick="closeStopModal()">취소</button>
+        <button class="rights-export-btn warn" id="stop-confirm-btn" onclick="submitStop(false)">처리정지 실행</button>
+      </div>
+    `;
+  } else {
+    titleEl.innerHTML = `▶️ ${escapeHtml(r.nickname)} 재활성화`;
+    body.innerHTML = `
+      <div class="modal-warn ok">
+        <b>▶️ 재활성화하면</b> ${escapeHtml(r.nickname)} 학생이 다시 학습 데이터를 저장할 수 있게 됩니다.
+        ${r.deactivated_at ? `<small>처리정지일: ${fmtDate(r.deactivated_at)}${r.deactivation_reason ? ` · 사유: ${escapeHtml(r.deactivation_reason)}` : ''}</small>` : ''}
+      </div>
+      <label class="modal-field-label">재활성화 사유 (선택)</label>
+      <textarea id="stop-reason" class="modal-textarea" rows="3" maxlength="300" placeholder="예: 학부모 동의 재확인"></textarea>
+      <div class="modal-note">
+        📌 본 행위는 <code>data_requests</code> 테이블에 자동 기록됩니다.<br>
+        📌 학생 본인은 자가 재활성화할 수 없으며, 교사·운영자만 재활성화할 수 있습니다 (DB 트리거).
+      </div>
+      <div class="modal-actions">
+        <button class="rights-export-btn ghost" onclick="closeStopModal()">취소</button>
+        <button class="rights-export-btn" id="stop-confirm-btn" onclick="submitStop(true)">재활성화 실행</button>
+      </div>
+    `;
+  }
+
+  document.getElementById('stop-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('stop-reason')?.focus(), 50);
+}
+
+function closeStopModal(){
+  document.getElementById('stop-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  _stopTargetId = null;
+}
+
+async function submitStop(activate){
+  if(!_stopTargetId) return;
+  const reasonEl = document.getElementById('stop-reason');
+  const reason = (reasonEl?.value || '').trim();
+
+  // 처리정지 시 사유 필수 (재활성화 시 선택)
+  if(!activate && !reason){
+    showToast('처리정지 사유를 입력해 주세요.');
+    reasonEl?.focus();
+    return;
+  }
+
+  const btn = document.getElementById('stop-confirm-btn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '처리 중…';
+
+  const { error } = await db.rpc('toggle_student_processing', {
+    p_student_id: _stopTargetId,
+    p_active: activate,
+    p_reason: reason || null
+  });
+
+  if(error){
+    showToast(`오류: ${error.message || '처리 실패'}`);
+    btn.disabled = false;
+    btn.textContent = originalText;
+    return;
+  }
+
+  closeStopModal();
+  showToast(activate ? '재활성화 완료' : '처리정지 완료');
+  await loadRightsChannel();
+}
+
+// =============================================
+// 학생 데이터 삭제 모달 — 2단계 확인 (T09b)
+// 1단계: 모드 선택(기본 익명화 / 완전 삭제 — 처리방침 v2.1 제8조 5항) + 사유 입력
+// 2단계: 닉네임 직접 입력 확인 → delete_student_data() 호출
+// =============================================
+let _deleteState = null;
+
+function openDeleteModal(studentId){
+  const r = rightsCache.find(x => x.student_id === studentId);
+  if(!r){ showToast('학생 데이터를 찾지 못했어요.'); return; }
+
+  _deleteState = {
+    studentId,
+    nickname: r.nickname,
+    fullDelete: false,
+    note: '',
+    step: 1
+  };
+
+  renderDeleteStep();
+  document.getElementById('delete-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderDeleteStep(){
+  if(!_deleteState) return;
+  const { studentId, nickname, fullDelete, note, step } = _deleteState;
+  const r = rightsCache.find(x => x.student_id === studentId);
+  if(!r){ closeDeleteModal(); return; }
+
+  const titleEl = document.getElementById('delete-modal-title');
+  const body = document.getElementById('delete-modal-body');
+
+  if(step === 1){
+    titleEl.innerHTML = `🗑️ ${escapeHtml(nickname)} 데이터 삭제`;
+    body.innerHTML = `
+      <div class="modal-warn red">
+        <b>⚠️ ${escapeHtml(nickname)} 학생의 학습 데이터를 영구 삭제합니다.</b><br>
+        점수·오답노트·숙제 완료 기록·학부모 연결 정보가 즉시 제거되며, <b>되돌릴 수 없습니다</b>.
+      </div>
+      <label class="modal-field-label">삭제 모드 선택</label>
+      <div class="modal-radio-group" id="del-mode-group">
+        <label class="modal-radio ${!fullDelete ? 'selected' : ''}" data-mode="anon">
+          <input type="radio" name="del-mode" value="anon" ${!fullDelete ? 'checked' : ''}>
+          <div>
+            <b>기본 익명화</b><span class="badge">권장</span><br>
+            <span class="note">학습 데이터 삭제 + 닉네임 <code>[삭제됨_xxxxxxxx]</code>로 변경 + 처리정지. 학생 프로필 row는 감사 추적용으로 보존되며, 학교 학사 운영과 호환됩니다.</span>
+          </div>
+        </label>
+        <label class="modal-radio ${fullDelete ? 'selected' : ''}" data-mode="full">
+          <input type="radio" name="del-mode" value="full" ${fullDelete ? 'checked' : ''}>
+          <div>
+            <b>완전 삭제</b><br>
+            <span class="note">위 처리에 더해 학생 프로필 row 자체를 제거합니다. 처리방침 v2.1 제8조 5항 ② <b>잊혀질 권리</b> 강화 모드. 처리 이력(<code>data_requests</code>)은 보존됩니다.</span>
+          </div>
+        </label>
+      </div>
+      <label class="modal-field-label">삭제 사유 (선택)</label>
+      <textarea id="del-note" class="modal-textarea" rows="2" maxlength="300" placeholder="예: 학부모 동의 철회 (2026-04-29)">${escapeHtml(note)}</textarea>
+      <div class="modal-note">
+        📌 본 행위는 <code>data_requests</code> 테이블에 <b>요청 유형: delete</b>로 자동 기록됩니다 (제38조).<br>
+        📌 다음 단계에서 학생 닉네임 직접 입력으로 최종 확인합니다.
+      </div>
+      <div class="modal-actions">
+        <button class="rights-export-btn ghost" onclick="closeDeleteModal()">취소</button>
+        <button class="rights-export-btn warn" onclick="advanceDeleteStep()">다음 →</button>
+      </div>
+    `;
+    // 라디오 selected 스타일 동기화
+    document.getElementById('del-mode-group').addEventListener('change', e => {
+      if(!_deleteState) return;
+      _deleteState.fullDelete = (e.target.value === 'full');
+      document.querySelectorAll('#del-mode-group .modal-radio').forEach(el => {
+        el.classList.toggle('selected', el.dataset.mode === e.target.value);
+      });
+    });
+  } else if(step === 2){
+    const modeLabel = fullDelete ? '완전 삭제' : '기본 익명화';
+    titleEl.innerHTML = `🗑️ 최종 확인 — ${escapeHtml(nickname)}`;
+    body.innerHTML = `
+      <div class="modal-warn red">
+        <b>마지막 확인입니다.</b> ${escapeHtml(nickname)} 학생을 <b>${modeLabel}</b> 모드로 처리하면 되돌릴 수 없습니다.<br>
+        계속하려면 학생 닉네임 <code>${escapeHtml(nickname)}</code>을(를) 아래에 정확히 입력하세요.
+      </div>
+      <label class="modal-field-label">닉네임 확인 입력 <span class="required">*</span></label>
+      <input type="text" id="del-confirm" class="modal-input" placeholder="${escapeHtml(nickname)}" autocomplete="off">
+      <div class="modal-note">
+        모드: <b>${modeLabel}</b>${note ? `<br>사유: ${escapeHtml(note)}` : ''}
+      </div>
+      <div class="modal-actions">
+        <button class="rights-export-btn ghost" onclick="backDeleteStep()">← 이전</button>
+        <button class="rights-export-btn red" id="del-final-btn" onclick="submitDelete()">영구 삭제 실행</button>
+      </div>
+    `;
+    // 엔터 키로도 제출 가능
+    setTimeout(() => {
+      const input = document.getElementById('del-confirm');
+      input?.focus();
+      input?.addEventListener('keydown', e => {
+        if(e.key === 'Enter') submitDelete();
+      });
+    }, 50);
+  }
+}
+
+function advanceDeleteStep(){
+  if(!_deleteState) return;
+  const noteEl = document.getElementById('del-note');
+  _deleteState.note = (noteEl?.value || '').trim();
+  // 라디오 fullDelete는 onchange에서 이미 반영됨
+  _deleteState.step = 2;
+  renderDeleteStep();
+}
+
+function backDeleteStep(){
+  if(!_deleteState) return;
+  _deleteState.step = 1;
+  renderDeleteStep();
+}
+
+async function submitDelete(){
+  if(!_deleteState) return;
+  const { studentId, nickname, fullDelete, note } = _deleteState;
+  const confirmEl = document.getElementById('del-confirm');
+  const typed = (confirmEl?.value || '').trim();
+
+  if(typed !== nickname){
+    showToast('닉네임이 일치하지 않아요. 정확히 입력해 주세요.');
+    confirmEl?.focus();
+    return;
+  }
+
+  const btn = document.getElementById('del-final-btn');
+  btn.disabled = true;
+  btn.textContent = '삭제 중…';
+
+  const { data, error } = await db.rpc('delete_student_data', {
+    p_student_id: studentId,
+    p_request_id: null,
+    p_note: note || null,
+    p_full_delete: fullDelete
+  });
+
+  if(error){
+    showToast(`오류: ${error.message || '삭제 실패'}`);
+    btn.disabled = false;
+    btn.textContent = '영구 삭제 실행';
+    return;
+  }
+
+  const action = data?.profile_action || (fullDelete ? 'deleted' : 'anonymized');
+  closeDeleteModal();
+  showToast(action === 'deleted'
+    ? `${nickname} 완전 삭제 완료 (명단에서 제거됨)`
+    : `${nickname} 익명화 완료 ([삭제됨_…])`);
+  await loadRightsChannel();
+}
+
+function closeDeleteModal(){
+  document.getElementById('delete-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  _deleteState = null;
 }
 
 // =============================================
