@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu 학부모 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
+  --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#9F7AEA;
+  --bg:#F5F7FA;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
+  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);-webkit-tap-highlight-color:transparent}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{font-family:'Jua',sans-serif;font-size:22px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text)}
+.nav-logo span{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-badge{font-size:11px;background:#F3E8FF;color:var(--purple);padding:3px 10px;border-radius:50px;font-weight:600}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-email{font-size:12px;color:var(--sub);font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--sub);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.nav-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+/* LOGIN GATE (비로그인) */
+.gate{display:none;min-height:calc(100vh - 56px);align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.gate.active{display:flex}
+.gate-card{background:var(--card);border-radius:24px;padding:36px 28px;max-width:380px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.08)}
+.gate-emoji{font-size:48px;margin-bottom:12px}
+.gate-title{font-family:'Jua',sans-serif;font-size:24px;margin-bottom:10px}
+.gate-sub{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:22px}
+.gate-btn{display:inline-block;padding:12px 28px;background:var(--primary);color:#fff;border-radius:12px;text-decoration:none;font-family:'Jua',sans-serif;font-size:16px}
+
+/* DASH */
+.dash{display:none;max-width:720px;margin:0 auto;padding:24px 18px 60px}
+.dash.active{display:block}
+.welcome{font-family:'Jua',sans-serif;font-size:24px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.welcome .accent{color:var(--purple)}
+.welcome-sub{font-size:13px;color:var(--sub);margin-bottom:24px;line-height:1.55}
+
+/* SECTION */
+.section{margin-bottom:28px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.section-title{font-family:'Jua',sans-serif;font-size:18px;display:flex;align-items:center;gap:8px}
+.section-title .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--purple);color:#fff;font-size:14px}
+
+/* INFO BOX */
+.info-box{background:#FFF8EC;border:1px solid #F6E0B5;border-radius:12px;padding:12px 14px;font-size:13px;color:#7A5A1A;line-height:1.6;margin-bottom:14px}
+.info-box b{color:#5C4308}
+.info-box.purple{background:#F3E8FF;border-color:#E9D5FF;color:#553C9A}
+.info-box.purple b{color:#3B176F}
+
+/* CHILD CARDS (자녀 목록) */
+.child-list{display:grid;gap:12px}
+.child-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;border-left:4px solid var(--border)}
+.child-card.verified{border-left-color:var(--green)}
+.child-card.pending{border-left-color:var(--orange)}
+.child-card.inactive{border-left-color:var(--red);opacity:.75}
+.child-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.child-name{font-family:'Jua',sans-serif;font-size:18px;display:flex;align-items:center;gap:8px}
+.child-name .emoji{font-size:22px}
+.child-meta{font-size:12px;color:var(--sub)}
+.child-meta b{color:var(--text)}
+.child-status{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:50px;font-size:11px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.child-status.verified{background:#F0FFF4;color:#2F855A}
+.child-status.pending{background:#FFFBEA;color:#B7791F}
+.child-status.inactive{background:#FFF5F5;color:#C53030}
+.child-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.child-action-btn{flex:1;min-width:60px;padding:8px 0;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--border);background:#fff;color:var(--sub);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.child-action-btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary);background:#F8FBFF}
+.child-action-btn.danger:hover:not(:disabled){border-color:var(--red);color:var(--red);background:#FFF5F5}
+.child-action-btn.warn:hover:not(:disabled){border-color:#B7791F;color:#B7791F;background:#FFFBEA}
+.child-action-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ADD CHILD BUTTON */
+.add-btn{width:100%;padding:14px;border:2px dashed #CBD5E0;border-radius:14px;background:#fff;font-family:'Jua',sans-serif;font-size:15px;color:var(--sub);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.add-btn:hover{border-color:var(--purple);color:var(--purple);background:#FAF5FF}
+.add-btn .plus{font-size:20px;font-weight:300;line-height:1}
+
+/* EMPTY */
+.empty{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:36px 20px;text-align:center;color:var(--sub);font-size:14px;line-height:1.6}
+.empty .empty-icon{font-size:40px;margin-bottom:8px}
+
+/* HISTORY TABLE */
+.history-list{display:grid;gap:8px}
+.history-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start}
+.history-meta{font-size:13px;line-height:1.55}
+.history-meta .type{font-weight:700;color:var(--text)}
+.history-meta .student{color:var(--purple);font-weight:600}
+.history-meta .date{color:var(--sub);font-size:11px;margin-top:3px}
+.history-meta .note{color:var(--sub);font-size:12px;margin-top:4px;line-height:1.5}
+.history-pill{display:inline-block;padding:4px 10px;border-radius:50px;font-size:11px;font-weight:600;white-space:nowrap}
+.history-pill.pending{background:#FFFBEA;color:#B7791F}
+.history-pill.in_progress{background:#EBF4FF;color:#3B6FD8}
+.history-pill.completed{background:#F0FFF4;color:#2F855A}
+.history-pill.rejected{background:#FFF5F5;color:#C53030}
+.history-due{font-size:11px;color:var(--sub);margin-top:4px}
+.history-due.urgent{color:var(--red);font-weight:600}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-bg.active{display:flex}
+.modal{background:var(--card);border-radius:18px;padding:24px 22px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.modal-title{font-family:'Jua',sans-serif;font-size:20px;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.55}
+.modal-input{width:100%;height:46px;border:2px solid var(--border);border-radius:12px;padding:0 14px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .15s;margin-bottom:12px}
+.modal-input:focus{border-color:var(--primary)}
+.modal-textarea{width:100%;min-height:80px;padding:12px 14px;border:2px solid var(--border);border-radius:12px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;resize:vertical;line-height:1.5;transition:border-color .15s}
+.modal-textarea:focus{border-color:var(--primary)}
+.modal-warn{padding:11px 13px;border-radius:10px;font-size:12px;line-height:1.5;margin:10px 0}
+.modal-warn.yellow{background:#FFFBEA;border:1px solid #F6E05E;color:#7A5A1A}
+.modal-warn.red{background:#FFF5F5;border:1px solid #FBB;color:#9B2C2C}
+.modal-warn.info{background:#EBF4FF;border:1px solid #BEE3F8;color:#2C5282}
+.modal-row-actions{display:flex;gap:8px;margin-top:14px}
+.modal-btn{flex:1;height:46px;border-radius:12px;font-family:'Jua',sans-serif;font-size:16px;cursor:pointer;border:none;transition:opacity .15s}
+.modal-btn.primary{background:var(--primary);color:#fff}
+.modal-btn.purple{background:var(--purple);color:#fff}
+.modal-btn.red{background:var(--red);color:#fff}
+.modal-btn.warn{background:#DD6B20;color:#fff}
+.modal-btn.ghost{background:#fff;color:var(--sub);border:1px solid var(--border)}
+.modal-btn:hover{opacity:.88}
+.modal-btn:disabled{opacity:.5;cursor:not-allowed}
+.modal-radio-group{display:grid;gap:8px;margin:12px 0 4px}
+.modal-radio{padding:12px 14px;border:2px solid var(--border);border-radius:12px;cursor:pointer;font-size:13px;line-height:1.5;color:var(--text);transition:all .15s}
+.modal-radio:hover{border-color:var(--primary)}
+.modal-radio.selected{border-color:var(--primary);background:var(--primary-light)}
+.modal-radio b{display:block;font-size:14px;margin-bottom:2px;color:var(--text)}
+.modal-radio .desc{font-size:12px;color:var(--sub)}
+
+/* CONTACT BLOCK (보호책임자 안내) */
+.contact{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;font-size:13px;line-height:1.7;color:var(--sub)}
+.contact b{color:var(--text)}
+.contact a{color:var(--primary);text-decoration:none}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A202C;color:#fff;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:300;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* RESPONSIVE */
+@media (max-width: 480px){
+  .welcome{font-size:21px}
+  .child-name{font-size:16px}
+  .modal{padding:20px 18px}
+  .modal-title{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/" class="nav-logo"><span>K-edu</span> <span class="nav-badge">학부모</span></a>
+  <div class="nav-right">
+    <span class="nav-email" id="nav-email"></span>
+    <button class="nav-btn" id="logout-btn" style="display:none" onclick="doLogout()">로그아웃</button>
+  </div>
+</nav>
+
+<!-- LOGIN GATE -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-emoji">👨‍👧</div>
+    <div class="gate-title">학부모 전용 페이지</div>
+    <div class="gate-sub">자녀의 학습 권리 행사를 위해<br>학부모 계정으로 로그인해주세요.</div>
+    <a href="/auth/?redirect=/parent/" class="gate-btn">로그인 / 회원가입</a>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash">
+
+  <h1 class="welcome">👨‍👧 <span class="accent" id="welcome-name">학부모</span>님, 안녕하세요</h1>
+  <p class="welcome-sub">자녀의 학급코드와 닉네임으로 매핑을 신청하면 담임 교사 검증 후<br>본인 자녀에 대한 권리 행사(열람·정정·삭제·처리정지)가 가능합니다.</p>
+
+  <!-- SECTION 1: 자녀 -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title"><span class="num">1</span>자녀 목록</h2>
+    </div>
+
+    <div class="info-box">
+      <b>자녀 매핑 절차</b>
+      <ol style="padding-left:18px;margin-top:5px">
+        <li>자녀의 <b>학급코드</b>와 <b>닉네임</b>을 정확히 입력</li>
+        <li>담임 교사가 학급에서 검증</li>
+        <li>검증 완료 후 권리 행사 가능</li>
+      </ol>
+    </div>
+
+    <div id="children-area">
+      <div class="empty"><div class="empty-icon">⏳</div>불러오는 중...</div>
+    </div>
+
+    <button class="add-btn" onclick="openAddChild()" style="margin-top:12px">
+      <span class="plus">＋</span> 자녀 추가하기
+    </button>
+  </section>
+
+  <!-- SECTION 2: 권리 행사 이력 -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title"><span class="num">2</span>권리 행사 이력</h2>
+    </div>
+
+    <div class="info-box purple">
+      <b>처리 의무</b> — 케이에듀는 권리 행사 요청을 접수일로부터 <b>10일 이내</b> 처리·통보해야 합니다(개인정보 보호법 제38조).
+      처리 기한이 지나도 응답이 없으면 본 페이지 하단 보호책임자 또는 학교에 직접 문의해주세요.
+    </div>
+
+    <div id="history-area">
+      <div class="empty"><div class="empty-icon">📋</div>아직 신청 이력이 없습니다.</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: 보호책임자 안내 -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title"><span class="num">3</span>문의처</h2>
+    </div>
+    <div class="contact">
+      <b>1차 — 학교 담당 교사</b>: 자녀가 다니는 학교 담임 교사에게 직접 문의<br>
+      <b>2차 — 케이에듀 개인정보 보호책임자</b>: 본 처리방침 <a href="/privacy/" target="_blank">제10조</a> 참조<br>
+      <span style="font-size:12px;color:var(--sub);display:inline-block;margin-top:6px">권리 행사 외 문의는 학교를 통해 접수해주시면 보다 정확하게 안내드립니다.</span>
+    </div>
+  </section>
+
+</div>
+
+<!-- ADD CHILD MODAL -->
+<div class="modal-bg" id="add-child-modal">
+  <div class="modal">
+    <h3 class="modal-title">👨‍👧 자녀 추가</h3>
+    <p class="modal-sub">자녀의 학급코드와 닉네임을 정확히 입력하면<br>매핑 신청이 접수됩니다. 담임 교사 검증 후 활성화됩니다.</p>
+
+    <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--sub)">학급코드</div>
+    <input type="text" class="modal-input" id="add-class-code" placeholder="예: ABCD12" maxlength="32" autocomplete="off">
+
+    <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--sub)">자녀 닉네임</div>
+    <input type="text" class="modal-input" id="add-nickname" placeholder="자녀가 사용하는 닉네임" maxlength="32" autocomplete="off">
+
+    <div class="modal-warn yellow">
+      <b>주의</b> — 학급코드와 닉네임이 모두 정확히 일치해야 매핑됩니다.
+      여러 번 잘못 입력하면 신청이 차단될 수 있습니다.
+    </div>
+
+    <div class="modal-row-actions">
+      <button class="modal-btn ghost" onclick="closeAddChild()">취소</button>
+      <button class="modal-btn purple" id="add-child-submit" onclick="submitAddChild()">신청</button>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT REQUEST MODAL -->
+<div class="modal-bg" id="right-modal">
+  <div class="modal">
+    <h3 class="modal-title" id="right-title">권리 행사 신청</h3>
+    <p class="modal-sub" id="right-sub"></p>
+
+    <!-- 삭제 모드 라디오 (request_type=delete일 때만) -->
+    <div id="right-delete-modes" style="display:none">
+      <div style="font-size:12px;font-weight:600;color:var(--sub);margin-bottom:6px">삭제 처리 방식 선택 (처리방침 제8조 5항)</div>
+      <div class="modal-radio-group">
+        <div class="modal-radio selected" data-mode="default" onclick="pickDeleteMode('default')">
+          <b>1) 기본 — 익명화 + 학습 데이터 삭제 (권장)</b>
+          <span class="desc">닉네임 식별 불가 처리 + 점수·오답·숙제 일괄 삭제 + 학생 프로필은 학교 학사 운영 호환을 위해 보존</span>
+        </div>
+        <div class="modal-radio" data-mode="full" onclick="pickDeleteMode('full')">
+          <b>2) 완전 삭제</b>
+          <span class="desc">학생 프로필 row 자체를 데이터베이스에서 완전 삭제. 잊혀질 권리 강화</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:6px 0 6px;font-size:12px;font-weight:600;color:var(--sub)">요청 사유 <span style="color:var(--sub);font-weight:400">(선택)</span></div>
+    <textarea class="modal-textarea" id="right-note" placeholder="처리 시 참고할 사유나 요청사항을 적어주세요"></textarea>
+
+    <div class="modal-warn info" id="right-info"></div>
+
+    <div class="modal-row-actions">
+      <button class="modal-btn ghost" onclick="closeRightModal()">취소</button>
+      <button class="modal-btn primary" id="right-submit" onclick="submitRightRequest()">신청</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const db = getKeduDb();
+
+// 상태
+let _user = null;
+let _children = [];        // [{link_id, student_id, nickname, class_code, verified_at, is_active, requested_at}]
+let _history = [];         // [{id, request_type, target_student_id, student_nickname, status, note, requested_at, due_at, processed_at}]
+let _rightCtx = null;      // { student_id, student_nickname, request_type, full_delete }
+
+// =============================================
+// 진입 — 세션 확인
+// =============================================
+async function init(){
+  const { data: { session } } = await db.auth.getSession();
+  if(!session){
+    showGate();
+    return;
+  }
+  _user = session.user;
+
+  // 교사·학생 차단 (잘못된 라우팅 방지)
+  const { data: t } = await db.from('teachers').select('id').eq('user_id', _user.id).maybeSingle();
+  if(t){ location.href = '/teacher/'; return; }
+  const { data: s } = await db.from('student_profiles').select('id').eq('user_id', _user.id).maybeSingle();
+  if(s){ location.href = '/'; return; }
+
+  // 학부모 화면
+  document.getElementById('nav-email').textContent = _user.email || '';
+  document.getElementById('logout-btn').style.display = 'inline-block';
+  document.getElementById('welcome-name').textContent = (_user.email || '학부모').split('@')[0];
+  document.getElementById('dash').classList.add('active');
+
+  await Promise.all([loadChildren(), loadHistory()]);
+}
+
+function showGate(){
+  document.getElementById('gate').classList.add('active');
+  document.getElementById('dash').classList.remove('active');
+}
+
+async function doLogout(){
+  await db.auth.signOut();
+  location.href = '/auth/?redirect=/parent/';
+}
+
+// =============================================
+// 자녀 목록 로드
+// =============================================
+async function loadChildren(){
+  const { data, error } = await db.rpc('my_parent_links');
+  if(error){
+    document.getElementById('children-area').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div>자녀 목록을 불러올 수 없습니다.<br><span style="font-size:12px">${escapeHtml(error.message)}</span></div>`;
+    return;
+  }
+  _children = data || [];
+  renderChildren();
+}
+
+function renderChildren(){
+  const area = document.getElementById('children-area');
+  if(!_children.length){
+    area.innerHTML = '<div class="empty"><div class="empty-icon">🌱</div>아직 등록된 자녀가 없습니다.<br>아래 [자녀 추가하기] 버튼으로 신청하세요.</div>';
+    return;
+  }
+  area.innerHTML = '<div class="child-list">' + _children.map(renderChildCard).join('') + '</div>';
+}
+
+function renderChildCard(c){
+  const status = !c.is_active ? 'inactive' : (c.verified_at ? 'verified' : 'pending');
+  const statusLabel = !c.is_active ? '⛔ 처리정지'
+                    : c.verified_at ? '✓ 검증 완료'
+                    : '⏳ 검증 대기';
+  const verifiedDate = c.verified_at ? fmtDate(c.verified_at) : '—';
+  const requestedDate = fmtDate(c.requested_at);
+
+  // 권리 행사 가능 여부 — 검증 완료 + 활성 학생만
+  const canAct = c.is_active && c.verified_at;
+  const disabled = canAct ? '' : 'disabled';
+
+  return `
+    <div class="child-card ${status}">
+      <div class="child-head">
+        <div class="child-name"><span class="emoji">🎒</span>${escapeHtml(c.nickname || '(닉네임 미상)')}</div>
+        <span class="child-status ${status}">${statusLabel}</span>
+      </div>
+      <div class="child-meta">
+        <b>학급</b> ${escapeHtml(c.class_code || '—')} ·
+        <b>신청일</b> ${requestedDate}${c.verified_at ? ` · <b>검증일</b> ${verifiedDate}` : ''}
+      </div>
+      <div class="child-actions">
+        <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'view')">📋 열람</button>
+        <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'correct')">✏️ 정정</button>
+        <button class="child-action-btn warn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'stop')">⏸️ 처리정지</button>
+        <button class="child-action-btn danger" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'delete')">🗑️ 삭제</button>
+      </div>
+    </div>
+  `;
+}
+
+// =============================================
+// 권리 행사 이력 로드
+// =============================================
+async function loadHistory(){
+  const { data, error } = await db.rpc('my_data_requests');
+  if(error){
+    document.getElementById('history-area').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div>이력을 불러올 수 없습니다.<br><span style="font-size:12px">${escapeHtml(error.message)}</span></div>`;
+    return;
+  }
+  _history = data || [];
+  renderHistory();
+}
+
+function renderHistory(){
+  const area = document.getElementById('history-area');
+  if(!_history.length){
+    area.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>아직 신청 이력이 없습니다.</div>';
+    return;
+  }
+  area.innerHTML = '<div class="history-list">' + _history.map(renderHistoryRow).join('') + '</div>';
+}
+
+const REQUEST_LABEL = {
+  view: '📋 열람 요청',
+  correct: '✏️ 정정 요청',
+  delete: '🗑️ 삭제 요청',
+  stop: '⏸️ 처리정지 요청',
+  export: '📤 이동 요청'
+};
+const STATUS_LABEL = {
+  pending: '대기',
+  in_progress: '처리 중',
+  completed: '완료',
+  rejected: '거부'
+};
+
+function renderHistoryRow(h){
+  const due = h.due_at ? new Date(h.due_at) : null;
+  const isOpen = (h.status === 'pending' || h.status === 'in_progress');
+  const dueDays = due ? Math.ceil((due.getTime() - Date.now()) / 86400000) : null;
+  const dueLabel = !due ? '' : !isOpen ? `처리일 ${fmtDate(h.processed_at)}`
+                  : (dueDays < 0 ? `⚠️ 기한 ${-dueDays}일 초과`
+                                  : dueDays === 0 ? '오늘 마감'
+                                  : `D-${dueDays} (${fmtDate(h.due_at)})`);
+  const dueClass = (isOpen && dueDays !== null && dueDays <= 1) ? 'urgent' : '';
+
+  return `
+    <div class="history-card">
+      <div class="history-meta">
+        <div><span class="type">${REQUEST_LABEL[h.request_type] || h.request_type}</span> — <span class="student">${escapeHtml(h.student_nickname || '(이전 자녀)')}</span></div>
+        <div class="date">신청일: ${fmtDateTime(h.requested_at)}</div>
+        ${h.note ? `<div class="note">사유: ${escapeHtml(h.note)}</div>` : ''}
+        <div class="history-due ${dueClass}">${dueLabel}</div>
+      </div>
+      <div><span class="history-pill ${h.status}">${STATUS_LABEL[h.status] || h.status}</span></div>
+    </div>
+  `;
+}
+
+// =============================================
+// 자녀 추가 모달
+// =============================================
+function openAddChild(){
+  document.getElementById('add-class-code').value = '';
+  document.getElementById('add-nickname').value = '';
+  document.getElementById('add-child-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>document.getElementById('add-class-code').focus(), 100);
+}
+function closeAddChild(){
+  document.getElementById('add-child-modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function submitAddChild(){
+  const code = document.getElementById('add-class-code').value.trim();
+  const nick = document.getElementById('add-nickname').value.trim();
+  if(!code || !nick){
+    showToast('학급코드와 닉네임을 모두 입력해주세요');
+    return;
+  }
+  const btn = document.getElementById('add-child-submit');
+  btn.disabled = true; btn.textContent = '신청 중...';
+
+  const { data, error } = await db.rpc('request_parent_link', {
+    p_class_code: code,
+    p_nickname: nick
+  });
+
+  btn.disabled = false; btn.textContent = '신청';
+
+  if(error){
+    showToast('❌ ' + (error.message || '신청 실패'));
+    return;
+  }
+
+  const status = data && data.status;
+  if(status === 'requested'){
+    showToast('✅ 매핑 신청 완료 — 담임 교사 검증 대기');
+  } else if(status === 'already_pending'){
+    showToast('⏳ 이미 신청한 자녀입니다 — 검증 대기 중');
+  } else if(status === 'already_verified'){
+    showToast('✓ 이미 검증 완료된 자녀입니다');
+  } else {
+    showToast('✅ 처리되었습니다');
+  }
+  closeAddChild();
+  await loadChildren();
+}
+
+// =============================================
+// 권리 행사 신청 모달
+// =============================================
+function openRightModal(studentId, studentNickname, requestType){
+  _rightCtx = { student_id: studentId, student_nickname: studentNickname, request_type: requestType, full_delete: false };
+
+  const titleMap = {
+    view: '📋 자녀 데이터 열람 요청',
+    correct: '✏️ 자녀 데이터 정정 요청',
+    delete: '🗑️ 자녀 데이터 삭제 요청',
+    stop: '⏸️ 자녀 데이터 처리정지 요청'
+  };
+  const subMap = {
+    view: '자녀의 학습 데이터(차시별 진척도, 학습 시간 등) 열람을 신청합니다.',
+    correct: '잘못 기록된 학습 데이터의 정정을 신청합니다. 사유에 정정 대상을 명시해주세요.',
+    delete: '자녀의 학습 데이터를 삭제 처리합니다. 처리방식을 선택해주세요.',
+    stop: '자녀의 학습 데이터 처리를 일시 정지합니다. 신청 후 새 학습 데이터가 저장되지 않습니다.'
+  };
+  const infoMap = {
+    view: '<b>처리 결과 통보</b> — 접수일로부터 10일 이내에 학교 또는 보호책임자가 결과를 통보합니다.',
+    correct: '<b>처리 결과 통보</b> — 정정 사유가 명확할수록 빠르게 처리됩니다.',
+    delete: '<b>주의</b> — 삭제 처리는 되돌릴 수 없습니다. 학생 본인의 동의도 확인 후 신청해주세요.',
+    stop: '<b>참고</b> — 처리정지된 학생은 이후 학습 데이터를 저장할 수 없습니다. 재활성화는 학교를 통해 신청해주세요.'
+  };
+  const tone = {
+    view: 'primary', correct: 'primary', delete: 'red', stop: 'warn'
+  };
+
+  document.getElementById('right-title').textContent = titleMap[requestType] || '권리 행사 신청';
+  document.getElementById('right-sub').textContent = `대상: ${studentNickname || '(자녀)'}\n${subMap[requestType] || ''}`.replace('\n', ' — ');
+  document.getElementById('right-info').innerHTML = infoMap[requestType] || '';
+  document.getElementById('right-note').value = '';
+
+  // 삭제 모드 라디오 — request_type=delete일 때만
+  const isDelete = requestType === 'delete';
+  document.getElementById('right-delete-modes').style.display = isDelete ? 'block' : 'none';
+  if(isDelete){
+    pickDeleteMode('default');
+  }
+
+  // 제출 버튼 톤
+  const btn = document.getElementById('right-submit');
+  btn.className = 'modal-btn ' + (tone[requestType] || 'primary');
+  btn.textContent = isDelete ? '삭제 신청' : '신청';
+
+  document.getElementById('right-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRightModal(){
+  document.getElementById('right-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  _rightCtx = null;
+}
+
+function pickDeleteMode(mode){
+  if(!_rightCtx) return;
+  _rightCtx.full_delete = (mode === 'full');
+  document.querySelectorAll('#right-delete-modes .modal-radio').forEach(el => {
+    el.classList.toggle('selected', el.dataset.mode === mode);
+  });
+}
+
+async function submitRightRequest(){
+  if(!_rightCtx) return;
+  const note = document.getElementById('right-note').value.trim();
+
+  // 삭제 모드 사유 명시 안내 (note에 명시적으로 기록 — 제8조 5항 2 "서면 또는 전자우편으로 명시적 요청")
+  let finalNote = note;
+  if(_rightCtx.request_type === 'delete'){
+    const tag = _rightCtx.full_delete ? '[완전 삭제 모드 요청]' : '[기본 익명화 모드 요청]';
+    finalNote = (note ? note + '\n' : '') + tag;
+  }
+
+  const btn = document.getElementById('right-submit');
+  btn.disabled = true; btn.textContent = '신청 중...';
+
+  const { error } = await db.from('data_requests').insert({
+    request_type: _rightCtx.request_type,
+    requester_type: 'parent',
+    requester_user_id: _user.id,
+    target_student_id: _rightCtx.student_id,
+    note: finalNote || null,
+    status: 'pending'
+  });
+
+  btn.disabled = false; btn.textContent = '신청';
+
+  if(error){
+    showToast('❌ ' + (error.message || '신청 실패'));
+    return;
+  }
+  showToast('✅ 권리 행사 신청 완료 — 10일 이내 처리됩니다');
+  closeRightModal();
+  await loadHistory();
+}
+
+// =============================================
+// 유틸
+// =============================================
+function fmtDate(s){
+  if(!s) return '—';
+  const d = new Date(s);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDateTime(s){
+  if(!s) return '—';
+  const d = new Date(s);
+  return `${fmtDate(s)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function escapeHtml(s){
+  if(s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeJsString(s){
+  // onclick 핸들러에 닉네임 문자열 안전 삽입용
+  return JSON.stringify(s == null ? '' : String(s));
+}
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+// ESC 닫기 (우선순위: right > add)
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape') return;
+  const right = document.getElementById('right-modal');
+  if(right.classList.contains('active')){ closeRightModal(); return; }
+  const add = document.getElementById('add-child-modal');
+  if(add.classList.contains('active')){ closeAddChild(); return; }
+});
+// 백드롭 클릭 닫기
+document.getElementById('add-child-modal').addEventListener('click', e => {
+  if(e.target.id === 'add-child-modal') closeAddChild();
+});
+document.getElementById('right-modal').addEventListener('click', e => {
+  if(e.target.id === 'right-modal') closeRightModal();
+});
+// Enter 키 자녀 추가 (모달 활성 시)
+document.getElementById('add-nickname').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); submitAddChild(); }
+});
+
+// 시작
+init();
+</script>
+</body>
+</html>

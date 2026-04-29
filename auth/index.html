@@ -131,6 +131,10 @@ footer strong{color:#718096;font-weight:500}
           <span class="role-emoji">🍎</span>
           <span class="role-label">교사</span>
         </div>
+        <div class="role-btn" id="role-parent" onclick="pickRole('parent')">
+          <span class="role-emoji">👨‍👧</span>
+          <span class="role-label">학부모</span>
+        </div>
       </div>
       <div class="form-group">
         <label>이메일</label>
@@ -241,9 +245,12 @@ function pickRole(role){
   selectedRole = role;
   document.getElementById('role-student').classList.toggle('selected', role==='student');
   document.getElementById('role-teacher').classList.toggle('selected', role==='teacher');
+  document.getElementById('role-parent').classList.toggle('selected', role==='parent');
 
   const isTeacher = role==='teacher';
-  document.getElementById('group-nickname').style.display = isTeacher ? 'none' : 'block';
+  const isStudent = role==='student';
+  // 학부모: 닉네임/이름/학교 모두 숨김 (이메일+비번+동의만)
+  document.getElementById('group-nickname').style.display = isStudent ? 'block' : 'none';
   document.getElementById('group-teacher-name').style.display = isTeacher ? 'block' : 'none';
   document.getElementById('group-teacher-school').style.display = isTeacher ? 'block' : 'none';
 }
@@ -304,15 +311,20 @@ async function doSignup(){
   if(selectedRole === 'student'){
     const nick = document.getElementById('signup-nickname').value.trim();
     if(!nick){ showMsg('signup-msg','닉네임을 입력해주세요.','error'); return; }
-  } else {
+  } else if(selectedRole === 'teacher'){
     const tName = document.getElementById('signup-teacher-name').value.trim();
     if(!tName){ showMsg('signup-msg','이름을 입력해주세요.','error'); return; }
   }
+  // 학부모: 추가 입력 없음 (이메일+비번+동의만)
 
   const btn = document.getElementById('btn-signup');
   btn.disabled = true; btn.textContent = '가입 중...';
 
-  const { data, error } = await db.auth.signUp({ email, password: pw });
+  // 학부모는 user_metadata.role='parent' 저장 (ensureProfile 식별용)
+  const signUpOpts = selectedRole === 'parent'
+    ? { email, password: pw, options: { data: { role: 'parent' } } }
+    : { email, password: pw };
+  const { data, error } = await db.auth.signUp(signUpOpts);
   btn.disabled = false; btn.textContent = '회원가입';
 
   if(error){
@@ -329,13 +341,19 @@ async function doSignup(){
     if(selectedRole === 'student'){
       const nick = document.getElementById('signup-nickname').value.trim();
       await createStudentProfile(data.user.id, nick);
-    } else {
+      showToast('🎉 가입 완료! 환영합니다.');
+      setTimeout(()=>{ location.href = redirectTo; }, 800);
+    } else if(selectedRole === 'teacher'){
       const tName = document.getElementById('signup-teacher-name').value.trim();
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
       await createTeacherProfile(data.user.id, tName, tSchool);
+      showToast('🎉 가입 완료! 환영합니다.');
+      setTimeout(()=>{ location.href = redirectTo; }, 800);
+    } else {
+      // 학부모: 별도 프로필 테이블 없음. parent/index.html에서 자녀 매핑 신청
+      showToast('🎉 가입 완료! 자녀 정보를 등록해주세요.');
+      setTimeout(()=>{ location.href = '/parent/'; }, 800);
     }
-    showToast('🎉 가입 완료! 환영합니다.');
-    setTimeout(()=>{ location.href = redirectTo; }, 800);
   } else {
     // 이메일 확인 필요한 경우
     showMsg('signup-msg', '✉️ 이메일로 인증 링크를 보냈습니다. 확인 후 로그인해주세요.', 'success');
@@ -355,7 +373,15 @@ async function ensureProfile(user){
 
   if(teacher) return true; // 교사면 프로필 OK
 
-  // 2) 학생 프로필 확인
+  // 2) 학부모 식별 — user_metadata.role === 'parent' 또는 parent_student_links 매핑 보유
+  // 학부모는 별도 프로필 테이블 없음. signUp 시 user_metadata.role='parent' 저장됨.
+  const isParentByMeta = user.user_metadata && user.user_metadata.role === 'parent';
+  if(isParentByMeta){
+    location.href = '/parent/';
+    return true;
+  }
+
+  // 3) 학생 프로필 확인
   const { data: profile } = await db
     .from('student_profiles')
     .select('id, nickname')
@@ -364,7 +390,18 @@ async function ensureProfile(user){
 
   if(profile) return true;
 
-  // 3) 프로필 없으면 닉네임 카드 표시
+  // 4) 학부모 매핑 보유 시 학부모로 간주 (user_metadata 누락 케이스 대비)
+  const { data: pslRows } = await db
+    .from('parent_student_links')
+    .select('id')
+    .eq('parent_id', user.id)
+    .limit(1);
+  if(pslRows && pslRows.length > 0){
+    location.href = '/parent/';
+    return true;
+  }
+
+  // 5) 프로필 없으면 닉네임 카드 표시
   document.getElementById('card-auth').style.display = 'none';
   document.getElementById('card-nickname').style.display = 'block';
   return false;
