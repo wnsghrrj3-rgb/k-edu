@@ -1,10 +1,11 @@
-# 케이에듀(K-edu) 개인정보 처리방침 v2
+# 케이에듀(K-edu) 개인정보 처리방침 v2.1
 
 > **문서 정보**
-> - 버전: v2.0 (초안)
-> - 작성일: 2026년 4월 28일
+> - 버전: v2.1
+> - 작성일: 2026년 4월 28일 (v2.0) → 2026년 4월 29일 (v2.1 — 제8조 5항 신설: 삭제 요구 두 가지 모드 명시)
 > - 적용 시나리오: 학교 단위 도입(트랙 A) 단독 운영
 > - v1 대비 주요 변경: ① 학생 실명 미수집(익명 닉네임 전환) ② 「학습 진단 데이터 처리」 조항 신설 ③ 학년 와이프 시점 변경(3/1 → 2/28 자정) ④ 4단 권한(학생/학부모/교사/운영자) 명문화 ⑤ 학부모 회원·숙제·오답노트 처리 절차 신설
+> - v2.0 → v2.1: 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 반영.
 > - 향후 학부모 직접 가입(트랙 B) 추가 시 처리방침 개정 예정
 
 ---
@@ -195,7 +196,7 @@
 1. 정보주체(학생의 경우 법정대리인)는 서비스에 대해 언제든지 다음의 권리를 행사할 수 있습니다.
    - 개인정보 열람 요구
    - 오류 등이 있을 경우 정정 요구
-   - 삭제 요구
+   - 삭제 요구 (본 조 5항에 따른 두 가지 모드 중 선택)
    - 처리정지 요구
 
 2. 권리 행사 방법
@@ -209,6 +210,23 @@
 3. 서비스는 정보주체의 권리 행사 요청을 접수한 날로부터 10일 이내에 처리 결과를 통보합니다.
 
 4. 정보주체가 만 14세 미만 아동인 경우 법정대리인이 권리를 행사하여야 하며, 법정대리인임을 확인할 수 있는 증빙을 요청할 수 있습니다.
+
+5. **삭제 요구 처리 방식** (v2.1 신설)
+
+   삭제 요구는 다음 두 가지 모드 중 정보주체(법정대리인)가 선택할 수 있습니다.
+
+   **1) 기본 모드 — 익명화 + 학습 데이터 삭제** (별도 명시 요청이 없을 때 적용)
+   - 학습 데이터 일괄 삭제 대상: 점수(`scores`), 오답노트(`wrong_answers`), 숙제 완료 기록(`homework_completions`), 학부모 매핑(`parent_student_links`), 학급 좌석 점유 해제(`student_seats` unclaim)
+   - 학생 닉네임을 식별 불가 형식(`[삭제됨_xxxxxxxx]`)으로 변경
+   - 학생 프로필을 처리정지(`is_active = false`) 상태로 전환 — 이후 학습 INSERT 차단
+   - 학생 프로필 row 자체는 감사 추적용으로 보존되나 식별 정보 일체 없음
+
+   **2) 완전 삭제 모드** (법정대리인이 서면 또는 전자우편으로 명시적으로 요청한 경우에만 적용)
+   - 위 1)의 모든 처리에 더해, 학생 프로필 row(`student_profiles`) 자체를 데이터베이스에서 완전 삭제
+   - 권리 행사 이력(`data_requests` 테이블)에서 해당 학생을 가리키던 식별자(`target_student_id`)는 외래키의 ON DELETE SET NULL 정책에 따라 자동으로 NULL 처리됨 — 누구의 요청이었는지 사후 추적 불가
+   - 단, 처리 이력 row 자체는 「개인정보 보호법」 제38조에 따른 처리 결과 통보 의무 및 감사 로그 의무를 위해 일정 기간 보존됩니다(학생 식별 정보 없음)
+
+   기본 모드는 학교 학사 운영(학급 명단 추적 등)과의 호환성을 위해 마련되었으며, 완전 삭제 모드는 정보주체의 잊혀질 권리를 최대한 보장하기 위한 모드입니다.
 
 ---
 
@@ -286,12 +304,13 @@
 |---|---|---|
 | v1.0 | 2026-04-27 | 최초 작성 (학교 단위 도입 트랙 A 단독 운영 기준) |
 | v2.0 | 2026-04-28 | ① 학생 실명 미수집(익명 닉네임) 원칙 명문화 ② 「학습 진단 데이터 처리」 조항(제3조) 신설 ③ 학년 와이프 시점 변경(3/1 → 2/28 자정) + 1주일 전 PDF 알림 절차 신설 ④ 4단 RLS 권한(학생/학부모/교사/운영자) 명문화 ⑤ 학부모 회원·`parent_student_links` 매핑 절차 신설 ⑥ 숙제·오답노트·진단 결과 처리 절차 신설 ⑦ 무로그인 INSERT 차단(`auth_insert_visits`) 명시 ⑧ 자존감 보호 조치(학생 화면 정량 비공개, 오답노트 본문 비공개) 명시 |
+| v2.1 | 2026-04-29 | 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 추가 반영 (정보주체 잊혀질 권리 강화). |
 
 ---
 
 ## [부록 2] 본 처리방침과 코드의 일치 검증
 
-본 처리방침 v2는 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 push):
+본 처리방침 v2.1은 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 + 사이클 ㉝ 권리 행사 채널 BE + 사이클 ㉞ 삭제 모드 분기):
 
 | 처리방침 조항 | 대응 코드 |
 |---|---|
@@ -300,8 +319,16 @@
 | 제3조 학습 진단 데이터 | `scores` 테이블(question_id, concept_id, time_spent_sec 컬럼), `wrong_answers`, `student_lesson_progress` 뷰 |
 | 제3조 숙제 시스템 | `homework_assignments`, `homework_completions` 테이블 |
 | 제4조 학년 와이프 | `wipe_student_data()` 함수 (Supabase pg_cron 등록 예정) |
-| 제9조 4단 RLS | `setup_diagnosis_v2.sql` RLS 정책 |
+| 제8조 1) 열람 요구 | `student_data_summary` 뷰 + 교사 RLS SELECT 정책 (`setup_data_requests.sql` S7) |
+| 제8조 1) 정정 요구 | `sp_teacher_update_class` RLS UPDATE 정책 |
+| 제8조 5항 1) 기본 익명화 모드 | `delete_student_data(p_full_delete=false)` (기본값) — 닉네임 `[삭제됨_xxxxxxxx]` + `is_active=false` + 학습 데이터 일괄 삭제 |
+| 제8조 5항 2) 완전 삭제 모드 | `delete_student_data(p_full_delete=true)` — `student_profiles` row DELETE + `data_requests.target_student_id` ON DELETE SET NULL로 식별자 자동 NULL 처리 |
+| 제8조 1) 처리정지 요구 | `toggle_student_processing()` 함수 + `is_active`/`deactivated_at` 컬럼 + `enforce_student_active_change` 트리거 |
+| 제8조 3) 10일 이내 처리·통보 | `data_requests.due_at` 컬럼 + `sync_data_request_due_at` 트리거 + `data_requests_overdue` 뷰 |
+| 제8조 권리 행사 이력 기록 | `data_requests` 테이블 + 헬퍼 함수에서 자동 INSERT/UPDATE |
+| 제9조 4단 RLS | `setup_diagnosis_v2.sql` + `setup_data_requests.sql` RLS 정책 |
 | 제9조 무로그인 INSERT 차단 | `auth_insert_visits` 정책 (anyone_insert_visits DROP) |
 | 제9조 학습 페이지 인증 가드 | `kedu_tracker.js` v2 PROTECTED 정규식 |
+| 제7조 학급 동의 확인 강제 | `class_codes.consent_confirmed` CHECK 제약 + RLS WITH CHECK + 클라이언트 명시 (3중 방어) |
 
 코드 변경 시 본 처리방침을 우선 갱신해야 합니다(처리방침-코드 일치 원칙).
