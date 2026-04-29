@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>로그인 | K-edu</title>
-<!-- [임시 비활성화] 로그인 기능 일시 중단 — 메인으로 리다이렉트 -->
-<script>alert('로그인 기능이 일시적으로 비활성화되어 있습니다.\n로그인 없이 이용해주세요!'); location.href='/';</script>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/kedu_config.js"></script>
@@ -39,6 +37,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;d
 /* 역할 선택 */
 .role-picker{display:flex;gap:10px;margin-bottom:20px}
 .role-btn{flex:1;padding:14px 0;border:2px solid #E2E8F0;border-radius:14px;background:#fff;cursor:pointer;text-align:center;transition:all .2s;font-family:'Noto Sans KR',sans-serif}
+
+/* 학생 안내 박스 — 처리방침 v2.1 제2조 3 "교사 일괄 부여 방식" 정합 */
+.student-notice{margin-bottom:18px;padding:14px 16px;background:#F0FFF4;border:1px solid #C6F6D5;border-radius:12px;font-size:13px;line-height:1.6;color:#22543D;text-align:center}
+.student-notice b{color:#1C4532;font-weight:700}
+.student-notice span{font-size:12.5px;color:#2F855A;display:block;margin-top:4px}
+.student-notice-link{display:inline-block;margin-top:8px;padding:5px 14px;background:#38A169;color:#fff;border-radius:50px;text-decoration:none;font-size:12px;font-weight:600;transition:background .15s}
+.student-notice-link:hover{background:#2F855A}
 .role-btn:hover{border-color:#5B8EF8}
 .role-btn.selected{border-color:#5B8EF8;background:#EBF4FF}
 .role-emoji{font-size:28px;display:block;margin-bottom:4px}
@@ -122,12 +127,16 @@ footer strong{color:#718096;font-weight:500}
 
     <!-- 회원가입 폼 -->
     <div id="form-signup" style="display:none">
+      <!-- 학생은 처리방침 v2.1 제2조 3 "교사 일괄 부여 방식"에 따라 셀프 회원가입 차단.
+           학급코드+닉네임은 교사가 학급 생성 시 부여 → 학생은 메인 페이지에서 진입 -->
+      <div class="student-notice">
+        🎒 <b>학생은 별도 회원가입이 필요하지 않습니다</b><br>
+        <span>메인 페이지에서 교사가 부여한 <b>학급코드와 닉네임</b>으로 학습을 시작할 수 있어요.</span>
+        <a href="/" class="student-notice-link">메인으로 가기 →</a>
+      </div>
+
       <div class="role-picker">
-        <div class="role-btn selected" id="role-student" onclick="pickRole('student')">
-          <span class="role-emoji">🎒</span>
-          <span class="role-label">학생</span>
-        </div>
-        <div class="role-btn" id="role-teacher" onclick="pickRole('teacher')">
+        <div class="role-btn selected" id="role-teacher" onclick="pickRole('teacher')">
           <span class="role-emoji">🍎</span>
           <span class="role-label">교사</span>
         </div>
@@ -144,7 +153,9 @@ footer strong{color:#718096;font-weight:500}
         <label>비밀번호 (6자 이상)</label>
         <input type="password" id="signup-pw" placeholder="비밀번호 입력" autocomplete="new-password">
       </div>
-      <div class="form-group" id="group-nickname">
+      <!-- [처리방침 v2.1 제2조 3 정합] 학생 닉네임 input은 회원가입 시 사용 안 함 — 영구 숨김.
+           학생 닉네임은 교사가 학급 생성 시 일괄 부여. 교사·학부모만 회원가입 가능. -->
+      <div class="form-group" id="group-nickname" style="display:none">
         <label>닉네임</label>
         <input type="text" id="signup-nickname" placeholder="친구들에게 보이는 이름" maxlength="10">
       </div>
@@ -209,7 +220,8 @@ const db = getKeduDb();
 const params = new URLSearchParams(location.search);
 const redirectTo = params.get('redirect') || '/';
 
-let selectedRole = 'student';
+// 회원가입 역할 — 'teacher' 또는 'parent' (학생은 처리방침 v2.1 제2조 3 정합으로 차단)
+let selectedRole = 'teacher';
 
 // =============================================
 // 이미 로그인 상태면 바로 이동
@@ -242,15 +254,15 @@ function switchTab(tab){
 // 역할 선택
 // =============================================
 function pickRole(role){
+  // 처리방침 v2.1 제2조 3 정합: 학생 셀프 가입 차단 — 'teacher' 또는 'parent'만 허용
+  if(role !== 'teacher' && role !== 'parent') return;
   selectedRole = role;
-  document.getElementById('role-student').classList.toggle('selected', role==='student');
   document.getElementById('role-teacher').classList.toggle('selected', role==='teacher');
   document.getElementById('role-parent').classList.toggle('selected', role==='parent');
 
   const isTeacher = role==='teacher';
-  const isStudent = role==='student';
-  // 학부모: 닉네임/이름/학교 모두 숨김 (이메일+비번+동의만)
-  document.getElementById('group-nickname').style.display = isStudent ? 'block' : 'none';
+  // 학생 닉네임 group은 항상 숨김 (회원가입 시 사용 안 함)
+  document.getElementById('group-nickname').style.display = 'none';
   document.getElementById('group-teacher-name').style.display = isTeacher ? 'block' : 'none';
   document.getElementById('group-teacher-school').style.display = isTeacher ? 'block' : 'none';
 }
@@ -308,10 +320,14 @@ async function doSignup(){
     return;
   }
 
+  // 처리방침 v2.1 제2조 3 정합 안전망: 학생 셀프 회원가입 차단
+  // (UI에서는 학생 역할 버튼 제거되었으나 직접 selectedRole 우회 시도 차단)
   if(selectedRole === 'student'){
-    const nick = document.getElementById('signup-nickname').value.trim();
-    if(!nick){ showMsg('signup-msg','닉네임을 입력해주세요.','error'); return; }
-  } else if(selectedRole === 'teacher'){
+    showMsg('signup-msg','학생은 별도 회원가입이 필요하지 않습니다. 메인 페이지에서 학급코드로 진입해주세요.','error');
+    return;
+  }
+
+  if(selectedRole === 'teacher'){
     const tName = document.getElementById('signup-teacher-name').value.trim();
     if(!tName){ showMsg('signup-msg','이름을 입력해주세요.','error'); return; }
   }
@@ -338,12 +354,7 @@ async function doSignup(){
 
   // Supabase 이메일 확인이 꺼져 있으면 바로 세션 생성됨
   if(data.session){
-    if(selectedRole === 'student'){
-      const nick = document.getElementById('signup-nickname').value.trim();
-      await createStudentProfile(data.user.id, nick);
-      showToast('🎉 가입 완료! 환영합니다.');
-      setTimeout(()=>{ location.href = redirectTo; }, 800);
-    } else if(selectedRole === 'teacher'){
+    if(selectedRole === 'teacher'){
       const tName = document.getElementById('signup-teacher-name').value.trim();
       const tSchool = document.getElementById('signup-teacher-school').value.trim();
       await createTeacherProfile(data.user.id, tName, tSchool);
