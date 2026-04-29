@@ -93,6 +93,26 @@ main{flex:1;max-width:900px;margin:0 auto;padding:36px 24px 48px;width:100%}
 .privacy-notice a{color:#5B8EF8;text-decoration:none;font-weight:500}
 .privacy-notice a:hover{text-decoration:underline}
 
+/* 학생 진입 카드 (비로그인) */
+.entry-card{max-width:520px;margin:0 auto 36px;padding:28px 28px 22px;background:#fff;border:2px solid #E2E8F0;border-radius:24px;box-shadow:0 4px 20px rgba(91,142,248,.08)}
+.entry-title{font-family:'Jua',sans-serif;font-size:22px;color:#1A202C;text-align:center;margin-bottom:6px}
+.entry-sub{font-size:14px;color:#A0AEC0;text-align:center;margin-bottom:20px}
+.entry-row{margin-bottom:14px}
+.entry-label{display:block;font-size:13px;color:#4A5568;font-weight:500;margin-bottom:6px}
+.entry-input{width:100%;height:48px;padding:0 16px;border:1.5px solid #E2E8F0;border-radius:12px;font-family:'Noto Sans KR',sans-serif;font-size:16px;outline:none;transition:border-color .2s;background:#F5F7FA}
+.entry-input:focus{border-color:#5B8EF8;background:#fff}
+.entry-input::placeholder{color:#CBD5E0}
+.entry-consent{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;background:#F5F7FA;border-radius:12px;margin:6px 0 18px;cursor:pointer;font-size:13px;color:#4A5568;line-height:1.5}
+.entry-consent input[type="checkbox"]{margin-top:3px;width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:#5B8EF8}
+.entry-consent a{color:#5B8EF8;font-weight:500;text-decoration:none}
+.entry-consent a:hover{text-decoration:underline}
+.entry-btn{width:100%;height:52px;background:linear-gradient(135deg,#5B8EF8 0%,#FF85A1 100%);color:#fff;border:none;border-radius:14px;font-family:'Jua',sans-serif;font-size:18px;cursor:pointer;transition:transform .15s,opacity .15s;letter-spacing:.5px}
+.entry-btn:hover{transform:translateY(-2px)}
+.entry-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.entry-error{margin-top:12px;padding:10px 14px;background:#FFF5F5;border:1px solid #FED7D7;border-radius:10px;color:#C53030;font-size:13px;line-height:1.5;display:none}
+.entry-error.show{display:block}
+.entry-help{margin-top:14px;text-align:center;font-size:12px;color:#A0AEC0}
+
 /* FOOTER */
 footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
 .footer-text{font-size:12px;color:#A0AEC0;letter-spacing:.3px}
@@ -118,20 +138,13 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
 
 <!-- TOP BAR -->
 <div class="top-bar">
-  <!-- [임시 비활성화] 비로그인 상태 -->
-  <div class="auth-btns" id="auth-btns" style="display:none!important">
-    <button class="btn-login" onclick="location.href='/auth/'">로그인</button>
-    <button class="btn-signup" onclick="location.href='/auth/'">회원가입</button>
-  </div>
-  <!-- [임시 비활성화] 로그인 상태 -->
-  <div class="user-area" id="user-area" style="display:none!important">
+  <!-- 로그인 상태(claim_seat 완료): 닉네임칩 + 학급 라벨 + 로그아웃만 -->
+  <div class="user-area" id="user-area" style="display:none">
     <div class="nickname-chip">
       <span>🐾</span>
       <span class="chip-name" id="chip-name"></span>
     </div>
     <span class="class-code-badge" id="class-code-badge"></span>
-    <input class="class-input" id="class-input" type="text" placeholder="🔑 학급코드" maxlength="6" style="display:none">
-    <button class="btn-enter" id="btn-enter" onclick="enterClass()" style="display:none">입장</button>
     <button class="btn-logout" onclick="doLogout()">로그아웃</button>
   </div>
 </div>
@@ -144,6 +157,28 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
       <div class="hero-title">K-edu</div>
       <div class="hero-sub">케이에듀 · 초등 학습 플랫폼</div>
     </div>
+
+    <!-- 학생 진입 카드 (비로그인 시만 표시) -->
+    <div class="entry-card" id="entry-card" style="display:none">
+      <div class="entry-title">🔑 학급에 입장하세요</div>
+      <div class="entry-sub">선생님이 알려준 학급코드와 본인 닉네임을 입력해 주세요</div>
+      <div class="entry-row">
+        <label class="entry-label">학급코드</label>
+        <input class="entry-input" id="entry-class-code" type="text" placeholder="예: AB12CD" maxlength="12" autocomplete="off" autocapitalize="characters">
+      </div>
+      <div class="entry-row">
+        <label class="entry-label">내 닉네임</label>
+        <input class="entry-input" id="entry-nickname" type="text" placeholder="선생님이 정해준 내 닉네임" maxlength="20" autocomplete="off">
+      </div>
+      <label class="entry-consent">
+        <input type="checkbox" id="entry-consent-check">
+        <span>학부모님이 가정통신문을 통해 케이에듀 개인정보 처리에 사전 동의했음을 확인했어요. <a href="/privacy/" target="_blank">처리방침 보기 →</a></span>
+      </label>
+      <button class="entry-btn" id="entry-btn" onclick="enterStudent()">🐾 학습 시작하기</button>
+      <div class="entry-error" id="entry-error"></div>
+      <div class="entry-help">학급코드를 모르거나 닉네임이 안 맞으면 담임 선생님께 물어보세요</div>
+    </div>
+
     <div class="section-label">몇 학년인가요? 👇</div>
     <div class="grade-grid">
       <div class="grade-card" style="--c:#FF85A1" onclick="pickGrade(1,'#FF85A1','🌸')">
@@ -263,35 +298,47 @@ let currentUser = null;   // Supabase auth user
 let currentProfile = null; // student_profiles row
 
 // =============================================
-// 초기화: Auth 상태 확인 + UI 복원
+// 초기화: Auth 세션 확인 + UI 분기 (로그인 → user-area / 비로그인 → entry-card)
 // =============================================
 (async function init(){
-  // [임시 비활성화] Auth 세션 확인 — 로그인 기능 재활성화 시 아래 주석 해제
-  /*
-  const { data:{ session } } = await db.auth.getSession();
-  if(session){
-    currentUser = session.user;
-    await loadProfile();
-    showLoggedInUI();
-  } else {
+  try {
+    const { data:{ session } } = await db.auth.getSession();
+    if(session && session.user){
+      currentUser = session.user;
+      await loadProfile();
+      if(currentProfile && currentProfile.profile_id){
+        showLoggedInUI();
+      } else {
+        // 세션은 있는데 프로필 매핑이 없는 경우 (예: 슬롯 회수됨) — 세션 정리 후 진입 카드 표시
+        await db.auth.signOut();
+        currentUser = null;
+        currentProfile = null;
+        showLoggedOutUI();
+      }
+    } else {
+      showLoggedOutUI();
+    }
+
+    // Auth 상태 변경 리스너
+    db.auth.onAuthStateChange(async (event, session) => {
+      if(event === 'SIGNED_IN' && session){
+        currentUser = session.user;
+        await loadProfile();
+        if(currentProfile && currentProfile.profile_id){
+          showLoggedInUI();
+        }
+      } else if(event === 'SIGNED_OUT'){
+        currentUser = null;
+        currentProfile = null;
+        showLoggedOutUI();
+      }
+    });
+  } catch(e){
+    // 세션 조회 실패 → 비로그인 화면으로
     showLoggedOutUI();
   }
 
-  // Auth 상태 변경 리스너
-  db.auth.onAuthStateChange(async (event, session) => {
-    if(event === 'SIGNED_IN' && session){
-      currentUser = session.user;
-      await loadProfile();
-      showLoggedInUI();
-    } else if(event === 'SIGNED_OUT'){
-      currentUser = null;
-      currentProfile = null;
-      showLoggedOutUI();
-    }
-  });
-  */
-
-  // 2) 학년/학기 복원
+  // 학년/학기 복원
   const savedGrade    = localStorage.getItem('kedu_grade');
   const savedSemester = localStorage.getItem('kedu_semester');
 
@@ -310,112 +357,139 @@ let currentProfile = null; // student_profiles row
 })();
 
 // =============================================
-// 학생 프로필 로드
+// 학생 프로필 로드 — my_seat_class RPC (익명 인증 호환)
 // =============================================
 async function loadProfile(){
   if(!currentUser) return;
-  const { data } = await db
-    .from('student_profiles')
-    .select('id, nickname, class_code_id, grade')
-    .eq('user_id', currentUser.id)
-    .maybeSingle();
-  currentProfile = data;
+  try {
+    const { data, error } = await db.rpc('my_seat_class');
+    if(error || !data || data.status !== 'ok'){
+      currentProfile = null;
+      return;
+    }
+    currentProfile = data;
+  } catch(e){
+    currentProfile = null;
+  }
 }
 
 // =============================================
 // 로그인 UI 전환
 // =============================================
 function showLoggedInUI(){
-  document.getElementById('auth-btns').style.display = 'none';
+  document.getElementById('entry-card').style.display = 'none';
   const area = document.getElementById('user-area');
   area.style.display = 'flex';
 
-  const name = currentProfile ? currentProfile.nickname : (currentUser.email || '사용자');
-  document.getElementById('chip-name').textContent = name;
-
-  // 학급코드가 연결되어 있으면 배지 표시, 아니면 입력 표시
-  if(currentProfile && currentProfile.class_code_id){
-    loadClassCodeBadge(currentProfile.class_code_id);
-    document.getElementById('class-input').style.display = 'none';
-    document.getElementById('btn-enter').style.display = 'none';
-  } else {
-    document.getElementById('class-code-badge').style.display = 'none';
-    document.getElementById('class-input').style.display = '';
-    document.getElementById('btn-enter').style.display = '';
+  if(currentProfile){
+    document.getElementById('chip-name').textContent = currentProfile.nickname || '학생';
+    const badge = document.getElementById('class-code-badge');
+    if(currentProfile.class_label || currentProfile.class_code){
+      badge.textContent = '📚 ' + (currentProfile.class_label || currentProfile.class_code);
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 }
 
 function showLoggedOutUI(){
-  document.getElementById('auth-btns').style.display = 'flex';
   document.getElementById('user-area').style.display = 'none';
+  document.getElementById('entry-card').style.display = 'block';
 }
 
 // =============================================
-// 학급코드 배지 로드
+// 학생 진입 (학급코드 + 닉네임 + 동의) — 익명 인증 후 claim_seat
 // =============================================
-async function loadClassCodeBadge(classCodeId){
-  const { data } = await db
-    .from('class_codes')
-    .select('code, label')
-    .eq('id', classCodeId)
-    .single();
+async function enterStudent(){
+  const codeInput = document.getElementById('entry-class-code');
+  const nickInput = document.getElementById('entry-nickname');
+  const consent   = document.getElementById('entry-consent-check');
+  const btn       = document.getElementById('entry-btn');
+  const errorBox  = document.getElementById('entry-error');
 
-  const badge = document.getElementById('class-code-badge');
-  if(data){
-    badge.textContent = '📚 ' + (data.label || data.code);
-    badge.style.display = 'inline-block';
-  } else {
-    badge.style.display = 'none';
-  }
-}
+  const showError = (msg) => {
+    errorBox.textContent = '⚠️ ' + msg;
+    errorBox.classList.add('show');
+  };
+  errorBox.classList.remove('show');
 
-// =============================================
-// 학급코드 입장 (student_profiles에 연결)
-// =============================================
-async function enterClass(){
-  const code = document.getElementById('class-input').value.trim().toUpperCase();
-  if(code.length < 4){ showToast('올바른 학급코드를 입력해주세요.'); return; }
-  if(!currentUser || !currentProfile){ showToast('로그인이 필요합니다.'); return; }
+  const code = (codeInput.value || '').trim().toUpperCase();
+  const nick = (nickInput.value || '').trim();
 
-  const btn = document.getElementById('btn-enter');
+  if(code.length < 4){ showError('학급코드를 입력해 주세요.'); codeInput.focus(); return; }
+  if(nick.length === 0){ showError('내 닉네임을 입력해 주세요.'); nickInput.focus(); return; }
+  if(nick.length > 20){ showError('닉네임은 20자 이내로 입력해 주세요.'); nickInput.focus(); return; }
+  if(!consent.checked){ showError('처리방침 동의를 확인해 주세요.'); return; }
+
   btn.disabled = true; btn.textContent = '확인 중...';
 
   try {
-    // 학급코드 검증
-    const { data, error } = await db
-      .from('class_codes')
-      .select('id, label, grade, semester')
-      .eq('code', code)
-      .eq('is_active', true)
-      .single();
+    // 1) 익명 인증 (이미 세션이 있으면 그대로 사용)
+    let { data: sessionData } = await db.auth.getSession();
+    if(!sessionData || !sessionData.session){
+      const { data: anonData, error: anonError } = await db.auth.signInAnonymously();
+      if(anonError || !anonData || !anonData.session){
+        showError('인증에 실패했어요. 잠시 후 다시 시도해 주세요.');
+        btn.disabled = false; btn.textContent = '🐾 학습 시작하기';
+        return;
+      }
+      currentUser = anonData.user;
+    } else {
+      currentUser = sessionData.session.user;
+    }
 
-    if(error || !data){
-      showToast('❌ 존재하지 않는 학급코드입니다.');
-      btn.disabled=false; btn.textContent='입장';
+    // 2) claim_seat RPC 호출
+    const { data: claim, error: claimError } = await db.rpc('claim_seat', {
+      p_class_code: code,
+      p_nickname: nick
+    });
+
+    if(claimError){
+      showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+      btn.disabled = false; btn.textContent = '🐾 학습 시작하기';
       return;
     }
 
-    // student_profiles 업데이트 (학급 연결)
-    await db.from('student_profiles')
-      .update({
-        class_code_id: data.id,
-        grade: data.grade || currentProfile.grade
-      })
-      .eq('user_id', currentUser.id);
+    const status = claim && claim.status;
 
-    currentProfile.class_code_id = data.id;
-    showToast('🐾 ' + (data.label || code) + '에 입장했어요!');
+    if(status === 'created' || status === 'reclaim'){
+      // 성공 — 프로필 로드 + UI 전환
+      await loadProfile();
+      if(currentProfile && currentProfile.profile_id){
+        showLoggedInUI();
+        showToast('🐾 ' + (currentProfile.class_label || code) + '에 입장했어요!');
+      } else {
+        // RPC는 성공했으나 my_seat_class에서 못 가져온 경우 — 일단 UI는 전환
+        currentProfile = {
+          profile_id: claim.profile_id,
+          nickname: claim.nickname,
+          class_code_id: claim.class_code_id,
+          class_code: code,
+          class_label: code,
+          grade: claim.grade
+        };
+        showLoggedInUI();
+        showToast('🐾 입장했어요!');
+      }
+      return;
+    }
 
-    // UI 갱신
-    loadClassCodeBadge(data.id);
-    document.getElementById('class-input').style.display = 'none';
-    document.getElementById('btn-enter').style.display = 'none';
-
+    if(status === 'taken'){
+      showError(claim.message || '이미 다른 기기에서 사용 중인 닉네임이에요. 다른 닉네임을 선택하거나 담임 선생님께 문의하세요.');
+    } else if(status === 'inactive'){
+      showError(claim.message || '처리정지된 학생이에요. 담임 선생님께 문의하세요.');
+    } else if(status === 'no_session'){
+      showError('인증 세션이 없어요. 페이지를 새로고침해 주세요.');
+    } else {
+      // 'not_found' 또는 기타
+      showError(claim && claim.message ? claim.message : '학급코드 또는 닉네임이 일치하지 않아요. 담임 선생님께 다시 확인해 주세요.');
+    }
   } catch(e){
-    showToast('네트워크 오류가 발생했습니다.');
+    showError('네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
   }
 
-  btn.disabled=false; btn.textContent='입장';
+  btn.disabled = false; btn.textContent = '🐾 학습 시작하기';
 }
 
 // =============================================
