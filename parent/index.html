@@ -349,6 +349,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
     </div>
     <div class="modal-row-actions">
       <button class="modal-btn ghost" onclick="closeDataModal()">닫기</button>
+      <button class="modal-btn purple" onclick="openReportFromModal()">📄 PDF 저장</button>
     </div>
   </div>
 </div>
@@ -451,6 +452,7 @@ function renderChildCard(c){
       </div>
       <div class="child-actions">
         <button class="child-action-btn data" ${disabled} onclick="openDataModal('${c.student_id}', ${escapeJsString(c.nickname)})">📊 학습 보기</button>
+        <button class="child-action-btn data" ${disabled} onclick="openReport('${c.student_id}')">📄 리포트</button>
         <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'view')">📋 열람</button>
         <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'correct')">✏️ 정정</button>
         <button class="child-action-btn warn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'stop')">⏸️ 처리정지</button>
@@ -693,6 +695,24 @@ function closeDataModal(){
   _dataCtx = null;
 }
 
+// =============================================
+// 학년 종합 리포트 새 탭 (사이클 ㊼ — 처리방침 v2.1 제4조 PDF 다운로드)
+// 자녀 카드 [📄 리포트] 또는 학습 보기 모달 푸터 [📄 PDF 저장]에서 호출.
+// 별도 페이지 parent/report.html 새 탭 진입 — window.print() 인쇄 다이얼로그로 PDF 저장.
+// =============================================
+function openReport(studentId){
+  if(!studentId) return;
+  window.open('report.html?student_id=' + encodeURIComponent(studentId), '_blank');
+}
+
+function openReportFromModal(){
+  if(!_dataCtx || !_dataCtx.student_id){
+    showToast('자녀 정보를 확인할 수 없습니다.');
+    return;
+  }
+  openReport(_dataCtx.student_id);
+}
+
 async function loadChildData(studentId){
   // (1) student_data_summary — 학부모 RLS(sp_parent_read + scores_parent_read 등) 통과
   // (2) student_lesson_progress — scores 테이블 RLS(scores_parent_read) 통과
@@ -872,15 +892,15 @@ function renderWipeCountdown(){
     banner.classList.add('info');
   }
 
-  // 메시지 — 학부모 시점(자녀 학습 데이터 보존 안내)
+  // 메시지 — 학부모 시점(자녀 학습 데이터 보존 안내, 사이클 ㊼ — [📄 리포트] 버튼 가리킴)
   if(diffDays === 0){
     text.innerHTML = `<b>오늘 자정 학년 와이프 — ${kstLabel}</b><br>` +
       `처리방침 제4조에 따라 자녀의 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
-      `자녀 카드의 [📊 학습 보기]에서 진척도·약점 차시·학습 시간을 확인하시고, 필요하면 화면을 저장해 두세요.`;
+      `자녀 카드의 <b>[📄 리포트]</b> 버튼으로 학년 종합 리포트를 지금 즉시 PDF로 저장하세요.`;
   } else {
     text.innerHTML = `<b>학년 와이프 D-${diffDays} — ${kstLabel}</b><br>` +
       `처리방침 제4조에 따라 자녀의 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
-      `자녀 카드의 [📊 학습 보기]에서 한 학년 학습 결과를 미리 확인하시고, 필요하면 화면을 저장해 두세요.`;
+      `자녀 카드의 <b>[📄 리포트]</b> 버튼으로 학년 종합 리포트를 PDF로 저장해 보존해 두세요.`;
   }
 
   banner.hidden = false;
