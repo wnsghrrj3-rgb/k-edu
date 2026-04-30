@@ -88,9 +88,14 @@ CREATE TABLE IF NOT EXISTS page_visits (
 
 ALTER TABLE page_visits ENABLE ROW LEVEL SECURITY;
 
--- 누구나 방문 기록 삽입 가능 (anon)
-CREATE POLICY "anyone_insert_visits" ON page_visits
-  FOR INSERT WITH CHECK (true);
+-- 인증된 사용자만 방문 기록 삽입 가능 (적합성 — 무로그인 INSERT 차단)
+-- 처리방침 v2.1 제3조 4) 무로그인 체험 모드 + 부록 2 제9조 정합
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='page_visits' AND policyname='auth_insert_visits') THEN
+    CREATE POLICY "auth_insert_visits" ON page_visits
+      FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+  END IF;
+END $$;
 
 -- 어드민만 방문 기록 조회
 CREATE POLICY "admins_read_visits" ON page_visits
