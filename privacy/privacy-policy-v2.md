@@ -304,18 +304,19 @@
 |---|---|---|
 | v1.0 | 2026-04-27 | 최초 작성 (학교 단위 도입 트랙 A 단독 운영 기준) |
 | v2.0 | 2026-04-28 | ① 학생 실명 미수집(익명 닉네임) 원칙 명문화 ② 「학습 진단 데이터 처리」 조항(제3조) 신설 ③ 학년 와이프 시점 변경(3/1 → 2/28 자정) + 1주일 전 PDF 알림 절차 신설 ④ 4단 RLS 권한(학생/학부모/교사/운영자) 명문화 ⑤ 학부모 회원·`parent_student_links` 매핑 절차 신설 ⑥ 숙제·오답노트·진단 결과 처리 절차 신설 ⑦ 무로그인 INSERT 차단(`auth_insert_visits`) 명시 ⑧ 자존감 보호 조치(학생 화면 정량 비공개, 오답노트 본문 비공개) 명시 |
-| v2.1 | 2026-04-29 | 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 추가 반영 (정보주체 잊혀질 권리 강화). + 부록 2 검증표: 사이클 ㊳ 학년 와이프 자동화(`wipe_student_data_yearly()` + pg_cron `kedu-yearly-wipe-kst` 등록 완료) 반영 — 본문 변경 없음, 표기 정합 갱신. |
+| v2.1 | 2026-04-29 | 제8조 1)에 삭제 요구 두 가지 모드 명시 + 본 조 5항 신설(기본 익명화 / 완전 삭제). 코드 측 `delete_student_data()` 함수에 `p_full_delete bool DEFAULT false` 파라미터 추가 반영 (정보주체 잊혀질 권리 강화). + 부록 2 검증표: 사이클 ㊳ 학년 와이프 자동화(`wipe_student_data_yearly()` + pg_cron `kedu-yearly-wipe-kst` 등록 완료) 반영 — 본문 변경 없음, 표기 정합 갱신. + 부록 2 검증표: 사이클 ㊵ 학부모 대시보드 + 사이클 ㊶ 학생 진입 흐름 재구축 + 사이클 ㊷ 교사 측 학부모 매핑 검증 UI 반영 — 본문 변경 없음, 표기 정합 갱신. |
 
 ---
 
 ## [부록 2] 본 처리방침과 코드의 일치 검증
 
-본 처리방침 v2.1은 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 + 사이클 ㉝ 권리 행사 채널 BE + 사이클 ㉞ 삭제 모드 분기 + 사이클 ㊳ 학년 와이프 자동화):
+본 처리방침 v2.1은 다음 코드 산출물과 일치합니다 (사이클 ㉙ 인프라 1차 + 사이클 ㉝ 권리 행사 채널 BE + 사이클 ㉞ 삭제 모드 분기 + 사이클 ㊳ 학년 와이프 자동화 + 사이클 ㊵ 학부모 대시보드 + 사이클 ㊶ 학생 진입 흐름 재구축 + 사이클 ㊷ 교사 측 학부모 매핑 검증 UI):
 
 | 처리방침 조항 | 대응 코드 |
 |---|---|
-| 제2조 3) 익명 닉네임 | `student_seats` 테이블 (claim_code 기반) |
-| 제2조 2) 학부모 자녀 매핑 | `parent_student_links` 테이블 |
+| 제2조 3) 익명 닉네임 (교사 일괄 부여) | `student_seats` 테이블 (claim_code 기반) + `bulk_create_seats()` SECURITY DEFINER RPC (교사 일괄 등록, `consent_confirmed=true` 강제 + 50명 제한 + 닉네임 가드) + `claim_seat()` SECURITY DEFINER RPC (학생 익명 인증 후 슬롯 점유 → `student_profiles` row 생성) + `my_seat_class()` SECURITY DEFINER RPC. 학생 진입은 Supabase 익명 인증(`signInAnonymously`) 사용 (별도 회원가입 없음, 처리방침 line 56 "교사 일괄 부여 방식" 정합). 학생 셀프 회원가입은 `auth/index.html`에서 차단 (`setup_student_entry.sql`) |
+| 제2조 2) 학부모 자녀 매핑 (BE) | `parent_student_links` 테이블 + RLS 6정책(`psl_admin_all`/`psl_parent_insert`/`psl_parent_read`/`psl_teacher_read`/`psl_teacher_verify`/`psl_teacher_delete`) + `request_parent_link()` SECURITY DEFINER RPC (학부모 매핑 신청, 학급코드+닉네임 검증) + `my_parent_links()` SECURITY DEFINER RPC (학부모 본인 자녀 목록) + `pending_parent_links_for_teacher()` SECURITY DEFINER RPC (교사 검증 대기 목록, 학부모 이메일 마스킹 `j***@gmail.com` 형식). 승인 = `verified_at`/`verified_by` UPDATE (psl_teacher_verify), 거부 = row DELETE (psl_teacher_delete). `setup_parent_dashboard.sql` + `setup_parent_link_actions.sql` |
+| 제8조 학부모 채널 (FE) | `parent/index.html` (학부모 대시보드 — 자녀 매핑 신청 + 권리 행사 신청 폼[열람·정정·삭제·처리정지] + 권리 행사 이력 + 검증 대기 자녀 권리 행사 비활성 + 보호책임자 안내). `teacher/index.html` [👨‍👧 학부모 매핑 검증 대기] 섹션 (승인/거부 모달 + 카운트 배지) |
 | 제3조 학습 진단 데이터 | `scores` 테이블(question_id, concept_id, time_spent_sec 컬럼), `wrong_answers`, `student_lesson_progress` 뷰 |
 | 제3조 숙제 시스템 | `homework_assignments`, `homework_completions` 테이블 |
 | 제4조 학년 와이프 | `wipe_student_data_yearly()` 함수 + `pg_cron` 등록 완료(`kedu-yearly-wipe-kst`, 매년 2/28 15:00 UTC = KST 평년 3/1 00:00 / 윤년 2/29 00:00). 부분 와이프 admin 도구 `wipe_student_data()` 함수 공존(`setup_yearly_wipe.sql` + `setup_diagnosis_v2.sql`) |
