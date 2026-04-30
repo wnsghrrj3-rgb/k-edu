@@ -451,6 +451,7 @@ tr:hover td{background:#FAFBFC}
       <div class="rights-actions">
         <span id="rights-overdue-summary"></span>
         <button class="rights-export-btn" id="btn-export-class" onclick="exportClassCSV()" disabled>📥 학급 전체 CSV</button>
+        <button class="rights-export-btn" id="btn-report-class" onclick="openClassReport()" disabled>📄 학급 전체 PDF</button>
       </div>
     </div>
     <div class="rights-info">
@@ -818,11 +819,11 @@ function renderWipeCountdown(){
   if(diffDays === 0){
     text.innerHTML = `<b>오늘 자정 학년 와이프 — ${kstLabel}</b><br>` +
       `처리방침 v2.1 제4조에 따라 학생 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
-      `미보존 자료는 권리 행사 채널의 [학급 전체 CSV] 또는 학생별 [CSV] 버튼으로 지금 즉시 내려받아 보존하세요.`;
+      `미보존 자료는 권리 행사 채널의 <b>[📄 학급 전체 PDF]</b>(인쇄·공유) 또는 <b>[📥 학급 전체 CSV]</b>(엑셀 분석), 학생별 <b>[📄 PDF]</b>·<b>[CSV]</b> 버튼으로 지금 즉시 내려받아 보존하세요.`;
   } else {
     text.innerHTML = `<b>학년 와이프 D-${diffDays} — ${kstLabel}</b><br>` +
       `처리방침 v2.1 제4조에 따라 학생 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
-      `새 학년 시작 전, 권리 행사 채널의 [학급 전체 CSV] 또는 학생별 [CSV]로 자료를 내려받아 보존해 두세요.`;
+      `새 학년 시작 전, 권리 행사 채널의 <b>[📄 학급 전체 PDF]</b>(인쇄·공유) 또는 <b>[📥 학급 전체 CSV]</b>(엑셀 분석), 학생별 <b>[📄 PDF]</b>·<b>[CSV]</b>로 자료를 내려받아 보존해 두세요.`;
   }
 
   banner.hidden = false;
@@ -1082,11 +1083,13 @@ function fmtDate(iso){
 async function loadRightsChannel(){
   const listWrap = document.getElementById('rights-list');
   const exportBtn = document.getElementById('btn-export-class');
+  const reportBtn = document.getElementById('btn-report-class');
   const overdueSummary = document.getElementById('rights-overdue-summary');
 
   if(!currentClassCode){
     listWrap.innerHTML = '<div class="rights-empty"><div class="empty-icon">🔒</div><p>학급코드를 먼저 생성해 주세요.</p></div>';
     exportBtn.disabled = true;
+    if(reportBtn) reportBtn.disabled = true;
     overdueSummary.innerHTML = '';
     rightsCache = [];
     return;
@@ -1102,6 +1105,7 @@ async function loadRightsChannel(){
   if(sumErr){
     listWrap.innerHTML = `<div class="rights-empty"><div class="empty-icon">⚠️</div><p>데이터 조회 중 오류가 발생했어요.<br><span style="font-size:12px;color:var(--sub)">${escapeHtml(sumErr.message || '')}</span></p></div>`;
     exportBtn.disabled = true;
+    if(reportBtn) reportBtn.disabled = true;
     overdueSummary.innerHTML = '';
     rightsCache = [];
     return;
@@ -1139,10 +1143,12 @@ async function loadRightsChannel(){
   if(rightsCache.length === 0){
     listWrap.innerHTML = '<div class="rights-empty"><div class="empty-icon">🔒</div><p>아직 회원가입한 학생이 없어요.<br>가정통신문 동의 후 학생이 회원가입하면 이곳에서 관리할 수 있어요.</p></div>';
     exportBtn.disabled = true;
+    if(reportBtn) reportBtn.disabled = true;
     return;
   }
 
   exportBtn.disabled = false;
+  if(reportBtn) reportBtn.disabled = false;
 
   let html = '<div class="rights-table-wrap"><table><thead><tr>';
   html += '<th>닉네임</th><th>풀이</th><th>정답률</th><th>시간</th><th>오답</th><th>숙제</th><th>상태</th><th>마지막 접속</th><th style="text-align:right">관리</th>';
@@ -1168,6 +1174,7 @@ async function loadRightsChannel(){
         <div class="rights-row-actions" style="justify-content:flex-end">
           <button class="rights-action-btn primary" onclick="openStudentDetail('${r.student_id}')">열람</button>
           <button class="rights-action-btn" onclick="exportStudentCSV('${r.student_id}')">CSV</button>
+          <button class="rights-action-btn" onclick="openStudentReport('${r.student_id}')">📄 PDF</button>
           <button class="rights-action-btn ${stopClass}" onclick="openStopModal('${r.student_id}')">${stopLabel}</button>
           <button class="rights-action-btn danger" onclick="openDeleteModal('${r.student_id}')">삭제</button>
         </div>
@@ -1182,9 +1189,13 @@ async function loadRightsChannel(){
 // =============================================
 // 학생 상세 열람 모달 (T08b)
 // =============================================
+let _currentDetailStudentId = null;
+
 function openStudentDetail(studentId){
   const r = rightsCache.find(x => x.student_id === studentId);
   if(!r){ showToast('학생 데이터를 찾지 못했어요.'); return; }
+
+  _currentDetailStudentId = studentId;
 
   const acc = fmtAccuracy(r.correct_questions, r.total_questions);
   const isActive = r.is_active !== false;
@@ -1254,6 +1265,7 @@ function openStudentDetail(studentId){
 
     <div class="modal-actions">
       <button class="rights-export-btn" onclick="exportStudentCSV('${r.student_id}')">📥 이 학생 CSV 내보내기</button>
+      <button class="rights-export-btn" onclick="openStudentReportFromModal()">📄 PDF 저장</button>
     </div>
 
     <div class="modal-note">
@@ -1270,6 +1282,7 @@ function openStudentDetail(studentId){
 function closeStudentDetail(){
   document.getElementById('student-detail-modal').classList.remove('show');
   document.body.style.overflow = '';
+  _currentDetailStudentId = null;
 }
 
 // =============================================
@@ -1719,6 +1732,37 @@ function exportStudentCSV(studentId){
   const safeName = (r.nickname || 'student').replace(/[\\/:*?"<>|]/g, '_');
   downloadCsv(csv, `kedu_${safeName}_${todayStamp()}.csv`);
   showToast(`${r.nickname} CSV 다운로드 완료`);
+}
+
+// =============================================
+// 학년 마감 PDF 진입 (사이클 ㊽ — 처리방침 v2.1 제4조 PDF 다운로드)
+// 권리 행사 헤더 [📄 학급 전체 PDF], 학생 row [📄 PDF], 학생 상세 모달 푸터 [📄 PDF 저장]에서 호출.
+// 별도 페이지 teacher/report.html 새 탭 진입 — window.print() 인쇄 다이얼로그로 PDF 저장.
+// 학생별: ?student_id=...   학급 전체: ?class_code_id=...
+// =============================================
+function openClassReport(){
+  if(!currentClassCode || !currentClassCode.id){
+    showToast('학급코드를 먼저 생성해 주세요.');
+    return;
+  }
+  if(!rightsCache.length){
+    showToast('내보낼 학생이 없어요.');
+    return;
+  }
+  window.open('report.html?class_code_id=' + encodeURIComponent(currentClassCode.id), '_blank');
+}
+
+function openStudentReport(studentId){
+  if(!studentId) return;
+  window.open('report.html?student_id=' + encodeURIComponent(studentId), '_blank');
+}
+
+function openStudentReportFromModal(){
+  if(!_currentDetailStudentId){
+    showToast('학생 정보를 확인할 수 없습니다.');
+    return;
+  }
+  openStudentReport(_currentDetailStudentId);
 }
 
 // =============================================

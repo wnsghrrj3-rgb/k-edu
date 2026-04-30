@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학습 리포트 | K-edu 교사</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--primary-dark:#3B6FD8;
+  --pink:#FF85A1;--green:#38A169;--orange:#FFB347;--red:#E53E3E;--purple:#9F7AEA;
+  --bg:#F5F7FA;--card:#fff;--text:#1A202C;--sub:#718096;--border:#E2E8F0;
+  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,.06);
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);-webkit-tap-highlight-color:transparent}
+
+/* TOPBAR (인쇄 시 숨김) */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-back{font-size:13px;color:var(--sub);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:8px;transition:all .15s}
+.topbar-back:hover{background:var(--primary-light);color:var(--primary)}
+.topbar-title{font-family:'Jua',sans-serif;font-size:16px}
+.topbar-right{display:flex;gap:8px}
+.topbar-btn{padding:8px 16px;border-radius:10px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--sub);transition:all .15s}
+.topbar-btn:hover{border-color:var(--primary);color:var(--primary)}
+.topbar-btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.topbar-btn.primary:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}
+
+/* HINT (인쇄 시 숨김) */
+.print-hint{max-width:880px;margin:18px auto 0;padding:14px 20px;background:#FFFBEA;border:1px solid #F6E05E;border-radius:12px;font-size:13px;line-height:1.6;color:#7A5A1A;display:flex;align-items:flex-start;gap:10px}
+.print-hint .hint-icon{font-size:20px;flex-shrink:0;margin-top:1px}
+.print-hint b{color:#5C4308}
+.print-hint .hint-key{display:inline-block;background:#fff;border:1px solid #E0C97D;border-radius:6px;padding:1px 6px;font-family:monospace;font-size:12px;margin:0 2px}
+
+/* PAPER (인쇄 시 페이지 형태) */
+.paper{max-width:880px;margin:18px auto 60px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:42px 48px}
+
+/* HEADER */
+.report-header{border-bottom:3px double var(--primary);padding-bottom:18px;margin-bottom:24px}
+.report-brand{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.report-logo{font-family:'Jua',sans-serif;font-size:32px;letter-spacing:-1px;background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.report-issued{font-size:12px;color:var(--sub);font-weight:500}
+.report-issued b{color:var(--text)}
+.report-title{font-family:'Jua',sans-serif;font-size:24px;color:var(--text)}
+.report-subtitle{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.5}
+
+/* META GRID — 학생별 / 학급 양쪽 공통 */
+.meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px}
+.meta-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.meta-cell{background:var(--bg);border-radius:10px;padding:12px 14px}
+.meta-label{font-size:11px;color:var(--sub);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px}
+.meta-value{font-size:15px;font-weight:600;color:var(--text)}
+.meta-value .accent{color:var(--primary)}
+.meta-value .pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:50px}
+.meta-value .pill.active{background:#F0FFF4;color:#22543D}
+.meta-value .pill.inactive{background:#FED7D7;color:#9B2C2C}
+
+/* SECTION */
+.section{margin-bottom:28px}
+.section-title{font-family:'Jua',sans-serif;font-size:18px;display:flex;align-items:center;gap:8px;margin-bottom:12px;color:var(--text);padding-bottom:6px;border-bottom:1.5px solid var(--border)}
+.section-title .badge{font-size:13px;color:var(--sub);font-weight:400}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:10px;padding:12px 14px}
+.stat-row .label{font-size:13px;color:var(--sub);font-weight:500}
+.stat-row .value{font-size:14px;font-weight:600;color:var(--text)}
+.stat-row .value .acc-good{color:var(--green)}
+.stat-row .value .acc-mid{color:#B7791F}
+.stat-row .value .acc-low{color:var(--red)}
+
+/* WEAK LIST */
+.weak-list{display:grid;gap:8px}
+.weak-row{background:#FFFBEA;border:1px solid #F6E05E;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.weak-row.supplement{background:#FFF5F5;border-color:#FBB}
+.weak-lesson{font-size:13px;font-weight:600;color:var(--text)}
+.weak-lesson .meta{font-size:11px;color:var(--sub);font-weight:500;margin-top:2px}
+.weak-acc{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.weak-acc .pct{font-size:14px;font-weight:700}
+.weak-acc .pct.acc-low{color:var(--red)}
+.weak-acc .pct.acc-mid{color:#B7791F}
+.weak-acc .pill{font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;letter-spacing:.3px}
+.weak-acc .pill.supplement{background:#FFF5F5;color:#9B2C2C;border:1px solid #FBB}
+.weak-acc .pill.try_again{background:#FFFBEA;color:#7A5A1A;border:1px solid #F6E05E}
+.weak-empty{background:#F0FFF4;border:1px solid #C6F6D5;border-radius:10px;padding:14px 16px;font-size:13px;color:#22543D;line-height:1.55;text-align:center}
+
+/* TABLES (학생/차시 공통) */
+.r-table{width:100%;border-collapse:collapse;font-size:12px}
+.r-table th{background:var(--bg);padding:10px 12px;text-align:left;font-weight:700;color:var(--sub);border-bottom:1.5px solid var(--border);font-size:11px;letter-spacing:.3px;text-transform:uppercase}
+.r-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+.r-table .l-id{font-weight:600;font-family:monospace;font-size:11px}
+.r-table .nick{font-weight:700}
+.r-table .num{font-variant-numeric:tabular-nums}
+.r-table .l-acc{font-weight:600}
+.r-table .l-acc.acc-good{color:var(--green)}
+.r-table .l-acc.acc-mid{color:#B7791F}
+.r-table .l-acc.acc-low{color:var(--red)}
+.r-table .l-status,.r-table .s-status{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.3px}
+.r-table .l-status.perfect,.r-table .l-status.excellent{background:#F0FFF4;color:#22543D}
+.r-table .l-status.good{background:#EBF4FF;color:#2C5282}
+.r-table .l-status.try_again{background:#FFFBEA;color:#7A5A1A}
+.r-table .l-status.supplement{background:#FFF5F5;color:#9B2C2C}
+.r-table .l-status.no_data{background:#F5F7FA;color:#718096}
+.r-table .s-status.active{background:#F0FFF4;color:#22543D}
+.r-table .s-status.inactive{background:#FED7D7;color:#9B2C2C}
+.r-table tr:last-child td{border-bottom:none}
+.r-table-empty{text-align:center;padding:24px 16px;background:var(--bg);border-radius:10px;font-size:13px;color:var(--sub);line-height:1.55}
+
+/* NOTES (자존감 보호 + 와이프 안내 + 권리 행사) */
+.notes{margin-top:30px;padding-top:18px;border-top:1.5px dashed var(--border)}
+.note-block{background:var(--primary-light);border:1px solid #C7DCFA;border-radius:10px;padding:11px 14px;font-size:11px;line-height:1.6;color:#1E3A8A;margin-bottom:8px}
+.note-block.warn{background:#FFFBEA;border-color:#F6E05E;color:#7A5A1A}
+.note-block b{color:#1A365D;font-weight:700}
+.note-block.warn b{color:#5C4308}
+
+/* FOOTER */
+.report-footer{margin-top:24px;padding-top:14px;border-top:1.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub);flex-wrap:wrap;gap:6px}
+.report-footer .brand{font-family:'Jua',sans-serif;color:var(--primary);font-size:13px}
+
+/* LOADING / ERROR */
+.center-state{max-width:500px;margin:80px auto;background:#fff;border-radius:18px;box-shadow:var(--shadow);padding:40px 30px;text-align:center}
+.center-state .icon{font-size:48px;margin-bottom:14px}
+.center-state .ttl{font-family:'Jua',sans-serif;font-size:22px;margin-bottom:8px}
+.center-state .desc{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:18px}
+.center-state .desc b{color:var(--text)}
+.center-state .cta{display:inline-block;padding:11px 24px;background:var(--primary);color:#fff;border-radius:12px;text-decoration:none;font-family:'Jua',sans-serif;font-size:15px}
+.center-state .cta:hover{background:var(--primary-dark)}
+.center-state .cta.ghost{background:#fff;color:var(--sub);border:1px solid var(--border);margin-left:8px}
+.center-state .cta.ghost:hover{border-color:var(--primary);color:var(--primary)}
+
+/* SPINNER */
+.spin{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===========================
+   PRINT (PDF 저장 시) 스타일
+   =========================== */
+@media print {
+  @page{size:A4;margin:14mm}
+  html,body{background:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .topbar,.print-hint{display:none !important}
+  .paper{max-width:100%;margin:0;padding:0;border-radius:0;box-shadow:none}
+  .center-state{display:none !important}
+  /* 페이지 break */
+  .section{page-break-inside:auto}
+  .r-table{page-break-inside:auto}
+  .r-table tr{page-break-inside:avoid;page-break-after:auto}
+  .r-table thead{display:table-header-group}
+  .notes{page-break-inside:avoid}
+  /* 학급 전체에서 통계·약점 그리드는 가능한 한 함께 */
+  .stat-grid,.weak-list,.weak-empty{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR (화면 전용) -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/teacher/" class="topbar-back">← 교사 대시보드로</a>
+    <span class="topbar-title" id="topbar-title">📄 학습 리포트</span>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-btn primary" onclick="doPrint()">🖨️ PDF 저장 / 인쇄</button>
+  </div>
+</div>
+
+<!-- 안내 (화면 전용) -->
+<div class="print-hint" id="print-hint" style="display:none">
+  <span class="hint-icon">💡</span>
+  <div>
+    <b>PDF로 저장하려면</b> [🖨️ PDF 저장 / 인쇄] 버튼을 누르거나 키보드 <span class="hint-key">Ctrl</span>+<span class="hint-key">P</span> (Mac은 <span class="hint-key">⌘</span>+<span class="hint-key">P</span>)을 누르세요.
+    인쇄 다이얼로그에서 <b>대상 = "PDF로 저장"</b>을 선택하면 컴퓨터에 PDF 파일로 저장됩니다.
+  </div>
+</div>
+
+<!-- 본문 — 로딩/에러/리포트 중 하나 표시 -->
+<div id="root">
+  <div class="center-state">
+    <div class="icon"><span class="spin"></span></div>
+    <div class="ttl">학습 데이터를 불러오는 중…</div>
+    <div class="desc">잠시만 기다려 주세요.</div>
+  </div>
+</div>
+
+<script>
+const db = getKeduDb();
+
+function getQueryParam(name){
+  const url = new URL(location.href);
+  return url.searchParams.get(name);
+}
+
+function escapeHtml(s){
+  if(s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function fmtDate(s){
+  if(!s) return '—';
+  const d = new Date(s);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fmtDuration(sec){
+  const n = Number(sec || 0);
+  if(n <= 0) return '—';
+  if(n < 60) return `${n}초`;
+  const m = Math.floor(n / 60);
+  const h = Math.floor(m / 60);
+  if(h > 0) return `${h}시간 ${m % 60}분`;
+  return `${m}분`;
+}
+
+function fmtAccuracy(correct, total){
+  const c = Number(correct || 0), t = Number(total || 0);
+  if(t === 0) return { text: '—', cls: '' };
+  const pct = Math.round(100 * c / t);
+  return { text: `${pct}%`, cls: accClass(pct) };
+}
+
+function accClass(pct){
+  if(pct >= 80) return 'acc-good';
+  if(pct >= 60) return 'acc-mid';
+  return 'acc-low';
+}
+
+function statusLabel(status){
+  switch(status){
+    case 'perfect':    return '완벽';
+    case 'excellent':  return '완벽';
+    case 'good':       return '양호';
+    case 'try_again':  return '재도전';
+    case 'supplement': return '보충 필요';
+    case 'no_data':    return '데이터 없음';
+    default:           return status || '—';
+  }
+}
+
+function doPrint(){
+  window.print();
+}
+
+function showError(icon, ttl, desc, ctaText, ctaHref){
+  document.getElementById('root').innerHTML = `
+    <div class="center-state">
+      <div class="icon">${icon}</div>
+      <div class="ttl">${escapeHtml(ttl)}</div>
+      <div class="desc">${desc}</div>
+      <a href="${escapeHtml(ctaHref || '/teacher/')}" class="cta">${escapeHtml(ctaText || '교사 대시보드로')}</a>
+    </div>
+  `;
+}
+
+function todayStr(){
+  const today = new Date();
+  return `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+}
+
+// =============================================
+// 진입 — 인증 + 모드 분기 + 데이터 로드
+// student_id 있으면 학생별, class_code_id 있으면 학급 전체
+// =============================================
+async function init(){
+  const studentId   = getQueryParam('student_id');
+  const classCodeId = getQueryParam('class_code_id');
+
+  if(!studentId && !classCodeId){
+    showError('⚠️', '리포트 대상이 누락되었습니다',
+      '학생별 리포트는 권리 행사 채널의 [📄 PDF] 버튼,<br>학급 전체 리포트는 [📄 학급 전체 PDF] 버튼으로 진입해 주세요.',
+      '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  // 세션 확인
+  const { data: { session } } = await db.auth.getSession();
+  if(!session){
+    const back = studentId
+      ? '/teacher/report.html?student_id=' + studentId
+      : '/teacher/report.html?class_code_id=' + classCodeId;
+    location.href = `/auth/?redirect=${encodeURIComponent(back)}`;
+    return;
+  }
+  const _user = session.user;
+
+  // 교사 검증 — 학부모·학생 차단
+  const { data: t } = await db.from('teachers').select('id, name').eq('user_id', _user.id).maybeSingle();
+  if(!t){
+    showError('🔒', '교사 권한이 없습니다',
+      '본 리포트는 교사·운영자만 조회할 수 있습니다.<br>학부모는 학부모 화면에서, 학생은 메인으로 이동해 주세요.',
+      '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  if(studentId){
+    await loadStudentReport(studentId, t);
+  } else {
+    await loadClassReport(classCodeId, t);
+  }
+}
+
+// =============================================
+// 학생별 모드
+// =============================================
+async function loadStudentReport(studentId, teacher){
+  document.getElementById('topbar-title').textContent = '📄 학생 학습 리포트';
+
+  // RLS: student_data_summary는 student_profiles RLS를 따름 — 교사는 본인 학급만 조회
+  // student_lesson_progress는 scores RLS를 따름 — 동일 정합
+  const [{ data: summaryRows, error: e1 }, { data: lessons, error: e2 }] = await Promise.all([
+    db.from('student_data_summary').select('*').eq('student_id', studentId).limit(1),
+    db.from('student_lesson_progress').select('*').eq('student_id', studentId).order('lesson_id', { ascending: true })
+  ]);
+
+  if(e1 || e2){
+    const msg = (e1 && e1.message) || (e2 && e2.message) || '알 수 없는 오류';
+    showError('⚠️', '학습 데이터를 불러올 수 없습니다', escapeHtml(msg), '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  const summary = (summaryRows && summaryRows[0]) || null;
+  if(!summary){
+    showError('🔒',
+      '조회 권한이 없거나 데이터가 없습니다',
+      '본 학생이 본인 학급에 속해 있고 가입(Auth 연동)된 경우에만 학생 학습 리포트를 조회할 수 있습니다.',
+      '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  renderStudentReport(summary, lessons || [], teacher);
+}
+
+function renderStudentReport(s, lessons, teacher){
+  const acc = fmtAccuracy(s.correct_questions, s.total_questions);
+  const isActive = s.is_active !== false;
+
+  // 약점 차시 = supplement(60% 미만) + try_again(60~79%) — accuracy 오름차순 상위 10
+  const weakLessons = (lessons || [])
+    .filter(l => l.status === 'supplement' || l.status === 'try_again')
+    .slice()
+    .sort((a, b) => Number(a.accuracy || 0) - Number(b.accuracy || 0))
+    .slice(0, 10);
+
+  const issued = todayStr();
+
+  // 약점 차시 HTML
+  let weakHtml;
+  if(weakLessons.length === 0){
+    weakHtml = `<div class="weak-empty">✨ 약점 차시가 없습니다. 학생이 잘 따라오고 있습니다.</div>`;
+  } else {
+    weakHtml = `<div class="weak-list">${weakLessons.map(l => {
+      const cls = l.status === 'supplement' ? 'supplement' : 'try_again';
+      const accCls = accClass(Number(l.accuracy || 0));
+      return `
+        <div class="weak-row ${cls}">
+          <div>
+            <div class="weak-lesson">${escapeHtml(l.lesson_id || '-')}</div>
+            <div class="meta">${l.attempts || 0}회 시도 · ${fmtDuration(l.total_time_sec)}</div>
+          </div>
+          <div class="weak-acc">
+            <span class="pct ${accCls}">${l.accuracy || 0}%</span>
+            <span class="pill ${cls}">${statusLabel(l.status)}</span>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  // 차시 표
+  let lessonHtml;
+  if(!lessons || !lessons.length){
+    lessonHtml = `<div class="r-table-empty">아직 학습한 차시가 없습니다.</div>`;
+  } else {
+    lessonHtml = `
+      <table class="r-table">
+        <thead>
+          <tr>
+            <th style="width:32%">차시</th>
+            <th style="width:14%;text-align:center">시도</th>
+            <th style="width:18%;text-align:right">정답률</th>
+            <th style="width:18%;text-align:right">학습 시간</th>
+            <th style="width:18%;text-align:center">상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lessons.map(l => {
+            const accCls = accClass(Number(l.accuracy || 0));
+            return `
+              <tr>
+                <td class="l-id">${escapeHtml(l.lesson_id || '-')}</td>
+                <td style="text-align:center" class="num">${l.attempts || 0}회</td>
+                <td style="text-align:right" class="l-acc ${accCls}">${l.accuracy || 0}%</td>
+                <td style="text-align:right" class="num">${fmtDuration(l.total_time_sec)}</td>
+                <td style="text-align:center"><span class="l-status ${l.status || ''}">${statusLabel(l.status)}</span></td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  document.getElementById('root').innerHTML = `
+    <div class="paper">
+      <!-- HEADER -->
+      <div class="report-header">
+        <div class="report-brand">
+          <div class="report-logo">K-edu</div>
+          <div class="report-issued">출력일 <b>${issued}</b> · 담임 <b>${escapeHtml(teacher.name || '—')}</b></div>
+        </div>
+        <div class="report-title">📄 학생 학습 리포트</div>
+        <div class="report-subtitle">교사·운영자가 학급 운영을 위해 조회하는 학생 1명의 한 학년 학습 결과 요약입니다.</div>
+      </div>
+
+      <!-- STUDENT META -->
+      <div class="meta-grid cols-3">
+        <div class="meta-cell">
+          <div class="meta-label">학생 닉네임</div>
+          <div class="meta-value"><span class="accent">🎒 ${escapeHtml(s.nickname || '—')}</span></div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">학급코드</div>
+          <div class="meta-value">${escapeHtml(s.class_code || '—')}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">학년</div>
+          <div class="meta-value">${s.grade ? s.grade + '학년' : '—'}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">상태</div>
+          <div class="meta-value"><span class="pill ${isActive ? 'active' : 'inactive'}">${isActive ? '활성' : '처리정지'}</span></div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">가입일</div>
+          <div class="meta-value">${fmtDate(s.student_created_at)}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">마지막 접속</div>
+          <div class="meta-value">${fmtDate(s.last_seen_at)}</div>
+        </div>
+      </div>
+
+      <!-- SECTION 1: 학습 진척도 -->
+      <div class="section">
+        <div class="section-title">📈 학습 진척도</div>
+        <div class="stat-grid">
+          <div class="stat-row">
+            <span class="label">📚 풀이한 문제</span>
+            <span class="value">${s.total_questions || 0}문제</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">🎯 정답률</span>
+            <span class="value">${s.correct_questions || 0} / ${s.total_questions || 0} <span class="${acc.cls}">(${acc.text})</span></span>
+          </div>
+          <div class="stat-row">
+            <span class="label">📖 학습한 차시</span>
+            <span class="value">${s.lessons_attempted || 0}차시</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">⏱️ 누적 학습 시간</span>
+            <span class="value">${fmtDuration(s.total_time_sec)}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">📝 미해결 오답</span>
+            <span class="value">${s.unresolved_wrong_count || 0}문제</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">✅ 완료한 숙제</span>
+            <span class="value">${s.homework_completed_count || 0}건</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: 약점 차시 -->
+      <div class="section">
+        <div class="section-title">🎯 약점 차시 <span class="badge">${weakLessons.length ? `상위 ${weakLessons.length}개` : '없음'}</span></div>
+        ${weakHtml}
+      </div>
+
+      <!-- SECTION 3: 차시별 진척도 -->
+      <div class="section">
+        <div class="section-title">📋 차시별 진척도 <span class="badge">${(lessons && lessons.length) || 0}차시</span></div>
+        ${lessonHtml}
+      </div>
+
+      <!-- NOTES -->
+      <div class="notes">
+        <div class="note-block">
+          <b>📌 자존감 보호 원칙</b> — 본 리포트는 교사·운영자만 볼 수 있습니다. 학생 본인 화면에는 정량 수치를 노출하지 않으며, 학부모에게는 오답노트의 개별 문제 본문이 비공개됩니다 (처리방침 제3조 4).
+        </div>
+        <div class="note-block warn">
+          <b>📌 학년 데이터 격리 안내</b> — 본 리포트의 학습 데이터는 매년 2월 28일 자정(KST 평년 3월 1일·윤년 2월 29일)에 자동으로 영구 삭제됩니다 (처리방침 제4조). 새 학년 시작 전, 권리 행사 채널의 <b>[📥 CSV]</b>(엑셀 분석용) 또는 <b>[📄 PDF]</b>(본 리포트, 인쇄·공유용) 형태로 보존해 주세요.
+        </div>
+        <div class="note-block">
+          <b>📌 권리 행사 기록</b> — 「개인정보 보호법」 제35조 열람권 행사 기록은 <code>data_requests</code> 테이블에 자동 기록됩니다(10일 이내 처리 의무 추적). 본 리포트 출력은 일반 교사 운영 행위로, 별도 기록 대상이 아닙니다.
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="report-footer">
+        <span class="brand">K-edu 학생 학습 리포트</span>
+        <span>처리방침 v2.1 · 출력 ${issued} · 학생: ${escapeHtml(s.nickname || '—')} · 담임: ${escapeHtml(teacher.name || '—')}</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('print-hint').style.display = '';
+}
+
+// =============================================
+// 학급 전체 모드
+// =============================================
+async function loadClassReport(classCodeId, teacher){
+  document.getElementById('topbar-title').textContent = '📄 학급 종합 리포트';
+
+  // 1) 학급 메타
+  const { data: classRow, error: ec } = await db
+    .from('class_codes')
+    .select('id, code, label, created_at, teacher_id')
+    .eq('id', classCodeId)
+    .maybeSingle();
+
+  if(ec){
+    showError('⚠️', '학급 정보를 불러올 수 없습니다', escapeHtml(ec.message || ''), '교사 대시보드로', '/teacher/');
+    return;
+  }
+  if(!classRow){
+    showError('🔒',
+      '조회 권한이 없거나 학급을 찾을 수 없습니다',
+      '본인 소유 학급코드인 경우에만 학급 종합 리포트를 조회할 수 있습니다.',
+      '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  // 2) 학급 학생 명단 (student_data_summary)
+  const { data: students, error: es } = await db
+    .from('student_data_summary')
+    .select('*')
+    .eq('class_code_id', classCodeId)
+    .order('nickname', { ascending: true });
+
+  if(es){
+    showError('⚠️', '학생 명단을 불러올 수 없습니다', escapeHtml(es.message || ''), '교사 대시보드로', '/teacher/');
+    return;
+  }
+
+  // 3) 차시별 학급 평균을 위한 raw 데이터 (학생별 차시 진척도)
+  const studentIds = (students || []).map(s => s.student_id).filter(Boolean);
+  let lessonRows = [];
+  if(studentIds.length){
+    const { data: lp, error: el } = await db
+      .from('student_lesson_progress')
+      .select('*')
+      .in('student_id', studentIds);
+    if(el){
+      // 차시 데이터 실패는 비치명적 — 명단·통계는 그대로 표시
+      console.warn('lesson_progress error:', el);
+    }
+    lessonRows = lp || [];
+  }
+
+  renderClassReport(classRow, students || [], lessonRows, teacher);
+}
+
+function renderClassReport(classRow, students, lessonRows, teacher){
+  const issued = todayStr();
+  const totalCount = students.length;
+  const activeCount = students.filter(s => s.is_active !== false).length;
+  const inactiveCount = totalCount - activeCount;
+
+  // 학급 통계 — 활성 학생 기준 (처리정지 학생 평균 산입은 통계 왜곡)
+  const activeStudents = students.filter(s => s.is_active !== false);
+
+  const sumQ  = activeStudents.reduce((a, s) => a + (Number(s.total_questions)   || 0), 0);
+  const sumC  = activeStudents.reduce((a, s) => a + (Number(s.correct_questions) || 0), 0);
+  const sumT  = activeStudents.reduce((a, s) => a + (Number(s.total_time_sec)    || 0), 0);
+  const sumW  = students.reduce((a, s) => a + (Number(s.unresolved_wrong_count) || 0), 0);
+  const sumH  = students.reduce((a, s) => a + (Number(s.homework_completed_count) || 0), 0);
+  const sumLA = activeStudents.reduce((a, s) => a + (Number(s.lessons_attempted) || 0), 0);
+
+  const denom    = activeStudents.length || 1;
+  const avgQ     = Math.round(sumQ / denom);
+  const avgT     = Math.round(sumT / denom);
+  const avgLA    = (sumLA / denom).toFixed(1);
+  const classAcc = sumQ > 0 ? Math.round(100 * sumC / sumQ) : 0;
+  const classAccCls = sumQ > 0 ? accClass(classAcc) : '';
+
+  // 학년 분포 (다학년이면 모두 표시)
+  const grades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))).sort((a,b)=>a-b);
+  const gradeLabel = grades.length === 0 ? '—'
+                  : grades.length === 1 ? `${grades[0]}학년`
+                  : grades.map(g => `${g}학년`).join('·');
+
+  // 학생 명단 표
+  let studentsHtml;
+  if(totalCount === 0){
+    studentsHtml = `<div class="r-table-empty">아직 회원가입한 학생이 없습니다.<br>가정통신문 동의 후 학생이 회원가입하면 본 리포트에 명단이 표시됩니다.</div>`;
+  } else {
+    studentsHtml = `
+      <table class="r-table">
+        <thead>
+          <tr>
+            <th style="width:18%">닉네임</th>
+            <th style="width:8%;text-align:center">학년</th>
+            <th style="width:9%;text-align:right">풀이</th>
+            <th style="width:11%;text-align:right">정답률</th>
+            <th style="width:11%;text-align:right">학습 시간</th>
+            <th style="width:8%;text-align:right">차시</th>
+            <th style="width:8%;text-align:right">오답</th>
+            <th style="width:8%;text-align:right">숙제</th>
+            <th style="width:9%;text-align:center">상태</th>
+            <th style="width:10%;text-align:right">최근 접속</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${students.map(s => {
+            const acc = fmtAccuracy(s.correct_questions, s.total_questions);
+            const isActive = s.is_active !== false;
+            return `
+              <tr>
+                <td class="nick">${escapeHtml(s.nickname || '—')}</td>
+                <td style="text-align:center" class="num">${s.grade || '—'}</td>
+                <td style="text-align:right" class="num">${s.total_questions || 0}</td>
+                <td style="text-align:right" class="l-acc ${acc.cls}">${acc.text}</td>
+                <td style="text-align:right" class="num">${fmtDuration(s.total_time_sec)}</td>
+                <td style="text-align:right" class="num">${s.lessons_attempted || 0}</td>
+                <td style="text-align:right" class="num">${s.unresolved_wrong_count || 0}</td>
+                <td style="text-align:right" class="num">${s.homework_completed_count || 0}</td>
+                <td style="text-align:center"><span class="s-status ${isActive ? 'active' : 'inactive'}">${isActive ? '활성' : '처리정지'}</span></td>
+                <td style="text-align:right" class="num">${fmtDate(s.last_seen_at)}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // 차시별 학급 평균 — lesson_id별 집계
+  const lessonAgg = {};
+  for(const r of lessonRows){
+    const lid = r.lesson_id;
+    if(!lid) continue;
+    if(!lessonAgg[lid]){
+      lessonAgg[lid] = { lesson_id: lid, students: 0, total_attempts: 0, sum_attempts: 0, sum_correct: 0, total_time_sec: 0 };
+    }
+    const a = lessonAgg[lid];
+    a.students       += 1;
+    a.sum_attempts   += Number(r.attempts || 0);
+    a.sum_correct    += Number(r.correct_count || 0);
+    a.total_time_sec += Number(r.total_time_sec || 0);
+  }
+  const lessonList = Object.values(lessonAgg).sort((a, b) => String(a.lesson_id).localeCompare(String(b.lesson_id)));
+
+  let classLessonsHtml;
+  if(lessonList.length === 0){
+    classLessonsHtml = `<div class="r-table-empty">아직 학급에서 학습한 차시가 없습니다.</div>`;
+  } else {
+    classLessonsHtml = `
+      <table class="r-table">
+        <thead>
+          <tr>
+            <th style="width:36%">차시</th>
+            <th style="width:14%;text-align:right">시도 학생</th>
+            <th style="width:14%;text-align:right">학급 누적 풀이</th>
+            <th style="width:18%;text-align:right">학급 평균 정답률</th>
+            <th style="width:18%;text-align:right">학급 누적 시간</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lessonList.map(l => {
+            const accPct = l.sum_attempts > 0 ? Math.round(100 * l.sum_correct / l.sum_attempts) : 0;
+            const accCls = l.sum_attempts > 0 ? accClass(accPct) : '';
+            return `
+              <tr>
+                <td class="l-id">${escapeHtml(l.lesson_id || '-')}</td>
+                <td style="text-align:right" class="num">${l.students}명</td>
+                <td style="text-align:right" class="num">${l.sum_attempts}회</td>
+                <td style="text-align:right" class="l-acc ${accCls}">${l.sum_attempts > 0 ? accPct + '%' : '—'}</td>
+                <td style="text-align:right" class="num">${fmtDuration(l.total_time_sec)}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  document.getElementById('root').innerHTML = `
+    <div class="paper">
+      <!-- HEADER -->
+      <div class="report-header">
+        <div class="report-brand">
+          <div class="report-logo">K-edu</div>
+          <div class="report-issued">출력일 <b>${issued}</b> · 담임 <b>${escapeHtml(teacher.name || '—')}</b></div>
+        </div>
+        <div class="report-title">📄 학급 종합 리포트</div>
+        <div class="report-subtitle">교사·운영자가 학급 운영을 위해 조회하는 한 학급 전체의 한 학년 학습 결과 요약입니다.</div>
+      </div>
+
+      <!-- CLASS META -->
+      <div class="meta-grid cols-3">
+        <div class="meta-cell">
+          <div class="meta-label">학급코드</div>
+          <div class="meta-value"><span class="accent">${escapeHtml(classRow.code || '—')}</span></div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">학급명</div>
+          <div class="meta-value">${escapeHtml(classRow.label || '—')}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">학년</div>
+          <div class="meta-value">${escapeHtml(gradeLabel)}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">전체 학생</div>
+          <div class="meta-value">${totalCount}명</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">활성 / 처리정지</div>
+          <div class="meta-value"><span class="pill active">${activeCount}명</span> ${inactiveCount > 0 ? `<span class="pill inactive">${inactiveCount}명</span>` : ''}</div>
+        </div>
+        <div class="meta-cell">
+          <div class="meta-label">학급 개설일</div>
+          <div class="meta-value">${fmtDate(classRow.created_at)}</div>
+        </div>
+      </div>
+
+      <!-- SECTION 1: 학급 통계 (활성 학생 기준) -->
+      <div class="section">
+        <div class="section-title">📈 학급 학습 통계 <span class="badge">활성 ${activeCount}명 기준</span></div>
+        <div class="stat-grid cols-3">
+          <div class="stat-row">
+            <span class="label">📚 평균 풀이 문제</span>
+            <span class="value">${avgQ}문제</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">🎯 학급 평균 정답률</span>
+            <span class="value">${sumQ > 0 ? `<span class="${classAccCls}">${classAcc}%</span>` : '—'}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">⏱️ 평균 학습 시간</span>
+            <span class="value">${fmtDuration(avgT)}</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">📖 평균 학습 차시</span>
+            <span class="value">${avgLA}차시</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">📝 미해결 오답 합계</span>
+            <span class="value">${sumW}문제</span>
+          </div>
+          <div class="stat-row">
+            <span class="label">✅ 완료 숙제 합계</span>
+            <span class="value">${sumH}건</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: 학생 명단 -->
+      <div class="section">
+        <div class="section-title">👥 학생 명단 <span class="badge">${totalCount}명</span></div>
+        ${studentsHtml}
+      </div>
+
+      <!-- SECTION 3: 차시별 학급 평균 -->
+      <div class="section">
+        <div class="section-title">📋 차시별 학급 평균 <span class="badge">${lessonList.length}차시</span></div>
+        ${classLessonsHtml}
+      </div>
+
+      <!-- NOTES -->
+      <div class="notes">
+        <div class="note-block">
+          <b>📌 자존감 보호 원칙</b> — 본 리포트는 교사·운영자만 볼 수 있습니다. 학생 본인 화면에는 정량 수치(풀이 수·정답률·차시 수)를 노출하지 않으며, 학부모에게는 오답노트의 개별 문제 본문이 비공개됩니다 (처리방침 제3조 4). 학급 평균 정답률은 활성 학생만 산입했습니다(처리정지 학생 평균 왜곡 방지).
+        </div>
+        <div class="note-block warn">
+          <b>📌 학년 데이터 격리 안내</b> — 본 리포트의 학습 데이터는 매년 2월 28일 자정(KST 평년 3월 1일·윤년 2월 29일)에 자동으로 영구 삭제됩니다 (처리방침 제4조). 새 학년 시작 전, 권리 행사 채널의 <b>[📥 학급 전체 CSV]</b>(엑셀 분석용) 또는 본 <b>[📄 학급 전체 PDF]</b>(인쇄·공유·기록 보존용) 형태로 보존해 주세요.
+        </div>
+        <div class="note-block">
+          <b>📌 권리 행사 기록</b> — 「개인정보 보호법」 제35조 열람권 행사 기록은 <code>data_requests</code> 테이블에 자동 기록됩니다(10일 이내 처리 의무 추적). 본 리포트 출력은 일반 교사 운영 행위로, 별도 기록 대상이 아닙니다.
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="report-footer">
+        <span class="brand">K-edu 학급 종합 리포트</span>
+        <span>처리방침 v2.1 · 출력 ${issued} · 학급: ${escapeHtml(classRow.code || '—')} · 담임: ${escapeHtml(teacher.name || '—')}</span>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('print-hint').style.display = '';
+}
+
+// 시작
+init();
+</script>
+
+</body>
+</html>
