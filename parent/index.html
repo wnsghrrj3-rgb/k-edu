@@ -41,6 +41,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .dash.active{display:block}
 .welcome{font-family:'Jua',sans-serif;font-size:24px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
 .welcome .accent{color:var(--purple)}
+/* WIPE BANNER (학년 와이프 D-day 카운트다운, 사이클 ㊺) */
+.wipe-banner{margin:14px 0 18px;padding:14px 20px;border-radius:14px;font-size:13px;line-height:1.6;display:flex;align-items:flex-start;gap:12px;border:1px solid;background:#fff;animation:fadeUp .4s ease both}
+.wipe-banner .wipe-icon{font-size:22px;line-height:1;flex-shrink:0;margin-top:1px}
+.wipe-banner .wipe-text{flex:1}
+.wipe-banner b{font-weight:700}
+.wipe-banner.info{background:#EBF5FF;border-color:#C7DCFA;color:#1E3A8A}
+.wipe-banner.info b{color:#1A365D}
+.wipe-banner.warn{background:#FFFBEA;border-color:#F6E05E;color:#7A5A1A}
+.wipe-banner.warn b{color:#5C4308}
+.wipe-banner.critical{background:#FFF5F5;border-color:#FBB;color:#9B2C2C}
+.wipe-banner.critical b{color:#742A2A}
+.wipe-banner[hidden]{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* WELCOME */
 .welcome-sub{font-size:13px;color:var(--sub);margin-bottom:24px;line-height:1.55}
 
 /* SECTION */
@@ -207,6 +222,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   <h1 class="welcome">👨‍👧 <span class="accent" id="welcome-name">학부모</span>님, 안녕하세요</h1>
   <p class="welcome-sub">자녀의 학급코드와 닉네임으로 매핑을 신청하면 담임 교사 검증 후<br>본인 자녀에 대한 권리 행사(열람·정정·삭제·처리정지)가 가능합니다.</p>
 
+  <!-- YEARLY WIPE COUNTDOWN BANNER — 처리방침 v2.1 제4조 (D-7 이내일 때만 표시, 사이클 ㊺) -->
+  <div class="wipe-banner" id="wipe-banner" hidden>
+    <span class="wipe-icon">🗂️</span>
+    <span class="wipe-text" id="wipe-banner-text"></span>
+  </div>
+
   <!-- SECTION 1: 자녀 -->
   <section class="section">
     <div class="section-head">
@@ -368,6 +389,9 @@ async function init(){
   document.getElementById('dash').classList.add('active');
 
   await Promise.all([loadChildren(), loadHistory()]);
+
+  // 학년 와이프 D-day 카운트다운 (제4조 — D-7 이내일 때만 표시, 사이클 ㊺)
+  renderWipeCountdown();
 }
 
 function showGate(){
@@ -801,6 +825,65 @@ function accClass(pct){
   if(pct >= 80) return 'acc-good';
   if(pct >= 60) return 'acc-mid';
   return 'acc-low';
+}
+
+// =============================================
+// 학년 와이프 D-day 카운트다운 (사이클 ㊺ — 처리방침 v2.1 제4조)
+// 매년 2/28 15:00 UTC = KST 평년 3/1 00:00 / 윤년 2/29 00:00 wipe_student_data_yearly() 자동 실행.
+// 학부모 측 배너 — D-7 이내 표시, D-2 이내 warn, D-0 critical.
+// teacher 측 사이클 ㊳ 패턴 그대로 복사 + 학부모 시점 메시지 변경.
+// =============================================
+function nextYearlyWipeUtcMs(){
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  // 2월 = month index 1 (0-indexed). 매년 2/28 15:00 UTC = KST 평년 3/1 00:00 / 윤년 2/29 00:00
+  let cand = Date.UTC(y, 1, 28, 15, 0, 0);
+  if(cand <= now.getTime()) cand = Date.UTC(y + 1, 1, 28, 15, 0, 0);
+  return cand;
+}
+
+function renderWipeCountdown(){
+  const banner = document.getElementById('wipe-banner');
+  const text   = document.getElementById('wipe-banner-text');
+  if(!banner || !text) return;
+
+  const targetMs = nextYearlyWipeUtcMs();
+  const nowMs    = Date.now();
+  const diffMs   = targetMs - nowMs;
+  const diffDays = Math.ceil(diffMs / 86400000);
+
+  // 7일 초과 = 평소 (숨김)
+  if(diffDays > 7 || diffDays < 0){
+    banner.hidden = true;
+    return;
+  }
+
+  // KST 기준 와이프 시점 표시 (UTC + 9h)
+  const kst = new Date(targetMs + 9 * 3600000);
+  const kstLabel = `${kst.getUTCMonth() + 1}월 ${kst.getUTCDate()}일 0시(KST)`;
+
+  // 톤 분기
+  banner.classList.remove('info', 'warn', 'critical');
+  if(diffDays === 0){
+    banner.classList.add('critical');
+  } else if(diffDays <= 2){
+    banner.classList.add('warn');
+  } else {
+    banner.classList.add('info');
+  }
+
+  // 메시지 — 학부모 시점(자녀 학습 데이터 보존 안내)
+  if(diffDays === 0){
+    text.innerHTML = `<b>오늘 자정 학년 와이프 — ${kstLabel}</b><br>` +
+      `처리방침 제4조에 따라 자녀의 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
+      `자녀 카드의 [📊 학습 보기]에서 진척도·약점 차시·학습 시간을 확인하시고, 필요하면 화면을 저장해 두세요.`;
+  } else {
+    text.innerHTML = `<b>학년 와이프 D-${diffDays} — ${kstLabel}</b><br>` +
+      `처리방침 제4조에 따라 자녀의 학습 데이터·닉네임·학급코드가 영구 삭제됩니다. ` +
+      `자녀 카드의 [📊 학습 보기]에서 한 학년 학습 결과를 미리 확인하시고, 필요하면 화면을 저장해 두세요.`;
+  }
+
+  banner.hidden = false;
 }
 
 // =============================================
