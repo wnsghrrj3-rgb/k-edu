@@ -73,6 +73,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .child-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .child-action-btn{flex:1;min-width:60px;padding:8px 0;border-radius:10px;font-size:12px;font-weight:600;border:1px solid var(--border);background:#fff;color:var(--sub);cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
 .child-action-btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary);background:#F8FBFF}
+.child-action-btn.data:hover:not(:disabled){border-color:var(--purple);color:var(--purple);background:#F3E8FF}
 .child-action-btn.danger:hover:not(:disabled){border-color:var(--red);color:var(--red);background:#FFF5F5}
 .child-action-btn.warn:hover:not(:disabled){border-color:#B7791F;color:#B7791F;background:#FFFBEA}
 .child-action-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -132,6 +133,33 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .modal-radio b{display:block;font-size:14px;margin-bottom:2px;color:var(--text)}
 .modal-radio .desc{font-size:12px;color:var(--sub)}
 
+/* DATA MODAL (학습 보기) — 사이클 ㊹ */
+.modal.modal-data{max-width:520px}
+.data-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.data-meta-cell{background:var(--bg);border-radius:10px;padding:10px 12px}
+.data-meta-label{font-size:11px;color:var(--sub);font-weight:600;margin-bottom:3px}
+.data-meta-value{font-size:14px;font-weight:600;color:var(--text)}
+.data-stats{display:grid;gap:8px;margin:10px 0 14px}
+.data-stat-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg);border-radius:10px;font-size:13px}
+.data-stat-label{color:var(--sub);font-weight:500;display:flex;align-items:center;gap:6px}
+.data-stat-value{font-weight:600;color:var(--text)}
+.data-stat-value .acc-good{color:var(--green)}
+.data-stat-value .acc-mid{color:#B7791F}
+.data-stat-value .acc-low{color:var(--red)}
+.data-section-title{font-family:'Jua',sans-serif;font-size:14px;margin:14px 0 8px;color:var(--text);display:flex;align-items:center;gap:6px}
+.weak-list{display:grid;gap:6px}
+.weak-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:12px}
+.weak-row .lesson-id{font-weight:600;color:var(--text);font-family:monospace;font-size:11px}
+.weak-row .lesson-meta{color:var(--sub);font-size:11px}
+.weak-row .status-pill{display:inline-block;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:600;margin-left:6px}
+.weak-row .status-pill.supplement{background:#FFF5F5;color:#C53030}
+.weak-row .status-pill.try_again{background:#FFFBEA;color:#B7791F}
+.weak-empty{padding:14px;text-align:center;color:var(--sub);background:var(--bg);border-radius:10px;font-size:13px}
+.data-loading{padding:30px;text-align:center;color:var(--sub);font-size:13px}
+.data-error{padding:14px;background:#FFF5F5;border:1px solid #FBB;border-radius:10px;color:#9B2C2C;font-size:13px;line-height:1.5}
+.data-note{margin-top:14px;padding:11px 13px;background:#F3E8FF;border:1px solid #E9D5FF;border-radius:10px;font-size:11px;line-height:1.6;color:#553C9A}
+.data-note b{color:#3B176F}
+
 /* CONTACT BLOCK (보호책임자 안내) */
 .contact{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;font-size:13px;line-height:1.7;color:var(--sub)}
 .contact b{color:var(--text)}
@@ -147,6 +175,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   .child-name{font-size:16px}
   .modal{padding:20px 18px}
   .modal-title{font-size:18px}
+  .data-meta{grid-template-columns:1fr 1fr;gap:8px}
+  .data-stat-row{font-size:12px;padding:10px 12px}
 }
 </style>
 </head>
@@ -288,6 +318,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
   </div>
 </div>
 
+<!-- DATA MODAL (학습 보기) — 사이클 ㊹ — 학부모 직접 열람 -->
+<div class="modal-bg" id="data-modal">
+  <div class="modal modal-data">
+    <h3 class="modal-title" id="data-title">📊 학습 보기</h3>
+    <p class="modal-sub" id="data-sub"></p>
+    <div id="data-body">
+      <div class="data-loading">⏳ 자녀의 학습 데이터를 불러오는 중…</div>
+    </div>
+    <div class="modal-row-actions">
+      <button class="modal-btn ghost" onclick="closeDataModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -382,6 +426,7 @@ function renderChildCard(c){
         <b>신청일</b> ${requestedDate}${c.verified_at ? ` · <b>검증일</b> ${verifiedDate}` : ''}
       </div>
       <div class="child-actions">
+        <button class="child-action-btn data" ${disabled} onclick="openDataModal('${c.student_id}', ${escapeJsString(c.nickname)})">📊 학습 보기</button>
         <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'view')">📋 열람</button>
         <button class="child-action-btn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'correct')">✏️ 정정</button>
         <button class="child-action-btn warn" ${disabled} onclick="openRightModal('${c.student_id}', ${escapeJsString(c.nickname)}, 'stop')">⏸️ 처리정지</button>
@@ -600,6 +645,165 @@ async function submitRightRequest(){
 }
 
 // =============================================
+// 학습 보기 모달 (사이클 ㊹) — 학부모 직접 열람
+// 처리방침 v2.1 line 23 + line 103: 차시별 진척도 + 약점 차시 + 학습 시간 + 오답노트 개수.
+// 자존감 보호: 오답 본문 비공개, 개수만 노출 (제3조 4).
+// 권리 행사 채널과 별도 — 본 화면은 본인 자녀에 대한 직접 열람이며 data_requests 자동 기록 X.
+// =============================================
+let _dataCtx = null;
+
+async function openDataModal(studentId, nickname){
+  _dataCtx = { student_id: studentId, nickname };
+  document.getElementById('data-title').textContent = `📊 ${nickname || '자녀'} 학습 보기`;
+  document.getElementById('data-sub').textContent = '본인 자녀의 학습 진척도 · 약점 차시 · 누적 시간을 직접 확인합니다.';
+  document.getElementById('data-body').innerHTML = `<div class="data-loading">⏳ 자녀의 학습 데이터를 불러오는 중…</div>`;
+  document.getElementById('data-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  await loadChildData(studentId);
+}
+
+function closeDataModal(){
+  document.getElementById('data-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  _dataCtx = null;
+}
+
+async function loadChildData(studentId){
+  // (1) student_data_summary — 학부모 RLS(sp_parent_read + scores_parent_read 등) 통과
+  // (2) student_lesson_progress — scores 테이블 RLS(scores_parent_read) 통과
+  const [{ data: summaryRows, error: e1 }, { data: lessons, error: e2 }] = await Promise.all([
+    db.from('student_data_summary').select('*').eq('student_id', studentId).limit(1),
+    db.from('student_lesson_progress').select('*').eq('student_id', studentId).order('accuracy', { ascending: true })
+  ]);
+
+  if(e1 || e2){
+    const errMsg = (e1 && e1.message) || (e2 && e2.message) || '알 수 없는 오류';
+    document.getElementById('data-body').innerHTML = `
+      <div class="data-error">
+        <b>⚠️ 학습 데이터를 불러올 수 없습니다.</b><br>
+        ${escapeHtml(errMsg)}<br>
+        <span style="font-size:11px;opacity:.85">검증 완료된 자녀만 조회할 수 있습니다. 검증 대기 중이면 담임 교사에게 문의하세요.</span>
+      </div>`;
+    return;
+  }
+
+  const summary = (summaryRows && summaryRows[0]) || null;
+  if(!summary){
+    document.getElementById('data-body').innerHTML = `
+      <div class="data-error">
+        <b>📭 자녀 학습 데이터를 찾을 수 없습니다.</b><br>
+        <span style="font-size:11px;opacity:.85">검증이 완료되었는지 확인하거나, 자녀가 아직 학습을 시작하지 않았을 수 있습니다.</span>
+      </div>`;
+    return;
+  }
+
+  renderChildData(summary, lessons || []);
+}
+
+function renderChildData(s, lessons){
+  const acc = fmtAccuracy(s.correct_questions, s.total_questions);
+  // 약점 차시 = supplement(60% 미만) + try_again(60~79%) — accuracy 오름차순 상위 10
+  const weakLessons = lessons.filter(l => l.status === 'supplement' || l.status === 'try_again').slice(0, 10);
+
+  let weakHtml;
+  if(weakLessons.length === 0){
+    weakHtml = `<div class="weak-empty">✨ 약점 차시가 없어요. 자녀가 잘 따라가고 있습니다.</div>`;
+  } else {
+    weakHtml = `<div class="weak-list">${weakLessons.map(l => {
+      const statusLabel = l.status === 'supplement' ? '보충 필요' : '재도전';
+      return `
+        <div class="weak-row">
+          <div>
+            <div class="lesson-id">${escapeHtml(l.lesson_id || '-')}</div>
+            <div class="lesson-meta">${l.attempts}회 시도 · ${fmtDuration(l.total_time_sec)}</div>
+          </div>
+          <div>
+            <span class="data-stat-value ${accClass(l.accuracy)}">${l.accuracy}%</span>
+            <span class="status-pill ${l.status}">${statusLabel}</span>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  document.getElementById('data-body').innerHTML = `
+    <div class="data-meta">
+      <div class="data-meta-cell">
+        <div class="data-meta-label">학급</div>
+        <div class="data-meta-value">${escapeHtml(s.class_code || '—')}</div>
+      </div>
+      <div class="data-meta-cell">
+        <div class="data-meta-label">학년</div>
+        <div class="data-meta-value">${s.grade ? s.grade + '학년' : '—'}</div>
+      </div>
+    </div>
+
+    <div class="data-section-title">📈 학습 진척도</div>
+    <div class="data-stats">
+      <div class="data-stat-row">
+        <span class="data-stat-label">📚 풀이한 문제 수</span>
+        <span class="data-stat-value">${s.total_questions || 0}문제</span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">🎯 정답 수 / 정답률</span>
+        <span class="data-stat-value">${s.correct_questions || 0}문제 · <span class="${acc.cls}">${acc.text}</span></span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">📖 학습한 차시 수</span>
+        <span class="data-stat-value">${s.lessons_attempted || 0}차시</span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">⏱️ 누적 학습 시간</span>
+        <span class="data-stat-value">${fmtDuration(s.total_time_sec)}</span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">📝 미해결 오답 (개수만)</span>
+        <span class="data-stat-value">${s.unresolved_wrong_count || 0}문제</span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">✅ 완료한 숙제 수</span>
+        <span class="data-stat-value">${s.homework_completed_count || 0}건</span>
+      </div>
+      <div class="data-stat-row">
+        <span class="data-stat-label">🕐 마지막 접속</span>
+        <span class="data-stat-value">${fmtDate(s.last_seen_at)}</span>
+      </div>
+    </div>
+
+    <div class="data-section-title">🎯 약점 차시 ${weakLessons.length ? `(${weakLessons.length}개)` : ''}</div>
+    ${weakHtml}
+
+    <div class="data-note">
+      <b>📌 자존감 보호 원칙</b> — 본 화면은 학부모(법정대리인)만 볼 수 있습니다. 오답노트의 개별 문제 본문은 비공개되며, 개수만 표시됩니다 (처리방침 제3조 4).<br>
+      <b>📌 직접 열람 vs 권리 행사</b> — 본 화면은 본인 자녀의 직접 열람입니다. 「개인정보 보호법」 제35조 정식 열람권 행사를 원하시면 자녀 카드의 [📋 열람] 버튼을 사용하세요(10일 이내 처리·통보).
+    </div>
+  `;
+}
+
+function fmtDuration(sec){
+  const n = Number(sec || 0);
+  if(n <= 0) return '—';
+  if(n < 60) return `${n}초`;
+  const m = Math.floor(n / 60);
+  const h = Math.floor(m / 60);
+  if(h > 0) return `${h}시간 ${m % 60}분`;
+  return `${m}분`;
+}
+
+function fmtAccuracy(correct, total){
+  const c = Number(correct || 0), t = Number(total || 0);
+  if(t === 0) return { text: '—', cls: '' };
+  const pct = Math.round(100 * c / t);
+  return { text: `${pct}%`, cls: accClass(pct) };
+}
+
+function accClass(pct){
+  if(pct >= 80) return 'acc-good';
+  if(pct >= 60) return 'acc-mid';
+  return 'acc-low';
+}
+
+// =============================================
 // 유틸
 // =============================================
 function fmtDate(s){
@@ -629,9 +833,11 @@ function showToast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
 }
 
-// ESC 닫기 (우선순위: right > add)
+// ESC 닫기 (우선순위: data > right > add)
 document.addEventListener('keydown', e => {
   if(e.key !== 'Escape') return;
+  const dataM = document.getElementById('data-modal');
+  if(dataM.classList.contains('active')){ closeDataModal(); return; }
   const right = document.getElementById('right-modal');
   if(right.classList.contains('active')){ closeRightModal(); return; }
   const add = document.getElementById('add-child-modal');
@@ -643,6 +849,9 @@ document.getElementById('add-child-modal').addEventListener('click', e => {
 });
 document.getElementById('right-modal').addEventListener('click', e => {
   if(e.target.id === 'right-modal') closeRightModal();
+});
+document.getElementById('data-modal').addEventListener('click', e => {
+  if(e.target.id === 'data-modal') closeDataModal();
 });
 // Enter 키 자녀 추가 (모달 활성 시)
 document.getElementById('add-nickname').addEventListener('keydown', e => {
