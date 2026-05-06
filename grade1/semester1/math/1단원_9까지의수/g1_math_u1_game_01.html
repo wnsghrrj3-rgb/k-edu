@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<!--
+  K-edu 1학년 수학 1단원 — 단원 게임 (game_01)
+  ────────────────────────────────────────────────────────
+  영역 2 base — 카훗형 즉답 퀴즈, 개인 모드 (cycle 12 박힘)
+  Foundation 04 4.2 / STATUS-kedu-game.md 준수, 디자인 헌법 v11 적용 (풀스크린).
+  파일명 규약: g{N}_{과목}_{단원약어}_game_{NN}.html
+
+  영역 2 본질:
+    - 카훗 응용 + 게임 형식 7종 풀 활용
+    - 단원 정리를 다양·재밌게
+    - 인디스쿨 대체 use case
+    - 진입: 단원 끝, 학생 호출 + 교사 라이브
+
+  이번 base 형식: 카훗형 즉답 퀴즈 (7종 중 1번)
+    - 5초 타이머 / 빠른 답 = 보너스 점수
+    - 정답: 50 + 남은초×10 = 50~100점 / 오답·시간초과: 0점
+    - 8문제 = 만점 800점
+    - 즉답 즉시 피드백 + 1.0~1.5초 후 자동 다음
+
+  학년군 변주 (저학년):
+    - 5초 = 시간 여유 (정식 카훗 3초보다 길게)
+    - 점수보다 재미 강조 (결과 슬 메시지 톤)
+    - 단순 즉답형 (4지선다·빈칸만, 매칭/드래그 X)
+
+  미결 (cycle 12 시점):
+    - 단체 라이브 모드 (Supabase Realtime 인프라 박힌 후)
+    - 게임 형식 6종 (보드게임/메모리/퍼즐/골든벨/팀미션) base
+    - 양산 표준 (Layer 4) 박힌 후 같은 단원 game_02·03 양산
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g1_math_u1_game_01">
+<meta name="kedu-lesson-area" content="game">
+<meta name="kedu-game-format" content="kahoot-quiz">
+<title>1단원 단원 게임 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #FFF8E1; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  overflow: hidden;
+}
+
+/* ─── 애니메이션 키프레임 ─── */
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(245,124,0,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(245,124,0,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-bounceIn { 0% { opacity: 0; transform: translateY(30px) scale(0.8); } 60% { opacity: 1; transform: translateY(-6px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+@keyframes timer-shrink { from { width: 100%; } to { width: 0%; } }
+@keyframes timer-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes score-pop { 0% { opacity: 0; transform: translateY(20px) scale(0.5); } 60% { opacity: 1; transform: translateY(-6px) scale(1.2); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* ─── 카드 외형 (풀스크린) ─── */
+.ka {
+  background: white; border-radius: 0;
+  width: 100vw; height: 100vh;
+  padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3.2vw, 32px);
+  color: #333;
+  display: flex; flex-direction: column;
+  margin: 0;
+  position: relative; overflow: hidden;
+}
+
+/* ─── 헤더 (게임 컬러: 노랑·주황 톤) ─── */
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.4vw, 12px); margin-bottom: clamp(10px, 2.2vw, 18px); flex-wrap: nowrap; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px) clamp(8px, 1.6vw, 14px); border-radius: clamp(8px, 1.5vw, 12px); display: flex; align-items: center; gap: clamp(4px, 0.8vw, 7px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; }
+.ka-lb svg { width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px); flex-shrink: 0; }
+.ka-lb span { font-size: clamp(11px, 1.8vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.55vw, 5px); background: #FFF3E0; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #F57C00; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #E65100; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.8vw, 14px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #E65100; font-size: clamp(13px, 2.2vw, 17px); width: clamp(30px, 5vw, 38px); height: clamp(30px, 5vw, 38px); display: flex; align-items: center; justify-content: center; }
+.ka-mute.off { color: #B0B7C2; }
+.ka-sc { background: #FFE082; color: #E65100; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.6vw, 12px); border-radius: 999px; display: flex; align-items: center; gap: clamp(3px, 0.6vw, 5px); flex-shrink: 0; }
+.ka-sc svg { width: clamp(11px, 1.85vw, 14px); height: clamp(11px, 1.85vw, 14px); flex-shrink: 0; }
+.ka-sc-n { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 2vw, 16px); }
+.ka-sc-u { font-size: clamp(10px, 1.65vw, 13px); }
+
+/* ─── 메인 ─── */
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; }
+.slide { display: none; flex-direction: column; justify-content: flex-start; align-items: center; height: 100%; width: 100%; padding-top: clamp(12px, 2.5vw, 20px); animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-tags { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(10px, 2vw, 14px); flex-wrap: wrap; align-self: flex-start; }
+.tag-stage { background: #FFE082; color: #E65100; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); display: inline-flex; align-items: center; gap: clamp(3px, 0.8vw, 6px); }
+.tag-meta { background: #F4F4F8; color: #6E6E78; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); }
+
+.slide-title { font-size: clamp(22px, 4.4vw, 38px); margin: 0 0 clamp(12px, 2.6vw, 20px); line-height: 1.4; color: #E65100; letter-spacing: -0.3px; font-weight: 400; text-align: center; }
+.slide-sub   { font-size: clamp(16px, 3vw, 23px); color: #455A64; margin-bottom: clamp(10px, 2vw, 16px); text-align: center; }
+
+/* ─── 인트로 ─── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.8vw, 22px); margin-top: clamp(8px, 1.8vw, 14px); }
+.intro-emoji { font-size: clamp(64px, 13vw, 120px); animation: ka-bounceIn 0.7s ease both; }
+.intro-msg { font-size: clamp(17px, 3.2vw, 25px); color: #455A64; text-align: center; line-height: 1.5; }
+.intro-rules { background: #FFF3E0; border: clamp(2px, 0.45vw, 3px) solid #F57C00; border-radius: clamp(14px, 2.8vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3.2vw, 28px); font-size: clamp(14px, 2.6vw, 19px); color: #E65100; line-height: 1.7; max-width: clamp(280px, 70vw, 500px); }
+.intro-rules b { color: #BF360C; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ─── 타이머 ─── */
+.timer-row { width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto clamp(10px, 2vw, 16px); display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+.timer-label { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(15px, 2.8vw, 22px); color: #E65100; min-width: clamp(28px, 5vw, 44px); text-align: center; animation: timer-pulse 0.5s ease infinite; }
+.timer-bar { flex: 1; height: clamp(10px, 1.8vw, 14px); background: #FFF3E0; border-radius: 999px; overflow: hidden; border: clamp(1px, 0.3vw, 2px) solid #F57C00; }
+.timer-fill { height: 100%; background: linear-gradient(90deg, #F57C00, #FF6E40); border-radius: 999px; width: 100%; }
+
+/* ─── 게임 문제 ─── */
+.q-stem { font-size: clamp(20px, 3.8vw, 30px); color: #E65100; margin: 0 auto clamp(12px, 2.4vw, 18px); text-align: center; line-height: 1.5; }
+.q-stem .k-emph { color: #C62828; font-weight: bold; }
+.q-visual { display: flex; gap: clamp(8px, 1.8vw, 14px); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 2.8vw, 22px); border: clamp(2px, 0.4vw, 3px) solid #FFB74D; border-radius: clamp(14px, 2.8vw, 20px); background: #FFF8E1; margin: 0 auto clamp(12px, 2.4vw, 18px); justify-content: center; max-width: clamp(280px, 60vw, 480px); flex-wrap: wrap; }
+.q-obj { font-size: clamp(28px, 5.4vw, 48px); animation: ka-pop 0.5s ease both; }
+
+.opt-grid { display: grid; gap: clamp(8px, 1.8vw, 14px); width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto; }
+.opt-3 { grid-template-columns: repeat(3, 1fr); }
+.opt-4 { grid-template-columns: repeat(2, 1fr); }
+.opt-btn {
+  background: white; border: clamp(2px, 0.45vw, 3px) solid #FFB74D;
+  border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(12px, 2.4vw, 18px);
+  font-family: inherit; font-size: clamp(22px, 4.2vw, 34px); color: #E65100;
+  cursor: pointer; transition: all 0.18s;
+  min-height: clamp(56px, 10vw, 90px); display: flex; align-items: center; justify-content: center;
+}
+.opt-btn:hover:not(:disabled) { border-color: #F57C00; transform: translateY(-2px); }
+.opt-btn.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+.opt-btn.wrong { background: #FFCDD2; border-color: #C62828; color: #B71C1C; animation: ka-shake 0.4s ease; }
+.opt-btn.reveal { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; }
+.opt-btn:disabled { cursor: not-allowed; }
+
+.q-feedback { margin-top: clamp(8px, 1.8vw, 14px); font-size: clamp(16px, 3vw, 22px); min-height: clamp(20px, 3.6vw, 28px); text-align: center; }
+.q-feedback.ok { color: #2E7D32; font-weight: bold; }
+.q-feedback.no { color: #C62828; }
+.q-bonus { display: inline-block; background: #FFE082; color: #E65100; padding: clamp(3px, 0.8vw, 5px) clamp(10px, 2vw, 14px); border-radius: 999px; font-family: 'Nunito', sans-serif; font-weight: 800; margin-left: clamp(6px, 1.2vw, 10px); animation: score-pop 0.5s ease both; }
+
+/* ─── 빈칸 ─── */
+.fill-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.8vw, 14px); margin: clamp(10px, 2.2vw, 16px) 0; flex-wrap: wrap; }
+.fill-text { font-size: clamp(22px, 4.2vw, 34px); color: #455A64; }
+.fill-blank { display: inline-flex; align-items: center; justify-content: center; min-width: clamp(56px, 10vw, 90px); height: clamp(56px, 10vw, 90px); border: clamp(2px, 0.45vw, 3px) dashed #F57C00; border-radius: clamp(12px, 2.4vw, 18px); background: #FFF9C4; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 6.4vw, 58px); color: #E65100; }
+.fill-blank.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+
+/* ─── 결과 ─── */
+.result-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 18px); margin-top: clamp(6px, 1.4vw, 10px); }
+.result-emoji { font-size: clamp(50px, 10vw, 90px); animation: ka-bounceIn 0.7s ease both; }
+.result-score { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 7.6vw, 64px); color: #E65100; }
+.result-stars { font-size: clamp(34px, 6.6vw, 56px); letter-spacing: clamp(4px, 1vw, 8px); animation: ka-popBig 0.6s 0.3s ease both; }
+.result-msg { font-size: clamp(15px, 2.8vw, 21px); color: #455A64; text-align: center; line-height: 1.5; }
+.result-stats { display: flex; gap: clamp(14px, 3vw, 26px); margin-top: clamp(4px, 1vw, 8px); flex-wrap: wrap; justify-content: center; }
+.result-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.result-stat-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 4.4vw, 34px); color: #E65100; }
+.result-stat-label { font-size: clamp(11px, 2vw, 14px); color: #6E6E78; }
+.result-actions { display: flex; gap: clamp(10px, 2vw, 16px); margin-top: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; }
+.result-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #F57C00; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(8px, 1.8vw, 12px) clamp(14px, 2.8vw, 22px); font-family: inherit; font-size: clamp(14px, 2.6vw, 19px); color: #E65100; cursor: pointer; transition: all 0.18s; }
+.result-btn:hover { background: #FFF3E0; transform: translateY(-2px); }
+.result-btn.primary { background: #F57C00; color: white; }
+.result-btn.primary:hover { background: #E65100; }
+
+/* ─── 푸터 ─── */
+.ka-f { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: clamp(5px, 1vw, 8px); margin-top: clamp(10px, 2vw, 16px); }
+.ka-nav { background: #F4F4F8; color: #2A2A35; border: none; padding: clamp(8px, 1.8vw, 14px) 6px; font-size: clamp(12px, 2.2vw, 17px); border-radius: clamp(10px, 2vw, 14px); cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: clamp(3px, 0.8vw, 6px); white-space: nowrap; }
+.ka-nav svg { width: clamp(14px, 2vw, 20px); height: clamp(14px, 2vw, 20px); flex-shrink: 0; }
+.ka-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+.ka-nav-prev { color: #6E6E78; }
+.ka-nav-next { background: #F57C00; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(245,124,0,0.32); }
+.ka-nav-next.hl { animation: ka-pulse 1.8s 1.2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+
+  <!-- ═══════════════════ 헤더 ═══════════════════ -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHome()">
+      <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="1" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar-fill" style="width:10%"></div></div>
+    <div class="ka-pg" id="pg-text">1 / 10</div>
+    <button class="ka-mute" id="mute-btn" onclick="toggleMute()" title="음성 켜기/끄기">🔊</button>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score-num">0</span>
+      <span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ 메인 ═══════════════════ -->
+  <div class="ka-m">
+
+    <!-- 슬1: 인트로 -->
+    <div class="slide active" data-stage="game-intro">
+      <div class="slide-tags">
+        <div class="tag-stage">🎮 단원 게임</div>
+        <div class="tag-meta">1단원 · 9까지의 수</div>
+      </div>
+      <h2 class="slide-title">단원 정리 카훗!</h2>
+      <div class="intro-stage">
+        <div class="intro-emoji">🎮</div>
+        <div class="intro-rules">
+          📝 <b>8문제</b> 즉답 게임!<br>
+          ⏱️ 한 문제당 <b>5초</b>!<br>
+          ⚡ 빠르게 풀면 <b>보너스 점수</b>!<br>
+          🏆 만점 <b>800점</b> 도전!
+        </div>
+      </div>
+      <audio data-tts="game-s01" preload="none"><!-- TTS: "단원 정리 카훗! 8문제 즉답 게임이에요. 한 문제당 5초, 빠르게 풀면 보너스 점수를 받아요. 만점 800점에 도전해봐요!" --></audio>
+    </div>
+
+    <!-- 슬2~9: 즉답 8문제 (4지선다·빈칸) -->
+
+    <!-- 슬2: Q1 - 4지선다 (사물 개수) -->
+    <div class="slide" data-stage="game-q" data-game-q="1"
+         data-slot-id="game-q-01" data-pattern="4지선다"
+         data-vars='{"object_pool":["🍎","🐥","🐶","🌸","🍓"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 1번 문제</div>
+        <div class="tag-meta">개수 세기</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-1">5</div><div class="timer-bar"><div class="timer-fill" id="tf-1"></div></div></div>
+      <div class="q-stem">사과는 모두 몇 개?</div>
+      <div class="q-visual"><span class="q-obj">🍎</span><span class="q-obj">🍎</span></div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">1</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">2</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s02" preload="none"></audio>
+    </div>
+
+    <!-- 슬3: Q2 - 4지선다 (사물 개수) -->
+    <div class="slide" data-stage="game-q" data-game-q="2"
+         data-slot-id="game-q-02" data-pattern="4지선다"
+         data-vars='{"object_pool":["🐥","🐶","🌸","🍓","🍎"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 2번 문제</div>
+        <div class="tag-meta">개수 세기</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-2">5</div><div class="timer-bar"><div class="timer-fill" id="tf-2"></div></div></div>
+      <div class="q-stem">병아리는 모두 몇 마리?</div>
+      <div class="q-visual"><span class="q-obj">🐥</span><span class="q-obj">🐥</span><span class="q-obj">🐥</span></div>
+      <div class="opt-grid opt-3" data-correct="3">
+        <button class="opt-btn" onclick="answerQ(this, 1)">1</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">2</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s03" preload="none"></audio>
+    </div>
+
+    <!-- 슬4: Q3 - 빈칸 (사물 개수) -->
+    <div class="slide" data-stage="game-q" data-game-q="3"
+         data-slot-id="game-q-03" data-pattern="빈칸채우기"
+         data-vars='{"object_pool":["🐶","🌸","🐥"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 3번 문제</div>
+        <div class="tag-meta">빈칸 채우기</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-3">5</div><div class="timer-bar"><div class="timer-fill" id="tf-3"></div></div></div>
+      <div class="q-stem">강아지는 몇 마리?</div>
+      <div class="q-visual"><span class="q-obj">🐶</span></div>
+      <div class="fill-row">
+        <span class="fill-text">강아지</span>
+        <span class="fill-blank" id="fill-blank-q3">?</span>
+        <span class="fill-text">마리</span>
+      </div>
+      <div class="opt-grid opt-3" data-correct="1">
+        <button class="opt-btn" onclick="answerFill(this, 1, 'q3')">1</button>
+        <button class="opt-btn" onclick="answerFill(this, 2, 'q3')">2</button>
+        <button class="opt-btn" onclick="answerFill(this, 3, 'q3')">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s04" preload="none"></audio>
+    </div>
+
+    <!-- 슬5: Q4 - 4지선다 (숫자 → 사물) -->
+    <div class="slide" data-stage="game-q" data-game-q="4"
+         data-slot-id="game-q-04" data-pattern="4지선다"
+         data-vars='{"object_pool":["🌸","🐥","🐶"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 4번 문제</div>
+        <div class="tag-meta">숫자만큼 골라요</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-4">5</div><div class="timer-bar"><div class="timer-fill" id="tf-4"></div></div></div>
+      <div class="q-stem">꽃이 <span class="k-emph">2</span>송이인 그림은?</div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">🌸</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">🌸🌸</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">🌸🌸🌸</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s05" preload="none"></audio>
+    </div>
+
+    <!-- 슬6: Q5 - 4지선다 (가장 큰 수) -->
+    <div class="slide" data-stage="game-q" data-game-q="5"
+         data-slot-id="game-q-05" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"context":"가장_큰"}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 5번 문제</div>
+        <div class="tag-meta">크기 비교</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-5">5</div><div class="timer-bar"><div class="timer-fill" id="tf-5"></div></div></div>
+      <div class="q-stem">셋 중에 <span class="k-emph">가장 큰</span> 수는?</div>
+      <div class="opt-grid opt-3" data-correct="3">
+        <button class="opt-btn" onclick="answerQ(this, 1)">1</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">2</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s06" preload="none"></audio>
+    </div>
+
+    <!-- 슬7: Q6 - 4지선다 (가장 작은 수) -->
+    <div class="slide" data-stage="game-q" data-game-q="6"
+         data-slot-id="game-q-06" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"context":"가장_작은"}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 6번 문제</div>
+        <div class="tag-meta">크기 비교</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-6">5</div><div class="timer-bar"><div class="timer-fill" id="tf-6"></div></div></div>
+      <div class="q-stem">셋 중에 <span class="k-emph">가장 작은</span> 수는?</div>
+      <div class="opt-grid opt-3" data-correct="1">
+        <button class="opt-btn" onclick="answerQ(this, 1)">1</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">2</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s07" preload="none"></audio>
+    </div>
+
+    <!-- 슬8: Q7 - 4지선다 (다음 수) -->
+    <div class="slide" data-stage="game-q" data-game-q="7"
+         data-slot-id="game-q-07" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"context":"다음_수"}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 7번 문제</div>
+        <div class="tag-meta">수의 순서</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-7">5</div><div class="timer-bar"><div class="timer-fill" id="tf-7"></div></div></div>
+      <div class="q-stem"><span class="k-emph">1</span> 다음 수는?</div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">1</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">2</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s08" preload="none"></audio>
+    </div>
+
+    <!-- 슬9: Q8 - 빈칸 (수의 모음) -->
+    <div class="slide" data-stage="game-q" data-game-q="8"
+         data-slot-id="game-q-08" data-pattern="빈칸채우기"
+         data-vars='{"object_pool":["🐱"],"number_range":[1,2,3],"context":"섞은_숫자"}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 8번 문제</div>
+        <div class="tag-meta">개수 세기</div>
+      </div>
+      <div class="timer-row"><div class="timer-label" id="t-8">5</div><div class="timer-bar"><div class="timer-fill" id="tf-8"></div></div></div>
+      <div class="q-stem">고양이는 모두 몇 마리?</div>
+      <div class="q-visual"><span class="q-obj">🐱</span><span class="q-obj">🐱</span></div>
+      <div class="fill-row">
+        <span class="fill-text">고양이</span>
+        <span class="fill-blank" id="fill-blank-q8">?</span>
+        <span class="fill-text">마리</span>
+      </div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerFill(this, 1, 'q8')">1</button>
+        <button class="opt-btn" onclick="answerFill(this, 2, 'q8')">2</button>
+        <button class="opt-btn" onclick="answerFill(this, 3, 'q8')">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s09" preload="none"></audio>
+    </div>
+
+    <!-- 슬10: 결과 -->
+    <div class="slide" data-stage="game-result">
+      <div class="slide-tags">
+        <div class="tag-stage">🏆 게임 끝!</div>
+        <div class="tag-meta">결과 보기</div>
+      </div>
+      <h2 class="slide-title" id="result-title">잘 했어요!</h2>
+      <div class="result-stage">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <div class="result-score"><span id="result-score-num">0</span> / 800점</div>
+        <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+        <div class="result-stats">
+          <div class="result-stat"><div class="result-stat-num" id="result-correct">0</div><div class="result-stat-label">맞춘 문제</div></div>
+          <div class="result-stat"><div class="result-stat-num" id="result-fast">0</div><div class="result-stat-label">빠른 답 (3초 내)</div></div>
+          <div class="result-stat"><div class="result-stat-num" id="result-best">0</div><div class="result-stat-label">최고 점수</div></div>
+        </div>
+        <div class="result-msg" id="result-msg">단원 정리 한 판 잘 했어요!</div>
+        <div class="result-actions">
+          <button class="result-btn" onclick="retryGame()">🔁 다시 도전</button>
+          <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
+        </div>
+      </div>
+      <audio data-tts="game-s10" preload="none"></audio>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ 푸터 (게임 모드: 이전·다시 듣기·다음만) ═══════════════════ -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="btn-prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-nav" onclick="replayAudio()">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav ka-nav-next hl" id="btn-next" onclick="goNext()">다음 →</button>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   영역 2 base — 카훗형 즉답 퀴즈, 개인 모드
+   슬 인덱스: 인트로=0 / Q1~Q8 = 1~8 / 결과=9
+   ════════════════════════════════════════════════════════════ */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const RESULT_IDX = 9;
+const Q_TIME = 5;            // 한 문제당 5초
+const Q_BASE = 50;            // 정답 보장 점수
+const Q_BONUS_PER_SEC = 10;   // 남은 1초당 보너스
+const FAST_THRESHOLD = 3;     // "빠른 답" 기준 (남은 시간 ≥ 3초)
+
+let cur = 0;
+let totalScore = 0;
+let muted = false;
+
+// 게임 통계 (결과 슬에서 표시)
+const stats = {
+  correct: 0,         // 맞춘 문제 수
+  fast: 0,            // 3초 내 정답 수
+  best: 0,            // 한 문제 최고 점수
+  perQ: []            // 문제별 [{correct, score, remainSec}]
+};
+
+// 타이머 상태
+let timerInterval = null;
+let timerStart = 0;
+let qLocked = false;          // 답 입력 후 잠금 (중복 클릭 차단)
+let currentQ = 0;             // 현재 문제 번호 (1~8)
+
+function show(i){
+  // 이전 슬 타이머 정리
+  stopTimer();
+  qLocked = false;
+
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  cur = i;
+  document.getElementById('pg-text').textContent = (i+1) + ' / ' + total;
+  document.getElementById('bar-fill').style.width = ((i+1)/total*100) + '%';
+  document.getElementById('btn-prev').disabled = (i === 0);
+  document.getElementById('btn-next').textContent = (i === total-1) ? '끝!' : '다음 →';
+
+  const slide = slides[i];
+  const qNum = slide.dataset.gameQ;
+  if(qNum){
+    currentQ = +qNum;
+    startTimer(currentQ);
+  } else {
+    currentQ = 0;
+    if(i === RESULT_IDX) renderResult();
+  }
+  playSlideAudio();
+}
+
+function goNext(){
+  if(cur < total - 1) show(cur + 1);
+  else goHome();
+}
+function goPrev(){ if(cur > 0) show(cur - 1); }
+function goHome(){ window.location.href = '/grade1/semester1/math/'; }
+
+function toggleMute(){
+  muted = !muted;
+  const b = document.getElementById('mute-btn');
+  b.textContent = muted ? '🔇' : '🔊';
+  b.classList.toggle('off', muted);
+  if(muted) document.querySelectorAll('audio').forEach(a => a.pause());
+  else playSlideAudio();
+}
+
+function playSlideAudio(){
+  if(muted) return;
+  const slide = slides[cur];
+  const audio = slide.querySelector('audio');
+  if(audio && audio.src){
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+  }
+}
+function replayAudio(){ playSlideAudio(); }
+
+/* ─── 타이머 ─── */
+function startTimer(qNum){
+  const tLabel = document.getElementById('t-' + qNum);
+  const tFill = document.getElementById('tf-' + qNum);
+  if(!tLabel || !tFill) return;
+  timerStart = Date.now();
+  tFill.style.width = '100%';
+  tFill.style.transition = 'width ' + Q_TIME + 's linear';
+  // 다음 frame에서 width 0 (transition 작동)
+  requestAnimationFrame(() => { tFill.style.width = '0%'; });
+
+  timerInterval = setInterval(() => {
+    const elapsed = (Date.now() - timerStart) / 1000;
+    const remain = Math.max(0, Q_TIME - elapsed);
+    tLabel.textContent = Math.ceil(remain);
+    if(remain <= 0){
+      stopTimer();
+      timeoutQ();
+    }
+  }, 100);
+}
+
+function stopTimer(){
+  if(timerInterval){
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function getRemainSec(){
+  const elapsed = (Date.now() - timerStart) / 1000;
+  return Math.max(0, Q_TIME - elapsed);
+}
+
+/* ─── 답 처리 ─── */
+function answerQ(btn, picked){
+  if(qLocked) return;
+  qLocked = true;
+  stopTimer();
+
+  const slide = slides[cur];
+  const opts = slide.querySelector('.opt-grid');
+  const correct = +opts.dataset.correct;
+  const fb = slide.querySelector('.q-feedback');
+  const remainSec = getRemainSec();
+  const isCorrect = (picked === correct);
+
+  // 모든 버튼 잠금
+  slide.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+  if(isCorrect){
+    btn.classList.add('correct');
+    const earned = Q_BASE + Math.round(remainSec * Q_BONUS_PER_SEC);
+    totalScore += earned;
+    stats.correct++;
+    if(remainSec >= FAST_THRESHOLD) stats.fast++;
+    if(earned > stats.best) stats.best = earned;
+    stats.perQ.push({correct: true, score: earned, remainSec});
+    fb.innerHTML = '🎉 정답! <span class="q-bonus">+' + earned + '점</span>';
+    fb.className = 'q-feedback ok';
+    document.getElementById('score-num').textContent = totalScore;
+    setTimeout(goNext, 1000);
+  } else {
+    btn.classList.add('wrong');
+    // 정답 노출
+    slide.querySelectorAll('.opt-btn').forEach(b => {
+      const i = [...slide.querySelectorAll('.opt-btn')].indexOf(b) + 1;
+      if(i === correct) b.classList.add('reveal');
+    });
+    stats.perQ.push({correct: false, score: 0, remainSec});
+    fb.textContent = '❌ 정답은 ' + correct;
+    fb.className = 'q-feedback no';
+    setTimeout(goNext, 1500);
+  }
+}
+
+function answerFill(btn, picked, slideKey){
+  if(qLocked) return;
+  const slide = slides[cur];
+  const opts = slide.querySelector('.opt-grid');
+  const correct = +opts.dataset.correct;
+  if(picked === correct){
+    const blank = document.getElementById('fill-blank-' + slideKey);
+    blank.textContent = picked;
+    blank.classList.add('filled');
+  }
+  answerQ(btn, picked);
+}
+
+function timeoutQ(){
+  if(qLocked) return;
+  qLocked = true;
+  const slide = slides[cur];
+  const opts = slide.querySelector('.opt-grid');
+  const correct = +opts.dataset.correct;
+  const fb = slide.querySelector('.q-feedback');
+  slide.querySelectorAll('.opt-btn').forEach((b, i) => {
+    b.disabled = true;
+    if((i+1) === correct) b.classList.add('reveal');
+  });
+  stats.perQ.push({correct: false, score: 0, remainSec: 0});
+  fb.textContent = '⏰ 시간 끝! 정답은 ' + correct;
+  fb.className = 'q-feedback no';
+  setTimeout(goNext, 1500);
+}
+
+/* ─── 결과 ─── */
+function renderResult(){
+  document.getElementById('result-score-num').textContent = totalScore;
+  document.getElementById('result-correct').textContent = stats.correct + ' / 8';
+  document.getElementById('result-fast').textContent = stats.fast + '개';
+  document.getElementById('result-best').textContent = stats.best + '점';
+
+  const max = 800;
+  let stars, emoji, msg, title;
+  if(stats.correct === 8 && totalScore >= max * 0.85){
+    stars = '⭐⭐⭐'; emoji = '🏆'; title = '완벽해요!';
+    msg = '8문제 다 맞히고 빠르기까지! 단원 마스터!';
+  } else if(stats.correct >= 6){
+    stars = '⭐⭐⭐'; emoji = '🎉'; title = '잘 했어요!';
+    msg = stats.correct + '문제를 맞췄어요. 단원 정리 잘 됐네요!';
+  } else if(stats.correct >= 4){
+    stars = '⭐⭐'; emoji = '😊'; title = '좋아요!';
+    msg = '한 번 더 도전하면 더 잘할 수 있어요!';
+  } else {
+    stars = '⭐'; emoji = '💪'; title = '다시 한 번!';
+    msg = '천천히 다시 도전해봐요. 충분히 할 수 있어요!';
+  }
+  document.getElementById('result-stars').textContent = stars;
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-title').textContent = title;
+}
+
+function retryGame(){ window.location.reload(); }
+
+/* ─── 키보드 ─── */
+document.addEventListener('keydown', e => {
+  // 게임 슬에선 키보드 다음 잠금 (시간/답 외 진행 차단)
+  const slide = slides[cur];
+  const isGameQ = slide.dataset.gameQ;
+  if(isGameQ && !qLocked) return;
+  if(e.key === 'ArrowRight') goNext();
+  else if(e.key === 'ArrowLeft') goPrev();
+});
+
+/* 초기 상태 */
+show(0);
+</script>
+
+</body>
+</html>
