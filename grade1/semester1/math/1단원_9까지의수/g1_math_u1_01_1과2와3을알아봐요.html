@@ -84,7 +84,7 @@ body {
 .slide-sub   { font-size: clamp(16px, 3vw, 23px); color: #455A64; margin-bottom: clamp(10px, 2vw, 16px); text-align: center; }
 
 /* ─── 시각 강조 (인터랙션 라이브러리 8종) ─── */
-/* 2. 밑줄 */
+/* 2. 밑줄 (구버전 단일 강조 — 양산 슬롯 q-stem 등에서 사용 가능) */
 .k-emph { position: relative; display: inline-block; padding-right: clamp(2px, 0.4vw, 4px); color: #1976D2; }
 .k-emph::after { content: ''; position: absolute; bottom: clamp(2px, 0.6vw, 5px); left: 0; right: clamp(2px, 0.4vw, 4px); height: clamp(2.5px, 0.55vw, 3.5px); background: #DC2626; border-radius: 2px; transform: scaleX(0); transform-origin: left; animation: ka-drawLine 0.6s 0.6s ease forwards; }
 /* 4. 별 */
@@ -98,6 +98,52 @@ body {
 /* 8. 흔들림 (정답·오답 피드백) */
 .k-shake { animation: ka-shake 0.4s ease; }
 
+/* ─── 디자인 v11 시그니처: 빨간 색연필 강조 (ka-emph + ka-mini, 시퀀스 정렬) ─── */
+/* 한 슬라이드에 2~3곳 강조 가능. 시퀀스: 1.2s/1.8s → 2.7s/3.1s → 3.3s/3.7s */
+.ka-emph { position: relative; display: inline-block; padding-right: clamp(2px, 0.5vw, 4px); }
+.ka-emph::after {
+  content: ''; position: absolute;
+  bottom: clamp(3px, 0.8vw, 5px);
+  left: 0; right: clamp(2px, 0.5vw, 4px);
+  height: clamp(2.5px, 0.7vw, 3.5px);
+  background: #DC2626; border-radius: 2px;
+  transform: scaleX(0); transform-origin: left;
+}
+.ka-em-1::after { animation: ka-drawLine 0.6s 1.2s ease forwards; }
+.ka-em-2::after { animation: ka-drawLine 0.6s 2.7s ease forwards; }
+.ka-em-3::after { animation: ka-drawLine 0.6s 3.3s ease forwards; }
+
+/* 빨간 별 한붓그리기 (단어 끝 우상단) */
+.ka-mini {
+  position: absolute;
+  top: clamp(-6px, -1.4vw, -4px);
+  right: clamp(-4px, -1vw, -2px);
+  width: clamp(13px, 3.2vw, 17px);
+  height: clamp(13px, 3.2vw, 17px);
+  pointer-events: none;
+  overflow: visible;
+}
+.ka-mini path {
+  fill: none; stroke: #DC2626; stroke-width: 3;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 96; stroke-dashoffset: 96;
+}
+.ka-mini-1 path { animation: ka-starDraw 0.5s 1.8s ease forwards; }
+.ka-mini-2 path { animation: ka-starDraw 0.5s 3.1s ease forwards; }
+.ka-mini-3 path { animation: ka-starDraw 0.5s 3.7s ease forwards; }
+
+/* 결과 텍스트 popBig 강조 (2.4s 시퀀스 슬롯) */
+.ka-r-pop {
+  display: inline-block;
+  animation: ka-popBig 0.6s 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── 4.3초 시퀀스 정렬: 자식 시간차 등장 ─── */
+/* 0.0s 카드 fadeUp(부모) → 0.2s 태그 → 0.4s 제목 → 0.6s 말풍선 → 1.0s+ 시각 자료 → 1.2s 강조1 → 4.3s pulse */
+.slide.active > .slide-tags { animation: ka-fadeUp 0.45s 0.2s ease both; }
+.slide.active > .slide-title { animation: ka-fadeUp 0.45s 0.4s ease both; }
+.slide.active > .slide-sub { animation: ka-fadeUp 0.45s 0.6s ease both; }
+
 /* ─── 1·2·3 카운트 시각 (사물 + 숫자 + 손가락) ─── */
 .count-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.2vw, 16px); margin: clamp(6px, 1.5vw, 10px) 0; }
 .count-row { display: flex; gap: clamp(10px, 2.4vw, 18px); align-items: center; justify-content: center; flex-wrap: wrap; }
@@ -106,8 +152,8 @@ body {
 .count-obj:nth-child(1) { animation-delay: 0.5s; }
 .count-obj:nth-child(2) { animation-delay: 0.85s; }
 .count-obj:nth-child(3) { animation-delay: 1.2s; }
-.count-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(64px, 12vw, 120px); color: #1976D2; line-height: 1; animation: ka-popBig 0.6s 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.count-read { display: flex; flex-direction: column; gap: clamp(4px, 0.9vw, 7px); align-items: center; animation: ka-fadeUp 0.4s 1.9s ease both; }
+.count-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(64px, 12vw, 120px); color: #1976D2; line-height: 1; animation: ka-popBig 0.6s 2.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.count-read { display: flex; flex-direction: column; gap: clamp(4px, 0.9vw, 7px); align-items: center; animation: ka-fadeUp 0.4s 3.0s ease both; }
 .count-read-line { font-size: clamp(20px, 3.8vw, 30px); color: #455A64; }
 .count-read-line b { color: #1976D2; font-weight: 400; }
 
@@ -218,7 +264,7 @@ body {
 .ka-nav:disabled { opacity: 0.4; cursor: not-allowed; }
 .ka-nav-prev { color: #6E6E78; }
 .ka-nav-next { background: #42A5F5; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
-.ka-nav-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-nav-next.hl { animation: ka-pulse 1.8s 4.3s ease-in-out infinite; }
 
 /* ─── 모바일 변형 ─── */
 @media (max-width: 480px) {
@@ -261,7 +307,7 @@ body {
         <div class="tag-stage tag-do">📘 학습 목표</div>
         <div class="tag-meta">1단원 · 9까지의 수</div>
       </div>
-      <h2 class="slide-title">오늘은 <span class="k-emph">1, 2, 3</span>을 알아봐요</h2>
+      <h2 class="slide-title">오늘은 <span class="ka-emph ka-em-1">1, 2, 3<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>을 알아봐요</h2>
       <div class="celebrate">
         <div class="celebrate-emoji">🌸</div>
         <div class="celebrate-msg">하나, 둘, 셋!<br>차근차근 함께 알아볼까요?</div>
@@ -275,7 +321,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 도입</div>
         <div class="tag-meta">1을 알아봐요</div>
       </div>
-      <h2 class="slide-title">사과가 <span class="k-emph">하나</span> 있어요</h2>
+      <h2 class="slide-title">사과가 <span class="ka-emph ka-em-1">하나<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> 있어요</h2>
       <div class="count-stage">
         <div class="count-objs"><span class="count-obj">🍎</span></div>
         <div class="count-num">1</div>
@@ -292,7 +338,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 도입</div>
         <div class="tag-meta">2를 알아봐요</div>
       </div>
-      <h2 class="slide-title">병아리가 <span class="k-emph">둘</span> 있어요</h2>
+      <h2 class="slide-title">병아리가 <span class="ka-emph ka-em-1">둘<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> 있어요</h2>
       <div class="count-stage">
         <div class="count-objs"><span class="count-obj">🐥</span><span class="count-obj">🐥</span></div>
         <div class="count-num">2</div>
@@ -309,7 +355,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 도입</div>
         <div class="tag-meta">3을 알아봐요</div>
       </div>
-      <h2 class="slide-title">강아지가 <span class="k-emph">셋</span> 있어요</h2>
+      <h2 class="slide-title">강아지가 <span class="ka-emph ka-em-1">셋<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> 있어요</h2>
       <div class="count-stage">
         <div class="count-objs"><span class="count-obj">🐶</span><span class="count-obj">🐶</span><span class="count-obj">🐶</span></div>
         <div class="count-num">3</div>
@@ -328,7 +374,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 전개</div>
         <div class="tag-meta">한눈에 보기</div>
       </div>
-      <h2 class="slide-title"><span class="k-emph">1, 2, 3</span>을 한눈에!</h2>
+      <h2 class="slide-title"><span class="ka-emph ka-em-1">1, 2, 3<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>을 한눈에!</h2>
       <div class="triple-row">
         <div class="triple-card">
           <div class="triple-num">1</div>
@@ -355,7 +401,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 전개</div>
         <div class="tag-meta">두 가지 읽는 법</div>
       </div>
-      <h2 class="slide-title">숫자는 <span class="k-emph">두 가지</span>로 읽을 수 있어요</h2>
+      <h2 class="slide-title">숫자는 <span class="ka-emph ka-em-1">두 가지<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>로 읽을 수 있어요</h2>
       <div class="read-table">
         <div class="read-row">
           <div class="read-cell num">1</div>
@@ -373,7 +419,7 @@ body {
           <div class="read-cell kor">셋</div>
         </div>
       </div>
-      <div class="slide-sub">사과 한 개 = 사과 일 개 (둘 다 맞아요!)</div>
+      <div class="slide-sub">사과 <span class="ka-emph ka-em-2">한 개<svg class="ka-mini ka-mini-2" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> = 사과 <span class="ka-emph ka-em-3">일 개<svg class="ka-mini ka-mini-3" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> (둘 다 맞아요!)</div>
       <audio data-tts="s06" preload="none"><!-- TTS: "숫자는 두 가지로 읽을 수 있어요. 1은 일이라고도, 하나라고도 읽어요." --></audio>
     </div>
 
@@ -383,7 +429,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 전개</div>
         <div class="tag-meta">숫자 쓰기</div>
       </div>
-      <h2 class="slide-title">숫자를 <span class="k-emph">예쁘게 써</span> 볼까요?</h2>
+      <h2 class="slide-title">숫자를 <span class="ka-emph ka-em-1">예쁘게 써<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> 볼까요?</h2>
       <div class="write-stage">
         <div class="write-card">
           <div class="write-num">1</div>
@@ -407,7 +453,7 @@ body {
         <div class="tag-stage tag-do">📘 개념 전개</div>
         <div class="tag-meta">하나씩 늘어나요</div>
       </div>
-      <h2 class="slide-title"><span class="k-emph">하나씩</span> 늘어나는 수</h2>
+      <h2 class="slide-title"><span class="ka-emph ka-em-1">하나씩<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span> 늘어나는 수</h2>
       <div class="count-stage">
         <div class="count-row" id="grow-row" style="min-height:clamp(60px,11vw,100px); align-items:center;">
           <span class="count-obj" style="animation-delay:0.4s">⭐</span>
@@ -594,7 +640,7 @@ body {
         <div class="tag-stage tag-end">🎯 개념 정리</div>
         <div class="tag-meta">오늘 배운 것</div>
       </div>
-      <h2 class="slide-title">오늘 우리는 <span class="k-emph">1, 2, 3</span>을 배웠어요</h2>
+      <h2 class="slide-title">오늘 우리는 <span class="ka-emph ka-em-1">1, 2, 3<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>을 배웠어요</h2>
       <div class="recap-grid">
         <div class="recap-card">
           <div class="recap-num">1</div>
@@ -621,7 +667,7 @@ body {
         <div class="tag-stage tag-end">🎯 개념 정리</div>
         <div class="tag-meta">손가락으로 표현</div>
       </div>
-      <h2 class="slide-title">손가락으로 <span class="k-emph">1, 2, 3</span>을 만들어봐요</h2>
+      <h2 class="slide-title">손가락으로 <span class="ka-emph ka-em-1">1, 2, 3<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>을 만들어봐요</h2>
       <div class="fingers">
         <div class="finger-card">
           <div class="finger-emoji">☝️</div>
