@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<!--
+  K-edu 1학년 수학 1단원 1차시 — 양산 문제 풀 (extra_01)
+  ────────────────────────────────────────────────────────
+  영역 4 base — 양산 문제 풀 모형 (cycle 11 박힘)
+  Foundation 4.4 / 2.4 준수, 디자인 헌법 v11 적용 (풀스크린 변환).
+  파일명 규약: g{N}_{과목}_{단원약어}_{차시번호}_extra_{NN}.html
+
+  영역 4 본질:
+    - 형태: 문제만 연속, 개념 설명 X (5단계 골격 X)
+    - 진입: 학생 호출(차시 끝 "더 풀어볼래?") + 교사 과제
+    - 품질: base 차시 안 문제와 동등 — 양 늘리되 품질 X 떨어짐
+
+  골격 (9 슬라이드):
+    슬1: 인트로 (연습 7문제 안내)
+    슬2~5: 기본 4문제 (q-basic-01~04 변수 swap 양산판)
+    슬6~8: 응용 3문제 (q-app-01~03 변수 swap 양산판)
+    슬9: 결과 (점수 · 별 보상 · 다시 풀기 · 다음 차시)
+
+  양산 슬롯 메타: data-slot-id / data-pattern / data-vars / data-slot-fixed
+  TTS 자리: <audio data-tts="..."> placeholder (Clova mp3 batch 후 src 채움)
+
+  시범 base (g1_math_u1_01_1과2와3을알아봐요.html) 양산 슬롯 변수 swap 매핑:
+    q-basic-01 사과 2개 (correct=2)        → 병아리 2마리 (correct=2)
+    q-basic-02 병아리 3마리 (correct=3)     → 강아지 1마리 (correct=1)
+    q-basic-03 꽃·딸기·고양이 매칭          → 사과·병아리·강아지 매칭
+    q-basic-04 강아지 3마리 (correct=3)     → 꽃 2송이 (correct=2)
+    q-app-01   사과 2+1=3 (correct=3)       → 병아리 1+1=2 (correct=2)
+    q-app-02   1꽃 2병아리 3강아지 드래그   → 1사과 2고양이 3딸기 드래그
+    q-app-03   asc 1·2·3 순서               → desc 3·2·1 순서 (큰 수부터)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g1_math_u1_01_extra_01">
+<meta name="kedu-lesson-area" content="extra">
+<title>1, 2, 3 더 풀어보기 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #F0F7FF; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  overflow: hidden;
+}
+
+/* ─── 애니메이션 키프레임 ─── */
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-drawLine { to { transform: scaleX(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-starDraw { to { stroke-dashoffset: 0; } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-bounceIn { 0% { opacity: 0; transform: translateY(30px) scale(0.8); } 60% { opacity: 1; transform: translateY(-6px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+
+/* ─── 카드 외형 (풀스크린 변환) ─── */
+.ka {
+  background: white; border-radius: 0;
+  width: 100vw; height: 100vh;
+  padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3.2vw, 32px);
+  color: #333;
+  display: flex; flex-direction: column;
+  margin: 0;
+  position: relative; overflow: hidden;
+}
+
+/* ─── 헤더 (시범 base와 동일) ─── */
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.4vw, 12px); margin-bottom: clamp(10px, 2.2vw, 18px); flex-wrap: nowrap; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px) clamp(8px, 1.6vw, 14px); border-radius: clamp(8px, 1.5vw, 12px); display: flex; align-items: center; gap: clamp(4px, 0.8vw, 7px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; }
+.ka-lb svg { width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px); flex-shrink: 0; }
+.ka-lb span { font-size: clamp(11px, 1.8vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.55vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.8vw, 14px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(13px, 2.2vw, 17px); width: clamp(30px, 5vw, 38px); height: clamp(30px, 5vw, 38px); display: flex; align-items: center; justify-content: center; }
+.ka-mute.off { color: #B0B7C2; }
+.ka-sc { background: #FFF8E1; color: #F57F17; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.6vw, 12px); border-radius: 999px; display: flex; align-items: center; gap: clamp(3px, 0.6vw, 5px); flex-shrink: 0; }
+.ka-sc svg { width: clamp(11px, 1.85vw, 14px); height: clamp(11px, 1.85vw, 14px); flex-shrink: 0; }
+.ka-sc-n { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 2vw, 16px); }
+.ka-sc-u { font-size: clamp(10px, 1.65vw, 13px); }
+
+/* ─── 메인 슬라이드 영역 ─── */
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; }
+.slide { display: none; flex-direction: column; justify-content: flex-start; align-items: center; height: 100%; width: 100%; padding-top: clamp(12px, 2.5vw, 20px); animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-tags { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(10px, 2vw, 14px); flex-wrap: wrap; align-self: flex-start; }
+.tag-stage { background: #FFF8E1; color: #F57F17; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); display: inline-flex; align-items: center; gap: clamp(3px, 0.8vw, 6px); }
+.tag-q { background: #E1F5FE; color: #0277BD; }
+.tag-app { background: #F3E5F5; color: #7B1FA2; }
+.tag-end { background: #C8E6C9; color: #2E7D32; }
+.tag-meta { background: #F4F4F8; color: #6E6E78; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); }
+
+.slide-title { font-size: clamp(22px, 4.4vw, 38px); margin: 0 0 clamp(12px, 2.6vw, 20px); line-height: 1.4; color: #1976D2; letter-spacing: -0.3px; font-weight: 400; text-align: center; }
+.slide-sub   { font-size: clamp(16px, 3vw, 23px); color: #455A64; margin-bottom: clamp(10px, 2vw, 16px); text-align: center; }
+
+/* ─── 시그니처 강조 (인트로/결과만 사용) ─── */
+.ka-emph { position: relative; display: inline-block; padding-right: clamp(2px, 0.5vw, 4px); }
+.ka-emph::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3px;
+  height: clamp(3px, 0.55vw, 5px); background: #E63946;
+  border-radius: 999px; transform: scaleX(0); transform-origin: left;
+}
+.ka-em-1::after { animation: ka-drawLine 0.6s 1.2s ease forwards; }
+.ka-mini {
+  position: absolute; top: -8px; right: -22px;
+  width: clamp(18px, 3vw, 26px); height: clamp(18px, 3vw, 26px);
+  pointer-events: none;
+}
+.ka-mini path {
+  fill: none; stroke: #E63946; stroke-width: 2.4; stroke-linejoin: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+}
+.ka-mini-1 path { animation: ka-starDraw 0.5s 1.8s ease forwards; }
+
+.slide.active > .slide-tags { animation: ka-fadeUp 0.45s 0.2s ease both; }
+.slide.active > .slide-title { animation: ka-fadeUp 0.45s 0.4s ease both; }
+.slide.active > .slide-sub { animation: ka-fadeUp 0.45s 0.6s ease both; }
+
+/* ─── 인트로 슬 ─── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.8vw, 22px); margin-top: clamp(8px, 1.8vw, 14px); }
+.intro-emoji { font-size: clamp(56px, 11vw, 100px); animation: ka-bounceIn 0.7s ease both; }
+.intro-msg { font-size: clamp(17px, 3.2vw, 25px); color: #455A64; text-align: center; line-height: 1.5; }
+
+/* ─── 양산 슬롯 공통 (시범 base 동일) ─── */
+.q-stem { font-size: clamp(20px, 3.8vw, 30px); color: #1976D2; margin: 0 auto clamp(12px, 2.4vw, 18px); text-align: center; line-height: 1.5; }
+.q-stem .k-hl { background: linear-gradient(180deg, transparent 60%, #FFF59D 60%); padding: 0 4px; }
+.q-stem .k-emph { color: #E63946; font-weight: bold; }
+.q-visual { display: flex; gap: clamp(8px, 1.8vw, 14px); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 2.8vw, 22px); border: clamp(2px, 0.4vw, 3px) solid #B5D8F0; border-radius: clamp(14px, 2.8vw, 20px); background: #F0F7FF; margin: 0 auto clamp(12px, 2.4vw, 18px); justify-content: center; max-width: clamp(280px, 60vw, 480px); flex-wrap: wrap; }
+.q-obj { font-size: clamp(28px, 5.4vw, 48px); animation: ka-pop 0.5s ease both; }
+
+.opt-grid { display: grid; gap: clamp(8px, 1.8vw, 14px); width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto; }
+.opt-3 { grid-template-columns: repeat(3, 1fr); }
+.opt-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #B5D8F0; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(12px, 2.4vw, 18px); font-family: inherit; font-size: clamp(22px, 4.2vw, 34px); color: #1976D2; cursor: pointer; transition: all 0.18s; min-height: clamp(56px, 10vw, 90px); display: flex; align-items: center; justify-content: center; }
+.opt-btn:hover:not(:disabled) { border-color: #42A5F5; transform: translateY(-2px); }
+.opt-btn.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+.opt-btn.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.opt-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+.q-feedback { margin-top: clamp(8px, 1.8vw, 14px); font-size: clamp(16px, 3vw, 22px); min-height: clamp(20px, 3.6vw, 28px); text-align: center; }
+.q-feedback.ok { color: #2E7D32; font-weight: bold; }
+.q-feedback.no { color: #C62828; }
+
+.q-easy-row { display: flex; justify-content: center; margin-top: clamp(6px, 1.4vw, 10px); }
+.q-easy { background: transparent; border: clamp(1px, 0.3vw, 2px) dashed #B0B7C2; border-radius: clamp(10px, 2vw, 14px); padding: clamp(5px, 1.1vw, 8px) clamp(10px, 2vw, 14px); font-family: inherit; font-size: clamp(11px, 2vw, 14px); color: #6E6E78; cursor: pointer; }
+
+/* ─── 빈칸 ─── */
+.fill-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.8vw, 14px); margin: clamp(10px, 2.2vw, 16px) 0; flex-wrap: wrap; }
+.fill-text { font-size: clamp(22px, 4.2vw, 34px); color: #455A64; }
+.fill-blank { display: inline-flex; align-items: center; justify-content: center; min-width: clamp(56px, 10vw, 90px); height: clamp(56px, 10vw, 90px); border: clamp(2px, 0.45vw, 3px) dashed #42A5F5; border-radius: clamp(12px, 2.4vw, 18px); background: #FFF9C4; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 6.4vw, 58px); color: #F57F17; }
+.fill-blank.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+
+/* ─── 매칭 ─── */
+.match-board { display: flex; gap: clamp(20px, 4vw, 40px); justify-content: center; margin: 0 auto; max-width: clamp(280px, 60vw, 500px); }
+.match-col { display: flex; flex-direction: column; gap: clamp(8px, 1.8vw, 14px); flex: 1; }
+.match-item { background: white; border: clamp(2px, 0.45vw, 3px) solid #B5D8F0; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(10px, 2vw, 14px); display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: clamp(56px, 10vw, 80px); transition: all 0.18s; font-size: clamp(28px, 5.4vw, 48px); }
+.match-item.selected { border-color: #42A5F5; background: #E1F5FE; }
+.match-item.matched { background: #C8E6C9; border-color: #2E7D32; cursor: default; opacity: 0.8; }
+.match-item.k-shake { animation: ka-shake 0.4s ease; }
+.match-num { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ─── 드래그 ─── */
+.drag-zone { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; flex-wrap: wrap; margin: clamp(10px, 2vw, 16px) 0; }
+.drop-target { width: clamp(80px, 16vw, 130px); height: clamp(80px, 16vw, 130px); border: clamp(2px, 0.45vw, 3px) dashed #42A5F5; border-radius: clamp(14px, 2.8vw, 20px); background: #F0F7FF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: clamp(6px, 1.4vw, 10px); }
+.drop-target.over { background: #E1F5FE; transform: scale(1.04); }
+.drop-target.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; }
+.drop-target.k-shake { animation: ka-shake 0.4s ease; }
+.drop-objs { font-size: clamp(20px, 4vw, 32px); }
+.drop-num-zone { min-height: clamp(28px, 5vw, 40px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 40px); color: #1976D2; }
+.drag-bank { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; margin-top: clamp(8px, 1.8vw, 14px); }
+.drag-num { width: clamp(50px, 10vw, 80px); height: clamp(50px, 10vw, 80px); background: #FFE082; border: clamp(2px, 0.45vw, 3px) solid #F57F17; border-radius: clamp(12px, 2.4vw, 18px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 5.4vw, 48px); color: #F57F17; cursor: grab; user-select: none; }
+.drag-num.used { opacity: 0.3; cursor: default; }
+
+/* ─── 순서 ─── */
+.order-zone { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; min-height: clamp(70px, 14vw, 110px); border: clamp(2px, 0.45vw, 3px) dashed #B5D8F0; border-radius: clamp(14px, 2.8vw, 20px); background: #F0F7FF; padding: clamp(10px, 2vw, 16px); margin: clamp(8px, 1.8vw, 14px) auto; max-width: clamp(280px, 60vw, 480px); align-items: center; flex-wrap: wrap; }
+.order-bank { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; flex-wrap: wrap; }
+.order-tile { width: clamp(50px, 10vw, 80px); height: clamp(50px, 10vw, 80px); background: white; border: clamp(2px, 0.45vw, 3px) solid #42A5F5; border-radius: clamp(12px, 2.4vw, 18px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(30px, 5.6vw, 50px); color: #1976D2; cursor: pointer; user-select: none; transition: all 0.18s; }
+.order-tile.placed { background: #FFE082; border-color: #F57F17; color: #F57F17; }
+
+/* ─── 결과 슬 ─── */
+.result-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 18px); margin-top: clamp(6px, 1.4vw, 10px); }
+.result-emoji { font-size: clamp(50px, 10vw, 90px); animation: ka-bounceIn 0.7s ease both; }
+.result-score { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(36px, 7vw, 60px); color: #F57F17; }
+.result-stars { font-size: clamp(34px, 6.6vw, 56px); letter-spacing: clamp(4px, 1vw, 8px); animation: ka-popBig 0.6s 0.3s ease both; }
+.result-msg { font-size: clamp(15px, 2.8vw, 21px); color: #455A64; text-align: center; line-height: 1.5; }
+.result-actions { display: flex; gap: clamp(10px, 2vw, 16px); margin-top: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; }
+.result-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #42A5F5; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(8px, 1.8vw, 12px) clamp(14px, 2.8vw, 22px); font-family: inherit; font-size: clamp(14px, 2.6vw, 19px); color: #1976D2; cursor: pointer; transition: all 0.18s; }
+.result-btn:hover { background: #E1F5FE; transform: translateY(-2px); }
+.result-btn.primary { background: #42A5F5; color: white; }
+.result-btn.primary:hover { background: #1976D2; }
+
+/* ─── 푸터 4-button ─── */
+.ka-f { display: grid; grid-template-columns: 1fr 1.3fr 1fr 1.3fr; gap: clamp(5px, 1vw, 8px); margin-top: clamp(10px, 2vw, 16px); }
+.ka-nav { background: #F4F4F8; color: #2A2A35; border: none; padding: clamp(8px, 1.8vw, 14px) 6px; font-size: clamp(12px, 2.2vw, 17px); border-radius: clamp(10px, 2vw, 14px); cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: clamp(3px, 0.8vw, 6px); white-space: nowrap; }
+.ka-nav svg { width: clamp(14px, 2vw, 20px); height: clamp(14px, 2vw, 20px); flex-shrink: 0; }
+.ka-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+.ka-nav-prev { color: #6E6E78; }
+.ka-nav-next { background: #42A5F5; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.ka-nav-next.hl { animation: ka-pulse 1.8s 1.2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+
+  <!-- ═══════════════════ 헤더 ═══════════════════ -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHome()">
+      <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="1" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar-fill" style="width:11%"></div></div>
+    <div class="ka-pg" id="pg-text">1 / 9</div>
+    <button class="ka-mute" id="mute-btn" onclick="toggleMute()" title="음성 켜기/끄기">🔊</button>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score-num">0</span>
+      <span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ 메인 콘텐츠 ═══════════════════ -->
+  <div class="ka-m">
+
+    <!-- ─────── 슬1: 인트로 ─────── -->
+    <div class="slide active" data-stage="extra-intro" data-stage-class="tag-q">
+      <div class="slide-tags">
+        <div class="tag-stage tag-q">📝 더 풀어보기</div>
+        <div class="tag-meta">1단원 · 1, 2, 3</div>
+      </div>
+      <h2 class="slide-title">더 <span class="ka-emph ka-em-1">풀어볼까요<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>?</h2>
+      <div class="intro-stage">
+        <div class="intro-emoji">📝</div>
+        <div class="intro-msg">1, 2, 3 문제 <b>7개</b>가 기다리고 있어요.<br>준비됐으면 <b>다음</b>을 눌러요!</div>
+      </div>
+      <audio data-tts="extra01-s01" preload="none"><!-- TTS: "더 풀어볼까요? 1, 2, 3 문제 7개가 기다리고 있어요. 준비됐으면 다음을 눌러요." --></audio>
+    </div>
+
+    <!-- ─────── 슬2: q-basic-01 변주 (4지선다 - 사물 개수) ─────── -->
+    <div class="slide" data-stage="기본" data-stage-class="tag-q"
+         data-slot-id="q-basic-01" data-pattern="4지선다"
+         data-vars='{"object_pool":["🐥","🐶","🌸","🍓","🐱","🍎"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-q">✏️ 기본 문제</div>
+        <div class="tag-meta">개수 세기</div>
+      </div>
+      <div class="q-stem">병아리는 모두 <span class="k-hl">몇 마리</span>인가요?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">🐥</span><span class="q-obj">🐥</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="2">
+        <button class="opt-btn" onclick="checkOpt(this, false)">1</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">2</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s02" preload="none"><!-- TTS: "병아리는 모두 몇 마리인가요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬3: q-basic-02 변주 (빈칸 채우기) ─────── -->
+    <div class="slide" data-stage="기본" data-stage-class="tag-q"
+         data-slot-id="q-basic-02" data-pattern="빈칸채우기"
+         data-vars='{"object_pool":["🐶","🌸","🍓","🍎","🐥","🐱"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-q">✏️ 기본 문제</div>
+        <div class="tag-meta">빈칸 채우기</div>
+      </div>
+      <div class="q-stem">강아지는 모두 <span class="k-hl">몇 마리</span>인가요?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">🐶</span>
+      </div>
+      <div class="fill-row">
+        <span class="fill-text">강아지</span>
+        <span class="fill-blank" id="fill-blank-q3">?</span>
+        <span class="fill-text">마리</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="1">
+        <button class="opt-btn" onclick="checkFill(this, 'q3', true, 1)">1</button>
+        <button class="opt-btn" onclick="checkFill(this, 'q3', false, 2)">2</button>
+        <button class="opt-btn" onclick="checkFill(this, 'q3', false, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s03" preload="none"><!-- TTS: "강아지는 모두 몇 마리인가요? 알맞은 숫자를 골라 빈칸을 채워봐요." --></audio>
+    </div>
+
+    <!-- ─────── 슬4: q-basic-03 변주 (터치 매칭) ─────── -->
+    <div class="slide" data-stage="기본" data-stage-class="tag-q"
+         data-slot-id="q-basic-03" data-pattern="터치매칭"
+         data-vars='{"object_pool":["🍎","🐥","🐶","🌸","🍓","🐱"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-q">✏️ 기본 문제</div>
+        <div class="tag-meta">짝지어 보기</div>
+      </div>
+      <div class="q-stem">그림과 숫자를 <span class="k-hl">짝지어</span> 봐요</div>
+      <div class="match-board">
+        <div class="match-col">
+          <div class="match-item" data-side="L" data-key="A">🍎</div>
+          <div class="match-item" data-side="L" data-key="B">🐥🐥🐥</div>
+          <div class="match-item" data-side="L" data-key="C">🐶🐶</div>
+        </div>
+        <div class="match-col">
+          <div class="match-item" data-side="R" data-key="C"><span class="match-num">2</span></div>
+          <div class="match-item" data-side="R" data-key="A"><span class="match-num">1</span></div>
+          <div class="match-item" data-side="R" data-key="B"><span class="match-num">3</span></div>
+        </div>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s04" preload="none"><!-- TTS: "그림과 숫자를 짝지어 봐요. 그림 하나를 누르고, 어울리는 숫자를 누르면 돼요." --></audio>
+    </div>
+
+    <!-- ─────── 슬5: q-basic-04 변주 (4지선다 - 숫자→사물) ─────── -->
+    <div class="slide" data-stage="기본" data-stage-class="tag-q"
+         data-slot-id="q-basic-04" data-pattern="4지선다"
+         data-vars='{"object_pool":["🌸","🐥","🐶","🍓","🍎","🐱"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-q">✏️ 기본 문제</div>
+        <div class="tag-meta">숫자만큼 골라요</div>
+      </div>
+      <div class="q-stem">꽃이 <span class="k-emph">2</span>송이인 그림은?</div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="2">
+        <button class="opt-btn" onclick="checkOpt(this, false)">🌸</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">🌸🌸</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">🌸🌸🌸</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s05" preload="none"><!-- TTS: "꽃이 2송이인 그림은 어느 것일까요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬6: q-app-01 변주 (4지선다 - 짧은 문장제) ─────── -->
+    <div class="slide" data-stage="응용" data-stage-class="tag-app"
+         data-slot-id="q-app-01" data-pattern="4지선다"
+         data-vars='{"object_pool":["🐥","🐶","🌸","🍓","🍎"],"number_range":[1,2,3],"context":"하나_더_오는_상황"}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🌟 응용 문제</div>
+        <div class="tag-meta">이야기 속 숫자</div>
+      </div>
+      <div class="q-stem">병아리가 <span class="k-emph">1</span>마리 있는데<br>친구가 병아리 <span class="k-emph">1</span>마리를 더 줬어요.<br>모두 몇 마리?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">🐥</span>
+        <span class="q-obj" style="opacity:0.5">➕</span>
+        <span class="q-obj">🐥</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="2">
+        <button class="opt-btn" onclick="checkOpt(this, false)">1</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">2</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s06" preload="none"><!-- TTS: "병아리가 1마리 있었어요. 친구가 1마리를 더 줬어요. 모두 몇 마리일까요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬7: q-app-02 변주 (드래그앤드롭) ─────── -->
+    <div class="slide" data-stage="응용" data-stage-class="tag-app"
+         data-slot-id="q-app-02" data-pattern="드래그앤드롭"
+         data-vars='{"object_pool":["🍎","🐱","🍓"],"number_range":[1,2,3]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🌟 응용 문제</div>
+        <div class="tag-meta">알맞은 숫자 옮기기</div>
+      </div>
+      <div class="q-stem">숫자를 <span class="k-hl">알맞은 그림</span> 위로 옮겨봐요</div>
+      <div class="drag-zone">
+        <div class="drop-target" data-answer="1"><div class="drop-objs">🍎</div><div class="drop-num-zone"></div></div>
+        <div class="drop-target" data-answer="2"><div class="drop-objs">🐱🐱</div><div class="drop-num-zone"></div></div>
+        <div class="drop-target" data-answer="3"><div class="drop-objs">🍓🍓🍓</div><div class="drop-num-zone"></div></div>
+      </div>
+      <div class="drag-bank">
+        <div class="drag-num" draggable="true" data-num="3">3</div>
+        <div class="drag-num" draggable="true" data-num="1">1</div>
+        <div class="drag-num" draggable="true" data-num="2">2</div>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s07" preload="none"><!-- TTS: "숫자를 알맞은 그림 위로 옮겨봐요. 숫자를 누르고 그림 위까지 끌어 놓으면 돼요." --></audio>
+    </div>
+
+    <!-- ─────── 슬8: q-app-03 변주 (순서맞추기 - 큰 수부터) ─────── -->
+    <div class="slide" data-stage="응용" data-stage-class="tag-app"
+         data-slot-id="q-app-03" data-pattern="순서맞추기"
+         data-vars='{"number_range":[1,2,3],"order":"desc"}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🌟 응용 문제</div>
+        <div class="tag-meta">큰 수부터</div>
+      </div>
+      <div class="q-stem"><span class="k-hl">큰 수부터</span> 순서대로 놓아봐요</div>
+      <div class="order-zone" id="order-zone-q8"></div>
+      <div class="order-bank" id="order-bank-q8">
+        <div class="order-tile" draggable="true" data-num="1">1</div>
+        <div class="order-tile" draggable="true" data-num="3">3</div>
+        <div class="order-tile" draggable="true" data-num="2">2</div>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="extra01-s08" preload="none"><!-- TTS: "큰 수부터 순서대로 놓아봐요. 3, 2, 1 순서로요." --></audio>
+    </div>
+
+    <!-- ─────── 슬9: 결과 ─────── -->
+    <div class="slide" data-stage="extra-result" data-stage-class="tag-end">
+      <div class="slide-tags">
+        <div class="tag-stage tag-end">🎯 다 풀었어요!</div>
+        <div class="tag-meta">결과 보기</div>
+      </div>
+      <h2 class="slide-title">잘 했어요!</h2>
+      <div class="result-stage">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <div class="result-score"><span id="result-score-num">0</span> / 35점</div>
+        <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+        <div class="result-msg" id="result-msg">7문제를 멋지게 풀어냈어요!</div>
+        <div class="result-actions">
+          <button class="result-btn" onclick="retryExtra()">🔁 다시 풀기</button>
+          <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
+        </div>
+      </div>
+      <audio data-tts="extra01-s09" preload="none"><!-- TTS: "잘 했어요! 7문제를 멋지게 풀어냈어요." --></audio>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ 푸터 4-button ═══════════════════ -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="btn-prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-nav" onclick="replayAudio()">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" onclick="showHintBubble()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next hl" id="btn-next" onclick="goNext()">다음 →</button>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   영역 4 base — 슬라이드 진행 + 양산 슬롯 인터랙션
+   슬 인덱스 매핑: 인트로=0 / q-basic 1~4 / q-app 5~7 / 결과=8
+   ════════════════════════════════════════════════════════════ */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const RESULT_IDX = 8;        // 결과 슬 인덱스
+const MATCH_IDX = 3;         // q-basic-03 매칭 슬
+const DRAG_IDX = 6;          // q-app-02 드래그 슬
+const ORDER_IDX = 7;         // q-app-03 순서 슬
+let cur = 0;
+let score = 0;
+let muted = false;
+
+function show(i){
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  cur = i;
+  document.getElementById('pg-text').textContent = (i+1) + ' / ' + total;
+  document.getElementById('bar-fill').style.width = ((i+1)/total*100) + '%';
+  document.getElementById('btn-prev').disabled = (i === 0);
+  document.getElementById('btn-next').textContent = (i === total-1) ? '끝!' : '다음 →';
+  if(i === RESULT_IDX) renderResult();
+  playSlideAudio();
+}
+
+function goNext(){
+  if(cur < total - 1) show(cur + 1);
+  else goHome();
+}
+function goPrev(){ if(cur > 0) show(cur - 1); }
+function goHome(){ window.location.href = '/grade1/semester1/math/'; }
+
+function toggleMute(){
+  muted = !muted;
+  const b = document.getElementById('mute-btn');
+  b.textContent = muted ? '🔇' : '🔊';
+  b.classList.toggle('off', muted);
+  if(muted) document.querySelectorAll('audio').forEach(a => a.pause());
+  else playSlideAudio();
+}
+
+function playSlideAudio(){
+  if(muted) return;
+  const slide = slides[cur];
+  const audio = slide.querySelector('audio');
+  if(audio && audio.src){
+    audio.currentTime = 0;
+    audio.play().catch(()=>{ /* mp3 미배치 시 무음 */ });
+  }
+}
+function replayAudio(){ playSlideAudio(); }
+
+/* ─── 4지선다·빈칸 정답 체크 ─── */
+function checkOpt(btn, ok){
+  const slide = btn.closest('.slide');
+  const fb = slide.querySelector('.q-feedback');
+  if(btn.disabled) return;
+  if(ok){
+    btn.classList.add('correct');
+    fb.textContent = '🎉 정답! 잘했어요';
+    fb.className = 'q-feedback ok';
+    score += 5;
+    document.getElementById('score-num').textContent = score;
+    slide.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+    setTimeout(()=>{ if(cur < total-1) goNext(); }, 1400);
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '다시 한 번 세어볼까요?';
+    fb.className = 'q-feedback no';
+    setTimeout(()=>{ btn.classList.remove('wrong'); btn.disabled = true; }, 600);
+  }
+}
+
+function checkFill(btn, slideKey, ok, num){
+  const blank = document.getElementById('fill-blank-' + slideKey);
+  if(ok){
+    blank.textContent = num;
+    blank.classList.add('filled');
+    checkOpt(btn, true);
+  } else {
+    checkOpt(btn, false);
+  }
+}
+
+/* ─── 매칭 (q-basic-03 = 슬3) ─── */
+let matchSelected = null;
+let matchPairs = 0;
+const matchTotal = 3;
+document.querySelectorAll('.match-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if(item.classList.contains('matched')) return;
+    if(!matchSelected){
+      matchSelected = item;
+      item.classList.add('selected');
+      return;
+    }
+    if(matchSelected === item){
+      item.classList.remove('selected');
+      matchSelected = null;
+      return;
+    }
+    if(matchSelected.dataset.side === item.dataset.side){
+      matchSelected.classList.remove('selected');
+      matchSelected = item;
+      item.classList.add('selected');
+      return;
+    }
+    if(matchSelected.dataset.key === item.dataset.key){
+      matchSelected.classList.add('matched');
+      item.classList.add('matched');
+      matchSelected.classList.remove('selected');
+      matchSelected = null;
+      matchPairs++;
+      if(matchPairs === matchTotal){
+        const fb = slides[MATCH_IDX].querySelector('.q-feedback');
+        fb.textContent = '🎉 모두 맞췄어요!';
+        fb.className = 'q-feedback ok';
+        score += 5;
+        document.getElementById('score-num').textContent = score;
+        setTimeout(goNext, 1400);
+      }
+    } else {
+      const a = matchSelected, b = item;
+      a.classList.add('k-shake'); b.classList.add('k-shake');
+      setTimeout(() => {
+        a.classList.remove('selected', 'k-shake');
+        b.classList.remove('k-shake');
+        matchSelected = null;
+      }, 500);
+    }
+  });
+});
+
+/* ─── 드래그 (q-app-02 = 슬6) ─── */
+let dragging = null;
+document.querySelectorAll('.drag-num').forEach(d => {
+  d.addEventListener('dragstart', e => { dragging = d; e.dataTransfer.effectAllowed = 'move'; });
+  d.addEventListener('dragend', () => { dragging = null; });
+  d.addEventListener('touchstart', e => { dragging = d; });
+});
+let dropDone = 0;
+const dropTotal = 3;
+document.querySelectorAll('.drop-target').forEach(t => {
+  t.addEventListener('dragover', e => { e.preventDefault(); t.classList.add('over'); });
+  t.addEventListener('dragleave', () => t.classList.remove('over'));
+  t.addEventListener('drop', e => {
+    e.preventDefault();
+    t.classList.remove('over');
+    if(!dragging || dragging.classList.contains('used')) return;
+    if(dragging.dataset.num === t.dataset.answer){
+      t.querySelector('.drop-num-zone').textContent = dragging.dataset.num;
+      t.classList.add('filled');
+      dragging.classList.add('used');
+      dropDone++;
+      if(dropDone === dropTotal){
+        const slide = slides[DRAG_IDX];
+        const fb = slide.querySelector('.q-feedback');
+        fb.textContent = '🎉 모두 맞췄어요!';
+        fb.className = 'q-feedback ok';
+        score += 5;
+        document.getElementById('score-num').textContent = score;
+        setTimeout(goNext, 1400);
+      }
+    } else {
+      t.classList.add('k-shake');
+      setTimeout(() => t.classList.remove('k-shake'), 500);
+    }
+  });
+});
+
+/* ─── 순서 맞추기 (q-app-03 = 슬7, desc 큰 수부터) ─── */
+const orderZone = document.getElementById('order-zone-q8');
+const orderBank = document.getElementById('order-bank-q8');
+let orderTile = null;
+document.querySelectorAll('.order-tile').forEach(t => {
+  t.addEventListener('dragstart', e => { orderTile = t; });
+  t.addEventListener('click', () => {
+    if(t.classList.contains('placed')) return;
+    orderZone.appendChild(t);
+    t.classList.add('placed');
+    checkOrder();
+  });
+});
+orderZone.addEventListener('dragover', e => e.preventDefault());
+orderZone.addEventListener('drop', e => {
+  e.preventDefault();
+  if(!orderTile || orderTile.classList.contains('placed')) return;
+  orderZone.appendChild(orderTile);
+  orderTile.classList.add('placed');
+  checkOrder();
+});
+function checkOrder(){
+  const tiles = orderZone.querySelectorAll('.order-tile');
+  if(tiles.length < 3) return;
+  const seq = [...tiles].map(t => +t.dataset.num).join(',');
+  const slide = slides[ORDER_IDX];
+  const fb = slide.querySelector('.q-feedback');
+  if(seq === '3,2,1'){
+    fb.textContent = '🎉 정답! 큰 수부터 3, 2, 1 순서예요';
+    fb.className = 'q-feedback ok';
+    score += 5;
+    document.getElementById('score-num').textContent = score;
+    setTimeout(goNext, 1400);
+  } else {
+    fb.textContent = '다시 놓아볼까요? 큰 수부터요';
+    fb.className = 'q-feedback no';
+    setTimeout(() => {
+      tiles.forEach(t => { orderBank.appendChild(t); t.classList.remove('placed'); });
+      fb.textContent = '';
+      fb.className = 'q-feedback';
+    }, 1200);
+  }
+}
+
+/* ─── 결과 슬 렌더링 ─── */
+function renderResult(){
+  const max = 35;  // 7문제 × 5점
+  document.getElementById('result-score-num').textContent = score;
+  let stars = '⭐⭐⭐';
+  let emoji = '🎉';
+  let msg = '7문제를 멋지게 풀어냈어요!';
+  if(score === max){
+    stars = '⭐⭐⭐';
+    emoji = '🏆';
+    msg = '와! 7문제 다 맞췄어요. 정말 잘했어요!';
+  } else if(score >= max * 0.7){
+    stars = '⭐⭐⭐';
+    emoji = '🎉';
+    msg = '잘 풀었어요! 거의 다 맞췄어요.';
+  } else if(score >= max * 0.4){
+    stars = '⭐⭐';
+    emoji = '😊';
+    msg = '잘했어요. 다시 풀면서 더 익혀봐요.';
+  } else {
+    stars = '⭐';
+    emoji = '💪';
+    msg = '천천히 다시 한 번 풀어볼까요?';
+  }
+  document.getElementById('result-stars').textContent = stars;
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-msg').textContent = msg;
+}
+
+function retryExtra(){ window.location.reload(); }
+
+/* ─── 어려워요·힌트 ─── */
+function showHelp(btn){
+  const slide = btn.closest('.slide');
+  const fb = slide.querySelector('.q-feedback');
+  fb.textContent = '천천히 하나씩 세어볼까요? 1, 2, 3...';
+  fb.className = 'q-feedback';
+  fb.style.color = '#1976D2';
+}
+function showHintBubble(){
+  const slide = slides[cur];
+  const fb = slide.querySelector('.q-feedback');
+  if(fb){ showHelp({closest: () => slide}); }
+}
+
+/* ─── 키보드 ←/→ ─── */
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') goNext();
+  else if(e.key === 'ArrowLeft') goPrev();
+});
+
+/* 초기 상태 */
+show(0);
+</script>
+
+</body>
+</html>
