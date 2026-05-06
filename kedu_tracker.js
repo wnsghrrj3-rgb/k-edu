@@ -51,7 +51,8 @@
 
       // --- 인증 가드 (보호 경로) ---
       // 무로그인 = 즉시 /auth로 리다이렉트.
-      if(PROTECTED.test(path)){
+      // 단, kedu_config.js의 KEDU_AUTH_GATE === false면 게이트 OFF (작업·검증용).
+      if(PROTECTED.test(path) && (typeof KEDU_AUTH_GATE === 'undefined' || KEDU_AUTH_GATE !== false)){
         state.client.auth.getSession().then(function(result){
           state.session = result.data.session || null;
           if(!state.session){
