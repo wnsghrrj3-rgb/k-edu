@@ -398,7 +398,7 @@ body {
         </div>
         <div class="result-msg" id="result-msg">단원 정리 한 판 잘 했어요!</div>
         <div class="result-actions">
-          <button class="result-btn" onclick="retryGame()">🔁 다시 도전</button>
+          <button class="result-btn" onclick="goRandomGame()">🎲 다른 게임!</button>
           <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
         </div>
       </div>
@@ -641,7 +641,39 @@ function renderResult(){
   document.getElementById('result-title').textContent = title;
 }
 
-function retryGame(){ window.location.reload(); }
+/* ─── C안 동선 (cycle 17): 다른 게임 = 단원 풀에서 안 푼 것 우선 랜덤 ─── */
+const UNIT_BASE = 'g1_math_u1';   // 단원 식별자 (단원 게임은 단원 단위)
+const GAME_NUM = 1;                // 이 파일의 game 번호
+const GAME_TOTAL = 3;              // 단원당 양산 N (Foundation 4.2)
+
+// mount 시 푼 것 기록
+(function markGameDone(){
+  try{
+    const key = 'kedu_game_done_' + UNIT_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    if(!done.includes(GAME_NUM)){
+      done.push(GAME_NUM);
+      localStorage.setItem(key, JSON.stringify(done));
+    }
+  }catch(e){}
+})();
+
+function goRandomGame(){
+  try{
+    const key = 'kedu_game_done_' + UNIT_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    const all = Array.from({length: GAME_TOTAL}, (_,i) => i+1);
+    const undone = all.filter(n => !done.includes(n));
+    const pool = undone.length > 0 ? undone : all;
+    const next = pool[Math.floor(Math.random() * pool.length)];
+    if(next === GAME_NUM && pool.length === 1){ window.location.reload(); return; }
+    const target = UNIT_BASE + '_game_' + String(next).padStart(2,'0') + '.html';
+    window.location.href = target;
+  }catch(e){ window.location.reload(); }
+}
+
+// 호환: 기존 retryGame() 호출 남아있을 수 있어 alias
+function retryGame(){ goRandomGame(); }
 
 /* ─── 키보드 ─── */
 document.addEventListener('keydown', e => {

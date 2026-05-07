@@ -417,7 +417,7 @@ body {
         <div class="result-stars" id="result-stars">⭐⭐⭐</div>
         <div class="result-msg" id="result-msg">7문제를 멋지게 풀어냈어요!</div>
         <div class="result-actions">
-          <button class="result-btn" onclick="retryExtra()">🔁 다시 풀기</button>
+          <button class="result-btn" onclick="goRandomExtra()">🔁 한 번 더!</button>
           <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
         </div>
       </div>
@@ -692,7 +692,39 @@ function renderResult(){
   document.getElementById('result-msg').textContent = msg;
 }
 
-function retryExtra(){ window.location.reload(); }
+/* ─── C안 동선 (cycle 17): 한 번 더 = 안 푼 것 우선 랜덤 진입 ─── */
+const LESSON_BASE = 'g1_math_u1_01';   // 차시 식별자 (양산판 prefix)
+const EXTRA_NUM = 1;                    // 이 파일의 extra 번호
+const EXTRA_TOTAL = 10;                 // 차시당 양산 N (Foundation 4.4)
+
+// mount 시 푼 것 기록
+(function markExtraDone(){
+  try{
+    const key = 'kedu_extra_done_' + LESSON_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    if(!done.includes(EXTRA_NUM)){
+      done.push(EXTRA_NUM);
+      localStorage.setItem(key, JSON.stringify(done));
+    }
+  }catch(e){}
+})();
+
+function goRandomExtra(){
+  try{
+    const key = 'kedu_extra_done_' + LESSON_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    const all = Array.from({length: EXTRA_TOTAL}, (_,i) => i+1);
+    const undone = all.filter(n => !done.includes(n));
+    const pool = undone.length > 0 ? undone : all;  // 다 풀었으면 전체 풀에서 랜덤
+    const next = pool[Math.floor(Math.random() * pool.length)];
+    if(next === EXTRA_NUM && pool.length === 1){ window.location.reload(); return; }
+    const target = LESSON_BASE + '_extra_' + String(next).padStart(2,'0') + '.html';
+    window.location.href = target;
+  }catch(e){ window.location.reload(); }
+}
+
+// 호환: 기존 retryExtra() 호출 남아있을 수 있어 alias
+function retryExtra(){ goRandomExtra(); }
 
 /* ─── 어려워요·힌트 ─── */
 function showHelp(btn){
