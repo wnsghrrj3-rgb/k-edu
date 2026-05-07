@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <!--
-  K-edu 1학년 수학 1단원 — 단원 게임 (game_01)
+  K-edu 1학년 수학 1단원 — 단원 도전 퀴즈 (game_01)
   ────────────────────────────────────────────────────────
-  영역 2 base — 카훗형 즉답 퀴즈, 개인 모드 (cycle 12 박힘)
+  영역 2 base — 즉답형 도전 퀴즈, 개인 모드 (cycle 12 박힘 → cycle 19 자동진행 제거 + 명칭 정정)
   Foundation 04 4.2 / STATUS-kedu-game.md 준수, 디자인 헌법 v11 적용 (풀스크린).
   파일명 규약: g{N}_{과목}_{단원약어}_game_{NN}.html
 
   영역 2 본질:
-    - 카훗 응용 + 게임 형식 7종 풀 활용
+    - 즉답형 타이머 퀴즈 + 게임 형식 7종 풀 활용
     - 단원 정리를 다양·재밌게
     - 인디스쿨 대체 use case
     - 진입: 단원 끝, 학생 호출 + 교사 라이브
 
-  이번 base 형식: 카훗형 즉답 퀴즈 (7종 중 1번)
-    - 5초 타이머 / 빠른 답 = 보너스 점수
+  이번 base 형식: 즉답형 도전 퀴즈 (7종 중 1번)
+    - 5초 타이머 / 빠른 답 = 보너스 점수 (긴장감)
     - 정답: 50 + 남은초×10 = 50~100점 / 오답·시간초과: 0점
     - 8문제 = 만점 800점
-    - 즉답 즉시 피드백 + 1.0~1.5초 후 자동 다음
+    - 답 처리 후 자동 진행 X (cycle 19): 학생이 직접 "다음 →" 누름. 페이스 학생 통제.
+    - 시간 만료 시도 자동 진행 X (cycle 19): 정답 노출 후 학생이 다음 누름.
 
   학년군 변주 (저학년):
-    - 5초 = 시간 여유 (정식 카훗 3초보다 길게)
+    - 5초 타이머 = 빠른 답 보너스용 (시간 만료여도 강제 진행 X)
     - 점수보다 재미 강조 (결과 슬 메시지 톤)
     - 단순 즉답형 (4지선다·빈칸만, 매칭/드래그 X)
 
@@ -34,8 +35,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="kedu-lesson-id" content="g1_math_u1_game_01">
 <meta name="kedu-lesson-area" content="game">
-<meta name="kedu-game-format" content="kahoot-quiz">
-<title>1단원 단원 게임 · K-edu 1학년 수학</title>
+<meta name="kedu-game-format" content="quick-quiz">
+<title>1단원 단원 도전 퀴즈 · K-edu 1학년 수학</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../math-common.css">
 <style>
@@ -200,17 +201,17 @@ body {
         <div class="tag-stage">🎮 단원 게임</div>
         <div class="tag-meta">1단원 · 9까지의 수</div>
       </div>
-      <h2 class="slide-title">단원 정리 카훗!</h2>
+      <h2 class="slide-title">단원 도전 퀴즈!</h2>
       <div class="intro-stage">
-        <div class="intro-emoji">🎮</div>
+        <div class="intro-emoji">🎯</div>
         <div class="intro-rules">
-          📝 <b>8문제</b> 즉답 게임!<br>
+          📝 <b>8문제</b> 즉답 도전!<br>
           ⏱️ 한 문제당 <b>5초</b>!<br>
           ⚡ 빠르게 풀면 <b>보너스 점수</b>!<br>
           🏆 만점 <b>800점</b> 도전!
         </div>
       </div>
-      <audio data-tts="game-s01" preload="none"><!-- TTS: "단원 정리 카훗! 8문제 즉답 게임이에요. 한 문제당 5초, 빠르게 풀면 보너스 점수를 받아요. 만점 800점에 도전해봐요!" --></audio>
+      <audio data-tts="game-s01" preload="none"><!-- TTS: "단원 도전 퀴즈! 8문제 즉답 도전이에요. 한 문제당 5초, 빠르게 풀면 보너스 점수를 받아요. 만점 800점에 도전해봐요!" --></audio>
     </div>
 
     <!-- 슬2~9: 즉답 8문제 (4지선다·빈칸) -->
@@ -422,7 +423,7 @@ body {
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   영역 2 base — 카훗형 즉답 퀴즈, 개인 모드
+   영역 2 base — 즉답형 도전 퀴즈, 개인 모드
    슬 인덱스: 인트로=0 / Q1~Q8 = 1~8 / 결과=9
    ════════════════════════════════════════════════════════════ */
 const slides = document.querySelectorAll('.slide');
@@ -564,7 +565,8 @@ function answerQ(btn, picked){
     fb.innerHTML = '🎉 정답! <span class="q-bonus">+' + earned + '점</span>';
     fb.className = 'q-feedback ok';
     document.getElementById('score-num').textContent = totalScore;
-    setTimeout(goNext, 1000);
+    // cycle 19: 자동 진행 제거 — 학생이 직접 "다음 →" 누름
+    document.getElementById('btn-next').classList.add('hl');
   } else {
     btn.classList.add('wrong');
     // 정답 노출
@@ -575,7 +577,8 @@ function answerQ(btn, picked){
     stats.perQ.push({correct: false, score: 0, remainSec});
     fb.textContent = '❌ 정답은 ' + correct;
     fb.className = 'q-feedback no';
-    setTimeout(goNext, 1500);
+    // cycle 19: 자동 진행 제거 — 학생이 직접 "다음 →" 누름
+    document.getElementById('btn-next').classList.add('hl');
   }
 }
 
@@ -606,7 +609,8 @@ function timeoutQ(){
   stats.perQ.push({correct: false, score: 0, remainSec: 0});
   fb.textContent = '⏰ 시간 끝! 정답은 ' + correct;
   fb.className = 'q-feedback no';
-  setTimeout(goNext, 1500);
+  // cycle 19: 자동 진행 제거 — 학생이 직접 "다음 →" 누름
+  document.getElementById('btn-next').classList.add('hl');
 }
 
 /* ─── 결과 ─── */
