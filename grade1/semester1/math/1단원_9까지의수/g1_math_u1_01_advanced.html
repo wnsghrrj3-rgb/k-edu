@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<!--
+  K-edu 1학년 수학 1단원 1차시 — 심화 트랙 (advanced)
+  ────────────────────────────────────────────────────────
+  영역 3 base — 심화 트랙 모형 (cycle 13 박힘)
+  Foundation 4.3 준수, 디자인 헌법 v11 적용 (풀스크린 변환).
+  파일명 규약: g{N}_math_{단원약어}_{차시번호}_advanced.html
+
+  영역 3 본질:
+    - 과목: 수학 전학년만 (다른 과목 X)
+    - 분량: 슬라이드 6~7개 (심화 + 최상위 심화)
+    - 시간: 본 차시와 별도 학습 단위 (15~20분)
+    - 진입: 차시 목록 별도 카드 (본 차시 직후 부록 X)
+    - 본질: 도전 — 본 차시 한 단계 위 사고력
+
+  골격 (7 슬라이드):
+    슬1: 인트로 (도전 안내 — 5문제 / 35점 만점)
+    슬2~4: 심화 3문제 (5점 × 3 = 15점)
+      - q-adv-01 4지선다  : 사고력 (가장 큰 수)
+      - q-adv-02 빈칸채우기: 사이 수 추론 (1, ?, 3)
+      - q-adv-03 4지선다  : 합치기 도입
+    슬5~6: 최상위 심화 2문제 (10점 × 2 = 20점)
+      - q-top-01 터치매칭  : 다른 표현 통합 (그림·점·숫자)
+      - q-top-02 4지선다  : 서술 응용
+    슬7: 결과 (점수 · 별 보상 · 다시 도전 · 차시 목록)
+
+  점수 차등: 심화 5점 / 최상위 10점 (도전 본질 박힘)
+  9패턴 사용: 4지선다(3) + 빈칸채우기(1) + 터치매칭(1) = 3가지 (규약 ≥3 통과)
+
+  시그니처 색: 딥퍼플 (#5E35B1 메인 / #7E57C2 강조 / #EDE7F6 배경)
+    - 영역 1 시범 = 파랑 / 영역 4 양산 = 파랑계 / 영역 2 게임 = 노랑·주황 / 영역 3 도전 = 보라
+
+  양산 슬롯 메타: data-slot-id / data-pattern / data-vars / data-slot-fixed
+  TTS 자리: <audio data-tts="..."> placeholder (Clova mp3 batch 후 src 채움)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g1_math_u1_01_advanced">
+<meta name="kedu-lesson-area" content="advanced">
+<title>1, 2, 3 도전하기 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #EDE7F6; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  overflow: hidden;
+}
+
+/* ─── 애니메이션 키프레임 ─── */
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-drawLine { to { transform: scaleX(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(94,53,177,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(94,53,177,0.5); } }
+@keyframes ka-starDraw { to { stroke-dashoffset: 0; } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-bounceIn { 0% { opacity: 0; transform: translateY(30px) scale(0.8); } 60% { opacity: 1; transform: translateY(-6px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+
+/* ─── 카드 외형 (풀스크린 변환) ─── */
+.ka {
+  background: white; border-radius: 0;
+  width: 100vw; height: 100vh;
+  padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3.2vw, 32px);
+  color: #333;
+  display: flex; flex-direction: column;
+  margin: 0;
+  position: relative; overflow: hidden;
+}
+
+/* ─── 헤더 (시범 base와 동일) ─── */
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.4vw, 12px); margin-bottom: clamp(10px, 2.2vw, 18px); flex-wrap: nowrap; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px) clamp(8px, 1.6vw, 14px); border-radius: clamp(8px, 1.5vw, 12px); display: flex; align-items: center; gap: clamp(4px, 0.8vw, 7px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; }
+.ka-lb svg { width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px); flex-shrink: 0; }
+.ka-lb span { font-size: clamp(11px, 1.8vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.55vw, 5px); background: #EDE7F6; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #7E57C2; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #5E35B1; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.8vw, 14px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #5E35B1; font-size: clamp(13px, 2.2vw, 17px); width: clamp(30px, 5vw, 38px); height: clamp(30px, 5vw, 38px); display: flex; align-items: center; justify-content: center; }
+.ka-mute.off { color: #B0B7C2; }
+.ka-sc { background: #FFF8E1; color: #F57F17; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.6vw, 12px); border-radius: 999px; display: flex; align-items: center; gap: clamp(3px, 0.6vw, 5px); flex-shrink: 0; }
+.ka-sc svg { width: clamp(11px, 1.85vw, 14px); height: clamp(11px, 1.85vw, 14px); flex-shrink: 0; }
+.ka-sc-n { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 2vw, 16px); }
+.ka-sc-u { font-size: clamp(10px, 1.65vw, 13px); }
+
+/* ─── 메인 슬라이드 영역 ─── */
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; }
+.slide { display: none; flex-direction: column; justify-content: flex-start; align-items: center; height: 100%; width: 100%; padding-top: clamp(12px, 2.5vw, 20px); animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-tags { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(10px, 2vw, 14px); flex-wrap: wrap; align-self: flex-start; }
+.tag-stage { background: #FFF8E1; color: #F57F17; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); display: inline-flex; align-items: center; gap: clamp(3px, 0.8vw, 6px); }
+.tag-q { background: #D1C4E9; color: #0277BD; }
+.tag-app { background: #F3E5F5; color: #7B1FA2; }
+.tag-top { background: #FCE4EC; color: #AD1457; }
+.tag-end { background: #C8E6C9; color: #2E7D32; }
+.tag-meta { background: #F4F4F8; color: #6E6E78; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); }
+
+.slide-title { font-size: clamp(22px, 4.4vw, 38px); margin: 0 0 clamp(12px, 2.6vw, 20px); line-height: 1.4; color: #5E35B1; letter-spacing: -0.3px; font-weight: 400; text-align: center; }
+.slide-sub   { font-size: clamp(16px, 3vw, 23px); color: #455A64; margin-bottom: clamp(10px, 2vw, 16px); text-align: center; }
+
+/* ─── 시그니처 강조 (인트로/결과만 사용) ─── */
+.ka-emph { position: relative; display: inline-block; padding-right: clamp(2px, 0.5vw, 4px); }
+.ka-emph::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3px;
+  height: clamp(3px, 0.55vw, 5px); background: #E63946;
+  border-radius: 999px; transform: scaleX(0); transform-origin: left;
+}
+.ka-em-1::after { animation: ka-drawLine 0.6s 1.2s ease forwards; }
+.ka-mini {
+  position: absolute; top: -8px; right: -22px;
+  width: clamp(18px, 3vw, 26px); height: clamp(18px, 3vw, 26px);
+  pointer-events: none;
+}
+.ka-mini path {
+  fill: none; stroke: #E63946; stroke-width: 2.4; stroke-linejoin: round;
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+}
+.ka-mini-1 path { animation: ka-starDraw 0.5s 1.8s ease forwards; }
+
+.slide.active > .slide-tags { animation: ka-fadeUp 0.45s 0.2s ease both; }
+.slide.active > .slide-title { animation: ka-fadeUp 0.45s 0.4s ease both; }
+.slide.active > .slide-sub { animation: ka-fadeUp 0.45s 0.6s ease both; }
+
+/* ─── 인트로 슬 ─── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.8vw, 22px); margin-top: clamp(8px, 1.8vw, 14px); }
+.intro-emoji { font-size: clamp(56px, 11vw, 100px); animation: ka-bounceIn 0.7s ease both; }
+.intro-msg { font-size: clamp(17px, 3.2vw, 25px); color: #455A64; text-align: center; line-height: 1.5; }
+
+/* ─── 양산 슬롯 공통 (시범 base 동일) ─── */
+.q-stem { font-size: clamp(20px, 3.8vw, 30px); color: #5E35B1; margin: 0 auto clamp(12px, 2.4vw, 18px); text-align: center; line-height: 1.5; }
+.q-stem .k-hl { background: linear-gradient(180deg, transparent 60%, #FFF59D 60%); padding: 0 4px; }
+.q-stem .k-emph { color: #E63946; font-weight: bold; }
+.q-visual { display: flex; gap: clamp(8px, 1.8vw, 14px); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 2.8vw, 22px); border: clamp(2px, 0.4vw, 3px) solid #B39DDB; border-radius: clamp(14px, 2.8vw, 20px); background: #EDE7F6; margin: 0 auto clamp(12px, 2.4vw, 18px); justify-content: center; max-width: clamp(280px, 60vw, 480px); flex-wrap: wrap; }
+.q-obj { font-size: clamp(28px, 5.4vw, 48px); animation: ka-pop 0.5s ease both; }
+
+.opt-grid { display: grid; gap: clamp(8px, 1.8vw, 14px); width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto; }
+.opt-3 { grid-template-columns: repeat(3, 1fr); }
+.opt-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #B39DDB; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(12px, 2.4vw, 18px); font-family: inherit; font-size: clamp(22px, 4.2vw, 34px); color: #5E35B1; cursor: pointer; transition: all 0.18s; min-height: clamp(56px, 10vw, 90px); display: flex; align-items: center; justify-content: center; }
+.opt-btn:hover:not(:disabled) { border-color: #7E57C2; transform: translateY(-2px); }
+.opt-btn.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+.opt-btn.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.opt-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+.q-feedback { margin-top: clamp(8px, 1.8vw, 14px); font-size: clamp(16px, 3vw, 22px); min-height: clamp(20px, 3.6vw, 28px); text-align: center; }
+.q-feedback.ok { color: #2E7D32; font-weight: bold; }
+.q-feedback.no { color: #C62828; }
+
+.q-easy-row { display: flex; justify-content: center; margin-top: clamp(6px, 1.4vw, 10px); }
+.q-easy { background: transparent; border: clamp(1px, 0.3vw, 2px) dashed #B0B7C2; border-radius: clamp(10px, 2vw, 14px); padding: clamp(5px, 1.1vw, 8px) clamp(10px, 2vw, 14px); font-family: inherit; font-size: clamp(11px, 2vw, 14px); color: #6E6E78; cursor: pointer; }
+
+/* ─── 빈칸 ─── */
+.fill-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.8vw, 14px); margin: clamp(10px, 2.2vw, 16px) 0; flex-wrap: wrap; }
+.fill-text { font-size: clamp(22px, 4.2vw, 34px); color: #455A64; }
+.fill-blank { display: inline-flex; align-items: center; justify-content: center; min-width: clamp(56px, 10vw, 90px); height: clamp(56px, 10vw, 90px); border: clamp(2px, 0.45vw, 3px) dashed #7E57C2; border-radius: clamp(12px, 2.4vw, 18px); background: #FFF9C4; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 6.4vw, 58px); color: #F57F17; }
+.fill-blank.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+
+/* ─── 매칭 ─── */
+.match-board { display: flex; gap: clamp(20px, 4vw, 40px); justify-content: center; margin: 0 auto; max-width: clamp(280px, 60vw, 500px); }
+.match-col { display: flex; flex-direction: column; gap: clamp(8px, 1.8vw, 14px); flex: 1; }
+.match-item { background: white; border: clamp(2px, 0.45vw, 3px) solid #B39DDB; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(10px, 2vw, 14px); display: flex; align-items: center; justify-content: center; cursor: pointer; min-height: clamp(56px, 10vw, 80px); transition: all 0.18s; font-size: clamp(28px, 5.4vw, 48px); }
+.match-item.selected { border-color: #7E57C2; background: #D1C4E9; }
+.match-item.matched { background: #C8E6C9; border-color: #2E7D32; cursor: default; opacity: 0.8; }
+.match-item.k-shake { animation: ka-shake 0.4s ease; }
+.match-num { color: #5E35B1; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ─── 드래그 ─── */
+.drag-zone { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; flex-wrap: wrap; margin: clamp(10px, 2vw, 16px) 0; }
+.drop-target { width: clamp(80px, 16vw, 130px); height: clamp(80px, 16vw, 130px); border: clamp(2px, 0.45vw, 3px) dashed #7E57C2; border-radius: clamp(14px, 2.8vw, 20px); background: #EDE7F6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: clamp(6px, 1.4vw, 10px); }
+.drop-target.over { background: #D1C4E9; transform: scale(1.04); }
+.drop-target.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; }
+.drop-target.k-shake { animation: ka-shake 0.4s ease; }
+.drop-objs { font-size: clamp(18px, 3vw, 26px); max-width: 100%; line-height: 1; overflow: hidden; text-align: center; letter-spacing: -1px; }
+.drop-num-zone { min-height: clamp(28px, 5vw, 40px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 40px); color: #5E35B1; }
+.drag-bank { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; margin-top: clamp(8px, 1.8vw, 14px); }
+.drag-num { width: clamp(50px, 10vw, 80px); height: clamp(50px, 10vw, 80px); background: #FFE082; border: clamp(2px, 0.45vw, 3px) solid #F57F17; border-radius: clamp(12px, 2.4vw, 18px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 5.4vw, 48px); color: #F57F17; cursor: grab; user-select: none; }
+.drag-num.used { opacity: 0.3; cursor: default; }
+
+/* ─── 순서 ─── */
+.order-zone { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; min-height: clamp(70px, 14vw, 110px); border: clamp(2px, 0.45vw, 3px) dashed #B39DDB; border-radius: clamp(14px, 2.8vw, 20px); background: #EDE7F6; padding: clamp(10px, 2vw, 16px); margin: clamp(8px, 1.8vw, 14px) auto; max-width: clamp(280px, 60vw, 480px); align-items: center; flex-wrap: wrap; }
+.order-bank { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; flex-wrap: wrap; }
+.order-tile { width: clamp(50px, 10vw, 80px); height: clamp(50px, 10vw, 80px); background: white; border: clamp(2px, 0.45vw, 3px) solid #7E57C2; border-radius: clamp(12px, 2.4vw, 18px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(30px, 5.6vw, 50px); color: #5E35B1; cursor: pointer; user-select: none; transition: all 0.18s; }
+.order-tile.placed { background: #FFE082; border-color: #F57F17; color: #F57F17; }
+
+/* ─── 결과 슬 ─── */
+.result-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 18px); margin-top: clamp(6px, 1.4vw, 10px); }
+.result-emoji { font-size: clamp(50px, 10vw, 90px); animation: ka-bounceIn 0.7s ease both; }
+.result-score { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(36px, 7vw, 60px); color: #F57F17; }
+.result-stars { font-size: clamp(34px, 6.6vw, 56px); letter-spacing: clamp(4px, 1vw, 8px); animation: ka-popBig 0.6s 0.3s ease both; }
+.result-msg { font-size: clamp(15px, 2.8vw, 21px); color: #455A64; text-align: center; line-height: 1.5; }
+.result-actions { display: flex; gap: clamp(10px, 2vw, 16px); margin-top: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; }
+.result-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #7E57C2; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(8px, 1.8vw, 12px) clamp(14px, 2.8vw, 22px); font-family: inherit; font-size: clamp(14px, 2.6vw, 19px); color: #5E35B1; cursor: pointer; transition: all 0.18s; }
+.result-btn:hover { background: #D1C4E9; transform: translateY(-2px); }
+.result-btn.primary { background: #7E57C2; color: white; }
+.result-btn.primary:hover { background: #5E35B1; }
+
+/* ─── 푸터 4-button ─── */
+.ka-f { display: grid; grid-template-columns: 1fr 1.3fr 1fr 1.3fr; gap: clamp(5px, 1vw, 8px); margin-top: clamp(10px, 2vw, 16px); }
+.ka-nav { background: #F4F4F8; color: #2A2A35; border: none; padding: clamp(8px, 1.8vw, 14px) 6px; font-size: clamp(12px, 2.2vw, 17px); border-radius: clamp(10px, 2vw, 14px); cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: clamp(3px, 0.8vw, 6px); white-space: nowrap; }
+.ka-nav svg { width: clamp(14px, 2vw, 20px); height: clamp(14px, 2vw, 20px); flex-shrink: 0; }
+.ka-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+.ka-nav-prev { color: #6E6E78; }
+.ka-nav-next { background: #7E57C2; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(94,53,177,0.32); }
+.ka-nav-next.hl { animation: ka-pulse 1.8s 1.2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+
+  <!-- ═══════════════════ 헤더 ═══════════════════ -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHome()">
+      <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="1" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar-fill" style="width:14%"></div></div>
+    <div class="ka-pg" id="pg-text">1 / 7</div>
+    <button class="ka-mute" id="mute-btn" onclick="toggleMute()" title="음성 켜기/끄기">🔊</button>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score-num">0</span>
+      <span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ 메인 콘텐츠 ═══════════════════ -->
+  <div class="ka-m">
+
+    <!-- ─────── 슬1: 인트로 (도전 안내) ─────── -->
+    <div class="slide active" data-stage="advanced-intro" data-stage-class="tag-app">
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🚀 도전 트랙</div>
+        <div class="tag-meta">1단원 · 1, 2, 3</div>
+      </div>
+      <h2 class="slide-title">한 단계 <span class="ka-emph ka-em-1">올라가볼까요<svg class="ka-mini ka-mini-1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="M 15 5 L 20.88 23.09 L 5.49 11.91 L 24.51 11.91 L 9.12 23.09 Z"/></svg></span>?</h2>
+      <div class="intro-stage">
+        <div class="intro-emoji">🚀</div>
+        <div class="intro-msg">조금 더 어려운 문제 <b>5개</b>가 기다려요.<br>심화 3 + 최상위 2 · 만점 <b>35점</b>!</div>
+      </div>
+      <audio data-tts="adv01-s01" preload="none"><!-- TTS: "한 단계 올라가볼까요? 조금 더 어려운 문제 다섯 개가 기다려요. 심화 세 문제와 최상위 두 문제예요. 준비됐으면 다음을 눌러요." --></audio>
+    </div>
+
+    <!-- ─────── 슬2: q-adv-01 (4지선다 - 가장 큰 수) ─────── -->
+    <div class="slide" data-stage="심화" data-stage-class="tag-app" data-points="5"
+         data-slot-id="q-adv-01" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"compare":"max"}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🚀 심화 1</div>
+        <div class="tag-meta">가장 큰 수</div>
+      </div>
+      <div class="q-stem">1, 2, 3 중에서 <span class="k-hl">가장 큰 수</span>는?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">1️⃣</span>
+        <span class="q-obj">2️⃣</span>
+        <span class="q-obj">3️⃣</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="3">
+        <button class="opt-btn" onclick="checkOpt(this, false)">1</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">2</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="adv01-s02" preload="none"><!-- TTS: "1, 2, 3 중에서 가장 큰 수는 무엇일까요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬3: q-adv-02 (빈칸 채우기 - 사이 수) ─────── -->
+    <div class="slide" data-stage="심화" data-stage-class="tag-app" data-points="5"
+         data-slot-id="q-adv-02" data-pattern="빈칸채우기"
+         data-vars='{"number_range":[1,2,3],"reasoning":"between"}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🚀 심화 2</div>
+        <div class="tag-meta">사이 수 찾기</div>
+      </div>
+      <div class="q-stem"><span class="k-hl">1과 3 사이</span>의 수는 무엇일까요?</div>
+      <div class="fill-row">
+        <span class="fill-text">1,</span>
+        <span class="fill-blank" id="fill-blank-q3">?</span>
+        <span class="fill-text">, 3</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="2">
+        <button class="opt-btn" onclick="checkFill(this, 'q3', false, 1)">1</button>
+        <button class="opt-btn" onclick="checkFill(this, 'q3', true, 2)">2</button>
+        <button class="opt-btn" onclick="checkFill(this, 'q3', false, 3)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="adv01-s03" preload="none"><!-- TTS: "1과 3 사이에 들어갈 수는 무엇일까요? 알맞은 숫자를 골라 빈칸을 채워봐요." --></audio>
+    </div>
+
+    <!-- ─────── 슬4: q-adv-03 (4지선다 - 합치기 도입) ─────── -->
+    <div class="slide" data-stage="심화" data-stage-class="tag-app" data-points="5"
+         data-slot-id="q-adv-03" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"context":"합치기","sum_max":3}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-app">🚀 심화 3</div>
+        <div class="tag-meta">합치면 몇 개?</div>
+      </div>
+      <div class="q-stem">사과 <span class="k-emph">1</span>개와 사과 <span class="k-emph">2</span>개를<br>모으면 <span class="k-hl">모두 몇 개</span>?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">🍎</span>
+        <span class="q-obj" style="opacity:0.5">➕</span>
+        <span class="q-obj">🍎</span><span class="q-obj">🍎</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="3">
+        <button class="opt-btn" onclick="checkOpt(this, false)">1</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">2</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">3</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="adv01-s04" preload="none"><!-- TTS: "사과 한 개와 사과 두 개를 모으면 모두 몇 개일까요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬5: q-top-01 (터치 매칭 - 다른 표현 통합) ─────── -->
+    <div class="slide" data-stage="최상위" data-stage-class="tag-top" data-points="10"
+         data-slot-id="q-top-01" data-pattern="터치매칭"
+         data-vars='{"number_range":[1,2,3],"representation":["숫자","점","손가락"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-top">💎 최상위 1</div>
+        <div class="tag-meta">같은 수를 찾아요</div>
+      </div>
+      <div class="q-stem"><span class="k-hl">같은 수</span>를 나타내는 것끼리 짝지어요</div>
+      <div class="match-board">
+        <div class="match-col">
+          <div class="match-item" data-side="L" data-key="A"><span class="match-num">1</span></div>
+          <div class="match-item" data-side="L" data-key="B"><span class="match-num">2</span></div>
+          <div class="match-item" data-side="L" data-key="C"><span class="match-num">3</span></div>
+        </div>
+        <div class="match-col">
+          <div class="match-item" data-side="R" data-key="C">●●●</div>
+          <div class="match-item" data-side="R" data-key="A">●</div>
+          <div class="match-item" data-side="R" data-key="B">●●</div>
+        </div>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="adv01-s05" preload="none"><!-- TTS: "같은 수를 나타내는 것끼리 짝지어 봐요. 숫자 하나를 누르고, 같은 수의 점을 누르면 돼요." --></audio>
+    </div>
+
+    <!-- ─────── 슬6: q-top-02 (4지선다 - 서술 응용) ─────── -->
+    <div class="slide" data-stage="최상위" data-stage-class="tag-top" data-points="10"
+         data-slot-id="q-top-02" data-pattern="4지선다"
+         data-vars='{"number_range":[1,2,3],"context":"서술응용"}'>
+      <div class="slide-tags">
+        <div class="tag-stage tag-top">💎 최상위 2</div>
+        <div class="tag-meta">이야기 풀이</div>
+      </div>
+      <div class="q-stem">동생은 <span class="k-emph">1</span>살이에요.<br>형은 동생보다 <span class="k-emph">2</span>살 더 많아요.<br>형은 <span class="k-hl">몇 살</span>일까요?</div>
+      <div class="q-visual" data-slot-fixed="visual">
+        <span class="q-obj">👶</span>
+        <span class="q-obj" style="opacity:0.6">+2</span>
+        <span class="q-obj">👦</span>
+      </div>
+      <div class="opt-grid opt-3" data-slot-fixed="options" data-correct="3">
+        <button class="opt-btn" onclick="checkOpt(this, false)">1살</button>
+        <button class="opt-btn" onclick="checkOpt(this, false)">2살</button>
+        <button class="opt-btn" onclick="checkOpt(this, true)">3살</button>
+      </div>
+      <div class="q-feedback"></div>
+      <div class="q-easy-row"><button class="q-easy" onclick="showHelp(this)">어려워요</button></div>
+      <audio data-tts="adv01-s06" preload="none"><!-- TTS: "동생은 한 살이에요. 형은 동생보다 두 살 더 많아요. 형은 몇 살일까요?" --></audio>
+    </div>
+
+    <!-- ─────── 슬7: 결과 ─────── -->
+    <div class="slide" data-stage="advanced-result" data-stage-class="tag-end">
+      <div class="slide-tags">
+        <div class="tag-stage tag-end">🎯 도전 끝!</div>
+        <div class="tag-meta">결과 보기</div>
+      </div>
+      <h2 class="slide-title">멋진 도전이었어요!</h2>
+      <div class="result-stage">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <div class="result-score"><span id="result-score-num">0</span> / 35점</div>
+        <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+        <div class="result-msg" id="result-msg">5문제를 멋지게 풀어냈어요!</div>
+        <div class="result-actions">
+          <button class="result-btn" onclick="retryAdvanced()">🔁 다시 도전</button>
+          <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
+        </div>
+      </div>
+      <audio data-tts="adv01-s07" preload="none"><!-- TTS: "멋진 도전이었어요! 5문제를 풀어냈어요." --></audio>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ 푸터 4-button ═══════════════════ -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="btn-prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-nav" onclick="replayAudio()">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" onclick="showHintBubble()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next hl" id="btn-next" onclick="goNext()">다음 →</button>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   영역 3 base — 심화 트랙 슬라이드 진행 + 양산 슬롯 인터랙션
+   슬 인덱스 매핑: 인트로=0 / q-adv 1~3 (심화) / q-top 4~5 (최상위) / 결과=6
+   점수: data-points 읽어서 차등 (심화 5 / 최상위 10) — 만점 35
+   ════════════════════════════════════════════════════════════ */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const RESULT_IDX = 6;        // 결과 슬 인덱스
+const MATCH_IDX = 4;         // q-top-01 매칭 슬 (슬5)
+const MAX_SCORE = 35;        // 5×3 + 10×2 = 35
+let cur = 0;
+let score = 0;
+let muted = false;
+
+function show(i){
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  cur = i;
+  document.getElementById('pg-text').textContent = (i+1) + ' / ' + total;
+  document.getElementById('bar-fill').style.width = ((i+1)/total*100) + '%';
+  document.getElementById('btn-prev').disabled = (i === 0);
+  document.getElementById('btn-next').textContent = (i === total-1) ? '끝!' : '다음 →';
+  if(i === RESULT_IDX) renderResult();
+  playSlideAudio();
+}
+
+function goNext(){
+  if(cur < total - 1) show(cur + 1);
+  else goHome();
+}
+function goPrev(){ if(cur > 0) show(cur - 1); }
+function goHome(){ window.location.href = '/grade1/semester1/math/'; }
+
+function toggleMute(){
+  muted = !muted;
+  const b = document.getElementById('mute-btn');
+  b.textContent = muted ? '🔇' : '🔊';
+  b.classList.toggle('off', muted);
+  if(muted) document.querySelectorAll('audio').forEach(a => a.pause());
+  else playSlideAudio();
+}
+
+function playSlideAudio(){
+  if(muted) return;
+  const slide = slides[cur];
+  const audio = slide.querySelector('audio');
+  if(audio && audio.src){
+    audio.currentTime = 0;
+    audio.play().catch(()=>{ /* mp3 미배치 시 무음 */ });
+  }
+}
+function replayAudio(){ playSlideAudio(); }
+
+/* ─── 점수 누적 (data-points 읽기, fallback 5) ─── */
+function addScore(slide){
+  const pts = parseInt(slide.dataset.points) || 5;
+  score += pts;
+  document.getElementById('score-num').textContent = score;
+  return pts;
+}
+
+/* ─── 4지선다·빈칸 정답 체크 ─── */
+function checkOpt(btn, ok){
+  const slide = btn.closest('.slide');
+  const fb = slide.querySelector('.q-feedback');
+  if(btn.disabled) return;
+  if(ok){
+    btn.classList.add('correct');
+    const pts = addScore(slide);
+    fb.textContent = '🎉 정답! +' + pts + '점';
+    fb.className = 'q-feedback ok';
+    slide.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+    setTimeout(()=>{ if(cur < total-1) goNext(); }, 1400);
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '다시 한 번 생각해볼까요?';
+    fb.className = 'q-feedback no';
+    setTimeout(()=>{ btn.classList.remove('wrong'); btn.disabled = true; }, 600);
+  }
+}
+
+function checkFill(btn, slideKey, ok, num){
+  const blank = document.getElementById('fill-blank-' + slideKey);
+  if(ok){
+    blank.textContent = num;
+    blank.classList.add('filled');
+    checkOpt(btn, true);
+  } else {
+    checkOpt(btn, false);
+  }
+}
+
+/* ─── 매칭 (q-top-01 = 슬5, MATCH_IDX = 4) ─── */
+let matchSelected = null;
+let matchPairs = 0;
+const matchTotal = 3;
+document.querySelectorAll('.match-item').forEach(item => {
+  item.addEventListener('click', () => {
+    if(item.classList.contains('matched')) return;
+    if(!matchSelected){
+      matchSelected = item;
+      item.classList.add('selected');
+      return;
+    }
+    if(matchSelected === item){
+      item.classList.remove('selected');
+      matchSelected = null;
+      return;
+    }
+    if(matchSelected.dataset.side === item.dataset.side){
+      matchSelected.classList.remove('selected');
+      matchSelected = item;
+      item.classList.add('selected');
+      return;
+    }
+    if(matchSelected.dataset.key === item.dataset.key){
+      matchSelected.classList.add('matched');
+      item.classList.add('matched');
+      matchSelected.classList.remove('selected');
+      matchSelected = null;
+      matchPairs++;
+      if(matchPairs === matchTotal){
+        const slide = slides[MATCH_IDX];
+        const fb = slide.querySelector('.q-feedback');
+        const pts = addScore(slide);
+        fb.textContent = '🎉 모두 맞췄어요! +' + pts + '점';
+        fb.className = 'q-feedback ok';
+        setTimeout(goNext, 1400);
+      }
+    } else {
+      const a = matchSelected, b = item;
+      a.classList.add('k-shake'); b.classList.add('k-shake');
+      setTimeout(() => {
+        a.classList.remove('selected', 'k-shake');
+        b.classList.remove('k-shake');
+        matchSelected = null;
+      }, 500);
+    }
+  });
+});
+
+/* ─── 결과 슬 렌더링 (35점 만점 분기) ─── */
+function renderResult(){
+  document.getElementById('result-score-num').textContent = score;
+  let stars = '⭐⭐⭐';
+  let emoji = '🎉';
+  let msg = '5문제를 멋지게 풀어냈어요!';
+  if(score === MAX_SCORE){
+    stars = '⭐⭐⭐';
+    emoji = '🏆';
+    msg = '와! 5문제 모두 정복! 도전 마스터예요!';
+  } else if(score >= MAX_SCORE * 0.7){
+    // 25점 이상 (5문제 중 심화 1+ + 최상위 1+ 또는 심화 3+ + 최상위 1)
+    stars = '⭐⭐⭐';
+    emoji = '🎉';
+    msg = '잘 풀었어요! 어려운 문제를 해냈어요.';
+  } else if(score >= MAX_SCORE * 0.4){
+    // 14점 이상
+    stars = '⭐⭐';
+    emoji = '😊';
+    msg = '좋아요. 한 번 더 도전해볼까요?';
+  } else {
+    stars = '⭐';
+    emoji = '💪';
+    msg = '도전은 어려워요. 천천히 다시 한 번!';
+  }
+  document.getElementById('result-stars').textContent = stars;
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-msg').textContent = msg;
+}
+
+function retryAdvanced(){ window.location.reload(); }
+
+/* ─── 어려워요·힌트 ─── */
+function showHelp(btn){
+  const slide = btn.closest('.slide');
+  const fb = slide.querySelector('.q-feedback');
+  const slotId = slide.dataset.slotId;
+  let hint = '천천히 그림을 다시 살펴볼까요?';
+  if(slotId === 'q-adv-01') hint = '큰 수일수록 손가락이 더 많이 펴져요. 1보다 2가, 2보다 3이 커요.';
+  else if(slotId === 'q-adv-02') hint = '1과 3 사이의 수예요. 1, ?, 3 — 비어있는 자리는 무엇일까요?';
+  else if(slotId === 'q-adv-03') hint = '사과를 하나하나 세어보면 돼요. 🍎 + 🍎🍎 = ?';
+  else if(slotId === 'q-top-01') hint = '점의 개수를 세고, 같은 개수의 숫자랑 짝지어요. ●● = 2 처럼요.';
+  else if(slotId === 'q-top-02') hint = '동생 1살에서 2살이 더 많아져요. 1, 2, 3 — 1에서 두 칸 더 가면?';
+  fb.textContent = hint;
+  fb.className = 'q-feedback';
+  fb.style.color = '#5E35B1';
+}
+function showHintBubble(){
+  const slide = slides[cur];
+  const helpBtn = slide.querySelector('.q-easy');
+  if(helpBtn){ showHelp(helpBtn); }
+}
+
+/* ─── 키보드 ←/→ ─── */
+document.addEventListener('keydown', e => {
+  if(e.key === 'ArrowRight') goNext();
+  else if(e.key === 'ArrowLeft') goPrev();
+});
+
+/* 초기 상태 */
+show(0);
+</script>
+
+</body>
+</html>
