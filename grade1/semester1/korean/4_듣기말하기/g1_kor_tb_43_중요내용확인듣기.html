@@ -163,7 +163,7 @@ function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}func
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=200?'⭐⭐⭐⭐⭐':score>=140?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=200?'🏆':'🎉'}}
 function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
-function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 듣고 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 듣고 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 
 // 빈칸채우기 S5(slideIdx=5)
 const fill5Data={slots:['s5a','s5b','s5c','s5d'],answers:['현우','아침','공원','강아지와 산책'],options:['공원','현우','강아지와 산책','아침']};
@@ -173,7 +173,7 @@ const p=document.getElementById('fill5');p.innerHTML='';
 fill5Data.options.forEach(t=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=t;b.onclick=function(){fill5Pick(this,t)};p.appendChild(b)})}
 function fill5Pick(btn,text){if(answered[5])return;playClick();
 if(text===fill5Data.answers[fill5Step]){btn.classList.add('correct');document.getElementById(fill5Data.slots[fill5Step]).textContent=text;document.getElementById(fill5Data.slots[fill5Step]).classList.add('filled');fill5Step++;
-if(fill5Step===4){playCorrect();addScore(25);setFB('fb5','✅ 핵심 정보 완성! +25점',true);answered[5]=true;setTimeout(nextSlide,900)}}
+if(fill5Step===4){playCorrect();addScore(25);setFB('fb5','✅ 핵심 정보 완성! +25점',true);answered[5]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}}
 else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb5','순서대로 채워 봐! (누가→언제→어디서→무엇을) 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 initFill5();
 
@@ -185,7 +185,7 @@ const p=document.getElementById('fill10');p.innerHTML='';
 fill10Data.options.forEach(t=>{const b=document.createElement('button');b.className='pick-btn';b.textContent=t;b.onclick=function(){fill10Pick(this,t)};p.appendChild(b)})}
 function fill10Pick(btn,text){if(answered[10])return;playClick();
 if(text===fill10Data.answers[fill10Step]){btn.classList.add('correct');document.getElementById(fill10Data.slots[fill10Step]).textContent=text;document.getElementById(fill10Data.slots[fill10Step]).classList.add('filled');fill10Step++;
-if(fill10Step===5){playCorrect();addScore(50);setFB('fb10','✅ 완벽한 정리! +50점',true);answered[10]=true;setTimeout(nextSlide,900)}}
+if(fill10Step===5){playCorrect();addScore(50);setFB('fb10','✅ 완벽한 정리! +50점',true);answered[10]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}}
 else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb10','위에서부터 순서대로 채워 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 initFill10();
 

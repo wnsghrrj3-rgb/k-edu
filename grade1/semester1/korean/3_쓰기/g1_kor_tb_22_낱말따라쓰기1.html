@@ -332,12 +332,12 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=100?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const s=document.querySelectorAll('.slide')[currentSlide];const c=parseInt(s.dataset.correct),p=parseInt(s.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const p=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const s=document.querySelectorAll('.slide')[currentSlide];const c=parseInt(s.dataset.correct),p=parseInt(s.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const p=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Q3 순서 배치
 let oIdx=0;
-function orderClick(btn,ch,idx){if(answered[5])return;playClick();if(idx===oIdx){btn.classList.add('correct');btn.style.pointerEvents='none';document.getElementById('os'+idx).textContent=ch;document.getElementById('os'+idx).classList.add('filled');playCorrect();oIdx++;if(oIdx>=2){answered[5]=true;addScore(10);setFB('fb5','✅ 나무 완성! +10점',true);setTimeout(nextSlide,900);}}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb5','나→무 순서!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function orderClick(btn,ch,idx){if(answered[5])return;playClick();if(idx===oIdx){btn.classList.add('correct');btn.style.pointerEvents='none';document.getElementById('os'+idx).textContent=ch;document.getElementById('os'+idx).classList.add('filled');playCorrect();oIdx++;if(oIdx>=2){answered[5]=true;addScore(10);setFB('fb5','✅ 나무 완성! +10점',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb5','나→무 순서!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Q6 3글자 순서 — 토끼
 let o2Idx=0;
@@ -349,7 +349,7 @@ function orderClick2(btn,ch,idx){
     if(o2Idx>=2){
       // Remove 3rd slot
       document.getElementById('os2_2').style.display='none';
-      answered[8]=true;addScore(25);setFB('fb8','✅ 토끼 완성! +25점',true);setTimeout(nextSlide,900);}
+      answered[8]=true;addScore(25);setFB('fb8','✅ 토끼 완성! +25점',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}
   }else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb8','토→끼 순서!',false);setTimeout(()=>btn.classList.remove('wrong'),500);}
 }
 
@@ -367,7 +367,7 @@ function matchAnswer(btn,word){
     const btns=document.querySelectorAll('#matchChoices .choice-btn');
     btns.forEach((b,i)=>{if(opts[i]){b.textContent=opts[i];b.onclick=function(){matchAnswer(this,opts[i]);};}});
   },700);}
-  else{answered[10]=true;if(mOk>=3)addScore(50);setTimeout(()=>{setFB('fb10',mOk+'/4 맞았어! '+(mOk>=3?'+50점':''),mOk>=3);setTimeout(nextSlide,800);},700);}
+  else{answered[10]=true;if(mOk>=3)addScore(50);setTimeout(()=>{setFB('fb10',mOk+'/4 맞았어! '+(mOk>=3?'+50점':''),mOk>=3);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */},700);}
 }
 
 // SWIPE

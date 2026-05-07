@@ -301,13 +301,13 @@ function updateUI(){
 }
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // MATCH GAME
 const matchData=[{w:'🐱 고양이',c:0},{w:'🦋 나비',c:1},{w:'🍊 귤',c:0},{w:'📰 뉴스',c:1},{w:'🎸 기타',c:0}];
 let matchIdx=0,matchSc=0,matchInit=false;
 function initMatch(){matchInit=true;matchIdx=0;matchSc=0;showMatch();}
-function showMatch(){if(matchIdx>=matchData.length){answered[11]=true;if(matchSc>=4){addScore(25);setFB('fb11','✅ '+matchSc+'/5 정답! +25점',true);}else setFB('fb11','✅ '+matchSc+'/5',true);setTimeout(nextSlide,1200);return;}
+function showMatch(){if(matchIdx>=matchData.length){answered[11]=true;if(matchSc>=4){addScore(25);setFB('fb11','✅ '+matchSc+'/5 정답! +25점',true);}else setFB('fb11','✅ '+matchSc+'/5',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}
   document.getElementById('matchWord').textContent=matchData[matchIdx].w;
   document.getElementById('matchProg').textContent=(matchIdx+1)+'/'+matchData.length;
   document.getElementById('mBtn0').className='choice-btn';document.getElementById('mBtn1').className='choice-btn';}

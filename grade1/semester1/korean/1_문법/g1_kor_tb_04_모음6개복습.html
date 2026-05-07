@@ -336,19 +336,19 @@ function updateUI(){
 }
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // BLANK3: 아버지
-function fillBlank3(btn,idx){if(answered[3])return;playClick();document.getElementById('blank3').textContent=idx===0?'ㅓ':idx===1?'ㅏ':'ㅜ';if(idx===0){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb3','✅ 아버지! 정답!',true);answered[3]=true;speakKo('아버지');setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank3').textContent='___';setFB('fb3','다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank3(btn,idx){if(answered[3])return;playClick();document.getElementById('blank3').textContent=idx===0?'ㅓ':idx===1?'ㅏ':'ㅜ';if(idx===0){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb3','✅ 아버지! 정답!',true);answered[3]=true;speakKo('아버지');/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank3').textContent='___';setFB('fb3','다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 // BLANK4: 어머니
-function fillBlank4(btn,idx){if(answered[4])return;playClick();document.getElementById('blank4').textContent=idx===0?'ㅓ':idx===1?'ㅏ':'ㅗ';if(idx===0){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb4','✅ 어머니! 정답!',true);answered[4]=true;speakKo('어머니');setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank4').textContent='___';setFB('fb4','다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank4(btn,idx){if(answered[4])return;playClick();document.getElementById('blank4').textContent=idx===0?'ㅓ':idx===1?'ㅏ':'ㅗ';if(idx===0){btn.classList.add('correct');playCorrect();addScore(10);setFB('fb4','✅ 어머니! 정답!',true);answered[4]=true;speakKo('어머니');/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;document.getElementById('blank4').textContent='___';setFB('fb4','다시! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // CLASSIFY: 가로 vs 세로
 const classifyData=[{v:'ㅏ',z:1},{v:'ㅗ',z:0},{v:'ㅣ',z:1},{v:'ㅡ',z:0},{v:'ㅓ',z:1},{v:'ㅜ',z:0}];
 let classifyIdx=0,classifyScore=0,classifyInited=false;
 function initClassify(){classifyInited=true;classifyIdx=0;classifyScore=0;showClassify();}
 function showClassify(){
-  if(classifyIdx>=classifyData.length){answered[5]=true;if(classifyScore>=5){addScore(25);setFB('fb5','✅ 훌륭해! +25점',true);}else setFB('fb5','✅ 완료! '+classifyScore+'/6',true);setTimeout(nextSlide,1200);return;}
+  if(classifyIdx>=classifyData.length){answered[5]=true;if(classifyScore>=5){addScore(25);setFB('fb5','✅ 훌륭해! +25점',true);}else setFB('fb5','✅ 완료! '+classifyScore+'/6',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}
   document.getElementById('classifyVowel').textContent=classifyData[classifyIdx].v;
   document.getElementById('classifyProg').textContent=(classifyIdx+1)+' / '+classifyData.length;
 }
@@ -370,13 +370,13 @@ function startSpeed(){
 }
 function showSpeedQ(){if(speedIdx>=speedQuiz.length){clearInterval(speedTimer);endSpeed();return;}speakKo(VS[speedQuiz[speedIdx]]);document.getElementById('speedScore').textContent=speedCorrect+'/'+speedQuiz.length+' 맞음';}
 function speedAnswer(idx){if(speedIdx>=speedQuiz.length)return;playClick();if(idx===speedQuiz[speedIdx]){playCorrect();speedCorrect++;}else{playWrong();combo=0;}speedIdx++;if(speedIdx<speedQuiz.length)showSpeedQ();else{clearInterval(speedTimer);endSpeed();}}
-function endSpeed(){answered[6]=true;if(speedCorrect>=5){addScore(25);setFB('fb6','✅ '+speedCorrect+'/6 정답! +25점',true);}else setFB('fb6','✅ '+speedCorrect+'/6 완료!',true);document.getElementById('speedTimer').textContent='완료!';setTimeout(nextSlide,1200);}
+function endSpeed(){answered[6]=true;if(speedCorrect>=5){addScore(25);setFB('fb6','✅ '+speedCorrect+'/6 정답! +25점',true);}else setFB('fb6','✅ '+speedCorrect+'/6 완료!',true);document.getElementById('speedTimer').textContent='완료!';/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}
 
 // CHAIN QUIZ
 const chainQuiz=shuffle([0,1,2,3,4]).slice(0,5);
 let chainIdx=0,chainScore=0,chainInited=false;
 function initChain(){chainInited=true;chainIdx=0;chainScore=0;showChain();}
-function showChain(){if(chainIdx>=chainQuiz.length){answered[7]=true;if(chainScore===5){addScore(25);setFB('fb7','✅ 퍼펙트! +25점',true);}else setFB('fb7','✅ '+chainScore+'/5 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('chainProg').textContent=(chainIdx+1)+'/5';document.querySelectorAll('#chainChoices .choice-btn').forEach(b=>b.className='choice-btn small');}
+function showChain(){if(chainIdx>=chainQuiz.length){answered[7]=true;if(chainScore===5){addScore(25);setFB('fb7','✅ 퍼펙트! +25점',true);}else setFB('fb7','✅ '+chainScore+'/5 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('chainProg').textContent=(chainIdx+1)+'/5';document.querySelectorAll('#chainChoices .choice-btn').forEach(b=>b.className='choice-btn small');}
 function playChainSound(){if(chainIdx<chainQuiz.length)speakKo(VS[chainQuiz[chainIdx]]);}
 function chainAnswer(idx){if(chainIdx>=chainQuiz.length||answered[7])return;playClick();const btns=document.querySelectorAll('#chainChoices .choice-btn');if(idx===chainQuiz[chainIdx]){btns[idx].classList.add('correct');playCorrect();chainScore++;}else{btns[idx].classList.add('wrong');playWrong();combo=0;}chainIdx++;setTimeout(showChain,700);}
 
@@ -384,7 +384,7 @@ function chainAnswer(idx){if(chainIdx>=chainQuiz.length||answered[7])return;play
 const dictQuiz=shuffle([0,1,2,3,4,5]).slice(0,5);
 let dictIdx=0,dictScore=0,dictInited=false,dictResults=[];
 function initDict(){dictInited=true;dictIdx=0;dictScore=0;dictResults=[];showDict();}
-function showDict(){if(dictIdx>=dictQuiz.length){answered[9]=true;if(dictScore>=4){addScore(25);setFB('fb9','✅ '+dictScore+'/5 정답! +25점',true);}else setFB('fb9','✅ '+dictScore+'/5 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('dictProg').textContent=(dictIdx+1)+'/5';document.getElementById('dictResult').textContent=dictResults.join(' ');document.querySelectorAll('#dictChoices .choice-btn').forEach(b=>b.className='choice-btn small');}
+function showDict(){if(dictIdx>=dictQuiz.length){answered[9]=true;if(dictScore>=4){addScore(25);setFB('fb9','✅ '+dictScore+'/5 정답! +25점',true);}else setFB('fb9','✅ '+dictScore+'/5 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('dictProg').textContent=(dictIdx+1)+'/5';document.getElementById('dictResult').textContent=dictResults.join(' ');document.querySelectorAll('#dictChoices .choice-btn').forEach(b=>b.className='choice-btn small');}
 function playDictSound(){if(dictIdx<dictQuiz.length)speakKo(VS[dictQuiz[dictIdx]]);}
 function dictAnswer(idx){if(dictIdx>=dictQuiz.length||answered[9])return;playClick();const btns=document.querySelectorAll('#dictChoices .choice-btn');if(idx===dictQuiz[dictIdx]){btns[idx].classList.add('correct');playCorrect();dictScore++;dictResults.push(V[idx]);}else{btns[idx].classList.add('wrong');playWrong();combo=0;dictResults.push('✗');}dictIdx++;setTimeout(showDict,700);}
 

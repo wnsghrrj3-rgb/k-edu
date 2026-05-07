@@ -163,8 +163,8 @@ function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}func
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=200?'⭐⭐⭐⭐⭐':score>=140?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=200?'🏆':'🎉'}}
 function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
-function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
-function pickA(btn,si,slotId,text){if(answered[si])return;playClick();btn.classList.add('correct');document.getElementById(slotId).textContent=text;document.getElementById(slotId).classList.add('filled');const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;playCorrect();addScore(p);setFB('fb'+si,'✅ 좋아! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function pickA(btn,si,slotId,text){if(answered[si])return;playClick();btn.classList.add('correct');document.getElementById(slotId).textContent=text;document.getElementById(slotId).classList.add('filled');const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;playCorrect();addScore(p);setFB('fb'+si,'✅ 좋아! +'+p+'점',true);answered[si]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}
 
 // 순서 배열 S3
 const orderCorrect3=['📅 언제?','📍 어디서?','🎯 무엇을?','💭 느낌은?'];
@@ -173,7 +173,7 @@ function initOrder3(){orderState3=[];const slots=document.getElementById('os3');
 for(let i=0;i<4;i++){const s=document.createElement('div');s.className='order-slot';s.id='os3_'+i;s.textContent=(i+1)+'번째:';slots.appendChild(s)}
 ['🎯 무엇을?','💭 느낌은?','📅 언제?','📍 어디서?'].forEach(t=>{const b=document.createElement('div');b.className='order-pick';b.textContent=t;b.onclick=function(){orderSel3(this,t)};picks.appendChild(b)})}
 function orderSel3(btn,text){if(answered[3]||btn.classList.contains('used'))return;playClick();btn.classList.add('used');const idx=orderState3.length;orderState3.push(text);document.getElementById('os3_'+idx).textContent=text;document.getElementById('os3_'+idx).classList.add('filled');
-if(orderState3.length===4){if(orderState3.join('|')===orderCorrect3.join('|')){playCorrect();addScore(25);setFB('fb3','✅ 순서 정답! +25점',true);answered[3]=true;setTimeout(nextSlide,900)}else{playWrong();combo=0;setFB('fb3','순서를 다시 생각해 봐! 💪',false);setTimeout(()=>initOrder3(),800)}}}
+if(orderState3.length===4){if(orderState3.join('|')===orderCorrect3.join('|')){playCorrect();addScore(25);setFB('fb3','✅ 순서 정답! +25점',true);answered[3]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{playWrong();combo=0;setFB('fb3','순서를 다시 생각해 봐! 💪',false);setTimeout(()=>initOrder3(),800)}}}
 initOrder3();
 
 // 발표문 빌더 S8
@@ -189,7 +189,7 @@ function sp8Pick(btn,text,step){if(answered[8]||step!==sp8step)return;playClick(
 const ids=['sp8a','sp8b','sp8c','sp8d'];const labels=['② 어디서?','③ 무엇을?','④ 느낌은?',''];
 document.getElementById(ids[sp8step]).textContent=text;document.getElementById(ids[sp8step]).classList.add('filled');sp8step++;
 if(sp8step<4){document.getElementById('sp8label').textContent=labels[sp8step-1];document.querySelectorAll('#sp8picks [data-step="'+(sp8step-1)+'"]').forEach(b=>b.style.display='none');document.querySelectorAll('#sp8picks [data-step="'+sp8step+'"]').forEach(b=>b.style.display='')}
-else{playCorrect();addScore(50);setFB('fb8','✅ 멋진 발표문! +50점',true);answered[8]=true;setTimeout(nextSlide,1200)}}
+else{playCorrect();addScore(50);setFB('fb8','✅ 멋진 발표문! +50점',true);answered[8]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}}
 initSp8();
 
 let tx=0;document.getElementById('slidesContainer').addEventListener('touchstart',e=>{tx=e.touches[0].clientX});document.getElementById('slidesContainer').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-tx;if(dx<-50)nextSlide();if(dx>50)prevSlide()});

@@ -355,14 +355,14 @@ function updateUI(){
 }
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // Q1: 10모음 듣기
 const V10=['아','야','어','여','요','유'];const V10i=[0,1,2,3,4,5];
 const q1Quiz=[{s:'요',c:4},{s:'유',c:5},{s:'야',c:1},{s:'여',c:3}];
 let q1Idx=0,q1Sc=0,q1In=false;
 function initQ1(){q1In=true;q1Idx=0;q1Sc=0;showQ1();}
-function showQ1(){if(q1Idx>=q1Quiz.length){answered[11]=true;if(q1Sc>=3){addScore(25);setFB('fb11','✅ '+q1Sc+'/4 정답! +25점',true);}else setFB('fb11','✅ '+q1Sc+'/4 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('q1Prog').textContent=(q1Idx+1)+'/'+q1Quiz.length;document.querySelectorAll('#q1Choices .choice-btn').forEach(b=>b.className='choice-btn small');}
+function showQ1(){if(q1Idx>=q1Quiz.length){answered[11]=true;if(q1Sc>=3){addScore(25);setFB('fb11','✅ '+q1Sc+'/4 정답! +25점',true);}else setFB('fb11','✅ '+q1Sc+'/4 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('q1Prog').textContent=(q1Idx+1)+'/'+q1Quiz.length;document.querySelectorAll('#q1Choices .choice-btn').forEach(b=>b.className='choice-btn small');}
 function playQ1(){if(q1Idx<q1Quiz.length)speakKo(q1Quiz[q1Idx].s);}
 function q1Ans(idx){if(q1Idx>=q1Quiz.length||answered[11])return;playClick();const btns=document.querySelectorAll('#q1Choices .choice-btn');if(idx===q1Quiz[q1Idx].c){btns[idx].classList.add('correct');playCorrect();q1Sc++;}else{btns[idx].classList.add('wrong');playWrong();combo=0;}q1Idx++;setTimeout(showQ1,700);}
 
@@ -370,7 +370,7 @@ function q1Ans(idx){if(q1Idx>=q1Quiz.length||answered[11])return;playClick();con
 const clData=[{v:'ㅏ',c:0},{v:'ㅑ',c:1},{v:'ㅗ',c:0},{v:'ㅛ',c:1},{v:'ㅜ',c:0},{v:'ㅠ',c:1}];
 let clIdx=0,clSc=0,clIn=false;
 function initCl(){clIn=true;clIdx=0;clSc=0;showCl();}
-function showCl(){if(clIdx>=clData.length){answered[12]=true;if(clSc>=5){addScore(25);setFB('fb12','✅ '+clSc+'/6 정답! +25점',true);}else setFB('fb12','✅ '+clSc+'/6 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('clVowel').textContent=clData[clIdx].v;document.getElementById('clProg').textContent=(clIdx+1)+'/'+clData.length;document.getElementById('clBtn0').className='choice-btn small';document.getElementById('clBtn1').className='choice-btn small';}
+function showCl(){if(clIdx>=clData.length){answered[12]=true;if(clSc>=5){addScore(25);setFB('fb12','✅ '+clSc+'/6 정답! +25점',true);}else setFB('fb12','✅ '+clSc+'/6 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('clVowel').textContent=clData[clIdx].v;document.getElementById('clProg').textContent=(clIdx+1)+'/'+clData.length;document.getElementById('clBtn0').className='choice-btn small';document.getElementById('clBtn1').className='choice-btn small';}
 function clAns(idx){if(clIdx>=clData.length||answered[12])return;playClick();const btn=document.getElementById('clBtn'+idx);if(idx===clData[clIdx].c){btn.classList.add('correct');playCorrect();clSc++;}else{btn.classList.add('wrong');playWrong();combo=0;}clIdx++;setTimeout(showCl,700);}
 
 // CANVAS

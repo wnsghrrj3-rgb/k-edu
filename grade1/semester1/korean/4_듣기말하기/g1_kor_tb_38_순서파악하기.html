@@ -163,7 +163,7 @@ function nextSlide(){if(currentSlide<TOTAL_SLIDES-1)goSlide(currentSlide+1)}func
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL_SLIDES-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+'/'+TOTAL_SLIDES;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL_SLIDES-1;document.getElementById('scoreDisp').textContent=score;if(currentSlide===TOTAL_SLIDES-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=220?'⭐⭐⭐⭐⭐':score>=150?'⭐⭐⭐⭐':score>=70?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=220?'🏆':'🎉'}}
 function addScore(p){score+=p;combo++;document.getElementById('scoreDisp').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400)}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err')}}
-function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900)}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 듣고 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
+function answer(btn,idx){if(answered[currentSlide])return;const sl=document.querySelectorAll('.slide')[currentSlide],c=parseInt(sl.dataset.correct),p=parseInt(sl.dataset.score)||10;playClick();if(idx===c){btn.classList.add('correct');playCorrect();addScore(p);setFB('fb'+currentSlide,'✅ 정답! +'+p+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 듣고 생각해 봐! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 
 // 순서 배열 공통
 const orderData={
@@ -187,7 +187,7 @@ function orderSel(btn,si,text){
   const d=orderData[si];
   if(st.length===d.correct.length){
     const p=parseInt(document.querySelectorAll('.slide')[si].dataset.score)||10;
-    if(st.join('|')===d.correct.join('|')){playCorrect();addScore(p);setFB('fb'+si,'✅ 순서 정답! +'+p+'점',true);answered[si]=true;setTimeout(nextSlide,900)}
+    if(st.join('|')===d.correct.join('|')){playCorrect();addScore(p);setFB('fb'+si,'✅ 순서 정답! +'+p+'점',true);answered[si]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}
     else{playWrong();combo=0;setFB('fb'+si,'순서를 다시 생각해 봐! 💪',false);setTimeout(()=>initOrder(si),800)}
   }
 }

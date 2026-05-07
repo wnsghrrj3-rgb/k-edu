@@ -392,9 +392,9 @@ function updateUI(){document.getElementById('progressFill').style.width=(current
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
 
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
-function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,blankId,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(blankId);b.textContent=text;b.classList.add('filled');playClick();const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // ── Q3 자음/모음 분류 ──
 const classifyData=[{l:'ㅂ',t:'cons'},{l:'ㅜ',t:'vow'},{l:'ㄲ',t:'cons'},{l:'ㅕ',t:'vow'},{l:'ㅎ',t:'cons'},{l:'ㅡ',t:'vow'}];
@@ -421,7 +421,7 @@ function classifyAnswer(type){
   } else {
     answered[5]=true;
     if(clsCorrect>=4)addScore(10);
-    setTimeout(()=>{setFB('fb5','분류 완료! '+clsCorrect+'/'+classifyData.length+'개 맞았어!',clsCorrect>=4);setTimeout(nextSlide,800);},700);
+    setTimeout(()=>{setFB('fb5','분류 완료! '+clsCorrect+'/'+classifyData.length+'개 맞았어!',clsCorrect>=4);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */},700);
   }
 }
 
@@ -478,7 +478,7 @@ function placeVow(zone){
   if(vowPlaced>=vowClassify.length){
     answered[8]=true;
     if(vowCorrectCount>=7)addScore(25);
-    setTimeout(()=>{setFB('fb8','분류 완료! '+vowCorrectCount+'/'+vowClassify.length+'개 정답!',vowCorrectCount>=7);setTimeout(nextSlide,900);},500);
+    setTimeout(()=>{setFB('fb8','분류 완료! '+vowCorrectCount+'/'+vowClassify.length+'개 정답!',vowCorrectCount>=7);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */},500);
   }
 }
 initVowClassify();
@@ -508,7 +508,7 @@ function speedClick(el,c){
       const pts=speedTime<10?50:speedTime<15?35:20;
       addScore(pts);
       setFB('fb10','🎉 '+speedTime.toFixed(1)+'초! +'+pts+'점',true);
-      setTimeout(nextSlide,1200);
+      /* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */
     }
   } else {
     el.classList.add('wrong-flash');playWrong();combo=0;

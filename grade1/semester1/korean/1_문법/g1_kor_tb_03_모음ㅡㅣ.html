@@ -369,7 +369,7 @@ function updateUI(){
 }
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // ── SORT: 6모음 듣기 퀴즈 ──
 const vowels=['아','어','오','우','으','이'];
@@ -377,7 +377,7 @@ const sortQuiz=[{sound:'우',correct:3},{sound:'이',correct:5},{sound:'아',cor
 let sortIdx=0,sortScore=0,sortInited=false;
 function initSort(){sortInited=true;sortIdx=0;sortScore=0;showSort();}
 function showSort(){
-  if(sortIdx>=sortQuiz.length){answered[11]=true;if(sortScore===sortQuiz.length){addScore(25);setFB('fb11','✅ 모두 맞혔어! +25점',true);}else setFB('fb11','✅ 완료! '+sortScore+'/'+sortQuiz.length,true);setTimeout(nextSlide,1200);return;}
+  if(sortIdx>=sortQuiz.length){answered[11]=true;if(sortScore===sortQuiz.length){addScore(25);setFB('fb11','✅ 모두 맞혔어! +25점',true);}else setFB('fb11','✅ 완료! '+sortScore+'/'+sortQuiz.length,true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}
   document.getElementById('sortProgress').textContent=(sortIdx+1)+' / '+sortQuiz.length;
   document.querySelectorAll('#sortChoices .choice-btn').forEach(b=>b.className='choice-btn small');
 }
@@ -413,7 +413,7 @@ function flipCard(card){
     const[a,b]=flipped;
     if(a.dataset.val===b.dataset.val){
       setTimeout(()=>{a.classList.add('matched');b.classList.add('matched');playCorrect();memoMatched++;document.getElementById('memoRemain').textContent=4-memoMatched;flipped=[];memoLocked=false;
-        if(memoMatched===4){answered[12]=true;addScore(50);setFB('fb12','✅ 모든 짝을 찾았어! +50점',true);setTimeout(nextSlide,1200);}
+        if(memoMatched===4){answered[12]=true;addScore(50);setFB('fb12','✅ 모든 짝을 찾았어! +50점',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}
       },400);
     }else{
       playWrong();combo=0;

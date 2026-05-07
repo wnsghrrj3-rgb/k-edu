@@ -396,8 +396,8 @@ function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';document.getElementById('pageInfo').textContent=(currentSlide+1)+' / '+TOTAL;document.getElementById('prevBtn').disabled=currentSlide===0;document.getElementById('nextBtn').disabled=currentSlide===TOTAL-1;document.getElementById('scoreVal').textContent=score;if(currentSlide===TOTAL-1){document.getElementById('finalScore').textContent=score;document.getElementById('resultStars').textContent=score>=300?'⭐⭐⭐⭐⭐':score>=200?'⭐⭐⭐⭐':score>=120?'⭐⭐⭐':'⭐⭐';document.getElementById('resultEmoji').textContent=score>=300?'🏆':'🎉';}}
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
-function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function fillBlank(btn,bid,text,ci,mi){if(answered[currentSlide])return;const b=document.getElementById(bid);b.textContent=text;b.classList.add('filled');playClick();const pts=parseInt(document.querySelectorAll('.slide')[currentSlide].dataset.score)||10;if(mi===ci){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;b.textContent='___';b.classList.remove('filled');setFB('fb'+currentSlide,'다시 도전! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // ── Q5 같은 받침 모으기 ──
 const batchimWords=[{w:'산',b:'ㄴ'},{w:'달',b:'ㄹ'},{w:'눈',b:'ㄴ'},{w:'골',b:'ㄹ'},{w:'반',b:'ㄴ'},{w:'벌',b:'ㄹ'}];
@@ -424,7 +424,7 @@ function placeToken(zone){
     setTimeout(()=>el.classList.remove('wrong'),500);}
   el.style.outline='';selToken=null;btPlaced++;
   if(btPlaced>=batchimWords.length){answered[7]=true;if(btOk>=4)addScore(25);
-    setTimeout(()=>{setFB('fb7','분류 완료! '+btOk+'/'+batchimWords.length,btOk>=4);setTimeout(nextSlide,800);},500);}
+    setTimeout(()=>{setFB('fb7','분류 완료! '+btOk+'/'+batchimWords.length,btOk>=4);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */},500);}
 }
 initBatchim();
 
@@ -441,7 +441,7 @@ function batchAnswer(hasB){
   else{setFB('fb10','❌ '+(d.h?'받침 있어!':'받침 없어!'),false);playWrong();combo=0;}
   btIdx++;
   if(btIdx<batchData.length){setTimeout(()=>{document.getElementById('batchCheck').textContent=batchData[btIdx].c;document.getElementById('batchProg').textContent=(btIdx+1)+' / '+batchData.length;setFB('fb10','',true);},700);}
-  else{answered[10]=true;if(btScore2>=4)addScore(50);setTimeout(()=>{setFB('fb10','완료! '+btScore2+'/'+batchData.length,btScore2>=4);setTimeout(nextSlide,800);},700);}
+  else{answered[10]=true;if(btScore2>=4)addScore(50);setTimeout(()=>{setFB('fb10','완료! '+btScore2+'/'+batchData.length,btScore2>=4);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */},700);}
 }
 
 // Auto-play for Q3

@@ -343,13 +343,13 @@ function updateUI(){
 }
 function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bonus;combo++;document.getElementById('scoreVal').textContent=score;if(combo>=2){const t=document.getElementById('comboToast');t.textContent='🔥 '+combo+' 콤보!';t.classList.add('show');clearTimeout(addScore._t);addScore._t=setTimeout(()=>t.classList.remove('show'),1400);}}
 function setFB(id,msg,ok){const el=document.getElementById(id);if(el){el.textContent=msg;el.className='feedback '+(ok?'ok':'err');}}
-function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;setTimeout(nextSlide,900);}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
+function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||10;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'다시 한번! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500);}}
 
 // D1: ㅏ vs ㅑ quiz
 const d1Quiz=[{s:'아',c:0},{s:'야',c:1},{s:'야',c:1},{s:'아',c:0}];
 let d1Idx=0,d1Score=0,d1Inited=false;
 function initD1(){d1Inited=true;d1Idx=0;d1Score=0;showD1();}
-function showD1(){if(d1Idx>=d1Quiz.length){answered[10]=true;if(d1Score>=3){addScore(25);setFB('fb10','✅ '+d1Score+'/4 정답! +25점',true);}else setFB('fb10','✅ '+d1Score+'/4 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('d1Prog').textContent=(d1Idx+1)+'/'+d1Quiz.length;document.querySelectorAll('#d1Choices .choice-btn').forEach(b=>b.className='choice-btn');}
+function showD1(){if(d1Idx>=d1Quiz.length){answered[10]=true;if(d1Score>=3){addScore(25);setFB('fb10','✅ '+d1Score+'/4 정답! +25점',true);}else setFB('fb10','✅ '+d1Score+'/4 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('d1Prog').textContent=(d1Idx+1)+'/'+d1Quiz.length;document.querySelectorAll('#d1Choices .choice-btn').forEach(b=>b.className='choice-btn');}
 function playD1Sound(){if(d1Idx<d1Quiz.length)speakKo(d1Quiz[d1Idx].s);}
 function d1Answer(idx){if(d1Idx>=d1Quiz.length||answered[10])return;playClick();const btns=document.querySelectorAll('#d1Choices .choice-btn');if(idx===d1Quiz[d1Idx].c){btns[idx].classList.add('correct');playCorrect();d1Score++;}else{btns[idx].classList.add('wrong');playWrong();combo=0;}d1Idx++;setTimeout(showD1,700);}
 
@@ -357,7 +357,7 @@ function d1Answer(idx){if(d1Idx>=d1Quiz.length||answered[10])return;playClick();
 const d2Quiz=[{w:'⚾ __구',ans:'ㅑ',c:0,full:'야구'},{w:'🦊 __우',ans:'ㅕ',c:1,full:'여우'},{w:'🍉 수__',ans:'ㅑ',c:0,full:'수야? → 아니! 다시!'},{w:'🏖️ __름',ans:'ㅕ',c:1,full:'여름'}];
 let d2Idx=0,d2Score=0,d2Inited=false;
 function initD2(){d2Inited=true;d2Idx=0;d2Score=0;showD2();}
-function showD2(){if(d2Idx>=d2Quiz.length){answered[11]=true;if(d2Score>=3){addScore(25);setFB('fb11','✅ '+d2Score+'/'+d2Quiz.length+' 정답! +25점',true);}else setFB('fb11','✅ 완료!',true);setTimeout(nextSlide,1200);return;}document.getElementById('d2Word').textContent=d2Quiz[d2Idx].w;document.getElementById('d2Prog').textContent=(d2Idx+1)+'/'+d2Quiz.length;document.querySelectorAll('#d2Choices .choice-btn').forEach(b=>b.className='choice-btn');}
+function showD2(){if(d2Idx>=d2Quiz.length){answered[11]=true;if(d2Score>=3){addScore(25);setFB('fb11','✅ '+d2Score+'/'+d2Quiz.length+' 정답! +25점',true);}else setFB('fb11','✅ 완료!',true);/* cycle 21: 자동 진행 제거 — 학생이 직접 "다음 →" 누름 */return;}document.getElementById('d2Word').textContent=d2Quiz[d2Idx].w;document.getElementById('d2Prog').textContent=(d2Idx+1)+'/'+d2Quiz.length;document.querySelectorAll('#d2Choices .choice-btn').forEach(b=>b.className='choice-btn');}
 function d2Answer(idx){if(d2Idx>=d2Quiz.length||answered[11])return;playClick();const btns=document.querySelectorAll('#d2Choices .choice-btn');if(idx===d2Quiz[d2Idx].c){btns[idx].classList.add('correct');playCorrect();d2Score++;speakKo(d2Quiz[d2Idx].full);}else{btns[idx].classList.add('wrong');playWrong();combo=0;}d2Idx++;setTimeout(showD2,800);}
 
 // CANVAS
