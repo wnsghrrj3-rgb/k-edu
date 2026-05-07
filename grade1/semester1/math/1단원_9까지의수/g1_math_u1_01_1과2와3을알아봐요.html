@@ -280,6 +280,9 @@ body {
   .recap-grid { grid-template-columns: 1fr; }
 }
 </style>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
 </head>
 <body>
 
@@ -735,6 +738,9 @@ let cur = 0;
 let score = 0;
 let muted = false;
 
+const MAX_SCORE = 35;
+let trackedLessonEnd = false;
+
 function show(i){
   slides.forEach(s => s.classList.remove('active'));
   slides[i].classList.add('active');
@@ -743,6 +749,13 @@ function show(i){
   document.getElementById('bar-fill').style.width = ((i+1)/total*100) + '%';
   document.getElementById('btn-prev').disabled = (i === 0);
   document.getElementById('btn-next').textContent = (i === total-1) ? '끝!' : '다음 →';
+  // 마지막 슬 진입 시 점수 기록 (1회만)
+  if(i === total - 1 && !trackedLessonEnd){
+    trackedLessonEnd = true;
+    if(window.kedu && window.kedu.recordLessonEnd){
+      window.kedu.recordLessonEnd(score, MAX_SCORE);
+    }
+  }
   // 슬라이드 진입 시 TTS 자동 재생 (음소거 아닐 때)
   playSlideAudio();
 }

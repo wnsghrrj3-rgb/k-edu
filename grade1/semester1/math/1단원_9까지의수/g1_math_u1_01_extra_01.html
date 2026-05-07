@@ -201,6 +201,9 @@ body {
 .ka-nav-next { background: #42A5F5; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
 .ka-nav-next.hl { animation: ka-pulse 1.8s 1.2s ease-in-out infinite; }
 </style>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
 </head>
 <body>
 
@@ -658,6 +661,11 @@ function checkOrder(){
 /* ─── 결과 슬 렌더링 ─── */
 function renderResult(){
   const max = 35;  // 7문제 × 5점
+  // tracker 점수 기록 (1회만)
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(score, max);
+  }
   document.getElementById('result-score-num').textContent = score;
   let stars = '⭐⭐⭐';
   let emoji = '🎉';
