@@ -39,11 +39,26 @@
 .submit-btn:disabled{opacity:.4;cursor:default}
 .hint-box{background:var(--yellow-light);border-radius:16px;padding:16px;max-width:500px;width:100%;margin:8px 0;font-size:22px;line-height:1.6;text-align:left}
 .hint-box .hint-icon{margin-right:4px}
+
+/* cycle 7: 올림피아드 도전 라이프 시스템 (game_02 archive 패턴) */
+.ka-life{position:fixed;top:12px;right:64px;z-index:999;display:flex;align-items:center;gap:clamp(2px,0.4vw,4px);padding:clamp(3px,0.7vw,5px) clamp(6px,1.2vw,9px);background:var(--red-light);border-radius:999px}
+.ka-life-heart{font-size:clamp(13px,2.2vw,17px);transition:all 0.3s ease}
+.ka-life-heart.lost{opacity:0.18;filter:grayscale(1);transform:scale(0.85)}
+@keyframes ka-heartbreak{0%{transform:scale(1)}30%{transform:scale(1.4) rotate(15deg)}60%{transform:scale(0.7) rotate(-10deg)}100%{transform:scale(0.85) rotate(0)}}
+.ka-life-heart.breaking{animation:ka-heartbreak 0.6s ease both}
+.life-info{font-size:18px;color:var(--red);margin:6px 0;display:inline-block;background:var(--red-light);padding:6px 14px;border-radius:20px}
 </style>
 </head>
 <body>
 <div class="logo"><span class="logo-k">K</span><span class="logo-star">✦</span><span class="logo-edu">edu</span></div>
 <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+<div class="ka-life" id="ka-life">
+  <span class="ka-life-heart" id="life-1">❤️</span>
+  <span class="ka-life-heart" id="life-2">❤️</span>
+  <span class="ka-life-heart" id="life-3">❤️</span>
+  <span class="ka-life-heart" id="life-4">❤️</span>
+  <span class="ka-life-heart" id="life-5">❤️</span>
+</div>
 <div class="combo-display" id="comboDisplay" style="display:none">🔥 0 콤보</div>
 
 <!-- 타이틀 -->
@@ -52,9 +67,10 @@
   <div class="st">9까지의 수 올림피아드</div>
   <div class="cb">
     <div style="font-size:26px;margin-bottom:12px">⭐⭐⭐⭐ 최고 난도 도전!</div>
+    <div class="life-info">❤️❤️❤️❤️❤️ 라이프 5개 — 틀리면 하나씩 줄어요</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px">
       <img src="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA" class="ci" alt="케이">
-      <div class="sb">수 암호, 논리 퍼즐, 스토리 추론!<br>영재원 수준이야! 해볼 수 있지?</div>
+      <div class="sb">수 암호, 논리 퍼즐, 스토리 추론!<br>영재원 수준이야! 끝까지 살아남자!</div>
     </div>
   </div>
 </div>
@@ -360,6 +376,8 @@
     <div style="font-size:28px;margin-bottom:8px">올림피아드 완료!</div>
     <div class="rs" id="rScore">0</div><div style="font-size:22px;color:var(--subtext)">점</div>
     <div class="rm" id="rMsg"></div><div class="rd" id="rCombo"></div><div class="rd" id="rCorr"></div>
+    <div class="rd" id="rLives" style="margin-top:8px">남은 라이프: ❤️❤️❤️❤️❤️</div>
+    <div class="rd" id="rStreak">최장 연속: 0</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
       <img src="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA" class="ci" style="width:48px;height:48px" alt="듀">
       <div class="sb" style="font-size:20px" id="rSp">잘했어!</div>
@@ -381,15 +399,71 @@ function ps(t){if(!soundOn)return;initAudio();audioCtx.resume().then(()=>{if(t==
 function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
 let cur=0;const sls=document.querySelectorAll('.slide'),tot=sls.length;
 let sc=0,cmb=0,mxC=0,cc=0;const ans={};
+
+/* cycle 7: 올림피아드 라이프 시스템 (game_02 archive 패턴, 라이프 5개로 확장) */
+const LIFE_INITIAL=5;
+const TOTAL_Q=18;
+let lives=LIFE_INITIAL;
+let streak=0;
+let maxStreak=0;
+let challengeOver=false;
+
+function breakHeart(){
+  const heart=document.getElementById('life-'+lives);
+  if(heart){
+    heart.classList.add('breaking');
+    setTimeout(()=>{
+      heart.classList.remove('breaking');
+      heart.classList.add('lost');
+      heart.textContent='🖤';
+    },600);
+  }
+  lives--;
+}
+
+function checkLifeZero(){
+  if(lives<=0 && !challengeOver){
+    challengeOver=true;
+    setTimeout(()=>{
+      const resultIdx=Array.from(sls).findIndex(s=>s.dataset.type==='result');
+      if(resultIdx>=0){cur=resultIdx;show(cur);}
+    },1400);
+  }
+}
+
 function show(i){sls.forEach((s,x)=>s.classList.toggle('active',x===i));document.getElementById('prevBtn').disabled=i===0;document.getElementById('nextBtn').disabled=i===tot-1;document.getElementById('pageInfo').textContent=`${i+1} / ${tot}`;if(sls[i].dataset.type==='result')showR()}
 function go(d){ps('click');const n=cur+d;if(n>=0&&n<tot){cur=n;show(cur)}}
 let tsx=0;document.addEventListener('touchstart',e=>{tsx=e.touches[0].clientX},{passive:true});document.addEventListener('touchend',e=>{const d=tsx-e.changedTouches[0].clientX;if(Math.abs(d)>50){d>0?go(1):go(-1)}},{passive:true});
 function uc(ok){const cd=document.getElementById('comboDisplay');if(ok){cmb++;if(cmb>mxC)mxC=cmb}else cmb=0;cmb>=2?(cd.style.display='block',cd.textContent=`🔥 ${cmb} 콤보`):cd.style.display='none'}
 
-function chk(btn,si,ok){if(ans[si])return;const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');if(ok){ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});ps('correct');cc++;sc+=100;fb.textContent='정답! 대단해! 🏆';fb.className='fb good';uc(true)}else{btn.classList.add('wrong');ps('wrong');fb.textContent='천천히 다시 생각해 봐요!';fb.className='fb bad';uc(false);setTimeout(()=>btn.classList.remove('wrong'),600)}}
+function chk(btn,si,ok){
+  if(ans[si]||challengeOver)return;
+  const fb=document.getElementById('fb'+si),btns=btn.parentElement.querySelectorAll('.ob');
+  if(ok){
+    ans[si]=true;btn.classList.add('correct');btns.forEach(b=>{if(b!==btn)b.classList.add('disabled')});
+    ps('correct');cc++;sc+=100;
+    streak++;if(streak>maxStreak)maxStreak=streak;
+    fb.textContent='정답! 대단해! 🏆';fb.className='fb good';uc(true);
+  }else{
+    btn.classList.add('wrong');ps('wrong');
+    streak=0;
+    if(lives>0)breakHeart();
+    if(lives<=0){
+      fb.textContent='💔 라이프 0 — 다음 도전을 기다려!';
+      fb.className='fb bad';
+      uc(false);
+      checkLifeZero();
+    }else{
+      fb.textContent=`❌ 천천히 다시 생각해 봐요! (라이프 ${lives})`;
+      fb.className='fb bad';
+      uc(false);
+      setTimeout(()=>btn.classList.remove('wrong'),600);
+    }
+  }
+}
 
 function checkTextInput(si, correct) {
-  if(ans[si]) return;
+  if(ans[si]||challengeOver) return;
   const inp = document.getElementById('textInput'+si);
   const fb = document.getElementById('fb'+si);
   const btn = document.getElementById('submitBtn'+si);
@@ -398,20 +472,41 @@ function checkTextInput(si, correct) {
   if(val === correct) {
     ans[si] = true; inp.classList.add('correct'); inp.readOnly = true; btn.disabled = true;
     ps('correct'); cc++; sc += 100;
+    streak++;if(streak>maxStreak)maxStreak=streak;
     fb.textContent = '정답! 🌟'; fb.className = 'fb good'; uc(true);
   } else {
     inp.classList.add('wrong'); ps('wrong');
-    fb.textContent = '다시 생각해 봐요!'; fb.className = 'fb bad'; uc(false);
-    setTimeout(() => inp.classList.remove('wrong'), 600);
+    streak=0;
+    if(lives>0)breakHeart();
+    if(lives<=0){
+      fb.textContent='💔 라이프 0 — 다음 도전을 기다려!';
+      fb.className='fb bad';
+      uc(false);
+      checkLifeZero();
+    }else{
+      fb.textContent=`❌ 다시 생각해 봐요! (라이프 ${lives})`;
+      fb.className='fb bad';
+      uc(false);
+      setTimeout(() => inp.classList.remove('wrong'), 600);
+    }
   }
 }
 
 function showR(){
   document.getElementById('rScore').textContent=sc;
   document.getElementById('rCombo').textContent=`최대 콤보: 🔥 ${mxC}`;
-  document.getElementById('rCorr').textContent=`맞힌 문제: ${cc} / 18`;
-  let m,s;if(sc>=1575){m='🏆 올림피아드 챔피언!';s='영재원 수준! 정말 놀라워!'}else if(sc>=1125){m='🎉 뛰어나요!';s='대단한 사고력이야!'}else if(sc>=675){m='👍 잘했어요!';s='어려운 문제도 잘 풀었어!'}else{m='💪 계속 도전!';s='최고 난도라 어렵지만 포기하지 마!'}
-  document.getElementById('rMsg').textContent=m;document.getElementById('rSp').textContent=s}
+  document.getElementById('rCorr').textContent=`맞힌 문제: ${cc} / ${TOTAL_Q}`;
+  document.getElementById('rLives').textContent='남은 라이프: ' + '❤️'.repeat(Math.max(0,lives)) + (lives===0?'🖤🖤🖤🖤🖤':'');
+  document.getElementById('rStreak').textContent=`최장 연속: ${maxStreak}`;
+  let m,s;
+  if(lives>=1 && cc===TOTAL_Q){m='🏆 올림피아드 챔피언!';s='끝까지 살아남고 모두 정답! 영재원 수준!'}
+  else if(lives<=0){m='💔 도전 종료';s='최고 난도라 어렵지만 다시 도전해보자!'}
+  else if(sc>=1575){m='🌟 뛰어난 성과!';s='영재원 수준에 가까워!'}
+  else if(sc>=1125){m='🎉 잘했어요!';s='대단한 사고력이야!'}
+  else if(sc>=675){m='👍 좋은 도전!';s='어려운 문제도 잘 풀었어!'}
+  else{m='💪 계속 도전!';s='최고 난도라 어렵지만 포기하지 마!'}
+  document.getElementById('rMsg').textContent=m;document.getElementById('rSp').textContent=s;
+}
 show(0);
 </script>
 </body>
