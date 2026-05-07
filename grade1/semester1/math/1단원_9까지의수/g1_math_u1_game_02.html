@@ -199,6 +199,23 @@ body {
 .bingo-cell.free { background: #E8F5E9; color: #2E7D32; }
 .bingo-cell.line { animation: bingo-line-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 0 3px #F57F17, 0 4px 14px rgba(245,127,23,0.45); }
 @keyframes bingo-line-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+
+/* cycle 9: 문제 슬 inline 빙고 격자 (학생이 빈 칸 직접 클릭) */
+.bingoq-zone { margin-top: clamp(8px, 1.4vw, 14px); display: none; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); animation: bingoq-fade .5s ease both; }
+.bingoq-zone.shown { display: flex; }
+.bingoq-prompt { font-size: clamp(13px, 2.2vw, 17px); color: #F57F17; font-weight: 700; }
+.bingoq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(3px, 0.6vw, 6px); width: clamp(140px, 22vw, 200px); padding: clamp(4px, 0.8vw, 8px); background: rgba(255,255,255,0.7); border-radius: clamp(8px, 1.2vw, 12px); }
+.bingoq-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: white; border-radius: clamp(6px, 1vw, 10px); font-size: clamp(18px, 3vw, 28px); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+.bingoq-cell.empty { cursor: pointer; border: 2px dashed #FFB74D; }
+.bingoq-cell.empty:hover { background: #FFF3E0; transform: scale(1.05); }
+.bingoq-cell.placed { background: #FFF8E1; color: #F57F17; animation: bingoq-pop .4s ease; }
+.bingoq-cell.free { background: #E8F5E9; color: #2E7D32; }
+.bingoq-cell.locked { cursor: default; opacity: 0.6; }
+.bingoq-cell.line-now { animation: bingo-line-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 0 3px #F57F17; }
+@keyframes bingoq-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bingoq-pop { 0%{transform:scale(0.6)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.bingoq-msg { font-size: clamp(14px, 2.4vw, 18px); color: #C62828; font-weight: 700; min-height: 1.4em; }
+.bingoq-msg.bingo { color: #F57F17; animation: bingoq-pop .5s ease; }
 </style>
 <script src="/kedu_config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -473,16 +490,18 @@ const stats = {
 };
 
 // 빙고 격자 상태 (9칸: 0~8 인덱스, 가운데 4 = free)
-// 칸 매핑: [Q1, Q2, Q3, Q4, FREE, Q5, Q6, Q7, Q8]
+// cycle 9: 학생 선택 결 — 정답 시 학생이 빈 칸 직접 클릭. 정해진 매핑 폐기.
 const BINGO_FREE_IDX = 4;
-const QToCellMap = [0, 1, 2, 3, /*free=4*/ 5, 6, 7, 8];  // Q1..Q8 → cell idx
 let bingoState = [null, null, null, null, 'free', null, null, null, null];
+let prevLinesCount = 0;        // 직전 빙고 라인 수 (새 라인 발생 감지용)
 
 let qLocked = false;          // 답 입력 후 잠금 (중복 클릭 차단)
+let placeLocked = false;      // 격자 클릭 잠금 (정답 슬에서 1번만 클릭 가능)
 let currentQ = 0;             // 현재 문제 번호 (1~8)
 
 function show(i){
   qLocked = false;
+  placeLocked = false;
 
   slides.forEach(s => s.classList.remove('active'));
   slides[i].classList.add('active');
@@ -530,13 +549,93 @@ function playSlideAudio(){
 }
 function replayAudio(){ playSlideAudio(); }
 
-/* ─── 빙고 격자 상태 변경 ─── */
-function markBingoCell(qNum, isCorrect){
-  const cellIdx = QToCellMap[qNum - 1];
-  bingoState[cellIdx] = isCorrect ? 'correct' : 'wrong';
+/* ─── cycle 9: 학생 선택 결 빙고 격자 (문제 슬 안 inline) ─── */
+function showBingoQZone(slide){
+  // 이미 박힌 zone 있으면 제거 (중복 박음 방지)
+  const old = slide.querySelector('.bingoq-zone');
+  if(old) old.remove();
+
+  const zone = document.createElement('div');
+  zone.className = 'bingoq-zone shown';
+  zone.innerHTML = '<div class="bingoq-prompt">⭕ 박을 칸을 골라봐!</div><div class="bingoq-grid"></div><div class="bingoq-msg" id="bz-msg-' + currentQ + '"></div>';
+  // q-feedback 다음에 박음 (audio 앞)
+  const fb = slide.querySelector('.q-feedback');
+  fb.insertAdjacentElement('afterend', zone);
+
+  const grid = zone.querySelector('.bingoq-grid');
+  for(let i=0; i<9; i++){
+    const cell = document.createElement('div');
+    cell.className = 'bingoq-cell';
+    cell.dataset.cellIdx = i;
+    const state = bingoState[i];
+    if(state === 'free'){ cell.classList.add('free'); cell.textContent = '★'; }
+    else if(state === 'placed'){ cell.classList.add('placed', 'locked'); cell.textContent = '⭕'; }
+    else { cell.classList.add('empty'); cell.textContent = ''; cell.onclick = () => handlePlace(i, slide); }
+    grid.appendChild(cell);
+  }
 }
 
-/* ─── 답 처리 (시간 압박 X, 정답 = 100점 + 격자 ⭕) ─── */
+function countBingoLines(){
+  return BINGO_LINES.filter(line =>
+    line.every(i => bingoState[i] === 'placed' || bingoState[i] === 'free')
+  ).length;
+}
+
+function getBingoLineCells(){
+  // 현재 빙고 라인 모든 셀 idx 모음 (중복 OK)
+  const cells = new Set();
+  BINGO_LINES.forEach(line => {
+    if(line.every(i => bingoState[i] === 'placed' || bingoState[i] === 'free')){
+      line.forEach(i => cells.add(i));
+    }
+  });
+  return cells;
+}
+
+function handlePlace(cellIdx, slide){
+  if(placeLocked) return;
+  if(bingoState[cellIdx] !== null) return;  // 빈 칸만 클릭 가능 (free·placed 차단)
+  placeLocked = true;
+
+  // 격자 갱신
+  bingoState[cellIdx] = 'placed';
+
+  // UI 갱신: 클릭한 칸 placed + 다른 빈 칸 잠금
+  const grid = slide.querySelector('.bingoq-grid');
+  const cells = grid.querySelectorAll('.bingoq-cell');
+  cells.forEach((c, i) => {
+    if(i === cellIdx){
+      c.classList.remove('empty');
+      c.classList.add('placed', 'locked');
+      c.textContent = '⭕';
+      c.onclick = null;
+    } else if(c.classList.contains('empty')){
+      c.classList.add('locked');
+      c.classList.remove('empty');
+      c.onclick = null;
+    }
+  });
+
+  // 빙고 라인 체크 (현재 vs 직전)
+  const newLinesCount = countBingoLines();
+  const msg = slide.querySelector('#bz-msg-' + currentQ);
+  if(newLinesCount > prevLinesCount){
+    const added = newLinesCount - prevLinesCount;
+    msg.textContent = '🎯 ' + added + '줄 빙고! (총 ' + newLinesCount + '줄)';
+    msg.classList.add('bingo');
+    // 라인 셀 강조
+    const lineCells = getBingoLineCells();
+    cells.forEach((c, i) => { if(lineCells.has(i)) c.classList.add('line-now'); });
+  } else {
+    msg.textContent = '⭕ 박았어! (빙고 ' + newLinesCount + '줄)';
+  }
+  prevLinesCount = newLinesCount;
+
+  // "다음 →" 활성화
+  document.getElementById('btn-next').classList.add('hl');
+}
+
+/* ─── 답 처리 (시간 압박 X, 정답 = 100점 + 학생 격자 선택) ─── */
 function answerQ(btn, picked){
   if(qLocked) return;
   qLocked = true;
@@ -555,11 +654,12 @@ function answerQ(btn, picked){
     totalScore += Q_SCORE;
     stats.correct++;
     stats.perQ.push({correct: true, score: Q_SCORE});
-    markBingoCell(currentQ, true);
-    fb.innerHTML = '🎉 정답! <span class="q-bonus">+' + Q_SCORE + '점</span> · 격자 ⭕';
+    fb.innerHTML = '🎉 정답! <span class="q-bonus">+' + Q_SCORE + '점</span>';
     fb.className = 'q-feedback ok';
     document.getElementById('score-num').textContent = totalScore;
-    document.getElementById('btn-next').classList.add('hl');
+    // 격자 fade-in: 학생이 빈 칸 클릭해야 다음 진행 OK
+    showBingoQZone(slide);
+    // "다음 →" 강조 X (학생 격자 클릭 후 활성화됨)
   } else {
     btn.classList.add('wrong');
     // 정답 노출
@@ -568,9 +668,9 @@ function answerQ(btn, picked){
       if(i === correct) b.classList.add('reveal');
     });
     stats.perQ.push({correct: false, score: 0});
-    markBingoCell(currentQ, false);
-    fb.textContent = '❌ 정답은 ' + correct + ' · 격자 ❌';
+    fb.textContent = '❌ 정답은 ' + correct + ' (격자 변동 X)';
     fb.className = 'q-feedback no';
+    // 오답: 격자 변동 X / 다음 진행 가능
     document.getElementById('btn-next').classList.add('hl');
   }
 }
@@ -614,10 +714,9 @@ function renderResult(){
     cell.className = 'bingo-cell';
     cell.dataset.idx = i;
     const state = bingoState[i];
-    if(state === 'correct'){ cell.classList.add('correct'); cell.textContent = '⭕'; }
-    else if(state === 'wrong'){ cell.classList.add('wrong'); cell.textContent = '❌'; }
+    if(state === 'placed'){ cell.classList.add('correct'); cell.textContent = '⭕'; }
     else if(state === 'free'){ cell.classList.add('free'); cell.textContent = '★'; }
-    else { cell.textContent = '·'; }
+    else { cell.textContent = '·'; }  // 빈 칸: 학생이 안 박음 (오답 또는 진행 X)
     grid.appendChild(cell);
     setTimeout(() => cell.classList.add('shown'), 100 + i * 90);
   }
@@ -642,7 +741,7 @@ function renderResult(){
   document.getElementById('result-fullhouse').textContent = stats.fullHouse ? '🌟 YES' : '—';
 
   let stars, emoji, msg, title;
-  if(stats.fullHouse){
+  if(stats.fullHouse && stats.bingoLines >= 8){
     stars = '⭐⭐⭐'; emoji = '🌟'; title = '풀하우스 빙고 마스터!';
     msg = '8문제 다 정답 + 8 라인 빙고! 단원 마스터!';
   } else if(stats.bingoLines >= 3){
