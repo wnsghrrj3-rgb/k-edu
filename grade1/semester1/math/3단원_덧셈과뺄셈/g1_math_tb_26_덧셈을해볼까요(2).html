@@ -1,548 +1,596 @@
 <!DOCTYPE html>
+<!--
+  tb_26 덧셈을 해볼까요 (2) — 본격 5단계 18슬 base v1
+  ════════════════════════════════════════════════════════════
+  cycle 43 박음 (math)
+
+  설계 출처: kedu/2026-05-09_math_3단원_매핑_v1초안.md (l.53 tb_26 자리)
+
+  학습 본질: 덧셈의 확장 = 같은 답 식 = 합 = 결합 직관 + 빠진 수 = 역연산 초기 직관
+  메카닉:
+    ✅ 같은 답 식 묶기 (합이 같은 결끼리 분류, 카드 드래그)
+    ✅ 빠진 수 찾기 (? + 3 = 5, 2 + ? = 5 결, 답 직접 입력)
+    ⛔ 4지선다 X · 무효 4종 X
+-->
 <html lang="ko">
 <head>
-<script src="/kedu_config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/kedu_tracker.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>덧셈을 해 볼까요(2) - K✦edu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_tb_26_v1">
+<title>덧셈을 해볼까요 (2) · K-edu 1학년 수학</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../math-common.css">
 <style>
-:root{--bg:#F0FDFA;--card:#FFFFFF;--primary:#26A69A;--primary-light:#E0F2F1;--secondary:#4DB6AC;--green:#4CAF50;--green-light:#E8F5E9;--red:#F44336;--red-light:#FFEBEE;--yellow:#FFC107;--yellow-light:#FFF8E1;--text:#333;--subtext:#888;--border:#D0E8E4;--shadow:0 4px 16px rgba(0,0,0,0.08);--radius:20px;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;-webkit-user-select:none;}
-.logo{display:flex;align-items:center;gap:2px;position:fixed;top:12px;left:16px;z-index:999;}
-.logo span:first-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#1D4ED8;}
-.logo span:nth-child(2){font-size:10px;color:#F59E0B;}
-.logo span:last-child{font-family:'Nunito',sans-serif;font-weight:800;font-size:20px;color:#333;}
-.sound-btn{position:fixed;top:12px;right:16px;z-index:999;background:var(--primary-light);border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;}
-.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px 80px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;transform:translateX(60px);overflow-y:auto;}
-.slide.active{opacity:1;pointer-events:auto;transform:translateX(0);}
-.slide.exit{opacity:0;transform:translateX(-60px);}
-.slide-title{font-size:28px;color:var(--primary);margin-bottom:8px;text-align:center;}
-.badge{display:inline-block;background:var(--yellow-light);color:#F57F17;padding:4px 14px;border-radius:20px;font-size:16px;margin-bottom:10px;}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;width:100%;max-width:560px;text-align:center;}
-.char-row{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:12px;}
-.char-img{width:56px;height:56px;border-radius:50%;}
-.speech{background:var(--primary-light);border-radius:16px;padding:12px 18px;font-size:22px;max-width:380px;text-align:left;position:relative;}
-.speech::before{content:'';position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:var(--primary-light);}
-.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;}
-.btn{padding:10px 24px;border-radius:16px;border:3px solid var(--border);background:var(--card);font-family:'Jua',sans-serif;font-size:44px;cursor:pointer;transition:all .2s;min-width:64px;}
-.btn:hover{border-color:var(--primary);background:var(--primary-light);}
-.btn.correct{background:var(--green-light)!important;border-color:var(--green)!important;animation:pop .3s;}
-.btn.wrong{background:var(--red-light)!important;border-color:var(--red)!important;animation:shake .4s;}
-.btn-sm{font-size:26px;padding:8px 16px;}
-.blank{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border:3px dashed var(--primary);border-radius:12px;font-size:36px;color:var(--primary);background:var(--primary-light);transition:all .3s;vertical-align:middle;}
-.blank.filled{border-style:solid;background:var(--green-light);border-color:var(--green);color:var(--green);}
-.eq-row{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0;font-size:48px;}
-.feedback{margin-top:10px;font-size:22px;min-height:28px;text-align:center;}
-.ok{color:var(--green);}
-.no{color:var(--red);}
-.add-table{border-collapse:collapse;margin:10px auto;}
-.add-table td,.add-table th{width:44px;height:44px;text-align:center;font-size:24px;border:2px solid var(--border);border-radius:6px;}
-.add-table th{background:var(--primary-light);color:var(--primary);font-weight:normal;}
-.add-table .plus-cell{background:var(--primary);color:#fff;font-size:20px;}
-.add-table .blank-cell{background:var(--yellow-light);cursor:pointer;font-size:22px;color:var(--primary);}
-.add-table .blank-cell.filled{background:var(--green-light);color:var(--green);cursor:default;}
-.add-table .highlight{background:#FFE0B2;border-color:#FFCC80;}
-.ox-btn{width:76px;height:76px;border-radius:50%;font-size:36px;border:4px solid var(--border);background:var(--card);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.ox-btn.correct{border-color:var(--green);background:var(--green-light);}
-.ox-btn.wrong{border-color:var(--red);background:var(--red-light);}
-.pattern-row{display:flex;align-items:center;gap:6px;justify-content:center;margin:8px 0;font-size:32px;}
-.pattern-box{width:48px;height:48px;border:3px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#fff;}
-.pattern-box.hl{background:var(--yellow-light);border-color:var(--yellow);}
-.nav{position:fixed;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:16px;z-index:100;}
-.nav-btn{padding:10px 28px;border-radius:30px;border:none;font-family:'Jua',sans-serif;font-size:22px;cursor:pointer;}
-.nav-prev{background:var(--card);color:var(--text);border:2px solid var(--border);}
-.nav-next{background:var(--primary);color:#fff;}
-.nav-btn:disabled{opacity:.4;cursor:default;}
-.page-info{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--subtext);}
-.combo-badge{display:inline-block;background:linear-gradient(135deg,#FF6B6B,#FFE66D);color:#fff;padding:6px 18px;border-radius:20px;font-size:20px;margin:6px 0;}
-@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: clamp(11px, 1.7vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+.intro-card { background: #F8FBFF; border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(14px, 2.4vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.5vw, 14px); max-width: var(--mw-md); border: 2px solid #E3F2FD; }
+.intro-line { font-size: clamp(16px, 2.6vw, 22px); color: #455A64; text-align: center; line-height: 1.5; }
+.intro-line strong { color: #F57F17; font-weight: 400; background: #FFF8E1; padding: 0 6px; border-radius: 6px; }
+
+/* 같은 답 식 묶기 */
+.sumgroup-stage { display: flex; flex-direction: column; align-items: stretch; width: 100%; max-width: var(--mw-md); gap: clamp(8px, 1.5vw, 12px); }
+.sumgroup-prompt { font-size: clamp(13px, 2.2vw, 18px); color: #455A64; text-align: center; }
+.sumgroup-prompt strong { color: #F57F17; font-weight: 400; }
+.sumgroup-prompt strong.other { color: #C2185B; }
+.sumgroup-pool { display: flex; flex-wrap: wrap; gap: clamp(5px, 1vw, 8px); justify-content: center; padding: clamp(6px, 1.2vw, 10px); background: #F8FBFF; border-radius: clamp(10px, 1.6vw, 14px); border: 2px dashed #B3E5FC; min-height: clamp(50px, 8vw, 70px); }
+.sumgroup-card { display: inline-flex; align-items: center; gap: clamp(2px, 0.5vw, 4px); background: white; border: 2px solid #B3E5FC; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(5px, 1vw, 8px) clamp(8px, 1.5vw, 12px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(13px, 2.2vw, 18px); color: #1976D2; cursor: grab; user-select: none; touch-action: none; transition: transform 0.2s, filter 0.2s; position: relative; animation: ka-pop 0.4s ease both; }
+.sumgroup-card:active { cursor: grabbing; transform: scale(1.1); }
+.sumgroup-card.dragging { z-index: 100; transform: scale(1.15); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
+.sumgroup-card.placed { cursor: default; }
+.sumgroup-bins { display: flex; gap: clamp(6px, 1.2vw, 10px); }
+.sumgroup-bin { flex: 1; background: #FFF8E1; border: 3px dashed #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.5vw, 12px); display: flex; flex-wrap: wrap; gap: clamp(3px, 0.7vw, 6px); align-items: flex-start; justify-content: center; position: relative; min-height: clamp(60px, 9vw, 85px); }
+.sumgroup-bin.bin-other { background: #FCE4EC; border-color: #F48FB1; }
+.sumgroup-bin.has-items { border-style: solid; }
+.sumgroup-bin-label { position: absolute; top: clamp(-9px, -1.4vw, -11px); left: 50%; transform: translateX(-50%); background: #F57F17; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; padding: clamp(2px, 0.5vw, 4px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(11px, 1.8vw, 14px); white-space: nowrap; }
+.sumgroup-bin.bin-other .sumgroup-bin-label { background: #C2185B; }
+.sumgroup-fb { font-size: clamp(12px, 2vw, 16px); color: #2E7D32; text-align: center; min-height: clamp(16px, 2.5vw, 22px); }
+.sumgroup-fb.wrong { color: #C62828; }
+
+/* 빠진 수 찾기 (답 직접 입력) */
+.blank-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px); max-width: var(--mw-md); width: 100%; }
+.blank-eq { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: clamp(4px, 0.9vw, 8px); padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3vw, 28px); background: white; border: 3px solid #1976D2; border-radius: clamp(14px, 2.4vw, 20px); }
+.blank-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 5.6vw, 52px); color: #1976D2; padding: 0 4px; }
+.blank-op { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(26px, 4.4vw, 40px); color: #FFA726; padding: 0 4px; }
+.blank-input { display: inline-flex; align-items: center; justify-content: center; width: clamp(60px, 9vw, 90px); height: clamp(60px, 9vw, 90px); background: #F8FBFF; border: 3px dashed #90CAF9; border-radius: clamp(12px, 2vw, 16px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 5.6vw, 52px); color: #1976D2; cursor: pointer; transition: all 0.2s; }
+.blank-input.active { animation: ka-pulse 1.4s ease-in-out infinite; }
+.blank-input.filled { border-style: solid; background: #E3F2FD; }
+.blank-input.correct { border-color: #66BB6A; background: #E8F5E9; color: #2E7D32; }
+.blank-input.wrong { border-color: #EF5350; background: #FFEBEE; color: #C62828; animation: ka-shake 0.4s ease; }
+.blank-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(4px, 0.9vw, 8px); width: 100%; max-width: clamp(280px, 50vw, 460px); }
+.blank-key { background: white; border: 2px solid #E3F2FD; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(8px, 1.5vw, 12px) 0; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 3vw, 26px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.blank-key:hover { background: #E3F2FD; }
+.blank-key.del { color: #C62828; border-color: #FFCDD2; font-size: clamp(13px, 2.2vw, 18px); }
+.blank-fb { font-size: clamp(13px, 2.2vw, 18px); color: #2E7D32; text-align: center; min-height: clamp(18px, 2.8vw, 24px); }
+.blank-fb.wrong { color: #C62828; }
+.blank-hint { font-size: clamp(13px, 2.2vw, 18px); color: #607D8B; text-align: center; padding: clamp(8px, 1.5vw, 12px); background: #FFFDE7; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); }
+.blank-hint strong { color: #F57F17; font-weight: 400; }
+
+.recap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px); max-width: var(--mw-md); width: 100%; }
+.recap-card { background: linear-gradient(135deg, #FFF8E1 0%, #FFFDE7 100%); border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(14px, 2.4vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.5vw, 14px); width: 100%; border: 2px solid #FFD54F; }
+.recap-card.split { background: linear-gradient(135deg, #E3F2FD 0%, #F0F7FF 100%); border-color: #90CAF9; }
+.recap-icon { font-size: clamp(36px, 5.8vw, 60px); line-height: 1; }
+.recap-title { font-size: clamp(20px, 3.4vw, 30px); color: #F57F17; font-weight: 400; text-align: center; }
+.recap-card.split .recap-title { color: #1976D2; }
+.recap-body { font-size: clamp(15px, 2.4vw, 20px); color: #455A64; text-align: center; line-height: 1.5; }
+.recap-body strong { color: #F57F17; font-weight: 400; background: white; padding: 0 6px; border-radius: 6px; }
+
+.wrap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: var(--mw-md); }
+.wrap-trophy { font-size: clamp(50px, 8vw, 90px); line-height: 1; }
+.wrap-title { font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; font-weight: 400; text-align: center; }
+.wrap-line { font-size: clamp(15px, 2.4vw, 20px); color: #455A64; text-align: center; line-height: 1.6; }
+.wrap-next { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 18px); font-size: clamp(13px, 2.1vw, 17px); color: #F57F17; }
+
+.ka-f { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-next { background: #1976D2; color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(12px, 2vw, 16px); cursor: pointer; transition: background 0.2s; }
+.ka-prev { background: #B0BEC5; }
+.ka-next:hover { background: #1565C0; }
+.ka-next.hl { animation: ka-pulse 1.4s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
 </style>
 </head>
 <body>
-<div class="logo"><span>K</span><span>✦</span><span>edu</span></div>
-<button class="sound-btn" onclick="toggleSound()" id="soundBtn">🔊</button>
-<div id="sc" style="width:100%;height:100vh;position:relative;overflow:hidden;"></div>
-<div class="nav"><button class="nav-btn nav-prev" id="prevBtn" onclick="prev()">◀ 이전</button><button class="nav-btn nav-next" id="nextBtn" onclick="next()">다음 ▶</button></div>
-<div class="page-info" id="pi"></div>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="window.history.back()">← 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+    <!-- 1단계 도입 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">덧셈을 해볼까요 (2)</h1>
+      <div class="slide-sub">오늘은 덧셈의 두 가지 결을 박을 거예요</div>
+      <div class="intro-card">
+        <div style="font-size:clamp(22px,3.8vw,32px); color:#F57F17;">🎯 같은 답 결 모으기</div>
+        <div style="font-size:clamp(22px,3.8vw,32px); color:#C2185B;">🔍 빠진 수 찾기</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">같은 답 결</h1>
+      <div class="intro-card">
+        <div class="intro-line">합이 <strong>같은 식</strong>이 여러 가지 있어요</div>
+        <div style="font-size:clamp(18px,3vw,26px); color:#1976D2; font-family:'Nunito',sans-serif; font-weight:800; line-height:1.6;">
+          1 + 4 = 5<br>
+          2 + 3 = 5<br>
+          3 + 2 = 5
+        </div>
+        <div class="intro-line">결은 달라도 답은 <strong>5</strong></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">빠진 수 찾기</h1>
+      <div class="intro-card">
+        <div class="intro-line">식의 <strong>한 자리가 비어 있어요</strong></div>
+        <div style="font-size:clamp(26px,4.4vw,40px); color:#1976D2; font-family:'Nunito',sans-serif; font-weight:800;">
+          2 + <span style="color:#C2185B;">?</span> = 5
+        </div>
+        <div class="intro-line">"2와 무엇을 모으면 5?"</div>
+        <div class="intro-line">답은 <strong>3</strong>이에요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="4" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">오늘 박을 결</h1>
+      <div class="intro-card" style="background:#FFFDE7; border-color:#FFD54F;">
+        <div style="font-size:clamp(22px,3.8vw,32px); color:#F57F17;">🎯 같은 답끼리 묶음 박기</div>
+        <div class="intro-line">합 같은 결끼리 모아 박아요</div>
+      </div>
+      <div class="intro-card" style="background:#FCE4EC; border-color:#F48FB1;">
+        <div style="font-size:clamp(22px,3.8vw,32px); color:#C2185B;">🔍 빠진 자리 박기</div>
+        <div class="intro-line">비어 있는 자리에 맞는 수 박아요</div>
+      </div>
+    </div>
+
+    <!-- 2단계 전개 -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">같은 답 결 모으기</h1>
+      <div class="sumgroup-stage" data-sumgroup="5">
+        <div class="sumgroup-prompt">묶음을 <strong>합 5</strong>인 자리와 <strong class="other">합 6</strong>인 자리로 갈라 박으세요</div>
+        <div class="sumgroup-pool">
+          <div class="sumgroup-card" data-sum="5">1+4</div>
+          <div class="sumgroup-card" data-sum="6">2+4</div>
+          <div class="sumgroup-card" data-sum="5">2+3</div>
+          <div class="sumgroup-card" data-sum="6">5+1</div>
+          <div class="sumgroup-card" data-sum="5">4+1</div>
+          <div class="sumgroup-card" data-sum="6">3+3</div>
+        </div>
+        <div class="sumgroup-bins">
+          <div class="sumgroup-bin" data-target="5"><div class="sumgroup-bin-label">합 = 5</div></div>
+          <div class="sumgroup-bin bin-other" data-target="6"><div class="sumgroup-bin-label">합 = 6</div></div>
+        </div>
+        <div class="sumgroup-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">한 번 더 모아 박기</h1>
+      <div class="sumgroup-stage" data-sumgroup="6">
+        <div class="sumgroup-prompt">묶음을 <strong>합 7</strong>인 자리와 <strong class="other">합 8</strong>인 자리로 갈라 박으세요</div>
+        <div class="sumgroup-pool">
+          <div class="sumgroup-card" data-sum="7">3+4</div>
+          <div class="sumgroup-card" data-sum="8">6+2</div>
+          <div class="sumgroup-card" data-sum="7">5+2</div>
+          <div class="sumgroup-card" data-sum="8">4+4</div>
+          <div class="sumgroup-card" data-sum="7">6+1</div>
+          <div class="sumgroup-card" data-sum="8">5+3</div>
+        </div>
+        <div class="sumgroup-bins">
+          <div class="sumgroup-bin" data-target="7"><div class="sumgroup-bin-label">합 = 7</div></div>
+          <div class="sumgroup-bin bin-other" data-target="8"><div class="sumgroup-bin-label">합 = 8</div></div>
+        </div>
+        <div class="sumgroup-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">빠진 수 찾기</h1>
+      <div class="blank-stage" data-blank="7">
+        <div class="blank-hint">"2와 무엇을 모으면 5가 될까요?"</div>
+        <div class="blank-eq">
+          <span class="blank-num">2</span><span class="blank-op">+</span>
+          <button class="blank-input active" data-answer="3">?</button>
+          <span class="blank-op">=</span><span class="blank-num">5</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="8" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">빠진 수 찾기</h1>
+      <div class="blank-stage" data-blank="8">
+        <div class="blank-hint">"무엇과 4를 모으면 7이 될까요?"</div>
+        <div class="blank-eq">
+          <button class="blank-input active" data-answer="3">?</button>
+          <span class="blank-op">+</span><span class="blank-num">4</span>
+          <span class="blank-op">=</span><span class="blank-num">7</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <!-- 3단계 기본문제 (양산 슬롯) -->
+    <div class="slide" data-slide="9" data-stage="3" data-slot-id="basic_blank_a">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="9">
+        <div class="blank-eq">
+          <span class="blank-num">3</span><span class="blank-op">+</span>
+          <button class="blank-input active" data-answer="3">?</button>
+          <span class="blank-op">=</span><span class="blank-num">6</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="10" data-stage="3" data-slot-id="basic_blank_b">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="10">
+        <div class="blank-eq">
+          <button class="blank-input active" data-answer="5">?</button>
+          <span class="blank-op">+</span><span class="blank-num">2</span>
+          <span class="blank-op">=</span><span class="blank-num">7</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="11" data-stage="3" data-slot-id="basic_blank_c">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="11">
+        <div class="blank-eq">
+          <span class="blank-num">4</span><span class="blank-op">+</span>
+          <button class="blank-input active" data-answer="4">?</button>
+          <span class="blank-op">=</span><span class="blank-num">8</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="12" data-stage="3" data-slot-id="basic_blank_d">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="12">
+        <div class="blank-eq">
+          <button class="blank-input active" data-answer="6">?</button>
+          <span class="blank-op">+</span><span class="blank-num">3</span>
+          <span class="blank-op">=</span><span class="blank-num">9</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <!-- 4단계 응용 -->
+    <div class="slide" data-slide="13" data-stage="4" data-slot-id="app_sumgroup_a">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">같은 답 결 모으기</h1>
+      <div class="sumgroup-stage" data-sumgroup="13">
+        <div class="sumgroup-prompt">합 <strong>6</strong>인 자리와 <strong class="other">9</strong>인 자리로 갈라 박으세요</div>
+        <div class="sumgroup-pool">
+          <div class="sumgroup-card" data-sum="6">2+4</div>
+          <div class="sumgroup-card" data-sum="9">5+4</div>
+          <div class="sumgroup-card" data-sum="6">1+5</div>
+          <div class="sumgroup-card" data-sum="9">7+2</div>
+          <div class="sumgroup-card" data-sum="6">3+3</div>
+          <div class="sumgroup-card" data-sum="9">6+3</div>
+        </div>
+        <div class="sumgroup-bins">
+          <div class="sumgroup-bin" data-target="6"><div class="sumgroup-bin-label">합 = 6</div></div>
+          <div class="sumgroup-bin bin-other" data-target="9"><div class="sumgroup-bin-label">합 = 9</div></div>
+        </div>
+        <div class="sumgroup-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="14" data-stage="4" data-slot-id="app_blank_a">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="14">
+        <div class="blank-hint">두 자리 모두 비어 있어요. 합이 <strong>5</strong>인 결 한 가지 박으세요</div>
+        <div class="blank-eq">
+          <button class="blank-input active" data-answer="2">?</button>
+          <span class="blank-op">+</span>
+          <button class="blank-input" data-answer="3">?</button>
+          <span class="blank-op">=</span><span class="blank-num">5</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="15" data-stage="4" data-slot-id="app_blank_b">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">빠진 수 박기</h1>
+      <div class="blank-stage" data-blank="15">
+        <div class="blank-eq">
+          <span class="blank-num">7</span><span class="blank-op">+</span>
+          <button class="blank-input active" data-answer="2">?</button>
+          <span class="blank-op">=</span><span class="blank-num">9</span>
+        </div>
+        <div class="blank-pad">
+          <button class="blank-key" data-key="1">1</button><button class="blank-key" data-key="2">2</button><button class="blank-key" data-key="3">3</button><button class="blank-key" data-key="4">4</button><button class="blank-key" data-key="5">5</button>
+          <button class="blank-key" data-key="6">6</button><button class="blank-key" data-key="7">7</button><button class="blank-key" data-key="8">8</button><button class="blank-key" data-key="9">9</button>
+          <button class="blank-key del" data-key="del">지우기</button>
+        </div>
+        <div class="blank-fb">빠진 수를 박으세요</div>
+      </div>
+    </div>
+
+    <!-- 5단계 정리 -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 박은 것 ①</h1>
+      <div class="recap-stage">
+        <div class="recap-card">
+          <div class="recap-icon">🎯</div>
+          <div class="recap-title">같은 답 결</div>
+          <div class="recap-body">결은 달라도 <strong>합이 같으면</strong> 같은 묶음<br>1+4 = 2+3 = 3+2 = <strong>5</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 박은 것 ②</h1>
+      <div class="recap-stage">
+        <div class="recap-card split">
+          <div class="recap-icon">🔍</div>
+          <div class="recap-title">빠진 수 찾기</div>
+          <div class="recap-body">한 자리가 비어 있을 때<br><strong>"무엇과 무엇을 모으면 ?"</strong> 박을 수 있어요</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="wrap-stage">
+        <div class="wrap-trophy">🏆</div>
+        <div class="wrap-title">정말 잘했어요!</div>
+        <div class="wrap-line">같은 답 결과 빠진 수 결 모두 박았어요<br>다음 시간엔 뺄셈을 박을 거예요</div>
+        <div class="wrap-next">📚 다음 차시 — 뺄셈을 알아볼까요</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
 
 <script>
-const KAY="data:image/webp;base64,UklGRi4DAABXRUJQVlA4ICIDAACwDwCdASpAADQAPpE6lkgloyIhLhbdULASCWIAv2tLVJ91/ebfZYmBYRmNbEm3KtppnkA1COlC0qPl8lbpPOMvM2+7Paj7RyTRWkREpTairsQmfIaQHPuysZGp//AZOh/jhXMgf+XukneaTzeAwrYpCptDySjwuW6f1OccbfWCheBXOucqgAD+/0+Dl+AdHcEtL1tgGpY9A3cZGKy5flJPAUKNf9C2LqZ9+c6s+AuIXTKIfLmRciOGPZIJyFt6o2Ve/4UfabBdF9Zbd/7jtqaOPGI+0HBEZ1ShVDFULPS07rBzFVnn6okSBEwMCW3Et+nMjONY1j9eOQ0N4p0HSUGw4amR1CyH5BAwJYiCfsHax0Qq6pKuW9JyrD2znHQzdHZbIs3jLpwvJpdS8u8woJuK0RTRMqh0KXmfn8W+bGDxsgqmaoAPlGdEjAjFEs5MxlTn+BL08u9SP4H9zrlI+YzHznt3aHKf6cbpF+0omk1Vhm6MEN2mx/ulJxh1gf3bBEt05y+ki/fmi8F94yOGBwCds82ya/2W+WP0T6v/uTm27/51s+M7xjXGrtzGcyO6Y7hQCQ5dgBOxoDEvrYyjx/Y3lto+tdsFcdKsIA8H0y+bGenSlLrroFCKyzdSgEjhcma7hsOlT12vjv1idWQ8Ix13zTEzwGBOc2/RX+VXKYjul+rMAThdcqavxooRkgrVnThNyLLkJ7dPaStKwB0dxkzFHSlrJyRc199QMEiDvrh1wNhcoE3Rth45nghKzBePCeHjQujoZfe1vzJmVb1D1/Yge8yF66LAdOTH2erd2InrQ8OQ5fSfOaPuYYX+3Jyh/Kf+On4ybKylo+tQnNukOi1Pz8c7y8hauJKmtKxCoRUKEW0LC4HlTncAFgomF/eIRa/3dE3S9nq17huadym1imoCs+3h1GgXhmP+MZp+7GXNkOTku6qznRlgOgEH64Ah54EWrhSdk5UoJ3pzjYXt5wgYXVOLfd3Q+7JwSTLym8v+B6p3KFewI5RHShHzbtIf8Nk9U2fx+uoQob5b0Aq5RHXKjAZufVLWiQR665CMzpKxfyAA";
-const DEW="data:image/webp;base64,UklGRnoCAABXRUJQVlA4IG4CAADwDACdASpAADoAPpFCmkolo6IhphqrsLASCWMBBgGR+0X3A4qPoGUDwL0gU0Xx98e1w7+TeAV235taC0yLQJRivrlrPRVKEIgEULNS50inV9QNYkSrvmnwBkA/e092ohWmsfh4XTWiBovtjrRyQdAAAP78luCp3tatm0//xO+Of/HjiDgggHnwXuMiB0+z33XX1DBi+KCecGx0nrbSJA1WUEv3dbBxsA5ByyEn4D/OBRquCptZcBNZYhJLIgHvWdEjEqa5upf4MSE4GQC3w+5RJsURcxZSM8cnZMZyawScCL52V9vJSLboUnQQyiJFiNlO/SUDXoyaOeaVBcPvHagM5kfwK7syvzlddmlo0cRg5D3UoBX1Xk2clxB+1v8qorqFxn2eR70TNo2v4vt+oBG9iNmMSC/wS6TDjOoafEiTm8zO+lTMyCt2L2/F7ihUmucBkJDI91mteDYdu+ZofCTLHnWu5bhzvr7ALOpfvUuc58VFoNXI0+zmghZ/tUjc9mHC0HnpuzleZZBgV9rblbr1hWFIqrA40ToMX4qJUSxr+aBIRq1G918gy7/Xi03y0HgXW0LYTfecu3IjqxR9P6HxOr7plxlENSK5p+MbJ4d14EsxRpKMPeLn8FPvqgVA9fcY/WC2HOtgIet9WDe+AxQ/bO16OHwifyFXPSRZS7T+xnrzeX87AKXAf3lgbu2pldUKO0pG0rNzhswfvdIqX2RsRkrv3Etm5P5Y9hZBROImnDceH3o9kd7JIkYLmqKROIJAdZ8S07opuwP/B8wNUanQwLZ8v/8FLEPgBqz3I8aVfw54t8Hrs1QABy6FYqAA";
+const TOTAL = 18;
+let cur = 0, score = 0;
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+let muted = false;
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
 
-let audioCtx,soundOn=true,cur=0,score=0,combo=0,maxCombo=0;
-function initA(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
-function ps(t){if(!soundOn)return;initA();audioCtx.resume().then(()=>{const n=audioCtx.currentTime;if(t==='correct'){[523,659,784].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.15,n+i*.12);g.gain.exponentialRampToValueAtTime(.01,n+i*.12+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.12);o.stop(n+i*.12+.2);});}else if(t==='wrong'){[220,196].forEach((f,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sawtooth';o.frequency.value=f;g.gain.setValueAtTime(.1,n+i*.15);g.gain.exponentialRampToValueAtTime(.01,n+i*.15+.2);o.connect(g);g.connect(audioCtx.destination);o.start(n+i*.15);o.stop(n+i*.15+.2);});}else{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.08,n);g.gain.exponentialRampToValueAtTime(.01,n+.08);o.connect(g);g.connect(audioCtx.destination);o.start(n);o.stop(n+.08);}});}
-function toggleSound(){soundOn=!soundOn;document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';}
-function stars(s){if(s<=10)return'⭐ 기본';if(s<=25)return'⭐⭐ 발전';if(s<=50)return'⭐⭐⭐ 심화';return'⭐⭐⭐⭐ 최심화';}
-
-// Build addition table HTML
-function addTableHTML(blanks){
-  let h='<table class="add-table"><tr><td class="plus-cell">+</td>';
-  for(let j=1;j<=5;j++)h+=`<th>${j}</th>`;
-  h+='</tr>';
-  for(let i=1;i<=4;i++){
-    h+=`<tr><th>${i}</th>`;
-    for(let j=1;j<=5;j++){
-      const v=i+j;
-      const isBlank=blanks.some(b=>b[0]===i&&b[1]===j);
-      if(isBlank)h+=`<td class="blank-cell" id="tc_${i}_${j}">?</td>`;
-      else h+=`<td>${v}</td>`;
+/* 같은 답 식 묶기 (드래그) */
+document.querySelectorAll('.sumgroup-stage').forEach(stage => {
+  const pool = stage.querySelector('.sumgroup-pool');
+  const bins = stage.querySelectorAll('.sumgroup-bin');
+  const fb = stage.querySelector('.sumgroup-fb');
+  const total = pool.querySelectorAll('.sumgroup-card').length;
+  let solved = false;
+  function bindDrag(card) {
+    function startDrag(e) {
+      if (card.classList.contains('placed') || solved) return;
+      e.preventDefault();
+      const rect = card.getBoundingClientRect();
+      const isTouch = e.type === 'touchstart';
+      const point = isTouch ? e.touches[0] : e;
+      const offsetX = point.clientX - rect.left;
+      const offsetY = point.clientY - rect.top;
+      card.classList.add('dragging');
+      card.style.position = 'fixed';
+      card.style.left = (point.clientX - offsetX) + 'px';
+      card.style.top = (point.clientY - offsetY) + 'px';
+      card.style.pointerEvents = 'none';
+      function onMove(ev) {
+        ev.preventDefault();
+        const p = ev.type === 'touchmove' ? ev.touches[0] : ev;
+        card.style.left = (p.clientX - offsetX) + 'px';
+        card.style.top = (p.clientY - offsetY) + 'px';
+        bins.forEach(t => {
+          const r = t.getBoundingClientRect();
+          const over = p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom;
+          t.style.transform = over ? 'scale(1.02)' : '';
+        });
+      }
+      function onEnd(ev) {
+        const p = ev.type === 'touchend' ? ev.changedTouches[0] : ev;
+        let dropped = null;
+        bins.forEach(t => {
+          const r = t.getBoundingClientRect();
+          if (p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom) dropped = t;
+          t.style.transform = '';
+        });
+        card.classList.remove('dragging');
+        card.style.position = ''; card.style.left = ''; card.style.top = ''; card.style.pointerEvents = '';
+        if (dropped) {
+          const targetSum = parseInt(dropped.dataset.target, 10);
+          const cardSum = parseInt(card.dataset.sum, 10);
+          if (targetSum === cardSum) {
+            dropped.appendChild(card);
+            card.classList.add('placed');
+            dropped.classList.add('has-items');
+            addScore(3);
+            update();
+          } else {
+            fb.textContent = '합이 ' + cardSum + '이라 ' + targetSum + ' 자리에 안 박혀요';
+            fb.classList.add('wrong');
+            setTimeout(() => { fb.textContent = '묶음 카드를 끌어다 박아 보세요'; fb.classList.remove('wrong'); }, 1400);
+          }
+        }
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+      document.addEventListener('touchmove', onMove, {passive: false});
+      document.addEventListener('touchend', onEnd);
     }
-    h+='</tr>';
+    card.addEventListener('mousedown', startDrag);
+    card.addEventListener('touchstart', startDrag, {passive: false});
   }
-  return h+'</table>';
-}
+  function update() {
+    const placed = stage.querySelectorAll('.sumgroup-card.placed').length;
+    if (placed === total && !solved) {
+      solved = true;
+      fb.textContent = '모두 박혔어요!';
+      fb.classList.remove('wrong');
+    }
+  }
+  pool.querySelectorAll('.sumgroup-card').forEach(bindDrag);
+});
 
-const S=[];
-
-// 0: Title
-S.push({t:'c',h:`
-<div class="slide-title" style="font-size:32px;">3단원: 덧셈과 뺄셈</div>
-<div style="font-size:26px;color:var(--secondary);margin-bottom:16px;">덧셈을 해 볼까요(2)</div>
-<div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이"><div class="speech">이번에는 <b>덧셈표</b>를 만들고 <b>규칙</b>을 찾아볼 거야!</div></div>
-  <div style="font-size:22px;color:var(--subtext);margin-top:10px;">덧셈표 속에 숨겨진 비밀을 찾아보아요!</div>
-</div>`});
-
-// 1: Concept - 덧셈표
-S.push({t:'c',h:`
-<div class="slide-title">덧셈표 📊</div>
-<div class="card">
-  <div class="char-row"><img src="${DEW}" class="char-img" alt="듀"><div class="speech">덧셈표에서 가로와 세로가 만나는 칸이 합이야!</div></div>
-  ${addTableHTML([])}
-  <div style="font-size:20px;color:var(--subtext);margin-top:8px;">+ 칸의 가로 수와 세로 수를 더하면 돼요!</div>
-</div>`});
-
-// 2: Concept - 덧셈표 규칙
-S.push({t:'c',h:`
-<div class="slide-title">덧셈표의 규칙 🔍</div>
-<div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이"><div class="speech">덧셈표에는 재미있는 규칙이 숨어 있어!</div></div>
-  <div style="margin:10px 0;">
-    <div style="font-size:22px;margin-bottom:8px;">규칙 1: 오른쪽으로 가면 합이 <b>1씩 커져요</b></div>
-    <div class="pattern-row">
-      <div class="pattern-box">2</div><span>→</span>
-      <div class="pattern-box">3</div><span>→</span>
-      <div class="pattern-box">4</div><span>→</span>
-      <div class="pattern-box">5</div><span>→</span>
-      <div class="pattern-box">6</div>
-    </div>
-    <div style="font-size:22px;margin:10px 0 8px;">규칙 2: 아래로 가면 합이 <b>1씩 커져요</b></div>
-    <div style="font-size:22px;margin-top:8px;">규칙 3: 대각선(↘)은 합이 <b>같아요!</b></div>
-    <div class="pattern-row">
-      <div class="pattern-box hl">3</div><span>↘</span>
-      <div class="pattern-box hl">3</div><span>↘</span>
-      <div class="pattern-box hl">3</div>
-    </div>
-    <div style="font-size:18px;color:var(--subtext);">1+2, 2+1 → 둘 다 3!</div>
-  </div>
-</div>`});
-
-// Q1: 덧셈표 빈칸 채우기 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">덧셈표 완성!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:6px;">빈칸에 알맞은 수를 넣으세요</div>
-  ${addTableHTML([[2,3],[3,4]])}
-  <div style="font-size:18px;color:var(--subtext);margin:6px 0;">빈칸을 터치한 후 아래 수를 골라요</div>
-  <div id="tsel${i}" style="font-size:20px;margin:4px 0;">선택: -</div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q2: 규칙 찾기 - 다음 수 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">규칙을 찾아요!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">오른쪽으로 1씩 커지는 규칙!</div>
-  <div class="pattern-row">
-    <div class="pattern-box">3</div><span>→</span>
-    <div class="pattern-box">4</div><span>→</span>
-    <div class="pattern-box">5</div><span>→</span>
-    <div class="pattern-box hl">?</div>
-  </div>
-  <div class="btn-row">${[5,6,7,8].map(n=>`<button class="btn" onclick="chk(${i},this,${n},6)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q3: 덧셈 계산 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">덧셈 풀기</div><div class="card">
-  <div class="eq-row"><span>3</span><span style="color:#2E7D32;">+</span><span>5</span><span style="color:#1565C0;">=</span><div class="blank" id="bl${i}">?</div></div>
-  <div class="btn-row">${[7,8,9,6].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},8)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q4: 역방향 추론 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">역방향 추론 🔍</div><div class="card">
-  <div class="eq-row"><div class="blank" id="bl${i}">?</div><span style="color:#2E7D32;">+</span><span>3</span><span style="color:#1565C0;">=</span><span>7</span></div>
-  <div style="font-size:20px;color:var(--subtext);margin:6px 0;">□에 알맞은 수는?</div>
-  <div class="btn-row">${[3,4,5,6].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},4)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q5: O·X ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">O·X 판단</div><div class="card">
-  <div style="font-size:26px;margin-bottom:14px;">"2+5와 5+2의 합은 같다"</div>
-  <div class="btn-row">
-    <button class="ox-btn" onclick="chkOX(${i},this,true)">⭕</button>
-    <button class="ox-btn" onclick="chkOX(${i},this,false)">❌</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q6: 덧셈표 완성 (큰 테이블) ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">덧셈표 완성하기!</div><div class="card">
-  <div style="font-size:20px;margin-bottom:6px;">빈칸을 모두 채우세요!</div>
-  <div id="tbl${i}"></div>
-  <div id="tsel2_${i}" style="font-size:18px;margin:4px 0;">선택: -</div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q7: 규칙 - 대각선 합 같기 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">대각선 규칙 🔍</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">대각선(↘)의 합이 모두 같아요!<br>빈칸에 알맞은 수는?</div>
-  <div class="pattern-row"><span>1+4=</span><div class="pattern-box">5</div></div>
-  <div class="pattern-row"><span>2+3=</span><div class="pattern-box">5</div></div>
-  <div class="pattern-row"><span>3+2=</span><div class="pattern-box hl">?</div></div>
-  <div class="btn-row">${[4,5,6,3].map(n=>`<button class="btn" onclick="chk(${i},this,${n},5)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q8: 이야기 + 역방향 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">이야기 역추론</div><div class="card">
-  <div class="char-row"><img src="${DEW}" class="char-img" alt="듀">
-    <div class="speech" style="font-size:20px;">케이가 사탕을 몇 개 가지고 있었어요. 듀가 3개를 더 주어서 모두 8개가 되었어요. 처음에 몇 개?</div>
-  </div>
-  <div class="eq-row"><div class="blank" id="bl${i}">?</div><span style="color:#2E7D32;">+</span><span>3</span><span style="color:#1565C0;">=</span><span>8</span></div>
-  <div class="btn-row">${[4,5,6,3].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},5)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q9: 합이 같은 식 모두 찾기 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">합이 같은 식 찾기! 🧠</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">합이 <span style="font-size:36px;color:var(--primary);">8</span>인 덧셈식을 모두 골라요!</div>
-  <div id="multi${i}" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
-  <button class="btn-sm btn" onclick="chkMulti(${i})" style="margin-top:10px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q10: 종합 퍼즐 - 덧셈 피라미드 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">덧셈 피라미드 🔺</div><div class="card">
-  <div style="font-size:20px;margin-bottom:8px;">위 칸 = 아래 두 칸의 합!</div>
-  <div id="pyr${i}"></div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// --- ADDED_BY_SCRIPT: Q11~Q20 ---
-
-// Q11: 덧셈 계산 4+3=7 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">덧셈 풀기</div><div class="card">
-  <div class="eq-row"><span>4</span><span style="color:#2E7D32;">+</span><span>3</span><span style="color:#1565C0;">=</span><div class="blank" id="bl${i}">?</div></div>
-  <div class="btn-row">${[6,7,8,5].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},7)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q12: 빈칸 2+□=9 ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">빈칸 채우기</div><div class="card">
-  <div class="eq-row"><span>2</span><span style="color:#2E7D32;">+</span><div class="blank" id="bl${i}">?</div><span style="color:#1565C0;">=</span><span>9</span></div>
-  <div class="btn-row">${[6,7,8,5].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},7)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q13: 규칙 아래로 3→4→5→? ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">규칙을 찾아요!</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">아래로 가면 1씩 커지는 규칙!</div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-    <div class="pattern-box">3</div><span style="font-size:24px;">↓</span>
-    <div class="pattern-box">4</div><span style="font-size:24px;">↓</span>
-    <div class="pattern-box">5</div><span style="font-size:24px;">↓</span>
-    <div class="pattern-box hl">?</div>
-  </div>
-  <div class="btn-row">${[5,6,7,8].map(n=>`<button class="btn" onclick="chk(${i},this,${n},6)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q14: OX "대각선으로가면 합이 1씩 커진다" → X (같다) ⭐
-S.push({t:'q',sc:10,done:false,r(i){return`<div class="badge">${stars(10)}</div>
-<div class="slide-title">O·X 판단</div><div class="card">
-  <div style="font-size:26px;margin-bottom:14px;">"덧셈표에서 대각선(↘)으로<br>가면 합이 1씩 커진다"</div>
-  <div class="btn-row">
-    <button class="ox-btn" onclick="chkOXg(${i},this,true,false,'대각선은 합이 같아요!','맞아요! 대각선은 합이 같아요!')" >⭕</button>
-    <button class="ox-btn" onclick="chkOXg(${i},this,false,false,'대각선은 합이 같아요!','맞아요! 대각선은 합이 같아요!')">❌</button>
-  </div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q15: □+4=9(5) ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">역방향 추론 🔍</div><div class="card">
-  <div class="eq-row"><div class="blank" id="bl${i}">?</div><span style="color:#2E7D32;">+</span><span>4</span><span style="color:#1565C0;">=</span><span>9</span></div>
-  <div style="font-size:20px;color:var(--subtext);margin:6px 0;">□에 알맞은 수는?</div>
-  <div class="btn-row">${[4,5,6,3].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},5)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q16: 이야기 사과 3+□=8(5) ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">이야기 문제 📖</div><div class="card">
-  <div class="char-row"><img src="${KAY}" class="char-img" alt="케이">
-    <div class="speech" style="font-size:20px;">바구니에 사과 3개가 있어요. 몇 개를 더 넣어서 모두 8개가 되었어요!</div>
-  </div>
-  <div class="eq-row"><span>3</span><span style="color:#2E7D32;">+</span><div class="blank" id="bl${i}">?</div><span style="color:#1565C0;">=</span><span>8</span></div>
-  <div class="btn-row">${[4,5,6,3].map(n=>`<button class="btn" onclick="chkB(${i},this,${n},5)">${n}</button>`).join('')}</div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q17: 덧셈표 빈칸3 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">덧셈표 완성하기!</div><div class="card">
-  <div style="font-size:20px;margin-bottom:6px;">빈칸을 모두 채우세요!</div>
-  <div id="tbl3_${i}"></div>
-  <div id="tsel3_${i}" style="font-size:18px;margin:4px 0;">빈칸을 터치하세요</div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q18: 속도챌린지2 ⭐⭐
-S.push({t:'q',sc:25,done:false,r(i){return`<div class="badge">${stars(25)}</div>
-<div class="slide-title">⚡ 속도 챌린지!</div><div class="card">
-  <div style="font-size:20px;margin-bottom:6px;">덧셈표 규칙을 이용해 빠르게 풀어요!</div>
-  <div id="spd2_${i}"></div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q19: 합이 같은 식2 합=7 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">합이 같은 식 찾기! 🧠</div><div class="card">
-  <div style="font-size:22px;margin-bottom:8px;">합이 <span style="font-size:36px;color:var(--primary);">7</span>인 덧셈식을 모두 골라요!</div>
-  <div id="multi2_${i}" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
-  <button class="btn-sm btn" onclick="chkMulti2(${i})" style="margin-top:10px;">확인하기</button>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-// Q20: 덧셈 피라미드2 ⭐⭐⭐
-S.push({t:'q',sc:50,done:false,r(i){return`<div class="badge">${stars(50)}</div>
-<div class="slide-title">덧셈 피라미드 🔺</div><div class="card">
-  <div style="font-size:20px;margin-bottom:8px;">위 칸 = 아래 두 칸의 합!</div>
-  <div id="pyr2_${i}"></div>
-  <div class="btn-row" id="b${i}"></div>
-  <div class="feedback" id="f${i}"></div>
-</div>`;}});
-
-S.push({t:'result'});
-
-function render(){const c=document.getElementById('sc');c.innerHTML='';S.forEach((s,i)=>{const d=document.createElement('div');d.className='slide'+(i===0?' active':'');d.id='s'+i;if(s.t==='c')d.innerHTML=s.h;else if(s.t==='q'&&s.r)d.innerHTML=s.r(i);else d.innerHTML='<div class="card" style="max-width:480px;"><div class="slide-title">🎉</div></div>';c.appendChild(d);});updNav();}
-
-function chk(i,el,v,c){const s=S[i];if(s.done)return;ps('click');if(v===c){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 정답! +${s.sc}점 ${combo>1?'🔥x'+combo:''}</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 생각해 보세요!</span>`;}}
-
-function chkB(i,el,v,c){const s=S[i];if(s.done)return;ps('click');const bl=document.getElementById('bl'+i);if(v===c){s.done=true;bl.textContent=c;bl.classList.add('filled');el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 맞았어요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">다시 풀어 보세요!</span>`;}}
-
-function chkOX(i,el,isO){const s=S[i];if(s.done)return;ps('click');if(isO){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 맞아요! 2+5=7, 5+2=7 같아요! +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">2+5와 5+2 둘 다 계산해 보세요!</span>`;}}
-
-// Q1: Table blanks
-let tblState={};
-function initTbl1(i){
-  if(tblState[i])return;
-  const blanks=[[2,3,5],[3,4,7]];// [row,col,answer]
-  tblState[i]={blanks,cur:null,solved:0};
-  document.querySelectorAll(`#s${i} .blank-cell`).forEach(cell=>{
-    cell.onclick=()=>{tblState[i].cur=cell.id;document.getElementById('tsel'+i).textContent='선택: '+cell.id.replace('tc_','').replace('_',' + ');showTblBtns(i);};
+/* 빠진 수 찾기 (답 직접 입력) */
+document.querySelectorAll('.blank-stage').forEach(stage => {
+  const inputs = Array.from(stage.querySelectorAll('.blank-input'));
+  const pad = stage.querySelector('.blank-pad');
+  const fb = stage.querySelector('.blank-fb');
+  let active = inputs[0];
+  const filled = new Array(inputs.length).fill(null);
+  let solved = false, attempts = 0;
+  function setActive(input) { inputs.forEach(b => b.classList.remove('active')); input.classList.add('active'); active = input; }
+  inputs.forEach(b => b.addEventListener('click', () => { if (!solved) setActive(b); }));
+  function checkAll() {
+    if (filled.every(v => v !== null)) {
+      attempts++;
+      // 슬14 결 = 두 자리 박힘 답 = 합 5인 결 = (1,4) (2,3) (3,2) (4,1)
+      let correct;
+      if (inputs.length === 2 && stage.dataset.blank === '14') {
+        const a = parseInt(filled[0], 10);
+        const b = parseInt(filled[1], 10);
+        correct = (a + b === 5 && a >= 1 && b >= 1);
+      } else {
+        correct = inputs.every((inp, i) => filled[i] === inp.dataset.answer);
+      }
+      if (correct) {
+        solved = true;
+        inputs.forEach(inp => { inp.classList.add('correct'); inp.classList.remove('active', 'filled', 'wrong'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+      } else {
+        inputs.forEach((inp, i) => {
+          inp.classList.add('wrong');
+          setTimeout(() => inp.classList.remove('wrong'), 500);
+        });
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+      }
+    }
+  }
+  pad.querySelectorAll('.blank-key').forEach(key => {
+    key.addEventListener('click', () => {
+      if (solved) return;
+      const k = key.dataset.key;
+      if (k === 'del') {
+        const idx = inputs.indexOf(active);
+        active.textContent = '?';
+        active.classList.remove('filled', 'wrong');
+        active.classList.add('active');
+        filled[idx] = null;
+        fb.textContent = '';
+        fb.classList.remove('wrong');
+        return;
+      }
+      const idx = inputs.indexOf(active);
+      active.textContent = k;
+      active.classList.add('filled');
+      active.classList.remove('active');
+      filled[idx] = k;
+      const nextEmpty = inputs.find(b => b.textContent === '?');
+      if (nextEmpty) setActive(nextEmpty);
+      checkAll();
+    });
   });
-}
-function showTblBtns(i){
-  const ts=tblState[i];if(!ts.cur)return;
-  const parts=ts.cur.split('_');const r=parseInt(parts[1]),c=parseInt(parts[2]),ans=r+c;
-  document.getElementById('b'+i).innerHTML=[ans-1,ans,ans+1,ans+2].filter(n=>n>0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansTbl1(${i},${n},${ans})">${n}</button>`).join('');
-}
-function ansTbl1(i,v,c){
-  ps('click');const ts=tblState[i];
-  const cell=document.getElementById(ts.cur);
-  if(v===c){cell.textContent=c;cell.classList.add('filled');ts.solved++;
-    if(ts.solved>=ts.blanks.length){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 덧셈표 완성! +${S[i].sc}점</span>`;document.getElementById('b'+i).innerHTML='';}
-    else{ts.cur=null;document.getElementById('tsel'+i).textContent='선택: 다른 빈칸을 터치하세요';document.getElementById('b'+i).innerHTML='';}
-  }else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">가로와 세로 수를 더해 보세요!</span>`;}
-}
+});
 
-// Q6: Bigger table
-let tbl2={};
-function initTbl2(i){
-  if(tbl2[i])return;
-  const blanks=[[1,2,3],[2,1,3],[3,3,6],[4,2,6],[1,5,6]];
-  tbl2[i]={blanks,cur:null,solved:0};
-  let h='<table class="add-table"><tr><td class="plus-cell">+</td>';
-  for(let j=1;j<=5;j++)h+=`<th>${j}</th>`;h+='</tr>';
-  for(let r=1;r<=4;r++){h+=`<tr><th>${r}</th>`;for(let c=1;c<=5;c++){const isB=blanks.some(b=>b[0]===r&&b[1]===c);if(isB)h+=`<td class="blank-cell" id="t2_${r}_${c}" onclick="selTbl2(${i},'t2_${r}_${c}')">?</td>`;else h+=`<td>${r+c}</td>`;}h+='</tr>';}
-  document.getElementById('tbl'+i).innerHTML=h+'</table>';
-}
-function selTbl2(i,id){tbl2[i].cur=id;const p=id.split('_');document.getElementById('tsel2_'+i).textContent=`선택: ${p[1]} + ${p[2]}`;const ans=parseInt(p[1])+parseInt(p[2]);document.getElementById('b'+i).innerHTML=[ans-1,ans,ans+1,ans+2].filter(n=>n>0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansTbl2(${i},${n},${ans})">${n}</button>`).join('');}
-function ansTbl2(i,v,c){ps('click');const ts=tbl2[i],cell=document.getElementById(ts.cur);if(v===c){cell.textContent=c;cell.classList.add('filled');ts.solved++;if(ts.solved>=ts.blanks.length){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 완성! +${S[i].sc}점</span>`;document.getElementById('b'+i).innerHTML='';}else{ts.cur=null;document.getElementById('tsel2_'+i).textContent='다른 빈칸을 터치하세요';document.getElementById('b'+i).innerHTML='';}}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">가로+세로를 더해 보세요!</span>`;}}
-
-// Q9: Multi select
-let msel={};
-function initMulti(i){
-  if(msel[i])return;
-  const opts=[{t:'1+7',v:8},{t:'2+6',v:8},{t:'3+4',v:7},{t:'4+4',v:8},{t:'5+3',v:8},{t:'3+6',v:9}];
-  msel[i]={opts,sel:new Set()};
-  document.getElementById('multi'+i).innerHTML=opts.map((o,j)=>`<button class="btn btn-sm" id="ms${i}_${j}" onclick="tapM(${i},${j})">${o.t}</button>`).join('');
-}
-function tapM(i,j){ps('click');const m=msel[i],el=document.getElementById('ms'+i+'_'+j);if(m.sel.has(j)){m.sel.delete(j);el.style.borderColor='var(--border)';el.style.background='var(--card)';}else{m.sel.add(j);el.style.borderColor='var(--primary)';el.style.background='var(--primary-light)';}}
-function chkMulti(i){const s=S[i];if(s.done)return;const m=msel[i];const cor=m.opts.map((o,j)=>o.v===8?j:-1).filter(j=>j>=0);const sel=Array.from(m.sel).sort().join(',');if(sel===cor.sort().join(',')){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;cor.forEach(j=>document.getElementById('ms'+i+'_'+j).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 찾았어요! +${s.sc}점</span>`;}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">합이 8인 식을 모두 골라 보세요!</span>`;}}
-
-// Q10: Pyramid
-let pyrD={};
-function initPyr(i){
-  if(pyrD[i])return;
-  // Bottom: 2, 3, 4. Middle: 5, 7. Top: 12? No, keep small. Bottom: 1,2,3. Mid: 3,5. Top: 8
-  // Simpler: Bottom: 1, 3, 2. Mid: 4, 5. Top: 9
-  // Actually for grade 1, keep sums ≤9: Bottom: 1, 2, 3 -> Mid: 3, 5 -> Top: 8
-  pyrD[i]={cells:[{r:0,c:0,v:8,blank:true},{r:1,c:0,v:3,blank:true},{r:1,c:1,v:5,blank:false},{r:2,c:0,v:1,blank:false},{r:2,c:1,v:2,blank:false},{r:2,c:2,v:3,blank:false}],cur:null,solved:0,total:2};
-  renderPyr(i);
-}
-function renderPyr(i){
-  const d=pyrD[i];
-  let h='<div style="text-align:center;">';
-  // Top row (1 cell)
-  const top=d.cells[0];
-  h+=`<div style="margin:4px 0;"><span class="${top.blank&&!top.filled?'blank':'pattern-box'}" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;${top.filled?'background:var(--green-light);border-color:var(--green);color:var(--green);border-style:solid;':''}" id="py${i}_0_0" onclick="selPyr(${i},0,0)">${top.filled?top.v:top.blank?'?':top.v}</span></div>`;
-  // Middle row (2 cells)
-  h+='<div style="margin:4px 0;display:flex;gap:12px;justify-content:center;">';
-  [1,2].forEach(j=>{const c=d.cells[j];h+=`<span class="${c.blank&&!c.filled?'blank':'pattern-box'}" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;${c.filled?'background:var(--green-light);border-color:var(--green);color:var(--green);border-style:solid;':''}" id="py${i}_1_${j-1}" onclick="selPyr(${i},1,${j-1})">${c.filled?c.v:c.blank?'?':c.v}</span>`;});
-  h+='</div>';
-  // Bottom row (3 cells)
-  h+='<div style="margin:4px 0;display:flex;gap:12px;justify-content:center;">';
-  [3,4,5].forEach(j=>{const c=d.cells[j];h+=`<span class="pattern-box" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;">${c.v}</span>`;});
-  h+='</div></div>';
-  document.getElementById('pyr'+i).innerHTML=h;
-}
-function selPyr(i,r,c){
-  const d=pyrD[i];
-  const cell=d.cells.find(x=>x.r===r&&x.c===c);
-  if(!cell||!cell.blank||cell.filled)return;
-  pyrD[i].cur={r,c,v:cell.v};
-  document.getElementById('b'+i).innerHTML=[cell.v-1,cell.v,cell.v+1,cell.v+2].filter(n=>n>=0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansPyr(${i},${n},${cell.v})">${n}</button>`).join('');
-}
-function ansPyr(i,v,c){
-  ps('click');
-  if(v===c){
-    const d=pyrD[i],cur=d.cur;
-    const cell=d.cells.find(x=>x.r===cur.r&&x.c===cur.c);
-    cell.filled=true;d.solved++;
-    renderPyr(i);
-    if(d.solved>=d.total){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 피라미드 완성! +${S[i].sc}점</span>`;document.getElementById('b'+i).innerHTML='';}
-    else{d.cur=null;document.getElementById('b'+i).innerHTML='';}
-  }else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">아래 두 수를 더해 보세요!</span>`;}
-}
-
-// --- ADDED_BY_SCRIPT: new functions for Q11~Q20 ---
-
-// chkOXg: 일반화된 OX 체크
-function chkOXg(i,el,picked,correct,okMsg,noMsg){const s=S[i];if(s.done)return;ps('click');if(picked===correct){s.done=true;el.classList.add('correct');ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${okMsg} +${s.sc}점</span>`;}else{el.classList.add('wrong');ps('wrong');combo=0;setTimeout(()=>el.classList.remove('wrong'),500);document.getElementById('f'+i).innerHTML=`<span class="no">${noMsg}</span>`;}}
-
-// Q17: 덧셈표3 (tbl3)
-let tbl3={};
-function initTbl3(i){
-  if(tbl3[i])return;
-  const blanks=[[2,4],[3,2],[4,3],[1,3],[3,5]];
-  tbl3[i]={blanks,cur:null,solved:0};
-  let h='<table class="add-table"><tr><td class="plus-cell">+</td>';
-  for(let j=1;j<=5;j++)h+=`<th>${j}</th>`;h+='</tr>';
-  for(let r=1;r<=4;r++){h+=`<tr><th>${r}</th>`;for(let c=1;c<=5;c++){const isB=blanks.some(b=>b[0]===r&&b[1]===c);if(isB)h+=`<td class="blank-cell" id="t3_${r}_${c}" onclick="selTbl3(${i},'t3_${r}_${c}')">?</td>`;else h+=`<td>${r+c}</td>`;}h+='</tr>';}
-  document.getElementById('tbl3_'+i).innerHTML=h+'</table>';
-}
-function selTbl3(i,id){tbl3[i].cur=id;const p=id.split('_');document.getElementById('tsel3_'+i).textContent=`선택: ${p[1]} + ${p[2]}`;const ans=parseInt(p[1])+parseInt(p[2]);document.getElementById('b'+i).innerHTML=[ans-1,ans,ans+1,ans+2].filter(n=>n>0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansTbl3(${i},${n},${ans})">${n}</button>`).join('');}
-function ansTbl3(i,v,c){ps('click');const ts=tbl3[i],cell=document.getElementById(ts.cur);if(v===c){cell.textContent=c;cell.classList.add('filled');ts.solved++;if(ts.solved>=ts.blanks.length){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 덧셈표 완성! +${S[i].sc}점</span>`;document.getElementById('b'+i).innerHTML='';}else{ts.cur=null;document.getElementById('tsel3_'+i).textContent='다른 빈칸을 터치하세요';document.getElementById('b'+i).innerHTML='';}}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">가로+세로를 더해 보세요!</span>`;}}
-
-// Q18: 속도챌린지2
-let spd2={};
-function initSpd2(i){
-  if(spd2[i])return;
-  spd2[i]={qs:[{q:'1+5=',a:6},{q:'2+4=',a:6},{q:'3+3=',a:6},{q:'4+5=',a:9},{q:'2+7=',a:9}],ci:0,ok:0,t0:null};
-  renderSpd2(i);
-}
-function renderSpd2(i){
-  const d=spd2[i];if(d.ci>=d.qs.length){endSpd2(i);return;}
-  if(!d.t0)d.t0=Date.now();
-  const q=d.qs[d.ci];
-  document.getElementById('spd2_'+i).innerHTML=`<div style="font-size:22px;color:var(--subtext);margin-bottom:6px;">${d.ci+1}/${d.qs.length}</div><div class="eq-row" style="font-size:44px;"><span>${q.q}</span><span class="blank" style="font-size:36px;">?</span></div>`;
-  const a=q.a;document.getElementById('b'+i).innerHTML=[a-1,a,a+1,a+2].filter(n=>n>=0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansSpd2(${i},${n})">${n}</button>`).join('');
-}
-function ansSpd2(i,v){ps('click');const d=spd2[i],q=d.qs[d.ci];if(v===q.a){d.ok++;d.ci++;ps('correct');renderSpd2(i);}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">다시 풀어요!</span>`;}}
-function endSpd2(i){const d=spd2[i],sec=((Date.now()-d.t0)/1000).toFixed(1);S[i].done=true;combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('spd2_'+i).innerHTML=`<div style="font-size:28px;">⏱ ${sec}초</div>`;document.getElementById('b'+i).innerHTML='';document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 ${d.ok}/${d.qs.length} 정답! +${S[i].sc}점</span>`;}
-
-// Q19: 합이 같은 식2 (합=7)
-let msel2={};
-function initMulti2(i){
-  if(msel2[i])return;
-  const opts=[{t:'1+6',v:7},{t:'2+5',v:7},{t:'3+3',v:6},{t:'4+3',v:7},{t:'5+4',v:9},{t:'3+4',v:7}];
-  msel2[i]={opts,sel:new Set()};
-  document.getElementById('multi2_'+i).innerHTML=opts.map((o,j)=>`<button class="btn btn-sm" id="m2${i}_${j}" onclick="tapM2(${i},${j})">${o.t}</button>`).join('');
-}
-function tapM2(i,j){ps('click');const m=msel2[i],el=document.getElementById('m2'+i+'_'+j);if(m.sel.has(j)){m.sel.delete(j);el.style.borderColor='var(--border)';el.style.background='var(--card)';}else{m.sel.add(j);el.style.borderColor='var(--primary)';el.style.background='var(--primary-light)';}}
-function chkMulti2(i){const s=S[i];if(s.done)return;const m=msel2[i];const cor=m.opts.map((o,j)=>o.v===7?j:-1).filter(j=>j>=0);const sel=Array.from(m.sel).sort().join(',');if(sel===cor.sort().join(',')){s.done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=s.sc;cor.forEach(j=>document.getElementById('m2'+i+'_'+j).classList.add('correct'));document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 모두 찾았어요! +${s.sc}점</span>`;}else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">합이 7인 식을 모두 골라 보세요!</span>`;}}
-
-// Q20: 덧셈 피라미드2 (Bottom: 2,1,4 -> Mid: 3,5 -> Top: 8)
-let pyr2D={};
-function initPyr2(i){
-  if(pyr2D[i])return;
-  pyr2D[i]={cells:[{r:0,c:0,v:8,blank:true},{r:1,c:0,v:3,blank:false},{r:1,c:1,v:5,blank:true},{r:2,c:0,v:2,blank:false},{r:2,c:1,v:1,blank:false},{r:2,c:2,v:4,blank:false}],cur:null,solved:0,total:2};
-  renderPyr2(i);
-}
-function renderPyr2(i){
-  const d=pyr2D[i];
-  let h='<div style="text-align:center;">';
-  const top=d.cells[0];
-  h+=`<div style="margin:4px 0;"><span class="${top.blank&&!top.filled?'blank':'pattern-box'}" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;${top.filled?'background:var(--green-light);border-color:var(--green);color:var(--green);border-style:solid;':''}" id="py2${i}_0_0" onclick="selPyr2(${i},0,0)">${top.filled?top.v:top.blank?'?':top.v}</span></div>`;
-  h+='<div style="margin:4px 0;display:flex;gap:12px;justify-content:center;">';
-  [1,2].forEach(j=>{const c=d.cells[j];h+=`<span class="${c.blank&&!c.filled?'blank':'pattern-box'}" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;${c.filled?'background:var(--green-light);border-color:var(--green);color:var(--green);border-style:solid;':''}" id="py2${i}_1_${j-1}" onclick="selPyr2(${i},1,${j-1})">${c.filled?c.v:c.blank?'?':c.v}</span>`;});
-  h+='</div>';
-  h+='<div style="margin:4px 0;display:flex;gap:12px;justify-content:center;">';
-  [3,4,5].forEach(j=>{const c=d.cells[j];h+=`<span class="pattern-box" style="width:52px;height:52px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;">${c.v}</span>`;});
-  h+='</div></div>';
-  document.getElementById('pyr2_'+i).innerHTML=h;
-}
-function selPyr2(i,r,c){
-  const d=pyr2D[i];
-  const cell=d.cells.find(x=>x.r===r&&x.c===c);
-  if(!cell||!cell.blank||cell.filled)return;
-  pyr2D[i].cur={r,c,v:cell.v};
-  document.getElementById('b'+i).innerHTML=[cell.v-1,cell.v,cell.v+1,cell.v+2].filter(n=>n>=0&&n<=9).sort(()=>Math.random()-.5).map(n=>`<button class="btn" onclick="ansPyr2(${i},${n},${cell.v})">${n}</button>`).join('');
-}
-function ansPyr2(i,v,c){
-  ps('click');
-  if(v===c){
-    const d=pyr2D[i],cur=d.cur;
-    const cell=d.cells.find(x=>x.r===cur.r&&x.c===cur.c);
-    cell.filled=true;d.solved++;
-    renderPyr2(i);
-    if(d.solved>=d.total){S[i].done=true;ps('correct');combo++;if(combo>maxCombo)maxCombo=combo;score+=S[i].sc;document.getElementById('f'+i).innerHTML=`<span class="ok">🎉 피라미드 완성! +${S[i].sc}점</span>`;document.getElementById('b'+i).innerHTML='';}
-    else{d.cur=null;document.getElementById('b'+i).innerHTML='';}
-  }else{ps('wrong');combo=0;document.getElementById('f'+i).innerHTML=`<span class="no">아래 두 수를 더해 보세요!</span>`;}
-}
-
-function showResult(){const d=document.getElementById('s'+(S.length-1));const total=S.filter(s=>s.t==='q').reduce((a,s)=>a+s.sc,0);const pct=Math.round(score/total*100);let msg=pct>=90?'🏆 덧셈 마스터!':pct>=70?'👏 잘했어요!':pct>=50?'💪 좋은 시작!':'🌱 다시 도전!';d.innerHTML=`<div class="card" style="max-width:480px;"><div style="font-size:32px;color:var(--primary);margin-bottom:8px;">🎉 학습 완료!</div><div style="font-size:64px;color:var(--primary);">${score}<span style="font-size:28px;color:var(--subtext);">/${total}</span></div><div style="font-size:28px;margin:8px 0;">${msg}</div>${maxCombo>1?`<div class="combo-badge">🔥 최대 콤보 x${maxCombo}</div>`:''}<div style="font-size:20px;color:var(--subtext);margin-top:12px;">덧셈표의 규칙을 찾고 심화 문제를 풀었어요!<br>다음에는 뺄셈을 배워 봐요!</div><button class="btn" style="font-size:24px;margin-top:16px;padding:10px 28px;background:var(--primary);color:#fff;border-color:var(--primary);" onclick="location.reload()">다시 하기 🔄</button></div>`;}
-
-function updNav(){document.getElementById('prevBtn').disabled=(cur===0);document.getElementById('nextBtn').textContent=cur===S.length-2?'결과 보기 🏆':'다음 ▶';document.getElementById('pi').textContent=`${cur+1} / ${S.length}`;}
-function go(n){if(n<0||n>=S.length)return;document.getElementById('s'+cur).classList.remove('active');document.getElementById('s'+cur).classList.add('exit');cur=n;setTimeout(()=>{document.querySelectorAll('.slide').forEach(s=>s.classList.remove('exit'));document.getElementById('s'+cur).classList.add('active');updNav();if(cur===3)initTbl1(cur);if(cur===8)initTbl2(cur);if(cur===11)initMulti(cur);if(cur===12)initPyr(cur);if(cur===19)initTbl3(cur);if(cur===20)initSpd2(cur);if(cur===21)initMulti2(cur);if(cur===22)initPyr2(cur);if(S[cur].t==='result')showResult();},200);}
-function prev(){go(cur-1);}function next(){go(cur+1);}
-let tx=0;document.addEventListener('touchstart',e=>{tx=e.changedTouches[0].screenX;},{passive:true});document.addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-tx;if(Math.abs(d)>50){d>0?prev():next();}},{passive:true});
-render();
+updateUI();
 </script>
 </body>
 </html>
