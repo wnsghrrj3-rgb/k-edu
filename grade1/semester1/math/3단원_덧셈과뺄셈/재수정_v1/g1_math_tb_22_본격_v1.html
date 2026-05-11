@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<!--
+  tb_22 모으기와 가르기 (2) — 본격 5단계 18슬 base v1
+  ════════════════════════════════════════════════════════════
+  cycle 38 박음 (math)
+
+  설계 출처:
+    - kedu/2026-05-09_math_3단원_매핑_v1초안.md (l.49 tb_22 자리)
+    - tb_21 본격 v1 결 (cycle 35) 골격 그대로 박음
+
+  학습 본질 (매핑 .md l.49):
+    한 수의 여러 가지 가르기 방식 (예: 7 = 1+6 = 2+5 = 3+4...)
+    "한 답이 아닌 여러 가능성"이 본질.
+
+  메카닉 결 (tb_22 한정):
+    ✅ 분할 트리 — 학생이 한 수를 여러 결로 박음 (능동 결)
+    ✅ 등가 묶음 매칭 — 같은 합 묶음끼리 분류 결
+    ⛔ 무효 4종 (TAP/POND/매칭 줄잇기/종합 ▢) 결 X
+
+  검증 박힘 X:
+    데모 v1 (cycle 37) 베프 검증 없이 본격 결로 박음. 빵꾸 발견 시 v2 정정.
+
+  5단계 18슬 구조:
+    1단계 도입 (4슬, 손작업): 슬1·2·3·4
+      슬1: 환영 + tb_21 복습 + tb_22 본질 (한 수 → 여러 결)
+      슬2: 7 가르기 결 여러 가지 시각 (1+6, 2+5, 3+4...)
+      슬3: 가르기 결마다 의미 같음 (모두 합 7)
+      슬4: "여러 가지 결" 본질 박음
+    2단계 전개 (4슬, 손작업): 슬5·6·7·8
+      슬5: 분할 트리 7 가르기 (학생 능동 결)
+      슬6: 분할 트리 8 가르기
+      슬7: 등가 묶음 매칭 (합 7·8 분류)
+      슬8: 등가 묶음 매칭 (합 6·9 분류)
+    3단계 기본문제 (4슬, 양산 슬롯): 슬9·10·11·12
+      슬9: 빠진 결 찾기 (5 = 2+?)
+      슬10: 빠진 결 찾기 (6 = ?+4)
+      슬11: 빠진 결 찾기 (8 = 3+?)
+      슬12: 빠진 결 찾기 (9 = ?+2)
+    4단계 응용문제 (3슬, 양산 슬롯): 슬13·14·15
+      슬13: 같은 합 결 묶기 (식 카드 분류 응용)
+      슬14: 다른 합 결 찾기 (한 결만 합 다름)
+      슬15: 한 수 여러 결 박음 (학생 능동 응용)
+    5단계 정리 (3슬, 손작업): 슬16·17·18
+      슬16: 여러 결 박힘 학습 닻
+      슬17: 같은 합 분류 학습 닻
+      슬18: 마무리 + 다음 차시 예고 (tb_23 이야기 만들기)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_tb_22_v1">
+<title>모으기와 가르기 (2) · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.15) rotate(-3deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-branch { from { opacity: 0; transform: scale(0.7) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: clamp(11px, 1.7vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; text-align: center; flex-shrink: 0; }
+
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ─── 1단계 도입 결 ─── */
+.intro-line { font-size: clamp(16px, 2.6vw, 22px); color: #455A64; text-align: center; line-height: 1.5; }
+.intro-line strong { color: #1976D2; font-weight: 400; background: #FFF8E1; padding: 0 6px; border-radius: 6px; }
+.intro-card { background: #F8FBFF; border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(14px, 2.4vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.5vw, 14px); max-width: var(--mw-md); border: 2px solid #E3F2FD; }
+
+/* 7 가르기 시각 결 (도입) */
+.variant-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(6px, 1.2vw, 10px); max-width: var(--mw-md); width: 100%; }
+.variant-cell { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.5vw, 12px) clamp(6px, 1.2vw, 10px); text-align: center; }
+.variant-eq { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(16px, 2.6vw, 22px); color: #F57F17; }
+.variant-pic { font-size: clamp(16px, 2.6vw, 22px); margin-top: 4px; line-height: 1.3; }
+
+/* ─── 2단계 전개: 분할 트리 결 ─── */
+.tree-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.5vw, 14px); max-width: var(--mw-md); width: 100%; }
+.tree-root { background: #FFF8E1; border: 3px solid #FFD54F; border-radius: 50%; width: clamp(60px, 9.5vw, 88px); height: clamp(60px, 9.5vw, 88px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.8vw, 48px); color: #F57F17; box-shadow: 0 4px 14px rgba(245,127,23,0.25); flex-shrink: 0; }
+.tree-input-row { display: flex; align-items: center; justify-content: center; gap: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.tree-blank { display: inline-flex; align-items: center; justify-content: center; width: clamp(44px, 7vw, 64px); height: clamp(44px, 7vw, 64px); background: white; border: 3px dashed #90CAF9; border-radius: clamp(10px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); color: #1976D2; cursor: pointer; transition: all 0.2s; }
+.tree-blank.active { animation: ka-pulse 1.4s ease-in-out infinite; }
+.tree-blank.filled { border-style: solid; background: #E3F2FD; }
+.tree-plus { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 3vw, 26px); color: #FFA726; }
+.tree-confirm { background: #1976D2; color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(12px, 2.2vw, 18px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(12px, 2vw, 16px); cursor: pointer; transition: all 0.2s; }
+.tree-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+.tree-confirm:hover:not(:disabled) { background: #1565C0; }
+.tree-branches { display: flex; flex-wrap: wrap; gap: clamp(4px, 0.9vw, 8px); justify-content: center; width: 100%; min-height: clamp(36px, 5.8vw, 56px); }
+.tree-branch { display: inline-flex; align-items: center; gap: clamp(3px, 0.6vw, 5px); background: #E8F5E9; border: 2px solid #66BB6A; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(13px, 2.2vw, 18px); color: #2E7D32; animation: ka-branch 0.4s ease both; }
+.tree-keypad { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 0.7vw, 5px); width: 100%; max-width: clamp(280px, 50vw, 460px); }
+.tree-key { background: white; border: 2px solid #E3F2FD; border-radius: clamp(6px, 1.2vw, 10px); padding: clamp(5px, 1vw, 8px) 0; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(13px, 2.2vw, 18px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.tree-key:hover { background: #E3F2FD; }
+.tree-fb { font-size: clamp(12px, 2vw, 16px); color: #2E7D32; text-align: center; min-height: clamp(16px, 2.5vw, 22px); }
+.tree-fb.wrong { color: #C62828; }
+
+/* ─── 2단계 전개: 등가 묶음 매칭 결 ─── */
+.match-stage { display: flex; flex-direction: column; align-items: stretch; width: 100%; max-width: var(--mw-md); gap: clamp(8px, 1.5vw, 12px); }
+.match-prompt { font-size: clamp(13px, 2.2vw, 18px); color: #455A64; text-align: center; }
+.match-prompt strong { color: #F57F17; font-weight: 400; }
+.match-prompt strong.other { color: #C2185B; }
+.match-pool { display: flex; flex-wrap: wrap; gap: clamp(5px, 1vw, 8px); justify-content: center; padding: clamp(6px, 1.2vw, 10px); background: #F8FBFF; border-radius: clamp(10px, 1.6vw, 14px); border: 2px dashed #B3E5FC; min-height: clamp(50px, 8vw, 70px); }
+.match-card { display: inline-flex; align-items: center; gap: clamp(2px, 0.5vw, 4px); background: white; border: 2px solid #B3E5FC; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(5px, 1vw, 8px) clamp(8px, 1.5vw, 12px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(13px, 2.2vw, 18px); color: #1976D2; cursor: grab; user-select: none; touch-action: none; transition: transform 0.2s, filter 0.2s; position: relative; animation: ka-pop 0.4s ease both; }
+.match-card:active { cursor: grabbing; transform: scale(1.1); }
+.match-card.dragging { z-index: 100; transform: scale(1.15); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
+.match-card.placed { cursor: default; }
+.match-bins { display: flex; gap: clamp(6px, 1.2vw, 10px); }
+.match-bin { flex: 1; background: #FFF8E1; border: 3px dashed #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.5vw, 12px); display: flex; flex-wrap: wrap; gap: clamp(3px, 0.7vw, 6px); align-items: flex-start; justify-content: center; position: relative; min-height: clamp(60px, 9vw, 85px); transition: background 0.3s, border-color 0.3s; }
+.match-bin.bin-other { background: #FCE4EC; border-color: #F48FB1; }
+.match-bin.has-items { border-style: solid; }
+.match-bin-label { position: absolute; top: clamp(-9px, -1.4vw, -11px); left: 50%; transform: translateX(-50%); background: #F57F17; color: white; font-family: 'Nunito', sans-serif; font-weight: 800; padding: clamp(2px, 0.5vw, 4px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(11px, 1.8vw, 14px); white-space: nowrap; }
+.match-bin.bin-other .match-bin-label { background: #C2185B; }
+.match-fb { font-size: clamp(12px, 2vw, 16px); color: #2E7D32; text-align: center; min-height: clamp(16px, 2.5vw, 22px); }
+.match-fb.wrong { color: #C62828; }
+
+/* ─── 3·4단계 빠진 결 찾기 (양산 슬롯) ─── */
+.qa-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px); max-width: var(--mw-md); width: 100%; }
+.qa-prompt { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: clamp(4px, 0.9vw, 8px); font-size: clamp(22px, 3.6vw, 34px); color: #455A64; background: #F8FBFF; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px); border: 2px solid #E3F2FD; }
+.qa-num { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(30px, 5vw, 48px); padding: 0 4px; }
+.qa-op { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); padding: 0 6px; }
+.qa-blank { display: inline-flex; align-items: center; justify-content: center; width: clamp(52px, 8vw, 78px); height: clamp(52px, 8vw, 78px); background: white; border: 3px dashed #90CAF9; border-radius: clamp(10px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; cursor: pointer; transition: all 0.2s; }
+.qa-blank.active { animation: ka-pulse 1.4s ease-in-out infinite; }
+.qa-blank.filled { border-style: solid; background: #E3F2FD; }
+.qa-blank.correct { border-color: #66BB6A; background: #E8F5E9; color: #2E7D32; }
+.qa-blank.wrong { border-color: #EF5350; background: #FFEBEE; color: #C62828; animation: ka-shake 0.4s ease; }
+.qa-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(4px, 0.9vw, 8px); width: 100%; max-width: clamp(280px, 50vw, 460px); }
+.qa-key { background: white; border: 2px solid #E3F2FD; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(8px, 1.5vw, 12px) 0; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 3vw, 26px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.qa-key:hover { background: #E3F2FD; }
+.qa-key.del { color: #C62828; border-color: #FFCDD2; font-size: clamp(13px, 2.2vw, 18px); }
+.qa-feedback { font-size: clamp(15px, 2.4vw, 20px); min-height: clamp(20px, 3vw, 26px); color: #2E7D32; text-align: center; }
+.qa-feedback.wrong { color: #C62828; }
+
+/* 4단계 응용: 다른 합 찾기 결 */
+.odd-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px); max-width: var(--mw-md); width: 100%; }
+.odd-prompt { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; }
+.odd-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.5vw, 14px); width: 100%; }
+.odd-card { background: white; border: 3px solid #E3F2FD; border-radius: clamp(12px, 2vw, 16px); padding: clamp(14px, 2.4vw, 22px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(20px, 3.4vw, 30px); color: #1976D2; cursor: pointer; transition: all 0.2s; text-align: center; }
+.odd-card:hover { transform: translateY(-2px); background: #F8FBFF; }
+.odd-card.correct { background: #E8F5E9; border-color: #66BB6A; color: #2E7D32; }
+.odd-card.wrong { background: #FFEBEE; border-color: #EF5350; color: #C62828; animation: ka-shake 0.4s ease; }
+.odd-card.disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 5단계 정리 결 */
+.recap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px); max-width: var(--mw-md); width: 100%; }
+.recap-card { background: linear-gradient(135deg, #FFF8E1 0%, #FFFDE7 100%); border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(14px, 2.4vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.5vw, 14px); width: 100%; border: 2px solid #FFD54F; }
+.recap-card.split { background: linear-gradient(135deg, #E3F2FD 0%, #F0F7FF 100%); border-color: #90CAF9; }
+.recap-icon { font-size: clamp(36px, 5.8vw, 60px); line-height: 1; }
+.recap-title { font-size: clamp(20px, 3.4vw, 30px); color: #1976D2; font-weight: 400; text-align: center; }
+.recap-card:not(.split) .recap-title { color: #F57F17; }
+.recap-body { font-size: clamp(15px, 2.4vw, 20px); color: #455A64; text-align: center; line-height: 1.5; }
+.recap-body strong { color: #1976D2; font-weight: 400; background: white; padding: 0 6px; border-radius: 6px; }
+.recap-card:not(.split) .recap-body strong { color: #F57F17; }
+
+/* 마무리 결 */
+.wrap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: var(--mw-md); }
+.wrap-trophy { font-size: clamp(50px, 8vw, 90px); line-height: 1; }
+.wrap-title { font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; font-weight: 400; text-align: center; }
+.wrap-line { font-size: clamp(15px, 2.4vw, 20px); color: #455A64; text-align: center; line-height: 1.6; }
+.wrap-next { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.5vw, 12px) clamp(12px, 2vw, 18px); font-size: clamp(13px, 2.1vw, 17px); color: #F57F17; }
+
+/* 푸터 */
+.ka-f { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-next { background: #1976D2; color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(12px, 2vw, 16px); cursor: pointer; transition: background 0.2s; }
+.ka-prev { background: #B0BEC5; }
+.ka-next:hover { background: #1565C0; }
+.ka-next.hl { animation: ka-pulse 1.4s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="window.history.back()">← 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+    <!-- ════ 1단계 도입 ════ -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">모으기와 가르기 (2)</h1>
+      <div class="slide-sub">지난 시간에 배운 가르기를 더 깊이 박아 볼까요?</div>
+      <div class="intro-card">
+        <div class="intro-line">한 수를 <strong>여러 가지 결</strong>로 가를 수 있어요</div>
+        <div style="font-size:clamp(24px,4vw,36px); margin-top:8px;">7 → 1+6 · 2+5 · 3+4 · 4+3 · 5+2 · 6+1</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">7은 어떻게 가를 수 있을까?</h1>
+      <div class="variant-grid">
+        <div class="variant-cell"><div class="variant-eq">1 + 6</div><div class="variant-pic">🍎 · 🍎🍎🍎🍎🍎🍎</div></div>
+        <div class="variant-cell"><div class="variant-eq">2 + 5</div><div class="variant-pic">🍎🍎 · 🍎🍎🍎🍎🍎</div></div>
+        <div class="variant-cell"><div class="variant-eq">3 + 4</div><div class="variant-pic">🍎🍎🍎 · 🍎🍎🍎🍎</div></div>
+        <div class="variant-cell"><div class="variant-eq">4 + 3</div><div class="variant-pic">🍎🍎🍎🍎 · 🍎🍎🍎</div></div>
+        <div class="variant-cell"><div class="variant-eq">5 + 2</div><div class="variant-pic">🍎🍎🍎🍎🍎 · 🍎🍎</div></div>
+        <div class="variant-cell"><div class="variant-eq">6 + 1</div><div class="variant-pic">🍎🍎🍎🍎🍎🍎 · 🍎</div></div>
+      </div>
+      <div class="intro-line">7은 <strong>6가지 결</strong>로 가를 수 있어요</div>
+    </div>
+
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">결마다 뜻은 같아요</h1>
+      <div class="slide-sub">어떤 결로 박아도 다 합하면 같은 수</div>
+      <div class="intro-card" style="background:#E8F5E9; border-color:#66BB6A;">
+        <div style="font-size:clamp(18px,3vw,26px); color:#2E7D32; font-family:'Nunito',sans-serif; font-weight:800;">
+          1+6 = 7<br>2+5 = 7<br>3+4 = 7<br>...
+        </div>
+        <div class="intro-line">결은 달라도 <strong>모두 합 7</strong></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="4" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">오늘 박을 결</h1>
+      <div class="intro-card" style="background:#FFFDE7; border-color:#FFD54F;">
+        <div style="font-size:clamp(28px,4.6vw,48px);">🌳</div>
+        <div class="intro-line">한 수를 <strong>여러 가지 결</strong>로 박아 보고</div>
+      </div>
+      <div class="intro-card" style="background:#E3F2FD; border-color:#90CAF9;">
+        <div style="font-size:clamp(28px,4.6vw,48px);">🧺</div>
+        <div class="intro-line">같은 합 묶음끼리 <strong>모아 박아 봐요</strong></div>
+      </div>
+    </div>
+
+    <!-- ════ 2단계 전개: 분할 트리 + 등가 묶음 매칭 ════ -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">7을 가르는 결 박기</h1>
+      <div class="slide-sub">두 자리에 들어갈 수를 박아 보세요. 여러 결로 박을 수 있어요!</div>
+      <div class="tree-stage" data-tree="5" data-target="7">
+        <div class="tree-root">7</div>
+        <div class="tree-input-row">
+          <button class="tree-blank active" data-side="L">?</button>
+          <span class="tree-plus">+</span>
+          <button class="tree-blank" data-side="R">?</button>
+          <button class="tree-confirm" disabled>박기</button>
+        </div>
+        <div class="tree-keypad">
+          <button class="tree-key" data-num="1">1</button>
+          <button class="tree-key" data-num="2">2</button>
+          <button class="tree-key" data-num="3">3</button>
+          <button class="tree-key" data-num="4">4</button>
+          <button class="tree-key" data-num="5">5</button>
+          <button class="tree-key" data-num="6">6</button>
+          <button class="tree-key" data-num="del">지우기</button>
+        </div>
+        <div class="tree-branches"></div>
+        <div class="tree-fb">7을 가르는 결을 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">8을 가르는 결 박기</h1>
+      <div class="slide-sub">이번엔 8을 여러 결로 박아 볼까요?</div>
+      <div class="tree-stage" data-tree="6" data-target="8">
+        <div class="tree-root">8</div>
+        <div class="tree-input-row">
+          <button class="tree-blank active" data-side="L">?</button>
+          <span class="tree-plus">+</span>
+          <button class="tree-blank" data-side="R">?</button>
+          <button class="tree-confirm" disabled>박기</button>
+        </div>
+        <div class="tree-keypad">
+          <button class="tree-key" data-num="1">1</button>
+          <button class="tree-key" data-num="2">2</button>
+          <button class="tree-key" data-num="3">3</button>
+          <button class="tree-key" data-num="4">4</button>
+          <button class="tree-key" data-num="5">5</button>
+          <button class="tree-key" data-num="6">6</button>
+          <button class="tree-key" data-num="7">7</button>
+        </div>
+        <div class="tree-branches"></div>
+        <div class="tree-fb">8을 가르는 결을 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">같은 합끼리 모아 박기</h1>
+      <div class="match-stage" data-match="7">
+        <div class="match-prompt">묶음을 <strong>합 7</strong>인 자리와 <strong class="other">합 8</strong>인 자리로 갈라 박으세요</div>
+        <div class="match-pool">
+          <div class="match-card" data-sum="7">3+4</div>
+          <div class="match-card" data-sum="8">5+3</div>
+          <div class="match-card" data-sum="7">1+6</div>
+          <div class="match-card" data-sum="8">2+6</div>
+          <div class="match-card" data-sum="7">2+5</div>
+          <div class="match-card" data-sum="8">4+4</div>
+        </div>
+        <div class="match-bins">
+          <div class="match-bin" data-target="7"><div class="match-bin-label">합 = 7</div></div>
+          <div class="match-bin bin-other" data-target="8"><div class="match-bin-label">합 = 8</div></div>
+        </div>
+        <div class="match-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="8" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">한 번 더 모아 박기</h1>
+      <div class="match-stage" data-match="8">
+        <div class="match-prompt">묶음을 <strong>합 6</strong>인 자리와 <strong class="other">합 9</strong>인 자리로 갈라 박으세요</div>
+        <div class="match-pool">
+          <div class="match-card" data-sum="6">2+4</div>
+          <div class="match-card" data-sum="9">5+4</div>
+          <div class="match-card" data-sum="6">1+5</div>
+          <div class="match-card" data-sum="9">7+2</div>
+          <div class="match-card" data-sum="6">3+3</div>
+          <div class="match-card" data-sum="9">6+3</div>
+        </div>
+        <div class="match-bins">
+          <div class="match-bin" data-target="6"><div class="match-bin-label">합 = 6</div></div>
+          <div class="match-bin bin-other" data-target="9"><div class="match-bin-label">합 = 9</div></div>
+        </div>
+        <div class="match-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <!-- ════ 3단계 기본문제: 빠진 결 찾기 ════ -->
+    <div class="slide" data-slide="9" data-stage="3" data-slot-id="basic_blank_a">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 결을 박아 보세요</h1>
+      <div class="qa-stage">
+        <div class="qa-prompt">
+          <span class="qa-num">5</span><span class="qa-op">=</span><span class="qa-num">2</span><span class="qa-op">+</span>
+          <span class="qa-blank active" data-blank="9" data-answer="3">?</span>
+        </div>
+        <div class="qa-pad" data-qa-pad="9">
+          <button class="qa-key" data-num="1">1</button><button class="qa-key" data-num="2">2</button><button class="qa-key" data-num="3">3</button><button class="qa-key" data-num="4">4</button><button class="qa-key" data-num="5">5</button>
+          <button class="qa-key" data-num="6">6</button><button class="qa-key" data-num="7">7</button><button class="qa-key" data-num="8">8</button><button class="qa-key" data-num="9">9</button>
+          <button class="qa-key del" data-num="del">지우기</button>
+        </div>
+        <div class="qa-feedback" id="qa-fb-9"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="10" data-stage="3" data-slot-id="basic_blank_b">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 결을 박아 보세요</h1>
+      <div class="qa-stage">
+        <div class="qa-prompt">
+          <span class="qa-num">6</span><span class="qa-op">=</span>
+          <span class="qa-blank active" data-blank="10" data-answer="2">?</span>
+          <span class="qa-op">+</span><span class="qa-num">4</span>
+        </div>
+        <div class="qa-pad" data-qa-pad="10">
+          <button class="qa-key" data-num="1">1</button><button class="qa-key" data-num="2">2</button><button class="qa-key" data-num="3">3</button><button class="qa-key" data-num="4">4</button><button class="qa-key" data-num="5">5</button>
+          <button class="qa-key" data-num="6">6</button><button class="qa-key" data-num="7">7</button><button class="qa-key" data-num="8">8</button><button class="qa-key" data-num="9">9</button>
+          <button class="qa-key del" data-num="del">지우기</button>
+        </div>
+        <div class="qa-feedback" id="qa-fb-10"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="11" data-stage="3" data-slot-id="basic_blank_c">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 결을 박아 보세요</h1>
+      <div class="qa-stage">
+        <div class="qa-prompt">
+          <span class="qa-num">8</span><span class="qa-op">=</span><span class="qa-num">3</span><span class="qa-op">+</span>
+          <span class="qa-blank active" data-blank="11" data-answer="5">?</span>
+        </div>
+        <div class="qa-pad" data-qa-pad="11">
+          <button class="qa-key" data-num="1">1</button><button class="qa-key" data-num="2">2</button><button class="qa-key" data-num="3">3</button><button class="qa-key" data-num="4">4</button><button class="qa-key" data-num="5">5</button>
+          <button class="qa-key" data-num="6">6</button><button class="qa-key" data-num="7">7</button><button class="qa-key" data-num="8">8</button><button class="qa-key" data-num="9">9</button>
+          <button class="qa-key del" data-num="del">지우기</button>
+        </div>
+        <div class="qa-feedback" id="qa-fb-11"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="12" data-stage="3" data-slot-id="basic_blank_d">
+      <div class="stage-badge">3단계 · 기본문제</div>
+      <h1 class="slide-title">빠진 결을 박아 보세요</h1>
+      <div class="qa-stage">
+        <div class="qa-prompt">
+          <span class="qa-num">9</span><span class="qa-op">=</span>
+          <span class="qa-blank active" data-blank="12" data-answer="7">?</span>
+          <span class="qa-op">+</span><span class="qa-num">2</span>
+        </div>
+        <div class="qa-pad" data-qa-pad="12">
+          <button class="qa-key" data-num="1">1</button><button class="qa-key" data-num="2">2</button><button class="qa-key" data-num="3">3</button><button class="qa-key" data-num="4">4</button><button class="qa-key" data-num="5">5</button>
+          <button class="qa-key" data-num="6">6</button><button class="qa-key" data-num="7">7</button><button class="qa-key" data-num="8">8</button><button class="qa-key" data-num="9">9</button>
+          <button class="qa-key del" data-num="del">지우기</button>
+        </div>
+        <div class="qa-feedback" id="qa-fb-12"></div>
+      </div>
+    </div>
+
+    <!-- ════ 4단계 응용 ════ -->
+    <div class="slide" data-slide="13" data-stage="4" data-slot-id="app_match_c">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">같은 합 결끼리 모아 박기</h1>
+      <div class="match-stage" data-match="13">
+        <div class="match-prompt">합 <strong>5</strong>인 자리와 합 <strong class="other">7</strong>인 자리로 갈라 박으세요</div>
+        <div class="match-pool">
+          <div class="match-card" data-sum="5">1+4</div>
+          <div class="match-card" data-sum="7">4+3</div>
+          <div class="match-card" data-sum="5">2+3</div>
+          <div class="match-card" data-sum="7">5+2</div>
+          <div class="match-card" data-sum="5">3+2</div>
+          <div class="match-card" data-sum="7">6+1</div>
+        </div>
+        <div class="match-bins">
+          <div class="match-bin" data-target="5"><div class="match-bin-label">합 = 5</div></div>
+          <div class="match-bin bin-other" data-target="7"><div class="match-bin-label">합 = 7</div></div>
+        </div>
+        <div class="match-fb">묶음 카드를 끌어다 박아 보세요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="14" data-stage="4" data-slot-id="app_odd_a">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">다른 합 결을 찾아 박아요</h1>
+      <div class="odd-stage">
+        <div class="odd-prompt">아래 4개 결 중 <strong style="color:#F57F17;">합이 다른 하나</strong>를 박으세요. (3개는 합 8, 1개는 합 다름)</div>
+        <div class="odd-grid" data-odd="14" data-answer="3">
+          <button class="odd-card" data-pick="0">3 + 5</button>
+          <button class="odd-card" data-pick="1">6 + 2</button>
+          <button class="odd-card" data-pick="2">4 + 4</button>
+          <button class="odd-card" data-pick="3">5 + 4</button>
+        </div>
+        <div class="qa-feedback" id="qa-fb-14"></div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="15" data-stage="4" data-slot-id="app_tree_c">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">9를 가르는 결 박기</h1>
+      <div class="slide-sub">9를 여러 결로 박아 보세요</div>
+      <div class="tree-stage" data-tree="15" data-target="9">
+        <div class="tree-root">9</div>
+        <div class="tree-input-row">
+          <button class="tree-blank active" data-side="L">?</button>
+          <span class="tree-plus">+</span>
+          <button class="tree-blank" data-side="R">?</button>
+          <button class="tree-confirm" disabled>박기</button>
+        </div>
+        <div class="tree-keypad">
+          <button class="tree-key" data-num="1">1</button>
+          <button class="tree-key" data-num="2">2</button>
+          <button class="tree-key" data-num="3">3</button>
+          <button class="tree-key" data-num="4">4</button>
+          <button class="tree-key" data-num="5">5</button>
+          <button class="tree-key" data-num="6">6</button>
+          <button class="tree-key" data-num="7">7</button>
+          <button class="tree-key" data-num="8">8</button>
+        </div>
+        <div class="tree-branches"></div>
+        <div class="tree-fb">9를 가르는 결을 박아 보세요</div>
+      </div>
+    </div>
+
+    <!-- ════ 5단계 정리 ════ -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 박은 것 ①</h1>
+      <div class="recap-stage">
+        <div class="recap-card">
+          <div class="recap-icon">🌳</div>
+          <div class="recap-title">한 수, 여러 결</div>
+          <div class="recap-body">
+            <strong>7</strong>은 <strong>6가지 결</strong>로 가를 수 있어요<br>
+            1+6 · 2+5 · 3+4 · 4+3 · 5+2 · 6+1
+          </div>
+        </div>
+        <div class="intro-line" style="margin-top:8px;">한 답이 아니에요. 여러 가능성이 있어요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 박은 것 ②</h1>
+      <div class="recap-stage">
+        <div class="recap-card split">
+          <div class="recap-icon">🧺</div>
+          <div class="recap-title">같은 합 묶음</div>
+          <div class="recap-body">
+            결이 달라도 <strong>합이 같으면</strong> 같은 묶음<br>
+            3+4 = 2+5 = 1+6 = <strong>7</strong>
+          </div>
+        </div>
+        <div class="intro-line" style="margin-top:8px;">합이 같은 결끼리 모아 박을 수 있어요</div>
+      </div>
+    </div>
+
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="wrap-stage">
+        <div class="wrap-trophy">🏆</div>
+        <div class="wrap-title">정말 잘했어요!</div>
+        <div class="wrap-line">
+          한 수를 여러 결로 가르고<br>
+          같은 합 묶음끼리 모아 박았어요
+        </div>
+        <div class="wrap-next">📚 다음 차시 — 이야기를 만들어 볼까요: 상황에서 식 박기</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+let cur = 0;
+let score = 0;
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+
+let muted = false;
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+
+/* ─── 분할 트리 결 (슬5·6·15) ─── */
+document.querySelectorAll('.tree-stage').forEach(stage => {
+  const target = parseInt(stage.dataset.target, 10);
+  const left = stage.querySelector('.tree-blank[data-side="L"]');
+  const right = stage.querySelector('.tree-blank[data-side="R"]');
+  const confirm = stage.querySelector('.tree-confirm');
+  const branches = stage.querySelector('.tree-branches');
+  const fb = stage.querySelector('.tree-fb');
+  const keypad = stage.querySelector('.tree-keypad');
+  let active = left;
+  const found = new Set();
+  let lVal = null, rVal = null;
+  let awarded = 0;
+
+  function setActive(el) { [left, right].forEach(b => b.classList.remove('active')); el.classList.add('active'); active = el; }
+  left.addEventListener('click', () => setActive(left));
+  right.addEventListener('click', () => setActive(right));
+
+  function updateConfirm() { confirm.disabled = !(lVal !== null && rVal !== null); }
+
+  keypad.querySelectorAll('.tree-key').forEach(key => {
+    key.addEventListener('click', () => {
+      const n = key.dataset.num;
+      if (n === 'del') {
+        if (active === left) { left.textContent = '?'; left.classList.remove('filled'); lVal = null; }
+        else { right.textContent = '?'; right.classList.remove('filled'); rVal = null; }
+      } else {
+        active.textContent = n;
+        active.classList.add('filled');
+        if (active === left) { lVal = parseInt(n, 10); setActive(right); }
+        else { rVal = parseInt(n, 10); }
+      }
+      updateConfirm();
+    });
+  });
+
+  confirm.addEventListener('click', () => {
+    if (lVal === null || rVal === null) return;
+    const sum = lVal + rVal;
+    if (sum !== target) {
+      fb.textContent = lVal + ' + ' + rVal + ' = ' + sum + '이에요. ' + target + '이 되는 결을 박아 보세요';
+      fb.classList.add('wrong');
+      return;
+    }
+    const key = lVal + '+' + rVal;
+    if (found.has(key)) {
+      fb.textContent = '이 결은 이미 박았어요! 다른 결도 박아 보세요';
+      fb.classList.add('wrong');
+      return;
+    }
+    found.add(key);
+    if (awarded < 3) { addScore(5); awarded++; }
+    const b = document.createElement('div');
+    b.className = 'tree-branch';
+    b.innerHTML = '<span>' + lVal + '</span><span style="color:#FFA726;">+</span><span>' + rVal + '</span>';
+    branches.appendChild(b);
+    fb.classList.remove('wrong');
+    fb.textContent = '박혔어요! 다른 결도 박아 보세요 (' + found.size + '개 박힘)';
+    left.textContent = '?'; left.classList.remove('filled'); lVal = null;
+    right.textContent = '?'; right.classList.remove('filled'); rVal = null;
+    setActive(left);
+    updateConfirm();
+  });
+});
+
+/* ─── 등가 묶음 매칭 결 (슬7·8·13) ─── */
+document.querySelectorAll('.match-stage').forEach(stage => {
+  const pool = stage.querySelector('.match-pool');
+  const bins = stage.querySelectorAll('.match-bin');
+  const fb = stage.querySelector('.match-fb');
+  const total = pool.querySelectorAll('.match-card').length;
+  let solved = false;
+
+  function bindDrag(card) {
+    function startDrag(e) {
+      if (card.classList.contains('placed') || solved) return;
+      e.preventDefault();
+      const rect = card.getBoundingClientRect();
+      const isTouch = e.type === 'touchstart';
+      const point = isTouch ? e.touches[0] : e;
+      const offsetX = point.clientX - rect.left;
+      const offsetY = point.clientY - rect.top;
+      card.classList.add('dragging');
+      card.style.position = 'fixed';
+      card.style.left = (point.clientX - offsetX) + 'px';
+      card.style.top = (point.clientY - offsetY) + 'px';
+      card.style.pointerEvents = 'none';
+      function onMove(ev) {
+        ev.preventDefault();
+        const p = ev.type === 'touchmove' ? ev.touches[0] : ev;
+        card.style.left = (p.clientX - offsetX) + 'px';
+        card.style.top = (p.clientY - offsetY) + 'px';
+        bins.forEach(t => {
+          const r = t.getBoundingClientRect();
+          const over = p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom;
+          t.style.transform = over ? 'scale(1.02)' : '';
+        });
+      }
+      function onEnd(ev) {
+        const p = ev.type === 'touchend' ? ev.changedTouches[0] : ev;
+        let dropped = null;
+        bins.forEach(t => {
+          const r = t.getBoundingClientRect();
+          if (p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom) dropped = t;
+          t.style.transform = '';
+        });
+        card.classList.remove('dragging');
+        card.style.position = '';
+        card.style.left = '';
+        card.style.top = '';
+        card.style.pointerEvents = '';
+        if (dropped) {
+          const targetSum = parseInt(dropped.dataset.target, 10);
+          const cardSum = parseInt(card.dataset.sum, 10);
+          if (targetSum === cardSum) {
+            dropped.appendChild(card);
+            card.classList.add('placed');
+            dropped.classList.add('has-items');
+            addScore(3);
+            update();
+          } else {
+            fb.textContent = '합이 ' + cardSum + '이라 ' + targetSum + ' 자리에 안 박혀요';
+            fb.classList.add('wrong');
+            setTimeout(() => { fb.textContent = '묶음 카드를 끌어다 박아 보세요'; fb.classList.remove('wrong'); }, 1400);
+          }
+        }
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+      document.addEventListener('touchmove', onMove, {passive: false});
+      document.addEventListener('touchend', onEnd);
+    }
+    card.addEventListener('mousedown', startDrag);
+    card.addEventListener('touchstart', startDrag, {passive: false});
+  }
+  function update() {
+    const placed = stage.querySelectorAll('.match-card.placed').length;
+    if (placed === total && !solved) {
+      solved = true;
+      fb.textContent = '모두 박혔어요!';
+      fb.classList.remove('wrong');
+    }
+  }
+  pool.querySelectorAll('.match-card').forEach(bindDrag);
+});
+
+/* ─── 3·4단계 빠진 결 찾기 (양산 슬롯) ─── */
+document.querySelectorAll('.qa-pad').forEach(pad => {
+  const padId = pad.dataset.qaPad;
+  const blank = document.querySelector('.qa-blank[data-blank="' + padId + '"]');
+  const fb = document.getElementById('qa-fb-' + padId);
+  const answer = parseInt(blank.dataset.answer, 10);
+  let solved = false;
+  let attempts = 0;
+
+  pad.querySelectorAll('.qa-key').forEach(key => {
+    key.addEventListener('click', () => {
+      if (solved) return;
+      const num = key.dataset.num;
+      if (num === 'del') {
+        blank.textContent = '?'; blank.classList.remove('filled', 'wrong'); blank.classList.add('active');
+        fb.textContent = ''; fb.classList.remove('wrong');
+        return;
+      }
+      attempts++;
+      const n = parseInt(num, 10);
+      blank.textContent = n;
+      blank.classList.add('filled');
+      blank.classList.remove('active');
+      if (n === answer) {
+        solved = true;
+        blank.classList.add('correct');
+        blank.classList.remove('filled', 'wrong');
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+      } else {
+        blank.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+      }
+    });
+  });
+});
+
+/* ─── 4단계 다른 합 결 찾기 (양산 슬롯) ─── */
+document.querySelectorAll('.odd-grid').forEach(grid => {
+  const slideId = grid.dataset.odd;
+  const answer = grid.dataset.answer;
+  const fb = document.getElementById('qa-fb-' + slideId);
+  let solved = false;
+  let attempts = 0;
+
+  grid.querySelectorAll('.odd-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      const pick = card.dataset.pick;
+      if (pick === answer) {
+        solved = true;
+        card.classList.add('correct');
+        grid.querySelectorAll('.odd-card').forEach(c => { if (c !== card) c.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : 6;
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+      } else {
+        card.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => card.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>
