@@ -2,7 +2,7 @@
 <!--
   K-edu 1학년 수학 1단원 — 단원 도전 퀴즈 (game_01)
   ────────────────────────────────────────────────────────
-  영역 2 base — 즉답형 도전 퀴즈, 개인 모드 (cycle 12 박힘 → cycle 19 자동진행 제거 + 명칭 정정)
+  영역 2 base — 즉답형 도전 퀴즈, 개인 모드 (cycle 12 완료 → cycle 19 자동진행 제거 + 명칭 정정)
   Foundation 04 4.2 / STATUS-kedu-game.md 준수, 디자인 헌법 v11 적용 (풀스크린).
   파일명 규약: g{N}_{과목}_{단원약어}_game_{NN}.html
 
@@ -25,9 +25,9 @@
     - 단순 즉답형 (4지선다·빈칸만, 매칭/드래그 X)
 
   미결 (cycle 12 시점):
-    - 단체 라이브 모드 (Supabase Realtime 인프라 박힌 후)
+    - 단체 라이브 모드 (Supabase Realtime 인프라 들어간 후)
     - 게임 형식 6종 (보드게임/메모리/퍼즐/골든벨/팀미션) base
-    - 양산 표준 (Layer 4) 박힌 후 같은 단원 game_02·03 양산
+    - 양산 표준 (Layer 4) 들어간 후 같은 단원 game_02·03 양산
 -->
 <html lang="ko">
 <head>
@@ -256,7 +256,7 @@ body {
           🌟 8문제 모두 정답 = <b>풀하우스</b>!
         </div>
       </div>
-      <audio data-tts="game-s01" preload="none"><!-- TTS: "빙고 도전! 3 곱하기 3 격자에서 가운데는 자유 칸이에요. 문제를 맞히면 빈 칸을 자유롭게 골라 동그라미를 박아요. 가로, 세로, 대각선으로 빙고를 만들어봐요!" --></audio>
+      <audio data-tts="game-s01" preload="none"><!-- TTS: "빙고 도전! 3 곱하기 3 격자에서 가운데는 자유 칸이에요. 문제를 맞히면 빈 칸을 자유롭게 골라 동그라미를 써요. 가로, 세로, 대각선으로 빙고를 만들어봐요!" --></audio>
     </div>
 
     <!-- 슬2~9: 즉답 8문제 (4지선다·빈칸) -->
@@ -458,7 +458,7 @@ body {
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   영역 2 base — 빙고 도전, 개인 모드 (cycle 8 박힘)
+   영역 2 base — 빙고 도전, 개인 모드 (cycle 8 완료)
    슬 인덱스: 인트로=0 / Q1~Q8 = 1~8 / 결과=9
    메커니즘: 시간 압박 X / 정답 = 100점 + 격자 ⭕ / 오답 = 0점 + 격자 ❌
    격자 매핑: 칸 1~4 = 문제 1~4 / 칸 5 = free (자동 ⭕) / 칸 6~9 = 문제 5~8
@@ -481,7 +481,7 @@ const stats = {
 };
 
 // 빙고 격자 상태 (9칸: 0~8 인덱스, 가운데 4 = free)
-// cycle 9: 학생 선택 결 — 정답 시 학생이 빈 칸 직접 클릭. 정해진 매핑 폐기.
+// cycle 9: 학생 선택 방식 — 정답 시 학생이 빈 칸 직접 클릭. 정해진 매핑 폐기.
 const BINGO_FREE_IDX = 4;
 let bingoState = [null, null, null, null, 'free', null, null, null, null];
 let prevLinesCount = 0;        // 직전 빙고 라인 수 (새 라인 발생 감지용)
@@ -540,16 +540,16 @@ function playSlideAudio(){
 }
 function replayAudio(){ playSlideAudio(); }
 
-/* ─── cycle 9: 학생 선택 결 빙고 격자 (문제 슬 안 inline) ─── */
+/* ─── cycle 9: 학생 선택 방식 빙고 격자 (문제 슬 안 inline) ─── */
 function showBingoQZone(slide){
-  // 이미 박힌 zone 있으면 제거 (중복 박음 방지)
+  // 이미 들어간 zone 있으면 제거 (중복 완료 방지)
   const old = slide.querySelector('.bingoq-zone');
   if(old) old.remove();
 
   const zone = document.createElement('div');
   zone.className = 'bingoq-zone shown';
-  zone.innerHTML = '<div class="bingoq-prompt">⭕ 박을 칸을 골라봐!</div><div class="bingoq-grid"></div><div class="bingoq-msg" id="bz-msg-' + currentQ + '"></div>';
-  // q-feedback 다음에 박음 (audio 앞)
+  zone.innerHTML = '<div class="bingoq-prompt">⭕ 쓸 칸을 골라봐!</div><div class="bingoq-grid"></div><div class="bingoq-msg" id="bz-msg-' + currentQ + '"></div>';
+  // q-feedback 다음에 완료 (audio 앞)
   const fb = slide.querySelector('.q-feedback');
   fb.insertAdjacentElement('afterend', zone);
 
@@ -618,7 +618,7 @@ function handlePlace(cellIdx, slide){
     const lineCells = getBingoLineCells();
     cells.forEach((c, i) => { if(lineCells.has(i)) c.classList.add('line-now'); });
   } else {
-    msg.textContent = '⭕ 박았어! (빙고 ' + newLinesCount + '줄)';
+    msg.textContent = '⭕ 맞췄어요! (빙고 ' + newLinesCount + '줄)';
   }
   prevLinesCount = newLinesCount;
 
@@ -707,7 +707,7 @@ function renderResult(){
     const state = bingoState[i];
     if(state === 'placed'){ cell.classList.add('correct'); cell.textContent = '⭕'; }
     else if(state === 'free'){ cell.classList.add('free'); cell.textContent = '★'; }
-    else { cell.textContent = '·'; }  // 빈 칸: 학생이 안 박음 (오답 또는 진행 X)
+    else { cell.textContent = '·'; }  // 빈 칸: 학생이 안 완료 (오답 또는 진행 X)
     grid.appendChild(cell);
     setTimeout(() => cell.classList.add('shown'), 100 + i * 90);
   }
