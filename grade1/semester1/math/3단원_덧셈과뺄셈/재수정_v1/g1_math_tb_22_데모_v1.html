@@ -2,7 +2,7 @@
 <!--
   tb_22 모으기와 가르기 (2) — 메카닉 데모 v1
   ════════════════════════════════════════════════════════════
-  cycle 37 박음 (math)
+  cycle 37 완료 (math)
 
   설계 출처:
     - kedu/2026-05-09_math_3단원_매핑_v1초안.md (l.49 + l.72)
@@ -11,19 +11,19 @@
     한 수의 여러 가지 가르기 방식 (예: 7 = 1+6 = 2+5 = 3+4 = 4+3 = 5+2 = 6+1)
     → "한 답이 아닌 여러 가능성"이 본질. 한 답 메카닉(4지선다)으론 본질 안 살아남.
 
-  데모 박는 결 (2슬):
-    슬1: 분할 트리 — 한 수(7) → 학생이 여러 결로 가르기 박음 (학생 능동 결, 결마다 트리 노드 박힘)
+  데모 정하는 결 (2슬):
+    슬1: 분할 트리 — 한 수(7) → 학생이 여러 방식으로 가르기 완료 (학생 능동 결, 결마다 트리 노드 완료)
     슬2: 등가 묶음 매칭 — 같은 합(7) 묶음 카드들 → 학생이 같은 합 묶음끼리 분류 결
 
   검증 자리:
-    재수정_v1/ 안 박음. 라이브 갈아엎음 X. 차시 목록 등록 X.
+    재수정_v1/ 안 완료. 라이브 전면 교체 X. 차시 목록 등록 X.
     베프·준호 URL 직접 진입 검증.
 
-  검증 포인트 (베프 박을 결):
-    1. 분할 트리 — 학생이 가르기 결로 박는 결이 1학년에게 동작 가능한가
-    2. 분할 트리 — 여러 결 박는 결이 "여러 가능성" 본질 닿는가
+  검증 포인트 (베프 정할 결):
+    1. 분할 트리 — 학생이 가르기 방식으로 정하는 결이 1학년에게 동작 가능한가
+    2. 분할 트리 — 여러 결 정하는 결이 "여러 가능성" 본질 닿는가
     3. 등가 묶음 매칭 — 같은 합 묶음끼리 분류 결이 본질 닿는가, 무효 4종 매칭(좌·우 줄 잇기)과 본질 다른가
-    4. 메카닉 두 결 합쳐 tb_22 학습 본질 박혔는가
+    4. 메카닉 두 결 합쳐 tb_22 학습 본질 정해졌는가
 
   ⛔ 무효 4종 결 X:
     매칭(좌·우 줄 잇기), TAP, POND, 종합 ▢
@@ -244,14 +244,14 @@ body {
     <!-- ════ 슬1: 분할 트리 ════ -->
     <div class="slide active" data-slide="1">
       <h1 class="slide-title">7은 어떻게 가를 수 있을까?</h1>
-      <div class="slide-sub">두 자리에 들어갈 수를 골라 보세요. 여러 가지 결로 박을 수 있어요!</div>
+      <div class="slide-sub">두 자리에 들어갈 수를 골라 보세요. 여러 가지 방식으로 정할 수 있어요!</div>
       <div class="tree-stage">
         <div class="tree-root">7</div>
         <div class="tree-input-row">
           <button class="tree-input-blank active" id="tree-left">?</button>
           <span class="tree-plus">+</span>
           <button class="tree-input-blank" id="tree-right">?</button>
-          <button class="tree-confirm" id="tree-confirm" disabled>박기</button>
+          <button class="tree-confirm" id="tree-confirm" disabled>넣기</button>
         </div>
         <div class="tree-keypad" id="tree-keypad">
           <button class="tree-key" data-num="1">1</button>
@@ -263,7 +263,7 @@ body {
           <button class="tree-key" data-num="0">지우기</button>
         </div>
         <div class="tree-branches" id="tree-branches"></div>
-        <div class="tree-feedback" id="tree-fb">7을 가르는 결을 박아 보세요</div>
+        <div class="tree-feedback" id="tree-fb">7을 가르는 결을 넣어 보세요</div>
       </div>
     </div>
 
@@ -288,7 +288,7 @@ body {
             <div class="match-bin-label">합 = 8</div>
           </div>
         </div>
-        <div class="match-feedback" id="match-fb">묶음 카드를 끌어다 박아 보세요</div>
+        <div class="match-feedback" id="match-fb">묶음 카드를 끌어다 넣어 보세요</div>
       </div>
     </div>
   </div>
@@ -364,13 +364,13 @@ function toggleMute() {
     if (lVal === null || rVal === null) return;
     const sum = lVal + rVal;
     if (sum !== TARGET) {
-      fb.textContent = lVal + ' + ' + rVal + ' = ' + sum + '이에요. 7이 되는 결을 박아 보세요';
+      fb.textContent = lVal + ' + ' + rVal + ' = ' + sum + '이에요. 7이 되는 결을 넣어 보세요';
       fb.classList.add('wrong');
       return;
     }
     const key = lVal + '+' + rVal;
     if (found.has(key)) {
-      fb.textContent = '이 결은 이미 박았어요! 다른 결도 박아 보세요';
+      fb.textContent = '이 결은 이미 정했어요! 다른 결도 넣어 보세요';
       fb.classList.add('wrong');
       return;
     }
@@ -380,7 +380,7 @@ function toggleMute() {
     b.innerHTML = '<span>' + lVal + '</span><span style="color:#FFA726;">+</span><span>' + rVal + '</span>';
     branches.appendChild(b);
     fb.classList.remove('wrong');
-    fb.textContent = '박혔어요! 다른 결도 박아 보세요 (' + found.size + '개 박힘)';
+    fb.textContent = '정해졌어요! 다른 결도 넣어 보세요 (' + found.size + '개 완료)';
     left.textContent = '?'; left.classList.remove('filled'); lVal = null;
     right.textContent = '?'; right.classList.remove('filled'); rVal = null;
     setActive(left);
@@ -445,9 +445,9 @@ function toggleMute() {
             dropped.classList.add('has-items');
             update();
           } else {
-            fb.textContent = '합이 ' + cardSum + '이라 ' + targetSum + ' 자리에 안 박혀요';
+            fb.textContent = '합이 ' + cardSum + '이라 ' + targetSum + ' 자리에 안 들어가요';
             fb.classList.add('wrong');
-            setTimeout(() => { fb.textContent = '묶음 카드를 끌어다 박아 보세요'; fb.classList.remove('wrong'); }, 1400);
+            setTimeout(() => { fb.textContent = '묶음 카드를 끌어다 넣어 보세요'; fb.classList.remove('wrong'); }, 1400);
           }
         }
         document.removeEventListener('mousemove', onMove);
@@ -467,7 +467,7 @@ function toggleMute() {
     const placed = document.querySelectorAll('.match-card.placed').length;
     if (placed === total && !solved) {
       solved = true;
-      fb.textContent = '모두 박혔어요! 같은 합 묶음끼리 모았어요';
+      fb.textContent = '모두 정해졌어요! 같은 합 묶음끼리 모았어요';
       fb.classList.remove('wrong');
     }
   }
