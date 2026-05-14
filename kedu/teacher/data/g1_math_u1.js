@@ -1,0 +1,100 @@
+/* ============================================================
+   1학년 1학기 수학 — 1단원 「9까지의 수」 (12차시)
+   양산 자리 — LESSONS["u1_l{NN}"] 누적
+   ------------------------------------------------------------
+   진입 채팅: 1학년 수학 1단원 채팅 / 케이티처 채팅
+   다른 단원 .js (g1_math_u2.js ~ u6.js) = read-only
+   학년·과목 통합 파일 g1_math.html이 자동 로드 후
+   window.LESSONS 객체에 누적시킴.
+============================================================ */
+LESSONS["u1_l8"] = {
+    meta: {
+      grade: 1, subject: "수학",
+      unit: 1, n: 8,
+      title: "1만큼 더 큰 수와 1만큼 더 작은 수",
+      std: "[2수01-03]",
+      duration_min: 40
+    },
+    slides: [
+      // ===== 도입 (5) =====
+      {id:"s01",stage:"도입",block:"cover",data:{title:"1만큼 더 큰 수와\n1만큼 더 작은 수를\n알아볼까요?",emoji:""},suggested_extras:["v_count_song_kor"]},
+      {id:"s02",stage:"도입",block:"motivate",data:{scene_title:"도서관에 있는 책",kids:[{face:"📚",label:"오늘 빌릴 책 4권"},{face:"📚",label:"내일 빌릴 책 ?권"}],question:"내일 한 권 더 빌리면 책은 몇 권?"},suggested_extras:["v_geni_pm1","q_fun_dinosaur"]},
+      {id:"s03",stage:"도입",block:"review",data:{title:"전시 학습 — 수의 순서",content:"1, 2, 3, 4, 5, 6, 7, 8, 9\n앞 시간에 수를 차례로 세어 봤어요."},suggested_extras:["v_count_song_kor"]},
+      {id:"s04",stage:"도입",block:"motivate",data:{title:"오늘 배울 거",question:"**1만큼 더 큰 수**와\n**1만큼 더 작은 수**는 무엇일까?"},suggested_extras:[]},
+      {id:"s05",stage:"도입",block:"visual_demo",data:{title:"십 배열판으로 5 보여주기",ten_frame_solo:{count:5,is_anchor:true,label:"5는 5개 채워진 자리"}},suggested_extras:["m_ten_frame_tip"]},
+      // ===== 전개 (8) =====
+      {id:"s06",stage:"전개",block:"concept",data:{title:"5에서 1만큼 더 커지면",content:"5에 **하나 더** 들어가면\n**6**이 되어요"},suggested_extras:["v_geni_pm1"]},
+      {id:"s07",stage:"전개",block:"compare",data:{title:"5와 6을 견주어 봐요",items:[{ten_frame:5,num:5,caption:"5",is_anchor:true},{ten_frame:6,num:6,caption:"6 (1만큼 더 큰 수)"}]},suggested_extras:["r_elevator"]},
+      {id:"s08",stage:"전개",block:"concept",data:{title:"5에서 1만큼 더 작아지면",content:"5에서 **하나 빠지면**\n**4**가 되어요"},suggested_extras:[]},
+      {id:"s09",stage:"전개",block:"compare",data:{title:"5와 4를 견주어 봐요",items:[{ten_frame:5,num:5,caption:"5",is_anchor:true},{ten_frame:4,num:4,caption:"4 (1만큼 더 작은 수)"}]},suggested_extras:[]},
+      {id:"s09b",stage:"전개",block:"interactive_ten_frame",data:{title:"앞에 나와서 직접 채워 봐요",start_count:5,question:"하나 더 누르면? 하나 빼면?"},suggested_extras:[]},
+      {id:"s10",stage:"전개",block:"visual_demo",data:{title:"계단처럼 1만큼씩 커져요",linking_cube_staircase:{range:[1,9]},caption:"한 칸씩 더 쌓이면 1만큼씩 커져요"},suggested_extras:["m_number_line"]},
+      {id:"s10b",stage:"전개",block:"interactive_cube_stairs",data:{title:"큐브를 직접 쌓아 봐요",start_count:3,question:"하나 더 쌓으면? 하나 빼면?"},suggested_extras:[]},
+      {id:"s11",stage:"전개",block:"arrow_flow",data:{title:"화살표로 보면",flow:[{num:4,label:"",type:""},{num:5,label:"1만큼 더 큰 수",type:"anchor"},{num:6,label:"1만큼 더 큰 수",type:"up"}],sub:"5보다 1만큼 더 큰 수는 6, 그 다음 1만큼 더 큰 수는 7…"},suggested_extras:[]},
+      {id:"s12",stage:"전개",block:"concept",data:{title:"같은 일을 두 가지 말로",bidirect:["**5**는 **6**보다 1만큼 더 **작은 수**","=","**6**은 **5**보다 1만큼 더 **큰 수**"]},suggested_extras:["x_more_means_bigger"]},
+      {id:"s13",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"3에서 하나 적어지면... 0?",right:"아니에요! **2**예요. 하나만 줄어드는 거예요.",hint:"십 배열판으로 보면 한 칸만 줄어요."},suggested_extras:["x_zero_confusion"]},
+
+      // ===== 기본 문제 (6) =====
+      {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"7보다 1만큼 더 큰 수는?",ten_frame_anchor:7,question:"7보다 1만큼 더 큰 수는 무엇일까요?"},suggested_extras:["q_fun_pizza"]},
+      {id:"s15",stage:"기본문제",block:"basic_problem",data:{title:"6보다 1만큼 더 작은 수는?",ten_frame_anchor:6,question:"6보다 1만큼 더 작은 수는 무엇일까요?"},suggested_extras:["m_finger_tip"]},
+      {id:"s16",stage:"기본문제",block:"basic_problem",data:{title:"4보다 1만큼 더 큰 수는?",ten_frame_anchor:4,question:"4보다 1만큼 더 큰 수는?\n4보다 1만큼 더 작은 수는?"},suggested_extras:[]},
+      {id:"s17",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 1",question:"**8**은 **9**보다 1만큼 더 ___ 수\n**8**은 **7**보다 1만큼 더 ___ 수"},suggested_extras:[]},
+      {id:"s18",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 2",question:"**5**보다 1만큼 더 작은 수와\n**5**보다 1만큼 더 큰 수는?"},suggested_extras:[]},
+      {id:"s19",stage:"기본문제",block:"number_line_demo",data:{title:"수직선으로 확인해요",nl:{range:[1,9],anchor:5},caption:"5의 양옆은 4와 6"},suggested_extras:["m_number_line"]},
+      {id:"s19b",stage:"기본문제",block:"interactive_number_line",data:{title:"앞에 나와서 점을 움직여 봐요",range:[1,9],start:5,question:"점을 누르거나 버튼으로 옆 칸으로 움직여 봐요"},suggested_extras:[]},
+
+      // ===== 응용 문제 (8) =====
+      {id:"s20",stage:"응용문제",block:"real_world",data:{title:"엘리베이터에서 만나는 ±1",scenario:{icon:"🏢",body:"지금 **5층**에 있어요.\n한 층 올라가면? **6층**\n한 층 내려가면? **4층**"}},suggested_extras:["r_elevator","r_calendar"]},
+      {id:"s20b",stage:"응용문제",block:"card_arrange",data:{title:"수 카드 순서대로 놓기",instruction:"카드를 드래그해서 **작은 수부터 큰 수** 순서로 놓아 보세요",cards:[3,1,5,2,4],target:[1,2,3,4,5]},suggested_extras:[]},
+      {id:"s21",stage:"응용문제",block:"real_world",data:{title:"달력 속의 ±1",scenario:{icon:"📅",body:"오늘이 **8일**이에요.\n어제는 **7일** (1만큼 더 작은 수)\n내일은 **9일** (1만큼 더 큰 수)"}},suggested_extras:["r_calendar"]},
+      {id:"s22",stage:"응용문제",block:"real_world",data:{title:"나이로 만나는 ±1",scenario:{icon:"👨‍👩‍👧",body:"나는 **8살**.\n1살 더 많은 형은 **9살** (1만큼 더 큰 수)\n1살 더 어린 동생은 **7살** (1만큼 더 작은 수)"}},suggested_extras:["r_age"]},
+      {id:"s23",stage:"응용문제",block:"advanced_problem",data:{title:"줄넘기 횟수",context:"어제는 오늘보다 하나 더 적게,\n내일은 오늘보다 하나 더 많이 넘기로 했어요.\n오늘 **8번** 넘었어요.",questions:["어제 넘은 횟수는?","내일 넘을 횟수는?"]},suggested_extras:["r_age"]},
+      {id:"s24",stage:"응용문제",block:"advanced_problem",data:{title:"한 단계 더 — 사탕 나누기",context:"형이 사탕을 **6개** 가지고 있어요.\n동생은 형보다 **1만큼 더 적게** 가지고 있어요.",questions:["동생은 사탕을 몇 개 가지고 있을까요?","둘이 합치면 모두 몇 개?"]},suggested_extras:[]},
+      {id:"s25",stage:"응용문제",block:"offline_activity",data:{title:"손가락으로 표현하기",tag:"교실에서 함께 해요",icon:"✋",body:"선생님이 수를 외쳐요!\n그 수보다 **1만큼 더 큰 수**만큼 손가락을 들어요.\n다음엔 **1만큼 더 작은 수**만큼 들어 봐요.",materials:"손가락만 있으면 돼요"},suggested_extras:[]},
+      {id:"s26",stage:"응용문제",block:"offline_activity",data:{title:"칠판 앞에 나와서 써봐요",tag:"교실에서 함께 해요",icon:"🖍️",body:"선생님이 수 카드를 보여줘요.\n학생이 칠판 앞에 나와서\n**1만큼 더 큰 수**와 **1만큼 더 작은 수**를 분필로 써요.",materials:"수 카드 1~9 · 분필"},suggested_extras:[]},
+      {id:"s27",stage:"응용문제",block:"game",data:{title:"수 알아맞히기 놀이",steps:["짝과 함께 수 카드(1~9) 뒤집어 놓기","한 명이 카드 1장 골라 잡기 (1·9는 빼고)","다른 한 명이 질문: '○○보다 1만큼 더 큰 수인가요?'","맞히면 점수! 역할 바꿔서 또 하기"]},suggested_extras:["g_card_bingo","g_finger_game","a_dice_game"]},
+      {id:"s28",stage:"응용문제",block:"game",data:{title:"손가락 ±1 놀이",steps:["짝과 마주 앉기","한 명이 손가락 N개 들기 (예: 4개)","다른 한 명: '1만큼 더 큰 수 = 5개' 빨리 들기","'1만큼 더 작은 수 = 3개' 도 해 보기","빨리 정확하게 드는 사람이 점수"]},suggested_extras:["g_finger_game"]},
+      {id:"s29",stage:"응용문제",block:"advanced_problem",data:{title:"도전 — 두 가지로 말해보기",challenge:"**8**을 묻고 싶을 때,\n어떻게 질문할 수 있을까요?\n방법은 **두 가지!**"},suggested_extras:[]},
+
+      // ===== 정리 (5) =====
+      {id:"s30",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["어떤 수보다 **1만큼 더 큰 수**","어떤 수보다 **1만큼 더 작은 수**","같은 수도 **두 가지 방법**으로 말할 수 있어요","수직선·계단으로 보면 옆 칸이 ±1"]},suggested_extras:["b_number_book"]},
+      {id:"s31",stage:"정리",block:"question",data:{title:"스스로 점검",content:"1만큼 더 큰 수를 말할 수 있나요?\n1만큼 더 작은 수를 말할 수 있나요?\n같은 수를 두 가지 방법으로 말할 수 있나요?"},suggested_extras:[]},
+      {id:"s32",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:5,question:"5보다 1만큼 더 큰 수와\n5보다 1만큼 더 작은 수를 말해 봐요."},suggested_extras:[]},
+      {id:"s33",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"1보다 1만큼 더 작은 수는?\n새로운 수 **0** 이 나타나요.",emoji:""},suggested_extras:["e_zero_intro"]},
+      {id:"s34",stage:"정리",block:"next_lesson",data:{title:"한 가지 더 궁금해요",preview:"9보다 1만큼 더 큰 수는?\n**10** 이라는 수가 곧 나와요!\n(다음 단원에서)",emoji:""},suggested_extras:["e_above_9"]}
+    ],
+    extras: [
+      {id:"v_geni_pm1",type:"video",icon:"🎥",title:"지니와 함께하는 수학 — 1만큼 더 큰 수·작은 수",url:"https://www.youtube.com/watch?v=kfg8v8CRLRI",video_id:"kfg8v8CRLRI",description:"8차시 ±1 개념 직격 영상. 스마트올TV의 1학년 1학기 1단원 9까지의 수 학습 영상으로, 1만큼 더 큰 수와 1만큼 더 작은 수를 다룸. 수업 도입·개념 단계에 그대로 띄울 수 있음.",source:"스마트올TV (개인·학교 무료 사용 허용 — 출처·링크 표기 조건)",fit_slides:["motivate", "concept", "review"]},
+      {id:"v_chickadees_song",type:"video",icon:"🎥",title:"Five Little Chickadees",url:"https://www.youtube.com/results?search_query=five+little+chickadees+song",description:"1만큼 적어지는 개념을 노래로 익히는 영어 동요. 챙기새 5마리가 하나씩 줄어듦.",source:"영미권 전래 동요 (퍼블릭 도메인). 유튜브에 다수 공개 영상 존재 — 교사 선택",fit_slides:["motivate", "concept"]},
+      {id:"v_count_song_kor",type:"video",icon:"🎥",title:"핑크퐁 1-10 숫자송",url:"https://www.youtube.com/watch?v=Qxi-dPmsl-Q",video_id:"Qxi-dPmsl-Q",description:"1부터 10까지 노래로 익히기. 도입 자리에 흥미 유발용. 전시 학습(1~9 수 이름) 상기에도 좋음.",source:"핑크퐁 (Pinkfong) — 유튜브 공개 영상",fit_slides:["motivate", "review"]},
+      {id:"q_fun_dinosaur",type:"fun_question",icon:"💡",title:"공룡이 5마리 있다면?",content:"공룡이 5마리 놀고 있어요. 1마리가 더 오면 몇 마리? 1마리가 가버리면 몇 마리?",fit_slides:["motivate", "basic_problem"]},
+      {id:"q_fun_pizza",type:"fun_question",icon:"💡",title:"피자 조각 이야기",content:"피자가 7조각 있었는데 한 조각을 먹었어요. 몇 조각이 남았을까요? (7보다 1만큼 더 작은 수)",fit_slides:["basic_problem", "real_world"]},
+      {id:"g_card_bingo",type:"game",icon:"🎮",title:"수 카드 빙고 (변형)",content:"3×3 빙고판. 교사가 '4보다 1만큼 더 큰 수'라고 외치면 학생은 5에 동그라미. ±1 표현 듣고 답하기 익히기.",fit_slides:["game", "advanced_problem"]},
+      {id:"g_finger_game",type:"game",icon:"🎮",title:"손가락 ±1 놀이",content:"짝과 마주 앉아 한 명이 손가락 N개를 들면, 다른 한 명은 1만큼 더 큰 수·작은 수만큼 손가락을 듦. 빨리 정확히 드는 사람 승.",fit_slides:["game"]},
+      {id:"r_elevator",type:"real_world",icon:"🌍",title:"엘리베이터 층수",content:"5층에서 1층 올라가면 6층, 1층 내려가면 4층. 엘리베이터 버튼이 ±1의 좋은 예.",fit_slides:["concept", "real_world"]},
+      {id:"r_calendar",type:"real_world",icon:"🌍",title:"달력 날짜",content:"오늘이 8일이면 어제는 7일, 내일은 9일. 매일 ±1로 날짜가 바뀜.",fit_slides:["real_world"]},
+      {id:"r_age",type:"real_world",icon:"🌍",title:"나이",content:"나는 8살. 1살 더 많은 형은 9살. 1살 더 어린 동생은 7살.",fit_slides:["real_world"]},
+      {id:"e_zero_intro",type:"extension",icon:"⬆",title:"1보다 1만큼 더 작은 수는?",content:"1보다 1만큼 더 작은 수는… 다음 차시(9차시)에서 배워요! 0이라는 새로운 수가 등장합니다.",fit_slides:["next_lesson", "summary"]},
+      {id:"e_above_9",type:"extension",icon:"⬆",title:"9보다 1만큼 더 큰 수는?",content:"9보다 1만큼 더 큰 수는 10! 다음 단원(50까지의 수)에서 만나요.",fit_slides:["next_lesson"]},
+      {id:"b_number_book",type:"book",icon:"📖",title:"『숫자가 사라졌어요』 - 로렌 리디",content:"갑자기 숫자가 사라진 세상 이야기. 수의 필요성·이웃 수 개념을 자연스럽게 익힘.",source:"로렌 리디 (Loreen Leedy) / 비룡소 (한국어판)",fit_slides:["motivate", "summary"]},
+      {id:"b_one_more",type:"book",icon:"📖",title:"『One More』 - 그림책",content:"동물이 하나씩 늘어나는 단순한 구조의 그림책. ±1 개념 시각화.",source:"영미권 그림책 (저자·출판사 다수 버전 — 교사가 도서관에서 확인 후 사용)",fit_slides:["motivate"]},
+      {id:"m_finger_tip",type:"tip",icon:"🧩",title:"1만큼 더 작은 수 헷갈리면",content:"손가락 N개를 펴고 → 한 개 접으면 → 그게 1만큼 더 작은 수.",fit_slides:["concept", "basic_problem"]},
+      {id:"m_number_line",type:"tip",icon:"🧩",title:"수직선 활용",content:"1~9 수직선 그려두면 ±1 = 한 칸 옆. 이후 덧셈·뺄셈 학습 기반.",fit_slides:["concept", "visual_demo"]},
+      {id:"x_zero_confusion",type:"misconception",icon:"❓",title:"오개념: '하나 적어짐 = 없어짐'",content:"어떤 학생은 '3에서 1만큼 더 작은 수'를 '0' 또는 '없어요'라고 답함. 실제는 2. 십 배열판으로 한 칸만 줄어드는 것 시각화.",fit_slides:["concept", "compare"]},
+      {id:"x_more_means_bigger",type:"misconception",icon:"❓",title:"오개념: '더 많다 = 더 크다'",content:"학생들이 양(많다/적다)과 수(크다/작다)를 혼동. 일관되게 '1만큼 더 큰 수' / '1만큼 더 작은 수' 표현 사용.",fit_slides:["concept"]},
+      {id:"a_other_textbook_card",type:"other_activity",icon:"📚",title:"다른 활동 — '이웃 수 카드 만들기'",content:"수 카드 5에 대해 '1만큼 더 작은 수(4)'와 '1만큼 더 큰 수(6)' 양옆에 놓기. 1~9 모두 만들면 자동으로 1~9 순서가 됨.",fit_slides:["advanced_problem", "game"]},
+      {id:"a_dice_game",type:"other_activity",icon:"📚",title:"다른 활동 — 주사위 ±1",content:"주사위 굴려 나온 수의 1만큼 더 큰 수·작은 수 말하기. 1·6 나오면 한쪽만 답 가능 → 자연스럽게 0·7 호기심 유발.",fit_slides:["game"]},
+      {id:"r_candy",type:"real_world",icon:"🌍",title:"사탕 봉지",content:"사탕이 6개 있어요. 친구가 1개 더 주면 7개. 내가 1개 먹으면 5개. 사탕 개수가 1만큼씩 늘고 줄어요.",fit_slides:["real_world", "concept"]},
+      {id:"r_traffic_light",type:"real_world",icon:"🌍",title:"신호등 카운트다운",content:"횡단보도 신호등이 5초 남았다고 깜빡여요. 1초 지나면 4초 남았어요. 또 1초 지나면 3초. 시간이 1만큼씩 줄어요.",fit_slides:["real_world"]},
+      {id:"r_shoebox",type:"real_world",icon:"🌍",title:"신발장 번호",content:"내 신발장은 5번. 1만큼 더 큰 수가 적힌 6번 신발장에는 누구 신발이 있을까? 1만큼 더 작은 수인 4번에는?",fit_slides:["real_world", "basic_problem"]},
+      {id:"r_bus_stop",type:"real_world",icon:"🌍",title:"버스 정류장 대기 인원",content:"버스를 기다리는 사람이 4명이었어요. 1명이 더 와서 5명이 됐어요. 그런데 1명이 그냥 가버리면 다시 4명. ±1이 매일 일어나는 곳.",fit_slides:["real_world"]},
+      {id:"q_fun_zoo",type:"fun_question",icon:"💡",title:"동물원에 사자가 6마리",content:"동물원 우리에 사자 6마리가 있어요. 옆 동물원에서 1마리 더 오면 몇 마리? 1마리가 다른 곳으로 가면 몇 마리?",fit_slides:["motivate", "basic_problem"]},
+      {id:"q_fun_pets",type:"fun_question",icon:"💡",title:"강아지 발자국 세기",content:"산책 가는 강아지 발자국이 3개 찍혔어요. 한 발 더 가면 4개. 한 발 더 가면 5개. 발자국이 1만큼씩 늘어나요.",fit_slides:["motivate", "concept"]},
+      {id:"q_fun_classroom",type:"fun_question",icon:"💡",title:"교실 친구 수",content:"오늘 우리 반에 친구가 8명 왔어요. 한 명이 더 오면 9명. 한 명이 일찍 가면 7명. 1만큼이 우리 교실에서도 일어나요.",fit_slides:["real_world", "motivate"]},
+      {id:"g_clap_count",type:"game",icon:"🎮",title:"손뼉 ±1 게임",content:"교사가 손뼉 5번을 친 다음 '1만큼 더 많이!'라고 외치면 학생은 6번. '1만큼 더 적게!'라고 외치면 4번. 박자 맞춰 빠르게.",fit_slides:["game", "advanced_problem"]},
+      {id:"g_jumping",type:"game",icon:"🎮",title:"수 뛰어 만들기",content:"줄넘기 3번 뛴 친구에게 '1만큼 더 큰 수'를 외치면 4번까지 뛰기. '1만큼 더 작은 수'면 멈춰서 2번까지만 한 것으로. 체험으로 익히는 ±1.",fit_slides:["game"]},
+      {id:"b_count_to_10",type:"book",icon:"📖",title:"『열까지 셀 줄 아는 아기염소』",content:"알프 프뢰위센. 아기 염소가 동물들을 만나며 1부터 10까지 세는 그림책. 한 마리씩 늘어나는 구조가 ±1 개념과 정확히 일치.",source:"알프 프뢰위센 / 마루벌",fit_slides:["motivate", "concept"]},
+      {id:"m_ten_frame_tip",type:"tip",icon:"🧩",title:"십 배열판으로 ±1 보여주기",content:"십 배열판에 칸이 5개 채워져 있을 때 '1만큼 더 큰 수'는 한 칸을 더 채움 → 6. '1만큼 더 작은 수'는 한 칸을 비움 → 4. 시각·동작으로 동시에 이해.",fit_slides:["concept", "visual_demo"]},
+      {id:"x_order_confusion",type:"misconception",icon:"❓",title:"오개념: '다음 수' 헷갈림",content:"'5 다음의 수'를 '5보다 1만큼 더 작은 수(4)'로 답하는 학생 있음. '다음'을 '뒤로 간다'로 오해. 수직선·계단으로 '커지는 방향'을 일관되게 보여주기.",fit_slides:["concept", "basic_problem"]}
+    ]
+};
