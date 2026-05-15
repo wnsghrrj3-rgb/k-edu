@@ -85,6 +85,18 @@
 
   @keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
   @keyframes ka-fillCell { from { transform: scale(0); } to { transform: scale(1); } }
+  @keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+  /* 인라인 원본 compare-card */
+  .legacy-cp-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(16px, 3vw, 24px); padding: clamp(18px, 3.2vw, 28px) clamp(24px, 4.4vw, 38px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); min-width: clamp(140px, 22vw, 200px); font-family: inherit; }
+  .legacy-cp-card:hover { background: #E3F2FD; transform: translateY(-3px); }
+  .legacy-cp-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(60px, 10vw, 110px); color: #1976D2; line-height: 1; }
+  .legacy-cp-visual { font-size: clamp(28px, 4.6vw, 44px); min-height: clamp(50px, 8vw, 70px); display: flex; align-items: center; justify-content: center; }
+  .legacy-cp-visual.empty { color: #B0BEC5; font-family: 'Jua', sans-serif; font-size: clamp(14px, 2.2vw, 18px); }
+  .legacy-cp-card.correct { background: #C8E6C9; border-color: #2E7D32; }
+  .legacy-cp-card.correct .legacy-cp-num { color: #2E7D32; }
+  .legacy-cp-card.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+  .legacy-cp-card.disabled { opacity: 0.4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -276,6 +288,59 @@
   </div>
 </div>
 
+<!-- ───── Case 8: compare-picker single (더 작은 수) ───── -->
+<div class="case">
+  <h2>Case 8 — compare-picker single (0 vs 1, 정답=0)</h2>
+  <p class="desc">두 수 비교 카드. 클릭하면 correct/wrong 표시.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본</h3>
+      <div style="text-align:center; margin-bottom: 14px; font-size: 16px;">두 수 중 더 작은 수를 골라요</div>
+      <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;" id="legacy-cp-row">
+        <button class="legacy-cp-card" data-num="0">
+          <div class="legacy-cp-num">0</div>
+          <div class="legacy-cp-visual empty">없음</div>
+        </button>
+        <button class="legacy-cp-card" data-num="1">
+          <div class="legacy-cp-num">1</div>
+          <div class="legacy-cp-visual">🍎</div>
+        </button>
+      </div>
+      <div class="log" id="legacy-cp-log">선택 대기</div>
+    </div>
+    <div>
+      <h3>&lt;kedu-compare-picker&gt;</h3>
+      <kedu-compare-picker id="kedu-cp"
+        prompt="두 수 중 더 작은 수를 골라요"
+        items='[{"num":0,"visual":""},{"num":1,"visual":"🍎"}]'
+        correct="0"
+        mode="single"></kedu-compare-picker>
+      <div class="log" id="kedu-cp-log">선택 대기</div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 9: compare-picker multi ───── -->
+<div class="case">
+  <h2>Case 9 — compare-picker multi ('0개' 모두 고르기, 정답=인덱스 0·2)</h2>
+  <p class="desc">multi 모드 — 정답 모두 선택해야 complete.</p>
+  <div class="pair">
+    <div>
+      <h3>설명</h3>
+      <div style="color:#999; font-size:13px;">multi 모드 단독 검증. 우측에서 '없음' 두 항목(인덱스 0·2)을 다 누르면 correct event.</div>
+    </div>
+    <div>
+      <h3>&lt;kedu-compare-picker mode="multi"&gt;</h3>
+      <kedu-compare-picker id="kedu-cp-multi"
+        prompt="'0개'에 해당하는 자리를 모두 골라요"
+        items='[{"num":0,"visual":""},{"num":2,"visual":"🍎🍎"},{"num":0,"visual":""}]'
+        correct="0,2"
+        mode="multi"></kedu-compare-picker>
+      <div class="log" id="kedu-cp-multi-log">선택 대기 (정답 2개)</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -335,20 +400,72 @@
   window.addEventListener('kedu-components-ready', () => {
     const tf = document.getElementById('kedu-tf-interactive');
     const log = document.getElementById('kedu-log');
-    if (!tf || !log) return;
-    tf.addEventListener('kedu-ten-frame-change', e => {
-      log.textContent = `count: ${e.detail.count} (목표 ${e.detail.target})`;
-    });
-    tf.addEventListener('kedu-ten-frame-complete', e => {
-      log.textContent = `✓ count: ${e.detail.count} — complete!`;
-    });
-    tf.addEventListener('kedu-ten-frame-overflow', e => {
-      log.textContent = `⚠ count: ${e.detail.count} — overflow`;
-    });
-    tf.addEventListener('kedu-ten-frame-out-of-order', () => {
-      log.textContent = '⚠ 왼쪽부터 차례로 채워요';
-    });
+    if (tf && log) {
+      tf.addEventListener('kedu-ten-frame-change', e => {
+        log.textContent = `count: ${e.detail.count} (목표 ${e.detail.target})`;
+      });
+      tf.addEventListener('kedu-ten-frame-complete', e => {
+        log.textContent = `✓ count: ${e.detail.count} — complete!`;
+      });
+      tf.addEventListener('kedu-ten-frame-overflow', e => {
+        log.textContent = `⚠ count: ${e.detail.count} — overflow`;
+      });
+      tf.addEventListener('kedu-ten-frame-out-of-order', () => {
+        log.textContent = '⚠ 왼쪽부터 차례로 채워요';
+      });
+    }
+
+    // ── 컴포넌트 compare-picker single 로그 (Case 8) ──
+    const cp = document.getElementById('kedu-cp');
+    const cpLog = document.getElementById('kedu-cp-log');
+    if (cp && cpLog) {
+      cp.addEventListener('kedu-compare-picker-select', e => {
+        cpLog.textContent = `선택: num=${e.detail.num} (${e.detail.isCorrect ? '✓ 정답' : '✗ 오답'})`;
+      });
+      cp.addEventListener('kedu-compare-picker-correct', e => {
+        cpLog.textContent = `✓ 정답! selected=${JSON.stringify(e.detail.selected)}`;
+      });
+    }
+
+    // ── 컴포넌트 compare-picker multi 로그 (Case 9) ──
+    const cpm = document.getElementById('kedu-cp-multi');
+    const cpmLog = document.getElementById('kedu-cp-multi-log');
+    if (cpm && cpmLog) {
+      cpm.addEventListener('kedu-compare-picker-select', e => {
+        cpmLog.textContent = `선택: idx=${e.detail.index}, num=${e.detail.num} (${e.detail.isCorrect ? '✓' : '✗'})`;
+      });
+      cpm.addEventListener('kedu-compare-picker-correct', e => {
+        cpmLog.textContent = `✓ 모두 정답! selected=${JSON.stringify(e.detail.selected)}`;
+      });
+    }
   });
+
+  // ── 인라인 원본 compare-card 동작 (Case 8 좌측) ──
+  (function legacyCp() {
+    const row = document.getElementById('legacy-cp-row');
+    const log = document.getElementById('legacy-cp-log');
+    if (!row || !log) return;
+    const CORRECT = 0;
+    let done = false;
+    row.addEventListener('click', e => {
+      if (done) return;
+      const card = e.target.closest('.legacy-cp-card');
+      if (!card) return;
+      const num = Number(card.dataset.num);
+      if (num === CORRECT) {
+        card.classList.add('correct');
+        row.querySelectorAll('.legacy-cp-card').forEach(c => {
+          if (!c.classList.contains('correct')) c.classList.add('disabled');
+        });
+        log.textContent = `✓ 정답! num=${num}`;
+        done = true;
+      } else {
+        card.classList.add('wrong');
+        setTimeout(() => card.classList.remove('wrong'), 600);
+        log.textContent = `✗ 오답: num=${num}`;
+      }
+    });
+  })();
 </script>
 
 <script src="./index.js" defer></script>

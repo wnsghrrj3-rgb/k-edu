@@ -27,7 +27,8 @@
   const BASE = currentDir();
   const PARTS = [
     'kedu-ten-frame.js',
-    'kedu-linking-cube.js'
+    'kedu-linking-cube.js',
+    'kedu-compare-picker.js'
     // 부품 추가 시 본 배열에 한 줄.
   ];
 
