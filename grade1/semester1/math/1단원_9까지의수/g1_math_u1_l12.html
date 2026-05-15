@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l12 — 단원 아웃트로 (수 그림책 만들기 자리)
+  자리: grade1/semester1/math/1단원_9까지의수/g1_math_u1_l12.html
+  지도서: handoff kedu/curriculum/math/g1/unit1/12차_수_그림책_만들기/_SOURCE.md (p.172-173)
+  골격: 안 B — 단원 아웃트로 슬 묶음 (본 차시 X, 점수 X) + "내 수 컬렉션" 자유 발상 자리
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l12_v1">
+<title>1단원 마무리 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fs-title:clamp(28px,4.6vw,52px);
+  --fs-heading:clamp(25px,3.8vw,38px);
+  --fs-body:clamp(20px,3.2vw,30px);
+  --fs-caption:clamp(16px,2.4vw,22px);
+  --c-primary:#3D90F0;
+  --c-primary-soft:#EBF4FF;
+  --c-accent:#FF85A1;
+  --c-text:#1A202C;
+  --c-muted:#718096;
+  --c-bg:#F5F7FA;
+  --c-card:#fff;
+  --c-line:#E2E8F0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--c-bg);color:var(--c-text);overflow:hidden}
+.kedu-app{position:fixed;inset:0;display:flex;flex-direction:column}
+.kedu-topbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-bottom:1px solid var(--c-line);flex-shrink:0}
+.kedu-topbar .back{color:var(--c-muted);text-decoration:none;font-size:14px;font-weight:500}
+.kedu-topbar .title{font-family:'Jua',sans-serif;font-size:15px;color:var(--c-text)}
+.kedu-progress{height:4px;background:var(--c-line);position:relative;flex-shrink:0}
+.kedu-progress-bar{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--c-primary),var(--c-accent));transition:width .3s}
+.kedu-main{flex:1;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+.kedu-card{width:100%;max-width:1024px;aspect-ratio:5/4;background:var(--c-card);border-radius:24px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:clamp(20px,3.5vw,48px);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.slide{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:clamp(14px,2.6vw,28px)}
+.slide.active{display:flex;animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+.s-title{font-family:'Jua',sans-serif;font-size:var(--fs-title);background:linear-gradient(135deg,var(--c-primary),var(--c-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15}
+.s-sub{font-family:'Jua',sans-serif;font-size:var(--fs-heading);color:var(--c-text)}
+.s-body{font-size:var(--fs-body);color:var(--c-text);line-height:1.5;max-width:780px}
+.s-cap{font-size:var(--fs-caption);color:var(--c-muted)}
+.emoji-row{font-size:clamp(48px,8vw,96px);line-height:1;display:flex;gap:.15em;justify-content:center}
+.recall-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;width:100%;max-width:880px;text-align:left}
+.recall-card{background:var(--c-primary-soft);border-radius:12px;padding:12px 16px;font-size:var(--fs-caption);display:flex;gap:10px;align-items:flex-start}
+.recall-card .check{color:var(--c-primary);font-family:'Jua',sans-serif;flex-shrink:0}
+.num-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;width:100%;max-width:640px}
+.num-btn{aspect-ratio:1;border-radius:16px;background:#fff;border:3px solid var(--c-primary);font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(28px,5vw,48px);color:var(--c-primary);cursor:pointer;transition:transform .15s,background .15s,color .15s}
+.num-btn:hover{transform:translateY(-2px)}
+.num-btn.picked{background:var(--c-primary);color:#fff;animation:pop .35s ease}
+.idea-input-wrap{width:100%;max-width:640px;display:flex;flex-direction:column;gap:10px}
+.idea-input{width:100%;padding:14px 18px;border-radius:14px;border:2px solid var(--c-line);font-family:inherit;font-size:var(--fs-caption);outline:none;transition:border-color .15s}
+.idea-input:focus{border-color:var(--c-primary)}
+.idea-hint{font-size:14px;color:var(--c-muted)}
+.idea-saved{background:var(--c-primary-soft);border-radius:12px;padding:10px 14px;font-size:var(--fs-caption);color:var(--c-primary);display:none}
+.idea-saved.show{display:block;animation:fadeUp .35s ease both}
+.star-row{display:flex;gap:14px;justify-content:center}
+.star{font-size:clamp(40px,7vw,72px);cursor:pointer;color:#CBD5E0;transition:color .15s,transform .15s}
+.star.lit{color:#F6AD55}
+.star:hover{transform:scale(1.1)}
+.preview-frame{width:100%;max-width:520px;background:linear-gradient(135deg,#F3E8FF,#FFE7E0);border-radius:18px;padding:clamp(20px,3vw,36px);display:flex;align-items:center;justify-content:center;gap:clamp(14px,2.5vw,28px)}
+.preview-frame svg{flex-shrink:0}
+.kedu-footer{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid var(--c-line);flex-shrink:0;gap:10px}
+.fbtn{height:44px;padding:0 22px;border-radius:50px;font-family:'Jua',sans-serif;font-size:15px;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.fbtn-prev{background:#EDF2F7;color:var(--c-muted)}
+.fbtn-prev:disabled{opacity:.35;cursor:not-allowed}
+.fbtn-next{background:var(--c-primary);color:#fff}
+.fbtn-home{background:linear-gradient(135deg,var(--c-primary),var(--c-accent));color:#fff;padding:0 28px;height:48px}
+.slide-count{font-size:13px;color:var(--c-muted);font-family:'Jua',sans-serif}
+</style>
+</head>
+<body>
+<div class="kedu-app">
+  <div class="kedu-topbar">
+    <a class="back" href="../index.html">← 1학년 수학</a>
+    <span class="title">🎉 단원 마무리 · 수 그림책</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="kedu-progress"><div class="kedu-progress-bar" id="bar"></div></div>
+  <main class="kedu-main">
+    <div class="kedu-card">
+
+      <section class="slide active">
+        <div class="emoji-row">🎉 🌟 🎈</div>
+        <h1 class="s-title">1단원 끝났어요!</h1>
+        <p class="s-body">9까지의 수를 모두 배웠어요.<br>오늘은 단원에서 배운 것들을 모아 봐요.</p>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">우리가 배운 것</h2>
+        <div class="recall-list">
+          <div class="recall-card"><span class="check">✓</span><span>수를 세는 것</span></div>
+          <div class="recall-card"><span class="check">✓</span><span>1부터 9까지 읽고 쓰기</span></div>
+          <div class="recall-card"><span class="check">✓</span><span>몇째인지 순서 알기</span></div>
+          <div class="recall-card"><span class="check">✓</span><span>1만큼 더 큰 수·작은 수</span></div>
+          <div class="recall-card"><span class="check">✓</span><span>0의 뜻 알기</span></div>
+          <div class="recall-card"><span class="check">✓</span><span>두 수의 크기 비교</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">좋아하는 수를 골라요</h2>
+        <p class="s-cap">단원에서 만난 0부터 9까지 중에서 가장 좋아하는 수를 골라 봐요.</p>
+        <div class="num-grid" id="numGrid">
+          <button class="num-btn" data-n="0">0</button>
+          <button class="num-btn" data-n="1">1</button>
+          <button class="num-btn" data-n="2">2</button>
+          <button class="num-btn" data-n="3">3</button>
+          <button class="num-btn" data-n="4">4</button>
+          <button class="num-btn" data-n="5">5</button>
+          <button class="num-btn" data-n="6">6</button>
+          <button class="num-btn" data-n="7">7</button>
+          <button class="num-btn" data-n="8">8</button>
+          <button class="num-btn" data-n="9">9</button>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">내 수 컬렉션</h2>
+        <p class="s-body">좋아하는 수 <span id="pickedNum" style="font-family:Nunito,sans-serif;font-weight:800;color:var(--c-primary)">?</span>을 어디서 봤어요?<br>생각나는 것을 적어 봐요.</p>
+        <div class="idea-input-wrap">
+          <input type="text" class="idea-input" id="ideaInput" placeholder="예: 생일 케이크 초가 7개, 우리집 7층…" maxlength="60">
+          <div class="idea-hint">정답은 없어요. 자유롭게 떠올려 봐요.</div>
+          <div class="idea-saved" id="ideaSaved">저장됐어요!</div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">단원이 즐거웠나요?</h2>
+        <div class="star-row" id="starRow">
+          <span class="star" data-v="1">★</span>
+          <span class="star" data-v="2">★</span>
+          <span class="star" data-v="3">★</span>
+          <span class="star" data-v="4">★</span>
+          <span class="star" data-v="5">★</span>
+        </div>
+        <p class="s-cap" id="starLabel">별을 눌러 평가해 봐요</p>
+      </section>
+
+      <section class="slide">
+        <div class="emoji-row">🔷 ⚪ 🔺</div>
+        <h2 class="s-sub">다음 단원 예고</h2>
+        <div class="preview-frame">
+          <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="#FFB74D" stroke="#EF6C00" stroke-width="3"/></svg>
+          <svg width="80" height="80" viewBox="0 0 80 80"><polygon points="40,8 76,72 4,72" fill="#81C784" stroke="#2E7D32" stroke-width="3"/></svg>
+          <svg width="80" height="80" viewBox="0 0 80 80"><rect x="10" y="10" width="60" height="60" fill="#64B5F6" stroke="#1565C0" stroke-width="3"/></svg>
+        </div>
+        <p class="s-body"><strong>2단원 — 여러 가지 모양</strong><br>동그라미·세모·네모를 만나러 가요!</p>
+      </section>
+
+      <section class="slide">
+        <div class="emoji-row">🌟</div>
+        <h1 class="s-title">잘했어요!</h1>
+        <p class="s-body">1단원을 모두 끝냈어요.<br>이제 다른 차시로 가거나, 단원 목록으로 돌아갈 수 있어요.</p>
+        <a class="fbtn fbtn-home" href="../index.html">단원 목록으로 →</a>
+      </section>
+
+    </div>
+  </main>
+  <div class="kedu-footer">
+    <button class="fbtn fbtn-prev" id="prev" disabled>← 이전</button>
+    <span class="slide-count" id="cnt">1 / 7</span>
+    <button class="fbtn fbtn-next" id="next">다음 →</button>
+  </div>
+</div>
+<script>
+(function(){
+  const KEY='kedu_progress_g1_math_u1_l12';
+  const slides=document.querySelectorAll('.slide');
+  const bar=document.getElementById('bar');
+  const cnt=document.getElementById('cnt');
+  const prev=document.getElementById('prev');
+  const next=document.getElementById('next');
+  let cur=0;
+  let state={picked:null,idea:'',stars:0};
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s)Object.assign(state,s);}catch(e){}
+
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+  function render(){
+    slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+    bar.style.width=(((cur+1)/slides.length)*100)+'%';
+    cnt.textContent=(cur+1)+' / '+slides.length;
+    prev.disabled=cur===0;
+    next.style.display=cur===slides.length-1?'none':'inline-flex';
+    // 슬4 진입 시 좋아하는 수 동기화
+    if(cur===3){
+      document.getElementById('pickedNum').textContent=state.picked==null?'?':state.picked;
+      document.getElementById('ideaInput').value=state.idea||'';
+    }
+  }
+
+  // 좋아하는 수
+  document.getElementById('numGrid').addEventListener('click',e=>{
+    const b=e.target.closest('.num-btn');if(!b)return;
+    state.picked=parseInt(b.dataset.n,10);
+    document.querySelectorAll('.num-btn').forEach(x=>x.classList.toggle('picked',x===b));
+    save();
+  });
+  if(state.picked!=null){
+    const b=document.querySelector(`.num-btn[data-n="${state.picked}"]`);
+    if(b)b.classList.add('picked');
+  }
+
+  // 발상 입력
+  const ideaInput=document.getElementById('ideaInput');
+  const ideaSaved=document.getElementById('ideaSaved');
+  let ideaTimer;
+  ideaInput.addEventListener('input',()=>{
+    state.idea=ideaInput.value;
+    clearTimeout(ideaTimer);
+    ideaTimer=setTimeout(()=>{save();ideaSaved.classList.add('show');setTimeout(()=>ideaSaved.classList.remove('show'),1500);},500);
+  });
+
+  // 별 평가
+  const starLabels=['','조금 즐거웠어요','보통이에요','즐거웠어요','많이 즐거웠어요','정말 정말 즐거웠어요'];
+  function paintStars(v){
+    document.querySelectorAll('.star').forEach(s=>{
+      s.classList.toggle('lit',parseInt(s.dataset.v,10)<=v);
+    });
+    if(v>0)document.getElementById('starLabel').textContent=starLabels[v];
+  }
+  document.getElementById('starRow').addEventListener('click',e=>{
+    const s=e.target.closest('.star');if(!s)return;
+    state.stars=parseInt(s.dataset.v,10);paintStars(state.stars);save();
+  });
+  if(state.stars>0)paintStars(state.stars);
+
+  prev.onclick=()=>{if(cur>0){cur--;render()}};
+  next.onclick=()=>{
+    if(cur<slides.length-1){cur++;render();}
+    // 마지막 슬 도달 = 단원 완료 자리
+    if(cur===slides.length-1 && window.kedu && window.kedu.recordLessonEnd){
+      window.kedu.recordLessonEnd(0,0); // 자유 활동, 점수 X — 완료 자리만 기록
+    }
+  };
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l01 — 단원 도입 (학교가 즐거워요)
+  자리: grade1/semester1/math/1단원_9까지의수/g1_math_u1_l01.html
+  지도서: handoff kedu/curriculum/math/g1/unit1/01차_단원도입/_SOURCE.md (p.148-151)
+  골격: 안 B — 단원 진입 슬 묶음 (본 차시 X, 점수 X)
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l01_v1">
+<title>1단원 학교가 즐거워요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fs-title:clamp(28px,4.6vw,52px);
+  --fs-heading:clamp(25px,3.8vw,38px);
+  --fs-body:clamp(20px,3.2vw,30px);
+  --fs-caption:clamp(16px,2.4vw,22px);
+  --c-primary:#3D90F0;
+  --c-primary-soft:#EBF4FF;
+  --c-text:#1A202C;
+  --c-muted:#718096;
+  --c-bg:#F5F7FA;
+  --c-card:#fff;
+  --c-line:#E2E8F0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--c-bg);color:var(--c-text);overflow:hidden}
+.kedu-app{position:fixed;inset:0;display:flex;flex-direction:column}
+.kedu-topbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-bottom:1px solid var(--c-line);flex-shrink:0}
+.kedu-topbar .back{color:var(--c-muted);text-decoration:none;font-size:14px;font-weight:500}
+.kedu-topbar .title{font-family:'Jua',sans-serif;font-size:15px;color:var(--c-text)}
+.kedu-progress{height:4px;background:var(--c-line);position:relative;flex-shrink:0}
+.kedu-progress-bar{position:absolute;left:0;top:0;height:100%;background:var(--c-primary);transition:width .3s}
+.kedu-main{flex:1;display:flex;align-items:center;justify-content:center;padding:18px;overflow:hidden}
+.kedu-card{width:100%;max-width:1024px;aspect-ratio:5/4;background:var(--c-card);border-radius:24px;box-shadow:0 4px 24px rgba(0,0,0,.06);padding:clamp(20px,3.5vw,48px);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.slide{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:clamp(14px,2.6vw,28px)}
+.slide.active{display:flex;animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.s-title{font-family:'Jua',sans-serif;font-size:var(--fs-title);color:var(--c-primary);line-height:1.15}
+.s-sub{font-family:'Jua',sans-serif;font-size:var(--fs-heading);color:var(--c-text)}
+.s-body{font-size:var(--fs-body);color:var(--c-text);line-height:1.5;max-width:780px}
+.emoji-row{font-size:clamp(48px,8vw,96px);line-height:1;display:flex;gap:.15em;justify-content:center}
+.goal-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;width:100%;max-width:880px;text-align:left}
+.goal-card{background:var(--c-primary-soft);border-radius:14px;padding:14px 18px;font-size:var(--fs-caption);display:flex;gap:10px;align-items:flex-start}
+.goal-card .gn{font-family:'Jua',sans-serif;color:var(--c-primary);flex-shrink:0;width:24px}
+.lesson-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:720px}
+.lesson-row{display:flex;align-items:center;gap:14px;background:var(--c-card);border:2px solid var(--c-line);border-radius:14px;padding:12px 18px;font-size:var(--fs-caption)}
+.lesson-row .ln{width:28px;height:28px;border-radius:8px;background:var(--c-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;flex-shrink:0}
+.lesson-row .lt{flex:1;text-align:left}
+.scene-frame{width:100%;max-width:720px;background:linear-gradient(135deg,#E0F2FE 0%,#FFFBEB 100%);border-radius:18px;padding:clamp(20px,3vw,32px);display:flex;align-items:center;justify-content:center;gap:clamp(12px,2vw,24px);flex-wrap:wrap;font-size:clamp(40px,6vw,72px)}
+.kedu-footer{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#fff;border-top:1px solid var(--c-line);flex-shrink:0;gap:10px}
+.fbtn{height:44px;padding:0 22px;border-radius:50px;font-family:'Jua',sans-serif;font-size:15px;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+.fbtn-prev{background:#EDF2F7;color:var(--c-muted)}
+.fbtn-prev:disabled{opacity:.35;cursor:not-allowed}
+.fbtn-next{background:var(--c-primary);color:#fff}
+.fbtn-start{background:linear-gradient(135deg,#3D90F0,#FF85A1);color:#fff;padding:0 28px;height:48px}
+.slide-count{font-size:13px;color:var(--c-muted);font-family:'Jua',sans-serif}
+</style>
+</head>
+<body>
+<div class="kedu-app">
+  <div class="kedu-topbar">
+    <a class="back" href="../index.html">← 1학년 수학</a>
+    <span class="title">🏫 학교가 즐거워요 · 단원 도입</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="kedu-progress"><div class="kedu-progress-bar" id="bar"></div></div>
+  <main class="kedu-main">
+    <div class="kedu-card">
+
+      <section class="slide active">
+        <div class="emoji-row">🏫 ✨ 🌸</div>
+        <h1 class="s-title">학교가 즐거워요</h1>
+        <p class="s-body"><strong>1단원</strong>에서는 <strong>9까지의 수</strong>를 배워요.<br>오늘은 단원에서 무엇을 배울지 함께 살펴봐요.</p>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">우리 주변에는 셀 수 있는 것이 많아요</h2>
+        <div class="scene-frame">🐿️ 🐰 🦆 🦋 🐟 🐸 🌼 🌳 👫</div>
+        <p class="s-body">학교 가는 길에 무엇이 보이나요?<br>그림에서 <strong>셀 수 있는 것</strong>을 친구와 이야기해 봐요.</p>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">단원에서 배울 7가지</h2>
+        <div class="goal-list">
+          <div class="goal-card"><span class="gn">1.</span><span>수의 필요성을 알고 사물의 수를 세요</span></div>
+          <div class="goal-card"><span class="gn">2.</span><span>1부터 9까지 수를 세고 읽고 쓰요</span></div>
+          <div class="goal-card"><span class="gn">3.</span><span>몇째인지 순서를 알아요</span></div>
+          <div class="goal-card"><span class="gn">4.</span><span>1만큼 더 큰 수·작은 수를 알아요</span></div>
+          <div class="goal-card"><span class="gn">5.</span><span>0의 뜻을 알고 읽고 쓰요</span></div>
+          <div class="goal-card"><span class="gn">6.</span><span>두 수의 크기를 비교해요</span></div>
+          <div class="goal-card"><span class="gn">7.</span><span>1~9·0 문제를 해결해요</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">단원 차시 미리보기</h2>
+        <div class="lesson-list">
+          <div class="lesson-row"><span class="ln">1</span><span class="lt">1, 2, 3, 4, 5를 알아볼까요</span></div>
+          <div class="lesson-row"><span class="ln">2</span><span class="lt">6, 7, 8, 9를 알아볼까요</span></div>
+          <div class="lesson-row"><span class="ln">3</span><span class="lt">순서를 알아볼까요</span></div>
+          <div class="lesson-row"><span class="ln">4</span><span class="lt">수의 순서를 알아볼까요</span></div>
+          <div class="lesson-row"><span class="ln">5</span><span class="lt">1만큼 더 큰 수와 작은 수</span></div>
+          <div class="lesson-row"><span class="ln">6</span><span class="lt">0을 알아볼까요</span></div>
+          <div class="lesson-row"><span class="ln">7</span><span class="lt">수의 크기를 비교해 볼까요</span></div>
+          <div class="lesson-row"><span class="ln">8</span><span class="lt">수학이랑 확인해요 (단원 평가)</span></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <h2 class="s-sub">단원 실천 활동</h2>
+        <div class="goal-list">
+          <div class="goal-card" style="background:#FFF7E6"><span class="gn">🏠</span><span>수를 세어 준비물을 챙겨요</span></div>
+          <div class="goal-card" style="background:#FFF7E6"><span class="gn">🚦</span><span>수를 찾아 말해 봐요</span></div>
+          <div class="goal-card" style="background:#FFF7E6"><span class="gn">🎒</span><span>수와 함께 놀아요</span></div>
+        </div>
+        <p class="s-body">단원을 배우며 실천해 봐요.</p>
+      </section>
+
+      <section class="slide">
+        <div class="emoji-row">🌟</div>
+        <h2 class="s-sub">준비됐어요?</h2>
+        <p class="s-body">단원에서 만날 수들과 친해질 시간이에요.<br>2차시 <strong>1, 2, 3, 4, 5를 알아볼까요</strong>로 가 봐요!</p>
+        <a class="fbtn fbtn-start" href="g1_math_u1_l02_03.html">2차시로 가기 →</a>
+      </section>
+
+    </div>
+  </main>
+  <div class="kedu-footer">
+    <button class="fbtn fbtn-prev" id="prev" disabled>← 이전</button>
+    <span class="slide-count" id="cnt">1 / 6</span>
+    <button class="fbtn fbtn-next" id="next">다음 →</button>
+  </div>
+</div>
+<script>
+(function(){
+  const slides=document.querySelectorAll('.slide');
+  const bar=document.getElementById('bar');
+  const cnt=document.getElementById('cnt');
+  const prev=document.getElementById('prev');
+  const next=document.getElementById('next');
+  let cur=0;
+  function render(){
+    slides.forEach((s,i)=>s.classList.toggle('active',i===cur));
+    bar.style.width=(((cur+1)/slides.length)*100)+'%';
+    cnt.textContent=(cur+1)+' / '+slides.length;
+    prev.disabled=cur===0;
+    next.style.display=cur===slides.length-1?'none':'inline-flex';
+  }
+  prev.onclick=()=>{if(cur>0){cur--;render()}};
+  next.onclick=()=>{if(cur<slides.length-1){cur++;render()}};
+  render();
+})();
+</script>
+</body>
+</html>

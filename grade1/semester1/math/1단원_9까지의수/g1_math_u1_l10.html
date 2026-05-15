@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l10 — 수의 크기를 비교해 볼까요 (1단원 10차시, 단일 차시)
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/math/g1/unit1/10차_수의_크기를_비교해_볼까요/draft.html
+  계획: _PLAN.md (2026-05-15, cycle 5)
+  지도서: _SOURCE.md (지도서 p.168-169, 40분 단일 차시)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+
+  학습 본질: 일대일대응 / 양 vs 수 표현 구분 / 양방향 가역 (08차 패턴) / ten_frame 비교 시각
+  메카닉: ten_frame compare 모드(처음) + compare_picker(처음) + card_flip(처음) + count_input 2자리·다중 정답
+  점수: 기본 4 × 10 + 응용 4 × 15 = 100점 만점
+  부품 인라인 구현:
+    - ten_frame compare 모드: 슬6·8·9·16 (두 십 배열판 나란히, compareWith)
+    - compare_picker: 슬8·9 (target="larger"|"smaller", 양쪽 클릭)
+    - card_flip: 슬11(단판) + 슬15(3판 점수 누적)
+    - count_input acceptRange: 슬12·13 (정답 범위 다중 정답)
+  연계: 09차 슬14 "0 vs 1" 회상(슬3) + 08차 양방향 가역 재사용(슬7·14)
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l10_v1">
+<title>수의 크기를 비교해 볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+  --mw-xl: min(920px, 98vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-flip { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(90deg); } 100% { transform: rotateY(0deg); } }
+@keyframes ka-arrowBounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+@keyframes ka-arrowBounceLeft { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-8px); } }
+@keyframes ka-winnerGlow { 0%, 100% { box-shadow: 0 4px 14px rgba(46,125,50,0.3); } 50% { box-shadow: 0 0 0 6px rgba(46,125,50,0.5), 0 4px 14px rgba(46,125,50,0.5); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; overflow-y: auto; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── 슬 1 도입 — 고리 던지기 ───── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-xl); }
+.intro-meta { font-size: var(--fs-label); color: #90A4AE; }
+.intro-q { font-size: var(--fs-body); color: #1976D2; text-align: center; }
+.ring-stage { display: flex; gap: clamp(14px, 2.8vw, 24px); justify-content: center; flex-wrap: wrap; padding: clamp(14px, 2.8vw, 22px); background: linear-gradient(135deg, #C8E6C9 0%, #A5D6A7 100%); border-radius: clamp(14px, 2.6vw, 22px); }
+.ring-group { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 10px); animation: ka-pop 0.5s ease both; min-width: clamp(120px, 18vw, 170px); }
+.ring-group:nth-child(2) { animation-delay: 0.15s; }
+.ring-group:nth-child(3) { animation-delay: 0.3s; }
+.ring-group-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #1976D2; }
+.ring-row { display: flex; gap: clamp(2px, 0.4vw, 4px); font-size: clamp(28px, 4.6vw, 42px); flex-wrap: wrap; justify-content: center; max-width: clamp(100px, 16vw, 160px); }
+.ring-count { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 42px); color: #DC2626; }
+
+/* ───── 슬 2 학습 목표 ───── */
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #333; max-width: var(--mw-sm); }
+.goal-list li { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); list-style: none; }
+
+/* ───── 슬 3 회상 (09차 0 vs 1) ───── */
+.recall-msg { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-md); text-align: center; }
+.recall-zero-row { display: flex; gap: clamp(20px, 4vw, 36px); justify-content: center; align-items: center; flex-wrap: wrap; }
+.recall-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(22px, 4vw, 34px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(50px, 8vw, 80px); color: #1976D2; line-height: 1; min-width: clamp(80px, 13vw, 120px); text-align: center; }
+.recall-card.smaller { border-color: #F57C00; color: #F57C00; box-shadow: 0 0 0 4px rgba(245,124,0,0.25); }
+.recall-card-label { font-size: var(--fs-caption); color: #6D4C41; text-align: center; }
+
+/* ───── 슬 4 표현 구분 ───── */
+.disting-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); }
+.disting-row { display: flex; gap: clamp(20px, 4vw, 36px); justify-content: center; flex-wrap: wrap; }
+.disting-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); min-width: clamp(220px, 36vw, 300px); }
+.disting-card-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #6D4C41; }
+.disting-row-inner { display: flex; gap: clamp(6px, 1.2vw, 10px); justify-content: center; align-items: center; flex-wrap: wrap; }
+.disting-row-inner .left { font-size: clamp(28px, 4.6vw, 42px); }
+.disting-row-inner .vs { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(20px, 3.2vw, 28px); color: #607D8B; }
+.disting-row-inner .right { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(36px, 5.8vw, 54px); color: #1976D2; }
+.disting-result { font-family: 'Jua', sans-serif; font-size: var(--fs-body); }
+.disting-result .more-amount { color: #2E7D32; }
+.disting-result .more-num { color: #2E7D32; }
+.disting-result .less-amount { color: #C62828; }
+.disting-result .less-num { color: #C62828; }
+.disting-note { background: #FFF3E0; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #D84315; text-align: center; max-width: var(--mw-md); }
+.disting-note .em-amt { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.disting-note .em-num { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── 슬 5 일대일대응 (정적 SVG, 학생 클릭 X) ───── */
+.match121-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); }
+.match121-svg { width: clamp(280px, 60vw, 520px); height: auto; }
+.match121-text { font-size: var(--fs-body); color: #1976D2; text-align: center; max-width: var(--mw-md); }
+.match121-text .em-more { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.match121-text .em-less { color: #C62828; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── ten_frame 부품 (재사용 04-05차) ───── */
+.ten-frame { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: clamp(3px, 0.6vw, 5px); background: #1565C0; padding: clamp(3px, 0.6vw, 5px); border-radius: clamp(8px, 1.4vw, 12px); }
+.ten-frame.size-sm { width: clamp(110px, 18vw, 160px); height: clamp(48px, 7.4vw, 70px); }
+.ten-frame.size-md { width: clamp(160px, 25vw, 240px); height: clamp(68px, 10.4vw, 98px); }
+.ten-frame.size-lg { width: clamp(210px, 32vw, 300px); height: clamp(88px, 13.6vw, 124px); }
+.tf-cell { background: white; border-radius: clamp(4px, 0.8vw, 7px); display: flex; align-items: center; justify-content: center; position: relative; }
+.tf-dot { width: 70%; height: 70%; border-radius: 50%; background: #1976D2; transform: scale(0); }
+.tf-cell.fill .tf-dot { transform: scale(1); }
+
+/* ───── ten_frame 비교 모드 (compare) — 슬6·8·9·16 ───── */
+.tf-compare-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.tf-compare-row { display: flex; gap: clamp(14px, 2.8vw, 28px); justify-content: center; align-items: center; flex-wrap: wrap; }
+.tf-compare-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); animation: ka-pop 0.5s ease both; cursor: default; transition: all 0.2s; }
+.tf-compare-card.clickable { cursor: pointer; }
+.tf-compare-card.clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.tf-compare-card:nth-of-type(2) { animation-delay: 0.2s; }
+.tf-compare-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 64px); color: #1976D2; line-height: 1; }
+.tf-compare-card.winner { background: #C8E6C9; border-color: #2E7D32; animation: ka-winnerGlow 1.6s ease-in-out infinite; }
+.tf-compare-card.winner .tf-compare-num { color: #2E7D32; }
+.tf-compare-card.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.tf-compare-vs { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 32px); color: #607D8B; }
+.tf-compare-text { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; text-align: center; max-width: var(--mw-md); line-height: 1.6; }
+.tf-compare-text .em-big { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.tf-compare-text .em-small { color: #C62828; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── 슬 7 양방향 가역 (08차 패턴 재사용) ───── */
+.rev-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); }
+.rev-row { display: flex; gap: clamp(14px, 2.8vw, 24px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.rev-num-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(22px, 4vw, 34px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 70px); color: #1976D2; line-height: 1; }
+.rev-arrows { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 7px); }
+.rev-arrows .a-r { font-size: clamp(18px, 3vw, 26px); color: #2E7D32; animation: ka-arrowBounce 1.4s ease-in-out infinite; }
+.rev-arrows .a-l { font-size: clamp(18px, 3vw, 26px); color: #C62828; animation: ka-arrowBounceLeft 1.4s ease-in-out infinite; }
+.rev-text { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-md); text-align: center; line-height: 1.6; }
+.rev-text .em-more { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.rev-text .em-less { color: #C62828; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── compare_picker (슬8·9) — ten_frame 비교 + 양쪽 클릭 ───── */
+.cp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.q-prompt { font-size: var(--fs-heading); color: #333; text-align: center; }
+.q-prompt .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.q-prompt-row { display: flex; gap: clamp(10px, 2vw, 16px); align-items: center; justify-content: center; flex-wrap: wrap; font-size: var(--fs-heading); color: #333; }
+.q-fb { font-size: var(--fs-caption); min-height: 1.6em; color: #2E7D32; text-align: center; }
+.q-fb.wrong { color: #C62828; }
+
+/* ───── 슬 10 두 그룹 사과 vs 배 + count_input 2자리 ───── */
+.dual-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.dual-row { display: flex; gap: clamp(20px, 4vw, 36px); justify-content: center; align-items: stretch; flex-wrap: wrap; }
+.dual-group { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); min-width: clamp(180px, 28vw, 240px); }
+.dual-group-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #1976D2; }
+.dual-group-items { display: flex; gap: clamp(2px, 0.4vw, 4px); font-size: clamp(24px, 4vw, 36px); flex-wrap: wrap; justify-content: center; max-width: clamp(140px, 22vw, 200px); }
+.dual-group-input { background: #E3F2FD; border-radius: clamp(10px, 2vw, 16px); padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.8vw, 22px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 40px); color: #1976D2; min-width: clamp(60px, 10vw, 90px); text-align: center; line-height: 1; cursor: pointer; transition: all 0.2s; }
+.dual-group-input.empty { color: #B5D8F0; }
+.dual-group-input.active { background: #FFE0B2; border: clamp(2px, 0.4vw, 3px) solid #F57C00; color: #F57C00; }
+.dual-group-input.filled { background: #C8E6C9; color: #2E7D32; cursor: default; }
+.dual-group-input.wrong { background: #FFCDD2; color: #C62828; animation: ka-shake 0.4s ease; }
+.dual-result { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; text-align: center; min-height: 1.6em; max-width: var(--mw-md); }
+.dual-result .em-big { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.q-pad { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(3px, 0.6vw, 6px); max-width: clamp(380px, 64vw, 580px); }
+.q-pad-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(8px, 1.6vw, 14px); padding: clamp(6px, 1.4vw, 12px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(16px, 2.6vw, 24px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.q-pad-btn:hover { background: #E3F2FD; }
+.q-pad-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.q-pad-btn.zero { color: #F57C00; border-color: #F57C00; }
+
+/* ───── card_flip (슬11·15) ───── */
+.cf-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.cf-round-bar { display: flex; gap: clamp(14px, 2.8vw, 22px); justify-content: center; align-items: center; flex-wrap: wrap; font-size: var(--fs-caption); color: #6D4C41; }
+.cf-round-bar .round-label { font-family: 'Jua', sans-serif; }
+.cf-round-bar .round-score { background: #FFF8E1; padding: clamp(4px, 0.8vw, 7px) clamp(12px, 2.4vw, 18px); border-radius: clamp(10px, 2vw, 16px); font-family: 'Nunito', sans-serif; font-weight: 800; color: #F57F17; }
+.cf-row { display: flex; gap: clamp(20px, 4vw, 40px); justify-content: center; align-items: center; flex-wrap: wrap; }
+.cf-card { width: clamp(110px, 18vw, 160px); height: clamp(150px, 24vw, 220px); border-radius: clamp(14px, 2.6vw, 22px); cursor: pointer; transition: transform 0.35s; position: relative; perspective: 1000px; transform-style: preserve-3d; }
+.cf-card.flipped { animation: ka-flip 0.5s ease both; }
+.cf-card-face { position: absolute; inset: 0; border-radius: clamp(14px, 2.6vw, 22px); display: flex; align-items: center; justify-content: center; backface-visibility: hidden; }
+.cf-card-back { background: linear-gradient(135deg, #5C6BC0 0%, #3949AB 100%); border: clamp(3px, 0.5vw, 4px) solid #1A237E; }
+.cf-card-back::after { content: '?'; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(54px, 9vw, 80px); color: white; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+.cf-card-front { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(70px, 12vw, 120px); color: #1976D2; opacity: 0; transition: opacity 0.2s 0.25s; }
+.cf-card.revealed .cf-card-back { opacity: 0; }
+.cf-card.revealed .cf-card-front { opacity: 1; }
+.cf-card.pickable { box-shadow: 0 0 0 4px rgba(245,124,0,0.4); cursor: pointer; }
+.cf-card.pickable:hover { transform: translateY(-6px); }
+.cf-card.picked.correct .cf-card-front { background: #C8E6C9; color: #2E7D32; border-color: #2E7D32; }
+.cf-card.picked.wrong .cf-card-front { background: #FFCDD2; color: #C62828; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.cf-vs { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 40px); color: #607D8B; }
+.cf-msg { font-size: var(--fs-body); color: #6D4C41; text-align: center; min-height: 1.6em; max-width: var(--mw-md); }
+.cf-msg .em-win { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.cf-msg .em-tie { color: #F57C00; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.cf-next-round { background: #42A5F5; color: white; border: none; padding: clamp(8px, 1.6vw, 14px) clamp(18px, 3.4vw, 28px); border-radius: clamp(12px, 2.2vw, 18px); font-family: inherit; font-size: clamp(14px, 2.4vw, 19px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.cf-next-round:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ───── 슬12·13 다중 정답 count_input ───── */
+.range-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.q-display { background: #E3F2FD; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(28px, 5vw, 44px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 70px); color: #1976D2; min-width: clamp(140px, 22vw, 200px); text-align: center; line-height: 1; }
+.q-display.empty { color: #B5D8F0; }
+.q-display.correct { background: #C8E6C9; color: #2E7D32; }
+.q-display.wrong { background: #FFCDD2; color: #C62828; animation: ka-shake 0.4s ease; }
+.range-hint { background: #FFF3E0; padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.8vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); color: #D84315; text-align: center; }
+.range-hint .em { font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── 슬14 양방향 표현 매칭 ───── */
+.bidi-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; }
+.bidi-rows { display: flex; flex-direction: column; gap: clamp(14px, 2.8vw, 22px); align-items: center; }
+.bidi-line { display: flex; gap: clamp(10px, 2vw, 16px); align-items: center; justify-content: center; flex-wrap: wrap; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 42px); color: #1976D2; }
+.bidi-line .text { font-family: 'Jua', sans-serif; font-weight: 400; font-size: var(--fs-body); color: #333; }
+.bidi-blank { background: #FFF8E1; border: clamp(2.5px, 0.45vw, 3.5px) dashed #F57C00; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(16px, 3vw, 24px); color: #F57C00; min-width: clamp(80px, 13vw, 110px); text-align: center; cursor: pointer; transition: all 0.2s; font-family: 'Jua', sans-serif; }
+.bidi-blank:hover { background: #FFECB3; }
+.bidi-blank.active { background: #FFE0B2; border-style: solid; box-shadow: 0 0 0 3px rgba(245,124,0,0.3); }
+.bidi-blank.filled { background: #C8E6C9; color: #2E7D32; border-style: solid; border-color: #2E7D32; cursor: default; }
+.bidi-blank.wrong { background: #FFCDD2; color: #C62828; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.bidi-choices { display: flex; gap: clamp(14px, 2.8vw, 24px); justify-content: center; flex-wrap: wrap; }
+.bidi-choice { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 18px) clamp(20px, 3.6vw, 32px); font-family: 'Jua', sans-serif; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; cursor: pointer; transition: all 0.2s; }
+.bidi-choice:hover { background: #E3F2FD; }
+.bidi-choice.more { color: #2E7D32; border-color: #2E7D32; }
+.bidi-choice.less { color: #C62828; border-color: #C62828; }
+.bidi-choice.disabled { opacity: 0.5; pointer-events: none; }
+
+/* ───── 슬16 정리 ───── */
+.sum-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); }
+.sum-num-row { display: flex; gap: clamp(4px, 0.8vw, 8px); justify-content: center; flex-wrap: nowrap; padding: clamp(8px, 1.6vw, 14px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; max-width: 100%; }
+.sum-num-card { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(6px, 1.2vw, 10px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; min-width: clamp(40px, 7vw, 58px); min-height: clamp(50px, 8.4vw, 72px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: ka-pop 0.3s ease both; }
+.sum-num-card:nth-child(1) { animation-delay: 0.05s; color: #F57C00; border-color: #F57C00; }
+.sum-num-card:nth-child(2) { animation-delay: 0.1s; }
+.sum-num-card:nth-child(3) { animation-delay: 0.15s; }
+.sum-num-card:nth-child(4) { animation-delay: 0.2s; }
+.sum-num-card:nth-child(5) { animation-delay: 0.25s; }
+.sum-num-card:nth-child(6) { animation-delay: 0.3s; }
+.sum-num-card:nth-child(7) { animation-delay: 0.35s; }
+.sum-num-card:nth-child(8) { animation-delay: 0.4s; }
+.sum-num-card:nth-child(9) { animation-delay: 0.45s; }
+.sum-num-card:nth-child(10) { animation-delay: 0.5s; }
+.sum-arrows { display: flex; gap: clamp(14px, 2.8vw, 22px); justify-content: center; font-size: var(--fs-caption); color: #6D4C41; flex-wrap: wrap; }
+.sum-arrows .em-more { color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.sum-arrows .em-less { color: #C62828; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.wrap-msg { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; margin-top: clamp(10px, 2vw, 16px); }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.self-row { display: flex; gap: clamp(10px, 2vw, 16px); flex-wrap: wrap; justify-content: center; }
+.self-btn { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3vw, 24px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1vw, 8px); }
+.self-btn-stars { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; letter-spacing: 2px; }
+.self-btn-name { font-size: var(--fs-caption); color: #1976D2; }
+.self-btn.picked { background: #FFF8E1; border-color: #F57C00; transform: scale(1.05); }
+
+/* ───── 슬 18 다음 차시 ───── */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-md); }
+.next-card { background: #E3F2FD; border-radius: clamp(18px, 3.4vw, 28px); padding: clamp(20px, 3.6vw, 32px) clamp(24px, 4.4vw, 38px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+.next-emojis { font-size: var(--em-md); display: flex; gap: clamp(8px, 1.6vw, 14px); flex-wrap: wrap; justify-content: center; }
+.next-label { font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+.home-prompt { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; text-align: center; max-width: var(--mw-md); line-height: 1.5; }
+
+/* 힌트 */
+.mcq-hint { background: #FFF8E1; color: #6D4C41; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); max-width: var(--mw-md); text-align: center; display: none; }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 메인 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 고리 던지기 3모둠 (3·3·5) -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <div class="intro-stage">
+        <div class="intro-meta">1단원 · 9까지의 수</div>
+        <h2 class="slide-title">어느 모둠이 가장 많이 넣었을까요?</h2>
+        <div class="ring-stage">
+          <div class="ring-group">
+            <div class="ring-group-label">🟥 빨강 모둠</div>
+            <div class="ring-row">🍩🍩🍩</div>
+            <div class="ring-count">3</div>
+          </div>
+          <div class="ring-group">
+            <div class="ring-group-label">🟦 파랑 모둠</div>
+            <div class="ring-row">🍩🍩🍩</div>
+            <div class="ring-count">3</div>
+          </div>
+          <div class="ring-group">
+            <div class="ring-group-label">🟨 노랑 모둠</div>
+            <div class="ring-row">🍩🍩🍩🍩🍩</div>
+            <div class="ring-count">5</div>
+          </div>
+        </div>
+        <div class="intro-q">두 수의 크기를 어떻게 비교할 수 있을까요?</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 학습 목표</h2>
+      <ul class="goal-list">
+        <li>① 두 수의 크기를 비교해요</li>
+        <li>② 양은 '많다·적다', 수는 '크다·작다'로 말해요</li>
+        <li>③ 양쪽 방향으로 비교해요 (A는 B보다 크다 ↔ B는 A보다 작다)</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 09차 0 vs 1 회상 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간 0과 1</h2>
+      <div class="recall-msg">9차시에 배운 것 — 0이 1보다 작은 수였어요</div>
+      <div class="recall-zero-row">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div class="recall-card smaller">0</div>
+          <div class="recall-card-label">더 작은 수</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div class="recall-card">1</div>
+          <div class="recall-card-label">더 큰 수</div>
+        </div>
+      </div>
+      <div class="recall-msg">오늘은 다른 수들도 크기를 비교해 봐요!</div>
+    </div>
+
+    <!-- 슬 4 — 전개: 표현 구분 (양 vs 수) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">'많다 · 적다' 와 '크다 · 작다'</h2>
+      <div class="disting-stage">
+        <div class="disting-row">
+          <div class="disting-card">
+            <div class="disting-card-label">양 (사물)</div>
+            <div class="disting-row-inner">
+              <span class="left">🍎🍎🍎🍎🍎</span>
+              <span class="vs">vs</span>
+              <span class="left">🍎🍎🍎</span>
+            </div>
+            <div class="disting-result">사과가 <span class="more-amount">더 많다</span> · <span class="less-amount">더 적다</span></div>
+          </div>
+          <div class="disting-card">
+            <div class="disting-card-label">수 (숫자)</div>
+            <div class="disting-row-inner">
+              <span class="right">5</span>
+              <span class="vs">vs</span>
+              <span class="right">3</span>
+            </div>
+            <div class="disting-result">5는 3보다 <span class="more-num">더 크다</span> · 3은 5보다 <span class="less-num">더 작다</span></div>
+          </div>
+        </div>
+        <div class="disting-note">사물의 <span class="em-amt">양</span>은 '많다·적다', 숫자의 <span class="em-num">수</span>는 '크다·작다'로 말해요</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 일대일대응 (정적 SVG, 학생 클릭 X) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">짝을 지어 보면 알 수 있어요</h2>
+      <div class="match121-stage">
+        <svg class="match121-svg" viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg">
+          <!-- 위 줄 3개 -->
+          <text x="40" y="30" font-family="Jua" font-size="20" fill="#1976D2">사과 (3)</text>
+          <circle cx="60" cy="80" r="22" fill="#EF5350" stroke="#C62828" stroke-width="2"/>
+          <circle cx="170" cy="80" r="22" fill="#EF5350" stroke="#C62828" stroke-width="2"/>
+          <circle cx="280" cy="80" r="22" fill="#EF5350" stroke="#C62828" stroke-width="2"/>
+          <!-- 아래 줄 5개 -->
+          <text x="40" y="200" font-family="Jua" font-size="20" fill="#1976D2">배 (5)</text>
+          <circle cx="60" cy="160" r="22" fill="#FFEE58" stroke="#F9A825" stroke-width="2"/>
+          <circle cx="170" cy="160" r="22" fill="#FFEE58" stroke="#F9A825" stroke-width="2"/>
+          <circle cx="280" cy="160" r="22" fill="#FFEE58" stroke="#F9A825" stroke-width="2"/>
+          <circle cx="390" cy="160" r="22" fill="#FFEE58" stroke="#F9A825" stroke-width="2"/>
+          <circle cx="460" cy="160" r="22" fill="#FFEE58" stroke="#F9A825" stroke-width="2"/>
+          <!-- 짝 선 (3쌍) -->
+          <line x1="60" y1="102" x2="60" y2="138" stroke="#2E7D32" stroke-width="3" stroke-dasharray="5,4"/>
+          <line x1="170" y1="102" x2="170" y2="138" stroke="#2E7D32" stroke-width="3" stroke-dasharray="5,4"/>
+          <line x1="280" y1="102" x2="280" y2="138" stroke="#2E7D32" stroke-width="3" stroke-dasharray="5,4"/>
+          <!-- 남는 2개 강조 -->
+          <rect x="372" y="138" width="106" height="44" rx="8" fill="none" stroke="#F57C00" stroke-width="3" stroke-dasharray="6,4"/>
+          <text x="395" y="125" font-family="Jua" font-size="18" fill="#F57C00">남는 2개</text>
+        </svg>
+        <div class="match121-text">
+          짝이 안 된 배가 <span class="em-more">2개 더 많아요</span> → 배가 사과보다 <span class="em-more">더 많아요</span><br>
+          숫자로는 <span class="em-more">5가 3보다 더 큰 수</span>예요
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: ten_frame 비교 모드 (6 vs 4) — 첫 등장 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 시각</div>
+      <h2 class="slide-title">십 배열판으로 비교해요</h2>
+      <div class="tf-compare-stage">
+        <div class="tf-compare-row">
+          <div class="tf-compare-card">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">6</div>
+          </div>
+          <div class="tf-compare-vs">vs</div>
+          <div class="tf-compare-card">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">4</div>
+          </div>
+        </div>
+        <div class="tf-compare-text">
+          채워진 칸이 더 많은 쪽이 <span class="em-big">더 큰 수</span>예요<br>
+          <span class="em-big">6은 4보다 더 큰 수</span> · <span class="em-small">4는 6보다 더 작은 수</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 양방향 가역 (08차 슬7 패턴 재사용) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 정리</div>
+      <h2 class="slide-title">두 수, 두 가지 표현</h2>
+      <div class="rev-stage">
+        <div class="rev-row">
+          <div class="rev-num-card">6</div>
+          <div class="rev-arrows">
+            <div class="a-r">→ 더 큰 수</div>
+            <div class="a-l">← 더 작은 수</div>
+          </div>
+          <div class="rev-num-card">4</div>
+        </div>
+        <div class="rev-text">
+          6은 4보다 <span class="em-more">더 큰 수</span>예요<br>
+          4는 6보다 <span class="em-less">더 작은 수</span>예요
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제: compare_picker (5 vs 3, target=larger) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="cp-stage">
+        <div class="q-prompt">어느 쪽이 <span class="em">더 큰 수</span>일까요?</div>
+        <div class="tf-compare-row" data-target="larger" data-left="5" data-right="3">
+          <div class="tf-compare-card clickable" data-side="left">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">5</div>
+          </div>
+          <div class="tf-compare-vs">vs</div>
+          <div class="tf-compare-card clickable" data-side="right">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">3</div>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["채워진 칸이 더 많은 쪽을 골라요","5가 3보다 더 큰 수예요 → 왼쪽"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제: compare_picker (7 vs 8, target=smaller) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="cp-stage">
+        <div class="q-prompt">한 칸 차이! 어느 쪽이 <span class="em">더 작은 수</span>일까요?</div>
+        <div class="tf-compare-row" data-target="smaller" data-left="7" data-right="8">
+          <div class="tf-compare-card clickable" data-side="left">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">7</div>
+          </div>
+          <div class="tf-compare-vs">vs</div>
+          <div class="tf-compare-card clickable" data-side="right">
+            <div class="ten-frame size-lg">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">8</div>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["채워진 칸이 더 적은 쪽을 골라요","7이 8보다 더 작은 수예요 → 왼쪽"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제: count_input 2자리 (사과 5 + 배 7) + 자동 비교 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="dual-stage">
+        <div class="q-prompt">사과와 배의 수를 세어 빈칸에 넣어요</div>
+        <div class="dual-row" data-answers="5,7">
+          <div class="dual-group">
+            <div class="dual-group-label">🍎 사과</div>
+            <div class="dual-group-items">🍎🍎🍎🍎🍎</div>
+            <div class="dual-group-input empty active" data-blank-idx="0">?</div>
+          </div>
+          <div class="dual-group">
+            <div class="dual-group-label">🍐 배</div>
+            <div class="dual-group-items">🍐🍐🍐🍐🍐🍐🍐</div>
+            <div class="dual-group-input empty" data-blank-idx="1">?</div>
+          </div>
+        </div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="dual-result" id="q10-result">사과와 배를 모두 세어 봐요</div>
+        <div class="mcq-hint" data-hints='["빈칸을 먼저 누르고 숫자를 골라요","사과 5개, 배 7개예요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제: card_flip 단판 (5 vs 3) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="cf-stage">
+        <div class="q-prompt">카드 두 장을 뒤집고, 더 큰 수 카드를 골라요</div>
+        <div class="cf-row" id="q11-row" data-values="5,3" data-pick="larger">
+          <div class="cf-card" data-side="left" data-val="5">
+            <div class="cf-card-face cf-card-back"></div>
+            <div class="cf-card-face cf-card-front">5</div>
+          </div>
+          <div class="cf-vs">vs</div>
+          <div class="cf-card" data-side="right" data-val="3">
+            <div class="cf-card-face cf-card-back"></div>
+            <div class="cf-card-face cf-card-front">3</div>
+          </div>
+        </div>
+        <div class="cf-msg" id="q11-msg">카드를 한 장씩 눌러 뒤집어 봐요</div>
+        <div class="mcq-hint" data-hints='["두 카드를 모두 뒤집어 본 뒤 큰 수를 고르세요","5가 3보다 더 큰 수예요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용문제: 6보다 작은 수? (정답 0~5 다중) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="range-stage">
+        <div class="q-prompt-row">
+          <span class="em" style="font-family:'Nunito';font-weight:800;color:#1976D2;font-size:clamp(40px,6vw,60px);">6</span>
+          <span>보다</span>
+          <span class="em">작은 수</span>
+          <span>를 하나 골라요</span>
+        </div>
+        <div class="q-display empty" id="d-q12">?</div>
+        <div class="q-pad" data-accept-min="0" data-accept-max="5">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="range-hint">정답: <span class="em">0, 1, 2, 3, 4, 5</span> 중 아무거나</div>
+        <div class="mcq-hint" data-hints='["6보다 한 칸이라도 작은 수를 떠올려 봐요","0·1·2·3·4·5 중 하나면 정답!"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용문제: 5보다 크고 8보다 작은 수? (정답 6 또는 7) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="range-stage">
+        <div class="q-prompt-row">
+          <span class="em" style="font-family:'Nunito';font-weight:800;color:#1976D2;font-size:clamp(36px,5.6vw,54px);">5</span>
+          <span>보다</span>
+          <span style="color:#2E7D32; font-family:'Nunito'; font-weight:800;">크고</span>
+          <span class="em" style="font-family:'Nunito';font-weight:800;color:#1976D2;font-size:clamp(36px,5.6vw,54px);">8</span>
+          <span>보다</span>
+          <span style="color:#C62828; font-family:'Nunito'; font-weight:800;">작은 수</span>
+          <span>는?</span>
+        </div>
+        <div class="q-display empty" id="d-q13">?</div>
+        <div class="q-pad" data-accept-min="6" data-accept-max="7">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="range-hint">정답: <span class="em">6 또는 7</span></div>
+        <div class="mcq-hint" data-hints='["5보다 크고, 동시에 8보다 작은 수를 찾아요","6과 7만 두 조건을 모두 만족해요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용문제: 양방향 표현 매칭 (6은 4보다 크다 / 4는 6보다 작다) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="bidi-stage">
+        <div class="q-prompt">빈칸에 알맞은 말을 골라 채워요</div>
+        <div class="bidi-rows">
+          <div class="bidi-line">
+            <span>6</span>
+            <span class="text">은 4보다</span>
+            <button class="bidi-blank active" data-blank-idx="0" data-expect="more">?</button>
+          </div>
+          <div class="bidi-line">
+            <span>4</span>
+            <span class="text">는 6보다</span>
+            <button class="bidi-blank" data-blank-idx="1" data-expect="less">?</button>
+          </div>
+        </div>
+        <div class="bidi-choices" id="q14-choices">
+          <button class="bidi-choice more" data-val="more">더 크다</button>
+          <button class="bidi-choice less" data-val="less">더 작다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["빈칸 하나를 먼저 누르고 카드를 골라요","6은 4보다 더 크다 / 4는 6보다 더 작다"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용문제: card_flip 3판 (점수 누적) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="cf-stage">
+        <div class="q-prompt">3판 동안 더 큰 수 카드를 골라 봐요</div>
+        <div class="cf-round-bar">
+          <span class="round-label">판: <span id="q15-round">1 / 3</span></span>
+          <span class="round-score">⭐ 내가 이긴 판: <span id="q15-wins">0</span></span>
+        </div>
+        <div class="cf-row" id="q15-row" data-rounds='[[6,2],[3,8],[5,5]]' data-pick="larger">
+          <div class="cf-card" data-side="left">
+            <div class="cf-card-face cf-card-back"></div>
+            <div class="cf-card-face cf-card-front" id="q15-left-val">?</div>
+          </div>
+          <div class="cf-vs">vs</div>
+          <div class="cf-card" data-side="right">
+            <div class="cf-card-face cf-card-back"></div>
+            <div class="cf-card-face cf-card-front" id="q15-right-val">?</div>
+          </div>
+        </div>
+        <div class="cf-msg" id="q15-msg">두 카드를 뒤집고, 더 큰 수를 고르세요</div>
+        <button class="cf-next-round" id="q15-next" style="display:none;">다음 판 →</button>
+        <div class="mcq-hint" data-hints='["카드 두 장을 모두 뒤집고 큰 수를 골라요","같은 수면 무승부예요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 0~9 카드 줄 + 양방향 화살표 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">크기 비교를 정리해요</h2>
+      <div class="sum-stage">
+        <div class="tf-compare-row">
+          <div class="tf-compare-card">
+            <div class="ten-frame size-md">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">7</div>
+          </div>
+          <div class="tf-compare-vs">vs</div>
+          <div class="tf-compare-card">
+            <div class="ten-frame size-md">
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell fill"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+              <div class="tf-cell"><div class="tf-dot"></div></div>
+            </div>
+            <div class="tf-compare-num">3</div>
+          </div>
+        </div>
+        <div class="sum-num-row">
+          <div class="sum-num-card">0</div>
+          <div class="sum-num-card">1</div>
+          <div class="sum-num-card">2</div>
+          <div class="sum-num-card">3</div>
+          <div class="sum-num-card">4</div>
+          <div class="sum-num-card">5</div>
+          <div class="sum-num-card">6</div>
+          <div class="sum-num-card">7</div>
+          <div class="sum-num-card">8</div>
+          <div class="sum-num-card">9</div>
+        </div>
+        <div class="sum-arrows">
+          <div>왼쪽 → <span class="em-less">더 작은 수</span></div>
+          <div><span class="em-more">더 큰 수</span> ← 오른쪽</div>
+        </div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 예고 (단원 평가) -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📝 ✅</div>
+          <div class="next-label">1단원 정리·평가<br>지금까지 배운 0~9를 모두 확인해 봐요</div>
+        </div>
+        <div class="home-prompt">
+          집에서 가족 나이를 비교해 봐요!<br>누가 가장 큰 수일까요?
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g1_math_u1_l10';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+        if(window.kedu && window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, 100);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) {
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── compare_picker (슬 8·9) ─────
+['q8','q9'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const row = slide.querySelector('.tf-compare-row');
+  const target = row.dataset.target; // 'larger' | 'smaller'
+  const leftN = parseInt(row.dataset.left, 10);
+  const rightN = parseInt(row.dataset.right, 10);
+  const correctSide = (target === 'larger')
+    ? (leftN > rightN ? 'left' : 'right')
+    : (leftN < rightN ? 'left' : 'right');
+  const cards = row.querySelectorAll('.tf-compare-card.clickable');
+  const fb = slide.querySelector('.mcq-fb');
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (card.dataset.side === correctSide) {
+        st.solved = true;
+        card.classList.add('winner');
+        cards.forEach(c => c.style.pointerEvents = 'none');
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        const targetText = target === 'larger' ? '더 큰 수' : '더 작은 수';
+        fb.textContent = '정답이에요! ' + targetText + '를 잘 골랐어요. +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        card.classList.add('wrong');
+        fb.textContent = '다시 한 번 채워진 칸을 비교해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => card.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 슬 10 dual count_input + 자동 비교 ─────
+(function q10Dual() {
+  const slide = document.querySelector('[data-q-id="q10"]');
+  if (!slide) return;
+  const qid = 'q10';
+  const row = slide.querySelector('.dual-row');
+  const answers = row.dataset.answers.split(',').map(s => parseInt(s, 10));
+  const blanks = slide.querySelectorAll('.dual-group-input');
+  const pad = slide.querySelector('.q-pad');
+  const fb = slide.querySelector('.q-fb');
+  const resultEl = slide.querySelector('#q10-result');
+  let activeBlank = blanks[0];
+  const filled = [null, null];
+
+  function setActive(b) {
+    blanks.forEach(x => x.classList.remove('active'));
+    if (b && !b.classList.contains('filled')) { b.classList.add('active'); activeBlank = b; }
+    else activeBlank = null;
+  }
+
+  blanks.forEach(b => {
+    b.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || b.classList.contains('filled')) return;
+      setActive(b);
+    });
+  });
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (!activeBlank) { fb.textContent = '빈칸을 먼저 골라요'; fb.classList.add('wrong'); return; }
+      st.attempts++;
+      const num = parseInt(btn.dataset.num, 10);
+      const idx = parseInt(activeBlank.dataset.blankIdx, 10);
+      const expect = answers[idx];
+      if (num === expect) {
+        activeBlank.textContent = num;
+        activeBlank.classList.remove('active', 'empty');
+        activeBlank.classList.add('filled');
+        filled[idx] = num;
+        const next = Array.from(blanks).find(x => !x.classList.contains('filled'));
+        if (next) {
+          setActive(next);
+          fb.textContent = '맞아요! 다음 빈칸도 채워요';
+          fb.classList.remove('wrong');
+        } else {
+          // 둘 다 채움 → 자동 비교
+          st.solved = true;
+          pad.querySelectorAll('.q-pad-btn').forEach(p => p.disabled = true);
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          const [a, b] = filled;
+          let cmpText;
+          if (a > b) cmpText = '<span class="em-big">사과 ' + a + '개</span>가 배 ' + b + '개보다 더 많아요';
+          else if (a < b) cmpText = '<span class="em-big">배 ' + b + '개</span>가 사과 ' + a + '개보다 더 많아요';
+          else cmpText = '사과와 배의 수가 같아요';
+          resultEl.innerHTML = cmpText;
+          fb.textContent = '둘 다 맞췄어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        }
+      } else {
+        st.wrongCount++;
+        activeBlank.classList.add('wrong');
+        fb.textContent = '다시 한 번 세어 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => activeBlank && activeBlank.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── card_flip (슬 11 단판) ─────
+(function q11Flip() {
+  const slide = document.querySelector('[data-q-id="q11"]');
+  if (!slide) return;
+  const qid = 'q11';
+  const row = slide.querySelector('#q11-row');
+  const values = row.dataset.values.split(',').map(s => parseInt(s, 10));
+  const pick = row.dataset.pick; // 'larger'
+  const cards = row.querySelectorAll('.cf-card');
+  const msg = slide.querySelector('#q11-msg');
+  const fb = slide.querySelector('.q-fb');
+  const flipped = new Set();
+  const correctSide = pick === 'larger'
+    ? (values[0] > values[1] ? 'left' : 'right')
+    : (values[0] < values[1] ? 'left' : 'right');
+
+  cards.forEach((card, idx) => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (card.classList.contains('picked')) return;
+      // 1단계: 뒤집기
+      if (!card.classList.contains('revealed')) {
+        card.classList.add('revealed', 'flipped');
+        flipped.add(idx);
+        if (flipped.size === 2) {
+          msg.textContent = '큰 수 카드를 골라요!';
+          cards.forEach(c => c.classList.add('pickable'));
+        } else {
+          msg.textContent = '나머지 한 장도 뒤집어 봐요';
+        }
+        return;
+      }
+      // 2단계: 큰 수 고르기 (둘 다 뒤집힌 뒤)
+      if (flipped.size === 2 && card.classList.contains('pickable')) {
+        st.attempts++;
+        card.classList.remove('pickable');
+        if (card.dataset.side === correctSide) {
+          st.solved = true;
+          card.classList.add('picked', 'correct');
+          cards.forEach(c => c.classList.remove('pickable'));
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          msg.innerHTML = '<span class="em-win">' + card.dataset.val + '</span>이 더 큰 수! 카드를 가져갔어요. +' + earn + '점';
+          fb.textContent = '';
+          updateUI();
+        } else {
+          st.wrongCount++;
+          card.classList.add('picked', 'wrong');
+          setTimeout(() => {
+            card.classList.remove('picked', 'wrong');
+            card.classList.add('pickable');
+            msg.textContent = '더 큰 수를 다시 골라요';
+          }, 700);
+        }
+      }
+    });
+  });
+})();
+
+// ───── 다중 정답 count_input (슬 12·13 acceptRange) ─────
+['q12','q13'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const pad = slide.querySelector('.q-pad');
+  const display = slide.querySelector('.q-display');
+  const fb = slide.querySelector('.q-fb');
+  const min = parseInt(pad.dataset.acceptMin, 10);
+  const max = parseInt(pad.dataset.acceptMax, 10);
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const num = parseInt(btn.dataset.num, 10);
+      display.textContent = num;
+      display.classList.remove('empty');
+      if (num >= min && num <= max) {
+        st.solved = true;
+        display.classList.add('correct');
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        display.classList.add('wrong');
+        fb.textContent = '다른 수를 시도해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => { display.classList.remove('wrong'); display.classList.add('empty'); display.textContent = '?'; }, 600);
+      }
+    });
+  });
+});
+
+// ───── 양방향 표현 매칭 (슬 14) ─────
+(function q14Bidi() {
+  const slide = document.querySelector('[data-q-id="q14"]');
+  if (!slide) return;
+  const qid = 'q14';
+  const blanks = slide.querySelectorAll('.bidi-blank');
+  const choices = slide.querySelectorAll('.bidi-choice');
+  const fb = slide.querySelector('.mcq-fb');
+  let activeBlank = blanks[0];
+  let doneCount = 0;
+  const totalBlanks = blanks.length;
+
+  function setActive(b) {
+    blanks.forEach(x => x.classList.remove('active'));
+    if (b && !b.classList.contains('filled')) { b.classList.add('active'); activeBlank = b; }
+    else activeBlank = null;
+  }
+
+  blanks.forEach(b => {
+    b.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || b.classList.contains('filled')) return;
+      setActive(b);
+    });
+  });
+
+  choices.forEach(choice => {
+    choice.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (!activeBlank) { fb.textContent = '빈칸을 먼저 골라요'; fb.classList.add('wrong'); return; }
+      st.attempts++;
+      const val = choice.dataset.val;
+      const expect = activeBlank.dataset.expect;
+      if (val === expect) {
+        activeBlank.textContent = choice.textContent;
+        activeBlank.classList.remove('active');
+        activeBlank.classList.add('filled');
+        doneCount++;
+        if (doneCount === totalBlanks) {
+          st.solved = true;
+          choices.forEach(c => c.classList.add('disabled'));
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '둘 다 맞췄어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          const next = Array.from(blanks).find(x => !x.classList.contains('filled'));
+          setActive(next);
+          fb.textContent = '맞아요! 다음 빈칸도 채워요';
+          fb.classList.remove('wrong');
+        }
+      } else {
+        st.wrongCount++;
+        activeBlank.classList.add('wrong');
+        fb.textContent = '6이 4보다 큰지 작은지 다시 생각해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => activeBlank && activeBlank.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── card_flip 3판 누적 (슬 15) ─────
+(function q15Flip3() {
+  const slide = document.querySelector('[data-q-id="q15"]');
+  if (!slide) return;
+  const qid = 'q15';
+  const row = slide.querySelector('#q15-row');
+  const rounds = JSON.parse(row.dataset.rounds);
+  const cards = row.querySelectorAll('.cf-card');
+  const leftVal = slide.querySelector('#q15-left-val');
+  const rightVal = slide.querySelector('#q15-right-val');
+  const roundEl = slide.querySelector('#q15-round');
+  const winsEl = slide.querySelector('#q15-wins');
+  const msg = slide.querySelector('#q15-msg');
+  const nextBtn = slide.querySelector('#q15-next');
+  const fb = slide.querySelector('.q-fb');
+  let roundIdx = 0;
+  let wins = 0;
+  let flipped = new Set();
+  let curValues = null;
+
+  function loadRound() {
+    flipped.clear();
+    curValues = rounds[roundIdx];
+    leftVal.textContent = curValues[0];
+    rightVal.textContent = curValues[1];
+    cards.forEach(c => {
+      c.classList.remove('revealed', 'flipped', 'pickable', 'picked', 'correct', 'wrong');
+    });
+    roundEl.textContent = (roundIdx + 1) + ' / 3';
+    msg.textContent = '두 카드를 모두 뒤집어 봐요';
+    nextBtn.style.display = 'none';
+  }
+
+  function handlePick(card) {
+    const st = getQState(qid);
+    if (st.solved) return;
+    if (flipped.size < 2) return;
+    if (!card.classList.contains('pickable')) return;
+    st.attempts++;
+    const sideIdx = card.dataset.side === 'left' ? 0 : 1;
+    const myVal = curValues[sideIdx];
+    const otherVal = curValues[1 - sideIdx];
+    cards.forEach(c => c.classList.remove('pickable'));
+    if (myVal > otherVal) {
+      // 정답: 학생이 큰 수 선택
+      card.classList.add('picked', 'correct');
+      wins++;
+      winsEl.textContent = wins;
+      msg.innerHTML = '<span class="em-win">' + myVal + '</span> 승! 한 판 가져갔어요';
+    } else if (myVal === otherVal) {
+      // 무승부
+      card.classList.add('picked', 'correct');
+      msg.innerHTML = '<span class="em-tie">' + myVal + ' = ' + myVal + '</span> 무승부!';
+    } else {
+      // 학생이 작은 쪽 선택
+      st.wrongCount++;
+      card.classList.add('picked', 'wrong');
+      msg.innerHTML = '아! ' + otherVal + '이 더 큰 수였어요';
+    }
+    if (roundIdx < rounds.length - 1) {
+      nextBtn.style.display = 'inline-block';
+    } else {
+      // 마지막 판 종료
+      st.solved = true;
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '3판 끝! 이긴 판: ' + wins + ' / 3 · +' + earn + '점';
+      fb.classList.remove('wrong');
+      updateUI();
+    }
+  }
+
+  function handleFlip(card) {
+    const st = getQState(qid);
+    if (st.solved) return;
+    if (card.classList.contains('revealed')) return;
+    card.classList.add('revealed', 'flipped');
+    flipped.add(card.dataset.side);
+    if (flipped.size === 2) {
+      // 무승부면 어느 쪽 눌러도 정답 처리
+      if (curValues[0] === curValues[1]) {
+        msg.textContent = '두 카드가 같아요! 아무 카드나 골라요';
+      } else {
+        msg.textContent = '큰 수 카드를 골라요!';
+      }
+      cards.forEach(c => c.classList.add('pickable'));
+    } else {
+      msg.textContent = '나머지 한 장도 뒤집어 봐요';
+    }
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      if (!card.classList.contains('revealed')) {
+        handleFlip(card);
+      } else if (card.classList.contains('pickable')) {
+        handlePick(card);
+      }
+    });
+  });
+
+  nextBtn.addEventListener('click', () => {
+    roundIdx++;
+    loadRound();
+  });
+
+  loadRound();
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const name = btn.querySelector('.self-btn-name').textContent;
+    document.getElementById('self-fb').textContent = name + '을 골랐어요!';
+  });
+});
+
+// ───── 진도 저장 ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function loadProgress() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+// 시작
+updateUI();
+</script>
+</body>
+</html>

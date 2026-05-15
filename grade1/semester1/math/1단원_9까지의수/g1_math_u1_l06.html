@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l06 — 순서를 알아볼까요 (1단원 6차시, 단일 차시)
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/math/g1/unit1/06차_순서를_알아볼까요/draft.html
+  계획: _PLAN.md (2026-05-15, cycle 3)
+  지도서: _SOURCE.md (지도서 p.160-161, 40분 단일 차시)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+
+  학습 본질: 순서수 매핑(첫째~아홉째 ↔ 1~9) + 기준 명시(왼/오) + '몇째 vs 몇 개' 구분
+  메카닉: position_picker(처음) + ordinal_match(처음) + count_input + 다중 선택
+  점수: 기본 4 × 10 + 응용 4 × 15 = 100점 만점
+  부품 인라인 구현: position_picker(슬8·11·12) / ordinal_match(슬10) / 04-05차 ten_frame 재사용(슬3)
+  휠체어 친구: 9명 중 5번째 자리 (다양성 표현, _SOURCE 베프 메모)
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l06_v1">
+<title>순서를 알아볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+  --mw-xl: min(920px, 98vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-arrowSlide { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; overflow-y: auto; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── 슬 1 진입 ───── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-xl); }
+.intro-meta { font-size: var(--fs-label); color: #90A4AE; }
+.intro-friends { display: flex; gap: clamp(2px, 0.6vw, 6px); justify-content: center; flex-wrap: wrap; padding: clamp(10px, 2vw, 16px) clamp(8px, 1.6vw, 14px); background: linear-gradient(to bottom, #FFF8E1 0%, #FFE0B2 100%); border-radius: clamp(14px, 2.6vw, 22px); }
+.intro-friend { font-size: clamp(36px, 6vw, 56px); animation: ka-pop 0.5s ease both; }
+.intro-friend:nth-child(1) { animation-delay: 0.1s; }
+.intro-friend:nth-child(2) { animation-delay: 0.18s; }
+.intro-friend:nth-child(3) { animation-delay: 0.26s; }
+.intro-friend:nth-child(4) { animation-delay: 0.34s; }
+.intro-friend:nth-child(5) { animation-delay: 0.42s; }
+.intro-friend:nth-child(6) { animation-delay: 0.5s; }
+.intro-friend:nth-child(7) { animation-delay: 0.58s; }
+.intro-friend:nth-child(8) { animation-delay: 0.66s; }
+.intro-friend:nth-child(9) { animation-delay: 0.74s; }
+.intro-q { font-size: var(--fs-body); color: #1976D2; }
+
+/* ───── 슬 2 학습 목표 ───── */
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #333; max-width: var(--mw-sm); }
+.goal-list li { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); list-style: none; }
+
+/* ───── 슬 3 ten_frame 1~9 띠 (04-05차 부품 재사용) ───── */
+.tf-strip { display: flex; gap: clamp(6px, 1.2vw, 10px); justify-content: center; align-items: center; flex-wrap: wrap; max-width: var(--mw-xl); padding: clamp(8px, 1.6vw, 14px); }
+.tf-strip-cell { display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); }
+.tf-strip-cell .ten-frame { width: clamp(64px, 10vw, 90px); height: clamp(28px, 4.2vw, 38px); }
+.tf-strip-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(16px, 2.4vw, 22px); color: #1976D2; }
+.recall-msg { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-md); text-align: center; }
+
+/* ───── ten_frame 부품 (04-05차 재사용) ───── */
+.ten-frame { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: clamp(3px, 0.6vw, 5px); background: #1565C0; padding: clamp(3px, 0.6vw, 5px); border-radius: clamp(8px, 1.4vw, 12px); }
+.tf-cell { background: white; border-radius: clamp(4px, 0.8vw, 7px); display: flex; align-items: center; justify-content: center; position: relative; }
+.tf-dot { width: 70%; height: 70%; border-radius: 50%; background: #1976D2; transform: scale(0); }
+.tf-cell.fill .tf-dot { transform: scale(1); }
+
+/* ───── position_picker 부품 (처음 등장 — 슬 4·6·8·11·12·13·15) ───── */
+.pp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-xl); width: 100%; }
+.pp-direction-bar { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: center; background: #FFF8E1; padding: clamp(6px, 1.4vw, 12px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); }
+.pp-direction-bar.both { flex-direction: column; gap: clamp(4px, 0.8vw, 8px); }
+.pp-direction-line { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: center; }
+.pp-arrow { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; animation: ka-arrowSlide 1.4s ease-in-out infinite; }
+.pp-direction-label { font-size: var(--fs-caption); color: #6D4C41; }
+.pp-direction-label .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+.pp-row { display: flex; gap: clamp(3px, 0.7vw, 7px); justify-content: center; flex-wrap: nowrap; max-width: 100%; padding: clamp(6px, 1.2vw, 10px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; }
+.pp-friend { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(4px, 1vw, 8px) clamp(2px, 0.6vw, 5px); cursor: pointer; transition: all 0.2s; min-width: clamp(46px, 7.5vw, 70px); min-height: clamp(60px, 9.5vw, 86px); display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); animation: ka-pop 0.35s ease both; flex-shrink: 0; }
+.pp-friend:nth-child(1) { animation-delay: 0.05s; }
+.pp-friend:nth-child(2) { animation-delay: 0.1s; }
+.pp-friend:nth-child(3) { animation-delay: 0.15s; }
+.pp-friend:nth-child(4) { animation-delay: 0.2s; }
+.pp-friend:nth-child(5) { animation-delay: 0.25s; }
+.pp-friend:nth-child(6) { animation-delay: 0.3s; }
+.pp-friend:nth-child(7) { animation-delay: 0.35s; }
+.pp-friend:nth-child(8) { animation-delay: 0.4s; }
+.pp-friend:nth-child(9) { animation-delay: 0.45s; }
+.pp-friend:hover { background: #E3F2FD; }
+.pp-friend-face { font-size: clamp(24px, 4.2vw, 40px); line-height: 1; }
+.pp-friend-pos { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 15px); color: #607D8B; }
+.pp-friend.correct { background: #C8E6C9; border-color: #2E7D32; animation: ka-pop 0.4s ease; }
+.pp-friend.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.pp-friend.disabled { opacity: 0.5; pointer-events: none; }
+.pp-friend.highlight { background: #FFE0B2; border-color: #F57C00; box-shadow: 0 0 0 4px rgba(245,124,0,0.25); }
+
+/* 슬 4·5·6·7 전개 자리 */
+.concept-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); width: 100%; }
+.concept-row { display: flex; gap: clamp(3px, 0.7vw, 7px); justify-content: center; flex-wrap: nowrap; padding: clamp(6px, 1.2vw, 10px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); }
+.concept-cell { display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); animation: ka-pop 0.35s ease both; min-width: clamp(46px, 7.5vw, 70px); }
+.concept-cell:nth-child(1) { animation-delay: 0.05s; }
+.concept-cell:nth-child(2) { animation-delay: 0.1s; }
+.concept-cell:nth-child(3) { animation-delay: 0.15s; }
+.concept-cell:nth-child(4) { animation-delay: 0.2s; }
+.concept-cell:nth-child(5) { animation-delay: 0.25s; }
+.concept-cell:nth-child(6) { animation-delay: 0.3s; }
+.concept-cell:nth-child(7) { animation-delay: 0.35s; }
+.concept-cell:nth-child(8) { animation-delay: 0.4s; }
+.concept-cell:nth-child(9) { animation-delay: 0.45s; }
+.concept-face { font-size: clamp(24px, 4.2vw, 40px); padding: clamp(4px, 1vw, 8px); background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); }
+.concept-ord { font-family: 'Jua', sans-serif; font-size: clamp(13px, 2vw, 18px); color: #1976D2; }
+.concept-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(15px, 2.4vw, 22px); color: #DC2626; }
+
+/* 슬 5 '몇째 vs 몇 개' 시각 대조 */
+.compare-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); width: 100%; }
+.compare-row { display: flex; gap: clamp(20px, 4vw, 40px); align-items: stretch; justify-content: center; flex-wrap: wrap; }
+.compare-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(16px, 3vw, 24px); padding: clamp(14px, 2.6vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); min-width: clamp(240px, 38vw, 340px); animation: ka-pop 0.5s ease both; }
+.compare-card:nth-child(2) { animation-delay: 0.2s; }
+.compare-card-label { font-size: var(--fs-caption); color: #1976D2; font-family: 'Jua', sans-serif; }
+.compare-candies { display: flex; gap: clamp(4px, 0.8vw, 7px); font-size: clamp(28px, 4.6vw, 44px); }
+.compare-candies span { transition: all 0.2s; }
+.compare-candies .nth { background: #FFE0B2; border-radius: 50%; padding: 4px; box-shadow: 0 0 0 4px rgba(245,124,0,0.4); }
+.compare-candies .group { background: #C8E6C9; border-radius: clamp(8px, 1.4vw, 12px); padding: 4px 6px; }
+.compare-msg { font-size: var(--fs-body); color: #DC2626; text-align: center; max-width: var(--mw-md); }
+
+/* 슬 7 순서수 표 */
+.order-table { display: grid; grid-template-columns: repeat(9, 1fr); gap: clamp(3px, 0.7vw, 7px); max-width: var(--mw-xl); }
+.order-cell { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(4px, 1vw, 8px) clamp(2px, 0.6vw, 5px); display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); animation: ka-pop 0.35s ease both; }
+.order-cell:nth-child(1) { animation-delay: 0.05s; }
+.order-cell:nth-child(2) { animation-delay: 0.1s; }
+.order-cell:nth-child(3) { animation-delay: 0.15s; }
+.order-cell:nth-child(4) { animation-delay: 0.2s; }
+.order-cell:nth-child(5) { animation-delay: 0.25s; }
+.order-cell:nth-child(6) { animation-delay: 0.3s; }
+.order-cell:nth-child(7) { animation-delay: 0.35s; }
+.order-cell:nth-child(8) { animation-delay: 0.4s; }
+.order-cell:nth-child(9) { animation-delay: 0.45s; }
+.order-ord { font-family: 'Jua', sans-serif; font-size: clamp(13px, 2vw, 18px); color: #1976D2; }
+.order-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 26px); color: #DC2626; }
+.direction-summary { display: flex; gap: clamp(14px, 2.8vw, 22px); justify-content: center; flex-wrap: wrap; margin-top: clamp(8px, 1.6vw, 14px); }
+.direction-card { background: #FFF8E1; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); font-size: var(--fs-caption); color: #6D4C41; }
+.direction-card .arrow { font-size: clamp(20px, 3.2vw, 30px); color: #F57F17; }
+
+/* ───── count_input (슬 9·15) — 04-05차 재사용 ───── */
+.q-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-lg); width: 100%; }
+.q-prompt { font-size: var(--fs-heading); color: #333; text-align: center; }
+.q-display { background: #E3F2FD; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(28px, 5vw, 44px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 70px); color: #1976D2; min-width: clamp(140px, 22vw, 200px); text-align: center; line-height: 1; }
+.q-display.empty { color: #B5D8F0; }
+.q-display.correct { background: #C8E6C9; color: #2E7D32; }
+.q-display.wrong { background: #FFCDD2; color: #C62828; animation: ka-shake 0.4s ease; }
+.q-pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: clamp(4px, 0.8vw, 7px); max-width: clamp(360px, 60vw, 540px); }
+.q-pad-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 26px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.q-pad-btn:hover { background: #E3F2FD; }
+.q-pad-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.q-fb { font-size: var(--fs-caption); min-height: 1.6em; color: #2E7D32; text-align: center; }
+.q-fb.wrong { color: #C62828; }
+
+/* ───── ordinal_match 부품 (처음 등장 — 슬 10) ───── */
+.om-stage { display: flex; flex-direction: column; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; align-items: center; }
+.om-row { display: flex; gap: clamp(10px, 2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.om-item { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; min-width: clamp(96px, 15vw, 130px); min-height: clamp(70px, 11vw, 90px); }
+.om-item.ko { font-family: 'Jua', sans-serif; font-weight: 400; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; }
+.om-item.num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(30px, 4.8vw, 44px); color: #DC2626; }
+.om-item.selected { border-color: #DC2626; transform: scale(1.05); }
+.om-item.done { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; opacity: 0.7; pointer-events: none; }
+.om-item.wrong { animation: ka-shake 0.4s ease; border-color: #C62828; }
+
+/* ───── 다중 선택 (슬 13·14) ───── */
+.multi-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-lg); width: 100%; }
+.multi-confirm { background: #42A5F5; color: white; border: none; padding: clamp(10px, 2vw, 16px) clamp(20px, 3.6vw, 30px); border-radius: clamp(12px, 2.2vw, 18px); font-family: inherit; font-size: clamp(16px, 2.6vw, 22px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.multi-confirm:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.multi-confirm.spaced { margin-top: clamp(8px, 1.6vw, 14px); }
+
+/* 슬 14 사탕 가로 배열 (몇째 vs 몇 개 구분 다중 선택) */
+.candy-row { display: flex; gap: clamp(4px, 0.8vw, 7px); justify-content: center; padding: clamp(6px, 1.2vw, 10px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); flex-wrap: nowrap; max-width: 100%; overflow-x: auto; }
+.candy-item { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(4px, 1vw, 8px); font-size: clamp(24px, 4vw, 38px); cursor: pointer; transition: all 0.2s; min-width: clamp(40px, 7vw, 60px); display: flex; align-items: center; justify-content: center; }
+.candy-item:hover { background: #E3F2FD; }
+.candy-item.picked { background: #FFE0B2; border-color: #F57C00; box-shadow: 0 0 0 3px rgba(245,124,0,0.3); }
+.candy-item.correct { background: #C8E6C9; border-color: #2E7D32; }
+.candy-item.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.candy-item.disabled { opacity: 0.5; pointer-events: none; }
+.candy-prompt-row { display: flex; gap: clamp(10px, 2vw, 16px); justify-content: center; flex-wrap: wrap; margin-bottom: clamp(6px, 1.2vw, 10px); }
+.candy-prompt-card { background: #FFF8E1; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; }
+.candy-prompt-card .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+
+/* ───── 슬 15 벽 작품 ───── */
+.wall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-xl); width: 100%; }
+.wall-row { display: flex; gap: clamp(3px, 0.7vw, 7px); justify-content: center; padding: clamp(8px, 1.6vw, 14px) clamp(6px, 1.2vw, 10px); background: linear-gradient(to bottom, #FFE0B2 0%, #FFCC80 100%); border-radius: clamp(12px, 2.2vw, 18px); flex-wrap: nowrap; max-width: 100%; }
+.wall-frame { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #6D4C41; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(4px, 0.8vw, 7px); min-width: clamp(46px, 7.5vw, 70px); min-height: clamp(54px, 9vw, 80px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(2px, 0.4vw, 4px); }
+.wall-frame-art { font-size: clamp(20px, 3.4vw, 32px); }
+.wall-frame-pos { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 15px); color: #607D8B; }
+.wall-frame.my { background: #FFE0B2; border-color: #DC2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.3); }
+.wall-arrows { display: flex; gap: clamp(14px, 2.8vw, 22px); justify-content: center; font-size: var(--fs-caption); color: #6D4C41; flex-wrap: wrap; }
+.wall-arrows .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+
+/* ───── 슬 16 정리 표 ───── */
+.summary-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-xl); }
+.summary-table-full { display: grid; grid-template-columns: 1fr repeat(9, 1fr); gap: clamp(3px, 0.7vw, 7px); align-items: center; }
+.summary-row-label { font-size: var(--fs-caption); color: #607D8B; text-align: right; padding-right: clamp(8px, 1.6vw, 14px); }
+.summary-row-cell { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(6px, 1.2vw, 10px) clamp(2px, 0.6vw, 5px); display: flex; align-items: center; justify-content: center; min-height: clamp(34px, 5.4vw, 48px); }
+.summary-row-cell.num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 26px); color: #1976D2; }
+.summary-row-cell.ord { font-family: 'Jua', sans-serif; font-size: clamp(13px, 2vw, 18px); color: #1976D2; padding: clamp(4px, 1vw, 8px) clamp(2px, 0.6vw, 5px); }
+.wrap-msg { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; margin-top: clamp(10px, 2vw, 16px); }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.self-row { display: flex; gap: clamp(10px, 2vw, 16px); flex-wrap: wrap; justify-content: center; }
+.self-btn { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3vw, 24px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1vw, 8px); }
+.self-btn-stars { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; letter-spacing: 2px; }
+.self-btn-name { font-size: var(--fs-caption); color: #1976D2; }
+.self-btn.picked { background: #FFF8E1; border-color: #F57C00; transform: scale(1.05); }
+
+/* ───── 슬 18 다음 차시 ───── */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-md); }
+.next-card { background: #E3F2FD; border-radius: clamp(18px, 3.4vw, 28px); padding: clamp(20px, 3.6vw, 32px) clamp(24px, 4.4vw, 38px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+.next-emojis { font-size: var(--em-md); display: flex; gap: clamp(8px, 1.6vw, 14px); flex-wrap: wrap; justify-content: center; }
+.next-label { font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+.home-prompt { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; text-align: center; max-width: var(--mw-md); line-height: 1.5; }
+
+/* 힌트 */
+.mcq-hint { background: #FFF8E1; color: #6D4C41; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); max-width: var(--mw-md); text-align: center; display: none; }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 메인 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 복도 줄 선 9명 친구 (휠체어 포함) -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <div class="intro-stage">
+        <div class="intro-meta">1단원 · 9까지의 수</div>
+        <h2 class="slide-title">친구들이 줄을 섰어요</h2>
+        <div class="intro-friends">
+          <span class="intro-friend">👦</span>
+          <span class="intro-friend">👧</span>
+          <span class="intro-friend">🧒</span>
+          <span class="intro-friend">👦🏽</span>
+          <span class="intro-friend">🧑‍🦽</span>
+          <span class="intro-friend">👧🏽</span>
+          <span class="intro-friend">🧑</span>
+          <span class="intro-friend">🧒🏾</span>
+          <span class="intro-friend">👶</span>
+        </div>
+        <div class="intro-q">이 친구들의 순서를 어떻게 말할까요?</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 학습 목표</h2>
+      <ul class="goal-list">
+        <li>① 첫째부터 아홉째까지 순서를 알아봐요</li>
+        <li>② 왼쪽과 오른쪽 기준을 알아봐요</li>
+        <li>③ '몇째'와 '몇 개'를 구분해 봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 (1~9 ten_frame 띠) -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간에 배운 1~9</h2>
+      <div class="recall-msg">십 배열판으로 다시 한 번 떠올려 봐요</div>
+      <div class="tf-strip">
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+            <div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">1</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+            <div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">2</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+            <div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">3</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+            <div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">4</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div>
+            <div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">5</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div>
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">6</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div>
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">7</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div>
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">8</div>
+        </div>
+        <div class="tf-strip-cell">
+          <div class="ten-frame">
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div>
+            <div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell fill"><div class="tf-dot"></div></div><div class="tf-cell"><div class="tf-dot"></div></div>
+          </div>
+          <div class="tf-strip-num">9</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 순서수 매핑 (첫째~아홉째 ↔ 1~9) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">순서를 나타내는 말</h2>
+      <div class="concept-stage">
+        <div class="pp-direction-bar">
+          <span class="pp-arrow">→</span>
+          <span class="pp-direction-label">왼쪽에서부터 세어 봐요</span>
+        </div>
+        <div class="concept-row">
+          <div class="concept-cell"><div class="concept-face">👦</div><div class="concept-ord">첫째</div><div class="concept-num">1</div></div>
+          <div class="concept-cell"><div class="concept-face">👧</div><div class="concept-ord">둘째</div><div class="concept-num">2</div></div>
+          <div class="concept-cell"><div class="concept-face">🧒</div><div class="concept-ord">셋째</div><div class="concept-num">3</div></div>
+          <div class="concept-cell"><div class="concept-face">👦🏽</div><div class="concept-ord">넷째</div><div class="concept-num">4</div></div>
+          <div class="concept-cell"><div class="concept-face">🧑‍🦽</div><div class="concept-ord">다섯째</div><div class="concept-num">5</div></div>
+          <div class="concept-cell"><div class="concept-face">👧🏽</div><div class="concept-ord">여섯째</div><div class="concept-num">6</div></div>
+          <div class="concept-cell"><div class="concept-face">🧑</div><div class="concept-ord">일곱째</div><div class="concept-num">7</div></div>
+          <div class="concept-cell"><div class="concept-face">🧒🏾</div><div class="concept-ord">여덟째</div><div class="concept-num">8</div></div>
+          <div class="concept-cell"><div class="concept-face">👶</div><div class="concept-ord">아홉째</div><div class="concept-num">9</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: '몇째 vs 몇 개' 시각 대조 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">'몇째'와 '몇 개'는 달라요</h2>
+      <div class="compare-stage">
+        <div class="compare-row">
+          <div class="compare-card">
+            <div class="compare-card-label">사탕 둘째</div>
+            <div class="compare-candies">
+              <span>🍬</span><span class="nth">🍬</span><span>🍬</span><span>🍬</span><span>🍬</span>
+            </div>
+            <div class="compare-msg">두 번째 사탕 <strong>한 개</strong>예요</div>
+          </div>
+          <div class="compare-card">
+            <div class="compare-card-label">사탕 2개</div>
+            <div class="compare-candies">
+              <span class="group">🍬</span><span class="group">🍬</span><span>🍬</span><span>🍬</span><span>🍬</span>
+            </div>
+            <div class="compare-msg">사탕 <strong>두 개</strong>예요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 기준 명시 (왼/오 두 자리 표현) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">기준이 바뀌면 순서도 바뀌어요</h2>
+      <div class="concept-stage">
+        <div class="pp-direction-bar both">
+          <div class="pp-direction-line"><span class="pp-arrow">→</span><span class="pp-direction-label">왼쪽에서 <span class="em">셋째</span></span></div>
+          <div class="pp-direction-line"><span class="pp-direction-label">오른쪽에서 <span class="em">일곱째</span></span><span class="pp-arrow" style="transform: scaleX(-1);">→</span></div>
+        </div>
+        <div class="concept-row">
+          <div class="concept-cell"><div class="concept-face">👦</div><div class="concept-ord">1</div></div>
+          <div class="concept-cell"><div class="concept-face">👧</div><div class="concept-ord">2</div></div>
+          <div class="concept-cell" style="background:#FFE0B2; border-radius: clamp(10px, 2vw, 16px); padding: clamp(2px,0.4vw,4px);"><div class="concept-face" style="border-color:#DC2626;">🧒</div><div class="concept-ord" style="color:#DC2626;">셋째 / 일곱째</div></div>
+          <div class="concept-cell"><div class="concept-face">👦🏽</div><div class="concept-ord">4</div></div>
+          <div class="concept-cell"><div class="concept-face">🧑‍🦽</div><div class="concept-ord">5</div></div>
+          <div class="concept-cell"><div class="concept-face">👧🏽</div><div class="concept-ord">6</div></div>
+          <div class="concept-cell"><div class="concept-face">🧑</div><div class="concept-ord">7</div></div>
+          <div class="concept-cell"><div class="concept-face">🧒🏾</div><div class="concept-ord">8</div></div>
+          <div class="concept-cell"><div class="concept-face">👶</div><div class="concept-ord">9</div></div>
+        </div>
+        <div class="compare-msg" style="color:#1976D2; margin-top: clamp(6px,1.2vw,10px);">같은 친구도 <strong style="color:#DC2626;">기준</strong>에 따라 달리 불러요</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 순서수 표 + 기준 두 자리 정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 정리</div>
+      <h2 class="slide-title">순서를 정리해요</h2>
+      <div class="concept-stage">
+        <div class="order-table">
+          <div class="order-cell"><div class="order-ord">첫째</div><div class="order-num">1</div></div>
+          <div class="order-cell"><div class="order-ord">둘째</div><div class="order-num">2</div></div>
+          <div class="order-cell"><div class="order-ord">셋째</div><div class="order-num">3</div></div>
+          <div class="order-cell"><div class="order-ord">넷째</div><div class="order-num">4</div></div>
+          <div class="order-cell"><div class="order-ord">다섯째</div><div class="order-num">5</div></div>
+          <div class="order-cell"><div class="order-ord">여섯째</div><div class="order-num">6</div></div>
+          <div class="order-cell"><div class="order-ord">일곱째</div><div class="order-num">7</div></div>
+          <div class="order-cell"><div class="order-ord">여덟째</div><div class="order-num">8</div></div>
+          <div class="order-cell"><div class="order-ord">아홉째</div><div class="order-num">9</div></div>
+        </div>
+        <div class="direction-summary">
+          <div class="direction-card"><span class="arrow">→</span>왼쪽에서</div>
+          <div class="direction-card"><span class="arrow">←</span>오른쪽에서</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제: position_picker 왼쪽 셋째 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="pp-stage">
+        <div class="q-prompt">왼쪽에서 셋째 친구를 골라요</div>
+        <div class="pp-direction-bar">
+          <span class="pp-arrow">→</span>
+          <span class="pp-direction-label">왼쪽에서 <span class="em">셋째</span></span>
+        </div>
+        <div class="pp-row" data-direction="left" data-target="3">
+          <button class="pp-friend" data-idx="0"><span class="pp-friend-face">👦</span></button>
+          <button class="pp-friend" data-idx="1"><span class="pp-friend-face">👧</span></button>
+          <button class="pp-friend" data-idx="2"><span class="pp-friend-face">🧒</span></button>
+          <button class="pp-friend" data-idx="3"><span class="pp-friend-face">👦🏽</span></button>
+          <button class="pp-friend" data-idx="4"><span class="pp-friend-face">🧑‍🦽</span></button>
+          <button class="pp-friend" data-idx="5"><span class="pp-friend-face">👧🏽</span></button>
+          <button class="pp-friend" data-idx="6"><span class="pp-friend-face">🧑</span></button>
+          <button class="pp-friend" data-idx="7"><span class="pp-friend-face">🧒🏾</span></button>
+          <button class="pp-friend" data-idx="8"><span class="pp-friend-face">👶</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["왼쪽 친구부터 첫째, 둘째, 셋째…", "왼쪽 끝에서부터 세 번째 친구예요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제: count_input — 표시된 친구는 왼쪽에서 몇째? (정답 = 6) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="pp-stage">
+        <div class="q-prompt">노란색 친구는 왼쪽에서 몇째일까요?</div>
+        <div class="pp-direction-bar">
+          <span class="pp-arrow">→</span>
+          <span class="pp-direction-label">왼쪽에서부터 세어 봐요</span>
+        </div>
+        <div class="pp-row" style="pointer-events:none;">
+          <div class="pp-friend"><span class="pp-friend-face">👦</span><span class="pp-friend-pos">1</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">👧</span><span class="pp-friend-pos">2</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">🧒</span><span class="pp-friend-pos">3</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">👦🏽</span><span class="pp-friend-pos">4</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">🧑‍🦽</span><span class="pp-friend-pos">5</span></div>
+          <div class="pp-friend highlight"><span class="pp-friend-face">👧🏽</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">🧑</span><span class="pp-friend-pos">7</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">🧒🏾</span><span class="pp-friend-pos">8</span></div>
+          <div class="pp-friend"><span class="pp-friend-face">👶</span><span class="pp-friend-pos">9</span></div>
+        </div>
+        <div class="q-display empty" id="d-q9">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["왼쪽 친구부터 첫째, 둘째 … 차례대로 세어 봐요", "다섯째 다음 자리예요 — 여섯째"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제: ordinal_match (처음 등장, 3쌍) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="om-stage">
+        <div class="q-prompt">순서를 나타내는 말과 숫자를 짝지어요</div>
+        <div class="om-row" id="om-ko">
+          <div class="om-item ko" data-match="5">다섯째</div>
+          <div class="om-item ko" data-match="1">첫째</div>
+          <div class="om-item ko" data-match="9">아홉째</div>
+        </div>
+        <div class="om-row" id="om-num">
+          <div class="om-item num" data-shape="9">9</div>
+          <div class="om-item num" data-shape="5">5</div>
+          <div class="om-item num" data-shape="1">1</div>
+        </div>
+        <div class="mcq-hint" data-hints='["한글 카드를 먼저 골라요", "첫째 = 1, 다섯째 = 5, 아홉째 = 9"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제: position_picker 오른쪽 다섯째 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="pp-stage">
+        <div class="q-prompt">오른쪽에서 다섯째 친구를 골라요</div>
+        <div class="pp-direction-bar">
+          <span class="pp-arrow" style="transform: scaleX(-1);">→</span>
+          <span class="pp-direction-label">오른쪽에서 <span class="em">다섯째</span></span>
+        </div>
+        <div class="pp-row" data-direction="right" data-target="5">
+          <button class="pp-friend" data-idx="0"><span class="pp-friend-face">👦</span></button>
+          <button class="pp-friend" data-idx="1"><span class="pp-friend-face">👧</span></button>
+          <button class="pp-friend" data-idx="2"><span class="pp-friend-face">🧒</span></button>
+          <button class="pp-friend" data-idx="3"><span class="pp-friend-face">👦🏽</span></button>
+          <button class="pp-friend" data-idx="4"><span class="pp-friend-face">🧑‍🦽</span></button>
+          <button class="pp-friend" data-idx="5"><span class="pp-friend-face">👧🏽</span></button>
+          <button class="pp-friend" data-idx="6"><span class="pp-friend-face">🧑</span></button>
+          <button class="pp-friend" data-idx="7"><span class="pp-friend-face">🧒🏾</span></button>
+          <button class="pp-friend" data-idx="8"><span class="pp-friend-face">👶</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["오른쪽 끝 친구부터 첫째, 둘째…", "오른쪽 끝에서부터 다섯 번째 친구예요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용문제: position_picker 두 기준 동시 (왼쪽 셋째이자 오른쪽 일곱째) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="pp-stage">
+        <div class="q-prompt">두 기준을 모두 만족하는 친구를 골라요</div>
+        <div class="pp-direction-bar both">
+          <div class="pp-direction-line"><span class="pp-arrow">→</span><span class="pp-direction-label">왼쪽에서 <span class="em">셋째</span></span></div>
+          <div class="pp-direction-line"><span class="pp-direction-label">오른쪽에서 <span class="em">일곱째</span></span><span class="pp-arrow" style="transform: scaleX(-1);">→</span></div>
+        </div>
+        <div class="pp-row" data-direction="both" data-target="3" data-target-right="7">
+          <button class="pp-friend" data-idx="0"><span class="pp-friend-face">👦</span></button>
+          <button class="pp-friend" data-idx="1"><span class="pp-friend-face">👧</span></button>
+          <button class="pp-friend" data-idx="2"><span class="pp-friend-face">🧒</span></button>
+          <button class="pp-friend" data-idx="3"><span class="pp-friend-face">👦🏽</span></button>
+          <button class="pp-friend" data-idx="4"><span class="pp-friend-face">🧑‍🦽</span></button>
+          <button class="pp-friend" data-idx="5"><span class="pp-friend-face">👧🏽</span></button>
+          <button class="pp-friend" data-idx="6"><span class="pp-friend-face">🧑</span></button>
+          <button class="pp-friend" data-idx="7"><span class="pp-friend-face">🧒🏾</span></button>
+          <button class="pp-friend" data-idx="8"><span class="pp-friend-face">👶</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["왼쪽에서 셋째를 먼저 짚어 보고, 오른쪽에서도 일곱째인지 확인해요", "왼쪽 셋째 = 오른쪽 일곱째예요 (9 - 7 + 1 = 3)"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용문제: 호명 다중 선택 (둘째·다섯째·여덟째) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="multi-stage">
+        <div class="q-prompt">왼쪽에서 둘째, 다섯째, 여덟째 친구를 모두 골라요</div>
+        <div class="pp-direction-bar">
+          <span class="pp-arrow">→</span>
+          <span class="pp-direction-label">왼쪽에서 <span class="em">둘째 · 다섯째 · 여덟째</span></span>
+        </div>
+        <div class="pp-row" id="q13-row" data-targets="1,4,7">
+          <button class="pp-friend" data-idx="0"><span class="pp-friend-face">👦</span></button>
+          <button class="pp-friend" data-idx="1"><span class="pp-friend-face">👧</span></button>
+          <button class="pp-friend" data-idx="2"><span class="pp-friend-face">🧒</span></button>
+          <button class="pp-friend" data-idx="3"><span class="pp-friend-face">👦🏽</span></button>
+          <button class="pp-friend" data-idx="4"><span class="pp-friend-face">🧑‍🦽</span></button>
+          <button class="pp-friend" data-idx="5"><span class="pp-friend-face">👧🏽</span></button>
+          <button class="pp-friend" data-idx="6"><span class="pp-friend-face">🧑</span></button>
+          <button class="pp-friend" data-idx="7"><span class="pp-friend-face">🧒🏾</span></button>
+          <button class="pp-friend" data-idx="8"><span class="pp-friend-face">👶</span></button>
+        </div>
+        <button class="multi-confirm spaced" id="q13-confirm" disabled>확인하기</button>
+        <div class="mcq-hint" data-hints='["왼쪽부터 둘째, 다섯째, 여덟째를 차근차근 짚어 봐요", "2번 · 5번 · 8번 친구예요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용문제: 사탕 셋째 vs 사탕 3개 (다중 선택, 둘 다 골라야 정답) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="multi-stage">
+        <div class="candy-prompt-row">
+          <div class="candy-prompt-card">왼쪽에서 <span class="em">셋째</span> 사탕 한 개</div>
+          <div class="candy-prompt-card">왼쪽에서부터 <span class="em">3개</span> 사탕</div>
+        </div>
+        <div class="q-prompt">두 조건의 사탕을 모두 골라요</div>
+        <div class="candy-row" id="q14-row">
+          <button class="candy-item" data-idx="0" data-target-third="0" data-target-three="1">🍬</button>
+          <button class="candy-item" data-idx="1" data-target-third="0" data-target-three="1">🍬</button>
+          <button class="candy-item" data-idx="2" data-target-third="1" data-target-three="1">🍬</button>
+          <button class="candy-item" data-idx="3" data-target-third="0" data-target-three="0">🍬</button>
+          <button class="candy-item" data-idx="4" data-target-third="0" data-target-three="0">🍬</button>
+          <button class="candy-item" data-idx="5" data-target-third="0" data-target-three="0">🍬</button>
+          <button class="candy-item" data-idx="6" data-target-third="0" data-target-three="0">🍬</button>
+          <button class="candy-item" data-idx="7" data-target-third="0" data-target-three="0">🍬</button>
+          <button class="candy-item" data-idx="8" data-target-third="0" data-target-three="0">🍬</button>
+        </div>
+        <button class="multi-confirm spaced" id="q14-confirm" disabled>확인하기</button>
+        <div class="mcq-hint" data-hints='["셋째 = 세 번째 사탕 한 개 / 3개 = 처음부터 세 개 묶음", "셋째는 3번 사탕 한 개, 3개는 1·2·3번 사탕이에요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용문제: 벽 작품 (왼 4째 → 오른 몇째? = 6) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="wall-stage">
+        <div class="q-prompt">내 작품은 왼쪽에서 넷째예요. 오른쪽에서는 몇째일까요?</div>
+        <div class="pp-direction-bar both">
+          <div class="pp-direction-line"><span class="pp-arrow">→</span><span class="pp-direction-label">왼쪽에서 <span class="em">넷째</span></span></div>
+          <div class="pp-direction-line"><span class="pp-direction-label">오른쪽에서 <span class="em">?</span></span><span class="pp-arrow" style="transform: scaleX(-1);">→</span></div>
+        </div>
+        <div class="wall-row">
+          <div class="wall-frame"><span class="wall-frame-art">🎨</span><span class="wall-frame-pos">1</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🖼️</span><span class="wall-frame-pos">2</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🌈</span><span class="wall-frame-pos">3</span></div>
+          <div class="wall-frame my"><span class="wall-frame-art">⭐</span><span class="wall-frame-pos">내 작품</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🌸</span><span class="wall-frame-pos">5</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🦋</span><span class="wall-frame-pos">6</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🌳</span><span class="wall-frame-pos">7</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🐝</span><span class="wall-frame-pos">8</span></div>
+          <div class="wall-frame"><span class="wall-frame-art">🌷</span><span class="wall-frame-pos">9</span></div>
+        </div>
+        <div class="q-display empty" id="d-q15">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["오른쪽 끝 작품부터 거꾸로 세어 봐요", "내 작품 오른쪽에 5개가 있어요 → 오른쪽에서 여섯째"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 순서수 표 + 두 기준 한 화면 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">순서를 정리해요</h2>
+      <div class="summary-stage">
+        <div class="summary-table-full">
+          <div class="summary-row-label">숫자</div>
+          <div class="summary-row-cell num">1</div>
+          <div class="summary-row-cell num">2</div>
+          <div class="summary-row-cell num">3</div>
+          <div class="summary-row-cell num">4</div>
+          <div class="summary-row-cell num">5</div>
+          <div class="summary-row-cell num">6</div>
+          <div class="summary-row-cell num">7</div>
+          <div class="summary-row-cell num">8</div>
+          <div class="summary-row-cell num">9</div>
+          <div class="summary-row-label">왼쪽 →</div>
+          <div class="summary-row-cell ord">첫째</div>
+          <div class="summary-row-cell ord">둘째</div>
+          <div class="summary-row-cell ord">셋째</div>
+          <div class="summary-row-cell ord">넷째</div>
+          <div class="summary-row-cell ord">다섯째</div>
+          <div class="summary-row-cell ord">여섯째</div>
+          <div class="summary-row-cell ord">일곱째</div>
+          <div class="summary-row-cell ord">여덟째</div>
+          <div class="summary-row-cell ord">아홉째</div>
+          <div class="summary-row-label">← 오른쪽</div>
+          <div class="summary-row-cell ord">아홉째</div>
+          <div class="summary-row-cell ord">여덟째</div>
+          <div class="summary-row-cell ord">일곱째</div>
+          <div class="summary-row-cell ord">여섯째</div>
+          <div class="summary-row-cell ord">다섯째</div>
+          <div class="summary-row-cell ord">넷째</div>
+          <div class="summary-row-cell ord">셋째</div>
+          <div class="summary-row-cell ord">둘째</div>
+          <div class="summary-row-cell ord">첫째</div>
+        </div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 예고 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">1️⃣ 2️⃣ 3️⃣ … 9️⃣</div>
+          <div class="next-label">수의 순서를 알아봐요<br>(1·2·3 … 그리고 거꾸로 9·8·7 …)</div>
+        </div>
+        <div class="home-prompt">
+          집에서 가족이 줄 설 때 누가 첫째인지 말해 봐요!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g1_math_u1_l06';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+const N = 9;
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+        if(window.kedu && window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, 100);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) {
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── position_picker 정답 계산 ─────
+function ppCorrectIdx(direction, target, targetRight) {
+  // direction: 'left' / 'right' / 'both'
+  // target: 정수 (1~9, 1-indexed)
+  // 반환: 0-indexed 정답 idx, -1 = 불일치 (both에서 두 기준 불일치 시)
+  if (direction === 'left') return target - 1;
+  if (direction === 'right') return N - target;
+  if (direction === 'both') {
+    const fromLeft = target - 1;
+    const fromRight = N - targetRight;
+    return fromLeft === fromRight ? fromLeft : -1;
+  }
+  return -1;
+}
+
+// ───── position_picker 단일 선택 (슬 8·11·12) ─────
+['q8','q11','q12'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const row = slide.querySelector('.pp-row');
+  if (!row) return;
+  const direction = row.dataset.direction;
+  const target = parseInt(row.dataset.target, 10);
+  const targetRight = parseInt(row.dataset.targetRight || '0', 10);
+  const correct = ppCorrectIdx(direction, target, targetRight);
+  const fb = slide.querySelector('.mcq-fb');
+  const friends = row.querySelectorAll('.pp-friend');
+
+  friends.forEach(f => {
+    f.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const idx = parseInt(f.dataset.idx, 10);
+      if (idx === correct) {
+        st.solved = true;
+        f.classList.add('correct');
+        friends.forEach(o => { if (o !== f) o.classList.add('disabled'); });
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        f.classList.add('wrong');
+        fb.textContent = '다시 한 번 세어 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => f.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 답 직접 입력 (슬 9·15) ─────
+document.querySelectorAll('[data-q-points]').forEach(slide => {
+  const qid = slide.dataset.qId;
+  if (!qid) return;
+  if (qid !== 'q9' && qid !== 'q15') return;
+  const pad = slide.querySelector('.q-pad');
+  if (!pad) return;
+  const display = slide.querySelector('.q-display');
+  const fb = slide.querySelector('.q-fb');
+  const correctMap = { q9: 6, q15: 6 };
+  const correct = correctMap[qid];
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const num = parseInt(btn.dataset.num, 10);
+      display.textContent = num;
+      display.classList.remove('empty');
+      if (num === correct) {
+        st.solved = true;
+        display.classList.add('correct');
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        display.classList.add('wrong');
+        fb.textContent = '다시 한 번 세어 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => { display.classList.remove('wrong'); display.classList.add('empty'); display.textContent = '?'; }, 600);
+      }
+    });
+  });
+});
+
+// ───── ordinal_match (슬 10) ─────
+(function om10() {
+  const slide = document.querySelector('[data-q-id="q10"]');
+  if (!slide) return;
+  const qid = 'q10';
+  const koItems = slide.querySelectorAll('#om-ko .om-item');
+  const numItems = slide.querySelectorAll('#om-num .om-item');
+  const fb = slide.querySelector('.mcq-fb');
+  let selectedKo = null;
+  let doneCount = 0;
+  const totalPairs = koItems.length;
+
+  koItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || item.classList.contains('done')) return;
+      koItems.forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      selectedKo = item;
+      fb.textContent = '짝이 되는 숫자를 골라요';
+      fb.classList.remove('wrong');
+    });
+  });
+
+  numItems.forEach(target => {
+    target.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selectedKo) return;
+      st.attempts++;
+      if (selectedKo.dataset.match === target.dataset.shape) {
+        selectedKo.classList.add('done');
+        target.classList.add('done');
+        selectedKo.classList.remove('selected');
+        doneCount++;
+        selectedKo = null;
+        if (doneCount === totalPairs) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '모두 짝지었어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          fb.textContent = '맞아요! 다음 짝도 골라요';
+        }
+      } else {
+        st.wrongCount++;
+        target.classList.add('wrong');
+        fb.textContent = '순서수와 숫자를 다시 떠올려 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => target.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── 다중 선택 — position_picker (슬 13) ─────
+(function q13Multi() {
+  const slide = document.querySelector('[data-q-id="q13"]');
+  if (!slide) return;
+  const qid = 'q13';
+  const row = slide.querySelector('#q13-row');
+  const targets = row.dataset.targets.split(',').map(s => parseInt(s, 10)); // [1,4,7]
+  const friends = row.querySelectorAll('.pp-friend');
+  const confirm = slide.querySelector('#q13-confirm');
+  const fb = slide.querySelector('.mcq-fb');
+  let picked = new Set();
+
+  function updateConfirm() { confirm.disabled = picked.size === 0; }
+
+  friends.forEach(f => {
+    f.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      const idx = parseInt(f.dataset.idx, 10);
+      if (picked.has(idx)) {
+        picked.delete(idx);
+        f.classList.remove('highlight');
+      } else {
+        picked.add(idx);
+        f.classList.add('highlight');
+      }
+      updateConfirm();
+    });
+  });
+
+  confirm.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    const targetSet = new Set(targets);
+    let correctAll = picked.size === targetSet.size;
+    if (correctAll) {
+      for (const t of targetSet) {
+        if (!picked.has(t)) { correctAll = false; break; }
+      }
+    }
+    if (correctAll) {
+      st.solved = true;
+      friends.forEach(f => {
+        const idx = parseInt(f.dataset.idx, 10);
+        f.classList.remove('highlight');
+        if (targetSet.has(idx)) f.classList.add('correct');
+        f.classList.add('disabled');
+      });
+      confirm.disabled = true;
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '모두 맞췄어요! +' + earn + '점';
+      fb.classList.remove('wrong');
+      updateUI();
+    } else {
+      st.wrongCount++;
+      friends.forEach(f => {
+        const idx = parseInt(f.dataset.idx, 10);
+        if (picked.has(idx) && !targetSet.has(idx)) f.classList.add('wrong');
+      });
+      fb.textContent = '다시 한 번 세어 봐요. 셋을 골라야 해요';
+      fb.classList.add('wrong');
+      setTimeout(() => friends.forEach(f => f.classList.remove('wrong')), 500);
+    }
+  });
+})();
+
+// ───── 다중 선택 — 사탕 셋째 vs 사탕 3개 (슬 14) ─────
+(function q14Multi() {
+  const slide = document.querySelector('[data-q-id="q14"]');
+  if (!slide) return;
+  const qid = 'q14';
+  const items = slide.querySelectorAll('#q14-row .candy-item');
+  const confirm = slide.querySelector('#q14-confirm');
+  const fb = slide.querySelector('.mcq-fb');
+  let picked = new Set();
+
+  function updateConfirm() { confirm.disabled = picked.size === 0; }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      const idx = parseInt(item.dataset.idx, 10);
+      if (picked.has(idx)) {
+        picked.delete(idx);
+        item.classList.remove('picked');
+      } else {
+        picked.add(idx);
+        item.classList.add('picked');
+      }
+      updateConfirm();
+    });
+  });
+
+  confirm.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    // 정답: idx 0,1,2 모두 (3개 묶음) + idx 2는 셋째 = 합집합으로 {0,1,2}
+    const correctSet = new Set([0, 1, 2]);
+    let correctAll = picked.size === correctSet.size;
+    if (correctAll) {
+      for (const t of correctSet) {
+        if (!picked.has(t)) { correctAll = false; break; }
+      }
+    }
+    if (correctAll) {
+      st.solved = true;
+      items.forEach(item => {
+        const idx = parseInt(item.dataset.idx, 10);
+        item.classList.remove('picked');
+        if (correctSet.has(idx)) item.classList.add('correct');
+        item.classList.add('disabled');
+      });
+      confirm.disabled = true;
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '둘 다 맞췄어요! +' + earn + '점';
+      fb.classList.remove('wrong');
+      updateUI();
+    } else {
+      st.wrongCount++;
+      items.forEach(item => {
+        const idx = parseInt(item.dataset.idx, 10);
+        if (picked.has(idx) && !correctSet.has(idx)) item.classList.add('wrong');
+      });
+      fb.textContent = '셋째 사탕 한 개 + 처음부터 3개 묶음 = 1·2·3번이에요';
+      fb.classList.add('wrong');
+      setTimeout(() => items.forEach(o => o.classList.remove('wrong')), 600);
+    }
+  });
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const name = btn.querySelector('.self-btn-name').textContent;
+    document.getElementById('self-fb').textContent = name + '을 골랐어요!';
+  });
+});
+
+// ───── 진도 저장 ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// 시작
+updateUI();
+</script>
+</body>
+</html>

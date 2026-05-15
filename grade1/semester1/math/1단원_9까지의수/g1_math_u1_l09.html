@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l09 — 0을 알아볼까요 (1단원 9차시, 단일 차시)
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/math/g1/unit1/09차_0을_알아볼까요/draft.html
+  계획: _PLAN.md (2026-05-15, cycle 5)
+  지도서: _SOURCE.md (지도서 p.166-167, 40분 단일 차시)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1)
+
+  학습 본질: 아무것도 없음 = 0 / 0 필순 / 일상 0 사례
+  메카닉: decrement_animation(처음) + trace_number digit=0 + count_input 재사용 + 매칭 + 장면 선택
+  점수: 기본 4 × 10 + 응용 4 × 15 = 100점 만점
+  부품 인라인 구현: decrement_animation(슬4·8 학생 클릭 제거 + 0 도달 강조)
+                  / trace_number digit=0(슬6, 1~9와 다른 path)
+                  / count_input(슬8·9·10·12·13 items optional)
+  연계: 08차 "1보다 작은 수?" 호기심 회수(슬3) + 10차 크기 비교 예고(슬14·18)
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l09_v1">
+<title>0을 알아볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+  --mw-xl: min(920px, 98vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-vanish { 0% { transform: scale(1); opacity: 1; } 60% { transform: scale(0.3) rotate(15deg); opacity: 0.5; } 100% { transform: scale(0) rotate(45deg); opacity: 0; } }
+@keyframes ka-zeroGlow { 0%, 100% { transform: scale(1); text-shadow: 0 0 0 rgba(245,124,0,0); } 50% { transform: scale(1.18); text-shadow: 0 0 24px rgba(245,124,0,0.7); } }
+@keyframes ka-grow { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; overflow-y: auto; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── 슬 1 진입 — 풀 받침대 ───── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-lg); }
+.intro-meta { font-size: var(--fs-label); color: #90A4AE; }
+.intro-q { font-size: var(--fs-body); color: #1976D2; text-align: center; }
+.glue-tray { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); padding: clamp(14px, 2.8vw, 22px); background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%); border-radius: clamp(14px, 2.6vw, 22px); min-width: clamp(280px, 44vw, 420px); }
+.glue-tray-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #6D4C41; }
+.glue-tray-items { display: flex; gap: clamp(10px, 2vw, 18px); font-size: clamp(48px, 8vw, 80px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); background: #FFCC80; border: clamp(2.5px, 0.45vw, 3.5px) solid #6D4C41; border-radius: clamp(12px, 2.2vw, 18px); }
+.glue-tray-items span { animation: ka-pop 0.4s ease both; }
+.glue-tray-items span:nth-child(1) { animation-delay: 0.2s; }
+.glue-tray-items span:nth-child(2) { animation-delay: 0.35s; }
+.glue-tray-items span:nth-child(3) { animation-delay: 0.5s; }
+.glue-friends { display: flex; gap: clamp(14px, 2.8vw, 22px); font-size: clamp(36px, 6vw, 54px); justify-content: center; flex-wrap: wrap; }
+
+/* ───── 슬 2 학습 목표 ───── */
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #333; max-width: var(--mw-sm); }
+.goal-list li { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); list-style: none; }
+
+/* ───── 슬 3 회상 (08차 호기심) ───── */
+.recall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.recall-curio-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #F57C00; border-radius: clamp(16px, 3vw, 24px); padding: clamp(20px, 3.6vw, 32px); display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); }
+.recall-curio-eq { display: flex; gap: clamp(10px, 2vw, 16px); align-items: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(36px, 5.8vw, 60px); color: #1976D2; }
+.recall-curio-eq .blank { background: #FFF8E1; border: clamp(2.5px, 0.45vw, 3.5px) dashed #F57C00; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(18px, 3.2vw, 28px); color: #F57C00; }
+.recall-curio-eq .arrow { font-size: clamp(26px, 4.2vw, 38px); color: #C62828; }
+.recall-curio-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #6D4C41; text-align: center; line-height: 1.5; }
+.recall-curio-label .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.recall-hint { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+
+/* ───── decrement_animation (슬 4·8) ───── */
+.da-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.da-prompt { font-size: var(--fs-heading); color: #333; text-align: center; }
+.da-prompt .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.da-container { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); padding: clamp(14px, 2.8vw, 22px); background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%); border-radius: clamp(14px, 2.6vw, 22px); min-width: clamp(280px, 44vw, 420px); }
+.da-tray-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #6D4C41; }
+.da-items { display: flex; gap: clamp(10px, 2vw, 18px); font-size: clamp(44px, 7vw, 70px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); background: #FFCC80; border: clamp(2.5px, 0.45vw, 3.5px) solid #6D4C41; border-radius: clamp(12px, 2.2vw, 18px); min-height: clamp(70px, 11vw, 110px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.da-item { cursor: pointer; transition: transform 0.15s; display: inline-block; user-select: none; }
+.da-item:hover { transform: scale(1.15); }
+.da-item.vanishing { animation: ka-vanish 0.45s ease both; pointer-events: none; }
+.da-item.removed { display: none; }
+.da-counter { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: baseline; }
+.da-counter-label { font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #6D4C41; }
+.da-counter-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 70px); color: #1976D2; line-height: 1; transition: all 0.3s ease; }
+.da-counter-num.zero { color: #F57C00; animation: ka-zeroGlow 1.4s ease-in-out infinite; }
+.da-note { background: #FFF3E0; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #D84315; max-width: var(--mw-md); text-align: center; line-height: 1.5; opacity: 0; transition: opacity 0.4s ease; }
+.da-note.show { opacity: 1; }
+.da-note .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+
+/* ───── 슬 5 0 명시 ───── */
+.zero-intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 3.6vw, 32px); max-width: var(--mw-md); }
+.zero-big { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(140px, 24vw, 260px); color: #1976D2; line-height: 1; animation: ka-grow 0.7s ease both; }
+.zero-read { font-family: 'Jua', sans-serif; font-size: clamp(32px, 5vw, 50px); color: #1976D2; text-align: center; }
+.zero-read .han { color: #64B5F6; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.zero-note { background: #FFF8E1; padding: clamp(14px, 2.8vw, 22px) clamp(20px, 3.6vw, 30px); border-radius: clamp(14px, 2.6vw, 22px); font-size: var(--fs-body); color: #6D4C41; text-align: center; line-height: 1.6; }
+.zero-note .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── 슬 6 trace_number digit=0 ───── */
+.trace-stage-single { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.trace-cell-big { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #E0E0E0; border-radius: clamp(16px, 3vw, 24px); padding: clamp(14px, 2.8vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); cursor: pointer; transition: transform 0.15s; }
+.trace-cell-big:hover { transform: scale(1.04); }
+.trace-cell-big svg { width: clamp(140px, 22vw, 220px); height: clamp(180px, 28vw, 280px); }
+.trace-cell-big .tn-out { fill: none; stroke: #E0E0E0; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+.trace-cell-big .tn-line { fill: none; stroke: #1976D2; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 500; stroke-dashoffset: 500; transition: stroke-dashoffset 1.6s ease; }
+.trace-cell-big.done .tn-line { stroke-dashoffset: 0; }
+.trace-cell-big .tn-start { fill: #DC2626; }
+.trace-cell-big .tn-arrow { fill: #DC2626; }
+.trace-cell-big-label { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 40px); color: #1976D2; }
+.trace-note-zero { background: #FFF3E0; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #D84315; max-width: var(--mw-md); text-align: center; line-height: 1.5; }
+.trace-note-zero .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+
+/* ───── 슬 7·16 0~9 한 줄 카드 ───── */
+.num-line-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); width: 100%; }
+.num-line-row { display: flex; gap: clamp(4px, 0.8vw, 8px); justify-content: center; flex-wrap: nowrap; padding: clamp(8px, 1.6vw, 14px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; max-width: 100%; }
+.num-line-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(10px, 2vw, 16px) clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); color: #1976D2; min-width: clamp(50px, 8vw, 70px); min-height: clamp(60px, 10vw, 84px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: ka-pop 0.35s ease both; }
+.num-line-card:nth-child(1) { animation-delay: 0.05s; }
+.num-line-card:nth-child(2) { animation-delay: 0.1s; }
+.num-line-card:nth-child(3) { animation-delay: 0.15s; }
+.num-line-card:nth-child(4) { animation-delay: 0.2s; }
+.num-line-card:nth-child(5) { animation-delay: 0.25s; }
+.num-line-card:nth-child(6) { animation-delay: 0.3s; }
+.num-line-card:nth-child(7) { animation-delay: 0.35s; }
+.num-line-card:nth-child(8) { animation-delay: 0.4s; }
+.num-line-card:nth-child(9) { animation-delay: 0.45s; }
+.num-line-card:nth-child(10) { animation-delay: 0.5s; }
+.num-line-card.zero { border-color: #F57C00; color: #F57C00; background: #FFF8E1; box-shadow: 0 0 0 4px rgba(245,124,0,0.2); }
+.welcome-msg { font-family: 'Jua', sans-serif; font-size: var(--fs-body); color: #6D4C41; background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); text-align: center; }
+.welcome-msg .em { color: #F57C00; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── count_input 재사용 ───── */
+.q-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-lg); width: 100%; }
+.q-prompt { font-size: var(--fs-heading); color: #333; text-align: center; line-height: 1.4; max-width: var(--mw-md); }
+.q-prompt .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.q-display { background: #E3F2FD; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(28px, 5vw, 44px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 70px); color: #1976D2; min-width: clamp(140px, 22vw, 200px); text-align: center; line-height: 1; }
+.q-display.empty { color: #B5D8F0; }
+.q-display.correct { background: #C8E6C9; color: #2E7D32; }
+.q-display.wrong { background: #FFCDD2; color: #C62828; animation: ka-shake 0.4s ease; }
+.q-pad { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(3px, 0.7vw, 6px); max-width: clamp(380px, 62vw, 580px); }
+.q-pad-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(4px, 0.8vw, 8px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(16px, 2.6vw, 24px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.q-pad-btn:hover { background: #E3F2FD; }
+.q-pad-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.q-pad-btn.zero { border-color: #F57C00; color: #F57C00; }
+.q-fb { font-size: var(--fs-caption); min-height: 1.6em; color: #2E7D32; text-align: center; }
+.q-fb.wrong { color: #C62828; }
+.q-visual { display: flex; gap: clamp(6px, 1.2vw, 10px); font-size: clamp(36px, 6vw, 56px); flex-wrap: wrap; justify-content: center; padding: clamp(10px, 2vw, 16px); background: #FFF8E1; border-radius: clamp(12px, 2.2vw, 18px); min-height: clamp(60px, 10vw, 90px); align-items: center; }
+.q-visual.empty-tray::before { content: '아무것도 없어요'; font-family: 'Jua', sans-serif; font-size: var(--fs-caption); color: #B0BEC5; }
+
+/* ───── 슬 11 매칭 (0 ↔ 영) ───── */
+.match-stage { display: flex; flex-direction: column; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-lg); width: 100%; align-items: center; }
+.match-row { display: flex; gap: clamp(10px, 2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.match-item { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(18px, 3.2vw, 28px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; min-width: clamp(88px, 14vw, 120px); min-height: clamp(76px, 12vw, 100px); }
+.match-item.num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 5.4vw, 50px); color: #1976D2; }
+.match-item.han { font-family: 'Jua', sans-serif; font-size: clamp(28px, 4.6vw, 42px); color: #64B5F6; }
+.match-item.zero { color: #F57C00; border-color: #F57C00; }
+.match-item.selected { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(220,38,38,0.3); border-color: #DC2626; }
+.match-item.done { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; opacity: 0.7; pointer-events: none; }
+.match-item.wrong { animation: ka-shake 0.4s ease; border-color: #C62828; }
+
+/* ───── 슬 14 두 카드 비교 (0 vs 1) ───── */
+.compare-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.compare-row { display: flex; gap: clamp(20px, 4vw, 40px); justify-content: center; align-items: stretch; flex-wrap: wrap; }
+.compare-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(16px, 3vw, 24px); padding: clamp(18px, 3.2vw, 28px) clamp(24px, 4.4vw, 38px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); min-width: clamp(140px, 22vw, 200px); }
+.compare-card:hover { background: #E3F2FD; transform: translateY(-3px); }
+.compare-card-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(60px, 10vw, 110px); color: #1976D2; line-height: 1; }
+.compare-card-visual { font-size: clamp(28px, 4.6vw, 44px); min-height: clamp(50px, 8vw, 70px); display: flex; align-items: center; justify-content: center; }
+.compare-card-visual.empty { color: #B0BEC5; font-family: 'Jua', sans-serif; font-size: var(--fs-caption); }
+.compare-card.correct { background: #C8E6C9; border-color: #2E7D32; }
+.compare-card.correct .compare-card-num { color: #2E7D32; }
+.compare-card.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.compare-card.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ───── 슬 15 장면 선택 (3장면 중 0개 자리 둘) ───── */
+.scene-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-xl); width: 100%; }
+.scene-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 2vw, 16px); max-width: clamp(400px, 70vw, 720px); width: 100%; }
+.scene-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(10px, 2vw, 16px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 10px); min-height: clamp(120px, 19vw, 180px); position: relative; }
+.scene-card:hover { background: #E3F2FD; }
+.scene-card-visual { font-size: clamp(30px, 5vw, 50px); min-height: clamp(50px, 8vw, 70px); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: clamp(3px, 0.6vw, 6px); }
+.scene-card-label { font-family: 'Jua', sans-serif; font-size: var(--fs-label); color: #1976D2; text-align: center; line-height: 1.3; }
+.scene-card.picked { background: #FFE0B2; border-color: #F57C00; transform: scale(1.04); }
+.scene-card.picked::after { content: '✓'; position: absolute; top: 6px; right: 10px; color: #2E7D32; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 24px); }
+.scene-card.correct { background: #C8E6C9; border-color: #2E7D32; }
+.scene-card.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.scene-card.disabled { opacity: 0.55; pointer-events: none; }
+.scene-confirm { background: #42A5F5; color: white; border: none; padding: clamp(10px, 2vw, 16px) clamp(20px, 3.6vw, 30px); border-radius: clamp(12px, 2.2vw, 18px); font-family: inherit; font-size: clamp(16px, 2.6vw, 22px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.scene-confirm:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.self-row { display: flex; gap: clamp(10px, 2vw, 16px); flex-wrap: wrap; justify-content: center; }
+.self-btn { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3vw, 24px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1vw, 8px); }
+.self-btn-stars { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; letter-spacing: 2px; }
+.self-btn-name { font-size: var(--fs-caption); color: #1976D2; }
+.self-btn.picked { background: #FFF8E1; border-color: #F57C00; transform: scale(1.05); }
+
+/* ───── 슬 16 정리 ───── */
+.wrap-msg { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; margin-top: clamp(10px, 2vw, 16px); }
+
+/* ───── 슬 18 다음 차시 ───── */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-md); }
+.next-card { background: #E3F2FD; border-radius: clamp(18px, 3.4vw, 28px); padding: clamp(20px, 3.6vw, 32px) clamp(24px, 4.4vw, 38px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+.next-cards-row { display: flex; gap: clamp(14px, 2.8vw, 22px); justify-content: center; align-items: center; }
+.next-mini-card { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(40px, 6.5vw, 60px); color: #1976D2; background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(12px, 2.2vw, 18px); padding: clamp(8px, 1.6vw, 14px) clamp(18px, 3.2vw, 26px); line-height: 1; }
+.next-vs { font-family: 'Jua', sans-serif; font-size: clamp(22px, 3.6vw, 32px); color: #F57C00; }
+.next-label { font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+.home-prompt { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; text-align: center; max-width: var(--mw-md); line-height: 1.5; }
+
+/* 힌트 */
+.mcq-hint { background: #FFF8E1; color: #6D4C41; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); max-width: var(--mw-md); text-align: center; display: none; }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 메인 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 풀 받침대 + 친구들 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <div class="intro-stage">
+        <div class="intro-meta">1단원 · 9까지의 수</div>
+        <h2 class="slide-title">친구들이 풀을 가져가요</h2>
+        <div class="glue-tray">
+          <div class="glue-tray-label">풀 받침대</div>
+          <div class="glue-tray-items">
+            <span>🧴</span><span>🧴</span><span>🧴</span>
+          </div>
+        </div>
+        <div class="glue-friends">
+          <span>👦</span><span>👧</span><span>🧒</span>
+        </div>
+        <div class="intro-q">친구가 셋, 풀도 셋. 모두 가져가면 받침대는 어떻게 될까요?</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 학습 목표</h2>
+      <ul class="goal-list">
+        <li>① 아무것도 없음을 수로 나타내요</li>
+        <li>② 0을 쓰고 '영'이라고 읽어 봐요</li>
+        <li>③ 일상에서 0이 어울리는 자리를 찾아봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 08차 호기심 회수 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간 궁금한 점</h2>
+      <div class="recall-stage">
+        <div class="recall-curio-card">
+          <div class="recall-curio-eq">
+            <span class="blank">?</span>
+            <span class="arrow">→</span>
+            <span>1</span>
+          </div>
+          <div class="recall-curio-label">
+            8차시에 "1 이전 수는 무엇일까?"<br>
+            <span class="em">바로 오늘 배워요!</span>
+          </div>
+        </div>
+        <div class="recall-hint">힌트: 아무것도 없을 때를 나타내는 새 수예요</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: decrement_animation 풀 3→0 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">풀을 하나씩 가져가 봐요</h2>
+      <div class="da-stage">
+        <div class="da-prompt">받침대의 풀을 <span class="em">하나씩 눌러</span> 가져가요</div>
+        <div class="da-container">
+          <div class="da-tray-label">풀 받침대</div>
+          <div class="da-items" id="da4-items" data-start="3" data-end="0">
+            <span class="da-item" data-idx="0">🧴</span>
+            <span class="da-item" data-idx="1">🧴</span>
+            <span class="da-item" data-idx="2">🧴</span>
+          </div>
+          <div class="da-counter">
+            <span class="da-counter-label">남은 풀:</span>
+            <span class="da-counter-num" id="da4-count">3</span>
+          </div>
+        </div>
+        <div class="da-note" id="da4-note">받침대가 비었어요. 이걸 <span class="em">0</span>이라고 해요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 0 명시 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">아무것도 없음 = 0</h2>
+      <div class="zero-intro-stage">
+        <div class="zero-big">0</div>
+        <div class="zero-read">'<span class="han">영</span>'이라고 읽어요</div>
+        <div class="zero-note">
+          아무것도 없을 때는 <span class="em">"0"</span>이라고 써요.<br>
+          "안 적기"가 아니라 "0"이라고 또렷이 적어요!
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: trace_number digit=0 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 쓰기</div>
+      <h2 class="slide-title">0을 써 봐요</h2>
+      <div class="trace-stage-single">
+        <div class="trace-cell-big" id="trace-zero">
+          <svg viewBox="0 0 100 130">
+            <path class="tn-out" d="M 50 16 Q 22 16 22 65 Q 22 114 50 114 Q 78 114 78 65 Q 78 16 50 16 Z"/>
+            <path class="tn-line" d="M 50 16 Q 22 16 22 65 Q 22 114 50 114 Q 78 114 78 65 Q 78 16 50 16 Z"/>
+            <circle class="tn-start" cx="50" cy="16" r="5"/>
+            <polygon class="tn-arrow" points="22,52 17,62 27,62"/>
+          </svg>
+          <span class="trace-cell-big-label">0</span>
+        </div>
+        <div class="trace-note-zero">
+          위에서 시작해 <span class="em">왼쪽 아래로</span> 돌아 한 바퀴 닫아요.<br>
+          숫자를 눌러 따라 써 봐요.
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 0~9 한 줄 + 새 식구 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 정리</div>
+      <h2 class="slide-title">0이 새 식구가 되었어요</h2>
+      <div class="num-line-stage">
+        <div class="num-line-row">
+          <div class="num-line-card zero">0</div>
+          <div class="num-line-card">1</div>
+          <div class="num-line-card">2</div>
+          <div class="num-line-card">3</div>
+          <div class="num-line-card">4</div>
+          <div class="num-line-card">5</div>
+          <div class="num-line-card">6</div>
+          <div class="num-line-card">7</div>
+          <div class="num-line-card">8</div>
+          <div class="num-line-card">9</div>
+        </div>
+        <div class="welcome-msg">이제 우리는 <span class="em">0부터 9까지</span> 모두 알아요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제: 가위 보관통 3→0 decrement_animation + 정답 0 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="da-stage">
+        <div class="da-prompt">가위를 모두 가져가면 보관통에는 몇 개 남을까요?</div>
+        <div class="da-container">
+          <div class="da-tray-label">가위 보관통</div>
+          <div class="da-items" id="da8-items" data-start="3" data-end="0">
+            <span class="da-item" data-idx="0">✂️</span>
+            <span class="da-item" data-idx="1">✂️</span>
+            <span class="da-item" data-idx="2">✂️</span>
+          </div>
+          <div class="da-counter">
+            <span class="da-counter-label">남은 가위:</span>
+            <span class="da-counter-num" id="da8-count">3</span>
+          </div>
+        </div>
+        <div class="q-display empty" id="d-q8">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["보관통이 비면 몇 개일까요?","아무것도 없음 = 0"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제: 빈 크레파스 보관함 → 정답 0 (시작 0) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">크레파스 보관함이 비어 있어요. 몇 개일까요?</div>
+        <div class="q-visual empty-tray"></div>
+        <div class="q-display empty" id="d-q9">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["보이는 게 하나도 없어요","아무것도 없음 = 0"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제: 사과 1 - 1 = ? -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">사과가 1개 있어요. 친구가 1개 가져가면 몇 개 남을까요?</div>
+        <div class="q-visual">🍎 → 👋</div>
+        <div class="q-display empty" id="d-q10">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1개에서 1개를 빼면?","아무것도 안 남았어요 → 0"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제: 매칭 0↔영, 1↔하나 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="match-stage">
+        <div class="q-prompt">숫자와 한글을 짝지어요</div>
+        <div class="match-row" id="m11-num">
+          <div class="match-item num zero" data-match="ko-0">0</div>
+          <div class="match-item num" data-match="ko-1">1</div>
+        </div>
+        <div class="match-row" id="m11-han">
+          <div class="match-item han" data-shape="ko-1">하나</div>
+          <div class="match-item han zero" data-shape="ko-0">영</div>
+        </div>
+        <div class="mcq-hint" data-hints='["숫자 카드를 먼저 골라요","0은 영, 1은 하나"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용문제: 주머니 사탕 다 먹음 → 0 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">주머니에 사탕이 있었는데 <span class="em">모두 먹었어요</span>. 지금 주머니에 사탕은 몇 개일까요?</div>
+        <div class="q-visual">👝 ✨</div>
+        <div class="q-display empty" id="d-q12">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["다 먹었으니 사탕이 없어요","아무것도 없음 = 0"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용문제: 바둑돌 5 → 0으로 만들려면 몇 번? -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">바둑돌 5개를 <span class="em">한 번에 한 개씩</span> 덜어 내어 0개로 만들려고 해요. 몇 번 덜어내야 할까요?</div>
+        <div class="q-visual">⚫⚫⚫⚫⚫</div>
+        <div class="q-display empty" id="d-q13">?</div>
+        <div class="q-pad">
+          <button class="q-pad-btn zero" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["바둑돌이 몇 개 있나요?","5개를 한 개씩 빼려면 5번 빼야 0이 돼요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용문제: 0과 1 비교 → 0 (10차 예고) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="compare-stage">
+        <div class="q-prompt">두 수 중 <span class="em">더 작은 수</span>를 골라요</div>
+        <div class="compare-row" data-correct="0">
+          <button class="compare-card" data-num="0">
+            <div class="compare-card-num">0</div>
+            <div class="compare-card-visual empty">없음</div>
+          </button>
+          <button class="compare-card" data-num="1">
+            <div class="compare-card-num">1</div>
+            <div class="compare-card-visual">🍎</div>
+          </button>
+        </div>
+        <div class="mcq-hint" data-hints='["아무것도 없는 쪽이 더 적어요","0이 1보다 더 작아요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용문제: 0개 자리 둘 고르기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="scene-stage">
+        <div class="q-prompt">'0개'에 해당하는 자리를 <span class="em">모두</span> 골라요</div>
+        <div class="scene-row" id="q15-scenes">
+          <button class="scene-card" data-idx="0" data-correct="1">
+            <div class="scene-card-visual">📚</div>
+            <div class="scene-card-label">빈 책장</div>
+          </button>
+          <button class="scene-card" data-idx="1" data-correct="1">
+            <div class="scene-card-visual">🪑</div>
+            <div class="scene-card-label">결석한 친구 자리</div>
+          </button>
+          <button class="scene-card" data-idx="2" data-correct="0">
+            <div class="scene-card-visual">🍞🍞🍞🍞</div>
+            <div class="scene-card-label">빵이 가득한 바구니</div>
+          </button>
+        </div>
+        <button class="scene-confirm" id="q15-confirm" disabled>확인하기</button>
+        <div class="mcq-hint" data-hints='["아무것도 없는 자리를 찾아요","빈 책장도, 결석한 친구 자리도 0개예요"]'></div>
+        <div class="q-fb mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 0~9 한 줄 + 핵심 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">0을 정리해요</h2>
+      <div class="num-line-stage">
+        <div class="num-line-row">
+          <div class="num-line-card zero">0</div>
+          <div class="num-line-card">1</div>
+          <div class="num-line-card">2</div>
+          <div class="num-line-card">3</div>
+          <div class="num-line-card">4</div>
+          <div class="num-line-card">5</div>
+          <div class="num-line-card">6</div>
+          <div class="num-line-card">7</div>
+          <div class="num-line-card">8</div>
+          <div class="num-line-card">9</div>
+        </div>
+        <div class="welcome-msg">
+          <span class="em">0</span> = 아무것도 없음 · <span class="em">'영'</span>이라고 읽어요
+        </div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 10차 예고 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-cards-row">
+            <div class="next-mini-card">3</div>
+            <div class="next-vs">vs</div>
+            <div class="next-mini-card">5</div>
+          </div>
+          <div class="next-label">수의 크기를 비교해 봐요!<br>어느 쪽이 더 클까요?</div>
+        </div>
+        <div class="home-prompt">
+          집에서 "0개인 것"을 찾아봐요. 빈 컵, 빈 신발장 …
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g1_math_u1_l09';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+        if(window.kedu && window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, 100);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) {
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── decrement_animation (슬 4·8) ─────
+// 학생이 사물 클릭 → 사물 사라짐 + count 자동 감소. 0 도달 시 강조 글로우.
+['da4', 'da8'].forEach(prefix => {
+  const itemsEl = document.getElementById(prefix + '-items');
+  if (!itemsEl) return;
+  const countEl = document.getElementById(prefix + '-count');
+  const noteEl = document.getElementById(prefix + '-note');
+  const items = itemsEl.querySelectorAll('.da-item');
+  const start = parseInt(itemsEl.dataset.start, 10);
+  const end = parseInt(itemsEl.dataset.end, 10);
+  let remaining = start;
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      if (item.classList.contains('vanishing') || item.classList.contains('removed')) return;
+      item.classList.add('vanishing');
+      remaining--;
+      countEl.textContent = remaining;
+      setTimeout(() => item.classList.add('removed'), 450);
+      if (remaining === end) {
+        countEl.classList.add('zero');
+        if (noteEl) noteEl.classList.add('show');
+      }
+    });
+  });
+});
+
+// ───── trace_number digit=0 (슬 6) ─────
+const traceZero = document.getElementById('trace-zero');
+if (traceZero) {
+  traceZero.addEventListener('click', () => traceZero.classList.toggle('done'));
+}
+
+// ───── count_input 단일 (슬 8·9·10·12·13) ─────
+['q8','q9','q10','q12','q13'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const pad = slide.querySelector('.q-pad');
+  if (!pad) return;
+  const display = slide.querySelector('.q-display');
+  const fb = slide.querySelector('.q-fb');
+  const correctMap = { q8: 0, q9: 0, q10: 0, q12: 0, q13: 5 };
+  const correct = correctMap[qid];
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const num = parseInt(btn.dataset.num, 10);
+      display.textContent = num;
+      display.classList.remove('empty');
+      if (num === correct) {
+        st.solved = true;
+        display.classList.add('correct');
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        display.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => { display.classList.remove('wrong'); display.classList.add('empty'); display.textContent = '?'; }, 600);
+      }
+    });
+  });
+});
+
+// ───── 매칭 (슬 11) ─────
+(function m11() {
+  const slide = document.querySelector('[data-q-id="q11"]');
+  if (!slide) return;
+  const qid = 'q11';
+  const numItems = slide.querySelectorAll('#m11-num .match-item');
+  const hanItems = slide.querySelectorAll('#m11-han .match-item');
+  const fb = slide.querySelector('.mcq-fb');
+  let selectedNum = null;
+  let doneCount = 0;
+  const totalPairs = numItems.length;
+
+  numItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || item.classList.contains('done')) return;
+      numItems.forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      selectedNum = item;
+      fb.textContent = '한글 카드를 골라요';
+      fb.classList.remove('wrong');
+    });
+  });
+
+  hanItems.forEach(target => {
+    target.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selectedNum) return;
+      st.attempts++;
+      if (selectedNum.dataset.match === target.dataset.shape) {
+        selectedNum.classList.add('done');
+        target.classList.add('done');
+        selectedNum.classList.remove('selected');
+        doneCount++;
+        selectedNum = null;
+        if (doneCount === totalPairs) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '모두 짝지었어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          fb.textContent = '맞아요! 다음 짝도 골라요';
+        }
+      } else {
+        st.wrongCount++;
+        target.classList.add('wrong');
+        fb.textContent = '0은 영, 1은 하나예요';
+        fb.classList.add('wrong');
+        setTimeout(() => target.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── 두 카드 비교 (슬 14) ─────
+(function q14() {
+  const slide = document.querySelector('[data-q-id="q14"]');
+  if (!slide) return;
+  const qid = 'q14';
+  const row = slide.querySelector('.compare-row');
+  const correct = parseInt(row.dataset.correct, 10);
+  const cards = row.querySelectorAll('.compare-card');
+  const fb = slide.querySelector('.mcq-fb');
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const num = parseInt(card.dataset.num, 10);
+      if (num === correct) {
+        st.solved = true;
+        card.classList.add('correct');
+        cards.forEach(c => { if (c !== card) c.classList.add('disabled'); });
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '맞아요! 0이 1보다 더 작아요. +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        card.classList.add('wrong');
+        fb.textContent = '아무것도 없는 쪽이 더 적어요';
+        fb.classList.add('wrong');
+        setTimeout(() => card.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── 장면 다중 선택 (슬 15) ─────
+(function q15() {
+  const slide = document.querySelector('[data-q-id="q15"]');
+  if (!slide) return;
+  const qid = 'q15';
+  const cards = slide.querySelectorAll('.scene-card');
+  const confirm = slide.querySelector('#q15-confirm');
+  const fb = slide.querySelector('.mcq-fb');
+  const picked = new Set();
+
+  function updateConfirm() { confirm.disabled = picked.size === 0; }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      const idx = parseInt(card.dataset.idx, 10);
+      if (picked.has(idx)) {
+        picked.delete(idx);
+        card.classList.remove('picked');
+      } else {
+        picked.add(idx);
+        card.classList.add('picked');
+      }
+      updateConfirm();
+    });
+  });
+
+  confirm.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    // 정답 = idx 0, 1 (책장·결석 자리)
+    const correctSet = new Set([0, 1]);
+    let ok = picked.size === correctSet.size;
+    if (ok) { for (const i of correctSet) { if (!picked.has(i)) { ok = false; break; } } }
+    if (ok) {
+      st.solved = true;
+      cards.forEach(card => {
+        const idx = parseInt(card.dataset.idx, 10);
+        card.classList.remove('picked');
+        if (correctSet.has(idx)) card.classList.add('correct');
+        card.classList.add('disabled');
+      });
+      confirm.disabled = true;
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '둘 다 맞췄어요! +' + earn + '점';
+      fb.classList.remove('wrong');
+      updateUI();
+    } else {
+      st.wrongCount++;
+      cards.forEach(card => {
+        const idx = parseInt(card.dataset.idx, 10);
+        if (picked.has(idx) && !correctSet.has(idx)) card.classList.add('wrong');
+      });
+      fb.textContent = '0개 자리를 모두 골라야 해요';
+      fb.classList.add('wrong');
+      setTimeout(() => cards.forEach(c => c.classList.remove('wrong')), 600);
+    }
+  });
+})();
+
+// ───── 자기 평가 (슬 17) ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const name = btn.querySelector('.self-btn-name').textContent;
+    document.getElementById('self-fb').textContent = name + '을 골랐어요!';
+  });
+});
+
+// ───── 진도 저장 ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// 시작
+updateUI();
+</script>
+</body>
+</html>

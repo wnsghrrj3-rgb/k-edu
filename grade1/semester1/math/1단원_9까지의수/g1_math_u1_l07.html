@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u1_l07 — 수의 순서를 알아볼까요 (1단원 7차시, 단일 차시)
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/math/g1/unit1/07차_수의_순서를_알아볼까요/draft.html
+  계획: _PLAN.md (2026-05-15, cycle 3)
+  지도서: _SOURCE.md (지도서 p.162-163, 40분 단일 차시)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+
+  학습 본질: 수의 계열 (순방향 1→9, 역방향 9→1, 중간 시작) + "9 다음? 1 이전?" 호기심
+  메카닉: number_path(처음) + sequence_arrange(처음) + count_input 다수(슬8·9·14)
+  점수: 기본 4 × 10 + 응용 4 × 15 = 100점 만점
+  부품 인라인 구현: number_path(슬11·15) / sequence_arrange(슬10·12·13) / count_input 다수(슬8·9·14)
+  호기심 자리(슬7·16): 정답 X, 빈칸 카드만 표시 (단원 후반 9차시 0 도입·다음 단원 연결)
+-->
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u1_l07_v1">
+<title>수의 순서를 알아볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+  --mw-xl: min(920px, 98vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-arrowSlide { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(6px); } }
+@keyframes ka-jump { 0% { transform: translateY(0); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0); } }
+@keyframes ka-stepHighlight { 0%, 100% { background: #E3F2FD; transform: scale(1); } 50% { background: #FFE0B2; transform: scale(1.1); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; overflow-y: auto; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── 슬 1 진입 — 1~9 색 동그라미 ───── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-xl); }
+.intro-meta { font-size: var(--fs-label); color: #90A4AE; }
+.intro-q { font-size: var(--fs-body); color: #1976D2; text-align: center; }
+.num-board { display: flex; gap: clamp(6px, 1.2vw, 10px); flex-wrap: wrap; justify-content: center; padding: clamp(10px, 2vw, 16px); background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%); border-radius: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); }
+.num-board-cell { width: clamp(48px, 8vw, 76px); height: clamp(48px, 8vw, 76px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 34px); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); animation: ka-pop 0.5s ease both; }
+.num-board-cell:nth-child(1) { background: #EF5350; animation-delay: 0.05s; }
+.num-board-cell:nth-child(2) { background: #FF9800; animation-delay: 0.12s; }
+.num-board-cell:nth-child(3) { background: #FFC107; animation-delay: 0.19s; }
+.num-board-cell:nth-child(4) { background: #66BB6A; animation-delay: 0.26s; }
+.num-board-cell:nth-child(5) { background: #26C6DA; animation-delay: 0.33s; }
+.num-board-cell:nth-child(6) { background: #42A5F5; animation-delay: 0.4s; }
+.num-board-cell:nth-child(7) { background: #5C6BC0; animation-delay: 0.47s; }
+.num-board-cell:nth-child(8) { background: #AB47BC; animation-delay: 0.54s; }
+.num-board-cell:nth-child(9) { background: #EC407A; animation-delay: 0.61s; }
+
+/* ───── 슬 2 학습 목표 ───── */
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #333; max-width: var(--mw-sm); }
+.goal-list li { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); list-style: none; }
+
+/* ───── 슬 3 회상 표 (06차 첫째~아홉째) ───── */
+.recall-msg { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-md); text-align: center; }
+.recall-table { display: grid; grid-template-columns: 1fr repeat(9, 1fr); gap: clamp(3px, 0.7vw, 7px); align-items: center; max-width: var(--mw-xl); }
+.recall-row-label { font-size: var(--fs-caption); color: #607D8B; text-align: right; padding-right: clamp(8px, 1.6vw, 14px); }
+.recall-row-cell { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(6px, 1.2vw, 10px) clamp(2px, 0.6vw, 5px); display: flex; align-items: center; justify-content: center; min-height: clamp(34px, 5.4vw, 48px); }
+.recall-row-cell.num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 26px); color: #1976D2; }
+.recall-row-cell.ord { font-family: 'Jua', sans-serif; font-size: clamp(13px, 2vw, 18px); color: #1976D2; padding: clamp(4px, 1vw, 8px) clamp(2px, 0.6vw, 5px); }
+
+/* ───── 카드 줄 (슬 4·5·6·16) — 수의 계열 시각 ───── */
+.seq-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); width: 100%; }
+.seq-direction { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: center; background: #FFF8E1; padding: clamp(6px, 1.4vw, 12px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; }
+.seq-direction .arrow { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; animation: ka-arrowSlide 1.4s ease-in-out infinite; }
+.seq-direction .em { font-family: 'Nunito', sans-serif; font-weight: 800; color: #DC2626; }
+.seq-row { display: flex; gap: clamp(4px, 0.8vw, 8px); justify-content: center; flex-wrap: nowrap; padding: clamp(8px, 1.6vw, 14px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; max-width: 100%; }
+.seq-card { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(6px, 1.2vw, 10px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; min-width: clamp(46px, 7.5vw, 64px); min-height: clamp(60px, 9.5vw, 80px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: ka-pop 0.3s ease both; }
+.seq-card:nth-child(1) { animation-delay: 0.05s; }
+.seq-card:nth-child(2) { animation-delay: 0.1s; }
+.seq-card:nth-child(3) { animation-delay: 0.15s; }
+.seq-card:nth-child(4) { animation-delay: 0.2s; }
+.seq-card:nth-child(5) { animation-delay: 0.25s; }
+.seq-card:nth-child(6) { animation-delay: 0.3s; }
+.seq-card:nth-child(7) { animation-delay: 0.35s; }
+.seq-card:nth-child(8) { animation-delay: 0.4s; }
+.seq-card:nth-child(9) { animation-delay: 0.45s; }
+.seq-card.highlight { background: #FFE0B2; border-color: #F57C00; transform: scale(1.1); animation: ka-stepHighlight 1.4s ease-in-out infinite; }
+.seq-card.range { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.seq-card.blank { background: #FFF8E1; border-style: dashed; color: #F57C00; }
+.seq-card.dim { opacity: 0.35; }
+
+/* ───── 슬 7·16 호기심 자리 (정답 X, 빈칸 카드) ───── */
+.curio-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); }
+.curio-row { display: flex; gap: clamp(20px, 4vw, 40px); align-items: stretch; justify-content: center; flex-wrap: wrap; }
+.curio-card { background: white; border: clamp(3px, 0.5vw, 4px) solid #F57C00; border-radius: clamp(16px, 3vw, 24px); padding: clamp(14px, 2.6vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); min-width: clamp(220px, 36vw, 320px); }
+.curio-q-row { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; }
+.curio-blank { background: #FFF8E1; border: clamp(2px, 0.4vw, 3px) dashed #F57C00; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.4vw, 20px); color: #F57C00; min-width: clamp(48px, 8vw, 72px); text-align: center; }
+.curio-arrow { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; }
+.curio-note { font-size: var(--fs-caption); color: #6D4C41; text-align: center; max-width: var(--mw-md); }
+.curio-note .em { color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── count_input 다수 (슬 8·9·14) ───── */
+.cm-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-lg); width: 100%; }
+.q-prompt { font-size: var(--fs-heading); color: #333; text-align: center; }
+.cm-row { display: flex; gap: clamp(4px, 0.8vw, 8px); justify-content: center; flex-wrap: nowrap; padding: clamp(8px, 1.6vw, 14px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; max-width: 100%; }
+.cm-slot { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(6px, 1.2vw, 10px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; min-width: clamp(46px, 7.5vw, 64px); min-height: clamp(60px, 9.5vw, 80px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cm-slot.blank { background: #FFF8E1; border-style: dashed; color: #F57C00; cursor: pointer; transition: all 0.2s; }
+.cm-slot.blank:hover { background: #FFE0B2; }
+.cm-slot.blank.active { background: #FFE0B2; border-style: solid; border-color: #F57C00; box-shadow: 0 0 0 4px rgba(245,124,0,0.3); }
+.cm-slot.blank.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #2E7D32; }
+.cm-slot.blank.wrong { background: #FFCDD2; border-color: #C62828; animation: ka-shake 0.4s ease; }
+.cm-pair-stage { display: flex; gap: clamp(20px, 4vw, 40px); align-items: stretch; justify-content: center; flex-wrap: wrap; }
+.cm-pair-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); min-width: clamp(200px, 32vw, 280px); }
+.cm-pair-label { font-size: var(--fs-caption); color: #1976D2; font-family: 'Jua', sans-serif; }
+.cm-pair-eq { display: flex; gap: clamp(8px, 1.6vw, 14px); align-items: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; }
+.cm-pad { display: grid; grid-template-columns: repeat(9, 1fr); gap: clamp(4px, 0.8vw, 7px); max-width: clamp(360px, 60vw, 540px); margin-top: clamp(6px, 1.2vw, 10px); }
+.cm-pad-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.8vw, 26px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.cm-pad-btn:hover { background: #E3F2FD; }
+.cm-pad-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.q-fb { font-size: var(--fs-caption); min-height: 1.6em; color: #2E7D32; text-align: center; }
+.q-fb.wrong { color: #C62828; }
+
+/* ───── sequence_arrange (슬 10·12·13) ───── */
+.sa-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); width: 100%; }
+.sa-pool { display: flex; gap: clamp(4px, 0.8vw, 8px); flex-wrap: wrap; justify-content: center; padding: clamp(10px, 2vw, 16px); background: #FFF8E1; border-radius: clamp(12px, 2.2vw, 18px); min-height: clamp(80px, 12vw, 110px); align-items: center; max-width: var(--mw-xl); }
+.sa-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(10px, 2vw, 16px) clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); color: #1976D2; min-width: clamp(54px, 9vw, 76px); min-height: clamp(60px, 10vw, 84px); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; animation: ka-pop 0.35s ease both; }
+.sa-card:hover { background: #E3F2FD; transform: translateY(-3px); }
+.sa-card.selected { border-color: #DC2626; background: #FFE0B2; transform: scale(1.08); }
+.sa-card.placed { opacity: 0.3; pointer-events: none; }
+.sa-slot-row { display: flex; gap: clamp(4px, 0.8vw, 8px); justify-content: center; flex-wrap: nowrap; padding: clamp(10px, 2vw, 16px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); overflow-x: auto; max-width: 100%; }
+.sa-slot { background: white; border: clamp(2.5px, 0.45vw, 3.5px) dashed #607D8B; border-radius: clamp(10px, 2vw, 16px); padding: clamp(10px, 2vw, 16px) clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); color: #607D8B; min-width: clamp(54px, 9vw, 76px); min-height: clamp(60px, 10vw, 84px); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all 0.2s; position: relative; }
+.sa-slot:hover { background: #E3F2FD; }
+.sa-slot-pos { position: absolute; top: 2px; left: 4px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); color: #90A4AE; }
+.sa-slot.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #2E7D32; cursor: default; }
+.sa-slot.filled-wrong { background: #FFCDD2; border-style: solid; border-color: #C62828; color: #C62828; animation: ka-shake 0.4s ease; }
+.sa-slot.active { background: #FFE0B2; border-style: solid; border-color: #F57C00; box-shadow: 0 0 0 4px rgba(245,124,0,0.3); }
+.sa-controls { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; }
+.sa-reset { background: #FFF8E1; border: none; padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); border-radius: clamp(10px, 2vw, 16px); font-family: inherit; font-size: clamp(14px, 2.2vw, 18px); color: #F57F17; cursor: pointer; }
+.sa-confirm { background: #42A5F5; color: white; border: none; padding: clamp(10px, 2vw, 16px) clamp(20px, 3.6vw, 30px); border-radius: clamp(12px, 2.2vw, 18px); font-family: inherit; font-size: clamp(15px, 2.4vw, 19px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.sa-confirm:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ───── number_path (슬 11·15) ───── */
+.np-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-xl); width: 100%; }
+.np-path { display: flex; gap: clamp(6px, 1.2vw, 10px); justify-content: center; padding: clamp(14px, 2.8vw, 22px) clamp(10px, 2vw, 16px); background: linear-gradient(to right, #FFF8E1 0%, #FFE0B2 50%, #FFCC80 100%); border-radius: clamp(14px, 2.6vw, 22px); flex-wrap: nowrap; overflow-x: auto; max-width: 100%; position: relative; }
+.np-path.desc { background: linear-gradient(to left, #FFF8E1 0%, #FFE0B2 50%, #FFCC80 100%); }
+.np-tile { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: 50%; width: clamp(54px, 9vw, 76px); height: clamp(54px, 9vw, 76px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; position: relative; }
+.np-tile:hover:not(.visited):not(.locked) { background: #E3F2FD; transform: scale(1.1); }
+.np-tile.start { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.np-tile.visited { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; cursor: default; }
+.np-tile.current { background: #FFE0B2; border-color: #F57C00; transform: scale(1.15); box-shadow: 0 0 0 5px rgba(245,124,0,0.3); }
+.np-tile.locked { opacity: 0.55; cursor: not-allowed; }
+.np-tile.wrong { animation: ka-shake 0.4s ease; background: #FFCDD2; border-color: #C62828; }
+.np-walker { position: relative; }
+.np-walker::before { content: '🐰'; position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: clamp(22px, 3.4vw, 30px); animation: ka-jump 0.5s ease; }
+.np-progress { font-size: var(--fs-caption); color: #6D4C41; }
+.np-progress strong { font-family: 'Nunito', sans-serif; font-weight: 800; color: #F57F17; }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.self-row { display: flex; gap: clamp(10px, 2vw, 16px); flex-wrap: wrap; justify-content: center; }
+.self-btn { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3vw, 24px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1vw, 8px); }
+.self-btn-stars { font-size: clamp(22px, 3.6vw, 32px); color: #F57F17; letter-spacing: 2px; }
+.self-btn-name { font-size: var(--fs-caption); color: #1976D2; }
+.self-btn.picked { background: #FFF8E1; border-color: #F57C00; transform: scale(1.05); }
+
+/* ───── 슬 16 정리 ───── */
+.wrap-msg { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.6vw, 44px); color: #1976D2; margin-top: clamp(10px, 2vw, 16px); }
+
+/* ───── 슬 18 다음 차시 ───── */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-md); }
+.next-card { background: #E3F2FD; border-radius: clamp(18px, 3.4vw, 28px); padding: clamp(20px, 3.6vw, 32px) clamp(24px, 4.4vw, 38px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+.next-emojis { font-size: var(--em-md); display: flex; gap: clamp(8px, 1.6vw, 14px); flex-wrap: wrap; justify-content: center; }
+.next-label { font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+.home-prompt { background: #FFF8E1; padding: clamp(10px, 2vw, 16px) clamp(14px, 2.8vw, 22px); border-radius: clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); color: #6D4C41; text-align: center; max-width: var(--mw-md); line-height: 1.5; }
+
+/* 힌트 */
+.mcq-hint { background: #FFF8E1; color: #6D4C41; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.8vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); max-width: var(--mw-md); text-align: center; display: none; }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 메인 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 1~9 색 동그라미 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <div class="intro-stage">
+        <div class="intro-meta">1단원 · 9까지의 수</div>
+        <h2 class="slide-title">수를 순서대로 말해 봐요</h2>
+        <div class="num-board">
+          <div class="num-board-cell">1</div>
+          <div class="num-board-cell">2</div>
+          <div class="num-board-cell">3</div>
+          <div class="num-board-cell">4</div>
+          <div class="num-board-cell">5</div>
+          <div class="num-board-cell">6</div>
+          <div class="num-board-cell">7</div>
+          <div class="num-board-cell">8</div>
+          <div class="num-board-cell">9</div>
+        </div>
+        <div class="intro-q">이 수들을 어떤 순서로 말할 수 있을까요?</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘의 학습 목표</h2>
+      <ul class="goal-list">
+        <li>① 1·2·3 … 9 순서대로 세어 봐요</li>
+        <li>② 9·8·7 … 1 거꾸로 세어 봐요</li>
+        <li>③ 다음 수와 이전 수를 알아봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 06차 회상 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간에 배운 순서</h2>
+      <div class="recall-msg">숫자에는 첫째, 둘째 … 순서도 있었어요</div>
+      <div class="recall-table">
+        <div class="recall-row-label">숫자</div>
+        <div class="recall-row-cell num">1</div>
+        <div class="recall-row-cell num">2</div>
+        <div class="recall-row-cell num">3</div>
+        <div class="recall-row-cell num">4</div>
+        <div class="recall-row-cell num">5</div>
+        <div class="recall-row-cell num">6</div>
+        <div class="recall-row-cell num">7</div>
+        <div class="recall-row-cell num">8</div>
+        <div class="recall-row-cell num">9</div>
+        <div class="recall-row-label">순서</div>
+        <div class="recall-row-cell ord">첫째</div>
+        <div class="recall-row-cell ord">둘째</div>
+        <div class="recall-row-cell ord">셋째</div>
+        <div class="recall-row-cell ord">넷째</div>
+        <div class="recall-row-cell ord">다섯째</div>
+        <div class="recall-row-cell ord">여섯째</div>
+        <div class="recall-row-cell ord">일곱째</div>
+        <div class="recall-row-cell ord">여덟째</div>
+        <div class="recall-row-cell ord">아홉째</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 순방향 1·2·3···9 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">1부터 9까지 차례로</h2>
+      <div class="seq-stage">
+        <div class="seq-direction">
+          <span class="arrow">→</span>
+          <span>작은 수부터 <span class="em">큰 수까지</span></span>
+        </div>
+        <div class="seq-row">
+          <div class="seq-card">1</div>
+          <div class="seq-card">2</div>
+          <div class="seq-card">3</div>
+          <div class="seq-card">4</div>
+          <div class="seq-card">5</div>
+          <div class="seq-card">6</div>
+          <div class="seq-card">7</div>
+          <div class="seq-card">8</div>
+          <div class="seq-card">9</div>
+        </div>
+        <div class="curio-note">1 다음은 2, 2 다음은 3 … 한 칸씩 커져요</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 역방향 9·8·7···1 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">9부터 1까지 거꾸로</h2>
+      <div class="seq-stage">
+        <div class="seq-direction">
+          <span class="arrow" style="transform: scaleX(-1);">→</span>
+          <span>큰 수부터 <span class="em">작은 수까지</span></span>
+        </div>
+        <div class="seq-row">
+          <div class="seq-card">9</div>
+          <div class="seq-card">8</div>
+          <div class="seq-card">7</div>
+          <div class="seq-card">6</div>
+          <div class="seq-card">5</div>
+          <div class="seq-card">4</div>
+          <div class="seq-card">3</div>
+          <div class="seq-card">2</div>
+          <div class="seq-card">1</div>
+        </div>
+        <div class="curio-note">9 이전은 8, 8 이전은 7 … 한 칸씩 작아져요</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 중간 시작 (4~8 / 7~2) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">중간에서 시작해 볼까요</h2>
+      <div class="seq-stage">
+        <div class="seq-direction">
+          <span class="arrow">→</span>
+          <span><span class="em">4부터 8까지</span> 차례로</span>
+        </div>
+        <div class="seq-row">
+          <div class="seq-card dim">1</div>
+          <div class="seq-card dim">2</div>
+          <div class="seq-card dim">3</div>
+          <div class="seq-card range">4</div>
+          <div class="seq-card range">5</div>
+          <div class="seq-card range">6</div>
+          <div class="seq-card range">7</div>
+          <div class="seq-card range">8</div>
+          <div class="seq-card dim">9</div>
+        </div>
+        <div class="seq-direction">
+          <span class="arrow" style="transform: scaleX(-1);">→</span>
+          <span><span class="em">7부터 2까지</span> 거꾸로</span>
+        </div>
+        <div class="seq-row">
+          <div class="seq-card dim">1</div>
+          <div class="seq-card range">2</div>
+          <div class="seq-card range">3</div>
+          <div class="seq-card range">4</div>
+          <div class="seq-card range">5</div>
+          <div class="seq-card range">6</div>
+          <div class="seq-card range">7</div>
+          <div class="seq-card dim">8</div>
+          <div class="seq-card dim">9</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: "9 다음? 1 이전?" 호기심 (정답 X) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 정리</div>
+      <h2 class="slide-title">궁금한 점이 있어요</h2>
+      <div class="curio-stage">
+        <div class="curio-row">
+          <div class="curio-card">
+            <div class="curio-q-row">
+              <span>9</span>
+              <span class="curio-arrow">→</span>
+              <span class="curio-blank">?</span>
+            </div>
+            <div class="curio-note">9 <span class="em">다음</span>에는 어떤 수가 올까요?</div>
+          </div>
+          <div class="curio-card">
+            <div class="curio-q-row">
+              <span class="curio-blank">?</span>
+              <span class="curio-arrow">→</span>
+              <span>1</span>
+            </div>
+            <div class="curio-note">1 <span class="em">이전</span>에는 어떤 수가 있을까요?</div>
+          </div>
+        </div>
+        <div class="curio-note">이번 시간에는 답을 찾지 않아요. 다음 시간들에 배워 볼 거예요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제: count_input 4자리 순방향 "1 _ 3 _ 5 6 _ 8 _" -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="cm-stage">
+        <div class="q-prompt">빈칸에 들어갈 수를 차례로 넣어요</div>
+        <div class="seq-direction">
+          <span class="arrow">→</span>
+          <span>순방향</span>
+        </div>
+        <div class="cm-row" data-mode="multi" data-answers="2,4,7,9">
+          <div class="cm-slot">1</div>
+          <div class="cm-slot blank" data-blank-idx="0">?</div>
+          <div class="cm-slot">3</div>
+          <div class="cm-slot blank" data-blank-idx="1">?</div>
+          <div class="cm-slot">5</div>
+          <div class="cm-slot">6</div>
+          <div class="cm-slot blank" data-blank-idx="2">?</div>
+          <div class="cm-slot">8</div>
+          <div class="cm-slot blank" data-blank-idx="3">?</div>
+        </div>
+        <div class="cm-pad">
+          <button class="cm-pad-btn" data-num="1">1</button>
+          <button class="cm-pad-btn" data-num="2">2</button>
+          <button class="cm-pad-btn" data-num="3">3</button>
+          <button class="cm-pad-btn" data-num="4">4</button>
+          <button class="cm-pad-btn" data-num="5">5</button>
+          <button class="cm-pad-btn" data-num="6">6</button>
+          <button class="cm-pad-btn" data-num="7">7</button>
+          <button class="cm-pad-btn" data-num="8">8</button>
+          <button class="cm-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["빈칸 하나를 먼저 누르고 숫자를 골라요","1 다음은 2, 3 다음은 4, 6 다음은 7, 8 다음은 9"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제: count_input 4자리 역방향 "9 _ 7 _ 5 _ 3 _ 1" -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="cm-stage">
+        <div class="q-prompt">거꾸로 빈칸을 채워요</div>
+        <div class="seq-direction">
+          <span class="arrow" style="transform: scaleX(-1);">→</span>
+          <span>역방향</span>
+        </div>
+        <div class="cm-row" data-mode="multi" data-answers="8,6,4,2">
+          <div class="cm-slot">9</div>
+          <div class="cm-slot blank" data-blank-idx="0">?</div>
+          <div class="cm-slot">7</div>
+          <div class="cm-slot blank" data-blank-idx="1">?</div>
+          <div class="cm-slot">5</div>
+          <div class="cm-slot blank" data-blank-idx="2">?</div>
+          <div class="cm-slot">3</div>
+          <div class="cm-slot blank" data-blank-idx="3">?</div>
+          <div class="cm-slot">1</div>
+        </div>
+        <div class="cm-pad">
+          <button class="cm-pad-btn" data-num="1">1</button>
+          <button class="cm-pad-btn" data-num="2">2</button>
+          <button class="cm-pad-btn" data-num="3">3</button>
+          <button class="cm-pad-btn" data-num="4">4</button>
+          <button class="cm-pad-btn" data-num="5">5</button>
+          <button class="cm-pad-btn" data-num="6">6</button>
+          <button class="cm-pad-btn" data-num="7">7</button>
+          <button class="cm-pad-btn" data-num="8">8</button>
+          <button class="cm-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["빈칸 하나를 먼저 누르고 숫자를 골라요","9 이전은 8, 7 이전은 6, 5 이전은 4, 3 이전은 2"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제: sequence_arrange asc range=[1,9] -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="sa-stage">
+        <div class="q-prompt">카드를 1부터 9까지 차례대로 놓아요</div>
+        <div class="sa-pool" id="q10-pool" data-direction="asc" data-range="1,9">
+          <button class="sa-card" data-num="4">4</button>
+          <button class="sa-card" data-num="7">7</button>
+          <button class="sa-card" data-num="2">2</button>
+          <button class="sa-card" data-num="9">9</button>
+          <button class="sa-card" data-num="5">5</button>
+          <button class="sa-card" data-num="1">1</button>
+          <button class="sa-card" data-num="8">8</button>
+          <button class="sa-card" data-num="3">3</button>
+          <button class="sa-card" data-num="6">6</button>
+        </div>
+        <div class="sa-slot-row" id="q10-slots">
+          <button class="sa-slot" data-slot-idx="0" data-expect="1"><span class="sa-slot-pos">1번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="1" data-expect="2"><span class="sa-slot-pos">2번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="2" data-expect="3"><span class="sa-slot-pos">3번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="3" data-expect="4"><span class="sa-slot-pos">4번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="4" data-expect="5"><span class="sa-slot-pos">5번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="5" data-expect="6"><span class="sa-slot-pos">6번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="6" data-expect="7"><span class="sa-slot-pos">7번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="7" data-expect="8"><span class="sa-slot-pos">8번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="8" data-expect="9"><span class="sa-slot-pos">9번째</span>?</button>
+        </div>
+        <div class="sa-controls">
+          <button class="sa-reset" data-sa-reset="q10">처음부터</button>
+        </div>
+        <div class="mcq-hint" data-hints='["카드 한 장을 누른 다음 슬롯을 골라요","1, 2, 3 … 차례로 놓아요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제: number_path asc 1→9 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="np-stage">
+        <div class="q-prompt">토끼가 1부터 9까지 차례로 뛰어가요</div>
+        <div class="seq-direction">
+          <span class="arrow">→</span>
+          <span>다음 칸을 누르며 따라가요</span>
+        </div>
+        <div class="np-path" id="q11-path" data-direction="asc" data-start="1" data-end="9">
+          <button class="np-tile" data-num="1">1</button>
+          <button class="np-tile" data-num="2">2</button>
+          <button class="np-tile" data-num="3">3</button>
+          <button class="np-tile" data-num="4">4</button>
+          <button class="np-tile" data-num="5">5</button>
+          <button class="np-tile" data-num="6">6</button>
+          <button class="np-tile" data-num="7">7</button>
+          <button class="np-tile" data-num="8">8</button>
+          <button class="np-tile" data-num="9">9</button>
+        </div>
+        <div class="np-progress">진행: <strong id="q11-progress">1 / 9</strong></div>
+        <div class="mcq-hint" data-hints='["지금 자리에서 다음 수가 적힌 칸을 눌러요","1 다음 2, 2 다음 3 … 차례로 누르세요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용문제: sequence_arrange asc range=[4,8] (중간 시작) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sa-stage">
+        <div class="q-prompt">4부터 8까지 차례대로 놓아요</div>
+        <div class="sa-pool" id="q12-pool" data-direction="asc" data-range="4,8">
+          <button class="sa-card" data-num="7">7</button>
+          <button class="sa-card" data-num="5">5</button>
+          <button class="sa-card" data-num="8">8</button>
+          <button class="sa-card" data-num="4">4</button>
+          <button class="sa-card" data-num="6">6</button>
+        </div>
+        <div class="sa-slot-row" id="q12-slots">
+          <button class="sa-slot" data-slot-idx="0" data-expect="4"><span class="sa-slot-pos">1번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="1" data-expect="5"><span class="sa-slot-pos">2번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="2" data-expect="6"><span class="sa-slot-pos">3번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="3" data-expect="7"><span class="sa-slot-pos">4번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="4" data-expect="8"><span class="sa-slot-pos">5번째</span>?</button>
+        </div>
+        <div class="sa-controls">
+          <button class="sa-reset" data-sa-reset="q12">처음부터</button>
+        </div>
+        <div class="mcq-hint" data-hints='["시작이 1이 아니라 4예요","4, 5, 6, 7, 8 순서대로 놓아요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용문제: sequence_arrange desc range=[7,2] (역방향 중간 시작) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sa-stage">
+        <div class="q-prompt">7부터 2까지 거꾸로 놓아요</div>
+        <div class="sa-pool" id="q13-pool" data-direction="desc" data-range="7,2">
+          <button class="sa-card" data-num="3">3</button>
+          <button class="sa-card" data-num="6">6</button>
+          <button class="sa-card" data-num="2">2</button>
+          <button class="sa-card" data-num="5">5</button>
+          <button class="sa-card" data-num="7">7</button>
+          <button class="sa-card" data-num="4">4</button>
+        </div>
+        <div class="sa-slot-row" id="q13-slots">
+          <button class="sa-slot" data-slot-idx="0" data-expect="7"><span class="sa-slot-pos">1번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="1" data-expect="6"><span class="sa-slot-pos">2번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="2" data-expect="5"><span class="sa-slot-pos">3번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="3" data-expect="4"><span class="sa-slot-pos">4번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="4" data-expect="3"><span class="sa-slot-pos">5번째</span>?</button>
+          <button class="sa-slot" data-slot-idx="5" data-expect="2"><span class="sa-slot-pos">6번째</span>?</button>
+        </div>
+        <div class="sa-controls">
+          <button class="sa-reset" data-sa-reset="q13">처음부터</button>
+        </div>
+        <div class="mcq-hint" data-hints='["큰 수부터 작은 수까지 거꾸로 놓아요","7, 6, 5, 4, 3, 2 순서로 놓아요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용문제: 5의 다음 + 5의 이전 (한 슬 2자리 입력) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="cm-stage">
+        <div class="q-prompt">5의 다음 수와 이전 수를 모두 채워요</div>
+        <div class="cm-pair-stage" data-mode="pair" data-answers="6,4">
+          <div class="cm-pair-card">
+            <div class="cm-pair-label">5의 다음 수</div>
+            <div class="cm-pair-eq">
+              <span>5</span>
+              <span class="curio-arrow">→</span>
+              <button class="cm-slot blank" data-blank-idx="0">?</button>
+            </div>
+          </div>
+          <div class="cm-pair-card">
+            <div class="cm-pair-label">5의 이전 수</div>
+            <div class="cm-pair-eq">
+              <button class="cm-slot blank" data-blank-idx="1">?</button>
+              <span class="curio-arrow">→</span>
+              <span>5</span>
+            </div>
+          </div>
+        </div>
+        <div class="cm-pad">
+          <button class="cm-pad-btn" data-num="1">1</button>
+          <button class="cm-pad-btn" data-num="2">2</button>
+          <button class="cm-pad-btn" data-num="3">3</button>
+          <button class="cm-pad-btn" data-num="4">4</button>
+          <button class="cm-pad-btn" data-num="5">5</button>
+          <button class="cm-pad-btn" data-num="6">6</button>
+          <button class="cm-pad-btn" data-num="7">7</button>
+          <button class="cm-pad-btn" data-num="8">8</button>
+          <button class="cm-pad-btn" data-num="9">9</button>
+        </div>
+        <div class="mcq-hint" data-hints='["빈칸 하나를 먼저 골라요","5 다음 = 6, 5 이전 = 4"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용문제: number_path desc 9→1 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="np-stage">
+        <div class="q-prompt">이번에는 토끼가 9부터 1까지 거꾸로 가요</div>
+        <div class="seq-direction">
+          <span class="arrow" style="transform: scaleX(-1);">→</span>
+          <span>이전 칸을 누르며 따라가요</span>
+        </div>
+        <div class="np-path desc" id="q15-path" data-direction="desc" data-start="9" data-end="1">
+          <button class="np-tile" data-num="9">9</button>
+          <button class="np-tile" data-num="8">8</button>
+          <button class="np-tile" data-num="7">7</button>
+          <button class="np-tile" data-num="6">6</button>
+          <button class="np-tile" data-num="5">5</button>
+          <button class="np-tile" data-num="4">4</button>
+          <button class="np-tile" data-num="3">3</button>
+          <button class="np-tile" data-num="2">2</button>
+          <button class="np-tile" data-num="1">1</button>
+        </div>
+        <div class="np-progress">진행: <strong id="q15-progress">1 / 9</strong></div>
+        <div class="mcq-hint" data-hints='["지금 자리에서 한 칸 작은 수를 눌러요","9 이전 8, 8 이전 7 … 차례로 누르세요"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 화살표 + 호기심 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">수의 순서를 정리해요</h2>
+      <div class="seq-stage">
+        <div class="seq-direction">
+          <span class="arrow">→</span>
+          <span>순방향: 1·2·3·4·5·6·7·8·9</span>
+        </div>
+        <div class="seq-row">
+          <div class="seq-card">1</div>
+          <div class="seq-card">2</div>
+          <div class="seq-card">3</div>
+          <div class="seq-card">4</div>
+          <div class="seq-card">5</div>
+          <div class="seq-card">6</div>
+          <div class="seq-card">7</div>
+          <div class="seq-card">8</div>
+          <div class="seq-card">9</div>
+        </div>
+        <div class="seq-direction">
+          <span class="arrow" style="transform: scaleX(-1);">→</span>
+          <span>역방향: 9·8·7·6·5·4·3·2·1</span>
+        </div>
+        <div class="curio-row" style="margin-top: clamp(8px, 1.6vw, 14px);">
+          <div class="curio-card">
+            <div class="curio-q-row">
+              <span>9</span>
+              <span class="curio-arrow">→</span>
+              <span class="curio-blank">?</span>
+            </div>
+            <div class="curio-note">다음 차시에 배워 봐요</div>
+          </div>
+          <div class="curio-card">
+            <div class="curio-q-row">
+              <span class="curio-blank">?</span>
+              <span class="curio-arrow">→</span>
+              <span>1</span>
+            </div>
+            <div class="curio-note">9차시에 배워 봐요</div>
+          </div>
+        </div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 예고 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">➕1️⃣ ➖1️⃣</div>
+          <div class="next-label">1만큼 더 큰 수와<br>1만큼 더 작은 수를 배워요</div>
+        </div>
+        <div class="home-prompt">
+          집에서 가족 나이를 순서대로 말해 봐요!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g1_math_u1_l07';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+        if(window.kedu && window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, 100);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) {
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── count_input 다수 입력 (슬 8·9·14) ─────
+// 빈칸 하나를 선택(active) → 패드 클릭 → 채움. 모든 빈칸이 정답으로 채워지면 정답.
+['q8','q9','q14'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const container = slide.querySelector('[data-answers]');
+  if (!container) return;
+  const answers = container.dataset.answers.split(',').map(s => parseInt(s, 10));
+  const blanks = slide.querySelectorAll('.cm-slot.blank');
+  const pad = slide.querySelector('.cm-pad');
+  const fb = slide.querySelector('.q-fb');
+  let activeBlank = null;
+  const filled = new Map(); // blankIdx → number
+  const N_BLANKS = blanks.length;
+
+  function setActive(b) {
+    blanks.forEach(x => x.classList.remove('active'));
+    if (b && !b.classList.contains('filled')) {
+      b.classList.add('active');
+      activeBlank = b;
+    } else {
+      activeBlank = null;
+    }
+  }
+
+  blanks.forEach(b => {
+    b.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (b.classList.contains('filled')) return;
+      setActive(b);
+    });
+  });
+
+  // 첫 빈칸 자동 활성
+  if (blanks.length > 0) setActive(blanks[0]);
+
+  pad.querySelectorAll('.cm-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (!activeBlank) {
+        fb.textContent = '빈칸을 먼저 골라요';
+        fb.classList.add('wrong');
+        return;
+      }
+      st.attempts++;
+      const num = parseInt(btn.dataset.num, 10);
+      const blankIdx = parseInt(activeBlank.dataset.blankIdx, 10);
+      const expect = answers[blankIdx];
+      if (num === expect) {
+        activeBlank.textContent = num;
+        activeBlank.classList.remove('active');
+        activeBlank.classList.add('filled');
+        filled.set(blankIdx, num);
+        // 다음 빈칸 자동 활성
+        const next = Array.from(blanks).find(x => !x.classList.contains('filled'));
+        if (next) {
+          setActive(next);
+          fb.textContent = '맞아요! 다음 빈칸을 채워요';
+          fb.classList.remove('wrong');
+        } else {
+          // 모두 채움
+          st.solved = true;
+          pad.querySelectorAll('.cm-pad-btn').forEach(p => p.disabled = true);
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '모두 맞췄어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        }
+      } else {
+        st.wrongCount++;
+        activeBlank.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => activeBlank && activeBlank.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── sequence_arrange (슬 10·12·13) ─────
+['q10','q12','q13'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const poolEl = slide.querySelector('.sa-pool');
+  const slotEls = slide.querySelectorAll('.sa-slot');
+  const resetBtn = slide.querySelector('.sa-reset');
+  const fb = slide.querySelector('.q-fb');
+  const cards = poolEl.querySelectorAll('.sa-card');
+  let selectedCard = null;
+  let filledCount = 0;
+  const totalSlots = slotEls.length;
+
+  function reset() {
+    cards.forEach(c => { c.classList.remove('placed', 'selected'); });
+    slotEls.forEach(s => {
+      s.classList.remove('filled', 'filled-wrong', 'active');
+      const num = s.dataset.expect;
+      s.innerHTML = '<span class="sa-slot-pos">' + (parseInt(s.dataset.slotIdx, 10) + 1) + '번째</span>?';
+    });
+    selectedCard = null;
+    filledCount = 0;
+    fb.textContent = '';
+    fb.classList.remove('wrong');
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (card.classList.contains('placed')) return;
+      cards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedCard = card;
+      fb.textContent = '카드를 놓을 자리를 골라요';
+      fb.classList.remove('wrong');
+    });
+  });
+
+  slotEls.forEach(slot => {
+    slot.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (slot.classList.contains('filled')) return;
+      if (!selectedCard) {
+        fb.textContent = '카드를 먼저 골라요';
+        fb.classList.add('wrong');
+        return;
+      }
+      st.attempts++;
+      const cardNum = parseInt(selectedCard.dataset.num, 10);
+      const expect = parseInt(slot.dataset.expect, 10);
+      if (cardNum === expect) {
+        slot.innerHTML = '<span class="sa-slot-pos">' + (parseInt(slot.dataset.slotIdx, 10) + 1) + '번째</span>' + cardNum;
+        slot.classList.add('filled');
+        selectedCard.classList.add('placed');
+        selectedCard.classList.remove('selected');
+        selectedCard = null;
+        filledCount++;
+        if (filledCount === totalSlots) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '모두 맞췄어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          fb.textContent = '맞아요! 다음 카드를 골라요';
+        }
+      } else {
+        st.wrongCount++;
+        slot.classList.add('filled-wrong');
+        fb.textContent = '여기는 다른 자리예요';
+        fb.classList.add('wrong');
+        setTimeout(() => slot.classList.remove('filled-wrong'), 500);
+      }
+    });
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      reset();
+    });
+  }
+});
+
+// ───── number_path (슬 11·15) ─────
+['q11','q15'].forEach(qid => {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const pathEl = slide.querySelector('.np-path');
+  const tiles = pathEl.querySelectorAll('.np-tile');
+  const direction = pathEl.dataset.direction; // asc | desc
+  const start = parseInt(pathEl.dataset.start, 10);
+  const end = parseInt(pathEl.dataset.end, 10);
+  const progressEl = slide.querySelector('[id$="-progress"]');
+  const fb = slide.querySelector('.q-fb');
+  let curStep = 0; // 0-indexed step (0 = 시작점에 있음)
+  const N = 9;
+
+  function expectedNumber(step) {
+    // step = 0 → 시작점, step = 1 → 시작 다음, ...
+    if (direction === 'asc') return start + step;
+    return start - step;
+  }
+
+  function curTileNumber() { return expectedNumber(curStep); }
+
+  function render() {
+    tiles.forEach(t => {
+      const n = parseInt(t.dataset.num, 10);
+      t.classList.remove('start', 'visited', 'current', 'locked', 'np-walker');
+    });
+    // 시작 ~ curStep까지는 visited, curStep == current
+    for (let i = 0; i <= curStep; i++) {
+      const n = expectedNumber(i);
+      const tile = Array.from(tiles).find(t => parseInt(t.dataset.num, 10) === n);
+      if (!tile) continue;
+      if (i < curStep) {
+        tile.classList.add('visited');
+      } else {
+        tile.classList.add('current');
+        tile.classList.add('np-walker');
+      }
+    }
+    // 나머지 = locked
+    tiles.forEach(t => {
+      if (!t.classList.contains('visited') && !t.classList.contains('current')) {
+        t.classList.add('locked');
+      }
+    });
+    progressEl.textContent = (curStep + 1) + ' / ' + N;
+  }
+
+  render();
+
+  tiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      const n = parseInt(tile.dataset.num, 10);
+      const nextExpect = expectedNumber(curStep + 1);
+      if (curStep + 1 >= N) return; // 이미 끝
+      st.attempts++;
+      if (n === nextExpect) {
+        curStep++;
+        render();
+        if (curStep + 1 === N) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '끝까지 갔어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          fb.textContent = '잘했어요! 다음 칸을 누르세요';
+          fb.classList.remove('wrong');
+        }
+      } else {
+        st.wrongCount++;
+        tile.classList.add('wrong');
+        fb.textContent = direction === 'asc' ? '한 칸 큰 수를 눌러요' : '한 칸 작은 수를 눌러요';
+        fb.classList.add('wrong');
+        setTimeout(() => tile.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const name = btn.querySelector('.self-btn-name').textContent;
+    document.getElementById('self-fb').textContent = name + '을 골랐어요!';
+  });
+});
+
+// ───── 진도 저장 ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// 시작
+updateUI();
+</script>
+</body>
+</html>
