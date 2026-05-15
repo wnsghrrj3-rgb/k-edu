@@ -266,3 +266,50 @@ LESSONS["u1_l11"] = {
   ],
   extras: []
 };
+
+/* ============================================================
+   l01 (단원 도입) — 안 B (5슬, 본 차시 X, 점수 X)
+   라이브 자리 g1_math_u1_l01.html 자리 슬 자리 자리
+============================================================ */
+LESSONS["u1_l1"] = {
+  meta: {
+    grade: 1, subject: "수학", unit: 1, n: 1,
+    title: "단원 도입 (학교가 즐거워요)",
+    std: "[2수01-01]",
+    duration_min: 40,
+    lesson_format: "안 B — 단원 진입 슬 묶음 (본 차시 X, 점수 X)",
+    live_url: "../../grade1/semester1/math/1단원_9까지의수/g1_math_u1_l01.html"
+  },
+  slides: [
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"우리 주변에는 셀 수 있는 것이 많아요", desc:"학교 가는 길에 무엇이 보이나요? 그림에서 셀 수 있는 것을 친구와 이야기해 봐요 (🐿️🐰🦆🦋🐟🐸🌼🌳👫)"}, suggested_extras:[]},
+    {id:"s02", stage:"도입", block:"objective", data:{title:"단원에서 배울 7가지", desc:"1. 수의 필요성·사물의 수 세기 / 2. 1~9 세고 읽고 쓰기 / 3. 몇째인지 순서 / 4. ±1 큰 수·작은 수 / 5. 0의 뜻 / 6. 두 수의 크기 비교 / 7. 1~9·0 문제 해결"}, suggested_extras:[]},
+    {id:"s03", stage:"도입", block:"review", data:{title:"단원 차시 미리보기", desc:"1. 1~5 / 2. 6~9 / 3. 순서 / 4. 수의 순서 / 5. ±1 / 6. 0 / 7. 크기 비교 / 8. 단원 평가"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"단원 실천 활동", desc:"🏠 수를 세어 준비물 챙기기 / 🚦 수를 찾아 말하기 / 🎒 수와 함께 놀기 — 단원을 배우며 실천"}, suggested_extras:[]},
+    {id:"s05", stage:"정리", block:"next_lesson", data:{title:"준비됐어요?", desc:"단원에서 만날 수들과 친해질 시간 — 2차시 「1, 2, 3, 4, 5를 알아볼까요」로 진입"}, suggested_extras:[]}
+  ],
+  extras: []
+};
+
+/* ============================================================
+   l12 (단원 아웃트로 — 수학이랑 만들어요 / 수 그림책) — 안 B (6슬, 본 차시 X, 점수 X)
+   라이브 자리 g1_math_u1_l12.html 자리 슬 자리 자리
+============================================================ */
+LESSONS["u1_l12"] = {
+  meta: {
+    grade: 1, subject: "수학", unit: 1, n: 12,
+    title: "수학이랑 만들어요 (수 그림책)",
+    std: "[2수01-01]",
+    duration_min: 40,
+    lesson_format: "안 B — 단원 아웃트로 + \"내 수 컬렉션\" 자유 발상 (본 차시 X, 점수 X)",
+    live_url: "../../grade1/semester1/math/1단원_9까지의수/g1_math_u1_l12.html"
+  },
+  slides: [
+    {id:"s01", stage:"정리", block:"summary", data:{title:"우리가 배운 것", desc:"✓ 수를 세는 것 / ✓ 1~9 읽고 쓰기 / ✓ 몇째인지 순서 / ✓ ±1 큰 수·작은 수 / ✓ 0의 뜻 / ✓ 두 수의 크기 비교"}, suggested_extras:[]},
+    {id:"s02", stage:"응용문제", block:"real_world", data:{title:"좋아하는 수를 골라요", desc:"단원에서 만난 0~9 중 가장 좋아하는 수 고르기 (자유 선택, 정답 X)"}, suggested_extras:[]},
+    {id:"s03", stage:"응용문제", block:"real_world", data:{title:"내 수 컬렉션", desc:"좋아하는 수를 어디서 봤어요? 생각나는 것 자유 발상 자리 (정답 없음, 자유롭게 떠올리기) — 저장 기능 자리"}, suggested_extras:[]},
+    {id:"s04", stage:"정리", block:"self_assessment", data:{title:"단원이 즐거웠나요?", desc:"별 1~5개 자리 단원 평가 (자기 평가 자리)"}, suggested_extras:[]},
+    {id:"s05", stage:"정리", block:"next_lesson", data:{title:"다음 단원 예고", desc:"2단원 — 여러 가지 모양 (🔷⚪🔺 동그라미·세모·네모)"}, suggested_extras:[]},
+    {id:"s06", stage:"정리", block:"next_lesson", data:{title:"잘했어요!", desc:"1단원을 모두 끝냈어요 — 단원 목록으로 진입"}, suggested_extras:[]}
+  ],
+  extras: []
+};
