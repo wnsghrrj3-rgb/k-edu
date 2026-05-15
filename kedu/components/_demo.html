@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-edu Components — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --mw-lg: 800px;
+    --mw-md: 600px;
+    --fs-caption: clamp(14px, 2.2vw, 18px);
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Jua', sans-serif;
+    margin: 0;
+    padding: 24px;
+    background: #FAFAFA;
+    color: #222;
+    line-height: 1.5;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; color: #1565C0; }
+  h2 { font-size: 22px; margin: 0 0 6px; color: #1976D2; }
+  h3 { font-size: 16px; margin: 0 0 8px; color: #607D8B; font-weight: normal; }
+  .meta { color: #607D8B; margin-bottom: 24px; font-size: 14px; }
+  .case {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+  }
+  .case .desc { color: #607D8B; font-size: 14px; margin: 4px 0 14px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .pair > div {
+    padding: 14px;
+    border: 1px dashed #BDBDBD;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 140px;
+  }
+  .log {
+    font-family: monospace;
+    font-size: 12px;
+    background: #F5F5F5;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #424242;
+    max-height: 80px;
+    overflow-y: auto;
+    width: 100%;
+  }
+  /* ───── 학생 라이브 원본 인라인 CSS (시각 비교용) ───── */
+  .ten-frame { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: clamp(3px, 0.6vw, 5px); background: #1565C0; padding: clamp(3px, 0.6vw, 5px); border-radius: clamp(8px, 1.4vw, 12px); }
+  .ten-frame.size-sm { width: clamp(120px, 19vw, 180px); height: clamp(50px, 7.8vw, 74px); }
+  .ten-frame.size-md { width: clamp(170px, 26vw, 250px); height: clamp(70px, 10.7vw, 102px); }
+  .ten-frame.size-lg { width: clamp(220px, 34vw, 320px); height: clamp(90px, 14vw, 132px); }
+  .tf-cell { background: white; border-radius: clamp(4px, 0.8vw, 7px); display: flex; align-items: center; justify-content: center; position: relative; }
+  .tf-dot { width: 70%; height: 70%; border-radius: 50%; background: #1976D2; transform: scale(0); animation: ka-fillCell 0.35s ease both; }
+  .tf-cell.fill .tf-dot { transform: scale(1); }
+  .ten-frame.interactive .tf-cell { cursor: pointer; transition: background 0.15s; }
+  .ten-frame.interactive .tf-cell:hover { background: #E3F2FD; }
+  .ten-frame.interactive .tf-cell.fill { cursor: default; }
+
+  .lc-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+  .lc-row { display: flex; gap: clamp(4px, 0.8vw, 8px); align-items: flex-end; justify-content: center; flex-wrap: nowrap; }
+  .lc-bar { display: flex; flex-direction: column; gap: clamp(2px, 0.4vw, 4px); align-items: center; animation: ka-pop 0.4s ease both; }
+  .lc-cubes { display: flex; flex-direction: column-reverse; gap: clamp(1px, 0.3vw, 3px); }
+  .lc-cube { width: clamp(18px, 3vw, 30px); height: clamp(18px, 3vw, 30px); background: #64B5F6; border: clamp(1.5px, 0.3vw, 2.5px) solid #1976D2; border-radius: clamp(3px, 0.6vw, 5px); }
+  .lc-label { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(14px, 2.2vw, 20px); color: #1976D2; }
+  .lc-stage-single { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); }
+  .lc-row-single { display: flex; gap: clamp(4px, 0.8vw, 8px); align-items: center; padding: clamp(10px, 2vw, 16px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); }
+  .lc-row-single .lc-cube-h { width: clamp(28px, 4.5vw, 44px); height: clamp(28px, 4.5vw, 44px); background: #64B5F6; border: clamp(2px, 0.4vw, 3px) solid #1976D2; border-radius: clamp(4px, 0.8vw, 7px); animation: ka-pop 0.35s ease both; }
+
+  @keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes ka-fillCell { from { transform: scale(0); } to { transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<h1>K-edu Components — Demo</h1>
+<p class="meta">컴포넌트표준 v1 시각·동작 검증. 좌(인라인 원본) vs 우(&lt;kedu-*&gt; 컴포넌트). 시각 동일하면 통과.</p>
+
+<!-- ───── Case 1: ten-frame default count=6 size=md ───── -->
+<div class="case">
+  <h2>Case 1 — ten-frame default count=6 size=md</h2>
+  <p class="desc">기본 표시 모드. 왼쪽부터 6칸이 채워진다.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본</h3>
+      <div class="ten-frame size-md">
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+      </div>
+    </div>
+    <div>
+      <h3>&lt;kedu-ten-frame&gt;</h3>
+      <kedu-ten-frame count="6" size="md"></kedu-ten-frame>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 2: ten-frame size 3종 ───── -->
+<div class="case">
+  <h2>Case 2 — ten-frame size sm / md / lg / xl</h2>
+  <p class="desc">size attribute 변화 → 크기 변경.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본 (sm·md·lg)</h3>
+      <div class="ten-frame size-sm">
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+      </div>
+      <div class="ten-frame size-md">
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+      </div>
+      <div class="ten-frame size-lg">
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell fill"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+      </div>
+    </div>
+    <div>
+      <h3>&lt;kedu-ten-frame&gt; (sm·md·lg·xl)</h3>
+      <kedu-ten-frame count="3" size="sm"></kedu-ten-frame>
+      <kedu-ten-frame count="3" size="md"></kedu-ten-frame>
+      <kedu-ten-frame count="3" size="lg"></kedu-ten-frame>
+      <kedu-ten-frame count="3" size="xl"></kedu-ten-frame>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 3: ten-frame interactive (target=8) ───── -->
+<div class="case">
+  <h2>Case 3 — ten-frame interactive (target=8)</h2>
+  <p class="desc">빈 칸 클릭 → 왼쪽부터 채워짐. 8칸 채우면 complete 이벤트, 9칸 가면 overflow.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본 (수동)</h3>
+      <div id="legacy-tf-interactive" class="ten-frame size-lg interactive">
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+        <div class="tf-cell"><div class="tf-dot"></div></div>
+      </div>
+      <div class="log" id="legacy-log">count: 0 (목표 8)</div>
+    </div>
+    <div>
+      <h3>&lt;kedu-ten-frame mode="interactive" target="8"&gt;</h3>
+      <kedu-ten-frame id="kedu-tf-interactive" count="0" size="lg" mode="interactive" target="8"></kedu-ten-frame>
+      <div class="log" id="kedu-log">count: 0 (목표 8)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 4: linking-cube stairs range=1~9 ───── -->
+<div class="case">
+  <h2>Case 4 — linking-cube stairs range=1,9</h2>
+  <p class="desc">1부터 9까지 계단형 큐브 + 숫자 라벨.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본</h3>
+      <div class="lc-stage">
+        <div class="lc-row" id="legacy-lc-row"></div>
+      </div>
+    </div>
+    <div>
+      <h3>&lt;kedu-linking-cube&gt;</h3>
+      <kedu-linking-cube display="stairs" range="1,9"></kedu-linking-cube>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 5: linking-cube stairs + show-zero + highlight ───── -->
+<div class="case">
+  <h2>Case 5 — linking-cube stairs range=0,5 show-zero highlight=3</h2>
+  <p class="desc">0 표시 + 3 강조. 학생 라이브에 동일 자리는 없지만 표준 사양 검증용.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본 (없음)</h3>
+      <div style="color:#999; font-size:13px;">학생 라이브에 동일 자리 없음. show-zero·highlight props 단독 검증.</div>
+    </div>
+    <div>
+      <h3>&lt;kedu-linking-cube&gt;</h3>
+      <kedu-linking-cube display="stairs" range="0,5" show-zero highlight="3"></kedu-linking-cube>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 6: linking-cube single count=5 ───── -->
+<div class="case">
+  <h2>Case 6 — linking-cube single count=5</h2>
+  <p class="desc">단독 배치, 배경 박스 있음.</p>
+  <div class="pair">
+    <div>
+      <h3>인라인 원본</h3>
+      <div class="lc-stage-single">
+        <div class="lc-row-single">
+          <div class="lc-cube-h"></div>
+          <div class="lc-cube-h"></div>
+          <div class="lc-cube-h"></div>
+          <div class="lc-cube-h"></div>
+          <div class="lc-cube-h"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3>&lt;kedu-linking-cube&gt;</h3>
+      <kedu-linking-cube display="single" count="5"></kedu-linking-cube>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 7: CSS 변수 override ───── -->
+<div class="case">
+  <h2>Case 7 — CSS 변수 override</h2>
+  <p class="desc">--kedu-lc-cube-color 등 변경 → 큐브 색 따라옴.</p>
+  <div class="pair">
+    <div>
+      <h3>기본 색</h3>
+      <kedu-linking-cube display="stairs" range="1,5"></kedu-linking-cube>
+    </div>
+    <div style="--kedu-lc-cube-color-override: #FFAB91; --kedu-lc-cube-border-override: #BF360C; --kedu-lc-label-color-override: #BF360C;">
+      <h3>--kedu-lc-cube-color = #FFAB91</h3>
+      <kedu-linking-cube display="stairs" range="1,5"></kedu-linking-cube>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
+  (function legacyLcStairs() {
+    const row = document.getElementById('legacy-lc-row');
+    if (!row) return;
+    for (let n = 1; n <= 9; n++) {
+      const bar = document.createElement('div');
+      bar.className = 'lc-bar';
+      const cubes = document.createElement('div');
+      cubes.className = 'lc-cubes';
+      for (let i = 0; i < n; i++) {
+        const c = document.createElement('div');
+        c.className = 'lc-cube';
+        cubes.appendChild(c);
+      }
+      const label = document.createElement('div');
+      label.className = 'lc-label';
+      label.textContent = String(n);
+      bar.appendChild(cubes);
+      bar.appendChild(label);
+      row.appendChild(bar);
+    }
+  })();
+
+  // ── 인라인 원본 interactive (Case 3 좌측) ────────
+  (function legacyTfInteractive() {
+    const tf = document.getElementById('legacy-tf-interactive');
+    const log = document.getElementById('legacy-log');
+    if (!tf || !log) return;
+    const cells = tf.querySelectorAll('.tf-cell');
+    const TARGET = 8;
+    let completed = false;
+    cells.forEach((cell, idx) => {
+      cell.addEventListener('click', () => {
+        if (completed) return;
+        if (cell.classList.contains('fill')) return;
+        const firstEmpty = Array.from(cells).findIndex(c => !c.classList.contains('fill'));
+        if (idx !== firstEmpty) {
+          log.textContent = '⚠ 왼쪽부터 차례로 채워요';
+          return;
+        }
+        cell.classList.add('fill');
+        const n = tf.querySelectorAll('.tf-cell.fill').length;
+        if (n === TARGET) {
+          completed = true;
+          log.textContent = `✓ count: ${n} — complete!`;
+        } else if (n > TARGET) {
+          log.textContent = `⚠ count: ${n} — overflow`;
+        } else {
+          log.textContent = `count: ${n} (목표 ${TARGET})`;
+        }
+      });
+    });
+  })();
+
+  // ── 컴포넌트 interactive 로그 (Case 3 우측) ──────
+  window.addEventListener('kedu-components-ready', () => {
+    const tf = document.getElementById('kedu-tf-interactive');
+    const log = document.getElementById('kedu-log');
+    if (!tf || !log) return;
+    tf.addEventListener('kedu-ten-frame-change', e => {
+      log.textContent = `count: ${e.detail.count} (목표 ${e.detail.target})`;
+    });
+    tf.addEventListener('kedu-ten-frame-complete', e => {
+      log.textContent = `✓ count: ${e.detail.count} — complete!`;
+    });
+    tf.addEventListener('kedu-ten-frame-overflow', e => {
+      log.textContent = `⚠ count: ${e.detail.count} — overflow`;
+    });
+    tf.addEventListener('kedu-ten-frame-out-of-order', () => {
+      log.textContent = '⚠ 왼쪽부터 차례로 채워요';
+    });
+  });
+</script>
+
+<script src="./index.js" defer></script>
+
+</body>
+</html>
