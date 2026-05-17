@@ -1265,6 +1265,104 @@
     });
   }
 
+  // =================== 테마 토글 (2026-05-17) ===================
+  const THEME_KEY = 'kedu-teacher-theme';
+
+  function loadThemeState() {
+    try {
+      const s = JSON.parse(localStorage.getItem(THEME_KEY) || '{}');
+      return { t: s.t || 'board', f: s.f || 'round' };
+    } catch (e) { return { t: 'board', f: 'round' }; }
+  }
+
+  function saveThemeState(state) {
+    try { localStorage.setItem(THEME_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function applyThemeState(state) {
+    const body = document.body;
+    body.classList.remove('t-board', 't-atlas', 't-paper', 't-spring', 't-night');
+    body.classList.remove('f-round', 'f-myeong', 'f-hand');
+    if (state.t !== 'board') body.classList.add('t-' + state.t);
+    if (state.f !== 'round') body.classList.add('f-' + state.f);
+    document.querySelectorAll('.theme-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.t === state.t);
+    });
+    document.querySelectorAll('.theme-font').forEach(f => {
+      f.classList.toggle('active', f.dataset.f === state.f);
+    });
+  }
+
+  let _themeState = { t: 'board', f: 'round' };
+
+  function initTheme() {
+    if (document.getElementById('theme-toggle-btn')) return;
+
+    _themeState = loadThemeState();
+
+    const btn = document.createElement('button');
+    btn.className = 'theme-toggle-btn';
+    btn.id = 'theme-toggle-btn';
+    btn.innerHTML = '<span aria-hidden="true">🎨</span><span>테마</span>';
+    btn.setAttribute('aria-label', '테마 변경');
+
+    const panel = document.createElement('div');
+    panel.className = 'theme-panel';
+    panel.id = 'theme-panel';
+    panel.innerHTML = [
+      '<div class="theme-section">',
+      '  <div class="theme-section-label">색 테마</div>',
+      '  <div class="theme-swatches">',
+      '    <div class="theme-swatch" data-t="board" title="칠판 차콜"></div>',
+      '    <div class="theme-swatch" data-t="atlas" title="누런 도감"></div>',
+      '    <div class="theme-swatch" data-t="paper" title="흰 신문"></div>',
+      '    <div class="theme-swatch" data-t="spring" title="봄 교실"></div>',
+      '    <div class="theme-swatch" data-t="night" title="밤 칠판"></div>',
+      '  </div>',
+      '</div>',
+      '<div class="theme-section">',
+      '  <div class="theme-section-label">글씨체</div>',
+      '  <div class="theme-fonts">',
+      '    <button class="theme-font" data-f="round">굴림</button>',
+      '    <button class="theme-font" data-f="myeong">명조</button>',
+      '    <button class="theme-font" data-f="hand">손글씨</button>',
+      '  </div>',
+      '</div>'
+    ].join('\n');
+
+    document.body.appendChild(btn);
+    document.body.appendChild(panel);
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      panel.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!panel.contains(e.target) && !btn.contains(e.target)) {
+        panel.classList.remove('open');
+      }
+    });
+
+    panel.querySelectorAll('.theme-swatch').forEach(s => {
+      s.addEventListener('click', () => {
+        _themeState.t = s.dataset.t;
+        applyThemeState(_themeState);
+        saveThemeState(_themeState);
+      });
+    });
+
+    panel.querySelectorAll('.theme-font').forEach(f => {
+      f.addEventListener('click', () => {
+        _themeState.f = f.dataset.f;
+        applyThemeState(_themeState);
+        saveThemeState(_themeState);
+      });
+    });
+
+    applyThemeState(_themeState);
+  }
+
   // =================== 공개 API ===================
   global.Teacher = {
     init(config) {
@@ -1273,10 +1371,14 @@
       SUBJECT_INFO = config.subject || {};
       renderHome();
       bindEvents();
+      initTheme();
     },
     // 디버그·외부 호출용
     openShow,
-    backToHome
+    backToHome,
+    // 테마 외부 호출용 (디버그·확장)
+    setTheme(t) { _themeState.t = t; applyThemeState(_themeState); saveThemeState(_themeState); },
+    setFont(f) { _themeState.f = f; applyThemeState(_themeState); saveThemeState(_themeState); }
   };
 
 })(window);
