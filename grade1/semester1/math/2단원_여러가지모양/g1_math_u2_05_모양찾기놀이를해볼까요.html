@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u2_l05 — 모양 찾기 놀이를 해 볼까요 (2단원 5차시)
+  ════════════════════════════════════════════════════════════
+  자리: kedu/curriculum/math/g1/unit2/05차_모양찾기놀이를해볼까요/draft.html
+  계획: _PLAN.md (2026-05-15)
+  지도서: _SOURCE.md (지도서 p.192-193)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md (v1)
+
+  학습 본질: 놀이(색 코딩 분류·메모리 카드 게임)를 통한 직·원·구 모양 분류·매칭 강화
+  학생 노출 어휘: 상자 모양·기둥 모양·공 모양 (일상용어, 수학 용어 X)
+  메카닉: 4지선다 + 터치 매칭 (풀 안) + 메모리 카드 게임 (풀 밖, 자체 구현 / ideas 적재)
+  점수: 기본문제 4슬 × 10점 + 응용문제 4슬 × 15점 = 100점 만점
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u2_l05_v1">
+<title>모양 찾기 놀이를 해 볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+
+  --c-green: #A5D6A7;
+  --c-green-d: #2E7D32;
+  --c-pink: #F8BBD0;
+  --c-pink-d: #C2185B;
+  --c-yellow: #FFE082;
+  --c-yellow-d: #F57F17;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-flip-out { from { transform: rotateY(0); } to { transform: rotateY(180deg); } }
+@keyframes ka-flip-in { from { transform: rotateY(180deg); } to { transform: rotateY(0); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── 슬 1 진입 표지 ───── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 24px); max-width: var(--mw-md); }
+.intro-meta { font-size: var(--fs-label); color: #90A4AE; }
+.intro-preview { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(4px, 0.8vw, 8px); padding: clamp(8px, 1.6vw, 14px); background: #E3F2FD; border-radius: clamp(12px, 2vw, 18px); margin: clamp(8px, 1.6vw, 14px) 0; }
+.intro-preview-card { background: white; border: 2px solid #42A5F5; border-radius: clamp(6px, 1vw, 10px); padding: clamp(6px, 1.2vw, 10px); display: flex; align-items: center; justify-content: center; font-size: clamp(20px, 3.5vw, 36px); animation: ka-pop 0.6s ease both; }
+.intro-preview-card:nth-child(1) { animation-delay: 0.1s; }
+.intro-preview-card:nth-child(2) { animation-delay: 0.15s; }
+.intro-preview-card:nth-child(3) { animation-delay: 0.2s; }
+.intro-preview-card:nth-child(4) { animation-delay: 0.25s; }
+.intro-preview-card:nth-child(5) { animation-delay: 0.3s; }
+.intro-preview-card:nth-child(6) { animation-delay: 0.35s; }
+.intro-preview-card:nth-child(7) { animation-delay: 0.4s; }
+.intro-preview-card:nth-child(8) { animation-delay: 0.45s; }
+.intro-preview-card:nth-child(9) { animation-delay: 0.5s; }
+.intro-preview-card:nth-child(10) { animation-delay: 0.55s; }
+.intro-preview-card:nth-child(11) { animation-delay: 0.6s; }
+.intro-preview-card:nth-child(12) { animation-delay: 0.65s; }
+.intro-goal { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 26px); font-size: var(--fs-body); color: #F57F17; text-align: center; }
+
+/* ───── 슬 2 카드 풀 ───── */
+.cards-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.cards-bub { background: #E3F2FD; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 16px) clamp(14px, 2.6vw, 22px); font-size: var(--fs-body); color: #1976D2; text-align: center; max-width: var(--mw-sm); }
+.cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(6px, 1.2vw, 12px); width: 100%; max-width: var(--mw-md); padding: clamp(8px, 1.6vw, 14px); background: #E3F2FD; border-radius: clamp(14px, 2.4vw, 20px); }
+.cards-card { background: white; border: 2px solid #42A5F5; border-radius: clamp(8px, 1.4vw, 12px); padding: clamp(8px, 1.6vw, 14px) clamp(4px, 0.8vw, 8px); display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); animation: ka-pop 0.5s ease both; }
+.cards-card-emoji { font-size: clamp(28px, 4.5vw, 48px); line-height: 1; }
+.cards-card-name { font-size: clamp(11px, 1.7vw, 14px); color: #455A64; text-align: center; }
+
+/* ───── 슬 3 전시 학습 상기 ───── */
+.recall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-md); }
+.recall-row { display: flex; gap: clamp(10px, 2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.recall-chip { background: white; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.4vw, 22px); padding: clamp(10px, 2vw, 16px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); min-width: clamp(110px, 18vw, 170px); }
+.recall-emoji { font-size: var(--em-md); }
+.recall-name { font-size: var(--fs-heading); color: #1976D2; }
+.recall-goal { font-size: var(--fs-body); color: #455A64; text-align: center; line-height: 1.5; background: #FFF8E1; padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.8vw, 16px); border: 2px solid #FFD54F; }
+.recall-goal strong { color: #F57F17; font-weight: 400; }
+.recall-sub { font-size: var(--fs-label); color: #607D8B; text-align: center; margin-top: clamp(2px, 0.4vw, 4px); line-height: 1.4; }
+
+/* ───── 슬 4·5 색 코딩 안내 ───── */
+.colorcode-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-md); }
+.colorcode-row { display: flex; gap: clamp(10px, 2vw, 20px); justify-content: center; flex-wrap: wrap; }
+.colorcode-item { background: white; border: 3px solid; border-radius: clamp(14px, 2.4vw, 22px); padding: clamp(10px, 2vw, 16px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); min-width: clamp(100px, 16vw, 150px); animation: ka-pop 0.5s ease both; }
+.colorcode-item.green { border-color: var(--c-green); background: #E8F5E9; }
+.colorcode-item.pink { border-color: var(--c-pink); background: #FCE4EC; }
+.colorcode-item.yellow { border-color: var(--c-yellow); background: #FFF8E1; }
+.colorcode-emoji { font-size: var(--em-md); }
+.colorcode-circle { font-size: clamp(36px, 6vw, 64px); line-height: 1; }
+.colorcode-name { font-size: var(--fs-caption); color: #455A64; }
+.colorcode-rule { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); background: #F0F7FF; padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.4vw, 18px); border-radius: clamp(10px, 1.8vw, 16px); font-size: clamp(16px, 2.8vw, 22px); color: #1976D2; }
+.colorcode-rule-circle { width: clamp(22px, 4vw, 32px); height: clamp(22px, 4vw, 32px); border-radius: 50%; flex-shrink: 0; }
+.colorcode-rule-green { background: var(--c-green); }
+.colorcode-rule-pink { background: var(--c-pink); }
+.colorcode-rule-yellow { background: var(--c-yellow); }
+.colorcode-demo { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+.colorcode-demo-emoji { font-size: var(--em-md); }
+.colorcode-demo-arrow { font-size: clamp(24px, 4vw, 36px); color: #1976D2; }
+.colorcode-demo-circle { width: clamp(48px, 8vw, 72px); height: clamp(48px, 8vw, 72px); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: ka-popBig 0.6s ease both; animation-delay: 0.4s; }
+.colorcode-demo-circle.pink { background: var(--c-pink); }
+.colorcode-demo-circle.green { background: var(--c-green); }
+.colorcode-demo-circle.yellow { background: var(--c-yellow); }
+.colorcode-demo-circle-inner { font-size: clamp(28px, 4.5vw, 44px); line-height: 1; }
+
+/* ───── 슬 6·7 메모리 게임 안내·시연 ───── */
+.memintro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-md); }
+.memintro-rule { display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); width: 100%; max-width: var(--mw-sm); }
+.memintro-step { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); background: white; border: 2px solid #E3F2FD; border-radius: clamp(10px, 1.8vw, 14px); padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.4vw, 18px); font-size: var(--fs-body); color: #455A64; }
+.memintro-step-num { background: #1976D2; color: white; width: clamp(28px, 4.5vw, 38px); height: clamp(28px, 4.5vw, 38px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(14px, 2.4vw, 20px); flex-shrink: 0; }
+.memintro-bub { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.8vw, 14px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.6vw, 22px); font-size: var(--fs-body); color: #F57F17; text-align: center; max-width: var(--mw-sm); }
+.memintro-bub strong { color: #C62828; font-weight: 400; }
+
+/* 슬 7 메모리 시연 자리 (4장, 자동 진행 X) */
+.memdemo-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-md); }
+.memdemo-q { background: white; border: 3px solid #1976D2; border-radius: clamp(12px, 2vw, 18px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.6vw, 22px); font-size: var(--fs-caption); color: #1976D2; text-align: center; max-width: var(--mw-sm); }
+.memdemo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(6px, 1.2vw, 12px); }
+.memdemo-card { width: clamp(70px, 11vw, 110px); height: clamp(85px, 13vw, 130px); border-radius: clamp(10px, 1.8vw, 14px); position: relative; transform-style: preserve-3d; transition: transform 0.5s; cursor: pointer; }
+.memdemo-card.flipped { transform: rotateY(180deg); }
+.memdemo-card-face { position: absolute; width: 100%; height: 100%; border-radius: clamp(10px, 1.8vw, 14px); display: flex; align-items: center; justify-content: center; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.memdemo-card-back { background: #1976D2; color: white; font-size: clamp(28px, 4.5vw, 44px); }
+.memdemo-card-front { background: white; border: 3px solid #42A5F5; transform: rotateY(180deg); font-size: clamp(36px, 6vw, 60px); }
+.memdemo-fb { font-size: var(--fs-caption); color: #2E7D32; text-align: center; min-height: clamp(24px, 4vw, 36px); }
+
+/* ───── 4지선다 (슬 8·9·10·11·13·14) ───── */
+.mcq-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-md); width: 100%; }
+.mcq-q { font-size: var(--fs-heading); color: #1976D2; text-align: center; line-height: 1.4; max-width: var(--mw-sm); }
+.mcq-q-cards { display: flex; gap: clamp(6px, 1.2vw, 12px); justify-content: center; flex-wrap: wrap; padding: clamp(6px, 1.2vw, 10px); background: #E3F2FD; border-radius: clamp(10px, 1.8vw, 14px); }
+.mcq-q-card { background: white; border: 2px solid #42A5F5; border-radius: clamp(6px, 1vw, 10px); padding: clamp(6px, 1.2vw, 10px); display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); min-width: clamp(70px, 11vw, 100px); }
+.mcq-q-card-emoji { font-size: clamp(28px, 4.5vw, 48px); }
+.mcq-q-card-name { font-size: clamp(11px, 1.7vw, 14px); color: #455A64; }
+.mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.6vw, 14px); width: 100%; }
+.mcq-grid.q4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.mcq-opt { background: white; border: 3px solid #E3F2FD; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 16px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.mcq-opt:hover { background: #F8FBFF; transform: translateY(-2px); }
+.mcq-opt.correct { background: #E8F5E9; border-color: #66BB6A; }
+.mcq-opt.wrong { background: #FFEBEE; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.mcq-opt.disabled { opacity: 0.5; cursor: not-allowed; }
+.mcq-opt-circle { width: clamp(40px, 6.5vw, 56px); height: clamp(40px, 6.5vw, 56px); border-radius: 50%; }
+.mcq-opt-circle.green { background: var(--c-green); }
+.mcq-opt-circle.pink { background: var(--c-pink); }
+.mcq-opt-circle.yellow { background: var(--c-yellow); }
+.mcq-opt-circle.gray { background: #ECEFF1; }
+.mcq-opt-emoji { font-size: var(--em-md); }
+.mcq-opt-label { font-size: var(--fs-body); color: #1976D2; text-align: center; }
+.mcq-opt-sub { font-size: var(--fs-label); color: #607D8B; text-align: center; }
+.mcq-fb { font-size: var(--fs-caption); text-align: center; min-height: clamp(24px, 4vw, 36px); color: #2E7D32; }
+.mcq-fb.wrong { color: #C62828; }
+.mcq-hint { background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(10px, 1.8vw, 14px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.6vw, 22px); font-size: var(--fs-body); color: #F57F17; text-align: center; max-width: var(--mw-sm); display: none; }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.4s ease both; }
+
+/* ───── 슬 12 메모리 카드 게임 (6장, 3쌍) ───── */
+.memgame-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); max-width: var(--mw-md); width: 100%; }
+.memgame-q { font-size: var(--fs-caption); color: #1976D2; text-align: center; line-height: 1.4; }
+.memgame-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 1.6vw, 14px); width: 100%; max-width: clamp(360px, 60vw, 540px); }
+.memgame-card { aspect-ratio: 3 / 4; border-radius: clamp(10px, 1.8vw, 14px); position: relative; transform-style: preserve-3d; transition: transform 0.5s, opacity 0.4s; cursor: pointer; }
+.memgame-card.flipped { transform: rotateY(180deg); }
+.memgame-card.done { opacity: 0.4; pointer-events: none; }
+.memgame-card-face { position: absolute; width: 100%; height: 100%; border-radius: clamp(10px, 1.8vw, 14px); display: flex; align-items: center; justify-content: center; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.memgame-card-back { background: #1976D2; color: white; font-size: clamp(28px, 4.5vw, 48px); }
+.memgame-card-back::after { content: '❓'; }
+.memgame-card-front { background: white; border: 3px solid #42A5F5; transform: rotateY(180deg); font-size: clamp(36px, 6vw, 60px); }
+.memgame-card.matched .memgame-card-front { background: #E8F5E9; border-color: #66BB6A; }
+.memgame-status { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); font-size: var(--fs-body); color: #1976D2; }
+.memgame-status-num { font-family: 'Nunito', sans-serif; font-weight: 800; color: #F57F17; }
+.memgame-fb { font-size: var(--fs-caption); text-align: center; min-height: clamp(24px, 4vw, 36px); color: #2E7D32; }
+.memgame-fb.wrong { color: #C62828; }
+
+/* ───── 슬 13·14 공통점·차이점 (4지선다 변형) ───── */
+.compare-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-md); width: 100%; }
+.compare-pair { display: flex; gap: clamp(14px, 2.6vw, 26px); align-items: center; justify-content: center; padding: clamp(10px, 2vw, 16px); background: #E3F2FD; border-radius: clamp(12px, 2vw, 18px); }
+.compare-pair-item { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.compare-pair-emoji { font-size: var(--em-lg); }
+.compare-pair-name { font-size: var(--fs-caption); color: #1976D2; }
+.compare-pair-vs { font-size: var(--fs-heading); color: #607D8B; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ───── 슬 15 매칭 (카드 ↔ 색 짝짓기) ───── */
+.match-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vw, 14px); max-width: var(--mw-md); width: 100%; }
+.match-q { font-size: var(--fs-caption); color: #1976D2; text-align: center; }
+.match-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(8px, 1.6vw, 14px); width: 100%; }
+.match-item { background: white; border: 3px solid #E3F2FD; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 14px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.match-item:hover { transform: translateY(-2px); }
+.match-item.selected { border-color: #1976D2; background: #E3F2FD; }
+.match-item.done { background: #E8F5E9; border-color: #66BB6A; opacity: 0.7; pointer-events: none; }
+.match-item-emoji { font-size: var(--em-md); }
+.match-item-name { font-size: var(--fs-label); color: #455A64; }
+.match-target-row { display: flex; gap: clamp(10px, 2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.match-target { background: white; border: 3px dashed #42A5F5; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 16px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); min-width: clamp(80px, 13vw, 120px); }
+.match-target:hover { background: #F0F7FF; transform: translateY(-2px); }
+.match-target.wrong { background: #FFEBEE; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.match-target-circle { width: clamp(40px, 6.5vw, 56px); height: clamp(40px, 6.5vw, 56px); border-radius: 50%; }
+.match-target-circle.green { background: var(--c-green); }
+.match-target-circle.pink { background: var(--c-pink); }
+.match-target-circle.yellow { background: var(--c-yellow); }
+.match-target-name { font-size: var(--fs-label); color: #455A64; }
+
+/* ───── 슬 16 핵심 개념 정리 ───── */
+.summary-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-md); width: 100%; }
+.summary-row { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 14px); width: 100%; }
+.summary-item { background: white; border: 2px solid #E3F2FD; border-radius: clamp(12px, 2vw, 18px); padding: clamp(10px, 2vw, 16px) clamp(14px, 2.6vw, 22px); display: flex; align-items: center; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #455A64; }
+.summary-item-num { background: #1976D2; color: white; width: clamp(32px, 5vw, 44px); height: clamp(32px, 5vw, 44px); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(16px, 2.6vw, 22px); flex-shrink: 0; }
+.summary-item-text strong { color: #1976D2; font-weight: 400; }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-md); }
+.self-q { font-size: var(--fs-heading); color: #1976D2; text-align: center; line-height: 1.4; }
+.self-row { display: flex; gap: clamp(10px, 2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.self-btn { background: white; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.4vw, 22px); padding: clamp(10px, 2vw, 16px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); min-width: clamp(110px, 18vw, 160px); }
+.self-btn:hover { transform: translateY(-2px); }
+.self-btn.picked { background: #FFF8E1; border-color: #FFD54F; }
+.self-btn-emoji { font-size: var(--em-md); }
+.self-btn-name { font-size: var(--fs-caption); color: #1976D2; }
+.self-fb { font-size: var(--fs-caption); color: #2E7D32; text-align: center; min-height: clamp(24px, 4vw, 36px); }
+
+/* ───── 슬 18 종료 화면 ───── */
+.wrap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 22px); max-width: var(--mw-md); }
+.wrap-trophy { font-size: clamp(80px, 14vw, 160px); animation: ka-popBig 0.7s ease both; }
+.wrap-score { display: flex; align-items: baseline; gap: clamp(6px, 1.2vw, 10px); }
+.wrap-score-big { font-family: 'Nunito', sans-serif; font-weight: 800; color: #F57F17; font-size: clamp(60px, 10vw, 120px); }
+.wrap-score-max { font-size: var(--fs-heading); color: #90A4AE; }
+.wrap-msg { font-size: var(--fs-heading); color: #1976D2; text-align: center; }
+.wrap-next { background: #E3F2FD; border: 2px solid #42A5F5; border-radius: clamp(10px, 1.8vw, 16px); padding: clamp(8px, 1.6vw, 14px) clamp(14px, 2.6vw, 24px); font-size: var(--fs-caption); color: #1976D2; }
+
+/* ───── 반응형 ───── */
+@media (max-width: 480px) {
+  .ka-lb { padding: 4px 6px; }
+  .mcq-grid.q4 { grid-template-columns: 1fr 1fr; }
+  .mcq-grid { grid-template-columns: 1fr; }
+  .match-row { grid-template-columns: 1fr 1fr; }
+  .cards-grid { grid-template-columns: repeat(3, 1fr); }
+  .intro-preview { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- 헤더 -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📚 차시 목록</button>
+    <div class="ka-bar"><div id="bar" style="width: 5.5%;"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- 메인 -->
+  <div class="ka-m">
+
+    <!-- 슬 1 진입 표지 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <div class="intro-stage">
+        <div class="intro-meta">2단원 · 여러 가지 모양 · 5차시</div>
+        <h1 class="slide-title">모양 찾기 놀이를 해 볼까요</h1>
+        <div class="intro-preview">
+          <div class="intro-preview-card">🐷</div>
+          <div class="intro-preview-card">🖍️</div>
+          <div class="intro-preview-card">🏀</div>
+          <div class="intro-preview-card">🎁</div>
+          <div class="intro-preview-card">🧱</div>
+          <div class="intro-preview-card">💊</div>
+          <div class="intro-preview-card">🧻</div>
+          <div class="intro-preview-card">🗄️</div>
+          <div class="intro-preview-card">🍱</div>
+          <div class="intro-preview-card">🎾</div>
+          <div class="intro-preview-card">⚽</div>
+          <div class="intro-preview-card">🔮</div>
+        </div>
+        <div class="intro-goal">카드 12장에서 모양을 찾고 짝지어 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 카드 풀 흥미 유발 -->
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h2 class="slide-title">카드에는 어떤 물건들이?</h2>
+      <div class="cards-stage">
+        <div class="cards-grid">
+          <div class="cards-card"><div class="cards-card-emoji">🐷</div><div class="cards-card-name">저금통</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🖍️</div><div class="cards-card-name">딱풀</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🏀</div><div class="cards-card-name">농구공</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🎁</div><div class="cards-card-name">선물 상자</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🧱</div><div class="cards-card-name">쌓기나무</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">💊</div><div class="cards-card-name">약병</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🧻</div><div class="cards-card-name">두루마리 휴지</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🗄️</div><div class="cards-card-name">수납장</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🍱</div><div class="cards-card-name">도시락</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🎾</div><div class="cards-card-name">탱탱볼</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">⚽</div><div class="cards-card-name">축구공</div></div>
+          <div class="cards-card"><div class="cards-card-emoji">🔮</div><div class="cards-card-name">구슬</div></div>
+        </div>
+        <div class="cards-bub">12장 카드에서 어떤 모양들이 보일까요?</div>
+      </div>
+    </div>
+
+    <!-- 슬 3 전시 학습 상기 -->
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h2 class="slide-title">지난 시간에 배운 세 모양</h2>
+      <div class="recall-stage">
+        <div class="recall-row">
+          <div class="recall-chip"><div class="recall-emoji">📦</div><div class="recall-name">상자</div><div class="recall-sub">평평함 · 잘 쌓임</div></div>
+          <div class="recall-chip"><div class="recall-emoji">🥫</div><div class="recall-name">기둥</div><div class="recall-sub">둥근 옆 · 한 방향 굴러감</div></div>
+          <div class="recall-chip"><div class="recall-emoji">⚽</div><div class="recall-name">공</div><div class="recall-sub">전부 둥근 · 잘 굴러감</div></div>
+        </div>
+        <div class="recall-goal">오늘은 카드 놀이로 <strong>같은 모양 찾기</strong>를 해 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 색 코딩 안내 -->
+    <div class="slide" data-slide="4" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h2 class="slide-title">모양마다 다른 색깔로</h2>
+      <div class="colorcode-stage">
+        <div class="colorcode-row">
+          <div class="colorcode-item green"><div class="colorcode-emoji">📦</div><div class="colorcode-circle">🟢</div><div class="colorcode-name">상자 = 연두</div></div>
+          <div class="colorcode-item pink"><div class="colorcode-emoji">🥫</div><div class="colorcode-circle">🩷</div><div class="colorcode-name">기둥 = 분홍</div></div>
+          <div class="colorcode-item yellow"><div class="colorcode-emoji">⚽</div><div class="colorcode-circle">🟡</div><div class="colorcode-name">공 = 노랑</div></div>
+        </div>
+        <div class="colorcode-demo">
+          <span class="colorcode-demo-emoji">🐷</span>
+          <span class="colorcode-demo-arrow">→</span>
+          <span class="colorcode-demo-circle pink"><span class="colorcode-demo-circle-inner">🐷</span></span>
+        </div>
+        <div class="colorcode-name" style="font-size: var(--fs-body); color: #C2185B;">저금통은 기둥 모양이라 <strong style="color:#C62828;">분홍색 ○</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 5 색 코딩 시연 2 -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h2 class="slide-title">두 카드도 색칠해 보면?</h2>
+      <div class="colorcode-stage">
+        <div class="colorcode-demo">
+          <span class="colorcode-demo-emoji">🎁</span>
+          <span class="colorcode-demo-arrow">→</span>
+          <span class="colorcode-demo-circle green"><span class="colorcode-demo-circle-inner">🎁</span></span>
+        </div>
+        <div class="colorcode-name" style="font-size: var(--fs-caption); color: #2E7D32;">선물 상자는 상자 모양이라 <strong style="color:#C62828;">연두색 ○</strong></div>
+        <div class="colorcode-demo">
+          <span class="colorcode-demo-emoji">🏀</span>
+          <span class="colorcode-demo-arrow">→</span>
+          <span class="colorcode-demo-circle yellow"><span class="colorcode-demo-circle-inner">🏀</span></span>
+        </div>
+        <div class="colorcode-name" style="font-size: var(--fs-caption); color: #F57F17;">농구공은 공 모양이라 <strong style="color:#C62828;">노란색 ○</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 6 메모리 게임 메카닉 안내 -->
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h2 class="slide-title">카드 뒤집기 놀이 방법</h2>
+      <div class="memintro-stage">
+        <div class="memintro-rule">
+          <div class="memintro-step"><span class="memintro-step-num">1</span>카드를 모두 뒤집어 놓아요</div>
+          <div class="memintro-step"><span class="memintro-step-num">2</span>두 장을 뒤집어 봐요</div>
+          <div class="memintro-step"><span class="memintro-step-num">3</span>같은 모양이면 가져가요</div>
+          <div class="memintro-step"><span class="memintro-step-num">4</span>다른 모양이면 다시 뒤집어 놓아요</div>
+        </div>
+        <div class="memintro-bub">카드를 많이 모은 사람이 <strong>이겨요!</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 7 메모리 게임 시연 (4장, 자동 진행 X, 클릭 자리 안 안내 메시지) -->
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h2 class="slide-title">한번 같이 해 볼까요?</h2>
+      <div class="memdemo-stage">
+        <div class="memdemo-q">아래 카드를 모두 뒤집어 봐요. 같은 모양이 보이면 알겠죠?</div>
+        <div class="memdemo-grid" id="memdemo-grid">
+          <div class="memdemo-card" data-shape="cyl">
+            <div class="memdemo-card-face memdemo-card-back">❓</div>
+            <div class="memdemo-card-face memdemo-card-front">💊</div>
+          </div>
+          <div class="memdemo-card" data-shape="rect">
+            <div class="memdemo-card-face memdemo-card-back">❓</div>
+            <div class="memdemo-card-face memdemo-card-front">🎁</div>
+          </div>
+          <div class="memdemo-card" data-shape="cyl">
+            <div class="memdemo-card-face memdemo-card-back">❓</div>
+            <div class="memdemo-card-face memdemo-card-front">🧻</div>
+          </div>
+          <div class="memdemo-card" data-shape="rect">
+            <div class="memdemo-card-face memdemo-card-back">❓</div>
+            <div class="memdemo-card-face memdemo-card-front">🧱</div>
+          </div>
+        </div>
+        <div class="memdemo-fb" id="memdemo-fb">카드 한 장을 눌러 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 기본문제 1 (저금통·딱풀·약병 = 원) -->
+    <div class="slide" data-slide="8" data-stage="3" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">3단계 · 기본문제 1</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">이 세 카드는 모두 어느 모양인가요?</div>
+        <div class="mcq-q-cards">
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🐷</div><div class="mcq-q-card-name">저금통</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🖍️</div><div class="mcq-q-card-name">딱풀</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">💊</div><div class="mcq-q-card-name">약병</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["이 세 카드를 만져 보면 어떤 느낌일까요? 둥글둥글한가요?","저금통·딱풀·약병 모두 둥글둥글한 기둥 모양이에요. 분홍색이에요."]'></div>
+        <div class="mcq-grid q4">
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle green"></div><div class="mcq-opt-sub">상자</div></div>
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-circle pink"></div><div class="mcq-opt-sub">기둥</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle yellow"></div><div class="mcq-opt-sub">공</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle gray"></div><div class="mcq-opt-sub">모르겠어요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 기본문제 2 (선물 상자·쌓기나무·수납장 = 직) -->
+    <div class="slide" data-slide="9" data-stage="3" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">3단계 · 기본문제 2</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">이 세 카드는 모두 어느 모양인가요?</div>
+        <div class="mcq-q-cards">
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🎁</div><div class="mcq-q-card-name">선물 상자</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🧱</div><div class="mcq-q-card-name">쌓기나무</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🗄️</div><div class="mcq-q-card-name">수납장</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["이 세 카드는 평평한 면이 많아요. 잘 쌓을 수 있는 모양은?","선물 상자·쌓기나무·수납장 모두 평평한 상자 모양이에요. 연두색이에요."]'></div>
+        <div class="mcq-grid q4">
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-circle green"></div><div class="mcq-opt-sub">상자</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle pink"></div><div class="mcq-opt-sub">기둥</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle yellow"></div><div class="mcq-opt-sub">공</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle gray"></div><div class="mcq-opt-sub">모르겠어요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 기본문제 3 (농구공·탱탱볼·구슬 = 구) -->
+    <div class="slide" data-slide="10" data-stage="3" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">3단계 · 기본문제 3</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">이 세 카드는 모두 어느 모양인가요?</div>
+        <div class="mcq-q-cards">
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🏀</div><div class="mcq-q-card-name">농구공</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🎾</div><div class="mcq-q-card-name">탱탱볼</div></div>
+          <div class="mcq-q-card"><div class="mcq-q-card-emoji">🔮</div><div class="mcq-q-card-name">구슬</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["이 세 카드는 어디로든 잘 굴러가요. 공처럼 둥근 모양은?","농구공·탱탱볼·구슬 모두 어디로든 잘 굴러가는 공 모양이에요. 노란색이에요."]'></div>
+        <div class="mcq-grid q4">
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle green"></div><div class="mcq-opt-sub">상자</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle pink"></div><div class="mcq-opt-sub">기둥</div></div>
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-circle yellow"></div><div class="mcq-opt-sub">공</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle gray"></div><div class="mcq-opt-sub">모르겠어요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 기본문제 4 (도시락 한 카드 = 직) -->
+    <div class="slide" data-slide="11" data-stage="3" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">3단계 · 기본문제 4</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">도시락은 어느 모양인가요?</div>
+        <div class="mcq-q-cards">
+          <div class="mcq-q-card" style="min-width: clamp(110px, 18vw, 160px);"><div class="mcq-q-card-emoji" style="font-size: clamp(50px, 8vw, 80px);">🍱</div><div class="mcq-q-card-name">도시락</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["도시락을 자세히 봐요. 평평한 면이 보이나요?","도시락은 평평한 면이 있는 상자 모양이에요. 연두색이에요."]'></div>
+        <div class="mcq-grid q4">
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-circle green"></div><div class="mcq-opt-sub">상자</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle pink"></div><div class="mcq-opt-sub">기둥</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle yellow"></div><div class="mcq-opt-sub">공</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-circle gray"></div><div class="mcq-opt-sub">모르겠어요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 응용 1 — 메모리 카드 게임 (6장, 3쌍) -->
+    <div class="slide" data-slide="12" data-stage="4" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">4단계 · 응용문제 1</div>
+      <h2 class="slide-title">같은 모양 찾기 놀이</h2>
+      <div class="memgame-stage">
+        <div class="memgame-q">두 장을 뒤집어 같은 모양 짝을 모두 찾아 봐요!</div>
+        <div class="memgame-status">짝지은 쌍: <span class="memgame-status-num" id="memgame-count">0</span> / 3</div>
+        <div class="memgame-grid" id="memgame-grid">
+          <!-- 6장: rect 2 + cyl 2 + sph 2, JS 자리에서 셔플 -->
+        </div>
+        <div class="memgame-fb" id="memgame-fb">카드를 한 장씩 눌러서 뒤집어 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬 13 응용 2 — 공통점 4지선다 -->
+    <div class="slide" data-slide="13" data-stage="4" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">4단계 · 응용문제 2</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">딱풀과 약병의 같은 점은?</div>
+        <div class="compare-pair">
+          <div class="compare-pair-item"><div class="compare-pair-emoji">🖍️</div><div class="compare-pair-name">딱풀</div></div>
+          <div class="compare-pair-vs">=?</div>
+          <div class="compare-pair-item"><div class="compare-pair-emoji">💊</div><div class="compare-pair-name">약병</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["딱풀과 약병을 만져 보면 어떤 느낌일까요? 둥근가요?","둘 다 둥근 옆이 있는 기둥 모양이에요. 잘 굴러가요."]'></div>
+        <div class="mcq-grid">
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-label">둘 다 기둥 모양</div><div class="mcq-opt-sub">잘 굴러가요</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">둘 다 상자 모양</div><div class="mcq-opt-sub">잘 쌓여요</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">둘 다 공 모양</div><div class="mcq-opt-sub">전부 둥글어요</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">같은 점 없음</div><div class="mcq-opt-sub">완전히 달라요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 응용 3 — 차이점 4지선다 -->
+    <div class="slide" data-slide="14" data-stage="4" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">4단계 · 응용문제 3</div>
+      <div class="mcq-stage">
+        <div class="mcq-q">딱풀과 수납장의 다른 점은?</div>
+        <div class="compare-pair">
+          <div class="compare-pair-item"><div class="compare-pair-emoji">🖍️</div><div class="compare-pair-name">딱풀</div></div>
+          <div class="compare-pair-vs">≠?</div>
+          <div class="compare-pair-item"><div class="compare-pair-emoji">🗄️</div><div class="compare-pair-name">수납장</div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["딱풀은 잘 굴러가요. 수납장은 어떨까요?","딱풀(기둥)은 잘 굴러가지만 수납장(상자)은 평평해서 안 굴러가요."]'></div>
+        <div class="mcq-grid">
+          <div class="mcq-opt" data-correct="1"><div class="mcq-opt-label">딱풀은 굴러가요</div><div class="mcq-opt-sub">수납장은 안 굴러가요</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">딱풀은 공 모양</div><div class="mcq-opt-sub">수납장은 기둥 모양</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">딱풀은 크기가 커요</div><div class="mcq-opt-sub">수납장이 작아요</div></div>
+          <div class="mcq-opt" data-correct="0"><div class="mcq-opt-label">다른 점 없음</div><div class="mcq-opt-sub">둘 다 똑같아요</div></div>
+        </div>
+        <div class="mcq-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 응용 4 — 카드 ↔ 색 짝짓기 매칭 -->
+    <div class="slide" data-slide="15" data-stage="4" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">4단계 · 응용문제 4</div>
+      <div class="match-stage">
+        <div class="match-q">카드를 누르고 알맞은 색깔에 짝지어요</div>
+        <div class="match-row">
+          <div class="match-item" data-match="rect"><div class="match-item-emoji">🧱</div><div class="match-item-name">쌓기나무</div></div>
+          <div class="match-item" data-match="cyl"><div class="match-item-emoji">🧻</div><div class="match-item-name">두루마리 휴지</div></div>
+          <div class="match-item" data-match="sph"><div class="match-item-emoji">⚽</div><div class="match-item-name">축구공</div></div>
+        </div>
+        <div class="match-target-row">
+          <div class="match-target" data-shape="rect"><div class="match-target-circle green"></div><div class="match-target-name">연두 · 상자</div></div>
+          <div class="match-target" data-shape="cyl"><div class="match-target-circle pink"></div><div class="match-target-name">분홍 · 기둥</div></div>
+          <div class="match-target" data-shape="sph"><div class="match-target-circle yellow"></div><div class="match-target-name">노랑 · 공</div></div>
+        </div>
+        <div class="mcq-fb" id="match-fb">카드 한 장을 골라 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬 16 정리 — 핵심 개념 -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-row">
+          <div class="summary-item">
+            <span class="summary-item-num">1</span>
+            <span class="summary-item-text">카드 속 물건을 <strong>모양별로 분류</strong>할 수 있어요</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item-num">2</span>
+            <span class="summary-item-text">놀이로 <strong>같은 모양</strong> 짝을 찾을 수 있어요</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item-num">3</span>
+            <span class="summary-item-text">두 물건의 <strong>같은 점과 다른 점</strong>을 말할 수 있어요</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 17 정리 — 자기 평가 -->
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h2 class="slide-title">오늘 배운 것 ②</h2>
+      <div class="self-stage">
+        <div class="self-q">오늘 가장 재미있었던 것은?</div>
+        <div class="self-row">
+          <div class="self-btn" data-pick="color"><div class="self-btn-emoji">🟢</div><div class="self-btn-name">색 코딩 분류</div></div>
+          <div class="self-btn" data-pick="memory"><div class="self-btn-emoji">🃏</div><div class="self-btn-name">카드 뒤집기</div></div>
+          <div class="self-btn" data-pick="compare"><div class="self-btn-emoji">🔍</div><div class="self-btn-name">같은 점·다른 점</div></div>
+        </div>
+        <div class="self-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 종료 화면 -->
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="wrap-stage">
+        <div class="wrap-trophy" id="wrap-trophy">🏆</div>
+        <div class="wrap-score">
+          <div class="wrap-score-big" id="wrap-score-big">0</div>
+          <div class="wrap-score-max">/ 100 점</div>
+        </div>
+        <div class="wrap-msg" id="wrap-msg">정말 잘했어요!</div>
+        <div class="wrap-next">📚 다음 차시 — 수학이랑 확인해요</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 푸터 -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const STORAGE_KEY = 'kedu_progress_g1_math_u2_l05';
+let cur = 0;
+let score = 0;
+let muted = false;
+const startedAt = Date.now();
+
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, hintLevel: 0, wrongCount: 0, attempts: 0 };
+  return qState[qid];
+}
+
+function currentSlide() {
+  return document.querySelectorAll('.slide')[cur];
+}
+
+function currentQId() {
+  const s = currentSlide();
+  return s ? s.dataset.qId : null;
+}
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+    hintBtn.style.display = '';
+  } else {
+    hintBtn.style.display = 'none';
+  }
+
+  document.getElementById('next').disabled = (cur >= TOTAL - 1);
+
+  if (cur === TOTAL - 1) {
+    saveProgress(true);
+    document.getElementById('wrap-score-big').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() {
+  if (cur < TOTAL - 1) {
+    cur++;
+    saveProgress(false);
+    updateUI();
+  }
+}
+
+function goPrev() {
+  if (cur > 0) {
+    cur--;
+    updateUI();
+  }
+}
+
+function goHub() {
+  saveProgress(false);
+  location.href = '../../index.html';
+}
+
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute').textContent = muted ? '🔇' : '🔊';
+}
+
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+}
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── 4지선다 자리 (슬 8·9·10·11·13·14) ─────
+document.querySelectorAll('.mcq-stage').forEach(stage => {
+  const slide = stage.closest('.slide');
+  if (!slide || !slide.dataset.qId) return;
+  const qid = slide.dataset.qId;
+  if (qid === 'q12' || qid === 'q15') return;
+  const fb = stage.querySelector('.mcq-fb');
+  const opts = stage.querySelectorAll('.mcq-opt');
+  opts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (opt.dataset.correct === '1') {
+        st.solved = true;
+        opt.classList.add('correct');
+        opts.forEach(o => { if (o !== opt) o.classList.add('disabled'); });
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        opt.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => opt.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 슬 7 메모리 시연 (자동 진행 X, 학생 클릭 자리) ─────
+(function() {
+  const cards = document.querySelectorAll('#memdemo-grid .memdemo-card');
+  const fb = document.getElementById('memdemo-fb');
+  let first = null;
+  let busy = false;
+  let matched = 0;
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      if (busy || card.classList.contains('flipped')) return;
+      card.classList.add('flipped');
+      if (!first) {
+        first = card;
+        fb.textContent = '한 장 더 뒤집어 봐요';
+        return;
+      }
+      busy = true;
+      if (first.dataset.shape === card.dataset.shape) {
+        matched++;
+        fb.textContent = '같은 모양이에요! 잘했어요';
+        first = null;
+        busy = false;
+        if (matched === 2) {
+          fb.textContent = '모두 짝지었어요! 다음 슬에서 진짜 놀이를 해 봐요';
+        }
+      } else {
+        fb.textContent = '다른 모양이에요. 다시 뒤집어요';
+        const a = first, b = card;
+        setTimeout(() => {
+          a.classList.remove('flipped');
+          b.classList.remove('flipped');
+          first = null;
+          busy = false;
+          fb.textContent = '카드 한 장을 다시 눌러 봐요';
+        }, 1400);
+      }
+    });
+  });
+})();
+
+// ───── 슬 12 메모리 카드 게임 (6장, 3쌍) ─────
+(function() {
+  const qid = 'q12';
+  const grid = document.getElementById('memgame-grid');
+  const fb = document.getElementById('memgame-fb');
+  const countEl = document.getElementById('memgame-count');
+
+  // 6장 카드 자리: 직 2장 (선물 상자·도시락) + 원 2장 (저금통·약병) + 구 2장 (탱탱볼·구슬)
+  const cards = [
+    { shape: 'rect', emoji: '🎁' },
+    { shape: 'rect', emoji: '🍱' },
+    { shape: 'cyl',  emoji: '🐷' },
+    { shape: 'cyl',  emoji: '💊' },
+    { shape: 'sph', emoji: '🎾' },
+    { shape: 'sph', emoji: '🔮' },
+  ];
+  // 셔플
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  // 렌더
+  cards.forEach((c, idx) => {
+    const el = document.createElement('div');
+    el.className = 'memgame-card';
+    el.dataset.shape = c.shape;
+    el.dataset.idx = idx;
+    el.innerHTML = `
+      <div class="memgame-card-face memgame-card-back"></div>
+      <div class="memgame-card-face memgame-card-front">${c.emoji}</div>
+    `;
+    grid.appendChild(el);
+  });
+
+  let first = null;
+  let busy = false;
+  let matched = 0;
+
+  grid.querySelectorAll('.memgame-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || busy || card.classList.contains('flipped') || card.classList.contains('done')) return;
+      card.classList.add('flipped');
+      if (!first) {
+        first = card;
+        fb.textContent = '한 장 더 뒤집어 봐요';
+        fb.classList.remove('wrong');
+        return;
+      }
+      busy = true;
+      st.attempts++;
+      if (first.dataset.shape === card.dataset.shape) {
+        // 매칭 자리
+        const a = first, b = card;
+        setTimeout(() => {
+          a.classList.add('matched', 'done');
+          b.classList.add('matched', 'done');
+          matched++;
+          countEl.textContent = matched;
+          first = null;
+          busy = false;
+          if (matched === 3) {
+            st.solved = true;
+            const earn = pointsForQ(qid);
+            addScore(earn);
+            fb.textContent = '3쌍 모두 짝지었어요! +' + earn + '점';
+            fb.classList.remove('wrong');
+            updateUI();
+          } else {
+            fb.textContent = '같은 모양이에요! 잘했어요';
+            fb.classList.remove('wrong');
+          }
+        }, 600);
+      } else {
+        st.wrongCount++;
+        const a = first, b = card;
+        fb.textContent = '다른 모양이에요. 다시 뒤집어요';
+        fb.classList.add('wrong');
+        setTimeout(() => {
+          a.classList.remove('flipped');
+          b.classList.remove('flipped');
+          first = null;
+          busy = false;
+        }, 1400);
+      }
+    });
+  });
+})();
+
+// ───── 슬 15 매칭 자리 (카드 ↔ 색) ─────
+(function() {
+  const qid = 'q15';
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const items = slide.querySelectorAll('.match-item');
+  const targets = slide.querySelectorAll('.match-target');
+  const fb = document.getElementById('match-fb');
+  let selectedItem = null;
+  let doneCount = 0;
+  const totalItems = items.length;
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || item.classList.contains('done')) return;
+      items.forEach(i => i.classList.remove('selected'));
+      item.classList.add('selected');
+      selectedItem = item;
+      fb.textContent = '짝지을 색깔을 골라 봐요';
+      fb.classList.remove('wrong');
+    });
+  });
+
+  targets.forEach(target => {
+    target.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selectedItem) return;
+      st.attempts++;
+      if (selectedItem.dataset.match === target.dataset.shape) {
+        selectedItem.classList.add('done');
+        selectedItem.classList.remove('selected');
+        doneCount++;
+        selectedItem = null;
+        if (doneCount === totalItems) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '모두 짝지었어요! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          fb.textContent = '맞아요! 다음 카드도 짝지어요';
+          fb.classList.remove('wrong');
+        }
+      } else {
+        st.wrongCount++;
+        target.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => target.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 자리 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    const name = btn.querySelector('.self-btn-name').textContent;
+    document.getElementById('self-fb').textContent = name + '을 골랐어요! 다음에도 잘할 거예요';
+  });
+});
+
+// ───── 진도 저장 (차시운영 §4) ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    // localStorage 자리 차단 자리 = 무시
+  }
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 초기 자리
+updateUI();
+</script>
+</body>
+</html>
