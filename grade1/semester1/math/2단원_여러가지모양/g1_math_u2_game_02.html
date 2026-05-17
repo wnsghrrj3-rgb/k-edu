@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<!--
+  K-edu 1학년 수학 1단원 — 단원 도전 퀴즈 (game_01)
+  ────────────────────────────────────────────────────────
+  영역 2 base — 즉답형 도전 퀴즈, 개인 모드 (cycle 12 완료 → cycle 19 자동진행 제거 + 명칭 정정)
+  Foundation 04 4.2 / STATUS-kedu-game.md 준수, 디자인 헌법 v11 적용 (풀스크린).
+  파일명 규약: g{N}_{과목}_{단원약어}_game_{NN}.html
+
+  영역 2 본질:
+    - 즉답형 타이머 퀴즈 + 게임 형식 7종 풀 활용
+    - 단원 정리를 다양·재밌게
+    - 인디스쿨 대체 use case
+    - 진입: 단원 끝, 학생 호출 + 교사 라이브
+
+  이번 base 형식: 즉답형 도전 퀴즈 (7종 중 1번)
+    - 5초 타이머 / 빠른 답 = 보너스 점수 (긴장감)
+    - 정답: 50 + 남은초×10 = 50~100점 / 오답·시간초과: 0점
+    - 8문제 = 만점 800점
+    - 답 처리 후 자동 진행 X (cycle 19): 학생이 직접 "다음 →" 누름. 페이스 학생 통제.
+    - 시간 만료 시도 자동 진행 X (cycle 19): 정답 노출 후 학생이 다음 누름.
+
+  학년군 변주 (저학년):
+    - 5초 타이머 = 빠른 답 보너스용 (시간 만료여도 강제 진행 X)
+    - 점수보다 재미 강조 (결과 슬 메시지 톤)
+    - 단순 즉답형 (4지선다·빈칸만, 매칭/드래그 X)
+
+  미결 (cycle 12 시점):
+    - 단체 라이브 모드 (Supabase Realtime 인프라 들어간 후)
+    - 게임 형식 6종 (보드게임/메모리/퍼즐/골든벨/팀미션) base
+    - 양산 표준 (Layer 4) 들어간 후 같은 단원 game_02·03 양산
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="kedu-lesson-id" content="g1_math_u2_game_02">
+<meta name="kedu-lesson-area" content="game">
+<meta name="kedu-game-format" content="bingo">
+<title>2단원 빙고 도전 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #FFF8E1; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; margin: 0; padding: 0;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  overflow: hidden;
+}
+
+/* ─── 애니메이션 키프레임 ─── */
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(245,124,0,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(245,124,0,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-bounceIn { 0% { opacity: 0; transform: translateY(30px) scale(0.8); } 60% { opacity: 1; transform: translateY(-6px) scale(1.05); } 100% { transform: translateY(0) scale(1); } }
+@keyframes timer-shrink { from { width: 100%; } to { width: 0%; } }
+@keyframes timer-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes score-pop { 0% { opacity: 0; transform: translateY(20px) scale(0.5); } 60% { opacity: 1; transform: translateY(-6px) scale(1.2); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* ─── 카드 외형 (풀스크린) ─── */
+.ka {
+  background: white; border-radius: 0;
+  width: 100vw; height: 100vh;
+  padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3.2vw, 32px);
+  color: #333;
+  display: flex; flex-direction: column;
+  margin: 0;
+  position: relative; overflow: hidden;
+}
+
+/* ─── 헤더 (게임 컬러: 노랑·주황 톤) ─── */
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.4vw, 12px); margin-bottom: clamp(10px, 2.2vw, 18px); flex-wrap: nowrap; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px) clamp(8px, 1.6vw, 14px); border-radius: clamp(8px, 1.5vw, 12px); display: flex; align-items: center; gap: clamp(4px, 0.8vw, 7px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; }
+.ka-lb svg { width: clamp(12px, 2vw, 16px); height: clamp(12px, 2vw, 16px); flex-shrink: 0; }
+.ka-lb span { font-size: clamp(11px, 1.8vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.55vw, 5px); background: #FFF3E0; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #F57C00; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #E65100; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.8vw, 14px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(5px, 1.1vw, 8px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #E65100; font-size: clamp(13px, 2.2vw, 17px); width: clamp(30px, 5vw, 38px); height: clamp(30px, 5vw, 38px); display: flex; align-items: center; justify-content: center; }
+.ka-mute.off { color: #B0B7C2; }
+.ka-sc { background: #FFE082; color: #E65100; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.6vw, 12px); border-radius: 999px; display: flex; align-items: center; gap: clamp(3px, 0.6vw, 5px); flex-shrink: 0; }
+.ka-sc svg { width: clamp(11px, 1.85vw, 14px); height: clamp(11px, 1.85vw, 14px); flex-shrink: 0; }
+.ka-sc-n { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 2vw, 16px); }
+.ka-sc-u { font-size: clamp(10px, 1.65vw, 13px); }
+
+/* ─── 메인 ─── */
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; }
+.slide { display: none; flex-direction: column; justify-content: flex-start; align-items: center; height: 100%; width: 100%; padding-top: clamp(12px, 2.5vw, 20px); animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-tags { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(10px, 2vw, 14px); flex-wrap: wrap; align-self: flex-start; }
+.tag-stage { background: #FFE082; color: #E65100; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); display: inline-flex; align-items: center; gap: clamp(3px, 0.8vw, 6px); }
+.tag-meta { background: #F4F4F8; color: #6E6E78; padding: clamp(3px, 0.8vw, 6px) clamp(10px, 2vw, 14px); border-radius: 30px; font-size: clamp(11px, 2vw, 14px); }
+
+.slide-title { font-size: clamp(22px, 4.4vw, 38px); margin: 0 0 clamp(12px, 2.6vw, 20px); line-height: 1.4; color: #E65100; letter-spacing: -0.3px; font-weight: 400; text-align: center; }
+.slide-sub   { font-size: clamp(16px, 3vw, 23px); color: #455A64; margin-bottom: clamp(10px, 2vw, 16px); text-align: center; }
+
+/* ─── 인트로 ─── */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.8vw, 22px); margin-top: clamp(8px, 1.8vw, 14px); }
+.intro-emoji { font-size: clamp(64px, 13vw, 120px); animation: ka-bounceIn 0.7s ease both; }
+.intro-msg { font-size: clamp(17px, 3.2vw, 25px); color: #455A64; text-align: center; line-height: 1.5; }
+.intro-rules { background: #FFF3E0; border: clamp(2px, 0.45vw, 3px) solid #F57C00; border-radius: clamp(14px, 2.8vw, 22px); padding: clamp(12px, 2.4vw, 20px) clamp(16px, 3.2vw, 28px); font-size: clamp(14px, 2.6vw, 19px); color: #E65100; line-height: 1.7; max-width: clamp(280px, 70vw, 500px); }
+.intro-rules b { color: #BF360C; font-family: 'Nunito', sans-serif; font-weight: 800; }
+
+/* ─── 타이머 ─── */
+.timer-row { width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto clamp(10px, 2vw, 16px); display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+.timer-label { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(15px, 2.8vw, 22px); color: #E65100; min-width: clamp(28px, 5vw, 44px); text-align: center; animation: timer-pulse 0.5s ease infinite; }
+.timer-bar { flex: 1; height: clamp(10px, 1.8vw, 14px); background: #FFF3E0; border-radius: 999px; overflow: hidden; border: clamp(1px, 0.3vw, 2px) solid #F57C00; }
+.timer-fill { height: 100%; background: linear-gradient(90deg, #F57C00, #FF6E40); border-radius: 999px; width: 100%; }
+
+/* ─── 게임 문제 ─── */
+.q-stem { font-size: clamp(20px, 3.8vw, 30px); color: #E65100; margin: 0 auto clamp(12px, 2.4vw, 18px); text-align: center; line-height: 1.5; }
+.q-stem .k-emph { color: #C62828; font-weight: bold; }
+.q-visual { display: flex; gap: clamp(8px, 1.8vw, 14px); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 2.8vw, 22px); border: clamp(2px, 0.4vw, 3px) solid #FFB74D; border-radius: clamp(14px, 2.8vw, 20px); background: #FFF8E1; margin: 0 auto clamp(12px, 2.4vw, 18px); justify-content: center; max-width: clamp(280px, 60vw, 480px); flex-wrap: wrap; }
+.q-obj { font-size: clamp(28px, 5.4vw, 48px); animation: ka-pop 0.5s ease both; }
+
+.opt-grid { display: grid; gap: clamp(8px, 1.8vw, 14px); width: 100%; max-width: clamp(280px, 60vw, 500px); margin: 0 auto; }
+.opt-3 { grid-template-columns: repeat(3, 1fr); }
+.opt-4 { grid-template-columns: repeat(2, 1fr); }
+.opt-btn {
+  background: white; border: clamp(2px, 0.45vw, 3px) solid #FFB74D;
+  border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(12px, 2.4vw, 18px);
+  font-family: inherit; font-size: clamp(22px, 4.2vw, 34px); color: #E65100;
+  cursor: pointer; transition: all 0.18s;
+  min-height: clamp(56px, 10vw, 90px); display: flex; align-items: center; justify-content: center;
+}
+.opt-btn:hover:not(:disabled) { border-color: #F57C00; transform: translateY(-2px); }
+.opt-btn.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+.opt-btn.wrong { background: #FFCDD2; border-color: #C62828; color: #B71C1C; animation: ka-shake 0.4s ease; }
+.opt-btn.reveal { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; }
+.opt-btn:disabled { cursor: not-allowed; }
+
+.q-feedback { margin-top: clamp(8px, 1.8vw, 14px); font-size: clamp(16px, 3vw, 22px); min-height: clamp(20px, 3.6vw, 28px); text-align: center; }
+.q-feedback.ok { color: #2E7D32; font-weight: bold; }
+.q-feedback.no { color: #C62828; }
+.q-bonus { display: inline-block; background: #FFE082; color: #E65100; padding: clamp(3px, 0.8vw, 5px) clamp(10px, 2vw, 14px); border-radius: 999px; font-family: 'Nunito', sans-serif; font-weight: 800; margin-left: clamp(6px, 1.2vw, 10px); animation: score-pop 0.5s ease both; }
+
+/* ─── 빈칸 ─── */
+.fill-row { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.8vw, 14px); margin: clamp(10px, 2.2vw, 16px) 0; flex-wrap: wrap; }
+.fill-text { font-size: clamp(22px, 4.2vw, 34px); color: #455A64; }
+.fill-blank { display: inline-flex; align-items: center; justify-content: center; min-width: clamp(56px, 10vw, 90px); height: clamp(56px, 10vw, 90px); border: clamp(2px, 0.45vw, 3px) dashed #F57C00; border-radius: clamp(12px, 2.4vw, 18px); background: #FFF9C4; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(34px, 6.4vw, 58px); color: #E65100; }
+.fill-blank.filled { background: #C8E6C9; border-style: solid; border-color: #2E7D32; color: #1B5E20; animation: ka-pop 0.4s ease; }
+
+/* ─── 결과 ─── */
+/* cycle 18: 결과 슬 풀스크린 viewport 겹침 픽스 — 사이즈 다이어트 (gap·emoji·score·stars·msg 압축) */
+.result-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4vw, 10px); margin-top: clamp(2px, 0.6vw, 4px); }
+.result-emoji { font-size: clamp(40px, 7vw, 64px); animation: ka-bounceIn 0.7s ease both; }
+.result-score { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(32px, 5.6vw, 52px); color: #E65100; }
+.result-stars { font-size: clamp(26px, 5vw, 42px); letter-spacing: clamp(4px, 1vw, 8px); animation: ka-popBig 0.6s 0.3s ease both; }
+.result-msg { font-size: clamp(13px, 2.4vw, 17px); color: #455A64; text-align: center; line-height: 1.4; }
+.result-actions { display: flex; gap: clamp(10px, 2vw, 16px); margin-top: clamp(4px, 1vw, 8px); flex-wrap: wrap; justify-content: center; }
+.result-btn { background: white; border: clamp(2px, 0.45vw, 3px) solid #F57C00; border-radius: clamp(12px, 2.4vw, 18px); padding: clamp(8px, 1.8vw, 12px) clamp(14px, 2.8vw, 22px); font-family: inherit; font-size: clamp(14px, 2.6vw, 19px); color: #E65100; cursor: pointer; transition: all 0.18s; }
+.result-btn:hover { background: #FFF3E0; transform: translateY(-2px); }
+.result-btn.primary { background: #F57C00; color: white; }
+.result-btn.primary:hover { background: #E65100; }
+
+/* ─── 푸터 ─── */
+.ka-f { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap: clamp(5px, 1vw, 8px); margin-top: clamp(10px, 2vw, 16px); }
+.ka-nav { background: #F4F4F8; color: #2A2A35; border: none; padding: clamp(8px, 1.8vw, 14px) 6px; font-size: clamp(12px, 2.2vw, 17px); border-radius: clamp(10px, 2vw, 14px); cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: clamp(3px, 0.8vw, 6px); white-space: nowrap; }
+.ka-nav svg { width: clamp(14px, 2vw, 20px); height: clamp(14px, 2vw, 20px); flex-shrink: 0; }
+.ka-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+.ka-nav-prev { color: #6E6E78; }
+.ka-nav-next { background: #F57C00; color: white; font-size: clamp(13px, 2.4vw, 18px); box-shadow: 0 4px 14px rgba(245,124,0,0.32); }
+.ka-nav-next.hl { animation: ka-pulse 1.8s 1.2s ease-in-out infinite; }
+
+/* cycle 8: 빙고 격자 (결과 슬에서 표시) */
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(4px, 0.8vw, 8px);
+  width: clamp(180px, 28vw, 260px);
+  margin: clamp(10px, 1.6vw, 16px) auto;
+  background: rgba(255,255,255,0.6);
+  padding: clamp(6px, 1vw, 10px);
+  border-radius: clamp(10px, 1.5vw, 14px);
+}
+.bingo-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: clamp(8px, 1.2vw, 12px);
+  font-size: clamp(20px, 3.5vw, 32px);
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0.6);
+}
+.bingo-cell.shown { opacity: 1; transform: scale(1); }
+.bingo-cell.correct { background: #FFF8E1; color: #F57F17; }
+.bingo-cell.wrong { background: #FFEBEE; color: #C62828; }
+.bingo-cell.free { background: #E8F5E9; color: #2E7D32; }
+.bingo-cell.line { animation: bingo-line-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 0 3px #F57F17, 0 4px 14px rgba(245,127,23,0.45); }
+@keyframes bingo-line-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+
+/* cycle 9: 문제 슬 inline 빙고 격자 (학생이 빈 칸 직접 클릭) */
+.bingoq-zone { margin-top: clamp(8px, 1.4vw, 14px); display: none; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); animation: bingoq-fade .5s ease both; }
+.bingoq-zone.shown { display: flex; }
+.bingoq-prompt { font-size: clamp(13px, 2.2vw, 17px); color: #F57F17; font-weight: 700; }
+.bingoq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(3px, 0.6vw, 6px); width: clamp(140px, 22vw, 200px); padding: clamp(4px, 0.8vw, 8px); background: rgba(255,255,255,0.7); border-radius: clamp(8px, 1.2vw, 12px); }
+.bingoq-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: white; border-radius: clamp(6px, 1vw, 10px); font-size: clamp(18px, 3vw, 28px); font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+.bingoq-cell.empty { cursor: pointer; border: 2px dashed #FFB74D; }
+.bingoq-cell.empty:hover { background: #FFF3E0; transform: scale(1.05); }
+.bingoq-cell.placed { background: #FFF8E1; color: #F57F17; animation: bingoq-pop .4s ease; }
+.bingoq-cell.free { background: #E8F5E9; color: #2E7D32; }
+.bingoq-cell.locked { cursor: default; opacity: 0.6; }
+.bingoq-cell.line-now { animation: bingo-line-pulse 1.4s ease-in-out infinite; box-shadow: 0 0 0 3px #F57F17; }
+@keyframes bingoq-fade { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bingoq-pop { 0%{transform:scale(0.6)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+.bingoq-msg { font-size: clamp(14px, 2.4vw, 18px); color: #C62828; font-weight: 700; min-height: 1.4em; }
+.bingoq-msg.bingo { color: #F57F17; animation: bingoq-pop .5s ease; }
+</style>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+</head>
+<body>
+
+<div class="ka">
+
+  <!-- ═══════════════════ 헤더 ═══════════════════ -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHome()">
+      <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="11" width="12" height="2" rx="1" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar-fill" style="width:10%"></div></div>
+    <div class="ka-pg" id="pg-text">1 / 10</div>
+    <button class="ka-mute" id="mute-btn" onclick="toggleMute()" title="음성 켜기/끄기">🔊</button>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score-num">0</span>
+      <span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ 메인 ═══════════════════ -->
+  <div class="ka-m">
+
+    <!-- 슬1: 인트로 -->
+    <div class="slide active" data-stage="game-intro">
+      <div class="slide-tags">
+        <div class="tag-stage">🎮 단원 게임</div>
+        <div class="tag-meta">2단원 · 여러 가지 모양</div>
+      </div>
+      <h2 class="slide-title">빙고 도전!</h2>
+      <div class="intro-stage">
+        <div class="intro-emoji">🎯</div>
+        <div class="intro-rules">
+          🔢 <b>3×3 격자</b> + 가운데 자유 칸<br>
+          ✅ 정답 = 빈 칸 1개 ⭕ 자유 선택<br>
+          🎯 가로·세로·대각선 <b>빙고</b> 만들기!<br>
+          🌟 8문제 모두 정답 = <b>풀하우스</b>!
+        </div>
+      </div>
+      <audio data-tts="game-s01" preload="none"><!-- TTS: "빙고 도전! 3 곱하기 3 격자에서 가운데는 자유 칸이에요. 문제를 맞히면 빈 칸을 자유롭게 골라 동그라미를 써요. 가로, 세로, 대각선으로 빙고를 만들어봐요!" --></audio>
+    </div>
+
+    <!-- 슬2~9: 즉답 8문제 (4지선다·빈칸) -->
+
+    <!-- 슬2: Q1 - 4지선다 (사물 개수) -->
+    <div class="slide" data-stage="game-q" data-game-q="1"
+         data-slot-id="game-q-01" data-pattern="4지선다"
+         data-vars='{"object_pool":["📦","🎁","📚"],"shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 1번 문제</div>
+        <div class="tag-meta">모양 알아보기</div>
+      </div>
+      <div class="q-stem">이 물건은 어떤 모양?</div>
+      <div class="q-visual"><span class="q-obj">📦</span></div>
+      <div class="opt-grid opt-3" data-correct="1">
+        <button class="opt-btn" onclick="answerQ(this, 1)">상자 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">기둥 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">공 모양</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s02" preload="none"></audio>
+    </div>
+
+    <!-- 슬3: Q2 - 4지선다 (사물 → 모양) -->
+    <div class="slide" data-stage="game-q" data-game-q="2"
+         data-slot-id="game-q-02" data-pattern="4지선다"
+         data-vars='{"object_pool":["💊","🥁","🔋"],"shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 2번 문제</div>
+        <div class="tag-meta">모양 알아보기</div>
+      </div>
+      <div class="q-stem">이 물건은 어떤 모양?</div>
+      <div class="q-visual"><span class="q-obj">🥁</span></div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">상자 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">기둥 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">공 모양</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s03" preload="none"></audio>
+    </div>
+
+    <!-- 슬4: Q3 - 4지선다 (사물 → 모양) -->
+    <div class="slide" data-stage="game-q" data-game-q="3"
+         data-slot-id="game-q-03" data-pattern="4지선다"
+         data-vars='{"object_pool":["🌐","🎱","🍊"],"shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 3번 문제</div>
+        <div class="tag-meta">모양 알아보기</div>
+      </div>
+      <div class="q-stem">이 물건은 어떤 모양?</div>
+      <div class="q-visual"><span class="q-obj">🌐</span></div>
+      <div class="opt-grid opt-3" data-correct="3">
+        <button class="opt-btn" onclick="answerQ(this, 1)">상자 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">기둥 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">공 모양</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s04" preload="none"></audio>
+    </div>
+
+    <!-- 슬5: Q4 - 4지선다 (모양 → 사물) -->
+    <div class="slide" data-stage="game-q" data-game-q="4"
+         data-slot-id="game-q-04" data-pattern="4지선다"
+         data-vars='{"shape_target":"기둥","options":["🎁","🥁","🌐"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 4번 문제</div>
+        <div class="tag-meta">같은 모양 찾기</div>
+      </div>
+      <div class="q-stem"><span class="k-emph">기둥 모양</span>인 물건은?</div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">🎁</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">🥁</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">🌐</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s05" preload="none"></audio>
+    </div>
+
+    <!-- 슬6: Q5 - 4지선다 (모양 특징 — 쌓기) -->
+    <div class="slide" data-stage="game-q" data-game-q="5"
+         data-slot-id="game-q-05" data-pattern="4지선다"
+         data-vars='{"context":"잘_쌓이는","shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 5번 문제</div>
+        <div class="tag-meta">모양 특징</div>
+      </div>
+      <div class="q-stem"><span class="k-emph">잘 쌓이는</span> 모양은?</div>
+      <div class="opt-grid opt-3" data-correct="1">
+        <button class="opt-btn" onclick="answerQ(this, 1)">📦 상자</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">🥫 기둥</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">⚽ 공</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s06" preload="none"></audio>
+    </div>
+
+    <!-- 슬7: Q6 - 4지선다 (모양 특징 — 한 방향 굴러감) -->
+    <div class="slide" data-stage="game-q" data-game-q="6"
+         data-slot-id="game-q-06" data-pattern="4지선다"
+         data-vars='{"context":"한_방향_굴러가는","shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 6번 문제</div>
+        <div class="tag-meta">모양 특징</div>
+      </div>
+      <div class="q-stem">눕히면 <span class="k-emph">한 방향만</span> 굴러가는 모양은?</div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">📦 상자</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">🥫 기둥</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">⚽ 공</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s07" preload="none"></audio>
+    </div>
+
+    <!-- 슬8: Q7 - 4지선다 (사물 → 모양) -->
+    <div class="slide" data-stage="game-q" data-game-q="7"
+         data-slot-id="game-q-07" data-pattern="4지선다"
+         data-vars='{"object_pool":["🔋","🎈","📚"],"shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 7번 문제</div>
+        <div class="tag-meta">모양 알아보기</div>
+      </div>
+      <div class="q-stem">배터리는 어떤 모양?</div>
+      <div class="q-visual"><span class="q-obj">🔋</span></div>
+      <div class="opt-grid opt-3" data-correct="2">
+        <button class="opt-btn" onclick="answerQ(this, 1)">상자 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">기둥 모양</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">공 모양</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s08" preload="none"></audio>
+    </div>
+
+    <!-- 슬9: Q8 - 4지선다 (모양 특징 마지막 문제) -->
+    <div class="slide" data-stage="game-q" data-game-q="8"
+         data-slot-id="game-q-08" data-pattern="4지선다"
+         data-vars='{"context":"모두_둥근","shape_pool":["상자","기둥","공"]}'>
+      <div class="slide-tags">
+        <div class="tag-stage">⚡ 8번 문제</div>
+        <div class="tag-meta">모양 특징</div>
+      </div>
+      <div class="q-stem"><span class="k-emph">모든 부분이 둥근</span> 모양은?</div>
+      <div class="opt-grid opt-3" data-correct="3">
+        <button class="opt-btn" onclick="answerQ(this, 1)">📦 상자</button>
+        <button class="opt-btn" onclick="answerQ(this, 2)">🥫 기둥</button>
+        <button class="opt-btn" onclick="answerQ(this, 3)">⚽ 공</button>
+      </div>
+      <div class="q-feedback"></div>
+      <audio data-tts="game-s09" preload="none"></audio>
+    </div>
+
+    <!-- 슬10: 결과 -->
+    <div class="slide" data-stage="game-result">
+      <div class="slide-tags">
+        <div class="tag-stage">🏆 빙고 끝!</div>
+        <div class="tag-meta">결과 보기</div>
+      </div>
+      <h2 class="slide-title" id="result-title">잘 했어요!</h2>
+      <div class="result-stage">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <div class="result-score"><span id="result-score-num">0</span> / 800점</div>
+        <div class="result-stars" id="result-stars">⭐⭐⭐</div>
+        <div class="bingo-grid" id="result-bingo-grid">
+          <!-- JS renderResult에서 9칸 동적 생성 -->
+        </div>
+        <div class="result-msg" id="result-msg">단원 정리 한 판 잘 했어요!</div>
+        <div class="result-actions">
+          <button class="result-btn" onclick="goRandomGame()">🎲 다른 게임!</button>
+          <button class="result-btn primary" onclick="goHome()">📚 차시 목록</button>
+        </div>
+      </div>
+      <audio data-tts="game-s10" preload="none"></audio>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ 푸터 (게임 모드: 이전·다시 듣기·다음만) ═══════════════════ -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="btn-prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-nav" onclick="replayAudio()">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav ka-nav-next hl" id="btn-next" onclick="goNext()">다음 →</button>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   영역 2 base — 빙고 도전, 개인 모드 (cycle 8 완료)
+   슬 인덱스: 인트로=0 / Q1~Q8 = 1~8 / 결과=9
+   메커니즘: 시간 압박 X / 정답 = 100점 + 격자 ⭕ / 오답 = 0점 + 격자 ❌
+   격자 매핑: 칸 1~4 = 문제 1~4 / 칸 5 = free (자동 ⭕) / 칸 6~9 = 문제 5~8
+   ════════════════════════════════════════════════════════════ */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const RESULT_IDX = 9;
+const Q_SCORE = 100;          // 정답 점수 (8문제 × 100 = 800만점, game_01과 통일)
+
+let cur = 0;
+let totalScore = 0;
+let muted = false;
+
+// 게임 통계 (결과 슬에서 표시)
+const stats = {
+  correct: 0,         // 맞춘 문제 수
+  bingoLines: 0,      // 빙고 라인 수
+  fullHouse: false,   // 풀하우스 (8문제 모두 정답)
+  perQ: []            // 문제별 [{correct, score}]
+};
+
+// 빙고 격자 상태 (9칸: 0~8 인덱스, 가운데 4 = free)
+// cycle 9: 학생 선택 방식 — 정답 시 학생이 빈 칸 직접 클릭. 정해진 매핑 폐기.
+const BINGO_FREE_IDX = 4;
+let bingoState = [null, null, null, null, 'free', null, null, null, null];
+let prevLinesCount = 0;        // 직전 빙고 라인 수 (새 라인 발생 감지용)
+
+let qLocked = false;          // 답 입력 후 잠금 (중복 클릭 차단)
+let placeLocked = false;      // 격자 클릭 잠금 (정답 슬에서 1번만 클릭 가능)
+let currentQ = 0;             // 현재 문제 번호 (1~8)
+
+function show(i){
+  qLocked = false;
+  placeLocked = false;
+
+  slides.forEach(s => s.classList.remove('active'));
+  slides[i].classList.add('active');
+  cur = i;
+  document.getElementById('pg-text').textContent = (i+1) + ' / ' + total;
+  document.getElementById('bar-fill').style.width = ((i+1)/total*100) + '%';
+  document.getElementById('btn-prev').disabled = (i === 0);
+  document.getElementById('btn-next').textContent = (i === total-1) ? '끝!' : '다음 →';
+
+  const slide = slides[i];
+  const qNum = slide.dataset.gameQ;
+  if(qNum){
+    currentQ = +qNum;
+  } else {
+    currentQ = 0;
+    if(i === RESULT_IDX) renderResult();
+  }
+  playSlideAudio();
+}
+
+function goNext(){
+  if(cur < total - 1) show(cur + 1);
+  else goHome();
+}
+function goPrev(){ if(cur > 0) show(cur - 1); }
+function goHome(){ window.location.href = '/grade1/semester1/math/'; }
+
+function toggleMute(){
+  muted = !muted;
+  const b = document.getElementById('mute-btn');
+  b.textContent = muted ? '🔇' : '🔊';
+  b.classList.toggle('off', muted);
+  if(muted) document.querySelectorAll('audio').forEach(a => a.pause());
+  else playSlideAudio();
+}
+
+function playSlideAudio(){
+  if(muted) return;
+  const slide = slides[cur];
+  const audio = slide.querySelector('audio');
+  if(audio && audio.src){
+    audio.currentTime = 0;
+    audio.play().catch(()=>{});
+  }
+}
+function replayAudio(){ playSlideAudio(); }
+
+/* ─── cycle 9: 학생 선택 방식 빙고 격자 (문제 슬 안 inline) ─── */
+function showBingoQZone(slide){
+  // 이미 들어간 zone 있으면 제거 (중복 완료 방지)
+  const old = slide.querySelector('.bingoq-zone');
+  if(old) old.remove();
+
+  const zone = document.createElement('div');
+  zone.className = 'bingoq-zone shown';
+  zone.innerHTML = '<div class="bingoq-prompt">⭕ 쓸 칸을 골라봐!</div><div class="bingoq-grid"></div><div class="bingoq-msg" id="bz-msg-' + currentQ + '"></div>';
+  // q-feedback 다음에 완료 (audio 앞)
+  const fb = slide.querySelector('.q-feedback');
+  fb.insertAdjacentElement('afterend', zone);
+
+  const grid = zone.querySelector('.bingoq-grid');
+  for(let i=0; i<9; i++){
+    const cell = document.createElement('div');
+    cell.className = 'bingoq-cell';
+    cell.dataset.cellIdx = i;
+    const state = bingoState[i];
+    if(state === 'free'){ cell.classList.add('free'); cell.textContent = '★'; }
+    else if(state === 'placed'){ cell.classList.add('placed', 'locked'); cell.textContent = '⭕'; }
+    else { cell.classList.add('empty'); cell.textContent = ''; cell.onclick = () => handlePlace(i, slide); }
+    grid.appendChild(cell);
+  }
+}
+
+function countBingoLines(){
+  return BINGO_LINES.filter(line =>
+    line.every(i => bingoState[i] === 'placed' || bingoState[i] === 'free')
+  ).length;
+}
+
+function getBingoLineCells(){
+  // 현재 빙고 라인 모든 셀 idx 모음 (중복 OK)
+  const cells = new Set();
+  BINGO_LINES.forEach(line => {
+    if(line.every(i => bingoState[i] === 'placed' || bingoState[i] === 'free')){
+      line.forEach(i => cells.add(i));
+    }
+  });
+  return cells;
+}
+
+function handlePlace(cellIdx, slide){
+  if(placeLocked) return;
+  if(bingoState[cellIdx] !== null) return;  // 빈 칸만 클릭 가능 (free·placed 차단)
+  placeLocked = true;
+
+  // 격자 갱신
+  bingoState[cellIdx] = 'placed';
+
+  // UI 갱신: 클릭한 칸 placed + 다른 빈 칸 잠금
+  const grid = slide.querySelector('.bingoq-grid');
+  const cells = grid.querySelectorAll('.bingoq-cell');
+  cells.forEach((c, i) => {
+    if(i === cellIdx){
+      c.classList.remove('empty');
+      c.classList.add('placed', 'locked');
+      c.textContent = '⭕';
+      c.onclick = null;
+    } else if(c.classList.contains('empty')){
+      c.classList.add('locked');
+      c.classList.remove('empty');
+      c.onclick = null;
+    }
+  });
+
+  // 빙고 라인 체크 (현재 vs 직전)
+  const newLinesCount = countBingoLines();
+  const msg = slide.querySelector('#bz-msg-' + currentQ);
+  if(newLinesCount > prevLinesCount){
+    const added = newLinesCount - prevLinesCount;
+    msg.textContent = '🎯 ' + added + '줄 빙고! (총 ' + newLinesCount + '줄)';
+    msg.classList.add('bingo');
+    // 라인 셀 강조
+    const lineCells = getBingoLineCells();
+    cells.forEach((c, i) => { if(lineCells.has(i)) c.classList.add('line-now'); });
+  } else {
+    msg.textContent = '⭕ 맞췄어요! (빙고 ' + newLinesCount + '줄)';
+  }
+  prevLinesCount = newLinesCount;
+
+  // "다음 →" 활성화
+  document.getElementById('btn-next').classList.add('hl');
+}
+
+/* ─── 답 처리 (시간 압박 X, 정답 = 100점 + 학생 격자 선택) ─── */
+function answerQ(btn, picked){
+  if(qLocked) return;
+  qLocked = true;
+
+  const slide = slides[cur];
+  const opts = slide.querySelector('.opt-grid');
+  const correct = +opts.dataset.correct;
+  const fb = slide.querySelector('.q-feedback');
+  const isCorrect = (picked === correct);
+
+  // 모든 버튼 잠금
+  slide.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+  if(isCorrect){
+    btn.classList.add('correct');
+    totalScore += Q_SCORE;
+    stats.correct++;
+    stats.perQ.push({correct: true, score: Q_SCORE});
+    fb.innerHTML = '🎉 정답! <span class="q-bonus">+' + Q_SCORE + '점</span>';
+    fb.className = 'q-feedback ok';
+    document.getElementById('score-num').textContent = totalScore;
+    // 격자 fade-in: 학생이 빈 칸 클릭해야 다음 진행 OK
+    showBingoQZone(slide);
+    // "다음 →" 강조 X (학생 격자 클릭 후 활성화됨)
+  } else {
+    btn.classList.add('wrong');
+    // 정답 노출
+    slide.querySelectorAll('.opt-btn').forEach(b => {
+      const i = [...slide.querySelectorAll('.opt-btn')].indexOf(b) + 1;
+      if(i === correct) b.classList.add('reveal');
+    });
+    stats.perQ.push({correct: false, score: 0});
+    fb.textContent = '❌ 정답은 ' + correct + ' (격자 변동 X)';
+    fb.className = 'q-feedback no';
+    // 오답: 격자 변동 X / 다음 진행 가능
+    document.getElementById('btn-next').classList.add('hl');
+  }
+}
+
+function answerFill(btn, picked, slideKey){
+  if(qLocked) return;
+  const slide = slides[cur];
+  const opts = slide.querySelector('.opt-grid');
+  const correct = +opts.dataset.correct;
+  if(picked === correct){
+    const blank = document.getElementById('fill-blank-' + slideKey);
+    blank.textContent = picked;
+    blank.classList.add('filled');
+  }
+  answerQ(btn, picked);
+}
+
+/* ─── 빙고 라인 계산 (8 라인: 가로 3, 세로 3, 대각선 2) ─── */
+const BINGO_LINES = [
+  [0,1,2], [3,4,5], [6,7,8],   // 가로
+  [0,3,6], [1,4,7], [2,5,8],   // 세로
+  [0,4,8], [2,4,6]             // 대각선
+];
+
+function computeBingoLines(){
+  const wins = [];
+  BINGO_LINES.forEach((line, idx) => {
+    const ok = line.every(i => bingoState[i] === 'correct' || bingoState[i] === 'free');
+    if(ok) wins.push({lineIdx: idx, cells: line});
+  });
+  return wins;
+}
+
+/* ─── 결과 ─── */
+function renderResult(){
+  // 빙고 격자 렌더 (한 칸씩 fade-in 애니메이션)
+  const grid = document.getElementById('result-bingo-grid');
+  grid.innerHTML = '';
+  for(let i=0; i<9; i++){
+    const cell = document.createElement('div');
+    cell.className = 'bingo-cell';
+    cell.dataset.idx = i;
+    const state = bingoState[i];
+    if(state === 'placed'){ cell.classList.add('correct'); cell.textContent = '⭕'; }
+    else if(state === 'free'){ cell.classList.add('free'); cell.textContent = '★'; }
+    else { cell.textContent = '·'; }  // 빈 칸: 학생이 안 완료 (오답 또는 진행 X)
+    grid.appendChild(cell);
+    setTimeout(() => cell.classList.add('shown'), 100 + i * 90);
+  }
+
+  // 빙고 라인 계산 + 라인 셀 강조 (격자 다 펼쳐진 후)
+  const wins = computeBingoLines();
+  stats.bingoLines = wins.length;
+  stats.fullHouse = (stats.correct === 8);
+  setTimeout(() => {
+    const cells = grid.querySelectorAll('.bingo-cell');
+    wins.forEach(w => w.cells.forEach(idx => cells[idx].classList.add('line')));
+  }, 100 + 9 * 90 + 200);
+
+  // tracker 점수 기록 (1회만, 만점 800점 기준)
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(totalScore, 800);
+  }
+  document.getElementById('result-score-num').textContent = totalScore;
+
+  let stars, emoji, msg, title;
+  if(stats.fullHouse && stats.bingoLines >= 8){
+    stars = '⭐⭐⭐'; emoji = '🌟'; title = '풀하우스 빙고 마스터!';
+    msg = '8문제 다 정답 + 8 라인 빙고! 단원 마스터!';
+  } else if(stats.bingoLines >= 3){
+    stars = '⭐⭐⭐'; emoji = '🏆'; title = '빙고 챔피언!';
+    msg = stats.bingoLines + '줄 빙고! 정말 잘 했어요!';
+  } else if(stats.bingoLines >= 1){
+    stars = '⭐⭐'; emoji = '🎯'; title = '빙고!';
+    msg = stats.bingoLines + '줄 빙고 만들었어요. 다음엔 더 많이 도전!';
+  } else if(stats.correct >= 4){
+    stars = '⭐⭐'; emoji = '😊'; title = '아쉬워요!';
+    msg = '정답은 많은데 빙고 라인은 못 만들었네. 다시 도전!';
+  } else {
+    stars = '⭐'; emoji = '💪'; title = '다시 한 번!';
+    msg = '천천히 다시 도전해봐요. 충분히 할 수 있어요!';
+  }
+  document.getElementById('result-stars').textContent = stars;
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-title').textContent = title;
+}
+
+/* ─── C안 동선 (cycle 17): 다른 게임 = 단원 풀에서 안 푼 것 우선 랜덤 ─── */
+const UNIT_BASE = 'g1_math_u2';   // 단원 식별자 (단원 게임은 단원 단위)
+const GAME_NUM = 2;                // 이 파일의 game 번호
+const GAME_TOTAL = 2;              // 단원당 양산 N (cycle 8: game_01 카훗 + game_02 빙고)
+
+// mount 시 푼 것 기록
+(function markGameDone(){
+  try{
+    const key = 'kedu_game_done_' + UNIT_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    if(!done.includes(GAME_NUM)){
+      done.push(GAME_NUM);
+      localStorage.setItem(key, JSON.stringify(done));
+    }
+  }catch(e){}
+})();
+
+function goRandomGame(){
+  try{
+    const key = 'kedu_game_done_' + UNIT_BASE;
+    const done = JSON.parse(localStorage.getItem(key) || '[]');
+    const all = Array.from({length: GAME_TOTAL}, (_,i) => i+1);
+    const undone = all.filter(n => !done.includes(n));
+    const pool = undone.length > 0 ? undone : all;
+    const next = pool[Math.floor(Math.random() * pool.length)];
+    if(next === GAME_NUM && pool.length === 1){ window.location.reload(); return; }
+    const target = UNIT_BASE + '_game_' + String(next).padStart(2,'0') + '.html';
+    window.location.href = target;
+  }catch(e){ window.location.reload(); }
+}
+
+// 호환: 기존 retryGame() 호출 남아있을 수 있어 alias
+function retryGame(){ goRandomGame(); }
+
+/* ─── 키보드 ─── */
+document.addEventListener('keydown', e => {
+  // 게임 슬에선 키보드 다음 잠금 (시간/답 외 진행 차단)
+  const slide = slides[cur];
+  const isGameQ = slide.dataset.gameQ;
+  if(isGameQ && !qLocked) return;
+  if(e.key === 'ArrowRight') goNext();
+  else if(e.key === 'ArrowLeft') goPrev();
+});
+
+/* 초기 상태 */
+show(0);
+</script>
+
+</body>
+</html>
