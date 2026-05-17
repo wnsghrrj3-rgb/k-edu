@@ -186,36 +186,178 @@
     return html;
   }
 
+  // =================== 신규 렌더 헬퍼 ===================
+
+  function renderEmojiCount(emoji, count) {
+    const items = Array.from({length: count}, () => `<span class="big-emoji">${emoji}</span>`).join('');
+    return `<div class="emoji-count">${items}</div>`;
+  }
+
+  function renderDots(count) {
+    const dots = Array.from({length: count}, () => '<span class="dot-mark">●</span>').join('');
+    return `<div class="dot-row">${dots}</div>`;
+  }
+
+  function renderTenFrameStrip(arr) {
+    // arr 자리 = [1..9] 같은 수 자리 → 각 칸 자리 작은 ten_frame
+    return `<div class="tf-strip">${arr.map(n => `<div class="tfs-item">${renderTenFrame(n, 'sm')}<div class="tfs-num">${n}</div></div>`).join('')}</div>`;
+  }
+
+  function renderLinkingCubeSingle(count) {
+    const cubeSize = 28;
+    let stack = '<div class="cube-stack-single">';
+    for (let i = 0; i < count; i++) stack += `<div class="cube" style="width:${cubeSize}px;height:${cubeSize}px;"></div>`;
+    stack += `<div class="cube-label">${count}</div></div>`;
+    return stack;
+  }
+
+  function renderTraceNumber(n) {
+    return `<div class="trace-num">
+      <div class="trace-num-outline">${n}</div>
+      <div class="trace-num-arrows">↘</div>
+      <div class="trace-num-label">${n}</div>
+    </div>`;
+  }
+
+  function renderSequenceNumbers(seq, highlight_pos) {
+    return `<div class="seq-numbers">${seq.map((s, i) => {
+      const isHighlight = highlight_pos !== undefined && i === highlight_pos;
+      const isBlank = s === '?' || s === null || s === '';
+      return `<span class="seq-cell ${isBlank ? 'blank' : ''} ${isHighlight ? 'highlight' : ''}">${isBlank ? '?' : s}</span>`;
+    }).join('<span class="seq-arrow">→</span>')}</div>`;
+  }
+
+  function renderTableNumKorHan(table) {
+    if (!table || !table.length) return '';
+    const hasKorHan = table[0].kor !== undefined || table[0].han !== undefined;
+    if (hasKorHan) {
+      return `<table class="num-table">
+        <thead><tr><th>수</th><th>우리말</th><th>한자어</th></tr></thead>
+        <tbody>${table.map(r => `<tr><td class="nt-num">${r.num}</td><td>${r.kor || ''}</td><td>${r.han || ''}</td></tr>`).join('')}</tbody>
+      </table>`;
+    }
+    // 일반 표 자리
+    const keys = Object.keys(table[0]);
+    return `<table class="num-table">
+      <thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead>
+      <tbody>${table.map(r => `<tr>${keys.map(k => `<td>${r[k]}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderMatchPairs(pairs, type) {
+    if (!pairs || !pairs.length) return '';
+    return `<div class="match-pairs">${pairs.map(p => {
+      let left = '';
+      if (p.ten_frame !== undefined) left = renderTenFrame(p.ten_frame, 'sm');
+      else if (p.emoji) left = `<div class="mp-emoji">${p.emoji}</div>`;
+      else if (p.label) left = `<div class="mp-text">${p.label}</div>`;
+      let right = '';
+      if (p.num !== undefined) right = `<div class="mp-num">${p.num}</div>`;
+      else if (p.kind) right = `<div class="mp-kind">${p.kind}</div>`;
+      return `<div class="match-pair"><div class="mp-left">${left}</div><div class="mp-sep">—</div><div class="mp-right">${right}</div></div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderOptions(options, isMulti) {
+    if (!options || !options.length) return '';
+    return `<div class="options-grid ${isMulti ? 'multi' : ''}">${options.map((opt, i) => {
+      let body = '';
+      if (opt.emoji && opt.count !== undefined) {
+        body = `<div class="opt-emojis">${Array.from({length: opt.count}, () => opt.emoji).join('')}</div>`;
+      } else if (opt.ten_frame !== undefined) {
+        body = renderTenFrame(opt.ten_frame, 'sm');
+      } else if (opt.label) {
+        body = `<div class="opt-label">${md(opt.label)}</div>`;
+      } else if (opt.num !== undefined) {
+        body = `<div class="opt-num">${opt.num}</div>`;
+      }
+      return `<div class="opt-card" data-opt-idx="${i}" ${opt.correct ? 'data-correct="true"' : ''}>
+        <div class="opt-marker">${isMulti ? '☐' : (i + 1)}</div>
+        ${body}
+      </div>`;
+    }).join('')}</div>`;
+  }
+
   // =================== 슬라이드 본문 렌더링 ===================
   function renderSlide(slide) {
     const d = slide.data;
     switch (slide.block) {
       case 'cover':
         return `<div class="center"><div class="center-text" style="font-size: clamp(28px, 4.4cqw, 44px);">${md(d.title)}</div></div>`;
-      case 'review':
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="center-text">${md(d.content)}</div></div>`;
-      case 'motivate':
-        let kidsHtml = '';
-        if (d.kids) kidsHtml = `<div class="scene">${d.kids.map(k => `<div class="kid"><div class="face">${k.face}</div><div class="cards">${k.label}</div></div>`).join('')}</div>`;
-        return `<h2>${md(d.scene_title || d.title || '')}</h2><div class="center" style="gap: 36px;">${kidsHtml}${d.question ? `<div class="big-q">${md(d.question)}</div>` : ''}</div>`;
-      case 'concept':
-        if (d.kids_after) {
-          return `<h2>${md(d.title)}</h2><div class="center"><div class="scene">${d.kids_after.map(k => `<div class="kid ${k.dir}"><div class="face">${k.face}</div><div class="cards">${k.label}</div><div class="delta">${k.delta}</div></div>`).join('')}</div></div>`;
+
+      case 'review': {
+        let body = '';
+        if (d.content) body += `<div class="center-text">${md(d.content)}</div>`;
+        if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        if (d.table) body += renderTableNumKorHan(d.table);
+        if (d.sequence) body += renderSequenceNumbers(d.sequence);
+        if (d.ten_frame_strip) body += renderTenFrameStrip(d.ten_frame_strip);
+        if (d.areas) body += `<div class="areas-list">${d.areas.map(a => `<div class="area-item">${md(a)}</div>`).join('')}</div>`;
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}</div>`;
+      }
+
+      case 'objective': {
+        const main = d.content || d.desc || '';
+        return `<h2>${md(d.title)}</h2><div class="center"><div class="objective-card">${md(main)}</div></div>`;
+      }
+
+      case 'motivate': {
+        let body = '';
+        if (d.desc) body += `<div class="motivate-desc">${md(d.desc)}</div>`;
+        if (d.emojis) body += `<div class="emoji-row">${d.emojis.map(e => `<span class="big-emoji">${e}</span>`).join('')}</div>`;
+        if (d.emoji && d.count !== undefined) body += renderEmojiCount(d.emoji, d.count);
+        if (d.kids) body += `<div class="scene">${d.kids.map(k => `<div class="kid"><div class="face">${k.face}</div><div class="cards">${k.label || ''}</div></div>`).join('')}</div>`;
+        if (d.scene) body += `<div class="scene-text">${md(d.scene)}</div>`;
+        if (d.teams) body += `<div class="teams">${d.teams.map(t => `<div class="team"><div class="team-name">${md(t.name || '')}</div>${t.emoji && t.count !== undefined ? renderEmojiCount(t.emoji, t.count) : ''}</div>`).join('')}</div>`;
+        if (d.number_panel) body += `<div class="number-panel">${d.number_panel.map(n => `<span class="np-cell">${n}</span>`).join('')}</div>`;
+        if (d.question) body += `<div class="big-q">${md(d.question)}</div>`;
+        return `<h2>${md(d.scene_title || d.title || '')}</h2><div class="center" style="gap:28px;">${body}</div>`;
+      }
+
+      case 'concept': {
+        let body = '';
+        if (d.content) body += `<div class="center-text">${md(d.content)}</div>`;
+        if (d.kids_after) body += `<div class="scene">${d.kids_after.map(k => `<div class="kid ${k.dir || ''}"><div class="face">${k.face}</div><div class="cards">${k.label || ''}</div>${k.delta ? `<div class="delta">${k.delta}</div>` : ''}</div>`).join('')}</div>`;
+        if (d.items) {
+          body += `<div class="tf-row">${d.items.map(it => {
+            let visual = '';
+            if (it.ten_frame !== undefined) visual = renderTenFrame(it.ten_frame, 'md');
+            else if (it.linking_cube !== undefined) visual = renderLinkingCubeSingle(it.linking_cube);
+            else if (it.emoji && it.count !== undefined) visual = renderEmojiCount(it.emoji, it.count);
+            else if (it.dots !== undefined) visual = renderDots(it.dots);
+            return `<div class="tf-item">${visual}${it.num !== undefined ? `<div class="tf-num">${it.num}</div>` : ''}<div class="tf-caption">${md(it.label || '')}</div>${it.note ? `<div class="small-text">${md(it.note)}</div>` : ''}</div>`;
+          }).join('')}</div>`;
         }
-        if (d.bidirect) {
-          return `<h2>${md(d.title)}</h2><div class="center"><div class="bidirect-card">${d.bidirect.map(line => line === '=' ? '<span class="equals">=</span>' : md(line)).join('<br>')}</div></div>`;
-        }
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="center-text">${md(d.content || '')}</div></div>`;
-      case 'visual_demo':
+        if (d.bidirect) body += `<div class="bidirect-card">${d.bidirect.map(line => line === '=' ? '<span class="equals">=</span>' : md(line)).join('<br>')}</div>`;
+        if (d.examples) body += `<div class="examples-grid">${d.examples.map(e => `<div class="ex-item">${md(typeof e === 'string' ? e : e.label || '')}</div>`).join('')}</div>`;
+        if (d.pairs) body += renderMatchPairs(d.pairs, 'static');
+        if (d.ordinal_map) body += `<div class="ordinals-row">${d.ordinal_map.map(o => `<div class="ord-item"><span class="ord-num">${o.num || ''}</span><span class="ord-label">${md(o.label || '')}</span></div>`).join('')}</div>`;
+        if (d.linking_cube_staircase) body += renderStaircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]);
+        if (d.sequence) body += renderSequenceNumbers(d.sequence);
+        if (d.expression) body += `<div class="big-q">${md(d.expression)}</div>`;
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
+      }
+
+      case 'visual_demo': {
+        let body = '';
         if (d.ten_frame_solo) {
           const tf = d.ten_frame_solo;
-          return `<h2>${md(d.title)}</h2><div class="center"><div class="tf-item ${tf.is_anchor ? 'anchor' : ''}">${renderTenFrame(tf.count, 'xl')}<div class="tf-num">${tf.count}</div><div class="tf-caption">${md(tf.label || '')}</div></div></div>`;
+          body += `<div class="tf-item ${tf.is_anchor ? 'anchor' : ''}">${renderTenFrame(tf.count, 'xl')}<div class="tf-num">${tf.count}</div><div class="tf-caption">${md(tf.label || '')}</div></div>`;
         }
-        if (d.linking_cube_staircase) {
-          const [min, max] = d.linking_cube_staircase.range;
-          return `<h2>${md(d.title)}</h2><div class="center">${renderStaircase(min, max)}${d.caption ? `<div class="tf-caption" style="margin-top: 16px;">${md(d.caption)}</div>` : ''}</div>`;
-        }
-        return `<h2>${md(d.title)}</h2>`;
+        if (d.linking_cube_staircase) body += renderStaircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]);
+        if (d.left && d.right) body += `<div class="compare-cols"><div class="cmp-col">${md(typeof d.left === 'object' ? (d.left.label || '') : d.left)}</div><div class="cmp-sep">vs</div><div class="cmp-col">${md(typeof d.right === 'object' ? (d.right.label || '') : d.right)}</div></div>`;
+        if (d.caption) body += `<div class="tf-caption" style="margin-top:8px;">${md(d.caption)}</div>`;
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
+      }
+
+      case 'trace': {
+        const traceN = d.trace_numbers || [];
+        return `<h2>${md(d.title)}</h2><div class="center"><div class="trace-row">${traceN.map(n => renderTraceNumber(n)).join('')}</div>${d.note ? `<div class="small-text" style="margin-top:16px;">${md(d.note)}</div>` : ''}</div>`;
+      }
+
       case 'interactive_ten_frame':
         return renderInteractiveTenFrame(d, slide.id);
       case 'interactive_cube_stairs':
@@ -226,41 +368,138 @@
         return renderCardArrange(d, slide.id);
       case 'offline_activity':
         return renderOfflineActivity(d);
-      case 'compare':
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="tf-row">${d.items.map(it => `<div class="tf-item ${it.is_anchor ? 'anchor' : ''}">${renderTenFrame(it.ten_frame, 'md')}<div class="tf-num">${it.num}</div><div class="tf-caption">${md(it.caption)}</div></div>`).join('')}</div></div>`;
-      case 'basic_problem':
-        let tfHtml = '';
-        if (d.ten_frame_anchor !== undefined) tfHtml = `<div class="tf-item anchor">${renderTenFrame(d.ten_frame_anchor, 'lg')}<div class="tf-num">${d.ten_frame_anchor}</div></div>`;
-        return `<h2>${md(d.title)}</h2><div class="center" style="gap: 32px;">${tfHtml}<div class="big-q">${md(d.question || '')}</div></div>`;
-      case 'real_world':
-        if (d.scenario) {
-          return `<h2>${md(d.title)}</h2><div class="center"><div class="scenario-card"><div class="sc-icon">${d.scenario.icon}</div><div class="sc-body">${md(d.scenario.body)}</div></div></div>`;
-        }
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="center-text">${md(d.content || '')}</div></div>`;
-      case 'advanced_problem':
+
+      case 'compare': {
         let body = '';
-        if (d.context) body += `<div class="center-text" style="font-size: clamp(18px, 2.6cqw, 24px);">${md(d.context)}</div>`;
-        if (d.questions) body += `<div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">${d.questions.map(q => `<div class="big-q">${md(typeof q === 'string' ? q : q.q || '')}</div>`).join('')}</div>`;
-        if (d.challenge) body = `<div class="big-q">${md(d.challenge)}</div>`;
-        return `<h2>${md(d.title)}</h2><div class="center" style="gap: 28px;">${body}</div>`;
+        if (d.items) body += `<div class="tf-row">${d.items.map(it => `<div class="tf-item ${it.is_anchor ? 'anchor' : ''}">${it.ten_frame !== undefined ? renderTenFrame(it.ten_frame, 'md') : (it.emoji && it.count !== undefined ? renderEmojiCount(it.emoji, it.count) : '')}${it.num !== undefined ? `<div class="tf-num">${it.num}</div>` : ''}<div class="tf-caption">${md(it.caption || it.label || '')}</div></div>`).join('')}</div>`;
+        if (d.left && d.right) body += `<div class="compare-cols"><div class="cmp-col">${md(typeof d.left === 'object' ? (d.left.label || '') : d.left)}</div><div class="cmp-sep">vs</div><div class="cmp-col">${md(typeof d.right === 'object' ? (d.right.label || '') : d.right)}</div></div>`;
+        if (d.target !== undefined) body += `<div class="match-target"><span class="mt-label">기준</span><span class="mt-num">${d.target}</span></div>`;
+        if (d.contrast) body += `<div class="center-text">${md(d.contrast)}</div>`;
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
+      }
+
+      case 'basic_problem': {
+        let body = '';
+        if (d.ten_frame_anchor !== undefined) body += `<div class="tf-item anchor">${renderTenFrame(d.ten_frame_anchor, 'lg')}<div class="tf-num">${d.ten_frame_anchor}</div></div>`;
+        if (d.ten_frame !== undefined) body += `<div class="tf-item anchor">${renderTenFrame(d.ten_frame, 'lg')}<div class="tf-num">${d.ten_frame}</div></div>`;
+        if (d.linking_cube !== undefined) body += renderLinkingCubeSingle(d.linking_cube);
+        if (d.emoji && d.count !== undefined) body += renderEmojiCount(d.emoji, d.count);
+        if (d.items) body += `<div class="tf-row">${d.items.map(it => `<div class="tf-item">${it.ten_frame !== undefined ? renderTenFrame(it.ten_frame, 'md') : (it.emoji && it.count !== undefined ? renderEmojiCount(it.emoji, it.count) : '')}${it.num !== undefined ? `<div class="tf-num">${it.num}</div>` : ''}<div class="tf-caption">${md(it.label || '')}</div></div>`).join('')}</div>`;
+        if (d.sequence) body += renderSequenceNumbers(d.sequence, d.highlight_pos);
+        if (d.cards) body += `<div class="num-cards">${d.cards.map(c => `<span class="num-card">${c}</span>`).join('')}</div>`;
+        if (d.scenario) body += `<div class="scenario-card"><div class="sc-icon">${d.scenario.icon || ''}</div><div class="sc-body">${md(d.scenario.body || '')}</div></div>`;
+        if (d.question) body += `<div class="big-q">${md(d.question)}</div>`;
+        if (d.input === 'count_input' && (d.answer !== undefined || d.answers)) {
+          const ans = d.answer !== undefined ? d.answer : (d.answers && d.answers[0]);
+          body += `<div class="answer-input"><span class="ai-label">답</span><input type="number" class="ai-box" placeholder="?" data-answer="${ans}"></div>`;
+        }
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
+      }
+
+      case 'match': {
+        let body = '';
+        if (d.target !== undefined) body += `<div class="match-target"><span class="mt-label">기준</span><span class="mt-num">${d.target}</span></div>`;
+        if (d.pairs) body += renderMatchPairs(d.pairs, d.type || 'touch_match');
+        if (d.options) body += renderOptions(d.options, false);
+        if (d.left && d.right && Array.isArray(d.left)) {
+          body += `<div class="match-cols"><div class="match-col">${d.left.map(l => `<div class="match-cell">${md(typeof l === 'string' ? l : l.label || '')}</div>`).join('')}</div><div class="match-col">${d.right.map(r => `<div class="match-cell">${md(typeof r === 'string' ? r : r.label || '')}</div>`).join('')}</div></div>`;
+        }
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}</div>`;
+      }
+
+      case 'multi': {
+        const body = renderOptions(d.options || [], true);
+        const hint = `<div class="multi-hint">정답을 모두 골라요${d.expectedCount ? ` <span class="mh-count">${d.expectedCount}개</span>` : ''}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}${hint}${d.note ? `<div class="small-text">${md(d.note)}</div>` : ''}</div>`;
+      }
+
+      case 'real_world': {
+        let body = '';
+        if (d.scenario) body += `<div class="scenario-card"><div class="sc-icon">${d.scenario.icon || ''}</div><div class="sc-body">${md(d.scenario.body || '')}</div></div>`;
+        if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        if (d.content) body += `<div class="center-text">${md(d.content)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}</div>`;
+      }
+
+      case 'advanced_problem': {
+        let body = '';
+        if (d.context) body += `<div class="context-text">${md(d.context)}</div>`;
+        if (d.card !== undefined) body += `<div class="num-card-big">${d.card}</div>`;
+        if (d.options) body += renderOptions(d.options, false);
+        if (d.sequence) body += renderSequenceNumbers(d.sequence);
+        if (d.target !== undefined && d.component === 'ten_frame') body += `<div class="tf-target"><div class="tt-empty-frame">${renderTenFrame(0, 'lg')}</div><div class="tt-num">목표 ${d.target}</div></div>`;
+        if (d.scenario) body += `<div class="scenario-card"><div class="sc-icon">${d.scenario.icon || ''}</div><div class="sc-body">${md(d.scenario.body || '')}</div></div>`;
+        if (d.items) body += `<div class="tf-row">${d.items.map(it => `<div class="tf-item">${it.ten_frame !== undefined ? renderTenFrame(it.ten_frame, 'md') : ''}${it.num !== undefined ? `<div class="tf-num">${it.num}</div>` : ''}<div class="tf-caption">${md(it.label || '')}</div></div>`).join('')}</div>`;
+        if (d.questions) body += `<div class="q-list">${d.questions.map(q => `<div class="big-q">${md(typeof q === 'string' ? q : q.q || '')}</div>`).join('')}</div>`;
+        if (d.challenge) body += `<div class="big-q">${md(d.challenge)}</div>`;
+        if (d.input === 'count_input' && (d.answer !== undefined || d.answers)) {
+          const ans = d.answer !== undefined ? d.answer : (d.answers && d.answers[0]);
+          body += `<div class="answer-input"><span class="ai-label">답</span><input type="number" class="ai-box" placeholder="?" data-answer="${ans}"></div>`;
+        }
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
+      }
+
       case 'game':
-        return `<h2>${md(d.title)}</h2><div class="center"><ol class="steps-list">${d.steps.map(s => `<li>${md(s)}</li>`).join('')}</ol></div>`;
-      case 'summary':
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="points-list">${d.points.map(p => `<span class="dot">·</span>${md(p)}`).join('<br>')}</div></div>`;
+        return `<h2>${md(d.title)}</h2><div class="center"><ol class="steps-list">${(d.steps || []).map(s => `<li>${md(s)}</li>`).join('')}</ol></div>`;
+
+      case 'summary': {
+        let body = '';
+        if (d.table) body += renderTableNumKorHan(d.table);
+        if (d.ten_frame_strip) body += renderTenFrameStrip(d.ten_frame_strip);
+        if (d.bidirect) body += `<div class="bidirect-card">${d.bidirect.map(line => line === '=' ? '<span class="equals">=</span>' : md(line)).join('<br>')}</div>`;
+        if (d.linking_cube_staircase) body += renderStaircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]);
+        if (d.sequence_asc) body += `<div class="seq-block"><div class="seq-label">작은 수 → 큰 수</div>${renderSequenceNumbers(d.sequence_asc)}</div>`;
+        if (d.sequence_desc) body += `<div class="seq-block"><div class="seq-label">큰 수 → 작은 수</div>${renderSequenceNumbers(d.sequence_desc)}</div>`;
+        if (d.sequence) body += renderSequenceNumbers(d.sequence);
+        if (d.ordinals) body += `<div class="ordinals-row">${d.ordinals.map(o => `<div class="ord-item">${md(typeof o === 'string' ? o : o.label || '')}</div>`).join('')}</div>`;
+        if (d.arrows) body += `<div class="arrow-flow-summary">${d.arrows.map((a, i) => `<span class="afs-item">${md(a)}</span>${i < d.arrows.length - 1 ? '<span class="afs-arr">→</span>' : ''}`).join('')}</div>`;
+        if (d.points) body += `<div class="points-list">${d.points.map(p => `<div class="point-item"><span class="dot">·</span>${md(p)}</div>`).join('')}</div>`;
+        if (d.questions) body += `<div class="q-list">${d.questions.map(q => `<div class="big-q">${md(typeof q === 'string' ? q : q.q || '')}</div>`).join('')}</div>`;
+        if (d.legend) body += `<div class="small-text">${md(d.legend)}</div>`;
+        if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}</div>`;
+      }
+
       case 'question':
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="points-list">${md(d.content || '')}</div></div>`;
-      case 'next_lesson':
-        return `<h2>${md(d.title)}</h2><div class="center"><div class="big-q">${md(d.preview || '')}</div></div>`;
-      case 'arrow_flow':
+        return `<h2>${md(d.title)}</h2><div class="center"><div class="big-q">${md(d.content || '')}</div></div>`;
+
+      case 'self_assessment': {
+        const items = d.items || d.dimensions || [];
+        const stars = d.starsPerDimension || d.stars || 3;
+        let body = '';
+        body += `<div class="sa-list">${items.map(it => `<div class="sa-row"><span class="sa-label">${md(typeof it === 'string' ? it : (it.label || ''))}</span><span class="sa-stars">${'☆'.repeat(stars)}</span></div>`).join('')}</div>`;
+        if (d.prompts) body += `<div class="sa-prompts">${d.prompts.map(p => `<div class="sa-prompt">${md(p)}</div>`).join('')}</div>`;
+        if (d.question) body += `<div class="big-q">${md(d.question)}</div>`;
+        if (d.preview_slide) body += `<div class="small-text" style="margin-top:8px;">${md(d.preview_slide)}</div>`;
+        if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}</div>`;
+      }
+
+      case 'next_lesson': {
+        let body = '';
+        if (d.preview) body += `<div class="big-q">${md(d.preview)}</div>`;
+        if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:16px;">${body}</div>`;
+      }
+
+      case 'arrow_flow': {
         const flowHtml = d.flow.map((f, i) => {
           const numCls = f.type === 'anchor' ? 'anchor' : (f.type === 'up' ? 'up' : '');
           return `<div class="af-item"><div class="af-num ${numCls}">${f.num}</div><div class="af-label">${md(f.label)}</div></div>${i < d.flow.length - 1 ? '<div class="af-arrow">→</div>' : ''}`;
         }).join('');
         return `<h2>${md(d.title)}</h2><div class="center"><div class="arrow-flow">${flowHtml}</div>${d.sub ? `<div class="small-text">${md(d.sub)}</div>` : ''}</div>`;
+      }
+
       case 'misconception':
         return `<h2>${md(d.title)}</h2><div class="center"><div class="misconception-card"><div class="mc-label">${d.label || '오개념 주의'}</div><div class="mc-wrong">${md(d.wrong)}</div><div class="mc-right" style="margin-top:8px;">${md(d.right)}</div>${d.hint ? `<div style="margin-top:12px; font-size: 0.85em; color: var(--c-text-light);">${md(d.hint)}</div>` : ''}</div></div>`;
+
       case 'number_line_demo':
         return `<h2>${md(d.title)}</h2><div class="center">${renderNumberLine(d.nl.range, d.nl.anchor)}${d.caption ? `<div class="small-text">${md(d.caption)}</div>` : ''}</div>`;
+
       default:
         return `<h2>${md(d.title || '새 슬라이드')}</h2><div class="center"><div class="center-text">${md(d.content || '내용을 추가하세요')}</div></div>`;
     }
