@@ -244,23 +244,66 @@
     </table>`;
   }
 
-  function renderMatchPairs(pairs, type) {
-    if (!pairs || !pairs.length) return '';
-    return `<div class="match-pairs">${pairs.map(p => {
-      let left = '';
-      if (p.ten_frame !== undefined) left = renderTenFrame(p.ten_frame, 'sm');
-      else if (p.emoji) left = `<div class="mp-emoji">${p.emoji}</div>`;
-      else if (p.label) left = `<div class="mp-text">${p.label}</div>`;
-      let right = '';
-      if (p.num !== undefined) right = `<div class="mp-num">${p.num}</div>`;
-      else if (p.kind) right = `<div class="mp-kind">${p.kind}</div>`;
-      return `<div class="match-pair"><div class="mp-left">${left}</div><div class="mp-sep">—</div><div class="mp-right">${right}</div></div>`;
-    }).join('')}</div>`;
+  // ===== 자리 자리 (수업 자리 정답 토글 자리) =====
+  const MARKERS = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  function hashSeed(str) {
+    let h = 0;
+    for (let i = 0; i < (str || '').length; i++) {
+      h = ((h << 5) - h) + str.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h) || 1;
   }
 
-  function renderOptions(options, isMulti) {
+  function seededShuffleIdx(n, seed) {
+    let s = seed || 1;
+    const arr = Array.from({length: n}, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+      s = (s * 9301 + 49297) % 233280;
+      const j = Math.floor((s / 233280) * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function renderMatchLeft(p) {
+    if (p.ten_frame !== undefined) return renderTenFrame(p.ten_frame, 'sm');
+    if (p.emoji) return `<div class="mp-emoji">${p.emoji}</div>`;
+    if (p.label) return `<div class="mp-text">${p.label}</div>`;
+    return '';
+  }
+
+  function renderMatchRight(p) {
+    if (p.num !== undefined) return `<div class="mp-num">${p.num}</div>`;
+    if (p.kind) return `<div class="mp-kind">${p.kind}</div>`;
+    return '';
+  }
+
+  function renderMatchPairs(pairs, type, revealed, seed) {
+    if (!pairs || !pairs.length) return '';
+    if (revealed) {
+      return `<div class="match-pairs revealed">${pairs.map(p => {
+        return `<div class="match-pair revealed"><div class="mp-left">${renderMatchLeft(p)}</div><div class="mp-arrow">↔</div><div class="mp-right">${renderMatchRight(p)}</div></div>`;
+      }).join('')}</div>`;
+    }
+    // 자리 자리: 왼쪽 자리 자리 + 오른쪽 자리 섞임 (seed 자리 안정 자리)
+    const shuf = seededShuffleIdx(pairs.length, seed);
+    return `<div class="match-cols">
+      <div class="match-col">
+        <div class="match-col-label">사물</div>
+        ${pairs.map(p => `<div class="match-cell">${renderMatchLeft(p)}</div>`).join('')}
+      </div>
+      <div class="match-col">
+        <div class="match-col-label">숫자</div>
+        ${shuf.map(i => `<div class="match-cell match-cell-right">${renderMatchRight(pairs[i])}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  function renderOptions(options, isMulti, revealed) {
     if (!options || !options.length) return '';
-    return `<div class="options-grid ${isMulti ? 'multi' : ''}">${options.map((opt, i) => {
+    return `<div class="options-grid ${isMulti ? 'multi' : ''} ${revealed ? 'revealed' : ''}">${options.map((opt, i) => {
       let body = '';
       if (opt.emoji && opt.count !== undefined) {
         body = `<div class="opt-emojis">${Array.from({length: opt.count}, () => opt.emoji).join('')}</div>`;
@@ -271,16 +314,39 @@
       } else if (opt.num !== undefined) {
         body = `<div class="opt-num">${opt.num}</div>`;
       }
-      return `<div class="opt-card" data-opt-idx="${i}" ${opt.correct ? 'data-correct="true"' : ''}>
-        <div class="opt-marker">${isMulti ? '☐' : (i + 1)}</div>
+      const isCorrect = !!opt.correct;
+      const cls = `opt-card${revealed && isCorrect ? ' correct' : ''}`;
+      const marker = isMulti
+        ? (revealed && isCorrect ? '☑' : '☐')
+        : MARKERS[i] || (i + 1);
+      return `<div class="${cls}" data-opt-idx="${i}" ${isCorrect ? 'data-correct="true"' : ''}>
+        <div class="opt-marker">${marker}</div>
         ${body}
       </div>`;
     }).join('')}</div>`;
   }
 
   // =================== 슬라이드 본문 렌더링 ===================
+  function slideHasAnswer(slide) {
+    if (!slide || !slide.block) return false;
+    return ['basic_problem', 'advanced_problem', 'match', 'multi', 'concept'].includes(slide.block) && hasAnswerData(slide);
+  }
+
+  function hasAnswerData(slide) {
+    const d = slide.data || {};
+    if (slide.block === 'basic_problem' || slide.block === 'advanced_problem') {
+      return d.answer !== undefined || (d.answers && d.answers.length) || (d.options && d.options.some(o => o.correct));
+    }
+    if (slide.block === 'match') return !!(d.pairs && d.pairs.length);
+    if (slide.block === 'multi') return !!(d.options && d.options.some(o => o.correct));
+    if (slide.block === 'concept') return !!(d.pairs && d.pairs.length); // 짝짓기 자리 자리
+    return false;
+  }
+
   function renderSlide(slide) {
     const d = slide.data;
+    const revealed = !!slide.revealed;
+    const seed = hashSeed(slide.id || '');
     switch (slide.block) {
       case 'cover':
         return `<div class="center"><div class="center-text" style="font-size: clamp(28px, 4.4cqw, 44px);">${md(d.title)}</div></div>`;
@@ -331,7 +397,7 @@
         }
         if (d.bidirect) body += `<div class="bidirect-card">${d.bidirect.map(line => line === '=' ? '<span class="equals">=</span>' : md(line)).join('<br>')}</div>`;
         if (d.examples) body += `<div class="examples-grid">${d.examples.map(e => `<div class="ex-item">${md(typeof e === 'string' ? e : e.label || '')}</div>`).join('')}</div>`;
-        if (d.pairs) body += renderMatchPairs(d.pairs, 'static');
+        if (d.pairs) body += renderMatchPairs(d.pairs, 'static', revealed, seed);
         if (d.ordinal_map) body += `<div class="ordinals-row">${d.ordinal_map.map(o => `<div class="ord-item"><span class="ord-num">${o.num || ''}</span><span class="ord-label">${md(o.label || '')}</span></div>`).join('')}</div>`;
         if (d.linking_cube_staircase) body += renderStaircase(d.linking_cube_staircase.range[0], d.linking_cube_staircase.range[1]);
         if (d.sequence) body += renderSequenceNumbers(d.sequence);
@@ -392,7 +458,7 @@
         if (d.question) body += `<div class="big-q">${md(d.question)}</div>`;
         if (d.input === 'count_input' && (d.answer !== undefined || d.answers)) {
           const ans = d.answer !== undefined ? d.answer : (d.answers && d.answers[0]);
-          body += `<div class="answer-input"><span class="ai-label">답</span><input type="number" class="ai-box" placeholder="?" data-answer="${ans}"></div>`;
+          body += `<div class="answer-input ${revealed ? 'revealed' : ''}"><span class="ai-label">답</span><div class="ai-box">${revealed ? ans : '?'}</div></div>`;
         }
         if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
         return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
@@ -401,8 +467,8 @@
       case 'match': {
         let body = '';
         if (d.target !== undefined) body += `<div class="match-target"><span class="mt-label">기준</span><span class="mt-num">${d.target}</span></div>`;
-        if (d.pairs) body += renderMatchPairs(d.pairs, d.type || 'touch_match');
-        if (d.options) body += renderOptions(d.options, false);
+        if (d.pairs) body += renderMatchPairs(d.pairs, d.type || 'touch_match', revealed, seed);
+        if (d.options) body += renderOptions(d.options, false, revealed);
         if (d.left && d.right && Array.isArray(d.left)) {
           body += `<div class="match-cols"><div class="match-col">${d.left.map(l => `<div class="match-cell">${md(typeof l === 'string' ? l : l.label || '')}</div>`).join('')}</div><div class="match-col">${d.right.map(r => `<div class="match-cell">${md(typeof r === 'string' ? r : r.label || '')}</div>`).join('')}</div></div>`;
         }
@@ -410,7 +476,7 @@
       }
 
       case 'multi': {
-        const body = renderOptions(d.options || [], true);
+        const body = renderOptions(d.options || [], true, revealed);
         const hint = `<div class="multi-hint">정답을 모두 골라요${d.expectedCount ? ` <span class="mh-count">${d.expectedCount}개</span>` : ''}</div>`;
         return `<h2>${md(d.title)}</h2><div class="center" style="gap:20px;">${body}${hint}${d.note ? `<div class="small-text">${md(d.note)}</div>` : ''}</div>`;
       }
@@ -427,7 +493,7 @@
         let body = '';
         if (d.context) body += `<div class="context-text">${md(d.context)}</div>`;
         if (d.card !== undefined) body += `<div class="num-card-big">${d.card}</div>`;
-        if (d.options) body += renderOptions(d.options, false);
+        if (d.options) body += renderOptions(d.options, false, revealed);
         if (d.sequence) body += renderSequenceNumbers(d.sequence);
         if (d.target !== undefined && d.component === 'ten_frame') body += `<div class="tf-target"><div class="tt-empty-frame">${renderTenFrame(0, 'lg')}</div><div class="tt-num">목표 ${d.target}</div></div>`;
         if (d.scenario) body += `<div class="scenario-card"><div class="sc-icon">${d.scenario.icon || ''}</div><div class="sc-body">${md(d.scenario.body || '')}</div></div>`;
@@ -436,7 +502,7 @@
         if (d.challenge) body += `<div class="big-q">${md(d.challenge)}</div>`;
         if (d.input === 'count_input' && (d.answer !== undefined || d.answers)) {
           const ans = d.answer !== undefined ? d.answer : (d.answers && d.answers[0]);
-          body += `<div class="answer-input"><span class="ai-label">답</span><input type="number" class="ai-box" placeholder="?" data-answer="${ans}"></div>`;
+          body += `<div class="answer-input ${revealed ? 'revealed' : ''}"><span class="ai-label">답</span><div class="ai-box">${revealed ? ans : '?'}</div></div>`;
         }
         if (d.note) body += `<div class="small-text">${md(d.note)}</div>`;
         return `<h2>${md(d.title)}</h2><div class="center" style="gap:24px;">${body}</div>`;
@@ -842,6 +908,26 @@
     document.getElementById('delete-slide-btn').style.display = cur.user_added ? '' : 'none';
     document.getElementById('prev-btn').disabled = visIdx === 0;
     document.getElementById('next-btn').disabled = visIdx === visibleSlides.length - 1;
+
+    // 정답 토글 버튼 자리 — 슬라이드 자리 정답 있을 때만 노출
+    const revealBtn = document.getElementById('reveal-btn');
+    if (revealBtn) {
+      if (slideHasAnswer(cur)) {
+        revealBtn.style.display = '';
+        revealBtn.textContent = cur.revealed ? '👁 정답 보임' : '🙈 정답 가림';
+        revealBtn.classList.toggle('revealed', !!cur.revealed);
+      } else {
+        revealBtn.style.display = 'none';
+      }
+    }
+  }
+
+  function toggleReveal() {
+    const cur = slides[curIdx];
+    if (!slideHasAnswer(cur)) return;
+    cur.revealed = !cur.revealed;
+    renderCurrentSlide();
+    saveState();
   }
 
   function rebuild() {
@@ -987,6 +1073,10 @@
     document.getElementById('fs-exit-btn').addEventListener('click', toggleFullscreen);
     document.getElementById('back-to-home').addEventListener('click', backToHome);
 
+    // 정답 토글 자리
+    const revealBtn = document.getElementById('reveal-btn');
+    if (revealBtn) revealBtn.addEventListener('click', toggleReveal);
+
     // 자료 오버레이 닫기
     document.getElementById('eo-close').addEventListener('click', closeExtraOverlay);
     document.getElementById('ext-overlay').addEventListener('click', e => {
@@ -1011,6 +1101,7 @@
       if (e.key === 'ArrowLeft' || e.key === 'PageUp') go(-1);
       else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { go(1); e.preventDefault(); }
       else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      else if (e.key === 'a' || e.key === 'A') toggleReveal();
       else if (e.key === 'Escape' && document.body.classList.contains('fullscreen')) toggleFullscreen();
     });
 
