@@ -30,6 +30,19 @@
     extension: '심화 자료', book: '책 추천', tip: '학습 가이드', misconception: '오개념 주의',
     other_activity: '다른 활동'
   };
+  function getExtraTypeLabel(e) {
+    if (!e) return '';
+    if (e.type === 'game') {
+      return e.game_kind ? '게임' : '교실 활동';
+    }
+    return EXTRA_TYPE_FULL_LABEL[e.type] || e.type;
+  }
+  function getExtraIconFallback(e) {
+    if (!e) return '';
+    if (e.icon) return e.icon;
+    if (e.type === 'game') return e.game_kind ? '🎮' : '🙋';
+    return '';
+  }
   const BLOCK_TEMPLATES = {
     motivate: {stage:'도입', block:'motivate', data:{scene_title:'새 도입 상황',kids:[{face:'🙂',label:'(편집)'}],question:'(질문 편집)'}},
     concept: {stage:'전개', block:'concept', data:{title:'새 개념', content:'(개념 설명 편집)'}},
@@ -755,7 +768,7 @@
       const isSuggested = suggestedIds.has(e.id);
       return `<div class="extra-card ${isAttached ? 'attached' : ''}" data-extra-id="${e.id}">
         <div class="extra-head">
-          <span class="extra-icon">${e.icon}</span>
+          <span class="extra-icon">${getExtraIconFallback(e)}</span>
           <span class="extra-title">${e.title}${isSuggested ? '  ·' : ''}</span>
           <button class="extra-attach">${isAttached ? '뺌' : '끼움'}</button>
         </div>
@@ -786,7 +799,7 @@
       const preview = previewText.length > 60 ? previewText.slice(0, 60) + '…' : previewText;
       html += `<div class="extra-attached-card" data-extra-id="${id}">
         <div class="ext-head">
-          <span class="ext-icon">${e.icon}</span>
+          <span class="ext-icon">${getExtraIconFallback(e)}</span>
           <span class="ext-title">${e.title}</span>
           <span class="ext-remove" data-remove="${id}">×</span>
         </div>
@@ -860,13 +873,20 @@
       </div>`;
     }
     if (e.type === 'game' || e.type === 'other_activity') {
+      // 인터랙티브 게임 분기
+      if (e.type === 'game' && e.game_kind === 'memory_match') {
+        return `<div id="kedu-game-mount" class="eo-game-mount"></div>`;
+      }
+      // 교실 활동 안내 (스텝/설명만)
+      const guideHead = (e.type === 'game' && !e.game_kind)
+        ? `<div class="eo-classroom-banner">🙋 교실에서 진행하는 활동입니다</div>` : '';
       if (Array.isArray(e.steps) && e.steps.length > 0) {
         const stepsHtml = e.steps.map(s => `<li>${md(s)}</li>`).join('');
-        return `<div class="eo-label">진행 단계</div>
+        return `${guideHead}<div class="eo-label">진행 단계</div>
           <ol class="eo-steps">${stepsHtml}</ol>
           ${e.description ? `<div class="eo-divider"></div><div class="eo-medium-text" style="font-size:16px; color:var(--c-text-light);">${md(e.description)}</div>` : ''}`;
       }
-      return `<div class="eo-big-text" style="text-align:left;">${md(e.content || e.description || '')}</div>`;
+      return `${guideHead}<div class="eo-big-text" style="text-align:left;">${md(e.content || e.description || '')}</div>`;
     }
     return `<div class="eo-big-text">${md(e.content || e.description || '')}</div>`;
   }
@@ -875,8 +895,8 @@
     const e = getExtra(extraId);
     if (!e) return;
     const audience = EXTRA_TYPE_AUDIENCE[e.type] || 'student';
-    const typeLabel = EXTRA_TYPE_FULL_LABEL[e.type] || e.type;
-    document.getElementById('eo-icon').textContent = e.icon || '';
+    const typeLabel = getExtraTypeLabel(e);
+    document.getElementById('eo-icon').textContent = getExtraIconFallback(e);
     document.getElementById('eo-type-tag').textContent = typeLabel;
     document.getElementById('eo-title').textContent = e.title || '';
     const audEl = document.getElementById('eo-audience');
@@ -888,9 +908,18 @@
     }
     document.getElementById('eo-canvas').innerHTML = body;
     document.getElementById('ext-overlay').classList.add('active');
+
+    // 인터랙티브 게임 마운트
+    if (e.type === 'game' && e.game_kind === 'memory_match' && window.KeduMemoryMatch) {
+      const mountEl = document.getElementById('kedu-game-mount');
+      if (mountEl) window.KeduMemoryMatch.mount(mountEl, e);
+    }
   }
 
   function closeExtraOverlay() {
+    if (window.KeduMemoryMatch && typeof window.KeduMemoryMatch.unmount === 'function') {
+      window.KeduMemoryMatch.unmount();
+    }
     document.getElementById('ext-overlay').classList.remove('active');
     const canvas = document.getElementById('eo-canvas');
     if (canvas) canvas.innerHTML = '';

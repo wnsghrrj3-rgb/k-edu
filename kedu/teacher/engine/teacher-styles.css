@@ -2474,3 +2474,188 @@ body.fullscreen .fs-exit { display: flex; }
 .theme-font.active { background: var(--c-accent); color: white; border-color: var(--c-accent); }
 .theme-font[data-f="myeong"] { font-family: 'Gowun Batang', serif; }
 .theme-font[data-f="hand"] { font-family: 'Gaegu', cursive; font-size: 14px; }
+
+/* ============================================================
+   메모리 매치 게임 컴포넌트
+   ============================================================ */
+.eo-game-mount {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.mm-wrap {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.mm-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--c-card);
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  box-shadow: var(--c-shadow);
+}
+.mm-stats {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+}
+.mm-stat {
+  font-size: 18px;
+  color: var(--c-text);
+  font-family: var(--c-font-body);
+}
+.mm-stat strong {
+  font-size: 22px;
+  color: var(--c-accent-text);
+  font-weight: 700;
+  margin: 0 2px;
+}
+.mm-stat-sub { color: var(--c-text-light); font-size: 16px; }
+.mm-stat-sub strong { font-size: 18px; color: var(--c-text-light); }
+.mm-reset {
+  padding: 10px 18px;
+  border: 1.5px solid var(--c-accent);
+  background: var(--c-card);
+  color: var(--c-accent);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--c-font-body);
+  transition: all 0.15s;
+}
+.mm-reset:hover { background: var(--c-accent); color: white; }
+.mm-hint {
+  text-align: center;
+  font-size: 17px;
+  color: var(--c-text-light);
+  padding: 6px 0;
+}
+.mm-done {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--c-accent-text);
+  background: var(--c-accent-soft);
+  border: 2px solid var(--c-accent);
+  border-radius: 14px;
+  padding: 18px;
+}
+.mm-board {
+  display: grid;
+  grid-template-columns: repeat(var(--mm-cols, 4), 1fr);
+  gap: 14px;
+  width: 100%;
+}
+.mm-card {
+  aspect-ratio: 3/4;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  perspective: 800px;
+  font-family: var(--c-font-body);
+}
+.mm-card[disabled] { cursor: default; }
+.mm-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(.4,.2,.2,1);
+  display: block;
+}
+.mm-card.flipped .mm-card-inner { transform: rotateY(180deg); }
+.mm-card-back,
+.mm-card-front {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: var(--c-shadow);
+}
+.mm-card-back {
+  background: linear-gradient(135deg, var(--c-accent) 0%, var(--c-accent-text) 100%);
+  color: white;
+  font-size: 48px;
+  font-weight: 800;
+}
+.mm-card-front {
+  background: var(--c-card);
+  border: 2px solid var(--c-line);
+  transform: rotateY(180deg);
+  padding: 10px;
+}
+.mm-card.matched .mm-card-front {
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+  box-shadow: 0 0 0 3px var(--c-accent-soft), var(--c-shadow);
+}
+.mm-card:not([disabled]):hover .mm-card-inner {
+  transform: translateY(-2px);
+}
+.mm-card:not([disabled]).flipped:hover .mm-card-inner {
+  transform: rotateY(180deg) translateY(-2px);
+}
+.mm-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.mm-face-text {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 800;
+  color: var(--c-accent-text);
+  font-family: var(--c-font-body);
+}
+.mm-face-emojis {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-items: center;
+  padding: 8px;
+}
+.mm-face-emojis.mm-count-1 { grid-template-columns: 1fr; }
+.mm-face-emojis.mm-count-2 { grid-template-columns: 1fr 1fr; }
+.mm-face-emojis.mm-count-3 { grid-template-columns: 1fr 1fr 1fr; }
+.mm-face-emojis.mm-count-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.mm-face-emojis.mm-count-5 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.mm-face-emojis.mm-count-5 .mm-emoji:nth-child(4) { grid-column: 1 / 2; }
+.mm-face-emojis.mm-count-5 .mm-emoji:nth-child(5) { grid-column: 3 / 4; }
+.mm-emoji {
+  font-size: clamp(18px, 3vw, 32px);
+  line-height: 1;
+}
+.mm-empty {
+  text-align: center;
+  color: var(--c-text-light);
+  padding: 40px;
+  font-size: 16px;
+}
+
+/* 교실 활동 배너 */
+.eo-classroom-banner {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--c-warm-soft);
+  color: var(--c-warm);
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}

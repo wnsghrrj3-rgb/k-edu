@@ -52,7 +52,13 @@ LESSONS["u1_l2~3"] = {
     {id:"m_finger_writing", type:"tip", icon:"🧩", title:"필순 손가락으로 따라하기", content:"점선만 따라가지 말고, 손가락으로 허공에 한 번 써본 뒤 종이에 쓰면 기억이 잘 돼요.", fit_slides:["trace","concept"]},
     {id:"r_phone_number", type:"real_world", icon:"🌍", title:"전화번호 읽기", content:"010-1234-5678 같은 전화번호는 한자어로 읽어요(공일공·일이삼사·오륙칠팔). 우리집·엄마 전화번호 읽어보기.", fit_slides:["real_world","concept"]},
     {id:"r_finger_count", type:"real_world", icon:"🌍", title:"손가락으로 세기", content:"한 손에 손가락 5개. 1·2·3·4·5 — 손가락 펴면서 세기. 가장 가까운 수 세기 도구.", fit_slides:["concept","real_world"]},
-    {id:"g_card_match", type:"game", icon:"🎮", title:"수 카드 짝짓기 놀이", content:"수 카드 1~5와 그림 카드(사물 1~5개) 5쌍을 뒤집어 놓고 같은 짝 찾기. 메모리 게임 형식.", fit_slides:["match","game"]},
+    {id:"g_card_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"수 카드 짝짓기 놀이", description:"수 카드와 그림 카드의 같은 짝을 찾아보세요.", content:"수 카드 1~5와 그림 카드(사물 1~5개) 5쌍을 뒤집어 놓고 같은 짝 찾기. 메모리 게임 형식.", hint:"같은 수끼리 짝을 맞춰 보세요.", pairs:[
+      { a:{text:"1"}, b:{emoji:"✏️", count:1} },
+      { a:{text:"2"}, b:{emoji:"📕", count:2} },
+      { a:{text:"3"}, b:{emoji:"⚽", count:3} },
+      { a:{text:"4"}, b:{emoji:"✂️", count:4} },
+      { a:{text:"5"}, b:{emoji:"🎲", count:5} }
+    ], fit_slides:["match","game"]},
     {id:"g_show_finger", type:"game", icon:"🎮", title:"손가락 빨리 들기", content:"교사가 '셋!' 외치면 손가락 3개를, '오!' 하면 5개를 빨리 드는 게임. 우리말·한자어 둘 다 사용.", fit_slides:["game","concept"]},
     {id:"b_number_book", type:"book", icon:"📖", title:"『숫자가 사라졌어요』 - 로렌 리디", content:"숫자가 사라진 세상 이야기로 수의 필요성·이름을 자연스럽게 배움.", source:"로렌 리디 / 비룡소", fit_slides:["motivate","summary"]},
     {id:"b_ten_apples", type:"book", icon:"📖", title:"『사과가 쿵!』", content:"사물이 하나씩 늘어나는 단순한 구조. 1·2·3·4·5 차례로 세는 그림책.", source:"국내 그림책 (도서관 확인)", fit_slides:["motivate","concept"]},
@@ -145,7 +151,13 @@ LESSONS["u1_l6"] = {
     {id:"r_race_finish", type:"real_world", icon:"🌍", title:"달리기 결승선", content:"운동회 달리기에서 1등·2등·3등은 첫째·둘째·셋째로도 말해요. 순서를 표현하는 다른 방식.", fit_slides:["real_world","concept"]},
     {id:"m_ordinal_vs_count", type:"tip", icon:"🧩", title:"'몇째'와 '몇 개' 구분 팁", content:"'몇째'는 위치 (한 명·한 개). '몇 개'는 양 (여러 개). 손가락으로 짚을 때 — '셋째'는 셋째 자리 한 곳만 짚고, '3개'는 1·2·3 모두 짚어요.", fit_slides:["concept","compare"]},
     {id:"m_two_directions", type:"tip", icon:"🧩", title:"기준 명시 습관", content:"순서를 말할 때 항상 '왼쪽에서·오른쪽에서·앞에서·뒤에서' 같은 기준을 함께 말해요. 안 그러면 듣는 사람이 헷갈려요.", fit_slides:["concept","real_world"]},
-    {id:"g_ordinal_card", type:"game", icon:"🎮", title:"순서수 카드 뒤집기", content:"숫자 카드(1~9)와 순서수 카드(첫째~아홉째)를 뒤집어 놓고 같은 짝 찾기 메모리 게임.", fit_slides:["match","game"]},
+    {id:"g_ordinal_card", type:"game", game_kind:"memory_match", icon:"🎮", title:"순서수 카드 뒤집기", description:"숫자와 순서수의 같은 짝을 찾아보세요.", content:"숫자 카드(1~9)와 순서수 카드(첫째~아홉째)를 뒤집어 놓고 같은 짝 찾기 메모리 게임.", hint:"숫자와 순서수의 짝을 맞춰 보세요.", pairs:[
+      { a:{text:"1"}, b:{text:"첫째"} },
+      { a:{text:"2"}, b:{text:"둘째"} },
+      { a:{text:"3"}, b:{text:"셋째"} },
+      { a:{text:"5"}, b:{text:"다섯째"} },
+      { a:{text:"9"}, b:{text:"아홉째"} }
+    ], fit_slides:["match","game"]},
     {id:"g_line_game", type:"game", icon:"🎮", title:"기준 바꾸기 놀이", content:"친구 9명이 일렬로 섬. 교사가 '왼쪽에서 다섯째!' 외치면 다섯째가 손 들기. '오른쪽에서 다섯째!'로 바꾸면 다른 친구가 손 듦. 빠르게 반응 훈련.", fit_slides:["game","real_world"]},
     {id:"b_ordinal_book", type:"book", icon:"📖", title:"『첫째·둘째·셋째』 - 순서 그림책", content:"동물들이 줄을 서며 순서를 배우는 그림책. '몇째'와 '몇 개'를 자연스럽게 구분.", source:"국내 그림책 다수 — 도서관 확인", fit_slides:["motivate","summary"]},
     {id:"x_order_vs_quantity", type:"misconception", icon:"❓", title:"오개념 — '셋째'와 '3개' 혼동", content:"학생이 '사탕 셋째'에 사탕 3개를 답하는 경우. '몇째'는 한 곳을 가리키는 위치임을 손가락 짚기로 강조.", fit_slides:["concept","compare"]},
