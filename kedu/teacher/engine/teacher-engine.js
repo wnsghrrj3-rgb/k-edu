@@ -877,6 +877,9 @@
       if (e.type === 'game' && e.game_kind === 'memory_match') {
         return `<div id="kedu-game-mount" class="eo-game-mount"></div>`;
       }
+      if (e.type === 'game' && e.game_kind === 'compare_pair') {
+        return `<div id="kedu-game-mount" class="eo-game-mount"></div>`;
+      }
       // 교실 활동 안내 (스텝/설명만)
       const guideHead = (e.type === 'game' && !e.game_kind)
         ? `<div class="eo-classroom-banner">🙋 교실에서 진행하는 활동입니다</div>` : '';
@@ -914,11 +917,18 @@
       const mountEl = document.getElementById('kedu-game-mount');
       if (mountEl) window.KeduMemoryMatch.mount(mountEl, e);
     }
+    if (e.type === 'game' && e.game_kind === 'compare_pair' && window.KeduComparePair) {
+      const mountEl = document.getElementById('kedu-game-mount');
+      if (mountEl) window.KeduComparePair.mount(mountEl, e);
+    }
   }
 
   function closeExtraOverlay() {
     if (window.KeduMemoryMatch && typeof window.KeduMemoryMatch.unmount === 'function') {
       window.KeduMemoryMatch.unmount();
+    }
+    if (window.KeduComparePair && typeof window.KeduComparePair.unmount === 'function') {
+      window.KeduComparePair.unmount();
     }
     document.getElementById('ext-overlay').classList.remove('active');
     const canvas = document.getElementById('eo-canvas');
