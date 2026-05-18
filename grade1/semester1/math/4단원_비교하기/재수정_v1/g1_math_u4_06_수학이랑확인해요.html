@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<!--
+  u4_06 수학이랑 확인해요 — 단원 평가 18슬 base v1
+  4단원 안 cycle 10
+
+  설계 출처: _PLAN.md (안 B 본격 매핑), _SOURCE.md (지도서 258~259)
+  18슬: 도입1 + 평가1(길이) 2슬 + 평가2(무게) 2슬 + 평가3(들이) 2슬 + 평가4(넓이) 2슬 + 평가5(종합) 3슬 + 자기평가 3슬(3차원) + 점수등급분기 + 실천활동 회상 + 다음차시(7차)
+  신규 부품: line_draw_compare(슬2)·area_draw_compare(슬8)·sticker_drag_fill(슬10)·practice_review(슬17)
+  재사용: attribute_picker(슬4·6) volume·weight 모드 / self_assessment 3차원 분리
+  점수 등급 분기: 3단원 cycle 16 패턴 (정답률 따라 메시지·별 5단계)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u4_06_v1">
+<title>수학이랑 확인해요 · K-edu 1학년 수학 4단원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.15) rotate(-3deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-shine { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); display: flex; flex-direction: column; position: relative; overflow: hidden; color: #333; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); color: #1976D2; font-weight: 400; text-align: center; line-height: 1.3; margin: 0 0 clamp(4px, 0.8vw, 7px); flex-shrink: 0; }
+.slide-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; margin-bottom: clamp(8px, 1.5vw, 12px); text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+.stage-badge.q { background: #FFF8E1; color: #F57F17; }
+.stage-badge.assess { background: #E1BEE7; color: #6A1B9A; }
+.stage-badge.review { background: #C8E6C9; color: #2E7D32; }
+
+.ka-f { display: flex; justify-content: space-between; gap: clamp(6px, 1.2vw, 10px); flex-shrink: 0; margin-top: clamp(6px, 1.2vw, 10px); }
+.ka-prev, .ka-next { background: #F4F4F8; border: none; padding: clamp(8px, 1.5vw, 12px) clamp(14px, 2.4vw, 22px); border-radius: clamp(10px, 1.8vw, 14px); cursor: pointer; font-family: inherit; color: #555; font-size: clamp(13px, 2.1vw, 16px); flex: 1; }
+.ka-next.hl { background: linear-gradient(135deg, #42A5F5 0%, #1976D2 100%); color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 슬1 평가 안내 */
+.intro-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 720px; width: 100%; }
+.intro-emoji { font-size: clamp(60px, 9vw, 90px); animation: ka-pop 0.6s ease both; }
+.intro-card { background: linear-gradient(135deg, #FFF 0%, #E3F2FD 100%); border: 3px solid #42A5F5; border-radius: clamp(16px, 2.6vw, 24px); padding: clamp(18px, 2.8vw, 26px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); width: 100%; }
+.intro-title { font-size: clamp(22px, 3.6vw, 32px); color: #1976D2; font-weight: 400; }
+.intro-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.6; }
+.intro-line strong { color: #1976D2; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 6px; }
+.intro-chips { display: flex; gap: clamp(6px, 1vw, 10px); flex-wrap: wrap; justify-content: center; }
+.intro-chip { background: #FFF; border: 2px solid #42A5F5; border-radius: 999px; padding: clamp(4px, 0.8vw, 6px) clamp(10px, 1.6vw, 14px); font-size: clamp(12px, 2vw, 16px); color: #1976D2; }
+
+/* line_draw_compare 슬2 — 캔버스 선 긋기 */
+.ldc-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.ldc-prompt { background: #FFF; border: 2px solid #42A5F5; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(14px, 2.3vw, 19px); color: #1976D2; text-align: center; line-height: 1.5; width: 100%; }
+.ldc-prompt strong { color: #DC2626; font-weight: 400; }
+.ldc-board { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); position: relative; width: 100%; touch-action: none; cursor: crosshair; }
+.ldc-svg { display: block; width: 100%; height: auto; max-height: 220px; }
+.ldc-ref-line { stroke: #FFA726; stroke-width: 6; stroke-linecap: round; }
+.ldc-ref-label { fill: #E65100; font-size: 14px; font-family: 'Jua', sans-serif; }
+.ldc-user-line { stroke: #1976D2; stroke-width: 6; stroke-linecap: round; }
+.ldc-user-label { fill: #1976D2; font-size: 14px; font-family: 'Jua', sans-serif; }
+.ldc-actions { display: flex; gap: clamp(8px, 1.4vw, 12px); }
+.ldc-reset-btn { background: #FFF; border: 2px solid #607D8B; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.2vw, 18px); border-radius: clamp(10px, 1.6vw, 14px); font-family: inherit; font-size: clamp(13px, 2.1vw, 17px); color: #455A64; cursor: pointer; }
+.ldc-check-btn { background: linear-gradient(135deg, #42A5F5 0%, #1976D2 100%); color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(16px, 2.6vw, 22px); border-radius: clamp(10px, 1.6vw, 14px); font-family: inherit; font-size: clamp(13px, 2.1vw, 17px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.32); }
+.ldc-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ldc-status { font-size: clamp(13px, 2.1vw, 18px); color: #1976D2; text-align: center; min-height: 1.6em; }
+.ldc-status.done { color: #1B5E20; font-weight: 400; }
+.ldc-status.wrong { color: #C62828; }
+
+/* 해설 카드 (평가 짝수 슬) */
+.exp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 680px; width: 100%; }
+.exp-card { background: linear-gradient(135deg, #FFF 0%, #E8F5E9 100%); border: 3px solid #66BB6A; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(16px, 2.6vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); width: 100%; }
+.exp-tag { background: #66BB6A; color: white; padding: 4px 12px; border-radius: 999px; font-size: clamp(11px, 1.8vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.exp-title { font-size: clamp(17px, 2.8vw, 24px); color: #2E7D32; font-weight: 400; text-align: center; }
+.exp-line { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.5; }
+.exp-line strong { color: #DC2626; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 6px; text-decoration: underline; text-decoration-color: #DC2626; }
+.exp-illust { background: #FFF; border: 2px solid #66BB6A; border-radius: 12px; padding: 12px; display: flex; gap: 18px; align-items: center; justify-content: center; }
+
+/* attribute_picker (평가 4·6) */
+.ap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.ap-prompt { background: #FFF; border: 2px solid #FFA726; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px); font-size: clamp(14px, 2.3vw, 20px); color: #455A64; text-align: center; line-height: 1.5; width: 100%; }
+.ap-prompt strong { color: #DC2626; font-weight: 400; }
+.ap-objects { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: 16px; padding: 18px; display: flex; gap: 30px; justify-content: center; align-items: center; width: 100%; }
+.ap-obj { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 8px; border-radius: 12px; border: 3px solid transparent; transition: all 0.2s; position: relative; }
+.ap-obj:hover { background: #FFF8E1; }
+.ap-obj.picked { border-color: #DC2626; background: #FFF; }
+.ap-obj.picked::after { content: '○'; position: absolute; top: -10px; right: -10px; font-size: 32px; color: #DC2626; font-weight: 800; }
+.ap-obj-emoji { font-size: clamp(48px, 7vw, 64px); }
+.ap-obj-name { font-size: clamp(13px, 2.1vw, 17px); color: #455A64; }
+.ap-fb { font-size: clamp(13px, 2.1vw, 17px); color: #1976D2; text-align: center; min-height: 1.4em; }
+.ap-fb.done { color: #1B5E20; font-weight: 400; }
+.ap-fb.wrong { color: #C62828; }
+.ap-check-btn { background: linear-gradient(135deg, #FFA726 0%, #E65100 100%); color: white; border: none; padding: clamp(8px, 1.4vw, 12px) clamp(18px, 3vw, 24px); border-radius: clamp(10px, 1.8vw, 14px); font-family: inherit; font-size: clamp(14px, 2.3vw, 18px); cursor: pointer; box-shadow: 0 4px 14px rgba(255,167,38,0.32); }
+.ap-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* area_draw_compare 슬8 — 캔버스 사각형 크기 조절 */
+.adc-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.adc-prompt { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(14px, 2.3vw, 19px); color: #2E7D32; text-align: center; line-height: 1.5; width: 100%; }
+.adc-prompt strong { color: #DC2626; font-weight: 400; }
+.adc-board { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); position: relative; width: 100%; height: clamp(220px, 32vw, 300px); }
+.adc-ref { position: absolute; background: #EF5350; opacity: 0.7; border: 3px solid #C62828; border-radius: 8px; pointer-events: none; }
+.adc-ref-label { position: absolute; background: #FFF; padding: 2px 8px; border-radius: 8px; font-size: clamp(11px, 1.8vw, 14px); color: #C62828; }
+.adc-user { position: absolute; background: #66BB6A; opacity: 0.6; border: 3px solid #2E7D32; border-radius: 8px; }
+.adc-handle { position: absolute; right: -10px; bottom: -10px; width: 24px; height: 24px; background: #2E7D32; border: 3px solid white; border-radius: 50%; cursor: nwse-resize; touch-action: none; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.adc-user-label { position: absolute; background: #FFF; padding: 2px 8px; border-radius: 8px; font-size: clamp(11px, 1.8vw, 14px); color: #2E7D32; }
+.adc-status { font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; text-align: center; min-height: 1.6em; }
+.adc-status.done { color: #1B5E20; font-weight: 400; }
+.adc-status.wrong { color: #C62828; }
+.adc-check-btn { background: linear-gradient(135deg, #66BB6A 0%, #2E7D32 100%); color: white; border: none; padding: clamp(8px, 1.4vw, 12px) clamp(18px, 3vw, 24px); border-radius: clamp(10px, 1.8vw, 14px); font-family: inherit; font-size: clamp(14px, 2.3vw, 18px); cursor: pointer; box-shadow: 0 4px 14px rgba(102,187,106,0.32); }
+.adc-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* sticker_drag_fill 슬10 — 붙임딱지 4개 → 4빈칸 */
+.sdf-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 760px; width: 100%; }
+.sdf-illust { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: 16px; padding: 14px; display: flex; gap: 18px; justify-content: center; align-items: center; flex-wrap: wrap; }
+.sdf-illust-obj { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sdf-illust-emoji { font-size: clamp(32px, 5vw, 44px); }
+.sdf-illust-name { font-size: clamp(11px, 1.8vw, 14px); color: #455A64; }
+.sdf-sentences { display: flex; flex-direction: column; gap: clamp(8px, 1.4vw, 10px); width: 100%; max-width: 680px; }
+.sdf-sentence { background: #FFF; border: 2px solid #E3F2FD; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(10px, 1.6vw, 14px); font-size: clamp(13px, 2.1vw, 18px); color: #455A64; display: flex; align-items: center; gap: clamp(6px, 1vw, 10px); flex-wrap: wrap; }
+.sdf-slot { display: inline-block; min-width: 70px; min-height: 30px; border: 2px dashed #FFA726; border-radius: 8px; padding: 4px 10px; text-align: center; background: #FFF8E1; color: #E65100; font-weight: 400; transition: all 0.2s; }
+.sdf-slot.filled { border-style: solid; background: #C8E6C9; color: #1B5E20; border-color: #66BB6A; }
+.sdf-slot.over { background: #FFE082; transform: scale(1.06); }
+.sdf-pool { background: #FFF; border: 2px solid #FFA726; border-radius: 14px; padding: 12px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.sdf-sticker { background: linear-gradient(135deg, #FFF8E1 0%, #FFE082 100%); border: 3px solid #FFA726; border-radius: 10px; padding: 6px 14px; font-size: clamp(13px, 2.1vw, 18px); color: #E65100; cursor: grab; user-select: none; touch-action: none; transition: transform 0.2s; }
+.sdf-sticker:active { cursor: grabbing; }
+.sdf-sticker.dragging { z-index: 100; transform: scale(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+.sdf-sticker.used { opacity: 0.3; pointer-events: none; }
+.sdf-fb { font-size: clamp(13px, 2.1vw, 17px); color: #1976D2; text-align: center; min-height: 1.4em; }
+.sdf-fb.done { color: #1B5E20; font-weight: 400; }
+
+/* 자기 평가 (3차원 분리, 슬13·14·15) */
+.assess-big-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.2vw, 20px); max-width: 720px; width: 100%; }
+.assess-big-card { background: linear-gradient(135deg, #FFF 0%, #F3E5F5 100%); border: 3px solid #9C27B0; border-radius: clamp(16px, 2.6vw, 24px); padding: clamp(20px, 3vw, 28px); display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); width: 100%; }
+.assess-big-tag { background: #9C27B0; color: white; padding: 4px 14px; border-radius: 999px; font-size: clamp(12px, 2vw, 16px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.assess-big-q { font-size: clamp(17px, 2.8vw, 24px); color: #4A148C; text-align: center; line-height: 1.5; }
+.assess-big-q strong { color: #DC2626; font-weight: 400; }
+.assess-big-stars { display: flex; gap: clamp(8px, 1.4vw, 12px); }
+.assess-big-star { font-size: clamp(40px, 6vw, 56px); cursor: pointer; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
+.assess-big-star.on { opacity: 1; transform: scale(1.12); }
+
+/* 점수 등급 분기 슬16 */
+.grade-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 720px; width: 100%; }
+.grade-emoji { font-size: clamp(70px, 10vw, 100px); animation: ka-pop 0.7s ease both; }
+.grade-stars { display: flex; gap: clamp(6px, 1vw, 10px); }
+.grade-star { font-size: clamp(36px, 5.4vw, 50px); animation: ka-shine 1.5s infinite; }
+.grade-star.dim { opacity: 0.2; animation: none; }
+.grade-msg { font-size: clamp(20px, 3.2vw, 28px); color: #1976D2; font-weight: 400; text-align: center; }
+.grade-sub { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.5; }
+.grade-score-tag { background: #FFF8E1; border: 2px solid #FFA726; padding: 6px 16px; border-radius: 999px; font-family: 'Nunito', sans-serif; font-weight: 800; color: #E65100; font-size: clamp(13px, 2.1vw, 18px); }
+
+/* practice_review 슬17 */
+.pr-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.pr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.pr-card { background: #FFF; border: 3px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.6vw, 14px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 6px); cursor: pointer; transition: all 0.2s; }
+.pr-card:hover { background: #E8F5E9; transform: translateY(-2px); }
+.pr-card.checked { background: #C8E6C9; transform: scale(0.95); position: relative; }
+.pr-card.checked::after { content: '✓'; position: absolute; top: -6px; right: -6px; background: #66BB6A; color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px; }
+.pr-emoji { font-size: clamp(28px, 4.4vw, 40px); }
+.pr-name { font-size: clamp(12px, 2vw, 16px); color: #2E7D32; }
+.pr-prompt { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(14px, 2.3vw, 19px); color: #2E7D32; text-align: center; }
+.pr-prompt strong { color: #DC2626; font-weight: 400; }
+
+/* 슬18 다음 차시 */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); }
+.next-trophy { font-size: clamp(60px, 8vw, 84px); animation: ka-pop 0.6s ease both; }
+.next-title { font-size: clamp(24px, 4vw, 36px); color: #1976D2; font-weight: 400; }
+.next-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.6; }
+.next-preview { background: #E3F2FD; border: 2px solid #42A5F5; border-radius: clamp(14px, 2.2vw, 18px); padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.4vw, 22px); font-size: clamp(14px, 2.3vw, 18px); color: #1976D2; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="if(window.parent) window.parent.postMessage({type:'kedu_lesson_close'},'*')">✕ 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5.5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+
+    <!-- 슬1: 평가 안내 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">단원 평가</div>
+      <div class="intro-stage">
+        <div class="intro-emoji">📝</div>
+        <div class="intro-card">
+          <div class="intro-title">수학이랑 확인해요</div>
+          <div class="intro-line">4단원에서 배운 <strong>비교하기</strong>를 확인해 봐요</div>
+          <div class="intro-chips">
+            <div class="intro-chip">📏 길이</div>
+            <div class="intro-chip">⚖️ 무게</div>
+            <div class="intro-chip">🥛 들이</div>
+            <div class="intro-chip">🟦 넓이</div>
+            <div class="intro-chip">🎯 종합</div>
+          </div>
+          <div class="intro-line">5문제를 풀어 봐요. 끝까지 차분하게 ✨</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬2: 평가1 — 길이 (line_draw_compare) -->
+    <div class="slide" data-slide="2" data-stage="q">
+      <div class="stage-badge q">문제 1 · 길이</div>
+      <h1 class="slide-title">연필보다 더 긴 선을 그어요</h1>
+      <div class="ldc-stage">
+        <div class="ldc-prompt">아래 연필(주황)보다 <strong>더 긴 선</strong>을 손가락(또는 마우스)으로 그어 보세요</div>
+        <div class="ldc-board">
+          <svg class="ldc-svg" id="ldc-svg-2" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet">
+            <!-- 기준 연필 -->
+            <line class="ldc-ref-line" x1="100" y1="80" x2="280" y2="80"/>
+            <polygon points="280,72 296,80 280,88" fill="#FFA726"/>
+            <text class="ldc-ref-label" x="100" y="65">✏️ 연필</text>
+            <!-- 사용자 선 자리 -->
+            <line class="ldc-user-line" id="ldc-user-2" x1="0" y1="0" x2="0" y2="0" style="visibility:hidden"/>
+            <text class="ldc-user-label" id="ldc-user-label-2" x="0" y="0" style="visibility:hidden">내 선</text>
+            <!-- 안내선 -->
+            <text x="300" y="180" font-size="11" fill="#999" text-anchor="middle">▼ 이 영역에서 손가락으로 그어 보세요 ▼</text>
+          </svg>
+        </div>
+        <div class="ldc-actions">
+          <button class="ldc-reset-btn" id="ldc-reset-2">다시 그리기</button>
+          <button class="ldc-check-btn" id="ldc-check-2" disabled>확인</button>
+        </div>
+        <div class="ldc-status" id="ldc-status-2">선을 그어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬3: 평가1 해설 -->
+    <div class="slide" data-slide="3" data-stage="q">
+      <div class="stage-badge q">문제 1 · 해설</div>
+      <h1 class="slide-title">정답이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card">
+          <div class="exp-tag">정답</div>
+          <div class="exp-title">연필보다 그은 선이 더 길어요</div>
+          <div class="exp-illust">
+            <svg width="320" height="80" viewBox="0 0 320 80">
+              <line x1="40" y1="30" x2="180" y2="30" stroke="#FFA726" stroke-width="6" stroke-linecap="round"/>
+              <text x="40" y="22" font-size="11" fill="#E65100">연필</text>
+              <line x1="40" y1="60" x2="280" y2="60" stroke="#1976D2" stroke-width="6" stroke-linecap="round"/>
+              <text x="40" y="78" font-size="11" fill="#1976D2">내 선</text>
+            </svg>
+          </div>
+          <div class="exp-line">그은 선은 연필보다 <strong>더 깁니다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬4: 평가2 — 무게 -->
+    <div class="slide" data-slide="4" data-stage="q">
+      <div class="stage-badge q">문제 2 · 무게</div>
+      <h1 class="slide-title">더 가벼운 것을 골라요</h1>
+      <div class="ap-stage">
+        <div class="ap-prompt">두 가지 중 <strong>더 가벼운 것</strong>에 ○ 표시를 해 보세요</div>
+        <div class="ap-objects" id="ap-objs-4">
+          <div class="ap-obj" data-pick="book">
+            <div class="ap-obj-emoji">📕</div>
+            <div class="ap-obj-name">책</div>
+          </div>
+          <div class="ap-obj" data-pick="chair">
+            <div class="ap-obj-emoji">🪑</div>
+            <div class="ap-obj-name">의자</div>
+          </div>
+        </div>
+        <button class="ap-check-btn" id="ap-check-4" disabled>확인</button>
+        <div class="ap-fb" id="ap-fb-4">두 가지 중 더 가벼운 것에 ○ 표시</div>
+      </div>
+    </div>
+
+    <!-- 슬5: 평가2 해설 -->
+    <div class="slide" data-slide="5" data-stage="q">
+      <div class="stage-badge q">문제 2 · 해설</div>
+      <h1 class="slide-title">정답이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card">
+          <div class="exp-tag">정답</div>
+          <div class="exp-title">책은 의자보다 더 가벼워요</div>
+          <div class="exp-illust">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="font-size:48px;">📕</div>
+              <div style="font-size:12px; color:#1B5E20;">책 ✓</div>
+            </div>
+            <div style="font-size:24px; color:#999;">vs</div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="font-size:48px;">🪑</div>
+              <div style="font-size:12px; color:#999;">의자</div>
+            </div>
+          </div>
+          <div class="exp-line">책은 의자보다 <strong>더 가볍습니다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬6: 평가3 — 들이 -->
+    <div class="slide" data-slide="6" data-stage="q">
+      <div class="stage-badge q">문제 3 · 들이</div>
+      <h1 class="slide-title">담을 수 있는 양이 더 많은 것을 골라요</h1>
+      <div class="ap-stage">
+        <div class="ap-prompt">두 그릇 중 <strong>담을 수 있는 양이 더 많은 것</strong>에 ○ 표시를 해 보세요</div>
+        <div class="ap-objects" id="ap-objs-6">
+          <div class="ap-obj" data-pick="milk">
+            <div class="ap-obj-emoji">🥛</div>
+            <div class="ap-obj-name">우유갑</div>
+          </div>
+          <div class="ap-obj" data-pick="bucket">
+            <div class="ap-obj-emoji">🪣</div>
+            <div class="ap-obj-name">물통</div>
+          </div>
+        </div>
+        <button class="ap-check-btn" id="ap-check-6" disabled>확인</button>
+        <div class="ap-fb" id="ap-fb-6">두 그릇 중 더 많이 담을 수 있는 것에 ○ 표시</div>
+      </div>
+    </div>
+
+    <!-- 슬7: 평가3 해설 -->
+    <div class="slide" data-slide="7" data-stage="q">
+      <div class="stage-badge q">문제 3 · 해설</div>
+      <h1 class="slide-title">정답이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card">
+          <div class="exp-tag">정답</div>
+          <div class="exp-title">물통은 우유갑보다 담을 수 있는 양이 더 많아요</div>
+          <div class="exp-illust">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="font-size:48px;">🥛</div>
+              <div style="font-size:12px; color:#999;">우유갑</div>
+            </div>
+            <div style="font-size:24px; color:#999;">vs</div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <div style="font-size:48px;">🪣</div>
+              <div style="font-size:12px; color:#1B5E20;">물통 ✓</div>
+            </div>
+          </div>
+          <div class="exp-line">물통은 우유갑보다 <strong>담을 수 있는 양이 더 많습니다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬8: 평가4 — 넓이 (area_draw_compare) -->
+    <div class="slide" data-slide="8" data-stage="q">
+      <div class="stage-badge q">문제 4 · 넓이</div>
+      <h1 class="slide-title">빨간 방석보다 더 넓은 방석을 그려요</h1>
+      <div class="adc-stage">
+        <div class="adc-prompt">초록 방석의 <strong>오른쪽 아래 손잡이</strong>를 끌어 빨간 방석보다 더 넓게 만들어 보세요</div>
+        <div class="adc-board" id="adc-board-8">
+          <div class="adc-ref" id="adc-ref-8" style="left:20px; top:30px; width:120px; height:120px;"></div>
+          <div class="adc-ref-label" style="left:24px; top:158px;">빨간 방석</div>
+          <div class="adc-user" id="adc-user-8" style="left:230px; top:30px; width:60px; height:60px;">
+            <div class="adc-handle" id="adc-handle-8"></div>
+          </div>
+          <div class="adc-user-label" id="adc-user-label-8" style="left:230px; top:98px;">초록 방석</div>
+        </div>
+        <button class="adc-check-btn" id="adc-check-8">확인</button>
+        <div class="adc-status" id="adc-status-8">손잡이를 끌어 크기를 바꿔 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬9: 평가4 해설 -->
+    <div class="slide" data-slide="9" data-stage="q">
+      <div class="stage-badge q">문제 4 · 해설</div>
+      <h1 class="slide-title">정답이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card">
+          <div class="exp-tag">정답</div>
+          <div class="exp-title">초록 방석이 빨간 방석보다 더 넓어요</div>
+          <div class="exp-illust">
+            <svg width="280" height="120" viewBox="0 0 280 120">
+              <rect x="20" y="30" width="80" height="60" fill="#EF5350" opacity="0.7" rx="6" stroke="#C62828" stroke-width="3"/>
+              <text x="60" y="100" font-size="11" fill="#C62828" text-anchor="middle">빨간 방석</text>
+              <rect x="140" y="20" width="120" height="80" fill="#66BB6A" opacity="0.6" rx="6" stroke="#2E7D32" stroke-width="3"/>
+              <text x="200" y="110" font-size="11" fill="#2E7D32" text-anchor="middle">초록 방석 ✓</text>
+            </svg>
+          </div>
+          <div class="exp-line">초록 방석은 빨간 방석보다 <strong>더 넓다</strong>, 빨간 방석은 <strong>더 좁다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬10: 평가5 — 종합 (sticker_drag_fill) -->
+    <div class="slide" data-slide="10" data-stage="q">
+      <div class="stage-badge q">문제 5 · 종합</div>
+      <h1 class="slide-title">알맞은 말 붙임딱지를 빈칸에 끌어다 놓아요</h1>
+      <div class="sdf-stage">
+        <div class="sdf-illust">
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">📏</div><div class="sdf-illust-name">자</div></div>
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">✏️</div><div class="sdf-illust-name">연필</div></div>
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">📚</div><div class="sdf-illust-name">책 두 권</div></div>
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">📓</div><div class="sdf-illust-name">공책 한 권</div></div>
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">🥤</div><div class="sdf-illust-name">컵</div></div>
+          <div class="sdf-illust-obj"><div class="sdf-illust-emoji">🍶</div><div class="sdf-illust-name">물병</div></div>
+        </div>
+        <div class="sdf-sentences">
+          <div class="sdf-sentence">자는 연필보다 <span class="sdf-slot" data-slot="s1" data-answer="long">?</span></div>
+          <div class="sdf-sentence">책 두 권은 공책 한 권보다 <span class="sdf-slot" data-slot="s2" data-answer="heavy">?</span></div>
+          <div class="sdf-sentence">물병은 컵보다 담을 수 있는 양이 <span class="sdf-slot" data-slot="s3" data-answer="many">?</span></div>
+          <div class="sdf-sentence">책은 공책보다 <span class="sdf-slot" data-slot="s4" data-answer="wide">?</span></div>
+        </div>
+        <div class="sdf-pool" id="sdf-pool-10">
+          <div class="sdf-sticker" data-id="long" draggable="true">더 깁니다</div>
+          <div class="sdf-sticker" data-id="heavy" draggable="true">더 무겁습니다</div>
+          <div class="sdf-sticker" data-id="many" draggable="true">더 많습니다</div>
+          <div class="sdf-sticker" data-id="wide" draggable="true">더 넓습니다</div>
+        </div>
+        <div class="sdf-fb" id="sdf-fb-10">붙임딱지를 끌어 빈칸에 넣어 보세요 (0 / 4)</div>
+      </div>
+    </div>
+
+    <!-- 슬11: 평가5 해설 1·2 -->
+    <div class="slide" data-slide="11" data-stage="q">
+      <div class="stage-badge q">문제 5 · 해설 ①②</div>
+      <h1 class="slide-title">첫 두 문장이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card">
+          <div class="exp-tag">정답 ①</div>
+          <div class="exp-line">자는 연필보다 <strong>더 깁니다</strong></div>
+        </div>
+        <div class="exp-card" style="border-color:#FFA726; background:linear-gradient(135deg, #FFF 0%, #FFF3E0 100%);">
+          <div class="exp-tag" style="background:#FFA726;">정답 ②</div>
+          <div class="exp-line">책 두 권은 공책 한 권보다 <strong>더 무겁습니다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬12: 평가5 해설 3·4 -->
+    <div class="slide" data-slide="12" data-stage="q">
+      <div class="stage-badge q">문제 5 · 해설 ③④</div>
+      <h1 class="slide-title">남은 두 문장이에요</h1>
+      <div class="exp-stage">
+        <div class="exp-card" style="border-color:#9C27B0; background:linear-gradient(135deg, #FFF 0%, #F3E5F5 100%);">
+          <div class="exp-tag" style="background:#9C27B0;">정답 ③</div>
+          <div class="exp-line">물병은 컵보다 담을 수 있는 양이 <strong>더 많습니다</strong></div>
+        </div>
+        <div class="exp-card">
+          <div class="exp-tag">정답 ④</div>
+          <div class="exp-line">책은 공책보다 <strong>더 넓습니다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬13: 자기 평가 ① 지식·이해 -->
+    <div class="slide" data-slide="13" data-stage="assess">
+      <div class="stage-badge assess">자기 평가 ①</div>
+      <div class="assess-big-stage">
+        <div class="assess-big-card">
+          <div class="assess-big-tag">📚 지식·이해</div>
+          <div class="assess-big-q">여러 가지 방법으로 <strong>비교</strong>할 수 있나요?</div>
+          <div class="assess-big-stars" data-assess="d1">
+            <span class="assess-big-star" data-n="1">⭐</span>
+            <span class="assess-big-star" data-n="2">⭐</span>
+            <span class="assess-big-star" data-n="3">⭐</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬14: 자기 평가 ② 과정·기능 -->
+    <div class="slide" data-slide="14" data-stage="assess">
+      <div class="stage-badge assess">자기 평가 ②</div>
+      <div class="assess-big-stage">
+        <div class="assess-big-card" style="border-color:#2E7D32; background:linear-gradient(135deg, #FFF 0%, #E8F5E9 100%);">
+          <div class="assess-big-tag" style="background:#2E7D32;">🔧 과정·기능</div>
+          <div class="assess-big-q">생활 속 다양한 물건을 비교하여 <strong>말로 표현</strong>할 수 있나요?</div>
+          <div class="assess-big-stars" data-assess="d2">
+            <span class="assess-big-star" data-n="1">⭐</span>
+            <span class="assess-big-star" data-n="2">⭐</span>
+            <span class="assess-big-star" data-n="3">⭐</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬15: 자기 평가 ③ 가치·태도 -->
+    <div class="slide" data-slide="15" data-stage="assess">
+      <div class="stage-badge assess">자기 평가 ③</div>
+      <div class="assess-big-stage">
+        <div class="assess-big-card" style="border-color:#E65100; background:linear-gradient(135deg, #FFF 0%, #FFF3E0 100%);">
+          <div class="assess-big-tag" style="background:#E65100;">💛 가치·태도</div>
+          <div class="assess-big-q">친구와 <strong>즐겁게</strong> 비교하기를 공부했나요?</div>
+          <div class="assess-big-stars" data-assess="d3">
+            <span class="assess-big-star" data-n="1">⭐</span>
+            <span class="assess-big-star" data-n="2">⭐</span>
+            <span class="assess-big-star" data-n="3">⭐</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬16: 점수 등급 분기 -->
+    <div class="slide" data-slide="16" data-stage="1">
+      <div class="stage-badge">평가 결과</div>
+      <div class="grade-stage" id="grade-stage">
+        <div class="grade-emoji" id="grade-emoji">🏆</div>
+        <div class="grade-stars" id="grade-stars">
+          <span class="grade-star">⭐</span>
+          <span class="grade-star">⭐</span>
+          <span class="grade-star">⭐</span>
+          <span class="grade-star">⭐</span>
+          <span class="grade-star">⭐</span>
+        </div>
+        <div class="grade-msg" id="grade-msg">결과를 확인해요</div>
+        <div class="grade-sub" id="grade-sub">오늘 5문제를 풀어 봤어요</div>
+        <div class="grade-score-tag" id="grade-score-tag">⭐ 0점</div>
+      </div>
+    </div>
+
+    <!-- 슬17: 실천 활동 회상 -->
+    <div class="slide" data-slide="17" data-stage="review">
+      <div class="stage-badge review">실천 활동 점검</div>
+      <h1 class="slide-title" style="color:#2E7D32;">단원에서 실천한 활동은?</h1>
+      <div class="pr-stage">
+        <div class="pr-prompt">집·학교에서 <strong>실천한 활동 카드</strong>를 모두 눌러 보세요 (여러 개 가능)</div>
+        <div class="pr-grid" id="pr-grid">
+          <div class="pr-card" data-act="length"><div class="pr-emoji">📏</div><div class="pr-name">길이 비교</div></div>
+          <div class="pr-card" data-act="weight"><div class="pr-emoji">⚖️</div><div class="pr-name">무게 비교</div></div>
+          <div class="pr-card" data-act="area"><div class="pr-emoji">🟦</div><div class="pr-name">넓이 비교</div></div>
+          <div class="pr-card" data-act="volume"><div class="pr-emoji">🥛</div><div class="pr-name">들이 비교</div></div>
+        </div>
+        <div class="pr-prompt" id="pr-summary" style="border-color:#FFA726; color:#E65100;">활동을 눌러 점검해 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬18: 다음 차시 -->
+    <div class="slide" data-slide="18" data-stage="1">
+      <div class="stage-badge">단원 마무리</div>
+      <div class="next-stage">
+        <div class="next-trophy">🎨</div>
+        <div class="next-title">단원을 마무리해요</div>
+        <div class="next-line">4단원 비교하기를 모두 확인했어요<br>이제 점토로 만들어 비교해 봐요</div>
+        <div class="next-preview">📚 다음 차시 — 7차 수학이랑 만들어요</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script src="../../../../../kedu_tracker.js"></script>
+<script>
+const TOTAL = 18;
+let cur = 0;
+let score = 0;
+// 평가 문항 정답 자리 추적 (등급 분기 자리)
+let questionsCorrect = 0; // 0~5
+const totalQuestions = 5;
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+  // 슬16 등급 자리 진입 시 분기
+  if (cur === 15) renderGrade();
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+let muted = false;
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+  if (window.keduTracker && window.keduTracker.recordScore) window.keduTracker.recordScore('g1_math_u4_06', score);
+}
+function markQuestion() { questionsCorrect++; }
+
+/* line_draw_compare 슬2 */
+(function() {
+  const svg = document.getElementById('ldc-svg-2');
+  const userLine = document.getElementById('ldc-user-2');
+  const userLabel = document.getElementById('ldc-user-label-2');
+  const resetBtn = document.getElementById('ldc-reset-2');
+  const checkBtn = document.getElementById('ldc-check-2');
+  const status = document.getElementById('ldc-status-2');
+  let drawing = false, startX = 0, startY = 0, endX = 0, endY = 0, drawn = false, solved = false;
+  function getPoint(e) {
+    const rect = svg.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    const x = (p.clientX - rect.left) * (600 / rect.width);
+    const y = (p.clientY - rect.top) * (200 / rect.height);
+    return { x, y };
+  }
+  function start(e) {
+    if (solved) return;
+    e.preventDefault();
+    drawing = true;
+    const p = getPoint(e);
+    startX = p.x; startY = p.y;
+    endX = p.x; endY = p.y;
+    userLine.setAttribute('x1', startX);
+    userLine.setAttribute('y1', startY);
+    userLine.setAttribute('x2', endX);
+    userLine.setAttribute('y2', endY);
+    userLine.style.visibility = 'visible';
+  }
+  function move(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = getPoint(e);
+    endX = p.x; endY = p.y;
+    userLine.setAttribute('x2', endX);
+    userLine.setAttribute('y2', endY);
+    userLabel.setAttribute('x', startX);
+    userLabel.setAttribute('y', startY - 8);
+    userLabel.style.visibility = 'visible';
+  }
+  function end() {
+    if (!drawing) return;
+    drawing = false;
+    const len = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
+    if (len > 12) { drawn = true; checkBtn.disabled = false; status.textContent = '선을 그렸어요. 확인 버튼을 눌러 봐요'; }
+  }
+  svg.addEventListener('mousedown', start);
+  svg.addEventListener('mousemove', move);
+  svg.addEventListener('mouseup', end);
+  svg.addEventListener('mouseleave', end);
+  svg.addEventListener('touchstart', start, { passive: false });
+  svg.addEventListener('touchmove', move, { passive: false });
+  svg.addEventListener('touchend', end);
+  resetBtn.addEventListener('click', () => {
+    if (solved) return;
+    userLine.style.visibility = 'hidden';
+    userLabel.style.visibility = 'hidden';
+    drawn = false;
+    checkBtn.disabled = true;
+    status.textContent = '선을 그어 보세요';
+    status.classList.remove('done', 'wrong');
+  });
+  checkBtn.addEventListener('click', () => {
+    if (!drawn || solved) return;
+    const refLen = 280 - 100; // 180px
+    const userLen = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
+    if (userLen > refLen + 6) {
+      solved = true;
+      status.textContent = '정답이에요! 그은 선이 연필보다 더 깁니다 +10점';
+      status.classList.add('done');
+      addScore(10);
+      markQuestion();
+      checkBtn.disabled = true;
+    } else {
+      status.textContent = '아직 짧아요. 다시 그려 봐요';
+      status.classList.add('wrong');
+      setTimeout(() => status.classList.remove('wrong'), 1500);
+    }
+  });
+})();
+
+/* attribute_picker 평가 4·6 */
+function setupApObjs(slideNum, answer, fbCorrect) {
+  const objs = document.getElementById('ap-objs-' + slideNum);
+  const checkBtn = document.getElementById('ap-check-' + slideNum);
+  const fb = document.getElementById('ap-fb-' + slideNum);
+  let picked = null, solved = false;
+  objs.querySelectorAll('.ap-obj').forEach(obj => {
+    obj.addEventListener('click', () => {
+      if (solved) return;
+      objs.querySelectorAll('.ap-obj').forEach(o => o.classList.remove('picked'));
+      obj.classList.add('picked');
+      picked = obj.dataset.pick;
+      checkBtn.disabled = false;
+    });
+  });
+  checkBtn.addEventListener('click', () => {
+    if (solved) return;
+    if (picked === answer) {
+      solved = true;
+      fb.textContent = fbCorrect + ' +10점';
+      fb.classList.add('done');
+      addScore(10);
+      markQuestion();
+      checkBtn.disabled = true;
+    } else {
+      fb.textContent = '다시 한 번 살펴봐요';
+      fb.classList.add('wrong');
+      setTimeout(() => fb.classList.remove('wrong'), 1500);
+    }
+  });
+}
+setupApObjs(4, 'book', '정답이에요! 책은 의자보다 더 가볍습니다');
+setupApObjs(6, 'bucket', '정답이에요! 물통은 우유갑보다 담을 수 있는 양이 더 많습니다');
+
+/* area_draw_compare 슬8 */
+(function() {
+  const board = document.getElementById('adc-board-8');
+  const user = document.getElementById('adc-user-8');
+  const handle = document.getElementById('adc-handle-8');
+  const userLabel = document.getElementById('adc-user-label-8');
+  const checkBtn = document.getElementById('adc-check-8');
+  const status = document.getElementById('adc-status-8');
+  let resizing = false, startW = 0, startH = 0, startPX = 0, startPY = 0, solved = false;
+  function getPoint(e) {
+    const p = e.touches ? e.touches[0] : e;
+    return { x: p.clientX, y: p.clientY };
+  }
+  function startResize(e) {
+    if (solved) return;
+    e.preventDefault();
+    e.stopPropagation();
+    resizing = true;
+    startW = user.offsetWidth;
+    startH = user.offsetHeight;
+    const p = getPoint(e);
+    startPX = p.x; startPY = p.y;
+  }
+  function moveResize(e) {
+    if (!resizing) return;
+    e.preventDefault();
+    const p = getPoint(e);
+    const newW = Math.max(40, Math.min(280, startW + (p.x - startPX)));
+    const newH = Math.max(40, Math.min(220, startH + (p.y - startPY)));
+    user.style.width = newW + 'px';
+    user.style.height = newH + 'px';
+    const top = parseInt(user.style.top, 10);
+    userLabel.style.top = (top + newH + 8) + 'px';
+  }
+  function endResize() { resizing = false; }
+  handle.addEventListener('mousedown', startResize);
+  handle.addEventListener('touchstart', startResize, { passive: false });
+  document.addEventListener('mousemove', moveResize);
+  document.addEventListener('touchmove', moveResize, { passive: false });
+  document.addEventListener('mouseup', endResize);
+  document.addEventListener('touchend', endResize);
+  checkBtn.addEventListener('click', () => {
+    if (solved) return;
+    const refW = 120, refH = 120;
+    const userW = user.offsetWidth, userH = user.offsetHeight;
+    const refArea = refW * refH;
+    const userArea = userW * userH;
+    if (userArea > refArea + 600) {
+      solved = true;
+      status.textContent = '정답이에요! 초록 방석이 빨간 방석보다 더 넓습니다 +10점';
+      status.classList.add('done');
+      addScore(10);
+      markQuestion();
+      checkBtn.disabled = true;
+    } else {
+      status.textContent = '아직 좁아요. 손잡이를 더 끌어 보세요';
+      status.classList.add('wrong');
+      setTimeout(() => status.classList.remove('wrong'), 1500);
+    }
+  });
+})();
+
+/* sticker_drag_fill 슬10 */
+(function() {
+  const pool = document.getElementById('sdf-pool-10');
+  const fb = document.getElementById('sdf-fb-10');
+  const slots = document.querySelectorAll('.sdf-slot');
+  let filled = 0, solved = false;
+
+  function bindSticker(sticker) {
+    function start(e) {
+      if (sticker.classList.contains('used') || solved) return;
+      e.preventDefault();
+      sticker.classList.add('dragging');
+      const isTouch = e.type === 'touchstart';
+      const p = isTouch ? e.touches[0] : e;
+      const rect = sticker.getBoundingClientRect();
+      const offsetX = p.clientX - rect.left;
+      const offsetY = p.clientY - rect.top;
+      const origPos = { left: sticker.style.left, top: sticker.style.top, pos: sticker.style.position };
+      sticker.style.position = 'fixed';
+      sticker.style.left = (p.clientX - offsetX) + 'px';
+      sticker.style.top = (p.clientY - offsetY) + 'px';
+      sticker.style.zIndex = 200;
+      function move(ev) {
+        ev.preventDefault();
+        const pp = ev.type === 'touchmove' ? ev.touches[0] : ev;
+        sticker.style.left = (pp.clientX - offsetX) + 'px';
+        sticker.style.top = (pp.clientY - offsetY) + 'px';
+        // 빈칸 over 자리
+        slots.forEach(slot => {
+          const r = slot.getBoundingClientRect();
+          const inside = pp.clientX >= r.left && pp.clientX <= r.right && pp.clientY >= r.top && pp.clientY <= r.bottom;
+          slot.classList.toggle('over', inside && !slot.classList.contains('filled'));
+        });
+      }
+      function endDrag(ev) {
+        sticker.classList.remove('dragging');
+        const pp = ev.type === 'touchend' ? (ev.changedTouches[0] || {clientX:0, clientY:0}) : ev;
+        let dropped = false;
+        slots.forEach(slot => {
+          slot.classList.remove('over');
+          if (dropped || slot.classList.contains('filled')) return;
+          const r = slot.getBoundingClientRect();
+          const inside = pp.clientX >= r.left && pp.clientX <= r.right && pp.clientY >= r.top && pp.clientY <= r.bottom;
+          if (inside) {
+            // 정답 자리?
+            if (slot.dataset.answer === sticker.dataset.id) {
+              slot.textContent = sticker.textContent;
+              slot.classList.add('filled');
+              sticker.classList.add('used');
+              filled++;
+              dropped = true;
+              addScore(2);
+              fb.textContent = '잘 했어요! (' + filled + ' / 4)';
+              if (filled === 4 && !solved) {
+                solved = true;
+                fb.textContent = '4문장 모두 정답이에요! +10점';
+                fb.classList.add('done');
+                addScore(10);
+                markQuestion();
+              }
+            } else {
+              // 오답 자리
+              fb.textContent = '이 자리 자리는 아니에요. 다시 끌어 봐요';
+            }
+          }
+        });
+        // 원래 자리 자리 복귀
+        sticker.style.position = origPos.pos || '';
+        sticker.style.left = origPos.left || '';
+        sticker.style.top = origPos.top || '';
+        sticker.style.zIndex = '';
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchmove', move);
+        document.removeEventListener('touchend', endDrag);
+      }
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', endDrag);
+      document.addEventListener('touchmove', move, { passive: false });
+      document.addEventListener('touchend', endDrag);
+    }
+    sticker.addEventListener('mousedown', start);
+    sticker.addEventListener('touchstart', start, { passive: false });
+    sticker.addEventListener('dragstart', e => e.preventDefault());
+  }
+  pool.querySelectorAll('.sdf-sticker').forEach(bindSticker);
+})();
+
+/* 자기 평가 (3차원 분리, 슬13·14·15) */
+document.querySelectorAll('.assess-big-stars').forEach(group => {
+  let chosen = false;
+  group.querySelectorAll('.assess-big-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const n = parseInt(star.dataset.n, 10);
+      group.querySelectorAll('.assess-big-star').forEach(s => {
+        s.classList.toggle('on', parseInt(s.dataset.n, 10) <= n);
+      });
+      if (!chosen) { chosen = true; addScore(3); }
+    });
+  });
+});
+
+/* 점수 등급 분기 슬16 */
+let gradeRendered = false;
+function renderGrade() {
+  if (gradeRendered) return;
+  gradeRendered = true;
+  const emoji = document.getElementById('grade-emoji');
+  const stars = document.getElementById('grade-stars');
+  const msg = document.getElementById('grade-msg');
+  const sub = document.getElementById('grade-sub');
+  const tag = document.getElementById('grade-score-tag');
+  const rate = questionsCorrect / totalQuestions;
+  let starCount, msgText, subText, emojiText;
+  if (rate >= 1.0)       { starCount = 5; emojiText = '🏆'; msgText = '모두 맞혔어요!'; subText = '정말 잘 했어요. 완벽한 자리!'; }
+  else if (rate >= 0.8)  { starCount = 4; emojiText = '🎉'; msgText = '거의 다 맞혔어요!'; subText = '잘 했어요. 한 번 더 확인해 봐요'; }
+  else if (rate >= 0.6)  { starCount = 3; emojiText = '😊'; msgText = '잘 했어요!'; subText = '한 번 더 살펴보면 더 잘 할 수 있어요'; }
+  else if (rate >= 0.4)  { starCount = 2; emojiText = '💪'; msgText = '조금 더 살펴봐요'; subText = '실수한 자리를 다시 한 번 봐 봐요'; }
+  else                   { starCount = 1; emojiText = '📚'; msgText = '한 번 더 학습해 봐요'; subText = '괜찮아요. 다시 도전해 봐요!'; }
+  emoji.textContent = emojiText;
+  msg.textContent = msgText;
+  sub.textContent = subText;
+  tag.textContent = '맞힌 문제 ' + questionsCorrect + ' / ' + totalQuestions + ' · ⭐ ' + score + '점';
+  // 별 자리 활성 자리
+  const starEls = stars.querySelectorAll('.grade-star');
+  starEls.forEach((s, i) => s.classList.toggle('dim', i >= starCount));
+}
+
+/* practice_review 슬17 */
+(function() {
+  const grid = document.getElementById('pr-grid');
+  const summary = document.getElementById('pr-summary');
+  const labels = { length: '길이', weight: '무게', area: '넓이', volume: '들이' };
+  const picked = new Set();
+  let awarded = false;
+  grid.querySelectorAll('.pr-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const act = card.dataset.act;
+      if (picked.has(act)) {
+        picked.delete(act);
+        card.classList.remove('checked');
+      } else {
+        picked.add(act);
+        card.classList.add('checked');
+      }
+      if (picked.size > 0) {
+        const items = [...picked].map(k => labels[k]).join(' · ');
+        summary.innerHTML = '실천한 활동: <strong>' + items + '</strong> (' + picked.size + ' / 4)';
+        summary.style.borderColor = '#66BB6A';
+        summary.style.color = '#2E7D32';
+      } else {
+        summary.textContent = '활동을 눌러 점검해 보세요';
+        summary.style.borderColor = '#FFA726';
+        summary.style.color = '#E65100';
+      }
+      if (picked.size === 4 && !awarded) {
+        awarded = true;
+        addScore(8);
+        summary.innerHTML = '4가지 모두 실천했어요! 정말 잘 했어요 ⭐ +8점';
+      } else if (picked.size > 0 && !awarded) {
+        // 1개 이상 자리 자리 점수 부여
+        addScore(1);
+      }
+    });
+  });
+})();
+
+updateUI();
+</script>
+</body>
+</html>
