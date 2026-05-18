@@ -134,7 +134,7 @@ LESSONS["u1_l6"] = {
     {id:"s07", stage:"전개", block:"summary", data:{title:"정리표", table:[{num:1,ord:"첫째"},{num:2,ord:"둘째"},{num:3,ord:"셋째"},{num:4,ord:"넷째"},{num:5,ord:"다섯째"},{num:6,ord:"여섯째"},{num:7,ord:"일곱째"},{num:8,ord:"여덟째"},{num:9,ord:"아홉째"}], legend:"← 왼쪽 기준 / 오른쪽 기준 →"}, suggested_extras:[]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"왼쪽에서 셋째는?", line_count:9, direction:"left", target:3, component:"position_picker"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"이 친구는 왼쪽에서 몇째?", line_count:9, highlight_pos:5, direction:"left", input:"count_input", answer:5}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"match", data:{title:"순서수 짝짓기", pairs:[{n:3,ord:"셋째"},{n:6,ord:"여섯째"},{n:9,ord:"아홉째"}], type:"ordinal_match"}, suggested_extras:[]},
+    {id:"s10", stage:"기본문제", block:"match", data:{title:"순서수 짝짓기", pairs:[{n:3,ord:"셋째"},{n:6,ord:"여섯째"},{n:9,ord:"아홉째"}], type:"ordinal_match"}, suggested_extras:["g_ordinal_card"]},
     {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"오른쪽에서 다섯째는?", line_count:9, direction:"right", target:5, component:"position_picker", note:"기준이 바뀜 — 오른쪽부터 세어요"}, suggested_extras:["m_two_directions"]},
     {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"두 기준 동시", line_count:9, both:true, left_target:3, right_target:7, component:"position_picker", note:"왼쪽에서 셋째 = 오른쪽에서 일곱째 — 같은 친구!"}, suggested_extras:["x_two_orders_same_person"]},
     {id:"s13", stage:"응용문제", block:"multi", data:{title:"둘째·다섯째·여덟째 모두 골라", line_count:9, targets:[2,5,8], direction:"left", expectedCount:3}, suggested_extras:[]},
