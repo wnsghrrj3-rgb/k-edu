@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u3_l04 — 이야기를 만들어 볼까요 [3단원 04차시, 단일 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g1/unit3/04차_이야기를_만들어_볼까요/draft.html
+  계획: _PLAN.md (2026-05-15, cycle 8)
+  지도서: _SOURCE.md (지도서 p.214-215, 수학 64-65, 수학익힘 36-37, 40분 단일)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+
+  학습 본질: 한 그림 = 덧셈 이야기·뺄셈 이야기 모두 가능 + 4상황(합병·첨가·제거·비교) 자연 도입
+  메카닉: 4지선다 (4상황 분류) + 영역 클릭 + 분기 선택 (story_picker)
+  점수: 기본 4슬 × 10점(q8·9·10·11) + 응용 4슬 × 15점(q12·13·14·15) = 100점 만점
+  부품: situation_visual·story_picker (단원 새 부품 2종) + mcq_grid·self_assessment (재사용)
+  단원 안 위치: 단원 핵심 도약점 — 모으기·가르기(02·03차) ↔ 덧셈·뺄셈(05·08차) 가교
+  단독 학습 환경 대체: 안 (4) 혼합 — 기본 = 닫힌 검증(분류), 응용 = 열린 자율 + 자동 검증(분기)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u3_l04_v1">
+<title>이야기를 만들어 볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-glow { 0%, 100% { filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.5)); } 50% { filter: drop-shadow(0 0 14px rgba(255, 193, 7, 0.9)); } }
+@keyframes ka-fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ───── situation_visual (슬 1·12~15) — 농장 그림 + 4영역 hot zone ───── */
+.farm-scene { position: relative; background: linear-gradient(180deg, #FFF9C4 0%, #C8E6C9 60%, #A5D6A7 100%); border: clamp(3px, 0.5vw, 4px) solid #66BB6A; border-radius: clamp(20px, 3.6vw, 32px); width: min(560px, 92vw); aspect-ratio: 16 / 11; overflow: hidden; box-shadow: 0 8px 20px rgba(102, 187, 106, 0.18); }
+.farm-sun { position: absolute; top: 6%; right: 8%; font-size: clamp(34px, 5.5vw, 60px); }
+.farm-zone { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: clamp(6px, 1.2vw, 10px); border-radius: clamp(12px, 2vw, 18px); cursor: default; transition: all 0.25s; }
+.farm-zone.clickable { cursor: pointer; }
+.farm-zone.clickable:hover { background: rgba(255, 255, 255, 0.4); transform: scale(1.06); }
+.farm-zone.picked { background: rgba(255, 193, 7, 0.35); animation: ka-glow 1.8s ease-in-out infinite; }
+.farm-zone-emoji { font-size: clamp(28px, 4.6vw, 50px); line-height: 1; }
+.farm-zone-label { font-size: clamp(11px, 1.7vw, 14px); color: #2E7D32; background: rgba(255, 255, 255, 0.7); padding: 1px 6px; border-radius: 8px; }
+.zone-honey { top: 14%; left: 10%; }
+.zone-butterfly { top: 18%; right: 14%; }
+.zone-bee { bottom: 12%; left: 16%; }
+.zone-flower { bottom: 16%; right: 12%; }
+.farm-prompt { position: absolute; bottom: clamp(6px, 1vw, 10px); left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.85); padding: clamp(4px, 0.8vw, 7px) clamp(10px, 1.8vw, 16px); border-radius: 999px; font-size: clamp(13px, 2vw, 17px); color: #1B5E20; white-space: nowrap; }
+
+.intro-q { font-size: var(--fs-body); color: #1976D2; text-align: center; max-width: var(--mw-md); }
+
+/* ───── 슬 2·3 ───── */
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); font-size: var(--fs-body); color: #333; max-width: var(--mw-sm); }
+.goal-list li { background: #E3F2FD; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); border-radius: clamp(12px, 2.2vw, 18px); list-style: none; }
+.goal-list li strong { color: #DC2626; }
+.recall-box { background: #FFF8E1; padding: clamp(14px, 2.8vw, 22px) clamp(20px, 3.6vw, 30px); border-radius: clamp(16px, 3vw, 24px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+.bridge-row { display: flex; gap: clamp(10px, 2vw, 16px); font-size: var(--em-sm); margin-top: clamp(8px, 1.6vw, 14px); justify-content: center; flex-wrap: wrap; }
+.bridge-item { display: flex; flex-direction: column; gap: clamp(4px, 0.8vw, 7px); align-items: center; padding: clamp(8px, 1.6vw, 14px) clamp(12px, 2.2vw, 18px); background: #E3F2FD; border-radius: clamp(12px, 2vw, 18px); }
+.bridge-item-emo { font-size: var(--em-sm); }
+.bridge-item-label { font-size: var(--fs-label); color: #1976D2; }
+
+/* ───── 슬 4~7 — 이야기 카드 (4상황 자연 도입) ───── */
+.story-stage { display: flex; flex-direction: column; gap: clamp(12px, 2.4vw, 20px); align-items: center; max-width: var(--mw-lg); width: 100%; }
+.story-board { background: linear-gradient(180deg, #FFFDE7 0%, #FFF9C4 100%); border: clamp(3px, 0.5vw, 4px) solid #FFC107; border-radius: clamp(18px, 3.4vw, 30px); padding: clamp(18px, 3.4vw, 30px) clamp(24px, 4.6vw, 40px); display: flex; flex-direction: column; gap: clamp(12px, 2.4vw, 20px); align-items: center; min-width: clamp(280px, 56vw, 480px); }
+.story-row { display: flex; gap: clamp(8px, 1.6vw, 14px); font-size: var(--em-md); min-height: clamp(60px, 9vw, 100px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.story-row .item-fade { animation: ka-fadeInUp 0.6s ease both; }
+.story-row .item-pop { animation: ka-pop 0.45s ease both; }
+.story-text { font-size: var(--fs-body); color: #6D4C41; text-align: center; line-height: 1.5; max-width: var(--mw-sm); }
+.story-text strong { color: #DC2626; }
+.story-eq { font-size: var(--fs-caption); color: #1565C0; background: #E3F2FD; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 2vw, 16px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.story-tag { display: inline-block; background: #C8E6C9; color: #1B5E20; padding: clamp(4px, 0.8vw, 7px) clamp(10px, 2vw, 16px); border-radius: 999px; font-size: clamp(14px, 2.2vw, 18px); margin-top: clamp(4px, 0.8vw, 7px); }
+.story-tag.hap { background: #FFE0B2; color: #E65100; }
+.story-tag.chum { background: #BBDEFB; color: #1565C0; }
+.story-tag.je { background: #FFCDD2; color: #C62828; }
+.story-tag.bi { background: #D1C4E9; color: #4527A0; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.q-prompt { font-size: var(--fs-body); color: #333; text-align: center; max-width: var(--mw-md); line-height: 1.5; }
+.q-fb { font-size: var(--fs-caption); color: #2E7D32; text-align: center; min-height: clamp(28px, 4.4vw, 36px); transition: all 0.3s; }
+.q-fb.wrong { color: #DC2626; }
+
+.mcq-hint { display: none; background: #FFF8E1; color: #6D4C41; padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.8vw, 14px); font-size: var(--fs-label); max-width: var(--mw-sm); }
+.mcq-hint.show { display: block; }
+
+/* ───── 슬 8~11 — 4상황 분류 4지선다 ───── */
+.mcq-visual { display: flex; gap: clamp(8px, 1.6vw, 14px); font-size: var(--em-md); justify-content: center; align-items: center; margin-bottom: clamp(8px, 1.6vw, 14px); flex-wrap: wrap; }
+.mcq-visual-tag { font-size: clamp(14px, 2.2vw, 18px); color: #6D4C41; background: #FFF8E1; padding: clamp(4px, 0.8vw, 7px) clamp(10px, 2vw, 16px); border-radius: 999px; }
+.mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.6vw, 14px); max-width: var(--mw-md); width: 100%; }
+.mcq-opt { background: white; border: clamp(2px, 0.4vw, 3px) solid #42A5F5; padding: clamp(12px, 2.4vw, 20px) clamp(14px, 2.8vw, 22px); border-radius: clamp(14px, 2.4vw, 20px); cursor: pointer; font-family: inherit; font-size: var(--fs-body); color: #1976D2; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: clamp(2px, 0.4vw, 4px); }
+.mcq-opt:hover { background: #E3F2FD; transform: translateY(-2px); }
+.mcq-opt:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
+.mcq-opt.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; }
+.mcq-opt.wrong { animation: ka-shake 0.4s ease; background: #FFCDD2; border-color: #C62828; }
+.mcq-opt-name { font-weight: 400; }
+.mcq-opt-desc { font-size: clamp(13px, 1.9vw, 16px); color: #6D4C41; font-weight: 400; }
+
+/* ───── 슬 12~15 — story_picker (영역 클릭 + 분기 선택) ───── */
+.sp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.sp-card { background: white; border: clamp(2px, 0.4vw, 3px) solid #FFC107; border-radius: clamp(16px, 3vw, 24px); padding: clamp(14px, 2.8vw, 22px) clamp(20px, 3.8vw, 32px); display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 14px); align-items: center; min-width: clamp(280px, 56vw, 460px); animation: ka-fadeInUp 0.5s ease both; }
+.sp-card.hidden { display: none; }
+.sp-card-emojis { font-size: var(--em-sm); display: flex; gap: clamp(6px, 1.2vw, 10px); flex-wrap: wrap; justify-content: center; }
+.sp-card-text { font-size: var(--fs-caption); color: #6D4C41; text-align: center; line-height: 1.5; }
+.sp-card-text strong { color: #DC2626; }
+.sp-branch { display: flex; gap: clamp(10px, 2vw, 16px); justify-content: center; }
+.sp-branch-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #42A5F5; padding: clamp(10px, 2vw, 16px) clamp(20px, 3.8vw, 32px); border-radius: clamp(12px, 2.2vw, 18px); cursor: pointer; font-family: inherit; font-size: var(--fs-body); color: #1976D2; transition: all 0.2s; }
+.sp-branch-btn:hover { background: #E3F2FD; transform: translateY(-2px); }
+.sp-branch-btn:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
+.sp-branch-btn.correct { background: #C8E6C9; border-color: #2E7D32; color: #1B5E20; }
+.sp-branch-btn.wrong { animation: ka-shake 0.4s ease; background: #FFCDD2; border-color: #C62828; }
+.sp-zone-prompt { font-size: var(--fs-caption); color: #1565C0; text-align: center; background: #E3F2FD; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.8vw, 16px); }
+
+/* ───── 슬 16 정리 ───── */
+.summary-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); width: 100%; }
+.summary-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.6vw, 14px); max-width: var(--mw-md); width: 100%; }
+.summary-card { background: #FFF8E1; border: clamp(2px, 0.4vw, 3px) solid #FFC107; border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(12px, 2.4vw, 18px); display: flex; flex-direction: column; gap: clamp(4px, 0.8vw, 7px); align-items: center; }
+.summary-card-icon { font-size: var(--em-sm); }
+.summary-card-name { font-size: var(--fs-caption); color: #E65100; font-weight: 400; }
+.summary-card-desc { font-size: var(--fs-label); color: #6D4C41; text-align: center; }
+.summary-msg { font-size: var(--fs-body); color: #1976D2; text-align: center; max-width: var(--mw-sm); line-height: 1.5; padding: clamp(10px, 2vw, 16px) clamp(16px, 3vw, 24px); background: #E3F2FD; border-radius: clamp(12px, 2.2vw, 18px); }
+.summary-msg strong { color: #DC2626; }
+.wrap-msg { font-size: var(--fs-caption); color: #F57F17; text-align: center; }
+
+/* ───── 슬 17 자기 평가 ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); width: 100%; }
+.self-row { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; flex-wrap: wrap; }
+.self-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #FFC107; padding: clamp(14px, 2.8vw, 22px) clamp(16px, 3.2vw, 26px); border-radius: clamp(14px, 2.4vw, 20px); cursor: pointer; font-family: inherit; display: flex; flex-direction: column; gap: clamp(4px, 0.8vw, 7px); align-items: center; transition: all 0.2s; min-width: clamp(100px, 18vw, 140px); }
+.self-btn:hover { background: #E3F2FD; }
+.self-btn.selected { background: #FFF8E1; border-color: #F57F17; }
+.self-btn-stars { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(32px, 5vw, 48px); color: #F57F17; }
+.self-btn-name { font-size: var(--fs-caption); color: #6E6E78; }
+
+/* ───── 슬 18 다음 차시 ───── */
+.next-stage { display: flex; flex-direction: column; gap: clamp(14px, 2.6vw, 22px); align-items: center; max-width: var(--mw-md); }
+.next-card { background: #E3F2FD; border-radius: clamp(20px, 3.6vw, 32px); padding: clamp(20px, 4vw, 32px) clamp(28px, 5.2vw, 44px); display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); align-items: center; }
+.next-emojis { font-size: var(--em-md); }
+.next-label { font-size: var(--fs-body); color: #1976D2; text-align: center; }
+.home-prompt { background: #FFF8E1; padding: clamp(12px, 2.4vw, 20px) clamp(20px, 4vw, 32px); border-radius: clamp(16px, 3vw, 24px); font-size: var(--fs-caption); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">차시 목록</button>
+    <div class="ka-bar"><div id="bar" style="width: 5.55%"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 메인 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 농장 그림 흥미 유발 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">농장에 무슨 이야기가 있을까요?</h2>
+      <div class="farm-scene">
+        <div class="farm-sun">☀️</div>
+        <div class="farm-zone zone-honey"><div class="farm-zone-emoji">🍯</div><div class="farm-zone-label">꿀</div></div>
+        <div class="farm-zone zone-butterfly"><div class="farm-zone-emoji">🦋</div><div class="farm-zone-label">나비</div></div>
+        <div class="farm-zone zone-bee"><div class="farm-zone-emoji">🐝</div><div class="farm-zone-label">벌</div></div>
+        <div class="farm-zone zone-flower"><div class="farm-zone-emoji">🌸</div><div class="farm-zone-label">꽃</div></div>
+        <div class="farm-prompt">꿀·나비·벌·꽃을 보고 이야기를 만들어 봐요</div>
+      </div>
+      <div class="intro-q">그림 속에는 여러 이야기가 숨어 있어요.<br>모으는 이야기·들어오는 이야기·빠지는 이야기·견주는 이야기를 찾아봐요.</div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 이야기를 만들어요</h2>
+      <ul class="goal-list">
+        <li>👀 그림을 보고 <strong>네 가지 이야기</strong>를 알아봐요</li>
+        <li>🔢 이야기를 <strong>덧셈·뺄셈</strong>으로 나누어요</li>
+        <li>📝 한 그림에 <strong>여러 이야기</strong>가 있다는 것을 알아요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 (02·03차 → 04차 다리) -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간을 떠올려요</h2>
+      <div class="recall-box">
+        02·03차시에서 <strong style="color:#1976D2">모으기</strong>와 <strong style="color:#1976D2">가르기</strong>를 배웠어요.<br>
+        오늘은 한 그림에서 모으는 이야기·빠지는 이야기를 찾아봐요.<br>
+        <span style="font-size: var(--fs-caption); color:#1565C0;">예) 5에서 2를 빼면 남는 수는 얼마일까요?</span>
+      </div>
+      <div class="bridge-row">
+        <div class="bridge-item"><div class="bridge-item-emo">🤲</div><div class="bridge-item-label">모으기</div></div>
+        <div class="bridge-item"><div class="bridge-item-emo">✋</div><div class="bridge-item-label">가르기</div></div>
+        <div class="bridge-item"><div class="bridge-item-emo">➕</div><div class="bridge-item-label">덧셈으로</div></div>
+        <div class="bridge-item"><div class="bridge-item-emo">➖</div><div class="bridge-item-label">뺄셈으로</div></div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 합병 상황 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 모으는 이야기</div>
+      <h2 class="slide-title">꿀을 함께 모아 봐요</h2>
+      <div class="story-stage">
+        <div class="story-board">
+          <div class="story-row">
+            <span class="item-fade">🍯</span><span class="item-fade">🍯</span><span class="item-fade">🍯</span><span class="item-fade">🍯</span><span class="item-fade">🍯</span>
+            <span style="font-size: clamp(24px, 3.6vw, 36px); color:#1565C0;">+</span>
+            <span class="item-fade">🍯</span><span class="item-fade">🍯</span><span class="item-fade">🍯</span><span class="item-fade">🍯</span>
+          </div>
+          <div class="story-eq">5 + 4 = 9</div>
+        </div>
+        <div class="story-text">꿀 5개와 꿀 4개를 모으면 모두 <strong>9개</strong>예요.<br>이렇게 모으는 이야기를 <span class="story-tag hap">합병</span>이라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 첨가 상황 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 들어오는 이야기</div>
+      <h2 class="slide-title">나비가 더 날아와요</h2>
+      <div class="story-stage">
+        <div class="story-board">
+          <div class="story-row">
+            <span class="item-pop">🦋</span><span class="item-pop">🦋</span><span class="item-pop">🦋</span>
+            <span style="font-size: clamp(24px, 3.6vw, 36px); color:#1565C0;">+</span>
+            <span class="item-fade">🦋</span>
+          </div>
+          <div class="story-eq">3 + 1 = 4</div>
+        </div>
+        <div class="story-text">나비 3마리에 1마리가 더 날아오면 모두 <strong>4마리</strong>예요.<br>이렇게 더 들어오는 이야기를 <span class="story-tag chum">첨가</span>라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 제거 상황 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 빠지는 이야기</div>
+      <h2 class="slide-title">벌이 날아가요</h2>
+      <div class="story-stage">
+        <div class="story-board">
+          <div class="story-row">
+            <span class="item-pop">🐝</span><span class="item-pop">🐝</span><span class="item-pop">🐝</span><span class="item-pop">🐝</span><span class="item-pop">🐝</span>
+            <span style="font-size: clamp(24px, 3.6vw, 36px); color:#1565C0;">−</span>
+            <span class="item-fade" style="opacity: 0.35;">🐝</span><span class="item-fade" style="opacity: 0.35;">🐝</span>
+          </div>
+          <div class="story-eq">5 − 2 = 3</div>
+        </div>
+        <div class="story-text">벌 5마리에서 2마리가 날아가면 <strong>3마리</strong>가 남아요.<br>이렇게 빠지는 이야기를 <span class="story-tag je">제거</span>라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 비교 상황 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 견주는 이야기</div>
+      <h2 class="slide-title">꽃은 얼마나 더 많을까요?</h2>
+      <div class="story-stage">
+        <div class="story-board">
+          <div class="story-row" style="flex-direction: column; gap: clamp(6px, 1.2vw, 10px);">
+            <div style="display: flex; gap: clamp(6px, 1.2vw, 10px); align-items: center;">
+              <span style="font-size: clamp(16px, 2.4vw, 22px); color:#C62828;">빨강</span>
+              <span class="item-fade">🌹</span><span class="item-fade">🌹</span><span class="item-fade">🌹</span><span class="item-fade">🌹</span>
+            </div>
+            <div style="display: flex; gap: clamp(6px, 1.2vw, 10px); align-items: center;">
+              <span style="font-size: clamp(16px, 2.4vw, 22px); color:#F57F17;">노랑</span>
+              <span class="item-fade">🌼</span><span class="item-fade">🌼</span>
+            </div>
+          </div>
+          <div class="story-eq">4 − 2 = 2</div>
+        </div>
+        <div class="story-text">빨강 꽃 4송이가 노랑 꽃 2송이보다 <strong>2송이 더 많아요</strong>.<br>이렇게 견주는 이야기를 <span class="story-tag bi">비교</span>라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제 q8: 합병 분류 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 이야기는 어떤 이야기일까요?</div>
+        <div class="mcq-visual">
+          <span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span>
+          <span style="font-size: clamp(20px, 3vw, 30px); color:#1565C0;">+</span>
+          <span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span>
+        </div>
+        <div class="mcq-visual-tag">꿀 5개와 꿀 4개를 모았어요</div>
+        <div class="mcq-grid">
+          <button class="mcq-opt" data-correct="true"><span class="mcq-opt-name">합병</span><span class="mcq-opt-desc">모으는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">첨가</span><span class="mcq-opt-desc">들어오는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">제거</span><span class="mcq-opt-desc">빠지는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">비교</span><span class="mcq-opt-desc">견주는 이야기</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 묶음을 한자리에 모으는 이야기예요","꿀 5개 + 꿀 4개 = 모이는 이야기 = 합병"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제 q9: 첨가 분류 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 이야기는 어떤 이야기일까요?</div>
+        <div class="mcq-visual">
+          <span>🦋</span><span>🦋</span><span>🦋</span><span>🦋</span><span>🦋</span><span>🦋</span>
+          <span style="font-size: clamp(20px, 3vw, 30px); color:#1565C0;">+</span>
+          <span>🦋</span><span>🦋</span>
+        </div>
+        <div class="mcq-visual-tag">나비 6마리에 2마리가 더 날아왔어요</div>
+        <div class="mcq-grid">
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">합병</span><span class="mcq-opt-desc">모으는 이야기</span></button>
+          <button class="mcq-opt" data-correct="true"><span class="mcq-opt-name">첨가</span><span class="mcq-opt-desc">들어오는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">제거</span><span class="mcq-opt-desc">빠지는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">비교</span><span class="mcq-opt-desc">견주는 이야기</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["원래 있던 자리에 더 들어오는 이야기예요","나비 6 + 날아온 나비 2 = 들어오는 이야기 = 첨가"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제 q10: 제거 분류 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 이야기는 어떤 이야기일까요?</div>
+        <div class="mcq-visual">
+          <span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span>
+          <span style="font-size: clamp(20px, 3vw, 30px); color:#1565C0;">−</span>
+          <span style="opacity: 0.35;">🐝</span><span style="opacity: 0.35;">🐝</span><span style="opacity: 0.35;">🐝</span>
+        </div>
+        <div class="mcq-visual-tag">벌 7마리 중 3마리가 날아갔어요</div>
+        <div class="mcq-grid">
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">합병</span><span class="mcq-opt-desc">모으는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">첨가</span><span class="mcq-opt-desc">들어오는 이야기</span></button>
+          <button class="mcq-opt" data-correct="true"><span class="mcq-opt-name">제거</span><span class="mcq-opt-desc">빠지는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">비교</span><span class="mcq-opt-desc">견주는 이야기</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["원래 있던 것에서 빠져나가는 이야기예요","벌 7 − 날아간 벌 3 = 빠지는 이야기 = 제거"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제 q11: 비교 분류 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 이야기는 어떤 이야기일까요?</div>
+        <div class="mcq-visual" style="flex-direction: column; gap: clamp(4px, 0.8vw, 7px);">
+          <div style="display: flex; gap: clamp(6px, 1.2vw, 10px); align-items: center;">
+            <span style="font-size: clamp(14px, 2vw, 18px); color:#C62828;">빨강</span>
+            <span>🌹</span><span>🌹</span><span>🌹</span><span>🌹</span><span>🌹</span>
+          </div>
+          <div style="display: flex; gap: clamp(6px, 1.2vw, 10px); align-items: center;">
+            <span style="font-size: clamp(14px, 2vw, 18px); color:#F57F17;">노랑</span>
+            <span>🌼</span><span>🌼</span><span>🌼</span>
+          </div>
+        </div>
+        <div class="mcq-visual-tag">빨강 꽃 5송이와 노랑 꽃 3송이가 있어요</div>
+        <div class="mcq-grid">
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">합병</span><span class="mcq-opt-desc">모으는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">첨가</span><span class="mcq-opt-desc">들어오는 이야기</span></button>
+          <button class="mcq-opt" data-correct="false"><span class="mcq-opt-name">제거</span><span class="mcq-opt-desc">빠지는 이야기</span></button>
+          <button class="mcq-opt" data-correct="true"><span class="mcq-opt-name">비교</span><span class="mcq-opt-desc">견주는 이야기</span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 묶음을 짝지어 견주는 이야기예요","빨강 5 vs 노랑 3 = 견주는 이야기 = 비교"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용문제 q12: story_picker 꿀 영역 → 덧셈 분기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sp-stage">
+        <div class="q-prompt">농장 그림에서 <strong style="color:#E65100;">🍯 꿀</strong> 영역을 눌러 이야기를 만들어 봐요</div>
+        <div class="farm-scene" id="sp12-scene">
+          <div class="farm-sun">☀️</div>
+          <div class="farm-zone clickable zone-honey" data-zone="honey" data-correct="honey"><div class="farm-zone-emoji">🍯</div><div class="farm-zone-label">꿀</div></div>
+          <div class="farm-zone clickable zone-butterfly" data-zone="butterfly"><div class="farm-zone-emoji">🦋</div><div class="farm-zone-label">나비</div></div>
+          <div class="farm-zone clickable zone-bee" data-zone="bee"><div class="farm-zone-emoji">🐝</div><div class="farm-zone-label">벌</div></div>
+          <div class="farm-zone clickable zone-flower" data-zone="flower"><div class="farm-zone-emoji">🌸</div><div class="farm-zone-label">꽃</div></div>
+          <div class="farm-prompt">영역을 눌러 이야기 듣기</div>
+        </div>
+        <div class="sp-zone-prompt" id="sp12-prompt">🍯 꿀 영역을 눌러 보세요</div>
+        <div class="sp-card hidden" id="sp12-card">
+          <div class="sp-card-emojis"><span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span><span style="color:#1565C0;">+</span><span>🍯</span><span>🍯</span><span>🍯</span><span>🍯</span></div>
+          <div class="sp-card-text">꿀 5개와 꿀 4개를 모았어요. 모두 <strong>9개</strong>예요.</div>
+          <div class="sp-branch">
+            <button class="sp-branch-btn" data-pick="add">➕ 덧셈 이야기</button>
+            <button class="sp-branch-btn" data-pick="sub">➖ 뺄셈 이야기</button>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["모으는 이야기는 덧셈이에요","5 + 4 = 9 → 덧셈 이야기"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용문제 q13: story_picker 나비 영역 → 덧셈 분기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sp-stage">
+        <div class="q-prompt">농장 그림에서 <strong style="color:#1565C0;">🦋 나비</strong> 영역을 눌러 이야기를 만들어 봐요</div>
+        <div class="farm-scene" id="sp13-scene">
+          <div class="farm-sun">☀️</div>
+          <div class="farm-zone clickable zone-honey" data-zone="honey"><div class="farm-zone-emoji">🍯</div><div class="farm-zone-label">꿀</div></div>
+          <div class="farm-zone clickable zone-butterfly" data-zone="butterfly" data-correct="butterfly"><div class="farm-zone-emoji">🦋</div><div class="farm-zone-label">나비</div></div>
+          <div class="farm-zone clickable zone-bee" data-zone="bee"><div class="farm-zone-emoji">🐝</div><div class="farm-zone-label">벌</div></div>
+          <div class="farm-zone clickable zone-flower" data-zone="flower"><div class="farm-zone-emoji">🌸</div><div class="farm-zone-label">꽃</div></div>
+          <div class="farm-prompt">영역을 눌러 이야기 듣기</div>
+        </div>
+        <div class="sp-zone-prompt" id="sp13-prompt">🦋 나비 영역을 눌러 보세요</div>
+        <div class="sp-card hidden" id="sp13-card">
+          <div class="sp-card-emojis"><span>🦋</span><span>🦋</span><span>🦋</span><span>🦋</span><span style="color:#1565C0;">+</span><span>🦋</span><span>🦋</span></div>
+          <div class="sp-card-text">나비 4마리에 2마리가 더 날아왔어요. 모두 <strong>6마리</strong>예요.</div>
+          <div class="sp-branch">
+            <button class="sp-branch-btn" data-pick="add">➕ 덧셈 이야기</button>
+            <button class="sp-branch-btn" data-pick="sub">➖ 뺄셈 이야기</button>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["더 들어오는 이야기는 덧셈이에요","4 + 2 = 6 → 덧셈 이야기"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용문제 q14: story_picker 벌 영역 → 뺄셈 분기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sp-stage">
+        <div class="q-prompt">농장 그림에서 <strong style="color:#F57F17;">🐝 벌</strong> 영역을 눌러 이야기를 만들어 봐요</div>
+        <div class="farm-scene" id="sp14-scene">
+          <div class="farm-sun">☀️</div>
+          <div class="farm-zone clickable zone-honey" data-zone="honey"><div class="farm-zone-emoji">🍯</div><div class="farm-zone-label">꿀</div></div>
+          <div class="farm-zone clickable zone-butterfly" data-zone="butterfly"><div class="farm-zone-emoji">🦋</div><div class="farm-zone-label">나비</div></div>
+          <div class="farm-zone clickable zone-bee" data-zone="bee" data-correct="bee"><div class="farm-zone-emoji">🐝</div><div class="farm-zone-label">벌</div></div>
+          <div class="farm-zone clickable zone-flower" data-zone="flower"><div class="farm-zone-emoji">🌸</div><div class="farm-zone-label">꽃</div></div>
+          <div class="farm-prompt">영역을 눌러 이야기 듣기</div>
+        </div>
+        <div class="sp-zone-prompt" id="sp14-prompt">🐝 벌 영역을 눌러 보세요</div>
+        <div class="sp-card hidden" id="sp14-card">
+          <div class="sp-card-emojis"><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span>🐝</span><span style="color:#1565C0;">−</span><span style="opacity:0.35;">🐝</span><span style="opacity:0.35;">🐝</span><span style="opacity:0.35;">🐝</span></div>
+          <div class="sp-card-text">벌 7마리 중 3마리가 날아갔어요. <strong>4마리</strong>가 남았어요.</div>
+          <div class="sp-branch">
+            <button class="sp-branch-btn" data-pick="add">➕ 덧셈 이야기</button>
+            <button class="sp-branch-btn" data-pick="sub">➖ 뺄셈 이야기</button>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["빠지는 이야기는 뺄셈이에요","7 − 3 = 4 → 뺄셈 이야기"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용문제 q15: story_picker 꽃 영역 → 뺄셈 분기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="sp-stage">
+        <div class="q-prompt">농장 그림에서 <strong style="color:#C62828;">🌸 꽃</strong> 영역을 눌러 이야기를 만들어 봐요</div>
+        <div class="farm-scene" id="sp15-scene">
+          <div class="farm-sun">☀️</div>
+          <div class="farm-zone clickable zone-honey" data-zone="honey"><div class="farm-zone-emoji">🍯</div><div class="farm-zone-label">꿀</div></div>
+          <div class="farm-zone clickable zone-butterfly" data-zone="butterfly"><div class="farm-zone-emoji">🦋</div><div class="farm-zone-label">나비</div></div>
+          <div class="farm-zone clickable zone-bee" data-zone="bee"><div class="farm-zone-emoji">🐝</div><div class="farm-zone-label">벌</div></div>
+          <div class="farm-zone clickable zone-flower" data-zone="flower" data-correct="flower"><div class="farm-zone-emoji">🌸</div><div class="farm-zone-label">꽃</div></div>
+          <div class="farm-prompt">영역을 눌러 이야기 듣기</div>
+        </div>
+        <div class="sp-zone-prompt" id="sp15-prompt">🌸 꽃 영역을 눌러 보세요</div>
+        <div class="sp-card hidden" id="sp15-card">
+          <div class="sp-card-emojis" style="flex-direction: column; align-items: flex-start;">
+            <div style="display: flex; gap: 4px; align-items: center;"><span style="font-size: 16px; color:#C62828;">빨강</span><span>🌹</span><span>🌹</span><span>🌹</span><span>🌹</span><span>🌹</span></div>
+            <div style="display: flex; gap: 4px; align-items: center;"><span style="font-size: 16px; color:#F57F17;">노랑</span><span>🌼</span><span>🌼</span><span>🌼</span></div>
+          </div>
+          <div class="sp-card-text">빨강 꽃 5송이가 노랑 꽃 3송이보다 <strong>2송이 더 많아요</strong>.</div>
+          <div class="sp-branch">
+            <button class="sp-branch-btn" data-pick="add">➕ 덧셈 이야기</button>
+            <button class="sp-branch-btn" data-pick="sub">➖ 뺄셈 이야기</button>
+          </div>
+        </div>
+        <div class="mcq-hint" data-hints='["견주는 이야기는 뺄셈이에요","5 − 3 = 2 → 뺄셈 이야기 (얼마나 더 많은지 알아내기)"]'></div>
+        <div class="q-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 핵심 요약 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-cards">
+          <div class="summary-card">
+            <div class="summary-card-icon">🤲</div>
+            <div class="summary-card-name">합병</div>
+            <div class="summary-card-desc">모으는 이야기 = 덧셈</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-icon">⬅️</div>
+            <div class="summary-card-name">첨가</div>
+            <div class="summary-card-desc">들어오는 이야기 = 덧셈</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-icon">➡️</div>
+            <div class="summary-card-name">제거</div>
+            <div class="summary-card-desc">빠지는 이야기 = 뺄셈</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-icon">⚖️</div>
+            <div class="summary-card-name">비교</div>
+            <div class="summary-card-desc">견주는 이야기 = 뺄셈</div>
+          </div>
+        </div>
+        <div class="summary-msg">
+          한 그림에 여러 이야기가 있어요.<br>
+          <strong>모으기·들어오기</strong>는 덧셈, <strong>빠지기·견주기</strong>는 뺄셈으로 나타내요.
+        </div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">➕ ✏️ 🟰</div>
+          <div class="next-label">다음에는 <strong>`+`</strong>와 <strong>`=`</strong> 기호를 배워요</div>
+        </div>
+        <div class="home-prompt">
+          집에서도 그림을 보고 덧셈·뺄셈 이야기를 만들어 보세요!
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g1_math_u3_l04';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() {
+  const s = currentSlide();
+  return s ? s.dataset.qId : null;
+}
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) {
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function saveProgress(done) {
+  const data = {
+    cur, score, done,
+    startedAt,
+    finishedAt: done ? Date.now() : null,
+    qState
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() {
+  if (cur < TOTAL - 1) {
+    cur++;
+    saveProgress(false);
+    updateUI();
+  }
+}
+function goPrev() {
+  if (cur > 0) {
+    cur--;
+    updateUI();
+  }
+}
+function goHub() {
+  saveProgress(false);
+  location.href = '../../index.html';
+}
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute').textContent = muted ? '🔇' : '🔊';
+}
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+}
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── 슬 8~11 — 4상황 분류 4지선다 ─────
+document.querySelectorAll('[data-q-points]').forEach(slide => {
+  const qid = slide.dataset.qId;
+  if (!qid) return;
+  const grid = slide.querySelector('.mcq-grid');
+  if (!grid) return;
+  const opts = grid.querySelectorAll('.mcq-opt');
+  const fb = slide.querySelector('.q-fb');
+  const hintEl = slide.querySelector('.mcq-hint');
+
+  opts.forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      const isCorrect = o.dataset.correct === 'true';
+      if (isCorrect) {
+        st.solved = true;
+        o.classList.add('correct');
+        opts.forEach(x => x.disabled = true);
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        o.classList.add('wrong');
+        const hintsRaw = hintEl ? hintEl.dataset.hints : null;
+        const hints = hintsRaw ? JSON.parse(hintsRaw) : [];
+        fb.textContent = hints[0] || '다시 골라 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => o.classList.remove('wrong'), 600);
+      }
+    });
+  });
+});
+
+// ───── 슬 12~15 — story_picker (영역 클릭 + 분기 선택) ─────
+['sp12', 'sp13', 'sp14', 'sp15'].forEach(spid => {
+  const qid = 'q' + spid.replace('sp', '');
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  if (!slide) return;
+  const zones = slide.querySelectorAll('.farm-zone.clickable');
+  const card = slide.querySelector('.sp-card');
+  const zonePrompt = slide.querySelector('.sp-zone-prompt');
+  const branchBtns = card.querySelectorAll('.sp-branch-btn');
+  const fb = slide.querySelector('.q-fb');
+  const hintEl = slide.querySelector('.mcq-hint');
+  const correctZone = { q12: 'honey', q13: 'butterfly', q14: 'bee', q15: 'flower' }[qid];
+  const correctPick = { q12: 'add', q13: 'add', q14: 'sub', q15: 'sub' }[qid];
+
+  let zonePicked = false;
+
+  zones.forEach(z => {
+    z.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (z.dataset.zone === correctZone) {
+        zones.forEach(x => x.classList.remove('picked'));
+        z.classList.add('picked');
+        card.classList.remove('hidden');
+        zonePrompt.textContent = '✨ 이야기 카드를 읽고, 덧셈인지 뺄셈인지 골라요';
+        zonePicked = true;
+      } else {
+        zonePrompt.textContent = '🔍 다른 영역을 눌러 보세요 — 문제에 알맞은 영역을 찾아요';
+      }
+    });
+  });
+
+  branchBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (!zonePicked) {
+        fb.textContent = '먼저 영역을 눌러 이야기를 들어 봐요';
+        fb.classList.add('wrong');
+        return;
+      }
+      st.attempts++;
+      const isCorrect = b.dataset.pick === correctPick;
+      if (isCorrect) {
+        st.solved = true;
+        b.classList.add('correct');
+        branchBtns.forEach(x => x.disabled = true);
+        zones.forEach(x => x.style.pointerEvents = 'none');
+        const earn = pointsForQ(qid);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        st.wrongCount++;
+        b.classList.add('wrong');
+        const hintsRaw = hintEl ? hintEl.dataset.hints : null;
+        const hints = hintsRaw ? JSON.parse(hintsRaw) : [];
+        fb.textContent = hints[0] || '이야기를 다시 보고 골라요';
+        fb.classList.add('wrong');
+        setTimeout(() => b.classList.remove('wrong'), 600);
+      }
+    });
+  });
+});
+
+// ───── 슬 17 — 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+updateUI();
+</script>
+</body>
+</html>
