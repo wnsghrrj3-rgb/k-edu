@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<!--
+  u4_04_extra_01 어느 것이 더 넓을까요 — 추가 풀이 20문제
+  ════════════════════════════════════════════════════════════
+  4단원 안 cycle 14 (_extra 양산)
+
+  설계 출처:
+    - kedu/curriculum/math/g1/unit4/_EXTRA_STANDARD.md (v1)
+    - 본 차시: g1_math_u4_04_어느것이더넓을까요.html
+
+  구조 (21슬):
+    문제 슬1~20: 4지선다 통합 부품 + 시각 (이모지·SVG)
+    결과 슬21: 점수 등급 + 다시 풀기
+
+  20문제 분배 (표준 §4차 넓이):
+    1~6: 두 면 넓이 비교 (넓은/좁은)
+    7~10: 겹쳐 보기 (직접 비교)
+    11~15: 세 면 정렬 (가장 넓은/좁은)
+    16~20: 모양 함정
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u4_04_extra_01_v1">
+<title>어느 것이 더 넓을까요 · 추가 풀이 · K-edu 1학년 수학 4단원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+  background: #F0F7FF;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  touch-action: manipulation;
+}
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.18) rotate(-4deg); } 60% { transform: scale(1.1) rotate(3deg); } 100% { transform: scale(1) rotate(0); } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: clamp(11px, 1.7vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.q-title { font-size: clamp(18px, 3vw, 28px); margin: 0 0 clamp(4px, 0.8vw, 7px); line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.q-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; margin-bottom: clamp(8px, 1.5vw, 12px); text-align: center; flex-shrink: 0; }
+
+/* ─── 시각 자리 (이모지·SVG) ─── */
+.visual-row { display: flex; gap: clamp(20px, 4vw, 40px); justify-content: center; align-items: center; margin: clamp(10px, 1.8vw, 18px) 0; min-height: clamp(80px, 14vw, 140px); }
+.visual-item { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); }
+.visual-emoji { font-size: clamp(60px, 10vw, 110px); line-height: 1; }
+.visual-name { font-size: clamp(12px, 2vw, 16px); color: #455A64; }
+.visual-bar { background: linear-gradient(90deg, #FFA726 0%, #FFD54F 100%); border-radius: clamp(6px, 1vw, 10px); height: clamp(24px, 4vw, 36px); border: 2px solid #F57C00; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; }
+.visual-bar-label { position: absolute; left: clamp(10px, 1.6vw, 14px); top: 50%; transform: translateY(-50%); color: white; font-size: clamp(13px, 2.2vw, 18px); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.visual-stack { display: flex; flex-direction: column; gap: clamp(10px, 1.6vw, 14px); align-items: flex-start; max-width: 720px; width: 100%; }
+.visual-three { display: flex; gap: clamp(14px, 2.6vw, 22px); justify-content: center; align-items: flex-end; margin: clamp(10px, 1.8vw, 18px) 0; }
+
+/* ─── 4지선다 부품 ─── */
+.choices { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.8vw, 16px); max-width: 640px; width: 100%; margin-top: clamp(10px, 1.8vw, 16px); }
+.choice { background: white; border: 3px solid #42A5F5; border-radius: clamp(14px, 2.4vw, 20px); padding: clamp(14px, 2.4vw, 22px) clamp(16px, 2.8vw, 26px); font-size: clamp(15px, 2.5vw, 21px); color: #1976D2; cursor: pointer; transition: all 0.2s; text-align: center; font-family: inherit; min-height: clamp(56px, 9vw, 80px); display: flex; align-items: center; justify-content: center; }
+.choice:hover { background: #E3F2FD; transform: translateY(-2px); }
+.choice.correct { background: #C8E6C9; border-color: #43A047; color: #2E7D32; animation: ka-celebrate 0.5s ease; }
+.choice.wrong { background: #FFCDD2; border-color: #E53935; color: #C62828; animation: ka-shake 0.4s ease; }
+.choice:disabled { cursor: not-allowed; opacity: 0.85; }
+
+.feedback { font-size: clamp(15px, 2.5vw, 20px); color: #2E7D32; text-align: center; padding: clamp(8px, 1.4vw, 12px) clamp(14px, 2.4vw, 20px); background: #E8F5E9; border-radius: clamp(10px, 1.7vw, 14px); margin-top: clamp(8px, 1.4vw, 12px); display: none; }
+.feedback.show { display: block; animation: ka-pop 0.4s ease; }
+
+/* ─── 결과 슬 ─── */
+.result-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.4vw, 22px); max-width: 600px; width: 100%; }
+.result-icon { font-size: clamp(70px, 12vw, 130px); line-height: 1; animation: ka-pop 0.6s ease; }
+.result-score { font-size: clamp(36px, 6vw, 64px); color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.result-stars { font-size: clamp(28px, 4.6vw, 46px); letter-spacing: clamp(4px, 0.8vw, 8px); }
+.result-msg { font-size: clamp(17px, 2.8vw, 24px); color: #455A64; text-align: center; line-height: 1.5; padding: 0 clamp(12px, 2vw, 20px); }
+.retry-btn { background: #1976D2; color: white; border: none; padding: clamp(12px, 2vw, 18px) clamp(24px, 4vw, 36px); border-radius: clamp(14px, 2.4vw, 20px); font-family: inherit; font-size: clamp(16px, 2.6vw, 22px); cursor: pointer; box-shadow: 0 4px 14px rgba(66,165,245,0.4); margin-top: clamp(10px, 1.8vw, 16px); }
+.retry-btn:hover { background: #1565C0; transform: translateY(-2px); }
+
+/* ─── 푸터 ─── */
+.ka-f { display: flex; gap: clamp(8px, 1.5vw, 12px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; justify-content: space-between; }
+.ka-prev, .ka-next { background: #1976D2; color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(12px, 2vw, 16px); cursor: pointer; transition: background 0.2s; }
+.ka-prev { background: #B0BEC5; }
+.ka-next:hover { background: #1565C0; }
+.ka-next.hl { animation: ka-pulse 1.4s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="window.history.back()">← 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 21</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m" id="slides">
+    <!-- 슬라이드 21개 — JS 동적 생성 -->
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next" id="next" onclick="goNext()" disabled>다음 →</button>
+  </div>
+</div>
+
+<script src="../../../../../kedu_tracker.js"></script>
+<script>
+// ════════════════════════════════════════════════
+// 20문제 데이터 (4지선다)
+// 시각 = visual (HTML 문자열), 질문 = q, 보기 4개 = choices, 정답 인덱스 = ans
+// ════════════════════════════════════════════════
+
+const QUESTIONS = [
+  // ─── 1~6: 두 면 넓이 비교 ───
+  {
+    q: "더 넓은 것은 어느 것인가요?",
+    visual: row([{e:'🟦', name:'큰 사각형'}, {e:'🟥', name:'작은 사각형'}], 'compare-a'),
+    choices: ['큰 사각형', '작은 사각형', '둘 다 같다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "더 좁은 것은 어느 것인가요?",
+    visual: row([{e:'🏟️', name:'운동장'}, {e:'🛏️', name:'침대'}], 'compare-a'),
+    choices: ['운동장', '침대', '둘 다 같다', '모르겠다'],
+    ans: 1
+  },
+  {
+    q: "더 넓은 것은 어느 것인가요?",
+    visual: row([{e:'📄', name:'A4 종이'}, {e:'💳', name:'카드'}], 'compare-a'),
+    choices: ['A4 종이', '카드', '둘 다 같다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "더 좁은 것은 어느 것인가요?",
+    visual: row([{e:'🗺️', name:'지도'}, {e:'📮', name:'우표'}], 'compare-a'),
+    choices: ['지도', '우표', '둘 다 같다', '모르겠다'],
+    ans: 1
+  },
+  {
+    q: "더 넓은 것은 어느 것인가요?",
+    visual: row([{e:'🪟', name:'창문'}, {e:'🖼️', name:'액자'}], 'compare-a'),
+    choices: ['창문', '액자', '둘 다 같다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "더 좁은 것은 어느 것인가요?",
+    visual: row([{e:'🛋️', name:'소파'}, {e:'🪑', name:'의자 좌석'}], 'compare-a'),
+    choices: ['소파', '의자 좌석', '둘 다 같다', '모르겠다'],
+    ans: 1
+  },
+
+  // ─── 7~10: 겹쳐 보기 ───
+  {
+    q: "두 종이를 겹쳤더니 위 종이가 아래 종이 안에 다 들어갔어요. 어느 것이 더 넓을까요?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(80px,13vw,140px);">📄📄</div><div class="q-sub">아래 종이가 위 종이를 모두 덮고도 남았어요</div>',
+    choices: ['위 종이', '아래 종이', '둘 다 같다', '모르겠다'],
+    ans: 1
+  },
+  {
+    q: "두 사각형을 겹쳤더니 똑같이 맞아 떨어졌어요. 어떻게 된 걸까요?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(80px,13vw,140px);">🟦🟦</div><div class="q-sub">완전히 똑같이 겹쳐졌어요</div>',
+    choices: ['두 사각형이 똑같이 넓다', '왼쪽이 넓다', '오른쪽이 넓다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "넓이를 정확히 비교하려면 어떻게 해야 할까요?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(80px,13vw,140px);">🤔</div>',
+    choices: ['겹쳐서 본다', '눈으로만 본다', '멀리 떨어뜨려 본다', '뒤집어 본다'],
+    ans: 0
+  },
+  {
+    q: "겹쳐 봤더니 한쪽이 삐져 나왔어요. 그 쪽은 어떨까요?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(80px,13vw,140px);">📃</div>',
+    choices: ['더 넓다', '더 좁다', '같다', '모르겠다'],
+    ans: 0
+  },
+
+  // ─── 11~15: 세 면 정렬 ───
+  {
+    q: "가장 넓은 것은 어느 것인가요?",
+    visual: three([{e:'🏟️', name:'운동장', w:90}, {e:'🏫', name:'교실', w:60}, {e:'🛏️', name:'침대', w:40}]),
+    choices: ['운동장', '교실', '침대', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "가장 좁은 것은 어느 것인가요?",
+    visual: three([{e:'📄', name:'종이', w:55}, {e:'🗺️', name:'지도', w:80}, {e:'📮', name:'우표', w:30}]),
+    choices: ['종이', '지도', '우표', '모르겠다'],
+    ans: 2
+  },
+  {
+    q: "가장 넓은 사각형은 어느 것인가요?",
+    visual: '<div class="visual-stack"><div class="visual-bar" style="width:50%;background:linear-gradient(90deg,#42A5F5 0%,#90CAF9 100%);border-color:#1565C0;height:clamp(36px,6vw,56px);"><span class="visual-bar-label">가</span></div><div class="visual-bar" style="width:85%;height:clamp(36px,6vw,56px);"><span class="visual-bar-label">나</span></div><div class="visual-bar" style="width:65%;background:linear-gradient(90deg,#66BB6A 0%,#A5D6A7 100%);border-color:#388E3C;height:clamp(36px,6vw,56px);"><span class="visual-bar-label">다</span></div></div>',
+    choices: ['가', '나', '다', '모르겠다'],
+    ans: 1
+  },
+  {
+    q: "가장 좁은 방은 어느 것인가요?",
+    visual: three([{e:'🏠', name:'거실', w:85}, {e:'🛏️', name:'침실', w:60}, {e:'🚪', name:'화장실', w:35}]),
+    choices: ['거실', '침실', '화장실', '모르겠다'],
+    ans: 2
+  },
+  {
+    q: "가장 넓은 것은 어느 것인가요?",
+    visual: three([{e:'🟦', name:'큰 사각형', w:90}, {e:'🟨', name:'중간 사각형', w:60}, {e:'🟥', name:'작은 사각형', w:35}]),
+    choices: ['큰 사각형', '중간 사각형', '작은 사각형', '모르겠다'],
+    ans: 0
+  },
+
+  // ─── 16~20: 모양 함정 ───
+  {
+    q: "긴 직사각형과 정사각형 — 둘 다 같은 크기 종이라면?",
+    visual: '<div class="visual-stack" style="gap:14px;"><div style="width:80%;height:clamp(24px,4vw,32px);background:linear-gradient(135deg,#42A5F5,#90CAF9);border-radius:8px;"></div><div style="width:40%;height:clamp(50px,8vw,72px);background:linear-gradient(135deg,#FFA726,#FFD54F);border-radius:8px;"></div></div><div class="q-sub">두 종이를 잘라서 만든 모양이에요</div>',
+    choices: ['첫 번째가 넓다', '두 번째가 넓다', '두 종이 넓이 같다', '모르겠다'],
+    ans: 2
+  },
+  {
+    q: "모양이 달라도 넓이는 같을 수 있을까요?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(70px,12vw,120px);">🟦🔺</div>',
+    choices: ['있다', '없다', '항상 다르다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "교실 칠판과 우리 책상 — 어느 것이 더 넓을까요?",
+    visual: row([{e:'🟫', name:'칠판'}, {e:'🪑', name:'책상'}], 'compare-a'),
+    choices: ['칠판', '책상', '둘 다 같다', '모르겠다'],
+    ans: 0
+  },
+  {
+    q: "공책 한 페이지와 동전 — 어느 것이 더 좁을까요?",
+    visual: row([{e:'📓', name:'공책'}, {e:'🪙', name:'동전'}], 'compare-a'),
+    choices: ['공책', '동전', '둘 다 같다', '모르겠다'],
+    ans: 1
+  },
+  {
+    q: "넓이를 비교할 때 가장 좋은 방법은?",
+    visual: '<div class="visual-emoji" style="margin:18px 0;font-size:clamp(80px,13vw,140px);">🤔</div>',
+    choices: ['겹쳐 본다', '색깔을 본다', '소리를 듣는다', '들어 본다'],
+    ans: 0
+  }
+];
+
+// ════════════════════════════════════════════════
+// 시각 부품 함수
+// ════════════════════════════════════════════════
+
+function row(items, mode) {
+  return '<div class="visual-row">' + items.map(it =>
+    '<div class="visual-item"><div class="visual-emoji">' + it.e + '</div>' +
+    (it.name ? '<div class="visual-name">' + it.name + '</div>' : '') + '</div>'
+  ).join('') + '</div>';
+}
+
+function bars(items) {
+  return '<div class="visual-stack">' + items.map(it =>
+    '<div class="visual-bar" style="width:' + it.w + '%;background:linear-gradient(90deg,' + it.c + ' 0%,' + lighten(it.c) + ' 100%);border-color:' + darken(it.c) + ';"><span class="visual-bar-label">' + it.name + '</span></div>'
+  ).join('') + '</div>';
+}
+
+function barsAligned(items) {
+  return bars(items);
+}
+
+function three(items) {
+  return '<div class="visual-three">' + items.map(it =>
+    '<div class="visual-item"><div class="visual-emoji" style="font-size:clamp(' + (40+it.w/3) + 'px,' + (6+it.w/15) + 'vw,' + (60+it.w/2) + 'px);">' + it.e + '</div><div class="visual-name">' + it.name + '</div></div>'
+  ).join('') + '</div>';
+}
+
+function lighten(hex) {
+  const map = {'#FFA726':'#FFD54F','#42A5F5':'#90CAF9','#66BB6A':'#A5D6A7','#EF5350':'#EF9A9A','#AB47BC':'#CE93D8','#26A69A':'#80CBC4'};
+  return map[hex] || hex;
+}
+function darken(hex) {
+  const map = {'#FFA726':'#F57C00','#42A5F5':'#1565C0','#66BB6A':'#388E3C','#EF5350':'#C62828','#AB47BC':'#7B1FA2','#26A69A':'#00897B'};
+  return map[hex] || hex;
+}
+
+// ════════════════════════════════════════════════
+// 슬라이드 동적 생성
+// ════════════════════════════════════════════════
+
+const slides = document.getElementById('slides');
+QUESTIONS.forEach((q, i) => {
+  const slide = document.createElement('div');
+  slide.className = 'slide' + (i === 0 ? ' active' : '');
+  slide.dataset.slide = String(i + 1);
+  slide.innerHTML =
+    '<h1 class="q-title">문제 ' + (i + 1) + ' / 20</h1>' +
+    '<div class="q-sub">' + q.q + '</div>' +
+    q.visual +
+    '<div class="choices">' +
+      q.choices.map((c, j) =>
+        '<button class="choice" data-idx="' + j + '" data-q="' + i + '">' + c + '</button>'
+      ).join('') +
+    '</div>' +
+    '<div class="feedback" id="fb-' + i + '">정답이에요! ⭐</div>';
+  slides.appendChild(slide);
+});
+
+// 결과 슬
+const resultSlide = document.createElement('div');
+resultSlide.className = 'slide';
+resultSlide.dataset.slide = '21';
+resultSlide.innerHTML =
+  '<div class="result-stage">' +
+    '<div class="result-icon" id="r-icon">🎉</div>' +
+    '<div class="result-score" id="r-score">⭐ 0 / 100</div>' +
+    '<div class="result-stars" id="r-stars">⭐⭐⭐⭐⭐</div>' +
+    '<div class="result-msg" id="r-msg">모두 맞혔어요! 정말 잘 했어요</div>' +
+    '<button class="retry-btn" onclick="retry()">🔁 다시 풀기</button>' +
+  '</div>';
+slides.appendChild(resultSlide);
+
+// ════════════════════════════════════════════════
+// 진행·점수·메카닉
+// ════════════════════════════════════════════════
+
+const TOTAL = 21;
+let cur = 0;
+let score = 0;
+let correctCount = 0;
+const answered = new Array(20).fill(false);
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+
+  // 다음 버튼: 문제 슬에서는 정답 맞히면 활성화. 결과 슬에서는 비활성.
+  const next = document.getElementById('next');
+  if (cur === TOTAL - 1) {
+    next.disabled = true;
+    next.classList.remove('hl');
+  } else if (cur < 20) {
+    next.disabled = !answered[cur];
+    next.classList.toggle('hl', answered[cur]);
+  } else {
+    next.disabled = false;
+  }
+}
+
+function goNext() {
+  if (cur < TOTAL - 1) {
+    cur++;
+    updateUI();
+    if (cur === 20) renderResult();
+  }
+}
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+
+let muted = false;
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute').textContent = muted ? '🔇' : '🔊';
+}
+
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+  if (window.keduTracker && window.keduTracker.recordScore) {
+    window.keduTracker.recordScore('g1_math_u4_04_extra_01', score);
+  }
+}
+
+// 4지선다 클릭 처리
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.choice');
+  if (!btn) return;
+  const qIdx = parseInt(btn.dataset.q);
+  const cIdx = parseInt(btn.dataset.idx);
+  if (answered[qIdx]) return;
+
+  const ans = QUESTIONS[qIdx].ans;
+  if (cIdx === ans) {
+    btn.classList.add('correct');
+    answered[qIdx] = true;
+    correctCount++;
+    addScore(5);
+    document.getElementById('fb-' + qIdx).classList.add('show');
+    document.querySelectorAll('.slide.active .choice').forEach(b => b.disabled = true);
+    updateUI();
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(() => btn.classList.remove('wrong'), 500);
+  }
+});
+
+function renderResult() {
+  const pct = Math.round((correctCount / 20) * 100);
+  document.getElementById('r-score').textContent = '⭐ ' + score + ' / 100';
+
+  let stars, msg, icon;
+  if (pct === 100) { stars = '⭐⭐⭐⭐⭐'; msg = '모두 맞혔어요! 정말 잘 했어요'; icon = '🎉'; }
+  else if (pct >= 80) { stars = '⭐⭐⭐⭐'; msg = '거의 다 맞혔어요! 잘 했어요'; icon = '😊'; }
+  else if (pct >= 60) { stars = '⭐⭐⭐'; msg = '잘 했어요! 한 번 더 살펴봐요'; icon = '💪'; }
+  else if (pct >= 40) { stars = '⭐⭐'; msg = '조금 더 살펴봐요'; icon = '🤔'; }
+  else { stars = '⭐'; msg = '한 번 더 학습해 봐요'; icon = '📚'; }
+
+  document.getElementById('r-stars').textContent = stars;
+  document.getElementById('r-msg').textContent = msg;
+  document.getElementById('r-icon').textContent = icon;
+}
+
+function retry() {
+  cur = 0;
+  score = 0;
+  correctCount = 0;
+  answered.fill(false);
+  document.getElementById('score').textContent = '⭐ 0';
+  document.querySelectorAll('.choice').forEach(b => {
+    b.classList.remove('correct', 'wrong');
+    b.disabled = false;
+  });
+  document.querySelectorAll('.feedback').forEach(f => f.classList.remove('show'));
+  updateUI();
+}
+
+updateUI();
+</script>
+</body>
+</html>
