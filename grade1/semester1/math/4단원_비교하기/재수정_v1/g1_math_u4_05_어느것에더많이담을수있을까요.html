@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<!--
+  u4_05 어느 것에 더 많이 담을 수 있을까요 — 본격 5단계 18슬 base v1
+  4단원 안 cycle 9
+
+  설계 출처: _PLAN.md (cycle 3 시안 + cycle 4 매칭 통합), _SOURCE.md (지도서 256~257)
+  18슬: 도입(물통선택·목표·회상) → 전개(직관·pour_water·용어·담을양vs담긴양) → 기본(pour_water·세그릇water_level_compare) → 응용(match_play(bell)·높이함정·일상) → 정리(요약·자기평가·다음)
+  신규 부품: pour_water(슬5·8·9·14)·water_level_compare(슬10·11)·match_play(bell 모드, 슬12·13)
+  재사용: attribute_picker(슬6·8·9·15)·4속성 회상 카드(슬3)·용어 카드(슬6)·자기평가·자유선택
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u4_05_v1">
+<title>어느 것에 더 많이 담을 수 있을까요 · K-edu 1학년 수학 4단원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(156,39,176,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(156,39,176,0.5); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.15) rotate(-3deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-bell-pulse { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 50% { transform: rotate(0); } 75% { transform: rotate(15deg); } }
+@keyframes ka-water-fill { from { height: 0; } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); display: flex; flex-direction: column; position: relative; overflow: hidden; color: #333; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); color: #6A1B9A; font-weight: 400; text-align: center; line-height: 1.3; margin: 0 0 clamp(4px, 0.8vw, 7px); flex-shrink: 0; }
+.slide-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; margin-bottom: clamp(8px, 1.5vw, 12px); text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #F3E5F5; color: #6A1B9A; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+.ka-f { display: flex; justify-content: space-between; gap: clamp(6px, 1.2vw, 10px); flex-shrink: 0; margin-top: clamp(6px, 1.2vw, 10px); }
+.ka-prev, .ka-next { background: #F4F4F8; border: none; padding: clamp(8px, 1.5vw, 12px) clamp(14px, 2.4vw, 22px); border-radius: clamp(10px, 1.8vw, 14px); cursor: pointer; font-family: inherit; color: #555; font-size: clamp(13px, 2.1vw, 16px); flex: 1; }
+.ka-next.hl { background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%); color: white; box-shadow: 0 4px 14px rgba(156,39,176,0.32); }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 슬1 물통 자유 선택 */
+.pick-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 720px; width: 100%; }
+.pick-row { display: flex; gap: clamp(20px, 3.4vw, 36px); justify-content: center; align-items: flex-end; }
+.pick-card { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; padding: clamp(10px, 1.6vw, 14px); border-radius: clamp(14px, 2.2vw, 20px); border: 3px solid transparent; transition: transform 0.2s; }
+.pick-card:hover { transform: translateY(-4px); background: #F3E5F5; }
+.pick-card.picked { border-color: #9C27B0; background: #F3E5F5; box-shadow: 0 4px 16px rgba(156,39,176,0.3); }
+.bottle-svg { display: block; }
+.pick-name { font-size: clamp(13px, 2.1vw, 18px); color: #6A1B9A; }
+.pick-q { background: #FFF; border: 2px solid #9C27B0; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px); font-size: clamp(15px, 2.5vw, 21px); color: #6A1B9A; text-align: center; }
+.pick-q strong { color: #DC2626; font-weight: 400; }
+
+/* 슬2 학습 목표 */
+.goal-card { background: linear-gradient(135deg, #FFF 0%, #F3E5F5 100%); border: 3px solid #9C27B0; border-radius: clamp(16px, 2.6vw, 24px); padding: clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 640px; width: 100%; }
+.goal-icon { font-size: clamp(40px, 6vw, 60px); }
+.goal-line { font-size: clamp(17px, 2.8vw, 24px); color: #455A64; text-align: center; line-height: 1.5; }
+.goal-line strong { color: #6A1B9A; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 8px; }
+.goal-chips { display: flex; gap: clamp(10px, 1.6vw, 14px); }
+.goal-chip-big { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(12px, 2vw, 18px); padding: clamp(12px, 2vw, 18px) clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.goal-chip-big.few { border-color: #FFA726; }
+.goal-chip-emoji { font-size: clamp(36px, 5.6vw, 52px); }
+.goal-chip-text { font-size: clamp(16px, 2.6vw, 22px); color: #6A1B9A; }
+.goal-chip-big.few .goal-chip-text { color: #E65100; }
+
+/* 슬3 4속성 회상 (들이 강조) */
+.recall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 760px; width: 100%; }
+.recall-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.recall-card { background: #FFF; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(12px, 2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; transition: all 0.3s; opacity: 0.6; position: relative; }
+.recall-card.done { opacity: 0.85; }
+.recall-card.done::after { content: '✓'; position: absolute; top: 6px; right: 6px; background: #9C27B0; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.recall-card.today { opacity: 1; border-color: #9C27B0; background: linear-gradient(135deg, #FFF 0%, #F3E5F5 100%); transform: scale(1.04); box-shadow: 0 6px 20px rgba(156,39,176,0.35); }
+.recall-card.today::after { content: '오늘'; position: absolute; top: 6px; right: 6px; background: #DC2626; color: white; padding: 2px 10px; border-radius: 999px; font-size: clamp(11px, 1.8vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.recall-emoji { font-size: clamp(32px, 5vw, 50px); }
+.recall-name { font-size: clamp(16px, 2.6vw, 22px); color: #1976D2; }
+.recall-card[data-attr="weight"] .recall-name { color: #E65100; }
+.recall-card[data-attr="area"] .recall-name { color: #2E7D32; }
+.recall-card[data-attr="volume"] .recall-name { color: #6A1B9A; }
+.recall-hint { font-size: clamp(14px, 2.3vw, 19px); color: #6A1B9A; background: #F3E5F5; padding: 8px 14px; border-radius: 12px; text-align: center; }
+.recall-hint.done { background: #E1BEE7; }
+
+/* pour_water 자리 (슬5·8·9·14) */
+.pw-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 760px; width: 100%; }
+.pw-arena { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(16px, 2.4vw, 22px); width: 100%; display: flex; gap: clamp(16px, 2.4vw, 28px); align-items: flex-end; justify-content: center; min-height: clamp(220px, 32vw, 320px); position: relative; }
+.pw-cup { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+.pw-cup-shape { position: relative; border: 4px solid #6A1B9A; border-top: none; border-radius: 0 0 14px 14px; background: rgba(243,229,245,0.4); overflow: hidden; transition: transform 0.2s; }
+.pw-cup-shape.from { border-color: #9C27B0; cursor: pointer; }
+.pw-cup-shape.from:hover { transform: translateY(-3px); }
+.pw-cup-shape.to { border-color: #6A1B9A; }
+.pw-cup-shape.from.empty { background: rgba(243,229,245,0.4); }
+.pw-water { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, #BBDEFB 0%, #64B5F6 100%); transition: height 0.8s ease, transform 0.4s ease; }
+.pw-water.overflow { background: linear-gradient(180deg, #BBDEFB 0%, #EF5350 100%); }
+.pw-water-droplet { position: absolute; width: 14px; height: 18px; background: #64B5F6; border-radius: 50% 50% 50% 50%/60% 60% 40% 40%; opacity: 0; }
+.pw-water-droplet.fall { animation: ka-fall 0.6s ease both; }
+@keyframes ka-fall { 0% { opacity: 1; top: 10px; } 100% { opacity: 0; top: 80px; } }
+.pw-cup-label { font-size: clamp(12px, 2vw, 16px); color: #6A1B9A; }
+.pw-cup-label .pw-tag { background: #FFF; border: 1px solid #9C27B0; padding: 1px 8px; border-radius: 8px; }
+.pw-pour-btn { background: linear-gradient(135deg, #9C27B0 0%, #6A1B9A 100%); color: white; border: none; padding: clamp(10px, 1.8vw, 14px) clamp(18px, 3vw, 24px); border-radius: clamp(12px, 2vw, 16px); font-family: inherit; font-size: clamp(14px, 2.3vw, 18px); cursor: pointer; box-shadow: 0 4px 14px rgba(156,39,176,0.32); animation: ka-pulse 2.4s infinite; }
+.pw-pour-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
+.pw-status { font-size: clamp(13px, 2.1vw, 18px); color: #6A1B9A; text-align: center; min-height: 1.6em; }
+.pw-status.done { color: #4A148C; font-weight: 400; }
+.pw-status.overflow { color: #C62828; font-weight: 400; }
+
+/* 슬6 용어 카드 */
+.term-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 680px; width: 100%; }
+.term-row { display: flex; gap: clamp(20px, 3.4vw, 32px); justify-content: center; align-items: center; }
+.term-card { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3vw, 28px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; transition: all 0.2s; opacity: 0.45; }
+.term-card.few { border-color: #FFA726; }
+.term-card.opened { opacity: 1; animation: ka-pop 0.5s ease both; box-shadow: 0 6px 20px rgba(156,39,176,0.3); }
+.term-emoji { font-size: clamp(40px, 6vw, 56px); }
+.term-word { font-size: clamp(22px, 3.6vw, 32px); color: #6A1B9A; text-decoration: underline; text-decoration-color: #DC2626; }
+.term-card.few .term-word { color: #E65100; }
+.term-star { font-size: clamp(16px, 2.4vw, 22px); color: #DC2626; }
+.recap-body { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.6; }
+.recap-body strong { color: #6A1B9A; font-weight: 400; background: #F3E5F5; padding: 2px 8px; border-radius: 6px; }
+
+/* 슬7 담을 양 vs 담긴 양 */
+.cv-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 760px; width: 100%; }
+.cv-row { display: flex; gap: clamp(14px, 2.4vw, 24px); justify-content: center; width: 100%; }
+.cv-card { flex: 1; background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px); max-width: 320px; }
+.cv-card.filled { border-color: #2196F3; }
+.cv-card-title { font-size: clamp(13px, 2.1vw, 17px); color: #6A1B9A; font-weight: 400; }
+.cv-card.filled .cv-card-title { color: #1565C0; }
+.cv-card-tag { background: #F3E5F5; color: #6A1B9A; padding: 2px 10px; border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.cv-card.filled .cv-card-tag { background: #E3F2FD; color: #1565C0; }
+.cv-cup-mini { position: relative; width: 80px; height: 100px; border: 4px solid #6A1B9A; border-top: none; border-radius: 0 0 12px 12px; }
+.cv-cup-mini.filled-cup { border-color: #2196F3; }
+.cv-water-mini { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, #BBDEFB 0%, #64B5F6 100%); height: 60%; }
+.cv-cap { font-size: clamp(13px, 2.1vw, 18px); color: #455A64; text-align: center; line-height: 1.5; max-width: 640px; }
+.cv-cap strong { color: #6A1B9A; font-weight: 400; background: #F3E5F5; padding: 2px 8px; border-radius: 6px; text-decoration: underline; text-decoration-color: #DC2626; }
+
+/* attribute_picker */
+.ap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.ap-prompt { background: #FFF; border: 2px solid #9C27B0; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px); font-size: clamp(14px, 2.3vw, 20px); color: #455A64; text-align: center; line-height: 1.5; width: 100%; }
+.ap-prompt strong { color: #DC2626; font-weight: 400; }
+.ap-options { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.ap-btn { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(12px, 2vw, 16px); padding: clamp(14px, 2.4vw, 22px); font-family: inherit; font-size: clamp(16px, 2.6vw, 23px); color: #6A1B9A; cursor: pointer; transition: all 0.2s; }
+.ap-btn:hover { background: #F3E5F5; transform: translateY(-2px); }
+.ap-btn.correct { background: #E1BEE7; border-color: #9C27B0; color: #4A148C; animation: ka-celebrate 0.5s ease; }
+.ap-btn.wrong { background: #FFCDD2; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.ap-btn.disabled { opacity: 0.4; pointer-events: none; }
+.ap-fb { font-size: clamp(13px, 2.1vw, 17px); color: #6A1B9A; text-align: center; min-height: 1.4em; margin-top: 4px; }
+.ap-fb.done { color: #4A148C; font-weight: 400; }
+.ap-fb.wrong { color: #C62828; }
+
+/* water_level_compare 슬10·11 */
+.wlc-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.wlc-row { display: flex; gap: clamp(14px, 2.4vw, 24px); justify-content: center; align-items: flex-end; padding: clamp(12px, 2vw, 18px); background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); }
+.wlc-cup { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.wlc-shape { position: relative; width: 80px; height: 140px; border: 4px solid #6A1B9A; border-top: none; border-radius: 0 0 14px 14px; background: rgba(243,229,245,0.2); }
+.wlc-water { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(180deg, #BBDEFB 0%, #64B5F6 100%); transition: height 0.6s ease; }
+.wlc-name { font-size: clamp(15px, 2.4vw, 20px); color: #6A1B9A; font-weight: 400; }
+.wlc-prompt { font-size: clamp(15px, 2.5vw, 21px); color: #6A1B9A; text-align: center; margin-top: 4px; }
+.wlc-prompt strong { color: #DC2626; font-weight: 400; }
+.wlc-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.wlc-btn { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px) clamp(6px, 1vw, 10px); font-family: inherit; font-size: clamp(14px, 2.3vw, 19px); color: #6A1B9A; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wlc-btn:hover { background: #F3E5F5; transform: translateY(-2px); }
+.wlc-btn.correct { background: #E1BEE7; border-color: #9C27B0; color: #4A148C; animation: ka-celebrate 0.5s ease; }
+.wlc-btn.wrong { background: #FFCDD2; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.wlc-btn.disabled { opacity: 0.4; pointer-events: none; }
+.wlc-btn-emoji { font-size: clamp(20px, 3vw, 26px); }
+.wlc-fb { font-size: clamp(13px, 2.1vw, 17px); color: #6A1B9A; text-align: center; min-height: 1.4em; margin-top: 4px; }
+.wlc-fb.done { color: #4A148C; font-weight: 400; }
+.wlc-fb.wrong { color: #C62828; }
+
+/* match_play(bell) 슬12·13 */
+.mp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 760px; width: 100%; }
+.mp-pool { display: flex; gap: clamp(10px, 1.6vw, 14px); flex-wrap: wrap; justify-content: center; }
+.mp-cup-pick { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(10px, 1.6vw, 14px); padding: clamp(8px, 1.4vw, 12px); cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mp-cup-pick:hover { background: #F3E5F5; transform: translateY(-2px); }
+.mp-cup-pick.picked { border-color: #DC2626; background: #FFF8E1; transform: scale(0.95); }
+.mp-cup-emoji { font-size: clamp(32px, 5vw, 44px); }
+.mp-cup-name { font-size: clamp(11px, 1.8vw, 14px); color: #6A1B9A; }
+.mp-bell-btn { background: linear-gradient(135deg, #F57F17 0%, #E65100 100%); color: white; border: none; padding: clamp(12px, 2vw, 16px) clamp(20px, 3.4vw, 28px); border-radius: clamp(14px, 2.2vw, 18px); font-family: inherit; font-size: clamp(15px, 2.5vw, 20px); cursor: pointer; box-shadow: 0 4px 14px rgba(245,127,23,0.32); }
+.mp-bell-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.mp-bell-emoji { display: inline-block; font-size: 1.3em; }
+.mp-bell-emoji.ring { animation: ka-bell-pulse 0.5s ease 3; }
+.mp-meet { background: #F3E5F5; border: 2px solid #9C27B0; border-radius: clamp(14px, 2.2vw, 18px); padding: clamp(12px, 2vw, 18px); display: none; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); width: 100%; }
+.mp-meet.show { display: flex; animation: ka-fadeUp 0.4s ease both; }
+.mp-meet-row { display: flex; gap: clamp(14px, 2.4vw, 24px); align-items: center; justify-content: center; }
+.mp-meet-cup { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mp-meet-cup-emoji { font-size: clamp(40px, 6vw, 56px); }
+.mp-meet-cup-name { font-size: clamp(12px, 2vw, 16px); color: #6A1B9A; }
+.mp-vs { font-size: clamp(20px, 3.4vw, 28px); color: #DC2626; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.mp-hidden { display: none !important; }
+
+/* 슬14 함정 — 다른 모양 그릇 */
+.trap-banner { background: #FFF8E1; border: 2px solid #FFC107; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(13px, 2.1vw, 18px); color: #E65100; text-align: center; line-height: 1.5; max-width: 680px; }
+.trap-banner strong { color: #DC2626; font-weight: 400; }
+.trap-reveal { display: none; background: #F3E5F5; border: 2px solid #9C27B0; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(13px, 2.1vw, 18px); color: #4A148C; text-align: center; line-height: 1.5; max-width: 680px; }
+.trap-reveal.show { display: block; animation: ka-fadeUp 0.5s ease both; }
+.trap-reveal strong { color: #DC2626; font-weight: 400; }
+
+/* 슬15 일상 */
+.daily-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.daily-illust { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: 16px; padding: 18px; display: flex; gap: 30px; justify-content: center; align-items: center; width: 100%; }
+.daily-obj { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.daily-obj-emoji { font-size: clamp(40px, 6vw, 56px); }
+.daily-obj-name { font-size: clamp(12px, 2vw, 16px); color: #6A1B9A; }
+
+/* 슬16 요약 */
+.recap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.recap-card { background: #FFF; border: 3px solid #9C27B0; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); display: flex; flex-direction: column; gap: clamp(6px, 1vw, 10px); width: 100%; }
+.recap-title2 { font-size: clamp(16px, 2.6vw, 22px); color: #6A1B9A; font-weight: 400; }
+
+/* 슬17 자기 평가 */
+.assess-stage { display: flex; flex-direction: column; gap: clamp(8px, 1.4vw, 12px); max-width: 720px; width: 100%; }
+.assess-card { background: #FFF; border: 2px solid #E3F2FD; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); display: flex; justify-content: space-between; align-items: center; gap: clamp(10px, 1.6vw, 14px); }
+.assess-q { font-size: clamp(13px, 2.1vw, 17px); color: #455A64; flex: 1; }
+.assess-stars { display: flex; gap: clamp(4px, 0.8vw, 6px); }
+.assess-star { font-size: clamp(20px, 3.2vw, 28px); cursor: pointer; opacity: 0.3; transition: opacity 0.2s, transform 0.2s; }
+.assess-star.on { opacity: 1; transform: scale(1.12); }
+
+/* 슬18 다음 차시 */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); }
+.next-trophy { font-size: clamp(60px, 8vw, 84px); animation: ka-pop 0.6s ease both; }
+.next-title { font-size: clamp(24px, 4vw, 36px); color: #6A1B9A; font-weight: 400; }
+.next-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.6; }
+.next-preview { background: #F3E5F5; border: 2px solid #9C27B0; border-radius: clamp(14px, 2.2vw, 18px); padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.4vw, 22px); font-size: clamp(14px, 2.3vw, 18px); color: #6A1B9A; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="if(window.parent) window.parent.postMessage({type:'kedu_lesson_close'},'*')">✕ 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5.5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+
+    <!-- 슬1: 흥미 유발 — 두 물통 자유 선택 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">운동회 날, 어느 물통을?</h1>
+      <div class="pick-stage">
+        <div class="pick-row" id="pick-row">
+          <div class="pick-card" data-pick="small">
+            <svg class="bottle-svg" width="80" height="130" viewBox="0 0 80 130">
+              <rect x="32" y="8" width="16" height="14" fill="#9E9E9E" rx="3"/>
+              <path d="M 18 22 Q 18 14 28 14 L 52 14 Q 62 14 62 22 L 62 118 Q 62 124 56 124 L 24 124 Q 18 124 18 118 Z" fill="#EF5350" stroke="#C62828" stroke-width="3"/>
+              <rect x="22" y="48" width="36" height="20" fill="#FFCDD2" rx="2" opacity="0.7"/>
+              <text x="40" y="62" font-size="10" text-anchor="middle" fill="#C62828">물</text>
+            </svg>
+            <div class="pick-name">빨강 물통</div>
+          </div>
+          <div class="pick-card" data-pick="big">
+            <svg class="bottle-svg" width="100" height="160" viewBox="0 0 100 160">
+              <rect x="40" y="6" width="20" height="16" fill="#9E9E9E" rx="3"/>
+              <path d="M 12 22 Q 12 14 24 14 L 76 14 Q 88 14 88 22 L 88 148 Q 88 154 80 154 L 20 154 Q 12 154 12 148 Z" fill="#42A5F5" stroke="#1565C0" stroke-width="3"/>
+              <rect x="18" y="60" width="64" height="30" fill="#BBDEFB" rx="2" opacity="0.7"/>
+              <text x="50" y="80" font-size="12" text-anchor="middle" fill="#1565C0">물</text>
+            </svg>
+            <div class="pick-name">파랑 물통</div>
+          </div>
+        </div>
+        <div class="pick-q">어느 물통을 <strong>가져가고 싶나요?</strong> 눌러 골라 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬2: 학습 목표 -->
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">오늘 배워요</h1>
+      <div class="goal-card">
+        <div class="goal-icon">🥛</div>
+        <div class="goal-line">두 그릇의 <strong>담을 수 있는 양</strong>을 비교하는 방법을 배워 봐요</div>
+        <div class="goal-chips">
+          <div class="goal-chip-big">
+            <div class="goal-chip-emoji">🌊</div>
+            <div class="goal-chip-text">더 많다</div>
+          </div>
+          <div class="goal-chip-big few">
+            <div class="goal-chip-emoji">💧</div>
+            <div class="goal-chip-text">더 적다</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬3: 4속성 회상 (들이 강조) -->
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">길이·무게·넓이를 배웠으니</h1>
+      <div class="slide-sub">오늘은 '들이'예요</div>
+      <div class="recall-stage">
+        <div class="recall-grid">
+          <div class="recall-card done" data-attr="length"><div class="recall-emoji">📏</div><div class="recall-name">길이</div></div>
+          <div class="recall-card done" data-attr="weight"><div class="recall-emoji">⚖️</div><div class="recall-name">무게</div></div>
+          <div class="recall-card done" data-attr="area"><div class="recall-emoji">🟦</div><div class="recall-name">넓이</div></div>
+          <div class="recall-card today" data-attr="volume"><div class="recall-emoji">🥛</div><div class="recall-name">들이</div></div>
+        </div>
+        <div class="recall-hint">오늘은 <strong style="color:#DC2626">들이</strong> 카드를 눌러 만나 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬4: 직관 비교 — 두 물통 -->
+    <div class="slide" data-slide="4" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">눈으로 보아 알 수 있어요</h1>
+      <div class="cv-stage">
+        <div class="cv-row">
+          <div class="cv-card">
+            <div class="cv-card-tag">작은 물통</div>
+            <svg width="80" height="130" viewBox="0 0 80 130">
+              <rect x="32" y="8" width="16" height="14" fill="#9E9E9E" rx="3"/>
+              <path d="M 18 22 Q 18 14 28 14 L 52 14 Q 62 14 62 22 L 62 118 Q 62 124 56 124 L 24 124 Q 18 124 18 118 Z" fill="#EF5350" stroke="#C62828" stroke-width="3"/>
+            </svg>
+            <div class="cv-card-title">빨강 물통</div>
+          </div>
+          <div class="cv-card">
+            <div class="cv-card-tag">큰 물통</div>
+            <svg width="100" height="160" viewBox="0 0 100 160">
+              <rect x="40" y="6" width="20" height="16" fill="#9E9E9E" rx="3"/>
+              <path d="M 12 22 Q 12 14 24 14 L 76 14 Q 88 14 88 22 L 88 148 Q 88 154 80 154 L 20 154 Q 12 154 12 148 Z" fill="#42A5F5" stroke="#1565C0" stroke-width="3"/>
+            </svg>
+            <div class="cv-card-title">파랑 물통</div>
+          </div>
+        </div>
+        <div class="cv-cap">차이가 크게 나면 <strong>눈으로 보아</strong> 어느 것에 더 많이 담을 수 있는지 알 수 있어요</div>
+      </div>
+    </div>
+
+    <!-- 슬5: pour_water 도입 — 직접 비교 방법 -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">물을 옮겨 담아 보아요</h1>
+      <div class="slide-sub">빨강 물통의 물을 파랑 물통에 부어 보세요</div>
+      <div class="pw-stage">
+        <div class="pw-arena" data-pw="5">
+          <div class="pw-cup">
+            <div class="pw-cup-shape from" data-pw-from="5" style="width:60px; height:130px;">
+              <div class="pw-water" id="pw-water-from-5" style="height: 100%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">빨강 물통</span></div>
+          </div>
+          <button class="pw-pour-btn" id="pw-btn-5">물 따르기 →</button>
+          <div class="pw-cup">
+            <div class="pw-cup-shape to" style="width:84px; height:150px;">
+              <div class="pw-water" id="pw-water-to-5" style="height: 0%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">파랑 물통</span></div>
+          </div>
+        </div>
+        <div class="pw-status" id="pw-status-5">빨강 물통의 물을 파랑 물통에 부어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬6: '많다·적다' 용어 -->
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">'많다'와 '적다'</h1>
+      <div class="slide-sub">카드를 하나씩 눌러 보세요</div>
+      <div class="term-stage">
+        <div class="term-row">
+          <div class="term-card" data-term="many"><div class="term-emoji">🌊</div><div class="term-word">더 많다 <span class="term-star">⭐</span></div></div>
+          <div class="term-card few" data-term="few"><div class="term-emoji">💧</div><div class="term-word">더 적다 <span class="term-star">⭐</span></div></div>
+        </div>
+        <div class="recap-body">담을 수 있는 양이 많음 = <strong>더 많다</strong> / 적음 = <strong style="color:#E65100">더 적다</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬7: 담을 수 있는 양 vs 담긴 양 -->
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">담을 수 있는 양? 담긴 양?</h1>
+      <div class="cv-stage">
+        <div class="cv-row">
+          <div class="cv-card">
+            <div class="cv-card-tag">담을 수 있는 양</div>
+            <div class="cv-cup-mini"></div>
+            <div class="cv-card-title">빈 그릇 자체의 크기</div>
+          </div>
+          <div class="cv-card filled">
+            <div class="cv-card-tag">담긴 양</div>
+            <div class="cv-cup-mini filled-cup">
+              <div class="cv-water-mini"></div>
+            </div>
+            <div class="cv-card-title">실제 담겨 있는 물의 양</div>
+          </div>
+        </div>
+        <div class="cv-cap">그릇 자체의 크기는 <strong>담을 수 있는 양</strong>, 실제 담긴 물의 양은 <strong style="color:#1565C0; background:#E3F2FD">담긴 양</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬8: 유리병 vs 요구르트병 -->
+    <div class="slide" data-slide="8" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">유리병과 요구르트병</h1>
+      <div class="slide-sub">유리병의 물을 요구르트병에 부어 보세요</div>
+      <div class="pw-stage">
+        <div class="pw-arena" data-pw="8">
+          <div class="pw-cup">
+            <div class="pw-cup-shape from" data-pw-from="8" style="width:60px; height:140px;">
+              <div class="pw-water" id="pw-water-from-8" style="height: 100%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">유리병</span></div>
+          </div>
+          <button class="pw-pour-btn" id="pw-btn-8">물 따르기 →</button>
+          <div class="pw-cup">
+            <div class="pw-cup-shape to" style="width:46px; height:80px;">
+              <div class="pw-water" id="pw-water-to-8" style="height: 0%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">요구르트병</span></div>
+          </div>
+        </div>
+        <div class="pw-status" id="pw-status-8">유리병 물을 요구르트병에 부어 비교해 봐요</div>
+        <div class="ap-options" data-ap="8" data-answer="many-glass">
+          <button class="ap-btn" data-pick="many-glass">유리병에 더 많이 담을 수 있어요</button>
+          <button class="ap-btn" data-pick="many-yogurt">요구르트병에 더 많이 담을 수 있어요</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-8"></div>
+      </div>
+    </div>
+
+    <!-- 슬9: 작은 컵 vs 큰 컵 -->
+    <div class="slide" data-slide="9" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">작은 컵과 큰 컵</h1>
+      <div class="slide-sub">작은 컵의 물을 큰 컵에 부어 보세요</div>
+      <div class="pw-stage">
+        <div class="pw-arena" data-pw="9">
+          <div class="pw-cup">
+            <div class="pw-cup-shape from" data-pw-from="9" style="width:54px; height:90px;">
+              <div class="pw-water" id="pw-water-from-9" style="height: 100%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">작은 컵</span></div>
+          </div>
+          <button class="pw-pour-btn" id="pw-btn-9">물 따르기 →</button>
+          <div class="pw-cup">
+            <div class="pw-cup-shape to" style="width:90px; height:150px;">
+              <div class="pw-water" id="pw-water-to-9" style="height: 0%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">큰 컵</span></div>
+          </div>
+        </div>
+        <div class="pw-status" id="pw-status-9">작은 컵 물을 큰 컵에 부어 비교해 봐요</div>
+        <div class="ap-options" data-ap="9" data-answer="few-small">
+          <button class="ap-btn" data-pick="few-small">작은 컵에 더 적게 담을 수 있어요</button>
+          <button class="ap-btn" data-pick="few-big">큰 컵에 더 적게 담을 수 있어요</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-9"></div>
+      </div>
+    </div>
+
+    <!-- 슬10: 세 그릇 가장 적은 것 (담긴 양) -->
+    <div class="slide" data-slide="10" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">담긴 양이 가장 적은 컵은?</h1>
+      <div class="slide-sub">크기가 같은 컵에 담긴 물의 양을 보아요</div>
+      <div class="wlc-stage">
+        <div class="wlc-row">
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 70%;"></div></div>
+            <div class="wlc-name">컵 가</div>
+          </div>
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 90%;"></div></div>
+            <div class="wlc-name">컵 나</div>
+          </div>
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 35%;"></div></div>
+            <div class="wlc-name">컵 다</div>
+          </div>
+        </div>
+        <div class="wlc-prompt"><strong>가장 적게 담긴 컵</strong>을 골라 보세요</div>
+        <div class="wlc-options" data-wlc="10" data-answer="da">
+          <button class="wlc-btn" data-pick="ga"><span class="wlc-btn-emoji">🥛</span>컵 가</button>
+          <button class="wlc-btn" data-pick="na"><span class="wlc-btn-emoji">🥛</span>컵 나</button>
+          <button class="wlc-btn" data-pick="da"><span class="wlc-btn-emoji">🥛</span>컵 다</button>
+        </div>
+        <div class="wlc-fb" id="wlc-fb-10"></div>
+      </div>
+    </div>
+
+    <!-- 슬11: 세 그릇 가장 많이 담긴 것 -->
+    <div class="slide" data-slide="11" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">담긴 양이 가장 많은 컵은?</h1>
+      <div class="slide-sub">크기가 같은 컵 셋을 보아요</div>
+      <div class="wlc-stage">
+        <div class="wlc-row">
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 45%;"></div></div>
+            <div class="wlc-name">컵 가</div>
+          </div>
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 85%;"></div></div>
+            <div class="wlc-name">컵 나</div>
+          </div>
+          <div class="wlc-cup">
+            <div class="wlc-shape"><div class="wlc-water" style="height: 60%;"></div></div>
+            <div class="wlc-name">컵 다</div>
+          </div>
+        </div>
+        <div class="wlc-prompt"><strong>가장 많이 담긴 컵</strong>을 골라 보세요</div>
+        <div class="wlc-options" data-wlc="11" data-answer="na">
+          <button class="wlc-btn" data-pick="ga"><span class="wlc-btn-emoji">🥛</span>컵 가</button>
+          <button class="wlc-btn" data-pick="na"><span class="wlc-btn-emoji">🥛</span>컵 나</button>
+          <button class="wlc-btn" data-pick="da"><span class="wlc-btn-emoji">🥛</span>컵 다</button>
+        </div>
+        <div class="wlc-fb" id="wlc-fb-11"></div>
+      </div>
+    </div>
+
+    <!-- 슬12: 종 놀이 1턴 (2명) -->
+    <div class="slide" data-slide="12" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">종 놀이 ① — 둘이 만나요</h1>
+      <div class="slide-sub">통을 한 개 골라 보세요. 종이 울리면 친구를 만나요</div>
+      <div class="mp-stage">
+        <div class="mp-pool" id="mp-pool-12">
+          <div class="mp-cup-pick" data-cup="bucket" data-emoji="🪣" data-name="양동이" data-volume="100"><div class="mp-cup-emoji">🪣</div><div class="mp-cup-name">양동이</div></div>
+          <div class="mp-cup-pick" data-cup="cup" data-emoji="🥤" data-name="컵" data-volume="30"><div class="mp-cup-emoji">🥤</div><div class="mp-cup-name">컵</div></div>
+          <div class="mp-cup-pick" data-cup="bottle" data-emoji="🍶" data-name="병" data-volume="60"><div class="mp-cup-emoji">🍶</div><div class="mp-cup-name">병</div></div>
+          <div class="mp-cup-pick" data-cup="kettle" data-emoji="🫖" data-name="주전자" data-volume="80"><div class="mp-cup-emoji">🫖</div><div class="mp-cup-name">주전자</div></div>
+        </div>
+        <button class="mp-bell-btn" id="mp-bell-12" disabled><span class="mp-bell-emoji" id="mp-bell-emoji-12">🔔</span> 종 울리기</button>
+        <div class="mp-meet" id="mp-meet-12">
+          <div class="mp-meet-row" id="mp-meet-row-12"></div>
+          <div class="ap-options" data-ap="12" data-answer-resolver="mp">
+            <button class="ap-btn" data-pick="me-many">내 통에 더 많이 담을 수 있어요</button>
+            <button class="ap-btn" data-pick="friend-many">친구 통에 더 많이 담을 수 있어요</button>
+          </div>
+          <div class="ap-fb" id="ap-fb-12"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬13: 종 놀이 2턴 (3명) -->
+    <div class="slide" data-slide="13" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">종 놀이 ② — 셋이 만나요</h1>
+      <div class="slide-sub">통을 한 개 더 골라 보세요. 이번엔 셋이 만나요</div>
+      <div class="mp-stage">
+        <div class="mp-pool" id="mp-pool-13">
+          <div class="mp-cup-pick" data-cup="pot" data-emoji="🍲" data-name="냄비" data-volume="90"><div class="mp-cup-emoji">🍲</div><div class="mp-cup-name">냄비</div></div>
+          <div class="mp-cup-pick" data-cup="thermos" data-emoji="🍵" data-name="찻잔" data-volume="20"><div class="mp-cup-emoji">🍵</div><div class="mp-cup-name">찻잔</div></div>
+          <div class="mp-cup-pick" data-cup="wine" data-emoji="🍷" data-name="와인잔" data-volume="40"><div class="mp-cup-emoji">🍷</div><div class="mp-cup-name">와인잔</div></div>
+          <div class="mp-cup-pick" data-cup="vase" data-emoji="🏺" data-name="항아리" data-volume="120"><div class="mp-cup-emoji">🏺</div><div class="mp-cup-name">항아리</div></div>
+        </div>
+        <button class="mp-bell-btn" id="mp-bell-13" disabled><span class="mp-bell-emoji" id="mp-bell-emoji-13">🔔</span> 종 울리기</button>
+        <div class="mp-meet" id="mp-meet-13">
+          <div class="mp-meet-row" id="mp-meet-row-13"></div>
+          <div class="wlc-options" data-wlc="13" data-answer-resolver="mp">
+            <button class="wlc-btn" data-pick="me"><span class="wlc-btn-emoji">🙋</span>내 통</button>
+            <button class="wlc-btn" data-pick="f1"><span class="wlc-btn-emoji">👦</span>친구1 통</button>
+            <button class="wlc-btn" data-pick="f2"><span class="wlc-btn-emoji">👧</span>친구2 통</button>
+          </div>
+          <div class="wlc-fb" id="wlc-fb-13">가장 많이 담을 수 있는 통을 골라 보세요</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬14: 함정 — 다른 모양 그릇 (높이 같지만 들이 다름) -->
+    <div class="slide" data-slide="14" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">높이가 같으면 양도 같을까요?</h1>
+      <div class="slide-sub">두 컵의 모양이 다르면 직접 부어 봐야 알아요</div>
+      <div class="pw-stage">
+        <div class="trap-banner">좁고 긴 컵과 넓고 짧은 컵 중 어느 쪽에 <strong>더 많이</strong> 담을 수 있을까요? 직접 부어 봐요</div>
+        <div class="pw-arena" data-pw="14">
+          <div class="pw-cup">
+            <div class="pw-cup-shape from" data-pw-from="14" style="width:40px; height:170px;">
+              <div class="pw-water" id="pw-water-from-14" style="height: 100%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">좁고 긴 컵</span></div>
+          </div>
+          <button class="pw-pour-btn" id="pw-btn-14">물 따르기 →</button>
+          <div class="pw-cup">
+            <div class="pw-cup-shape to" style="width:120px; height:100px;">
+              <div class="pw-water" id="pw-water-to-14" style="height: 0%;"></div>
+            </div>
+            <div class="pw-cup-label"><span class="pw-tag">넓고 짧은 컵</span></div>
+          </div>
+        </div>
+        <div class="pw-status" id="pw-status-14">눌러서 물을 부어 봐요</div>
+        <div class="trap-reveal" id="trap-reveal-14">넓고 짧은 컵이 좁고 긴 컵의 물을 다 받고 <strong>공간이 남았어요</strong>! 넓고 짧은 컵에 더 많이 담을 수 있어요. 높이만 보면 알 수 없어요 +10점</div>
+      </div>
+    </div>
+
+    <!-- 슬15: 일상 — 물 따르기 -->
+    <div class="slide" data-slide="15" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">집에서 물을 따라요</h1>
+      <div class="slide-sub">두 그릇을 비교해 봐요</div>
+      <div class="ap-stage">
+        <div class="daily-illust">
+          <div class="daily-obj">
+            <div class="daily-obj-emoji">🍶</div>
+            <div class="daily-obj-name">물병</div>
+          </div>
+          <div class="daily-obj">
+            <div class="daily-obj-emoji">🥤</div>
+            <div class="daily-obj-name">컵 한 개</div>
+          </div>
+        </div>
+        <div class="ap-prompt"><strong>물병</strong>은 컵 한 개보다 어떤가요?</div>
+        <div class="ap-options" data-ap="15" data-answer="many">
+          <button class="ap-btn" data-pick="many">더 많이 담을 수 있어요</button>
+          <button class="ap-btn" data-pick="few">더 적게 담을 수 있어요</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-15"></div>
+      </div>
+    </div>
+
+    <!-- 슬16: 요약 -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 배운 것</h1>
+      <div class="recap-stage">
+        <div class="recap-card">
+          <div class="recap-title2">🥛 들이 비교 방법</div>
+          <div class="recap-body">한 그릇 물을 <strong>다른 그릇에 옮겨 담아</strong> 어느 쪽에 더 많이 담을 수 있는지 알 수 있어요</div>
+        </div>
+        <div class="recap-card" style="border-color:#FFA726;">
+          <div class="recap-title2" style="color:#E65100;">📝 들이 비교 말</div>
+          <div class="recap-body">두 그릇 → <strong>더 많다 · 더 적다</strong><br>세 그릇 → <strong>가장 많다 · 가장 적다</strong></div>
+        </div>
+        <div class="recap-card" style="border-color:#2196F3;">
+          <div class="recap-title2" style="color:#1565C0;">🌊 두 가지 양 구별</div>
+          <div class="recap-body">그릇 자체 크기 = <strong style="background:#F3E5F5; color:#6A1B9A">담을 수 있는 양</strong> / 안에 든 물 = <strong style="background:#E3F2FD; color:#1565C0">담긴 양</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬17: 자기 평가 -->
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">스스로 점검해요</h1>
+      <div class="slide-sub">별을 눌러 표시해 보세요</div>
+      <div class="assess-stage">
+        <div class="assess-card">
+          <div class="assess-q">📚 <strong style="color:#1976D2; font-weight:400">지식·이해</strong> — 들이 비교 방법(물 옮겨 담기)을 알았나요?</div>
+          <div class="assess-stars" data-assess="d1"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">🔧 <strong style="color:#2E7D32; font-weight:400">과정·기능</strong> — '더 많다·더 적다'를 말할 수 있나요?</div>
+          <div class="assess-stars" data-assess="d2"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">💛 <strong style="color:#E65100; font-weight:400">가치·태도</strong> — 집에서 물 따르기를 해 보고 싶나요?</div>
+          <div class="assess-stars" data-assess="d3"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬18: 다음 차시 -->
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="next-stage">
+        <div class="next-trophy">🏆</div>
+        <div class="next-title">잘 했어요!</div>
+        <div class="next-line">길이·무게·넓이·들이 4가지를 모두 배웠어요<br>이제 단원 평가로 확인해 봐요</div>
+        <div class="next-preview">📚 다음 차시 — 6차 수학이랑 확인해요</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script src="../../../../../kedu_tracker.js"></script>
+<script>
+const TOTAL = 18;
+let cur = 0;
+let score = 0;
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+let muted = false;
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+  if (window.keduTracker && window.keduTracker.recordScore) window.keduTracker.recordScore('g1_math_u4_05', score);
+}
+
+/* 슬1 자유 선택 */
+(function() {
+  const row = document.getElementById('pick-row');
+  if (!row) return;
+  let picked = false;
+  row.querySelectorAll('.pick-card').forEach(p => {
+    p.addEventListener('click', () => {
+      row.querySelectorAll('.pick-card').forEach(x => x.classList.remove('picked'));
+      p.classList.add('picked');
+      if (!picked) { picked = true; addScore(3); }
+    });
+  });
+})();
+
+/* 슬3 4속성 회상 */
+(function() {
+  const card = document.querySelector('.recall-card[data-attr="volume"]');
+  if (!card) return;
+  const hint = document.querySelector('.recall-hint');
+  let opened = false;
+  card.addEventListener('click', () => {
+    if (opened) return;
+    opened = true;
+    hint.textContent = '맞아요! 오늘은 들이를 자세히 만나 봐요 ⭐ +5점';
+    hint.classList.add('done');
+    addScore(5);
+  });
+})();
+
+/* pour_water 슬5·8·9·14 */
+function setupPw(slideNum, opts) {
+  opts = opts || {};
+  const arena = document.querySelector('.pw-arena[data-pw="' + slideNum + '"]');
+  if (!arena) return;
+  const btn = document.getElementById('pw-btn-' + slideNum);
+  const wFrom = document.getElementById('pw-water-from-' + slideNum);
+  const wTo = document.getElementById('pw-water-to-' + slideNum);
+  const status = document.getElementById('pw-status-' + slideNum);
+  let poured = false;
+  btn.addEventListener('click', () => {
+    if (poured) return;
+    poured = true;
+    btn.disabled = true;
+    btn.textContent = '물을 따르는 중...';
+    // 출발 그릇 비우기
+    setTimeout(() => {
+      wFrom.style.height = '0%';
+    }, 100);
+    // 도착 그릇 채우기 — 슬마다 다른 결과 자리
+    setTimeout(() => {
+      let toHeight, overflow = false;
+      if (slideNum === 5) {
+        // 빨강 작은 → 파랑 큰 (공간 남음, 약 50% 채움)
+        toHeight = 52;
+      } else if (slideNum === 8) {
+        // 유리병 큰 → 요구르트병 작은 (넘침)
+        toHeight = 100;
+        overflow = true;
+      } else if (slideNum === 9) {
+        // 작은 컵 → 큰 컵 (공간 남음, 약 35%)
+        toHeight = 36;
+      } else if (slideNum === 14) {
+        // 좁고 긴 → 넓고 짧은 (공간 남음, 약 60%)
+        toHeight = 62;
+      }
+      wTo.style.height = toHeight + '%';
+      if (overflow) wTo.classList.add('overflow');
+
+      setTimeout(() => {
+        btn.textContent = '✓ 물 따랐어요';
+        if (opts.onDone) opts.onDone(overflow);
+        else if (status) {
+          if (overflow) {
+            status.textContent = '물이 넘쳤어요! 출발 그릇이 더 많이 담을 수 있어요. +6점';
+            status.classList.add('overflow');
+          } else {
+            status.textContent = '공간이 남았어요! 도착 그릇이 더 많이 담을 수 있어요. +6점';
+            status.classList.add('done');
+          }
+          addScore(6);
+        }
+      }, 900);
+    }, 700);
+  });
+}
+setupPw(5);
+setupPw(8, {
+  onDone: (overflow) => {
+    const s = document.getElementById('pw-status-8');
+    if (overflow) { s.textContent = '요구르트병에서 물이 넘쳤어요! 유리병이 더 많이 담을 수 있어요'; s.classList.add('overflow'); }
+    addScore(4);
+  }
+});
+setupPw(9, {
+  onDone: () => {
+    const s = document.getElementById('pw-status-9');
+    s.textContent = '큰 컵에 공간이 남았어요! 작은 컵에 더 적게 담을 수 있어요';
+    s.classList.add('done');
+    addScore(4);
+  }
+});
+setupPw(14, {
+  onDone: () => {
+    const reveal = document.getElementById('trap-reveal-14');
+    const s = document.getElementById('pw-status-14');
+    if (reveal) reveal.classList.add('show');
+    if (s) { s.textContent = '넓고 짧은 컵에 공간이 남았어요'; s.classList.add('done'); }
+    addScore(10);
+  }
+});
+
+/* 슬6 용어 카드 */
+(function() {
+  const cards = document.querySelectorAll('.term-card');
+  let opened = 0;
+  let awarded = false;
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('opened')) return;
+      card.classList.add('opened');
+      opened++;
+      if (opened === 2 && !awarded) { awarded = true; addScore(8); }
+    });
+  });
+})();
+
+/* attribute_picker */
+function setupAp(slideNum) {
+  const group = document.querySelector('.ap-options[data-ap="' + slideNum + '"]');
+  if (!group) return;
+  const answer = group.dataset.answer;
+  const resolver = group.dataset.answerResolver;
+  const fb = document.getElementById('ap-fb-' + slideNum);
+  let solved = false;
+  let attempts = 0;
+  group.querySelectorAll('.ap-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      let correctPick = answer;
+      // mp resolver = match_play에서 동적 정답 자리
+      if (resolver === 'mp') {
+        correctPick = window['mpAnswer' + slideNum] || 'me-many';
+      }
+      if (btn.dataset.pick === correctPick) {
+        solved = true;
+        btn.classList.add('correct');
+        group.querySelectorAll('.ap-btn').forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        fb.classList.add('done');
+      } else {
+        btn.classList.add('wrong');
+        fb.textContent = '다시 한 번 살펴봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+[8, 9, 12, 15].forEach(setupAp);
+
+/* water_level_compare 슬10·11·13 */
+function setupWlc(slideNum) {
+  const group = document.querySelector('.wlc-options[data-wlc="' + slideNum + '"]');
+  if (!group) return;
+  const answer = group.dataset.answer;
+  const resolver = group.dataset.answerResolver;
+  const fb = document.getElementById('wlc-fb-' + slideNum);
+  let solved = false;
+  let attempts = 0;
+  group.querySelectorAll('.wlc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      let correctPick = answer;
+      if (resolver === 'mp') {
+        correctPick = window['mpAnswer' + slideNum] || 'me';
+      }
+      if (btn.dataset.pick === correctPick) {
+        solved = true;
+        btn.classList.add('correct');
+        group.querySelectorAll('.wlc-btn').forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        fb.classList.add('done');
+      } else {
+        btn.classList.add('wrong');
+        fb.textContent = '다시 한 번 살펴봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+[10, 11, 13].forEach(setupWlc);
+
+/* match_play(bell) 슬12·13 */
+function setupMp(slideNum, groupSize) {
+  const pool = document.getElementById('mp-pool-' + slideNum);
+  const bellBtn = document.getElementById('mp-bell-' + slideNum);
+  const bellEmoji = document.getElementById('mp-bell-emoji-' + slideNum);
+  const meet = document.getElementById('mp-meet-' + slideNum);
+  const meetRow = document.getElementById('mp-meet-row-' + slideNum);
+  if (!pool) return;
+  let myPick = null;
+  pool.querySelectorAll('.mp-cup-pick').forEach(p => {
+    p.addEventListener('click', () => {
+      if (meet.classList.contains('show')) return;
+      pool.querySelectorAll('.mp-cup-pick').forEach(x => x.classList.remove('picked'));
+      p.classList.add('picked');
+      myPick = {
+        cup: p.dataset.cup,
+        emoji: p.dataset.emoji,
+        name: p.dataset.name,
+        volume: parseInt(p.dataset.volume, 10)
+      };
+      bellBtn.disabled = false;
+      addScore(2);
+    });
+  });
+  bellBtn.addEventListener('click', () => {
+    if (!myPick || meet.classList.contains('show')) return;
+    bellEmoji.classList.add('ring');
+    bellBtn.disabled = true;
+    setTimeout(() => {
+      // 친구 자리 = 풀에서 내 선택 외 랜덤 N-1개
+      const others = [...pool.querySelectorAll('.mp-cup-pick')].filter(p => p.dataset.cup !== myPick.cup);
+      const friends = [];
+      for (let i = 0; i < groupSize - 1; i++) {
+        const idx = Math.floor(Math.random() * others.length);
+        friends.push({
+          cup: others[idx].dataset.cup,
+          emoji: others[idx].dataset.emoji,
+          name: others[idx].dataset.name,
+          volume: parseInt(others[idx].dataset.volume, 10)
+        });
+        others.splice(idx, 1);
+      }
+      // 만남 자리 자리 그리기
+      meetRow.innerHTML = '';
+      const meEl = document.createElement('div');
+      meEl.className = 'mp-meet-cup';
+      meEl.innerHTML = '<div class="mp-meet-cup-emoji">' + myPick.emoji + '</div><div class="mp-meet-cup-name">내 통 (' + myPick.name + ')</div>';
+      meetRow.appendChild(meEl);
+      friends.forEach((f, i) => {
+        const vs = document.createElement('div');
+        vs.className = 'mp-vs';
+        vs.textContent = 'vs';
+        meetRow.appendChild(vs);
+        const fEl = document.createElement('div');
+        fEl.className = 'mp-meet-cup';
+        const label = groupSize === 2 ? '친구 통' : (i === 0 ? '친구1 통' : '친구2 통');
+        fEl.innerHTML = '<div class="mp-meet-cup-emoji">' + f.emoji + '</div><div class="mp-meet-cup-name">' + label + ' (' + f.name + ')</div>';
+        meetRow.appendChild(fEl);
+      });
+      // 정답 자리 — 가장 많은 부피
+      const all = [{key: 'me', volume: myPick.volume}].concat(
+        friends.map((f, i) => ({key: groupSize === 2 ? 'friend' : (i === 0 ? 'f1' : 'f2'), volume: f.volume}))
+      );
+      let answer;
+      if (slideNum === 12) {
+        // 2인 = 내 통 vs 친구 통, 정답 = 누가 더 많이 담을 수 있는지
+        answer = myPick.volume > friends[0].volume ? 'me-many' : 'friend-many';
+      } else {
+        // 3인 = 가장 많은 통
+        const max = all.reduce((a, b) => a.volume > b.volume ? a : b);
+        answer = max.key;
+      }
+      window['mpAnswer' + slideNum] = answer;
+      meet.classList.add('show');
+      addScore(3);
+    }, 700);
+  });
+}
+setupMp(12, 2);
+setupMp(13, 3);
+
+/* 자기 평가 */
+document.querySelectorAll('.assess-stars').forEach(group => {
+  let chosen = false;
+  group.querySelectorAll('.assess-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const n = parseInt(star.dataset.n, 10);
+      group.querySelectorAll('.assess-star').forEach(s => {
+        s.classList.toggle('on', parseInt(s.dataset.n, 10) <= n);
+      });
+      if (!chosen) { chosen = true; addScore(3); }
+    });
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>
