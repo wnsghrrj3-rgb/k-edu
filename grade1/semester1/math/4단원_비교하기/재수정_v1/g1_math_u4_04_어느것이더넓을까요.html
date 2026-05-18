@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<!--
+  u4_04 어느 것이 더 넓을까요 — 본격 5단계 18슬 base v1
+  4단원 안 cycle 8
+
+  설계 출처: _PLAN.md (cycle 3 시안), _SOURCE.md (지도서 254~255)
+  18슬: 도입(돗자리·목표·회상) → 전개(겹쳐보기·area_overlap·용어·포함관계) → 기본(area_overlap·three_object_sort) → 응용(paper_fold·함정·일상) → 정리(요약·자기평가·다음)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u4_04_v1">
+<title>어느 것이 더 넓을까요 · K-edu 1학년 수학 4단원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.15) rotate(-3deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-fold { from { transform: scaleY(1); } to { transform: scaleY(0.5); transform-origin: top; } }
+
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); display: flex; flex-direction: column; position: relative; overflow: hidden; color: #333; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); flex-shrink: 0; }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); color: #2E7D32; font-weight: 400; text-align: center; line-height: 1.3; margin: 0 0 clamp(4px, 0.8vw, 7px); flex-shrink: 0; }
+.slide-sub { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; margin-bottom: clamp(8px, 1.5vw, 12px); text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E8F5E9; color: #2E7D32; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* 슬1 돗자리 자유 선택 */
+.pick-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 720px; width: 100%; }
+.pick-row { display: flex; gap: clamp(20px, 3.4vw, 36px); justify-content: center; align-items: flex-end; }
+.pick-card { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; padding: clamp(10px, 1.6vw, 14px); border-radius: clamp(14px, 2.2vw, 20px); border: 3px solid transparent; transition: transform 0.2s; }
+.pick-card:hover { transform: translateY(-4px); background: #E8F5E9; }
+.pick-card.picked { border-color: #66BB6A; background: #E8F5E9; box-shadow: 0 4px 16px rgba(102,187,106,0.3); }
+.mat-svg { display: block; }
+.pick-name { font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; }
+.pick-q { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px); font-size: clamp(15px, 2.5vw, 21px); color: #2E7D32; text-align: center; }
+.pick-q strong { color: #DC2626; font-weight: 400; }
+
+/* 슬2 학습 목표 */
+.goal-card { background: linear-gradient(135deg, #FFF 0%, #E8F5E9 100%); border: 3px solid #66BB6A; border-radius: clamp(16px, 2.6vw, 24px); padding: clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 640px; width: 100%; }
+.goal-icon { font-size: clamp(40px, 6vw, 60px); }
+.goal-line { font-size: clamp(17px, 2.8vw, 24px); color: #455A64; text-align: center; line-height: 1.5; }
+.goal-line strong { color: #2E7D32; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 8px; }
+.goal-chips { display: flex; gap: clamp(10px, 1.6vw, 14px); }
+.goal-chip-big { background: #FFF; border: 3px solid #66BB6A; border-radius: clamp(12px, 2vw, 18px); padding: clamp(12px, 2vw, 18px) clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.goal-chip-big.narrow { border-color: #FFA726; }
+.goal-chip-emoji { font-size: clamp(36px, 5.6vw, 52px); }
+.goal-chip-text { font-size: clamp(16px, 2.6vw, 22px); color: #2E7D32; }
+.goal-chip-big.narrow .goal-chip-text { color: #E65100; }
+
+/* 슬3 4속성 회상 (넓이 강조) */
+.recall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 760px; width: 100%; }
+.recall-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.recall-card { background: #FFF; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(12px, 2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; transition: all 0.3s; opacity: 0.6; position: relative; }
+.recall-card.done { opacity: 0.85; }
+.recall-card.done::after { content: '✓'; position: absolute; top: 6px; right: 6px; background: #66BB6A; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; }
+.recall-card.today { opacity: 1; border-color: #66BB6A; background: linear-gradient(135deg, #FFF 0%, #E8F5E9 100%); transform: scale(1.04); box-shadow: 0 6px 20px rgba(102,187,106,0.35); }
+.recall-card.today::after { content: '오늘'; position: absolute; top: 6px; right: 6px; background: #DC2626; color: white; padding: 2px 10px; border-radius: 999px; font-size: clamp(11px, 1.8vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; }
+.recall-emoji { font-size: clamp(32px, 5vw, 50px); }
+.recall-name { font-size: clamp(16px, 2.6vw, 22px); color: #1976D2; }
+.recall-card[data-attr="weight"] .recall-name { color: #E65100; }
+.recall-card[data-attr="area"] .recall-name { color: #2E7D32; }
+.recall-card[data-attr="volume"] .recall-name { color: #6A1B9A; }
+.recall-hint { font-size: clamp(14px, 2.3vw, 19px); color: #2E7D32; background: #E8F5E9; padding: 8px 14px; border-radius: 12px; text-align: center; }
+.recall-hint.done { background: #C8E6C9; }
+
+/* area_overlap 자리 (슬5·8·9·14) */
+.ao-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.ao-board { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); width: 100%; min-height: clamp(220px, 32vw, 320px); position: relative; }
+.ao-shape { position: absolute; cursor: grab; user-select: none; touch-action: none; transition: transform 0.2s; }
+.ao-shape:active { cursor: grabbing; }
+.ao-shape.dragging { z-index: 100; transform: scale(1.04); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
+.ao-shape.overlapped { z-index: 50; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.ao-shape-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 8px; font-size: clamp(11px, 1.8vw, 14px); color: #455A64; pointer-events: none; }
+.ao-status { font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; text-align: center; min-height: 1.6em; }
+.ao-status.done { color: #1B5E20; font-weight: 400; }
+
+/* 슬6 용어 카드 */
+.term-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 680px; width: 100%; }
+.term-row { display: flex; gap: clamp(20px, 3.4vw, 32px); justify-content: center; align-items: center; }
+.term-card { background: #FFF; border: 3px solid #66BB6A; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.4vw, 22px) clamp(18px, 3vw, 28px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); cursor: pointer; transition: all 0.2s; opacity: 0.45; }
+.term-card.narrow { border-color: #FFA726; }
+.term-card.opened { opacity: 1; animation: ka-pop 0.5s ease both; box-shadow: 0 6px 20px rgba(102,187,106,0.3); }
+.term-emoji { font-size: clamp(40px, 6vw, 56px); }
+.term-word { font-size: clamp(22px, 3.6vw, 32px); color: #2E7D32; text-decoration: underline; text-decoration-color: #DC2626; }
+.term-card.narrow .term-word { color: #E65100; }
+.term-star { font-size: clamp(16px, 2.4vw, 22px); color: #DC2626; }
+
+/* 슬7 포함 관계 */
+.contain-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 680px; width: 100%; }
+.contain-svg-wrap { background: #F8FBFF; border: 2px solid #66BB6A; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.2vw, 20px); width: 100%; display: flex; justify-content: center; }
+.contain-cap { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.5; }
+.contain-cap strong { color: #2E7D32; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 6px; text-decoration: underline; text-decoration-color: #DC2626; }
+
+/* attribute_picker */
+.ap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.ap-prompt { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px); font-size: clamp(14px, 2.3vw, 20px); color: #455A64; text-align: center; line-height: 1.5; width: 100%; }
+.ap-prompt strong { color: #DC2626; font-weight: 400; }
+.ap-options { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.ap-btn { background: #FFF; border: 3px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(14px, 2.4vw, 22px); font-family: inherit; font-size: clamp(16px, 2.6vw, 23px); color: #2E7D32; cursor: pointer; transition: all 0.2s; }
+.ap-btn:hover { background: #E8F5E9; transform: translateY(-2px); }
+.ap-btn.correct { background: #C8E6C9; border-color: #66BB6A; color: #1B5E20; animation: ka-celebrate 0.5s ease; }
+.ap-btn.wrong { background: #FFCDD2; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.ap-btn.disabled { opacity: 0.4; pointer-events: none; }
+.ap-fb { font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; text-align: center; min-height: 1.6em; }
+.ap-fb.wrong { color: #EF5350; }
+.ap-fb.done { color: #1B5E20; font-weight: 400; }
+
+/* three_object_sort */
+.tos-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.tos-objects { display: flex; gap: clamp(14px, 2.4vw, 22px); justify-content: center; align-items: flex-end; width: 100%; background: #F8FBFF; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(16px, 2.4vw, 22px); border: 2px solid #E3F2FD; }
+.tos-obj { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px); }
+.tos-rect { background: #66BB6A; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+.tos-rect.r2 { background: #FFA726; }
+.tos-rect.r3 { background: #42A5F5; }
+.tos-obj-emoji { font-size: clamp(24px, 3.8vw, 36px); margin-top: 4px; }
+.tos-obj-name { font-size: clamp(12px, 2vw, 16px); color: #455A64; }
+.tos-prompt { background: #E8F5E9; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 16px); font-size: clamp(15px, 2.5vw, 21px); color: #2E7D32; text-align: center; }
+.tos-prompt strong { color: #DC2626; font-weight: 400; }
+.tos-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.tos-btn { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-family: inherit; font-size: clamp(14px, 2.3vw, 19px); color: #2E7D32; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tos-btn:hover { background: #E8F5E9; transform: translateY(-2px); }
+.tos-btn.correct { background: #C8E6C9; border-color: #66BB6A; animation: ka-celebrate 0.5s ease; }
+.tos-btn.wrong { background: #FFCDD2; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.tos-btn.disabled { opacity: 0.4; pointer-events: none; }
+.tos-btn-emoji { font-size: clamp(22px, 3.4vw, 30px); }
+.tos-fb { font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; text-align: center; min-height: 1.6em; }
+.tos-fb.wrong { color: #EF5350; }
+.tos-fb.done { color: #1B5E20; font-weight: 400; }
+
+/* paper_fold 슬12·13 */
+.pf-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.pf-arena { background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(16px, 2.4vw, 22px); width: 100%; display: flex; gap: clamp(20px, 3.4vw, 32px); justify-content: center; align-items: flex-end; min-height: clamp(180px, 26vw, 260px); }
+.pf-player { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); }
+.pf-paper { background: #FFA726; border-radius: 8px; box-shadow: 0 3px 8px rgba(0,0,0,0.12); transition: all 0.6s ease; transform-origin: top center; position: relative; }
+.pf-paper.fold-1 { transform: scaleY(0.5); }
+.pf-paper.fold-2 { transform: scaleY(0.25); }
+.pf-paper.color2 { background: #42A5F5; }
+.pf-player-name { font-size: clamp(12px, 2vw, 16px); color: #1976D2; }
+.pf-trigger-btn { background: #2E7D32; color: white; border: none; padding: clamp(10px, 1.8vw, 14px) clamp(20px, 3.4vw, 30px); border-radius: clamp(12px, 2vw, 18px); font-family: inherit; font-size: clamp(15px, 2.5vw, 21px); cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.3); transition: all 0.2s; }
+.pf-trigger-btn:hover { background: #1B5E20; transform: translateY(-2px); }
+.pf-trigger-btn:disabled { opacity: 0.4; pointer-events: none; }
+.pf-hidden { display: none; }
+
+/* 슬14 함정 자리 */
+.trap-banner { background: #FFF3E0; border: 2px dashed #FFA726; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px); font-size: clamp(14px, 2.3vw, 19px); color: #E65100; text-align: center; line-height: 1.5; }
+.trap-banner strong { color: #DC2626; font-weight: 400; }
+.trap-reveal { font-size: clamp(14px, 2.3vw, 20px); color: #1B5E20; background: #C8E6C9; padding: 8px 14px; border-radius: 12px; text-align: center; display: none; animation: ka-fadeUp 0.4s ease both; }
+.trap-reveal.show { display: block; }
+
+/* 슬16 요약 */
+.recap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 720px; width: 100%; }
+.recap-card { background: #F8FBFF; border: 3px solid #66BB6A; border-radius: clamp(14px, 2.2vw, 20px); padding: clamp(14px, 2.4vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px); width: 100%; }
+.recap-title2 { font-size: clamp(18px, 3vw, 25px); color: #2E7D32; }
+.recap-body { font-size: clamp(14px, 2.3vw, 20px); color: #455A64; text-align: center; line-height: 1.6; }
+.recap-body strong { color: #2E7D32; font-weight: 400; background: white; padding: 2px 8px; border-radius: 6px; text-decoration: underline; text-decoration-color: #DC2626; }
+
+/* 자기 평가 */
+.assess-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px); max-width: 720px; width: 100%; }
+.assess-card { background: #FFF; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.6vw, 14px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px); width: 100%; }
+.assess-q { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.4; }
+.assess-stars { display: flex; gap: clamp(6px, 1vw, 10px); }
+.assess-star { font-size: clamp(28px, 4.4vw, 40px); cursor: pointer; opacity: 0.3; transition: all 0.2s; }
+.assess-star.on { opacity: 1; animation: ka-pop 0.3s ease both; }
+
+/* 다음 차시 */
+.next-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px); max-width: 640px; width: 100%; }
+.next-trophy { font-size: clamp(56px, 9vw, 100px); }
+.next-title { font-size: clamp(20px, 3.4vw, 30px); color: #2E7D32; text-align: center; }
+.next-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.6; }
+.next-preview { background: #E8F5E9; border: 2px solid #66BB6A; border-radius: clamp(12px, 2vw, 16px); padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.4vw, 22px); font-size: clamp(14px, 2.3vw, 19px); color: #2E7D32; text-align: center; }
+
+/* 푸터 */
+.ka-f { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-next { background: #2E7D32; color: white; border: none; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(12px, 2vw, 16px); cursor: pointer; transition: background 0.2s; }
+.ka-prev { background: #B0BEC5; }
+.ka-next:hover { background: #1B5E20; }
+.ka-next.hl { animation: ka-pulse 1.4s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="window.history.back()">← 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+
+    <!-- 슬1: 돗자리 자유 선택 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">어느 돗자리에 앉고 싶나요?</h1>
+      <div class="slide-sub">두 돗자리 중 마음에 드는 것을 골라 보세요</div>
+      <div class="pick-stage">
+        <div class="pick-row" id="pick-row">
+          <div class="pick-card" data-pick="big">
+            <svg class="mat-svg" width="180" height="120" viewBox="0 0 180 120">
+              <rect width="180" height="120" fill="#FFE082" rx="10"/>
+              <text x="90" y="70" font-size="40" text-anchor="middle">🌸</text>
+            </svg>
+            <div class="pick-name">큰 돗자리</div>
+          </div>
+          <div class="pick-card" data-pick="small">
+            <svg class="mat-svg" width="100" height="80" viewBox="0 0 100 80">
+              <rect width="100" height="80" fill="#FFCC80" rx="10"/>
+              <text x="50" y="50" font-size="30" text-anchor="middle">🐻</text>
+            </svg>
+            <div class="pick-name">작은 돗자리</div>
+          </div>
+        </div>
+        <div class="pick-q">두 돗자리는 무엇이 <strong>다른</strong>가요?</div>
+      </div>
+    </div>
+
+    <!-- 슬2: 학습 목표 -->
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">오늘 배울 것</h1>
+      <div class="goal-card">
+        <div class="goal-icon">🟦</div>
+        <div class="goal-line">두 면의 <strong>넓이</strong>를 비교하는 방법을 배워 봐요</div>
+        <div class="goal-chips">
+          <div class="goal-chip-big">
+            <div class="goal-chip-emoji">🟩</div>
+            <div class="goal-chip-text">더 넓다</div>
+          </div>
+          <div class="goal-chip-big narrow">
+            <div class="goal-chip-emoji">🟫</div>
+            <div class="goal-chip-text">더 좁다</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬3: 4속성 회상 (넓이 강조) -->
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">길이·무게를 배웠으니</h1>
+      <div class="slide-sub">오늘은 '넓이'예요</div>
+      <div class="recall-stage">
+        <div class="recall-grid">
+          <div class="recall-card done" data-attr="length"><div class="recall-emoji">📏</div><div class="recall-name">길이</div></div>
+          <div class="recall-card done" data-attr="weight"><div class="recall-emoji">⚖️</div><div class="recall-name">무게</div></div>
+          <div class="recall-card today" data-attr="area"><div class="recall-emoji">🟦</div><div class="recall-name">넓이</div></div>
+          <div class="recall-card" data-attr="volume"><div class="recall-emoji">🥛</div><div class="recall-name">들이</div></div>
+        </div>
+        <div class="recall-hint">오늘은 <strong style="color:#DC2626">넓이</strong> 카드를 눌러 만나 봐요</div>
+      </div>
+    </div>
+
+    <!-- 슬4: 직관 비교 -->
+    <div class="slide" data-slide="4" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">눈으로 보아 알 수 있어요</h1>
+      <div class="contain-stage">
+        <div class="contain-svg-wrap">
+          <svg width="320" height="200" viewBox="0 0 320 200">
+            <rect x="10" y="20" width="180" height="120" fill="#FFE082" rx="10" stroke="#FFA726" stroke-width="3"/>
+            <text x="100" y="90" font-size="40" text-anchor="middle">🌸</text>
+            <rect x="210" y="80" width="100" height="80" fill="#FFCC80" rx="10" stroke="#FFA726" stroke-width="3"/>
+            <text x="260" y="130" font-size="30" text-anchor="middle">🐻</text>
+          </svg>
+        </div>
+        <div class="contain-cap">차이가 크게 나면 <strong>눈으로 보아</strong> 어느 것이 더 넓은지 알 수 있어요</div>
+      </div>
+    </div>
+
+    <!-- 슬5: 겹쳐 보기 area_overlap -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">겹쳐 보기로 비교해요</h1>
+      <div class="slide-sub">작은 종이를 큰 종이 위로 끌어 보세요</div>
+      <div class="ao-stage">
+        <div class="ao-board" data-ao="5">
+          <div class="ao-shape" data-id="ao5-base" style="left:20px; top:30px; width:240px; height:160px; background:#66BB6A; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.12);" data-fixed="yes">
+            <span class="ao-shape-label">큰 종이</span>
+          </div>
+          <div class="ao-shape" data-id="ao5-move" style="left:300px; top:80px; width:140px; height:90px; background:#FFA726; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.12);">
+            <span class="ao-shape-label">작은 종이</span>
+          </div>
+        </div>
+        <div class="ao-status" id="ao-status-5">작은 종이를 큰 종이 위로 끌어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬6: '넓다·좁다' 용어 -->
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">'넓다'와 '좁다'</h1>
+      <div class="slide-sub">카드를 하나씩 눌러 보세요</div>
+      <div class="term-stage">
+        <div class="term-row">
+          <div class="term-card" data-term="wide"><div class="term-emoji">🟩</div><div class="term-word">더 넓다 <span class="term-star">⭐</span></div></div>
+          <div class="term-card narrow" data-term="narrow"><div class="term-emoji">🟫</div><div class="term-word">더 좁다 <span class="term-star">⭐</span></div></div>
+        </div>
+        <div class="recap-body">큰 면 = <strong>더 넓다</strong> / 작은 면 = <strong style="color:#E65100">더 좁다</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬7: 포함 관계 -->
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">세 가지를 비교하면?</h1>
+      <div class="contain-stage">
+        <div class="contain-svg-wrap">
+          <svg width="320" height="200" viewBox="0 0 320 200">
+            <rect x="10" y="10" width="300" height="180" fill="#C8E6C9" rx="14" stroke="#66BB6A" stroke-width="3"/>
+            <rect x="50" y="40" width="180" height="120" fill="#FFE082" rx="10" stroke="#FFA726" stroke-width="3"/>
+            <rect x="80" y="70" width="80" height="60" fill="#90CAF9" rx="6" stroke="#42A5F5" stroke-width="3"/>
+            <text x="120" y="105" font-size="14" text-anchor="middle" fill="#1976D2">교실</text>
+            <text x="180" y="50" font-size="14" text-anchor="middle" fill="#E65100">운동장</text>
+            <text x="160" y="195" font-size="14" text-anchor="middle" fill="#2E7D32">학교</text>
+          </svg>
+        </div>
+        <div class="contain-cap">
+          학교 > 운동장 > 교실 순서로<br>
+          <strong>가장 넓다 · 가장 좁다</strong>고 말해요
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬8: 책 vs 수첩 -->
+    <div class="slide" data-slide="8" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">책과 수첩</h1>
+      <div class="slide-sub">수첩을 책 위로 끌어 겹쳐 보세요</div>
+      <div class="ao-stage">
+        <div class="ao-board" data-ao="8">
+          <div class="ao-shape" data-id="ao8-base" style="left:30px; top:30px; width:220px; height:160px; background:#42A5F5; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.12);" data-fixed="yes">
+            <span class="ao-shape-label">📕 책</span>
+          </div>
+          <div class="ao-shape" data-id="ao8-move" style="left:310px; top:80px; width:110px; height:80px; background:#AB47BC; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,0.12);">
+            <span class="ao-shape-label">📓 수첩</span>
+          </div>
+        </div>
+        <div class="ao-status" id="ao-status-8">수첩을 책 위로 끌어 보세요</div>
+        <div class="ap-options" data-ap="8" data-answer="wide-book">
+          <button class="ap-btn" data-pick="wide-book">책이 더 넓습니다</button>
+          <button class="ap-btn" data-pick="wide-note">수첩이 더 넓습니다</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-8"></div>
+      </div>
+    </div>
+
+    <!-- 슬9: 스케치북 vs 메모지 -->
+    <div class="slide" data-slide="9" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">스케치북과 메모지</h1>
+      <div class="slide-sub">메모지를 스케치북 위로 끌어 겹쳐 보세요</div>
+      <div class="ao-stage">
+        <div class="ao-board" data-ao="9">
+          <div class="ao-shape" data-id="ao9-base" style="left:30px; top:20px; width:260px; height:180px; background:#FFA726; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.12);" data-fixed="yes">
+            <span class="ao-shape-label">📒 스케치북</span>
+          </div>
+          <div class="ao-shape" data-id="ao9-move" style="left:330px; top:80px; width:70px; height:90px; background:#FFEB3B; border-radius:4px; box-shadow:0 4px 10px rgba(0,0,0,0.12);">
+            <span class="ao-shape-label">📝 메모지</span>
+          </div>
+        </div>
+        <div class="ao-status" id="ao-status-9">메모지를 스케치북 위로 끌어 보세요</div>
+        <div class="ap-options" data-ap="9" data-answer="narrow-memo">
+          <button class="ap-btn" data-pick="narrow-memo">메모지가 더 좁습니다</button>
+          <button class="ap-btn" data-pick="narrow-sketch">스케치북이 더 좁습니다</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-9"></div>
+      </div>
+    </div>
+
+    <!-- 슬10: 세 물건 (가장 좁은 것) -->
+    <div class="slide" data-slide="10" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">세 가지 중 가장 좁은 것은?</h1>
+      <div class="tos-stage">
+        <div class="tos-objects">
+          <div class="tos-obj">
+            <div class="tos-rect" style="width:60px; height:80px;"></div>
+            <div class="tos-obj-emoji">📓</div>
+            <div class="tos-obj-name">수첩</div>
+          </div>
+          <div class="tos-obj">
+            <div class="tos-rect r2" style="width:120px; height:160px;"></div>
+            <div class="tos-obj-emoji">📕</div>
+            <div class="tos-obj-name">책</div>
+          </div>
+          <div class="tos-obj">
+            <div class="tos-rect r3" style="width:160px; height:200px;"></div>
+            <div class="tos-obj-emoji">📒</div>
+            <div class="tos-obj-name">스케치북</div>
+          </div>
+        </div>
+        <div class="tos-prompt"><strong>가장 좁은 것</strong>을 골라 보세요</div>
+        <div class="tos-options" data-tos="10" data-answer="note">
+          <button class="tos-btn" data-pick="note"><span class="tos-btn-emoji">📓</span>수첩</button>
+          <button class="tos-btn" data-pick="book"><span class="tos-btn-emoji">📕</span>책</button>
+          <button class="tos-btn" data-pick="sketch"><span class="tos-btn-emoji">📒</span>스케치북</button>
+        </div>
+        <div class="tos-fb" id="tos-fb-10"></div>
+      </div>
+    </div>
+
+    <!-- 슬11: 세 물건 (가장 넓은 것) -->
+    <div class="slide" data-slide="11" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">세 가지 중 가장 넓은 것은?</h1>
+      <div class="tos-stage">
+        <div class="tos-objects">
+          <div class="tos-obj">
+            <div class="tos-rect" style="width:60px; height:60px;"></div>
+            <div class="tos-obj-emoji">📱</div>
+            <div class="tos-obj-name">휴대폰</div>
+          </div>
+          <div class="tos-obj">
+            <div class="tos-rect r2" style="width:120px; height:90px;"></div>
+            <div class="tos-obj-emoji">💻</div>
+            <div class="tos-obj-name">노트북</div>
+          </div>
+          <div class="tos-obj">
+            <div class="tos-rect r3" style="width:200px; height:120px;"></div>
+            <div class="tos-obj-emoji">🖼️</div>
+            <div class="tos-obj-name">칠판</div>
+          </div>
+        </div>
+        <div class="tos-prompt"><strong>가장 넓은 것</strong>을 골라 보세요</div>
+        <div class="tos-options" data-tos="11" data-answer="board">
+          <button class="tos-btn" data-pick="phone"><span class="tos-btn-emoji">📱</span>휴대폰</button>
+          <button class="tos-btn" data-pick="laptop"><span class="tos-btn-emoji">💻</span>노트북</button>
+          <button class="tos-btn" data-pick="board"><span class="tos-btn-emoji">🖼️</span>칠판</button>
+        </div>
+        <div class="tos-fb" id="tos-fb-11"></div>
+      </div>
+    </div>
+
+    <!-- 슬12: 종이 접기 1턴 -->
+    <div class="slide" data-slide="12" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">종이 접기 놀이 ①</h1>
+      <div class="slide-sub">가위바위보에 진 종이가 반으로 접혀요</div>
+      <div class="pf-stage">
+        <div class="pf-arena">
+          <div class="pf-player">
+            <div class="pf-paper" id="pf-paper-12-1" style="width:120px; height:160px;"></div>
+            <div class="pf-player-name">A 종이</div>
+          </div>
+          <div class="pf-player">
+            <div class="pf-paper color2" id="pf-paper-12-2" style="width:120px; height:160px;"></div>
+            <div class="pf-player-name">B 종이</div>
+          </div>
+        </div>
+        <button class="pf-trigger-btn" id="pf-btn-12">가위바위보!</button>
+        <div class="ap-options pf-hidden" id="pf-ans-12" data-ap="12" data-answer="wide-a">
+          <button class="ap-btn" data-pick="wide-a">A 종이가 더 넓습니다</button>
+          <button class="ap-btn" data-pick="wide-b">B 종이가 더 넓습니다</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-12"></div>
+      </div>
+    </div>
+
+    <!-- 슬13: 종이 접기 2턴 -->
+    <div class="slide" data-slide="13" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">종이 접기 놀이 ②</h1>
+      <div class="slide-sub">다시 한 번 접으면 더 좁아져요</div>
+      <div class="pf-stage">
+        <div class="pf-arena">
+          <div class="pf-player">
+            <div class="pf-paper fold-1" id="pf-paper-13-1" style="width:120px; height:160px;"></div>
+            <div class="pf-player-name">A 종이 (한 번 접음)</div>
+          </div>
+          <div class="pf-player">
+            <div class="pf-paper color2" id="pf-paper-13-2" style="width:120px; height:160px;"></div>
+            <div class="pf-player-name">B 종이</div>
+          </div>
+        </div>
+        <button class="pf-trigger-btn" id="pf-btn-13">한 번 더 접어요!</button>
+        <div class="ap-options pf-hidden" id="pf-ans-13" data-ap="13" data-answer="narrow-a">
+          <button class="ap-btn" data-pick="narrow-a">A 종이가 더 좁습니다</button>
+          <button class="ap-btn" data-pick="narrow-b">B 종이가 더 좁습니다</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-13"></div>
+      </div>
+    </div>
+
+    <!-- 슬14: 모양 다른 함정 -->
+    <div class="slide" data-slide="14" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">모양이 달라도 넓이가 같을까요?</h1>
+      <div class="slide-sub">두 모양을 겹쳐 비교해 봐요</div>
+      <div class="ao-stage">
+        <div class="trap-banner">가로로 긴 <strong>직사각형</strong>과 <strong>정사각형</strong> 중 어느 것이 더 넓을까요?</div>
+        <div class="ao-board" data-ao="14">
+          <div class="ao-shape" data-id="ao14-base" style="left:30px; top:60px; width:240px; height:80px; background:#FFA726; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.12);" data-fixed="yes">
+            <span class="ao-shape-label">긴 직사각형</span>
+          </div>
+          <div class="ao-shape" data-id="ao14-move" style="left:330px; top:60px; width:138px; height:138px; background:#42A5F5; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.12);">
+            <span class="ao-shape-label">정사각형</span>
+          </div>
+        </div>
+        <div class="ao-status" id="ao-status-14">정사각형을 직사각형 위로 끌어 보세요</div>
+        <div class="trap-reveal" id="trap-reveal-14">두 모양이 <strong style="color:#1B5E20">서로 빠져나옴이 비슷</strong>하다면 넓이가 비슷할 수 있어요. 모양만 보고 알기 어려워요! +10점</div>
+      </div>
+    </div>
+
+    <!-- 슬15: 일상 적용 -->
+    <div class="slide" data-slide="15" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">빨래를 갤 때</h1>
+      <div class="slide-sub">두 옷을 펼쳐 비교해 봐요</div>
+      <div class="ap-stage">
+        <div style="background:#F8FBFF; border:2px solid #E3F2FD; border-radius:16px; padding:18px; display:flex; gap:30px; justify-content:center; align-items:center; width:100%;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:60px; height:80px; background:#FFEB3B; border-radius:6px;"></div>
+            <div style="font-size:clamp(28px,4.4vw,40px);">🧦</div>
+            <div style="font-size:clamp(12px,2vw,16px); color:#2E7D32;">양말</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:160px; height:180px; background:#42A5F5; border-radius:8px;"></div>
+            <div style="font-size:clamp(28px,4.4vw,40px);">👕</div>
+            <div style="font-size:clamp(12px,2vw,16px); color:#2E7D32;">티셔츠</div>
+          </div>
+        </div>
+        <div class="ap-prompt"><strong>티셔츠</strong>는 양말보다 어떤가요?</div>
+        <div class="ap-options" data-ap="15" data-answer="wider">
+          <button class="ap-btn" data-pick="wider">더 넓습니다</button>
+          <button class="ap-btn" data-pick="narrower">더 좁습니다</button>
+        </div>
+        <div class="ap-fb" id="ap-fb-15"></div>
+      </div>
+    </div>
+
+    <!-- 슬16: 요약 -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">오늘 배운 것</h1>
+      <div class="recap-stage">
+        <div class="recap-card">
+          <div class="recap-title2">🟦 넓이 비교 방법</div>
+          <div class="recap-body">두 면을 <strong>겹쳐 보면</strong> 어느 것이 더 넓은지 알 수 있어요</div>
+        </div>
+        <div class="recap-card" style="border-color:#FFA726;">
+          <div class="recap-title2" style="color:#E65100;">📝 넓이 비교 말</div>
+          <div class="recap-body">두 가지 → <strong>더 넓다 · 더 좁다</strong><br>세 가지 → <strong>가장 넓다 · 가장 좁다</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬17: 자기 평가 -->
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">스스로 점검해요</h1>
+      <div class="slide-sub">별을 눌러 표시해 보세요</div>
+      <div class="assess-stage">
+        <div class="assess-card">
+          <div class="assess-q">📚 <strong style="color:#1976D2; font-weight:400">지식·이해</strong> — 넓이 비교 방법(겹쳐 보기)을 알았나요?</div>
+          <div class="assess-stars" data-assess="d1"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">🔧 <strong style="color:#2E7D32; font-weight:400">과정·기능</strong> — '더 넓다·더 좁다'를 말할 수 있나요?</div>
+          <div class="assess-stars" data-assess="d2"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">💛 <strong style="color:#E65100; font-weight:400">가치·태도</strong> — 빨래·종이 활동을 해 보고 싶나요?</div>
+          <div class="assess-stars" data-assess="d3"><span class="assess-star" data-n="1">⭐</span><span class="assess-star" data-n="2">⭐</span><span class="assess-star" data-n="3">⭐</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬18: 다음 차시 -->
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="next-stage">
+        <div class="next-trophy">🏆</div>
+        <div class="next-title">잘 했어요!</div>
+        <div class="next-line">넓이 비교를 배웠으니<br>이제 들이 비교를 만나 봐요</div>
+        <div class="next-preview">📚 다음 차시 — 5차 어느 것에 더 많이 담을 수 있을까요</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script src="../../../../../kedu_tracker.js"></script>
+<script>
+const TOTAL = 18;
+let cur = 0;
+let score = 0;
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+let muted = false;
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+  if (window.keduTracker && window.keduTracker.recordScore) window.keduTracker.recordScore('g1_math_u4_04', score);
+}
+
+/* 슬1 자유 선택 */
+(function() {
+  const row = document.getElementById('pick-row');
+  if (!row) return;
+  let picked = false;
+  row.querySelectorAll('.pick-card').forEach(p => {
+    p.addEventListener('click', () => {
+      row.querySelectorAll('.pick-card').forEach(x => x.classList.remove('picked'));
+      p.classList.add('picked');
+      if (!picked) { picked = true; addScore(3); }
+    });
+  });
+})();
+
+/* 슬3 4속성 회상 */
+(function() {
+  const card = document.querySelector('.recall-card[data-attr="area"]');
+  if (!card) return;
+  const hint = document.querySelector('.recall-hint');
+  let opened = false;
+  card.addEventListener('click', () => {
+    if (opened) return;
+    opened = true;
+    hint.textContent = '맞아요! 오늘은 넓이를 자세히 만나 봐요 ⭐ +5점';
+    hint.classList.add('done');
+    addScore(5);
+  });
+})();
+
+/* area_overlap 공용 드래그 */
+function bindAo(shape, board, baseShape, onOverlap) {
+  let overlapped = false;
+  function startDrag(e) {
+    if (shape.classList.contains('overlapped') && !shape.dataset.trap) return;
+    e.preventDefault();
+    const rect = shape.getBoundingClientRect();
+    const boardRect = board.getBoundingClientRect();
+    const isTouch = e.type === 'touchstart';
+    const point = isTouch ? e.touches[0] : e;
+    const offsetX = point.clientX - rect.left;
+    const offsetY = point.clientY - rect.top;
+    shape.classList.add('dragging');
+    function onMove(ev) {
+      ev.preventDefault();
+      const p = ev.type === 'touchmove' ? ev.touches[0] : ev;
+      let newL = p.clientX - offsetX - boardRect.left;
+      let newT = p.clientY - offsetY - boardRect.top;
+      newL = Math.max(0, Math.min(boardRect.width - rect.width, newL));
+      newT = Math.max(0, Math.min(boardRect.height - rect.height, newT));
+      shape.style.left = newL + 'px';
+      shape.style.top = newT + 'px';
+    }
+    function onEnd() {
+      shape.classList.remove('dragging');
+      // 겹침 검사 (시각 자리 — base와 좌상단 차이 < 30)
+      const baseRect = baseShape.getBoundingClientRect();
+      const shapeRect = shape.getBoundingClientRect();
+      const overlapsBase = !(shapeRect.right < baseRect.left || shapeRect.left > baseRect.right || shapeRect.bottom < baseRect.top || shapeRect.top > baseRect.bottom);
+      if (overlapsBase && !overlapped) {
+        overlapped = true;
+        shape.classList.add('overlapped');
+        if (onOverlap) onOverlap();
+      }
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, {passive: false});
+    document.addEventListener('touchend', onEnd);
+  }
+  shape.addEventListener('mousedown', startDrag);
+  shape.addEventListener('touchstart', startDrag, {passive: false});
+}
+
+function setupAo(slideNum, opts) {
+  const board = document.querySelector('.ao-board[data-ao="' + slideNum + '"]');
+  if (!board) return;
+  const status = document.getElementById('ao-status-' + slideNum);
+  const baseShape = board.querySelector('.ao-shape[data-fixed="yes"]');
+  const moveShape = board.querySelector('.ao-shape:not([data-fixed])');
+  if (!moveShape) return;
+  bindAo(moveShape, board, baseShape, () => {
+    if (opts && opts.onOverlap) opts.onOverlap();
+    else {
+      status.textContent = '잘 겹쳤어요! 빠져나온 부분이 어느 쪽인지 보아요. +8점';
+      status.classList.add('done');
+      addScore(8);
+    }
+  });
+}
+setupAo(5);
+setupAo(8);
+setupAo(9);
+setupAo(14, {
+  onOverlap: () => {
+    const reveal = document.getElementById('trap-reveal-14');
+    const status = document.getElementById('ao-status-14');
+    if (reveal) reveal.classList.add('show');
+    if (status) { status.textContent = '겹쳐 보면 빠져나옴이 비슷해요'; status.classList.add('done'); }
+    addScore(10);
+  }
+});
+
+/* attribute_picker */
+function setupAp(slideNum) {
+  const group = document.querySelector('.ap-options[data-ap="' + slideNum + '"]');
+  if (!group) return;
+  const answer = group.dataset.answer;
+  const fb = document.getElementById('ap-fb-' + slideNum);
+  let solved = false;
+  let attempts = 0;
+  group.querySelectorAll('.ap-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      if (btn.dataset.pick === answer) {
+        solved = true;
+        btn.classList.add('correct');
+        group.querySelectorAll('.ap-btn').forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        fb.classList.add('done');
+      } else {
+        btn.classList.add('wrong');
+        fb.textContent = '다시 한 번 살펴봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+[8, 9, 12, 13, 15].forEach(setupAp);
+
+/* three_object_sort */
+function setupTos(slideNum) {
+  const group = document.querySelector('.tos-options[data-tos="' + slideNum + '"]');
+  if (!group) return;
+  const answer = group.dataset.answer;
+  const fb = document.getElementById('tos-fb-' + slideNum);
+  let solved = false;
+  let attempts = 0;
+  group.querySelectorAll('.tos-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      if (btn.dataset.pick === answer) {
+        solved = true;
+        btn.classList.add('correct');
+        group.querySelectorAll('.tos-btn').forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! +' + earn + '점';
+        fb.classList.remove('wrong');
+        fb.classList.add('done');
+      } else {
+        btn.classList.add('wrong');
+        fb.textContent = '다시 한 번 살펴봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+[10, 11].forEach(setupTos);
+
+/* 슬6 용어 카드 */
+(function() {
+  const cards = document.querySelectorAll('.term-card');
+  let opened = 0;
+  let awarded = false;
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('opened')) return;
+      card.classList.add('opened');
+      opened++;
+      if (opened === 2 && !awarded) { awarded = true; addScore(8); }
+    });
+  });
+})();
+
+/* paper_fold 슬12·13 */
+function setupPf(slideNum, foldClass) {
+  const btn = document.getElementById('pf-btn-' + slideNum);
+  if (!btn) return;
+  const paper1 = document.getElementById('pf-paper-' + slideNum + '-1');
+  const ans = document.getElementById('pf-ans-' + slideNum);
+  let triggered = false;
+  btn.addEventListener('click', () => {
+    if (triggered) return;
+    triggered = true;
+    btn.disabled = true;
+    setTimeout(() => {
+      paper1.classList.add(foldClass);
+      btn.textContent = '한 번 접혔어요!';
+      ans.classList.remove('pf-hidden');
+      addScore(5);
+    }, 600);
+  });
+}
+setupPf(12, 'fold-1');
+setupPf(13, 'fold-2');
+
+/* 자기 평가 */
+document.querySelectorAll('.assess-stars').forEach(group => {
+  let chosen = false;
+  group.querySelectorAll('.assess-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const n = parseInt(star.dataset.n, 10);
+      group.querySelectorAll('.assess-star').forEach(s => {
+        s.classList.toggle('on', parseInt(s.dataset.n, 10) <= n);
+      });
+      if (!chosen) { chosen = true; addScore(3); }
+    });
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>
