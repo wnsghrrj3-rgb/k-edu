@@ -36,7 +36,7 @@ LESSONS["u1_l2~3"] = {
     {id:"s11", stage:"기본문제", block:"match", data:{title:"사물과 숫자 짝짓기", pairs:[{emoji:"🍎", num:1},{emoji:"🐶🐱", num:2},{emoji:"🌸🌸🌸", num:3},{emoji:"⭐⭐⭐⭐", num:4},{emoji:"🚗🚗🚗🚗🚗", num:5}], type:"touch_match"}, suggested_extras:["g_card_match"]},
     {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"수 카드 보고 그림 고르기", card:3, options:[{emoji:"🐶🐶", count:2},{emoji:"🐶🐶🐶", count:3, correct:true},{emoji:"🐶🐶🐶🐶", count:4},{emoji:"🐶🐶🐶🐶🐶", count:5}], type:"choice4_image"}, suggested_extras:[]},
     {id:"s13", stage:"응용문제", block:"multi", data:{title:"둘 다 4개인 것을 모두 골라요", options:[{emoji:"🍎🍎🍎🍎", count:4, correct:true},{emoji:"🍌🍌🍌🍌", count:4, correct:true},{emoji:"🌸🌸🌸", count:3},{emoji:"⭐⭐⭐⭐⭐", count:5}], expectedCount:2, note:"추상화 검증 — 종류가 달라도 같은 수일 수 있어요"}, suggested_extras:["x_object_vs_number"]},
-    {id:"s14", stage:"응용문제", block:"match", data:{title:"숫자와 두 가지 읽기 짝짓기", target:3, pairs:[{label:"셋", kind:"우리말"},{label:"삼", kind:"한자어"}], type:"touch_match"}, suggested_extras:["m_two_readings","r_phone_number"]},
+    {id:"s14", stage:"응용문제", block:"match", data:{title:"숫자와 두 가지 읽기 짝짓기", target:3, pairs:[{label:"셋", kind:"우리말"},{label:"삼", kind:"한자어"}], type:"touch_match"}, suggested_extras:["g_num_word_match","m_two_readings","r_phone_number"]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"빠진 수 찾기", sequence:[1,2,3,"?",5], answer:4, input:"count_input"}, suggested_extras:[]},
     {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", table:[{num:1, kor:"하나", han:"일"},{num:2, kor:"둘", han:"이"},{num:3, kor:"셋", han:"삼"},{num:4, kor:"넷", han:"사"},{num:5, kor:"다섯", han:"오"}]}, suggested_extras:["b_number_book"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 평가", items:["수 세기를 잘했어요","수 쓰기를 잘했어요","두 가지 읽기를 잘했어요"], stars:3}, suggested_extras:[]},
@@ -58,6 +58,13 @@ LESSONS["u1_l2~3"] = {
       { a:{text:"3"}, b:{emoji:"⚽", count:3} },
       { a:{text:"4"}, b:{emoji:"✂️", count:4} },
       { a:{text:"5"}, b:{emoji:"🎲", count:5} }
+    ], fit_slides:["match","game"]},
+    {id:"g_num_word_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"숫자와 우리말 읽기 짝짓기", description:"숫자와 우리말 읽기의 짝을 찾아보세요.", content:"숫자 1~5와 우리말 읽기(하나·둘·셋·넷·다섯)를 뒤집어 놓고 짝 찾기.", hint:"숫자를 우리말로 읽어 보고 짝을 찾아요.", pairs:[
+      { a:{text:"1"}, b:{text:"하나"} },
+      { a:{text:"2"}, b:{text:"둘"} },
+      { a:{text:"3"}, b:{text:"셋"} },
+      { a:{text:"4"}, b:{text:"넷"} },
+      { a:{text:"5"}, b:{text:"다섯"} }
     ], fit_slides:["match","game"]},
     {id:"g_show_finger", type:"game", icon:"🎮", title:"손가락 빨리 들기", content:"교사가 '셋!' 외치면 손가락 3개를, '오!' 하면 5개를 빨리 드는 게임. 우리말·한자어 둘 다 사용.", fit_slides:["game","concept"]},
     {id:"b_number_book", type:"book", icon:"📖", title:"『숫자가 사라졌어요』 - 로렌 리디", content:"숫자가 사라진 세상 이야기로 수의 필요성·이름을 자연스럽게 배움.", source:"로렌 리디 / 비룡소", fit_slides:["motivate","summary"]},
@@ -87,7 +94,7 @@ LESSONS["u1_l4~5"] = {
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"십 배열판 6칸 — 몇 칸?", ten_frame:6, answer:6, input:"count_input"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"십 배열판 9칸 — 몇 칸?", ten_frame:9, answer:9, input:"count_input"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"사물 7개 세어 봐요", emoji:"🐰", count:7, answer:7, input:"count_input", note:"답한 뒤 우리말·한자어 두 가지로 읽어요"}, suggested_extras:["m_two_readings"]},
-    {id:"s11", stage:"기본문제", block:"match", data:{title:"십 배열판과 숫자 짝짓기", pairs:[{ten_frame:6,num:6},{ten_frame:7,num:7},{ten_frame:8,num:8},{ten_frame:9,num:9}], type:"touch_match"}, suggested_extras:[]},
+    {id:"s11", stage:"기본문제", block:"match", data:{title:"십 배열판과 숫자 짝짓기", pairs:[{ten_frame:6,num:6},{ten_frame:7,num:7},{ten_frame:8,num:8},{ten_frame:9,num:9}], type:"touch_match"}, suggested_extras:["g_ten_frame_match"]},
     {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"수만큼 십 배열판 채우기", target:8, component:"ten_frame", mode:"interactive", note:"숫자 8을 보고 ten_frame 8칸을 클릭으로 채워봐요"}, suggested_extras:["g_finger_show"]},
     {id:"s13", stage:"응용문제", block:"multi", data:{title:"둘 다 7개인 것을 모두 골라요", options:[{emoji:"🍎",count:7,correct:true},{emoji:"🍌",count:7,correct:true},{emoji:"🌸",count:6},{emoji:"⭐",count:9}], expectedCount:2}, suggested_extras:["x_object_vs_number"]},
     {id:"s14", stage:"응용문제", block:"match", data:{title:"숫자와 두 가지 읽기 짝짓기", target:8, pairs:[{label:"여덟",kind:"우리말"},{label:"팔",kind:"한자어"}], type:"touch_match"}, suggested_extras:["m_two_readings"]},
@@ -107,6 +114,12 @@ LESSONS["u1_l4~5"] = {
     {id:"r_team_member", type:"real_world", icon:"🌍", title:"모둠 친구 수", content:"우리 모둠은 6명. 옆 모둠은 8명. 어느 쪽이 더 많을까? 우리 반 전체는 몇 명?", fit_slides:["real_world","concept"]},
     {id:"r_egg_box", type:"real_world", icon:"🌍", title:"계란 한 판", content:"마트에서 계란을 사면 한 판에 10개가 들어 있어요. 9개를 먹으면 1개 남음. 십 배열판과 똑같이 생겼어요.", fit_slides:["real_world","visual_demo"]},
     {id:"g_finger_show", type:"game", icon:"🎮", title:"손가락 빨리 들기", content:"교사가 '여덟!' 하면 두 손 합쳐 8개를 빨리 드는 게임. '구!' 하면 9개. 우리말·한자어 둘 다 사용.", fit_slides:["game","concept"]},
+    {id:"g_ten_frame_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"십 배열판과 숫자 짝짓기", description:"십 배열판과 숫자의 같은 짝을 찾아보세요.", content:"숫자 6~9와 십 배열판(채워진 칸 수)을 뒤집어 놓고 짝 찾기.", hint:"십 배열판의 채워진 칸을 세어 짝을 찾아요.", pairs:[
+      { a:{text:"6"}, b:{ten_frame:6} },
+      { a:{text:"7"}, b:{ten_frame:7} },
+      { a:{text:"8"}, b:{ten_frame:8} },
+      { a:{text:"9"}, b:{ten_frame:9} }
+    ], fit_slides:["match","game"]},
     {id:"g_ten_frame_race", type:"game", icon:"🎮", title:"십 배열판 채우기 경주", content:"두 팀이 빈 십 배열판에 돌을 놓으며 N개를 빨리 채우는 게임. 잘못 세면 다시 시작.", fit_slides:["game","interactive"]},
     {id:"b_count_to_10", type:"book", icon:"📖", title:"『열까지 셀 줄 아는 아기염소』", content:"알프 프뢰위센. 아기 염소가 동물들을 만나며 1~10 세는 그림책. 한 마리씩 늘어나는 구조.", source:"알프 프뢰위센 / 마루벌", fit_slides:["motivate","concept"]},
     {id:"x_object_vs_number", type:"misconception", icon:"❓", title:"오개념 — 종류가 다르면 수도 다르다?", content:"사과 7과 자동차 7을 보고 다른 수로 답하는 경우. 일대일대응이나 십 배열판으로 둘 다 7이라는 같은 수임을 시각화.", fit_slides:["concept","multi"]},
@@ -386,7 +399,7 @@ LESSONS["u1_l11"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"평가 6번 일부 — 캔 5보다 1 적은 유리병", base:5, mode:"choice4", direction:"less", component:"more_less_one", answer:4}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"평가 6번 일부 — 캔 5보다 1 많은 페트병", base:5, mode:"choice4", direction:"more", component:"more_less_one", answer:6}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"종합 — 분리배출 세 그룹", items:[{label:"캔",count:5},{label:"유리병",count:4},{label:"페트병",count:6}], answers:[5,4,6], input:"count_input_3", note:"세 수 비교까지 한 번에 (실생활 연결)"}, suggested_extras:["r_recycling"]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"단원 학습 목표 회수", points:["수 세기와 두 가지 읽기","순서와 기준 순서","±1과 0","수의 크기 비교"], note:"이 모든 것을 1단원에서 배웠어요"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"단원 학습 목표 회수", points:["수 세기와 두 가지 읽기","순서와 기준 순서","±1과 0","수의 크기 비교"], note:"이 모든 것을 1단원에서 배웠어요"}, suggested_extras:["g_unit_review_match"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 평가 — 3차원", dimensions:["지식·이해","과정·기능","가치·태도"], prompts:["0~9까지의 수를 정확히 이해했어요","두 수의 크기를 잘 비교했어요","수 학습에 즐겁게 참여했어요"], starsPerDimension:3}, suggested_extras:[]},
     {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 단원", preview:"**여러 가지 모양** — 동그라미·세모·네모를 찾아봐요"}, suggested_extras:["e_to_unit2"]}
   ],
@@ -398,6 +411,13 @@ LESSONS["u1_l11"] = {
     {id:"m_two_readings", type:"tip", icon:"🧩", title:"우리말·한자어 두 가지", content:"수 세기는 우리말('넷')·순서·번호는 한자어('사번'). 평가 자리에서 둘 다 확인.", fit_slides:["basic_problem","summary"]},
     {id:"m_assessment_tip", type:"tip", icon:"🧩", title:"평가 진행 팁", content:"평가는 점수보다 어디가 어렵고 어디가 자신 있는지 확인하는 자리. 못한 부분도 다시 배우면 돼요.", fit_slides:["motivate","self_assessment"]},
     {id:"g_review_quiz", type:"game", icon:"🎮", title:"단원 복습 퀴즈", content:"짝과 함께 1단원 핵심 4가지(수 세기·순서·±1·비교)에서 한 문제씩 만들어 풀기. 모두 맞히면 박수!", fit_slides:["game","summary"]},
+    {id:"g_unit_review_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"1단원 종합 짝짓기", description:"1단원에서 배운 여러 영역의 짝을 찾아보세요.", content:"수 세기·순서·0·시각화를 한 게임으로 종합. 5쌍 — 영역별 1개씩.", hint:"읽기·순서수·십 배열판·0까지 1단원 전체를 떠올려 봐요.", pairs:[
+      { a:{text:"4"}, b:{ten_frame:4} },
+      { a:{text:"7"}, b:{emoji:"🥕", count:7} },
+      { a:{text:"9"}, b:{text:"구"} },
+      { a:{text:"5"}, b:{text:"다섯째"} },
+      { a:{text:"0"}, b:{ten_frame:0} }
+    ], fit_slides:["match","game","summary"]},
     {id:"g_card_review", type:"game", icon:"🎮", title:"카드로 빠른 복습", content:"0~9 카드 + 첫째~아홉째 카드 + '크다·작다·1만큼 더 큰·1만큼 더 작은' 카드를 섞어 빠르게 답하기.", fit_slides:["game","summary"]},
     {id:"b_review_book", type:"book", icon:"📖", title:"『수의 세계 한 바퀴』", content:"0~9까지의 수, 순서, 크기 비교를 모두 다루는 종합 그림책. 단원 마무리 자리.", source:"국내 그림책 다수 — 도서관 확인", fit_slides:["summary","motivate"]},
     {id:"x_assessment_fear", type:"misconception", icon:"❓", title:"오개념 — 평가 = 점수", content:"평가를 점수로만 받아들이는 학생. 평가는 자기를 알아가는 자리임을 강조. 못한 부분은 다시 배우면 됨.", fit_slides:["motivate","self_assessment"]},

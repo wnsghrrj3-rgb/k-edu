@@ -31,6 +31,14 @@
         .map(em => `<span class="mm-emoji">${em}</span>`).join('');
       return `<span class="mm-face mm-face-emojis mm-count-${face.count}">${items}</span>`;
     }
+    if (typeof face.ten_frame === 'number') {
+      const n = Math.max(0, Math.min(10, face.ten_frame));
+      let cells = '';
+      for (let i = 0; i < 10; i++) {
+        cells += `<span class="mm-tf-cell ${i < n ? 'filled' : ''}"></span>`;
+      }
+      return `<span class="mm-face mm-face-tenframe">${cells}</span>`;
+    }
     return '';
   }
 
