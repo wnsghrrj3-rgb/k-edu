@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<!--
+  u4_01 단원 도입 — 본격 5단계 18슬 base v1
+  ════════════════════════════════════════════════════════════
+  4단원 안 cycle 5 (양산 진입)
+
+  설계 출처:
+    - kedu/curriculum/math/g1/unit4/01차_단원도입/_PLAN.md (cycle 4 본격 매핑, 안 C)
+    - kedu/curriculum/math/g1/unit4/01차_단원도입/_SOURCE.md (지도서 246~249)
+
+  채택 안: 안 C — 5단계 골격 의미 재해석 18슬 (표준 18슬 유지 + 단원 도입 본질 살림)
+
+  5단계 18슬 구조:
+    1단계 도입 (3슬, "단원 만남"): 슬1·2·3
+      슬1: 흥미 유발 — 방 안 그림
+      슬2: 학습 목표 안내
+      슬3: 4속성 카드 등장 (four_attribute_preview 신규 부품)
+    2단계 전개 (4슬, "비교의 의미·필요성 발견"): 슬4·5·6·7
+      슬4: 필통 자리 (sticker_classify mode=pencilcase)
+      슬5: 책가방 자리 (sticker_classify mode=schoolbag)
+      슬6: 까닭 이야기 (4지선다)
+      슬7: 비교의 의미 정리
+    3단계 기본문제 (4슬, "단원 실천 활동 살펴보기"): 슬8·9·10·11
+      슬8: 길이 활동 (practice_picker item=length)
+      슬9: 무게 활동 (practice_picker item=weight)
+      슬10: 넓이 활동 (practice_picker item=area)
+      슬11: 들이 활동 (practice_picker item=volume)
+    4단계 응용문제 (4슬, "실천 활동 선택 + 다짐"): 슬12·13·14·15
+      슬12: 실천 활동 선택 (practice_picker mode=select)
+      슬13: 가족 사례
+      슬14: 다른 친구 선택 살펴보기
+      슬15: 실천해요 표 작성
+    5단계 정리 (3슬, "다짐 + 자기 평가 + 다음 차시"): 슬16·17·18
+      슬16: 다짐 카드 (commit_card 신규 부품)
+      슬17: 자기 평가 3차원 (self_assessment 1단원 표준 부품)
+      슬18: 다음 차시 예고 (2차 길이)
+
+  표준 자리:
+    ✅ 자동 진행 X (학생 직접 '다음 →' 누름)
+    ✅ tracker 점수 기록 자리 (placeholder)
+    ✅ 진행률 바 + 점수 표시
+    ✅ 음성 단어 노출 X — 🔊/🔇 아이콘만
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u4_01_v1">
+<title>단원 도입 · K-edu 1학년 수학 4단원</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../math-common.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+  background: #F0F7FF;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+  touch-action: manipulation;
+}
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,167,38,0.35); } 50% { box-shadow: 0 0 0 8px rgba(255,167,38,0.15); } }
+@keyframes ka-celebrate { 0% { transform: scale(1); } 30% { transform: scale(1.15) rotate(-3deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ─── 헤더·푸터·진행률 ─── */
+.ka {
+  background: white; width: 100vw; height: 100vh; height: 100dvh;
+  padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px);
+  color: #333; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: clamp(11px, 1.7vw, 14px); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(11px, 1.7vw, 14px); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; }
+.slide.active { display: flex; }
+.slide-title { font-size: clamp(20px, 3.4vw, 32px); margin: 0 0 clamp(4px, 0.8vw, 7px); line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub   { font-size: clamp(13px, 2.1vw, 18px); color: #607D8B; margin-bottom: clamp(8px, 1.5vw, 12px); text-align: center; flex-shrink: 0; }
+
+/* ─── 단계 배지 (좌상단) ─── */
+.stage-badge {
+  position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px);
+  background: #E3F2FD; color: #1976D2;
+  padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px);
+  border-radius: 999px;
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-family: 'Nunito', sans-serif; font-weight: 800;
+  z-index: 5;
+}
+
+/* ─── 슬1 환영 자리 ─── */
+.intro-scene {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.8vw, 16px);
+  max-width: 720px; width: 100%;
+}
+.intro-room {
+  background: linear-gradient(135deg, #E3F2FD 0%, #FFF8E1 100%);
+  border: 3px solid #90CAF9; border-radius: clamp(16px, 2.6vw, 24px);
+  padding: clamp(16px, 2.6vw, 24px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px);
+  width: 100%; position: relative;
+}
+.intro-room-objs {
+  font-size: clamp(36px, 6vw, 56px);
+  display: flex; flex-wrap: wrap; gap: clamp(6px, 1vw, 10px);
+  justify-content: center; align-items: center;
+  line-height: 1;
+}
+.intro-room-label {
+  font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center;
+}
+.intro-question {
+  background: #FFF; border: 2px solid #FFD54F; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px);
+  font-size: clamp(15px, 2.5vw, 21px); color: #1976D2; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.intro-question strong { color: #DC2626; font-weight: 400; text-decoration: underline; text-decoration-color: #DC2626; }
+
+/* ─── 슬2 학습 목표 자리 ─── */
+.goal-card {
+  background: linear-gradient(135deg, #FFF 0%, #FFF8E1 100%);
+  border: 3px solid #FFD54F; border-radius: clamp(16px, 2.6vw, 24px);
+  padding: clamp(16px, 2.6vw, 24px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 640px; width: 100%;
+}
+.goal-icon { font-size: clamp(40px, 6vw, 60px); line-height: 1; }
+.goal-line {
+  font-size: clamp(17px, 2.8vw, 24px); color: #455A64; text-align: center; line-height: 1.5;
+}
+.goal-line strong { color: #1976D2; font-weight: 400; background: #FFF; padding: 2px 8px; border-radius: 8px; }
+.goal-list {
+  display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 1vw, 10px); width: 100%;
+  margin-top: clamp(4px, 0.8vw, 8px);
+}
+.goal-chip {
+  background: #FFF; border: 2px solid #90CAF9; border-radius: clamp(10px, 1.6vw, 14px);
+  padding: clamp(8px, 1.4vw, 12px);
+  font-size: clamp(13px, 2.1vw, 18px); color: #1976D2; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+/* ─── 슬3 four_attribute_preview 자리 ─── */
+.attr-preview {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px);
+  width: 100%; max-width: 760px;
+}
+.attr-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(10px, 1.6vw, 14px);
+  width: 100%;
+}
+.attr-card {
+  background: #FFF; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px);
+  padding: clamp(12px, 2vw, 18px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px);
+  cursor: pointer; transition: all 0.3s;
+  position: relative;
+  opacity: 0.35;
+}
+.attr-card.revealed { opacity: 1; animation: ka-pop 0.5s ease both; border-color: #42A5F5; box-shadow: 0 4px 16px rgba(66,165,245,0.2); }
+.attr-card[data-attr="length"].revealed { border-color: #42A5F5; }
+.attr-card[data-attr="weight"].revealed { border-color: #FFA726; }
+.attr-card[data-attr="area"].revealed { border-color: #66BB6A; }
+.attr-card[data-attr="volume"].revealed { border-color: #AB47BC; }
+.attr-emoji { font-size: clamp(32px, 5vw, 50px); line-height: 1; }
+.attr-name { font-size: clamp(16px, 2.6vw, 22px); color: #1976D2; }
+.attr-card[data-attr="weight"].revealed .attr-name { color: #F57F17; }
+.attr-card[data-attr="area"].revealed .attr-name { color: #2E7D32; }
+.attr-card[data-attr="volume"].revealed .attr-name { color: #7B1FA2; }
+.attr-sub { font-size: clamp(12px, 1.9vw, 16px); color: #607D8B; text-align: center; }
+.attr-hint {
+  font-size: clamp(13px, 2.1vw, 17px); color: #DC2626; text-align: center;
+  background: #FFF8E1; padding: 8px 14px; border-radius: 12px;
+}
+
+/* ─── 슬4·5 sticker_classify 자리 ─── */
+.classify-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 780px; width: 100%;
+}
+.classify-pool {
+  background: #F8FBFF; border: 2px solid #E3F2FD; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.6vw, 14px);
+  display: flex; flex-wrap: wrap; gap: clamp(8px, 1.4vw, 12px);
+  justify-content: center; align-items: center;
+  width: 100%; min-height: clamp(60px, 9vw, 84px);
+}
+.sticker {
+  font-size: clamp(28px, 4.5vw, 44px);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: clamp(46px, 7vw, 64px); height: clamp(46px, 7vw, 64px);
+  background: #FFF; border: 2px solid #BDBDBD; border-radius: 50%;
+  cursor: grab; user-select: none;
+  touch-action: none;
+  transition: transform 0.2s, filter 0.2s, border-color 0.2s;
+  line-height: 1;
+  animation: ka-pop 0.4s ease both;
+  flex-shrink: 0;
+  position: relative;
+}
+.sticker:active { cursor: grabbing; transform: scale(1.15); }
+.sticker.dragging { z-index: 100; transform: scale(1.2); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
+.sticker.placed-ok { border-color: #66BB6A; animation: ka-celebrate 0.5s ease; }
+.sticker.placed-no { border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.classify-target {
+  background: #FFF8E1; border: 3px dashed #FFD54F; border-radius: clamp(14px, 2.2vw, 20px);
+  padding: clamp(14px, 2.2vw, 20px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px);
+  width: 100%; min-height: clamp(120px, 18vw, 180px);
+  position: relative;
+  animation: ka-glow 2s ease-in-out infinite;
+}
+.classify-target.has-items { animation: none; }
+.classify-target-emoji { font-size: clamp(40px, 6vw, 60px); line-height: 1; }
+.classify-target-label {
+  position: absolute; top: clamp(-12px, -1.6vw, -14px); left: 50%; transform: translateX(-50%);
+  background: #F57F17; color: white;
+  font-family: inherit;
+  padding: clamp(3px, 0.6vw, 5px) clamp(10px, 1.6vw, 16px);
+  border-radius: 999px;
+  font-size: clamp(13px, 2vw, 17px);
+}
+.classify-target-bin {
+  display: flex; flex-wrap: wrap; gap: clamp(6px, 1vw, 10px);
+  justify-content: center; align-items: center;
+  min-height: clamp(50px, 8vw, 70px); width: 100%;
+}
+.classify-fb {
+  font-size: clamp(13px, 2.1vw, 18px); color: #1976D2; text-align: center; min-height: 1.6em;
+}
+.classify-fb.done { color: #2E7D32; font-weight: 400; }
+
+/* ─── 슬6 까닭 4지선다 자리 ─── */
+.reason-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px);
+  max-width: 720px; width: 100%;
+}
+.reason-prompt {
+  background: #FFF; border: 2px solid #FFD54F; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(12px, 2vw, 18px);
+  font-size: clamp(15px, 2.5vw, 22px); color: #455A64; text-align: center; line-height: 1.5;
+  width: 100%;
+}
+.reason-prompt strong { color: #DC2626; font-weight: 400; }
+.reason-options {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%;
+}
+.reason-btn {
+  background: #FFF; border: 2px solid #90CAF9; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(12px, 2vw, 18px);
+  font-family: inherit; font-size: clamp(14px, 2.3vw, 20px); color: #1976D2;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.reason-btn:hover { background: #E3F2FD; }
+.reason-btn.correct { background: #C8E6C9; border-color: #66BB6A; color: #2E7D32; }
+.reason-btn.wrong { background: #FFCDD2; border-color: #EF5350; animation: ka-shake 0.4s ease; }
+.reason-btn.disabled { opacity: 0.4; pointer-events: none; }
+.reason-fb {
+  font-size: clamp(13px, 2.1vw, 18px); color: #1976D2; text-align: center; min-height: 1.6em;
+}
+.reason-fb.wrong { color: #EF5350; }
+.reason-fb.done { color: #2E7D32; font-weight: 400; }
+
+/* ─── 슬7 비교 의미 정리 ─── */
+.summary-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 720px; width: 100%;
+}
+.summary-line {
+  font-size: clamp(16px, 2.7vw, 23px); color: #455A64; text-align: center; line-height: 1.5;
+}
+.summary-line strong { color: #1976D2; font-weight: 400; background: #FFF8E1; padding: 2px 8px; border-radius: 8px; }
+.summary-attrs {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%;
+}
+.summary-attr-cell {
+  background: #F8FBFF; border: 2px solid #90CAF9; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.6vw, 14px);
+  display: flex; align-items: center; gap: clamp(8px, 1.4vw, 12px);
+  font-size: clamp(13px, 2.1vw, 18px); color: #455A64;
+}
+.summary-attr-emoji { font-size: clamp(28px, 4.5vw, 40px); line-height: 1; flex-shrink: 0; }
+.summary-attr-text strong { color: #1976D2; font-weight: 400; }
+
+/* ─── 슬8~12 practice_picker 자리 ─── */
+.practice-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 720px; width: 100%;
+}
+.practice-card {
+  background: linear-gradient(135deg, #FFF 0%, #E3F2FD 100%);
+  border: 3px solid #42A5F5; border-radius: clamp(16px, 2.6vw, 22px);
+  padding: clamp(14px, 2.4vw, 20px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px);
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.practice-card:hover { transform: translateY(-2px); }
+.practice-card.expanded { background: linear-gradient(135deg, #FFF 0%, #FFF8E1 100%); border-color: #FFD54F; }
+.practice-card[data-item="weight"] { border-color: #FFA726; background: linear-gradient(135deg, #FFF 0%, #FFF3E0 100%); }
+.practice-card[data-item="weight"].expanded { background: linear-gradient(135deg, #FFF 0%, #FFE0B2 100%); }
+.practice-card[data-item="area"] { border-color: #66BB6A; background: linear-gradient(135deg, #FFF 0%, #E8F5E9 100%); }
+.practice-card[data-item="area"].expanded { background: linear-gradient(135deg, #FFF 0%, #C8E6C9 100%); }
+.practice-card[data-item="volume"] { border-color: #AB47BC; background: linear-gradient(135deg, #FFF 0%, #F3E5F5 100%); }
+.practice-card[data-item="volume"].expanded { background: linear-gradient(135deg, #FFF 0%, #E1BEE7 100%); }
+.practice-emoji { font-size: clamp(48px, 7.5vw, 72px); line-height: 1; }
+.practice-title { font-size: clamp(18px, 3vw, 26px); color: #1976D2; }
+.practice-card[data-item="weight"] .practice-title { color: #E65100; }
+.practice-card[data-item="area"] .practice-title { color: #2E7D32; }
+.practice-card[data-item="volume"] .practice-title { color: #6A1B9A; }
+.practice-detail {
+  display: none; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px);
+  animation: ka-fadeUp 0.4s ease both;
+  width: 100%;
+}
+.practice-card.expanded .practice-detail { display: flex; }
+.practice-scene {
+  font-size: clamp(40px, 6vw, 60px); line-height: 1.2; text-align: center;
+}
+.practice-line {
+  font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.5;
+}
+.practice-line strong { color: #DC2626; font-weight: 400; }
+.practice-hint {
+  font-size: clamp(12px, 2vw, 16px); color: #1976D2;
+  background: #FFF; padding: 6px 12px; border-radius: 10px;
+  margin-top: 4px;
+}
+
+/* practice_picker mode=select (슬12 자리) */
+.picker-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 760px; width: 100%;
+}
+.picker-prompt {
+  background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.8vw, 16px) clamp(14px, 2.4vw, 22px);
+  font-size: clamp(15px, 2.5vw, 21px); color: #1976D2; text-align: center;
+}
+.picker-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%;
+}
+.picker-card {
+  background: #FFF; border: 3px solid #E3F2FD; border-radius: clamp(14px, 2.2vw, 20px);
+  padding: clamp(12px, 2vw, 18px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px);
+  cursor: pointer; transition: all 0.2s;
+  position: relative;
+}
+.picker-card:hover { transform: translateY(-2px); background: #F8FBFF; }
+.picker-card[data-item="length"] { border-color: #42A5F5; }
+.picker-card[data-item="weight"] { border-color: #FFA726; }
+.picker-card[data-item="area"] { border-color: #66BB6A; }
+.picker-card[data-item="volume"] { border-color: #AB47BC; }
+.picker-card.selected { animation: ka-celebrate 0.5s ease; box-shadow: 0 6px 20px rgba(245,127,23,0.4); }
+.picker-card.selected::after {
+  content: '⭐';
+  position: absolute; top: 6px; right: 6px;
+  font-size: clamp(20px, 3vw, 26px);
+}
+.picker-emoji { font-size: clamp(34px, 5.4vw, 52px); line-height: 1; }
+.picker-name { font-size: clamp(15px, 2.5vw, 21px); color: #1976D2; }
+.picker-card[data-item="weight"] .picker-name { color: #E65100; }
+.picker-card[data-item="area"] .picker-name { color: #2E7D32; }
+.picker-card[data-item="volume"] .picker-name { color: #6A1B9A; }
+.picker-fb {
+  font-size: clamp(13px, 2.1vw, 18px); color: #2E7D32; text-align: center; min-height: 1.6em; font-weight: 400;
+}
+
+/* ─── 슬13 가족 사례·슬14 친구 살펴보기 ─── */
+.family-scene {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 720px; width: 100%;
+}
+.family-card {
+  background: #FFF; border: 3px solid #FFD54F; border-radius: clamp(14px, 2.2vw, 20px);
+  padding: clamp(14px, 2.4vw, 20px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vw, 12px);
+  width: 100%;
+}
+.family-figure { font-size: clamp(50px, 7.8vw, 80px); line-height: 1; }
+.family-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.5; }
+.family-line strong { color: #1976D2; font-weight: 400; background: #FFF8E1; padding: 2px 6px; border-radius: 6px; }
+
+.friend-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 1.4vw, 12px); width: 100%;
+}
+.friend-card {
+  background: #FFF; border: 2px solid #90CAF9; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.6vw, 14px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 8px);
+  cursor: pointer; transition: all 0.2s;
+}
+.friend-card:hover { background: #E3F2FD; transform: translateY(-2px); }
+.friend-card.opened { background: #FFF8E1; border-color: #FFD54F; }
+.friend-avatar { font-size: clamp(38px, 6vw, 56px); line-height: 1; }
+.friend-name { font-size: clamp(13px, 2.1vw, 18px); color: #1976D2; }
+.friend-detail {
+  display: none; font-size: clamp(11px, 1.8vw, 15px); color: #455A64; text-align: center; line-height: 1.4;
+  animation: ka-fadeUp 0.3s ease both;
+}
+.friend-card.opened .friend-detail { display: block; }
+
+/* ─── 슬15 실천해요 표 작성 ─── */
+.plan-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 720px; width: 100%;
+}
+.plan-prompt {
+  background: #E3F2FD; border: 2px solid #90CAF9; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.8vw, 16px);
+  font-size: clamp(14px, 2.3vw, 19px); color: #1976D2; text-align: center;
+}
+.plan-table {
+  background: #FFF; border: 3px solid #42A5F5; border-radius: clamp(14px, 2.2vw, 20px);
+  padding: clamp(12px, 2vw, 18px);
+  display: flex; flex-direction: column; gap: clamp(8px, 1.4vw, 12px);
+  width: 100%;
+}
+.plan-row {
+  display: grid; grid-template-columns: 1fr 2fr; gap: clamp(8px, 1.4vw, 12px);
+  align-items: center;
+  padding: clamp(8px, 1.4vw, 12px);
+  background: #F8FBFF; border-radius: clamp(10px, 1.6vw, 14px);
+  font-size: clamp(13px, 2.1vw, 18px);
+}
+.plan-row-label { color: #1976D2; font-family: inherit; }
+.plan-row-value { color: #455A64; }
+.plan-row-value strong { color: #F57F17; font-weight: 400; background: #FFF8E1; padding: 2px 6px; border-radius: 6px; }
+
+/* ─── 슬16 commit_card 자리 ─── */
+.commit-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 16px);
+  max-width: 720px; width: 100%;
+}
+.commit-card {
+  background: linear-gradient(135deg, #FFF 0%, #FFF8E1 100%);
+  border: 3px solid #FFD54F; border-radius: clamp(16px, 2.6vw, 24px);
+  padding: clamp(18px, 2.8vw, 26px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(255,167,38,0.2);
+}
+.commit-icon { font-size: clamp(50px, 7.8vw, 76px); line-height: 1; }
+.commit-line {
+  font-size: clamp(16px, 2.7vw, 23px); color: #455A64; text-align: center; line-height: 1.6;
+}
+.commit-line strong {
+  color: #F57F17; font-weight: 400;
+  background: #FFF; padding: 4px 12px; border-radius: 10px;
+  border: 2px solid #FFD54F;
+  display: inline-block;
+  margin: 0 4px;
+}
+.commit-signature {
+  font-size: clamp(13px, 2.2vw, 18px); color: #1976D2; text-align: center;
+  margin-top: clamp(4px, 0.8vw, 8px);
+}
+
+/* ─── 슬17 self_assessment 3차원 자리 ─── */
+.assess-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 1.6vw, 14px);
+  max-width: 720px; width: 100%;
+}
+.assess-card {
+  background: #FFF; border: 2px solid #90CAF9; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.6vw, 14px);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1vw, 10px);
+  width: 100%;
+}
+.assess-q { font-size: clamp(14px, 2.3vw, 19px); color: #455A64; text-align: center; line-height: 1.4; }
+.assess-stars { display: flex; gap: clamp(6px, 1vw, 10px); }
+.assess-star {
+  font-size: clamp(28px, 4.4vw, 40px); cursor: pointer; opacity: 0.3; transition: all 0.2s;
+  line-height: 1;
+}
+.assess-star.on { opacity: 1; animation: ka-pop 0.3s ease both; }
+
+/* ─── 슬18 다음 차시 예고 ─── */
+.next-stage {
+  display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2vw, 18px);
+  max-width: 640px; width: 100%;
+}
+.next-trophy { font-size: clamp(56px, 9vw, 100px); line-height: 1; }
+.next-title {
+  font-size: clamp(20px, 3.4vw, 30px);
+  color: #1976D2; text-align: center;
+}
+.next-line { font-size: clamp(15px, 2.5vw, 21px); color: #455A64; text-align: center; line-height: 1.6; }
+.next-preview {
+  background: #FFF8E1; border: 2px solid #FFD54F; border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(10px, 1.8vw, 14px) clamp(14px, 2.4vw, 22px);
+  font-size: clamp(14px, 2.3vw, 19px);
+  color: #F57F17; text-align: center;
+}
+
+/* 푸터 */
+.ka-f { display: flex; justify-content: space-between; align-items: center; padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-next {
+  background: #1976D2; color: white; border: none;
+  padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px);
+  border-radius: clamp(10px, 1.7vw, 14px);
+  font-family: inherit; font-size: clamp(12px, 2vw, 16px);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ka-prev { background: #B0BEC5; }
+.ka-next:hover { background: #1565C0; }
+.ka-next.hl { animation: ka-pulse 1.4s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="window.history.back()">← 종료</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-score" id="score">⭐ 0</div>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+    <!-- ════════ 1단계 도입 (슬 1~3) — 단원 만남 ════════ -->
+
+    <!-- 슬1: 환영 — 방 안 그림 + 발문 -->
+    <div class="slide active" data-slide="1" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">비교하기를 시작해요</h1>
+      <div class="slide-sub">우리 둘레에 있는 물건들을 살펴봐요</div>
+      <div class="intro-scene">
+        <div class="intro-room">
+          <div class="intro-room-objs">📚 ✏️ 🎒 🧸 🍎 🥛</div>
+          <div class="intro-room-label">교실 안 여러 물건들</div>
+        </div>
+        <div class="intro-question">학생은 <strong>무엇을 비교</strong>해 본 적이 있나요?</div>
+      </div>
+    </div>
+
+    <!-- 슬2: 학습 목표 안내 -->
+    <div class="slide" data-slide="2" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">오늘부터 배울 것</h1>
+      <div class="goal-card">
+        <div class="goal-icon">🎯</div>
+        <div class="goal-line">4가지 방법으로 <strong>비교하기</strong>를 배워 봐요</div>
+        <div class="goal-list">
+          <div class="goal-chip">📏 길이</div>
+          <div class="goal-chip">⚖️ 무게</div>
+          <div class="goal-chip">🟦 넓이</div>
+          <div class="goal-chip">🥛 들이</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬3: 4속성 카드 등장 (four_attribute_preview 신규 부품) -->
+    <div class="slide" data-slide="3" data-stage="1">
+      <div class="stage-badge">1단계 · 도입</div>
+      <h1 class="slide-title">4가지 비교 만나기</h1>
+      <div class="slide-sub">카드를 하나씩 눌러서 만나 봐요</div>
+      <div class="attr-preview">
+        <div class="attr-grid" id="attr-grid">
+          <div class="attr-card" data-attr="length">
+            <div class="attr-emoji">📏</div>
+            <div class="attr-name">길이</div>
+            <div class="attr-sub">더 길다 · 더 짧다</div>
+          </div>
+          <div class="attr-card" data-attr="weight">
+            <div class="attr-emoji">⚖️</div>
+            <div class="attr-name">무게</div>
+            <div class="attr-sub">더 무겁다 · 더 가볍다</div>
+          </div>
+          <div class="attr-card" data-attr="area">
+            <div class="attr-emoji">🟦</div>
+            <div class="attr-name">넓이</div>
+            <div class="attr-sub">더 넓다 · 더 좁다</div>
+          </div>
+          <div class="attr-card" data-attr="volume">
+            <div class="attr-emoji">🥛</div>
+            <div class="attr-name">들이</div>
+            <div class="attr-sub">더 많다 · 더 적다</div>
+          </div>
+        </div>
+        <div class="attr-hint" id="attr-hint">카드를 하나씩 눌러 보세요</div>
+      </div>
+    </div>
+
+    <!-- ════════ 2단계 전개 (슬 4~7) — 비교의 의미·필요성 발견 ════════ -->
+
+    <!-- 슬4: 필통 자리 (sticker_classify mode=pencilcase) -->
+    <div class="slide" data-slide="4" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">필통에 무엇을 넣을까요?</h1>
+      <div class="slide-sub">필통에 들어갈 수 있는 물건을 끌어다 넣어 보세요</div>
+      <div class="classify-stage">
+        <div class="classify-pool" id="pool-4">
+          <span class="sticker" data-id="s4-1" data-fit="yes" data-name="연필">✏️</span>
+          <span class="sticker" data-id="s4-2" data-fit="yes" data-name="지우개">🩹</span>
+          <span class="sticker" data-id="s4-3" data-fit="no" data-name="책가방">🎒</span>
+          <span class="sticker" data-id="s4-4" data-fit="yes" data-name="가위">✂️</span>
+          <span class="sticker" data-id="s4-5" data-fit="no" data-name="공">⚽</span>
+        </div>
+        <div class="classify-target" id="target-4">
+          <div class="classify-target-label">필통</div>
+          <div class="classify-target-emoji">🖊️</div>
+          <div class="classify-target-bin" id="bin-4"></div>
+        </div>
+        <div class="classify-fb" id="fb-4">필통에 들어갈 수 있는 작은 물건만 넣어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬5: 책가방 자리 (sticker_classify mode=schoolbag) -->
+    <div class="slide" data-slide="5" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">책가방에 무엇을 넣을까요?</h1>
+      <div class="slide-sub">책가방에 들어갈 수 있는 물건을 끌어다 넣어 보세요</div>
+      <div class="classify-stage">
+        <div class="classify-pool" id="pool-5">
+          <span class="sticker" data-id="s5-1" data-fit="yes" data-name="책">📚</span>
+          <span class="sticker" data-id="s5-2" data-fit="yes" data-name="필통">🖊️</span>
+          <span class="sticker" data-id="s5-3" data-fit="yes" data-name="공책">📓</span>
+          <span class="sticker" data-id="s5-4" data-fit="no" data-name="자전거">🚲</span>
+          <span class="sticker" data-id="s5-5" data-fit="no" data-name="식탁">🪑</span>
+        </div>
+        <div class="classify-target" id="target-5">
+          <div class="classify-target-label">책가방</div>
+          <div class="classify-target-emoji">🎒</div>
+          <div class="classify-target-bin" id="bin-5"></div>
+        </div>
+        <div class="classify-fb" id="fb-5">책가방에 들어갈 수 있는 물건만 넣어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬6: 까닭 이야기 4지선다 -->
+    <div class="slide" data-slide="6" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">왜 그렇게 나누었을까요?</h1>
+      <div class="reason-stage">
+        <div class="reason-prompt">
+          필통에는 <strong>작은</strong> 물건만, 책가방에는 <strong>좀 더 큰</strong> 물건도 넣었어요.<br>
+          이렇게 나눈 까닭은 무엇일까요?
+        </div>
+        <div class="reason-options" data-reason="6" data-answer="size">
+          <button class="reason-btn" data-pick="color">색깔이 달라서</button>
+          <button class="reason-btn" data-pick="size">크기·길이가 달라서</button>
+          <button class="reason-btn" data-pick="name">이름이 달라서</button>
+          <button class="reason-btn" data-pick="age">새 물건이라서</button>
+        </div>
+        <div class="reason-fb" id="reason-fb-6">맞다고 생각하는 것을 골라 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬7: 비교의 의미 정리 -->
+    <div class="slide" data-slide="7" data-stage="2">
+      <div class="stage-badge">2단계 · 전개</div>
+      <h1 class="slide-title">비교의 의미</h1>
+      <div class="summary-stage">
+        <div class="summary-line">
+          물건들은 <strong>길이·무게·넓이·들이</strong>가 모두 달라요<br>
+          그래서 우리는 <strong>비교</strong>하면서 살아가요
+        </div>
+        <div class="summary-attrs">
+          <div class="summary-attr-cell">
+            <div class="summary-attr-emoji">📏</div>
+            <div class="summary-attr-text"><strong>길이</strong> — 얼마나 긴가</div>
+          </div>
+          <div class="summary-attr-cell">
+            <div class="summary-attr-emoji">⚖️</div>
+            <div class="summary-attr-text"><strong>무게</strong> — 얼마나 무거운가</div>
+          </div>
+          <div class="summary-attr-cell">
+            <div class="summary-attr-emoji">🟦</div>
+            <div class="summary-attr-text"><strong>넓이</strong> — 얼마나 넓은가</div>
+          </div>
+          <div class="summary-attr-cell">
+            <div class="summary-attr-emoji">🥛</div>
+            <div class="summary-attr-text"><strong>들이</strong> — 얼마나 담을 수 있는가</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 3단계 기본문제 (슬 8~11) — 단원 실천 활동 살펴보기 ════════ -->
+
+    <!-- 슬8: 길이 실천 활동 -->
+    <div class="slide" data-slide="8" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">실천 활동 1 · 길이 비교</h1>
+      <div class="slide-sub">카드를 눌러서 활동을 펼쳐 보세요</div>
+      <div class="practice-stage">
+        <div class="practice-card" data-item="length" data-slide-id="8">
+          <div class="practice-emoji">🥄</div>
+          <div class="practice-title">우리 가족 수저 길이 비교</div>
+          <div class="practice-detail">
+            <div class="practice-scene">🥄 🥄 🥄</div>
+            <div class="practice-line">
+              가족 수저를 한 자리에 모아<br>
+              <strong>가장 긴 것</strong>과 <strong>가장 짧은 것</strong>을 찾아 봐요
+            </div>
+            <div class="practice-hint">💡 끝을 같은 곳에 맞춰 보세요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬9: 무게 실천 활동 -->
+    <div class="slide" data-slide="9" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">실천 활동 2 · 무게 비교</h1>
+      <div class="slide-sub">카드를 눌러서 활동을 펼쳐 보세요</div>
+      <div class="practice-stage">
+        <div class="practice-card" data-item="weight" data-slide-id="9">
+          <div class="practice-emoji">🧸</div>
+          <div class="practice-title">장난감 정리하기</div>
+          <div class="practice-detail">
+            <div class="practice-scene">🧸 ⚽ 🎮</div>
+            <div class="practice-line">
+              장난감을 양손에 들어 보고<br>
+              <strong>더 무거운 것</strong>과 <strong>더 가벼운 것</strong>을 찾아 봐요
+            </div>
+            <div class="practice-hint">💡 양손으로 동시에 들어 보면 잘 알 수 있어요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬10: 넓이 실천 활동 -->
+    <div class="slide" data-slide="10" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">실천 활동 3 · 넓이 비교</h1>
+      <div class="slide-sub">카드를 눌러서 활동을 펼쳐 보세요</div>
+      <div class="practice-stage">
+        <div class="practice-card" data-item="area" data-slide-id="10">
+          <div class="practice-emoji">🧺</div>
+          <div class="practice-title">빨래 개기</div>
+          <div class="practice-detail">
+            <div class="practice-scene">👕 🧦 🧣</div>
+            <div class="practice-line">
+              옷을 펼쳐 보고<br>
+              <strong>더 넓은 것</strong>과 <strong>더 좁은 것</strong>을 찾아 봐요
+            </div>
+            <div class="practice-hint">💡 두 옷을 겹쳐 보면 잘 알 수 있어요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬11: 들이 실천 활동 -->
+    <div class="slide" data-slide="11" data-stage="3">
+      <div class="stage-badge">3단계 · 기본</div>
+      <h1 class="slide-title">실천 활동 4 · 들이 비교</h1>
+      <div class="slide-sub">카드를 눌러서 활동을 펼쳐 보세요</div>
+      <div class="practice-stage">
+        <div class="practice-card" data-item="volume" data-slide-id="11">
+          <div class="practice-emoji">🥛</div>
+          <div class="practice-title">물 따르기</div>
+          <div class="practice-detail">
+            <div class="practice-scene">🥛 🍶 🪣</div>
+            <div class="practice-line">
+              여러 통에 물을 가득 부어 보고<br>
+              <strong>더 많이</strong> 담을 수 있는 통을 찾아 봐요
+            </div>
+            <div class="practice-hint">💡 물이 넘치지 않게 조심해요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 4단계 응용문제 (슬 12~15) — 실천 활동 선택 + 다짐 ════════ -->
+
+    <!-- 슬12: 실천 활동 선택 (practice_picker mode=select) -->
+    <div class="slide" data-slide="12" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">어떤 활동을 해 볼까요?</h1>
+      <div class="picker-stage">
+        <div class="picker-prompt">4가지 중 <strong>가장 하고 싶은 활동</strong> 하나를 골라 보세요</div>
+        <div class="picker-grid" id="picker-grid">
+          <div class="picker-card" data-item="length" data-name="길이 비교">
+            <div class="picker-emoji">🥄</div>
+            <div class="picker-name">길이 비교</div>
+          </div>
+          <div class="picker-card" data-item="weight" data-name="무게 비교">
+            <div class="picker-emoji">🧸</div>
+            <div class="picker-name">무게 비교</div>
+          </div>
+          <div class="picker-card" data-item="area" data-name="넓이 비교">
+            <div class="picker-emoji">🧺</div>
+            <div class="picker-name">넓이 비교</div>
+          </div>
+          <div class="picker-card" data-item="volume" data-name="들이 비교">
+            <div class="picker-emoji">🥛</div>
+            <div class="picker-name">들이 비교</div>
+          </div>
+        </div>
+        <div class="picker-fb" id="picker-fb">활동을 하나 골라 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬13: 가족 사례 -->
+    <div class="slide" data-slide="13" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">가족과 함께 해 봐요</h1>
+      <div class="family-scene">
+        <div class="family-card">
+          <div class="family-figure">👨‍👩‍👧</div>
+          <div class="family-line">
+            우리 가족과 함께 <strong>비교 활동</strong>을 해 볼 수 있어요<br>
+            아빠·엄마·동생과 같이 하면 더 재미있어요
+          </div>
+        </div>
+        <div class="family-card" style="background:#FFF8E1; border-color:#FFD54F;">
+          <div class="family-figure" style="font-size:clamp(32px,5vw,46px)">🥄 👨 👧</div>
+          <div class="family-line">
+            예: 아빠 수저와 내 수저를 끝을 맞추어 <strong>길이</strong>를 비교해 봐요
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬14: 다른 친구 선택 살펴보기 -->
+    <div class="slide" data-slide="14" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">친구들은 무엇을 골랐을까요?</h1>
+      <div class="slide-sub">친구 카드를 눌러 보세요</div>
+      <div class="family-scene">
+        <div class="friend-list" id="friend-list">
+          <div class="friend-card" data-friend="민지">
+            <div class="friend-avatar">👧</div>
+            <div class="friend-name">민지</div>
+            <div class="friend-detail">엄마와 함께 빨래를 개며 <strong>넓이</strong> 비교를 해요</div>
+          </div>
+          <div class="friend-card" data-friend="준호">
+            <div class="friend-avatar">👦</div>
+            <div class="friend-name">준호</div>
+            <div class="friend-detail">아빠와 장난감을 정리하며 <strong>무게</strong> 비교를 해요</div>
+          </div>
+          <div class="friend-card" data-friend="소율">
+            <div class="friend-avatar">🧒</div>
+            <div class="friend-name">소율</div>
+            <div class="friend-detail">동생과 우유를 따르며 <strong>들이</strong> 비교를 해요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬15: 실천해요 표 작성 -->
+    <div class="slide" data-slide="15" data-stage="4">
+      <div class="stage-badge">4단계 · 응용</div>
+      <h1 class="slide-title">실천해요 표</h1>
+      <div class="plan-stage">
+        <div class="plan-prompt">학생이 고른 활동이 표에 자리 잡았어요</div>
+        <div class="plan-table">
+          <div class="plan-row">
+            <div class="plan-row-label">고른 활동</div>
+            <div class="plan-row-value" id="plan-activity"><strong>--</strong> 비교</div>
+          </div>
+          <div class="plan-row">
+            <div class="plan-row-label">언제</div>
+            <div class="plan-row-value">학교에서 돌아온 후 <strong>저녁</strong>에</div>
+          </div>
+          <div class="plan-row">
+            <div class="plan-row-label">누구와</div>
+            <div class="plan-row-value">가족 또는 <strong>친구</strong>와 함께</div>
+          </div>
+          <div class="plan-row">
+            <div class="plan-row-label">며칠 동안</div>
+            <div class="plan-row-value">단원이 끝날 때까지 <strong>꾸준히</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ 5단계 정리 (슬 16~18) — 다짐 + 자기 평가 + 다음 차시 ════════ -->
+
+    <!-- 슬16: 다짐 카드 (commit_card 신규 부품) -->
+    <div class="slide" data-slide="16" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">나의 다짐</h1>
+      <div class="commit-stage">
+        <div class="commit-card">
+          <div class="commit-icon">🤝</div>
+          <div class="commit-line">
+            저는 4단원을 배우며<br>
+            <strong id="commit-activity">--</strong> 활동을<br>
+            <strong style="background:#E3F2FD; border-color:#90CAF9; color:#1976D2;">꾸준히 실천</strong>할 것을 다짐합니다
+          </div>
+          <div class="commit-signature">— 1학년 어린이 —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬17: 자기 평가 3차원 (self_assessment) -->
+    <div class="slide" data-slide="17" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <h1 class="slide-title">스스로 점검해요</h1>
+      <div class="slide-sub">별을 눌러 표시해 보세요</div>
+      <div class="assess-stage">
+        <div class="assess-card">
+          <div class="assess-q">📚 <strong style="color:#1976D2; font-weight:400">지식·이해</strong> — 비교의 의미를 알게 되었나요?</div>
+          <div class="assess-stars" data-assess="d1">
+            <span class="assess-star" data-n="1">⭐</span>
+            <span class="assess-star" data-n="2">⭐</span>
+            <span class="assess-star" data-n="3">⭐</span>
+          </div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">🔧 <strong style="color:#2E7D32; font-weight:400">과정·기능</strong> — 비교할 4가지를 잘 살펴보았나요?</div>
+          <div class="assess-stars" data-assess="d2">
+            <span class="assess-star" data-n="1">⭐</span>
+            <span class="assess-star" data-n="2">⭐</span>
+            <span class="assess-star" data-n="3">⭐</span>
+          </div>
+        </div>
+        <div class="assess-card">
+          <div class="assess-q">💛 <strong style="color:#E65100; font-weight:400">가치·태도</strong> — 단원 실천 활동을 꾸준히 해 보고 싶나요?</div>
+          <div class="assess-stars" data-assess="d3">
+            <span class="assess-star" data-n="1">⭐</span>
+            <span class="assess-star" data-n="2">⭐</span>
+            <span class="assess-star" data-n="3">⭐</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬18: 다음 차시 예고 -->
+    <div class="slide" data-slide="18" data-stage="5">
+      <div class="stage-badge">5단계 · 정리</div>
+      <div class="next-stage">
+        <div class="next-trophy">🏆</div>
+        <div class="next-title">단원 시작을 잘 마쳤어요</div>
+        <div class="next-line">
+          4가지 비교 자리를 미리 살펴보았어요<br>
+          이제 하나씩 자세히 만나 봐요
+        </div>
+        <div class="next-preview">📚 다음 차시 — 2차 어느 것이 더 길까요</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()" disabled>← 이전</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script src="../../../../../kedu_tracker.js"></script>
+<script>
+const TOTAL = 18;
+let cur = 0;
+let score = 0;
+let selectedActivity = null;
+let selectedActivityName = null;
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur+1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur+1)/TOTAL*100) + '%';
+  document.getElementById('prev').disabled = (cur === 0);
+  document.getElementById('next').disabled = (cur >= TOTAL-1);
+}
+function goNext() { if (cur < TOTAL-1) { cur++; updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+
+let muted = false;
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute').textContent = muted ? '🔇' : '🔊';
+}
+
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+  if (window.keduTracker && window.keduTracker.recordScore) {
+    window.keduTracker.recordScore('g1_math_u4_01', score);
+  }
+}
+
+/* ─── 슬3 four_attribute_preview 자리 ─── */
+(function() {
+  const grid = document.getElementById('attr-grid');
+  if (!grid) return;
+  const hint = document.getElementById('attr-hint');
+  let revealed = 0;
+  grid.querySelectorAll('.attr-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('revealed')) return;
+      card.classList.add('revealed');
+      revealed++;
+      if (revealed === 4) {
+        hint.textContent = '4가지 비교를 모두 만났어요! +10점';
+        hint.style.color = '#2E7D32';
+        hint.style.background = '#C8E6C9';
+        addScore(10);
+      } else {
+        hint.textContent = (4 - revealed) + '가지 더 남았어요';
+      }
+    });
+  });
+})();
+
+/* ─── 슬4·5 sticker_classify 자리 (공용 드래그) ─── */
+function bindStickerDrag(sticker, targetBin, onDrop) {
+  function startDrag(e) {
+    if (sticker.classList.contains('placed-ok')) return;
+    e.preventDefault();
+    const rect = sticker.getBoundingClientRect();
+    const isTouch = e.type === 'touchstart';
+    const point = isTouch ? e.touches[0] : e;
+    const offsetX = point.clientX - rect.left;
+    const offsetY = point.clientY - rect.top;
+    sticker.classList.add('dragging');
+    sticker.style.position = 'fixed';
+    sticker.style.left = (point.clientX - offsetX) + 'px';
+    sticker.style.top = (point.clientY - offsetY) + 'px';
+    sticker.style.pointerEvents = 'none';
+    function onMove(ev) {
+      ev.preventDefault();
+      const p = ev.type === 'touchmove' ? ev.touches[0] : ev;
+      sticker.style.left = (p.clientX - offsetX) + 'px';
+      sticker.style.top = (p.clientY - offsetY) + 'px';
+      const r = targetBin.getBoundingClientRect();
+      const over = p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom;
+      targetBin.parentElement.style.transform = over ? 'scale(1.02)' : '';
+    }
+    function onEnd(ev) {
+      const p = ev.type === 'touchend' ? ev.changedTouches[0] : ev;
+      const r = targetBin.getBoundingClientRect();
+      const over = p.clientX >= r.left && p.clientX <= r.right && p.clientY >= r.top && p.clientY <= r.bottom;
+      sticker.classList.remove('dragging');
+      sticker.style.position = '';
+      sticker.style.left = '';
+      sticker.style.top = '';
+      sticker.style.pointerEvents = '';
+      targetBin.parentElement.style.transform = '';
+      if (over) {
+        if (sticker.dataset.fit === 'yes') {
+          targetBin.appendChild(sticker);
+          sticker.classList.add('placed-ok');
+          if (onDrop) onDrop('ok', sticker);
+        } else {
+          sticker.classList.add('placed-no');
+          setTimeout(() => sticker.classList.remove('placed-no'), 500);
+          if (onDrop) onDrop('no', sticker);
+        }
+      }
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, {passive: false});
+    document.addEventListener('touchend', onEnd);
+  }
+  sticker.addEventListener('mousedown', startDrag);
+  sticker.addEventListener('touchstart', startDrag, {passive: false});
+}
+
+function setupClassify(slideNum) {
+  const pool = document.getElementById('pool-' + slideNum);
+  const bin = document.getElementById('bin-' + slideNum);
+  const target = document.getElementById('target-' + slideNum);
+  const fb = document.getElementById('fb-' + slideNum);
+  if (!pool || !bin) return;
+  const fitTotal = pool.querySelectorAll('.sticker[data-fit="yes"]').length;
+  let placedOk = 0;
+  let wrongCount = 0;
+  let awarded = false;
+  pool.querySelectorAll('.sticker').forEach(s => {
+    bindStickerDrag(s, bin, (result, sticker) => {
+      if (result === 'ok') {
+        placedOk++;
+        target.classList.add('has-items');
+        if (placedOk === fitTotal && !awarded) {
+          awarded = true;
+          fb.textContent = '잘 골라 넣었어요! +10점';
+          fb.classList.add('done');
+          addScore(10);
+        } else {
+          fb.textContent = (fitTotal - placedOk) + '가지 더 들어갈 수 있어요';
+        }
+      } else {
+        wrongCount++;
+        fb.textContent = '그 물건은 ' + (slideNum === 4 ? '필통' : '책가방') + '에 잘 맞지 않아요';
+      }
+    });
+  });
+}
+setupClassify(4);
+setupClassify(5);
+
+/* ─── 슬6 까닭 4지선다 ─── */
+(function() {
+  const group = document.querySelector('.reason-options[data-reason="6"]');
+  if (!group) return;
+  const answer = group.dataset.answer;
+  const fb = document.getElementById('reason-fb-6');
+  let solved = false;
+  let attempts = 0;
+  group.querySelectorAll('.reason-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      attempts++;
+      const pick = btn.dataset.pick;
+      if (pick === answer) {
+        solved = true;
+        btn.classList.add('correct');
+        group.querySelectorAll('.reason-btn').forEach(b => { if (b !== btn) b.classList.add('disabled'); });
+        const earn = attempts === 1 ? 10 : (attempts === 2 ? 6 : 3);
+        addScore(earn);
+        fb.textContent = '정답이에요! 물건은 크기·길이가 달라서 자리도 달라져요. +' + earn + '점';
+        fb.classList.remove('wrong');
+        fb.classList.add('done');
+      } else {
+        btn.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 봐요';
+        fb.classList.add('wrong');
+        setTimeout(() => btn.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+/* ─── 슬8~11 practice_picker (open 모드) ─── */
+document.querySelectorAll('.practice-card[data-slide-id]').forEach(card => {
+  let opened = false;
+  card.addEventListener('click', () => {
+    if (!card.classList.contains('expanded')) {
+      card.classList.add('expanded');
+      if (!opened) {
+        opened = true;
+        addScore(5);
+      }
+    }
+  });
+});
+
+/* ─── 슬12 practice_picker (select 모드) ─── */
+(function() {
+  const grid = document.getElementById('picker-grid');
+  if (!grid) return;
+  const fb = document.getElementById('picker-fb');
+  let awarded = false;
+  grid.querySelectorAll('.picker-card').forEach(card => {
+    card.addEventListener('click', () => {
+      grid.querySelectorAll('.picker-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedActivity = card.dataset.item;
+      selectedActivityName = card.dataset.name;
+      fb.textContent = selectedActivityName + ' 활동을 골랐어요! ⭐';
+      // 슬15·16 자동 채움
+      const planEl = document.getElementById('plan-activity');
+      if (planEl) planEl.innerHTML = '<strong>' + selectedActivityName.replace(' 비교', '') + '</strong> 비교';
+      const commitEl = document.getElementById('commit-activity');
+      if (commitEl) commitEl.textContent = selectedActivityName;
+      if (!awarded) {
+        awarded = true;
+        addScore(10);
+      }
+    });
+  });
+})();
+
+/* ─── 슬14 친구 카드 열기 ─── */
+(function() {
+  const list = document.getElementById('friend-list');
+  if (!list) return;
+  let openedCount = 0;
+  let awarded = false;
+  list.querySelectorAll('.friend-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('opened')) return;
+      card.classList.add('opened');
+      openedCount++;
+      if (openedCount === 3 && !awarded) {
+        awarded = true;
+        addScore(8);
+      }
+    });
+  });
+})();
+
+/* ─── 슬17 self_assessment 3차원 ─── */
+document.querySelectorAll('.assess-stars').forEach(group => {
+  let chosen = false;
+  group.querySelectorAll('.assess-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const n = parseInt(star.dataset.n, 10);
+      group.querySelectorAll('.assess-star').forEach(s => {
+        s.classList.toggle('on', parseInt(s.dataset.n, 10) <= n);
+      });
+      if (!chosen) {
+        chosen = true;
+        addScore(3);
+      }
+    });
+  });
+});
+
+updateUI();
+</script>
+</body>
+</html>
