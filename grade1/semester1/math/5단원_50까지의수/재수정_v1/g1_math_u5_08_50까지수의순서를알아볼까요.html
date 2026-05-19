@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<!--
+  g1_math_u5_l08 — 50까지 수의 순서를 알아볼까요 (5단원 8차시)
+  ════════════════════════════════════════════════════════════
+  자리: kedu/curriculum/math/g1/unit5/08차_50까지수의순서를알아볼까요/draft.html
+  계획: _PLAN.md (2026-05-18, cycle 3)
+  지도서: _SOURCE.md (지도서 p.294-295, 40분 단일 차시)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+  양식 기반: 5단원 07차 draft.html (양식 일관 — qState[qid])
+
+  학습 본질: 단원 사다리 2 진입 — 수 사이 관계 (1만큼 큰/작은 수·수의 계열).
+  메카닉: number_neighbor_picker(신규, 슬4·5·6) + number_grid_50(신규, 슬7·8·9·10·11·15·16) + number_path_50(신규, 슬12·13·14) + count_input(입력) + self_assessment(슬17)
+  점수: 기본 4슬 × 10점 + 응용 4슬 × 15점 = 100점
+  단원 스토리: '건강한 여름을 보내요'. 슬1 좌석표 13번 + 슬14 점잇기 = 운동 친구(고래) 윤곽.
+  신규 부품: 3개 (number_neighbor_picker · number_grid_50 · number_path_50) — 표준 §부품 v3 갱신 자리 (정리 채팅)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g1_math_u5_l08_v1">
+<title>50까지 수의 순서를 알아볼까요 · K-edu 1학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --fs-title:   clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(25px, 3.8vw, 38px);
+  --fs-body:    clamp(22px, 3.3vw, 32px);
+  --fs-caption: clamp(20px, 3vw, 28px);
+  --fs-label:   clamp(15px, 2.2vw, 19px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(68px, 10.5vw, 128px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(820px, 96vw);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: #F0F7FF; display: flex; align-items: center; justify-content: center; font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(66,165,245,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(66,165,245,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(245,127,23,0); } 50% { box-shadow: 0 0 0 6px rgba(245,127,23,0.25); } }
+@keyframes ka-fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ka-pathDraw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #333; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; color: #555; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: #F0F7FF; border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: #42A5F5; border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: #1976D2; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: #F57F17; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: #FFF8E1; padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); }
+.ka-mute { background: #F4F4F8; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: #1976D2; font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(10px, 2vw, 20px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: #1976D2; font-weight: 400; text-align: center; flex-shrink: 0; }
+.slide-sub { font-size: var(--fs-caption); color: #607D8B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(8px, 1.5vw, 14px); left: clamp(12px, 2.2vw, 22px); background: #E3F2FD; color: #1976D2; padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F4F4F8; color: #6E6E78; }
+.ka-hint { background: #FFF8E1; color: #F57F17; }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: #42A5F5; color: white; box-shadow: 0 4px 14px rgba(66,165,245,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: #1976D2; }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ───── 슬 1 — 좌석표 도입 (단원 스토리: 영화관 13번 자리) ───── */
+.seat-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 18px); max-width: var(--mw-lg); width: 100%; }
+.seat-caption { font-size: var(--fs-body); color: #6D4C41; text-align: center; line-height: 1.5; }
+.seat-caption strong { color: #BF360C; }
+.seat-room { background: #FAFAFA; border: clamp(3px, 0.5vw, 4px) solid #B0BEC5; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(10px, 2vw, 16px) clamp(14px, 2.8vw, 22px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 10px); }
+.seat-screen { font-size: var(--fs-label); color: #607D8B; background: #ECEFF1; padding: clamp(4px, 0.8vw, 7px) clamp(40px, 7vw, 80px); border-radius: clamp(6px, 1vw, 10px); }
+.seat-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(3px, 0.5vw, 5px); }
+.seat-cell { width: clamp(26px, 4vw, 38px); height: clamp(26px, 4vw, 38px); background: white; border: clamp(2px, 0.4vw, 3px) solid #B0BEC5; border-radius: clamp(6px, 1vw, 9px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 1.9vw, 16px); color: #1976D2; }
+.seat-cell.target { background: #FFF8E1; border-color: #F57F17; color: transparent; animation: ka-glow 2s ease-in-out infinite; position: relative; }
+.seat-cell.target::after { content: '?'; color: #F57F17; font-size: clamp(14px, 2.3vw, 20px); }
+.seat-cell.character { background: #E3F2FD; border-color: #1565C0; font-size: clamp(16px, 2.6vw, 22px); }
+
+/* ───── 슬 2 — 학습 목표 카드 ───── */
+.goal-card { background: linear-gradient(135deg, #E3F2FD 0%, #FFF8E1 100%); border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(18px, 3vw, 28px); padding: clamp(20px, 3.6vw, 32px) clamp(24px, 4.4vw, 40px); max-width: var(--mw-md); display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); }
+.goal-emojis { font-size: var(--em-md); }
+.goal-title { font-size: var(--fs-heading); color: #1976D2; text-align: center; line-height: 1.4; }
+.goal-list { list-style: none; display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); font-size: var(--fs-body); color: #6D4C41; }
+.goal-list li { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); }
+.goal-list li::before { content: '🔵'; font-size: clamp(16px, 2.6vw, 22px); }
+
+/* ───── 슬 3 — 전시 학습 상기 (07차 묶음·낱개 + 단순 다음 수) ───── */
+.recall-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-md); }
+.recall-row { display: flex; gap: clamp(10px, 2vw, 18px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.recall-card { background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 18px) clamp(16px, 3vw, 24px); display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 7px); }
+.recall-card-label { font-size: var(--fs-label); color: #607D8B; }
+.recall-card-num { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(42px, 6.5vw, 64px); color: #1565C0; line-height: 1; }
+.recall-arrow { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.4vw, 44px); color: #F57F17; }
+.recall-caption { font-size: var(--fs-body); color: #6D4C41; text-align: center; line-height: 1.5; }
+.recall-caption strong { color: #BF360C; }
+
+/* ───── 슬 4·5·6 — number_neighbor_picker (1만큼 큰/작은 수, 양옆) ───── */
+.nnp-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-lg); width: 100%; }
+.nnp-prompt { font-size: var(--fs-heading); color: #333; text-align: center; line-height: 1.4; }
+.nnp-row { display: flex; gap: clamp(10px, 2vw, 16px); align-items: center; justify-content: center; flex-wrap: wrap; }
+.nnp-cell { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 0.8vw, 7px); }
+.nnp-cell-label { font-size: var(--fs-label); color: #607D8B; }
+.nnp-cell-box { background: #E3F2FD; border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(22px, 4vw, 36px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(48px, 7.5vw, 80px); color: #1976D2; min-width: clamp(110px, 17vw, 160px); text-align: center; line-height: 1; }
+.nnp-cell-box.given { background: #BBDEFB; }
+.nnp-cell-box.target { background: #FFF8E1; border-color: #F57F17; color: #F57F17; cursor: pointer; }
+.nnp-cell-box.target.active { animation: ka-glow 2s ease-in-out infinite; }
+.nnp-cell-box.empty { color: #FFCC80; }
+.nnp-cell-box.correct { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.nnp-cell-box.wrong { background: #FFCDD2; border-color: #C62828; color: #C62828; animation: ka-shake 0.4s ease; }
+.nnp-arrow { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(28px, 4.4vw, 44px); color: #1565C0; }
+
+/* ───── 숫자 패드 (공용 — 슬 4·5·6·8·9·10·11·15) ───── */
+.q-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(5px, 1vw, 8px); max-width: clamp(320px, 54vw, 460px); }
+.q-pad-btn { background: white; border: clamp(2px, 0.4vw, 3px) solid #1565C0; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 14px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(20px, 3.2vw, 28px); color: #1976D2; cursor: pointer; transition: all 0.15s; }
+.q-pad-btn:hover { background: #E3F2FD; }
+.q-pad-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.q-pad-btn.clear { background: #FFF8E1; color: #F57F17; border-color: #F57F17; }
+.q-fb { font-size: var(--fs-caption); min-height: 1.6em; color: #2E7D32; text-align: center; }
+.q-fb.wrong { color: #C62828; }
+.mcq-hint { font-size: var(--fs-caption); color: #F57F17; min-height: 1.4em; text-align: center; }
+
+/* ───── 슬 7·8·9·10·11·15·16 — number_grid_50 (수 배열표) ───── */
+.ng-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.ng-prompt { font-size: var(--fs-body); color: #333; text-align: center; line-height: 1.5; }
+.ng-prompt strong { color: #BF360C; }
+.ng-grid { display: grid; gap: clamp(3px, 0.5vw, 5px); padding: clamp(8px, 1.6vw, 12px); background: #F0F7FF; border-radius: clamp(12px, 2.2vw, 18px); }
+.ng-cell { background: white; border: clamp(2px, 0.4vw, 3px) solid #B0BEC5; border-radius: clamp(7px, 1.3vw, 10px); padding: clamp(6px, 1.2vw, 10px); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(18px, 2.9vw, 24px); color: #1976D2; text-align: center; min-width: clamp(34px, 5.4vw, 52px); }
+.ng-cell.blank { background: #FFF8E1; border-color: #F57F17; color: #F57F17; cursor: pointer; }
+.ng-cell.blank.active { animation: ka-glow 2s ease-in-out infinite; }
+.ng-cell.blank.empty::before { content: '?'; }
+.ng-cell.correct { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.ng-cell.wrong { background: #FFCDD2; border-color: #C62828; color: #C62828; animation: ka-shake 0.4s ease; }
+.ng-arrow-row { display: flex; gap: clamp(20px, 3.6vw, 32px); flex-wrap: wrap; justify-content: center; font-size: var(--fs-caption); color: #1565C0; }
+.ng-arrow-row span strong { color: #F57F17; }
+
+/* 슬 7 — 1~30 살펴보기 (학습 자리, 클릭 X) */
+.ng-grid.size-1-30 { grid-template-columns: repeat(10, 1fr); }
+.ng-grid.size-1-30 .ng-cell { font-size: clamp(14px, 2.3vw, 20px); padding: clamp(4px, 0.9vw, 7px); min-width: clamp(28px, 4.4vw, 42px); }
+
+/* ───── 슬 12·13·14 — number_path_50 (순서대로 클릭·점잇기) ───── */
+.np-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.np-prompt { font-size: var(--fs-body); color: #333; text-align: center; line-height: 1.5; }
+.np-prompt strong { color: #BF360C; }
+.np-board { background: #F0F7FF; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(10px, 2vw, 16px); position: relative; }
+.np-row { display: grid; grid-template-columns: repeat(10, 1fr); gap: clamp(4px, 0.8vw, 6px); padding: clamp(6px, 1.2vw, 10px); }
+.np-dot { background: white; border: clamp(2px, 0.4vw, 3px) solid #B0BEC5; border-radius: 50%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(14px, 2.2vw, 19px); color: #1976D2; cursor: pointer; transition: all 0.2s; }
+.np-dot.hl { background: #FFF8E1; border-color: #F57F17; color: #F57F17; animation: ka-glow 2s ease-in-out infinite; }
+.np-dot.tapped { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.np-dot.locked { background: #ECEFF1; border-color: #B0BEC5; color: #B0BEC5; cursor: default; }
+.np-dot.wrong { background: #FFCDD2; border-color: #C62828; color: #C62828; animation: ka-shake 0.4s ease; }
+.np-progress { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-caption); color: #1565C0; }
+
+/* 슬 14 — 점잇기 SVG (고래 윤곽) */
+.connect-wrap { position: relative; max-width: clamp(360px, 60vw, 580px); aspect-ratio: 16 / 10; background: linear-gradient(180deg, #E3F2FD 0%, #BBDEFB 100%); border: clamp(3px, 0.5vw, 4px) solid #1565C0; border-radius: clamp(14px, 2.6vw, 22px); overflow: hidden; }
+.connect-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.connect-dot { cursor: pointer; transition: all 0.2s; }
+.connect-dot circle { fill: white; stroke: #1565C0; stroke-width: 3; transition: all 0.2s; }
+.connect-dot text { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 14px; fill: #1976D2; pointer-events: none; }
+.connect-dot.hl circle { fill: #FFF8E1; stroke: #F57F17; }
+.connect-dot.hl text { fill: #F57F17; }
+.connect-dot.tapped circle { fill: #C8E6C9; stroke: #2E7D32; r: 7; }
+.connect-dot.tapped text { fill: #2E7D32; }
+.connect-line { stroke: #2E7D32; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.connect-whale { transition: opacity 1s ease; }
+.connect-whale-bg { fill: #1565C0; opacity: 0.85; }
+.connect-msg { font-size: var(--fs-caption); color: #2E7D32; min-height: 1.4em; text-align: center; font-weight: 800; }
+
+/* ───── 슬 15 — 회오리 빈칸 (number_grid_50 spiral) ───── */
+.spiral-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.spiral-wrap { position: relative; aspect-ratio: 1; width: clamp(300px, 50vw, 460px); }
+.spiral-cell { position: absolute; background: white; border: clamp(2px, 0.4vw, 3px) solid #B0BEC5; border-radius: clamp(7px, 1.3vw, 10px); display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: clamp(12px, 1.9vw, 16px); color: #1976D2; width: 18%; height: 18%; }
+.spiral-cell.blank { background: #FFF8E1; border-color: #F57F17; color: #F57F17; cursor: pointer; }
+.spiral-cell.blank.active { animation: ka-glow 2s ease-in-out infinite; }
+.spiral-cell.blank.empty::before { content: '?'; }
+.spiral-cell.correct { background: #C8E6C9; border-color: #2E7D32; color: #2E7D32; }
+.spiral-cell.wrong { background: #FFCDD2; border-color: #C62828; color: #C62828; animation: ka-shake 0.4s ease; }
+
+/* ───── 슬 16 — 정리 1~50 + 화살표 ───── */
+.summary-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2vw, 16px); max-width: var(--mw-lg); width: 100%; }
+.summary-caption { font-size: var(--fs-body); color: #6D4C41; text-align: center; line-height: 1.5; }
+.summary-caption strong { color: #BF360C; }
+.summary-pill { background: #FFF8E1; border: clamp(2.5px, 0.45vw, 3.5px) solid #F57F17; border-radius: 999px; padding: clamp(6px, 1.2vw, 10px) clamp(14px, 2.6vw, 22px); font-size: var(--fs-caption); color: #BF360C; }
+.summary-pill strong { color: #1565C0; }
+
+/* ───── 슬 17 — 자기 평가 (별 1~3, 세 자리) ───── */
+.self-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 2.4vw, 20px); max-width: var(--mw-md); width: 100%; }
+.self-row { display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); background: white; border: clamp(2.5px, 0.45vw, 3.5px) solid #B0BEC5; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(12px, 2.4vw, 18px); width: 100%; }
+.self-row-q { font-size: var(--fs-body); color: #333; text-align: center; }
+.self-row-stars { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; }
+.self-btn { background: #F4F4F8; border: clamp(2px, 0.4vw, 3px) solid #B0BEC5; border-radius: clamp(10px, 2vw, 16px); padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.6vw, 22px); font-size: clamp(24px, 4vw, 36px); cursor: pointer; transition: all 0.15s; }
+.self-btn:hover { background: #FFF8E1; }
+.self-btn.picked { background: #FFF8E1; border-color: #F57F17; }
+
+/* ───── 슬 18 — 다음 차시 예고 ───── */
+.wrap-stage { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); width: 100%; }
+.wrap-emoji { font-size: var(--em-lg); }
+.wrap-msg-text { font-size: var(--fs-heading); color: #1976D2; text-align: center; line-height: 1.4; }
+.wrap-next { background: #E8F5E9; border: clamp(2.5px, 0.45vw, 3.5px) solid #2E7D32; border-radius: clamp(14px, 2.6vw, 22px); padding: clamp(14px, 2.6vw, 22px) clamp(20px, 3.6vw, 32px); display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.2vw, 10px); }
+.wrap-next-label { font-size: var(--fs-label); color: #2E7D32; }
+.wrap-next-title { font-size: var(--fs-heading); color: #1B5E20; text-align: center; }
+</style>
+</head>
+<body>
+<div class="ka">
+
+  <!-- ════════════════════ 머리 ════════════════════ -->
+  <header class="ka-h">
+    <button class="ka-lb" onclick="goHub()">←</button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </header>
+
+  <!-- ════════════════════ 본문 ════════════════════ -->
+  <main class="ka-m">
+
+    <!-- 슬 1 — 도입: 흥미 유발 (영화관 13번 자리 찾기) -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 이야기</div>
+      <h2 class="slide-title">자리를 찾아 봐요</h2>
+      <div class="seat-stage">
+        <div class="seat-room">
+          <span class="seat-screen">🎬 영화관</span>
+          <div class="seat-grid" id="seatGrid1"></div>
+        </div>
+        <p class="seat-caption"><span style="font-size:1.4em;">🧒</span> 아이로가 <strong>13번 자리</strong>를 찾고 있어요.<br>13번은 어디 있을까요?</p>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 카드 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 목표</div>
+      <h2 class="slide-title">오늘의 목표</h2>
+      <div class="goal-card">
+        <div class="goal-emojis">🔢 🏃</div>
+        <p class="goal-title">50까지 수의 순서를<br>알아보아요!</p>
+        <ul class="goal-list">
+          <li>1만큼 더 큰 수 · 1만큼 더 작은 수를 찾아요</li>
+          <li>수 배열표에서 빠진 수를 찾아요</li>
+          <li>1부터 50까지 순서대로 세어 봐요</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 상기 (07차 묶음·낱개 + 단순 다음 수) -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 떠올리기</div>
+      <h2 class="slide-title">지난 시간엔 이렇게 배웠어요</h2>
+      <div class="recall-stage">
+        <div class="recall-row">
+          <div class="recall-card">
+            <span class="recall-card-label">묶음 3, 낱개 2</span>
+            <span class="recall-card-num">32</span>
+          </div>
+          <span class="recall-arrow">→</span>
+          <div class="recall-card">
+            <span class="recall-card-label">다음 수는?</span>
+            <span class="recall-card-num" style="color:#F57F17;">33</span>
+          </div>
+        </div>
+        <p class="recall-caption">32 <strong>다음 수</strong>는 33이에요.<br>오늘은 50까지 <strong>수의 순서</strong>를 알아봐요!</p>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 1만큼 더 큰 수 (12 → ?) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1 큰 수</div>
+      <h2 class="slide-title">12보다 1만큼 더 큰 수는?</h2>
+      <div class="nnp-stage">
+        <p class="nnp-prompt">12 다음 수를 찾아보세요.</p>
+        <div class="nnp-row">
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">기준 수</span>
+            <div class="nnp-cell-box given">12</div>
+          </div>
+          <span class="nnp-arrow">→</span>
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">1만큼 더 큰 수</span>
+            <div class="nnp-cell-box target active empty" id="nnp4Box">?</div>
+          </div>
+        </div>
+        <div class="q-pad" id="nnp4Pad">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="nnp-prompt" id="nnp4Fb" style="color:#2E7D32;min-height:1.4em;"></p>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 1만큼 더 작은 수 (? ← 14) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1 작은 수</div>
+      <h2 class="slide-title">14보다 1만큼 더 작은 수는?</h2>
+      <div class="nnp-stage">
+        <p class="nnp-prompt">14 바로 앞 수를 찾아보세요.</p>
+        <div class="nnp-row">
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">1만큼 더 작은 수</span>
+            <div class="nnp-cell-box target active empty" id="nnp5Box">?</div>
+          </div>
+          <span class="nnp-arrow">←</span>
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">기준 수</span>
+            <div class="nnp-cell-box given">14</div>
+          </div>
+        </div>
+        <div class="q-pad" id="nnp5Pad">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="nnp-prompt" id="nnp5Fb" style="color:#2E7D32;min-height:1.4em;"></p>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 양옆 동시 (? ← 25 → ?) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 양옆</div>
+      <h2 class="slide-title">25 양옆의 수는?</h2>
+      <div class="nnp-stage">
+        <p class="nnp-prompt">25보다 1만큼 작은 수와 1만큼 큰 수를 차례로 찾아보세요.</p>
+        <div class="nnp-row">
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">1 작은 수</span>
+            <div class="nnp-cell-box target active empty" id="nnp6Left">?</div>
+          </div>
+          <span class="nnp-arrow">←</span>
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">기준 수</span>
+            <div class="nnp-cell-box given">25</div>
+          </div>
+          <span class="nnp-arrow">→</span>
+          <div class="nnp-cell">
+            <span class="nnp-cell-label">1 큰 수</span>
+            <div class="nnp-cell-box target empty" id="nnp6Right">?</div>
+          </div>
+        </div>
+        <div class="q-pad" id="nnp6Pad">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="nnp-prompt" id="nnp6Fb" style="color:#2E7D32;min-height:1.4em;"></p>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 1~30 수 배열표 살펴보기 (number_grid_50) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 수 배열표</div>
+      <h2 class="slide-title">수 배열표에서 규칙을 찾아 봐요</h2>
+      <div class="ng-stage">
+        <div class="ng-grid size-1-30" id="grid7"></div>
+        <div class="ng-arrow-row">
+          <span>➡️ <strong>오른쪽</strong>은 1 큰 수</span>
+          <span>⬇️ <strong>아래</strong>는 10 큰 수</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제 q8: 행 빈칸 1개 (37·38·▢·40·41 → 39) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10" data-q-correct="39">
+      <div class="stage-badge">기본문제 · q8 (10점)</div>
+      <h2 class="slide-title">빈칸에 알맞은 수는?</h2>
+      <div class="ng-stage">
+        <p class="ng-prompt">37 38 <strong>?</strong> 40 41 — 빈칸을 채워 보세요.</p>
+        <div class="ng-grid" id="grid8" style="grid-template-columns:repeat(5,1fr);"></div>
+        <div class="q-pad" id="pad8">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["38 다음 수예요. 38 → ?","오른쪽으로 한 칸 가면 1 큰 수예요. 39!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제 q9: 행 빈칸 1개 (44·45·46·▢·48·49 → 47) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-q-correct="47">
+      <div class="stage-badge">기본문제 · q9 (10점)</div>
+      <h2 class="slide-title">빈칸에 알맞은 수는?</h2>
+      <div class="ng-stage">
+        <p class="ng-prompt">44 45 46 <strong>?</strong> 48 49 — 빈칸을 채워 보세요.</p>
+        <div class="ng-grid" id="grid9" style="grid-template-columns:repeat(6,1fr);"></div>
+        <div class="q-pad" id="pad9">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["46 다음 수예요. 46 → ?","46 다음, 48 앞이에요. 47!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제 q10: 빈칸 두 칸 (12·▢·14·▢ → 13·15) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10" data-q-two-answer="13,15">
+      <div class="stage-badge">기본문제 · q10 (10점)</div>
+      <h2 class="slide-title">두 빈칸을 채워 봐요</h2>
+      <div class="ng-stage">
+        <p class="ng-prompt">12 <strong>?</strong> 14 <strong>?</strong> — 차례로 두 빈칸을 채워 보세요.</p>
+        <div class="ng-grid" id="grid10" style="grid-template-columns:repeat(4,1fr);"></div>
+        <div class="q-pad" id="pad10">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["12 다음 수, 14 다음 수 차례로 찾아 보세요.","12→13, 14→15. 차례로 13, 15!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제 q11: 위·아래 (15·▢·35 → 25) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-q-correct="25">
+      <div class="stage-badge">기본문제 · q11 (10점)</div>
+      <h2 class="slide-title">위·아래 빈칸을 채워 봐요</h2>
+      <div class="ng-stage">
+        <p class="ng-prompt">15 아래는? 35 위는? — 가운데 빈칸을 채워 보세요.</p>
+        <div class="ng-grid" id="grid11" style="grid-template-columns:1fr;width:clamp(120px,18vw,160px);"></div>
+        <div class="q-pad" id="pad11">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["15에서 아래로 한 칸 = 10 큰 수예요.","15 + 10 = 25. 35 − 10 = 25. 둘 다 25!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12: 30~38 이어 세기 (number_path_50) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15" data-q-path-from="30" data-q-path-to="38">
+      <div class="stage-badge">응용 · q12 (15점)</div>
+      <h2 class="slide-title">30부터 38까지 차례로 눌러 봐요</h2>
+      <div class="np-stage">
+        <p class="np-prompt"><strong>30</strong>부터 시작해서 <strong>38</strong>까지 순서대로 점을 눌러요.</p>
+        <div class="np-board">
+          <div class="np-row" id="path12"></div>
+        </div>
+        <p class="np-progress" id="prog12">진행: 0 / 9</p>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["30 다음은 31, 그 다음은 32...","30·31·32·33·34·35·36·37·38 차례로!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13: 46~50 이어 세기 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-q-path-from="46" data-q-path-to="50">
+      <div class="stage-badge">응용 · q13 (15점)</div>
+      <h2 class="slide-title">46부터 50까지 차례로 눌러 봐요</h2>
+      <div class="np-stage">
+        <p class="np-prompt">단원의 끝수 <strong>50</strong>까지 가 봐요. <strong>46</strong>부터 시작!</p>
+        <div class="np-board">
+          <div class="np-row" id="path13"></div>
+        </div>
+        <p class="np-progress" id="prog13">진행: 0 / 5</p>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["46 → 47 → 48 → 49 → 50!","끝수 50까지 차례로 눌러요."]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: 점잇기 (1~25, 고래 윤곽) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용 · q14 (15점)</div>
+      <h2 class="slide-title">점을 이어 운동 친구를 만나 봐요</h2>
+      <div class="np-stage">
+        <p class="np-prompt">1부터 25까지 <strong>순서대로</strong> 점을 누르면 운동 친구가 나타나요!</p>
+        <div class="connect-wrap">
+          <svg class="connect-svg" id="connectSvg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <p class="connect-msg" id="connectMsg">진행: 0 / 25</p>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["1부터 차례로 눌러야 해요.","빛나는 점이 다음 점이에요. 따라가 봐요!"]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: 회오리 빈칸 (수익 79쪽 자리, 5×5 + 가운데 빈칸 4개) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-q-spiral-answers="33,34,35,36">
+      <div class="stage-badge">응용 · q15 (15점)</div>
+      <h2 class="slide-title">회오리 빈칸을 채워 봐요</h2>
+      <div class="spiral-stage">
+        <p class="ng-prompt">26부터 50까지 <strong>회오리</strong>로 놓은 수예요. 네 빈칸을 채워 보세요.</p>
+        <div class="spiral-wrap" id="spiral15"></div>
+        <div class="q-pad" id="pad15">
+          <button class="q-pad-btn" data-num="0">0</button>
+          <button class="q-pad-btn" data-num="1">1</button>
+          <button class="q-pad-btn" data-num="2">2</button>
+          <button class="q-pad-btn" data-num="3">3</button>
+          <button class="q-pad-btn" data-num="4">4</button>
+          <button class="q-pad-btn" data-num="5">5</button>
+          <button class="q-pad-btn" data-num="6">6</button>
+          <button class="q-pad-btn" data-num="7">7</button>
+          <button class="q-pad-btn" data-num="8">8</button>
+          <button class="q-pad-btn" data-num="9">9</button>
+          <button class="q-pad-btn clear" data-clear="1" style="grid-column:span 5;">← 지우기</button>
+        </div>
+        <p class="q-fb"></p>
+        <p class="mcq-hint" data-hints='["빛나는 칸의 앞·뒤 수를 살펴봐요.","빈칸 앞이 32면 빈칸은 33, 그 다음은 34..."]'></p>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 1~50 한눈에 + 화살표 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 한눈에</div>
+      <h2 class="slide-title">1부터 50까지 한눈에 봐요</h2>
+      <div class="summary-stage">
+        <div class="ng-grid size-1-30" id="grid16"></div>
+        <div class="ng-arrow-row">
+          <span class="summary-pill">➡️ 오른쪽 = <strong>+1</strong></span>
+          <span class="summary-pill">⬇️ 아래 = <strong>+10</strong></span>
+        </div>
+        <p class="summary-caption">총점: <strong id="wrap-msg-score">0</strong>점 — <span id="wrap-msg">잘했어요!</span></p>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 자기 평가</div>
+      <h2 class="slide-title">스스로 평가해요</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <span class="self-row-q">1부터 50까지 순서를 말할 수 있나요?</span>
+          <div class="self-row-stars">
+            <button class="self-btn">⭐</button>
+            <button class="self-btn">⭐⭐</button>
+            <button class="self-btn">⭐⭐⭐</button>
+          </div>
+        </div>
+        <div class="self-row">
+          <span class="self-row-q">1만큼 더 큰 수를 찾을 수 있나요?</span>
+          <div class="self-row-stars">
+            <button class="self-btn">⭐</button>
+            <button class="self-btn">⭐⭐</button>
+            <button class="self-btn">⭐⭐⭐</button>
+          </div>
+        </div>
+        <div class="self-row">
+          <span class="self-row-q">1만큼 더 작은 수를 찾을 수 있나요?</span>
+          <div class="self-row-stars">
+            <button class="self-btn">⭐</button>
+            <button class="self-btn">⭐⭐</button>
+            <button class="self-btn">⭐⭐⭐</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 예고 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리 · 다음 시간</div>
+      <h2 class="slide-title">잘했어요!</h2>
+      <div class="wrap-stage">
+        <div class="wrap-emoji">🎉</div>
+        <p class="wrap-msg-text">50까지 수의 순서를 잘 알게 됐어요.<br>다음 시간엔 무엇을 할까요?</p>
+        <div class="wrap-next">
+          <span class="wrap-next-label">다음 차시</span>
+          <span class="wrap-next-title">📊 수의 크기를 비교해 봐요</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ════════════════════ 푸터 (3-button) ════════════════════ -->
+  <footer class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next" id="next" onclick="goNext()">다음 →</button>
+  </footer>
+</div>
+
+<script>
+// ───── 상태 (5단원 02-03·05·06·07차 양식 일관 — qState[qid]) ─────
+const TOTAL = 18;
+const STORAGE_KEY = 'kedu_progress_g1_math_u5_l08';
+let cur = 0;
+let score = 0;
+let muted = false;
+let qState = {};
+const startedAt = Date.now();
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() {
+  const s = currentSlide();
+  return s ? s.dataset.qId : null;
+}
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) {
+    const st = getQState(qid);
+    hintBtn.disabled = st.solved || st.hintLevel >= 2;
+  } else {
+    hintBtn.disabled = true;
+  }
+
+  if (cur === TOTAL - 1) {
+    document.getElementById('next').textContent = '마치기 →';
+    saveProgress(true);
+  } else {
+    document.getElementById('next').textContent = '다음 →';
+  }
+
+  if (cur === 15) { // 슬 16 정리
+    document.getElementById('wrap-msg-score').textContent = score;
+    document.getElementById('wrap-msg').textContent = wrapMsg(score);
+  }
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() {
+  if (cur < TOTAL - 1) {
+    cur++;
+    saveProgress(false);
+    updateUI();
+  }
+}
+
+function goPrev() {
+  if (cur > 0) {
+    cur--;
+    updateUI();
+  }
+}
+
+function goHub() {
+  saveProgress(false);
+  location.href = '../../index.html';
+}
+
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute').textContent = muted ? '🔇' : '🔊';
+}
+
+function addScore(n) {
+  score += n;
+  document.getElementById('score').textContent = '⭐ ' + score;
+}
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ───── 슬 1 — 영화관 좌석표 (5행 × 10열, 50칸, 13번 target, 32번 character) ─────
+(function initSeatGrid() {
+  const grid = document.getElementById('seatGrid1');
+  for (let n = 1; n <= 50; n++) {
+    const cell = document.createElement('div');
+    cell.className = 'seat-cell';
+    cell.textContent = n;
+    if (n === 13) cell.classList.add('target');
+    if (n === 32) {
+      cell.classList.add('character');
+      cell.textContent = '🧒';
+    }
+    grid.appendChild(cell);
+  }
+})();
+
+// ───── 공용 — number_neighbor_picker 단일 입력 (슬 4·5) ─────
+function nnpSingleSetup(qid, padId, boxId, fbId, correct) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const pad = document.getElementById(padId);
+  const box = document.getElementById(boxId);
+  const fb = document.getElementById(fbId);
+  let buffer = '';
+
+  function clearBuf() {
+    buffer = '';
+    box.textContent = '?';
+    box.classList.add('empty');
+    box.classList.remove('correct', 'wrong');
+    fb.textContent = '';
+  }
+
+  function checkAnswer(val) {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    if (val === correct) {
+      st.solved = true;
+      box.classList.remove('empty', 'wrong', 'active');
+      box.classList.add('correct');
+      box.textContent = val;
+      pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '정답이에요! +' + earn + '점';
+      fb.style.color = '#2E7D32';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      box.classList.add('wrong');
+      box.classList.remove('empty');
+      box.textContent = val;
+      fb.textContent = '다시 세어 볼까요?';
+      fb.style.color = '#C62828';
+      setTimeout(() => {
+        if (!st.solved) {
+          box.classList.remove('wrong');
+          box.classList.add('empty');
+          box.textContent = '?';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      box.textContent = buffer;
+      box.classList.remove('empty');
+      if (buffer.length === 2) {
+        const v = parseInt(buffer, 10);
+        checkAnswer(v);
+      }
+    });
+  });
+}
+// 슬 4 — q? 없음 (학습 자리), 정답 13. 점수 X. → 자리만 점검.
+// 단, _PLAN에 슬4·5·6은 학습 자리(개념 도입)로 두고 q-id는 슬8부터.
+// 따라 슬4·5·6은 점수 X. 누름 → 정답 표시만.
+function nnpLearnSetup(padId, boxId, fbId, correct) {
+  const pad = document.getElementById(padId);
+  const box = document.getElementById(boxId);
+  const fb = document.getElementById(fbId);
+  let buffer = '';
+  let solved = false;
+
+  function clearBuf() {
+    buffer = '';
+    box.textContent = '?';
+    box.classList.add('empty');
+    box.classList.remove('correct', 'wrong');
+    fb.textContent = '';
+  }
+
+  function checkAnswer(val) {
+    if (solved) return;
+    if (val === correct) {
+      solved = true;
+      box.classList.remove('empty', 'wrong', 'active');
+      box.classList.add('correct');
+      box.textContent = val;
+      pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+      fb.textContent = '✨ 맞아요!';
+      fb.style.color = '#2E7D32';
+    } else {
+      box.classList.add('wrong');
+      box.classList.remove('empty');
+      box.textContent = val;
+      fb.textContent = '다시 세어 볼까요?';
+      fb.style.color = '#C62828';
+      setTimeout(() => {
+        if (!solved) {
+          box.classList.remove('wrong');
+          box.classList.add('empty');
+          box.textContent = '?';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (solved) return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      box.textContent = buffer;
+      box.classList.remove('empty');
+      if (buffer.length === 2) {
+        const v = parseInt(buffer, 10);
+        checkAnswer(v);
+      }
+    });
+  });
+}
+nnpLearnSetup('nnp4Pad', 'nnp4Box', 'nnp4Fb', 13);
+nnpLearnSetup('nnp5Pad', 'nnp5Box', 'nnp5Fb', 13);
+
+// 슬 6 — 양옆 동시 (학습 자리, 점수 X. 두 칸 차례로 입력)
+(function nnp6Setup() {
+  const pad = document.getElementById('nnp6Pad');
+  const leftBox = document.getElementById('nnp6Left');
+  const rightBox = document.getElementById('nnp6Right');
+  const fb = document.getElementById('nnp6Fb');
+  let stage = 'left'; // 'left' → 'right' → 'done'
+  let buffer = '';
+  let leftVal = null;
+
+  function refresh() {
+    leftBox.classList.toggle('active', stage === 'left');
+    rightBox.classList.toggle('active', stage === 'right');
+  }
+  refresh();
+
+  function clearBuf() {
+    buffer = '';
+    leftBox.textContent = '?';
+    leftBox.classList.add('empty');
+    leftBox.classList.remove('correct', 'wrong');
+    rightBox.textContent = '?';
+    rightBox.classList.add('empty');
+    rightBox.classList.remove('correct', 'wrong');
+    fb.textContent = '';
+    stage = 'left';
+    leftVal = null;
+    refresh();
+  }
+
+  function setBox(box, val, correct, isLeft) {
+    if (val === correct) {
+      box.classList.remove('empty', 'wrong', 'active');
+      box.classList.add('correct');
+      box.textContent = val;
+      if (isLeft) {
+        stage = 'right';
+        refresh();
+      } else {
+        stage = 'done';
+        refresh();
+        fb.textContent = '✨ 양옆 모두 맞아요!';
+        fb.style.color = '#2E7D32';
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+      }
+    } else {
+      box.classList.add('wrong');
+      box.classList.remove('empty');
+      box.textContent = val;
+      fb.textContent = '다시 세어 볼까요?';
+      fb.style.color = '#C62828';
+      setTimeout(() => {
+        if (stage !== 'done') {
+          box.classList.remove('wrong');
+          box.classList.add('empty');
+          box.textContent = '?';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (stage === 'done') return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      const v = parseInt(buffer, 10);
+      if (stage === 'left') {
+        leftBox.textContent = buffer;
+        leftBox.classList.remove('empty');
+        if (buffer.length === 2) {
+          setBox(leftBox, v, 24, true);
+          if (v === 24) { leftVal = v; }
+          buffer = '';
+        }
+      } else if (stage === 'right') {
+        rightBox.textContent = buffer;
+        rightBox.classList.remove('empty');
+        if (buffer.length === 2) {
+          setBox(rightBox, v, 26, false);
+          buffer = '';
+        }
+      }
+    });
+  });
+})();
+
+// ───── 슬 7 — 1~30 수 배열표 (학습 자리, 모두 표시) ─────
+(function initGrid7() {
+  const grid = document.getElementById('grid7');
+  for (let n = 1; n <= 30; n++) {
+    const cell = document.createElement('div');
+    cell.className = 'ng-cell';
+    cell.textContent = n;
+    grid.appendChild(cell);
+  }
+})();
+
+// ───── 슬 8·9·11 — 단일 빈칸 (number_grid_50 부분 행/열) ─────
+// 슬8: 37·38·▢·40·41 → 39 (5칸, 빈칸 idx 2)
+// 슬9: 44·45·46·▢·48·49 → 47 (6칸, 빈칸 idx 3)
+// 슬11: 15·▢·35 → 25 (3칸 세로, 빈칸 idx 1)
+function ngSingleBlankSetup(qid, gridId, padId, sequence, blankIdx) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const correct = parseInt(slide.dataset.qCorrect, 10);
+  const grid = document.getElementById(gridId);
+  const pad = document.getElementById(padId);
+  const fb = slide.querySelector('.q-fb');
+  let blankCell = null;
+  let buffer = '';
+
+  sequence.forEach((val, i) => {
+    const cell = document.createElement('div');
+    if (i === blankIdx) {
+      cell.className = 'ng-cell blank active empty';
+      blankCell = cell;
+    } else {
+      cell.className = 'ng-cell';
+      cell.textContent = val;
+    }
+    grid.appendChild(cell);
+  });
+
+  function clearBuf() {
+    buffer = '';
+    blankCell.classList.add('empty');
+    blankCell.classList.remove('correct', 'wrong');
+    blankCell.textContent = '';
+    fb.textContent = '';
+    fb.classList.remove('wrong');
+  }
+
+  function checkAnswer(val) {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    if (val === correct) {
+      st.solved = true;
+      blankCell.classList.remove('empty', 'wrong', 'active');
+      blankCell.classList.add('correct');
+      blankCell.textContent = val;
+      pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+      const earn = pointsForQ(qid);
+      addScore(earn);
+      fb.textContent = '정답이에요! +' + earn + '점';
+      fb.classList.remove('wrong');
+      updateUI();
+    } else {
+      st.wrongCount++;
+      blankCell.classList.add('wrong');
+      blankCell.classList.remove('empty');
+      blankCell.textContent = val;
+      fb.textContent = '다시 살펴봐요!';
+      fb.classList.add('wrong');
+      setTimeout(() => {
+        if (!st.solved) {
+          blankCell.classList.remove('wrong');
+          blankCell.classList.add('empty');
+          blankCell.textContent = '';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      blankCell.textContent = buffer;
+      blankCell.classList.remove('empty');
+      if (buffer.length === 2) {
+        const v = parseInt(buffer, 10);
+        checkAnswer(v);
+      }
+    });
+  });
+}
+ngSingleBlankSetup('q8', 'grid8', 'pad8', [37, 38, null, 40, 41], 2);
+ngSingleBlankSetup('q9', 'grid9', 'pad9', [44, 45, 46, null, 48, 49], 3);
+ngSingleBlankSetup('q11', 'grid11', 'pad11', [15, null, 35], 1);
+
+// ───── 슬 10 — 두 빈칸 (12·▢·14·▢ → 13, 15) ─────
+(function q10Setup() {
+  const slide = document.querySelector('[data-q-id="q10"]');
+  const twoAns = slide.dataset.qTwoAnswer.split(',').map(s => parseInt(s, 10));
+  const grid = document.getElementById('grid10');
+  const pad = document.getElementById('pad10');
+  const fb = slide.querySelector('.q-fb');
+  const blanks = [];
+  const seq = [12, null, 14, null];
+  seq.forEach((val, i) => {
+    const cell = document.createElement('div');
+    if (val === null) {
+      cell.className = 'ng-cell blank empty';
+      blanks.push(cell);
+    } else {
+      cell.className = 'ng-cell';
+      cell.textContent = val;
+    }
+    grid.appendChild(cell);
+  });
+  blanks[0].classList.add('active');
+
+  let stage = 0; // 0: 첫 빈칸 → 1: 두번째 빈칸 → 2: 완료
+  let buffer = '';
+
+  function clearBuf() {
+    buffer = '';
+    blanks.forEach(b => {
+      b.classList.add('empty');
+      b.classList.remove('correct', 'wrong');
+      b.textContent = '';
+    });
+    blanks[0].classList.add('active');
+    blanks[1].classList.remove('active');
+    stage = 0;
+    fb.textContent = '';
+    fb.classList.remove('wrong');
+  }
+
+  function commitOne(val) {
+    const st = getQState('q10');
+    if (st.solved) return;
+    const target = twoAns[stage];
+    const cell = blanks[stage];
+    if (val === target) {
+      cell.classList.remove('empty', 'wrong', 'active');
+      cell.classList.add('correct');
+      cell.textContent = val;
+      stage++;
+      if (stage === 2) {
+        st.solved = true;
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+        const earn = pointsForQ('q10');
+        addScore(earn);
+        fb.textContent = '두 빈칸 모두 정답! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        blanks[1].classList.add('active');
+      }
+    } else {
+      st.wrongCount++;
+      cell.classList.add('wrong');
+      cell.classList.remove('empty');
+      cell.textContent = val;
+      fb.textContent = '다시 살펴봐요!';
+      fb.classList.add('wrong');
+      setTimeout(() => {
+        if (!st.solved) {
+          cell.classList.remove('wrong');
+          cell.classList.add('empty');
+          cell.textContent = '';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState('q10');
+      if (st.solved) return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      blanks[stage].textContent = buffer;
+      blanks[stage].classList.remove('empty');
+      if (buffer.length === 2) {
+        const v = parseInt(buffer, 10);
+        st.attempts++;
+        commitOne(v);
+        buffer = '';
+      }
+    });
+  });
+})();
+
+// ───── 슬 12·13 — number_path_50 (순서대로 이어 세기) ─────
+function pathSetup(qid, rowId, progId, from, to) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const row = document.getElementById(rowId);
+  const prog = document.getElementById(progId);
+  const fb = slide.querySelector('.q-fb');
+  const total = to - from + 1;
+  let nextExpected = from;
+
+  // 1~50 모두 표시. 범위 밖은 locked, 범위 안은 클릭 활성. 시작 수만 hl
+  for (let n = 1; n <= 50; n++) {
+    const dot = document.createElement('div');
+    dot.className = 'np-dot';
+    dot.textContent = n;
+    dot.dataset.num = n;
+    if (n < from || n > to) {
+      dot.classList.add('locked');
+    } else if (n === from) {
+      dot.classList.add('hl');
+    }
+    row.appendChild(dot);
+  }
+
+  function highlightNext() {
+    row.querySelectorAll('.np-dot').forEach(d => {
+      if (d.classList.contains('locked') || d.classList.contains('tapped')) return;
+      d.classList.toggle('hl', parseInt(d.dataset.num, 10) === nextExpected);
+    });
+  }
+
+  row.querySelectorAll('.np-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      if (dot.classList.contains('locked') || dot.classList.contains('tapped')) return;
+      const n = parseInt(dot.dataset.num, 10);
+      st.attempts++;
+      if (n === nextExpected) {
+        dot.classList.remove('hl');
+        dot.classList.add('tapped');
+        nextExpected++;
+        const tappedCount = nextExpected - from;
+        prog.textContent = '진행: ' + tappedCount + ' / ' + total;
+        if (nextExpected > to) {
+          st.solved = true;
+          const earn = pointsForQ(qid);
+          addScore(earn);
+          fb.textContent = '✨ 완성! +' + earn + '점';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          highlightNext();
+        }
+      } else {
+        st.wrongCount++;
+        dot.classList.add('wrong');
+        fb.textContent = nextExpected + '부터 차례로 눌러요!';
+        fb.classList.add('wrong');
+        setTimeout(() => {
+          dot.classList.remove('wrong');
+          fb.textContent = '';
+          fb.classList.remove('wrong');
+        }, 700);
+      }
+    });
+  });
+}
+pathSetup('q12', 'path12', 'prog12', 30, 38);
+pathSetup('q13', 'path13', 'prog13', 46, 50);
+
+// ───── 슬 14 — 점잇기 (1~25, 고래 윤곽 SVG) ─────
+(function connectSetup() {
+  const slide = document.querySelector('[data-q-id="q14"]');
+  const svg = document.getElementById('connectSvg');
+  const msg = document.getElementById('connectMsg');
+  const fb = slide.querySelector('.q-fb');
+  // 25개 점 자리 — 고래 윤곽 (위→꼬리→배→입→눈)
+  // viewBox 800x500. 좌표 사람 손으로 디자인. 1=입 끝, 25=눈 근처 마무리.
+  const dots = [
+    [120, 280], [110, 230], [130, 190], [180, 160], [240, 150],   // 1~5 머리 위쪽
+    [310, 145], [380, 150], [450, 160], [520, 175], [580, 200],   // 6~10 등 위쪽
+    [640, 235], [690, 280], [720, 320], [690, 350], [640, 370],   // 11~15 꼬리 쪽
+    [700, 390], [620, 430], [620, 380], [550, 380], [470, 380],   // 16~20 꼬리·배
+    [380, 380], [290, 370], [220, 360], [160, 340], [130, 310]    // 21~25 배·입 아래
+  ];
+  // 고래 본체 윤곽 (배경, 처음엔 숨김)
+  const whaleBg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  whaleBg.setAttribute('class', 'connect-whale connect-whale-bg');
+  // 고래 모양 단순 path — 점잇기 좌표와 어울리는 둥근 윤곽
+  let pathD = 'M ' + dots[0][0] + ' ' + dots[0][1];
+  for (let i = 1; i < dots.length; i++) {
+    pathD += ' L ' + dots[i][0] + ' ' + dots[i][1];
+  }
+  pathD += ' Z';
+  whaleBg.setAttribute('d', pathD);
+  whaleBg.setAttribute('opacity', '0');
+  svg.appendChild(whaleBg);
+
+  // 눈 + 입 (고래 표시 자리, 처음엔 숨김)
+  const eye = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  eye.setAttribute('cx', '170');
+  eye.setAttribute('cy', '275');
+  eye.setAttribute('r', '8');
+  eye.setAttribute('fill', 'white');
+  eye.setAttribute('opacity', '0');
+  eye.setAttribute('class', 'connect-whale');
+  svg.appendChild(eye);
+  const eyePupil = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  eyePupil.setAttribute('cx', '170');
+  eyePupil.setAttribute('cy', '275');
+  eyePupil.setAttribute('r', '4');
+  eyePupil.setAttribute('fill', '#0D47A1');
+  eyePupil.setAttribute('opacity', '0');
+  eyePupil.setAttribute('class', 'connect-whale');
+  svg.appendChild(eyePupil);
+
+  // 연결 선 group (점 잇는 자리)
+  const lineGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  svg.appendChild(lineGroup);
+  let currentLine = null;
+
+  function drawLine(from, to) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', from[0]);
+    line.setAttribute('y1', from[1]);
+    line.setAttribute('x2', to[0]);
+    line.setAttribute('y2', to[1]);
+    line.setAttribute('class', 'connect-line');
+    lineGroup.appendChild(line);
+  }
+
+  // 점 자리
+  const dotGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  svg.appendChild(dotGroup);
+  let nextExpected = 1;
+  const dotEls = [];
+
+  dots.forEach((pos, idx) => {
+    const num = idx + 1;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'connect-dot' + (num === 1 ? ' hl' : ''));
+    g.setAttribute('transform', 'translate(' + pos[0] + ',' + pos[1] + ')');
+    g.dataset.num = num;
+
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', '0');
+    c.setAttribute('cy', '0');
+    c.setAttribute('r', '12');
+    g.appendChild(c);
+
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', '0');
+    t.setAttribute('y', '5');
+    t.setAttribute('text-anchor', 'middle');
+    t.textContent = num;
+    g.appendChild(t);
+
+    g.addEventListener('click', () => {
+      const st = getQState('q14');
+      if (st.solved) return;
+      st.attempts++;
+      if (num === nextExpected) {
+        if (nextExpected > 1) {
+          drawLine(dots[nextExpected - 2], dots[nextExpected - 1]);
+        }
+        g.classList.remove('hl');
+        g.classList.add('tapped');
+        nextExpected++;
+        msg.textContent = '진행: ' + (nextExpected - 1) + ' / 25';
+        if (nextExpected > 25) {
+          st.solved = true;
+          // 마지막 → 첫 점 닫기 (윤곽 완성)
+          drawLine(dots[24], dots[0]);
+          // 고래 fade-in
+          whaleBg.setAttribute('opacity', '0.85');
+          eye.setAttribute('opacity', '1');
+          eyePupil.setAttribute('opacity', '1');
+          const earn = pointsForQ('q14');
+          addScore(earn);
+          msg.textContent = '🐳 고래 친구가 나타났어요! +' + earn + '점';
+          fb.textContent = '';
+          fb.classList.remove('wrong');
+          updateUI();
+        } else {
+          // 다음 점 hl
+          dotEls.forEach(de => {
+            const dn = parseInt(de.dataset.num, 10);
+            if (de.classList.contains('tapped')) return;
+            de.classList.toggle('hl', dn === nextExpected);
+          });
+        }
+      } else {
+        st.wrongCount++;
+        const orig = g.getAttribute('class');
+        g.setAttribute('class', 'connect-dot wrong');
+        fb.textContent = nextExpected + '번 점을 찾아 봐요!';
+        fb.classList.add('wrong');
+        setTimeout(() => {
+          g.setAttribute('class', orig);
+          fb.textContent = '';
+          fb.classList.remove('wrong');
+        }, 700);
+      }
+    });
+
+    dotGroup.appendChild(g);
+    dotEls.push(g);
+  });
+})();
+
+// ───── 슬 15 — 회오리 빈칸 (26~50, 5×5 회오리 자리) ─────
+(function spiral15Setup() {
+  const slide = document.querySelector('[data-q-id="q15"]');
+  const wrap = document.getElementById('spiral15');
+  const pad = document.getElementById('pad15');
+  const fb = slide.querySelector('.q-fb');
+  const answers = slide.dataset.qSpiralAnswers.split(',').map(s => parseInt(s, 10));
+
+  // 26부터 50까지 25수를 회오리(spiral) 자리로 배치 (5×5)
+  // 회오리 순서: 바깥에서 안으로 시계 방향 (왼쪽위 시작)
+  // grid (row, col) 자리, 0~4 인덱스, 25칸
+  // 회오리 경로 (row, col) — 25칸 시계방향 회오리
+  const spiralPath = [
+    [0,0],[0,1],[0,2],[0,3],[0,4],
+    [1,4],[2,4],[3,4],[4,4],
+    [4,3],[4,2],[4,1],[4,0],
+    [3,0],[2,0],[1,0],
+    [1,1],[1,2],[1,3],
+    [2,3],[3,3],
+    [3,2],[3,1],
+    [2,1],
+    [2,2]
+  ];
+  // 빈칸 자리 = 26~50 중 33·34·35·36 (idx 7·8·9·10)
+  const blankNums = answers; // [33, 34, 35, 36]
+  const blankCells = [];
+
+  spiralPath.forEach(([r, c], i) => {
+    const num = 26 + i;
+    const cell = document.createElement('div');
+    cell.className = 'spiral-cell';
+    cell.style.left = (c * 20 + 5) + '%';
+    cell.style.top = (r * 20 + 5) + '%';
+    if (blankNums.indexOf(num) !== -1) {
+      cell.classList.add('blank', 'empty');
+      cell.dataset.target = num;
+      blankCells.push(cell);
+    } else {
+      cell.textContent = num;
+    }
+    wrap.appendChild(cell);
+  });
+  // 회오리 첫 빈칸 활성화
+  blankCells[0].classList.add('active');
+  let stage = 0;
+  let buffer = '';
+
+  function clearBuf() {
+    buffer = '';
+    blankCells.forEach(c => {
+      c.classList.add('empty');
+      c.classList.remove('correct', 'wrong', 'active');
+      c.textContent = '';
+    });
+    blankCells[0].classList.add('active');
+    stage = 0;
+    fb.textContent = '';
+    fb.classList.remove('wrong');
+  }
+
+  function commit(val) {
+    const st = getQState('q15');
+    if (st.solved) return;
+    const cell = blankCells[stage];
+    const target = parseInt(cell.dataset.target, 10);
+    if (val === target) {
+      cell.classList.remove('empty', 'wrong', 'active');
+      cell.classList.add('correct');
+      cell.textContent = val;
+      stage++;
+      if (stage === blankCells.length) {
+        st.solved = true;
+        pad.querySelectorAll('.q-pad-btn').forEach(b => b.disabled = true);
+        const earn = pointsForQ('q15');
+        addScore(earn);
+        fb.textContent = '회오리 완성! +' + earn + '점';
+        fb.classList.remove('wrong');
+        updateUI();
+      } else {
+        blankCells[stage].classList.add('active');
+      }
+    } else {
+      st.wrongCount++;
+      cell.classList.add('wrong');
+      cell.classList.remove('empty');
+      cell.textContent = val;
+      fb.textContent = '앞 수와 뒤 수를 살펴봐요!';
+      fb.classList.add('wrong');
+      setTimeout(() => {
+        if (!st.solved) {
+          cell.classList.remove('wrong');
+          cell.classList.add('empty');
+          cell.textContent = '';
+        }
+        buffer = '';
+      }, 700);
+    }
+  }
+
+  pad.querySelectorAll('.q-pad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const st = getQState('q15');
+      if (st.solved) return;
+      if (btn.dataset.clear === '1') { clearBuf(); return; }
+      buffer += btn.dataset.num;
+      if (buffer.length > 2) buffer = buffer.slice(-2);
+      blankCells[stage].textContent = buffer;
+      blankCells[stage].classList.remove('empty');
+      if (buffer.length === 2) {
+        const v = parseInt(buffer, 10);
+        st.attempts++;
+        commit(v);
+        buffer = '';
+      }
+    });
+  });
+})();
+
+// ───── 슬 16 — 정리 1~50 + 화살표 ─────
+(function initGrid16() {
+  const grid = document.getElementById('grid16');
+  for (let n = 1; n <= 50; n++) {
+    const cell = document.createElement('div');
+    cell.className = 'ng-cell';
+    cell.textContent = n;
+    if (n % 10 === 0) {
+      cell.style.background = '#FFF8E1';
+      cell.style.borderColor = '#F57F17';
+      cell.style.color = '#F57F17';
+    }
+    grid.appendChild(cell);
+  }
+})();
+
+// ───── 자기 평가 자리 (슬 17) — 점수 X, 세 자리 ─────
+document.querySelectorAll('.self-row').forEach(row => {
+  row.querySelectorAll('.self-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      row.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+      btn.classList.add('picked');
+    });
+  });
+});
+
+// ───── 진도 저장 자리 (차시운영 §4) ─────
+function saveProgress(completed) {
+  const wrongArr = [];
+  const hintArr = [];
+  ['q8','q9','q10','q11','q12','q13','q14','q15'].forEach(qid => {
+    const st = getQState(qid);
+    wrongArr.push(st.wrongCount);
+    hintArr.push(st.hintLevel);
+  });
+  const prev = loadProgress();
+  const data = {
+    score: score,
+    max_score: 100,
+    completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 0) + (cur === 0 && !prev ? 1 : 0) : 1,
+    hint_used: hintArr,
+    wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000) + (prev ? (prev.duration_sec || 0) : 0),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+// 초기 자리
+updateUI();
+</script>
+</body>
+</html>
