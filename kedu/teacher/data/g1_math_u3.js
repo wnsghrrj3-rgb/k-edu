@@ -16,7 +16,7 @@ LESSONS["u3_l1"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 1,
     title: "자연과 함께해요 (단원 도입)",
-    std: "[2수01-02]",
+    std: "[2수01-05]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 밭 채소 모두 세기로 모으기 동기 유발",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_01_자연과함께해요.html"
@@ -48,7 +48,7 @@ LESSONS["u3_l2"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 2,
     title: "모으기와 가르기 (1)",
-    std: "[2수01-02]",
+    std: "[2수01-04]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 두 수 모으기·한 수 가르기",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_02_모으기와가르기1.html"
@@ -80,7 +80,7 @@ LESSONS["u3_l3"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 3,
     title: "모으기와 가르기 (2)",
-    std: "[2수01-02]",
+    std: "[2수01-04]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 모으기·가르기 숙달과 여러 가지 가르기",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_03_모으기와가르기2.html"
@@ -112,7 +112,7 @@ LESSONS["u3_l4"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 4,
     title: "이야기를 만들어 볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-04], [2수01-05]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 그림 상황으로 덧셈·뺄셈 이야기 만들기",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_04_이야기를만들어볼까요.html"
@@ -144,7 +144,7 @@ LESSONS["u3_l5"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 5,
     title: "덧셈을 알아볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-05]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 덧셈식 쓰기·읽기 도입",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_05_덧셈을알아볼까요.html"
@@ -176,7 +176,7 @@ LESSONS["u3_l6~7"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: "6~7",
     title: "덧셈을 해 볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-06]",
     duration_min: 80,
     lesson_format: "본 차시 5단계 18슬 (6·7차시 블록) — 덧셈 계산 연습",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_06_07_덧셈을해볼까요.html"
@@ -208,7 +208,7 @@ LESSONS["u3_l8"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 8,
     title: "뺄셈을 알아볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-05]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 뺄셈식 쓰기·읽기 도입",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_08_뺄셈을알아볼까요.html"
@@ -240,7 +240,7 @@ LESSONS["u3_l9~10"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: "9~10",
     title: "뺄셈을 해 볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-06]",
     duration_min: 80,
     lesson_format: "본 차시 5단계 18슬 (9·10차시 블록) — 뺄셈 계산 연습",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_09_10_뺄셈을해볼까요.html"
@@ -272,7 +272,7 @@ LESSONS["u3_l11"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 11,
     title: "0이 있는 덧셈과 뺄셈",
-    std: "[2수01-02]",
+    std: "[2수01-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 0을 더하거나 빼는 계산",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_11_0이있는덧셈과뺄셈.html"
@@ -304,7 +304,7 @@ LESSONS["u3_l12"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 12,
     title: "덧셈과 뺄셈을 해 볼까요",
-    std: "[2수01-02]",
+    std: "[2수01-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 덧셈·뺄셈 종합 연습",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_12_덧셈과뺄셈을해볼까요.html"
@@ -336,7 +336,7 @@ LESSONS["u3_l13"] = {
   meta: {
     grade: 1, subject: "수학", unit: 3, n: 13,
     title: "수학이랑 확인해요",
-    std: "[2수01-02]",
+    std: "[2수01-04], [2수01-05], [2수01-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 단원 평가와 자기 평가",
     live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_13_수학이랑확인해요.html"
