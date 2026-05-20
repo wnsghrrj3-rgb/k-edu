@@ -341,6 +341,44 @@
   </div>
 </div>
 
+<!-- ───── Case 10: number-path ───── -->
+<div class="case">
+  <h2>Case 10 — number-path (오름차·내림차 길 밟기)</h2>
+  <p class="desc">시작 타일에서 다음 수를 차례로 눌러 끝까지. asc/desc 분기.</p>
+  <div class="pair">
+    <div>
+      <h3>&lt;kedu-number-path direction="asc"&gt;</h3>
+      <kedu-number-path id="kedu-np-asc" start="1" end="9" direction="asc"></kedu-number-path>
+      <div class="log" id="kedu-np-asc-log">대기</div>
+    </div>
+    <div>
+      <h3>&lt;kedu-number-path direction="desc"&gt;</h3>
+      <kedu-number-path id="kedu-np-desc" start="9" end="1" direction="desc"></kedu-number-path>
+      <div class="log" id="kedu-np-desc-log">대기</div>
+    </div>
+  </div>
+</div>
+
+<!-- ───── Case 11: sequence-arrange ───── -->
+<div class="case">
+  <h2>Case 11 — sequence-arrange (정적 순서 카드, 상태 표시)</h2>
+  <p class="desc">인터랙션 없는 시각 부품. from/to 자동 + states로 강조·범위·빈칸·흐림.</p>
+  <div class="pair">
+    <div>
+      <h3>&lt;kedu-sequence-arrange from="1" to="9"&gt;</h3>
+      <kedu-sequence-arrange from="1" to="9"
+        states="normal,normal,blank,normal,highlight,normal,blank,normal,normal"
+        note="? 자리에 들어갈 수는 무엇일까요?"></kedu-sequence-arrange>
+    </div>
+    <div>
+      <h3>numbers + states (range·dim)</h3>
+      <kedu-sequence-arrange numbers="9,8,7,6,5,4,3,2,1"
+        states="dim,dim,range,range,range,dim,dim,dim,dim"
+        note="7부터 5까지의 범위"></kedu-sequence-arrange>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -438,6 +476,22 @@
         cpmLog.textContent = `✓ 모두 정답! selected=${JSON.stringify(e.detail.selected)}`;
       });
     }
+
+    // ── 컴포넌트 number-path 로그 (Case 10) ──
+    [['kedu-np-asc','kedu-np-asc-log'], ['kedu-np-desc','kedu-np-desc-log']].forEach(([id, logId]) => {
+      const np = document.getElementById(id);
+      const log = document.getElementById(logId);
+      if (!np || !log) return;
+      np.addEventListener('kedu-number-path-step', e => {
+        log.textContent = `전진: ${e.detail.current} (${e.detail.step + 1}/${e.detail.total})`;
+      });
+      np.addEventListener('kedu-number-path-wrong', e => {
+        log.textContent = `✗ ${e.detail.clicked} 누름 (정답: ${e.detail.expected})`;
+      });
+      np.addEventListener('kedu-number-path-complete', () => {
+        log.textContent = '✓ 끝까지 밟았어요!';
+      });
+    });
   });
 
   // ── 인라인 원본 compare-card 동작 (Case 8 좌측) ──
