@@ -427,6 +427,40 @@
   </div>
 </div>
 
+<!-- ───── Case 14: more-less-one 3 mode ───── -->
+<div class="case">
+  <h2>Case 14 — more-less-one (match · free · choice4)</h2>
+  <p class="desc">±1 부품. 짝짓기 / 버튼 탐색 / 단서 4지선다 세 mode 자족.</p>
+  <div class="pair">
+    <div>
+      <h3>mode="match" direction="more"</h3>
+      <kedu-more-less-one id="kedu-mlo-match"
+        mode="match" direction="more" pairs="4,5,6,7"></kedu-more-less-one>
+      <div class="log" id="kedu-mlo-match-log">대기</div>
+    </div>
+    <div>
+      <h3>mode="free" base="5"</h3>
+      <kedu-more-less-one id="kedu-mlo-free"
+        mode="free" base="5"></kedu-more-less-one>
+      <div class="log" id="kedu-mlo-free-log">대기</div>
+    </div>
+  </div>
+  <div class="pair">
+    <div>
+      <h3>mode="choice4" direction="more" result="6"</h3>
+      <kedu-more-less-one id="kedu-mlo-c4"
+        mode="choice4" direction="more" result="6" options="4,5,6,7"></kedu-more-less-one>
+      <div class="log" id="kedu-mlo-c4-log">대기</div>
+    </div>
+    <div>
+      <h3>mode="match" direction="less" (1 작은 수)</h3>
+      <kedu-more-less-one id="kedu-mlo-less"
+        mode="match" direction="less" pairs="5,6,7,8"></kedu-more-less-one>
+      <div class="log" id="kedu-mlo-less-log">대기</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -554,6 +588,22 @@
       });
       ci.addEventListener('kedu-count-input-complete', e => {
         log.textContent = `✓ 완성! ${JSON.stringify(e.detail.values)}`;
+      });
+    });
+
+    // ── more-less-one 4개 ──
+    ['kedu-mlo-match', 'kedu-mlo-free', 'kedu-mlo-c4', 'kedu-mlo-less'].forEach(id => {
+      const el = document.getElementById(id);
+      const log = document.getElementById(id + '-log');
+      if (!el || !log) return;
+      el.addEventListener('kedu-more-less-one-step', e => {
+        log.textContent = `→ step ${JSON.stringify(e.detail)}`;
+      });
+      el.addEventListener('kedu-more-less-one-wrong', e => {
+        log.textContent = `✗ 오답 ${JSON.stringify(e.detail)}`;
+      });
+      el.addEventListener('kedu-more-less-one-complete', () => {
+        log.textContent = `✓ 완료!`;
       });
     });
   });
