@@ -510,6 +510,32 @@
   </div>
 </div>
 
+<!-- ───── Case 17: position-picker ───── -->
+<div class="case">
+  <h2>Case 17 — position-picker (카드 풀에서 순서대로 채우기)</h2>
+  <p class="desc">정해진 순서대로만 카드가 들어감. 순서 틀리면 거부. (응용 차시 fillSeq/pickRev 호환)</p>
+  <div class="pair">
+    <div>
+      <h3>빠진 수 찾기 (2개)</h3>
+      <kedu-position-picker id="kedu-pp-fill"
+        sequence="0,1,?,3,4,?,6,7,8,9"
+        pool="5,2,7"
+        answers="2,5"
+        prompt="빠진 수 2개를 찾아요!"></kedu-position-picker>
+      <div class="log" id="kedu-pp-fill-log">대기</div>
+    </div>
+    <div>
+      <h3>거꾸로 세기 (큰 수부터)</h3>
+      <kedu-position-picker id="kedu-pp-rev"
+        sequence="?,?,?,?,?"
+        pool="5,9,3,7,1"
+        answers="9,7,5,3,1"
+        prompt="큰 수부터 순서대로!"></kedu-position-picker>
+      <div class="log" id="kedu-pp-rev-log">대기</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -679,6 +705,22 @@
       });
       el.addEventListener('kedu-self-assessment-complete', () => {
         log.textContent = `✓ 모든 차원 평가 완료!`;
+      });
+    });
+
+    // ── position-picker 2개 ──
+    ['kedu-pp-fill', 'kedu-pp-rev'].forEach(id => {
+      const el = document.getElementById(id);
+      const log = document.getElementById(id + '-log');
+      if (!el || !log) return;
+      el.addEventListener('kedu-position-picker-fill', e => {
+        log.textContent = `→ ${e.detail.step}번 칸 = ${e.detail.value}`;
+      });
+      el.addEventListener('kedu-position-picker-wrong', e => {
+        log.textContent = `✗ ${e.detail.value} 순서 오답`;
+      });
+      el.addEventListener('kedu-position-picker-complete', e => {
+        log.textContent = `✓ 완성! ${JSON.stringify(e.detail.values)}`;
       });
     });
   });
