@@ -489,6 +489,27 @@
   </div>
 </div>
 
+<!-- ───── Case 16: self-assessment ───── -->
+<div class="case">
+  <h2>Case 16 — self-assessment (단일 · 3차원)</h2>
+  <p class="desc">차시 마무리 자기 평가. 점수 집계 X. 3d는 모든 차원 선택 시 complete.</p>
+  <div class="pair">
+    <div>
+      <h3>mode="single" (기본 별점 3택)</h3>
+      <kedu-self-assessment id="kedu-sa-single"></kedu-self-assessment>
+      <div class="log" id="kedu-sa-single-log">대기</div>
+    </div>
+    <div>
+      <h3>mode="3d" (평가 차시 3차원)</h3>
+      <kedu-self-assessment id="kedu-sa-3d"
+        mode="3d"
+        dimensions="① 지식·이해 — 수를 세고 비교할 수 있나요?|② 과정·기능 — 십 배열판·연결 모형을 잘 썼나요?|③ 가치·태도 — 끝까지 노력했나요?"
+        options="조금|잘함|매우 잘함"></kedu-self-assessment>
+      <div class="log" id="kedu-sa-3d-log">대기</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -645,6 +666,19 @@
       });
       el.addEventListener('kedu-trace-number-complete', () => {
         log.textContent = `✓ 모두 따라 썼어요!`;
+      });
+    });
+
+    // ── self-assessment 2개 ──
+    ['kedu-sa-single', 'kedu-sa-3d'].forEach(id => {
+      const el = document.getElementById(id);
+      const log = document.getElementById(id + '-log');
+      if (!el || !log) return;
+      el.addEventListener('kedu-self-assessment-pick', e => {
+        log.textContent = `→ pick ${JSON.stringify(e.detail)}`;
+      });
+      el.addEventListener('kedu-self-assessment-complete', () => {
+        log.textContent = `✓ 모든 차원 평가 완료!`;
       });
     });
   });
