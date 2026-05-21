@@ -32,7 +32,8 @@
     'kedu-number-path.js',
     'kedu-sequence-arrange.js',
     'kedu-count-input.js',
-    'kedu-more-less-one.js'
+    'kedu-more-less-one.js',
+    'kedu-trace-number.js'
     // 부품 추가 시 본 배열에 한 줄.
   ];
 

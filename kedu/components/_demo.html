@@ -461,6 +461,34 @@
   </div>
 </div>
 
+<!-- ───── Case 15: trace-number ───── -->
+<div class="case">
+  <h2>Case 15 — trace-number (필순 따라쓰기 0~9)</h2>
+  <p class="desc">클릭하면 시작점부터 획이 그려짐. 다시 누르면 지워짐. 모두 그리면 complete.</p>
+  <div class="pair">
+    <div>
+      <h3>digits="1,2,3,4,5" size="md"</h3>
+      <kedu-trace-number id="kedu-tn-row"
+        digits="1,2,3,4,5"></kedu-trace-number>
+      <div class="log" id="kedu-tn-row-log">대기</div>
+    </div>
+    <div>
+      <h3>digits="0" size="lg" (한 바퀴 닫는 0)</h3>
+      <kedu-trace-number id="kedu-tn-zero"
+        digits="0" size="lg"></kedu-trace-number>
+      <div class="log" id="kedu-tn-zero-log">대기</div>
+    </div>
+  </div>
+  <div class="pair">
+    <div>
+      <h3>digits="6,7,8,9"</h3>
+      <kedu-trace-number id="kedu-tn-high"
+        digits="6,7,8,9"></kedu-trace-number>
+      <div class="log" id="kedu-tn-high-log">대기</div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ── 인라인 원본 stairs 1~9 (Case 4) ─────────────
   (function legacyLcStairs() {
@@ -604,6 +632,19 @@
       });
       el.addEventListener('kedu-more-less-one-complete', () => {
         log.textContent = `✓ 완료!`;
+      });
+    });
+
+    // ── trace-number 3개 ──
+    ['kedu-tn-row', 'kedu-tn-zero', 'kedu-tn-high'].forEach(id => {
+      const el = document.getElementById(id);
+      const log = document.getElementById(id + '-log');
+      if (!el || !log) return;
+      el.addEventListener('kedu-trace-number-trace', e => {
+        log.textContent = `→ ${e.detail.digit} ${e.detail.done ? '그림' : '지움'}`;
+      });
+      el.addEventListener('kedu-trace-number-complete', () => {
+        log.textContent = `✓ 모두 따라 썼어요!`;
       });
     });
   });
