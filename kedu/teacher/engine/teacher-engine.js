@@ -945,6 +945,8 @@
     document.getElementById('total-pos').textContent = visibleSlides.length;
     document.getElementById('current-stage').textContent = cur.stage;
     document.getElementById('delete-slide-btn').style.display = cur.user_added ? '' : 'none';
+    const _editBtn = document.getElementById('edit-slide-btn');
+    if (_editBtn) _editBtn.style.display = cur.user_added ? '' : 'none';
     document.getElementById('prev-btn').disabled = visIdx === 0;
     document.getElementById('next-btn').disabled = visIdx === visibleSlides.length - 1;
 
@@ -1109,6 +1111,10 @@
     document.getElementById('prev-btn').addEventListener('click', () => go(-1));
     document.getElementById('next-btn').addEventListener('click', () => go(1));
     document.getElementById('full-btn').addEventListener('click', toggleFullscreen);
+    const epBtn = document.getElementById('export-pptx-btn');
+    if (epBtn) epBtn.addEventListener('click', exportPptx);
+    const ewBtn = document.getElementById('export-ws-btn');
+    if (ewBtn) ewBtn.addEventListener('click', exportWorksheet);
     document.getElementById('fs-exit-btn').addEventListener('click', toggleFullscreen);
     document.getElementById('back-to-home').addEventListener('click', backToHome);
 
@@ -1169,6 +1175,7 @@
         slides.splice(curIdx + 1, 0, newSlide);
         curIdx++;
         rebuild();
+        openBlockEditor(curIdx); // 추가 직후 바로 내용 채우기
       });
     });
 
@@ -1179,6 +1186,12 @@
       slides.splice(curIdx, 1);
       if (curIdx >= slides.length) curIdx = slides.length - 1;
       rebuild();
+    });
+
+    // 사용자 추가 슬라이드 수정
+    const editBtn = document.getElementById('edit-slide-btn');
+    if (editBtn) editBtn.addEventListener('click', () => {
+      if (slides[curIdx] && slides[curIdx].user_added) openBlockEditor(curIdx);
     });
 
     // 인터랙티브 이벤트 (위임)
@@ -1403,6 +1416,134 @@
   }
 
   // =================== 공개 API ===================
+  // =================== 산출물 내보내기 ===================
+  function currentLessonForExport() {
+    const meta = (LESSONS[currentLessonKey] && LESSONS[currentLessonKey].meta) || {};
+    return { meta: meta, slides: slides.filter(s => s.included !== false) };
+  }
+  function exportPptx() {
+    if (typeof TeacherExport === 'undefined' || typeof PptxGenJS === 'undefined') {
+      alert('PPT 생성 도구를 불러오는 중입니다. 잠시 후 다시 눌러 주세요.');
+      return;
+    }
+    try {
+      const pres = TeacherExport.buildPptx(PptxGenJS, currentLessonForExport());
+      const name = (SUBJECT_INFO && SUBJECT_INFO.slug ? SUBJECT_INFO.slug : 'lesson') + '_' + (currentLessonKey || 'export') + '_교사용.pptx';
+      pres.writeFile({ fileName: name });
+    } catch (e) { console.error(e); alert('PPT 생성 중 오류가 발생했습니다.'); }
+  }
+  function exportWorksheet() {
+    if (typeof TeacherExport === 'undefined') { alert('학습지 생성 도구를 불러오는 중입니다.'); return; }
+    try {
+      const html = TeacherExport.buildWorksheetHTML(currentLessonForExport());
+      const win = window.open('', '_blank');
+      if (!win) { alert('팝업이 차단되었습니다. 팝업을 허용해 주세요.'); return; }
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => { win.focus(); win.print(); }, 400);
+    } catch (e) { console.error(e); alert('학습지 생성 중 오류가 발생했습니다.'); }
+  }
+
+  // =================== 블록 편집 (B안: 입력창 방식) ===================
+  // 블록 타입별 편집 가능한 필드 정의
+  const EDIT_SCHEMA = {
+    motivate: [
+      { key: 'scene_title', label: '장면 제목', type: 'text' },
+      { key: 'question', label: '핵심 질문', type: 'text' }
+    ],
+    concept: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'content', label: '개념 설명', type: 'textarea' }
+    ],
+    question: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'content', label: '발문 내용', type: 'textarea' }
+    ],
+    basic_problem: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'question', label: '문제', type: 'textarea' },
+      { key: 'answer', label: '정답 (선택)', type: 'text' }
+    ],
+    advanced_problem: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'challenge', label: '문제', type: 'textarea' },
+      { key: 'answer', label: '정답 (선택)', type: 'text' }
+    ],
+    game: [
+      { key: 'title', label: '활동 이름', type: 'text' },
+      { key: 'steps', label: '활동 단계 (한 줄에 하나씩)', type: 'lines' }
+    ],
+    summary: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'points', label: '핵심 정리 (한 줄에 하나씩)', type: 'lines' }
+    ],
+    next_lesson: [
+      { key: 'title', label: '제목', type: 'text' },
+      { key: 'preview', label: '예고 내용', type: 'textarea' }
+    ]
+  };
+
+  function openBlockEditor(slideIdx) {
+    const slide = slides[slideIdx];
+    if (!slide) return;
+    const schema = EDIT_SCHEMA[slide.block];
+    if (!schema) return; // 편집 스키마 없는 블록은 무시
+    const d = slide.data || {};
+
+    const overlay = document.createElement('div');
+    overlay.className = 'block-editor-overlay';
+    const fieldsHtml = schema.map((f, i) => {
+      let cur = d[f.key];
+      // 플레이스홀더 텍스트는 빈칸으로 시작
+      if (typeof cur === 'string' && /^\(.*편집.*\)$|^새 |^단계 \d|^점 \d/.test(cur)) cur = '';
+      if (f.type === 'lines') {
+        const val = Array.isArray(cur) ? cur.filter(x => !/^단계 \d|^점 \d/.test(x)).join('\n') : '';
+        return `<label class="be-field"><span>${f.label}</span><textarea data-key="${f.key}" data-type="lines" rows="4">${esc(val)}</textarea></label>`;
+      }
+      if (f.type === 'textarea') {
+        return `<label class="be-field"><span>${f.label}</span><textarea data-key="${f.key}" rows="3">${esc(cur || '')}</textarea></label>`;
+      }
+      return `<label class="be-field"><span>${f.label}</span><input type="text" data-key="${f.key}" value="${esc(cur || '')}"></label>`;
+    }).join('');
+
+    overlay.innerHTML = `<div class="block-editor">
+      <div class="be-head">✏️ 내용 채우기 <span class="be-blocktype">${blockLabel(slide.block)}</span></div>
+      <div class="be-body">${fieldsHtml}</div>
+      <div class="be-foot">
+        <button class="be-cancel">취소</button>
+        <button class="be-save">저장</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.querySelector('.be-cancel').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('.be-save').addEventListener('click', () => {
+      overlay.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.dataset.key;
+        if (el.dataset.type === 'lines') {
+          const arr = el.value.split('\n').map(s => s.trim()).filter(Boolean);
+          if (arr.length) slide.data[key] = arr;
+        } else {
+          const v = el.value.trim();
+          if (key === 'answer' && v === '') { delete slide.data[key]; }
+          else if (v !== '') slide.data[key] = v;
+        }
+      });
+      close();
+      rebuild();
+    });
+    // 첫 입력칸 포커스
+    const first = overlay.querySelector('input, textarea');
+    if (first) first.focus();
+  }
+  function blockLabel(type) {
+    const m = { motivate: '도입 상황', concept: '개념 설명', question: '발문', basic_problem: '기본 문제', advanced_problem: '응용 문제', game: '활동·놀이', summary: '핵심 요약', next_lesson: '다음 차시' };
+    return m[type] || type;
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
   global.Teacher = {
     init(config) {
       CURRICULUM = config.curriculum || [];
@@ -1415,6 +1556,8 @@
     // 디버그·외부 호출용
     openShow,
     backToHome,
+    exportPptx,
+    exportWorksheet,
     // 테마 외부 호출용 (디버그·확장)
     setTheme(t) { _themeState.t = t; applyThemeState(_themeState); saveThemeState(_themeState); },
     setFont(f) { _themeState.f = f; applyThemeState(_themeState); saveThemeState(_themeState); }
