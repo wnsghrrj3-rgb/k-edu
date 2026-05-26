@@ -795,6 +795,28 @@ async function loadDashboard(user){
 }
 
 // =============================================
+// [베타] 게스트 진입 — 로그인 없이 대시보드 골격 표시
+// 세션이 없으므로 RLS로 보호되는 데이터는 비어 있을 수 있음 (의도된 동작).
+// 게이트 복구 시: 초기화 블록의 else 분기를 원래대로 되돌리면 됨.
+// =============================================
+async function enterDashboardAsGuest(){
+  currentTeacher = { user_id: null, id: null, name: '게스트' };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').classList.add('active');
+  document.getElementById('nav-right').style.display = 'flex';
+  const navName = document.getElementById('nav-name');
+  if(navName) navName.textContent = '게스트 선생님';
+  const welcome = document.getElementById('welcome-name');
+  if(welcome) welcome.innerHTML = '<span class="accent">게스트</span> 선생님';
+  // 데이터 로드 — 비거나 실패해도 화면 골격은 유지
+  try { await loadClassCode(); } catch(e){}
+  try { await loadStudents(); } catch(e){}
+  try { await loadRightsChannel(); } catch(e){}
+  try { await loadParentLinks(); } catch(e){}
+  try { renderWipeCountdown(); } catch(e){}
+}
+
+// =============================================
 // 학년 와이프 D-day 카운트다운 (T13 — 처리방침 v2.1 제4조)
 // 매년 2/28 15:00 UTC = KST 다음날 자정에 wipe_student_data_yearly() 자동 실행.
 // FE 배너는 D-7 이내일 때 표시, D-2 이내는 critical 톤. D > 7 또는 D < 0이면 hidden.
@@ -2127,14 +2149,11 @@ function checkSession(){
 (async()=>{
   const { data: { session } } = await db.auth.getSession();
   if(session?.user){
-    const remember = localStorage.getItem('kedu_remember') === 'true';
-    if(remember || sessionStorage.getItem('kedu_session') === 'true'){
-      await loadDashboard(session.user);
-      startSessionTimer();
-    } else {
-      // 브라우저 재시작 + 로그인 유지 안 했으면 로그아웃
-      await db.auth.signOut();
-    }
+    await loadDashboard(session.user);
+    startSessionTimer();
+  } else {
+    // [베타] 로그인 게이트 해제 — 세션이 없어도 바로 대시보드로 진입
+    await enterDashboardAsGuest();
   }
 
   // Enter 키 바인딩
