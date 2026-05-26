@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>1학년 수학 — 케이티처 (K-edu Teacher)</title>
+<link rel="stylesheet" href="engine/teacher-styles.css">
+</head>
+<body>
+
+<!-- ===================== 화면 1: 차시 선택 (홈) ===================== -->
+<div class="home-view active" id="home-view">
+  <div class="home-inner">
+    <div class="home-header">
+      <div class="brand">케이티처 [시범판] · PPT·학습지 다운로드 테스트</div>
+      <h1>1학년 1학기 수학</h1>
+      <div class="sub">차시를 선택하면 수업 자료가 열립니다. 사용 가능한 차시는 짙은 색으로 표시됩니다.</div>
+    </div>
+    <div id="units-container"></div>
+  </div>
+</div>
+
+<!-- ===================== 화면 2: 슬라이드쇼 ===================== -->
+<div class="show-view" id="show-view">
+
+<!-- ===================== 사이드바 ===================== -->
+<aside id="aside" class="collapsed">
+  <header>
+    <h1>차시</h1>
+    <div class="meta"></div>
+    <div>
+      <span class="tag">1학년</span>
+      <span class="tag">수학</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="slides">슬라이드</div>
+    <div class="tab" data-tab="extras">보조자료</div>
+    <div class="tab" data-tab="blocks">블록 추가</div>
+  </div>
+
+  <div class="tab-panel active" data-tab-panel="slides" id="slides-panel"></div>
+  <div class="tab-panel" data-tab-panel="extras">
+    <div class="extras-hint">현재 슬라이드에 어울리는 자료부터 보여드려요. 카드 클릭으로 끼움·뺌.</div>
+    <div class="extras-filter" id="extras-filter"></div>
+    <div id="extras-list"></div>
+  </div>
+  <div class="tab-panel" data-tab-panel="blocks">
+    <div class="extras-hint">현재 슬라이드 뒤에 새 슬라이드를 추가해요.</div>
+    <div class="block-section">
+      <h3>도입 · 전개</h3>
+      <div class="block-card" data-block-type="motivate"><div class="block-name">도입 상황</div><div class="block-desc">흥미 유발 장면</div></div>
+      <div class="block-card" data-block-type="concept"><div class="block-name">개념 설명</div><div class="block-desc">큰 글씨 설명</div></div>
+      <div class="block-card" data-block-type="question"><div class="block-name">발문</div><div class="block-desc">큰 발문 한 줄</div></div>
+    </div>
+    <div class="block-section">
+      <h3>문제 · 활동</h3>
+      <div class="block-card" data-block-type="basic_problem"><div class="block-name">기본 문제</div><div class="block-desc">±1 문제</div></div>
+      <div class="block-card" data-block-type="advanced_problem"><div class="block-name">응용 문제</div><div class="block-desc">실생활 적용</div></div>
+      <div class="block-card" data-block-type="game"><div class="block-name">활동 · 놀이</div><div class="block-desc">단계별 안내</div></div>
+    </div>
+    <div class="block-section">
+      <h3>정리</h3>
+      <div class="block-card" data-block-type="summary"><div class="block-name">핵심 요약</div><div class="block-desc">배운 점</div></div>
+      <div class="block-card" data-block-type="next_lesson"><div class="block-name">다음 차시</div><div class="block-desc">예고</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===================== 메인 영역 ===================== -->
+<main>
+  <div class="toolbar">
+    <button class="icon-btn" id="back-to-home">← 차시 목록</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="toggle-side" title="차시 목차 펼치기/접기">📑 차시 목차</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="prev-btn" title="이전">←</button>
+    <button class="icon-btn" id="next-btn" title="다음">→</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="full-btn" title="전체화면 (F)">⛶ 전체화면</button>
+    <button class="icon-btn" id="delete-slide-btn" title="현재 슬라이드 삭제" style="display:none;">삭제</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="export-pptx-btn" title="현재 조립을 교사용 PPT로 내려받기">⬇ PPT</button>
+    <button class="icon-btn" id="export-ws-btn" title="문제·활동을 학습지로 내려받기">⬇ 학습지</button>
+
+    <div class="position">
+      <span id="cur-pos">1</span> / <span id="total-pos">1</span>
+      <span class="stage-tag">· <span id="current-stage">도입</span></span>
+    </div>
+
+    <div class="save-status" id="save-status" title="자동 저장됨 — 다시 열어도 조립 상태 유지">
+      <span class="dot"></span>
+      <span id="save-status-text">자동 저장</span>
+    </div>
+    <button class="reset-btn" id="reset-btn" title="조립 상태를 초기 자리로 되돌리기">초기화</button>
+  </div>
+
+  <div class="slide-stage" id="slide-stage">
+    <div class="slide-wrapper">
+      <div id="slide-content"></div>
+      <div class="extras-panel" id="extras-panel" style="display:none;">
+        <div class="ep-label">보조자료</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+</div><!-- /show-view -->
+
+<button class="fs-exit" id="fs-exit-btn">전체화면 종료 (ESC)</button>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modal-title"></h3>
+    <div class="content" id="modal-content"></div>
+    <div class="url" id="modal-url"></div>
+    <div style="margin-top: 16px;">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 자료 오버레이 ===================== -->
+<div class="ext-overlay" id="ext-overlay">
+  <div class="ext-overlay-bar">
+    <span class="eo-icon" id="eo-icon"></span>
+    <span class="eo-type-tag" id="eo-type-tag"></span>
+    <span class="eo-title" id="eo-title"></span>
+    <span class="eo-audience" id="eo-audience"></span>
+    <button class="eo-close" id="eo-close">닫기 (ESC)</button>
+  </div>
+  <div class="ext-overlay-body">
+    <div class="eo-canvas" id="eo-canvas"></div>
+  </div>
+</div>
+
+<!-- ===================== 단원·차시 카탈로그 ===================== -->
+<script>
+window.CURRICULUM_G1_MATH = [
+  {
+    unit: 1, title: "9까지의 수", lesson_count: 12,
+    lessons: [
+      {n: 1, title: "단원 도입", std: "[2수01-01]", concept: "수 세기가 필요한 상황 인식 · 단원 실천 활동"},
+      {n: "2~3", title: "1, 2, 3, 4, 5를 알아볼까요", std: "[2수01-01]", concept: "1~5 수 개념 · 우리말·한자어 두 가지 읽기"},
+      {n: "4~5", title: "6, 7, 8, 9를 알아볼까요", std: "[2수01-01]", concept: "6~9 수 개념 · 십 배열판 5 기준 인식"},
+      {n: 6, title: "순서를 알아볼까요", std: "[2수01-01]", concept: "순서수 · 기준 넣은 순서 (왼쪽/오른쪽)"},
+      {n: 7, title: "수의 순서를 알아볼까요", std: "[2수01-03]", concept: "1~9 순서대로 · 9~1 거꾸로"},
+      {n: 8, title: "1만큼 더 큰 수와 1만큼 더 작은 수를 알아볼까요", std: "[2수01-03]", concept: "±1 개념 · 가역적 사고 · 연결 모형 계단"},
+      {n: 9, title: "0을 알아볼까요", std: "[2수01-01], [2수01-03]", concept: "1보다 1만큼 더 작은 수 · 0 도입"},
+      {n: 10, title: "수의 크기를 비교해 볼까요", std: "[2수01-03]", concept: "두 수 비교 · 크다·작다 표현"},
+      {n: 11, title: "수학이랑 확인해요", std: "[2수01-01], [2수01-03]", concept: "단원 평가 · 자기 평가"},
+      {n: 12, title: "수학이랑 만들어요", std: "[2수01-01]", concept: "수 그림책 만들기 · 생활 속 수"}
+    ]
+  },
+  {
+    unit: 2, title: "여러 가지 모양", lesson_count: 6,
+    lessons: [
+      {n: 1, title: "단원 도입", std: "[2수02-01]", concept: "여러 모양 찾기"},
+      {n: 2, title: "여러 가지 모양 찾기", std: "[2수02-01]", concept: "□ △ ○ 모양 분류"},
+      {n: 3, title: "여러 가지 모양 알아보기", std: "[2수02-01]", concept: "모양의 특징"},
+      {n: 4, title: "여러 가지 모양으로 만들기", std: "[2수02-01]", concept: "모양 조합·구성"},
+      {n: 5, title: "수학이랑 확인해요", std: "[2수02-01]", concept: "단원 평가"},
+      {n: 6, title: "수학이랑 만들어요", std: "[2수02-01]", concept: "모양으로 작품 만들기"}
+    ]
+  },
+  {
+    unit: 3, title: "덧셈과 뺄셈", lesson_count: 14,
+    lessons: [
+      {n: 1, title: "단원 도입", std: "[2수01-04]", concept: "모으기·가르기 필요성"},
+      {n: 2, title: "모으기와 가르기 (1)", std: "[2수01-04]", concept: "9까지의 수 모으기·가르기 도입"},
+      {n: 3, title: "모으기와 가르기 (2)", std: "[2수01-04]", concept: "연결 모형·구체물 가르기 심화"},
+      {n: 4, title: "이야기를 만들어 볼까요", std: "[2수01-04], [2수01-05]", concept: "덧셈·뺄셈 상황 이야기"},
+      {n: 5, title: "덧셈을 알아볼까요", std: "[2수01-05]", concept: "+·= 기호 도입, 덧셈식"},
+      {n: "6~7", title: "덧셈을 해 볼까요", std: "[2수01-06]", concept: "덧셈 다양한 전략·교환법칙"},
+      {n: 8, title: "뺄셈을 알아볼까요", std: "[2수01-05]", concept: "− 기호 도입, 뺄셈식"},
+      {n: "9~10", title: "뺄셈을 해 볼까요", std: "[2수01-06]", concept: "뺄셈 다양한 전략"},
+      {n: 11, title: "0이 있는 덧셈과 뺄셈", std: "[2수01-06]", concept: "0의 항등원"},
+      {n: 12, title: "덧셈과 뺄셈을 해 볼까요", std: "[2수01-06]", concept: "같은 결괏값 다양한 식"},
+      {n: 13, title: "수학이랑 확인해요", std: "[2수01-04~06]", concept: "단원 평가"},
+      {n: 14, title: "수학이랑 만들어요", std: "[2수01-05~06]", concept: "무당벌레 자유 창작"}
+    ]
+  },
+  {
+    unit: 4, title: "비교하기", lesson_count: 6,
+    lessons: [
+      {n: 1, title: "단원 도입", std: "[2수03-01]", concept: "비교의 필요성"},
+      {n: 2, title: "길이 비교하기", std: "[2수03-01]", concept: "길다·짧다"},
+      {n: 3, title: "무게 비교하기", std: "[2수03-01]", concept: "무겁다·가볍다"},
+      {n: 4, title: "넓이 비교하기", std: "[2수03-01]", concept: "넓다·좁다"},
+      {n: 5, title: "담을 수 있는 양 비교하기", std: "[2수03-01]", concept: "많다·적다 (들이)"},
+      {n: 6, title: "수학이랑 확인해요", std: "[2수03-01]", concept: "단원 평가"}
+    ]
+  },
+  {
+    unit: 5, title: "50까지의 수", lesson_count: 9,
+    lessons: [
+      {n: 1, title: "단원 도입", std: "[2수01-01]", concept: "10 이상의 수 필요성"},
+      {n: 2, title: "10을 알아볼까요", std: "[2수01-01]", concept: "10 도입"},
+      {n: 3, title: "십몇을 알아볼까요", std: "[2수01-01]", concept: "11~19"},
+      {n: 4, title: "모으기와 가르기", std: "[2수01-02]", concept: "십몇 모으기·가르기"},
+      {n: 5, title: "10개씩 묶어 세기", std: "[2수01-01]", concept: "20·30·40·50"},
+      {n: 6, title: "50까지의 수", std: "[2수01-01]", concept: "50까지 수 세기"},
+      {n: 7, title: "수의 순서", std: "[2수01-03]", concept: "50까지 순서"},
+      {n: 8, title: "수의 크기 비교", std: "[2수01-03]", concept: "두 자리 수 비교"},
+      {n: 9, title: "수학이랑 확인해요", std: "[2수01-01]", concept: "단원 평가"}
+    ]
+  },
+  {
+    unit: 6, title: "수학이랑 사회랑 어울려요", lesson_count: 3,
+    lessons: [
+      {n: 1, title: "통합 수업 도입", std: "교과 통합", concept: "수학·사회 연결"},
+      {n: 2, title: "우리 학교 둘러보기", std: "교과 통합", concept: "수와 위치"},
+      {n: 3, title: "수학이랑 만들어요", std: "교과 통합", concept: "산출물 만들기"}
+    ]
+  }
+];
+
+// 차시 데이터 누적 객체 — data/*.js 파일들이 LESSONS[키]를 채움
+window.LESSONS = {};
+</script>
+
+<!-- 엔진 -->
+<script src="engine/teacher-engine.js"></script>
+<script src="vendor/pptxgen.bundle.js"></script>
+<script src="engine/teacher-export.js"></script>
+
+<!-- 1학년 수학 단원별 데이터 (각 파일이 window.LESSONS에 누적) -->
+<script src="data/g1_math_u1.js"></script>
+<script src="data/g1_math_u2.js"></script>
+<script src="data/g1_math_u3.js"></script>
+<script src="data/g1_math_u4.js"></script>
+<script src="data/g1_math_u5.js"></script>
+<script src="data/g1_math_u6.js"></script>
+
+<!-- 진입 -->
+<script>
+Teacher.init({
+  subject: { slug: 'g1_math', label: '1학년 수학' },
+  curriculum: window.CURRICULUM_G1_MATH,
+  lessons: window.LESSONS
+});
+</script>
+
+</body>
+</html>
