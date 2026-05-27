@@ -5,8 +5,8 @@
    ------------------------------------------------------------
    진척:
    - cycle A/B (인덱스): u4_01~07 ✅
-   - cycle C (extras 풍부화): l02 길이 ✅ · l03 무게 ✅ · l04 넓이 ✅ · l05 들이 ✅
-   - 대기: l01·l06·l07 extras · _extra 5개
+   - cycle C (extras 풍부화): 전 7차시 ✅ (l01 도입·l02~05 측정·l06 평가·l07 만들기)
+   - 4단원 케이티처 데이터 = 완료
 ============================================================ */
 
 
@@ -20,11 +20,11 @@ LESSONS["u4_l01"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_01_단원도입.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"비교하기를 시작해요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘부터 배울 것", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"4가지 비교 만나기", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"필통에 무엇을 넣을까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"책가방에 무엇을 넣을까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"비교하기를 시작해요", desc:"1단계 · 도입"}, suggested_extras:["v_l1_intro", "q_l1_around", "b_l1_book"]},
+    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘부터 배울 것", desc:"1단계 · 도입"}, suggested_extras:["t_l1_four"]},
+    {id:"s03", stage:"도입", block:"review", data:{title:"4가지 비교 만나기", desc:"1단계 · 도입"}, suggested_extras:["q_l1_words"]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"필통에 무엇을 넣을까요?", desc:"2단계 · 전개"}, suggested_extras:["t_l1_daily", "x_l1_one"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"책가방에 무엇을 넣을까요?", desc:"2단계 · 전개"}, suggested_extras:["g_l1_match"]},
     {id:"s06", stage:"전개", block:"concept", data:{title:"왜 그렇게 나누었을까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
     {id:"s07", stage:"전개", block:"concept", data:{title:"비교의 의미", desc:"2단계 · 전개"}, suggested_extras:[]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"실천 활동 1 · 길이 비교", desc:"3단계 · 기본문제"}, suggested_extras:[]},
@@ -35,11 +35,23 @@ LESSONS["u4_l01"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"가족과 함께 해 봐요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"친구들은 무엇을 골랐을까요?", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"실천해요 표", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"나의 다짐", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"나의 다짐", desc:"5단계 · 정리"}, suggested_extras:["r_l1_home", "r_l1_market"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l1_plan"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l1_intro", type:"video", icon:"🎥", title:"비교하기 4가지 미리보기", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%B9%84%EA%B5%90%ED%95%98%EA%B8%B0%20%EA%B8%B8%EC%9D%B4%20%EB%AC%B4%EA%B2%8C%20%EB%84%93%EC%9D%B4%20%EB%93%A4%EC%9D%B4", description:"길이·무게·넓이·들이 네 가지 비교를 한눈에 보여 주는 영상. 단원 첫 시간 흥미 유발용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l1_around", type:"fun_question", icon:"💡", title:"교실에서 비교할 것 찾기", content:"교실을 둘러보며 '더 긴 것, 더 무거운 것, 더 넓은 것, 더 많이 담기는 것'을 하나씩 찾아볼까요?", fit_slides:["motivate", "concept"]},
+    {id:"q_l1_words", type:"fun_question", icon:"💡", title:"비교하는 말 모으기", content:"길다·짧다, 무겁다·가볍다, 넓다·좁다, 많다·적다 — 우리가 쓰는 비교 말을 함께 모아 봐요.", fit_slides:["concept"]},
+    {id:"t_l1_four", type:"tip", icon:"🧩", title:"네 가지를 묶어 보여 주기", content:"길이·무게·넓이·들이를 따로가 아니라 '무엇을 견주는가'로 묶어 주면 아이가 단원 전체 그림을 잡아요.", fit_slides:["concept", "objective"]},
+    {id:"t_l1_daily", type:"tip", icon:"🧩", title:"생활 장면으로 시작", content:"가방 싸기, 물 따르기처럼 익숙한 장면에서 비교가 쓰인다는 걸 먼저 보여 주면 동기가 살아나요.", fit_slides:["motivate"]},
+    {id:"r_l1_home", type:"real_world", icon:"🌍", title:"집에서도 비교해요", content:"신발 정리, 물병 고르기, 이불 펴기 — 집안일 속에 네 가지 비교가 다 숨어 있어요.", fit_slides:["real_world", "motivate"]},
+    {id:"r_l1_market", type:"real_world", icon:"🌍", title:"시장 속 비교", content:"과일 무게 달기, 큰 봉지 고르기처럼 시장에서도 비교를 늘 해요.", fit_slides:["real_world"]},
+    {id:"g_l1_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"무엇을 비교할까 짝짓기", description:"상황과 어울리는 비교 종류를 짝지어 보세요.", hint:"무엇을 견주는지 생각해요.", pairs:[{a:{text:"연필 두 자루"}, b:{text:"길이"}}, {a:{text:"가방과 책"}, b:{text:"무게"}}, {a:{text:"방석 두 장"}, b:{text:"넓이"}}, {a:{text:"컵과 병"}, b:{text:"들이"}}], fit_slides:["concept", "game"]},
+    {id:"b_l1_book", type:"book", icon:"📖", title:"『크다 작다 많다 적다』", content:"여러 비교 말을 그림으로 두루 만나 보는 그림책. 단원 도입에 어울려요.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l1_one", type:"misconception", icon:"❓", title:"오개념 — 비교는 길이뿐?", content:"비교를 '길이 재기'로만 좁게 알기 쉬워요. 무게·넓이·들이도 모두 비교라는 걸 처음에 넓게 잡아 주세요.", fit_slides:["concept"]},
+    {id:"e_l1_plan", type:"extension", icon:"⬆", title:"나의 비교 일기", content:"하루 동안 찾은 비교를 한 가지씩 적어 오게 하면 단원 내내 동기가 이어져요.", fit_slides:["next_lesson", "self_assessment"]}
+  ]
 };
 
 LESSONS["u4_l02"] = {
@@ -228,26 +240,37 @@ LESSONS["u4_l06"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_06_수학이랑확인해요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"objective", data:{title:"단원 평가를 시작해요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s02", stage:"기본문제", block:"basic_problem", data:{title:"연필보다 더 긴 선을 그어요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s03", stage:"기본문제", block:"basic_problem", data:{title:"정답이에요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"objective", data:{title:"단원 평가를 시작해요", desc:"1단계 · 도입"}, suggested_extras:["v_l6_review"]},
+    {id:"s02", stage:"기본문제", block:"basic_problem", data:{title:"연필보다 더 긴 선을 그어요", desc:"3단계 · 기본문제"}, suggested_extras:["q_l6_why"]},
+    {id:"s03", stage:"기본문제", block:"basic_problem", data:{title:"정답이에요", desc:"3단계 · 기본문제"}, suggested_extras:["t_l6_wrong"]},
     {id:"s04", stage:"기본문제", block:"basic_problem", data:{title:"더 가벼운 것을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s05", stage:"기본문제", block:"basic_problem", data:{title:"정답이에요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s06", stage:"기본문제", block:"basic_problem", data:{title:"담을 수 있는 양이 더 많은 것을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s07", stage:"기본문제", block:"basic_problem", data:{title:"정답이에요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"빨간 방석보다 더 넓은 방석을 그려요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"정답이에요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"응용문제", block:"advanced_problem", data:{title:"알맞은 말 붙임딱지를 빈칸에 끌어다 놓아요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
+    {id:"s10", stage:"응용문제", block:"advanced_problem", data:{title:"알맞은 말 붙임딱지를 빈칸에 끌어다 놓아요", desc:"4단계 · 응용문제"}, suggested_extras:["x_l6_mix"]},
     {id:"s11", stage:"응용문제", block:"advanced_problem", data:{title:"첫 두 문장이에요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"남은 두 문장이에요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요 ①", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s13", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요 ①", desc:"5단계 · 정리"}, suggested_extras:["q_l6_pick"]},
     {id:"s14", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요 ②", desc:"5단계 · 정리"}, suggested_extras:[]},
     {id:"s15", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요 ③", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"평가 결과를 확인해요", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"평가 결과를 확인해요", desc:"5단계 · 정리"}, suggested_extras:["t_l6_method", "g_l6_match", "r_l6_use", "b_l6_book"]},
     {id:"s17", stage:"정리", block:"review", data:{title:"단원에서 실천한 활동은?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"단원을 마무리해요", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"단원을 마무리해요", desc:"5단계 · 정리"}, suggested_extras:["e_l6_make"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l6_review", type:"video", icon:"🎥", title:"비교하기 총정리 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%B9%84%EA%B5%90%ED%95%98%EA%B8%B0%20%EB%8B%A8%EC%9B%90%20%EC%A0%95%EB%A6%AC%20%EA%B8%B8%EC%9D%B4%20%EB%AC%B4%EA%B2%8C%20%EB%84%93%EC%9D%B4%20%EB%93%A4%EC%9D%B4", description:"네 가지 비교를 빠르게 되짚는 정리 영상. 평가 전 복습에 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["objective", "summary"]},
+    {id:"q_l6_pick", type:"fun_question", icon:"💡", title:"가장 자신 있는 비교는?", content:"길이·무게·넓이·들이 중 어떤 비교가 가장 쉬웠나요? 어려웠던 건 무엇인가요?", fit_slides:["self_assessment", "summary"]},
+    {id:"q_l6_why", type:"fun_question", icon:"💡", title:"왜 그렇게 골랐어요?", content:"답을 고른 까닭을 친구에게 말로 설명해 봐요. 설명하면 더 단단해져요.", fit_slides:["basic_problem", "advanced_problem"]},
+    {id:"t_l6_wrong", type:"tip", icon:"🧩", title:"오답은 보물", content:"틀린 문제는 어디서 헷갈렸는지 함께 짚어 주세요. 끝 맞추기·겹치기·옮겨 담기 중 무엇을 빠뜨렸는지 돌아보면 좋아요.", fit_slides:["basic_problem", "advanced_problem"]},
+    {id:"t_l6_method", type:"tip", icon:"🧩", title:"방법으로 묶어 점검", content:"문제를 '직접 대보기·겹쳐보기·옮겨담기'로 묶어 보면 아이가 비교 방법을 정리하기 쉬워요.", fit_slides:["summary"]},
+    {id:"r_l6_use", type:"real_world", icon:"🌍", title:"배운 걸 어디에 쓸까", content:"가방 무게 줄이기, 큰 그릇 고르기처럼 오늘 배운 비교를 생활에서 어디에 쓸지 이야기해 봐요.", fit_slides:["real_world", "summary"]},
+    {id:"g_l6_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"비교 방법 짝짓기", description:"비교 종류와 알맞은 방법을 짝지어 보세요.", hint:"각 비교를 어떻게 했는지 떠올려요.", pairs:[{a:{text:"길이"}, b:{text:"끝을 맞춰 대보기"}}, {a:{text:"무게"}, b:{text:"양팔저울로"}}, {a:{text:"넓이"}, b:{text:"겹쳐 보기"}}, {a:{text:"들이"}, b:{text:"옮겨 담기"}}], fit_slides:["summary", "game"]},
+    {id:"b_l6_book", type:"book", icon:"📖", title:"『비교 박사가 되었어요』", content:"여러 비교를 두루 복습하며 마무리하기 좋은 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["summary", "self_assessment"]},
+    {id:"x_l6_mix", type:"misconception", icon:"❓", title:"오개념 — 방법을 뒤섞기", content:"넓이를 길이처럼 끝만 맞춰 보거나, 들이를 높이로만 보는 실수가 잦아요. 비교마다 방법이 다름을 다시 짚어요.", fit_slides:["basic_problem", "summary"]},
+    {id:"e_l6_make", type:"extension", icon:"⬆", title:"내가 문제 내기", content:"배운 비교로 친구에게 낼 문제를 직접 만들어 보면 이해가 한층 깊어져요.", fit_slides:["next_lesson", "advanced_problem"]}
+  ]
 };
 
 LESSONS["u4_l07"] = {
@@ -260,24 +283,36 @@ LESSONS["u4_l07"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_07_수학이랑만들어요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"점토로 만들어 봐요", desc:"1단계 · 도입"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"점토로 만들어 봐요", desc:"1단계 · 도입"}, suggested_extras:["v_l7_make", "q_l7_what", "b_l7_book"]},
     {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 배워요", desc:"1단계 · 도입"}, suggested_extras:[]},
     {id:"s03", stage:"도입", block:"review", data:{title:"비교하기 5가지를 만나요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"미리 만든 점토 작품들", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"긴 뱀과 사과 — 어느 것이 더 길까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"미리 만든 점토 작품들", desc:"2단계 · 전개"}, suggested_extras:["t_l7_simple", "x_l7_fair"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"긴 뱀과 사과 — 어느 것이 더 길까요?", desc:"2단계 · 전개"}, suggested_extras:["q_l7_team"]},
     {id:"s06", stage:"전개", block:"concept", data:{title:"사과와 동그란 공 — 어느 것이 더 무거울까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"다음은 넓이와 들이예요", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s07", stage:"전개", block:"concept", data:{title:"다음은 넓이와 들이예요", desc:"2단계 · 전개"}, suggested_extras:["g_l7_match"]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
+    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:["t_l7_share"]},
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"단원에서 만난 5가지", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"단원에서 만난 5가지", desc:"5단계 · 정리"}, suggested_extras:["r_l7_class", "r_l7_home"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l7_book2"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l7_make", type:"video", icon:"🎥", title:"비교 놀이 만들기 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%B9%84%EA%B5%90%ED%95%98%EA%B8%B0%20%EB%86%80%EC%9D%B4%20%EB%A7%8C%EB%93%A4%EA%B8%B0%20%ED%99%9C%EB%8F%99", description:"비교를 활용한 간단한 만들기·놀이 활동 예시 영상. 활동 안내에 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l7_what", type:"fun_question", icon:"💡", title:"무엇을 만들어 볼까?", content:"길이·무게·넓이·들이 중 무엇으로 놀이를 만들어 볼까요? 가장 재미있을 것 같은 걸 골라 봐요.", fit_slides:["motivate", "concept"]},
+    {id:"q_l7_team", type:"fun_question", icon:"💡", title:"누구와 함께 할까?", content:"짝과 함께 비교 놀이를 만들면 더 즐거워요. 역할을 어떻게 나눌까요?", fit_slides:["concept", "advanced_problem"]},
+    {id:"t_l7_simple", type:"tip", icon:"🧩", title:"작게 시작하기", content:"처음엔 두 가지만 견주는 단순한 활동으로 시작하면 누구나 성공 경험을 가져요.", fit_slides:["basic_problem", "concept"]},
+    {id:"t_l7_share", type:"tip", icon:"🧩", title:"만든 걸 나누기", content:"각자 만든 비교 놀이를 친구와 바꿔 해 보면 활동이 두 배로 풍성해져요.", fit_slides:["advanced_problem", "summary"]},
+    {id:"r_l7_home", type:"real_world", icon:"🌍", title:"집에서 만드는 비교 놀이", content:"집에 있는 물건으로 '더 무거운 것 찾기' 같은 놀이를 가족과 만들어 봐요.", fit_slides:["real_world", "next_lesson"]},
+    {id:"r_l7_class", type:"real_world", icon:"🌍", title:"우리 반 비교 전시", content:"만든 활동을 교실 한쪽에 모아 두면 쉬는 시간에도 비교 놀이를 즐길 수 있어요.", fit_slides:["real_world", "summary"]},
+    {id:"g_l7_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"활동과 준비물 짝짓기", description:"비교 놀이와 어울리는 준비물을 짝지어 보세요.", hint:"무엇으로 견줄지 생각해요.", pairs:[{a:{text:"길이 재기 놀이"}, b:{text:"끈·막대"}}, {a:{text:"무게 견주기"}, b:{text:"양팔저울"}}, {a:{text:"넓이 겹치기"}, b:{text:"색종이"}}, {a:{text:"들이 옮기기"}, b:{text:"컵·물"}}], fit_slides:["concept", "game"]},
+    {id:"b_l7_book", type:"book", icon:"📖", title:"『만들며 배우는 비교』", content:"직접 만들고 견주며 비교를 익히는 활동 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l7_fair", type:"misconception", icon:"❓", title:"오개념 — 공평하지 않은 비교", content:"한쪽만 가득 채우거나 시작점을 안 맞추면 놀이가 공평하지 않아요. 만들 때 '같은 조건'을 약속하게 해 주세요.", fit_slides:["basic_problem", "concept"]},
+    {id:"e_l7_book2", type:"extension", icon:"⬆", title:"비교 책 만들기", content:"내가 찾은 비교를 그림과 말로 모아 작은 책으로 엮으면 단원 마무리 작품이 돼요.", fit_slides:["next_lesson", "summary"]}
+  ]
 };
