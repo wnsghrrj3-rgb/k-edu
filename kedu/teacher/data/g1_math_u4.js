@@ -1,16 +1,12 @@
 /* ============================================================
    1학년 1학기 수학 — 4단원 「비교하기」 (7차시 + 단원평가)
-   양산 자리 — LESSONS["u4_l{NN}"] 누적
-   ------------------------------------------------------------
-   진입 채팅: 케이티처 채팅 / 다른 단원 .js = read-only
-   학년·과목 통합 파일 g1_math.html이 자동 로드 후
-   window.LESSONS 객체에 누적시킴.
+   양산 자리 — LESSONS["u4_l{NN}"] 누적 / 다른 단원 .js = read-only
+   g1_math.html이 자동 로드 후 window.LESSONS 에 누적.
    ------------------------------------------------------------
    진척:
-   - cycle A (본 차시 인덱스): u4_02·03·04·05·07 ✅
-   - cycle B (단원 도입): u4_01 ✅
-   - 단원 평가: u4_06 ✅ (평가 구조를 5단계로 흡수)
-   - 대기: cycle C(extras 풍부화 차시당 10~15건 · suggested_extras 매핑 · _extra 5개)
+   - cycle A/B (인덱스): u4_01~07 ✅
+   - cycle C (extras 풍부화): l02 길이 ✅ · l03 무게 ✅ · 나머지 대기
+   - 대기: l04·l05·l01·l06·l07 extras · _extra 5개
 ============================================================ */
 
 
@@ -56,13 +52,13 @@ LESSONS["u4_l02"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_02_어느것이더길까요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 우산을 가져가고 싶나요?", desc:"1단계 · 도입"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 우산을 가져가고 싶나요?", desc:"1단계 · 도입"}, suggested_extras:["v_l2_len", "q_l2_pencil", "b_l2_book"]},
     {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:[]},
     {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간에 만난 4가지", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"끝을 맞추어 비교해요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"'길다'와 '짧다'", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"세 가지를 비교하면?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:["t_l2_align", "r_l2_height"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"끝을 맞추어 비교해요", desc:"2단계 · 전개"}, suggested_extras:["t_l2_align", "t_l2_hands"]},
+    {id:"s06", stage:"전개", block:"concept", data:{title:"'길다'와 '짧다'", desc:"2단계 · 전개"}, suggested_extras:["q_l2_arm"]},
+    {id:"s07", stage:"전개", block:"concept", data:{title:"세 가지를 비교하면?", desc:"2단계 · 전개"}, suggested_extras:["x_l2_start", "g_l2_match"]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
@@ -71,11 +67,23 @@ LESSONS["u4_l02"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["r_l2_train"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l2_string"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l2_len", type:"video", icon:"🎥", title:"길이를 비교해요 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EA%B8%B8%EC%9D%B4%20%EB%B9%84%EA%B5%90%20%EA%B8%B8%EB%8B%A4%20%EC%A7%A7%EB%8B%A4", description:"여러 물건의 길이를 끝을 맞추어 비교하는 과정을 보여 주는 영상. 도입에서 흥미를 끌 때 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l2_pencil", type:"fun_question", icon:"💡", title:"연필과 지우개, 어느 게 더 길까?", content:"필통 속 연필과 지우개를 꺼내 끝을 나란히 맞춰 봐요. 어느 것이 더 길까요?", fit_slides:["motivate", "concept"]},
+    {id:"q_l2_arm", type:"fun_question", icon:"💡", title:"내 팔과 친구 팔", content:"짝꿍과 팔을 나란히 대 보아요. 누구 팔이 더 길까요? 끝을 꼭 맞추어야 정확해요.", fit_slides:["concept"]},
+    {id:"t_l2_align", type:"tip", icon:"🧩", title:"한쪽 끝을 꼭 맞추기", content:"길이를 비교할 때는 한쪽 끝을 같은 자리에서 출발시켜야 해요. 시작점이 어긋나면 길이를 잘못 볼 수 있어요.", fit_slides:["concept"]},
+    {id:"t_l2_hands", type:"tip", icon:"🧩", title:"먼저 손으로, 다음에 눈으로", content:"끈이나 막대를 직접 대 보고 비교하게 한 뒤 눈대중으로 넘어가면 '끝 맞추기' 감각이 단단해져요.", fit_slides:["concept"]},
+    {id:"r_l2_height", type:"real_world", icon:"🌍", title:"키 재기", content:"보건실에서 키를 잴 때도 발끝을 같은 바닥에 맞춰요. 길이 비교의 '끝 맞추기'와 똑같아요.", fit_slides:["real_world", "concept"]},
+    {id:"r_l2_train", type:"real_world", icon:"🌍", title:"기차와 자동차", content:"기차는 칸이 여러 개라 자동차보다 훨씬 길어요. 생활 속에서 길고 짧은 것을 찾아보아요.", fit_slides:["real_world", "motivate"]},
+    {id:"g_l2_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"길이 말 짝짓기", description:"물건과 어울리는 길이 표현을 짝지어 보세요.", hint:"긴 것과 짧은 것을 떠올려요.", pairs:[{a:{text:"기차"}, b:{text:"아주 길다"}}, {a:{text:"색연필"}, b:{text:"짧다"}}, {a:{text:"버스"}, b:{text:"길다"}}, {a:{text:"클립"}, b:{text:"아주 짧다"}}], fit_slides:["concept", "game"]},
+    {id:"b_l2_book", type:"book", icon:"📖", title:"『긴 줄 짧은 줄』", content:"길고 짧은 것을 그림으로 견주어 보며 길이 감각을 키우는 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l2_start", type:"misconception", icon:"❓", title:"오개념 — 끝만 보고 판단하기", content:"한쪽 끝이 더 튀어나왔다고 무조건 길다고 보면 안 돼요. 반대쪽 시작점이 맞는지 함께 확인해야 해요.", fit_slides:["concept"]},
+    {id:"e_l2_string", type:"extension", icon:"⬆", title:"끈으로 옮겨 재기", content:"직접 댈 수 없는 물건은 끈을 대어 길이를 옮긴 뒤 비교해 봐요. 다음 단계의 간접 비교로 이어져요.", fit_slides:["next_lesson", "concept"]}
+  ]
 };
 
 LESSONS["u4_l03"] = {
@@ -88,13 +96,13 @@ LESSONS["u4_l03"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_03_어느것이더무거울까요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 것을 들 수 있을까요?", desc:"1단계 · 도입"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 것을 들 수 있을까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l3_wt", "q_l3_hand", "b_l3_book"]},
     {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:[]},
     {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간 끝나고", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"양손으로 들어 봐요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"양팔저울로 확인해요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"'무겁다'와 '가볍다'", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"크면 더 무거울까요?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"양손으로 들어 봐요", desc:"2단계 · 전개"}, suggested_extras:["t_l3_feel"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"양팔저울로 확인해요", desc:"2단계 · 전개"}, suggested_extras:["t_l3_scale", "r_l3_play"]},
+    {id:"s06", stage:"전개", block:"concept", data:{title:"'무겁다'와 '가볍다'", desc:"2단계 · 전개"}, suggested_extras:["q_l3_seesaw"]},
+    {id:"s07", stage:"전개", block:"concept", data:{title:"크면 더 무거울까요?", desc:"2단계 · 전개"}, suggested_extras:["x_l3_big", "g_l3_match"]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
@@ -103,11 +111,23 @@ LESSONS["u4_l03"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["r_l3_bag"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l3_unit"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l3_wt", type:"video", icon:"🎥", title:"무게를 비교해요 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%AC%B4%EA%B2%8C%20%EB%B9%84%EA%B5%90%20%EB%AC%B4%EA%B2%81%EB%8B%A4%20%EA%B0%80%EB%B3%8D%EB%8B%A4%20%EC%96%91%ED%8C%94%EC%A0%80%EC%9A%B8", description:"양손과 양팔저울로 무게를 견주는 과정을 보여 주는 영상. 도입·전개에 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l3_hand", type:"fun_question", icon:"💡", title:"양손에 하나씩", content:"한 손엔 지우개, 다른 손엔 가위를 들어 봐요. 어느 쪽 손이 더 아래로 내려가나요?", fit_slides:["motivate", "concept"]},
+    {id:"q_l3_seesaw", type:"fun_question", icon:"💡", title:"누가 타면 내려갈까?", content:"시소에 형과 동생이 타면 어느 쪽이 내려갈까요? 무거운 쪽이 내려가요.", fit_slides:["concept", "real_world"]},
+    {id:"t_l3_scale", type:"tip", icon:"🧩", title:"양팔저울이 약속", content:"손 느낌은 사람마다 달라요. 양팔저울로 확인하면 누구나 같은 결과를 얻어요. '내려간 쪽이 무겁다'를 약속으로 정해 주세요.", fit_slides:["concept"]},
+    {id:"t_l3_feel", type:"tip", icon:"🧩", title:"손으로 먼저 느끼기", content:"저울에 올리기 전 양손으로 들어 무게를 어림하게 하면 예상과 결과를 견주는 재미가 생겨요.", fit_slides:["concept"]},
+    {id:"r_l3_bag", type:"real_world", icon:"🌍", title:"장바구니", content:"마트에서 산 물병은 무겁고 과자는 가벼워요. 장바구니를 들 때 무게를 몸으로 느껴요.", fit_slides:["real_world", "concept"]},
+    {id:"r_l3_play", type:"real_world", icon:"🌍", title:"놀이터 시소", content:"시소는 무게 비교 도구예요. 무거운 친구 쪽이 내려가고 가벼운 친구 쪽이 올라가요.", fit_slides:["real_world", "concept"]},
+    {id:"g_l3_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"무게 말 짝짓기", description:"물건과 어울리는 무게 표현을 짝지어 보세요.", hint:"무거운 것과 가벼운 것을 떠올려요.", pairs:[{a:{text:"코끼리"}, b:{text:"무겁다"}}, {a:{text:"깃털"}, b:{text:"가볍다"}}, {a:{text:"수박"}, b:{text:"무겁다"}}, {a:{text:"풍선"}, b:{text:"가볍다"}}], fit_slides:["concept", "game"]},
+    {id:"b_l3_book", type:"book", icon:"📖", title:"『무거워, 가벼워』", content:"여러 동물과 물건의 무게를 견주어 보며 무게 말을 익히는 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l3_big", type:"misconception", icon:"❓", title:"오개념 — 크면 무겁다?", content:"큰 풍선이 작은 돌보다 가벼울 수 있어요. 크기와 무게는 늘 같이 가지 않아요. 직접 저울로 확인해 주세요.", fit_slides:["concept"]},
+    {id:"e_l3_unit", type:"extension", icon:"⬆", title:"똑같은 것 몇 개로 재기", content:"공깃돌 몇 개와 같은 무게인지 세어 보면 무게를 수로 나타낼 수 있어요. 다음 단계로 이어지는 생각이에요.", fit_slides:["next_lesson", "concept"]}
+  ]
 };
 
 LESSONS["u4_l04"] = {
