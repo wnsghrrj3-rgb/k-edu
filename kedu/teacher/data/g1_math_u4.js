@@ -5,8 +5,8 @@
    ------------------------------------------------------------
    진척:
    - cycle A/B (인덱스): u4_01~07 ✅
-   - cycle C (extras 풍부화): l02 길이 ✅ · l03 무게 ✅ · 나머지 대기
-   - 대기: l04·l05·l01·l06·l07 extras · _extra 5개
+   - cycle C (extras 풍부화): l02 길이 ✅ · l03 무게 ✅ · l04 넓이 ✅ · l05 들이 ✅
+   - 대기: l01·l06·l07 extras · _extra 5개
 ============================================================ */
 
 
@@ -140,13 +140,13 @@ LESSONS["u4_l04"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_04_어느것이더넓을까요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 돗자리에 앉고 싶나요?", desc:"1단계 · 도입"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"어느 돗자리에 앉고 싶나요?", desc:"1단계 · 도입"}, suggested_extras:["v_l4_area", "q_l4_book", "b_l4_book"]},
     {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:[]},
     {id:"s03", stage:"도입", block:"review", data:{title:"길이·무게를 배웠으니", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"겹쳐 보기로 비교해요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"'넓다'와 '좁다'", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"세 가지를 비교하면?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:["t_l4_overlap"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"겹쳐 보기로 비교해요", desc:"2단계 · 전개"}, suggested_extras:["t_l4_overlap", "t_l4_corner"]},
+    {id:"s06", stage:"전개", block:"concept", data:{title:"'넓다'와 '좁다'", desc:"2단계 · 전개"}, suggested_extras:["q_l4_hand"]},
+    {id:"s07", stage:"전개", block:"concept", data:{title:"세 가지를 비교하면?", desc:"2단계 · 전개"}, suggested_extras:["x_l4_long", "g_l4_match"]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
@@ -155,11 +155,23 @@ LESSONS["u4_l04"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["r_l4_blanket", "r_l4_field"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l4_grid"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l4_area", type:"video", icon:"🎥", title:"넓이를 비교해요 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%84%93%EC%9D%B4%20%EB%B9%84%EA%B5%90%20%EB%84%93%EB%8B%A4%20%EC%A2%81%EB%8B%A4%20%EA%B2%B9%EC%B3%90%EB%B3%B4%EA%B8%B0", description:"두 면을 겹쳐서 넓고 좁음을 견주는 과정을 보여 주는 영상. 도입·전개에 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l4_book", type:"fun_question", icon:"💡", title:"공책과 교과서, 어느 게 더 넓을까?", content:"공책 위에 교과서를 겹쳐 올려 봐요. 어느 것이 더 넓은 자리를 차지하나요?", fit_slides:["motivate", "concept"]},
+    {id:"q_l4_hand", type:"fun_question", icon:"💡", title:"내 손과 친구 손", content:"손바닥을 맞대어 겹쳐 봐요. 누구 손이 더 넓은가요? 겹쳐 보면 한눈에 알 수 있어요.", fit_slides:["concept"]},
+    {id:"t_l4_overlap", type:"tip", icon:"🧩", title:"겹쳐서 비교하기", content:"넓이는 한쪽을 다른 쪽 위에 겹쳐 보면 쉬워요. 남는 부분이 있는 쪽이 더 넓어요.", fit_slides:["concept"]},
+    {id:"t_l4_corner", type:"tip", icon:"🧩", title:"모서리를 맞추기", content:"겹칠 때 한 귀퉁이를 딱 맞추면 남는 부분이 또렷하게 보여요. 길이의 '끝 맞추기'와 같은 원리예요.", fit_slides:["concept"]},
+    {id:"r_l4_blanket", type:"real_world", icon:"🌍", title:"이불과 방석", content:"이불은 방석보다 훨씬 넓어 몸을 다 덮어요. 집 안에서 넓은 것과 좁은 것을 찾아보아요.", fit_slides:["real_world", "concept"]},
+    {id:"r_l4_field", type:"real_world", icon:"🌍", title:"운동장과 교실", content:"운동장은 교실보다 넓어 여럿이 뛰어놀 수 있어요. 넓을수록 더 많은 자리가 생겨요.", fit_slides:["real_world", "motivate"]},
+    {id:"g_l4_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"넓이 말 짝짓기", description:"장소·물건과 어울리는 넓이 표현을 짝지어 보세요.", hint:"넓은 것과 좁은 것을 떠올려요.", pairs:[{a:{text:"운동장"}, b:{text:"넓다"}}, {a:{text:"우표"}, b:{text:"좁다"}}, {a:{text:"이불"}, b:{text:"넓다"}}, {a:{text:"손수건"}, b:{text:"좁다"}}], fit_slides:["concept", "game"]},
+    {id:"b_l4_book", type:"book", icon:"📖", title:"『넓은 들 좁은 길』", content:"넓고 좁은 곳을 그림으로 견주며 넓이 말을 익히는 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l4_long", type:"misconception", icon:"❓", title:"오개념 — 길면 넓다?", content:"가늘고 긴 띠는 길지만 넓지 않을 수 있어요. 길이와 넓이는 달라요. 겹쳐서 차지하는 자리로 봐야 해요.", fit_slides:["concept"]},
+    {id:"e_l4_grid", type:"extension", icon:"⬆", title:"칸으로 세어 보기", content:"똑같은 네모 칸이 몇 개 들어가는지 세면 넓이를 수로 나타낼 수 있어요. 다음 단계로 이어지는 생각이에요.", fit_slides:["next_lesson", "concept"]}
+  ]
 };
 
 LESSONS["u4_l05"] = {
@@ -172,13 +184,13 @@ LESSONS["u4_l05"] = {
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_05_어느것에더많이담을수있을까요.html"
   },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"운동회 날, 어느 물통을?", desc:"1단계 · 도입"}, suggested_extras:[]},
+    {id:"s01", stage:"도입", block:"motivate", data:{title:"운동회 날, 어느 물통을?", desc:"1단계 · 도입"}, suggested_extras:["v_l5_vol", "q_l5_cup", "b_l5_book"]},
     {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 배워요", desc:"1단계 · 도입"}, suggested_extras:[]},
     {id:"s03", stage:"도입", block:"review", data:{title:"길이·무게·넓이를 배웠으니", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"물을 옮겨 담아 보아요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"'많다'와 '적다'", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"담을 수 있는 양? 담긴 양?", desc:"2단계 · 전개"}, suggested_extras:[]},
+    {id:"s04", stage:"전개", block:"concept", data:{title:"눈으로 보아 알 수 있어요", desc:"2단계 · 전개"}, suggested_extras:["t_l5_fill"]},
+    {id:"s05", stage:"전개", block:"concept", data:{title:"물을 옮겨 담아 보아요", desc:"2단계 · 전개"}, suggested_extras:["t_l5_same", "t_l5_fill"]},
+    {id:"s06", stage:"전개", block:"concept", data:{title:"'많다'와 '적다'", desc:"2단계 · 전개"}, suggested_extras:["q_l5_pour"]},
+    {id:"s07", stage:"전개", block:"concept", data:{title:"담을 수 있는 양? 담긴 양?", desc:"2단계 · 전개"}, suggested_extras:["x_l5_tall", "g_l5_match"]},
     {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
     {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
@@ -187,11 +199,23 @@ LESSONS["u4_l05"] = {
     {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
     {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
+    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["r_l5_bath", "r_l5_bottle"]},
     {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:[]}
+    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l5_count"]}
   ],
-  extras: []
+  extras: [
+    {id:"v_l5_vol", type:"video", icon:"🎥", title:"들이를 비교해요 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1%201%ED%95%99%EB%85%84%20%EC%88%98%ED%95%99%20%EB%93%A4%EC%9D%B4%20%EB%B9%84%EA%B5%90%20%EB%8B%B4%EC%9D%84%20%EC%88%98%20%EC%9E%88%EB%8A%94%20%EC%96%91%20%EC%BB%B5%20%EB%AC%BC", description:"같은 물을 여러 그릇에 옮겨 담아 들이를 견주는 과정을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "concept"]},
+    {id:"q_l5_cup", type:"fun_question", icon:"💡", title:"컵과 양동이, 어디에 더 담길까?", content:"컵과 양동이에 물을 가득 담으면 어디에 더 많이 담길까요?", fit_slides:["motivate", "concept"]},
+    {id:"q_l5_pour", type:"fun_question", icon:"💡", title:"옮겨 담아 보면?", content:"한 그릇의 물을 다른 그릇에 옮겨 담아 봐요. 넘치면 옮긴 쪽이 더 적게 담기는 그릇이에요.", fit_slides:["concept"]},
+    {id:"t_l5_same", type:"tip", icon:"🧩", title:"같은 컵으로 옮겨 담기", content:"똑같은 컵으로 몇 번 담기는지 세면 어느 그릇이 더 많이 담는지 정확히 알 수 있어요.", fit_slides:["concept"]},
+    {id:"t_l5_fill", type:"tip", icon:"🧩", title:"가득 채워서 비교", content:"들이를 비교할 땐 그릇을 가득 채워야 공평해요. 덜 채우면 잘못 견주게 돼요.", fit_slides:["concept"]},
+    {id:"r_l5_bath", type:"real_world", icon:"🌍", title:"욕조와 세숫대야", content:"욕조는 세숫대야보다 훨씬 많은 물을 담아요. 생활 속 그릇의 들이를 견주어 보아요.", fit_slides:["real_world", "concept"]},
+    {id:"r_l5_bottle", type:"real_world", icon:"🌍", title:"물병과 우유갑", content:"물병과 우유갑 중 어디에 더 많이 담길까요? 마트에서 담는 양을 살펴보아요.", fit_slides:["real_world", "motivate"]},
+    {id:"g_l5_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"들이 말 짝짓기", description:"그릇과 어울리는 들이 표현을 짝지어 보세요.", hint:"많이 담기는 것과 적게 담기는 것을 떠올려요.", pairs:[{a:{text:"양동이"}, b:{text:"많이 담겨요"}}, {a:{text:"숟가락"}, b:{text:"적게 담겨요"}}, {a:{text:"주전자"}, b:{text:"많이 담겨요"}}, {a:{text:"종이컵"}, b:{text:"적게 담겨요"}}], fit_slides:["concept", "game"]},
+    {id:"b_l5_book", type:"book", icon:"📖", title:"『가득가득 비어비어』", content:"여러 그릇에 물을 담아 보며 들이를 견주는 그림책.", source:"도서관 그림책 코너에서 확인", fit_slides:["motivate", "concept"]},
+    {id:"x_l5_tall", type:"misconception", icon:"❓", title:"오개념 — 키 크면 많이 담긴다?", content:"길쭉한 컵이 넓적한 그릇보다 적게 담길 수 있어요. 높이만으로 들이를 판단하면 안 돼요. 옮겨 담아 확인해요.", fit_slides:["concept"]},
+    {id:"e_l5_count", type:"extension", icon:"⬆", title:"컵 수로 나타내기", content:"같은 컵으로 몇 컵 담기는지 세면 들이를 수로 말할 수 있어요. 다음 단계로 이어지는 생각이에요.", fit_slides:["next_lesson", "concept"]}
+  ]
 };
 
 LESSONS["u4_l06"] = {
