@@ -1,6 +1,6 @@
 /* ============================================================
    1학년 1학기 수학 — 4단원 「비교하기」 (7차시 + 단원평가)
-   양산 자리 — LESSONS["u4_l{NN}"] 누적 / 다른 단원 .js = read-only
+   양산 영역 — LESSONS["u4_l{NN}"] 누적 / 다른 단원 .js = read-only
    g1_math.html이 자동 로드 후 window.LESSONS 에 누적.
    ------------------------------------------------------------
    진척:
@@ -14,7 +14,7 @@ LESSONS["u4_l01"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 1,
     title: "비교하기를 시작해요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "단원 도입 18슬 — 비교하기 4가지 미리보기 + 실천 다짐",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_01_단원도입.html"
@@ -58,7 +58,7 @@ LESSONS["u4_l02"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 2,
     title: "어느 것이 더 길까요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 길이 비교",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_02_어느것이더길까요.html"
@@ -102,7 +102,7 @@ LESSONS["u4_l03"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 3,
     title: "어느 것이 더 무거울까요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 무게 비교",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_03_어느것이더무거울까요.html"
@@ -146,7 +146,7 @@ LESSONS["u4_l04"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 4,
     title: "어느 것이 더 넓을까요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 넓이 비교",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_04_어느것이더넓을까요.html"
@@ -190,7 +190,7 @@ LESSONS["u4_l05"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 5,
     title: "어느 것에 더 많이 담을 수 있을까요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 들이 비교",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_05_어느것에더많이담을수있을까요.html"
@@ -234,7 +234,7 @@ LESSONS["u4_l06"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 6,
     title: "수학이랑 확인해요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "단원 평가 18슬 — 문제 5 + 해설 + 자기평가",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_06_수학이랑확인해요.html"
@@ -277,7 +277,7 @@ LESSONS["u4_l07"] = {
   meta: {
     grade: 1, subject: "수학", unit: 4, n: 7,
     title: "수학이랑 만들어요",
-    std: "[2수03-01]",
+    std: "[2수03-06]",
     duration_min: 40,
     lesson_format: "본 차시 5단계 18슬 — 비교하기 종합 만들기 활동",
     live_url: "../../grade1/semester1/math/4단원_비교하기/재수정_v1/g1_math_u4_07_수학이랑만들어요.html"
