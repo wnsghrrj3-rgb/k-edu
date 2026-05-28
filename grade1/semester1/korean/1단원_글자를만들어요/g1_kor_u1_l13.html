@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g1_kor_u1_l13_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>글자를 만들어요 · 자음자와 모음자로 놀이하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+/* ===== 디자인 헌법 v11 준수: 저학년 토큰 (draft_l05_06 / l07_08 / l09_11 동일 결) ===== */
+:root{
+  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
+  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626;
+  --c-ja:#42A5F5;   /* 자음자 = 메인 파랑 */
+  --c-mo:#FF8A65;   /* 모음자 = 대비 코랄 */
+  --c-good:#66BB6A; --c-good-deep:#388E3C;
+  --c-card-back:#90CAF9;
+  --fs-title:clamp(20px,5.2cqw,32px);
+  --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px);
+  --fs-caption:clamp(12px,2.7cqw,16px);
+  --fs-label:clamp(11px,2.3cqw,14px);
+  --em-sm:clamp(28px,6cqw,40px); --em-md:clamp(40px,9cqw,60px); --em-lg:clamp(54px,12cqw,80px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+body{background:var(--c-bg); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; font-family:'Jua',sans-serif;}
+
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-pulse{0%,100%{transform:scale(1); box-shadow:0 4px 14px rgba(66,165,245,.32);}50%{transform:scale(1.04); box-shadow:0 6px 20px rgba(66,165,245,.5);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+@keyframes ka-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes ka-flip{from{transform:rotateY(180deg);} to{transform:rotateY(0);}}
+
+/* ===== 헌법 카드 골격 ===== */
+.ka{
+  container-type:inline-size; background:#fff;
+  border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4;
+  padding:clamp(14px,3cqw,22px) clamp(18px,4cqw,32px);
+  font-family:'Jua',sans-serif; color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; max-width:1024px; width:100%; margin:0 auto;
+}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.4; color:var(--c-deep); margin-bottom:clamp(12px,3cqw,18px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(10px,2.5cqw,16px) clamp(14px,3.4cqw,22px); font-size:var(--fs-body); line-height:1.7; color:#333; max-width:600px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+
+/* 자모 / 글자 블록 */
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(8px,2cqw,14px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.syl.sm{width:clamp(52px,12cqw,80px); height:clamp(52px,12cqw,80px); font-size:clamp(28px,6.2cqw,44px);}
+.jamo{width:clamp(52px,12cqw,84px); height:clamp(52px,12cqw,84px); border-radius:clamp(12px,2.6cqw,18px); display:grid; place-items:center; font-size:clamp(30px,6.5cqw,48px); color:#fff; box-shadow:0 5px 0 rgba(0,0,0,.12); animation:ka-pop .5s ease both;}
+.jamo.ja{background:var(--c-ja);} .jamo.mo{background:var(--c-mo);}
+.jamo.big{width:clamp(76px,17cqw,120px); height:clamp(76px,17cqw,120px); font-size:clamp(44px,10cqw,72px);}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+
+/* M16 카드 뒤집기 — 자모 카드 미리보기 */
+.cards{display:flex; flex-wrap:wrap; gap:clamp(6px,1.5cqw,10px); justify-content:center; max-width:640px; margin:clamp(4px,1cqw,8px) auto clamp(8px,2cqw,12px);}
+.flipcard{width:clamp(52px,12cqw,76px); height:clamp(64px,14cqw,90px); border-radius:clamp(10px,2.4cqw,14px); cursor:pointer; perspective:600px; flex-shrink:0;}
+.flipcard .inner{position:relative; width:100%; height:100%; transition:transform .45s; transform-style:preserve-3d;}
+.flipcard.open .inner{transform:rotateY(180deg);}
+.flipcard .face{position:absolute; inset:0; display:grid; place-items:center; border-radius:inherit; backface-visibility:hidden; font-family:'Jua';}
+.flipcard .back{background:var(--c-card-back); color:#fff; font-size:clamp(20px,5cqw,30px); box-shadow:0 5px 0 var(--c-deep);}
+.flipcard .back::before{content:'?'; font-family:'Nunito'; font-weight:800;}
+.flipcard .front{transform:rotateY(180deg); background:#fff; box-shadow:0 5px 0 var(--c-soft);}
+.flipcard.ja .front{border:clamp(3px,.7cqw,4px) solid var(--c-ja); color:var(--c-ja); font-size:clamp(28px,6.5cqw,42px);}
+.flipcard.mo .front{border:clamp(3px,.7cqw,4px) solid var(--c-mo); color:var(--c-mo); font-size:clamp(28px,6.5cqw,42px);}
+
+/* 카드 뽑기 결합 — 큰 두 장 카드 */
+.draw{display:flex; align-items:center; gap:clamp(10px,2.5cqw,18px); justify-content:center; flex-wrap:wrap; margin:clamp(6px,1.5cqw,10px) auto clamp(8px,2cqw,12px);}
+.draw .flipcard{width:clamp(72px,16cqw,108px); height:clamp(90px,20cqw,130px);}
+.draw .flipcard .back{font-size:clamp(28px,7cqw,44px);}
+.draw .flipcard .front{font-size:clamp(40px,9cqw,62px);}
+
+/* 그림→낱말 */
+.picture-q{display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.5cqw,10px); margin-bottom:clamp(8px,2cqw,12px);}
+.picture-q .pic{font-size:var(--em-lg);}
+.picture-q .wname{font-size:clamp(22px,5cqw,32px); color:var(--c-deep);}
+
+/* 고르기 — 글자 픽 */
+.picks{display:flex; gap:clamp(10px,2.4cqw,16px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.pick{min-width:clamp(72px,16cqw,100px); padding:clamp(12px,3cqw,18px) clamp(14px,3cqw,20px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(26px,6cqw,42px); color:var(--c-deep); cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.pick.mo-pick{color:var(--c-mo);}
+.pick:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.pick.correct{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.pick.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+
+.slot{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); border:clamp(3px,.7cqw,4px) dashed var(--c-main); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-main); background:#fff;}
+.slot.filled{border-style:solid; background:var(--c-main); color:#fff; box-shadow:0 5px 0 var(--c-deep);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+
+/* 짝 잇기 — 자모 조합 ↔ 낱말 그림 */
+.match-grid{display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,2.4cqw,16px); max-width:560px; width:100%;}
+.match-col{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px);}
+.match-cell{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(8px,2cqw,12px); display:flex; align-items:center; justify-content:center; gap:clamp(6px,1.5cqw,10px); cursor:pointer; font-family:'Jua'; min-height:clamp(56px,12cqw,76px); box-shadow:0 4px 0 var(--c-soft);}
+.match-cell .mc-combo{font-size:clamp(20px,4.6cqw,28px); color:var(--c-deep); display:flex; align-items:center; gap:6px;}
+.match-cell .mc-combo .mc-ja{color:var(--c-ja);} .match-cell .mc-combo .mc-mo{color:var(--c-mo);}
+.match-cell .mc-pic{font-size:var(--em-md);}
+.match-cell .mc-word{font-size:var(--fs-body); color:var(--c-deep);}
+.match-cell.sel{background:#FFF8E1; border-color:#FFB300;}
+.match-cell.done{background:#E8F5E9; border-color:var(--c-good-deep); cursor:default; opacity:.85;}
+.match-cell.miss{animation:ka-shake .35s;}
+
+/* 자유 보드 — 자모 누르면 글자 보드 */
+.freeboard{display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,2.4cqw,16px); max-width:560px; width:100%;}
+.fb-col{display:flex; flex-direction:column; gap:clamp(6px,1.5cqw,10px);}
+.fb-col h4{font-size:var(--fs-caption); color:#888; font-weight:400;}
+.fb-jamo{display:flex; flex-wrap:wrap; gap:clamp(4px,1cqw,7px); justify-content:center;}
+.fb-jamo button{width:clamp(36px,8cqw,52px); height:clamp(36px,8cqw,52px); border-radius:clamp(8px,1.8cqw,12px); border:none; font-family:'Jua'; font-size:clamp(18px,4.2cqw,26px); cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.1);}
+.fb-jamo button.ja-btn{background:var(--c-ja); color:#fff;}
+.fb-jamo button.mo-btn{background:var(--c-mo); color:#fff;}
+.fb-jamo button:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.1);}
+.fb-show{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(12px,3cqw,18px); min-height:clamp(80px,18cqw,120px); display:flex; align-items:center; justify-content:center; gap:clamp(8px,2cqw,12px);}
+.fb-show .show-syl{font-size:clamp(40px,9cqw,60px); color:var(--c-deep);}
+.fb-show .show-ja{color:var(--c-ja);} .fb-show .show-mo{color:var(--c-mo);}
+.fb-show .placeholder{color:#bbb; font-size:var(--fs-caption);}
+.fb-reset{margin-top:6px; padding:6px 12px; background:#F4F4F8; border:none; border-radius:8px; cursor:pointer; font-family:'Jua'; font-size:var(--fs-caption); color:#555;}
+
+/* 정리 — 단원 회상 */
+.wrap-row{display:flex; flex-wrap:wrap; gap:clamp(8px,2cqw,12px); justify-content:center; max-width:640px;}
+.wr{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,16px); padding:clamp(8px,2cqw,12px) clamp(10px,2.4cqw,14px); display:flex; flex-direction:column; align-items:center; gap:4px; min-width:clamp(80px,18cqw,110px); animation:ka-pop .4s ease both;}
+.wr .w-pic{font-size:var(--em-md);}
+.wr .w-word{font-size:clamp(18px,4cqw,26px); color:var(--c-deep);}
+.wr .w-jamo{font-size:var(--fs-caption); color:#888;}
+
+/* 푸터 */
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+
+@container (max-width:420px){
+  .ka-lb span{display:none;}
+  .ka-f{grid-template-columns:1fr 1fr;}
+  .freeboard{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <!-- 헤더 -->
+  <div class="ka-h">
+    <button class="ka-lb">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <span class="ka-pg" id="pg">1 / 15</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <!-- 메인 -->
+  <div class="ka-m" id="main"></div>
+  <!-- 푸터 -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+/* ===== tracker ===== */
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+/* ===== 슬라이드 정의 (15슬: ① 2 / ② 4 / ③ 6 / ④ 3)
+   13차시 = 실천. 자음자·모음자 카드 놀이로 받침 없는 낱말 만들기.
+   지도서 핵심 = 자모 카드 뒤집기 + 카드로 글자·낱말 알아맞히기 (140~141쪽, 지도서 164~167쪽).
+   모음자 방향 돌리지 않음 (지도서 명시).
+   메커닉 = M16 카드 뒤집기(②) + M1 고르기(②③) + M5 짝 잇기(③) + 자유 보드(④).
+   ===== */
+const slides=[
+
+  // ───────────── ① 만나기 (2) ─────────────
+  {stage:'만나기', tag:'① 첫 만남',
+   t:'카드로 글자를 만들어 봐요 🎴',
+   html:`<div class="cards">
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㄱ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅏ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㄴ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅗ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅂ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅣ</div></div></div>
+    </div>
+    <div class="ka-bub">자음자 카드와 모음자 카드를 뒤집어 보아요!<br>두 카드를 모으면 <span class="emph">글자</span> 가 만들어져요.</div>`,
+   flipMode:true},
+
+  {stage:'만나기', tag:'① 학습 문제',
+   t:'자음자와 모음자로 낱말을 만들어요',
+   html:`<div class="build" style="gap:clamp(8px,2cqw,12px);">
+      <div class="jamo ja" style="width:clamp(46px,10cqw,68px); height:clamp(46px,10cqw,68px); font-size:clamp(24px,5.4cqw,36px);">ㄱ</div>
+      <div class="op">+</div>
+      <div class="jamo mo" style="width:clamp(46px,10cqw,68px); height:clamp(46px,10cqw,68px); font-size:clamp(24px,5.4cqw,36px);">ㅏ</div>
+      <div class="op">=</div>
+      <div class="syl sm">가</div>
+      <div class="syl sm">지</div>
+      <div class="op">→</div>
+      <div style="font-size:var(--em-md);">🍆</div></div>
+    <div class="ka-bub">단원에서 배운 자음자와 모음자로 <span class="emph">받침 없는 낱말</span> 을 만들어 보아요.<br>모음자는 그대로 두고 돌리지 않아요!</div>`},
+
+  // ───────────── ② 엔진 전반: 카드 만나기 (4슬) ─────────────
+
+  {stage:'엔진전반', tag:'② 자음자 카드',
+   t:'자음자 카드를 뒤집어 보아요',
+   html:`<div class="cards">
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㄱ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㄴ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㄷ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅁ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅂ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅅ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅇ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅈ</div></div></div>
+      <div class="flipcard ja"><div class="inner"><div class="face back"></div><div class="face front">ㅎ</div></div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">카드를 한 장씩 눌러서 자음자를 만나 봐요.</div>`,
+   flipMode:true},
+
+  {stage:'엔진전반', tag:'② 모음자 카드',
+   t:'모음자 카드를 뒤집어 보아요',
+   html:`<div class="cards">
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅏ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅑ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅓ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅕ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅗ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅛ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅜ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅠ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅡ</div></div></div>
+      <div class="flipcard mo"><div class="inner"><div class="face back"></div><div class="face front">ㅣ</div></div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">모음자도 한 장씩 눌러 만나 봐요. 방향은 그대로 두어요.</div>`,
+   flipMode:true},
+
+  {stage:'엔진전반', tag:'② 카드 뽑기 1', log:true, correct:'나', slot:true,
+   t:'자음자 ㄴ 과 모음자 ㅏ 를 모으면?',
+   html:`<div class="draw">
+      <div class="flipcard ja open"><div class="inner"><div class="face back"></div><div class="face front">ㄴ</div></div></div>
+      <div class="op">+</div>
+      <div class="flipcard mo open"><div class="inner"><div class="face back"></div><div class="face front">ㅏ</div></div></div>
+      <div class="op">=</div>
+      <div class="slot" id="slotA">?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="가">가</button>
+      <button class="pick" data-v="나">나</button>
+      <button class="pick" data-v="다">다</button></div>
+    <div class="fb" id="fbA"></div>`},
+
+  {stage:'엔진전반', tag:'② 카드 뽑기 2', log:true, correct:'소', slot:true,
+   t:'자음자 ㅅ 과 모음자 ㅗ 를 모으면?',
+   html:`<div class="draw">
+      <div class="flipcard ja open"><div class="inner"><div class="face back"></div><div class="face front">ㅅ</div></div></div>
+      <div class="op">+</div>
+      <div class="flipcard mo open"><div class="inner"><div class="face back"></div><div class="face front">ㅗ</div></div></div>
+      <div class="op">=</div>
+      <div class="slot" id="slotB">?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="사">사</button>
+      <button class="pick" data-v="서">서</button>
+      <button class="pick" data-v="소">소</button></div>
+    <div class="fb" id="fbB"></div>`},
+
+  // ───────────── ③ 엔진 후반: 낱말 만들기 (6슬) ─────────────
+
+  {stage:'엔진후반', tag:'③ 낱말 만들기', log:true, correct:'가지',
+   t:'카드를 모아 낱말을 만들어요 🍆',
+   html:`<div class="build">
+      <div class="jamo ja">ㄱ</div><div class="op">+</div><div class="jamo mo">ㅏ</div>
+      <div class="op">→</div><div class="syl sm">가</div>
+      <div style="width:clamp(6px,1.5cqw,10px);"></div>
+      <div class="jamo ja">ㅈ</div><div class="op">+</div><div class="jamo mo">ㅣ</div>
+      <div class="op">→</div><div class="syl sm">지</div>
+      <div class="op">=</div><div style="font-size:var(--em-md);">🍆</div></div>
+    <div class="picks">
+      <button class="pick" data-v="가지">가지</button>
+      <button class="pick" data-v="고지">고지</button>
+      <button class="pick" data-v="거지">거지</button></div>
+    <div class="fb" id="fbC"></div>`},
+
+  {stage:'엔진후반', tag:'③ 낱말 만들기', log:true, correct:'거미',
+   t:'카드를 모아 낱말을 만들어요 🕷️',
+   html:`<div class="build">
+      <div class="jamo ja">ㄱ</div><div class="op">+</div><div class="jamo mo">ㅓ</div>
+      <div class="op">→</div><div class="syl sm">거</div>
+      <div style="width:clamp(6px,1.5cqw,10px);"></div>
+      <div class="jamo ja">ㅁ</div><div class="op">+</div><div class="jamo mo">ㅣ</div>
+      <div class="op">→</div><div class="syl sm">미</div>
+      <div class="op">=</div><div style="font-size:var(--em-md);">🕷️</div></div>
+    <div class="picks">
+      <button class="pick" data-v="거미">거미</button>
+      <button class="pick" data-v="가미">가미</button>
+      <button class="pick" data-v="구미">구미</button></div>
+    <div class="fb" id="fbD"></div>`},
+
+  {stage:'엔진후반', tag:'③ 낱말 만들기', log:true, correct:'모자',
+   t:'카드를 모아 낱말을 만들어요 🎩',
+   html:`<div class="build">
+      <div class="jamo ja">ㅁ</div><div class="op">+</div><div class="jamo mo">ㅗ</div>
+      <div class="op">→</div><div class="syl sm">모</div>
+      <div style="width:clamp(6px,1.5cqw,10px);"></div>
+      <div class="jamo ja">ㅈ</div><div class="op">+</div><div class="jamo mo">ㅏ</div>
+      <div class="op">→</div><div class="syl sm">자</div>
+      <div class="op">=</div><div style="font-size:var(--em-md);">🎩</div></div>
+    <div class="picks">
+      <button class="pick" data-v="모자">모자</button>
+      <button class="pick" data-v="무자">무자</button>
+      <button class="pick" data-v="머자">머자</button></div>
+    <div class="fb" id="fbE"></div>`},
+
+  {stage:'엔진후반', tag:'③ 글자 탐정', log:true, correct:'하루',
+   t:'그림을 보고 낱말 카드를 찾아요 ☀️',
+   html:`<div class="picture-q">
+      <div class="pic">☀️</div>
+      <div class="wname" style="color:#bbb;">? ?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="하루">하 루</button>
+      <button class="pick" data-v="허로">허 로</button>
+      <button class="pick" data-v="후리">후 리</button></div>
+    <div class="fb" id="fbF"></div>`},
+
+  {stage:'엔진후반', tag:'③ 글자 탐정', log:true, correct:'조개',
+   t:'그림을 보고 낱말 카드를 찾아요 🐚',
+   html:`<div class="picture-q">
+      <div class="pic">🐚</div>
+      <div class="wname" style="color:#bbb;">? ?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="조개">조 개</button>
+      <button class="pick" data-v="저게">저 게</button>
+      <button class="pick" data-v="주가">주 가</button></div>
+    <div class="fb" id="fbG"></div>`},
+
+  // 짝 잇기 — 자모 조합 ↔ 낱말 그림 (M5)
+  {stage:'엔진후반', tag:'③ 짝을 이어요', log:true,
+   t:'자음자·모음자 조합과 낱말을 이어 봐요',
+   html:`<div class="match-grid" id="matchGrid">
+      <div class="match-col">
+        <div class="match-cell" data-side="L" data-k="A"><span class="mc-combo"><span class="mc-ja">ㄴ</span>+<span class="mc-mo">ㅏ</span>+<span class="mc-ja">ㅁ</span>+<span class="mc-mo">ㅜ</span></span></div>
+        <div class="match-cell" data-side="L" data-k="B"><span class="mc-combo"><span class="mc-ja">ㅂ</span>+<span class="mc-mo">ㅏ</span>+<span class="mc-ja">ㄷ</span>+<span class="mc-mo">ㅏ</span></span></div>
+        <div class="match-cell" data-side="L" data-k="C"><span class="mc-combo"><span class="mc-ja">ㅊ</span>+<span class="mc-mo">ㅣ</span>+<span class="mc-ja">ㅁ</span>+<span class="mc-mo">ㅏ</span></span></div>
+        <div class="match-cell" data-side="L" data-k="D"><span class="mc-combo"><span class="mc-ja">ㅋ</span>+<span class="mc-mo">ㅏ</span>+<span class="mc-ja">ㄷ</span>+<span class="mc-mo">ㅡ</span></span></div>
+      </div>
+      <div class="match-col">
+        <div class="match-cell" data-side="R" data-k="C"><span class="mc-pic">🩱</span><span class="mc-word">치마</span></div>
+        <div class="match-cell" data-side="R" data-k="A"><span class="mc-pic">🌳</span><span class="mc-word">나무</span></div>
+        <div class="match-cell" data-side="R" data-k="D"><span class="mc-pic">💳</span><span class="mc-word">카드</span></div>
+        <div class="match-cell" data-side="R" data-k="B"><span class="mc-pic">🌊</span><span class="mc-word">바다</span></div>
+      </div>
+    </div>
+    <div class="fb" id="fbH"></div>`,
+   matchMode:true},
+
+  // ───────────── ④ 표현·정리 (3) ─────────────
+
+  {stage:'표현정리', tag:'④ 자유 글자 만들기',
+   t:'카드를 골라 글자를 만들어 봐요',
+   html:`<div class="freeboard" id="freeboard">
+      <div class="fb-col">
+        <h4>자음자</h4>
+        <div class="fb-jamo">
+          <button class="ja-btn" data-v="ㄱ" data-t="ja">ㄱ</button>
+          <button class="ja-btn" data-v="ㄴ" data-t="ja">ㄴ</button>
+          <button class="ja-btn" data-v="ㄷ" data-t="ja">ㄷ</button>
+          <button class="ja-btn" data-v="ㅁ" data-t="ja">ㅁ</button>
+          <button class="ja-btn" data-v="ㅂ" data-t="ja">ㅂ</button>
+          <button class="ja-btn" data-v="ㅅ" data-t="ja">ㅅ</button>
+          <button class="ja-btn" data-v="ㅈ" data-t="ja">ㅈ</button>
+          <button class="ja-btn" data-v="ㅎ" data-t="ja">ㅎ</button>
+        </div>
+        <h4 style="margin-top:6px;">모음자</h4>
+        <div class="fb-jamo">
+          <button class="mo-btn" data-v="ㅏ" data-t="mo">ㅏ</button>
+          <button class="mo-btn" data-v="ㅓ" data-t="mo">ㅓ</button>
+          <button class="mo-btn" data-v="ㅗ" data-t="mo">ㅗ</button>
+          <button class="mo-btn" data-v="ㅜ" data-t="mo">ㅜ</button>
+          <button class="mo-btn" data-v="ㅡ" data-t="mo">ㅡ</button>
+          <button class="mo-btn" data-v="ㅣ" data-t="mo">ㅣ</button>
+        </div>
+      </div>
+      <div class="fb-col">
+        <h4>내가 만든 글자</h4>
+        <div class="fb-show" id="fbShow">
+          <span class="placeholder">자음자와 모음자를 골라 봐요</span>
+        </div>
+        <button class="fb-reset" id="fbReset">↺ 다시</button>
+      </div>
+    </div>`,
+   freeMode:true},
+
+  {stage:'표현정리', tag:'④ 우리가 만든 낱말',
+   t:'오늘 만든 낱말 🌟',
+   html:`<div class="wrap-row">
+      <div class="wr"><div class="w-pic">🍆</div><div class="w-word">가지</div><div class="w-jamo">ㄱㅏ ㅈㅣ</div></div>
+      <div class="wr"><div class="w-pic">🕷️</div><div class="w-word">거미</div><div class="w-jamo">ㄱㅓ ㅁㅣ</div></div>
+      <div class="wr"><div class="w-pic">🎩</div><div class="w-word">모자</div><div class="w-jamo">ㅁㅗ ㅈㅏ</div></div>
+      <div class="wr"><div class="w-pic">☀️</div><div class="w-word">하루</div><div class="w-jamo">ㅎㅏ ㄹㅜ</div></div>
+      <div class="wr"><div class="w-pic">🐚</div><div class="w-word">조개</div><div class="w-jamo">ㅈㅗ ㄱㅐ</div></div>
+      <div class="wr"><div class="w-pic">🌳</div><div class="w-word">나무</div><div class="w-jamo">ㄴㅏ ㅁㅜ</div></div>
+      <div class="wr"><div class="w-pic">🌊</div><div class="w-word">바다</div><div class="w-jamo">ㅂㅏ ㄷㅏ</div></div>
+      <div class="wr"><div class="w-pic">🩱</div><div class="w-word">치마</div><div class="w-jamo">ㅊㅣ ㅁㅏ</div></div>
+    </div>
+    <div class="ka-bub" style="margin-top:clamp(10px,2.4cqw,14px);">자음자와 모음자가 만나면 <span class="emph">글자</span> 가 되고,<br>글자가 모이면 <span class="emph">낱말</span> 이 돼요!</div>`},
+
+  {stage:'표현정리', tag:'④ 마무리',
+   t:'단원을 마무리해요 🎉',
+   html:`<div style="display:flex; flex-direction:column; gap:clamp(10px,2.4cqw,14px); align-items:center;">
+      <div class="build" style="gap:clamp(6px,1.5cqw,10px);">
+        <div class="jamo ja" style="width:clamp(40px,9cqw,60px); height:clamp(40px,9cqw,60px); font-size:clamp(22px,5cqw,34px);">자</div>
+        <div class="op">+</div>
+        <div class="jamo mo" style="width:clamp(40px,9cqw,60px); height:clamp(40px,9cqw,60px); font-size:clamp(22px,5cqw,34px);">모</div>
+        <div class="op">=</div>
+        <div class="syl sm" style="background:var(--c-main); color:#fff; border-color:var(--c-deep);">글</div>
+        <div class="syl sm" style="background:var(--c-main); color:#fff; border-color:var(--c-deep);">자</div>
+      </div>
+      <div class="ka-bub">받침이 없는 글자는 <span class="emph">자음자 + 모음자</span> 로 만들어요.<br>다음 단원에서는 <span class="emph">받침 있는 글자</span> 를 배워요!</div>
+    </div>`},
+];
+
+const LESSON_ID='g1_kor_u1_l13_v1';
+const LESSON_MAX=80;
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar'), pg=document.getElementById('pg'), scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev'), nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(s.flipMode) bindFlip(s);
+  if(s.matchMode) bindMatch(s);
+  if(s.freeMode) bindFree(s);
+  if(s.correct) bindPicks(s);
+}
+
+function bindFlip(s){
+  main.querySelectorAll('.flipcard').forEach(c=>{
+    c.onclick=()=>{ c.classList.toggle('open'); };
+  });
+}
+
+function bindPicks(s){
+  let done=false;
+  main.querySelectorAll('.pick').forEach(btn=>{
+    btn.onclick=()=>{
+      if(done) return;
+      const ok=btn.dataset.v===s.correct;
+      btn.classList.add(ok?'correct':'wrong');
+      let target=null;
+      if(s.slot) target=main.querySelector('.slot');
+      else if(s.slotSel) target=main.querySelector(s.slotSel);
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(target){target.textContent=s.correct; target.classList.add('filled');}
+        if(fb)fb.textContent='잘했어요! 🎉';
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.pick').forEach(b=>{if(b!==btn)b.style.opacity=.4;});
+      }else{
+        if(fb){fb.textContent='다시 한 번 볼까요?'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>btn.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+
+function bindMatch(s){
+  let sel=null, matched=0, total=4, logged=false;
+  const cells=main.querySelectorAll('.match-cell');
+  cells.forEach(c=>{
+    c.onclick=()=>{
+      if(c.classList.contains('done')) return;
+      if(!sel){
+        sel=c; c.classList.add('sel');
+      }else if(sel===c){
+        c.classList.remove('sel'); sel=null;
+      }else{
+        if(sel.dataset.side===c.dataset.side){
+          sel.classList.remove('sel');
+          sel=c; c.classList.add('sel');
+          return;
+        }
+        if(sel.dataset.k===c.dataset.k){
+          sel.classList.remove('sel'); sel.classList.add('done');
+          c.classList.add('done');
+          matched++;
+          const fb=main.querySelector('.fb');
+          if(matched===total){
+            if(fb)fb.textContent='모두 이었어요! 🎉';
+            if(!logged){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true); logged=true;}
+          }else{
+            if(fb)fb.textContent=`잘했어요! ${matched}/${total}`;
+          }
+          sel=null;
+        }else{
+          c.classList.add('miss');
+          sel.classList.add('miss');
+          const lastSel=sel;
+          setTimeout(()=>{
+            c.classList.remove('miss','sel');
+            lastSel.classList.remove('miss','sel');
+          },360);
+          const fb=main.querySelector('.fb');
+          if(fb){fb.textContent='다시 한 번 살펴봐요'; fb.classList.add('bad'); setTimeout(()=>fb.classList.remove('bad'),700);}
+          if(!logged) tracker.answer(cur,false);
+          sel=null;
+        }
+      }
+    };
+  });
+}
+
+function bindFree(s){
+  let ja=null, mo=null;
+  const show=main.querySelector('#fbShow');
+  function update(){
+    if(!ja && !mo){
+      show.innerHTML='<span class="placeholder">자음자와 모음자를 골라 봐요</span>';
+    }else if(ja && !mo){
+      show.innerHTML=`<span class="show-syl show-ja">${ja}</span><span class="op">+</span><span class="placeholder">모음자?</span>`;
+    }else if(!ja && mo){
+      show.innerHTML=`<span class="placeholder">자음자?</span><span class="op">+</span><span class="show-syl show-mo">${mo}</span>`;
+    }else{
+      // 자음자 + 모음자 결합 → 글자 보이기 (한글 유니코드 조합)
+      const jaIdx={ㄱ:0,ㄴ:2,ㄷ:3,ㅁ:6,ㅂ:7,ㅅ:9,ㅈ:12,ㅎ:18}[ja];
+      const moIdx={ㅏ:0,ㅓ:4,ㅗ:8,ㅜ:13,ㅡ:18,ㅣ:20}[mo];
+      const code=0xAC00 + jaIdx*588 + moIdx*28;
+      const syl=String.fromCharCode(code);
+      show.innerHTML=`<span class="show-syl show-ja">${ja}</span><span class="op">+</span><span class="show-syl show-mo">${mo}</span><span class="op">=</span><span class="show-syl" style="font-size:clamp(48px,11cqw,72px); color:var(--c-deep);">${syl}</span>`;
+    }
+  }
+  main.querySelectorAll('.fb-jamo button').forEach(btn=>{
+    btn.onclick=()=>{
+      const t=btn.dataset.t, v=btn.dataset.v;
+      if(t==='ja') ja=v;
+      else mo=v;
+      update();
+    };
+  });
+  main.querySelector('#fbReset').onclick=()=>{ ja=null; mo=null; update(); };
+}
+
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+
+document.getElementById('hint').onclick=()=>{
+  const hints={
+    '4':'ㄴ 소리 + ㅏ 소리 → ‘나’! 천천히 소리 내어 봐요.',
+    '5':'ㅅ 소리 + ㅗ 소리 → ‘소’!',
+    '6':'그림은 🍆 가지! ㄱㅏ + ㅈㅣ.',
+    '7':'그림은 🕷️ 거미! ㄱㅓ + ㅁㅣ.',
+    '8':'그림은 🎩 모자! ㅁㅗ + ㅈㅏ.',
+    '9':'해 ☀️ 가 비치는 하루! ㅎㅏ + ㄹㅜ.',
+    '10':'바닷가 🐚 조개! ㅈㅗ + ㄱㅐ.',
+    '11':'자모 조합을 천천히 소리 내어 읽어 봐요. 🌳 나무 / 🌊 바다 / 🩱 치마 / 💳 카드.',
+    '12':'자음자와 모음자 카드를 자유롭게 골라 봐요. 받침은 없어요!'
+  };
+  if(hints[cur]) alert('💡 ' + hints[cur]);
+  else alert('💡 천천히 소리 내어 읽어 봐요!');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+</body>
+</html>

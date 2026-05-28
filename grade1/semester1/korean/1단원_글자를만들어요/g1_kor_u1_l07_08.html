@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g1_kor_u1_l07_08_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>글자를 만들어요 · 바른 자세로 읽고 쓰기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
+  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626;
+  --c-ja:#42A5F5; --c-mo:#FF8A65;
+  --c-good:#66BB6A; --c-good-deep:#388E3C;
+  --c-bad:#EF5350;
+  --fs-title:clamp(20px,5.2cqw,32px);
+  --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px);
+  --fs-caption:clamp(12px,2.7cqw,16px);
+  --fs-label:clamp(11px,2.3cqw,14px);
+  --em-sm:clamp(28px,6cqw,40px); --em-md:clamp(40px,9cqw,60px); --em-lg:clamp(54px,12cqw,80px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+body{background:var(--c-bg); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; font-family:'Jua',sans-serif;}
+
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+@keyframes ka-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+@keyframes ka-stroke{0%{stroke-dashoffset:300;} 100%{stroke-dashoffset:0;}}
+
+.ka{
+  container-type:inline-size; background:#fff;
+  border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4;
+  padding:clamp(14px,3cqw,22px) clamp(18px,4cqw,32px);
+  font-family:'Jua',sans-serif; color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; max-width:1024px; width:100%; margin:0 auto;
+}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.4; color:var(--c-deep); margin-bottom:clamp(12px,3cqw,18px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(10px,2.5cqw,16px) clamp(14px,3.4cqw,22px); font-size:var(--fs-body); line-height:1.7; color:#333; max-width:600px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+
+/* 자세 비교 — 두 그림 카드 */
+.pose-pair{display:flex; gap:clamp(12px,3cqw,22px); flex-wrap:wrap; justify-content:center; margin-bottom:clamp(8px,2cqw,12px);}
+.pose-card{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); padding:clamp(10px,2.5cqw,16px) clamp(14px,3cqw,20px); display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.5cqw,10px); cursor:pointer; min-width:clamp(120px,28cqw,180px); box-shadow:0 5px 0 var(--c-soft); transition:transform .2s;}
+.pose-card:hover{transform:translateY(-2px);}
+.pose-card:active{transform:translateY(2px); box-shadow:0 3px 0 var(--c-soft);}
+.pose-card.correct{background:#E8F5E9; border-color:var(--c-good-deep); box-shadow:0 5px 0 var(--c-good-deep); animation:ka-popBig .5s ease;}
+.pose-card.wrong{background:#FFEBEE; border-color:var(--c-bad); animation:ka-shake .35s;}
+.pose-emoji{font-size:var(--em-lg);}
+.pose-label{font-size:var(--fs-caption); color:#666; max-width:140px;}
+
+/* 자세 5요소 체크 */
+.check-list{display:flex; flex-direction:column; gap:clamp(6px,1.4cqw,9px); max-width:520px; width:100%; margin-top:clamp(4px,1cqw,6px);}
+.check-item{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); background:var(--c-soft); border-radius:clamp(10px,2.2cqw,14px); padding:clamp(8px,2cqw,12px) clamp(12px,2.8cqw,18px); font-size:var(--fs-caption); color:#333; text-align:left; animation:ka-fadeUp .4s ease both;}
+.check-item .icon{font-size:var(--em-sm); flex-shrink:0;}
+.check-item b{color:var(--c-deep);}
+
+/* 따라 읽기 — 운율 */
+.poem{background:#FFF8E1; border:clamp(3px,.7cqw,4px) solid #FFE082; border-radius:clamp(14px,3cqw,20px); padding:clamp(14px,3cqw,22px) clamp(20px,4cqw,32px); font-size:clamp(18px,4.2cqw,26px); line-height:2; color:#5D4037; max-width:560px; animation:ka-fadeUp .5s ease both;}
+.poem .line{display:block;}
+
+/* 글자/자모 블록 (앞 차시 동일 토큰) */
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(8px,2cqw,14px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.syl.sm{width:clamp(52px,12cqw,80px); height:clamp(52px,12cqw,80px); font-size:clamp(28px,6.2cqw,44px);}
+.jamo{width:clamp(52px,12cqw,84px); height:clamp(52px,12cqw,84px); border-radius:clamp(12px,2.6cqw,18px); display:grid; place-items:center; font-size:clamp(30px,6.5cqw,48px); color:#fff; box-shadow:0 5px 0 rgba(0,0,0,.12); animation:ka-pop .5s ease both;}
+.jamo.ja{background:var(--c-ja);} .jamo.mo{background:var(--c-mo);}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+
+/* 따라 쓰기 — 획순 SVG */
+.trace-box{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); padding:clamp(10px,2.5cqw,16px); display:inline-flex; align-items:center; justify-content:center;}
+.trace-svg{width:clamp(120px,26cqw,180px); height:clamp(120px,26cqw,180px);}
+.trace-svg .guide{stroke:#E0E0E0; stroke-width:2; fill:none; stroke-dasharray:6 6;}
+.trace-svg .stroke{stroke:var(--c-deep); stroke-width:10; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:300; stroke-dashoffset:300; animation:ka-stroke 1.5s ease-out forwards;}
+.trace-svg .stroke.s2{animation-delay:1.5s;}
+.trace-svg .stroke.s3{animation-delay:3s;}
+
+/* 고르기 */
+.picks{display:flex; gap:clamp(10px,2.4cqw,16px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.pick{min-width:clamp(72px,16cqw,100px); padding:clamp(12px,3cqw,18px) clamp(14px,3cqw,20px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(26px,6cqw,42px); color:var(--c-deep); cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.pick:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.pick.correct{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.pick.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+.slot{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); border:clamp(3px,.7cqw,4px) dashed var(--c-main); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-main); background:#fff;}
+.slot.filled{border-style:solid; background:var(--c-main); color:#fff; box-shadow:0 5px 0 var(--c-deep);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+
+/* 자가 점검 체크박스 */
+.self-check{display:flex; flex-direction:column; gap:clamp(8px,1.8cqw,12px); max-width:480px; width:100%;}
+.sc-row{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(8px,2cqw,12px) clamp(12px,2.8cqw,18px); cursor:pointer; transition:all .2s;}
+.sc-row:active{transform:scale(.98);}
+.sc-row.checked{background:#E8F5E9; border-color:var(--c-good-deep);}
+.sc-box{width:clamp(26px,6cqw,36px); height:clamp(26px,6cqw,36px); border-radius:8px; border:clamp(2px,.5cqw,3px) solid var(--c-soft); display:grid; place-items:center; font-size:var(--em-sm); color:#fff; flex-shrink:0;}
+.sc-row.checked .sc-box{background:var(--c-good); border-color:var(--c-good-deep);}
+.sc-text{font-size:var(--fs-body); color:#333; flex:1; text-align:left;}
+
+/* 약속 카드 */
+.promise{background:linear-gradient(135deg, #FFF8E1, #FFE0B2); border-radius:clamp(14px,3cqw,22px); padding:clamp(16px,3.5cqw,24px) clamp(20px,4cqw,32px); display:flex; flex-direction:column; align-items:center; gap:clamp(8px,2cqw,12px); max-width:520px;}
+.promise .star{font-size:var(--em-lg);}
+.promise .line{font-size:var(--fs-body); line-height:1.7; color:#5D4037;}
+
+/* 푸터 */
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+
+@container (max-width:420px){
+  .ka-lb span{display:none;}
+  .ka-f{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:7%"></div></div>
+    <span class="ka-pg" id="pg">1 / 13</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <div class="ka-m" id="main"></div>
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+/* ===== tracker: (a) 정답 로깅 (b) 완주 기록 ===== */
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+/* ===== 슬라이드 정의 (13슬: ① 2 / ② 4 / ③ 5 / ④ 2)
+   7~8차시 = 바른 자세로 읽고 쓰기. 한글 트랙 ②③④ 유창성·글씨 다지기. ===== */
+const slides=[
+  // ── ① 만나기 (2) ──
+  {stage:'만나기', tag:'① 첫 만남',
+   t:'바른 자세로 읽고 써 봐요 📖✏️',
+   html:`<div style="font-size:var(--em-lg); animation:ka-bounce 1.5s infinite;">🪑📚</div>
+    <div class="ka-bub">앉아서 책을 오래 읽으면 어깨가 아픈 적 있나요?<br>오늘은 <span class="emph">바른 자세</span> 로 글자를 읽고 써 봐요.</div>`},
+
+  {stage:'만나기', tag:'① 학습 문제',
+   t:'왜 바른 자세가 좋을까요?',
+   html:`<div class="pose-pair">
+      <div class="pose-card" style="cursor:default;">
+        <div class="pose-emoji">😊</div>
+        <div class="pose-label" style="color:var(--c-good-deep);"><b>바른 자세</b><br>어깨가 가뿐!</div>
+      </div>
+      <div class="pose-card" style="cursor:default;">
+        <div class="pose-emoji">😣</div>
+        <div class="pose-label" style="color:var(--c-bad);"><b>구부정한 자세</b><br>목·허리가 아파요</div>
+      </div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">바른 자세로 읽고 쓰면 몸도 편하고, 글자도 또렷이 보여요.</div>`},
+
+  // ── ② 엔진 전반: 바른 읽기 자세 + 따라 읽기 (4) ──
+  {stage:'엔진전반', tag:'② 바른 읽기 자세',
+   t:'책 읽을 때 이렇게 앉아 봐요',
+   html:`<div class="check-list">
+      <div class="check-item" style="animation-delay:.1s"><span class="icon">🪑</span><span><b>등</b> 은 의자 등받이에 곧게 붙여요.</span></div>
+      <div class="check-item" style="animation-delay:.3s"><span class="icon">👟</span><span><b>두 발</b> 은 바닥에 가지런히 놓아요.</span></div>
+      <div class="check-item" style="animation-delay:.5s"><span class="icon">👀</span><span><b>눈</b> 과 책 사이는 한 뼘쯤 띄워요.</span></div>
+      <div class="check-item" style="animation-delay:.7s"><span class="icon">📖</span><span><b>두 손</b> 으로 책을 가만히 잡아요.</span></div>
+    </div>`},
+
+  {stage:'엔진전반', tag:'② 골라 봐요', log:true, correct:'A',
+   t:'바른 읽기 자세는 어느 쪽일까요?',
+   html:`<div class="pose-pair">
+      <div class="pose-card" data-v="A">
+        <div class="pose-emoji">🧒📖</div>
+        <div class="pose-label">등 곧게,<br>책 한 뼘 거리</div>
+      </div>
+      <div class="pose-card" data-v="B">
+        <div class="pose-emoji">🤸📖</div>
+        <div class="pose-label">엎드려서,<br>책에 코가 닿게</div>
+      </div>
+    </div>
+    <div class="fb" id="fbA"></div>`,
+   poseMode:true},
+
+  {stage:'엔진전반', tag:'② 따라 읽기 🔊',
+   t:'바른 자세로 또박또박 읽어 봐요',
+   html:`<div class="poem">
+      <span class="line">🌸 봄이 오면 꽃이 펴</span>
+      <span class="line">🦋 나비도 같이 와</span>
+      <span class="line">🌳 가지마다 새 잎이</span>
+      <span class="line">🍃 햇살 받아 반짝여</span>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption); margin-top:clamp(8px,2cqw,12px);">한 줄씩 천천히, 또박또박 읽어 봐요.</div>`},
+
+  {stage:'엔진전반', tag:'② 또박또박', log:true, correct:'나비',
+   t:'위 글에서 본 낱말을 골라요',
+   html:`<div class="build">
+      <div class="syl sm">나</div><div class="syl sm">비</div></div>
+    <div class="picks">
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="나비">나비</button>
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="모기">모기</button>
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="개미">개미</button></div>
+    <div class="fb" id="fbB"></div>`},
+
+  // ── ③ 엔진 후반: 바른 쓰기 자세 + 글씨 + 글자 만들기 (5) ──
+  {stage:'엔진후반', tag:'③ 바른 쓰기 자세',
+   t:'글씨 쓸 때 이렇게 앉아 봐요',
+   html:`<div class="check-list">
+      <div class="check-item" style="animation-delay:.1s"><span class="icon">🪑</span><span><b>등</b> 은 곧게, <b>엉덩이</b> 는 의자에 깊숙이.</span></div>
+      <div class="check-item" style="animation-delay:.3s"><span class="icon">✋</span><span><b>왼손</b> 으로 공책을 가만히 눌러요.</span></div>
+      <div class="check-item" style="animation-delay:.5s"><span class="icon">✏️</span><span><b>연필</b> 은 엄지·검지·중지로 살짝 잡아요.</span></div>
+      <div class="check-item" style="animation-delay:.7s"><span class="icon">📓</span><span><b>공책</b> 은 몸 가운데에 똑바로 두어요.</span></div>
+    </div>`},
+
+  {stage:'엔진후반', tag:'③ 골라 봐요', log:true, correct:'A',
+   t:'바른 쓰기 자세는 어느 쪽일까요?',
+   html:`<div class="pose-pair">
+      <div class="pose-card" data-v="A">
+        <div class="pose-emoji">🧒✏️</div>
+        <div class="pose-label">등 곧게,<br>연필 살짝 잡고</div>
+      </div>
+      <div class="pose-card" data-v="B">
+        <div class="pose-emoji">🥱✏️</div>
+        <div class="pose-label">엎드려서,<br>턱을 괴고</div>
+      </div>
+    </div>
+    <div class="fb" id="fbC"></div>`,
+   poseMode:true},
+
+  {stage:'엔진후반', tag:'③ 획순 보기 ✏️',
+   t:'‘가’ 를 따라 써 봐요',
+   html:`<div class="trace-box">
+      <svg class="trace-svg" viewBox="0 0 200 200">
+        <!-- 안내선 (회색 점선 글자) -->
+        <text x="100" y="150" text-anchor="middle" font-family="Jua, sans-serif" font-size="160" fill="#F0F0F0">가</text>
+        <!-- ㄱ 가로획 → 세로획 -->
+        <path class="stroke" d="M 45,55 L 110,55 L 110,135" />
+        <!-- ㅏ 세로획 -->
+        <path class="stroke s2" d="M 135,40 L 135,175" />
+        <!-- ㅏ 가로획(짧은) -->
+        <path class="stroke s3" d="M 135,100 L 168,100" />
+      </svg>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption); margin-top:clamp(8px,2cqw,12px);">선이 그어지는 차례를 잘 보아요.<br>이제 공책에 따라 써 봐요!</div>`},
+
+  {stage:'엔진후반', tag:'③ 만들고 써요', log:true, correct:'무', slot:true,
+   t:'ㅁ 과 ㅜ 가 만나면? 위아래로',
+   html:`<div class="build">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <div class="jamo ja">ㅁ</div>
+        <div class="jamo mo">ㅜ</div>
+      </div>
+      <div class="op">=</div><div class="slot" id="slotD">?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="마">마</button>
+      <button class="pick" data-v="모">모</button>
+      <button class="pick" data-v="무">무</button></div>
+    <div class="fb" id="fbD"></div>`},
+
+  {stage:'엔진후반', tag:'③ 한 번 더', log:true, correct:'기', slot:true,
+   t:'ㄱ 과 ㅣ 가 만나면? 옆으로',
+   html:`<div class="build">
+      <div class="jamo ja">ㄱ</div><div class="op">+</div><div class="jamo mo">ㅣ</div>
+      <div class="op">=</div><div class="slot" id="slotE">?</div></div>
+    <div class="picks">
+      <button class="pick" data-v="가">가</button>
+      <button class="pick" data-v="구">구</button>
+      <button class="pick" data-v="기">기</button></div>
+    <div class="fb" id="fbE"></div>`},
+
+  // ── ④ 표현·정리 (2) ──
+  {stage:'표현정리', tag:'④ 스스로 점검',
+   t:'오늘 어떻게 했는지 점검해 봐요',
+   html:`<div class="self-check">
+      <div class="sc-row" data-k="back"><div class="sc-box">✓</div><div class="sc-text">등을 곧게 폈어요</div></div>
+      <div class="sc-row" data-k="foot"><div class="sc-box">✓</div><div class="sc-text">두 발을 바닥에 놓았어요</div></div>
+      <div class="sc-row" data-k="eye"><div class="sc-box">✓</div><div class="sc-text">눈과 책을 한 뼘쯤 띄웠어요</div></div>
+      <div class="sc-row" data-k="pen"><div class="sc-box">✓</div><div class="sc-text">연필을 바르게 잡았어요</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption); margin-top:clamp(8px,2cqw,12px); max-width:480px;">잘한 것에 ✓ 표시해 봐요. 다 못 했어도 괜찮아요!</div>`,
+   selfCheck:true},
+
+  {stage:'표현정리', tag:'④ 약속',
+   t:'바른 자세 약속 🌟',
+   html:`<div class="promise">
+      <div class="star">🌟</div>
+      <div class="line"><b>등은 곧게,<br>발은 가지런히,<br>책은 한 뼘 거리에!</b></div>
+      <div class="line" style="font-size:var(--fs-caption); color:#8D6E63;">매일매일 꾸준히 해 봐요.</div>
+    </div>`},
+];
+
+const LESSON_ID='g1_kor_u1_l07_08_v1';
+const LESSON_MAX=50;
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar'), pg=document.getElementById('pg'), scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev'), nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(s.poseMode) bindPose(s);
+  else if(s.correct) bindPicks(s);
+  if(s.selfCheck) bindSelfCheck();
+}
+function bindPicks(s){
+  let done=false;
+  main.querySelectorAll('.pick').forEach(btn=>{
+    btn.onclick=()=>{
+      if(done) return;
+      const ok=btn.dataset.v===s.correct;
+      btn.classList.add(ok?'correct':'wrong');
+      const slot=s.slot?main.querySelector('.slot'):null;
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(slot){slot.textContent=s.correct; slot.classList.add('filled');}
+        if(fb)fb.textContent='잘했어요! 🎉';
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.pick').forEach(b=>{if(b!==btn)b.style.opacity=.4;});
+      }else{
+        if(fb){fb.textContent='다시 한 번 볼까요?'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>btn.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindPose(s){
+  let done=false;
+  main.querySelectorAll('.pose-card[data-v]').forEach(card=>{
+    card.onclick=()=>{
+      if(done) return;
+      const ok=card.dataset.v===s.correct;
+      card.classList.add(ok?'correct':'wrong');
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(fb)fb.textContent='바른 자세를 잘 골랐어요! 🎉';
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+      }else{
+        if(fb){fb.textContent='다시 한 번 살펴봐요'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>card.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindSelfCheck(){
+  main.querySelectorAll('.sc-row').forEach(row=>{
+    row.onclick=()=>{ row.classList.toggle('checked'); };
+  });
+}
+
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+document.getElementById('hint').onclick=()=>{
+  const s=slides[cur];
+  const hints={
+    '3':'등이 곧고, 책과 눈 사이가 한 뼘쯤 떨어진 자세를 골라요.',
+    '5':'운율에 ‘나비도 같이 와’ 라는 줄이 있어요. 🦋',
+    '7':'턱을 괴거나 엎드린 자세는 바른 자세가 아니에요.',
+    '9':'위아래로 쌓이는 글자. ㅁ + ㅜ = ?',
+    '10':'옆으로 나란히. ㄱ + ㅣ = ?'
+  };
+  if(hints[cur]) alert('💡 ' + hints[cur]);
+  else alert('💡 천천히 살펴봐요!');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+</body>
+</html>

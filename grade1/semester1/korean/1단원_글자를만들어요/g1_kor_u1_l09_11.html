@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g1_kor_u1_l09_11_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>글자를 만들어요 · 여러 가지 모음자 알기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+/* ===== 디자인 헌법 v11 준수: 저학년 토큰 (draft_l05_06 / l07_08 동일 결) ===== */
+:root{
+  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
+  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626;
+  --c-ja:#42A5F5;   /* 자음자 = 메인 파랑 */
+  --c-mo:#FF8A65;   /* 모음자 = 대비 코랄 */
+  --c-good:#66BB6A; --c-good-deep:#388E3C;
+  --fs-title:clamp(20px,5.2cqw,32px);
+  --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px);
+  --fs-caption:clamp(12px,2.7cqw,16px);
+  --fs-label:clamp(11px,2.3cqw,14px);
+  --em-sm:clamp(28px,6cqw,40px); --em-md:clamp(40px,9cqw,60px); --em-lg:clamp(54px,12cqw,80px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+body{background:var(--c-bg); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; font-family:'Jua',sans-serif;}
+
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-pulse{0%,100%{transform:scale(1); box-shadow:0 4px 14px rgba(66,165,245,.32);}50%{transform:scale(1.04); box-shadow:0 6px 20px rgba(66,165,245,.5);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+@keyframes ka-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+
+/* ===== 헌법 카드 골격 ===== */
+.ka{
+  container-type:inline-size; background:#fff;
+  border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4;
+  padding:clamp(14px,3cqw,22px) clamp(18px,4cqw,32px);
+  font-family:'Jua',sans-serif; color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; max-width:1024px; width:100%; margin:0 auto;
+}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.4; color:var(--c-deep); margin-bottom:clamp(12px,3cqw,18px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(10px,2.5cqw,16px) clamp(14px,3.4cqw,22px); font-size:var(--fs-body); line-height:1.7; color:#333; max-width:600px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+
+/* 자모 / 글자 블록 */
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(8px,2cqw,14px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.syl.sm{width:clamp(52px,12cqw,80px); height:clamp(52px,12cqw,80px); font-size:clamp(28px,6.2cqw,44px);}
+.jamo{width:clamp(52px,12cqw,84px); height:clamp(52px,12cqw,84px); border-radius:clamp(12px,2.6cqw,18px); display:grid; place-items:center; font-size:clamp(30px,6.5cqw,48px); color:#fff; box-shadow:0 5px 0 rgba(0,0,0,.12); animation:ka-pop .5s ease both;}
+.jamo.ja{background:var(--c-ja);} .jamo.mo{background:var(--c-mo);}
+.jamo.big{width:clamp(76px,17cqw,120px); height:clamp(76px,17cqw,120px); font-size:clamp(44px,10cqw,72px);}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+.split-v{display:flex; flex-direction:column; align-items:center; gap:4px;}
+
+/* 모음자 알기 카드 (그룹별 소개) — 모음 + 이름 + 예시 낱말·이모지 */
+.vowel-row{display:flex; gap:clamp(10px,2.5cqw,18px); flex-wrap:wrap; justify-content:center; margin-bottom:clamp(8px,2cqw,12px);}
+.vowel-card{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); padding:clamp(10px,2.4cqw,14px) clamp(12px,2.8cqw,18px); display:flex; flex-direction:column; align-items:center; gap:clamp(4px,1cqw,6px); min-width:clamp(96px,22cqw,140px); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.vowel-card .mo-big{font-size:clamp(40px,9cqw,60px); color:var(--c-mo); font-weight:400; line-height:1;}
+.vowel-card .nm{font-size:var(--fs-caption); color:#888;}
+.vowel-card .ex{font-size:var(--em-md);}
+.vowel-card .word{font-size:var(--fs-body); color:var(--c-deep);}
+
+/* 그림→모음자 고르기 */
+.picture-q{display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.5cqw,10px); margin-bottom:clamp(8px,2cqw,12px);}
+.picture-q .pic{font-size:var(--em-lg);}
+.picture-q .wname{font-size:clamp(22px,5cqw,32px); color:var(--c-deep);}
+
+/* 고르기 — 모음자 픽 */
+.picks{display:flex; gap:clamp(10px,2.4cqw,16px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.pick{min-width:clamp(72px,16cqw,100px); padding:clamp(12px,3cqw,18px) clamp(14px,3cqw,20px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(26px,6cqw,42px); color:var(--c-mo); cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.pick.ja-pick{color:var(--c-deep);}
+.pick:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.pick.correct{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.pick.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+
+/* 음절표 */
+.gtable{border-collapse:separate; border-spacing:clamp(4px,1cqw,7px); margin-top:8px; max-width:100%;}
+.gtable td,.gtable th{width:clamp(46px,10cqw,68px); height:clamp(46px,10cqw,68px); border-radius:clamp(8px,1.8cqw,12px); text-align:center; font-size:clamp(22px,5cqw,34px); font-family:'Jua';}
+.gtable th{color:#fff;} .gtable th.ja{background:var(--c-ja);} .gtable th.mo{background:var(--c-mo);} .gtable th.corner{background:#eee;}
+.gtable td{background:var(--c-soft); color:var(--c-deep);}
+.gtable td.hl{background:var(--c-main); color:#fff; animation:ka-pop .4s ease both;}
+.gtable td.q{background:#fff; border:clamp(3px,.7cqw,4px) dashed var(--c-main); color:var(--c-main); font-size:clamp(24px,5.4cqw,36px);}
+.gtable td.q.filled{background:var(--c-main); border-style:solid; color:#fff;}
+
+.slot{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); border:clamp(3px,.7cqw,4px) dashed var(--c-main); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-main); background:#fff;}
+.slot.filled{border-style:solid; background:var(--c-main); color:#fff; box-shadow:0 5px 0 var(--c-deep);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+
+/* 짝 잇기 — 모음자 ↔ 낱말 그림 */
+.match-grid{display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,2.4cqw,16px); max-width:560px; width:100%;}
+.match-col{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px);}
+.match-cell{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); padding:clamp(8px,2cqw,12px); display:flex; align-items:center; justify-content:center; gap:clamp(6px,1.5cqw,10px); cursor:pointer; font-family:'Jua'; min-height:clamp(56px,12cqw,76px); box-shadow:0 4px 0 var(--c-soft);}
+.match-cell .mc-mo{font-size:clamp(28px,6cqw,40px); color:var(--c-mo);}
+.match-cell .mc-pic{font-size:var(--em-md);}
+.match-cell .mc-word{font-size:var(--fs-body); color:var(--c-deep);}
+.match-cell.sel{background:#FFF8E1; border-color:#FFB300;}
+.match-cell.done{background:#E8F5E9; border-color:var(--c-good-deep); cursor:default; opacity:.85;}
+.match-cell.miss{animation:ka-shake .35s;}
+
+/* 보드게임 단순화 — 모음자 칸 + 낱말 매칭 */
+.board{display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.5cqw,10px); max-width:520px; width:100%;}
+.board-cell{background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(8px,2cqw,12px) clamp(4px,1cqw,8px); display:flex; flex-direction:column; align-items:center; gap:4px; font-family:'Jua'; cursor:pointer;}
+.board-cell .bc-mo{font-size:clamp(22px,5cqw,32px); color:var(--c-mo);}
+.board-cell .bc-pic{font-size:var(--em-sm);}
+.board-cell.done{background:#E8F5E9; border-color:var(--c-good-deep); animation:ka-popBig .4s ease;}
+
+/* 정리 — 11모음자 한눈에 */
+.vowel-wall{display:flex; flex-wrap:wrap; gap:clamp(6px,1.5cqw,10px); justify-content:center; max-width:600px;}
+.vw{background:var(--c-soft); border-radius:clamp(8px,1.8cqw,12px); padding:clamp(8px,1.8cqw,12px) clamp(10px,2.2cqw,14px); display:flex; flex-direction:column; align-items:center; gap:2px; min-width:clamp(54px,11cqw,72px); animation:ka-pop .4s ease both;}
+.vw .v-mo{font-size:clamp(22px,5cqw,32px); color:var(--c-mo); line-height:1;}
+.vw .v-nm{font-size:var(--fs-label); color:#888;}
+
+/* 푸터 */
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+
+@container (max-width:420px){
+  .ka-lb span{display:none;}
+  .ka-f{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <!-- 헤더 -->
+  <div class="ka-h">
+    <button class="ka-lb">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:5%"></div></div>
+    <span class="ka-pg" id="pg">1 / 19</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <!-- 메인 -->
+  <div class="ka-m" id="main"></div>
+  <!-- 푸터 -->
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+/* ===== tracker ===== */
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+/* ===== 슬라이드 정의 (19슬: ① 2 / ② 9 / ③ 6 / ④ 2)
+   9~11차시 = 여러 가지 모음자(ㅐㅔㅒㅖㅘㅙㅚㅝㅞㅟㅢ 11개) 알기.
+   한글 트랙 ②(수용·식별) + ③(결합·생산) 두껍게.
+   교재 사례 = 거미↔개미 대비로 도입. 5그룹 분할: ㅐㅔ / ㅒㅖ / ㅘㅙㅚ / ㅝㅞㅟ / ㅢ
+   ===== */
+const slides=[
+
+  // ───────────── ① 만나기 (2) ─────────────
+  {stage:'만나기', tag:'① 첫 만남',
+   t:'어? 모음자가 다르네! 🐜',
+   html:`<div class="build" style="gap:clamp(14px,3cqw,22px);">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <div style="font-size:var(--em-lg);">🕷️</div>
+        <div class="syl sm" style="font-size:clamp(24px,5.4cqw,36px);">거미</div>
+      </div>
+      <div class="op">↔</div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+        <div style="font-size:var(--em-lg);">🐜</div>
+        <div class="syl sm" style="font-size:clamp(24px,5.4cqw,36px);">개미</div>
+      </div></div>
+    <div class="ka-bub">‘거미’ 와 ‘개미’ — 닮은 듯 다르죠?<br>두 낱말에서 <span class="emph">다른 모음자</span> 를 찾을 수 있나요?</div>`},
+
+  {stage:'만나기', tag:'① 학습 문제',
+   t:'여러 가지 모음자를 알아봐요',
+   html:`<div class="vowel-row" style="margin-bottom:clamp(10px,2.4cqw,14px);">
+      <div class="vowel-card" style="min-width:clamp(72px,16cqw,100px); padding:clamp(8px,2cqw,12px);"><div class="mo-big">ㅐ</div></div>
+      <div class="vowel-card" style="min-width:clamp(72px,16cqw,100px); padding:clamp(8px,2cqw,12px);"><div class="mo-big">ㅖ</div></div>
+      <div class="vowel-card" style="min-width:clamp(72px,16cqw,100px); padding:clamp(8px,2cqw,12px);"><div class="mo-big">ㅘ</div></div>
+      <div class="vowel-card" style="min-width:clamp(72px,16cqw,100px); padding:clamp(8px,2cqw,12px);"><div class="mo-big">ㅟ</div></div>
+      <div class="vowel-card" style="min-width:clamp(72px,16cqw,100px); padding:clamp(8px,2cqw,12px);"><div class="mo-big">ㅢ</div></div>
+    </div>
+    <div class="ka-bub">지금까지 배운 모음자 말고도 <span class="emph">여러 가지 모음자</span> 가 있어요.<br>이름·소리·결합을 함께 알아봐요!</div>`},
+
+  // ───────────── ② 엔진 전반: 그룹별 수용·식별 (9슬, 5그룹) ─────────────
+
+  // G1: ㅐ, ㅔ
+  {stage:'엔진전반', tag:'② ㅐ, ㅔ 알기',
+   t:'모음자 ㅐ, ㅔ — 이름과 소리',
+   html:`<div class="vowel-row">
+      <div class="vowel-card"><div class="mo-big">ㅐ</div><div class="nm">‘애’ 소리</div><div class="ex">🐜</div><div class="word">개미</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅔ</div><div class="nm">‘에’ 소리</div><div class="ex">🛝</div><div class="word">그네</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">‘개’ 의 모음자는 <span class="emph">ㅐ</span>, ‘네’ 의 모음자는 <span class="emph">ㅔ</span> 예요.<br>소리 내어 따라 읽어 봐요.</div>`},
+
+  {stage:'엔진전반', tag:'② 골라 봐요', log:true, correct:'ㅐ',
+   t:'‘새’ 에 들어간 모음자는?',
+   html:`<div class="picture-q">
+      <div class="pic">🐦</div>
+      <div class="wname">새</div></div>
+    <div class="picks">
+      <button class="pick" data-v="ㅏ">ㅏ</button>
+      <button class="pick" data-v="ㅐ">ㅐ</button>
+      <button class="pick" data-v="ㅔ">ㅔ</button></div>
+    <div class="fb" id="fbA"></div>`},
+
+  // G2: ㅒ, ㅖ
+  {stage:'엔진전반', tag:'② ㅒ, ㅖ 알기',
+   t:'모음자 ㅒ, ㅖ — 이름과 소리',
+   html:`<div class="vowel-row">
+      <div class="vowel-card"><div class="mo-big">ㅒ</div><div class="nm">‘얘’ 소리</div><div class="ex">💬</div><div class="word">얘기</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅖ</div><div class="nm">‘예’ 소리</div><div class="ex">🕰️</div><div class="word">시계</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">‘얘’ 의 모음자는 <span class="emph">ㅒ</span>, ‘계’ 의 모음자는 <span class="emph">ㅖ</span> 예요.</div>`},
+
+  {stage:'엔진전반', tag:'② 골라 봐요', log:true, correct:'ㅖ',
+   t:'‘시계’ 의 ‘계’ 에 들어간 모음자는?',
+   html:`<div class="picture-q">
+      <div class="pic">🕰️</div>
+      <div class="wname">시<span style="color:var(--c-emph);">계</span></div></div>
+    <div class="picks">
+      <button class="pick" data-v="ㅒ">ㅒ</button>
+      <button class="pick" data-v="ㅖ">ㅖ</button>
+      <button class="pick" data-v="ㅔ">ㅔ</button></div>
+    <div class="fb" id="fbB"></div>`},
+
+  // G3: ㅘ, ㅙ, ㅚ
+  {stage:'엔진전반', tag:'② ㅘ, ㅙ, ㅚ 알기',
+   t:'모음자 ㅘ, ㅙ, ㅚ — 이름과 소리',
+   html:`<div class="vowel-row">
+      <div class="vowel-card"><div class="mo-big">ㅘ</div><div class="nm">‘와’ 소리</div><div class="ex">🍎</div><div class="word">사과</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅙ</div><div class="nm">‘왜’ 소리</div><div class="ex">🐷</div><div class="word">돼지</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅚ</div><div class="nm">‘외’ 소리</div><div class="ex">🍈</div><div class="word">참외</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">‘과’, ‘돼’, ‘외’ 의 모음자를 잘 보아요.</div>`},
+
+  {stage:'엔진전반', tag:'② 골라 봐요', log:true, correct:'ㅘ',
+   t:'‘사과’ 의 ‘과’ 에 들어간 모음자는?',
+   html:`<div class="picture-q">
+      <div class="pic">🍎</div>
+      <div class="wname">사<span style="color:var(--c-emph);">과</span></div></div>
+    <div class="picks">
+      <button class="pick" data-v="ㅘ">ㅘ</button>
+      <button class="pick" data-v="ㅙ">ㅙ</button>
+      <button class="pick" data-v="ㅚ">ㅚ</button></div>
+    <div class="fb" id="fbC"></div>`},
+
+  // G4: ㅝ, ㅞ, ㅟ
+  {stage:'엔진전반', tag:'② ㅝ, ㅞ, ㅟ 알기',
+   t:'모음자 ㅝ, ㅞ, ㅟ — 이름과 소리',
+   html:`<div class="vowel-row">
+      <div class="vowel-card"><div class="mo-big">ㅝ</div><div class="nm">‘워’ 소리</div><div class="ex">🏥</div><div class="word">병원</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅞ</div><div class="nm">‘웨’ 소리</div><div class="ex">🧥</div><div class="word">스웨터</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅟ</div><div class="nm">‘위’ 소리</div><div class="ex">✂️</div><div class="word">가위</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">‘원’, ‘웨’, ‘위’ 의 모음자를 잘 보아요.</div>`},
+
+  {stage:'엔진전반', tag:'② 골라 봐요', log:true, correct:'ㅟ',
+   t:'‘가위’ 의 ‘위’ 에 들어간 모음자는?',
+   html:`<div class="picture-q">
+      <div class="pic">✂️</div>
+      <div class="wname">가<span style="color:var(--c-emph);">위</span></div></div>
+    <div class="picks">
+      <button class="pick" data-v="ㅝ">ㅝ</button>
+      <button class="pick" data-v="ㅞ">ㅞ</button>
+      <button class="pick" data-v="ㅟ">ㅟ</button></div>
+    <div class="fb" id="fbD"></div>`},
+
+  // G5: ㅢ
+  {stage:'엔진전반', tag:'② ㅢ 알기',
+   t:'모음자 ㅢ — 이름과 소리',
+   html:`<div class="vowel-row">
+      <div class="vowel-card"><div class="mo-big">ㅢ</div><div class="nm">‘의’ 소리</div><div class="ex">🪑</div><div class="word">의자</div></div>
+      <div class="vowel-card"><div class="mo-big">ㅢ</div><div class="nm">‘의’ 소리</div><div class="ex">👨‍⚕️</div><div class="word">의사</div></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption);">‘의’ 의 모음자 <span class="emph">ㅢ</span> 는 ‘ㅡ’ 와 ‘ㅣ’ 를 이어 소리 내요.</div>`},
+
+  // ───────────── ③ 엔진 후반: 결합·생산 (6슬) ─────────────
+
+  {stage:'엔진후반', tag:'③ 카드로 만들어요', log:true, correct:'개', slot:true,
+   t:'ㄱ 과 ㅐ 가 만나면? 🐜',
+   html:`<div class="build">
+      <div class="jamo ja">ㄱ</div><div class="op">+</div><div class="jamo mo">ㅐ</div>
+      <div class="op">=</div><div class="slot" id="slotE">?</div>
+      <div style="width:clamp(8px,2cqw,14px);"></div>
+      <div class="syl sm">미</div>
+      <div class="op">→</div>
+      <div style="font-size:var(--em-md);">🐜</div></div>
+    <div class="picks">
+      <button class="pick" data-v="가">가</button>
+      <button class="pick" data-v="개">개</button>
+      <button class="pick" data-v="거">거</button></div>
+    <div class="fb" id="fbE"></div>`},
+
+  {stage:'엔진후반', tag:'③ 표에서 골라요', log:true, correct:'네',
+   t:'ㄴ 과 ㅔ 가 만나는 칸은?',
+   html:`<table class="gtable">
+      <tr><th class="corner"></th><th class="mo">ㅏ</th><th class="mo">ㅐ</th><th class="mo">ㅔ</th></tr>
+      <tr><th class="ja">ㄱ</th><td>가</td><td>개</td><td>게</td></tr>
+      <tr><th class="ja">ㄴ</th><td>나</td><td>내</td><td class="q" id="qF">?</td></tr>
+      <tr><th class="ja">ㄷ</th><td>다</td><td>대</td><td>데</td></tr>
+    </table>
+    <div class="picks">
+      <button class="pick" data-v="나">나</button>
+      <button class="pick" data-v="내">내</button>
+      <button class="pick" data-v="네">네</button></div>
+    <div class="fb" id="fbF"></div>`,
+   slotSel:'#qF'},
+
+  {stage:'엔진후반', tag:'③ 카드로 만들어요', log:true, correct:'과', slot:true,
+   t:'ㄱ 과 ㅘ 가 만나면? 🍎',
+   html:`<div class="build">
+      <div class="jamo ja">ㄱ</div><div class="op">+</div><div class="jamo mo">ㅘ</div>
+      <div class="op">=</div><div class="slot" id="slotG">?</div>
+      <div style="width:clamp(8px,2cqw,14px);"></div>
+      <div class="syl sm">사</div>
+      <div class="op">→</div>
+      <div style="font-size:var(--em-md);">🍎</div></div>
+    <div class="picks">
+      <button class="pick" data-v="가">가</button>
+      <button class="pick" data-v="고">고</button>
+      <button class="pick" data-v="과">과</button></div>
+    <div class="fb" id="fbG"></div>`},
+
+  {stage:'엔진후반', tag:'③ 카드로 만들어요', log:true, correct:'위', slot:true,
+   t:'ㅇ 과 ㅟ 가 만나면? ✂️',
+   html:`<div class="build">
+      <div class="jamo ja">ㅇ</div><div class="op">+</div><div class="jamo mo">ㅟ</div>
+      <div class="op">=</div><div class="slot" id="slotH">?</div>
+      <div style="width:clamp(8px,2cqw,14px);"></div>
+      <div class="syl sm">가</div>
+      <div class="op">→</div>
+      <div style="font-size:var(--em-md);">✂️</div></div>
+    <div class="picks">
+      <button class="pick" data-v="우">우</button>
+      <button class="pick" data-v="위">위</button>
+      <button class="pick" data-v="와">와</button></div>
+    <div class="fb" id="fbH"></div>`},
+
+  {stage:'엔진후반', tag:'③ 두 글자 모으기', log:true, correct:'의자',
+   t:'‘의’ 와 ‘자’ 를 모으면? 🪑',
+   html:`<div class="build">
+      <div class="syl sm">의</div><div class="op">+</div><div class="syl sm">자</div>
+      <div class="op">=</div><div style="font-size:var(--em-lg);">🪑</div></div>
+    <div class="picks">
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="의자">의자</button>
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="이자">이자</button>
+      <button class="pick" style="font-size:clamp(22px,5cqw,34px)" data-v="우자">우자</button></div>
+    <div class="fb" id="fbI"></div>`},
+
+  // 짝 잇기 — 모음자 ↔ 그림 (자동 채점, M5)
+  {stage:'엔진후반', tag:'③ 짝을 이어요', log:true,
+   t:'모음자와 알맞은 낱말을 이어 봐요',
+   html:`<div class="match-grid" id="matchGrid">
+      <div class="match-col">
+        <div class="match-cell" data-side="L" data-k="A"><span class="mc-mo">ㅐ</span></div>
+        <div class="match-cell" data-side="L" data-k="B"><span class="mc-mo">ㅖ</span></div>
+        <div class="match-cell" data-side="L" data-k="C"><span class="mc-mo">ㅙ</span></div>
+        <div class="match-cell" data-side="L" data-k="D"><span class="mc-mo">ㅢ</span></div>
+      </div>
+      <div class="match-col">
+        <div class="match-cell" data-side="R" data-k="C"><span class="mc-pic">🐷</span><span class="mc-word">돼지</span></div>
+        <div class="match-cell" data-side="R" data-k="A"><span class="mc-pic">🐜</span><span class="mc-word">개미</span></div>
+        <div class="match-cell" data-side="R" data-k="D"><span class="mc-pic">🪑</span><span class="mc-word">의자</span></div>
+        <div class="match-cell" data-side="R" data-k="B"><span class="mc-pic">🕰️</span><span class="mc-word">시계</span></div>
+      </div>
+    </div>
+    <div class="fb" id="fbJ"></div>`,
+   matchMode:true},
+
+  // ───────────── ④ 표현·정리 (2) ─────────────
+
+  {stage:'표현정리', tag:'④ 모음자 보드',
+   t:'모음자 칸을 눌러 보아요',
+   html:`<div class="board" id="board">
+      <div class="board-cell" data-v="ㅐ"><span class="bc-mo">ㅐ</span><span class="bc-pic">🐜</span></div>
+      <div class="board-cell" data-v="ㅔ"><span class="bc-mo">ㅔ</span><span class="bc-pic">🛝</span></div>
+      <div class="board-cell" data-v="ㅒ"><span class="bc-mo">ㅒ</span><span class="bc-pic">💬</span></div>
+      <div class="board-cell" data-v="ㅖ"><span class="bc-mo">ㅖ</span><span class="bc-pic">🕰️</span></div>
+      <div class="board-cell" data-v="ㅘ"><span class="bc-mo">ㅘ</span><span class="bc-pic">🍎</span></div>
+      <div class="board-cell" data-v="ㅙ"><span class="bc-mo">ㅙ</span><span class="bc-pic">🐷</span></div>
+      <div class="board-cell" data-v="ㅚ"><span class="bc-mo">ㅚ</span><span class="bc-pic">🍈</span></div>
+      <div class="board-cell" data-v="ㅝ"><span class="bc-mo">ㅝ</span><span class="bc-pic">🏥</span></div>
+      <div class="board-cell" data-v="ㅞ"><span class="bc-mo">ㅞ</span><span class="bc-pic">🧥</span></div>
+      <div class="board-cell" data-v="ㅟ"><span class="bc-mo">ㅟ</span><span class="bc-pic">✂️</span></div>
+      <div class="board-cell" data-v="ㅢ"><span class="bc-mo">ㅢ</span><span class="bc-pic">🪑</span></div>
+    </div>
+    <div class="ka-bub" style="font-size:var(--fs-caption); margin-top:clamp(8px,2cqw,12px);">칸을 눌러 모음자 소리를 내며 낱말을 말해 봐요.</div>`,
+   boardMode:true},
+
+  {stage:'표현정리', tag:'④ 오늘 배운 것',
+   t:'여러 가지 모음자 🌟',
+   html:`<div class="vowel-wall">
+      <div class="vw"><div class="v-mo">ㅐ</div><div class="v-nm">애</div></div>
+      <div class="vw"><div class="v-mo">ㅔ</div><div class="v-nm">에</div></div>
+      <div class="vw"><div class="v-mo">ㅒ</div><div class="v-nm">얘</div></div>
+      <div class="vw"><div class="v-mo">ㅖ</div><div class="v-nm">예</div></div>
+      <div class="vw"><div class="v-mo">ㅘ</div><div class="v-nm">와</div></div>
+      <div class="vw"><div class="v-mo">ㅙ</div><div class="v-nm">왜</div></div>
+      <div class="vw"><div class="v-mo">ㅚ</div><div class="v-nm">외</div></div>
+      <div class="vw"><div class="v-mo">ㅝ</div><div class="v-nm">워</div></div>
+      <div class="vw"><div class="v-mo">ㅞ</div><div class="v-nm">웨</div></div>
+      <div class="vw"><div class="v-mo">ㅟ</div><div class="v-nm">위</div></div>
+      <div class="vw"><div class="v-mo">ㅢ</div><div class="v-nm">의</div></div>
+    </div>
+    <div class="ka-bub" style="margin-top:clamp(10px,2.4cqw,14px);">모두 <span class="emph">11개</span> 의 모음자를 만났어요!<br>자음자와 만나면 더 많은 글자를 만들 수 있어요.</div>`},
+];
+
+const LESSON_ID='g1_kor_u1_l09_11_v1';
+const LESSON_MAX=100;
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar'), pg=document.getElementById('pg'), scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev'), nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(s.matchMode) bindMatch(s);
+  else if(s.boardMode) bindBoard(s);
+  else if(s.correct) bindPicks(s);
+}
+
+function bindPicks(s){
+  let done=false;
+  main.querySelectorAll('.pick').forEach(btn=>{
+    btn.onclick=()=>{
+      if(done) return;
+      const ok=btn.dataset.v===s.correct;
+      btn.classList.add(ok?'correct':'wrong');
+      let target=null;
+      if(s.slot) target=main.querySelector('.slot');
+      else if(s.slotSel) target=main.querySelector(s.slotSel);
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(target){target.textContent=s.correct; target.classList.add('filled');}
+        if(fb)fb.textContent='잘했어요! 🎉';
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.pick').forEach(b=>{if(b!==btn)b.style.opacity=.4;});
+      }else{
+        if(fb){fb.textContent='다시 한 번 볼까요?'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>btn.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+
+function bindMatch(s){
+  let sel=null, matched=0, total=4, logged=false;
+  const cells=main.querySelectorAll('.match-cell');
+  cells.forEach(c=>{
+    c.onclick=()=>{
+      if(c.classList.contains('done')) return;
+      if(!sel){
+        sel=c; c.classList.add('sel');
+      }else if(sel===c){
+        c.classList.remove('sel'); sel=null;
+      }else{
+        // 같은 열끼리는 선택 불가 — 다른 열인지 확인
+        if(sel.dataset.side===c.dataset.side){
+          sel.classList.remove('sel');
+          sel=c; c.classList.add('sel');
+          return;
+        }
+        if(sel.dataset.k===c.dataset.k){
+          sel.classList.remove('sel'); sel.classList.add('done');
+          c.classList.add('done');
+          matched++;
+          const fb=main.querySelector('.fb');
+          if(matched===total){
+            if(fb)fb.textContent='모두 이었어요! 🎉';
+            if(!logged){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true); logged=true;}
+          }else{
+            if(fb)fb.textContent=`잘했어요! ${matched}/${total}`;
+          }
+          sel=null;
+        }else{
+          c.classList.add('miss');
+          sel.classList.add('miss');
+          const lastSel=sel;
+          setTimeout(()=>{
+            c.classList.remove('miss','sel');
+            lastSel.classList.remove('miss','sel');
+          },360);
+          const fb=main.querySelector('.fb');
+          if(fb){fb.textContent='다시 한 번 살펴봐요'; fb.classList.add('bad'); setTimeout(()=>fb.classList.remove('bad'),700);}
+          if(!logged) tracker.answer(cur,false);
+          sel=null;
+        }
+      }
+    };
+  });
+}
+
+function bindBoard(s){
+  main.querySelectorAll('.board-cell').forEach(c=>{
+    c.onclick=()=>{ c.classList.toggle('done'); };
+  });
+}
+
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+
+document.getElementById('hint').onclick=()=>{
+  const hints={
+    '3':'‘새’ 를 천천히 소리 내어 보아요 — ‘ㅅ … 애’. 어느 모음자일까?',
+    '5':'‘계’ 를 천천히 ‘ㄱ … 예’. ‘예’ 소리 모음자!',
+    '7':'‘과’ 의 모음자는 ‘ㅗ’ 와 ‘ㅏ’ 가 만난 모음자. 모양을 보아요.',
+    '9':'‘위’ 의 모음자는 ‘ㅜ’ 와 ‘ㅣ’ 가 만난 모음자.',
+    '11':'옆으로 만나기 — ㄱ + ㅐ … 가, 개, 거 가운데 하나!',
+    '12':'ㄴ 줄에서 ㅔ 칸. 표를 잘 보아요.',
+    '13':'사과의 ‘과’. ㄱ + ㅘ = ?',
+    '14':'가위의 ‘위’. ㅇ + ㅟ = ?',
+    '15':'그림 🪑 는 의자! ‘의’ 가 먼저.',
+    '16':'모음자 모양을 잘 보고, 그림 속 낱말 속 모음자를 찾아요.'
+  };
+  if(hints[cur]) alert('💡 ' + hints[cur]);
+  else alert('💡 천천히 소리 내어 읽어 봐요!');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+</body>
+</html>
