@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이티처 · K-edu Teacher</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   케이티처 통합 허브 — 학년 → 과목 선택 진입
+   디자인: 표준_디자인토큰.md v1 (세이지·차콜·아이보리 / Gowun Dodum)
+   진입 패턴: 케이에듀 자기주도 허브와 동일한 결 (학년→과목)
+   종착점: g{학년}_{과목}.html (한 학년·과목 = 한 파일)
+   ============================================================ */
+:root{
+  --c-text:#2A2D31; --c-text-light:#5A6068; --c-text-mute:#8B919A;
+  --c-line:#E5E2DC; --c-line-soft:#F0EDE6;
+  --c-bg:#FAF8F3; --c-card:#FFFFFF;
+  --c-accent:#5B7A6E; --c-accent-soft:#E8EEEB; --c-accent-text:#3D5651;
+  --c-warm:#B08B5C; --c-warm-soft:#F5EDE0;
+  --c-shadow:0 1px 3px rgba(42,45,49,.04), 0 4px 16px rgba(42,45,49,.05);
+  --c-shadow-md:0 2px 8px rgba(42,45,49,.06), 0 8px 24px rgba(42,45,49,.07);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+body{
+  font-family:'Gowun Dodum','Inter',system-ui,sans-serif;
+  background:var(--c-bg); color:var(--c-text);
+  min-height:100vh; line-height:1.55;
+  display:flex; flex-direction:column;
+}
+.num,.grade-num{font-family:'Inter',sans-serif;}
+
+/* ---------- 상단 바 ---------- */
+.topbar{
+  background:var(--c-card); border-bottom:1px solid var(--c-line);
+  padding:0 28px; height:58px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+.brand{
+  display:flex; align-items:center; gap:9px;
+  font-size:17px; color:var(--c-text);
+}
+.brand .dot{
+  width:9px; height:9px; border-radius:50%;
+  background:var(--c-accent); display:inline-block;
+}
+.brand b{font-weight:400;}
+.brand .en{font-family:'Inter',sans-serif; font-weight:600; font-size:13px; color:var(--c-text-mute); letter-spacing:.02em;}
+.topbar .hint{font-size:12.5px; color:var(--c-text-mute);}
+
+/* ---------- 본문 ---------- */
+main{flex:1; width:100%; max-width:880px; margin:0 auto; padding:44px 24px 56px;}
+
+@keyframes fadeUp{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
+.screen{display:none;}
+.screen.active{display:block; animation:fadeUp .28s ease both;}
+
+/* 브레드크럼 */
+.bc{
+  display:flex; align-items:center; gap:8px;
+  font-size:12.5px; color:var(--c-text-mute); margin-bottom:22px;
+}
+.bc button{
+  background:none; border:none; cursor:pointer;
+  font-family:inherit; font-size:12.5px; color:var(--c-accent-text);
+  padding:0; transition:opacity .12s;
+}
+.bc button:hover{opacity:.65; text-decoration:underline;}
+.bc .sep{color:var(--c-line);}
+.bc .cur{color:var(--c-text-light);}
+
+/* 페이지 타이틀 */
+.ptitle{font-size:24px; margin-bottom:6px; letter-spacing:-.01em;}
+.ptitle .ac{color:var(--c-accent-text);}
+.psub{font-size:13.5px; color:var(--c-text-light); margin-bottom:30px;}
+
+/* 학년 배지 (과목 화면) */
+.grade-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--c-accent-soft); color:var(--c-accent-text);
+  border:1px solid var(--c-line); border-radius:7px;
+  padding:6px 13px; font-size:13px; margin-bottom:22px;
+}
+.grade-badge .b-num{font-family:'Inter',sans-serif; font-weight:700;}
+
+/* ---------- 학년 그리드 ---------- */
+.section-label{font-size:13px; color:var(--c-text-light); margin:0 0 13px 2px;}
+.grade-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+}
+.grade-card{
+  background:var(--c-card); border:1px solid var(--c-line); border-radius:12px;
+  padding:22px 18px; cursor:pointer; text-align:center;
+  box-shadow:var(--c-shadow); transition:all .15s;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.grade-card:hover{border-color:var(--c-accent); transform:translateY(-2px); box-shadow:var(--c-shadow-md);}
+.grade-card .grade-num{
+  font-size:34px; font-weight:700; color:var(--c-accent-text); line-height:1;
+}
+.grade-card .grade-label{font-size:13px; color:var(--c-text-light);}
+
+/* 영어(전 학년) 카드 — 케이에듀와 동일하게 학년선택 화면에 별도 배치 */
+.wide-card{
+  margin-top:14px; background:var(--c-card);
+  border:1px solid var(--c-line); border-radius:12px;
+  padding:18px 22px; box-shadow:var(--c-shadow);
+  display:flex; align-items:center; gap:14px;
+  transition:all .15s;
+}
+.wide-card.disabled{background:var(--c-line-soft); cursor:not-allowed; box-shadow:none;}
+.wide-card .wc-ic{
+  width:42px; height:42px; border-radius:9px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--c-accent-soft); font-family:'Inter',sans-serif; font-weight:700; color:var(--c-accent-text);
+  font-size:17px;
+}
+.wide-card.disabled .wc-ic{background:#ECE9E2; color:var(--c-text-mute);}
+.wide-card .wc-name{font-size:15px;}
+.wide-card .wc-sub{font-size:12px; color:var(--c-text-mute); margin-top:1px;}
+.wide-card .wc-status{margin-left:auto; font-size:12px; color:var(--c-text-mute);}
+
+/* ---------- 과목 그리드 ---------- */
+.subject-grid{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:14px;
+}
+.subject-card{
+  background:var(--c-card); border:1px solid var(--c-line); border-radius:12px;
+  padding:20px 18px; box-shadow:var(--c-shadow);
+  display:flex; align-items:center; gap:14px; transition:all .15s;
+}
+.subject-card.ready{cursor:pointer;}
+.subject-card.ready:hover{border-color:var(--c-accent); transform:translateY(-2px); box-shadow:var(--c-shadow-md);}
+.subject-card.disabled{background:var(--c-line-soft); cursor:not-allowed; box-shadow:none;}
+.subject-card .sc-ic{
+  width:46px; height:46px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+  background:var(--c-accent-soft);
+}
+.subject-card.disabled .sc-ic{background:#ECE9E2; filter:grayscale(.4) opacity(.7);}
+.subject-card .sc-body{flex:1; min-width:0;}
+.subject-card .sc-name{font-size:16px; color:var(--c-text);}
+.subject-card.disabled .sc-name{color:var(--c-text-mute);}
+.subject-card .sc-meta{font-size:12px; color:var(--c-text-mute); margin-top:2px;}
+.subject-card .sc-status{
+  font-size:11.5px; font-family:'Inter',sans-serif; font-weight:600;
+  padding:4px 10px; border-radius:6px; flex-shrink:0;
+}
+.subject-card.ready .sc-status{background:var(--c-accent); color:#fff;}
+.subject-card.disabled .sc-status{background:transparent; color:var(--c-text-mute); font-weight:500;}
+
+/* 푸터 안내 */
+.foot{margin-top:34px; font-size:11.5px; color:var(--c-text-mute); line-height:1.7;}
+
+@media (max-width:560px){
+  .grade-grid{grid-template-columns:repeat(2,1fr);}
+  .subject-grid{grid-template-columns:1fr;}
+  main{padding:32px 18px 44px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span><b>케이티처</b><span class="en">K-edu Teacher</span></div>
+  <div class="hint">교사용 수업 도구</div>
+</div>
+
+<main>
+
+  <!-- ===================== 화면 1: 학년 선택 ===================== -->
+  <section class="screen active" id="s-grade">
+    <div class="ptitle">어느 <span class="ac">학년</span> 수업인가요?</div>
+    <div class="psub">학년을 고르면 과목을 선택할 수 있어요. 준비된 과목은 바로 수업 화면으로 들어갑니다.</div>
+
+    <div class="section-label">학년 선택 👇</div>
+    <div class="grade-grid" id="grade-grid"></div>
+
+    <div class="section-label" style="margin-top:30px;">영어는 여기서 👇</div>
+    <div class="wide-card disabled" id="english-card" onclick="pickEnglish()">
+      <div class="wc-ic">EN</div>
+      <div>
+        <div class="wc-name">영어 (전 학년)</div>
+        <div class="wc-sub">학년 구분 없이 한곳에서</div>
+      </div>
+      <div class="wc-status">준비 중</div>
+    </div>
+
+    <div class="foot">
+      한 학년·과목이 한 파일로 묶여 있어요 (예: 1학년 수학 = g1_math.html).<br>
+      과목 카드의 <b>바로 시작</b> 표시가 있으면 클릭해서 그 학년·과목의 차시 목록으로 들어갑니다.
+    </div>
+  </section>
+
+  <!-- ===================== 화면 2: 과목 선택 ===================== -->
+  <section class="screen" id="s-subject">
+    <div class="bc">
+      <button onclick="goGrade()">학년 선택</button>
+      <span class="sep">›</span><span class="cur" id="bc-grade">1학년</span>
+    </div>
+
+    <div class="grade-badge"><span class="b-num" id="badge-num">1</span><span>학년 수업</span></div>
+    <div class="ptitle">어떤 <span class="ac">과목</span>을 수업할까요?</div>
+    <div class="psub">준비된 과목은 차시 목록으로 바로 들어갑니다. 준비 중인 과목은 곧 추가됩니다.</div>
+
+    <div class="subject-grid" id="subject-grid"></div>
+  </section>
+
+</main>
+
+<script>
+// ============================================================
+// 진입 가능 카탈로그 — 실물 파일(g{N}_{subject}.html)이 있을 때만 ready:true
+// 케이티처 실물 양산이 끝나는 학년·과목을 여기에 등재한다.
+// ============================================================
+const READY = {
+  // "{학년}_{과목}": { file: "파일명", units: 단원수, lessons: 차시수 }
+  "1_math": { file: "g1_math.html", units: 6, lessons: 46 }
+};
+
+// 학년별 과목 구성 (케이에듀와 동일: 저학년 국어·수학 / 고학년 +사회·과학)
+const SUB_LOW  = [
+  { id:"korean", n:"국어", i:"📖" },
+  { id:"math",   n:"수학", i:"🔢" }
+];
+const SUB_HIGH = [
+  ...SUB_LOW,
+  { id:"social",  n:"사회", i:"🌏" },
+  { id:"science", n:"과학", i:"🔬" }
+];
+
+let curGrade = null;
+
+// ----- 학년 그리드 렌더 -----
+(function renderGrades(){
+  const grid = document.getElementById("grade-grid");
+  for(let g=1; g<=6; g++){
+    const card = document.createElement("div");
+    card.className = "grade-card";
+    card.onclick = () => pickGrade(g);
+    card.innerHTML = `<div class="grade-num">${g}</div><div class="grade-label">${g}학년</div>`;
+    grid.appendChild(card);
+  }
+})();
+
+// ----- 화면 전환 -----
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+function goGrade(){ show("s-grade"); }
+
+// ----- 학년 선택 → 과목 화면 -----
+function pickGrade(g){
+  curGrade = g;
+  document.getElementById("bc-grade").textContent = g + "학년";
+  document.getElementById("badge-num").textContent = g;
+
+  const subs = (g <= 2) ? SUB_LOW : SUB_HIGH;
+  const grid = document.getElementById("subject-grid");
+  grid.innerHTML = "";
+
+  subs.forEach(sub => {
+    const key = g + "_" + sub.id;
+    const info = READY[key];
+    const ready = !!info;
+
+    const card = document.createElement("div");
+    card.className = "subject-card " + (ready ? "ready" : "disabled");
+
+    const meta = ready
+      ? `${info.units}개 단원 · ${info.lessons}차시`
+      : "준비 중인 과목이에요";
+
+    card.innerHTML = `
+      <div class="sc-ic">${sub.i}</div>
+      <div class="sc-body">
+        <div class="sc-name">${sub.n}</div>
+        <div class="sc-meta">${meta}</div>
+      </div>
+      <div class="sc-status">${ready ? "바로 시작" : "준비 중"}</div>`;
+
+    if(ready){ card.onclick = () => { window.location.href = info.file; }; }
+    grid.appendChild(card);
+  });
+
+  show("s-subject");
+}
+
+// ----- 영어 (전 학년) -----
+function pickEnglish(){
+  const info = READY["english"];
+  if(info){ window.location.href = info.file; }
+  // 준비 전에는 동작 없음 (disabled)
+}
+</script>
+
+</body>
+</html>
