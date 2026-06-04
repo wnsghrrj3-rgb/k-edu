@@ -167,6 +167,7 @@
   {id:"s04",stage:"전개",block:"concept",data:{title:"세 모양의 특징",bidirect:["📦 **상자 모양** — 뾰족한 곳 · 평평한 면","↓","🥫 **기둥 모양** — 평평한 곳 · 둥근 곳 모두","↓","⚽ **공 모양** — 둥근 곳만"]},suggested_extras:["m_three_features","x_features_simple"]},
   {id:"s05",stage:"전개",block:"visual_demo",data:{title:"쌓아 볼까요?",ten_frame_solo:{count:0,is_anchor:true,label:"📦 상자: 여러 방향 **쌓을 수 있어요**\n🥫 기둥: 세우면 쌓을 수 있어요\n⚽ 공: 쌓을 수 **없어요**"},sub_text:"평평한 면이 있어야 쌓을 수 있어요"},suggested_extras:["a_stack_test","m_flat_face"]},
   {id:"s06",stage:"전개",block:"visual_demo",data:{title:"굴려 볼까요?",ten_frame_solo:{count:0,is_anchor:true,label:"📦 상자: 굴러가지 **않아요**\n🥫 기둥: 옆으로 누우면 **굴러가요**\n⚽ 공: 어느 방향으로도 **잘 굴러가요**"},sub_text:"둥근 부분이 있어야 굴러가요"},suggested_extras:["a_roll_test","m_round_part"]},
+  {id:"s06b",stage:"전개",block:"klab",data:{title:"직접 굴리고 세워 봐요",tool:"shape3d",config:{shapes:["box","cylinder","ball"],actions:["roll","flip"],terms:"daily"}},suggested_extras:["a_roll_test","m_round_part"]},
   {id:"s07",stage:"전개",block:"compare",data:{title:"한눈에 비교",items:[{ten_frame:0,num:0,caption:"📦 **상자**\n쌓기 ◯ · 굴리기 ✕"},{ten_frame:0,num:0,caption:"🥫 **기둥**\n쌓기 △ · 굴리기 △",is_anchor:true},{ten_frame:0,num:0,caption:"⚽ **공**\n쌓기 ✕ · 굴리기 ◯"}]},suggested_extras:["m_summary_table"]},
   {id:"s08",stage:"전개",block:"misconception",data:{title:"조심해요 — 기둥은 두 가지 성질",label:"오개념 주의",wrong:"기둥 모양은 쌓기·굴리기 둘 다 못해요",right:"기둥은 **두 가지 성질**을 가졌어요.\n**세우면** 쌓기 / **눕히면** 굴리기\n방향에 따라 달라져요!",hint:"두루마리 휴지를 세워 보고 눕혀 봐요"},suggested_extras:["m_cylinder_both","r_tissue_test"]},
 

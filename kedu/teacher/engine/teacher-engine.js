@@ -443,6 +443,9 @@
         return renderInteractiveCubeStairs(d, slide.id);
       case 'interactive_number_line':
         return renderInteractiveNumberLine(d, slide.id);
+      case 'klab':
+      case 'math_tool':
+        return (d.title ? `<h2>${md(d.title)}</h2>` : '') + `<div class="klab-mount" data-tool="${d.tool || ''}" data-config="${encodeURIComponent(JSON.stringify(d.config || {}))}" style="width:100%;"></div>`;
       case 'card_arrange':
         return renderCardArrange(d, slide.id);
       case 'offline_activity':
@@ -716,7 +719,7 @@
 
   // =================== 사이드바 — 슬라이드/보조자료/블록 ===================
   function blockShortLabel(block) {
-    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동'})[block] || block;
+    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',klab:'🧊 케이랩',math_tool:'🧊 케이랩',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동'})[block] || block;
   }
 
   function renderSlidesPanel() {
@@ -938,7 +941,15 @@
   // =================== 현재 슬라이드·rebuild·이동 ===================
   function renderCurrentSlide() {
     const cur = slides[curIdx];
+    if (renderCurrentSlide._cleanup) { try { renderCurrentSlide._cleanup(); } catch (e) {} renderCurrentSlide._cleanup = null; }
     document.getElementById('slide-content').innerHTML = `<div class="slide active ${cur.user_added ? 'user-added' : ''}">${renderSlide(cur)}</div>`;
+    const _mt = document.querySelector('#slide-content .klab-mount');
+    if (_mt && window.KLab) {
+      try {
+        const _cfg = JSON.parse(decodeURIComponent(_mt.dataset.config || '%7B%7D'));
+        renderCurrentSlide._cleanup = window.KLab.mount(_mt, _mt.dataset.tool, _cfg) || null;
+      } catch (e) { _mt.textContent = '교구 로드 오류'; }
+    }
     const visibleSlides = slides.filter(s => s.included);
     const visIdx = visibleSlides.indexOf(cur);
     document.getElementById('cur-pos').textContent = visIdx + 1;
