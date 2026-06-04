@@ -1053,7 +1053,13 @@
   }
 
   function lessonKey(unit, lesson) {
-    return `u${unit}_l${lesson}`;
+    const s = String(lesson);
+    // 묶음 차시 "2~3" → "02_03"
+    if (s.indexOf('~') >= 0) {
+      return `u${unit}_l${s.split('~').map(x => x.trim().padStart(2, '0')).join('_')}`;
+    }
+    // 단일 차시 "1" → "01"
+    return `u${unit}_l${s.padStart(2, '0')}`;
   }
 
   function openShow(unit, lesson) {
