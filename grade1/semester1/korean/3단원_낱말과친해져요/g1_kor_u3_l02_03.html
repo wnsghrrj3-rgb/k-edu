@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g1_kor_u3_l02_03_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>낱말과 친해져요 · 받침이 있는 글자 쓰기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+/* ===== 디자인 헌법 v11 저학년 토큰 (g1_u3 l01 계승) ===== */
+:root{
+  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
+  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626;
+  --c-ja:#42A5F5;   /* 자음자 */
+  --c-mo:#FF8A65;   /* 모음자 */
+  --c-bat:#1976D2;  /* 받침 */
+  --fs-title:clamp(20px,5.2cqw,32px);
+  --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px);
+  --fs-caption:clamp(12px,2.7cqw,16px);
+  --fs-label:clamp(11px,2.3cqw,14px);
+  --em-sm:clamp(28px,6cqw,40px); --em-md:clamp(40px,9cqw,60px); --em-lg:clamp(54px,12cqw,80px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--c-bg); display:flex; align-items:center; justify-content:center; padding:12px; font-family:'Jua',sans-serif; overflow:hidden;}
+
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+@keyframes ka-drop{0%{opacity:0; transform:translateY(-30px);}60%{opacity:1; transform:translateY(6px);}100%{transform:translateY(0);}}
+@keyframes ka-fade{0%{opacity:1;}100%{opacity:.25;}}
+
+/* ===== 헌법 카드 골격 ===== */
+.ka{
+  container-type:inline-size; background:#fff;
+  border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4;
+  width:min(1024px, calc((100vh - 24px) * 5 / 4), calc(100vw - 24px));
+  padding:clamp(12px,2.6cqw,20px) clamp(16px,3.4cqw,28px);
+  font-family:'Jua',sans-serif; color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; margin:0 auto;
+}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+
+/* 메인 */
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center; width:100%; overflow-y:auto;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.3; color:var(--c-deep); margin-bottom:clamp(8px,2cqw,14px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(8px,2cqw,14px) clamp(12px,3cqw,20px); font-size:var(--fs-body); line-height:1.55; color:#333; max-width:620px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+
+/* 자모/글자 블록 */
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+.legend{display:flex; gap:clamp(12px,3cqw,20px); font-size:var(--fs-caption); margin-top:clamp(4px,1cqw,8px); flex-wrap:wrap; justify-content:center;}
+.legend span{display:flex; align-items:center; gap:6px;}
+.dot{width:clamp(14px,3cqw,18px); height:clamp(14px,3cqw,18px); border-radius:5px;}
+.dot.ja{background:var(--c-ja);} .dot.mo{background:var(--c-mo);} .dot.bat{background:var(--c-bat);}
+
+/* 받침 음절 시각화 (자음+모음 위, 받침 아래) */
+.bat-syl{display:grid; grid-template-rows:auto auto; gap:clamp(3px,.7cqw,5px); padding:clamp(3px,.7cqw,5px); border-radius:clamp(10px,2.2cqw,16px); background:rgba(66,165,245,.08);}
+.bat-row1{display:flex; gap:clamp(3px,.7cqw,5px); justify-content:center;}
+.bat-row2{display:flex; justify-content:center;}
+.bat-jamo{width:clamp(36px,8.4cqw,58px); height:clamp(36px,8.4cqw,58px); border-radius:clamp(8px,1.8cqw,12px); display:grid; place-items:center; font-size:clamp(22px,4.8cqw,34px); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12);}
+.bat-jamo.ja{background:var(--c-ja);} .bat-jamo.mo{background:var(--c-mo);} .bat-jamo.bat{background:var(--c-bat); animation:ka-drop .5s ease both;}
+.bat-arrow{font-size:clamp(20px,4.5cqw,32px); color:var(--c-deep); margin:0 clamp(6px,1.6cqw,12px);}
+
+/* 고르기 */
+.picks{display:flex; gap:clamp(10px,2.4cqw,16px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.pick{min-width:clamp(72px,16cqw,100px); padding:clamp(12px,3cqw,18px) clamp(14px,3cqw,20px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(26px,6cqw,42px); color:var(--c-deep); cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.pick:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.pick.correct{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.pick.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+.slot-bat{width:clamp(36px,8.4cqw,58px); height:clamp(36px,8.4cqw,58px); border:clamp(3px,.7cqw,4px) dashed var(--c-bat); border-radius:clamp(8px,1.8cqw,12px); display:grid; place-items:center; font-size:clamp(22px,4.8cqw,34px); color:var(--c-bat); background:#fff;}
+.slot-bat.filled{border-style:solid; background:var(--c-bat); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+
+/* 그림 + 글자 만들기 무대 */
+.make-stage{display:flex; align-items:center; gap:clamp(10px,2.6cqw,18px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+.make-pic{font-size:clamp(48px,11cqw,80px);}
+
+/* 받침 위치 보기 (여러 글자 나란히) */
+.batpos{display:flex; gap:clamp(8px,2cqw,16px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+.batpos .bat-syl{background:rgba(25,118,210,.06);}
+
+/* 받침 바꿔 보기 (탐구) */
+.swap-wrap{display:flex; flex-direction:column; align-items:center; gap:clamp(8px,2cqw,12px); margin:clamp(4px,1cqw,8px) 0;}
+.swap-show{display:flex; align-items:center; gap:clamp(10px,2.6cqw,18px);}
+.swap-pic{font-size:clamp(48px,11cqw,76px); transition:.2s;}
+.swap-word{font-size:clamp(40px,9cqw,64px); color:var(--c-deep);}
+.swap-btns{display:flex; gap:clamp(10px,2.4cqw,16px);}
+.swap-btn{padding:clamp(10px,2.4cqw,14px) clamp(16px,3.4cqw,24px); border-radius:clamp(12px,2.6cqw,18px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(22px,5cqw,34px); color:var(--c-deep); cursor:pointer; box-shadow:0 4px 0 var(--c-soft);}
+.swap-btn.on{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 4px 0 var(--c-deep);}
+
+/* 따라 쓰기 (M8) — 점선 글자 누르면 또렷해짐 */
+.trace-wrap{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px); margin:clamp(4px,1cqw,8px) 0; align-items:center;}
+.trace-row{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center;}
+.trace-pic{font-size:clamp(32px,7cqw,48px); flex-shrink:0;}
+.trace-word{display:flex; gap:clamp(4px,1cqw,7px);}
+.trace-cell{width:clamp(44px,10cqw,68px); height:clamp(44px,10cqw,68px); border:clamp(3px,.7cqw,4px) dashed var(--c-sub); border-radius:clamp(10px,2.2cqw,14px); display:grid; place-items:center; font-size:clamp(28px,6cqw,44px); color:#BBDEFB; background:#fff; cursor:pointer;}
+.trace-cell.done{border-style:solid; border-color:var(--c-deep); color:var(--c-deep); background:var(--c-soft); animation:ka-pop .35s ease;}
+
+/* 정리 요약 */
+.recap{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px); max-width:520px; margin:clamp(6px,1.6cqw,10px) auto;}
+.recap-item{display:flex; align-items:center; gap:clamp(10px,2.4cqw,14px); padding:clamp(10px,2.6cqw,15px) clamp(14px,3cqw,20px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); font-size:var(--fs-body); color:var(--c-deep); text-align:left; animation:ka-fadeUp .4s ease both;}
+.recap-ic{font-size:clamp(26px,6cqw,38px); flex-shrink:0;}
+
+/* 푸터 */
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+
+@container (max-width:420px){
+  .ka-lb span{display:none;}
+  .ka-f{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="location.href='../index.html'">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:7%"></div></div>
+    <span class="ka-pg" id="pg">1 / 14</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <div class="ka-m" id="main"></div>
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+/* ===== tracker: (a) 정답 로깅 (b) 완주 기록 ===== */
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+
+/* ===== 2~3차시(소단원1·쓰기) 14슬: ① 만나기 2 → ② 전반 3 → ③ 후반 6(심장) → ④ 정리 3 =====
+   학습 목표: 글자의 짜임을 생각하며 받침이 있는 글자를 쓸 수 있다.
+   심장 = ③ 받침 붙여 글자·낱말 만들기. 정답 있는 활동만 log:true.
+   자유 탐구(받침 바꿔 보기)·따라 쓰기 = 로깅 X, 완주 기록만.
+   된소리 미등장(6~7차시 첫 도입) — 평음만.
+*/
+const slides=[
+  // ── ① 만나기 ──
+  {stage:'만나기', tag:'① 오늘 시작',
+   t:'받침 있는 글자를 직접 써 봐요',
+   html:`<div class="build">
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄱ</div><div class="bat-jamo mo">ㅗ</div></div>
+        <div class="bat-row2"><div class="bat-jamo bat">ㅁ</div></div>
+      </div>
+      <div class="bat-arrow">→</div>
+      <div class="syl">곰</div>
+    </div>
+    <div class="ka-bub">지난 시간에는 받침 있는 글자를 <b>읽었어요</b>.<br>오늘은 받침을 <span class="emph">직접 넣어</span> 글자를 만들고 써 볼 거예요! ✏️</div>`},
+
+  {stage:'만나기', tag:'① 받침 글자 찾아 읽기',
+   t:'그림 속 글자를 소리 내어 읽어 봐요',
+   html:`<div class="make-stage">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div class="make-pic" style="font-size:clamp(40px,9cqw,60px);">🌙</div><div class="syl">달</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div class="make-pic" style="font-size:clamp(40px,9cqw,60px);">📕</div><div class="syl">책</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div class="make-pic" style="font-size:clamp(40px,9cqw,60px);">⛰️</div><div class="syl">산</div>
+      </div>
+    </div>
+    <div class="ka-bub">달, 책, 산. 모두 <span class="emph">받침</span>이 있어요.<br>이런 글자를 오늘 우리 손으로 만들어 볼까요? 😊</div>`},
+
+  // ── ② 엔진 전반: 받침 글자의 짜임 ──
+  {stage:'엔진전반', tag:'② 글자의 짜임',
+   t:'받침 글자는 세 조각으로 이루어져요',
+   html:`<div class="build">
+      <div class="bat-jamo ja" style="width:clamp(44px,10cqw,64px); height:clamp(44px,10cqw,64px); font-size:clamp(26px,5.6cqw,38px);">ㄷ</div>
+      <span class="op">+</span>
+      <div class="bat-jamo mo" style="width:clamp(44px,10cqw,64px); height:clamp(44px,10cqw,64px); font-size:clamp(26px,5.6cqw,38px);">ㅏ</div>
+      <span class="op">+</span>
+      <div class="bat-jamo bat" style="width:clamp(44px,10cqw,64px); height:clamp(44px,10cqw,64px); font-size:clamp(26px,5.6cqw,38px);">ㄹ</div>
+      <span class="op">=</span>
+      <div class="syl">달</div>
+    </div>
+    <div class="legend">
+      <span><i class="dot ja"></i>첫 자음자</span>
+      <span><i class="dot mo"></i>모음자</span>
+      <span><i class="dot bat"></i>받침</span>
+    </div>
+    <div class="ka-bub">첫 자음자 <b>ㄷ</b>, 모음자 <b>ㅏ</b>, 받침 <b>ㄹ</b>이 모여 <b>달</b>이 돼요.<br>받침 글자는 이렇게 <span class="emph">세 조각</span>이에요.</div>`},
+
+  {stage:'엔진전반', tag:'② 받침은 어디에?',
+   t:'받침은 글자의 맨 아래에 들어가요',
+   html:`<div class="batpos">
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄱ</div><div class="bat-jamo mo">ㅏ</div></div>
+        <div class="bat-row2"><div class="bat-jamo bat">ㅁ</div></div>
+      </div>
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄴ</div><div class="bat-jamo mo">ㅜ</div></div>
+        <div class="bat-row2"><div class="bat-jamo bat">ㄴ</div></div>
+      </div>
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㅂ</div><div class="bat-jamo mo">ㅜ</div></div>
+        <div class="bat-row2"><div class="bat-jamo bat">ㄱ</div></div>
+      </div>
+    </div>
+    <div class="build" style="margin-top:4px;">
+      <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">감</div>
+      <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">눈</div>
+      <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">북</div>
+    </div>
+    <div class="ka-bub">모음자가 옆에 있든 아래에 있든,<br>받침은 언제나 글자의 <span class="emph">맨 아래</span>에 들어가요.</div>`},
+
+  {stage:'엔진전반', tag:'② 만들 준비',
+   t:'짜임을 생각하며 만들어 봐요',
+   html:`<div class="build">
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄷ</div><div class="bat-jamo mo">ㅏ</div></div>
+        <div class="bat-row2"><div class="slot-bat">?</div></div>
+      </div>
+      <div class="bat-arrow">←</div>
+      <div class="picks" style="margin-top:0;">
+        <button class="pick" style="pointer-events:none;">ㄹ</button>
+      </div>
+    </div>
+    <div class="ka-bub">윗줄(자음자·모음자)은 정해져 있어요.<br>그림을 보고 <span class="emph">알맞은 받침</span>을 골라 아래에 넣으면 글자가 완성돼요.<br>이제 직접 만들어 볼까요? ✏️</div>`},
+
+  // ── ③ 엔진 후반: 글자·낱말 만들기 (심장) ──
+  {stage:'엔진후반', tag:'③ 글자 만들기 ①', log:true, correct:'ㄹ',
+   t:'그림에 맞게 받침을 넣어 봐요',
+   html:`<div class="make-stage">
+      <div class="make-pic">🌙</div>
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄷ</div><div class="bat-jamo mo">ㅏ</div></div>
+        <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+      </div>
+    </div>
+    <div class="ka-bub">'다' 아래에 어떤 받침을 넣으면 밤하늘의 <b>달</b>이 될까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㄹ">ㄹ</button>
+      <button class="pick" data-v="ㅁ">ㅁ</button>
+      <button class="pick" data-v="ㄴ">ㄴ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 글자 만들기 ②', log:true, correct:'ㅇ',
+   t:'그림에 맞게 받침을 넣어 봐요',
+   html:`<div class="make-stage">
+      <div class="make-pic">🐑</div>
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㅇ</div><div class="bat-jamo mo">ㅑ</div></div>
+        <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+      </div>
+    </div>
+    <div class="ka-bub">'야' 아래에 어떤 받침을 넣으면 <b>양</b>이 될까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㄱ">ㄱ</button>
+      <button class="pick" data-v="ㅇ">ㅇ</button>
+      <button class="pick" data-v="ㄹ">ㄹ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 글자 만들기 ③', log:true, correct:'ㄱ',
+   t:'그림에 맞게 받침을 넣어 봐요',
+   html:`<div class="make-stage">
+      <div class="make-pic">🥁</div>
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㅂ</div><div class="bat-jamo mo">ㅜ</div></div>
+        <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+      </div>
+    </div>
+    <div class="ka-bub">'부' 아래에 어떤 받침을 넣으면 둥둥 치는 <b>북</b>이 될까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㄴ">ㄴ</button>
+      <button class="pick" data-v="ㅁ">ㅁ</button>
+      <button class="pick" data-v="ㄱ">ㄱ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 낱말 완성하기 ①', log:true, correct:'ㅇ',
+   t:'낱말의 마지막 글자를 완성해 봐요',
+   html:`<div class="make-stage">
+      <div class="make-pic">⚽</div>
+      <div class="build" style="gap:clamp(4px,1cqw,7px);">
+        <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">축</div>
+        <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">구</div>
+        <div class="bat-syl">
+          <div class="bat-row1"><div class="bat-jamo ja">ㄱ</div><div class="bat-jamo mo">ㅗ</div></div>
+          <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub">'축구고'에 받침을 넣어 <b>축구공</b>을 완성해 봐요.<br>'고'에 어떤 받침을 넣을까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㅇ">ㅇ</button>
+      <button class="pick" data-v="ㄴ">ㄴ</button>
+      <button class="pick" data-v="ㄱ">ㄱ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 낱말 완성하기 ②', log:true, correct:'ㄹ',
+   t:'낱말의 마지막 글자를 완성해 봐요',
+   html:`<div class="make-stage">
+      <div class="make-pic">🪢</div>
+      <div class="build" style="gap:clamp(4px,1cqw,7px);">
+        <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">고</div>
+        <div class="syl" style="width:clamp(54px,12cqw,80px); height:clamp(54px,12cqw,80px); font-size:clamp(30px,6.6cqw,46px);">무</div>
+        <div class="bat-syl">
+          <div class="bat-row1"><div class="bat-jamo ja">ㅈ</div><div class="bat-jamo mo">ㅜ</div></div>
+          <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub">'고무주'에 받침을 넣어 <b>고무줄</b>을 완성해 봐요.<br>'주'에 어떤 받침을 넣을까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㅁ">ㅁ</button>
+      <button class="pick" data-v="ㄹ">ㄹ</button>
+      <button class="pick" data-v="ㅇ">ㅇ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 받침을 바꿔 보면?',
+   t:'받침 하나만 바꿔도 다른 낱말이 돼요',
+   html:`<div class="swap-wrap">
+      <div class="swap-show">
+        <div class="swap-pic" id="swapPic">🐻</div>
+        <div class="bat-arrow">→</div>
+        <div class="bat-syl">
+          <div class="bat-row1"><div class="bat-jamo ja">ㄱ</div><div class="bat-jamo mo">ㅗ</div></div>
+          <div class="bat-row2"><div class="bat-jamo bat" id="swapBat">ㅁ</div></div>
+        </div>
+        <span class="op">=</span>
+        <div class="swap-word" id="swapWord">곰</div>
+      </div>
+      <div class="swap-btns">
+        <button class="swap-btn on" data-bat="ㅁ" data-word="곰" data-pic="🐻">받침 ㅁ</button>
+        <button class="swap-btn" data-bat="ㅇ" data-word="공" data-pic="⚽">받침 ㅇ</button>
+      </div>
+    </div>
+    <div class="ka-bub" id="swapFb">받침을 <b>ㅁ</b>에서 <b>ㅇ</b>으로 바꿔 보세요.<br>받침 하나로 <span class="emph">곰</span>이 <span class="emph">공</span>이 돼요!</div>`},
+
+  // ── ④ 표현·정리 ──
+  {stage:'표현정리', tag:'④ 따라 써 봐요 ①',
+   t:'받침 있는 낱말을 따라 써 봐요',
+   html:`<div class="trace-wrap">
+      <div class="trace-row">
+        <div class="trace-pic">🐿️</div>
+        <div class="trace-word">
+          <div class="trace-cell" data-t="1">다</div><div class="trace-cell" data-t="1">람</div><div class="trace-cell" data-t="1">쥐</div>
+        </div>
+      </div>
+      <div class="trace-row">
+        <div class="trace-pic">🌉</div>
+        <div class="trace-word">
+          <div class="trace-cell" data-t="1">돌</div><div class="trace-cell" data-t="1">다</div><div class="trace-cell" data-t="1">리</div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub" id="traceFb">흐린 글자를 손가락으로 따라 쓰고 눌러 봐요. ✏️<br>받침이 있는 글자는 <b>또박또박</b> 써요.</div>`},
+
+  {stage:'표현정리', tag:'④ 따라 써 봐요 ②',
+   t:'받침 있는 낱말을 따라 써 봐요',
+   html:`<div class="trace-wrap">
+      <div class="trace-row">
+        <div class="trace-pic">🪨</div>
+        <div class="trace-word">
+          <div class="trace-cell" data-t="1">징</div><div class="trace-cell" data-t="1">검</div><div class="trace-cell" data-t="1">다</div><div class="trace-cell" data-t="1">리</div>
+        </div>
+      </div>
+      <div class="trace-row">
+        <div class="trace-pic">🏞️</div>
+        <div class="trace-word">
+          <div class="trace-cell" data-t="1">개</div><div class="trace-cell" data-t="1">울</div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub" id="traceFb">받침을 빠뜨리지 않고 따라 써 봐요.<br>다 쓰면 글자가 또렷해져요! ✨</div>`},
+
+  {stage:'표현정리', tag:'④ 오늘 배운 것',
+   t:'받침 있는 글자, 이렇게 만들었어요',
+   html:`<div class="recap">
+      <div class="recap-item" style="animation-delay:.1s"><span class="recap-ic">✏️</span><div>받침을 넣어 <b>글자를 만들었어요</b> (달·양·북)</div></div>
+      <div class="recap-item" style="animation-delay:.25s"><span class="recap-ic">🧩</span><div>받침을 넣어 <b>낱말을 완성했어요</b> (축구공·고무줄)</div></div>
+      <div class="recap-item" style="animation-delay:.4s"><span class="recap-ic">🔁</span><div>받침을 바꾸면 <b>다른 낱말</b>이 돼요 (곰↔공)</div></div>
+    </div>
+    <div class="ka-bub">받침 짜임을 생각하며 글자를 쓰면<br>내 마음을 <span class="emph">바르게</span> 전할 수 있어요.<br>다음 시간에는 받침 글자를 <b>더 바르게</b> 써 볼 거예요!</div>`},
+];
+
+const LESSON_ID='g1_kor_u3_l02_03_v1';
+const LESSON_MAX=60;
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar');
+const pg=document.getElementById('pg');
+const scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev');
+const nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(s.correct && main.querySelector('.pick[data-v]')) bindPicks(s);
+  if(main.querySelector('.swap-btn')) bindSwap();
+  if(main.querySelector('.trace-cell')) bindTrace();
+}
+function bindPicks(s){
+  let done=false;
+  main.querySelectorAll('.pick[data-v]').forEach(btn=>{
+    btn.onclick=()=>{
+      if(done) return;
+      const ok=btn.dataset.v===s.correct;
+      btn.classList.add(ok?'correct':'wrong');
+      const slot=main.querySelector('#slot');
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(slot){slot.textContent=s.correct; slot.classList.add('filled');}
+        if(fb){fb.textContent='잘했어요! 🎉'; fb.classList.remove('bad');}
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.pick[data-v]').forEach(b=>{if(b!==btn)b.style.opacity=.4;});
+      }else{
+        if(fb){fb.textContent='다시 한 번 살펴봐요.'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>btn.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindSwap(){
+  const pic=main.querySelector('#swapPic');
+  const bat=main.querySelector('#swapBat');
+  const word=main.querySelector('#swapWord');
+  const fb=main.querySelector('#swapFb');
+  main.querySelectorAll('.swap-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      main.querySelectorAll('.swap-btn').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      bat.textContent=btn.dataset.bat;
+      bat.style.animation='none'; void bat.offsetWidth; bat.style.animation='ka-drop .5s ease both';
+      word.textContent=btn.dataset.word;
+      word.style.animation='none'; void word.offsetWidth; word.style.animation='ka-popBig .4s ease';
+      pic.textContent=btn.dataset.pic;
+      if(btn.dataset.word==='공'){
+        fb.innerHTML='받침이 <b>ㅇ</b>이 되니 <span class="emph">공</span>이 되었어요! 받침이 정말 중요하죠? 😮';
+      }else{
+        fb.innerHTML='받침이 <b>ㅁ</b>이 되니 다시 <span class="emph">곰</span>이에요.<br>받침 하나로 낱말이 달라져요!';
+      }
+    };
+  });
+}
+function bindTrace(){
+  const cells=main.querySelectorAll('.trace-cell');
+  const fb=main.querySelector('#traceFb');
+  const total=cells.length;
+  let done=0;
+  cells.forEach(c=>{
+    c.onclick=()=>{
+      if(c.classList.contains('done')) return;
+      c.classList.add('done'); done++;
+      if(done===total){
+        fb.innerHTML='모두 따라 썼어요! 받침까지 또박또박 잘 썼어요. 🎉';
+      }else{
+        fb.innerHTML=`잘하고 있어요! <b>${done}</b>글자 따라 썼어요. 계속 써 볼까요?`;
+      }
+    };
+  });
+}
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+document.getElementById('hint').onclick=()=>{
+  const s=slides[cur];
+  if(s.correct==='ㄹ' && s.tag.indexOf('글자 만들기')>=0) alert('힌트: 밤하늘의 \'달\'을 소리 내어 보면 끝이 \'ㄹ\'로 닫혀요.');
+  else if(s.correct==='ㅇ' && s.tag.indexOf('글자 만들기')>=0) alert('힌트: \'양\'을 소리 내어 보면 끝이 \'ㅇ\' 소리로 닫혀요.');
+  else if(s.correct==='ㄱ') alert('힌트: \'북\'을 소리 내어 보면 끝이 \'ㄱ\'으로 닫혀요.');
+  else if(s.correct==='ㅇ') alert('힌트: \'축구공\'을 천천히 읽어 보면 마지막 글자 끝이 \'ㅇ\' 소리예요.');
+  else if(s.correct==='ㄹ') alert('힌트: \'고무줄\'을 천천히 읽어 보면 마지막 글자 끝이 \'ㄹ\'로 닫혀요.');
+  else if(main.querySelector('.swap-btn')) alert('힌트: 받침 ㅁ과 ㅇ을 번갈아 눌러 글자가 어떻게 바뀌는지 살펴봐요.');
+  else if(main.querySelector('.trace-cell')) alert('힌트: 흐린 글자를 손가락으로 따라 쓰고 글자 칸을 눌러 봐요.');
+  else alert('힌트: 받침은 글자의 맨 아래에 들어가요.');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+</body>
+</html>

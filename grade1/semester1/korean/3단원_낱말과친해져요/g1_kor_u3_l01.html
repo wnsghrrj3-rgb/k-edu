@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta name="kedu-lesson-id" content="g1_kor_u3_l01_v1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>낱말과 친해져요 · 배울 내용 살펴보기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+/* ===== 디자인 헌법 v11 저학년 토큰 (g1_u2 계승) ===== */
+:root{
+  --c-main:#42A5F5; --c-deep:#1976D2; --c-soft:#E3F2FD; --c-sub:#64B5F6;
+  --c-ink:#1565C0; --c-bg:#F0F7FF; --c-emph:#DC2626;
+  --c-ja:#42A5F5;   /* 자음자 */
+  --c-mo:#FF8A65;   /* 모음자 */
+  --c-bat:#1976D2;  /* 받침 */
+  --fs-title:clamp(20px,5.2cqw,32px);
+  --fs-heading:clamp(17px,4.2cqw,24px);
+  --fs-body:clamp(15px,3.6cqw,21px);
+  --fs-caption:clamp(12px,2.7cqw,16px);
+  --fs-label:clamp(11px,2.3cqw,14px);
+  --em-sm:clamp(28px,6cqw,40px); --em-md:clamp(40px,9cqw,60px); --em-lg:clamp(54px,12cqw,80px);
+}
+*{margin:0; padding:0; box-sizing:border-box;}
+html,body{height:100%;}
+body{background:var(--c-bg); display:flex; align-items:center; justify-content:center; padding:12px; font-family:'Jua',sans-serif; overflow:hidden;}
+
+@keyframes ka-fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+@keyframes ka-pop{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.12);}100%{opacity:1; transform:scale(1);}}
+@keyframes ka-popBig{0%{opacity:0; transform:scale(.3);}60%{opacity:1; transform:scale(1.25);}100%{transform:scale(1);}}
+@keyframes ka-shake{0%,100%{transform:none;}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+@keyframes ka-drop{0%{opacity:0; transform:translateY(-30px);}60%{opacity:1; transform:translateY(6px);}100%{transform:translateY(0);}}
+@keyframes ka-fade{0%{opacity:1;}100%{opacity:.25;}}
+
+/* ===== 헌법 카드 골격 ===== */
+.ka{
+  container-type:inline-size; background:#fff;
+  border-radius:clamp(16px,3cqw,24px); aspect-ratio:5/4;
+  width:min(1024px, calc((100vh - 24px) * 5 / 4), calc(100vw - 24px));
+  padding:clamp(12px,2.6cqw,20px) clamp(16px,3.4cqw,28px);
+  font-family:'Jua',sans-serif; color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.08);
+  display:flex; flex-direction:column; margin:0 auto;
+}
+.ka-h{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); margin-bottom:clamp(12px,3cqw,18px);}
+.ka-lb{background:#F4F4F8; border:none; padding:clamp(5px,1.4cqw,8px) clamp(8px,2cqw,14px); border-radius:clamp(8px,1.8cqw,12px); color:#555; font-family:inherit; font-size:var(--fs-label); display:flex; align-items:center; gap:5px; flex-shrink:0;}
+.ka-bar{flex:1; height:clamp(3px,.7cqw,5px); background:var(--c-bg); border-radius:999px; overflow:hidden;}
+.ka-bar>div{height:100%; background:var(--c-main); border-radius:999px; transition:width .3s;}
+.ka-pg{color:var(--c-deep); font-family:'Nunito',sans-serif; font-weight:800; font-size:var(--fs-label); flex-shrink:0;}
+.ka-sc{background:#FFF8E1; color:#F57F17; padding:clamp(3px,.9cqw,5px) clamp(8px,2cqw,12px); border-radius:999px; font-size:var(--fs-caption); flex-shrink:0; display:flex; align-items:center; gap:4px;}
+
+/* 메인 */
+.ka-m{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0; text-align:center; width:100%; overflow-y:auto;}
+.ka-tag{background:#FFF8E1; color:#F57F17; padding:clamp(3px,1cqw,6px) clamp(10px,2.4cqw,14px); border-radius:30px; font-size:var(--fs-caption); margin-bottom:clamp(8px,2cqw,12px); display:inline-block;}
+.ka-t{font-size:var(--fs-title); line-height:1.3; color:var(--c-deep); margin-bottom:clamp(8px,2cqw,14px); font-weight:400; animation:ka-fadeUp .4s .15s ease both;}
+.ka-bub{background:var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); padding:clamp(8px,2cqw,14px) clamp(12px,3cqw,20px); font-size:var(--fs-body); line-height:1.55; color:#333; max-width:620px; animation:ka-fadeUp .4s .4s ease both;}
+.emph{color:var(--c-emph);}
+
+/* 자모/글자 블록 */
+.build{display:flex; align-items:center; gap:clamp(8px,2cqw,14px); flex-wrap:wrap; justify-content:center; margin:clamp(4px,1cqw,8px) 0;}
+.syl{width:clamp(64px,15cqw,104px); height:clamp(64px,15cqw,104px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,22px); display:grid; place-items:center; font-size:clamp(36px,8cqw,58px); color:var(--c-deep); box-shadow:0 5px 0 var(--c-soft); animation:ka-pop .5s ease both;}
+.op{font-size:clamp(24px,5cqw,38px); color:#aaa;}
+.legend{display:flex; gap:clamp(12px,3cqw,20px); font-size:var(--fs-caption); margin-top:clamp(4px,1cqw,8px); flex-wrap:wrap; justify-content:center;}
+.legend span{display:flex; align-items:center; gap:6px;}
+.dot{width:clamp(14px,3cqw,18px); height:clamp(14px,3cqw,18px); border-radius:5px;}
+.dot.ja{background:var(--c-ja);} .dot.mo{background:var(--c-mo);} .dot.bat{background:var(--c-bat);}
+
+/* 받침 음절 시각화 (자음+모음 위, 받침 아래) */
+.bat-syl{display:grid; grid-template-rows:auto auto; gap:clamp(3px,.7cqw,5px); padding:clamp(3px,.7cqw,5px); border-radius:clamp(10px,2.2cqw,16px); background:rgba(66,165,245,.08);}
+.bat-row1{display:flex; gap:clamp(3px,.7cqw,5px); justify-content:center;}
+.bat-row2{display:flex; justify-content:center;}
+.bat-jamo{width:clamp(36px,8.4cqw,58px); height:clamp(36px,8.4cqw,58px); border-radius:clamp(8px,1.8cqw,12px); display:grid; place-items:center; font-size:clamp(22px,4.8cqw,34px); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12);}
+.bat-jamo.ja{background:var(--c-ja);} .bat-jamo.mo{background:var(--c-mo);} .bat-jamo.bat{background:var(--c-bat); animation:ka-drop .5s ease both;}
+.bat-arrow{font-size:clamp(20px,4.5cqw,32px); color:var(--c-deep); margin:0 clamp(6px,1.6cqw,12px);}
+
+/* 받침 빠짐 비교 (도치 에피소드) */
+.cmp{display:flex; gap:clamp(12px,3cqw,28px); justify-content:center; align-items:center; flex-wrap:wrap; margin:clamp(4px,1cqw,8px) 0;}
+.cmp-card{display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1.4cqw,8px); padding:clamp(10px,2.4cqw,16px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; min-width:clamp(96px,22cqw,150px);}
+.cmp-card.bad{border-color:var(--c-emph); background:#FFF4F4;}
+.cmp-card.good{border-color:var(--c-main); background:var(--c-soft);}
+.cmp-emoji{font-size:clamp(40px,9cqw,64px);}
+.cmp-word{font-size:clamp(26px,6cqw,42px); color:var(--c-deep);}
+.cmp-card.bad .cmp-word{color:var(--c-emph);}
+.cmp-cap{font-size:var(--fs-caption); color:#777;}
+.cmp-card.bad .cmp-cap{color:var(--c-emph);}
+
+/* 고르기 */
+.picks{display:flex; gap:clamp(10px,2.4cqw,16px); flex-wrap:wrap; justify-content:center; margin-top:clamp(8px,2cqw,12px);}
+.pick{min-width:clamp(72px,16cqw,100px); padding:clamp(12px,3cqw,18px) clamp(14px,3cqw,20px); border-radius:clamp(14px,3cqw,20px); border:clamp(3px,.7cqw,4px) solid var(--c-soft); background:#fff; font-family:'Jua'; font-size:clamp(26px,6cqw,42px); color:var(--c-deep); cursor:pointer; box-shadow:0 5px 0 var(--c-soft);}
+.pick:active{transform:translateY(3px); box-shadow:0 2px 0 var(--c-soft);}
+.pick.correct{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 5px 0 var(--c-deep); animation:ka-popBig .5s ease;}
+.pick.wrong{background:#FFE0E0; border-color:var(--c-emph); animation:ka-shake .35s;}
+.slot-bat{width:clamp(36px,8.4cqw,58px); height:clamp(36px,8.4cqw,58px); border:clamp(3px,.7cqw,4px) dashed var(--c-bat); border-radius:clamp(8px,1.8cqw,12px); display:grid; place-items:center; font-size:clamp(22px,4.8cqw,34px); color:var(--c-bat); background:#fff;}
+.slot-bat.filled{border-style:solid; background:var(--c-bat); color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.12);}
+.fb{margin-top:clamp(8px,2cqw,12px); min-height:26px; font-size:var(--fs-caption); color:var(--c-deep);}
+.fb.bad{color:var(--c-emph);}
+
+/* 받침 글자 찾기 (탭형) */
+.word-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(clamp(54px,12cqw,84px), 1fr)); gap:clamp(6px,1.6cqw,10px); max-width:520px; margin:clamp(4px,1cqw,8px) auto;}
+.bat-word{aspect-ratio:1; background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(10px,2.4cqw,16px); display:grid; place-items:center; font-size:clamp(22px,5cqw,36px); color:var(--c-deep); box-shadow:0 3px 0 var(--c-soft); cursor:pointer; animation:ka-pop .4s ease both;}
+.bat-word.hit{background:var(--c-main); color:#fff; border-color:var(--c-deep); box-shadow:0 3px 0 var(--c-deep); animation:ka-popBig .4s ease;}
+.bat-word.miss{animation:ka-shake .35s;}
+
+/* 배울 내용 두 갈래 */
+.roadmap{display:flex; flex-direction:column; gap:clamp(10px,2.4cqw,14px); max-width:520px; margin:clamp(6px,1.6cqw,10px) auto;}
+.road-item{display:flex; align-items:center; gap:clamp(10px,2.4cqw,14px); padding:clamp(12px,2.8cqw,16px) clamp(14px,3cqw,20px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(14px,3cqw,20px); font-size:var(--fs-body); color:var(--c-deep); text-align:left; animation:ka-fadeUp .4s ease both;}
+.road-num{width:clamp(30px,6.6cqw,40px); height:clamp(30px,6.6cqw,40px); border-radius:50%; background:var(--c-main); color:#fff; display:grid; place-items:center; flex-shrink:0; font-size:var(--fs-heading);}
+
+/* 다짐 체크 */
+.pledge-list{display:flex; flex-direction:column; gap:clamp(8px,2cqw,12px); max-width:480px; margin:clamp(6px,1.6cqw,10px) auto;}
+.pledge-item{display:flex; align-items:center; gap:clamp(8px,2cqw,12px); padding:clamp(10px,2.4cqw,14px) clamp(14px,3cqw,18px); background:#fff; border:clamp(3px,.7cqw,4px) solid var(--c-soft); border-radius:clamp(12px,2.6cqw,18px); cursor:pointer; font-size:var(--fs-body); color:var(--c-deep); text-align:left;}
+.pledge-item.checked{background:var(--c-soft); border-color:var(--c-main);}
+.pledge-check{width:clamp(24px,5.4cqw,32px); height:clamp(24px,5.4cqw,32px); border-radius:50%; border:clamp(3px,.7cqw,4px) solid var(--c-main); display:grid; place-items:center; flex-shrink:0; background:#fff; color:transparent; font-weight:bold;}
+.pledge-item.checked .pledge-check{background:var(--c-main); color:#fff;}
+
+/* 푸터 */
+.ka-f{display:grid; grid-template-columns:1fr 1.3fr 1fr 1.3fr; gap:clamp(5px,1.4cqw,8px); margin-top:clamp(10px,2.6cqw,15px);}
+.ka-nav{background:#F4F4F8; color:#2A2A35; border:none; padding:clamp(8px,2.2cqw,12px) 6px; font-size:var(--fs-caption); border-radius:clamp(10px,2.5cqw,14px); cursor:pointer; font-family:inherit;}
+.ka-nav-next{background:var(--c-main); color:#fff;}
+.ka-nav:disabled{opacity:.4; cursor:default;}
+
+@container (max-width:420px){
+  .ka-lb span{display:none;}
+  .ka-f{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="location.href='../index.html'">📚 <span>차시 목록</span></button>
+    <div class="ka-bar"><div id="bar" style="width:6%"></div></div>
+    <span class="ka-pg" id="pg">1 / 9</span>
+    <span class="ka-sc">⭐ <b id="score">0</b></span>
+  </div>
+  <div class="ka-m" id="main"></div>
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev">◁ 이전</button>
+    <button class="ka-nav" id="replay">🔊 다시</button>
+    <button class="ka-nav" id="hint">💡 힌트</button>
+    <button class="ka-nav ka-nav-next" id="next">다음 ▷</button>
+  </div>
+</div>
+
+<script>
+/* ===== tracker: (a) 정답 로깅 (b) 완주 기록 ===== */
+const tracker={
+  answer(i,ok){ if(window.kedu&&window.kedu.recordAnswer) window.kedu.recordAnswer(LESSON_ID+'_s'+i, ok, null, null); },
+  done(i){}
+};
+
+/* ===== 1차시(준비) 9슬: ① 만나기 2 → ② 전반 2 → ③ 후반 3 → ④ 정리 2 =====
+   도입 차시. "받침이 빠지면 뜻이 사라진다"를 체감 → 단원 두 갈래 안내.
+   캐릭터 없이(헌법) 쪽지·그림 상황으로 중립 재구성. 된소리 미등장(평음 받침만).
+*/
+const slides=[
+  // ── ① 만나기 ──
+  {stage:'만나기', tag:'① 오늘 시작',
+   t:'낱말과 친해져요',
+   html:`<div class="build">
+      <div class="syl">곰</div>
+      <div class="syl">별</div>
+      <div class="syl">산</div>
+      <div class="syl">책</div>
+    </div>
+    <div class="ka-bub">이 글자들은 모두 <span class="emph">받침</span>이 있어요.<br>오늘부터 받침이 있는 낱말을 <b>읽고 쓰며</b><br>낱말과 친해져 볼까요? 😊</div>`},
+
+  {stage:'만나기', tag:'① 받침을 떠올려요',
+   t:'받침은 글자 아래에 들어가요',
+   html:`<div class="build">
+      <div class="bat-syl">
+        <div class="bat-row1"><div class="bat-jamo ja">ㄱ</div><div class="bat-jamo mo">ㅗ</div></div>
+        <div class="bat-row2"><div class="bat-jamo bat">ㅁ</div></div>
+      </div>
+      <div class="bat-arrow">→</div>
+      <div class="syl">곰</div>
+    </div>
+    <div class="legend">
+      <span><i class="dot ja"></i>자음자</span>
+      <span><i class="dot mo"></i>모음자</span>
+      <span><i class="dot bat"></i>받침</span>
+    </div>
+    <div class="ka-bub">'고'의 아래에 받침 <b>ㅁ</b>이 들어가면 <b>곰</b>이 돼요.<br>받침은 글자의 <span class="emph">아래쪽 자음자</span>예요.</div>`},
+
+  // ── ② 엔진 전반: 받침이 빠지면? ──
+  {stage:'엔진전반', tag:'② 이런 일이 있었어요',
+   t:'쪽지에 받침을 빠뜨렸어요',
+   html:`<div class="cmp">
+      <div class="cmp-card bad">
+        <div class="cmp-emoji">🍉</div>
+        <div class="cmp-word">수바</div>
+        <div class="cmp-cap">받침이 빠졌어요</div>
+      </div>
+      <div class="bat-arrow">➡️</div>
+      <div class="cmp-card good">
+        <div class="cmp-emoji">🍉</div>
+        <div class="cmp-word">수박</div>
+        <div class="cmp-cap">받침 ㄱ을 넣어요</div>
+      </div>
+    </div>
+    <div class="ka-bub">'수박'을 쓸 때 받침 <b>ㄱ</b>을 빠뜨리면 <span class="emph">'수바'</span>가 돼요.<br>그러면 무슨 말인지 알기 어려워요.</div>`},
+
+  {stage:'엔진전반', tag:'② 한 번 더 살펴봐요',
+   t:'받침이 사라지면 뜻도 흐려져요',
+   html:`<div class="cmp">
+      <div class="cmp-card bad">
+        <div class="cmp-emoji">🐻</div>
+        <div class="cmp-word">고</div>
+        <div class="cmp-cap">받침이 없어요</div>
+      </div>
+      <div class="bat-arrow">➡️</div>
+      <div class="cmp-card good">
+        <div class="cmp-emoji">🐻</div>
+        <div class="cmp-word">곰</div>
+        <div class="cmp-cap">받침 ㅁ을 넣어요</div>
+      </div>
+    </div>
+    <div class="ka-bub">받침 <b>ㅁ</b>이 있어야 <b>곰</b>이에요.<br>받침을 정확히 써야 <span class="emph">내 마음을 바르게</span> 전할 수 있어요.</div>`},
+
+  // ── ③ 엔진 후반: 받침 채워 바로잡기 ──
+  {stage:'엔진후반', tag:'③ 받침을 채워 봐요', log:true, correct:'ㄴ',
+   t:'그림에 맞게 받침을 골라요',
+   html:`<div class="build">
+      <div class="cmp-emoji" style="font-size:clamp(48px,11cqw,76px);">⛰️</div>
+      <div class="build" style="gap:clamp(3px,.7cqw,5px);">
+        <div class="bat-syl">
+          <div class="bat-row1"><div class="bat-jamo ja">ㅅ</div><div class="bat-jamo mo">ㅏ</div></div>
+          <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub">'사' 아래에 어떤 받침을 넣으면 <b>산</b>이 될까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㄴ">ㄴ</button>
+      <button class="pick" data-v="ㅁ">ㅁ</button>
+      <button class="pick" data-v="ㄹ">ㄹ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 받침을 채워 봐요', log:true, correct:'ㄱ',
+   t:'그림에 맞게 받침을 골라요',
+   html:`<div class="build">
+      <div class="cmp-emoji" style="font-size:clamp(48px,11cqw,76px);">📖</div>
+      <div class="build" style="gap:clamp(3px,.7cqw,5px);">
+        <div class="bat-syl">
+          <div class="bat-row1"><div class="bat-jamo ja">ㅊ</div><div class="bat-jamo mo">ㅐ</div></div>
+          <div class="bat-row2"><div class="slot-bat" id="slot">?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="ka-bub">'채' 아래에 어떤 받침을 넣으면 <b>책</b>이 될까요?</div>
+    <div class="picks">
+      <button class="pick" data-v="ㄴ">ㄴ</button>
+      <button class="pick" data-v="ㄱ">ㄱ</button>
+      <button class="pick" data-v="ㅂ">ㅂ</button>
+    </div>
+    <div class="fb"></div>`},
+
+  {stage:'엔진후반', tag:'③ 받침 있는 글자 찾기',
+   t:'받침이 있는 글자를 모두 눌러 봐요',
+   html:`<div class="word-grid" id="findgrid">
+      <div class="bat-word" data-bat="1">별</div>
+      <div class="bat-word" data-bat="0">나</div>
+      <div class="bat-word" data-bat="1">문</div>
+      <div class="bat-word" data-bat="0">코</div>
+      <div class="bat-word" data-bat="1">발</div>
+      <div class="bat-word" data-bat="0">소</div>
+      <div class="bat-word" data-bat="1">숲</div>
+      <div class="bat-word" data-bat="0">배</div>
+    </div>
+    <div class="ka-bub" id="findfb">아래쪽에 받침이 있는 글자는 모두 <b>4개</b>예요. 찾아볼까요? 🔍</div>`},
+
+  // ── ④ 표현·정리 ──
+  {stage:'표현정리', tag:'④ 이 단원에서 배울 것',
+   t:'두 가지를 배울 거예요',
+   html:`<div class="roadmap">
+      <div class="road-item" style="animation-delay:.1s"><div class="road-num">1</div><div><b>받침이 있는 글자 쓰기</b><br><span style="font-size:var(--fs-caption); color:#777;">짜임을 생각하며 바르게 써요</span></div></div>
+      <div class="road-item" style="animation-delay:.3s"><div class="road-num">2</div><div><b>여러 가지 낱말 읽기</b><br><span style="font-size:var(--fs-caption); color:#777;">ㄲ ㄸ ㅃ ㅆ ㅉ 가 들어간 낱말도 읽어요</span></div></div>
+    </div>
+    <div class="ka-bub">낱말을 바르게 읽고 쓰면<br>내 생각을 <span class="emph">또박또박</span> 전할 수 있어요!</div>`},
+
+  {stage:'표현정리', tag:'④ 오늘의 다짐',
+   t:'낱말과 친해지기로 약속해요',
+   html:`<div class="pledge-list">
+      <div class="pledge-item"><span class="pledge-check">✓</span>받침을 빠뜨리지 않고 쓸래요</div>
+      <div class="pledge-item"><span class="pledge-check">✓</span>낱말을 또박또박 읽을래요</div>
+      <div class="pledge-item"><span class="pledge-check">✓</span>새로운 낱말과 친해질래요</div>
+    </div>
+    <div class="ka-bub">마음에 드는 다짐을 눌러 표시해 봐요. ✨<br>다음 시간에는 받침이 있는 글자를 <b>직접 써</b> 볼 거예요!</div>`},
+];
+
+const LESSON_ID='g1_kor_u3_l01_v1';
+const LESSON_MAX=20;
+let cur=0, score=0, maxScore=0;
+const main=document.getElementById('main');
+const bar=document.getElementById('bar');
+const pg=document.getElementById('pg');
+const scoreEl=document.getElementById('score');
+const prevB=document.getElementById('prev');
+const nextB=document.getElementById('next');
+
+function render(){
+  const s=slides[cur];
+  main.innerHTML=`<span class="ka-tag">${s.tag}</span><h2 class="ka-t">${s.t}</h2>${s.html}`;
+  bar.style.width=((cur+1)/slides.length*100)+'%';
+  pg.textContent=`${cur+1} / ${slides.length}`;
+  prevB.disabled=cur===0; nextB.disabled=cur===slides.length-1;
+  if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
+  tracker.done(cur);
+  if(s.correct && main.querySelector('.pick')) bindPicks(s);
+  if(main.querySelector('#findgrid')) bindFind();
+  if(main.querySelector('.pledge-item')) bindPledge();
+}
+function bindPicks(s){
+  let done=false;
+  main.querySelectorAll('.pick').forEach(btn=>{
+    btn.onclick=()=>{
+      if(done) return;
+      const ok=btn.dataset.v===s.correct;
+      btn.classList.add(ok?'correct':'wrong');
+      const slot=main.querySelector('#slot');
+      const fb=main.querySelector('.fb');
+      if(ok){
+        done=true;
+        if(slot){slot.textContent=s.correct; slot.classList.add('filled');}
+        if(fb){fb.textContent='잘했어요! 🎉'; fb.classList.remove('bad');}
+        if(s.log){score+=10; maxScore+=10; scoreEl.textContent=score; tracker.answer(cur,true);}
+        main.querySelectorAll('.pick').forEach(b=>{if(b!==btn)b.style.opacity=.4;});
+      }else{
+        if(fb){fb.textContent='다시 한 번 살펴봐요.'; fb.classList.add('bad');}
+        if(s.log)tracker.answer(cur,false);
+        setTimeout(()=>btn.classList.remove('wrong'),350);
+      }
+    };
+  });
+}
+function bindFind(){
+  const grid=main.querySelector('#findgrid');
+  const fb=main.querySelector('#findfb');
+  const total=grid.querySelectorAll('[data-bat="1"]').length;
+  let found=0;
+  grid.querySelectorAll('.bat-word').forEach(w=>{
+    w.onclick=()=>{
+      if(w.dataset.bat==='1'){
+        if(w.classList.contains('hit')) return;
+        w.classList.add('hit'); found++;
+        if(found===total){ fb.innerHTML='모두 찾았어요! 받침이 있는 글자 <b>4개</b>를 잘 골랐어요. 🎉'; }
+        else { fb.innerHTML=`잘했어요! <b>${found}</b>개 찾았어요. 계속 찾아볼까요?`; }
+      }else{
+        w.classList.add('miss');
+        fb.innerHTML='이 글자는 받침이 없어요. 아래쪽 자음자를 다시 살펴봐요.';
+        setTimeout(()=>w.classList.remove('miss'),350);
+      }
+    };
+  });
+}
+function bindPledge(){
+  main.querySelectorAll('.pledge-item').forEach(item=>{
+    item.onclick=()=>{ item.classList.toggle('checked'); };
+  });
+}
+prevB.onclick=()=>{if(cur>0){cur--; render();}};
+nextB.onclick=()=>{if(cur<slides.length-1){cur++; render();}};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')nextB.click();if(e.key==='ArrowLeft')prevB.click();});
+document.getElementById('hint').onclick=()=>{
+  const s=slides[cur];
+  if(s.correct==='ㄴ') alert('힌트: 우뚝 솟은 \'산\'을 소리 내어 보면 끝이 \'ㄴ\'으로 닫혀요.');
+  else if(s.correct==='ㄱ') alert('힌트: \'책\'을 소리 내어 보면 끝이 \'ㄱ\'으로 닫혀요.');
+  else alert('힌트: 글자 아래쪽에 자음자가 있는지 살펴봐요.');
+};
+document.getElementById('replay').onclick=()=>{/* 음성 보조층 — 추후 mp3 연결 */};
+render();
+</script>
+</body>
+</html>
