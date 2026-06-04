@@ -548,6 +548,7 @@
   // ===== 전개 (5) =====
   {id:"s04",stage:"전개",block:"concept",data:{title:"10을 기억해요",bidirect:["⚫⚫⚫⚫⚫⚫⚫⚫⚫⚫ (10개)","↓","10개씩 **묶음 1개**","낱개가 없으면 **10**"]},suggested_extras:["m_three_links","x_unit_confusion","r_apartment_floor"]},
   {id:"s05",stage:"전개",block:"concept",data:{title:"12를 만들어 봐요",bidirect:["묶음 1개 (10)","+","낱개 2개","↓","**10과 2로 12**"]},suggested_extras:["m_three_links","x_teen_as_two_digits"]},
+  {id:"s05b",stage:"전개",block:"klab",data:{title:"직접 묶어서 12를 만들어 봐요",tool:"place_value",config:{max:19}},suggested_extras:["m_three_links","x_teen_as_two_digits"]},
   {id:"s06",stage:"전개",block:"visual_demo",data:{title:"12를 세 가지로 나타내요",ten_frame_solo:{count:12,is_anchor:true,label:"**그림**으로 12개\n**말**로 십이 / 열둘\n**수**로 12"},sub_text:"그림 → 말 → 수, 표현이 자라요"},suggested_extras:["m_array_recognition","a_link_cube_teens","m_choose_tool"]},
   {id:"s07",stage:"전개",block:"concept",data:{title:"낱개를 늘려 봐요",bidirect:["10과 3 → 13","10과 4 → 14","10과 5 → 15","낱개가 1씩 늘면 **수도 1씩 커져요**"]},suggested_extras:["m_one_to_one_count_teen","r_fruit_shop_count"]},
   {id:"s08",stage:"전개",block:"arrow_flow",data:{title:"묶어 세면 더 빨라요",steps:["하나씩 세기 — 느려요","10개씩 **묶음**으로 보기","묶음 1개와 낱개 몇 개","**십몇**을 한눈에"]},suggested_extras:["r_pencil_dozen","m_no_korean_writing"]},
