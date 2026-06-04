@@ -34,11 +34,11 @@
   // 선명한 색 (전자칠판에서 또렷한 채도)
   var COLOR   = { box: 0xFF6B35, cylinder: 0x12B886, ball: 0x6C5CE7 };
   var COLORCSS = { box: '#E8590C', cylinder: '#0B8457', ball: '#5145CD' };
-  var OUTLINE = 0x1A1A1A;   // 굵은 검은 외곽선
+  var OUTLINE = 0x37474F;   // 외곽선 (어두운 청회색 — 또렷하되 순검정보다 부드러움)
   var R   = { box: 0.9, cylinder: 0.78, ball: 0.92 };
   var BOX = 1.55;           // 상자 한 변
   var CYL_H = 1.95;         // 기둥 높이
-  var SHELL = 1.07;         // 외곽선 셸 배율
+  var SHELL = 1.035;        // 외곽선 셸 배율 (얇게 — 형태 안 헷갈리도록)
 
   window.KLab.register('shape3d', function (el, config) {
     var shapes  = (config.shapes  && config.shapes.length)  ? config.shapes  : ['box', 'cylinder', 'ball'];
