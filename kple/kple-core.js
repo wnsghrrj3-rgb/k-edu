@@ -108,6 +108,7 @@
     function onMsg(p) {
       if (p.kind === 'join') {
         if (roster.indexOf(p.name) === -1) roster.push(p.name);
+        conn.send({ kind: 'welcome', game: gameName });  // 참가자가 이 방의 게임을 알게
         broadcastRoster();
         emit('join', p);              // 게임이 받아서 필요 시 resync state 되쏨
       } else if (p.kind === 'bye') {
@@ -143,18 +144,14 @@
   function join(roomCode, nickname, opts) {
     opts = opts || {};
     roomCode = String(roomCode || '').toUpperCase().trim();
-    var def = registry[opts.game] || firstGameWithJoin();
-    if (!def || !def.join) throw new Error('[Kple] 게임 없음(join)');
 
     var listeners = { roster: [], state: [], status: [] };
-    var conn = null;   // 핸들러 등록 후 구독
+    var conn = null;       // 핸들러 등록 후 구독
+    var mounted = false;
+    var pending = [];      // 마운트 전 도착한 state 버퍼(welcome 보다 state 가 먼저 올 경우 대비)
+
     function emit(kind, data) {
       (listeners[kind] || []).forEach(function (fn) { try { fn(data); } catch (e) { console.error(e); } });
-    }
-
-    function onMsg(p) {
-      if (p.kind === 'roster') emit('roster', p);
-      else if (p.kind === 'state') emit('state', p);
     }
 
     var ctx = {
@@ -168,11 +165,29 @@
       close: function () { if (conn) conn.close(); }
     };
 
-    def.join(ctx);   // 핸들러 등록 먼저
+    function mountGame(name) {
+      if (mounted) return;
+      var def = registry[name] || (opts.game && registry[opts.game]) || firstGameWithJoin();
+      if (!def || !def.join) { console.error('[Kple] join 게임 없음: ' + name); return; }
+      def.join(ctx);            // 핸들러 등록(state/roster)
+      mounted = true;
+      pending.forEach(function (p) { emit('state', p); });  // 버퍼 비움
+      pending = [];
+    }
+
+    function onMsg(p) {
+      if (p.kind === 'welcome') { mountGame(p.game); }
+      else if (p.kind === 'roster') { if (mounted) emit('roster', p); }
+      else if (p.kind === 'state') { if (mounted) emit('state', p); else pending.push(p); }
+    }
+
+    // 게임을 미리 알면(단일 게임/호환) 즉시 마운트. 모르면 welcome 기다림.
+    if (opts.game && registry[opts.game]) mountGame(opts.game);
+
     conn = openChannel(roomCode, onMsg, function (status, c) {   // 그 다음 구독
       emit('status', status);
       if (status === 'SUBSCRIBED') {
-        // 구독 직후 입장 신호 → 호스트가 현재 state 를 되쏴 줌(늦은 입장 동기화)
+        // 구독 직후 입장 신호 → 호스트가 welcome + 현재 state 되쏨(늦은 입장 동기화)
         c.send({ kind: 'join', name: nickname });
       }
     });

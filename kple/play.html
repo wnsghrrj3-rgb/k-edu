@@ -29,6 +29,7 @@
 
 <script src="kple-core.js"></script>
 <script src="games/quiz-show.js"></script>
+<script src="games/speed-quiz.js"></script>
 <script>
 (function () {
   var root = document.getElementById('root');
@@ -48,13 +49,12 @@
     if (!name) { errEl.textContent = '이름을 입력해요'; return; }
     if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
 
-    // 게임 화면으로 전환
     root.innerHTML = '<div class="kp-play" id="play"></div>';
     var playEl = document.getElementById('play');
     var ctx;
-    try {
-      ctx = Kple.join(code, name, { el: playEl, game: 'quiz_show' });
-    } catch (e) { setConn(String(e.message || e), 'err'); return; }
+    // 게임은 미지정 — 호스트가 welcome 으로 알려주면 그 게임으로 동적 마운트
+    try { ctx = Kple.join(code, name, { el: playEl }); }
+    catch (e) { setConn(String(e.message || e), 'err'); return; }
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
