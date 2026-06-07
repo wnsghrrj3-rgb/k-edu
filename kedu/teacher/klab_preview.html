@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이랩 도구 미리보기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: 'Jua', 'Apple SD Gothic Neo', sans-serif;
+    background: #EAF2FB; color: #1B3A57;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  .sub { color: #5a7894; font-size: 16px; margin: 0 0 20px; }
+  .panel {
+    background: #fff; border-radius: 18px; padding: 18px 20px; margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(21,101,192,0.08);
+  }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  label { font-size: 17px; }
+  select, textarea {
+    font-family: inherit; font-size: 17px; padding: 8px 12px;
+    border: 2px solid #BBD3EC; border-radius: 10px; background: #F8FBFF; color: #1B3A57;
+  }
+  select { min-width: 200px; }
+  textarea { width: 100%; min-height: 64px; resize: vertical; }
+  .preset { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.act {
+    font-family: inherit; font-size: 17px; padding: 9px 18px; border-radius: 12px;
+    border: 2px solid #1565C0; background: #1565C0; color: #fff; cursor: pointer;
+  }
+  button.preset-btn {
+    font-family: inherit; font-size: 15px; padding: 7px 14px; border-radius: 10px;
+    border: 2px solid #0B7285; background: #fff; color: #0B7285; cursor: pointer;
+  }
+  button:active { transform: translateY(1px); }
+  .mount {
+    background: #fff; border-radius: 18px; padding: 20px;
+    box-shadow: 0 2px 10px rgba(21,101,192,0.08); min-height: 420px;
+  }
+  .hint { font-size: 14px; color: #7a93ac; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧊 케이랩 도구 미리보기</h1>
+  <p class="sub">차시에 박기 전에 도구를 단독으로 띄워 품질·가독성·동작을 확인하는 샌드박스입니다.</p>
+
+  <div class="panel">
+    <div class="row">
+      <label>도구</label>
+      <select id="toolSel"></select>
+      <span class="preset">
+        <button class="preset-btn" data-tool="fraction" data-cfg='{"shape":"bar","denom":4}'>분수 막대 4등분</button>
+        <button class="preset-btn" data-tool="fraction" data-cfg='{"shape":"circle","denom":6,"numer":2}'>분수 원 6분의2</button>
+        <button class="preset-btn" data-tool="place_value" data-cfg='{"start":12,"max":19}'>자릿값 12</button>
+        <button class="preset-btn" data-tool="shape3d" data-cfg='{"shapes":["box","cylinder","ball"],"actions":["roll","flip"],"terms":"daily"}'>도형 굴리기</button>
+      </span>
+    </div>
+    <div class="row" style="align-items: flex-start;">
+      <label style="padding-top:10px;">config</label>
+      <textarea id="cfgBox">{"shape":"bar","denom":4}</textarea>
+    </div>
+    <div class="row">
+      <button class="act" id="mountBtn">▶ 띄우기</button>
+      <span class="hint">config 는 JSON. 잘못되면 빈 객체로 띄웁니다.</span>
+    </div>
+  </div>
+
+  <div class="mount"><div id="mountEl" style="width:100%;"></div></div>
+</div>
+
+<!-- 케이랩 엔진 + 도구들 (배포 순서와 동일: three → klab → 도구) -->
+<script src="vendor/three.min.js"></script>
+<script src="engine/klab.js"></script>
+<script src="engine/tools/shape3d.js"></script>
+<script src="engine/tools/place_value.js"></script>
+<script src="engine/tools/fraction.js"></script>
+<script>
+  var toolSel = document.getElementById('toolSel');
+  var cfgBox  = document.getElementById('cfgBox');
+  var mountEl = document.getElementById('mountEl');
+  var cleanup = null;
+
+  // 등록된 도구를 드롭다운에 채움
+  (window.KLab ? window.KLab.list() : []).forEach(function (name) {
+    var o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    toolSel.appendChild(o);
+  });
+
+  function doMount(tool, cfgText) {
+    if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
+    var cfg = {};
+    try { cfg = JSON.parse(cfgText || '{}'); } catch (e) { cfg = {}; }
+    cleanup = window.KLab.mount(mountEl, tool, cfg) || null;
+  }
+
+  document.getElementById('mountBtn').addEventListener('click', function () {
+    doMount(toolSel.value, cfgBox.value);
+  });
+
+  // 프리셋: 도구·config 채우고 바로 띄움
+  document.querySelectorAll('.preset-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      toolSel.value = b.dataset.tool;
+      cfgBox.value = b.dataset.cfg;
+      doMount(b.dataset.tool, b.dataset.cfg);
+    });
+  });
+
+  // 첫 진입: 분수 도구 기본 띄움
+  if (toolSel.value) doMount(toolSel.value, cfgBox.value);
+</script>
+</body>
+</html>
