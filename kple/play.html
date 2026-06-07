@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>케이플 — 참가</title>
+<link rel="stylesheet" href="kple.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+</head>
+<body>
+<div id="root">
+  <div class="kp-gate" id="gate">
+    <div class="kp-logo">케이<span>플</span></div>
+    <div class="kp-sub">방코드를 입력하고 들어가요</div>
+    <div class="kp-field">
+      <label>방코드</label>
+      <input class="kp-input code" id="code" maxlength="4" autocomplete="off" inputmode="text" placeholder="ABCD">
+    </div>
+    <div class="kp-field">
+      <label>내 이름(별명)</label>
+      <input class="kp-input" id="name" maxlength="10" autocomplete="off" placeholder="예: 햇살이">
+    </div>
+    <button class="kp-btn kp-enter" id="enter">들어가기 ▶</button>
+    <div class="kp-err" id="err"></div>
+  </div>
+</div>
+<div class="kp-conn" id="conn">연결 준비…</div>
+
+<script src="kple-core.js"></script>
+<script src="games/quiz-show.js"></script>
+<script>
+(function () {
+  var root = document.getElementById('root');
+  var conn = document.getElementById('conn');
+  function setConn(t, cls) { conn.textContent = t; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
+
+  var codeEl = document.getElementById('code');
+  var nameEl = document.getElementById('name');
+  var errEl = document.getElementById('err');
+  codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+
+  document.getElementById('enter').onclick = function () {
+    var code = codeEl.value.trim().toUpperCase();
+    var name = nameEl.value.trim();
+    errEl.textContent = '';
+    if (code.length < 4) { errEl.textContent = '방코드 4자리를 입력해요'; return; }
+    if (!name) { errEl.textContent = '이름을 입력해요'; return; }
+    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
+
+    // 게임 화면으로 전환
+    root.innerHTML = '<div class="kp-play" id="play"></div>';
+    var playEl = document.getElementById('play');
+    var ctx;
+    try {
+      ctx = Kple.join(code, name, { el: playEl, game: 'quiz_show' });
+    } catch (e) { setConn(String(e.message || e), 'err'); return; }
+    ctx.on('status', function (s) {
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
+      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
+      else setConn(s);
+    });
+    window.addEventListener('beforeunload', function () { try { ctx.leave(); } catch (e) {} });
+  };
+})();
+</script>
+</body>
+</html>

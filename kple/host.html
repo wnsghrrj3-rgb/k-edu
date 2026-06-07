@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이플 — 진행(전자칠판)</title>
+<link rel="stylesheet" href="kple.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+</head>
+<body>
+<div class="kp-app" id="app">
+  <div class="kp-stage">
+    <div class="kp-big">케이<span style="color:var(--kp-yellow)">플</span></div>
+    <div class="kp-dim">전자칠판에서 게임을 시작하세요</div>
+    <button class="kp-btn kp-go" id="kpCreate" style="margin-top:30px;">방 만들기 ▶</button>
+  </div>
+</div>
+<div class="kp-conn" id="conn">연결 준비…</div>
+
+<script src="kple-core.js"></script>
+<script src="games/quiz-show.js"></script>
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var conn = document.getElementById('conn');
+  function setConn(text, cls) { conn.textContent = text; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
+
+  document.getElementById('kpCreate').onclick = function () {
+    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
+    var ctx;
+    try {
+      ctx = Kple.host('quiz_show', { el: app, config: {} /* 일반 모드: 샘플 문제 */ });
+    } catch (e) { setConn(String(e.message || e), 'err'); return; }
+    ctx.on('status', function (s) {
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
+      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s + ' (망 차단 가능성)', 'err');
+      else setConn(s);
+    });
+  };
+})();
+</script>
+</body>
+</html>
