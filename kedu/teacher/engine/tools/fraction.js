@@ -1,231 +1,204 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 분수 모형 (fraction) v1
-   초점 = "전체를 똑같이 N으로 나눈 것 중 M개가 분수 M/N" 을 눈으로.
-     · 모양: 막대(띠) / 원(피자) 토글 — 같은 분수를 두 표상으로.
-     · [등분 +/-] 로 분모(나누는 수)를 바꾸면 전체가 즉시 똑같이 다시 나뉜다.
-       (← 디지털 우위 핵심. 실물 분수막대는 분모마다 다른 막대를 꺼내야 함.)
-     · 조각을 손으로 누르면 색칠/지움. 색칠한 조각 수 = 분자.
-     · 항상 큰 분수로 "똑같이 N으로 나눈 것 중 M개 ＝ M/N" 표시.
-   교구화 기준("디지털이 실물보다 결정적으로 나은 것만") 만족:
-     등분이 즉각·정확(완전 등분)·가역, 색칠 토글이 깨끗·반복 가능.
+   케이랩 도구 모듈 — 분수 모형 (fraction) v2
+   v2 초점 = 완성도(근사함). 전자칠판에 띄웠을 때 또렷하고 크고 깔끔하게.
+     · 큰 도형 + 시원한 여백 + 부드러운 그림자(입체감) + 또렷한 흰 경계.
+     · 표현 3종 토글: 막대(띠) / 원(피자) / 격자(초콜릿) — 같은 분수를 세 표상으로.
+     · [등분 ＋/－]로 분모를 바꾸면 전체가 즉시 똑같이 다시 나뉜다(← 디지털 우위).
+     · 조각을 누르면 부드럽게 색칠/지움. 색칠 수 = 분자.
+     · 우측 큰 분수 표기 패널 + "한 조각 = 단위분수" 안내.
+   v1 대비: 크기·입체감·디테일·표현 다양성 전면 강화. 로직(등분/색칠)은 동일.
 
    - 의존: window.KLab (THREE 불필요, 순수 SVG+DOM)
-   - config 예시:
-       3학년 분수 도입:   { shape:"bar", denom:4 }
-       원으로 등분 보기:   { shape:"circle", denom:6, numer:2 }
-       shape   : "bar"(기본) | "circle"  — 시작 모양 (버튼으로 전환 가능)
-       denom   : 시작 분모(나누는 수), 기본 4
-       numer   : 시작 분자(색칠 수), 기본 0
-       maxDenom: 분모 최댓값, 기본 12
+   - config: { shape:"bar"|"circle"|"grid", denom(기본4), numer(기본0), maxDenom(기본12) }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
 
-  // 색 (전자칠판에서 또렷하게) — place_value 와 통일된 톤, 채움색만 분수 정체성(청록)
   var C = {
-    fill:    '#12B886',   // 색칠한 조각
-    fillEdge:'#099268',   // 색칠 조각 외곽
-    empty:   'rgba(255,255,255,0.55)', // 빈 조각
-    edge:    '#1B6F8C',   // 조각/외곽 구분선
-    guide:   '#9AB7D4'    // 등분 안내선
+    fillTop: '#38D9A9',  // 채운 조각 (밝은 청록 — 위)
+    fill:    '#12B886',  // 채운 조각 (아래)
+    fillEdge:'#0B7A5C',
+    empty:   '#E7F1FB',  // 빈 조각
+    emptyEdge:'#B8CFE8',
+    seam:    '#FFFFFF',  // 조각 사이 흰 경계
+    num:     '#0CA678',  // 분자 색
+    den:     '#1565C0'   // 분모 색
   };
+
+  function bestCols(n) {          // 격자: sqrt(n)에 가장 가까운 약수 → 완전 직사각형
+    var best = 1, t = Math.sqrt(n);
+    for (var c = 1; c <= n; c++) if (n % c === 0 && Math.abs(c - t) < Math.abs(best - t)) best = c;
+    return best;
+  }
 
   window.KLab.register('fraction', function (el, config) {
     var maxDenom = (typeof config.maxDenom === 'number' && config.maxDenom >= 2) ? config.maxDenom : 12;
     var denom = (typeof config.denom === 'number' && config.denom >= 1) ? Math.min(config.denom, maxDenom) : 4;
-    var shape = (config.shape === 'circle') ? 'circle' : 'bar';
-
-    // 색칠 상태: 길이 denom 의 boolean 배열 (조각별 칠함 여부)
+    var shape = (['bar','circle','grid'].indexOf(config.shape) >= 0) ? config.shape : 'bar';
     var filled = makeFilled(denom, (typeof config.numer === 'number') ? config.numer : 0);
 
-    function makeFilled(n, m) {
-      var a = [];
-      m = Math.max(0, Math.min(m, n));
-      for (var i = 0; i < n; i++) a.push(i < m);
-      return a;
-    }
-    function numerCount() {
-      var c = 0;
-      for (var i = 0; i < filled.length; i++) if (filled[i]) c++;
-      return c;
-    }
+    function makeFilled(n, m) { var a = []; m = Math.max(0, Math.min(m, n)); for (var i = 0; i < n; i++) a.push(i < m); return a; }
+    function numerCount() { var c = 0; for (var i = 0; i < filled.length; i++) if (filled[i]) c++; return c; }
 
-    // ---------- UI 골격 (place_value/shape3d 와 통일: 큰 버튼·Jua·연파랑 스테이지) ----------
-    var btnBase = 'font-size:28px;padding:16px 30px;border-radius:16px;border:3px solid #1565C0;'
-                + 'cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
-                + 'transition:transform .08s,opacity .15s;';
+    var btnBase = 'font-size:27px;padding:15px 28px;border-radius:18px;border:3px solid #1565C0;'
+                + 'cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s,opacity .15s;';
+    var shapeBtn = 'font-size:25px;padding:14px 20px;border-radius:18px;border:3px solid #0B7285;'
+                + 'background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
     el.innerHTML =
       '<style>'
-      + '.fr-btn:active{transform:translateY(2px);}'
-      + '.fr-btn[disabled]{opacity:.4;cursor:not-allowed;}'
-      + '.fr-piece{cursor:pointer;transition:fill .18s ease, transform .15s ease;transform-origin:center;}'
-      + '.fr-piece:hover{filter:brightness(1.05);}'
-      + '.fr-pop{animation:frPop .28s cubic-bezier(.2,1.5,.4,1) both;}'
-      + '@keyframes frPop{0%{transform:scale(.82);}100%{transform:scale(1);}}'
+      + '.fr-btn:active,.fr-sbtn:active{transform:translateY(2px);}'
+      + '.fr-btn[disabled]{opacity:.35;cursor:not-allowed;}'
+      + '.fr-sbtn.fr-on{background:#0B7285 !important;color:#fff !important;}'
+      + '.fr-piece{cursor:pointer;transition:fill-opacity .25s ease, transform .18s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}'
+      + '.fr-piece:hover{transform:scale(1.04);}'
+      + '.fr-pop{animation:frPop .32s cubic-bezier(.2,1.6,.4,1) both;}'
+      + '@keyframes frPop{0%{transform:scale(.7);}60%{transform:scale(1.08);}100%{transform:scale(1);}}'
       + '</style>'
-      + '<div class="fr-controls" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
+      + '<div style="display:flex;gap:11px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="fr-btn" data-act="dminus" style="' + btnBase + 'background:#fff;color:#1565C0;">－ 등분</button>'
         + '<button class="fr-btn" data-act="dplus"  style="' + btnBase + 'background:#1565C0;color:#fff;">＋ 등분</button>'
-        + '<button class="fr-btn" data-act="shape"  style="' + btnBase + 'background:#fff;color:#0B7285;border-color:#0B7285;">⬭ 모양 바꾸기</button>'
-        + '<button class="fr-btn" data-act="reset"  style="font-size:28px;padding:16px 30px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#555;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 처음으로</button>'
+        + '<span style="width:14px;"></span>'
+        + '<button class="fr-sbtn fr-btn" data-shape="bar"    style="' + shapeBtn + '">▭ 막대</button>'
+        + '<button class="fr-sbtn fr-btn" data-shape="circle" style="' + shapeBtn + '">◔ 원</button>'
+        + '<button class="fr-sbtn fr-btn" data-shape="grid"   style="' + shapeBtn + '">▦ 격자</button>'
+        + '<span style="width:14px;"></span>'
+        + '<button class="fr-btn" data-act="reset" style="font-size:27px;padding:15px 24px;border-radius:18px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>'
       + '</div>'
-      + '<div class="fr-stage" style="width:100%;height:50vh;min-height:340px;'
-        + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
-        + 'border-radius:20px;overflow:hidden;'
-        + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
-      + '<div class="fr-status" style="text-align:center;margin-top:14px;font-weight:800;line-height:1.2;'
-        + 'font-family:inherit;color:#1B3A57;"></div>';
+      + '<div class="fr-stage" style="width:100%;height:58vh;min-height:400px;'
+        + 'background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);'
+        + 'border-radius:26px;overflow:hidden;'
+        + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>';
 
-    var stage    = el.querySelector('.fr-stage');
-    var statusEl = el.querySelector('.fr-status');
-    var btns = {};
-    el.querySelectorAll('.fr-btn').forEach(function (b) { btns[b.dataset.act] = b; });
+    var stage = el.querySelector('.fr-stage');
+    el.querySelectorAll('.fr-sbtn').forEach(function (b) { b.classList.toggle('fr-on', b.dataset.shape === shape); });
 
-    // ---------- SVG 헬퍼 ----------
-    var VBW = 720, VBH = 380;
-    function svgEl(tag, attrs) {
-      var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
-      for (var k in attrs) e.setAttribute(k, attrs[k]);
-      return e;
+    function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+    function pt(cx, cy, r, deg) { var a = (deg - 90) * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+
+    var VBW = 940, VBH = 480;
+    var SHAPE_X = 40, SHAPE_W = 580;          // 도형 영역(좌)
+    var PANEL_X = 660;                          // 분수 패널(우)
+
+    function defs(svg) {
+      var d = svgEl('defs', {});
+      d.innerHTML =
+        '<filter id="frSh" x="-25%" y="-25%" width="150%" height="160%">'
+        + '<feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#13315C" flood-opacity="0.20"/></filter>'
+        + '<linearGradient id="frFill" x1="0" y1="0" x2="0" y2="1">'
+        + '<stop offset="0" stop-color="' + C.fillTop + '"/><stop offset="1" stop-color="' + C.fill + '"/></linearGradient>';
+      svg.appendChild(d);
     }
-    // 원 위 각도(deg, 12시=0) → 좌표
-    function pt(cx, cy, r, deg) {
-      var a = (deg - 90) * Math.PI / 180;
-      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-    }
+    function pieceFill(on) { return on ? 'url(#frFill)' : C.empty; }
+    function pieceEdge(on) { return on ? C.fillEdge : C.emptyEdge; }
 
-    // ---------- 그리기 ----------
     function render(opts) {
       opts = opts || {};
       stage.innerHTML = '';
       var svg = svgEl('svg', { viewBox: '0 0 ' + VBW + ' ' + VBH, width: '100%', height: '100%' });
-
+      defs(svg);
       if (shape === 'bar') drawBar(svg, opts);
-      else drawCircle(svg, opts);
-
+      else if (shape === 'circle') drawCircle(svg, opts);
+      else drawGrid(svg, opts);
+      drawPanel(svg);
       stage.appendChild(svg);
       bindPieces();
-      updateStatus();
       updateButtons();
     }
 
     function drawBar(svg, opts) {
-      var W = 600, H = 150, x0 = (VBW - W) / 2, y0 = (VBH - H) / 2;
+      var W = SHAPE_W, H = 230, x0 = SHAPE_X + 20, y0 = (VBH - H) / 2;
       var w = W / denom;
-      // 바깥 테두리
-      svg.appendChild(svgEl('rect', {
-        x: x0, y: y0, width: W, height: H, rx: 12,
-        fill: 'none', stroke: C.edge, 'stroke-width': 5
-      }));
+      var group = svgEl('g', { filter: 'url(#frSh)' });
       for (var i = 0; i < denom; i++) {
-        var px = x0 + i * w;
-        svg.appendChild(svgEl('rect', {
-          x: px, y: y0, width: w, height: H,
-          rx: (denom === 1 ? 12 : 0),
-          fill: filled[i] ? C.fill : C.empty,
-          stroke: C.edge, 'stroke-width': 2.5,
-          'data-i': i,
-          class: 'fr-piece' + (opts.popIdx === i ? ' fr-pop' : '')
+        group.appendChild(svgEl('rect', {
+          x: x0 + i * w, y: y0, width: w, height: H,
+          rx: (denom === 1 ? 22 : 6),
+          fill: pieceFill(filled[i]), stroke: C.seam, 'stroke-width': 6,
+          'data-i': i, class: 'fr-piece' + (opts.popIdx === i ? ' fr-pop' : '')
         }));
+        // 채운 칸 윗면 하이라이트
+        if (filled[i]) group.appendChild(svgEl('rect', { x: x0 + i * w + 8, y: y0 + 7, width: w - 16, height: 16, rx: 7, fill: '#FFFFFF', 'fill-opacity': 0.28, 'pointer-events': 'none' }));
       }
+      group.appendChild(svgEl('rect', { x: x0, y: y0, width: W, height: H, rx: 22, fill: 'none', stroke: C.fillEdge, 'stroke-width': 5, 'pointer-events': 'none' }));
+      svg.appendChild(group);
     }
 
     function drawCircle(svg, opts) {
-      var cx = VBW / 2, cy = VBH / 2, r = 145;
+      var cx = SHAPE_X + SHAPE_W / 2, cy = VBH / 2, r = 175;
+      var group = svgEl('g', { filter: 'url(#frSh)' });
       if (denom === 1) {
-        svg.appendChild(svgEl('circle', {
-          cx: cx, cy: cy, r: r,
-          fill: filled[0] ? C.fill : C.empty,
-          stroke: C.edge, 'stroke-width': 5,
-          'data-i': 0,
-          class: 'fr-piece' + (opts.popIdx === 0 ? ' fr-pop' : '')
-        }));
-        return;
+        group.appendChild(svgEl('circle', { cx: cx, cy: cy, r: r, fill: pieceFill(filled[0]), stroke: C.seam, 'stroke-width': 6, 'data-i': 0, class: 'fr-piece' + (opts.popIdx === 0 ? ' fr-pop' : '') }));
+      } else {
+        var step = 360 / denom;
+        for (var i = 0; i < denom; i++) {
+          var p0 = pt(cx, cy, r, i * step), p1 = pt(cx, cy, r, (i + 1) * step);
+          var large = (step > 180) ? 1 : 0;
+          var d = 'M ' + cx + ' ' + cy + ' L ' + p0[0] + ' ' + p0[1] + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + p1[0] + ' ' + p1[1] + ' Z';
+          group.appendChild(svgEl('path', { d: d, fill: pieceFill(filled[i]), stroke: C.seam, 'stroke-width': 5, 'data-i': i, class: 'fr-piece' + (opts.popIdx === i ? ' fr-pop' : '') }));
+        }
       }
-      var step = 360 / denom;
-      for (var i = 0; i < denom; i++) {
-        var a0 = i * step, a1 = (i + 1) * step;
-        var p0 = pt(cx, cy, r, a0), p1 = pt(cx, cy, r, a1);
-        var large = (step > 180) ? 1 : 0;
-        var d = 'M ' + cx + ' ' + cy
-              + ' L ' + p0[0] + ' ' + p0[1]
-              + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + p1[0] + ' ' + p1[1]
-              + ' Z';
-        svg.appendChild(svgEl('path', {
-          d: d,
-          fill: filled[i] ? C.fill : C.empty,
-          stroke: C.edge, 'stroke-width': 3,
-          'data-i': i,
-          class: 'fr-piece' + (opts.popIdx === i ? ' fr-pop' : '')
-        }));
-      }
+      group.appendChild(svgEl('circle', { cx: cx, cy: cy, r: r, fill: 'none', stroke: C.fillEdge, 'stroke-width': 5, 'pointer-events': 'none' }));
+      svg.appendChild(group);
     }
 
-    // 조각 클릭 = 색칠/지움 토글
+    function drawGrid(svg, opts) {
+      var cols = bestCols(denom), rows = Math.ceil(denom / cols);
+      var maxW = SHAPE_W, maxH = 300, gap = 8;
+      var cw = (maxW - gap * (cols - 1)) / cols, ch = (maxH - gap * (rows - 1)) / rows;
+      var cell = Math.min(cw, ch, 120);
+      var gw = cell * cols + gap * (cols - 1), gh = cell * rows + gap * (rows - 1);
+      var x0 = SHAPE_X + (SHAPE_W - gw) / 2, y0 = (VBH - gh) / 2;
+      var group = svgEl('g', { filter: 'url(#frSh)' });
+      for (var i = 0; i < denom; i++) {
+        var r = Math.floor(i / cols), c = i % cols;
+        group.appendChild(svgEl('rect', {
+          x: x0 + c * (cell + gap), y: y0 + r * (cell + gap), width: cell, height: cell, rx: 12,
+          fill: pieceFill(filled[i]), stroke: pieceEdge(filled[i]), 'stroke-width': 4,
+          'data-i': i, class: 'fr-piece' + (opts.popIdx === i ? ' fr-pop' : '')
+        }));
+        if (filled[i]) group.appendChild(svgEl('rect', { x: x0 + c * (cell + gap) + 9, y: y0 + r * (cell + gap) + 8, width: cell - 18, height: 13, rx: 6, fill: '#fff', 'fill-opacity': 0.3, 'pointer-events': 'none' }));
+      }
+      svg.appendChild(group);
+    }
+
+    function drawPanel(svg) {
+      var m = numerCount(), n = denom, cx = PANEL_X + 120;
+      // 큰 분수 (분자 / 가로선 / 분모)
+      var t1 = svgEl('text', { x: cx, y: 150, 'text-anchor': 'middle', 'font-family': 'Jua, sans-serif', 'font-size': 130, 'font-weight': 800, fill: C.num }); t1.textContent = m; svg.appendChild(t1);
+      svg.appendChild(svgEl('rect', { x: cx - 95, y: 175, width: 190, height: 11, rx: 5, fill: '#1B3A57' }));
+      var t2 = svgEl('text', { x: cx, y: 320, 'text-anchor': 'middle', 'font-family': 'Jua, sans-serif', 'font-size': 130, 'font-weight': 800, fill: C.den }); t2.textContent = n; svg.appendChild(t2);
+      // 설명
+      function line(y, s, size, fill) { var t = svgEl('text', { x: cx, y: y, 'text-anchor': 'middle', 'font-family': 'Jua, sans-serif', 'font-size': size, 'font-weight': 800, fill: fill }); t.textContent = s; svg.appendChild(t); }
+      line(375, '똑같이 ' + n + '로 나눈 것 중 ' + m + '개', 26, '#1B3A57');
+      line(415, '한 조각 = 1/' + n + ' (단위분수)', 22, '#5a7894');
+    }
+
     function bindPieces() {
       stage.querySelectorAll('.fr-piece').forEach(function (p) {
-        p.addEventListener('click', function () {
-          var i = parseInt(p.getAttribute('data-i'), 10);
-          filled[i] = !filled[i];
-          render({ popIdx: i });
-        });
+        p.addEventListener('click', function () { var i = +p.getAttribute('data-i'); filled[i] = !filled[i]; render({ popIdx: i }); });
       });
     }
-
-    // ---------- 상태 / 버튼 ----------
-    function updateStatus() {
-      var m = numerCount(), n = denom;
-      // 큰 분수 표기 (분자 / 가로선 / 분모)
-      statusEl.innerHTML =
-        '<span style="font-size:30px;">똑같이 </span>'
-        + '<span style="font-size:40px;color:#1565C0;">' + n + '</span>'
-        + '<span style="font-size:30px;">으로 나눈 것 중 </span>'
-        + '<span style="font-size:40px;color:#0CA678;">' + m + '</span>'
-        + '<span style="font-size:30px;">개 ＝ </span>'
-        + '<span style="display:inline-block;vertical-align:middle;text-align:center;line-height:1;">'
-          + '<span style="display:block;font-size:44px;color:#0CA678;">' + m + '</span>'
-          + '<span style="display:block;height:4px;background:#1B3A57;border-radius:2px;margin:2px 0;"></span>'
-          + '<span style="display:block;font-size:44px;color:#1565C0;">' + n + '</span>'
-        + '</span>';
-    }
-
     function updateButtons() {
-      btns.dplus.disabled  = denom >= maxDenom;
-      btns.dminus.disabled = denom <= 1;
+      el.querySelector('[data-act="dplus"]').disabled = denom >= maxDenom;
+      el.querySelector('[data-act="dminus"]').disabled = denom <= 1;
     }
-
-    // ---------- 동작 ----------
-    // 분모 변경 = 전체를 다시 똑같이 나눔 → 색칠 초기화(개수 매핑이 깨지므로)
-    function setDenom(n) {
-      n = Math.max(1, Math.min(n, maxDenom));
-      if (n === denom) return;
-      denom = n;
-      filled = makeFilled(denom, 0);
-      render({});
-    }
-    function toggleShape() {
-      shape = (shape === 'bar') ? 'circle' : 'bar';
-      render({});
-    }
+    function setDenom(n) { n = Math.max(1, Math.min(n, maxDenom)); if (n === denom) return; denom = n; filled = makeFilled(denom, 0); render({}); }
+    function setShape(s) { shape = s; el.querySelectorAll('.fr-sbtn').forEach(function (b) { b.classList.toggle('fr-on', b.dataset.shape === s); }); render({}); }
     function reset() {
       denom = (typeof config.denom === 'number' && config.denom >= 1) ? Math.min(config.denom, maxDenom) : 4;
-      shape = (config.shape === 'circle') ? 'circle' : 'bar';
+      shape = (['bar','circle','grid'].indexOf(config.shape) >= 0) ? config.shape : 'bar';
       filled = makeFilled(denom, (typeof config.numer === 'number') ? config.numer : 0);
+      el.querySelectorAll('.fr-sbtn').forEach(function (b) { b.classList.toggle('fr-on', b.dataset.shape === shape); });
       render({});
     }
 
-    btns.dplus.addEventListener('click', function () { setDenom(denom + 1); });
-    btns.dminus.addEventListener('click', function () { setDenom(denom - 1); });
-    btns.shape.addEventListener('click', toggleShape);
-    btns.reset.addEventListener('click', reset);
+    el.querySelector('[data-act="dplus"]').addEventListener('click', function () { setDenom(denom + 1); });
+    el.querySelector('[data-act="dminus"]').addEventListener('click', function () { setDenom(denom - 1); });
+    el.querySelector('[data-act="reset"]').addEventListener('click', reset);
+    el.querySelectorAll('.fr-sbtn').forEach(function (b) { b.addEventListener('click', function () { setShape(b.dataset.shape); }); });
 
     render({});
-
-    // ---------- cleanup ----------
-    return function cleanup() {
-      // 리스너는 stage/el 내부 요소에 붙어 innerHTML 교체 시 함께 제거됨.
-      // window 리스너 없음 → 별도 정리 불필요.
-    };
+    return function cleanup() { /* el 내부 리스너만 — innerHTML 교체 시 자동 제거 */ };
   });
 })();
