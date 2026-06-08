@@ -249,23 +249,33 @@ function initIconPanel() {
     document.querySelectorAll('.ip-mode').forEach(x => x.classList.remove('on'));
     b.classList.add('on'); iconMode = b.dataset.im; iconCat = 'all';
     document.getElementById('ipSearch').value = '';
-    if (iconMode === 'color') loadStickers(() => { buildCatChips(); renderIconGrid(); });
-    else { buildCatChips(); renderIconGrid(); }
+    const done = () => { buildCatChips(); renderIconGrid(); };
+    if (iconMode === 'color') loadAsset('stickers.js', 'STICKERS', done);
+    else if (iconMode === 'illust') loadAsset('illust.js', 'ILLUSTS', done);
+    else done();
   });
   document.getElementById('ipSearch').oninput = renderIconGrid;
   document.getElementById('ipClose').onclick = () => document.getElementById('iconPanel').classList.add('hidden');
   buildCatChips(); renderIconGrid();
 }
-function loadStickers(cb) {
-  if (window.STICKERS) return cb();
+function loadAsset(src, glob, cb) {
+  if (window[glob]) return cb();
   const grid = document.getElementById('ipGrid');
-  grid.innerHTML = `<div class="ip-empty">컬러 스티커 불러오는 중…</div>`;
-  const s = document.createElement('script'); s.src = 'stickers.js'; s.onload = cb;
+  grid.innerHTML = `<div class="ip-empty">불러오는 중…</div>`;
+  const s = document.createElement('script'); s.src = src; s.onload = cb;
   s.onerror = () => { grid.innerHTML = `<div class="ip-empty">불러오기 실패</div>`; };
   document.head.appendChild(s);
 }
-function curCats() { return iconMode === 'color' ? (window.STICKER_CATS || []) : ICON_CATS; }
-function curList() { return iconMode === 'color' ? (window.STICKERS || []) : ICONS; }
+function curCats() {
+  if (iconMode === 'color') return window.STICKER_CATS || [];
+  if (iconMode === 'illust') return [];
+  return ICON_CATS;
+}
+function curList() {
+  if (iconMode === 'color') return window.STICKERS || [];
+  if (iconMode === 'illust') return window.ILLUSTS || [];
+  return ICONS;
+}
 function buildCatChips() {
   const cats = document.getElementById('ipCats');
   cats.innerHTML = `<button class="ip-cat on" data-cat="all">전체</button>` +
@@ -281,31 +291,36 @@ function renderIconGrid() {
   if (q) list = list.filter(i => i.n.includes(q));
   else if (iconCat !== 'all') list = list.filter(i => i.c === iconCat);
   const grid = document.getElementById('ipGrid');
+  grid.classList.toggle('illust', iconMode === 'illust');
   if (!list.length) { grid.innerHTML = `<div class="ip-empty">결과가 없어요</div>`; return; }
   const show = list.slice(0, 400);
-  const vb = iconMode === 'color' ? '0 0 72 72' : '0 0 24 24';
-  const attr = iconMode === 'color' ? '' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
-  grid.innerHTML = show.map((i, idx) =>
-    `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="${vb}" ${attr}>${i.s}</svg></button>`
-  ).join('');
+  const lineAttr = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  grid.innerHTML = show.map((i, idx) => {
+    const vb = iconMode === 'color' ? '0 0 72 72' : iconMode === 'illust' ? i.vb : '0 0 24 24';
+    const attr = iconMode === 'line' ? lineAttr : '';
+    return `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="${vb}" ${attr}>${i.s}</svg></button>`;
+  }).join('');
   grid.querySelectorAll('.ip-item').forEach(b => b.onclick = () => {
     const it = show[+b.dataset.idx];
-    iconMode === 'color' ? addSticker(it.s) : addIcon(it.s);
+    if (iconMode === 'color') addSticker(it.s);
+    else if (iconMode === 'illust') addIllust(it);
+    else addIcon(it.s);
   });
 }
 function addIcon(inner) {
-  const svg = `<svg viewBox="0 0 24 24" fill="none" stroke="#2D3748" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
-  insertSvg(svg, 'icon');
+  insertSvg(`<svg viewBox="0 0 24 24" fill="none" stroke="#2D3748" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`, 'icon', Math.min(baseW, baseH) * 0.18);
 }
 function addSticker(inner) {
-  const svg = `<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
-  insertSvg(svg, 'sticker');
+  insertSvg(`<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`, 'sticker', Math.min(baseW, baseH) * 0.18);
 }
-function insertSvg(svg, kind) {
+function addIllust(it) {
+  insertSvg(`<svg viewBox="${it.vb}" xmlns="http://www.w3.org/2000/svg">${it.s}</svg>`, 'illust', Math.min(baseW, baseH) * 0.45);
+}
+function insertSvg(svg, kind, size) {
   fabric.loadSVGFromString(svg, (objs, opts) => {
     const g = fabric.util.groupSVGElements(objs, opts);
     g.set({ left: baseW / 2, top: baseH / 2, originX: 'center', originY: 'center' });
-    g.scaleToWidth(Math.min(baseW, baseH) * 0.18);
+    g.scaleToWidth(size);
     g.kmType = kind;
     canvas.add(g); canvas.setActiveObject(g); canvas.requestRenderAll();
   });
