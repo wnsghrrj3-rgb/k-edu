@@ -104,6 +104,19 @@ function openTemplate(key) {
   openEditor(t.w, t.h);
   loadSVGTemplate(t);
 }
+function goHome() {
+  if (canvas && canvas.getObjects().length) {
+    if (!confirm('지금 만들던 내용이 사라져요. 템플릿 고르기로 돌아갈까요?')) return;
+  }
+  if (canvas) { canvas.dispose(); canvas = null; }
+  undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
+  document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
+  document.getElementById('modeBanner').classList.add('hidden');
+  document.getElementById('toolbar').classList.remove('locked');
+  document.getElementById('editor').classList.add('hidden');
+  startEl.classList.remove('hidden');
+  renderPresets();
+}
 function loadSVGTemplate(t) {
   fabric.loadSVGFromString(t.svg, (objects) => {
     lockHistory = true;
@@ -132,6 +145,9 @@ function loadSVGTemplate(t) {
   });
 }
 function initCanvas() {
+  // 이전 fabric 래퍼 잔재 제거 후 깨끗한 캔버스 생성 (홈 복귀→재진입 대비)
+  const stage = document.querySelector('.canvas-stage');
+  stage.innerHTML = '<canvas id="c"></canvas>';
   const el = document.getElementById('c'); el.width = baseW; el.height = baseH;
   canvas = new fabric.Canvas('c', { backgroundColor: '#fff', preserveObjectStacking: true });
   canvas.setDimensions({ width: baseW, height: baseH });
