@@ -236,7 +236,7 @@ function dot(ctx, x, y) { ctx.fillStyle = '#EC4899'; ctx.beginPath(); ctx.arc(x,
 function clearGuides() { if (canvas) canvas.clearContext(canvas.contextTop); }
 
 /* ============ 아이콘 패널 ============ */
-let iconCat = 'all';
+let iconCat = 'all', iconMode = 'line';
 function toggleIconPanel() {
   const p = document.getElementById('iconPanel');
   const open = !p.classList.contains('hidden');
@@ -245,43 +245,72 @@ function toggleIconPanel() {
   if (!p.dataset.init) { initIconPanel(); p.dataset.init = '1'; }
 }
 function initIconPanel() {
-  // 카테고리 칩
+  document.querySelectorAll('.ip-mode').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.ip-mode').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); iconMode = b.dataset.im; iconCat = 'all';
+    document.getElementById('ipSearch').value = '';
+    if (iconMode === 'color') loadStickers(() => { buildCatChips(); renderIconGrid(); });
+    else { buildCatChips(); renderIconGrid(); }
+  });
+  document.getElementById('ipSearch').oninput = renderIconGrid;
+  document.getElementById('ipClose').onclick = () => document.getElementById('iconPanel').classList.add('hidden');
+  buildCatChips(); renderIconGrid();
+}
+function loadStickers(cb) {
+  if (window.STICKERS) return cb();
+  const grid = document.getElementById('ipGrid');
+  grid.innerHTML = `<div class="ip-empty">컬러 스티커 불러오는 중…</div>`;
+  const s = document.createElement('script'); s.src = 'stickers.js'; s.onload = cb;
+  s.onerror = () => { grid.innerHTML = `<div class="ip-empty">불러오기 실패</div>`; };
+  document.head.appendChild(s);
+}
+function curCats() { return iconMode === 'color' ? (window.STICKER_CATS || []) : ICON_CATS; }
+function curList() { return iconMode === 'color' ? (window.STICKERS || []) : ICONS; }
+function buildCatChips() {
   const cats = document.getElementById('ipCats');
   cats.innerHTML = `<button class="ip-cat on" data-cat="all">전체</button>` +
-    ICON_CATS.map(([cid, nm]) => `<button class="ip-cat" data-cat="${cid}">${nm}</button>`).join('');
+    curCats().map(([cid, nm]) => `<button class="ip-cat" data-cat="${cid}">${nm}</button>`).join('');
   cats.querySelectorAll('.ip-cat').forEach(b => b.onclick = () => {
     cats.querySelectorAll('.ip-cat').forEach(x => x.classList.remove('on'));
     b.classList.add('on'); iconCat = b.dataset.cat; document.getElementById('ipSearch').value = ''; renderIconGrid();
   });
-  document.getElementById('ipSearch').oninput = renderIconGrid;
-  document.getElementById('ipClose').onclick = () => document.getElementById('iconPanel').classList.add('hidden');
-  renderIconGrid();
 }
 function renderIconGrid() {
   const q = document.getElementById('ipSearch').value.trim().toLowerCase();
-  let list = ICONS;
+  let list = curList();
   if (q) list = list.filter(i => i.n.includes(q));
   else if (iconCat !== 'all') list = list.filter(i => i.c === iconCat);
   const grid = document.getElementById('ipGrid');
   if (!list.length) { grid.innerHTML = `<div class="ip-empty">결과가 없어요</div>`; return; }
   const show = list.slice(0, 400);
+  const vb = iconMode === 'color' ? '0 0 72 72' : '0 0 24 24';
+  const attr = iconMode === 'color' ? '' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   grid.innerHTML = show.map((i, idx) =>
-    `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${i.s}</svg></button>`
+    `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="${vb}" ${attr}>${i.s}</svg></button>`
   ).join('');
-  grid.querySelectorAll('.ip-item').forEach(b => b.onclick = () => addIcon(show[+b.dataset.idx].s));
+  grid.querySelectorAll('.ip-item').forEach(b => b.onclick = () => {
+    const it = show[+b.dataset.idx];
+    iconMode === 'color' ? addSticker(it.s) : addIcon(it.s);
+  });
 }
 function addIcon(inner) {
   const svg = `<svg viewBox="0 0 24 24" fill="none" stroke="#2D3748" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  insertSvg(svg, 'icon');
+}
+function addSticker(inner) {
+  const svg = `<svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+  insertSvg(svg, 'sticker');
+}
+function insertSvg(svg, kind) {
   fabric.loadSVGFromString(svg, (objs, opts) => {
     const g = fabric.util.groupSVGElements(objs, opts);
-    const size = Math.min(baseW, baseH) * 0.18;
     g.set({ left: baseW / 2, top: baseH / 2, originX: 'center', originY: 'center' });
-    g.scaleToWidth(size);
-    g.kmType = 'icon';
+    g.scaleToWidth(Math.min(baseW, baseH) * 0.18);
+    g.kmType = kind;
     canvas.add(g); canvas.setActiveObject(g); canvas.requestRenderAll();
   });
 }
-// 아이콘(그룹) 색 일괄 변경
+// 아이콘(라인) 색 일괄 변경
 function setIconColor(g, color) {
   const apply = o => { if (o._objects) o._objects.forEach(apply); else { if (o.stroke) o.set('stroke', color); if (o.fill && o.fill !== '' && o.fill !== 'none') o.set('fill', color); } };
   apply(g);
