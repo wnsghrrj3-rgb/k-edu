@@ -6,7 +6,7 @@
 
 /* 슬롯 커스텀 속성 직렬화 */
 fabric.Object.prototype.toObject = (function (orig) {
-  return function (extra) { return orig.call(this, ['kmSlot'].concat(extra || [])); };
+  return function (extra) { return orig.call(this, ['kmSlot', 'kmType'].concat(extra || [])); };
 })(fabric.Object.prototype.toObject);
 
 /* ---------- 데이터 ---------- */
@@ -112,6 +112,7 @@ function goHome() {
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
+  document.getElementById('iconPanel').classList.add('hidden');
   document.getElementById('toolbar').classList.remove('locked');
   document.getElementById('editor').classList.add('hidden');
   startEl.classList.remove('hidden');
@@ -182,6 +183,7 @@ function addElement(type) {
   } else if (type === 'arrow') {
     o = makeArrow(c.left - 120, c.top, c.left + 120, c.top, '#2D3748', 4);
   } else if (type === 'image') { imgTarget = null; document.getElementById('imgInput').click(); return; }
+  else if (type === 'icon') { toggleIconPanel(); return; }
   if (o) { canvas.add(o); canvas.setActiveObject(o); canvas.requestRenderAll(); }
 }
 function makeArrow(x1, y1, x2, y2, color, w) {
@@ -233,7 +235,58 @@ function drawGuides(gv, gh) {
 function dot(ctx, x, y) { ctx.fillStyle = '#EC4899'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); }
 function clearGuides() { if (canvas) canvas.clearContext(canvas.contextTop); }
 
-/* ============ 컨텍스트 바 ============ */
+/* ============ 아이콘 패널 ============ */
+let iconCat = 'all';
+function toggleIconPanel() {
+  const p = document.getElementById('iconPanel');
+  const open = !p.classList.contains('hidden');
+  if (open) { p.classList.add('hidden'); return; }
+  p.classList.remove('hidden');
+  if (!p.dataset.init) { initIconPanel(); p.dataset.init = '1'; }
+}
+function initIconPanel() {
+  // 카테고리 칩
+  const cats = document.getElementById('ipCats');
+  cats.innerHTML = `<button class="ip-cat on" data-cat="all">전체</button>` +
+    ICON_CATS.map(([cid, nm]) => `<button class="ip-cat" data-cat="${cid}">${nm}</button>`).join('');
+  cats.querySelectorAll('.ip-cat').forEach(b => b.onclick = () => {
+    cats.querySelectorAll('.ip-cat').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); iconCat = b.dataset.cat; document.getElementById('ipSearch').value = ''; renderIconGrid();
+  });
+  document.getElementById('ipSearch').oninput = renderIconGrid;
+  document.getElementById('ipClose').onclick = () => document.getElementById('iconPanel').classList.add('hidden');
+  renderIconGrid();
+}
+function renderIconGrid() {
+  const q = document.getElementById('ipSearch').value.trim().toLowerCase();
+  let list = ICONS;
+  if (q) list = list.filter(i => i.n.includes(q));
+  else if (iconCat !== 'all') list = list.filter(i => i.c === iconCat);
+  const grid = document.getElementById('ipGrid');
+  if (!list.length) { grid.innerHTML = `<div class="ip-empty">결과가 없어요</div>`; return; }
+  const show = list.slice(0, 400);
+  grid.innerHTML = show.map((i, idx) =>
+    `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${i.s}</svg></button>`
+  ).join('');
+  grid.querySelectorAll('.ip-item').forEach(b => b.onclick = () => addIcon(show[+b.dataset.idx].s));
+}
+function addIcon(inner) {
+  const svg = `<svg viewBox="0 0 24 24" fill="none" stroke="#2D3748" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  fabric.loadSVGFromString(svg, (objs, opts) => {
+    const g = fabric.util.groupSVGElements(objs, opts);
+    const size = Math.min(baseW, baseH) * 0.18;
+    g.set({ left: baseW / 2, top: baseH / 2, originX: 'center', originY: 'center' });
+    g.scaleToWidth(size);
+    g.kmType = 'icon';
+    canvas.add(g); canvas.setActiveObject(g); canvas.requestRenderAll();
+  });
+}
+// 아이콘(그룹) 색 일괄 변경
+function setIconColor(g, color) {
+  const apply = o => { if (o._objects) o._objects.forEach(apply); else { if (o.stroke) o.set('stroke', color); if (o.fill && o.fill !== '' && o.fill !== 'none') o.set('fill', color); } };
+  apply(g);
+  g.dirty = true; canvas.requestRenderAll();
+}
 const ctxbar = document.getElementById('ctxbar');
 let openPop = null;
 function onSelect() {
@@ -259,7 +312,9 @@ function buildCtxbar(o) {
     if (o.type !== 'line') g += `<div class="ctx-group">${colorBtn('fill', o.fill, '채움')}</div>`;
     g += `<div class="ctx-group">${colorBtn('stroke', o.stroke || '#2D3748', '테두리')}</div>
       <div class="ctx-sep"></div><div class="ctx-group">${stepper('sw', o.strokeWidth || 0, '테두리 굵기')}</div>`;
-  } else { g += `<div class="ctx-group" style="color:var(--gray-l);font-size:13px;padding:0 6px">${o.type === 'image' ? '🖼 이미지' : '➶ 묶음'} 선택됨</div>`; }
+  } else { g += o.kmType === 'icon'
+    ? `<div class="ctx-group">${colorBtn('iconcolor', '#2D3748', '아이콘 색')}</div>`
+    : `<div class="ctx-group" style="color:var(--gray-l);font-size:13px;padding:0 6px">${o.type === 'image' ? '🖼 이미지' : '➶ 묶음'} 선택됨</div>`; }
   g += `<div class="ctx-sep"></div><div class="ctx-group">
       <button class="ctx-btn" data-act="dup" title="복제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
       <button class="ctx-btn del" data-act="del" title="삭제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
@@ -305,10 +360,12 @@ function bindCtx(o) {
     closePops(); if (!wasOpen) { pop.classList.remove('hidden'); openPop = pop; }
   });
   ctxbar.querySelectorAll('[data-color]').forEach(b => b.onclick = () => {
-    const [k, c] = b.dataset.color.split(':'); o.set(k, c); render(); pushHistory(); buildCtxbar(o);
+    const [k, c] = b.dataset.color.split(':');
+    if (k === 'iconcolor') setIconColor(o, c); else o.set(k, c);
+    render(); pushHistory(); buildCtxbar(o);
   });
   ctxbar.querySelectorAll('[data-colorpick]').forEach(inp => {
-    inp.oninput = () => { o.set(inp.dataset.colorpick, inp.value); render(); };
+    inp.oninput = () => { const k = inp.dataset.colorpick; if (k === 'iconcolor') setIconColor(o, inp.value); else o.set(k, inp.value); render(); };
     inp.onchange = () => { pushHistory(); buildCtxbar(o); };
   });
 }
