@@ -4,173 +4,279 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>케이메이크 | K-edu</title>
-<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Black+Han+Sans&family=Do+Hyeon&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Hahmlet:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Black+Han+Sans&family=Do+Hyeon&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Hahmlet:wght@400;700&family=Gamja+Flower&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 :root{
-  --blue:#5B8EF8; --blue-d:#2B6CB0; --blue-l:#EBF4FF;
-  --ink:#1A202C; --gray:#718096; --line:#E2E8F0; --bg:#F5F7FA;
-  --slot:#F59E0B; --slot-l:#FEF3C7; --danger:#E53E3E;
-  --r:12px;
+  --blue:#5B8EF8; --blue-d:#4A7DE8; --blue-l:#EEF4FE; --blue-ll:#F6F9FF;
+  --ink:#2D3748; --ink-2:#4A5568; --gray:#718096; --gray-l:#A0AEC0;
+  --line:#E5E8EE; --line-2:#EDEFF3; --bg:#F4F5F8; --stage:#E9EBF0;
+  --slot:#F59E0B; --slot-l:#FEF6E3; --slot-d:#B45309;
+  --guide:#EC4899; --danger:#E53E3E; --white:#fff;
+  --sh-sm:0 1px 2px rgba(16,24,40,.05);
+  --sh:0 4px 16px rgba(16,24,40,.09);
+  --sh-lg:0 12px 40px rgba(16,24,40,.16);
+  --sh-pop:0 6px 28px rgba(16,24,40,.14);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
-button{font-family:inherit;cursor:pointer}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;color:inherit}
+input,textarea,select{font-family:inherit}
 .hidden{display:none!important}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#CBD2DC;border-radius:10px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#AEB7C4;background-clip:content-box}
 
-/* ========== 시작 화면 ========== */
-#start{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#EBF4FF 0%,#F5F7FA 60%);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:40px 20px}
-.start-logo{font-family:'Jua',sans-serif;font-size:42px;color:var(--blue);margin-top:24px}
-.start-logo .sub{font-family:'Noto Sans KR';font-size:15px;color:var(--gray);font-weight:500;display:block;margin-top:6px}
-.start-tabs{display:flex;gap:8px;margin:32px 0 24px;background:#fff;padding:6px;border-radius:50px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-.start-tab{border:none;background:none;padding:10px 26px;border-radius:50px;font-size:15px;font-weight:700;color:var(--gray);transition:all .15s}
-.start-tab.on{background:var(--blue);color:#fff}
-.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;max-width:720px;width:100%}
-.preset-card{background:#fff;border:2px solid var(--line);border-radius:var(--r);padding:18px 14px;text-align:center;transition:all .15s}
-.preset-card:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 8px 20px rgba(91,142,248,.15)}
-.preset-thumb{width:100%;height:88px;margin-bottom:12px;display:flex;align-items:center;justify-content:center}
-.preset-thumb .paper{background:#fff;border:1.5px solid var(--line);border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-.preset-name{font-size:14px;font-weight:700}
-.preset-dim{font-size:11px;color:var(--gray);margin-top:3px}
-.preset-custom{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.preset-custom input{width:54px;padding:5px;border:1.5px solid var(--line);border-radius:8px;text-align:center;font-family:inherit}
+/* ============ 시작 화면 ============ */
+#start{position:fixed;inset:0;z-index:100;overflow-y:auto;
+  background:radial-gradient(1200px 600px at 50% -10%, #E8F0FE 0%, transparent 60%), linear-gradient(180deg,#FBFCFE 0%,#F4F5F8 100%)}
+.start-inner{max-width:840px;margin:0 auto;padding:56px 24px 80px;text-align:center}
+.start-badge{display:inline-flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:50px;padding:6px 14px;font-size:12.5px;font-weight:700;color:var(--blue);box-shadow:var(--sh-sm);margin-bottom:22px}
+.start-badge .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px #DCFCE7}
+.start-logo{font-family:'Jua',sans-serif;font-size:54px;line-height:1.05;color:var(--ink);letter-spacing:-1px}
+.start-logo b{color:var(--blue)}
+.start-sub{font-size:16px;color:var(--gray);margin-top:14px;font-weight:500;line-height:1.6}
+.start-tabs{display:inline-flex;gap:4px;margin:36px 0 28px;background:var(--white);padding:5px;border-radius:50px;box-shadow:var(--sh);border:1px solid var(--line-2)}
+.start-tab{border:none;background:none;padding:11px 30px;border-radius:50px;font-size:15px;font-weight:700;color:var(--gray);transition:all .18s cubic-bezier(.4,0,.2,1)}
+.start-tab.on{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(91,142,248,.35)}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:18px}
+.preset-card{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center;transition:transform .2s cubic-bezier(.34,1.4,.5,1),box-shadow .2s,border-color .2s;box-shadow:var(--sh-sm)}
+.preset-card:hover{transform:translateY(-5px);box-shadow:var(--sh-lg);border-color:#CBD9F8}
+.preset-thumb{height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.preset-thumb svg{max-width:100%;max-height:100%;filter:drop-shadow(0 6px 14px rgba(16,24,40,.14))}
+.preset-name{font-size:14.5px;font-weight:700;color:var(--ink)}
+.preset-dim{font-size:11.5px;color:var(--gray-l);margin-top:4px;font-weight:500}
+.preset-custom{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px dashed #C3CCDA;background:var(--blue-ll)}
+.preset-custom .ico{font-size:26px;margin-bottom:8px}
+.preset-custom .row{display:flex;align-items:center;gap:6px;margin:6px 0 10px}
+.preset-custom input{width:56px;padding:7px;border:1px solid var(--line);border-radius:8px;text-align:center;font-size:13px;outline:none;background:#fff}
+.preset-custom input:focus{border-color:var(--blue)}
 
-/* ========== 에디터 ========== */
+/* ============ 에디터 셸 ============ */
 #editor{display:flex;flex-direction:column;height:100%}
-.topbar{height:54px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:20}
-.topbar .logo{font-family:'Jua';font-size:22px;color:var(--blue);margin-right:8px}
-.topbar .home{color:var(--gray);text-decoration:none;font-size:13px;font-weight:500;padding:6px 10px;border-radius:8px}
-.topbar .home:hover{background:var(--bg)}
-.mode-toggle{display:flex;background:var(--bg);border-radius:50px;padding:4px;gap:2px}
-.mode-toggle button{border:none;background:none;padding:7px 16px;border-radius:50px;font-size:13px;font-weight:700;color:var(--gray)}
-.mode-toggle button.on{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.mode-toggle button.on.fill{color:var(--slot)}
-.spacer{flex:1}
-.tb-btn{height:36px;padding:0 14px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:13px;font-weight:500;color:var(--ink);display:inline-flex;align-items:center;gap:5px;transition:all .15s}
-.tb-btn:hover{border-color:var(--blue);color:var(--blue)}
-.tb-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-.tb-btn.primary:hover{opacity:.88;color:#fff}
-.export-menu{position:absolute;top:44px;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;z-index:30;min-width:150px}
-.export-menu button{display:block;width:100%;text-align:left;border:none;background:none;padding:9px 12px;border-radius:7px;font-family:inherit;font-size:13px;color:var(--ink)}
-.export-menu button:hover{background:var(--blue-l);color:var(--blue)}
 
+/* 메인 바 */
+.topbar{height:56px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:40;box-shadow:var(--sh-sm)}
+.topbar .logo{font-family:'Jua';font-size:23px;color:var(--blue);user-select:none}
+.topbar .home{color:var(--gray);text-decoration:none;font-size:13px;font-weight:600;padding:7px 11px;border-radius:8px;transition:.15s}
+.topbar .home:hover{background:var(--bg);color:var(--ink)}
+.vr{width:1px;height:24px;background:var(--line)}
+.mode-toggle{display:flex;background:var(--bg);border-radius:10px;padding:4px;gap:3px}
+.mode-toggle button{border:none;background:none;padding:8px 16px;border-radius:7px;font-size:13px;font-weight:700;color:var(--gray);transition:.15s;display:flex;align-items:center;gap:6px}
+.mode-toggle button:hover{color:var(--ink)}
+.mode-toggle button.on{background:var(--white);color:var(--blue);box-shadow:var(--sh-sm)}
+.mode-toggle button.on[data-mode=fill]{color:var(--slot-d)}
+.spacer{flex:1}
+.icon-btn{width:38px;height:38px;border:none;background:none;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--gray);transition:.14s}
+.icon-btn:hover{background:var(--bg);color:var(--ink)}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn svg{width:19px;height:19px}
+.tb-btn{height:38px;padding:0 15px;border:1px solid var(--line);background:var(--white);border-radius:9px;font-size:13px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;transition:.14s}
+.tb-btn:hover{border-color:#C3CCDA;background:#FAFBFD}
+.tb-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(91,142,248,.3)}
+.tb-btn.primary:hover{background:var(--blue-d);border-color:var(--blue-d)}
+.tb-btn svg{width:16px;height:16px}
+
+/* 컨텍스트 바 (선택 시) */
+.ctxbar{height:52px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;z-index:30;overflow-x:auto;box-shadow:var(--sh-sm)}
+.ctxbar.empty{display:none}
+.ctx-group{display:flex;align-items:center;gap:6px}
+.ctx-sep{width:1px;height:22px;background:var(--line);flex-shrink:0;margin:0 3px}
+.ctx-btn{height:34px;min-width:34px;padding:0 9px;border:1px solid transparent;background:none;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;gap:5px;transition:.13s;flex-shrink:0}
+.ctx-btn:hover{background:var(--bg)}
+.ctx-btn.on{background:var(--blue-l);color:var(--blue)}
+.ctx-btn svg{width:17px;height:17px}
+.ctx-btn.del:hover{background:#FEF2F2;color:var(--danger)}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;height:34px;overflow:hidden;flex-shrink:0}
+.stepper button{width:30px;height:100%;border:none;background:var(--white);color:var(--gray);font-size:16px;display:flex;align-items:center;justify-content:center}
+.stepper button:hover{background:var(--bg);color:var(--ink)}
+.stepper input{width:42px;height:100%;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);text-align:center;font-size:13px;font-weight:600;outline:none;color:var(--ink)}
+
+/* 폰트 드롭다운 */
+.font-dd{position:relative;flex-shrink:0}
+.font-dd>button{height:34px;min-width:132px;padding:0 12px;border:1px solid var(--line);background:var(--white);border-radius:8px;font-size:13.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px;transition:.13s}
+.font-dd>button:hover{border-color:#C3CCDA}
+.font-dd>button svg{width:14px;height:14px;color:var(--gray);flex-shrink:0}
+.font-list{position:absolute;top:40px;left:0;width:218px;max-height:340px;overflow-y:auto;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh-pop);padding:6px;z-index:60}
+.font-item{display:flex;align-items:center;justify-content:space-between;width:100%;padding:9px 12px;border:none;background:none;border-radius:8px;font-size:18px;color:var(--ink);transition:.1s;text-align:left}
+.font-item:hover{background:var(--blue-ll)}
+.font-item .fname{font-size:11px;color:var(--gray-l);font-family:'Noto Sans KR';font-weight:500}
+.font-item.sel{background:var(--blue-l)}
+
+/* 색 스와치 버튼 + 팝오버 */
+.color-btn{position:relative;flex-shrink:0}
+.color-btn>button{height:34px;padding:0 8px;border:1px solid var(--line);background:var(--white);border-radius:8px;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2);transition:.13s}
+.color-btn>button:hover{border-color:#C3CCDA}
+.color-btn .chip{width:18px;height:18px;border-radius:5px;border:1px solid rgba(0,0,0,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.color-pop{position:absolute;top:40px;left:0;background:var(--white);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-pop);padding:14px;z-index:60;width:206px}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.swatches button{width:24px;height:24px;border-radius:7px;border:1px solid rgba(0,0,0,.1);transition:transform .1s,box-shadow .1s}
+.swatches button:hover{transform:scale(1.14)}
+.swatches button.sel{box-shadow:0 0 0 2px var(--white),0 0 0 4px var(--blue)}
+.color-custom{display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:13px;border-top:1px solid var(--line-2)}
+.color-custom input[type=color]{width:34px;height:30px;border:1px solid var(--line);border-radius:7px;padding:2px;background:#fff;cursor:pointer}
+.color-custom span{font-size:12px;color:var(--gray);font-weight:600}
+
+/* 워크스페이스 */
 .workspace{flex:1;display:flex;min-height:0}
 
 /* 좌측 도구 */
-.tools{width:72px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;flex-shrink:0}
-.tool{width:52px;height:52px;border:none;background:none;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--gray);font-size:10px;font-weight:500;transition:all .12s}
-.tool:hover{background:var(--blue-l);color:var(--blue)}
-.tool svg{width:22px;height:22px}
-.tool-sep{width:36px;height:1px;background:var(--line);margin:4px 0}
+.tools{width:78px;background:var(--white);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:4px;flex-shrink:0;z-index:20}
+.tool{width:60px;height:58px;border:none;background:none;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--gray);font-size:10.5px;font-weight:600;transition:.14s}
+.tool:hover{background:var(--blue-ll);color:var(--blue)}
+.tool:active{transform:scale(.94)}
+.tool svg{width:23px;height:23px;stroke-width:1.8}
+.tool-sep{width:40px;height:1px;background:var(--line-2);margin:5px 0}
+.tools.locked{opacity:.4;pointer-events:none}
 
-/* 캔버스 영역 */
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;background:#EDF0F5;padding:32px;position:relative}
-.canvas-stage{box-shadow:0 6px 30px rgba(0,0,0,.12);background:#fff}
-.mode-banner{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--slot-l);color:#92400E;padding:7px 18px;border-radius:50px;font-size:13px;font-weight:700;box-shadow:0 2px 10px rgba(245,158,11,.25);display:flex;align-items:center;gap:7px}
-.zoombar{position:absolute;bottom:16px;right:20px;background:#fff;border-radius:50px;box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;align-items:center;padding:5px 8px;gap:4px}
-.zoombar button{width:30px;height:30px;border:none;background:none;border-radius:50%;font-size:18px;color:var(--gray)}
-.zoombar button:hover{background:var(--bg)}
-.zoombar span{font-size:12px;color:var(--gray);min-width:42px;text-align:center;font-weight:500}
+/* 캔버스 무대 */
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;background:var(--stage);
+  background-image:radial-gradient(circle, #D8DCE4 1px, transparent 1px);background-size:22px 22px;
+  padding:40px;position:relative}
+.canvas-stage{box-shadow:var(--sh-lg);background:#fff;border-radius:2px}
+.mode-banner{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:var(--slot);color:#fff;padding:9px 20px;border-radius:50px;font-size:13px;font-weight:700;box-shadow:0 6px 20px rgba(245,158,11,.4);display:flex;align-items:center;gap:8px;z-index:10}
+.zoombar{position:absolute;bottom:20px;right:24px;background:var(--white);border-radius:50px;box-shadow:var(--sh);display:flex;align-items:center;padding:5px;gap:2px;border:1px solid var(--line-2);z-index:10}
+.zoombar button{width:32px;height:32px;border:none;background:none;border-radius:50%;font-size:18px;color:var(--gray);display:flex;align-items:center;justify-content:center;transition:.12s}
+.zoombar button:hover{background:var(--bg);color:var(--ink)}
+.zoombar .zlabel{font-size:12.5px;color:var(--ink-2);min-width:46px;text-align:center;font-weight:700}
 
-/* 우측 속성 */
-.props{width:264px;background:#fff;border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:16px}
-.props h3{font-size:13px;color:var(--gray);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.prop-empty{color:#A0AEC0;font-size:13px;text-align:center;padding:40px 10px;line-height:1.7}
-.prop-row{margin-bottom:14px}
-.prop-row label{display:block;font-size:12px;color:var(--gray);font-weight:500;margin-bottom:6px}
-.prop-row select,.prop-row input[type=text],.prop-row textarea{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;outline:none}
-.prop-row select:focus,.prop-row input:focus,.prop-row textarea:focus{border-color:var(--blue)}
-.prop-row textarea{resize:vertical;min-height:54px}
-.inline2{display:flex;gap:8px}
-.inline2>*{flex:1}
-.color-row{display:flex;align-items:center;gap:10px}
-.color-row input[type=color]{width:40px;height:32px;border:1.5px solid var(--line);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
-.btn-grp{display:flex;gap:6px}
-.btn-grp button{flex:1;height:34px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:13px;color:var(--ink);display:flex;align-items:center;justify-content:center}
-.btn-grp button:hover{border-color:var(--blue);color:var(--blue)}
-.btn-grp button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.slot-box{background:var(--slot-l);border:1.5px solid #FCD34D;border-radius:10px;padding:12px;margin-top:6px}
-.slot-box .stitle{font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px;display:flex;align-items:center;gap:5px}
-.slot-toggle{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#78350F}
-.switch{position:relative;width:42px;height:24px}
+/* 우측 패널 */
+.panel{width:258px;background:var(--white);border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;z-index:20}
+.panel-sec{padding:18px;border-bottom:1px solid var(--line-2)}
+.panel-sec h3{font-size:11px;font-weight:700;color:var(--gray-l);letter-spacing:.6px;text-transform:uppercase;margin-bottom:13px;display:flex;align-items:center;gap:6px}
+.p-empty{padding:48px 22px;text-align:center;color:var(--gray-l)}
+.p-empty .big{font-size:34px;margin-bottom:14px;opacity:.7}
+.p-empty p{font-size:13px;line-height:1.7}
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:var(--gray);font-weight:600;margin-bottom:7px}
+.field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;outline:none;resize:vertical;min-height:60px;transition:.13s;color:var(--ink)}
+.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-l)}
+.align-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.align-grid button{height:38px;border:1px solid var(--line);background:var(--white);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--gray);transition:.13s}
+.align-grid button:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-ll)}
+.align-grid button svg{width:18px;height:18px}
+.layer-row,.act-row{display:flex;gap:7px}
+.layer-row button,.act-row button{flex:1;height:40px;border:1px solid var(--line);background:var(--white);border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;color:var(--gray);font-weight:600;transition:.13s}
+.layer-row button:hover,.act-row button:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-ll)}
+.act-row button.del:hover{border-color:var(--danger);color:var(--danger);background:#FEF2F2}
+.layer-row svg,.act-row svg{width:17px;height:17px}
+.range-row{display:flex;align-items:center;gap:11px}
+.range-row input[type=range]{flex:1;accent-color:var(--blue)}
+.range-row .val{font-size:12px;color:var(--ink-2);font-weight:700;min-width:38px;text-align:right}
+.dim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dim-grid .field label{margin-bottom:5px}
+.dim-grid input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;outline:none;color:var(--ink)}
+.dim-grid input:focus{border-color:var(--blue)}
+
+/* 슬롯 박스 */
+.slot-box{background:var(--slot-l);border:1px solid #FBE3B0;border-radius:12px;padding:14px}
+.slot-head{display:flex;align-items:center;justify-content:space-between}
+.slot-head .t{font-size:12.5px;font-weight:700;color:var(--slot-d);display:flex;align-items:center;gap:6px}
+.switch{position:relative;width:42px;height:24px;flex-shrink:0}
 .switch input{opacity:0;width:0;height:0}
-.switch .track{position:absolute;inset:0;background:#D1D5DB;border-radius:50px;transition:.2s}
-.switch .track:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch .track{position:absolute;inset:0;background:#D9DEE6;border-radius:50px;transition:.2s;cursor:pointer}
+.switch .track:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .switch input:checked+.track{background:var(--slot)}
 .switch input:checked+.track:before{transform:translateX(18px)}
-.prop-actions{display:flex;gap:6px;margin-top:8px}
-.prop-actions button{flex:1;height:36px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:12px;color:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
-.prop-actions button:hover{border-color:var(--blue);color:var(--blue)}
-.prop-actions button.del:hover{border-color:var(--danger);color:var(--danger)}
-.divider{height:1px;background:var(--line);margin:16px 0}
+.slot-label{margin-top:12px}
+.slot-label label{font-size:11.5px;color:var(--slot-d);font-weight:600;display:block;margin-bottom:6px}
+.slot-label input{width:100%;padding:8px 10px;border:1px solid #FBE3B0;border-radius:8px;font-size:13px;outline:none;background:#fff;color:var(--ink)}
+.slot-label input:focus{border-color:var(--slot)}
+.slot-hint{font-size:11.5px;color:var(--slot-d);margin-top:9px;line-height:1.5;opacity:.85}
+
+/* fill 모드 우측 */
+.fill-card{padding:18px}
+.fill-tag{display:inline-flex;align-items:center;gap:6px;background:var(--slot-l);color:var(--slot-d);font-size:12px;font-weight:700;padding:5px 11px;border-radius:50px;margin-bottom:14px}
+
+/* 내보내기 메뉴 */
+.export-wrap{position:relative}
+.export-menu{position:absolute;top:46px;right:0;background:var(--white);border:1px solid var(--line);border-radius:13px;box-shadow:var(--sh-pop);padding:7px;z-index:60;min-width:172px}
+.export-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:none;background:none;padding:11px 13px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink-2);transition:.1s}
+.export-menu button:hover{background:var(--blue-ll);color:var(--blue)}
+.export-menu button .em-ico{width:30px;height:30px;border-radius:8px;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 
 /* 토스트 */
-#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 22px;border-radius:50px;font-size:14px;font-weight:500;opacity:0;transition:all .25s;z-index:200;pointer-events:none}
+#toast{position:fixed;bottom:34px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:600;opacity:0;transition:all .26s cubic-bezier(.34,1.3,.5,1);z-index:200;pointer-events:none;box-shadow:var(--sh-lg);display:flex;align-items:center;gap:9px}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast .tcheck{color:#6EE7B7}
 </style>
 </head>
 <body>
 
-<!-- ========== 시작 화면 ========== -->
+<!-- ============ 시작 화면 ============ -->
 <div id="start">
-  <div class="start-logo">케이메이크<span class="sub">선생님도 학생도, 무료로 뚝딱 만드는 K-edu 디자인 도구</span></div>
-  <div class="start-tabs">
-    <button class="start-tab on" data-aud="teacher">👩‍🏫 선생님</button>
-    <button class="start-tab" data-aud="student">🎒 학생</button>
+  <div class="start-inner">
+    <div class="start-badge"><span class="dot"></span>K-edu · 완전 무료</div>
+    <div class="start-logo">케이<b>메이크</b></div>
+    <div class="start-sub">상장·학습지·이름표·발표자료를 무료로 뚝딱.<br>한 번 만든 틀은 이름만 바꿔 다시 써요.</div>
+    <div class="start-tabs">
+      <button class="start-tab on" data-aud="teacher">👩‍🏫 선생님</button>
+      <button class="start-tab" data-aud="student">🎒 학생</button>
+    </div>
+    <div class="preset-grid" id="presetGrid"></div>
   </div>
-  <div class="preset-grid" id="presetGrid"></div>
 </div>
 
-<!-- ========== 에디터 ========== -->
+<!-- ============ 에디터 ============ -->
 <div id="editor" class="hidden">
+  <!-- 메인 바 -->
   <div class="topbar">
     <span class="logo">케이메이크</span>
-    <a href="/" class="home">← K-edu 홈</a>
+    <a href="/" class="home">← 홈</a>
+    <div class="vr"></div>
     <div class="mode-toggle" id="modeToggle">
-      <button class="on" data-mode="edit">✏️ 자유편집</button>
-      <button data-mode="fill">📝 슬롯 채우기</button>
+      <button class="on" data-mode="edit">✏️ 만들기</button>
+      <button data-mode="fill">📝 채우기</button>
     </div>
+    <div class="vr"></div>
+    <button class="icon-btn" id="btnUndo" title="실행취소 (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+    <button class="icon-btn" id="btnRedo" title="다시실행 (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg></button>
     <div class="spacer"></div>
-    <button class="tb-btn" id="btnOpen">📂 불러오기</button>
-    <button class="tb-btn" id="btnSave">💾 저장</button>
-    <div style="position:relative">
-      <button class="tb-btn primary" id="btnExport">⬇ 내보내기</button>
+    <button class="tb-btn" id="btnOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>불러오기</button>
+    <button class="tb-btn" id="btnSave"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>저장</button>
+    <div class="export-wrap">
+      <button class="tb-btn primary" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>내보내기</button>
       <div class="export-menu hidden" id="exportMenu">
-        <button onclick="exportPNG()">🖼 PNG 이미지</button>
-        <button onclick="exportPDF()">📄 PDF</button>
+        <button onclick="exportPNG()"><span class="em-ico">🖼</span><div><div>PNG 이미지</div></div></button>
+        <button onclick="exportPDF()"><span class="em-ico">📄</span><div><div>PDF 문서</div></div></button>
       </div>
     </div>
   </div>
 
+  <!-- 컨텍스트 바 -->
+  <div class="ctxbar empty" id="ctxbar"></div>
+
   <div class="workspace">
     <!-- 좌측 도구 -->
     <div class="tools" id="toolbar">
-      <button class="tool" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>텍스트</button>
+      <button class="tool" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>텍스트</button>
       <div class="tool-sep"></div>
-      <button class="tool" data-tool="rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/></svg>사각형</button>
-      <button class="tool" data-tool="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>원</button>
-      <button class="tool" data-tool="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>선</button>
-      <button class="tool" data-tool="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>화살표</button>
+      <button class="tool" data-tool="rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="4" y="6" width="16" height="12" rx="2"/></svg>사각형</button>
+      <button class="tool" data-tool="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/></svg>원</button>
+      <button class="tool" data-tool="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="5" y1="19" x2="19" y2="5"/></svg>선</button>
+      <button class="tool" data-tool="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="18" y2="12"/><polyline points="13 7 19 12 13 17"/></svg>화살표</button>
       <div class="tool-sep"></div>
-      <button class="tool" data-tool="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 16l-5-5L5 20"/></svg>이미지</button>
+      <button class="tool" data-tool="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 20"/></svg>이미지</button>
     </div>
 
     <!-- 캔버스 -->
     <div class="canvas-wrap" id="canvasWrap">
       <div class="canvas-stage"><canvas id="c"></canvas></div>
-      <div class="mode-banner hidden" id="modeBanner">📝 슬롯 채우기 모드 — 표시된 칸만 바꿀 수 있어요</div>
+      <div class="mode-banner hidden" id="modeBanner">📝 채우기 모드 — 노란 칸만 바꿀 수 있어요</div>
       <div class="zoombar">
-        <button id="zoomOut">−</button><span id="zoomLabel">100%</span><button id="zoomIn">+</button>
-        <button id="zoomFit" title="화면 맞춤">⊡</button>
+        <button id="zoomOut" title="축소">−</button>
+        <button class="zlabel" id="zoomFit" title="화면 맞춤" style="border-radius:8px;width:auto;padding:0 4px">100%</button>
+        <button id="zoomIn" title="확대">+</button>
       </div>
     </div>
 
-    <!-- 우측 속성 -->
-    <div class="props" id="props">
-      <div class="prop-empty">요소를 선택하거나<br>왼쪽에서 추가해 보세요</div>
-    </div>
+    <!-- 우측 패널 -->
+    <div class="panel" id="panel"></div>
   </div>
 </div>
 
