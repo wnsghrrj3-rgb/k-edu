@@ -1,0 +1,89 @@
+/* ============================================================
+   1학년 1학기 국어 — 4단원 「여러 가지 낱말을 익혀요」 (케이티처)
+   양산 영역 — LESSONS["u4_l{NN}"] 누적 / 다른 단원·과목 .js = read-only
+   g1_korean.html이 자동 로드 후 LESSONS 에 누적.
+   ------------------------------------------------------------
+   ★ 케이티처 = 교사 주도 수업 도구. 로깅 없음(수업 진행용).
+   ★ 기준점 = golden_samples/g1_korean_u4_l05_공개수업_GOLDEN.html
+     골든샘플 5스테이지(동기유발→읽어주기→초성퀴즈→발표→마무리)를
+     케이티처 B 구조 블록으로 재현 + 저작권 안전선 재구성.
+   ★ 저작권: 그림책 본문·인물명·삽화·작가 미게재. read_aloud = 책 비특정
+     + 교사 진행 안내(본문 아님) + placeholder. 음식 낱말은 보편/교과 어휘.
+   ------------------------------------------------------------
+   진척:
+   - l05 「좋아하는 음식을 말해요」 ✅ (첫 타자 · 골든샘플 시스템 재현)
+============================================================ */
+
+  LESSONS["u4_l05"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 5,
+    title: "좋아하는 음식을 말해요",
+    std: "[2국05-01] · [2국02-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 동기유발(음식카드) → 그림책 읽어주기 → 초성퀴즈 → 좋아하는 음식 발표 → 마무리"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"좋아하는 음식을 말해요", subtitle:"4단원 · 5/14차시 · 듣기·말하기"}, suggested_extras:["v_intro", "q_open"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["음식이 나오는 그림책을 함께 들어요", "이야기 속 음식 낱말을 알아맞혀요", "내가 좋아하는 음식을 친구들에게 말해요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"열기", block:"card_quiz", data:{
+      title:"오늘은 맛있는 시간! 🍴",
+      sub:"카드를 눌러서 어떤 음식인지 맞혀 봐요!",
+      cards:[
+        {clue:"동글동글 구멍 뚫린<br>달콤한 빵!", emoji:"🍩", name:"도넛"},
+        {clue:"동그란 빵 사이에<br>고기가 쏘옥!", emoji:"🍔", name:"햄버거"},
+        {clue:"차갑고 달콤한<br>여름의 친구!", emoji:"🍦", name:"아이스크림"}
+      ],
+      outro:"여러분도 좋아하는 음식이 많죠? 😋 오늘은 책 속 친구들이 좋아하는 음식을 만나러 가 봐요! 📖"
+    }, suggested_extras:["q_around", "x_clue"]},
+    {id:"s04", stage:"만나기", block:"read_aloud", data:{
+      title:"그림책을 함께 들어요 📖",
+      author:"교사가 준비한 음식 그림책을 읽어 주세요",
+      pages:[
+        {img_hint:"그림책 표지", quote:"표지를 보여 주며 “무슨 이야기일까요?”\n아이들이 보이는 음식을 자유롭게 말하게 해요."},
+        {img_hint:"동물·가족이 음식을 먹는 장면", quote:"등장하는 친구마다 좋아하는 음식이 달라요.\n“이 친구는 무엇을 좋아하나요?” 물어봐요."},
+        {img_hint:"여러 음식이 나오는 장면", quote:"길쭉한 채소, 빨갛고 매운 음식, 기다란 면…\n어떤 음식이 나오는지 함께 짚어 봐요."},
+        {img_hint:"이야기 마무리 장면", quote:"“여러분은 어떤 음식이 가장 맛있나요?”\n뒤 활동(발표)으로 자연스럽게 이어 줘요."}
+      ],
+      copyright:"📖 교재·그림책 본문과 삽화는 화면에 담지 않았습니다. 교사가 수업 시간에 직접 책을 읽어 주거나 교재 사진을 보여 주세요. (저작권법 제25조 학교 수업 목적 이용)"
+    }, suggested_extras:["t_read", "b_book", "q_connect"]},
+    {id:"s05", stage:"활동", block:"chosung_quiz", data:{
+      title:"이야기에 나온 음식, 초성으로 맞혀 봐요!",
+      sub:"가운데 큰 글자를 보고 무슨 음식일지 생각해요. [정답 보기]를 누르면 답이 나와요",
+      items:[
+        {chosung:"ㅇ ㅇ", answer:"오이", emoji:"🥒", hint:"길쭉하고 초록색인 채소예요!"},
+        {chosung:"ㄱ ㅊ", answer:"김치", emoji:"🥬", hint:"빨갛고 매콤한, 밥이랑 먹는 음식!"},
+        {chosung:"ㄱ ㅅ", answer:"국수", emoji:"🍜", hint:"길~다란 면을 후루룩 먹어요!"},
+        {chosung:"ㅍ ㅈ", answer:"피자", emoji:"🍕", hint:"동그랗고 치즈가 쭉 늘어나요!"},
+        {chosung:"ㅅ ㅍ ㄱ ㅌ", answer:"스파게티", emoji:"🍝", hint:"기다란 면을 돌돌 말아 먹어요!"}
+      ]
+    }, suggested_extras:["g_match", "x_chosung", "e_word"]},
+    {id:"s06", stage:"발표", block:"present", data:{
+      title:"좋아하는 음식 발표하기 🎤",
+      sub:"버튼을 누르면 발표할 친구를 뽑아요. 자신이 좋아하는 음식을 친구들에게 소개해요!",
+      count:24,
+      hint:"“저는 ○○을(를) 좋아해요. 왜냐하면 ~” 처럼 까닭도 말해 봐요",
+      end_msg:"우리 반 친구들이 좋아하는 음식을 모두 들어봤어요. 정말 잘했어요! 👏"
+    }, suggested_extras:["t_present", "q_why", "r_home"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["음식이 나오는 그림책을 함께 들었어요", "이야기 속 음식 낱말을 초성으로 알아맞혔어요", "내가 좋아하는 음식을 친구들에게 말했어요"]}, suggested_extras:["q_reflect", "r_market"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"오늘 배운 낱말로 재미있는 놀이를 해요", body:"낱말 카드로 짝을 맞추거나 이어 말하기 놀이를 해 봐요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"v_intro", type:"video", icon:"🎥", title:"음식 이름 노래·영상", url:"https://www.youtube.com/results?search_query=%EC%9C%A0%EC%95%84+%EC%9D%8C%EC%8B%9D+%EC%9D%B4%EB%A6%84+%EB%85%B8%EB%9E%98", description:"여러 음식 이름을 노래로 만나며 흥미를 여는 영상. 수업 시작 전 분위기 띄우기용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["card_quiz", "cover"]},
+    {id:"q_open", type:"fun_question", icon:"💡", title:"아침에 뭐 먹고 왔나요?", content:"“오늘 아침에 무엇을 먹고 왔어요?” 한두 명에게 물어보며 음식 이야기로 자연스럽게 문을 열어요.", fit_slides:["cover", "card_quiz"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"목표는 ‘말하기’에 둔다", content:"이 차시 핵심은 듣고 읽기보다 ‘자기 경험을 또렷이 말하기’예요. 앞 활동은 발표를 위한 준비라는 걸 교사가 의식하면 시간 배분이 잡혀요.", fit_slides:["objective"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"카드 힌트로 상상하기", content:"카드를 뒤집기 전에 “구멍이 뚫렸대요. 뭘까요?”처럼 힌트만으로 먼저 떠올리게 하면 집중이 살아나요.", fit_slides:["card_quiz"]},
+    {id:"x_clue", type:"misconception", icon:"❓", title:"정답을 너무 빨리 공개 X", content:"카드는 아이들이 충분히 말한 뒤 뒤집어요. 바로 공개하면 ‘맞히는 재미’와 말할 기회가 사라져요.", fit_slides:["card_quiz"]},
+    {id:"t_read", type:"tip", icon:"🧩", title:"읽어주기는 천천히, 발문과 함께", content:"한 장면마다 멈춰 “무슨 음식일까요?”, “너라면 어떨까?” 발문을 끼우면 듣기가 살아 있는 활동이 돼요.", fit_slides:["read_aloud"]},
+    {id:"b_book", type:"book", icon:"📖", title:"음식이 나오는 그림책 고르기", content:"여러 인물이 저마다 좋아하는 음식을 말하는 그림책이면 이 차시에 잘 맞아요. 도서관 그림책 코너에서 음식·식사 주제로 찾아보세요.", source:"학교·지역 도서관 그림책 코너", fit_slides:["read_aloud"]},
+    {id:"q_connect", type:"fun_question", icon:"💡", title:"나와 연결 짓기", content:"“책 속 친구는 이걸 좋아하네요. 그럼 여러분은요?” 책과 자기 경험을 잇는 발문으로 발표를 준비시켜요.", fit_slides:["read_aloud", "present"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"음식과 첫소리 짝짓기", description:"음식 그림과 첫소리(초성)를 짝지어 보세요.", hint:"낱말의 첫 글자 소리를 생각해요.", pairs:[{a:{text:"🥒 오이"}, b:{text:"ㅇ"}}, {a:{text:"🥬 김치"}, b:{text:"ㄱ"}}, {a:{text:"🍕 피자"}, b:{text:"ㅍ"}}, {a:{text:"🍜 국수"}, b:{text:"ㄱ"}}], fit_slides:["chosung_quiz"]},
+    {id:"x_chosung", type:"misconception", icon:"❓", title:"초성을 글자 수와 헷갈리기", content:"‘ㅅ ㅍ ㄱ ㅌ’처럼 초성이 많으면 글자도 많다는 뜻이에요. 초성 칸 수 = 글자 수라는 걸 짚어 주세요.", fit_slides:["chosung_quiz"]},
+    {id:"e_word", type:"extension", icon:"⬆", title:"우리 반 음식 초성 퀴즈 만들기", content:"아이들이 좋아하는 음식으로 초성 문제를 직접 만들어 서로 내보게 하면 낱말 감각이 자라요.", fit_slides:["chosung_quiz", "next_lesson"]},
+    {id:"t_present", type:"tip", icon:"🧩", title:"발표는 한 문장부터", content:"“저는 ○○을 좋아해요” 한 문장이면 충분해요. 잘하는 아이에게는 까닭(왜냐하면)을 한 마디 더 붙이게 해요.", fit_slides:["present"]},
+    {id:"q_why", type:"fun_question", icon:"💡", title:"왜 좋아할까?", content:"“그 음식은 왜 좋아요?”라고 한 번 더 물어 주면 단순 나열이 아니라 자기 생각을 말하는 연습이 돼요.", fit_slides:["present"]},
+    {id:"r_home", type:"real_world", icon:"🌍", title:"우리 집 식탁 이야기", content:"가족이 자주 먹는 음식, 내가 제일 좋아하는 반찬 등 집과 이어지는 발표 거리를 미리 떠올리게 해요.", fit_slides:["present"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"오늘 기억에 남은 친구 음식", content:"“오늘 친구가 말한 음식 중에 먹어 보고 싶은 게 있었나요?” 들은 내용을 되짚으며 듣기 태도를 칭찬해요.", fit_slides:["summary"]},
+    {id:"r_market", type:"real_world", icon:"🌍", title:"시장·마트에서 음식 낱말", content:"시장이나 마트에서 본 음식 이름을 떠올리면 오늘 배운 낱말이 생활과 이어져요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"낱말 카드 미리 만들기", content:"오늘 나온 음식 낱말로 카드를 만들어 두면 다음 차시 낱말 놀이에 바로 쓸 수 있어요.", fit_slides:["next_lesson"]}
+  ]
+};

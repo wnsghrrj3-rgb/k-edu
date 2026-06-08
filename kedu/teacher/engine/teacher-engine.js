@@ -356,6 +356,87 @@
     return false;
   }
 
+  // =================== 국어 케이티처 블록 (교사주도, 로깅 없음) ===================
+  // card_quiz — 동기유발 카드 뒤집기 (교사 클릭으로 정답 공개)
+  function renderCardQuiz(d, sid) {
+    const cards = d.cards || [];
+    const st = getIState(sid, { flipped: cards.map(function () { return false; }) });
+    const grid = cards.map(function (c, i) {
+      const on = st.flipped[i];
+      return '<div class="kt-cq-card' + (on ? ' flipped' : '') + '" data-action="kt-flip" data-slide-id="' + sid + '" data-ci="' + i + '">'
+        + '<div class="kt-cq-inner">'
+        + '<div class="kt-cq-face kt-cq-front"><div class="kt-cq-q">?</div><div class="kt-cq-clue">' + md(c.clue || '') + '</div></div>'
+        + '<div class="kt-cq-face kt-cq-back"><div class="kt-cq-emoji">' + (c.emoji || '') + '</div><div class="kt-cq-name">' + md(c.name || '') + '</div></div>'
+        + '</div></div>';
+    }).join('');
+    return '<h2>' + md(d.title || '') + '</h2>' + (d.sub ? '<p class="kt-sub">' + md(d.sub) + '</p>' : '')
+      + '<div class="center" style="gap:22px;"><div class="kt-cq-grid">' + grid + '</div>'
+      + (d.outro ? '<div class="kt-outro">' + md(d.outro) + '</div>' : '') + '</div>';
+  }
+
+  // read_aloud — 그림책/글 읽어주기 (교재 본문 미게재 · placeholder + 페이지 안내 · 저작권 안전선)
+  function renderReadAloud(d, sid) {
+    const pages = d.pages || [];
+    const st = getIState(sid, { page: 0 });
+    const p = Math.max(0, Math.min(st.page, pages.length - 1));
+    const cur = pages[p] || {};
+    const dots = pages.map(function (_, i) { return '<span class="kt-dot' + (i === p ? ' on' : '') + '"></span>'; }).join('');
+    return '<h2>' + md(d.title || '') + '</h2>' + (d.author ? '<p class="kt-sub">' + md(d.author) + '</p>' : '')
+      + '<div class="center" style="gap:14px;">'
+      + '<div class="kt-ra-counter"><b>' + (p + 1) + '</b> / ' + pages.length + ' 쪽</div>'
+      + '<div class="kt-ra-frame"><div class="image-placeholder" data-prompt="' + (cur.img_hint || '교재 그림') + '">📖 교재 그림 자리<br><span>교사가 교재 사진을 보여 주세요</span></div></div>'
+      + (cur.quote ? '<div class="kt-ra-quote">' + md(cur.quote) + '</div>' : '')
+      + '<div class="kt-ra-controls">'
+      + '<button class="i-btn" data-action="kt-ra-prev" data-slide-id="' + sid + '"' + (p === 0 ? ' disabled' : '') + '>◀ 이전</button>'
+      + '<div class="kt-dots">' + dots + '</div>'
+      + '<button class="i-btn coral" data-action="kt-ra-next" data-slide-id="' + sid + '"' + (p === pages.length - 1 ? ' disabled' : '') + '>다음 ▶</button>'
+      + '</div>'
+      + (d.copyright ? '<div class="kt-copyright">' + md(d.copyright) + '</div>' : '')
+      + '</div>';
+  }
+
+  // chosung_quiz — 초성 퀴즈 (교사 클릭으로 정답 공개, 문항 네비)
+  function renderChosungQuiz(d, sid) {
+    const items = d.items || [];
+    const st = getIState(sid, { idx: 0, revealed: false });
+    const i = Math.max(0, Math.min(st.idx, items.length - 1));
+    const q = items[i] || {};
+    return '<h2>' + md(d.title || '') + '</h2>' + (d.sub ? '<p class="kt-sub">' + md(d.sub) + '</p>' : '')
+      + '<div class="center" style="gap:18px;">'
+      + '<div class="kt-cz-counter"><b>' + (i + 1) + '</b> / ' + items.length + ' 문제</div>'
+      + '<div class="kt-cz-chosung' + (st.revealed ? ' answered' : '') + '">' + (st.revealed ? (q.emoji || '') + ' ' + md(q.answer || '') : md(q.chosung || '')) + '</div>'
+      + (q.hint ? '<div class="kt-cz-hint">' + md(q.hint) + '</div>' : '')
+      + '<div class="kt-cz-controls">'
+      + '<button class="i-btn coral" data-action="kt-cz-reveal" data-slide-id="' + sid + '">' + (st.revealed ? '🙈 다시 숨기기' : '정답 보기 ✨') + '</button>'
+      + '<button class="i-btn" data-action="kt-cz-prev" data-slide-id="' + sid + '"' + (i === 0 ? ' disabled' : '') + '>◀ 이전</button>'
+      + '<button class="i-btn" data-action="kt-cz-next" data-slide-id="' + sid + '"' + (i === items.length - 1 ? ' disabled' : '') + '>다음 ▶</button>'
+      + '</div></div>';
+  }
+
+  // present — 호명 발표 (무작위 뽑기, 중복 방지). 반 명단은 교사가 data.names로 채우거나 번호 기본
+  function renderPresent(d, sid) {
+    const count = d.count || (d.names ? d.names.length : 24);
+    const label = function (n) { return (d.names && d.names[n]) ? md(d.names[n]) : (n + 1) + '번 친구'; };
+    const st = getIState(sid, { picked: [], current: null });
+    const done = st.picked.length >= count;
+    let card;
+    if (done) {
+      card = '<div class="kt-pr-end"><div class="kt-pr-big">🎉 모두 발표했어요! 🎉</div><div class="kt-pr-sub">' + md(d.end_msg || '우리 반 친구들 이야기를 모두 들어봤어요.') + '</div></div>';
+    } else if (st.current === null) {
+      card = '<div class="kt-pr-card"><div class="kt-pr-pl">🎤 발표할 친구</div><div class="kt-pr-name">?</div><div class="kt-pr-hint">' + md(d.hint || '버튼을 눌러 발표할 친구를 뽑아요') + '</div></div>';
+    } else {
+      card = '<div class="kt-pr-card on"><div class="kt-pr-pl">🎤 발표할 친구</div><div class="kt-pr-name pop">' + label(st.current) + '</div><div class="kt-pr-hint">' + md(d.hint || '') + '</div></div>';
+    }
+    return '<h2>' + md(d.title || '') + '</h2>' + (d.sub ? '<p class="kt-sub">' + md(d.sub) + '</p>' : '')
+      + '<div class="center" style="gap:18px;">'
+      + '<div class="kt-pr-counter"><b>' + st.picked.length + '</b> / ' + count + ' 명</div>'
+      + card
+      + '<div class="kt-pr-controls">'
+      + (done ? '' : '<button class="i-btn coral" data-action="kt-pr-next" data-slide-id="' + sid + '" data-count="' + count + '">' + (st.current === null ? '첫 친구 뽑기 🎲' : '다음 친구 🎲') + '</button>')
+      + '<button class="i-btn secondary" data-action="kt-pr-reset" data-slide-id="' + sid + '">처음부터</button>'
+      + '</div></div>';
+  }
+
   function renderSlide(slide) {
     const d = slide.data;
     const revealed = !!slide.revealed;
@@ -567,6 +648,15 @@
         if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
         return `<h2>${md(d.title)}</h2><div class="center" style="gap:16px;">${body}</div>`;
       }
+
+      case 'card_quiz':
+        return renderCardQuiz(d, slide.id);
+      case 'read_aloud':
+        return renderReadAloud(d, slide.id);
+      case 'chosung_quiz':
+        return renderChosungQuiz(d, slide.id);
+      case 'present':
+        return renderPresent(d, slide.id);
 
       case 'arrow_flow': {
         const flowHtml = d.flow.map((f, i) => {
@@ -1282,6 +1372,65 @@
         const initial = JSON.parse(t.dataset.initial);
         const shuffled = [...initial].sort(() => Math.random() - 0.5);
         resetIState(t.dataset.slideId, {order: shuffled});
+        return;
+      }
+      // 국어 동기유발 카드 뒤집기 (자식 요소 클릭도 카드로 위임)
+      const _flipCard = t.closest && t.closest('[data-action="kt-flip"]');
+      if (_flipCard) {
+        const sid = _flipCard.dataset.slideId;
+        const ci = parseInt(_flipCard.dataset.ci, 10);
+        const s = global.interactiveState[sid] || { flipped: [] };
+        const flipped = (s.flipped || []).slice();
+        flipped[ci] = !flipped[ci];
+        setIState(sid, { flipped: flipped });
+        return;
+      }
+      // 국어 읽어주기 페이지 네비
+      if (t.dataset.action === 'kt-ra-prev') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { page: 0 };
+        if (s.page > 0) setIState(sid, { page: s.page - 1 });
+        return;
+      }
+      if (t.dataset.action === 'kt-ra-next') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { page: 0 };
+        setIState(sid, { page: s.page + 1 });
+        return;
+      }
+      // 국어 초성퀴즈
+      if (t.dataset.action === 'kt-cz-reveal') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { idx: 0, revealed: false };
+        setIState(sid, { idx: s.idx, revealed: !s.revealed });
+        return;
+      }
+      if (t.dataset.action === 'kt-cz-prev') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { idx: 0, revealed: false };
+        if (s.idx > 0) setIState(sid, { idx: s.idx - 1, revealed: false });
+        return;
+      }
+      if (t.dataset.action === 'kt-cz-next') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { idx: 0, revealed: false };
+        setIState(sid, { idx: s.idx + 1, revealed: false });
+        return;
+      }
+      // 국어 호명 발표 (무작위·중복방지)
+      if (t.dataset.action === 'kt-pr-next') {
+        const sid = t.dataset.slideId;
+        const count = parseInt(t.dataset.count, 10);
+        const s = global.interactiveState[sid] || { picked: [], current: null };
+        const remaining = [];
+        for (let k = 0; k < count; k++) if (s.picked.indexOf(k) < 0) remaining.push(k);
+        if (remaining.length === 0) return;
+        const pick = remaining[Math.floor(Math.random() * remaining.length)];
+        setIState(sid, { picked: s.picked.concat([pick]), current: pick });
+        return;
+      }
+      if (t.dataset.action === 'kt-pr-reset') {
+        resetIState(t.dataset.slideId, { picked: [], current: null });
         return;
       }
     });
