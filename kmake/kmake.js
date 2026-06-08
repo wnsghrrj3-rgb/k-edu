@@ -269,11 +269,13 @@ function loadAsset(src, glob, cb) {
 function curCats() {
   if (iconMode === 'color') return window.STICKER_CATS || [];
   if (iconMode === 'illust') return [];
+  if (iconMode === 'shape') return window.SHAPE_CATS || [];
   return ICON_CATS;
 }
 function curList() {
   if (iconMode === 'color') return window.STICKERS || [];
   if (iconMode === 'illust') return window.ILLUSTS || [];
+  if (iconMode === 'shape') return window.SHAPES || [];
   return ICONS;
 }
 function buildCatChips() {
@@ -296,7 +298,7 @@ function renderIconGrid() {
   const show = list.slice(0, 400);
   const lineAttr = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   grid.innerHTML = show.map((i, idx) => {
-    const vb = iconMode === 'color' ? '0 0 72 72' : iconMode === 'illust' ? i.vb : '0 0 24 24';
+    const vb = iconMode === 'color' ? '0 0 72 72' : (iconMode === 'illust' || iconMode === 'shape') ? i.vb : '0 0 24 24';
     const attr = iconMode === 'line' ? lineAttr : '';
     return `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="${vb}" ${attr}>${i.s}</svg></button>`;
   }).join('');
@@ -304,8 +306,12 @@ function renderIconGrid() {
     const it = show[+b.dataset.idx];
     if (iconMode === 'color') addSticker(it.s);
     else if (iconMode === 'illust') addIllust(it);
+    else if (iconMode === 'shape') addShape(it);
     else addIcon(it.s);
   });
+}
+function addShape(it) {
+  insertSvg(`<svg viewBox="${it.vb}" xmlns="http://www.w3.org/2000/svg">${it.s}</svg>`, 'shape', Math.min(baseW, baseH) * 0.22);
 }
 function addIcon(inner) {
   insertSvg(`<svg viewBox="0 0 24 24" fill="none" stroke="#2D3748" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`, 'icon', Math.min(baseW, baseH) * 0.18);
@@ -356,8 +362,8 @@ function buildCtxbar(o) {
     if (o.type !== 'line') g += `<div class="ctx-group">${colorBtn('fill', o.fill, '채움')}</div>`;
     g += `<div class="ctx-group">${colorBtn('stroke', o.stroke || '#2D3748', '테두리')}</div>
       <div class="ctx-sep"></div><div class="ctx-group">${stepper('sw', o.strokeWidth || 0, '테두리 굵기')}</div>`;
-  } else { g += o.kmType === 'icon'
-    ? `<div class="ctx-group">${colorBtn('iconcolor', '#2D3748', '아이콘 색')}</div>`
+  } else { g += (o.kmType === 'icon' || o.kmType === 'shape')
+    ? `<div class="ctx-group">${colorBtn('iconcolor', '#5B8EF8', '색 바꾸기')}</div>`
     : `<div class="ctx-group" style="color:var(--gray-l);font-size:13px;padding:0 6px">${o.type === 'image' ? '🖼 이미지' : '➶ 묶음'} 선택됨</div>`; }
   g += `<div class="ctx-sep"></div><div class="ctx-group">
       <button class="ctx-btn" data-act="dup" title="복제"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
