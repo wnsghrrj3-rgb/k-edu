@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이메이크 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&family=Black+Han+Sans&family=Do+Hyeon&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Hahmlet:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --blue:#5B8EF8; --blue-d:#2B6CB0; --blue-l:#EBF4FF;
+  --ink:#1A202C; --gray:#718096; --line:#E2E8F0; --bg:#F5F7FA;
+  --slot:#F59E0B; --slot-l:#FEF3C7; --danger:#E53E3E;
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);overflow:hidden}
+button{font-family:inherit;cursor:pointer}
+.hidden{display:none!important}
+
+/* ========== 시작 화면 ========== */
+#start{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#EBF4FF 0%,#F5F7FA 60%);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:40px 20px}
+.start-logo{font-family:'Jua',sans-serif;font-size:42px;color:var(--blue);margin-top:24px}
+.start-logo .sub{font-family:'Noto Sans KR';font-size:15px;color:var(--gray);font-weight:500;display:block;margin-top:6px}
+.start-tabs{display:flex;gap:8px;margin:32px 0 24px;background:#fff;padding:6px;border-radius:50px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.start-tab{border:none;background:none;padding:10px 26px;border-radius:50px;font-size:15px;font-weight:700;color:var(--gray);transition:all .15s}
+.start-tab.on{background:var(--blue);color:#fff}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;max-width:720px;width:100%}
+.preset-card{background:#fff;border:2px solid var(--line);border-radius:var(--r);padding:18px 14px;text-align:center;transition:all .15s}
+.preset-card:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:0 8px 20px rgba(91,142,248,.15)}
+.preset-thumb{width:100%;height:88px;margin-bottom:12px;display:flex;align-items:center;justify-content:center}
+.preset-thumb .paper{background:#fff;border:1.5px solid var(--line);border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.preset-name{font-size:14px;font-weight:700}
+.preset-dim{font-size:11px;color:var(--gray);margin-top:3px}
+.preset-custom{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.preset-custom input{width:54px;padding:5px;border:1.5px solid var(--line);border-radius:8px;text-align:center;font-family:inherit}
+
+/* ========== 에디터 ========== */
+#editor{display:flex;flex-direction:column;height:100%}
+.topbar{height:54px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;z-index:20}
+.topbar .logo{font-family:'Jua';font-size:22px;color:var(--blue);margin-right:8px}
+.topbar .home{color:var(--gray);text-decoration:none;font-size:13px;font-weight:500;padding:6px 10px;border-radius:8px}
+.topbar .home:hover{background:var(--bg)}
+.mode-toggle{display:flex;background:var(--bg);border-radius:50px;padding:4px;gap:2px}
+.mode-toggle button{border:none;background:none;padding:7px 16px;border-radius:50px;font-size:13px;font-weight:700;color:var(--gray)}
+.mode-toggle button.on{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.mode-toggle button.on.fill{color:var(--slot)}
+.spacer{flex:1}
+.tb-btn{height:36px;padding:0 14px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:13px;font-weight:500;color:var(--ink);display:inline-flex;align-items:center;gap:5px;transition:all .15s}
+.tb-btn:hover{border-color:var(--blue);color:var(--blue)}
+.tb-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tb-btn.primary:hover{opacity:.88;color:#fff}
+.export-menu{position:absolute;top:44px;right:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;z-index:30;min-width:150px}
+.export-menu button{display:block;width:100%;text-align:left;border:none;background:none;padding:9px 12px;border-radius:7px;font-family:inherit;font-size:13px;color:var(--ink)}
+.export-menu button:hover{background:var(--blue-l);color:var(--blue)}
+
+.workspace{flex:1;display:flex;min-height:0}
+
+/* 좌측 도구 */
+.tools{width:72px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:6px;flex-shrink:0}
+.tool{width:52px;height:52px;border:none;background:none;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--gray);font-size:10px;font-weight:500;transition:all .12s}
+.tool:hover{background:var(--blue-l);color:var(--blue)}
+.tool svg{width:22px;height:22px}
+.tool-sep{width:36px;height:1px;background:var(--line);margin:4px 0}
+
+/* 캔버스 영역 */
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;background:#EDF0F5;padding:32px;position:relative}
+.canvas-stage{box-shadow:0 6px 30px rgba(0,0,0,.12);background:#fff}
+.mode-banner{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--slot-l);color:#92400E;padding:7px 18px;border-radius:50px;font-size:13px;font-weight:700;box-shadow:0 2px 10px rgba(245,158,11,.25);display:flex;align-items:center;gap:7px}
+.zoombar{position:absolute;bottom:16px;right:20px;background:#fff;border-radius:50px;box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;align-items:center;padding:5px 8px;gap:4px}
+.zoombar button{width:30px;height:30px;border:none;background:none;border-radius:50%;font-size:18px;color:var(--gray)}
+.zoombar button:hover{background:var(--bg)}
+.zoombar span{font-size:12px;color:var(--gray);min-width:42px;text-align:center;font-weight:500}
+
+/* 우측 속성 */
+.props{width:264px;background:#fff;border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:16px}
+.props h3{font-size:13px;color:var(--gray);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.prop-empty{color:#A0AEC0;font-size:13px;text-align:center;padding:40px 10px;line-height:1.7}
+.prop-row{margin-bottom:14px}
+.prop-row label{display:block;font-size:12px;color:var(--gray);font-weight:500;margin-bottom:6px}
+.prop-row select,.prop-row input[type=text],.prop-row textarea{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;outline:none}
+.prop-row select:focus,.prop-row input:focus,.prop-row textarea:focus{border-color:var(--blue)}
+.prop-row textarea{resize:vertical;min-height:54px}
+.inline2{display:flex;gap:8px}
+.inline2>*{flex:1}
+.color-row{display:flex;align-items:center;gap:10px}
+.color-row input[type=color]{width:40px;height:32px;border:1.5px solid var(--line);border-radius:8px;padding:2px;background:#fff;cursor:pointer}
+.btn-grp{display:flex;gap:6px}
+.btn-grp button{flex:1;height:34px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:13px;color:var(--ink);display:flex;align-items:center;justify-content:center}
+.btn-grp button:hover{border-color:var(--blue);color:var(--blue)}
+.btn-grp button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.slot-box{background:var(--slot-l);border:1.5px solid #FCD34D;border-radius:10px;padding:12px;margin-top:6px}
+.slot-box .stitle{font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.slot-toggle{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#78350F}
+.switch{position:relative;width:42px;height:24px}
+.switch input{opacity:0;width:0;height:0}
+.switch .track{position:absolute;inset:0;background:#D1D5DB;border-radius:50px;transition:.2s}
+.switch .track:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+.track{background:var(--slot)}
+.switch input:checked+.track:before{transform:translateX(18px)}
+.prop-actions{display:flex;gap:6px;margin-top:8px}
+.prop-actions button{flex:1;height:36px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-size:12px;color:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.prop-actions button:hover{border-color:var(--blue);color:var(--blue)}
+.prop-actions button.del:hover{border-color:var(--danger);color:var(--danger)}
+.divider{height:1px;background:var(--line);margin:16px 0}
+
+/* 토스트 */
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 22px;border-radius:50px;font-size:14px;font-weight:500;opacity:0;transition:all .25s;z-index:200;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ========== 시작 화면 ========== -->
+<div id="start">
+  <div class="start-logo">케이메이크<span class="sub">선생님도 학생도, 무료로 뚝딱 만드는 K-edu 디자인 도구</span></div>
+  <div class="start-tabs">
+    <button class="start-tab on" data-aud="teacher">👩‍🏫 선생님</button>
+    <button class="start-tab" data-aud="student">🎒 학생</button>
+  </div>
+  <div class="preset-grid" id="presetGrid"></div>
+</div>
+
+<!-- ========== 에디터 ========== -->
+<div id="editor" class="hidden">
+  <div class="topbar">
+    <span class="logo">케이메이크</span>
+    <a href="/" class="home">← K-edu 홈</a>
+    <div class="mode-toggle" id="modeToggle">
+      <button class="on" data-mode="edit">✏️ 자유편집</button>
+      <button data-mode="fill">📝 슬롯 채우기</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="tb-btn" id="btnOpen">📂 불러오기</button>
+    <button class="tb-btn" id="btnSave">💾 저장</button>
+    <div style="position:relative">
+      <button class="tb-btn primary" id="btnExport">⬇ 내보내기</button>
+      <div class="export-menu hidden" id="exportMenu">
+        <button onclick="exportPNG()">🖼 PNG 이미지</button>
+        <button onclick="exportPDF()">📄 PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <!-- 좌측 도구 -->
+    <div class="tools" id="toolbar">
+      <button class="tool" data-tool="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>텍스트</button>
+      <div class="tool-sep"></div>
+      <button class="tool" data-tool="rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/></svg>사각형</button>
+      <button class="tool" data-tool="circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>원</button>
+      <button class="tool" data-tool="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>선</button>
+      <button class="tool" data-tool="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>화살표</button>
+      <div class="tool-sep"></div>
+      <button class="tool" data-tool="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M21 16l-5-5L5 20"/></svg>이미지</button>
+    </div>
+
+    <!-- 캔버스 -->
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="canvas-stage"><canvas id="c"></canvas></div>
+      <div class="mode-banner hidden" id="modeBanner">📝 슬롯 채우기 모드 — 표시된 칸만 바꿀 수 있어요</div>
+      <div class="zoombar">
+        <button id="zoomOut">−</button><span id="zoomLabel">100%</span><button id="zoomIn">+</button>
+        <button id="zoomFit" title="화면 맞춤">⊡</button>
+      </div>
+    </div>
+
+    <!-- 우측 속성 -->
+    <div class="props" id="props">
+      <div class="prop-empty">요소를 선택하거나<br>왼쪽에서 추가해 보세요</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="imgInput" accept="image/*" class="hidden">
+<input type="file" id="jsonInput" accept=".kmake,.json,application/json" class="hidden">
+
+<script src="kmake.js"></script>
+</body>
+</html>
