@@ -48,7 +48,21 @@ let undoStack = [], redoStack = [], lockHistory = false, imgTarget = null;
 /* ============ 시작 화면 ============ */
 const startEl = document.getElementById('start');
 const grid = document.getElementById('presetGrid');
+function renderTemplates() {
+  const wrap = document.getElementById('tplWrap');
+  const tpls = Object.entries(KM_TEMPLATES).filter(([k, t]) => t.aud === audience);
+  if (!tpls.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  wrap.querySelector('.tpl-grid').innerHTML = tpls.map(([k, t]) =>
+    `<button class="tpl-card" data-tpl="${k}">
+      <div class="tpl-thumb">${t.svg}</div>
+      <div class="tpl-name">${t.name}</div>
+      <div class="tpl-badge">✨ 바로 쓰기</div>
+    </button>`).join('');
+  wrap.querySelectorAll('.tpl-card').forEach(c => c.onclick = () => openTemplate(c.dataset.tpl));
+}
 function renderPresets() {
+  renderTemplates();
   const list = PRESETS[audience];
   let html = list.map((p, i) => `
     <button class="preset-card" data-i="${i}">
@@ -84,6 +98,38 @@ function openEditor(w, h) {
   startEl.classList.add('hidden');
   document.getElementById('editor').classList.remove('hidden');
   initCanvas();
+}
+function openTemplate(key) {
+  const t = KM_TEMPLATES[key]; if (!t) return;
+  openEditor(t.w, t.h);
+  loadSVGTemplate(t);
+}
+function loadSVGTemplate(t) {
+  fabric.loadSVGFromString(t.svg, (objects) => {
+    lockHistory = true;
+    let ti = 0;
+    objects.forEach(o => {
+      let obj = o;
+      // SVG <text>는 static이라 편집 불가 → 편집·슬롯 가능한 IText로 변환 (위치/스타일 그대로 복사)
+      if (o.type === 'text' || o.type === 'i-text') {
+        obj = new fabric.IText(o.text, {
+          left: o.left, top: o.top, originX: o.originX, originY: o.originY,
+          fontSize: o.fontSize, fontFamily: o.fontFamily, fill: o.fill,
+          fontWeight: o.fontWeight, fontStyle: o.fontStyle, textAlign: o.textAlign,
+          charSpacing: o.charSpacing, angle: o.angle, opacity: o.opacity,
+          editingBorderColor: '#5B8EF8',
+        });
+        const label = t.textSlots && t.textSlots[ti];
+        if (label) obj.kmSlot = { on: true, label: label };
+        ti++;
+      }
+      canvas.add(obj);
+    });
+    lockHistory = false;
+    canvas.requestRenderAll();
+    undoStack = []; redoStack = []; pushHistory();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
+  });
 }
 function initCanvas() {
   const el = document.getElementById('c'); el.width = baseW; el.height = baseH;
