@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>케이랩 교구 — 학년별</title>
+<title>케이랩 교구 — 과목별</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;}
@@ -14,6 +14,7 @@
   .grades{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
   .gtab{font-size:22px;padding:12px 26px;border-radius:16px;border:3px solid #1565C0;background:#fff;color:#1565C0;cursor:pointer;font-family:inherit;font-weight:800;}
   .gtab.on{background:#1565C0;color:#fff;}
+  .grp{flex-basis:100%;width:100%;font-size:20px;font-weight:800;color:#1565C0;margin:16px 4px 2px;}
   .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:22px;}
   .card{background:#fff;border-radius:18px;padding:18px;border:3px solid transparent;cursor:pointer;box-shadow:0 2px 10px rgba(21,101,192,.08);transition:transform .1s,border-color .15s;}
   .card:hover{transform:translateY(-3px);border-color:#1565C0;}
@@ -30,7 +31,7 @@
 <body>
 <div class="wrap">
   <h1>🧊 케이랩 교구</h1>
-  <p class="sub">학년을 고르면 그 학년에서 쓸 수 있는 교구가 나와요. 교구를 누르면 바로 띄웁니다.</p>
+  <p class="sub">과목을 고르면 그 과목 교구가 나와요. 교구를 누르면 바로 띄웁니다.</p>
   <div class="grades" id="grades"></div>
   <div class="cards" id="cards"></div>
   <div class="mount"><div id="mountEl" style="width:100%;"><div class="ph">위에서 교구를 골라 주세요</div></div></div>
@@ -57,68 +58,64 @@
 <script src="engine/tools/ratio.js"></script>
 <script src="engine/tools/circuit.js"></script>
 <script>
-// 학년별 교구 카탈로그 (tool=null 이면 준비 중)
+// 과목별 교구 카탈로그 (도구당 대표 1개, 영역으로 묶음)
 var CATALOG = {
-  1: [
-    {nm:'자릿값 수모형', ds:'10개씩 묶어 세기 (십몇)', tool:'place_value', cfg:{start:12,max:19}},
-    {nm:'입체도형 굴리기', ds:'상자·기둥·공 굴리고 세우기', tool:'shape3d', cfg:{shapes:['box','cylinder','ball'],actions:['roll','flip'],terms:'daily'}},
-    {nm:'십 배열판(텐프레임)', ds:'10을 한눈에, 가르기·모으기', tool:'tenframe', cfg:{num:7,frames:2}}
+  math: [
+    {group:'수와 연산', items:[
+      {nm:'자릿값 수모형', ds:'10개씩 묶어 자리값 보기', tool:'place_value', cfg:{start:24,max:99}},
+      {nm:'십 배열판(텐프레임)', ds:'10을 한눈에, 가르기·모으기', tool:'tenframe', cfg:{num:7,frames:2}},
+      {nm:'곱셈 배열판', ds:'몇 줄 × 몇 개 = 곱, 교환법칙', tool:'array', cfg:{rows:4,cols:6}},
+      {nm:'나눗셈 모형', ds:'똑같이 나눠 담기, 나머지', tool:'division', cfg:{total:12,groups:3}},
+      {nm:'분수 — 4가지 표상', ds:'면적·수직선·묶음·나눗셈 + 비교·통분·퀴즈', tool:'fraction', cfg:{denom:4,showQuiz:true}},
+      {nm:'소수 모형', ds:'100칸으로 소수=분수 보기', tool:'decimal', cfg:{value:0.37}},
+      {nm:'비와 비율', ds:'두 양의 비·기약비·백분율', tool:'ratio', cfg:{a:2,b:3}}
+    ]},
+    {group:'도형', items:[
+      {nm:'입체도형', ds:'직육면체·원기둥·구 굴리고 세우기', tool:'shape3d', cfg:{shapes:['box','cylinder','ball'],actions:['roll','flip'],terms:'math'}},
+      {nm:'대칭(선·점)', ds:'한쪽 그리면 대칭 자동 완성', tool:'symmetry', cfg:{n:8,mode:'line',axis:'v'}},
+      {nm:'전개도·겨냥도', ds:'전개도가 입체로 접히는 과정', tool:'net', cfg:{fold:0}},
+      {nm:'원·컴퍼스', ds:'반지름·지름·원주, 원의 넓이', tool:'circle', cfg:{mode:'draw',r:4}}
+    ]},
+    {group:'측정', items:[
+      {nm:'각도기', ds:'양쪽 눈금·각 만들고 재고 분류', tool:'angle', cfg:{deg:50}},
+      {nm:'넓이 격자', ds:'단위넓이로 채워 넓이·둘레', tool:'area', cfg:{w:5,h:3}},
+      {nm:'쌓기나무·부피', ds:'위·앞·옆 보기, 부피 세기', tool:'cubes', cfg:{}}
+    ]},
+    {group:'규칙성', items:[
+      {nm:'규칙·패턴', ds:'패턴 만들고 규칙·다음 찾기', tool:'pattern', cfg:{preset:[0,1,0,1,0,1]}}
+    ]},
+    {group:'자료와 가능성', items:[
+      {nm:'그래프', ds:'그림·막대·꺾은선·원·띠그래프', tool:'graph', cfg:{title:'좋아하는 운동',unit:'명',types:['picto','bar','line','pie','band']}},
+      {nm:'가능성', ds:'동전·주사위 여러 번 굴려 빈도', tool:'probability', cfg:{type:'coin'}}
+    ]}
   ],
-  2: [
-    {nm:'곱셈 배열판', ds:'몇 줄 × 몇 개 = 곱', tool:'array', cfg:{rows:3,cols:4}},
-    {nm:'그래프(그림·막대)', ds:'좋아하는 것 세어 그래프로', tool:'graph', cfg:{title:'좋아하는 과일',unit:'명',types:['picto','bar']}},
-    {nm:'자릿값(두 자리)', ds:'두 자리 수 만들기', tool:'place_value', cfg:{start:24,max:99}},
-    {nm:'규칙·패턴', ds:'패턴 만들고 규칙·다음 찾기', tool:'pattern', cfg:{preset:[0,1,0,1,0,1]}}
-  ],
-  3: [
-    {nm:'분수 — 4가지 표상', ds:'면적·수직선·묶음·나눗셈으로 자유롭게 보기', tool:'fraction', cfg:{denom:4}},
-    {nm:'분수 퀴즈(양방향)', ds:'만들기↔맞히기, ✓ 확인·동치 인정', tool:'fraction', cfg:{mode:'quiz'}},
-    {nm:'곱셈 배열판', ds:'곱셈 구조·교환법칙', tool:'array', cfg:{rows:4,cols:6}},
-    {nm:'막대그래프', ds:'자료를 막대로 나타내기', tool:'graph', cfg:{title:'반 친구 조사',unit:'명',types:['bar','picto']}},
-    {nm:'나눗셈 모형', ds:'똑같이 나눠 담기, 나머지', tool:'division', cfg:{total:12,groups:3}},
-    {nm:'원·컴퍼스', ds:'반지름·지름·원주 그리기', tool:'circle', cfg:{mode:'draw',r:4}}
-  ],
-  4: [
-    {nm:'분수(가분수·대분수)', ds:'7/4 ⇄ 1과 3/4, 자연수', tool:'fraction', cfg:{denom:4,numer:7}},
-    {nm:'각도기', ds:'각 만들고 재고 분류하기', tool:'angle', cfg:{deg:50}},
-    {nm:'꺾은선그래프', ds:'변화를 선으로', tool:'graph', cfg:{title:'기온 변화',unit:'도',types:['line','bar']}},
-    {nm:'소수 모형', ds:'100칸으로 소수=분수 보기', tool:'decimal', cfg:{value:0.37}},
-    {nm:'넓이 격자', ds:'단위넓이로 채워 넓이·둘레', tool:'area', cfg:{w:5,h:3}}
-  ],
-  5: [
-    {nm:'분수 비교·동치·통분', ds:'분모 다르면 같은 크기로 맞춰 비교', tool:'fraction', cfg:{mode:'compare',a:{denom:4,numer:3},b:{denom:3,numer:2}}},
-    {nm:'쌓기나무·부피', ds:'위·앞·옆 보기, 부피 세기', tool:'cubes', cfg:{}},
-    {nm:'입체도형(수학용어)', ds:'직육면체·원기둥·구', tool:'shape3d', cfg:{shapes:['box','cylinder','ball'],actions:['roll','flip'],terms:'math'}},
-    {nm:'대칭(선·점)', ds:'한쪽 그리면 대칭 자동 완성', tool:'symmetry', cfg:{n:8,mode:'line',axis:'v'}},
-    {nm:'전개도·겨냥도', ds:'전개도가 입체로 접히는 과정', tool:'net', cfg:{fold:0}}
-  ],
-  6: [
-    {nm:'🔌 전기 회로 (과학·1호)', ds:'직렬↔병렬·전지·전구 바꾸며 직접 실험', tool:'circuit', cfg:{mode:'series',bulbs:2}},
-    {nm:'그래프(원·띠)', ds:'비율을 원·띠로', tool:'graph', cfg:{title:'좋아하는 운동',unit:'명',types:['pie','band','bar']}},
-    {nm:'쌓기나무 부피', ds:'직접 쌓아 부피 구하기', tool:'cubes', cfg:{shape:[]}},
-    {nm:'원주율·원의 넓이', ds:'원을 잘라 펼쳐 직사각형으로', tool:'circle', cfg:{mode:'area',r:4,pieces:8}},
-    {nm:'비와 비율', ds:'두 양의 비·기약비·백분율', tool:'ratio', cfg:{a:2,b:3}},
-    {nm:'가능성', ds:'동전·주사위 여러 번 굴려 빈도', tool:'probability', cfg:{type:'coin'}}
+  science: [
+    {group:'에너지 · 전기', items:[
+      {nm:'🔌 전기 회로', ds:'직렬↔병렬·전지·전구 바꾸며 직접 실험', tool:'circuit', cfg:{mode:'series',bulbs:2}}
+    ]}
   ]
 };
 
 var grades=document.getElementById('grades'), cardsEl=document.getElementById('cards'), mountEl=document.getElementById('mountEl');
-var cleanup=null, cur=1;
+var cleanup=null, cur='math';
 
-[1,2,3,4,5,6].forEach(function(g){
-  var b=document.createElement('button'); b.className='gtab'+(g===1?' on':''); b.textContent=g+'학년';
-  b.onclick=function(){cur=g;document.querySelectorAll('.gtab').forEach(function(x,i){x.classList.toggle('on',i+1===g);});renderCards();};
+var SUBJECTS=[{key:'math',label:'수학'},{key:'science',label:'과학'}];
+SUBJECTS.forEach(function(sub,i){
+  var b=document.createElement('button'); b.className='gtab'+(i===0?' on':''); b.textContent=sub.label;
+  b.onclick=function(){cur=sub.key;document.querySelectorAll('.gtab').forEach(function(x){x.classList.toggle('on',x.textContent===sub.label);});renderCards();};
   grades.appendChild(b);
 });
 
 function renderCards(){
   cardsEl.innerHTML='';
-  (CATALOG[cur]||[]).forEach(function(item){
-    var c=document.createElement('div'); c.className='card'+(item.tool?'':' soon');
-    c.innerHTML='<div class="nm">'+item.nm+'</div><div class="ds">'+item.ds+'</div>'
-      +'<div class="badge">'+(item.tool?'열기':'준비 중')+'</div>';
-    if(item.tool) c.onclick=function(){mount(item.tool,item.cfg);};
-    cardsEl.appendChild(c);
+  (CATALOG[cur]||[]).forEach(function(grp){
+    var h=document.createElement('div'); h.className='grp'; h.textContent=grp.group; cardsEl.appendChild(h);
+    grp.items.forEach(function(item){
+      var c=document.createElement('div'); c.className='card'+(item.tool?'':' soon');
+      c.innerHTML='<div class="nm">'+item.nm+'</div><div class="ds">'+item.ds+'</div><div class="badge">'+(item.tool?'열기':'준비 중')+'</div>';
+      if(item.tool) c.onclick=function(){mount(item.tool,item.cfg);};
+      cardsEl.appendChild(c);
+    });
   });
 }
 function mount(tool,cfg){
