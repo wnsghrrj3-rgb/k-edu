@@ -1,14 +1,14 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 자릿값 수모형 (place_value) v1
+   케이랩 도구 모듈 — 자릿값 수모형 (place_value) v2
    초점 = "10이 되면 한 자리 올라간다"(십진법)를 눈으로 보게 하는 것.
      · 낱개를 텐프레임(2×5)에 하나씩 채운다.
      · 낱개 10칸이 다 차면 [10개 묶기] 버튼이 살아나고(반짝), 누르면
        낱개 10개가 십묶음 막대 하나로 스르륵 변신한다. (← 디지털 우위 핵심)
      · 십묶음을 [묶음 풀기]로 도로 낱개 10개로 풀 수 있다(가역).
      · 항상 큰 글씨로 "10개씩 묶음 N개와 낱개 M개 = 값" 표시.
-   실물 연결모형은 손으로 끼우고 빼야 하지만, 여기선 묶고 푸는 게
-   즉각·깨끗·반복 가능 — 그래서 교구화 기준("디지털이 실물보다 결정적으로
-   나은 것만")을 만족한다.
+   v2: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
+     · 미션 — "10개 채워 묶기", "13 만들기", "묶음 풀어 보기" 등 단계 과제.
+     · 퀴즈 — 수모형을 보여 주고 "이 수는 얼마?" 선택지 출제.
 
    - 의존: window.KLab (THREE 불필요)
    - config 예시:
@@ -16,73 +16,133 @@
        5단원 50까지:     { start:24, max:50 }
        start : 처음 보여줄 수 (기본 0)
        max   : 다룰 수 있는 최댓값 (기본 50, 묶음 5개까지)
+       mode  : "free" | "mission" | "quiz" (기본 free)
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
 
-  // 색 (전자칠판에서 또렷하게)
   var C = {
-    tenBar:    '#2B8A3E',   // 십묶음 막대 채움
-    tenLine:   '#1B5E20',   // 막대 칸 구분선/외곽
-    one:       '#FF8A3D',   // 낱개 큐브
-    oneLine:   '#E8590C',   // 낱개 외곽
-    frame:     '#9AB7D4',   // 텐프레임 칸 점선
-    glow:      '#FFD43B'    // 10칸 다 찼을 때 강조
+    tenBar:    '#2B8A3E',
+    tenLine:   '#1B5E20',
+    one:       '#FF8A3D',
+    oneLine:   '#E8590C',
+    frame:     '#9AB7D4',
+    glow:      '#FFD43B'
   };
 
   window.KLab.register('place_value', function (el, config) {
+    var ui = window.KLab.ui;
     var max   = (typeof config.max === 'number' && config.max > 0) ? config.max : 50;
     var start = (typeof config.start === 'number' && config.start >= 0) ? config.start : 0;
     if (start > max) start = max;
 
     var tens = Math.floor(start / 10);
     var ones = start - tens * 10;
+    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
 
-    // ---------- UI 골격 (shape3d와 통일된 큰 버튼·큰 글씨) ----------
+    // ---------- 미션 (max에 맞는 것만) ----------
+    var MISSIONS = [
+      { need: 10, text: '낱개를 <b style="color:#7048E8;">10개</b> 채우고 <b style="color:#2B8A3E;">📦 10개 묶기</b>를 눌러 봐요!',
+        check: function (act) { return act === 'bundle'; } },
+      { need: 13, text: '<b style="color:#7048E8;">13</b>을 만들어 봐요 — 묶음 1개와 낱개 3개!',
+        check: function () { return tens === 1 && ones === 3; } },
+      { need: 10, text: '<b style="color:#2B8A3E;">묶음 풀기</b>를 눌러 묶음을 도로 낱개로 풀어 봐요 (가역!)',
+        check: function (act) { return act === 'unbundle'; } },
+      { need: 24, text: '<b style="color:#7048E8;">24</b>를 만들어 봐요 — 묶음 몇 개, 낱개 몇 개일까요?',
+        check: function () { return tens === 2 && ones === 4; } },
+      { need: 31, text: '<b style="color:#7048E8;">31</b>을 만들어 봐요!',
+        check: function () { return tens === 3 && ones === 1; } }
+    ].filter(function (m) { return m.need <= max; });
+    var mStep = 0, mDone = false, mLock = false;
+
+    // ---------- 퀴즈 ----------
+    var qT = 1, qO = 2, qKind = 'value', qScore = 0, qCount = 0, qLock = false;
+    function newQuiz() {
+      var maxT = Math.min(Math.floor(max / 10), 5);
+      qT = (maxT > 0) ? Math.floor(Math.random() * (maxT + 1)) : 0;
+      qO = Math.floor(Math.random() * 10);
+      if (qT * 10 + qO > max) { qT = Math.max(0, qT - 1); }
+      if (qT === 0 && qO < 3) qO = 3 + Math.floor(Math.random() * 7);
+      qKind = (Math.random() < 0.6) ? 'value' : 'tens';
+      qLock = false;
+    }
+    function qAnswer() { return qKind === 'value' ? (qT * 10 + qO) : qT; }
+    function quizChoices() {
+      var ans = qAnswer(), set = {}, out = [ans]; set[ans] = 1;
+      var step = (qKind === 'value') ? [10, -10, 1, -1, 9, 11] : [1, -1, 2, -2, 3];
+      for (var i = 0; i < step.length && out.length < 4; i++) {
+        var d = ans + step[i];
+        if (d >= 0 && d <= Math.max(max, 9) && !set[d]) { set[d] = 1; out.push(d); }
+      }
+      while (out.length < 4) { var r = ans + 1 + Math.floor(Math.random() * 5); if (!set[r]) { set[r] = 1; out.push(r); } }
+      out.sort(function (a, b) { return a - b; });
+      return out.map(function (v) { return { v: v }; });
+    }
+
     var btnBase = 'font-size:28px;padding:16px 34px;border-radius:16px;border:3px solid #1565C0;'
                 + 'cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s,box-shadow .15s,opacity .15s;';
+    var stage, statusEl, btns = {}, busy = false;
 
-    el.innerHTML =
-      '<style>'
-      + '.pv-btn:active{transform:translateY(2px);}'
-      + '.pv-btn[disabled]{opacity:.4;cursor:not-allowed;}'
-      + '.pv-btn.pv-ready{animation:pvPulse 1s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,212,59,.7);}'
-      + '@keyframes pvPulse{0%{box-shadow:0 0 0 0 rgba(255,212,59,.75);}70%{box-shadow:0 0 0 16px rgba(255,212,59,0);}100%{box-shadow:0 0 0 0 rgba(255,212,59,0);}}'
-      + '.pv-cell{transition:transform .25s ease, opacity .25s ease;transform-origin:center;}'
-      + '.pv-pop{animation:pvPop .32s cubic-bezier(.2,1.5,.4,1) both;}'
-      + '@keyframes pvPop{0%{transform:scale(0);}100%{transform:scale(1);}}'
-      + '.pv-bar{transition:opacity .3s ease;}'
-      + '.pv-bar-pop{animation:pvBarPop .4s cubic-bezier(.2,1.4,.4,1) both;transform-origin:bottom center;}'
-      + '@keyframes pvBarPop{0%{transform:scaleY(0);opacity:0;}100%{transform:scaleY(1);opacity:1;}}'
-      + '.pv-suck{animation:pvSuck .42s ease-in both;}'
-      + '@keyframes pvSuck{0%{transform:scale(1);opacity:1;}100%{transform:scale(.2) translateY(-30px);opacity:0;}}'
-      + '.pv-frameglow rect.pv-fcell{stroke:' + C.glow + ';stroke-width:4;}'
-      + '</style>'
-      + '<div class="pv-controls" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
+    function build() {
+      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', ctrlRow = '', foot = '';
+      var controls =
+        '<div class="pv-controls" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
         + '<button class="pv-btn" data-act="plus"  style="' + btnBase + 'background:#1565C0;color:#fff;">＋ 낱개</button>'
         + '<button class="pv-btn" data-act="minus" style="' + btnBase + 'background:#fff;color:#1565C0;">－ 낱개</button>'
         + '<button class="pv-btn" data-act="bundle" style="' + btnBase + 'background:#2B8A3E;color:#fff;border-color:#2B8A3E;">📦 10개 묶기</button>'
         + '<button class="pv-btn" data-act="unbundle" style="' + btnBase + 'background:#fff;color:#2B8A3E;border-color:#2B8A3E;">묶음 풀기</button>'
         + '<button class="pv-btn" data-act="reset" style="font-size:28px;padding:16px 34px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#555;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 처음으로</button>'
-      + '</div>'
-      + '<div class="pv-stage" style="width:100%;height:50vh;min-height:340px;'
-        + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
-        + 'border-radius:20px;overflow:hidden;'
-        + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
-      + '<div class="pv-status" style="text-align:center;margin-top:14px;font-weight:800;line-height:1.3;'
-        + 'font-family:inherit;color:#1B3A57;"></div>';
+        + '</div>';
+      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); ctrlRow = controls; }
+      else if (mode === 'quiz') {
+        bar = ui.quizBar(qKind === 'value' ? '이 수모형이 나타내는 수는 얼마일까요?' : '10개씩 묶음은 몇 개일까요?', qScore, qCount);
+        foot = ui.choices(quizChoices());
+      }
+      else ctrlRow = controls;
 
-    var stage  = el.querySelector('.pv-stage');
-    var statusEl = el.querySelector('.pv-status');
-    var btns = {};
-    el.querySelectorAll('.pv-btn').forEach(function (b) { btns[b.dataset.act] = b; });
+      el.innerHTML =
+        '<style>'
+        + '.pv-btn:active,.kl-choice:active{transform:translateY(2px);}'
+        + '.pv-btn[disabled]{opacity:.4;cursor:not-allowed;}'
+        + '.pv-btn.pv-ready{animation:pvPulse 1s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,212,59,.7);}'
+        + '@keyframes pvPulse{0%{box-shadow:0 0 0 0 rgba(255,212,59,.75);}70%{box-shadow:0 0 0 16px rgba(255,212,59,0);}100%{box-shadow:0 0 0 0 rgba(255,212,59,0);}}'
+        + '.pv-cell{transition:transform .25s ease, opacity .25s ease;transform-origin:center;}'
+        + '.pv-pop{animation:pvPop .32s cubic-bezier(.2,1.5,.4,1) both;}'
+        + '@keyframes pvPop{0%{transform:scale(0);}100%{transform:scale(1);}}'
+        + '.pv-bar{transition:opacity .3s ease;}'
+        + '.pv-bar-pop{animation:pvBarPop .4s cubic-bezier(.2,1.4,.4,1) both;transform-origin:bottom center;}'
+        + '@keyframes pvBarPop{0%{transform:scaleY(0);opacity:0;}100%{transform:scaleY(1);opacity:1;}}'
+        + '.pv-suck{animation:pvSuck .42s ease-in both;}'
+        + '@keyframes pvSuck{0%{transform:scale(1);opacity:1;}100%{transform:scale(.2) translateY(-30px);opacity:0;}}'
+        + '.pv-frameglow rect.pv-fcell{stroke:' + C.glow + ';stroke-width:4;}'
+        + '.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}'
+        + '</style>'
+        + top + bar + ctrlRow
+        + '<div class="kl-stage-host" style="position:relative;"><div class="pv-stage" style="width:100%;height:' + (mode === 'quiz' ? '44vh' : '50vh') + ';min-height:320px;'
+          + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
+          + 'border-radius:20px;overflow:hidden;'
+          + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div></div>'
+        + foot
+        + '<div class="pv-status" style="text-align:center;margin-top:14px;font-weight:800;line-height:1.3;'
+          + 'font-family:inherit;color:#1B3A57;"></div>';
 
-    var busy = false;   // 애니메이션 중 입력 잠금
+      stage = el.querySelector('.pv-stage');
+      statusEl = el.querySelector('.pv-status');
+      btns = {};
+      el.querySelectorAll('.pv-btn').forEach(function (b) { btns[b.dataset.act] = b; });
+      ui.bindModeTabs(el, function (m) {
+        mode = m; mStep = 0; mDone = false; busy = false;
+        if (m === 'quiz') { qScore = 0; qCount = 0; newQuiz(); }
+        else if (m === 'mission') { tens = 0; ones = 0; }
+        else { tens = Math.floor(start / 10); ones = start - tens * 10; }
+        build();
+      });
+      bindActions(); bindChoices();
+      render({ glow: ones >= 10 });
+    }
 
     // ---------- SVG 그리기 ----------
-    // 레이아웃: [십묶음 막대들] + [＝ 또는 묶음/낱개 구분] + [낱개 텐프레임들]
     var VBW = 860, VBH = 380;
-
     function svgEl(tag, attrs) {
       var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
       for (var k in attrs) e.setAttribute(k, attrs[k]);
@@ -92,13 +152,13 @@
     function render(opts) {
       opts = opts || {};
       stage.innerHTML = '';
+      var T = (mode === 'quiz') ? qT : tens;
+      var O = (mode === 'quiz') ? qO : ones;
       var svg = svgEl('svg', { viewBox: '0 0 ' + VBW + ' ' + VBH, width: '100%', height: '100%' });
 
-      // ----- 십묶음 막대 영역 -----
       var barW = 50, barGap = 14, barH = 280, barTop = 50;
       var barAreaX = 40;
-      // 막대: 세로 직사각형 + 내부 10칸 가로 구분선 + 위 "10" 라벨
-      for (var t = 0; t < tens; t++) {
+      for (var t = 0; t < T; t++) {
         var bx = barAreaX + t * (barW + barGap);
         var g = svgEl('g', { class: 'pv-bar' + (opts.newBar === t ? ' pv-bar-pop' : '') });
         g.appendChild(svgEl('rect', {
@@ -112,7 +172,6 @@
             stroke: C.tenLine, 'stroke-width': 2, 'stroke-opacity': 0.55
           }));
         }
-        // "10" 라벨
         var lbl = svgEl('text', {
           x: bx + barW / 2, y: barTop - 14, 'text-anchor': 'middle',
           'font-family': 'Jua, "Apple SD Gothic Neo", sans-serif',
@@ -123,9 +182,8 @@
         svg.appendChild(g);
       }
 
-      // 막대가 하나라도 있으면 막대영역과 낱개영역 사이 구분 점선 + 라벨
-      var oneAreaX = barAreaX + Math.max(tens, 0) * (barW + barGap) + 30;
-      if (tens > 0) {
+      var oneAreaX = barAreaX + Math.max(T, 0) * (barW + barGap) + 30;
+      if (T > 0) {
         var divX = oneAreaX - 22;
         svg.appendChild(svgEl('line', {
           x1: divX, y1: barTop - 10, x2: divX, y2: barTop + barH + 10,
@@ -133,34 +191,28 @@
         }));
       }
 
-      // ----- 낱개 텐프레임 영역 -----
-      // 필요한 프레임 수 = 최소 1개, ones가 10 넘으면 추가
-      var framesNeeded = Math.max(1, Math.ceil(ones / 10));
+      var framesNeeded = Math.max(1, Math.ceil(O / 10));
       var cell = 50, cellGap = 8;
-      var frameW = cell * 2 + cellGap;        // 2열
-      var frameH = cell * 5 + cellGap * 4;     // 5행
+      var frameW = cell * 2 + cellGap;
+      var frameH = cell * 5 + cellGap * 4;
       var frameGap = 26;
-      var fTop = barTop + (barH - frameH) / 2;  // 막대와 세로 중앙 맞춤
+      var fTop = barTop + (barH - frameH) / 2;
 
-      var oneIdx = 0;  // 채워진 낱개 카운트
       for (var f = 0; f < framesNeeded; f++) {
         var fx = oneAreaX + f * (frameW + frameGap);
-        var inThisFrame = Math.min(10, ones - f * 10);
+        var inThisFrame = Math.min(10, O - f * 10);
         var fg = svgEl('g', { class: 'pv-frame' + (inThisFrame === 10 && opts.glow ? ' pv-frameglow' : '') });
-        // 10칸 (2열 × 5행)
         for (var r = 0; r < 5; r++) {
           for (var c = 0; c < 2; c++) {
             var idxInFrame = r * 2 + c;
             var cx = fx + c * (cell + cellGap);
             var cy = fTop + r * (cell + cellGap);
-            // 빈 칸 (점선 테두리)
             fg.appendChild(svgEl('rect', {
               x: cx, y: cy, width: cell, height: cell, rx: 9,
               fill: 'rgba(255,255,255,0.45)', stroke: C.frame,
               'stroke-width': 2.5, 'stroke-dasharray': '5 5',
               class: 'pv-fcell'
             }));
-            // 채워진 낱개 큐브
             if (idxInFrame < inThisFrame) {
               var filled = (f * 10 + idxInFrame);
               var isNew = (opts.newOne != null && filled === opts.newOne);
@@ -180,11 +232,16 @@
       stage.appendChild(svg);
       updateStatus();
       updateButtons();
+      checkMission(opts.act);
     }
 
     function value() { return tens * 10 + ones; }
 
     function updateStatus() {
+      if (mode === 'quiz') {
+        statusEl.innerHTML = '<span style="font-size:26px;color:#5a7894;">아래에서 답을 골라 누르세요</span>';
+        return;
+      }
       var v = value();
       statusEl.innerHTML =
         '<span style="font-size:30px;">10개씩 묶음 </span>'
@@ -196,15 +253,29 @@
     }
 
     function updateButtons() {
+      if (!btns.plus) return;
       var v = value();
       btns.plus.disabled = busy || v >= max;
       btns.minus.disabled = busy || ones <= 0;
       btns.bundle.disabled = busy || ones < 10;
       btns.unbundle.disabled = busy || tens < 1;
       btns.reset.disabled = busy;
-      // 10칸 다 찼으면 묶기 버튼 반짝
       if (!busy && ones >= 10) btns.bundle.classList.add('pv-ready');
       else btns.bundle.classList.remove('pv-ready');
+    }
+
+    function checkMission(act) {
+      if (mode !== 'mission' || mDone || mLock) return;
+      if (MISSIONS[mStep].check(act)) {
+        mLock = true;
+        ui.toast(el, true);
+        setTimeout(function () {
+          mLock = false;
+          if (mStep < MISSIONS.length - 1) { mStep++; tens = 0; ones = 0; }
+          else mDone = true;
+          build();
+        }, 1500);
+      }
     }
 
     // ---------- 동작 ----------
@@ -222,13 +293,12 @@
       if (busy || ones < 10) return;
       busy = true;
       updateButtons();
-      // 첫 프레임의 낱개 10개가 막대로 빨려들어가는 연출
       render({ suckFrame: 0, glow: false });
       setTimeout(function () {
         tens += 1;
         ones -= 10;
         busy = false;
-        render({ newBar: tens - 1, glow: ones >= 10 });
+        render({ newBar: tens - 1, glow: ones >= 10, act: 'bundle' });
       }, 430);
     }
     function unbundle() {
@@ -237,31 +307,43 @@
       updateButtons();
       tens -= 1;
       ones += 10;
-      // 새로 생긴 낱개 10개를 pop으로 (마지막 프레임)
-      render({ glow: ones >= 10 });
-      // 살짝 pop 강조: 방금 푼 낱개 10칸에 pop
+      render({ glow: ones >= 10, act: 'unbundle' });
       busy = false;
       updateButtons();
     }
     function reset() {
       if (busy) return;
-      tens = Math.floor(start / 10);
-      ones = start - tens * 10;
+      tens = (mode === 'mission') ? 0 : Math.floor(start / 10);
+      ones = (mode === 'mission') ? 0 : start - Math.floor(start / 10) * 10;
       render({ glow: ones >= 10 });
     }
 
-    btns.plus.addEventListener('click', plus);
-    btns.minus.addEventListener('click', minus);
-    btns.bundle.addEventListener('click', bundle);
-    btns.unbundle.addEventListener('click', unbundle);
-    btns.reset.addEventListener('click', reset);
+    function bindActions() {
+      if (!btns.plus) return;
+      btns.plus.addEventListener('click', plus);
+      btns.minus.addEventListener('click', minus);
+      btns.bundle.addEventListener('click', bundle);
+      btns.unbundle.addEventListener('click', unbundle);
+      btns.reset.addEventListener('click', reset);
+    }
 
-    render({ glow: ones >= 10 });
+    function bindChoices() {
+      el.querySelectorAll('.kl-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (qLock) return; qLock = true;
+          var ok = (+b.dataset.v === qAnswer());
+          qCount++; if (ok) qScore++;
+          ui.toast(el, ok, ok ? null : ('🤔 정답은 ' + qAnswer() + '!'));
+          b.style.background = ok ? '#12B886' : '#FF8A3D'; b.style.color = '#fff'; b.style.borderColor = ok ? '#12B886' : '#FF8A3D';
+          setTimeout(function () { newQuiz(); build(); }, 1500);
+        });
+      });
+    }
 
-    // ---------- cleanup ----------
-    return function cleanup() {
-      // 리스너는 el 내부 요소에 붙어 있어 innerHTML 교체 시 함께 제거됨.
-      // window 리스너 없음. 별도 정리 불필요.
-    };
+    if (mode === 'quiz') newQuiz();
+    if (mode === 'mission') { tens = 0; ones = 0; }
+    build();
+
+    return function cleanup() {};
   });
 })();
