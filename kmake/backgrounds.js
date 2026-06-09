@@ -1,3 +1,4 @@
-/* 케이메이크 배경 — 직접제작 50종 폐기(품질 미달). Claude Design 워크플로우로 재구성 예정 */
+/* 케이메이크 배경 — Claude Design 파이프라인으로 제작 예정.
+   프롬프트·등록 절차: 같은 폴더 BG_PROMPTS.md 참고 */
 window.BG_CATS = [];
 window.BACKGROUNDS = [];
