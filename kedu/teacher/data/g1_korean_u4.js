@@ -149,3 +149,115 @@
     {id:"e_plan", type:"extension", icon:"⬆", title:"학교 낱말 미리 떠올리기", content:"다음 시간 ‘학교 낱말’을 위해, 교실에서 본 물건 이름을 하나씩 떠올려 두게 하면 도입이 매끄러워요.", fit_slides:["next_lesson"]}
   ]
 };
+  LESSONS["u4_l03"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 3,
+    title: "나와 몸을 나타내는 낱말",
+    std: "[2국02-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 몸 가리키기 → 몸 낱말·하는 일 → 몸 카드 퀴즈 → 몸으로 말하기 → 마무리"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"나와 몸을 나타내는 낱말", subtitle:"4단원 · 3/14차시 · 문법(어휘)"}, suggested_extras:["q_open", "t_goal"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["내 몸을 나타내는 낱말을 알아요", "몸과 하는 일을 이어 봐요", "몸 낱말을 넣어 말해요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"만나기", block:"motivate", data:{scene_title:"내 몸을 얼마나 알까? 🧒", visual:"🧒", question:"눈은 무엇을 할까요? 손은요?<br>내 몸의 이름을 함께 알아봐요!"}, suggested_extras:["q_around"]},
+    {id:"s04", stage:"만나기", block:"concept", data:{
+      title:"몸을 나타내는 낱말",
+      content:"우리 몸에는 저마다 이름과 **하는 일**이 있어요. 낱말과 하는 일을 함께 알면 더 잘 기억나요!",
+      symbol_meanings:[
+        {symbol:"눈 👁", meaning:"보아요"},
+        {symbol:"귀 👂", meaning:"들어요"},
+        {symbol:"코 👃", meaning:"냄새 맡아요"},
+        {symbol:"손 ✋", meaning:"잡아요"},
+        {symbol:"발 🦶", meaning:"걸어요"}
+      ]
+    }, suggested_extras:["t_concept", "x_body"]},
+    {id:"s05", stage:"활동", block:"card_quiz", data:{
+      title:"무엇으로 할까요?",
+      sub:"그림을 보고 어떤 몸의 이름인지 맞혀 봐요!",
+      cards:[
+        {clue:"👁<br>무엇으로 <b>볼까?</b>", emoji:"👁", name:"눈"},
+        {clue:"👂<br>무엇으로 <b>들을까?</b>", emoji:"👂", name:"귀"},
+        {clue:"✋<br>무엇으로 <b>잡을까?</b>", emoji:"✋", name:"손"}
+      ],
+      outro:"몸의 이름과 하는 일을 잘 알았어요! 이제 몸 낱말을 넣어 말해 볼까요?"
+    }, suggested_extras:["g_match", "e_word"]},
+    {id:"s06", stage:"발표", block:"present", data:{
+      title:"몸 낱말로 말해 볼까요? 🎤",
+      sub:"내 몸으로 할 수 있는 일을 친구들에게 말해요!",
+      count:24,
+      hint:"“나는 **○○**으로 **○○**해요” 처럼 말해요 (예: 나는 발로 달려요)",
+      end_msg:"우리 몸으로 할 수 있는 일이 정말 많네요! 👏"
+    }, suggested_extras:["t_present", "r_home"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["내 몸을 나타내는 낱말을 알았어요", "몸과 하는 일을 이어 봤어요", "몸 낱말을 넣어 말했어요"]}, suggested_extras:["q_reflect"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"우리 집에 함께 사는 사람을 부르는 말을 알아봐요", body:"할머니·아버지·동생처럼 가족을 부르는 낱말을 만나요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"q_open", type:"fun_question", icon:"💡", title:"몸으로 가위바위보", content:"손·발을 움직이는 간단한 동작으로 시작해 “지금 무엇을 썼나요?”로 몸 낱말에 자연스럽게 들어가요.", fit_slides:["cover", "motivate"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"낱말 + 하는 일을 묶기", content:"몸 이름만 외우기보다 ‘눈-보다’처럼 하는 일과 묶어 익히면 오래 기억하고 말하기로도 잘 이어져요.", fit_slides:["objective", "concept"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"선생님을 따라 짚어요", content:"“눈 짚어 보세요, 귀 짚어 보세요” 따라 짚기로 시작하면 모든 아이가 참여하며 몸 낱말을 확인해요.", fit_slides:["motivate"]},
+    {id:"t_concept", type:"tip", icon:"🧩", title:"오감으로 넓히기", content:"눈-보다, 귀-듣다, 코-맡다, 혀-맛보다, 손-만지다. 오감을 몸과 묶으면 다음 감각 표현 학습으로 이어져요.", fit_slides:["concept"]},
+    {id:"x_body", type:"misconception", icon:"❓", title:"‘몸’은 손·발만 아님", content:"몸 낱말을 팔다리로만 떠올리기 쉬워요. 눈·코·입·귀처럼 얼굴 부분도 모두 몸을 나타내는 낱말이에요.", fit_slides:["concept", "card_quiz"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"몸 ↔ 하는 일 짝짓기", description:"몸의 이름과 하는 일을 짝지어 보세요.", hint:"그 부분으로 무엇을 하나요?", pairs:[{a:{text:"👁 눈"}, b:{text:"보다"}}, {a:{text:"👂 귀"}, b:{text:"듣다"}}, {a:{text:"✋ 손"}, b:{text:"잡다"}}, {a:{text:"🦶 발"}, b:{text:"걷다"}}], fit_slides:["card_quiz"]},
+    {id:"e_word", type:"extension", icon:"⬆", title:"더 많은 몸 낱말", content:"머리·어깨·무릎·팔꿈치처럼 더 많은 몸 낱말을 노래나 동작으로 넓혀 보면 어휘가 풍성해져요.", fit_slides:["card_quiz", "next_lesson"]},
+    {id:"t_present", type:"tip", icon:"🧩", title:"동작과 함께 말하기", content:"말하면서 그 동작을 직접 해 보게 하면(발로 달리는 시늉) 낱말과 의미가 몸으로 붙어요.", fit_slides:["present"]},
+    {id:"r_home", type:"real_world", icon:"🌍", title:"집에서 몸으로 돕기", content:"손으로 수저 놓기, 발로 심부름 가기 등 집에서 몸으로 하는 일을 떠올려 말하면 생활과 이어져요.", fit_slides:["present"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"오늘 새로 안 몸 낱말", content:"“오늘 새로 알게 된 몸 낱말이 있나요?” 되짚으며 마무리해요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"우리 집 사람 떠올리기", content:"다음 시간 ‘가족을 부르는 말’을 위해, 집에 함께 사는 사람을 한 명 떠올려 두게 하면 도입이 매끄러워요.", fit_slides:["next_lesson"]}
+  ]
+};
+
+  LESSONS["u4_l04"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 4,
+    title: "가족을 나타내는 낱말",
+    std: "[2국02-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 우리 집 사람 → 부르는 말 → 호칭 카드 → 소개하기 → 마무리 (다양한 가족 형태 존중)"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"가족을 나타내는 낱말", subtitle:"4단원 · 4/14차시 · 문법(어휘)"}, suggested_extras:["t_care", "t_goal"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["우리 집 사람을 부르는 낱말을 알아요", "여러 가지 가족 부르는 말을 익혀요", "우리 집 사람을 소개해요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"만나기", block:"motivate", data:{scene_title:"우리 집에는 누가 함께 살까요?", visual:"🏠", question:"집집마다 함께 사는 사람이 달라요.<br>사람마다 부르는 말도 다르답니다!"}, suggested_extras:["t_care", "q_around"]},
+    {id:"s04", stage:"만나기", block:"concept", data:{
+      title:"가족을 부르는 말",
+      content:"우리 집에 함께 사는 사람을 부르는 여러 가지 낱말이 있어요. 집마다 함께 사는 사람은 **다 달라요** — 누구든 소중한 우리 집 사람이에요.",
+      symbol_meanings:[
+        {symbol:"할머니·할아버지", meaning:"부모님의 부모님"},
+        {symbol:"아버지·어머니", meaning:"나를 돌봐 주는 분"},
+        {symbol:"형·오빠·누나·언니", meaning:"나보다 먼저 태어난 사람"},
+        {symbol:"동생", meaning:"나보다 나중에 태어난 사람"}
+      ]
+    }, suggested_extras:["t_care", "x_family"]},
+    {id:"s05", stage:"활동", block:"card_quiz", data:{
+      title:"뭐라고 부를까요?",
+      sub:"설명을 보고 어떻게 부르는지 맞혀 봐요!",
+      cards:[
+        {clue:"엄마, 아빠를<br>낳아 주신 분", emoji:"👵", name:"할머니 · 할아버지"},
+        {clue:"나보다 먼저 태어난<br>여자 형제", emoji:"👧", name:"누나 · 언니"},
+        {clue:"나보다 나중에<br>태어난 동생", emoji:"👶", name:"동생"}
+      ],
+      outro:"부르는 말이 여러 가지죠? 이제 우리 집 사람을 소개해 볼까요?"
+    }, suggested_extras:["g_match", "x_family"]},
+    {id:"s06", stage:"발표", block:"present", data:{
+      title:"우리 집 사람을 소개해요 🎤",
+      sub:"함께 사는 사람 중 한 명을, 부르는 말을 넣어 소개해요 (말하고 싶은 사람만 해도 좋아요)",
+      count:24,
+      hint:"“우리 집에는 **○○**이(가) 있어요” 처럼 부르는 말을 넣어 소개해요",
+      end_msg:"집집마다 다른 소중한 사람들을 만났어요. 모두 잘했어요! 👏"
+    }, suggested_extras:["t_present", "t_care", "r_home"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["우리 집 사람을 부르는 낱말을 알았어요", "여러 가지 부르는 말을 익혔어요", "우리 집 사람을 소개했어요"]}, suggested_extras:["q_reflect"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"그림책을 보며 좋아하는 음식을 말해요", body:"이야기 속 친구들이 좋아하는 음식을 만나고, 내가 좋아하는 음식도 말해 봐요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"t_care", type:"tip", icon:"💛", title:"다양한 가족 존중", content:"한부모·조손·다문화 등 가족 형태는 다양해요. ‘엄마·아빠가 다 있어야 한다’는 전제 없이 “함께 사는 소중한 사람”으로 열어 두고, 특정 구성을 묻거나 강요하지 마세요.", fit_slides:["cover", "motivate", "concept", "present"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"호칭은 ‘부르는 말’로", content:"가족 관계도(촌수)를 가르치는 차시가 아니에요. 함께 사는 사람을 ‘부르는 말(낱말)’을 익히는 데 초점을 둬요.", fit_slides:["objective", "concept"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"부르는 말 떠올리기", content:"“집에서 누군가를 부를 때 뭐라고 하나요?” 가볍게 물어 아이가 쓰는 호칭을 자연스럽게 꺼내게 해요.", fit_slides:["motivate"]},
+    {id:"x_family", type:"misconception", icon:"❓", title:"가족 수·구성은 다 달라", content:"가족은 꼭 몇 명, 누구누구여야 한다는 정답이 없어요. 아이마다 다른 답을 모두 인정해 주세요.", fit_slides:["concept", "card_quiz"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"부르는 말 ↔ 설명 짝짓기", description:"부르는 말과 설명을 짝지어 보세요.", hint:"누구를 부르는 말일까요?", pairs:[{a:{text:"할머니"}, b:{text:"엄마·아빠의 어머니"}}, {a:{text:"동생"}, b:{text:"나보다 나중에 태어남"}}, {a:{text:"누나·언니"}, b:{text:"먼저 태어난 여자 형제"}}, {a:{text:"형·오빠"}, b:{text:"먼저 태어난 남자 형제"}}], fit_slides:["card_quiz"]},
+    {id:"t_present", type:"tip", icon:"🧩", title:"소개는 자유롭게", content:"발표는 원하는 아이만. 말하기 어려워하면 “좋아하는 사람 한 명”처럼 부담을 낮춰 주거나 넘어가 주세요.", fit_slides:["present"]},
+    {id:"r_home", type:"real_world", icon:"🌍", title:"집에서 불러 보기", content:"집에 가서 함께 사는 사람을 부르는 말로 인사해 보게 하면 배운 낱말이 생활로 이어져요.", fit_slides:["present"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"새로 안 부르는 말", content:"“오늘 새로 알게 된 부르는 말이 있나요?” 되짚으며 마무리해요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"좋아하는 음식 떠올리기", content:"다음 시간 ‘좋아하는 음식 말하기’를 위해, 가장 좋아하는 음식을 하나 떠올려 두게 하면 도입이 매끄러워요.", fit_slides:["next_lesson"]}
+  ]
+};
