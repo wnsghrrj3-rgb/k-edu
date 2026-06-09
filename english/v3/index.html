@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영어 — 끝까지 가는 사다리 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;color:#1A202C;min-height:100vh}
+  .top{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 18px;gap:10px;position:sticky;top:0;z-index:20}
+  .top a{font-size:14px;color:#718096;text-decoration:none;font-weight:500}
+  .top .t{font-family:Jua;font-size:16px}
+  .wrap{max-width:520px;margin:0 auto;padding:18px 16px 60px}
+  .hero{background:linear-gradient(135deg,#1565C0,#5B8CFF);border-radius:20px;color:#fff;padding:18px 20px;margin-bottom:8px}
+  .hero h1{font-family:Jua;font-size:22px;margin-bottom:4px}
+  .hero p{font-size:13.5px;opacity:.92;line-height:1.5}
+  .summary{display:flex;gap:8px;margin:12px 0 20px}
+  .sumbox{flex:1;background:#fff;border-radius:14px;padding:12px;text-align:center;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+  .sumbox .n{font-family:Jua;font-size:22px;color:#1565C0}
+  .sumbox .l{font-size:12px;color:#A0AEC0}
+  /* 사다리 */
+  .ladder{position:relative;padding-left:34px}
+  .rail{position:absolute;left:13px;top:0;bottom:0;width:8px;background:#E2E8F0;border-radius:4px}
+  .rail-fill{position:absolute;left:13px;top:0;width:8px;background:linear-gradient(180deg,#FFB454,#FF8A3D);border-radius:4px;transition:height .6s ease}
+  .step{position:relative;background:#fff;border-radius:16px;padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;
+        box-shadow:0 1px 8px rgba(0,0,0,.05);border:2.5px solid transparent;cursor:pointer;transition:transform .12s,border-color .12s}
+  .step:active{transform:scale(.985)}
+  .step .dot{position:absolute;left:-27px;width:18px;height:18px;border-radius:50%;background:#CBD5E0;border:3px solid #F5F7FA}
+  .step.lit .dot{background:#FF8A3D;box-shadow:0 0 0 4px rgba(255,138,61,.25)}
+  .step.open{border-color:#1565C0;box-shadow:0 4px 16px rgba(21,101,192,.18)}
+  .step.open .dot{background:#1565C0;animation:pulse 1.6s infinite}
+  .step.locked{opacity:.55;filter:saturate(.6)}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(21,101,192,.25)}50%{box-shadow:0 0 0 8px rgba(21,101,192,.12)}}
+  .chip{flex-shrink:0;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:Jua;font-size:18px;color:#fff}
+  .tP{background:#1565C0}.tV{background:#FF8A3D}.tG{background:#7048E8}.tR{background:#12B886}.tM{background:#F59F00}
+  .step .info{flex:1;min-width:0}
+  .step .nm{font-family:Jua;font-size:16.5px;display:flex;align-items:center;gap:6px}
+  .step .en{font-size:12.5px;color:#A0AEC0;margin-top:2px}
+  .step .badge{font-size:18px}
+  .kei{position:absolute;right:12px;top:-14px;font-size:26px;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .lit-glow{animation:lightUp 2.2s ease}
+  @keyframes lightUp{0%{box-shadow:0 0 0 0 rgba(255,180,84,0)}25%{box-shadow:0 0 0 12px rgba(255,180,84,.45);border-color:#FFB454}100%{box-shadow:0 1px 8px rgba(0,0,0,.05)}}
+  /* 잠긴 레벨 띠 */
+  .lvband{background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;opacity:.78;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+  .lvband .no{flex-shrink:0;width:44px;height:44px;border-radius:13px;background:#EDF2F7;color:#718096;display:flex;align-items:center;justify-content:center;font-family:Jua;font-size:17px}
+  .lvband .nm{font-family:Jua;font-size:16px}
+  .lvband .ds{font-size:12.5px;color:#A0AEC0;margin-top:2px}
+  .lvband .lock{margin-left:auto;font-size:16px;color:#CBD5E0}
+  .sectionT{font-family:Jua;font-size:15px;color:#718096;margin:22px 0 10px}
+  /* 시작 시트 */
+  .sheet-bg{position:fixed;inset:0;background:rgba(20,25,40,.4);z-index:50;display:none}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:22px 20px 28px;z-index:51;
+         max-width:520px;margin:0 auto;display:none;animation:up .25s ease}
+  @keyframes up{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
+  .sheet h3{font-family:Jua;font-size:19px;margin-bottom:2px}
+  .sheet .en{font-size:13px;color:#A0AEC0;margin-bottom:14px}
+  .sheet button{width:100%;font-family:Jua;font-size:18px;border:0;border-radius:14px;padding:14px;cursor:pointer;margin-bottom:8px}
+  .b-start{background:#1565C0;color:#fff}
+  .b-skip{background:#FFF6E6;color:#D97706;border:2px solid #FBBF24 !important}
+  .b-close{background:#F1F5F9;color:#64748B;font-size:15px !important}
+  .skip-note{font-size:12px;color:#A0AEC0;text-align:center;margin:-2px 0 8px}
+</style>
+</head>
+<body>
+<div class="top"><a href="/">← 홈</a><span class="t">영어 사다리</span></div>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🪜 끝까지 가는 영어 사다리</h1>
+    <p>1칸부터 꼭대기까지 길이 전부 깔려 있어요.<br>한 칸씩 밟으면 불이 켜지고, 켜진 불은 절대 꺼지지 않아요!</p>
+  </div>
+
+  <div class="summary">
+    <div class="sumbox"><div class="n" id="sumLit">0 / 18</div><div class="l">밝힌 칸</div></div>
+    <div class="sumbox"><div class="n" id="sumToday">0칸</div><div class="l">오늘</div></div>
+    <div class="sumbox"><div class="n">Lv1</div><div class="l">지금 레벨</div></div>
+  </div>
+
+  <div class="sectionT" id="lv1Title">Lv1 · 읽기 진입로 — 지금 오르는 중!</div>
+  <div class="ladder">
+    <div class="rail"></div><div class="rail-fill" id="railFill" style="height:0"></div>
+    <div id="steps"></div>
+  </div>
+
+  <div class="sectionT">이다음 칸들 — 길은 이미 깔려 있어요</div>
+  <div id="locked"></div>
+
+</div>
+
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <h3 id="shName"></h3><div class="en" id="shEn"></div>
+  <button class="b-start" id="shStart">▶ 시작하기</button>
+  <div id="shSkipWrap">
+    <button class="b-skip" id="shSkip">⚡ 먼저 풀기 — 바로 도전!</button>
+    <div class="skip-note">이미 알면 통과 시험만 봐도 돼요 (한 번만!)</div>
+  </div>
+  <button class="b-close" onclick="closeSheet()">닫기</button>
+</div>
+
+<script src="data/ladder.js"></script>
+<script src="engine/k-progress.js"></script>
+<script>
+var TEST = new URLSearchParams(location.search).get('test') === '1';
+var TRACK_ICON = { P:'🔤', V:'🍎', G:'💬', R:'📖', M:'🏁' };
+var lv1 = EN_LADDER.levels.find(function(l){return l.open;});
+var curSheetStep = null;
+
+function render(){
+  var c = KProgress.counts();
+  document.getElementById('sumLit').textContent = c.lit + ' / ' + c.total;
+  document.getElementById('sumToday').textContent = KProgress.today() + '칸';
+  document.getElementById('railFill').style.height = (c.lit / c.total * 100) + '%';
+
+  var host = document.getElementById('steps');
+  host.innerHTML = '';
+  lv1.steps.forEach(function(s){
+    var st = KProgress.state(s.id);
+    var div = document.createElement('div');
+    div.className = 'step ' + (st==='lit'||st==='lit_skip' ? 'lit' : st);
+    div.dataset.id = s.id;
+    div.innerHTML = '<div class="dot"></div>'
+      + '<div class="chip t'+s.track+'">'+TRACK_ICON[s.track]+'</div>'
+      + '<div class="info"><div class="nm">'+s.name
+        + (s.star?' <span class="badge">⭐</span>':'') + (s.mission?' <span class="badge">🏆</span>':'')
+        + ((st==='lit'||st==='lit_skip')?' <span class="badge">🔥</span>':'') + '</div>'
+      + '<div class="en">'+s.en+'</div></div>'
+      + (st==='open' ? '<div class="kei" title="여기까지 왔어요!">🐶</div>' : '');
+    div.addEventListener('click', function(){ tap(s, st); });
+    host.appendChild(div);
+  });
+
+  var lk = document.getElementById('locked');
+  lk.innerHTML = '';
+  EN_LADDER.levels.filter(function(l){return !l.open;}).forEach(function(l){
+    var d = document.createElement('div');
+    d.className = 'lvband';
+    d.innerHTML = '<div class="no">Lv'+l.num+'</div><div><div class="nm">'+l.name+'</div><div class="ds">'+l.desc+'</div></div><div class="lock">🔒</div>';
+    lk.appendChild(d);
+  });
+}
+
+function tap(s, st){
+  if (st === 'locked') { toastMini('앞 칸을 먼저 밟아요! 한 칸씩이에요 🪜'); return; }
+  if (st === 'lit' || st === 'lit_skip') { toastMini('이미 밝힌 칸이에요 🔥 (다시 보기는 준비 중)'); return; }
+  curSheetStep = s;
+  document.getElementById('shName').textContent = s.name + (s.star?' ⭐':'') + (s.mission?' 🏆':'');
+  document.getElementById('shEn').textContent = s.en;
+  document.getElementById('shSkipWrap').style.display = KProgress.canSkip(s) ? 'block' : 'none';
+  document.getElementById('sheetBg').style.display = 'block';
+  document.getElementById('sheet').style.display = 'block';
+}
+function closeSheet(){ document.getElementById('sheetBg').style.display='none'; document.getElementById('sheet').style.display='none'; }
+
+document.getElementById('shStart').addEventListener('click', function(){
+  closeSheet();
+  if (TEST) return simulate(curSheetStep, false);
+  toastMini('차시를 만드는 중이에요! 곧 열려요 🔧');
+});
+document.getElementById('shSkip').addEventListener('click', function(){
+  closeSheet();
+  if (TEST) return simulate(curSheetStep, true);
+  toastMini('통과 시험을 만드는 중이에요! 곧 열려요 🔧');
+});
+
+/* 검수 모드(?test=1) — 점등 연출·종료 카드·먼저풀기 흐름 시뮬레이션 */
+function simulate(s, skip){
+  KProgress.light(s.id, { skip: skip });
+  render();
+  var el = document.querySelector('.step[data-id="'+s.id+'"]');
+  if (el) { el.classList.add('lit-glow'); el.scrollIntoView({block:'center',behavior:'smooth'}); }
+  setTimeout(function(){
+    KProgress.showEndCard({ stepName: s.name, emoji: skip ? '⚡' : '✨',
+      title: skip ? '먼저 풀기 통과! 불이 켜졌어요!' : '칸에 불이 켜졌어요!' });
+  }, 1400);
+}
+
+function toastMini(msg){
+  var t = document.createElement('div');
+  t.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:#1A202C;color:#fff;font-size:14.5px;font-weight:700;padding:11px 20px;border-radius:30px;z-index:99;opacity:0;transition:opacity .2s;white-space:nowrap;';
+  t.textContent = msg; document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity = 1; });
+  setTimeout(function(){ t.style.opacity = 0; setTimeout(function(){ t.remove(); }, 300); }, 1800);
+}
+
+if (TEST) {
+  var bar = document.createElement('div');
+  bar.style.cssText='position:fixed;top:60px;right:10px;z-index:95;display:flex;flex-direction:column;gap:6px;';
+  bar.innerHTML='<button onclick="KProgress._reset();location.reload()" style="font-size:12px;padding:8px 10px;border-radius:10px;border:1px solid #CBD5E0;background:#fff;cursor:pointer;">🧪 초기화</button>';
+  document.body.appendChild(bar);
+}
+
+render();
+/* 현재 칸으로 스크롤 */
+setTimeout(function(){
+  var open = document.querySelector('.step.open');
+  if (open && KProgress.counts().lit > 2) open.scrollIntoView({block:'center'});
+}, 150);
+</script>
+</body>
+</html>
