@@ -264,6 +264,7 @@ function renderBgGrid() {
   const grid = document.getElementById('bgGrid');
   let html = `<button class="ip-item bg-none" data-none="1"><span style="font-size:20px">⬜</span>배경 없음</button>`;
   html += list.map((b, idx) => `<button class="ip-item" data-idx="${idx}" title="${b.n}"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">${b.s}</svg></button>`).join('');
+  if (!list.length) html += `<div class="ip-empty" style="grid-column:1/-1">멋진 배경을 준비 중이에요 ✨</div>`;
   grid.innerHTML = html;
   grid.querySelector('[data-none]').onclick = clearBackground;
   grid.querySelectorAll('.ip-item[data-idx]').forEach(b => b.onclick = () => applyBackground(list[+b.dataset.idx]));
