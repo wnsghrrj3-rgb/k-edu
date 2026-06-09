@@ -632,6 +632,18 @@ function exportPDF() {
   const pdf = new jsPDF({ orientation: mmW > mmH ? 'l' : 'p', unit: 'mm', format: [mmW, mmH] });
   pdf.addImage(url, 'PNG', 0, 0, mmW, mmH); pdf.save('케이메이크.pdf'); toast('PDF 저장 완료');
 }
+function exportPPTX() {
+  closePops();
+  if (!window.PptxGenJS) { toast('PPT 모듈 로딩 중… 잠시 후 다시'); return; }
+  const url = snapshot(3);
+  const inW = baseW / 96, inH = baseH / 96;
+  const pptx = new PptxGenJS();
+  pptx.defineLayout({ name: 'KM', width: inW, height: inH });
+  pptx.layout = 'KM';
+  const s = pptx.addSlide();
+  s.addImage({ data: url, x: 0, y: 0, w: inW, h: inH });
+  pptx.writeFile({ fileName: '케이메이크.pptx' }).then(() => toast('PPT 저장 완료'));
+}
 
 /* ============ 저장 / 불러오기 ============ */
 document.getElementById('btnSave').onclick = () => {
