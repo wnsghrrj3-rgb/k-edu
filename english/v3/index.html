@@ -49,6 +49,27 @@
   .lvband .ds{font-size:12.5px;color:#A0AEC0;margin-top:2px}
   .lvband .lock{margin-left:auto;font-size:16px;color:#CBD5E0}
   .sectionT{font-family:Jua;font-size:15px;color:#718096;margin:22px 0 10px}
+  /* 계단참 */
+  .landing{position:relative;margin-bottom:10px}
+  .landing-h{background:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;
+             box-shadow:0 1px 8px rgba(0,0,0,.05);border:2px solid transparent}
+  .landing-h .em{font-size:20px}
+  .landing-h .nm{font-family:Jua;font-size:15.5px;flex:1}
+  .landing-h .st{font-size:12.5px;color:#A0AEC0;white-space:nowrap}
+  .landing-h .car{color:#CBD5E0;font-size:13px;transition:transform .2s}
+  .landing.openL>.landing-h{border-color:#1565C0;background:#F0F7FF}
+  .landing.doneL>.landing-h{background:#FFF9F0}
+  .landing.doneL>.landing-h .st{color:#D97706;font-weight:700}
+  .landing.expanded>.landing-h .car{transform:rotate(90deg)}
+  .landing-body{display:none;padding-top:10px}
+  .landing.expanded>.landing-body{display:block}
+  .peek-note{font-size:12px;color:#A0AEC0;text-align:center;margin:2px 0 8px}
+  /* 잠긴 레벨 펼침 */
+  .lvband{cursor:pointer;flex-wrap:wrap}
+  .lvband .pv{display:none;width:100%;margin-top:10px;padding-top:10px;border-top:1px dashed #E2E8F0}
+  .lvband.expanded .pv{display:block}
+  .pv-item{font-size:13px;color:#718096;padding:6px 4px;display:flex;gap:8px;align-items:center}
+  .pv-item .lk{margin-left:auto;font-size:12px;color:#CBD5E0}
   /* 시작 시트 */
   .sheet-bg{position:fixed;inset:0;background:rgba(20,25,40,.4);z-index:50;display:none}
   .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:22px 20px 28px;z-index:51;
@@ -84,7 +105,7 @@
     <div id="steps"></div>
   </div>
 
-  <div class="sectionT">이다음 칸들 — 길은 이미 깔려 있어요</div>
+  <div class="sectionT">이다음 레벨들 — 길은 끝까지 깔려 있어요 (눌러서 구경하기 🔭)</div>
   <div id="locked"></div>
 
 </div>
@@ -107,6 +128,8 @@ var TEST = new URLSearchParams(location.search).get('test') === '1';
 var TRACK_ICON = { P:'🔤', V:'🍎', G:'💬', R:'📖', M:'🏁' };
 var lv1 = EN_LADDER.levels.find(function(l){return l.open;});
 var curSheetStep = null;
+var expandedLandings = {};   /* 구경으로 펼친 계단참 기억(렌더 간 유지) */
+var expandedLevels = {};     /* 구경으로 펼친 잠긴 레벨 기억 */
 
 function render(){
   var c = KProgress.counts();
@@ -116,28 +139,62 @@ function render(){
 
   var host = document.getElementById('steps');
   host.innerHTML = '';
-  lv1.steps.forEach(function(s){
-    var st = KProgress.state(s.id);
-    var div = document.createElement('div');
-    div.className = 'step ' + (st==='lit'||st==='lit_skip' ? 'lit' : st);
-    div.dataset.id = s.id;
-    div.innerHTML = '<div class="dot"></div>'
-      + '<div class="chip t'+s.track+'">'+TRACK_ICON[s.track]+'</div>'
-      + '<div class="info"><div class="nm">'+s.name
-        + (s.star?' <span class="badge">⭐</span>':'') + (s.mission?' <span class="badge">🏆</span>':'')
-        + ((st==='lit'||st==='lit_skip')?' <span class="badge">🔥</span>':'') + '</div>'
-      + '<div class="en">'+s.en+'</div></div>'
-      + (st==='open' ? '<div class="kei" title="여기까지 왔어요!">🐶</div>' : '');
-    div.addEventListener('click', function(){ tap(s, st); });
-    host.appendChild(div);
+  var curStep = KProgress.current();
+
+  (lv1.landings || [{name:'전체', emoji:'🪜', from:0, to:lv1.steps.length-1}]).forEach(function(L, li){
+    var slice = lv1.steps.slice(L.from, L.to+1);
+    var litN = slice.filter(function(s){ var t=KProgress.state(s.id); return t==='lit'||t==='lit_skip'; }).length;
+    var isDone = litN === slice.length;
+    var isCur = !isDone && slice.some(function(s){ return KProgress.state(s.id)==='open'; });
+
+    var wrap = document.createElement('div');
+    wrap.className = 'landing' + (isCur?' openL expanded':'') + (isDone?' doneL':'') + (expandedLandings[li]?' expanded':'');
+    var stTxt = isDone ? '✅ '+slice.length+'칸 완료!' : (isCur ? '지금 오르는 중 · '+litN+'/'+slice.length : '🔭 미리 보기 · '+slice.length+'칸');
+    wrap.innerHTML = '<div class="landing-h"><span class="em">'+L.emoji+'</span>'
+      + '<span class="nm">계단참 '+(li+1)+' — '+L.name+'</span>'
+      + '<span class="st">'+stTxt+'</span><span class="car">▶</span></div>'
+      + '<div class="landing-body"></div>';
+    var body = wrap.querySelector('.landing-body');
+
+    if (!isCur && !isDone) body.innerHTML = '<div class="peek-note">구경은 자유! 도전은 한 칸씩이에요 🪜</div>';
+
+    slice.forEach(function(s){
+      var st = KProgress.state(s.id);
+      var div = document.createElement('div');
+      div.className = 'step ' + (st==='lit'||st==='lit_skip' ? 'lit' : st);
+      div.dataset.id = s.id;
+      div.innerHTML = '<div class="dot"></div>'
+        + '<div class="chip t'+s.track+'">'+TRACK_ICON[s.track]+'</div>'
+        + '<div class="info"><div class="nm">'+s.name
+          + (s.star?' <span class="badge">⭐</span>':'') + (s.mission?' <span class="badge">🏆</span>':'')
+          + ((st==='lit'||st==='lit_skip')?' <span class="badge">🔥</span>':'') + '</div>'
+        + '<div class="en">'+s.en+'</div></div>'
+        + (st==='open' ? '<div class="kei" title="여기까지 왔어요!">🐶</div>' : '');
+      div.addEventListener('click', function(e){ e.stopPropagation(); tap(s, st); });
+      body.appendChild(div);
+    });
+
+    wrap.querySelector('.landing-h').addEventListener('click', function(){
+      expandedLandings[li] = !wrap.classList.contains('expanded');
+      wrap.classList.toggle('expanded');
+    });
+    host.appendChild(wrap);
   });
 
   var lk = document.getElementById('locked');
   lk.innerHTML = '';
   EN_LADDER.levels.filter(function(l){return !l.open;}).forEach(function(l){
     var d = document.createElement('div');
-    d.className = 'lvband';
-    d.innerHTML = '<div class="no">Lv'+l.num+'</div><div><div class="nm">'+l.name+'</div><div class="ds">'+l.desc+'</div></div><div class="lock">🔒</div>';
+    d.className = 'lvband' + (expandedLevels[l.id]?' expanded':'');
+    d.innerHTML = '<div class="no">Lv'+l.num+'</div><div style="flex:1"><div class="nm">'+l.name+'</div><div class="ds">'+l.desc+'</div></div><div class="lock">🔭</div>'
+      + '<div class="pv">'
+        + (l.preview||[]).map(function(p){ return '<div class="pv-item"><span>'+p+'</span><span class="lk">🔒</span></div>'; }).join('')
+        + '<div class="peek-note">Lv'+(l.num-1)+'를 마치면 열려요 — 구경은 언제든!</div>'
+      + '</div>';
+    d.addEventListener('click', function(){
+      expandedLevels[l.id] = !d.classList.contains('expanded');
+      d.classList.toggle('expanded');
+    });
     lk.appendChild(d);
   });
 }
