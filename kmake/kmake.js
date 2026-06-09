@@ -113,6 +113,7 @@ function goHome() {
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
   document.getElementById('iconPanel').classList.add('hidden');
+  document.getElementById('bgPanel').classList.add('hidden');
   document.getElementById('toolbar').classList.remove('locked');
   document.getElementById('editor').classList.add('hidden');
   startEl.classList.remove('hidden');
@@ -184,6 +185,7 @@ function addElement(type) {
     o = makeArrow(c.left - 120, c.top, c.left + 120, c.top, '#2D3748', 4);
   } else if (type === 'image') { imgTarget = null; document.getElementById('imgInput').click(); return; }
   else if (type === 'icon') { toggleIconPanel(); return; }
+  else if (type === 'bg') { toggleBgPanel(); return; }
   if (o) { canvas.add(o); canvas.setActiveObject(o); canvas.requestRenderAll(); }
 }
 function makeArrow(x1, y1, x2, y2, color, w) {
@@ -235,11 +237,57 @@ function drawGuides(gv, gh) {
 function dot(ctx, x, y) { ctx.fillStyle = '#EC4899'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); }
 function clearGuides() { if (canvas) canvas.clearContext(canvas.contextTop); }
 
+/* ============ 배경 패널 ============ */
+let bgCat = 'all';
+function toggleBgPanel() {
+  const p = document.getElementById('bgPanel');
+  const open = !p.classList.contains('hidden');
+  document.getElementById('iconPanel').classList.add('hidden');
+  if (open) { p.classList.add('hidden'); return; }
+  p.classList.remove('hidden');
+  if (!p.dataset.init) { initBgPanel(); p.dataset.init = '1'; }
+}
+function initBgPanel() {
+  const cats = document.getElementById('bgCats');
+  cats.innerHTML = `<button class="ip-cat on" data-cat="all">전체</button>` +
+    (window.BG_CATS || []).map(([cid, nm]) => `<button class="ip-cat" data-cat="${cid}">${nm}</button>`).join('');
+  cats.querySelectorAll('.ip-cat').forEach(b => b.onclick = () => {
+    cats.querySelectorAll('.ip-cat').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); bgCat = b.dataset.cat; renderBgGrid();
+  });
+  document.getElementById('bgClose').onclick = () => document.getElementById('bgPanel').classList.add('hidden');
+  renderBgGrid();
+}
+function renderBgGrid() {
+  let list = window.BACKGROUNDS || [];
+  if (bgCat !== 'all') list = list.filter(b => b.c === bgCat);
+  const grid = document.getElementById('bgGrid');
+  let html = `<button class="ip-item bg-none" data-none="1"><span style="font-size:20px">⬜</span>배경 없음</button>`;
+  html += list.map((b, idx) => `<button class="ip-item" data-idx="${idx}" title="${b.n}"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">${b.s}</svg></button>`).join('');
+  grid.innerHTML = html;
+  grid.querySelector('[data-none]').onclick = clearBackground;
+  grid.querySelectorAll('.ip-item[data-idx]').forEach(b => b.onclick = () => applyBackground(list[+b.dataset.idx]));
+}
+function applyBackground(bg) {
+  canvas.getObjects().filter(o => o.kmType === 'background').forEach(o => canvas.remove(o));
+  const svg = `<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">${bg.s}</svg>`;
+  fabric.loadSVGFromString(svg, (objs, opts) => {
+    const g = fabric.util.groupSVGElements(objs, opts);
+    g.set({ left: 0, top: 0, originX: 'left', originY: 'top', scaleX: baseW / 1200, scaleY: baseH / 800, selectable: false, evented: false, kmType: 'background' });
+    canvas.add(g); g.sendToBack(); canvas.requestRenderAll(); pushHistory();
+  });
+}
+function clearBackground() {
+  canvas.getObjects().filter(o => o.kmType === 'background').forEach(o => canvas.remove(o));
+  canvas.requestRenderAll(); pushHistory();
+}
+
 /* ============ 아이콘 패널 ============ */
 let iconCat = 'all', iconMode = 'line';
 function toggleIconPanel() {
   const p = document.getElementById('iconPanel');
   const open = !p.classList.contains('hidden');
+  document.getElementById('bgPanel').classList.add('hidden');
   if (open) { p.classList.add('hidden'); return; }
   p.classList.remove('hidden');
   if (!p.dataset.init) { initIconPanel(); p.dataset.init = '1'; }
@@ -539,6 +587,7 @@ function setMode(m) {
 function applyMode() {
   if (!canvas) return;
   canvas.forEachObject(o => {
+    if (o.kmType === 'background') { o.selectable = false; o.evented = false; return; }
     if (mode === 'fill') {
       const s = !!(o.kmSlot && o.kmSlot.on);
       o.selectable = s; o.evented = s; o.hasControls = false;
