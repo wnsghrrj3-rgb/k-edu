@@ -110,6 +110,18 @@
 
 </div>
 
+<!-- 첫 진입 — 시작 지점 선택 (입구 시험 프레임) -->
+<div id="startPick" style="display:none;position:fixed;inset:0;background:rgba(20,25,40,.5);z-index:80;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:24px;max-width:400px;width:100%;padding:24px 20px;text-align:center;">
+    <div style="font-size:40px;">🪜</div>
+    <div style="font-family:Jua;font-size:20px;margin:6px 0 2px;">어디서 시작할까요?</div>
+    <div style="font-size:13px;color:#718096;margin-bottom:16px;line-height:1.6;">영어가 처음이 아니면<br>시험 보고 위 칸에서 시작할 수 있어요!</div>
+    <button onclick="pickStart('lv1')" style="width:100%;font-family:Jua;font-size:17px;background:#1565C0;color:#fff;border:0;border-radius:14px;padding:14px;cursor:pointer;margin-bottom:8px;">🐣 처음부터 차근차근 (Lv1)</button>
+    <button onclick="pickJump()" style="width:100%;font-family:Jua;font-size:17px;background:#FFF6E6;color:#D97706;border:2px solid #FBBF24;border-radius:14px;padding:14px;cursor:pointer;">⚡ 레벨 점프 — 시험 보고 시작</button>
+    <div style="font-size:11.5px;color:#A0AEC0;margin-top:10px;">점프해도 사다리는 그대로 — 시작 칸만 올라가요</div>
+  </div>
+</div>
+
 <div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
 <div class="sheet" id="sheet">
   <h3 id="shName"></h3><div class="en" id="shEn"></div>
@@ -250,6 +262,25 @@ if (TEST) {
   bar.innerHTML='<button onclick="KProgress._reset();location.reload()" style="font-size:12px;padding:8px 10px;border-radius:10px;border:1px solid #CBD5E0;background:#fff;cursor:pointer;">🧪 초기화</button>';
   document.body.appendChild(bar);
 }
+
+/* 첫 진입이면 시작 선택 먼저 */
+function pickStart(lv){
+  KProgress.setEntry(lv);
+  document.getElementById('startPick').style.display = 'none';
+  toastMini(lv === 'lv1' ? '좋아요! 1칸부터 차근차근 🐣' : '점프 완료! ⚡');
+  render();
+}
+function pickJump(){
+  if (TEST) {
+    /* 검수 모드: Lv2 점프 시뮬레이션 — Lv1 전 칸 입구시험 점등 */
+    lv1.steps.forEach(function(s){ KProgress.light(s.id, { skip: true }); });
+    pickStart('lv2');
+    KProgress.showEndCard({ emoji:'⚡', title:'입구 시험 통과! Lv2에서 시작!', stepName:'Lv1 전체 인정' });
+    return;
+  }
+  toastMini('점프 시험을 만드는 중이에요! 지금은 Lv1부터 🐣');
+}
+if (KProgress.isFresh()) document.getElementById('startPick').style.display = 'flex';
 
 render();
 /* 현재 칸으로 스크롤 */

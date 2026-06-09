@@ -19,8 +19,8 @@
   var KEY = 'kedu-en-v3-progress';
 
   function load() {
-    try { return JSON.parse(localStorage.getItem(KEY)) || { lit: {}, skipFailed: {} }; }
-    catch (e) { return { lit: {}, skipFailed: {} }; }
+    try { return JSON.parse(localStorage.getItem(KEY)) || { lit: {}, skipFailed: {}, entry: null }; }
+    catch (e) { return { lit: {}, skipFailed: {}, entry: null }; }
   }
   function save(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {} }
 
@@ -128,6 +128,17 @@
         document.head.appendChild(st);
       }
       document.body.appendChild(wrap);
+    },
+
+    /* ── 입구 시험(레벨 점프) — 시작 레벨 기록. startedLv 이하 레벨은 일괄 인정 ── */
+    setEntry: function (levelId) {
+      var d = load(); d.entry = levelId; save(d);
+    },
+    entry: function () { return load().entry; },
+    /* 첫 진입 여부 (시작 선택 화면 노출 조건) */
+    isFresh: function () {
+      var d = load();
+      return !d.entry && Object.keys(d.lit).length === 0;
     },
 
     /* 검수·디버그용 초기화 */
