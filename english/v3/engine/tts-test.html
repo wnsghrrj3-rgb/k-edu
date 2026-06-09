@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KTTS 시청실 — 영어 v3 소리 엔진 튜닝</title>
+<style>
+  :root{--bg:#1c2230;--card:#252d3f;--line:#39435c;--txt:#eef1f8;--sub:#9aa6c0;--acc:#5b8cff;--ok:#3ecf8e;--warn:#ffb454}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard',-apple-system,'Malgun Gothic',sans-serif;background:var(--bg);color:var(--txt);padding:24px;max-width:980px;margin:0 auto}
+  h1{font-size:1.3rem;margin-bottom:4px} .sub{color:var(--sub);font-size:.85rem;margin-bottom:20px;line-height:1.5}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+  h2{font-size:1rem;margin-bottom:10px;color:var(--acc)}
+  button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:.9rem;cursor:pointer;font-family:inherit}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  button:active{transform:scale(.97)}
+  input[type=text]{background:#1a2030;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:.95rem;font-family:inherit}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+  .ph{background:#1a2030;border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+  .ph .key{font-weight:800;font-size:1.05rem} .ph .key small{color:var(--sub);font-weight:400;margin-left:4px}
+  .ph .row{display:flex;gap:5px;align-items:center}
+  .ph button{padding:4px 9px;font-size:.78rem} .ph input{width:64px;padding:4px 6px;font-size:.82rem;text-align:center}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  #unlock{background:var(--warn);color:#222;font-weight:700}
+  #voiceInfo{font-size:.8rem;color:var(--sub)}
+  textarea{width:100%;height:110px;background:#1a2030;border:1px solid var(--line);color:var(--ok);border-radius:8px;padding:10px;font-family:monospace;font-size:.78rem;margin-top:8px}
+  .hint{font-size:.78rem;color:var(--sub);margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+<h1>🔊 KTTS 시청실 <span style="font-size:.8rem;color:var(--sub)">영어 v3 소리 엔진 v1 (Web Speech)</span></h1>
+<p class="sub">소리조각 근사값(say)을 귀로 듣고 확정하는 자리. 입력칸을 고치면 즉시 그 소리로 들린다 →
+마음에 들면 아래 「맵 내보내기」 JSON을 복사해서 주면 k-tts.js에 잠근다.<br>
+⚠️ 모바일은 먼저 <b>소리 잠금 해제</b>를 한 번 눌러야 한다.</p>
+
+<section>
+  <div class="bar">
+    <button id="unlock">🔓 소리 잠금 해제 (모바일 필수)</button>
+    <button class="ghost" onclick="KTTS.stop()">⏹ 멈춤</button>
+    <span id="voiceInfo">voice: 확인 중…</span>
+  </div>
+</section>
+
+<section>
+  <h2>① 소리조각 (탭하면 소리 · say 칸 수정 = 즉시 반영)</h2>
+  <div class="grid" id="phGrid"></div>
+  <p class="hint">▶ = 단독 소리(say) · 닻 = 닻 단어(anchor). 파열음(b·t·k…)은 뒤에 '으' 꼬리가 약간 붙는 게 Web Speech 한계 —
+  못 견딜 수준이면 그 조각만 나중에 음원 파일로 교체(어댑터가 자동 폴백 지원).</p>
+</section>
+
+<section>
+  <h2>② 블렌딩 (phonics_blocks 소리 코어)</h2>
+  <div class="bar">
+    <button onclick="testBlend(['c','a','t'])">c + a + t → cat</button>
+    <button onclick="testBlend(['p','i','g'])">p + i + g → pig</button>
+    <button onclick="testBlend(['s','u','n'])">s + u + n → sun</button>
+    <input type="text" id="blendIn" placeholder="직접: m,a,t" style="width:120px">
+    <button class="ghost" onclick="testBlend(document.getElementById('blendIn').value.split(',').map(s=>s.trim()))">▶</button>
+    <span id="blendNow" style="font-weight:800;font-size:1.1rem;color:var(--ok)"></span>
+  </div>
+  <p class="hint">1차 느리게 → 2차 촘촘하게 → 단어 통째. 실전에선 onPiece 콜백이 블록 하이라이트와 동기화된다.</p>
+</section>
+
+<section>
+  <h2>③ 단어 · 통문장</h2>
+  <div class="bar">
+    <input type="text" id="wordIn" value="cat">
+    <button onclick="KTTS.word(document.getElementById('wordIn').value)">단어(또박)</button>
+    <button class="ghost" onclick="KTTS.word(document.getElementById('wordIn').value,{natural:true})">단어(자연)</button>
+  </div>
+  <div class="bar">
+    <input type="text" id="sentIn" value="I like a cat." style="width:280px">
+    <button onclick="KTTS.sentence(document.getElementById('sentIn').value)">통문장</button>
+  </div>
+</section>
+
+<section>
+  <h2>④ 맵 내보내기 (튜닝 끝나면 복사해서 채팅에)</h2>
+  <button class="ghost" onclick="exportMap()">현재 say 값 JSON 생성</button>
+  <textarea id="out" readonly placeholder="버튼을 누르면 여기 JSON이 나온다"></textarea>
+</section>
+
+<script src="k-tts.js"></script>
+<script>
+  document.getElementById('unlock').onclick = function(){ KTTS.unlock(); this.textContent='🔓 해제됨'; };
+
+  /* 소리조각 그리드 */
+  var grid = document.getElementById('phGrid');
+  Object.keys(KTTS.PHONEMES).forEach(function(key){
+    var p = KTTS.PHONEMES[key];
+    var div = document.createElement('div'); div.className='ph';
+    div.innerHTML = '<div class="key">'+key+(p.label?'<small>'+p.label+'</small>':'')+'</div>'+
+      '<div class="row"><button data-k="'+key+'" class="play">▶</button>'+
+      '<button data-k="'+key+'" class="anchor ghost">닻 '+p.anchor+'</button></div>'+
+      '<div class="row"><span style="font-size:.72rem;color:var(--sub)">say</span>'+
+      '<input data-k="'+key+'" value="'+p.say+'"></div>';
+    grid.appendChild(div);
+  });
+  grid.addEventListener('click', function(e){
+    var k = e.target.getAttribute('data-k'); if(!k) return;
+    if (e.target.classList.contains('play')) KTTS.sound(k);
+    if (e.target.classList.contains('anchor')) KTTS.sound(k,{anchor:true});
+  });
+  grid.addEventListener('change', function(e){
+    var k = e.target.getAttribute('data-k'); if(!k) return;
+    KTTS.PHONEMES[k].say = e.target.value; KTTS.sound(k);
+  });
+
+  function testBlend(keys){
+    var label = document.getElementById('blendNow');
+    KTTS.blend(keys, {
+      onPiece: function(i){ label.textContent = keys.map(function(k,j){return j===i?'['+k+']':k}).join(' '); },
+      onWord: function(){ label.textContent = '→ ' + keys.join(''); }
+    }).then(function(){ setTimeout(function(){label.textContent='';}, 1200); });
+  }
+
+  function exportMap(){
+    var m = {};
+    Object.keys(KTTS.PHONEMES).forEach(function(k){ m[k] = KTTS.PHONEMES[k].say; });
+    document.getElementById('out').value = JSON.stringify(m, null, 1);
+  }
+
+  /* voice 정보 */
+  (function poll(){
+    var vs = speechSynthesis.getVoices().filter(function(v){return v.lang.indexOf('en')===0});
+    document.getElementById('voiceInfo').textContent = vs.length
+      ? 'en voice ' + vs.length + '개 (자동선택: 우선순위 Google US → Samantha → en-US 첫번째)'
+      : 'voice 로딩 중…';
+    if(!vs.length) setTimeout(poll, 300);
+  })();
+</script>
+</body>
+</html>
