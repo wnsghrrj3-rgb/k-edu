@@ -1,0 +1,238 @@
+/* ============================================================================
+   케이랩 도구 모듈 — 동물의 한살이 (animal) v1  [과학 11호 · 생명 2호]
+   3학년 동물의 한살이. KLab.ui 3모드(자유탐구/미션/퀴즈) 표준. plant 패턴 재활용.
+   디지털 우위: 몇 주~몇 달 걸리는 한살이를 시간 압축 + 두 동물 나란히 비교.
+   변수 → 현상 → 발견:
+     ▸ 왼쪽 🦋 배추흰나비(완전 변태): 알→애벌레(허물벗기)→번데기→어른벌레.
+     ▸ 오른쪽 🜲 잠자리(불완전 변태): 알→애벌레(약충, 물속)→어른벌레. 번데기 없음!
+     ▸ 같은 시간을 나란히 흘려 보며 "번데기 단계가 있고 없고" 차이를 스스로 발견.
+     ▸ 어른이 되면 다시 알을 낳음 → 한살이 순환.
+   미션 4종(번데기/나비 어른/잠자리 어른+차이/번데기 있는 쪽 찾기) + 퀴즈 5문.
+   - 의존: window.KLab (순수 SVG + requestAnimationFrame, THREE 불필요)
+   - config: { mode:"free"|"mission"|"quiz" }
+   ============================================================================ */
+(function () {
+  if (!window.KLab) return;
+  window.KLab.register('animal', function (el, config) {
+    var ui = window.KLab.ui;
+    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+    var raf = null, frame = 0;
+    var C = { ink:'#1B3A57', sub:'#5a7894', good:'#12B886', vio:'#7048E8', leaf:'#51CF66', water:'#74C0FC' };
+    var btn = 'font-size:22px;padding:12px 20px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
+    function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+    /* ───────────── 상태 ───────────── */
+    var day, playing, picked;
+    function reset(){ day=0; playing=false; picked=''; }
+    reset();
+    // 단계: [시작일, 이름]
+    var BF=[[0,'알'],[3,'애벌레'],[10,'번데기'],[15,'어른벌레(나비)'],[20,'다시 알!']];
+    var DF=[[0,'알'],[4,'애벌레(약충)'],[14,'어른벌레(잠자리)'],[20,'다시 알!']];
+    function stageOf(T){ var s=0; for(var i=0;i<T.length;i++)if(day>=T[i][0])s=i; return s; }
+    function tickDay(){ day=Math.min(24,day+1); renderScene(); renderStatus(); checkMission(); }
+    function pick(which){
+      picked=which; renderScene(); renderStatus();
+      if(mode==='mission'&&mStep===3&&!mLock&&which!=='bf')ui.toast(el,false);
+      checkMission();
+    }
+
+    /* ───────────── 미션 ───────────── */
+    var MISSIONS=[
+      { text:'▶ 시간을 흘려 배추흰나비의 <b style="color:#7048E8;">번데기</b> 단계를 봐요!',
+        keep:false, check:function(){ return stageOf(BF)>=2; } },
+      { text:'계속 흘려 <b style="color:#7048E8;">나비(어른벌레)</b>가 되는 순간까지!',
+        keep:true, check:function(){ return stageOf(BF)>=3; } },
+      { text:'잠자리도 <b style="color:#7048E8;">어른벌레</b>가 됐어요 — 나비와 달리 <b style="color:#7048E8;">없었던 단계</b>는 뭘까요? 끝까지 지켜봐요!',
+        keep:true, check:function(){ return stageOf(DF)>=2; } },
+      { text:'🔍 <b style="color:#7048E8;">번데기 단계를 거친 동물</b>의 그림(이름표)을 클릭해요!',
+        keep:true, check:function(){ return picked==='bf'; } }
+    ];
+    var mStep=0, mDone=false, mLock=false;
+    function checkMission(){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; playing=false; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          else mDone=true;
+          build();
+        },1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 ───────────── */
+    var QUIZ=[
+      { q:'배추흰나비 한살이의 순서로 맞는 것은?',
+        ch:['알→애벌레→번데기→어른벌레','알→번데기→애벌레→어른벌레','애벌레→알→어른벌레'], a:0 },
+      { q:'완전 변태와 불완전 변태의 차이는?',
+        ch:['번데기 단계가 있고 없고','날개가 있고 없고','알을 낳고 안 낳고'], a:0 },
+      { q:'잠자리의 한살이는 어느 쪽일까요?',
+        ch:['불완전 변태 — 번데기가 없어요','완전 변태 — 번데기가 있어요','한살이가 없어요'], a:0 },
+      { q:'애벌레는 어떻게 몸이 커질까요?',
+        ch:['허물을 벗으면서 자라요','몸이 풍선처럼 부풀어요','크기가 변하지 않아요'], a:0 },
+      { q:'동물의 한살이란 무엇일까요?',
+        ch:['태어나 자라서 다시 자손을 남기기까지의 과정','하루 동안 하는 일','겨울잠을 자는 것'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i, label:'<span style="font-size:21px;">'+q.ch[i]+'</span>'}; });
+    }
+
+    /* ───────────── UI ───────────── */
+    function ctrlRow(){
+      return '<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:10px;">'
+        +'<button class="an-btn" data-act="play" style="'+btn+(playing?'background:'+C.vio+';color:#fff;border-color:'+C.vio:'background:#fff;color:'+C.vio+';border-color:'+C.vio)+';">'+(playing?'⏸ 멈춤':'▶ 시간 흐르기')+'</button>'
+        +'<button class="an-btn" data-act="step" style="'+btn+'background:#fff;color:'+C.ink+';border-color:'+C.ink+';">+1일</button>'
+        +'<span class="an-day" style="font-size:23px;font-weight:800;color:'+C.ink+';min-width:74px;text-align:center;">'+day+'일째</span>'
+        +'<button class="an-btn" data-act="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 다시 알부터</button>'
+        +'</div>';
+    }
+    function build(){
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      else body=ctrlRow();
+      el.innerHTML='<style>.an-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.an-pane{cursor:pointer;}</style>'
+        + top + bar + body
+        +'<div class="kl-stage-host" style="position:relative;"><div class="an-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:linear-gradient(180deg,#E7F5FF 0%,#F4FCE3 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
+        + foot
+        +'<div class="an-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0; mDone=false; mLock=false; reset();
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        build();
+      });
+      drawStage(); bind(); renderScene(); renderStatus();
+    }
+
+    /* ───────────── 무대 ───────────── */
+    var stage, svg;
+    function drawStage(){
+      stage=el.querySelector('.an-stage'); stage.innerHTML='';
+      svg=svgEl('svg',{viewBox:'0 0 900 460',width:'100%',height:'100%'});
+      stage.appendChild(svg);
+    }
+    function drawButterfly(g,cx){ // 완전 변태 패널
+      var s=stageOf(BF), gy=380;
+      // 배경: 풀밭 + 배춧잎
+      g.appendChild(svgEl('rect',{x:cx-200,y:gy,width:400,height:80,fill:'#B2F2BB'}));
+      g.appendChild(svgEl('ellipse',{cx:cx,cy:gy-4,rx:120,ry:34,fill:C.leaf,stroke:'#2F9E44','stroke-width':3}));
+      g.appendChild(svgEl('path',{d:'M '+(cx-110)+' '+(gy-4)+' Q '+cx+' '+(gy-26)+' '+(cx+110)+' '+(gy-4),fill:'none',stroke:'#2F9E44','stroke-width':2.5}));
+      if(s===0){ // 알
+        for(var e2=0;e2<4;e2++)g.appendChild(svgEl('ellipse',{cx:cx-24+e2*16,cy:gy-16,rx:5,ry:7,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+      } else if(s===1){ // 애벌레 (허물 벗으며 자람)
+        var grow=Math.min(1,(day-3)/6), segs=4+Math.round(grow*3), r=9+grow*6;
+        for(var sg=0;sg<segs;sg++)g.appendChild(svgEl('circle',{cx:cx-segs*r*0.8+sg*r*1.6,cy:gy-14-r,r:r,fill:'#69DB7C',stroke:'#2F9E44','stroke-width':2.5}));
+        g.appendChild(svgEl('circle',{cx:cx-segs*r*0.8-r*0.4,cy:gy-14-r-2,r:r*0.6,fill:'#2F9E44'}));
+        if(grow>0.3)for(var m2=0;m2<Math.floor(grow*3);m2++){ // 벗어 놓은 허물
+          var ht=svgEl('text',{x:cx+90+m2*26,y:gy-10,'font-size':16,opacity:0.55}); ht.textContent='〰️'; g.appendChild(ht); }
+      } else if(s===2){ // 번데기 (가지에 매달림)
+        g.appendChild(svgEl('line',{x1:cx-90,y1:gy-160,x2:cx+90,y2:gy-180,stroke:'#8D6E63','stroke-width':6,'stroke-linecap':'round'}));
+        g.appendChild(svgEl('line',{x1:cx,y1:gy-170,x2:cx,y2:gy-150,stroke:'#A07855','stroke-width':3}));
+        g.appendChild(svgEl('path',{d:'M '+cx+' '+(gy-150)+' q 20 18 14 50 q -5 26 -14 32 q -9 -6 -14 -32 q -6 -32 14 -50',fill:'#C8B08A',stroke:'#9C7E54','stroke-width':2.5,'data-pupa':'1'}));
+      } else { // 어른벌레 나비 (날갯짓)
+        var fl=Math.abs(Math.sin(frame/7)), wx=26+fl*16, by2=gy-190+Math.sin(frame/16)*10;
+        g.appendChild(svgEl('ellipse',{cx:cx-wx,cy:by2-12,rx:30,ry:20,fill:'#fff',stroke:'#495057','stroke-width':2.5,transform:'rotate(-22 '+(cx-wx)+' '+(by2-12)+')'}));
+        g.appendChild(svgEl('ellipse',{cx:cx+wx,cy:by2-12,rx:30,ry:20,fill:'#fff',stroke:'#495057','stroke-width':2.5,transform:'rotate(22 '+(cx+wx)+' '+(by2-12)+')'}));
+        g.appendChild(svgEl('circle',{cx:cx-wx-6,cy:by2-16,r:4.5,fill:'#343A40'}));
+        g.appendChild(svgEl('circle',{cx:cx+wx+6,cy:by2-16,r:4.5,fill:'#343A40'}));
+        g.appendChild(svgEl('ellipse',{cx:cx,cy:by2,rx:7,ry:22,fill:'#495057'}));
+        if(s>=4){ for(var e3=0;e3<3;e3++)g.appendChild(svgEl('ellipse',{cx:cx-16+e3*16,cy:gy-16,rx:5,ry:7,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+          var t4=svgEl('text',{x:cx,y:gy-60,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
+      }
+      // 이름표 + 단계
+      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':25,'font-weight':800,fill:(picked==='bf'?C.vio:C.ink)}); nm.textContent='🦋 배추흰나비'; g.appendChild(nm);
+      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-bfstage':s}); st.textContent=BF[s][1]; g.appendChild(st);
+    }
+    function drawDragonfly(g,cx){ // 불완전 변태 패널
+      var s=stageOf(DF), wy=300;
+      // 연못
+      g.appendChild(svgEl('rect',{x:cx-200,y:wy,width:400,height:160,fill:C.water,'fill-opacity':0.5}));
+      g.appendChild(svgEl('path',{d:'M '+(cx-190)+' '+(wy+6)+' q 30 -10 60 0 q 30 10 60 0 q 30 -10 60 0 q 30 10 60 0 q 30 -10 60 0',fill:'none',stroke:'#fff','stroke-width':3,'stroke-opacity':0.6}));
+      // 갈대
+      g.appendChild(svgEl('line',{x1:cx-140,y1:wy+10,x2:cx-150,y2:wy-130,stroke:'#2F9E44','stroke-width':6,'stroke-linecap':'round'}));
+      if(s===0){ // 알 (물속)
+        for(var e2=0;e2<5;e2++)g.appendChild(svgEl('circle',{cx:cx-30+e2*14,cy:wy+70,r:4.5,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+      } else if(s===1){ // 약충 (물속, 번데기 없이 점점 어른 닮아 감)
+        var grow=Math.min(1,(day-4)/9), len=34+grow*26, ny=wy+70;
+        g.appendChild(svgEl('ellipse',{cx:cx,cy:ny,rx:len/2,ry:11+grow*3,fill:'#A9845C',stroke:'#7B5E3C','stroke-width':2.5,'data-nymph':'1'}));
+        g.appendChild(svgEl('circle',{cx:cx-len/2-7,cy:ny-2,r:9,fill:'#7B5E3C'}));
+        for(var l2=0;l2<3;l2++){ g.appendChild(svgEl('line',{x1:cx-12+l2*12,y1:ny+9,x2:cx-18+l2*12,y2:ny+22,stroke:'#7B5E3C','stroke-width':2.5})); }
+        if(grow>0.5){ // 날개싹(점점 어른을 닮아 감)
+          g.appendChild(svgEl('ellipse',{cx:cx+6,cy:ny-10,rx:12,ry:5,fill:'#C8B08A','fill-opacity':0.8})); }
+      } else { // 어른 잠자리 (물 위)
+        var by2=wy-110+Math.sin(frame/13)*9, fl=Math.abs(Math.sin(frame/5));
+        for(var w2=0;w2<2;w2++){ var sx=(w2?1:-1);
+          g.appendChild(svgEl('ellipse',{cx:cx+sx*34,cy:by2-8,rx:38,ry:6+fl*3,fill:'#D0EBFF','fill-opacity':0.85,stroke:'#74C0FC','stroke-width':2,transform:'rotate('+(sx*10)+' '+(cx+sx*34)+' '+(by2-8)+')'}));
+          g.appendChild(svgEl('ellipse',{cx:cx+sx*30,cy:by2+4,rx:32,ry:5+fl*3,fill:'#D0EBFF','fill-opacity':0.85,stroke:'#74C0FC','stroke-width':2,transform:'rotate('+(sx*-8)+' '+(cx+sx*30)+' '+(by2+4)+')'}));
+        }
+        g.appendChild(svgEl('rect',{x:cx-5,y:by2-6,width:10,height:64,rx:5,fill:'#1098AD'}));
+        g.appendChild(svgEl('circle',{cx:cx,cy:by2-14,r:9,fill:'#0B7285'}));
+        if(s>=3){ for(var e3=0;e3<4;e3++)g.appendChild(svgEl('circle',{cx:cx-24+e3*14,cy:wy+70,r:4.5,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
+          var t4=svgEl('text',{x:cx,y:wy-30,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
+      }
+      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':25,'font-weight':800,fill:(picked==='df'?C.vio:C.ink)}); nm.textContent='🜲 잠자리'; g.appendChild(nm);
+      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-dfstage':s});
+      st.textContent=DF[s][1]+(s>=2?' — 번데기 없이!':''); g.appendChild(st);
+    }
+    function renderScene(){
+      if(!svg)return;
+      svg.innerHTML='';
+      svg.appendChild(svgEl('line',{x1:450,y1:30,x2:450,y2:440,stroke:'#B6C9DC','stroke-width':3,'stroke-dasharray':'8 8'}));
+      var gb=svgEl('g',{'class':'an-pane','data-pick':'bf'}); svg.appendChild(gb); drawButterfly(gb,225);
+      var gd=svgEl('g',{'class':'an-pane','data-pick':'df'}); svg.appendChild(gd); drawDragonfly(gd,675);
+      var dEl=el.querySelector('.an-day'); if(dEl)dEl.textContent=day+'일째';
+      svg.querySelectorAll('.an-pane').forEach(function(g2){
+        g2.addEventListener('click',function(){ pick(g2.getAttribute('data-pick')); });
+      });
+    }
+
+    /* ───────────── 갱신 ───────────── */
+    function loop(){ frame++;
+      if(mode!=='quiz' && playing && frame%26===0) tickDay();
+      else if(mode!=='quiz' && frame%4===0) renderScene();
+      raf=requestAnimationFrame(loop);
+    }
+    function renderStatus(){
+      var s=el.querySelector('.an-status'); if(!s)return;
+      if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">키워 본 걸 떠올리며 답을 골라요</div>'; return; }
+      var sb=stageOf(BF), sd=stageOf(DF), h;
+      if(day===0)h='<div style="font-size:24px;color:'+C.ink+';">🥚 두 동물이 알에서 출발해요 — ▶로 시간을 흘려 봐요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">나비와 잠자리의 한살이가 <b>어디가 같고 어디가 다른지</b> 나란히 비교해요.</div>';
+      else if(sb===2&&sd<2)h='<div style="font-size:24px;color:'+C.vio+';">나비는 번데기 속에서 몸이 바뀌는 중!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">잠자리 애벌레(약충)는 번데기 없이 물속에서 점점 어른을 닮아 가요 — 차이가 보이나요?</div>';
+      else if(sb>=3&&sd>=2)h='<div style="font-size:24px;color:'+C.good+';">둘 다 어른벌레! 그런데 길이 달랐어요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">나비처럼 <b>번데기를 거치면 완전 변태</b>, 잠자리처럼 <b>번데기 없이 자라면 불완전 변태</b>예요.</div>';
+      else { var tips=['알 속에서 준비 중…','애벌레는 허물을 벗으며 쑥쑥 자라요.','',''];
+        h='<div style="font-size:24px;color:'+C.ink+';">'+day+'일째 — 나비: '+BF[sb][1]+' / 잠자리: '+DF[sd][1]+'</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+(sb===1?'애벌레는 허물을 벗으며 자라요. 잠자리 약충은 물속에서 살아요!':'두 동물을 잘 지켜봐요 — 단계가 어떻게 다른가요?')+'</div>'; }
+      s.innerHTML=h;
+    }
+
+    /* ───────────── 바인딩 ───────────── */
+    function bind(){
+      el.querySelectorAll('.an-btn').forEach(function(b){ b.addEventListener('click',function(){
+        var a=b.dataset.act;
+        if(a==='play'){ playing=!playing; build(); }
+        else if(a==='step'){ tickDay(); }
+        else if(a==='reset'){ reset(); build(); }
+      }); });
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok,ok?null:('🤔 정답은 "'+q.ch[q.a]+'"!'));
+          setTimeout(function(){ newQuiz(); build(); },1500);
+        });
+      });
+    }
+
+    if(mode==='quiz')newQuiz();
+    build(); loop();
+    return function cleanup(){ if(raf)cancelAnimationFrame(raf); };
+  });
+})();
