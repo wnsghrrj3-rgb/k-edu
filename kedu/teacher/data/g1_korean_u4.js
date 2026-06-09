@@ -87,3 +87,65 @@
     {id:"e_plan", type:"extension", icon:"⬆", title:"낱말 카드 미리 만들기", content:"오늘 나온 음식 낱말로 카드를 만들어 두면 다음 차시 낱말 놀이에 바로 쓸 수 있어요.", fit_slides:["next_lesson"]}
   ]
 };
+  LESSONS["u4_l06"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 6,
+    title: "꾸며 주는 말",
+    std: "[2국02-01] · [2국05-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 동기유발(어떤 토끼?) → 꾸며 주는 말 개념 → 꾸민 말 카드 퀴즈 → 꾸며 말하기 발표 → 마무리"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"꾸며 주는 말을 알아봐요", subtitle:"4단원 · 6/14차시 · 문법(어휘)"}, suggested_extras:["q_open", "t_goal"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["낱말을 더 자세히 해 주는 ‘꾸며 주는 말’을 알아요", "낱말에 꾸며 주는 말을 붙여 봐요", "꾸며서 친구들에게 말해요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"만나기", block:"motivate", data:{
+      scene_title:"어떤 토끼일까요? 🐰",
+      visual:"🐰",
+      question:"똑같은 토끼인데, 더 자세히 말하려면 어떻게 할까요?<br>(큰 토끼? 하얀 토끼? 깡충깡충 뛰는 토끼?)"
+    }, suggested_extras:["q_around", "x_clue"]},
+    {id:"s04", stage:"만나기", block:"concept", data:{
+      title:"꾸며 주는 말이란?",
+      content:"낱말 앞에 붙어서, **모양·색·크기·맛**을 더 자세히 알려 주는 말이에요.<br>‘사과’보다 ‘**빨간** 사과’가 머릿속에 더 또렷하게 그려지죠!",
+      symbol_meanings:[
+        {symbol:"빨간", meaning:"색을 꾸며요"},
+        {symbol:"큰", meaning:"크기를 꾸며요"},
+        {symbol:"달콤한", meaning:"맛을 꾸며요"},
+        {symbol:"폭신한", meaning:"느낌을 꾸며요"}
+      ]
+    }, suggested_extras:["t_concept", "x_order"]},
+    {id:"s05", stage:"활동", block:"card_quiz", data:{
+      title:"어떤 낱말일까요?",
+      sub:"그림을 보고 꾸며 주는 말을 넣어 말해 봐요! 카드를 누르면 답이 나와요",
+      cards:[
+        {clue:"🍎<br>어떤 <b>색</b>일까?", emoji:"🍎", name:"빨간 사과"},
+        {clue:"🐘<br>어떤 <b>크기</b>일까?", emoji:"🐘", name:"큰 코끼리"},
+        {clue:"🍬<br>어떤 <b>맛</b>일까?", emoji:"🍬", name:"달콤한 사탕"}
+      ],
+      outro:"꾸며 주는 말을 붙이니 훨씬 생생하죠? 😊 이번엔 여러분 차례예요!"
+    }, suggested_extras:["g_match", "e_word"]},
+    {id:"s06", stage:"발표", block:"present", data:{
+      title:"꾸며서 말해 볼까요? 🎤",
+      sub:"좋아하는 것에 꾸며 주는 말을 붙여 친구들에게 소개해요!",
+      count:24,
+      hint:"“저는 **○○한 ○○**을(를) 좋아해요” 처럼 꾸며 주는 말을 넣어 말해요",
+      end_msg:"꾸며 주는 말을 넣으니 이야기가 훨씬 재미있어졌어요! 👏"
+    }, suggested_extras:["t_present", "r_home", "q_why"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["꾸며 주는 말은 낱말을 더 자세히 해 줘요", "색·크기·맛·느낌을 꾸며 줄 수 있어요", "꾸며 주는 말을 넣어 또렷하게 말했어요"]}, suggested_extras:["q_reflect"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"학교에서 만나는 여러 낱말을 알아봐요", body:"교실·운동장·복도에서 볼 수 있는 낱말을 모아 봐요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"q_open", type:"fun_question", icon:"💡", title:"가방 속 물건 자랑하기", content:"“여러분 가방에 뭐가 있어요?” 한 명에게 물은 뒤 “어떤 색이에요? 어떤 모양이에요?”로 이어 꾸며 주는 말로 자연스럽게 들어가요.", fit_slides:["cover", "motivate"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"‘자세히 말하기’가 목표", content:"꾸며 주는 말의 문법 용어(형용사 등)는 1학년엔 필요 없어요. ‘낱말을 더 자세하게 해 주는 말’이라는 느낌만 잡으면 충분해요.", fit_slides:["objective", "concept"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"교실 물건 꾸며 말하기", content:"칠판·창문·책상 등 교실 물건을 가리키며 “어떤 ○○일까요?”로 색·크기·모양을 말하게 하면 개념 도입이 쉬워요.", fit_slides:["motivate"]},
+    {id:"x_clue", type:"misconception", icon:"❓", title:"꾸미는 말 = 칭찬 아님", content:"‘예쁜·멋진’ 같은 좋은 말만 꾸며 주는 말이라고 오해하기 쉬워요. ‘작은·네모난·매운’처럼 사실을 자세히 하는 말도 모두 꾸며 주는 말이에요.", fit_slides:["concept", "card_quiz"]},
+    {id:"t_concept", type:"tip", icon:"🧩", title:"같은 낱말, 다른 꾸밈", content:"‘사과’ 하나로 빨간 사과·큰 사과·달콤한 사과를 만들어 보이면, 꾸며 주는 말이 ‘바꿔 끼우는 말’이라는 걸 직관적으로 알아요.", fit_slides:["concept"]},
+    {id:"x_order", type:"misconception", icon:"❓", title:"꾸미는 말은 앞에", content:"‘사과 빨간’처럼 뒤에 붙이는 실수가 나와요. 꾸며 주는 말은 꾸밈 받는 낱말 **앞**에 온다는 걸 짚어 주세요.", fit_slides:["concept", "card_quiz"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"꾸미는 말 ↔ 어울리는 낱말", description:"꾸며 주는 말과 잘 어울리는 낱말을 짝지어 보세요.", hint:"색·크기·맛을 떠올려요.", pairs:[{a:{text:"달콤한"}, b:{text:"🍬 사탕"}}, {a:{text:"빨간"}, b:{text:"🍎 사과"}}, {a:{text:"큰"}, b:{text:"🐘 코끼리"}}, {a:{text:"폭신한"}, b:{text:"🧸 곰인형"}}], fit_slides:["card_quiz"]},
+    {id:"e_word", type:"extension", icon:"⬆", title:"꾸미는 말 바꿔 끼우기", content:"한 낱말(예: 공)에 꾸미는 말을 계속 바꿔 보게 해요. 동그란 공·작은 공·통통 튀는 공… 많이 나올수록 어휘가 자라요.", fit_slides:["card_quiz", "next_lesson"]},
+    {id:"t_present", type:"tip", icon:"🧩", title:"한 낱말이라도 칭찬", content:"꾸며 주는 말 하나만 붙여도 성공이에요. 잘하는 아이에게는 두 개(‘크고 노란 바나나’)에 도전하게 해요.", fit_slides:["present"]},
+    {id:"r_home", type:"real_world", icon:"🌍", title:"집에서 꾸며 말하기", content:"집 물건(이불·컵·인형)에 꾸미는 말을 붙여 가족에게 말해 보게 하면 생활과 이어져요.", fit_slides:["present"]},
+    {id:"q_why", type:"fun_question", icon:"💡", title:"왜 그렇게 꾸몄어?", content:"“왜 ‘폭신한’이라고 했어요?”라고 물으면 감각·경험을 떠올려 말하는 연습이 돼요.", fit_slides:["present"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"오늘 들은 꾸미는 말", content:"“친구가 쓴 꾸미는 말 중에 기억에 남는 게 있나요?” 들은 내용을 되짚으며 마무리해요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"학교 낱말 미리 떠올리기", content:"다음 시간 ‘학교 낱말’을 위해, 교실에서 본 물건 이름을 하나씩 떠올려 두게 하면 도입이 매끄러워요.", fit_slides:["next_lesson"]}
+  ]
+};
