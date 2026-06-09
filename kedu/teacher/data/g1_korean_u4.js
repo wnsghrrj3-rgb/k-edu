@@ -261,3 +261,115 @@
     {id:"e_plan", type:"extension", icon:"⬆", title:"좋아하는 음식 떠올리기", content:"다음 시간 ‘좋아하는 음식 말하기’를 위해, 가장 좋아하는 음식을 하나 떠올려 두게 하면 도입이 매끄러워요.", fit_slides:["next_lesson"]}
   ]
 };
+  LESSONS["u4_l07"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 7,
+    title: "학교에서 보는 낱말",
+    std: "[2국02-01] · [2국06-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 학교 둘러보기 → 학교 낱말·장소 → 장소 카드 퀴즈 → 학교에서 본 것 말하기 → 마무리"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"학교에서 보는 낱말", subtitle:"4단원 · 7/14차시 · 문법(어휘)·매체"}, suggested_extras:["q_open", "t_goal"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["학교에서 보는 낱말을 알아요", "어디에서 무엇을 하는지 이어 봐요", "학교에서 본 것을 말해요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"만나기", block:"motivate", data:{scene_title:"우리 학교를 둘러봐요 🏫", visual:"🏫", question:"교실 말고 또 어디가 있을까요?<br>운동장, 복도, 급식실… 무엇을 볼 수 있나요?"}, suggested_extras:["q_around"]},
+    {id:"s04", stage:"만나기", block:"concept", data:{
+      title:"학교에서 보는 낱말",
+      content:"학교에는 여러 **장소**가 있고, 저마다 **하는 일**이 달라요. 장소와 하는 일을 함께 알아봐요!",
+      symbol_meanings:[
+        {symbol:"교실 📚", meaning:"공부하는 곳"},
+        {symbol:"운동장 ⚽", meaning:"뛰어노는 곳"},
+        {symbol:"급식실 🍚", meaning:"밥 먹는 곳"},
+        {symbol:"도서관 📖", meaning:"책 읽는 곳"}
+      ]
+    }, suggested_extras:["t_concept", "x_place"]},
+    {id:"s05", stage:"활동", block:"card_quiz", data:{
+      title:"어디일까요?",
+      sub:"하는 일을 보고 학교 어디인지 맞혀 봐요!",
+      cards:[
+        {clue:"공부하고<br>수업하는 곳", emoji:"📚", name:"교실"},
+        {clue:"뛰어놀고<br>운동하는 곳", emoji:"⚽", name:"운동장"},
+        {clue:"맛있는 밥을<br>먹는 곳", emoji:"🍚", name:"급식실"}
+      ],
+      outro:"학교 곳곳의 이름을 잘 알았어요! 여러분이 가 본 곳도 말해 볼까요?"
+    }, suggested_extras:["g_match", "e_word"]},
+    {id:"s06", stage:"발표", block:"present", data:{
+      title:"학교에서 본 것을 말해요 🎤",
+      sub:"학교에서 좋아하는 곳, 자주 가는 곳을 친구들에게 말해요!",
+      count:24,
+      hint:"“나는 **○○**에서 **○○**해요” 처럼 장소와 하는 일을 넣어 말해요",
+      end_msg:"우리 학교 곳곳을 잘 알게 됐어요! 👏"
+    }, suggested_extras:["t_present", "r_school"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["학교에서 보는 낱말을 알았어요", "장소와 하는 일을 이어 봤어요", "학교에서 본 것을 말했어요"]}, suggested_extras:["q_reflect"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"우리 동네에서 보는 낱말을 알아봐요", body:"가게·병원·우체국처럼 동네에서 만나는 낱말을 모아 봐요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"q_open", type:"fun_question", icon:"💡", title:"오늘 아침 지나온 곳", content:"“교실까지 오면서 어디를 지나왔나요?” 복도·계단·신발장을 떠올리며 학교 낱말로 들어가요.", fit_slides:["cover", "motivate"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"장소 + 하는 일", content:"장소 이름만이 아니라 ‘거기서 무엇을 하나’를 함께 익히면 다음 발표(○○에서 ○○해요)로 잘 이어져요.", fit_slides:["objective", "concept"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"창밖으로 보이는 곳", content:"교실 창밖이나 문밖으로 보이는 학교 장소를 가리키며 이름을 말하게 하면 실제와 이어져요.", fit_slides:["motivate"]},
+    {id:"t_concept", type:"tip", icon:"🧩", title:"우리 학교 맞춤", content:"학교마다 장소가 달라요. 우리 학교에 있는 곳(강당·텃밭 등)으로 바꿔 들면 더 와닿아요.", fit_slides:["concept"]},
+    {id:"x_place", type:"misconception", icon:"❓", title:"장소도 ‘낱말’", content:"낱말을 사물(연필·가방)로만 생각하기 쉬워요. 교실·운동장 같은 장소 이름도 모두 낱말이에요.", fit_slides:["concept", "card_quiz"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"장소 ↔ 하는 일", description:"학교 장소와 하는 일을 짝지어요.", hint:"거기서 무엇을 하나요?", pairs:[{a:{text:"📚 교실"}, b:{text:"공부해요"}}, {a:{text:"⚽ 운동장"}, b:{text:"뛰어놀아요"}}, {a:{text:"🍚 급식실"}, b:{text:"밥 먹어요"}}, {a:{text:"📖 도서관"}, b:{text:"책 읽어요"}}], fit_slides:["card_quiz"]},
+    {id:"e_word", type:"extension", icon:"⬆", title:"학교 낱말 더 모으기", content:"보건실·과학실·음악실처럼 더 많은 학교 낱말을 모아 보면 어휘가 넓어져요.", fit_slides:["card_quiz", "next_lesson"]},
+    {id:"t_present", type:"tip", icon:"🧩", title:"좋아하는 곳부터", content:"“학교에서 제일 좋아하는 곳”을 먼저 말하게 하면 부담 없이 발표가 시작돼요.", fit_slides:["present"]},
+    {id:"r_school", type:"real_world", icon:"🌍", title:"학교 지도 그리기", content:"오늘 배운 장소로 우리 학교 간단 지도를 그려 보면 낱말이 공간 감각과 이어져요.", fit_slides:["present", "summary"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"새로 안 학교 낱말", content:"“오늘 새로 알게 된 학교 낱말이 있나요?” 되짚으며 마무리해요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"동네 장소 떠올리기", content:"다음 시간 ‘동네 낱말’을 위해, 집 근처에서 본 가게·건물을 하나 떠올려 두게 해요.", fit_slides:["next_lesson"]}
+  ]
+};
+
+  LESSONS["u4_l08"] = {
+  meta: {
+    grade: 1, subject: "국어", unit: 4, n: 8,
+    title: "이웃·동네에서 보는 낱말",
+    std: "[2국02-01] · [2국06-01]",
+    duration_min: 40,
+    lesson_format: "교사주도 8슬 — 우리 동네 → 동네 낱말·장소 → 장소 카드 → 학교/동네 나누기(주제 분류) → 마무리"
+  },
+  slides: [
+    {id:"s01", stage:"열기", block:"cover", data:{title:"이웃·동네에서 보는 낱말", subtitle:"4단원 · 8/14차시 · 문법(어휘)·매체"}, suggested_extras:["q_open", "t_goal"]},
+    {id:"s02", stage:"열기", block:"objective", data:{title:"오늘 우리가 할 일", bullets:["우리 동네에서 보는 낱말을 알아요", "어떤 곳인지 이어 봐요", "학교 낱말과 동네 낱말을 나눠 봐요"]}, suggested_extras:["t_goal"]},
+    {id:"s03", stage:"만나기", block:"motivate", data:{scene_title:"우리 동네에는 무엇이 있을까? 🏘", visual:"🏘", question:"집을 나서면 무엇이 보이나요?<br>가게, 병원, 공원… 우리 동네를 떠올려 봐요!"}, suggested_extras:["q_around"]},
+    {id:"s04", stage:"만나기", block:"concept", data:{
+      title:"동네에서 보는 낱말",
+      content:"우리 동네에도 여러 **장소**가 있어요. 어떤 일을 하는 곳인지 알면 낱말이 더 잘 기억나요!",
+      symbol_meanings:[
+        {symbol:"가게 🏪", meaning:"물건 사는 곳"},
+        {symbol:"병원 🏥", meaning:"아플 때 가는 곳"},
+        {symbol:"우체국 📮", meaning:"편지 부치는 곳"},
+        {symbol:"공원 🌳", meaning:"쉬고 노는 곳"}
+      ]
+    }, suggested_extras:["t_concept", "x_place"]},
+    {id:"s05", stage:"활동", block:"card_quiz", data:{
+      title:"어디일까요?",
+      sub:"하는 일을 보고 동네 어디인지 맞혀 봐요!",
+      cards:[
+        {clue:"아프거나 다쳤을 때<br>가는 곳", emoji:"🏥", name:"병원"},
+        {clue:"편지나 택배를<br>부치는 곳", emoji:"📮", name:"우체국"},
+        {clue:"책을 빌리고<br>읽는 곳", emoji:"📖", name:"도서관"}
+      ],
+      outro:"동네 곳곳의 이름을 알았어요! 그럼 학교 낱말과 동네 낱말을 나눠 볼까요?"
+    }, suggested_extras:["g_match", "e_word"]},
+    {id:"s06", stage:"활동", block:"question", data:{
+      title:"학교일까, 동네일까?",
+      question:"다음 낱말은 어디에서 볼 수 있을까요? 함께 ‘학교’와 ‘우리 동네’로 나눠 봐요!",
+      items:["교실 — 어디에서 볼까요?", "병원 — 어디에서 볼까요?", "운동장 — 어디에서 볼까요?", "우체국 — 어디에서 볼까요?", "급식실 — 어디에서 볼까요?", "공원 — 어디에서 볼까요?"]
+    }, suggested_extras:["t_sort", "x_sort"]},
+    {id:"s07", stage:"정리", block:"summary", data:{title:"오늘 배운 것", points:["동네에서 보는 낱말을 알았어요", "어떤 일을 하는 곳인지 이어 봤어요", "학교 낱말과 동네 낱말을 나눠 봤어요"]}, suggested_extras:["q_reflect", "r_home"]},
+    {id:"s08", stage:"정리", block:"next_lesson", data:{title:"다음 시간 예고", preview:"이야기를 들으며 길에서 만나는 낱말을 알아봐요", body:"학교 가는 길에 보고 듣고 만난 것을 이야기로 만나요!"}, suggested_extras:["e_plan"]}
+  ],
+  extras: [
+    {id:"q_open", type:"fun_question", icon:"💡", title:"집 앞에 뭐가 있나요?", content:"“집에서 나오면 제일 먼저 뭐가 보여요?” 가볍게 물어 동네 낱말로 들어가요.", fit_slides:["cover", "motivate"]},
+    {id:"t_goal", type:"tip", icon:"🧩", title:"분류가 오늘의 핵심", content:"이 차시 핵심은 ‘학교 낱말 / 동네 낱말 나누기’예요. 낱말을 두 묶음으로 가르는 활동에 시간을 넉넉히 두세요.", fit_slides:["objective", "question"]},
+    {id:"q_around", type:"fun_question", icon:"💡", title:"가 본 동네 장소", content:"“주말에 동네 어디 가 봤어요?” 실제 경험을 끌어내면 낱말이 살아나요.", fit_slides:["motivate"]},
+    {id:"t_concept", type:"tip", icon:"🧩", title:"우리 동네 맞춤", content:"동네마다 있는 곳이 달라요. 우리 동네에 있는 곳(시장·놀이터 등)으로 바꿔 들면 더 와닿아요.", fit_slides:["concept"]},
+    {id:"x_place", type:"misconception", icon:"❓", title:"동네 = 우리 집만 아님", content:"동네를 ‘우리 집’으로만 좁히기 쉬워요. 집 둘레의 가게·길·공원 모두가 동네예요.", fit_slides:["concept", "card_quiz"]},
+    {id:"g_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"동네 장소 ↔ 하는 일", description:"동네 장소와 하는 일을 짝지어요.", hint:"거기서 무엇을 하나요?", pairs:[{a:{text:"🏥 병원"}, b:{text:"진료받아요"}}, {a:{text:"📮 우체국"}, b:{text:"편지 부쳐요"}}, {a:{text:"🏪 가게"}, b:{text:"물건 사요"}}, {a:{text:"🌳 공원"}, b:{text:"쉬며 놀아요"}}], fit_slides:["card_quiz"]},
+    {id:"e_word", type:"extension", icon:"⬆", title:"동네 낱말 더 모으기", content:"소방서·경찰서·은행·시장처럼 더 많은 동네 낱말을 모아 보면 어휘가 넓어져요.", fit_slides:["card_quiz"]},
+    {id:"t_sort", type:"tip", icon:"🧩", title:"나누는 까닭 묻기", content:"“왜 그렇게 나눴어요?”를 물으면 단순 분류를 넘어 ‘어디에 있는가’ 기준을 스스로 말하게 돼요.", fit_slides:["question"]},
+    {id:"x_sort", type:"misconception", icon:"❓", title:"둘 다 있는 낱말", content:"도서관처럼 학교에도 동네에도 있는 낱말이 나와요. ‘둘 다 맞아요’를 인정하면 분류가 더 풍부해져요.", fit_slides:["question"]},
+    {id:"q_reflect", type:"fun_question", icon:"💡", title:"오늘 나눈 낱말", content:"“오늘 나눠 본 낱말 중 기억에 남는 게 있나요?” 되짚으며 마무리해요.", fit_slides:["summary"]},
+    {id:"r_home", type:"real_world", icon:"🌍", title:"집 가는 길 살펴보기", content:"집에 가는 길에 동네 장소 간판을 읽어 보게 하면 낱말이 생활·매체와 이어져요.", fit_slides:["summary"]},
+    {id:"e_plan", type:"extension", icon:"⬆", title:"길에서 본 것 떠올리기", content:"다음 시간 ‘길에서 만나는 낱말’을 위해, 학교 오는 길에 본 것을 하나 떠올려 두게 해요.", fit_slides:["next_lesson"]}
+  ]
+};
