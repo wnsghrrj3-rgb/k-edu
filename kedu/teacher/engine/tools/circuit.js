@@ -1,10 +1,11 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 전기 회로 (circuit) v4  [과학 1호 · 직렬/병렬 + 전지 방향]
+   케이랩 도구 모듈 — 전기 회로 (circuit) v5  [과학 1호 · 직렬/병렬 + 전지 방향 + 3모드]
    v4 추가 (준호 "남은 자세한 컨트롤까지"):
      ▸ [직렬]/[병렬] 작업판 토글 — 병렬 가지에 전구를 독립으로.
      ▸ 전지 방향(극): '전지' 도구로 전지를 탭하면 ＋－ 방향이 바뀜.
         직렬에서 전지를 거꾸로 섞으면 상쇄(netB)되어 약해지거나 꺼짐.
-   v3 자유 배치(팔레트로 놓기/빼기, 스위치 여닫기) 유지.
+   v5: KLab.ui 3모드(자유탐구/미션4/퀴즈5) 증축 — 퀴즈는 켜진 회로를 보고 예측형.
+   v3 자유 배치(팔레트로 놓기/빼기, 스위치 여닫기) 유지. config.circ='parallel'로 병렬 진입.
    물리:
      직렬: netB=|Σ전지방향|, 전구≥1, 열린 스위치 없음 → 흐름. 밝기 netB/전구수. 전구0=합선.
      병렬: 본선 전지·스위치 → 흐르면 각 가지 전구 독립 점등(밝기 netB). 가지 전구0=합선.
@@ -15,7 +16,9 @@
   var TOOLS=[{k:'battery',l:'🔋 전지'},{k:'bulb',l:'💡 전구'},{k:'switch',l:'⏻ 스위치'},{k:'erase',l:'✖ 지우기'}];
 
   window.KLab.register('circuit', function (el, config) {
-    var mode=(config.mode==='parallel')?'parallel':'series';
+    var ui=window.KLab.ui;
+    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    var circ=(config.mode==='parallel'||config.circ==='parallel')?'parallel':'series';
     function defS(){return [{t:'battery',dir:1},{t:'wire'},{t:'bulb'},{t:'wire'},{t:'switch',open:false},{t:'wire'},{t:'bulb'},{t:'wire'}];}
     function defP(){return [{t:'battery',dir:1},{t:'switch',open:false},{t:'bulb'},{t:'bulb'},{t:'wire'}];} // 0본선전지,1본선스위치,2~4가지
     var sSlots=defS(), pSlots=defP(), tool='bulb';
@@ -28,10 +31,10 @@
     var btn='font-size:21px;padding:10px 16px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     var mbtn='font-size:21px;padding:10px 18px;border-radius:14px;border:3px solid #7048E8;background:#fff;color:#7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
-    function slots(){return mode==='series'?sSlots:pSlots;}
+    function slots(){return circ==='series'?sSlots:pSlots;}
     // ── 해석
     function calc(){
-      if(mode==='series'){
+      if(circ==='series'){
         var net=0,L=0,openSw=false;
         sSlots.forEach(function(s){if(s.t==='battery')net+=(s.dir||1);else if(s.t==='bulb')L++;else if(s.t==='switch'&&s.open)openSw=true;});
         net=Math.abs(net);
@@ -50,22 +53,82 @@
       }
     }
 
+    /* ───────────── 미션 ───────────── */
+    var MISSIONS=[
+      { circ:'series', text:'🔋 <b style="color:#7048E8;">전지를 한 개 더</b> 놓아 전구를 더 밝게 만들어 봐요!',
+        check:function(r){ return circ==='series' && r.flow && r.net>=2; } },
+      { circ:'series', text:'전지 하나를 <b style="color:#7048E8;">거꾸로(＋－ 바꾸기)</b> 끼우면 어떻게 되는지 봐요!',
+        check:function(r){ if(circ!=='series')return false; var nb=0; sSlots.forEach(function(s){if(s.t==='battery')nb++;}); return nb>=2 && r.net===0; } },
+      { circ:'parallel', text:'🔀 병렬 — <b style="color:#7048E8;">세 가지 모두 전구</b>를 놓아 다 켜 봐요!',
+        check:function(r){ return circ==='parallel' && r.mainFlow && r.bb>=3; } },
+      { circ:'parallel', text:'✖ 가지 전구 <b style="color:#7048E8;">하나를 빼도</b> 나머지가 켜져 있는지 확인해 봐요!',
+        check:function(r){ return circ==='parallel' && r.mainFlow && r.bb===2; } }
+    ];
+    var mStep=0,mDone=false,mLock=false;
+    function checkMission(r){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check(r)){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1){
+            mStep++;
+            if(MISSIONS[mStep].circ!==circ){ circ=MISSIONS[mStep].circ; sSlots=defS(); pSlots=defP(); }
+          } else mDone=true;
+          buildUI();
+        },1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 (켜져 있는 회로를 보고 예측) ───────────── */
+    var QUIZ=[
+      { circ:'series',   q:'켜져 있는 이 스위치를 열면 어떻게 될까요?', ch:['모든 전구가 꺼져요','전구 하나만 꺼져요','더 밝아져요'], a:0 },
+      { circ:'series',   q:'이 직렬 회로에 전구를 더 놓으면 밝기는?', ch:['어두워져요','밝아져요','변화 없어요'], a:0 },
+      { circ:'parallel', q:'가지 전구 한 개를 빼면 나머지 전구는?', ch:['그대로 켜져 있어요','모두 꺼져요','더 어두워져요'], a:0 },
+      { circ:'series',   q:'전지를 한 개 더 같은 방향으로 놓으면?', ch:['전구가 더 밝아져요','전구가 꺼져요','어두워져요'], a:0 },
+      { circ:'series',   q:'전구를 모두 빼고 전지만 한 줄로 이으면?', ch:['합선되어 위험해요','더 밝아져요','아무 일 없어요'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+      circ=QUIZ[qIdx].circ; sSlots=defS(); pSlots=defP();
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
+    }
+
     function buildUI(){
       var pal=TOOLS.map(function(t){return '<button class="cir-tool'+(t.k===tool?' on':'')+'" data-tool="'+t.k+'" style="'+btn+(t.k===tool?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+t.l+'</button>';}).join('');
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', mid='', foot='';
+      var circRow='<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
+          +'<button class="cir-mode'+(circ==='series'?' on':'')+'" data-mode="series" style="'+mbtn+'">직렬</button>'
+          +'<button class="cir-mode'+(circ==='parallel'?' on':'')+'" data-mode="parallel" style="'+mbtn+'">병렬</button>'
+        +'</div>';
+      var palRow='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:5px;">'+pal
+          +'<button class="cir-tool" data-tool="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 처음</button></div>';
+      var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">부품을 골라 빈 자리를 탭해 놓아요. \'스위치\'로 탭=여닫기, \'전지\'로 전지 탭=＋－ 방향 바꾸기.</div>';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); mid=palRow+hint; }
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      else mid=circRow+palRow+hint;
       el.innerHTML='<style>'
-        +'.cir-tool:active,.cir-mode:active{transform:translateY(2px);}'
+        +'.cir-tool:active,.cir-mode:active,.kl-choice:active{transform:translateY(2px);}'
         +'.cir-tool.on{background:#1565C0 !important;color:#fff !important;}.cir-mode.on{background:#7048E8 !important;color:#fff !important;}'
+        +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.cir-hit{cursor:pointer;}@keyframes cirFlow{to{stroke-dashoffset:-30;}}.cir-flow{stroke-dasharray:3 13;stroke-linecap:round;animation:cirFlow .55s linear infinite;}'
         +'</style>'
-        +'<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
-          +'<button class="cir-mode'+(mode==='series'?' on':'')+'" data-mode="series" style="'+mbtn+'">직렬</button>'
-          +'<button class="cir-mode'+(mode==='parallel'?' on':'')+'" data-mode="parallel" style="'+mbtn+'">병렬</button>'
-        +'</div>'
-        +'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:5px;">'+pal
-          +'<button class="cir-tool" data-tool="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 처음</button></div>'
-        +'<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">부품을 골라 빈 자리를 탭해 놓아요. \'스위치\'로 탭=여닫기, \'전지\'로 전지 탭=＋－ 방향 바꾸기.</div>'
-        +'<div class="cir-stage" style="width:100%;height:44vh;min-height:320px;background:radial-gradient(120% 120% at 50% 30%,#FCFDFF 0%,#EAF1FA 70%,#DCE8F6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
+        + top + bar + mid
+        +'<div class="kl-stage-host" style="position:relative;"><div class="cir-stage" style="width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'250':'320')+'px;background:radial-gradient(120% 120% at 50% 30%,#FCFDFF 0%,#EAF1FA 70%,#DCE8F6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
+        + foot
         +'<div class="cir-status" style="text-align:center;margin-top:9px;font-weight:800;font-family:inherit;"></div>';
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0;mDone=false;mLock=false; sSlots=defS();pSlots=defP(); tool='bulb';
+        if(m==='mission')circ=MISSIONS[0].circ;
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        buildUI();
+      });
       bind(); render();
     }
 
@@ -118,7 +181,7 @@
       var stage=el.querySelector('.cir-stage'); stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'}); defs(svg);
       var r=calc();
-      if(mode==='series'){
+      if(circ==='series'){
         var flow=r.flow, rr=26;
         var d='M '+(lft+rr)+' '+top+' L '+(rgt-rr)+' '+top+' Q '+rgt+' '+top+' '+rgt+' '+(top+rr)+' L '+rgt+' '+(bot-rr)+' Q '+rgt+' '+bot+' '+(rgt-rr)+' '+bot+' L '+(lft+rr)+' '+bot+' Q '+lft+' '+bot+' '+lft+' '+(bot-rr)+' L '+lft+' '+(top+rr)+' Q '+lft+' '+top+' '+(lft+rr)+' '+top+' Z';
         svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:'#415062','stroke-width':12,'stroke-opacity':0.16,'stroke-linejoin':'round'}));
@@ -147,10 +210,12 @@
       }
       stage.appendChild(svg);
       renderStatus(r);
+      checkMission(r);
     }
     function renderStatus(r){
       var s=el.querySelector('.cir-status'), msg, sub;
-      if(mode==='series'){
+      if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;color:'+C.sub+';">그림 속 회로를 보고 답을 골라요!</div>'; return; }
+      if(circ==='series'){
         if(r.short){msg='합선됐어요';sub='전구 없이 전지만 이으면 위험해요.';}
         else if(r.net===0){msg='전류가 안 흘러요';sub='전지를 놓거나, 거꾸로 끼운 전지의 방향을 맞춰 보세요.';}
         else if(r.openSw){msg='스위치가 열렸어요';sub='직렬은 한 줄이라 스위치 하나만 열려도 전부 꺼져요.';}
@@ -168,13 +233,14 @@
     }
 
     function bind(){
-      el.querySelectorAll('.cir-mode').forEach(function(b){b.addEventListener('click',function(){if(mode!==b.dataset.mode){mode=b.dataset.mode;buildUI();}});});
+      el.querySelectorAll('.cir-mode').forEach(function(b){b.addEventListener('click',function(){if(circ!==b.dataset.mode){circ=b.dataset.mode;buildUI();}});});
       el.querySelectorAll('.cir-tool').forEach(function(b){b.addEventListener('click',function(){
         var k=b.dataset.tool;
         if(k==='reset'){sSlots=defS();pSlots=defP();tool='bulb';buildUI();return;}
         tool=k; el.querySelectorAll('.cir-tool').forEach(function(x){x.classList.toggle('on',x.dataset.tool===tool);});
       });});
       el.querySelector('.cir-stage').addEventListener('click',function(e){
+        if(mode==='quiz')return;
         var h=e.target.closest?e.target.closest('.cir-hit'):null; if(!h)return;
         var i=+h.getAttribute('data-slot'), arr=slots(), s=arr[i];
         if(tool==='erase') {s.t='wire'; delete s.open; delete s.dir;}
@@ -182,6 +248,15 @@
         else if(tool==='battery'){ if(s.t==='battery') s.dir=(s.dir||1)*-1; else {s.t='battery';s.dir=1;} }
         else { s.t='bulb'; }
         render();
+      });
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok);
+          setTimeout(function(){ newQuiz(); buildUI(); },1500);
+        });
       });
     }
     buildUI();

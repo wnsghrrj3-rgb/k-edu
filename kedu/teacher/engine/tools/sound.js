@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 소리·진동 (sound) v2  [과학 5호]
+   케이랩 도구 모듈 — 소리·진동 (sound) v3  [과학 5호 · 3모드]
    3학년 소리의 성질.
    v2 추가 (준호 "전기 v4 수준으로 깊게"):
      ▸ 탐구 미션 4종 — 🔊 큰 / 🔉 작은 / ⬆️ 높은 / ⬇️ 낮은 소리 만들기.
@@ -10,15 +10,17 @@
      진폭(소리 크기)·진동수(소리 높이) 슬라이더 → 파형·떨림·실제 음 →
      "소리는 떨림(진동). 크게 떨리면 큰 소리, 빠르게 떨리면 높은 소리."
    - 의존: window.KLab (SVG + rAF + Web Audio, 오디오는 안전 try/catch)
-   - config: { amp(1~5,기본3), freq(1~8,기본3) }
+   v3: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 움직이는 파형을 보고 답하기.
+   - config: { amp(1~5,기본3), freq(1~8,기본3), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   var C={wave:'#7048E8',speaker:'#495057',ink:'#1B3A57',sub:'#5a7894',ring:'#9775FA',good:'#12B886'};
   window.KLab.register('sound', function (el, config) {
+    var ui=window.KLab.ui;
+    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var amp=config.amp||3, freq=config.freq||3, playing=false, raf=null, ph=0;
     var actx=null, osc=null, gain=null, lastK=null;
-    var done={loud:false,quiet:false,high:false,low:false};
     var btn='font-size:22px;padding:11px 20px;border-radius:14px;border:3px solid #7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=900,VBH=460, SPK={x:135,y:230}, X0=235, X1=850, MID=230;
@@ -26,30 +28,75 @@
     function hz(){return 200+freq*80;}
     function vol(){return amp*0.04;}
 
+    /* ───────────── 미션 ───────────── */
     var MISSIONS=[
-      {k:'loud', l:'🔊 큰 소리',  test:function(){return amp>=5;}, tip:'소리 크기(진폭)를 가장 크게'},
-      {k:'quiet',l:'🔉 작은 소리',test:function(){return amp<=1;}, tip:'소리 크기(진폭)를 가장 작게'},
-      {k:'high', l:'⬆️ 높은 소리',test:function(){return freq>=8;}, tip:'소리 높이(진동수)를 가장 높게'},
-      {k:'low',  l:'⬇️ 낮은 소리',test:function(){return freq<=1;}, tip:'소리 높이(진동수)를 가장 낮게'}
+      { text:'🔊 진폭 슬라이더로 <b style="color:#7048E8;">가장 큰 소리</b>를 만들어 봐요!',
+        check:function(){ return amp>=5; } },
+      { text:'🔉 이번엔 <b style="color:#7048E8;">가장 작은 소리</b> — 파형이 어떻게 변하나요?',
+        check:function(){ return amp<=1; } },
+      { text:'⬆️ 진동수 슬라이더로 <b style="color:#7048E8;">가장 높은 소리</b>를 만들어 봐요!',
+        check:function(){ return freq>=8; } },
+      { text:'⬇️ 마지막 — <b style="color:#7048E8;">가장 낮은 소리</b>! 파형이 느긋해져요.',
+        check:function(){ return freq<=1; } }
     ];
+    var mStep=0,mDone=false,mLock=false;
+    function checkMissionStep(){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          buildUI();
+        },1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 (파형 장면을 보고 답하기) ───────────── */
+    var QUIZ=[
+      { amp:5, freq:3, q:'파형이 이렇게 크게 떨리면 어떤 소리일까요?', ch:['큰 소리','작은 소리','높은 소리'], a:0 },
+      { amp:1, freq:3, q:'파형이 이렇게 작게 떨리면 어떤 소리일까요?', ch:['작은 소리','큰 소리','낮은 소리'], a:0 },
+      { amp:3, freq:8, q:'파형이 이렇게 촘촘하면 어떤 소리일까요?', ch:['높은 소리','낮은 소리','큰 소리'], a:0 },
+      { amp:3, freq:1, q:'파형이 이렇게 느긋하면 어떤 소리일까요?', ch:['낮은 소리','높은 소리','작은 소리'], a:0 },
+      { amp:3, freq:3, q:'소리는 무엇 때문에 생길까요?', ch:['물체의 떨림(진동)','물체의 색깔','물체의 무게'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+      amp=QUIZ[qIdx].amp; freq=QUIZ[qIdx].freq; lastK=null;
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i,label:'<span style="font-size:21px;">'+q.ch[i]+'</span>'}; });
+    }
 
     function buildUI(){
-      var chips=MISSIONS.map(function(m){return '<button class="sd-chip'+(done[m.k]?' done':'')+'" data-k="'+m.k+'" style="font-size:16px;padding:7px 12px;border-radius:12px;border:2.5px solid #D0BFFF;background:#fff;color:#5a3fb8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">'+(done[m.k]?'✓ ':'')+m.l+'</button>';}).join('');
-      el.innerHTML='<style>.sd-btn:active,.sd-chip:active{transform:translateY(2px);}'
-        +'.sd-chip.done{background:#E6FCF5 !important;border-color:'+C.good+' !important;color:'+C.good+' !important;}'
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var ctrl='<div style="display:flex;gap:18px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
+          +'<span class="sd-lab">소리 크기(진폭)</span><input class="sd-range" data-k="amp" type="range" min="1" max="5" value="'+amp+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="amp">'+amp+'/5</span>'
+          +'<span class="sd-lab">소리 높이(진동수)</span><input class="sd-range" data-k="freq" type="range" min="1" max="8" value="'+freq+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="freq">'+freq+'/8</span>'
+          +'<button class="sd-btn" data-act="play" style="'+btn+(playing?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">'+(playing?'■ 멈춤':'▶ 소리 듣기')+'</button>'
+        +'</div>';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl='<div style="display:flex;justify-content:center;margin-bottom:8px;"><button class="sd-btn" data-act="play" style="'+btn+(playing?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">'+(playing?'■ 멈춤':'▶ 소리 듣기')+'</button></div>'; foot=ui.choices(quizChoices()); }
+      el.innerHTML='<style>.sd-btn:active,.kl-choice:active{transform:translateY(2px);}'
+        +'.kl-choice{min-width:auto !important;padding:14px 22px !important;}'
         +'.sd-range{-webkit-appearance:none;appearance:none;height:12px;border-radius:7px;background:#D0BFFF;outline:none;}'
         +'.sd-range::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:4px solid #7048E8;cursor:pointer;}'
         +'.sd-range::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;border:4px solid #7048E8;cursor:pointer;}'
         +'.sd-lab{font-size:17px;font-weight:800;color:#5a3fb8;font-family:inherit;}.sd-val{font-size:16px;font-weight:800;color:#7048E8;font-family:inherit;min-width:34px;display:inline-block;text-align:center;}</style>'
-        +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;"><span style="font-size:15px;color:'+C.sub+';align-self:center;font-weight:800;">미션</span>'+chips+'</div>'
-        +'<div style="display:flex;gap:18px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
-          +'<span class="sd-lab">소리 크기(진폭)</span><input class="sd-range" data-k="amp" type="range" min="1" max="5" value="'+amp+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="amp">'+amp+'/5</span>'
-          +'<span class="sd-lab">소리 높이(진동수)</span><input class="sd-range" data-k="freq" type="range" min="1" max="8" value="'+freq+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="freq">'+freq+'/8</span>'
-          +'<button class="sd-btn" data-act="play" style="'+btn+(playing?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">'+(playing?'■ 멈춤':'▶ 소리 듣기')+'</button>'
-        +'</div>'
-        +'<div class="sd-stage" style="width:100%;height:42vh;min-height:310px;background:radial-gradient(120% 120% at 16% 50%,#FBFAFF 0%,#F1EEFA 70%,#E7E0F6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(112,72,232,0.10);"></div>'
+        + top + bar + ctrl
+        +'<div class="kl-stage-host" style="position:relative;"><div class="sd-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'42vh')+';min-height:'+(mode==='quiz'?'240':'310')+'px;background:radial-gradient(120% 120% at 16% 50%,#FBFAFF 0%,#F1EEFA 70%,#E7E0F6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(112,72,232,0.10);"></div></div>'
+        + foot
         +'<div class="sd-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;color:'+C.sub+';font-size:18px;line-height:1.4;"></div>';
-      drawStage(); bind(); if(!raf)loop(); renderStatus();
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0;mDone=false;mLock=false; amp=3; freq=3; lastK=null;
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        buildUI();
+      });
+      drawStage(); bind(); if(!raf)loop(); renderStatus(); updateAudio();
     }
 
     var stage, waveEl, coneEl, ringEls=[];
@@ -82,21 +129,14 @@
 
     function renderStatus(){
       var s=el.querySelector('.sd-status');
+      if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;">떨리는 파형을 잘 보고 (들어 보고) 답을 골라요!</div>'; return; }
       var big=amp>=4?'큰':(amp<=2?'작은':'보통'), high=freq>=6?'높은':(freq<=2?'낮은':'보통');
       var base='파형이 '+(amp>=4?'크게':(amp<=2?'작게':'적당히'))+' '+(freq>=6?'촘촘하게':(freq<=2?'천천히':'적당히'))+' 떨려요 — '+big+' 소리·'+high+' 소리. <b>진폭</b>은 소리 크기, <b>진동수</b>는 소리 높이예요.';
       var hint='';
       if(lastK==='amp')hint='<div style="font-size:16px;color:'+C.ring+';margin-top:4px;">크기(진폭)만 바꿨더니 파형 높이만 달라지고 촘촘함(높이)은 그대로예요.</div>';
       else if(lastK==='freq')hint='<div style="font-size:16px;color:'+C.ring+';margin-top:4px;">높이(진동수)만 바꿨더니 촘촘함만 달라지고 파형 높이(크기)는 그대로예요.</div>';
       s.innerHTML='<div>'+base+'</div>'+hint;
-      checkMission();
-    }
-    function checkMission(){
-      var allDone=true;
-      MISSIONS.forEach(function(m){ if(m.test())done[m.k]=true; if(!done[m.k])allDone=false; });
-      el.querySelectorAll('.sd-chip').forEach(function(c){var k=c.dataset.k;
-        if(done[k]&&!c.classList.contains('done')){c.classList.add('done');if(c.textContent.indexOf('✓')<0)c.textContent='✓ '+c.textContent;}});
-      if(allDone){var s=el.querySelector('.sd-status');
-        if(s&&s.innerHTML.indexOf('네 가지')<0)s.innerHTML+='<div style="font-size:17px;color:'+C.good+';margin-top:5px;">네 가지 소리를 모두 만들었어요! ✨ 크기와 높이는 따로따로 바꿀 수 있어요.</div>';}
+      checkMissionStep();
     }
 
     function ensureCtx(){ try{ if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){actx=null;} return actx; }
@@ -116,10 +156,15 @@
         b.textContent=playing?'■ 멈춤':'▶ 소리 듣기';
         b.style.background=playing?'#7048E8':'#fff'; b.style.color=playing?'#fff':'#7048E8';
       });
-      el.querySelectorAll('.sd-chip').forEach(function(c){c.addEventListener('click',function(){
-        var m=MISSIONS.filter(function(x){return x.k===c.dataset.k;})[0], s=el.querySelector('.sd-status');
-        if(s&&m)s.innerHTML='<div style="font-size:21px;color:'+C.ink+';">'+m.l+' 만들기</div><div style="font-size:17px;color:'+C.sub+';margin-top:5px;">'+m.tip+'</div>';
-      });});
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok);
+          setTimeout(function(){ newQuiz(); buildUI(); },1500);
+        });
+      });
     }
     buildUI();
     return function cleanup(){ if(raf)cancelAnimationFrame(raf); stopAudio(); try{actx&&actx.close();}catch(e){} };
