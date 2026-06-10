@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Max Is Lost! | K-edu 영어 Lv5</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   영어 v3 샘플 — Lv5 이야기 독해 「Max Is Lost!」
+   디자인: 교실 단 후반 — 지문 카드 + 문제 상하 분할, R초록 포인트.
+   독해 사다리 표준 적용: 13문장(10~15 범위) · 과거형(Lv5 문법) ·
+   고정 인물 풀(Mina·Max) · 문제 = 사건 순서 + 지칭어(지문 탭) — Lv5 도입 유형.
+   낭독: Lv5 = 묵독 기본, TTS는 선택(🔊).
+   ============================================================ */
+:root{ --primary:#12B886; --primary-light:#E6FAF3; --bg:#F6FBF9; --text:#1A202C; --sub:#64748B; --ok:#12B886; --warn:#F59F00; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.top{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:1px solid #E2E8F0}
+.back{font-size:14px;color:var(--sub);text-decoration:none;font-weight:700}
+.progress-wrap{flex:1;margin:0 6px}
+.progress-bar{height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--primary);transition:width .5s}
+.kedu-logo{background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-family:Jua;font-size:14px}
+.slides{flex:1;position:relative;overflow:hidden}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:16px 18px;text-align:center;
+       opacity:0;transform:translateX(60px);transition:all .4s;pointer-events:none;overflow-y:auto}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.center{justify-content:center}
+.badge{background:var(--primary-light);color:#0B7A5C;border-radius:99px;padding:4px 14px;font-family:Jua;font-size:14px;margin-bottom:10px;flex-shrink:0}
+.s-title{font-family:Jua;font-size:22px;line-height:1.45}
+.s-sub{font-size:14.5px;color:var(--sub);margin-top:8px;line-height:1.7}
+/* 지문 카드 — 교실 단 독해 레이아웃 */
+.passage{background:#fff;border-radius:16px;padding:18px;max-width:420px;width:100%;text-align:left;box-shadow:0 1px 8px rgba(0,0,0,.06);margin-top:4px}
+.passage h3{font-family:Jua;font-size:18px;color:#0B7A5C;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.passage h3 .tts{margin-left:auto;font-size:13px;background:var(--primary-light);color:#0B7A5C;border:0;border-radius:99px;padding:5px 12px;cursor:pointer;font-family:'Noto Sans KR';font-weight:700}
+.passage p{font-size:17.5px;line-height:1.85;color:#2D3748}
+.passage .tappable{border-bottom:2px dotted #94D9C3;cursor:pointer}
+.passage .tappable.found{background:#FFE45C;border-radius:4px;border-bottom:0;padding:0 2px}
+/* 문제 */
+.qcard{background:#fff;border-radius:16px;padding:16px;max-width:420px;width:100%;box-shadow:0 1px 8px rgba(0,0,0,.06);margin-top:10px}
+.qcard .q{font-size:16px;font-weight:800;margin-bottom:12px;text-align:left}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{border:2px solid #E2E8F0;border-radius:12px;padding:11px 14px;font-size:15.5px;font-weight:700;cursor:pointer;text-align:left;background:#fff}
+.opt:active{transform:scale(.99)}
+.opt.right{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong{opacity:.35}
+/* 순서 카드 */
+.scene{border:2px solid #E2E8F0;border-radius:12px;padding:11px 14px;font-size:15px;font-weight:700;cursor:pointer;background:#fff;display:flex;gap:10px;align-items:center;text-align:left}
+.scene .num{width:26px;height:26px;border-radius:50%;background:#EDF2F7;color:#A0AEC0;display:flex;align-items:center;justify-content:center;font-family:Jua;flex-shrink:0}
+.scene.picked .num{background:var(--primary);color:#fff}
+.feedback{font-size:14.5px;color:var(--sub);margin-top:12px;min-height:22px;font-weight:700}
+.key-box{background:#FFF9C2;border:3px solid #FACC15;border-radius:16px;padding:16px 20px;font-size:18px;line-height:1.6;max-width:360px;font-weight:700}
+.bottom{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E2E8F0}
+.nav{flex:1;font-family:Jua;font-size:18px;border:0;border-radius:13px;padding:13px;cursor:pointer}
+.nav.prev{background:#EDF2F7;color:#64748B;max-width:100px}
+.nav.next{background:var(--primary);color:#fff}
+.nav:disabled{opacity:.35}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="back" href="index.html">← 샘플</a>
+  <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="pf"></div></div></div>
+  <div class="kedu-logo">K 영어 Lv5</div>
+</div>
+
+<div class="slides">
+
+  <!-- 1. 표지 -->
+  <div class="slide center">
+    <span class="badge">📖 이야기 읽기 · Lv5</span>
+    <div style="font-size:56px">🐕💨</div>
+    <div class="s-title">Max Is Lost!</div>
+    <div class="s-sub">Mina의 강아지 Max가 사라졌어요!<br>눈으로 조용히 읽어 봐요. 막히는 문장만 🔊로 들어요.</div>
+  </div>
+
+  <!-- 2. 지문 -->
+  <div class="slide">
+    <span class="badge">📖 읽기 — 무슨 일이 일어났을까?</span>
+    <div class="passage">
+      <h3>Max Is Lost! <button class="tts" id="readAll">🔊 전체 듣기</button></h3>
+      <p>
+        Mina had a dog. His name was Max.<br>
+        One day, they went to the park.<br>
+        Mina played with her ball.<br>
+        Max saw a small cat.<br>
+        <span class="tappable" data-ref="he">He</span> ran after <span class="tappable" data-ref="it">it</span>!<br>
+        Mina looked back. Max was not there.<br>
+        "Max! Max!" she called.<br>
+        She looked under the big tree.<br>
+        Max was there with the cat.<br>
+        Mina hugged Max.<br>
+        They went home together.
+      </p>
+    </div>
+    <div class="s-sub">밑줄 친 말은 나중에 다시 만나요 — 일단 끝까지!</div>
+  </div>
+
+  <!-- 3. 문제 1 — 사건 -->
+  <div class="slide center">
+    <span class="badge">❓ 문제 1</span>
+    <div class="qcard">
+      <div class="q">Max는 왜 사라졌나요?</div>
+      <div class="opts" id="q1">
+        <div class="opt" data-ok="0">공을 잃어버려서</div>
+        <div class="opt" data-ok="1">작은 고양이를 쫓아가서</div>
+        <div class="opt" data-ok="0">집에 가고 싶어서</div>
+      </div>
+      <div class="feedback" id="q1msg"></div>
+    </div>
+  </div>
+
+  <!-- 4. 문제 2 — 순서 (Lv5 도입 유형: 인물·사건·순서) -->
+  <div class="slide center">
+    <span class="badge">❓ 문제 2 — 일이 일어난 순서대로!</span>
+    <div class="qcard">
+      <div class="q">장면을 순서대로 눌러요 (1→2→3)</div>
+      <div class="opts">
+        <div class="scene" data-ord="2"><span class="num">·</span>🐱 Max가 고양이를 쫓아갔어요</div>
+        <div class="scene" data-ord="3"><span class="num">·</span>🌳 큰 나무 아래에서 Max를 찾았어요</div>
+        <div class="scene" data-ord="1"><span class="num">·</span>🏞 Mina와 Max가 공원에 갔어요</div>
+      </div>
+      <div class="feedback" id="q2msg"></div>
+    </div>
+  </div>
+
+  <!-- 5. 문제 3 — 지칭어 (Lv5 도입 유형: 지문 탭) -->
+  <div class="slide">
+    <span class="badge">❓ 문제 3 — 누구를 말하는 걸까?</span>
+    <div class="qcard" style="margin-top:0">
+      <div class="q">"<b>He</b> ran after <b>it</b>!"<br><span style="color:var(--sub);font-weight:700;font-size:14px">He와 it은 누구·무엇일까요?</span></div>
+      <div class="opts" id="q3">
+        <div class="opt" data-ok="1">He = Max 🐕 · it = 고양이 🐱</div>
+        <div class="opt" data-ok="0">He = Mina · it = 공</div>
+        <div class="opt" data-ok="0">He = 고양이 🐱 · it = Max 🐕</div>
+      </div>
+      <div class="feedback" id="q3msg"></div>
+    </div>
+    <div class="s-sub">💡 He·it 같은 말은 <b>바로 앞 문장</b>에 답이 숨어 있어요!</div>
+  </div>
+
+  <!-- 6. 핵심 -->
+  <div class="slide center">
+    <span class="badge">⭐ 오늘의 발견</span>
+    <div class="key-box">💡 이야기에는 순서가 있다!<br><span style="font-size:15px;color:#92660A">처음 → 사건 → 해결</span><br>그리고 He·it의 답은 앞 문장에!</div>
+    <div class="s-sub">방금 13문장짜리 영어 이야기를 혼자 다 읽었어요.<br>여기 나온 단어, 전부 사다리에서 만난 것들이에요 😉</div>
+  </div>
+
+  <!-- 7. 완료 -->
+  <div class="slide center">
+    <div style="font-size:64px">🐕❤️</div>
+    <div class="s-title">Max를 찾았다!<br>이야기 한 편 완독!</div>
+    <div class="s-sub">다음 이야기: Mina의 생일에 무슨 일이?</div>
+  </div>
+
+</div>
+
+<div class="bottom">
+  <button class="nav prev" id="btnPrev">이전</button>
+  <button class="nav next" id="btnNext">다음 →</button>
+</div>
+
+<script src="../engine/k-tts.js"></script>
+<script>
+var slides=[].slice.call(document.querySelectorAll('.slide')),cur=0,unlocked=false;
+var pf=document.getElementById('pf'),bp=document.getElementById('btnPrev'),bn=document.getElementById('btnNext');
+document.body.addEventListener('pointerdown',function(){if(!unlocked){KTTS.unlock();unlocked=true;}},{once:true});
+function show(i){if(i<0||i>=slides.length)return;KTTS.stop();
+  slides.forEach(function(s,j){s.classList.toggle('active',j===i);});cur=i;
+  pf.style.width=(i/(slides.length-1)*100)+'%';bp.disabled=(i===0);
+  bn.style.visibility=(i===slides.length-1)?'hidden':'visible';}
+bp.addEventListener('click',function(){show(cur-1);});
+bn.addEventListener('click',function(){show(cur+1);});
+
+var STORY="Mina had a dog. His name was Max. One day, they went to the park. Mina played with her ball. Max saw a small cat. He ran after it! Mina looked back. Max was not there. Max! Max! she called. She looked under the big tree. Max was there with the cat. Mina hugged Max. They went home together.";
+document.getElementById('readAll').addEventListener('click',function(e){e.stopPropagation();KTTS.sentence(STORY,{rate:0.82});});
+
+function quiz(id,msgId,okText,noText){
+  document.querySelectorAll('#'+id+' .opt').forEach(function(o){
+    o.addEventListener('click',function(){
+      if(o.dataset.ok==='1'){o.classList.add('right');
+        document.getElementById(msgId).textContent=okText;
+        setTimeout(function(){show(cur+1);},1300);}
+      else{o.classList.add('wrong');document.getElementById(msgId).textContent=noText;}
+    });});
+}
+quiz('q1','q1msg','🎉 맞아요! 고양이를 보고 달려갔죠!','🤔 지문으로 돌아가 봐요 — Max saw a...?');
+quiz('q3','q3msg','✨ 정확해요! 앞 문장에 Max saw a small cat — 그래서 He=Max, it=cat!','💡 바로 앞 문장을 다시 읽어 봐요!');
+
+/* 순서 문제 */
+var pickN=0;
+document.querySelectorAll('.scene').forEach(function(sc){
+  sc.addEventListener('click',function(){
+    if(sc.classList.contains('picked'))return;
+    pickN++;
+    if(+sc.dataset.ord===pickN){sc.classList.add('picked');sc.querySelector('.num').textContent=pickN;
+      if(pickN===3){document.getElementById('q2msg').textContent='🎉 완벽한 순서! 이야기의 흐름을 잡았어요!';
+        setTimeout(function(){show(cur+1);},1300);}}
+    else{pickN--;sc.style.borderColor='#F59F00';
+      document.getElementById('q2msg').textContent='🤔 그건 '+(pickN+1)+'번째가 아니에요 — 맨 처음 무슨 일이?';
+      setTimeout(function(){sc.style.borderColor='#E2E8F0';},700);}
+  });});
+show(0);
+</script>
+</body>
+</html>
