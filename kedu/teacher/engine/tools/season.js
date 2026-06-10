@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 계절의 변화 (season) v1  [과학 9호 · 천체 4호]
+   케이랩 도구 모듈 — 계절의 변화 (season) v2  [과학 9호 · 천체 4호 · 3모드]
    6학년 계절의 변화 — 자전축 기울기와 공전.
    하이브리드:
      ▸ 3D 공전 — 태양 중심, 지구가 궤도를 공전. 자전축은 우주 공간에서
@@ -13,8 +13,9 @@
        ▸ 기울기를 0으로 → 남중고도·낮 길이가 사철 똑같아 계절이 사라진다 (오개념 직격)
      "계절은 지구-태양 거리 때문이 아니라, 자전축이 기울어진 채 공전하기 때문."
    - 의존: THREE (전역, preview의 vendor/three.min.js), window.KLab
+   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 기울어진 지구 장면을 보고 답하기.
    - config: { orb(0~360, 0=춘분·90=하지·180=추분·270=동지, 기본 90),
-               tilt(자전축 기울기 0~35, 기본 23.5), lat(위도, 기본 37.5=한국) }
+               tilt(0~35, 기본 23.5), lat(기본 37.5), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab || !window.THREE) return;
@@ -47,8 +48,9 @@
     var orb  = (config.orb!=null)?config.orb:90;
     var tilt = (config.tilt!=null)?config.tilt:23.5;
     var lat  = (config.lat!=null)?config.lat:37.5;
+    var ui=window.KLab.ui;
+    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var playing=false, alive=true, last=0, spin=0;
-    var done={summer:false,winter:false,flat:false};
     var C={ink:'#1B3A57',sub:'#5a7894',mute:'#8aa0b6',good:'#12B886'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     var sbtn='font-size:16px;padding:8px 12px;border-radius:12px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
@@ -56,20 +58,77 @@
     var SEASONS=[ {k:'spring',o:0,l:'🌸 봄(춘분)'},{k:'summer',o:90,l:'☀️ 여름(하지)'},
                   {k:'fall',o:180,l:'🍂 가을(추분)'},{k:'winter',o:270,l:'❄️ 겨울(동지)'} ];
 
+    /* ───────────── 미션 ───────────── */
     var MISSIONS=[
-      {k:'summer', l:'☀️ 여름 만들기', tip:'하지(여름) 위치로 — 남중고도가 가장 높고 낮이 가장 길어요',
-        test:function(){ return tilt>5 && decl(orb,tilt) >= tilt*0.93; }},
-      {k:'winter', l:'❄️ 겨울 만들기', tip:'동지(겨울) 위치로 — 남중고도가 가장 낮고 낮이 가장 짧아요',
-        test:function(){ return tilt>5 && decl(orb,tilt) <= -tilt*0.93; }},
-      {k:'flat',   l:'🔭 기울기 0', tip:'자전축 기울기를 0°으로 — 계절이 사라지는지 확인해요',
-        test:function(){ return tilt <= 1; }}
+      { text:'☀️ <b style="color:#7048E8;">여름(하지)</b> 위치로! 남중고도가 가장 높아지는 곳을 찾아요!',
+        check:function(){ return tilt>5 && decl(orb,tilt) >= tilt*0.93; } },
+      { text:'❄️ 이번엔 <b style="color:#7048E8;">겨울(동지)</b> — 남중고도가 가장 낮아져요!',
+        check:function(){ return tilt>5 && decl(orb,tilt) <= -tilt*0.93; } },
+      { text:'🔭 자전축 <b style="color:#7048E8;">기울기를 0°</b>으로! 계절이 사라지는지 확인해요!',
+        check:function(){ return tilt <= 1; } },
+      { text:'🌐 기울기를 다시 <b style="color:#7048E8;">20° 넘게</b> 올려 계절을 되살려 봐요!',
+        check:function(){ return tilt >= 20; } }
     ];
-    function chips(){return MISSIONS.map(function(m){return '<button class="se-chip'+(done[m.k]?' done':'')+'" data-k="'+m.k+'" style="'+sbtn+'">'+(done[m.k]?'✓ ':'')+m.l+'</button>';}).join('');}
+    var mStep=0,mDone=false,mLock=false;
+    function checkMission(){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          updateBars();
+        },1500);
+      }
+    }
+    function updateBars(){
+      var host=el.querySelector('.se-bars'); if(!host)return;
+      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else host.innerHTML='';
+    }
+
+    /* ───────────── 퀴즈 (기울어진 지구 장면을 보고 답하기) ───────────── */
+    var QUIZ=[
+      { orb:90,  tilt:23.5, q:'북반구(북극 쪽)가 태양 쪽으로 기울어 있어요. 우리나라는 어떤 계절일까요?', ch:['여름','겨울','가을'], a:0 },
+      { orb:270, tilt:23.5, q:'북반구가 태양 반대쪽으로 기울었어요. 지금 우리나라는?', ch:['겨울','여름','봄'], a:0 },
+      { orb:90,  tilt:23.5, q:'계절이 생기는 진짜 까닭은 무엇일까요?', ch:['자전축이 기울어진 채 공전해서','태양과의 거리가 변해서','달이 지구를 끌어당겨서'], a:0 },
+      { orb:90,  tilt:0,    q:'자전축 기울기가 0°이 되면 어떻게 될까요?', ch:['계절이 사라져요','여름만 계속돼요','겨울만 계속돼요'], a:0 },
+      { orb:90,  tilt:23.5, q:'여름에 낮이 더 긴 까닭은?', ch:['남중고도가 높아 태양이 오래 떠 있어서','지구가 태양에 가까워져서','달이 늦게 떠서'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+      orb=QUIZ[qIdx].orb; tilt=QUIZ[qIdx].tilt;
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
+    }
+    function bindChoices(){
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok);
+          setTimeout(function(){ newQuiz(); updateBars();
+            var fc=el.querySelector('.se-foot'); if(fc){fc.innerHTML=ui.choices(quizChoices());bindChoices();}
+            render(); renderStatus();
+          },1500);
+        });
+      });
+    }
     function seasonBtns(){return SEASONS.map(function(s){return '<button class="se-sea" data-o="'+s.o+'" style="'+sbtn+'">'+s.l+'</button>';}).join('');}
 
     function buildUI(){
-      el.innerHTML='<style>.se-btn:active,.se-chip:active,.se-sea:active{transform:translateY(2px);}'
-        +'.se-chip.done{background:#E6FCF5 !important;border-color:#12B886 !important;color:#12B886 !important;}'
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      el.innerHTML='<style>.se-btn:active,.se-sea:active,.kl-choice:active{transform:translateY(2px);}'
+        +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.se-sea.on{background:#1565C0 !important;border-color:#1565C0 !important;color:#fff !important;}'
         +'.se-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#10183A,#5C7CFA,#FFD43B);outline:none;}'
         +'.se-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
@@ -77,7 +136,8 @@
         +'.se-tilt{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#9DB2C8,#FF922B);outline:none;}'
         +'.se-tilt::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #E8590C;cursor:pointer;}'
         +'.se-tilt::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #E8590C;cursor:pointer;}</style>'
-        +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;"><span style="font-size:15px;color:#5a7894;align-self:center;font-weight:800;">미션</span>'+chips()+'</div>'
+        + top + '<div class="se-bars">'+bar+'</div>'
+        +(mode==='quiz'?'<div style="display:none;">':'<div>')
         +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'+seasonBtns()+'</div>'
         +'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
           +'<button class="se-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 1년 재생')+'</button>'
@@ -89,7 +149,8 @@
           +'<input class="se-tilt" type="range" min="0" max="35" step="0.5" value="'+tilt+'" style="width:min(40vw,280px);">'
           +'<span class="se-tval" style="font-size:18px;font-weight:800;color:#E8590C;min-width:54px;text-align:center;font-family:inherit;"></span>'
         +'</div>'
-        +'<div class="se-stage" style="position:relative;width:100%;height:42vh;min-height:320px;background:radial-gradient(120% 120% at 60% 35%,#0D1430 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
+        +'</div>'
+        +'<div class="kl-stage-host" style="position:relative;"><div class="se-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'42vh')+';min-height:'+(mode==='quiz'?'260':'320')+'px;background:radial-gradient(120% 120% at 60% 35%,#0D1430 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
           +'<div class="se-panel" style="position:absolute;top:12px;right:12px;width:150px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.55);border-radius:14px;padding:7px 6px 5px;">'
             +'<svg class="se-sky" viewBox="-65 -52 130 78" width="142" height="85">'
               +'<defs><linearGradient id="seSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2e54"/><stop offset="1" stop-color="#4a6aa0"/></linearGradient></defs>'
@@ -103,9 +164,15 @@
             +'</svg>'
             +'<div style="font-size:12px;color:#cdd6e6;font-weight:800;margin-top:1px;">우리나라 정오의 태양</div>'
           +'</div>'
-        +'</div>'
+        +'</div></div>'
+        +'<div class="se-foot">'+foot+'</div>'
         +'<div class="se-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
-      initThree(); bind(); render(); renderStatus();
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0;mDone=false;mLock=false; playing=false; orb=(m==='mission')?0:90; tilt=23.5;
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        buildUI();
+      });
+      initThree(); bind(); bindChoices(); render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,earthPivot,earthSphere,pin,orbitR=5;
@@ -119,6 +186,7 @@
       return new T.CanvasTexture(c);
     }
     function initThree(){
+      if(renderer){ try{renderer.dispose();}catch(e){} renderer=null; }
       stage=el.querySelector('.se-stage');
       var W=stage.clientWidth||720, H=stage.clientHeight||340;
       scene=new T.Scene();
@@ -190,6 +258,7 @@
 
     function renderStatus(){
       var tv=el.querySelector('.se-tval'); if(tv)tv.textContent=tilt.toFixed(1)+'°';
+      if(mode==='quiz'){ var sq=el.querySelector('.se-status'); if(sq)sq.innerHTML='<div style="font-size:19px;color:#8aa0b6;">기울어진 지구와 \'우리나라 정오의 태양\' 패널을 보고 답을 골라요!</div>'; return; }
       var alt=noonAlt(orb,tilt,lat), dh=dayHours(orb,tilt,lat), sea=seasonOf(orb,tilt);
       var s=el.querySelector('.se-status'), sub;
       if(sea.k==='none')
@@ -209,27 +278,14 @@
         b.classList.toggle('on', on); });
       checkMission();
     }
-    function checkMission(){
-      var all=true;
-      MISSIONS.forEach(function(m){ if(m.test())done[m.k]=true; if(!done[m.k])all=false; });
-      el.querySelectorAll('.se-chip').forEach(function(c){var k=c.dataset.k;
-        if(done[k]&&!c.classList.contains('done')){c.classList.add('done');if(c.textContent.indexOf('✓')<0)c.textContent='✓ '+c.textContent;}});
-      if(all){var s=el.querySelector('.se-status');
-        if(s&&s.innerHTML.indexOf('직접 확인')<0)s.innerHTML+='<div style="font-size:16px;color:#12B886;margin-top:5px;">여름·겨울을 만들고, 기울기를 0으로 해 계절이 사라지는 것까지 직접 확인했어요! ✨ 계절의 진짜 원인은 자전축 기울기예요.</div>';}
-    }
-
     function setOrb(v){ orb=((v%360)+360)%360; var r=el.querySelector('.se-range'); if(r&&+r.value!==orb)r.value=orb; render(); renderStatus(); }
     function setTilt(v){ tilt=Math.max(0,Math.min(35,v)); var r=el.querySelector('.se-tilt'); if(r&&+r.value!==tilt)r.value=tilt; render(); renderStatus(); }
     var _mv,_up;
     function bind(){
-      el.querySelector('.se-range').addEventListener('input',function(e){ if(playing)togglePlay(); setOrb(+e.target.value); });
-      el.querySelector('.se-tilt').addEventListener('input',function(e){ setTilt(+e.target.value); });
-      el.querySelector('[data-act="play"]').addEventListener('click',togglePlay);
+      var rg=el.querySelector('.se-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setOrb(+e.target.value); });
+      var tg=el.querySelector('.se-tilt'); if(tg)tg.addEventListener('input',function(e){ setTilt(+e.target.value); });
+      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',togglePlay);
       el.querySelectorAll('.se-sea').forEach(function(b){b.addEventListener('click',function(){ if(playing)togglePlay(); setOrb(+b.dataset.o); });});
-      el.querySelectorAll('.se-chip').forEach(function(c){c.addEventListener('click',function(){
-        var m=MISSIONS.filter(function(x){return x.k===c.dataset.k;})[0], s=el.querySelector('.se-status');
-        if(s&&m)s.innerHTML='<div style="font-size:21px;color:'+C.ink+';">'+m.l+'</div><div style="font-size:17px;color:'+C.sub+';margin-top:5px;">'+m.tip+'</div>';
-      });});
       var drag=false,px=0,py=0;
       function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
       function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;theta-=(p.clientX-px)*0.008;phi-=(p.clientY-py)*0.006;phi=Math.max(0.25,Math.min(1.45,phi));px=p.clientX;py=p.clientY;camPos();render();if(e.touches)e.preventDefault();}
@@ -240,7 +296,8 @@
       _mv=mv;_up=up; window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
     }
     function togglePlay(){ playing=!playing; last=0;
-      var b=el.querySelector('[data-act="play"]'); b.textContent=playing?'■ 멈춤':'▶ 1년 재생';
+      var b=el.querySelector('[data-act="play"]'); if(!b)return;
+      b.textContent=playing?'■ 멈춤':'▶ 1년 재생';
       b.style.background=playing?'#1565C0':'#fff'; b.style.color=playing?'#fff':'#1565C0'; }
 
     buildUI(); requestAnimationFrame(loop);

@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 달의 위상 (moon) v1  [과학 7호 · 천체 2호]
+   케이랩 도구 모듈 — 달의 위상 (moon) v2  [과학 7호 · 천체 2호 · 3모드]
    6학년 지구와 달의 운동 — 달의 위상 변화.
    하이브리드:
      ▸ 3D 공전 배치(위에서 본 시점) — 지구 중심, 달이 궤도 공전, 태양 평행광.
@@ -11,7 +11,8 @@
      "달 모양이 변하는 건 달이 차고 이지러지는 게 아니라, 태양 빛 받는 면을
       지구에서 보는 각도가 달라지기 때문."
    - 의존: THREE (전역), window.KLab
-   - config: { phase(0~360, 기본 180=보름) }
+   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = '지구에서 본 달' 모양을 보고 답하기.
+   - config: { phase(0~360, 기본 180=보름), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab || !window.THREE) return;
@@ -41,43 +42,111 @@
   }
 
   window.KLab.register('moon', function (el, config) {
+    var ui=window.KLab.ui;
+    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var phase=(config.phase!=null)?config.phase:180;
-    var playing=false, alive=true, last=0, done={wax_cre:false,first:false,full:false,last:false};
+    var playing=false, alive=true, last=0;
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
+    /* ───────────── 미션 ───────────── */
     var MISSIONS=[
-      {k:'wax_cre', l:'🌒 초승달', tip:'삭 직후 — 오른쪽 가는 낫 모양'},
-      {k:'first',   l:'🌓 상현달', tip:'달의 나이 약 7일 — 오른쪽 반달'},
-      {k:'full',    l:'🌕 보름달', tip:'약 15일 — 꽉 찬 달(망)'},
-      {k:'last',    l:'🌗 하현달', tip:'약 22일 — 왼쪽 반달'}
+      { text:'🌒 달을 움직여 <b style="color:#7048E8;">초승달</b>(오른쪽 가는 낫)을 만들어 봐요 — 삭 직후예요!',
+        check:function(){ return phaseInfo(phase).k==='wax_cre'; } },
+      { text:'🌓 달의 나이 약 7일 — <b style="color:#7048E8;">상현달</b>(오른쪽 반달)을 만들어 봐요!',
+        check:function(){ return phaseInfo(phase).k==='first'; } },
+      { text:'🌕 약 15일 — <b style="color:#7048E8;">보름달(망)</b>! 달이 태양 반대편으로 가면?',
+        check:function(){ return phaseInfo(phase).k==='full'; } },
+      { text:'🌗 약 22일 — <b style="color:#7048E8;">하현달</b>(왼쪽 반달)까지 만들면 한 달 완성!',
+        check:function(){ return phaseInfo(phase).k==='last'; } }
     ];
-    function chips(){return MISSIONS.map(function(m){return '<button class="mn-chip'+(done[m.k]?' done':'')+'" data-k="'+m.k+'" style="font-size:16px;padding:7px 13px;border-radius:12px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">'+(done[m.k]?'✓ ':'')+m.l+'</button>';}).join('');}
+    var mStep=0,mDone=false,mLock=false;
+    function checkMission(){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          updateBars();
+        },1500);
+      }
+    }
+    function updateBars(){
+      var host=el.querySelector('.mn-bars'); if(!host)return;
+      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else host.innerHTML='';
+    }
+
+    /* ───────────── 퀴즈 ('지구에서 본 달'을 보고 답하기) ───────────── */
+    var QUIZ=[
+      { phase:180, q:'오른쪽 위 \'지구에서 본 달\'처럼 꽉 찬 달의 이름은?', ch:['보름달 (망)','초승달','하현달'], a:0 },
+      { phase:90,  q:'오른쪽이 밝은 반달 — 이 달의 이름은?', ch:['상현달','하현달','그믐달'], a:0 },
+      { phase:40,  q:'오른쪽 가는 낫 모양 — 이 달의 이름은?', ch:['초승달','보름달','하현달'], a:0 },
+      { phase:180, q:'달의 모양이 날마다 변하는 까닭은?', ch:['태양 빛 받는 면을 보는 각도가 달라져서','달이 실제로 커졌다 작아져서','구름이 달을 가려서'], a:0 },
+      { phase:0,   q:'달이 태양과 지구 사이에 있어 거의 안 보일 때를 뭐라고 할까요?', ch:['삭 (신월)','망 (보름)','상현'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+      phase=QUIZ[qIdx].phase;
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
+    }
+    function bindChoices(){
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok);
+          setTimeout(function(){ newQuiz(); updateBars();
+            var fc=el.querySelector('.mn-foot'); if(fc){fc.innerHTML=ui.choices(quizChoices());bindChoices();}
+            render(); renderStatus();
+          },1500);
+        });
+      });
+    }
 
     function buildUI(){
-      el.innerHTML='<style>.mn-btn:active,.mn-chip:active{transform:translateY(2px);}'
-        +'.mn-chip.done{background:#E6FCF5 !important;border-color:#12B886 !important;color:#12B886 !important;}'
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      el.innerHTML='<style>.mn-btn:active,.kl-choice:active{transform:translateY(2px);}'
+        +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.mn-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#10183A,#5C7CFA,#FFF3BF,#5C7CFA,#10183A);outline:none;}'
         +'.mn-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'.mn-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
-        +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;"><span style="font-size:15px;color:#5a7894;align-self:center;font-weight:800;">미션</span>'+chips()+'</div>'
-        +'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+        + top + '<div class="mn-bars">'+bar+'</div>'
+        +(mode==='quiz'?'<div style="display:none;">':'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">')
           +'<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 공전 재생')+'</button>'
           +'<input class="mn-range" type="range" min="0" max="360" step="1" value="'+phase+'" style="width:min(46vw,330px);">'
           +'<span class="mn-age" style="font-size:18px;font-weight:800;color:'+C.ink+';min-width:96px;text-align:center;font-family:inherit;"></span>'
         +'</div>'
-        +'<div class="mn-stage" style="position:relative;width:100%;height:44vh;min-height:330px;background:radial-gradient(120% 120% at 75% 25%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
+        +'<div class="kl-stage-host" style="position:relative;"><div class="mn-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 75% 25%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
           +'<div class="mn-panel" style="position:absolute;top:12px;right:12px;width:118px;text-align:center;pointer-events:none;">'
             +'<svg class="mn-moon2d" viewBox="-55 -55 110 110" width="104" height="104"><circle cx="0" cy="0" r="50" fill="#1A2440" stroke="#3a4a6a" stroke-width="2"/><path class="mn-lit" d="" fill="#FDF6D8"/></svg>'
             +'<div style="font-size:13px;color:#cdd6e6;font-weight:800;margin-top:2px;">지구에서 본 달</div>'
           +'</div>'
-        +'</div>'
+        +'</div></div>'
+        +'<div class="mn-foot">'+foot+'</div>'
         +'<div class="mn-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
-      initThree(); bind(); render(); renderStatus();
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0;mDone=false;mLock=false; playing=false; phase=180;
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        buildUI();
+      });
+      initThree(); bind(); bindChoices(); render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,moonMesh,orbitR=4.2;
     function initThree(){
+      if(renderer){ try{renderer.dispose();}catch(e){} renderer=null; }
       stage=el.querySelector('.mn-stage');
       var W=stage.clientWidth||720, H=stage.clientHeight||360;
       scene=new T.Scene();
@@ -128,6 +197,7 @@
 
     function ageStr(){ var d=phase/360*29.5; return '약 '+d.toFixed(1)+'일'; }
     function renderStatus(){
+      if(mode==='quiz'){ var sq=el.querySelector('.mn-status'); if(sq)sq.innerHTML='<div style="font-size:19px;color:#8aa0b6;">오른쪽 위 \'지구에서 본 달\'과 달의 위치를 보고 답을 골라요!</div>'; return; }
       var info=phaseInfo(phase), pct=Math.round(illum(phase)*100);
       var age=el.querySelector('.mn-age'); if(age)age.textContent=info.emo+' '+ageStr();
       var s=el.querySelector('.mn-status'), sub;
@@ -139,26 +209,13 @@
       s.innerHTML='<div style="font-size:25px;color:#FFF3BF;">'+info.emo+' '+info.nm+' · 밝기 '+pct+'%</div>'
         +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">'+sub+'</div>'
         +'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">달은 스스로 빛나지 않아요. 태양 빛 받는 면을 지구에서 보는 각도가 달라져 모양이 변해요.</div>';
-      checkMission(info);
+      checkMission();
     }
-    function checkMission(info){
-      if(done.hasOwnProperty(info.k))done[info.k]=true;
-      var all=MISSIONS.every(function(m){return done[m.k];});
-      el.querySelectorAll('.mn-chip').forEach(function(c){var k=c.dataset.k;
-        if(done[k]&&!c.classList.contains('done')){c.classList.add('done');if(c.textContent.indexOf('✓')<0)c.textContent='✓ '+c.textContent;}});
-      if(all){var s=el.querySelector('.mn-status');
-        if(s&&s.innerHTML.indexOf('한 달 동안')<0)s.innerHTML+='<div style="font-size:16px;color:#12B886;margin-top:5px;">초승→상현→보름→하현을 다 봤어요! ✨ 한 달 동안 달은 이 순서로 차고 이지러져요.</div>';}
-    }
-
     function setPhase(v){ phase=((v%360)+360)%360; var r=el.querySelector('.mn-range'); if(r&&+r.value!==phase)r.value=phase; render(); renderStatus(); }
     var _mv,_up;
     function bind(){
-      el.querySelector('.mn-range').addEventListener('input',function(e){ if(playing)togglePlay(); setPhase(+e.target.value); });
-      el.querySelector('[data-act="play"]').addEventListener('click',togglePlay);
-      el.querySelectorAll('.mn-chip').forEach(function(c){c.addEventListener('click',function(){
-        var m=MISSIONS.filter(function(x){return x.k===c.dataset.k;})[0], s=el.querySelector('.mn-status');
-        if(s&&m)s.innerHTML='<div style="font-size:21px;color:#FFF3BF;">'+m.l+' 만들기</div><div style="font-size:17px;color:#8aa0b6;margin-top:5px;">'+m.tip+'</div>';
-      });});
+      var rg=el.querySelector('.mn-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setPhase(+e.target.value); });
+      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',togglePlay);
       var drag=false,px=0,py=0;
       function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
       function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;theta-=(p.clientX-px)*0.008;phi-=(p.clientY-py)*0.006;phi=Math.max(0.2,Math.min(1.4,phi));px=p.clientX;py=p.clientY;camPos();render();if(e.touches)e.preventDefault();}
@@ -169,7 +226,8 @@
       _mv=mv;_up=up; window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
     }
     function togglePlay(){ playing=!playing; last=0;
-      var b=el.querySelector('[data-act="play"]'); b.textContent=playing?'■ 멈춤':'▶ 공전 재생';
+      var b=el.querySelector('[data-act="play"]'); if(!b)return;
+      b.textContent=playing?'■ 멈춤':'▶ 공전 재생';
       b.style.background=playing?'#1565C0':'#fff'; b.style.color=playing?'#fff':'#1565C0'; }
 
     buildUI(); requestAnimationFrame(loop);

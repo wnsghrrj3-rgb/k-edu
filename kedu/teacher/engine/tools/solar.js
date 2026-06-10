@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 태양계 (solar) v1  [과학 8호 · 천체 3호]
+   케이랩 도구 모듈 — 태양계 (solar) v2  [과학 8호 · 천체 3호 · 3모드]
    5학년 태양계와 별 — 태양계 구성·행성 크기와 거리.
      변수 → 현상 → 발견:
        ▸ 8행성 공전(▶) · 행성 선택(수~해) · 🔭 실제 비율 토글
@@ -7,7 +7,8 @@
          바깥 행성은 까마득. 목성·토성은 크고 나머지는 점.
        ▸ "태양계는 거의 텅 비어 있고, 행성마다 크기·태양까지 거리가 크게 다르다."
    - 의존: THREE (전역), window.KLab
-   - config: { play(기본 false) }
+   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 태양계 장면을 보며 행성 상식 답하기.
+   - config: { play(기본 false), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab || !window.THREE) return;
@@ -28,37 +29,108 @@
   function prad(i, real){ return real ? Math.max(0.08, PL[i].r*0.28) : (0.34 + Math.log(PL[i].r+1)*0.42); }
 
   window.KLab.register('solar', function (el, config) {
+    var ui=window.KLab.ui;
+    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var playing=!!config.play, real=false, alive=true, last=0, sel=null;
     var ang=PL.map(function(_,i){return i*0.7;});
-    var done={ear:false,jup:false,real:false};
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:20px;padding:10px 16px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
+    /* ───────────── 미션 ───────────── */
     var MISSIONS=[
-      {k:'ear',  l:'🌍 지구 찾기',     tip:'행성 버튼에서 지구를 골라요'},
-      {k:'jup',  l:'🪐 가장 큰 행성',  tip:'가장 큰 행성(목성)을 골라요'},
-      {k:'real', l:'🔭 실제 비율로 보기', tip:'실제 비율 버튼을 눌러 거리·크기를 실제대로'}
+      { text:'🌍 행성 버튼에서 <b style="color:#7048E8;">우리가 사는 지구</b>를 찾아 골라 봐요!',
+        check:function(){ return sel==='ear'; } },
+      { text:'🪐 태양계에서 <b style="color:#7048E8;">가장 큰 행성</b>은 누구일까요? 골라 봐요!',
+        check:function(){ return sel==='jup'; } },
+      { text:'🔭 <b style="color:#7048E8;">실제 비율</b> 버튼을 눌러 진짜 거리·크기를 봐요 — 태양계는 텅텅!',
+        check:function(){ return real===true; } },
+      { text:'🌀 <b style="color:#7048E8;">태양에서 가장 먼 행성</b>을 찾아 골라 봐요!',
+        check:function(){ return sel==='nep'; } }
     ];
-    function chips(){return MISSIONS.map(function(m){return '<button class="so-chip'+(done[m.k]?' done':'')+'" data-k="'+m.k+'" style="font-size:15px;padding:7px 12px;border-radius:12px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">'+(done[m.k]?'✓ ':'')+m.l+'</button>';}).join('');}
+    var mStep=0,mDone=false,mLock=false;
+    function checkMission(){
+      if(mode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){
+          mLock=false;
+          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          updateBars();
+        },1500);
+      }
+    }
+    function updateBars(){
+      var host=el.querySelector('.so-bars'); if(!host)return;
+      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else host.innerHTML='';
+    }
+
+    /* ───────────── 퀴즈 ───────────── */
+    var QUIZ=[
+      { q:'태양에서 가장 가까운 행성은?', ch:['수성','금성','지구'], a:0 },
+      { q:'태양계에서 가장 큰 행성은?', ch:['목성','토성','지구'], a:0 },
+      { q:'우리가 사는 지구는 태양에서 몇 번째 행성일까요?', ch:['세 번째','첫 번째','다섯 번째'], a:0 },
+      { q:'아름다운 고리를 가진 행성은?', ch:['토성','화성','수성'], a:0 },
+      { q:'태양에서 가장 먼 행성은?', ch:['해왕성','천왕성','목성'], a:0 }
+    ];
+    var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    function newQuiz(){
+      if(qUsed.length>=QUIZ.length)qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
+      sel=null;
+    }
+    function quizChoices(){
+      var q=QUIZ[qIdx], idx=[0,1,2].sort(function(){return Math.random()-0.5;});
+      return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
+    }
+    function bindChoices(){
+      el.querySelectorAll('.kl-choice').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(qLock)return; qLock=true;
+          var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
+          qCount++; if(ok)qScore++;
+          ui.toast(el,ok);
+          setTimeout(function(){ newQuiz(); updateBars();
+            var fc=el.querySelector('.so-foot'); if(fc){fc.innerHTML=ui.choices(quizChoices());bindChoices();}
+            render(); renderStatus();
+          },1500);
+        });
+      });
+    }
     function planetBtns(){return PL.map(function(p){return '<button class="so-pl'+(sel===p.k?' on':'')+'" data-k="'+p.k+'" style="font-size:16px;padding:7px 12px;border-radius:12px;border:2.5px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'+(sel===p.k?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+p.nm+'</button>';}).join('');}
 
     function buildUI(){
-      el.innerHTML='<style>.so-btn:active,.so-chip:active,.so-pl:active{transform:translateY(2px);}'
-        +'.so-chip.done{background:#E6FCF5 !important;border-color:#12B886 !important;color:#12B886 !important;}'
-        +'.so-real.on{background:#7048E8 !important;color:#fff !important;border-color:#7048E8 !important;}</style>'
-        +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:8px;flex-wrap:wrap;"><span style="font-size:15px;color:#5a7894;align-self:center;font-weight:800;">미션</span>'+chips()+'</div>'
-        +'<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
+      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      var ctrl='<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
           +'<button class="so-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 공전 재생')+'</button>'
           +'<button class="so-btn so-real'+(real?' on':'')+'" data-act="real" style="'+btn+'border-color:#7048E8;'+(real?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🔭 '+(real?'보기 좋게':'실제 비율')+'</button>'
-        +'</div>'
-        +'<div class="so-stage" style="width:100%;height:42vh;min-height:320px;background:radial-gradient(120% 120% at 50% 45%,#0E1330 0%,#070B1E 60%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);"></div>'
-        +'<div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">'+planetBtns()+'</div>'
+        +'</div>';
+      var plRow='<div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">'+planetBtns()+'</div>';
+      if(mode==='quiz'){ ctrl=''; plRow=''; }
+      el.innerHTML='<style>.so-btn:active,.so-pl:active,.kl-choice:active{transform:translateY(2px);}'
+        +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
+        +'.so-real.on{background:#7048E8 !important;color:#fff !important;border-color:#7048E8 !important;}</style>'
+        + top + '<div class="so-bars">'+bar+'</div>' + ctrl
+        +'<div class="kl-stage-host" style="position:relative;"><div class="so-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'42vh')+';min-height:'+(mode==='quiz'?'250':'320')+'px;background:radial-gradient(120% 120% at 50% 45%,#0E1330 0%,#070B1E 60%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);"></div></div>'
+        + plRow
+        +'<div class="so-foot">'+foot+'</div>'
         +'<div class="so-status" style="text-align:center;margin-top:9px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
-      initThree(); bind(); layout(); render(); renderStatus();
+      ui.bindModeTabs(el,function(m){
+        mode=m; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false;
+        if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+        buildUI();
+      });
+      initThree(); bind(); bindChoices(); layout(); render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,sunMesh,planetGrp=[],orbitRings=[];
     function initThree(){
+      if(renderer){ try{renderer.dispose();}catch(e){} renderer=null; }
+      planetGrp=[]; orbitRings=[];
       stage=el.querySelector('.so-stage');
       var W=stage.clientWidth||720, H=stage.clientHeight||360;
       scene=new T.Scene();
@@ -107,6 +179,7 @@
 
     function renderStatus(){
       var s=el.querySelector('.so-status');
+      if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">태양계 그림을 보면서 답을 골라요! (화면을 끌어 돌려볼 수 있어요)</div>'; return; }
       if(sel){ var p=PL.filter(function(x){return x.k===sel;})[0], idx=PL.map(function(x){return x.k;}).indexOf(sel);
         s.innerHTML='<div style="font-size:23px;color:#FFF3BF;">'+p.nm+' — 태양에서 '+(idx+1)+'번째</div>'
           +'<div style="font-size:17px;color:#cdd6e6;margin-top:4px;">'+p.desc+'</div>'
@@ -117,29 +190,18 @@
         s.innerHTML='<div style="font-size:21px;color:#FFF3BF;">☀️ 태양계</div><div style="font-size:16px;color:#8aa0b6;margin-top:4px;">행성을 골라 보고, 🔭 실제 비율을 눌러 진짜 거리·크기를 비교해 보세요.</div>';
       }
     }
-    function checkMission(){
-      var all=MISSIONS.every(function(m){return done[m.k];});
-      el.querySelectorAll('.so-chip').forEach(function(c){var k=c.dataset.k;
-        if(done[k]&&!c.classList.contains('done')){c.classList.add('done');if(c.textContent.indexOf('✓')<0)c.textContent='✓ '+c.textContent;}});
-      if(all){var s=el.querySelector('.so-status');
-        if(s&&s.innerHTML.indexOf('태양계 탐험')<0)s.innerHTML+='<div style="font-size:15px;color:#12B886;margin-top:5px;">태양계 탐험 미션 완료! ✨ 행성마다 크기도, 태양까지 거리도 이렇게 다르답니다.</div>';}
-    }
 
     var _mv,_up;
     function bind(){
-      el.querySelector('[data-act="play"]').addEventListener('click',function(){ playing=!playing; last=0;
-        var b=el.querySelector('[data-act="play"]'); b.textContent=playing?'■ 멈춤':'▶ 공전 재생';
-        b.style.background=playing?'#1565C0':'#fff'; b.style.color=playing?'#fff':'#1565C0'; });
-      el.querySelector('[data-act="real"]').addEventListener('click',function(){ real=!real; if(real)done.real=true;
-        layout(); render(); buildUIKeepState(); });
+      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',function(){ playing=!playing; last=0;
+        pb.textContent=playing?'■ 멈춤':'▶ 공전 재생';
+        pb.style.background=playing?'#1565C0':'#fff'; pb.style.color=playing?'#fff':'#1565C0'; });
+      var rb=el.querySelector('[data-act="real"]'); if(rb)rb.addEventListener('click',function(){ real=!real;
+        layout(); render(); buildUIKeepState(); checkMission(); });
       el.querySelectorAll('.so-pl').forEach(function(b){b.addEventListener('click',function(){
-        sel=b.dataset.k; if(sel==='ear')done.ear=true; if(sel==='jup')done.jup=true;
+        sel=b.dataset.k;
         el.querySelectorAll('.so-pl').forEach(function(x){var on=x.dataset.k===sel;x.classList.toggle('on',on);x.style.background=on?'#1565C0':'#fff';x.style.color=on?'#fff':'#1565C0';});
         renderStatus(); checkMission(); });});
-      el.querySelectorAll('.so-chip').forEach(function(c){c.addEventListener('click',function(){
-        var m=MISSIONS.filter(function(x){return x.k===c.dataset.k;})[0], s=el.querySelector('.so-status');
-        if(s&&m)s.innerHTML='<div style="font-size:20px;color:#FFF3BF;">'+m.l+'</div><div style="font-size:16px;color:#8aa0b6;margin-top:5px;">'+m.tip+'</div>';
-      });});
       var drag=false,px=0,py=0;
       function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
       function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;theta-=(p.clientX-px)*0.008;phi-=(p.clientY-py)*0.006;phi=Math.max(0.15,Math.min(1.45,phi));px=p.clientX;py=p.clientY;camPos();render();if(e.touches)e.preventDefault();}
@@ -151,11 +213,10 @@
     }
     // 토글 시 버튼 라벨/미션칩만 다시 그리되 three 씬은 유지
     function buildUIKeepState(){
-      var rb=el.querySelector('[data-act="real"]'); rb.textContent='🔭 '+(real?'보기 좋게':'실제 비율');
+      var rb=el.querySelector('[data-act="real"]'); if(!rb)return;
+      rb.textContent='🔭 '+(real?'보기 좋게':'실제 비율');
       rb.classList.toggle('on',real); rb.style.background=real?'#7048E8':'#fff'; rb.style.color=real?'#fff':'#7048E8';
-      el.querySelectorAll('.so-chip').forEach(function(c){var k=c.dataset.k;
-        if(done[k]&&!c.classList.contains('done')){c.classList.add('done');if(c.textContent.indexOf('✓')<0)c.textContent='✓ '+c.textContent;}});
-      renderStatus(); checkMission();
+      renderStatus();
     }
 
     buildUI(); requestAnimationFrame(loop);
