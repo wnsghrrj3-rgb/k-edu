@@ -1710,6 +1710,105 @@
   }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
+  // =================== 케이랩 도크 (차시 → 교구 다리, 분리형) ===================
+  // 케이랩은 별도 페이지(klab.html)로 분리 유지. 차시에서는 "이 차시 추천 교구"를
+  // 골라 새 탭으로 바로 띄운다 (수업 화면·조립 상태는 그대로 남음).
+  // 매핑 = 페이지가 로드하는 data/*_klab.js 의 window.KLAB_MAP.
+  //   키: 정확한 차시 키("u4_l05") 또는 단원 키("u4" — 그 단원 모든 차시에 노출)
+  //   값: [{ tool, label, desc, cfg }]
+  const KLAB_PAGE_URL = 'klab.html';
+
+  function klabRecsFor(key) {
+    const map = global.KLAB_MAP || {};
+    const out = [], seen = {};
+    const addAll = arr => (arr || []).forEach(r => {
+      const id = r.tool + '|' + (r.label || '');
+      if (!seen[id]) { seen[id] = 1; out.push(r); }
+    });
+    if (key) {
+      addAll(map[key]);
+      const um = String(key).match(/^u(\d+)_/);
+      if (um) addAll(map['u' + um[1]]);
+    }
+    return out;
+  }
+
+  function klabDeepUrl(rec) {
+    let q = '?tool=' + encodeURIComponent(rec.tool) + '&from=kteacher';
+    if (rec.cfg) q += '&cfg=' + encodeURIComponent(JSON.stringify(rec.cfg));
+    if (rec.label) q += '&label=' + encodeURIComponent(rec.label);
+    return KLAB_PAGE_URL + q;
+  }
+
+  function setupKlabDock() {
+    if (document.getElementById('klab-dock-btn')) return;
+    const fullBtn = document.getElementById('full-btn');
+    if (!fullBtn || !fullBtn.parentNode) return;
+    const btn = document.createElement('button');
+    btn.className = 'icon-btn';
+    btn.id = 'klab-dock-btn';
+    btn.title = '이 차시에 어울리는 케이랩 교구 열기';
+    btn.textContent = '🧊 교구';
+    fullBtn.parentNode.insertBefore(btn, fullBtn);
+
+    const panel = document.createElement('div');
+    panel.id = 'klab-dock-panel';
+    panel.style.cssText = 'display:none;position:fixed;z-index:260;background:#fff;border-radius:18px;'
+      + 'box-shadow:0 12px 40px rgba(0,0,0,.25);padding:14px;min-width:340px;max-width:480px;max-height:72vh;overflow:auto;';
+    document.body.appendChild(panel);
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (panel.style.display === 'none') openKlabDock(btn, panel);
+      else panel.style.display = 'none';
+    });
+    document.addEventListener('click', e => {
+      if (panel.style.display !== 'none' && !panel.contains(e.target) && e.target !== btn) panel.style.display = 'none';
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && panel.style.display !== 'none') panel.style.display = 'none';
+    });
+  }
+
+  function openKlabDock(btn, panel) {
+    const recs = klabRecsFor(currentLessonKey);
+    let html = '<div style="font-size:19px;font-weight:800;color:#1B3A57;margin:2px 4px 10px;">🧊 케이랩 교구 — 이 차시 추천</div>';
+    if (recs.length) {
+      html += recs.map((r, i) =>
+        '<div class="klab-dock-item" data-i="' + i + '" style="cursor:pointer;border:3px solid #D7E6F5;border-radius:14px;padding:12px 14px;margin-bottom:8px;transition:border-color .15s,background .15s;">'
+        + '<div style="font-size:19px;font-weight:800;color:#1565C0;">' + esc(r.label || r.tool) + ' <span style="float:right;font-size:15px;color:#8aa9c6;">새 탭 ↗</span></div>'
+        + (r.desc ? '<div style="font-size:15px;color:#5a7894;margin-top:3px;line-height:1.4;">' + esc(r.desc) + '</div>' : '')
+        + '</div>'
+      ).join('');
+    } else {
+      html += '<div style="font-size:16px;color:#5a7894;padding:6px 4px 10px;line-height:1.5;">이 차시에 등록된 추천 교구가 아직 없어요.<br>전체 목록에서 골라 쓸 수 있어요.</div>';
+    }
+    html += '<div class="klab-dock-all" style="cursor:pointer;text-align:center;border-radius:14px;padding:12px;background:#EAF2FB;color:#1565C0;font-size:17px;font-weight:800;">🧊 케이랩 전체 교구 보기 ↗</div>'
+      + '<div style="font-size:13px;color:#9AB7D4;text-align:center;margin-top:8px;">새 탭에서 열려요 — 탭을 닫으면 수업 화면이 그대로 있어요</div>';
+    panel.innerHTML = html;
+
+    panel.querySelectorAll('.klab-dock-item').forEach(el => {
+      el.addEventListener('mouseenter', () => { el.style.borderColor = '#1565C0'; el.style.background = '#F4F9FF'; });
+      el.addEventListener('mouseleave', () => { el.style.borderColor = '#D7E6F5'; el.style.background = '#fff'; });
+      el.addEventListener('click', () => {
+        const r = recs[Number(el.dataset.i)];
+        if (r) window.open(klabDeepUrl(r), '_blank', 'noopener');
+        panel.style.display = 'none';
+      });
+    });
+    const allEl = panel.querySelector('.klab-dock-all');
+    if (allEl) allEl.addEventListener('click', () => {
+      window.open(KLAB_PAGE_URL, '_blank', 'noopener');
+      panel.style.display = 'none';
+    });
+
+    // 버튼 아래에 위치
+    const rect = btn.getBoundingClientRect();
+    panel.style.display = 'block';
+    panel.style.top = Math.min(rect.bottom + 8, window.innerHeight - 80) + 'px';
+    panel.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - panel.offsetWidth - 8)) + 'px';
+  }
+
   global.Teacher = {
     init(config) {
       CURRICULUM = config.curriculum || [];
@@ -1718,6 +1817,7 @@
       renderHome();
       bindEvents();
       initTheme();
+      setupKlabDock();
     },
     // 디버그·외부 호출용
     openShow,
