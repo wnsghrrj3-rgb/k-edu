@@ -7,10 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   영어 v3 샘플 — Lv3 문법 발견 「물어볼 땐 Do가 붙네!」
-   디자인: 교실 단 (Lv3~5) — 본문 22~26px, 슬라이드당 2~3개,
-   트랙색(G 보라)은 포인트로 후퇴, 카드 레이아웃.
-   발견의 문법: 용어 설명 X → 관찰 → 스스로 패턴 발견 → 이름은 나중에.
+   영어 v3 — Lv3 문법 발견 「물어볼 땐 Do가 붙네!」 (풀버전 v2)
+   자기주도 설명 표준 5칙 적용:
+   ①뜻 우선(모든 영어에 한국어) ②시범 먼저 ③지시 3요소 ④힌트 2단 ⑤해설 동반
    ============================================================ */
 :root{ --primary:#7048E8; --primary-light:#F0EBFE; --bg:#F7F7FB; --text:#1A202C; --sub:#64748B; --ok:#12B886; }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -19,36 +18,54 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .back{font-size:14px;color:var(--sub);text-decoration:none;font-weight:700}
 .progress-wrap{flex:1;margin:0 6px}
 .progress-bar{height:8px;background:#E2E8F0;border-radius:99px;overflow:hidden}
-.progress-fill{height:100%;width:0;background:var(--primary);border-radius:99px;transition:width .5s}
+.progress-fill{height:100%;width:0;background:var(--primary);transition:width .5s}
 .kedu-logo{background:var(--primary);color:#fff;border-radius:99px;padding:4px 12px;font-family:Jua;font-size:14px}
 .slides{flex:1;position:relative;overflow:hidden}
-.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 22px;text-align:center;
-       opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;text-align:center;
+       opacity:0;transform:translateX(60px);transition:all .4s;pointer-events:none;overflow-y:auto}
 .slide.active{opacity:1;transform:translateX(0);pointer-events:all}
-.badge{background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-family:Jua;font-size:14px;margin-bottom:12px}
-.s-title{font-family:Jua;font-size:23px;line-height:1.45}
-.s-sub{font-size:15px;color:var(--sub);margin-top:8px;line-height:1.7}
-/* 문장 카드 (교실 단 — 카드 레이아웃) */
-.pair{display:flex;flex-direction:column;gap:10px;margin:18px 0;width:100%;max-width:380px}
-.sent{background:#fff;border-radius:14px;padding:14px 16px;font-size:21px;font-weight:700;box-shadow:0 1px 6px rgba(0,0,0,.06);
-      display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;border:2px solid transparent}
+.badge{background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-family:Jua;font-size:14px;margin-bottom:10px}
+.s-title{font-family:Jua;font-size:22px;line-height:1.5}
+.s-sub{font-size:14.5px;color:var(--sub);margin-top:10px;line-height:1.8;max-width:360px}
+.s-sub b{color:#4A5568}
+/* 문장 카드 — 뜻 동반 (표준 1칙) */
+.pair{display:flex;flex-direction:column;gap:10px;margin:16px 0 4px;width:100%;max-width:390px}
+.sent{background:#fff;border-radius:14px;padding:12px 16px;box-shadow:0 1px 6px rgba(0,0,0,.06);cursor:pointer;text-align:left;border:2px solid transparent}
 .sent:active{transform:scale(.985)}
-.sent .spk{font-size:16px;flex-shrink:0}
-.sent.q{border-color:var(--primary-light)}
+.sent .en{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.sent .en .spk{font-size:15px}
+.sent .ko{font-size:13.5px;color:var(--sub);margin-top:3px;padding-left:25px}
+.sent .tag{float:right;font-size:11.5px;font-weight:800;border-radius:99px;padding:2px 10px;margin-top:2px}
+.sent.say .tag{background:#EDF2F7;color:#64748B}
+.sent.ask{border-color:#E4DAFB}
+.sent.ask .tag{background:var(--primary-light);color:var(--primary)}
 .sent .hl{background:#FFE45C;border-radius:6px;padding:0 4px}
-.choices{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center}
-.choice{background:#fff;border:2.5px solid #E2E8F0;border-radius:14px;padding:12px 24px;font-family:Jua;font-size:22px;cursor:pointer;color:var(--primary)}
-.choice:active{transform:scale(.96)}
+.choices{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.choice{background:#fff;border:2.5px solid #E2E8F0;border-radius:14px;padding:12px 24px;font-family:Jua;font-size:21px;cursor:pointer;color:var(--primary)}
 .choice.right{background:var(--ok);border-color:var(--ok);color:#fff}
 .choice.wrong{opacity:.35}
-.key-box{background:#FFF9C2;border:3px solid #FACC15;border-radius:16px;padding:16px 22px;font-size:19px;line-height:1.6;max-width:360px;font-weight:700}
-.feedback{font-size:15px;color:var(--sub);margin-top:14px;min-height:24px;font-weight:700}
+.choice.hinted{border-color:#FACC15;background:#FFFBEB}
+.opts{display:flex;flex-direction:column;gap:8px;width:100%;max-width:380px;margin-top:12px}
+.opt{background:#fff;border:2px solid #E2E8F0;border-radius:12px;padding:11px 14px;cursor:pointer;text-align:left}
+.opt .en{font-size:16.5px;font-weight:800}
+.opt .ko{font-size:12.5px;color:var(--sub);margin-top:2px}
+.opt.right{background:var(--ok);border-color:var(--ok)}
+.opt.right .en,.opt.right .ko{color:#fff}
+.opt.wrong{opacity:.35}
+.key-box{background:#FFF9C2;border:3px solid #FACC15;border-radius:16px;padding:16px 22px;font-size:18px;line-height:1.7;max-width:370px;font-weight:700}
+.feedback{font-size:14.5px;margin-top:12px;min-height:44px;font-weight:700;line-height:1.6;max-width:380px}
+.feedback.good{color:#0B7A5C}.feedback.help{color:#B45309}
+.demo-stage{background:#fff;border-radius:16px;padding:20px;max-width:390px;width:100%;box-shadow:0 1px 8px rgba(0,0,0,.06);margin-top:14px}
+.demo-sent{font-size:22px;font-weight:800;position:relative;min-height:36px}
+.demo-ko{font-size:13.5px;color:var(--sub);margin-top:6px}
+.fly{display:inline-block;font-family:Jua;color:var(--primary);opacity:0;transform:translateY(-26px) scale(1.3)}
+.fly.in{transition:all .7s cubic-bezier(.3,1.4,.5,1);opacity:1;transform:translateY(0) scale(1)}
+.btn{font-family:Jua;font-size:17px;border:0;border-radius:13px;padding:12px 26px;cursor:pointer;margin-top:14px;background:var(--primary);color:#fff}
 .bottom{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E2E8F0}
 .nav{flex:1;font-family:Jua;font-size:18px;border:0;border-radius:13px;padding:13px;cursor:pointer}
 .nav.prev{background:#EDF2F7;color:#64748B;max-width:100px}
 .nav.next{background:var(--primary);color:#fff}
 .nav:disabled{opacity:.35}
-.done-emoji{font-size:64px}
 </style>
 </head>
 <body>
@@ -60,84 +77,160 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 
 <div class="slides">
 
-  <!-- 1. 표지 -->
+  <!-- 1. 표지 — 오늘 뭘 하는지 명확하게 -->
   <div class="slide">
     <span class="badge">💬 문법 탐정 · Lv3</span>
-    <div class="s-title">물어보는 문장에는<br><span style="color:var(--primary)">비밀</span>이 숨어 있어요</div>
-    <div class="s-sub">선생님이 알려주지 않아요.<br><b>탐정처럼 직접 찾아낼 거예요!</b> 🔍</div>
+    <div class="s-title">영어로 <span style="color:var(--primary)">물어보는 법</span>,<br>오늘 직접 발견해요</div>
+    <div class="s-sub">"너 고양이 좋아해?" — 이걸 영어로 어떻게 말할까요?<br>
+    답을 그냥 알려주지 않을 거예요.<br><b>문장들을 보다 보면 규칙이 스스로 보여요.</b> 🔍<br>
+    먼저 문장 두 개를 만나러 가요. <b>다음 →</b></div>
   </div>
 
-  <!-- 2. 관찰 ① -->
+  <!-- 2. 뜻부터 — 말하는 문장 -->
   <div class="slide">
-    <span class="badge">🔍 단서 1</span>
-    <div class="s-title">두 문장을 잘 들어 봐요</div>
+    <span class="badge">📖 먼저, 뜻부터</span>
+    <div class="s-title">이 문장은 <b>말해주는</b> 문장</div>
     <div class="pair">
-      <div class="sent" data-say="You like cats."><span class="spk">🔊</span>You like cats.<span style="margin-left:auto;font-size:13px;color:#A0AEC0">말하기</span></div>
-      <div class="sent q" data-say="Do you like cats?"><span class="spk">🔊</span><b>Do</b> you like cats?<span style="margin-left:auto;font-size:13px;color:#A0AEC0">물어보기</span></div>
+      <div class="sent say" data-say="You like cats.">
+        <span class="tag">말하기</span>
+        <div class="en"><span class="spk">🔊</span>You like cats.</div>
+        <div class="ko">너는 고양이를 좋아해. (친구에게 말해주는 거예요)</div>
+      </div>
     </div>
-    <div class="s-sub">뭐가 달라졌을까요? 아직 답하지 말고 다음 단서로!</div>
+    <div class="s-sub">🔊가 있는 카드는 <b>누르면 소리가 나요.</b> 한번 눌러서 들어 보세요.<br>뜻도 같이 읽어 두세요 — 곧 중요해져요!</div>
   </div>
 
-  <!-- 3. 관찰 ② -->
+  <!-- 3. 뜻부터 — 물어보는 문장 -->
   <div class="slide">
-    <span class="badge">🔍 단서 2</span>
-    <div class="s-title">한 쌍 더!</div>
+    <span class="badge">📖 그리고 이 문장</span>
+    <div class="s-title">이건 <b style="color:var(--primary)">물어보는</b> 문장</div>
     <div class="pair">
-      <div class="sent" data-say="You run fast."><span class="spk">🔊</span>You run fast.</div>
-      <div class="sent q" data-say="Do you run fast?"><span class="spk">🔊</span><b>Do</b> you run fast?</div>
-      <div class="sent" data-say="They eat apples."><span class="spk">🔊</span>They eat apples.</div>
-      <div class="sent q" data-say="Do they eat apples?"><span class="spk">🔊</span><b>Do</b> they eat apples?</div>
+      <div class="sent ask" data-say="Do you like cats?">
+        <span class="tag">물어보기</span>
+        <div class="en"><span class="spk">🔊</span>Do you like cats?</div>
+        <div class="ko">너 고양이 좋아해? (친구에게 물어보는 거예요)</div>
+      </div>
     </div>
+    <div class="s-sub">눌러서 들어 보세요. 끝이 올라가죠? ↗<br>한국어로는 거의 같은 말인데… <b>영어 모양은 뭔가 달라졌어요.</b></div>
   </div>
 
-  <!-- 4. 발견 미션 -->
+  <!-- 4. 나란히 비교 -->
+  <div class="slide">
+    <span class="badge">🔍 단서 1 — 나란히 놓고 보기</span>
+    <div class="s-title">뭐가 달라졌는지 찾는 중…</div>
+    <div class="pair">
+      <div class="sent say" data-say="You like cats.">
+        <div class="en"><span class="spk">🔊</span>You like cats.</div>
+        <div class="ko">너는 고양이를 좋아해.</div>
+      </div>
+      <div class="sent ask" data-say="Do you like cats?">
+        <div class="en"><span class="spk">🔊</span><b>Do</b> you like cats?</div>
+        <div class="ko">너 고양이 좋아해?</div>
+      </div>
+    </div>
+    <div class="s-sub">두 문장을 번갈아 누르며 들어 보세요.<br>물어보는 문장에 <b>없던 게 하나 생겼어요.</b> 어디에 생겼는지 눈여겨봐요!<br>(아직 답 안 해도 돼요 — 단서를 하나 더 봅시다)</div>
+  </div>
+
+  <!-- 5. 단서 2 -->
+  <div class="slide">
+    <span class="badge">🔍 단서 2 — 다른 문장도 그럴까?</span>
+    <div class="s-title">두 쌍 더 — 뜻과 함께!</div>
+    <div class="pair">
+      <div class="sent say" data-say="You run fast.">
+        <div class="en"><span class="spk">🔊</span>You run fast.</div>
+        <div class="ko">너는 빨리 달려.</div>
+      </div>
+      <div class="sent ask" data-say="Do you run fast?">
+        <div class="en"><span class="spk">🔊</span><b>Do</b> you run fast?</div>
+        <div class="ko">너 빨리 달려?</div>
+      </div>
+      <div class="sent say" data-say="They eat apples.">
+        <div class="en"><span class="spk">🔊</span>They eat apples.</div>
+        <div class="ko">그 애들은 사과를 먹어.</div>
+      </div>
+      <div class="sent ask" data-say="Do they eat apples?">
+        <div class="en"><span class="spk">🔊</span><b>Do</b> they eat apples?</div>
+        <div class="ko">걔네 사과 먹어?</div>
+      </div>
+    </div>
+    <div class="s-sub">물어보는 문장(보라 카드)들을 보세요 — <b>똑같은 일이 또 일어났어요!</b></div>
+  </div>
+
+  <!-- 6. 추리 미션 (힌트 2단) -->
   <div class="slide">
     <span class="badge">💡 탐정의 추리</span>
-    <div class="s-title">물어보는 문장 <b>맨 앞</b>에<br>늘 나타난 건?</div>
+    <div class="s-title">물어보는 문장으로 변할 때<br><b>맨 앞에 새로 생긴 단어</b>는?</div>
     <div class="choices" id="findChoices">
       <div class="choice" data-v="The">The</div>
       <div class="choice" data-v="Do">Do</div>
       <div class="choice" data-v="You">You</div>
     </div>
-    <div class="feedback" id="findMsg"></div>
+    <div class="feedback" id="findMsg">위 단서의 보라 카드 세 개를 떠올려 보세요!</div>
   </div>
 
-  <!-- 5. 확인 — 패턴에 불 켜기 -->
+  <!-- 7. 확인 + 해설 (한국어 대조) -->
   <div class="slide">
-    <span class="badge">✔ 추리 확인</span>
-    <div class="s-title">정말 그런지 다시 봐요</div>
+    <span class="badge">✔ 추리 확인 + 왜 그럴까?</span>
+    <div class="s-title">정말 셋 다 그래요</div>
     <div class="pair">
-      <div class="sent q" data-say="Do you like cats?"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;you like cats?</div>
-      <div class="sent q" data-say="Do you run fast?"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;you run fast?</div>
-      <div class="sent q" data-say="Do they eat apples?"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;they eat apples?</div>
+      <div class="sent ask" data-say="Do you like cats?"><div class="en"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;you like cats?</div><div class="ko">너 고양이 좋아해?</div></div>
+      <div class="sent ask" data-say="Do you run fast?"><div class="en"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;you run fast?</div><div class="ko">너 빨리 달려?</div></div>
+      <div class="sent ask" data-say="Do they eat apples?"><div class="en"><span class="spk">🔊</span><span class="hl">Do</span>&nbsp;they eat apples?</div><div class="ko">걔네 사과 먹어?</div></div>
     </div>
-    <div class="s-sub">셋 다 <b>Do</b>로 시작! 탐정 성공 🎉</div>
+    <div class="s-sub">📌 <b>한국어</b>는 물어볼 때 끝을 올리죠 — "좋아해<b>?</b>↗"<br>
+    <b>영어</b>는 끝을 올리는 것에 더해, <b>문장 맨 앞에 Do를 붙여요.</b><br>이게 준호… 아니, 탐정인 <b>내가 찾아낸 규칙!</b></div>
   </div>
 
-  <!-- 6. 적용 — 내가 만들어 보기 -->
+  <!-- 8. 시범 — 먼저 보여주기 (표준 2칙) -->
   <div class="slide">
-    <span class="badge">🛠 내가 만들기</span>
-    <div class="s-title">"You like dogs."를<br>물어보는 문장으로!</div>
-    <div class="choices" style="flex-direction:column;width:100%;max-width:360px" id="applyChoices">
-      <div class="choice" style="font-size:18px;font-family:'Noto Sans KR';font-weight:800" data-ok="0">You like dogs?</div>
-      <div class="choice" style="font-size:18px;font-family:'Noto Sans KR';font-weight:800" data-ok="1">Do you like dogs?</div>
-      <div class="choice" style="font-size:18px;font-family:'Noto Sans KR';font-weight:800" data-ok="0">Like you dogs?</div>
+    <span class="badge">👀 시범 — 먼저 보여줄게요</span>
+    <div class="s-title">규칙으로 문장을 바꾸면 이렇게!</div>
+    <div class="demo-stage">
+      <div class="demo-sent" id="demoSent">You like dogs.</div>
+      <div class="demo-ko" id="demoKo">너는 강아지를 좋아해.</div>
     </div>
-    <div class="feedback" id="applyMsg"></div>
+    <button class="btn" id="demoBtn">▶ 물어보는 문장으로 변신!</button>
+    <div class="s-sub" id="demoMsg">버튼을 누르면 Do가 날아와 붙는 걸 보여줄게요.</div>
   </div>
 
-  <!-- 7. 핵심 -->
+  <!-- 9. 내가 만들기 ① -->
   <div class="slide">
-    <span class="badge">⭐ 오늘의 발견</span>
-    <div class="key-box">💡 물어볼 땐 문장 앞에<br><span style="color:#B45309;font-family:Jua;font-size:24px">Do</span>가 붙는다!</div>
-    <div class="s-sub">내가 직접 찾아낸 규칙이에요.<br>이런 걸 어른들은 '의문문'이라고 불러요 — 이름은 나중에, 규칙이 먼저!</div>
+    <span class="badge">🛠 이제 내 차례 ①</span>
+    <div class="s-title">"너 강아지 좋아해?"<br>영어로 바르게 물어본 것은?</div>
+    <div class="opts" id="apply1">
+      <div class="opt" data-ok="0"><div class="en">You like dogs?</div><div class="ko">Do가 없어요 — 그냥 말하기 문장에 ?만 붙였네요</div></div>
+      <div class="opt" data-ok="1"><div class="en">Do you like dogs?</div><div class="ko">맨 앞에 Do!</div></div>
+      <div class="opt" data-ok="0"><div class="en">Like you dogs?</div><div class="ko">단어 순서가 뒤집혔어요</div></div>
+    </div>
+    <div class="feedback" id="apply1Msg">방금 본 시범을 떠올려요 — 맨 앞에 뭐가 왔죠?</div>
   </div>
 
-  <!-- 8. 완료 -->
+  <!-- 10. 내가 만들기 ② (반복) -->
   <div class="slide">
-    <div class="done-emoji">🕵️</div>
-    <div class="s-title">문법 탐정 사건 해결!</div>
-    <div class="s-sub">다음 사건: <b>아니라고 말할 때</b>는 뭐가 붙을까?</div>
+    <span class="badge">🛠 이제 내 차례 ②</span>
+    <div class="s-title">"걔네 빨리 달려?"<br>이번엔 새 문장으로!</div>
+    <div class="s-sub" style="margin-top:0;margin-bottom:4px">They run fast. (그 애들은 빨리 달려.) — 를 물어보는 문장으로:</div>
+    <div class="opts" id="apply2">
+      <div class="opt" data-ok="1"><div class="en">Do they run fast?</div></div>
+      <div class="opt" data-ok="0"><div class="en">They do run fast?</div><div class="ko">Do의 자리가 틀렸어요 — 맨 앞이에요!</div></div>
+      <div class="opt" data-ok="0"><div class="en">Run they fast?</div><div class="ko">단어 순서가 뒤집혔어요</div></div>
+    </div>
+    <div class="feedback" id="apply2Msg">규칙은 똑같아요 — 어떤 문장이든!</div>
+  </div>
+
+  <!-- 11. 핵심 정리 -->
+  <div class="slide">
+    <span class="badge">⭐ 오늘 내가 발견한 규칙</span>
+    <div class="key-box">💡 영어로 물어볼 땐<br>문장 <b>맨 앞에 <span style="color:#B45309;font-family:Jua;font-size:24px">Do</span></b>를 붙인다!<br>
+    <span style="font-size:13.5px;color:#92660A">한국어: 끝을 올린다 ↗ / 영어: 앞에 Do + 끝도 올린다 ↗</span></div>
+    <div class="s-sub">선생님이 알려준 게 아니라 <b>내가 단서로 찾아낸 규칙</b>이에요.<br>어른들은 이런 문장을 '의문문'이라고 불러요 — 이름은 나중에, 규칙이 먼저!</div>
+  </div>
+
+  <!-- 12. 완료 -->
+  <div class="slide">
+    <div style="font-size:64px">🕵️</div>
+    <div class="s-title">문법 탐정, 사건 해결!</div>
+    <div class="s-sub">오늘 배운 Do는 앞으로 읽을 글에서 계속 만나요.<br>다음 사건: <b>"아니야"라고 말할 때</b>는 뭐가 붙을까?</div>
   </div>
 
 </div>
@@ -160,24 +253,56 @@ bp.addEventListener('click',function(){show(cur-1);});
 bn.addEventListener('click',function(){show(cur+1);});
 document.querySelectorAll('[data-say]').forEach(function(el){
   el.addEventListener('click',function(){KTTS.sentence(el.dataset.say);});});
-/* 발견 미션 */
+
+/* 추리 미션 — 힌트 2단 (표준 4칙) */
+var findTry=0;
 document.querySelectorAll('#findChoices .choice').forEach(function(c){
   c.addEventListener('click',function(){
-    if(c.dataset.v==='Do'){c.classList.add('right');
-      document.getElementById('findMsg').textContent='🎉 명탐정! 물어볼 땐 Do가 맨 앞에!';
-      setTimeout(function(){show(cur+1);},1200);}
-    else{c.classList.add('wrong');
-      document.getElementById('findMsg').textContent='🤔 단서를 다시 볼까요? 물어보는 문장들 맨 앞!';}
+    var msg=document.getElementById('findMsg');
+    if(c.dataset.v==='Do'){c.classList.add('right');msg.className='feedback good';
+      msg.textContent='🎉 명탐정! 셋 다 Do로 시작했어요. 다음 장에서 왜 그런지 확인해요!';
+      setTimeout(function(){show(cur+1);},1500);}
+    else{findTry++;c.classList.add('wrong');msg.className='feedback help';
+      if(findTry===1){msg.textContent='🤔 힌트: 물어보는 문장(보라 카드)의 첫 단어만 보세요!';}
+      else{msg.textContent='💡 큰 힌트: D로 시작하는 두 글자였어요!';
+        document.querySelector('#findChoices .choice[data-v="Do"]').classList.add('hinted');}}
   });});
-/* 적용 */
-document.querySelectorAll('#applyChoices .choice').forEach(function(c){
-  c.addEventListener('click',function(){
-    if(c.dataset.ok==='1'){c.classList.add('right');KTTS.sentence('Do you like dogs?');
-      document.getElementById('applyMsg').textContent='✨ 완벽해요! 규칙을 쓸 줄 알아요!';
-      setTimeout(function(){show(cur+1);},1400);}
-    else{c.classList.add('wrong');
-      document.getElementById('applyMsg').textContent='발견한 규칙을 떠올려요 — 맨 앞에 뭐?';}
-  });});
+
+/* 시범 — Do가 날아와 붙는 애니메이션 (표준 2칙) */
+document.getElementById('demoBtn').addEventListener('click',function(){
+  this.style.display='none';
+  var sent=document.getElementById('demoSent');
+  sent.innerHTML='<span class="fly" id="flyDo">Do </span>you like dogs<span id="qm">.</span>';
+  KTTS.sentence('You like dogs.').then(function(){
+    setTimeout(function(){
+      document.getElementById('flyDo').classList.add('in');
+      document.getElementById('qm').textContent='?';
+      document.getElementById('demoKo').textContent='너 강아지 좋아해?';
+      document.getElementById('demoMsg').innerHTML='보셨죠? <b>Do가 맨 앞에 + 마침표가 물음표로!</b> 들어 봐요 ↓';
+      setTimeout(function(){KTTS.sentence('Do you like dogs?');},700);
+    },500);
+  });
+});
+
+/* 적용 ①② — 정답 후 해설 동반 (표준 5칙) */
+function apply(id,msgId,sayText,okMsg,baseHint){
+  var t=0;
+  document.querySelectorAll('#'+id+' .opt').forEach(function(o){
+    o.addEventListener('click',function(){
+      var msg=document.getElementById(msgId);
+      if(o.dataset.ok==='1'){o.classList.add('right');KTTS.sentence(sayText);
+        msg.className='feedback good';msg.innerHTML=okMsg;
+        setTimeout(function(){show(cur+1);},1800);}
+      else{t++;o.classList.add('wrong');msg.className='feedback help';
+        msg.innerHTML=(t===1)?baseHint:'💡 큰 힌트: 정답은 <b>Do</b>로 시작해요!';}
+    });});
+}
+apply('apply1','apply1Msg','Do you like dogs?',
+  '✨ 맞아요! <b>Do</b> + you like dogs + <b>?</b> — 내가 찾은 규칙을 그대로 썼어요!',
+  '🤔 규칙: 물어볼 땐 맨 앞에 뭐가 붙는다고 했죠?');
+apply('apply2','apply2Msg','Do they run fast?',
+  '🎉 완벽! 처음 보는 문장에도 규칙이 통해요 — 이게 규칙의 힘이에요!',
+  '🤔 Do의 자리는 문장 <b>맨 앞</b>이에요!');
 show(0);
 </script>
 </body>
