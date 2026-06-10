@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 3D 도형 (shape3d) v2
+   케이랩 도구 모듈 — 3D 도형 (shape3d) v3 · 3모드
    v2 초점 = 전자칠판 가독성 (준호 1순위 결정 2026-06-04)
      · 굵은 검은 외곽선  : 도형보다 살짝 큰 BackSide 검은 셸 메시 → 카툰 테두리.
                            (three.js LineBasicMaterial.linewidth 는 대부분 1로 고정돼
@@ -17,6 +17,8 @@
        actions : 허용 동작 ("roll"=굴리기, "flip"=기둥 눕히기/세우기)
        terms   : "daily"=일상어(상자·기둥·공) / "math"=수학용어(직육면체·원기둥·구)
    - 한 모듈로 학년별 분기: 1학년은 daily+roll/flip, 상위 학년은 config만 바꿔 확장.
+   - v3: KLab.ui 3모드. THREE 씬은 1회 구축 유지 — 모드 전환은 크롬(탭/바/선택지/컨트롤 표시)만
+         갈아끼움. 퀴즈 중 상태 카드(굴러가요/안 굴러가요) 숨김(정답 누설 차단). config.mode 추가.
    ============================================================================ */
 (function () {
   if (!window.KLab || !window.THREE) return;
@@ -41,6 +43,8 @@
   var SHELL = 1.035;        // 외곽선 셸 배율 (얇게 — 형태 안 헷갈리도록)
 
   window.KLab.register('shape3d', function (el, config) {
+    var ui = window.KLab.ui;
+    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
     var shapes  = (config.shapes  && config.shapes.length)  ? config.shapes  : ['box', 'cylinder', 'ball'];
     var actions = (config.actions && config.actions.length) ? config.actions : ['roll', 'flip'];
     var terms   = LABELS[config.terms] ? config.terms : 'daily';
@@ -48,20 +52,102 @@
     var canRollAction = actions.indexOf('roll') >= 0;
     var canFlipAction = actions.indexOf('flip') >= 0;
 
-    // ---------- UI 골격 (큰 버튼·큰 글씨) ----------
+    /* ───────────── 미션 (관찰 행동 4단계) ───────────── */
+    var mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
+    var MISSIONS = [
+      { text: '▶ <b style="color:#7048E8;">굴려보기</b>를 눌러 봐요! 누가 굴러가고 누가 안 굴러갈까요?',
+        check: function () { return mFlags.rolled; } },
+      { text: '<b style="color:#7048E8;">기둥 눕히기</b>를 눌러 ' + LS.cylinder + '을(를) 눕혀 봐요!',
+        check: function () { return mFlags.laid; } },
+      { text: '눕힌 채로 다시 ▶ <b style="color:#7048E8;">굴려보기</b> — 이제 ' + LS.cylinder + '도 굴러가요!',
+        check: function () { return mFlags.rolledLying; } },
+      { text: '↺ <b style="color:#7048E8;">처음으로</b>를 눌러 모두 제자리로 되돌려 봐요!',
+        check: function () { return mFlags.resetDone; } }
+    ];
+    var mStep = 0, mDone = false, mLock = false;
+    function checkMission() {
+      if (mode !== 'mission' || mDone || mLock) return;
+      if (MISSIONS[mStep].check()) {
+        mLock = true; ui.toast(el, true);
+        setTimeout(function () {
+          mLock = false; mStep++;
+          if (mStep >= MISSIONS.length) mDone = true;
+          buildChrome();
+        }, 1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 (모양과 굴러감 — 개념) ───────────── */
+    var QUIZ_POOL = [
+      { q: '셋 중에서 어느 쪽으로든 잘 굴러가는 모양은?', answer: LS.ball, choices: [LS.ball, LS.box, LS.cylinder] },
+      { q: '잘 굴러가지 않고, 대신 잘 쌓을 수 있는 모양은?', answer: LS.box, choices: [LS.box, LS.ball, LS.cylinder] },
+      { q: LS.cylinder + ' 모양을 눕히면 어떻게 될까요?', answer: '잘 굴러가요', choices: ['잘 굴러가요', '안 굴러가요', '공이 돼요'] },
+      { q: LS.box + ' 모양이 잘 굴러가지 않는 까닭은?', answer: '평평한 면이 있어서', choices: ['평평한 면이 있어서', '너무 작아서', '색깔 때문에'] },
+      { q: '축구공처럼 어디로든 굴러가야 하는 물건은 어떤 모양이 좋을까요?', answer: LS.ball, choices: [LS.ball, LS.box, LS.cylinder] }
+    ];
+    var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+    function shuffleQuiz() {
+      qList = QUIZ_POOL.slice();
+      for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
+      qIdx = 0; qScore = 0; qCount = 0;
+    }
+    function shuffled(arr) { var c = arr.slice(); for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = c[i]; c[i] = c[j]; c[j] = t; } return c; }
+
+    // ---------- UI 골격 (큰 버튼·큰 글씨) — 씬은 1회 구축, 크롬만 모드별 갱신 ----------
     var btnBase = 'font-size:28px;padding:16px 34px;border-radius:16px;border:3px solid #1565C0;'
                 + 'cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     el.innerHTML =
-      '<div class="s3d-controls" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
+      '<div class="s3d-top"></div>'
+      + '<div class="s3d-bars"></div>'
+      + '<div class="s3d-controls" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
         + (canRollAction ? '<button class="s3d-btn" data-act="roll" style="' + btnBase + 'background:#1565C0;color:#fff;">▶ 굴려보기</button>' : '')
         + (canFlipAction ? '<button class="s3d-btn" data-act="flip" style="' + btnBase + 'background:#fff;color:#1565C0;">기둥 눕히기</button>' : '')
         + '<button class="s3d-btn" data-act="reset" style="font-size:28px;padding:16px 34px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#555;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 처음으로</button>'
       + '</div>'
+      + '<div class="kl-stage-host" style="position:relative;">'
       + '<div class="s3d-stage" style="width:100%;height:50vh;min-height:340px;'
         + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
         + 'border-radius:20px;overflow:hidden;cursor:grab;touch-action:none;'
         + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
+      + '</div>'
+      + '<div class="s3d-foot"></div>'
       + '<div class="s3d-status" style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>';
+
+    function buildChrome() {
+      var topEl = el.querySelector('.s3d-top'), barEl = el.querySelector('.s3d-bars'), footEl = el.querySelector('.s3d-foot');
+      topEl.innerHTML = ui.modeTabs(['free', 'mission', 'quiz'], mode);
+      if (mode === 'mission') barEl.innerHTML = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+      else if (mode === 'quiz') barEl.innerHTML = ui.quizBar(qList[qIdx].q, qScore, qCount);
+      else barEl.innerHTML = '';
+      var quiz = (mode === 'quiz');
+      el.querySelector('.s3d-controls').style.display = quiz ? 'none' : 'flex';
+      el.querySelector('.s3d-status').style.display = quiz ? 'none' : 'flex';
+      footEl.innerHTML = quiz
+        ? ui.choices(shuffled(qList[qIdx].choices).map(function (v) { return { v: v, label: v }; }))
+          + '<style>.kl-choice{min-width:130px !important;}</style>'
+        : '';
+      ui.bindModeTabs(el, function (m2) {
+        mode = m2; mStep = 0; mDone = false; mLock = false;
+        mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
+        rolling = false; cylUp = true; applyCyl(); drawStatus();
+        shapes.forEach(function (k) { var g = groups[k]; if (g) { g.position.x = g.userData.homeX; g.rotation.set(0, 0, 0); g.userData.phase = 0; g.userData.wobble = -1; } });
+        if (m2 === 'quiz') shuffleQuiz();
+        buildChrome();
+      });
+      footEl.querySelectorAll('.kl-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (qLock) return; qLock = true; qCount++;
+          var q = qList[qIdx];
+          var ok = (b.dataset.v === String(q.answer));
+          if (ok) qScore++;
+          ui.toast(el, ok);
+          setTimeout(function () {
+            qIdx++; if (qIdx >= qList.length) shuffleQuiz();
+            qLock = false; buildChrome();
+          }, 1400);
+        });
+      });
+    }
 
     var stage  = el.querySelector('.s3d-stage');
     var statusRow = el.querySelector('.s3d-status');
@@ -240,16 +326,23 @@
         var act = btn.dataset.act;
         if (act === 'roll') {
           rolling = true;
+          mFlags.rolled = true; if (!cylUp) mFlags.rolledLying = true;
           shapes.forEach(function (k) { groups[k].userData.phase = 0; groups[k].userData.wobble = canRoll(k) ? -1 : 0; });
         } else if (act === 'flip') {
           cylUp = !cylUp; applyCyl(); drawStatus();
+          if (!cylUp) mFlags.laid = true;
           var g = groups.cylinder; if (g) { g.rotation.z = 0; g.userData.phase = 0; g.userData.wobble = (rolling && !canRoll('cylinder')) ? 0 : -1; }
         } else if (act === 'reset') {
           rolling = false; cylUp = true; applyCyl(); drawStatus();
+          if (mode === 'mission' && mStep === 3) mFlags.resetDone = true;   // 마지막 단계에서만 인정
           shapes.forEach(function (k) { var g = groups[k]; g.position.x = g.userData.homeX; g.rotation.set(0, 0, 0); g.userData.phase = 0; g.userData.wobble = -1; });
         }
+        if (mode === 'mission') checkMission();
       });
     });
+
+    shuffleQuiz();
+    buildChrome();
 
     // ---------- 루프 ----------
     var alive = true, last = performance.now();

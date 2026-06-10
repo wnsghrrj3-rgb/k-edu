@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 글자 조립 (hangul_build) v2
+   케이랩 도구 모듈 — 글자 조립 (hangul_build) v3 · 3모드
    초점 (1학년 한글 깨치기) = 자음과 모음(과 받침)이 만나 글자가 된다.
      · 자음 1개 + 모음 1개(+ 받침)를 고르면 → 글자가 즉시 합쳐져 크게 나타난다.
      · ㄱ+ㅏ=가, ㄱ+ㅏ+받침ㅁ=감 — 받침을 끼우고 빼며 글자 변화를 직접 본다.
@@ -13,6 +13,8 @@
        batchims(보여줄 받침 배열 | false = 받침 줄 숨김(v1 동작), 기본 8+쌍받침 2)
      }
    - v2 추가: 받침(종성) 줄. batchims:false 주면 v1(받침 없는 글자)과 동일.
+   - v3: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 조합식(ㄱ+ㅏ+ㅁ)을 보고 글자 고르기
+         (결과 글자는 가림). config.mode:"free"|"mission"|"quiz".
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
@@ -28,9 +30,12 @@
     var vows = (config.vowels && config.vowels.length) ? config.vowels : defVow;
     var useJong = config.batchims !== false; // false = 받침 줄 숨김(v1 동작)
     var jongs = (config.batchims && config.batchims.length) ? config.batchims : defJong;
-    var cho = (config.consonant && CHO.indexOf(config.consonant) >= 0) ? config.consonant : cons[0];
-    var jung = (config.vowel && JUNG.indexOf(config.vowel) >= 0) ? config.vowel : vows[0];
-    var jong = (useJong && config.batchim && JONG.indexOf(config.batchim) >= 0) ? config.batchim : '';
+    var ui = window.KLab.ui;
+    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+    function startCho(){ return (config.consonant && CHO.indexOf(config.consonant) >= 0) ? config.consonant : cons[0]; }
+    function startJung(){ return (config.vowel && JUNG.indexOf(config.vowel) >= 0) ? config.vowel : vows[0]; }
+    function startJong(){ return (useJong && config.batchim && JONG.indexOf(config.batchim) >= 0) ? config.batchim : ''; }
+    var cho = startCho(), jung = startJung(), jong = startJong();
 
     function compose(c, j, b) {
       var ci = CHO.indexOf(c), ji = JUNG.indexOf(j);
@@ -40,40 +45,134 @@
       return String.fromCharCode(0xAC00 + (ci * 21 + ji) * 28 + bi);
     }
 
+    /* ───────────── 미션 ───────────── */
+    var MISSIONS = [
+      { text: 'ㄱ과 ㅏ를 골라 <b style="color:#7048E8;">〈가〉</b>를 만들어 봐요!',
+        check: function () { return compose(cho, jung, jong) === '가'; } },
+      { text: '모음만 바꿔 <b style="color:#7048E8;">〈고〉</b>를 만들어 봐요!',
+        check: function () { return compose(cho, jung, jong) === '고'; } },
+      { text: '받침 ㅁ을 끼워 <b style="color:#7048E8;">〈곰〉</b>! 받침은 글자 아래에 들어가요!',
+        check: function () { return compose(cho, jung, jong) === '곰'; } },
+      { text: '자음·모음·받침을 바꿔 <b style="color:#7048E8;">〈산〉</b>을 만들어 봐요!',
+        check: function () { return compose(cho, jung, jong) === '산'; } }
+    ];
+    if (!useJong) {  // 받침 줄이 없는 구성에서는 받침 미션 대신 받침 없는 글자로
+      MISSIONS[2] = { text: '자음을 바꿔 <b style="color:#7048E8;">〈노〉</b>를 만들어 봐요!', check: function () { return compose(cho, jung, jong) === '노'; } };
+      MISSIONS[3] = { text: '<b style="color:#7048E8;">〈수〉</b>를 만들어 봐요!', check: function () { return compose(cho, jung, jong) === '수'; } };
+    }
+    var mStep = 0, mDone = false, mLock = false;
+    function checkMission() {
+      if (mode !== 'mission' || mDone || mLock) return;
+      if (MISSIONS[mStep].check()) {
+        mLock = true; ui.toast(el, true);
+        setTimeout(function () {
+          mLock = false; mStep++;
+          if (mStep >= MISSIONS.length) mDone = true;
+          build();
+        }, 1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 (조합식을 보고 글자 고르기 — 결과 가림) ───────────── */
+    var QUIZ_POOL = [
+      { cho: 'ㄱ', jung: 'ㅏ', jong: '',  answer: '가', choices: ['가', '거', '기'] },
+      { cho: 'ㄴ', jung: 'ㅗ', jong: '',  answer: '노', choices: ['노', '누', '나'] },
+      { cho: 'ㄱ', jung: 'ㅏ', jong: 'ㅁ', answer: '감', choices: ['감', '강', '곰'] },
+      { cho: 'ㅂ', jung: 'ㅏ', jong: 'ㅂ', answer: '밥', choices: ['밥', '법', '봅'] },
+      { cho: 'ㅎ', jung: 'ㅏ', jong: 'ㄴ', answer: '한', choices: ['한', '함', '혼'] }
+    ].filter(function (q) { return useJong || !q.jong; });
+    var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+    function shuffleQuiz() {
+      qList = QUIZ_POOL.slice();
+      for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
+      qIdx = 0; qScore = 0; qCount = 0;
+    }
+    function shuffled(arr) { var c = arr.slice(); for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = c[i]; c[i] = c[j]; c[j] = t; } return c; }
+    function quizQText(q) {
+      return '<span style="color:#1E88A8;">' + q.cho + '</span> ＋ <span style="color:#E07A2C;">' + q.jung + '</span>'
+        + (q.jong ? ' ＋ <span style="color:#12B886;">' + q.jong + '</span>' : '')
+        + ' ＝ 무슨 글자일까요?';
+    }
+
     var C_CON = '#1E88A8', C_CON_BG = '#E3F1F5', C_CON_LINE = '#13647A';
     var C_VOW = '#E07A2C', C_VOW_BG = '#FBEDDF', C_VOW_LINE = '#B25812';
     var C_JNG = '#12B886', C_JNG_BG = '#E2F7F0', C_JNG_LINE = '#0B7A5C';
     var keyBase = 'font-family:inherit;cursor:pointer;border-radius:16px;font-weight:800;line-height:1;transition:transform .08s,background .15s;font-size:clamp(22px,3.4vw,34px);min-width:clamp(52px,7vw,72px);padding:14px 4px;';
 
-    el.innerHTML = '<style>'
-      + '.hb-key:active{transform:translateY(2px);}'
-      + '.hb-result{animation:hbPop .3s cubic-bezier(.2,1.4,.4,1);}'
-      + '@keyframes hbPop{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}'
-      + '</style>'
-      + '<div class="hb-stage" style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:18px;">'
-      + '<div class="hb-break" style="font-size:clamp(26px,4vw,40px);font-weight:800;color:#5a6b78;display:flex;align-items:center;gap:10px;"></div>'
-      + '<div class="hb-result-wrap" style="width:100%;display:flex;justify-content:center;">'
-      + '<div class="hb-result" style="font-size:clamp(120px,22vw,220px);font-weight:800;color:#2C3A45;line-height:1;"></div>'
-      + '</div></div>'
-      + '<div style="display:flex;flex-direction:column;gap:14px;">'
-      + '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_CON + ';margin-bottom:7px;">자음 (닿소리)</div>'
-      + '<div class="hb-cons" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
-      + '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_VOW + ';margin-bottom:7px;">모음 (홀소리)</div>'
-      + '<div class="hb-vows" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
-      + (useJong
-        ? '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_JNG + ';margin-bottom:7px;">받침 (글자 아래에 끼워요)</div>'
-          + '<div class="hb-jongs" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
-        : '')
-      + '</div>'
-      + '<div style="text-align:center;margin-top:16px;">'
-      + '<button class="hb-reset" style="font-family:inherit;cursor:pointer;border-radius:14px;border:3px solid #9aa;background:#fff;color:#666;font-weight:800;font-size:clamp(16px,2vw,20px);padding:11px 24px;">↺ 처음으로</button>'
-      + '</div>';
+    var resultEl, breakEl, consWrap, vowsWrap, jongsWrap;
+    function build() {
+      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', foot = '';
+      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); }
+      else if (mode === 'quiz') {
+        var q = qList[qIdx] || qList[0];
+        cho = q.cho; jung = q.jung; jong = q.jong;
+        bar = ui.quizBar(quizQText(q), qScore, qCount);
+        foot = ui.choices(shuffled(q.choices).map(function (v) { return { v: v, label: '<span style="font-size:34px;">' + v + '</span>' }; }));
+      }
+      el.innerHTML = '<style>'
+        + '.hb-key:active{transform:translateY(2px);}'
+        + '.hb-result{animation:hbPop .3s cubic-bezier(.2,1.4,.4,1);}'
+        + '@keyframes hbPop{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}'
+        + '.kl-choice{min-width:110px !important;}'
+        + '</style>'
+        + top + bar
+        + '<div class="kl-stage-host" style="position:relative;">'
+        + '<div class="hb-stage" style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:18px;">'
+        + (mode === 'quiz' ? '' : '<div class="hb-break" style="font-size:clamp(26px,4vw,40px);font-weight:800;color:#5a6b78;display:flex;align-items:center;gap:10px;"></div>')
+        + '<div class="hb-result-wrap" style="width:100%;display:flex;justify-content:center;">'
+        + (mode === 'quiz'
+          ? '<div class="hb-result" style="font-size:clamp(120px,22vw,220px);font-weight:800;color:#C9D7E6;line-height:1;">?</div>'
+          : '<div class="hb-result" style="font-size:clamp(120px,22vw,220px);font-weight:800;color:#2C3A45;line-height:1;"></div>')
+        + '</div></div>'
+        + '</div>'
+        + foot
+        + (mode === 'quiz' ? '' :
+          '<div style="display:flex;flex-direction:column;gap:14px;">'
+          + '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_CON + ';margin-bottom:7px;">자음 (닿소리)</div>'
+          + '<div class="hb-cons" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
+          + '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_VOW + ';margin-bottom:7px;">모음 (홀소리)</div>'
+          + '<div class="hb-vows" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
+          + (useJong
+            ? '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_JNG + ';margin-bottom:7px;">받침 (글자 아래에 끼워요)</div>'
+              + '<div class="hb-jongs" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
+            : '')
+          + '</div>'
+          + '<div style="text-align:center;margin-top:16px;">'
+          + '<button class="hb-reset" style="font-family:inherit;cursor:pointer;border-radius:14px;border:3px solid #9aa;background:#fff;color:#666;font-weight:800;font-size:clamp(16px,2vw,20px);padding:11px 24px;">↺ 처음으로</button>'
+          + '</div>');
 
-    var resultEl = el.querySelector('.hb-result');
-    var breakEl = el.querySelector('.hb-break');
-    var consWrap = el.querySelector('.hb-cons');
-    var vowsWrap = el.querySelector('.hb-vows');
-    var jongsWrap = el.querySelector('.hb-jongs');
+      resultEl = el.querySelector('.hb-result');
+      breakEl = el.querySelector('.hb-break');
+      consWrap = el.querySelector('.hb-cons');
+      vowsWrap = el.querySelector('.hb-vows');
+      jongsWrap = el.querySelector('.hb-jongs');
+      makeKeys(consWrap, cons, 'cho');
+      makeKeys(vowsWrap, vows, 'jung');
+      if (useJong) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
+
+      ui.bindModeTabs(el, function (m2) {
+        mode = m2; mStep = 0; mDone = false; mLock = false;
+        cho = startCho(); jung = startJung(); jong = startJong();
+        if (m2 === 'mission') { cho = cons[1] || cons[0]; jung = vows[0]; jong = ''; }  // '나'에서 시작(가 자동달성 방지)
+        if (m2 === 'quiz') shuffleQuiz();
+        build();
+      });
+      el.querySelectorAll('.kl-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (qLock) return; qLock = true; qCount++;
+          var q = qList[qIdx];
+          var ok = (b.dataset.v === String(q.answer));
+          if (ok) qScore++;
+          ui.toast(el, ok);
+          if (ok && resultEl) { resultEl.textContent = q.answer; resultEl.style.color = '#2C3A45'; }  // 정답이면 글자 공개
+          setTimeout(function () {
+            qIdx++; if (qIdx >= qList.length) shuffleQuiz();
+            qLock = false; build();
+          }, 1400);
+        });
+      });
+      if (mode !== 'quiz') paint();
+    }
 
     function makeKeys(wrap, list, kind) {
       if (!wrap) return;
@@ -95,13 +194,14 @@
     if (useJong) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
 
     function paint() {
+      if (!resultEl) return;
       var g = compose(cho, jung, jong);
       resultEl.textContent = g;
       // 합쳐지는 느낌: 매 갱신마다 pop 재생
       resultEl.classList.remove('hb-result');
       void resultEl.offsetWidth;
       resultEl.classList.add('hb-result');
-      breakEl.innerHTML = '<span style="color:' + C_CON + ';">' + cho + '</span>'
+      if (breakEl) breakEl.innerHTML = '<span style="color:' + C_CON + ';">' + cho + '</span>'
         + '<span style="color:#9aa;font-weight:700;">＋</span>'
         + '<span style="color:' + C_VOW + ';">' + jung + '</span>'
         + (jong
@@ -129,17 +229,19 @@
         else if (k.dataset.kind === 'jung') jung = k.dataset.ch;
         else jong = k.dataset.ch;
         paint();
+        if (mode === 'mission') checkMission();
         return;
       }
       if (e.target.closest('.hb-reset')) {
-        cho = (config.consonant && CHO.indexOf(config.consonant) >= 0) ? config.consonant : cons[0];
-        jung = (config.vowel && JUNG.indexOf(config.vowel) >= 0) ? config.vowel : vows[0];
-        jong = (useJong && config.batchim && JONG.indexOf(config.batchim) >= 0) ? config.batchim : '';
+        cho = (mode === 'mission') ? cons[0] : startCho();
+        jung = (mode === 'mission') ? vows[0] : startJung();
+        jong = (mode === 'mission') ? '' : startJong();
         paint();
       }
     });
 
-    paint();
+    shuffleQuiz();
+    build();
     return function cleanup() {};
   });
 })();

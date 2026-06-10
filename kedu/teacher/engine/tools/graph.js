@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 그래프 메이커 (graph) v1
+   케이랩 도구 모듈 — 그래프 메이커 (graph) v2 · 3모드
    초점 (2~6학년 자료와 가능성) = 종이로 못 하는 두 가지:
      ① 그래프 종류 토글 — 똑같은 자료를 막대·꺾은선·그림·원그래프로 즉시 바꿔 본다.
         ("어떤 그래프가 이 자료에 어울릴까"를 눈으로 비교 = 6학년 핵심 학습)
@@ -7,6 +7,7 @@
         (실물 모눈종이는 한 칸 틀리면 다시 그려야 함)
    교구화 기준("디지털이 실물보다 결정적으로 나은 것만") 만족.
 
+   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 그래프를 보고 읽기·그래프 고르기.
    - 의존: window.KLab (THREE 불필요, 순수 SVG+DOM)
    - config 예시:
        3학년 막대:   { title:"좋아하는 과일", unit:"명", types:["bar","picto"] }
@@ -31,6 +32,8 @@
   ];
 
   window.KLab.register('graph', function (el, config) {
+    var ui = window.KLab.ui;
+    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
     var types = (config.types && config.types.length) ? config.types.filter(function (t) { return TYPE_LABEL[t]; }) : ['bar', 'line', 'picto', 'pie'];
     if (!types.length) types = ['bar'];
     var type = types[0];
@@ -39,52 +42,126 @@
     var editable = (config.editable === false) ? false : true;
     var max = (typeof config.max === 'number' && config.max > 0) ? config.max : 10;
 
-    var data = (Array.isArray(config.data) && config.data.length ? config.data : DEFAULT_DATA).map(function (d, i) {
-      return { label: d.label, value: Math.max(0, Math.min(d.value || 0, max)), color: d.color || PALETTE[i % PALETTE.length] };
-    });
+    function freshData() {
+      return (Array.isArray(config.data) && config.data.length ? config.data : DEFAULT_DATA).map(function (d, i) {
+        return { label: d.label, value: Math.max(0, Math.min(d.value || 0, max)), color: d.color || PALETTE[i % PALETTE.length] };
+      });
+    }
+    var data = freshData();
+
+    /* ───────────── 미션 ───────────── */
+    var MISSIONS = [
+      { text: '＋ 버튼으로 <b style="color:#7048E8;">' + (DEFAULT_DATA[0].label) + '</b>를 <b style="color:#7048E8;">10</b>까지 키워 봐요 — 막대가 쑥쑥!',
+        check: function () { return type === 'bar' && data[0].value === 10; } },
+      { text: '<b style="color:#7048E8;">꺾은선그래프</b>로 바꿔 봐요 — 같은 자료가 다르게 보여요!',
+        check: function () { return type === 'line'; } },
+      { text: '<b style="color:#7048E8;">' + (DEFAULT_DATA[3].label) + '</b>를 <b style="color:#7048E8;">0</b>으로 줄여 봐요 — 그래프에서 어떻게 보일까요?',
+        check: function () { return data[3] && data[3].value === 0; } },
+      { text: '<b style="color:#7048E8;">원그래프</b>로 바꿔 전체에 대한 비율을 봐요!',
+        check: function () { return type === 'pie'; } }
+    ];
+    var mStep = 0, mDone = false, mLock = false;
+    function checkMission() {
+      if (mode !== 'mission' || mDone || mLock) return;
+      if (MISSIONS[mStep].check()) {
+        mLock = true; ui.toast(el, true);
+        setTimeout(function () {
+          mLock = false; mStep++;
+          if (mStep >= MISSIONS.length) mDone = true;
+          build();
+        }, 1500);
+      }
+    }
+
+    /* ───────────── 퀴즈 (그래프를 보고 읽기) ───────────── */
+    var QUIZ_POOL = [
+      { type: 'bar', preset: [6, 4, 8, 3], q: '막대그래프에서 가장 많은 항목은?', answer: '포도', choices: ['포도', '사과', '딸기'] },
+      { type: 'bar', preset: [6, 4, 8, 3], q: '사과는 바나나보다 몇 ' + '명' + ' 더 많을까요?', answer: '2명', choices: ['2명', '4명', '6명'] },
+      { type: 'pie', preset: [5, 5, 5, 5], q: '원그래프에서 한 항목이 차지하는 비율은?', answer: '25%', choices: ['25%', '50%', '10%'] },
+      { type: 'line', preset: [2, 4, 7, 9], q: '시간에 따라 변하는 모습을 보기 좋은 그래프는?', answer: '꺾은선그래프', choices: ['꺾은선그래프', '원그래프', '그림그래프'] },
+      { type: 'band', preset: [6, 4, 8, 3], q: '전체에 대한 비율을 가로 띠로 나타낸 이 그래프의 이름은?', answer: '띠그래프', choices: ['띠그래프', '막대그래프', '꺾은선그래프'] }
+    ];
+    var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+    function shuffleQuiz() {
+      qList = QUIZ_POOL.slice();
+      for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
+      qIdx = 0; qScore = 0; qCount = 0;
+    }
+    function shuffled(arr) { var c = arr.slice(); for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = c[i]; c[i] = c[j]; c[j] = t; } return c; }
+    function applyQuizState(q) {
+      data = freshData();
+      q.preset.forEach(function (v, i) { if (data[i]) data[i].value = Math.min(v, max); });
+      type = q.type;
+    }
 
     // ---------- UI 골격 ----------
     var typeBtn = 'font-size:23px;padding:12px 20px;border-radius:14px;border:3px solid #1565C0;'
                 + 'background:#fff;color:#1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
-    el.innerHTML =
-      '<style>'
-      + '.gr-tbtn:active{transform:translateY(2px);}'
-      + '.gr-tbtn.gr-on{background:#1565C0 !important;color:#fff !important;}'
-      + '.gr-vbtn{font-size:24px;width:46px;height:46px;border-radius:12px;border:3px solid #1565C0;'
-        + 'background:#fff;color:#1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;}'
-      + '.gr-vbtn:active{transform:translateY(2px);}'
-      + '.gr-bar,.gr-slice,.gr-dot{transition:all .25s ease;}'
-      + '</style>'
-      + '<div class="gr-types" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;"></div>'
-      + (title ? '<div style="text-align:center;font-size:24px;font-weight:800;color:#1B3A57;font-family:inherit;margin-bottom:6px;">' + title + '</div>' : '')
-      + '<div class="gr-stage" style="width:100%;height:46vh;min-height:300px;'
-        + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
-        + 'border-radius:20px;overflow:hidden;'
-        + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
-      + (editable ? '<div class="gr-ctrls" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px;"></div>' : '');
+    var stage = null, ctrls = null;
 
-    // 그래프 종류 버튼
-    var typesRow = el.querySelector('.gr-types');
-    typesRow.innerHTML = types.map(function (t) {
-      return '<button class="gr-tbtn' + (t === type ? ' gr-on' : '') + '" data-type="' + t + '" style="' + typeBtn + '">' + TYPE_LABEL[t] + '</button>';
-    }).join('');
+    function build() {
+      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', foot = '';
+      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); }
+      else if (mode === 'quiz') {
+        var q = qList[qIdx] || qList[0];
+        applyQuizState(q);
+        bar = ui.quizBar(q.q, qScore, qCount);
+        foot = ui.choices(shuffled(q.choices).map(function (v) { return { v: v, label: v }; }));
+      }
+      el.innerHTML =
+        '<style>'
+        + '.gr-tbtn:active{transform:translateY(2px);}'
+        + '.gr-tbtn.gr-on{background:#1565C0 !important;color:#fff !important;}'
+        + '.gr-vbtn{font-size:24px;width:46px;height:46px;border-radius:12px;border:3px solid #1565C0;'
+          + 'background:#fff;color:#1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;}'
+        + '.gr-vbtn:active{transform:translateY(2px);}'
+        + '.gr-bar,.gr-slice,.gr-dot{transition:all .25s ease;}'
+        + '.kl-choice{min-width:130px !important;}'
+        + '</style>'
+        + top + bar
+        + (mode === 'quiz' ? '' : '<div class="gr-types" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;"></div>')
+        + (title && mode !== 'quiz' ? '<div style="text-align:center;font-size:24px;font-weight:800;color:#1B3A57;font-family:inherit;margin-bottom:6px;">' + title + '</div>' : '')
+        + '<div class="kl-stage-host" style="position:relative;">'
+        + '<div class="gr-stage" style="width:100%;height:' + (mode === 'quiz' ? '38vh' : '46vh') + ';min-height:' + (mode === 'quiz' ? '260' : '300') + 'px;'
+          + 'background:linear-gradient(180deg,#F4F9FF 0%,#DCEBFB 100%);'
+          + 'border-radius:20px;overflow:hidden;'
+          + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
+        + '</div>'
+        + foot
+        + (editable && mode !== 'quiz' ? '<div class="gr-ctrls" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px;"></div>' : '');
 
-    var stage = el.querySelector('.gr-stage');
-    var ctrls = el.querySelector('.gr-ctrls');
+      var typesRow = el.querySelector('.gr-types');
+      if (typesRow) {
+        typesRow.innerHTML = types.map(function (t) {
+          return '<button class="gr-tbtn' + (t === type ? ' gr-on' : '') + '" data-type="' + t + '" style="' + typeBtn + '">' + TYPE_LABEL[t] + '</button>';
+        }).join('');
+      }
 
-    // 값 조절 행
-    if (editable && ctrls) {
-      ctrls.innerHTML = data.map(function (d, i) {
-        return '<div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:14px;'
-          + 'padding:8px 12px;border:2px solid ' + d.color + '55;">'
-          + '<span style="width:16px;height:16px;border-radius:5px;background:' + d.color + ';display:inline-block;"></span>'
-          + '<span style="font-size:18px;font-weight:800;color:#1B3A57;font-family:inherit;min-width:42px;text-align:center;">' + d.label + '</span>'
-          + '<button class="gr-vbtn" data-i="' + i + '" data-d="-1">－</button>'
-          + '<span class="gr-val" data-i="' + i + '" style="font-size:24px;font-weight:800;color:' + d.color + ';font-family:inherit;min-width:30px;text-align:center;">' + d.value + '</span>'
-          + '<button class="gr-vbtn" data-i="' + i + '" data-d="1">＋</button>'
-          + '</div>';
-      }).join('');
+      stage = el.querySelector('.gr-stage');
+      ctrls = el.querySelector('.gr-ctrls');
+
+      if (editable && ctrls) {
+        ctrls.innerHTML = data.map(function (d, i) {
+          return '<div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:14px;'
+            + 'padding:8px 12px;border:2px solid ' + d.color + '55;">'
+            + '<span style="width:16px;height:16px;border-radius:5px;background:' + d.color + ';display:inline-block;"></span>'
+            + '<span style="font-size:18px;font-weight:800;color:#1B3A57;font-family:inherit;min-width:42px;text-align:center;">' + d.label + '</span>'
+            + '<button class="gr-vbtn" data-i="' + i + '" data-d="-1">－</button>'
+            + '<span class="gr-val" data-i="' + i + '" style="font-size:24px;font-weight:800;color:' + d.color + ';font-family:inherit;min-width:30px;text-align:center;">' + d.value + '</span>'
+            + '<button class="gr-vbtn" data-i="' + i + '" data-d="1">＋</button>'
+            + '</div>';
+        }).join('');
+      }
+
+      ui.bindModeTabs(el, function (m2) {
+        mode = m2; mStep = 0; mDone = false; mLock = false;
+        data = freshData(); type = types[0];
+        if (m2 === 'quiz') shuffleQuiz();
+        build();
+      });
+      bind();
+      render();
     }
 
     // ---------- SVG 헬퍼 ----------
@@ -109,6 +186,7 @@
 
     // ---------- 그리기 ----------
     function render() {
+      if (!stage) return;
       stage.innerHTML = '';
       var svg = svgEl('svg', { viewBox: '0 0 ' + VBW + ' ' + VBH, width: '100%', height: '100%' });
       if (type === 'bar') drawAxisGraph(svg, 'bar');
@@ -228,24 +306,42 @@
     }
 
     // ---------- 이벤트 ----------
-    el.querySelectorAll('.gr-tbtn').forEach(function (b) {
-      b.addEventListener('click', function () {
-        type = b.dataset.type;
-        el.querySelectorAll('.gr-tbtn').forEach(function (x) { x.classList.toggle('gr-on', x.dataset.type === type); });
-        render();
-      });
-    });
-    if (ctrls) {
-      ctrls.querySelectorAll('.gr-vbtn').forEach(function (b) {
+    function bind() {
+      el.querySelectorAll('.gr-tbtn').forEach(function (b) {
         b.addEventListener('click', function () {
-          var i = +b.dataset.i, d = +b.dataset.d;
-          data[i].value = Math.max(0, Math.min(data[i].value + d, max));
+          type = b.dataset.type;
+          el.querySelectorAll('.gr-tbtn').forEach(function (x) { x.classList.toggle('gr-on', x.dataset.type === type); });
           render();
+          if (mode === 'mission') checkMission();
+        });
+      });
+      if (ctrls) {
+        ctrls.querySelectorAll('.gr-vbtn').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var i = +b.dataset.i, d = +b.dataset.d;
+            data[i].value = Math.max(0, Math.min(data[i].value + d, max));
+            render();
+            if (mode === 'mission') checkMission();
+          });
+        });
+      }
+      el.querySelectorAll('.kl-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (qLock) return; qLock = true; qCount++;
+          var q = qList[qIdx];
+          var ok = (b.dataset.v === String(q.answer));
+          if (ok) qScore++;
+          ui.toast(el, ok);
+          setTimeout(function () {
+            qIdx++; if (qIdx >= qList.length) shuffleQuiz();
+            qLock = false; build();
+          }, 1400);
         });
       });
     }
 
-    render();
+    shuffleQuiz();
+    build();
 
     return function cleanup() { /* el 내부 리스너만 — innerHTML 교체 시 자동 제거 */ };
   });
