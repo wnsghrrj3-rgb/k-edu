@@ -69,9 +69,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--navy);color:#E8ECF5;
     <div class="s-title">이 문장, 한 번에 읽혀요?</div>
     <div class="paper" style="margin-top:14px">
       <div class="label">CHALLENGE</div>
-      <div class="en">The small bird with bright blue wings on the tall tree near my window sings a beautiful song every morning.</div>
+      <div class="en" id="chalSent" style="cursor:pointer">The small bird with bright blue wings on the tall tree near my window sings a beautiful song every morning.</div>
+      <div id="chalKo" style="display:none;font-size:13.5px;color:#6B5E3A;background:#F3EDD9;border-radius:8px;padding:8px 12px;margin-top:10px;font-family:'Noto Sans KR';line-height:1.7">내 창문 근처 높은 나무 위, 밝은 파란 날개를 가진 작은 새가 매일 아침 아름다운 노래를 부른다. <b>— 21단어짜리 한 문장!</b></div>
     </div>
-    <div class="s-sub">길죠? 괜찮아요 — 오늘 <b style="color:#fff">긴 문장을 해부하는 도구</b>를 갖게 될 거예요.</div>
+    <div class="s-sub">한 번에 안 읽히는 게 <b style="color:#fff">정상</b>이에요. (문장을 누르면 뜻이 나와요)<br>오늘 이 긴 문장을 <b style="color:#fff">7단어로 줄이는 해부 도구</b>를 갖게 될 거예요.</div>
   </div>
 
   <!-- 2. 도구 ① 동사 — 문장의 심장 -->
@@ -82,7 +83,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--navy);color:#E8ECF5;
       <div class="label">FIND THE VERB</div>
       <div class="en" id="verbHunt"></div>
     </div>
-    <div class="tool-tip" id="verbMsg">단어를 눌러 보세요 — "~한다"에 해당하는 한 단어!</div>
+    <div class="tool-tip" id="verbMsg">📌 <b>하는 법</b>: 아래 문장에서 단어 하나를 골라 누르세요.<br>찾는 것 = "~한다"는 <b>움직임 단어</b>. 뜻: 새가 노래를 <b>부른다</b> — 영어로 뭘까요?</div>
   </div>
 
   <!-- 3. 도구 ② 주어 — 누가? -->
@@ -93,7 +94,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--navy);color:#E8ECF5;
       <div class="label">FIND THE SUBJECT</div>
       <div class="en" id="subjHunt"></div>
     </div>
-    <div class="tool-tip" id="subjMsg">sings 앞쪽에서 찾아 보세요 — 노래하는 건 누구?</div>
+    <div class="tool-tip" id="subjMsg">📌 <b>하는 법</b>: "누가 sings(노래)하지?"의 답인 단어를 누르세요.<br>힌트: 날개 달린 그 친구 — wings 말고, 노래하는 <b>주인공</b>!</div>
   </div>
 
   <!-- 4. 도구 ③ 꾸밈 접기 -->
@@ -154,6 +155,8 @@ function show(i){if(i<0||i>=slides.length)return;KTTS.stop();
   bn.style.visibility=(i===slides.length-1)?'hidden':'visible';}
 bp.addEventListener('click',function(){show(cur-1);});
 bn.addEventListener('click',function(){show(cur+1);});
+var chal=document.getElementById('chalSent');
+if(chal)chal.addEventListener('click',function(){var k=document.getElementById('chalKo');k.style.display=k.style.display==='none'?'block':'none';});
 document.querySelectorAll('[data-say]').forEach(function(el){
   el.addEventListener('click',function(){KTTS.sentence(el.dataset.say,{rate:0.85});});});
 
@@ -176,7 +179,7 @@ function hunt(hostId,msgId,answer,cls,okMsg,hint){
 }
 hunt('verbHunt','verbMsg','sings','verb',
   '🎯 <b>sings</b> — 노래한다! 문장의 심장을 찾았어요.',
-  '🤔 그건 움직임이 아니에요 — "~한다"는 딱 하나!');
+  '🤔 그건 움직임이 아니에요. 뜻을 다시 봐요 — 새가 노래를 <b>부른다</b>(sings)!');
 hunt('subjHunt','subjMsg','bird','subj',
   '🎯 <b>bird</b>! 노래하는 주인공. 뼈대 두 조각 완성!',
   '🤔 sings 하는 건 누구일까요? 날개 달린…');

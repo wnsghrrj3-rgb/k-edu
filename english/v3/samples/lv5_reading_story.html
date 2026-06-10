@@ -35,8 +35,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
 .passage h3{font-family:Jua;font-size:18px;color:#0B7A5C;display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .passage h3 .tts{margin-left:auto;font-size:13px;background:var(--primary-light);color:#0B7A5C;border:0;border-radius:99px;padding:5px 12px;cursor:pointer;font-family:'Noto Sans KR';font-weight:700}
 .passage p{font-size:17.5px;line-height:1.85;color:#2D3748}
-.passage .tappable{border-bottom:2px dotted #94D9C3;cursor:pointer}
-.passage .tappable.found{background:#FFE45C;border-radius:4px;border-bottom:0;padding:0 2px}
+.passage .sline{cursor:pointer;border-radius:6px;padding:1px 2px}
+.passage .sline:active{background:#E6FAF3}
+.passage .ko{display:none;font-size:13px;color:#0B7A5C;background:#E6FAF3;border-radius:8px;padding:3px 8px;margin:2px 0 6px}
+.passage .sline.showko + .ko{display:block}
 /* 문제 */
 .qcard{background:#fff;border-radius:16px;padding:16px;max-width:420px;width:100%;box-shadow:0 1px 8px rgba(0,0,0,.06);margin-top:10px}
 .qcard .q{font-size:16px;font-weight:800;margin-bottom:12px;text-align:left}
@@ -80,21 +82,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
     <span class="badge">📖 읽기 — 무슨 일이 일어났을까?</span>
     <div class="passage">
       <h3>Max Is Lost! <button class="tts" id="readAll">🔊 전체 듣기</button></h3>
-      <p>
-        Mina had a dog. His name was Max.<br>
-        One day, they went to the park.<br>
-        Mina played with her ball.<br>
-        Max saw a small cat.<br>
-        <span class="tappable" data-ref="he">He</span> ran after <span class="tappable" data-ref="it">it</span>!<br>
-        Mina looked back. Max was not there.<br>
-        "Max! Max!" she called.<br>
-        She looked under the big tree.<br>
-        Max was there with the cat.<br>
-        Mina hugged Max.<br>
-        They went home together.
-      </p>
+      <p id="storyP"></p>
     </div>
-    <div class="s-sub">밑줄 친 말은 나중에 다시 만나요 — 일단 끝까지!</div>
+    <div class="s-sub">📌 <b>읽는 법</b>: 눈으로 조용히 읽다가, <b>뜻이 궁금한 문장을 손가락으로 누르면</b> 한국어 뜻이 나와요.<br>막히는 문장은 🔊 전체 듣기로 소리도 들어요. 다 읽으면 다음 →</div>
   </div>
 
   <!-- 3. 문제 1 — 사건 -->
@@ -172,6 +162,27 @@ function show(i){if(i<0||i>=slides.length)return;KTTS.stop();
   bn.style.visibility=(i===slides.length-1)?'hidden':'visible';}
 bp.addEventListener('click',function(){show(cur-1);});
 bn.addEventListener('click',function(){show(cur+1);});
+
+/* 지문 — 문장 탭 = 뜻 (자기주도 설명 표준 1칙) */
+var LINES=[
+ ["Mina had a dog.","미나는 강아지를 키웠어요."],
+ ["His name was Max.","이름은 맥스였죠."],
+ ["One day, they went to the park.","어느 날, 둘은 공원에 갔어요."],
+ ["Mina played with her ball.","미나는 공을 가지고 놀았어요."],
+ ["Max saw a small cat.","맥스가 작은 고양이를 봤어요."],
+ ["<b>He</b> ran after <b>it</b>!","걔(?)가 그것(?)을 쫓아 달려갔어요! ← 누구일까요?"],
+ ["Mina looked back. Max was not there.","미나가 뒤를 봤어요. 맥스가 없어요!"],
+ ["\u201cMax! Max!\u201d she called.","\u201c맥스! 맥스!\u201d 미나가 불렀어요."],
+ ["She looked under the big tree.","큰 나무 아래를 봤어요."],
+ ["Max was there with the cat.","맥스가 고양이랑 거기 있었어요."],
+ ["Mina hugged Max.","미나는 맥스를 꼭 안았어요."],
+ ["They went home together.","둘은 함께 집으로 갔답니다."]
+];
+var sp=document.getElementById('storyP');
+sp.innerHTML=LINES.map(function(l,i){return '<span class="sline">'+l[0]+'</span><span class="ko">'+l[1]+'</span>';}).join(' ');
+sp.querySelectorAll('.sline').forEach(function(el){
+  el.addEventListener('click',function(){el.classList.toggle('showko');});
+});
 
 var STORY="Mina had a dog. His name was Max. One day, they went to the park. Mina played with her ball. Max saw a small cat. He ran after it! Mina looked back. Max was not there. Max! Max! she called. She looked under the big tree. Max was there with the cat. Mina hugged Max. They went home together.";
 document.getElementById('readAll').addEventListener('click',function(e){e.stopPropagation();KTTS.sentence(STORY,{rate:0.82});});
