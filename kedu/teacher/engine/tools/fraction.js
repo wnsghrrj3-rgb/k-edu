@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 분수 모형 (fraction) v6
+   케이랩 도구 모듈 — 분수 모형 (fraction) v7 · KLab.ui 3모드 통일
    v6 초점 = 다양한 사고. "면적 한 칸"에 갇혔던 분수를 네 가지 표상으로 자유롭게.
      같은 Sn/Sd 분수를 표상 버튼으로 즉시 갈아끼우며 본다(이렇게도·저렇게도):
        ▸ 면적(area)     — 전체를 나눈 조각 (막대/원/격자) … v4~v5 자산
@@ -10,8 +10,12 @@
    깊이 3축(통분+오개념가드 / 동치 발견 / 자기점검)은 v5에서 유지.
    모두 config 토글 → 기존 차시 동작 불변. 표상 1호 표준 = 다른 도구로 복제.
 
+   v7: 겉 셸을 KLab.ui 3모드(자유탐구/미션/퀴즈)로 통일. 자유탐구 = 기존
+       한 개 보기/두 개 비교, 퀴즈 = 기존 양방향(만들기/맞히기) + 표준 점수·토스트.
+       옛 config.mode='single'|'compare'|'quiz'는 그대로 호환.
    - 의존: window.KLab
-   - config: { mode:"single"|"compare"|"quiz", model:"area"|"line"|"set"|"quotient",
+   - config: { mode:"free"|"mission"|"quiz"(신) 또는 "single"|"compare"|"quiz"(구),
+               model:"area"|"line"|"set"|"quotient",
                models:[...](노출 표상, 기본 4종), shape:"bar"|"circle"|"grid",
                denom, numer, maxDenom, maxWholes(기본3), notation, setPer(기본2),
                a:{}, b:{}, equiv(true), commonize(true), showQuiz(false), quizDir:"make"|"guess" }
@@ -29,7 +33,13 @@
   window.KLab.register('fraction', function (el, config) {
     var maxDenom=(typeof config.maxDenom==='number'&&config.maxDenom>=2)?config.maxDenom:12;
     var maxWholes=(typeof config.maxWholes==='number'&&config.maxWholes>=1)?config.maxWholes:3;
-    var mode=(['single','compare','quiz'].indexOf(config.mode)>=0)?config.mode:'single';
+    var ui=window.KLab.ui;
+    var klMode;                                   // 겉 셸: free | mission | quiz
+    if(config.mode==='mission')klMode='mission';
+    else if(config.mode==='quiz')klMode='quiz';
+    else klMode='free';                           // free·single·compare·미지정 → 자유탐구
+    var mode=(['single','compare'].indexOf(config.mode)>=0)?config.mode:'single';
+    if(klMode==='quiz')mode='quiz';
     var shape=(['bar','circle','grid'].indexOf(config.shape)>=0)?config.shape:'bar';
     var notation=(config.notation==='mixed')?'mixed':'improper';
     var models=(Array.isArray(config.models)&&config.models.length)?config.models.filter(function(m){return ALLM.indexOf(m)>=0;}):ALLM.slice();
@@ -60,7 +70,37 @@
     var nextBtn='font-size:24px;padding:12px 22px;border-radius:16px;border:3px solid #7048E8;background:#7048E8;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     var dirBtn='font-size:22px;padding:11px 18px;border-radius:14px;border:3px solid #C24E0E;background:#fff;color:#C24E0E;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
-    function newQuiz(){var topD=Math.max(2,Math.min(6,maxDenom));qD=2+Math.floor(Math.random()*(topD-1));qN=1+Math.floor(Math.random()*qD);qPhase='try';
+    /* ───────────── 미션 (KLab.ui 표준) ───────────── */
+    var MISSIONS=[
+      { text:'＋조각 버튼으로 <b style="color:#7048E8;">3/4</b>을 만들어 봐요!',
+        check:function(){ return mode==='single'&&Sn===3&&Sd===4; } },
+      { text:'등분·조각을 바꿔 3/4과 <b style="color:#7048E8;">같은 양인 6/8</b>을 만들어 봐요! (동치분수)',
+        check:function(){ return mode==='single'&&Sn===6&&Sd===8; } },
+      { text:'표상을 <b style="color:#7048E8;">┼ 수직선</b>으로 바꾸고, <b style="color:#7048E8;">절반(1/2) 지점</b>에 점을 놓아 봐요!',
+        check:function(){ return mode==='single'&&model==='line'&&Sd>0&&Sn*2===Sd&&Sn>0; } },
+      { text:'<b style="color:#7048E8;">두 개 비교</b>로 가서 <b style="color:#7048E8;">⚖ 같은 크기로 맞추기</b>(통분)를 눌러 봐요!',
+        check:function(){ return mode==='compare'&&commonized===true; } }
+    ];
+    var mStep=0,mDone=false,mLock=false;
+    function checkMission(){
+      if(klMode!=='mission'||mDone||mLock)return;
+      if(MISSIONS[mStep].check()){
+        mLock=true; ui.toast(el,true);
+        setTimeout(function(){ mLock=false; mStep++;
+          if(mStep>=MISSIONS.length)mDone=true;
+          updateShellBar();
+        },1500);
+      }
+    }
+    var qScore=0,qCount=0,qCounted=false;
+    function updateShellBar(){
+      var host=el.querySelector('.fr-bars'); if(!host)return;
+      if(klMode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      else if(klMode==='quiz')host.innerHTML=ui.quizBar(qDir==='make'?'🎯 목표 분수만큼 색칠하고 ✓ 확인을 눌러요!':'🔍 그림이 나타내는 분수를 맞히고 ✓ 확인을 눌러요!',qScore,qCount);
+      else host.innerHTML='';
+    }
+
+    function newQuiz(){var topD=Math.max(2,Math.min(6,maxDenom));qD=2+Math.floor(Math.random()*(topD-1));qN=1+Math.floor(Math.random()*qD);qPhase='try';qCounted=false;
       if(qDir==='make'){Sd=qD;Sn=0;} else {gD=2;gN=1;}}
 
     function nctl(act,label,fg,bg){return '<button class="fr-btn" data-act="'+act+'" style="'+btn+'background:'+(bg||'#fff')+';color:'+(fg)+';border-color:'+fg+';">'+label+'</button>';}
@@ -120,9 +160,8 @@
         ctrl+='<span style="width:10px;"></span><button class="fr-chk fr-btn" style="'+okBtn+'">✓ 확인</button>'
             +'<button class="fr-next fr-btn" style="'+nextBtn+'">↻ 다음 문제</button>';
       }
-      var modeButtons='<button class="fr-mbtn'+(mode==='single'?' fr-on':'')+'" data-mode="single" style="'+modeBtn+'">한 개 보기</button>'
-          +'<button class="fr-mbtn'+(mode==='compare'?' fr-on':'')+'" data-mode="compare" style="'+modeBtn+'">두 개 비교</button>';
-      if(showQuiz) modeButtons+='<button class="fr-mbtn'+(mode==='quiz'?' fr-on':'')+'" data-mode="quiz" style="'+modeBtn+'">✏ 퀴즈</button>';
+      var modeButtons=(klMode==='quiz')?'':('<button class="fr-mbtn'+(mode==='single'?' fr-on':'')+'" data-mode="single" style="'+modeBtn+'">한 개 보기</button>'
+          +'<button class="fr-mbtn'+(mode==='compare'?' fr-on':'')+'" data-mode="compare" style="'+modeBtn+'">두 개 비교</button>');
       var resetBtn=(mode==='quiz')?'':'<span style="width:8px;"></span><button class="fr-btn" data-act="reset" style="font-size:24px;padding:12px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>';
       el.innerHTML='<style>'
         +'.fr-btn:active,.fr-sbtn:active,.fr-mbtn:active,.fr-nbtn:active,.fr-cmn:active,.fr-chk:active,.fr-next:active,.fr-mdl:active,.fr-dir:active{transform:translateY(2px);}'
@@ -136,11 +175,22 @@
         +'.fr-piece{cursor:pointer;transition:fill-opacity .25s,transform .18s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}'
         +'.fr-piece:hover{transform:scale(1.04);}'
         +'</style>'
-        +'<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'+modeButtons+'</div>'
+        + ui.modeTabs(['free','mission','quiz'],klMode)
+        +'<div class="fr-bars"></div>'
+        +(modeButtons?('<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'+modeButtons+'</div>'):'')
         +modelRow
         +'<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'+ctrl+resetBtn+'</div>'
-        +'<div class="fr-stage" style="width:100%;height:52vh;min-height:370px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>';
-      bindUI(); render();
+        +'<div class="kl-stage-host" style="position:relative;"><div class="fr-stage" style="width:100%;height:'+(klMode==='quiz'?'48vh':'52vh')+';min-height:'+(klMode==='quiz'?'340':'370')+'px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>';
+      ui.bindModeTabs(el,function(m2){
+        klMode=m2; mStep=0;mDone=false;mLock=false; commonized=false;
+        if(m2==='quiz'){ mode='quiz'; qScore=0;qCount=0; newQuiz(); }
+        else if(m2==='mission'){ mode='single'; model='area'; shape='bar'; notation='improper'; Sd=4; Sn=0; }
+        else { mode='single'; model=(models.indexOf(config.model)>=0)?config.model:models[0];
+               Sd=(typeof config.denom==='number')?Math.min(config.denom,maxDenom):4;
+               Sn=(typeof config.numer==='number')?Math.max(0,config.numer):0; }
+        buildUI();
+      });
+      bindUI(); updateShellBar(); render();
     }
 
     function defs(svg){var d=svgEl('defs',{});d.innerHTML=
@@ -205,6 +255,7 @@
         Sn=Math.round(frac*wn*Sd); render();
       });
       updateButtons();
+      if(klMode==='mission')checkMission();
     }
 
     function renderArea(svg){
@@ -347,7 +398,7 @@
     }
 
     function bindUI(){
-      el.querySelectorAll('.fr-mbtn').forEach(function(b){b.addEventListener('click',function(){if(mode!==b.dataset.mode){mode=b.dataset.mode;if(mode==='quiz')newQuiz();commonized=false;buildUI();}});});
+      el.querySelectorAll('.fr-mbtn').forEach(function(b){b.addEventListener('click',function(){if(mode!==b.dataset.mode){mode=b.dataset.mode;commonized=false;buildUI();}});});
       el.querySelectorAll('.fr-mdl').forEach(function(b){b.addEventListener('click',function(){if(model!==b.dataset.model){model=b.dataset.model;buildUI();}});});
       el.querySelectorAll('.fr-dir').forEach(function(b){b.addEventListener('click',function(){if(qDir!==b.dataset.dir){qDir=b.dataset.dir;newQuiz();buildUI();}});});
       function clampN(){Sn=Math.max(0,Math.min(Sn,Sd*maxWholes));}
@@ -379,16 +430,18 @@
       });});
       var cmn=el.querySelector('.fr-cmn'); if(cmn)cmn.addEventListener('click',function(){commonized=!commonized;cmn.classList.toggle('fr-on',commonized);render();});
       var chk=el.querySelector('.fr-chk'); if(chk)chk.addEventListener('click',function(){
-        if(qDir==='make'){ if(Sn===0){qPhase='wrong';render();return;} qPhase=(Math.abs(Sn/Sd-qN/qD)<1e-9)?'right':'wrong'; }
+        if(qDir==='make'){ if(Sn===0){qPhase='wrong';}else{qPhase=(Math.abs(Sn/Sd-qN/qD)<1e-9)?'right':'wrong';} }
         else { qPhase=(Math.abs(gN/gD-qN/qD)<1e-9)?'right':'wrong'; }
+        if(!qCounted){ qCount++; if(qPhase==='right')qScore++; qCounted=true; updateShellBar(); }
+        ui.toast(el,qPhase==='right');
         render();
       });
-      var nx=el.querySelector('.fr-next'); if(nx)nx.addEventListener('click',function(){newQuiz();render();});
+      var nx=el.querySelector('.fr-next'); if(nx)nx.addEventListener('click',function(){newQuiz();updateShellBar();render();});
       el.querySelectorAll('.fr-sbtn[data-shape]').forEach(function(b){b.classList.toggle('fr-on',b.dataset.shape===shape);});
       el.querySelectorAll('.fr-nbtn').forEach(function(b){b.classList.toggle('fr-on',b.dataset.notation===notation);});
     }
 
-    if(mode==='quiz') newQuiz();
+    if(klMode==='quiz') newQuiz();
     buildUI();
     return function cleanup(){};
   });
