@@ -187,7 +187,7 @@ function renderCards(){
     grp.items.forEach(function(item){
       var c=document.createElement('div'); c.className='card'+(item.tool?'':' soon');
       c.innerHTML='<div class="nm">'+item.nm+'</div><div class="ds">'+item.ds+'</div><div class="badge">'+(item.tool?'열기':'준비 중')+'</div>';
-      if(item.tool) c.onclick=function(){mount(item.tool,item.cfg);};
+      if(item.tool) c.onclick=function(){enterFocus(item.nm); mount(item.tool,item.cfg); window.scrollTo({top:0,behavior:'smooth'});};
       cardsEl.appendChild(c);
     });
   });
@@ -198,6 +198,31 @@ function mount(tool,cfg){
   cleanup=window.KLab.mount(mountEl,tool,cfg||{})||null;
   curTool=tool; curCfg=cfg||{}; renderShare();
 }
+
+/* ===== 집중 화면 (교구 하나만 보기) =====
+   카드를 누르면 카탈로그(제목·과목 탭·카드 목록)를 숨기고 그 교구만 띄운다.
+   딥링크 진입도 같은 함수를 쓴다. 복귀 = 🧊 전체 교구 보기. */
+function enterFocus(label, fromLesson){
+  document.getElementById('grades').style.display='none';
+  cardsEl.style.display='none';
+  document.getElementById('klab-h1').style.display='none';
+  document.getElementById('klab-sub').style.display='none';
+  var bar=document.getElementById('back-bar');
+  bar.style.display='flex';
+  document.getElementById('back-bar-title').textContent='🧊 '+label;
+  document.getElementById('back-to-lesson').style.display=fromLesson?'':'none';
+}
+function exitFocus(){
+  if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
+  mountEl.innerHTML='<div class="ph">위에서 교구를 골라 주세요</div>';
+  curTool=null; curCfg=null; renderShare();
+  document.getElementById('back-bar').style.display='none';
+  document.getElementById('grades').style.display='';
+  cardsEl.style.display='';
+  document.getElementById('klab-h1').style.display='';
+  document.getElementById('klab-sub').style.display='';
+}
+document.getElementById('show-all-tools').addEventListener('click', exitFocus);
 
 /* ===== 프리셋 공유 링크 (2026-06-11) =====
    띄운 교구를 모드까지 박아 링크로 복사 — 학생에게 보내면 퀴즈 모드로 바로 입장.
@@ -256,30 +281,14 @@ renderCards();
   var label = sp.get('label') || tool;
   var fromLesson = sp.get('from') === 'kteacher';
 
-  function enterDeep(){
-    document.getElementById('grades').style.display = 'none';
-    cardsEl.style.display = 'none';
-    document.getElementById('klab-h1').style.display = 'none';
-    document.getElementById('klab-sub').style.display = 'none';
-    var bar = document.getElementById('back-bar');
-    bar.style.display = 'flex';
-    document.getElementById('back-bar-title').textContent = '🧊 ' + label;
-    if (!fromLesson) document.getElementById('back-to-lesson').style.display = 'none';
-    if (window.KLab && window.KLab.has(tool)) mount(tool, cfg);
-    else mountEl.innerHTML = '<div class="ph">준비 중인 교구입니다: ' + label + '</div>';
-  }
-  enterDeep();
+  enterFocus(label, fromLesson);
+  if (window.KLab && window.KLab.has(tool)) mount(tool, cfg);
+  else mountEl.innerHTML = '<div class="ph">준비 중인 교구입니다: ' + label + '</div>';
 
   document.getElementById('back-to-lesson').addEventListener('click', function(){
     window.close();
     // 스크립트로 못 닫는 창(직접 연 탭)이면 히스토리로
     setTimeout(function(){ try { history.back(); } catch(e){} }, 150);
-  });
-  document.getElementById('show-all-tools').addEventListener('click', function(){
-    document.getElementById('grades').style.display = '';
-    cardsEl.style.display = '';
-    document.getElementById('klab-h1').style.display = '';
-    document.getElementById('klab-sub').style.display = '';
   });
 })();
 </script>
