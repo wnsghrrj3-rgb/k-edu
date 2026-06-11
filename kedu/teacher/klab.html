@@ -196,6 +196,47 @@ function mount(tool,cfg){
   if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
   mountEl.innerHTML='';
   cleanup=window.KLab.mount(mountEl,tool,cfg||{})||null;
+  curTool=tool; curCfg=cfg||{}; renderShare();
+}
+
+/* ===== 프리셋 공유 링크 (2026-06-11) =====
+   띄운 교구를 모드까지 박아 링크로 복사 — 학생에게 보내면 퀴즈 모드로 바로 입장.
+   cfg.mode를 자체 용도로 쓰는 도구(phonics_blocks 등)는 모드 덮어쓰기 버튼을 숨김. */
+var curTool=null, curCfg=null;
+var shareBar=document.createElement('div');
+shareBar.id='share-bar';
+shareBar.style.cssText='display:none;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin:10px 0 4px;';
+(function(){var m=document.querySelector('.mount'); m.parentNode.insertBefore(shareBar,m);})();
+function shareURL(mode){
+  var cfg={}; var src=curCfg||{}; for(var k in src)cfg[k]=src[k];
+  if(mode)cfg.mode=mode;
+  var base=location.href.split('?')[0];
+  var u=base+'?tool='+encodeURIComponent(curTool);
+  if(Object.keys(cfg).length)u+='&cfg='+encodeURIComponent(JSON.stringify(cfg));
+  return u;
+}
+function copyText(t,btn){
+  function done(){var old=btn.textContent;btn.textContent='✓ 복사됐어요!';btn.disabled=true;setTimeout(function(){btn.textContent=old;btn.disabled=false;},1300);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){window.prompt('링크를 복사하세요',t);});}
+  else window.prompt('링크를 복사하세요',t);
+}
+function renderShare(){
+  if(!curTool){shareBar.style.display='none';return;}
+  var foreignMode=!!(curCfg&&curCfg.mode&&['free','mission','quiz'].indexOf(curCfg.mode)<0);
+  var sb='font-size:16px;padding:8px 14px;border-radius:12px;border:2.5px solid #1565C0;background:#fff;color:#1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
+  var html='<span style="font-size:15px;font-weight:800;color:#5a7894;">🔗 링크 복사</span>';
+  if(foreignMode){
+    html+='<button class="shr" data-m="" style="'+sb+'">이 교구 그대로</button>';
+  } else {
+    html+='<button class="shr" data-m="" style="'+sb+'border-color:#9aa;color:#666;">기본</button>'
+        +'<button class="shr" data-m="free" style="'+sb+'">🧭 자유탐구</button>'
+        +'<button class="shr" data-m="mission" style="'+sb+'border-color:#7048E8;color:#7048E8;">🎯 미션</button>'
+        +'<button class="shr" data-m="quiz" style="'+sb+'border-color:#FF8A3D;color:#FF8A3D;">❓ 퀴즈</button>';
+  }
+  shareBar.innerHTML=html; shareBar.style.display='flex';
+  shareBar.querySelectorAll('.shr').forEach(function(b){
+    b.addEventListener('click',function(){copyText(shareURL(b.dataset.m||null),b);});
+  });
 }
 renderCards();
 
