@@ -48,13 +48,15 @@
      모든 도구는 mode: "free"(자유탐구) | "mission"(단계 미션) | "quiz"(문제)
      를 지원하는 것을 표준으로 한다. 아래 헬퍼로 UI를 통일한다.
      -------------------------------------------------------------------------- */
-  var PRAISE = ['🎉 정답이에요! 멋져요!', '👏 잘했어요! 케이가 깜짝 놀랐어요!', '🌟 완벽해요!', '🏆 대단해요! 바로 그거예요!', '💙 정확해요! 척척박사네요!'];
+  var PRAISE = ['🎉 정답이에요! 멋져요!', '👏 잘했어요! 한 번에 척!', '🌟 완벽해요!', '🏆 대단해요! 바로 그거예요!', '💙 정확해요! 척척박사네요!'];
   var RETRY  = ['🤔 음… 다시 한번 생각해 봐요!', '💪 괜찮아요, 한 번 더!', '🔍 아깝다! 다시 살펴볼까요?'];
 
   window.KLab.ui = {
-    // 모드 탭 HTML. modes=['free','mission','quiz'] 중 도구가 지원하는 것만, cur=현재 모드
-    modeTabs: function (modes, cur) {
+    // 모드 탭 HTML. modes=['free','mission','quiz',...] 중 도구가 지원하는 것만, cur=현재 모드
+    // extraLabels(선택): { 커스텀모드키: '라벨' } — 도구별 확장 모드 탭(예: '🌀 만약에')
+    modeTabs: function (modes, cur, extraLabels) {
       var L = { free: '🧭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+      if (extraLabels) for (var k in extraLabels) L[k] = extraLabels[k];
       var base = 'font-size:21px;padding:11px 20px;border-radius:14px;border:3px solid #7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
       return '<div class="kl-modes" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + modes.map(function (m) {
