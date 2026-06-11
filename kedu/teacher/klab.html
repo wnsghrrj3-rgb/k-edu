@@ -39,6 +39,7 @@
   <h1 id="klab-h1">🧊 케이랩 교구</h1>
   <p class="sub" id="klab-sub">모든 교구는 🧭 자유탐구 · 🎯 미션 · ❓ 퀴즈를 지원해요. 카드를 누르면 그 교구만 크게 열립니다.</p>
   <div class="grades" id="grades"></div>
+  <div class="grades" id="gradeRow" style="margin-top:2px;"></div>
   <div class="cards" id="cards"></div>
   <div class="mount"><div id="mountEl" style="width:100%;"><div class="ph">위에서 교구를 골라 주세요</div></div></div>
 </div>
@@ -94,93 +95,109 @@ var CATALOG = {
      학년 표기는 임시 배치 — 교육과정 정밀 매핑 때 수정 예정. */
   math: [
     {group:'수와 연산', items:[
-      {nm:'십 배열판(텐프레임)', g:'1학년', ds:'10을 한눈에 — 가르기·모으기', tool:'tenframe', cfg:{num:7,frames:2}},
-      {nm:'자릿값 수모형', g:'1~2학년', ds:'10개씩 묶어 자리값 보기', tool:'place_value', cfg:{start:24,max:50}},
-      {nm:'곱셈 배열판', g:'2~3학년', ds:'몇 줄 × 몇 개 = 곱, 교환법칙', tool:'array', cfg:{rows:4,cols:6}},
-      {nm:'나눗셈 모형', g:'3학년', ds:'똑같이 나눠 담기와 나머지', tool:'division', cfg:{total:12,groups:3}},
-      {nm:'분수 — 4가지 표상', g:'3~5학년', ds:'면적·수직선·묶음·나눗셈으로 보는 분수와 통분', tool:'fraction', cfg:{denom:4,showQuiz:true}},
-      {nm:'소수 모형', g:'3~4학년', ds:'100칸 모눈으로 소수 = 분수', tool:'decimal', cfg:{value:0.37}}
+      {nm:'십 배열판(텐프레임)', g:'1학년', ds:'10을 한눈에 — 가르기·모으기', gr:[1,1], tool:'tenframe', cfg:{num:7,frames:2}},
+      {nm:'자릿값 수모형', g:'1~2학년', ds:'10개씩 묶어 자리값 보기', gr:[1,2], tool:'place_value', cfg:{start:24,max:50}},
+      {nm:'곱셈 배열판', g:'2~3학년', ds:'몇 줄 × 몇 개 = 곱, 교환법칙', gr:[2,3], tool:'array', cfg:{rows:4,cols:6}},
+      {nm:'나눗셈 모형', g:'3학년', ds:'똑같이 나눠 담기와 나머지', gr:[3,3], tool:'division', cfg:{total:12,groups:3}},
+      {nm:'분수 — 4가지 표상', g:'3~5학년', ds:'면적·수직선·묶음·나눗셈으로 보는 분수와 통분', gr:[3,5], tool:'fraction', cfg:{denom:4,showQuiz:true}},
+      {nm:'소수 모형', g:'3~4학년', ds:'100칸 모눈으로 소수 = 분수', gr:[3,4], tool:'decimal', cfg:{value:0.37}}
     ]},
     {group:'변화와 관계', items:[
-      {nm:'규칙·패턴', g:'2~4학년', ds:'패턴을 만들고 규칙과 다음 찾기', tool:'pattern', cfg:{preset:[0,1,0,1,0,1]}},
-      {nm:'비와 비율', g:'6학년', ds:'띠로 보는 비·기약비·백분율', tool:'ratio', cfg:{a:2,b:3}}
+      {nm:'규칙·패턴', g:'2~4학년', ds:'패턴을 만들고 규칙과 다음 찾기', gr:[2,4], tool:'pattern', cfg:{preset:[0,1,0,1,0,1]}},
+      {nm:'비와 비율', g:'6학년', ds:'띠로 보는 비·기약비·백분율', gr:[6,6], tool:'ratio', cfg:{a:2,b:3}}
     ]},
     {group:'도형과 측정', items:[
-      {nm:'입체도형', g:'1~6학년', ds:'굴리고 눕히며 여러 가지 모양 탐구', tool:'shape3d', cfg:{shapes:['box','cylinder','ball'],actions:['roll','flip'],terms:'math'}},
-      {nm:'시계 읽기', g:'1~2학년', ds:'시침·분침을 움직여 시각 읽기', tool:'clock', cfg:{h:12,m:0}},
-      {nm:'각도기', g:'4학년', ds:'양쪽 눈금으로 각을 만들고 재고 분류', tool:'angle', cfg:{deg:50}},
-      {nm:'넓이 격자', g:'5학년', ds:'단위넓이로 채워 넓이와 둘레', tool:'area', cfg:{w:5,h:3}},
-      {nm:'대칭(선·점)', g:'5학년', ds:'한쪽을 그리면 대칭이 자동 완성', tool:'symmetry', cfg:{n:8,mode:'line',axis:'v'}},
-      {nm:'전개도·겨냥도', g:'5~6학년', ds:'전개도가 입체로 접히는 과정', tool:'net', cfg:{fold:0}},
-      {nm:'쌓기나무·부피', g:'6학년', ds:'위·앞·옆에서 보기와 부피 세기', tool:'cubes', cfg:{}},
-      {nm:'원·컴퍼스', g:'6학년', ds:'반지름·원주·원의 넓이', tool:'circle', cfg:{view:'draw',r:4}}
+      {nm:'입체도형', g:'1~6학년', ds:'굴리고 눕히며 여러 가지 모양 탐구', gr:[1,6], tool:'shape3d', cfg:{shapes:['box','cylinder','ball'],actions:['roll','flip'],terms:'math'}},
+      {nm:'시계 읽기', g:'1~2학년', ds:'시침·분침을 움직여 시각 읽기', gr:[1,2], tool:'clock', cfg:{h:12,m:0}},
+      {nm:'각도기', g:'4학년', ds:'양쪽 눈금으로 각을 만들고 재고 분류', gr:[4,4], tool:'angle', cfg:{deg:50}},
+      {nm:'넓이 격자', g:'5학년', ds:'단위넓이로 채워 넓이와 둘레', gr:[5,5], tool:'area', cfg:{w:5,h:3}},
+      {nm:'대칭(선·점)', g:'5학년', ds:'한쪽을 그리면 대칭이 자동 완성', gr:[5,5], tool:'symmetry', cfg:{n:8,mode:'line',axis:'v'}},
+      {nm:'전개도·겨냥도', g:'5~6학년', ds:'전개도가 입체로 접히는 과정', gr:[5,6], tool:'net', cfg:{fold:0}},
+      {nm:'쌓기나무·부피', g:'6학년', ds:'위·앞·옆에서 보기와 부피 세기', gr:[6,6], tool:'cubes', cfg:{}},
+      {nm:'원·컴퍼스', g:'6학년', ds:'반지름·원주·원의 넓이', gr:[6,6], tool:'circle', cfg:{view:'draw',r:4}}
     ]},
     {group:'자료와 가능성', items:[
-      {nm:'그래프', g:'2~6학년', ds:'한 자료를 5가지 그래프로 바꿔 보기', tool:'graph', cfg:{title:'좋아하는 운동',unit:'명',types:['picto','bar','line','pie','band']}},
-      {nm:'가능성', g:'5~6학년', ds:'동전·주사위 시행으로 보는 가능성', tool:'probability', cfg:{type:'coin'}}
+      {nm:'그래프', g:'2~6학년', ds:'한 자료를 5가지 그래프로 바꿔 보기', gr:[2,6], tool:'graph', cfg:{title:'좋아하는 운동',unit:'명',types:['picto','bar','line','pie','band']}},
+      {nm:'가능성', g:'5~6학년', ds:'동전·주사위 시행으로 보는 가능성', gr:[5,6], tool:'probability', cfg:{type:'coin'}}
     ]}
   ],
   science: [
     {group:'운동과 에너지', items:[
-      {nm:'🧲 자석·자기장', g:'3학년', ds:'자기력선·나침반·끌림과 밀림', tool:'magnet', cfg:{count:1}},
-      {nm:'🔊 소리·진동', g:'3학년', ds:'진폭·진동수로 파형과 실제 소리 듣기', tool:'sound', cfg:{amp:3,freq:3}},
-      {nm:'💡 빛·그림자·거울', g:'4학년', ds:'빛의 직진·그림자·거울 반사', tool:'light', cfg:{}},
-      {nm:'🌡️ 열의 이동', g:'5학년', ds:'전도(버터 경주)와 대류(물·공기)', tool:'heat', cfg:{}},
-      {nm:'🏁 물체의 운동과 속력', g:'5학년', ds:'자취 점으로 보는 위치 변화 — 속력=거리÷시간', tool:'motion', cfg:{}},
-      {nm:'🔌 전기 회로', g:'6학년', ds:'전지·전구·스위치 직렬/병렬', tool:'circuit', cfg:{}}
+      {nm:'🧲 자석·자기장', g:'3학년', ds:'자기력선·나침반·끌림과 밀림', gr:[3,3], tool:'magnet', cfg:{count:1}},
+      {nm:'🔊 소리·진동', g:'3학년', ds:'진폭·진동수로 파형과 실제 소리 듣기', gr:[3,3], tool:'sound', cfg:{amp:3,freq:3}},
+      {nm:'💡 빛·그림자·거울', g:'4학년', ds:'빛의 직진·그림자·거울 반사', gr:[4,4], tool:'light', cfg:{}},
+      {nm:'🌡️ 열의 이동', g:'5학년', ds:'전도(버터 경주)와 대류(물·공기)', gr:[5,5], tool:'heat', cfg:{}},
+      {nm:'🏁 물체의 운동과 속력', g:'5학년', ds:'자취 점으로 보는 위치 변화 — 속력=거리÷시간', gr:[5,5], tool:'motion', cfg:{}},
+      {nm:'🔌 전기 회로', g:'6학년', ds:'전지·전구·스위치 직렬/병렬', gr:[6,6], tool:'circuit', cfg:{}}
     ]},
     {group:'물질', items:[
-      {nm:'🧊 입자·상태변화', g:'4학년', ds:'온도로 녹이고 끓여 입자 운동 보기', tool:'states', cfg:{temp:25}},
-      {nm:'🍬 용해와 용액', g:'5학년', ds:'무게 보존·젓기·온도·포화·석출', tool:'dissolve', cfg:{}},
-      {nm:'🧪 산과 염기', g:'5학년', ds:'지시약 4종으로 용액 분류 + 섞어 성질 약해짐', tool:'acid', cfg:{}},
-      {nm:'🕯️ 연소와 소화', g:'6학년', ds:'산소 게이지로 촛불 비교 + 소화 3방법', tool:'burn', cfg:{}}
+      {nm:'🧊 입자·상태변화', g:'4학년', ds:'온도로 녹이고 끓여 입자 운동 보기', gr:[4,4], tool:'states', cfg:{temp:25}},
+      {nm:'🍬 용해와 용액', g:'5학년', ds:'무게 보존·젓기·온도·포화·석출', gr:[5,5], tool:'dissolve', cfg:{}},
+      {nm:'🧪 산과 염기', g:'5학년', ds:'지시약 4종으로 용액 분류 + 섞어 성질 약해짐', gr:[5,5], tool:'acid', cfg:{}},
+      {nm:'🕯️ 연소와 소화', g:'6학년', ds:'산소 게이지로 촛불 비교 + 소화 3방법', gr:[6,6], tool:'burn', cfg:{}}
     ]},
     {group:'생명', items:[
-      {nm:'🦋 동물의 한살이', g:'3학년', ds:'완전 변태와 불완전 변태를 나란히', tool:'animal', cfg:{}},
-      {nm:'🌱 식물의 한살이', g:'4학년', ds:'씨앗→꽃→열매 + 물·빛 비교 실험', tool:'plant', cfg:{}},
-      {nm:'🕸 먹이사슬·먹이그물', g:'5학년', ds:'화살표 먹이 관계 + 사라지면? 시뮬', tool:'foodchain', cfg:{}},
-      {nm:'🫀 우리 몸 기관계', g:'6학년', ds:'소화·호흡·순환·배설 길 따라가기', tool:'bodysys', cfg:{}}
+      {nm:'🦋 동물의 한살이', g:'3학년', ds:'완전 변태와 불완전 변태를 나란히', gr:[3,3], tool:'animal', cfg:{}},
+      {nm:'🌱 식물의 한살이', g:'4학년', ds:'씨앗→꽃→열매 + 물·빛 비교 실험', gr:[4,4], tool:'plant', cfg:{}},
+      {nm:'🕸 먹이사슬·먹이그물', g:'5학년', ds:'화살표 먹이 관계 + 사라지면? 시뮬', gr:[5,5], tool:'foodchain', cfg:{}},
+      {nm:'🫀 우리 몸 기관계', g:'6학년', ds:'소화·호흡·순환·배설 길 따라가기', gr:[6,6], tool:'bodysys', cfg:{}}
     ]},
     {group:'지구와 우주', items:[
-      {nm:'🪨 지층과 화석', g:'4학년', ds:'지층 쌓기·화석·융기 — 산에서 조개가 나오는 까닭', tool:'strata', cfg:{}},
-      {nm:'🌋 화산과 지진', g:'4학년', ds:'마그마 분출·화성암·지진', tool:'volcano', cfg:{}},
-      {nm:'☀️ 태양계', g:'5학년', ds:'8행성 공전과 실제 비율 비교', tool:'solar', cfg:{}},
-      {nm:'✨ 계절별 별자리 ★3층', g:'5학년', ds:'공전·북극성 + 사고 미션 + 만약에(태양 끄기!) + 내 별자리 공유', tool:'constellation', cfg:{orb:270}},
-      {nm:'🌍 지구 자전·낮밤', g:'6학년', ds:'지구 자전으로 낮·밤·해돋이', tool:'earth', cfg:{hour:12}},
-      {nm:'🌙 달의 위상', g:'6학년', ds:'달 공전과 위상(초승~하현)', tool:'moon', cfg:{phase:180}},
-      {nm:'🌗 계절의 변화', g:'6학년', ds:'자전축 기울기와 계절·남중고도', tool:'season', cfg:{orb:90,tilt:23.5}}
+      {nm:'🪨 지층과 화석', g:'4학년', ds:'지층 쌓기·화석·융기 — 산에서 조개가 나오는 까닭', gr:[4,4], tool:'strata', cfg:{}},
+      {nm:'🌋 화산과 지진', g:'4학년', ds:'마그마 분출·화성암·지진', gr:[4,4], tool:'volcano', cfg:{}},
+      {nm:'☀️ 태양계', g:'5학년', ds:'8행성 공전과 실제 비율 비교', gr:[5,5], tool:'solar', cfg:{}},
+      {nm:'✨ 계절별 별자리 ★3층', g:'5학년', ds:'공전·북극성 + 사고 미션 + 만약에(태양 끄기!) + 내 별자리 공유', gr:[5,5], tool:'constellation', cfg:{orb:270}},
+      {nm:'🌍 지구 자전·낮밤', g:'6학년', ds:'지구 자전으로 낮·밤·해돋이', gr:[6,6], tool:'earth', cfg:{hour:12}},
+      {nm:'🌙 달의 위상', g:'6학년', ds:'달 공전과 위상(초승~하현)', gr:[6,6], tool:'moon', cfg:{phase:180}},
+      {nm:'🌗 계절의 변화', g:'6학년', ds:'자전축 기울기와 계절·남중고도', gr:[6,6], tool:'season', cfg:{orb:90,tilt:23.5}}
     ]}
   ],
   korean: [
     {group:'한글', items:[
-      {nm:'글자 조립', g:'1학년', ds:'자음+모음+받침 = 글자', tool:'hangul_build', cfg:{consonant:'ㄱ',vowel:'ㅏ'}}
+      {nm:'글자 조립', g:'1학년', ds:'자음+모음+받침 = 글자', gr:[1,1], tool:'hangul_build', cfg:{consonant:'ㄱ',vowel:'ㅏ'}}
     ]}
   ],
   english: [
     {group:'파닉스 Lv1 — 블렌딩 (심화)', items:[
-      {nm:'🧩 파닉스 블록 — 합치기', g:'Lv1', ds:'소리 블록을 붙이면 단어 소리 (c+a+t→cat)', tool:'phonics_blocks', cfg:{mode:'build',words:['cat','mat','sat']}},
-      {nm:'🔁 파닉스 블록 — 첫소리 교체', g:'Lv1', ds:'끝소리 _at 고정, 첫소리만 바꿔 끼우기', tool:'phonics_blocks', cfg:{mode:'swap',ending:'at',onsets:['c','m','s','n']}},
-      {nm:'📖 파닉스 블록 — 스스로 읽기', g:'Lv1', ds:'처음 보는 단어를 읽고 정답 듣고 확인', tool:'phonics_blocks', cfg:{mode:'read',words:['bat','tap','rag','nap']}},
-      {nm:'👂 파닉스 블록 — 듣고 고르기', g:'Lv1', ds:'듣고 맞는 단어 고르기 (숙달 게이트)', tool:'phonics_blocks', cfg:{mode:'listen',words:['cat','mat','sat','man','nap']}}
+      {nm:'🧩 파닉스 블록 — 합치기', g:'Lv1', ds:'소리 블록을 붙이면 단어 소리 (c+a+t→cat)', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'build',words:['cat','mat','sat']}},
+      {nm:'🔁 파닉스 블록 — 첫소리 교체', g:'Lv1', ds:'끝소리 _at 고정, 첫소리만 바꿔 끼우기', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'swap',ending:'at',onsets:['c','m','s','n']}},
+      {nm:'📖 파닉스 블록 — 스스로 읽기', g:'Lv1', ds:'처음 보는 단어를 읽고 정답 듣고 확인', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'read',words:['bat','tap','rag','nap']}},
+      {nm:'👂 파닉스 블록 — 듣고 고르기', g:'Lv1', ds:'듣고 맞는 단어 고르기 (숙달 게이트)', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'listen',words:['cat','mat','sat','man','nap']}}
     ]}
   ]
 };
 
-var grades=document.getElementById('grades'), cardsEl=document.getElementById('cards'), mountEl=document.getElementById('mountEl');
-var cleanup=null, cur='math';
+var grades=document.getElementById('grades'), gradeRow=document.getElementById('gradeRow'), cardsEl=document.getElementById('cards'), mountEl=document.getElementById('mountEl');
+var cleanup=null, cur='math', curGrade=0;   // curGrade 0 = 전체
 
 var SUBJECTS=[{key:'math',label:'수학'},{key:'korean',label:'국어'},{key:'english',label:'영어'},{key:'science',label:'과학'}];
 SUBJECTS.forEach(function(sub,i){
   var b=document.createElement('button'); b.className='gtab'+(i===0?' on':''); b.textContent=sub.label;
-  b.onclick=function(){cur=sub.key;document.querySelectorAll('.gtab').forEach(function(x){x.classList.toggle('on',x.textContent===sub.label);});renderCards();};
+  b.onclick=function(){cur=sub.key;grades.querySelectorAll('.gtab').forEach(function(x){x.classList.toggle('on',x.textContent===sub.label);});renderCards();};
   grades.appendChild(b);
 });
+// 학년 탭 (과목 → 학년 → 영역 3단 분류)
+[{v:0,l:'전체'},{v:1,l:'1학년'},{v:2,l:'2학년'},{v:3,l:'3학년'},{v:4,l:'4학년'},{v:5,l:'5학년'},{v:6,l:'6학년'}].forEach(function(gd){
+  var b=document.createElement('button'); b.className='gtab gsub'+(gd.v===0?' on':''); b.textContent=gd.l;
+  b.style.cssText='font-size:16px;padding:8px 14px;';
+  b.onclick=function(){curGrade=gd.v;gradeRow.querySelectorAll('.gtab').forEach(function(x){x.classList.toggle('on',x===b);});renderCards();};
+  gradeRow.appendChild(b);
+});
+function gradeFit(item){
+  if(curGrade===0)return true;
+  var gr=item.gr||[1,6];
+  return curGrade>=gr[0] && curGrade<=gr[1];
+}
 
 function renderCards(){
   cardsEl.innerHTML='';
+  var shown=0;
   (CATALOG[cur]||[]).forEach(function(grp){
+    var items=grp.items.filter(gradeFit);
+    if(!items.length)return;
+    shown+=items.length;
     var h=document.createElement('div'); h.className='grp'; h.textContent=grp.group; cardsEl.appendChild(h);
-    grp.items.forEach(function(item){
+    items.forEach(function(item){
       var c=document.createElement('div'); c.className='card'+(item.tool?'':' soon');
       c.innerHTML='<div class="nm">'+item.nm
         +(item.g?' <span style="font-size:12px;font-weight:800;color:#1565C0;background:#E3F0FF;border:1.5px solid #B9D6F5;border-radius:9px;padding:3px 8px;vertical-align:2px;margin-left:6px;white-space:nowrap;">'+item.g+'</span>':'')
@@ -189,6 +206,11 @@ function renderCards(){
       cardsEl.appendChild(c);
     });
   });
+  if(!shown){
+    var e=document.createElement('div'); e.className='ph';
+    e.textContent='이 학년에 맞는 교구는 준비 중이에요!';
+    cardsEl.appendChild(e);
+  }
 }
 function mount(tool,cfg){
   if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
@@ -202,6 +224,7 @@ function mount(tool,cfg){
    딥링크 진입도 같은 함수를 쓴다. 복귀 = 🧊 전체 교구 보기. */
 function enterFocus(label, fromLesson){
   document.getElementById('grades').style.display='none';
+  document.getElementById('gradeRow').style.display='none';
   cardsEl.style.display='none';
   document.getElementById('klab-h1').style.display='none';
   document.getElementById('klab-sub').style.display='none';
@@ -216,6 +239,7 @@ function exitFocus(){
   curTool=null; curCfg=null; renderShare();
   document.getElementById('back-bar').style.display='none';
   document.getElementById('grades').style.display='';
+  document.getElementById('gradeRow').style.display='';
   cardsEl.style.display='';
   document.getElementById('klab-h1').style.display='';
   document.getElementById('klab-sub').style.display='';
