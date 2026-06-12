@@ -59,6 +59,7 @@
 
 <div class="chip" id="titleChip">우주 창문 <span style="color:#5f769a;font-size:12px">시제품</span></div>
 <div class="chip" id="stampChip">행성 도장 <b id="stampN">0</b>/8</div>
+<div class="chip" id="voiceChip" style="right:140px;cursor:pointer">🔊</div>
 <div id="hint">기기를 돌려 우주를 둘러보세요</div>
 <div id="arrow"></div>
 <div id="fade"></div>
@@ -145,9 +146,35 @@ var PLANETS = [
  {key:'neptune', nm:'해왕성', r:4.3, d:236, speed:0.18, ang:2.8, col:0x4A6BD9, fact:'태양에서 가장 먼 여덟 번째 행성.<br>태양계에서 바람이 가장 세요! 💨'}
 ];
 var planetMeshes = [];
+/* 절차적 텍스처 — 외부 이미지 없이 캔버스로 행성 표면 생성 */
+function makeTex(key){
+  var cv=document.createElement('canvas'); cv.width=256; cv.height=128;
+  var x=cv.getContext('2d');
+  function fill(c){ x.fillStyle=c; x.fillRect(0,0,256,128); }
+  function blobs(n,cols,rmin,rmax,a){ for(var i=0;i<n;i++){ x.globalAlpha=(a||1)*(0.5+Math.random()*0.5);
+    x.fillStyle=cols[(Math.random()*cols.length)|0];
+    var r=rmin+Math.random()*(rmax-rmin), bx=Math.random()*256, by=12+Math.random()*104;
+    x.beginPath(); x.ellipse(bx,by,r,r*(0.5+Math.random()*0.6),Math.random()*3,0,7); x.fill(); } x.globalAlpha=1; }
+  function bands(cols){ var y=0,i=0; while(y<128){ var h=7+Math.random()*15;
+    x.fillStyle=cols[i%cols.length]; x.fillRect(0,y-1,256,h+2); y+=h; i++; }
+    for(var k=0;k<70;k++){ var yy=(Math.random()*126)|0;
+      var img=x.getImageData(0,yy,256,2); x.putImageData(img,((Math.random()*16)-8)|0,yy); } }
+  function caps(c){ x.fillStyle=c; x.globalAlpha=.9;
+    x.beginPath(); x.ellipse(128,2,120,10+Math.random()*6,0,0,7); x.fill();
+    x.beginPath(); x.ellipse(128,126,120,9+Math.random()*6,0,0,7); x.fill(); x.globalAlpha=1; }
+  if(key==='mercury'){ fill('#9c8f84'); blobs(90,['#6f655c','#b3a89c','#7d736a'],2,7,.8); }
+  else if(key==='venus'){ fill('#E8C07A'); bands(['#E8C07A','#F2D49A','#DDB068','#EFCB8C']); blobs(16,['#F7E2B6'],10,26,.25); }
+  else if(key==='earth'){ fill('#2D6BD9'); blobs(7,['#3E9C4F','#4FAE5C'],18,34,1); blobs(10,['#C2B26B','#3E9C4F'],6,14,.9); caps('#EAF4FF'); blobs(26,['#FFFFFF'],4,12,.32); }
+  else if(key==='mars'){ fill('#C75A3A'); blobs(60,['#8E3D26','#A8492E','#D97B52'],3,12,.7); x.fillStyle='#F2E7DC'; x.globalAlpha=.85; x.beginPath(); x.ellipse(128,3,60,8,0,0,7); x.fill(); x.globalAlpha=1; }
+  else if(key==='jupiter'){ bands(['#D9A56B','#C08850','#EAD0A4','#B57A45','#E3BD89']); x.fillStyle='#C44E2E'; x.beginPath(); x.ellipse(176,82,17,9,0,0,7); x.fill(); x.fillStyle='#E06A47'; x.beginPath(); x.ellipse(176,82,10,5,0,0,7); x.fill(); }
+  else if(key==='saturn'){ bands(['#E3CC8F','#D6BC7C','#EFDFAE','#CDB272']); }
+  else if(key==='uranus'){ fill('#8FD4E3'); bands(['#8FD4E3','#83C8D8','#9ADCEA']); }
+  else { fill('#4A6BD9'); bands(['#4A6BD9','#3A55B5','#5B7CE8']); blobs(8,['#DCE6FF'],6,16,.35); }
+  var t=new THREE.CanvasTexture(cv); return t;
+}
 PLANETS.forEach(function(p){
   var m = new THREE.Mesh(new THREE.SphereGeometry(p.r, 26, 18),
-    new THREE.MeshStandardMaterial({color:p.col, roughness:0.85, metalness:0.05}));
+    new THREE.MeshStandardMaterial({map:makeTex(p.key), roughness:0.9, metalness:0.03}));
   m.userData = p;
   scene.add(m); planetMeshes.push(m);
   /* 궤도 선 (아주 옅게) */
@@ -250,10 +277,11 @@ function goObserve(mesh){
     if (!gyroOn){ faceTarget(); }
     $('cardNm').textContent = p.nm;
     $('cardFact').innerHTML = p.fact;
+    say(p.nm + '. ' + p.fact.replace(/<br>/g,' ').replace(/<[^>]*>/g,'').replace(/[\u{1F300}-\u{1FAFF}]/gu,''));
     $('card').classList.add('on');
     $('hint').textContent = gyroOn ? '기기를 움직여 ' + p.nm + '을(를) 찾아보세요' : '드래그해서 ' + p.nm + '을(를) 둘러보세요';
     if (!visited[p.key]){ visited[p.key]=true; var n=Object.keys(visited).length; $('stampN').textContent=n;
-      if (n===8) setTimeout(function(){ $('fin').style.display='flex'; }, 900); }
+      if (n===8) setTimeout(function(){ $('fin').style.display='flex'; say('태양계 탐험 완료! 여덟 행성을 모두 만났어요.'); }, 900); }
   });
 }
 function faceTarget(){
@@ -263,6 +291,7 @@ function faceTarget(){
   dragLat = THREE.MathUtils.radToDeg(Math.asin(dir.y));
 }
 $('backBtn').addEventListener('click', function(){
+  hush();
   fade(function(){
     mode='free'; target=null;
     camera.position.copy(HOME);
@@ -271,6 +300,9 @@ $('backBtn').addEventListener('click', function(){
   });
 });
 $('finBtn').addEventListener('click', function(){ $('fin').style.display='none'; });
+$('voiceChip').addEventListener('click', function(){
+  voiceOn=!voiceOn; this.textContent=voiceOn?'🔊':'🔇'; if(!voiceOn) hush();
+});
 
 /* ---------- 가장자리 화살표 (관찰 중 행성이 화면 밖이면 방향 안내) ---------- */
 function updateArrow(){
@@ -290,6 +322,41 @@ function updateArrow(){
   ar.style.left=(rx-14)+'px'; ar.style.top=(ry-12)+'px';
   ar.style.transform='rotate('+(ang+Math.PI/2)+'rad)';
 }
+
+/* ---------- 별똥별 ---------- */
+var meteors=[], meteorTimer=0, meteorNext=4+Math.random()*5;
+function spawnMeteor(){
+  var u=Math.random()*0.7+0.15, th=Math.random()*Math.PI*2, r=1200, sq=Math.sqrt(1-u*u);
+  var head=new THREE.Vector3(r*sq*Math.cos(th), r*u, r*sq*Math.sin(th));
+  var dir=new THREE.Vector3(Math.random()-0.5,-(0.4+Math.random()*0.5),Math.random()-0.5).normalize();
+  var g=new THREE.BufferGeometry().setFromPoints([head,head.clone()]);
+  var mat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:1});
+  var line=new THREE.Line(g,mat); scene.add(line);
+  meteors.push({line:line,head:head,dir:dir,life:0});
+}
+function updateMeteors(dt){
+  meteorTimer+=dt;
+  if(meteorTimer>meteorNext){ meteorTimer=0; meteorNext=4+Math.random()*6; spawnMeteor(); }
+  for(var i=meteors.length-1;i>=0;i--){
+    var mt=meteors[i]; mt.life+=dt;
+    mt.head.addScaledVector(mt.dir, dt*520);
+    var tail=mt.head.clone().addScaledVector(mt.dir,-90);
+    mt.line.geometry.setFromPoints([mt.head,tail]);
+    mt.line.material.opacity=Math.max(0,1-mt.life/1.1);
+    if(mt.life>1.1){ scene.remove(mt.line); mt.line.geometry.dispose(); meteors.splice(i,1); }
+  }
+}
+
+/* ---------- 음성 (행성이 말 걸기) ---------- */
+var voiceOn = true;
+function say(t){
+  if(!voiceOn) return;
+  try{ speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(t); u.lang='ko-KR'; u.rate=0.95; u.pitch=1.05;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function hush(){ try{ speechSynthesis.cancel(); }catch(e){} }
 
 /* ---------- 루프 ---------- */
 var lastTs = null;
@@ -311,6 +378,7 @@ function loop(ts){
     var toSun = target.position.clone().negate().normalize();
     camera.position.copy(target.position).add(toSun.multiplyScalar(p.r*5+6)).add(new THREE.Vector3(0,p.r*1.2,0));
   }
+  updateMeteors(dt);
   updateLook();
   updateArrow();
   renderer.render(scene, camera);
