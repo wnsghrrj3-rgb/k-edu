@@ -162,7 +162,21 @@
         +'.ea-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'.ea-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
         + top + '<div class="ea-bars">'+bar+'</div>' + ctrl
-        +'<div class="kl-stage-host" style="position:relative;"><div class="ea-stage" style="width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 70% 30%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);"></div></div>'
+        +'<div class="kl-stage-host" style="position:relative;"><div class="ea-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 70% 30%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
+          +(mode==='quiz'?'':'<div class="ea-skypanel" style="position:absolute;bottom:12px;left:12px;width:212px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
+            +'<svg class="ea-spsvg" viewBox="-80 -46 160 84" width="204" height="108">'
+              +'<defs><linearGradient id="eaSp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16224a"/><stop offset="1" stop-color="#3a4f86"/></linearGradient></defs>'
+              +'<rect class="ea-spbg" x="-80" y="-46" width="160" height="76" fill="url(#eaSp)" rx="6"/>'
+              +'<g class="ea-spg"></g>'
+              +'<line x1="-76" y1="30" x2="76" y2="30" stroke="#6b8a4a" stroke-width="3"/>'
+              +'<rect x="-76" y="30" width="152" height="4" fill="#3f5a28"/>'
+              +'<text x="-68" y="27" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">동</text>'
+              +'<text x="0" y="27" text-anchor="middle" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">남</text>'
+              +'<text x="68" y="27" text-anchor="end" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">서</text>'
+            +'</svg>'
+            +'<div class="ea-spcap" style="font-size:12px;color:#cdd6e6;font-weight:800;margin-top:1px;">우리나라 하늘에서 본 태양</div>'
+          +'</div>')
+        +'</div></div>'
         +'<div class="ea-foot">'+foot+'</div>'
         +'<div class="ea-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
@@ -224,13 +238,47 @@
       camera.position.set(radius*Math.sin(phi)*Math.sin(theta), radius*Math.cos(phi), radius*Math.sin(phi)*Math.cos(theta));
       camera.lookAt(0,0,0); }
 
+    function renderSky(){
+      var g=el.querySelector('.ea-spg'); if(!g)return;
+      g.innerHTML='';
+      function S(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+      var rev=(wif.active()&&wif.state.key==='rev');
+      var day=(hour>=6&&hour<=18);
+      var bg=el.querySelector('.ea-spbg');
+      // 경로 참조선
+      g.appendChild(S('path',{d:'M -64 30 Q 0 -32 64 30',stroke:'#7d8db5','stroke-width':1.3,fill:'none','stroke-dasharray':'4 4',opacity:0.6}));
+      var cap=el.querySelector('.ea-spcap');
+      if(day){
+        var t=(hour-6)/12;                       // 0(동) → 1(서)
+        var x=-64+128*t; if(rev)x=-x;            // 거꾸로 자전이면 서→동!
+        var y=30-Math.sin(t*Math.PI)*58;
+        g.appendChild(S('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:6,fill:'#FFD43B',class:'ea-spsun'}));
+        var hr=Math.floor(hour), mn=Math.round((hour-hr)*60); if(mn===60){hr=(hr+1)%24;mn=0;}
+        if(cap)cap.textContent=hr+'시'+(mn?(' '+mn+'분'):'')+' — 태양이 '+(rev?'서→동':'동→남→서')+'으로 움직여요'+(rev?' (거꾸로!)':'');
+        if(bg)bg.setAttribute('fill','url(#eaSp)');
+      } else {
+        for(var i=0;i<10;i++){
+          g.appendChild(S('circle',{cx:(Math.sin(i*7.7)*70).toFixed(1),cy:(-40+((i*13)%62)).toFixed(1),r:(0.8+(i%3)*0.5),fill:'#cdd6ff',opacity:0.7,class:'ea-spstar'}));
+        }
+        var tn=S('text',{x:0,y:-8,'text-anchor':'middle',fill:'#9fb6e6','font-size':11,'font-weight':800,'font-family':'inherit'});
+        tn.textContent='🌙 밤이에요 — 태양은 지구 반대편!'; g.appendChild(tn);
+        if(cap)cap.textContent='밤하늘 — 자전이 우리를 태양 반대쪽으로 데려갔어요';
+      }
+    }
     function render(){
       if(earthGrp){ var ang=((hour-12)/24)*2*Math.PI; earthGrp.rotation.y=ang; }   // 자전(서→동)
+      renderSky();
       if(renderer&&scene&&camera) renderer.render(scene,camera);
     }
     function loop(now){ if(!alive)return;
       if(playing){ if(!last)last=now; var dt=Math.min((now-last)/1000,0.05); last=now;
-        hour=(hour+dt*3)%24; spinAcc+=dt*3;          // 약 8초에 하루
+        if(wif.active()&&wif.state.key==='stop'){
+          hrCnt+=dt*8; renderStatus(); render(); requestAnimationFrame(loop); return;
+        }
+        var spd=3;
+        if(wif.active()&&wif.state.key==='rev')spd=-3;
+        if(wif.active()&&wif.state.key==='fast')spd=6;
+        hour=(((hour+dt*spd)%24)+24)%24; spinAcc+=dt*Math.abs(spd);   // 약 8초에 하루
         var r=el.querySelector('.ea-range'); if(r)r.value=hour;
         render(); renderStatus();
       }

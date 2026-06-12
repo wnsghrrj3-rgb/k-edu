@@ -197,6 +197,19 @@
         +'</div>'
         +'</div>'
         +'<div class="kl-stage-host" style="position:relative;"><div class="se-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'42vh')+';min-height:'+(mode==='quiz'?'260':'320')+'px;background:radial-gradient(120% 120% at 60% 35%,#0D1430 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
+          +'<div class="se-sunpath" style="position:absolute;bottom:12px;left:12px;width:226px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
+            +'<svg class="se-spsvg" viewBox="-84 -50 168 92" width="218" height="118">'
+              +'<defs><linearGradient id="seSp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2a52"/><stop offset="1" stop-color="#314a86"/></linearGradient></defs>'
+              +'<rect x="-84" y="-50" width="168" height="84" fill="url(#seSp)" rx="6"/>'
+              +'<g class="se-spg"></g>'
+              +'<line x1="-80" y1="26" x2="80" y2="26" stroke="#6b8a4a" stroke-width="3"/>'
+              +'<rect x="-80" y="26" width="160" height="8" fill="#3f5a28"/>'
+              +'<text x="-72" y="23" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">동</text>'
+              +'<text x="0" y="-40" text-anchor="middle" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">남</text>'
+              +'<text x="72" y="23" text-anchor="end" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">서</text>'
+            +'</svg>'
+            +'<div class="se-spcap" style="font-size:12px;color:#cdd6e6;font-weight:800;margin-top:1px;">하루 동안 태양의 길과 막대 그림자</div>'
+          +'</div>'
           +'<div class="se-panel" style="position:absolute;top:12px;right:12px;width:150px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.55);border-radius:14px;padding:7px 6px 5px;">'
             +'<svg class="se-sky" viewBox="-65 -52 130 78" width="142" height="85">'
               +'<defs><linearGradient id="seSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2e54"/><stop offset="1" stop-color="#4a6aa0"/></linearGradient></defs>'
@@ -283,6 +296,34 @@
     // 지구 궤도 위치: φ=(orb+90)° → orb=90(하지) 때 지구 -X(북극이 태양 쪽), orb=270(동지) 때 +X
     function earthPos(o){ var ph=(o+90)*Math.PI/180; return {x:orbitR*Math.cos(ph), z:orbitR*Math.sin(ph)}; }
 
+    function renderSunPath(){
+      var g=el.querySelector('.se-spg'); if(!g)return;
+      g.innerHTML='';
+      function S(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+      var alt=Math.max(0,noonAlt(orb,tilt,lat)), dh=Math.max(0.5,dayHours(orb,tilt,lat));
+      var half=Math.min(76, dh/24*152/2+18);          // 낮 길이 → 경로 폭
+      var peak=26-(alt/90)*62;                        // 남중고도 → 꼭대기 높이
+      // 참조: 기울기 0°(계절 없음)의 경로 — 점선
+      var alt0=90-Math.abs(lat), peak0=26-(alt0/90)*62, half0=Math.min(76,12/24*152/2+18);
+      g.appendChild(S('path',{d:'M '+(-half0)+' 26 Q 0 '+peak0.toFixed(1)+' '+half0+' 26',stroke:'#7d8db5','stroke-width':1.4,fill:'none','stroke-dasharray':'4 4',opacity:0.65}));
+      // 현재 경로
+      g.appendChild(S('path',{d:'M '+(-half)+' 26 Q 0 '+peak.toFixed(1)+' '+half+' 26',stroke:'#FFD43B','stroke-width':2.6,fill:'none',class:'se-sparc'}));
+      // 남중 태양
+      var sy=26-(26-peak)*0.99;
+      g.appendChild(S('circle',{cx:0,cy:Math.max(sy,peak).toFixed(1),r:5,fill:'#FFD43B',class:'se-spsun'}));
+      // 해 뜨고 지는 시각
+      var rise=12-dh/2, set=12+dh/2;
+      function hm(h){ var H=Math.floor(h), M=Math.round((h-H)*60); if(M===60){H++;M=0;} return H+'시'+(M?(' '+M+'분'):''); }
+      var tr=S('text',{x:-half,y:14,'text-anchor':'middle',fill:'#FFE08A','font-size':8,'font-weight':800,'font-family':'inherit'}); tr.textContent='↑'+hm(rise); g.appendChild(tr);
+      var ts=S('text',{x:half,y:14,'text-anchor':'middle',fill:'#FFE08A','font-size':8,'font-weight':800,'font-family':'inherit'}); ts.textContent='↓'+hm(set); g.appendChild(ts);
+      // 막대와 그림자 (정오 기준): 그림자 길이 = 막대÷tan(남중고도)
+      var sx=44, h2=13;
+      var shadow=(alt>2)?Math.min(h2/Math.tan(alt*Math.PI/180),52):52;
+      g.appendChild(S('line',{x1:sx,y1:30,x2:sx-shadow,y2:30,stroke:'#0e1426','stroke-width':5,'stroke-linecap':'round',opacity:0.85,class:'se-shadow'}));
+      g.appendChild(S('line',{x1:sx,y1:30,x2:sx,y2:30-h2,stroke:'#D9A066','stroke-width':3.2,'stroke-linecap':'round'}));
+      var cap=el.querySelector('.se-spcap');
+      if(cap)cap.textContent=(tilt<=1)?'기울기 0° — 일 년 내내 같은 길, 같은 그림자':('남중고도 '+Math.round(alt)+'° → 그림자가 '+(alt>=60?'짧아요':(alt<=35?'길어요':'중간이에요'))+' · 낮 '+dh.toFixed(1)+'시간');
+    }
     function render(){
       if(earthPivot){
         var p=earthPos(orb); earthPivot.position.set(p.x,0,p.z);
@@ -296,6 +337,7 @@
       if(arc) arc.setAttribute('d','M -55 22 Q 0 '+(22-2*altH).toFixed(1)+' 55 22');
       if(sun2d) sun2d.setAttribute('cy', (22-altH).toFixed(1));
       var altT=el.querySelector('.se-alt'); if(altT) altT.textContent='남중고도 '+Math.round(alt)+'°';
+      renderSunPath();
       if(renderer&&scene&&camera) renderer.render(scene,camera);
     }
     function loop(now){ if(!alive)return;

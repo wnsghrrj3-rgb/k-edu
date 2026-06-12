@@ -169,6 +169,7 @@
         +'.mn-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
         + top + '<div class="mn-bars">'+bar+'</div>'
         +((mode==='quiz'||(mode==='whatif'&&!wif.active()))?'<div style="display:none;">':'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">')
+          +'<button class="mn-btn" data-act="day" style="font-size:18px;padding:11px 16px;border-radius:14px;border:3px solid #845EF7;background:#fff;color:#845EF7;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">📅 하루 뒤</button>'
           +'<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 공전 재생'))+'</button>'
           +'<input class="mn-range" type="range" min="0" max="360" step="1" value="'+phase+'" '+(frozen?'disabled':'')+' style="width:min(46vw,330px);'+(frozen?'opacity:.4;':'')+'">'
           +'<span class="mn-age" style="font-size:18px;font-weight:800;color:'+C.ink+';min-width:96px;text-align:center;font-family:inherit;"></span>'
@@ -178,6 +179,19 @@
             +'<svg class="mn-moon2d" viewBox="-55 -55 110 110" width="104" height="104"><circle cx="0" cy="0" r="50" fill="#1A2440" stroke="#3a4a6a" stroke-width="2"/><path class="mn-lit" d="" fill="#FDF6D8"/></svg>'
             +'<div style="font-size:13px;color:#cdd6e6;font-weight:800;margin-top:2px;">지구에서 본 달</div>'
           +'</div>'
+          +(mode==='quiz'?'':'<div class="mn-evening" style="position:absolute;bottom:12px;left:12px;width:208px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
+            +'<svg class="mn-evsky" viewBox="-78 -46 156 84" width="200" height="108">'
+              +'<defs><linearGradient id="mnEv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16224a"/><stop offset="1" stop-color="#41356b"/></linearGradient></defs>'
+              +'<rect x="-78" y="-46" width="156" height="76" fill="url(#mnEv)" rx="6"/>'
+              +'<g class="mn-evg"></g>'
+              +'<line x1="-74" y1="30" x2="74" y2="30" stroke="#6b8a4a" stroke-width="3"/>'
+              +'<rect x="-74" y="30" width="148" height="4" fill="#3f5a28"/>'
+              +'<text x="-66" y="27" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">동</text>'
+              +'<text x="0" y="27" text-anchor="middle" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">남</text>'
+              +'<text x="66" y="27" text-anchor="end" fill="#9fb6e6" font-size="9" font-weight="800" font-family="inherit">서</text>'
+            +'</svg>'
+            +'<div class="mn-evcap" style="font-size:12px;color:#cdd6e6;font-weight:800;margin-top:1px;">여러 날 저녁 7시, 남쪽 하늘</div>'
+          +'</div>')
         +'</div></div>'
         +'<div class="mn-foot">'+foot+'</div>'
         +'<div class="mn-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
@@ -227,12 +241,46 @@
       camera.position.set(radius*Math.sin(phi)*Math.sin(theta), radius*Math.cos(phi), radius*Math.sin(phi)*Math.cos(theta));
       camera.lookAt(0,0,0); }
 
+    function evAge(){ var a=Math.round((((phase%360)+360)%360)/12); return a===0?30:a; }
+    function renderEvening(){
+      var g=el.querySelector('.mn-evg'); if(!g)return;
+      g.innerHTML='';
+      function S(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+      var pp=(wif.active()&&wif.state.key==='glow')?180:(((phase%360)+360)%360);
+      var cap=el.querySelector('.mn-evcap');
+      if(cap)cap.textContent='여러 날 저녁 7시, 남쪽 하늘 · 달 나이 '+evAge()+'일';
+      if(pp<22||pp>200){
+        var t=S('text',{x:0,y:-4,'text-anchor':'middle',fill:'#9fb6e6','font-size':10,'font-weight':800,'font-family':'inherit'});
+        t.textContent=(pp<22)?'삭 무렵 — 달이 보이지 않아요':'저녁 7시엔 아직 안 떴어요 (새벽에 떠요)';
+        g.appendChild(t); return;
+      }
+      var tt=(pp-22)/(200-22);                  // 초승(서쪽) → 보름 직후(동쪽)
+      var x=64-128*tt;
+      var alt=Math.sin(Math.min(Math.max((pp-22)/(180-22),0),1)*Math.PI)*40;
+      var y=28-alt;
+      for(var d=-2;d<=2;d++){                   // 며칠 전후 자취 — '날마다 동쪽으로'
+        if(d===0)continue;
+        var p2=pp+d*12; if(p2<22||p2>200)continue;
+        var t2=(p2-22)/(200-22);
+        var a2=Math.sin(Math.min(Math.max((p2-22)/(180-22),0),1)*Math.PI)*40;
+        g.appendChild(S('circle',{cx:(64-128*t2).toFixed(1),cy:(28-a2).toFixed(1),r:2.2,fill:'#8d9dc8',opacity:0.45}));
+      }
+      var grp=S('g',{transform:'translate('+x.toFixed(1)+','+y.toFixed(1)+') scale(0.17)'});
+      grp.appendChild(S('circle',{cx:0,cy:0,r:50,fill:'#1A2440',stroke:'#3a4a6a','stroke-width':3}));
+      var lp=S('path',{fill:'#FDF6D8',class:'mn-evmoon'}); lp.setAttribute('d',litPath(50,pp)); grp.appendChild(lp);
+      g.appendChild(grp);
+      if(pp>40&&pp<196){
+        var ar=S('text',{x:Math.min(x+14,46),y:Math.max(y-9,-38),fill:'#FFD43B','font-size':9,'font-weight':800,'font-family':'inherit'});
+        ar.textContent='← 날마다 동쪽으로'; g.appendChild(ar);
+      }
+    }
     function render(){
       // 달 공전 위치: φ=0 신월(+X 태양쪽), φ=180 보름(-X), φ=90 +Z
       var rad=phase*Math.PI/180;
       if(moonMesh) moonMesh.position.set(Math.cos(rad)*orbitR, 0, Math.sin(rad)*orbitR);
       // 2D 패널
       var lit=el.querySelector('.mn-lit'); if(lit)lit.setAttribute('d', litPath(50, (wif.active()&&wif.state.key==='glow')?180:phase));
+      renderEvening();
       if(renderer&&scene&&camera) renderer.render(scene,camera);
     }
     function loop(now){ if(!alive)return;
@@ -274,6 +322,7 @@
     var _mv,_up;
     function bind(){
       var rg=el.querySelector('.mn-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setPhase(+e.target.value); });
+      var db=el.querySelector('[data-act="day"]'); if(db)db.addEventListener('click',function(){ if(playing)return; phase=(phase+12)%360; var r=el.querySelector('.mn-range'); if(r)r.value=phase; render(); renderStatus(); });
       var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',togglePlay);
       var drag=false,px=0,py=0;
       function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
