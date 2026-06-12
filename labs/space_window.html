@@ -40,6 +40,7 @@
 
   /* 순간이동 페이드 */
   #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+  #seasonBanner{position:fixed;top:20%;left:50%;transform:translateX(-50%);font-size:44px;color:#FFC53D;text-shadow:0 0 22px rgba(255,197,61,.65);z-index:45;opacity:0;transition:opacity .5s;pointer-events:none;white-space:nowrap}
 
   /* 완료 축하 */
   #fin{position:fixed;inset:0;background:rgba(2,6,15,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:60;text-align:center;padding:24px}
@@ -64,6 +65,7 @@
 <div id="hint">기기를 돌려 우주를 둘러보세요</div>
 <div id="arrow"></div>
 <div id="fade"></div>
+<div id="seasonBanner"></div>
 
 <div id="card">
   <div class="nm" id="cardNm">지구</div>
@@ -77,6 +79,7 @@
   <div style="font-size:14px;color:#bcd2f0">잘 보이는 별자리: <b id="visConsts" style="color:#fff">—</b></div>
   <div style="margin-top:9px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
     <button id="seasonBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#1565C0;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #0b3d75;cursor:pointer">⏩ 다음 계절로</button>
+    <button id="topBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#7048E8;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #4a2da3;cursor:pointer">🗺 위에서 보기</button>
     <button id="liftBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#FF8A3D;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #b85a1a;cursor:pointer">🚀 우주로 돌아가기</button>
   </div>
 </div>
@@ -243,7 +246,7 @@ function pDown(x,y){ dragging=true; px=x; py=y; moved=0; }
 function pMove(x,y){
   if(!dragging) return;
   var dx=x-px, dy=y-py; px=x; py=y; moved+=Math.abs(dx)+Math.abs(dy);
-  if (!gyroOn){ dragLon -= dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
+  if (!gyroOn){ dragLon += dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
 }
 renderer.domElement.addEventListener('mousedown', function(e){ pDown(e.clientX,e.clientY); });
 window.addEventListener('mousemove', function(e){ pMove(e.clientX,e.clientY); });
@@ -321,7 +324,9 @@ function landOnEarth(){
 function leaveEarth(){
   hush();
   fade(function(){
-    mode='free'; seasonAnim=null;
+    mode='free'; seasonAnim=null; faceAnim=null; guidePos=null;
+    topView=false; topGroup.visible=false;
+    $('topBtn').textContent='🗺 위에서 보기';
     $('earthPanel').style.display='none';
     camera.position.copy(HOME);
     $('hint').textContent = gyroOn ? '기기를 돌려 우주를 둘러보세요' : '드래그해서 우주를 둘러보세요';
@@ -329,6 +334,12 @@ function leaveEarth(){
 }
 $('landBtn').addEventListener('click', landOnEarth);
 $('liftBtn').addEventListener('click', leaveEarth);
+$('topBtn').addEventListener('click', function(){
+  topView=!topView; topGroup.visible=topView;
+  this.textContent = topView ? '🌍 지구에서 보기' : '🗺 위에서 보기';
+  $('hint').textContent = topView ? '교과서 그림 그대로 — ⏩를 눌러 지구가 도는 걸 보세요'
+    : (gyroOn ? '고개를 들어 밤하늘을 둘러보세요' : '드래그해서 밤하늘을 둘러보세요');
+});
 $('seasonBtn').addEventListener('click', nextSeason);
 $('constChip').addEventListener('click', function(){
   constMode=!constMode;
@@ -353,8 +364,11 @@ $('voiceChip').addEventListener('click', function(){
 /* ---------- 가장자리 화살표 (관찰 중 행성이 화면 밖이면 방향 안내) ---------- */
 function updateArrow(){
   var ar = $('arrow');
-  if (mode!=='observe' || !target){ ar.style.display='none'; return; }
-  var v = target.position.clone().project(camera);
+  var tp = null;
+  if (mode==='observe' && target) tp = target.position;
+  else if (mode==='earth' && !topView && guidePos && performance.now()<guideUntil) tp = guidePos;
+  if (!tp){ ar.style.display='none'; return; }
+  var v = tp.clone().project(camera);
   var behind = v.z > 1;
   var sx=(v.x+1)/2*innerWidth, sy=(-v.y+1)/2*innerHeight;
   var onScreen = !behind && sx>40 && sx<innerWidth-40 && sy>40 && sy<innerHeight-40;
@@ -434,11 +448,47 @@ function updateConsts(){
     $('visConsts').textContent=visNames.length?visNames.join(' · '):'(반대쪽이 밤이에요 — 둘러보세요)';
   }
 }
-var seasonAnim=null;
+var seasonAnim=null, faceAnim=null, guidePos=null, guideUntil=0;
 function nextSeason(){
   var p=earthMesh().userData;
   seasonAnim={from:p.ang, to:p.ang+Math.PI/2, t:0};
 }
+/* 계절 도착 — 크게 알리고(배너+음성), 시선을 새 밤하늘로 안내 */
+function seasonArrived(){
+  var si=seasonIdx(earthMesh().userData.ang);
+  var names=CONST_DATA.filter(function(c){return c.si===si;}).map(function(c){return c.nm;});
+  var b=$('seasonBanner');
+  b.textContent=(si===0?'🌸 ':si===1?'☀️ ':si===2?'🍂 ':'❄️ ')+SEASONS[si]+'이 왔어요!';
+  b.style.opacity=1; setTimeout(function(){ b.style.opacity=0; }, 2100);
+  say(SEASONS[si]+'이 왔어요. 이제 '+names.join('와 ')+'가 잘 보여요!');
+  var out=earthMesh().position.clone().normalize();
+  if(!gyroOn && !topView){
+    var to=THREE.MathUtils.radToDeg(Math.atan2(-out.x,-out.z));
+    var d=((to-dragLon+540)%360)-180;
+    faceAnim={from:dragLon, to:dragLon+d, t:0};
+  }
+  guidePos=out.clone().multiplyScalar(1380); guideUntil=performance.now()+6000;
+}
+
+/* ---------- 위에서 보기(단면) — 교과서 공전 그림 모드 ---------- */
+var topView=false, topGroup=new THREE.Group(), earthRing, nightArrow;
+topGroup.visible=false; scene.add(topGroup);
+(function buildTop(){
+  var D2R=Math.PI/180;
+  SEASONS.forEach(function(nm,i){
+    var sp=makeLabel(nm); sp.material.opacity=0.95; sp.scale.set(96,24,1);
+    var a=(i*90+45)*D2R; sp.position.set(Math.cos(a)*308, 2, Math.sin(a)*308); topGroup.add(sp);
+  });
+  CONST_DATA.forEach(function(c){
+    var sp=makeLabel(c.nm); sp.material.opacity=0.8; sp.scale.set(78,19,1);
+    var a=c.lon*D2R; sp.position.set(Math.cos(a)*368, 2, Math.sin(a)*368); topGroup.add(sp);
+  });
+  earthRing=new THREE.Mesh(new THREE.RingGeometry(6,9,40),
+    new THREE.MeshBasicMaterial({color:0x2EE88A, side:THREE.DoubleSide, transparent:true, opacity:0.9}));
+  earthRing.rotation.x=-Math.PI/2; topGroup.add(earthRing);
+  nightArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 95, 0xFFC53D, 22, 11);
+  topGroup.add(nightArrow);
+})();
 
 /* ---------- 별똥별 ---------- */
 var meteors=[], meteorTimer=0, meteorNext=4+Math.random()*5;
@@ -494,10 +544,17 @@ function loop(ts){
     seasonAnim.t += dt/1.4;
     var e=earthMesh().userData, k=Math.min(1,seasonAnim.t), ease=1-Math.pow(1-k,3);
     e.ang = seasonAnim.from + (seasonAnim.to-seasonAnim.from)*ease;
-    if (k>=1) seasonAnim=null;
+    if (k>=1){ seasonAnim=null; seasonArrived(); }
+  }
+  /* 시선 안내 애니메이션(드래그 모드) */
+  if (faceAnim && !gyroOn && !topView){
+    faceAnim.t += dt/1.2;
+    var fk=Math.min(1,faceAnim.t), fe=1-Math.pow(1-fk,3);
+    dragLon = faceAnim.from + (faceAnim.to-faceAnim.from)*fe;
+    if (fk>=1) faceAnim=null;
   }
   /* 지구 표면 모드: 지구 밤쪽에 서서 공전을 따라감 */
-  if (mode==='earth'){
+  if (mode==='earth' && !topView){
     var em=earthMesh(), out=em.position.clone().normalize();
     camera.position.copy(em.position).add(out.multiplyScalar(em.userData.r*1.7)).add(new THREE.Vector3(0,em.userData.r*0.5,0));
   }
@@ -509,7 +566,20 @@ function loop(ts){
   }
   updateMeteors(dt);
   updateConsts();
-  updateLook();
+  if (topView){
+    var em2=earthMesh(), out2=em2.position.clone().normalize();
+    earthRing.position.copy(em2.position).setY(0.3);
+    nightArrow.position.copy(em2.position);
+    nightArrow.setDirection(out2);
+    /* 세로·가로 어느 화면이든 단면 전체가 들어오게 높이 자동 */
+    var need=415, H=need/(Math.tan(THREE.MathUtils.degToRad(36))*Math.min(1,camera.aspect));
+    camera.up.set(0,0,-1);
+    camera.position.set(0,H,0);
+    camera.lookAt(0,0,0);
+  } else {
+    camera.up.set(0,1,0);
+    updateLook();
+  }
   updateArrow();
   renderer.render(scene, camera);
 }
