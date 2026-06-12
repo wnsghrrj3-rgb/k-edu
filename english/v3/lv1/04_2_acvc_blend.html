@@ -167,7 +167,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- S5 확인문제 1 — 듣고 고르기 -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.onset" data-skill="listen_pick">
     <div class="card">
       <div class="question-label">확인 문제 1 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 소리를 듣고 맞는 단어를 골라요!</div>
@@ -181,7 +181,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- S6 확인문제 2 — 그림 보고 고르기 -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="vocab.meaning" data-skill="pic_pick">
     <div class="card">
       <div class="question-label">확인 문제 2 <span class="stars">⭐</span></div>
       <div class="question-text">그림에 맞는 단어는?</div>
@@ -201,7 +201,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- S8 확인문제 3 — 듣고 고르기 (hat) -->
-  <div class="slide" data-correct="1" data-score="10">
+  <div class="slide" data-correct="1" data-score="10" data-concept="phonics.onset" data-skill="listen_pick">
     <div class="card">
       <div class="question-label">확인 문제 3 <span class="stars">⭐</span></div>
       <div class="question-text">🔊 이번 소리는 어떤 단어?</div>
@@ -215,7 +215,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- S9 확인문제 4 — 첫소리 빈칸 -->
-  <div class="slide" data-correct="0" data-score="10">
+  <div class="slide" data-correct="0" data-score="10" data-concept="phonics.onset" data-skill="fill_onset">
     <div class="card">
       <div class="question-label">확인 문제 4 <span class="stars">⭐</span></div>
       <div class="question-text">🐱 고양이! 빈칸에 올 첫소리는?</div>
@@ -235,7 +235,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
   </div>
 
   <!-- S11 도전 2 — 3연속 듣고 고르기 -->
-  <div class="slide" data-score="25">
+  <div class="slide" data-score="25" data-concept="phonics.onset" data-skill="sort">
     <div class="card">
       <div class="question-label">도전 문제 <span class="stars">⭐⭐</span></div>
       <div class="question-text">🔊 듣고 3연속 맞히기!</div>
@@ -265,6 +265,10 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
         📖 <b>내 단어 도감</b>에 <b id="dogamAdded">0</b>개 들어왔어요!<br>
         <span style="font-size:13px;color:#4a7fb5">지금까지 모은 단어 <b id="dogamTotal">0</b>개</span>
       </div>
+      <div id="weakCard" style="margin-top:10px;background:#fff5e9;border:2px solid #ef9f27;border-radius:14px;padding:11px 14px;font-size:15px;color:#9a5b06;display:none">
+        💪 <b id="weakLabel">첫소리 구분</b>이 조금 헷갈렸어요.<br>
+        <span style="font-size:13px;color:#b07a2a">다음에 <b>한 번 더</b> 연습하면 완벽해져요!</span>
+      </div>
       <button class="nav-btn" style="margin-top:10px" onclick="location.href='../index.html'">🪜 사다리로</button>
     </div>
   </div>
@@ -280,6 +284,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 <script src="/kedu/teacher/engine/tools/phonics_blocks.js"></script>
 <script src="../engine/k-tts.js"></script>
 <script src="../engine/k-collection.js"></script>
+<script src="../engine/k-diagnosis.js"></script>
 <script>
 let soundOn=true,currentSlide=0,score=0,combo=0,answered={},klabCleanup=null,unlocked=false;
 const TOTAL=13;
@@ -323,6 +328,13 @@ function updateUI(){
       var dc=document.getElementById('dogamCard');
       if(dc){ document.getElementById('dogamAdded').textContent=r.added;
         document.getElementById('dogamTotal').textContent=r.total; dc.style.display='block'; }
+      /* 약점 진단 — 표본 충분 + 정답률 낮은 개념이 있으면 보충 안내 */
+      if(window.KDiagnosis){
+        var w=KDiagnosis.weakest();
+        if(w){ var wc=document.getElementById('weakCard');
+          document.getElementById('weakLabel').textContent=(KDiagnosis.LABEL[w.concept]||w.concept);
+          wc.style.display='block'; }
+      }
     }
   }
 }
@@ -339,6 +351,7 @@ function answer(btn,idx){
   const slide=document.querySelectorAll('.slide')[currentSlide];
   const correct=+slide.dataset.correct,pts=+slide.dataset.score||10;
   playClick();
+  if(window.KDiagnosis) KDiagnosis.record(slide.dataset.concept, idx===correct);
   if(idx===correct){
     btn.classList.add('correct');playCorrect();addScore(pts);
     KTTS.word(btn.textContent.trim());
@@ -353,6 +366,7 @@ function answer(btn,idx){
 function fillQ9(btn,idx){
   if(answered[currentSlide])return;
   playClick();
+  if(window.KDiagnosis) KDiagnosis.record(document.querySelectorAll('.slide')[currentSlide].dataset.concept, idx===0);
   if(idx===0){
     document.getElementById('blank9').textContent='c';
     btn.classList.add('correct');playCorrect();addScore(10);
@@ -383,7 +397,9 @@ document.getElementById('sortHear').addEventListener('click',()=>{if(sortIdx<3)K
 function sortAnswer(i){
   if(sortIdx>=3)return;playClick();
   const btn=document.getElementById('sb'+i);
-  if(sortWords[sortIdx]===btn.textContent.trim()){btn.classList.add('correct');playCorrect();sortOK++;}
+  const _ok=sortWords[sortIdx]===btn.textContent.trim();
+  if(window.KDiagnosis) KDiagnosis.record('phonics.onset', _ok);
+  if(_ok){btn.classList.add('correct');playCorrect();sortOK++;}
   else{btn.classList.add('wrong');playWrong();combo=0;}
   sortIdx++;setTimeout(showSort,800);
 }
