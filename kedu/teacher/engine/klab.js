@@ -115,6 +115,96 @@
       host.appendChild(d);
       setTimeout(function () { d.remove(); }, 1700);
     },
+    /* ── 3층 깊이 공용 엔진 (골든 샘플 constellation v3 패턴 승급) ── */
+    // 생각형 미션 선택지 — m={type:'think',ch:[..3],a,why}. 정답 시 이유 배너 → 2.4초 후 onPass()
+    // sel = { foot:'.xx-foot', bar:'.xx-bars' }
+    thinkFoot: function (el, sel, m, onPass) {
+      var ui = window.KLab.ui;
+      var fc = el.querySelector(sel.foot); if (!fc) return;
+      if (!m || m.type !== 'think') { fc.innerHTML = ''; return; }
+      var idx = [0, 1, 2].sort(function () { return Math.random() - 0.5; });
+      fc.innerHTML = ui.choices(idx.map(function (i) { return { v: i, label: '<span style="font-size:19px;">' + m.ch[i] + '</span>' }; }));
+      var lock = false;
+      fc.querySelectorAll('.kl-choice').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (lock) return;
+          if (+b.dataset.v !== m.a) { ui.toast(el, false); return; }
+          lock = true;
+          var host = el.querySelector(sel.bar);
+          if (host) host.innerHTML = '<div style="text-align:center;background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:13px 16px;margin-bottom:12px;">'
+            + '<span style="font-size:21px;font-weight:800;color:#0B7A5C;">✅ 정답! ' + m.why + '</span></div>';
+          fc.innerHTML = '';
+          setTimeout(onPass, 2400);
+        });
+      });
+    },
+    // 🌀 만약에 엔진 — 예측→실험→정리.
+    // spec = { scenarios:{key:{icon,title,q,ch[3],a,reveal,tip}}, rebuild(), footEl(),
+    //          onSelect(key)?, onPlay(key)?, onExit()? }
+    whatifEngine: function (spec) {
+      var ui = window.KLab.ui;
+      var st = { key: null, phase: 'pick', choice: null };
+      function active() { return !!st.key && (st.phase === 'play' || st.phase === 'reveal'); }
+      function reset() { st.key = null; st.phase = 'pick'; st.choice = null; if (spec.onExit) spec.onExit(); }
+      function barHTML() {
+        var card = 'font-size:19px;padding:14px 18px;border-radius:16px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;line-height:1.3;';
+        if (st.phase === 'pick') {
+          return '<div style="text-align:center;background:#E3FAFC;border:3px solid #0B7285;border-radius:18px;padding:12px 16px;margin-bottom:10px;">'
+            + '<div style="font-size:22px;font-weight:800;color:#0B7285;">🌀 만약에… 상상해 보고, 직접 확인해요!</div></div>'
+            + '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+            + Object.keys(spec.scenarios).map(function (k) { var w = spec.scenarios[k];
+                return '<button class="kl-wifcard" data-k="' + k + '" style="' + card + '">' + w.icon + ' ' + w.title + '</button>'; }).join('')
+            + '</div>';
+        }
+        var w = spec.scenarios[st.key];
+        if (st.phase === 'predict') {
+          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#F3F0FF;border:3px solid #7048E8;border-radius:18px;padding:12px 18px;margin-bottom:12px;">'
+            + '<span style="font-size:17px;font-weight:800;color:#fff;background:#7048E8;border-radius:10px;padding:6px 12px;white-space:nowrap;">🔮 예측</span>'
+            + '<span style="font-size:22px;font-weight:800;color:#4527A0;">' + w.icon + ' ' + w.q + '</span></div>';
+        }
+        if (st.phase === 'play') {
+          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#E3FAFC;border:3px solid #0B7285;border-radius:18px;padding:11px 16px;margin-bottom:10px;">'
+            + '<span style="font-size:17px;font-weight:800;color:#fff;background:#0B7285;border-radius:10px;padding:6px 12px;white-space:nowrap;">🧪 실험 중</span>'
+            + '<span style="font-size:20px;font-weight:800;color:#0B7285;">' + w.icon + ' ' + w.tip + '</span>'
+            + '<button class="kl-wifreveal" style="font-size:18px;padding:9px 16px;border-radius:12px;border:3px solid #7048E8;background:#7048E8;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;">💡 정리 보기</button>'
+            + '<button class="kl-wifback" style="font-size:16px;padding:8px 12px;border-radius:12px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:800;font-family:inherit;">← 다른 만약에</button></div>';
+        }
+        var mine = w.ch[st.choice != null ? st.choice : 0], hit = (st.choice === w.a);
+        return '<div style="background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:14px 18px;margin-bottom:10px;text-align:center;">'
+          + '<div style="font-size:21px;font-weight:800;color:#0B7A5C;">💡 ' + w.reveal + '</div>'
+          + '<div style="font-size:17px;font-weight:800;color:' + (hit ? '#0B7A5C' : '#E8590C') + ';margin-top:8px;">네 예측: “' + mine + '” → '
+          + (hit ? '정확했어요! 🎯' : '실제는 달랐죠? 예측이 빗나갈 때 더 크게 배워요! 💪') + '</div>'
+          + '<div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
+          + '<button class="kl-wifplay" style="font-size:17px;padding:9px 15px;border-radius:12px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;">🔁 더 가지고 놀기</button>'
+          + '<button class="kl-wifback" style="font-size:17px;padding:9px 15px;border-radius:12px;border:3px solid #0B7285;background:#0B7285;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;">🌀 다른 만약에</button></div></div>';
+      }
+      function bind(el) {
+        el.querySelectorAll('.kl-wifcard').forEach(function (b) {
+          b.addEventListener('click', function () {
+            st.key = b.dataset.k; st.phase = 'predict'; st.choice = null;
+            if (spec.onSelect) spec.onSelect(st.key);
+            spec.rebuild();
+          });
+        });
+        var rv = el.querySelector('.kl-wifreveal'); if (rv) rv.addEventListener('click', function () { st.phase = 'reveal'; spec.rebuild(); });
+        el.querySelectorAll('.kl-wifback').forEach(function (b) { b.addEventListener('click', function () { reset(); spec.rebuild(); }); });
+        var pl = el.querySelector('.kl-wifplay'); if (pl) pl.addEventListener('click', function () { st.phase = 'play'; if (spec.onPlay) spec.onPlay(st.key); spec.rebuild(); });
+        if (st.phase === 'predict') {
+          var w = spec.scenarios[st.key], fc = spec.footEl();
+          if (!fc) return;
+          var idx = [0, 1, 2].sort(function () { return Math.random() - 0.5; });
+          fc.innerHTML = ui.choices(idx.map(function (i) { return { v: i, label: '<span style="font-size:19px;">' + w.ch[i] + '</span>' }; }));
+          fc.querySelectorAll('.kl-choice').forEach(function (b) {
+            b.addEventListener('click', function () {
+              st.choice = +b.dataset.v;
+              ui.toast(el, true, '🔮 예측 완료! 이제 직접 확인해 봐요');
+              setTimeout(function () { st.phase = 'play'; if (spec.onPlay) spec.onPlay(st.key); spec.rebuild(); }, 1200);
+            });
+          });
+        }
+      }
+      return { state: st, active: active, reset: reset, barHTML: barHTML, bind: bind };
+    },
     // 미션 전체 완료 배너
     doneBar: function () {
       return '<div style="text-align:center;background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:16px;margin-bottom:12px;">'

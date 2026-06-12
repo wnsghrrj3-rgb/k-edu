@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 계절의 변화 (season) v2  [과학 9호 · 천체 4호 · 3모드]
+   케이랩 도구 모듈 — 계절의 변화 (season) v3  [과학 9호 · 천체 4호 · 3층]
    6학년 계절의 변화 — 자전축 기울기와 공전.
    하이브리드:
      ▸ 3D 공전 — 태양 중심, 지구가 궤도를 공전. 자전축은 우주 공간에서
@@ -13,7 +13,8 @@
        ▸ 기울기를 0으로 → 남중고도·낮 길이가 사철 똑같아 계절이 사라진다 (오개념 직격)
      "계절은 지구-태양 거리 때문이 아니라, 자전축이 기울어진 채 공전하기 때문."
    - 의존: THREE (전역, preview의 vendor/three.min.js), window.KLab
-   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 기울어진 지구 장면을 보고 답하기.
+   v3 · 3층: 미션 6단계(만들기↔생각형) + 🌀 만약에(기울기 90°=진짜 천왕성!,
+       남반구 호주=크리스마스가 한여름, 공전 멈춤=영원한 한 계절).
    - config: { orb(0~360, 0=춘분·90=하지·180=추분·270=동지, 기본 90),
                tilt(0~35, 기본 23.5), lat(기본 37.5), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
@@ -58,35 +59,77 @@
     var SEASONS=[ {k:'spring',o:0,l:'🌸 봄(춘분)'},{k:'summer',o:90,l:'☀️ 여름(하지)'},
                   {k:'fall',o:180,l:'🍂 가을(추분)'},{k:'winter',o:270,l:'❄️ 겨울(동지)'} ];
 
-    /* ───────────── 미션 ───────────── */
+    /* ───────────── 미션 6단계 (만들기 ↔ 생각형) ───────────── */
     var MISSIONS=[
-      { text:'☀️ <b style="color:#7048E8;">여름(하지)</b> 위치로! 남중고도가 가장 높아지는 곳을 찾아요!',
+      { type:'make', text:'☀️ <b style="color:#7048E8;">여름(하지)</b> 위치로! 남중고도가 가장 높아지는 곳을 찾아요!',
         check:function(){ return tilt>5 && decl(orb,tilt) >= tilt*0.93; } },
-      { text:'❄️ 이번엔 <b style="color:#7048E8;">겨울(동지)</b> — 남중고도가 가장 낮아져요!',
+      { type:'think', text:'🤔 여름이 더 <b style="color:#7048E8;">더운 까닭</b>은 무엇일까요?',
+        ch:['남중고도가 높아 햇빛이 곧게(세게) 들어와서','지구가 태양에 더 가까워져서','여름엔 바람이 안 불어서'], a:0,
+        why:'거리가 아니라 각도! 햇빛이 높이서 곧게 내리쬐면 같은 땅에 더 많은 열이 모여요. 손전등을 바닥에 똑바로 vs 비스듬히 비춰 보면 알 수 있죠.' },
+      { type:'make', text:'❄️ 이번엔 <b style="color:#7048E8;">겨울(동지)</b> — 남중고도가 가장 낮아져요!',
         check:function(){ return tilt>5 && decl(orb,tilt) <= -tilt*0.93; } },
-      { text:'🔭 자전축 <b style="color:#7048E8;">기울기를 0°</b>으로! 계절이 사라지는지 확인해요!',
+      { type:'make', text:'🔭 자전축 <b style="color:#7048E8;">기울기를 0°</b>으로! 계절이 사라지는지 확인해요!',
         check:function(){ return tilt <= 1; } },
-      { text:'🌐 기울기를 다시 <b style="color:#7048E8;">20° 넘게</b> 올려 계절을 되살려 봐요!',
+      { type:'think', text:'🤔 기울기가 0°이 되니 계절이 사라졌어요. <b style="color:#7048E8;">왜</b>일까요?',
+        ch:['공전해도 햇빛 받는 각도가 일 년 내내 똑같아져서','태양이 멀어져서','지구가 자전을 멈춰서'], a:0,
+        why:'계절의 진짜 원인 = 기울어진 채 공전! 축이 똑바로 서면 어디를 돌아도 남중고도와 낮 길이가 그대로예요.' },
+      { type:'make', text:'🌐 기울기를 다시 <b style="color:#7048E8;">20° 넘게</b> 올려 계절을 되살려 봐요!',
         check:function(){ return tilt >= 20; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    function advanceMission(){
+      mLock=false;
+      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      else mDone=true;
+      updateBars(); missionFoot(); render(); renderStatus();
+    }
+    function missionFoot(){
+      ui.thinkFoot(el,{foot:'.se-foot',bar:'.se-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+    }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      if(m.check()){
         mLock=true; ui.toast(el,true);
-        setTimeout(function(){
-          mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
-          updateBars();
-        },1500);
+        setTimeout(advanceMission,1500);
       }
     }
     function updateBars(){
       var host=el.querySelector('.se-bars'); if(!host)return;
       if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
     }
+
+    /* ───────────── 🌀 만약에 (계절의 규칙을 바꿔 보기) ───────────── */
+    var dayCnt=0, southOn=false;
+    var WHATIF={
+      ura:{ icon:'🪐', title:'기울기가 90°라면? (진짜 천왕성!)',
+        q:'자전축이 아예 옆으로 누우면(90°), 계절은 어떻게 될까요?',
+        ch:['반년 낮·반년 밤의 어마어마한 계절이 돼요','계절이 사라져요','지금과 비슷해요'], a:0,
+        reveal:'이건 상상이 아니라 진짜 천왕성 이야기! 옆으로 누워 도는 천왕성은 한쪽 극이 42년 낮, 42년 밤이에요. 기울기가 클수록 계절도 극단이 돼요.',
+        tip:'공전 위치를 돌려 봐요 — 남중고도가 0°에서 꼭대기까지 널뛰어요!' },
+      south:{ icon:'🦘', title:'남반구(호주)에 산다면?',
+        q:'호주의 12월 크리스마스는 어떤 계절일까요?',
+        ch:['한여름이에요!','한겨울이에요','봄이에요'], a:0,
+        reveal:'북반구가 태양 반대로 기울 때, 남반구는 태양 쪽으로 기울어요! 그래서 계절이 정반대 — 호주의 산타는 서핑보드를 타요. 🏄',
+        tip:'☀️ 여름 / ❄️ 겨울 버튼을 눌러 봐요 — 호주 기준으로는 계절이 뒤집혀 나와요!' },
+      stops:{ icon:'⏸', title:'공전을 멈춘다면?',
+        q:'지구가 공전을 딱 멈추면, 계절은 어떻게 될까요?',
+        ch:['한 계절이 영원히 계속돼요','지금처럼 돌아요','계절이 더 빨라져요'], a:0,
+        reveal:'계절이 바뀌는 건 기울어진 채 공전하기 때문! 멈추면 그 위치의 계절이 영원히 — 여름에서 멈췄다면 끝나지 않는 여름이에요.',
+        tip:'▶ 시간 흐르기 — 날짜가 흘러도 남중고도·계절이 그대로!' }
+    };
+    var wif=ui.whatifEngine({
+      scenarios:WHATIF,
+      rebuild:function(){buildUI();},
+      footEl:function(){return el.querySelector('.se-foot');},
+      onSelect:function(k){ playing=false; dayCnt=0; southOn=(k==='south');
+        tilt=(k==='ura')?90:23.5; orb=90; },
+      onPlay:function(){ dayCnt=0; },
+      onExit:function(){ playing=false; dayCnt=0; southOn=false; tilt=23.5; orb=90; }
+    });
 
     /* ───────────── 퀴즈 (기울어진 지구 장면을 보고 답하기) ───────────── */
     var QUIZ=[
@@ -124,9 +167,12 @@
     function seasonBtns(){return SEASONS.map(function(s){return '<button class="se-sea" data-o="'+s.o+'" style="'+sbtn+'">'+s.l+'</button>';}).join('');}
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var frozen=(wif.active()&&wif.state.key==='stops');
+      var uraOn=(wif.active()&&wif.state.key==='ura');
       if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      else if(mode==='whatif'){ bar=wif.barHTML(); }
       el.innerHTML='<style>.se-btn:active,.se-sea:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.se-sea.on{background:#1565C0 !important;border-color:#1565C0 !important;color:#fff !important;}'
@@ -137,16 +183,16 @@
         +'.se-tilt::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #E8590C;cursor:pointer;}'
         +'.se-tilt::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #E8590C;cursor:pointer;}</style>'
         + top + '<div class="se-bars">'+bar+'</div>'
-        +(mode==='quiz'?'<div style="display:none;">':'<div>')
+        +((mode==='quiz'||(mode==='whatif'&&!wif.active()))?'<div style="display:none;">':'<div>')
         +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'+seasonBtns()+'</div>'
         +'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
-          +'<button class="se-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 1년 재생')+'</button>'
+          +'<button class="se-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 1년 재생'))+'</button>'
           +'<span style="font-size:15px;color:#5a7894;font-weight:800;">공전 위치</span>'
-          +'<input class="se-range" type="range" min="0" max="360" step="1" value="'+orb+'" style="width:min(40vw,280px);">'
+          +'<input class="se-range" type="range" min="0" max="360" step="1" value="'+orb+'" '+(frozen?'disabled':'')+' style="width:min(40vw,280px);'+(frozen?'opacity:.4;':'')+'">'
         +'</div>'
         +'<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
           +'<span style="font-size:15px;color:#E8590C;font-weight:800;">🌐 자전축 기울기</span>'
-          +'<input class="se-tilt" type="range" min="0" max="35" step="0.5" value="'+tilt+'" style="width:min(40vw,280px);">'
+          +'<input class="se-tilt" type="range" min="0" max="35" step="0.5" value="'+Math.min(tilt,35)+'" '+((frozen||uraOn)?'disabled':'')+' style="width:min(40vw,280px);'+((frozen||uraOn)?'opacity:.4;':'')+'">'
           +'<span class="se-tval" style="font-size:18px;font-weight:800;color:#E8590C;min-width:54px;text-align:center;font-family:inherit;"></span>'
         +'</div>'
         +'</div>'
@@ -168,11 +214,16 @@
         +'<div class="se-foot">'+foot+'</div>'
         +'<div class="se-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
+        wif.reset();
         mode=m; mStep=0;mDone=false;mLock=false; playing=false; orb=(m==='mission')?0:90; tilt=23.5;
+        dayCnt=0; southOn=false;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices(); render(); renderStatus();
+      initThree(); bind(); bindChoices();
+      if(mode==='whatif')wif.bind(el);
+      if(mode==='mission')missionFoot();
+      render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,earthPivot,earthSphere,pin,orbitR=5;
@@ -250,6 +301,7 @@
     function loop(now){ if(!alive)return;
       if(!last)last=now; var dt=Math.min((now-last)/1000,0.05); last=now;
       spin += dt*0.9;                                  // 지구 자전 항상 살짝
+      if(playing&&wif.active()&&wif.state.key==='stops'){ if(!last)last=now; var dtf=Math.min((now-last)/1000,0.05); last=now; dayCnt+=dtf*8; renderStatus(); render(); requestAnimationFrame(loop); return; }
       if(playing){ orb=(orb+dt*36)%360;                // 약 10초에 1년
         var r=el.querySelector('.se-range'); if(r)r.value=orb; renderStatus(); }
       render();
@@ -259,6 +311,20 @@
     function renderStatus(){
       var tv=el.querySelector('.se-tval'); if(tv)tv.textContent=tilt.toFixed(1)+'°';
       if(mode==='quiz'){ var sq=el.querySelector('.se-status'); if(sq)sq.innerHTML='<div style="font-size:19px;color:#8aa0b6;">기울어진 지구와 \'우리나라 정오의 태양\' 패널을 보고 답을 골라요!</div>'; return; }
+      if(mode==='whatif'){
+        var sw=el.querySelector('.se-status'); if(!sw)return;
+        if(wif.state.phase==='pick'){ sw.innerHTML='<div style="font-size:19px;color:#8aa0b6;">카드를 골라 계절의 규칙을 바꿔 봐요 — 상상이 곧 실험!</div>'; return; }
+        if(wif.state.phase==='predict'){ sw.innerHTML='<div style="font-size:19px;color:#8aa0b6;">정답 걱정 없이 네 생각을 먼저! 그게 과학자의 첫걸음이에요.</div>'; return; }
+        var seaW=seasonOf(orb,tilt);
+        if(wif.state.key==='stops'){ sw.innerHTML='<div style="font-size:32px;color:#0B7285;">📅 +'+Math.floor(dayCnt)+'일</div><div style="font-size:18px;color:#5a7894;margin-top:3px;">날짜가 흘러도 '+seaW.emo+' '+seaW.nm+' 그대로 — 계절은 공전이 만들어요!</div>'; return; }
+        if(wif.state.key==='south'){
+          var FLIP={summer:['❄️','겨울'],winter:['☀️','여름'],spring:['🍂','가을'],fall:['🌸','봄'],none:['⚪','계절 없음']};
+          var f=FLIP[seaW.k]||FLIP.none;
+          sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🦘 호주 기준: 지금은 '+f[0]+' <b>'+f[1]+'</b>! (우리나라는 '+seaW.emo+' '+seaW.nm+')</div>'
+            +'<div style="font-size:17px;color:#5a7894;margin-top:4px;">북반구와 남반구는 기우는 방향이 반대 — 계절도 정반대예요.</div>'; return; }
+        sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🪐 기울기 90° — 진짜 천왕성처럼! 남중고도 '+Math.round(noonAlt(orb,tilt,lat))+'°</div>'
+          +'<div style="font-size:17px;color:#5a7894;margin-top:4px;">공전 위치에 따라 해가 안 뜨거나, 종일 떠 있는 극단의 계절이에요.</div>'; return;
+      }
       var alt=noonAlt(orb,tilt,lat), dh=dayHours(orb,tilt,lat), sea=seasonOf(orb,tilt);
       var s=el.querySelector('.se-status'), sub;
       if(sea.k==='none')
@@ -278,8 +344,8 @@
         b.classList.toggle('on', on); });
       checkMission();
     }
-    function setOrb(v){ orb=((v%360)+360)%360; var r=el.querySelector('.se-range'); if(r&&+r.value!==orb)r.value=orb; render(); renderStatus(); }
-    function setTilt(v){ tilt=Math.max(0,Math.min(35,v)); var r=el.querySelector('.se-tilt'); if(r&&+r.value!==tilt)r.value=tilt; render(); renderStatus(); }
+    function setOrb(v){ if(wif.active()&&wif.state.key==='stops')return; orb=((v%360)+360)%360; var r=el.querySelector('.se-range'); if(r&&+r.value!==orb)r.value=orb; render(); renderStatus(); }
+    function setTilt(v){ if(wif.active()&&(wif.state.key==='stops'||wif.state.key==='ura'))return; tilt=Math.max(0,Math.min(35,v)); var r=el.querySelector('.se-tilt'); if(r&&+r.value!==tilt)r.value=tilt; render(); renderStatus(); }
     var _mv,_up;
     function bind(){
       var rg=el.querySelector('.se-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setOrb(+e.target.value); });

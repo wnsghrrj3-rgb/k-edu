@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 지구 자전·낮밤 (earth) v2  [과학 6호 · 천체 1호 · 3모드]
+   케이랩 도구 모듈 — 지구 자전·낮밤 (earth) v3  [과학 6호 · 천체 1호 · 3층]
    6학년 지구와 달의 운동 — 지구의 자전과 낮·밤.
      변수 → 현상 → 발견:
        ▸ 시간 슬라이더(0~24시) / ▶ 하루 재생 → 지구가 서→동으로 자전
@@ -8,7 +8,8 @@
        ▸ "낮과 밤은 태양이 도는 게 아니라 지구가 자전하기 때문" (오개념 직격)
    - 의존: THREE (전역, preview의 vendor/three.min.js), window.KLab
    - 자전축은 수직(기울기 0). 계절·기울기는 다른 도구에서 다룸.
-   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 지구·핀 장면을 보고 답하기.
+   v3 · 3층: 미션 6단계(만들기↔생각형) + 🌀 만약에(거꾸로 자전=해가 서쪽에서!,
+       2배 자전=하루 12시간, 자전 멈춤=아주 긴 낮). 퀴즈 = 장면 관찰형.
    - config: { hour(0~24, 기본 12), lat(기본 37.5), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
@@ -38,35 +39,76 @@
     var C={ink:'#1B3A57',sub:'#9DB2C8',good:'#37D67A',day:'#FFD43B',night:'#5C7CFA'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
-    /* ───────────── 미션 ───────────── */
+    /* ───────────── 미션 6단계 (만들기 ↔ 생각형) ───────────── */
     var MISSIONS=[
-      { text:'☀️ 시간을 움직여 <b style="color:#7048E8;">우리나라 정오(낮 12시쯤)</b>를 만들어 봐요!',
+      { type:'make', text:'☀️ 시간을 움직여 <b style="color:#7048E8;">우리나라 정오(낮 12시쯤)</b>를 만들어 봐요!',
         check:function(){ return timeOfDay(hour,lat)==='noon'; } },
-      { text:'🌙 이번엔 태양 반대쪽 — <b style="color:#7048E8;">한밤(자정쯤)</b>으로!',
+      { type:'think', text:'🤔 우리 눈엔 <b style="color:#7048E8;">태양이 하늘을 가로질러 움직이는</b> 것처럼 보여요. 진짜는 무엇이 움직일까요?',
+        ch:['지구가 자전해서 그렇게 보여요','태양이 지구 둘레를 돌아요','태양이 켜졌다 꺼졌다 해요'], a:0,
+        why:'움직이는 건 우리(지구)! 회전목마를 타면 바깥 풍경이 도는 것처럼 보이는 것과 같아요.' },
+      { type:'make', text:'🌙 이번엔 태양 반대쪽 — <b style="color:#7048E8;">한밤(자정쯤)</b>으로!',
         check:function(){ return timeOfDay(hour,lat)==='night'; } },
-      { text:'🌅 낮과 밤의 경계, <b style="color:#7048E8;">해돋이(아침 6시쯤)</b> 순간을 잡아 봐요!',
+      { type:'make', text:'🌅 낮과 밤의 경계, <b style="color:#7048E8;">해돋이(아침 6시쯤)</b> 순간을 잡아 봐요!',
         check:function(){ return timeOfDay(hour,lat)==='sunrise'; } },
-      { text:'▶ <b style="color:#7048E8;">하루 재생</b>을 켜고 지구가 한 바퀴 도는 걸 끝까지 지켜봐요!',
-        check:function(){ return spinAcc>=24; } }
+      { type:'make', text:'▶ <b style="color:#7048E8;">하루 재생</b>을 켜고 지구가 한 바퀴 도는 걸 끝까지 지켜봐요!',
+        check:function(){ return spinAcc>=24; } },
+      { type:'think', text:'🤔 마지막 질문! 내일 아침, 해는 <b style="color:#7048E8;">어느 쪽</b>에서 뜰까요?',
+        ch:['동쪽 — 지구가 늘 같은 방향(서→동)으로 도니까','서쪽 — 날마다 바뀌니까','남쪽 — 한국은 남쪽이 밝으니까'], a:0,
+        why:'지구는 언제나 서→동으로 자전해요. 그래서 해는 어제도 내일도 동쪽에서!' }
     ];
     var mStep=0,mDone=false,mLock=false;
+    function advanceMission(){
+      mLock=false; spinAcc=0;
+      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      else mDone=true;
+      updateBars(); missionFoot(); render(); renderStatus();
+    }
+    function missionFoot(){
+      ui.thinkFoot(el,{foot:'.ea-foot',bar:'.ea-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+    }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      if(m.check()){
         mLock=true; ui.toast(el,true);
-        setTimeout(function(){
-          mLock=false; spinAcc=0;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
-          updateBars();
-        },1500);
+        setTimeout(advanceMission,1500);
       }
     }
     function updateBars(){
       var host=el.querySelector('.ea-bars'); if(!host)return;
       if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
     }
+
+    /* ───────────── 🌀 만약에 (자전을 직접 바꿔 보기) ───────────── */
+    var hrCnt=0;
+    var WHATIF={
+      rev:{ icon:'🔄', title:'지구가 거꾸로 자전한다면?',
+        q:'지구가 반대 방향으로 자전하면, 해는 어느 쪽에서 뜰까요?',
+        ch:['서쪽에서 떠요!','동쪽 그대로예요','해가 안 떠요'], a:0,
+        reveal:'"해가 서쪽에서 뜨겠네"라는 말 알죠? 자전이 거꾸로면 진짜로 서쪽에서 해가 떠요. 해 뜨는 방향은 지구의 자전 방향이 정하는 거예요!',
+        tip:'▶ 하루 재생을 눌러 봐요 — 시간이 거꾸로 흐르듯 빨간 핀이 반대로 돌아요!' },
+      fast:{ icon:'⏩', title:'자전이 2배 빨라진다면?',
+        q:'지구가 2배 빨리 돌면 하루는 어떻게 될까요?',
+        ch:['12시간으로 짧아져요','24시간 그대로예요','이틀(48시간)이 돼요'], a:0,
+        reveal:'하루 = 지구가 한 바퀴 도는 시간! 2배 빨리 돌면 하루가 12시간 — 낮 6시간, 밤 6시간이 돼요. 잠잘 시간이 모자라겠죠?',
+        tip:'▶ 하루 재생 — 시계가 휙휙! 하루가 두 배 빨리 지나가요.' },
+      stop:{ icon:'⏸', title:'자전이 멈춘다면?',
+        q:'자전이 딱 멈추면, 지금 낮인 곳은 어떻게 될까요?',
+        ch:['아주 오랫동안 낮이 계속돼요','곧바로 밤이 돼요','지금처럼 하루가 흘러요'], a:0,
+        reveal:'자전이 멈추면 태양 쪽은 계속 낮! (아주 느린 공전 때문에 결국 바뀌긴 하지만, 반년짜리 낮이에요.) 하루의 리듬은 자전이 만든다는 것!',
+        tip:'▶ 시간 흐르기 — 시간이 흘러도 시계와 핀이 그대로예요!' }
+    };
+    var wif=ui.whatifEngine({
+      scenarios:WHATIF,
+      rebuild:function(){buildUI();},
+      footEl:function(){return el.querySelector('.ea-foot');},
+      onSelect:function(k){ playing=false; hrCnt=0; hour=(k==='stop')?12:5; },
+      onPlay:function(){ hrCnt=0; },
+      onExit:function(){ playing=false; hrCnt=0; hour=12; }
+    });
 
     /* ───────────── 퀴즈 (지구 장면을 보고 답하기) ───────────── */
     var QUIZ=[
@@ -103,14 +145,17 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var frozen=(wif.active()&&wif.state.key==='stop');
+      var playLabel=frozen?(playing?'■ 멈춤':'▶ 시간 흐르기'):(playing?'■ 멈춤':'▶ 하루 재생');
       var ctrl='<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
-          +'<button class="ea-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 하루 재생')+'</button>'
-          +'<input class="ea-range" type="range" min="0" max="24" step="0.25" value="'+hour+'" style="width:min(46vw,330px);">'
+          +'<button class="ea-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+playLabel+'</button>'
+          +'<input class="ea-range" type="range" min="0" max="24" step="0.25" value="'+hour+'" '+(frozen?'disabled':'')+' style="width:min(46vw,330px);'+(frozen?'opacity:.4;':'')+'">'
           +'<span class="ea-clock" style="font-size:22px;font-weight:800;color:'+C.ink+';min-width:78px;text-align:center;font-family:inherit;"></span>'
         +'</div>';
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl=''; foot=ui.choices(quizChoices()); }
+      else if(mode==='whatif'){ bar=wif.barHTML(); if(wif.state.phase==='pick'||wif.state.phase==='predict')ctrl=''; }
       el.innerHTML='<style>.ea-btn:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.ea-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#1A2B4A,#5C7CFA,#FFD43B,#5C7CFA,#1A2B4A);outline:none;}'
@@ -121,11 +166,15 @@
         +'<div class="ea-foot">'+foot+'</div>'
         +'<div class="ea-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; playing=false; spinAcc=0; hour=(m==='mission')?9:12;
+        wif.reset();
+        mode=m; mStep=0;mDone=false;mLock=false; playing=false; spinAcc=0; hrCnt=0; hour=(m==='mission')?9:12;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices(); render(); renderStatus();
+      initThree(); bind(); bindChoices();
+      if(mode==='whatif')wif.bind(el);
+      if(mode==='mission')missionFoot();
+      render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,earthGrp,pin,sunSpr;
@@ -192,6 +241,14 @@
     function renderStatus(){
       var s=el.querySelector('.ea-status'), clk=el.querySelector('.ea-clock'); if(clk)clk.textContent=clockStr(hour);
       if(mode==='quiz'){ if(s)s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">지구와 빨간 핀, 태양을 잘 보고 답을 골라요! (화면을 끌어 돌려볼 수 있어요)</div>'; return; }
+      if(mode==='whatif'){
+        if(!s)return;
+        if(wif.state.phase==='pick'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">카드를 골라 자전을 직접 바꿔 봐요 — 과학자는 늘 "만약에?"에서 출발!</div>'; return; }
+        if(wif.state.phase==='predict'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">정답 걱정은 노노! 네 생각을 먼저 고르는 게 진짜 실험의 시작이에요.</div>'; return; }
+        if(wif.state.key==='stop'){ s.innerHTML='<div style="font-size:32px;color:#0B7285;">⏱ +'+Math.floor(hrCnt)+'시간</div><div style="font-size:18px;color:#5a7894;margin-top:3px;">시간이 흘러도 빨간 핀은 계속 낮 — 자전이 하루를 만들어요!</div>'; return; }
+        if(wif.state.key==='rev'){ s.innerHTML='<div style="font-size:20px;color:#0B7285;">🔄 거꾸로 도는 지구 — 빨간 핀의 아침이 어느 쪽에서 시작되는지 봐요!</div>'; return; }
+        s.innerHTML='<div style="font-size:20px;color:#0B7285;">⏩ 2배 자전 — 시계가 두 배 빨리! 낮도 밤도 절반씩이에요.</div>'; return;
+      }
       var tod=timeOfDay(hour,lat), nm,col,sub;
       if(tod==='noon'){nm='낮 · 정오 ☀️';col=C.day;sub='우리나라가 태양을 정면으로 봐요. 태양이 하늘 가장 높이 떠 있어요.';}
       else if(tod==='morning'){nm='낮 · 아침 🌤️';col=C.day;sub='우리나라가 막 태양 쪽으로 들어왔어요. 태양이 동쪽 하늘에 낮게 떠 있어요.';}

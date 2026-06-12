@@ -1,5 +1,5 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 달의 위상 (moon) v2  [과학 7호 · 천체 2호 · 3모드]
+   케이랩 도구 모듈 — 달의 위상 (moon) v3  [과학 7호 · 천체 2호 · 3층]
    6학년 지구와 달의 운동 — 달의 위상 변화.
    하이브리드:
      ▸ 3D 공전 배치(위에서 본 시점) — 지구 중심, 달이 궤도 공전, 태양 평행광.
@@ -11,7 +11,8 @@
      "달 모양이 변하는 건 달이 차고 이지러지는 게 아니라, 태양 빛 받는 면을
       지구에서 보는 각도가 달라지기 때문."
    - 의존: THREE (전역), window.KLab
-   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = '지구에서 본 달' 모양을 보고 답하기.
+   v3 · 3층: 미션 6단계(만들기↔생각형: 달빛=반사, 삭의 비밀) + 🌀 만약에
+       (달이 스스로 빛난다면=항상 보름달!, 공전 멈춤=모양 고정, 2배 공전=보름짜리 한 달).
    - config: { phase(0~360, 기본 180=보름), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
@@ -49,35 +50,77 @@
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
-    /* ───────────── 미션 ───────────── */
+    /* ───────────── 미션 6단계 (만들기 ↔ 생각형) ───────────── */
     var MISSIONS=[
-      { text:'🌒 달을 움직여 <b style="color:#7048E8;">초승달</b>(오른쪽 가는 낫)을 만들어 봐요 — 삭 직후예요!',
+      { type:'make', text:'🌒 달을 움직여 <b style="color:#7048E8;">초승달</b>(오른쪽 가는 낫)을 만들어 봐요 — 삭 직후예요!',
         check:function(){ return phaseInfo(phase).k==='wax_cre'; } },
-      { text:'🌓 달의 나이 약 7일 — <b style="color:#7048E8;">상현달</b>(오른쪽 반달)을 만들어 봐요!',
+      { type:'think', text:'🤔 방금 만든 초승달의 밝은 부분 — 저 빛은 <b style="color:#7048E8;">무엇 때문에</b> 빛날까요?',
+        ch:['태양 빛을 반사해서','달이 스스로 빛나서','지구 빛을 받아서'], a:0,
+        why:'달은 스스로 빛나지 않아요 — 거대한 거울처럼 태양 빛을 반사할 뿐! 그래서 태양 쪽 면만 밝아요.' },
+      { type:'make', text:'🌓 달의 나이 약 7일 — <b style="color:#7048E8;">상현달</b>(오른쪽 반달)을 만들어 봐요!',
         check:function(){ return phaseInfo(phase).k==='first'; } },
-      { text:'🌕 약 15일 — <b style="color:#7048E8;">보름달(망)</b>! 달이 태양 반대편으로 가면?',
+      { type:'make', text:'🌕 약 15일 — <b style="color:#7048E8;">보름달(망)</b>! 달이 태양 반대편으로 가면?',
         check:function(){ return phaseInfo(phase).k==='full'; } },
-      { text:'🌗 약 22일 — <b style="color:#7048E8;">하현달</b>(왼쪽 반달)까지 만들면 한 달 완성!',
+      { type:'think', set:function(){ phase=0; },
+        text:'🤔 지금 달은 <b style="color:#7048E8;">삭</b>(태양과 지구 사이) 위치예요. 달이 안 보이는 까닭은?',
+        ch:['빛 받는 면이 태양 쪽이라 우리에겐 그늘진 면만 보여서','달이 잠시 사라져서','구름이 가려서'], a:0,
+        why:'삭일 때도 달은 그 자리에! 다만 밝은 면이 전부 태양 쪽이라 지구에서는 깜깜한 뒷면만 보여요.' },
+      { type:'make', text:'🌗 약 22일 — <b style="color:#7048E8;">하현달</b>(왼쪽 반달)까지 만들면 한 달 완성!',
         check:function(){ return phaseInfo(phase).k==='last'; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    function advanceMission(){
+      mLock=false;
+      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      else mDone=true;
+      updateBars(); missionFoot(); render(); renderStatus();
+    }
+    function missionFoot(){
+      ui.thinkFoot(el,{foot:'.mn-foot',bar:'.mn-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+    }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      if(m.check()){
         mLock=true; ui.toast(el,true);
-        setTimeout(function(){
-          mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
-          updateBars();
-        },1500);
+        setTimeout(advanceMission,1500);
       }
     }
     function updateBars(){
       var host=el.querySelector('.mn-bars'); if(!host)return;
       if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
+      else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
     }
+
+    /* ───────────── 🌀 만약에 (달의 규칙을 바꿔 보기) ───────────── */
+    var dayCnt=0;
+    var WHATIF={
+      glow:{ icon:'💡', title:'달이 스스로 빛난다면?',
+        q:'달이 전구처럼 스스로 빛나면, 달의 모양 변화는 어떻게 될까요?',
+        ch:['항상 보름달 — 모양 변화가 사라져요','지금처럼 변해요','항상 초승달이에요'], a:0,
+        reveal:'위상의 비밀 = 반사! 스스로 빛나면 어느 위치에서 봐도 둥근 보름달이에요. 모양이 변하는 건 태양 빛을 받는 면을 보는 각도가 달라지기 때문이었던 거죠.',
+        tip:'▶ 공전 재생 — 달이 어디로 가도 \'지구에서 본 달\'이 늘 꽉 차 있어요!' },
+      stopm:{ icon:'⏸', title:'달이 공전을 멈춘다면?',
+        q:'달이 그 자리에 딱 멈추면, 밤마다 보는 달의 모양은?',
+        ch:['매일 밤 같은 모양이에요','계속 변해요','달이 안 보이게 돼요'], a:0,
+        reveal:'달 모양이 변하는 건 달이 지구를 공전하기 때문! 멈추면 평생 같은 달만 봐요 — 보름달에서 멈췄다면 매일 밤 보름달!',
+        tip:'▶ 시간 흐르기 — 날짜가 흘러도 달 모양이 그대로예요!' },
+      fastm:{ icon:'⏩', title:'달이 2배 빨리 공전한다면?',
+        q:'보름달에서 다음 보름달까지, 얼마나 걸릴까요?',
+        ch:['보름(약 15일)으로 짧아져요','한 달 그대로예요','두 달이 걸려요'], a:0,
+        reveal:'\'한 달\'의 길이는 달의 공전이 정해요! 2배 빨리 돌면 보름달→보름달이 15일 — 달력이 완전히 달라지겠죠?',
+        tip:'▶ 공전 재생 — 위상이 두 배 빨리 휙휙 바뀌어요!' }
+    };
+    var wif=ui.whatifEngine({
+      scenarios:WHATIF,
+      rebuild:function(){buildUI();},
+      footEl:function(){return el.querySelector('.mn-foot');},
+      onSelect:function(k){ playing=false; dayCnt=0; phase=(k==='stopm')?180:45; },
+      onPlay:function(){ dayCnt=0; },
+      onExit:function(){ playing=false; dayCnt=0; phase=180; }
+    });
 
     /* ───────────── 퀴즈 ('지구에서 본 달'을 보고 답하기) ───────────── */
     var QUIZ=[
@@ -114,18 +157,20 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var frozen=(wif.active()&&wif.state.key==='stopm');
       if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
+      else if(mode==='whatif'){ bar=wif.barHTML(); }
       el.innerHTML='<style>.mn-btn:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.mn-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#10183A,#5C7CFA,#FFF3BF,#5C7CFA,#10183A);outline:none;}'
         +'.mn-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'.mn-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
         + top + '<div class="mn-bars">'+bar+'</div>'
-        +(mode==='quiz'?'<div style="display:none;">':'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">')
-          +'<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 공전 재생')+'</button>'
-          +'<input class="mn-range" type="range" min="0" max="360" step="1" value="'+phase+'" style="width:min(46vw,330px);">'
+        +((mode==='quiz'||(mode==='whatif'&&!wif.active()))?'<div style="display:none;">':'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">')
+          +'<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 공전 재생'))+'</button>'
+          +'<input class="mn-range" type="range" min="0" max="360" step="1" value="'+phase+'" '+(frozen?'disabled':'')+' style="width:min(46vw,330px);'+(frozen?'opacity:.4;':'')+'">'
           +'<span class="mn-age" style="font-size:18px;font-weight:800;color:'+C.ink+';min-width:96px;text-align:center;font-family:inherit;"></span>'
         +'</div>'
         +'<div class="kl-stage-host" style="position:relative;"><div class="mn-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 75% 25%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
@@ -137,11 +182,15 @@
         +'<div class="mn-foot">'+foot+'</div>'
         +'<div class="mn-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; playing=false; phase=180;
+        wif.reset();
+        mode=m; mStep=0;mDone=false;mLock=false; playing=false; phase=180; dayCnt=0;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices(); render(); renderStatus();
+      initThree(); bind(); bindChoices();
+      if(mode==='whatif')wif.bind(el);
+      if(mode==='mission')missionFoot();
+      render(); renderStatus();
     }
 
     var stage,scene,camera,renderer,moonMesh,orbitR=4.2;
@@ -183,12 +232,14 @@
       var rad=phase*Math.PI/180;
       if(moonMesh) moonMesh.position.set(Math.cos(rad)*orbitR, 0, Math.sin(rad)*orbitR);
       // 2D 패널
-      var lit=el.querySelector('.mn-lit'); if(lit)lit.setAttribute('d', litPath(50, phase));
+      var lit=el.querySelector('.mn-lit'); if(lit)lit.setAttribute('d', litPath(50, (wif.active()&&wif.state.key==='glow')?180:phase));
       if(renderer&&scene&&camera) renderer.render(scene,camera);
     }
     function loop(now){ if(!alive)return;
       if(playing){ if(!last)last=now; var dt=Math.min((now-last)/1000,0.05); last=now;
-        phase=(phase+dt*30)%360;                  // 약 12초에 한 바퀴
+        if(wif.active()&&wif.state.key==='stopm'){ dayCnt+=dt*8; renderStatus(); render(); requestAnimationFrame(loop); return; }
+        var spd=(wif.active()&&wif.state.key==='fastm')?60:30;
+        phase=(phase+dt*spd)%360;                 // 약 12초에 한 바퀴 (2배 공전이면 6초)
         var r=el.querySelector('.mn-range'); if(r)r.value=phase;
         render(); renderStatus();
       }
@@ -198,6 +249,14 @@
     function ageStr(){ var d=phase/360*29.5; return '약 '+d.toFixed(1)+'일'; }
     function renderStatus(){
       if(mode==='quiz'){ var sq=el.querySelector('.mn-status'); if(sq)sq.innerHTML='<div style="font-size:19px;color:#8aa0b6;">오른쪽 위 \'지구에서 본 달\'과 달의 위치를 보고 답을 골라요!</div>'; return; }
+      if(mode==='whatif'){
+        var sw=el.querySelector('.mn-status'); if(!sw)return;
+        if(wif.state.phase==='pick'){ sw.innerHTML='<div style="font-size:19px;color:#8aa0b6;">카드를 골라 달의 규칙을 바꿔 봐요 — 상상이 곧 실험!</div>'; return; }
+        if(wif.state.phase==='predict'){ sw.innerHTML='<div style="font-size:19px;color:#8aa0b6;">정답 걱정 없이 네 생각을 먼저 골라요 — 그게 과학자의 첫걸음!</div>'; return; }
+        if(wif.state.key==='stopm'){ sw.innerHTML='<div style="font-size:32px;color:#0B7285;">📅 +'+Math.floor(dayCnt)+'일</div><div style="font-size:18px;color:#8aa0b6;margin-top:3px;">날짜가 흘러도 달 모양은 그대로 — 위상은 공전이 만들어요!</div>'; return; }
+        if(wif.state.key==='glow'){ sw.innerHTML='<div style="font-size:20px;color:#0B7285;">💡 스스로 빛나는 달 — 어느 위치든 \'지구에서 본 달\'이 꽉 차 있죠?</div>'; return; }
+        sw.innerHTML='<div style="font-size:20px;color:#0B7285;">⏩ 2배 공전 — 초승→보름→그믐이 두 배 빨리! 한 달이 보름이 됐어요.</div>'; return;
+      }
       var info=phaseInfo(phase), pct=Math.round(illum(phase)*100);
       var age=el.querySelector('.mn-age'); if(age)age.textContent=info.emo+' '+ageStr();
       var s=el.querySelector('.mn-status'), sub;
