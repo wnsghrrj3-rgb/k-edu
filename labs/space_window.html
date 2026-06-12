@@ -59,6 +59,7 @@
 </div>
 
 <div class="chip" id="titleChip">우주 창문 <span style="color:#5f769a;font-size:12px">시제품</span></div>
+<div class="chip" id="journeyChip" style="left:12px;top:52px;cursor:pointer;border-color:#7048E8">🧭 천체 여행</div>
 <div class="chip" id="stampChip">행성 도장 <b id="stampN">0</b>/8</div>
 <div class="chip" id="voiceChip" style="right:140px;cursor:pointer">🔊</div>
 <div class="chip" id="constChip" style="right:196px;cursor:pointer">✨ 별자리</div>
@@ -81,6 +82,18 @@
     <button id="seasonBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#1565C0;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #0b3d75;cursor:pointer">⏩ 다음 계절로</button>
     <button id="topBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#7048E8;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #4a2da3;cursor:pointer">🗺 위에서 보기</button>
     <button id="liftBtn" style="font-family:'Jua';font-size:15px;color:#fff;background:#FF8A3D;border:none;border-radius:12px;padding:8px 18px;box-shadow:0 4px 0 #b85a1a;cursor:pointer">🚀 우주로 돌아가기</button>
+  </div>
+</div>
+
+<div id="journeyPanel" style="position:fixed;left:50%;bottom:56px;transform:translateX(-50%);background:rgba(8,16,34,.9);border:2px solid #7048E8;border-radius:18px;padding:12px 16px;text-align:center;z-index:30;display:none;backdrop-filter:blur(6px);max-width:94vw">
+  <div style="font-size:18px;margin-bottom:2px"><b id="jTitle" style="color:#C9B3FF">—</b></div>
+  <div id="jDesc" style="font-size:14px;color:#bcd2f0">—</div>
+  <div id="jRead" style="font-size:15px;color:#FFC53D;margin-top:4px;min-height:20px"></div>
+  <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <button id="jPrev" style="font-family:'Jua';font-size:16px;color:#fff;background:#1565C0;border:none;border-radius:12px;padding:8px 20px;box-shadow:0 4px 0 #0b3d75;cursor:pointer">◀ 이전</button>
+    <button id="jSeason" style="display:none;font-family:'Jua';font-size:15px;color:#fff;background:#12B886;border:none;border-radius:12px;padding:8px 16px;box-shadow:0 4px 0 #0b7a59;cursor:pointer">⏩ 계절 바꾸기</button>
+    <button id="jNext" style="font-family:'Jua';font-size:16px;color:#fff;background:#1565C0;border:none;border-radius:12px;padding:8px 20px;box-shadow:0 4px 0 #0b3d75;cursor:pointer">다음 ▶</button>
+    <button id="jExit" style="font-family:'Jua';font-size:14px;color:#fff;background:#FF8A3D;border:none;border-radius:12px;padding:8px 14px;box-shadow:0 4px 0 #b85a1a;cursor:pointer">✖ 자유 탐험</button>
   </div>
 </div>
 
@@ -136,6 +149,7 @@ var bgStarMat = null;
   scene.add(new THREE.Points(g, bgStarMat));
 })();
 
+var sunGlowSp = null;
 /* ---------- 태양 ---------- */
 var sun = new THREE.Mesh(new THREE.SphereGeometry(14, 32, 20),
   new THREE.MeshBasicMaterial({color:0xFFD27A}));
@@ -147,7 +161,7 @@ scene.add(sun);
   gr.addColorStop(0,'rgba(255,225,160,0.9)'); gr.addColorStop(0.4,'rgba(255,190,90,0.35)'); gr.addColorStop(1,'rgba(255,170,60,0)');
   ctx.fillStyle = gr; ctx.fillRect(0,0,256,256);
   var sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), transparent:true, depthWrite:false}));
-  sp.scale.set(95,95,1); scene.add(sp);
+  sp.scale.set(95,95,1); scene.add(sp); sunGlowSp = sp;
 })();
 
 /* ---------- 행성 데이터 (크기·거리 = 체감용 압축 스케일) ---------- */
@@ -209,7 +223,7 @@ PLANETS.forEach(function(p){
     var moon = new THREE.Mesh(new THREE.SphereGeometry(0.8, 14, 10),
       new THREE.MeshStandardMaterial({color:0xBFC4CC, roughness:1}));
     moon.userData.isMoon = true;
-    m.add(moon); m.userData.moon = moon;
+    scene.add(moon); m.userData.moon = moon;   /* 월드 좌표로 지구를 따라다님 */
   }
 });
 
@@ -262,7 +276,7 @@ var mode = 'free';            /* free | observe */
 var target = null;            /* 관찰 중 행성 */
 var visited = {};
 function tapAt(x, y){
-  if (moved > 12 || mode==='earth') return;                      /* 드래그였으면 무시 */
+  if (moved > 12 || mode==='earth' || journey) return;                      /* 드래그였으면 무시 */
   ndc.set(x/innerWidth*2-1, -(y/innerHeight)*2+1);
   ray.setFromCamera(ndc, camera);
   /* 히트 판정 넉넉히: 행성 중심까지 화면 거리로 */
@@ -341,11 +355,12 @@ $('topBtn').addEventListener('click', function(){
     : (gyroOn ? '고개를 들어 밤하늘을 둘러보세요' : '드래그해서 밤하늘을 둘러보세요');
 });
 $('seasonBtn').addEventListener('click', nextSeason);
-$('constChip').addEventListener('click', function(){
-  constMode=!constMode;
-  this.style.background = constMode ? 'rgba(255,197,61,.25)' : 'rgba(10,20,40,.72)';
-  this.style.borderColor = constMode ? '#FFC53D' : 'rgba(120,160,220,.35)';
-});
+$('constChip').addEventListener('click', function(){ setConstMode(!constMode); });
+$('journeyChip').addEventListener('click', function(){ if(!journey) enterJourney(); });
+$('jPrev').addEventListener('click', function(){ goStop(jStop-1); });
+$('jNext').addEventListener('click', function(){ goStop(jStop+1); });
+$('jSeason').addEventListener('click', nextSeason);
+$('jExit').addEventListener('click', exitJourney);
 
 $('backBtn').addEventListener('click', function(){
   hush();
@@ -366,7 +381,7 @@ function updateArrow(){
   var ar = $('arrow');
   var tp = null;
   if (mode==='observe' && target) tp = target.position;
-  else if (mode==='earth' && !topView && guidePos && performance.now()<guideUntil) tp = guidePos;
+  else if (((mode==='earth' && !topView) || (journey && !topView)) && guidePos && performance.now()<guideUntil) tp = guidePos;
   if (!tp){ ar.style.display='none'; return; }
   var v = tp.clone().project(camera);
   var behind = v.z > 1;
@@ -430,7 +445,8 @@ function updateConsts(){
   var visNames=[];
   CONSTS.forEach(function(c){
     var vis = 1;
-    if (mode==='earth'){ var d=c.dir.dot(outward); vis=Math.max(0,Math.min(1,(d-0.05)/0.75)); }
+    var nightish = (mode==='earth') || (journey && JSTOPS[jStop].id==='stars');
+    if (nightish){ var d=c.dir.dot(outward); vis=Math.max(0,Math.min(1,(d-0.05)/0.75)); }
     if (constMode){
       c.sm.size=5; c.sm.opacity=0.25+0.75*vis;
       c.lm.opacity=0.85*vis*(mode==='earth'?1:0.9)+(mode==='earth'?0:0.05);
@@ -439,8 +455,9 @@ function updateConsts(){
       c.sm.size=2.8; c.sm.opacity=0.9;
       c.lm.opacity=0.08; c.lb.opacity=0;
     }
-    if (mode==='earth' && vis>0.55) visNames.push(c.nm);
+    if ((mode==='earth' || (journey && JSTOPS[jStop].id==='stars')) && vis>0.55) visNames.push(c.nm);
   });
+  window._visNames = visNames;
   if (bgStarMat) bgStarMat.opacity = constMode ? 0.22 : 1;
   if (mode==='earth'){
     var si=seasonIdx(earthMesh().userData.ang);
@@ -461,6 +478,8 @@ function seasonArrived(){
   b.textContent=(si===0?'🌸 ':si===1?'☀️ ':si===2?'🍂 ':'❄️ ')+SEASONS[si]+'이 왔어요!';
   b.style.opacity=1; setTimeout(function(){ b.style.opacity=0; }, 2100);
   say(SEASONS[si]+'이 왔어요. 이제 '+names.join('와 ')+'가 잘 보여요!');
+  /* 여행 중 남중고도 정거장이면 태양 쪽으로, 그 외엔 새 밤하늘 쪽으로 시선 안내 */
+  if (journey && JSTOPS[jStop].id==='noon'){ faceDir(noonCalc().sdir); return; }
   var out=earthMesh().position.clone().normalize();
   if(!gyroOn && !topView){
     var to=THREE.MathUtils.radToDeg(Math.atan2(-out.x,-out.z));
@@ -489,6 +508,128 @@ topGroup.visible=false; scene.add(topGroup);
   nightArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 95, 0xFFC53D, 22, 11);
   topGroup.add(nightArrow);
 })();
+
+/* ---------- 🧭 천체 여행 — 한 세계, 다섯 시점(프레지 문법) ----------
+ * 자전축: 겨울 위치(경도 315°) 방향으로 23.5° 기울임 → 계절·남중고도가 실원리로 발생.
+ * 검증: 여름 76.5° / 봄·가을 53° / 겨울 29.5° (서울 위도 37°N, 교과서 수치 일치) */
+var _Y=new THREE.Vector3(0,1,0), _qSpin=new THREE.Quaternion();
+var TILT_Q=(function(){
+  var D=Math.PI/180, lean=new THREE.Vector3(Math.cos(315*D),0,Math.sin(315*D));
+  var axis=_Y.clone().cross(lean).normalize();
+  return new THREE.Quaternion().setFromAxisAngle(axis, 23.5*D);
+})();
+var axisLine=(function(){
+  var g=new THREE.CylinderGeometry(0.06,0.06,2.8*3.6,8);
+  var m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xFFFFFF,transparent:true,opacity:0.75}));
+  m.visible=false; scene.add(m); return m;
+})();
+var spinBoost=false;
+
+/* 막대와 그림자 (남중고도 정거장) */
+var stickGroup=(function(){
+  var grp=new THREE.Group(); grp.visible=false; scene.add(grp);
+  var ground=new THREE.Mesh(new THREE.CircleGeometry(5.5,40),
+    new THREE.MeshBasicMaterial({color:0x2E6B3E,transparent:true,opacity:0.95,side:THREE.DoubleSide}));
+  ground.rotation.x=-Math.PI/2; grp.add(ground);
+  var stick=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.4,8),
+    new THREE.MeshBasicMaterial({color:0x8B5A2B}));
+  stick.position.y=0.7; grp.add(stick);
+  var shadow=new THREE.Mesh(new THREE.PlaneGeometry(1,0.22),
+    new THREE.MeshBasicMaterial({color:0x10301C,transparent:true,opacity:0.9,side:THREE.DoubleSide}));
+  shadow.rotation.x=-Math.PI/2; shadow.position.y=0.015; grp.add(shadow);
+  grp.userData={shadow:shadow}; return grp;
+})();
+
+/* 정오 관측 지점(위도 37°N, 태양 쪽 경도) — 매 프레임 실기하로 계산 */
+function noonCalc(){
+  var em=earthMesh(), P=_Y.clone().applyQuaternion(TILT_Q);
+  var sdir=em.position.clone().negate().normalize();             /* 지구→태양 */
+  var e=sdir.clone().sub(P.clone().multiplyScalar(sdir.dot(P))).normalize();
+  var D=Math.PI/180, lat=37*D;
+  var up=e.clone().multiplyScalar(Math.cos(lat)).add(P.clone().multiplyScalar(Math.sin(lat))).normalize();
+  var obs=em.position.clone().add(up.clone().multiplyScalar(em.userData.r*1.02));
+  var alt=90-THREE.MathUtils.radToDeg(Math.acos(Math.max(-1,Math.min(1,up.dot(sdir)))));
+  return {em:em, up:up, obs:obs, sdir:sdir, alt:alt};
+}
+
+/* 정거장 정의 — 자리(pos)는 매 프레임 추적(지구가 움직이므로) */
+var JSTOPS=[
+ {id:'solar', t:'태양계',            d:'여덟 행성이 태양 둘레를 돌아요'},
+ {id:'spin',  t:'지구의 자전 — 하루', d:'지구가 스스로 돌아서 낮과 밤이 생겨요'},
+ {id:'noon',  t:'태양의 남중고도',    d:'계절마다 한낮의 태양 높이가 달라요'},
+ {id:'orbit', t:'지구의 공전 — 1년',  d:'지구가 태양 둘레를 돌아서 계절이 생겨요'},
+ {id:'stars', t:'계절별 별자리',      d:'밤하늘은 태양 반대쪽 — 계절마다 별자리가 달라져요'}
+];
+var journey=false, jStop=0, transit=null, jPrevConst=null;
+function jPos(i){
+  var em=earthMesh(), out=em.position.clone().normalize();
+  if (JSTOPS[i].id==='solar') return HOME.clone();
+  if (JSTOPS[i].id==='spin'){
+    var tang=out.clone().cross(_Y).normalize();
+    return em.position.clone().add(tang.multiplyScalar(13)).add(new THREE.Vector3(0,3.5,0));
+  }
+  if (JSTOPS[i].id==='noon'){ var n=noonCalc(); return n.obs.clone().add(n.up.clone().multiplyScalar(1.1)); }
+  if (JSTOPS[i].id==='stars') return em.position.clone().add(out.multiplyScalar(em.userData.r*1.7)).add(new THREE.Vector3(0,em.userData.r*0.5,0));
+  return camera.position.clone(); /* orbit: 탑뷰 분기가 처리 */
+}
+function setConstMode(v){
+  constMode=v;
+  var c=$('constChip');
+  c.style.background = v ? 'rgba(255,197,61,.25)' : 'rgba(10,20,40,.72)';
+  c.style.borderColor = v ? '#FFC53D' : 'rgba(120,160,220,.35)';
+}
+function faceDir(d){
+  if (gyroOn) { guidePos=d.clone().multiplyScalar(900).add(camera.position); guideUntil=performance.now()+5000; return; }
+  var to=THREE.MathUtils.radToDeg(Math.atan2(-d.x,-d.z));
+  var dd=((to-dragLon+540)%360)-180;
+  faceAnim={from:dragLon, to:dragLon+dd, t:0};
+  dragLat=Math.max(-40,Math.min(40,THREE.MathUtils.radToDeg(Math.asin(d.y))));
+}
+function applyStop(i){
+  var st=JSTOPS[i];
+  /* 공통 리셋 */
+  spinBoost=false; stickGroup.visible=false;
+  if (sunGlowSp) sunGlowSp.scale.set(95,95,1);
+  topView=false; topGroup.visible=false;
+  if (jPrevConst!==null){ setConstMode(jPrevConst); jPrevConst=null; }
+  /* 정거장별 세팅 */
+  if (st.id==='spin'){ spinBoost=true; faceDir(earthMesh().position.clone().sub(camera.position).normalize()); }
+  if (st.id==='noon'){ stickGroup.visible=true; if(sunGlowSp) sunGlowSp.scale.set(26,26,1);
+    var n=noonCalc(); faceDir(n.sdir); say('막대 그림자를 보세요. 계절을 바꾸면 태양 높이와 그림자가 달라져요!'); }
+  if (st.id==='orbit'){ topView=true; topGroup.visible=true; }
+  if (st.id==='stars'){ jPrevConst=constMode; setConstMode(true);
+    faceDir(earthMesh().position.clone().normalize()); say('태양 반대쪽, 밤하늘이에요. 별자리를 찾아보세요!'); }
+  $('jTitle').textContent=(i+1)+'/5 · '+st.t;
+  $('jDesc').textContent=st.d;
+  $('jSeason').style.display=(st.id==='noon'||st.id==='orbit'||st.id==='stars')?'inline-block':'none';
+  $('jPrev').disabled=(i===0); $('jNext').disabled=(i===JSTOPS.length-1);
+}
+function goStop(i){
+  if (i<0||i>=JSTOPS.length) return;
+  hush();
+  var needFade = (JSTOPS[i].id==='orbit') || (JSTOPS[jStop].id==='orbit');
+  if (needFade){ fade(function(){ jStop=i; applyStop(i); }); }
+  else { jStop=i; applyStop(i); transit={fromPos:camera.position.clone(), t:0}; }
+}
+function enterJourney(){
+  hush(); mode='journey'; journey=true; target=null;
+  $('card').classList.remove('on'); $('earthPanel').style.display='none';
+  $('journeyPanel').style.display='block';
+  $('hint').textContent='◀ ▶ 로 정거장을 옮겨 보세요';
+  jStop=0; applyStop(0); transit={fromPos:camera.position.clone(), t:0};
+}
+function exitJourney(){
+  hush();
+  fade(function(){
+    journey=false; mode='free'; transit=null;
+    spinBoost=false; stickGroup.visible=false; topView=false; topGroup.visible=false;
+    if (sunGlowSp) sunGlowSp.scale.set(95,95,1);
+    if (jPrevConst!==null){ setConstMode(jPrevConst); jPrevConst=null; }
+    $('journeyPanel').style.display='none';
+    camera.position.copy(HOME);
+    $('hint').textContent = gyroOn ? '기기를 돌려 우주를 둘러보세요' : '드래그해서 우주를 둘러보세요';
+  });
+}
 
 /* ---------- 별똥별 ---------- */
 var meteors=[], meteorTimer=0, meteorNext=4+Math.random()*5;
@@ -536,9 +677,15 @@ function loop(ts){
     var p=m.userData;
     p.ang += dt * 0.05 * p.speed;
     m.position.set(Math.cos(p.ang)*p.d, 0, Math.sin(p.ang)*p.d);
-    m.rotation.y += dt*0.4;
-    if (p.moon){ p.moonAng=(p.moonAng||0)+dt*0.9; p.moon.position.set(Math.cos(p.moonAng)*5.2, 0.6, Math.sin(p.moonAng)*5.2); }
+    if (p.key==='earth'){
+      p.spin = (p.spin||0) + dt*(0.4 + (spinBoost?2.4:0));
+      m.quaternion.copy(TILT_Q).multiply(_qSpin.setFromAxisAngle(_Y, p.spin));
+    } else { m.rotation.y += dt*0.4; }
+    if (p.moon){ p.moonAng=(p.moonAng||0)+dt*0.9;
+      p.moon.position.copy(m.position).add(new THREE.Vector3(Math.cos(p.moonAng)*5.2, 0.6, Math.sin(p.moonAng)*5.2)); }
   });
+  if (axisLine){ axisLine.position.copy(earthMesh().position); axisLine.quaternion.copy(TILT_Q);
+    axisLine.visible = journey && (JSTOPS[jStop].id==='spin' || JSTOPS[jStop].id==='noon'); }
   /* 계절 빨리감기 애니메이션 */
   if (seasonAnim){
     seasonAnim.t += dt/1.4;
@@ -552,6 +699,36 @@ function loop(ts){
     var fk=Math.min(1,faceAnim.t), fe=1-Math.pow(1-fk,3);
     dragLon = faceAnim.from + (faceAnim.to-faceAnim.from)*fe;
     if (fk>=1) faceAnim=null;
+  }
+  /* 여행 모드: 정거장 자리를 추적(지구가 움직이므로) + 비행 전환 */
+  if (journey){
+    var jp=jPos(jStop);
+    if (transit){
+      transit.t += dt/1.5;
+      var tk=Math.min(1,transit.t), te=1-Math.pow(1-tk,3);
+      camera.position.copy(transit.fromPos).lerp(jp, te);
+      if (tk>=1) transit=null;
+    } else if (JSTOPS[jStop].id!=='orbit'){
+      camera.position.copy(jp);
+    }
+    /* 남중고도: 막대·그림자 실기하 갱신 */
+    if (JSTOPS[jStop].id==='noon'){
+      var n=noonCalc();
+      stickGroup.position.copy(n.obs);
+      stickGroup.quaternion.setFromUnitVectors(_Y, n.up);
+      var sh=stickGroup.userData.shadow;
+      var sLocal=n.sdir.clone().applyQuaternion(stickGroup.quaternion.clone().invert());
+      var az=Math.atan2(sLocal.z, sLocal.x);
+      var L=Math.max(0.3, Math.min(7, 1.4/Math.tan(Math.max(0.12, n.alt*Math.PI/180))));
+      sh.scale.set(L,1,1);
+      sh.position.set(-Math.cos(az)*L/2, 0.015, -Math.sin(az)*L/2);
+      sh.rotation.z=-az;
+      $('jRead').textContent='남중고도 약 '+n.alt.toFixed(0)+'° · '+SEASONS[seasonIdx(earthMesh().userData.ang)]+' · 그림자 '+(L<1.6?'짧아요':L<3.5?'보통':'길어요');
+    } else if (JSTOPS[jStop].id==='orbit'){
+      $('jRead').textContent='지금 계절: '+SEASONS[seasonIdx(earthMesh().userData.ang)];
+    } else if (JSTOPS[jStop].id==='stars'){
+      $('jRead').textContent=(window._visNames&&window._visNames.length)?('잘 보이는 별자리: '+window._visNames.join(' · ')):'';
+    } else { $('jRead').textContent=''; }
   }
   /* 지구 표면 모드: 지구 밤쪽에 서서 공전을 따라감 */
   if (mode==='earth' && !topView){
