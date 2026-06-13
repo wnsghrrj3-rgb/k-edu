@@ -12,7 +12,7 @@
   canvas{display:block}
 
   /* 시작 화면 */
-  #start{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 35%, #0b1d3a 0%, #02060f 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:50;text-align:center;padding:24px}
+  #start{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%, #0b1d3a 0%, #02060f 72%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50;text-align:center;padding:24px}
   #start h1{font-size:34px;letter-spacing:1px}
   #start p{font-size:16px;color:#9fb6d8;line-height:1.6}
   #startBtn{font-family:'Jua';font-size:24px;color:#fff;background:#1565C0;border:none;border-radius:18px;padding:16px 44px;box-shadow:0 6px 0 #0b3d75;cursor:pointer}
@@ -42,6 +42,27 @@
   #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
   #seasonBanner{position:fixed;top:20%;left:50%;transform:translateX(-50%);font-size:44px;color:#FFC53D;text-shadow:0 0 22px rgba(255,197,61,.65);z-index:45;opacity:0;transition:opacity .5s;pointer-events:none;white-space:nowrap}
 
+  /* ── 컨트롤 도크: 화면을 가리지 않게 진짜 바닥에 붙임 ── */
+  .dock{bottom:calc(env(safe-area-inset-bottom, 0px) + 10px) !important;}
+  /* 폰(세로·좁은 화면): 패널을 작게, 바닥에 딱 붙여 화면(우주)을 최대한 비움 */
+  @media (max-width:560px){
+    #card, #earthPanel, #journeyPanel{
+      left:8px !important; right:8px !important; transform:none !important;
+      bottom:calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+      max-width:none !important; min-width:0 !important; width:auto !important;
+      padding:9px 12px !important; border-radius:14px !important;
+    }
+    #card.on{transform:none !important;}
+    #card .nm{font-size:19px !important;}
+    #card .fact{font-size:13px !important;}
+    #journeyPanel #jTitle{font-size:15px}
+    #journeyPanel #jDesc{font-size:12.5px}
+    #journeyPanel button, #earthPanel button, #card button{font-size:13px !important;padding:7px 12px !important}
+    #seasonBanner{font-size:30px}
+    .chip{font-size:12px;padding:6px 10px}
+    #hint{font-size:12px;padding:7px 12px;bottom:auto;top:calc(env(safe-area-inset-top,0px) + 92px)}
+  }
+
   /* 완료 축하 */
   #fin{position:fixed;inset:0;background:rgba(2,6,15,.9);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:60;text-align:center;padding:24px}
   #fin h2{font-size:32px;color:#FFC53D}
@@ -70,14 +91,14 @@
 <div id="fade"></div>
 <div id="seasonBanner"></div>
 
-<div id="card">
+<div id="card" class="dock">
   <div class="nm" id="cardNm">지구</div>
   <div class="fact" id="cardFact"></div>
   <button id="backBtn">제자리로 돌아가기</button>
   <button id="landBtn" style="display:none;margin-top:8px;margin-left:8px;font-family:'Jua';font-size:16px;color:#fff;background:#12B886;border:none;border-radius:12px;padding:9px 20px;box-shadow:0 4px 0 #0b7a59;cursor:pointer">🌍 지구에 내려서 하늘 보기</button>
 </div>
 
-<div id="earthPanel" style="position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(8,16,34,.88);border:2px solid #12B886;border-radius:18px;padding:12px 18px;text-align:center;z-index:30;display:none;backdrop-filter:blur(6px);max-width:92vw">
+<div id="earthPanel" class="dock" style="position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(8,16,34,.88);border:2px solid #12B886;border-radius:18px;padding:12px 18px;text-align:center;z-index:30;display:none;backdrop-filter:blur(6px);max-width:92vw">
   <div style="font-size:18px;margin-bottom:3px"><b id="seasonNm" style="color:#FFC53D">—</b>의 밤하늘</div>
   <div style="font-size:14px;color:#bcd2f0">잘 보이는 별자리: <b id="visConsts" style="color:#fff">—</b></div>
   <div style="margin-top:9px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
@@ -87,7 +108,7 @@
   </div>
 </div>
 
-<div id="journeyPanel" style="position:fixed;left:50%;bottom:56px;transform:translateX(-50%);background:rgba(8,16,34,.9);border:2px solid #7048E8;border-radius:18px;padding:12px 16px;text-align:center;z-index:30;display:none;backdrop-filter:blur(6px);max-width:94vw">
+<div id="journeyPanel" class="dock" style="position:fixed;left:50%;bottom:56px;transform:translateX(-50%);background:rgba(8,16,34,.9);border:2px solid #7048E8;border-radius:18px;padding:12px 16px;text-align:center;z-index:30;display:none;backdrop-filter:blur(6px);max-width:94vw">
   <div style="font-size:18px;margin-bottom:2px"><b id="jTitle" style="color:#C9B3FF">—</b></div>
   <div id="jDesc" style="font-size:14px;color:#bcd2f0">—</div>
   <div id="jRead" style="font-size:15px;color:#FFC53D;margin-top:4px;min-height:20px"></div>
