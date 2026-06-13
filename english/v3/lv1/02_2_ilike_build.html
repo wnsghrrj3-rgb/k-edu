@@ -41,8 +41,12 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 .badge{display:inline-block;background:var(--primary-light);color:var(--primary);border-radius:99px;padding:4px 14px;font-size:17px;margin-bottom:8px}
 .concept-text{font-size:24px;line-height:1.6;margin:8px 0}
 .highlight{color:var(--primary)}
-/* 형광 강조 — 중요 포인트 (교수 순서 ①·②) */
-.hl{background:linear-gradient(transparent 55%,#FFE680 55%);padding:0 3px;font-weight:bold;color:var(--text)}
+/* 형광 강조 — 쓸리듯 칠해지는 애니메이션 (교수 순서 ⑦) */
+.hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
+.card.lit .hl{background-size:100% 100%}
+/* 순차 등장 — 정적 나열 금지 (교수 순서 ⑦) */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .45s ease,transform .45s cubic-bezier(.34,1.3,.64,1)}
+.reveal.show{opacity:1;transform:translateY(0)}
 .hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
 .kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
 .kay-icon{font-size:30px;flex-shrink:0}
@@ -131,11 +135,12 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
         <div class="kay-icon">💡</div>
         <div class="kay-text">단어 카드를 끼우면 <b>진짜 문장</b>이 돼요! 🏭<br>오늘 이 틀 하나만 손에 넣으면<br>좋아하는 걸 다 말할 수 있어요.</div>
       </div>
+      <div class="hint">👆 화면을 톡 누르면 소리가 나와요!</div>
     </div>
   </div>
 
   <!-- ━━━ S1 개념① 문장틀 명시 (교수순서 ①의 심장) ━━━ -->
-  <div class="slide">
+  <div class="slide" data-speak="I like a cat.">
     <div class="card">
       <div class="slide-title">📐 오늘의 문장틀을 봐요</div>
       <div class="frame">
@@ -372,13 +377,32 @@ function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audio
 function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
 function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
 function playClick(){playTone(880,'sine',.08,.2);}
-document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;}},{once:true});
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;
+  // 첫 터치 직후, 현재 슬라이드에 읽을 문장이 있으면 1회 낭독
+  const cur=document.querySelectorAll('.slide')[currentSlide];
+  if(cur&&cur.dataset.speak)setTimeout(()=>KTTS.sentence(cur.dataset.speak),200);
+}},{once:true});
 
+function revealSlide(slide){
+  const card=slide.querySelector('.card');if(!card)return;
+  card.classList.remove('lit');
+  const kids=[...card.children];
+  kids.forEach(el=>{el.classList.add('reveal');el.classList.remove('show');});
+  let d=120;
+  kids.forEach(el=>{setTimeout(()=>el.classList.add('show'),d);d+=240;});
+  // 모든 요소 등장 후 형광 칠 + 핵심 문장 자동 낭독("시범 먼저")
+  setTimeout(()=>{
+    card.classList.add('lit');
+    const speak=slide.dataset.speak;
+    if(speak&&unlocked)KTTS.sentence(speak);
+  },d+150);
+}
 function goSlide(n){
   const sl=document.querySelectorAll('.slide');KTTS.stop();
   sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
   setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
   currentSlide=n;sl[n].classList.add('active');updateUI();
+  revealSlide(sl[n]);
 }
 function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}
 function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
@@ -547,6 +571,7 @@ let tx=0;
 document.getElementById('slidesContainer').addEventListener('touchstart',e=>tx=e.touches[0].clientX);
 document.getElementById('slidesContainer').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d>0?prevSlide():nextSlide();}});
 updateUI();
+revealSlide(document.querySelectorAll('.slide')[0]);
 </script>
 </body>
 </html>
