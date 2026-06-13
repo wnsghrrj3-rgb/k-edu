@@ -206,96 +206,93 @@ var PLANETS = [
 var planetMeshes = [];
 /* 절차적 텍스처 — 외부 이미지 없이 캔버스로 행성 표면 생성 */
 function makeTex(key){
-  var W=1024, H=512;
+  var W=512, H=256;
   var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   var x=cv.getContext('2d');
+  var S=(key.charCodeAt(0)*131+key.length*977)|0;
 
-  /* 값 노이즈 (시드 기반, 부드러운 보간) */
+  /* ── 노이즈 그리드를 '미리' 만들어 둠 (픽셀 루프 안에서 재생성 금지 = 성능 핵심) ── */
   function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-  function noiseField(seed, gx, gy){
-    var rnd=mulberry(seed), g=[];
-    for(var i=0;i<(gx+1)*(gy+1);i++) g.push(rnd());
-    function sm(t){ return t*t*(3-2*t); }
-    return function(u,v){ /* u:0..1 경도(주기), v:0..1 위도 */
-      var fx=u*gx, fy=v*gy, ix=Math.floor(fx), iy=Math.floor(fy), tx=sm(fx-ix), ty=sm(fy-iy);
-      function val(cx,cy){ cx=((cx%gx)+gx)%gx; cy=Math.max(0,Math.min(gy,cy)); return g[cy*(gx+1)+cx]; }
-      var a=val(ix,iy),b=val(ix+1,iy),c=val(ix,iy+1),d=val(ix+1,iy+1);
-      return (a*(1-tx)+b*tx)*(1-ty)+(c*(1-tx)+d*tx)*ty;
-    };
+  function smooth(t){ return t*t*(3-2*t); }
+  function buildGrids(seed, oct){
+    var grids=[];
+    for(var o=0; o<oct; o++){
+      var fr=Math.pow(2,o), gx=4*fr, gy=2*fr, rnd=mulberry(seed+o*97), g=new Float32Array((gx+1)*(gy+1));
+      for(var i=0;i<g.length;i++) g[i]=rnd();
+      grids.push({gx:gx, gy:gy, g:g});
+    }
+    return grids;
   }
-  function fbm(seed, u, v, oct){ var s=0,amp=0.5,fr=1,tot=0;
-    for(var o=0;o<oct;o++){ s+=amp*noiseField(seed+o*97, 4*fr, 2*fr)(u,v); tot+=amp; amp*=0.5; fr*=2; }
+  function sampleFbm(grids, u, v){
+    var s=0, amp=0.5, tot=0;
+    for(var o=0;o<grids.length;o++){
+      var G=grids[o], gx=G.gx, gy=G.gy, g=G.g;
+      var fx=u*gx, fy=v*gy, ix=Math.floor(fx), iy=Math.floor(fy), tx=smooth(fx-ix), ty=smooth(fy-iy);
+      var x0=((ix%gx)+gx)%gx, x1=((ix+1)%gx+gx)%gx, y0=Math.max(0,Math.min(gy,iy)), y1=Math.max(0,Math.min(gy,iy+1));
+      var a=g[y0*(gx+1)+x0], b=g[y0*(gx+1)+x1], c=g[y1*(gx+1)+x0], d=g[y1*(gx+1)+x1];
+      s += amp*((a*(1-tx)+b*tx)*(1-ty)+(c*(1-tx)+d*tx)*ty); tot+=amp; amp*=0.5;
+    }
     return s/tot;
   }
   function lerpC(c1,c2,t){ return [c1[0]+(c2[0]-c1[0])*t, c1[1]+(c2[1]-c1[1])*t, c1[2]+(c2[2]-c1[2])*t]; }
-  function px(img,i,c){ img[i]=c[0]; img[i+1]=c[1]; img[i+2]=c[2]; img[i+3]=255; }
 
-  var img=x.createImageData(W,H), D=img.data, S=(key.charCodeAt(0)*131+key.length*977)|0;
-
+  var img=x.createImageData(W,H), D=img.data;
+  var GA=buildGrids(S,5);                       /* 주 지형 */
   function paint(fn){
-    for(var py=0;py<H;py++) for(var pxx=0;pxx<W;pxx++){
-      var u=pxx/W, v=py/H, c=fn(u,v,pxx,py); px(D,(py*W+pxx)*4,c);
-    }
+    for(var py=0;py<H;py++){ var v=py/H;
+      for(var pxx=0;pxx<W;pxx++){ var u=pxx/W, c=fn(u,v); var i=(py*W+pxx)*4;
+        D[i]=c[0]; D[i+1]=c[1]; D[i+2]=c[2]; D[i+3]=255; } }
     x.putImageData(img,0,0);
   }
 
   if(key==='earth'){
-    var ocean=[28,78,150], deep=[16,52,110], land=[64,140,72], hi=[150,170,90], sand=[200,180,120], ice=[235,242,250];
-    paint(function(u,v){
-      var n=fbm(S,u,v,6), polar=Math.abs(v-0.5)*2;
-      var c = n<0.5 ? lerpC(deep,ocean,n/0.5) : (n<0.56 ? sand : lerpC(land,hi,Math.min(1,(n-0.56)/0.4)));
-      if(polar>0.82){ var t=(polar-0.82)/0.18; c=lerpC(c,ice,Math.min(1,t*1.4)); }   /* 극관 */
-      return c;
-    });
-    /* 구름 — 별도 fbm로 흰 농도 */
-    var cd=x.getImageData(0,0,W,H), CD=cd.data;
+    var deep=[16,52,110],ocean=[28,82,156],sand=[202,182,124],land=[60,138,70],hi=[150,168,92],ice=[236,242,250];
+    paint(function(u,v){ var n=sampleFbm(GA,u,v), polar=Math.abs(v-0.5)*2, c;
+      if(n<0.5) c=lerpC(deep,ocean,n/0.5);
+      else if(n<0.55) c=sand;
+      else c=lerpC(land,hi,Math.min(1,(n-0.55)/0.4));
+      if(polar>0.84) c=lerpC(c,ice,Math.min(1,(polar-0.84)/0.16*1.4));
+      return c; });
+    /* 구름 — 그리드 하나 더, 합성 */
+    var GC=buildGrids(S+555,4), cd=x.getImageData(0,0,W,H), CD=cd.data;
     for(var py=0;py<H;py++) for(var pxx=0;pxx<W;pxx++){
-      var cl=fbm(S+555, pxx/W, py/H, 5); cl=Math.max(0,(cl-0.52)/0.48);
-      var i=(py*W+pxx)*4, a=cl*0.85;
-      CD[i]=CD[i]*(1-a)+255*a; CD[i+1]=CD[i+1]*(1-a)+255*a; CD[i+2]=CD[i+2]*(1-a)+255*a;
+      var cl=sampleFbm(GC,pxx/W,py/H); cl=Math.max(0,(cl-0.52)/0.48);
+      var i=(py*W+pxx)*4, a=cl*0.8;
+      CD[i]+= (255-CD[i])*a; CD[i+1]+=(255-CD[i+1])*a; CD[i+2]+=(255-CD[i+2])*a;
     }
     x.putImageData(cd,0,0);
   }
   else if(key==='mars'){
-    var base=[200,96,62], dark=[150,62,40], bright=[224,140,100], capc=[238,228,222];
-    paint(function(u,v){ var n=fbm(S,u,v,6), polar=Math.abs(v-0.5)*2;
+    var base=[200,96,62],dark=[150,62,40],bright=[224,140,100],cap=[238,228,222];
+    paint(function(u,v){ var n=sampleFbm(GA,u,v), polar=Math.abs(v-0.5)*2;
       var c=lerpC(dark, n>0.55?bright:base, n);
-      if(polar>0.9){ c=lerpC(c,capc,(polar-0.9)/0.1); }
-      return c; });
+      if(polar>0.9) c=lerpC(c,cap,(polar-0.9)/0.1); return c; });
   }
   else if(key==='mercury'){
-    var m1=[120,110,100], m2=[80,72,66], m3=[160,150,140];
-    paint(function(u,v){ var n=fbm(S,u,v,6); return lerpC(m2, n>0.6?m3:m1, n); });
-    /* 크레이터 */
-    for(var k=0;k<60;k++){ var rr=4+Math.random()*16, cx=Math.random()*W, cy=40+Math.random()*(H-80);
-      var gr=x.createRadialGradient(cx,cy,1,cx,cy,rr); gr.addColorStop(0,'rgba(60,54,48,0.5)'); gr.addColorStop(0.7,'rgba(180,168,156,0.35)'); gr.addColorStop(1,'rgba(120,110,100,0)');
+    var m1=[120,110,100],m2=[80,72,66],m3=[160,150,140];
+    paint(function(u,v){ var n=sampleFbm(GA,u,v); return lerpC(m2, n>0.6?m3:m1, n); });
+    for(var k=0;k<40;k++){ var rr=3+Math.random()*12, cx=Math.random()*W, cy=20+Math.random()*(H-40);
+      var gr=x.createRadialGradient(cx,cy,1,cx,cy,rr); gr.addColorStop(0,'rgba(60,54,48,0.5)'); gr.addColorStop(0.7,'rgba(180,168,156,0.32)'); gr.addColorStop(1,'rgba(120,110,100,0)');
       x.fillStyle=gr; x.beginPath(); x.arc(cx,cy,rr,0,7); x.fill(); }
   }
-  else if(key==='venus' || key==='jupiter' || key==='saturn' || key==='uranus' || key==='neptune'){
-    /* 가스 행성 — 위도 줄무늬 + 난류 흐름 */
-    var pal={
-      venus:[[232,196,130],[244,216,160],[214,176,108]],
+  else if(key==='venus'||key==='jupiter'||key==='saturn'||key==='uranus'||key==='neptune'){
+    var pal={venus:[[232,196,130],[244,216,160],[214,176,108]],
       jupiter:[[214,168,116],[180,128,80],[234,210,168],[150,96,60]],
       saturn:[[226,206,150],[210,184,124],[238,224,180]],
       uranus:[[150,212,224],[128,196,212],[170,224,234]],
-      neptune:[[64,96,200],[48,72,176],[96,128,224]]
-    }[key];
-    paint(function(u,v){
-      var warp=fbm(S+12,u,v,4)*0.10;                 /* 줄무늬를 살짝 흐트러뜨림 */
+      neptune:[[64,96,200],[48,72,176],[96,128,224]]}[key];
+    var GW=buildGrids(S+12,3);
+    paint(function(u,v){ var warp=sampleFbm(GW,u,v)*0.10;
       var b=(v+warp)*pal.length, idx=Math.floor(b)%pal.length, t=b-Math.floor(b);
       var c=lerpC(pal[idx], pal[(idx+1)%pal.length], t);
-      var fine=fbm(S+30,u*1,v*6,4); return lerpC(c, [c[0]*1.08,c[1]*1.08,c[2]*1.08], fine*0.5);
-    });
-    if(key==='jupiter'){ /* 대적점 */
-      var gx=W*0.7, gy=H*0.62; var gr=x.createRadialGradient(gx,gy,4,gx,gy,46);
+      var fine=sampleFbm(GA,u,v); return lerpC(c,[c[0]*1.07,c[1]*1.07,c[2]*1.07],fine*0.4); });
+    if(key==='jupiter'){ var gx=W*0.7, gy=H*0.62, gr=x.createRadialGradient(gx,gy,3,gx,gy,30);
       gr.addColorStop(0,'rgba(200,80,50,0.95)'); gr.addColorStop(0.6,'rgba(214,120,86,0.8)'); gr.addColorStop(1,'rgba(214,120,86,0)');
-      x.fillStyle=gr; x.save(); x.translate(gx,gy); x.scale(1,0.62); x.beginPath(); x.arc(0,0,46,0,7); x.fill(); x.restore();
-    }
+      x.fillStyle=gr; x.save(); x.translate(gx,gy); x.scale(1,0.62); x.beginPath(); x.arc(0,0,30,0,7); x.fill(); x.restore(); }
   }
-  else { paint(function(u,v){ var n=fbm(S,u,v,5); return lerpC([90,90,110],[160,160,180],n); }); }
+  else { paint(function(u,v){ var n=sampleFbm(GA,u,v); return lerpC([90,90,110],[160,160,180],n); }); }
 
-  var t=new THREE.CanvasTexture(cv);
-  t.anisotropy=4; return t;
+  var t=new THREE.CanvasTexture(cv); t.anisotropy=4; return t;
 }
 PLANETS.forEach(function(p){
   var m = new THREE.Mesh(new THREE.SphereGeometry(p.r, 48, 32),
