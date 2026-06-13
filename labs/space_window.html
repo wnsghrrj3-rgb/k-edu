@@ -250,6 +250,37 @@ PLANETS.forEach(function(p){
   }
 });
 
+/* ---------- 행성 이름표 (항상 카메라를 향함) ---------- */
+function makePlanetLabel(t){
+  var cv=document.createElement('canvas'); cv.width=256; cv.height=72;
+  var x=cv.getContext('2d');
+  x.font='38px Jua, sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+  x.lineWidth=7; x.strokeStyle='rgba(0,10,28,0.9)'; x.strokeText(t,128,40);   /* 외곽선 — 배경 무관 가독 */
+  x.fillStyle='#ffffff'; x.fillText(t,128,40);
+  var m=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv), transparent:true, depthWrite:false, depthTest:false});
+  var sp=new THREE.Sprite(m); sp.scale.set(34,9.6,1); sp.renderOrder=999; return sp;
+}
+var planetLabels=[];
+planetMeshes.forEach(function(m){
+  var lb=makePlanetLabel(m.userData.nm);
+  scene.add(lb); planetLabels.push({sp:lb, planet:m});
+});
+function updatePlanetLabels(){
+  /* 여행/지구표면 모드에선 이름표가 방해되니 자유 탐험·관찰에서만 */
+  var show = (mode==='free' || mode==='observe') && !topView;
+  planetLabels.forEach(function(L){
+    if (!show){ L.sp.visible=false; return; }
+    var p=L.planet, wp=p.position;
+    L.sp.visible=true;
+    L.sp.position.set(wp.x, wp.y + p.userData.r + 3.4, wp.z);   /* 행성 위에 띄움 */
+    /* 카메라와의 거리로 크기·투명도 — 가까운 건 또렷·크게, 먼 건 작고 흐리게 */
+    var dist=camera.position.distanceTo(wp);
+    var sc=THREE.MathUtils.clamp(dist*0.045, 7, 60);
+    L.sp.scale.set(sc, sc*0.282, 1);
+    L.sp.material.opacity=THREE.MathUtils.clamp(1 - (dist-40)/520, 0.18, 1);
+  });
+}
+
 /* ---------- 시선 컨트롤: 자이로(있으면) + 드래그(항상) ---------- */
 var lookQuat = new THREE.Quaternion();
 var gyroOn = false, gyro = {alpha:0, beta:0, gamma:0};
@@ -780,6 +811,7 @@ function loop(ts){
   }
   updateMeteors(dt);
   updateConsts();
+  updatePlanetLabels();
   if (topView){
     var em2=earthMesh(), out2=em2.position.clone().normalize();
     earthRing.position.copy(em2.position).setY(0.3);
