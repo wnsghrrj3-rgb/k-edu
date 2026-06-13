@@ -44,9 +44,14 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 /* 형광 강조 — 쓸리듯 칠해지는 애니메이션 (교수 순서 ⑦) */
 .hl{background:linear-gradient(transparent 58%,#FFE680 58%);background-repeat:no-repeat;background-size:0% 100%;transition:background-size .55s cubic-bezier(.4,0,.2,1) .15s;padding:0 3px;font-weight:bold;color:var(--text)}
 .card.lit .hl{background-size:100% 100%}
-/* 순차 등장 — 정적 나열 금지 (교수 순서 ⑦) */
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .45s ease,transform .45s cubic-bezier(.34,1.3,.64,1)}
-.reveal.show{opacity:1;transform:translateY(0)}
+/* 탭하면 휙 날아오는 단계 등장 (교수 순서 ⑦ — 자동 흐름 ❌, 학생 탭 ✓) */
+.step{opacity:0;transform:translateY(34px) scale(.82);transition:opacity .26s ease,transform .42s cubic-bezier(.34,1.6,.5,1);pointer-events:none}
+.step.in{opacity:1;transform:none;pointer-events:auto}
+/* 중요 설명 — 크게 */
+.concept-big{font-size:30px;line-height:1.5;margin:10px 0}
+.tap-hint{font-size:18px;color:var(--primary);margin-top:10px;animation:tapBlink 1.1s infinite}
+@keyframes tapBlink{0%,100%{opacity:.4}50%{opacity:1}}
+.tap-hint.done{color:var(--green);animation:none}
 .hl-slot{background:var(--yellow-light);border:2px dashed var(--yellow);border-radius:8px;padding:1px 8px;color:#e6a800}
 .kay-says{display:flex;align-items:center;gap:12px;background:var(--primary-light);border-radius:16px;padding:12px 16px;margin:10px 0;text-align:left}
 .kay-icon{font-size:30px;flex-shrink:0}
@@ -125,53 +130,56 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <div class="slides" id="slidesContainer">
 
-  <!-- ━━━ S0 표지 — 오늘 배울 것 예고 ━━━ -->
-  <div class="slide active">
+  <!-- ━━━ S0 표지 — 오늘 배울 것 예고 (탭 step) ━━━ -->
+  <div class="slide active" data-steps>
     <div class="card">
-      <div class="badge">영어 Lv1 · 문장 만들기 2-2</div>
-      <div class="pic">🧱➕🧱➕🧱</div>
-      <div class="concept-text">오늘은 <span class="hl">I like ___</span> 문장을 만들어요!<br><span style="font-size:18px;color:var(--subtext)">= 나는 ___가 좋아</span></div>
-      <div class="kay-says">
+      <div class="badge step">영어 Lv1 · 문장 만들기 2-2</div>
+      <div class="pic step" style="font-size:90px">😊<span style="display:inline-block;animation:beat 1s infinite">💗</span></div>
+      <div class="concept-big step">오늘은 <span class="hl">I like ___</span><br>문장을 만들어요!</div>
+      <div class="concept-text step" style="font-size:19px;color:var(--subtext)">= 나는 ___가 좋아</div>
+      <div class="kay-says step">
         <div class="kay-icon">💡</div>
-        <div class="kay-text">단어 카드를 끼우면 <b>진짜 문장</b>이 돼요! 🏭<br>오늘 이 틀 하나만 손에 넣으면<br>좋아하는 걸 다 말할 수 있어요.</div>
+        <div class="kay-text">좋아하는 걸 영어로 말해 봐요!<br>이 틀 하나면 다 말할 수 있어요 😎</div>
       </div>
-      <div class="hint">👆 화면을 톡 누르면 소리가 나와요!</div>
+      <div class="tap-hint step" id="hint0">👆 화면을 톡 누르면 계속 — 소리도 나와요!</div>
     </div>
   </div>
 
-  <!-- ━━━ S1 개념① 문장틀 명시 (교수순서 ①의 심장) ━━━ -->
-  <div class="slide" data-speak="I like a cat.">
+  <!-- ━━━ S1 개념① 문장틀 명시 (탭 step — I→like→___ 하나씩 휙) ━━━ -->
+  <div class="slide" data-steps>
     <div class="card">
-      <div class="slide-title">📐 오늘의 문장틀을 봐요</div>
+      <div class="slide-title step">📐 오늘의 문장틀을 봐요</div>
       <div class="frame">
-        <div class="fbox"><div class="fword" onclick="KTTS.word('I')">I</div><div class="fko">나는</div></div>
-        <div class="fbox"><div class="fword" onclick="KTTS.word('like')">like</div><div class="fko">좋아해</div></div>
-        <div class="fbox"><div class="fword blank">___</div><div class="fko">좋아하는 것</div></div>
+        <div class="fbox step"><div class="fword" data-word="I">I</div><div class="fko">나는</div></div>
+        <div class="fbox step"><div class="fword" data-word="like">like</div><div class="fko">좋아해</div></div>
+        <div class="fbox step"><div class="fword blank">___</div><div class="fko">좋아하는 것</div></div>
       </div>
-      <div class="concept-text" style="font-size:20px">맨 뒤 <span class="hl-slot">___</span> 칸에 <span class="hl">좋아하는 것</span>을 넣어요.</div>
-      <div class="kay-says">
+      <div class="concept-big step">맨 뒤 <span class="hl-slot">___</span> 칸에<br><span class="hl">좋아하는 것</span>을 넣어요!</div>
+      <div class="kay-says step" data-speak="I like a cat.">
         <div class="kay-icon">💡</div>
-        <div class="kay-text">한국어는 "나는 <b>고양이가</b> 좋아"처럼 좋아하는 게 <b>가운데</b>! 🇰🇷<br>영어는 <span class="hl">맨 뒤</span>에 와요 — "I like <b>a cat</b>". 자리만 기억해요!</div>
+        <div class="kay-text">한국어는 "나는 <b>고양이가</b> 좋아"처럼 좋아하는 게 <b>가운데</b>! 🇰🇷<br>영어는 <span class="hl">맨 뒤</span>에 와요 — "I like <b>a cat</b>".</div>
       </div>
+      <div class="tap-hint step">👆 톡 톡! 하나씩 나와요</div>
     </div>
   </div>
 
-  <!-- ━━━ S2 카드 소환 — 오늘 쓸 5장 전부 + a 신출 설명 (교수순서 ②③) ━━━ -->
-  <div class="slide">
+  <!-- ━━━ S2 카드 소환 — 오늘 쓸 5장 전부 + a 신출 설명 (탭 step) ━━━ -->
+  <div class="slide" data-steps>
     <div class="card">
-      <div class="slide-title">🔁 오늘 쓸 단어 카드 — 다 눌러 들어 봐!</div>
+      <div class="slide-title step">🔁 오늘 쓸 단어 카드 — 눌러서 들어 봐!</div>
       <div class="wcards">
-        <div class="wcard" onclick="KTTS.word('I')">I<span class="ko">나는</span></div>
-        <div class="wcard" onclick="KTTS.word('like')">like<span class="ko">좋아해</span></div>
-        <div class="wcard" onclick="KTTS.word('you')">you<span class="ko">너</span></div>
-        <div class="wcard" onclick="KTTS.word('it')">it<span class="ko">그것</span></div>
-        <div class="wcard isnew" onclick="KTTS.word('a')">a<span class="ko">한 개</span></div>
+        <div class="wcard step" data-word="I">I<span class="ko">나는</span></div>
+        <div class="wcard step" data-word="like">like<span class="ko">좋아해</span></div>
+        <div class="wcard step" data-word="you">you<span class="ko">너</span></div>
+        <div class="wcard step" data-word="it">it<span class="ko">그것</span></div>
+        <div class="wcard step isnew" data-word="a">a<span class="ko">한 개</span></div>
       </div>
-      <div class="concept-text" style="font-size:19px"><span class="hl">a</span>는 처음 나왔죠? <b>"하나"</b>를 말할 때 이름 앞에 붙는 꼬마예요 — <span class="hl">a cat</span>(고양이 한 마리) 🐱</div>
-      <div class="kay-says">
+      <div class="concept-big step"><span class="hl">a</span>는 처음 나왔죠?<br><b>"하나"</b>를 말할 때 이름 앞에 붙어요 — <span class="hl">a cat</span> 🐱</div>
+      <div class="kay-says step">
         <div class="kay-icon">💡</div>
-        <div class="kay-text">다섯 친구가 오늘의 재료예요. <b>한 장도 안 빼고</b> 다 써볼 거예요! 가요 😎</div>
+        <div class="kay-text">다섯 친구가 오늘의 재료예요.<br><b>한 장도 안 빼고</b> 다 써볼 거예요! 가요 😎</div>
       </div>
+      <div class="tap-hint step">👆 톡 톡! 카드가 하나씩 와요</div>
     </div>
   </div>
 
@@ -369,7 +377,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
 
 <script src="../engine/k-tts.js"></script>
 <script>
-let currentSlide=0,score=0,combo=0,answered={},unlocked=false;
+let currentSlide=0,score=0,combo=0,answered={},unlocked=false,justUnlocked=false;
 const TOTAL=15;
 let audioCtx=null;
 function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
@@ -377,32 +385,52 @@ function playTone(f,t,d,g=.3){getCtx();audioCtx.resume().then(()=>{const o=audio
 function playCorrect(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',.25),i*80));}
 function playWrong(){[220,196].forEach((f,i)=>setTimeout(()=>playTone(f,'sawtooth',.3),i*100));}
 function playClick(){playTone(880,'sine',.08,.2);}
-document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;
-  // 첫 터치 직후, 현재 슬라이드에 읽을 문장이 있으면 1회 낭독
+document.body.addEventListener('pointerdown',()=>{if(!unlocked){KTTS.unlock();unlocked=true;justUnlocked=true;setTimeout(()=>justUnlocked=false,350);
+  // 첫 터치 직후, 현재 step에 읽을 게 있으면 1회 낭독
   const cur=document.querySelectorAll('.slide')[currentSlide];
-  if(cur&&cur.dataset.speak)setTimeout(()=>KTTS.sentence(cur.dataset.speak),200);
+  const last=cur&&cur.querySelectorAll('.step.in');
+  if(last&&last.length){const el=last[last.length-1];if(el.dataset.speak)setTimeout(()=>KTTS.sentence(el.dataset.speak),200);}
 }},{once:true});
 
-function revealSlide(slide){
-  const card=slide.querySelector('.card');if(!card)return;
-  card.classList.remove('lit');
-  const kids=[...card.children];
-  kids.forEach(el=>{el.classList.add('reveal');el.classList.remove('show');});
-  let d=120;
-  kids.forEach(el=>{setTimeout(()=>el.classList.add('show'),d);d+=240;});
-  // 모든 요소 등장 후 형광 칠 + 핵심 문장 자동 낭독("시범 먼저")
-  setTimeout(()=>{
-    card.classList.add('lit');
-    const speak=slide.dataset.speak;
-    if(speak&&unlocked)KTTS.sentence(speak);
-  },d+150);
+/* ── 탭 기반 단계 등장 (자동 흐름 ❌ — 학생이 탭하면 휙 ✓) ── */
+let stepState={};  // 슬라이드별 현재 노출 step 수
+function setupSlide(slide,idx){
+  slide.classList.add('lit');  // 형광은 진입 즉시 칠
+  const steps=slide.querySelectorAll('.step');
+  if(!steps.length)return;
+  if(stepState[idx]===undefined){
+    steps.forEach(s=>s.classList.remove('in'));
+    // 첫 조각은 진입과 동시에 등장
+    steps[0].classList.add('in');stepState[idx]=1;
+    speakStep(steps[0]);
+  }else{
+    // 다시 돌아온 슬라이드는 전부 보이게
+    steps.forEach(s=>s.classList.add('in'));stepState[idx]=steps.length;
+  }
+  updateTapHint(slide,idx);
+}
+function speakStep(el){const s=el.dataset.speak;if(s&&unlocked)KTTS.sentence(s);}
+function advanceStep(slide,idx){
+  const steps=[...slide.querySelectorAll('.step')];
+  if(stepState[idx]<steps.length){
+    const el=steps[stepState[idx]];
+    el.classList.add('in');playClick();speakStep(el);
+    stepState[idx]++;updateTapHint(slide,idx);
+    return true;  // step 진행함
+  }
+  return false;  // 다 나옴
+}
+function updateTapHint(slide,idx){
+  const steps=slide.querySelectorAll('.step');
+  const hint=slide.querySelector('.tap-hint');
+  if(hint&&stepState[idx]>=steps.length){hint.textContent='✅ 다 봤어요! 아래 다음 ▶ 을 눌러요';hint.classList.add('done');}
 }
 function goSlide(n){
   const sl=document.querySelectorAll('.slide');KTTS.stop();
   sl[currentSlide].classList.remove('active');sl[currentSlide].classList.add('out');
   setTimeout(()=>sl.forEach(s=>s.classList.remove('out')),400);
   currentSlide=n;sl[n].classList.add('active');updateUI();
-  revealSlide(sl[n]);
+  setupSlide(sl[n],n);
 }
 function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}
 function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
@@ -567,11 +595,26 @@ document.querySelectorAll('#myChoices .choice-btn').forEach(b=>{
   });
 });
 
-let tx=0;
-document.getElementById('slidesContainer').addEventListener('touchstart',e=>tx=e.touches[0].clientX);
-document.getElementById('slidesContainer').addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50){d>0?prevSlide():nextSlide();}});
+let tx=0,ty=0;
+const sc=document.getElementById('slidesContainer');
+sc.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+sc.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}  // 좌우 스와이프 = 슬라이드 넘김
+});
+function d_swipe(dx){dx>0?prevSlide():nextSlide();}
+/* 탭 = step 진행 (step 슬라이드 한정). 인터랙션 버튼·발음 카드는 그대로. */
+sc.addEventListener('click',e=>{
+  if(justUnlocked)return;                                // 첫 탭은 소리 풀기만
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  if(!slide.hasAttribute('data-steps'))return;          // 개념 step 슬라이드만
+  if(e.target.closest('.nav-btn,.listen-btn,.voice-btn,.choice-btn'))return;
+  if(advanceStep(slide,currentSlide))return;            // 아직 나올 게 있으면 등장
+  const w=e.target.closest('[data-word]');              // 다 나왔으면 단어 발음
+  if(w)KTTS.word(w.dataset.word);
+});
 updateUI();
-revealSlide(document.querySelectorAll('.slide')[0]);
+setupSlide(document.querySelectorAll('.slide')[0],0);
 </script>
 </body>
 </html>
