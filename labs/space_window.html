@@ -55,8 +55,10 @@
   <h1>🪐 우주 창문</h1>
   <p>지금부터 이 태블릿은 <b>우주로 뚫린 창문</b>이에요.<br>기기를 들고 천천히 한 바퀴 돌아 보세요.<br>행성을 만나면 <b>톡!</b> 눌러서 가까이 가 볼 수 있어요.</p>
   <button id="startBtn">우주로 나가기</button>
-  <p style="font-size:12.5px;color:#5f769a">케이랩 시제품 · 자이로가 없으면 손가락으로 둘러볼 수 있어요</p>
+  <p style="font-size:12.5px;color:#5f769a">📱 폰·태블릿은 들고 돌리면 보여요 · 안 되면 손가락 드래그로</p>
 </div>
+
+<div id="dragBadge" style="position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:rgba(18,184,134,.92);color:#fff;padding:10px 18px;border-radius:14px;font-size:15px;z-index:35;display:none">👆 손가락으로 화면을 드래그해 보세요</div>
 
 <div class="chip" id="titleChip">우주 창문 <span style="color:#5f769a;font-size:12px">시제품</span></div>
 <div class="chip" id="journeyChip" style="left:12px;top:52px;cursor:pointer;border-color:#7048E8">🧭 천체 여행</div>
@@ -243,16 +245,30 @@ function updateLook(){
     lookQuat.setFromEuler(eul);
     lookQuat.multiply(qX);
     lookQuat.multiply(q0.setFromAxisAngle(zee, -screenAngle()));
+    /* 영점 보정: 처음 든 방향(yaw)을 장면 정면으로 — 어느 쪽을 보고 시작하든 OK */
+    lookQuat.premultiply(yawZero);
   } else {
     eul.set(THREE.MathUtils.degToRad(dragLat), THREE.MathUtils.degToRad(dragLon), 0, 'YXZ');
     lookQuat.setFromEuler(eul);
   }
   camera.quaternion.copy(lookQuat);
 }
+var yawZero = new THREE.Quaternion();   /* 자이로 영점(yaw 보정) */
+var gyroCalib = false;
 window.addEventListener('deviceorientation', function(e){
   if (e.alpha === null && e.beta === null) return;
   gyroOn = true;
   gyro.alpha = e.alpha||0; gyro.beta = e.beta||0; gyro.gamma = e.gamma||0;
+  if (!gyroCalib){
+    gyroCalib = true;
+    /* 현재 바라보는 방향의 yaw를 0으로 끌어오는 보정 쿼터니언 계산 */
+    eul.set(THREE.MathUtils.degToRad(gyro.beta), THREE.MathUtils.degToRad(gyro.alpha), -THREE.MathUtils.degToRad(gyro.gamma), 'YXZ');
+    var raw = new THREE.Quaternion().setFromEuler(eul).multiply(qX).multiply(q0.setFromAxisAngle(zee, -screenAngle()));
+    var fwd = new THREE.Vector3(0,0,-1).applyQuaternion(raw);
+    var yaw = Math.atan2(fwd.x, fwd.z);   /* 현재 정면의 좌우각 */
+    yawZero.setFromAxisAngle(new THREE.Vector3(0,1,0), -yaw - Math.PI);  /* 장면 정면(태양 쪽)으로 */
+    $('hint').textContent = '기기를 돌려 우주를 둘러보세요';
+  }
 });
 /* 드래그(자이로 없을 때 / 전자칠판) */
 var dragging=false, px=0, py=0, moved=0;
@@ -763,14 +779,31 @@ function loop(ts){
 
 /* ---------- 시작 (iOS 자이로 권한은 사용자 제스처에서) ---------- */
 $('startBtn').addEventListener('click', function(){
-  function begin(){
+  function begin(gyroAllowed){
     $('start').style.display='none';
-    if (!gyroOn) $('hint').textContent='드래그해서 우주를 둘러보세요';
+    if (!gyroAllowed){
+      $('hint').textContent='손가락으로 드래그해서 둘러보세요';
+      $('dragBadge').style.display='block';
+      setTimeout(function(){ $('dragBadge').style.display='none'; }, 5000);
+    } else {
+      $('hint').textContent='기기를 돌려 우주를 둘러보세요';
+    }
     requestAnimationFrame(loop);
   }
+  /* iOS 13+ : 권한을 명시적으로 요청하고 결과에 따라 분기 */
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
-    DeviceOrientationEvent.requestPermission().then(function(res){ begin(); }).catch(function(){ begin(); });
-  } else begin();
+    DeviceOrientationEvent.requestPermission().then(function(res){
+      if (res === 'granted'){
+        begin(true);
+        setTimeout(function(){ if(!gyroOn){ $('hint').textContent='손가락으로 드래그해서 둘러보세요'; } }, 1200);
+      } else {
+        begin(false);
+      }
+    }).catch(function(){ begin(false); });
+  } else {
+    begin(false);
+    setTimeout(function(){ if(gyroOn) $('hint').textContent='기기를 돌려 우주를 둘러보세요'; }, 1200);
+  }
 });
 
 window.addEventListener('resize', function(){
