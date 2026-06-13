@@ -137,7 +137,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
       <div class="pic step" style="font-size:90px">😊<span style="display:inline-block;animation:beat 1s infinite">💗</span></div>
       <div class="concept-big step">오늘은 <span class="hl">I like ___</span><br>문장을 만들어요!</div>
       <div class="concept-text step" style="font-size:19px;color:var(--subtext)">= 나는 ___가 좋아</div>
-      <div class="tap-hint step" id="hint0">👆 화면을 톡 누르면 계속 — 소리도 나와요!</div>
+      <div class="tap-hint step" id="hint0">👇 아래 <b>다음 ▶</b>을 누르면 하나씩 나와요!</div>
     </div>
   </div>
 
@@ -155,7 +155,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
         <div class="kay-icon">💡</div>
         <div class="kay-text">한국어는 "나는 <b>고양이가</b> 좋아"처럼 좋아하는 게 <b>가운데</b>! 🇰🇷<br>영어는 <span class="hl">맨 뒤</span>에 와요 — "I like <b>a cat</b>".</div>
       </div>
-      <div class="tap-hint step">👆 톡 톡! 하나씩 나와요</div>
+      <div class="tap-hint step">👇 다음 ▶ 을 누르면 하나씩!</div>
     </div>
   </div>
 
@@ -175,7 +175,7 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
         <div class="kay-icon">💡</div>
         <div class="kay-text">다섯 친구가 오늘의 재료예요.<br><b>한 장도 안 빼고</b> 다 써볼 거예요! 가요 😎</div>
       </div>
-      <div class="tap-hint step">👆 톡 톡! 카드가 하나씩 와요</div>
+      <div class="tap-hint step">👇 다음 ▶ 을 누르면 카드가 하나씩!</div>
     </div>
   </div>
 
@@ -428,7 +428,12 @@ function goSlide(n){
   currentSlide=n;sl[n].classList.add('active');updateUI();
   setupSlide(sl[n],n);
 }
-function nextSlide(){if(currentSlide<TOTAL-1)goSlide(currentSlide+1);}
+function nextSlide(){
+  const slide=document.querySelectorAll('.slide')[currentSlide];
+  // step 슬라이드면 먼저 다음 조각을 등장시킴 — 다 나왔을 때만 슬라이드 넘김
+  if(slide.hasAttribute('data-steps')&&advanceStep(slide,currentSlide))return;
+  if(currentSlide<TOTAL-1)goSlide(currentSlide+1);
+}
 function prevSlide(){if(currentSlide>0)goSlide(currentSlide-1);}
 function updateUI(){
   document.getElementById('progressFill').style.width=(currentSlide/(TOTAL-1)*100)+'%';
@@ -599,15 +604,11 @@ sc.addEventListener('touchend',e=>{
   if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){d_swipe(dx);return;}  // 좌우 스와이프 = 슬라이드 넘김
 });
 function d_swipe(dx){dx>0?prevSlide():nextSlide();}
-/* 탭 = step 진행 (step 슬라이드 한정). 인터랙션 버튼·발음 카드는 그대로. */
+/* 단어 카드는 탭하면 발음 (step 다 나온 뒤). step 진행은 '다음 ▶' 버튼이 담당. */
 sc.addEventListener('click',e=>{
-  if(justUnlocked)return;                                // 첫 탭은 소리 풀기만
-  const slide=document.querySelectorAll('.slide')[currentSlide];
-  if(!slide.hasAttribute('data-steps'))return;          // 개념 step 슬라이드만
-  if(e.target.closest('.nav-btn,.listen-btn,.voice-btn,.choice-btn'))return;
-  if(advanceStep(slide,currentSlide))return;            // 아직 나올 게 있으면 등장
-  const w=e.target.closest('[data-word]');              // 다 나왔으면 단어 발음
-  if(w)KTTS.word(w.dataset.word);
+  if(justUnlocked)return;
+  const w=e.target.closest('[data-word]');
+  if(w&&w.classList.contains('in'))KTTS.word(w.dataset.word);
 });
 updateUI();
 setupSlide(document.querySelectorAll('.slide')[0],0);
