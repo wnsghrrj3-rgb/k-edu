@@ -179,7 +179,7 @@ var bgStarMat = null;
 
 var sunGlowSp = null;
 /* ---------- 태양 ---------- */
-var sun = new THREE.Mesh(new THREE.SphereGeometry(14, 32, 20),
+var sun = new THREE.Mesh(new THREE.SphereGeometry(14, 48, 32),
   new THREE.MeshBasicMaterial({color:0xFFD27A}));
 scene.add(sun);
 (function sunGlow(){
@@ -206,33 +206,100 @@ var PLANETS = [
 var planetMeshes = [];
 /* 절차적 텍스처 — 외부 이미지 없이 캔버스로 행성 표면 생성 */
 function makeTex(key){
-  var cv=document.createElement('canvas'); cv.width=256; cv.height=128;
+  var W=1024, H=512;
+  var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
   var x=cv.getContext('2d');
-  function fill(c){ x.fillStyle=c; x.fillRect(0,0,256,128); }
-  function blobs(n,cols,rmin,rmax,a){ for(var i=0;i<n;i++){ x.globalAlpha=(a||1)*(0.5+Math.random()*0.5);
-    x.fillStyle=cols[(Math.random()*cols.length)|0];
-    var r=rmin+Math.random()*(rmax-rmin), bx=Math.random()*256, by=12+Math.random()*104;
-    x.beginPath(); x.ellipse(bx,by,r,r*(0.5+Math.random()*0.6),Math.random()*3,0,7); x.fill(); } x.globalAlpha=1; }
-  function bands(cols){ var y=0,i=0; while(y<128){ var h=7+Math.random()*15;
-    x.fillStyle=cols[i%cols.length]; x.fillRect(0,y-1,256,h+2); y+=h; i++; }
-    for(var k=0;k<70;k++){ var yy=(Math.random()*126)|0;
-      var img=x.getImageData(0,yy,256,2); x.putImageData(img,((Math.random()*16)-8)|0,yy); } }
-  function caps(c){ x.fillStyle=c; x.globalAlpha=.9;
-    x.beginPath(); x.ellipse(128,2,120,10+Math.random()*6,0,0,7); x.fill();
-    x.beginPath(); x.ellipse(128,126,120,9+Math.random()*6,0,0,7); x.fill(); x.globalAlpha=1; }
-  if(key==='mercury'){ fill('#9c8f84'); blobs(90,['#6f655c','#b3a89c','#7d736a'],2,7,.8); }
-  else if(key==='venus'){ fill('#E8C07A'); bands(['#E8C07A','#F2D49A','#DDB068','#EFCB8C']); blobs(16,['#F7E2B6'],10,26,.25); }
-  else if(key==='earth'){ fill('#2D6BD9'); blobs(7,['#3E9C4F','#4FAE5C'],18,34,1); blobs(10,['#C2B26B','#3E9C4F'],6,14,.9); caps('#EAF4FF'); blobs(26,['#FFFFFF'],4,12,.32); }
-  else if(key==='mars'){ fill('#C75A3A'); blobs(60,['#8E3D26','#A8492E','#D97B52'],3,12,.7); x.fillStyle='#F2E7DC'; x.globalAlpha=.85; x.beginPath(); x.ellipse(128,3,60,8,0,0,7); x.fill(); x.globalAlpha=1; }
-  else if(key==='jupiter'){ bands(['#D9A56B','#C08850','#EAD0A4','#B57A45','#E3BD89']); x.fillStyle='#C44E2E'; x.beginPath(); x.ellipse(176,82,17,9,0,0,7); x.fill(); x.fillStyle='#E06A47'; x.beginPath(); x.ellipse(176,82,10,5,0,0,7); x.fill(); }
-  else if(key==='saturn'){ bands(['#E3CC8F','#D6BC7C','#EFDFAE','#CDB272']); }
-  else if(key==='uranus'){ fill('#8FD4E3'); bands(['#8FD4E3','#83C8D8','#9ADCEA']); }
-  else { fill('#4A6BD9'); bands(['#4A6BD9','#3A55B5','#5B7CE8']); blobs(8,['#DCE6FF'],6,16,.35); }
-  var t=new THREE.CanvasTexture(cv); return t;
+
+  /* 값 노이즈 (시드 기반, 부드러운 보간) */
+  function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function noiseField(seed, gx, gy){
+    var rnd=mulberry(seed), g=[];
+    for(var i=0;i<(gx+1)*(gy+1);i++) g.push(rnd());
+    function sm(t){ return t*t*(3-2*t); }
+    return function(u,v){ /* u:0..1 경도(주기), v:0..1 위도 */
+      var fx=u*gx, fy=v*gy, ix=Math.floor(fx), iy=Math.floor(fy), tx=sm(fx-ix), ty=sm(fy-iy);
+      function val(cx,cy){ cx=((cx%gx)+gx)%gx; cy=Math.max(0,Math.min(gy,cy)); return g[cy*(gx+1)+cx]; }
+      var a=val(ix,iy),b=val(ix+1,iy),c=val(ix,iy+1),d=val(ix+1,iy+1);
+      return (a*(1-tx)+b*tx)*(1-ty)+(c*(1-tx)+d*tx)*ty;
+    };
+  }
+  function fbm(seed, u, v, oct){ var s=0,amp=0.5,fr=1,tot=0;
+    for(var o=0;o<oct;o++){ s+=amp*noiseField(seed+o*97, 4*fr, 2*fr)(u,v); tot+=amp; amp*=0.5; fr*=2; }
+    return s/tot;
+  }
+  function lerpC(c1,c2,t){ return [c1[0]+(c2[0]-c1[0])*t, c1[1]+(c2[1]-c1[1])*t, c1[2]+(c2[2]-c1[2])*t]; }
+  function px(img,i,c){ img[i]=c[0]; img[i+1]=c[1]; img[i+2]=c[2]; img[i+3]=255; }
+
+  var img=x.createImageData(W,H), D=img.data, S=(key.charCodeAt(0)*131+key.length*977)|0;
+
+  function paint(fn){
+    for(var py=0;py<H;py++) for(var pxx=0;pxx<W;pxx++){
+      var u=pxx/W, v=py/H, c=fn(u,v,pxx,py); px(D,(py*W+pxx)*4,c);
+    }
+    x.putImageData(img,0,0);
+  }
+
+  if(key==='earth'){
+    var ocean=[28,78,150], deep=[16,52,110], land=[64,140,72], hi=[150,170,90], sand=[200,180,120], ice=[235,242,250];
+    paint(function(u,v){
+      var n=fbm(S,u,v,6), polar=Math.abs(v-0.5)*2;
+      var c = n<0.5 ? lerpC(deep,ocean,n/0.5) : (n<0.56 ? sand : lerpC(land,hi,Math.min(1,(n-0.56)/0.4)));
+      if(polar>0.82){ var t=(polar-0.82)/0.18; c=lerpC(c,ice,Math.min(1,t*1.4)); }   /* 극관 */
+      return c;
+    });
+    /* 구름 — 별도 fbm로 흰 농도 */
+    var cd=x.getImageData(0,0,W,H), CD=cd.data;
+    for(var py=0;py<H;py++) for(var pxx=0;pxx<W;pxx++){
+      var cl=fbm(S+555, pxx/W, py/H, 5); cl=Math.max(0,(cl-0.52)/0.48);
+      var i=(py*W+pxx)*4, a=cl*0.85;
+      CD[i]=CD[i]*(1-a)+255*a; CD[i+1]=CD[i+1]*(1-a)+255*a; CD[i+2]=CD[i+2]*(1-a)+255*a;
+    }
+    x.putImageData(cd,0,0);
+  }
+  else if(key==='mars'){
+    var base=[200,96,62], dark=[150,62,40], bright=[224,140,100], capc=[238,228,222];
+    paint(function(u,v){ var n=fbm(S,u,v,6), polar=Math.abs(v-0.5)*2;
+      var c=lerpC(dark, n>0.55?bright:base, n);
+      if(polar>0.9){ c=lerpC(c,capc,(polar-0.9)/0.1); }
+      return c; });
+  }
+  else if(key==='mercury'){
+    var m1=[120,110,100], m2=[80,72,66], m3=[160,150,140];
+    paint(function(u,v){ var n=fbm(S,u,v,6); return lerpC(m2, n>0.6?m3:m1, n); });
+    /* 크레이터 */
+    for(var k=0;k<60;k++){ var rr=4+Math.random()*16, cx=Math.random()*W, cy=40+Math.random()*(H-80);
+      var gr=x.createRadialGradient(cx,cy,1,cx,cy,rr); gr.addColorStop(0,'rgba(60,54,48,0.5)'); gr.addColorStop(0.7,'rgba(180,168,156,0.35)'); gr.addColorStop(1,'rgba(120,110,100,0)');
+      x.fillStyle=gr; x.beginPath(); x.arc(cx,cy,rr,0,7); x.fill(); }
+  }
+  else if(key==='venus' || key==='jupiter' || key==='saturn' || key==='uranus' || key==='neptune'){
+    /* 가스 행성 — 위도 줄무늬 + 난류 흐름 */
+    var pal={
+      venus:[[232,196,130],[244,216,160],[214,176,108]],
+      jupiter:[[214,168,116],[180,128,80],[234,210,168],[150,96,60]],
+      saturn:[[226,206,150],[210,184,124],[238,224,180]],
+      uranus:[[150,212,224],[128,196,212],[170,224,234]],
+      neptune:[[64,96,200],[48,72,176],[96,128,224]]
+    }[key];
+    paint(function(u,v){
+      var warp=fbm(S+12,u,v,4)*0.10;                 /* 줄무늬를 살짝 흐트러뜨림 */
+      var b=(v+warp)*pal.length, idx=Math.floor(b)%pal.length, t=b-Math.floor(b);
+      var c=lerpC(pal[idx], pal[(idx+1)%pal.length], t);
+      var fine=fbm(S+30,u*1,v*6,4); return lerpC(c, [c[0]*1.08,c[1]*1.08,c[2]*1.08], fine*0.5);
+    });
+    if(key==='jupiter'){ /* 대적점 */
+      var gx=W*0.7, gy=H*0.62; var gr=x.createRadialGradient(gx,gy,4,gx,gy,46);
+      gr.addColorStop(0,'rgba(200,80,50,0.95)'); gr.addColorStop(0.6,'rgba(214,120,86,0.8)'); gr.addColorStop(1,'rgba(214,120,86,0)');
+      x.fillStyle=gr; x.save(); x.translate(gx,gy); x.scale(1,0.62); x.beginPath(); x.arc(0,0,46,0,7); x.fill(); x.restore();
+    }
+  }
+  else { paint(function(u,v){ var n=fbm(S,u,v,5); return lerpC([90,90,110],[160,160,180],n); }); }
+
+  var t=new THREE.CanvasTexture(cv);
+  t.anisotropy=4; return t;
 }
 PLANETS.forEach(function(p){
-  var m = new THREE.Mesh(new THREE.SphereGeometry(p.r, 26, 18),
-    new THREE.MeshStandardMaterial({map:makeTex(p.key), roughness:0.9, metalness:0.03}));
+  var m = new THREE.Mesh(new THREE.SphereGeometry(p.r, 48, 32),
+    new THREE.MeshStandardMaterial({map:makeTex(p.key), roughness:0.82, metalness:0.04}));
   m.userData = p;
   scene.add(m); planetMeshes.push(m);
   /* 궤도 선 (아주 옅게) */
@@ -242,9 +309,18 @@ PLANETS.forEach(function(p){
     new THREE.LineBasicMaterial({color:0x2a4a78, transparent:true, opacity:0.35}));
   scene.add(line);
   if (p.key==='saturn'){
-    var ring = new THREE.Mesh(new THREE.RingGeometry(p.r*1.5, p.r*2.4, 48),
-      new THREE.MeshBasicMaterial({color:0xCBB585, side:THREE.DoubleSide, transparent:true, opacity:0.75}));
-    ring.rotation.x = Math.PI/2 - 0.35;
+    var rc=document.createElement('canvas'); rc.width=256; rc.height=8; var rx=rc.getContext('2d');
+    for(var ri=0;ri<256;ri++){ var tt=ri/256; var br=0.55+0.4*Math.sin(tt*38)+0.15*Math.sin(tt*120);
+      var gap=(tt>0.42&&tt<0.48)||(tt>0.7&&tt<0.73); var al=gap?0.05:(0.45+0.45*Math.max(0,br));
+      rx.fillStyle='rgba('+(225-tt*30)+','+(205-tt*30)+','+(150-tt*20)+','+al+')'; rx.fillRect(ri,0,1,8); }
+    var rtex=new THREE.CanvasTexture(rc);
+    var rg=new THREE.RingGeometry(p.r*1.45, p.r*2.5, 96);
+    /* UV를 반경 방향으로 매핑 */
+    var pos=rg.attributes.position, uv=rg.attributes.uv, v3=new THREE.Vector3();
+    for(var q=0;q<pos.count;q++){ v3.fromBufferAttribute(pos,q); var rr=v3.length();
+      var tnorm=(rr-p.r*1.45)/(p.r*2.5-p.r*1.45); uv.setXY(q, tnorm, 0.5); }
+    var ring = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({map:rtex, side:THREE.DoubleSide, transparent:true}));
+    ring.rotation.x = Math.PI/2 - 0.32;
     m.add(ring);
   }
   if (p.key==='earth'){
