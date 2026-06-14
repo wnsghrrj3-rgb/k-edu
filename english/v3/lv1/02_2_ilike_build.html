@@ -268,19 +268,15 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <!-- ━━━ S7 따라 말하기 — 낭독 변주 ━━━ -->
+  <!-- ━━━ S7 따라 말하기 — 정확한 발음 듣고 따라 하기 ━━━ -->
   <div class="slide">
     <div class="card">
-      <div class="slide-title">🎤 따라 말하기 — 세 가지 목소리로!</div>
+      <div class="slide-title">🎤 듣고 따라 말해 봐요!</div>
       <div class="sent-done">I like pizza. <span class="mean">나는 피자가 좋아 🍕</span></div>
-      <div class="voice-row">
-        <button class="voice-btn" data-v="whisper"><span class="vico">🤫</span>속삭이듯</button>
-        <button class="voice-btn" data-v="loud"><span class="vico">📢</span>씩씩하게</button>
-        <button class="voice-btn" data-v="robot"><span class="vico">🤖</span>로봇처럼</button>
-      </div>
+      <button class="listen-btn" id="sayBtn" style="font-size:24px;padding:14px 30px;margin:14px 0">🔊 발음 듣기</button>
       <div class="kay-says">
         <div class="kay-icon">💡</div>
-        <div class="kay-text">버튼마다 목소리가 달라요! 듣고 <b>똑같이 흉내</b> 내요.<br>셋 다 하면 칭찬 도장 🎯</div>
+        <div class="kay-text">🔊 버튼을 눌러 발음을 듣고,<br><b>똑같이 따라</b> 큰 소리로 말해 봐요!</div>
       </div>
       <div class="feedback" id="fb7"></div>
     </div>
@@ -595,16 +591,12 @@ let b1done=false,b2done=false,b3done=false;
 buildFill('b1slot','b1cards','fb5','milk','나는 우유가 좋아! 🥛',()=>{if(!b1done){b1done=true;addScore(10);}});
 buildFill('b2slot','b2cards','fb6','chicken','나는 치킨이 좋아! 🍗',()=>{if(!b2done){b2done=true;addScore(10);}});
 
-/* S7 낭독 변주 — 셋 다 하면 도장 */
-let voicesDone={};
-document.querySelectorAll('.voice-btn').forEach(b=>{
-  b.addEventListener('click',()=>{
-    const v=b.dataset.v;playClick();
-    const opt=v==='whisper'?{rate:0.6,pitch:1.4}:v==='loud'?{rate:0.95,pitch:1.1}:{rate:0.55,pitch:0.6};
-    KTTS.sentence('I like pizza.',opt);
-    b.classList.add('done');voicesDone[v]=1;
-    if(Object.keys(voicesDone).length===3&&!answered[7]){answered[7]=true;addScore(10);setFB('fb7','🎯 세 목소리 다 따라 했어요! +10점 — 어떤 목소리가 제일 웃겼어요?',true);}
-  });
+/* S7 따라 말하기 — 정확한 발음 듣기(따라 하면 도장) */
+document.getElementById('sayBtn').addEventListener('click',function(){
+  playClick();
+  KTTS.sentence('I like pizza.');
+  if(!answered[7]){answered[7]=true;addScore(10);
+    setFB('fb7','🎯 잘 들었어요! 큰 소리로 따라 말해 봐요 — I like pizza! +10점',true);}
 });
 
 /* S11 Max 사건 — I like 조립하면 피자 등장 */
