@@ -10,36 +10,94 @@
    2026-05-20 cycle A — 11차시 18슬 인덱스 양산 (학생 HTML 자동 추출)
    차시: 01(자연과함께해요·단원도입)·02·03·04·05·06~07(병합)·08·09~10(병합)·11·12·13
    14차시 = 안 B 유지 (별도 결정 영역, 본 차시 미양산)
+   ------------------------------------------------------------
+   2026-06-15 라이브 동기화 — l01·l02·l03 밀도 표준 v1 재제작분 반영.
+   ★키 0패딩 교정(u3_l1→u3_l01): 엔진 lessonKey가 padStart(2,'0')라
+     옛 비패딩 키는 진입 불가였음. l01~l03·l11~l13만 매칭(진입 가능),
+     l4·l5·l6~7·l8·l9~10은 비패딩 옛 껍데기 = 다음 재제작 대기.
 ============================================================ */
 
-LESSONS["u3_l1"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 1,
-    title: "자연과 함께해요 (단원 도입)",
-    std: "[2수01-05]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 밭 채소 모두 세기로 모으기 동기 유발",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_01_자연과함께해요.html"
-  },
+/* u3_l01 — 자연과 함께해요 (단원 도입) · 밀도 표준 v1 */
+LESSONS["u3_l01"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:1, title:"자연과 함께해요 (단원 도입)", std:"[2수01-05]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"밭에서 무엇을 보았나요?", desc:"1단계 · 도입"}, suggested_extras:["v_l1_count", "q_l1_field"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘 무엇을 배워요?", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"1단원에서 무엇을 배웠나요?", desc:"1단계 · 도입"}, suggested_extras:["v_l1_count"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"먼저 토마토만 세어 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l1_group", "t_l1_oneone"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"오이와 참외도 따로따로 세요", desc:"2단계 · 전개"}, suggested_extras:["q_l1_group", "t_l1_oneone"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"이제 모두 합쳐 세어 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l1_group", "t_l1_oneone"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"빠짐없이 세는 방법", desc:"2단계 · 전개"}, suggested_extras:["q_l1_group", "t_l1_oneone"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 내용", desc:"5단계 · 정리"}, suggested_extras:["t_l1_unit_intro", "b_l1_garden"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l1_next"]}
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"덧셈과 뺄셈\n자연과 함께해요", emoji:"🌱" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"우리가 할 수 있는 것",
+        content:"우리는 1부터 9까지 수를 **세고**, 순서를 알고, 크기를 비교할 수 있어요.\n이번 단원에서는 수를 **합치고 덜어내는** 방법을 배워요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"학교 텃밭에 갔어요",
+        kids:[ {face:"👧", label:"민지\n방울토마토 4개"}, {face:"👦", label:"준서\n방울토마토 3개"} ],
+        question:"두 사람이 딴 토마토를 한 바구니에 담으면 모두 몇 개일까요? 세지 않고도 알 수 있는 방법이 있을까요?" } },
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"이번 단원에서 배울 것 ①",
+        content:"**모으기** — 두 묶음을 하나로!",
+        items:[ {emoji:"🍅", count:4, label:"4개"}, {emoji:"🍅", count:3, label:"3개"}, {emoji:"🍅", count:7, label:"모으면 7개"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"이번 단원에서 배울 것 ②",
+        content:"**가르기** — 한 묶음을 둘로!",
+        items:[ {emoji:"🌰", count:6, label:"도토리 6개를"}, {emoji:"🌰", count:4, label:"다람쥐에게 4개"}, {emoji:"🌰", count:2, label:"내가 2개"} ] } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"이번 단원에서 배울 것 ③",
+        content:"모으기와 가르기를 **식**으로 쓰는 방법도 배워요.",
+        examples:[ {label:"4 + 3 = 7"}, {label:"6 − 4 = 2"} ],
+        note:"+, −, = 기호의 뜻을 차근차근 알아갈 거예요." } },
+    { id:"s07", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"수를 **합쳐야 하는 때**와 **덜어내야 하는 때**는 언제일까요? 오늘 아침부터 지금까지 있었던 일에서 찾아봐요." } },
+    { id:"s08", stage:"전개", block:"visual_demo", data:{
+        title:"자연에서 찾은 모으기",
+        items:[ {emoji:"🐦", count:2, label:"나무 위 참새 2마리"}, {emoji:"🐦", count:5, label:"날아온 참새 5마리"}, {emoji:"🐦", count:7, label:"모두 7마리"} ],
+        sub_text:"자연 속에는 수가 합쳐지고 줄어드는 일이 가득해요." } },
+    { id:"s09", stage:"전개", block:"misconception", data:{
+        title:"이런 생각을 조심해요",
+        label:"자주 하는 실수",
+        wrong:"\"합치면 무조건 9가 넘어요!\" — 수가 커지기만 한다고 생각",
+        right:"이번 단원은 **합쳐서 9까지** 수만 다뤄요. 4와 3을 모으면 7 — 9를 넘지 않아요.",
+        hint:"덜어내는 뺄셈은 오히려 수가 작아져요." } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"준비 운동 ① — 세어 봐요",
+        items:[ {emoji:"🐞", count:5, label:"무당벌레"} ],
+        question:"풀잎 위 무당벌레는 몇 마리일까요?",
+        input:"count_input", answer:5,
+        note:"풀이: 하나씩 짚으며 세요 — 1,2,3,4,5." } },
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"준비 운동 ② — 미리 맛보기",
+        items:[ {emoji:"🌼", count:3, label:"노란 꽃"}, {emoji:"🌸", count:2, label:"분홍 꽃"} ],
+        question:"꽃은 모두 몇 송이일까요?",
+        input:"count_input", answer:5,
+        note:"풀이: 3에서 이어 세기 — 4, 5. 이것이 곧 배울 '모으기'예요!" } },
+    { id:"s12", stage:"기본문제", block:"multi", data:{
+        title:"합치는 상황을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"두 바구니의 귤을 한 상자에 담기", correct:true},
+          {label:"풍선 8개 중 2개가 날아가기"},
+          {label:"내 구슬과 친구 구슬을 한 통에 모으기", correct:true},
+          {label:"사탕 5개 중 3개를 먹기"} ],
+        note:"풀이: 담기·모으기는 합치는 상황, 날아가기·먹기는 줄어드는 상황이에요." } },
+    { id:"s13", stage:"응용문제", block:"offline_activity", data:{
+        title:"교실 속 모으기·가르기 찾기", tag:"모둠 활동", icon:"🔍",
+        body:"모둠별로 교실을 둘러봐요. '합쳐지는 것'과 '나눠지는 것'을 하나씩 찾아 칠판에 붙임쪽지로 붙여요.",
+        materials:"붙임쪽지, 연필 · 10분" } },
+    { id:"s14", stage:"응용문제", block:"real_world", data:{
+        title:"텃밭 이야기 만들기",
+        scenario:{ icon:"🥕", body:"민지는 당근을 2개 뽑았고, 준서는 4개를 뽑았어요." },
+        question:"이 그림으로 '모으기 이야기'를 말해 볼까요? \"당근이 모두 ___개\"",
+        answer:6 } },
+    { id:"s15", stage:"정리", block:"summary", data:{
+        title:"이번 단원 한눈에",
+        points:[ "모으기 — 두 묶음을 하나로 (4와 3 → 7)",
+                 "가르기 — 한 묶음을 둘로 (6 → 4와 2)",
+                 "덧셈식 +, 뺄셈식 −, 그리고 = 기호를 배운다." ] } },
+    { id:"s16", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"🍎", count:2, label:"빨강"}, {emoji:"🍏", count:2, label:"초록"} ],
+        question:"사과는 모두 몇 개?", input:"count_input", answer:4,
+        note:"2에서 이어 세기 — 3, 4. 다음 시간엔 이걸 '모으기'로 배워요!" } },
+    { id:"s17", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔", preview:"두 묶음을 하나로 합치는 **모으기**, 그리고 거꾸로 나누는 **가르기**를 본격적으로 배워요.", emoji:"🧺" } }
   ],
   extras: [
     {id:"v_l1_count", type:"video", icon:"🎥", title:"수 세기 노래로 준비 운동", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EC%88%98+%EC%84%B8%EA%B8%B0+%EB%85%B8%EB%9E%98", description:"밭 채소를 세기 전, 1부터 9까지 수 세기를 노래로 다시 떠올려요. 도입 흥미 유발.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
@@ -57,34 +115,129 @@ LESSONS["u3_l1"] = {
   ]
 };
 
-LESSONS["u3_l2"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 2,
-    title: "모으기와 가르기 (1)",
-    std: "[2수01-04]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 두 수 모으기·한 수 가르기",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_02_모으기와가르기1.html"
-  },
+/* u3_l02 — 모으기와 가르기 (1) · 밀도 표준 v1 */
+LESSONS["u3_l02"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:2, title:"모으기와 가르기 (1)", std:"[2수01-04]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"고구마는 모두 몇 개일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l2_gather", "q_l2_snack"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘은 모으기와 가르기를 배워요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"우리 생활에서도 모으기·가르기를 해요", desc:"1단계 · 도입"}, suggested_extras:["v_l2_gather"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"두 수를 모아 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l2_snack", "q_l2_share"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"한 수를 둘로 갈라 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l2_snack", "q_l2_share"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"7을 다양하게 갈라 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l2_snack", "q_l2_share"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"모으기와 가르기는 함께해요", desc:"2단계 · 전개"}, suggested_extras:["q_l2_snack", "q_l2_share"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 내용", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l2_to9"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"모으기\n두 수를 한꺼번에", emoji:"🧺" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"우리는 1부터 9까지 수를 세었어요.\n오늘은 **두 묶음을 하나로 모으면 몇 개가 되는지** 알아봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"밭에서 토마토를 땄어요",
+        kids:[ {face:"🧺", label:"빨강 바구니\n토마토 3개"}, {face:"🧺", label:"노랑 바구니\n토마토 2개"} ],
+        question:"두 바구니를 한 상자에 담으면 토마토는 모두 몇 개가 될까요?" } },
+    // ── 전개: 개념을 단계로 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"먼저 하나씩 세어 봐요",
+        content:"빨강 바구니부터 세요. 🍅🍅🍅 → **3개**\n노랑 바구니도 세요. 🍅🍅 → **2개**",
+        items:[ {emoji:"🍅", count:3, label:"빨강 3개"}, {emoji:"🍅", count:2, label:"노랑 2개"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"이제 한 상자에 모아요",
+        content:"두 바구니를 한 상자에 부으면, 토마토가 한 곳에 모여요.\n모은 것을 다시 세어 봐요.",
+        items:[ {emoji:"🍅", count:5, label:"모으면 5개"} ],
+        note:"👉 3과 2를 모으면 5. 이것을 **3과 2를 모으기**라고 해요." } },
+    { id:"s06", stage:"전개", block:"visual_demo", data:{
+        title:"십 배열판으로 보면",
+        items:[ {ten_frame:3, num:3, label:"빨강"}, {ten_frame:2, num:2, label:"노랑"}, {ten_frame:5, num:5, label:"모으기"} ],
+        sub_text:"왼쪽 두 칸을 합치면 오른쪽처럼 5칸이 채워져요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"모을 때 한쪽 묶음만 세고 끝낸다 (3개만 보고 \"3!\")",
+        right:"두 묶음을 **모두** 센 다음 합친 수를 말한다 (3과 2 → 5)",
+        hint:"모으기는 '두 개를 하나로'예요. 한쪽만 세면 안 돼요." } },
+
+    // ── 전개+: 발문·터치 교구 ──
+    { id:"s08b", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"모으기를 하면 수가 **커질까요, 작아질까요?** 왜 그럴까요?" } },
+    { id:"s08c", stage:"전개", block:"interactive_ten_frame", data:{
+        title:"👆 직접 채워 봐요 — 3과 4 모으기",
+        start_count:3,
+        prompt:"지금 3칸이 채워져 있어요. 4개를 더 눌러 채우면 모두 몇 칸이 될까요?" } },
+    // ── 기본문제: 정답·풀이·reveal ──
+    { id:"s09", stage:"기본문제", block:"basic_problem", data:{
+        title:"사과를 모아 봐요",
+        items:[ {emoji:"🍎", count:2, label:"왼쪽"}, {emoji:"🍎", count:3, label:"오른쪽"} ],
+        question:"왼쪽 2개와 오른쪽 3개를 모으면 모두 몇 개일까요?",
+        input:"count_input", answer:5,
+        note:"풀이: 2를 먼저, 이어서 3을 더 세요 → 3,4,5. 답은 5." } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"십 배열판으로 모으기",
+        items:[ {ten_frame:4, num:4, label:"파랑"}, {ten_frame:3, num:3, label:"초록"} ],
+        question:"4와 3을 모으면 몇일까요?",
+        input:"count_input", answer:7,
+        note:"풀이: 4칸에서 이어 세기 → 5,6,7. 답은 7." } },
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"빈칸을 채워요",
+        scenario:{ icon:"🐤", body:"병아리 6마리가 마당에 있어요. 한 마리가 더 왔어요." },
+        question:"이제 병아리는 모두 몇 마리?",
+        input:"count_input", answer:7,
+        note:"6에서 한 번 더 세면 7. '1 더 모으기'예요." } },
+
+    { id:"s11b", stage:"기본문제", block:"multi", data:{
+        title:"모아서 5가 되는 것을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"2와 3", correct:true},
+          {label:"1과 3"},
+          {label:"4와 1", correct:true},
+          {label:"2와 2"} ],
+        note:"풀이: 2와 3 → 5 ✓ / 1과 3 → 4 ✗ / 4와 1 → 5 ✓ / 2와 2 → 4 ✗" } },
+    { id:"s11c", stage:"기본문제", block:"match", data:{
+        title:"모으기 짝을 찾아 이어요",
+        type:"touch_match",
+        pairs:[
+          {left:{label:"3과 2"}, right:{num:5}},
+          {left:{label:"1과 5"}, right:{num:6}},
+          {left:{label:"4와 3"}, right:{num:7}} ] } },
+    // ── 응용 ──
+    { id:"s12", stage:"응용문제", block:"offline_activity", data:{
+        title:"손가락 모으기 놀이", tag:"짝 활동", icon:"🙌",
+        body:"둘이 짝을 지어요. 한 사람이 손가락 몇 개, 다른 사람이 몇 개를 펴면, 둘을 모아 모두 몇인지 빠르게 말해요.",
+        materials:"준비물 없음 · 5분" } },
+
+    { id:"s12b", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 모으기",
+        scenario:{ icon:"🚌", body:"버스에 5명이 타고 있어요. 정류장에서 2명이 더 탔어요. 버스에는 모두 몇 명이 있을까요?" },
+        question:"식으로 말해 볼까요? \"5와 2를 모으면 ___\"",
+        answer:7 } },
+    { id:"s12c", stage:"응용문제", block:"compare", data:{
+        title:"어느 쪽이 더 많이 모았나요?",
+        items:[
+          {emoji:"🍓", count:6, label:"민지: 4와 2 모으기"},
+          {emoji:"🍓", count:7, label:"준서: 3과 4 모으기"} ] } },
+
+    { id:"s12d", stage:"전개", block:"concept", data:{
+        title:"거꾸로! 가르기",
+        content:"모으기를 거꾸로 하면 **가르기**예요.\n토마토 5개를 두 바구니에 나눠 담아 봐요.",
+        items:[ {emoji:"🍅", count:5, label:"5개를"}, {emoji:"🍅", count:3, label:"3개와"}, {emoji:"🍅", count:2, label:"2개로!"} ],
+        note:"👉 5는 3과 2로 가르기 할 수 있어요." } },
+    { id:"s12e", stage:"기본문제", block:"basic_problem", data:{
+        title:"가르기 해 봐요",
+        items:[ {emoji:"🍪", count:6, label:"과자 6개"} ],
+        question:"과자 6개를 내가 4개 가지면, 동생은 몇 개를 가질까요?",
+        input:"count_input", answer:2,
+        note:"풀이: 6은 4와 2로 가르기. 동생은 2개." } },
+    { id:"s13", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"모아서 6이 되는 두 수는 무엇무엇이 있을까요? (예: 1과 5, 2와 4 …) 짝을 모두 찾아보세요." } },
+    // ── 정리 ──
+    { id:"s14", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[ "두 묶음을 하나로 합치는 것을 **모으기**라고 한다.",
+                 "모을 때는 양쪽을 모두 세고 이어 센다.",
+                 "모으기를 거꾸로 하면 가르기 — 5는 3과 2로 가를 수 있다." ] } },
+    { id:"s15", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:3, label:"별"}, {emoji:"⭐", count:4, label:"별"} ],
+        question:"3과 4를 모으면?", input:"count_input", answer:7,
+        note:"맞혔다면 모으기를 잘 이해한 거예요!" } },
+    { id:"s16", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔", preview:"모으기와 반대! 한 묶음을 둘로 나누는 **가르기**를 배워요.", emoji:"✂️" } }
   ],
   extras: [
     {id:"v_l2_gather", type:"video", icon:"🎥", title:"모으기와 가르기 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%AA%A8%EC%9C%BC%EA%B8%B0+%EA%B0%80%EB%A5%B4%EA%B8%B0", description:"두 수를 모으고 한 수를 가르는 과정을 그림으로 보여 주는 영상. 개념 도입에 활용.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
@@ -102,34 +255,98 @@ LESSONS["u3_l2"] = {
   ]
 };
 
-LESSONS["u3_l3"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 3,
-    title: "모으기와 가르기 (2)",
-    std: "[2수01-04]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 모으기·가르기 숙달과 여러 가지 가르기",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_03_모으기와가르기2.html"
-  },
+/* u3_l03 — 모으기와 가르기 (2) · 밀도 표준 v1
+   초점: 한 수를 여러 가지 방법으로 가르기 (수 분해 유창성) */
+LESSONS["u3_l03"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:3, title:"모으기와 가르기 (2)", std:"[2수01-04]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"닭은 모두 몇 마리일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l3_link"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘은 9까지 모으기·가르기 해요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간을 떠올려요", desc:"1단계 · 도입"}, suggested_extras:["v_l3_link"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"연결 모형으로 닭을 나타내요", desc:"2단계 · 전개"}, suggested_extras:["q_l3_eight", "q_l3_nine"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"연결 모형으로 모아 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l3_eight", "q_l3_nine"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"달걀 8개를 두 바구니로 갈라요", desc:"2단계 · 전개"}, suggested_extras:["q_l3_eight", "q_l3_nine"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"9는 여러 방법으로 가를 수 있어요", desc:"2단계 · 전개"}, suggested_extras:["q_l3_eight", "q_l3_nine"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 내용", desc:"5단계 · 정리"}, suggested_extras:["b_l3_count"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l3_story"]}
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"모으기와 가르기 (2)\n여러 가지 방법으로!", emoji:"✂️" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔",
+        content:"두 묶음을 하나로 **모으고**, 한 묶음을 둘로 **가르는** 것을 배웠어요.\n오늘은 한 수를 **여러 가지 방법**으로 가를 수 있다는 비밀을 알아봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"사탕 5개를 나눠요",
+        kids:[ {face:"👧", label:"민지"}, {face:"👦", label:"준서"} ],
+        question:"사탕 5개를 민지와 준서가 나눠 가지려 해요. 나누는 방법이 **한 가지뿐**일까요?" } },
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"5 가르기 — 방법 ①",
+        items:[ {emoji:"🍬", count:5, label:"5개를"}, {emoji:"🍬", count:1, label:"1개와"}, {emoji:"🍬", count:4, label:"4개로"} ],
+        note:"민지가 1개, 준서가 4개. 5는 1과 4로 가를 수 있어요." } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"5 가르기 — 방법 ②, ③",
+        items:[ {emoji:"🍬", count:2, label:"2와 3"}, {emoji:"🍬", count:3, label:"3과 2"}, {emoji:"🍬", count:4, label:"4와 1"} ],
+        content:"2와 3, 3과 2, 4와 1… 같은 5라도 **가르는 방법이 여러 가지**예요!",
+        note:"👉 순서를 바꿔도 모으면 다시 5가 돼요." } },
+    { id:"s06", stage:"전개", block:"visual_demo", data:{
+        title:"십 배열판으로 5 가르기 한눈에",
+        items:[ {ten_frame:1, num:1, label:"1과 4"}, {ten_frame:2, num:2, label:"2와 3"}, {ten_frame:3, num:3, label:"3과 2"}, {ten_frame:4, num:4, label:"4와 1"} ],
+        sub_text:"채워진 칸과 빈 칸(5칸 기준)을 함께 보면 가르기 짝이 보여요." } },
+    { id:"s07", stage:"전개", block:"interactive_ten_frame", data:{
+        title:"👆 직접 갈라 봐요 — 6 가르기",
+        start_count:6,
+        prompt:"6칸이 채워져 있어요. 친구에게 2개를 주면(2칸을 비우면) 나에게 몇 개가 남을까요? 직접 눌러 확인해요." } },
+    { id:"s08", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"가르기 짝에서 **한쪽 수가 커지면 다른 쪽 수는** 어떻게 될까요? 왜 그럴까요?" } },
+    { id:"s09", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"\"3과 2\"와 \"2와 3\"은 완전히 같은 거라서 하나만 쓰면 된다",
+        right:"모으면 둘 다 5지만, **누가 몇 개 갖는지**는 달라요. 민지 3·준서 2와 민지 2·준서 3은 다른 나눔이에요.",
+        hint:"수학으로는 짝꿍이지만, 상황으로는 서로 달라요." } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"7 가르기",
+        items:[ {emoji:"🌰", count:7, label:"도토리 7개"} ],
+        question:"도토리 7개 중 다람쥐가 3개를 가져가면, 몇 개가 남을까요?",
+        input:"count_input", answer:4,
+        note:"풀이: 7은 3과 4로 가르기. 4개가 남아요." } },
+    { id:"s11", stage:"기본문제", block:"match", data:{
+        title:"가르기 짝을 이어요 — 6 가르기",
+        type:"touch_match",
+        pairs:[
+          {left:{label:"6은 1과"}, right:{num:5}},
+          {left:{label:"6은 2와"}, right:{num:4}},
+          {left:{label:"6은 3과"}, right:{num:3}} ] } },
+    { id:"s12", stage:"기본문제", block:"multi", data:{
+        title:"8 가르기가 맞는 것을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"3과 5", correct:true},
+          {label:"4와 5"},
+          {label:"6과 2", correct:true},
+          {label:"7과 2"} ],
+        note:"풀이: 3과 5 → 8 ✓ / 4와 5 → 9 ✗ / 6과 2 → 8 ✓ / 7과 2 → 9 ✗" } },
+    { id:"s13", stage:"기본문제", block:"basic_problem", data:{
+        title:"빈칸 가르기",
+        scenario:{ icon:"🥚", body:"달걀 9개를 두 접시에 나눠 담아요. 한 접시에 5개를 담았어요." },
+        question:"다른 접시에는 몇 개를 담아야 할까요?",
+        input:"count_input", answer:4,
+        note:"풀이: 9는 5와 4로 가르기. 답은 4." } },
+    { id:"s14", stage:"응용문제", block:"offline_activity", data:{
+        title:"가르기 손가락 대결", tag:"짝 활동", icon:"🙌",
+        body:"짝과 마주 봐요. 선생님이 수를 외치면(예: \"7!\") 둘이 동시에 손가락을 펴서, 둘의 손가락을 모아 그 수가 되면 성공! 몇 번 만에 맞출 수 있나요?",
+        materials:"준비물 없음 · 7분" } },
+    { id:"s15", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 가르기",
+        scenario:{ icon:"🚌", body:"체험학습 버스 자리가 한 줄에 4칸이에요. 우리 모둠 4명 중 2명이 앉았어요." },
+        question:"남은 자리에 앉을 수 있는 사람은 몇 명일까요?",
+        answer:2 } },
+    { id:"s16", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"9를 가르는 방법을 **모두** 찾아 써 보세요. (1과 8부터 시작!) 몇 가지가 나올까요? 그 개수에서 규칙을 발견할 수 있나요?" } },
+    { id:"s17", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[ "한 수는 **여러 가지 방법**으로 가를 수 있다 (5는 1과4, 2와3, 3과2, 4와1).",
+                 "한쪽이 1 커지면 다른 쪽은 1 작아진다.",
+                 "가르기 짝은 모으면 다시 원래 수가 된다." ] } },
+    { id:"s18", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:8, label:"별 8개"} ],
+        question:"8을 6과 몇으로 가를 수 있을까요?", input:"count_input", answer:2,
+        note:"8은 6과 2로 가르기. 맞혔다면 오늘 완벽!" } },
+    { id:"s19", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔", preview:"모으기·가르기 상황으로 **수학 이야기**를 직접 만들어 봐요. 그림을 보고 말로 풀어내는 시간!", emoji:"📖" } }
   ],
   extras: [
     {id:"v_l3_link", type:"video", icon:"🎥", title:"연결 모형으로 수 나타내기", url:"https://www.youtube.com/results?search_query=%EC%97%B0%EA%B2%B0%ED%81%90%EB%B8%8C+%EB%AA%A8%EC%9C%BC%EA%B8%B0+%EA%B0%80%EB%A5%B4%EA%B8%B0", description:"연결 모형(큐브)으로 수를 만들고 모으고 가르는 과정을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
