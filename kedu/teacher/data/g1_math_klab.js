@@ -3,7 +3,7 @@
    - 케이티처 툴바 "🧊 교구" 도크가 읽는다 (engine/teacher-engine.js).
    - 키: 단원 키 "u{N}" = 그 단원 모든 차시에 노출 / 차시 키 = 그 차시에만 추가.
      ⚠️ 차시 키는 LESSONS 실제 키와 정확히 일치해야 함
-        (u1은 "u1_l02_03"처럼 블록 차시, u3은 "u3_l2"처럼 0패딩 없음).
+        (u1은 "u1_l02_03"처럼 블록 차시, u3도 "u3_l08"처럼 0패딩 적용(엔진 lessonKey 일치)).
    - 값: [{ tool, label, desc, cfg }] — tool/cfg는 케이랩(klab.html) 도구 register 이름·설정.
    - mode: 'free'(기본)|'mission'|'quiz' — 진입 모드만 지정, 탭으로 전환 가능.
      미션·퀴즈 출제 범위가 차시 스코프와 맞을 때만 지정 (예: tenframe 미션 1번 =
@@ -35,12 +35,12 @@ window.KLAB_MAP = {
   u2: [
     { tool: 'shape3d', label: '입체 모양 굴리기', desc: '상자·둥근기둥·공 모양을 굴리고 세우며 어떤 모양이 잘 구르는지 탐구', cfg: { shapes: ['box', 'cylinder', 'ball'], actions: ['roll', 'flip'], terms: 'daily' } }
   ],
-  /* ---------------- 3단원 — 덧셈과 뺄셈 (⚠️ 차시 키 0패딩 없음) ---------------- */
+  /* ---------------- 3단원 — 덧셈과 뺄셈 (차시 키 0패딩: u3_l08·u3_l11) ---------------- */
   u3: [
     { tool: 'tenframe', label: '십 배열판 — 모으기·가르기', desc: '두 판에 점을 모으고 가르며 덧셈·뺄셈 상황 만들기', cfg: { frames: 2, max: 9, num: 5 } }
   ],
   // 8차시 — 뺄셈을 알아볼까요
-  u3_l8: [
+  u3_l08: [
     { tool: 'tenframe', label: '십 배열판 — 점 빼기', desc: '놓인 점을 하나씩 빼며 "몇 개 남았나" 뺄셈 상황 만들기', cfg: { frames: 1, max: 9, num: 7 } }
   ],
   // 11차시 — 0이 있는 덧셈과 뺄셈
