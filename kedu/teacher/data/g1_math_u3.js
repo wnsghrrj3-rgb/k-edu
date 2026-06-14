@@ -364,48 +364,155 @@ LESSONS["u3_l03"] = {
   ]
 };
 
-LESSONS["u3_l4"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 4,
-    title: "이야기를 만들어 볼까요",
-    std: "[2수01-04], [2수01-05]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 그림 상황으로 덧셈·뺄셈 이야기 만들기",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_04_이야기를만들어볼까요.html"
-  },
+/* u3_l04 — 이야기를 만들어 볼까요 · 밀도 표준 v1 */
+LESSONS["u3_l04"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:4, title:"이야기를 만들어 볼까요", std:"[2수01-04], [2수01-05]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"농장에 무슨 이야기가 있을까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l4_story", "q_l4_bee"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘은 이야기를 만들어요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간을 떠올려요", desc:"1단계 · 도입"}, suggested_extras:["v_l4_story"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"꿀을 함께 모아 봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l4_bee", "q_l4_leave"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"나비가 더 날아와요", desc:"2단계 · 전개"}, suggested_extras:["q_l4_bee", "q_l4_leave"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"벌이 날아가요", desc:"2단계 · 전개"}, suggested_extras:["q_l4_bee", "q_l4_leave"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"꽃은 얼마나 더 많을까요?", desc:"2단계 · 전개"}, suggested_extras:["q_l4_bee", "q_l4_leave"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["b_l4_math_story", "q_l4_make"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l4_symbol"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"이야기 만들기\n그림 속 수학 이야기", emoji:"📖" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"두 묶음을 하나로 **모으기**, 한 묶음을 둘로 **가르기**를 했어요.\n오늘은 그림을 보고 **수학 이야기**를 만들어 봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"연못에 오리가 있어요",
+        kids:[ {face:"🦆", label:"연못에\n오리 4마리"}, {face:"🦆", label:"뒤뚱뒤뚱\n2마리가 더!"} ],
+        question:"무슨 일이 일어났는지 이야기로 말해 볼까요? 오리는 모두 몇 마리가 될까요?" } },
+    // ── 전개: 이야기 짜임 → 더하는/빼는 이야기 구분 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"이야기에는 세 가지가 들어가요",
+        content:"① 무엇이 있었나  ② 무슨 일이 생겼나  ③ 그래서 어떻게 되었나\n연못에 오리 4마리가 있었어요(①). 2마리가 더 왔어요(②). 그래서 모두 6마리(③).",
+        items:[ {emoji:"🦆", count:4, label:"있던 오리"}, {emoji:"🦆", count:2, label:"더 온 오리"}, {emoji:"🦆", count:6, label:"모두 6마리"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"더하는 이야기 — 수가 늘어나요",
+        content:"**더 오다 · 모으다 · 모두** 같은 말이 나오면 수가 **늘어나요**.\n사과 3개에 2개를 더 담으면 모두 5개.",
+        items:[ {emoji:"🍎", count:3, label:"3개"}, {emoji:"🍎", count:2, label:"더 담기"}, {emoji:"🍎", count:5, label:"모두 5개"} ],
+        note:"👉 '더, 모두, 모으면'이 나오면 → 더하는 이야기" } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"빼는 이야기 — 수가 줄어들어요",
+        content:"**가다 · 먹다 · 남다** 같은 말이 나오면 수가 **줄어들어요**.\n빵 5개에서 2개를 먹으면 3개가 남아요.",
+        items:[ {emoji:"🍞", count:5, label:"5개"}, {emoji:"🍞", count:2, label:"먹은 것"}, {emoji:"🍞", count:3, label:"남은 3개"} ],
+        note:"👉 '가다, 먹다, 남다'가 나오면 → 빼는 이야기" } },
+    { id:"s07", stage:"전개", block:"visual_demo", data:{
+        title:"더하는 이야기를 십 배열판으로",
+        items:[ {ten_frame:4, num:4, label:"있던 오리"}, {ten_frame:2, num:2, label:"더 온 오리"}, {ten_frame:6, num:6, label:"모두"} ],
+        sub_text:"4칸에 2칸을 더 채우면 6칸. 말로 만든 이야기가 그림으로도 보여요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"'2마리가 더 왔다'인데 빼는 이야기로 만든다 (4에서 2를 빼서 2라고 말함)",
+        right:"'더 왔다'는 **늘어나는** 말 → 더하는 이야기 (4와 2를 모아 6)",
+        hint:"이야기 속 말이 '늘어나는 말'인지 '줄어드는 말'인지 먼저 찾아요." } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"사과 6개가 있는 그림 하나로 **더하는 이야기**와 **빼는 이야기**를 둘 다 만들 수 있을까요?" } },
+    { id:"s10", stage:"전개", block:"interactive_ten_frame", data:{
+        title:"👆 더하는 이야기를 채워 봐요 — 3마리에 4마리가 더",
+        start_count:3,
+        prompt:"지금 3칸이 채워져 있어요. 병아리 4마리가 더 왔어요. 4개를 더 눌러 모두 몇 마리인지 채워 볼까요?" } },
+    // ── 기본문제 ──
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"더하는 이야기를 만들어 풀어요",
+        items:[ {emoji:"🐤", count:5, label:"마당 병아리"}, {emoji:"🐤", count:3, label:"더 온 병아리"} ],
+        question:"마당에 병아리 5마리가 있었어요. 3마리가 더 왔어요. 모두 몇 마리?",
+        input:"count_input", answer:8,
+        note:"풀이: '더 왔다'는 더하는 이야기. 5에서 이어 세기 → 6,7,8. 답은 8." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"빼는 이야기를 만들어 풀어요",
+        scenario:{ icon:"🍪", body:"접시에 쿠키가 7개 있었어요. 동생이 2개를 먹었어요." },
+        question:"접시에 남은 쿠키는 몇 개?",
+        input:"count_input", answer:5,
+        note:"풀이: '먹었다'는 빼는 이야기. 7에서 2개를 덜어내면 5. 답은 5." } },
+    { id:"s13", stage:"기본문제", block:"multi", data:{
+        title:"더하는 이야기를 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"새 3마리가 있는데 2마리가 더 날아왔어요", correct:true},
+          {label:"사탕 6개 중 4개를 먹었어요"},
+          {label:"빨강 풍선 4개와 파랑 풍선 3개를 모았어요", correct:true},
+          {label:"버스에서 5명이 내렸어요"}
+        ],
+        note:"풀이: '더 날아왔다'·'모았다' → 더하는 이야기 ✓ / '먹었다'·'내렸다' → 빼는 이야기 ✗" } },
+    { id:"s14", stage:"기본문제", block:"match", data:{
+        title:"이야기와 알맞은 수를 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"4와 2를 모으면"}, right:{num:6} },
+          { left:{label:"7에서 3을 먹으면"}, right:{num:4} },
+          { left:{label:"5와 4를 모으면"}, right:{num:9} }
+        ] } },
+    // ── 응용문제 ──
+    { id:"s15", stage:"응용문제", block:"offline_activity", data:{
+        title:"그림 카드로 이야기 만들기 놀이",
+        tag:"짝 활동", icon:"🃏",
+        body:"짝과 그림 카드 한 장을 골라요. 한 사람은 '더하는 이야기', 다른 사람은 '빼는 이야기'를 만들어 말해요. 누가 더 재미있는 이야기를 만들까요?",
+        materials:"그림 카드(또는 교실 물건) · 7분" } },
+    { id:"s16", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 이야기",
+        scenario:{ icon:"🚌", body:"버스에 6명이 타고 있었어요. 정류장에서 2명이 더 탔어요." },
+        question:"이야기로 만들어 말해 볼까요? \"6과 2를 모으면 ___\" 버스에는 모두 몇 명?",
+        answer:8 } },
+    { id:"s17", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"사과 5개 그림 하나로 **더하는 이야기**와 **빼는 이야기**를 각각 하나씩 만들어 친구에게 들려주세요. (예: '3개에 2개를 더 담아 5개' / '5개에서 2개를 먹어 3개')" } },
+    // ── 정리 ──
+    { id:"s18", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "그림을 보고 **수학 이야기**를 만들 수 있다.",
+          "'더 오다·모으다·모두'가 나오면 **더하는 이야기** (예: 4와 2 → 6).",
+          "'가다·먹다·남다'가 나오면 **빼는 이야기** (예: 5에서 2 → 3)."
+        ] } },
+    { id:"s19", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        scenario:{ icon:"🐟", body:"어항에 물고기 4마리가 있었어요. 3마리가 더 들어왔어요." },
+        question:"더하는 이야기일까요, 빼는 이야기일까요? 물고기는 모두 몇 마리?",
+        input:"count_input", answer:7,
+        note:"'더 들어왔다'는 더하는 이야기. 4와 3을 모아 7. 답은 7." } },
+    { id:"s20", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"이야기를 **식**으로 써 봐요. **+** 와 **=** 기호를 처음 만나요! '4와 2를 모으면 6'을 '4 + 2 = 6'으로.",
+        emoji:"➕" } }
   ],
   extras: [
-    {id:"v_l4_story", type:"video", icon:"🎥", title:"수학 이야기 만들기 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88+%EC%9D%B4%EC%95%BC%EA%B8%B0+%EB%A7%8C%EB%93%A4%EA%B8%B0", description:"그림 상황을 보고 수 이야기를 만드는 과정을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l4_bee", type:"fun_question", icon:"💡", title:"나비가 더 날아오면?", content:"꽃에 나비 3마리가 앉아 있는데 2마리가 더 날아왔어요. 어떤 이야기를 만들 수 있을까요?", fit_slides:["motivate", "concept"]},
-    {id:"q_l4_leave", type:"fun_question", icon:"💡", title:"벌이 날아가면?", content:"벌 5마리 중에서 2마리가 날아갔어요. 남은 벌 이야기를 만들어 봐요. 모으는 이야기일까요, 덜어 내는 이야기일까요?", fit_slides:["concept"]},
-    {id:"t_l4_keyword", type:"tip", icon:"🧩", title:"이야기 속 낱말 찾기", content:"'모두·합하면'은 모으는 이야기, '남은·더 적은'은 덜어 내는 이야기예요. 낱말을 단서로 삼게 도와주세요.", fit_slides:["concept"]},
-    {id:"t_l4_picture", type:"tip", icon:"🧩", title:"그림 먼저, 이야기 나중", content:"그림을 손으로 짚으며 무슨 일이 일어났는지 말하게 한 뒤 수로 옮기면 이야기 만들기가 쉬워져요.", fit_slides:["concept"]},
-    {id:"r_l4_garden", type:"real_world", icon:"🌍", title:"우리 주변 이야기로 바꾸기", content:"교실·운동장에서 일어난 일도 수 이야기로 만들 수 있어요. 친구 2명이 오고 3명이 더 왔어요처럼요.", fit_slides:["real_world", "concept"]},
-    {id:"r_l4_snackbox", type:"real_world", icon:"🌍", title:"간식 이야기", content:"간식 상자에 과자 4개가 있었는데 2개를 먹었어요. 남은 과자 이야기를 만들어 봐요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l4_match_story", type:"game", game_kind:"memory_match", icon:"🎮", title:"이야기와 상황 짝짓기", description:"이야기와 어울리는 상황을 짝지어 보세요.", hint:"이야기 속 낱말이 모으기인지 덜어 내기인지 살펴요.", pairs:[{a:{text:"모두 모이면"}, b:{text:"더하는 이야기"}}, {a:{text:"남은 것은"}, b:{text:"덜어 내는 이야기"}}, {a:{text:"더 날아오면"}, b:{text:"더하는 이야기"}}, {a:{text:"날아가면"}, b:{text:"덜어 내는 이야기"}}], fit_slides:["match", "game"]},
-    {id:"b_l4_math_story", type:"book", icon:"📖", title:"『수학으로 이야기 짓기』 같은 수 이야기책", content:"일상 장면을 수 이야기로 바꾸어 보는 그림책으로 상상력을 길러요.", source:"도서관에서 수·이야기 주제로 확인", fit_slides:["motivate", "summary"]},
-    {id:"x_l4_addonly", type:"misconception", icon:"❓", title:"오개념 — 이야기는 모두 더하기?", content:"두 무리가 보이면 무조건 더한다고 생각하는 경우가 있어요. 덜어 내는 이야기도 있음을 그림으로 구분해 주세요.", fit_slides:["concept"]},
-    {id:"e_l4_symbol", type:"extension", icon:"⬆", title:"다음은 덧셈 기호", content:"이야기를 +와 = 기호로 짧게 적을 수 있어요. 다음 시간에 덧셈식을 배워요.", fit_slides:["next_lesson"]},
-    {id:"q_l4_make", type:"fun_question", icon:"💡", title:"내 이야기 발표하기", content:"내가 만든 수 이야기를 친구 앞에서 말해 봐요. 친구의 이야기와 어떻게 다른지 비교해요.", fit_slides:["summary", "game"]}
+    { id:"v_l04_story", type:"video", icon:"🎥", title:"덧셈·뺄셈 이야기 만들기 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88+%EC%9D%B4%EC%95%BC%EA%B8%B0+%EB%A7%8C%EB%93%A4%EA%B8%B0",
+      description:"그림 상황을 보고 수학 이야기를 만드는 과정을 보여 주는 영상. 도입에 활용.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate","review"] },
+    { id:"q_l04_morning", type:"fun_question", icon:"💡", title:"오늘 아침 이야기",
+      content:"오늘 아침에 있었던 일로 더하는 이야기를 하나 만들어 볼까요? (예: 식탁에 컵 2개가 있었는데 1개를 더 놓아 모두 3개.)",
+      fit_slides:["motivate","concept"] },
+    { id:"a_l04_finger", type:"other_activity", icon:"🙌", title:"손가락으로 이야기 만들기",
+      content:"손가락을 펴며 '있었던 수'와 '더 온 수(또는 간 수)'를 보여 주고, 짝이 모두/남은 수를 말하게 해요.",
+      fit_slides:["concept","interactive_ten_frame"] },
+    { id:"t_l04_words", type:"tip", icon:"🧩", title:"늘어나는 말·줄어드는 말",
+      content:"칠판 두 칸에 '늘어나는 말(더·모두·모으다)'과 '줄어드는 말(가다·먹다·남다)'을 미리 적어 두면, 학생이 이야기 종류를 스스로 분류하기 쉬워요.",
+      fit_slides:["concept","misconception"] },
+    { id:"x_l04_partonly", type:"misconception", icon:"❓", title:"오개념 — 그림의 일부만 보기",
+      content:"그림에서 한쪽 묶음만 보고 이야기를 끝내는 학생이 있어요. '있던 것'과 '달라진 것'을 모두 짚어 주세요.",
+      fit_slides:["misconception","basic_problem"] },
+    { id:"r_l04_classroom", type:"real_world", icon:"🌍", title:"교실 속 이야기",
+      content:"줄을 선 친구가 몇 명인데 몇 명이 더 왔는지, 사물함에서 책을 몇 권 꺼냈는지 — 교실에서 일어나는 일을 이야기로 만들어 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l04_sort", type:"game", game_kind:"memory_match", icon:"🎮", title:"이야기 분류 짝짓기",
+      description:"이야기 문장과 '더하기/빼기' 종류를 짝지어 보세요.", hint:"늘어나는 말인지 줄어드는 말인지 찾아요.",
+      pairs:[ {a:{text:"2마리가 더 왔어요"}, b:{text:"더하기"}}, {a:{text:"3개를 먹었어요"}, b:{text:"빼기"}}, {a:{text:"두 바구니를 모았어요"}, b:{text:"더하기"}}, {a:{text:"4명이 내렸어요"}, b:{text:"빼기"}} ],
+      fit_slides:["multi","game"] },
+    { id:"q_l04_friend", type:"fun_question", icon:"💡", title:"친구 이야기를 식으로",
+      content:"친구가 만든 더하는 이야기를 듣고, '몇과 몇을 모으면 몇'인지 말로 바꿔 말해 줄 수 있나요?",
+      fit_slides:["summary","real_world"] },
+    { id:"b_l04_book", type:"book", icon:"📖", title:"수 이야기 그림책",
+      content:"수가 늘어나고 줄어드는 장면이 담긴 그림책으로 이야기 만들기를 이어 가 보세요.",
+      source:"도서관에서 '수·더하기' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l04_support", type:"tip", icon:"🧩", title:"이야기가 어려운 학생에게",
+      content:"이야기 만들기를 어려워하면 '있었어요 → 어떻게 됐어요' 두 칸 틀을 주고 빈칸만 채우게 하면 시작이 쉬워져요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l04_three", type:"extension", icon:"⬆", title:"확장 — 세 수 이야기",
+      content:"'2개 있었는데 1개가 오고, 또 2개가 왔어요'처럼 수가 세 번 나오는 이야기도 만들어 볼 수 있어요.",
+      fit_slides:["advanced_problem","next_lesson"] },
+    { id:"e_l04_symbol", type:"extension", icon:"⬆", title:"확장 — 식으로 가는 다리",
+      content:"다음 시간에 배울 +·= 기호를 살짝 보여 주며 '모으면'을 '+'로 바꿔 쓸 수 있다고 예고하면 연결이 자연스러워요.",
+      fit_slides:["next_lesson","summary"] }
   ]
 };
 
