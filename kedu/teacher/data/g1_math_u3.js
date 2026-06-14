@@ -669,139 +669,478 @@ LESSONS["u3_l05"] = {
   ]
 };
 
-LESSONS["u3_l6~7"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: "6~7",
-    title: "덧셈을 해 볼까요",
-    std: "[2수01-06]",
-    duration_min: 80,
-    lesson_format: "본 차시 5단계 18슬 (6·7차시 블록) — 덧셈 계산 연습",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_06_07_덧셈을해볼까요.html"
-  },
+/* u3_l06_07 — 덧셈을 해 볼까요 (병합 차시) · 밀도 표준 v1 */
+LESSONS["u3_l06_07"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:"6~7", title:"덧셈을 해 볼까요", std:"[2수01-06]", duration_min:80 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"딸기는 모두 몇 개일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l67_strategy"]},
-    {id:"s02", stage:"도입", block:"motivate", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:["v_l67_strategy"]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간에 배운 것", desc:"1단계 · 도입"}, suggested_extras:["v_l67_strategy"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"딸기를 모두 모으면", desc:"2단계 · 전개"}, suggested_extras:["q_l67_faster", "q_l67_swap"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"모두 세기", desc:"2단계 · 전개"}, suggested_extras:["q_l67_faster", "q_l67_swap"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"이어 세기", desc:"2단계 · 전개"}, suggested_extras:["q_l67_faster", "q_l67_swap"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"십 배열판으로 묶어 세기", desc:"2단계 · 전개"}, suggested_extras:["q_l67_faster", "q_l67_swap"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"방법을 골라 풀어 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"십 배열판으로 6 + 2를 풀어 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"자리를 바꿔도 합이 같을까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"달걀을 두 식으로 써 봐요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"공깃돌 놀이", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"규칙을 찾아 빈칸을 채워요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"합이 6인 식을 만들어요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["b_l67_add", "q_l67_make"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l67_sub"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"덧셈을 해 봐요\n여러 가지 방법", emoji:"🍓" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"덧셈식 **3 + 2 = 5** 와 + · = 기호를 배웠어요.\n오늘은 답을 구하는 **여러 가지 방법**을 익히고, 두 수의 **자리를 바꿔도** 되는지 알아봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"바구니에 딸기를 담아요",
+        kids:[ {face:"🧺", label:"빨강 바구니\n딸기 4개"}, {face:"🧺", label:"노랑 바구니\n딸기 3개"} ],
+        question:"딸기는 모두 몇 개일까요? 어떻게 세면 빠를까요?" } },
+    // ── 전개: 세 가지 방법 + 교환법칙 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"답을 구하는 여러 방법",
+        content:"4 + 3 의 답은 **여러 방법**으로 구할 수 있어요.\n① 모두 세기  ② 이어 세기  ③ 십 배열판",
+        items:[ {emoji:"🍓", count:4, label:"4"}, {emoji:"🍓", count:3, label:"+ 3"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"① 모두 세기",
+        content:"처음부터 하나씩 다 세요. 🍓🍓🍓🍓 🍓🍓🍓 → 1,2,3,4,5,6,7.\n**4 + 3 = 7**",
+        items:[ {emoji:"🍓", count:7, label:"모두 7"} ],
+        note:"👉 가장 기본 방법. 빠뜨리지 않게 손으로 짚으며 세요." } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"② 이어 세기",
+        content:"앞의 수 4부터 이어서 세요. '4!' 하고 → 5,6,7.\n세 번만 더 세면 돼서 빨라요.",
+        items:[ {emoji:"🍓", count:4, label:"4에서"}, {emoji:"🍓", count:3, label:"3개 더"} ],
+        note:"👉 큰 수부터 이어 세면 더 빨라요." } },
+    { id:"s07", stage:"전개", block:"visual_demo", data:{
+        title:"③ 십 배열판으로",
+        items:[ {ten_frame:4, num:4, label:"4"}, {ten_frame:3, num:3, label:"3"}, {ten_frame:7, num:7, label:"4+3"} ],
+        sub_text:"4칸에 3칸을 더 채우면 7칸. 한눈에 보여요." } },
+    { id:"s08", stage:"전개", block:"concept", data:{
+        title:"자리를 바꿔도 합은 같아요",
+        content:"4 + 3 과 3 + 4 를 각각 세어 봐요. 둘 다 **7**!\n더하는 두 수는 **자리를 바꿔도** 답이 같아요.",
+        items:[ {emoji:"🍓", count:7, label:"4+3=7"}, {emoji:"🍓", count:7, label:"3+4=7"} ],
+        note:"👉 그래서 큰 수부터 이어 세면 편해요 (3+4 → 4부터)." } },
+    { id:"s09", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"이어 세기를 할 때 시작 수를 한 번 더 센다 (4 + 3을 4,5,6,7,8 — 4를 또 셈)",
+        right:"시작 수는 세지 않고 **그 다음부터** 센다 (4 → 5,6,7). 더한 수만큼만 이어 센다.",
+        hint:"이어 세기는 '4!' 하고 손가락 3개를 펴며 5,6,7." } },
+    { id:"s10", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"6 + 1 은 어떤 방법이 가장 빠를까요? 그 이유는 무엇일까요?" } },
+    { id:"s11", stage:"전개", block:"interactive_ten_frame", data:{
+        title:"👆 십 배열판으로 5 + 3 채우기",
+        start_count:5,
+        prompt:"5칸이 채워져 있어요. 3개를 더 눌러 5 + 3 = 몇인지 채워 봐요." } },
+    // ── 기본문제 ──
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"이어 세기로 풀어요",
+        items:[ {emoji:"🍎", count:6, label:"6"}, {emoji:"🍎", count:2, label:"+ 2"} ],
+        question:"6 + 2 = ?  큰 수 6부터 이어 세 봐요.",
+        input:"count_input", answer:8,
+        note:"풀이: 6 → 7,8. 6 + 2 = 8." } },
+    { id:"s13", stage:"기본문제", block:"basic_problem", data:{
+        title:"십 배열판으로 6 + 2",
+        items:[ {ten_frame:6, num:6, label:"6"}, {ten_frame:2, num:2, label:"+2"} ],
+        question:"6 + 2 는 모두 몇 칸이 될까요?",
+        input:"count_input", answer:8,
+        note:"6칸에서 2칸을 더 → 7,8. 답은 8." } },
+    { id:"s14", stage:"기본문제", block:"basic_problem", data:{
+        title:"자리를 바꿔 확인해요",
+        scenario:{ icon:"🥚", body:"달걀을 2 + 5 로도, 5 + 2 로도 셀 수 있어요." },
+        question:"2 + 5 와 5 + 2 의 답은? (둘 다 같은 수)",
+        input:"count_input", answer:7,
+        note:"2+5=7, 5+2=7. 자리를 바꿔도 7로 같아요." } },
+    { id:"s15", stage:"기본문제", block:"multi", data:{
+        title:"합이 8이 되는 식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"5 + 3", correct:true},
+          {label:"4 + 3"},
+          {label:"6 + 2", correct:true},
+          {label:"3 + 4"}
+        ],
+        note:"풀이: 5+3=8 ✓ / 4+3=7 ✗ / 6+2=8 ✓ / 3+4=7 ✗" } },
+    { id:"s16", stage:"기본문제", block:"match", data:{
+        title:"덧셈식과 답을 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"5 + 4"}, right:{num:9} },
+          { left:{label:"6 + 1"}, right:{num:7} },
+          { left:{label:"4 + 4"}, right:{num:8} }
+        ] } },
+    // ── 응용문제 ──
+    { id:"s17", stage:"응용문제", block:"offline_activity", data:{
+        title:"공깃돌 두 식 놀이",
+        tag:"짝 활동", icon:"🪨",
+        body:"공깃돌을 두 손에 나눠 쥐어요. 왼손 몇 개, 오른손 몇 개인지 보고 '몇 + 몇 = 몇'과 자리를 바꾼 식 두 개를 말해요.",
+        materials:"공깃돌(또는 바둑돌) · 7분" } },
+    { id:"s18", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 덧셈",
+        scenario:{ icon:"🚌", body:"버스에 7명이 타고 있었는데 2명이 더 탔어요." },
+        question:"7 + 2 = ___  모두 몇 명? 큰 수 7부터 이어 세 봐요.",
+        answer:9 } },
+    { id:"s19", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"합이 6이 되는 덧셈식을 자리를 바꾼 짝까지 모두 찾아보세요. (예: 1+5와 5+1, 2+4와 4+2 …)" } },
+    // ── 정리 ──
+    { id:"s20", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "덧셈은 **모두 세기·이어 세기·십 배열판** 여러 방법으로 풀 수 있다.",
+          "**큰 수부터 이어 세면** 더 빠르다 (예: 2+6 → 6,7,8).",
+          "더하는 두 수는 **자리를 바꿔도 합이 같다** (4+3 = 3+4 = 7)."
+        ] } },
+    { id:"s21", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:3, label:"3"}, {emoji:"⭐", count:6, label:"+ 6"} ],
+        question:"3 + 6 = ?  큰 수 6부터 이어 세 봐요.",
+        input:"count_input", answer:9,
+        note:"6 → 7,8,9. 3 + 6 = 9 (= 6 + 3)." } },
+    { id:"s22", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"이번엔 **뺄셈**! 덧셈의 반대인 빼기를 배워요. **-** 기호를 처음 만나요.",
+        emoji:"➖" } }
   ],
   extras: [
-    {id:"v_l67_strategy", type:"video", icon:"🎥", title:"여러 가지 덧셈 방법", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EC%9D%B4%EC%96%B4+%EC%84%B8%EA%B8%B0+%EB%AA%A8%EB%91%90+%EC%84%B8%EA%B8%B0", description:"모두 세기·이어 세기·십 배열판으로 더하는 여러 방법을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l67_faster", type:"fun_question", icon:"💡", title:"어떤 방법이 빠를까요?", content:"6 + 2를 모두 세기로 풀 때와 이어 세기로 풀 때, 어느 쪽이 더 빠른가요? 왜 그럴까요?", fit_slides:["concept"]},
-    {id:"q_l67_swap", type:"fun_question", icon:"💡", title:"자리를 바꾸면?", content:"2 + 6과 6 + 2는 합이 같을까요? 큰 수부터 이어 세면 왜 더 편한지 이야기해 봐요.", fit_slides:["concept"]},
-    {id:"t_l67_counton", type:"tip", icon:"🧩", title:"이어 세기 요령", content:"큰 수를 머릿속에 두고 작은 수만큼 이어서 세요. 6에서 7, 8 — 6 + 2 = 8.", fit_slides:["concept"]},
-    {id:"t_l67_tenframe", type:"tip", icon:"🧩", title:"십 배열판으로 묶어 보기", content:"십 배열판에 두 수를 놓으면 합이 한눈에 보여요. 5를 기준으로 보면 더 빨라요.", fit_slides:["concept"]},
-    {id:"r_l67_marble", type:"real_world", icon:"🌍", title:"공깃돌 놀이로 더하기", content:"공깃돌을 두 번 집어 모으면 덧셈이 돼요. 4개와 3개를 집으면 모두 7개.", fit_slides:["real_world", "game"]},
-    {id:"r_l67_steps", type:"real_world", icon:"🌍", title:"계단 오르며 더하기", content:"계단을 3칸 오른 뒤 2칸 더 오르면 모두 5칸. 이어 세기를 몸으로 익혀요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l67_sum_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"덧셈식과 합 짝짓기", description:"덧셈식과 그 합을 짝지어 보세요.", hint:"이어 세기로 합을 구해 짝을 찾아요.", pairs:[{a:{text:"4 + 3"}, b:{text:"7"}}, {a:{text:"6 + 2"}, b:{text:"8"}}, {a:{text:"5 + 4"}, b:{text:"9"}}, {a:{text:"3 + 3"}, b:{text:"6"}}], fit_slides:["match", "game"]},
-    {id:"g_l67_swap", type:"game", game_kind:"memory_match", icon:"🎮", title:"교환법칙 짝짓기", description:"합이 같은 두 덧셈식을 짝지어 보세요.", hint:"자리를 바꿔도 합이 같은 식을 찾아요.", pairs:[{a:{text:"2 + 6"}, b:{text:"6 + 2"}}, {a:{text:"1 + 5"}, b:{text:"5 + 1"}}, {a:{text:"3 + 4"}, b:{text:"4 + 3"}}, {a:{text:"2 + 7"}, b:{text:"7 + 2"}}], fit_slides:["match", "game"]},
-    {id:"b_l67_add", type:"book", icon:"📖", title:"덧셈 연습 그림책", content:"여러 상황에서 더하는 이야기를 담아 덧셈을 즐겁게 연습해요.", source:"도서관에서 덧셈 주제로 확인", fit_slides:["concept", "summary"]},
-    {id:"x_l67_recount", type:"misconception", icon:"❓", title:"오개념 — 더할 때 처음부터 다시 센다", content:"6 + 2를 1부터 다시 세는 경우가 많아요. 큰 수에서 이어 세면 빠르다는 것을 반복해 보여 주세요.", fit_slides:["concept"]},
-    {id:"e_l67_sub", type:"extension", icon:"⬆", title:"다음은 뺄셈", content:"더하기를 익혔으니 이번엔 덜어 내기 — 뺄셈을 배워요.", fit_slides:["next_lesson"]},
-    {id:"q_l67_make", type:"fun_question", icon:"💡", title:"합이 6인 식 만들기", content:"합이 6이 되는 덧셈식을 모두 찾아봐요. 0 + 6, 1 + 5, 2 + 4, 3 + 3.", fit_slides:["game", "summary"]}
+    { id:"v_l67_add", type:"video", icon:"🎥", title:"여러 가지 덧셈 방법 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EC%9D%B4%EC%96%B4+%EC%84%B8%EA%B8%B0+%EB%8D%A7%EC%85%88",
+      description:"모두 세기·이어 세기로 덧셈하는 과정을 보여 주는 영상.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["concept","motivate"] },
+    { id:"q_l67_fast", type:"fun_question", icon:"💡", title:"어느 게 더 빠를까?",
+      content:"1 + 8 을 '1부터 이어 세기'와 '8부터 이어 세기'로 각각 해 봐요. 어느 쪽이 더 빠른가요?",
+      fit_slides:["concept","question"] },
+    { id:"a_l67_finger", type:"other_activity", icon:"🙌", title:"큰 수부터 이어 세기",
+      content:"작은 수 + 큰 수 식을 보여 주고, 큰 수를 먼저 말한 뒤 작은 수만큼 손가락을 펴며 이어 세게 해요.",
+      fit_slides:["concept","interactive_ten_frame"] },
+    { id:"t_l67_start", type:"tip", icon:"🧩", title:"이어 세기 시작점",
+      content:"이어 세기에서 '시작 수는 세지 않는다'를 강조하세요. '4!' 하고 그 다음부터 센다는 동작을 함께 연습하면 +1 오류가 줄어요.",
+      fit_slides:["misconception","concept"] },
+    { id:"x_l67_recount", type:"misconception", icon:"❓", title:"오개념 — 시작 수 다시 세기",
+      content:"이어 세기에서 시작 수를 한 번 더 세어 답이 1 커지는 실수가 흔해요. 손가락 동작으로 바로잡아 주세요.",
+      fit_slides:["misconception","basic_problem"] },
+    { id:"r_l67_classroom", type:"real_world", icon:"🌍", title:"교실 속 덧셈",
+      content:"우리 모둠 4명에 2명이 더 합쳐졌을 때, 연필 5자루에 3자루를 더 놓았을 때 — 빠른 방법으로 더해 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l67_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"자리 바꾼 식 짝짓기",
+      description:"답이 같은(자리만 바꾼) 식끼리 짝지어 보세요.", hint:"두 수의 자리만 다르고 합은 같아요.",
+      pairs:[ {a:{text:"2 + 6"}, b:{text:"6 + 2"}}, {a:{text:"3 + 5"}, b:{text:"5 + 3"}}, {a:{text:"1 + 7"}, b:{text:"7 + 1"}}, {a:{text:"4 + 5"}, b:{text:"5 + 4"}} ],
+      fit_slides:["multi","game"] },
+    { id:"q_l67_check", type:"fun_question", icon:"💡", title:"합을 빠르게",
+      content:"9 + 1, 8 + 2 처럼 합이 10이 되는 식을 빠르게 말해 봐요. 손가락 열 개로 확인할 수 있어요.",
+      fit_slides:["summary","real_world"] },
+    { id:"b_l67_book", type:"book", icon:"📖", title:"덧셈 그림책",
+      content:"여러 가지로 수를 세고 더하는 장면이 담긴 그림책으로 덧셈을 이어 가 보세요.",
+      source:"도서관에서 '덧셈·세기' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l67_support", type:"tip", icon:"🧩", title:"이어 세기가 어려우면",
+      content:"이어 세기를 어려워하면 십 배열판이나 구체물로 '모두 세기'부터 충분히 다진 뒤 이어 세기로 넘어가세요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l67_ten", type:"extension", icon:"⬆", title:"확장 — 10이 되는 짝",
+      content:"합이 10이 되는 두 수(1·9, 2·8, 3·7 …)를 찾아보면 다음 학기 받아올림 학습에 도움이 돼요.",
+      fit_slides:["advanced_problem","next_lesson"] },
+    { id:"e_l67_three", type:"extension", icon:"⬆", title:"확장 — 세 수 더하기",
+      content:"2 + 3 + 1 처럼 세 수를 더할 때, 앞에서부터 또는 합이 쉬운 짝부터 더하는 방법을 비교해 봐요.",
+      fit_slides:["advanced_problem","summary"] }
   ]
 };
 
-LESSONS["u3_l8"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 8,
-    title: "뺄셈을 알아볼까요",
-    std: "[2수01-05]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 뺄셈식 쓰기·읽기 도입",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_08_뺄셈을알아볼까요.html"
-  },
+/* u3_l08 — 뺄셈을 알아볼까요 · 밀도 표준 v1 */
+LESSONS["u3_l08"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:8, title:"뺄셈을 알아볼까요", std:"[2수01-05]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"남은 딸기는 몇 개일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l8_minus", "q_l8_left"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘은 뺄셈을 배워요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간을 떠올려요", desc:"1단계 · 도입"}, suggested_extras:["v_l8_minus"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"딸기를 따 가요", desc:"2단계 · 전개"}, suggested_extras:["q_l8_left", "q_l8_read"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"`-`를 알아봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l8_left", "q_l8_read"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"두 모양의 차이를 알아봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l8_left", "q_l8_read"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"두 상황 모두 뺄셈식이에요", desc:"2단계 · 전개"}, suggested_extras:["q_l8_left", "q_l8_read"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"`-`를 따라 써 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l8_practice"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"뺄셈을 알아봐요\n- 기호", emoji:"➖" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"덧셈 **+ · =** 와 여러 가지 더하는 방법을 배웠어요.\n오늘은 그 반대인 **뺄셈**, **-** 기호를 만나요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"접시의 딸기를 먹어요",
+        kids:[ {face:"🍓", label:"접시에\n딸기 7개"}, {face:"😋", label:"냠냠\n2개 먹음"} ],
+        question:"남은 딸기는 몇 개일까요? 이걸 짧은 식으로 쓸 수 있을까요?" } },
+    // ── 전개: - 도입 → 뺄셈식 → 가르기와 연결 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"'빼기'를 - 로 써요",
+        content:"'덜다 · 먹다 · 남다'를 기호 하나로 줄여 써요. 바로 **-** (빼기)예요.\n딸기 7개에서 2개를 먹으면 → **7 - 2**",
+        items:[ {emoji:"🍓", count:7, label:"7"}, {emoji:"🍓", count:2, label:"- 2"} ],
+        note:"👉 -는 '빼기'라고 읽어요. 7 - 2 는 '7 빼기 2'." } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"남은 수를 = 로 써요",
+        content:"7에서 2를 빼면 5가 남아요 → **7 - 2 = 5**\n'7 빼기 2는 5와 같다'라고 읽어요.",
+        items:[ {emoji:"🍓", count:5, label:"남은 5"} ],
+        note:"👉 = 는 덧셈과 똑같이 '양쪽이 같다'는 뜻." } },
+    { id:"s06", stage:"전개", block:"arrow_flow", data:{
+        title:"식이 만들어지는 순서",
+        flow:[ {num:7, label:"있던 딸기"}, {num:2, label:"먹은 딸기"}, {num:5, label:"남은 딸기", type:"up"} ],
+        sub:"7 - 2 = 5 — 있던 수, 덜어낸 수, 그리고 남은 수." } },
+    { id:"s07", stage:"전개", block:"visual_demo", data:{
+        title:"십 배열판으로 빼기",
+        items:[ {ten_frame:7, num:7, label:"7"}, {ten_frame:5, num:5, label:"7 - 2"} ],
+        sub_text:"7칸에서 2칸을 지우면 5칸이 남아요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"빼는 순서를 거꾸로 한다 (7 - 2 를 2 - 7 로 바꿔 쓴다)",
+        right:"뺄셈은 **있던 수(큰 수)에서** 덜어낸 수를 뺀다. 7 - 2 와 2 - 7 은 달라요.",
+        hint:"'있던 수'를 앞에, '덜어낸 수'를 뒤에 써요." } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"덧셈 3 + 2 = 5 를 보고 뺄셈식도 만들 수 있을까요? (5에서 2를 빼면 몇?)" } },
+    { id:"s10", stage:"전개", block:"concept", data:{
+        title:"가르기가 뺄셈이에요",
+        content:"5는 3과 2로 **가르기** 할 수 있었죠. 5에서 2를 빼면 3 → **5 - 2 = 3**\n가르기를 식으로 쓰면 뺄셈이에요.",
+        items:[ {emoji:"🍪", count:5, label:"5를"}, {emoji:"🍪", count:3, label:"3과"}, {emoji:"🍪", count:2, label:"2로"} ],
+        note:"👉 모으기↔덧셈, 가르기↔뺄셈." } },
+    // ── 기본문제 ──
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"빼고 남은 수를 구해요",
+        items:[ {emoji:"🐤", count:6, label:"6"}, {emoji:"🐤", count:2, label:"- 2"} ],
+        question:"병아리 6마리 중 2마리가 둥지로 갔어요.  6 - 2 = ___  남은 건 몇 마리?",
+        input:"count_input", answer:4,
+        note:"풀이: 6에서 거꾸로 2번 → 5,4. 6 - 2 = 4." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"십 배열판으로 7 - 2",
+        scenario:{ icon:"🍓", body:"딸기 7개에서 2개를 먹었어요." },
+        question:"7 - 2 는 몇 칸이 남을까요?",
+        input:"count_input", answer:5,
+        note:"7칸에서 2칸을 지우면 5칸. 7 - 2 = 5." } },
+    { id:"s13", stage:"기본문제", block:"multi", data:{
+        title:"바르게 쓴 뺄셈식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"8 - 3 = 5", correct:true},
+          {label:"6 - 2 = 3"},
+          {label:"9 - 4 = 5", correct:true},
+          {label:"7 - 5 = 3"}
+        ],
+        note:"풀이: 8-3=5 ✓ / 6-2=4 (≠3) ✗ / 9-4=5 ✓ / 7-5=2 (≠3) ✗" } },
+    { id:"s14", stage:"기본문제", block:"match", data:{
+        title:"뺄셈식과 답을 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"7 - 3"}, right:{num:4} },
+          { left:{label:"9 - 2"}, right:{num:7} },
+          { left:{label:"6 - 1"}, right:{num:5} }
+        ] } },
+    // ── 응용문제 ──
+    { id:"s15", stage:"응용문제", block:"offline_activity", data:{
+        title:"사라진 물건 놀이",
+        tag:"짝 활동", icon:"🫳",
+        body:"물건 몇 개를 놓고, 짝이 눈을 감은 사이 몇 개를 숨겨요. 몇 개가 사라졌는지 '몇 - 몇 = 몇'으로 말해요.",
+        materials:"작은 물건 여러 개 · 7분" } },
+    { id:"s16", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 뺄셈",
+        scenario:{ icon:"🚌", body:"버스에 8명이 타고 있었는데 정류장에서 3명이 내렸어요." },
+        question:"식으로 쓰면?  8 - 3 = ___  남은 사람은 몇 명?",
+        answer:5 } },
+    { id:"s17", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"9 - ? = 6 의 빈칸에 들어갈 수는 무엇일까요? 그리고 답이 6이 되는 뺄셈식을 여러 개 만들어 보세요." } },
+    // ── 정리 ──
+    { id:"s18", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "'빼기'는 **-**, 뺄셈식은 '있던 수 - 덜어낸 수 = 남은 수' (예: 7 - 2 = 5).",
+          "뺄셈은 **있던 수에서** 덜어낸 수를 뺀다 (7 - 2 와 2 - 7 은 다르다).",
+          "**가르기**를 식으로 쓰면 뺄셈이다 (5는 3과 2 → 5 - 2 = 3)."
+        ] } },
+    { id:"s19", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:8, label:"8"}, {emoji:"⭐", count:3, label:"- 3"} ],
+        question:"8 - 3 = 몇일까요?",
+        input:"count_input", answer:5,
+        note:"8에서 거꾸로 3번 → 7,6,5. 8 - 3 = 5." } },
+    { id:"s20", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"뺄셈을 **여러 가지 방법**으로 해 봐요. 거꾸로 세기·십 배열판으로 더 빠르게! 덧셈으로 답을 확인하는 법도 배워요.",
+        emoji:"🧮" } }
   ],
   extras: [
-    {id:"v_l8_minus", type:"video", icon:"🎥", title:"뺄셈 기호 - 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%BA%84%EC%85%88+%EB%B9%BC%EA%B8%B0+%EA%B8%B0%ED%98%B8", description:"빼기(-) 기호의 뜻과 덜어 내는 상황을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l8_left", type:"fun_question", icon:"💡", title:"남은 것은 몇 개?", content:"딸기 5개 중에서 2개를 먹었어요. 남은 딸기는 몇 개일까요? 어떻게 알 수 있을까요?", fit_slides:["motivate", "concept"]},
-    {id:"q_l8_read", type:"fun_question", icon:"💡", title:"5 - 2 = 3을 어떻게 읽을까요?", content:"'5 빼기 2는 3과 같습니다.' 소리 내어 읽어 봐요.", fit_slides:["concept"]},
-    {id:"t_l8_takeaway", type:"tip", icon:"🧩", title:"덜어 내기를 손으로", content:"구체물에서 빼는 만큼 실제로 치워 보면 뺄셈의 뜻이 분명해져요.", fit_slides:["concept"]},
-    {id:"t_l8_parallel", type:"tip", icon:"🧩", title:"덧셈과 나란히 보기", content:"5번에서 배운 덧셈식과 모양이 비슷해요. +가 -로 바뀌면 덜어 내기라는 점만 다르다는 것을 짚어 주세요.", fit_slides:["concept"]},
-    {id:"r_l8_eat", type:"real_world", icon:"🌍", title:"먹어서 줄어드는 간식", content:"사탕 6개에서 3개를 먹으면 3개 남아요. 6 - 3 = 3을 생활 속에서 써 봐요.", fit_slides:["real_world", "concept"]},
-    {id:"r_l8_leave", type:"real_world", icon:"🌍", title:"교실에서 나가면", content:"8명이 있는 모둠에서 2명이 나가면 6명 남아요. 8 - 2 = 6처럼 뺄셈식으로 적어요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l8_eq_pic", type:"game", game_kind:"memory_match", icon:"🎮", title:"뺄셈식과 그림 짝짓기", description:"뺄셈식과 어울리는 그림을 짝지어 보세요.", hint:"덜어 내고 남은 수를 그림에서 찾아요.", pairs:[{a:{text:"5 - 2 = 3"}, b:{emoji:"🍓🍓🍓", count:3}}, {a:{text:"6 - 4 = 2"}, b:{emoji:"🍓🍓", count:2}}, {a:{text:"4 - 1 = 3"}, b:{emoji:"🍓🍓🍓", count:3}}, {a:{text:"7 - 2 = 5"}, b:{emoji:"🍓🍓🍓🍓🍓", count:5}}], fit_slides:["match", "game"]},
-    {id:"b_l8_minus", type:"book", icon:"📖", title:"뺄셈을 다룬 수학 그림책", content:"하나씩 줄어드는 이야기로 뺄셈에 친숙해져요.", source:"도서관에서 뺄셈 주제로 확인", fit_slides:["motivate", "concept"]},
-    {id:"x_l8_order", type:"misconception", icon:"❓", title:"오개념 — 뺄셈도 자리를 바꿔도 된다?", content:"뺄셈은 덧셈과 달라요. 5 - 2와 2 - 5는 같지 않아요. 큰 수에서 작은 수를 덜어 낸다는 점을 강조해 주세요.", fit_slides:["concept"]},
-    {id:"e_l8_practice", type:"extension", icon:"⬆", title:"다음은 여러 방법으로 빼기", content:"뺄셈식을 배웠으니 다음 시간에는 여러 방법으로 직접 빼 봐요.", fit_slides:["next_lesson"]},
-    {id:"t_l8_voice", type:"tip", icon:"🧩", title:"뺄셈식 소리 내어 읽기", content:"식을 소리 내어 읽으면 '빼기'와 '같다'의 뜻이 더 잘 익어요.", fit_slides:["concept", "trace"]}
+    { id:"v_l08_sub", type:"video", icon:"🎥", title:"뺄셈 기호 - 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%BA%84%EC%85%88+%EA%B8%B0%ED%98%B8+%EB%B0%B0%EC%9A%B0%EA%B8%B0",
+      description:"- 기호의 뜻과 뺄셈식 읽는 법을 보여 주는 영상. 개념 도입에 활용.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate","concept"] },
+    { id:"q_l08_read", type:"fun_question", icon:"💡", title:"뺄셈식 읽기",
+      content:"칠판에 7 - 2 = 5 를 적고 '7 빼기 2는 5와 같다'라고 다 함께 읽어 봐요. 다른 식도 읽어 볼까요?",
+      fit_slides:["concept","summary"] },
+    { id:"a_l08_hide", type:"other_activity", icon:"🙌", title:"손가락 빼기",
+      content:"손가락을 몇 개 펴 두고 몇 개를 접으며 '몇 - 몇 = 몇'을 말하게 해요. 식과 동작이 연결돼요.",
+      fit_slides:["concept","basic_problem"] },
+    { id:"t_l08_order", type:"tip", icon:"🧩", title:"빼는 순서 강조",
+      content:"'있던 수'를 앞에 쓴다는 것을 강조하세요. 7 - 2 와 2 - 7 을 비교해 보이면 순서가 중요함을 알 수 있어요.",
+      fit_slides:["misconception","concept"] },
+    { id:"x_l08_reverse", type:"misconception", icon:"❓", title:"오개념 — 순서 뒤집기",
+      content:"작은 수를 앞에 써서 거꾸로 빼려는 학생이 있어요. '있던 것'이 앞, '덜어낸 것'이 뒤임을 그림으로 짚어 주세요.",
+      fit_slides:["misconception","multi"] },
+    { id:"r_l08_classroom", type:"real_world", icon:"🌍", title:"교실 속 뺄셈",
+      content:"줄 선 친구 중 몇 명이 자리로 돌아갈 때, 사물함 책 몇 권을 꺼낼 때 — 남은 수를 식으로 써 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l08_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"뺄셈식과 답 짝짓기",
+      description:"뺄셈식과 답을 짝지어 보세요.", hint:"거꾸로 세기로 답을 구해요.",
+      pairs:[ {a:{text:"5 - 2"}, b:{text:"3"}}, {a:{text:"8 - 3"}, b:{text:"5"}}, {a:{text:"6 - 4"}, b:{text:"2"}}, {a:{text:"9 - 1"}, b:{text:"8"}} ],
+      fit_slides:["match","game"] },
+    { id:"q_l08_pair", type:"fun_question", icon:"💡", title:"덧셈과 짝꿍",
+      content:"5 - 2 = 3 을 보고, 3 + 2 = 5 가 되는지 확인해 봐요. 덧셈과 뺄셈은 어떤 사이일까요? (다음 차시 연결)",
+      fit_slides:["question","next_lesson"] },
+    { id:"b_l08_book", type:"book", icon:"📖", title:"뺄셈 그림책",
+      content:"수가 줄어들고 사라지는 장면이 담긴 그림책으로 뺄셈을 친근하게 만나 보세요.",
+      source:"도서관에서 '뺄셈·빼기' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l08_support", type:"tip", icon:"🧩", title:"식 쓰기가 어려운 학생에게",
+      content:"'__ - __ = __' 빈칸 틀을 주고, 그림을 보며 칸을 채우게 하면 뺄셈식 쓰기가 쉬워져요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l08_zero", type:"extension", icon:"⬆", title:"확장 — 같은 수를 빼면?",
+      content:"5 - 5 는 얼마일까요? 같은 수를 빼면 0이 된다는 것을 미리 살짝 다뤄 볼 수 있어요. (l11에서 본격적으로)",
+      fit_slides:["advanced_problem","next_lesson"] },
+    { id:"e_l08_family", type:"extension", icon:"⬆", title:"확장 — 식 가족",
+      content:"3, 2, 5 세 수로 만들 수 있는 식(3+2=5, 2+3=5, 5-2=3, 5-3=2)을 모아 보면 덧셈·뺄셈 관계가 보여요.",
+      fit_slides:["advanced_problem","summary"] }
   ]
 };
 
-LESSONS["u3_l9~10"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: "9~10",
-    title: "뺄셈을 해 볼까요",
-    std: "[2수01-06]",
-    duration_min: 80,
-    lesson_format: "본 차시 5단계 18슬 (9·10차시 블록) — 뺄셈 계산 연습",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_09_10_뺄셈을해볼까요.html"
-  },
+/* u3_l09_10 — 뺄셈을 해 볼까요 (병합 차시) · 밀도 표준 v1 */
+LESSONS["u3_l09_10"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:"9~10", title:"뺄셈을 해 볼까요", std:"[2수01-06]", duration_min:80 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"남은 오이는 몇 개일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l910_strategy"]},
-    {id:"s02", stage:"도입", block:"motivate", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:["v_l910_strategy"]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간에 배운 것", desc:"1단계 · 도입"}, suggested_extras:["v_l910_strategy"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"오이 9개에서 3개를 빼면", desc:"2단계 · 전개"}, suggested_extras:["q_l910_how", "q_l910_check"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"모두 세기", desc:"2단계 · 전개"}, suggested_extras:["q_l910_how", "q_l910_check"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"거꾸로 세기", desc:"2단계 · 전개"}, suggested_extras:["q_l910_how", "q_l910_check"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"십 배열판으로 빼기", desc:"2단계 · 전개"}, suggested_extras:["q_l910_how", "q_l910_check"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"방법을 골라 풀어 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"십 배열판으로 7 - 2를 풀어 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"어떤 상황의 뺄셈일까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"두 가지 뺄셈식을 써 봐요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"의자 앉기 놀이", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"규칙을 찾아 빈칸을 채워요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"뽑기 기계로 뺄셈을 해 봐요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["b_l910_sub"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l910_zero"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"뺄셈을 해 봐요\n여러 가지 방법", emoji:"🥒" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"뺄셈식 **7 - 2 = 5** 와 - 기호를 배웠어요.\n오늘은 뺄셈의 답을 구하는 **여러 가지 방법**을 익히고, 덧셈으로 확인하는 법도 배워요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"밭에서 오이를 땄어요",
+        kids:[ {face:"🥒", label:"바구니에\n오이 9개"}, {face:"🧺", label:"3개를\n나눠 줌"} ],
+        question:"남은 오이는 몇 개일까요? 어떻게 빼면 빠를까요?" } },
+    // ── 전개: 세 가지 방법 + 덧셈으로 확인 + 차이 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"빼는 여러 방법",
+        content:"9 - 3 의 답은 **여러 방법**으로 구할 수 있어요.\n① 모두 놓고 빼기  ② 거꾸로 세기  ③ 십 배열판",
+        items:[ {emoji:"🥒", count:9, label:"9"}, {emoji:"🥒", count:3, label:"- 3"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"① 거꾸로 세기",
+        content:"9부터 거꾸로 세요. '9!' 하고 → 8,7,6.\n세 번 거꾸로 세면 6이 남아요. **9 - 3 = 6**",
+        items:[ {emoji:"🥒", count:6, label:"남은 6"} ],
+        note:"👉 뺄 수만큼만(3번) 거꾸로 세요." } },
+    { id:"s06", stage:"전개", block:"visual_demo", data:{
+        title:"② 십 배열판으로",
+        items:[ {ten_frame:9, num:9, label:"9"}, {ten_frame:6, num:6, label:"9 - 3"} ],
+        sub_text:"9칸에서 3칸을 지우면 6칸이 남아요." } },
+    { id:"s07", stage:"전개", block:"concept", data:{
+        title:"③ 덧셈으로 확인해요",
+        content:"9 - 3 = 6 이 맞는지 거꾸로 확인! **6 + 3 = 9** 가 되면 맞아요.\n덧셈과 뺄셈은 짝이에요.",
+        items:[ {emoji:"🥒", count:6, label:"6"}, {emoji:"🥒", count:3, label:"+ 3"}, {emoji:"🥒", count:9, label:"= 9"} ],
+        note:"👉 뺄셈의 답에 뺀 수를 더하면 처음 수가 돼요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"거꾸로 셀 때 시작 수를 한 번 더 센다 (9 - 3을 9,8,7,6,5 — 9를 또 셈)",
+        right:"시작 수는 빼고 **그 다음부터** 거꾸로 센다 (9 → 8,7,6). 뺄 수만큼만.",
+        hint:"'9!' 하고 손가락 3개를 접으며 8,7,6." } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"8 - 1 은 어떤 방법이 가장 빠를까요? 8 - 7 은요? 왜 다를까요?" } },
+    { id:"s10", stage:"전개", block:"concept", data:{
+        title:"두 수의 차이도 뺄셈이에요",
+        content:"민지는 딸기 7개, 준서는 4개. **누가 몇 개 더 많을까요?**\n7 - 4 = 3 → 민지가 3개 더 많아요. 이런 '차이'도 뺄셈으로 구해요.",
+        items:[ {emoji:"🍓", count:7, label:"민지 7"}, {emoji:"🍓", count:4, label:"준서 4"} ],
+        note:"👉 '얼마나 더?' '얼마나 차이?'도 뺄셈." } },
+    // ── 기본문제 ──
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"거꾸로 세기로 풀어요",
+        items:[ {emoji:"🍎", count:8, label:"8"}, {emoji:"🍎", count:3, label:"- 3"} ],
+        question:"8 - 3 = ?  8부터 거꾸로 세 봐요.",
+        input:"count_input", answer:5,
+        note:"풀이: 8 → 7,6,5. 8 - 3 = 5." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"십 배열판으로 7 - 2",
+        items:[ {ten_frame:7, num:7, label:"7"}, {ten_frame:5, num:5, label:"7 - 2"} ],
+        question:"7 - 2 는 몇 칸이 남을까요?",
+        input:"count_input", answer:5,
+        note:"7칸에서 2칸을 지우면 5칸. 7 - 2 = 5." } },
+    { id:"s13", stage:"기본문제", block:"basic_problem", data:{
+        title:"덧셈으로 답을 확인해요",
+        scenario:{ icon:"✅", body:"9 - 4 = 5 라고 구했어요. 맞는지 확인해 봐요." },
+        question:"5 + 4 = 몇일까요? (처음 수 9가 나오면 정답!)",
+        input:"count_input", answer:9,
+        note:"5 + 4 = 9. 처음 수 9가 나왔으니 9 - 4 = 5 가 맞아요." } },
+    { id:"s14", stage:"기본문제", block:"multi", data:{
+        title:"바르게 쓴 뺄셈식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"9 - 4 = 5", correct:true},
+          {label:"8 - 2 = 5"},
+          {label:"7 - 3 = 4", correct:true},
+          {label:"6 - 2 = 3"}
+        ],
+        note:"풀이: 9-4=5 ✓ / 8-2=6 (≠5) ✗ / 7-3=4 ✓ / 6-2=4 (≠3) ✗" } },
+    { id:"s15", stage:"기본문제", block:"match", data:{
+        title:"뺄셈식과 답을 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"8 - 5"}, right:{num:3} },
+          { left:{label:"9 - 2"}, right:{num:7} },
+          { left:{label:"6 - 1"}, right:{num:5} }
+        ] } },
+    // ── 응용문제 ──
+    { id:"s16", stage:"응용문제", block:"offline_activity", data:{
+        title:"의자 앉기 뺄셈 놀이",
+        tag:"모둠 활동", icon:"🪑",
+        body:"의자 몇 개에 친구들이 앉아요. 한 명씩 일어날 때마다 '몇 - 몇 = 몇'으로 남은 사람 수를 말해요.",
+        materials:"의자 · 10분" } },
+    { id:"s17", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 뺄셈",
+        scenario:{ icon:"🍪", body:"쿠키 8개가 있었는데 친구들과 5개를 먹었어요." },
+        question:"식으로 쓰면?  8 - 5 = ___  남은 쿠키는 몇 개?",
+        answer:3 } },
+    { id:"s18", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"7 - ? = 4 처럼 빈칸이 있는 뺄셈을 풀어 보세요. 그리고 덧셈(4 + ? = 7)으로 답이 맞는지 확인해 보세요." } },
+    // ── 정리 ──
+    { id:"s19", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "뺄셈은 **거꾸로 세기·십 배열판** 등 여러 방법으로 풀 수 있다.",
+          "거꾸로 셀 때는 **시작 수 다음부터** 뺄 수만큼만 센다 (9 → 8,7,6).",
+          "뺄셈의 답에 뺀 수를 **더하면** 처음 수가 된다 (9-3=6, 6+3=9)."
+        ] } },
+    { id:"s20", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:9, label:"9"}, {emoji:"⭐", count:5, label:"- 5"} ],
+        question:"9 - 5 = 몇일까요?",
+        input:"count_input", answer:4,
+        note:"9 → 8,7,6,5,4 (5번). 9 - 5 = 4. 확인: 4 + 5 = 9 ✓." } },
+    { id:"s21", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"**0이 있는** 덧셈과 뺄셈을 배워요. 0을 더하거나 빼면 수가 어떻게 될까요?",
+        emoji:"0️⃣" } }
   ],
   extras: [
-    {id:"v_l910_strategy", type:"video", icon:"🎥", title:"여러 가지 뺄셈 방법", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%BA%84%EC%85%88+%EB%B0%A9%EB%B2%95+%EA%B1%B0%EA%BE%B8%EB%A1%9C+%EC%84%B8%EA%B8%B0", description:"덜어 내기·거꾸로 세기·십 배열판으로 빼는 여러 방법을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l910_how", type:"fun_question", icon:"💡", title:"어떻게 빼면 좋을까요?", content:"8 - 3을 풀 때, 하나씩 덜어 낼까요, 거꾸로 셀까요? 나에게 편한 방법을 골라 봐요.", fit_slides:["concept"]},
-    {id:"q_l910_check", type:"fun_question", icon:"💡", title:"뺄셈을 덧셈으로 확인", content:"5 - 2 = 3이 맞는지 3 + 2 = 5로 확인할 수 있어요. 왜 그럴까요?", fit_slides:["concept"]},
-    {id:"t_l910_countback", type:"tip", icon:"🧩", title:"거꾸로 세기 요령", content:"빼는 수만큼 거꾸로 세요. 8에서 7, 6, 5 — 8 - 3 = 5.", fit_slides:["concept"]},
-    {id:"t_l910_tenframe", type:"tip", icon:"🧩", title:"십 배열판으로 덜어 내기", content:"십 배열판에서 빼는 만큼 가리면 남은 수가 한눈에 보여요.", fit_slides:["concept"]},
-    {id:"r_l910_chair", type:"real_world", icon:"🌍", title:"의자 빼기 놀이", content:"의자 7개에서 2개를 치우면 5개 남아요. 거꾸로 세기를 몸으로 익혀요.", fit_slides:["real_world", "game"]},
-    {id:"r_l910_money", type:"real_world", icon:"🌍", title:"용돈에서 쓰기", content:"용돈 9백 원에서 3백 원을 쓰면 6백 원 남아요. 9 - 3 = 6처럼 생활 속 뺄셈이에요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l910_diff_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"뺄셈식과 차 짝짓기", description:"뺄셈식과 그 차를 짝지어 보세요.", hint:"거꾸로 세기로 차를 구해 짝을 찾아요.", pairs:[{a:{text:"8 - 3"}, b:{text:"5"}}, {a:{text:"7 - 2"}, b:{text:"5"}}, {a:{text:"9 - 4"}, b:{text:"5"}}, {a:{text:"6 - 2"}, b:{text:"4"}}], fit_slides:["match", "game"]},
-    {id:"g_l910_add_sub", type:"game", game_kind:"memory_match", icon:"🎮", title:"뺄셈과 확인 덧셈 짝짓기", description:"뺄셈식과 그것을 확인하는 덧셈식을 짝지어 보세요.", hint:"남은 수에 뺀 수를 더하면 처음 수가 돼요.", pairs:[{a:{text:"5 - 2 = 3"}, b:{text:"3 + 2 = 5"}}, {a:{text:"6 - 4 = 2"}, b:{text:"2 + 4 = 6"}}, {a:{text:"8 - 3 = 5"}, b:{text:"5 + 3 = 8"}}, {a:{text:"7 - 1 = 6"}, b:{text:"6 + 1 = 7"}}], fit_slides:["match", "game"]},
-    {id:"b_l910_sub", type:"book", icon:"📖", title:"뺄셈 연습 그림책", content:"여러 상황에서 덜어 내는 이야기로 뺄셈을 즐겁게 연습해요.", source:"도서관에서 뺄셈 주제로 확인", fit_slides:["concept", "summary"]},
-    {id:"x_l910_count_self", type:"misconception", icon:"❓", title:"오개념 — 빼는 수까지 함께 센다", content:"8 - 3에서 8, 7, 6을 세고 6이라 답하는 실수가 있어요. 8에서 한 칸 거꾸로가 7임을 천천히 짚어 주세요.", fit_slides:["concept"]},
-    {id:"e_l910_zero", type:"extension", icon:"⬆", title:"다음은 0이 있는 계산", content:"수를 더하고 빼는 법을 익혔어요. 다음 시간에는 0을 더하거나 빼면 어떻게 되는지 알아봐요.", fit_slides:["next_lesson"]}
+    { id:"v_l910_sub", type:"video", icon:"🎥", title:"여러 가지 뺄셈 방법 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EA%B1%B0%EA%BE%B8%EB%A1%9C+%EC%84%B8%EA%B8%B0+%EB%BA%84%EC%85%88",
+      description:"거꾸로 세기로 뺄셈하는 과정을 보여 주는 영상.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["concept","motivate"] },
+    { id:"q_l910_check", type:"fun_question", icon:"💡", title:"덧셈으로 확인",
+      content:"8 - 3 = 5 라고 구했어요. 5 + 3 을 해서 8이 나오는지 확인해 봐요. 왜 이렇게 확인할 수 있을까요?",
+      fit_slides:["concept","summary"] },
+    { id:"a_l910_finger", type:"other_activity", icon:"🙌", title:"손가락 거꾸로 세기",
+      content:"손가락을 모두 편 뒤 뺄 수만큼 접으며 거꾸로 세요. 남은 손가락이 답이에요.",
+      fit_slides:["concept","basic_problem"] },
+    { id:"t_l910_start", type:"tip", icon:"🧩", title:"거꾸로 세기 시작점",
+      content:"거꾸로 세기도 '시작 수는 세지 않는다'를 강조하세요. '9!' 하고 그 다음부터 8,7,6 세는 동작을 함께 연습하면 -1 오류가 줄어요.",
+      fit_slides:["misconception","concept"] },
+    { id:"x_l910_recount", type:"misconception", icon:"❓", title:"오개념 — 시작 수 다시 세기",
+      content:"거꾸로 셀 때 시작 수를 한 번 더 세어 답이 1 작아지는 실수가 흔해요. 손가락 동작으로 바로잡아 주세요.",
+      fit_slides:["misconception","multi"] },
+    { id:"r_l910_classroom", type:"real_world", icon:"🌍", title:"교실 속 뺄셈",
+      content:"모둠 친구 중 몇 명이 자리를 옮길 때, 색연필 몇 자루를 빌려줄 때 — 남은 수를 빠른 방법으로 빼 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l910_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"뺄셈 짝짓기",
+      description:"뺄셈식과 답을 짝지어 보세요.", hint:"거꾸로 세기로 답을 구해요.",
+      pairs:[ {a:{text:"9 - 4"}, b:{text:"5"}}, {a:{text:"8 - 6"}, b:{text:"2"}}, {a:{text:"7 - 3"}, b:{text:"4"}}, {a:{text:"6 - 0"}, b:{text:"6"}} ],
+      fit_slides:["match","game"] },
+    { id:"q_l910_diff", type:"fun_question", icon:"💡", title:"얼마나 더 많을까?",
+      content:"빨강 블록 8개와 파랑 블록 5개가 있어요. 어느 색이 몇 개 더 많을까요? 차이를 뺄셈으로 구해 봐요.",
+      fit_slides:["concept","real_world"] },
+    { id:"b_l910_book", type:"book", icon:"📖", title:"뺄셈 그림책",
+      content:"수가 줄어드는 장면이 담긴 그림책으로 여러 가지 뺄셈을 이어 가 보세요.",
+      source:"도서관에서 '뺄셈·세기' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l910_support", type:"tip", icon:"🧩", title:"거꾸로 세기가 어려우면",
+      content:"거꾸로 세기를 어려워하면 십 배열판에서 칸을 하나씩 지우며 세게 하세요. 눈으로 보며 세면 쉬워져요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l910_family", type:"extension", icon:"⬆", title:"확장 — 식 가족",
+      content:"6, 3, 9 세 수로 덧셈·뺄셈 식 네 개(6+3=9, 3+6=9, 9-3=6, 9-6=3)를 만들어 보면 관계가 보여요.",
+      fit_slides:["advanced_problem","summary"] },
+    { id:"e_l910_zero", type:"extension", icon:"⬆", title:"확장 — 0을 빼면?",
+      content:"5 - 0 은 얼마일까요? 0을 빼면 수가 그대로라는 것을 미리 살짝 다뤄 보세요. (l11에서 본격적으로)",
+      fit_slides:["advanced_problem","next_lesson"] }
   ]
 };
 
