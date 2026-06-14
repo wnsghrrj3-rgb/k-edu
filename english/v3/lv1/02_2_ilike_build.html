@@ -212,23 +212,29 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <!-- ━━━ S5 손활동① I like milk — 원리 알고 조립 ━━━ -->
+  <!-- ━━━ S5 손활동① I like ___ 고정틀, 빈칸에 milk 골라 넣기 ━━━ -->
   <div class="slide">
     <div class="card">
-      <div class="slide-title">🧱 네 차례! 카드를 순서대로 눌러 끼워</div>
+      <div class="slide-title">🧱 빈칸에 좋아하는 걸 넣어 봐!</div>
+      <div class="sslots">
+        <div class="sslot filled">I</div><div class="sslot filled">like</div>
+        <div class="sslot" id="b1slot" style="min-width:96px">___</div>
+      </div>
       <div class="concept-text" style="font-size:20px">만들 문장: <b>"나는 우유가 좋아."</b> <span class="scene">😊<span class="heart">💗</span>🥛</span></div>
-      <div class="sslots" id="b1slots"></div>
       <div class="wcards" id="b1cards"></div>
       <div class="feedback" id="fb5"></div>
     </div>
   </div>
 
-  <!-- ━━━ S6 손활동② Mina 조립 — chicken ━━━ -->
+  <!-- ━━━ S6 손활동② Mina — I like ___ 고정, chicken 골라 넣기 ━━━ -->
   <div class="slide">
     <div class="card">
       <div class="slide-title">👧 먹보 친구 Mina가 부탁했어!</div>
-      <div class="concept-text" style="font-size:20px">Mina: "<b>나는 치킨이 좋아</b>를 만들어 줘!" <span class="scene">👧<span class="heart">💗</span>🍗</span></div>
-      <div class="sslots" id="b2slots"></div>
+      <div class="concept-text" style="font-size:19px">Mina: "<b>나는 치킨이 좋아</b>를 만들어 줘!" <span class="scene">👧<span class="heart">💗</span>🍗</span></div>
+      <div class="sslots">
+        <div class="sslot filled">I</div><div class="sslot filled">like</div>
+        <div class="sslot" id="b2slot" style="min-width:96px">___</div>
+      </div>
       <div class="wcards" id="b2cards"></div>
       <div class="feedback" id="fb6"></div>
     </div>
@@ -303,12 +309,15 @@ body{font-family:'Jua',sans-serif;background:var(--bg);color:var(--text);height:
     </div>
   </div>
 
-  <!-- ━━━ S11 손활동③ Max 조립 — 러닝개그(피자) 완성 보상 ━━━ -->
+  <!-- ━━━ S11 손활동③ Max — I like ___ 고정, 좋아하는 것(pizza) 맞히기 ━━━ -->
   <div class="slide">
     <div class="card">
-      <div class="slide-title">🐕 Max도 문장을 만들고 싶대!</div>
-      <div class="concept-text" style="font-size:19px">Max가 좋아하는 게 뭘까? <b>"I like"</b>를 끼워서 알아내자!</div>
-      <div class="sslots" id="b3slots"></div>
+      <div class="slide-title">🐕 Max는 뭘 좋아할까?</div>
+      <div class="concept-text" style="font-size:19px">Max가 좋아하는 음식을 골라 빈칸에 넣어 봐!</div>
+      <div class="sslots">
+        <div class="sslot filled">I</div><div class="sslot filled">like</div>
+        <div class="sslot" id="b3slot" style="min-width:96px">___</div>
+      </div>
       <div class="wcards" id="b3cards"></div>
       <div class="pic huge" id="maxPic" style="display:none">🍕</div>
       <div class="kay-says" id="maxKay" style="display:none">
@@ -507,28 +516,30 @@ function fillQ12(btn,idx){
   }
 }
 
-/* ── 카드 합치기 빌더 (심장 인터랙션) ── */
-function buildSentence(slotsId,cardsId,fbId,words,kos,meaning,onDone){
-  const slotsEl=document.getElementById(slotsId),cardsEl=document.getElementById(cardsId);
-  let pos=0;
-  slotsEl.innerHTML=words.map(()=>'<div class="sslot">?</div>').join('');
-  const order=words.map((w,i)=>i).sort(()=>Math.random()-.5);
-  cardsEl.innerHTML=order.map(i=>'<div class="wcard" data-i="'+i+'">'+words[i]+'<span class="ko">'+kos[i]+'</span></div>').join('');
-  cardsEl.querySelectorAll('.wcard').forEach(c=>{
+/* ── I like ___ 고정틀 + 선택지에서 골라 빈칸 채우기 ── */
+const FOODS=[{w:'pizza',e:'🍕',ko:'피자'},{w:'milk',e:'🥛',ko:'우유'},{w:'chicken',e:'🍗',ko:'치킨'}];
+function buildFill(slotId,choicesId,fbId,answer,meaning,onDone){
+  const slot=document.getElementById(slotId),box=document.getElementById(choicesId);
+  let done=false;
+  // 선택지 순서 섞기
+  const order=[...FOODS].sort(()=>Math.random()-.5);
+  box.innerHTML=order.map(c=>'<div class="wcard" data-w="'+c.w+'">'+c.e+' '+c.w+'<span class="ko">'+c.ko+'</span></div>').join('');
+  box.querySelectorAll('.wcard').forEach(c=>{
     c.addEventListener('click',()=>{
-      const i=+c.dataset.i;playClick();
-      if(i===pos){
-        KTTS.word(words[i]);
-        const s=slotsEl.children[pos];s.textContent=words[i];s.classList.add('filled');
-        c.classList.add('used');pos++;
-        if(pos===words.length){
-          setTimeout(()=>{KTTS.sentence(words.join(' ')+'.');
-            setFB(fbId,'🎉 문장 완성! <b>'+words.join(' ')+'.</b> = '+meaning,true);
-            playCorrect();if(onDone)onDone();},400);
-        }
+      if(done)return;
+      const w=c.dataset.w;playClick();
+      if(w===answer){
+        done=true;
+        slot.textContent=answer;slot.classList.add('filled');
+        box.querySelectorAll('.wcard').forEach(x=>{x.style.pointerEvents='none';if(x!==c)x.style.opacity=.3;});
+        c.classList.add('used');
+        setTimeout(()=>{KTTS.sentence('I like '+answer+'.');
+          setFB(fbId,'🎉 문장 완성! <b>I like '+answer+'.</b> = '+meaning,true);
+          playCorrect();if(onDone)onDone();},250);
       }else{
-        c.classList.add('used');setTimeout(()=>c.classList.remove('used'),400);
-        playWrong();setFB(fbId,'그 카드는 아직이에요! <b>'+(pos===0?'맨 앞':'다음')+'</b> 자리 단어부터 — 뜻을 보면 알아요: "'+meaning+'"',false);
+        c.classList.add('wrong');playWrong();
+        setFB(fbId,samMsg()+' 만들 문장: "'+meaning+'"',false);
+        setTimeout(()=>c.classList.remove('wrong'),450);
       }
     });
   });
@@ -557,8 +568,8 @@ document.getElementById('swapBtn').addEventListener('click',function(){
 
 /* S5·S6 합치기 */
 let b1done=false,b2done=false,b3done=false;
-buildSentence('b1slots','b1cards','fb5',['I','like','milk'],['나는','좋아해','우유'],'나는 우유가 좋아! 🥛',()=>{if(!b1done){b1done=true;addScore(10);}});
-buildSentence('b2slots','b2cards','fb6',['I','like','chicken'],['나는','좋아해','치킨'],'나는 치킨이 좋아! 🍗',()=>{if(!b2done){b2done=true;addScore(10);}});
+buildFill('b1slot','b1cards','fb5','milk','나는 우유가 좋아! 🥛',()=>{if(!b1done){b1done=true;addScore(10);}});
+buildFill('b2slot','b2cards','fb6','chicken','나는 치킨이 좋아! 🍗',()=>{if(!b2done){b2done=true;addScore(10);}});
 
 /* S7 낭독 변주 — 셋 다 하면 도장 */
 let voicesDone={};
@@ -573,7 +584,7 @@ document.querySelectorAll('.voice-btn').forEach(b=>{
 });
 
 /* S11 Max 사건 — I like 조립하면 피자 등장 */
-buildSentence('b3slots','b3cards','fb11',['I','like'],['나는','좋아해'],'나는 ___이 좋아!',()=>{
+buildFill('b3slot','b3cards','fb11','pizza','나는 피자가 좋아! 🍕',()=>{
   if(!b3done){b3done=true;addScore(10);
     setTimeout(()=>{
       document.getElementById('maxPic').style.display='block';
