@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>쌓기나무 유니버스 · KLab 3D</title>
+<style>
+  :root{
+    --ink:#1E2A38; --ink-soft:#5A6B7B; --line:#E2E8F0;
+    --panel:#FFFFFF; --bg-top:#F2F6FB; --bg-bot:#D7E0EC;
+    --accent:#FF7A59; --accent-soft:#FFE7DF;
+    --shadow:0 10px 30px rgba(30,42,56,.10), 0 2px 8px rgba(30,42,56,.06);
+    --radius:18px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:radial-gradient(120% 120% at 50% 0%, var(--bg-top) 0%, var(--bg-bot) 100%);
+    color:var(--ink); overflow:hidden; user-select:none;
+    transition:background .6s ease;
+  }
+  .app{display:flex; flex-direction:column; height:100dvh;}
+
+  /* ── 상단 바 ── */
+  header{
+    display:flex; align-items:center; gap:16px;
+    padding:14px 20px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:11px; min-width:max-content;}
+  .brand .mark{
+    width:38px; height:38px; border-radius:11px; position:relative;
+    background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#000 0%));
+    box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 45%,transparent);
+    transition:background .5s ease, box-shadow .5s ease; flex-shrink:0;
+  }
+  .brand .mark::before,.brand .mark::after{
+    content:""; position:absolute; border-radius:3px; background:rgba(255,255,255,.92);
+  }
+  .brand .mark::before{width:13px; height:13px; left:8px; top:8px; transform:rotate(0deg);}
+  .brand .mark::after{width:13px; height:13px; left:16px; top:16px; opacity:.7;}
+  .brand h1{font-size:17px; font-weight:800; letter-spacing:-.02em; line-height:1.1;}
+  .brand h1 span{display:block; font-size:11px; font-weight:600; color:var(--ink-soft); letter-spacing:.02em;}
+
+  /* ── 학년 진화 트랙 ── */
+  .track{
+    display:flex; align-items:center; gap:0; margin-left:auto;
+    background:var(--panel); padding:5px; border-radius:16px; box-shadow:var(--shadow);
+    position:relative;
+  }
+  .track .grade{
+    position:relative; z-index:2; border:none; background:none; cursor:pointer;
+    width:46px; height:42px; border-radius:12px; font-weight:800; font-size:15px;
+    color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:color .35s ease; line-height:1;
+  }
+  .track .grade small{font-size:8.5px; font-weight:700; opacity:.7; margin-top:2px;}
+  .track .grade.active{color:#fff;}
+  .track .glider{
+    position:absolute; z-index:1; top:5px; height:42px; width:46px; border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 65%,#000));
+    box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 40%,transparent);
+    transition:transform .42s cubic-bezier(.34,1.4,.5,1), background .42s ease;
+  }
+
+  /* ── 본문 ── */
+  .stage{flex:1; display:flex; min-height:0; padding:0 20px 18px; gap:16px;}
+  .canvas-wrap{
+    flex:1; position:relative; border-radius:var(--radius); overflow:hidden;
+    background:linear-gradient(180deg,#EEF3F9,#E0E8F2); box-shadow:var(--shadow);
+    min-width:0;
+  }
+  canvas#scene{display:block; width:100%; height:100%; touch-action:none; cursor:pointer;}
+
+  .hint{
+    position:absolute; left:50%; top:16px; transform:translateX(-50%);
+    background:rgba(30,42,56,.82); color:#fff; font-size:12.5px; font-weight:600;
+    padding:8px 15px; border-radius:20px; pointer-events:none; white-space:nowrap;
+    backdrop-filter:blur(6px); opacity:0; transition:opacity .4s ease;
+  }
+  .hint.show{opacity:1;}
+
+  /* 화면 안 도구바 (좌하단) */
+  .toolbar{
+    position:absolute; left:14px; bottom:14px; display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .tool{
+    border:none; cursor:pointer; background:var(--panel); color:var(--ink);
+    padding:9px 13px; border-radius:12px; font-weight:700; font-size:13px;
+    box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;
+    transition:transform .12s ease, background .25s ease, color .25s ease;
+  }
+  .tool:active{transform:scale(.94);}
+  .tool.on{background:var(--accent); color:#fff;}
+  .tool .ico{width:15px; height:15px; display:inline-block;}
+
+  /* 시점 프리셋 (우하단 캔버스 내) */
+  .views{position:absolute; right:14px; bottom:14px; display:flex; gap:7px; background:var(--panel);
+    padding:6px; border-radius:13px; box-shadow:var(--shadow);}
+  .views button{border:none; background:none; cursor:pointer; width:34px; height:34px; border-radius:9px;
+    font-size:11px; font-weight:800; color:var(--ink-soft); transition:background .2s,color .2s;}
+  .views button:hover{background:var(--bg-top);}
+  .views button.on{background:var(--accent-soft); color:var(--accent);}
+
+  /* ── 우측 패널 ── */
+  .panel{
+    width:300px; flex-shrink:0; background:var(--panel); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px; display:flex; flex-direction:column; gap:16px;
+    overflow-y:auto;
+  }
+  .panel-head{display:flex; align-items:center; gap:9px;}
+  .panel-head .dot{width:11px; height:11px; border-radius:50%; background:var(--accent); transition:background .4s;}
+  .panel-head h2{font-size:15px; font-weight:800; letter-spacing:-.01em;}
+  .panel-head .tag{margin-left:auto; font-size:10.5px; font-weight:800; color:var(--accent);
+    background:var(--accent-soft); padding:3px 9px; border-radius:20px; transition:.4s;}
+
+  .lead{font-size:12.5px; line-height:1.6; color:var(--ink-soft);}
+
+  /* 변신 콘텐츠 컨테이너 */
+  #grade-content{display:flex; flex-direction:column; gap:16px; animation:fadeUp .45s ease;}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+
+  .metric{
+    background:linear-gradient(135deg,var(--accent-soft),color-mix(in srgb,var(--accent-soft) 40%,#fff));
+    border-radius:14px; padding:16px; text-align:center; transition:background .4s;
+  }
+  .metric .big{font-size:42px; font-weight:900; line-height:1; color:var(--accent); font-variant-numeric:tabular-nums; transition:color .4s;}
+  .metric .lbl{font-size:12px; font-weight:700; color:var(--ink-soft); margin-top:6px;}
+  .metric .formula{font-size:12.5px; font-weight:700; color:var(--ink); margin-top:9px;
+    background:rgba(255,255,255,.6); border-radius:9px; padding:7px 10px; font-variant-numeric:tabular-nums;}
+
+  /* 투상도 */
+  .proj-grid{display:flex; gap:10px; justify-content:space-between;}
+  .proj{flex:1; text-align:center;}
+  .proj canvas{width:100%; aspect-ratio:1; background:#F7FAFD; border-radius:10px; border:1.5px solid var(--line);}
+  .proj .pl{font-size:11px; font-weight:800; margin-top:6px; color:var(--ink-soft);}
+
+  /* 미션 박스 */
+  .mission{border:1.5px dashed var(--accent); border-radius:14px; padding:14px; transition:border-color .4s;}
+  .mission .q{font-size:13px; font-weight:700; margin-bottom:11px;}
+  .mission .row{display:flex; gap:8px;}
+  .mission input{flex:1; border:1.5px solid var(--line); border-radius:10px; padding:9px 12px;
+    font-size:15px; font-weight:700; text-align:center; outline:none; font-family:inherit;}
+  .mission input:focus{border-color:var(--accent);}
+  .mission .check{border:none; background:var(--accent); color:#fff; font-weight:800; font-size:13px;
+    padding:0 16px; border-radius:10px; cursor:pointer; transition:.2s;}
+  .mission .check:active{transform:scale(.95);}
+  .mission .fb{font-size:12.5px; font-weight:700; margin-top:10px; min-height:18px;}
+  .mission .fb.ok{color:#10A86A;} .mission .fb.no{color:#E5484D;}
+  .mission .new{font-size:11.5px; font-weight:700; color:var(--accent); background:none; border:none;
+    cursor:pointer; margin-top:8px; text-decoration:underline; padding:0;}
+
+  .height-list{display:flex; flex-direction:column; gap:5px;}
+  .height-list .hrow{display:flex; justify-content:space-between; font-size:12px; font-weight:600;
+    padding:6px 10px; background:var(--bg-top); border-radius:8px;}
+  .height-list .hrow b{color:var(--accent);}
+
+  /* 반응형 */
+  @media(max-width:860px){
+    .stage{flex-direction:column; padding:0 12px 12px; gap:10px;}
+    .panel{width:100%; max-height:38dvh;}
+    .canvas-wrap{min-height:34dvh;}
+    header{padding:10px 12px;}
+    .track{margin-left:0; width:100%; justify-content:space-between;}
+    .track .grade,.track .glider{width:11.1%; min-width:0;}
+    .track .grade small{font-size:7.5px;}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{transition-duration:.01ms !important; animation-duration:.01ms !important;}
+  }
+  /* ── 색 팔레트 ── */
+  .swatches{display:flex; gap:5px; align-items:center; background:var(--panel);
+    padding:7px 9px; border-radius:12px; box-shadow:var(--shadow);}
+  .swatch{width:21px; height:21px; border-radius:50%; border:2.5px solid transparent;
+    cursor:pointer; padding:0; transition:transform .12s ease, border-color .12s ease;
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,.12);}
+  .swatch:active{transform:scale(.9);}
+  .swatch.on{border-color:var(--ink); transform:scale(1.15);}
+
+  /* ── 따라 만들기 ── */
+  .track .grade.lab-btn{color:var(--accent);}
+  .track .grade.lab-btn.active{color:#fff;}
+  .track .grade.follow-btn{color:#0EA5A5;}
+  .track .grade.follow-btn.active{color:#fff;}
+  .follow-metric{background:linear-gradient(135deg,var(--accent-soft),#fff);}
+  .follow-metric .big{font-size:36px; font-weight:900; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .follow-fb{font-size:13px; font-weight:800; text-align:center; padding:11px; border-radius:12px;
+    background:var(--bg-top); color:var(--ink-soft); transition:.25s;}
+  .follow-fb.ok{background:#E4F7EE; color:#10A86A;}
+  .follow-fb.no{background:#FDECEC; color:#E5484D;}
+  .seg{display:flex; gap:5px; background:var(--bg-top); padding:5px; border-radius:12px;}
+  .seg button{flex:1; border:none; background:none; cursor:pointer; padding:9px 0; border-radius:9px;
+    font-weight:800; font-size:13px; color:var(--ink-soft); transition:.2s; font-family:inherit;}
+  .seg button.on{background:var(--accent); color:#fff;}
+  /* ── 대칭 모드 ── */
+  .track .grade.sym-btn{color:#7C5CFC;}
+  .track .grade.sym-btn.active{color:#fff;}
+  .sym-kinds{display:grid; grid-template-columns:1fr 1fr; gap:7px;}
+  .sym-kinds button{border:1.5px solid var(--line); background:var(--panel); cursor:pointer;
+    padding:11px 6px; border-radius:11px; font-weight:800; font-size:12.5px; color:var(--ink-soft);
+    transition:.2s; font-family:inherit;}
+  .sym-kinds button.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .lab-twin{display:flex; gap:10px;}
+  .lab-cell{flex:1; border-radius:14px; padding:15px 10px; text-align:center;}
+  .lab-cell.vol{background:linear-gradient(135deg,#DCE9FE,#EFF5FF);}
+  .lab-cell.surf{background:linear-gradient(135deg,var(--accent-soft),#fff);}
+  .lab-cell .big{font-size:34px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums;}
+  .lab-cell.vol .big{color:#3B82F6;}
+  .lab-cell.surf .big{color:var(--accent);}
+  .lab-cell .lbl{font-size:11px; font-weight:700; color:var(--ink-soft); margin-top:5px;}
+  .lab-delta{font-size:13px; font-weight:800; text-align:center; padding:10px; border-radius:11px;
+    background:var(--bg-top); color:var(--ink-soft); transition:.25s; font-variant-numeric:tabular-nums;}
+  .lab-delta.up{background:#FDECEC; color:#E5484D;}
+  .lab-delta.down{background:#E4F7EE; color:#10A86A;}
+  .lab-delta.flat{background:#EEF2F7; color:var(--ink-soft);}
+  .lab-record{font-size:12px; font-weight:600; color:var(--ink-soft); background:var(--bg-top);
+    border-radius:12px; padding:12px 14px; line-height:1.5;}
+  .lab-record b{color:var(--ink); font-variant-numeric:tabular-nums;}
+  .lab-record .rng{display:flex; justify-content:space-between; margin-top:7px; font-size:13px;}
+  .lab-record .rng b{color:var(--accent); font-size:16px;}
+
+  /* ── 모드 스위처 / 코드 버튼 ── */
+  .appmode{display:flex; gap:4px; background:var(--panel); padding:5px; border-radius:13px; box-shadow:var(--shadow);}
+  .appmode button{border:none; background:none; cursor:pointer; padding:8px 13px; border-radius:9px;
+    font-weight:800; font-size:13px; color:var(--ink-soft); transition:.2s; font-family:inherit; white-space:nowrap;}
+  .appmode button.on{background:var(--ink); color:#fff;}
+  .code-btn{border:none; cursor:pointer; background:var(--panel); color:var(--ink); font-weight:800;
+    font-size:13px; padding:11px 14px; border-radius:13px; box-shadow:var(--shadow); white-space:nowrap;
+    transition:transform .12s;}
+  .code-btn:active{transform:scale(.95);}
+
+  /* ── 모달 ── */
+  .modal-bg{position:fixed; inset:0; background:rgba(20,28,38,.55); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+  .modal{background:#fff; border-radius:20px; padding:24px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal h3{font-size:18px; font-weight:800; margin-bottom:8px;}
+  .modal p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:14px;}
+  .modal input{width:100%; border:1.5px solid var(--line); border-radius:12px; padding:13px 15px;
+    font-size:14px; outline:none; font-family:inherit; margin-bottom:6px;}
+  .modal input:focus{border-color:var(--accent);}
+  .modal-fb{font-size:12.5px; font-weight:700; min-height:18px; margin-bottom:8px;}
+  .modal-fb.ok{color:#10A86A;} .modal-fb.no{color:#E5484D;}
+  .modal-row{display:flex; gap:9px;}
+  .mbtn{flex:1; border:none; cursor:pointer; padding:13px; border-radius:12px; font-weight:800; font-size:14px;
+    background:var(--ink); color:#fff; font-family:inherit; transition:transform .12s;}
+  .mbtn:active{transform:scale(.96);}
+  .mbtn.ghost{background:var(--bg-top); color:var(--ink-soft);}
+  .share-box{background:var(--bg-top); border-radius:12px; padding:14px; margin:4px 0 14px;}
+  .share-box .code-big{font-size:30px; font-weight:900; letter-spacing:.12em; text-align:center;
+    color:var(--accent); font-variant-numeric:tabular-nums; margin-bottom:4px;}
+  .share-box .code-lbl{font-size:11px; text-align:center; color:var(--ink-soft); font-weight:700;}
+  .share-box textarea{width:100%; border:1.5px solid var(--line); border-radius:9px; padding:9px;
+    font-size:11px; font-family:monospace; resize:none; height:54px; margin-top:10px; color:var(--ink-soft);}
+
+  /* ── 출제 ── */
+  .seg4{display:grid; grid-template-columns:repeat(4,1fr); gap:4px;}
+  .seg4 button{padding:9px 0; font-size:12.5px;}
+  .prob-list{display:flex; flex-direction:column; gap:7px; max-height:180px; overflow-y:auto;}
+  .prob-item{display:flex; align-items:center; gap:9px; background:var(--bg-top); border-radius:11px; padding:10px 12px;}
+  .prob-item .pnum{width:22px; height:22px; border-radius:50%; background:#0EA5A5; color:#fff;
+    font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .prob-item .pinfo{flex:1; font-size:12.5px; font-weight:700;}
+  .prob-item .pinfo small{display:block; font-size:10.5px; color:var(--ink-soft); font-weight:600;}
+  .prob-item .pdel{border:none; background:none; cursor:pointer; color:#E5484D; font-size:17px; padding:0 4px;}
+  .diff-chip{display:inline-block; font-size:10px; font-weight:800; padding:1px 7px; border-radius:8px; margin-left:5px;}
+  .diff-easy{background:#E4F7EE; color:#10A86A;} .diff-mid{background:#DCE9FE; color:#3B82F6;}
+  .diff-hard{background:#FFE7DF; color:#E5533C;} .diff-top{background:#1E2A38; color:#FFD66B;}
+
+  /* ── 풀이 ── */
+  .prog{height:8px; background:var(--bg-top); border-radius:20px; overflow:hidden;}
+  .prog-bar{height:100%; width:0%; background:linear-gradient(90deg,#7C5CFC,#A78BFA); border-radius:20px; transition:width .4s ease;}
+  .result-big{text-align:center; padding:8px 0;}
+  .result-big .stars{font-size:32px; letter-spacing:2px;}
+  .result-big .score{font-size:15px; font-weight:800; margin-top:6px;}
+  @media(max-width:860px){
+    .appmode{order:3;} .code-btn{order:4;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="mark" id="brandMark"></div>
+      <h1>쌓기나무 유니버스<span>하나의 교구, 여섯 학년의 변신</span></h1>
+    </div>
+    <div class="appmode" id="appModeSwitch">
+      <button data-m="learn" class="on">🎓 학습</button>
+      <button data-m="author">✏️ 출제</button>
+    </div>
+    <div class="track" id="track">
+      <div class="glider" id="glider"></div>
+      <!-- buttons injected -->
+    </div>
+    <button class="code-btn" id="enterCode">🔑 코드 입력</button>
+  </header>
+  <!-- 코드 입력 모달 -->
+  <div class="modal-bg" id="codeModal" style="display:none">
+    <div class="modal">
+      <h3>문제 코드 입력</h3>
+      <p>선생님이 준 <b>학급 코드</b>나 <b>공유 링크</b>를 붙여넣으세요.</p>
+      <input id="codeInput" placeholder="예: ABC123 또는 링크 전체" autocomplete="off" />
+      <div class="modal-fb" id="codeFb"></div>
+      <div class="modal-row">
+        <button class="mbtn ghost" id="codeCancel">닫기</button>
+        <button class="mbtn" id="codeLoad">문제 받기</button>
+      </div>
+      <button class="mbtn ghost" id="tryTop" style="width:100%; margin-top:9px; background:#1E2A38; color:#FFD66B;">⚡ 최상위 도전 바로 풀어보기</button>
+      <p style="margin:14px 0 7px; font-weight:700; color:var(--ink-soft); font-size:12px;">또는 난이도를 골라 바로 풀기</p>
+      <div class="seg seg4" id="quickPlay">
+        <button data-d="easy">쉬움</button>
+        <button data-d="mid">보통</button>
+        <button data-d="hard">어려움</button>
+        <button data-d="top">최상위</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="canvas-wrap">
+      <canvas id="scene"></canvas>
+      <div class="hint" id="hint"></div>
+      <div class="toolbar">
+        <button class="tool on" id="tBuild">쌓기</button>
+        <button class="tool" id="tErase">지우기</button>
+        <button class="tool" id="tPaint">색칠</button>
+        <div class="swatches" id="swatches"></div>
+        <button class="tool" id="tReset">비우기</button>
+      </div>
+      <div class="views" id="views">
+        <button data-v="front">앞</button>
+        <button data-v="side">옆</button>
+        <button data-v="top">위</button>
+        <button data-v="iso" class="on">입체</button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <!-- 학습 모드 -->
+      <div id="learnPanel">
+        <div class="panel-head">
+          <span class="dot" id="pDot"></span>
+          <h2 id="pTitle">1학년 · 쌓기와 세기</h2>
+          <span class="tag" id="pTag">Lv.1</span>
+        </div>
+        <p class="lead" id="pLead"></p>
+        <div id="grade-content"></div>
+      </div>
+
+      <!-- 출제 모드 (교사) -->
+      <div id="authorPanel" style="display:none">
+        <div class="panel-head">
+          <span class="dot" style="background:#0EA5A5"></span>
+          <h2>문제 만들기</h2>
+          <span class="tag" id="authCount" style="color:#0EA5A5; background:#D2F1F1">0문제</span>
+        </div>
+        <div class="seg" id="authType">
+          <button data-t="follow" class="on">따라만들기</button>
+          <button data-t="count">개수세기</button>
+        </div>
+        <div class="seg" id="authType2" style="margin-top:-8px">
+          <button data-t="line">선대칭</button>
+          <button data-t="point">점대칭</button>
+        </div>
+        <div class="seg seg4" id="authDiff">
+          <button data-d="easy" class="on">쉬움</button>
+          <button data-d="mid">보통</button>
+          <button data-d="hard">어려움</button>
+          <button data-d="top">최상위</button>
+        </div>
+        <p class="lead" id="authHint">캔버스에 정답 모양을 쌓은 뒤 ‘이 모양을 문제로’를 누르세요.</p>
+        <button class="tool" id="authAuto" style="width:100%; justify-content:center; background:#1E2A38; color:#FFD66B;">🎲 이 난이도로 5문제 자동 채우기</button>
+        <button class="tool" id="authAdd" style="width:100%; justify-content:center; background:#0EA5A5; color:#fff;">＋ 이 모양을 문제로 추가</button>
+        <div class="prob-list" id="probList"></div>
+        <button class="tool" id="authShare" style="width:100%; justify-content:center;" disabled>학급 코드 만들기 →</button>
+      </div>
+
+      <!-- 풀이 모드 (학생) -->
+      <div id="solvePanel" style="display:none">
+        <div class="panel-head">
+          <span class="dot" style="background:#7C5CFC" id="solveDot"></span>
+          <h2 id="solveTitle">문제 풀이</h2>
+          <span class="tag" id="solveTag" style="color:#7C5CFC; background:#E6E0FE">1/1</span>
+        </div>
+        <div class="prog"><div class="prog-bar" id="progBar"></div></div>
+        <div class="metric follow-metric" id="solveMetricWrap" style="background:linear-gradient(135deg,#E6E0FE,#fff)">
+          <div class="follow-fb" id="solveFb" style="background:none; padding:4px 0;">문제를 풀어 보세요</div>
+        </div>
+        <div id="solveExtra"></div>
+        <div style="display:flex; gap:8px;">
+          <button class="tool" id="solveHint" style="flex:1; justify-content:center;">힌트</button>
+          <button class="tool" id="solveSkip" style="flex:1; justify-content:center;">건너뛰기</button>
+        </div>
+        <button class="tool" id="solveNext" style="width:100%; justify-content:center; background:#7C5CFC; color:#fff;" disabled>다음 문제 →</button>
+        <button class="tool" id="solveExit" style="width:100%; justify-content:center;">나가기</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════
+   쌓기나무 유니버스 — KLab 3D 골든 샘플
+   본체(엔진)는 하나. 학년(GRADE)이 그 위에 레이어를 얹는다.
+   ════════════════════════════════════════════════════════ */
+
+// ── 학년 정의 (변신 데이터) ──────────────────────────────
+const GRADES = {
+  1:{name:"쌓기와 세기", accent:"#FF7A59", soft:"#FFE7DF",
+     lead:"블록을 자유롭게 쌓아 보고, 모두 몇 개인지 세어 봐요. 바닥을 누르면 새 블록, 블록 윗면을 누르면 그 위에 쌓여요."},
+  2:{name:"세 방향에서 보기", accent:"#FFB627", soft:"#FFF1D6",
+     lead:"같은 모양도 보는 방향에 따라 다르게 보여요. 위·앞·옆에서 본 모양이 실시간으로 그려집니다."},
+  3:{name:"여러 방향으로 관찰", accent:"#3DBA6F", soft:"#DBF3E5",
+     lead:"드래그해서 직접 돌려 보거나, 시점 버튼으로 정해진 방향에서 관찰해요. 돌려 보면 숨어 있던 모양이 보여요."},
+  4:{name:"위에서 본 모양과 개수", accent:"#16BDCA", soft:"#D5F4F7",
+     lead:"위에서 본 칸마다 몇 층씩 쌓였는지 알면, 보이지 않는 블록까지 개수를 구할 수 있어요."},
+  5:{name:"부피 구하기", accent:"#3B82F6", soft:"#DCE9FE",
+     lead:"쌓기나무 한 개를 1cm³로 보면, 전체 부피는 블록 개수와 같아요. 직육면체 부피 공식과 이어집니다."},
+  6:{name:"겉넓이 구하기", accent:"#8B5CF6", soft:"#E9E1FE",
+     lead:"바깥으로 드러난 면의 수가 곧 겉넓이예요. ‘면 보기’를 켜면 드러난 면이 색으로 표시됩니다."},
+  lab:{name:"열린 탐구", accent:"#E11D8F", soft:"#FBDDEF",
+     lead:"정답을 구하는 곳이 아니라 규칙을 발견하는 곳이에요. 블록을 옮기면 부피와 겉넓이가 어떻게 따로 움직이는지 직접 살펴보세요."},
+  follow:{name:"따라 만들기", accent:"#0EA5A5", soft:"#D2F1F1",
+     lead:"반투명한 본보기와 똑같이 쌓아 보세요. 위에 가려져 보이지 않는 블록은 직접 돌려 가며 찾아야 해요."},
+  sym:{name:"대칭 거울", accent:"#7C5CFC", soft:"#E6E0FE",
+     lead:"거울을 세우고 한쪽에만 쌓아 보세요. 반대쪽이 저절로 따라 만들어져요. ‘굳히기’를 누르면 거울을 끄고 자유롭게 다듬을 수 있어요."},
+};
+
+// ── 격자/엔진 상태 ───────────────────────────────────────
+const N=6, H=6;                 // 바닥 N×N, 최대 높이 H
+const cubes = new Map();        // "x,y,z" -> mesh
+let mode = "build";             // build | erase | paint
+let grade = 1;
+let showFaces = false;          // 6학년 면 보기
+
+const key=(x,y,z)=>`${x},${y},${z}`;
+const has=(x,y,z)=>cubes.has(key(x,y,z));
+
+// ── Three.js 셋업 ────────────────────────────────────────
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+
+const target = new THREE.Vector3(N/2, 1.0, N/2);  // 격자 중심
+let sph = {radius:14, theta:-Math.PI*0.78, phi:Math.PI*0.34}; // 시점 구면좌표
+let sphGoal = {...sph};
+
+function applyCamera(){
+  const {radius,theta,phi}=sph;
+  camera.position.set(
+    target.x + radius*Math.sin(phi)*Math.cos(theta),
+    target.y + radius*Math.cos(phi),
+    target.z + radius*Math.sin(phi)*Math.sin(theta)
+  );
+  camera.lookAt(target);
+}
+
+// 조명
+scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+const hemi = new THREE.HemisphereLight(0xffffff, 0xc7d3e0, 0.35); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+sun.position.set(8, 14, 5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near=1; sun.shadow.camera.far=50;
+sun.shadow.camera.left=-12; sun.shadow.camera.right=12;
+sun.shadow.camera.top=12; sun.shadow.camera.bottom=-12;
+sun.shadow.bias=-0.0004;
+scene.add(sun);
+
+// 바닥 (그림자 받기) + 격자선
+const floorMat = new THREE.MeshStandardMaterial({color:0xf3f7fc, roughness:0.95, metalness:0});
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(N+2, N+2), floorMat);
+floor.rotation.x = -Math.PI/2;
+floor.position.set(N/2, 0, N/2);
+floor.receiveShadow = true;
+floor.name = "floor";
+scene.add(floor);
+
+const grid = new THREE.GridHelper(N, N, 0xb9c6d6, 0xd6e0ec);
+grid.position.set(N/2, 0.001, N/2);
+scene.add(grid);
+
+// 격자 테두리(살짝)
+const border = new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(N, 0.02, N)),
+  new THREE.LineBasicMaterial({color:0x9fb0c2})
+);
+border.position.set(N/2, 0, N/2);
+scene.add(border);
+
+// 큐브 재질 — 레고풍 색 팔레트 (0번은 기본 나무색)
+const cubeGeo = new THREE.BoxGeometry(0.96,0.96,0.96);
+const PALETTE=[
+  {name:'나무', hex:0xE7BE89, css:'#E7BE89'},
+  {name:'빨강', hex:0xE5533C, css:'#E5533C'},
+  {name:'주황', hex:0xF2913D, css:'#F2913D'},
+  {name:'노랑', hex:0xF2C53D, css:'#F2C53D'},
+  {name:'초록', hex:0x49B26E, css:'#49B26E'},
+  {name:'파랑', hex:0x3E8FD6, css:'#3E8FD6'},
+  {name:'보라', hex:0x9B6FD6, css:'#9B6FD6'},
+];
+let currentColor=0;
+const matCache={};
+function getMat(idx){
+  if(idx==='seed'){
+    if(!matCache.seed) matCache.seed=new THREE.MeshStandardMaterial({color:0xA9B4C0, roughness:0.75, metalness:0});
+    return matCache.seed;
+  }
+  if(!matCache[idx]) matCache[idx]=new THREE.MeshStandardMaterial({color:PALETTE[idx].hex, roughness:0.6, metalness:0.04});
+  return matCache[idx];
+}
+const edgeGeo = new THREE.EdgesGeometry(cubeGeo);
+const edgeMat = new THREE.LineBasicMaterial({color:0x000000, transparent:true, opacity:0.18});
+
+const cubeGroup = new THREE.Group(); scene.add(cubeGroup);
+const faceGroup = new THREE.Group(); scene.add(faceGroup); // 면 하이라이트
+const ghostGroup = new THREE.Group(); scene.add(ghostGroup); // 따라 만들기 본보기
+const symPlaneGroup = new THREE.Group(); scene.add(symPlaneGroup); // 대칭 거울면
+
+// ── 큐브 추가/삭제 ───────────────────────────────────────
+function addCube(x,y,z, animate=true, colorIdx=currentColor){
+  if(x<0||x>=N||z<0||z>=N||y<0||y>=H) return false;
+  if(has(x,y,z)) return false;
+  const m = new THREE.Mesh(cubeGeo, getMat(colorIdx));
+  m.castShadow = true; m.receiveShadow = true;
+  m.position.set(x+0.5, y+0.5, z+0.5);
+  m.userData = {x,y,z,color:colorIdx};
+  const edge = new THREE.LineSegments(edgeGeo, edgeMat);
+  m.add(edge);
+  cubeGroup.add(m);
+  cubes.set(key(x,y,z), m);
+  if(animate && !reduceMotion){
+    m.scale.set(0.01,0.01,0.01);
+    const t0=performance.now();
+    (function pop(){
+      const k=Math.min(1,(performance.now()-t0)/220);
+      const e=1-Math.pow(1-k,3);
+      m.scale.setScalar(e);
+      if(k<1) requestAnimationFrame(pop);
+    })();
+  }
+  afterChange();
+  return true;
+}
+function removeCube(x,y,z){
+  const k=key(x,y,z); const m=cubes.get(k);
+  if(!m) return;
+  cubeGroup.remove(m); cubes.delete(k);
+  afterChange();
+}
+function clearAll(){
+  [...cubes.values()].forEach(m=>cubeGroup.remove(m));
+  cubes.clear(); afterChange();
+}
+
+// ── 레이캐스팅 (클릭으로 쌓기/지우기) ────────────────────
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2();
+
+function pickAt(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  ptr.x = ((clientX-r.left)/r.width)*2-1;
+  ptr.y = -((clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects([floor, ...cubes.values()], false);
+  if(!hits.length) return;
+  const hit = hits[0];
+
+  if(mode==="erase"){
+    if(hit.object!==floor && hit.object.userData){
+      const {x,y,z}=hit.object.userData;
+      if(grade==='sym' && symSub==='challenge' && seedSet.has(key(x,y,z))) return; // 문제 블록 보호
+      symCoords(x,y,z).forEach(([a,b,c])=>removeCube(a,b,c));
+    }
+    return;
+  }
+  if(mode==="paint"){
+    if(hit.object!==floor && hit.object.userData){
+      const {x,y,z}=hit.object.userData;
+      symCoords(x,y,z).forEach(([a,b,c])=>{
+        const m=cubes.get(key(a,b,c));
+        if(m){ m.material=getMat(currentColor); m.userData.color=currentColor; }
+      });
+      afterChange();
+    }
+    return;
+  }
+  // build
+  if(hit.object===floor){
+    const gx=Math.floor(hit.point.x), gz=Math.floor(hit.point.z);
+    symCoords(gx,0,gz).forEach(([a,b,c])=>addCube(a,b,c));
+  } else {
+    const {x,y,z}=hit.object.userData;
+    const n=hit.face.normal;
+    const nx=x+Math.round(n.x), ny=y+Math.round(n.y), nz=z+Math.round(n.z);
+    symCoords(nx,ny,nz).forEach(([a,b,c])=>addCube(a,b,c));
+  }
+}
+
+// 대칭 거울: 현재 모드/거울종류에 따라 미러 좌표들 반환 (없으면 자기 자신만)
+let symKind='none';
+function symCoords(x,y,z){
+  if(grade!=='sym' || symKind==='none') return [[x,y,z]];
+  const c=N-1; const set=new Map();
+  const put=(a,b,cc)=>{ if(a>=0&&a<N&&cc>=0&&cc<N&&b>=0&&b<H) set.set(key(a,b,cc),[a,b,cc]); };
+  put(x,y,z);
+  if(symKind==='lr'){ put(c-x,y,z); }
+  if(symKind==='fb'){ put(x,y,c-z); }
+  if(symKind==='quad'){ put(c-x,y,z); put(x,y,c-z); put(c-x,y,c-z); }
+  if(symKind==='rot4'){ let px=x,pz=z;
+    for(let i=0;i<3;i++){ const a=c-pz, b=px; put(a,y,b); px=a; pz=b; } }
+  return [...set.values()];
+}
+
+// ── 자체 오빗 컨트롤 (드래그 회전 / 휠·핀치 줌) ───────────
+let dragging=false, moved=false, lastX=0, lastY=0, downX=0, downY=0;
+let pinchDist=0;
+
+canvas.addEventListener('pointerdown', e=>{
+  dragging=true; moved=false;
+  lastX=downX=e.clientX; lastY=downY=e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY) > 6) moved=true;
+  sph.theta += dx*0.008;
+  sph.phi   -= dy*0.008;
+  sph.phi = Math.max(0.12, Math.min(Math.PI*0.49, sph.phi));
+  sphGoal={...sph};
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('pointerup', e=>{
+  dragging=false;
+  if(!moved) pickAt(e.clientX, e.clientY);
+});
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  sph.radius = Math.max(6, Math.min(30, sph.radius + Math.sign(e.deltaY)*1.2));
+  sphGoal={...sph};
+},{passive:false});
+
+// 터치 핀치 줌
+canvas.addEventListener('touchstart', e=>{
+  if(e.touches.length===2){
+    pinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  }
+},{passive:true});
+canvas.addEventListener('touchmove', e=>{
+  if(e.touches.length===2){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    sph.radius = Math.max(6, Math.min(30, sph.radius - (d-pinchDist)*0.03));
+    pinchDist=d; sphGoal={...sph}; moved=true;
+  }
+},{passive:true});
+
+// 시점 프리셋
+const VIEWS={
+  front:{theta:-Math.PI/2, phi:Math.PI*0.49},
+  side :{theta:Math.PI,    phi:Math.PI*0.49},
+  top  :{theta:-Math.PI/2, phi:0.13},
+  iso  :{theta:-Math.PI*0.78, phi:Math.PI*0.34},
+};
+document.getElementById('views').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#views button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const v=VIEWS[b.dataset.v];
+  sphGoal={radius:sph.radius, theta:v.theta, phi:v.phi};
+});
+
+// ── 계산 로직 ────────────────────────────────────────────
+function count(){ return cubes.size; }
+function surfaceArea(){
+  let f=0;
+  const dirs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  for(const m of cubes.values()){
+    const {x,y,z}=m.userData;
+    for(const [dx,dy,dz] of dirs) if(!has(x+dx,y+dy,z+dz)) f++;
+  }
+  return f; // 노출면 1개 = 1cm²
+}
+function topHeights(){               // 위에서 본 칸별 최고 높이
+  const map={};
+  for(const m of cubes.values()){
+    const {x,z,y}=m.userData; const k=`${x},${z}`;
+    map[k]=Math.max(map[k]||0, y+1);
+  }
+  return map;
+}
+// 투상: 'top'(x,z) 'front'(x,y) 'side'(z,y)
+function projection(kind){
+  const g=Array.from({length:N},()=>Array(kind==='top'?N:H).fill(false));
+  for(const m of cubes.values()){
+    const {x,y,z}=m.userData;
+    if(kind==='top')   g[x][z]=true;
+    if(kind==='front') g[x][y]=true;
+    if(kind==='side')  g[z][y]=true;
+  }
+  return g;
+}
+
+// ── 6학년 면 하이라이트 ──────────────────────────────────
+const faceGeo = new THREE.PlaneGeometry(0.96,0.96);
+function rebuildFaces(){
+  faceGroup.clear();
+  if(!((grade===6||grade==='lab') && showFaces)) return;
+  const col=new THREE.Color(GRADES[grade].accent);
+  const mat=new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false});
+  const dirs=[
+    {d:[1,0,0],  r:[0,Math.PI/2,0]},
+    {d:[-1,0,0], r:[0,-Math.PI/2,0]},
+    {d:[0,1,0],  r:[-Math.PI/2,0,0]},
+    {d:[0,-1,0], r:[Math.PI/2,0,0]},
+    {d:[0,0,1],  r:[0,0,0]},
+    {d:[0,0,-1], r:[0,Math.PI,0]},
+  ];
+  for(const m of cubes.values()){
+    const {x,y,z}=m.userData;
+    for(const {d,r} of dirs){
+      if(has(x+d[0],y+d[1],z+d[2])) continue;
+      const p=new THREE.Mesh(faceGeo, mat);
+      p.position.set(x+0.5+d[0]*0.485, y+0.5+d[1]*0.485, z+0.5+d[2]*0.485);
+      p.rotation.set(r[0],r[1],r[2]);
+      faceGroup.add(p);
+    }
+  }
+}
+
+// ── 변경 시 패널/계산 갱신 ───────────────────────────────
+function afterChange(){
+  rebuildFaces();
+  if(grade==='follow'){ updateGhost(); checkFollow(); }
+  if(grade==='sym' && symSub==='challenge'){ checkSym(); }
+  refreshPanelMetrics();
+}
+
+// ════════════════ UI / 패널 ════════════════════════════
+const reduceMotion = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const root = document.documentElement;
+const gradeContent = document.getElementById('grade-content');
+
+// 학년 트랙 버튼 생성
+const track=document.getElementById('track');
+for(let g=1; g<=6; g++){
+  const b=document.createElement('button');
+  b.className='grade'+(g===1?' active':''); b.dataset.g=g;
+  b.innerHTML=`${g}<small>학년</small>`;
+  b.onclick=()=>setGrade(g);
+  track.appendChild(b);
+}
+// ★ 열린 탐구 (학년을 초월하는 심화 레이어)
+const labBtn=document.createElement('button');
+labBtn.className='grade lab-btn'; labBtn.dataset.g='lab';
+labBtn.innerHTML=`★<small>탐구</small>`;
+labBtn.onclick=()=>setGrade('lab');
+track.appendChild(labBtn);
+// 🧩 따라 만들기
+const followBtn=document.createElement('button');
+followBtn.className='grade follow-btn'; followBtn.dataset.g='follow';
+followBtn.innerHTML=`🧩<small>조립</small>`;
+followBtn.onclick=()=>setGrade('follow');
+track.appendChild(followBtn);
+// 🪞 대칭 거울
+const symBtn=document.createElement('button');
+symBtn.className='grade sym-btn'; symBtn.dataset.g='sym';
+symBtn.innerHTML=`🪞<small>대칭</small>`;
+symBtn.onclick=()=>setGrade('sym');
+track.appendChild(symBtn);
+function moveGlider(g){
+  const btn=track.querySelector(`.grade[data-g="${g}"]`);
+  const glider=document.getElementById('glider');
+  glider.style.transform=`translateX(${btn.offsetLeft-5}px)`;
+  glider.style.width=btn.offsetWidth+'px';
+}
+
+function setAccent(g){
+  const {accent,soft}=GRADES[g];
+  root.style.setProperty('--accent',accent);
+  root.style.setProperty('--accent-soft',soft);
+}
+
+function setGrade(g){
+  grade=g; showFaces=false;
+  const info=GRADES[g];
+  setAccent(g);
+  document.querySelectorAll('.track .grade').forEach(x=>x.classList.toggle('active', x.dataset.g===String(g)));
+  moveGlider(g);
+  const special = (g==='lab'||g==='follow'||g==='sym');
+  document.getElementById('pTitle').textContent = special ? info.name : `${g}학년 · ${info.name}`;
+  document.getElementById('pTag').textContent = (g==='lab') ? '★' : (g==='follow') ? '🧩' : (g==='sym') ? '🪞' : `Lv.${g}`;
+  document.getElementById('pLead').textContent=info.lead;
+  buildGradeContent(g);
+  rebuildFaces();
+  if(g!=='follow') ghostGroup.clear();
+  if(g!=='sym'){ symKind='none'; symPlaneGroup.clear(); }
+}
+
+// 학년별 패널 콘텐츠 (변신)
+function buildGradeContent(g){
+  let html="";
+  if(g===1){
+    html=`
+      <div class="metric">
+        <div class="big" id="mCount">0</div>
+        <div class="lbl">지금 쌓은 블록</div>
+      </div>
+      <div class="mission">
+        <div class="q" id="msQ">아래 모양에는 블록이 몇 개 있을까요?</div>
+        <div class="row">
+          <input id="msIn" type="number" inputmode="numeric" placeholder="개수" />
+          <button class="check" id="msGo">확인</button>
+        </div>
+        <div class="fb" id="msFb"></div>
+        <button class="new" id="msNew">새 문제 만들기 ↻</button>
+      </div>`;
+  } else if(g===2){
+    html=`
+      <div class="proj-grid">
+        <div class="proj"><canvas id="pjTop"></canvas><div class="pl">위에서</div></div>
+        <div class="proj"><canvas id="pjFront"></canvas><div class="pl">앞에서</div></div>
+        <div class="proj"><canvas id="pjSide"></canvas><div class="pl">옆에서</div></div>
+      </div>
+      <p class="lead">블록을 옮기면 세 그림이 함께 바뀌어요. 어떤 방향에서 보면 모양이 가장 단순해지나요?</p>`;
+  } else if(g===3){
+    html=`
+      <div class="metric"><div class="big" id="mCount">0</div><div class="lbl">관찰 중인 블록</div></div>
+      <button class="tool" id="spin" style="width:100%; justify-content:center;">자동으로 돌려 보기 ▶</button>
+      <p class="lead">오른쪽 아래 <b>앞·옆·위·입체</b> 버튼으로 정해진 방향에서 관찰할 수 있어요. 같은 모양도 방향마다 다르게 보이죠.</p>`;
+  } else if(g===4){
+    html=`
+      <div class="metric"><div class="big" id="mCount">0</div><div class="lbl">전체 블록 수</div></div>
+      <p class="lead" style="margin:-4px 0 2px">위에서 본 각 칸의 층수를 모두 더하면 전체 개수예요.</p>
+      <div class="height-list" id="hList"></div>`;
+  } else if(g===5){
+    html=`
+      <div class="metric">
+        <div class="big" id="mVol">0</div>
+        <div class="lbl">전체 부피 (cm³)</div>
+        <div class="formula" id="volF">블록 0개 × 1cm³ = 0cm³</div>
+      </div>
+      <p class="lead">쌓기나무 한 개가 한 모서리 1cm인 정육면체라면, 부피는 블록 개수와 같아요. 직육면체로 쌓으면 가로×세로×높이 공식과 이어집니다.</p>`;
+  } else if(g===6){
+    html=`
+      <div class="metric">
+        <div class="big" id="mSurf">0</div>
+        <div class="lbl">겉넓이 (cm²)</div>
+        <div class="formula" id="surfF">드러난 면 0개 × 1cm² = 0cm²</div>
+      </div>
+      <button class="tool" id="faceToggle" style="width:100%; justify-content:center;">드러난 면 색으로 보기</button>
+      <p class="lead">밖으로 드러난 면 1개가 1cm²예요. 두 블록이 맞닿은 면은 겉넓이에서 빠져요.</p>`;
+  } else if(g==='lab'){
+    html=`
+      <div class="lab-twin">
+        <div class="lab-cell vol"><div class="big" id="mVol">0</div><div class="lbl">부피 cm³</div></div>
+        <div class="lab-cell surf"><div class="big" id="mSurf">0</div><div class="lbl">겉넓이 cm²</div></div>
+      </div>
+      <div class="lab-delta" id="labDelta">블록을 옮기면 두 값이 어떻게 따로 움직이는지 보세요</div>
+      <div class="lab-record" id="labRec">
+        <div>이 부피(<b id="recV">0</b>cm³)에서 발견한 겉넓이</div>
+        <div class="rng"><span>최소 <b id="recMin">–</b></span><span>최대 <b id="recMax">–</b></span></div>
+      </div>
+      <div class="mission">
+        <div class="q" id="labQ">도전 카드</div>
+        <p class="lead" id="labHint" style="margin-top:-4px"></p>
+        <button class="new" id="labNext">다른 도전 보기 ↻</button>
+      </div>
+      <button class="tool" id="faceToggle" style="width:100%; justify-content:center;">드러난 면 색으로 보기</button>`;
+  } else if(g==='follow'){
+    html=`
+      <div class="metric follow-metric">
+        <div class="big" id="mProg">0 / 0</div>
+        <div class="lbl">맞춘 칸 / 본보기</div>
+      </div>
+      <div class="follow-fb" id="followFb">본보기와 똑같이 쌓아 보세요</div>
+      <div class="seg" id="diffSeg">
+        <button data-d="easy" class="on">쉬움</button>
+        <button data-d="mid">보통</button>
+        <button data-d="hard">어려움</button>
+      </div>
+      <button class="tool" id="followNew" style="width:100%; justify-content:center;">다른 본보기 ↻</button>
+      <p class="lead">‘어려움’에는 위에 가려져 보이지 않는 블록이 숨어 있어요. 화면을 돌려 가며 찾아 보세요. 본보기 색까지 똑같이 맞추면 더 멋져요.</p>`;
+  } else if(g==='sym'){
+    html=`
+      <div class="seg" id="symSub">
+        <button data-s="play" class="on">거울 놀이</button>
+        <button data-s="challenge">대칭 도전</button>
+      </div>
+      <div class="metric follow-metric" style="background:linear-gradient(135deg,var(--accent-soft),#fff)">
+        <div class="big" id="mCount" style="color:var(--accent)">0</div>
+        <div class="lbl">전체 블록</div>
+      </div>
+      <div id="symPlayPanel">
+        <div class="sym-kinds" id="symKinds">
+          <button data-k="lr" class="on">↔ 좌우 거울</button>
+          <button data-k="fb">↕ 앞뒤 거울</button>
+          <button data-k="quad">✛ 네 방향</button>
+          <button data-k="rot4">✺ 회전 4겹</button>
+        </div>
+        <button class="tool" id="symFreeze" style="width:100%; justify-content:center; margin-top:12px;">거울 끄고 굳히기</button>
+        <p class="lead">거울을 켜면 한 번의 동작이 여러 개로 늘어나요. 좌우·앞뒤는 선대칭, 회전 4겹은 만화경처럼 돌아가는 대칭이에요.</p>
+      </div>
+      <div id="symChallengePanel" style="display:none">
+        <div class="seg" id="symKindSeg" style="margin-bottom:12px">
+          <button data-c="line" class="on">선대칭</button>
+          <button data-c="point">점대칭</button>
+        </div>
+        <div class="follow-fb" id="symFb">회색 블록의 짝이 되도록 직접 쌓아 보세요</div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="tool" id="symHintBtn" style="flex:1; justify-content:center;">힌트 보기</button>
+          <button class="tool" id="symNew" style="flex:1; justify-content:center;">새 문제 ↻</button>
+        </div>
+        <p class="lead" id="symChalLead">왼쪽 회색 블록을 거울선 너머로 똑같이 옮기면 선대칭이에요. 자동으로 안 만들어지니, 어디에 놓을지 직접 생각해야 해요.</p>
+      </div>`;
+  }
+  gradeContent.innerHTML=html;
+  wireGradeContent(g);
+  refreshPanelMetrics();
+}
+
+// 학년 콘텐츠 이벤트 연결
+let spinning=false, challengeAnswer=null;
+function wireGradeContent(g){
+  if(g===1){
+    document.getElementById('msGo').onclick=checkChallenge;
+    document.getElementById('msNew').onclick=newChallenge;
+    document.getElementById('msIn').addEventListener('keydown',e=>{if(e.key==='Enter')checkChallenge();});
+    newChallenge();
+  }
+  if(g===3){
+    spinning=false;
+    document.getElementById('spin').onclick=function(){
+      spinning=!spinning;
+      this.textContent=spinning?'멈추기 ⏸':'자동으로 돌려 보기 ▶';
+      this.classList.toggle('on',spinning);
+    };
+  }
+  if(g===6 || g==='lab'){
+    document.getElementById('faceToggle').onclick=function(){
+      showFaces=!showFaces;
+      this.classList.toggle('on',showFaces);
+      this.textContent=showFaces?'면 표시 끄기':'드러난 면 색으로 보기';
+      rebuildFaces();
+    };
+  }
+  if(g==='lab'){
+    surfRecord={};            // 부피별 겉넓이 최소/최대 기록 초기화
+    prevSurf=surfaceArea();
+    labJustEntered=true;
+    labCardIdx=Math.floor(Math.random()*LAB_CARDS.length);
+    showLabCard();
+    document.getElementById('labNext').onclick=()=>{
+      labCardIdx=(labCardIdx+1)%LAB_CARDS.length; showLabCard();
+    };
+  }
+  if(g==='follow'){
+    document.getElementById('diffSeg').addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      document.querySelectorAll('#diffSeg button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      followDiff=b.dataset.d; followIdx=0; loadTarget();
+    });
+    document.getElementById('followNew').onclick=()=>{
+      followIdx=(followIdx+1)%TARGETS[followDiff].length; loadTarget();
+    };
+    loadTarget();
+  }
+  if(g==='sym'){
+    symSub='play'; symSetup();
+    document.getElementById('symSub').addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      document.querySelectorAll('#symSub button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); symSub=b.dataset.s; symSetup();
+    });
+    // 거울 놀이: 거울 종류
+    document.getElementById('symKinds').addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      document.querySelectorAll('#symKinds button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); symKind=b.dataset.k; updateSymPlanes();
+    });
+    document.getElementById('symFreeze').onclick=function(){
+      if(symKind!=='none'){ symKind='none'; updateSymPlanes();
+        document.querySelectorAll('#symKinds button').forEach(x=>x.classList.remove('on'));
+        this.textContent='거울 다시 켜기 (좌우)'; this.classList.add('on');
+      } else { symKind='lr'; updateSymPlanes();
+        document.querySelector('#symKinds button[data-k="lr"]').classList.add('on');
+        this.textContent='거울 끄고 굳히기'; this.classList.remove('on'); }
+    };
+    // 대칭 도전: 선/점 선택, 힌트, 새 문제
+    document.getElementById('symKindSeg').addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      document.querySelectorAll('#symKindSeg button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); chalKind=b.dataset.c; loadSymChallenge();
+    });
+    document.getElementById('symNew').onclick=loadSymChallenge;
+    document.getElementById('symHintBtn').onclick=function(){
+      symHint=!symHint; this.classList.toggle('on',symHint);
+      this.textContent=symHint?'힌트 끄기':'힌트 보기'; updateSymHint();
+    };
+  }
+}
+
+// 거울놀이 ↔ 대칭도전 전환
+let symSub='play', chalKind='line', symHint=false, seedSet=new Set(), answerSet=new Set();
+function symSetup(){
+  const play=document.getElementById('symPlayPanel'), chal=document.getElementById('symChallengePanel');
+  if(symSub==='play'){
+    play.style.display=''; chal.style.display='none';
+    clearAll(); symKind='lr'; symHint=false;
+    document.querySelectorAll('#symKinds button').forEach(x=>x.classList.toggle('on',x.dataset.k==='lr'));
+    updateSymPlanes();
+  } else {
+    play.style.display='none'; chal.style.display='';
+    symKind='none'; symHint=false;
+    const hb=document.getElementById('symHintBtn'); if(hb){hb.textContent='힌트 보기'; hb.classList.remove('on');}
+    loadSymChallenge();
+  }
+}
+
+// ── 탐구 모드: 도전 카드 + 부피별 겉넓이 기록 ──
+const LAB_CARDS=[
+  {q:"블록 9개로 겉넓이를 가장 작게 만들어 봐", h:"정육면체에 가까울수록 겉넓이가 줄어들어요. 길게 늘어뜨리면? 뭉치면?"},
+  {q:"부피는 그대로 두고 겉넓이만 2 줄여 봐", h:"블록 하나를 떼서, 다른 블록과 더 많이 맞닿게 붙이면 어떻게 될까요?"},
+  {q:"위에서도 앞에서도 'ㄱ'자로 보이게 쌓아 봐", h:"두 방향을 동시에 만족시켜야 해요. 2학년 모드로 확인해 볼 수도 있어요."},
+  {q:"겉넓이가 부피의 정확히 4배가 되게 만들어 봐", h:"평평하게 한 층으로 깔면 위·아래 면이 많아져요."},
+  {q:"블록 8개로 만들 수 있는 가장 큰 겉넓이는?", h:"서로 안 닿게 띄울수록 커져요. 그런데 공중엔 못 띄우니… 어디까지 가능할까?"},
+];
+let labCardIdx=0, surfRecord={}, prevSurf=0, labJustEntered=false;
+function showLabCard(){
+  const c=LAB_CARDS[labCardIdx];
+  const q=document.getElementById('labQ'), h=document.getElementById('labHint');
+  if(q) q.textContent='도전 ' + (labCardIdx+1) + '. ' + c.q;
+  if(h) h.textContent=c.h;
+}
+
+// ── 따라 만들기: 본보기 라이브러리 ──
+// 좌표 [x,y,z,색인덱스]. 색은 본보기 안내용(완성 판정은 모양 기준).
+const TARGETS={
+  easy:[
+    {name:'세 칸 계단', c:[[2,0,2,1],[3,0,2,3],[3,1,2,3]]},
+    {name:'ㄴ자',       c:[[2,0,2,5],[2,0,3,5],[3,0,3,4]]},
+    {name:'작은 문',    c:[[2,0,2,2],[4,0,2,2],[2,1,2,3],[3,1,2,3],[4,1,2,3]]},
+  ],
+  mid:[
+    {name:'피라미드 씨앗', c:[[2,0,2,5],[3,0,2,5],[2,0,3,5],[3,0,3,5],[2,1,2,4]]},
+    {name:'T 기둥',       c:[[3,0,3,1],[3,1,3,1],[2,2,3,2],[3,2,3,2],[4,2,3,2]]},
+    {name:'지그재그',     c:[[2,0,2,6],[3,0,2,6],[3,0,3,3],[4,0,3,3],[4,1,3,1]]},
+  ],
+  hard:[
+    // 위 블록이 아래를 가린다 → 돌려봐야 보임
+    {name:'숨은 기둥',   c:[[2,0,2,5],[3,0,2,5],[2,0,3,5],[3,0,3,5],[2,1,2,2],[2,2,2,1]]},
+    {name:'다리',       c:[[2,0,3,3],[4,0,3,3],[2,1,3,4],[3,1,3,4],[4,1,3,4],[3,2,3,6]]},
+    {name:'2층 상자',  c:[[2,0,2,5],[3,0,2,5],[2,0,3,5],[3,0,3,5],[2,1,2,5],[3,1,2,5],[2,1,3,5],[3,1,3,5]]},
+  ],
+};
+let followDiff='easy', followIdx=0, targetCubes=[];
+
+function loadTarget(){
+  clearAll();
+  const t=TARGETS[followDiff][followIdx];
+  targetCubes=t.c.map(a=>a.slice());
+  updateGhost(); checkFollow();
+  const fb=document.getElementById('followFb');
+  if(fb){ fb.textContent=`본보기: ${t.name} · 똑같이 쌓아 보세요`; fb.className='follow-fb'; }
+}
+
+const ghostMatCache={};
+function ghostMat(ci){
+  if(!ghostMatCache[ci]) ghostMatCache[ci]=new THREE.MeshBasicMaterial(
+    {color:PALETTE[ci].hex, transparent:true, opacity:0.20, depthWrite:false});
+  return ghostMatCache[ci];
+}
+function updateGhost(){
+  ghostGroup.clear();
+  if(grade!=='follow') return;
+  for(const [x,y,z,ci] of targetCubes){
+    if(has(x,y,z)) continue;   // 이미 채운 칸은 본보기 숨김
+    const gm=new THREE.Mesh(cubeGeo, ghostMat(ci||0));
+    gm.position.set(x+0.5,y+0.5,z+0.5);
+    const e=new THREE.LineSegments(edgeGeo,
+      new THREE.LineBasicMaterial({color:PALETTE[ci||0].hex, transparent:true, opacity:0.55}));
+    gm.add(e);
+    ghostGroup.add(gm);
+  }
+}
+function checkFollow(){
+  if(grade!=='follow') return;
+  const targetSet=new Set(targetCubes.map(([x,y,z])=>key(x,y,z)));
+  let filled=0;
+  for(const k of targetSet) if(cubes.has(k)) filled++;
+  const total=targetSet.size;
+  const extra=cubes.size-filled;     // 본보기에 없는 여분 블록
+  const prog=document.getElementById('mProg');
+  if(prog) prog.textContent=`${filled} / ${total}`;
+  const fb=document.getElementById('followFb'); if(!fb) return;
+  if(filled===total && extra===0){
+    fb.textContent='완성! 똑같이 만들었어요 🎉'; fb.className='follow-fb ok';
+  } else if(extra>0){
+    fb.textContent=`본보기에 없는 블록이 ${extra}개 있어요`; fb.className='follow-fb no';
+  } else {
+    fb.textContent=`${total-filled}칸 더 채우면 완성!`; fb.className='follow-fb';
+  }
+}
+
+// ── 대칭 거울면 표시 ──
+function updateSymPlanes(){
+  symPlaneGroup.clear();
+  if(grade!=='sym' || symKind==='none') return;
+  const col=new THREE.Color(GRADES.sym.accent);
+  const mat=new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.13, side:THREE.DoubleSide, depthWrite:false});
+  const mid=N/2; // 칸 경계 = 월드 3.0
+  function plane(axis){
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(N, H), mat);
+    if(axis==='x'){ p.rotation.y=Math.PI/2; p.position.set(mid, H/2, N/2); }
+    else { p.position.set(N/2, H/2, mid); }
+    symPlaneGroup.add(p);
+  }
+  if(symKind==='lr') plane('x');
+  if(symKind==='fb') plane('z');
+  if(symKind==='quad'){ plane('x'); plane('z'); }
+  if(symKind==='rot4'){
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,H,12), mat);
+    pole.position.set(mid, H/2, mid); symPlaneGroup.add(pole);
+  }
+}
+
+// ── 대칭 도전(능동): 절반을 주고 직접 완성 ──
+function genSeed(){
+  const s=[], used=new Set(); const n=3+Math.floor(Math.random()*3); // 3~5칸
+  let guard=0;
+  while(s.length<n && guard++<50){
+    const x=Math.floor(Math.random()*3);   // 왼쪽 절반 0,1,2
+    const z=1+Math.floor(Math.random()*4); // 1~4
+    const kk=x+','+z; if(used.has(kk)) continue; used.add(kk);
+    s.push([x,0,z]);
+    if(Math.random()<0.25 && s.length<n) s.push([x,1,z]); // 가끔 2층
+  }
+  return s;
+}
+function loadSymChallenge(){
+  if(grade!=='sym') return;
+  clearAll(); seedSet=new Set(); answerSet=new Set();
+  const cc=N-1;
+  const map = (chalKind==='line') ? ([x,y,z])=>[cc-x,y,z] : ([x,y,z])=>[cc-x,y,cc-z];
+  const seed=genSeed();
+  for(const [x,y,z] of seed){ addCube(x,y,z,false,'seed'); seedSet.add(key(x,y,z)); }
+  for(const [x,y,z] of seed){ const [a,b,d]=map([x,y,z]); answerSet.add(key(a,b,d)); }
+  symHint=false;
+  const hb=document.getElementById('symHintBtn'); if(hb){ hb.textContent='힌트 보기'; hb.classList.remove('on'); }
+  updateSymHint(); checkSym();
+  const lead=document.getElementById('symChalLead');
+  if(lead) lead.textContent = (chalKind==='line')
+    ? '회색 블록을 거울선 너머로 똑같이 옮기면 선대칭이에요. 좌우만 뒤집혀요.'
+    : '회색 블록을 중심을 기준으로 반대편에 놓으면 점대칭이에요. 좌우·앞뒤가 모두 뒤집혀요.';
+}
+function checkSym(){
+  if(grade!=='sym' || symSub!=='challenge') return;
+  const placedSet=new Set();
+  for(const k of cubes.keys()) if(!seedSet.has(k)) placedSet.add(k);
+  let correct=0, wrong=0;
+  for(const k of answerSet) if(placedSet.has(k)) correct++;
+  for(const k of placedSet) if(!answerSet.has(k)) wrong++;
+  const total=answerSet.size;
+  const fb=document.getElementById('symFb'); if(!fb) return;
+  const nm = (chalKind==='line') ? '선대칭' : '점대칭';
+  if(correct===total && wrong===0){ fb.textContent=`완벽한 ${nm}이에요! 🎉`; fb.className='follow-fb ok'; }
+  else if(wrong>0){ fb.textContent='대칭이 맞지 않는 블록이 있어요'; fb.className='follow-fb no'; }
+  else { fb.textContent=`${total-correct}칸 더 놓으면 ${nm} 완성!`; fb.className='follow-fb'; }
+}
+function updateSymHint(){
+  symPlaneGroup.clear();
+  if(grade!=='sym' || symSub!=='challenge' || !symHint) return;
+  const col=new THREE.Color(GRADES.sym.accent);
+  const mat=new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.14, side:THREE.DoubleSide, depthWrite:false});
+  const mid=N/2;
+  if(chalKind==='line'){
+    const p=new THREE.Mesh(new THREE.PlaneGeometry(N,H), mat);
+    p.rotation.y=Math.PI/2; p.position.set(mid, H/2, N/2); symPlaneGroup.add(p);
+  } else {
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,H,12), mat);
+    pole.position.set(mid, H/2, mid); symPlaneGroup.add(pole);
+    // 중심점 강조용 작은 구
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(0.16,16,16),
+      new THREE.MeshBasicMaterial({color:col, transparent:true, opacity:0.6}));
+    dot.position.set(mid, 0.5, mid); symPlaneGroup.add(dot);
+  }
+}
+
+// 1학년 미션
+function newChallenge(){
+  clearAll();
+  // 랜덤한 작은 모양 생성 (3~7개, 붙어 있게)
+  const n=3+Math.floor(Math.random()*5);
+  let x=Math.floor(N/2), z=Math.floor(N/2), y=0;
+  addCube(x,y,z,false);
+  let placed=1, guard=0;
+  while(placed<n && guard++<60){
+    const dir=Math.floor(Math.random()*4);
+    if(dir===0) x=Math.min(N-1,x+1);
+    if(dir===1) x=Math.max(0,x-1);
+    if(dir===2) z=Math.min(N-1,z+1);
+    if(dir===3) z=Math.max(0,z-1);
+    // 그 칸의 맨 위에 쌓기
+    let ty=0; while(has(x,ty,z)) ty++;
+    if(ty<H && !(x===N/2&&z===N/2&&ty===0)){ if(addCube(x,ty,z,false)) placed++; }
+  }
+  challengeAnswer=count();
+  const fb=document.getElementById('msFb'); if(fb){fb.textContent='';fb.className='fb';}
+  const inp=document.getElementById('msIn'); if(inp) inp.value='';
+}
+function checkChallenge(){
+  const inp=document.getElementById('msIn'); const fb=document.getElementById('msFb');
+  const v=parseInt(inp.value,10);
+  if(isNaN(v)){fb.textContent='숫자를 적어 주세요.';fb.className='fb';return;}
+  if(v===challengeAnswer){fb.textContent=`정답이에요! 모두 ${challengeAnswer}개 🎉`;fb.className='fb ok';}
+  else{fb.textContent=`다시 세어 볼까요? 돌려 보면 숨은 블록이 보여요.`;fb.className='fb no';}
+}
+
+// 패널 숫자/그림 갱신
+function refreshPanelMetrics(){
+  const c=count();
+  const cEl=document.getElementById('mCount'); if(cEl) cEl.textContent=c;
+  if(grade===2){ drawProjection('pjTop','top'); drawProjection('pjFront','front'); drawProjection('pjSide','side'); }
+  if(grade===4){
+    const hm=topHeights(); const wrap=document.getElementById('hList');
+    if(wrap){
+      const entries=Object.entries(hm);
+      wrap.innerHTML = entries.length
+        ? entries.map(([k,v],i)=>`<div class="hrow"><span>칸 ${i+1}</span><b>${v}층</b></div>`).join('')
+        : `<div class="hrow"><span>아직 블록이 없어요</span><b>0</b></div>`;
+    }
+  }
+  if(grade===5){
+    const v=document.getElementById('mVol'); if(v) v.textContent=c;
+    const f=document.getElementById('volF'); if(f) f.textContent=`블록 ${c}개 × 1cm³ = ${c}cm³`;
+  }
+  if(grade===6){
+    const s=surfaceArea();
+    const sEl=document.getElementById('mSurf'); if(sEl) sEl.textContent=s;
+    const f=document.getElementById('surfF'); if(f) f.textContent=`드러난 면 ${s}개 × 1cm² = ${s}cm²`;
+  }
+  if(grade==='lab'){
+    const s=surfaceArea();
+    const vEl=document.getElementById('mVol'); if(vEl) vEl.textContent=c;
+    const sEl=document.getElementById('mSurf'); if(sEl) sEl.textContent=s;
+    // 부피별 겉넓이 최소/최대 기록
+    if(c>0){
+      const r=surfRecord[c]||(surfRecord[c]={min:s,max:s});
+      r.min=Math.min(r.min,s); r.max=Math.max(r.max,s);
+      const rv=document.getElementById('recV'); if(rv) rv.textContent=c;
+      const rmin=document.getElementById('recMin'); if(rmin) rmin.textContent=r.min;
+      const rmax=document.getElementById('recMax'); if(rmax) rmax.textContent=r.max;
+    }
+    // 직전 대비 겉넓이 변화 피드백 (예측→검증 루프)
+    const d=document.getElementById('labDelta');
+    if(d){
+      const diff=s-prevSurf;
+      if(labJustEntered || c===0){ d.textContent=c===0?'블록을 쌓아 탐구를 시작해 보세요':'블록을 옮기면 부피·겉넓이가 어떻게 따로 움직이는지 보세요'; d.className='lab-delta'; }
+      else if(diff===0){ d.textContent='겉넓이 변화 없음 · 부피 '+c+'cm³ 그대로'; d.className='lab-delta flat'; }
+      else if(diff>0){ d.textContent='겉넓이 ↑ '+diff+' 늘었어요'; d.className='lab-delta up'; }
+      else { d.textContent='겉넓이 ↓ '+(-diff)+' 줄었어요'; d.className='lab-delta down'; }
+    }
+    prevSurf=s; labJustEntered=false;
+  }
+}
+
+// 투상도 그리기
+function drawProjection(id, kind){
+  const cv=document.getElementById(id); if(!cv) return;
+  const px=cv.clientWidth*Math.min(devicePixelRatio,2);
+  cv.width=px; cv.height=px;
+  const ctx=cv.getContext('2d');
+  const g=projection(kind);
+  const cols=g.length, rows=g[0].length;
+  const pad=px*0.08, cell=(px-pad*2)/Math.max(cols,rows);
+  const ox=(px-cell*cols)/2, oy=(px-cell*rows)/2;
+  ctx.clearRect(0,0,px,px);
+  const acc=getComputedStyle(root).getPropertyValue('--accent').trim();
+  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){
+    // 위에서 본 그림은 j(=z)가 아래로, 앞/옆은 y가 위로 → 화면상 뒤집기
+    const drawJ = (kind==='top') ? j : (rows-1-j);
+    const X=ox+i*cell, Y=oy+drawJ*cell;
+    if(g[i][j]){ ctx.fillStyle=acc; ctx.fillRect(X+1,Y+1,cell-2,cell-2);
+      ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1; ctx.strokeRect(X+1.5,Y+1.5,cell-3,cell-3);
+    } else { ctx.strokeStyle='#E2E8F0'; ctx.lineWidth=1; ctx.strokeRect(X+1,Y+1,cell-2,cell-2); }
+  }
+}
+
+// ── 도구바 ───────────────────────────────────────────────
+const tBuild=document.getElementById('tBuild'), tErase=document.getElementById('tErase'), tPaint=document.getElementById('tPaint');
+function setMode(m){
+  mode=m;
+  tBuild.classList.toggle('on', m==='build');
+  tErase.classList.toggle('on', m==='erase');
+  tPaint.classList.toggle('on', m==='paint');
+}
+tBuild.onclick=()=>setMode('build');
+tErase.onclick=()=>setMode('erase');
+tPaint.onclick=()=>setMode('paint');
+document.getElementById('tReset').onclick=()=>{
+  if(grade==='sym' && symSub==='challenge'){ loadSymChallenge(); return; }
+  clearAll();
+  if(grade===1) newChallenge();
+  if(grade==='follow') loadTarget();
+};
+
+// 색 팔레트 생성
+const swatchWrap=document.getElementById('swatches');
+PALETTE.forEach((p,i)=>{
+  const s=document.createElement('button');
+  s.className='swatch'+(i===0?' on':''); s.style.background=p.css; s.title=p.name;
+  s.onclick=()=>{
+    currentColor=i;
+    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on'));
+    s.classList.add('on');
+    if(mode==='erase') setMode('build'); // 색 고르면 자연스럽게 쌓기/색칠로
+  };
+  swatchWrap.appendChild(s);
+});
+
+// 힌트
+const hintEl=document.getElementById('hint');
+let hintTimer;
+function showHint(t){hintEl.textContent=t; hintEl.classList.add('show'); clearTimeout(hintTimer);
+  hintTimer=setTimeout(()=>hintEl.classList.remove('show'),3200);}
+
+// ── 렌더 루프 ────────────────────────────────────────────
+function resize(){
+  const w=canvas.clientWidth, h=canvas.clientHeight;
+  if(canvas.width!==w*Math.min(devicePixelRatio,2)||canvas.height!==h*Math.min(devicePixelRatio,2)){
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+}
+function tick(){
+  resize();
+  // 시점 부드럽게 보간
+  const L=reduceMotion?1:0.12;
+  sph.radius += (sphGoal.radius-sph.radius)*L;
+  sph.theta  += (sphGoal.theta -sph.theta )*L;
+  sph.phi    += (sphGoal.phi   -sph.phi   )*L;
+  if(grade===3 && spinning){ sph.theta-=0.006; sphGoal.theta=sph.theta; }
+  applyCamera();
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+
+// ── 초기화 ───────────────────────────────────────────────
+function seedDemo(){
+  const s=[[2,0,2],[3,0,2],[2,0,3],[3,0,3],[2,1,2],[3,1,2],[2,2,2]];
+  s.forEach(([x,y,z])=>addCube(x,y,z,false));
+}
+
+/* ════════════════════════════════════════════════════════
+   출제(교사) · 풀이(학생) · 공유 시스템
+   ════════════════════════════════════════════════════════ */
+let appMode='learn';
+const TYPE_NAME={follow:'따라만들기', count:'개수세기', line:'선대칭', point:'점대칭'};
+const DIFF_NAME={easy:'쉬움', mid:'보통', hard:'어려움', top:'최상위'};
+
+// 현재 캔버스의 큐브들을 [x,y,z,color] 배열로 추출
+function snapshot(){
+  return [...cubes.values()].map(m=>[m.userData.x,m.userData.y,m.userData.z,m.userData.color]);
+}
+function loadShape(arr, asSeed){
+  clearAll();
+  for(const [x,y,z,col] of arr) addCube(x,y,z,false, asSeed?'seed':(col??0));
+}
+
+// ── 모드 전환 ──
+function setAppMode(m){
+  appMode=m;
+  document.querySelectorAll('#appModeSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  document.getElementById('track').style.display = (m==='learn')?'':'none';
+  document.getElementById('learnPanel').style.display = (m==='learn')?'':'none';
+  document.getElementById('authorPanel').style.display = (m==='author')?'':'none';
+  document.getElementById('solvePanel').style.display = (m==='solve')?'':'none';
+  document.getElementById('enterCode').style.display = (m==='author')?'none':'';
+  // 공통 정리
+  ghostGroup.clear(); symPlaneGroup.clear(); faceGroup.clear(); showFaces=false;
+  symKind='none';
+  if(m==='learn'){ setGrade(grade); }
+  if(m==='author'){ grade='author'; clearAll(); setMode('build'); refreshAuthHint(); }
+}
+document.getElementById('appModeSwitch').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.m==='author') enterAuthor(); else setAppMode('learn');
+});
+
+// ── 출제(교사) ──
+let authType='follow', authDiff='easy', authProblems=[];
+function enterAuthor(){ authProblems=[]; renderProbList(); setAppMode('author'); }
+function refreshAuthHint(){
+  const h=document.getElementById('authHint');
+  if(authType==='line'||authType==='point'){
+    h.textContent='왼쪽 절반(거울선 왼쪽)에만 모양을 쌓으세요. 그게 학생에게 주어질 ‘절반’이 됩니다.';
+  } else if(authType==='count'){
+    h.textContent='정답 모양을 쌓으세요. 학생은 이 모양을 보고 블록이 몇 개인지 답하게 됩니다.';
+  } else {
+    h.textContent='본보기가 될 정답 모양을 쌓으세요. 학생은 빈 격자에서 똑같이 따라 만듭니다.';
+  }
+}
+document.getElementById('authType').addEventListener('click', e=>onAuthType(e));
+document.getElementById('authType2').addEventListener('click', e=>onAuthType(e));
+function onAuthType(e){
+  const b=e.target.closest('button'); if(!b) return;
+  authType=b.dataset.t;
+  document.querySelectorAll('#authType button,#authType2 button').forEach(x=>x.classList.toggle('on',x.dataset.t===authType));
+  refreshAuthHint();
+}
+document.getElementById('authDiff').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  authDiff=b.dataset.d;
+  document.querySelectorAll('#authDiff button').forEach(x=>x.classList.toggle('on',x.dataset.d===authDiff));
+});
+document.getElementById('authAdd').onclick=()=>{
+  const shape=snapshot();
+  if(shape.length===0){ flashAuthHint('먼저 캔버스에 모양을 쌓아 주세요'); return; }
+  const p={type:authType, diff:authDiff};
+  if(authType==='line'||authType==='point'){
+    // 절반만 유효 (거울선 왼쪽 x<=2)
+    const half=shape.filter(([x])=>x<=2);
+    if(half.length===0){ flashAuthHint('거울선 왼쪽(왼쪽 절반)에 모양을 쌓아 주세요'); return; }
+    p.seed=half.map(([x,y,z])=>[x,y,z]);
+  } else {
+    p.cubes=shape;
+  }
+  authProblems.push(p); renderProbList(); clearAll();
+}
+document.getElementById('authAuto').onclick=()=>{
+  for(let i=0;i<5;i++) authProblems.push(genProblem(authType, authDiff));
+  renderProbList(); clearAll();
+  flashAuthHint(`${DIFF_NAME[authDiff]} 5문제를 자동으로 추가했어요`, true);
+};
+function flashAuthHint(msg, ok){
+  const h=document.getElementById('authHint');
+  h.textContent=msg; h.style.color=ok?'#10A86A':'#E5484D';
+  setTimeout(()=>{h.style.color=''; refreshAuthHint();},1800);
+}
+function renderProbList(){
+  const wrap=document.getElementById('probList');
+  document.getElementById('authCount').textContent=authProblems.length+'문제';
+  document.getElementById('authShare').disabled = authProblems.length===0;
+  wrap.innerHTML = authProblems.map((p,i)=>`
+    <div class="prob-item">
+      <div class="pnum">${i+1}</div>
+      <div class="pinfo">${TYPE_NAME[p.type]}<span class="diff-chip diff-${p.diff}">${DIFF_NAME[p.diff]}</span>
+        <small>${(p.cubes||p.seed||[]).length}칸</small></div>
+      <button class="pdel" data-i="${i}">×</button>
+    </div>`).join('');
+  wrap.querySelectorAll('.pdel').forEach(b=>b.onclick=()=>{authProblems.splice(+b.dataset.i,1); renderProbList();});
+}
+
+// ── 인코딩 / 공유 ──
+function encodeSet(set){
+  const json=JSON.stringify(set);
+  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeSet(code){
+  let c=code.replace(/-/g,'+').replace(/_/g,'/'); while(c.length%4)c+='=';
+  return JSON.parse(decodeURIComponent(escape(atob(c))));
+}
+function makeClassCode(){
+  const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s='';
+  for(let i=0;i<6;i++) s+=ch[Math.floor(Math.random()*ch.length)];
+  return s;
+}
+document.getElementById('authShare').onclick=async ()=>{
+  const set={t:'우리반 쌓기나무 문제', p:authProblems};
+  const code=encodeSet(set);
+  const link=location.origin+location.pathname+'#set='+code;
+  const classCode=makeClassCode();
+  let stored=false;
+  try{
+    if(window.storage){ await window.storage.set('kset:'+classCode, code, true); stored=true; }
+  }catch(e){ stored=false; }
+  openShareModal(classCode, link, stored);
+};
+
+// ── 풀이(학생) ──
+let solveSet=null, solveIdx=0, solveScore=0, solveResults=[];
+function startSolve(set){
+  solveSet=set; solveIdx=0; solveScore=0; solveResults=[];
+  setAppMode('solve'); grade='solve';
+  loadSolveProblem();
+}
+function loadSolveProblem(){
+  const p=solveSet.p[solveIdx];
+  clearAll(); seedSet=new Set(); answerSet=new Set();
+  symPlaneGroup.clear(); ghostGroup.clear();
+  document.getElementById('solveMetricWrap').style.display='';
+  symHint=false; document.getElementById('solveHint').classList.remove('on');
+  document.getElementById('solveTag').textContent=`${solveIdx+1}/${solveSet.p.length}`;
+  document.getElementById('progBar').style.width=`${(solveIdx)/solveSet.p.length*100}%`;
+  document.getElementById('solveTitle').textContent=`${TYPE_NAME[p.type]} · ${DIFF_NAME[p.diff]}`;
+  document.getElementById('solveNext').disabled=true;
+  const extra=document.getElementById('solveExtra'); extra.innerHTML='';
+  const fb=document.getElementById('solveFb');
+  solveSolved=false;
+
+  if(p.type==='follow'){
+    solveTarget=p.cubes.map(a=>a.slice());
+    updateSolveGhost();
+    fb.textContent='반투명 본보기와 똑같이 쌓으세요'; fb.className='follow-fb';
+    setMode('build');
+  } else if(p.type==='count'){
+    loadShape(p.cubes,false);
+    fb.textContent='블록이 모두 몇 개일까요? (돌려서 숨은 블록도 확인!)'; fb.className='follow-fb';
+    extra.innerHTML=`<div class="mission" style="margin-top:4px"><div class="row">
+      <input id="countIn" type="number" inputmode="numeric" placeholder="개수"/>
+      <button class="check" id="countGo">확인</button></div></div>`;
+    document.getElementById('countGo').onclick=()=>{
+      const v=parseInt(document.getElementById('countIn').value,10);
+      if(isNaN(v)){fb.textContent='숫자를 적어 주세요';return;}
+      if(v===p.cubes.length){ markSolved(true,`정답! 모두 ${p.cubes.length}개예요 🎉`); }
+      else { fb.textContent='다시 세어 볼까요? 돌려 보면 숨은 칸이 보여요'; fb.className='follow-fb no'; }
+    };
+    setMode('build');
+  } else { // line / point
+    const cc=N-1;
+    const map=(p.type==='line')?([x,y,z])=>[cc-x,y,z]:([x,y,z])=>[cc-x,y,cc-z];
+    for(const [x,y,z] of p.seed){ addCube(x,y,z,false,'seed'); seedSet.add(key(x,y,z)); }
+    for(const [x,y,z] of p.seed){ const [a,b,d]=map([x,y,z]); answerSet.add(key(a,b,d)); }
+    chalKind=p.type;
+    fb.textContent = (p.type==='line')
+      ? '회색 블록의 짝을 거울선 너머에 놓아 선대칭을 완성하세요'
+      : '회색 블록을 중심 기준 반대편에 놓아 점대칭을 완성하세요';
+    fb.className='follow-fb';
+    setMode('build');
+  }
+}
+let solveTarget=[], solveSolved=false;
+function updateSolveGhost(){
+  ghostGroup.clear();
+  for(const [x,y,z,ci] of solveTarget){
+    if(has(x,y,z)) continue;
+    const gm=new THREE.Mesh(cubeGeo, ghostMat(ci||0));
+    gm.position.set(x+0.5,y+0.5,z+0.5);
+    gm.add(new THREE.LineSegments(edgeGeo,new THREE.LineBasicMaterial({color:PALETTE[ci||0].hex,transparent:true,opacity:0.5})));
+    ghostGroup.add(gm);
+  }
+}
+// 풀이 중 블록 변경 시 채점 (afterChange에서 호출)
+function checkSolve(){
+  if(appMode!=='solve' || solveSolved) return;
+  const p=solveSet.p[solveIdx]; const fb=document.getElementById('solveFb');
+  if(p.type==='follow'){
+    updateSolveGhost();
+    const tset=new Set(solveTarget.map(([x,y,z])=>key(x,y,z)));
+    let f=0; for(const k of tset) if(cubes.has(k)) f++;
+    const extra=cubes.size-f;
+    if(f===tset.size && extra===0){ markSolved(true,'완성! 똑같이 만들었어요 🎉'); }
+    else if(extra>0){ fb.textContent=`본보기에 없는 블록이 ${extra}개 있어요`; fb.className='follow-fb no'; }
+    else { fb.textContent=`${tset.size-f}칸 더 채우면 완성!`; fb.className='follow-fb'; }
+  } else if(p.type==='line'||p.type==='point'){
+    const placed=new Set([...cubes.keys()].filter(k=>!seedSet.has(k)));
+    let cor=0,wr=0; for(const k of answerSet) if(placed.has(k)) cor++; for(const k of placed) if(!answerSet.has(k)) wr++;
+    const nm=p.type==='line'?'선대칭':'점대칭';
+    if(cor===answerSet.size && wr===0){ markSolved(true,`완벽한 ${nm}이에요! 🎉`); }
+    else if(wr>0){ fb.textContent='대칭이 맞지 않는 블록이 있어요'; fb.className='follow-fb no'; }
+    else { fb.textContent=`${answerSet.size-cor}칸 더 놓으면 완성!`; fb.className='follow-fb'; }
+  }
+}
+function markSolved(ok, msg){
+  solveSolved=true;
+  const fb=document.getElementById('solveFb');
+  fb.textContent=msg; fb.className='follow-fb ok';
+  document.getElementById('solveNext').disabled=false;
+  if(ok && !solveResults[solveIdx]){ solveScore++; }
+  solveResults[solveIdx]=ok;
+  document.getElementById('progBar').style.width=`${(solveIdx+1)/solveSet.p.length*100}%`;
+}
+document.getElementById('solveNext').onclick=()=>{
+  if(solveIdx<solveSet.p.length-1){ solveIdx++; loadSolveProblem(); }
+  else showResult();
+};
+document.getElementById('solveSkip').onclick=()=>{
+  if(!solveResults[solveIdx]) solveResults[solveIdx]=false;
+  if(solveIdx<solveSet.p.length-1){ solveIdx++; loadSolveProblem(); } else showResult();
+};
+document.getElementById('solveHint').onclick=function(){
+  const p=solveSet.p[solveIdx];
+  if(p.type==='line'||p.type==='point'){
+    symHint=!symHint; this.classList.toggle('on',symHint);
+    symPlaneGroup.clear();
+    if(symHint){
+      const col=new THREE.Color('#7C5CFC');
+      const mat=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.14,side:THREE.DoubleSide,depthWrite:false});
+      const mid=N/2;
+      if(p.type==='line'){ const pl=new THREE.Mesh(new THREE.PlaneGeometry(N,H),mat); pl.rotation.y=Math.PI/2; pl.position.set(mid,H/2,N/2); symPlaneGroup.add(pl);}
+      else{ const po=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,H,12),mat); po.position.set(mid,H/2,mid); symPlaneGroup.add(po);}
+    }
+  } else if(p.type==='count'){
+    document.getElementById('solveFb').textContent='팁: 위에서 본 칸마다 몇 층인지 세어 더하면 빨라요';
+  } else {
+    document.getElementById('solveFb').textContent='팁: 본보기를 돌려 가며 뒤·아래 칸도 확인하세요';
+  }
+};
+document.getElementById('solveExit').onclick=()=>{ solveSet=null; location.hash=''; setAppMode('learn'); };
+function showResult(){
+  const total=solveSet.p.length, sc=solveScore;
+  const rate=sc/total;
+  const stars = rate>=1?'★★★★★':rate>=0.8?'★★★★☆':rate>=0.6?'★★★☆☆':rate>=0.4?'★★☆☆☆':rate>=0.2?'★☆☆☆☆':'☆☆☆☆☆';
+  document.getElementById('solveTitle').textContent='풀이 완료!';
+  document.getElementById('progBar').style.width='100%';
+  document.getElementById('solveExtra').innerHTML=`<div class="result-big">
+    <div class="stars" style="color:#FFB627">${stars}</div>
+    <div class="score">${total}문제 중 ${sc}문제 정답</div></div>`;
+  document.getElementById('solveFb').textContent = rate>=0.8?'훌륭해요! 공간감각이 뛰어나네요':rate>=0.5?'잘했어요! 틀린 문제는 다시 도전해 봐요':'천천히 다시 풀어 볼까요?';
+  document.getElementById('solveFb').className='follow-fb';
+  document.getElementById('solveNext').disabled=true;
+  document.getElementById('solveMetricWrap').style.display='none';
+}
+
+// ── 공유 모달 ──
+function openShareModal(classCode, link, stored){
+  const m=document.getElementById('codeModal');
+  m.querySelector('.modal').innerHTML=`
+    <h3>학생에게 전달하기</h3>
+    ${stored?`<div class="share-box"><div class="code-big">${classCode}</div>
+      <div class="code-lbl">학급 코드 · 학생이 ‘코드 입력’에 적으면 바로 열려요</div></div>`
+      :`<p style="color:#E5533C">이 화면에서는 학급 코드 저장이 안 돼요. 아래 <b>공유 링크</b>를 복사해 전달하세요. (정식 배포 시 학급 코드 기능이 켜집니다.)</p>`}
+    <p style="margin:0 0 6px">공유 링크 (카톡·클래스룸에 붙여넣기)</p>
+    <textarea id="shareLink" readonly>${link}</textarea>
+    <div class="modal-row" style="margin-top:14px">
+      <button class="mbtn ghost" id="shareClose">닫기</button>
+      <button class="mbtn" id="shareCopy">링크 복사</button>
+    </div>`;
+  m.style.display='flex';
+  document.getElementById('shareClose').onclick=()=>m.style.display='none';
+  document.getElementById('shareCopy').onclick=()=>{
+    const ta=document.getElementById('shareLink'); ta.select();
+    navigator.clipboard?.writeText(ta.value).then(()=>{
+      document.getElementById('shareCopy').textContent='복사됨 ✓';
+    }).catch(()=>{ try{document.execCommand('copy');document.getElementById('shareCopy').textContent='복사됨 ✓';}catch(e){} });
+  };
+}
+
+// ── 코드 입력 모달 ──
+const codeModalDefault=document.getElementById('codeModal').querySelector('.modal').innerHTML;
+document.getElementById('enterCode').onclick=()=>{
+  const m=document.getElementById('codeModal');
+  m.querySelector('.modal').innerHTML=codeModalDefault;
+  bindCodeModal(); m.style.display='flex';
+  document.getElementById('codeInput').focus();
+};
+// ── 문제 자동 생성기 ──
+function genBlob(diff){
+  const cfg={easy:[3,4,1],mid:[5,6,2],hard:[7,9,3],top:[10,13,3]}[diff];
+  const n=cfg[0]+Math.floor(Math.random()*(cfg[1]-cfg[0]+1)), maxL=cfg[2];
+  const placed=new Set(),arr=[];
+  const put=(x,y,z)=>{const k=`${x},${y},${z}`;if(placed.has(k)||x<0||x>=N||z<0||z>=N||y<0||y>=H)return false;placed.add(k);arr.push([x,y,z]);return true;};
+  put(2+Math.floor(Math.random()*2),0,2+Math.floor(Math.random()*2));
+  let guard=0;
+  while(arr.length<n&&guard++<200){
+    const [bx,by,bz]=arr[Math.floor(Math.random()*arr.length)];
+    if(Math.random()<0.4&&by+1<maxL){ put(bx,by+1,bz); }
+    else { const d=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random()*4)]; put(bx+d[0],0,bz+d[1]); }
+  }
+  return arr;
+}
+function genHalf(diff){
+  const target={easy:3,mid:4,hard:5,top:6}[diff];
+  const used=new Set(),arr=[]; let guard=0;
+  while(arr.length<target && guard++<60){
+    const x=Math.floor(Math.random()*3), z=1+Math.floor(Math.random()*4);
+    const k=x+','+z; if(used.has(k))continue; used.add(k); arr.push([x,0,z]);
+    if((diff==='hard'||diff==='top') && Math.random()<0.4) arr.push([x,1,z]);
+  }
+  return arr;
+}
+function genProblem(type, diff){
+  if(type==='line'||type==='point') return {type,diff,seed:genHalf(diff)};
+  const blob=genBlob(diff);
+  const cubes=blob.map(([x,y,z])=>[x,y,z, type==='follow'?(1+Math.floor(Math.random()*6)):0]);
+  return {type,diff,cubes};
+}
+function genSet(diff, n){
+  const types=['follow','count','line','point']; const p=[];
+  for(let i=0;i<n;i++) p.push(genProblem(types[Math.floor(Math.random()*types.length)], diff));
+  return {t:`${DIFF_NAME[diff]} 문제집`, p};
+}
+
+// ── 내장 최상위 도전 세트 ──
+const TOP_SET={t:"최상위 공간감각 도전", p:[
+  {type:'count', diff:'top', cubes:[[1,0,1,5],[2,0,1,5],[3,0,1,5],[1,0,2,5],[2,0,2,5],[3,0,2,5],[1,0,3,5],[2,0,3,5],[3,0,3,5],[2,1,2,1],[2,2,2,1],[1,1,1,3]]},
+  {type:'follow', diff:'top', cubes:[[1,0,1,4],[1,0,2,4],[1,0,3,4],[3,0,1,4],[3,0,2,4],[3,0,3,4],[1,1,1,2],[3,1,1,2],[2,1,1,6],[2,2,1,6]]},
+  {type:'point', diff:'top', seed:[[0,0,1],[1,0,1],[1,0,2],[1,1,1],[2,1,2]]},
+  {type:'line', diff:'top', seed:[[0,0,1],[0,0,2],[1,0,1],[1,1,1],[2,0,2],[2,1,2]]},
+]};
+
+function bindCodeModal(){
+  document.getElementById('codeCancel').onclick=()=>document.getElementById('codeModal').style.display='none';
+  document.getElementById('codeLoad').onclick=tryLoadCode;
+  document.getElementById('codeInput').addEventListener('keydown',e=>{if(e.key==='Enter')tryLoadCode();});
+  const tt=document.getElementById('tryTop');
+  if(tt) tt.onclick=()=>{ document.getElementById('codeModal').style.display='none'; startSolve(JSON.parse(JSON.stringify(TOP_SET))); };
+  const qp=document.getElementById('quickPlay');
+  if(qp) qp.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    document.getElementById('codeModal').style.display='none';
+    startSolve(genSet(b.dataset.d, 6));
+  });
+}
+async function tryLoadCode(){
+  const raw=document.getElementById('codeInput').value.trim();
+  const fb=document.getElementById('codeFb');
+  if(!raw){ fb.textContent='코드나 링크를 입력해 주세요'; fb.className='modal-fb no'; return; }
+  let set=null;
+  // 1) 링크에 #set= 포함?
+  const mhash=raw.match(/#set=([A-Za-z0-9\-_]+)/);
+  if(mhash){ try{ set=decodeSet(mhash[1]); }catch(e){} }
+  // 2) 통째로 인코딩 코드?
+  if(!set && /^[A-Za-z0-9\-_]{20,}$/.test(raw)){ try{ set=decodeSet(raw); }catch(e){} }
+  // 3) 6자리 학급 코드 → storage
+  if(!set && /^[A-Za-z0-9]{6}$/.test(raw)){
+    try{ if(window.storage){ const r=await window.storage.get('kset:'+raw.toUpperCase(), true); if(r&&r.value) set=decodeSet(r.value); } }catch(e){}
+  }
+  if(!set || !set.p || !set.p.length){ fb.textContent='문제를 찾지 못했어요. 코드나 링크를 다시 확인해 주세요'; fb.className='modal-fb no'; return; }
+  document.getElementById('codeModal').style.display='none';
+  startSolve(set);
+}
+
+// ── 링크(#set=)로 직접 진입 시 자동 로드 ──
+function checkHashOnLoad(){
+  const m=location.hash.match(/#set=([A-Za-z0-9\-_]+)/);
+  if(m){ try{ const set=decodeSet(m[1]); if(set&&set.p&&set.p.length) startSolve(set); }catch(e){} }
+}
+
+// afterChange 훅에 풀이 채점 연결
+const _afterChange=afterChange;
+afterChange=function(){ _afterChange(); if(appMode==='solve') checkSolve(); };
+
+window.addEventListener('resize',()=>{ if(appMode==='learn'){moveGlider(grade); if(grade===2) refreshPanelMetrics();} });
+
+setAccent(1);
+seedDemo();
+setGrade(1);
+requestAnimationFrame(()=>{moveGlider(1); applyCamera();});
+showHint('바닥이나 블록 윗면을 눌러 쌓아 보세요');
+checkHashOnLoad();
+tick();
+</script>
+</body>
+</html>
