@@ -121,6 +121,7 @@
 <script src="engine/tools/hangul_build.js"></script>
 <script src="../../english/v3/engine/k-tts.js"></script>
 <script src="engine/tools/phonics_blocks.js"></script>
+<script src="engine/tools/map.js"></script>
 <script>
 // 과목별 교구 카탈로그 (도구당 대표 1개, 영역으로 묶음)
 var CATALOG = {
@@ -197,13 +198,18 @@ var CATALOG = {
       {nm:'📖 파닉스 블록 — 스스로 읽기', g:'Lv1', ds:'처음 보는 단어를 읽고 정답 듣고 확인', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'read',words:['bat','tap','rag','nap']}},
       {nm:'👂 파닉스 블록 — 듣고 고르기', g:'Lv1', ds:'듣고 맞는 단어 고르기 (숙달 게이트)', gr:[3,6], tool:'phonics_blocks', cfg:{mode:'listen',words:['cat','mat','sat','man','nap']}}
     ]}
+  ],
+  social: [
+    {group:'지리 인식 (우리 고장)', items:[
+      {nm:'🗺 지도 읽기', g:'3학년', ds:'실제 모습 ↔ 지도 토글 + 방위표 + 기호로 우리 고장 읽기', gr:[3,3], tool:'map', cfg:{view:'real'}}
+    ]}
   ]
 };
 
 var grades=document.getElementById('grades'), gradeRow=document.getElementById('gradeRow'), cardsEl=document.getElementById('cards'), mountEl=document.getElementById('mountEl');
 var cleanup=null, cur='math', curGrade=0;   // curGrade 0 = 전체
 
-var SUBJECTS=[{key:'math',label:'수학'},{key:'korean',label:'국어'},{key:'english',label:'영어'},{key:'science',label:'과학'}];
+var SUBJECTS=[{key:'math',label:'수학'},{key:'korean',label:'국어'},{key:'english',label:'영어'},{key:'social',label:'사회'},{key:'science',label:'과학'}];
 SUBJECTS.forEach(function(sub,i){
   var b=document.createElement('button'); b.className='gtab'+(i===0?' on':''); b.textContent=sub.label;
   b.onclick=function(){cur=sub.key;grades.querySelectorAll('.gtab').forEach(function(x){x.classList.toggle('on',x.textContent===sub.label);});renderCards();};
