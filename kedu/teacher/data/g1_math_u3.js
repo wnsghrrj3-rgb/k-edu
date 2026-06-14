@@ -516,48 +516,156 @@ LESSONS["u3_l04"] = {
   ]
 };
 
-LESSONS["u3_l5"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 5,
-    title: "덧셈을 알아볼까요",
-    std: "[2수01-05]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 덧셈식 쓰기·읽기 도입",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_05_덧셈을알아볼까요.html"
-  },
+/* u3_l05 — 덧셈을 알아볼까요 · 밀도 표준 v1 */
+LESSONS["u3_l05"] = {
+  meta: { grade:1, subject:"수학", unit:3, n:5, title:"덧셈을 알아볼까요", std:"[2수01-05]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"벌은 모두 몇 마리일까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l5_plus", "b_l5_plus_book"]},
-    {id:"s02", stage:"도입", block:"objective", data:{title:"오늘은 덧셈을 배워요", desc:"1단계 · 도입"}, suggested_extras:[]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간을 떠올려요", desc:"1단계 · 도입"}, suggested_extras:["v_l5_plus"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"벌이 날아와요", desc:"2단계 · 전개"}, suggested_extras:["q_l5_read", "q_l5_two"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"`+`와 `=`를 알아봐요", desc:"2단계 · 전개"}, suggested_extras:["q_l5_read", "q_l5_two"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"나비가 모여요", desc:"2단계 · 전개"}, suggested_extras:["q_l5_read", "q_l5_two"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"두 상황 모두 덧셈식이에요", desc:"2단계 · 전개"}, suggested_extras:["q_l5_read", "q_l5_two"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"`+`를 따라 써 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"`=`를 따라 써 봐요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l5_practice"]}
+    // ── 도입 ──
+    { id:"s01", stage:"도입", block:"cover", data:{
+        title:"덧셈을 알아봐요\n+ 와 = 기호", emoji:"➕" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"그림을 보고 **더하는 이야기**를 만들었어요. (예: 4와 2를 모으면 6)\n오늘은 그 이야기를 짧은 **식**으로 써 봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"꽃밭에 벌이 날아와요",
+        kids:[ {face:"🐝", label:"꽃에 앉은\n벌 3마리"}, {face:"🐝", label:"붕붕\n2마리가 더!"} ],
+        question:"벌은 모두 몇 마리일까요? 이걸 짧은 식으로 쓸 수 있을까요?" } },
+    // ── 전개: + 도입 → = 도입 → 두 상황 모두 덧셈식 ──
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"'더하기'를 + 로 써요",
+        content:"'더 오다 · 모으다'를 기호 하나로 줄여 써요. 바로 **+** (더하기)예요.\n벌 3마리에 2마리가 더 오면 → **3 + 2**",
+        items:[ {emoji:"🐝", count:3, label:"3"}, {emoji:"🐝", count:2, label:"+ 2"} ],
+        note:"👉 +는 '더하기'라고 읽어요. 3 + 2 는 '3 더하기 2'." } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"'모두'를 = 로 써요",
+        content:"**=** 는 '**는/은**' 또는 '**같다**'라는 뜻이에요. 양쪽이 같다는 표시.\n3 + 2 의 답이 5이면 → **3 + 2 = 5**",
+        items:[ {emoji:"🐝", count:5, label:"모두 5"} ],
+        note:"👉 3 + 2 = 5 는 '3 더하기 2는 5와 같다'라고 읽어요." } },
+    { id:"s06", stage:"전개", block:"arrow_flow", data:{
+        title:"식이 만들어지는 순서",
+        flow:[ {num:3, label:"있던 벌"}, {num:2, label:"날아온 벌"}, {num:5, label:"모두", type:"up"} ],
+        sub:"3 + 2 = 5 — 있던 수, 더한 수, 그리고 모두의 수." } },
+    { id:"s07", stage:"전개", block:"concept", data:{
+        title:"모이는 상황도 덧셈식이에요",
+        content:"나비 4마리와 3마리가 한 꽃밭에 모였어요. 모으는 상황도 **덧셈식**으로 써요.\n**4 + 3 = 7**",
+        items:[ {emoji:"🦋", count:4, label:"4"}, {emoji:"🦋", count:3, label:"+ 3"}, {emoji:"🦋", count:7, label:"= 7"} ],
+        note:"👉 '더 오는 상황'도 '모이는 상황'도 모두 덧셈식이에요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"= 를 '여기에 답이 나온다'는 화살표로만 여긴다 (왼쪽만 보고 오른쪽은 아무 수나 씀)",
+        right:"= 는 **양쪽이 같다**는 뜻. 3 + 2 = 5 에서 왼쪽(3+2)과 오른쪽(5)의 크기가 같아요.",
+        hint:"= 양쪽을 저울처럼 생각해요. 양쪽 무게가 같아야 해요." } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"3 + 2 와 2 + 3 은 답이 같을까요, 다를까요? 왜 그렇게 생각하나요?" } },
+    { id:"s10", stage:"전개", block:"interactive_ten_frame", data:{
+        title:"👆 십 배열판으로 3 + 2 채우기",
+        start_count:3,
+        prompt:"지금 3칸이 채워져 있어요. 2개를 더 눌러 채우면 3 + 2 = 몇이 될까요?" } },
+    // ── 기본문제 ──
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"식으로 쓰고 답을 구해요",
+        items:[ {emoji:"🍎", count:4, label:"4"}, {emoji:"🍎", count:2, label:"+ 2"} ],
+        question:"사과 4개에 2개를 더하면?  식: 4 + 2 = ___",
+        input:"count_input", answer:6,
+        note:"풀이: 4에서 이어 세기 → 5,6. 4 + 2 = 6." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"식을 읽고 답해요",
+        scenario:{ icon:"🐥", body:"병아리 5마리가 있는데 3마리가 더 왔어요. 식으로 쓰면 5 + 3 = ?" },
+        question:"5 + 3 = 몇일까요?",
+        input:"count_input", answer:8,
+        note:"풀이: 5에서 이어 세기 → 6,7,8. 5 + 3 = 8." } },
+    { id:"s13", stage:"기본문제", block:"multi", data:{
+        title:"바르게 쓴 덧셈식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"2 + 3 = 5", correct:true},
+          {label:"4 + 1 = 6"},
+          {label:"6 + 0 = 6", correct:true},
+          {label:"3 + 4 = 6"}
+        ],
+        note:"풀이: 2+3=5 ✓ / 4+1=5 (≠6) ✗ / 6+0=6 ✓ / 3+4=7 (≠6) ✗" } },
+    { id:"s14", stage:"기본문제", block:"match", data:{
+        title:"덧셈식과 답을 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"3 + 4"}, right:{num:7} },
+          { left:{label:"6 + 2"}, right:{num:8} },
+          { left:{label:"5 + 4"}, right:{num:9} }
+        ] } },
+    // ── 응용문제 ──
+    { id:"s15", stage:"응용문제", block:"offline_activity", data:{
+        title:"덧셈식 카드 놀이",
+        tag:"짝 활동", icon:"🃏",
+        body:"수 카드 두 장을 뽑아 사이에 + 를 넣어 식을 만들고 답을 말해요. 짝이 답이 맞는지 확인해 줘요.",
+        materials:"수 카드(0~9) · 7분" } },
+    { id:"s16", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 덧셈식",
+        scenario:{ icon:"🚌", body:"버스에 4명이 타고 있었는데 정류장에서 3명이 더 탔어요." },
+        question:"식으로 쓰면?  4 + 3 = ___  모두 몇 명?",
+        answer:7 } },
+    { id:"s17", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"답이 6이 되는 덧셈식을 여러 개 만들어 보세요. (예: 1 + 5, 2 + 4, 3 + 3 …) 몇 가지나 찾을 수 있나요?" } },
+    // ── 정리 ──
+    { id:"s18", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "'더하기'는 **+**, '같다/는'은 **=** 로 쓴다.",
+          "덧셈식은 '있던 수 + 더한 수 = 모두'로 쓴다 (예: 3 + 2 = 5).",
+          "3 + 2 = 5 는 '3 더하기 2는 5와 같다'로 읽는다."
+        ] } },
+    { id:"s19", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:6, label:"6"}, {emoji:"⭐", count:2, label:"+ 2"} ],
+        question:"6 + 2 = 몇일까요?",
+        input:"count_input", answer:8,
+        note:"6에서 이어 세기 → 7,8. 6 + 2 = 8. 맞혔다면 덧셈식을 잘 이해한 거예요!" } },
+    { id:"s20", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"덧셈을 **여러 가지 방법**으로 해 봐요. 이어 세기·십 배열판으로 더 빠르게! 그리고 3 + 2 = 2 + 3 처럼 순서를 바꿔도 답이 같다는 것도 알아봐요.",
+        emoji:"🧮" } }
   ],
   extras: [
-    {id:"v_l5_plus", type:"video", icon:"🎥", title:"덧셈 기호 + = 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EA%B8%B0%ED%98%B8+%EB%8D%94%ED%95%98%EA%B8%B0", description:"더하기(+)와 같다(=) 기호의 뜻과 읽는 법을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l5_read", type:"fun_question", icon:"💡", title:"3 + 2 = 5를 어떻게 읽을까요?", content:"'3 더하기 2는 5와 같습니다.' 소리 내어 읽어 봐요. 또 다른 읽기 방법도 있을까요?", fit_slides:["concept"]},
-    {id:"q_l5_two", type:"fun_question", icon:"💡", title:"날아오기와 모이기, 둘 다 덧셈?", content:"나비가 더 날아오는 것과 두 무리가 모이는 것, 둘 다 덧셈식으로 쓸 수 있어요. 왜 그럴까요?", fit_slides:["concept"]},
-    {id:"t_l5_symbol", type:"tip", icon:"🧩", title:"기호는 천천히 따라 쓰기", content:"+와 =는 줄을 또박또박 그어요. 허공에 한 번 써 본 뒤 종이에 쓰면 모양을 기억하기 쉬워요.", fit_slides:["trace", "concept"]},
-    {id:"t_l5_equal", type:"tip", icon:"🧩", title:"= 는 '답'이 아니라 '같다'", content:"='를 '답이 나온다'로만 알면 나중에 어려워져요. 양쪽이 같다는 뜻으로 가르쳐 주세요.", fit_slides:["concept"]},
-    {id:"r_l5_score", type:"real_world", icon:"🌍", title:"점수 더하기", content:"놀이에서 1점과 2점을 얻으면 모두 3점. 1 + 2 = 3을 생활 속에서 써 봐요.", fit_slides:["real_world", "concept"]},
-    {id:"r_l5_family", type:"real_world", icon:"🌍", title:"가족 수 더하기", content:"우리 가족이 3명인데 할머니가 오시면 4명. 3 + 1 = 4처럼 덧셈식으로 적어 봐요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l5_eq_pic", type:"game", game_kind:"memory_match", icon:"🎮", title:"덧셈식과 그림 짝짓기", description:"덧셈식과 어울리는 그림을 짝지어 보세요.", hint:"식이 나타내는 상황을 그림에서 찾아요.", pairs:[{a:{text:"2 + 1 = 3"}, b:{emoji:"🐝🐝➕🐝", count:3}}, {a:{text:"3 + 2 = 5"}, b:{emoji:"🦋🦋🦋➕🦋🦋", count:5}}, {a:{text:"1 + 4 = 5"}, b:{emoji:"🐞➕🐞🐞🐞🐞", count:5}}, {a:{text:"2 + 2 = 4"}, b:{emoji:"🐝🐝➕🐝🐝", count:4}}], fit_slides:["match", "game"]},
-    {id:"b_l5_plus_book", type:"book", icon:"📖", title:"덧셈을 다룬 수학 그림책", content:"더하면 많아지는 즐거움을 담은 그림책으로 덧셈에 친숙해져요.", source:"도서관에서 덧셈 주제로 확인", fit_slides:["motivate", "concept"]},
-    {id:"x_l5_equal_dir", type:"misconception", icon:"❓", title:"오개념 — 식은 왼쪽에서만 읽는다?", content:"2 + 3 = 5와 5 = 2 + 3은 같은 뜻이에요. =를 기준으로 양쪽이 같다는 점을 보여 주세요.", fit_slides:["concept"]},
-    {id:"e_l5_practice", type:"extension", icon:"⬆", title:"다음은 여러 방법으로 더하기", content:"덧셈식을 배웠으니 다음 시간에는 모두 세기·이어 세기로 직접 더해 봐요.", fit_slides:["next_lesson"]},
-    {id:"t_l5_voice", type:"tip", icon:"🧩", title:"식을 소리 내어 읽기", content:"식을 눈으로만 보지 말고 소리 내어 읽으면 +와 =의 뜻이 더 잘 자리잡아요.", fit_slides:["concept", "trace"]}
+    { id:"v_l05_add", type:"video", icon:"🎥", title:"덧셈 기호 +·= 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EA%B8%B0%ED%98%B8+%EB%B0%B0%EC%9A%B0%EA%B8%B0",
+      description:"+ 와 = 기호의 뜻과 덧셈식 읽는 법을 보여 주는 영상. 개념 도입에 활용.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate","concept"] },
+    { id:"q_l05_read", type:"fun_question", icon:"💡", title:"식을 소리 내어 읽기",
+      content:"칠판에 3 + 2 = 5 를 적고 '3 더하기 2는 5와 같다'라고 다 함께 소리 내어 읽어 봐요. 다른 식도 읽어 볼까요?",
+      fit_slides:["concept","summary"] },
+    { id:"a_l05_finger", type:"other_activity", icon:"🙌", title:"손가락 덧셈식",
+      content:"한 손으로 '있던 수', 다른 손으로 '더한 수'를 펴고, 모두 펴서 답을 세요. 식을 입으로 말하며 손을 펴게 하면 식과 동작이 연결돼요.",
+      fit_slides:["concept","interactive_ten_frame"] },
+    { id:"t_l05_equal", type:"tip", icon:"🧩", title:"= 는 저울이에요",
+      content:"= 를 양팔 저울로 비유해 주세요. 왼쪽(3+2)과 오른쪽(5)의 무게가 같아 수평이 된다고 하면, '답 나오는 화살표' 오개념을 막을 수 있어요.",
+      fit_slides:["misconception","concept"] },
+    { id:"x_l05_anynum", type:"misconception", icon:"❓", title:"오개념 — = 뒤엔 아무 수나",
+      content:"왼쪽 식만 보고 = 뒤에 아무 수나 적는 학생이 있어요. 양쪽 크기가 같은지 다시 세어 확인하게 하세요.",
+      fit_slides:["misconception","multi"] },
+    { id:"r_l05_classroom", type:"real_world", icon:"🌍", title:"교실 속 덧셈식",
+      content:"우리 모둠 4명에 2명이 더 합쳐졌을 때, 책상 위 연필 3자루에 2자루를 더 놓았을 때 — 식으로 써 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l05_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"식과 답 짝짓기",
+      description:"덧셈식과 답을 짝지어 보세요.", hint:"이어 세기로 답을 구해요.",
+      pairs:[ {a:{text:"2 + 2"}, b:{text:"4"}}, {a:{text:"3 + 4"}, b:{text:"7"}}, {a:{text:"5 + 1"}, b:{text:"6"}}, {a:{text:"4 + 4"}, b:{text:"8"}} ],
+      fit_slides:["match","game"] },
+    { id:"q_l05_order", type:"fun_question", icon:"💡", title:"순서를 바꾸면?",
+      content:"2 + 3 과 3 + 2 의 답을 각각 구해 봐요. 답이 같나요? 왜 그럴까요? (다음 차시 연결)",
+      fit_slides:["question","next_lesson"] },
+    { id:"b_l05_book", type:"book", icon:"📖", title:"덧셈 그림책",
+      content:"수가 늘어나고 합쳐지는 장면이 담긴 그림책으로 덧셈식을 더 친근하게 만나 보세요.",
+      source:"도서관에서 '덧셈·더하기' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l05_support", type:"tip", icon:"🧩", title:"식 쓰기가 어려운 학생에게",
+      content:"'__ + __ = __' 빈칸 틀을 주고, 그림을 보며 칸을 채우게 하면 식 쓰기 부담이 줄어요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l05_zero", type:"extension", icon:"⬆", title:"확장 — 0을 더하면?",
+      content:"3 + 0 은 얼마일까요? 0을 더하면 수가 그대로라는 것을 미리 살짝 다뤄 볼 수 있어요. (l11에서 본격적으로)",
+      fit_slides:["advanced_problem","next_lesson"] },
+    { id:"e_l05_three", type:"extension", icon:"⬆", title:"확장 — 세 수 더하기",
+      content:"1 + 2 + 3 처럼 수가 세 개인 식도 만들어 볼 수 있어요. 앞에서부터 차례로 더하면 돼요.",
+      fit_slides:["advanced_problem","summary"] }
   ]
 };
 
