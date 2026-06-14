@@ -204,6 +204,7 @@ var PLANETS = [
  {key:'neptune', nm:'해왕성', r:4.3, d:236, speed:0.18, ang:2.8, col:0x4A6BD9, fact:'태양에서 가장 먼 여덟 번째 행성.<br>태양계에서 바람이 가장 세요! 💨'}
 ];
 var planetMeshes = [];
+var orbitLines = [];   /* 궤도선 머티리얼 — 단면 모드에서 진하게 */
 /* 절차적 텍스처 — 외부 이미지 없이 캔버스로 행성 표면 생성 */
 function makeTex(key){
   var W=512, H=256;
@@ -299,12 +300,12 @@ PLANETS.forEach(function(p){
     new THREE.MeshStandardMaterial({map:makeTex(p.key), roughness:0.82, metalness:0.04}));
   m.userData = p;
   scene.add(m); planetMeshes.push(m);
-  /* 궤도 선 (아주 옅게) */
+  /* 궤도 선 (평소 옅게, 단면 모드에서 진하게) */
   var seg = 128, pts = [];
   for (var i=0;i<=seg;i++){ var a=i/seg*Math.PI*2; pts.push(new THREE.Vector3(Math.cos(a)*p.d, 0, Math.sin(a)*p.d)); }
-  var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({color:0x2a4a78, transparent:true, opacity:0.35}));
-  scene.add(line);
+  var orbitMat = new THREE.LineBasicMaterial({color:0x2a4a78, transparent:true, opacity:0.35});
+  var line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), orbitMat);
+  scene.add(line); orbitLines.push(orbitMat);
   if (p.key==='saturn'){
     var rc=document.createElement('canvas'); rc.width=256; rc.height=8; var rx=rc.getContext('2d');
     for(var ri=0;ri<256;ri++){ var tt=ri/256; var br=0.55+0.4*Math.sin(tt*38)+0.15*Math.sin(tt*120);
@@ -403,12 +404,18 @@ window.addEventListener('deviceorientation', function(e){
 /* 드래그(자이로 없을 때 / 전자칠판) */
 var dragging=false, px=0, py=0, moved=0;
 var topZoom=1, pinchStart=0, pinchZoom0=1;   /* 위에서 보기 줌 배율 */
+var topPan=new THREE.Vector3(0,0,0);          /* 위에서 보기 시점 중심(드래그로 이동) */
 function clampZoom(z){ return Math.max(1, Math.min(6, z)); }
 function pDown(x,y){ dragging=true; px=x; py=y; moved=0; }
 function pMove(x,y){
   if(!dragging) return;
   var dx=x-px, dy=y-py; px=x; py=y; moved+=Math.abs(dx)+Math.abs(dy);
-  if (!gyroOn){ dragLon += dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
+  if (topView){
+    /* 단면 모드: 드래그로 시점 이동(화면 픽셀 → 월드, 화면 위=-z) */
+    var scale=(415/topZoom)/innerHeight*2;
+    topPan.x -= dx*scale; topPan.z -= dy*scale;
+    var lim=260; topPan.x=Math.max(-lim,Math.min(lim,topPan.x)); topPan.z=Math.max(-lim,Math.min(lim,topPan.z));
+  } else if (!gyroOn){ dragLon += dx*0.18; dragLat = Math.max(-85, Math.min(85, dragLat + dy*0.18)); }
 }
 renderer.domElement.addEventListener('mousedown', function(e){ pDown(e.clientX,e.clientY); });
 window.addEventListener('mousemove', function(e){ pMove(e.clientX,e.clientY); });
@@ -514,7 +521,7 @@ function leaveEarth(){
 $('landBtn').addEventListener('click', landOnEarth);
 $('liftBtn').addEventListener('click', leaveEarth);
 $('topBtn').addEventListener('click', function(){
-  topView=!topView; topGroup.visible=topView; topZoom=1;
+  topView=!topView; topGroup.visible=topView; topZoom=1; topPan.set(0,0,0);
   this.textContent = topView ? '🌍 지구에서 보기' : '🗺 위에서 보기';
   $('hint').textContent = topView ? '교과서 그림 — 손가락으로 모으고/펴서 확대, ⏩로 공전 보기'
     : (gyroOn ? '고개를 들어 밤하늘을 둘러보세요' : '드래그해서 밤하늘을 둘러보세요');
@@ -616,16 +623,19 @@ function updateConsts(){
     var nightish = (mode==='earth') || (journey && JSTOPS[jStop].id==='stars');
     if (nightish){ var d=c.dir.dot(outward); vis=Math.max(0,Math.min(1,(d-0.05)/0.75)); }
     if (constMode){
-      c.sm.size=5; c.sm.opacity=0.25+0.75*vis;
-      c.lm.opacity=0.85*vis*(mode==='earth'?1:0.9)+(mode==='earth'?0:0.05);
-      c.lb.opacity=0.95*vis;
+      c.sm.size = topView?3:5; c.sm.opacity=(topView?0.12:0.25)+0.55*vis;
+      c.lm.opacity = topView?0.04 : (0.85*vis*(mode==='earth'?1:0.9)+(mode==='earth'?0:0.05));
+      c.lb.opacity = topView?0.45 : 0.95*vis;
     } else {
-      c.sm.size=2.8; c.sm.opacity=0.9;
+      c.sm.size=2.8; c.sm.opacity = topView?0.3:0.9;
       c.lm.opacity=0.08; c.lb.opacity=0;
     }
     if ((mode==='earth' || (journey && JSTOPS[jStop].id==='stars')) && vis>0.55) visNames.push(c.nm);
   });
   window._visNames = visNames;
+  /* 궤도선: 단면 모드에서 또렷하게 */
+  for (var oi=0; oi<orbitLines.length; oi++){ orbitLines[oi].opacity = topView ? 0.7 : 0.35;
+    orbitLines[oi].color.setHex(topView ? 0x6f93d6 : 0x2a4a78); }
   if (bgStarMat) bgStarMat.opacity = constMode ? 0.22 : 1;
   if (mode==='earth'){
     var si=seasonIdx(earthMesh().userData.ang);
@@ -647,7 +657,7 @@ function seasonArrived(){
   b.style.opacity=1; setTimeout(function(){ b.style.opacity=0; }, 2100);
   say(SEASONS[si]+'이 왔어요. 이제 '+names.join('와 ')+'가 잘 보여요!');
   /* 여행 중 남중고도 정거장이면 태양 쪽으로, 그 외엔 새 밤하늘 쪽으로 시선 안내 */
-  if (journey && JSTOPS[jStop].id==='noon'){ faceDir(noonCalc().sdir); return; }
+  if (journey && JSTOPS[jStop].id==='noon'){ return; }
   var out=earthMesh().position.clone().normalize();
   if(!gyroOn && !topView){
     var to=THREE.MathUtils.radToDeg(Math.atan2(-out.x,-out.z));
@@ -731,13 +741,27 @@ var JSTOPS=[
 var journey=false, jStop=0, transit=null, jPrevConst=null;
 function jPos(i){
   var em=earthMesh(), out=em.position.clone().normalize();
-  if (JSTOPS[i].id==='solar') return HOME.clone();
-  if (JSTOPS[i].id==='spin'){
-    var tang=out.clone().cross(_Y).normalize();
-    return em.position.clone().add(tang.multiplyScalar(13)).add(new THREE.Vector3(0,3.5,0));
+  if (JSTOPS[i].id==='solar'){
+    var ed=earthMesh().position.clone().normalize();
+    return ed.clone().multiplyScalar(-150).add(new THREE.Vector3(0,135,0));
   }
-  if (JSTOPS[i].id==='noon'){ var n=noonCalc(); return n.obs.clone().add(n.up.clone().multiplyScalar(1.1)); }
-  if (JSTOPS[i].id==='stars') return em.position.clone().add(out.multiplyScalar(em.userData.r*1.7)).add(new THREE.Vector3(0,em.userData.r*0.5,0));
+  if (JSTOPS[i].id==='spin'){
+    /* 태양-지구 축에 직각인 옆 + 살짝 위 — 낮/밤 경계(절반)와 자전이 또렷이 보이는 자리 */
+    var sdir=em.position.clone().negate().normalize();
+    var side=sdir.clone().cross(_Y).normalize();
+    return em.position.clone()
+      .add(side.multiplyScalar(em.userData.r*4.2))
+      .add(new THREE.Vector3(0, em.userData.r*1.6, 0))
+      .add(sdir.clone().multiplyScalar(-em.userData.r*1.2));
+  }
+  if (JSTOPS[i].id==='noon'){ var n=noonCalc();
+    var side=n.sdir.clone().cross(n.up).normalize();
+    return n.obs.clone()
+      .add(side.multiplyScalar(em.userData.r*0.9))
+      .add(n.up.clone().multiplyScalar(em.userData.r*0.42))
+      .add(n.sdir.clone().multiplyScalar(-em.userData.r*0.5));
+  }
+  if (JSTOPS[i].id==='stars') return em.position.clone().add(out.multiplyScalar(em.userData.r*1.4)).add(new THREE.Vector3(0,em.userData.r*0.25,0));
   return camera.position.clone(); /* orbit: 탑뷰 분기가 처리 */
 }
 function setConstMode(v){
@@ -756,7 +780,7 @@ function faceDir(d){
 function applyStop(i){
   var st=JSTOPS[i];
   /* 공통 리셋 */
-  spinBoost=false; stickGroup.visible=false; topZoom=1;
+  spinBoost=false; stickGroup.visible=false; topZoom=1; topPan.set(0,0,0);
   if (sunGlowSp) sunGlowSp.scale.set(95,95,1);
   topView=false; topGroup.visible=false;
   if (jPrevConst!==null){ setConstMode(jPrevConst); jPrevConst=null; }
@@ -766,7 +790,9 @@ function applyStop(i){
     var n=noonCalc(); faceDir(n.sdir); say('막대 그림자를 보세요. 계절을 바꾸면 태양 높이와 그림자가 달라져요!'); }
   if (st.id==='orbit'){ topView=true; topGroup.visible=true; }
   if (st.id==='stars'){ jPrevConst=constMode; setConstMode(true);
-    faceDir(earthMesh().position.clone().normalize()); say('태양 반대쪽, 밤하늘이에요. 별자리를 찾아보세요!'); }
+    var sout=earthMesh().position.clone().normalize();
+    faceDir(sout.clone().add(new THREE.Vector3(0,0.35,0)).normalize());
+    say('지구에 서서 밤하늘을 봐요. 발 아래가 지구, 위로 별자리가 보여요!'); }
   $('jTitle').textContent=(i+1)+'/5 · '+st.t;
   $('jDesc').textContent=st.d;
   $('jSeason').style.display=(st.id==='noon'||st.id==='orbit'||st.id==='stars')?'inline-block':'none';
@@ -791,7 +817,7 @@ function exitJourney(){
   hush();
   fade(function(){
     journey=false; mode='free'; transit=null;
-    spinBoost=false; stickGroup.visible=false; topView=false; topGroup.visible=false; topZoom=1; updateZoomBtns();
+    spinBoost=false; stickGroup.visible=false; topView=false; topGroup.visible=false; topZoom=1; topPan.set(0,0,0); updateZoomBtns();
     if (sunGlowSp) sunGlowSp.scale.set(95,95,1);
     if (jPrevConst!==null){ setConstMode(jPrevConst); jPrevConst=null; }
     $('journeyPanel').style.display='none';
@@ -847,8 +873,9 @@ function loop(ts){
     p.ang += dt * 0.05 * p.speed;
     m.position.set(Math.cos(p.ang)*p.d, 0, Math.sin(p.ang)*p.d);
     if (p.key==='earth'){
-      p.spin = (p.spin||0) + dt*(0.4 + (spinBoost?2.4:0));
-      m.quaternion.copy(TILT_Q).multiply(_qSpin.setFromAxisAngle(_Y, p.spin));
+      var noonFreeze = journey && JSTOPS[jStop].id==='noon';
+      if (!noonFreeze) p.spin = (p.spin||0) + dt*(0.4 + (spinBoost?2.4:0));
+      m.quaternion.copy(TILT_Q).multiply(_qSpin.setFromAxisAngle(_Y, p.spin||0));
     } else { m.rotation.y += dt*0.4; }
     if (p.moon){ p.moonAng=(p.moonAng||0)+dt*0.9;
       p.moon.position.copy(m.position).add(new THREE.Vector3(Math.cos(p.moonAng)*5.2, 0.6, Math.sin(p.moonAng)*5.2)); }
@@ -892,12 +919,24 @@ function loop(ts){
       sh.scale.set(L,1,1);
       sh.position.set(-Math.cos(az)*L/2, 0.015, -Math.sin(az)*L/2);
       sh.rotation.z=-az;
+      /* 옆 시점: 막대 밑동을 바라보되 살짝 위(하늘의 태양도 화면에 들어오게) */
+      if (!transit){
+        camera.up.copy(n.up);
+        camera.lookAt(n.obs.clone().add(n.up.clone().multiplyScalar(0.8)));
+      }
       $('jRead').textContent='남중고도 약 '+n.alt.toFixed(0)+'° · '+SEASONS[seasonIdx(earthMesh().userData.ang)]+' · 그림자 '+(L<1.6?'짧아요':L<3.5?'보통':'길어요');
     } else if (JSTOPS[jStop].id==='orbit'){
       $('jRead').textContent='지금 계절: '+SEASONS[seasonIdx(earthMesh().userData.ang)];
+    } else if (JSTOPS[jStop].id==='spin'){
+      if (!transit){ camera.up.set(0,1,0); camera.lookAt(earthMesh().position); }
+      $('jRead').textContent='지구가 스스로 돌아요 — 밝은 쪽이 낮, 어두운 쪽이 밤';
+    } else if (JSTOPS[jStop].id==='solar'){
+      if (!transit){ camera.up.set(0,1,0); camera.lookAt(0,0,0); }
+      $('jRead').textContent='';
     } else if (JSTOPS[jStop].id==='stars'){
+      camera.up.set(0,1,0);
       $('jRead').textContent=(window._visNames&&window._visNames.length)?('잘 보이는 별자리: '+window._visNames.join(' · ')):'';
-    } else { $('jRead').textContent=''; }
+    } else { camera.up.set(0,1,0); $('jRead').textContent=''; }
   }
   /* 지구 표면 모드: 지구 밤쪽에 서서 공전을 따라감 */
   if (mode==='earth' && !topView){
@@ -921,10 +960,11 @@ function loop(ts){
     /* 세로·가로 어느 화면이든 단면 전체가 들어오게 높이 자동 + 줌 배율 */
     var need=415/topZoom, H=need/(Math.tan(THREE.MathUtils.degToRad(36))*Math.min(1,camera.aspect));
     camera.up.set(0,0,-1);
-    /* 확대하면 지구 쪽을 들여다보도록 중심 이동(줌이 1이면 태양 중심) */
-    var look = em2.position.clone().multiplyScalar(Math.min(1,(topZoom-1)*0.55));
-    camera.position.set(look.x, H, look.z);
-    camera.lookAt(look.x, 0, look.z);
+    /* 드래그로 옮긴 지점(topPan)을 중심으로 확대/축소 */
+    camera.position.set(topPan.x, H, topPan.z);
+    camera.lookAt(topPan.x, 0, topPan.z);
+  } else if (journey && (JSTOPS[jStop].id==='noon'||JSTOPS[jStop].id==='spin'||JSTOPS[jStop].id==='solar') && !transit){
+    /* 남중고도·자전·태양계 시점 — lookAt으로 직접 처리, updateLook 건너뜀 */
   } else {
     camera.up.set(0,1,0);
     updateLook();
