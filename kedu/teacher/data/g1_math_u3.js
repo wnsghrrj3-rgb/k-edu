@@ -1144,137 +1144,423 @@ LESSONS["u3_l09_10"] = {
   ]
 };
 
+/* u3_l11 — 0이 있는 덧셈과 뺄셈 · 밀도 표준 v1 */
 LESSONS["u3_l11"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 11,
-    title: "0이 있는 덧셈과 뺄셈",
-    std: "[2수01-06]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 0을 더하거나 빼는 계산",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_11_0이있는덧셈과뺄셈.html"
-  },
+  meta: { grade:1, subject:"수학", unit:3, n:11, title:"0이 있는 덧셈과 뺄셈", std:"[2수01-06]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"콩이 몇 개씩 있을까요?", desc:"1단계 · 도입"}, suggested_extras:["v_l11_zero", "b_l11_zero"]},
-    {id:"s02", stage:"도입", block:"motivate", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:["v_l11_zero", "b_l11_zero"]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간에 배운 것", desc:"1단계 · 도입"}, suggested_extras:["v_l11_zero"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"0에 더하기", desc:"2단계 · 전개"}, suggested_extras:["q_l11_add0", "q_l11_sub0"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"0을 더하기", desc:"2단계 · 전개"}, suggested_extras:["q_l11_add0", "q_l11_sub0"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"0을 빼기", desc:"2단계 · 전개"}, suggested_extras:["q_l11_add0", "q_l11_sub0"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"모두 빼기", desc:"2단계 · 전개"}, suggested_extras:["q_l11_add0", "q_l11_sub0"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"어떤 자리의 식일까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"어떤 자리의 식일까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"어떤 자리의 식일까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"어떤 자리의 식일까요?", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"수 카드로 덧셈식 만들기", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"수 카드로 모두 빼기 식 만들기", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"내가 식을 만들어요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"친구가 낸 문제", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l11_mix"]}
+    { id:"s01", stage:"도입", block:"cover", data:{ title:"0이 있는\n덧셈과 뺄셈", emoji:"0️⃣" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"여러 가지 방법으로 덧셈과 뺄셈을 했어요.\n오늘은 **0**이 들어간 식을 알아봐요. 0은 '아무것도 없음'이에요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"접시에 콩이 있어요",
+        kids:[ {face:"🫛", label:"왼쪽 접시\n콩 4개"}, {face:"🍽️", label:"오른쪽 접시\n콩 0개(비었음)"} ],
+        question:"두 접시의 콩을 모으면 모두 몇 개일까요?" } },
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"0은 '아무것도 없음'",
+        content:"빈 접시에는 콩이 **0개** 있어요. 0은 하나도 없다는 뜻이에요.",
+        items:[ {emoji:"🫛", count:4, label:"4개"}, {emoji:"🍽️", count:0, label:"0개(없음)"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"0을 더하면 그대로",
+        content:"4개에 0개를 더해도 그대로 4개. **4 + 0 = 4**\n순서를 바꿔 **0 + 4 = 4** 도 마찬가지!",
+        items:[ {emoji:"🫛", count:4, label:"4 + 0 = 4"} ],
+        note:"👉 어떤 수에 0을 더하면 그 수 그대로." } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"0을 빼도 그대로",
+        content:"5개에서 0개를 빼도 그대로 5개. **5 - 0 = 5**\n아무것도 빼지 않았으니까요.",
+        items:[ {emoji:"🍎", count:5, label:"5 - 0 = 5"} ],
+        note:"👉 어떤 수에서 0을 빼면 그 수 그대로." } },
+    { id:"s07", stage:"전개", block:"concept", data:{
+        title:"모두 빼면 0",
+        content:"3개에서 3개를 모두 빼면 하나도 안 남아요. **3 - 3 = 0**\n같은 수를 빼면 0이 돼요.",
+        items:[ {emoji:"🍪", count:3, label:"3 - 3"}, {emoji:"🍽️", count:0, label:"= 0" } ],
+        note:"👉 같은 수끼리 빼면 항상 0." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"0을 더하거나 빼면 0이 된다고 생각한다 (4 + 0 = 0)",
+        right:"0을 **더하거나 빼면** 수는 **그대로**. 4 + 0 = 4, 4 - 0 = 4. 단, 같은 수를 빼면 0 (4 - 4 = 0).",
+        hint:"0은 '아무 변화 없음'. 단 '모두 빼기'는 0." } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"0 + 0 은 얼마일까요? 7 - 7 은요? 왜 그렇게 생각하나요?" } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"0을 더해 봐요",
+        items:[ {emoji:"🐤", count:3, label:"3"}, {emoji:"🍽️", count:0, label:"+ 0"} ],
+        question:"3 + 0 = 몇일까요?",
+        input:"count_input", answer:3,
+        note:"0을 더하면 그대로. 3 + 0 = 3." } },
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"0을 빼 봐요",
+        scenario:{ icon:"🍓", body:"딸기 5개가 있는데 아무도 먹지 않았어요." },
+        question:"5 - 0 = 몇일까요?",
+        input:"count_input", answer:5,
+        note:"0을 빼면 그대로. 5 - 0 = 5." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"모두 빼 봐요",
+        items:[ {emoji:"🍪", count:4, label:"4"}, {emoji:"🍪", count:4, label:"- 4"} ],
+        question:"쿠키 4개를 모두 먹으면?  4 - 4 = ___",
+        input:"count_input", answer:0,
+        note:"같은 수를 빼면 0. 4 - 4 = 0 (하나도 안 남음)." } },
+    { id:"s13", stage:"기본문제", block:"multi", data:{
+        title:"답이 그대로(변하지 않는) 식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"6 + 0", correct:true},
+          {label:"6 - 6"},
+          {label:"6 - 0", correct:true},
+          {label:"0 + 0"}
+        ],
+        note:"풀이: 6+0=6 ✓(그대로) / 6-6=0 ✗ / 6-0=6 ✓(그대로) / 0+0=0 ✗" } },
+    { id:"s14", stage:"응용문제", block:"offline_activity", data:{
+        title:"빈손 더하기 놀이",
+        tag:"짝 활동", icon:"✋",
+        body:"한 사람이 손가락 몇 개를 펴고, 짝은 0개(주먹)를 내요. 모으면 몇? 0을 더해도 그대로임을 확인해요.",
+        materials:"준비물 없음 · 5분" } },
+    { id:"s15", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 0",
+        scenario:{ icon:"🪙", body:"저금통에 동전 6개가 있는데 오늘은 한 개도 넣지 않았어요." },
+        question:"6 + 0 = ___  저금통엔 몇 개?",
+        answer:6 } },
+    { id:"s16", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"답이 5가 되도록 0을 넣은 식을 만들어 보세요 (예: 5 + 0, 5 - 0, 0 + 5). 답이 0이 되는 식도 만들어 볼까요?" } },
+    { id:"s17", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "0을 **더하거나 빼면** 수는 **그대로** (4 + 0 = 4, 4 - 0 = 4).",
+          "**같은 수를 빼면 0** (3 - 3 = 0).",
+          "0은 '아무것도 없음'을 나타내는 수."
+        ] } },
+    { id:"s18", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        items:[ {emoji:"⭐", count:7, label:"7"}, {emoji:"⭐", count:0, label:"- 0"} ],
+        question:"7 - 0 = 몇일까요?",
+        input:"count_input", answer:7,
+        note:"0을 빼면 그대로. 7 - 0 = 7." } },
+    { id:"s19", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"이 단원에서 배운 모으기·덧셈·뺄셈·0이 있는 식을 **모두 모아** 연습해 봐요.",
+        emoji:"🧮" } }
   ],
   extras: [
-    {id:"v_l11_zero", type:"video", icon:"🎥", title:"0이 있는 계산 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+0+%EB%8D%94%ED%95%98%EA%B8%B0+%EB%B9%BC%EA%B8%B0", description:"0을 더하거나 빼면 수가 그대로인 까닭을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l11_add0", type:"fun_question", icon:"💡", title:"0을 더하면?", content:"접시에 사과 4개가 있는데 더 놓지 않았어요. 4 + 0은 몇일까요? 왜 그대로일까요?", fit_slides:["concept"]},
-    {id:"q_l11_sub0", type:"fun_question", icon:"💡", title:"전부 빼면?", content:"사과 4개를 모두 먹으면 몇 개 남을까요? 4 - 4 = 0. 아무것도 없는 것을 0이라고 해요.", fit_slides:["concept"]},
-    {id:"t_l11_meaning", type:"tip", icon:"🧩", title:"0은 '없음'을 나타내요", content:"0을 더하면 더한 것이 없으니 그대로, 0을 빼도 덜어 낸 것이 없으니 그대로예요.", fit_slides:["concept"]},
-    {id:"t_l11_self", type:"tip", icon:"🧩", title:"수에서 자기를 빼면 0", content:"어떤 수에서 같은 수를 빼면 하나도 남지 않아 0이 돼요. 5 - 5 = 0.", fit_slides:["concept"]},
-    {id:"r_l11_empty", type:"real_world", icon:"🌍", title:"빈 그릇 이야기", content:"과자가 다 떨어진 빈 그릇에는 0개가 있어요. 0은 생활 속에서 '하나도 없음'을 뜻해요.", fit_slides:["real_world", "concept"]},
-    {id:"r_l11_score", type:"real_world", icon:"🌍", title:"0점도 점수", content:"놀이에서 한 번도 못 맞히면 0점. 0도 어엿한 수예요.", fit_slides:["real_world", "concept"]},
-    {id:"g_l11_zero_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"0이 있는 식과 답 짝짓기", description:"0이 있는 식과 그 답을 짝지어 보세요.", hint:"0을 더하거나 빼면 수가 어떻게 되는지 생각해요.", pairs:[{a:{text:"3 + 0"}, b:{text:"3"}}, {a:{text:"0 + 5"}, b:{text:"5"}}, {a:{text:"4 - 0"}, b:{text:"4"}}, {a:{text:"6 - 6"}, b:{text:"0"}}], fit_slides:["match", "game"]},
-    {id:"b_l11_zero", type:"book", icon:"📖", title:"0을 다룬 수학 그림책", content:"아무것도 없는 0의 뜻을 재미있게 풀어낸 그림책.", source:"도서관에서 0·수 주제로 확인", fit_slides:["motivate", "concept"]},
-    {id:"x_l11_addchange", type:"misconception", icon:"❓", title:"오개념 — 0을 더하면 0이 된다?", content:"3 + 0을 0이라고 답하는 경우가 있어요. 0을 더하면 변화가 없어 그대로 3임을 그림으로 보여 주세요.", fit_slides:["concept"]},
-    {id:"e_l11_mix", type:"extension", icon:"⬆", title:"다음은 종합 연습", content:"0이 있는 계산까지 익혔어요. 다음 시간에는 덧셈과 뺄셈을 섞어 연습해 봐요.", fit_slides:["next_lesson"]},
-    {id:"t_l11_compare", type:"tip", icon:"🧩", title:"0 + 수 와 수 + 0 비교", content:"0 + 5와 5 + 0은 둘 다 5예요. 0은 어느 자리에 있어도 수를 바꾸지 않아요.", fit_slides:["concept"]}
+    { id:"v_l11_zero", type:"video", icon:"🎥", title:"0이 있는 계산 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+0%EC%9D%B4+%EC%9E%88%EB%8A%94+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88",
+      description:"0을 더하고 빼는 계산을 보여 주는 영상. 개념 도입에 활용.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate","concept"] },
+    { id:"q_l11_empty", type:"fun_question", icon:"💡", title:"0은 어떤 수?",
+      content:"교실에서 '0개'인 것을 찾아볼까요? (예: 빈 필통, 빈 의자) 0이 무슨 뜻인지 말로 설명해 봐요.",
+      fit_slides:["concept","motivate"] },
+    { id:"a_l11_fist", type:"other_activity", icon:"✊", title:"주먹은 0",
+      content:"한 손은 수를 펴고 다른 손은 주먹(0)을 쥐어요. 모으면 그대로임을 손으로 확인해요.",
+      fit_slides:["concept","basic_problem"] },
+    { id:"t_l11_same", type:"tip", icon:"🧩", title:"0 더하기와 모두 빼기 구분",
+      content:"'0을 더하거나 빼면 그대로'와 '같은 수를 빼면 0'을 헷갈리기 쉬워요. 두 경우를 나란히 칠판에 적어 비교해 주세요.",
+      fit_slides:["misconception","concept"] },
+    { id:"x_l11_zerores", type:"misconception", icon:"❓", title:"오개념 — 0이면 답도 0",
+      content:"4 + 0 의 답을 0으로 쓰는 학생이 있어요. 구체물로 '아무것도 안 더했으니 그대로'를 보여 주세요.",
+      fit_slides:["misconception","multi"] },
+    { id:"r_l11_real", type:"real_world", icon:"🌍", title:"생활 속 0",
+      content:"오늘 비 온 양이 0이면? 받은 칭찬 스티커가 0개면? 0이 들어간 상황을 식으로 말해 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l11_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"0 식 짝짓기",
+      description:"0이 있는 식과 답을 짝지어 보세요.", hint:"0을 더하거나 빼면 그대로, 같은 수를 빼면 0.",
+      pairs:[ {a:{text:"5 + 0"}, b:{text:"5"}}, {a:{text:"5 - 5"}, b:{text:"0"}}, {a:{text:"0 + 3"}, b:{text:"3"}}, {a:{text:"7 - 0"}, b:{text:"7"}} ],
+      fit_slides:["multi","game"] },
+    { id:"q_l11_both", type:"fun_question", icon:"💡", title:"0 + 0 은?",
+      content:"0에 0을 더하면 몇일까요? 아무것도 없는 데 아무것도 더하지 않았으니… 함께 생각해 봐요.",
+      fit_slides:["question","summary"] },
+    { id:"b_l11_book", type:"book", icon:"📖", title:"0에 관한 그림책",
+      content:"수 0의 뜻을 재미있게 다룬 그림책으로 0을 더 친근하게 만나 보세요.",
+      source:"도서관에서 '0·숫자' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l11_support", type:"tip", icon:"🧩", title:"0이 어려운 학생에게",
+      content:"빈 그릇과 채워진 그릇을 직접 보여 주며 '0은 비어 있음'을 손으로 느끼게 하면 이해가 빨라요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l11_pattern", type:"extension", icon:"⬆", title:"확장 — 0이 만드는 규칙",
+      content:"3+0, 3-0, 4+0, 4-0 … 답을 적어 보면 '+0·-0은 그대로'라는 규칙이 한눈에 보여요.",
+      fit_slides:["advanced_problem","summary"] },
+    { id:"e_l11_family", type:"extension", icon:"⬆", title:"확장 — 같은 수 식 가족",
+      content:"4와 0으로 만들 수 있는 식(4+0=4, 0+4=4, 4-0=4, 4-4=0)을 모아 보면 0의 성질이 보여요.",
+      fit_slides:["advanced_problem","next_lesson"] }
   ]
 };
 
+/* u3_l12 — 덧셈과 뺄셈을 해 볼까요 (종합 연습) · 밀도 표준 v1 */
 LESSONS["u3_l12"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 12,
-    title: "덧셈과 뺄셈을 해 볼까요",
-    std: "[2수01-06]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 덧셈·뺄셈 종합 연습",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_12_덧셈과뺄셈을해볼까요.html"
-  },
+  meta: { grade:1, subject:"수학", unit:3, n:12, title:"덧셈과 뺄셈을 해 볼까요", std:"[2수01-06]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"오늘의 수를 골라요", desc:"1단계 · 도입"}, suggested_extras:["v_l12_mix"]},
-    {id:"s02", stage:"도입", block:"motivate", data:{title:"오늘 배울 것", desc:"1단계 · 도입"}, suggested_extras:["v_l12_mix"]},
-    {id:"s03", stage:"도입", block:"review", data:{title:"지난 시간에 배운 것", desc:"1단계 · 도입"}, suggested_extras:["v_l12_mix"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"5가 되는 덧셈식", desc:"2단계 · 전개"}, suggested_extras:["q_l12_which", "q_l12_make"]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"5에서 만드는 뺄셈식", desc:"2단계 · 전개"}, suggested_extras:["q_l12_which", "q_l12_make"]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"6이 되는 식 모으기", desc:"2단계 · 전개"}, suggested_extras:["q_l12_which", "q_l12_make"]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"7이 되는 식 모으기", desc:"2단계 · 전개"}, suggested_extras:["q_l12_which", "q_l12_make"]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"결괏값이 5인 식을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"결괏값이 6인 식을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"결괏값이 4인 식을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"결괏값이 3인 식을 골라요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"오늘의 수로 덧셈식 만들기", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"오늘의 수로 뺄셈식 만들기", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"내가 식을 만들어요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"친구 식과 비교하기", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"오늘 배운 것", desc:"5단계 · 정리"}, suggested_extras:["b_l12_mix"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"오늘 학습은 어땠나요?", desc:"5단계 · 정리"}, suggested_extras:[]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["e_l12_eval"]}
+    { id:"s01", stage:"도입", block:"cover", data:{ title:"덧셈과 뺄셈을\n해 봐요", emoji:"🧮" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"지난 시간엔 무엇을 했나요?",
+        content:"0이 있는 덧셈·뺄셈을 배웠어요.\n오늘은 단원에서 배운 것을 **모두 모아** 연습해요. 한 수를 만드는 여러 식을 찾아봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"오늘의 수를 골라요",
+        kids:[ {face:"6️⃣", label:"오늘의 수\n6"} ],
+        question:"6을 만드는 덧셈식과 뺄셈식을 몇 가지나 만들 수 있을까요?" } },
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"6이 되는 덧셈식",
+        content:"두 수를 더해 6을 만들어 봐요.\n**1+5, 2+4, 3+3, 4+2, 5+1** 모두 6!",
+        items:[ {emoji:"🍓", count:6, label:"모두 6" } ],
+        note:"👉 한 수를 만드는 덧셈식은 여러 가지." } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"6이 되는 뺄셈식",
+        content:"빼서 6을 만들어 봐요.\n**7-1, 8-2, 9-3** 모두 6!",
+        items:[ {emoji:"🍎", count:6, label:"모두 6" } ],
+        note:"👉 뺄셈으로도 같은 수를 여러 가지로 만들 수 있어요." } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"덧셈인지 뺄셈인지 먼저 봐요",
+        content:"식을 풀 땐 가운데 **+ 인지 - 인지** 먼저 확인해요.\n+ 면 모으고(늘어남), - 면 덜어내요(줄어듦)." } },
+    { id:"s07", stage:"전개", block:"visual_demo", data:{
+        title:"십 배열판으로 확인",
+        items:[ {ten_frame:5, num:5, label:"2+3"}, {ten_frame:5, num:5, label:"7-2"} ],
+        sub_text:"2+3 도 7-2 도 모두 5칸. 식이 달라도 답이 같을 수 있어요." } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"이런 실수를 조심해요",
+        label:"자주 하는 실수",
+        wrong:"+ 와 - 를 대충 보고 반대로 푼다 (5 - 2 를 더해서 7)",
+        right:"식의 **가운데 기호**를 꼭 확인해요. + 면 더하고, - 면 빼요.",
+        hint:"문제를 풀기 전에 기호에 동그라미를 치는 습관!" } },
+    { id:"s09", stage:"전개", block:"question", data:{
+        title:"같이 생각해 봐요",
+        question:"답이 7이 되는 식은 덧셈과 뺄셈 중 어느 쪽이 더 많이 만들어질까요?" } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"덧셈식을 풀어요",
+        items:[ {emoji:"🍓", count:4, label:"4"}, {emoji:"🍓", count:3, label:"+ 3"} ],
+        question:"4 + 3 = ?",
+        input:"count_input", answer:7,
+        note:"4 → 5,6,7. 4 + 3 = 7." } },
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"뺄셈식을 풀어요",
+        items:[ {emoji:"🍎", count:8, label:"8"}, {emoji:"🍎", count:5, label:"- 5"} ],
+        question:"8 - 5 = ?",
+        input:"count_input", answer:3,
+        note:"8 → 7,6,5,4,3. 8 - 5 = 3." } },
+    { id:"s12", stage:"기본문제", block:"multi", data:{
+        title:"답이 6이 되는 식을 모두 골라요",
+        expectedCount:2,
+        options:[
+          {label:"2 + 4", correct:true},
+          {label:"3 + 4"},
+          {label:"9 - 3", correct:true},
+          {label:"8 - 1"}
+        ],
+        note:"풀이: 2+4=6 ✓ / 3+4=7 ✗ / 9-3=6 ✓ / 8-1=7 ✗" } },
+    { id:"s13", stage:"기본문제", block:"match", data:{
+        title:"식과 답을 이어요",
+        type:"touch_match",
+        pairs:[
+          { left:{label:"3 + 5"}, right:{num:8} },
+          { left:{label:"9 - 5"}, right:{num:4} },
+          { left:{label:"6 + 1"}, right:{num:7} }
+        ] } },
+    { id:"s14", stage:"응용문제", block:"offline_activity", data:{
+        title:"오늘의 수 만들기 놀이",
+        tag:"모둠 활동", icon:"🎯",
+        body:"교사가 '오늘의 수'를 정하면, 그 수가 되는 덧셈식·뺄셈식을 모둠에서 번갈아 말해요. 더 많이 만드는 모둠이 이겨요.",
+        materials:"칠판 · 8분" } },
+    { id:"s15", stage:"응용문제", block:"real_world", data:{
+        title:"우리 생활 속 식",
+        scenario:{ icon:"🍬", body:"사탕 5개가 있었는데 3개를 더 받고, 그중 2개를 먹었어요." },
+        question:"지금 사탕은?  5 + 3 을 한 뒤 - 2.  몇 개?",
+        answer:6 } },
+    { id:"s16", stage:"응용문제", block:"advanced_problem", data:{
+        title:"생각을 넓혀요",
+        challenge:"'오늘의 수'를 8로 정했어요. 8이 되는 덧셈식과 뺄셈식을 각각 세 개 이상 만들어 보세요." } },
+    { id:"s17", stage:"정리", block:"summary", data:{
+        title:"오늘 배운 것",
+        points:[
+          "한 수를 만드는 식은 **여러 가지** (6 = 2+4 = 9-3 …).",
+          "식을 풀 땐 **+·- 기호를 먼저** 확인한다.",
+          "덧셈·뺄셈을 자유롭게 오가며 답을 구할 수 있다."
+        ] } },
+    { id:"s18", stage:"정리", block:"basic_problem", data:{
+        title:"오늘 스스로 점검",
+        scenario:{ icon:"🐢", body:"연못에 거북 4마리가 있었는데 3마리가 더 오고, 2마리가 물속으로 갔어요." },
+        question:"4 + 3 - 2 = ?  지금 거북은 몇 마리?",
+        input:"count_input", answer:5,
+        note:"4 + 3 = 7, 7 - 2 = 5. 답은 5." } },
+    { id:"s19", stage:"정리", block:"next_lesson", data:{
+        title:"다음 시간엔",
+        preview:"단원을 **마무리**하며 배운 것을 스스로 점검해 봐요.",
+        emoji:"🏁" } }
   ],
   extras: [
-    {id:"v_l12_mix", type:"video", icon:"🎥", title:"덧셈·뺄셈 종합 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88+%EC%A2%85%ED%95%A9+%EC%97%B0%EC%8A%B5", description:"덧셈과 뺄셈을 가려 풀고 식을 만드는 종합 활동을 보여 주는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l12_which", type:"fun_question", icon:"💡", title:"더하기일까 빼기일까?", content:"'더 왔어요'와 '갔어요' 중 어떤 말이 나오면 빼기일까요? 이야기 속 낱말로 가려 봐요.", fit_slides:["concept"]},
-    {id:"q_l12_make", type:"fun_question", icon:"💡", title:"수로 식 만들기", content:"수 7, 2와 기호 +, -로 만들 수 있는 식을 모두 떠올려 봐요. 7 + 2, 7 - 2.", fit_slides:["concept", "game"]},
-    {id:"t_l12_keyword", type:"tip", icon:"🧩", title:"낱말로 연산 고르기", content:"'모두·합하면'은 덧셈, '남은·더 적은'은 뺄셈. 문제 속 낱말을 단서로 삼게 도와주세요.", fit_slides:["concept"]},
-    {id:"t_l12_check", type:"tip", icon:"🧩", title:"답을 거꾸로 확인", content:"덧셈은 한 수를 빼서, 뺄셈은 더해서 확인할 수 있어요. 스스로 점검하는 습관을 길러 주세요.", fit_slides:["concept"]},
-    {id:"r_l12_shop", type:"real_world", icon:"🌍", title:"가게 놀이", content:"물건을 사면 빼기(돈이 줄고), 더 담으면 더하기. 가게 놀이로 두 연산을 함께 써 봐요.", fit_slides:["real_world", "game"]},
-    {id:"r_l12_bus", type:"real_world", icon:"🌍", title:"버스 타고 내리기", content:"버스에 타면 더하기, 내리면 빼기. 5명이 탄 버스에 2명이 더 타면 7명, 다음에 3명이 내리면 4명.", fit_slides:["real_world", "concept"]},
-    {id:"g_l12_op_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"상황과 연산 짝짓기", description:"상황과 어울리는 연산을 짝지어 보세요.", hint:"상황의 낱말이 더하기인지 빼기인지 살펴요.", pairs:[{a:{text:"더 왔어요"}, b:{text:"덧셈"}}, {a:{text:"먹었어요"}, b:{text:"뺄셈"}}, {a:{text:"모두 모으면"}, b:{text:"덧셈"}}, {a:{text:"나갔어요"}, b:{text:"뺄셈"}}], fit_slides:["match", "game"]},
-    {id:"g_l12_eq_ans", type:"game", game_kind:"memory_match", icon:"🎮", title:"식과 답 짝짓기", description:"덧셈·뺄셈식과 그 답을 짝지어 보세요.", hint:"식이 더하기인지 빼기인지 보고 계산해요.", pairs:[{a:{text:"4 + 3"}, b:{text:"7"}}, {a:{text:"8 - 5"}, b:{text:"3"}}, {a:{text:"2 + 6"}, b:{text:"8"}}, {a:{text:"9 - 4"}, b:{text:"5"}}], fit_slides:["match", "game"]},
-    {id:"b_l12_mix", type:"book", icon:"📖", title:"덧셈·뺄셈 이야기책", content:"더하고 빼는 일이 번갈아 일어나는 이야기로 두 연산을 함께 익혀요.", source:"도서관에서 덧셈·뺄셈 주제로 확인", fit_slides:["concept", "summary"]},
-    {id:"x_l12_alwaysadd", type:"misconception", icon:"❓", title:"오개념 — 수가 둘이면 무조건 더한다", content:"두 수가 보이면 늘 더하려는 경우가 있어요. 이야기 속 낱말을 먼저 읽고 연산을 고르도록 안내해 주세요.", fit_slides:["concept"]},
-    {id:"e_l12_eval", type:"extension", icon:"⬆", title:"다음은 단원 평가", content:"덧셈과 뺄셈을 두루 익혔어요. 다음 시간에는 배운 것을 스스로 확인해 봐요.", fit_slides:["next_lesson"]}
+    { id:"v_l12_mix", type:"video", icon:"🎥", title:"덧셈·뺄셈 종합 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88+%EC%97%B0%EC%8A%B5",
+      description:"덧셈과 뺄셈을 섞어 연습하는 영상. 복습에 활용.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate","concept"] },
+    { id:"q_l12_many", type:"fun_question", icon:"💡", title:"몇 가지나?",
+      content:"'오늘의 수'를 7로 정하면, 7이 되는 식을 몇 가지 만들 수 있을까요? 덧셈·뺄셈 모두 떠올려 봐요.",
+      fit_slides:["concept","summary"] },
+    { id:"a_l12_card", type:"other_activity", icon:"🃏", title:"수 카드 식 만들기",
+      content:"수 카드 두세 장과 +·- 카드를 섞어 놓고, 목표 수가 되는 식을 만들게 해요.",
+      fit_slides:["concept","offline_activity"] },
+    { id:"t_l12_sign", type:"tip", icon:"🧩", title:"기호 먼저 보기",
+      content:"문제를 풀기 전 가운데 기호에 동그라미를 치게 하면 +·- 혼동이 크게 줄어요.",
+      fit_slides:["misconception","basic_problem"] },
+    { id:"x_l12_flip", type:"misconception", icon:"❓", title:"오개념 — 기호 무시",
+      content:"숫자만 보고 무조건 더하거나 빼는 학생이 있어요. 기호를 손으로 짚으며 읽게 하세요.",
+      fit_slides:["misconception","multi"] },
+    { id:"r_l12_real", type:"real_world", icon:"🌍", title:"생활 속 섞인 식",
+      content:"간식을 받고(더하기) 나눠 주는(빼기) 상황처럼, 더하고 빼는 일이 섞인 하루를 식으로 말해 봐요.",
+      fit_slides:["real_world","offline_activity"] },
+    { id:"g_l12_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"같은 답 식 짝짓기",
+      description:"답이 같은 덧셈식과 뺄셈식을 짝지어 보세요.", hint:"양쪽을 각각 풀어 답을 비교해요.",
+      pairs:[ {a:{text:"2 + 3"}, b:{text:"7 - 2"}}, {a:{text:"4 + 2"}, b:{text:"9 - 3"}}, {a:{text:"3 + 4"}, b:{text:"8 - 1"}}, {a:{text:"1 + 3"}, b:{text:"6 - 2"}} ],
+      fit_slides:["multi","game"] },
+    { id:"q_l12_more", type:"fun_question", icon:"💡", title:"덧셈이 많을까 뺄셈이 많을까",
+      content:"답이 3이 되는 식을 덧셈으로, 뺄셈으로 각각 찾아보고 개수를 비교해 봐요.",
+      fit_slides:["question","summary"] },
+    { id:"b_l12_book", type:"book", icon:"📖", title:"덧셈·뺄셈 그림책",
+      content:"수를 더하고 빼는 다양한 장면이 담긴 그림책으로 연습을 이어 가 보세요.",
+      source:"도서관에서 '덧셈·뺄셈' 주제로 확인", fit_slides:["summary","motivate"] },
+    { id:"t_l12_support", type:"tip", icon:"🧩", title:"섞인 식이 어려우면",
+      content:"4 + 3 - 2 처럼 섞인 식은 **앞에서부터 차례로** 풀라고 안내하세요. 한 단계씩 끊어 계산하면 쉬워요.",
+      fit_slides:["basic_problem","self_assessment"] },
+    { id:"e_l12_target", type:"extension", icon:"⬆", title:"확장 — 목표 수 도전",
+      content:"세 수를 써서 목표 수를 만드는 식(예: 2 + 4 - 1 = 5)에 도전해 봐요.",
+      fit_slides:["advanced_problem","summary"] },
+    { id:"e_l12_review", type:"extension", icon:"⬆", title:"확장 — 단원 복습 지도",
+      content:"모으기→덧셈→뺄셈→0 순서로 헷갈린 부분을 표시하며 다음 마무리 차시 준비를 도와주세요.",
+      fit_slides:["next_lesson","summary"] }
   ]
 };
 
+/* u3_l13 — 수학이랑 확인해요 (단원 마무리·평가) · 밀도 표준 v1 */
 LESSONS["u3_l13"] = {
-  meta: {
-    grade: 1, subject: "수학", unit: 3, n: 13,
-    title: "수학이랑 확인해요",
-    std: "[2수01-04], [2수01-05], [2수01-06]",
-    duration_min: 40,
-    lesson_format: "본 차시 5단계 18슬 — 단원 평가와 자기 평가",
-    live_url: "../../grade1/semester1/math/3단원_덧셈과뺄셈/재수정_v1/g1_math_u3_13_수학이랑확인해요.html"
-  },
+  meta: { grade:1, subject:"수학", unit:3, n:13, title:"수학이랑 확인해요", std:"[2수01-04], [2수01-05], [2수01-06]", duration_min:40 },
   slides: [
-    {id:"s01", stage:"도입", block:"motivate", data:{title:"단원을 마무리해요", desc:"1단계 · 도입"}, suggested_extras:["v_l13_review"]},
-    {id:"s02", stage:"도입", block:"motivate", data:{title:"오늘 점검할 것", desc:"1단계 · 도입"}, suggested_extras:["v_l13_review"]},
-    {id:"s03", stage:"도입", block:"motivate", data:{title:"단원에서 배운 것", desc:"1단계 · 도입"}, suggested_extras:["v_l13_review"]},
-    {id:"s04", stage:"전개", block:"concept", data:{title:"모으기·가르기를 떠올려요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s05", stage:"전개", block:"concept", data:{title:"덧셈을 떠올려요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s06", stage:"전개", block:"concept", data:{title:"뺄셈을 떠올려요", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s07", stage:"전개", block:"concept", data:{title:"0의 자리와 다양한 식", desc:"2단계 · 전개"}, suggested_extras:[]},
-    {id:"s08", stage:"기본문제", block:"basic_problem", data:{title:"덧셈식을 풀어요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s09", stage:"기본문제", block:"basic_problem", data:{title:"뺄셈식을 풀어요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s10", stage:"기본문제", block:"basic_problem", data:{title:"0이 있는 식을 풀어요", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s11", stage:"기본문제", block:"basic_problem", data:{title:"8을 가르기", desc:"3단계 · 기본문제"}, suggested_extras:[]},
-    {id:"s12", stage:"응용문제", block:"advanced_problem", data:{title:"꽃은 모두 몇 송이일까요?", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s13", stage:"응용문제", block:"advanced_problem", data:{title:"개구리는 몇 마리 남았을까요?", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s14", stage:"응용문제", block:"advanced_problem", data:{title:"농장에서 덧셈식을 만들어요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s15", stage:"응용문제", block:"advanced_problem", data:{title:"농장에서 뺄셈식을 만들어요", desc:"4단계 · 응용문제"}, suggested_extras:[]},
-    {id:"s16", stage:"정리", block:"summary", data:{title:"단원 점수와 결과", desc:"5단계 · 정리"}, suggested_extras:["q_l13_self", "q_l13_friend"]},
-    {id:"s17", stage:"정리", block:"self_assessment", data:{title:"스스로 점검해요", desc:"5단계 · 정리"}, suggested_extras:["q_l13_self", "t_l13_grade"]},
-    {id:"s18", stage:"정리", block:"next_lesson", data:{title:"다음 차시", desc:"5단계 · 정리"}, suggested_extras:["r_l13_next", "e_l13_make"]}
+    { id:"s01", stage:"도입", block:"cover", data:{ title:"수학이랑 확인해요\n단원 마무리", emoji:"🏁" } },
+    { id:"s02", stage:"도입", block:"review", data:{
+        title:"이 단원에서 배운 것",
+        content:"**모으기·가르기 → 덧셈(+) → 뺄셈(-) → 0이 있는 식**을 배웠어요.\n오늘은 모두 떠올리며 스스로 점검해 봐요." } },
+    { id:"s03", stage:"도입", block:"motivate", data:{
+        scene_title:"단원을 마무리해요",
+        kids:[ {face:"🧮", label:"모으기·가르기"}, {face:"➕", label:"덧셈"}, {face:"➖", label:"뺄셈"} ],
+        question:"무엇이 가장 자신 있나요? 어떤 것이 더 연습이 필요할까요?" } },
+    { id:"s04", stage:"전개", block:"concept", data:{
+        title:"① 모으기·가르기를 떠올려요",
+        content:"두 수를 하나로 **모으기**, 한 수를 둘로 **가르기**.\n(예: 3과 2를 모으면 5, 5는 3과 2로 가르기)",
+        items:[ {emoji:"🍅", count:3, label:"3"}, {emoji:"🍅", count:2, label:"2"}, {emoji:"🍅", count:5, label:"모으면 5"} ] } },
+    { id:"s05", stage:"전개", block:"concept", data:{
+        title:"② 덧셈을 떠올려요",
+        content:"모으는 상황은 **덧셈(+)**. 3 + 2 = 5.\n큰 수부터 이어 세면 빠르고, 자리를 바꿔도 합은 같아요.",
+        items:[ {emoji:"🐝", count:5, label:"3 + 2 = 5"} ],
+        note:"👉 + 는 '더하기', = 는 '같다'." } },
+    { id:"s06", stage:"전개", block:"concept", data:{
+        title:"③ 뺄셈을 떠올려요",
+        content:"덜어내는 상황은 **뺄셈(-)**. 5 - 2 = 3.\n거꾸로 세거나 십 배열판으로 풀고, 덧셈으로 확인할 수 있어요.",
+        items:[ {emoji:"🍓", count:3, label:"5 - 2 = 3"} ],
+        note:"👉 가르기를 식으로 쓰면 뺄셈." } },
+    { id:"s07", stage:"전개", block:"concept", data:{
+        title:"④ 0이 있는 식",
+        content:"0을 **더하거나 빼면** 그대로 (4 + 0 = 4, 4 - 0 = 4).\n**같은 수를 빼면 0** (4 - 4 = 0).",
+        items:[ {emoji:"🍎", count:4, label:"4 + 0 = 4"} ] } },
+    { id:"s08", stage:"전개", block:"misconception", data:{
+        title:"점검! 이런 실수 없었나요?",
+        label:"단원 빈출 실수",
+        wrong:"이어 세기 시작 수 다시 세기 · +/- 반대로 풀기 · 0 더하면 0이라 생각하기",
+        right:"시작 수 다음부터 세기 · 기호 먼저 확인 · 0 더하기·빼기는 그대로(같은 수 빼기만 0)",
+        hint:"문제마다 기호에 동그라미, 시작 수에 점 찍기!" } },
+    { id:"s09", stage:"기본문제", block:"basic_problem", data:{
+        title:"덧셈식을 풀어요",
+        items:[ {emoji:"🦋", count:5, label:"5"}, {emoji:"🦋", count:3, label:"+ 3"} ],
+        question:"5 + 3 = ?",
+        input:"count_input", answer:8,
+        note:"5 → 6,7,8. 5 + 3 = 8." } },
+    { id:"s10", stage:"기본문제", block:"basic_problem", data:{
+        title:"뺄셈식을 풀어요",
+        items:[ {emoji:"🐤", count:9, label:"9"}, {emoji:"🐤", count:4, label:"- 4"} ],
+        question:"9 - 4 = ?",
+        input:"count_input", answer:5,
+        note:"9 → 8,7,6,5. 9 - 4 = 5." } },
+    { id:"s11", stage:"기본문제", block:"basic_problem", data:{
+        title:"0이 있는 식을 풀어요",
+        scenario:{ icon:"🍪", body:"쿠키 6개가 있는데 아무도 먹지 않았어요." },
+        question:"6 - 0 = ?",
+        input:"count_input", answer:6,
+        note:"0을 빼면 그대로. 6 - 0 = 6." } },
+    { id:"s12", stage:"기본문제", block:"basic_problem", data:{
+        title:"8을 가르기 해요",
+        items:[ {emoji:"⭐", count:8, label:"8개"} ],
+        question:"별 8개 중 내가 5개를 가지면, 동생은 몇 개? (8은 5와 ?)",
+        input:"count_input", answer:3,
+        note:"8은 5와 3으로 가르기. 8 - 5 = 3." } },
+    { id:"s13", stage:"응용문제", block:"real_world", data:{
+        title:"꽃은 모두 몇 송이일까요?",
+        scenario:{ icon:"🌷", body:"화단에 빨강 꽃 4송이와 노랑 꽃 3송이가 피었어요." },
+        question:"꽃은 모두 몇 송이?  4 + 3 = ___",
+        answer:7 } },
+    { id:"s14", stage:"응용문제", block:"real_world", data:{
+        title:"개구리는 몇 마리 남았을까요?",
+        scenario:{ icon:"🐸", body:"연못에 개구리 8마리가 있었는데 3마리가 뛰어 나갔어요." },
+        question:"남은 개구리는?  8 - 3 = ___",
+        answer:5 } },
+    { id:"s15", stage:"응용문제", block:"advanced_problem", data:{
+        title:"농장에서 식을 만들어요",
+        challenge:"농장 그림(소·닭·오리 등)을 떠올려, **덧셈식 하나와 뺄셈식 하나**를 직접 만들어 친구에게 내 보세요." } },
+    { id:"s16", stage:"정리", block:"summary", data:{
+        title:"단원에서 배운 것",
+        points:[
+          "**모으기·가르기**로 수를 다루고, 그것이 **덧셈·뺄셈**으로 이어진다.",
+          "덧셈은 이어 세기, 뺄셈은 거꾸로 세기 — 십 배열판으로도 풀 수 있다.",
+          "**0**을 더하거나 빼면 그대로, **같은 수를 빼면 0**."
+        ] } },
+    { id:"s17", stage:"정리", block:"self_assessment", data:{
+        title:"스스로 점검해요",
+        items:[
+          "모으기·가르기를 할 수 있어요",
+          "덧셈식을 쓰고 풀 수 있어요",
+          "뺄셈식을 쓰고 풀 수 있어요",
+          "0이 있는 식을 풀 수 있어요"
+        ],
+        prompts:[
+          "가장 자신 있는 것에 별을 더 많이 칠해 봐요.",
+          "더 연습하고 싶은 것은 무엇인가요?"
+        ] } },
+    { id:"s18", stage:"정리", block:"next_lesson", data:{
+        title:"다음엔",
+        preview:"2학기에는 **더 큰 수(50까지)**의 덧셈과 뺄셈을 배워요. 오늘 배운 것이 바탕이 돼요!",
+        emoji:"🚀" } }
   ],
   extras: [
-    {id:"v_l13_review", type:"video", icon:"🎥", title:"단원 정리 영상", url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88+%EB%BA%84%EC%85%88+%EB%8B%A8%EC%9B%90+%EC%A0%95%EB%A6%AC", description:"모으기·가르기부터 0이 있는 계산까지 단원 전체를 짧게 정리하는 영상.", source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["motivate", "review"]},
-    {id:"q_l13_self", type:"fun_question", icon:"💡", title:"어떤 문제가 가장 쉬웠나요?", content:"평가를 풀면서 가장 자신 있었던 문제와 어려웠던 문제를 떠올려 봐요.", fit_slides:["self_assessment", "summary"]},
-    {id:"q_l13_friend", type:"fun_question", icon:"💡", title:"친구에게 설명하기", content:"내가 푼 방법을 친구에게 말로 설명해 봐요. 설명하면 더 잘 이해돼요.", fit_slides:["summary", "game"]},
-    {id:"t_l13_grade", type:"tip", icon:"🧩", title:"점수보다 과정", content:"평가는 등수를 매기는 것이 아니라, 무엇을 더 연습하면 좋을지 알아보는 거예요. 틀린 문제는 함께 다시 풀어 주세요.", fit_slides:["self_assessment"]},
-    {id:"t_l13_help", type:"tip", icon:"🧩", title:"보충이 필요하면", content:"모으기·가르기가 흔들리면 구체물로, 이어 세기가 약하면 십 배열판으로 다시 짚어 주면 좋아요.", fit_slides:["self_assessment"]},
-    {id:"r_l13_daily", type:"real_world", icon:"🌍", title:"오늘 하루 속 덧셈·뺄셈", content:"오늘 하루 동안 더하거나 뺀 일을 떠올려 봐요. 간식을 나눠 먹고, 친구가 더 오고… 수학은 생활 곳곳에 있어요.", fit_slides:["real_world", "summary"]},
-    {id:"r_l13_next", type:"real_world", icon:"🌍", title:"2학기에 만날 수", content:"이번 단원의 덧셈·뺄셈은 더 큰 수의 계산으로 이어져요. 50까지의 수를 배우면 더 다양하게 더하고 뺄 수 있어요.", fit_slides:["real_world", "next_lesson"]},
-    {id:"g_l13_eval_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"단원 종합 짝짓기", description:"식과 답을 짝지어 단원을 정리해 보세요.", hint:"모으기·덧셈·뺄셈·0을 두루 떠올려요.", pairs:[{a:{text:"3과 4를 모으면"}, b:{text:"7"}}, {a:{text:"5 + 2"}, b:{text:"7"}}, {a:{text:"8 - 3"}, b:{text:"5"}}, {a:{text:"6 - 0"}, b:{text:"6"}}], fit_slides:["match", "game"]},
-    {id:"g_l13_term_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"수학 낱말 짝짓기", description:"수학 낱말과 뜻을 짝지어 보세요.", hint:"단원에서 배운 낱말을 떠올려요.", pairs:[{a:{text:"모으기"}, b:{text:"둘을 하나로"}}, {a:{text:"가르기"}, b:{text:"하나를 둘로"}}, {a:{text:"덧셈"}, b:{text:"더하기"}}, {a:{text:"뺄셈"}, b:{text:"빼기"}}], fit_slides:["match", "game"]},
-    {id:"b_l13_wrap", type:"book", icon:"📖", title:"덧셈·뺄셈 마무리 그림책", content:"단원을 마무리하며 더하기·빼기를 즐겁게 되새기는 그림책.", source:"도서관에서 덧셈·뺄셈 주제로 확인", fit_slides:["summary", "self_assessment"]},
-    {id:"x_l13_speed", type:"misconception", icon:"❓", title:"오개념 — 빨리 풀어야 잘하는 것", content:"빠르게 푸는 것보다 바르게 푸는 것이 먼저예요. 천천히 정확히 풀도록 격려해 주세요.", fit_slides:["self_assessment"]},
-    {id:"e_l13_make", type:"extension", icon:"⬆", title:"다음은 만들기 활동", content:"배운 것을 모아 나만의 덧셈·뺄셈 작품으로 만들어 볼 수 있어요.", fit_slides:["next_lesson"]}
+    { id:"v_l13_review", type:"video", icon:"🎥", title:"단원 복습 영상",
+      url:"https://www.youtube.com/results?search_query=%EC%B4%88%EB%93%B1+1%ED%95%99%EB%85%84+%EB%8D%A7%EC%85%88%EA%B3%BC+%EB%BA%84%EC%85%88+%EB%8B%A8%EC%9B%90+%EB%B3%B5%EC%8A%B5",
+      description:"덧셈과 뺄셈 단원 전체를 정리하는 복습 영상.",
+      source:"유튜브 검색 (교사 사전 확인 권장)", fit_slides:["review","summary"] },
+    { id:"q_l13_best", type:"fun_question", icon:"💡", title:"가장 쉬운 방법은?",
+      content:"6 + 2 와 9 - 1 을 각자 좋아하는 방법으로 풀어 봐요. 친구와 방법이 같았나요?",
+      fit_slides:["concept","self_assessment"] },
+    { id:"a_l13_station", type:"other_activity", icon:"🎡", title:"코너 점검 놀이",
+      content:"모으기·덧셈·뺄셈·0 네 코너를 돌며 한 문제씩 풀어요. 다 풀면 단원 도장을 받아요.",
+      fit_slides:["basic_problem","summary"] },
+    { id:"t_l13_check", type:"tip", icon:"🧩", title:"오답 함께 보기",
+      content:"틀린 문제는 '왜 그렇게 생각했는지' 말로 설명하게 한 뒤 바로잡으면, 다음에 같은 실수를 덜 해요.",
+      fit_slides:["misconception","self_assessment"] },
+    { id:"x_l13_common", type:"misconception", icon:"❓", title:"오개념 — 단원 빈출 실수 모음",
+      content:"시작 수 다시 세기, 기호 반대로 풀기, 0 처리 오류 — 세 가지를 한 장에 모아 마지막으로 점검해 주세요.",
+      fit_slides:["misconception","review"] },
+    { id:"r_l13_real", type:"real_world", icon:"🌍", title:"생활 속 덧셈·뺄셈",
+      content:"하루 동안 더하고 뺀 일(간식 받기·나눠 주기 등)을 떠올려 식으로 적어 보면 단원이 생활과 이어져요.",
+      fit_slides:["real_world","summary"] },
+    { id:"g_l13_match", type:"game", game_kind:"memory_match", icon:"🎮", title:"단원 식 짝짓기",
+      description:"여러 가지 식과 답을 짝지어 단원을 정리해요.", hint:"덧셈·뺄셈·0 식을 골고루 풀어 봐요.",
+      pairs:[ {a:{text:"4 + 4"}, b:{text:"8"}}, {a:{text:"7 - 3"}, b:{text:"4"}}, {a:{text:"5 + 0"}, b:{text:"5"}}, {a:{text:"6 - 6"}, b:{text:"0"}} ],
+      fit_slides:["basic_problem","game"] },
+    { id:"q_l13_proud", type:"fun_question", icon:"💡", title:"가장 뿌듯한 것",
+      content:"이 단원에서 가장 잘하게 된 것은 무엇인가요? 짝에게 자랑해 봐요.",
+      fit_slides:["self_assessment","summary"] },
+    { id:"b_l13_book", type:"book", icon:"📖", title:"수 이야기 그림책",
+      content:"더하고 빼는 이야기가 담긴 그림책으로 단원을 즐겁게 마무리해 보세요.",
+      source:"도서관에서 '덧셈·뺄셈 이야기' 주제로 확인", fit_slides:["summary","next_lesson"] },
+    { id:"t_l13_support", type:"tip", icon:"🧩", title:"느린 학생 배려",
+      content:"점검은 점수보다 '어디까지 할 수 있는지' 확인이 목적이에요. 못 푼 문제는 함께 다시 풀며 격려해 주세요.",
+      fit_slides:["self_assessment","basic_problem"] },
+    { id:"e_l13_next", type:"extension", icon:"⬆", title:"확장 — 2학기 미리 보기",
+      content:"10이 되는 짝(1·9, 2·8 …)을 찾아 두면 2학기 받아올림·받아내림 학습에 큰 도움이 돼요.",
+      fit_slides:["next_lesson","summary"] },
+    { id:"e_l13_make", type:"extension", icon:"⬆", title:"확장 — 나만의 문제 내기",
+      content:"배운 것을 활용해 친구에게 낼 덧셈·뺄셈 문제를 만들어 보면 이해가 더 단단해져요.",
+      fit_slides:["advanced_problem","next_lesson"] }
   ]
 };
