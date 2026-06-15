@@ -286,33 +286,33 @@
         for(var b=0;b<5;b++){ var y=-1.2-b*1.7;
           var band=new T.Mesh(new T.PlaneGeometry(baseR*2-0.3, 1.2), new T.MeshStandardMaterial({color:bandCol[b%4], roughness:1}));
           band.position.set(0,y,frontZ+0.02); cutGroup.add(band); }
-        // 3) 마그마방 (발광 덩어리 + 후광)
-        var halo=new T.Mesh(new T.PlaneGeometry(11,8), new T.MeshBasicMaterial({map:sprite('rgba(255,120,30,0.9)'), blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
-        halo.position.set(0,-5.4,frontZ+0.05); cutGroup.add(halo); magHalo=halo;
-        var ch=new T.Mesh(new T.SphereGeometry(2.6,24,18), new T.MeshBasicMaterial({color:0xff5418}));
-        ch.scale.set(1.5,0.85,0.5); ch.position.set(0,-5.4,frontZ+0.12); cutGroup.add(ch); magChamber=ch;
-        // 4) 마그마 통로
-        var cd=new T.Mesh(new T.PlaneGeometry(1.0, (rimY-1.4)-(-4.6)), new T.MeshBasicMaterial({color:0xff6a22, transparent:true, opacity:0.95}));
-        cd.position.set(0, ((rimY-1.4)+(-4.6))/2, frontZ+0.1); cutGroup.add(cd); conduit=cd;
+        // 3) 마그마방 (발광 덩어리 + 후광) — 흙벽보다 확실히 앞으로
+        var halo=new T.Mesh(new T.PlaneGeometry(16,11), new T.MeshBasicMaterial({map:sprite('rgba(255,110,25,0.95)'), blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
+        halo.position.set(0,-5.2,frontZ+0.35); cutGroup.add(halo); magHalo=halo;
+        var ch=new T.Mesh(new T.SphereGeometry(3.0,28,20), new T.MeshBasicMaterial({color:0xff5a1e}));
+        ch.scale.set(1.7,1.0,0.7); ch.position.set(0,-5.2,frontZ+0.55); cutGroup.add(ch); magChamber=ch;
+        // 4) 마그마 통로 (마그마방→분화구)
+        var cd=new T.Mesh(new T.PlaneGeometry(1.5, (rimY-1.4)-(-4.6)), new T.MeshBasicMaterial({color:0xff7a2a, transparent:true, opacity:0.95}));
+        cd.position.set(0, ((rimY-1.4)+(-4.6))/2, frontZ+0.5); cutGroup.add(cd); conduit=cd;
         // 5) 분화구 용암 못
-        var cp=new T.Mesh(new T.CircleGeometry(1.5,24), new T.MeshBasicMaterial({color:0xffae3d, transparent:true, opacity:0.5}));
-        cp.position.set(0, rimY-1.4, frontZ+0.14); cutGroup.add(cp); craterPool=cp;
+        var cp=new T.Mesh(new T.CircleGeometry(1.7,24), new T.MeshBasicMaterial({color:0xffae3d, transparent:true, opacity:0.6}));
+        cp.position.set(0, rimY-1.4, frontZ+0.55); cutGroup.add(cp); craterPool=cp;
         // 6) 상승 거품 (마그마 → 통로)
-        bubbles=makeSys(40, sprite('rgba(255,210,120,1)'), T.AdditiveBlending, 1.6); bubbles.pts.visible=false;
+        bubbles=makeSys(40, sprite('rgba(255,210,120,1)'), T.AdditiveBlending, 1.8); bubbles.pts.visible=false;
         // 7) 화강암 (땅속에서 천천히 식음) — 평소 숨김
         var gtx=document.createElement('canvas'); gtx.width=gtx.height=64; var gg=gtx.getContext('2d');
         gg.fillStyle='#d8c7b0'; gg.fillRect(0,0,64,64);
         for(var s=0;s<260;s++){ gg.fillStyle=(Math.random()<0.5?'#b6a085':'#efe3cf'); gg.fillRect(Math.random()*64,Math.random()*64,3,3); }
         graniteMesh=new T.Mesh(new T.SphereGeometry(1.5,18,14), new T.MeshStandardMaterial({map:new T.CanvasTexture(gtx), roughness:1}));
-        graniteMesh.scale.set(1.2,0.9,0.5); graniteMesh.position.set(3.4,-5.2,frontZ+0.13); graniteMesh.visible=false; cutGroup.add(graniteMesh);
+        graniteMesh.scale.set(1.3,1.0,0.6); graniteMesh.position.set(3.8,-5.0,frontZ+0.55); graniteMesh.visible=false; cutGroup.add(graniteMesh);
         // 8) 현무암 (지표에서 빨리 식음) — 평소 숨김
         var btx=document.createElement('canvas'); btx.width=btx.height=64; var bg=btx.getContext('2d');
         bg.fillStyle='#2f2d33'; bg.fillRect(0,0,64,64);
         for(var s2=0;s2<200;s2++){ bg.fillStyle='rgba(10,10,12,0.7)'; bg.beginPath(); bg.arc(Math.random()*64,Math.random()*64,Math.random()*2,0,7); bg.fill(); }
         basaltMesh=new T.Mesh(new T.PlaneGeometry(4.2,2.4), new T.MeshStandardMaterial({map:new T.CanvasTexture(btx), roughness:1}));
-        basaltMesh.position.set(3.6,4.0,frontZ+0.1); basaltMesh.rotation.z=-0.5; basaltMesh.visible=false; cutGroup.add(basaltMesh);
+        basaltMesh.position.set(4.0,4.2,frontZ+0.5); basaltMesh.rotation.z=-0.5; basaltMesh.visible=false; cutGroup.add(basaltMesh);
       })();
-      function spawnBubble(p){ p.x=(Math.random()-0.5)*1.2; p.y=-5.2+Math.random()*0.8; p.z=frontZ+0.13;
+      function spawnBubble(p){ p.x=(Math.random()-0.5)*1.4; p.y=-5.0+Math.random()*0.8; p.z=frontZ+0.5;
         p.vx=(Math.random()-0.5)*0.2; p.vz=0; p.vy=1.2+Math.random()*0.8; p.life=p.max=(rimY+4)/1.4; }
       function bubbleFade(q,f){ q.r=1; q.g=0.7*f+0.2; q.b=0.15; }
       // 단면 라벨(클릭 불가, 안내)
