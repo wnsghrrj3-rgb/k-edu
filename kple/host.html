@@ -9,7 +9,7 @@
 <script src="../kedu_config.js"></script>
 </head>
 <body>
-<button id="kedu-home" title="케이에듀 시작 화면으로" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:12px;border:none;background:#fff;color:#1a2540;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:inherit;">🏠 케이에듀 홈</button>
+<button id="kedu-home" title="케이에듀 시작 화면으로" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:12px;border:none;background:#fff;color:#1a2540;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:inherit;">🏠 케이에듀로 가기</button>
 <div class="kp-app" id="app">
   <div class="kp-stage">
     <div class="kp-big">케이<span style="color:var(--kp-yellow)">플</span></div>
@@ -68,6 +68,7 @@
           else setConn(s);
         });
         try { history.pushState({ kple: 'game' }, ''); } catch (e) {}
+        setHomeBtn();
       };
     });
   }
@@ -77,6 +78,7 @@
     app.innerHTML = pickHTML;
     bindCards();
     setConn('연결 준비…', '');
+    setHomeBtn();
   }
 
   // 진행 중 게임에서 뒤로가기: 방을 닫고 게임 선택으로 복귀(학생 연결 끊김 → 확인)
@@ -89,14 +91,17 @@
     backToPick();
   });
 
-  bindCards();
-
-  // 케이에듀 홈으로 나가기 — 진행 중 방이 있으면 확인(학생 연결 끊김)
-  document.getElementById('kedu-home').onclick = function () {
-    if (activeCtx && !confirm('진행 중인 게임 방을 닫고 케이에듀 시작 화면으로 나갈까요? (참가한 학생 연결이 끊겨요)')) return;
-    if (activeCtx) { try { activeCtx.close(); } catch (e) {} }
-    location.href = '/';
+  var homeBtn = document.getElementById('kedu-home');
+  function setHomeBtn() { homeBtn.textContent = activeCtx ? '← 게임 선택' : '🏠 케이에듀로 가기'; }
+  // 진행 중이면 게임 선택(앱 홈)으로 — 뒤로가기와 동일 경로(popstate가 확인·복귀 처리)
+  // 선택 화면이면 케이에듀 시작점으로
+  homeBtn.onclick = function () {
+    if (activeCtx) { history.back(); }
+    else { location.href = '/'; }
   };
+
+  bindCards();
+  setHomeBtn();
 })();
 </script>
 </body>
