@@ -45,6 +45,23 @@
   .banner{ position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:650; background:#fff3cd; color:#7a5e1f;
            border:1px solid #ffe08a; border-radius:12px; padding:7px 14px; font-size:13px; font-weight:800; display:none; max-width:90%; text-align:center; }
   .hide{ display:none !important; }
+  /* 백지도 모드 */
+  #blankveil{ display:none; }
+  .leaflet-container{ background:#ffffff !important; }
+  .palette{ position:absolute; left:10px; right:10px; bottom:10px; z-index:600; background:rgba(255,255,255,.97);
+            border:1px solid var(--line); border-radius:16px; padding:8px; box-shadow:0 2px 10px rgba(0,0,0,.12); }
+  .prow{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+  .symbtn{ flex:0 0 auto; width:54px; height:58px; border:2px solid var(--line); border-radius:12px; background:#fff;
+           display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; font-family:inherit; }
+  .symbtn.on{ border-color:var(--orange); background:#FFF4EC; }
+  .symbtn small{ font-size:11px; font-weight:800; color:var(--ink); }
+  .prow2{ display:flex; gap:8px; align-items:center; margin-top:6px; }
+  .ptool{ padding:7px 11px; border-radius:10px; border:2px solid var(--blue); background:#fff; color:var(--blue);
+          font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; }
+  .ptool.on{ background:#E03131; border-color:#E03131; color:#fff; }
+  .phint{ font-size:12px; color:#8aa0b6; }
+  .symmark{ display:flex; align-items:center; justify-content:center; }
+  .symmark svg{ filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
 </style>
 </head>
 <body>
@@ -53,8 +70,9 @@
     <div class="ttl">케이랩 사회 · 지도 <small>3학년 우리 고장 · 브이월드 프로토타입 v0.1</small></div>
     <div class="tabs">
       <button class="tab on" data-mode="symbol">1 · 기호</button>
-      <button class="tab" data-mode="real">2 · 진짜 동네</button>
+      <button class="tab" data-mode="real">2 · 동네</button>
       <button class="tab" data-mode="d3">3 · 3D</button>
+      <button class="tab" data-mode="blank">4 · 백지도</button>
     </div>
   </header>
 
@@ -95,7 +113,18 @@
     </div>
 
     <div id="map"></div>
+    <div id="blankveil"></div>
     <div id="map3d" class="hide"></div>
+
+    <!-- 모드4: 백지도 기호 팔레트 -->
+    <div class="palette hide" id="palette">
+      <div class="prow" id="symRow"></div>
+      <div class="prow2">
+        <button class="ptool" id="btnErase">🗑 지우기</button>
+        <button class="ptool" id="btnClear">전체 지우기</button>
+        <span class="phint" id="phint">기호를 고르고 지도를 톡 누르면 찍혀요</span>
+      </div>
+    </div>
 
     <!-- 오프라인/키없음 폴백: 양식화 동네 -->
     <svg id="fallback" viewBox="0 0 380 360" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -122,11 +151,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
-  // ── 인증키: 레포에 박지 않음. ?key= 또는 입력창으로 주입 ──
   // ── 인증키: keduclass.com 도메인에 묶인 개발키(2026-12-15 만료). ?key= 로 덮어쓰기 가능. 운영 전환 시 운영키로 교체 ──
   var KEY = new URLSearchParams(location.search).get('key') || '7ED25FC8-DA7D-331F-AA7F-B4B7B901BCD1';
   var ATTR = '공간정보 오픈플랫폼(브이월드)';
   var map=null, layers={}, mode='symbol', threeReady=false;
+  var curSym=null, eraseOn=false, marks=[];   // 백지도 기호 찍기 상태
   var $=function(s){return document.querySelector(s);};
 
   function vwLayer(name, ext){
@@ -141,7 +170,9 @@
     layers.base = vwLayer('Base');             // 기호 지도(국가 약속 기호) — png
     layers.sat  = vwLayer('Satellite','jpeg'); // 실제 모습(항공/위성) — jpeg(중요)
     layers.hyb  = vwLayer('Hybrid');           // 위성 위 라벨 — png
+    layers.gray = vwLayer('gray');             // 백지도(회색 외곽 위주) — png
     layers.base.addTo(map);
+    map.on('click', onMapClick);               // 백지도 모드에서 기호 찍기
     // 타일 실패 → 폴백 안내
     var failed=false;
     layers.base.on('tileerror', function(){ if(failed) return; failed=true; showFallback('키/도메인 확인 필요 — 데모(양식화) 모드'); });
@@ -155,29 +186,72 @@
 
   function setBase(which){
     if(!map) return;
-    [layers.base,layers.sat,layers.hyb].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
+    [layers.base,layers.sat,layers.hyb,layers.gray].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
     if(which==='sat'){ layers.sat.addTo(map); layers.hyb.addTo(map); $('#btnReal').classList.add('on'); $('#btnSym').classList.remove('on'); }
+    else if(which==='gray'){ layers.gray.addTo(map); layers.gray.setOpacity(0.4); }
     else { layers.base.addTo(map); $('#btnSym').classList.add('on'); $('#btnReal').classList.remove('on'); }
   }
 
-  // ── 3D: 브이월드 WebGL 3D API (대도시 실사 + 그 외 항공 지형) ──
+  // ── 기호 정의: 약속된 기호(이모지 아님, SVG 글리프) ──
+  var SYMS = [
+    { k:'school', nm:'학교',   svg:'<rect x="3" y="9" width="18" height="12" rx="1" fill="#1565C0"/><path d="M2 9 L12 2 L22 9 Z" fill="#0D47A1"/><rect x="10" y="14" width="4" height="7" fill="#fff"/>' },
+    { k:'hosp',   nm:'병원',   svg:'<circle cx="12" cy="12" r="10" fill="#fff" stroke="#E03131" stroke-width="2.5"/><rect x="10" y="6" width="4" height="12" fill="#E03131"/><rect x="6" y="10" width="12" height="4" fill="#E03131"/>' },
+    { k:'park',   nm:'공원',   svg:'<rect x="10.5" y="13" width="3" height="8" fill="#7a5a3a"/><path d="M12 2 L20 14 L4 14 Z" fill="#2F9E44"/><path d="M12 7 L18 16 L6 16 Z" fill="#37B24D"/>' },
+    { k:'mtn',    nm:'산',     svg:'<path d="M12 3 L22 21 L2 21 Z" fill="#A98467" stroke="#7F5539" stroke-width="1.5"/><path d="M9 11 L12 7 L15 11 L13 13 L11 11 Z" fill="#fff"/>' },
+    { k:'river',  nm:'강',     svg:'<path d="M2 8 Q7 4 12 8 T22 8" stroke="#1971C2" stroke-width="3" fill="none"/><path d="M2 14 Q7 10 12 14 T22 14" stroke="#4DABF7" stroke-width="3" fill="none"/>' },
+    { k:'market', nm:'시장',   svg:'<rect x="3" y="11" width="18" height="10" fill="#F59F00"/><path d="M2 11 L4 5 L20 5 L22 11 Z" fill="#F08C00"/><path d="M2 11 L22 11" stroke="#fff" stroke-width="1"/>' },
+    { k:'post',   nm:'우체국', svg:'<rect x="3" y="6" width="18" height="13" rx="1" fill="#E8590C"/><path d="M3 7 L12 14 L21 7" stroke="#fff" stroke-width="2" fill="none"/>' },
+    { k:'police', nm:'경찰서', svg:'<path d="M12 2 L21 5 V12 C21 17 17 20 12 22 C7 20 3 17 3 12 V5 Z" fill="#1971C2"/><circle cx="12" cy="11" r="3.5" fill="#fff"/>' },
+    { k:'fire',   nm:'소방서', svg:'<path d="M12 2 C13 7 18 8 16 14 C20 13 19 7 21 9 C22 16 18 22 12 22 C6 22 3 17 6 11 C7 14 9 12 9 9 C9 6 11 4 12 2 Z" fill="#F03E3E"/>' }
+  ];
+  function symSVG(k, size){
+    var d=SYMS.filter(function(s){return s.k===k;})[0]; if(!d) d=SYMS[0];
+    return '<svg width="'+(size||24)+'" height="'+(size||24)+'" viewBox="0 0 24 24">'+d.svg+'</svg>';
+  }
+  function buildPalette(){
+    var row=$('#symRow'); if(!row||row.childElementCount) return;
+    SYMS.forEach(function(s){
+      var b=document.createElement('button'); b.className='symbtn'; b.dataset.k=s.k;
+      b.innerHTML=symSVG(s.k,26)+'<small>'+s.nm+'</small>';
+      b.addEventListener('click', function(){
+        eraseOn=false; $('#btnErase').classList.remove('on');
+        if(curSym===s.k){ curSym=null; b.classList.remove('on'); }
+        else { curSym=s.k; document.querySelectorAll('.symbtn').forEach(function(x){x.classList.toggle('on',x===b);}); }
+        $('#phint').textContent = curSym ? ('"'+s.nm+'" 기호 — 지도를 톡 누르면 찍혀요') : '기호를 고르고 지도를 톡 누르면 찍혀요';
+      });
+      row.appendChild(b);
+    });
+  }
+  function onMapClick(e){
+    if(mode!=='blank' || eraseOn || !curSym) return;
+    var icon=L.divIcon({ className:'symmark', html:symSVG(curSym,34), iconSize:[34,34], iconAnchor:[17,17] });
+    var mk=L.marker(e.latlng,{ icon:icon, draggable:true }).addTo(map);
+    mk.on('click', function(ev){ L.DomEvent.stop(ev); if(eraseOn){ map.removeLayer(mk); marks=marks.filter(function(x){return x!==mk;}); } });
+    marks.push(mk);
+  }
+  function clearMarks(){ marks.forEach(function(m){ map.removeLayer(m); }); marks=[]; }
+
+  // ── 3D: 브이월드 WebGL 3D API (대도시 실사 + 그 외 항공 지형). v2.0 생성자 방식 + domain 명시 ──
   function build3D(){
     if(threeReady) return;
+    var dom = location.hostname || 'keduclass.com';
     var s=document.createElement('script');
-    s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey='+KEY;
+    s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=2.0&apiKey='+KEY+'&domain='+encodeURIComponent(dom);
     s.onload=function(){
       try{
-        var pos=new vw.CameraPosition(new vw.CoordZ(127.5106,37.8315,6000), new vw.Direction(0,-50,0));
-        var m=new vw.Map();
-        m.setOption({ mapId:'map3d', initPosition:pos, logo:false, navigation:true });
-        m.setMapId('map3d');
-        m.setInitPosition(pos);
-        if(m.start) m.start();
-        threeReady=true; banner('🧊 드래그로 둘러보기 · 휠로 확대 (대도시일수록 실사 건물)');
-        setTimeout(function(){ banner(''); }, 4000);
-      }catch(e){ banner('3D 초기화 실패 — 키/도메인 확인'); }
+        var opt = new vw.MapOptions(
+          vw.BasemapType.GRAPHIC, '',
+          vw.DensityType.BASIC, vw.DensityType.BASIC, false,
+          new vw.CameraPosition(new vw.CoordZ(127.5106, 37.8315, 1200000), new vw.Direction(-90, 0, 0)),
+          new vw.CameraPosition(new vw.CoordZ(127.5106, 37.8315, 8000),    new vw.Direction(0, -55, 0))
+        );
+        new vw.Map('map3d', opt);
+        threeReady=true;
+        banner('🧊 드래그로 둘러보기 · 휠로 확대 · 대도시일수록 실사 건물');
+        setTimeout(function(){ banner(''); }, 4500);
+      }catch(e){ banner('3D 초기화 실패: '+(e&&e.message||'키/도메인 확인')); }
     };
-    s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키 확인'); };
+    s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키/도메인 확인'); };
     document.body.appendChild(s);
   }
 
@@ -187,9 +261,10 @@
     // 공통 토글
     $('#ctlSymbol').classList.toggle('hide', m!=='symbol');
     $('#legend').classList.toggle('hide', true); $('#legend').style.display='none'; $('#btnLeg').classList.remove('on');
-    $('#searchbar').classList.toggle('hide', m!=='real');
+    $('#searchbar').classList.toggle('hide', !(m==='real'||m==='blank'));   // 검색: 동네·백지도에서
     $('#preset').classList.toggle('hide', m==='d3');
     $('#compass').classList.toggle('hide', m==='d3');
+    $('#palette').classList.toggle('hide', m!=='blank');
 
     if(!KEY){ showFallback('브이월드 키를 넣으면 전국 실제 지도로 켜져요 (아래 입력창)'); return; }
     banner('');
@@ -198,8 +273,9 @@
     } else {
       $('#map3d').classList.add('hide'); $('#map').classList.remove('hide'); $('#fallback').style.display='none';
       if(!map) buildMap();
-      if(m==='real'){ setBase('symbol'); layers.hyb.addTo(map); } // 진짜 동네: 국가 기호지도 + 라벨 + 검색
-      else { setBase('symbol'); }                                  // 기호 학습: Base에서 시작, 항공 토글 가능
+      if(m==='real'){ setBase('symbol'); layers.hyb.addTo(map); }   // 동네: 국가 기호지도 + 라벨 + 검색
+      else if(m==='blank'){ setBase('gray'); buildPalette(); }      // 백지도: 회색 외곽 + 흰 베일 + 기호 팔레트
+      else { setBase('symbol'); }                                   // 기호: Base에서 시작, 항공 토글
       setTimeout(function(){ map.invalidateSize(); }, 50);
     }
   }
@@ -229,8 +305,8 @@
         +'&query='+encodeURIComponent(q)+'&type='+type+'&format=json&errorformat=json&key='+KEY+'&callback='+cb;
       document.body.appendChild(s);
     }
-    // 장소(POI) → 없으면 주소(address)로 재시도
-    tryType('place', function(){ tryType('address', null); });
+    // 장소(POI) → 주소(address) → 행정구역(district) 순 재시도
+    tryType('place', function(){ tryType('address', function(){ tryType('district', null); }); });
   }
 
   // ── 이벤트 ──
@@ -241,6 +317,12 @@
   document.querySelectorAll('#preset button').forEach(function(b){ b.addEventListener('click', function(){ flyTo(+b.dataset.lat,+b.dataset.lng,+b.dataset.z); }); });
   $('#goAddr').addEventListener('click', function(){ searchAddr($('#addr').value.trim()); });
   $('#addr').addEventListener('keydown', function(e){ if(e.key==='Enter') searchAddr(e.target.value.trim()); });
+  $('#btnErase').addEventListener('click', function(){
+    eraseOn=!eraseOn; $('#btnErase').classList.toggle('on',eraseOn);
+    if(eraseOn){ curSym=null; document.querySelectorAll('.symbtn').forEach(function(x){x.classList.remove('on');}); $('#phint').textContent='지울 기호를 톡 누르세요'; }
+    else $('#phint').textContent='기호를 고르고 지도를 톡 누르면 찍혀요';
+  });
+  $('#btnClear').addEventListener('click', function(){ clearMarks(); $('#phint').textContent='다 지웠어요 — 다시 기호를 골라요'; });
   $('#keygo').addEventListener('click', function(){
     var v=$('#keyin').value.trim(); if(!v) return;
     KEY=v; $('#keybar').classList.add('hide'); map=null; go(mode);
