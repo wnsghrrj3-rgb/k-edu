@@ -1,9 +1,10 @@
 /* ============================================================================
    케이랩 도구 모듈 — 화산과 지진 (volcano) v2  [과학 12호 · 지구 영역]
    4학년 화산과 지진. KLab.ui 3모드(자유탐구/미션/퀴즈) 표준.
-   디지털 우위: 위험해서 못 보는 화산 분출·지진을 땅속 단면째로 안전하게 체험.
-   v2: 🛰 '지금 지구' 탭 — USGS 실시간 지진 피드(무인증키·CORS)를 세계 좌표판에
-       규모별 점으로. 시뮬에서 배운 '땅이 끊어지면 지진'을 진짜 지구와 연결.
+   v2: 🌋 화산을 three.js 3D 무대로 — 황혼 하늘·별 아래, 안에서 차오르는 마그마 발광과
+       분출 파티클(용암 분수+화산재 기둥+가스). 드래그 회전·휠/핀치 줌.
+       (지진은 SVG 유지, 퀴즈 썸네일도 SVG. 학습 흐름·미션·퀴즈는 동일.)
+   디지털 우위: 위험해서 못 보는 화산 분출·지진을 안전하게 입체로 체험.
    변수 → 현상 → 발견:
      ▸ 🌋 화산 — 🔥 버튼으로 마그마 방 압력을 키우면 분출! 분출물 3종
        (용암·화산재·화산 가스) 라벨을 클릭해 이름 확인.
@@ -32,36 +33,8 @@
     function volReset(){ vol={ press:0, erupting:false, t:0, seen:{lava:false,ash:false,gas:false}, made:{basalt:false,granite:false} }; }
     function qkReset(){ qk={ stress:0, broken:false, t:0 }; }
     function resetAll(){ exp='volcano'; volReset(); qkReset(); }
-
-    /* ───────────── 실시간 지진 (USGS 실데이터) ───────────── */
-    var alive = true;
-    var live = { status:'idle', list:[], at:0, sel:-1, feed:'2.5_day' };
-    var FEED_LABEL = { '2.5_day':'최근 하루', '4.5_week':'이번 주' };
-    function loadQuakes(){
-      live.status='loading'; live.sel=-1; build();
-      var url='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/'+live.feed+'.geojson';
-      fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(d){
-        if(!alive) return;
-        var fs=(d&&d.features)?d.features:[];
-        live.list = fs.map(function(f){
-          var g=(f.geometry&&f.geometry.coordinates)||[0,0,0], p=f.properties||{};
-          return { mag:(typeof p.mag==='number')?p.mag:0, place:p.place||'바다 한가운데',
-                   time:p.time||0, lon:+g[0], lat:+g[1], depth:+g[2]||0 };
-        }).filter(function(q){ return isFinite(q.lon)&&isFinite(q.lat); })
-          .sort(function(a,b){ return b.time-a.time; });
-        live.at=Date.now(); live.status='ok'; build();
-      }).catch(function(){ if(!alive)return; live.status='err'; build(); });
-    }
-    // 등좌표(equirectangular) 투영 — viewBox 900×460, 가장자리 여백
-    function lon2x(lon){ return 28 + (lon+180)/360*844; }
-    function lat2y(lat){ return 22 + (90-lat)/180*416; }
-    function magColor(m){ return m>=6?'#FA5252':m>=4.5?'#FF8A3D':m>=2.5?'#FFD43B':'#74C0FC'; }
-    function magR(m){ return Math.max(3, 2.4 + (m||0)*1.7); }
-    function timeAgo(ms){ var d=Date.now()-ms; if(d<0)d=0;
-      var mn=d/60000; if(mn<60) return Math.max(1,Math.round(mn))+'분 전';
-      var hr=mn/60; if(hr<24) return Math.round(hr)+'시간 전';
-      return Math.round(hr/24)+'일 전'; }
     resetAll();
+    var v3d=null; // 3D 화산 무대 컨트롤러
 
     function pump(){
       if(vol.erupting){ ui.toast(el,false,'이미 분출 중이에요! ↺ 새 화산으로'); return; }
@@ -139,7 +112,7 @@
 
     /* ───────────── UI ───────────── */
     function expTabs(){
-      var L=[['volcano','🌋 화산'],['quake','🌍 지진'],['live','🛰 지금 지구']];
+      var L=[['volcano','🌋 화산'],['quake','🌍 지진']];
       return '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + L.map(function(x){ var on=(exp===x[0]);
             return '<button class="vc-exp" data-e="'+x[0]+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.hot+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
@@ -147,12 +120,6 @@
         + '</div>';
     }
     function ctrlRow(){
-      if(exp==='live'){
-        return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-          +'<button class="vc-btn" data-act="liveRefresh" style="'+btn+'background:#fff;color:#1565C0;border-color:#1565C0;">↻ 새로고침</button>'
-          +'<button class="vc-btn" data-act="liveFeed" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">'
-            +(live.feed==='2.5_day'?'🔎 이번 주 큰 지진만':'📅 최근 하루 전체')+'</button></div>';
-      }
       if(exp==='volcano'){
         var canCool=vol.erupting;
         return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
@@ -167,6 +134,7 @@
     }
 
     function build(){
+      if(v3d){ v3d.dispose(); v3d=null; }
       var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
@@ -185,13 +153,225 @@
       renderScene(); bind(); renderStatus();
     }
 
+    /* ───────────── 3D 화산 무대 (three.js) ─────────────
+       황혼 하늘·별 아래, 안에서 차오르는 마그마 발광과 분출 파티클
+       (용암 분수 + 화산재 기둥 + 가스). 드래그 회전·휠/핀치 줌. */
+    function Volcano3D(host, opts){
+      opts = opts || {};
+      var T = window.THREE;
+      function CW(){ return host.clientWidth || 800; }
+      function CH(){ return host.clientHeight || 480; }
+      var alive3 = true, raf3 = null, last = performance.now();
+      var S = { press:0, erupting:false, seen:{}, made:{} };
+
+      host.style.position = 'relative';
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:absolute;inset:0;overflow:hidden;background:#06070f;';
+      host.appendChild(wrap);
+
+      var renderer = new T.WebGLRenderer({ antialias:true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(CW(), CH());
+      renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;cursor:grab;touch-action:none;';
+      wrap.appendChild(renderer.domElement);
+
+      var scene = new T.Scene();
+      var camera = new T.PerspectiveCamera(52, CW()/CH(), 0.1, 3000);
+
+      // 하늘 돔(그라데이션)
+      (function(){
+        var c=document.createElement('canvas'); c.width=16; c.height=256; var g=c.getContext('2d');
+        var grd=g.createLinearGradient(0,0,0,256);
+        grd.addColorStop(0,'#06070f'); grd.addColorStop(.45,'#16123a'); grd.addColorStop(.72,'#3c1e52'); grd.addColorStop(.88,'#7c2c3c'); grd.addColorStop(1,'#c2461f');
+        g.fillStyle=grd; g.fillRect(0,0,16,256);
+        var sky=new T.Mesh(new T.SphereGeometry(900,32,24), new T.MeshBasicMaterial({map:new T.CanvasTexture(c), side:T.BackSide, depthWrite:false}));
+        scene.add(sky);
+      })();
+      // 별
+      (function(){
+        var N=1300, p=new Float32Array(N*3);
+        for(var i=0;i<N;i++){ var th=Math.random()*Math.PI*2, ph=Math.acos(Math.random()*0.92+0.04);
+          p[i*3]=820*Math.sin(ph)*Math.cos(th); p[i*3+1]=Math.abs(820*Math.cos(ph))*0.9+30; p[i*3+2]=820*Math.sin(ph)*Math.sin(th); }
+        var gg=new T.BufferGeometry(); gg.setAttribute('position', new T.BufferAttribute(p,3));
+        scene.add(new T.Points(gg, new T.PointsMaterial({color:0xffffff, size:1.7, sizeAttenuation:false, transparent:true, opacity:.85})));
+      })();
+      // 조명
+      var amb=new T.AmbientLight(0x2a3552, .75); scene.add(amb);
+      var moon=new T.DirectionalLight(0x9fb6ff, .55); moon.position.set(-30,46,22); scene.add(moon);
+      var glow=new T.PointLight(0xff5a1e, 0, 140, 2); glow.position.set(0,10,0); scene.add(glow);
+
+      // 지면
+      (function(){
+        var c=document.createElement('canvas'); c.width=c.height=256; var g=c.getContext('2d');
+        var rg=g.createRadialGradient(128,128,8,128,128,150); rg.addColorStop(0,'#2a211d'); rg.addColorStop(1,'#0c0a09');
+        g.fillStyle=rg; g.fillRect(0,0,256,256);
+        for(var i=0;i<420;i++){ g.fillStyle='rgba('+(18+Math.random()*32|0)+','+(14+Math.random()*20|0)+',13,.5)'; g.beginPath(); g.arc(Math.random()*256,Math.random()*256,Math.random()*2.6,0,7); g.fill(); }
+        var ground=new T.Mesh(new T.CircleGeometry(70,64), new T.MeshStandardMaterial({map:new T.CanvasTexture(c), roughness:1, metalness:0}));
+        ground.rotation.x=-Math.PI/2; scene.add(ground);
+      })();
+
+      // 화산 본체
+      var volGroup=new T.Group(); scene.add(volGroup);
+      var cone=new T.Mesh(new T.CylinderGeometry(2.2,9,9,7,1), new T.MeshStandardMaterial({color:0x4a3a30, roughness:1, metalness:0, flatShading:true}));
+      cone.position.y=4.5; volGroup.add(cone);
+      var skirt=new T.Mesh(new T.CylinderGeometry(9,13,2.6,7,1), new T.MeshStandardMaterial({color:0x352a23, roughness:1, flatShading:true}));
+      skirt.position.y=1.3; volGroup.add(skirt);
+      var craterGlowMat=new T.MeshBasicMaterial({color:0xff7a1e, transparent:true, opacity:0, side:T.DoubleSide});
+      var craterGlow=new T.Mesh(new T.CircleGeometry(2.0,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=9.05; volGroup.add(craterGlow);
+      var throatMat=new T.MeshBasicMaterial({color:0xffc24d, transparent:true, opacity:0});
+      var throat=new T.Mesh(new T.SphereGeometry(1.5,20,16), throatMat); throat.position.y=8.7; volGroup.add(throat);
+      var veins=[];
+      for(var vk=0; vk<6; vk++){ var va=vk/6*Math.PI*2;
+        var vm=new T.MeshBasicMaterial({color:0xff5a1e, transparent:true, opacity:0, side:T.DoubleSide});
+        var vmesh=new T.Mesh(new T.PlaneGeometry(0.9,8.4), vm);
+        vmesh.position.set(Math.cos(va)*3.3, 4.7, Math.sin(va)*3.3);
+        vmesh.lookAt(Math.cos(va)*60, -6, Math.sin(va)*60);
+        volGroup.add(vmesh); veins.push(vm);
+      }
+
+      // 파티클
+      function sprite(col){ var c=document.createElement('canvas'); c.width=c.height=64; var g=c.getContext('2d');
+        var rg=g.createRadialGradient(32,32,0,32,32,32); rg.addColorStop(0,col); rg.addColorStop(.4,col); rg.addColorStop(1,'rgba(0,0,0,0)');
+        g.fillStyle=rg; g.beginPath(); g.arc(32,32,32,0,7); g.fill(); return new T.CanvasTexture(c); }
+      function makeSys(n, tex, blend, size){
+        var pos=new Float32Array(n*3), col=new Float32Array(n*3);
+        var geo=new T.BufferGeometry(); geo.setAttribute('position',new T.BufferAttribute(pos,3)); geo.setAttribute('color',new T.BufferAttribute(col,3));
+        var mat=new T.PointsMaterial({size:size, map:tex, blending:blend, transparent:true, depthWrite:false, vertexColors:true, sizeAttenuation:true});
+        var pts=new T.Points(geo,mat); pts.frustumCulled=false; scene.add(pts);
+        var P=[]; for(var i=0;i<n;i++){ P.push({life:0,max:1,vx:0,vy:0,vz:0,x:0,y:0,z:0,r:0,g:0,b:0}); pos[i*3]=pos[i*3+1]=pos[i*3+2]=NaN; }
+        return {n:n,P:P,pos:pos,col:col,geo:geo,mat:mat};
+      }
+      var lava=makeSys(260, sprite('rgba(255,225,140,1)'), T.AdditiveBlending, 2.6);
+      var ash =makeSys(180, sprite('rgba(120,112,108,0.95)'), T.NormalBlending, 6.0);
+      var gas =makeSys(110, sprite('rgba(225,230,240,0.7)'), T.NormalBlending, 4.6);
+
+      function spawnLava(p){ var a=Math.random()*Math.PI*2, out=0.4+Math.random()*0.8;
+        p.x=Math.cos(a)*0.3*Math.random(); p.y=8.5+Math.random()*0.3; p.z=Math.sin(a)*0.3*Math.random();
+        p.vx=Math.cos(a)*out; p.vz=Math.sin(a)*out; p.vy=7.5+Math.random()*5.5; p.life=p.max=1.0+Math.random()*0.9; }
+      function spawnAsh(p){ var a=Math.random()*Math.PI*2, rr=Math.random()*0.6;
+        p.x=Math.cos(a)*rr; p.y=9.2+Math.random()*0.6; p.z=Math.sin(a)*rr;
+        p.vx=Math.cos(a)*(0.3+Math.random()*0.7); p.vz=Math.sin(a)*(0.3+Math.random()*0.7); p.vy=2.6+Math.random()*1.8; p.life=p.max=3.0+Math.random()*2.2; }
+      function spawnGas(p){ var a=Math.random()*Math.PI*2;
+        p.x=Math.cos(a)*0.4*Math.random(); p.y=8.8+Math.random()*0.4; p.z=Math.sin(a)*0.4*Math.random();
+        p.vx=Math.cos(a)*0.5; p.vz=Math.sin(a)*0.5; p.vy=3.4+Math.random()*1.6; p.life=p.max=1.6+Math.random()*1.2; }
+      function emit(sys, count, spawn){ var got=0; for(var i=0;i<sys.n && got<count;i++){ if(sys.P[i].life<=0){ spawn(sys.P[i]); got++; } } }
+
+      function stepSys(sys, dt, grav, fade){
+        var P=sys.P, pos=sys.pos, col=sys.col;
+        for(var i=0;i<sys.n;i++){ var q=P[i];
+          if(q.life>0){
+            q.vy-=grav*dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.z+=q.vz*dt; q.life-=dt;
+            var f=q.life/q.max; fade(q,f);
+            if(q.y<0){ q.life=0; }
+          }
+          if(q.life<=0){ pos[i*3]=pos[i*3+1]=pos[i*3+2]=NaN; col[i*3]=col[i*3+1]=col[i*3+2]=0; }
+          else { pos[i*3]=q.x; pos[i*3+1]=q.y; pos[i*3+2]=q.z; col[i*3]=q.r; col[i*3+1]=q.g; col[i*3+2]=q.b; }
+        }
+        sys.geo.attributes.position.needsUpdate=true; sys.geo.attributes.color.needsUpdate=true;
+      }
+      function lavaFade(q,f){ var age=1-f; // 0 어림 → 1 늙음
+        q.r=1; q.g=Math.max(0.12, 0.95-age*0.85); q.b=Math.max(0.04, 0.6-age*0.85); }
+      function ashFade(q,f){ var s=0.32+(1-f)*0.18; q.r=s*0.95; q.g=s*0.9; q.b=s*0.86; }
+      function gasFade(q,f){ var s=0.75*f+0.1; q.r=s; q.g=s*1.02; q.b=s*1.06; }
+
+      // 분출물 라벨 칩(클릭)
+      var chipBox=document.createElement('div');
+      chipBox.style.cssText='position:absolute;inset:0;pointer-events:none;font-family:inherit;';
+      wrap.appendChild(chipBox);
+      var CHIP='position:absolute;pointer-events:auto;cursor:pointer;font-size:16px;font-weight:800;padding:8px 14px;border-radius:13px;border:3px solid;background:rgba(8,12,26,.72);backdrop-filter:blur(3px);white-space:nowrap;transition:transform .08s;';
+      function mkChip(kind,label,color,css){ var b=document.createElement('button');
+        b.style.cssText=CHIP+css+'color:'+color+';border-color:'+color+';';
+        b.innerHTML=label; b.onclick=function(){ if(opts.onEjecta)opts.onEjecta(kind); };
+        b.style.display='none'; chipBox.appendChild(b); return b; }
+      var chipLava=mkChip('lava','🔥 용암','#FFB266','left:50%;bottom:14px;transform:translateX(-50%);');
+      var chipAsh =mkChip('ash','🌫️ 화산재','#CED4DA','left:50%;top:12px;transform:translateX(-50%);');
+      var chipGas =mkChip('gas','💨 화산 가스','#E9ECEF','right:12px;top:42%;');
+      function updateChips(){
+        var show=S.erupting;
+        [['lava',chipLava],['ash',chipAsh],['gas',chipGas]].forEach(function(o){
+          var b=o[1]; if(!show){ b.style.display='none'; return; }
+          b.style.display=''; var seen=S.seen&&S.seen[o[0]];
+          var base=b===chipLava?'🔥 용암':b===chipAsh?'🌫️ 화산재':'💨 화산 가스';
+          b.innerHTML=base+(seen?' ✓':''); b.style.opacity=seen?'0.75':'1';
+        });
+      }
+
+      // 카메라 궤도
+      var radius=42, theta=0.6, phi=1.12, target=new T.Vector3(0,5,0);
+      function place(){ camera.position.set(
+        target.x+radius*Math.sin(phi)*Math.sin(theta),
+        target.y+radius*Math.cos(phi),
+        target.z+radius*Math.sin(phi)*Math.cos(theta)); camera.lookAt(target); }
+      place();
+      var drag=false, lx=0, ly=0, idle=0;
+      var dom=renderer.domElement;
+      dom.addEventListener('pointerdown',function(e){ if(e.pointerType==='touch'&&touches>1)return; drag=true; idle=0; lx=e.clientX; ly=e.clientY; dom.style.cursor='grabbing'; });
+      window.addEventListener('pointermove',onMove); function onMove(e){ if(!drag)return; idle=0;
+        theta-=(e.clientX-lx)*0.006; phi-=(e.clientY-ly)*0.006; phi=Math.max(0.35,Math.min(1.45,phi)); lx=e.clientX; ly=e.clientY; place(); }
+      window.addEventListener('pointerup',onUp); function onUp(){ drag=false; dom.style.cursor='grab'; }
+      dom.addEventListener('wheel',function(e){ e.preventDefault(); radius*=(1+e.deltaY*0.0012); radius=Math.max(18,Math.min(80,radius)); place(); }, {passive:false});
+      var touches=0, pd=0;
+      dom.addEventListener('touchstart',function(e){ touches=e.touches.length; if(touches>1){ drag=false; pd=tdist(e); } },{passive:false});
+      dom.addEventListener('touchmove',function(e){ if(e.touches.length>1){ e.preventDefault(); var d=tdist(e); if(pd){ radius*=(pd/d); radius=Math.max(18,Math.min(80,radius)); place(); } pd=d; } },{passive:false});
+      dom.addEventListener('touchend',function(e){ touches=e.touches.length; pd=0; });
+      function tdist(e){ var a=e.touches[0],b=e.touches[1]; return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY); }
+
+      // 리사이즈
+      var ro=null;
+      if(window.ResizeObserver){ ro=new ResizeObserver(function(){ if(!alive3)return; renderer.setSize(CW(),CH()); camera.aspect=CW()/CH(); camera.updateProjectionMatrix(); }); ro.observe(host); }
+
+      // 루프
+      var gI=0, shake=0;
+      function loop(){ if(!alive3)return; raf3=requestAnimationFrame(loop);
+        var now=performance.now(), dt=Math.min(0.05,(now-last)/1000); last=now;
+        if(!drag){ idle+=dt; if(idle>1.2){ theta+=dt*0.08; place(); } }
+        var cooled=!!(S.made&&(S.made.basalt||S.made.granite));
+        var strength=S.erupting?(cooled?0.18:1):0;
+        // 발광
+        var gT=S.erupting?(cooled?1.0:2.6):(S.press/100)*0.95;
+        gI+=(gT-gI)*Math.min(1,dt*6); glow.intensity=gI;
+        var thT=S.erupting?1:S.press/150; throatMat.opacity+=(thT-throatMat.opacity)*Math.min(1,dt*6);
+        var cgT=S.erupting?0.9:S.press/200; craterGlowMat.opacity+=(cgT-craterGlowMat.opacity)*Math.min(1,dt*6);
+        throat.scale.setScalar(0.8+gI*0.15);
+        var vColor = S.made&&S.made.basalt?0x4a4a52 : (S.made&&S.made.granite?0xd8c7b0 : 0xff5a1e);
+        var vT=S.erupting?(cooled?0.6:0.85):0;
+        veins.forEach(function(m){ m.color.setHex(vColor); m.opacity+=(vT-m.opacity)*Math.min(1,dt*5); });
+        // 흔들림
+        var trembling=(!S.erupting&&S.press>=60)|| (S.erupting&&!cooled);
+        shake=trembling?Math.min(0.18,shake+dt*0.4):Math.max(0,shake-dt*0.6);
+        volGroup.position.x=(Math.random()-0.5)*shake; volGroup.position.z=(Math.random()-0.5)*shake;
+        // 방출
+        if(strength>0){ emit(lava, Math.round(8*strength), spawnLava); emit(ash, Math.round(4*strength), spawnAsh); emit(gas, Math.round(3*strength), spawnGas); }
+        else if(S.press>0){ if(Math.random()<0.5) emit(gas,1,spawnGas); }
+        stepSys(lava,dt,16,lavaFade); stepSys(ash,dt,1.0,ashFade); stepSys(gas,dt,1.4,gasFade);
+        renderer.render(scene,camera);
+      }
+      loop();
+
+      return {
+        sync:function(v){ S.press=v.press; S.erupting=v.erupting; S.seen=v.seen; S.made=v.made; updateChips(); },
+        dispose:function(){ alive3=false; if(raf3)cancelAnimationFrame(raf3);
+          window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); if(ro)ro.disconnect();
+          try{ renderer.dispose(); }catch(e){}
+          try{ scene.traverse(function(o){ if(o.geometry)o.geometry.dispose&&o.geometry.dispose(); if(o.material){ var m=o.material; if(m.map)m.map.dispose&&m.map.dispose(); m.dispose&&m.dispose(); } }); }catch(e){}
+          if(wrap.parentNode)wrap.parentNode.removeChild(wrap);
+        }
+      };
+    }
+
     /* ───────────── 무대 ───────────── */
     function renderScene(){
       var stage=el.querySelector('.vc-stage'); if(!stage)return;
+      var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp;
+      var use3D=(mode!=='quiz' && exp==='volcano' && window.THREE);
+      if(use3D){
+        if(!v3d){ stage.innerHTML=''; v3d=Volcano3D(stage,{onEjecta:seeEjecta}); }
+        v3d.sync(vol);
+        return;
+      }
+      if(v3d){ v3d.dispose(); v3d=null; }
       stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 900 460',width:'100%',height:'100%'});
-      if(mode!=='quiz' && exp==='live'){ drawLive(svg); stage.appendChild(svg); return; }
-      var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp;
       if(pic==='volcano')drawVolcano(svg); else drawQuake(svg);
       stage.appendChild(svg);
     }
@@ -286,73 +466,9 @@
         +'<text x="140" y="86" text-anchor="middle" font-size="17" font-weight="800" fill="'+C.vio+'" font-family="inherit">쌓인 힘 '+qk.stress+'%</text>';
     }
 
-    /* ───────────── 실시간 지진 세계 좌표판 ───────────── */
-    function drawLive(svg){
-      var g=svgEl('g',{}); svg.appendChild(g);
-      var P=[];
-      P.push('<defs><linearGradient id="vcOcean" x1="0" y1="0" x2="0" y2="1">'
-        +'<stop offset="0" stop-color="#0B2C4D"/><stop offset="1" stop-color="#06182C"/></linearGradient></defs>');
-      P.push('<rect x="0" y="0" width="900" height="460" fill="url(#vcOcean)"/>');
-      var lo,la,x,y;
-      for(lo=-150;lo<=150;lo+=30){ x=lon2x(lo); P.push('<line x1="'+x.toFixed(1)+'" y1="22" x2="'+x.toFixed(1)+'" y2="438" stroke="#21456b" stroke-width="1"/>'); }
-      for(la=-60;la<=60;la+=30){ y=lat2y(la); P.push('<line x1="28" y1="'+y.toFixed(1)+'" x2="872" y2="'+y.toFixed(1)+'" stroke="#21456b" stroke-width="1"/>'); }
-      var eqy=lat2y(0);
-      P.push('<line x1="28" y1="'+eqy.toFixed(1)+'" x2="872" y2="'+eqy.toFixed(1)+'" stroke="#3a6ea5" stroke-width="2" stroke-dasharray="2 6"/>');
-      P.push('<text x="33" y="'+(eqy-6).toFixed(1)+'" font-size="13" fill="#5f8fc0" font-family="inherit">적도</text>');
-      P.push('<rect x="28" y="22" width="844" height="416" fill="none" stroke="#2b517a" stroke-width="1.5" rx="6"/>');
-      // 기준점
-      [[139,36,'일본'],[-119,40,'미국 서부'],[-71,-33,'칠레'],[118,-2,'인도네시아'],[12,42,'유럽']].forEach(function(a){
-        var ax=lon2x(a[0]),ay=lat2y(a[1]);
-        P.push('<circle cx="'+ax.toFixed(1)+'" cy="'+ay.toFixed(1)+'" r="2.5" fill="#7fa8d0"/>'
-          +'<text x="'+(ax+5).toFixed(1)+'" y="'+(ay+4).toFixed(1)+'" font-size="11.5" fill="#9fc0e0" font-family="inherit">'+a[1+1]+'</text>');
-      });
-      var kx=lon2x(127.5),ky=lat2y(37);
-      P.push('<text x="'+kx.toFixed(1)+'" y="'+(ky+6).toFixed(1)+'" text-anchor="middle" font-size="20" fill="#FFD43B" font-family="inherit">★</text>'
-        +'<text x="'+(kx+11).toFixed(1)+'" y="'+(ky+4).toFixed(1)+'" font-size="12.5" font-weight="800" fill="#FFD43B" font-family="inherit">우리나라</text>');
-      // 제목 칩
-      P.push('<rect x="28" y="0" width="262" height="22" rx="8" fill="rgba(10,30,55,0.85)"/>'
-        +'<text x="40" y="16" font-size="13.5" font-weight="800" fill="#cfe2ff" font-family="inherit">🛰 지금 지구의 지진 · USGS 실시간</text>');
-
-      if(live.status==='ok' && live.list.length){
-        var idx=live.list.map(function(q,i){ return {q:q,i:i}; })
-                         .sort(function(a,b){ return (a.q.mag||0)-(b.q.mag||0); }); // 작은 점부터 그려 큰 점을 위로
-        idx.forEach(function(o){
-          var q=o.q, i=o.i, cx=lon2x(q.lon), cy=lat2y(q.lat), r=magR(q.mag), col=magColor(q.mag);
-          var sel=(i===live.sel), newest=(i===0);
-          if(newest){
-            P.push('<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="none" stroke="'+col+'" stroke-width="2">'
-              +'<animate attributeName="r" from="'+r.toFixed(1)+'" to="'+(r+20).toFixed(1)+'" dur="1.7s" repeatCount="indefinite"/>'
-              +'<animate attributeName="opacity" from="0.85" to="0" dur="1.7s" repeatCount="indefinite"/></circle>');
-          }
-          if(sel) P.push('<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(r+6).toFixed(1)+'" fill="none" stroke="#fff" stroke-width="2.5"/>');
-          P.push('<circle class="live-dot" data-i="'+i+'" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+col+'" fill-opacity="0.82" stroke="#fff" stroke-width="'+(sel?2.5:0.8)+'" style="cursor:pointer"/>');
-        });
-        // 범례
-        P.push('<g transform="translate(40,402)">'
-          +'<text x="0" y="4" font-size="12.5" font-weight="800" fill="#cfe2ff" font-family="inherit">규모</text>'
-          +'<circle cx="44" cy="0" r="'+magR(3).toFixed(1)+'" fill="'+magColor(3)+'"/><text x="56" y="4" font-size="11.5" fill="#9fc0e0" font-family="inherit">작음</text>'
-          +'<circle cx="108" cy="0" r="'+magR(5).toFixed(1)+'" fill="'+magColor(5)+'"/><text x="124" y="4" font-size="11.5" fill="#9fc0e0" font-family="inherit">중간</text>'
-          +'<circle cx="176" cy="0" r="'+magR(6.5).toFixed(1)+'" fill="'+magColor(6.5)+'"/><text x="196" y="4" font-size="11.5" fill="#9fc0e0" font-family="inherit">큼</text></g>');
-      } else if(live.status==='loading'){
-        P.push('<rect x="0" y="0" width="900" height="460" fill="rgba(4,14,28,0.55)"/>'
-          +'<text x="450" y="235" text-anchor="middle" font-size="24" font-weight="800" fill="#cfe2ff" font-family="inherit">🛰 실시간 지진을 불러오는 중…</text>');
-      } else if(live.status==='err'){
-        P.push('<rect x="0" y="0" width="900" height="460" fill="rgba(4,14,28,0.55)"/>'
-          +'<text x="450" y="225" text-anchor="middle" font-size="23" font-weight="800" fill="#FFA8A8" font-family="inherit">지금은 못 불러왔어요</text>'
-          +'<text x="450" y="262" text-anchor="middle" font-size="17" fill="#cfe2ff" font-family="inherit">인터넷 연결을 확인하고 ↻ 새로고침을 눌러 보세요</text>');
-      } else {
-        P.push('<text x="450" y="240" text-anchor="middle" font-size="20" fill="#9fc0e0" font-family="inherit">지구를 둘러보는 중…</text>');
-      }
-      g.innerHTML=P.join('');
-      g.querySelectorAll('.live-dot').forEach(function(c){
-        c.addEventListener('click',function(){ live.sel=+c.dataset.i; renderScene(); renderStatus(); });
-      });
-    }
-
     /* ───────────── 상태줄 ───────────── */
     function renderStatus(){
       var s=el.querySelector('.vc-status'); if(!s)return;
-      if(mode!=='quiz' && exp==='live'){ renderLiveStatus(s); return; }
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp, msg;
       if(pic==='volcano'){
         if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요</span>';
@@ -364,42 +480,11 @@
       }
       s.innerHTML=msg;
     }
-    function shortPlace(p){ p=String(p||''); return p.length>42?p.slice(0,40)+'…':p; }
-    function escapeHtml(t){ return String(t).replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;';}); }
-    function renderLiveStatus(s){
-      if(live.status==='loading'){ s.innerHTML='<span style="color:'+C.sub+';font-size:18px;">🛰 실시간 지진 데이터를 불러오는 중…</span>'; return; }
-      if(live.status==='err'){ s.innerHTML='<span style="color:'+C.hot+';font-size:18px;">데이터를 못 불러왔어요 — ↻ 새로고침을 눌러 보세요.</span>'; return; }
-      if(live.status!=='ok'){ s.innerHTML='<span style="color:'+C.sub+';font-size:18px;">🛰 지금 지구 탭에서 실시간 지진을 봐요.</span>'; return; }
-      var n=live.list.length;
-      if(!n){ s.innerHTML='<span style="color:'+C.sub+';font-size:18px;">이 기간엔 기록된 지진이 없어요. ↻ 새로고침이나 기간을 바꿔 보세요.</span>'; return; }
-      var big=live.list.slice().sort(function(a,b){return b.mag-a.mag;})[0];
-      var html='<div style="font-size:18px;color:'+C.ink+';">🛰 <b>'+FEED_LABEL[live.feed]+'</b> 동안 지구에서 <b style="color:'+C.hot+';">'+n+'번</b>의 지진이 났어요. '
-        +'가장 큰 건 <b style="color:'+C.hot+';">규모 '+big.mag.toFixed(1)+'</b> · '+escapeHtml(shortPlace(big.place))+'.</div>'
-        +'<div style="font-size:14px;color:'+C.sub+';margin-top:3px;">점이 클수록 큰 지진 · 태평양 가장자리(불의 고리)에 자주 몰려요 · USGS 실시간 ('+timeAgo(live.at)+' 업데이트)</div>'
-        +'<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;text-align:left;max-width:560px;margin-left:auto;margin-right:auto;">';
-      var top=live.list.map(function(q,i){return {q:q,i:i};}).sort(function(a,b){return b.q.mag-a.q.mag;}).slice(0,6);
-      top.forEach(function(o){
-        var q=o.q, sel=(o.i===live.sel), col=magColor(q.mag);
-        html+='<div class="live-row" data-i="'+o.i+'" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;border:2px solid '+(sel?C.ink:'#e6edf5')+';background:'+(sel?'#eef4fb':'#fff')+';">'
-          +'<span style="flex:0 0 auto;width:48px;height:32px;border-radius:9px;background:'+col+';color:#1b2733;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;">'+q.mag.toFixed(1)+'</span>'
-          +'<span style="flex:1 1 auto;font-size:14.5px;color:'+C.ink+';font-weight:700;line-height:1.35;">'+escapeHtml(shortPlace(q.place))
-          +'<span style="color:'+C.sub+';font-weight:500;"> · 깊이 '+Math.round(q.depth)+'km · '+timeAgo(q.time)+'</span></span></div>';
-      });
-      html+='</div>';
-      s.innerHTML=html;
-      s.querySelectorAll('.live-row').forEach(function(r){
-        r.onclick=function(){ live.sel=+r.dataset.i; renderScene(); renderStatus(); };
-      });
-    }
 
     /* ───────────── 바인딩 ───────────── */
     function bind(){
       el.querySelectorAll('.vc-exp').forEach(function(b){
-        b.addEventListener('click',function(){
-          exp=b.dataset.e;
-          if(exp==='live' && live.status==='idle'){ loadQuakes(); }
-          else { build(); }
-        });
+        b.addEventListener('click',function(){ exp=b.dataset.e; build(); });
       });
       el.querySelectorAll('.vc-btn').forEach(function(b){
         b.addEventListener('click',function(){
@@ -410,8 +495,6 @@
           else if(a==='volReset'){ volReset(); build(); }
           else if(a==='push')push();
           else if(a==='qkReset'){ qkReset(); build(); }
-          else if(a==='liveRefresh'){ loadQuakes(); }
-          else if(a==='liveFeed'){ live.feed=(live.feed==='2.5_day')?'4.5_week':'2.5_day'; loadQuakes(); }
         });
       });
       el.addEventListener('click',function(ev){
@@ -430,6 +513,6 @@
     }
 
     build();
-    return { destroy:function(){ alive=false; if(raf)cancelAnimationFrame(raf); } };
+    return { destroy:function(){ if(v3d){v3d.dispose();v3d=null;} if(raf)cancelAnimationFrame(raf); } };
   });
 })();
