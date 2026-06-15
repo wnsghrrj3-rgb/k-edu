@@ -211,27 +211,41 @@
         ground.rotation.x=-Math.PI/2; scene.add(ground);
       })();
 
-      // 화산 본체 (매끈한 원뿔 + 옴폭한 분화구)
+      // 화산 본체 (실제 화산 옆모습 LatheGeometry + 바위 질감 + 분화구 발광 균열)
       var volGroup=new T.Group(); scene.add(volGroup);
-      var cone=new T.Mesh(new T.CylinderGeometry(2.0,10,8,48,1), new T.MeshStandardMaterial({color:0x7d6650, roughness:1, metalness:0}));
-      cone.position.y=4; volGroup.add(cone);
-      var skirt=new T.Mesh(new T.CylinderGeometry(10,14.5,2.2,48,1), new T.MeshStandardMaterial({color:0x5d4a3b, roughness:1}));
-      skirt.position.y=1.1; volGroup.add(skirt);
-      // 분화구 안쪽 (어두운 깔때기)
-      var bowl=new T.Mesh(new T.CylinderGeometry(2.0,0.6,1.5,48,1,true), new T.MeshStandardMaterial({color:0x2a201a, roughness:1, side:T.DoubleSide}));
-      bowl.position.y=7.4; volGroup.add(bowl);
+      // 절차적 바위 텍스처
+      function rockTex(){ var c=document.createElement('canvas'); c.width=c.height=512; var g=c.getContext('2d');
+        g.fillStyle='#5b4636'; g.fillRect(0,0,512,512);
+        for(var i=0;i<11000;i++){ var sh=(Math.random()*64-22)|0; g.fillStyle='rgba('+(92+sh)+','+(74+sh*0.8|0)+','+(58+sh*0.7|0)+',0.5)'; g.fillRect(Math.random()*512,Math.random()*512,2,2); }
+        for(var k=0;k<46;k++){ g.strokeStyle='rgba(38,28,22,'+(0.12+Math.random()*0.26)+')'; g.lineWidth=2+Math.random()*5; g.beginPath(); var xx=Math.random()*512; g.moveTo(xx,0); for(var y=0;y<512;y+=14){ xx+=(Math.random()-0.5)*9; g.lineTo(xx,y);} g.stroke(); }
+        var t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(4,2); return t; }
+      // 분화구 둘레 발광 균열 (텍스처 위쪽=정상부)
+      function crackTex(){ var c=document.createElement('canvas'); c.width=c.height=512; var g=c.getContext('2d');
+        g.fillStyle='#000'; g.fillRect(0,0,512,512);
+        for(var k=0;k<26;k++){ var x=Math.random()*512, y=Math.random()*120; g.strokeStyle='rgba(255,'+(80+Math.random()*110|0)+',24,0.95)'; g.lineWidth=2+Math.random()*3; g.beginPath(); g.moveTo(x,y); var xx=x,yy=y, len=70+Math.random()*150; for(var s=0;s<len;s+=9){ xx+=(Math.random()-0.5)*18; yy+=9; g.lineTo(xx,yy);} g.stroke(); }
+        var t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(4,1); return t; }
+      var volMat=new T.MeshStandardMaterial({ map:rockTex(), roughness:1, metalness:0, emissive:0xff4a14, emissiveMap:crackTex(), emissiveIntensity:0, side:T.DoubleSide });
+      // 옆모습: 아래 넓게 퍼지고 위로 오목하게 좁아지다 분화구 함몰
+      var rimY=8.6, baseR=11.5, rimR=2.7;
+      var prof=[];
+      for(var pi=0; pi<=26; pi++){ var t=pi/26; var y=rimY*t; var r=baseR-(baseR-rimR)*Math.pow(t,0.82); prof.push(new T.Vector2(Math.max(0.05,r), y)); }
+      prof.push(new T.Vector2(1.7, rimY-0.5));
+      prof.push(new T.Vector2(0.95, rimY-1.5));
+      prof.push(new T.Vector2(0.5, rimY-1.7));
+      prof.push(new T.Vector2(0.0, rimY-1.7));
+      var volGeo=new T.LatheGeometry(prof, 120);
+      (function(){ var pos=volGeo.attributes.position, v=new T.Vector3();
+        for(var i=0;i<pos.count;i++){ v.fromBufferAttribute(pos,i); var rr=Math.hypot(v.x,v.z);
+          if(rr>0.7 && v.y<rimY-0.3){ var ang=Math.atan2(v.z,v.x);
+            var n=Math.sin(ang*9)*0.5+Math.sin(ang*15+v.y*0.7)*0.32+Math.sin(ang*23)*0.18;
+            var s=(rr+n*0.45)/rr; v.x*=s; v.z*=s; pos.setXYZ(i,v.x,v.y,v.z); } }
+        volGeo.computeVertexNormals();
+      })();
+      var cone=new T.Mesh(volGeo, volMat); volGroup.add(cone);
       var craterGlowMat=new T.MeshBasicMaterial({color:0xff7a1e, transparent:true, opacity:0, side:T.DoubleSide});
-      var craterGlow=new T.Mesh(new T.CircleGeometry(1.4,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=6.75; volGroup.add(craterGlow);
+      var craterGlow=new T.Mesh(new T.CircleGeometry(1.5,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=rimY-1.55; volGroup.add(craterGlow);
       var throatMat=new T.MeshBasicMaterial({color:0xffc24d, transparent:true, opacity:0});
-      var throat=new T.Mesh(new T.SphereGeometry(1.1,20,16), throatMat); throat.position.y=7.0; volGroup.add(throat);
-      var veins=[];
-      for(var vk=0; vk<6; vk++){ var va=vk/6*Math.PI*2;
-        var vm=new T.MeshBasicMaterial({color:0xff5a1e, transparent:true, opacity:0, side:T.DoubleSide});
-        var vmesh=new T.Mesh(new T.PlaneGeometry(1.1,9.2), vm);
-        vmesh.position.set(Math.cos(va)*5.6, 4.0, Math.sin(va)*5.6);
-        vmesh.lookAt(Math.cos(va)*40, -12, Math.sin(va)*40);
-        volGroup.add(vmesh); veins.push(vm);
-      }
+      var throat=new T.Mesh(new T.SphereGeometry(1.1,20,16), throatMat); throat.position.y=rimY-1.2; volGroup.add(throat);
 
       // 파티클
       function sprite(col){ var c=document.createElement('canvas'); c.width=c.height=64; var g=c.getContext('2d');
@@ -251,19 +265,19 @@
       var gas =makeSys(110, sprite('rgba(225,230,240,0.7)'), T.NormalBlending, 4.6);
 
       function spawnLava(p){ var a=Math.random()*Math.PI*2, out=0.4+Math.random()*0.8;
-        p.x=Math.cos(a)*0.3*Math.random(); p.y=7.3+Math.random()*0.3; p.z=Math.sin(a)*0.3*Math.random();
-        p.vx=Math.cos(a)*out; p.vz=Math.sin(a)*out; p.vy=7.0+Math.random()*5.0; p.life=p.max=1.0+Math.random()*0.9; }
+        p.x=Math.cos(a)*0.3*Math.random(); p.y=6.9+Math.random()*0.3; p.z=Math.sin(a)*0.3*Math.random();
+        p.vx=Math.cos(a)*out; p.vz=Math.sin(a)*out; p.vy=7.4+Math.random()*5.2; p.life=p.max=1.0+Math.random()*0.9; }
       // 경사면을 타고 흘러내리는 용암 줄기 — 분화구 가장자리에서 비탈 따라 아래로
       var FLOWCH=[0.5,2.1,3.7,5.3];
       function spawnFlow(p){ var a=FLOWCH[(Math.random()*FLOWCH.length)|0]+(Math.random()-0.5)*0.16;
-        p.x=Math.cos(a)*2.0; p.y=7.4; p.z=Math.sin(a)*2.0;
-        var sp=2.0+Math.random()*1.1;
-        p.vx=Math.cos(a)*sp; p.vz=Math.sin(a)*sp; p.vy=-sp*0.98; p.life=p.max=3.4+Math.random()*1.2; }
+        p.x=Math.cos(a)*2.7; p.y=7.9; p.z=Math.sin(a)*2.7;
+        var sp=2.1+Math.random()*1.1;
+        p.vx=Math.cos(a)*sp; p.vz=Math.sin(a)*sp; p.vy=-sp*0.92; p.life=p.max=3.4+Math.random()*1.2; }
       function spawnAsh(p){ var a=Math.random()*Math.PI*2, rr=Math.random()*0.6;
-        p.x=Math.cos(a)*rr; p.y=8.0+Math.random()*0.6; p.z=Math.sin(a)*rr;
+        p.x=Math.cos(a)*rr; p.y=8.6+Math.random()*0.6; p.z=Math.sin(a)*rr;
         p.vx=Math.cos(a)*(0.3+Math.random()*0.7); p.vz=Math.sin(a)*(0.3+Math.random()*0.7); p.vy=2.6+Math.random()*1.8; p.life=p.max=3.0+Math.random()*2.2; }
       function spawnGas(p){ var a=Math.random()*Math.PI*2;
-        p.x=Math.cos(a)*0.4*Math.random(); p.y=7.6+Math.random()*0.4; p.z=Math.sin(a)*0.4*Math.random();
+        p.x=Math.cos(a)*0.4*Math.random(); p.y=8.0+Math.random()*0.4; p.z=Math.sin(a)*0.4*Math.random();
         p.vx=Math.cos(a)*0.5; p.vz=Math.sin(a)*0.5; p.vy=3.2+Math.random()*1.6; p.life=p.max=1.6+Math.random()*1.2; }
       function emit(sys, count, spawn){ var got=0; for(var i=0;i<sys.n && got<count;i++){ if(sys.P[i].life<=0){ spawn(sys.P[i]); got++; } } }
 
@@ -345,9 +359,9 @@
         var thT=S.erupting?1:S.press/150; throatMat.opacity+=(thT-throatMat.opacity)*Math.min(1,dt*6);
         var cgT=S.erupting?0.9:S.press/200; craterGlowMat.opacity+=(cgT-craterGlowMat.opacity)*Math.min(1,dt*6);
         throat.scale.setScalar(0.8+gI*0.15);
-        var vColor = S.made&&S.made.basalt?0x4a4a52 : (S.made&&S.made.granite?0xd8c7b0 : 0xff5a1e);
-        var vT=S.erupting?(cooled?0.6:0.85):0;
-        veins.forEach(function(m){ m.color.setHex(vColor); m.opacity+=(vT-m.opacity)*Math.min(1,dt*5); });
+        // 바위 틈으로 비치는 용암 발광 (압력↑→은은, 분출→강하게, 식으면 약하게)
+        var eT=S.erupting?(cooled?0.5:2.3):(S.press/100)*1.3;
+        volMat.emissiveIntensity+=(eT-volMat.emissiveIntensity)*Math.min(1,dt*4);
         // 흔들림
         var trembling=(!S.erupting&&S.press>=60)|| (S.erupting&&!cooled);
         shake=trembling?Math.min(0.18,shake+dt*0.4):Math.max(0,shake-dt*0.6);
