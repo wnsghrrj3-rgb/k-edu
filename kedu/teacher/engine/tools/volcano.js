@@ -318,7 +318,7 @@
         var mat=new T.PointsMaterial({size:size, map:tex, blending:blend, transparent:true, depthWrite:false, vertexColors:true, sizeAttenuation:true});
         var pts=new T.Points(geo,mat); pts.frustumCulled=false; scene.add(pts);
         var P=[]; for(var i=0;i<n;i++){ P.push({life:0,max:1,vx:0,vy:0,vz:0,x:0,y:0,z:0,r:0,g:0,b:0}); pos[i*3]=pos[i*3+1]=pos[i*3+2]=NaN; }
-        return {n:n,P:P,pos:pos,col:col,geo:geo,mat:mat};
+        return {n:n,P:P,pos:pos,col:col,geo:geo,mat:mat,pts:pts};
       }
       var lava=makeSys(260, sprite('rgba(255,225,140,1)'), T.AdditiveBlending, 2.6);
       var flow=makeSys(340, sprite('rgba(255,205,110,1)'), T.AdditiveBlending, 3.4);
