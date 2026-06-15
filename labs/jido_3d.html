@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>케이랩 사회 · 3D 지도 (브이월드)</title>
+<style>
+  html,body{ margin:0; height:100%; overflow:hidden; font-family:'Jua','Apple SD Gothic Neo',sans-serif; background:#cfe3f2; }
+  #vmap{ position:absolute; inset:0; }
+  #msg{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:10;
+        background:#fff3cd; color:#7a5e1f; border:1px solid #ffe08a; border-radius:12px;
+        padding:7px 14px; font-size:13px; font-weight:800; max-width:92%; text-align:center; }
+</style>
+<!-- 정석: 3D 로더는 head에 정적으로. (동적 주입 시 document.write 막혀 vw 미정의) -->
+<script type="text/javascript" src="https://map.vworld.kr/js/webglMapInit.js.do?version=2.0&apiKey=7ED25FC8-DA7D-331F-AA7F-B4B7B901BCD1&domain=keduclass.com"></script>
+</head>
+<body>
+<div id="msg">3D 불러오는 중…</div>
+<div id="vmap"></div>
+<script type="text/javascript">
+(function(){
+  var msg=document.getElementById('msg');
+  var p=new URLSearchParams(location.search);
+  var lng=parseFloat(p.get('lng'))||127.5106, lat=parseFloat(p.get('lat'))||37.8315;  // 기본=가평
+  function start(){
+    try{
+      if(typeof vw==='undefined' || !vw.Map){ msg.textContent='vw 미정의 — 키의 3D 권한/도메인(keduclass.com) 확인'; return; }
+      var opt = new vw.MapOptions(
+        vw.BasemapType.GRAPHIC, '',
+        vw.DensityType.BASIC, vw.DensityType.BASIC, false,
+        new vw.CameraPosition(new vw.CoordZ(lng, lat, 1500000), new vw.Direction(-90, 0, 0)), // 홈
+        new vw.CameraPosition(new vw.CoordZ(lng, lat, 7000),    new vw.Direction(0, -52, 0))  // 시작(오블리크)
+      );
+      new vw.Map('vmap', opt);
+      msg.textContent='🧊 드래그로 둘러보기 · 휠로 확대 (전국 블록 건물, 대도시는 실사)';
+      setTimeout(function(){ msg.style.display='none'; }, 4500);
+    }catch(e){ msg.textContent='3D 초기화 실패: '+(e&&e.message||'키/도메인 확인'); }
+  }
+  if(document.readyState==='complete') start();
+  else window.addEventListener('load', start);
+})();
+</script>
+</body>
+</html>

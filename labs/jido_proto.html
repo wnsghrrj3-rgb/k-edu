@@ -232,31 +232,15 @@
   }
   function clearMarks(){ marks.forEach(function(m){ map.removeLayer(m); }); marks=[]; }
 
-  // ── 3D: 브이월드 WebGL 3D API (대도시 실사 + 그 외 항공 지형). v2.0 생성자 방식 + domain 명시 ──
+  // ── 3D: 별도 페이지(jido_3d.html)를 iframe으로. 로더 정적 head 박이가 정석이라 분리 ──
   function build3D(){
-    if(threeReady) return;
-    var dom = location.hostname || 'keduclass.com';
-    var s=document.createElement('script');
-    s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=2.0&apiKey='+KEY+'&domain='+encodeURIComponent(dom);
-    s.onload=function(){
-      setTimeout(function(){
-      try{
-        if(typeof vw==='undefined' || !vw.Map){ banner('3D 실패: 스크립트는 받았지만 vw 미정의 — 키의 3D권한/도메인 거부 가능성'); return; }
-        var opt = new vw.MapOptions(
-          vw.BasemapType.GRAPHIC, '',
-          vw.DensityType.BASIC, vw.DensityType.BASIC, false,
-          new vw.CameraPosition(new vw.CoordZ(127.5106, 37.8315, 1200000), new vw.Direction(-90, 0, 0)),
-          new vw.CameraPosition(new vw.CoordZ(127.5106, 37.8315, 8000),    new vw.Direction(0, -55, 0))
-        );
-        new vw.Map('map3d', opt);
-        threeReady=true;
-        banner('🧊 드래그로 둘러보기 · 휠로 확대 · 대도시일수록 실사 건물');
-        setTimeout(function(){ banner(''); }, 4500);
-      }catch(e){ banner('3D 초기화 실패: '+(e&&e.message||'키/도메인 확인')); }
-      }, 300);
-    };
-    s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키/도메인 확인'); };
-    document.body.appendChild(s);
+    var host=$('#map3d');
+    var c = map ? map.getCenter() : { lat:37.8315, lng:127.5106 };
+    var src = 'jido_3d.html?lat='+c.lat.toFixed(5)+'&lng='+c.lng.toFixed(5);
+    var f = host.querySelector('iframe');
+    if(!f){ f=document.createElement('iframe'); f.style.cssText='width:100%;height:100%;border:0;display:block;'; host.appendChild(f); }
+    f.src = src;   // 2D에서 보던 동네로 3D 진입
+    threeReady=true; banner('');
   }
 
   function go(m){
