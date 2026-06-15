@@ -50,6 +50,7 @@
   /* 백지도 모드 */
   #blankveil{ display:none; }
   .leaflet-container{ background:#ffffff !important; }
+  .kl-blankbase{ filter:grayscale(100%) brightness(1.12) contrast(0.9) opacity(0.5); }
   .palette{ position:absolute; left:10px; right:10px; bottom:10px; z-index:600; background:rgba(255,255,255,.97);
             border:1px solid var(--line); border-radius:16px; padding:8px; box-shadow:0 2px 10px rgba(0,0,0,.12); }
   .prow{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
@@ -163,6 +164,12 @@
     return L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/'+KEY+'/'+name+'/{z}/{y}/{x}.'+(ext||'png'),
       { attribution:ATTR, maxZoom:19, minZoom:6, errorTileUrl:'' });
   }
+  // 행정구역 경계 WMS(이미지 타일 → CORS 없음). 소문자 레이어명.
+  function vwWMS(layer, cls){
+    return L.tileLayer.wms('https://api.vworld.kr/req/wms?key='+KEY+'&domain='+encodeURIComponent(location.hostname||'keduclass.com'),
+      { layers:layer, styles:layer, format:'image/png', transparent:true, version:'1.3.0', uppercase:true,
+        attribution:ATTR, className:(cls||'') });
+  }
   function banner(msg){ var b=$('#banner'); if(!msg){b.style.display='none';return;} b.textContent=msg; b.style.display='block'; }
 
   function buildMap(){
@@ -171,7 +178,11 @@
     layers.base = vwLayer('Base');             // 기호 지도(국가 약속 기호) — png
     layers.sat  = vwLayer('Satellite','jpeg'); // 실제 모습(항공/위성) — jpeg(중요)
     layers.hyb  = vwLayer('Hybrid');           // 위성 위 라벨 — png
-    layers.gray = vwLayer('gray');             // 백지도(회색 외곽 위주) — png
+    // 백지도용: 흐린 회색 바탕(도로·강 골격) + 행정구역 경계(또렷)
+    layers.blankbase = L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/'+KEY+'/Base/{z}/{y}/{x}.png',
+      { attribution:ATTR, maxZoom:19, minZoom:6, className:'kl-blankbase' });
+    layers.admSigg = vwWMS('lt_c_adsigg');     // 시군구 경계
+    layers.admEmd  = vwWMS('lt_c_ademd');      // 읍면동 경계(동네 단위)
     layers.base.addTo(map);
     map.on('click', onMapClick);               // 백지도 모드에서 기호 찍기
     // 타일 실패 → 폴백 안내
@@ -187,9 +198,9 @@
 
   function setBase(which){
     if(!map) return;
-    [layers.base,layers.sat,layers.hyb,layers.gray].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
+    [layers.base,layers.sat,layers.hyb,layers.blankbase,layers.admSigg,layers.admEmd].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
     if(which==='sat'){ layers.sat.addTo(map); layers.hyb.addTo(map); $('#btnReal').classList.add('on'); $('#btnSym').classList.remove('on'); }
-    else if(which==='gray'){ layers.gray.addTo(map); layers.gray.setOpacity(0.85); }
+    else if(which==='gray'){ layers.blankbase.addTo(map); layers.admSigg.addTo(map); layers.admEmd.addTo(map); } // 백지도: 흐린 골격 + 행정구역 경계
     else { layers.base.addTo(map); $('#btnSym').classList.add('on'); $('#btnReal').classList.remove('on'); }
   }
 
