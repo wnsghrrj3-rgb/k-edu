@@ -166,7 +166,7 @@
 
       host.style.position = 'relative';
       var wrap = document.createElement('div');
-      wrap.style.cssText = 'position:absolute;inset:0;overflow:hidden;background:#06070f;';
+      wrap.style.cssText = 'position:absolute;inset:0;overflow:hidden;background:#23306a;';
       host.appendChild(wrap);
 
       var renderer = new T.WebGLRenderer({ antialias:true });
@@ -182,7 +182,7 @@
       (function(){
         var c=document.createElement('canvas'); c.width=16; c.height=256; var g=c.getContext('2d');
         var grd=g.createLinearGradient(0,0,0,256);
-        grd.addColorStop(0,'#06070f'); grd.addColorStop(.45,'#16123a'); grd.addColorStop(.72,'#3c1e52'); grd.addColorStop(.88,'#7c2c3c'); grd.addColorStop(1,'#c2461f');
+        grd.addColorStop(0,'#1c2c60'); grd.addColorStop(.4,'#3c3a76'); grd.addColorStop(.68,'#71406a'); grd.addColorStop(.86,'#b65c4c'); grd.addColorStop(1,'#e89a54');
         g.fillStyle=grd; g.fillRect(0,0,16,256);
         var sky=new T.Mesh(new T.SphereGeometry(900,32,24), new T.MeshBasicMaterial({map:new T.CanvasTexture(c), side:T.BackSide, depthWrite:false}));
         scene.add(sky);
@@ -196,9 +196,10 @@
         scene.add(new T.Points(gg, new T.PointsMaterial({color:0xffffff, size:1.7, sizeAttenuation:false, transparent:true, opacity:.85})));
       })();
       // 조명
-      var amb=new T.AmbientLight(0x2a3552, .75); scene.add(amb);
-      var moon=new T.DirectionalLight(0x9fb6ff, .55); moon.position.set(-30,46,22); scene.add(moon);
-      var glow=new T.PointLight(0xff5a1e, 0, 140, 2); glow.position.set(0,10,0); scene.add(glow);
+      var amb=new T.AmbientLight(0x4a5578, 1.2); scene.add(amb);
+      var hemi=new T.HemisphereLight(0xbfd0ff, 0x4a3a2c, 0.95); scene.add(hemi);
+      var moon=new T.DirectionalLight(0xcfe0ff, 1.15); moon.position.set(-30,46,22); scene.add(moon);
+      var glow=new T.PointLight(0xff5a1e, 0, 140, 2); glow.position.set(0,8,0); scene.add(glow);
 
       // 지면
       (function(){
@@ -210,22 +211,25 @@
         ground.rotation.x=-Math.PI/2; scene.add(ground);
       })();
 
-      // 화산 본체
+      // 화산 본체 (매끈한 원뿔 + 옴폭한 분화구)
       var volGroup=new T.Group(); scene.add(volGroup);
-      var cone=new T.Mesh(new T.CylinderGeometry(2.2,9,9,7,1), new T.MeshStandardMaterial({color:0x4a3a30, roughness:1, metalness:0, flatShading:true}));
-      cone.position.y=4.5; volGroup.add(cone);
-      var skirt=new T.Mesh(new T.CylinderGeometry(9,13,2.6,7,1), new T.MeshStandardMaterial({color:0x352a23, roughness:1, flatShading:true}));
-      skirt.position.y=1.3; volGroup.add(skirt);
+      var cone=new T.Mesh(new T.CylinderGeometry(2.0,10,8,48,1), new T.MeshStandardMaterial({color:0x7d6650, roughness:1, metalness:0}));
+      cone.position.y=4; volGroup.add(cone);
+      var skirt=new T.Mesh(new T.CylinderGeometry(10,14.5,2.2,48,1), new T.MeshStandardMaterial({color:0x5d4a3b, roughness:1}));
+      skirt.position.y=1.1; volGroup.add(skirt);
+      // 분화구 안쪽 (어두운 깔때기)
+      var bowl=new T.Mesh(new T.CylinderGeometry(2.0,0.6,1.5,48,1,true), new T.MeshStandardMaterial({color:0x2a201a, roughness:1, side:T.DoubleSide}));
+      bowl.position.y=7.4; volGroup.add(bowl);
       var craterGlowMat=new T.MeshBasicMaterial({color:0xff7a1e, transparent:true, opacity:0, side:T.DoubleSide});
-      var craterGlow=new T.Mesh(new T.CircleGeometry(2.0,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=9.05; volGroup.add(craterGlow);
+      var craterGlow=new T.Mesh(new T.CircleGeometry(1.4,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=6.75; volGroup.add(craterGlow);
       var throatMat=new T.MeshBasicMaterial({color:0xffc24d, transparent:true, opacity:0});
-      var throat=new T.Mesh(new T.SphereGeometry(1.5,20,16), throatMat); throat.position.y=8.7; volGroup.add(throat);
+      var throat=new T.Mesh(new T.SphereGeometry(1.1,20,16), throatMat); throat.position.y=7.0; volGroup.add(throat);
       var veins=[];
       for(var vk=0; vk<6; vk++){ var va=vk/6*Math.PI*2;
         var vm=new T.MeshBasicMaterial({color:0xff5a1e, transparent:true, opacity:0, side:T.DoubleSide});
-        var vmesh=new T.Mesh(new T.PlaneGeometry(0.9,8.4), vm);
-        vmesh.position.set(Math.cos(va)*3.3, 4.7, Math.sin(va)*3.3);
-        vmesh.lookAt(Math.cos(va)*60, -6, Math.sin(va)*60);
+        var vmesh=new T.Mesh(new T.PlaneGeometry(1.1,9.2), vm);
+        vmesh.position.set(Math.cos(va)*5.6, 4.0, Math.sin(va)*5.6);
+        vmesh.lookAt(Math.cos(va)*40, -12, Math.sin(va)*40);
         volGroup.add(vmesh); veins.push(vm);
       }
 
@@ -242,18 +246,25 @@
         return {n:n,P:P,pos:pos,col:col,geo:geo,mat:mat};
       }
       var lava=makeSys(260, sprite('rgba(255,225,140,1)'), T.AdditiveBlending, 2.6);
+      var flow=makeSys(240, sprite('rgba(255,205,110,1)'), T.AdditiveBlending, 3.0);
       var ash =makeSys(180, sprite('rgba(120,112,108,0.95)'), T.NormalBlending, 6.0);
       var gas =makeSys(110, sprite('rgba(225,230,240,0.7)'), T.NormalBlending, 4.6);
 
       function spawnLava(p){ var a=Math.random()*Math.PI*2, out=0.4+Math.random()*0.8;
-        p.x=Math.cos(a)*0.3*Math.random(); p.y=8.5+Math.random()*0.3; p.z=Math.sin(a)*0.3*Math.random();
-        p.vx=Math.cos(a)*out; p.vz=Math.sin(a)*out; p.vy=7.5+Math.random()*5.5; p.life=p.max=1.0+Math.random()*0.9; }
+        p.x=Math.cos(a)*0.3*Math.random(); p.y=7.3+Math.random()*0.3; p.z=Math.sin(a)*0.3*Math.random();
+        p.vx=Math.cos(a)*out; p.vz=Math.sin(a)*out; p.vy=7.0+Math.random()*5.0; p.life=p.max=1.0+Math.random()*0.9; }
+      // 경사면을 타고 흘러내리는 용암 줄기 — 분화구 가장자리에서 비탈 따라 아래로
+      var FLOWCH=[0.5,2.1,3.7,5.3];
+      function spawnFlow(p){ var a=FLOWCH[(Math.random()*FLOWCH.length)|0]+(Math.random()-0.5)*0.16;
+        p.x=Math.cos(a)*2.0; p.y=7.4; p.z=Math.sin(a)*2.0;
+        var sp=2.0+Math.random()*1.1;
+        p.vx=Math.cos(a)*sp; p.vz=Math.sin(a)*sp; p.vy=-sp*0.98; p.life=p.max=3.4+Math.random()*1.2; }
       function spawnAsh(p){ var a=Math.random()*Math.PI*2, rr=Math.random()*0.6;
-        p.x=Math.cos(a)*rr; p.y=9.2+Math.random()*0.6; p.z=Math.sin(a)*rr;
+        p.x=Math.cos(a)*rr; p.y=8.0+Math.random()*0.6; p.z=Math.sin(a)*rr;
         p.vx=Math.cos(a)*(0.3+Math.random()*0.7); p.vz=Math.sin(a)*(0.3+Math.random()*0.7); p.vy=2.6+Math.random()*1.8; p.life=p.max=3.0+Math.random()*2.2; }
       function spawnGas(p){ var a=Math.random()*Math.PI*2;
-        p.x=Math.cos(a)*0.4*Math.random(); p.y=8.8+Math.random()*0.4; p.z=Math.sin(a)*0.4*Math.random();
-        p.vx=Math.cos(a)*0.5; p.vz=Math.sin(a)*0.5; p.vy=3.4+Math.random()*1.6; p.life=p.max=1.6+Math.random()*1.2; }
+        p.x=Math.cos(a)*0.4*Math.random(); p.y=7.6+Math.random()*0.4; p.z=Math.sin(a)*0.4*Math.random();
+        p.vx=Math.cos(a)*0.5; p.vz=Math.sin(a)*0.5; p.vy=3.2+Math.random()*1.6; p.life=p.max=1.6+Math.random()*1.2; }
       function emit(sys, count, spawn){ var got=0; for(var i=0;i<sys.n && got<count;i++){ if(sys.P[i].life<=0){ spawn(sys.P[i]); got++; } } }
 
       function stepSys(sys, dt, grav, fade){
@@ -273,6 +284,7 @@
         q.r=1; q.g=Math.max(0.12, 0.95-age*0.85); q.b=Math.max(0.04, 0.6-age*0.85); }
       function ashFade(q,f){ var s=0.32+(1-f)*0.18; q.r=s*0.95; q.g=s*0.9; q.b=s*0.86; }
       function gasFade(q,f){ var s=0.75*f+0.1; q.r=s; q.g=s*1.02; q.b=s*1.06; }
+      function flowFade(q,f){ var age=1-f; q.r=1; q.g=Math.max(0.16,0.82-age*0.7); q.b=Math.max(0.04,0.32-age*0.32); }
 
       // 분출물 라벨 칩(클릭)
       var chipBox=document.createElement('div');
@@ -297,7 +309,7 @@
       }
 
       // 카메라 궤도
-      var radius=42, theta=0.6, phi=1.12, target=new T.Vector3(0,5,0);
+      var radius=38, theta=0.6, phi=1.05, target=new T.Vector3(0,4.5,0);
       function place(){ camera.position.set(
         target.x+radius*Math.sin(phi)*Math.sin(theta),
         target.y+radius*Math.cos(phi),
@@ -341,9 +353,11 @@
         shake=trembling?Math.min(0.18,shake+dt*0.4):Math.max(0,shake-dt*0.6);
         volGroup.position.x=(Math.random()-0.5)*shake; volGroup.position.z=(Math.random()-0.5)*shake;
         // 방출
-        if(strength>0){ emit(lava, Math.round(8*strength), spawnLava); emit(ash, Math.round(4*strength), spawnAsh); emit(gas, Math.round(3*strength), spawnGas); }
+        var flowing=S.erupting && !cooled;
+        if(strength>0){ emit(lava, Math.round(7*strength), spawnLava); emit(ash, Math.round(4*strength), spawnAsh); emit(gas, Math.round(3*strength), spawnGas); }
         else if(S.press>0){ if(Math.random()<0.5) emit(gas,1,spawnGas); }
-        stepSys(lava,dt,16,lavaFade); stepSys(ash,dt,1.0,ashFade); stepSys(gas,dt,1.4,gasFade);
+        if(flowing){ emit(flow, 6, spawnFlow); }
+        stepSys(lava,dt,16,lavaFade); stepSys(flow,dt,2.2,flowFade); stepSys(ash,dt,1.0,ashFade); stepSys(gas,dt,1.4,gasFade);
         renderer.render(scene,camera);
       }
       loop();
