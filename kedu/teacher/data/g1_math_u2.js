@@ -30,8 +30,9 @@
   {id:"s08",stage:"전개",block:"compare",data:{title:"같은 자리, 다른 모양",items:[{ten_frame:0,num:0,caption:"📦 **상자**\n네모난 휴지"},{ten_frame:0,num:0,caption:"같은 휴지인데",is_anchor:true},{ten_frame:0,num:0,caption:"🥫 **기둥**\n두루마리 휴지"}]},suggested_extras:["m_same_use_diff_shape","x_shape_only"]},
 
   // ===== 기본 (3) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"교실에서 상자 모양 찾기",question:"우리 교실 안에서\n**상자 모양**을 찾아봐요.\n어떤 물건이 있을까요?"},suggested_extras:["a_find_box","r_box_in_class"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"기둥 모양과 공 모양도",question:"이번에는 **기둥 모양**과 **공 모양**도\n찾아봐요.\n각각 무엇이 있나요?"},suggested_extras:["a_find_cylinder","a_find_sphere"]},
+  {id:"s09",stage:"기본문제",block:"advanced_problem",data:{title:"교실에서 상자 모양 찾기",challenge:"우리 교실 안에서\n**상자 모양**을 찾아봐요.\n어떤 물건이 있을까요?",note:"열린 활동이에요. 상자 모양 예 — 필통·지우개·우유갑·책·서랍. 평평한 면이 여러 개여서 잘 쌓이고 굴러가지 않아요."},suggested_extras:["a_find_box","r_box_in_class"]},
+  {id:"s10",stage:"기본문제",block:"advanced_problem",data:{title:"기둥 모양과 공 모양도",challenge:"이번에는 **기둥 모양**과 **공 모양**도\n찾아봐요.\n각각 무엇이 있나요?",note:"열린 활동. 기둥 예 — 연필·물컵·딱풀·음료 캔. 공 예 — 공·구슬·방울토마토. 기둥은 눕히면 옆으로만, 공은 어디로든 굴러가요."},suggested_extras:["a_find_cylinder","a_find_sphere"]},
+  {id:"s10b",stage:"전개",block:"misconception",data:{title:"조심해요 — 굴러가는 모양",label:"오개념 주의",wrong:"둥근 데가 있으면 모두 공 모양이야",right:"기둥 모양도 둥근 데가 있지만 **눕혀야 옆으로만** 굴러가요.\n공 모양은 **어디로든** 굴러가요.",hint:"세워서 쌓이면 기둥, 어느 쪽으로도 잘 구르면 공."},suggested_extras:[]},
   {id:"s11",stage:"기본문제",block:"question",data:{title:"친구와 같은 답일까요?",content:"내가 찾은 물건과\n친구가 찾은 물건이 **같을 수도 있고 다를 수도 있어요**.\n둘 다 맞아요. 함께 이야기해 봐요."},suggested_extras:["a_pair_share","m_many_answers"]},
 
   // ===== 응용 (4) =====
@@ -101,9 +102,9 @@
   {id:"s08",stage:"전개",block:"misconception",data:{title:"조심해요 — 모양 이름 짓기",label:"오개념 주의",wrong:"\"빨간 모양\"·\"큰 모양\"으로 이름 짓기",right:"색깔·크기·쓰임이 아닌\n**모양의 특징**으로 이름을 지어요.\n(예: 상자 모양 · 사물함 모양 · 지우개 모양)",hint:"모양을 보면 떠오르는 물건으로 이름 짓기"},suggested_extras:["m_name_from_shape","a_class_naming"]},
 
   // ===== 기본 (4) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"교실에서 세 모양 찾기",question:"우리 교실 안에서\n세 가지 모양을 각각 한 가지씩 찾아 봐요.\n어떤 물건이 있나요?"},suggested_extras:["r_classroom_three","a_find_each"]},
+  {id:"s09",stage:"기본문제",block:"advanced_problem",data:{title:"교실에서 세 모양 찾기",challenge:"우리 교실 안에서\n세 가지 모양을 각각 한 가지씩 찾아 봐요.\n어떤 물건이 있나요?",note:"열린 활동. 상자(책·필통)·기둥(풀·물컵)·공(공·구슬)을 하나씩. 같은 모양끼리 모으는 눈을 길러 주세요."},suggested_extras:["r_classroom_three","a_find_each"]},
   {id:"s10",stage:"기본문제",block:"card_arrange",data:{title:"같은 모양끼리 통에 담기",instruction:"카드를 드래그해서 **같은 모양 통**에 담아 보세요",cards:["책","공","두루마리 휴지","필통","구슬","연필꽂이"],target:["상자","상자","기둥","공","공","기둥"]},suggested_extras:["a_drag_classify"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"4지선다 — 어떤 모양?",question:"**두루마리 휴지**는 어떤 모양일까요?\n① 상자 모양\n② 기둥 모양\n③ 공 모양\n④ 알 수 없어요"},suggested_extras:["m_answer_cylinder"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"4지선다 — 어떤 모양?",question:"**두루마리 휴지**는 어떤 모양일까요?\n① 상자 모양\n② 기둥 모양\n③ 공 모양\n④ 알 수 없어요",answer:"② 기둥 모양",note:"두루마리 휴지는 위아래가 둥글고 옆은 평평 — 기둥 모양. 세우면 쌓이고 눕히면 굴러가요."},suggested_extras:["m_answer_cylinder"]},
   {id:"s12",stage:"기본문제",block:"question",data:{title:"이 모양은 무엇과 닮았을까?",content:"📦 상자 모양 → 지우개? 사물함?\n🥫 기둥 모양 → 딱풀? 깡통?\n⚽ 공 모양 → 공? 사탕? 구슬?\n우리 반만의 **모양 이름**을 함께 정해 봐요."},suggested_extras:["a_class_naming","m_naming_rule"]},
 
   // ===== 응용 (3) =====
@@ -172,9 +173,9 @@
   {id:"s08",stage:"전개",block:"misconception",data:{title:"조심해요 — 기둥은 두 가지 성질",label:"오개념 주의",wrong:"기둥 모양은 쌓기·굴리기 둘 다 못해요",right:"기둥은 **두 가지 성질**을 가졌어요.\n**세우면** 쌓기 / **눕히면** 굴리기\n방향에 따라 달라져요!",hint:"두루마리 휴지를 세워 보고 눕혀 봐요"},suggested_extras:["m_cylinder_both","r_tissue_test"]},
 
   // ===== 기본 (4) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"이 모양은 무엇일까?",question:"\"뾰족한 곳이 있어요.\n평평한 곳도 있어요.\n쌓을 수 있어요.\n굴러가지 않아요.\"\n어떤 모양일까요?"},suggested_extras:["m_clue_box"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"이 모양도 맞혀 봐요",question:"\"둥근 곳만 있어요.\n쌓을 수 없어요.\n어디로든 잘 굴러가요.\"\n어떤 모양일까요?"},suggested_extras:["m_clue_sphere"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더 — 어떤 모양?",question:"\"평평한 곳도 있고\n둥근 곳도 있어요.\n세우면 쌓을 수 있어요.\n옆으로 굴러가요.\"\n어떤 모양일까요?"},suggested_extras:["m_clue_cylinder"]},
+  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"이 모양은 무엇일까?",question:"\"뾰족한 곳이 있어요.\n평평한 곳도 있어요.\n쌓을 수 있어요.\n굴러가지 않아요.\"\n어떤 모양일까요?",answer:"상자 모양",note:"뾰족한 꼭짓점·평평한 면·잘 쌓임·안 굴러감 → 상자 모양."},suggested_extras:["m_clue_box"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"이 모양도 맞혀 봐요",question:"\"둥근 곳만 있어요.\n쌓을 수 없어요.\n어디로든 잘 굴러가요.\"\n어떤 모양일까요?",answer:"공 모양",note:"둥근 면만 있고 쌓을 수 없고 어디로든 굴러가요 → 공 모양."},suggested_extras:["m_clue_sphere"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더 — 어떤 모양?",question:"\"평평한 곳도 있고\n둥근 곳도 있어요.\n세우면 쌓을 수 있어요.\n옆으로 굴러가요.\"\n어떤 모양일까요?",answer:"기둥 모양",note:"평평한 면과 둥근 면, 세우면 쌓이고 눕히면 옆으로 굴러가요 → 기둥 모양."},suggested_extras:["m_clue_cylinder"]},
   {id:"s12",stage:"기본문제",block:"card_arrange",data:{title:"쌓기·굴리기 결과 짝짓기",instruction:"각 모양에 맞는 **결과**를 짝지어 봐요",cards:["📦","🥫(세움)","🥫(눕힘)","⚽"],target:["여러 방향 쌓기","한 방향 쌓기","옆으로 굴러감","어디로든 굴러감"]},suggested_extras:["a_result_match"]},
 
   // ===== 응용 (3) =====
@@ -241,8 +242,8 @@
 
   // ===== 기본 (4) =====
   {id:"s09",stage:"기본문제",block:"card_arrange",data:{title:"놀이 기구 — 모양 짝짓기",instruction:"각 놀이 기구에 어울리는 **모양**을 짝지어 봐요",cards:["시소 받침대","미끄럼틀 지붕","둥근 회전판","계단"],target:["기둥","상자","공","상자"]},suggested_extras:["m_match_help"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"4지선다",question:"**그네 좌석**으로 가장 어울리는 모양은?\n① 📦 상자 모양\n② 🥫 기둥 모양\n③ ⚽ 공 모양\n④ 아무 모양이나 다 좋아요"},suggested_extras:["m_answer_box"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더",question:"**축구공**으로 어울리는 모양은?\n어떤 모양이어야\n잘 굴러가서 차고 놀 수 있을까요?"},suggested_extras:["m_answer_sphere"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"4지선다",question:"**그네 좌석**으로 가장 어울리는 모양은?\n① 📦 상자 모양\n② 🥫 기둥 모양\n③ ⚽ 공 모양\n④ 아무 모양이나 다 좋아요",answer:"① 상자 모양",note:"그네 좌석은 평평해야 안정적 — 평평한 면이 있는 상자 모양이 어울려요."},suggested_extras:["m_answer_box"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더",question:"**축구공**으로 어울리는 모양은?\n어떤 모양이어야\n잘 굴러가서 차고 놀 수 있을까요?",answer:"공 모양",note:"어디로든 잘 굴러가야 차고 놀 수 있어요 → 공 모양."},suggested_extras:["m_answer_sphere"]},
   {id:"s12",stage:"기본문제",block:"offline_activity",data:{title:"우리만의 놀이터 그리기",tag:"공책에 그려요",icon:"✏️",body:"공책 한 페이지를 우리만의 놀이터로!\n**세 모양을 모두 사용**해서\n새로운 놀이 기구를 **두 개 이상** 그려요.\n옆에 어떤 모양을 썼는지 적어요.",materials:"공책 · 색연필"},suggested_extras:["a_drawing_tip"]},
 
   // ===== 응용 (3) =====
@@ -309,9 +310,9 @@
 
   // ===== 기본 (4) =====
   {id:"s09",stage:"기본문제",block:"card_arrange",data:{title:"색 코딩 — 어느 색으로 ○?",instruction:"각 물건에 어울리는 **색**을 골라 봐요",cards:["선물 상자","저금통","농구공","수납장"],target:["연두","분홍","노랑","연두"]},suggested_extras:["m_color_check"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"이 둘은 짝일까요?",question:"**딱풀**과 **두루마리 휴지**.\n짝일까요, 아닐까요?\n어떤 모양일까요?"},suggested_extras:["m_yes_pair_cylinder"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"이 둘도 짝일까요?",question:"**도시락**과 **농구공**.\n짝일까요, 아닐까요?\n왜 그렇게 생각해요?"},suggested_extras:["m_no_pair"]},
-  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"공통점·차이점",question:"**딱풀**과 **약병**은 어떤 점이 **같은가요**?\n**딱풀**과 **수납장**은 어떻게 **다른가요**?"},suggested_extras:["m_compare_pair","a_class_discussion"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"이 둘은 짝일까요?",question:"**딱풀**과 **두루마리 휴지**.\n짝일까요, 아닐까요?\n어떤 모양일까요?",answer:"짝이에요 — 둘 다 기둥 모양",note:"딱풀도 두루마리 휴지도 기둥 모양이라 한 짝."},suggested_extras:["m_yes_pair_cylinder"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"이 둘도 짝일까요?",question:"**도시락**과 **농구공**.\n짝일까요, 아닐까요?\n왜 그렇게 생각해요?",answer:"짝이 아니에요 — 도시락은 상자 모양, 농구공은 공 모양",note:"모양이 서로 달라요. 도시락은 평평한 면, 농구공은 둥근 면."},suggested_extras:["m_no_pair"]},
+  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"공통점·차이점",question:"**딱풀**과 **약병**은 어떤 점이 **같은가요**?\n**딱풀**과 **수납장**은 어떻게 **다른가요**?",answers:["딱풀·약병 = 둘 다 기둥 모양 (같아요)","딱풀·수납장 = 기둥과 상자 (달라요)"],note:"같은 점은 모양이 같음, 다른 점은 모양이 다름으로 설명하게 해요."},suggested_extras:["m_compare_pair","a_class_discussion"]},
 
   // ===== 응용 (3) =====
   {id:"s13",stage:"응용문제",block:"game",data:{title:"전체 메모리 게임 — 도전!",steps:["12장 카드 모두 뒤집어 놓기","한 명씩 차례로 두 장 뒤집기","같은 모양이면 가져가기","다르면 다시 뒤집어 놓기","카드가 다 없어질 때까지!"]},suggested_extras:["g_memory_full","m_full_game"]},
@@ -369,10 +370,11 @@
   {id:"s03",stage:"도입",block:"motivate",data:{scene_title:"함께 생활해요 점검",kids:[{face:"📦",label:"상자 ?칸"},{face:"🥫",label:"기둥 ?칸"},{face:"⚽",label:"공 ?칸"}],question:"지난 차시 동안 모은 색칠 칸을 세어 봐요.\n어떤 모양을 가장 많이 찾았나요?"},suggested_extras:["a_count_color","m_practice_check"]},
 
   // ===== 전개 (5) — 문항 4개 + 평가 안내 =====
-  {id:"s04",stage:"전개",block:"basic_problem",data:{title:"문항 ❶ — 분류해 봐요",question:"빨간 모양 · 수박 · 음료 캔 · 공 · 분홍 상자\n다섯 가지를\n**상자 · 기둥 · 공**으로 분류해 봐요."},suggested_extras:["m_classify_check","r_5items"]},
-  {id:"s05",stage:"전개",block:"basic_problem",data:{title:"문항 ❷ — 단서로 맞히기",question:"\"뾰족한 부분이 있고\n쉽게 쌓을 수 있어요\"\n축구공? 딱풀? 분홍 상자?"},suggested_extras:["m_clue_answer","x_no_clue_round"]},
-  {id:"s06",stage:"전개",block:"basic_problem",data:{title:"문항 ❸ — 같은 모양 짝짓기",question:"6개 사물을 보고\n같은 모양끼리 짝지어 봐요.\n어떻게 알 수 있을까요?"},suggested_extras:["m_match_method"]},
-  {id:"s07",stage:"전개",block:"basic_problem",data:{title:"문항 ❹ — 색으로 표시",question:"놀이터 그림에 있는 모양들을\n**색**으로 표시해 봐요.\n📦 연두 · 🥫 분홍 · ⚽ 노랑"},suggested_extras:["m_color_recall","r_playground_again"]},
+  {id:"s04",stage:"전개",block:"basic_problem",data:{title:"문항 ❶ — 분류해 봐요",question:"빨간 모양 · 수박 · 음료 캔 · 공 · 분홍 상자\n다섯 가지를\n**상자 · 기둥 · 공**으로 분류해 봐요.",answer:"음료 캔 → 기둥 · 수박·공 → 공 · 분홍 상자 → 상자 (빨간 모양은 생김새대로)",note:"굴러가는지·쌓이는지·평평한 면 유무로 묶어요."},suggested_extras:["m_classify_check","r_5items"]},
+  {id:"s05",stage:"전개",block:"basic_problem",data:{title:"문항 ❷ — 단서로 맞히기",question:"\"뾰족한 부분이 있고\n쉽게 쌓을 수 있어요\"\n축구공? 딱풀? 분홍 상자?",answer:"분홍 상자 (상자 모양)",note:"뾰족한 꼭짓점이 있고 잘 쌓이는 건 상자 모양 → 분홍 상자."},suggested_extras:["m_clue_answer","x_no_clue_round"]},
+  {id:"s06",stage:"전개",block:"basic_problem",data:{title:"문항 ❸ — 같은 모양 짝짓기",question:"6개 사물을 보고\n같은 모양끼리 짝지어 봐요.\n어떻게 알 수 있을까요?",answer:"굴러가는 모양·쌓이는 모양·평평한 면으로 같은 모양끼리 묶어요",note:"정답 짝은 그림 구성에 따라 달라요. 판단 기준(굴림·쌓임·면)을 말로 설명하는 게 핵심."},suggested_extras:["m_match_method"]},
+  {id:"s07",stage:"전개",block:"basic_problem",data:{title:"문항 ❹ — 색으로 표시",question:"놀이터 그림에 있는 모양들을\n**색**으로 표시해 봐요.\n📦 연두 · 🥫 분홍 · ⚽ 노랑",answer:"상자 모양 = 연두 · 기둥 모양 = 분홍 · 공 모양 = 노랑으로 생김새대로 칠해요",note:"미끄럼틀 기둥·그네 줄은 기둥, 모래통은 상자, 공은 공처럼 모양을 보고 색을 정해요."},suggested_extras:["m_color_recall","r_playground_again"]},
+  {id:"s07b",stage:"전개",block:"misconception",data:{title:"조심해요 — 모양 가르기",label:"오개념 주의",wrong:"세울 수 있으면 다 상자 모양이야",right:"기둥 모양도 세우면 쌓여요. **평평한 면 개수**와 **굴러가는지**를 함께 봐야 해요.\n상자는 안 구르고, 기둥은 눕히면 굴러요.",hint:"쌓임만 보지 말고 굴림도 함께 확인."},suggested_extras:[]},
   {id:"s08",stage:"전개",block:"question",data:{title:"풀이를 다시 보기",content:"답을 다 적었나요?\n빠진 답은 없나요?\n친구 답과 비교하지 말고\n**내가 푼 것**을 차분히 봐요."},suggested_extras:["m_review_own_test"]},
 
   // ===== 기본 (4) — 짝 검토 + 자기 평가 3 =====
@@ -444,8 +446,8 @@
   // ===== 기본 (4) =====
   {id:"s09",stage:"기본문제",block:"question",data:{title:"무엇을 만들까?",content:"우리 학교에 있는 물건 중\n무엇을 만들고 싶나요?\n어떤 모양들이 필요할까요?\n어떤 재활용품을 쓸까요?"},suggested_extras:["q_fun_what_make","m_plan_first"]},
   {id:"s10",stage:"기본문제",block:"offline_activity",data:{title:"만들기 시작",tag:"창작 시간 20분",icon:"🎨",body:"재활용품을 꺼내요.\n**상자·기둥·공** 모양에 맞게\n자르고 · 붙이고 · 꽂아요.\n친구 따라하지 말고\n**내 생각대로** 만들어요.",materials:"재활용품 · 가위 · 풀 · 테이프"},suggested_extras:["a_safe_scissors","m_take_time"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"4지선다 — 친구가 만든 것",question:"\"📦 상자 상판 + 🥫 빨대 다리로 만들었어요.\n도서관에서 사용해요.\"\n무엇일까요?\n① 책상 ② 의자 ③ 문 ④ 사물함"},suggested_extras:["m_clue_table"]},
-  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더",question:"\"📦 상자 판 + ⚽ 구슬 손잡이로 만들었어요.\n화장실에서 사용해요.\"\n무엇일까요?\n① 창문 ② 문 ③ 거울 ④ 수도꼭지"},suggested_extras:["m_clue_door"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"4지선다 — 친구가 만든 것",question:"\"📦 상자 상판 + 🥫 빨대 다리로 만들었어요.\n도서관에서 사용해요.\"\n무엇일까요?\n① 책상 ② 의자 ③ 문 ④ 사물함",answer:"① 책상",note:"상자 상판 + 기둥 다리, 도서관에서 쓰는 것 → 책상."},suggested_extras:["m_clue_table"]},
+  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"한 가지 더",question:"\"📦 상자 판 + ⚽ 구슬 손잡이로 만들었어요.\n화장실에서 사용해요.\"\n무엇일까요?\n① 창문 ② 문 ③ 거울 ④ 수도꼭지",answer:"② 문",note:"상자 판 + 공 모양 손잡이, 화장실에서 쓰는 것 → 문."},suggested_extras:["m_clue_door"]},
 
   // ===== 응용 (3) =====
   {id:"s13",stage:"응용문제",block:"question",data:{title:"내가 만든 것 소개하기",content:"\"저는 📦 상자 ___개, 🥫 기둥 ___개,\n⚽ 공 ___개를 사용했어요.\n저는 ___을(를) 만들었어요.\n이 물건은 학교의 ___에서 사용해요.\"\n친구들에게 소개해 봐요."},suggested_extras:["a_self_intro2","m_intro_template"]},
