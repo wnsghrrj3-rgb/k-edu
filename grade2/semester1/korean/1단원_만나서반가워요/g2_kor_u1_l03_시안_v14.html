@@ -42,7 +42,8 @@ body{font-family:var(--f-body); background:var(--paper); color:var(--ink); -webk
 .dot.done{background:var(--teal);}
 .score{font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px);}
 
-.stage{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:clamp(20px,4vh,48px) clamp(20px,5vw,64px) clamp(96px,12vh,120px); overflow-y:auto;}
+.stage{flex:1; display:flex; flex-direction:column; overflow-y:auto; padding:0 clamp(20px,5vw,64px);}
+.stage-inner{margin:auto; width:100%; display:flex; flex-direction:column; align-items:center; text-align:center; padding:clamp(24px,5vh,56px) 0 clamp(100px,13vh,128px);}
 .eyebrow{font-family:var(--f-title); color:var(--coral); font-size:clamp(16px,2.2vw,24px); letter-spacing:.5px; margin-bottom:10px; animation:fadeUp .4s ease both;}
 .eyebrow.teal{color:var(--teal);}
 h2.t{font-family:var(--f-title); font-size:clamp(30px,5vw,58px); line-height:1.18; color:var(--ink); margin-bottom:clamp(16px,3vh,30px); font-weight:400; animation:fadeUp .4s .1s ease both;}
@@ -83,7 +84,10 @@ h2.t{font-family:var(--f-title); font-size:clamp(30px,5vw,58px); line-height:1.1
 .mcard .mnum{font-family:var(--f-title); color:var(--teal); font-size:clamp(20px,2.6vw,30px); margin-bottom:clamp(7px,1.2vh,12px);}
 .mcard .mtext{font-size:clamp(18px,2.3vw,28px); line-height:1.5; color:var(--ink);}
 .mcard .mtext b{font-family:var(--f-title); font-weight:400; color:var(--ink);}
-.mcard .mhint{position:absolute; left:0; right:0; bottom:0; top:clamp(46px,7vh,62px); display:flex; align-items:center; justify-content:center; background:#fff; border-radius:0 0 20px 20px; font-family:var(--f-title); color:var(--ink-soft); font-size:clamp(18px,2.3vw,26px); transition:opacity .3s;}
+.mcard .mhint{position:absolute; inset:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:clamp(6px,1vh,10px); background:#fff; border-radius:20px; padding:0 clamp(20px,2.8vw,34px); transition:opacity .3s;}
+.mcard .mhint .mhn{font-family:var(--f-title); color:var(--teal); font-size:clamp(20px,2.6vw,30px);}
+.mcard .mhint .mho{font-family:var(--f-title); color:var(--ink-soft); font-size:clamp(17px,2.2vw,25px);}
+.mcard.open .mhint{opacity:0; pointer-events:none;}
 .mcard.open{border-color:var(--coral); box-shadow:0 6px 0 var(--coral);}
 .mcard.open .mhint{opacity:0; pointer-events:none;}
 
@@ -169,10 +173,10 @@ const slides=[
   // ④ 방법 — 클릭해서 하나씩 뒤집기
   {eb:'② 지키는 방법', ebc:'teal', t:'카드를 눌러서 하나씩 알아봐요',
    html:`<div class="mgrid">
-      <div class="mcard"><div class="mnum">방법 1</div><div class="mtext">친구가 말할 때는 <b>끝까지 들어요.</b><span class="mhint">눌러서 열기 👆</span></div></div>
-      <div class="mcard"><div class="mnum">방법 2</div><div class="mtext">먼저 말을 시작한 사람에게 <b><span class="mc">말차례</span>가 있어요.</b><span class="mhint">눌러서 열기 👆</span></div></div>
-      <div class="mcard"><div class="mnum">방법 3</div><div class="mtext">하고 싶은 말이 있으면 <b>손을 들고 기다려요.</b><span class="mhint">눌러서 열기 👆</span></div></div>
-      <div class="mcard"><div class="mnum">방법 4</div><div class="mtext">눈짓이나 말로 <b>확인하고</b> <span class="mc">말차례</span>를 가져와요.<span class="mhint">눌러서 열기 👆</span></div></div>
+      <div class="mcard"><div class="mnum">방법 1</div><div class="mtext">친구가 말할 때는 <b>끝까지 들어요.</b></div><div class="mhint"><span class="mhn">방법 1</span><span class="mho">눌러서 열기 👆</span></div></div>
+      <div class="mcard"><div class="mnum">방법 2</div><div class="mtext">먼저 말을 시작한 사람에게 <b><span class="mc">말차례</span>가 있어요.</b></div><div class="mhint"><span class="mhn">방법 2</span><span class="mho">눌러서 열기 👆</span></div></div>
+      <div class="mcard"><div class="mnum">방법 3</div><div class="mtext">하고 싶은 말이 있으면 <b>손을 들고 기다려요.</b></div><div class="mhint"><span class="mhn">방법 3</span><span class="mho">눌러서 열기 👆</span></div></div>
+      <div class="mcard"><div class="mnum">방법 4</div><div class="mtext">눈짓이나 말로 <b>확인하고</b> <span class="mc">말차례</span>를 가져와요.</div><div class="mhint"><span class="mhn">방법 4</span><span class="mho">눌러서 열기 👆</span></div></div>
     </div>`},
 
   {eb:'② 함께 생각해요', ebc:'teal', log:true, correct:'O', t:'이 친구는 <span class="mc">말차례</span>를 지켰나요?',
@@ -225,7 +229,7 @@ const dots=[...dotsWrap.children];
 
 function render(){
   const s=slides[cur];
-  stage.innerHTML=`<div class="eyebrow ${s.ebc||''}">${s.eb}</div><h2 class="t">${s.t}</h2>${s.html}`;
+  stage.innerHTML=`<div class="stage-inner"><div class="eyebrow ${s.ebc||''}">${s.eb}</div><h2 class="t">${s.t}</h2>${s.html}</div>`;
   dots.forEach((d,i)=>{ d.classList.toggle('active',i===cur); d.classList.toggle('done',i<cur); });
   prevB.disabled=cur===0; nextB.textContent=cur===slides.length-1?'끝 ✓':'다음 ▷';
   if(cur===slides.length-1){ if(window.kedu&&window.kedu.recordLessonEnd) window.kedu.recordLessonEnd(score, LESSON_MAX); }
