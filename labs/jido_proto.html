@@ -23,6 +23,8 @@
   .keybar{ position:absolute; left:10px; right:10px; bottom:10px; z-index:600; display:flex; gap:8px;
            background:rgba(255,255,255,.94); border:1px solid var(--line); border-radius:14px; padding:8px; align-items:center; }
   .keybar input{ flex:1; min-width:0; padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; font-family:inherit; font-size:14px; }
+  #searchbar{ top:10px; bottom:auto; left:10px; right:84px; }
+  #ctlSymbol{ top:58px; }
   .keybar button{ padding:8px 12px; border-radius:10px; border:2px solid var(--blue); background:var(--blue); color:#fff;
                   font-family:inherit; font-weight:800; cursor:pointer; white-space:nowrap; }
   .ctl{ position:absolute; z-index:600; display:flex; gap:8px; flex-wrap:wrap; }
@@ -106,9 +108,8 @@
       <div class="it">🧭 위쪽 = 북</div>
     </div>
 
-    <!-- 모드2: 진짜 동네 검색 -->
     <div class="keybar hide" id="searchbar">
-      <input id="addr" placeholder="우리 학교/동네 주소 (예: 가평초등학교)"/>
+      <input id="addr" placeholder="🔍 우리 동네/학교 검색 (예: 가평초등학교, 춘천시청)"/>
       <button id="goAddr">찾기</button>
     </div>
 
@@ -188,7 +189,7 @@
     if(!map) return;
     [layers.base,layers.sat,layers.hyb,layers.gray].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
     if(which==='sat'){ layers.sat.addTo(map); layers.hyb.addTo(map); $('#btnReal').classList.add('on'); $('#btnSym').classList.remove('on'); }
-    else if(which==='gray'){ layers.gray.addTo(map); layers.gray.setOpacity(0.4); }
+    else if(which==='gray'){ layers.gray.addTo(map); layers.gray.setOpacity(0.85); }
     else { layers.base.addTo(map); $('#btnSym').classList.add('on'); $('#btnReal').classList.remove('on'); }
   }
 
@@ -238,7 +239,9 @@
     var s=document.createElement('script');
     s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=2.0&apiKey='+KEY+'&domain='+encodeURIComponent(dom);
     s.onload=function(){
+      setTimeout(function(){
       try{
+        if(typeof vw==='undefined' || !vw.Map){ banner('3D 실패: 스크립트는 받았지만 vw 미정의 — 키의 3D권한/도메인 거부 가능성'); return; }
         var opt = new vw.MapOptions(
           vw.BasemapType.GRAPHIC, '',
           vw.DensityType.BASIC, vw.DensityType.BASIC, false,
@@ -250,6 +253,7 @@
         banner('🧊 드래그로 둘러보기 · 휠로 확대 · 대도시일수록 실사 건물');
         setTimeout(function(){ banner(''); }, 4500);
       }catch(e){ banner('3D 초기화 실패: '+(e&&e.message||'키/도메인 확인')); }
+      }, 300);
     };
     s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키/도메인 확인'); };
     document.body.appendChild(s);
@@ -261,8 +265,8 @@
     // 공통 토글
     $('#ctlSymbol').classList.toggle('hide', m!=='symbol');
     $('#legend').classList.toggle('hide', true); $('#legend').style.display='none'; $('#btnLeg').classList.remove('on');
-    $('#searchbar').classList.toggle('hide', !(m==='real'||m==='blank'));   // 검색: 동네·백지도에서
-    $('#preset').classList.toggle('hide', m==='d3');
+    $('#searchbar').classList.toggle('hide', m==='d3');                    // 검색: 3D 빼고 항상
+    $('#preset').classList.toggle('hide', !(m==='symbol'||m==='real'));    // 프리셋: 기호·동네에서만
     $('#compass').classList.toggle('hide', m==='d3');
     $('#palette').classList.toggle('hide', m!=='blank');
 
@@ -273,9 +277,9 @@
     } else {
       $('#map3d').classList.add('hide'); $('#map').classList.remove('hide'); $('#fallback').style.display='none';
       if(!map) buildMap();
-      if(m==='real'){ setBase('symbol'); layers.hyb.addTo(map); }   // 동네: 국가 기호지도 + 라벨 + 검색
-      else if(m==='blank'){ setBase('gray'); buildPalette(); }      // 백지도: 회색 외곽 + 흰 베일 + 기호 팔레트
-      else { setBase('symbol'); }                                   // 기호: Base에서 시작, 항공 토글
+      if(m==='real'){ setBase('sat'); }            // 동네 = 실제 항공사진 기본(모드1 기호와 구분)
+      else if(m==='blank'){ setBase('gray'); buildPalette(); }   // 백지도: 회색 골격(도로·강·테두리) + 기호 찍기
+      else { setBase('symbol'); }                  // 기호 = Base 기호지도에서 시작, 항공 토글
       setTimeout(function(){ map.invalidateSize(); }, 50);
     }
   }
