@@ -35,6 +35,7 @@
     function resetAll(){ exp='volcano'; volReset(); qkReset(); }
     resetAll();
     var v3d=null; // 3D 화산 무대 컨트롤러
+    var cutView=false; // 단면 보기 토글
 
     function pump(){
       if(vol.erupting){ ui.toast(el,false,'이미 분출 중이에요! ↺ 새 화산으로'); return; }
@@ -126,7 +127,8 @@
           +'<button class="vc-btn" data-act="pump" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 압력 키우기</button>'
           +'<button class="vc-btn" data-act="basalt" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:'+C.basalt:'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">🪨 빨리 식히기 → 현무암</button>'
           +'<button class="vc-btn" data-act="granite" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:#C9A227':'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">💎 천천히 식히기 → 화강암</button>'
-          +'<button class="vc-btn" data-act="volReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 화산</button></div>';
+          +'<button class="vc-btn" data-act="volReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 화산</button>'
+          +'<button class="vc-btn" data-act="toggleCut" style="'+btn+'background:#fff;color:#1565C0;border-color:#1565C0;">'+(cutView?'🌋 겉 보기':'🪓 단면 보기')+'</button></div>';
       }
       return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         +'<button class="vc-btn" data-act="push" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">➡️ 힘 가하기</button>'
@@ -162,7 +164,7 @@
       function CW(){ return host.clientWidth || 800; }
       function CH(){ return host.clientHeight || 480; }
       var alive3 = true, raf3 = null, last = performance.now();
-      var S = { press:0, erupting:false, seen:{}, made:{} };
+      var S = { press:0, erupting:false, seen:{}, made:{}, cut:false };
 
       host.style.position = 'relative';
       var wrap = document.createElement('div');
@@ -247,6 +249,65 @@
       var throatMat=new T.MeshBasicMaterial({color:0xffc24d, transparent:true, opacity:0});
       var throat=new T.Mesh(new T.SphereGeometry(1.1,20,16), throatMat); throat.position.y=rimY-1.2; volGroup.add(throat);
 
+      // ───── 단면(cutaway): 산을 반으로 잘라 속을 보기 ─────
+      var cutGroup=new T.Group(); cutGroup.visible=false; scene.add(cutGroup);
+      var DEPTH=4.6, frontZ=DEPTH/2, UG=9; // UG: 지하 깊이
+      function slopeX(t){ return baseR-(baseR-rimR)*Math.pow(t,0.82); }
+      var magChamber, magHalo, conduit, craterPool, graniteMesh, basaltMesh, bubbles;
+      (function(){
+        // 1) 흙·바위 슬래브 (전체 폭 산 + 지하)
+        var sh=new T.Shape(); var N=26;
+        sh.moveTo(-baseR,-UG); sh.lineTo(-baseR,0);
+        for(var i=N;i>=0;i--){ var t=i/N; sh.lineTo(-slopeX(t), rimY*t); }
+        sh.lineTo(0, rimY-1.6);
+        for(var j=0;j<=N;j++){ var t2=j/N; sh.lineTo(slopeX(t2), rimY*t2); }
+        sh.lineTo(baseR,0); sh.lineTo(baseR,-UG); sh.lineTo(-baseR,-UG);
+        var geo=new T.ExtrudeGeometry(sh,{depth:DEPTH, bevelEnabled:false}); geo.translate(0,0,-frontZ);
+        var faceMat=new T.MeshStandardMaterial({color:0x6a5341, roughness:1, metalness:0});
+        var sideMat=new T.MeshStandardMaterial({color:0x46372a, roughness:1});
+        cutGroup.add(new T.Mesh(geo,[faceMat,sideMat]));
+        // 2) 지층 띠 (지하)
+        var bandCol=[0x5c4636,0x715844,0x52402f,0x66503c];
+        for(var b=0;b<5;b++){ var y=-1.2-b*1.7;
+          var band=new T.Mesh(new T.PlaneGeometry(baseR*2-0.3, 1.2), new T.MeshStandardMaterial({color:bandCol[b%4], roughness:1}));
+          band.position.set(0,y,frontZ+0.02); cutGroup.add(band); }
+        // 3) 마그마방 (발광 덩어리 + 후광)
+        var halo=new T.Mesh(new T.PlaneGeometry(11,8), new T.MeshBasicMaterial({map:sprite('rgba(255,120,30,0.9)'), blending:T.AdditiveBlending, transparent:true, depthWrite:false}));
+        halo.position.set(0,-5.4,frontZ+0.05); cutGroup.add(halo); magHalo=halo;
+        var ch=new T.Mesh(new T.SphereGeometry(2.6,24,18), new T.MeshBasicMaterial({color:0xff5418}));
+        ch.scale.set(1.5,0.85,0.5); ch.position.set(0,-5.4,frontZ+0.12); cutGroup.add(ch); magChamber=ch;
+        // 4) 마그마 통로
+        var cd=new T.Mesh(new T.PlaneGeometry(1.0, (rimY-1.4)-(-4.6)), new T.MeshBasicMaterial({color:0xff6a22, transparent:true, opacity:0.95}));
+        cd.position.set(0, ((rimY-1.4)+(-4.6))/2, frontZ+0.1); cutGroup.add(cd); conduit=cd;
+        // 5) 분화구 용암 못
+        var cp=new T.Mesh(new T.CircleGeometry(1.5,24), new T.MeshBasicMaterial({color:0xffae3d, transparent:true, opacity:0.5}));
+        cp.position.set(0, rimY-1.4, frontZ+0.14); cutGroup.add(cp); craterPool=cp;
+        // 6) 상승 거품 (마그마 → 통로)
+        bubbles=makeSys(40, sprite('rgba(255,210,120,1)'), T.AdditiveBlending, 1.6); bubbles.pts.visible=false;
+        // 7) 화강암 (땅속에서 천천히 식음) — 평소 숨김
+        var gtx=document.createElement('canvas'); gtx.width=gtx.height=64; var gg=gtx.getContext('2d');
+        gg.fillStyle='#d8c7b0'; gg.fillRect(0,0,64,64);
+        for(var s=0;s<260;s++){ gg.fillStyle=(Math.random()<0.5?'#b6a085':'#efe3cf'); gg.fillRect(Math.random()*64,Math.random()*64,3,3); }
+        graniteMesh=new T.Mesh(new T.SphereGeometry(1.5,18,14), new T.MeshStandardMaterial({map:new T.CanvasTexture(gtx), roughness:1}));
+        graniteMesh.scale.set(1.2,0.9,0.5); graniteMesh.position.set(3.4,-5.2,frontZ+0.13); graniteMesh.visible=false; cutGroup.add(graniteMesh);
+        // 8) 현무암 (지표에서 빨리 식음) — 평소 숨김
+        var btx=document.createElement('canvas'); btx.width=btx.height=64; var bg=btx.getContext('2d');
+        bg.fillStyle='#2f2d33'; bg.fillRect(0,0,64,64);
+        for(var s2=0;s2<200;s2++){ bg.fillStyle='rgba(10,10,12,0.7)'; bg.beginPath(); bg.arc(Math.random()*64,Math.random()*64,Math.random()*2,0,7); bg.fill(); }
+        basaltMesh=new T.Mesh(new T.PlaneGeometry(4.2,2.4), new T.MeshStandardMaterial({map:new T.CanvasTexture(btx), roughness:1}));
+        basaltMesh.position.set(3.6,4.0,frontZ+0.1); basaltMesh.rotation.z=-0.5; basaltMesh.visible=false; cutGroup.add(basaltMesh);
+      })();
+      function spawnBubble(p){ p.x=(Math.random()-0.5)*1.2; p.y=-5.2+Math.random()*0.8; p.z=frontZ+0.13;
+        p.vx=(Math.random()-0.5)*0.2; p.vz=0; p.vy=1.2+Math.random()*0.8; p.life=p.max=(rimY+4)/1.4; }
+      function bubbleFade(q,f){ q.r=1; q.g=0.7*f+0.2; q.b=0.15; }
+      // 단면 라벨(클릭 불가, 안내)
+      var cutLabels=[];
+      function mkLabel(text,color){ var d=document.createElement('div');
+        d.style.cssText='position:absolute;pointer-events:none;font-family:inherit;font-weight:800;font-size:13px;padding:4px 9px;border-radius:9px;background:rgba(8,12,26,.78);white-space:nowrap;transform:translate(-50%,-50%);display:none;color:'+color+';border:1.5px solid '+color+';';
+        d.innerHTML=text; chipBox.appendChild(d); return d; }
+      // anchor[3], el, condition fn
+      var LBL=[];
+
       // 파티클
       function sprite(col){ var c=document.createElement('canvas'); c.width=c.height=64; var g=c.getContext('2d');
         var rg=g.createRadialGradient(32,32,0,32,32,32); rg.addColorStop(0,col); rg.addColorStop(.4,col); rg.addColorStop(1,'rgba(0,0,0,0)');
@@ -260,7 +321,7 @@
         return {n:n,P:P,pos:pos,col:col,geo:geo,mat:mat};
       }
       var lava=makeSys(260, sprite('rgba(255,225,140,1)'), T.AdditiveBlending, 2.6);
-      var flow=makeSys(240, sprite('rgba(255,205,110,1)'), T.AdditiveBlending, 3.0);
+      var flow=makeSys(340, sprite('rgba(255,205,110,1)'), T.AdditiveBlending, 3.4);
       var ash =makeSys(180, sprite('rgba(120,112,108,0.95)'), T.NormalBlending, 6.0);
       var gas =makeSys(110, sprite('rgba(225,230,240,0.7)'), T.NormalBlending, 4.6);
 
@@ -281,13 +342,13 @@
         p.vx=Math.cos(a)*0.5; p.vz=Math.sin(a)*0.5; p.vy=3.2+Math.random()*1.6; p.life=p.max=1.6+Math.random()*1.2; }
       function emit(sys, count, spawn){ var got=0; for(var i=0;i<sys.n && got<count;i++){ if(sys.P[i].life<=0){ spawn(sys.P[i]); got++; } } }
 
-      function stepSys(sys, dt, grav, fade){
+      function stepSys(sys, dt, grav, fade, noGround){
         var P=sys.P, pos=sys.pos, col=sys.col;
         for(var i=0;i<sys.n;i++){ var q=P[i];
           if(q.life>0){
             q.vy-=grav*dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.z+=q.vz*dt; q.life-=dt;
             var f=q.life/q.max; fade(q,f);
-            if(q.y<0){ q.life=0; }
+            if(!noGround && q.y<0){ q.life=0; }
           }
           if(q.life<=0){ pos[i*3]=pos[i*3+1]=pos[i*3+2]=NaN; col[i*3]=col[i*3+1]=col[i*3+2]=0; }
           else { pos[i*3]=q.x; pos[i*3+1]=q.y; pos[i*3+2]=q.z; col[i*3]=q.r; col[i*3+1]=q.g; col[i*3+2]=q.b; }
@@ -296,7 +357,9 @@
       }
       function lavaFade(q,f){ var age=1-f; // 0 어림 → 1 늙음
         q.r=1; q.g=Math.max(0.12, 0.95-age*0.85); q.b=Math.max(0.04, 0.6-age*0.85); }
-      function ashFade(q,f){ var s=0.32+(1-f)*0.18; q.r=s*0.95; q.g=s*0.9; q.b=s*0.86; }
+      function ashFade(q,f){ var s=0.34+(1-f)*0.16; q.r=s*0.95; q.g=s*0.9; q.b=s*0.86;
+        // 버섯구름: 높이 오르면 위 속도를 줄이고 옆으로 번짐
+        if(q.y>12){ q.vy*=0.95; q.vx*=1.03; q.vz*=1.03; } }
       function gasFade(q,f){ var s=0.75*f+0.1; q.r=s; q.g=s*1.02; q.b=s*1.06; }
       function flowFade(q,f){ var age=1-f; q.r=1; q.g=Math.max(0.16,0.82-age*0.7); q.b=Math.max(0.04,0.32-age*0.32); }
 
@@ -320,6 +383,25 @@
           var base=b===chipLava?'🔥 용암':b===chipAsh?'🌫️ 화산재':'💨 화산 가스';
           b.innerHTML=base+(seen?' ✓':''); b.style.opacity=seen?'0.75':'1';
         });
+      }
+
+      // 단면 안내 라벨 (단면 모드에서 3D 위치에 따라다님)
+      var labMag=mkLabel('🔴 마그마방','#FF8A5C');
+      var labCon=mkLabel('↑ 마그마 통로','#FFB266');
+      var labCra=mkLabel('분화구','#FFD8A8');
+      var labBas=mkLabel('현무암<br><span style="font-weight:600;font-size:10.5px;">밖에서 빨리 식음 · 어둡고 작은 알갱이</span>','#CED4DA');
+      var labGra=mkLabel('화강암<br><span style="font-weight:600;font-size:10.5px;">땅속에서 천천히 식음 · 밝고 큰 알갱이</span>','#E9D8C8');
+      var _pv=new T.Vector3();
+      function projectLabels(){
+        var on=S.cut;
+        var list=[[labMag,0,-5.4,true],[labCon,0,1.2,true],[labCra,0,rimY-1.0,true],
+                  [labBas,4.0,4.4,!!(S.made&&S.made.basalt)],[labGra,3.4,-5.2,!!(S.made&&S.made.granite)]];
+        for(var i=0;i<list.length;i++){ var o=list[i], lab=o[0];
+          if(!on||!o[3]){ lab.style.display='none'; continue; }
+          _pv.set(o[1],o[2],frontZ).project(camera);
+          if(_pv.z>1){ lab.style.display='none'; continue; }
+          lab.style.left=((_pv.x*0.5+0.5)*CW())+'px'; lab.style.top=((-_pv.y*0.5+0.5)*CH())+'px'; lab.style.display='';
+        }
       }
 
       // 카메라 궤도
@@ -350,7 +432,7 @@
       var gI=0, shake=0;
       function loop(){ if(!alive3)return; raf3=requestAnimationFrame(loop);
         var now=performance.now(), dt=Math.min(0.05,(now-last)/1000); last=now;
-        if(!drag){ idle+=dt; if(idle>1.2){ theta+=dt*0.08; place(); } }
+        if(!drag && !S.cut){ idle+=dt; if(idle>1.2){ theta+=dt*0.08; place(); } }
         var cooled=!!(S.made&&(S.made.basalt||S.made.granite));
         var strength=S.erupting?(cooled?0.18:1):0;
         // 발광
@@ -370,14 +452,36 @@
         var flowing=S.erupting && !cooled;
         if(strength>0){ emit(lava, Math.round(7*strength), spawnLava); emit(ash, Math.round(4*strength), spawnAsh); emit(gas, Math.round(3*strength), spawnGas); }
         else if(S.press>0){ if(Math.random()<0.5) emit(gas,1,spawnGas); }
-        if(flowing){ emit(flow, 6, spawnFlow); }
+        if(flowing){ emit(flow, 11, spawnFlow); }
         stepSys(lava,dt,16,lavaFade); stepSys(flow,dt,2.2,flowFade); stepSys(ash,dt,1.0,ashFade); stepSys(gas,dt,1.4,gasFade);
+        // 단면 모드
+        if(S.cut){
+          volGroup.visible=false; cutGroup.visible=true;
+          var pulse=0.93+Math.sin(now*0.004)*0.06+gI*0.04;
+          magChamber.scale.set(1.5*pulse,0.85*pulse,0.5);
+          magChamber.material.color.setRGB(1, 0.30+0.12*(0.5+0.5*Math.sin(now*0.006)), 0.09);
+          magHalo.material.opacity=0.45+0.32*(S.press/100)+(S.erupting?0.18:0);
+          magHalo.scale.setScalar(0.9+0.12*Math.sin(now*0.003));
+          conduit.material.opacity=0.45+0.5*(S.erupting?1:S.press/100);
+          craterPool.material.opacity=S.erupting?1:Math.min(1,0.3+S.press/150);
+          graniteMesh.visible=!!(S.made&&S.made.granite);
+          basaltMesh.visible=!!(S.made&&S.made.basalt);
+          if(S.press>0||S.erupting){ if(Math.random()<0.4) emit(bubbles,1,spawnBubble); }
+          bubbles.pts.visible=true; stepSys(bubbles,dt,0,bubbleFade,true);
+        } else {
+          volGroup.visible=true; cutGroup.visible=false; if(bubbles)bubbles.pts.visible=false;
+        }
+        projectLabels();
         renderer.render(scene,camera);
       }
       loop();
 
       return {
         sync:function(v){ S.press=v.press; S.erupting=v.erupting; S.seen=v.seen; S.made=v.made; updateChips(); },
+        setCut:function(b){ S.cut=!!b;
+          if(b){ theta=0; phi=1.12; radius=40; } else { theta=0.6; phi=1.05; radius=38; }
+          place();
+        },
         dispose:function(){ alive3=false; if(raf3)cancelAnimationFrame(raf3);
           window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); if(ro)ro.disconnect();
           try{ renderer.dispose(); }catch(e){}
@@ -394,7 +498,7 @@
       var use3D=(mode!=='quiz' && exp==='volcano' && window.THREE);
       if(use3D){
         if(!v3d){ stage.innerHTML=''; v3d=Volcano3D(stage,{onEjecta:seeEjecta}); }
-        v3d.sync(vol);
+        v3d.sync(vol); v3d.setCut(cutView);
         return;
       }
       if(v3d){ v3d.dispose(); v3d=null; }
@@ -523,6 +627,7 @@
           else if(a==='volReset'){ volReset(); build(); }
           else if(a==='push')push();
           else if(a==='qkReset'){ qkReset(); build(); }
+          else if(a==='toggleCut'){ cutView=!cutView; if(v3d)v3d.setCut(cutView); b.innerHTML=cutView?'🌋 겉 보기':'🪓 단면 보기'; }
         });
       });
       el.addEventListener('click',function(ev){
