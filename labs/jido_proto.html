@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>케이랩 사회 · 지도 프로토타입 (브이월드)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  :root{ --blue:#1565C0; --orange:#FF8A3D; --ink:#1B3A57; --line:#dce3ea; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; font-family:'Jua','Apple SD Gothic Neo',sans-serif; color:var(--ink); background:#f5f7f9; }
+  #app{ display:flex; flex-direction:column; height:100%; }
+  header{ padding:10px 14px; background:#fff; border-bottom:1px solid var(--line); }
+  .ttl{ font-size:18px; font-weight:800; }
+  .ttl small{ font-size:12px; color:#8aa0b6; font-weight:400; margin-left:6px; }
+  .tabs{ display:flex; gap:8px; margin-top:8px; }
+  .tab{ flex:1; padding:10px; border-radius:14px; border:2.5px solid var(--blue); background:#fff; color:var(--blue);
+        font-family:inherit; font-size:15px; font-weight:800; cursor:pointer; }
+  .tab.on{ background:var(--blue); color:#fff; }
+  .stagewrap{ position:relative; flex:1; min-height:0; }
+  #map,#map3d{ position:absolute; inset:0; }
+  #fallback{ position:absolute; inset:0; display:none; }
+  .keybar{ position:absolute; left:10px; right:10px; bottom:10px; z-index:600; display:flex; gap:8px;
+           background:rgba(255,255,255,.94); border:1px solid var(--line); border-radius:14px; padding:8px; align-items:center; }
+  .keybar input{ flex:1; min-width:0; padding:8px 10px; border:1px solid #cbd5e1; border-radius:10px; font-family:inherit; font-size:14px; }
+  .keybar button{ padding:8px 12px; border-radius:10px; border:2px solid var(--blue); background:var(--blue); color:#fff;
+                  font-family:inherit; font-weight:800; cursor:pointer; white-space:nowrap; }
+  .ctl{ position:absolute; z-index:600; display:flex; gap:8px; flex-wrap:wrap; }
+  .ctl.top{ left:10px; top:10px; }
+  .pillbtn{ padding:9px 13px; border-radius:999px; border:2px solid var(--blue); background:#fff; color:var(--blue);
+            font-family:inherit; font-weight:800; font-size:14px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+  .pillbtn.on{ background:var(--orange); border-color:var(--orange); color:#fff; }
+  .compass{ position:absolute; right:12px; top:12px; z-index:600; width:64px; height:64px; border-radius:50%;
+            background:rgba(255,255,255,.95); border:2px solid var(--ink); display:flex; align-items:center; justify-content:center; }
+  .compass b{ position:absolute; font-size:13px; font-weight:800; }
+  .compass .n{ top:2px; color:#E03131; } .compass .s{ bottom:2px; color:#5a7894; }
+  .compass .e{ right:5px; color:#5a7894; } .compass .w{ left:5px; color:#5a7894; }
+  .compass .arrow{ width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:24px solid #E03131; margin-bottom:14px; }
+  .preset{ position:absolute; left:10px; bottom:64px; z-index:600; display:flex; gap:6px; flex-wrap:wrap; max-width:72%; }
+  .preset button{ padding:7px 11px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.95);
+                  font-family:inherit; font-weight:800; font-size:13px; color:var(--ink); cursor:pointer; }
+  .legend{ position:absolute; right:12px; bottom:64px; z-index:600; background:rgba(255,255,255,.95); border:1px solid var(--line);
+           border-radius:12px; padding:8px 10px; font-size:12px; display:none; }
+  .legend .it{ display:flex; align-items:center; gap:6px; margin:2px 0; }
+  .banner{ position:absolute; left:50%; top:12px; transform:translateX(-50%); z-index:650; background:#fff3cd; color:#7a5e1f;
+           border:1px solid #ffe08a; border-radius:12px; padding:7px 14px; font-size:13px; font-weight:800; display:none; max-width:90%; text-align:center; }
+  .hide{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="ttl">케이랩 사회 · 지도 <small>3학년 우리 고장 · 브이월드 프로토타입 v0.1</small></div>
+    <div class="tabs">
+      <button class="tab on" data-mode="symbol">1 · 기호</button>
+      <button class="tab" data-mode="real">2 · 진짜 동네</button>
+      <button class="tab" data-mode="d3">3 · 3D</button>
+    </div>
+  </header>
+
+  <div class="stagewrap">
+    <div class="banner" id="banner"></div>
+
+    <!-- 방위표: 위 = 북 (Leaflet은 회전 안 하므로 북이 항상 위) -->
+    <div class="compass" id="compass"><div class="arrow"></div><b class="n">북</b><b class="s">남</b><b class="e">동</b><b class="w">서</b></div>
+
+    <!-- 모드1: 실제(항공) ⇄ 기호 토글 -->
+    <div class="ctl top" id="ctlSymbol">
+      <button class="pillbtn" id="btnReal">🛰 실제(항공)</button>
+      <button class="pillbtn" id="btnSym">🗺 기호 지도</button>
+      <button class="pillbtn" id="btnLeg">🏷 범례</button>
+    </div>
+
+    <!-- 전국 프리셋: 키 들어오면 어디든 -->
+    <div class="preset" id="preset">
+      <button data-lat="37.5665" data-lng="126.9780" data-z="15">서울</button>
+      <button data-lat="35.1796" data-lng="129.0756" data-z="15">부산</button>
+      <button data-lat="35.1595" data-lng="126.8526" data-z="15">광주</button>
+      <button data-lat="36.3504" data-lng="127.3845" data-z="15">대전</button>
+      <button data-lat="33.4996" data-lng="126.5312" data-z="14">제주</button>
+      <button data-lat="37.8315" data-lng="127.5106" data-z="14">가평</button>
+    </div>
+
+    <div class="legend" id="legend">
+      <div class="it"><span style="color:#E03131;font-weight:800">＋</span> 병원·보건</div>
+      <div class="it"><span style="color:#7F5539;font-weight:800">▲</span> 산</div>
+      <div class="it"><span style="color:#1971C2;font-weight:800">〰</span> 강·하천</div>
+      <div class="it">🧭 위쪽 = 북</div>
+    </div>
+
+    <!-- 모드2: 진짜 동네 검색 -->
+    <div class="keybar hide" id="searchbar">
+      <input id="addr" placeholder="우리 학교/동네 주소 (예: 가평초등학교)"/>
+      <button id="goAddr">찾기</button>
+    </div>
+
+    <div id="map"></div>
+    <div id="map3d" class="hide"></div>
+
+    <!-- 오프라인/키없음 폴백: 양식화 동네 -->
+    <svg id="fallback" viewBox="0 0 380 360" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0" y="0" width="380" height="360" fill="#dfe6c9"/>
+      <rect x="0" y="0" width="120" height="90" fill="#cbd9a0"/>
+      <path d="M0 300 Q90 280 150 298 T270 290 T380 306 L380 360 L0 360 Z" fill="#8fb8d8"/>
+      <rect x="178" y="0" width="20" height="360" fill="#c3bdb0"/>
+      <rect x="0" y="170" width="380" height="20" fill="#c3bdb0"/>
+      <g>
+        <path d="M210 60 h52 v22 h-30 v22 h-22 Z" fill="#d9b15c"/><text x="236" y="92" text-anchor="middle" font-size="11" fill="#7a5e1f" font-weight="800">학교</text>
+        <rect x="40" y="200" width="42" height="30" fill="#c9785a"/><rect x="98" y="206" width="34" height="26" fill="#9aa3ab"/>
+        <rect x="300" y="200" width="40" height="34" fill="#b56a8e"/>
+      </g>
+      <g><circle cx="150" cy="90" r="13" fill="#6e9b43"/><circle cx="320" cy="100" r="12" fill="#6e9b43"/><circle cx="120" cy="250" r="11" fill="#6e9b43"/></g>
+    </svg>
+
+    <div class="keybar" id="keybar">
+      <input id="keyin" placeholder="브이월드 인증키 붙여넣기 (네 계정 발급)"/>
+      <button id="keygo">켜기</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function(){
+  // ── 인증키: 레포에 박지 않음. ?key= 또는 입력창으로 주입 ──
+  var KEY = new URLSearchParams(location.search).get('key') || '';
+  var ATTR = '공간정보 오픈플랫폼(브이월드)';
+  var map=null, layers={}, mode='symbol', threeReady=false;
+  var $=function(s){return document.querySelector(s);};
+
+  function vwLayer(name){
+    return L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/'+KEY+'/'+name+'/{z}/{y}/{x}.png',
+      { attribution:ATTR, maxZoom:19, minZoom:6, errorTileUrl:'' });
+  }
+  function banner(msg){ var b=$('#banner'); if(!msg){b.style.display='none';return;} b.textContent=msg; b.style.display='block'; }
+
+  function buildMap(){
+    if(map){ map.remove(); map=null; }
+    map = L.map('map',{ zoomControl:true, attributionControl:true }).setView([37.8315,127.5106], 15); // 기본 = 가평
+    layers.base = vwLayer('Base');        // 기호 지도(국가 약속 기호)
+    layers.sat  = vwLayer('Satellite');   // 실제 모습(항공/위성)
+    layers.hyb  = vwLayer('Hybrid');      // 위성 위 라벨
+    layers.base.addTo(map);
+    // 타일 실패 → 폴백 안내
+    var failed=false;
+    layers.base.on('tileerror', function(){ if(failed) return; failed=true; showFallback('키/도메인 확인 필요 — 데모(양식화) 모드'); });
+  }
+
+  function showMap(){ $('#fallback').style.display='none'; $('#map').classList.remove('hide'); }
+  function showFallback(msg){
+    $('#map').classList.add('hide'); $('#map3d').classList.add('hide');
+    $('#fallback').style.display='block'; banner(msg);
+  }
+
+  function setBase(which){
+    if(!map) return;
+    [layers.base,layers.sat,layers.hyb].forEach(function(l){ if(l&&map.hasLayer(l)) map.removeLayer(l); });
+    if(which==='sat'){ layers.sat.addTo(map); layers.hyb.addTo(map); $('#btnReal').classList.add('on'); $('#btnSym').classList.remove('on'); }
+    else { layers.base.addTo(map); $('#btnSym').classList.add('on'); $('#btnReal').classList.remove('on'); }
+  }
+
+  // ── 3D: 브이월드 WebGL 3D API (대도시 실사 + 그 외 항공 지형) ──
+  function build3D(){
+    if(threeReady) return;
+    var s=document.createElement('script');
+    s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey='+KEY;
+    s.onload=function(){
+      try{
+        var m=new vw.Map(); m.setOption({ mapId:'map3d', logo:false, navigation:true });
+        m.setMapId('map3d');
+        m.setInitPosition(new vw.CameraPosition(new vw.CoordZ(127.5106,37.8315,3000), new vw.Direction(0,-60,0)));
+        m.start && m.start();
+        threeReady=true; banner('');
+      }catch(e){ banner('3D 초기화 실패 — 키/도메인 확인'); }
+    };
+    s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키 확인'); };
+    document.body.appendChild(s);
+  }
+
+  function go(m){
+    mode=m;
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('on', t.dataset.mode===m); });
+    // 공통 토글
+    $('#ctlSymbol').classList.toggle('hide', m!=='symbol');
+    $('#legend').classList.toggle('hide', true); $('#legend').style.display='none'; $('#btnLeg').classList.remove('on');
+    $('#searchbar').classList.toggle('hide', m!=='real');
+    $('#preset').classList.toggle('hide', m==='d3');
+    $('#compass').classList.toggle('hide', m==='d3');
+
+    if(!KEY){ showFallback('브이월드 키를 넣으면 전국 실제 지도로 켜져요 (아래 입력창)'); return; }
+    banner('');
+    if(m==='d3'){
+      $('#map').classList.add('hide'); $('#map3d').classList.remove('hide'); showMapShared(false); build3D();
+    } else {
+      $('#map3d').classList.add('hide'); $('#map').classList.remove('hide'); $('#fallback').style.display='none';
+      if(!map) buildMap();
+      if(m==='real'){ setBase('symbol'); layers.hyb.addTo(map); } // 진짜 동네: 국가 기호지도 + 라벨 + 검색
+      else { setBase('symbol'); }                                  // 기호 학습: Base에서 시작, 항공 토글 가능
+      setTimeout(function(){ map.invalidateSize(); }, 50);
+    }
+  }
+  function showMapShared(v){ $('#map').classList.toggle('hide', !v); }
+
+  function flyTo(lat,lng,z){ if(map){ map.setView([lat,lng], z||15); } }
+
+  // ── 검색(지오코더): 브이월드 검색 API. 키 필요. ──
+  function searchAddr(q){
+    if(!KEY){ banner('키가 있어야 검색돼요'); return; }
+    var url='https://api.vworld.kr/req/search?service=search&request=search&version=2.0&size=1&query='
+      +encodeURIComponent(q)+'&type=place&format=json&errorformat=json&key='+KEY;
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      var p=d&&d.response&&d.response.result&&d.response.result.items&&d.response.result.items[0];
+      if(p&&p.point){ flyTo(parseFloat(p.point.y), parseFloat(p.point.x), 17); banner(''); }
+      else banner('못 찾음 — 다른 이름으로');
+    }).catch(function(){ banner('검색 실패 — 키/도메인 확인'); });
+  }
+
+  // ── 이벤트 ──
+  document.querySelectorAll('.tab').forEach(function(t){ t.addEventListener('click', function(){ go(t.dataset.mode); }); });
+  $('#btnReal').addEventListener('click', function(){ setBase('sat'); });
+  $('#btnSym').addEventListener('click', function(){ setBase('symbol'); });
+  $('#btnLeg').addEventListener('click', function(){ var on=$('#legend').style.display==='block'; $('#legend').style.display=on?'none':'block'; $('#btnLeg').classList.toggle('on',!on); });
+  document.querySelectorAll('#preset button').forEach(function(b){ b.addEventListener('click', function(){ flyTo(+b.dataset.lat,+b.dataset.lng,+b.dataset.z); }); });
+  $('#goAddr').addEventListener('click', function(){ searchAddr($('#addr').value.trim()); });
+  $('#addr').addEventListener('keydown', function(e){ if(e.key==='Enter') searchAddr(e.target.value.trim()); });
+  $('#keygo').addEventListener('click', function(){
+    var v=$('#keyin').value.trim(); if(!v) return;
+    KEY=v; $('#keybar').classList.add('hide'); map=null; go(mode);
+  });
+
+  // ── 시작 ──
+  if(KEY) $('#keybar').classList.add('hide');
+  go('symbol');
+})();
+</script>
+</body>
+</html>
