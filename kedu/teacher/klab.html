@@ -228,7 +228,7 @@ function renderCards(){
       c.innerHTML='<div class="nm">'+item.nm
         +(item.g?' <span style="font-size:12px;font-weight:800;color:#1565C0;background:#E3F0FF;border:1.5px solid #B9D6F5;border-radius:9px;padding:3px 8px;vertical-align:2px;margin-left:6px;white-space:nowrap;">'+item.g+'</span>':'')
         +'</div><div class="ds">'+item.ds+'</div><div class="badge">'+((item.tool||item.link)?'열기':'준비 중')+'</div>';
-      if(item.tool) c.onclick=function(){enterFocus(item.nm); mount(item.tool,item.cfg); window.scrollTo({top:0,behavior:'smooth'});};
+      if(item.tool) c.onclick=function(){ try{history.pushState({klab:'focus'},'');focusPushed=true;}catch(e){} enterFocus(item.nm); mount(item.tool,item.cfg); window.scrollTo({top:0,behavior:'smooth'});};
       else if(item.link){ var lk=item.link; c.onclick=function(){window.open(lk,'_blank');}; }
       grid.appendChild(c);
     });
@@ -251,6 +251,7 @@ function mount(tool,cfg){
    카드를 누르면 카탈로그(제목·과목 탭·카드 목록)를 숨기고 그 교구만 띄운다.
    딥링크 진입도 같은 함수를 쓴다. 복귀 = 🧊 전체 교구 보기. */
 function enterFocus(label, fromLesson){
+  inFocus=true;
   document.getElementById('grades').style.display='none';
   document.getElementById('gradeRow').style.display='none';
   cardsEl.style.display='none';
@@ -261,6 +262,7 @@ function enterFocus(label, fromLesson){
   document.getElementById('back-to-lesson').style.display=fromLesson?'':'none';
 }
 function exitFocus(){
+  inFocus=false; focusPushed=false;
   if(cleanup){try{cleanup();}catch(e){}cleanup=null;}
   mountEl.innerHTML='<div class="ph">위에서 교구를 골라 주세요</div>';
   curTool=null; curCfg=null; renderShare();
@@ -270,7 +272,15 @@ function exitFocus(){
   cardsEl.style.display='';
   document.getElementById('klab-h1').style.display='';
 }
-document.getElementById('show-all-tools').addEventListener('click', exitFocus);
+var inFocus=false, focusPushed=false;
+// '전체 교구 보기' 버튼: history를 쌓고 들어온 경우엔 뒤로가기로 처리(popstate→exitFocus), 아니면(딥링크) 바로 복귀
+document.getElementById('show-all-tools').addEventListener('click', function(){
+  if(focusPushed){ history.back(); } else { exitFocus(); }
+});
+// 브라우저/기기 뒤로가기: focus 상태면 그리드로 한 단계만 복귀(페이지를 떠나지 않음)
+window.addEventListener('popstate', function(){
+  if(inFocus){ focusPushed=false; exitFocus(); }
+});
 
 /* ===== 프리셋 공유 링크 (2026-06-11) =====
    띄운 교구를 모드까지 박아 링크로 복사 — 학생에게 보내면 퀴즈 모드로 바로 입장.

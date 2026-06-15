@@ -36,34 +36,55 @@
 (function () {
   var root = document.getElementById('root');
   var conn = document.getElementById('conn');
+  var gateHTML = root.innerHTML;   // 방코드 입력 화면 보존
+  var activeCtx = null;
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
 
-  var codeEl = document.getElementById('code');
-  var nameEl = document.getElementById('name');
-  var errEl = document.getElementById('err');
-  codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+  function bindGate() {
+    var codeEl = document.getElementById('code');
+    var nameEl = document.getElementById('name');
+    var errEl = document.getElementById('err');
+    if (!codeEl) return;
+    codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
 
-  document.getElementById('enter').onclick = function () {
-    var code = codeEl.value.trim().toUpperCase();
-    var name = nameEl.value.trim();
-    errEl.textContent = '';
-    if (code.length < 4) { errEl.textContent = '방코드 4자리를 입력해요'; return; }
-    if (!name) { errEl.textContent = '이름을 입력해요'; return; }
-    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
+    document.getElementById('enter').onclick = function () {
+      var code = codeEl.value.trim().toUpperCase();
+      var name = nameEl.value.trim();
+      errEl.textContent = '';
+      if (code.length < 4) { errEl.textContent = '방코드 4자리를 입력해요'; return; }
+      if (!name) { errEl.textContent = '이름을 입력해요'; return; }
+      if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
 
-    root.innerHTML = '<div class="kp-play" id="play"></div>';
-    var playEl = document.getElementById('play');
-    var ctx;
-    // 게임은 미지정 — 호스트가 welcome 으로 알려주면 그 게임으로 동적 마운트
-    try { ctx = Kple.join(code, name, { el: playEl }); }
-    catch (e) { setConn(String(e.message || e), 'err'); return; }
-    ctx.on('status', function (s) {
-      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
-      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
-      else setConn(s);
-    });
-    window.addEventListener('beforeunload', function () { try { ctx.leave(); } catch (e) {} });
-  };
+      root.innerHTML = '<div class="kp-play" id="play"></div>';
+      var playEl = document.getElementById('play');
+      var ctx;
+      // 게임은 미지정 — 호스트가 welcome 으로 알려주면 그 게임으로 동적 마운트
+      try { ctx = Kple.join(code, name, { el: playEl }); }
+      catch (e) { setConn(String(e.message || e), 'err'); root.innerHTML = gateHTML; bindGate(); return; }
+      activeCtx = ctx;
+      ctx.on('status', function (s) {
+        if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
+        else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
+        else setConn(s);
+      });
+      try { history.pushState({ kple: 'play' }, ''); } catch (e) {}
+    };
+  }
+
+  function backToGate() {
+    if (activeCtx) { try { activeCtx.leave(); } catch (e) {} activeCtx = null; }
+    root.innerHTML = gateHTML;
+    bindGate();
+    setConn('연결 준비…', '');
+  }
+
+  // 참가 화면에서 뒤로가기: 방을 나가고 방코드 입력 화면으로 복귀
+  window.addEventListener('popstate', function () {
+    if (activeCtx) backToGate();
+  });
+  window.addEventListener('beforeunload', function () { if (activeCtx) { try { activeCtx.leave(); } catch (e) {} } });
+
+  bindGate();
 })();
 </script>
 </body>

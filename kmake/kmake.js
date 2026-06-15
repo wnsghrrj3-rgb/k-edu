@@ -93,21 +93,26 @@ document.querySelectorAll('.start-tab').forEach(t => t.onclick = () => {
 renderPresets();
 
 /* ============ 에디터 진입 ============ */
+var editorOpen = false;
 function openEditor(w, h) {
   baseW = w; baseH = h;
   startEl.classList.add('hidden');
   document.getElementById('editor').classList.remove('hidden');
   initCanvas();
+  editorOpen = true;
+  try { history.pushState({ kmake: 'editor' }, ''); } catch (e) {}
 }
 function openTemplate(key) {
   const t = KM_TEMPLATES[key]; if (!t) return;
   openEditor(t.w, t.h);
   loadSVGTemplate(t);
 }
+// 홈 버튼/로고 → 브라우저 뒤로가기와 동일 경로(popstate)로 처리해 confirm·복원을 일원화
 function goHome() {
-  if (canvas && canvas.getObjects().length) {
-    if (!confirm('지금 만들던 내용이 사라져요. 템플릿 고르기로 돌아갈까요?')) return;
-  }
+  if (editorOpen) { history.back(); return; }
+  doRestoreHome();
+}
+function doRestoreHome() {
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
@@ -118,7 +123,17 @@ function goHome() {
   document.getElementById('editor').classList.add('hidden');
   startEl.classList.remove('hidden');
   renderPresets();
+  editorOpen = false;
 }
+// 편집기에서 뒤로가기: 작업물 있으면 확인, 취소 시 편집기 유지(history 재push)
+window.addEventListener('popstate', function () {
+  if (!editorOpen) return;
+  if (canvas && canvas.getObjects().length && !confirm('지금 만들던 내용이 사라져요. 템플릿 고르기로 돌아갈까요?')) {
+    try { history.pushState({ kmake: 'editor' }, ''); } catch (e) {}
+    return;
+  }
+  doRestoreHome();
+});
 function loadSVGTemplate(t) {
   fabric.loadSVGFromString(t.svg, (objects) => {
     lockHistory = true;

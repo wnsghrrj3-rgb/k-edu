@@ -1152,6 +1152,7 @@
     return `u${unit}_l${s.padStart(2, '0')}`;
   }
 
+  let inShow = false;
   function openShow(unit, lesson) {
     const key = lessonKey(unit, lesson);
     const lessonData = LESSONS[key];
@@ -1170,6 +1171,8 @@
 
     document.getElementById('home-view').classList.remove('active');
     document.getElementById('show-view').classList.add('active');
+    if (!inShow) { try { history.pushState({ kt: 'lesson' }, ''); } catch (e) {} }
+    inShow = true;
 
     if (!loadState()) {
       slides = SLIDES_DATA.map(s => ({...s, included: true, attached_extras: []}));
@@ -1202,6 +1205,7 @@
   }
 
   function backToHome() {
+    inShow = false;
     document.getElementById('show-view').classList.remove('active');
     document.getElementById('home-view').classList.add('active');
     if (document.body.classList.contains('fullscreen')) {
@@ -1223,7 +1227,14 @@
     const ewBtn = document.getElementById('export-ws-btn');
     if (ewBtn) ewBtn.addEventListener('click', exportWorksheet);
     document.getElementById('fs-exit-btn').addEventListener('click', toggleFullscreen);
-    document.getElementById('back-to-home').addEventListener('click', backToHome);
+    // '← 차시 목록' 버튼: 차시 진입 시 쌓은 history를 되돌려(popstate→backToHome) 뒤로가기와 동작 일치
+    document.getElementById('back-to-home').addEventListener('click', function(){
+      if (inShow) { history.back(); } else { backToHome(); }
+    });
+    // 브라우저/기기 뒤로가기: 차시 뷰면 차시 목록으로 한 단계만 복귀(케이에듀로 안 빠짐)
+    window.addEventListener('popstate', function(){
+      if (inShow) backToHome();
+    });
 
     // 정답 토글 자리
     const revealBtn = document.getElementById('reveal-btn');
