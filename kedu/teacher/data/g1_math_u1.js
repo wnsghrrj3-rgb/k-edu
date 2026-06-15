@@ -31,8 +31,9 @@
   {id:"s08",stage:"전개",block:"motivate",data:{scene_title:"실천 약속 살펴보기",kids:[{face:"😊",label:"준비물 챙기기"},{face:"😊",label:"수 찾아 말하기"},{face:"😊",label:"수 놀이하기"}],question:"이 중에서 마음에 드는 약속 두세 가지를 골라요"},suggested_extras:["a_promise_select"]},
 
   // ===== 기본 (3) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"꾸민 그림에서 동물을 세어 볼까요?",question:"그림에서 동물을 한 가지 골라\n몇 마리가 있는지 말해 봐요.\n(아직 정확한 수 이름은 다음 시간에 배워요)"},suggested_extras:["m_count_one_kind"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"식물도 세어 볼까요?",question:"꽃은 몇 송이?\n나무는 몇 그루?\n작은 풀은 몇 개?"},suggested_extras:["r_garden_count"]},
+  {id:"s09",stage:"기본문제",block:"advanced_problem",data:{title:"꾸민 그림에서 동물을 세어 볼까요?",challenge:"그림에서 동물을 한 가지 골라\n몇 마리가 있는지 말해 봐요.\n(아직 정확한 수 이름은 다음 시간에 배워요)",note:"열린 탐색이에요. 학생마다 꾸민 그림이 달라 답이 여러 가지. 정해진 수보다 하나씩 빠짐없이 세는지를 봐 주세요."},suggested_extras:["m_count_one_kind"]},
+  {id:"s10",stage:"기본문제",block:"advanced_problem",data:{title:"식물도 세어 볼까요?",challenge:"꽃은 몇 송이?\n나무는 몇 그루?\n작은 풀은 몇 개?",note:"열린 탐색. 꽃·나무·풀 각각 종류별로 따로 세 보게 하세요. 답은 그림마다 달라요."},suggested_extras:["r_garden_count"]},
+  {id:"s10b",stage:"전개",block:"misconception",data:{title:"조심해요 — 셀 때",label:"오개념 주의",wrong:"빠뜨리거나 두 번 세도 괜찮아",right:"하나씩 짚으며 **한 번씩만** 세야\n수가 정확해요.",hint:"세었던 것에 살짝 표시하면 빠뜨리지 않아요."},suggested_extras:[]},
   {id:"s11",stage:"기본문제",block:"question",data:{title:"같은 그림이라도 친구는 다르게 볼 거예요",content:"옆 친구는 무엇을 세었는지 들어 봐요.\n나와 다르게 셀 수 있다는 것을 알아봐요."},suggested_extras:["x_different_view","a_pair_talk"]},
 
   // ===== 응용 (4) =====
@@ -104,11 +105,11 @@
   {id:"s11",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"종류가 다르면 다른 수",right:"가위 3개와 버스 3대는\n**모두 3**이에요!\n수는 **개수**만 보면 돼요.",hint:"종류는 달라도 개수가 같으면 같은 수."},suggested_extras:["x_kinds_diff_same_number","m_count_abstract"]},
 
   // ===== 기본 (5) =====
-  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"토끼는 몇 마리?",ten_frame_anchor:4,question:"토끼 그림을 세어 보세요.\n수로는? 우리말로는? 한자어로는?"},suggested_extras:["m_count_check","r_animals"]},
-  {id:"s13",stage:"기본문제",block:"basic_problem",data:{title:"비행기는 몇 대?",ten_frame_anchor:2,question:"비행기를 세어 답을 써 봐요.\n읽을 때는 **둘** 또는 **이**."},suggested_extras:[]},
-  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"우주선은 몇 대?",ten_frame_anchor:5,question:"우주선을 세고 읽어 봐요.\n**다섯** 또는 **오**."},suggested_extras:[]},
+  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"토끼는 몇 마리?",ten_frame_anchor:4,question:"토끼 그림을 세어 보세요.\n수로는? 우리말로는? 한자어로는?",answer:4,note:"십 배열판 4칸을 하나씩 짚어 세요. 4 — 넷 / 사."},suggested_extras:["m_count_check","r_animals"]},
+  {id:"s13",stage:"기본문제",block:"basic_problem",data:{title:"비행기는 몇 대?",ten_frame_anchor:2,question:"비행기를 세어 답을 써 봐요.\n읽을 때는 **둘** 또는 **이**.",answer:2,note:"2 — 둘 / 이."},suggested_extras:[]},
+  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"우주선은 몇 대?",ten_frame_anchor:5,question:"우주선을 세고 읽어 봐요.\n**다섯** 또는 **오**.",answer:5,note:"5칸이 다 찼어요. 5 — 다섯 / 오."},suggested_extras:[]},
   {id:"s15",stage:"기본문제",block:"interactive_ten_frame",data:{title:"앞에 나와서 채워봐요",start_count:0,question:"교사가 '3!'이라고 외치면\n앞에 나온 학생이 **3칸**을 채워요.\n수와 칸 수를 맞춰 봐요."},suggested_extras:[]},
-  {id:"s16",stage:"기본문제",block:"basic_problem",data:{title:"필순 따라 쓰기",question:"공책에 1·2·3·4·5를 **다섯 번씩** 따라 써 봐요.\n점선부터 시작해서 빈칸까지."},suggested_extras:["a_trace_book","m_writing_hard"]},
+  {id:"s16",stage:"연습",block:"question",data:{title:"필순 따라 쓰기",question:"공책에 1·2·3·4·5를 **다섯 번씩** 따라 써 봐요.\n점선부터 시작해서 빈칸까지."},suggested_extras:["a_trace_book","m_writing_hard"]},
 
   // ===== 응용 (5) =====
   {id:"s17",stage:"응용문제",block:"real_world",data:{title:"내 물건 세어 보기",scenario:{icon:"🎒",body:"가방에서 물건을 꺼내 봐요.\n필통 안 연필은 몇 자루?\n공책은 몇 권?\n지우개는 몇 개?\n각자 다섯까지의 수를 찾아봐요."}},suggested_extras:["a_my_stuff","r_pencil_case"]},
@@ -119,7 +120,7 @@
 
   // ===== 정리 (3) =====
   {id:"s22",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["**1~5 수**를 세고 읽고 썼어요","수는 **두 가지로 읽어요** — 우리말과 한자어","**종류가 달라도** 개수가 같으면 같은 수","수는 **숫자**로 적어요"]},suggested_extras:["b_count_to_five"]},
-  {id:"s23",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"손가락 **다섯 개**를 다 펴 보세요.\n수로는? 우리말로는? 한자어로는?"},suggested_extras:[]},
+  {id:"s23",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"손가락 **다섯 개**를 다 펴 보세요.\n수로는? 우리말로는? 한자어로는?",answer:5,note:"펼친 손가락은 5개. 다섯 / 오."},suggested_extras:[]},
   {id:"s24",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"**6, 7, 8, 9**\n다섯보다 더 큰 수를 만나요!\n어디까지 셀 수 있을까요?",emoji:""},suggested_extras:["e_beyond_five"]}
     ],
     extras: [
@@ -184,11 +185,11 @@
   {id:"s11",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"매번 1부터 다시 세요",right:"**5칸이 다 찼다**는 것을 알면\n**6은 5보다 한 칸 더**라는 것을 바로 알 수 있어요.",hint:"5 기준으로 보면 셈이 빨라져요."},suggested_extras:["x_count_from_one","m_speed_with_five"]},
 
   // ===== 기본 (5) =====
-  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"당근은 몇 개?",ten_frame_anchor:7,question:"당근을 세어 답을 써 봐요.\n읽을 때는 **일곱** 또는 **칠**."},suggested_extras:["m_count_check","r_vegetables"]},
-  {id:"s13",stage:"기본문제",block:"basic_problem",data:{title:"딸기는 몇 개?",ten_frame_anchor:9,question:"딸기를 세어 보세요.\n9까지 세고 읽어 봐요.\n**아홉** 또는 **구**."},suggested_extras:[]},
-  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"토마토는 몇 개?",ten_frame_anchor:6,question:"토마토를 세고 적어 봐요.\n5칸이 다 차고 한 칸 더!"},suggested_extras:["m_five_plus_n"]},
-  {id:"s15",stage:"기본문제",block:"basic_problem",data:{title:"꽃은 몇 송이?",ten_frame_anchor:8,question:"꽃 8송이를 십 배열판에서 확인.\n**5+3**으로 보이나요?"},suggested_extras:[]},
-  {id:"s16",stage:"기본문제",block:"basic_problem",data:{title:"필순 따라 쓰기",question:"공책에 6·7·8·9를 **다섯 번씩** 따라 써 봐요.\n점선부터 빈칸까지."},suggested_extras:["a_trace_book","m_writing_hard"]},
+  {id:"s12",stage:"기본문제",block:"basic_problem",data:{title:"당근은 몇 개?",ten_frame_anchor:7,question:"당근을 세어 답을 써 봐요.\n읽을 때는 **일곱** 또는 **칠**.",answer:7,note:"7 — 일곱 / 칠. 5칸+2."},suggested_extras:["m_count_check","r_vegetables"]},
+  {id:"s13",stage:"기본문제",block:"basic_problem",data:{title:"딸기는 몇 개?",ten_frame_anchor:9,question:"딸기를 세어 보세요.\n9까지 세고 읽어 봐요.\n**아홉** 또는 **구**.",answer:9,note:"9 — 아홉 / 구. 5칸+4."},suggested_extras:[]},
+  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"토마토는 몇 개?",ten_frame_anchor:6,question:"토마토를 세고 적어 봐요.\n5칸이 다 차고 한 칸 더!",answer:6,note:"6 — 여섯 / 육. 5칸 차고 1 더(5+1)."},suggested_extras:["m_five_plus_n"]},
+  {id:"s15",stage:"기본문제",block:"basic_problem",data:{title:"꽃은 몇 송이?",ten_frame_anchor:8,question:"꽃 8송이를 십 배열판에서 확인.\n**5+3**으로 보이나요?",answer:8,note:"8 — 여덟 / 팔. 5+3으로 보여요."},suggested_extras:[]},
+  {id:"s16",stage:"연습",block:"question",data:{title:"필순 따라 쓰기",question:"공책에 6·7·8·9를 **다섯 번씩** 따라 써 봐요.\n점선부터 빈칸까지."},suggested_extras:["a_trace_book","m_writing_hard"]},
 
   // ===== 응용 (5) =====
   {id:"s17",stage:"응용문제",block:"offline_activity",data:{title:"연결 모형으로 수 표현",tag:"교실 활동",icon:"🧱",body:"교사가 수를 정해요 (예: 8)\n학생은 **연결 모형 8개**를 막대로 쌓아요.\n5개 쌓은 다음 색을 바꾸면\n**5+3** 구조가 한눈에 보여요.",materials:"연결 모형 또는 바둑돌 9개씩"},suggested_extras:["m_color_change_at_5","a_cube_alternatives"]},
@@ -199,7 +200,7 @@
 
   // ===== 정리 (3) =====
   {id:"s22",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["**6, 7, 8, 9**를 세고 읽고 썼어요","**5 기준**으로 보면 셈이 빨라져요","십 배열판으로 보면 **5+N** 구조","우리만의 **수 카드(꾸러미 4)** 를 만들었어요"]},suggested_extras:["b_count_to_nine"]},
-  {id:"s23",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:9,question:"손가락을 다 펴 보세요.\n수는? 우리말은? 한자어는?\n**5+4** 로도 말할 수 있나요?"},suggested_extras:[]},
+  {id:"s23",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:9,question:"손가락을 다 펴 보세요.\n수는? 우리말은? 한자어는?\n**5+4** 로도 말할 수 있나요?",answer:9,note:"9 — 아홉 / 구. 5+4."},suggested_extras:[]},
   {id:"s24",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"**순서**를 알아봐요!\n첫째 · 둘째 · 셋째 · 넷째 …\n수가 또 다른 모습으로 변해요.",emoji:""},suggested_extras:["e_order_preview"]}
     ],
     extras: [
@@ -260,19 +261,19 @@
   {id:"s08",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"앞에서 셋째 = 셋째 사람 한 명",right:"맞아요! 단, **앞에서 세 명**과 다른 말이에요.",hint:"'셋째' = 그 자리 한 사람 / '세 명' = 자리 세 개의 합"},suggested_extras:["x_third_vs_three"]},
 
   // ===== 기본 (4) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"앞에서 둘째는 누구일까요?",ten_frame_anchor:5,question:"5명이 줄을 섰어요.\n**앞에서 둘째**에 있는 사람을 찾아 봐요."},suggested_extras:["q_fun_lineup"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"기준을 바꿔서",ten_frame_anchor:5,question:"같은 줄에서\n**뒤에서 둘째**는 누구인가요?\n(앞에서 둘째와 같은 사람일까요?)"},suggested_extras:[]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"순서 매기기",question:"4명이 달리기를 했어요.\n결승선에 들어온 순서를 보고\n**첫째 · 둘째 · 셋째 · 넷째**를 정해 봐요."},suggested_extras:["r_relay"]},
+  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"앞에서 둘째는 누구일까요?",ten_frame_anchor:5,question:"5명이 줄을 섰어요.\n**앞에서 둘째**에 있는 사람을 찾아 봐요.",answer:"앞에서 둘째 = 맨 앞에서 두 번째 사람",note:"순서수: 맨 앞=첫째, 그다음=둘째. 둘째는 차례를 나타내요."},suggested_extras:["q_fun_lineup"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"기준을 바꿔서",ten_frame_anchor:5,question:"같은 줄에서\n**뒤에서 둘째**는 누구인가요?\n(앞에서 둘째와 같은 사람일까요?)",answer:"다른 사람 — 뒤에서 둘째는 앞에서 넷째예요",note:"5명 줄에서 앞2째와 뒤2째는 서로 다른 사람. 기준이 바뀌면 가리키는 사람도 달라져요."},suggested_extras:[]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"순서 매기기",question:"4명이 달리기를 했어요.\n결승선에 들어온 순서를 보고\n**첫째 · 둘째 · 셋째 · 넷째**를 정해 봐요.",answer:"들어온 차례대로 첫째·둘째·셋째·넷째",note:"결승선 통과 순서대로 차례를 매겨요."},suggested_extras:["r_relay"]},
   {id:"s12",stage:"기본문제",block:"number_line_demo",data:{title:"수직선으로 확인",nl:{range:[1,5],anchor:3},caption:"왼쪽에서 셋째 = 3번째 자리"},suggested_extras:["m_number_line"]},
 
   // ===== 응용 (3) =====
   {id:"s13",stage:"응용문제",block:"real_world",data:{title:"엘리베이터 층수와 순서",scenario:{icon:"🏢",body:"우리 아파트는 5층.\n**1층부터 세면** 우리 집은 다섯째 층.\n**5층부터 거꾸로 세면** 우리 집은 첫째 층."}},suggested_extras:["r_elevator_order"]},
-  {id:"s14",stage:"응용문제",block:"advanced_problem",data:{title:"기차의 칸",context:"기차가 6칸이에요. **앞에서 셋째 칸**과\n**뒤에서 넷째 칸**은 같은 칸일까요?",questions:["같다고 생각하면 왜?","다르다고 생각하면 왜?"]},suggested_extras:["x_third_vs_three"]},
+  {id:"s14",stage:"응용문제",block:"advanced_problem",data:{title:"기차의 칸",context:"기차가 6칸이에요. **앞에서 셋째 칸**과\n**뒤에서 넷째 칸**은 같은 칸일까요?",questions:["같다고 생각하면 왜?","다르다고 생각하면 왜?"],answers:["같은 칸 — 6칸에서 앞에서 셋째 = 뒤에서 넷째"],note:"앞3째=3번 칸. 뒤4째=뒤에서 6·5·4·3 → 3번 칸. 같은 칸."},suggested_extras:["x_third_vs_three"]},
   {id:"s15",stage:"응용문제",block:"game",data:{title:"순서 호명 놀이",steps:["6~9명이 한 줄로 서기","교사가 '왼쪽에서 셋째!'라고 외침","해당 학생이 손을 듦","'오른쪽에서 둘째!' 등으로 기준을 바꿔 가며 진행","틀려도 다시 해 볼 수 있어요"]},suggested_extras:["g_order_call","g_who_is_it"]},
 
   // ===== 정리 (3) =====
   {id:"s16",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["수 이름은 **두 가지** — 셀 때와 순서를 말할 때","순서는 항상 **기준**이 있어요 (왼쪽·오른쪽·앞·뒤)","같은 자리도 **기준이 다르면** 다른 순서로 불러요","**'셋째'**와 **'세 명'**은 다른 말이에요"]},suggested_extras:["b_lineup_book"]},
-  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"5명이 줄을 서 있어요.\n**오른쪽에서 둘째**는 **왼쪽에서** 몇째인가요?"},suggested_extras:[]},
+  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"5명이 줄을 서 있어요.\n**오른쪽에서 둘째**는 **왼쪽에서** 몇째인가요?",answer:"왼쪽에서 넷째",note:"5명 줄에서 오른쪽 2째 = 왼쪽 4째 (5−2+1=4)."},suggested_extras:[]},
   {id:"s18",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"**6, 7, 8, 9**\n다섯보다 더 큰 수를 만나요!\n어디까지 셀 수 있을까요?",emoji:""},suggested_extras:["e_beyond_5"]}
     ],
     extras: [
@@ -322,8 +323,8 @@
 
   // ===== 기본 (4) =====
   {id:"s09",stage:"기본문제",block:"interactive_number_line",data:{title:"앞에 나와서 점을 움직여 봐요",range:[1,9],start:3,question:"점을 누르거나 버튼으로 한 칸씩 옮겨 봐요"},suggested_extras:[]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"빈칸을 채워 봐요",question:"**2 · 3 · ___ · 5 · 6**\n순서대로 빠진 수는 무엇일까요?"},suggested_extras:["m_one_more_step"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"거꾸로도 채워 봐요",question:"**7 · 6 · 5 · ___ · 3**\n거꾸로 셀 때 빠진 수는 무엇일까요?"},suggested_extras:[]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"빈칸을 채워 봐요",question:"**2 · 3 · ___ · 5 · 6**\n순서대로 빠진 수는 무엇일까요?",answer:4,note:"2,3,4,5,6 차례. 빠진 수는 4."},suggested_extras:["m_one_more_step"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"거꾸로도 채워 봐요",question:"**7 · 6 · 5 · ___ · 3**\n거꾸로 셀 때 빠진 수는 무엇일까요?",answer:4,note:"거꾸로 7,6,5,4,3. 빠진 수는 4."},suggested_extras:[]},
   {id:"s12",stage:"기본문제",block:"card_arrange",data:{title:"수 카드를 순서대로 놓아 봐요",instruction:"카드를 드래그해서 **작은 수부터 큰 수** 순서로 놓아 보세요",cards:[4,2,7,1,5],target:[1,2,4,5,7]},suggested_extras:[]},
 
   // ===== 응용 (3) =====
@@ -333,7 +334,7 @@
 
   // ===== 정리 (3) =====
   {id:"s16",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["1부터 9까지 **순서대로** 셀 수 있어요","9부터 1까지 **거꾸로** 셀 수 있어요","**중간**에서도 시작할 수 있어요 (위로·아래로)","수의 줄은 더 길어질 수 있어요 — 다음 시간에 만나요"]},suggested_extras:["b_count_to_10"]},
-  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"**6 다음 수**는?\n**6 이전 수**는?\n둘 다 말할 수 있나요?"},suggested_extras:[]},
+  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"**6 다음 수**는?\n**6 이전 수**는?\n둘 다 말할 수 있나요?",answer:"6 다음은 7, 6 이전은 5",note:"수의 순서에서 6 바로 뒤=7, 바로 앞=5."},suggested_extras:[]},
   {id:"s18",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"**1만큼 더 큰 수**와\n**1만큼 더 작은 수**를 만나요!\n오늘 배운 수의 줄과 어떻게 연결될까요?",emoji:""},suggested_extras:["e_pm1_preview"]}
     ],
     extras: [
@@ -388,11 +389,11 @@
   {id:"s13",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"3에서 하나 적어지면... 0?",right:"아니에요! **2**예요. 하나만 줄어드는 거예요.",hint:"십 배열판으로 보면 한 칸만 줄어요."},suggested_extras:["x_zero_confusion"]},
 
   // ===== 기본 문제 (6) =====
-  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"7보다 1만큼 더 큰 수는?",ten_frame_anchor:7,question:"7보다 1만큼 더 큰 수는 무엇일까요?"},suggested_extras:["q_fun_pizza"]},
-  {id:"s15",stage:"기본문제",block:"basic_problem",data:{title:"6보다 1만큼 더 작은 수는?",ten_frame_anchor:6,question:"6보다 1만큼 더 작은 수는 무엇일까요?"},suggested_extras:["m_finger_tip"]},
-  {id:"s16",stage:"기본문제",block:"basic_problem",data:{title:"4보다 1만큼 더 큰 수는?",ten_frame_anchor:4,question:"4보다 1만큼 더 큰 수는?\n4보다 1만큼 더 작은 수는?"},suggested_extras:[]},
-  {id:"s17",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 1",question:"**8**은 **9**보다 1만큼 더 ___ 수\n**8**은 **7**보다 1만큼 더 ___ 수"},suggested_extras:[]},
-  {id:"s18",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 2",question:"**5**보다 1만큼 더 작은 수와\n**5**보다 1만큼 더 큰 수는?"},suggested_extras:[]},
+  {id:"s14",stage:"기본문제",block:"basic_problem",data:{title:"7보다 1만큼 더 큰 수는?",ten_frame_anchor:7,question:"7보다 1만큼 더 큰 수는 무엇일까요?",answer:8,note:"7+1=8. 십 배열판 한 칸 더."},suggested_extras:["q_fun_pizza"]},
+  {id:"s15",stage:"기본문제",block:"basic_problem",data:{title:"6보다 1만큼 더 작은 수는?",ten_frame_anchor:6,question:"6보다 1만큼 더 작은 수는 무엇일까요?",answer:5,note:"6−1=5. 한 칸 빼기."},suggested_extras:["m_finger_tip"]},
+  {id:"s16",stage:"기본문제",block:"basic_problem",data:{title:"4보다 1만큼 더 큰 수는?",ten_frame_anchor:4,question:"4보다 1만큼 더 큰 수는?\n4보다 1만큼 더 작은 수는?",answer:"1만큼 더 큰 수 5, 1만큼 더 작은 수 3",note:"4+1=5, 4−1=3."},suggested_extras:[]},
+  {id:"s17",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 1",question:"**8**은 **9**보다 1만큼 더 ___ 수\n**8**은 **7**보다 1만큼 더 ___ 수",answer:"8은 9보다 1만큼 더 작은 수, 8은 7보다 1만큼 더 큰 수",note:"9−1=8(작은), 7+1=8(큰). 8은 7과 9 사이."},suggested_extras:[]},
+  {id:"s18",stage:"기본문제",block:"basic_problem",data:{title:"양방향 연습 2",question:"**5**보다 1만큼 더 작은 수와\n**5**보다 1만큼 더 큰 수는?",answer:"작은 수 4, 큰 수 6",note:"5−1=4, 5+1=6."},suggested_extras:[]},
   {id:"s19",stage:"기본문제",block:"number_line_demo",data:{title:"수직선으로 확인해요",nl:{range:[1,9],anchor:5},caption:"5의 양옆은 4와 6"},suggested_extras:["m_number_line"]},
   {id:"s19b",stage:"기본문제",block:"interactive_number_line",data:{title:"앞에 나와서 점을 움직여 봐요",range:[1,9],start:5,question:"점을 누르거나 버튼으로 옆 칸으로 움직여 봐요"},suggested_extras:[]},
 
@@ -401,8 +402,8 @@
   {id:"s20b",stage:"응용문제",block:"card_arrange",data:{title:"수 카드 순서대로 놓기",instruction:"카드를 드래그해서 **작은 수부터 큰 수** 순서로 놓아 보세요",cards:[3,1,5,2,4],target:[1,2,3,4,5]},suggested_extras:[]},
   {id:"s21",stage:"응용문제",block:"real_world",data:{title:"달력 속의 ±1",scenario:{icon:"📅",body:"오늘이 **8일**이에요.\n어제는 **7일** (1만큼 더 작은 수)\n내일은 **9일** (1만큼 더 큰 수)"}},suggested_extras:["r_calendar"]},
   {id:"s22",stage:"응용문제",block:"real_world",data:{title:"나이로 만나는 ±1",scenario:{icon:"👨‍👩‍👧",body:"나는 **8살**.\n1살 더 많은 형은 **9살** (1만큼 더 큰 수)\n1살 더 어린 동생은 **7살** (1만큼 더 작은 수)"}},suggested_extras:["r_age"]},
-  {id:"s23",stage:"응용문제",block:"advanced_problem",data:{title:"줄넘기 횟수",context:"어제는 오늘보다 하나 더 적게,\n내일은 오늘보다 하나 더 많이 넘기로 했어요.\n오늘 **8번** 넘었어요.",questions:["어제 넘은 횟수는?","내일 넘을 횟수는?"]},suggested_extras:["r_age"]},
-  {id:"s24",stage:"응용문제",block:"advanced_problem",data:{title:"한 단계 더 — 사탕 나누기",context:"형이 사탕을 **6개** 가지고 있어요.\n동생은 형보다 **1만큼 더 적게** 가지고 있어요.",questions:["동생은 사탕을 몇 개 가지고 있을까요?","둘이 합치면 모두 몇 개?"]},suggested_extras:[]},
+  {id:"s23",stage:"응용문제",block:"advanced_problem",data:{title:"줄넘기 횟수",context:"어제는 오늘보다 하나 더 적게,\n내일은 오늘보다 하나 더 많이 넘기로 했어요.\n오늘 **8번** 넘었어요.",questions:["어제 넘은 횟수는?","내일 넘을 횟수는?"],answers:["어제 7번","내일 9번"],note:"오늘 8 기준. 어제=8−1=7, 내일=8+1=9."},suggested_extras:["r_age"]},
+  {id:"s24",stage:"응용문제",block:"advanced_problem",data:{title:"한 단계 더 — 사탕 나누기",context:"형이 사탕을 **6개** 가지고 있어요.\n동생은 형보다 **1만큼 더 적게** 가지고 있어요.",questions:["동생은 사탕을 몇 개 가지고 있을까요?","둘이 합치면 모두 몇 개?"],answers:["동생 5개","둘이 합치면 11개"],note:"동생=6−1=5. 합=6+5=11. (합치기는 뒤 단원에서 더 배워요.)"},suggested_extras:[]},
   {id:"s25",stage:"응용문제",block:"offline_activity",data:{title:"손가락으로 표현하기",tag:"교실에서 함께 해요",icon:"✋",body:"선생님이 수를 외쳐요!\n그 수보다 **1만큼 더 큰 수**만큼 손가락을 들어요.\n다음엔 **1만큼 더 작은 수**만큼 들어 봐요.",materials:"손가락만 있으면 돼요"},suggested_extras:[]},
   {id:"s26",stage:"응용문제",block:"offline_activity",data:{title:"칠판 앞에 나와서 써봐요",tag:"교실에서 함께 해요",icon:"🖍️",body:"선생님이 수 카드를 보여줘요.\n학생이 칠판 앞에 나와서\n**1만큼 더 큰 수**와 **1만큼 더 작은 수**를 분필로 써요.",materials:"수 카드 1~9 · 분필"},suggested_extras:[]},
   {id:"s27",stage:"응용문제",block:"game",data:{title:"수 알아맞히기 놀이",steps:["짝과 함께 수 카드(1~9) 뒤집어 놓기","한 명이 카드 1장 골라 잡기 (1·9는 빼고)","다른 한 명이 질문: '○○보다 1만큼 더 큰 수인가요?'","맞히면 점수! 역할 바꿔서 또 하기"]},suggested_extras:["g_card_bingo","g_finger_game","a_dice_game"]},
@@ -412,7 +413,7 @@
   // ===== 정리 (5) =====
   {id:"s30",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["어떤 수보다 **1만큼 더 큰 수**","어떤 수보다 **1만큼 더 작은 수**","같은 수도 **두 가지 방법**으로 말할 수 있어요","수직선·계단으로 보면 옆 칸이 ±1"]},suggested_extras:["b_number_book"]},
   {id:"s31",stage:"정리",block:"question",data:{title:"스스로 점검",content:"1만큼 더 큰 수를 말할 수 있나요?\n1만큼 더 작은 수를 말할 수 있나요?\n같은 수를 두 가지 방법으로 말할 수 있나요?"},suggested_extras:[]},
-  {id:"s32",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:5,question:"5보다 1만큼 더 큰 수와\n5보다 1만큼 더 작은 수를 말해 봐요."},suggested_extras:[]},
+  {id:"s32",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:5,question:"5보다 1만큼 더 큰 수와\n5보다 1만큼 더 작은 수를 말해 봐요.",answer:"큰 수 6, 작은 수 4",note:"5+1=6, 5−1=4."},suggested_extras:[]},
   {id:"s33",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"1보다 1만큼 더 작은 수는?\n새로운 수 **0** 이 나타나요.",emoji:""},suggested_extras:["e_zero_intro"]},
   {id:"s34",stage:"정리",block:"next_lesson",data:{title:"한 가지 더 궁금해요",preview:"9보다 1만큼 더 큰 수는?\n**10** 이라는 수가 곧 나와요!\n(다음 단원에서)",emoji:""},suggested_extras:["e_above_9"]}
     ],
@@ -475,9 +476,9 @@
   {id:"s08",stage:"전개",block:"misconception",data:{title:"조심해요 — 자주 헷갈리는 것",label:"오개념 주의",wrong:"아무것도 안 적기 = 0",right:"아니에요! 빈칸은 **'적지 않음'**\n**0**은 **'아무것도 없다'**는 것을 적은 거예요.",hint:"0은 분명한 한 글자. 빈칸이 아니에요."},suggested_extras:["x_blank_vs_zero","m_zero_is_number"]},
 
   // ===== 기본 (4) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"가위가 몇 개?",ten_frame_anchor:0,question:"가위 보관통이 텅 비어 있어요.\n가위는 몇 개일까요?\n어떻게 적을까요?"},suggested_extras:["r_glue_class"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"점점 줄어드는 수",question:"**3 → 2 → 1 → ___**\n다음에 올 수는 무엇일까요?"},suggested_extras:["m_pm1_extends"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"점점 늘어나는 수",question:"**0 → 1 → 2 → ___**\n다음에 올 수는 무엇일까요?"},suggested_extras:[]},
+  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"가위가 몇 개?",ten_frame_anchor:0,question:"가위 보관통이 텅 비어 있어요.\n가위는 몇 개일까요?\n어떻게 적을까요?",answer:"0개 — 영이라고 읽고 0으로 적어요",note:"아무것도 없으면 0. 빈칸이 아니라 숫자 0으로 표기."},suggested_extras:["r_glue_class"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"점점 줄어드는 수",question:"**3 → 2 → 1 → ___**\n다음에 올 수는 무엇일까요?",answer:0,note:"한 칸씩 작아져요: 3,2,1,0. 1보다 1 작은 수=0."},suggested_extras:["m_pm1_extends"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"점점 늘어나는 수",question:"**0 → 1 → 2 → ___**\n다음에 올 수는 무엇일까요?",answer:3,note:"한 칸씩 커져요: 0,1,2,3."},suggested_extras:[]},
   {id:"s12",stage:"기본문제",block:"interactive_ten_frame",data:{title:"앞에 나와서 직접 비워봐요",start_count:3,question:"3에서 **하나씩 비워** 봐요.\n**3 → 2 → 1 → 0**\n0이 될 때까지 한 칸씩!"},suggested_extras:[]},
 
   // ===== 응용 (3) =====
@@ -487,7 +488,7 @@
 
   // ===== 정리 (3) =====
   {id:"s16",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["**아무것도 없는 것** = **0**","0은 **1보다 1만큼 더 작은 수**","0은 **'영'**이라고 읽어요","빈칸과 0은 **달라요** — 0은 분명한 수"]},suggested_extras:["b_zero_book"]},
-  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:1,question:"**1보다 1만큼 더 작은 수**는 무엇인가요?\n그것을 어떻게 적나요?"},suggested_extras:[]},
+  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",ten_frame_anchor:1,question:"**1보다 1만큼 더 작은 수**는 무엇인가요?\n그것을 어떻게 적나요?",answer:"0 — 숫자 0으로 적어요",note:"1−1=0. 영으로 읽고 0으로 써요."},suggested_extras:[]},
   {id:"s18",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"두 수의 **크기를 비교**해 봐요!\n**3**과 **5** 중에 어느 쪽이 더 클까요?",emoji:""},suggested_extras:["e_compare_preview"]}
     ],
     extras: [
@@ -538,9 +539,9 @@
   {id:"s08",stage:"전개",block:"visual_demo",data:{title:"0도 비교할 수 있어요",ten_frame_solo:{count:0,is_anchor:true,label:"**0과 2**를 비교하면?"},sub_text:"0은 가장 작은 수. **2가 0보다 더 커요**"},suggested_extras:["m_zero_smallest"]},
 
   // ===== 기본 (4) =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"어느 쪽이 더 클까요?",ten_frame_anchor:7,question:"**7**과 **3** 중에\n어느 쪽이 더 큰 수인가요?\n반대로도 말해 보세요."},suggested_extras:["m_bidirection"]},
-  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"빈칸 채우기",question:"**5**는 **8**보다 더 ___\n**8**은 **5**보다 더 ___\n(작은·큰 중에서 골라요)"},suggested_extras:["m_word_separation"]},
-  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"가장 큰 수·가장 작은 수",question:"**2 · 6 · 4 · 9 · 1** 중에서\n가장 **큰** 수는?\n가장 **작은** 수는?"},suggested_extras:[]},
+  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"어느 쪽이 더 클까요?",ten_frame_anchor:7,question:"**7**과 **3** 중에\n어느 쪽이 더 큰 수인가요?\n반대로도 말해 보세요.",answer:"7이 3보다 더 큽니다 (3은 7보다 더 작아요)",note:"칸이 더 많은 7이 더 큰 수. 반대로 3은 더 작은 수."},suggested_extras:["m_bidirection"]},
+  {id:"s10",stage:"기본문제",block:"basic_problem",data:{title:"빈칸 채우기",question:"**5**는 **8**보다 더 ___\n**8**은 **5**보다 더 ___\n(작은·큰 중에서 골라요)",answer:"5는 8보다 더 작은, 8은 5보다 더 큰",note:"칸 수 비교: 5<8. 5는 작은 쪽, 8은 큰 쪽."},suggested_extras:["m_word_separation"]},
+  {id:"s11",stage:"기본문제",block:"basic_problem",data:{title:"가장 큰 수·가장 작은 수",question:"**2 · 6 · 4 · 9 · 1** 중에서\n가장 **큰** 수는?\n가장 **작은** 수는?",answer:"가장 큰 수 9, 가장 작은 수 1",note:"칸 수를 견주면 9가 최다, 1이 최소."},suggested_extras:[]},
   {id:"s12",stage:"기본문제",block:"card_arrange",data:{title:"작은 수부터 큰 수로 줄 세우기",instruction:"카드를 드래그해서 **작은 수부터 큰 수** 순서로 놓아 보세요",cards:[6,2,8,4,0],target:[0,2,4,6,8]},suggested_extras:["e_order_compare"]},
 
   // ===== 응용 (3) =====
@@ -550,7 +551,7 @@
 
   // ===== 정리 (3) =====
   {id:"s16",stage:"정리",block:"summary",data:{title:"오늘 배운 것",points:["두 수를 **하나씩 짝지어** 비교할 수 있어요","십 배열판으로 비교하면 **한눈**에 보여요","수는 **크다·작다** / 물건은 **많다·적다**","같은 일을 **두 가지 말**로 할 수 있어요"]},suggested_extras:["b_compare_book"]},
-  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"**4**와 **7**을 비교해 봐요.\n어느 쪽이 더 크나요?\n어느 쪽이 더 작나요?\n두 가지 모두 말할 수 있나요?"},suggested_extras:[]},
+  {id:"s17",stage:"정리",block:"basic_problem",data:{title:"마지막 확인",question:"**4**와 **7**을 비교해 봐요.\n어느 쪽이 더 크나요?\n어느 쪽이 더 작나요?\n두 가지 모두 말할 수 있나요?",answer:"7이 더 크고, 4가 더 작아요",note:"4<7. 한 비교를 양방향으로 말하기."},suggested_extras:[]},
   {id:"s18",stage:"정리",block:"next_lesson",data:{title:"다음 시간에는",preview:"같은 수끼리 **분류**해 봐요!\n흩어진 수 카드를 어떻게 정리할까요?",emoji:""},suggested_extras:["e_classify_preview"]}
     ],
     extras: [
@@ -595,14 +596,15 @@
   {id:"s03",stage:"도입",block:"motivate",data:{scene_title:"야채 농장에 와 봤어요",kids:[{face:"🐰",label:"토끼"},{face:"🐦",label:"새"}],question:"농장 친구들이 수를 세려고 해요\n우리도 함께 풀어 볼까요?"},suggested_extras:["r_farm","q_fun_farm"]},
 
   // ===== 전개 (5) — 평가 문항 풀이 가이드 =====
-  {id:"s04",stage:"전개",block:"basic_problem",data:{title:"문항 1 — 세어 쓰기",question:"배추·당근·무를 세어 수로 적어 보세요.\n**배추 4 · 당근 9 · 무 7**\n([2수01-01] 수 세기·쓰기)"},suggested_extras:["m_count_check","x_zero_confusion"]},
-  {id:"s05",stage:"전개",block:"basic_problem",data:{title:"문항 2 — 0이 등장",question:"당근 바구니가 점점 비어 가요.\n**3 → 2 → 1 → ?**\n마지막 칸에 어떻게 적을까요?\n([2수01-01] 0 표기)"},suggested_extras:["x_blank_vs_zero","m_zero_recall"]},
-  {id:"s06",stage:"전개",block:"basic_problem",data:{title:"문항 3 — 두 수 비교",question:"**3과 6** 중에 어느 쪽이 더 큰 수인가요?\n반대로도 말해 봐요.\n([2수01-03] 크기 비교)"},suggested_extras:["m_compare_recall","x_amount_vs_number_recall"]},
-  {id:"s07",stage:"전개",block:"basic_problem",data:{title:"문항 4 — 수의 순서",question:"빠진 수를 채워 봐요.\n**1 · 2 · ___ · 4 · 5 · ___ · 7 · 8 · 9**\n([2수01-03] 수의 순서)"},suggested_extras:["m_order_recall"]},
-  {id:"s08",stage:"전개",block:"basic_problem",data:{title:"문항 5 — 기준 넣은 순서",question:"9명이 한 줄로 섰어요.\n**왼쪽에서 여섯째**는?\n**오른쪽에서 둘째**는?\n([2수01-03] 순서수)"},suggested_extras:["x_third_vs_three_recall","m_direction_check"]},
+  {id:"s04",stage:"전개",block:"basic_problem",data:{title:"문항 1 — 세어 쓰기",question:"배추·당근·무를 세어 수로 적어 보세요.\n**배추 4 · 당근 9 · 무 7**\n([2수01-01] 수 세기·쓰기)",answer:"배추 4, 당근 9, 무 7",note:"하나씩 짚어 세고 수로 적기."},suggested_extras:["m_count_check","x_zero_confusion"]},
+  {id:"s05",stage:"전개",block:"basic_problem",data:{title:"문항 2 — 0이 등장",question:"당근 바구니가 점점 비어 가요.\n**3 → 2 → 1 → ?**\n마지막 칸에 어떻게 적을까요?\n([2수01-01] 0 표기)",answer:"0 (숫자 0으로 적어요)",note:"1 다음은 0. 빈칸이 아니라 0으로 표기."},suggested_extras:["x_blank_vs_zero","m_zero_recall"]},
+  {id:"s06",stage:"전개",block:"basic_problem",data:{title:"문항 3 — 두 수 비교",question:"**3과 6** 중에 어느 쪽이 더 큰 수인가요?\n반대로도 말해 봐요.\n([2수01-03] 크기 비교)",answer:"6이 더 큼 (3은 더 작음)",note:"3<6. 양방향으로 말하기."},suggested_extras:["m_compare_recall","x_amount_vs_number_recall"]},
+  {id:"s07",stage:"전개",block:"basic_problem",data:{title:"문항 4 — 수의 순서",question:"빠진 수를 채워 봐요.\n**1 · 2 · ___ · 4 · 5 · ___ · 7 · 8 · 9**\n([2수01-03] 수의 순서)",answer:"첫 빈칸 3, 둘째 빈칸 6",note:"순서대로 1~9. 빠진 수는 3과 6."},suggested_extras:["m_order_recall"]},
+  {id:"s08",stage:"전개",block:"basic_problem",data:{title:"문항 5 — 기준 넣은 순서",question:"9명이 한 줄로 섰어요.\n**왼쪽에서 여섯째**는?\n**오른쪽에서 둘째**는?\n([2수01-03] 순서수)",answer:"왼쪽에서 여섯째 = 왼쪽 6번째, 오른쪽에서 둘째 = 왼쪽에서 여덟째(9−2+1=8)",note:"기준 방향에 따라 사람이 달라요. 오른쪽 2째 = 왼쪽 8째."},suggested_extras:["x_third_vs_three_recall","m_direction_check"]},
 
   // ===== 기본 (4) — 문항 6 + 자기 평가 =====
-  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"문항 6 — ±1 (분리배출)",ten_frame_anchor:5,question:"분리배출함에 캔이 **5개** 모였어요.\n**1만큼 더 작은 수**는?\n**1만큼 더 큰 수**는?\n([2수01-03] ±1)"},suggested_extras:["r_recycle","m_pm1_recall"]},
+  {id:"s09",stage:"기본문제",block:"basic_problem",data:{title:"문항 6 — ±1 (분리배출)",ten_frame_anchor:5,question:"분리배출함에 캔이 **5개** 모였어요.\n**1만큼 더 작은 수**는?\n**1만큼 더 큰 수**는?\n([2수01-03] ±1)",answer:"1만큼 더 작은 수 4, 1만큼 더 큰 수 6",note:"5−1=4, 5+1=6."},suggested_extras:["r_recycle","m_pm1_recall"]},
+  {id:"s09b",stage:"전개",block:"misconception",data:{title:"조심해요 — 순서 문제",label:"오개념 주의",wrong:"기준(앞/뒤·왼/오)은 안 봐도 돼",right:"**기준이 바뀌면** 가리키는 사람도 **달라져요**.\n'왼쪽에서'·'오른쪽에서'를 꼭 확인!",hint:"순서 문제는 어느 쪽에서 세는지부터 봐요."},suggested_extras:[]},
   {id:"s10",stage:"기본문제",block:"question",data:{title:"자기 평가 — 지식·이해",content:"**수를 셀 수 있나요?**\n★ · ★★ · ★★★\n별의 수로 스스로 평가해 봐요"},suggested_extras:["m_self_assess_tone"]},
   {id:"s11",stage:"기본문제",block:"question",data:{title:"자기 평가 — 과정·기능",content:"**어느 수가 더 큰지 말할 수 있나요?**\n★ · ★★ · ★★★\n부족하다고 느낀 부분도 솔직히 표시"},suggested_extras:["m_honest_check"]},
   {id:"s12",stage:"기본문제",block:"question",data:{title:"자기 평가 — 가치·태도",content:"**수를 즐겁게 공부했나요?**\n★ · ★★ · ★★★\n어떤 시간이 가장 즐거웠는지도 떠올려 봐요"},suggested_extras:["q_fun_favorite_time"]},
