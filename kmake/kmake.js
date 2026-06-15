@@ -1,5 +1,5 @@
 /* ============================================================
-   케이메이크 (KMake) v2 — K-edu 무료 교육 디자인 도구
+   케이메이커 (KMaker) v2 — K-edu 무료 교육 디자인 도구
    엔진: Fabric.js 5.3 · 내보내기: jsPDF
    핵심: 스마트 정렬 가이드 / 컨텍스트 툴바 / 폰트·색 피커 / 슬롯 채우기
    ============================================================ */
@@ -671,12 +671,12 @@ function snapshot(scale) {
   const z = zoom; canvas.discardActiveObject(); canvas.setZoom(1); canvas.setDimensions({ width: baseW, height: baseH }); canvas.renderAll();
   const url = canvas.toDataURL({ format: 'png', multiplier: scale || 2 }); applyZoom(z); return url;
 }
-function exportPNG() { closePops(); const a = document.createElement('a'); a.href = snapshot(2.5); a.download = '케이메이크.png'; a.click(); toast('PNG 저장 완료'); }
+function exportPNG() { closePops(); const a = document.createElement('a'); a.href = snapshot(2.5); a.download = '케이메이커.png'; a.click(); toast('PNG 저장 완료'); }
 function exportPDF() {
   closePops(); const { jsPDF } = window.jspdf; const url = snapshot(2.5);
   const mmW = baseW / 96 * 25.4, mmH = baseH / 96 * 25.4;
   const pdf = new jsPDF({ orientation: mmW > mmH ? 'l' : 'p', unit: 'mm', format: [mmW, mmH] });
-  pdf.addImage(url, 'PNG', 0, 0, mmW, mmH); pdf.save('케이메이크.pdf'); toast('PDF 저장 완료');
+  pdf.addImage(url, 'PNG', 0, 0, mmW, mmH); pdf.save('케이메이커.pdf'); toast('PDF 저장 완료');
 }
 function exportPPTX() {
   closePops();
@@ -688,13 +688,13 @@ function exportPPTX() {
   pptx.layout = 'KM';
   const s = pptx.addSlide();
   s.addImage({ data: url, x: 0, y: 0, w: inW, h: inH });
-  pptx.writeFile({ fileName: '케이메이크.pptx' }).then(() => toast('PPT 저장 완료'));
+  pptx.writeFile({ fileName: '케이메이커.pptx' }).then(() => toast('PPT 저장 완료'));
 }
 
 /* ============ 저장 / 불러오기 ============ */
 document.getElementById('btnSave').onclick = () => {
   const data = { v: 2, baseW, baseH, audience, canvas: canvas.toJSON(['kmSlot']) };
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = '케이메이크.kmake'; a.click(); toast('작업파일 저장 완료');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = '케이메이커.kmake'; a.click(); toast('작업파일 저장 완료');
 };
 document.getElementById('btnOpen').onclick = () => document.getElementById('jsonInput').click();
 document.getElementById('jsonInput').addEventListener('change', function (e) {

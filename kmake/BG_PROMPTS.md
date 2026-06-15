@@ -1,4 +1,4 @@
-# 케이메이크 배경 30종 — Claude Design 프롬프트북
+# 케이메이커 배경 30종 — Claude Design 프롬프트북
 
 사용법: **맨 아래 [공통 제약]을 복사해서 각 프롬프트 끝에 붙인 뒤** Claude Design에 넣는다.
 결과 SVG는 변환 없이 통째로 베프에게 전달 → backgrounds.js 등록·검수는 베프가 처리.
