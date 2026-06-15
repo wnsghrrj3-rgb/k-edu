@@ -244,6 +244,21 @@
         volGeo.computeVertexNormals();
       })();
       var cone=new T.Mesh(volGeo, volMat); volGroup.add(cone);
+      // 표면을 타고 흐르는 용암 강 (콘 모양 그대로 덧씌운 껍질 + 스크롤 텍스처)
+      function lavaRiversTex(){ var c=document.createElement('canvas'); c.width=c.height=128; var g=c.getContext('2d'); g.clearRect(0,0,128,128);
+        for(var ch=0; ch<7; ch++){ var x=8+ch*17+(Math.random()*6-3), w=5+Math.random()*5;
+          for(var y=-8;y<136;y+=6){ g.fillStyle='rgba(255,'+(150+Math.random()*90|0)+',40,'+(0.25+0.6*Math.random()).toFixed(2)+')'; g.beginPath(); g.ellipse(x+(Math.random()*4-2),y,w*0.5,4+Math.random()*3,0,0,7); g.fill(); }
+          g.strokeStyle='rgba(255,235,170,0.5)'; g.lineWidth=2; g.beginPath(); g.moveTo(x,0); g.lineTo(x,128); g.stroke(); }
+        var t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(3,2); return t; }
+      function basaltRockTex(){ var c=document.createElement('canvas'); c.width=c.height=128; var g=c.getContext('2d'); g.clearRect(0,0,128,128);
+        for(var ch=0; ch<7; ch++){ var x=8+ch*17+(Math.random()*6-3), w=6+Math.random()*5;
+          g.fillStyle='rgba(34,30,38,0.92)'; g.fillRect(x-w/2,0,w,128);
+          for(var s=0;s<40;s++){ g.fillStyle='rgba('+(54+Math.random()*26|0)+','+(50+Math.random()*22|0)+',60,0.7)'; g.beginPath(); g.arc(x+(Math.random()*w-w/2),Math.random()*128,1+Math.random()*1.5,0,7); g.fill(); } }
+        var t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping; t.repeat.set(3,2); return t; }
+      var lrTex=lavaRiversTex(), brTex=basaltRockTex();
+      var flowShellMat=new T.MeshBasicMaterial({map:lrTex, transparent:true, opacity:0, blending:T.AdditiveBlending, depthWrite:false, side:T.DoubleSide});
+      var flowShell=new T.Mesh(volGeo.clone(), flowShellMat); flowShell.scale.setScalar(1.015); volGroup.add(flowShell);
+      var shellMode='';
       var craterGlowMat=new T.MeshBasicMaterial({color:0xff7a1e, transparent:true, opacity:0, side:T.DoubleSide});
       var craterGlow=new T.Mesh(new T.CircleGeometry(1.5,32), craterGlowMat); craterGlow.rotation.x=-Math.PI/2; craterGlow.position.y=rimY-1.55; volGroup.add(craterGlow);
       var throatMat=new T.MeshBasicMaterial({color:0xffc24d, transparent:true, opacity:0});
@@ -444,6 +459,17 @@
         // 바위 틈으로 비치는 용암 발광 (압력↑→은은, 분출→강하게, 식으면 약하게)
         var eT=S.erupting?(cooled?0.5:2.3):(S.press/100)*1.3;
         volMat.emissiveIntensity+=(eT-volMat.emissiveIntensity)*Math.min(1,dt*4);
+        // 표면 용암 강: 분출 중 흐름 → 빨리 식히면 검은 현무암으로 굳음
+        var basaltCooled=!!(S.made&&S.made.basalt);
+        var wantMode = basaltCooled?'rock' : (S.erupting?'flow':'off');
+        if(wantMode!==shellMode){ shellMode=wantMode;
+          if(wantMode==='rock'){ flowShellMat.map=brTex; flowShellMat.blending=T.NormalBlending; }
+          else { flowShellMat.map=lrTex; flowShellMat.blending=T.AdditiveBlending; }
+          flowShellMat.needsUpdate=true;
+        }
+        var sOp = shellMode==='rock'?0.96 : (shellMode==='flow'?0.92:0);
+        flowShellMat.opacity += (sOp-flowShellMat.opacity)*Math.min(1,dt*3);
+        if(shellMode==='flow') lrTex.offset.y -= dt*0.4;
         // 흔들림
         var trembling=(!S.erupting&&S.press>=60)|| (S.erupting&&!cooled);
         shake=trembling?Math.min(0.18,shake+dt*0.4):Math.max(0,shake-dt*0.6);
@@ -479,7 +505,7 @@
       return {
         sync:function(v){ S.press=v.press; S.erupting=v.erupting; S.seen=v.seen; S.made=v.made; updateChips(); },
         setCut:function(b){ S.cut=!!b;
-          if(b){ theta=0; phi=1.12; radius=40; } else { theta=0.6; phi=1.05; radius=38; }
+          if(b){ theta=0; phi=1.2; radius=34; target.set(0,0.5,0); } else { theta=0.6; phi=1.05; radius=38; target.set(0,4.5,0); }
           place();
         },
         dispose:function(){ alive3=false; if(raf3)cancelAnimationFrame(raf3);
