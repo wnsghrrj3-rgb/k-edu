@@ -14,8 +14,10 @@
   .grades{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
   .gtab{font-size:22px;padding:12px 26px;border-radius:16px;border:3px solid #1565C0;background:#fff;color:#1565C0;cursor:pointer;font-family:inherit;font-weight:800;}
   .gtab.on{background:#1565C0;color:#fff;}
-  .grp{flex-basis:100%;width:100%;font-size:20px;font-weight:800;color:#1565C0;margin:16px 4px 2px;}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:22px;}
+  .grp{width:100%;font-size:20px;font-weight:800;color:#1565C0;margin:24px 4px 12px;}
+  .grp:first-child{margin-top:4px;}
+  .cards{margin-bottom:22px;}
+  .catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:6px;}
   .card{background:#fff;border-radius:18px;padding:18px;border:3px solid transparent;cursor:pointer;box-shadow:0 2px 10px rgba(21,101,192,.08);transition:transform .1s,border-color .15s;}
   .card:hover{transform:translateY(-3px);border-color:#1565C0;}
   .card.soon{opacity:.5;cursor:default;}
@@ -220,6 +222,7 @@ function renderCards(){
     if(!items.length)return;
     shown+=items.length;
     var h=document.createElement('div'); h.className='grp'; h.textContent=grp.group; cardsEl.appendChild(h);
+    var grid=document.createElement('div'); grid.className='catgrid';
     items.forEach(function(item){
       var c=document.createElement('div'); c.className='card'+((item.tool||item.link)?'':' soon');
       c.innerHTML='<div class="nm">'+item.nm
@@ -227,8 +230,9 @@ function renderCards(){
         +'</div><div class="ds">'+item.ds+'</div><div class="badge">'+((item.tool||item.link)?'열기':'준비 중')+'</div>';
       if(item.tool) c.onclick=function(){enterFocus(item.nm); mount(item.tool,item.cfg); window.scrollTo({top:0,behavior:'smooth'});};
       else if(item.link){ var lk=item.link; c.onclick=function(){window.open(lk,'_blank');}; }
-      cardsEl.appendChild(c);
+      grid.appendChild(c);
     });
+    cardsEl.appendChild(grid);
   });
   if(!shown){
     var e=document.createElement('div'); e.className='ph';
