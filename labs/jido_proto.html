@@ -123,13 +123,14 @@
 <script>
 (function(){
   // ── 인증키: 레포에 박지 않음. ?key= 또는 입력창으로 주입 ──
-  var KEY = new URLSearchParams(location.search).get('key') || '';
+  // ── 인증키: keduclass.com 도메인에 묶인 개발키(2026-12-15 만료). ?key= 로 덮어쓰기 가능. 운영 전환 시 운영키로 교체 ──
+  var KEY = new URLSearchParams(location.search).get('key') || '7ED25FC8-DA7D-331F-AA7F-B4B7B901BCD1';
   var ATTR = '공간정보 오픈플랫폼(브이월드)';
   var map=null, layers={}, mode='symbol', threeReady=false;
   var $=function(s){return document.querySelector(s);};
 
-  function vwLayer(name){
-    return L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/'+KEY+'/'+name+'/{z}/{y}/{x}.png',
+  function vwLayer(name, ext){
+    return L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/'+KEY+'/'+name+'/{z}/{y}/{x}.'+(ext||'png'),
       { attribution:ATTR, maxZoom:19, minZoom:6, errorTileUrl:'' });
   }
   function banner(msg){ var b=$('#banner'); if(!msg){b.style.display='none';return;} b.textContent=msg; b.style.display='block'; }
@@ -137,9 +138,9 @@
   function buildMap(){
     if(map){ map.remove(); map=null; }
     map = L.map('map',{ zoomControl:true, attributionControl:true }).setView([37.8315,127.5106], 15); // 기본 = 가평
-    layers.base = vwLayer('Base');        // 기호 지도(국가 약속 기호)
-    layers.sat  = vwLayer('Satellite');   // 실제 모습(항공/위성)
-    layers.hyb  = vwLayer('Hybrid');      // 위성 위 라벨
+    layers.base = vwLayer('Base');             // 기호 지도(국가 약속 기호) — png
+    layers.sat  = vwLayer('Satellite','jpeg'); // 실제 모습(항공/위성) — jpeg(중요)
+    layers.hyb  = vwLayer('Hybrid');           // 위성 위 라벨 — png
     layers.base.addTo(map);
     // 타일 실패 → 폴백 안내
     var failed=false;
@@ -166,11 +167,14 @@
     s.src='https://map.vworld.kr/js/webglMapInit.js.do?version=3.0&apiKey='+KEY;
     s.onload=function(){
       try{
-        var m=new vw.Map(); m.setOption({ mapId:'map3d', logo:false, navigation:true });
+        var pos=new vw.CameraPosition(new vw.CoordZ(127.5106,37.8315,6000), new vw.Direction(0,-50,0));
+        var m=new vw.Map();
+        m.setOption({ mapId:'map3d', initPosition:pos, logo:false, navigation:true });
         m.setMapId('map3d');
-        m.setInitPosition(new vw.CameraPosition(new vw.CoordZ(127.5106,37.8315,3000), new vw.Direction(0,-60,0)));
-        m.start && m.start();
-        threeReady=true; banner('');
+        m.setInitPosition(pos);
+        if(m.start) m.start();
+        threeReady=true; banner('🧊 드래그로 둘러보기 · 휠로 확대 (대도시일수록 실사 건물)');
+        setTimeout(function(){ banner(''); }, 4000);
       }catch(e){ banner('3D 초기화 실패 — 키/도메인 확인'); }
     };
     s.onerror=function(){ banner('3D 스크립트 로드 실패 — 키 확인'); };
@@ -203,16 +207,30 @@
 
   function flyTo(lat,lng,z){ if(map){ map.setView([lat,lng], z||15); } }
 
-  // ── 검색(지오코더): 브이월드 검색 API. 키 필요. ──
+  // ── 검색(지오코더): 브이월드 검색 API. fetch는 CORS 막히므로 JSONP(callback) 사용. ──
   function searchAddr(q){
+    if(!q) return;
     if(!KEY){ banner('키가 있어야 검색돼요'); return; }
-    var url='https://api.vworld.kr/req/search?service=search&request=search&version=2.0&size=1&query='
-      +encodeURIComponent(q)+'&type=place&format=json&errorformat=json&key='+KEY;
-    fetch(url).then(function(r){return r.json();}).then(function(d){
-      var p=d&&d.response&&d.response.result&&d.response.result.items&&d.response.result.items[0];
-      if(p&&p.point){ flyTo(parseFloat(p.point.y), parseFloat(p.point.x), 17); banner(''); }
-      else banner('못 찾음 — 다른 이름으로');
-    }).catch(function(){ banner('검색 실패 — 키/도메인 확인'); });
+    banner('찾는 중…');
+    var done=false;
+    function tryType(type, next){
+      var cb='vwcb'+Date.now()+Math.floor(Math.random()*1000);
+      var s=document.createElement('script');
+      window[cb]=function(d){
+        delete window[cb]; s.remove();
+        if(done) return;
+        var r=d&&d.response, item=r&&r.result&&r.result.items&&r.result.items[0];
+        if(r&&r.status==='OK'&&item&&item.point){ done=true; flyTo(parseFloat(item.point.y), parseFloat(item.point.x), 17); banner(''); }
+        else if(next) next();
+        else if(!done) banner('못 찾음 — 다른 이름으로 (예: 가평군청, 시청)');
+      };
+      s.onerror=function(){ s.remove(); if(next) next(); else banner('검색 실패 — 키/도메인 확인'); };
+      s.src='https://api.vworld.kr/req/search?service=search&request=search&version=2.0&crs=EPSG:4326&size=1&page=1'
+        +'&query='+encodeURIComponent(q)+'&type='+type+'&format=json&errorformat=json&key='+KEY+'&callback='+cb;
+      document.body.appendChild(s);
+    }
+    // 장소(POI) → 없으면 주소(address)로 재시도
+    tryType('place', function(){ tryType('address', null); });
   }
 
   // ── 이벤트 ──
