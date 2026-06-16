@@ -613,6 +613,48 @@ document.getElementById('build-501').innerHTML = pvNumber(5, 0, 1, 0.3);
 // 슬8 — 347 모형 (문제)
 document.getElementById('q8-blocks').innerHTML = pvNumber(3, 4, 7, 0.28);
 
+// ───── setupPad (숫자 키패드 입력 판정) — 공통 헬퍼 복구 ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg) {
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < 3) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한 번 세어 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
 setupPad('q8', 347, 'q8-pad', 'q8-display', 'q8-fb', '백3·십4·일7은 347!');
 setupPad('q11', 635, 'q11-pad', 'q11-display', 'q11-fb', '백6·십3·일5는 635!');
 

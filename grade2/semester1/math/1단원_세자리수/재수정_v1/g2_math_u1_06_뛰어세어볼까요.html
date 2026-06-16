@@ -634,6 +634,48 @@ document.getElementById('q12-jump').innerHTML = jumpRow([800,700,600], -100, {bl
 // 슬15 — 수 배열표 빈칸(가운데 632 = star)
 document.getElementById('q15-grid').innerHTML = numberGrid(621, 3, 3, {star:4});
 
+// ───── setupPad (숫자 키패드 입력 판정) — 공통 헬퍼 복구 ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg) {
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < 3) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한 번 세어 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
 setupPad('q8', 400, 'q8-pad', 'q8-display', 'q8-fb', '100씩 뛰면 400!');
 setupPad('q9', 470, 'q9-pad', 'q9-display', 'q9-fb', '10씩 뛰면 470!');
 setupPad('q11', 999, 'q11-pad', 'q11-display', 'q11-fb', '1씩 뛰면 999!');
