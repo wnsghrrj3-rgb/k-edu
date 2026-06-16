@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<!--
+  g2_math_u2_l02 — 삼각형을 알아보고 찾아볼까요 [2학년 2단원 02차시, 단일 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g2/unit2/02차_삼각형을_알아보고_찾아볼까요/draft.html
+  계획: _PLAN.md (2026-06-16)
+  지도서: _SOURCE.md (지도서 p.180-183, 교과서 36-39, 수학익힘 20-21, 40분 단일)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+
+  학습 본질: 곧은 선 3개로 둘러싸인 도형 = 삼각형 + 변 3개·꼭짓점 3개 + 예/예가 아닌 것 분류
+  메카닉: 개수 입력(count_input) + 4지선다 + 점판 점 잇기(dot_grid) + 도형 판정(shape_judge) + 매칭 + 실생활 판정
+  점수: 기본 4슬 × 10점(q8·9·10·11) + 응용 4슬 × 15점(q12·13·14·15) = 100점
+  부품: polygon_shape(다각형 SVG·변/꼭짓점 강조)·dot_grid(점판)·shape_judge(도형 ○✕) — 2학년 도형 신규 + count_input·mcq·match·self 재사용
+  톤: 2학년 v14 따뜻한 톤 = paper #FBF7F1 / ink #243043 / coral #FF6B4A / teal #1FA8A0 / Jua·Gowun Dodum
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g2_math_u2_l02_v1">
+<title>삼각형을 알아보고 찾아볼까요 · K-edu 2학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-dotpop { 0%{transform:scale(0);} 70%{transform:scale(1.3);} 100%{transform:scale(1);} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.emoji-row { display:flex; gap:clamp(6px,1.4vw,14px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); }
+
+/* ───── polygon_shape (도형 시각) ───── */
+.shape-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.shape-row { display:flex; gap:clamp(14px,3vw,30px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.shape-svg { display:block; }
+.shape-cap { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); text-align:center; }
+.poly-edge { stroke:var(--coral-deep); stroke-width:7; fill:var(--coral-soft); stroke-linejoin:round; }
+.poly-edge.hl { stroke:var(--emph); }
+.poly-vertex { fill:var(--emph); }
+.poly-vertex.pop { animation:ka-dotpop .45s ease both; }
+.label-tag { font-family:var(--f-title); font-size:var(--fs-caption); fill:var(--ink); }
+.label-tag.edge { fill:var(--coral-deep); }
+.label-tag.vertex { fill:var(--emph); }
+
+/* ───── dot_grid (점판) ───── */
+.dg-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.dg-svg { width:min(420px,82vw); height:auto; touch-action:manipulation; }
+.dg-dot { fill:#C9BCAC; cursor:pointer; transition:fill .15s; }
+.dg-dot:hover { fill:var(--coral); }
+.dg-dot.picked { fill:var(--coral-deep); }
+.dg-line { stroke:var(--coral-deep); stroke-width:5; stroke-linecap:round; }
+.dg-reset { font-family:var(--f-title); font-size:var(--fs-label); background:#FFF8E1; color:#F57F17; border:2px solid #FFE08A; border-radius:999px; padding:6px 18px; cursor:pointer; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; display:flex; align-items:center; justify-content:center; gap:10px; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-opt svg { display:block; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── shape_judge (도형 모음 ○✕) ───── */
+.judge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.judge-cell { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vw,9px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(8px,1.6vw,14px); box-shadow:0 5px 0 var(--coral-soft); cursor:pointer; transition:transform .12s, border-color .15s; }
+.judge-cell:hover { border-color:var(--coral); }
+.judge-cell:active { transform:translateY(3px); box-shadow:none; }
+.judge-cell.picked { border-color:var(--teal-deep); background:var(--teal-soft); }
+.judge-cell.miss { border-color:var(--emph); animation:ka-shake .35s; }
+.judge-mark { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.2em; }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(8px,1.4vw,12px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(8px,1.6vw,13px) clamp(16px,3vw,26px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(90px,16vw,140px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); font-weight:400; display:flex; align-items:center; justify-content:center; gap:8px; }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+.match-card svg { display:block; }
+
+/* ───── 실생활 judge (○✕ 버튼형) ───── */
+.life-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.life-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.life-emoji { font-size:var(--em-sm); }
+.life-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.life-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.life-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.life-btn:active { transform:translateY(3px); }
+.life-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.life-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.life-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.life-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+</style>
+</head>
+<body>
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">2차시</span>
+    <span class="ka-where">수학 2-1 · <b>2. 여러 가지 도형</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 슬라이드 본문 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 흥미 유발 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">어떤 모양이 보이나요?</h2>
+      <div class="scene">
+        <div class="shape-row" id="intro-shapes"></div>
+        <div class="emoji-row">🪁  🎏  ⛺</div>
+      </div>
+      <div class="intro-q">연과 깃발, 텐트에는 <strong>뾰족한 곳이 3개</strong>인 모양이 숨어 있어요.<br>이 모양을 함께 알아봐요!</div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 삼각형을 배워요</h2>
+      <ul class="goal-list">
+        <li><strong>삼각형</strong>이 어떤 모양인지 알아봐요</li>
+        <li>삼각형의 <strong>변과 꼭짓점</strong>을 찾아봐요</li>
+        <li>주변에서 <strong>삼각형</strong>을 찾아봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 상기 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">지난 시간을 떠올려요</h2>
+      <div class="recall-box">1학년 때 △ 모양을 찾아봤어요.<br><strong>곧은 선 3개</strong>, <strong>뾰족한 곳 3개</strong>가 있었어요.</div>
+      <div class="shape-row" id="recall-shape"></div>
+    </div>
+
+    <!-- 슬 4 — 전개: 개념 도입 (삼각형) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 개념</div>
+      <h2 class="slide-title">곧은 선 3개로 둘러싸인 도형</h2>
+      <div class="shape-stage">
+        <div class="shape-row" id="concept-tri"></div>
+        <div class="concept-box">이렇게 <strong>곧은 선 3개</strong>로 둘러싸인 도형을<br><strong>삼각형</strong>이라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 변·꼭짓점 이름 붙이기 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 변과 꼭짓점</div>
+      <h2 class="slide-title">변과 꼭짓점을 알아봐요</h2>
+      <div class="shape-stage">
+        <div class="shape-row" id="label-tri"></div>
+        <div class="concept-box">곧은 선을 <strong>변</strong>,<br>곧은 선 2개가 만나는 점을 <strong>꼭짓점</strong>이라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 다양한 삼각형 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 다양한 삼각형</div>
+      <h2 class="slide-title">모양이 달라도 삼각형이에요</h2>
+      <div class="shape-stage">
+        <div class="shape-row" id="various-tri"></div>
+        <div class="concept-box">크기와 모양이 달라도<br><strong>변 3개·꼭짓점 3개</strong>이면 모두 <strong>삼각형</strong>이에요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 개념 정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 정리</div>
+      <h2 class="slide-title">삼각형은 이런 도형이에요</h2>
+      <div class="shape-stage">
+        <div class="shape-row" id="sum-tri"></div>
+        <div class="concept-box"><strong>변 3개</strong> + <strong>꼭짓점 3개</strong> = <strong>삼각형</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본문제: 변 개수 (count_input) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">삼각형의 변은 모두 몇 개일까요?</div>
+        <div class="shape-row" id="q8-shape"></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["변은 도형을 둘러싼 곧은 선이에요.","곧은 선을 하나씩 세어 보세요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본문제: 꼭짓점 개수 (count_input) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">삼각형의 꼭짓점은 모두 몇 개일까요?</div>
+        <div class="shape-row" id="q9-shape"></div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["꼭짓점은 곧은 선 2개가 만나는 뾰족한 점이에요.","뾰족한 점을 하나씩 세어 보세요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본문제: 삼각형 찾기 (4지선다) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">삼각형은 어느 것일까요?</div>
+        <div class="mcq-opts" id="q10-opts"></div>
+        <div class="mcq-hint" data-hints='["곧은 선 3개로 둘러싸인 것을 찾아요.","뾰족한 꼭짓점이 3개인 것이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본문제: 점판에 삼각형 그리기 (dot_grid) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 점판 10점</div>
+      <h2 class="slide-title">점 3개를 이어 삼각형을 그려요</h2>
+      <div class="dg-stage">
+        <div id="q11-dg"></div>
+        <button class="dg-reset" id="q11-reset">다시 그리기</button>
+        <div class="mcq-hint" data-hints='["점 3개를 골라 차례대로 이어요.","마지막 점은 처음 점과 이어 닫아요."]'></div>
+        <div class="q-fb" id="q11-fb">점을 눌러 삼각형을 만들어 보세요</div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용: 삼각형 모두 찾기 (shape_judge) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">삼각형을 모두 찾아요</h2>
+      <div class="q-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">삼각형인 것을 모두 눌러요</div>
+        <div class="judge-grid" id="q12-judge"></div>
+        <div class="mcq-hint" data-hints='["변 3개·꼭짓점 3개를 확인해요.","곧은 선이고 끊긴 곳이 없어야 해요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용: 삼각형이 아닌 까닭 (4지선다) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">왜 삼각형이 아닐까요?</h2>
+      <div class="q-stage">
+        <div class="shape-row" id="q13-shape"></div>
+        <div class="q-prompt" style="font-size:var(--fs-body)">이 도형이 삼각형이 아닌 까닭은?</div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="1">한 군데가 열려 있어요</button>
+          <button class="mcq-opt" data-correct="0">변이 3개예요</button>
+          <button class="mcq-opt" data-correct="0">꼭짓점이 3개예요</button>
+          <button class="mcq-opt" data-correct="0">곧은 선이에요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["삼각형은 끊긴 곳 없이 닫혀 있어야 해요.","열려 있으면 삼각형이 될 수 없어요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용: 변·꼭짓점 ↔ 도형 매칭 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">변·꼭짓점 수로 이어요</h2>
+      <div class="match-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">왼쪽 설명과 알맞은 도형을 이어요</div>
+        <div class="match-cols">
+          <div class="match-col" id="q14-left"></div>
+          <div class="match-col" id="q14-right"></div>
+        </div>
+        <div class="mcq-hint" data-hints='["삼각형은 변·꼭짓점이 3개예요.","사각형은 변·꼭짓점이 4개예요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용: 실생활 삼각형 ○✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">삼각형 모양이면 ○, 아니면 ✕</h2>
+      <div class="q-stage">
+        <div class="life-grid" id="q15-life">
+          <div class="life-item" data-ans="o"><div class="life-emoji">⛺</div><div class="life-text">텐트</div><div class="life-btns"><button class="life-btn" data-pick="o">○</button><button class="life-btn" data-pick="x">✕</button></div></div>
+          <div class="life-item" data-ans="o"><div class="life-emoji">🏠</div><div class="life-text">삼각 지붕</div><div class="life-btns"><button class="life-btn" data-pick="o">○</button><button class="life-btn" data-pick="x">✕</button></div></div>
+          <div class="life-item" data-ans="x"><div class="life-emoji">⚽</div><div class="life-text">공</div><div class="life-btns"><button class="life-btn" data-pick="o">○</button><button class="life-btn" data-pick="x">✕</button></div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["곧은 선 3개·꼭짓점 3개인지 떠올려요.","둥근 모양은 삼각형이 아니에요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 핵심 요약 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="shape-row" id="sum-final"></div>
+        <div class="summary-card"><strong>삼각형</strong>은 <strong>곧은 선 3개</strong>로 둘러싸인 도형이에요.<br><strong>변 3개</strong>, <strong>꼭짓점 3개</strong>가 있어요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🔲</div>
+          <div class="next-label">곧은 선 4개로 둘러싸인 사각형을 알아봐요</div>
+        </div>
+        <div class="home-prompt">집에서 삼각형 모양 물건을 찾아보세요! (옷걸이·삼각자 등)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g2_math_u2_l02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+// polygon_shape — 다각형 SVG (2학년 도형 신규 부품)
+//   pts: [[x,y],...] 0~100 좌표계. opts: {size, showVertex, vertexLabels, edgeLabels}
+//   변 = coral-deep 굵은 선 + coral-soft 면 / 꼭짓점 = emph 원
+// ════════════════════════════════════════
+function polygon(pts, opts) {
+  opts = opts || {};
+  const size = opts.size || 150;
+  const pad = 16;
+  const inner = size - pad * 2;
+  function sx(x) { return pad + (x / 100) * inner; }
+  function sy(y) { return pad + (y / 100) * inner; }
+  const poly = pts.map(p => `${sx(p[0])},${sy(p[1])}`).join(' ');
+  let s = `<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  s += `<polygon class="poly-edge${opts.hl ? ' hl' : ''}" points="${poly}"/>`;
+  if (opts.showVertex) {
+    pts.forEach((p, i) => {
+      s += `<circle class="poly-vertex" cx="${sx(p[0])}" cy="${sy(p[1])}" r="${size*0.04}"/>`;
+    });
+  }
+  s += `</svg>`;
+  return s;
+}
+// 변·꼭짓점 라벨이 붙은 삼각형 (슬5 전용)
+function polygonLabeled(pts, size) {
+  size = size || 230;
+  const pad = 34;
+  const inner = size - pad * 2;
+  function sx(x){return pad+(x/100)*inner;}
+  function sy(y){return pad+(y/100)*inner;}
+  const poly = pts.map(p=>`${sx(p[0])},${sy(p[1])}`).join(' ');
+  let s = `<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  s += `<polygon class="poly-edge" points="${poly}"/>`;
+  // 변 라벨 = 한 변의 중점 바깥쪽
+  const cx = pts.reduce((a,p)=>a+sx(p[0]),0)/pts.length;
+  const cy = pts.reduce((a,p)=>a+sy(p[1]),0)/pts.length;
+  for (let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    const mx=(sx(a[0])+sx(b[0]))/2, my=(sy(a[1])+sy(b[1]))/2;
+    const ox=mx+(mx-cx)*0.34, oy=my+(my-cy)*0.34;
+    if (i===0) s += `<text class="label-tag edge" x="${ox}" y="${oy}" text-anchor="middle" dominant-baseline="middle">변</text>`;
+  }
+  // 꼭짓점 1개에만 라벨 + 점
+  pts.forEach((p,i)=>{ s += `<circle class="poly-vertex" cx="${sx(p[0])}" cy="${sy(p[1])}" r="${size*0.028}"/>`; });
+  const v=pts[0];
+  const vx=sx(v[0]), vy=sy(v[1]);
+  s += `<text class="label-tag vertex" x="${vx+(vx-cx)*0.5}" y="${vy+(vy-cy)*0.5-4}" text-anchor="middle" dominant-baseline="middle">꼭짓점</text>`;
+  s += `</svg>`;
+  return s;
+}
+function shapeCell(pts, cap, opts) {
+  return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px">${polygon(pts, opts)}${cap?`<div class="shape-cap">${cap}</div>`:''}</div>`;
+}
+
+// 도형 좌표 모음 (0~100 좌표계)
+const TRI = [[50,8],[90,88],[10,88]];                 // 기본 삼각형
+const TRI_R = [[12,12],[12,88],[88,88]];              // 직각삼각형
+const TRI_OB = [[8,80],[60,18],[92,80]];              // 둔각/예각
+const TRI_TILT = [[30,12],[88,46],[18,90]];           // 기울어진
+const SQ = [[14,14],[86,14],[86,86],[14,86]];         // 사각형
+const SQ_TRAP = [[28,18],[78,18],[92,84],[12,84]];    // 사다리꼴형 사각형
+const CIRCLE_PSEUDO = null;                            // 원은 별도
+
+// ════════════════════════════════════════
+// 슬별 도형 렌더
+// ════════════════════════════════════════
+document.getElementById('intro-shapes').innerHTML =
+  polygon(TRI,{size:130,showVertex:false}) + polygon(TRI_TILT,{size:130}) + polygon(TRI_R,{size:130});
+document.getElementById('recall-shape').innerHTML = polygon(TRI,{size:170,showVertex:true});
+document.getElementById('concept-tri').innerHTML = polygon(TRI,{size:200,showVertex:false});
+document.getElementById('label-tri').innerHTML = polygonLabeled(TRI,250);
+document.getElementById('various-tri').innerHTML =
+  polygon(TRI,{size:120,showVertex:true}) + polygon(TRI_R,{size:120,showVertex:true}) + polygon(TRI_OB,{size:120,showVertex:true}) + polygon(TRI_TILT,{size:120,showVertex:true});
+document.getElementById('sum-tri').innerHTML = polygon(TRI,{size:180,showVertex:true});
+document.getElementById('q8-shape').innerHTML = polygon(TRI,{size:160,showVertex:false});
+document.getElementById('q9-shape').innerHTML = polygon(TRI,{size:160,showVertex:true});
+document.getElementById('sum-final').innerHTML = polygon(TRI,{size:150,showVertex:true});
+
+// 슬13 — 열린 삼각형(한 변 떨어진) 시각: polyline로 표현
+(function openTri(){
+  const size=180, pad=16, inner=size-pad*2;
+  function sx(x){return pad+(x/100)*inner;} function sy(y){return pad+(y/100)*inner;}
+  const p=[[50,10],[90,86],[18,86]];
+  // 두 변만 그리고 한 변은 비움(열림)
+  let s=`<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  s+=`<polyline points="${sx(p[2][0])},${sy(p[2][1])} ${sx(p[0][0])},${sy(p[0][1])} ${sx(p[1][0])},${sy(p[1][1])}" fill="none" stroke="var(--coral-deep)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+  p.forEach(v=>{s+=`<circle class="poly-vertex" cx="${sx(v[0])}" cy="${sy(v[1])}" r="6"/>`;});
+  s+=`</svg>`;
+  document.getElementById('q13-shape').innerHTML=s;
+})();
+
+// ───── count_input (답 직접 입력) 공통 ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg) {
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < 2) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한 번 세어 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+setupPad('q8', 3, 'q8-pad', 'q8-display', 'q8-fb', '삼각형의 변은 3개!');
+setupPad('q9', 3, 'q9-pad', 'q9-display', 'q9-fb', '삼각형의 꼭짓점은 3개!');
+
+// ───── 슬10 삼각형 찾기 4지선다 (도형 SVG 옵션) ─────
+(function mcq10() {
+  const qid = 'q10';
+  const opts = [
+    { pts: TRI, correct: 1 },
+    { pts: SQ, correct: 0 },
+    { pts: SQ_TRAP, correct: 0 },
+    { type:'circle', correct: 0 },
+  ];
+  const wrap = document.getElementById('q10-opts');
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.className = 'mcq-opt'; b.dataset.correct = o.correct;
+    if (o.type === 'circle') b.innerHTML = `<svg class="shape-svg" width="90" height="90" viewBox="0 0 90 90"><circle cx="45" cy="45" r="34" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="7"/></svg>`;
+    else b.innerHTML = polygon(o.pts, { size: 90 });
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById('q10-fb');
+      if (b.dataset.correct === '1') {
+        st.solved = true; b.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent = '맞아요! 변 3개·꼭짓점 3개인 삼각형! +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; b.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '이건 삼각형이 아니에요. 다시!';
+        setTimeout(() => b.classList.remove('wrong'), 500);
+      }
+    });
+    wrap.appendChild(b);
+  });
+})();
+
+// ───── 슬11 점판 점 잇기 (dot_grid) ─────
+(function dotGrid11() {
+  const qid = 'q11';
+  const N = 4;                       // 4x4 점판
+  const size = 300, pad = 36;
+  const step = (size - pad * 2) / (N - 1);
+  const fb = document.getElementById('q11-fb');
+  let picked = [];                   // 선택된 점 인덱스 [r*N+c]
+  function px(c){return pad + c*step;}
+  function py(r){return pad + r*step;}
+  function render() {
+    let s = `<svg class="dg-svg" viewBox="0 0 ${size} ${size}">`;
+    // 선
+    for (let i=0;i<picked.length-1;i++){
+      const a=picked[i], b=picked[i+1];
+      s += `<line class="dg-line" x1="${px(a%N)}" y1="${py((a/N)|0)}" x2="${px(b%N)}" y2="${py((b/N)|0)}"/>`;
+    }
+    // 닫힘선 (3개 모두 골랐을 때 마지막→처음)
+    if (picked.length===3){
+      const a=picked[2], b=picked[0];
+      s += `<line class="dg-line" x1="${px(a%N)}" y1="${py((a/N)|0)}" x2="${px(b%N)}" y2="${py((b/N)|0)}"/>`;
+    }
+    // 점
+    for (let r=0;r<N;r++) for (let c=0;c<N;c++){
+      const idx=r*N+c;
+      const on=picked.includes(idx);
+      s += `<circle class="dg-dot${on?' picked':''}" data-idx="${idx}" cx="${px(c)}" cy="${py(r)}" r="9"/>`;
+    }
+    s += `</svg>`;
+    document.getElementById('q11-dg').innerHTML = s;
+    document.querySelectorAll('#q11-dg .dg-dot').forEach(d => d.addEventListener('click', () => pick(parseInt(d.dataset.idx,10))));
+  }
+  // 세 점이 한 직선 위인지 (삼각형 성립 판정)
+  function collinear(a,b,c){
+    const ax=a%N, ay=(a/N)|0, bx=b%N, by=(b/N)|0, cx=c%N, cy=(c/N)|0;
+    return (bx-ax)*(cy-ay) - (by-ay)*(cx-ax) === 0;
+  }
+  function pick(idx) {
+    const st = getQState(qid); if (st.solved) return;
+    if (picked.includes(idx)) return;
+    if (picked.length >= 3) return;
+    picked.push(idx);
+    render();
+    if (picked.length === 3) {
+      st.attempts++;
+      const [a,b,c] = picked;
+      if (!collinear(a,b,c)) {
+        st.solved = true;
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent = '삼각형을 잘 그렸어요! +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++;
+        fb.classList.add('wrong'); fb.textContent = '세 점이 한 줄에 있어요. 다시 그려요!';
+      }
+    } else {
+      fb.classList.remove('wrong'); fb.textContent = picked.length + '개째 점을 골랐어요';
+    }
+  }
+  document.getElementById('q11-reset').addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    picked = []; render(); fb.classList.remove('wrong'); fb.textContent = '점을 눌러 삼각형을 만들어 보세요';
+  });
+  render();
+})();
+
+// ───── 슬12 삼각형 모두 찾기 (shape_judge) ─────
+(function judge12() {
+  const qid = 'q12';
+  // isTri=true가 정답 대상. 6칸.
+  const cells = [
+    { pts: TRI, isTri: true },
+    { type:'circle', isTri: false },
+    { pts: TRI_R, isTri: true },
+    { pts: SQ, isTri: false },
+    { pts: TRI_OB, isTri: true },
+    { pts: SQ_TRAP, isTri: false },
+  ];
+  const wrap = document.getElementById('q12-judge');
+  const fb = document.getElementById('q12-fb');
+  const need = cells.filter(c => c.isTri).length;
+  let got = 0;
+  cells.forEach(c => {
+    const cell = document.createElement('div');
+    cell.className = 'judge-cell';
+    const svg = c.type === 'circle'
+      ? `<svg class="shape-svg" width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="31" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="6"/></svg>`
+      : polygon(c.pts, { size: 84 });
+    cell.innerHTML = svg + `<div class="judge-mark"></div>`;
+    cell.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (cell.dataset.locked) return;
+      if (c.isTri) {
+        cell.dataset.locked = '1'; cell.classList.add('picked');
+        cell.querySelector('.judge-mark').textContent = '삼각형 ○';
+        got++;
+        if (got === need) {
+          st.solved = true;
+          const earn = pointsForQ(qid); addScore(earn);
+          fb.classList.remove('wrong'); fb.textContent = '삼각형을 모두 찾았어요! +' + earn + '점';
+          updateUI();
+        } else { fb.classList.remove('wrong'); fb.textContent = '좋아요! 삼각형을 더 찾아봐요'; }
+      } else {
+        st.wrongCount++; cell.classList.add('miss');
+        fb.classList.add('wrong'); fb.textContent = '이건 삼각형이 아니에요';
+        setTimeout(() => cell.classList.remove('miss'), 500);
+      }
+    });
+    wrap.appendChild(cell);
+  });
+})();
+
+// ───── 슬13 삼각형이 아닌 까닭 4지선다 ─────
+(function mcq13() {
+  const qid = 'q13';
+  document.querySelectorAll('#q13-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById('q13-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent = '맞아요! 열려 있으면 삼각형이 아니에요. +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 생각해 볼까요?';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+})();
+
+// ───── 슬14 변·꼭짓점 ↔ 도형 매칭 ─────
+(function match14() {
+  const qid = 'q14';
+  // 왼쪽 설명 ↔ 오른쪽 도형
+  const left = [
+    { key:'tri', label:'변 3개 · 꼭짓점 3개' },
+    { key:'sq',  label:'변 4개 · 꼭짓점 4개' },
+  ];
+  const right = [
+    { key:'sq',  svg: polygon(SQ,{size:74}) },
+    { key:'tri', svg: polygon(TRI,{size:74}) },
+  ];
+  const lEl = document.getElementById('q14-left');
+  const rEl = document.getElementById('q14-right');
+  left.forEach(o => { const d=document.createElement('button'); d.className='match-card'; d.dataset.key=o.key; d.dataset.side='l'; d.textContent=o.label; lEl.appendChild(d); });
+  right.forEach(o => { const d=document.createElement('button'); d.className='match-card'; d.dataset.key=o.key; d.dataset.side='r'; d.innerHTML=o.svg; rEl.appendChild(d); });
+  let selL=null, matched=0;
+  const fb=document.getElementById('q14-fb');
+  function click(card){
+    const st=getQState(qid); if(st.solved) return;
+    if(card.classList.contains('matched')) return;
+    if(card.dataset.side==='l'){
+      document.querySelectorAll('#q14-left .match-card').forEach(c=>c.classList.remove('sel'));
+      card.classList.add('sel'); selL=card;
+    } else {
+      if(!selL){ fb.textContent='왼쪽 설명을 먼저 골라요'; return; }
+      if(selL.dataset.key===card.dataset.key){
+        selL.classList.add('matched'); selL.classList.remove('sel'); card.classList.add('matched');
+        selL=null; matched++;
+        if(matched===left.length){
+          st.solved=true; const earn=pointsForQ(qid); addScore(earn);
+          fb.classList.remove('wrong'); fb.textContent='모두 맞게 이었어요! +'+earn+'점';
+          updateUI();
+        } else { fb.classList.remove('wrong'); fb.textContent='좋아요! 하나 더 이어요'; }
+      } else {
+        st.wrongCount++; fb.classList.add('wrong'); fb.textContent='다시 살펴볼까요?';
+        card.classList.add('sel'); setTimeout(()=>card.classList.remove('sel'),500);
+      }
+    }
+  }
+  [...lEl.children, ...rEl.children].forEach(c=>c.addEventListener('click',()=>click(c)));
+})();
+
+// ───── 슬15 실생활 삼각형 ○✕ ─────
+(function life15() {
+  const qid = 'q15';
+  const items = [...document.querySelectorAll('#q15-life .life-item')];
+  let done = 0;
+  const fb = document.getElementById('q15-fb');
+  items.forEach(it => {
+    it.querySelectorAll('.life-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const st = getQState(qid); if (st.solved) return;
+        if (it.dataset.locked) return;
+        it.querySelectorAll('.life-btn').forEach(b => b.classList.remove('pick-o','pick-x'));
+        btn.classList.add(btn.dataset.pick === 'o' ? 'pick-o' : 'pick-x');
+        if (btn.dataset.pick === it.dataset.ans) {
+          it.dataset.locked = '1'; it.classList.remove('miss'); it.classList.add('right');
+          done++;
+          if (done === items.length) {
+            st.solved = true;
+            const earn = pointsForQ(qid); addScore(earn);
+            fb.classList.remove('wrong'); fb.textContent = '모두 맞았어요! +' + earn + '점';
+            updateUI();
+          } else { fb.classList.remove('wrong'); fb.textContent = '좋아요!'; }
+        } else {
+          st.wrongCount++; it.classList.add('miss');
+          fb.classList.add('wrong'); fb.textContent = '다시 생각해 볼까요?';
+          setTimeout(() => it.classList.remove('miss'), 500);
+        }
+      });
+    });
+  });
+})();
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
