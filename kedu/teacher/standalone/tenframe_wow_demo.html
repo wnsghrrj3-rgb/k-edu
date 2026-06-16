@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>십틀 · 예측해서 채우기 (와우 데모)</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B3A57; --sub:#5a7894; --line:#E2E8F0;
+    --blue:#1565C0; --orange:#FF8A3D; --green:#12B886; --vio:#7048E8;
+    --bg:#F2F6FB;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{font-family:'Gowun Dodum',sans-serif;background:radial-gradient(120% 120% at 50% 0%,#F7FAFE,#DCE6F2);color:var(--ink);overflow-x:hidden;user-select:none;}
+  .wrap{max-width:760px;margin:0 auto;padding:22px 18px 60px;}
+  h1{font-family:'Jua',sans-serif;font-size:26px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+  h1 small{font-family:'Gowun Dodum';font-size:13px;color:var(--sub);font-weight:400;}
+  .modes{display:flex;gap:8px;margin:16px 0 18px;flex-wrap:wrap;}
+  .mode{font-family:'Jua';font-size:18px;padding:11px 18px;border-radius:14px;border:3px solid var(--vio);background:#fff;color:var(--vio);cursor:pointer;line-height:1;transition:transform .08s;}
+  .mode.on{background:var(--vio);color:#fff;}
+  .mode:active{transform:scale(.96);}
+  .card{background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(30,42,56,.08),0 2px 8px rgba(30,42,56,.05);padding:22px 20px;position:relative;overflow:hidden;}
+  .ask{font-family:'Jua';font-size:21px;text-align:center;color:#4527A0;background:#F3F0FF;border:3px solid var(--vio);border-radius:16px;padding:13px 16px;margin-bottom:16px;line-height:1.35;}
+  .ask b.q{color:var(--blue);}
+  .predict{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;}
+  .pbtn{font-family:'Jua';font-size:22px;min-width:54px;padding:11px 0;border-radius:13px;border:3px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer;transition:transform .08s;}
+  .pbtn:active{transform:scale(.94);}
+  .pbtn.picked{background:var(--blue);color:#fff;}
+  .stage{display:flex;flex-direction:column;align-items:center;gap:14px;min-height:220px;justify-content:center;}
+  .frames{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}
+  .frame{position:relative;border-radius:14px;transition:filter .3s,transform .3s;}
+  .frame.full{animation:bundle .6s ease;}
+  @keyframes bundle{0%{transform:scale(1);}40%{transform:scale(1.07);}100%{transform:scale(1);}}
+  .bundle-glow{position:absolute;inset:-6px;border-radius:18px;border:4px solid var(--green);opacity:0;pointer-events:none;}
+  .frame.full .bundle-glow{animation:glow 1s ease;}
+  @keyframes glow{0%{opacity:0;box-shadow:0 0 0 rgba(18,184,134,0);}30%{opacity:1;box-shadow:0 0 26px rgba(18,184,134,.6);}100%{opacity:0;box-shadow:0 0 0 rgba(18,184,134,0);}}
+  .frame-label{text-align:center;font-family:'Jua';font-size:14px;color:var(--green);margin-top:6px;height:18px;opacity:0;transition:opacity .3s;}
+  .frame.full .frame-label{opacity:1;}
+  .hint{font-size:14px;color:var(--sub);text-align:center;min-height:20px;}
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .cbtn{font-family:'Jua';font-size:17px;padding:11px 18px;border-radius:13px;border:3px solid;cursor:pointer;line-height:1;transition:transform .08s;}
+  .cbtn:active{transform:scale(.95);}
+  .cbtn.primary{border-color:var(--orange);background:var(--orange);color:#fff;}
+  .cbtn.ghost{border-color:var(--line);background:#fff;color:var(--sub);}
+  .reveal{font-family:'Jua';font-size:20px;text-align:center;padding:14px;border-radius:14px;margin-top:14px;line-height:1.4;display:none;}
+  .reveal.show{display:block;animation:pop .4s ease;}
+  @keyframes pop{0%{transform:scale(.9);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  .reveal.hit{background:#E6FCF5;color:#0B7A5C;border:3px solid var(--green);}
+  .reveal.miss{background:#FFF4E6;color:#9A5500;border:3px solid var(--orange);}
+  /* 착시 모드 */
+  .illusion{display:flex;gap:14px;width:100%;justify-content:center;flex-wrap:wrap;}
+  .group{flex:1;min-width:240px;max-width:330px;height:230px;border-radius:18px;border:3px dashed var(--line);position:relative;cursor:pointer;transition:border-color .2s,background .2s;}
+  .group:hover{border-color:var(--blue);}
+  .group.chosen{border-style:solid;border-color:var(--blue);background:#EEF5FF;}
+  .group .gname{position:absolute;top:8px;left:0;right:0;text-align:center;font-family:'Jua';font-size:16px;color:var(--sub);}
+  .dot{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7FB2FF,var(--blue));box-shadow:0 2px 5px rgba(21,101,192,.35);transition:transform .25s;}
+  .dot.counted{animation:countpop .3s ease;}
+  @keyframes countpop{0%{transform:scale(1);}50%{transform:scale(1.5);}100%{transform:scale(1);}}
+  .gcount{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:'Jua';font-size:24px;color:var(--blue);opacity:0;transition:opacity .3s;}
+  .group.revealed .gcount{opacity:1;}
+  .foot{text-align:center;margin-top:12px;}
+  .credit{text-align:center;color:#B0BEC5;font-size:11px;margin-top:26px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔢 십틀 <small>예측하고 → 직접 해보고 → 발견하기</small></h1>
+  <div class="modes">
+    <button class="mode on" data-m="predict" onclick="setMode('predict')">🔮 예측해서 채우기</button>
+    <button class="mode" data-m="illusion" onclick="setMode('illusion')">👀 착시 함정</button>
+  </div>
+  <div class="card" id="card"></div>
+  <div class="credit">KLab 와우 데모 · 십틀 — 예측 루프 + 착시 함정</div>
+</div>
+
+<script>
+/* ── 미니 효과음 (엔진 KLab.sound와 같은 합성 방식, 독립 인라인) ── */
+var AC=null,MASTER=null,MUTED=false;
+function ctx(){ if(AC) return AC; try{ var A=window.AudioContext||window.webkitAudioContext; if(!A)return null; AC=new A(); MASTER=AC.createGain(); MASTER.gain.value=.5; MASTER.connect(AC.destination);}catch(e){AC=null;} return AC; }
+function tone(f,d,t,p,delay,fe){ var c=ctx(); if(!c)return; var t0=c.currentTime+(delay||0); var o=c.createOscillator(),g=c.createGain(); o.type=t||'sine'; o.frequency.setValueAtTime(f,t0); if(fe)o.frequency.exponentialRampToValueAtTime(Math.max(1,fe),t0+d); var pk=(p==null?.3:p); g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(pk,t0+Math.min(.012,d*.25)); g.gain.exponentialRampToValueAtTime(.0001,t0+d); o.connect(g); g.connect(MASTER); o.start(t0); o.stop(t0+d+.03); }
+var SND={
+  tap:function(){tone(660,.06,'triangle',.26);},
+  drop:function(){tone(420,.10,'sine',.32,0,760);},
+  bundle:function(){tone(523,.10,'sine',.3,0);tone(784,.14,'sine',.28,.09);tone(1046,.18,'sine',.26,.18);},
+  hit:function(){tone(660,.1,'sine',.3,0);tone(880,.12,'sine',.28,.1);tone(1175,.18,'sine',.26,.2);},
+  miss:function(){tone(330,.2,'sine',.22,0,250);},
+  count:function(){tone(740,.05,'square',.14);}
+};
+function play(n){ if(MUTED)return; var c=ctx(); if(!c)return; if(c.state==='suspended'){try{c.resume();}catch(e){}} try{(SND[n]||function(){})();}catch(e){} }
+
+var card=document.getElementById('card');
+var mode='predict';
+function setMode(m){ mode=m; document.querySelectorAll('.mode').forEach(function(b){b.classList.toggle('on',b.dataset.m===m);}); if(m==='predict')renderPredict(); else renderIllusion(); }
+
+/* ============================================================
+   모드 1 — 예측해서 채우기
+   "A + B = ?" 먼저 예측 → 직접 점 채우기 → 10 묶음 마법모먼트 → 예측과 비교
+   핵심: 받아올림(10을 넘기는 순간)이 예측을 빗나가게 하는 함정
+   ============================================================ */
+var P={};
+function newPredict(){
+  var a=5+Math.floor(Math.random()*4);   // 5~8
+  var b=4+Math.floor(Math.random()*5);   // 4~8  → 합이 10 넘김(받아올림)
+  P={a:a,b:b,sum:a+b,guess:null,placed:a,filled:false,locked:false};
+}
+function renderPredict(){
+  if(!P.a) newPredict();
+  var html='<div class="ask">파란 점 <b class="q">'+P.a+'개</b>에 <b class="q">'+P.b+'개</b>를 더하면 모두 몇 개일까? <br>먼저 마음속으로 정하고 <b class="q">예측</b>을 눌러봐!</div>';
+  // 예측 버튼 (sum 주변 5개)
+  html+='<div class="predict" id="pred">';
+  var opts=[P.sum-2,P.sum-1,P.sum,P.sum+1,P.sum+2].filter(function(x){return x>=2;});
+  // 순서 섞기
+  opts.sort(function(){return Math.random()-.5;});
+  opts.forEach(function(v){ html+='<button class="pbtn" data-v="'+v+'" onclick="guess('+v+')">'+v+'</button>'; });
+  html+='</div>';
+  html+='<div class="stage" id="stage"></div>';
+  html+='<div class="reveal" id="reveal"></div>';
+  card.innerHTML=html;
+  drawFrames();
+}
+function guess(v){
+  if(P.locked) return;
+  P.guess=v; play('tap');
+  document.querySelectorAll('#pred .pbtn').forEach(function(b){ b.classList.toggle('picked',+b.dataset.v===v); });
+  document.getElementById('hintline') && (document.getElementById('hintline').textContent='');
+  // 예측 후 "직접 채워봐" 안내
+  drawFrames();
+}
+function drawFrames(){
+  var stage=document.getElementById('stage'); if(!stage)return;
+  var need=P.guess!=null;
+  var totalCells=20;
+  var html='';
+  if(need && !P.filled){ html+='<div class="hint" id="hintline">빈 칸을 <b>직접 눌러</b> 점 <b style="color:var(--orange)">'+P.b+'개</b>를 더해봐 — 한 판이 꽉 차면?</div>'; }
+  else if(!need){ html+='<div class="hint">↑ 먼저 예측을 골라줘</div>'; }
+  html+='<div class="frames">';
+  for(var f=0;f<2;f++){
+    var base=f*10;
+    var ffull = P.placed>=base+10;
+    html+='<div class="frame'+(ffull?' full':'')+'" id="frame'+f+'"><div class="bundle-glow"></div>';
+    html+='<svg width="150" height="62" viewBox="0 0 150 62">';
+    for(var i=0;i<10;i++){
+      var idx=base+i;
+      var cx=14+(i%5)*30, cy=16+Math.floor(i/5)*30;
+      var on=idx<P.placed;
+      var isBlue=idx<P.a;
+      var addable = need && !P.filled && !on && idx===P.placed;
+      var fill = on?(isBlue?'#1565C0':'#FF8A3D'):'#EEF2F7';
+      html+='<circle cx="'+cx+'" cy="'+cy+'" r="11" fill="'+fill+'"'
+          + (on?' stroke="#fff" stroke-width="2"':'')
+          + (addable?' style="cursor:pointer" onclick="placeOne()" stroke="#FF8A3D" stroke-width="2" stroke-dasharray="3 3"':'')
+          + '/>';
+    }
+    html+='</svg><div class="frame-label">10 묶음! 🎉</div></div>';
+  }
+  html+='</div>';
+  // 컨트롤
+  if(P.filled){
+    html+='<div class="controls"><button class="cbtn primary" onclick="nextPredict()">다음 문제 →</button></div>';
+  }
+  stage.innerHTML=html;
+}
+function placeOne(){
+  if(P.placed>=P.a+P.b) return;
+  var beforeFull=Math.floor(P.placed/10);
+  P.placed++;
+  play('drop');
+  var afterFull=Math.floor(P.placed/10);
+  // 10 묶음 완성 순간 = 마법 모먼트
+  if(afterFull>beforeFull && P.placed%10===0){ setTimeout(function(){ play('bundle'); },120); }
+  if(P.placed>=P.a+P.b){ P.filled=true; setTimeout(showReveal,300); }
+  drawFrames();
+}
+function showReveal(){
+  P.locked=true;
+  var r=document.getElementById('reveal'); if(!r)return;
+  var hit=(P.guess===P.sum);
+  r.className='reveal show '+(hit?'hit':'miss');
+  if(hit){
+    r.innerHTML='🎯 예측 <b>'+P.guess+'</b> = 정답 <b>'+P.sum+'</b>! 받아올림까지 정확해!';
+    play('hit');
+  } else {
+    var msg = (P.guess<P.sum)
+      ? '네 예측 <b>'+P.guess+'</b> · 정답 <b>'+P.sum+'</b> — 10을 넘기면 한 개 더 올라가지? 그게 받아올림이야!'
+      : '네 예측 <b>'+P.guess+'</b> · 정답 <b>'+P.sum+'</b> — 한 판은 딱 10까지! 세어보니 '+P.sum+'이야.';
+    r.innerHTML='🤔 '+msg;
+    play('miss');
+  }
+}
+function nextPredict(){ newPredict(); renderPredict(); }
+
+/* ============================================================
+   모드 2 — 착시 함정
+   넓게 퍼진 적은 점 vs 빽빽한 많은 점. "어느 쪽이 많을까?" 예측 →
+   하나씩 세어 정답 공개. 많아 보이는 것 ≠ 많은 것.
+   라운드마다 배치·정답이 바뀌어 예측이 계속 빗나감 (긴장 유지)
+   ============================================================ */
+var IL={};
+function newIllusion(){
+  // 두 수: 차이 1~3, 8~14 범위
+  var x=8+Math.floor(Math.random()*5);
+  var y=x+(1+Math.floor(Math.random()*2))*(Math.random()<.5?1:-1);
+  if(y<6)y=x+1;
+  // 적은 쪽을 넓게(많아 보이게), 많은 쪽을 빽빽하게 — 함정
+  var few=Math.min(x,y), many=Math.max(x,y);
+  // 좌우 어느 쪽이 적은쪽인지 랜덤
+  var leftIsFew=Math.random()<.5;
+  IL={left:leftIsFew?few:many, right:leftIsFew?many:few, fewSide:leftIsFew?'left':'right',
+      chosen:null, revealed:false};
+}
+function scatter(n,spread){
+  // spread=true면 넓게(큰 점, 넓은 간격), false면 빽빽(작은 점)
+  var pts=[], W=300, H=200, pad=24;
+  var r=spread?15:9;
+  var tries=0;
+  while(pts.length<n && tries<800){
+    tries++;
+    var cx=pad+Math.random()*(W-2*pad), cy=30+Math.random()*(H-50);
+    var ok=true;
+    for(var i=0;i<pts.length;i++){ var dx=pts[i].x-cx,dy=pts[i].y-cy; if(dx*dx+dy*dy<(spread?44*44:24*24)){ok=false;break;} }
+    if(ok)pts.push({x:cx,y:cy,r:r});
+  }
+  return pts;
+}
+function renderIllusion(){
+  if(!IL.left) newIllusion();
+  var html='<div class="ask">두 무리 중 점이 <b class="q">더 많은 쪽</b>은 어디일까? <br>세지 말고 <b class="q">눈으로</b> 먼저 골라봐!</div>';
+  html+='<div class="illusion">';
+  ['left','right'].forEach(function(side){
+    var n=IL[side];
+    var spread=(side===IL.fewSide); // 적은 쪽을 넓게
+    var pts=scatter(n,spread);
+    IL[side+'Pts']=pts;
+    html+='<div class="group" id="g-'+side+'" onclick="chooseSide(\''+side+'\')">';
+    html+='<div class="gname">'+(side==='left'?'왼쪽':'오른쪽')+'</div>';
+    pts.forEach(function(p,i){
+      html+='<span class="dot" data-i="'+i+'" style="left:'+(p.x-p.r)+'px;top:'+(p.y-p.r)+'px;width:'+(p.r*2)+'px;height:'+(p.r*2)+'px;"></span>';
+    });
+    html+='<div class="gcount" id="cnt-'+side+'">'+n+'개</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  html+='<div class="reveal" id="ireveal"></div>';
+  html+='<div class="foot" id="ifoot"></div>';
+  card.innerHTML=html;
+}
+function chooseSide(side){
+  if(IL.revealed) return;
+  IL.chosen=side; play('tap');
+  document.getElementById('g-left').classList.toggle('chosen',side==='left');
+  document.getElementById('g-right').classList.toggle('chosen',side==='right');
+  countAndReveal();
+}
+function countAndReveal(){
+  IL.revealed=true;
+  // 양쪽 점을 하나씩 톡톡 세기
+  ['left','right'].forEach(function(side){
+    var g=document.getElementById('g-'+side);
+    var dots=g.querySelectorAll('.dot');
+    dots.forEach(function(d,i){
+      setTimeout(function(){ d.classList.add('counted'); play('count'); }, i*90);
+    });
+    setTimeout(function(){ g.classList.add('revealed'); }, dots.length*90+150);
+  });
+  var maxLen=Math.max(IL.left,IL.right);
+  setTimeout(function(){
+    var realMore = IL.left>IL.right?'left':'right';
+    var hit=(IL.chosen===realMore);
+    var r=document.getElementById('ireveal');
+    r.className='reveal show '+(hit?'hit':'miss');
+    var moreName=realMore==='left'?'왼쪽':'오른쪽';
+    if(hit){ r.innerHTML='👏 맞아! <b>'+moreName+'</b>이 '+Math.max(IL.left,IL.right)+'개로 더 많아.'; play('hit'); }
+    else { r.innerHTML='🤯 함정! 퍼져 있어서 많아 보였지? 세어보니 <b>'+moreName+'</b>이 '+Math.max(IL.left,IL.right)+'개로 더 많아.<br>많아 <b>보이는</b> 것과 <b>많은</b> 것은 달라!'; play('miss'); }
+    document.getElementById('ifoot').innerHTML='<button class="cbtn primary" onclick="nextIllusion()">한 번 더 →</button>';
+  }, maxLen*90+450);
+}
+function nextIllusion(){ newIllusion(); renderIllusion(); }
+
+setMode('predict');
+</script>
+</body>
+</html>
