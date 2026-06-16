@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>케이박스 | K-edu 선생님</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -142,6 +144,21 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:14px 26px;border-radius:50px;font-size:14px;font-weight:500;z-index:90;opacity:0;pointer-events:none;transition:all .3s;display:flex;align-items:center;gap:9px;box-shadow:0 12px 30px rgba(0,0,0,.25)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* GATE / LOADING */
+.loading{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--faint);font-size:14px}
+.spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gate{min-height:calc(100vh - 60px);display:none;align-items:center;justify-content:center;padding:40px 24px}
+.gate.on{display:flex}
+.gate-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:48px 40px;max-width:450px;text-align:center;box-shadow:var(--shadow-lg)}
+.gate-emoji{font-size:56px;margin-bottom:18px}
+.gate-title{font-family:'Jua',sans-serif;font-size:24px;margin-bottom:10px}
+.gate-desc{font-size:14.5px;color:var(--sub);line-height:1.65;margin-bottom:26px}
+.gate-btn{display:inline-flex;align-items:center;gap:8px;height:52px;padding:0 28px;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;border-radius:14px;font-family:'Jua',sans-serif;font-size:17px;cursor:pointer;text-decoration:none;box-shadow:0 8px 22px rgba(91,142,248,.32);transition:transform .15s}
+.gate-btn:hover{transform:translateY(-2px)}
+.nav-teacher{font-size:13px;color:var(--sub);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;cursor:pointer}
+
 @media(max-width:600px){
   .hero-title{font-size:32px}
   .wrap{padding:28px 18px 70px}
@@ -153,10 +170,36 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 
 <nav class="nav">
   <a class="nav-logo" href="/"><span class="kk">K-edu</span> <span class="nav-badge">케이박스</span></a>
-  <a class="nav-back" href="/teacher/">← 선생님 도구</a>
+  <div style="display:flex;align-items:center;gap:14px">
+    <span class="nav-teacher" id="nav-teacher" style="display:none"></span>
+    <a class="nav-back" href="/teacher/">← 선생님 도구</a>
+  </div>
 </nav>
 
-<div class="wrap">
+<!-- 로딩 -->
+<div class="loading" id="loading"><div class="spin"></div>불러오는 중…</div>
+
+<!-- 로그인 게이트 (미로그인) -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-emoji">🔑</div>
+    <div class="gate-title">선생님 로그인이 필요해요</div>
+    <div class="gate-desc">케이박스는 우리 반에 콘텐츠를 보내고 결과를 받는 도구예요. 선생님으로 로그인하면 박스를 만들어 학급에 보낼 수 있어요.</div>
+    <a class="gate-btn" href="/teacher/">선생님 로그인하러 가기 →</a>
+  </div>
+</div>
+
+<!-- DB 준비 안내 (테이블 미설정) -->
+<div class="gate" id="gate-db">
+  <div class="gate-card">
+    <div class="gate-emoji">🛠️</div>
+    <div class="gate-title">케이박스 준비 중</div>
+    <div class="gate-desc">케이박스 데이터베이스가 아직 준비되지 않았어요. 관리자 설정이 끝나면 바로 쓸 수 있어요.</div>
+    <a class="gate-btn" href="/teacher/">선생님 도구로 →</a>
+  </div>
+</div>
+
+<div class="wrap" id="main-wrap" style="display:none">
 
   <div class="hero">
     <div class="hero-left">
@@ -203,7 +246,9 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 
     <div class="field">
       <label class="field-label">어느 반에 보낼까요? <span class="field-hint">보내기에 필요해요</span></label>
-      <input class="inp" id="f-class" type="text" placeholder="예: 3학년 2반 (학급코드 연동은 곧 추가돼요)" maxlength="30">
+      <select class="inp" id="f-class">
+        <option value="">반을 선택하세요</option>
+      </select>
     </div>
   </div>
   <div class="bd-foot">
@@ -217,24 +262,79 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 <script>
 // ============ 콘텐츠 종류 정의 ============
 const KINDS = {
-  kteacher: {n:'케이티처', i:'📚', c:'var(--c-kteacher)', cl:'#FFE9EF', hex:'#FF85A1', hint:'교사 주도 차시'},
-  selfstudy:{n:'자기주도', i:'🎒', c:'var(--c-selfstudy)',cl:'#EEE8F8', hex:'#7E57C2', hint:'학년·과목 차시'},
-  klab:     {n:'케이랩',   i:'🧊', c:'var(--c-klab)',     cl:'#E3F4EB', hex:'#3BAB72', hint:'조작 교구'},
-  kple:     {n:'케이플',   i:'🎮', c:'var(--c-kple)',     cl:'#FFF1DC', hex:'#FFB347', hint:'멀티 게임'},
-  kmake:    {n:'케이메이커',i:'🎨', c:'var(--c-kmake)',    cl:'#E3EDFF', hex:'#5B8EF8', hint:'디자인 작품'},
-  english:  {n:'영어',     i:'🔤', c:'var(--c-english)',  cl:'#F5ECD8', hex:'#B7791F', hint:'영어 활동'},
-  link:     {n:'링크',     i:'🔗', c:'var(--c-link)',     cl:'#EEF1F6', hex:'#94A3B8', hint:'외부 자료'},
+  kteacher: {n:'케이티처', i:'📚', cl:'#FFE9EF', hex:'#FF85A1', hint:'교사 주도 차시'},
+  selfstudy:{n:'자기주도', i:'🎒', cl:'#EEE8F8', hex:'#7E57C2', hint:'학년·과목 차시'},
+  klab:     {n:'케이랩',   i:'🧊', cl:'#E3F4EB', hex:'#3BAB72', hint:'조작 교구'},
+  kple:     {n:'케이플',   i:'🎮', cl:'#FFF1DC', hex:'#FFB347', hint:'멀티 게임'},
+  kmake:    {n:'케이메이커',i:'🎨', cl:'#E3EDFF', hex:'#5B8EF8', hint:'디자인 작품'},
+  english:  {n:'영어',     i:'🔤', cl:'#F5ECD8', hex:'#B7791F', hint:'영어 활동'},
+  link:     {n:'링크',     i:'🔗', cl:'#EEF1F6', hex:'#94A3B8', hint:'외부 자료'},
 };
 
-// ============ 상태 ============
-const LS_KEY = 'cw_bundles_v1';
-let bundles = load();
+const db = getKeduDb();
+let currentTeacher = null;
+let classes = [];        // 교사의 활성 학급
+let bundles = [];        // 박스 목록 (items·발송 합성)
 let draft = null;        // 편집 중 박스
-let pendingKind = null;  // 추가 입력창에 떠 있는 종류
+let pendingKind = null;
 
-function load(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)) || []; }catch(e){ return []; } }
-function persist(){ localStorage.setItem(LS_KEY, JSON.stringify(bundles)); }
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+// ============ 초기화: 교사 세션 확인 ============
+(async function init(){
+  let session;
+  try { ({ data:{ session } } = await db.auth.getSession()); }
+  catch(e){ return showGate('gate'); }
+  if(!session || !session.user) return showGate('gate');
+
+  const { data: teacher } = await db.from('teachers').select('*').eq('user_id', session.user.id).single();
+  if(!teacher) return showGate('gate');
+  currentTeacher = teacher;
+  const nt = document.getElementById('nav-teacher');
+  nt.textContent = '👩‍🏫 ' + (teacher.name || '선생님') + ' 선생님';
+  nt.style.display = 'inline-flex';
+
+  try {
+    const { data: codes } = await db.from('class_codes').select('*')
+      .eq('teacher_id', teacher.id).eq('is_active', true)
+      .order('created_at', { ascending:false });
+    classes = codes || [];
+  } catch(e){ classes = []; }
+
+  const ok = await loadBundles();
+  if(!ok) return showGate('gate-db');
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main-wrap').style.display = 'block';
+  render();
+})();
+
+function showGate(id){
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById(id).classList.add('on');
+}
+
+// ============ 박스 로드 (bundles + items + sends 합성) ============
+async function loadBundles(){
+  try {
+    const { data: bs, error } = await db.from('cw_bundles').select('*')
+      .eq('teacher_id', currentTeacher.id).order('created_at', { ascending:false });
+    if(error) return false;
+    const ids = (bs||[]).map(b=>b.id);
+    let items = [], sends = [];
+    if(ids.length){
+      const [ri, rs] = await Promise.all([
+        db.from('cw_items').select('*').in('bundle_id', ids).order('sort_order', { ascending:true }),
+        db.from('cw_sends').select('bundle_id, class_codes(label)').in('bundle_id', ids),
+      ]);
+      items = ri.data || []; sends = rs.data || [];
+    }
+    bundles = (bs||[]).map(b=>({
+      id:b.id, title:b.title, desc:b.description||'', status:b.status,
+      items: items.filter(it=>it.bundle_id===b.id).map(it=>({ id:it.id, kind:it.kind, name:it.title, url:it.url||'' })),
+      className: (sends.find(s=>s.bundle_id===b.id)?.class_codes?.label) || '',
+    }));
+    return true;
+  } catch(e){ return false; }
+}
 
 // ============ 목록 렌더 ============
 function render(){
@@ -255,8 +355,7 @@ function render(){
     </div>`;
     return;
   }
-  const cards = bundles.map(bundleCard).join('');
-  grid.innerHTML = cards + `<div class="bcard bcard-new" onclick="openBuilder()">
+  grid.innerHTML = bundles.map(bundleCard).join('') + `<div class="bcard bcard-new" onclick="openBuilder()">
       <div class="plus">＋</div><div class="nl">새 박스</div></div>`;
 }
 
@@ -283,20 +382,30 @@ function bundleCard(b){
 function openBuilder(id){
   if(id){
     const b = bundles.find(x=>x.id===id);
-    draft = JSON.parse(JSON.stringify(b));
+    draft = JSON.parse(JSON.stringify(b)); draft.isNew = false; draft.classId = '';
     document.getElementById('bd-title').textContent = '박스 편집';
   } else {
-    draft = { id:uid(), title:'', desc:'', className:'', items:[], status:'draft' };
+    draft = { id:null, isNew:true, title:'', desc:'', classId:'', items:[], status:'draft' };
     document.getElementById('bd-title').textContent = '새 박스';
   }
   document.getElementById('f-title').value = draft.title || '';
   document.getElementById('f-desc').value = draft.desc || '';
-  document.getElementById('f-class').value = draft.className || '';
+  fillClassOptions(draft.classId);
   renderKinds(); renderItems(); cancelAdd();
   document.getElementById('scrim').classList.add('on');
   document.getElementById('builder').classList.add('on');
   document.getElementById('builder').setAttribute('aria-hidden','false');
   setTimeout(()=>document.getElementById('f-title').focus(), 320);
+}
+function fillClassOptions(selId){
+  const sel = document.getElementById('f-class');
+  if(classes.length===0){
+    sel.innerHTML = `<option value="">먼저 선생님 도구에서 학급을 만들어 주세요</option>`;
+    sel.disabled = true; return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = `<option value="">반을 선택하세요</option>` +
+    classes.map(c=>`<option value="${c.id}" ${c.id===selId?'selected':''}>${esc(c.label||c.code)}</option>`).join('');
 }
 function closeBuilder(){
   document.getElementById('scrim').classList.remove('on');
@@ -310,12 +419,10 @@ function renderKinds(){
     `<div class="kind" style="--kc:${k.hex};--kcl:${k.cl}" onclick="pickKind('${key}')">
       <div class="ke">${k.i}</div><div class="kn">${k.n}</div></div>`).join('');
 }
-
 function pickKind(key){
   pendingKind = key;
   const k = KINDS[key];
   const box = document.getElementById('additem');
-  box.style.setProperty('--c', k.hex);
   box.innerHTML = `
     <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 담을까요?</span></div>
     <input class="inp" id="ai-name" type="text" placeholder="콘텐츠 이름 (예: ${k.hint})" maxlength="50">
@@ -327,44 +434,82 @@ function pickKind(key){
   box.classList.add('on');
   setTimeout(()=>document.getElementById('ai-name').focus(), 50);
 }
-function cancelAdd(){ pendingKind=null; document.getElementById('additem').classList.remove('on'); document.getElementById('additem').innerHTML=''; }
+function cancelAdd(){ pendingKind=null; const b=document.getElementById('additem'); b.classList.remove('on'); b.innerHTML=''; }
 function confirmAdd(){
   const name = document.getElementById('ai-name').value.trim();
   const url  = document.getElementById('ai-url').value.trim();
   if(!name){ toast('콘텐츠 이름을 적어주세요'); document.getElementById('ai-name').focus(); return; }
-  draft.items.push({ id:uid(), kind:pendingKind, name, url });
+  draft.items.push({ id:null, kind:pendingKind, name, url });
   cancelAdd(); renderItems();
 }
 function renderItems(){
   const wrap = document.getElementById('items');
   document.getElementById('item-count').textContent = (draft.items.length) + '개';
   if(draft.items.length===0){ wrap.innerHTML = `<div class="items-empty">위에서 콘텐츠 종류를 눌러 하나씩 담아보세요 📥</div>`; return; }
-  wrap.innerHTML = draft.items.map(it=>{
+  wrap.innerHTML = draft.items.map((it,idx)=>{
     const k = KINDS[it.kind];
     const meta = it.url ? it.url : k.hint;
     return `<div class="item">
       <div class="dot" style="background:${k.hex}">${k.i}</div>
       <div class="item-body"><div class="item-name">${esc(it.name)}</div><div class="item-meta">${k.n} · ${esc(meta)}</div></div>
-      <button class="item-del" onclick="delItem('${it.id}')" aria-label="삭제">🗑️</button>
+      <button class="item-del" onclick="delItem(${idx})" aria-label="삭제">🗑️</button>
     </div>`;
   }).join('');
 }
-function delItem(id){ draft.items = draft.items.filter(x=>x.id!==id); renderItems(); }
+function delItem(idx){ draft.items.splice(idx,1); renderItems(); }
 
-function saveBundle(mode){
+// ============ 저장 / 발송 (Supabase) ============
+async function saveBundle(mode){
   draft.title = document.getElementById('f-title').value.trim();
   draft.desc = document.getElementById('f-desc').value.trim();
-  draft.className = document.getElementById('f-class').value.trim();
+  draft.classId = document.getElementById('f-class').value;
   if(!draft.title){ toast('박스 이름을 적어주세요'); document.getElementById('f-title').focus(); return; }
   if(mode==='sent'){
     if(draft.items.length===0){ toast('콘텐츠를 하나 이상 담아주세요'); return; }
-    if(!draft.className){ toast('보낼 반을 적어주세요'); document.getElementById('f-class').focus(); return; }
-    draft.status = 'sent'; draft.sentAt = Date.now();
+    if(!draft.classId){ toast('보낼 반을 선택해 주세요'); document.getElementById('f-class').focus(); return; }
   }
-  const idx = bundles.findIndex(b=>b.id===draft.id);
-  if(idx>=0) bundles[idx] = draft; else bundles.unshift(draft);
-  persist(); render(); closeBuilder();
-  toast(mode==='sent' ? '📨 우리 반에 보냈어요!' : '임시 저장했어요');
+  const btnS = document.getElementById('btn-send'), btnV = document.querySelector('.btn-save');
+  btnS.disabled = true; btnV.disabled = true;
+
+  try {
+    const status = mode==='sent' ? 'sent' : 'draft';
+    let bundleId = draft.id;
+
+    if(draft.isNew){
+      const { data, error } = await db.from('cw_bundles').insert({
+        teacher_id: currentTeacher.id, title: draft.title, description: draft.desc, status,
+        sent_at: status==='sent' ? new Date().toISOString() : null,
+      }).select('id').single();
+      if(error) throw error;
+      bundleId = data.id;
+    } else {
+      const patch = { title: draft.title, description: draft.desc, status };
+      if(status==='sent') patch.sent_at = new Date().toISOString();
+      const { error } = await db.from('cw_bundles').update(patch).eq('id', bundleId);
+      if(error) throw error;
+    }
+
+    await db.from('cw_items').delete().eq('bundle_id', bundleId);
+    if(draft.items.length){
+      const rows = draft.items.map((it,i)=>({ bundle_id:bundleId, kind:it.kind, title:it.name, url:it.url||'', sort_order:i }));
+      const { error } = await db.from('cw_items').insert(rows);
+      if(error) throw error;
+    }
+
+    if(status==='sent' && draft.classId){
+      const { error } = await db.from('cw_sends').upsert(
+        { bundle_id:bundleId, class_code_id:draft.classId },
+        { onConflict:'bundle_id,class_code_id' });
+      if(error) throw error;
+    }
+
+    await loadBundles(); render(); closeBuilder();
+    toast(mode==='sent' ? '📨 우리 반에 보냈어요!' : '임시 저장했어요');
+  } catch(e){
+    toast('저장에 실패했어요. 잠시 후 다시 시도해 주세요');
+  } finally {
+    btnS.disabled = false; btnV.disabled = false;
+  }
 }
 
 // ============ 유틸 ============
@@ -376,8 +521,6 @@ function toast(msg){
   clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 2600);
 }
 document.addEventListener('keydown', e=>{ if(e.key==='Escape' && draft) closeBuilder(); });
-
-render();
 </script>
 </body>
 </html>
