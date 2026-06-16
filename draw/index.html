@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>그리기 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--pink:#FF85A1;
+  --bg:#EEF1F7;--panel:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --shadow:0 2px 14px rgba(33,52,94,.08);--shadow-lg:0 10px 36px rgba(33,52,94,.16);
+}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+button{font-family:inherit;cursor:pointer}
+
+/* TOPBAR */
+.topbar{height:58px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 18px;flex-shrink:0;z-index:10}
+.logo{font-family:'Jua',sans-serif;font-size:20px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
+.logo .kk{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo .badge{font-family:'Jua',sans-serif;font-size:12.5px;background:var(--primary-light);color:var(--primary);padding:2px 11px;border-radius:50px}
+.tb-spacer{flex:1}
+.tb-group{display:flex;align-items:center;gap:8px}
+.tb-btn{height:38px;min-width:38px;padding:0 12px;border:1.5px solid var(--border);background:var(--panel);border-radius:11px;color:var(--sub);font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .14s}
+.tb-btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.tb-btn:disabled{opacity:.4;cursor:not-allowed}
+.tb-btn.warn:hover{border-color:#F87171;color:#E53E3E;background:#FFF5F5}
+.tb-save{background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;font-family:'Jua',sans-serif;font-size:15px;padding:0 18px;box-shadow:0 6px 16px rgba(91,142,248,.3)}
+.tb-save:hover{transform:translateY(-1px)}
+/* 굵기 슬라이더 (상단) */
+.size-wrap{display:flex;align-items:center;gap:9px}
+.size-dot{width:26px;height:26px;border-radius:50%;background:var(--ink);flex-shrink:0;transition:all .1s}
+.size-range{width:120px;accent-color:var(--primary)}
+.size-label{font-size:12px;color:var(--faint);font-weight:600;width:30px;text-align:right}
+
+/* MAIN */
+.main{flex:1;display:flex;min-height:0}
+.dock{width:78px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 0;overflow-y:auto;flex-shrink:0}
+.tool{width:50px;height:50px;border-radius:14px;border:2px solid transparent;background:var(--bg);font-size:23px;display:flex;align-items:center;justify-content:center;transition:all .14s}
+.tool:hover{background:#E3E8F1}
+.tool.on{background:var(--primary-light);border-color:var(--primary)}
+.dock-div{width:40px;height:1px;background:var(--border);margin:6px 0}
+.swatch{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--border);transition:transform .12s,box-shadow .12s}
+.swatch:hover{transform:scale(1.12)}
+.swatch.on{box-shadow:0 0 0 3px var(--primary);transform:scale(1.12)}
+.custom-wrap{position:relative;width:34px;height:34px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 1.5px var(--border);display:flex;align-items:center;justify-content:center;background:conic-gradient(#ff4d4d,#ffd24d,#4dff77,#4dd2ff,#a64dff,#ff4dde,#ff4d4d);font-size:14px}
+.custom-wrap input{position:absolute;inset:-6px;opacity:0;cursor:pointer}
+
+/* CANVAS */
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:22px;min-width:0;min-height:0}
+.paper{position:relative;width:100%;height:100%;background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden}
+#cv{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:50px;font-size:14px;font-weight:500;z-index:90;opacity:0;pointer-events:none;transition:all .3s}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 모바일: 도구를 하단 가로 바로 */
+@media(max-width:720px){
+  .topbar{gap:8px;padding:0 12px;height:52px}
+  .logo .badge{display:none}
+  .size-range{width:84px}
+  .size-label{display:none}
+  .main{flex-direction:column}
+  .stage{padding:12px}
+  .dock{width:100%;height:auto;flex-direction:row;border-right:none;border-top:1px solid var(--border);padding:10px 12px;gap:7px;overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start}
+  .dock-div{width:1px;height:36px;margin:0 4px;flex-shrink:0}
+  .tool{flex-shrink:0;width:46px;height:46px}
+  .swatch,.custom-wrap{flex-shrink:0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="logo" href="/"><span class="kk">K-edu</span> <span class="badge">그리기</span></a>
+  <div class="size-wrap" title="붓 굵기">
+    <span class="size-dot" id="size-dot"></span>
+    <input class="size-range" id="size-range" type="range" min="2" max="48" value="8">
+    <span class="size-label" id="size-label">8</span>
+  </div>
+  <div class="tb-spacer"></div>
+  <div class="tb-group">
+    <button class="tb-btn" id="undo-btn" onclick="doUndo()" title="되돌리기" disabled>↩</button>
+    <button class="tb-btn" id="redo-btn" onclick="doRedo()" title="다시" disabled>↪</button>
+    <button class="tb-btn warn" onclick="clearAll()" title="전체 지우기">🗑️</button>
+    <button class="tb-btn tb-save" onclick="save()">⬇ 저장</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="dock" id="dock">
+    <button class="tool on" data-tool="pen" onclick="setTool('pen')" title="연필">✏️</button>
+    <button class="tool" data-tool="marker" onclick="setTool('marker')" title="마커">🖊️</button>
+    <button class="tool" data-tool="eraser" onclick="setTool('eraser')" title="지우개">🧽</button>
+    <div class="dock-div"></div>
+    <div id="swatches"></div>
+    <label class="custom-wrap" title="색 직접 고르기">🎨<input type="color" id="custom-color" value="#5B8EF8"></label>
+  </div>
+
+  <div class="stage">
+    <div class="paper">
+      <canvas id="cv"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#1A202C','#EF4444','#F97316','#FBBF24','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#8B5E3C'];
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let dpr = Math.max(1, window.devicePixelRatio || 1);
+let drawing = false, lastX = 0, lastY = 0;
+let tool = 'pen', color = '#1A202C', size = 8;
+let undo = [], redo = [];
+
+// ---- 색 스와치 ----
+document.getElementById('swatches').innerHTML = COLORS.map((c,i)=>
+  `<button class="swatch ${i===0?'on':''}" style="background:${c}" data-c="${c}" onclick="setColor('${c}',this)" title="색"></button>`
+).join('');
+document.getElementById('custom-color').addEventListener('input', e=>{ setColor(e.target.value, null); });
+
+function setColor(c, el){
+  color = c;
+  if(tool==='eraser') setTool('pen');
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('on', s.dataset.c===c));
+}
+function setTool(t){
+  tool = t;
+  document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
+}
+// ---- 굵기 ----
+const sizeRange = document.getElementById('size-range');
+function updateSizeUI(){
+  size = +sizeRange.value;
+  document.getElementById('size-label').textContent = size;
+  const d = Math.min(30, Math.max(8, size));
+  const dot = document.getElementById('size-dot');
+  dot.style.width = d+'px'; dot.style.height = d+'px';
+}
+sizeRange.addEventListener('input', updateSizeUI);
+updateSizeUI();
+
+// ---- 캔버스 크기 ----
+function fitCanvas(){
+  const paper = cv.parentElement;
+  const r = paper.getBoundingClientRect();
+  const prev = (cv.width && hasDrawn) ? cv.toDataURL() : null;
+  cv.width = Math.max(1, Math.floor(r.width * dpr));
+  cv.height = Math.max(1, Math.floor(r.height * dpr));
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,r.width,r.height);
+  if(prev){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,r.width,r.height); img.src=prev; }
+}
+let hasDrawn = false;
+window.addEventListener('resize', ()=>{ clearTimeout(window._rt); window._rt=setTimeout(fitCanvas, 150); });
+
+// ---- 그리기 ----
+function getXY(e){ const r=cv.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
+function pres(e){ return (e.pointerType==='pen' && e.pressure>0) ? e.pressure : null; }
+
+function applyStyle(p){
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.globalCompositeOperation='source-over';
+  if(tool==='pen'){ ctx.globalAlpha=1; ctx.strokeStyle=color; ctx.lineWidth = size*(p!=null?(0.35+p*0.95):1); }
+  else if(tool==='marker'){ ctx.globalAlpha=0.5; ctx.strokeStyle=color; ctx.lineWidth = size*1.9; }
+  else { ctx.globalAlpha=1; ctx.strokeStyle='#fff'; ctx.lineWidth = size*2.3; } // 지우개=흰색
+}
+function down(e){
+  e.preventDefault();
+  drawing=true; const {x,y}=getXY(e); lastX=x; lastY=y;
+  applyStyle(pres(e));
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+0.01,y+0.01); ctx.stroke(); // 점 찍기
+  hasDrawn=true;
+}
+function move(e){
+  if(!drawing) return;
+  e.preventDefault();
+  // 합쳐진 포인터 이벤트(부드러움)
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  for(const ev of evs){
+    const {x,y}=getXY(ev);
+    applyStyle(pres(ev));
+    ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(x,y); ctx.stroke();
+    lastX=x; lastY=y;
+  }
+}
+function up(){ if(!drawing) return; drawing=false; pushUndo(); }
+
+cv.addEventListener('pointerdown', e=>{ cv.setPointerCapture(e.pointerId); down(e); });
+cv.addEventListener('pointermove', move);
+cv.addEventListener('pointerup', up);
+cv.addEventListener('pointercancel', up);
+cv.addEventListener('pointerleave', up);
+
+// ---- undo / redo ----
+function pushUndo(){
+  try { undo.push(cv.toDataURL()); } catch(e){}
+  if(undo.length>25) undo.shift();
+  redo=[]; updateBtns();
+}
+function restore(url){
+  const img=new Image();
+  img.onload=()=>{ const r=cv.parentElement.getBoundingClientRect();
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+    ctx.clearRect(0,0,r.width,r.height); ctx.drawImage(img,0,0,r.width,r.height); };
+  img.src=url;
+}
+function doUndo(){ if(undo.length<=1) return; redo.push(undo.pop()); restore(undo[undo.length-1]); updateBtns(); }
+function doRedo(){ if(!redo.length) return; const d=redo.pop(); undo.push(d); restore(d); updateBtns(); }
+function updateBtns(){
+  document.getElementById('undo-btn').disabled = undo.length<=1;
+  document.getElementById('redo-btn').disabled = redo.length===0;
+}
+
+function clearAll(){
+  const r=cv.parentElement.getBoundingClientRect();
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,r.width,r.height);
+  pushUndo(); toast('깨끗하게 지웠어요');
+}
+function save(){
+  const a=document.createElement('a'); a.download='그림.png'; a.href=cv.toDataURL('image/png'); a.click();
+  toast('그림을 저장했어요 🎉');
+}
+
+// ---- 키보드 단축 ----
+document.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='z'){ e.preventDefault(); e.shiftKey?doRedo():doUndo(); }
+  else if((e.ctrlKey||e.metaKey) && e.key==='y'){ e.preventDefault(); doRedo(); }
+});
+
+let toastT;
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2200); }
+
+// ---- 시작 ----
+fitCanvas();
+pushUndo(); // 빈 흰 캔버스 = undo 시작점
+</script>
+</body>
+</html>
