@@ -210,7 +210,7 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
 
   <!-- S1: 학년 선택 (학생 갈래) -->
   <div class="screen" id="s-grade">
-    <button class="back-btn" onclick="goTo('s-role')">← 처음으로</button>
+    <button class="back-btn" onclick="goHome()">← 처음으로</button>
     <div class="hero">
       <div class="hero-title">K-edu</div>
       <div class="hero-sub">케이에듀 · 초등 학습 플랫폼</div>
@@ -322,7 +322,7 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
 
   <!-- S-T: 선생님 도구 (교사 갈래) -->
   <div class="screen" id="s-teacher">
-    <button class="back-btn" onclick="goTo('s-role')">← 처음으로</button>
+    <button class="back-btn" onclick="goHome()">← 처음으로</button>
     <div class="page-title">👩‍🏫 <span class="accent">선생님</span> 수업 도구</div>
     <div class="ttool-grid">
       <a href="/kedu/teacher/" class="ttool-card" style="--tc:#FF85A1;--tcl:linear-gradient(135deg,#FFE5EC,#FFD6E5)">
@@ -454,27 +454,46 @@ let currentProfile = null; // student_profiles row
     showLoggedOutUI();
   }
 
-  // 학년/학기 복원
+  // 학년/학기 "값"만 복원 — 자동 점프는 하지 않음.
+  // 첫 화면은 어떤 경우에도 역할 선택(s-role). 이전에 고른 학기는 학년 화면에서 "저장됨"으로만 표시.
   const savedGrade    = localStorage.getItem('kedu_grade');
   const savedSemester = localStorage.getItem('kedu_semester');
 
-  if(savedSemester){
-    document.getElementById('saved-'+savedSemester).style.display='inline-flex';
-  }
-
-  if(savedGrade && savedSemester){
+  if(savedGrade && GRADE_DATA[savedGrade]){
     grade = +savedGrade;
     gradeColor = GRADE_DATA[grade].c;
     gradeEmoji = GRADE_DATA[grade].e;
-    semester = +savedSemester;
     document.getElementById('bc-grade').textContent = grade+'학년';
-    showSubject();
-  } else if(currentProfile && currentProfile.profile_id){
-    // 로그인된 학생 — 역할 선택 건너뛰고 학생 학년 선택으로
+  }
+  if(savedSemester){
+    semester = +savedSemester;
+    const savedEl = document.getElementById('saved-'+savedSemester);
+    if(savedEl) savedEl.style.display='inline-flex';
+  }
+
+  // URL로 진입 단계 결정 (없으면 역할 선택 유지)
+  applyEntryRoute();
+})();
+
+// =============================================
+// 진입 라우팅 — URL(?role= 또는 #해시)을 보고 첫 화면 결정
+//   /              → 역할 선택 (기본)
+//   /?role=teacher → 선생님 도구 메뉴 (도구에서 "케이에듀로 가기" 시 사용)
+//   /?role=student → 학생 학년 선택
+// =============================================
+function applyEntryRoute(){
+  let role = new URLSearchParams(location.search).get('role');
+  if(!role && location.hash){
+    const h = location.hash.replace('#','');
+    if(h === 'teacher' || h === 'student') role = h;
+  }
+  if(role === 'teacher'){
+    goTo('s-teacher');
+  } else if(role === 'student'){
     goTo('s-grade');
   }
-  // 그 외(비로그인) → 역할 선택(s-role) 화면이 기본 노출
-})();
+  // 그 외 → 역할 선택(s-role)이 기본 활성 그대로
+}
 
 // =============================================
 // 학생 프로필 로드 — my_seat_class RPC (익명 인증 호환)
@@ -646,14 +665,22 @@ function goTo(id){
 }
 
 // =============================================
-// 역할 선택 (학생 / 선생님)
+// 역할 선택 (학생 / 선생님) — URL도 함께 갱신
 // =============================================
 function pickRole(role){
   if(role === 'teacher'){
+    history.replaceState(null,'','/?role=teacher');
     goTo('s-teacher');
   } else {
+    history.replaceState(null,'','/?role=student');
     goTo('s-grade');
   }
+}
+
+// 처음(역할 선택)으로 — URL 초기화
+function goHome(){
+  history.replaceState(null,'','/');
+  goTo('s-role');
 }
 
 // =============================================
