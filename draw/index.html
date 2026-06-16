@@ -282,13 +282,12 @@ function rgbStr(rgb,a){ return `rgba(${rgb[0]|0},${rgb[1]|0},${rgb[2]|0},${a})`;
 /* ============== 브러시별 한 점(dab) ============== */
 function setBase(){ ctx.globalCompositeOperation='source-over'; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=1; ctx.setLineDash([]); }
 
-// 선형(연필/펜/형광펜/지우개/네온) — lastX,lastY → x,y 선
+// 선형(펜/형광펜/지우개/네온) — lastX,lastY → x,y 선
 function strokeLine(x,y,p){
   setBase();
-  if(tool==='pencil'){ ctx.strokeStyle=color; ctx.lineWidth=size*(p!=null?(0.35+p*0.95):1); }
-  else if(tool==='pen'){ ctx.strokeStyle=color; ctx.lineWidth=Math.max(1.4,size*0.75); }
+  if(tool==='pen'){ ctx.strokeStyle=color; ctx.lineWidth=Math.max(1.4,size*0.7); }
   else if(tool==='marker'){ ctx.globalAlpha=0.32; ctx.globalCompositeOperation='multiply'; ctx.strokeStyle=color; ctx.lineWidth=size*2.1; ctx.lineCap='butt'; ctx.lineJoin='round'; }
-  else if(tool==='neon'){ ctx.strokeStyle=color; ctx.lineWidth=Math.max(2,size*0.85); ctx.shadowColor=color; ctx.shadowBlur=size*1.6+8; }
+  else if(tool==='neon'){ ctx.strokeStyle=color; ctx.lineWidth=Math.max(2,size*0.7); ctx.shadowColor=color; ctx.shadowBlur=size*2.2+12; }
   else if(tool==='eraser'){ ctx.globalCompositeOperation='destination-out'; ctx.strokeStyle='rgba(0,0,0,1)'; ctx.lineWidth=size*2.3; }
   ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(x,y); ctx.stroke();
   if(tool==='neon'){ // 코어(흰빛)
@@ -299,8 +298,23 @@ function strokeLine(x,y,p){
 }
 
 // 질감 브러시 — 점 사이를 촘촘히 보간하며 dab 찍기
-function stampDab(x,y,rgb){
-  if(tool==='watercolor'){
+function stampDab(x,y,rgb,p,dir){
+  if(tool==='pencil'){
+    // 흑연: 진한 심 + 종이결 grain + 필압. 매끈한 선이 아니라 거친 질감.
+    ctx.globalCompositeOperation='source-over';
+    const press = p!=null ? (0.4+p*0.6) : 0.72;
+    const r = Math.max(1.2, size*0.55);
+    const n = Math.max(7, Math.floor(r*3.6));
+    for(let i=0;i<n;i++){
+      if(Math.random()<0.17) continue;            // 종이결 흰 틈
+      const ang=Math.random()*7, rr=Math.pow(Math.random(),0.7)*r;
+      const edge=rr/r;
+      const px=x+Math.cos(ang)*rr, py=y+Math.sin(ang)*rr;
+      const a=(0.15*(1-edge*0.55))*press*(0.5+Math.random()*0.5);
+      ctx.fillStyle=rgbStr(rgb,a);
+      ctx.beginPath(); ctx.arc(px,py, 0.4+Math.random()*0.85, 0,7); ctx.fill();
+    }
+  } else if(tool==='watercolor'){
     const r=size*1.1;
     const g=ctx.createRadialGradient(x,y,0,x,y,r);
     const c=jitterColor(rgb,10);
@@ -308,19 +322,25 @@ function stampDab(x,y,rgb){
     ctx.globalCompositeOperation='multiply'; ctx.fillStyle=g;
     ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
   } else if(tool==='oil'){
-    // 두꺼운 질감: 여러 굵은 짧은 획, 색 변주
-    ctx.globalCompositeOperation='source-over';
-    const n=Math.max(3,Math.floor(size/3));
-    for(let i=0;i<n;i++){
-      const a=Math.random()*Math.PI, len=size*(0.4+Math.random()*0.7);
-      const ox=(Math.random()-0.5)*size*0.5, oy=(Math.random()-0.5)*size*0.5;
-      ctx.strokeStyle=rgbStr(jitterColor(rgb,28),0.75);
-      ctx.lineWidth=Math.max(1.5,size*0.28); ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(x+ox-Math.cos(a)*len/2,y+oy-Math.sin(a)*len/2);
-      ctx.lineTo(x+ox+Math.cos(a)*len/2,y+oy+Math.sin(a)*len/2); ctx.stroke();
+    // 임파스토: 진행 방향으로 정렬된 붓털 자국 + 색 변주
+    ctx.globalCompositeOperation='source-over'; ctx.lineCap='round';
+    const baseAng = (dir!=null) ? dir : Math.random()*Math.PI;
+    const perp = baseAng + Math.PI/2;
+    const bristles = Math.max(4, Math.floor(size/2.2));
+    for(let i=0;i<bristles;i++){
+      const off=((i/(bristles-1))-0.5)*size*0.95;            // 붓 폭에 걸쳐 평행
+      const ox=Math.cos(perp)*off, oy=Math.sin(perp)*off;
+      const len=size*(0.55+Math.random()*0.5);
+      const c=jitterColor(rgb, 24 + Math.abs(off)/size*30);   // 가장자리일수록 색 변주
+      ctx.strokeStyle=rgbStr(c, 0.9);
+      ctx.lineWidth=Math.max(1.4, size*0.2);
+      ctx.beginPath();
+      ctx.moveTo(x+ox-Math.cos(baseAng)*len/2, y+oy-Math.sin(baseAng)*len/2);
+      ctx.lineTo(x+ox+Math.cos(baseAng)*len/2, y+oy+Math.sin(baseAng)*len/2);
+      ctx.stroke();
     }
   } else if(tool==='crayon'){
-    // 거친 점묘
+    // 거친 점묘 (왁스)
     ctx.globalCompositeOperation='source-over';
     const n=Math.max(6,size*1.4);
     for(let i=0;i<n;i++){
@@ -331,14 +351,19 @@ function stampDab(x,y,rgb){
       ctx.beginPath(); ctx.arc(px,py,d,0,7); ctx.fill();
     }
   } else if(tool==='pencilcolor'){
-    // 가는 빗금 질감
-    ctx.globalCompositeOperation='source-over';
-    const n=Math.max(4,size);
+    // 색연필: 일정 방향 가는 빗금, 색은 살리되 결 보이게
+    ctx.globalCompositeOperation='source-over'; ctx.lineCap='round';
+    const n=Math.max(5,Math.floor(size*1.1));
+    const hatch = (dir!=null) ? dir+0.5 : 0.7;               // 빗금 방향(45° 기울임)
+    const hx=Math.cos(hatch), hy=Math.sin(hatch);
     for(let i=0;i<n;i++){
-      const rr=Math.random()*size*0.7, a=Math.random()*7;
-      const px=x+Math.cos(a)*rr, py=y+Math.sin(a)*rr;
-      ctx.strokeStyle=rgbStr(rgb, 0.10+Math.random()*0.14); ctx.lineWidth=0.9;
-      ctx.beginPath(); ctx.moveTo(px-2,py-2); ctx.lineTo(px+2,py+2); ctx.stroke();
+      if(Math.random()<0.12) continue;
+      const rr=Math.random()*size*0.62, a0=Math.random()*7;
+      const px=x+Math.cos(a0)*rr, py=y+Math.sin(a0)*rr;
+      const len=1.8+Math.random()*2.4;
+      ctx.strokeStyle=rgbStr(rgb, 0.13+Math.random()*0.17);
+      ctx.lineWidth=0.8+Math.random()*0.5;
+      ctx.beginPath(); ctx.moveTo(px-hx*len,py-hy*len); ctx.lineTo(px+hx*len,py+hy*len); ctx.stroke();
     }
   } else if(tool==='pastel'){
     // 부드러운 가루
@@ -347,7 +372,6 @@ function stampDab(x,y,rgb){
     g.addColorStop(0, rgbStr(rgb,0.16)); g.addColorStop(1, rgbStr(rgb,0));
     ctx.globalCompositeOperation='source-over'; ctx.fillStyle=g;
     ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
-    // 약간의 입자
     for(let i=0;i<size*0.6;i++){ const a=Math.random()*7,rr=Math.random()*r;
       ctx.fillStyle=rgbStr(rgb,0.10); ctx.beginPath(); ctx.arc(x+Math.cos(a)*rr,y+Math.sin(a)*rr,0.8,0,7); ctx.fill(); }
   } else if(tool==='spray'){
@@ -363,21 +387,22 @@ function stampDab(x,y,rgb){
   ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
 }
 
-function stampStroke(x,y){
+function stampStroke(x,y,p){
   setBase();
   const rgb=hexToRgb(color);
   const dx=x-lastStampX, dy=y-lastStampY, dist=Math.hypot(dx,dy);
+  const dir = dist>0.5 ? Math.atan2(dy,dx) : null;   // 진행 방향(유화 붓털·색연필 빗금용)
   const spacing=Math.max(0.6, size*0.16);
   const steps=Math.max(1,Math.floor(dist/spacing));
   for(let i=1;i<=steps;i++){
     const px=lastStampX+dx*(i/steps), py=lastStampY+dy*(i/steps);
-    stampDab(px,py,rgb);
+    stampDab(px,py,rgb,p,dir);
   }
   lastStampX=x; lastStampY=y;
   ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; ctx.shadowBlur=0;
 }
 
-const STAMP_TOOLS=['watercolor','oil','crayon','pencilcolor','pastel','spray'];
+const STAMP_TOOLS=['pencil','watercolor','oil','crayon','pencilcolor','pastel','spray'];
 
 /* ============== 채우기 (flood fill) ============== */
 function floodFill(sx,sy){
@@ -454,7 +479,7 @@ function down(e){
   drawing=true; lastX=x; lastY=y; startX=x; startY=y; lastStampX=x; lastStampY=y;
   hasDrawn=true;
   if(isShape(tool)){ return; }
-  if(STAMP_TOOLS.includes(tool)){ stampStroke(x,y); }
+  if(STAMP_TOOLS.includes(tool)){ stampStroke(x,y,pres(e)); }
   else { strokeLine(x,y,pres(e)); }
 }
 function move(e){
@@ -470,7 +495,7 @@ function move(e){
   const evs=(e.getCoalescedEvents && e.getCoalescedEvents().length)?e.getCoalescedEvents():[e];
   for(const ev of evs){
     const {x,y}=getXY(ev);
-    if(STAMP_TOOLS.includes(tool)) stampStroke(x,y);
+    if(STAMP_TOOLS.includes(tool)) stampStroke(x,y,pres(ev));
     else { strokeLine(x,y,pres(ev)); lastX=x; lastY=y; }
   }
 }
