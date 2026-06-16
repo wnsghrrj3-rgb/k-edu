@@ -87,6 +87,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh
 .scrim.on{opacity:1;pointer-events:auto}
 .builder{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--bg);box-shadow:-20px 0 60px rgba(33,52,94,.22);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.1,1);z-index:61;display:flex;flex-direction:column}
 .builder.on{transform:translateX(0)}
+/* 채점 패널 = 빌더 스타일 재사용 + 폭만 넓게 */
+.grader{width:min(680px,100%)}
+.sub{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.sub.graded{border-color:#FCE6C7;background:#FFFCF7}
+.sub-top{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.sub-who{font-family:'Jua',sans-serif;font-size:16px}
+.sub-tag{font-size:11.5px;color:#fff;padding:3px 10px;border-radius:50px}
+.sub-comment{font-size:13.5px;color:#4A5568;background:var(--bg);border-radius:10px;padding:10px 13px;line-height:1.5;margin-bottom:12px}
+.sub-comment.empty{color:var(--faint)}
+.grade-row{display:flex;gap:8px;align-items:stretch}
+.grade-score{width:96px;flex-shrink:0;text-align:center}
+.grade-fb{flex:1}
+.grade-save{height:48px;padding:0 18px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-family:'Jua',sans-serif;font-size:14px;cursor:pointer;flex-shrink:0;transition:opacity .15s}
+.grade-save:hover{opacity:.88}
+.grade-done{font-size:12px;color:#C05621;font-weight:700;margin-top:9px;display:flex;align-items:center;gap:5px}
+.grader-empty{text-align:center;padding:54px 20px;color:var(--faint);font-size:14px}
+.grader-empty .ge-emoji{font-size:48px;margin-bottom:14px}
+.grader-section{font-family:'Jua',sans-serif;font-size:15px;color:var(--sub);margin:18px 0 12px;display:flex;align-items:center;gap:8px}
+.bcard-grade{position:absolute;bottom:18px;right:18px;background:var(--card);border:1.5px solid var(--border);color:var(--sub);font-size:12px;font-weight:600;padding:5px 12px;border-radius:50px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;z-index:2}
+.bcard-grade:hover{border-color:#22A06B;color:#22A06B;background:#E4F7EE}
 .bd-head{background:var(--card);border-bottom:1px solid var(--border);padding:20px 26px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .bd-head h2{font-family:'Jua',sans-serif;font-size:21px}
 .bd-close{width:38px;height:38px;border-radius:50%;border:none;background:var(--bg);color:var(--sub);font-size:20px;cursor:pointer;transition:all .15s}
@@ -217,7 +237,7 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 </div>
 
 <!-- BUILDER -->
-<div class="scrim" id="scrim" onclick="closeBuilder()"></div>
+<div class="scrim" id="scrim" onclick="closeAll()"></div>
 <aside class="builder" id="builder" aria-hidden="true">
   <div class="bd-head">
     <h2 id="bd-title">새 박스</h2>
@@ -255,6 +275,15 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
     <button class="btn-save" onclick="saveBundle('draft')">임시 저장</button>
     <button class="btn-send" id="btn-send" onclick="saveBundle('sent')">📨 우리 반에 보내기</button>
   </div>
+</aside>
+
+<!-- 채점·피드백 패널 -->
+<aside class="builder grader" id="grader" aria-hidden="true">
+  <div class="bd-head">
+    <h2 id="gr-title">제출 현황</h2>
+    <button class="bd-close" onclick="closeGrader()" aria-label="닫기">×</button>
+  </div>
+  <div class="bd-body" id="gr-body"></div>
 </aside>
 
 <div class="toast" id="toast"></div>
@@ -366,15 +395,23 @@ function bundleCard(b){
     return `<span class="chip" style="background:${k.hex}"><span class="ico">${k.i}</span>${k.n}</span>`;
   }).join('');
   const more = items.length>4 ? `<span class="chip-more">+${items.length-4}</span>` : '';
-  const stat = b.status==='sent'
+  const sent = b.status==='sent';
+  const stat = sent
     ? `<span class="bcard-status st-sent">보냄</span>`
     : `<span class="bcard-status st-draft">작성 중</span>`;
   const cls = b.className ? `<span class="bcard-class">🏫 ${esc(b.className)}</span>` : `<span class="bcard-class" style="color:var(--faint)">미지정</span>`;
-  return `<div class="bcard" onclick="openBuilder('${b.id}')">
+  const click = sent ? `openGrading('${b.id}')` : `openBuilder('${b.id}')`;
+  const editLink = sent
+    ? `<button onclick="event.stopPropagation();openBuilder('${b.id}')" style="background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">편집</button>`
+    : '';
+  const footRight = sent
+    ? `<span style="display:flex;align-items:center;gap:10px"><span>📊 제출 보기</span>${editLink}</span>`
+    : `<span>${items.length}개 콘텐츠</span>`;
+  return `<div class="bcard" onclick="${click}">
     <div class="bcard-top"><div class="bcard-title">${esc(b.title)}</div>${stat}</div>
     <div class="bcard-desc">${b.desc? esc(b.desc) : '<span style=\"color:var(--faint)\">안내 문구가 없어요</span>'}</div>
     <div class="stack">${shown || '<span class="chip-more">콘텐츠 없음</span>'}${more}</div>
-    <div class="bcard-foot">${cls}<span>${items.length}개 콘텐츠</span></div>
+    <div class="bcard-foot">${cls}${footRight}</div>
   </div>`;
 }
 
@@ -512,6 +549,73 @@ async function saveBundle(mode){
   }
 }
 
+// ============ 채점·피드백 (교사) ============
+let grBox = null, grSubs = [];
+async function openGrading(id){
+  grBox = bundles.find(b=>b.id===id);
+  document.getElementById('gr-title').textContent = grBox ? grBox.title : '제출 현황';
+  document.getElementById('gr-body').innerHTML = '<div class="grader-empty"><div class="spin" style="margin:0 auto 14px"></div>제출을 불러오는 중…</div>';
+  document.getElementById('scrim').classList.add('on');
+  const g = document.getElementById('grader');
+  g.classList.add('on'); g.setAttribute('aria-hidden','false');
+  try {
+    const { data } = await db.from('cw_submissions')
+      .select('id,item_id,student_profile_id,payload,status,score,feedback, student_profiles(nickname), cw_items(title,kind)')
+      .eq('bundle_id', id).order('submitted_at', { ascending:true });
+    grSubs = data || [];
+  } catch(e){ grSubs = []; }
+  renderGrading();
+}
+function renderGrading(){
+  const body = document.getElementById('gr-body');
+  if(grSubs.length === 0){
+    body.innerHTML = `<div class="grader-empty"><div class="ge-emoji">📭</div>아직 제출한 학생이 없어요.<br>학생이 활동을 제출하면 여기에 나타나요.</div>`;
+    return;
+  }
+  const graded = grSubs.filter(s=>s.status==='graded').length;
+  let html = `<div class="grader-section">📊 제출 ${grSubs.length}개 · 채점 완료 ${graded}개</div>`;
+  html += grSubs.map((s,idx)=>{
+    const k = KINDS[s.cw_items?.kind] || KINDS.link;
+    const who = s.student_profiles?.nickname || '학생';
+    const comment = s.payload?.comment;
+    const isG = s.status==='graded';
+    return `<div class="sub ${isG?'graded':''}">
+      <div class="sub-top">
+        <span class="sub-who">🐾 ${esc(who)}</span>
+        <span class="sub-tag" style="background:${k.hex}">${k.i} ${esc(s.cw_items?.title||'')}</span>
+      </div>
+      <div class="sub-comment ${comment?'':'empty'}">${comment? esc(comment) : '남긴 말 없음'}</div>
+      <div class="grade-row">
+        <input class="inp grade-score" id="gs-${idx}" type="number" min="0" max="100" placeholder="점수" value="${s.score!=null?s.score:''}">
+        <input class="inp grade-fb" id="gf-${idx}" type="text" placeholder="피드백 한마디 (예: 잘했어요!)" value="${s.feedback?esc(s.feedback):''}">
+        <button class="grade-save" onclick="saveGrade('${s.id}',${idx})">저장</button>
+      </div>
+      ${isG? `<div class="grade-done">✓ 채점 완료${s.score!=null?' · '+s.score+'점':''}</div>`:''}
+    </div>`;
+  }).join('');
+  body.innerHTML = html;
+}
+async function saveGrade(subId, idx){
+  const scoreRaw = document.getElementById('gs-'+idx).value.trim();
+  const fb = document.getElementById('gf-'+idx).value.trim();
+  const patch = { feedback: fb, status:'graded', graded_at:new Date().toISOString(), graded_by: currentTeacher.id,
+                  score: scoreRaw==='' ? null : Number(scoreRaw) };
+  try {
+    const { error } = await db.from('cw_submissions').update(patch).eq('id', subId);
+    if(error) throw error;
+  } catch(e){ return toast('채점 저장에 실패했어요'); }
+  grSubs[idx].status='graded'; grSubs[idx].score=patch.score; grSubs[idx].feedback=fb;
+  renderGrading();
+  toast('채점했어요 ✓');
+}
+function closeGrader(){
+  document.getElementById('scrim').classList.remove('on');
+  const g = document.getElementById('grader');
+  g.classList.remove('on'); g.setAttribute('aria-hidden','true');
+  grBox=null; grSubs=[];
+}
+function closeAll(){ if(draft) closeBuilder(); closeGrader(); }
+
 // ============ 유틸 ============
 function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 let toastT;
@@ -520,7 +624,7 @@ function toast(msg){
   t.textContent = msg; t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 2600);
 }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape' && draft) closeBuilder(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAll(); });
 </script>
 </body>
 </html>
