@@ -96,7 +96,9 @@
     praise: function () { return PRAISE[Math.floor(Math.random() * PRAISE.length)]; },
     retry: function () { return RETRY[Math.floor(Math.random() * RETRY.length)]; },
     // 피드백 토스트 — el 안에 잠깐 떴다 사라짐. ok=true 정답, false 오답
-    toast: function (el, ok, msg) {
+    toast: function (el, ok, msg, snd) {
+      // 와우 ③ 효과음 — snd 지정 시 그 음, false면 무음(도구가 직접 재생), 기본은 ok 기반
+      if (window.KLab.sound && snd !== false) window.KLab.sound.play(snd || (ok ? 'success' : 'fail'));
       var old = el.querySelector('.kl-toast'); if (old) old.remove();
       var d = document.createElement('div');
       d.className = 'kl-toast';
@@ -214,4 +216,108 @@
 
   // 옛 이름 호환 (혹시 남은 참조 대비) — 같은 객체를 가리킴
   window.MathTools = window.KLab;
+})();
+
+/* ============================================================================
+   KLab.sound — 와우 표준 ③ 효과음 공통 레이어 (2026-06-16 신설)
+   - Web Audio로 짧은 효과음을 즉석 합성. 음원 파일 없음(엔진 가벼움 유지).
+   - 전 도구가 ui.toast로 달성음(success)·안내음(fail)을 자동으로 얻는다.
+   - 도구별로 KLab.sound.play(name) 직접 호출 가능 (예: 화산 charge/erupt).
+   - 교실용: 우상단 🔊/🔇 토글이 첫 소리 때 1회 떠오름. 상태는 localStorage 기억.
+   - 소리는 사용자의 첫 조작(클릭/탭) 이후에만 울림(브라우저 자동재생 정책 준수).
+   ============================================================================ */
+(function () {
+  if (!window.KLab) return;
+  var ctx = null, master = null, muted = false;
+  try { muted = (localStorage.getItem('klab_muted') === '1'); } catch (e) {}
+
+  function ensureCtx() {
+    if (ctx) return ctx;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+    } catch (e) { ctx = null; }
+    return ctx;
+  }
+
+  // 단음. freq=주파수, dur=초, type=파형, peak=최대게인, delay=시작딜레이, freqEnd=글라이드 끝주파수
+  function tone(freq, dur, type, peak, delay, freqEnd) {
+    var c = ensureCtx(); if (!c) return;
+    var t0 = c.currentTime + (delay || 0);
+    var osc = c.createOscillator(), g = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    if (freqEnd) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t0 + dur);
+    var p = (peak == null ? 0.3 : peak);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(p, t0 + Math.min(0.012, dur * 0.25));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + dur + 0.03);
+  }
+
+  // 감쇠 노이즈 버스트 (분출/럼블용). lowpass=저역통과 컷오프(Hz)
+  function noise(dur, peak, lowpass) {
+    var c = ensureCtx(); if (!c) return;
+    var n = Math.floor(c.sampleRate * dur);
+    var buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var g = c.createGain(); g.gain.value = peak || 0.4;
+    if (lowpass) { var lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = lowpass; src.connect(lp); lp.connect(g); }
+    else src.connect(g);
+    g.connect(master);
+    src.start(c.currentTime);
+  }
+
+  var PRESETS = {
+    tap:     function () { tone(660, 0.06, 'triangle', 0.28); },
+    pop:     function () { tone(420, 0.11, 'sine', 0.34, 0, 780); },
+    select:  function () { tone(540, 0.07, 'square', 0.16); },
+    success: function () { tone(660, 0.10, 'sine', 0.30, 0); tone(880, 0.12, 'sine', 0.28, 0.10); tone(1175, 0.18, 'sine', 0.26, 0.20); },
+    fail:    function () { tone(330, 0.18, 'sine', 0.20, 0, 250); },
+    charge:  function () { tone(170, 0.40, 'sawtooth', 0.16, 0, 520); },
+    erupt:   function () { noise(0.9, 0.5, 900); tone(85, 0.7, 'sawtooth', 0.30, 0, 55); tone(140, 0.5, 'square', 0.16, 0.04); },
+    rumble:  function () { noise(0.6, 0.32, 380); tone(70, 0.6, 'sine', 0.22); },
+    whoosh:  function () { noise(0.32, 0.28, 1800); }
+  };
+
+  function play(name) {
+    if (muted) { ensureToggle(); return; }
+    var fn = PRESETS[name]; if (!fn) return;
+    var c = ensureCtx(); if (!c) return;
+    if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+    try { fn(); } catch (e) {}
+    ensureToggle();
+  }
+
+  function ensureToggle() {
+    if (document.getElementById('klab-mute')) { paintToggle(); return; }
+    if (!document.body) return;
+    var b = document.createElement('button');
+    b.id = 'klab-mute';
+    b.setAttribute('aria-label', '소리 켜기 또는 끄기');
+    b.style.cssText = 'position:fixed;top:12px;right:14px;z-index:9999;width:42px;height:42px;border-radius:50%;'
+      + 'border:2px solid #E2E8F0;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:pointer;'
+      + 'font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+    b.onclick = function () { setMuted(!muted); };
+    document.body.appendChild(b);
+    paintToggle();
+  }
+  function paintToggle() {
+    var b = document.getElementById('klab-mute'); if (!b) return;
+    b.textContent = muted ? '🔇' : '🔊';
+    b.style.opacity = muted ? '0.55' : '1';
+  }
+  function setMuted(m) {
+    muted = !!m;
+    try { localStorage.setItem('klab_muted', muted ? '1' : '0'); } catch (e) {}
+    paintToggle();
+  }
+
+  window.KLab.sound = { play: play, setMuted: setMuted, isMuted: function () { return muted; }, ensureToggle: ensureToggle };
 })();

@@ -40,7 +40,8 @@
     function pump(){
       if(vol.erupting){ ui.toast(el,false,'이미 분출 중이에요! ↺ 새 화산으로'); return; }
       vol.press=Math.min(100,vol.press+20);
-      if(vol.press>=100){ vol.erupting=true; vol.t=0; ui.toast(el,true,'🌋 콰과광! 화산이 분출했어요!'); }
+      if(vol.press>=100){ vol.erupting=true; vol.t=0; ui.toast(el,true,'🌋 콰과광! 화산이 분출했어요!','erupt'); }
+      else { if(window.KLab.sound) window.KLab.sound.play('charge'); }
       renderScene(); renderStatus(); checkMission();
     }
     function cool(kind){
@@ -59,7 +60,8 @@
     function push(){
       if(qk.broken){ ui.toast(el,false,'이미 끊어졌어요! ↺ 새 땅으로'); return; }
       qk.stress=Math.min(100,qk.stress+20);
-      if(qk.stress>=100){ qk.broken=true; qk.t=0; ui.toast(el,true,'🌍 우지끈! 땅이 끊어지며 지진!'); }
+      if(qk.stress>=100){ qk.broken=true; qk.t=0; ui.toast(el,true,'🌍 우지끈! 땅이 끊어지며 지진!','rumble'); }
+      else { if(window.KLab.sound) window.KLab.sound.play('charge'); }
       renderScene(); renderStatus(); checkMission();
     }
 
