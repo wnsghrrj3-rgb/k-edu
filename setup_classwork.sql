@@ -1,8 +1,8 @@
 -- =============================================
--- K-edu 꾸러미(classwork) — 콘텐츠 묶음 전달 → 제출 → 채점 → 피드백
+-- K-edu 케이박스(classwork) — 콘텐츠 묶음 전달 → 제출 → 채점 → 피드백
 -- 작성: 2026-06-16
 -- 본질: 교사가 케이에듀 콘텐츠(케이티처·자기주도·케이랩·케이플·케이메이커·영어)를
---       하나의 "꾸러미"로 묶어 학급에 보내고, 학생 결과를 받아 채점·피드백까지 닫는 루프.
+--       하나의 "케이박스"로 묶어 학급에 보내고, 학생 결과를 받아 채점·피드백까지 닫는 루프.
 -- 의존: setup_tables.sql(teachers, class_codes.teacher_id), setup_student_profiles.sql(student_profiles)
 -- 교사 식별 체인: auth.uid() → teachers.user_id → teachers.id → class_codes.teacher_id
 -- 멱등(idempotent) — 재실행 안전.
@@ -16,7 +16,7 @@ RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER AS $$
 $$;
 
 -- =============================================
--- [1] cw_bundles — 꾸러미 (교사가 만드는 묶음)
+-- [1] cw_bundles — 케이박스 (교사가 만드는 묶음)
 -- =============================================
 CREATE TABLE IF NOT EXISTS cw_bundles (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS cw_bundles (
 CREATE INDEX IF NOT EXISTS idx_cw_bundles_teacher ON cw_bundles(teacher_id);
 
 -- =============================================
--- [2] cw_items — 꾸러미에 담긴 콘텐츠 항목
+-- [2] cw_items — 케이박스에 담긴 콘텐츠 항목
 -- kind = 케이에듀 도구 종류. url = 바로 여는 경로(deep-link). config = 종류별 부가설정.
 -- =============================================
 CREATE TABLE IF NOT EXISTS cw_items (
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS cw_items (
 CREATE INDEX IF NOT EXISTS idx_cw_items_bundle ON cw_items(bundle_id);
 
 -- =============================================
--- [3] cw_sends — 발송 (한 꾸러미를 여러 학급에 보낼 수 있음)
+-- [3] cw_sends — 발송 (한 케이박스를 여러 학급에 보낼 수 있음)
 -- =============================================
 CREATE TABLE IF NOT EXISTS cw_sends (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_cw_subs_bundle ON cw_submissions(bundle_id);
 CREATE INDEX IF NOT EXISTS idx_cw_subs_class  ON cw_submissions(class_code_id);
 
 -- =============================================
--- RLS — 교사측 (본인 꾸러미·항목·발송 전체 / 본인 학급 제출 조회·채점)
+-- RLS — 교사측 (본인 케이박스·항목·발송 전체 / 본인 학급 제출 조회·채점)
 -- =============================================
 ALTER TABLE cw_bundles     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cw_items       ENABLE ROW LEVEL SECURITY;
@@ -94,13 +94,13 @@ CREATE POLICY cw_bundles_teacher ON cw_bundles
   FOR ALL USING (teacher_id = cw_my_teacher_id())
   WITH CHECK (teacher_id = cw_my_teacher_id());
 
--- items: 소유 꾸러미의 항목
+-- items: 소유 케이박스의 항목
 DROP POLICY IF EXISTS cw_items_teacher ON cw_items;
 CREATE POLICY cw_items_teacher ON cw_items
   FOR ALL USING (bundle_id IN (SELECT id FROM cw_bundles WHERE teacher_id = cw_my_teacher_id()))
   WITH CHECK (bundle_id IN (SELECT id FROM cw_bundles WHERE teacher_id = cw_my_teacher_id()));
 
--- sends: 소유 꾸러미의 발송, 대상 학급도 본인 것
+-- sends: 소유 케이박스의 발송, 대상 학급도 본인 것
 DROP POLICY IF EXISTS cw_sends_teacher ON cw_sends;
 CREATE POLICY cw_sends_teacher ON cw_sends
   FOR ALL USING (bundle_id IN (SELECT id FROM cw_bundles WHERE teacher_id = cw_my_teacher_id()))
@@ -121,7 +121,7 @@ CREATE POLICY cw_subs_teacher_grade ON cw_submissions
 
 -- =============================================
 -- [다음 단계] 학생측 — 별도 사이클에서 추가
---  · 받은 꾸러미 조회: 익명 auth.uid() → student_profiles → class_code_id → cw_sends 조인 RPC
+--  · 받은 케이박스 조회: 익명 auth.uid() → student_profiles → class_code_id → cw_sends 조인 RPC
 --  · 제출: claim_seat 패턴의 SECURITY DEFINER RPC(cw_submit)로 student_profile 검증 후 insert
 --  · 학생 RLS는 student_profiles의 auth 매핑을 RPC로 감싸 처리(직접 노출 최소화)
 -- =============================================
