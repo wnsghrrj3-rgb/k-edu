@@ -64,6 +64,13 @@ main{flex:1;max-width:900px;margin:0 auto;padding:36px 24px 48px;width:100%}
 .bc-sep{color:#E2E8F0}
 
 /* GRADE GRID */
+.inbox-banner{display:flex;align-items:center;gap:14px;max-width:520px;margin:0 auto 24px;padding:16px 20px;background:linear-gradient(120deg,#EBF4FF,#E4F7EE);border:1.5px solid #BBE9D3;border-radius:18px;text-decoration:none;box-shadow:0 4px 16px rgba(34,160,107,.12);transition:transform .15s,box-shadow .15s}
+.inbox-banner:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(34,160,107,.2)}
+.inbox-banner .ib-ic{font-size:32px;flex-shrink:0}
+.inbox-banner .ib-text{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.inbox-banner .ib-text b{font-family:'Jua',sans-serif;font-size:17px;color:#1A202C}
+.inbox-banner .ib-text span{font-size:12.5px;color:#718096}
+.inbox-banner .ib-go{font-family:'Jua',sans-serif;font-size:14px;color:#22A06B;white-space:nowrap;flex-shrink:0}
 .section-label{font-family:'Jua',sans-serif;font-size:18px;color:#718096;text-align:center;margin-bottom:20px}
 .grade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .grade-card{background:#fff;border-radius:20px;padding:28px 16px 22px;text-align:center;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;transition:transform .18s,border-color .18s,box-shadow .18s;box-shadow:0 2px 16px rgba(0,0,0,.07)}
@@ -208,6 +215,13 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
       <div class="hero-title">K-edu</div>
       <div class="hero-sub">케이에듀 · 초등 학습 플랫폼</div>
     </div>
+
+    <!-- 받은 박스 알림 (로그인 학생 + 받은 박스 있을 때) -->
+    <a class="inbox-banner" id="inbox-banner" href="/classwork/inbox.html" style="display:none">
+      <span class="ib-ic">📦</span>
+      <span class="ib-text"><b id="ib-count">받은 박스</b><span>선생님이 보낸 활동을 열어보세요</span></span>
+      <span class="ib-go">열어보기 →</span>
+    </a>
 
     <!-- 학생 진입 카드 (비로그인 시만 표시) -->
     <div class="entry-card" id="entry-card" style="display:none">
@@ -490,6 +504,20 @@ function showLoggedInUI(){
       badge.style.display = 'none';
     }
   }
+  checkInbox();
+}
+
+// 받은 박스(케이박스) 알림 — RPC 없거나 박스 없으면 조용히 숨김
+async function checkInbox(){
+  try {
+    const { data } = await db.rpc('cw_my_inbox');
+    if(data && data.status==='ok' && data.boxes && data.boxes.length){
+      const pending = data.boxes.filter(b=>(b.done_count||0) < (b.item_count||0)).length;
+      document.getElementById('ib-count').textContent =
+        pending>0 ? `선생님이 보낸 박스 ${pending}개` : `받은 박스 ${data.boxes.length}개`;
+      document.getElementById('inbox-banner').style.display = 'flex';
+    }
+  } catch(e){ /* 테이블/RPC 미설정 시 무시 */ }
 }
 
 function showLoggedOutUI(){

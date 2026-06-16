@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>받은 박스 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#5B8EF8;--primary-light:#EBF4FF;--pink:#FF85A1;
+  --bg:#F4F6FB;--card:#fff;--ink:#1A202C;--sub:#718096;--faint:#A0AEC0;--border:#E7ECF3;
+  --radius:20px;--shadow:0 2px 18px rgba(33,52,94,.07);--shadow-lg:0 18px 50px rgba(33,52,94,.16);
+  --done:#22A06B;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.nav{background:var(--card);border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:50}
+.nav-logo{font-family:'Jua',sans-serif;font-size:21px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
+.nav-logo .kk{background:linear-gradient(135deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-badge{font-family:'Jua',sans-serif;font-size:13px;background:#E4F7EE;color:var(--done);padding:3px 12px;border-radius:50px}
+.nav-me{font-size:13px;color:var(--sub);font-weight:600}
+
+.wrap{max-width:680px;margin:0 auto;padding:30px 18px 80px}
+
+.loading{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--faint);font-size:14px}
+.spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gate{min-height:60vh;display:none;align-items:center;justify-content:center;padding:30px}
+.gate.on{display:flex}
+.gate-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:44px 32px;max-width:420px;text-align:center;box-shadow:var(--shadow-lg)}
+.gate-emoji{font-size:54px;margin-bottom:16px}
+.gate-title{font-family:'Jua',sans-serif;font-size:23px;margin-bottom:10px}
+.gate-desc{font-size:14.5px;color:var(--sub);line-height:1.65;margin-bottom:24px}
+.gate-btn{display:inline-flex;align-items:center;gap:8px;height:52px;padding:0 28px;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;border-radius:14px;font-family:'Jua',sans-serif;font-size:17px;text-decoration:none;cursor:pointer}
+
+.screen{display:none}
+.screen.on{display:block;animation:fade .3s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.head{margin-bottom:24px}
+.head-title{font-family:'Jua',sans-serif;font-size:30px;letter-spacing:-.5px;margin-bottom:6px}
+.head-title .pop{background:linear-gradient(120deg,var(--primary),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.head-sub{font-size:14px;color:var(--sub)}
+
+/* 박스 목록 */
+.box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:14px;cursor:pointer;box-shadow:var(--shadow);transition:transform .16s,box-shadow .16s;display:flex;align-items:center;gap:18px}
+.box:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.box-ic{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#EBF4FF,#E4F7EE);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.box-body{flex:1;min-width:0}
+.box-title{font-family:'Jua',sans-serif;font-size:19px;margin-bottom:4px}
+.box-desc{font-size:13px;color:var(--sub);line-height:1.5;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.box-prog{display:flex;align-items:center;gap:10px;margin-top:10px}
+.bar{flex:1;height:7px;background:#EDF1F7;border-radius:50px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--done),#3FCB8E);border-radius:50px;transition:width .4s}
+.box-pct{font-size:12px;font-weight:700;color:var(--done);white-space:nowrap}
+.box-go{color:var(--faint);font-size:22px;flex-shrink:0}
+.box-done-badge{font-size:11.5px;font-weight:700;background:#E4F7EE;color:var(--done);padding:4px 11px;border-radius:50px;white-space:nowrap}
+
+.empty{text-align:center;padding:70px 20px}
+.empty-emoji{font-size:60px;margin-bottom:16px}
+.empty-title{font-family:'Jua',sans-serif;font-size:22px;margin-bottom:8px}
+.empty-desc{font-size:14px;color:var(--sub);line-height:1.6}
+
+/* 박스 상세 */
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:none;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--sub);cursor:pointer;padding:0;margin-bottom:18px;font-weight:500}
+.back-btn:hover{color:var(--ink)}
+.detail-head{background:linear-gradient(135deg,#EBF4FF,#F3ECFF);border-radius:22px;padding:26px;margin-bottom:22px}
+.detail-title{font-family:'Jua',sans-serif;font-size:25px;margin-bottom:8px}
+.detail-msg{font-size:14.5px;color:#4A5568;line-height:1.6}
+
+.task{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:13px;box-shadow:var(--shadow)}
+.task.done{border-color:#BBE9D3;background:#FBFEFC}
+.task-top{display:flex;align-items:center;gap:14px}
+.task-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0}
+.task-body{flex:1;min-width:0}
+.task-name{font-family:'Jua',sans-serif;font-size:17px;line-height:1.3}
+.task-kind{font-size:12px;color:var(--faint);margin-top:2px}
+.task-check{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;background:#EDF1F7;color:var(--faint)}
+.task-check.on{background:var(--done);color:#fff}
+.task-actions{display:flex;gap:9px;margin-top:14px}
+.t-btn{flex:1;height:46px;border-radius:12px;font-family:'Jua',sans-serif;font-size:15px;cursor:pointer;border:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
+.t-open{background:var(--primary-light);color:var(--primary)}
+.t-open:hover{background:#DCEAFE}
+.t-do{background:linear-gradient(120deg,var(--done),#2BB97C);color:#fff;box-shadow:0 6px 16px rgba(34,160,107,.26)}
+.t-do:hover{transform:translateY(-1px)}
+.t-redo{background:var(--card);color:var(--sub);border:1.5px solid var(--border)}
+/* 제출 입력 */
+.submit-box{margin-top:13px;display:none}
+.submit-box.on{display:block;animation:fade .2s ease}
+.submit-box textarea{width:100%;border:1.5px solid var(--primary);border-radius:12px;padding:12px 14px;font-family:'Noto Sans KR',sans-serif;font-size:14px;resize:vertical;min-height:64px;outline:none}
+.submit-row{display:flex;gap:8px;margin-top:8px}
+.submit-row button{flex:1;height:44px;border-radius:11px;font-size:14px;font-weight:600;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:none}
+.s-send{background:var(--done);color:#fff}
+.s-cancel{background:var(--bg);color:var(--sub)}
+/* 채점 결과 */
+.graded{margin-top:13px;background:#FFF8F0;border:1px solid #FCE6C7;border-radius:13px;padding:14px 16px}
+.graded-score{font-family:'Jua',sans-serif;font-size:16px;color:#C05621;display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.graded-fb{font-size:13.5px;color:#7B5230;line-height:1.55}
+.my-comment{margin-top:11px;font-size:13px;color:var(--sub);background:var(--bg);border-radius:11px;padding:10px 13px;line-height:1.5}
+.my-comment b{color:var(--ink);font-weight:600}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 24px;border-radius:50px;font-size:14px;font-weight:500;z-index:90;opacity:0;pointer-events:none;transition:all .3s}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="/"><span class="kk">K-edu</span> <span class="nav-badge">받은 박스</span></a>
+  <span class="nav-me" id="nav-me"></span>
+</nav>
+
+<div class="loading" id="loading"><div class="spin"></div>받은 박스를 확인하고 있어요…</div>
+
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="gate-emoji">🎒</div>
+    <div class="gate-title">먼저 우리 반에 입장해요</div>
+    <div class="gate-desc">받은 박스를 보려면 학급코드와 닉네임으로 입장해야 해요. 선생님이 알려준 코드로 입장한 다음 다시 와주세요!</div>
+    <a class="gate-btn" href="/">입장하러 가기 →</a>
+  </div>
+</div>
+
+<div class="wrap" id="wrap" style="display:none">
+  <!-- 목록 -->
+  <div class="screen on" id="s-list">
+    <div class="head">
+      <div class="head-title"><span class="pop">받은 박스</span>를 열어볼까요? 📦</div>
+      <div class="head-sub">선생님이 보낸 활동을 하나씩 해보고 다 하면 제출해요.</div>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <!-- 상세 -->
+  <div class="screen" id="s-detail">
+    <button class="back-btn" onclick="backToList()">← 받은 박스 목록</button>
+    <div class="detail-head">
+      <div class="detail-title" id="d-title"></div>
+      <div class="detail-msg" id="d-msg"></div>
+    </div>
+    <div id="tasks"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KINDS = {
+  kteacher: {n:'케이티처', i:'📚', hex:'#FF85A1'}, selfstudy:{n:'자기주도', i:'🎒', hex:'#7E57C2'},
+  klab:{n:'케이랩', i:'🧊', hex:'#3BAB72'}, kple:{n:'케이플', i:'🎮', hex:'#FFB347'},
+  kmake:{n:'케이메이커', i:'🎨', hex:'#5B8EF8'}, english:{n:'영어', i:'🔤', hex:'#B7791F'},
+  link:{n:'자료', i:'🔗', hex:'#94A3B8'},
+};
+const db = getKeduDb();
+let me = null;          // my_seat_class 결과
+let inbox = [];         // 받은 박스 목록
+let current = null;     // 열어본 박스 상세
+
+(async function init(){
+  let session;
+  try { ({ data:{ session } } = await db.auth.getSession()); }
+  catch(e){ return showGate(); }
+  if(!session || !session.user) return showGate();
+
+  let res;
+  try { ({ data: res } = await db.rpc('my_seat_class')); } catch(e){ return showGate(); }
+  if(!res || res.status !== 'ok' || !res.profile_id) return showGate();
+  me = res;
+  document.getElementById('nav-me').textContent = '🐾 ' + (me.nickname || '학생');
+
+  await loadInbox();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('wrap').style.display = 'block';
+})();
+
+function showGate(){
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('gate').classList.add('on');
+}
+
+async function loadInbox(){
+  try {
+    const { data } = await db.rpc('cw_my_inbox');
+    inbox = (data && data.status==='ok') ? (data.boxes||[]) : [];
+  } catch(e){ inbox = []; }
+  renderList();
+}
+
+function renderList(){
+  const el = document.getElementById('list');
+  if(inbox.length===0){
+    el.innerHTML = `<div class="empty"><div class="empty-emoji">📭</div>
+      <div class="empty-title">아직 받은 박스가 없어요</div>
+      <div class="empty-desc">선생님이 박스를 보내면 여기에 나타나요.<br>그때 다시 와주세요!</div></div>`;
+    return;
+  }
+  el.innerHTML = inbox.map(b=>{
+    const total = b.item_count||0, done = b.done_count||0;
+    const pct = total? Math.round(done/total*100) : 0;
+    const allDone = total>0 && done>=total;
+    const right = allDone
+      ? `<span class="box-done-badge">다 했어요 ✓</span>`
+      : `<span class="box-go">›</span>`;
+    return `<div class="box" onclick="openBox('${b.bundle_id}')">
+      <div class="box-ic">📦</div>
+      <div class="box-body">
+        <div class="box-title">${esc(b.title)}</div>
+        <div class="box-desc">${b.description? esc(b.description) : '선생님이 보낸 활동이에요'}</div>
+        <div class="box-prog"><div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div><span class="box-pct">${done}/${total}</span></div>
+      </div>${right}</div>`;
+  }).join('');
+}
+
+async function openBox(id){
+  let data;
+  try { ({ data } = await db.rpc('cw_open_bundle', { p_bundle_id:id })); } catch(e){ return toast('박스를 여는 데 실패했어요'); }
+  if(!data || data.status!=='ok'){ return toast('박스를 찾을 수 없어요'); }
+  current = data;
+  document.getElementById('d-title').textContent = data.bundle.title;
+  document.getElementById('d-msg').textContent = data.bundle.description || '활동을 하나씩 해볼까요?';
+  renderTasks();
+  document.getElementById('s-list').classList.remove('on');
+  document.getElementById('s-detail').classList.add('on');
+  window.scrollTo(0,0);
+}
+function backToList(){
+  document.getElementById('s-detail').classList.remove('on');
+  document.getElementById('s-list').classList.add('on');
+  loadInbox();
+}
+
+function renderTasks(){
+  const wrap = document.getElementById('tasks');
+  wrap.innerHTML = current.items.map((it,idx)=>{
+    const k = KINDS[it.kind] || KINDS.link;
+    const open = it.url ? `<a class="t-btn t-open" href="${esc(it.url)}" target="_blank" rel="noopener">▶ 열기</a>` : '';
+    let action, graded='', comment='';
+    if(it.status==='graded'){
+      action = `<button class="t-btn t-redo" onclick="toggleSubmit(${idx})">✏️ 다시 제출</button>`;
+      graded = `<div class="graded"><div class="graded-score">⭐ ${it.score!=null? esc(String(it.score))+'점' : '확인 완료'}</div>${it.feedback? `<div class="graded-fb">${esc(it.feedback)}</div>`:''}</div>`;
+    } else if(it.submitted){
+      action = `<button class="t-btn t-redo" onclick="toggleSubmit(${idx})">✏️ 다시 제출</button>`;
+    } else {
+      action = `<button class="t-btn t-do" onclick="toggleSubmit(${idx})">✓ 다 했어요</button>`;
+    }
+    const myc = (it.payload && it.payload.comment) ? `<div class="my-comment"><b>내가 남긴 말</b> · ${esc(it.payload.comment)}</div>` : '';
+    return `<div class="task ${it.submitted?'done':''}">
+      <div class="task-top">
+        <div class="task-ic" style="background:${k.hex}">${k.i}</div>
+        <div class="task-body"><div class="task-name">${esc(it.title)}</div><div class="task-kind">${k.n}</div></div>
+        <div class="task-check ${it.submitted?'on':''}">${it.submitted?'✓':''}</div>
+      </div>
+      <div class="task-actions">${open}${action}</div>
+      <div class="submit-box" id="sb-${idx}">
+        <textarea id="sc-${idx}" placeholder="선생님께 남길 말이나 결과를 적어요 (안 적어도 돼요)">${(it.payload&&it.payload.comment)?esc(it.payload.comment):''}</textarea>
+        <div class="submit-row">
+          <button class="s-cancel" onclick="toggleSubmit(${idx})">취소</button>
+          <button class="s-send" onclick="doSubmit(${idx})">제출하기</button>
+        </div>
+      </div>
+      ${graded}${myc}
+    </div>`;
+  }).join('');
+}
+
+function toggleSubmit(idx){
+  const b = document.getElementById('sb-'+idx);
+  b.classList.toggle('on');
+  if(b.classList.contains('on')) setTimeout(()=>document.getElementById('sc-'+idx)?.focus(), 50);
+}
+
+async function doSubmit(idx){
+  const it = current.items[idx];
+  const comment = (document.getElementById('sc-'+idx).value||'').trim();
+  try {
+    const { data } = await db.rpc('cw_submit', { p_bundle_id: current.bundle.id, p_item_id: it.id, p_payload: { comment } });
+    if(!data || data.status!=='ok'){ return toast('제출에 실패했어요'); }
+  } catch(e){ return toast('제출에 실패했어요'); }
+  // 로컬 상태 갱신 후 재렌더
+  it.submitted = true; it.status = 'submitted'; it.payload = { ...(it.payload||{}), comment };
+  renderTasks();
+  toast('제출했어요! 잘했어요 🎉');
+}
+
+function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+let toastT;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2400); }
+</script>
+</body>
+</html>

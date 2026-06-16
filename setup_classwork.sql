@@ -120,8 +120,87 @@ CREATE POLICY cw_subs_teacher_grade ON cw_submissions
   WITH CHECK (class_code_id IN (SELECT id FROM class_codes WHERE teacher_id = cw_my_teacher_id()));
 
 -- =============================================
--- [다음 단계] 학생측 — 별도 사이클에서 추가
---  · 받은 케이박스 조회: 익명 auth.uid() → student_profiles → class_code_id → cw_sends 조인 RPC
---  · 제출: claim_seat 패턴의 SECURITY DEFINER RPC(cw_submit)로 student_profile 검증 후 insert
---  · 학생 RLS는 student_profiles의 auth 매핑을 RPC로 감싸 처리(직접 노출 최소화)
+-- 학생측 — 받은 박스 조회·제출 (익명 auth + student_profiles 매핑, SECURITY DEFINER)
+-- 학생은 테이블 직접 접근 X. 아래 RPC로만 접근(발송 검증 포함).
+-- 학생 매핑: auth.uid() → student_profiles.user_id → id(프로필)·class_code_id
 -- =============================================
+
+-- 제출 중복 방지 (학생당 항목당 1제출 → 재제출은 갱신)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cw_sub_uniq') THEN
+    ALTER TABLE cw_submissions ADD CONSTRAINT cw_sub_uniq UNIQUE (student_profile_id, item_id);
+  END IF;
+END $$;
+
+-- [학생] 받은 박스 목록 (내 학급에 발송된 것 + 내 진행도)
+CREATE OR REPLACE FUNCTION cw_my_inbox()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_uid uuid; v_pid uuid; v_cc uuid; v_res jsonb;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('status','no_session'); END IF;
+  SELECT sp.id, sp.class_code_id INTO v_pid, v_cc FROM student_profiles sp WHERE sp.user_id = v_uid LIMIT 1;
+  IF v_pid IS NULL THEN RETURN jsonb_build_object('status','no_profile'); END IF;
+  SELECT jsonb_build_object('status','ok','boxes',
+    COALESCE(jsonb_agg(box ORDER BY (box->>'sent_at') DESC), '[]'::jsonb))
+  INTO v_res FROM (
+    SELECT jsonb_build_object(
+      'bundle_id', b.id, 'title', b.title, 'description', b.description, 'sent_at', s.sent_at,
+      'item_count', (SELECT count(*) FROM cw_items i WHERE i.bundle_id = b.id),
+      'done_count', (SELECT count(*) FROM cw_submissions su WHERE su.bundle_id = b.id AND su.student_profile_id = v_pid)
+    ) AS box
+    FROM cw_sends s JOIN cw_bundles b ON b.id = s.bundle_id
+    WHERE s.class_code_id = v_cc AND b.status = 'sent'
+  ) t;
+  RETURN v_res;
+END $$;
+GRANT EXECUTE ON FUNCTION cw_my_inbox() TO authenticated;
+
+-- [학생] 박스 열기 (항목 + 내 제출·채점 상태)
+CREATE OR REPLACE FUNCTION cw_open_bundle(p_bundle_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_uid uuid; v_pid uuid; v_cc uuid; v_ok boolean; v_res jsonb;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('status','no_session'); END IF;
+  SELECT sp.id, sp.class_code_id INTO v_pid, v_cc FROM student_profiles sp WHERE sp.user_id = v_uid LIMIT 1;
+  IF v_pid IS NULL THEN RETURN jsonb_build_object('status','no_profile'); END IF;
+  SELECT EXISTS(SELECT 1 FROM cw_sends s WHERE s.bundle_id = p_bundle_id AND s.class_code_id = v_cc) INTO v_ok;
+  IF NOT v_ok THEN RETURN jsonb_build_object('status','not_found'); END IF;
+  SELECT jsonb_build_object('status','ok',
+    'bundle', (SELECT jsonb_build_object('id',b.id,'title',b.title,'description',b.description) FROM cw_bundles b WHERE b.id = p_bundle_id),
+    'items', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object(
+        'id', i.id, 'kind', i.kind, 'title', i.title, 'url', i.url,
+        'submitted', (su.id IS NOT NULL), 'status', su.status, 'score', su.score,
+        'feedback', su.feedback, 'payload', su.payload
+      ) ORDER BY i.sort_order)
+      FROM cw_items i
+      LEFT JOIN cw_submissions su ON su.item_id = i.id AND su.student_profile_id = v_pid
+      WHERE i.bundle_id = p_bundle_id
+    ), '[]'::jsonb)
+  ) INTO v_res;
+  RETURN v_res;
+END $$;
+GRANT EXECUTE ON FUNCTION cw_open_bundle(uuid) TO authenticated;
+
+-- [학생] 제출 (항목별, 재제출은 갱신)
+CREATE OR REPLACE FUNCTION cw_submit(p_bundle_id uuid, p_item_id uuid, p_payload jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_uid uuid; v_pid uuid; v_cc uuid; v_ok boolean;
+BEGIN
+  v_uid := auth.uid();
+  IF v_uid IS NULL THEN RETURN jsonb_build_object('status','no_session'); END IF;
+  SELECT sp.id, sp.class_code_id INTO v_pid, v_cc FROM student_profiles sp WHERE sp.user_id = v_uid LIMIT 1;
+  IF v_pid IS NULL THEN RETURN jsonb_build_object('status','no_profile'); END IF;
+  SELECT EXISTS(SELECT 1 FROM cw_sends s WHERE s.bundle_id = p_bundle_id AND s.class_code_id = v_cc) INTO v_ok;
+  IF NOT v_ok THEN RETURN jsonb_build_object('status','not_found'); END IF;
+  INSERT INTO cw_submissions (bundle_id, item_id, student_profile_id, class_code_id, payload, status, submitted_at)
+  VALUES (p_bundle_id, p_item_id, v_pid, v_cc, COALESCE(p_payload,'{}'::jsonb), 'submitted', now())
+  ON CONFLICT (student_profile_id, item_id)
+  DO UPDATE SET payload = EXCLUDED.payload, status = 'submitted', submitted_at = now();
+  RETURN jsonb_build_object('status','ok');
+END $$;
+GRANT EXECUTE ON FUNCTION cw_submit(uuid, uuid, jsonb) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
