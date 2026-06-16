@@ -90,6 +90,11 @@ button{font-family:inherit;cursor:pointer}
 .dcard.bgcol{aspect-ratio:auto;height:54px}
 .sheet-close{position:sticky;top:0;float:right;width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);color:var(--sub);font-size:18px;display:flex;align-items:center;justify-content:center}
 .sheet-close:hover{background:#E3E8F1}
+.photo-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px}
+.photo-btn{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border-radius:12px;border:none;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;font-family:'Jua',sans-serif;font-size:14px;cursor:pointer;box-shadow:0 6px 16px rgba(91,142,248,.28);transition:transform .12s}
+.photo-btn:hover{transform:translateY(-1px)}
+.photo-detail{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--faint);font-weight:600}
+.photo-detail input{width:120px;accent-color:var(--primary)}
 
 /* 모바일 */
 @media(max-width:760px){
@@ -180,6 +185,17 @@ button{font-family:inherit;cursor:pointer}
     <button class="sheet-close" onclick="closeSheet()">✕</button>
     <h3>🗂️ 도면 · 배경 고르기</h3>
     <p class="desc">바탕을 깔아두면 그 위에 색칠하거나 그림을 그릴 수 있어요. 그림은 그대로 두고 바탕만 바뀌어요.</p>
+
+    <div class="sheet-sec">📷 사진으로 색칠 도안 만들기</div>
+    <p class="desc" style="margin:-4px 0 10px">사진을 올리면 윤곽선만 남긴 색칠 도안으로 바꿔줘요. 사진은 이 기기 밖으로 나가지 않아요 (인터넷 전송 없음).</p>
+    <div class="photo-row">
+      <label class="photo-btn">📷 사진 올리기<input type="file" accept="image/*" id="photo-input" onchange="loadPhoto(this)" hidden></label>
+      <div class="photo-detail">
+        <span>선 굵게</span>
+        <input type="range" id="photo-detail" min="40" max="180" value="95">
+        <span>선 가늘게</span>
+      </div>
+    </div>
 
     <div class="sheet-sec">바탕색</div>
     <div class="dgrid" id="bgcolors"></div>
@@ -573,6 +589,50 @@ function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.
 
 /* ============== 도면·배경 ============== */
 function paintBgColor(c){ bgx.globalAlpha=1; bgx.fillStyle=c; bgx.fillRect(0,0,cssW,cssH); }
+
+/* 사진 → 색칠 도안 (브라우저 내 Sobel 엣지 검출, 외부 전송 없음) */
+function loadPhoto(input){
+  const file=input.files && input.files[0]; if(!file) return;
+  const img=new Image();
+  const url=URL.createObjectURL(file);
+  img.onload=()=>{ try{ photoEdges(img); }catch(e){ toast('사진을 바꾸지 못했어요'); } URL.revokeObjectURL(url); };
+  img.onerror=()=>{ toast('사진을 열 수 없어요'); URL.revokeObjectURL(url); };
+  img.src=url; input.value='';
+}
+function photoEdges(img){
+  const W=bg.width, H=bg.height;                       // 디바이스 픽셀
+  const tmp=document.createElement('canvas'); tmp.width=W; tmp.height=H;
+  const t=tmp.getContext('2d',{willReadFrequently:true});
+  t.fillStyle='#fff'; t.fillRect(0,0,W,H);
+  // contain (종횡비 유지, 가운데)
+  const s=Math.min(W/img.width, H/img.height);
+  const w=img.width*s, h=img.height*s;
+  t.drawImage(img,(W-w)/2,(H-h)/2,w,h);
+  const src=t.getImageData(0,0,W,H).data;
+  // 그레이스케일
+  const gray=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++){ gray[i]=0.299*src[i*4]+0.587*src[i*4+1]+0.114*src[i*4+2]; }
+  // 출력(흰 바탕)
+  const out=t.createImageData(W,H), od=out.data;
+  for(let i=0;i<W*H;i++){ od[i*4]=od[i*4+1]=od[i*4+2]=255; od[i*4+3]=255; }
+  const thr=+document.getElementById('photo-detail').value;
+  const LINE=[120,130,145];                            // 도안 선 색(연회색, 템플릿 톤)
+  // Sobel
+  for(let y=1;y<H-1;y++){
+    for(let x=1;x<W-1;x++){
+      const i=y*W+x;
+      const gx=-gray[i-W-1]-2*gray[i-1]-gray[i+W-1]+gray[i-W+1]+2*gray[i+1]+gray[i+W+1];
+      const gy=-gray[i-W-1]-2*gray[i-W]-gray[i-W+1]+gray[i+W-1]+2*gray[i+W]+gray[i+W+1];
+      const mag=Math.hypot(gx,gy);
+      if(mag>thr){
+        const oi=i*4, k=Math.min(1,(mag-thr)/120);     // 강한 엣지일수록 진하게
+        od[oi]=LINE[0]*(1-k)+60*k; od[oi+1]=LINE[1]*(1-k)+66*k; od[oi+2]=LINE[2]*(1-k)+78*k; od[oi+3]=255;
+      }
+    }
+  }
+  bgx.setTransform(1,0,0,1,0,0); bgx.putImageData(out,0,0); bgx.setTransform(dpr,0,0,dpr,0,0);
+  closeSheet(); toast('사진을 색칠 도안으로 바꿨어요 — 색칠해 보세요');
+}
 function drawGuide(kind){
   paintBgColor('#fff');
   bgx.save(); bgx.strokeStyle='#D7DEE9'; bgx.lineWidth=1;
