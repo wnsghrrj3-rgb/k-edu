@@ -47,6 +47,19 @@
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var phase=(config.phase!=null)?config.phase:180;
     var playing=false, alive=true, last=0;
+    /* ── 학년 칸 (헌법 3장) — 같은 위상 무대 공유, 노출·미션·만약에·모드탭만 칸별 스왑 ──
+       저=모양이 바뀐다(관찰, 슬라이더만) / 중=규칙적 변화(재생+2배공전) / 고=위상 원리(스스로빛·삭의 비밀 풀버전). */
+    var GRADES={
+      low:  { modes:['free','mission','quiz'],           showPlay:false, mIdx:[0,2,3],        wif:[],                       hint:'슬라이더를 움직여 날마다 달 모양이 어떻게 바뀌는지 봐요.' },
+      mid:  { modes:['free','mission','quiz','whatif'],   showPlay:true,  mIdx:[0,1,2,3,5],    wif:['fastm'],                hint:'▶ 공전 재생으로 달 모양이 규칙적으로 돌아오는 걸 봐요.' },
+      high: { modes:['free','mission','quiz','whatif'],   showPlay:true,  mIdx:[0,1,2,3,4,5],  wif:['glow','stopm','fastm'], hint:'💡 만약에로 위상의 비밀(반사광)을 파헤쳐 봐요.' }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; playing=false; phase=180; dayCnt=0;
+      makeWif(); buildUI();
+    }});
+    function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
@@ -71,16 +84,16 @@
     var mStep=0,mDone=false,mLock=false;
     function advanceMission(){
       mLock=false;
-      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      var CM=curMissions(); if(mStep<CM.length-1){ mStep++; if(CM[mStep].set)CM[mStep].set(); }
       else mDone=true;
       updateBars(); missionFoot(); render(); renderStatus();
     }
     function missionFoot(){
-      ui.thinkFoot(el,{foot:'.mn-foot',bar:'.mn-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+      var CM=curMissions(); ui.thinkFoot(el,{foot:'.mn-foot',bar:'.mn-bars'},(mode==='mission'&&!mDone&&CM[mStep]&&CM[mStep].type==='think')?CM[mStep]:null,advanceMission);
     }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      var m=curMissions()[mStep]; if(!m||m.type!=='make')return;
       if(m.check()){
         mLock=true; ui.toast(el,true);
         setTimeout(advanceMission,1500);
@@ -88,7 +101,7 @@
     }
     function updateBars(){
       var host=el.querySelector('.mn-bars'); if(!host)return;
-      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission'){var CM=curMissions();host.innerHTML=mDone?ui.doneBar():ui.missionBar(CM[mStep].text,mStep,CM.length);}
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
       else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
@@ -113,14 +126,20 @@
         reveal:'\'한 달\'의 길이는 달의 공전이 정해요! 2배 빨리 돌면 보름달→보름달이 15일 — 달력이 완전히 달라지겠죠?',
         tip:'▶ 공전 재생 — 위상이 두 배 빨리 휙휙 바뀌어요!' }
     };
-    var wif=ui.whatifEngine({
-      scenarios:WHATIF,
-      rebuild:function(){buildUI();},
-      footEl:function(){return el.querySelector('.mn-foot');},
-      onSelect:function(k){ playing=false; dayCnt=0; phase=(k==='stopm')?180:45; },
-      onPlay:function(){ dayCnt=0; },
-      onExit:function(){ playing=false; dayCnt=0; phase=180; }
-    });
+    var wif;
+    function makeWif(){
+      var keys=GRADES[grade].wif, scen={};
+      keys.forEach(function(k){ scen[k]=WHATIF[k]; });
+      wif=ui.whatifEngine({
+        scenarios:scen,
+        rebuild:function(){buildUI();},
+        footEl:function(){return el.querySelector('.mn-foot');},
+        onSelect:function(k){ playing=false; dayCnt=0; phase=(k==='stopm')?180:45; },
+        onPlay:function(){ dayCnt=0; },
+        onExit:function(){ playing=false; dayCnt=0; phase=180; }
+      });
+    }
+    makeWif();
 
     /* ───────────── 퀴즈 ('지구에서 본 달'을 보고 답하기) ───────────── */
     var QUIZ=[
@@ -157,9 +176,9 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode,{whatif:'🌀 만약에'}), bar='', foot='';
       var frozen=(wif.active()&&wif.state.key==='stopm');
-      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission'){var CMB=curMissions();bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length);}
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); }
       el.innerHTML='<style>.mn-btn:active,.kl-choice:active{transform:translateY(2px);}'
@@ -170,7 +189,7 @@
         + top + '<div class="mn-bars">'+bar+'</div>'
         +((mode==='quiz'||(mode==='whatif'&&!wif.active()))?'<div style="display:none;">':'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">')
           +'<button class="mn-btn" data-act="day" style="font-size:18px;padding:11px 16px;border-radius:14px;border:3px solid #845EF7;background:#fff;color:#845EF7;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">📅 하루 뒤</button>'
-          +'<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 공전 재생'))+'</button>'
+          +(GRADES[grade].showPlay?('<button class="mn-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 공전 재생'))+'</button>'):'')
           +'<input class="mn-range" type="range" min="0" max="360" step="1" value="'+phase+'" '+(frozen?'disabled':'')+' style="width:min(46vw,330px);'+(frozen?'opacity:.4;':'')+'">'
           +'<span class="mn-age" style="font-size:18px;font-weight:800;color:'+C.ink+';min-width:96px;text-align:center;font-family:inherit;"></span>'
         +'</div>'
@@ -201,7 +220,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices();
+      initThree(); bind(); bindChoices(); bands.bind(el);
       if(mode==='whatif')wif.bind(el);
       if(mode==='mission')missionFoot();
       render(); renderStatus();
