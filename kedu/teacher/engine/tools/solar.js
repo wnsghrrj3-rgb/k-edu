@@ -34,6 +34,20 @@
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var playing=!!config.play, real=false, alive=true, last=0, sel=null;
     var ang=PL.map(function(_,i){return i*0.7;});
+    /* ── 학년 칸 (헌법 3장) — 무대(태양계)는 공유, 노출 변수·미션·만약에·용어만 칸별 스왑 ──
+       1차: 저=태양+행성 공전 관찰 / 중=행성 위치 관계 / 고=실제비율·케플러·추락 풀버전.
+       ※ 후속: 저학년 교과 닻 '낮과 밤'(지구 자전 클로즈업) 전용 장면은 정교화 대기. */
+    var GRADES={
+      low:  { showReal:false, mIdx:[0,5],          wif:['stopo'],             hint:'행성을 골라 보고, ▶ 공전 재생으로 도는 모습을 봐요.' },
+      mid:  { showReal:false, mIdx:[0,1,2,5],       wif:['mer','nep'],         hint:'행성을 골라 보고, 태양에서 멀수록 어떻게 도는지 살펴봐요.' },
+      high: { showReal:true,  mIdx:[0,1,2,3,4,5],   wif:['mer','nep','stopo'], hint:'🔭 실제 비율을 눌러 거리·크기를 비교해 보세요.' }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1;
+      makeWif(); buildUI();
+    }});
+    function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:20px;padding:10px 16px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
@@ -57,16 +71,16 @@
     var mStep=0,mDone=false,mLock=false;
     function advanceMission(){
       mLock=false;
-      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      var CM=curMissions(); if(mStep<CM.length-1){ mStep++; if(CM[mStep].set)CM[mStep].set(); }
       else mDone=true;
       updateBars(); missionFoot(); render(); renderStatus();
     }
     function missionFoot(){
-      ui.thinkFoot(el,{foot:'.so-foot',bar:'.so-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+      var CM=curMissions(); ui.thinkFoot(el,{foot:'.so-foot',bar:'.so-bars'},(mode==='mission'&&!mDone&&CM[mStep]&&CM[mStep].type==='think')?CM[mStep]:null,advanceMission);
     }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      var m=curMissions()[mStep]; if(!m||m.type!=='make')return;
       if(m.check()){
         mLock=true; ui.toast(el,true);
         setTimeout(advanceMission,1500);
@@ -74,7 +88,7 @@
     }
     function updateBars(){
       var host=el.querySelector('.so-bars'); if(!host)return;
-      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission'){var CM=curMissions();host.innerHTML=mDone?ui.doneBar():ui.missionBar(CM[mStep].text,mStep,CM.length);}
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
       else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
@@ -99,14 +113,20 @@
         reveal:'공전은 태양이 당기는 힘과 균형을 이루는 운동이에요! 멈추는 순간 태양의 중력에 끌려 떨어져요. 빙글빙글 도는 것이 곧 떠 있는 비결!',
         tip:'지구가 태양으로 끌려가는 걸 봐요…! 🔁 더 가지고 놀기로 다시 궤도에 올려요.' }
     };
-    var wif=ui.whatifEngine({
-      scenarios:WHATIF,
-      rebuild:function(){buildUI();},
-      footEl:function(){return el.querySelector('.so-foot');},
-      onSelect:function(k){ playing=false; real=false; sel=null; fallF=1; layout(); },
-      onPlay:function(k){ fallF=1; if(k!=='stopo')playing=true; },
-      onExit:function(){ playing=false; fallF=1; sel=null; }
-    });
+    var wif;
+    function makeWif(){
+      var keys=GRADES[grade].wif, scen={};
+      keys.forEach(function(k){ scen[k]=WHATIF[k]; });
+      wif=ui.whatifEngine({
+        scenarios:scen,
+        rebuild:function(){buildUI();},
+        footEl:function(){return el.querySelector('.so-foot');},
+        onSelect:function(k){ playing=false; real=false; sel=null; fallF=1; layout(); },
+        onPlay:function(k){ fallF=1; if(k!=='stopo')playing=true; },
+        onExit:function(){ playing=false; fallF=1; sel=null; }
+      });
+    }
+    makeWif();
     function earIdx(){ // 지구 궤도 칸: 수성 자리=0, 해왕성 자리=7, 평소=2
       if(wif.active()&&wif.state.key==='mer')return 0;
       if(wif.active()&&wif.state.key==='nep')return 7;
@@ -149,13 +169,16 @@
     function planetBtns(){return PL.map(function(p){return '<button class="so-pl'+(sel===p.k?' on':'')+'" data-k="'+p.k+'" style="font-size:16px;padding:7px 12px;border-radius:12px;border:2.5px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'+(sel===p.k?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+p.nm+'</button>';}).join('');}
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
-      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      var top=bands.selectorHTML()+ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      if(mode==='mission'){var CMB=curMissions();bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length);}
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); }
+      var realBtn=GRADES[grade].showReal
+        ? ('<button class="so-btn so-real'+(real?' on':'')+'" data-act="real" style="'+btn+'border-color:#7048E8;'+(real?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🔭 '+(real?'보기 좋게':'실제 비율')+'</button>')
+        : '';
       var ctrl='<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
           +'<button class="so-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 공전 재생')+'</button>'
-          +'<button class="so-btn so-real'+(real?' on':'')+'" data-act="real" style="'+btn+'border-color:#7048E8;'+(real?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🔭 '+(real?'보기 좋게':'실제 비율')+'</button>'
+          + realBtn
         +'</div>';
       var plRow='<div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">'+planetBtns()+'</div>';
       if(mode==='quiz'){ ctrl=''; plRow=''; }
@@ -174,7 +197,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices();
+      initThree(); bind(); bindChoices(); bands.bind(el);
       if(mode==='whatif')wif.bind(el);
       if(mode==='mission')missionFoot();
       layout(); render(); renderStatus();
@@ -258,7 +281,7 @@
       } else if(real){
         s.innerHTML='<div style="font-size:21px;color:#A9C4FF;">실제 비율로 보는 중 🔭</div><div style="font-size:16px;color:#8aa0b6;margin-top:4px;">안쪽 4행성은 태양 가까이 다닥, 바깥 행성은 까마득히 멀어요. 행성 사이는 거의 텅 비어 있어요.</div>';
       } else {
-        s.innerHTML='<div style="font-size:21px;color:#FFF3BF;">☀️ 태양계</div><div style="font-size:16px;color:#8aa0b6;margin-top:4px;">행성을 골라 보고, 🔭 실제 비율을 눌러 진짜 거리·크기를 비교해 보세요.</div>';
+        s.innerHTML='<div style="font-size:21px;color:#FFF3BF;">☀️ 태양계</div><div style="font-size:16px;color:#8aa0b6;margin-top:4px;">'+GRADES[grade].hint+'</div>';
       }
     }
 

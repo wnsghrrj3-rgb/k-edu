@@ -211,6 +211,39 @@
     doneBar: function () {
       return '<div style="text-align:center;background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:16px;margin-bottom:12px;">'
         + '<span style="font-size:26px;font-weight:800;color:#0B7A5C;">🏆 모든 미션 완료! 정말 멋져요!</span></div>';
+    },
+    /* ── 학년 칸 게이트 (헌법 3장 — 저/중/고 데이터 스왑 + 셀렉터) ──
+       한 도구가 저(1~2)/중(3~4)/고(5~6) 세 칸을 가진다. 모드와 직교(한 겹 위 게이트).
+       - config.grade가 박혀 오면 셀렉터 숨김(완성품 철학), 없으면 🌱🌿🌳 노출.
+       spec = { grade:'low'|'mid'|'high'|null, locked:bool, onChange(g) }
+       반환 = { current(), selectorHTML(), bind(el) } */
+    gradeBands: function (spec) {
+      var ORDER = ['low', 'mid', 'high'];
+      var L = { low: '🌱 1~2학년', mid: '🌿 3~4학년', high: '🌳 5~6학년' };
+      var cur = (ORDER.indexOf(spec.grade) >= 0) ? spec.grade : 'high';
+      var locked = !!spec.locked;
+      function selectorHTML() {
+        if (locked) return '';
+        var base = 'font-size:16px;padding:8px 14px;border-radius:12px;border:2.5px solid #2F9E44;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
+        return '<div class="kl-grades" style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          + ORDER.map(function (g) {
+              var on = (g === cur);
+              return '<button class="kl-grade" data-grade="' + g + '" style="' + base
+                + 'background:' + (on ? '#2F9E44' : '#fff') + ';color:' + (on ? '#fff' : '#2F9E44') + ';">' + L[g] + '</button>';
+            }).join('')
+          + '</div>';
+      }
+      function bind(el) {
+        el.querySelectorAll('.kl-grade').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var g = b.dataset.grade;
+            if (g === cur) return;
+            cur = g;
+            if (spec.onChange) spec.onChange(g);
+          });
+        });
+      }
+      return { current: function () { return cur; }, selectorHTML: selectorHTML, bind: bind };
     }
   };
 
