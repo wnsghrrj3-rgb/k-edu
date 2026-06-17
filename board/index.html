@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이에듀 비주얼 생산 보드</title>
+<script src="/kedu_gate.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --bg:#F4F5F7; --card:#FFFFFF; --ink:#1E222B; --muted:#6B7280;
+    --line:#E5E7EB; --line2:#EEF0F2;
+    --coral:#FF6B5E; --teal:#15B5A6; --indigo:#4F46E5; --purple:#8B5CF6;
+    --s-wait:#C4C9D0; --s-prompt:#F5A524; --s-gen:#3B82F6; --s-done:#16A34A;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);
+    line-height:1.55;-webkit-font-smoothing:antialiased;padding:0 0 90px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  header{padding:44px 0 24px}
+  .eyebrow{font-size:12px;letter-spacing:.18em;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+  h1{font-size:33px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  h1 .dot{color:var(--coral)}
+  .sub{color:var(--muted);font-size:14.5px;margin-top:10px;max-width:640px}
+
+  /* toolbar */
+  .toolbar{display:flex;align-items:center;gap:9px;margin-top:20px;flex-wrap:wrap}
+  .btn{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    font-family:var(--sans);font-weight:600;font-size:13px;padding:9px 14px;border-radius:10px;transition:.15s}
+  .btn:hover{background:#fff;box-shadow:0 2px 8px rgba(30,34,43,.07)}
+  .btn.prime{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.prime:hover{background:#2c313d}
+  .saved{font-size:12px;color:var(--muted);margin-left:auto}
+  .saved b{color:var(--s-done)}
+
+  /* pipeline ribbon */
+  .pipe{display:flex;margin:22px 0 8px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .pipe .stage{flex:1;padding:13px 16px;text-align:center}
+  .pipe .stage:not(:last-child){border-right:1px solid var(--line2)}
+  .pipe .num{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .pipe .lab{font-weight:700;font-size:14px;margin-top:2px}
+  .pipe .cnt{font-size:12px;color:var(--muted);margin-top:3px}
+  .pipe .bar{height:4px;border-radius:3px;width:34px;margin:8px auto 0}
+  .pipe .stage[data-s="0"] .bar{background:var(--s-wait)}
+  .pipe .stage[data-s="1"] .bar{background:var(--s-prompt)}
+  .pipe .stage[data-s="2"] .bar{background:var(--s-gen)}
+  .pipe .stage[data-s="3"] .bar{background:var(--s-done)}
+
+  /* house style */
+  .house{background:#1E222B;color:#EDEEF0;border-radius:14px;padding:20px 22px;margin:20px 0 14px}
+  .house h3{font-size:13px;letter-spacing:.04em;color:#FFC9A3;margin-bottom:6px}
+  .house .why{font-size:12.5px;color:#A9AEB8;margin-bottom:14px}
+  .house pre{font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#D6D9DE;white-space:pre-wrap;
+    background:#171A21;border:1px solid #2A2F3A;border-radius:10px;padding:14px 16px}
+  .copy{cursor:pointer;border:none;border-radius:8px;font-family:var(--sans);font-weight:600;font-size:12.5px;padding:7px 13px;transition:.15s}
+  .copy.dark{background:#FFC9A3;color:#2A1d12;margin-top:12px}
+  .copy.dark:hover{background:#ffd9bb}
+  .copy.light{background:#EEF0F3;color:#1E222B;margin-top:10px}
+  .copy.light:hover{background:#e3e6ea}
+  .copy.copied{background:var(--s-done)!important;color:#fff!important}
+
+  /* add form */
+  .addform{background:var(--card);border:1px dashed var(--indigo);border-radius:14px;padding:18px;margin:14px 0 30px;display:none}
+  .addform.show{display:block}
+  .addform .ff{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .addform label{font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:.04em}
+  .addform input,.addform select{width:100%;font-family:var(--sans);font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .addform .actions{margin-top:13px;display:flex;gap:8px}
+
+  .group{margin-bottom:30px}
+  .group-head{display:flex;align-items:baseline;gap:10px;margin:0 2px 13px}
+  .group-head h2{font-size:18px;font-weight:800;letter-spacing:-.01em}
+  .group-head .tag{font-size:12px;color:var(--muted)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:.15s;border-left:4px solid var(--line)}
+  .card:hover{box-shadow:0 6px 22px rgba(30,34,43,.07)}
+  .card.low{border-left-color:var(--coral)}
+  .card.mid{border-left-color:var(--indigo)}
+  .card-top{padding:15px 16px 13px;cursor:pointer}
+  .row1{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+  .id{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg);padding:2px 7px;border-radius:6px}
+  .btype{font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:2px 8px;border-radius:6px;color:#fff}
+  .btype.TEX{background:var(--teal)} .btype.t3D{background:var(--purple)} .btype.REF{background:#9AA0AA}
+  .cname{font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+  .cdesc{font-size:13px;color:var(--muted);margin-top:4px}
+  .ph{display:inline-block;font-size:10.5px;font-weight:700;color:var(--s-prompt);border:1px dashed var(--s-prompt);border-radius:5px;padding:0 5px;margin-left:6px;vertical-align:1px}
+
+  .pips{display:flex;align-items:center;gap:5px;margin-top:12px;cursor:pointer;width:fit-content;padding:4px 8px 4px 2px;border-radius:8px;transition:.12s}
+  .pips:hover{background:var(--bg)}
+  .pip{width:9px;height:9px;border-radius:50%;background:#E3E6EA;flex:none}
+  .pip.on{background:var(--s-done)}
+  .pipline{width:18px;height:2px;background:#E3E6EA}
+  .pipline.on{background:var(--s-done)}
+  .stat{font-size:11.5px;font-weight:700;margin-left:6px}
+  .stat[data-s="0"]{color:var(--s-wait)} .stat[data-s="1"]{color:var(--s-prompt)}
+  .stat[data-s="2"]{color:var(--s-gen)} .stat[data-s="3"]{color:var(--s-done)}
+  .clickhint{font-size:10px;color:#C4C9D0;margin-left:5px;font-weight:500}
+
+  .body{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#FBFBFC}
+  .card.open .body{max-height:1600px}
+  .body-in{padding:4px 16px 16px;border-top:1px solid var(--line2)}
+  .field{margin-top:13px}
+  .flab{font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  .edit{font-size:12.5px;margin-top:3px;border-radius:7px;padding:6px 8px;border:1px solid transparent;transition:.12s;outline:none}
+  .edit:hover{background:#fff;border-color:var(--line2)}
+  .edit:focus{background:#fff;border-color:var(--indigo)}
+  .edit.path{font-family:var(--mono);color:#3B5BA4;font-size:12px}
+  .edit.prompt{font-family:var(--mono);font-size:12px;line-height:1.65;white-space:pre-wrap;background:#fff;border:1px solid var(--line)}
+  .edit.prompt:focus{border-color:var(--indigo)}
+  .cardactions{margin-top:14px;display:flex;gap:8px;align-items:center}
+  .mini{cursor:pointer;border:1px solid var(--line);background:#fff;font-family:var(--sans);font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:7px;color:var(--muted)}
+  .mini:hover{border-color:var(--ink);color:var(--ink)}
+  .mini.del:hover{border-color:var(--coral);color:var(--coral)}
+  .chev{float:right;color:#C4C9D0;transition:.2s;font-size:13px}
+  .card.open .chev{transform:rotate(180deg)}
+
+  .note{font-size:12.5px;color:var(--muted);margin-top:38px;padding-top:20px;border-top:1px solid var(--line);line-height:1.9}
+  .note code{font-family:var(--mono);background:var(--card);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}h1{font-size:26px}.saved{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">K-EDU · DESIGN ASSET PIPELINE</div>
+    <h1>케이에듀 비주얼 생산 보드<span class="dot">.</span></h1>
+    <p class="sub">GPT가 비주얼을 만들고 베프가 Three.js로 구현한다. 진행 점을 <b>클릭하면 단계가 넘어가고 자동 저장</b>된다.
+      카드 본문을 누르면 프롬프트가 열리고, 글자는 바로 고칠 수 있다.</p>
+
+    <div class="toolbar">
+      <button class="btn prime" id="addBtn">+ 새 에셋</button>
+      <button class="btn" id="exportBtn">⬇ 파일로 저장 (드라이브용)</button>
+      <button class="btn" id="importBtn">↻ 파일 불러오기</button>
+      <input type="file" id="importInput" accept=".html,.json" style="display:none">
+      <span class="saved" id="saved"></span>
+    </div>
+
+    <div class="pipe" id="pipe">
+      <div class="stage" data-s="0"><div class="num">01</div><div class="lab">대기</div><div class="cnt" id="c0">–</div><div class="bar"></div></div>
+      <div class="stage" data-s="1"><div class="num">02</div><div class="lab">프롬프트</div><div class="cnt" id="c1">–</div><div class="bar"></div></div>
+      <div class="stage" data-s="2"><div class="num">03</div><div class="lab">생성</div><div class="cnt" id="c2">–</div><div class="bar"></div></div>
+      <div class="stage" data-s="3"><div class="num">04</div><div class="lab">적용</div><div class="cnt" id="c3">–</div><div class="bar"></div></div>
+    </div>
+
+    <div class="house">
+      <h3>★ 하우스 스타일 프리앰블</h3>
+      <div class="why">모든 GPT 프롬프트 맨 앞에 붙는다. 그래야 케이에듀 톤(v12)으로 통일된다. 복사 버튼이 이걸 프롬프트랑 합쳐준다.</div>
+      <pre id="house">[케이에듀 하우스 스타일]
+- 대상: 한국 초등학생 교육용 콘텐츠.
+- 톤: 밝고 깨끗하고 친근. 단순하지만 정교한 마감. 과하게 사실적이지 않게.
+- 컬러: (저학년 1~2학년) 크림·코랄·틸 / (중학년 3~4학년) 베이지·인디고·퍼플·그린.
+  → 이 도구의 학년군에 맞는 팔레트로.
+- 금지: 그림 안에 글자·숫자·라벨·워터마크 넣지 말 것 (다국어·수정 위해).
+- 그림자·반사는 절제. 배경은 용도에 맞게 (투명 PNG 또는 단색).
+이 스타일을 유지한 채 아래를 만들어줘:</pre>
+      <button class="copy dark" data-copy="house">프리앰블만 복사</button>
+    </div>
+
+    <div class="addform" id="addform">
+      <div class="ff">
+        <div><label>그룹 (도구·영역)</label><input id="f-group" placeholder="예: 케이랩 · 천체"></div>
+        <div><label>ID</label><input id="f-id" placeholder="예: LAB-PLANET-03"></div>
+        <div><label>에셋명</label><input id="f-name" placeholder="예: 달 표면 텍스처"></div>
+        <div><label>종류</label><select id="f-type"><option value="TEX">TEX · 평면 텍스처</option><option value="3D">3D · 입체</option><option value="REF">REF · 참고용</option></select></div>
+        <div><label>학년군</label><select id="f-grade"><option value="low">저학년 (코랄)</option><option value="mid">중학년 (인디고)</option></select></div>
+      </div>
+      <div class="actions">
+        <button class="btn prime" id="addConfirm">추가</button>
+        <button class="btn" id="addCancel">취소</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="board"></div>
+
+  <div class="note">
+    <b>저장 방식</b> — 클릭·편집은 이 브라우저에 자동 저장된다(같은 컴퓨터·브라우저면 다시 열어도 유지).<br>
+    백업하거나 다른 기기로 옮기려면 <code>⬇ 파일로 저장</code> → 떨어진 HTML을 구글 드라이브에 올려둔다. 드라이브에서 그 파일을 열면 그 상태 그대로 뜬다.<br>
+    종류 <code>TEX</code> 평면 / <code>3D</code> 입체 / <code>REF</code> 참고 · 색띠 코랄=저학년 / 인디고=중학년
+  </div>
+</div>
+
+<!-- 데이터 (자동 관리됨 — 직접 편집 가능) -->
+<script id="seed" type="application/json">
+[
+ {"group":"케이랩 · 사회","id":"LAB-SOC-01","name":"사과 (가격 시뮬레이션용)","type":"TEX","grade":"low","status":1,"ph":false,
+  "desc":"market.js 수급 시각화에 들어갈 사과. 이미 배포됨 → 임시 비주얼 교체용",
+  "prompt":"빨간 사과 한 개. 정면, 배경 투명(PNG), 정사각 프레임 중앙 배치.\n매끈하고 귀여운 교육용 일러스트, 과한 그림자 없음.\n같은 스타일로 \"사과 더미(여러 개)\" 버전도 1장 추가.",
+  "output":"assets/lab/apple.png, apple_pile.png","target":"market.js 수급 시각화"},
+ {"group":"케이랩 · 천체","id":"LAB-PLANET-01","name":"지구 표면 텍스처","type":"TEX","grade":"low","status":1,"ph":false,
+  "desc":"SphereGeometry에 매핑해서 자전시킨다",
+  "prompt":"지구의 표면을 펼친 이퀴렉탱귤러(정방형 도법) 텍스처 맵. 가로:세로 = 2:1.\n대륙은 부드러운 초록·갈색, 바다는 맑은 파랑, 구름 없음.\n초등 저학년용이라 디테일은 단순하게, 경계는 또렷하게.\n글자·국경선·라벨 절대 넣지 말 것. 가장자리 좌우가 자연스럽게 이어지도록(seamless).",
+  "output":"assets/lab/earth_tex.png","target":"케이랩 자전 행성 도구"},
+ {"group":"케이랩 · 천체","id":"LAB-PLANET-02","name":"행성 라인업 (수금지화목토…)","type":"TEX","grade":"low","status":0,"ph":false,
+  "desc":"궤도 운동 도구에 쓸 각 행성 텍스처 세트",
+  "prompt":"태양계 8개 행성 각각의 표면 텍스처 맵(이퀴렉탱귤러, 2:1).\n행성별 실제 색감 기반이되 저학년용으로 단순화.\n각 행성 1장씩, 동일한 스타일·해상도로.\n글자·라벨 없이, 가장자리 seamless.",
+  "output":"assets/lab/planets/*.png","target":"케이랩 궤도 운동 도구"},
+ {"group":"케이랩 · 천체","id":"LAB-PLANET-REF","name":"토성 (입체 모델링 참고)","type":"3D","grade":"low","status":0,"ph":false,
+  "desc":"본체 Sphere + 고리 Ring 지오메트리로 구현. 이건 텍스처 아님",
+  "prompt":"토성 3D 모델링 참고용 시트. 한 이미지 안에 정면·측면·45도(¾) 세 뷰를 나란히 배치.\n중립적인 정면 조명, 그림자 최소.\n고리의 두께·각도가 잘 보이게. 배경 흰색 단색.\n텍스처가 아니라 형태 참고용이라고 생각하고 깔끔하게.",
+  "output":"assets/lab/saturn_ref.png","target":"(참고용 — 코드에 직접 박지 않음)"},
+ {"group":"케이랩 · 물리","id":"LAB-PHYS-01","name":"물리 도구 오브젝트","type":"3D","grade":"low","status":0,"ph":true,
+  "desc":"준호가 물리 도구 확정 후 종류·내용 채움","prompt":"(도구 확정 후 작성)","output":"—","target":"—"},
+ {"group":"케이아트","id":"ART-GUIDE-01","name":"그리기 단계 가이드 일러스트","type":"REF","grade":"low","status":0,"ph":true,
+  "desc":"온보딩에서 보여줄 분위기 참고. 베프가 톤 잡는 용도","prompt":"(케이아트 온보딩 흐름 확정 후 작성)","output":"—","target":"케이아트 온보딩"},
+ {"group":"2학년 수학","id":"MATH2-01","name":"자릿값 블록 (참고)","type":"REF","grade":"low","status":0,"ph":true,
+  "desc":"기존 자릿값 SVG 보완용 룩 참고","prompt":"(자릿값 컴포넌트 디자인 방향 확정 후 작성)","output":"—","target":"자릿값 컴포넌트"}
+]
+</script>
+
+<script>
+const KEY='kedu_board_v1';
+const SEED=JSON.parse(document.getElementById('seed').textContent);
+let STATE = load() || structuredClone(SEED);
+const openIds=new Set();
+const STAT=['대기','프롬프트','생성','적용'];
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function load(){try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null;}catch(_){return null;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(_){}
+  const t=new Date();document.getElementById('saved').innerHTML=`<b>자동 저장됨</b> · ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;}
+function get(id){return STATE.find(a=>a.id===id);}
+
+function pips(s){let h='<div class="pips" data-pip>';
+  for(let i=0;i<4;i++){h+=`<div class="pip ${i<=s?'on':''}"></div>`;if(i<3)h+=`<div class="pipline ${i<s?'on':''}"></div>`;}
+  h+=`<span class="stat" data-s="${s}">${STAT[s]}</span><span class="clickhint">▸ 클릭</span></div>`;return h;}
+
+function render(){
+  const cnt=[0,0,0,0];STATE.forEach(a=>cnt[a.status]++);
+  for(let i=0;i<4;i++)document.getElementById('c'+i).textContent=cnt[i]+'개';
+  const groups={};STATE.forEach(a=>{(groups[a.group]=groups[a.group]||[]).push(a);});
+  let html='';
+  for(const g in groups){
+    html+=`<div class="group"><div class="group-head"><h2>${esc(g)}</h2><span class="tag">${groups[g].length}개 에셋</span></div><div class="grid">`;
+    groups[g].forEach(a=>{
+      const t=a.type==='3D'?'t3D':a.type;
+      html+=`<div class="card ${a.grade} ${openIds.has(a.id)?'open':''}" data-id="${a.id}">
+        <div class="card-top" data-toggle>
+          <span class="chev">▾</span>
+          <div class="row1"><span class="id">${esc(a.id)}</span><span class="btype ${t}">${a.type}</span></div>
+          <div class="cname">${esc(a.name)}${a.ph?'<span class="ph">미확정</span>':''}</div>
+          <div class="cdesc edit" contenteditable data-field="desc">${esc(a.desc)}</div>
+          ${pips(a.status)}
+        </div>
+        <div class="body"><div class="body-in">
+          <div class="field"><div class="flab">에셋명</div><div class="edit" contenteditable data-field="name">${esc(a.name)}</div></div>
+          <div class="field"><div class="flab">GPT 프롬프트</div>
+            <div class="edit prompt" contenteditable data-field="prompt">${esc(a.prompt)}</div>
+            <button class="copy light" data-copyprompt>프리앰블+프롬프트 복사</button>
+          </div>
+          <div class="field"><div class="flab">생성물 위치</div><div class="edit path" contenteditable data-field="output">${esc(a.output)}</div></div>
+          <div class="field"><div class="flab">적용 위치</div><div class="edit" contenteditable data-field="target">${esc(a.target)}</div></div>
+          <div class="cardactions">
+            <button class="mini" data-ph>${a.ph?'확정으로 표시':'미확정으로 표시'}</button>
+            <button class="mini del" data-del>삭제</button>
+          </div>
+        </div></div>
+      </div>`;
+    });
+    html+='</div></div>';
+  }
+  document.getElementById('board').innerHTML=html;
+  bind();
+}
+
+function bind(){
+  document.querySelectorAll('.card').forEach(card=>{
+    const id=card.dataset.id;
+    card.querySelector('[data-toggle]').addEventListener('click',e=>{
+      if(e.target.closest('[data-pip]')||e.target.closest('[contenteditable]'))return;
+      card.classList.toggle('open');
+      card.classList.contains('open')?openIds.add(id):openIds.delete(id);
+    });
+    card.querySelector('[data-pip]').addEventListener('click',e=>{
+      e.stopPropagation();const a=get(id);a.status=(a.status+1)%4;save();render();
+    });
+    card.querySelectorAll('[contenteditable]').forEach(el=>{
+      el.addEventListener('click',e=>e.stopPropagation());
+      el.addEventListener('blur',()=>{get(id)[el.dataset.field]=el.innerText.trim();save();});
+    });
+    card.querySelector('[data-copyprompt]').addEventListener('click',async e=>{
+      e.stopPropagation();const house=document.getElementById('house').textContent;
+      const p=card.querySelector('[data-field="prompt"]').innerText;
+      try{await navigator.clipboard.writeText(house+'\n\n'+p);}catch(_){}
+      flash(e.target,'복사됨 ✓');
+    });
+    card.querySelector('[data-ph]').addEventListener('click',e=>{e.stopPropagation();get(id).ph=!get(id).ph;save();render();});
+    card.querySelector('[data-del]').addEventListener('click',e=>{
+      e.stopPropagation();if(confirm(get(id).name+' 삭제할까?')){STATE=STATE.filter(a=>a.id!==id);openIds.delete(id);save();render();}
+    });
+  });
+}
+
+function flash(btn,txt){const o=btn.textContent;btn.textContent=txt;btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent=o;btn.classList.remove('copied');},1300);}
+
+// house preamble copy
+document.querySelector('.copy.dark').addEventListener('click',async e=>{
+  try{await navigator.clipboard.writeText(document.getElementById('house').textContent);}catch(_){}
+  flash(e.target,'복사됨 ✓');
+});
+
+// add form
+const af=document.getElementById('addform');
+document.getElementById('addBtn').onclick=()=>af.classList.toggle('show');
+document.getElementById('addCancel').onclick=()=>af.classList.remove('show');
+document.getElementById('addConfirm').onclick=()=>{
+  const v=id=>document.getElementById(id).value.trim();
+  const id=v('f-id')||('NEW-'+Date.now().toString().slice(-5));
+  if(STATE.some(a=>a.id===id)){alert('이미 있는 ID야.');return;}
+  STATE.push({group:v('f-group')||'미분류',id,name:v('f-name')||'새 에셋',type:document.getElementById('f-type').value,
+    grade:document.getElementById('f-grade').value,status:0,ph:false,desc:'',prompt:'',output:'—',target:'—'});
+  openIds.add(id);['f-group','f-id','f-name'].forEach(i=>document.getElementById(i).value='');
+  af.classList.remove('show');save();render();
+};
+
+// export self-contained HTML (data baked in)
+document.getElementById('exportBtn').onclick=()=>{
+  const clone=document.documentElement.cloneNode(true);
+  clone.querySelector('#seed').textContent='\n'+JSON.stringify(STATE,null,1)+'\n';
+  const out='<!DOCTYPE html>\n'+clone.outerHTML;
+  const blob=new Blob([out],{type:'text/html'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  const d=new Date();a.href=url;a.download=`kedu_board_${d.getMonth()+1}월${d.getDate()}일.html`;a.click();
+  URL.revokeObjectURL(url);
+};
+
+// import (.html or .json)
+document.getElementById('importBtn').onclick=()=>document.getElementById('importInput').click();
+document.getElementById('importInput').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;const txt=await f.text();
+  let data;try{
+    if(f.name.endsWith('.json')){data=JSON.parse(txt);}
+    else{const dom=new DOMParser().parseFromString(txt,'text/html');data=JSON.parse(dom.getElementById('seed').textContent);}
+  }catch(_){alert('파일을 읽지 못했어. 이 보드에서 저장한 HTML이나 JSON인지 확인해줘.');return;}
+  if(!Array.isArray(data)){alert('데이터 형식이 안 맞아.');return;}
+  if(confirm('불러온 데이터로 지금 보드를 덮어쓸까? (현재 화면 내용은 사라짐)')){STATE=data;openIds.clear();save();render();}
+  e.target.value='';
+};
+
+render();save();
+</script>
+</body>
+</html>
