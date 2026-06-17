@@ -38,7 +38,7 @@
        1차: 저=태양+행성 공전 관찰 / 중=행성 위치 관계 / 고=실제비율·케플러·추락 풀버전.
        ※ 후속: 저학년 교과 닻 '낮과 밤'(지구 자전 클로즈업) 전용 장면은 정교화 대기. */
     var GRADES={
-      low:  { showReal:false, mIdx:[0,5],          wif:['stopo'],             hint:'행성을 골라 보고, ▶ 공전 재생으로 도는 모습을 봐요.' },
+      low:  { showReal:false, mIdx:[],              wif:['stopspin'],          hint:'🌞 하루 돌리기로 지구를 돌려, 낮과 밤이 어떻게 생기는지 봐요.' },
       mid:  { showReal:false, mIdx:[0,1,2,5],       wif:['mer','nep'],         hint:'행성을 골라 보고, 태양에서 멀수록 어떻게 도는지 살펴봐요.' },
       high: { showReal:true,  mIdx:[0,1,2,3,4,5],   wif:['mer','nep','stopo'], hint:'🔭 실제 비율을 눌러 거리·크기를 비교해 보세요.' }
     };
@@ -47,7 +47,7 @@
       grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; sel=null; real=false; playing=false; fallF=1;
       makeWif(); buildUI();
     }});
-    function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
+    function curMissions(){ return (grade==='low') ? LOW_MISSIONS : GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
     var C={ink:'#1B3A57',sub:'#8aa0b6',good:'#12B886'};
     var btn='font-size:20px;padding:10px 16px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
@@ -113,16 +113,35 @@
         reveal:'공전은 태양이 당기는 힘과 균형을 이루는 운동이에요! 멈추는 순간 태양의 중력에 끌려 떨어져요. 빙글빙글 도는 것이 곧 떠 있는 비결!',
         tip:'지구가 태양으로 끌려가는 걸 봐요…! 🔁 더 가지고 놀기로 다시 궤도에 올려요.' }
     };
+    /* 저학년 전용 — 낮과 밤(지구 자전) 닻 */
+    var LOW_MISSIONS=[
+      { type:'make', text:'🌞 <b style="color:#7048E8;">하루 돌리기</b>를 눌러 지구를 빙글 돌려 봐요!',
+        check:function(){ return playing===true; } },
+      { type:'think', text:'🤔 내가 사는 곳(<b style="color:#E8590C;">빨간 점</b>)이 <b style="color:#7048E8;">밝은 쪽</b>에 오면 지금은?',
+        ch:['낮','밤','겨울'], a:0,
+        why:'태양 빛을 받는 쪽이 낮이에요! 지구가 돌면서 빨간 점이 밝은 쪽으로 오면 낮이 돼요.' },
+      { type:'think', text:'🤔 빨간 점이 <b style="color:#7048E8;">어두운 쪽</b>으로 넘어가면?',
+        ch:['밤이 돼요','낮이 그대로예요','계절이 바뀌어요'], a:0,
+        why:'태양 빛을 못 받는 쪽이 밤! 지구가 하루에 한 바퀴 돌며 낮과 밤이 번갈아 와요.' }
+    ];
+    var LOW_WHATIF={
+      stopspin:{ icon:'🛑', title:'지구가 자전을 멈추면?',
+        q:'지구가 도는 걸 멈추면 내가 사는 곳은 어떻게 될까요?',
+        ch:['한쪽은 끝없는 낮, 반대쪽은 끝없는 밤','아무 일도 없어요','계속 낮이에요'], a:0,
+        reveal:'지구가 멈추면 태양을 향한 쪽은 영원한 낮, 반대쪽은 영원한 밤이 돼요! 지구가 빙글빙글 돌기 때문에 낮과 밤이 번갈아 찾아오는 거예요.',
+        tip:'자전을 멈춰 봐요 — 빨간 점이 낮(또는 밤)에 딱 멈춰 더는 바뀌지 않아요.' }
+    };
     var wif;
     function makeWif(){
-      var keys=GRADES[grade].wif, scen={};
-      keys.forEach(function(k){ scen[k]=WHATIF[k]; });
+      var src=(grade==='low')?LOW_WHATIF:WHATIF;
+      var keys=(grade==='low')?Object.keys(LOW_WHATIF):GRADES[grade].wif, scen={};
+      keys.forEach(function(k){ scen[k]=src[k]; });
       wif=ui.whatifEngine({
         scenarios:scen,
         rebuild:function(){buildUI();},
         footEl:function(){return el.querySelector('.so-foot');},
         onSelect:function(k){ playing=false; real=false; sel=null; fallF=1; layout(); },
-        onPlay:function(k){ fallF=1; if(k!=='stopo')playing=true; },
+        onPlay:function(k){ fallF=1; if(k==='stopspin'){ playing=false; dayAngle=Math.PI; } else if(k!=='stopo'){ playing=true; } },
         onExit:function(){ playing=false; fallF=1; sel=null; }
       });
     }
@@ -177,11 +196,12 @@
         ? ('<button class="so-btn so-real'+(real?' on':'')+'" data-act="real" style="'+btn+'border-color:#7048E8;'+(real?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🔭 '+(real?'보기 좋게':'실제 비율')+'</button>')
         : '';
       var ctrl='<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
-          +'<button class="so-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':'▶ 공전 재생')+'</button>'
+          +'<button class="so-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(grade==='low'?'🌞 하루 돌리기':'▶ 공전 재생'))+'</button>'
           + realBtn
         +'</div>';
       var plRow='<div style="display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;">'+planetBtns()+'</div>';
       if(mode==='quiz'){ ctrl=''; plRow=''; }
+      if(grade==='low'){ plRow=''; }
       if(mode==='whatif'){ plRow=''; if(!wif.active())ctrl=''; if(wif.active()&&wif.state.key==='stopo')ctrl=''; }
       el.innerHTML='<style>.so-btn:active,.so-pl:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
@@ -203,7 +223,7 @@
       layout(); render(); renderStatus();
     }
 
-    var stage,scene,camera,renderer,sunMesh,planetGrp=[],orbitRings=[];
+    var stage,scene,camera,renderer,sunMesh,planetGrp=[],orbitRings=[],marker,dayAngle=0.6,wasDay=null;
     function initThree(){
       if(renderer){ try{renderer.dispose();}catch(e){} renderer=null; }
       planetGrp=[]; orbitRings=[];
@@ -226,14 +246,29 @@
         var ring=new T.Mesh(new T.RingGeometry(1,1.01,96), new T.MeshBasicMaterial({color:0x33415e,side:T.DoubleSide,transparent:true,opacity:0.45}));
         ring.rotation.x=Math.PI/2; scene.add(ring); orbitRings.push(ring);
       });
+      // 저학년 낮밤 — 내 위치 마커(지구 자식, 자전 따라 돔)
+      marker=new T.Mesh(new T.SphereGeometry(0.16,12,10), new T.MeshBasicMaterial({color:0xff5252}));
+      marker.position.set(1,0.18,0); if(planetGrp[2])planetGrp[2].add(marker); marker.visible=false;
       theta=0.7; phi=0.5; camPos();
     }
     var theta=0.7, phi=0.5, radius=22;
     function camPos(){ if(!camera)return;
+      if(grade==='low'){ camera.position.set(3.6,2.0,4.8); camera.lookAt(8,0,0); return; }
       camera.position.set(radius*Math.sin(phi)*Math.sin(theta), radius*Math.cos(phi), radius*Math.sin(phi)*Math.cos(theta));
       camera.lookAt(0,0,0); }
 
     function layout(){    // 스케일 모드에 맞춰 크기·궤도 반경·카메라 거리 재설정
+      if(grade==='low'){   // 저학년 낮밤 — 지구만 크게(원점 태양이 한쪽 반구를 비춤=낮/밤), 자전
+        planetGrp.forEach(function(m,i){ m.visible=(i===2); m.scale.setScalar(i===2?2.4:0.001); });
+        orbitRings.forEach(function(r){ r.visible=false; });
+        if(planetGrp[2])planetGrp[2].position.set(8,0,0);
+        if(sunMesh){ sunMesh.visible=true; sunMesh.scale.setScalar(1.4); sunMesh.position.set(0,0,0); }
+        if(marker)marker.visible=true;
+        camPos(); return;
+      }
+      planetGrp.forEach(function(m){ m.visible=true; });
+      orbitRings.forEach(function(r){ r.visible=true; });
+      if(marker)marker.visible=false;
       var far=dist(PL.length-1, real);
       radius = real ? far*1.55 : far*1.15;
       if(sunMesh)sunMesh.scale.setScalar(real?1.0:1.0);
@@ -242,6 +277,11 @@
       camPos();
     }
     function render(){
+      if(grade==='low'){
+        if(planetGrp[2]){ planetGrp[2].position.set(8,0,0); planetGrp[2].rotation.y=dayAngle; }
+        if(renderer&&scene&&camera) renderer.render(scene,camera);
+        return;
+      }
       planetGrp.forEach(function(m,i){
         var d=dist(i,real);
         if(i===2){ d=dist(earIdx(),real); if(wif.active()&&wif.state.key==='stopo')d=Math.max(d*fallF,0.9); }
@@ -251,6 +291,11 @@
     }
     function loop(now){ if(!alive)return;
       if(!last)last=now; var dt=Math.min((now-last)/1000,0.05); last=now;
+      if(grade==='low'){
+        if(playing){ dayAngle=(dayAngle+dt*0.7)%(2*Math.PI); render();
+          var nd=(Math.cos(dayAngle)<0); if(nd!==wasDay){ wasDay=nd; renderStatus(); } }
+        requestAnimationFrame(loop); return;
+      }
       var falling=(wif.active()&&wif.state.key==='stopo'&&wif.state.phase==='play');
       if(falling&&fallF>0.13){ fallF=Math.max(fallF-dt*0.22,0.12); ang[2]+=dt*0.25; render();
         if(fallF<=0.13)renderStatus(); }
@@ -263,6 +308,18 @@
 
     function renderStatus(){
       var s=el.querySelector('.so-status');
+      if(grade==='low'){
+        if(!s)return;
+        if(mode==='whatif'){
+          if(wif.active()&&wif.state.key==='stopspin'&&(wif.state.phase==='play'||wif.state.phase==='reveal'))
+            { s.innerHTML='<div style="font-size:22px;color:#FFE066;">🛑 자전이 멈춘 지구 — 태양 쪽은 끝없는 낮, 반대쪽은 끝없는 밤!</div>'; return; }
+          if(wif.state.phase==='pick'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">카드를 골라 상상해 봐요 — 지구가 멈추면?</div>'; return; }
+          if(wif.state.phase==='predict'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">네 생각을 먼저 골라요! 그게 첫걸음이에요.</div>'; return; }
+        }
+        var day=(Math.cos(dayAngle)<0);
+        s.innerHTML='<div style="font-size:23px;color:'+(day?'#FFE066':'#74C0FC')+';">'+(day?'☀️ 지금 빨간 점이 있는 곳은 낮!':'🌙 지금 빨간 점이 있는 곳은 밤!')+'</div>'
+          +'<div style="font-size:16px;color:#8aa0b6;margin-top:4px;">'+GRADES.low.hint+'</div>'; return;
+      }
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;color:#8aa0b6;">태양계 그림을 보면서 답을 골라요! (화면을 끌어 돌려볼 수 있어요)</div>'; return; }
       if(mode==='whatif'){
         if(!s)return;
@@ -288,7 +345,7 @@
     var _mv,_up;
     function bind(){
       var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',function(){ playing=!playing; last=0;
-        pb.textContent=playing?'■ 멈춤':'▶ 공전 재생';
+        pb.textContent=playing?'■ 멈춤':(grade==='low'?'🌞 하루 돌리기':'▶ 공전 재생');
         pb.style.background=playing?'#1565C0':'#fff'; pb.style.color=playing?'#fff':'#1565C0'; });
       var rb=el.querySelector('[data-act="real"]'); if(rb)rb.addEventListener('click',function(){ real=!real;
         layout(); render(); buildUIKeepState(); checkMission(); });
