@@ -65,8 +65,19 @@
 
   window.KLab.register('constellation', function (el, config) {
     var ui=window.KLab.ui;
-    var MODES=['free','mission','quiz','whatif','mystar'];
-    var mode=(MODES.indexOf(config.mode)>=0)?config.mode:'free';
+    /* ── 학년 칸 (헌법 3장) — 같은 밤하늘 무대 공유, 모드·만약에만 칸별 스왑 ──
+       저=별 잇기 놀이(밤하늘+내 별자리 창작) / 중=계절별 별자리(거꾸로 공전) / 고=연주운동(태양꺼짐·낮에도 별 풀버전). */
+    var GRADES={
+      low:  { modes:['free','mystar'],                          wif:[] },
+      mid:  { modes:['free','mission','quiz','whatif','mystar'], wif:['reverse'] },
+      high: { modes:['free','mission','quiz','whatif','mystar'], wif:['sunoff','reverse','freeze'] }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    var MODES=GRADES[grade].modes;
+    var mode=(MODES.indexOf(config.mode)>=0)?config.mode:MODES[0];
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; MODES=GRADES[grade].modes; mode=MODES[0]; mStep=0;mDone=false;mLock=false; playing=false; pointerOn=false; view='south'; wifKey=null; wifPhase='pick'; buildUI();
+    }});
     var orb=(config.orb!=null)?config.orb:270;
     var view=(config.view==='north')?'north':'south';
     var pointerOn=false;
@@ -205,7 +216,7 @@
         return '<div style="text-align:center;background:#E3FAFC;border:3px solid #0B7285;border-radius:18px;padding:12px 16px;margin-bottom:10px;">'
           +'<div style="font-size:22px;font-weight:800;color:#0B7285;">🌀 만약에… 상상해 보고, 직접 확인해요!</div></div>'
           +'<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-          +Object.keys(WHATIF).map(function(k){var w=WHATIF[k];
+          +GRADES[grade].wif.map(function(k){var w=WHATIF[k];
             return '<button class="cn-wifcard" data-k="'+k+'" style="'+card+'">'+w.icon+' '+w.title+'</button>';}).join('')
           +'</div>';
       }
@@ -390,7 +401,7 @@
 
     /* ═══════════════ 화면 구성 ═══════════════ */
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz','whatif','mystar'],mode,{whatif:'🌀 만약에',mystar:'✨ 내 별자리'});
+      var top=bands.selectorHTML()+ui.modeTabs(MODES,mode,{whatif:'🌀 만약에',mystar:'✨ 내 별자리'});
       var bar='', foot='';
       if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
@@ -466,7 +477,7 @@
         +'<div class="cn-foot">'+foot+'</div>'
         +'<div class="cn-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
       bindTabs();
-      initThree(); bind();
+      initThree(); bind(); bands.bind(el);
       if(mode==='quiz')bindQuizChoices();
       if(mode==='whatif')bindWhatif();
       if(mode==='mission')buildMissionFoot();
