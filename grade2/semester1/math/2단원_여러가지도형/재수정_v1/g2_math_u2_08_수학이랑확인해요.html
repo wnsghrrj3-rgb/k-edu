@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<!--
+  g2_math_u2_l08 — 수학이랑 확인해요 [2학년 2단원 08차시, 단원 평가, 단일 40분]
+  ════════════════════════════════════════════════════════════
+  계획: 단원 전 부품 총동원 점검 (신규 부품 0) / 지도서: _SOURCE.md (p.200-201)
+  학습 본질: 삼각형·사각형·원 구별·그리기 + 칠교로 모양 완성 + 쌓기나무 세고 똑같이 쌓기 + 도형으로 만들기 + 자기 평가
+  메카닉: shape_judge(삼각형 찾기) + polygon/circle mcq + count_input + dot_grid(삼각형 그리기) + buildStacker + tangram(집 완성) + csOptionMcq
+  점수: 기본 4슬 × 10 + 응용 4슬 × 15 = 100점
+  부품: polygon·circle(04·07 재사용)·shape_judge·dot_grid(02 재사용)·tangram(05 검증 좌표 재사용)·cube_stack(06·07 재사용) — 신규 부품 없음
+  방향 약속: +오른쪽 / -왼쪽 / +앞 / -뒤 / +위 (관찰자 기준)
+  톤: 2학년 v14 따뜻한 톤 = paper #FBF7F1 / coral #FF6B4A / teal #1FA8A0 / Jua·Gowun Dodum
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g2_math_u2_l08_v1">
+<title>수학이랑 확인해요 · K-edu 2학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.emoji-row { display:flex; gap:clamp(6px,1.4vw,14px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); }
+
+.shape-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.shape-row { display:flex; gap:clamp(14px,3vw,30px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.shape-svg { display:block; }
+.shape-cap { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); text-align:center; }
+.poly-edge { stroke:var(--coral-deep); stroke-width:7; fill:var(--coral-soft); stroke-linejoin:round; }
+.poly-vertex { fill:var(--emph); }
+.circ-edge { stroke:var(--coral-deep); stroke-width:7; fill:var(--coral-soft); }
+.noline-tag { font-family:var(--f-title); font-size:var(--fs-caption); fill:var(--teal-deep); }
+
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; display:flex; align-items:center; justify-content:center; gap:10px; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-opt svg { display:block; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+.judge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.judge-cell { display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vw,9px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(8px,1.6vw,14px); box-shadow:0 5px 0 var(--coral-soft); cursor:pointer; transition:transform .12s, border-color .15s; }
+.judge-cell:hover { border-color:var(--coral); }
+.judge-cell:active { transform:translateY(3px); box-shadow:none; }
+.judge-cell.picked { border-color:var(--teal-deep); background:var(--teal-soft); }
+.judge-cell.miss { border-color:var(--emph); animation:ka-shake .35s; }
+.judge-mark { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.2em; }
+
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(8px,1.4vw,12px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(8px,1.6vw,13px) clamp(16px,3vw,26px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(90px,16vw,140px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); font-weight:400; display:flex; align-items:center; justify-content:center; gap:8px; }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+.match-card svg { display:block; }
+
+.life-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.life-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.life-emoji { font-size:var(--em-sm); }
+.life-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.life-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.life-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.life-btn:active { transform:translateY(3px); }
+.life-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.life-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.life-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.life-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+/* ───── cube_stack (06차 신규) ───── */
+.cs-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.4vw,14px); width:100%; max-width:var(--mw-md); margin:0 auto; }
+.cs-svg { width:min(340px,90vw); height:auto; background:#fff; border:2px solid var(--line); border-radius:22px; box-shadow:var(--shadow); display:block; touch-action:manipulation; user-select:none; }
+.cs-face { stroke:#5b4636; stroke-width:1.5; stroke-linejoin:round; }
+.cs-cube.picked .cs-face { stroke:var(--gold); stroke-width:3.5; }
+.cs-views { display:flex; gap:clamp(6px,1.4vw,12px); justify-content:center; flex-wrap:wrap; }
+.cs-vbtn { font-family:var(--f-title); font-size:var(--fs-caption); border:2px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; padding:clamp(6px,1.1vw,9px) clamp(13px,2.2vw,20px); cursor:pointer; transition:transform .12s; }
+.cs-vbtn.on { background:var(--teal); color:#fff; border-color:var(--teal-deep); }
+.cs-vbtn:hover { transform:translateY(-2px); }
+.cs-tools { display:flex; gap:clamp(8px,1.6vw,14px); justify-content:center; flex-wrap:wrap; align-items:center; }
+.cs-tbtn { font-family:var(--f-title); font-size:var(--fs-caption); border:2px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; padding:clamp(7px,1.2vw,10px) clamp(14px,2.2vw,20px); cursor:pointer; }
+.cs-explain { font-family:var(--f-body); font-size:var(--fs-body); color:var(--ink-soft); text-align:center; max-width:var(--mw-md); margin:0 auto; line-height:1.6; }
+.cs-target { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.cs-target .cap { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--coral-deep); }
+.cs-target .cs-svg { width:min(170px,46vw); }
+.cs-build-wrap { display:flex; gap:clamp(12px,3vw,30px); align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.cs-cmp { display:flex; gap:clamp(14px,4vw,40px); align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.cs-cmp .cap { font-family:var(--f-title); font-size:var(--fs-caption); text-align:center; margin-top:6px; }
+.cs-cmp .cs-svg { width:min(150px,40vw); }
+.cs-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.8vw,16px); width:100%; max-width:var(--mw-md); margin:0 auto; }
+.cs-opt { border:2px solid var(--line); background:#fff; border-radius:18px; padding:6px; cursor:pointer; transition:transform .12s; display:flex; justify-content:center; }
+.cs-opt:hover { transform:translateY(-2px); }
+.cs-opt.correct { border-color:var(--teal-deep); background:var(--teal-soft); }
+.cs-opt.wrong { border-color:var(--coral-deep); background:#FDECEA; }
+.cs-opt .cs-svg { width:min(150px,38vw); box-shadow:none; border:none; }
+.cmd-row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:6px 0; }
+.cmd-chip { font-family:var(--f-title); font-size:var(--fs-body); background:#FFF8E1; border:2px solid #FFE08A; color:#F57F17; border-radius:14px; padding:6px 14px; }
+/* ───── dot_grid (점판) ───── */
+.dg-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.dg-svg { width:min(420px,82vw); height:auto; touch-action:manipulation; }
+.dg-dot { fill:#C9BCAC; cursor:pointer; transition:fill .15s; }
+.dg-dot:hover { fill:var(--coral); }
+.dg-dot.picked { fill:var(--coral-deep); }
+.dg-line { stroke:var(--coral-deep); stroke-width:5; stroke-linecap:round; }
+.dg-reset { font-family:var(--f-title); font-size:var(--fs-label); background:#FFF8E1; color:#F57F17; border:2px solid #FFE08A; border-radius:999px; padding:6px 18px; cursor:pointer; }
+/* ───── tangram_puzzle (05차 신규) ───── */
+.tg-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-md); }
+.tg-svg { width:min(360px,92vw); height:auto; touch-action:none; user-select:none; background:#fff; border:2px solid var(--line); border-radius:22px; box-shadow:var(--shadow); display:block; }
+.tg-target-fill { fill:#F4ECE0; stroke:#D9CBB5; stroke-width:2; stroke-dasharray:7 6; }
+.tg-divider { stroke:var(--line); stroke-width:2; }
+.tg-piece { cursor:grab; }
+.tg-piece.placed { cursor:default; }
+.tg-piece-poly { stroke-width:3; stroke-linejoin:round; transition:filter .15s; }
+.tg-tri  { fill:var(--coral-soft); stroke:var(--coral-deep); }
+.tg-sq   { fill:var(--teal-soft);  stroke:var(--teal-deep); }
+.tg-piece.sel .tg-piece-poly { filter:drop-shadow(0 0 0 var(--gold)); stroke:var(--gold); stroke-width:5; }
+.tg-piece.placed .tg-piece-poly { opacity:.96; }
+.tg-tray-label { font-family:var(--f-title); font-size:13px; fill:var(--ink-soft); }
+.tg-tools { display:flex; gap:clamp(8px,1.6vw,14px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.tg-rot { font-family:var(--f-title); font-size:var(--fs-body); border:2px solid #FFE08A; background:#FFF8E1; color:#F57F17; border-radius:999px; padding:clamp(8px,1.3vw,12px) clamp(16px,2.6vw,26px); cursor:pointer; transition:transform .12s; }
+.tg-rot:hover { transform:translateY(-2px); }
+.tg-rot:disabled { opacity:.4; cursor:default; transform:none; }
+.tg-reset { font-family:var(--f-title); font-size:var(--fs-caption); border:2px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; padding:clamp(7px,1.2vw,10px) clamp(14px,2.2vw,20px); cursor:pointer; }
+.tg-hintmsg { font-family:var(--f-body); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+.piece-cap { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); text-align:center; }
+.pieces-row { display:flex; gap:clamp(8px,2vw,18px); flex-wrap:wrap; justify-content:center; align-items:flex-end; }
+.piece-tag { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.piece-num { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink); }
+.combine-row { display:flex; gap:clamp(10px,2.4vw,22px); align-items:center; justify-content:center; flex-wrap:wrap; }
+.combine-arrow { font-family:var(--f-title); font-size:var(--em-sm); color:var(--coral); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">8차시</span>
+    <span class="ka-where">수학 2-1 · <b>2. 여러 가지 도형</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 단원 회상 갤러리 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">여러 가지 도형, 얼마나 알게 됐나요?</h2>
+      <div class="shape-row">
+        <div><span id="r1-tri"></span><div class="shape-cap">삼각형</div></div>
+        <div><span id="r1-sq"></span><div class="shape-cap">사각형</div></div>
+        <div><span id="r1-circ"></span><div class="shape-cap">원</div></div>
+        <div><span id="r1-tg"></span><div class="shape-cap">칠교</div></div>
+        <div class="cs-target"><span class="cap">쌓기나무</span><svg id="r1-cs" class="cs-svg" viewBox="0 0 170 150"></svg></div>
+      </div>
+      <div class="intro-q">우리는 이번 단원에서 <strong>삼각형·사각형·원</strong>을 배우고, <strong>칠교</strong>로 모양을 만들고, <strong>쌓기나무</strong>로 쌓았어요.<br>오늘은 그동안 배운 것을 <strong>스스로 확인</strong>해 볼 거예요.</div>
+    </div>
+
+    <!-- 슬 2 — 도입: 오늘 확인할 것 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 스스로 확인하는 날</h2>
+      <ul class="goal-list">
+        <li>삼각형·사각형·원을 <strong>구별</strong>할 수 있나요?</li>
+        <li>점판에 도형을 <strong>그릴</strong> 수 있나요?</li>
+        <li>쌓기나무를 <strong>세고</strong> 똑같이 <strong>쌓을</strong> 수 있나요?</li>
+        <li>칠교로 <strong>모양</strong>을 완성할 수 있나요?</li>
+        <li>여러 가지 도형으로 <strong>만들</strong> 수 있나요?</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 도형 3종 빠른 정리 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">삼각형·사각형·원을 떠올려요</h2>
+      <div class="shape-row">
+        <div><span id="s3-tri"></span><div class="shape-cap">변 3 · 꼭짓점 3</div></div>
+        <div><span id="s3-sq"></span><div class="shape-cap">변 4 · 꼭짓점 4</div></div>
+        <div><span id="s3-circ"></span><div class="shape-cap">곧은 선 없음</div></div>
+      </div>
+      <div class="concept-box">삼각형과 사각형은 <strong>변</strong>과 <strong>꼭짓점</strong>으로, 원은 <strong>둥근 곡선</strong>으로 구별해요.</div>
+    </div>
+
+    <!-- 슬 4 — 전개: 변·꼭짓점 복습 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 삼각형·사각형</div>
+      <h2 class="slide-title">변과 꼭짓점을 다시 봐요</h2>
+      <div class="shape-row">
+        <div><span id="s4-tri"></span><div class="shape-cap">삼각형 — 변 3, 꼭짓점 3</div></div>
+        <div><span id="s4-sq"></span><div class="shape-cap">사각형 — 변 4, 꼭짓점 4</div></div>
+      </div>
+      <div class="concept-box">곧은 선 <strong>3</strong>개로 둘러싸이면 <strong>삼각형</strong>, <strong>4</strong>개로 둘러싸이면 <strong>사각형</strong>이에요.</div>
+    </div>
+
+    <!-- 슬 5 — 전개: 원 복습 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 원</div>
+      <h2 class="slide-title">원의 특징을 떠올려요</h2>
+      <div class="shape-stage"><span id="s5-circ"></span></div>
+      <div class="concept-box">원은 <strong>곧은 선</strong>도 <strong>꼭짓점</strong>도 없어요. 어느 쪽에서 봐도 똑같이 <strong>둥글어요</strong>.</div>
+    </div>
+
+    <!-- 슬 6 — 전개: 칠교 복습 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 칠교</div>
+      <h2 class="slide-title">칠교판을 떠올려요</h2>
+      <div class="shape-stage"><span id="s6-tg"></span></div>
+      <div class="concept-box">칠교는 <strong>7조각</strong>이에요. <strong>삼각형 5조각</strong>과 <strong>사각형 2조각</strong>으로 여러 모양을 만들어요.</div>
+    </div>
+
+    <!-- 슬 7 — 전개: 쌓기나무 복습 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 쌓기나무</div>
+      <h2 class="slide-title">쌓기나무를 떠올려요</h2>
+      <div class="cs-stage"><svg id="s7-cs" class="cs-svg" viewBox="0 0 340 240"></svg></div>
+      <div class="concept-box">가려진 것까지 <strong>개수</strong>를 세고, <strong>층</strong>과 <strong>방향</strong>(앞·오른쪽·위)으로 설명할 수 있어요.</div>
+    </div>
+
+    <!-- 슬 8 — 기본: 삼각형 모두 찾기 (shape_judge) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>삼각형</strong>을 모두 찾아 눌러요.</div>
+        <div class="judge-grid" id="q8-judge"></div>
+        <div class="mcq-hint" data-hints='["곧은 선 3개로 둘러싸인 도형이 삼각형이에요.","변과 꼭짓점이 각각 3개인지 세어 봐요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본: 사각형 고르기 (polygon mcq) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">변과 꼭짓점이 각각 <strong>4개</strong>인 도형은 무엇일까요?</div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="0"><span id="q9-o0"></span></button>
+          <button class="mcq-opt" data-correct="1"><span id="q9-o1"></span></button>
+          <button class="mcq-opt" data-correct="0"><span id="q9-o2"></span></button>
+          <button class="mcq-opt" data-correct="0"><span id="q9-o3"></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["곧은 선(변)이 몇 개인지 세어 봐요.","변과 꼭짓점이 모두 4개인 도형이 사각형이에요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본: 원 고르기 (circle mcq) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>어느 쪽에서 봐도</strong> 똑같이 둥근 도형은 무엇일까요?</div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="1"><span id="q10-o0"></span></button>
+          <button class="mcq-opt" data-correct="0"><span id="q10-o1"></span></button>
+          <button class="mcq-opt" data-correct="0"><span id="q10-o2"></span></button>
+          <button class="mcq-opt" data-correct="0"><span id="q10-o3"></span></button>
+        </div>
+        <div class="mcq-hint" data-hints='["곧은 선도 꼭짓점도 없는 도형을 찾아요.","한쪽으로만 길쭉한 모양은 원이 아니에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본: 쌓기나무 개수 세기 (cube_stack + count_input) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">쌓기나무가 모두 <strong>몇 개</strong>일까요? (버튼으로 돌려서 가려진 것도 세어 봐요)</div>
+        <div class="cs-stage">
+          <svg id="q11-cs" class="cs-svg" viewBox="0 0 340 240"></svg>
+          <div class="cs-views" id="q11-views"></div>
+        </div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["위에서 본 모습으로 바닥 칸 수를 세고, 위에 쌓인 것을 더해요.","뒤쪽에 가려진 쌓기나무가 있을 수 있어요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용: 점판에 삼각형 그리기 (dot_grid) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">점을 <strong>3개</strong> 이어 <strong>삼각형</strong>을 그려요.</div>
+        <div class="dg-stage">
+          <div id="q12-dg"></div>
+          <button class="dg-reset" id="q12-reset">다시 그리기</button>
+        </div>
+        <div class="mcq-hint" data-hints='["한 줄에 있지 않은 점 3개를 골라요.","세 점이 한 줄에 있으면 삼각형이 되지 않아요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용: 똑같이 쌓기 (buildStacker) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">그림과 <strong>똑같이</strong> 쌓아 봐요.</div>
+        <div class="concept-box">바닥에 나란히 <strong>3개</strong>, <strong>가운데</strong> 칸 <strong>위</strong>에 1개</div>
+        <div class="cs-build-wrap">
+          <div class="cs-target"><span class="cap">목표 모양</span><svg id="q13-target" class="cs-svg" viewBox="0 0 220 180"></svg></div>
+          <div class="cs-stage">
+            <svg id="q13-build" class="cs-svg" viewBox="0 0 300 230"></svg>
+            <div class="cs-tools"><button class="cs-tbtn" data-act="undo">되돌리기</button><button class="cs-tbtn" data-act="reset">처음으로</button></div>
+            <div class="cs-explain" style="font-size:var(--fs-caption)">바닥 칸을 누르면 쌓이고, 되돌리기로 뺄 수 있어요.</div>
+          </div>
+        </div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용: 칠교로 집 완성 (tangram, 05 검증 좌표 재사용) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">칠교 조각을 옮기고 돌려서 <strong>집</strong>을 완성해요.</div>
+        <div class="tg-stage" id="q14-tg"></div>
+        <div class="mcq-hint" data-hints='["가장 큰 두 조각으로 아래쪽 사각형을 먼저 채워요.","남은 작은 삼각형 2개로 위쪽 지붕을 만들어요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용: 설명에 맞는 모양 고르기 (csOptionMcq) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">설명에 알맞은 모양을 골라요.</div>
+        <div class="concept-box">바닥에 <strong>2개</strong>가 나란히 있고, 맨 <strong>왼쪽</strong> 칸 <strong>위</strong>에 1개가 있어요.</div>
+        <div class="cs-opts" id="q15-opts"></div>
+        <div class="mcq-hint" data-hints='["바닥에 몇 개가 나란한지 먼저 세어 봐요.","위로 올라간 쌓기나무가 어느 칸 위인지 살펴봐요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 도형으로 만들기 + 마무리 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">도형으로 무엇이든 만들 수 있어요</h2>
+      <div class="shape-row">
+        <div><span id="m-tri"></span></div>
+        <div><span id="m-sq"></span></div>
+        <div><span id="m-circ"></span></div>
+        <div><span id="m-tg"></span></div>
+      </div>
+      <div class="summary-card">삼각형·사각형·원과 칠교, 쌓기나무로 <strong>집·자동차·동물</strong>처럼 여러 가지를 만들 수 있어요. 칠교나 공책으로 <strong>나만의 모양</strong>을 만들어 봐요.</div>
+      <div class="wrap-msg" id="wrap-msg"></div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습을 스스로 확인해요</h2>
+      <div class="summary-card" style="text-align:left">· 삼각형·사각형·원을 이해하고 그릴 수 있나요?<br>· 쌓기나무로 여러 모양을 만들고 설명할 수 있나요?<br>· 여러 가지 도형으로 즐겁게 만들었나요?</div>
+      <div class="self-row">
+        <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 더 연습할래요</div></button>
+        <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+        <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+      </div>
+      <div class="q-fb" id="self-fb"></div>
+    </div>
+
+    <!-- 슬 18 — 정리: 단원 마무리 + 실천 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">여러 가지 도형 단원을 마쳐요</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🎨</div>
+          <div class="next-label">다음 시간엔 「수학이랑 만들어요」<br>도형으로 우리 교실을 꾸며요!</div>
+        </div>
+        <div class="home-prompt">집과 교실에서 △ □ ○ 모양을 찾아봐요. 정리하며 삼각형, 청소하며 사각형, 화분에서 원을 찾으면 어디에 있었는지 이야기해 보세요!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g2_math_u2_l08';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0, score = 0, muted = false;
+const qState = {};
+function getQState(qid){ if(!qState[qid]) qState[qid]={solved:false,attempts:0,wrongCount:0,hintLevel:0}; return qState[qid]; }
+function currentSlide(){ return document.querySelectorAll('.slide')[cur]; }
+function currentQId(){ const s=currentSlide(); return s?s.dataset.qId:null; }
+
+function updateUI(){
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active',i===cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d,i)=>{ d.classList.toggle('active',i===cur); d.classList.toggle('done',i<cur); });
+  document.getElementById('prev').disabled = cur===0;
+  const qid=currentQId(); const hintBtn=document.getElementById('hint');
+  if(qid){ const st=getQState(qid); hintBtn.disabled = st.solved || st.hintLevel>=2; } else { hintBtn.disabled=true; }
+  if(cur===TOTAL-1){ document.getElementById('next').textContent='마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent='다음 →'; }
+  if(cur===15){ document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+function saveProgress(done){ const data={cur,score,done,startedAt,finishedAt:done?Date.now():null,qState}; try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){} }
+function wrapMsg(s){ if(s>=100)return'완벽해요!'; if(s>=80)return'정말 잘했어요!'; if(s>=60)return'잘했어요!'; return'다시 해도 좋아요!'; }
+function goNext(){ if(cur<TOTAL-1){ cur++; saveProgress(false); updateUI(); } }
+function goPrev(){ if(cur>0){ cur--; updateUI(); } }
+function goHub(){ saveProgress(false); location.href='../../index.html'; }
+function toggleMute(){ muted=!muted; document.getElementById('mute').textContent=muted?'🔇':'🔊'; }
+function addScore(n){ score+=n; document.getElementById('score').textContent='⭐ '+score; }
+function showHint(){
+  const qid=currentQId(); if(!qid)return;
+  const st=getQState(qid); if(st.solved||st.hintLevel>=2)return;
+  const hintEl=currentSlide().querySelector('.mcq-hint'); if(!hintEl)return;
+  const hints=JSON.parse(hintEl.dataset.hints||'[]');
+  st.hintLevel++; hintEl.textContent='💡 '+hints[st.hintLevel-1]; hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel>=2;
+}
+function pointsForQ(qid){
+  const slide=document.querySelector(`[data-q-id="${qid}"]`);
+  const base=parseInt(slide.dataset.qPoints||'0',10); const st=getQState(qid);
+  if(st.hintLevel===2)return Math.max(0,base-5); if(st.hintLevel===1)return Math.max(0,base-2); return base;
+}
+
+// ───── 도형 부품 ─────
+function polygon(pts, opts){
+  opts=opts||{}; const size=opts.size||150, pad=16, inner=size-pad*2;
+  function sx(x){return pad+(x/100)*inner;} function sy(y){return pad+(y/100)*inner;}
+  const poly=pts.map(p=>`${sx(p[0])},${sy(p[1])}`).join(' ');
+  let s=`<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  s+=`<polygon class="poly-edge" points="${poly}"/>`;
+  if(opts.showVertex){ pts.forEach(p=>{ s+=`<circle class="poly-vertex" cx="${sx(p[0])}" cy="${sy(p[1])}" r="${size*0.04}"/>`; }); }
+  s+=`</svg>`; return s;
+}
+// circle_shape (신규) — round=true 원 / false 타원(rx≠ry). noLine=true면 "곧은 선 없음" ✕ 표시
+function circle(opts){
+  opts=opts||{}; const size=opts.size||150, cx=size/2, cy=size/2;
+  const rx=(opts.rx!=null?opts.rx:0.38)*size;
+  const ry=(opts.ry!=null?opts.ry:0.38)*size;
+  let s=`<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  s+=`<ellipse class="circ-edge" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+  if(opts.noLine){ s+=`<text class="noline-tag" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle">곧은 선 없음</text>`; }
+  s+=`</svg>`; return s;
+}
+
+const TRI=[[50,8],[90,88],[10,88]];
+const SQ=[[14,14],[86,14],[86,86],[14,86]];
+
+
+// ───── count_input ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg){
+  const pad=document.getElementById(padId), display=document.getElementById(displayId), fb=document.getElementById(fbId);
+  let buf='';
+  ['1','2','3','4','5','6','7','8','9','0'].forEach(k=>{
+    const b=document.createElement('button'); b.className='q-key'; b.textContent=k;
+    b.addEventListener('click',()=>{ const st=getQState(qid); if(st.solved)return; if(buf.length<2){ buf+=k; display.textContent=buf; } });
+    pad.appendChild(b);
+  });
+  const del=document.createElement('button'); del.className='q-key fn'; del.textContent='지움';
+  del.addEventListener('click',()=>{ const st=getQState(qid); if(st.solved)return; buf=buf.slice(0,-1); display.textContent=buf||'?'; });
+  pad.appendChild(del);
+  const ok=document.createElement('button'); ok.className='q-key fn'; ok.textContent='확인'; ok.style.gridColumn='span 4';
+  ok.addEventListener('click',()=>{
+    const st=getQState(qid); if(st.solved)return; st.attempts++;
+    if(buf!=='' && parseInt(buf,10)===correct){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점'; updateUI(); }
+    else { st.wrongCount++; fb.classList.add('wrong'); fb.textContent='다시 한 번 생각해 볼까요?'; }
+  });
+  pad.appendChild(ok);
+}
+
+
+// ═════════════════ cube_stack 부품 (06차 신규) ═════════════════
+// 격자 (c=오른쪽, r=앞, l=위) → 아이소메트릭 투영. painter 정렬·3시점. verify_cube_stack.py 검증.
+const CS_TW=44, CS_TH=24, CS_CH=30, CS_NS='http://www.w3.org/2000/svg';
+const CS_COLORS = {
+  red:   {top:'#FF8A65', left:'#FF7043', right:'#E64A19'},
+  yellow:{top:'#FFD54F', left:'#FFCA28', right:'#FFA000'},
+  sky:   {top:'#4FC3F7', left:'#29B6F6', right:'#0288D1'},
+  wood:  {top:'#E8C9A0', left:'#D8B084', right:'#B98C5A'}
+};
+function csProject(c,r,l,ox,oy){ return [ox+(c-r)*(CS_TW/2), oy+(c+r)*(CS_TH/2)-l*CS_CH]; }
+function csFaces(c,r,l,ox,oy){
+  const P=(cc,rr,ll)=>csProject(cc,rr,ll,ox,oy);
+  return {
+    top:  [P(c,r,l+1),P(c+1,r,l+1),P(c+1,r+1,l+1),P(c,r+1,l+1)],
+    left: [P(c,r+1,l+1),P(c+1,r+1,l+1),P(c+1,r+1,l),P(c,r+1,l)],
+    right:[P(c+1,r,l+1),P(c+1,r+1,l+1),P(c+1,r+1,l),P(c+1,r,l)]
+  };
+}
+function csOrder(cubes){ return [...cubes].sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]) || a[2]-b[2]); }
+function csMaxC(cubes){ return cubes.reduce((m,k)=>Math.max(m,k[0]),0); }
+function csRotate(cubes, view){
+  const mc=csMaxC(cubes);
+  return cubes.map(k=> view==='side'?[k[1],mc-k[0],k[2],k[3]] : view==='top'?[k[0],k[1],0,k[3]] : [k[0],k[1],k[2],k[3]]);
+}
+function dedupeTop(cubes){
+  const m={}; cubes.forEach(k=>{ const key=k[0]+','+k[1]; if(!m[key]||k[2]>m[key][2]) m[key]=k; });
+  return Object.values(m).map(k=>[k[0],k[1],0,k[3]]);
+}
+function csRender(svg, cubes, opts){
+  opts=opts||{}; const view=opts.view||'front';
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+  let cs = view==='top' ? dedupeTop(cubes) : csRotate(cubes, view);
+  const tmp=cs.map(k=>{ const f=csFaces(k[0],k[1],k[2],0,0); return [].concat(f.top,f.left,f.right); }).flat();
+  const xs=tmp.map(p=>p[0]), ys=tmp.map(p=>p[1]);
+  const vb=svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const ox=vb[2]/2 - cx, oy=vb[3]/2 - cy;
+  csOrder(cs).forEach(k=>{
+    const col=CS_COLORS[k[3]||'wood']; const f=csFaces(k[0],k[1],k[2],ox,oy);
+    const g=document.createElementNS(CS_NS,'g'); g.setAttribute('class','cs-cube');
+    [['top',f.top],['left',f.left],['right',f.right]].forEach(([face,pts])=>{
+      const poly=document.createElementNS(CS_NS,'polygon'); poly.setAttribute('class','cs-face');
+      poly.setAttribute('points',pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '));
+      poly.setAttribute('fill',col[face]); g.appendChild(poly);
+    });
+    if(opts.onpick){ g.style.cursor='pointer'; g.addEventListener('click',()=>opts.onpick(k[0],k[1],k[2],g)); }
+    svg.appendChild(g);
+  });
+}
+function csViewButtons(hostId, svg, cubes){
+  const host=document.getElementById(hostId); if(!host)return;
+  let view='front';
+  [['front','앞'],['side','옆'],['top','위']].forEach(([v,label],i)=>{
+    const b=document.createElement('button'); b.className='cs-vbtn'+(i===0?' on':''); b.textContent=label;
+    b.addEventListener('click',()=>{ view=v; host.querySelectorAll('.cs-vbtn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); csRender(svg,cubes,{view}); });
+    host.appendChild(b);
+  });
+}
+
+// ───── 직접 쌓기 빌더 ─────
+function buildStacker(buildSvgId, targetSvgId, footprint, target, fbId, qid, doneMsg){
+  const svg=document.getElementById(buildSvgId), fb=document.getElementById(fbId);
+  if(targetSvgId){ csRender(document.getElementById(targetSvgId), target, {view:'front'}); }
+  const heights={}; footprint.forEach(([c,r])=>heights[c+','+r]=0);
+  const stack=[];
+  function curCubes(){
+    const out=[]; for(const key in heights){ const [c,r]=key.split(',').map(Number); for(let l=0;l<heights[key];l++) out.push([c,r,l,'wood']); }
+    return out;
+  }
+  function offsets(){
+    const vb=svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    const cubes=curCubes(); const ref=cubes.length?cubes:footprint.map(([c,r])=>[c,r,0,'wood']);
+    const tmp=ref.map(k=>{ const f=csFaces(k[0],k[1],k[2]||0,0,0); return [].concat(f.top,f.left,f.right); }).flat();
+    const xs=tmp.map(p=>p[0]), ys=tmp.map(p=>p[1]);
+    return {ox:vb[2]/2-(Math.min(...xs)+Math.max(...xs))/2, oy:vb[3]/2-(Math.min(...ys)+Math.max(...ys))/2};
+  }
+  function draw(){ csRender(svg, curCubes(), {view:'front'}); }
+  svg.addEventListener('click',(ev)=>{
+    const st=getQState(qid); if(st.solved)return;
+    const pt=svg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY;
+    const ctm=svg.getScreenCTM(); if(!ctm)return; const loc=pt.matrixTransform(ctm.inverse());
+    const {ox,oy}=offsets();
+    let best=null,bd=1e9;
+    footprint.forEach(([c,r])=>{ const h=heights[c+','+r]; const cen=csProject(c+0.5,r+0.5,h,ox,oy); const d=Math.hypot(loc.x-cen[0],loc.y-cen[1]); if(d<bd){bd=d;best=[c,r];} });
+    if(best && bd<70){ heights[best[0]+','+best[1]]++; stack.push(best); draw(); check(); }
+  });
+  function check(){
+    const st=getQState(qid); if(st.solved)return;
+    const tH={}; footprint.forEach(([c,r])=>tH[c+','+r]=0);
+    target.forEach(([c,r,l])=>{ const key=c+','+r; tH[key]=Math.max(tH[key]||0,l+1); });
+    const match=Object.keys(heights).every(k=>heights[k]===(tH[k]||0));
+    if(match){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent=(doneMsg||'딱 맞았어요!')+' +'+earn+'점'; updateUI(); }
+  }
+  draw();
+  const wrap=svg.closest('.cs-stage');
+  wrap.querySelectorAll('.cs-tbtn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved)return;
+      if(btn.dataset.act==='undo'){ const last=stack.pop(); if(last){ heights[last[0]+','+last[1]]=Math.max(0,heights[last[0]+','+last[1]]-1); draw(); } }
+      else { for(const k in heights)heights[k]=0; stack.length=0; fb.textContent=''; fb.classList.remove('wrong'); draw(); }
+    });
+  });
+}
+
+// ───── 그림 보기 mcq (작은 cube_stack 4개) ─────
+function csOptionMcq(optsId, options, correctIdx, fbId, qid, doneMsg){
+  const wrap=document.getElementById(optsId), fb=document.getElementById(fbId);
+  options.forEach((cubes,i)=>{
+    const div=document.createElement('div'); div.className='cs-opt';
+    const svg=document.createElementNS(CS_NS,'svg'); svg.setAttribute('class','cs-svg'); svg.setAttribute('viewBox','0 0 170 150');
+    div.appendChild(svg); wrap.appendChild(div);
+    csRender(svg, cubes, {view:'front'});
+    div.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved)return; st.attempts++;
+      if(i===correctIdx){ st.solved=true; div.classList.add('correct'); const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점'; updateUI(); }
+      else { st.wrongCount++; div.classList.add('wrong'); fb.classList.add('wrong'); fb.textContent='다시 한 번 살펴봐요'; setTimeout(()=>div.classList.remove('wrong'),600); }
+    });
+  });
+}
+
+// ───── 일반 mcq (텍스트 보기) ─────
+function setupMcq(optsId, fbId, qid, doneMsg){
+  const wrap=document.getElementById(optsId), fb=document.getElementById(fbId);
+  wrap.querySelectorAll('.mcq-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved)return; st.attempts++;
+      if(btn.dataset.correct==='1'){ st.solved=true; btn.classList.add('correct'); const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점'; updateUI(); }
+      else { st.wrongCount++; btn.classList.add('wrong'); fb.classList.add('wrong'); fb.textContent='다시 한 번 생각해 볼까요?'; setTimeout(()=>btn.classList.remove('wrong'),600); }
+    });
+  });
+}
+
+
+// ───── 추가 도형 상수 (02차 평면도형 재사용) ─────
+const TRI_R = [[12,12],[12,88],[88,88]];
+const TRI_OB = [[8,80],[60,18],[92,80]];
+const TRI_TILT = [[30,12],[88,46],[18,90]];
+const SQ_TRAP = [[28,18],[78,18],[92,84],[12,84]];
+const TANGRAM7 = [
+  {label:'①', type:'tri', pts:[[0,0],[2,2],[4,0]]},   // 큰삼각형
+  {label:'②', type:'tri', pts:[[4,0],[2,2],[4,4]]},   // 큰삼각형
+  {label:'③', type:'tri', pts:[[0,4],[0,2],[2,4]]},   // 중간삼각형
+  {label:'④', type:'sq',  pts:[[0,2],[1,1],[2,2],[1,3]]}, // 정사각형
+  {label:'⑤', type:'tri', pts:[[0,0],[1,1],[0,2]]},   // 작은삼각형
+  {label:'⑦', type:'tri', pts:[[3,3],[4,4],[2,4]]},   // 작은삼각형 (표시 ⑦)
+  {label:'⑥', type:'sq',  pts:[[1,3],[2,2],[3,3],[2,4]]}, // 평행사변형 (표시 ⑥)
+];
+// 칠교 전체 그림 (한 변 4 → size px). showLabel: 번호, colorByType: 분류색
+function tangramFull(opts){
+  opts=opts||{}; const size=opts.size||220, pad=10, sc=(size-pad*2)/4;
+  function X(x){return pad+x*sc;} function Y(y){return pad+y*sc;}
+  let s=`<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  TANGRAM7.forEach(pc=>{
+    const poly=pc.pts.map(p=>`${X(p[0])},${Y(p[1])}`).join(' ');
+    let fill, stroke;
+    if(opts.colorByType){ if(pc.type==='tri'){fill='var(--coral-soft)';stroke='var(--coral-deep)';}else{fill='var(--teal-soft)';stroke='var(--teal-deep)';} }
+    else { fill='#FBEFE6'; stroke='var(--coral-deep)'; }
+    s+=`<polygon points="${poly}" fill="${fill}" stroke="${stroke}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    if(opts.showLabel){ const cx=pc.pts.reduce((a,p)=>a+X(p[0]),0)/pc.pts.length, cy=pc.pts.reduce((a,p)=>a+Y(p[1]),0)/pc.pts.length;
+      s+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-family="var(--f-title)" font-size="${size*0.072}" fill="var(--ink)">${pc.label}</text>`; }
+  });
+  s+=`</svg>`; return s;
+}
+// 단일 칠교 조각 그림 (분류 셀·시범용). pts=한변4좌표, type=tri|sq
+function pieceSVG(pts, type, size){
+  size=size||84; const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  const w=maxx-minx,h=maxy-miny,span=Math.max(w,h),pad=12,sc=(size-pad*2)/span;
+  const ox=pad+(span-w)/2*sc-minx*sc, oy=pad+(span-h)/2*sc-miny*sc;
+  const poly=pts.map(p=>`${ox+p[0]*sc},${oy+p[1]*sc}`).join(' ');
+  const fill=type==='tri'?'var(--coral-soft)':'var(--teal-soft)', stroke=type==='tri'?'var(--coral-deep)':'var(--teal-deep)';
+  return `<svg class="shape-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><polygon points="${poly}" fill="${fill}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/></svg>`;
+}
+
+const SHAPE_LEG = { sm1:1, sm2:Math.SQRT2, mid2:2 }; // 직각이등변삼각형 다리 길이(모델 단위)
+function centroidOf(pts){ const n=pts.length; return [pts.reduce((a,p)=>a+p[0],0)/n, pts.reduce((a,p)=>a+p[1],0)/n]; }
+function canonTri(L){ // 직각원점 [(0,0),(L,0),(0,L)] 무게중심 정렬
+  const p=[[0,0],[L,0],[0,L]]; const c=centroidOf(p); return p.map(q=>[q[0]-c[0],q[1]-c[1]]);
+}
+function rotPts(pts,deg){ const r=deg*Math.PI/180,co=Math.cos(r),si=Math.sin(r); return pts.map(([x,y])=>[x*co-y*si, x*si+y*co]); }
+function ptsetEq(a,b,tol){ if(a.length!==b.length)return false;
+  const sa=[...a].sort((p,q)=>p[0]-q[0]||p[1]-q[1]); const sb=[...b].sort((p,q)=>p[0]-q[0]||p[1]-q[1]);
+  return sa.every((p,i)=>Math.hypot(p[0]-sb[i][0],p[1]-sb[i][1])<tol);
+}
+
+
+// 칠교 퍼즐 정의 — 05차 검증 좌표(calc_pieces.py 검증분) 그대로 재사용. 08은 집(house) 1종.
+const PZ_DEFS = {
+  q14:{ shape:'house', target:[[2,1],[3,2],[3,4],[1,4],[1,2]],
+        slots:[{shape:'mid2',poly:[[1,2],[1,4],[3,4]]},{shape:'mid2',poly:[[1,2],[3,4],[3,2]]},
+               {shape:'sm1',poly:[[1,2],[2,2],[2,1]]},{shape:'sm1',poly:[[3,2],[2,2],[2,1]]}],
+        pieces:[{shape:'mid2',initRot:0},{shape:'mid2',initRot:0},{shape:'sm1',initRot:0},{shape:'sm1',initRot:90}],
+        done:'칠교로 집을 완성했어요!' },
+};
+function buildTangram(qid, hostId){
+  const def=PZ_DEFS[qid]; const host=document.getElementById(hostId);
+  const SVGNS='http://www.w3.org/2000/svg';
+  // ── 보드 레이아웃: 모델좌표 → 화면 px ──
+  const VBW=360, VBH=430, boardTop=14, boardH=250, trayTop=300;
+  const allModel=def.target.concat(...def.slots.map(s=>s.poly));
+  const xs=allModel.map(p=>p[0]), ys=allModel.map(p=>p[1]);
+  const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+  const mw=mxx-mnx, mh=mxy-mny;
+  const sc=Math.min((VBW-80)/mw, (boardH-30)/mh);
+  const offx=(VBW-mw*sc)/2 - mnx*sc, offy=boardTop+(boardH-mh*sc)/2 - mny*sc;
+  function MX(x){return offx+x*sc;} function MY(y){return offy+y*sc;}
+
+  // 슬롯 화면폴리곤 + 슬롯별 targetRot/center(px) 계산
+  const slots=def.slots.map(sl=>{
+    const scrPoly=sl.poly.map(p=>[MX(p[0]),MY(p[1])]);
+    const ctr=centroidOf(scrPoly);
+    // canon(px) 회전 k·45 + ctr 가 scrPoly 와 일치하는 k
+    const canonPx=canonTri(SHAPE_LEG[sl.shape]*sc);
+    let trot=0;
+    for(let d=0; d<360; d+=45){ const placed=rotPts(canonPx,d).map(p=>[p[0]+ctr[0],p[1]+ctr[1]]); if(ptsetEq(placed,scrPoly,0.6)){ trot=d; break; } }
+    return {shape:sl.shape, scrPoly, cx:ctr[0], cy:ctr[1], trot, filled:false};
+  });
+
+  const svg=document.createElementNS(SVGNS,'svg');
+  svg.setAttribute('class','tg-svg'); svg.setAttribute('viewBox',`0 0 ${VBW} ${VBH}`);
+  // 목표 윤곽
+  const tEl=document.createElementNS(SVGNS,'polygon');
+  tEl.setAttribute('class','tg-target-fill');
+  tEl.setAttribute('points', def.target.map(p=>`${MX(p[0])},${MY(p[1])}`).join(' '));
+  svg.appendChild(tEl);
+  // 슬롯 가이드(점선 외곽)
+  slots.forEach(s=>{ const g=document.createElementNS(SVGNS,'polygon'); g.setAttribute('points', s.scrPoly.map(p=>`${p[0]},${p[1]}`).join(' '));
+    g.setAttribute('fill','none'); g.setAttribute('stroke','#E5D8C2'); g.setAttribute('stroke-width','1.5'); g.setAttribute('stroke-dasharray','4 5'); svg.appendChild(g); });
+  // 구분선 + 트레이 라벨
+  const divln=document.createElementNS(SVGNS,'line'); divln.setAttribute('class','tg-divider');
+  divln.setAttribute('x1',24); divln.setAttribute('y1',boardTop+boardH+16); divln.setAttribute('x2',VBW-24); divln.setAttribute('y2',boardTop+boardH+16); svg.appendChild(divln);
+  const tl=document.createElementNS(SVGNS,'text'); tl.setAttribute('class','tg-tray-label'); tl.setAttribute('x',28); tl.setAttribute('y',boardTop+boardH+10); tl.textContent='조각'; svg.appendChild(tl);
+
+  // 조각 생성 (트레이 가로 배치)
+  const n=def.pieces.length; const slotW=(VBW-40)/n;
+  const pieces=def.pieces.map((pc,i)=>{
+    const localPx=canonTri(SHAPE_LEG[pc.shape]*sc);
+    const cx=20+slotW*(i+0.5), cy=trayTop+58;
+    const g=document.createElementNS(SVGNS,'g'); g.setAttribute('class','tg-piece');
+    const poly=document.createElementNS(SVGNS,'polygon');
+    poly.setAttribute('class','tg-piece-poly '+(pc.shape==='mid2'||true ? 'tg-tri':'tg-tri')); // 모두 삼각형
+    poly.setAttribute('points', localPx.map(p=>`${p[0]},${p[1]}`).join(' '));
+    g.appendChild(poly);
+    const obj={g,localPx,shape:pc.shape,cx,cy,rot:pc.initRot,placed:false,homeX:cx,homeY:cy,homeRot:pc.initRot};
+    applyTf(obj); svg.appendChild(g);
+    return obj;
+  });
+  function applyTf(p){ p.g.setAttribute('transform',`translate(${p.cx},${p.cy}) rotate(${p.rot})`); }
+  function absPts(p){ return rotPts(p.localPx,p.rot).map(q=>[q[0]+p.cx, q[1]+p.cy]); }
+
+  host.appendChild(svg);
+  // 도구 버튼
+  const tools=document.createElement('div'); tools.className='tg-tools';
+  const rotBtn=document.createElement('button'); rotBtn.className='tg-rot'; rotBtn.textContent='↻ 돌리기'; rotBtn.disabled=true;
+  const resetBtn=document.createElement('button'); resetBtn.className='tg-reset'; resetBtn.textContent='처음으로';
+  tools.appendChild(rotBtn); tools.appendChild(resetBtn); host.appendChild(tools);
+
+  let sel=null, dragging=null, dragDX=0, dragDY=0, moved=false;
+  function setSel(p){ sel=p; pieces.forEach(q=>q.g.classList.toggle('sel',q===sel&&!q.placed)); rotBtn.disabled=!(sel&&!sel.placed); }
+  function svgPoint(ev){ const pt=svg.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; const ctm=svg.getScreenCTM(); if(!ctm)return[0,0]; const r=pt.matrixTransform(ctm.inverse()); return [r.x,r.y]; }
+  const fb=()=>document.getElementById(qid+'-fb');
+
+  function checkComplete(){
+    if(slots.every(s=>s.filled)){
+      const st=getQState(qid); if(st.solved)return; st.solved=true;
+      const earn=pointsForQ(qid); addScore(earn);
+      const f=fb(); f.classList.remove('wrong'); f.textContent=def.done+' +'+earn+'점';
+      rotBtn.disabled=true; setSel(null); updateUI();
+    }
+  }
+  function trySnap(p){
+    const ctr=[p.cx,p.cy]; const ap=absPts(p);
+    let best=null,bestd=1e9;
+    slots.forEach(s=>{ if(s.filled||s.shape!==p.shape)return; const d=Math.hypot(ctr[0]-s.cx,ctr[1]-s.cy); if(d<bestd){bestd=d;best=s;} });
+    if(best && bestd < 0.62*SHAPE_LEG[p.shape]*sc){
+      // 회전 정렬 확인: 현재 rot으로 best.scrPoly와 점집합 일치?
+      const test=rotPts(p.localPx,p.rot).map(q=>[q[0]+best.cx,q[1]+best.cy]);
+      if(ptsetEq(test,best.scrPoly, 0.42*SHAPE_LEG[p.shape]*sc)){
+        p.cx=best.cx; p.cy=best.cy; p.rot=best.trot; p.placed=true; best.filled=true; applyTf(p);
+        p.g.classList.add('placed'); p.g.classList.remove('sel');
+        const f=fb(); f.classList.remove('wrong'); f.textContent='딱 맞았어요!';
+        if(sel===p){ sel=null; rotBtn.disabled=true; }
+        checkComplete(); return true;
+      } else {
+        const f=fb(); f.classList.add('wrong'); f.textContent='방향을 돌려서 맞춰 봐요'; return false;
+      }
+    }
+    return false;
+  }
+
+  pieces.forEach(p=>{
+    p.g.addEventListener('pointerdown',ev=>{
+      if(p.placed){ return; }
+      ev.preventDefault(); setSel(p); p.g.parentNode.appendChild(p.g); // 맨 위로
+      dragging=p; moved=false; const [sx,sy]=svgPoint(ev); dragDX=sx-p.cx; dragDY=sy-p.cy;
+      try{ p.g.setPointerCapture(ev.pointerId); }catch(e){}
+    });
+    p.g.addEventListener('pointermove',ev=>{ if(dragging!==p)return; ev.preventDefault(); const [sx,sy]=svgPoint(ev); p.cx=sx-dragDX; p.cy=sy-dragDY; moved=true; applyTf(p); });
+    p.g.addEventListener('pointerup',ev=>{ if(dragging!==p)return; dragging=null; try{p.g.releasePointerCapture(ev.pointerId);}catch(e){} if(!p.placed) trySnap(p); });
+    p.g.addEventListener('pointercancel',()=>{ if(dragging===p) dragging=null; });
+  });
+  rotBtn.addEventListener('click',()=>{ if(!sel||sel.placed)return; sel.rot=(sel.rot+45)%360; applyTf(sel); });
+  resetBtn.addEventListener('click',()=>{
+    const st=getQState(qid); if(st.solved)return;
+    pieces.forEach(p=>{ p.cx=p.homeX; p.cy=p.homeY; p.rot=p.homeRot; p.placed=false; p.g.classList.remove('placed','sel'); applyTf(p); });
+    slots.forEach(s=>s.filled=false); setSel(null); const f=fb(); f.classList.remove('wrong'); f.textContent='';
+  });
+}
+
+// ───── q8 삼각형 모두 찾기 (shape_judge, 02차 재사용) ─────
+(function judge8(){
+  const qid='q8';
+  const cells=[ {pts:TRI,isTri:true},{type:'circle',isTri:false},{pts:TRI_R,isTri:true},{pts:SQ,isTri:false},{pts:TRI_OB,isTri:true},{pts:SQ_TRAP,isTri:false} ];
+  const wrap=document.getElementById('q8-judge'), fb=document.getElementById('q8-fb');
+  const need=cells.filter(c=>c.isTri).length; let got=0;
+  cells.forEach(c=>{
+    const cell=document.createElement('div'); cell.className='judge-cell';
+    const svg=c.type==='circle'
+      ? '<svg class="shape-svg" width="84" height="84" viewBox="0 0 84 84"><circle cx="42" cy="42" r="31" fill="var(--coral-soft)" stroke="var(--coral-deep)" stroke-width="6"/></svg>'
+      : polygon(c.pts,{size:84});
+    cell.innerHTML=svg+'<div class="judge-mark"></div>';
+    cell.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved)return; if(cell.dataset.locked)return;
+      if(c.isTri){ cell.dataset.locked='1'; cell.classList.add('picked'); cell.querySelector('.judge-mark').textContent='삼각형 ○'; got++;
+        if(got===need){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='삼각형을 모두 찾았어요! +'+earn+'점'; updateUI(); }
+        else { fb.classList.remove('wrong'); fb.textContent='좋아요! 삼각형을 더 찾아봐요'; } }
+      else { st.wrongCount++; cell.classList.add('miss'); fb.classList.add('wrong'); fb.textContent='이건 삼각형이 아니에요'; setTimeout(()=>cell.classList.remove('miss'),500); }
+    });
+    wrap.appendChild(cell);
+  });
+})();
+
+// ───── q12 점판에 삼각형 그리기 (dot_grid, 02차 재사용) ─────
+(function dotGrid12(){
+  const qid='q12'; const N=4, size=300, pad=36, step=(size-pad*2)/(N-1);
+  const fb=document.getElementById('q12-fb'); let picked=[];
+  function px(c){return pad+c*step;} function py(r){return pad+r*step;}
+  function render(){
+    let s='<svg class="dg-svg" viewBox="0 0 '+size+' '+size+'">';
+    for(let i=0;i<picked.length-1;i++){ const a=picked[i],b=picked[i+1]; s+='<line class="dg-line" x1="'+px(a%N)+'" y1="'+py((a/N)|0)+'" x2="'+px(b%N)+'" y2="'+py((b/N)|0)+'"/>'; }
+    if(picked.length===3){ const a=picked[2],b=picked[0]; s+='<line class="dg-line" x1="'+px(a%N)+'" y1="'+py((a/N)|0)+'" x2="'+px(b%N)+'" y2="'+py((b/N)|0)+'"/>'; }
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){ const idx=r*N+c; const on=picked.includes(idx); s+='<circle class="dg-dot'+(on?' picked':'')+'" data-idx="'+idx+'" cx="'+px(c)+'" cy="'+py(r)+'" r="9"/>'; }
+    s+='</svg>';
+    document.getElementById('q12-dg').innerHTML=s;
+    document.querySelectorAll('#q12-dg .dg-dot').forEach(d=>d.addEventListener('click',()=>pick(parseInt(d.dataset.idx,10))));
+  }
+  function collinear(a,b,c){ const ax=a%N,ay=(a/N)|0,bx=b%N,by=(b/N)|0,cx=c%N,cy=(c/N)|0; return (bx-ax)*(cy-ay)-(by-ay)*(cx-ax)===0; }
+  function pick(idx){
+    const st=getQState(qid); if(st.solved)return; if(picked.includes(idx))return; if(picked.length>=3)return;
+    picked.push(idx); render();
+    if(picked.length===3){ st.attempts++; const a=picked[0],b=picked[1],c=picked[2];
+      if(!collinear(a,b,c)){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='삼각형을 잘 그렸어요! +'+earn+'점'; updateUI(); }
+      else { st.wrongCount++; fb.classList.add('wrong'); fb.textContent='세 점이 한 줄에 있어요. 다시 그려요!'; }
+    } else { fb.classList.remove('wrong'); fb.textContent=picked.length+'개째 점을 골랐어요'; }
+  }
+  document.getElementById('q12-reset').addEventListener('click',()=>{ const st=getQState(qid); if(st.solved)return; picked=[]; render(); fb.classList.remove('wrong'); fb.textContent='점을 눌러 삼각형을 만들어 보세요'; });
+  render();
+})();
+
+// ═════════════════ 슬라이드별 초기화 ═════════════════
+// 도입·전개 정적 도형
+document.getElementById('r1-tri').innerHTML = polygon(TRI,{size:90});
+document.getElementById('r1-sq').innerHTML = polygon(SQ,{size:90});
+document.getElementById('r1-circ').innerHTML = circle({size:90});
+document.getElementById('r1-tg').innerHTML = tangramFull({size:96,colorByType:true});
+csRender(document.getElementById('r1-cs'), [[0,0,0,'red'],[1,0,0,'yellow'],[1,0,1,'sky']], {view:'front'});
+
+document.getElementById('s3-tri').innerHTML = polygon(TRI,{size:120,showVertex:true});
+document.getElementById('s3-sq').innerHTML = polygon(SQ,{size:120,showVertex:true});
+document.getElementById('s3-circ').innerHTML = circle({size:120});
+
+document.getElementById('s4-tri').innerHTML = polygon(TRI,{size:150,showVertex:true});
+document.getElementById('s4-sq').innerHTML = polygon(SQ,{size:150,showVertex:true});
+
+document.getElementById('s5-circ').innerHTML = circle({size:180,noLine:true});
+
+document.getElementById('s6-tg').innerHTML = tangramFull({size:230,showLabel:true,colorByType:true});
+
+csRender(document.getElementById('s7-cs'), [[0,0,0,'sky'],[1,0,0,'red'],[2,0,0,'sky'],[1,0,1,'yellow']], {view:'front'});
+
+// 정리 슬16 재료
+document.getElementById('m-tri').innerHTML = polygon(TRI,{size:90});
+document.getElementById('m-sq').innerHTML = polygon(SQ,{size:90});
+document.getElementById('m-circ').innerHTML = circle({size:90});
+document.getElementById('m-tg').innerHTML = tangramFull({size:96,colorByType:true});
+
+// q9 — 사각형 고르기
+document.getElementById('q9-o0').innerHTML = polygon(TRI,{size:96});
+document.getElementById('q9-o1').innerHTML = polygon(SQ,{size:96});
+document.getElementById('q9-o2').innerHTML = circle({size:96});
+document.getElementById('q9-o3').innerHTML = polygon(TRI_R,{size:96});
+setupMcq('q9-opts','q9-fb','q9','맞아요! 변과 꼭짓점이 4개인 사각형이에요!');
+
+// q10 — 원 고르기
+document.getElementById('q10-o0').innerHTML = circle({size:96});
+document.getElementById('q10-o1').innerHTML = circle({size:96,rx:0.44,ry:0.24});
+document.getElementById('q10-o2').innerHTML = polygon(SQ,{size:96});
+document.getElementById('q10-o3').innerHTML = polygon(TRI,{size:96});
+setupMcq('q10-opts','q10-fb','q10','맞아요! 어느 쪽에서 봐도 똑같이 둥근 원이에요!');
+
+// q11 — 쌓기나무 개수 (4개, 시점 버튼)
+(function(){ const cubes=[[0,0,0,'wood'],[1,0,0,'wood'],[0,1,0,'wood'],[0,1,1,'wood']];
+  const svg=document.getElementById('q11-cs'); csRender(svg,cubes,{view:'front'}); csViewButtons('q11-views',svg,cubes); })();
+setupPad('q11', 4, 'q11-pad','q11-display','q11-fb','맞아요! 가려진 것까지 모두 4개예요!');
+
+// q13 — 똑같이 쌓기 (바닥 3 + 가운데 위 1 = 4개)
+buildStacker('q13-build','q13-target', [[0,0],[1,0],[2,0]],
+  [[0,0,0,'wood'],[1,0,0,'wood'],[2,0,0,'wood'],[1,0,1,'wood']], 'q13-fb','q13','그림과 똑같이 쌓았어요!');
+
+// q14 — 칠교 집 완성
+buildTangram('q14','q14-tg');
+
+// q15 — 설명에 맞는 모양 (바닥 2 + 왼쪽 위 1 = 3개)
+csOptionMcq('q15-opts', [
+  [[0,0,0,'wood'],[1,0,0,'wood'],[0,0,1,'wood']],
+  [[0,0,0,'wood'],[1,0,0,'wood'],[1,0,1,'wood']],
+  [[0,0,0,'wood'],[1,0,0,'wood'],[2,0,0,'wood']],
+  [[0,0,0,'wood'],[0,0,1,'wood']]
+], 0, 'q15-fb','q15','맞아요! 왼쪽 칸 위에 1개 올라간 모양이에요!');
+
+// 슬17 자기 평가
+document.querySelectorAll('.self-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.self-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent='스스로 확인한 내용이 기록됐어요. 단원을 마쳐요!';
+  });
+});
+
+// 진도 복원
+(function restore(){ try{ const raw=localStorage.getItem(STORAGE_KEY); if(!raw)return; const data=JSON.parse(raw); if(data.cur!=null)cur=Math.min(data.cur,TOTAL-1); if(data.score!=null)score=data.score; document.getElementById('score').textContent='⭐ '+score; }catch(e){} })();
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+updateUI();
+</script>
+</body>
+</html>
