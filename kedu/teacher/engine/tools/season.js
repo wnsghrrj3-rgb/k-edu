@@ -51,6 +51,19 @@
     var lat  = (config.lat!=null)?config.lat:37.5;
     var ui=window.KLab.ui;
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    /* ── 학년 칸 (헌법 3장) — 같은 기울기 무대 공유, 노출(슬라이더)·미션·만약에·모드탭만 칸별 스왑 ──
+       저=사계절 통합(계절 버튼만) / 중=계절과 태양높이(재생+공전) / 고=자전축 기울기 원리(기울기 슬라이더 풀버전). */
+    var GRADES={
+      low:  { modes:['free','mission','quiz'],          showPlay:false, showOrb:false, showTilt:false, mIdx:[0,1,2],       wif:[],                       hint:'계절 버튼을 눌러 봄·여름·가을·겨울 해의 높이를 비교해 봐요.' },
+      mid:  { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:false, mIdx:[0,1,2],       wif:['south'],                hint:'▶ 1년 재생으로 계절마다 해 높이·낮 길이가 달라지는 걸 봐요.' },
+      high: { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:true,  mIdx:[0,1,2,3,4,5], wif:['ura','south','stops'],  hint:'🌐 자전축 기울기를 0으로 내려 보세요 — 계절이 사라질까요?' }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; playing=false; orb=90; tilt=23.5; dayCnt=0; southOn=false;
+      makeWif(); buildUI();
+    }});
+    function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
     var playing=false, alive=true, last=0, spin=0;
     var C={ink:'#1B3A57',sub:'#5a7894',mute:'#8aa0b6',good:'#12B886'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
@@ -79,16 +92,16 @@
     var mStep=0,mDone=false,mLock=false;
     function advanceMission(){
       mLock=false;
-      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      var CM=curMissions(); if(mStep<CM.length-1){ mStep++; if(CM[mStep].set)CM[mStep].set(); }
       else mDone=true;
       updateBars(); missionFoot(); render(); renderStatus();
     }
     function missionFoot(){
-      ui.thinkFoot(el,{foot:'.se-foot',bar:'.se-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+      var CM=curMissions(); ui.thinkFoot(el,{foot:'.se-foot',bar:'.se-bars'},(mode==='mission'&&!mDone&&CM[mStep]&&CM[mStep].type==='think')?CM[mStep]:null,advanceMission);
     }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      var m=curMissions()[mStep]; if(!m||m.type!=='make')return;
       if(m.check()){
         mLock=true; ui.toast(el,true);
         setTimeout(advanceMission,1500);
@@ -96,7 +109,7 @@
     }
     function updateBars(){
       var host=el.querySelector('.se-bars'); if(!host)return;
-      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission'){var CM=curMissions();host.innerHTML=mDone?ui.doneBar():ui.missionBar(CM[mStep].text,mStep,CM.length);}
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
       else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
@@ -121,15 +134,21 @@
         reveal:'계절이 바뀌는 건 기울어진 채 공전하기 때문! 멈추면 그 위치의 계절이 영원히 — 여름에서 멈췄다면 끝나지 않는 여름이에요.',
         tip:'▶ 시간 흐르기 — 날짜가 흘러도 남중고도·계절이 그대로!' }
     };
-    var wif=ui.whatifEngine({
-      scenarios:WHATIF,
-      rebuild:function(){buildUI();},
-      footEl:function(){return el.querySelector('.se-foot');},
-      onSelect:function(k){ playing=false; dayCnt=0; southOn=(k==='south');
-        tilt=(k==='ura')?90:23.5; orb=90; },
-      onPlay:function(){ dayCnt=0; },
-      onExit:function(){ playing=false; dayCnt=0; southOn=false; tilt=23.5; orb=90; }
-    });
+    var wif;
+    function makeWif(){
+      var keys=GRADES[grade].wif, scen={};
+      keys.forEach(function(k){ scen[k]=WHATIF[k]; });
+      wif=ui.whatifEngine({
+        scenarios:scen,
+        rebuild:function(){buildUI();},
+        footEl:function(){return el.querySelector('.se-foot');},
+        onSelect:function(k){ playing=false; dayCnt=0; southOn=(k==='south');
+          tilt=(k==='ura')?90:23.5; orb=90; },
+        onPlay:function(){ dayCnt=0; },
+        onExit:function(){ playing=false; dayCnt=0; southOn=false; tilt=23.5; orb=90; }
+      });
+    }
+    makeWif();
 
     /* ───────────── 퀴즈 (기울어진 지구 장면을 보고 답하기) ───────────── */
     var QUIZ=[
@@ -167,10 +186,10 @@
     function seasonBtns(){return SEASONS.map(function(s){return '<button class="se-sea" data-o="'+s.o+'" style="'+sbtn+'">'+s.l+'</button>';}).join('');}
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode,{whatif:'🌀 만약에'}), bar='', foot='';
       var frozen=(wif.active()&&wif.state.key==='stops');
       var uraOn=(wif.active()&&wif.state.key==='ura');
-      if(mode==='mission')bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission'){var CMB=curMissions();bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length);}
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); }
       el.innerHTML='<style>.se-btn:active,.se-sea:active,.kl-choice:active{transform:translateY(2px);}'
@@ -185,16 +204,16 @@
         + top + '<div class="se-bars">'+bar+'</div>'
         +((mode==='quiz'||(mode==='whatif'&&!wif.active()))?'<div style="display:none;">':'<div>')
         +'<div style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'+seasonBtns()+'</div>'
-        +'<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
+        +(GRADES[grade].showOrb?('<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
           +'<button class="se-btn" data-act="play" style="'+btn+(playing?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+(playing?'■ 멈춤':(frozen?'▶ 시간 흐르기':'▶ 1년 재생'))+'</button>'
           +'<span style="font-size:15px;color:#5a7894;font-weight:800;">공전 위치</span>'
           +'<input class="se-range" type="range" min="0" max="360" step="1" value="'+orb+'" '+(frozen?'disabled':'')+' style="width:min(40vw,280px);'+(frozen?'opacity:.4;':'')+'">'
-        +'</div>'
-        +'<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+        +'</div>'):'')
+        +(GRADES[grade].showTilt?('<div style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
           +'<span style="font-size:15px;color:#E8590C;font-weight:800;">🌐 자전축 기울기</span>'
           +'<input class="se-tilt" type="range" min="0" max="35" step="0.5" value="'+Math.min(tilt,35)+'" '+((frozen||uraOn)?'disabled':'')+' style="width:min(40vw,280px);'+((frozen||uraOn)?'opacity:.4;':'')+'">'
           +'<span class="se-tval" style="font-size:18px;font-weight:800;color:#E8590C;min-width:54px;text-align:center;font-family:inherit;"></span>'
-        +'</div>'
+        +'</div>'):'')
         +'</div>'
         +'<div class="kl-stage-host" style="position:relative;"><div class="se-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'42vh')+';min-height:'+(mode==='quiz'?'260':'320')+'px;background:radial-gradient(120% 120% at 60% 35%,#0D1430 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
           +'<div class="se-sunpath" style="position:absolute;bottom:12px;left:12px;width:226px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
@@ -233,7 +252,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices();
+      initThree(); bind(); bindChoices(); bands.bind(el);
       if(mode==='whatif')wif.bind(el);
       if(mode==='mission')missionFoot();
       render(); renderStatus();
