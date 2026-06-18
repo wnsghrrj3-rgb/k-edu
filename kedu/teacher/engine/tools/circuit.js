@@ -65,15 +65,45 @@
         check:function(r){ return circ==='parallel' && r.mainFlow && r.bb===2; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 미션 재설계 ──
+       저=불 켜기(닫힌 회로) / 중=스위치·끊긴 곳(직렬 전체 영향) / 고=직렬·병렬(밝기·독립성). 직병렬 토글은 고학년만. */
+    var LOW_MISSIONS=[
+      { circ:'series', setup:function(){ sSlots=defS(); sSlots[4]={t:'switch',open:true}; },
+        text:'💡 <b style="color:#7048E8;">스위치를 닫아</b> 전구에 불을 켜 봐요! 전기가 도는 길이 빙 둘러 이어져야 불이 켜져요.',
+        check:function(r){ return r.flow; } },
+      { circ:'series', setup:function(){ sSlots=defS(); },
+        text:'🔋 이번엔 <b style="color:#7048E8;">전구를 하나 더</b> 놓아 봐요 — 길 위에 전구가 둘이어도 불이 들어와요!',
+        check:function(r){ return r.flow && r.L>=2; } }
+    ];
+    var MID_MISSIONS=[
+      { circ:'series', setup:function(){ sSlots=defS(); },
+        text:'🔌 <b style="color:#7048E8;">스위치를 열어</b> 불을 꺼 봐요! 직렬은 한 줄이라, 한 곳만 끊겨도 전구가 전부 꺼져요.',
+        check:function(r){ return r.openSw && !r.flow; } },
+      { circ:'series', setup:function(){ sSlots=defS(); sSlots[4]={t:'switch',open:true}; },
+        text:'✅ 다시 <b style="color:#7048E8;">스위치를 닫아</b> 불을 켜 봐요 — 끊긴 길이 이어지면 전류가 다시 흘러요!',
+        check:function(r){ return r.flow; } }
+    ];
+    var GRADES={
+      low:  { showCirc:false, missions:LOW_MISSIONS, hint:'부품을 골라 빈 자리를 탭해 놓아요. 스위치를 탭하면 여닫을 수 있어요.' },
+      mid:  { showCirc:false, missions:MID_MISSIONS, hint:'스위치를 탭해 여닫아 보세요. 직렬은 한 곳만 끊겨도 전부 꺼져요.' },
+      high: { showCirc:true,  missions:MISSIONS,     hint:'직렬·병렬을 바꿔 가며 밝기와 독립성을 비교해 보세요. 스위치 탭=여닫기, 전지 탭=＋－ 방향.' }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; circ='series'; sSlots=defS();pSlots=defP(); tool='bulb'; buildUI();
+    }});
     function checkMission(r){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check(r)){
+      if(curMissions()[mStep].check(r)){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){
+          var CM=curMissions();
+          if(mStep<CM.length-1){
             mStep++;
-            if(MISSIONS[mStep].circ!==circ){ circ=MISSIONS[mStep].circ; sSlots=defS(); pSlots=defP(); }
+            if(CM[mStep].circ!==circ){ circ=CM[mStep].circ; sSlots=defS(); pSlots=defP(); }
+            if(CM[mStep].setup)CM[mStep].setup();
           } else mDone=true;
           buildUI();
         },1500);
@@ -102,15 +132,15 @@
 
     function buildUI(){
       var pal=TOOLS.map(function(t){return '<button class="cir-tool'+(t.k===tool?' on':'')+'" data-tool="'+t.k+'" style="'+btn+(t.k===tool?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+t.l+'</button>';}).join('');
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', mid='', foot='';
-      var circRow='<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
+      var top=bands.selectorHTML()+ui.modeTabs(['free','mission','quiz'],mode), bar='', mid='', foot='';
+      var circRow=GRADES[grade].showCirc?('<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
           +'<button class="cir-mode'+(circ==='series'?' on':'')+'" data-mode="series" style="'+mbtn+'">직렬</button>'
           +'<button class="cir-mode'+(circ==='parallel'?' on':'')+'" data-mode="parallel" style="'+mbtn+'">병렬</button>'
-        +'</div>';
+        +'</div>'):'';
       var palRow='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:5px;">'+pal
           +'<button class="cir-tool" data-tool="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 처음</button></div>';
-      var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">부품을 골라 빈 자리를 탭해 놓아요. \'스위치\'로 탭=여닫기, \'전지\'로 전지 탭=＋－ 방향 바꾸기.</div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); mid=palRow+hint; }
+      var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">'+GRADES[grade].hint+'</div>';
+      if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); mid=palRow+hint; }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else mid=circRow+palRow+hint;
       el.innerHTML='<style>'
@@ -125,11 +155,11 @@
         +'<div class="cir-status" style="text-align:center;margin-top:9px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0;mDone=false;mLock=false; sSlots=defS();pSlots=defP(); tool='bulb';
-        if(m==='mission')circ=MISSIONS[0].circ;
+        if(m==='mission'){ var fm=curMissions()[0]; circ=fm.circ; sSlots=defS();pSlots=defP(); if(fm.setup)fm.setup(); }
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      bind(); render();
+      bind(); render(); bands.bind(el);
     }
 
     function defs(svg){var d=svgEl('defs',{});d.innerHTML=
