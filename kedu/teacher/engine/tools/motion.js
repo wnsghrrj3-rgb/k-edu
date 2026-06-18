@@ -1,16 +1,19 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 물체의 운동과 속력 (motion) v1  [과학 13호 · 에너지 영역]
-   5학년 물체의 운동. KLab.ui 3모드(자유탐구/미션/퀴즈) 표준.
+   케이랩 도구 모듈 — 물체의 운동과 속력 (motion) v2  [과학 13호 · 에너지 영역]
+   5학년 물체의 운동. KLab.ui 3모드(자유탐구/미션/퀴즈) + 학년칸(헌법 3장).
    디지털 우위: 시간을 1초씩 멈춰 가며 위치 변화를 점으로 남겨 비교 —
    실제 운동장에선 불가능한 "시간 정지 + 자취 보기".
+   ── 학년 칸 (카드 D칸 닻대로) ──
+     저(🌱): 빠르다·느리다 — 누가 더 빠를까. race만, 일상어, 속력식·가속 숨김.
+     중(🌿): 거리·시간 함께 보기 — 멀리 간 게 빠른 걸까. race 중심.
+     고(🌳): 속력 계산 + 등속/가속 구분. race + calc + ★accel(신규).
+        ★고학년 마법 심화: 등속=자취 점 간격 일정 / 가속=점점 벌어짐.
    변수 → 현상 → 발견:
-     ▸ 🏁 빠르기 비교 — 🚶(2m/s)·🚲(5m/s)·🚗(10m/s)가 100m 트랙 경주.
-       ⏭ 1초 지나기로 시간이 갈수록 위치가 변함(=운동), 1초마다 자취 점.
-       같은 시간 → 멀리 간 쪽이 빠름 / 같은 거리(결승선) → 짧은 시간이 빠름.
-     ▸ 🧮 속력 계산 — 카드 클릭하면 속력 = 거리 ÷ 시간 계산식 펼침.
-   미션 4종(운동 확인/같은 시간 비교/결승 기록/속력 계산) + 퀴즈 5문.
+     ▸ 🏁 빠르기 비교 — 🚶(2)·🚲(5)·🚗(10)이 100m 트랙 경주, 1초마다 자취 점.
+     ▸ 🧮 속력 계산(고) — 카드 클릭, 속력 = 거리 ÷ 시간 식 펼침.
+     ▸ 🚀 등속/가속(고, 신규) — 등속차 vs 가속로켓, 자취 점 간격으로 가속 발견.
    - 의존: window.KLab (순수 SVG + requestAnimationFrame)
-   - config: { mode:"free"|"mission"|"quiz" }
+   - config: { mode:"free"|"mission"|"quiz", grade:"low"|"mid"|"high" }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
@@ -18,7 +21,7 @@
     var ui = window.KLab.ui;
     var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
     var raf = null, lastTs = null;
-    var C = { ink:'#1B3A57', sub:'#5a7894', blue:'#1565C0', org:'#FF8A3D', good:'#12B886', vio:'#7048E8', track:'#E7F0F9' };
+    var C = { ink:'#1B3A57', sub:'#5a7894', blue:'#1565C0', org:'#FF8A3D', good:'#12B886', vio:'#7048E8', track:'#E7F0F9', rocket:'#E8590C' };
     var btn = 'font-size:20px;padding:11px 16px;border-radius:14px;border:3px solid;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
 
@@ -27,12 +30,58 @@
                 {k:'bike', ic:'🚲', nm:'자전거', v:5,  col:'#1565C0'},
                 {k:'car',  ic:'🚗', nm:'자동차', v:10, col:'#FF8A3D'} ];
     var DIST = 100;                       // 결승선(m)
-    var exp;                              // 'race' | 'calc'
-    var mo, sp;
+    var ACC_A = 1.3;                      // 가속 로켓 가속도 (s = 0.5·a·t²)
+    var exp;                              // 'race' | 'calc' | 'accel'
+    var mo, sp, ac;
     function moReset(){ mo={ t:0, auto:false, fin:{walk:null,bike:null,car:null}, clickedFastest:false }; if(raf){cancelAnimationFrame(raf);raf=null;} }
     function spReset(){ sp={ seen:{walk:false,bike:false,car:false} }; }
-    function resetAll(){ exp='race'; moReset(); spReset(); }
+    function acReset(){ ac={ t:0, auto:false, finC:null, finR:null }; if(raf){cancelAnimationFrame(raf);raf=null;} }
+    function resetAll(){ exp=GRADES?GRADES[grade].exps[0]:'race'; moReset(); spReset(); acReset(); }
+
+    /* ───────────── 미션 (학년칸별) ───────────── */
+    // 고(🌳) — 운동 확인 / 같은 시간 비교 / 결승 기록 / 속력 계산 / 등속·가속
+    var HIGH_MISSIONS=[
+      { exp:'race', text:'⏭ <b style="color:#7048E8;">1초 지나기</b>를 눌러 봐요 — 시간이 가면 <b style="color:#7048E8;">위치가 변하죠</b>? 이게 운동!',
+        check:function(){ return exp==='race' && mo.t>=2; } },
+      { exp:'race', text:'<b style="color:#7048E8;">5초</b>가 넘었을 때, <b style="color:#7048E8;">같은 시간</b> 동안 가장 멀리 간 물체를 클릭!',
+        check:function(){ return exp==='race' && mo.clickedFastest; } },
+      { exp:'race', text:'시간을 계속 보내 셋 모두 <b style="color:#7048E8;">100m 결승선</b>을 통과시키고 기록을 비교해 봐요!',
+        check:function(){ return exp==='race' && mo.fin.walk!==null && mo.fin.bike!==null && mo.fin.car!==null; } },
+      { exp:'calc', text:'🧮 카드 셋을 모두 눌러 <b style="color:#7048E8;">속력 = 거리 ÷ 시간</b> 계산을 확인해 봐요!',
+        check:function(){ return exp==='calc' && sp.seen.walk && sp.seen.bike && sp.seen.car; } },
+      { exp:'accel', text:'🚀 시간을 보내며 <b style="color:#7048E8;">자취 점 간격</b>을 봐요 — 점점 벌어지는 쪽이 <b style="color:#7048E8;">점점 빨라지는(가속)</b> 거예요!',
+        check:function(){ return exp==='accel' && ac.t>=8; } }
+    ];
+    // 중(🌿) — 운동 / 같은 시간 거리 비교 / 결승 기록(거리·시간 함께)
+    var MID_MISSIONS=[
+      { exp:'race', text:'⏭ <b style="color:#7048E8;">1초 지나기</b>로 시간을 보내 봐요 — 위치가 변하죠? 이게 <b style="color:#7048E8;">운동</b>이에요!',
+        check:function(){ return exp==='race' && mo.t>=2; } },
+      { exp:'race', text:'<b style="color:#7048E8;">같은 시간</b> 동안 가장 <b style="color:#7048E8;">멀리</b> 간 물체를 클릭! 멀리 갔다 = 빠르다.',
+        check:function(){ return exp==='race' && mo.clickedFastest; } },
+      { exp:'race', text:'셋 다 <b style="color:#7048E8;">100m 결승선</b>을 통과시켜 봐요 — 같은 거리면 <b style="color:#7048E8;">시간이 짧은</b> 쪽이 빠른 거예요!',
+        check:function(){ return exp==='race' && mo.fin.walk!==null && mo.fin.bike!==null && mo.fin.car!==null; } }
+    ];
+    // 저(🌱) — 빠르다·느리다, 누가 빠를까
+    var LOW_MISSIONS=[
+      { exp:'race', text:'⏭ <b style="color:#7048E8;">1초 지나기</b>를 눌러 봐요 — 셋이 함께 출발해요! 누가 가장 빠른가요?',
+        check:function(){ return exp==='race' && mo.t>=3; } },
+      { exp:'race', text:'가장 <b style="color:#7048E8;">빠른 🚗 자동차</b>를 콕 눌러 봐요! 제일 멀리 가 있죠?',
+        check:function(){ return exp==='race' && mo.clickedFastest; } }
+    ];
+
+    /* ── GRADES 테이블 (헌법 3장) ── */
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['race'] },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['race'] },
+      high: { modes:['free','mission','quiz'], missions:HIGH_MISSIONS,exps:['race','calc','accel'] }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    function curExps(){ return GRADES[grade].exps; }
     resetAll();
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; resetAll(); build();
+    }});
 
     function distOf(o){ return Math.min(DIST, o.v*mo.t); }
     function stepTime(dt){
@@ -41,63 +90,67 @@
       OBJ.forEach(function(o){ if(mo.fin[o.k]===null && o.v*mo.t>=DIST) mo.fin[o.k]=Math.ceil(DIST/o.v); });
       renderScene(); renderStatus(); checkMission();
     }
+    /* 가속 무대: 등속차(v=8) vs 가속로켓(s=0.5·a·t²) */
+    function accDistCar(t){ return Math.min(DIST, 8*t); }
+    function accDistRocket(t){ return Math.min(DIST, 0.5*ACC_A*t*t); }
+    function stepAccel(dt){
+      if(ac.finC!==null&&ac.finR!==null){ ac.auto=false; return; }
+      ac.t=Math.round((ac.t+dt)*10)/10;
+      if(ac.finC===null && 8*ac.t>=DIST) ac.finC=Math.ceil(DIST/8);
+      if(ac.finR===null && 0.5*ACC_A*ac.t*ac.t>=DIST) ac.finR=Math.round(Math.sqrt(DIST*2/ACC_A)*10)/10;
+      renderScene(); renderStatus(); checkMission();
+    }
+    function curStep(dt){ if(exp==='accel')stepAccel(dt); else stepTime(dt); }
     function toggleAuto(){
-      mo.auto=!mo.auto;
-      if(mo.auto){ lastTs=null; raf=requestAnimationFrame(tick); }
+      var st=(exp==='accel')?ac:mo;
+      st.auto=!st.auto;
+      if(st.auto){ lastTs=null; raf=requestAnimationFrame(tick); }
       else if(raf){ cancelAnimationFrame(raf); raf=null; }
       renderCtrl();
     }
     function tick(ts){
-      if(!mo.auto)return;
-      if(lastTs!=null){ stepTime(Math.min(0.1,(ts-lastTs)/1000*2)); } // 실제 1초 = 시뮬 2초
+      var st=(exp==='accel')?ac:mo;
+      if(!st.auto)return;
+      if(lastTs!=null){ curStep(Math.min(0.1,(ts-lastTs)/1000*2)); } // 실제 1초 = 시뮬 2초
       lastTs=ts;
-      if(mo.auto)raf=requestAnimationFrame(tick);
+      if(st.auto)raf=requestAnimationFrame(tick);
     }
     function clickObj(k){
       if(exp==='race'){
         if(mo.t<=0){ ui.toast(el,false,'아직 출발 전이에요 — ⏭ 시간을 보내 봐요!'); return; }
         var o=OBJ.filter(function(x){return x.k===k;})[0];
         var d=distOf(o), tt=(mo.fin[k]!==null)?mo.fin[k]:mo.t;
-        ui.toast(el,true,o.ic+' 지금까지 '+Math.round(d)+'m — '+(Math.round(d/tt*10)/10)+' m/s');
-        if(k==='car'&&mo.t>=5)mo.clickedFastest=true;
-        else if(mode==='mission'&&mStep===1&&mo.t>=5&&!mLock)ui.toast(el,false,'가장 멀리 간 물체를 찾아 봐요!');
+        if(grade==='low') ui.toast(el,true,o.ic+' 지금 '+Math.round(d)+'m 갔어요!');
+        else ui.toast(el,true,o.ic+' 지금까지 '+Math.round(d)+'m — '+(Math.round(d/tt*10)/10)+' m/s');
+        var thr=(grade==='low')?3:5;
+        if(k==='car'&&mo.t>=thr)mo.clickedFastest=true;
+        else if(mode==='mission'&&mStep===1&&mo.t>=thr&&!mLock)ui.toast(el,false,'가장 멀리 간 물체를 찾아 봐요!');
         checkMission();
-      } else {
+      } else if(exp==='calc') {
         sp.seen[k]=true; renderScene(); renderStatus(); checkMission();
       }
     }
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS=[
-      { exp:'race', text:'⏭ <b style="color:#7048E8;">1초 지나기</b>를 눌러 봐요 — 시간이 가면 <b style="color:#7048E8;">위치가 변하죠</b>? 이게 운동!',
-        check:function(){ return exp==='race' && mo.t>=2; } },
-      { exp:'race', text:'<b style="color:#7048E8;">5초</b>가 넘었을 때, <b style="color:#7048E8;">같은 시간</b> 동안 가장 멀리 간 물체를 클릭!',
-        check:function(){ return exp==='race' && mo.clickedFastest; } },
-      { exp:'race', text:'시간을 계속 보내 셋 모두 <b style="color:#7048E8;">100m 결승선</b>을 통과시키고 기록을 비교해 봐요!',
-        check:function(){ return exp==='race' && mo.fin.walk!==null && mo.fin.bike!==null && mo.fin.car!==null; } },
-      { exp:'calc', text:'🧮 카드 셋을 모두 눌러 <b style="color:#7048E8;">속력 = 거리 ÷ 시간</b> 계산을 확인해 봐요!',
-        check:function(){ return exp==='calc' && sp.seen.walk && sp.seen.bike && sp.seen.car; } }
-    ];
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<mISSlen()-1){
+          if(mStep<M.length-1){
             mStep++;
-            var keep=(MISSIONS[mStep].exp===exp); // 1→2→3은 같은 경주 이어서
-            exp=MISSIONS[mStep].exp;
-            if(!keep){ moReset(); spReset(); }
+            var keep=(M[mStep].exp===exp);
+            exp=M[mStep].exp;
+            if(!keep){ moReset(); spReset(); acReset(); }
           } else mDone=true;
           build();
         },1500);
       }
     }
-    function mISSlen(){ return MISSIONS.length; }
 
-    /* ───────────── 퀴즈 ───────────── */
+    /* ───────────── 퀴즈 (중·고) ───────────── */
     var QUIZ=[
       { pic:'race', q:'시간이 지남에 따라 물체의 위치가 변하는 것을 무엇이라고 할까요?', ch:['운동','정지','속력'], a:0 },
       { pic:'race', q:'같은 거리를 이동했을 때 더 빠른 물체는?', ch:['걸린 시간이 짧은 물체','걸린 시간이 긴 물체','늦게 출발한 물체'], a:0 },
@@ -118,27 +171,29 @@
 
     /* ───────────── UI ───────────── */
     function expTabs(){
-      var L=[['race','🏁 빠르기 비교'],['calc','🧮 속력 계산']];
+      var EXPS=curExps(); if(EXPS.length<=1)return '<div style="height:2px;"></div>';
+      var LAB={race:'🏁 빠르기 비교', calc:'🧮 속력 계산', accel:'🚀 등속·가속'};
       return '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-        + L.map(function(x){ var on=(exp===x[0]);
-            return '<button class="mt-exp" data-e="'+x[0]+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.blue+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
-              +'background:'+(on?C.blue:'#fff')+';color:'+(on?'#fff':C.blue)+';">'+x[1]+'</button>'; }).join('')
+        + EXPS.map(function(e){ var on=(exp===e);
+            return '<button class="mt-exp" data-e="'+e+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.blue+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
+              +'background:'+(on?C.blue:'#fff')+';color:'+(on?'#fff':C.blue)+';">'+LAB[e]+'</button>'; }).join('')
         + '</div>';
     }
     function ctrlRow(){
-      if(exp!=='race')return '<div style="height:4px;"></div>';
+      if(exp==='calc')return '<div style="height:4px;"></div>';
       return '<div class="mt-ctrl" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'+ctrlBtns()+'</div>';
     }
     function ctrlBtns(){
+      var st=(exp==='accel')?ac:mo;
       return '<button class="mt-btn" data-act="step" style="'+btn+'background:#fff;color:'+C.blue+';border-color:'+C.blue+';">⏭ 1초 지나기</button>'
-        +'<button class="mt-btn" data-act="auto" style="'+btn+(mo.auto?'background:'+C.org+';color:#fff;border-color:'+C.org:'background:#fff;color:'+C.org+';border-color:'+C.org)+';">'+(mo.auto?'⏸ 멈추기':'▶ 자동 재생')+'</button>'
+        +'<button class="mt-btn" data-act="auto" style="'+btn+(st.auto?'background:'+C.org+';color:#fff;border-color:'+C.org:'background:#fff;color:'+C.org+';border-color:'+C.org)+';">'+(st.auto?'⏸ 멈추기':'▶ 자동 재생')+'</button>'
         +'<button class="mt-btn" data-act="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 다시 출발선</button>';
     }
     function renderCtrl(){ var c=el.querySelector('.mt-ctrl'); if(c){ c.innerHTML=ctrlBtns(); bindBtns(); } }
 
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=expTabs()+ctrlRow();
       el.innerHTML='<style>.mt-btn:active,.mt-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}</style>'
@@ -148,11 +203,11 @@
         +'<div class="mt-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0; mDone=false; mLock=false; resetAll();
-        if(m==='mission')exp=MISSIONS[0].exp;
+        if(m==='mission')exp=curMissions()[0].exp;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      renderScene(); bindBtns(); bindStage(); renderStatus();
+      renderScene(); bindBtns(); bindStage(); bands.bind(el); renderStatus();
     }
 
     /* ───────────── 무대 ───────────── */
@@ -163,29 +218,26 @@
       stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 900 460',width:'100%',height:'100%'});
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp;
-      if(pic==='race')drawRace(svg); else drawCalc(svg);
+      if(pic==='race')drawRace(svg);
+      else if(pic==='accel')drawAccel(svg);
+      else drawCalc(svg);
       stage.appendChild(svg);
     }
 
     function drawRace(svg){
       var g=svgEl('g',{}); svg.appendChild(g);
       var h='';
-      // 시계
       h+='<rect x="370" y="14" width="160" height="44" rx="14" fill="#fff" stroke="'+C.ink+'" stroke-width="3"/>'
         +'<text x="450" y="45" text-anchor="middle" font-size="24" font-weight="800" fill="'+C.ink+'" font-family="inherit">⏱ '+Math.floor(mo.t)+'초</text>';
-      // 거리 눈금
       for(var d=0;d<=DIST;d+=20){
         h+='<line x1="'+xOf(d)+'" y1="80" x2="'+xOf(d)+'" y2="430" stroke="#C6D8EA" stroke-width="2" stroke-dasharray="4 7"/>'
           +'<text x="'+xOf(d)+'" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="'+C.sub+'" font-family="inherit">'+d+'m</text>';
       }
-      // 결승선
       h+='<line x1="'+xOf(DIST)+'" y1="80" x2="'+xOf(DIST)+'" y2="430" stroke="'+C.ink+'" stroke-width="5"/>'
         +'<text x="'+xOf(DIST)+'" y="450" text-anchor="middle" font-size="17" font-weight="800" fill="'+C.ink+'" font-family="inherit">🏁 결승</text>';
-      // 레인
       OBJ.forEach(function(o,i){
         var y=120+i*110, d=distOf(o);
         h+='<rect x="'+(X0-60)+'" y="'+(y-34)+'" width="'+(XW+90)+'" height="72" rx="18" fill="'+C.track+'"/>';
-        // 자취 점(1초마다 위치)
         for(var k=1;k<=Math.floor(mo.t);k++){
           var dk=Math.min(DIST,o.v*k);
           h+='<circle cx="'+xOf(dk)+'" cy="'+(y+24)+'" r="4.5" fill="'+o.col+'" opacity="0.55"/>';
@@ -193,10 +245,45 @@
         }
         h+='<text x="'+xOf(d)+'" y="'+(y+12)+'" text-anchor="middle" font-size="46" font-family="inherit" class="mt-obj" data-k="'+o.k+'" style="cursor:pointer;">'+o.ic+'</text>'
           +'<text x="'+(X0-58)+'" y="'+(y+8)+'" font-size="17" font-weight="800" fill="'+o.col+'" font-family="inherit">'+o.nm+'</text>';
-        // 기록
         if(mo.fin[o.k]!==null){
           h+='<rect x="'+(xOf(DIST)+8)+'" y="'+(y-18)+'" width="92" height="40" rx="11" fill="#fff" stroke="'+o.col+'" stroke-width="3"/>'
             +'<text x="'+(xOf(DIST)+54)+'" y="'+(y+9)+'" text-anchor="middle" font-size="18" font-weight="800" fill="'+o.col+'" font-family="inherit">'+mo.fin[o.k]+'초!</text>';
+        }
+      });
+      g.innerHTML=h;
+    }
+
+    /* 등속/가속 무대 (고학년 신규) */
+    function drawAccel(svg){
+      var g=svgEl('g',{}); svg.appendChild(g);
+      var h='';
+      h+='<rect x="370" y="14" width="160" height="44" rx="14" fill="#fff" stroke="'+C.ink+'" stroke-width="3"/>'
+        +'<text x="450" y="45" text-anchor="middle" font-size="24" font-weight="800" fill="'+C.ink+'" font-family="inherit">⏱ '+Math.floor(ac.t)+'초</text>';
+      for(var d=0;d<=DIST;d+=20){
+        h+='<line x1="'+xOf(d)+'" y1="80" x2="'+xOf(d)+'" y2="430" stroke="#C6D8EA" stroke-width="2" stroke-dasharray="4 7"/>'
+          +'<text x="'+xOf(d)+'" y="76" text-anchor="middle" font-size="15" font-weight="800" fill="'+C.sub+'" font-family="inherit">'+d+'m</text>';
+      }
+      h+='<line x1="'+xOf(DIST)+'" y1="80" x2="'+xOf(DIST)+'" y2="430" stroke="'+C.ink+'" stroke-width="5"/>'
+        +'<text x="'+xOf(DIST)+'" y="450" text-anchor="middle" font-size="17" font-weight="800" fill="'+C.ink+'" font-family="inherit">🏁 결승</text>';
+      var LANES=[
+        {ic:'🚗', nm:'등속 자동차', col:C.org,    dist:accDistCar,    fin:ac.finC, tag:'간격 일정'},
+        {ic:'🚀', nm:'가속 로켓',   col:C.rocket, dist:accDistRocket, fin:ac.finR, tag:'점점 벌어짐'}
+      ];
+      LANES.forEach(function(o,i){
+        var y=150+i*150, d=o.dist(ac.t);
+        h+='<rect x="'+(X0-60)+'" y="'+(y-40)+'" width="'+(XW+90)+'" height="84" rx="18" fill="'+C.track+'"/>';
+        // 자취 점 — 등속은 균일, 가속은 벌어짐
+        for(var k=1;k<=Math.floor(ac.t);k++){
+          var dk=o.dist(k);
+          h+='<circle cx="'+xOf(dk)+'" cy="'+(y+28)+'" r="5" fill="'+o.col+'" opacity="0.6"/>';
+          if(dk>=DIST)break;
+        }
+        h+='<text x="'+xOf(d)+'" y="'+(y+12)+'" text-anchor="middle" font-size="46" font-family="inherit">'+o.ic+'</text>'
+          +'<text x="'+(X0-58)+'" y="'+(y-2)+'" font-size="16" font-weight="800" fill="'+o.col+'" font-family="inherit">'+o.nm+'</text>'
+          +'<text x="'+(X0-58)+'" y="'+(y+18)+'" font-size="13" font-weight="800" fill="'+C.sub+'" font-family="inherit">자취 '+o.tag+'</text>';
+        if(o.fin!==null){
+          h+='<rect x="'+(xOf(DIST)+8)+'" y="'+(y-18)+'" width="96" height="40" rx="11" fill="#fff" stroke="'+o.col+'" stroke-width="3"/>'
+            +'<text x="'+(xOf(DIST)+56)+'" y="'+(y+9)+'" text-anchor="middle" font-size="17" font-weight="800" fill="'+o.col+'" font-family="inherit">'+o.fin+'초!</text>';
         }
       });
       g.innerHTML=h;
@@ -226,11 +313,21 @@
     function renderStatus(){
       var s=el.querySelector('.mt-status'); if(!s)return;
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp, msg;
-      if(pic==='race'){
+      if(pic==='accel'){
+        if(ac.finC!==null&&ac.finR!==null) msg='<span style="color:'+C.good+';font-size:19px;">🚀 가속 로켓이 역전! <b>등속</b>은 자취 점 간격이 일정, <b>가속</b>은 점점 벌어져요 — 점점 빨라진다는 뜻!</span>';
+        else if(ac.t>0) msg='<span style="color:'+C.ink+';font-size:19px;">'+Math.floor(ac.t)+'초 — 자취 점을 봐요! 🚗는 간격 일정, 🚀는 점점 벌어지죠?</span>';
+        else msg='<span style="color:'+C.sub+';font-size:19px;">⏭ 시간을 보내며 두 자취의 <b>점 간격</b>을 비교해 봐요 — 일정 vs 벌어짐!</span>';
+      } else if(pic==='race'){
         var fin=OBJ.filter(function(o){return mo.fin[o.k]!==null;}).length;
-        if(fin===3) msg='<span style="color:'+C.good+';font-size:19px;">기록 비교 — 같은 거리(100m), 시간이 짧을수록 빠른 거예요!</span>';
-        else if(mo.t>0) msg='<span style="color:'+C.ink+';font-size:19px;">'+Math.floor(mo.t)+'초 — 같은 시간인데 간 거리가 다르죠? 물체를 눌러 확인!</span>';
-        else msg='<span style="color:'+C.sub+';font-size:19px;">⏭ 시간을 보내면 위치가 변해요 — 이게 바로 운동!</span>';
+        if(grade==='low'){
+          if(fin===3) msg='<span style="color:'+C.good+';font-size:19px;">🚗 자동차가 가장 빨라요 — 가장 멀리, 가장 빨리 도착했죠?</span>';
+          else if(mo.t>0) msg='<span style="color:'+C.ink+';font-size:19px;">'+Math.floor(mo.t)+'초 — 🚗 자동차가 제일 앞서가요! 가장 빠른 거예요.</span>';
+          else msg='<span style="color:'+C.sub+';font-size:19px;">⏭ 시간을 보내면 셋이 달려요 — 누가 빠를까요?</span>';
+        } else {
+          if(fin===3) msg='<span style="color:'+C.good+';font-size:19px;">기록 비교 — 같은 거리(100m), 시간이 짧을수록 빠른 거예요!</span>';
+          else if(mo.t>0) msg='<span style="color:'+C.ink+';font-size:19px;">'+Math.floor(mo.t)+'초 — 같은 시간인데 간 거리가 다르죠? 거리와 시간을 함께 봐요!</span>';
+          else msg='<span style="color:'+C.sub+';font-size:19px;">⏭ 시간을 보내면 위치가 변해요 — 이게 바로 운동!</span>';
+        }
       } else {
         var n=(sp.seen.walk?1:0)+(sp.seen.bike?1:0)+(sp.seen.car?1:0);
         msg='<span style="color:'+(n===3?C.good:C.sub)+';font-size:19px;">'+(n===3?'같은 시간(5초)이면 거리만 비교해도 빠르기를 알 수 있어요!':'카드를 눌러 속력을 계산해 봐요 ('+n+'/3)')+'</span>';
@@ -241,14 +338,14 @@
     /* ───────────── 바인딩 ───────────── */
     function bindBtns(){
       el.querySelectorAll('.mt-exp').forEach(function(b){
-        b.addEventListener('click',function(){ exp=b.dataset.e; moReset(); build(); });
+        b.addEventListener('click',function(){ exp=b.dataset.e; moReset(); spReset(); acReset(); build(); });
       });
       el.querySelectorAll('.mt-btn').forEach(function(b){
         b.addEventListener('click',function(){
           var a=b.dataset.act;
-          if(a==='step')stepTime(1);
+          if(a==='step')curStep(1);
           else if(a==='auto')toggleAuto();
-          else if(a==='reset'){ moReset(); build(); }
+          else if(a==='reset'){ if(exp==='accel')acReset(); else moReset(); build(); }
         });
       });
       el.querySelectorAll('.kl-choice').forEach(function(b){
