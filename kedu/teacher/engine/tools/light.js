@@ -42,13 +42,27 @@
         check:function(){ if(exp!=='mirror')return false; var r=centralReflect(); return !!r && r.ry>0.4; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=그림자 만들기 / 중=광원 위치와 그림자 크기(직진) / 고=거울 반사(입사각=반사각). 그림자/거울 토글은 고학년만. */
+    var GRADES={
+      low:  { mIdx:[0],         showExp:false },
+      mid:  { mIdx:[0,1],       showExp:false },
+      high: { mIdx:[0,1,2,3],   showExp:true  }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; exp='shadow';
+      src={x:130,y:200}; obj={x:430,y:230,h:150}; mir={x:540,y:270,ang:-0.78,len:220};
+      buildUI();
+    }});
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      if(curMissions()[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; exp=MISSIONS[mStep].exp; } else mDone=true;
+          var CM=curMissions(); if(mStep<CM.length-1){ mStep++; exp=CM[mStep].exp; } else mDone=true;
           buildUI();
         },1500);
       }
@@ -76,15 +90,15 @@
 
     function buildUI(){
       var rot = exp==='mirror' ? '<button class="lt-btn" data-act="rot" style="'+btn+'background:#fff;color:#7048E8;">↻ 거울 돌리기</button>' : '';
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
-      var expRow='<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
+      var top=bands.selectorHTML()+ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var expRow=GRADES[grade].showExp?('<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;">'
           +'<button class="lt-mode'+(exp==='shadow'?' on':'')+'" data-mode="shadow" style="'+mbtn+'">그림자</button>'
           +'<button class="lt-mode'+(exp==='mirror'?' on':'')+'" data-mode="mirror" style="'+mbtn+'">거울 반사</button>'
           +(rot?'<span style="width:6px;"></span>'+rot:'')
-        +'</div>';
+        +'</div>'):(rot?'<div style="display:flex;justify-content:center;margin-bottom:7px;">'+rot+'</div>':'');
       var hint='<div class="lt-hint" style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;"></div>';
       var mid=expRow+hint;
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); mid=(exp==='mirror'&&rot?'<div style="display:flex;justify-content:center;margin-bottom:7px;">'+rot+'</div>':''); }
+      if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); mid=(exp==='mirror'&&rot?'<div style="display:flex;justify-content:center;margin-bottom:7px;">'+rot+'</div>':''); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); mid=''; foot=ui.choices(quizChoices()); }
       el.innerHTML='<style>.lt-btn:active,.lt-mode:active,.kl-choice:active{transform:translateY(2px);}.lt-mode.on{background:#1565C0 !important;color:#fff !important;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
@@ -96,14 +110,14 @@
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0;mDone=false;mLock=false;
         src={x:130,y:200}; obj={x:430,y:230,h:150}; mir={x:540,y:270,ang:-0.78,len:220};
-        if(m==='mission')exp=MISSIONS[0].exp;
+        if(m==='mission')exp=curMissions()[0].exp;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
       var hh=el.querySelector('.lt-hint'); if(hh)hh.textContent = exp==='shadow'
         ? '💡 전구와 물체를 끌어 옮겨요. 빛이 곧게 가다 물체에 막히면 그림자가 생겨요.'
         : '💡 전구를 끌어 옮기고 거울을 돌려요. 빛이 거울에 부딪히면 입사각=반사각으로 튕겨요.';
-      bind(); render();
+      bind(); render(); bands.bind(el);
     }
 
     function sun(svg,x,y){var g=svgEl('g',{class:'lt-grab','data-grab':'src'});
