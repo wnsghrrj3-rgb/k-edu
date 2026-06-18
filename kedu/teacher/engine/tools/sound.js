@@ -20,13 +20,14 @@
     var ui=window.KLab.ui;
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var amp=config.amp||3, freq=config.freq||3, playing=false, raf=null, ph=0;
+    var medium='air', triedVacuum=false;   // 고학년 매질(공기/진공) — 진공이면 무음
     var actx=null, osc=null, gain=null, lastK=null;
     var btn='font-size:22px;padding:11px 20px;border-radius:14px;border:3px solid #7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=900,VBH=460, SPK={x:135,y:230}, X0=235, X1=850, MID=230;
 
     function hz(){return 200+freq*80;}
-    function vol(){return amp*0.04;}
+    function vol(){return medium==='vacuum'?0:amp*0.04;}
 
     /* ───────────── 미션 ───────────── */
     var MISSIONS=[
@@ -40,13 +41,38 @@
         check:function(){ return freq<=1; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=떨림이 소리 / 중=크기·높이 분리(진폭/진동수) / 고=매질·진공(소리는 무엇을 타고 오나, 매질 기능 신규). */
+    var LOW_MISSIONS=[
+      { text:'🥁 ▶ <b style="color:#7048E8;">소리 듣기</b>를 눌러, 소리가 날 때 파형이 떨리는 걸 봐요! 떨림이 곧 소리예요.',
+        check:function(){ return playing; } },
+      { text:'🔊 <b style="color:#7048E8;">진폭(크기) 슬라이더</b>를 올려 큰 소리를 만들어 봐요 — 떨림이 더 커져요!',
+        check:function(){ return amp>=4; } }
+    ];
+    var MEDIUM_MISSIONS=[
+      { text:'🌌 <b style="color:#7048E8;">매질을 진공</b>으로 바꾸고 ▶ 소리를 들어봐요 — 소리가 들릴까요?',
+        check:function(){ return medium==='vacuum' && triedVacuum; } },
+      { text:'💨 다시 <b style="color:#7048E8;">공기</b>로 바꿔 봐요 — 소리는 공기(매질)를 타고 우리 귀에 와요!',
+        check:function(){ return medium==='air' && triedVacuum; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],         missions:LOW_MISSIONS,                  showMedium:false },
+      mid:  { modes:['free','mission','quiz'],  missions:MISSIONS,                      showMedium:false },
+      high: { modes:['free','mission','quiz'],  missions:MISSIONS.concat(MEDIUM_MISSIONS), showMedium:true }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; amp=3; freq=3; medium='air'; triedVacuum=false; lastK=null;
+      buildUI();
+    }});
     function checkMissionStep(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      if(curMissions()[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          if(mStep<curMissions().length-1)mStep++; else mDone=true;
           buildUI();
         },1500);
       }
@@ -73,13 +99,16 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', foot='';
       var ctrl='<div style="display:flex;gap:18px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
           +'<span class="sd-lab">소리 크기(진폭)</span><input class="sd-range" data-k="amp" type="range" min="1" max="5" value="'+amp+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="amp">'+amp+'/5</span>'
           +'<span class="sd-lab">소리 높이(진동수)</span><input class="sd-range" data-k="freq" type="range" min="1" max="8" value="'+freq+'" style="width:min(26vw,170px);"><span class="sd-val" data-v="freq">'+freq+'/8</span>'
           +'<button class="sd-btn" data-act="play" style="'+btn+(playing?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">'+(playing?'■ 멈춤':'▶ 소리 듣기')+'</button>'
+          +(GRADES[grade].showMedium?('<span style="width:6px;"></span>'
+            +'<button class="sd-med" data-med="air" style="font-size:18px;padding:9px 14px;border-radius:13px;border:3px solid #15803D;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'+(medium==='air'?'background:#15803D;color:#fff;':'background:#fff;color:#15803D;')+'">💨 공기</button>'
+            +'<button class="sd-med" data-med="vacuum" style="font-size:18px;padding:9px 14px;border-radius:13px;border:3px solid #1E40AF;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'+(medium==='vacuum'?'background:#1E40AF;color:#fff;':'background:#fff;color:#1E40AF;')+'">🌌 진공</button>'):'')
         +'</div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
+      if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl='<div style="display:flex;justify-content:center;margin-bottom:8px;"><button class="sd-btn" data-act="play" style="'+btn+(playing?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">'+(playing?'■ 멈춤':'▶ 소리 듣기')+'</button></div>'; foot=ui.choices(quizChoices()); }
       el.innerHTML='<style>.sd-btn:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 22px !important;}'
@@ -92,11 +121,11 @@
         + foot
         +'<div class="sd-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;color:'+C.sub+';font-size:18px;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; amp=3; freq=3; lastK=null;
+        mode=m; mStep=0;mDone=false;mLock=false; amp=3; freq=3; medium='air'; triedVacuum=false; lastK=null;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      drawStage(); bind(); if(!raf)loop(); renderStatus(); updateAudio();
+      drawStage(); bind(); bands.bind(el); if(!raf)loop(); renderStatus(); updateAudio();
     }
 
     var stage, waveEl, coneEl, ringEls=[];
@@ -123,13 +152,15 @@
       if(waveEl)waveEl.setAttribute('d',d);
       drawCone(Math.sin(t*3)*amp*0.8);
       for(var i=0;i<ringEls.length;i++){var prog=((t*8 + i*40)% 160)/160; var r=prog*180;
-        ringEls[i].setAttribute('r',r.toFixed(1));ringEls[i].setAttribute('stroke-opacity',(0.5*(1-prog)*(amp/5)).toFixed(2));}
+        ringEls[i].setAttribute('r',r.toFixed(1));ringEls[i].setAttribute('stroke-opacity',(medium==='vacuum'?0:0.5*(1-prog)*(amp/5)).toFixed(2));}
       raf=requestAnimationFrame(loop);
     }
 
     function renderStatus(){
       var s=el.querySelector('.sd-status');
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;">떨리는 파형을 잘 보고 (들어 보고) 답을 골라요!</div>'; return; }
+      if(medium==='vacuum'){ s.innerHTML='<div style="font-size:20px;color:#1E40AF;">🌌 진공 — 소리가 안 들려요! 소리는 공기 같은 <b>매질</b>이 있어야 떨림이 전달돼요. 진공에는 전달할 것이 없어요.</div>'; checkMissionStep(); return; }
+      if(grade==='low'){ s.innerHTML='<div style="font-size:19px;">🥁 소리가 날 때 파형이 <b>떨려요(진동)</b> — 이 떨림이 바로 소리예요! 크게 떨릴수록 큰 소리.</div>'; checkMissionStep(); return; }
       var big=amp>=4?'큰':(amp<=2?'작은':'보통'), high=freq>=6?'높은':(freq<=2?'낮은':'보통');
       var base='파형이 '+(amp>=4?'크게':(amp<=2?'작게':'적당히'))+' '+(freq>=6?'촘촘하게':(freq<=2?'천천히':'적당히'))+' 떨려요 — '+big+' 소리·'+high+' 소리. <b>진폭</b>은 소리 크기, <b>진동수</b>는 소리 높이예요.';
       var hint='';
@@ -151,11 +182,15 @@
         updateAudio(); renderStatus();
       });});
       el.querySelector('[data-act="play"]').addEventListener('click',function(){
-        playing=!playing; if(playing)startAudio(); else stopAudio();
+        playing=!playing; if(playing){ startAudio(); if(medium==='vacuum')triedVacuum=true; } else stopAudio();
         var b=el.querySelector('[data-act="play"]');
         b.textContent=playing?'■ 멈춤':'▶ 소리 듣기';
         b.style.background=playing?'#7048E8':'#fff'; b.style.color=playing?'#fff':'#7048E8';
       });
+      el.querySelectorAll('.sd-med').forEach(function(b){ b.addEventListener('click',function(){
+        var m=b.dataset.med; if(m===medium)return; medium=m; if(medium==='vacuum'&&playing)triedVacuum=true;
+        updateAudio(); buildUI();
+      });});
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true;

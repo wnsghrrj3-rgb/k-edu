@@ -1,6 +1,10 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 열의 이동 (heat) v1  [과학 6호]
-   5학년 온도와 열. 과학 도구 최초로 KLab.ui 3모드(자유탐구/미션/퀴즈) 표준 적용.
+   케이랩 도구 모듈 — 열의 이동 (heat) v2  [과학 6호 · 물리현상군]
+   5학년 온도와 열. KLab.ui 3모드(자유탐구/미션/퀴즈) + 학년칸(헌법 3장).
+   ── 학년 칸 (카드 D칸 닻대로) ──
+     저(🌱): 따뜻함이 옮아간다 — 전도만, 일상어("따뜻함이 옆으로 번져요").
+     중(🌿): 고체 전도(차례차례) — 재질 비교(구리>철>유리), 전도만.
+     고(🌳): 액체·기체 대류(위/아래) — 전도+대류 전부, 마법모먼트(위/아래 가열).
    실험 3종 (변수 → 현상 → 발견):
      ▸ 🥄 고체(전도) — 구리·철·유리 막대 한쪽 끝 가열 → 열이 이웃으로 차례로
         퍼지는 빠르기 차이. 끝의 버터가 떨어지는 순서로 비교 (구리>철≫유리).
@@ -97,14 +101,43 @@
       { exp:'gas', text:'🌬️ <b style="color:#7048E8;">난로</b>를 켜서 따뜻한 공기가 <b style="color:#7048E8;">천장</b>에 모이는 걸 확인해 봐요! (천장 45℃↑)',
         check:function(){ return exp==='gas' && gs.heater && degC(regionTemp(gs.ps,GS_BOX,true))>=45; } }
     ];
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=따뜻함이 옮아간다(전도만, 일상어) / 중=고체 전도·재질 비교 / 고=액체·기체 대류(위·아래). */
+    var LOW_MISSIONS=[
+      { exp:'conduct', text:'🔥 <b style="color:#7048E8;">가열 시작</b>을 눌러 막대가 따뜻해지는 걸 봐요 — 따뜻함이 옆으로 <b style="color:#7048E8;">번져요</b>!',
+        check:function(){ return exp==='conduct' && cd.heating && Math.max.apply(null,cd.hf)>0.25; } },
+      { exp:'conduct', text:'조금 기다리면 막대 끝 <b style="color:#7048E8;">버터가 떨어져요</b> — 따뜻함이 끝까지 옮아간 거예요!',
+        check:function(){ return exp==='conduct' && cd.order.length>=1; } }
+    ];
+    var MID_MISSIONS=[
+      { exp:'conduct', text:'🥄 <b style="color:#7048E8;">가열</b>해서 <b style="color:#7048E8;">구리 막대의 버터</b>를 가장 먼저 떨어뜨려 봐요!',
+        check:function(){ return exp==='conduct' && cd.order.length>0 && cd.order[0]===0; } },
+      { exp:'conduct', text:'셋 다 떨어뜨려 순서를 확인! <b style="color:#7048E8;">구리 → 철 → 유리</b> — 재질마다 열 전달 빠르기가 달라요.',
+        check:function(){ return exp==='conduct' && cd.order.length===3; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['conduct'] },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['conduct'] },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['conduct','liquid','gas'] }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    function curExps(){ return GRADES[grade].exps; }
+    if(curExps().indexOf(exp)<0)exp=curExps()[0];
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false;
+      cdReset(); lqReset(); gsReset(); exp=curExps()[0]; build();
+    }});
+
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; exp=MISSIONS[mStep].exp; cdReset(); lqReset(); gsReset(); }
+          if(mStep<M.length-1){ mStep++; exp=M[mStep].exp; cdReset(); lqReset(); gsReset(); }
           else mDone=true;
           build();
         },1500);
@@ -137,11 +170,12 @@
 
     /* ─────────────────────────────── UI ─────────────────────────────── */
     function expTabs(){
-      var L=[['conduct','🥄 고체 — 전도'],['liquid','💧 액체 — 대류'],['gas','🌬️ 기체 — 대류']];
+      var EXPS=curExps(); if(EXPS.length<=1)return '<div style="height:2px;"></div>';
+      var LAB={conduct:'🥄 고체 — 전도', liquid:'💧 액체 — 대류', gas:'🌬️ 기체 — 대류'};
       return '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-        + L.map(function(x){ var on=(exp===x[0]);
-            return '<button class="ht-exp" data-e="'+x[0]+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.hot+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
-              +'background:'+(on?C.hot:'#fff')+';color:'+(on?'#fff':C.hot)+';">'+x[1]+'</button>'; }).join('')
+        + EXPS.map(function(e){ var on=(exp===e);
+            return '<button class="ht-exp" data-e="'+e+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.hot+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
+              +'background:'+(on?C.hot:'#fff')+';color:'+(on?'#fff':C.hot)+';">'+LAB[e]+'</button>'; }).join('')
         + '</div>';
     }
     function ctrlRow(){
@@ -164,8 +198,8 @@
     }
 
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=expTabs()+ctrlRow();
       el.innerHTML='<style>.ht-btn:active,.ht-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}</style>'
@@ -175,11 +209,11 @@
         +'<div class="ht-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0; mDone=false; mLock=false; cdReset(); lqReset(); gsReset();
-        if(m==='mission')exp=MISSIONS[0].exp;
+        if(m==='mission')exp=curMissions()[0].exp;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      drawStage(); bind(); renderStatus();
+      drawStage(); bind(); bands.bind(el); renderStatus();
     }
 
     /* ─────────────────────────────── 무대 ─────────────────────────────── */
@@ -315,7 +349,12 @@
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">그림을 떠올리며 답을 골라요</div>'; return; }
       var h='';
       if(exp==='conduct'){
-        if(!cd.heating&&cd.order.length===0)h='<div style="font-size:24px;color:'+C.ink+';">🥄 고체에서 열은 가열한 곳부터 <b style="color:'+C.hot+';">이웃으로 차례차례</b> 전달돼요 — 전도</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🔥 가열 시작을 눌러 어떤 막대의 버터가 먼저 떨어지는지 지켜봐요!</div>';
+        if(grade==='low'){
+          if(!cd.heating&&cd.order.length===0)h='<div style="font-size:24px;color:'+C.ink+';">🥄 뜨거운 것에 닿으면 <b style="color:'+C.hot+';">따뜻함이 옆으로 옆으로</b> 옮아가요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🔥 가열 시작을 눌러 막대가 따뜻해지는 걸 지켜봐요!</div>';
+          else if(cd.order.length>=1)h='<div style="font-size:24px;color:'+C.good+';">버터가 떨어졌어요 — 따뜻함이 막대 끝까지 갔어요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">가열한 곳에서 시작해 점점 옆으로 따뜻해진 거예요.</div>';
+          else h='<div style="font-size:24px;color:'+C.hot+';">막대가 점점 따뜻해지는 중…</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">가열한 끝부터 색이 번지죠? 따뜻함이 옆으로 옮아가고 있어요.</div>';
+        }
+        else if(!cd.heating&&cd.order.length===0)h='<div style="font-size:24px;color:'+C.ink+';">🥄 고체에서 열은 가열한 곳부터 <b style="color:'+C.hot+';">이웃으로 차례차례</b> 전달돼요 — 전도</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🔥 가열 시작을 눌러 어떤 막대의 버터가 먼저 떨어지는지 지켜봐요!</div>';
         else if(cd.order.length===3)h='<div style="font-size:24px;color:'+C.good+';">버터가 떨어진 순서: '+cd.order.map(function(i){return RODS[i].name;}).join(' → ')+'!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">같은 불인데 빠르기가 달라요. 열이 잘 전달되는 구리 같은 금속과 잘 안 되는 유리 — 그래서 냄비는 금속, 손잡이는 플라스틱!</div>';
         else if(cd.order.length>0)h='<div style="font-size:24px;color:'+C.hot+';">'+RODS[cd.order[cd.order.length-1]].name+' 막대의 버터가 떨어졌어요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">열이 막대를 타고 끝까지 전달된 거예요. 다른 막대도 지켜봐요.</div>';
         else h='<div style="font-size:24px;color:'+C.hot+';">열이 막대를 타고 퍼지는 중…</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">입자가 이웃 입자를 흔들어 깨우듯, 열이 가열한 끝에서부터 차례로 이동해요.</div>';
@@ -363,7 +402,7 @@
     }
 
     if(mode==='quiz')newQuiz();
-    if(mode==='mission')exp=MISSIONS[0].exp;
+    if(mode==='mission')exp=curMissions()[0].exp;
     build(); loop();
     return function cleanup(){ if(raf)cancelAnimationFrame(raf); };
   });
