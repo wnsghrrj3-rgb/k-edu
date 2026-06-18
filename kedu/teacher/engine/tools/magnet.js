@@ -25,6 +25,16 @@
     var mags = (config.count===2)?twoMag():oneMag();
     var view='lines';                 // 'lines' | 'compass'
     var rotCount=0, rotInCompass=false;
+    /* 저학년 '철 찾기' — 자석에 붙는 것/안 붙는 것 탐구 (신규 기능) */
+    function defObjects(){ return [
+      {emoji:'📎',name:'클립',  iron:true,  x:240,y:330,attached:false,shake:0},
+      {emoji:'🔩',name:'나사',  iron:true,  x:660,y:330,attached:false,shake:0},
+      {emoji:'📌',name:'압정',  iron:true,  x:450,y:375,attached:false,shake:0},
+      {emoji:'🧽',name:'스펀지',iron:false, x:330,y:365,attached:false,shake:0},
+      {emoji:'🪵',name:'나무',  iron:false, x:570,y:365,attached:false,shake:0},
+      {emoji:'🪙',name:'동전',  iron:false, x:450,y:300,attached:false,shake:0}
+    ]; }
+    var OBJECTS=defObjects(), triedNon=false;
     var btn='font-size:21px;padding:10px 16px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=900,VBH=460, ML=80, MW=42; // 자석 반길이/폭
@@ -78,13 +88,36 @@
         check:function(){ return view==='compass' && rotInCompass; } }
     ];
     var mStep=0,mDone=false,mLock=false;
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=무엇이 붙을까(철 찾기, 신규 무대) / 중=극·끌림·밀림(자석 2개) / 고=자기장·나침반(자기력선·나침반 풀). */
+    var LOW_MISSIONS=[
+      { text:'🧲 자석에 <b style="color:#7048E8;">붙는 물건</b>을 찾아 탭해 봐요! (쇠붙이가 자석에 붙어요)',
+        check:function(){ return OBJECTS.some(function(o){return o.iron&&o.attached;}); } },
+      { text:'🤔 이번엔 자석에 <b style="color:#7048E8;">안 붙는 물건</b>을 탭해서 확인해 봐요 — 다 붙는 건 아니에요!',
+        check:function(){ return triedNon; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],         missions:LOW_MISSIONS,             showView:false, showCnt:false, startCnt:1, hint:'물건을 탭해 자석에 붙는지 확인해 봐요. 쇠붙이만 붙어요!' },
+      mid:  { modes:['free','mission','quiz'], missions:[MISSIONS[1],MISSIONS[2]], showView:false, showCnt:true,  startCnt:2, hint:'자석 2개의 극을 마주 보게 옮겨, 끌리는지 밀어내는지 봐요. (돌리기로 극 방향 바꾸기)' },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,                  showView:true,  showCnt:true,  startCnt:1, hint:'자기력선·나침반으로 눈에 안 보이는 자기장을 살펴봐요. 자석을 돌리면 자기장도 따라 돌아요.' }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    function applyGradeStage(){ // 칸에 맞는 무대 초기 상태
+      if(grade==='low'){ mags=oneMag(); OBJECTS=defObjects(); triedNon=false; view='lines'; }
+      else { mags=(GRADES[grade].startCnt===2)?twoMag():oneMag(); view='lines'; }
+    }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false; applyGradeStage(); buildUI();
+    }});
+    applyGradeStage();
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      if(curMissions()[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          if(mStep<curMissions().length-1)mStep++; else mDone=true;
           buildUI();
         },1500);
       }
@@ -117,19 +150,19 @@
 
     function buildUI(){
       var rot=mags.map(function(m,i){return '<button class="mg-btn" data-rot="'+i+'" style="'+btn+'background:#fff;color:#7048E8;border-color:#7048E8;">↻ 자석'+(mags.length>1?(i+1):'')+' 돌리기</button>';}).join('');
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
-      var viewRow='<div style="display:flex;gap:7px;justify-content:center;margin-bottom:6px;">'
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', foot='';
+      var viewRow=GRADES[grade].showView?('<div style="display:flex;gap:7px;justify-content:center;margin-bottom:6px;">'
           +'<button class="mg-view'+(view==='lines'?' on':'')+'" data-view="lines" style="'+btn+'border-color:#7048E8;'+(view==='lines'?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🧲 자기력선</button>'
           +'<button class="mg-view'+(view==='compass'?' on':'')+'" data-view="compass" style="'+btn+'border-color:#7048E8;'+(view==='compass'?'background:#7048E8;color:#fff;':'background:#fff;color:#7048E8;')+'">🧭 나침반</button>'
-        +'</div>';
-      var cntRow='<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;">'
+        +'</div>'):'';
+      var cntRow=GRADES[grade].showCnt?('<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;">'
           +'<button class="mg-btn" data-cnt="1" style="'+btn+(mags.length===1?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">자석 1개</button>'
           +'<button class="mg-btn" data-cnt="2" style="'+btn+(mags.length===2?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">자석 2개</button>'
           +'<span style="width:6px;"></span>'+rot
-        +'</div>';
-      var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">자석을 끌어 옮기고, \'돌리기\'로 방향을 바꿔요. '+(view==='lines'?'보라색 선이 자기력선이에요(N극→S극).':'나침반 바늘(빨강이 N극)이 자기장 방향을 가리켜요.')+'</div>';
+        +'</div>'):'';
+      var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">'+GRADES[grade].hint+'</div>';
       var mid=viewRow+cntRow+hint;
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
+      if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); mid=''; foot=ui.choices(quizChoices()); }
       el.innerHTML='<style>.mg-btn:active,.kl-choice:active{transform:translateY(2px);}.mg-stage{cursor:default;touch-action:none;}.mg-mag{cursor:grab;}.mg-stage.drag .mg-mag{cursor:grabbing;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
@@ -140,7 +173,7 @@
         +'<div class="mg-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;color:'+C.sub+';font-size:18px;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false;
-        view='lines'; mags=oneMag();
+        applyGradeStage();
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
@@ -168,9 +201,24 @@
       var tN=svgEl('text',{x:m.x+ML/2,y:m.y+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
       svg.appendChild(g);
     }
+    function renderAttract(svg){
+      var mx=450,my=150; mags=[{x:mx,y:my,ang:0}];
+      magnet(svg,mags[0],0);
+      var nAtt=0;
+      OBJECTS.forEach(function(o){
+        var x=o.x,y=o.y;
+        if(o.attached){ x=mx-62+nAtt*62; y=my+54; nAtt++; }
+        var g=svgEl('g',{class:'mg-obj','data-obj':o.name});
+        g.appendChild(svgEl('circle',{cx:x,cy:y,r:33,fill:'#fff','fill-opacity':0.01,style:'cursor:pointer;'}));
+        var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','dominant-baseline':'central','font-size':46,style:'pointer-events:none;'}); t.textContent=o.emoji; g.appendChild(t);
+        if(o.attached){ var c=svgEl('text',{x:x+22,y:y-22,'font-size':22,style:'pointer-events:none;'}); c.textContent='✨'; g.appendChild(c); }
+        svg.appendChild(g);
+      });
+    }
     function render(){
       stage=el.querySelector('.mg-stage'); stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'});
+      if(grade==='low'){ renderAttract(svg); stage.appendChild(svg); renderStatus(); checkMission(); return; }
       if(view==='lines'){ fieldLines(svg); }
       else { var cols=11, rows=6, mx=70, my=60;
         for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var x=mx+(VBW-2*mx)*c/(cols-1), y=my+(VBH-2*my)*r/(rows-1); compass(svg,x,y);} }
@@ -182,6 +230,11 @@
     function renderStatus(){
       var s=el.querySelector('.mg-status');
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;">그림 속 자석과 자기장을 보고 답을 골라요!</div>'; return; }
+      if(grade==='low'){
+        var att=OBJECTS.filter(function(o){return o.attached;}).length;
+        s.innerHTML='<div style="font-size:19px;">🧲 쇠붙이(철)로 만든 물건만 자석에 붙어요! '+(att>0?('지금까지 '+att+'개 붙였어요 ✨'):'물건을 탭해 확인해 봐요.')+'</div>';
+        return;
+      }
       if(mags.length===1){
         s.textContent='자기력선이 자석을 빙 둘러 N극에서 나와 S극으로 들어가요 — 이게 눈에 안 보이는 자기장이에요. 자석을 돌려도 자기장이 함께 따라 돌아요.';
         return;
@@ -202,6 +255,20 @@
       stage.addEventListener('mousedown',down); stage.addEventListener('touchstart',down,{passive:false});
       stage.addEventListener('touchmove',function(e){if(drag){move(e);e.preventDefault();}},{passive:false});
       stage.addEventListener('touchend',up);
+      if(grade==='low'){
+        el.querySelectorAll('.mg-obj').forEach(function(g){
+          g.addEventListener('click',function(){
+            if(mode==='quiz')return;
+            var nm=g.getAttribute('data-obj'), o=null;
+            OBJECTS.forEach(function(x){if(x.name===nm)o=x;});
+            if(!o||o.attached)return;
+            if(o.iron){ o.attached=true; if(window.KLab.sound)window.KLab.sound.play('success'); }
+            else { triedNon=true; if(window.KLab.sound)window.KLab.sound.play('tap'); ui.toast(el,false,'🙅 '+o.name+'은(는) 자석에 안 붙어요!'); }
+            render();
+          });
+        });
+      }
+      bands.bind(el);
       el.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){if(view!==b.dataset.view){view=b.dataset.view;buildUI();}});});
       el.querySelectorAll('[data-cnt]').forEach(function(b){b.addEventListener('click',function(){var n=+b.dataset.cnt;if(n!==mags.length){mags=(n===2)?[{x:330,y:250,ang:0},{x:580,y:250,ang:Math.PI}]:[{x:450,y:250,ang:0}];buildUI();}});});
       el.querySelectorAll('[data-rot]').forEach(function(b){b.addEventListener('click',function(){var i=+b.dataset.rot;mags[i].ang+=Math.PI/6;rotCount++;if(view==='compass')rotInCompass=true;render();});});
