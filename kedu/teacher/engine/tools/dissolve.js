@@ -33,14 +33,16 @@
              total:0,            // 넣은 설탕 총량(점 단위)
              dots:[],            // 녹아 있는 입자
              erode:0,            // 용해 누적기
-             satEver:false };    // 한 번이라도 포화(가라앉음) 경험
+             satEver:false,      // 한 번이라도 포화(가라앉음) 경험
+             sand:0,             // 넣은 모래 총량(점 단위) — 안 녹고 바닥에 쌓임(저학년 닻)
+             sandSeed:[] };      // 모래 알갱이 흩뿌림 좌표(시각용)
     }
     reset();
     function limit(t){ return Math.round(18 + t*0.6); }              // 용해도(점): 0℃=18, 20℃=30, 80℃=66
     function pending(){ return st.total - st.dots.length; }          // 안 녹고 가라앉은 양
     function newDot(x,y){ return { x:x, y:y, vx:(Math.random()-0.5), vy:-(0.5+Math.random()), el:null }; }
 
-    /* ───────────── 미션 ───────────── */
+    /* ───────────── 미션 (고학년 = 기존 v1) ───────────── */
     var MISSIONS = [
       { text:'🍬 각설탕을 <b style="color:#7048E8;">2개</b> 넣고 <b style="color:#7048E8;">모두 녹여</b> 봐요! (저울 숫자도 지켜봐요)',
         keep:false, check:function(){ return st.total>=2*DOTS_PER_CUBE && pending()===0 && st.dots.length>0; } },
@@ -51,14 +53,48 @@
       { text:'🌡️ 이제 <b style="color:#7048E8;">온도를 올려서</b> 가라앉은 설탕을 <b style="color:#7048E8;">마저 녹여</b> 봐요!',
         keep:true,  check:function(){ return st.satEver && st.temp>=40 && pending()===0 && st.total>limit(20); } }
     ];
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=녹는다 vs 안 녹는다(설탕↔모래, 일상어) / 중=용해 전후 무게 같음·입자(혼합) / 고=용해도·포화·온도·재결정(기존 유지).
+       ※ 모래(안 녹는 가루)는 저학년 닻 기능 — 라이브에 없어 신규 구현(magnet 철찾기와 동일 원칙). */
+    var LOW_MISSIONS = [
+      { text:'🍬 <b style="color:#7048E8;">각설탕</b>을 넣고 다 녹여 봐요 — 어? <b style="color:#7048E8;">사라진 듯 숨었어요!</b>',
+        keep:false, check:function(){ return st.total>=DOTS_PER_CUBE && pending()===0 && st.dots.length>0; } },
+      { text:'🪨 이번엔 <b style="color:#7048E8;">모래</b>를 넣어 봐요 — 모래는 <b style="color:#7048E8;">안 녹고 바닥에 그대로!</b>',
+        keep:true,  check:function(){ return st.sand>=DOTS_PER_CUBE; } },
+      { text:'🥄 설탕을 넣고 <b style="color:#7048E8;">저어 봐요</b> — 저으면 훨씬 <b style="color:#7048E8;">빨리</b> 녹아요!',
+        keep:false, check:function(){ return st.stir && pending()>0 && st.dots.length>0; } }
+    ];
+    var MID_MISSIONS = [
+      { text:'🍬 각설탕 <b style="color:#7048E8;">2개</b>를 모두 녹여 봐요 — 사라진 게 아니라 <b style="color:#7048E8;">입자로 골고루</b> 섞인 거예요!',
+        keep:false, check:function(){ return st.total>=2*DOTS_PER_CUBE && pending()===0 && st.dots.length>0; } },
+      { text:'⚖️ 저울을 보며 설탕을 <b style="color:#7048E8;">더 넣어</b> 봐요 — 녹아도 <b style="color:#7048E8;">물+설탕 무게 그대로!</b> (무게 보존)',
+        keep:false, check:function(){ return st.total>=4*DOTS_PER_CUBE && pending()===0 && st.dots.length>0; } },
+      { text:'🥄 <b style="color:#7048E8;">저으면서</b> 녹여 봐요 — 젓기는 더 빨리 녹게 도와줘요!',
+        keep:false, check:function(){ return st.stir && pending()>0 && st.dots.length>0; } }
+    ];
+    var GRADES = {
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, sand:true,  temp:false, scale:false, gauge:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, sand:false, temp:true,  scale:true,  gauge:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     sand:false, temp:true,  scale:true,  gauge:true  }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade)>=0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+    function curMissions(){ return G().missions; }
+    var bands = ui.gradeBands({ grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false;
+      var t=st?st.temp:20; reset(); if(!G().temp)st.temp=20; else st.temp=t;
+      build();
+    }});
+
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
           else mDone=true;
           build();
         },1500);
@@ -91,18 +127,22 @@
 
     /* ───────────── UI ───────────── */
     function ctrlRow(){
-      return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:10px;">'
-        +'<button class="dv-btn" data-act="add" style="'+btn+'background:'+C.sugar+';color:#fff;border-color:'+C.sugar+';">🍬 각설탕 넣기</button>'
-        +'<button class="dv-btn" data-act="stir" style="'+btn+(st.stir?'background:'+C.vio+';color:#fff;border-color:'+C.vio:'background:#fff;color:'+C.vio+';border-color:'+C.vio)+';">🥄 젓기 '+(st.stir?'중!':'')+'</button>'
-        +'<span style="font-size:19px;font-weight:800;color:'+C.sub+';">🌡️</span>'
+      var g=G();
+      var s='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:10px;">'
+        +'<button class="dv-btn" data-act="add" style="'+btn+'background:'+C.sugar+';color:#fff;border-color:'+C.sugar+';">🍬 각설탕 넣기</button>';
+      if(g.sand) s+='<button class="dv-btn" data-act="sand" style="'+btn+'background:#A1887F;color:#fff;border-color:#8D6E63;">🪨 모래 넣기</button>';
+      s+='<button class="dv-btn" data-act="stir" style="'+btn+(st.stir?'background:'+C.vio+';color:#fff;border-color:'+C.vio:'background:#fff;color:'+C.vio+';border-color:'+C.vio)+';">🥄 젓기 '+(st.stir?'중!':'')+'</button>';
+      if(g.temp) s+='<span style="font-size:19px;font-weight:800;color:'+C.sub+';">🌡️</span>'
         +'<input class="dv-range" type="range" min="0" max="80" value="'+st.temp+'" style="width:min(34vw,220px);">'
-        +'<span class="dv-temp" style="font-size:22px;font-weight:800;color:'+C.ink+';min-width:58px;">'+st.temp+'℃</span>'
-        +'<button class="dv-btn" data-act="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 물</button>'
+        +'<span class="dv-temp" style="font-size:22px;font-weight:800;color:'+C.ink+';min-width:58px;">'+st.temp+'℃</span>';
+      s+='<button class="dv-btn" data-act="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 물</button>'
         +'</div>';
+      return s;
     }
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var M=curMissions();
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=ctrlRow();
       el.innerHTML='<style>.dv-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}'
@@ -114,11 +154,11 @@
         + foot
         +'<div class="dv-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0; mDone=false; mLock=false; reset();
+        mode=m; mStep=0; mDone=false; mLock=false; reset(); if(!G().temp)st.temp=20;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      drawStage(); bind(); renderStatus();
+      drawStage(); bind(); bands.bind(el); renderStatus();
     }
 
     /* ───────────── 무대 ───────────── */
@@ -138,23 +178,41 @@
       svg.appendChild(dyn.spoon);
       // 가라앉은 설탕 더미
       dyn.pile=svgEl('path',{d:'',fill:'#E0B27A',stroke:C.sugar,'stroke-width':2.5}); svg.appendChild(dyn.pile);
+      // 안 녹는 모래 더미 (저학년 닻 — 넣으면 그대로 바닥에 쌓임)
+      dyn.sand=svgEl('g',{}); svg.appendChild(dyn.sand); drawSand();
       // 녹은 입자
       dyn.parts=svgEl('g',{}); svg.appendChild(dyn.parts);
       st.dots.forEach(function(p){ p.el=svgEl('circle',{cx:p.x,cy:p.y,r:6.5,fill:C.sugar,'fill-opacity':0.85}); dyn.parts.appendChild(p.el); });
-      // 저울 패널(오른쪽)
-      var SX=720, SY=150;
-      svg.appendChild(svgEl('rect',{x:SX-22,y:SY-38,width:190,height:170,rx:18,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
-      var t1=svgEl('text',{x:SX+73,y:SY-10,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); t1.textContent='⚖️ 저울'; svg.appendChild(t1);
-      dyn.sW=svgEl('text',{x:SX-6,y:SY+26,'font-family':'Jua,sans-serif','font-size':19,fill:C.sub,'font-weight':800}); svg.appendChild(dyn.sW);
-      dyn.sS=svgEl('text',{x:SX-6,y:SY+56,'font-family':'Jua,sans-serif','font-size':19,fill:C.sugar,'font-weight':800}); svg.appendChild(dyn.sS);
-      svg.appendChild(svgEl('line',{x1:SX-6,y1:SY+72,x2:SX+152,y2:SY+72,stroke:'#C9D7E6','stroke-width':3}));
-      dyn.sT=svgEl('text',{x:SX-6,y:SY+104,'font-family':'Jua,sans-serif','font-size':22,fill:C.ink,'font-weight':800}); svg.appendChild(dyn.sT);
-      // 용해도 게이지(왼쪽): 지금 온도에서 녹을 수 있는 양
-      dyn.gT=svgEl('text',{x:120,y:130,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.sub}); dyn.gT.textContent='녹을 수 있는 양'; svg.appendChild(dyn.gT);
-      svg.appendChild(svgEl('rect',{x:96,y:145,width:48,height:240,rx:12,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
-      dyn.gFill=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:'#FFD8A8'}); svg.appendChild(dyn.gFill);
-      dyn.gNow=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:C.sugar,'fill-opacity':0.85}); svg.appendChild(dyn.gNow);
+      // 저울 패널(오른쪽) — 중·고학년만 (무게 보존 닻)
+      if(G().scale){
+        var SX=720, SY=150;
+        svg.appendChild(svgEl('rect',{x:SX-22,y:SY-38,width:190,height:170,rx:18,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
+        var t1=svgEl('text',{x:SX+73,y:SY-10,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); t1.textContent='⚖️ 저울'; svg.appendChild(t1);
+        dyn.sW=svgEl('text',{x:SX-6,y:SY+26,'font-family':'Jua,sans-serif','font-size':19,fill:C.sub,'font-weight':800}); svg.appendChild(dyn.sW);
+        dyn.sS=svgEl('text',{x:SX-6,y:SY+56,'font-family':'Jua,sans-serif','font-size':19,fill:C.sugar,'font-weight':800}); svg.appendChild(dyn.sS);
+        svg.appendChild(svgEl('line',{x1:SX-6,y1:SY+72,x2:SX+152,y2:SY+72,stroke:'#C9D7E6','stroke-width':3}));
+        dyn.sT=svgEl('text',{x:SX-6,y:SY+104,'font-family':'Jua,sans-serif','font-size':22,fill:C.ink,'font-weight':800}); svg.appendChild(dyn.sT);
+      }
+      // 용해도 게이지(왼쪽): 지금 온도에서 녹을 수 있는 양 — 고학년만 (포화·온도 닻)
+      if(G().gauge){
+        dyn.gT=svgEl('text',{x:120,y:130,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.sub}); dyn.gT.textContent='녹을 수 있는 양'; svg.appendChild(dyn.gT);
+        svg.appendChild(svgEl('rect',{x:96,y:145,width:48,height:240,rx:12,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
+        dyn.gFill=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:'#FFD8A8'}); svg.appendChild(dyn.gFill);
+        dyn.gNow=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:C.sugar,'fill-opacity':0.85}); svg.appendChild(dyn.gNow);
+      }
       stage.appendChild(svg);
+    }
+    // 모래 알갱이 렌더 (안 녹음 — 정적). st.sand 양만큼 바닥 더미+알갱이.
+    function drawSand(){
+      if(!dyn.sand)return; dyn.sand.innerHTML='';
+      if(st.sand<=0)return;
+      var n=st.sand, pd=Math.min(60, n);
+      // 바닥 더미 (칙칙한 모래색)
+      dyn.sand.appendChild(svgEl('path',{d:'M '+(B.x+12)+' '+(B.y+B.h)+' Q '+(B.x+B.w*0.32)+' '+(B.y+B.h-10-pd*1.4)+' '+(B.x+B.w*0.5)+' '+(B.y+B.h-12-pd*1.7)+' Q '+(B.x+B.w*0.68)+' '+(B.y+B.h-10-pd*1.4)+' '+(B.x+B.w-12)+' '+(B.y+B.h)+' Z',fill:'#B59A78',stroke:'#8D6E63','stroke-width':2}));
+      // 알갱이 (시드 좌표)
+      for(var i=0;i<st.sandSeed.length;i++){ var g=st.sandSeed[i];
+        dyn.sand.appendChild(svgEl('circle',{cx:g.x,cy:g.y,r:g.r,fill:'#8D6E63','fill-opacity':0.9}));
+      }
     }
 
     /* ───────────── 갱신 ───────────── */
@@ -215,6 +273,14 @@
       var s=el.querySelector('.dv-status'); if(!s)return;
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">실험을 떠올리며 답을 골라요</div>'; return; }
       var pd=pending(), n=st.dots.length, lim=limit(st.temp), h;
+      if(grade==='low'){
+        var sandMsg='<div style="font-size:18px;color:#8D6E63;margin-top:5px;">🪨 모래는 안 녹고 바닥에 그대로 있죠? <b>녹는 것</b>과 <b>안 녹는 것</b>이 있어요!</div>';
+        if(st.total===0&&st.sand===0)h='<div style="font-size:24px;color:'+C.ink+';">🍬 설탕과 🪨 모래를 넣어 봐요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">물에 넣으면 어떻게 되는지 잘 살펴봐요.</div>';
+        else if(st.total===0&&st.sand>0)h='<div style="font-size:24px;color:#8D6E63;">🪨 모래는 바닥에 그대로 가라앉았어요 — 안 녹아요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">이번엔 🍬 설탕도 넣어 비교해 봐요.</div>';
+        else if(pd>0)h='<div style="font-size:24px;color:'+C.sugar+';">설탕이 물속으로 사르르 풀리는 중…</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🥄 저으면 더 빨리 녹아요!</div>'+(st.sand>0?sandMsg:'');
+        else h='<div style="font-size:24px;color:'+C.good+';">설탕이 사라진 듯 숨었어요 — 물에 <b>녹은</b> 거예요!</div>'+(st.sand>0?sandMsg:'<div style="font-size:18px;color:'+C.sub+';margin-top:5px;">정말 사라진 게 아니라 물속에 골고루 숨어 있어요.</div>');
+        s.innerHTML=h; return;
+      }
       if(st.total===0)h='<div style="font-size:24px;color:'+C.ink+';">🍬 각설탕을 넣어 보세요 — 입자가 어떻게 되는지, 저울 숫자는 어떻게 되는지!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">물은 100g이에요. 설탕을 넣으면서 전체 무게를 지켜봐요.</div>';
       else if(pd>0&&n>=lim)h='<div style="font-size:24px;color:'+C.sugar+';">더 못 녹고 가라앉았어요 — 포화!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">지금 온도('+st.temp+'℃)에서 녹을 수 있는 양이 꽉 찼어요. 🌡️ 온도를 올리면 마저 녹일 수 있어요. 그래도 무게는 전체 '+(100+st.total)+'g 그대로!</div>';
       else if(pd>0)h='<div style="font-size:24px;color:'+C.sugar+';">설탕이 입자로 풀려 물속으로 퍼지는 중…</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🥄 저으면 훨씬 빨리 녹아요. 온도가 높아도 빨리, 더 많이 녹아요.</div>';
@@ -226,8 +292,16 @@
     function bind(){
       var H={
         add:function(){ st.total+=DOTS_PER_CUBE; renderStatus(); },
+        sand:function(){
+          for(var i=0;i<DOTS_PER_CUBE;i++){
+            var pd=Math.min(60, st.sand+1), spread=Math.min(170, 36+st.sand*2);
+            st.sandSeed.push({ x:B.x+B.w/2+(Math.random()-0.5)*spread, y:B.y+B.h-8-Math.random()*(10+pd*0.55), r:3+Math.random()*2 });
+            st.sand++;
+          }
+          drawSand(); renderStatus();
+        },
         stir:function(){ st.stir=!st.stir; st.stirT=0; build(); },
-        reset:function(){ var t=st.temp; reset(); st.temp=t; build(); }
+        reset:function(){ var t=st.temp; reset(); if(G().temp)st.temp=t; build(); }
       };
       el.querySelectorAll('.dv-btn').forEach(function(b){ b.addEventListener('click',function(){ var f=H[b.dataset.act]; if(f)f(); }); });
       var r=el.querySelector('.dv-range');
