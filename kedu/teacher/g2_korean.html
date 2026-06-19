@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>2학년 국어 — 케이티처 (K-edu Teacher)</title>
+<link rel="stylesheet" href="engine/teacher-styles.css">
+</head>
+<body>
+
+<!-- ===================== 화면 1: 차시 선택 (홈) ===================== -->
+<div class="home-view active" id="home-view">
+  <div class="home-inner">
+    <div class="home-header">
+      <div class="brand">케이티처 · K-edu Teacher</div>
+      <h1>2학년 1학기 국어</h1>
+      <div class="sub">차시를 선택하면 수업 자료가 열립니다. 사용 가능한 차시는 짙은 색으로 표시됩니다.</div>
+    </div>
+    <div id="units-container"></div>
+  </div>
+</div>
+
+<!-- ===================== 화면 2: 슬라이드쇼 ===================== -->
+<div class="show-view" id="show-view">
+
+<!-- ===================== 사이드바 ===================== -->
+<aside id="aside" class="collapsed">
+  <header>
+    <h1>차시</h1>
+    <div class="meta"></div>
+    <div>
+      <span class="tag">2학년</span>
+      <span class="tag">국어</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="slides">슬라이드</div>
+    <div class="tab" data-tab="extras">보조자료</div>
+    <div class="tab" data-tab="blocks">블록 추가</div>
+  </div>
+
+  <div class="tab-panel active" data-tab-panel="slides" id="slides-panel"></div>
+  <div class="tab-panel" data-tab-panel="extras">
+    <div class="extras-hint">현재 슬라이드에 어울리는 자료부터 보여드려요. 카드 클릭으로 끼움·뺌.</div>
+    <div class="extras-filter" id="extras-filter"></div>
+    <div id="extras-list"></div>
+  </div>
+  <div class="tab-panel" data-tab-panel="blocks">
+    <div class="extras-hint">현재 슬라이드 뒤에 새 슬라이드를 추가해요.</div>
+    <div class="block-section">
+      <h3>열기 · 만나기</h3>
+      <div class="block-card" data-block-type="motivate"><div class="block-name">동기유발</div><div class="block-desc">흥미 여는 장면</div></div>
+      <div class="block-card" data-block-type="card_quiz"><div class="block-name">카드 퀴즈</div><div class="block-desc">뒤집어 정답 공개</div></div>
+      <div class="block-card" data-block-type="read_aloud"><div class="block-name">읽어주기</div><div class="block-desc">그림책·글 + 발문</div></div>
+      <div class="block-card" data-block-type="question"><div class="block-name">발문</div><div class="block-desc">큰 발문 한 줄</div></div>
+    </div>
+    <div class="block-section">
+      <h3>핵심 활동 · 발표</h3>
+      <div class="block-card" data-block-type="chosung_quiz"><div class="block-name">초성 퀴즈</div><div class="block-desc">낱말 알아맞히기</div></div>
+      <div class="block-card" data-block-type="concept"><div class="block-name">개념·설명</div><div class="block-desc">큰 글씨 설명</div></div>
+      <div class="block-card" data-block-type="present"><div class="block-name">호명 발표</div><div class="block-desc">무작위 뽑기</div></div>
+    </div>
+    <div class="block-section">
+      <h3>정리</h3>
+      <div class="block-card" data-block-type="summary"><div class="block-name">핵심 요약</div><div class="block-desc">배운 점</div></div>
+      <div class="block-card" data-block-type="next_lesson"><div class="block-name">다음 차시</div><div class="block-desc">예고</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===================== 메인 영역 ===================== -->
+<main>
+  <div class="toolbar">
+    <button class="icon-btn" id="back-to-home">← 차시 목록</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="toggle-side" title="차시 목차 펼치기/접기">📑 차시 목차</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="prev-btn" title="이전">←</button>
+    <button class="icon-btn" id="next-btn" title="다음">→</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="full-btn" title="전체화면 (F)">⛶ 전체화면</button>
+    <button class="icon-btn" id="delete-slide-btn" title="현재 슬라이드 삭제" style="display:none;">삭제</button>
+    <div class="toolbar-sep"></div>
+    <button class="icon-btn" id="export-pptx-btn" title="현재 조립을 교사용 PPT로 내려받기">⬇ PPT</button>
+    <button class="icon-btn" id="export-ws-btn" title="문제·활동을 학습지로 내려받기">⬇ 학습지</button>
+
+    <div class="position">
+      <span id="cur-pos">1</span> / <span id="total-pos">1</span>
+      <span class="stage-tag">· <span id="current-stage">열기</span></span>
+    </div>
+
+    <div class="save-status" id="save-status" title="자동 저장됨 — 다시 열어도 조립 상태 유지">
+      <span class="dot"></span>
+      <span id="save-status-text">자동 저장</span>
+    </div>
+    <button class="reset-btn" id="reset-btn" title="조립 상태를 초기 자리로 되돌리기">초기화</button>
+  </div>
+
+  <div class="slide-stage" id="slide-stage">
+    <div class="slide-wrapper">
+      <div id="slide-content"></div>
+      <div class="extras-panel" id="extras-panel" style="display:none;">
+        <div class="ep-label">보조자료</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+</div><!-- /show-view -->
+
+<button class="fs-exit" id="fs-exit-btn">전체화면 종료 (ESC)</button>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modal-title"></h3>
+    <div class="content" id="modal-content"></div>
+    <div class="url" id="modal-url"></div>
+    <div style="margin-top: 16px;">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 자료 오버레이 ===================== -->
+<div class="ext-overlay" id="ext-overlay">
+  <div class="ext-overlay-bar">
+    <span class="eo-icon" id="eo-icon"></span>
+    <span class="eo-type-tag" id="eo-type-tag"></span>
+    <span class="eo-title" id="eo-title"></span>
+    <span class="eo-audience" id="eo-audience"></span>
+    <button class="eo-close" id="eo-close">닫기 (ESC)</button>
+  </div>
+  <div class="ext-overlay-body">
+    <div class="eo-canvas" id="eo-canvas"></div>
+  </div>
+</div>
+
+<!-- ===================== 단원·차시 카탈로그 ===================== -->
+<script>
+// ⚠️ 케이티처 국어 = 양산 진행 중. ready:true / LESSONS[키] 존재 차시만 사용 가능.
+//    미양산 차시 title·concept은 자기주도 단원 흐름 기반 잠정 표기 — 지도서 확인 후 정정.
+window.CURRICULUM_G2_KOR = [
+  // ⚠️ 2학년 국어 케이티처 = 양산 진행 중. 지도서 확보 단원부터 채움(추측 양산 금지).
+  //    8단원 = 지도서(미래엔 2-1 나 246~279) 기반 정확. 1~7단원은 지도서 확보 시 동일 패턴으로 추가.
+  {
+    unit: 8, title: "다양한 작품을 감상해요", lesson_count: 15,
+    lessons: [
+      {n: 1,  title: "단원 도입 — 다양한 작품을 만나요", std: "[2국05-02]", concept: "시·이야기·인형극 감상 경험 떠올리기 → 단원에서 할 일 살펴보기"},
+      {n: 2,  title: "작품 속 인물의 마음을 상상해요", std: "[2국05-02] · [2국05-03]", concept: "옛이야기 한 장면 떠올리기 → 장면 속 인물의 마음 상상하기"},
+      {n: 3,  title: "시를 낭송하고 느낌을 나눠요 ①", std: "[2국05-02]", concept: "표정·몸짓 주고받은 경험 → 시 낭송 → 행동에서 인물 마음 짐작"},
+      {n: 4,  title: "시를 낭송하고 느낌을 나눠요 ②", std: "[2국05-02]", concept: "흉내 내는 말 살피기 → 여러 방법으로 낭송 → 생각·느낌 나누기"},
+      {n: 5,  title: "이야기를 읽고 느낌을 표현해요 ①", std: "[2국05-02]", concept: "인물의 말·행동으로 마음 상상하며 이야기 읽기"},
+      {n: 6,  title: "이야기를 읽고 느낌을 표현해요 ②", std: "[2국05-02]", concept: "기억에 남는 장면·까닭 → 생각·느낌 글·말로 표현"},
+      {n: 7,  title: "인형극을 감상하고 인물 마음을 짐작해요 ①", std: "[2국05-02] · [2국06-01]", concept: "인형극 종류 → 인물 말·행동·목소리로 마음 짐작"},
+      {n: 8,  title: "인형극을 감상하고 인물 마음을 짐작해요 ②", std: "[2국05-02]", concept: "마음 짐작 단서 정리 → 장면 속 인물 마음 말하기"},
+      {n: 9,  title: "인형극을 감상하고 느낌을 표현해요 ①", std: "[2국05-03] · [2국05-02]", concept: "인형극 감상 → 일 일어난 차례 → 재미있는 장면 찾기"},
+      {n: 10, title: "인형극을 감상하고 느낌을 표현해요 ②", std: "[2국05-03]", concept: "인물에게 편지 쓰기 → 생각·느낌 표현"},
+      {n: 11, title: "인형극을 감상하고 느낌을 표현해요 ③", std: "[2국05-03]", concept: "쓴 글 발표 → 친구 감상과 견주어 듣기"},
+      {n: 12, title: "인형극 하기 ① (실천)", std: "[2국05-03] · [2국06-01]", concept: "막대 인형 만들기 → 보여 줄 장면·대사 정하기"},
+      {n: 13, title: "인형극 하기 ② (실천)", std: "[2국05-03]", concept: "역할 나누기 → 인형극 발표 → 감상 나누기"},
+      {n: 14, title: "마무리하기 ① — 스스로 확인", std: "[2국05-02]", concept: "감상·마음 짐작 방법 정리 → 스스로 확인"},
+      {n: 15, title: "마무리하기 ② — 기초 다지기", std: "[2국04-02]", concept: "연음 발음(구름이[구르미]) → 글씨 쓰기 → 단원 마무리"}
+    ]
+  }
+];
+
+// 차시 데이터 누적 객체 — data/*.js 파일들이 LESSONS[키]를 채움
+window.LESSONS = {};
+</script>
+
+<!-- 엔진 (국어는 케이랩/three 미사용 — 미로드) -->
+<script src="engine/teacher-engine.js"></script>
+<script src="vendor/pptxgen.bundle.js"></script>
+<script src="engine/teacher-export.js"></script>
+
+<!-- 2학년 국어 단원별 데이터 (각 파일이 window.LESSONS에 누적) -->
+<!-- 1~7단원: 지도서 확보 시 추가 -->
+<script src="data/g2_korean_u8.js"></script>
+
+<!-- 진입 -->
+<script>
+Teacher.init({
+  subject: { slug: 'g2_korean', label: '2학년 국어' },
+  curriculum: window.CURRICULUM_G2_KOR,
+  lessons: window.LESSONS
+});
+</script>
+
+</body>
+</html>
