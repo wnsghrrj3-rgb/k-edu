@@ -1,6 +1,11 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 입자/상태변화 (states) v3  [과학 2호 · 3모드]
-   3학년 물질의 상태 / 4학년 물의 상태변화.
+   케이랩 도구 모듈 — 입자/상태변화 (states) v4  [과학 2호 · 물질변화군]
+   3학년 물질의 상태 / 4학년 물의 상태변화. KLab.ui 3모드 + 학년칸(헌법 3장).
+   ── 학년 칸 (카드 D칸 닻대로) ──
+     저(🌱): 고체·액체·기체 구분 — 쥐어져/흘러/퍼져(일상어, 전환용어·정밀온도 회피).
+     중(🌿): 물의 상태 변화·양 보존 — 융해·기화·액화, "사라진 게 아니라 상태만 바뀜".
+     고(🌳): 입자 모델·녹는점·끓는점 (기존 v3 유지).
+   ※ 압력·잠열 마법모먼트 + 만약에(whatif) 모드는 후속 분리(물리군 방침).
    v2 추가 (준호 "전기 v4 수준으로 깊게"):
      ▸ 상태 전환 시각화 — 0℃ 부근(녹는·어는 중)·100℃ 부근(끓는·식는 중)에서
         입자가 한꺼번에 안 바뀌고 비율로 섞이며 전환. 끓을 땐 기포처럼 떠오름.
@@ -52,15 +57,48 @@
       { text:'❄️ 살살 식혀서 <b style="color:#7048E8;">100℃ 부근 \'액화(식는 중)\'</b> 순간을 잡아 봐요!',
         check:function(p){ return p==='boil' && lastDir<0; } }
     ];
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=3가지 상태 구분(쥐어져/흘러/퍼져, 일상어) / 중=물의 상태 변화·양 보존 / 고=입자 모델·녹는점·끓는점(기존 유지).
+       ※ 압력·잠열 마법모먼트 + 만약에 모드는 후속 분리(물리군 방침). */
+    var LOW_MISSIONS=[
+      { text:'❄️ <b style="color:#7048E8;">식혀서</b> 꽁꽁 언 <b style="color:#7048E8;">얼음(고체)</b>을 만들어 봐요 — 단단해서 쥐어져요!',
+        check:function(p){ return p==='solid'; } },
+      { text:'🔥 <b style="color:#7048E8;">데워서</b> <b style="color:#7048E8;">물(액체)</b>로 만들어 봐요 — 줄줄 흘러요!',
+        check:function(p){ return p==='liquid'; } },
+      { text:'🔥 더 뜨겁게 <b style="color:#7048E8;">끓여서</b> <b style="color:#7048E8;">수증기(기체)</b>를 만들어 봐요 — 사방으로 퍼져요!',
+        check:function(p){ return p==='gas'; } }
+    ];
+    var MID_MISSIONS=[
+      { text:'🧊 <b style="color:#7048E8;">0℃보다 낮게</b> 식혀 얼음(고체)을 만들어요. 물이 사라진 게 아니라 <b style="color:#7048E8;">상태만</b> 바뀐 거예요!',
+        check:function(p){ return p==='solid'; } },
+      { text:'💧 데워서 <b style="color:#7048E8;">물(액체)</b>로 — 얼음이 녹는 변화 = <b style="color:#7048E8;">융해</b>!',
+        check:function(p){ return p==='liquid' && lastDir>=0; } },
+      { text:'☁️ <b style="color:#7048E8;">100℃ 넘게</b> 끓여 수증기(기체)로 — 물이 사라진 게 아니라 <b style="color:#7048E8;">눈에 안 보이는 입자</b>로 흩어진 거예요!',
+        check:function(p){ return p==='gas'; } },
+      { text:'❄️ 살살 식혀 <b style="color:#7048E8;">100℃ 부근 \'액화\'</b> 순간을 잡아 봐요 — 수증기가 다시 물로!',
+        check:function(p){ return p==='boil' && lastDir<0; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function curMissions(){ return GRADES[grade].missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; lastDir=1; temp=25; buildUI();
+    }});
+
     var mStep=0,mDone=false,mLock=false;
     function checkMission(p){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check(p)){
+      var M=curMissions();
+      if(M[mStep].check(p)){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
-          var bar=el.querySelector('.kl-mission'); if(bar&&!mDone){ var t=bar.querySelector('.kl-mission-text'); if(t)t.innerHTML=MISSIONS[mStep].text; var n=bar.querySelector('span'); if(n)n.textContent='미션 '+(mStep+1)+'/'+MISSIONS.length; }
+          if(mStep<M.length-1)mStep++; else mDone=true;
+          var bar=el.querySelector('.kl-mission'); if(bar&&!mDone){ var t=bar.querySelector('.kl-mission-text'); if(t)t.innerHTML=M[mStep].text; var n=bar.querySelector('span'); if(n)n.textContent='미션 '+(mStep+1)+'/'+M.length; }
           if(mDone)buildUI();
         },1500);
       }
@@ -87,13 +125,13 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', foot='';
       var ctrl='<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:10px;flex-wrap:wrap;">'
           +'<button class="st-btn" data-act="cool" style="'+btn+'background:#fff;color:'+C.cold+';border-color:'+C.cold+';">❄️ 식히기</button>'
           +'<input class="st-range" type="range" min="-20" max="120" value="'+temp+'" style="width:min(44vw,300px);">'
           +'<button class="st-btn" data-act="heat" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 데우기</button>'
         +'</div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
+      if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl=''; foot=ui.choices(quizChoices()); }
       el.innerHTML='<style>.st-btn:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 22px !important;}'
@@ -110,7 +148,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      drawStage(); bind(); renderStatus(); if(!raf)loop();
+      drawStage(); bind(); bands.bind(el); renderStatus(); if(!raf)loop();
     }
 
     var stage, mercuryEl, partsLayer, bubbleLayer;
@@ -176,6 +214,16 @@
     function renderStatus(){
       var p=phase(temp), s=el.querySelector('.st-status'), nm,col,sub;
       if(mode==='quiz'){ if(s)s.innerHTML='<div style="font-size:19px;color:'+C.sub+';">움직이는 입자를 잘 보고 답을 골라요!</div>'; return; }
+      if(grade==='low'){
+        if(p==='solid'){nm='고체 (얼음)';col=C.cold;sub='꽁꽁 얼어서 단단해요 — 손으로 쥘 수 있고 모양이 변하지 않아요.';}
+        else if(p==='melt'){nm='고체에서 액체로';col=C.cold;sub='얼음이 녹아 물이 되는 중이에요.';}
+        else if(p==='liquid'){nm='액체 (물)';col='#1C7ED6';sub='줄줄 흘러요 — 담는 그릇 모양대로 바뀌어요.';}
+        else if(p==='boil'){nm='액체에서 기체로';col=C.hot;sub='물이 끓어서 수증기가 되는 중이에요.';}
+        else{nm='기체 (수증기)';col='#868E96';sub='사방으로 퍼져 날아다녀요 — 공간을 가득 채워요.';}
+        if(s)s.innerHTML='<div style="font-size:29px;color:'+col+';">'+nm+'</div>'
+          +'<div style="font-size:18px;color:'+C.sub+';margin-top:6px;line-height:1.4;">'+sub+'</div>';
+        checkMission(p); return;
+      }
       if(p==='solid'){nm='고체 (얼음)';col=C.cold;sub='입자가 제자리에서 규칙적으로 정렬해 진동만 해요. 모양도 부피도 일정해요.';}
       else if(p==='melt'){
         if(lastDir>=0){nm='융해 — 녹는 중';sub='0℃ 부근에서 얼음(고체) 입자가 하나둘 풀려나 물(액체)이 돼요. 고체와 액체가 섞여 있어요.';}

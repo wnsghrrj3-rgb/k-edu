@@ -49,9 +49,10 @@
     }
 
     /* ───────────── 상태 ───────────── */
-    var exp, selSol, selInd, tested, mixN; // mixN: 섞기 실험 염기 방울 수(0=새빨강)
-    function reset(){ exp='test'; selSol=-1; selInd=null; tested={}; mixN=0; }
+    var exp, selSol, selInd, tested, mixN, lowAdd; // mixN: 섞기 실험 염기 방울 수(0=새빨강) / lowAdd: 저학년 마법물에 넣은 것 null|'acid'|'base'
+    function reset(){ exp='test'; selSol=-1; selInd=null; tested={}; mixN=0; lowAdd=null; }
     reset();
+    function addLow(kind){ lowAdd=kind; renderScene(); renderStatus(); checkMission(); }
     function applyInd(ind){
       if(selSol<0){ ui.toast(el,false,'먼저 검사할 용액(비커)을 골라요!'); return; }
       selInd=ind; tested[SOLS[selSol].id+'_'+ind]=1;
@@ -72,6 +73,24 @@
       var a=0,b=0; SOLS.forEach(function(s){ if(tested[s.id+'_cab'])(s.kind==='acid')?a++:b++; });
       return a>=2&&b>=2;
     }
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=색 변하는 마법 물(★중앙 비커 1개에 식초/비눗물 투입=신규 구현, 저학년 닻·용어 없는 일상어) /
+       중=산성·염기성 분류(지시약 색, 양배추+페놀프탈레인) / 고=중화 반응·pH·적정(기존 v1 유지).
+       ※ 중화점 색 급반전 마법모먼트는 후속 분리(burn/dissolve 패턴과 동일). */
+    var LOW_MISSIONS=[
+      { text:'🍋 <b style="color:#7048E8;">식초</b>를 넣어 봐요 — 보라색 마법 물이 무슨 색으로 변할까요?',
+        keep:true, check:function(){ return lowAdd==='acid'; } },
+      { text:'🧼 <b style="color:#7048E8;">비눗물</b>도 넣어 봐요 — 이번엔 또 다른 색으로 변해요!',
+        keep:true, check:function(){ return lowAdd==='base'; } }
+    ];
+    var MID_MISSIONS=[
+      { text:'🍋 <b style="color:#7048E8;">식초</b>에 🥬 양배추 지시약 — <b style="color:#E03131;">붉은 계열</b>이면 <b>산성</b>이에요!',
+        keep:false, check:function(){ return exp==='test'&&selSol>=0&&SOLS[selSol].kind==='acid'&&selInd==='cab'; } },
+      { text:'🧼 <b style="color:#7048E8;">비눗물</b>에 🥬 양배추 지시약 — <b style="color:#1971C2;">푸른 계열</b>이면 <b>염기성</b>이에요!',
+        keep:false, check:function(){ return exp==='test'&&selSol>=0&&SOLS[selSol].kind==='base'&&selInd==='cab'; } },
+      { text:'🥬 양배추 지시약으로 여러 용액을 검사해 <b style="color:#7048E8;">산성 2개·염기성 2개</b> 이상 분류해요!',
+        keep:true, check:function(){ return cabClassified(); } }
+    ];
     var MISSIONS=[
       { text:'<b style="color:#7048E8;">식초</b>에 <b style="color:#7048E8;">푸른 리트머스 종이</b>를 — 어떻게 변하는지 확인해요!',
         keep:false, check:function(){ return exp==='test'&&selSol>=0&&SOLS[selSol].id==='vinegar'&&selInd==='litB'; } },
@@ -82,14 +101,27 @@
       { text:'⚗️ <b style="color:#7048E8;">섞어 보기</b>에서 붉은 용액에 염기를 넣어 <b style="color:#7048E8;">푸른색</b>까지 바꿔요 — 성질이 변해요!',
         keep:true, check:function(){ return exp==='mix'&&mixN>=8; } }
     ];
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['test'],       inds:['cab'],        low:true  },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['test'],       inds:['cab','phen'], low:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['test','mix'], inds:'all',          low:false }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    function curMissions(){ return G().missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; reset(); build();
+    }});
+
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
           else mDone=true;
           build();
         },1500);
@@ -122,24 +154,32 @@
 
     /* ───────────── UI ───────────── */
     function expTabs(){
+      if(G().exps.length<=1) return ''; // 저·중 = 지시약 검사만 (섞기/중화는 고학년)
       function t(id,lab){ var on=(exp===id);
         return '<button class="ac-btn" data-act="exp-'+id+'" style="'+btn+'border-color:#1565C0;background:'+(on?'#1565C0':'#fff')+';color:'+(on?'#fff':'#1565C0')+';">'+lab+'</button>'; }
       return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">'+t('test','🧪 지시약 검사')+t('mix','⚗️ 섞어 보기')+'</div>';
     }
     function indRow(){
+      if(G().low) // 저학년 = 마법 물에 식초/비눗물 직접 투입
+        return '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">'
+          +'<button class="ac-btn" data-act="low-acid" style="'+btn+'border-color:'+C.acid+';background:#fff;color:'+C.acid+';">🍋 식초 넣기</button>'
+          +'<button class="ac-btn" data-act="low-base" style="'+btn+'border-color:'+C.base+';background:#fff;color:'+C.base+';">🧼 비눗물 넣기</button>'
+          +'<button class="ac-btn" data-act="reset" style="'+btn+'border-color:#9aa;background:#fff;color:#667;">↺ 새 마법 물</button></div>';
       if(exp!=='test')return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">'
         +'<button class="ac-btn" data-act="drop-base" style="'+btn+'border-color:'+C.base+';background:#fff;color:'+C.base+';">💧 염기 한 방울</button>'
         +'<button class="ac-btn" data-act="drop-acid" style="'+btn+'border-color:'+C.acid+';background:#fff;color:'+C.acid+';">💧 산 한 방울</button>'
         +'<button class="ac-btn" data-act="reset" style="'+btn+'border-color:#9aa;background:#fff;color:#667;">↺ 처음부터</button></div>';
+      var inds=(G().inds==='all')?INDS:INDS.filter(function(d){return G().inds.indexOf(d.id)>=0;});
       return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center;margin-bottom:8px;">'
         +'<span style="font-size:17px;font-weight:800;color:'+C.sub+';">지시약</span>'
-        + INDS.map(function(d){ var on=(selInd===d.id);
+        + inds.map(function(d){ var on=(selInd===d.id);
             return '<button class="ac-btn" data-act="ind-'+d.id+'" style="'+btn+'border-color:'+C.vio+';background:'+(on?C.vio:'#fff')+';color:'+(on?'#fff':C.vio)+';">'+d.nm+'</button>'; }).join('')
         +'<button class="ac-btn" data-act="reset" style="'+btn+'border-color:#9aa;background:#fff;color:#667;">↺</button></div>';
     }
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=expTabs()+indRow(); }
+      var M=curMissions();
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=expTabs()+indRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=expTabs()+indRow();
       el.innerHTML='<style>.ac-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.ac-sol{cursor:pointer;}</style>'
@@ -152,7 +192,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      drawStage(); bind(); renderScene(); renderStatus();
+      drawStage(); bind(); bands.bind(el); renderScene(); renderStatus();
     }
 
     /* ───────────── 무대 ───────────── */
@@ -168,9 +208,24 @@
         fill:'#fff','fill-opacity':0.5,stroke:strokeCol||'#90A4AE','stroke-width':strokeW||3}));
       g.appendChild(svgEl('rect',{x:cx-w/2+4,y:by-liqH,width:w-8,height:liqH-4,rx:5,fill:liqCol}));
     }
+    function renderLowScene(){
+      // 저학년 닻 — 색이 변하는 마법 물(양배추 지시약) 비커 1개
+      var col=(lowAdd==='acid')?'#E03131':(lowAdd==='base')?'#15AABF':'#9C36B5';
+      var g=svgEl('g',{}); svg.appendChild(g);
+      beaker(g,450,365,210,250,col,185,'#78909C',4);
+      for(var b=0;b<4;b++){ var by=352-((frame*1.1+b*42)%150);
+        g.appendChild(svgEl('circle',{cx:402+b*32,cy:by,r:4,fill:'#fff','fill-opacity':0.5})); }
+      var t=svgEl('text',{x:450,y:120,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:C.ink});
+      t.textContent='🥬 색이 변하는 마법 물'; svg.appendChild(t);
+      var sub=svgEl('text',{x:450,y:158,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,
+        fill:(lowAdd==='acid')?C.acid:(lowAdd==='base')?C.base:C.sub,'data-lowadd':(lowAdd||'none')});
+      sub.textContent=(lowAdd==='acid')?'붉은색으로 변했어요!':(lowAdd==='base')?'푸른색으로 변했어요!':'무얼 넣으면 색이 변할까요? 👇';
+      svg.appendChild(sub);
+    }
     function renderScene(){
       if(!svg)return;
       svg.innerHTML='';
+      if(G().low){ renderLowScene(); return; }
       if(exp==='mix'){
         // 큰 비커: 식초+양배추 지시약
         var col=mixCol();
@@ -233,6 +288,12 @@
     function renderStatus(){
       var s=el.querySelector('.ac-status'); if(!s)return;
       var h;
+      if(G().low){
+        if(lowAdd==='acid')h='<div style="font-size:24px;color:'+C.acid+';">우와, 붉은색! 🍋</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">식초(신 것)를 넣으니 마법 물이 붉게 변했어요. 🧼 비눗물도 넣어 볼까요?</div>';
+        else if(lowAdd==='base')h='<div style="font-size:24px;color:'+C.base+';">우와, 푸른색! 🧼</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">비눗물(미끌한 것)을 넣으니 푸르게 변했어요. 넣는 것에 따라 색이 달라져요!</div>';
+        else h='<div style="font-size:24px;color:'+C.ink+';">🥬 보라색 마법 물이에요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">무얼 넣으면 색이 변하는지 알려 주는 <b>마법 물(지시약)</b>! 🍋 식초나 🧼 비눗물을 넣어 봐요.</div>';
+        s.innerHTML=h; return;
+      }
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">검사해 본 걸 떠올리며 답을 골라요</div>'; return; }
       if(exp==='mix'){
         if(mixN===0)h='<div style="font-size:24px;color:'+C.acid+';">새빨간 산성 용액이에요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">💧 염기를 한 방울씩 넣으며 색을 지켜봐요 — 무슨 일이 일어날까요?</div>';
@@ -257,6 +318,8 @@
         var a=b.dataset.act;
         if(a.indexOf('exp-')===0){ exp=a.slice(4); selSol=-1; selInd=null; build(); }
         else if(a.indexOf('ind-')===0)applyInd(a.slice(4));
+        else if(a==='low-acid')addLow('acid');
+        else if(a==='low-base')addLow('base');
         else if(a==='drop-base')drop('base');
         else if(a==='drop-acid')drop('acid');
         else if(a==='reset'){ var e0=exp; reset(); exp=e0; build(); }
