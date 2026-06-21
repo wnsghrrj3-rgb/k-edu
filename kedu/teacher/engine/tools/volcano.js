@@ -66,6 +66,27 @@
     }
 
     /* ───────────── 미션 ───────────── */
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=땅속은 뜨겁다·마그마(분출 1변수, 압력→분출만·용어 없는 일상어, 지진/식힘/단면 숨김) /
+       중=마그마→용암·식어 굳음(압력 분출+분출물+현무암+지진, 화강암/단면은 고) /
+       고=점성·분출형태·화성암(기존 v1 전부 유지).
+       ※ 점성 만약에 모드(끈적할수록 갇혔다 대폭발=마법모먼트)는 후속 분리(burn/dissolve/acid 패턴 동일). */
+    var LOW_MISSIONS=[
+      { exp:'volcano', text:'🔥 <b style="color:#7048E8;">압력 키우기</b>를 눌러 땅속 마그마를 밀어 올려요!',
+        check:function(){ return exp==='volcano' && vol.press>=20; } },
+      { exp:'volcano', text:'계속 눌러 압력을 가득 채우면 — 펑! <b style="color:#7048E8;">화산이 분출</b>해요!',
+        check:function(){ return exp==='volcano' && vol.erupting; } }
+    ];
+    var MID_MISSIONS=[
+      { exp:'volcano', text:'🔥 <b style="color:#7048E8;">압력 키우기</b>로 마그마 압력을 채워 <b style="color:#7048E8;">화산 분출</b>!',
+        check:function(){ return exp==='volcano' && vol.erupting; } },
+      { exp:'volcano', text:'분출물 <b style="color:#7048E8;">용암·화산재·화산 가스</b> 라벨을 모두 눌러 이름을 확인해요!',
+        check:function(){ return exp==='volcano' && vol.erupting && vol.seen.lava && vol.seen.ash && vol.seen.gas; } },
+      { exp:'volcano', text:'🪨 빨리 식히면 굳어서 <b style="color:#7048E8;">현무암</b>이 돼요 — 만들어 봐요!',
+        check:function(){ return exp==='volcano' && vol.made.basalt; } },
+      { exp:'quake', text:'➡️ <b style="color:#7048E8;">힘 가하기</b>로 땅을 끊어 <b style="color:#7048E8;">지진</b>을 일으켜요!',
+        check:function(){ return exp==='quake' && qk.broken; } }
+    ];
     var MISSIONS=[
       { exp:'volcano', text:'🔥 <b style="color:#7048E8;">압력 키우기</b>를 눌러 마그마 방 압력을 100%로 — <b style="color:#7048E8;">화산 분출</b>!',
         check:function(){ return exp==='volcano' && vol.erupting; } },
@@ -76,17 +97,30 @@
       { exp:'quake', text:'➡️ <b style="color:#7048E8;">힘 가하기</b>를 계속 눌러 땅을 끊어 봐요 — <b style="color:#7048E8;">지진</b> 발생!',
         check:function(){ return exp==='quake' && qk.broken; } }
     ];
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['volcano'],         cool:'none',   cut:false, ejecta:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true  },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true  }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    function curMissions(){ return G().missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; resetAll(); build();
+    }});
+
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){
+          if(mStep<M.length-1){
             mStep++;
-            var keep=(MISSIONS[mStep].exp===exp); // 1→2→3은 같은 화산 상태 유지
-            exp=MISSIONS[mStep].exp;
+            var keep=(M[mStep].exp===exp); // 1→2→3은 같은 화산 상태 유지
+            exp=M[mStep].exp;
             if(!keep){ volReset(); qkReset(); }
           } else mDone=true;
           build();
@@ -115,7 +149,8 @@
 
     /* ───────────── UI ───────────── */
     function expTabs(){
-      var L=[['volcano','🌋 화산'],['quake','🌍 지진']];
+      var L=[['volcano','🌋 화산'],['quake','🌍 지진']].filter(function(x){ return G().exps.indexOf(x[0])>=0; });
+      if(L.length<=1) return ''; // 저학년 = 화산만 → 탭 숨김
       return '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + L.map(function(x){ var on=(exp===x[0]);
             return '<button class="vc-exp" data-e="'+x[0]+'" style="font-size:20px;padding:10px 18px;border-radius:14px;border:3px solid '+C.hot+';cursor:pointer;font-weight:800;font-family:inherit;line-height:1;'
@@ -124,13 +159,17 @@
     }
     function ctrlRow(){
       if(exp==='volcano'){
-        var canCool=vol.erupting;
-        return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-          +'<button class="vc-btn" data-act="pump" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 압력 키우기</button>'
-          +'<button class="vc-btn" data-act="basalt" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:'+C.basalt:'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">🪨 빨리 식히기 → 현무암</button>'
-          +'<button class="vc-btn" data-act="granite" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:#C9A227':'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">💎 천천히 식히기 → 화강암</button>'
-          +'<button class="vc-btn" data-act="volReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 화산</button>'
-          +'<button class="vc-btn" data-act="toggleCut" style="'+btn+'background:#fff;color:#1565C0;border-color:#1565C0;">'+(cutView?'🌋 겉 보기':'🪓 단면 보기')+'</button></div>';
+        var canCool=vol.erupting, gc=G().cool;
+        var s='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+          +'<button class="vc-btn" data-act="pump" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 압력 키우기</button>';
+        if(gc==='basalt'||gc==='all')
+          s+='<button class="vc-btn" data-act="basalt" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:'+C.basalt:'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">🪨 빨리 식히기 → 현무암</button>';
+        if(gc==='all')
+          s+='<button class="vc-btn" data-act="granite" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:#C9A227':'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">💎 천천히 식히기 → 화강암</button>';
+        s+='<button class="vc-btn" data-act="volReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 화산</button>';
+        if(G().cut)
+          s+='<button class="vc-btn" data-act="toggleCut" style="'+btn+'background:#fff;color:#1565C0;border-color:#1565C0;">'+(cutView?'🌋 겉 보기':'🪓 단면 보기')+'</button>';
+        return s+'</div>';
       }
       return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         +'<button class="vc-btn" data-act="push" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">➡️ 힘 가하기</button>'
@@ -139,8 +178,9 @@
 
     function build(){
       if(v3d){ v3d.dispose(); v3d=null; }
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var M=curMissions();
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=expTabs()+ctrlRow();
       el.innerHTML='<style>.vc-btn:active,.vc-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}@keyframes vcShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-7px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-5px,2px);}80%{transform:translate(4px,-2px);}}</style>'
@@ -150,11 +190,11 @@
         +'<div class="vc-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0; mDone=false; mLock=false; resetAll();
-        if(m==='mission')exp=MISSIONS[0].exp;
+        if(m==='mission')exp=curMissions()[0].exp;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      renderScene(); bind(); renderStatus();
+      renderScene(); bind(); bands.bind(el); renderStatus();
     }
 
     /* ───────────── 3D 화산 무대 (three.js) ─────────────
@@ -393,7 +433,7 @@
       var chipAsh =mkChip('ash','🌫️ 화산재','#CED4DA','left:50%;top:12px;transform:translateX(-50%);');
       var chipGas =mkChip('gas','💨 화산 가스','#E9ECEF','right:12px;top:42%;');
       function updateChips(){
-        var show=S.erupting;
+        var show=S.erupting && opts.ejecta!==false; // 저학년=분출물 라벨 숨김(터지는 모습만)
         [['lava',chipLava],['ash',chipAsh],['gas',chipGas]].forEach(function(o){
           var b=o[1]; if(!show){ b.style.display='none'; return; }
           b.style.display=''; var seen=S.seen&&S.seen[o[0]];
@@ -525,8 +565,8 @@
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp;
       var use3D=(mode!=='quiz' && exp==='volcano' && window.THREE);
       if(use3D){
-        if(!v3d){ stage.innerHTML=''; v3d=Volcano3D(stage,{onEjecta:seeEjecta}); }
-        v3d.sync(vol); v3d.setCut(cutView);
+        if(!v3d){ stage.innerHTML=''; v3d=Volcano3D(stage,{onEjecta:seeEjecta, ejecta:G().ejecta}); }
+        v3d.sync(vol); v3d.setCut(G().cut && cutView);
         return;
       }
       if(v3d){ v3d.dispose(); v3d=null; }
@@ -566,10 +606,8 @@
           + ashDots
           +'<path d="M 450 84 C 470 120 520 150 560 250 L 520 250 C 495 170 462 140 446 100 Z" fill="'+C.lava+'"/>'
           +'<path d="M 450 84 C 440 130 400 170 370 250 L 402 250 C 425 175 450 140 456 104 Z" fill="'+C.lava2+'"/>'
-          // 분출물 라벨 칩 (클릭)
-          + chip('lava', 600, 215, '🔥 용암')
-          + chip('ash', 660, 60, '🌫️ 화산재')
-          + chip('gas', 240, 30, '💨 화산 가스');
+          // 분출물 라벨 칩 (클릭) — 저학년은 숨김(터지는 모습만)
+          + (G().ejecta ? (chip('lava', 600, 215, '🔥 용암') + chip('ash', 660, 60, '🌫️ 화산재') + chip('gas', 240, 30, '💨 화산 가스')) : '');
       }
       // 만든 암석 카드
       var cards='', cx=720;
@@ -631,7 +669,12 @@
       var s=el.querySelector('.vc-status'); if(!s)return;
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp, msg;
       if(pic==='volcano'){
-        if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요</span>';
+        if(G().low){
+          if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">펑! 화산이 터졌어요 🌋 땅속 뜨거운 마그마가 솟아올라요!</span>';
+          else if(vol.press>0) msg='<span style="color:'+C.ink+';font-size:19px;">압력이 차오르고 있어요… 가득 차면 펑! 터져요 (압력 '+vol.press+'%)</span>';
+          else msg='<span style="color:'+C.sub+';font-size:19px;">땅속 깊은 곳은 아주 뜨거워 돌이 녹아 있어요(마그마). 🔥 압력을 키워 봐요!</span>';
+        }
+        else if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요</span>';
         else if(vol.press>0) msg='<span style="color:'+C.ink+';font-size:19px;">압력 '+vol.press+'% — 100%가 되면 분출해요!</span>';
         else msg='<span style="color:'+C.sub+';font-size:19px;">땅속 마그마 방에 🔥 압력을 키워 봐요</span>';
       } else {
