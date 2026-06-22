@@ -1,13 +1,14 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 곱셈 배열판 (array) v2
+   케이랩 도구 모듈 — 곱셈 배열판 (array) v3
    초점 (2~4학년 곱셈) = 곱셈을 "몇 줄(행) × 한 줄에 몇 개(열)"의 배열로.
    v2: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
-     · 자유탐구 — 행·열 ＋/－, ⇄ 가로세로(교환법칙), 곱 자동 계산.
-     · 미션 — "곱이 12가 되는 배열", "같은 곱 다른 배열 찾기", "⇄로 교환법칙
-       확인" 등 단계 과제, 달성 자동 감지.
-     · 퀴즈 — 배열을 보여 주고 "몇 × 몇? 곱은?" 선택지 출제 (수식은 가림).
+   v3: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = ★묶어세기 닻 — ×기호 대신 동수누가 덧셈식(2+2+2)과 "몇씩 몇 묶음"
+            일상어로 곱셈의 씨앗을 봄·교환법칙/퀴즈 숨김·작은 배열(5×5).
+     · 중 = 곱셈식(3×4)·교환법칙(⇄)·퀴즈(9×9).
+     · 고 = 기존 전부 유지(config maxR/maxC·교환·퀴즈).
    - 의존: window.KLab (THREE 불필요)
-   - config: { rows(기본3), cols(기본4), maxR(기본10), maxC(기본10),
+   - config: { rows(기본3), cols(기본4), maxR, maxC, grade:"low|mid|high",
                shape:"dot"|"square", mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
@@ -15,15 +16,46 @@
   var C={topD:'#4DABF7',dot:'#1565C0',dotEdge:'#0B447C',empty:'#E7F1FB'};
   window.KLab.register('array', function (el, config) {
     var ui=window.KLab.ui;
-    var maxR=(config.maxR>=1)?config.maxR:10, maxC=(config.maxC>=1)?config.maxC:10;
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
+       저=묶어세기 동수누가 닻(×기호 없음)·퀴즈/교환 숨김 / 중=곱셈식·교환·퀴즈 /
+       고=기존 유지(config maxR/maxC 우선). */
+    var GRADES={
+      low:  { modes:['free','mission'],        maxR:5,    maxC:5,    addForm:true,  swap:false },
+      mid:  { modes:['free','mission','quiz'], maxR:9,    maxC:9,    addForm:false, swap:true  },
+      high: { modes:['free','mission','quiz'], maxR:null, maxC:null, addForm:false, swap:true  }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    function maxRFor(){ if(config.maxR>=1) return config.maxR; return G().maxR||10; }
+    function maxCFor(){ if(config.maxC>=1) return config.maxC; return G().maxC||10; }
+
+    var maxR=maxRFor(), maxC=maxCFor();
     var rows=Math.min(config.rows||3,maxR), cols=Math.min(config.cols||4,maxC);
     var shape=(config.shape==='square')?'square':'dot';
-    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    var mode=(G().modes.indexOf(config.mode)>=0)?config.mode:'free';
     var btn='font-size:25px;padding:13px 22px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
-    // ---- 미션 ----
-    var mFound={}; // 미션2에서 찾은 (r,c) 기록
-    var MISSIONS=[
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; maxR=maxRFor(); maxC=maxCFor();
+      rows=Math.min(rows,maxR); cols=Math.min(cols,maxC);
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false; mFound={};
+      if(mode==='quiz'){ qScore=0; qCount=0; newQuiz(); }
+      build();
+    }});
+
+    // ---- 미션 (학년칸별 풀) ----
+    var mFound={}; // 다른 배열 찾기에서 기록
+    var LOW_MISSIONS=[
+      {text:'한 줄에 <b style="color:#7048E8;">2개씩 3줄</b>을 만들어 봐요 — 모두 몇 개? (2 + 2 + 2)',
+        check:function(){ return rows===3 && cols===2; }},
+      {text:'한 줄에 <b style="color:#7048E8;">5개씩 2줄</b>을 만들어 봐요 — 5 + 5 = 10!',
+        check:function(){ return rows===2 && cols===5; }},
+      {text:'한 줄에 <b style="color:#7048E8;">3개씩 4줄</b>을 만들어 모두 12개! (3 + 3 + 3 + 3)',
+        check:function(){ return rows===4 && cols===3; }}
+    ];
+    var FULL_MISSIONS=[
       {text:'곱이 <b style="color:#7048E8;">12</b>가 되는 배열을 만들어 봐요!',
         check:function(){ if(rows*cols===12){mFound[rows+'x'+cols]=1;mFound[cols+'x'+rows]=1;return true;} return false;}},
       {text:'곱이 12가 되는 <b style="color:#7048E8;">다른 배열</b>도 찾아 봐요! (아까와 줄 수가 달라야 해요)',
@@ -33,6 +65,17 @@
       {text:'곱이 <b style="color:#7048E8;">18</b>이 되는 배열을 만들어 봐요!',
         check:function(){ return rows*cols===18; }}
     ];
+    function curMissions(){
+      var pool=(grade==='low')?LOW_MISSIONS:FULL_MISSIONS;
+      // swap 미션은 교환법칙 노출 학년만, 18 미션은 9×9 이상 필요
+      var f=pool.filter(function(m){
+        if(/⇄|교환법칙/.test(m.text)) return !!G().swap;
+        if(m.text.indexOf('18')>=0) return maxR*maxC>=18;
+        if(m.text.indexOf('12')>=0||/다른 배열/.test(m.text)) return maxR*maxC>=12;
+        return true;
+      });
+      return f.length?f:pool.slice(0,1);
+    }
     var mStep=0, mDone=false, mLock=false;
 
     // ---- 퀴즈 ----
@@ -47,18 +90,19 @@
     }
 
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', ctrl='', foot='';
-      var ctlHtml='<span style="font-size:21px;font-weight:800;color:#1565C0;align-self:center;">줄(행)</span>'
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', ctrl='', foot='';
+      var swapBtn=G().swap?('<button class="ar-btn" data-act="swap" style="'+btn+'background:#fff;color:#0B7285;border-color:#0B7285;">⇄ 가로세로</button>'):'';
+      var ctlHtml='<span style="font-size:21px;font-weight:800;color:#1565C0;align-self:center;">'+(G().addForm?'줄 수':'줄(행)')+'</span>'
         +'<button class="ar-btn" data-act="rm" style="'+btn+'background:#fff;color:#1565C0;">－</button>'
         +'<button class="ar-btn" data-act="rp" style="'+btn+'background:#1565C0;color:#fff;">＋</button>'
         +'<span style="width:8px;"></span>'
-        +'<span style="font-size:21px;font-weight:800;color:#1565C0;align-self:center;">한 줄 개수(열)</span>'
+        +'<span style="font-size:21px;font-weight:800;color:#1565C0;align-self:center;">한 줄 개수'+(G().addForm?'':'(열)')+'</span>'
         +'<button class="ar-btn" data-act="cm" style="'+btn+'background:#fff;color:#1565C0;">－</button>'
         +'<button class="ar-btn" data-act="cp" style="'+btn+'background:#1565C0;color:#fff;">＋</button>'
         +'<span style="width:8px;"></span>'
-        +'<button class="ar-btn" data-act="swap" style="'+btn+'background:#fff;color:#0B7285;border-color:#0B7285;">⇄ 가로세로</button>'
+        +swapBtn
         +'<button class="ar-btn" data-act="reset" style="font-size:25px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); ctrl=ctlHtml; }
+      if(mode==='mission'){ var _M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(_M[mStep].text,mStep,_M.length); ctrl=ctlHtml; }
       else if(mode==='quiz'){ bar=ui.quizBar('이 배열의 곱은 얼마일까요?',qScore,qCount); foot=ui.choices(quizChoices()); }
       else ctrl=ctlHtml;
       el.innerHTML='<style>.ar-btn:active,.kl-choice:active{transform:translateY(2px);}.ar-btn[disabled]{opacity:.35;cursor:not-allowed;}'
@@ -71,7 +115,7 @@
       ui.bindModeTabs(el,function(m){mode=m;mStep=0;mDone=false;mFound={};
         if(m==='quiz'){qScore=0;qCount=0;newQuiz();}
         build();});
-      bind(); render();
+      bind(); bands.bind(el); render();
     }
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
@@ -96,6 +140,20 @@
       var st=el.querySelector('.ar-status');
       if(mode==='quiz'){
         st.innerHTML='<span style="font-size:34px;color:#1565C0;">'+qR+'</span><span style="font-size:26px;color:#1B3A57;"> 줄 × 한 줄 </span><span style="font-size:34px;color:#1565C0;">'+qC+'</span><span style="font-size:26px;color:#1B3A57;">개 ＝ </span><span style="font-size:40px;color:#F59F00;">?</span>';
+      } else if(G().addForm){
+        // ★저학년 묶어세기 닻 — ×기호 없이 동수누가 덧셈식
+        var parts=[]; for(var i=0;i<rows;i++) parts.push(cols);
+        st.innerHTML='<span style="font-size:30px;color:#1B3A57;">한 줄에 </span>'
+          +'<span style="font-size:40px;color:#1565C0;">'+cols+'</span>'
+          +'<span style="font-size:30px;color:#1B3A57;">개씩 </span>'
+          +'<span style="font-size:40px;color:#1565C0;">'+rows+'</span>'
+          +'<span style="font-size:30px;color:#1B3A57;">줄</span>'
+          +'<div style="font-size:34px;margin-top:8px;color:#0CA678;">'+parts.join(' ＋ ')+' ＝ <span style="font-size:46px;">'+(rows*cols)+'</span></div>'
+          +'<div style="font-size:23px;margin-top:2px;color:#7048E8;">'+cols+'씩 '+rows+'묶음 = 모두 '+(rows*cols)+'개</div>';
+        var bp0=el.querySelector('[data-act="rp"]');if(bp0)bp0.disabled=rows>=maxR;
+        var bm0=el.querySelector('[data-act="rm"]');if(bm0)bm0.disabled=rows<=1;
+        var cp0=el.querySelector('[data-act="cp"]');if(cp0)cp0.disabled=cols>=maxC;
+        var cm0=el.querySelector('[data-act="cm"]');if(cm0)cm0.disabled=cols<=1;
       } else {
         st.innerHTML='<span style="font-size:38px;color:#1565C0;">'+rows+'</span>'
           +'<span style="font-size:28px;color:#1B3A57;"> 줄 × 한 줄 </span>'
@@ -112,12 +170,13 @@
 
     function checkMission(act){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check(act)){
+      var _M=curMissions();
+      if(_M[mStep].check(act)){
         mLock=true;
         window.KLab.ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1)mStep++; else mDone=true;
+          if(mStep<curMissions().length-1)mStep++; else mDone=true;
           build();
         },1500);
       }
