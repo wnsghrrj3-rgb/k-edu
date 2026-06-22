@@ -32,27 +32,69 @@
 
   window.KLab.register('place_value', function (el, config) {
     var ui = window.KLab.ui;
-    var max   = (typeof config.max === 'number' && config.max > 0) ? config.max : 50;
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 사다리(표상 전환) ──
+       저=묶음 구체물·십 묶기(일상어 닻, 퀴즈 숨김, 두 자리 작게) /
+       중=묶음↔숫자 자리값 분해(20+3)·퀴즈 /
+       고=10:1 교환=받아올림·내림 강조(자리마다 10배)·퀴즈.
+       ※ 12진법 '만약에' 신규 모드는 후속 분리(과학 골든샘플 동일 정책). */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         cap: 29, decompose: false, exchange: false },
+      mid:  { modes: ['free', 'mission', 'quiz'], cap: 50, decompose: true,  exchange: false },
+      high: { modes: ['free', 'mission', 'quiz'], cap: 99, decompose: true,  exchange: true  }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+    function capFor() { return (typeof config.max === 'number' && config.max > 0) ? config.max : G().cap; }
+
+    var max = capFor();
     var start = (typeof config.start === 'number' && config.start >= 0) ? config.start : 0;
     if (start > max) start = max;
 
     var tens = Math.floor(start / 10);
     var ones = start - tens * 10;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
 
-    // ---------- 미션 (max에 맞는 것만) ----------
-    var MISSIONS = [
-      { need: 10, text: '낱개를 <b style="color:#7048E8;">10개</b> 채우고 <b style="color:#2B8A3E;">📦 10개 묶기</b>를 눌러 봐요!',
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      max = capFor();
+      if (start > max) start = max;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      mStep = 0; mDone = false; mLock = false; busy = false;
+      tens = (mode === 'mission') ? 0 : Math.floor(start / 10);
+      ones = (mode === 'mission') ? 0 : start - Math.floor(start / 10) * 10;
+      build();
+    } });
+
+    // ---------- 미션 (학년칸별 · max에 맞는 것만) ----------
+    var LOW_MISSIONS = [
+      { need: 10, text: '낱개를 <b style="color:#7048E8;">10개</b> 모아 <b style="color:#2B8A3E;">📦 10개 묶기</b>로 한 묶음(십)을 만들어요!',
         check: function (act) { return act === 'bundle'; } },
-      { need: 13, text: '<b style="color:#7048E8;">13</b>을 만들어 봐요 — 묶음 1개와 낱개 3개!',
-        check: function () { return tens === 1 && ones === 3; } },
-      { need: 10, text: '<b style="color:#2B8A3E;">묶음 풀기</b>를 눌러 묶음을 도로 낱개로 풀어 봐요 (가역!)',
+      { need: 10, text: '이번엔 <b style="color:#2B8A3E;">묶음 풀기</b>로 묶음을 도로 낱개 10개로 풀어 봐요!',
         check: function (act) { return act === 'unbundle'; } },
-      { need: 24, text: '<b style="color:#7048E8;">24</b>를 만들어 봐요 — 묶음 몇 개, 낱개 몇 개일까요?',
+      { need: 16, text: '<b style="color:#7048E8;">16</b>을 만들어요 — 십 <b>1묶음</b>과 낱개 <b>6개</b>!',
+        check: function () { return tens === 1 && ones === 6; } }
+    ];
+    var MID_MISSIONS = [
+      { need: 13, text: '<b style="color:#7048E8;">13</b>을 만들어 봐요 — 묶음 1개와 낱개 3개! (13 = 10 + 3)',
+        check: function () { return tens === 1 && ones === 3; } },
+      { need: 24, text: '<b style="color:#7048E8;">24</b>를 만들어요 — 자리값으로 펼치면 20 + 4!',
         check: function () { return tens === 2 && ones === 4; } },
+      { need: 30, text: '<b style="color:#7048E8;">30</b>을 만들어요 — 같은 3이지만 여긴 십의 자리, 값은 30!',
+        check: function () { return tens === 3 && ones === 0; } }
+    ];
+    var HIGH_MISSIONS = [
+      { need: 10, text: '낱개 <b style="color:#7048E8;">10개</b>를 묶는 순간 = 십 한 묶음으로 <b style="color:#E8590C;">10:1 교환</b>! 직접 묶어 봐요!',
+        check: function (act) { return act === 'bundle'; } },
       { need: 31, text: '<b style="color:#7048E8;">31</b>을 만들어 봐요!',
-        check: function () { return tens === 3 && ones === 1; } }
-    ].filter(function (m) { return m.need <= max; });
+        check: function () { return tens === 3 && ones === 1; } },
+      { need: 47, text: '<b style="color:#7048E8;">47</b>을 만들어요 — 십 몇 묶음, 낱개 몇 개? 자리마다 10배인 까닭을 떠올리며!',
+        check: function () { return tens === 4 && ones === 7; } }
+    ];
+    function curMissions() {
+      var pool = (grade === 'low') ? LOW_MISSIONS : (grade === 'mid') ? MID_MISSIONS : HIGH_MISSIONS;
+      var f = pool.filter(function (m) { return m.need <= max; });
+      return f.length ? f : pool.slice(0, 1);
+    }
     var mStep = 0, mDone = false, mLock = false;
 
     // ---------- 퀴즈 ----------
@@ -84,7 +126,7 @@
     var stage, statusEl, btns = {}, busy = false;
 
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', ctrlRow = '', foot = '';
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', ctrlRow = '', foot = '';
       var controls =
         '<div class="pv-controls" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
         + '<button class="pv-btn" data-act="plus"  style="' + btnBase + 'background:#1565C0;color:#fff;">＋ 낱개</button>'
@@ -93,7 +135,7 @@
         + '<button class="pv-btn" data-act="unbundle" style="' + btnBase + 'background:#fff;color:#2B8A3E;border-color:#2B8A3E;">묶음 풀기</button>'
         + '<button class="pv-btn" data-act="reset" style="font-size:28px;padding:16px 34px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#555;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 처음으로</button>'
         + '</div>';
-      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); ctrlRow = controls; }
+      if (mode === 'mission') { var _M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(_M[mStep].text, mStep, _M.length); ctrlRow = controls; }
       else if (mode === 'quiz') {
         bar = ui.quizBar(qKind === 'value' ? '이 수모형이 나타내는 수는 얼마일까요?' : '10개씩 묶음은 몇 개일까요?', qScore, qCount);
         foot = ui.choices(quizChoices());
@@ -137,7 +179,7 @@
         else { tens = Math.floor(start / 10); ones = start - tens * 10; }
         build();
       });
-      bindActions(); bindChoices();
+      bindActions(); bindChoices(); bands.bind(el);
       render({ glow: ones >= 10 });
     }
 
@@ -243,13 +285,26 @@
         return;
       }
       var v = value();
-      statusEl.innerHTML =
+      var html =
         '<span style="font-size:30px;">10개씩 묶음 </span>'
         + '<span style="font-size:40px;color:#2B8A3E;">' + tens + '개</span>'
         + '<span style="font-size:30px;"> 와 낱개 </span>'
         + '<span style="font-size:40px;color:#E8590C;">' + ones + '개</span>'
         + '<span style="font-size:30px;"> ＝ </span>'
         + '<span style="font-size:52px;color:#1565C0;">' + v + '</span>';
+      // 중·고: 자리값 분해 표현(20 + 3)
+      if (G().decompose && tens > 0) {
+        html += '<div style="font-size:27px;margin-top:6px;color:#5a7894;font-weight:800;">'
+          + '<span style="color:#2B8A3E;">' + (tens * 10) + '</span> ＋ '
+          + '<span style="color:#E8590C;">' + ones + '</span> ＝ '
+          + '<span style="color:#1565C0;">' + v + '</span></div>';
+      }
+      // 고: 10:1 교환(받아올림) 강조
+      if (G().exchange && ones >= 10) {
+        html += '<div style="font-size:24px;margin-top:4px;color:#7048E8;font-weight:800;">'
+          + '🔁 낱개 10개 = 십 1묶음 — <span style="color:#1565C0;">10 : 1</span>로 바꿔요!</div>';
+      }
+      statusEl.innerHTML = html;
     }
 
     function updateButtons() {
@@ -266,12 +321,13 @@
 
     function checkMission(act) {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check(act)) {
+      var _M = curMissions();
+      if (_M[mStep].check(act)) {
         mLock = true;
         ui.toast(el, true);
         setTimeout(function () {
           mLock = false;
-          if (mStep < MISSIONS.length - 1) { mStep++; tens = 0; ones = 0; }
+          if (mStep < curMissions().length - 1) { mStep++; tens = 0; ones = 0; }
           else mDone = true;
           build();
         }, 1500);
