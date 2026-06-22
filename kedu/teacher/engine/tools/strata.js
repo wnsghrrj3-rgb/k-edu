@@ -71,14 +71,37 @@
       { text:'⛰️ <b style="color:#7048E8;">융기!</b> 화석이 든 지층을 땅 위로 — 산에서 조개가 나오는 까닭을 확인해요!',
         keep:true, check:function(){ return up>=1 && embeddedFossils().length>0; } }
     ];
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=줄무늬 지층 쌓기·화석 만들기(일상어, 오래된 층 추론·융기·퀴즈 숨김) /
+       중=가장 오래된 층·화석·융기 전부+퀴즈(4학년 본 과정) /
+       고=중과 동일(지층은 4학년 과정 — 풀세트 유지). */
+    var LOW_MISSIONS=[
+      { text:'🪨🟡🟤 <b style="color:#7048E8;">서로 다른 퇴적물을 3층 이상</b> 차곡차곡 쌓아 줄무늬를 만들어요!',
+        keep:false, check:function(){ var t={}; layers.forEach(function(l){t[l.type]=1;});
+          return layers.length>=3 && Object.keys(t).length>=2; } },
+      { text:'🐚 <b style="color:#7048E8;">조개를 두고 위에 퇴적물을 덮어</b> 화석을 만들어요!',
+        keep:true, check:function(){ return embeddedFossils().length>0; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, low:true  },
+      mid:  { modes:['free','mission','quiz'], missions:MISSIONS,     low:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     low:false }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    function curMissions(){ return G().missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; reset(); build();
+    }});
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var _M=curMissions();
+      if(_M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
-          mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          mLock=false; var M=curMissions();
+          if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
           else mDone=true;
           build();
         },1500);
@@ -117,13 +140,13 @@
         + bt('d-gravel','🪨 자갈','#607D8B') + bt('d-sand','🟡 모래','#C9971C') + bt('d-mud','🟤 진흙','#8D6E63')
         +'<span style="font-size:17px;font-weight:800;color:'+C.sub+';margin-left:8px;">생물 두기</span>'
         + bt('f-shell','🐚','#1565C0') + bt('f-fern','🌿','#2F9E44') + bt('f-fish','🐟','#1098AD')
-        + bt('uplift','⛰️ 융기!',C.vio,'margin-left:8px;'+(up>0?'opacity:.45;':''))
+        + (G().low?'':bt('uplift','⛰️ 융기!',C.vio,'margin-left:8px;'+(up>0?'opacity:.45;':'')))
         + bt('reset','↺ 처음부터','#889')
         +'</div>';
     }
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(curMissions()[mStep].text,mStep,curMissions().length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=ctrlRow();
       el.innerHTML='<style>.st-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.st-layer{cursor:pointer;}</style>'
@@ -136,7 +159,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      drawStage(); bind(); renderScene(); renderStatus();
+      drawStage(); bind(); bands.bind(el); renderScene(); renderStatus();
     }
 
     /* ───────────── 무대 ───────────── */

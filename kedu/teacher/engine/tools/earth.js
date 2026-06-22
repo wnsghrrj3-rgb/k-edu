@@ -56,19 +56,53 @@
         ch:['동쪽 — 지구가 늘 같은 방향(서→동)으로 도니까','서쪽 — 날마다 바뀌니까','남쪽 — 한국은 남쪽이 밝으니까'], a:0,
         why:'지구는 언제나 서→동으로 자전해요. 그래서 해는 어제도 내일도 동쪽에서!' }
     ];
+    /* ── 학년 칸 (헌법 3장) — 카드 D칸 닻대로 ──
+       저=낮↔밤 만들기·"지구가 빙글 돌아 낮밤"만(자전 용어/방향·퀴즈·만약에 숨김) /
+       중=자전·해돋이/해넘이·하루 한 바퀴(퀴즈 켬, 만약에는 고) /
+       고=자전방향 추론·생각형 오개념 직격·🌀만약에 전부(기존 v3 유지). */
+    var LOW_MISSIONS=[
+      { type:'make', text:'☀️ 시간을 움직여 <b style="color:#7048E8;">환한 낮(점심때쯤)</b>을 만들어 봐요!',
+        check:function(){ return timeOfDay(hour,lat)==='noon'; } },
+      { type:'make', text:'🌙 이번엔 반대로 — <b style="color:#7048E8;">깜깜한 밤</b>으로 옮겨 봐요!',
+        check:function(){ return timeOfDay(hour,lat)==='night'; } },
+      { type:'make', text:'▶ <b style="color:#7048E8;">하루 재생</b>을 켜고 지구가 빙글 한 바퀴 도는 걸 지켜봐요!',
+        check:function(){ return spinAcc>=24; } }
+    ];
+    var MID_MISSIONS=[
+      { type:'make', text:'☀️ 시간을 움직여 <b style="color:#7048E8;">우리나라 정오</b>를 만들어 봐요!',
+        check:function(){ return timeOfDay(hour,lat)==='noon'; } },
+      { type:'make', text:'🌙 태양 반대쪽 — <b style="color:#7048E8;">한밤(자정쯤)</b>으로!',
+        check:function(){ return timeOfDay(hour,lat)==='night'; } },
+      { type:'make', text:'🌅 낮과 밤의 경계, <b style="color:#7048E8;">해돋이(아침 6시쯤)</b>를 잡아 봐요!',
+        check:function(){ return timeOfDay(hour,lat)==='sunrise'; } },
+      { type:'make', text:'▶ <b style="color:#7048E8;">하루 재생</b>으로 지구가 한 바퀴(하루) 자전하는 걸 끝까지 봐요!',
+        check:function(){ return spinAcc>=24; } }
+    ];
+    var GRADES={
+      low:  { modes:['free','mission'],                 missions:LOW_MISSIONS, low:true  },
+      mid:  { modes:['free','mission','quiz'],          missions:MID_MISSIONS, low:false },
+      high: { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    function curMissions(){ return G().missions; }
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; wif.reset(); mode='free'; mStep=0; mDone=false; mLock=false; playing=false; spinAcc=0; hrCnt=0; hour=12; buildUI();
+    }});
     var mStep=0,mDone=false,mLock=false;
     function advanceMission(){
       mLock=false; spinAcc=0;
-      if(mStep<MISSIONS.length-1){ mStep++; if(MISSIONS[mStep].set)MISSIONS[mStep].set(); }
+      var _M=curMissions();
+      if(mStep<_M.length-1){ mStep++; if(_M[mStep].set)_M[mStep].set(); }
       else mDone=true;
       updateBars(); missionFoot(); render(); renderStatus();
     }
     function missionFoot(){
-      ui.thinkFoot(el,{foot:'.ea-foot',bar:'.ea-bars'},(mode==='mission'&&!mDone&&MISSIONS[mStep].type==='think')?MISSIONS[mStep]:null,advanceMission);
+      ui.thinkFoot(el,{foot:'.ea-foot',bar:'.ea-bars'},(mode==='mission'&&!mDone&&curMissions()[mStep].type==='think')?curMissions()[mStep]:null,advanceMission);
     }
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      var m=MISSIONS[mStep]; if(m.type!=='make')return;
+      var m=curMissions()[mStep]; if(m.type!=='make')return;
       if(m.check()){
         mLock=true; ui.toast(el,true);
         setTimeout(advanceMission,1500);
@@ -76,7 +110,7 @@
     }
     function updateBars(){
       var host=el.querySelector('.ea-bars'); if(!host)return;
-      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      if(mode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(curMissions()[mStep].text,mStep,curMissions().length);
       else if(mode==='quiz')host.innerHTML=ui.quizBar(QUIZ[qIdx].q,qScore,qCount);
       else if(mode==='whatif')host.innerHTML=wif.barHTML();
       else host.innerHTML='';
@@ -145,7 +179,7 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz','whatif'],mode,{whatif:'🌀 만약에'}), bar='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode,{whatif:'🌀 만약에'}), bar='', foot='';
       var frozen=(wif.active()&&wif.state.key==='stop');
       var playLabel=frozen?(playing?'■ 멈춤':'▶ 시간 흐르기'):(playing?'■ 멈춤':'▶ 하루 재생');
       var ctrl='<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
@@ -153,7 +187,7 @@
           +'<input class="ea-range" type="range" min="0" max="24" step="0.25" value="'+hour+'" '+(frozen?'disabled':'')+' style="width:min(46vw,330px);'+(frozen?'opacity:.4;':'')+'">'
           +'<span class="ea-clock" style="font-size:22px;font-weight:800;color:'+C.ink+';min-width:78px;text-align:center;font-family:inherit;"></span>'
         +'</div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
+      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(curMissions()[mStep].text,mStep,curMissions().length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl=''; foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); if(wif.state.phase==='pick'||wif.state.phase==='predict')ctrl=''; }
       el.innerHTML='<style>.ea-btn:active,.kl-choice:active{transform:translateY(2px);}'
@@ -185,7 +219,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
-      initThree(); bind(); bindChoices();
+      initThree(); bind(); bindChoices(); bands.bind(el);
       if(mode==='whatif')wif.bind(el);
       if(mode==='mission')missionFoot();
       render(); renderStatus();
@@ -306,7 +340,8 @@
       else{nm='밤 🌙';col=C.night;sub='우리나라가 태양 반대쪽이에요. 태양 빛이 닿지 않아 어두운 밤이에요.';}
       s.innerHTML='<div style="font-size:25px;color:'+col+';">'+clockStr(hour)+' — '+nm+'</div>'
         +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">'+sub+'</div>'
-        +'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">지구는 하루에 한 바퀴 서→동으로 자전해요. 태양이 도는 게 아니라 지구가 돌아서 낮과 밤이 생겨요.</div>';
+        +(G().low?'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">지구가 빙글 돌아서 낮과 밤이 생겨요. ☀️🌙</div>'
+                 :'<div style="font-size:15px;color:#8aa0b6;margin-top:4px;">지구는 하루에 한 바퀴 서→동으로 자전해요. 태양이 도는 게 아니라 지구가 돌아서 낮과 밤이 생겨요.</div>');
       checkMission();
     }
     function setHour(v){ hour=Math.max(0,Math.min(24,v)); var r=el.querySelector('.ea-range'); if(r&&+r.value!==hour)r.value=hour; render(); renderStatus(); }
