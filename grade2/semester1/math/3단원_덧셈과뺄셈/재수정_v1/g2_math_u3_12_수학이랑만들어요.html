@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<!--
+  g2_math_u3_l12 — 수학이랑 만들어요 [2학년 3단원 12차시, 단일 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g2/unit3/12차_수학이랑만들어요/draft.html
+  지도서: _SOURCE.md (지도서 p.240-241, 교과서 88-89, 교과서 14차시, 40분)
+  base 엔진: g2_math_u3_11 (v14) verbatim + cubeRow 미니 신규
+
+  학습 본질: 아웃트로·창의. 연결 모형(색 큐브)으로 멸종위기 동물 작품 → 쓴 모형 수로 덧셈·뺄셈. 나·친구 비교(모두/차이). 환경 맥락 마무리.
+  부품: cubeRow 미니 신규(색 큐브 세기). vAlgorithm(세로셈) 재사용. 자유활동→채점 문항화.
+  성취기준: [2수01-05]·[2수01-06].
+  메카닉: count_input ×4 + 4지선다 ×2 + 식↔답 매칭 + 계산 판정. 100점.
+  톤: 2학년 v14 따뜻한 톤
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g2_math_u3_l12_v1">
+<title>수학이랑 만들어요 · K-edu 2학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#FF6B4A; --coral-deep:#E0512E; --coral-soft:#FFE3DA;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+/* ───── bar_model — 전체|부분|부분 막대 (09차 신규 부품) ───── */
+.bar-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-md); width:100%; }
+.bar-svg { width:min(420px,92vw); height:auto; display:block; }
+.bar-legend { display:flex; gap:clamp(14px,3vw,26px); font-family:var(--f-title); font-size:var(--fs-caption); }
+.bar-legend .lg-w { color:var(--coral-deep); }
+.bar-legend .lg-p { color:var(--teal-deep); }
+.fam-grid { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); max-width:var(--mw-sm); width:100%; }
+.fam-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); background:#fff; border:2px solid var(--line); border-radius:16px; padding:clamp(8px,1.6vw,13px) clamp(16px,3vw,24px); text-align:center; box-shadow:var(--shadow); }
+.fam-eq.add { border-color:var(--coral); color:var(--coral-deep); }
+.fam-eq.sub { border-color:var(--teal); color:var(--teal-deep); }
+
+/* ───── box_equation — 식 안 □ 칸 (10차 신규 부품) ───── */
+.beq { display:flex; align-items:center; justify-content:center; gap:clamp(6px,1.4vw,12px); flex-wrap:wrap; font-family:var(--f-num); font-weight:800; }
+.beq-tok { font-size:var(--em-sm); color:var(--ink); }
+.beq-op { font-size:var(--em-sm); color:var(--ink-soft); }
+.beq-box { display:inline-flex; align-items:center; justify-content:center; min-width:clamp(48px,9vw,76px); height:clamp(48px,9vw,76px); border:4px dashed var(--coral); border-radius:16px; background:#fff; color:var(--coral); font-size:var(--em-sm); box-shadow:0 5px 0 var(--coral-soft); }
+.beq-box.filled { border-style:solid; background:var(--coral); color:#fff; }
+.balance-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--teal-deep); background:var(--teal-soft); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(14px,2.6vw,20px); }
+
+/* ───── three_number_calc — 세 수 ①→② 단계 (08차 신규 부품) ───── */
+.tnc { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-md); width:100%; }
+.tnc-expr { font-family:var(--f-num); font-weight:800; font-size:var(--em-sm); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(8px,1.6vw,14px) clamp(20px,4vw,38px); box-shadow:0 5px 0 var(--coral-soft); letter-spacing:1px; }
+.tnc-steps { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); width:100%; max-width:var(--mw-sm); }
+.tnc-step { display:flex; align-items:center; gap:clamp(8px,1.6vw,14px); background:#fff; border:2px solid var(--line); border-radius:16px; padding:clamp(8px,1.5vw,13px) clamp(14px,2.6vw,22px); box-shadow:var(--shadow); }
+.tnc-step.s2 { background:var(--teal-soft); border-color:var(--teal); }
+.tnc-badge { flex-shrink:0; width:clamp(30px,5vw,40px); height:clamp(30px,5vw,40px); border-radius:50%; background:var(--coral); color:#fff; font-family:var(--f-title); font-size:var(--fs-body); display:flex; align-items:center; justify-content:center; }
+.tnc-step.s2 .tnc-badge { background:var(--teal-deep); }
+.tnc-eq { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.tnc-eq .tnc-mid { color:var(--teal-deep); }
+.tnc-eq .tnc-res { color:var(--coral-deep); }
+.tnc-eq .tnc-blank { color:var(--coral); }
+.tnc-note { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; }
+
+/* ───── cube_row — 색 큐브 세기 (12차 미니 부품) ───── */
+.cube-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-md); width:100%; }
+.cube-grid { display:inline-flex; flex-wrap:wrap; gap:clamp(3px,0.7vw,5px); max-width:min(440px,92vw); justify-content:center; padding:clamp(8px,1.6vw,12px); background:#fff; border:2px solid var(--line); border-radius:16px; box-shadow:var(--shadow); }
+.cube { width:clamp(13px,2.7vw,18px); height:clamp(13px,2.7vw,18px); border-radius:4px; background:var(--teal); box-shadow:inset 0 -3px 0 rgba(0,0,0,0.14); }
+.cube.red { background:var(--coral); }
+.cube.blue { background:#5B8DEF; }
+.cube.gold { background:#F6B526; }
+.cube-count { font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); }
+.cube-count .red { color:var(--coral-deep); }
+.cube-count .blue { color:#3C6FD0; }
+
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">12차시</span>
+    <span class="ka-where">수학 2-1 · <b>3. 덧셈과 뺄셈</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 슬라이드 본문 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">연결 모형으로 작품을 만들어요</h2>
+      <div class="scene">
+        <div class="pencil-row">🧊🧊🧊 → 🐻‍❄️ &nbsp; · &nbsp; 🧊🧊🧊 → 🐧</div>
+        <div class="pencil-row">멸종 위기 동물을 큐브로 만들어요</div>
+      </div>
+      <div class="intro-q">곰이와 펭이가 색 큐브로 <strong>북극곰</strong>과 <strong>펭귄</strong>을 만들었어요.<br>쓴 큐브 수로 덧셈·뺄셈을 해 봐요!</div>
+    </div>
+
+    <!-- 슬 2 — 도입: 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘 할 일</h2>
+      <ul class="goal-list">
+        <li>연결 모형으로 <strong>작품</strong>을 만들어요</li>
+        <li>쓴 모형 수를 <strong>부분으로 나눠 세요</strong> (덧셈)</li>
+        <li>나와 친구를 <strong>비교</strong>해요 (모두·차이)</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 상기 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">부분으로 나눠 세요</h2>
+      <div class="recall-box">큐브가 많을 땐 <strong>색깔별</strong>로,<br><strong>부분으로 나눠</strong> 센 다음 더하면 쉬워요!</div>
+    </div>
+
+    <!-- 슬 4 — 전개: 작품 큐브 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 작품</div>
+      <h2 class="slide-title">곰이의 북극곰 작품</h2>
+      <div class="cube-stage">
+        <div id="art-cubes"></div>
+        <div class="concept-box">빨강 큐브(몸통)와 파랑 큐브(얼음)로 만들었어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 사용 모형 수 세기 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 세기</div>
+      <h2 class="slide-title">쓴 큐브는 모두 몇 개?</h2>
+      <div class="cube-stage">
+        <div id="count-cubes"></div>
+        <div class="cube-count"><span class="red">빨강 25</span> + <span class="blue">파랑 17</span> = <strong>42개</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 나·친구 비교 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 비교</div>
+      <h2 class="slide-title">곰이와 펭이를 비교해요</h2>
+      <div class="mean-grid">
+        <div class="mean-item"><strong>곰이</strong><br>42개</div>
+        <div class="mean-item"><strong>펭이</strong><br>35개</div>
+        <div class="mean-item"><strong>모두</strong><br>42+35=77개</div>
+        <div class="mean-item"><strong>차이</strong><br>42−35=7개</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 검토</div>
+      <h2 class="slide-title">바르게 계산했는지 살펴봐요</h2>
+      <div class="concept-box">큐브를 <strong>빠뜨리지 않고</strong> 세었나요?<br>더하기·빼기를 <strong>다시 한 번</strong> 확인해요.<br>🌏 멸종 위기 동물을 기억해요!</div>
+    </div>
+
+    <!-- 슬 8 — 기본: 큐브 세기 (cubeRow, count_input) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><span style="color:var(--coral-deep)">빨강 23</span> + <span style="color:#3C6FD0">파랑 19</span>. 큐브는 모두 몇 개?</div>
+        <div id="q8-cubes"></div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["부분으로 나눠 더해요.","23+19=42."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본: 비교 덧셈 (4지선다) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">곰이는 <strong>28개</strong>, 펭이는 <strong>36개</strong>를 썼어요.<br>두 사람이 쓴 큐브는 모두 몇 개?</div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt" data-correct="1">64개</button>
+          <button class="mcq-opt" data-correct="0">54개</button>
+          <button class="mcq-opt" data-correct="0">62개</button>
+          <button class="mcq-opt" data-correct="0">8개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["모두 = 두 수를 더해요.","28+36=64."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본: 비교 뺄셈 (count_input) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">곰이 <strong>45개</strong>, 펭이 <strong>28개</strong>.<br>곰이가 큐브를 몇 개 더 썼을까요?</div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["차이 = 큰 수에서 작은 수를 빼요.","45-28=17."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본: 식↔답 매칭 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <h2 class="slide-title">식과 답을 이어요</h2>
+      <div class="match-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">큐브 수 계산의 답을 찾아 이어요</div>
+        <div class="match-cols">
+          <div class="match-col" id="q11-left"></div>
+          <div class="match-col" id="q11-right"></div>
+        </div>
+        <div class="mcq-hint" data-hints='["받아올림·받아내림에 주의해요.","17+25=42."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용: 받아올림 세로셈 (count_input) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">작품에 쓴 큐브를 더해요</h2>
+      <div class="q-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">큰 작품에 <strong>38개</strong>, 작은 작품에 <strong>47개</strong>. 모두?</div>
+        <div id="q12-valg"></div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["일의 자리 8+7=15, 받아올림!","38+47=85."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용: 비교 실생활 (4지선다) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">재활용품을 모았어요</h2>
+      <div class="q-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">곰이는 재활용품 <strong>56개</strong>, 펭이는 <strong>38개</strong>를 모았어요.<br>곰이가 몇 개 더 모았을까요?</div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="1">18개</button>
+          <button class="mcq-opt" data-correct="0">28개</button>
+          <button class="mcq-opt" data-correct="0">22개</button>
+          <button class="mcq-opt" data-correct="0">94개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["몇 개 더 = 빼기예요.","56-38=18."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용: 계산 판정 ○/✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">큐브 수 계산이 맞으면 ○</h2>
+      <div class="q-stage">
+        <div class="judge-grid" id="q14-judge">
+          <div class="judge-item" data-ans="o"><div class="judge-text"><strong>29 + 34 = 63</strong></div><div class="judge-btns"><button class="judge-btn" data-pick="o">○</button><button class="judge-btn" data-pick="x">✕</button></div></div>
+          <div class="judge-item" data-ans="x"><div class="judge-text"><strong>61 − 27 = 44</strong></div><div class="judge-btns"><button class="judge-btn" data-pick="o">○</button><button class="judge-btn" data-pick="x">✕</button></div></div>
+          <div class="judge-item" data-ans="o"><div class="judge-text"><strong>45 + 38 = 83</strong></div><div class="judge-btns"><button class="judge-btn" data-pick="o">○</button><button class="judge-btn" data-pick="x">✕</button></div></div>
+        </div>
+        <div class="mcq-hint" data-hints='["받아올림·받아내림을 확인해요.","61-27은 받아내림하면 34예요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용: 받아내림 세로셈 (count_input) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <h2 class="slide-title">큐브 차이를 구해요</h2>
+      <div class="q-stage">
+        <div class="q-prompt" style="font-size:var(--fs-body)">곰이 <strong>72개</strong>, 펭이 <strong>39개</strong>. 차이는?</div>
+        <div id="q15-valg"></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["일의 자리 2-9, 받아내림!","72-39=33."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">단원을 마무리해요</h2>
+      <div class="summary-stage">
+        <div class="summary-card">연결 모형으로 작품을 만들고,<br>쓴 큐브 수로 <strong>덧셈·뺄셈</strong>까지 했어요.<br>🌏 멸종 위기 동물을 지키는 곰이·펭이처럼!</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">단원 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">단원 끝!</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🐻‍❄️ 🐧 🌏</div>
+          <div class="next-label">덧셈과 뺄셈 단원을 모두 마쳤어요</div>
+        </div>
+        <div class="home-prompt">집에서 색 블록이나 재활용품으로 동물을 만들고, 쓴 개수로 덧셈·뺄셈을 해 보세요!</div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ───── 푸터 ───── -->
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g2_math_u3_l12';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+// place_value_block — 자릿값 모형 SVG (2학년 신규 부품)
+//   kind: 'one'(낱개) | 'ten'(십 막대) | 'hundred'(백 10x10)
+//   색: 백 #FF6B4A(coral) / 십 #1FA8A0(teal) / 일 #F6B526(gold), 보더 #62708A
+// ════════════════════════════════════════
+function pvBlock(kind, scale) {
+  scale = scale || 1;
+  const u = 9 * scale;       // 한 칸 픽셀
+  const gap = 1.5 * scale;
+  const stroke = '#62708A';
+  function cell(x, y, fill) {
+    return `<rect x="${x}" y="${y}" width="${u}" height="${u}" rx="${1.5*scale}" fill="${fill}" stroke="${stroke}" stroke-width="${1*scale}"/>`;
+  }
+  if (kind === 'one') {
+    const s = u + 2;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">${cell(1,1,'#F6B526')}</svg>`;
+  }
+  if (kind === 'ten') {
+    const w = u + 2;
+    const h = 10 * (u + gap) + 2;
+    let r = '';
+    for (let i = 0; i < 10; i++) r += cell(1, 1 + i * (u + gap), '#1FA8A0');
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${r}</svg>`;
+  }
+  // hundred 10x10
+  const w = 10 * (u + gap) + 2;
+  let r = '';
+  for (let row = 0; row < 10; row++)
+    for (let col = 0; col < 10; col++)
+      r += cell(1 + col * (u + gap), 1 + row * (u + gap), '#FF6B4A');
+  return `<svg width="${w}" height="${w}" viewBox="0 0 ${w} ${w}">${r}</svg>`;
+}
+// 같은 종류 모형 n개를 가로로
+function pvGroupRow(kind, n, scale) {
+  let html = '';
+  for (let i = 0; i < n; i++) html += `<div class="pv-block">${pvBlock(kind, scale)}</div>`;
+  return html;
+}
+
+// ════════════════════════════════════════
+// number_line — 수직선 SVG (2학년 신규 부품)
+//   0~100, 10단위 눈금. pick=true면 0/50/100 클릭 지점
+// ════════════════════════════════════════
+function numberLine(opts) {
+  opts = opts || {};
+  const W = 700, H = opts.pick ? 110 : 90, padX = 40, y = 50;
+  const x0 = padX, x1 = W - padX;
+  const span = x1 - x0;
+  function px(v) { return x0 + (v / 100) * span; }
+  let s = `<svg class="nl-svg" viewBox="0 0 ${W} ${H}">`;
+  s += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#90A4AE" stroke-width="3"/>`;
+  s += `<polygon points="${x1},${y} ${x1-12},${y-7} ${x1-12},${y+7}" fill="#90A4AE"/>`;
+  for (let v = 0; v <= 100; v += 10) {
+    const x = px(v);
+    const big = (v === 0 || v === 50 || v === 100);
+    s += `<line x1="${x}" y1="${y-(big?12:7)}" x2="${x}" y2="${y+(big?12:7)}" stroke="#90A4AE" stroke-width="${big?3:2}"/>`;
+    if (big) s += `<g class="nl-tick"><text x="${x}" y="${y+34}" text-anchor="middle" font-size="20">${v}</text></g>`;
+  }
+  if (opts.mark != null) {
+    const x = px(opts.mark);
+    s += `<circle cx="${x}" cy="${y}" r="11" fill="#DC2626"/>`;
+    s += `<g class="nl-tick"><text x="${x}" y="${y-20}" text-anchor="middle" font-size="22" fill="#DC2626">${opts.mark}</text></g>`;
+  }
+  if (opts.pick) {
+    [0, 50, 100].forEach(v => {
+      const x = px(v);
+      s += `<g class="nl-pick" data-val="${v}"><circle cx="${x}" cy="${y}" r="14" fill="#FFE3DA" stroke="#FF6B4A" stroke-width="2.5"/></g>`;
+    });
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// 슬별 부품 렌더
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// vertical_algorithm v3 — 세로셈 SVG (덧셈/뺄셈 통합 핵심 부품)
+//   opts.op: '+'(기본) | '-'.  덧셈: carry 'ones'/'tens'/'both'.
+//   뺄셈: borrow=true → 십의 자리 빗금+줄인 수, 일의 자리 10 받기.
+//   opts.result(결과 표시) | opts.blank(? 표기, 자릿수만큼). 받아올림/내림 = red.
+// ════════════════════════════════════════
+function vAlgorithm(a, b, opts){
+  opts = opts || {};
+  const op = opts.op || '+';
+  const ad=[Math.floor(a/10)%10, a%10], bd=[Math.floor(b/10)%10, b%10];
+  const res = op==='-' ? (a-b) : (a+b);
+  const rd=[Math.floor(res/100)%10, Math.floor(res/10)%10, res%10];
+  const x0=48, cw=42, colX=[x0, x0+cw, x0+cw*2]; // 백·십·일
+  const yTop=12, rowH=40;
+  const yMark=yTop+13, yA=yTop+rowH, yB=yTop+rowH*2, yLine=yTop+rowH*2+14, yR=yTop+rowH*3+10;
+  const W=x0+cw*3+12, H=yR+14;
+  const ink='#243043', red='#DC2626', blk='#FF6B4A';
+  function tx(x,y,t,fill,size,bold){ return `<text x="${x}" y="${y}" text-anchor="middle" font-size="${size||30}" fill="${fill||ink}"${bold?' font-weight="800"':''}>${t}</text>`; }
+  let s=`<svg class="valg-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:250px">`;
+  if(op==='+'){
+    const cOnes=opts.carry==='ones'||opts.carry==='both'||opts.carry===true;
+    const cTens=opts.carry==='tens'||opts.carry==='both';
+    if(cOnes) s+=tx(colX[1], yMark, '1', red, 19, true);
+    if(cTens) s+=tx(colX[0], yMark, '1', red, 19, true);
+  } else if(opts.borrow){
+    s+=tx(colX[1], yMark, ad[0]-1, red, 18, true);
+    s+=tx(colX[2], yMark, ad[1]+10, red, 15, true);
+    s+=`<line x1="${colX[1]-13}" y1="${yA+5}" x2="${colX[1]+13}" y2="${yA-21}" stroke="${red}" stroke-width="2"/>`;
+  }
+  if(ad[0]>0) s+=tx(colX[1], yA, ad[0]);
+  s+=tx(colX[2], yA, ad[1]);
+  s+=tx(x0-20, yB, op==='-'?'\u2212':'+', ink, 28);
+  if(bd[0]>0) s+=tx(colX[1], yB, bd[0]);
+  s+=tx(colX[2], yB, bd[1]);
+  s+=`<line x1="${x0-26}" y1="${yLine}" x2="${x0+cw*3-8}" y2="${yLine}" stroke="#62708A" stroke-width="2.5"/>`;
+  if(opts.result){ if(rd[0]>0) s+=tx(colX[0], yR, rd[0]); s+=tx(colX[1], yR, rd[1])+tx(colX[2], yR, rd[2]); }
+  else if(opts.blank){ if(rd[0]>0) s+=tx(colX[0], yR, '?', blk, 30, true); s+=tx(colX[1], yR, '?', blk, 30, true)+tx(colX[2], yR, '?', blk, 30, true); }
+  s+=`</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// bar_model — 전체|부분|부분 막대 (09차 신규 부품)
+//   barModel(whole, p1, p2, {blank:'whole'|'p1'|'p2'})
+//   위=전체(coral) 칸 / 아래=부분 p1(teal)·p2(gold), 폭은 값에 비례
+// ════════════════════════════════════════
+function barModel(whole, p1, p2, opts){
+  opts = opts || {};
+  const W=420, barH=46, gap=16;
+  const H=barH*2+gap+4, x0=2, fullW=W-4;
+  const w1=fullW*p1/whole, w2=fullW-w1;
+  const coral='#FF6B4A', teal='#1FA8A0', gold='#F6B526', stroke='#62708A';
+  function seg(x,w,y,fill,txt,blank){
+    let r=`<rect x="${x}" y="${y}" width="${w}" height="${barH}" rx="10" fill="${blank?'#fff':fill}" stroke="${blank?coral:stroke}" stroke-width="${blank?3:2}"${blank?' stroke-dasharray="7 5"':''}/>`;
+    r+=`<text x="${x+w/2}" y="${y+barH/2+9}" text-anchor="middle" font-size="26" font-weight="800" fill="${blank?coral:'#fff'}" font-family="Nunito,sans-serif">${txt}</text>`;
+    return r;
+  }
+  const wT=opts.blank==='whole'?'?':whole, p1T=opts.blank==='p1'?'?':p1, p2T=opts.blank==='p2'?'?':p2;
+  let s=`<svg class="bar-svg" viewBox="0 0 ${W} ${H}" width="${W}">`;
+  s+=seg(x0, fullW, 2, coral, wT, opts.blank==='whole');
+  s+=seg(x0, w1, 2+barH+gap, teal, p1T, opts.blank==='p1');
+  s+=seg(x0+w1, w2, 2+barH+gap, gold, p2T, opts.blank==='p2');
+  s+=`</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// box_equation — 식 안 □ 칸 (10차 신규 부품)
+//   boxEquation(a, op, b, c)  —  a op b = c, 토큰 중 '□'는 점선 칸
+// ════════════════════════════════════════
+function boxEquation(a, op, b, c){
+  const sym = op === '+' ? '+' : '\u2212';
+  const tok = v => v === '\u25A1' ? '<span class="beq-box">\u25A1</span>' : `<span class="beq-tok">${v}</span>`;
+  return `<div class="beq">${tok(a)}<span class="beq-op">${sym}</span>${tok(b)}<span class="beq-op">=</span>${tok(c)}</div>`;
+}
+
+const BOX = '\u25A1';
+// ════════════════════════════════════════
+// three_number_calc — 세 수 ①→② 단계 (08차 신규 부품)
+//   threeNumCalc(a, op1, b, op2, c, opts)
+//   op1/op2: '+' | '-'.  중간값 m = a op1 b, 결과 r = m op2 c.
+//   opts.blank: 결과 ? · opts.blankMid: 중간값 ? · opts.note: 안내문
+// ════════════════════════════════════════
+function threeNumCalc(a, op1, b, op2, c, opts){
+  opts = opts || {};
+  const sym = o => o === '+' ? '+' : '\u2212';
+  const m = op1 === '+' ? a + b : a - b;
+  const r = op2 === '+' ? m + c : m - c;
+  const expr = `${a} ${sym(op1)} ${b} ${sym(op2)} ${c}`;
+  const midShown = opts.blankMid ? '<span class="tnc-blank">?</span>' : `<span class="tnc-mid">${m}</span>`;
+  const midLead  = opts.blankMid ? '<span class="tnc-blank">?</span>' : `<span class="tnc-mid">${m}</span>`;
+  const resShown = opts.blank ? '<span class="tnc-blank">?</span>' : `<span class="tnc-res">${r}</span>`;
+  let s = `<div class="tnc">`;
+  s += `<div class="tnc-expr">${expr}</div>`;
+  s += `<div class="tnc-steps">`;
+  s += `<div class="tnc-step"><span class="tnc-badge">\u2460</span><span class="tnc-eq">${a} ${sym(op1)} ${b} = ${midShown}</span></div>`;
+  s += `<div class="tnc-step s2"><span class="tnc-badge">\u2461</span><span class="tnc-eq">${midLead} ${sym(op2)} ${c} = ${resShown}</span></div>`;
+  s += `</div>`;
+  if (opts.note) s += `<div class="tnc-note">${opts.note}</div>`;
+  s += `</div>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// cube_row — 색 큐브 세기 (12차 미니 부품)
+//   cubeRow(n, cls)  →  n개의 색 큐브
+// ════════════════════════════════════════
+function cubeRow(n, cls){
+  let c=''; for(let i=0;i<n;i++) c+=`<span class="cube ${cls||''}"></span>`;
+  return `<span class="cube-grid">${c}</span>`;
+}
+
+// 슬4 — 작품 큐브 (빨강18 + 파랑12)
+document.getElementById('art-cubes').innerHTML = cubeRow(18,'red') + cubeRow(12,'blue');
+// 슬5 — 사용 모형 세기 (빨강25 + 파랑17 = 42)
+document.getElementById('count-cubes').innerHTML = cubeRow(25,'red') + cubeRow(17,'blue');
+// 슬8 — 큐브 세기 (빨강23 + 파랑19 = 42)
+document.getElementById('q8-cubes').innerHTML = cubeRow(23,'red') + cubeRow(19,'blue');
+// 슬12 — 받아올림 세로셈 38+47 (빈칸)
+document.getElementById('q12-valg').innerHTML = vAlgorithm(38,47,{op:'+',carry:'ones',blank:true});
+// 슬15 — 받아내림 세로셈 72-39 (빈칸)
+document.getElementById('q15-valg').innerHTML = vAlgorithm(72,39,{op:'-',borrow:true,blank:true});
+
+// ───── count_input (답 직접 입력) 공통 ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg) {
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < 3) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한 번 세어 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+setupPad('q8', 42, 'q8-pad', 'q8-display', 'q8-fb', '23+19=42개!');
+setupPad('q10', 17, 'q10-pad', 'q10-display', 'q10-fb', '45-28=17개!');
+setupPad('q12', 85, 'q12-pad', 'q12-display', 'q12-fb', '38+47=85개!');
+setupPad('q15', 33, 'q15-pad', 'q15-display', 'q15-fb', '72-39=33개!');
+
+// ───── 슬9 4지선다 (비교 덧셈 28+36=64) ─────
+(function mcq9(){
+  const qid='q9'; const fb=document.getElementById('q9-fb');
+  document.querySelectorAll('#q9-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved) return; st.attempts++;
+      if(o.dataset.correct==='1'){ st.solved=true; o.classList.add('correct'); const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='맞아요! 28+36=64개! +'+earn+'점'; updateUI(); }
+      else { st.wrongCount++; o.classList.add('wrong'); fb.classList.add('wrong'); fb.textContent='두 사람의 큐브를 더해 보세요'; setTimeout(()=>o.classList.remove('wrong'),500); }
+    });
+  });
+})();
+
+// ───── 슬13 4지선다 (비교 뺄셈 56-38=18) ─────
+(function mcq13(){
+  const qid='q13'; const fb=document.getElementById('q13-fb');
+  document.querySelectorAll('#q13-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click',()=>{
+      const st=getQState(qid); if(st.solved) return; st.attempts++;
+      if(o.dataset.correct==='1'){ st.solved=true; o.classList.add('correct'); const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='맞아요! 56-38=18개! +'+earn+'점'; updateUI(); }
+      else { st.wrongCount++; o.classList.add('wrong'); fb.classList.add('wrong'); fb.textContent='몇 개 더 = 빼기예요'; setTimeout(()=>o.classList.remove('wrong'),500); }
+    });
+  });
+})();
+
+// ───── 슬11 매칭 (식↔답) ─────
+(function match11(){
+  const qid='q11';
+  const items=[{e:'17+25',s:42},{e:'50-23',s:27},{e:'34+29',s:63}];
+  const rights=[27,63,42];
+  const lEl=document.getElementById('q11-left'); const rEl=document.getElementById('q11-right');
+  items.forEach(it=>{ const d=document.createElement('button'); d.className='match-card'; d.dataset.sum=it.s; d.dataset.side='l'; d.textContent=it.e; lEl.appendChild(d); });
+  rights.forEach(v=>{ const d=document.createElement('button'); d.className='match-card'; d.dataset.val=v; d.dataset.side='r'; d.textContent=v; rEl.appendChild(d); });
+  let selL=null, matched=0; const fb=document.getElementById('q11-fb');
+  function clickCard(card){
+    const st=getQState(qid); if(st.solved) return;
+    if(card.classList.contains('matched')) return;
+    if(card.dataset.side==='l'){ document.querySelectorAll('#q11-left .match-card').forEach(c=>c.classList.remove('sel')); card.classList.add('sel'); selL=card; }
+    else {
+      if(!selL){ fb.textContent='왼쪽 식을 먼저 골라요'; return; }
+      if(parseInt(selL.dataset.sum,10)===parseInt(card.dataset.val,10)){
+        const e=selL.textContent;
+        selL.classList.add('matched'); selL.classList.remove('sel'); card.classList.add('matched'); selL=null; matched++;
+        if(matched===items.length){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='모두 짝지었어요! +'+earn+'점'; updateUI(); }
+        else { fb.classList.remove('wrong'); fb.textContent='좋아요! '+e+' 짝!'; }
+      } else { st.wrongCount++; fb.classList.add('wrong'); fb.textContent='계산을 다시 해 보세요!'; card.classList.add('sel'); setTimeout(()=>card.classList.remove('sel'),500); }
+    }
+  }
+  [...lEl.children, ...rEl.children].forEach(c=>c.addEventListener('click',()=>clickCard(c)));
+})();
+
+// ───── 슬14 계산 판정 (○/✕) ─────
+(function judge14(){
+  const qid='q14';
+  const items=[...document.querySelectorAll('#q14-judge .judge-item')];
+  let done=0; const fb=document.getElementById('q14-fb');
+  items.forEach(it=>{
+    it.querySelectorAll('.judge-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const st=getQState(qid); if(st.solved) return;
+        if(it.dataset.locked) return;
+        it.querySelectorAll('.judge-btn').forEach(b=>b.classList.remove('pick-o','pick-x'));
+        btn.classList.add(btn.dataset.pick==='o'?'pick-o':'pick-x');
+        if(btn.dataset.pick===it.dataset.ans){
+          it.dataset.locked='1'; it.classList.remove('miss'); it.classList.add('right'); done++;
+          if(done===items.length){ st.solved=true; const earn=pointsForQ(qid); addScore(earn); fb.classList.remove('wrong'); fb.textContent='모두 맞았어요! +'+earn+'점'; updateUI(); }
+          else { fb.classList.remove('wrong'); fb.textContent='좋아요!'; }
+        } else { st.wrongCount++; it.classList.add('miss'); fb.classList.add('wrong'); fb.textContent='계산을 다시 확인해 볼까요?'; setTimeout(()=>it.classList.remove('miss'),500); }
+      });
+    });
+  });
+})();
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
