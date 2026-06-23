@@ -1,32 +1,64 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 넓이 격자 (area) v2
-   v2: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
-     · 자유탐구 — v1 자산(가로/세로±, 칸 클릭 색칠, 넓이·둘레 표시) 유지.
-     · 미션 — 넓이6→L자5칸→7×4→둘레20 4단계 달성.
-     · 퀴즈 — 직사각형/L자 격자 보여주고 넓이 또는 둘레 선택지 출제.
+   케이랩 도구 모듈 — 넓이 격자 (area) v3 · 3모드 + 학년칸
+   v3: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = "칸 세기"(넓이=칸 개수)·★채운 칸에 1·2·3 번호를 찍는 세기 신규 닻
+            ·빈 격자에서 채움·작은 격자(6×5)·곱셈식/둘레/㎠/퀴즈 숨김(일상어 "몇 칸").
+     · 중 = 가로×세로 곱셈식·둘레 등장·퀴즈(넓이·둘레).
+     · 고 = 기존 전부 유지(큰 격자·곱셈·둘레·퀴즈 5문).
    - 의존: window.KLab
+   - config: { w, h, maxW, maxH, unit, fillAll, grade:"low|mid|high", mode }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   window.KLab.register('area', function (el, config) {
     var ui = window.KLab.ui;
-    var maxW = config.maxW || 12, maxH = config.maxH || 10, unit = config.unit || '㎠';
-    var w = Math.min(config.w || 5, maxW), h = Math.min(config.h || 3, maxH);
-    var fillAll = (config.fillAll === false) ? false : true;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES={
+      low:  { modes:['free','mission'],        maxW:6,  maxH:5,  mult:false, perim:false, count:true,  fill:false },
+      mid:  { modes:['free','mission','quiz'], maxW:12, maxH:10, mult:true,  perim:true,  count:false, fill:true  },
+      high: { modes:['free','mission','quiz'], maxW:12, maxH:10, mult:true,  perim:true,  count:false, fill:true  }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+
+    var unit = config.unit || '㎠';
+    var maxW = config.maxW || G().maxW, maxH = config.maxH || G().maxH;
+    function startW(){ return Math.min(config.w || (grade==='low'?4:5), maxW); }
+    function startH(){ return Math.min(config.h || (grade==='low'?4:3), maxH); }
+    var w = startW(), h = startH();
+    function fillAllNow(){ return (config.fillAll===false) ? false : G().fill; }
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var filled = {};
 
     function fill_init() {
       filled = {};
-      if (fillAll) for(var r=0;r<h;r++) for(var c=0;c<w;c++) filled[c+','+r]=true;
+      if (fillAllNow()) for(var r=0;r<h;r++) for(var c=0;c<w;c++) filled[c+','+r]=true;
     }
     fill_init();
 
     function countFilled() { var n=0; for(var k in filled) if(filled[k]) n++; return n; }
 
-    // ---- 미션 ----
-    // M1: 넓이 6, M2: L자(비직사각, 5칸), M3: 7x4=28, M4: 둘레20(가로6세로4 또는 가로9세로1 등)
-    var MISSIONS = [
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g;
+      maxW = config.maxW || G().maxW; maxH = config.maxH || G().maxH;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false;
+      w=startW(); h=startH(); fill_init();
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
+
+    // ---- 미션 (학년칸별 풀) ----
+    var LOW_MISSIONS = [
+      { text: '칸을 색칠해서 정확히 <b style="color:#7048E8;">4칸</b>을 채워 봐요! (하나씩 세어 봐요)',
+        check: function() { return countFilled() === 4; } },
+      { text: '이번엔 <b style="color:#7048E8;">6칸</b>을 채워 봐요!',
+        check: function() { return countFilled() === 6; } },
+      { text: '<b style="color:#7048E8;">ㄴ자 모양</b>으로 <b style="color:#7048E8;">5칸</b>을 채워 봐요! (꼭 네모가 아니어도 돼요)',
+        check: function() { return countFilled() === 5; } }
+    ];
+    var MID_MISSIONS = [
       { text: '격자를 만들어 <b style="color:#7048E8;">넓이가 6㎠</b>인 직사각형을 만들어 봐요!',
         check: function() { return countFilled() === 6 && countFilled() === w*h; } },
       { text: '칸을 <b style="color:#7048E8;">일부만 색칠</b>해서 넓이가 <b style="color:#7048E8;">5칸</b>인 ㄴ자 모양을 만들어 봐요!',
@@ -36,9 +68,11 @@
       { text: '직사각형의 <b style="color:#7048E8;">둘레가 20㎝</b>가 되게 만들어 봐요!',
         check: function() { return countFilled() === w*h && 2*(w+h) === 20; } }
     ];
+    var HIGH_MISSIONS = MID_MISSIONS;
+    function curMissions(){ return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS; }
     var mStep = 0, mDone = false, mLock = false;
 
-    // ---- 퀴즈 ----
+    // ---- 퀴즈 (중·고만) ----
     var QUIZ_POOL = [
       { q: '직사각형의 넓이는 몇 ㎠인가요?', w:4, h:3, preset:null, answer:'12', choices:['10','12','14','18'], type:'rect' },
       { q: '직사각형의 넓이는 몇 ㎠인가요?', w:5, h:2, preset:null, answer:'10', choices:['7','10','14','20'], type:'rect' },
@@ -63,7 +97,7 @@
     var btn = 'font-size:25px;padding:13px 22px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
     function build() {
-      var top = ui.modeTabs(['free','mission','quiz'], mode);
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
       var bar = '', foot = '';
       var ctrlRow = '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">'
         + '<span style="font-size:21px;font-weight:800;color:#1565C0;align-self:center;">가로</span>'
@@ -78,7 +112,8 @@
         + '</div>';
 
       if (mode === 'mission') {
-        bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+        var _M=curMissions();
+        bar = mDone ? ui.doneBar() : ui.missionBar(_M[mStep].text, mStep, _M.length);
       } else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         bar = ui.quizBar(q.q, qScore, qCount);
@@ -96,11 +131,12 @@
         + '<div class="aa-status" style="text-align:center;margin-top:14px;font-weight:800;font-family:inherit;"></div>';
 
       ui.bindModeTabs(el, function(m) {
-        mode = m; w = Math.min(config.w||5,maxW); h = Math.min(config.h||3,maxH);
+        mode = m; w = startW(); h = startH();
         fill_init(); mStep=0; mDone=false; mLock=false;
         if (m === 'quiz') shuffleQuiz();
         build();
       });
+      bands.bind(el);
       bind(); render();
 
       el.querySelectorAll('.kl-choice').forEach(function(b) {
@@ -134,10 +170,16 @@
       var cell=Math.min((VBW-120)/w,(VBH-100)/h,72);
       var gw=cell*w, gh=cell*h, x0=(VBW-gw)/2, y0=(VBH-gh)/2;
       var g=svgEl('g',{filter:'url(#aaSh)'});
+      var cnt=0; // ★저학년 세기 번호용
       for(var r=0;r<h;r++) for(var c=0;c<w;c++){
         var on=!!filled[c+','+r];
         var cellEl=svgEl('rect',{x:x0+c*cell,y:y0+r*cell,width:cell,height:cell,fill:on?'url(#aaG)':'#F4F9FF',stroke:'#9AB7D4','stroke-width':1.5,'data-c':c,'data-r':r,class:'aa-cell'});
         g.appendChild(cellEl);
+        if(G().count && on){
+          cnt++;
+          var num=svgEl('text',{x:x0+c*cell+cell/2,y:y0+r*cell+cell/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':Math.min(cell*0.5,30),'font-weight':800,fill:'#fff','pointer-events':'none'});
+          num.textContent=cnt; g.appendChild(num);
+        }
       }
       g.appendChild(svgEl('rect',{x:x0,y:y0,width:gw,height:gh,fill:'none',stroke:'#0B7A5C','stroke-width':5,'pointer-events':'none'}));
       svg.appendChild(g);
@@ -157,12 +199,23 @@
         var isRect = (n === w*h);
         if (mode === 'quiz') {
           statusEl.innerHTML = '<span style="font-size:22px;color:#5a7894;">넓이를 세어 보고 아래에서 선택하세요!</span>';
+        } else if (grade==='low') {
+          // ★저학년: "○칸" 만 (곱셈식·둘레·㎠ 없음)
+          statusEl.innerHTML = '<span style="font-size:28px;color:#1B3A57;">색칠한 칸 ＝ </span>'
+            + '<span style="font-size:52px;color:#0CA678;">'+n+'</span>'
+            + '<span style="font-size:28px;color:#1B3A57;">칸</span>'
+            + '<div style="font-size:17px;color:#5a7894;margin-top:4px;">칸을 하나씩 눌러 세어 봐요!</div>';
+          var wp0=el.querySelector('[data-act="wp"]'),wm0=el.querySelector('[data-act="wm"]');
+          var hp0=el.querySelector('[data-act="hp"]'),hm0=el.querySelector('[data-act="hm"]');
+          if(wp0)wp0.disabled=w>=maxW; if(wm0)wm0.disabled=w<=1;
+          if(hp0)hp0.disabled=h>=maxH; if(hm0)hm0.disabled=h<=1;
         } else {
+          var mult = G().mult && isRect;
           statusEl.innerHTML = '<span style="font-size:28px;color:#1B3A57;">넓이 ＝ </span>'
-            + (isRect?'<span style="font-size:30px;color:#0CA678;">'+w+' × '+h+' ＝ </span>':'<span style="font-size:28px;color:#1B3A57;">덮은 칸 </span>')
+            + (mult?'<span style="font-size:30px;color:#0CA678;">'+w+' × '+h+' ＝ </span>':'<span style="font-size:28px;color:#1B3A57;">덮은 칸 </span>')
             + '<span style="font-size:48px;color:#0CA678;">'+n+'</span>'
             + '<span style="font-size:28px;color:#1B3A57;"> '+unit+'</span>'
-            + (isRect?'<span style="font-size:24px;color:#5a7894;">   (둘레 '+(2*(w+h))+'㎝)</span>':'');
+            + ((G().perim && isRect)?'<span style="font-size:24px;color:#5a7894;">   (둘레 '+(2*(w+h))+'㎝)</span>':'');
           var wp=el.querySelector('[data-act="wp"]'),wm=el.querySelector('[data-act="wm"]');
           var hp=el.querySelector('[data-act="hp"]'),hm=el.querySelector('[data-act="hm"]');
           if(wp)wp.disabled=w>=maxW; if(wm)wm.disabled=w<=1;
@@ -173,14 +226,16 @@
 
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var _M=curMissions();
+      if (_M[mStep].check()) {
         mLock = true;
         ui.toast(el, true);
         setTimeout(function() {
           mStep++;
-          if (mStep >= MISSIONS.length) { mDone = true; build(); return; }
+          if (mStep >= _M.length) { mDone = true; build(); return; }
           mLock = false;
-          if (mStep === 2) { w=5; h=3; fill_init(); }
+          // 중·고 미션3은 가로7세로4 조작 — 시작 격자 리셋(저학년 미션엔 없음)
+          if (grade!=='low' && mStep === 2) { w=5; h=3; fill_init(); }
           build();
         }, 1500);
       }
@@ -192,7 +247,7 @@
         wm:function(){if(w>1){w--;fill_init();render();checkMission();}},
         hp:function(){if(h<maxH){h++;fill_init();render();checkMission();}},
         hm:function(){if(h>1){h--;fill_init();render();checkMission();}},
-        reset:function(){w=Math.min(config.w||5,maxW);h=Math.min(config.h||3,maxH);fill_init();render();}
+        reset:function(){w=startW();h=startH();fill_init();render();}
       };
       el.querySelectorAll('.aa-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f)f();});});
     }
