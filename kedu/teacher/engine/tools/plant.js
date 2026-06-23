@@ -16,7 +16,17 @@
   if (!window.KLab) return;
   window.KLab.register('plant', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2 },
+      mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3 },
+      high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4 }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var raf = null;
     var C = { ink:'#1B3A57', sub:'#5a7894', good:'#12B886', vio:'#7048E8', soil:'#8B5E3C', pot:'#C9763D',
               green:'#2F9E44', pale:'#C9C13B', brown:'#A07855', sun:'#F59F00', water:'#339AF0' };
@@ -30,6 +40,15 @@
     function reset(){ day=0; playing=false; pots=[newPot(),newPot()]; }
     reset();
     var STAGES=[['seed','씨앗'],['sprout','싹(떡잎)'],['leaf','잎·줄기'],['flower','꽃'],['fruit','열매(꼬투리)'],['seedDone','다시 씨앗!']];
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false; reset();
+      if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+      build();
+    }});
+
     function stageOf(p){ var g=p.g;
       if(g<2)return 0; if(g<6)return 1; if(g<12)return 2; if(g<18)return 3; if(g<24)return 4; return 5; }
     function tickDay(){
@@ -54,14 +73,16 @@
       { text:'🔬 비교 실험! 두 화분 모두 물은 주고, <b style="color:#7048E8;">오른쪽만 빛을 꺼서</b> 며칠 키워 차이를 확인해요!',
         keep:false, check:function(){ return pots[0].water&&pots[1].water&&pots[0].light&&!pots[1].light&&pots[0].g>=6&&pots[1].etio>=3; } }
     ];
+    function curMissions(){ return MISSIONS.slice(0, G().missionN); }
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; playing=false; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
           else mDone=true;
           build();
         },1500);
@@ -82,9 +103,12 @@
         ch:['씨앗 — 한살이가 다시 시작돼요','물','뿌리'], a:0 }
     ];
     var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    // 중학년 = 기본 개념 3문(한살이 순서·싹트는 조건·열매 속 씨앗), 고학년 = 전체 5문
+    function quizIdxPool(){ return (grade==='mid') ? [0,1,4] : [0,1,2,3,4]; }
     function newQuiz(){
-      if(qUsed.length>=QUIZ.length)qUsed=[];
-      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      var pool=quizIdxPool();
+      if(qUsed.length>=pool.length)qUsed=[];
+      var cand=[]; for(var i=0;i<pool.length;i++)if(qUsed.indexOf(pool[i])<0)cand.push(pool[i]);
       qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
     }
     function quizChoices(){
@@ -107,12 +131,12 @@
         +'<button class="pl-btn" data-act="step" style="'+btn+'background:#fff;color:'+C.ink+';border-color:'+C.ink+';">+1일</button>'
         +'<span class="pl-day" style="font-size:23px;font-weight:800;color:'+C.ink+';min-width:74px;text-align:center;">'+day+'일째</span>'
         +'<button class="pl-btn" data-act="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 다시 심기</button>'
-        + potCtrl(1)
+        + (G().compare ? potCtrl(1) : '')
         +'</div>';
     }
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=ctrlRow();
       el.innerHTML='<style>.pl-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}</style>'
@@ -125,6 +149,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
+      bands.bind(el);
       drawStage(); bind(); renderScene(); renderStatus();
     }
 
@@ -134,9 +159,11 @@
       stage=el.querySelector('.pl-stage'); stage.innerHTML=''; dyn={};
       var svg=svgEl('svg',{viewBox:'0 0 900 460',width:'100%',height:'100%'});
       dyn.svg=svg; dyn.pot=[];
-      for(var i=0;i<2;i++){ var cx=(i===0)?260:640;
+      var nPot=G().compare?2:1;
+      var xs=(nPot===2)?[260,640]:[450];
+      for(var i=0;i<nPot;i++){
         var g=svgEl('g',{}); svg.appendChild(g);
-        dyn.pot.push({root:g,cx:cx,groundY:380});
+        dyn.pot.push({root:g,cx:xs[i],groundY:380});
       }
       stage.appendChild(svg);
     }
@@ -202,7 +229,7 @@
     }
     function renderScene(){
       if(!dyn.pot)return;
-      for(var i=0;i<2;i++)drawPlant(dyn.pot[i],pots[i]);
+      for(var i=0;i<dyn.pot.length;i++)drawPlant(dyn.pot[i],pots[i]);
       var dEl=el.querySelector('.pl-day'); if(dEl)dEl.textContent=day+'일째';
     }
 
@@ -217,6 +244,16 @@
       var s=el.querySelector('.pl-status'); if(!s)return;
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">키워 본 걸 떠올리며 답을 골라요</div>'; return; }
       var p0=pots[0],p1=pots[1],h;
+      if(!G().compare){
+        // 저학년: 화분 1개·일상어 닻(웃자람/황화/비교실험 용어 없이)
+        if(day===0)h='<div style="font-size:24px;color:'+C.ink+';">🌱 씨앗을 심었어요 — ▶로 시간을 흘려 봐요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">💧물과 ☀️빛을 주면 씨앗이 무럭무럭 자라요.</div>';
+        else if(!p0.water)h='<div style="font-size:24px;color:'+C.brown+';">물이 없으면 자라지 못해요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">💧를 다시 켜 주세요 — 식물에게 물은 꼭 필요해요.</div>';
+        else if(!p0.light)h='<div style="font-size:24px;color:'+C.pale+';">빛이 없으면 잘 자라지 못해요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">☀️를 켜 주세요 — 식물은 빛을 받아야 튼튼하게 자라요.</div>';
+        else { var stl=stageOf(p0);
+          var tipsL=['곧 싹이 터요!','떡잎이 나왔어요 — 곧 잎이 더 나와요.','잎과 줄기가 쑥쑥 자라요!','예쁜 꽃이 피었어요!','꽃이 진 자리에 열매가 생겼어요.','씨앗에서 시작해 다시 씨앗으로 — 한살이를 다 봤어요! ↺로 새 씨앗을 심어 봐요.'];
+          h='<div style="font-size:24px;color:'+C.good+';">'+day+'일째 — '+STAGES[stl][1]+'</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+tipsL[stl]+'</div>'; }
+        s.innerHTML=h; return;
+      }
       var diff=(p0.water!==p1.water)||(p0.light!==p1.light);
       if(day===0)h='<div style="font-size:24px;color:'+C.ink+';">🌱 씨앗을 심었어요 — ▶로 시간을 흘려 봐요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">두 화분의 💧물·☀️빛을 다르게 해서 <b>비교 실험</b>도 할 수 있어요. 다르게 하는 조건은 꼭 한 가지만!</div>';
       else if(diff)h='<div style="font-size:24px;color:'+C.vio+';">🔬 비교 실험 중 — 두 화분이 어떻게 달라질까요?</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+(p0.light!==p1.light?'빛을 못 받는 쪽은 가늘고 길게 <b>웃자라고</b> 잎이 노래져요(황화).':'물을 못 받는 쪽은 자라지 못하고 <b>시들어요</b>. 다시 주면 살아나요!')+'</div>';
