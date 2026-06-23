@@ -1,18 +1,31 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 시계 읽기 (clock) v1  [수학 · 1~2학년 · 3모드]
+   케이랩 도구 모듈 — 시계 읽기 (clock) v2  [수학 · 1~2학년 · 3모드]
    초점 = 아날로그 시계를 직접 움직여 '몇 시 / 몇 시 30분 / 5분·1분 단위' 읽기.
-     · 분침을 움직이면 시침이 비례해 따라간다 (핵심 오개념 직격:
-       "7시 30분의 짧은바늘은 7과 8 사이!")
-     · ＋1시간/＋5분/＋1분 버튼 → 시계와 디지털 읽기 즉시 연동.
-     · 미션 4단계(정각→30분→5분→55분=N시 5분 전), 퀴즈 5문(바늘 보고 읽기).
+     · 분침을 움직이면 시침이 비례해 따라간다 (핵심 오개념 직격).
+   v2: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = 정각·30분(½시간)만·★±30분 버튼 신규 닻(5분/1분 숨김)·퀴즈 숨김.
+     · 중 = 5분 단위(±5분)·퀴즈.
+     · 고 = 기존 전부 유지(1분 단위·"몇 분 전"·퀴즈 5문).
    - 의존: window.KLab (THREE 불필요)
-   - config: { h(기본 12), m(기본 0), mode:"free"|"mission"|"quiz" }
+   - config: { h(기본 12), m(기본 0), grade:"low|mid|high", mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   window.KLab.register('clock', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
+       저=정각·30분 닻(±30분, 퀴즈 숨김) / 중=5분 단위·퀴즈 / 고=기존 유지(1분·분 전). */
+    var GRADES={
+      low:  { modes:['free','mission'],        steps:[60,30]   },
+      mid:  { modes:['free','mission','quiz'], steps:[60,5]    },
+      high: { modes:['free','mission','quiz'], steps:[60,5,1]  }
+    };
+    var STEP_STYLE={ 60:{c:'#1565C0',label:'1시간'}, 30:{c:'#7048E8',label:'30분'}, 5:{c:'#FF8A3D',label:'5분'}, 1:{c:'#0CA678',label:'1분'} };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var startM = (((config.h != null ? config.h : 12) % 12) * 60 + (config.m != null ? config.m : 0)) % 720;
     var tm = startM;                       // 0~719 (12시간), 시침·분침 모두 이 값으로 계산
     function hh(){ var h = Math.floor(tm/60)%12; return h===0?12:h; }
@@ -21,8 +34,33 @@
 
     var btn='font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS=[
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false;
+      tm=(mode==='mission')?0:startM;
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
+
+    /* ───────────── 미션 (학년칸별 풀) ───────────── */
+    var LOW_MISSIONS=[
+      { text:'🕒 바늘을 움직여 <b style="color:#7048E8;">3시 정각</b>을 만들어 봐요! (긴바늘이 12 위에!)',
+        check:function(){ return tm===180; } },
+      { text:'🕢 이번엔 <b style="color:#7048E8;">7시 30분</b>! 긴바늘이 6 아래로, 짧은바늘은 7과 8 <b>사이</b>!',
+        check:function(){ return tm===450; } },
+      { text:'🕘 <b style="color:#7048E8;">9시 정각</b>을 만들어 봐요!',
+        check:function(){ return tm===540; } }
+    ];
+    var MID_MISSIONS=[
+      { text:'🕒 바늘을 움직여 <b style="color:#7048E8;">3시 정각</b>을 만들어 봐요!',
+        check:function(){ return tm===180; } },
+      { text:'🕢 이번엔 <b style="color:#7048E8;">7시 30분</b>! 짧은바늘이 7과 8 <b>사이</b>로 가는지 봐요!',
+        check:function(){ return tm===450; } },
+      { text:'⏱ <b style="color:#7048E8;">9시 5분</b> — 긴바늘이 숫자 1을 가리키면 5분이에요!',
+        check:function(){ return tm===545; } }
+    ];
+    var HIGH_MISSIONS=[
       { text:'🕒 바늘을 움직여 <b style="color:#7048E8;">3시 정각</b>을 만들어 봐요!',
         check:function(){ return tm===180; } },
       { text:'🕢 이번엔 <b style="color:#7048E8;">7시 30분</b>! 짧은바늘이 7과 8 <b style="color:#7048E8;">사이</b>로 가는지 봐요!',
@@ -32,14 +70,16 @@
       { text:'🕦 <b style="color:#7048E8;">11시 55분</b>을 만들어 봐요 — "12시 5분 전"이라고도 해요!',
         check:function(){ return tm===715; } }
     ];
+    function curMissions(){ return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS; }
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var _M=curMissions();
+      if(_M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mLock=false; mStep++;
-          if(mStep>=MISSIONS.length){ mDone=true; }
+          if(mStep>=curMissions().length){ mDone=true; }
           build();
         },1500);
       }
@@ -70,22 +110,24 @@
       return a;
     }
 
+    function ctrlHTML(){
+      var s='<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">';
+      G().steps.forEach(function(d){
+        var sty=STEP_STYLE[d];
+        s+='<button class="ck-btn" data-d="-'+d+'" style="'+btn+'background:#fff;color:'+sty.c+';border-color:'+sty.c+';">－'+sty.label+'</button>'
+          +'<button class="ck-btn" data-d="'+d+'" style="'+btn+'background:'+sty.c+';color:#fff;border-color:'+sty.c+';">＋'+sty.label+'</button>'
+          +'<span style="width:6px;"></span>';
+      });
+      s+='<button class="ck-btn" data-d="reset" style="font-size:23px;padding:12px 16px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button></div>';
+      return s;
+    }
+
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
-      var ctrl='<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">'
-        +'<button class="ck-btn" data-d="-60" style="'+btn+'background:#fff;color:#1565C0;">－1시간</button>'
-        +'<button class="ck-btn" data-d="60" style="'+btn+'background:#1565C0;color:#fff;">＋1시간</button>'
-        +'<span style="width:6px;"></span>'
-        +'<button class="ck-btn" data-d="-5" style="'+btn+'background:#fff;color:#FF8A3D;border-color:#FF8A3D;">－5분</button>'
-        +'<button class="ck-btn" data-d="5" style="'+btn+'background:#FF8A3D;color:#fff;border-color:#FF8A3D;">＋5분</button>'
-        +'<span style="width:6px;"></span>'
-        +'<button class="ck-btn" data-d="-1" style="'+btn+'background:#fff;color:#0CA678;border-color:#0CA678;">－1분</button>'
-        +'<button class="ck-btn" data-d="1" style="'+btn+'background:#0CA678;color:#fff;border-color:#0CA678;">＋1분</button>'
-        +'<span style="width:6px;"></span>'
-        +'<button class="ck-btn" data-d="reset" style="font-size:23px;padding:12px 16px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>'
-        +'</div>';
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', foot='';
+      var ctrl=ctrlHTML();
       if(mode==='mission'){
-        bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+        var _M=curMissions();
+        bar=mDone?ui.doneBar():ui.missionBar(_M[mStep].text,mStep,_M.length);
       } else if(mode==='quiz'){
         var q=qList[qIdx]||qList[0];
         tm=q.tm; ctrl='';
@@ -106,6 +148,7 @@
         if(m2==='quiz')shuffleQuiz();
         build();
       });
+      bands.bind(el);
       el.querySelectorAll('.ck-btn').forEach(function(b){
         b.addEventListener('click',function(){
           if(b.dataset.d==='reset'){ tm=(mode==='mission')?0:startM; }
@@ -186,8 +229,11 @@
         st.innerHTML='<div style="font-size:19px;color:#8aa0b6;">짧은바늘(파랑)=시, 긴바늘(주황)=분! 잘 보고 답을 골라요.</div>';
         return;
       }
+      var hint = (grade==='low')
+        ? '긴바늘(주황)이 <b>12 위</b>면 정각, <b>6 아래</b>면 30분이에요!'
+        : '짧은바늘(파랑)이 <b>시</b>, 긴바늘(주황)이 <b>분</b>이에요. 긴바늘이 한 바퀴(60분) 돌면 짧은바늘이 숫자 한 칸 움직여요.';
       st.innerHTML='<span style="font-size:44px;color:#1565C0;">'+timeStr()+'</span>'
-        +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">짧은바늘(파랑)이 <b>시</b>, 긴바늘(주황)이 <b>분</b>이에요. 긴바늘이 한 바퀴(60분) 돌면 짧은바늘이 숫자 한 칸 움직여요.</div>';
+        +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">'+hint+'</div>';
     }
 
     shuffleQuiz();
