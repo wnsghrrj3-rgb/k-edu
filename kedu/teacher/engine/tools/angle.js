@@ -1,28 +1,63 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 각도기 (angle) v3
-   v3: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
-     · 자유탐구 — v2 자산 그대로(드래그/±/양방향 눈금/시작 변 토글/사용 안내).
-     · 미션 — 예각→직각→둔각→왼쪽 0에서 재기 4단계 순차 달성.
-     · 퀴즈 — 각도 표시 없이 각을 보고 분류 / 눈금 읽기 5문 출제.
+   케이랩 도구 모듈 — 각도기 (angle) v4 · 3모드 + 학년칸
+   v4: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = 각도 숫자·눈금 숫자 숨김·"조금/많이 벌어진 각" 일상어
+            ·★직각(90°)일 때 반듯한 코너(┐) 기호가 뜨는 신규 닻·step 15·퀴즈 숨김.
+     · 중 = 각도기 눈금 읽기·예각/직각/둔각 용어·퀴즈(분류·눈금 읽기).
+     · 고 = 기존 전부 유지(양방향 눈금·왼쪽 0 미션·퀴즈 5문).
    - 의존: window.KLab
-   - config: { deg(기본50), step(기본5), startSide:"right"|"left", showGuide(기본true),
-               mode:"free"|"mission"|"quiz" }
+   - config: { deg, step, startSide, showGuide, grade:"low|mid|high", mode }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   window.KLab.register('angle', function (el, config) {
     var ui = window.KLab.ui;
-    var cfgDeg = (typeof config.deg === 'number') ? Math.max(0, Math.min(config.deg, 180)) : 50;
-    var step = config.step || 5;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES={
+      low:  { modes:['free','mission'],        step:15, nums:false, kindWord:false, rightMark:true,  guide:false, twoway:false },
+      mid:  { modes:['free','mission','quiz'], step:5,  nums:true,  kindWord:true,  rightMark:false, guide:true,  twoway:false },
+      high: { modes:['free','mission','quiz'], step:5,  nums:true,  kindWord:true,  rightMark:false, guide:true,  twoway:true  }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+
+    function defDeg(){ return (typeof config.deg==='number')?Math.max(0,Math.min(config.deg,180)):(grade==='low'?45:50); }
+    function curStep(){ return config.step || G().step; }
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
 
     // ---- 자유탐구 상태 ----
-    var deg = cfgDeg;
-    var startSide = (config.startSide === 'left') ? 'left' : 'right';
-    var guide = (config.showGuide !== false);
+    var deg = defDeg();
+    var startSide = (config.startSide === 'left' && G().twoway) ? 'left' : 'right';
+    function guideOn(){ return (config.showGuide !== false) && G().guide; }
 
-    // ---- 미션 ----
-    var MISSIONS = [
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      if(!G().twoway) startSide='right';
+      deg=defDeg(); mStep=0; mDone=false; mLock=false;
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
+
+    // ---- 미션 (학년칸별 풀) ----
+    var LOW_MISSIONS = [
+      { text: '두 변을 <b style="color:#7048E8;">조금만</b> 벌려 봐요! (뾰족한 각)',
+        check: function() { return deg > 0 && deg < 90; } },
+      { text: '딱 <b style="color:#7048E8;">반듯한 직각</b>을 만들어 봐요! (┐ 모양이 떠요)',
+        check: function() { return deg === 90; } },
+      { text: '이번엔 <b style="color:#7048E8;">많이</b> 벌려 봐요! (넓은 각)',
+        check: function() { return deg > 90 && deg < 180; } }
+    ];
+    var MID_MISSIONS = [
+      { text: '<b style="color:#7048E8;">예각</b>(0°보다 크고 90°보다 작은 각)을 만들어 봐요!',
+        check: function() { return deg > 0 && deg < 90; } },
+      { text: '정확히 <b style="color:#7048E8;">직각(90°)</b>을 만들어 봐요!',
+        check: function() { return deg === 90; } },
+      { text: '<b style="color:#7048E8;">둔각</b>(90°보다 크고 180°보다 작은 각)을 만들어 봐요!',
+        check: function() { return deg > 90 && deg < 180; } }
+    ];
+    var HIGH_MISSIONS = [
       { text: '<b style="color:#7048E8;">예각</b>(0°보다 크고 90°보다 작은 각)을 만들어 봐요!',
         check: function() { return deg > 0 && deg < 90; } },
       { text: '정확히 <b style="color:#7048E8;">직각(90°)</b>을 만들어 봐요!',
@@ -32,9 +67,10 @@
       { text: '<b style="color:#7048E8;">왼쪽 0에서</b> 시작해서 <b style="color:#7048E8;">70°</b>를 만들어 봐요!',
         check: function() { return startSide === 'left' && deg === 70; } }
     ];
+    function curMissions(){ return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS; }
     var mStep = 0, mDone = false, mLock = false;
 
-    // ---- 퀴즈 ----
+    // ---- 퀴즈 (중·고만) ----
     var QUIZ_POOL = [
       { q: '이 각의 종류는 무엇인가요?', deg: 45,  answer: '예각',  choices: ['예각','직각','둔각','평각'] },
       { q: '이 각의 종류는 무엇인가요?', deg: 90,  answer: '직각',  choices: ['예각','직각','둔각','평각'] },
@@ -56,12 +92,13 @@
     var tgl = 'font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
     function build() {
-      var top = ui.modeTabs(['free','mission','quiz'], mode);
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
       var bar = '', foot = '';
-      var ctrlRow = '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
+      var sideRow = G().twoway ? ('<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
         + '<button class="ag-side' + (startSide==='left'?' ag-on':'') + '" data-side="left" style="' + tgl + '">◀ 왼쪽 0에서</button>'
         + '<button class="ag-side' + (startSide==='right'?' ag-on':'') + '" data-side="right" style="' + tgl + '">오른쪽 0에서 ▶</button>'
-        + '</div>'
+        + '</div>') : '';
+      var ctrlRow = sideRow
         + '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="ag-btn" data-act="minus" style="' + btn + 'background:#fff;color:#1565C0;">－ 각</button>'
         + '<button class="ag-btn" data-act="plus"  style="' + btn + 'background:#1565C0;color:#fff;">＋ 각</button>'
@@ -69,7 +106,8 @@
         + '</div>';
 
       if (mode === 'mission') {
-        bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+        var _M=curMissions();
+        bar = mDone ? ui.doneBar() : ui.missionBar(_M[mStep].text, mStep, _M.length);
       } else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         bar = ui.quizBar(q.q, qScore, qCount);
@@ -87,17 +125,19 @@
         + '<div class="ag-status" style="text-align:center;margin-top:12px;font-weight:800;font-family:inherit;"></div>';
 
       ui.bindModeTabs(el, function(m) {
-        mode = m; deg = cfgDeg; startSide = 'right';
+        mode = m; deg = defDeg(); if(!G().twoway) startSide = 'right';
         mStep = 0; mDone = false; mLock = false;
         if (m === 'quiz') shuffleQuiz();
         build();
       });
+      bands.bind(el);
       bindControls(); render();
     }
 
     var VBW = 900, VBH = 440, cx = VBW/2, cy = VBH - 90, R = 260;
     function P(a, r) { var rad = a * Math.PI / 180; return [cx + r*Math.cos(rad), cy - r*Math.sin(rad)]; }
     function kind(d) { if(d===0)return['','']; if(d<90)return['예각','#0CA678']; if(d===90)return['직각','#1565C0']; if(d<180)return['둔각','#E8590C']; return['평각','#7048E8']; }
+    function lowWord(d) { if(d===0)return['','#5a7894']; if(d<90)return['조금 벌어진 각','#0CA678']; if(d===90)return['반듯한 직각!','#1565C0']; if(d<180)return['많이 벌어진 각','#E8590C']; return['쭉 펴진 각','#7048E8']; }
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function txt(svg,x,y,s,sz,fill,fw){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':fw||800,fill:fill});t.textContent=s;svg.appendChild(t);}
 
@@ -123,26 +163,31 @@
       for(var a=0;a<=180;a+=10){
         var big=(a%30===0), p1=P(a,R), p2=P(a,big?R-24:R-14);
         svg.appendChild(svgEl('line',{x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:'#5a7894','stroke-width':big?2.5:1.5}));
-        if(big){
+        if(big && G().nums){
           var pOut=P(a,R-44), pIn=P(a,R-82);
           var outActive=(right && a===d), inActive=(!right && (180-a)===d);
           txt(svg,pOut[0],pOut[1]+6,String(a),outActive?22:16,outActive?kc:'#8AA6C2',outActive?800:600);
-          txt(svg,pIn[0],pIn[1]+6,String(180-a),inActive?22:16,inActive?kc:'#B0C4DA',inActive?800:600);
+          if(G().twoway) txt(svg,pIn[0],pIn[1]+6,String(180-a),inActive?22:16,inActive?kc:'#B0C4DA',inActive?800:600);
         }
       }
       var base=P(baseA,R), mov=P(posA,R);
       svg.appendChild(svgEl('line',{x1:cx,y1:cy,x2:base[0],y2:base[1],stroke:'#1B3A57','stroke-width':7,'stroke-linecap':'round'}));
       svg.appendChild(svgEl('line',{x1:cx,y1:cy,x2:mov[0],y2:mov[1],stroke:kc,'stroke-width':8,'stroke-linecap':'round'}));
-      // 퀴즈 모드는 각도 숫자 숨김
-      if (mode !== 'quiz') {
+      // ★저학년 직각 기호 닻: d===90이면 꼭짓점에 반듯한 코너(┐)
+      if(G().rightMark && d===90){
+        var s=34, dir=right?1:-1;
+        svg.appendChild(svgEl('path',{d:'M '+(cx+dir*s)+' '+cy+' L '+(cx+dir*s)+' '+(cy-s)+' L '+cx+' '+(cy-s),fill:'none',stroke:'#1565C0','stroke-width':5,'stroke-linecap':'round','stroke-linejoin':'round'}));
+      }
+      // 퀴즈 모드 또는 저학년(nums off)은 각도 숫자 숨김
+      if (mode !== 'quiz' && G().nums) {
         svg.appendChild(svgEl('circle',{cx:mov[0],cy:mov[1],r:16,fill:kc,stroke:'#fff','stroke-width':4,style:'cursor:grab;'}));
         var mid = P((baseA+posA)/2, R*0.38);
         txt(svg, mid[0], mid[1]+10, d+'°', 38, kc);
       } else {
-        svg.appendChild(svgEl('circle',{cx:mov[0],cy:mov[1],r:14,fill:kc,stroke:'#fff','stroke-width':4}));
+        svg.appendChild(svgEl('circle',{cx:mov[0],cy:mov[1],r:(mode!=='quiz'?16:14),fill:kc,stroke:'#fff','stroke-width':4,style:(mode!=='quiz'?'cursor:grab;':'')}));
       }
       svg.appendChild(svgEl('circle',{cx:cx,cy:cy,r:10,fill:'#1B3A57'}));
-      if(guide && mode === 'free'){
+      if(guideOn() && mode === 'free'){
         svg.appendChild(svgEl('circle',{cx:cx,cy:cy,r:22,fill:'none',stroke:'#E8590C','stroke-width':2.5,'stroke-dasharray':'4 4'}));
         txt(svg,cx,cy+44,'① 중심을 꼭짓점에',18,'#E8590C');
         var bl=P(baseA,R*0.78); txt(svg,bl[0],bl[1]+28,'② 이 변을 0에',17,'#1B3A57');
@@ -155,10 +200,14 @@
       if (statusEl) {
         if (mode === 'quiz') {
           statusEl.innerHTML = '<span style="font-size:22px;color:#5a7894;">각도를 확인하고 아래에서 선택하세요!</span>';
+        } else if (grade==='low') {
+          // ★저학년: 각도 숫자 없이 벌어짐 일상어
+          var lw = lowWord(d);
+          statusEl.innerHTML = lw[0] ? ('<span style="font-size:36px;color:'+lw[1]+';">'+lw[0]+'</span>') : '<span style="font-size:24px;color:#5a7894;">두 변을 벌려 봐요!</span>';
         } else {
           var k = kind(d);
           statusEl.innerHTML = '<span style="font-size:32px;color:'+kc+';">'+d+'°</span>'
-            + (k[0]?'<span style="font-size:26px;color:#1B3A57;"> — </span><span style="font-size:32px;color:'+kc+';">'+k[0]+'</span>':'');
+            + (G().kindWord && k[0]?'<span style="font-size:26px;color:#1B3A57;"> — </span><span style="font-size:32px;color:'+kc+';">'+k[0]+'</span>':'');
         }
         var pb=el.querySelector('[data-act="plus"]'), mb=el.querySelector('[data-act="minus"]');
         if(pb)pb.disabled=(d>=180); if(mb)mb.disabled=(d<=0);
@@ -166,25 +215,30 @@
     }
 
     var dragging = false;
+    function snapStep(a){ var st=curStep(); return Math.round(a/st)*st; }
     function angleFromEvent(e) {
       var stage = el.querySelector('.ag-stage');
       var rect = stage.getBoundingClientRect();
       var p = e.touches ? e.touches[0] : e;
       var sx=(p.clientX-rect.left)/rect.width*VBW, sy=(p.clientY-rect.top)/rect.height*VBH;
       var a=Math.atan2(cy-sy,sx-cx)*180/Math.PI; a=Math.max(0,Math.min(Math.round(a),180));
-      return (startSide==='right')? a : (180-a);
+      var dd = (startSide==='right')? a : (180-a);
+      // 저학년은 step(15) 단위 스냅 — 직각(90) 정확히 짚기 쉽게
+      if(grade==='low') dd=Math.max(0,Math.min(snapStep(dd),180));
+      return dd;
     }
     var mm=function(e){if(dragging&&mode==='free'){deg=angleFromEvent(e);render();}};
     var mu=function(){dragging=false;var s=el.querySelector('.ag-stage');if(s)s.classList.remove('drag');};
 
     function checkMission(action) {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check(action)) {
+      var _M=curMissions();
+      if (_M[mStep].check(action)) {
         mLock = true;
         ui.toast(el, true);
         setTimeout(function() {
           mStep++;
-          if (mStep >= MISSIONS.length) { mDone = true; build(); return; }
+          if (mStep >= _M.length) { mDone = true; build(); return; }
           mLock = false; build();
         }, 1500);
       }
@@ -202,15 +256,15 @@
       var minusBtn = el.querySelector('[data-act="minus"]');
       var resetBtn = el.querySelector('[data-act="reset"]');
       if (plusBtn) plusBtn.addEventListener('click', function() {
-        deg = Math.min(180, deg + step); render();
+        deg = Math.min(180, deg + curStep()); render();
         if (mode === 'mission') checkMission('change');
       });
       if (minusBtn) minusBtn.addEventListener('click', function() {
-        deg = Math.max(0, deg - step); render();
+        deg = Math.max(0, deg - curStep()); render();
         if (mode === 'mission') checkMission('change');
       });
       if (resetBtn) resetBtn.addEventListener('click', function() {
-        deg = cfgDeg; startSide = 'right'; render();
+        deg = defDeg(); if(!G().twoway) startSide = 'right'; render();
       });
       el.querySelectorAll('.ag-side').forEach(function(b){
         b.addEventListener('click', function() {
@@ -231,7 +285,6 @@
             qIdx++;
             if (qIdx >= qList.length) { shuffleQuiz(); }
             qLock = false; build();
-            // 퀴즈 모드에서 각도 세팅
             var nq = qList[qIdx] || qList[0];
             render(nq.deg);
           }, 1400);
@@ -251,7 +304,6 @@
 
     shuffleQuiz();
     build();
-    // 퀴즈 첫 렌더
     if (mode === 'quiz') { var q0 = qList[0]; render(q0.deg); }
 
     return function cleanup() {
