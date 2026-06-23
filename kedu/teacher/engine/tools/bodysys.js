@@ -14,7 +14,17 @@
   if (!window.KLab) return;
   window.KLab.register('bodysys', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free', 'mission', 'quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        systems:['digest','breath'],                    quiz:false, missionN:2 },
+      mid:  { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:3 },
+      high: { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:4 }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var raf = null;
     var C = { ink: '#1B3A57', sub: '#5a7894', good: '#12B886', vio: '#7048E8' };
     var btn = 'font-size:21px;padding:11px 17px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
@@ -47,8 +57,18 @@
     };
 
     var sys, sel, flowIdx, playing;
-    function reset() { sys = (SYS[config.system]) ? config.system : 'digest'; sel = ''; flowIdx = -1; playing = false; }
+    function reset() { sys = (SYS[config.system] && G().systems.indexOf(config.system)>=0) ? config.system : G().systems[0]; sel = ''; flowIdx = -1; playing = false; }
     reset();
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false;
+      if(raf){ clearTimeout(raf); raf=null; }
+      reset();
+      if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+      build();
+    }});
 
     function setSys(s) { sys = s; sel = ''; flowIdx = -1; playing = false; renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
     function pickOrgan(k) {
@@ -73,18 +93,21 @@
       { text: '💧 <b style="color:#7048E8;">배설 기관계</b>에서 노폐물을 걸러 오줌을 만드는 <b style="color:#7048E8;">콩팥</b>을 찾아 눌러요!',
         check: function () { return sys === 'excrete' && (sel === 'kidneyL' || sel === 'kidneyR'); } }
     ];
+    function curMissions() { return MISSIONS.slice(0, G().missionN); }
     var mStep = 0, mDone = false, mLock = false;
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true; playing = false;
         ui.toast(el, true);
         setTimeout(function () {
           mLock = false;
-          if (mStep < MISSIONS.length - 1) {
+          if (mStep < M.length - 1) {
             mStep++;
-            // 다음 미션의 기관계로 자동 전환(아이가 헤매지 않게), 단 선택·흐름은 초기화
-            var nextSys = ['digest', 'breath', 'blood', 'excrete'][mStep];
+            var order = ['digest', 'breath', 'blood', 'excrete'];
+            var nextSys = order[mStep];
+            if (G().systems.indexOf(nextSys) < 0) nextSys = G().systems[0];
             sys = nextSys; sel = ''; flowIdx = -1; playing = false;
           } else mDone = true;
           build();
@@ -101,9 +124,12 @@
       { q: '음식이 지나가는 순서로 맞는 것은?', ch: ['입→식도→위→작은창자', '입→위→식도→폐', '코→위→큰창자'], a: 0 }
     ];
     var qIdx = 0, qScore = 0, qCount = 0, qLock = false, qUsed = [];
+    // 중학년 = 기본 3문(작은창자·심장·폐), 고학년 = 전체 5문(콩팥·소화 순서 포함)
+    function quizIdxPool() { return (grade === 'mid') ? [0, 1, 2] : [0, 1, 2, 3, 4]; }
     function newQuiz() {
-      if (qUsed.length >= QUIZ.length) qUsed = [];
-      var cand = []; for (var i = 0; i < QUIZ.length; i++) if (qUsed.indexOf(i) < 0) cand.push(i);
+      var pool = quizIdxPool();
+      if (qUsed.length >= pool.length) qUsed = [];
+      var cand = []; for (var i = 0; i < pool.length; i++) if (qUsed.indexOf(pool[i]) < 0) cand.push(pool[i]);
       qIdx = cand[Math.floor(Math.random() * cand.length)]; qUsed.push(qIdx); qLock = false;
     }
     function quizChoices() {
@@ -114,7 +140,7 @@
     /* ───────────── UI ───────────── */
     function sysTabs() {
       return '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-        + Object.keys(SYS).map(function (k) {
+        + G().systems.map(function (k) {
           var on = (k === sys);
           return '<button class="bs-sys" data-sys="' + k + '" style="' + btn + 'border-color:' + SYS[k].col + ';'
             + (on ? 'background:' + SYS[k].col + ';color:#fff;' : 'background:#fff;color:' + SYS[k].col + ';') + '">' + SYS[k].emo + ' ' + SYS[k].nm + '</button>';
@@ -127,8 +153,8 @@
         + '</div>';
     }
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', body = '', foot = '';
-      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); body = sysTabs() + ctrlRow(); }
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', body = '', foot = '';
+      if (mode === 'mission') { var M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); body = sysTabs() + ctrlRow(); }
       else if (mode === 'quiz') { bar = ui.quizBar(QUIZ[qIdx].q, qScore, qCount); foot = ui.choices(quizChoices()); }
       else body = sysTabs() + ctrlRow();
       el.innerHTML = '<style>.bs-btn:active,.bs-sys:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.bs-organ{cursor:pointer;}</style>'
@@ -137,10 +163,13 @@
         + foot
         + '<div class="bs-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el, function (m) {
-        mode = m; mStep = 0; mDone = false; mLock = false; reset();
+        mode = m; mStep = 0; mDone = false; mLock = false;
+        if (raf) { clearTimeout(raf); raf = null; }
+        reset();
         if (m === 'quiz') { qScore = 0; qCount = 0; qUsed = []; newQuiz(); }
         build();
       });
+      bands.bind(el);
       drawStage(); bind(); renderScene(); renderStatus();
     }
 
