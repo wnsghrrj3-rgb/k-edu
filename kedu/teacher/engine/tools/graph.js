@@ -33,10 +33,36 @@
 
   window.KLab.register('graph', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
-    var types = (config.types && config.types.length) ? config.types.filter(function (t) { return TYPE_LABEL[t]; }) : ['bar', 'line', 'picto', 'pie'];
-    if (!types.length) types = ['bar'];
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         allow: ['bar', 'picto'],                       quiz: false, anchor: true  },
+      mid:  { modes: ['free', 'mission', 'quiz'], allow: ['bar', 'line', 'picto'],               quiz: true,  anchor: false },
+      high: { modes: ['free', 'mission', 'quiz'], allow: ['bar', 'line', 'picto', 'pie', 'band'], quiz: true,  anchor: false }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+    function allowedTypes() {
+      var allow = G().allow;
+      var base = (config.types && config.types.length) ? config.types.filter(function (t) { return TYPE_LABEL[t]; }) : ['bar', 'line', 'picto', 'pie'];
+      var out = base.filter(function (t) { return allow.indexOf(t) >= 0; });
+      if (!out.length) out = [allow[0]];
+      return out;
+    }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
+    var types = allowedTypes();
     var type = types[0];
+
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      types = allowedTypes();
+      if (types.indexOf(type) < 0) type = types[0];
+      data = freshData(); mStep = 0; mDone = false; mLock = false;
+      if (mode === 'quiz') shuffleQuiz();
+      build();
+    } });
     var unit = (typeof config.unit === 'string') ? config.unit : '명';
     var title = (typeof config.title === 'string') ? config.title : '';
     var editable = (config.editable === false) ? false : true;
@@ -49,8 +75,22 @@
     }
     var data = freshData();
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS = [
+    /* ───────────── 미션 (학년칸별 풀) ───────────── */
+    var LOW_MISSIONS = [
+      { text: '＋ 버튼으로 <b style="color:#7048E8;">' + (DEFAULT_DATA[0].label) + '</b>를 <b style="color:#7048E8;">가장 많게</b> 만들어 봐요! (👑이 떠요)',
+        check: function () { return type === 'bar' && data[0].value > 0 && data.every(function (d, i) { return i === 0 || d.value < data[0].value; }); } },
+      { text: '<b style="color:#7048E8;">그림그래프</b>로 바꿔 봐요 — 동그라미로 하나씩 세어 봐요!',
+        check: function () { return type === 'picto'; } }
+    ];
+    var MID_MISSIONS = [
+      { text: '＋ 버튼으로 <b style="color:#7048E8;">' + (DEFAULT_DATA[0].label) + '</b>를 <b style="color:#7048E8;">10</b>까지 키워 봐요 — 막대가 쑥쑥!',
+        check: function () { return type === 'bar' && data[0].value === 10; } },
+      { text: '<b style="color:#7048E8;">꺾은선그래프</b>로 바꿔 봐요 — 같은 자료가 다르게 보여요!',
+        check: function () { return type === 'line'; } },
+      { text: '<b style="color:#7048E8;">' + (DEFAULT_DATA[3].label) + '</b>를 <b style="color:#7048E8;">0</b>으로 줄여 봐요 — 그래프에서 어떻게 보일까요?',
+        check: function () { return data[3] && data[3].value === 0; } }
+    ];
+    var HIGH_MISSIONS = [
       { text: '＋ 버튼으로 <b style="color:#7048E8;">' + (DEFAULT_DATA[0].label) + '</b>를 <b style="color:#7048E8;">10</b>까지 키워 봐요 — 막대가 쑥쑥!',
         check: function () { return type === 'bar' && data[0].value === 10; } },
       { text: '<b style="color:#7048E8;">꺾은선그래프</b>로 바꿔 봐요 — 같은 자료가 다르게 보여요!',
@@ -60,30 +100,38 @@
       { text: '<b style="color:#7048E8;">원그래프</b>로 바꿔 전체에 대한 비율을 봐요!',
         check: function () { return type === 'pie'; } }
     ];
+    function curMissions() { return (grade === 'low') ? LOW_MISSIONS : (grade === 'mid') ? MID_MISSIONS : HIGH_MISSIONS; }
     var mStep = 0, mDone = false, mLock = false;
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true; ui.toast(el, true);
         setTimeout(function () {
           mLock = false; mStep++;
-          if (mStep >= MISSIONS.length) mDone = true;
+          if (mStep >= M.length) mDone = true;
           build();
         }, 1500);
       }
     }
 
-    /* ───────────── 퀴즈 (그래프를 보고 읽기) ───────────── */
-    var QUIZ_POOL = [
+    /* ───────────── 퀴즈 (중·고만) ───────────── */
+    var MID_QUIZ = [
+      { type: 'bar', preset: [6, 4, 8, 3], q: '막대그래프에서 가장 많은 항목은?', answer: '포도', choices: ['포도', '사과', '딸기'] },
+      { type: 'bar', preset: [6, 4, 8, 3], q: '사과는 바나나보다 몇 ' + '명' + ' 더 많을까요?', answer: '2명', choices: ['2명', '4명', '6명'] },
+      { type: 'line', preset: [2, 4, 7, 9], q: '시간에 따라 변하는 모습을 보기 좋은 그래프는?', answer: '꺾은선그래프', choices: ['꺾은선그래프', '원그래프', '그림그래프'] }
+    ];
+    var HIGH_QUIZ = [
       { type: 'bar', preset: [6, 4, 8, 3], q: '막대그래프에서 가장 많은 항목은?', answer: '포도', choices: ['포도', '사과', '딸기'] },
       { type: 'bar', preset: [6, 4, 8, 3], q: '사과는 바나나보다 몇 ' + '명' + ' 더 많을까요?', answer: '2명', choices: ['2명', '4명', '6명'] },
       { type: 'pie', preset: [5, 5, 5, 5], q: '원그래프에서 한 항목이 차지하는 비율은?', answer: '25%', choices: ['25%', '50%', '10%'] },
       { type: 'line', preset: [2, 4, 7, 9], q: '시간에 따라 변하는 모습을 보기 좋은 그래프는?', answer: '꺾은선그래프', choices: ['꺾은선그래프', '원그래프', '그림그래프'] },
       { type: 'band', preset: [6, 4, 8, 3], q: '전체에 대한 비율을 가로 띠로 나타낸 이 그래프의 이름은?', answer: '띠그래프', choices: ['띠그래프', '막대그래프', '꺾은선그래프'] }
     ];
+    function quizPool() { return (grade === 'mid') ? MID_QUIZ : HIGH_QUIZ; }
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffleQuiz() {
-      qList = QUIZ_POOL.slice();
+      qList = quizPool().slice();
       for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
       qIdx = 0; qScore = 0; qCount = 0;
     }
@@ -101,8 +149,8 @@
     var stage = null, ctrls = null;
 
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', foot = '';
-      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); }
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', foot = '';
+      if (mode === 'mission') { var M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); }
       else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         applyQuizState(q);
@@ -162,6 +210,7 @@
       });
       bind();
       render();
+      bands.bind(el);
     }
 
     // ---------- SVG 헬퍼 ----------
@@ -236,6 +285,16 @@
           svg.appendChild(svgEl('circle', { cx: p[0], cy: p[1], r: 8, fill: data[i].color, stroke: '#fff', 'stroke-width': 3, class: 'gr-dot' }));
           if (data[i].value > 0) txt(svg, p[0], p[1] - 16, data[i].value, { size: 18, fill: data[i].color });
         });
+      }
+      // 저학년 닻: 가장 큰 막대 위에 👑 "가장 많아요"
+      if (kind === 'bar' && G().anchor) {
+        var maxV = -1, maxI = -1;
+        data.forEach(function (d, i) { if (d.value > maxV) { maxV = d.value; maxI = i; } });
+        if (maxV > 0) {
+          var ccx = x0 + slot * (maxI + 0.5), ch = (maxV / max) * plotH, ctopY = yBase - ch;
+          txt(svg, ccx, ctopY - 30, '👑', { size: 26 });
+          txt(svg, ccx, ctopY - 52, '가장 많아요', { size: 15, fill: '#E8590C' });
+        }
       }
     }
 
