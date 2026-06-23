@@ -13,9 +13,27 @@
 
   window.KLab.register('net', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         quiz: false, missionN: 2, quizN: 0 },
+      mid:  { modes: ['free', 'mission', 'quiz'], quiz: true,  missionN: 3, quizN: 3 },
+      high: { modes: ['free', 'mission', 'quiz'], quiz: true,  missionN: 4, quizN: 5 }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var t = (typeof config.fold === 'number') ? Math.max(0, Math.min(config.fold, 1)) : 0;
     var targetT = t;
+
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      t = 0; targetT = 0; mStep = 0; mDone = false; mLock = false; rotated = false;
+      if (mode === 'quiz') shuffleQuiz();
+      cleanup3d(); buildUI();
+    } });
 
     // ---- 미션 ----
     // M1: 완전히 접기(t>=0.99), M2: 완전히 펼치기(t<=0.01), M3: 중간(0.3~0.7) 상태로 두기, M4: 접고 드래그
@@ -30,8 +48,9 @@
         check: function() { return t >= 0.98 && rotated; } }
     ];
     var mStep = 0, mDone = false, mLock = false, rotated = false;
+    function curMissions() { return MISSIONS.slice(0, G().missionN); }
 
-    // ---- 퀴즈 ----
+    // ---- 퀴즈 (중·고만) ----
     var QUIZ_POOL = [
       { q: '전개도를 접으면 어떤 입체가 될까요?', answer: '정육면체', choices: ['직육면체','정육면체','삼각형','원기둥'] },
       { q: '정육면체의 면은 몇 개인가요?', answer: '6개', choices: ['4개','5개','6개','8개'] },
@@ -39,9 +58,11 @@
       { q: '전개도에서 면의 수는?', answer: '6개', choices: ['4개','5개','6개','7개'] },
       { q: '정육면체의 꼭짓점은 몇 개인가요?', answer: '8개', choices: ['6개','7개','8개','12개'] },
     ];
+    // 중학년 = 기본 개념(접으면 정육면체·면 6개·전개도 면 수), 고학년 = 전체(마주보는 면·꼭짓점 포함)
+    function quizPool() { return (grade==='mid') ? [QUIZ_POOL[0], QUIZ_POOL[1], QUIZ_POOL[3]] : QUIZ_POOL; }
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffleQuiz(){
-      qList=QUIZ_POOL.slice();
+      qList=quizPool().slice();
       for(var i=qList.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=qList[i];qList[i]=qList[j];qList[j]=tmp;}
       qIdx=0; qScore=0; qCount=0;
     }
@@ -60,10 +81,10 @@
     }
 
     function buildUI(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode);
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode);
       var bar='',foot='';
 
-      if(mode==='mission'){bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);}
+      if(mode==='mission'){var M=curMissions();bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length);}
       else if(mode==='quiz'){
         var q=qList[qIdx]||qList[0];
         bar=ui.quizBar(q.q,qScore,qCount);
@@ -89,6 +110,7 @@
         if(m==='quiz')shuffleQuiz();
         cleanup3d();buildUI();
       });
+      bands.bind(el);
 
       init3d();
 
@@ -172,16 +194,20 @@
     function updateStatus(){
       var statusEl=el.querySelector('.nt-status'); if(!statusEl)return;
       if(mode==='quiz'){statusEl.innerHTML='<span style="font-size:22px;color:#5a7894;">전개도를 보고 아래에서 선택하세요!</span>';}
-      else{statusEl.innerHTML='<span style="font-size:26px;">'+(t<0.02?'평면 전개도':(t>0.98?'정육면체 완성! ✅':'접는 중 '+Math.round(t*100)+'%'))+'</span>';}
+      else{
+        var doneMsg=(!G().quiz)?'접으니 상자(정육면체)가 됐어요! ✅':'정육면체 완성! ✅';
+        statusEl.innerHTML='<span style="font-size:26px;">'+(t<0.02?'평면 전개도':(t>0.98?doneMsg:'접는 중 '+Math.round(t*100)+'%'))+'</span>';
+      }
     }
 
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true;ui.toast(el,true);
         setTimeout(function(){
           mStep++;
-          if(mStep>=MISSIONS.length){mDone=true;cleanup3d();buildUI();return;}
+          if(mStep>=M.length){mDone=true;cleanup3d();buildUI();return;}
           if(mStep===1)targetT=1; // M2 진입 시 접힌 상태
           mLock=false;cleanup3d();buildUI();
         },1500);
