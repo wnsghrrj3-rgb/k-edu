@@ -15,7 +15,17 @@
   if (!window.KLab) return;
   window.KLab.register('foodchain', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free', 'mission', 'quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        web:false, roles:false, remove:false, quiz:false, missionN:2 },
+      mid:  { modes:['free','mission','quiz'], web:true,  roles:true,  remove:false, quiz:true,  missionN:3 },
+      high: { modes:['free','mission','quiz'], web:true,  roles:true,  remove:true,  quiz:true,  missionN:4 }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var C = { ink: '#1B3A57', sub: '#5a7894', good: '#12B886', vio: '#7048E8', arrow: '#FF8A3D' };
     var btn = 'font-size:21px;padding:11px 17px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t, a) { var e = document.createElementNS('http://www.w3.org/2000/svg', t); for (var k in a) e.setAttribute(k, a[k]); return e; }
@@ -47,8 +57,16 @@
     function webOrgs() { return ['rice', 'grass', 'hopper', 'rabbit', 'frog', 'snake', 'hawk', 'fox', 'mush']; }
 
     var view, sel, removed;
-    function reset() { view = (config.view === 'web') ? 'web' : 'chain'; sel = ''; removed = ''; }
+    function reset() { view = (G().web && config.view === 'web') ? 'web' : 'chain'; sel = ''; removed = ''; }
     reset();
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false; reset();
+      if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+      build();
+    }});
 
     function setView(v) { view = v; sel = ''; removed = ''; renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
     function pickOrg(k) {
@@ -62,8 +80,14 @@
       if (mode === 'mission') checkMission();
     }
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS = [
+    /* ───────────── 미션 (학년칸별 풀) ───────────── */
+    var LOW_MISSIONS = [
+      { text: '🌾 화살표를 따라가요 — <b style="color:#7048E8;">벼를 먹는 동물</b>을 찾아 눌러요! (메뚜기)',
+        check: function () { return view === 'chain' && sel === 'hopper'; } },
+      { text: '🐍 이번엔 <b style="color:#7048E8;">개구리를 먹는 동물</b>을 찾아 눌러요! (화살표가 개구리에서 나가는 쪽)',
+        check: function () { return view === 'chain' && sel === 'snake'; } }
+    ];
+    var BASE_MISSIONS = [
       { text: '🌱 먹이사슬에서 <b style="color:#7048E8;">스스로 양분을 만드는 생산자</b>를 찾아 눌러요!',
         check: function () { return view === 'chain' && sel && ORG[sel].role === 'prod'; } },
       { text: '🐍 <b style="color:#7048E8;">개구리를 먹는 동물</b>을 찾아 눌러요! (화살표가 개구리에서 나가는 쪽)',
@@ -73,17 +97,19 @@
       { text: '❓ 먹이그물에서 <b style="color:#7048E8;">메뚜기를 눌러 사라지게</b> 해봐요 — 누가 먹이를 잃을까요?',
         check: function () { return view === 'web' && removed === 'hopper'; } }
     ];
+    function curMissions() { return (grade==='low') ? LOW_MISSIONS : BASE_MISSIONS.slice(0, G().missionN); }
     var mStep = 0, mDone = false, mLock = false;
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true; ui.toast(el, true);
         setTimeout(function () {
           mLock = false;
-          if (mStep < MISSIONS.length - 1) {
+          if (mStep < M.length - 1) {
             mStep++;
-            if (mStep === 2) { sel = ''; }          // 그물 전환 유도
-            if (mStep === 3) { view = 'web'; sel = ''; removed = ''; }
+            if (grade !== 'low' && mStep === 2) { sel = ''; }
+            if (grade !== 'low' && mStep === 3) { view = 'web'; sel = ''; removed = ''; }
           } else mDone = true;
           build();
         }, 1500);
@@ -99,9 +125,12 @@
       { q: '먹이그물에서 메뚜기가 갑자기 사라지면 가장 먼저 곤란해지는 동물은?', ch: ['메뚜기를 먹던 개구리', '풀', '곰팡이'], a: 0 }
     ];
     var qIdx = 0, qScore = 0, qCount = 0, qLock = false, qUsed = [];
+    // 중학년 = 기본 3문(화살표 방향·생산자·먹이그물), 고학년 = 전체 5문(분해자·사라지면 영향 포함)
+    function quizIdxPool(){ return (grade==='mid') ? [0,1,3] : [0,1,2,3,4]; }
     function newQuiz() {
-      if (qUsed.length >= QUIZ.length) qUsed = [];
-      var cand = []; for (var i = 0; i < QUIZ.length; i++) if (qUsed.indexOf(i) < 0) cand.push(i);
+      var pool=quizIdxPool();
+      if (qUsed.length >= pool.length) qUsed = [];
+      var cand = []; for (var i = 0; i < pool.length; i++) if (qUsed.indexOf(pool[i]) < 0) cand.push(pool[i]);
       qIdx = cand[Math.floor(Math.random() * cand.length)]; qUsed.push(qIdx); qLock = false;
     }
     function quizChoices() {
@@ -113,20 +142,21 @@
     function viewTabs() {
       return '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="fc-view" data-view="chain" style="' + btn + (view === 'chain' ? 'background:#1565C0;color:#fff;' : 'background:#fff;color:#1565C0;') + '">🔗 먹이사슬</button>'
-        + '<button class="fc-view" data-view="web" style="' + btn + (view === 'web' ? 'background:#1565C0;color:#fff;' : 'background:#fff;color:#1565C0;') + '">🕸 먹이그물</button>'
+        + (G().web ? '<button class="fc-view" data-view="web" style="' + btn + (view === 'web' ? 'background:#1565C0;color:#fff;' : 'background:#fff;color:#1565C0;') + '">🕸 먹이그물</button>' : '')
         + '<span style="width:8px;"></span>'
         + '<button class="fc-btn" data-act="reset" style="' + btn + 'background:#fff;color:#666;border-color:#9aa;">↺ 처음으로</button>'
         + '</div>';
     }
     function legend() {
+      if (!G().roles) return '';
       return '<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;">'
         + Object.keys(ROLE).map(function (r) {
           return '<span style="font-size:16px;font-weight:800;color:' + ROLE[r].col + ';">● ' + ROLE[r].nm + '</span>';
         }).join('') + '</div>';
     }
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', body = '', foot = '';
-      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); body = viewTabs() + legend(); }
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', body = '', foot = '';
+      if (mode === 'mission') { var M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); body = viewTabs() + legend(); }
       else if (mode === 'quiz') { bar = ui.quizBar(QUIZ[qIdx].q, qScore, qCount); foot = ui.choices(quizChoices()); }
       else body = viewTabs() + legend();
       el.innerHTML = '<style>.fc-btn:active,.fc-view:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.fc-org{cursor:pointer;}</style>'
@@ -139,6 +169,7 @@
         if (m === 'quiz') { qScore = 0; qCount = 0; qUsed = []; newQuiz(); }
         build();
       });
+      bands.bind(el);
       drawStage(); bind(); renderScene(); renderStatus();
     }
 
@@ -222,6 +253,14 @@
         var eats = [], eaten = [];
         var rel = (view === 'chain') ? CHAIN : WEB;
         rel.forEach(function (e) { if (e[1] === sel) eats.push(ORG[e[0]].nm); if (e[0] === sel) eaten.push(ORG[e[1]].nm); });
+        if (!G().roles) {
+          // 저학년: 분류 용어 없이 누가 먹고 먹히는지 일상어
+          st.innerHTML = '<div style="font-size:23px;color:' + C.ink + ';">' + o.emo + ' ' + o.nm + '</div>'
+            + '<div style="font-size:17px;color:' + C.ink + ';margin-top:6px;">'
+            + (eats.length ? '🍽️ ' + o.nm + '은(는) <b>' + eats.join('·') + '</b>을(를) 먹어요.   ' : (o.role === 'prod' ? '🌞 햇빛을 받아 스스로 자라요.   ' : ''))
+            + (eaten.length ? '⚠️ <b>' + eaten.join('·') + '</b>에게 먹혀요.' : '') + '</div>';
+          return;
+        }
         st.innerHTML = '<div style="font-size:23px;color:' + role.col + ';">' + o.emo + ' ' + o.nm + ' — ' + role.nm + '</div>'
           + '<div style="font-size:17px;color:' + C.sub + ';margin-top:4px;">' + role.desc + '</div>'
           + '<div style="font-size:16px;color:' + C.ink + ';margin-top:4px;">'
@@ -230,7 +269,7 @@
         return;
       }
       st.innerHTML = '<div style="font-size:20px;color:' + C.ink + ';">' + (view === 'chain' ? '🔗 먹이사슬' : '🕸 먹이그물') + '</div>'
-        + '<div style="font-size:17px;color:' + C.sub + ';margin-top:4px;">생물을 눌러 역할과 먹이 관계를 봐요. 화살표는 <b>먹히는 생물 → 먹는 생물</b>로, 에너지가 옮겨가는 방향이에요.</div>';
+        + '<div style="font-size:17px;color:' + C.sub + ';margin-top:4px;">생물을 눌러' + (G().roles ? ' 역할과' : '') + ' 먹이 관계를 봐요. 화살표는 <b>먹히는 생물 → 먹는 생물</b>로, ' + (G().roles ? '에너지가 옮겨가는 방향이에요.' : '누가 누구를 먹는지 알려줘요.') + '</div>';
     }
 
     function bind() {
