@@ -15,7 +15,17 @@
   if (!window.KLab) return;
   window.KLab.register('animal', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2, terms:false },
+      mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3, terms:false },
+      high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4, terms:true  }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var raf = null, frame = 0;
     var C = { ink:'#1B3A57', sub:'#5a7894', good:'#12B886', vio:'#7048E8', leaf:'#51CF66', water:'#74C0FC' };
     var btn = 'font-size:22px;padding:12px 20px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
@@ -28,6 +38,14 @@
     // 단계: [시작일, 이름]
     var BF=[[0,'알'],[3,'애벌레'],[10,'번데기'],[15,'어른벌레(나비)'],[20,'다시 알!']];
     var DF=[[0,'알'],[4,'애벌레(약충)'],[14,'어른벌레(잠자리)'],[20,'다시 알!']];
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false; reset();
+      if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
+      build();
+    }});
     function stageOf(T){ var s=0; for(var i=0;i<T.length;i++)if(day>=T[i][0])s=i; return s; }
     function tickDay(){ day=Math.min(24,day+1); renderScene(); renderStatus(); checkMission(); }
     function pick(which){
@@ -47,14 +65,16 @@
       { text:'🔍 <b style="color:#7048E8;">번데기 단계를 거친 동물</b>의 그림(이름표)을 클릭해요!',
         keep:true, check:function(){ return picked==='bf'; } }
     ];
+    function curMissions(){ return MISSIONS.slice(0, G().missionN); }
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; playing=false; ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){ mStep++; if(!MISSIONS[mStep].keep)reset(); }
+          if(mStep<M.length-1){ mStep++; if(!M[mStep].keep)reset(); }
           else mDone=true;
           build();
         },1500);
@@ -75,9 +95,12 @@
         ch:['태어나 자라서 다시 자손을 남기기까지의 과정','하루 동안 하는 일','겨울잠을 자는 것'], a:0 }
     ];
     var qIdx=0,qScore=0,qCount=0,qLock=false,qUsed=[];
+    // 중학년 = 기본 3문(한살이 순서·허물 벗기·한살이 뜻), 고학년 = 전체 5문(완전/불완전 변태 용어 포함)
+    function quizIdxPool(){ return (grade==='mid') ? [0,3,4] : [0,1,2,3,4]; }
     function newQuiz(){
-      if(qUsed.length>=QUIZ.length)qUsed=[];
-      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(qUsed.indexOf(i)<0)cand.push(i);
+      var pool=quizIdxPool();
+      if(qUsed.length>=pool.length)qUsed=[];
+      var cand=[]; for(var i=0;i<pool.length;i++)if(qUsed.indexOf(pool[i])<0)cand.push(pool[i]);
       qIdx=cand[Math.floor(Math.random()*cand.length)]; qUsed.push(qIdx); qLock=false;
     }
     function quizChoices(){
@@ -95,8 +118,8 @@
         +'</div>';
     }
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=ctrlRow(); }
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=ctrlRow();
       el.innerHTML='<style>.an-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.an-pane{cursor:pointer;}</style>'
@@ -109,6 +132,7 @@
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
+      bands.bind(el);
       drawStage(); bind(); renderScene(); renderStatus();
     }
 
@@ -185,6 +209,13 @@
     function renderScene(){
       if(!svg)return;
       svg.innerHTML='';
+      if(!G().compare){
+        // 저학년: 나비 한 가지만 가운데
+        var gOnly=svgEl('g',{'class':'an-pane','data-pick':'bf'}); svg.appendChild(gOnly); drawButterfly(gOnly,450);
+        var dEl0=el.querySelector('.an-day'); if(dEl0)dEl0.textContent=day+'일째';
+        svg.querySelectorAll('.an-pane').forEach(function(g2){ g2.addEventListener('click',function(){ pick(g2.getAttribute('data-pick')); }); });
+        return;
+      }
       svg.appendChild(svgEl('line',{x1:450,y1:30,x2:450,y2:440,stroke:'#B6C9DC','stroke-width':3,'stroke-dasharray':'8 8'}));
       var gb=svgEl('g',{'class':'an-pane','data-pick':'bf'}); svg.appendChild(gb); drawButterfly(gb,225);
       var gd=svgEl('g',{'class':'an-pane','data-pick':'df'}); svg.appendChild(gd); drawDragonfly(gd,675);
@@ -204,11 +235,16 @@
       var s=el.querySelector('.an-status'); if(!s)return;
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">키워 본 걸 떠올리며 답을 골라요</div>'; return; }
       var sb=stageOf(BF), sd=stageOf(DF), h;
+      if(!G().compare){
+        // 저학년: 나비 한살이 순서 일상어 닻(변태 용어·비교 없이)
+        var tipsB=['🥚 알에서 시작해요 — ▶로 시간을 흘려 봐요!','애벌레가 잎을 먹고 무럭무럭 자라요.','번데기 속에서 몸이 바뀌고 있어요.','예쁜 나비가 됐어요! 🦋','나비가 다시 알을 낳았어요 — 알→애벌레→번데기→나비, 한살이 완성!'];
+        h='<div style="font-size:24px;color:'+(sb>=3?C.good:C.ink)+';">'+day+'일째 — '+BF[sb][1]+'</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+tipsB[sb]+'</div>';
+        s.innerHTML=h; return;
+      }
       if(day===0)h='<div style="font-size:24px;color:'+C.ink+';">🥚 두 동물이 알에서 출발해요 — ▶로 시간을 흘려 봐요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">나비와 잠자리의 한살이가 <b>어디가 같고 어디가 다른지</b> 나란히 비교해요.</div>';
       else if(sb===2&&sd<2)h='<div style="font-size:24px;color:'+C.vio+';">나비는 번데기 속에서 몸이 바뀌는 중!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">잠자리 애벌레(약충)는 번데기 없이 물속에서 점점 어른을 닮아 가요 — 차이가 보이나요?</div>';
-      else if(sb>=3&&sd>=2)h='<div style="font-size:24px;color:'+C.good+';">둘 다 어른벌레! 그런데 길이 달랐어요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">나비처럼 <b>번데기를 거치면 완전 변태</b>, 잠자리처럼 <b>번데기 없이 자라면 불완전 변태</b>예요.</div>';
-      else { var tips=['알 속에서 준비 중…','애벌레는 허물을 벗으며 쑥쑥 자라요.','',''];
-        h='<div style="font-size:24px;color:'+C.ink+';">'+day+'일째 — 나비: '+BF[sb][1]+' / 잠자리: '+DF[sd][1]+'</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+(sb===1?'애벌레는 허물을 벗으며 자라요. 잠자리 약충은 물속에서 살아요!':'두 동물을 잘 지켜봐요 — 단계가 어떻게 다른가요?')+'</div>'; }
+      else if(sb>=3&&sd>=2)h='<div style="font-size:24px;color:'+C.good+';">둘 다 어른벌레! 그런데 길이 달랐어요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+(G().terms?'나비처럼 <b>번데기를 거치면 완전 변태</b>, 잠자리처럼 <b>번데기 없이 자라면 불완전 변태</b>예요.':'나비는 <b>번데기를 거쳐서</b>, 잠자리는 <b>번데기 없이</b> 어른이 됐어요!')+'</div>';
+      else { h='<div style="font-size:24px;color:'+C.ink+';">'+day+'일째 — 나비: '+BF[sb][1]+' / 잠자리: '+DF[sd][1]+'</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">'+(sb===1?'애벌레는 허물을 벗으며 자라요. 잠자리 약충은 물속에서 살아요!':'두 동물을 잘 지켜봐요 — 단계가 어떻게 다른가요?')+'</div>'; }
       s.innerHTML=h;
     }
 
