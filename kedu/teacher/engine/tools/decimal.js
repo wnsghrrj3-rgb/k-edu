@@ -1,24 +1,59 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 소수 모형 (decimal) v2 · 3모드
+   케이랩 도구 모듈 — 소수 모형 (decimal) v3 · 3모드 + 학년칸
    초점 (4학년 소수) = 전체(1)를 100칸 모눈으로 보아 소수 자릿값을 눈으로.
      · 10×10 모눈 = 1. 한 칸 = 0.01, 한 줄(10칸) = 0.1.
      · ＋0.1 / ＋0.01 또는 칸 클릭으로 채우기 → 소수·분수 동시 표시.
        "0.37 = 37/100" (소수 ⇄ 분수 연결).
-   v2: KLab.ui 3모드(자유탐구/미션4/퀴즈5). 퀴즈 = 모눈을 보고 소수·분수 읽기.
+   v3: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = 0.1 단위만(한 줄=0.1)·★칸 클릭이 줄 전체를 채우는 0.1 스냅 신규 닻
+            ·0.01 버튼·분수 표시·퀴즈 숨김 (일상어 "한 줄이 0.1").
+     · 중 = 0.01 등장·소수⇄분수 연결·퀴즈(분수 포함 4문).
+     · 고 = 기존 전부 유지(0.1·0.01·칸 클릭·분수·퀴즈 5문).
    - 의존: window.KLab (THREE 불필요)
-   - config: { value(기본0.37), mode:"free"|"mission"|"quiz" }
+   - config: { value(기본0.37), grade:"low|mid|high", mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   window.KLab.register('decimal', function (el, config) {
     var ui=window.KLab.ui;
-    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
+       저=0.1 단위·줄 스냅 닻(0.01·분수·퀴즈 숨김) / 중=0.01+분수+퀴즈 / 고=기존 유지. */
+    var GRADES={
+      low:  { modes:['free','mission'],        steps:[10],   frac:false, snap:true  },
+      mid:  { modes:['free','mission','quiz'], steps:[10,1], frac:true,  snap:false },
+      high: { modes:['free','mission','quiz'], steps:[10,1], frac:true,  snap:false }
+    };
+    var STEP_STYLE={ 10:{c:'#1565C0',label:'0.1'}, 1:{c:'#0CA678',label:'0.01'} };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode=(G().modes.indexOf(config.mode)>=0)?config.mode:'free';
     var startH=Math.max(0,Math.min(Math.round((config.value!=null?config.value:0.37)*100),100));
-    var hund=startH; // 채운 칸 수 0~100
+    // 저학년 시작값은 0.1 단위로 스냅
+    function snap01(v){ return Math.round(v/10)*10; }
+    var hund=(grade==='low')?snap01(startH):startH; // 채운 칸 수 0~100
     var btn='font-size:25px;padding:13px 22px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS=[
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false;
+      hund=(mode==='mission')?0:((grade==='low')?snap01(startH):startH);
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
+
+    /* ───────────── 미션 (학년칸별 풀) ───────────── */
+    var LOW_MISSIONS=[
+      { text:'＋0.1 버튼으로 <b style="color:#7048E8;">0.3</b>을 만들어 봐요! (한 줄이 0.1 — 세 줄!)',
+        check:function(){ return hund===30; } },
+      { text:'한 줄씩 더 채워 <b style="color:#7048E8;">0.5</b>(절반)을 만들어요! (다섯 줄!)',
+        check:function(){ return hund===50; } },
+      { text:'모눈을 꽉 채워 <b style="color:#7048E8;">1</b>을 만들어요 — 0.1짜리 줄이 10개면 1!',
+        check:function(){ return hund===100; } }
+    ];
+    var MID_MISSIONS=[
       { text:'＋0.1 버튼으로 <b style="color:#7048E8;">0.3</b>을 만들어 봐요! (한 줄 = 0.1)',
         check:function(){ return hund===30; } },
       { text:'이제 ＋0.01로 <b style="color:#7048E8;">0.34</b>까지! (한 칸 = 0.01)',
@@ -28,47 +63,57 @@
       { text:'모눈을 꽉 채워 <b style="color:#7048E8;">1</b>을 만들어요 — 0.01이 100개면 1!',
         check:function(){ return hund===100; } }
     ];
+    var HIGH_MISSIONS=MID_MISSIONS; // 고학년은 기존 4미션 유지
+    function curMissions(){ return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS; }
     var mStep=0,mDone=false,mLock=false;
     function checkMission(){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var _M=curMissions();
+      if(_M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){ mLock=false; mStep++;
-          if(mStep>=MISSIONS.length)mDone=true;
+          if(mStep>=curMissions().length)mDone=true;
           build();
         },1500);
       }
     }
 
-    /* ───────────── 퀴즈 (모눈을 보고 읽기) ───────────── */
+    /* ───────────── 퀴즈 (모눈을 보고 읽기) — g:'mid'=중·고 공통, 'high'=고학년만 ───────────── */
     var QUIZ_POOL=[
-      { hund:37, q:'색칠한 모눈이 나타내는 소수는?', answer:'0.37', choices:['0.37','3.7','0.07'] },
-      { hund:50, q:'모눈의 절반이 색칠됐어요. 소수로 나타내면?', answer:'0.5', choices:['0.5','0.05','5'] },
-      { hund:3,  q:'세 칸만 색칠됐어요. 소수로 나타내면?', answer:'0.03', choices:['0.03','0.3','3'] },
-      { hund:70, q:'색칠한 부분을 분수로 나타내면?', answer:'70/100', choices:['70/100','7/100','70/10'] },
-      { hund:25, q:'0.1이 2개, 0.01이 5개인 수는?', answer:'0.25', choices:['0.25','0.52','2.5'] }
+      { hund:37, q:'색칠한 모눈이 나타내는 소수는?', answer:'0.37', choices:['0.37','3.7','0.07'], g:'mid' },
+      { hund:50, q:'모눈의 절반이 색칠됐어요. 소수로 나타내면?', answer:'0.5', choices:['0.5','0.05','5'], g:'mid' },
+      { hund:3,  q:'세 칸만 색칠됐어요. 소수로 나타내면?', answer:'0.03', choices:['0.03','0.3','3'], g:'mid' },
+      { hund:70, q:'색칠한 부분을 분수로 나타내면?', answer:'70/100', choices:['70/100','7/100','70/10'], g:'mid' },
+      { hund:25, q:'0.1이 2개, 0.01이 5개인 수는?', answer:'0.25', choices:['0.25','0.52','2.5'], g:'high' }
     ];
+    function curQuiz(){ return (grade==='high')?QUIZ_POOL.slice():QUIZ_POOL.filter(function(q){return q.g==='mid';}); }
     var qList=[],qIdx=0,qScore=0,qCount=0,qLock=false;
     function shuffleQuiz(){
-      qList=QUIZ_POOL.slice();
+      qList=curQuiz();
       for(var i=qList.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=qList[i];qList[i]=qList[j];qList[j]=t;}
       qIdx=0;qScore=0;qCount=0;
     }
     function shuffled(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
+    function ctrlHTML(){
+      var s='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">';
+      G().steps.forEach(function(d){
+        var sty=STEP_STYLE[d];
+        s+='<button class="dc-btn" data-d="-'+d+'" style="'+btn+'background:#fff;color:'+sty.c+';border-color:'+sty.c+';">－'+sty.label+'</button>'
+          +'<button class="dc-btn" data-d="'+d+'" style="'+btn+'background:'+sty.c+';color:#fff;border-color:'+sty.c+';">＋'+sty.label+'</button>'
+          +'<span style="width:8px;"></span>';
+      });
+      s+='<button class="dc-btn" data-d="reset" style="font-size:25px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button></div>';
+      return s;
+    }
+
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', foot='';
-      var ctrl='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
-        +'<button class="dc-btn" data-act="m10" style="'+btn+'background:#fff;color:#1565C0;">－0.1</button>'
-        +'<button class="dc-btn" data-act="p10" style="'+btn+'background:#1565C0;color:#fff;">＋0.1</button>'
-        +'<span style="width:8px;"></span>'
-        +'<button class="dc-btn" data-act="m1" style="'+btn+'background:#fff;color:#0CA678;border-color:#0CA678;">－0.01</button>'
-        +'<button class="dc-btn" data-act="p1" style="'+btn+'background:#0CA678;color:#fff;border-color:#0CA678;">＋0.01</button>'
-        +'<span style="width:8px;"></span>'
-        +'<button class="dc-btn" data-act="reset" style="font-size:25px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>'
-      +'</div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); }
-      else if(mode==='quiz'){
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', foot='';
+      var ctrl=ctrlHTML();
+      if(mode==='mission'){
+        var _M=curMissions();
+        bar=mDone?ui.doneBar():ui.missionBar(_M[mStep].text,mStep,_M.length);
+      } else if(mode==='quiz'){
         var q=qList[qIdx]||qList[0];
         hund=q.hund; ctrl='';
         bar=ui.quizBar(q.q,qScore,qCount);
@@ -83,14 +128,21 @@
         +'<div class="dc-status" style="text-align:center;margin-top:14px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m2){
         mode=m2; mStep=0;mDone=false;mLock=false;
-        hund=(m2==='mission')?0:startH;
+        hund=(m2==='mission')?0:((grade==='low')?snap01(startH):startH);
         if(m2==='quiz')shuffleQuiz();
         build();
       });
-      var H={p10:function(){hund=Math.min(100,hund+10);render();},m10:function(){hund=Math.max(0,hund-10);render();},
-        p1:function(){hund=Math.min(100,hund+1);render();},m1:function(){hund=Math.max(0,hund-1);render();},
-        reset:function(){hund=(mode==='mission')?0:startH;render();}};
-      el.querySelectorAll('.dc-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f){f();if(mode==='mission')checkMission();}});});
+      bands.bind(el);
+      var H={};
+      G().steps.forEach(function(d){
+        H[d]=function(){hund=Math.min(100,hund+d);render();};
+        H[-d]=function(){hund=Math.max(0,hund-d);render();};
+      });
+      H.reset=function(){hund=(mode==='mission')?0:((grade==='low')?snap01(startH):startH);render();};
+      el.querySelectorAll('.dc-btn').forEach(function(b){b.addEventListener('click',function(){
+        var key=(b.dataset.d==='reset')?'reset':(+b.dataset.d);
+        var f=H[key];if(f){f();if(mode==='mission')checkMission();}
+      });});
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true; qCount++;
@@ -127,27 +179,51 @@
       // 0.1 줄 구분 (굵은 가로선)
       for(var rr=1;rr<10;rr++) g.appendChild(svgEl('line',{x1:x0,y1:y0+rr*cell,x2:x0+grid,y2:y0+rr*cell,stroke:'#5a7894','stroke-width':rr%1===0?2:1,'pointer-events':'none'}));
       svg.appendChild(g);
+      // ★저학년 닻: 채워진 0.1 줄마다 오른쪽에 "0.1" 막대 칩을 쌓아 "0.1을 세는" 표상
+      if(grade==='low'){
+        var rows=Math.floor(hund/10), cx=x0+grid+26, cw=66, ch=cell*0.74, gap=cell*0.26;
+        for(var ri=0;ri<rows;ri++){
+          var cy=y0+ri*cell+(cell-ch)/2;
+          g.appendChild(svgEl('rect',{x:cx,y:cy,width:cw,height:ch,rx:8,fill:'#1565C0','pointer-events':'none'}));
+          var lt=svgEl('text',{x:cx+cw/2,y:cy+ch/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#fff'});
+          lt.textContent='0.1'; g.appendChild(lt);
+        }
+      }
       stage.appendChild(svg);
       if(mode!=='quiz'){
-        stage.querySelectorAll('.dc-cell').forEach(function(p){p.addEventListener('click',function(){hund=(+p.dataset.k)+1;if(hund>100)hund=100;render();if(mode==='mission')checkMission();});});
+        stage.querySelectorAll('.dc-cell').forEach(function(p){p.addEventListener('click',function(){
+          if(grade==='low'){ hund=(Math.floor((+p.dataset.k)/10)+1)*10; } // ★저학년: 줄 전체 채움(0.1 스냅)
+          else { hund=(+p.dataset.k)+1; }
+          if(hund>100)hund=100;
+          render();if(mode==='mission')checkMission();
+        });});
       }
       if(mode==='quiz'){
         statusEl.innerHTML='<div style="font-size:19px;color:#8aa0b6;">한 줄(10칸)=0.1, 한 칸=0.01! 색칠된 칸을 세어 답을 골라요.</div>';
         return;
       }
-      var val=(hund/100).toFixed(2), tenths=Math.floor(hund/10), ones=hund%10;
-      statusEl.innerHTML='<span style="font-size:50px;color:#1565C0;">'+val+'</span>'
-        +'<span style="font-size:28px;color:#1B3A57;"> ＝ </span>'
-        +'<span style="display:inline-block;vertical-align:middle;text-align:center;line-height:1;">'
-          +'<span style="display:block;font-size:34px;color:#0CA678;">'+hund+'</span>'
-          +'<span style="display:block;height:4px;background:#1B3A57;border-radius:2px;margin:2px 0;"></span>'
-          +'<span style="display:block;font-size:34px;color:#1565C0;">100</span></span>'
-        +'<span style="font-size:22px;color:#5a7894;">    (0.1이 '+tenths+'개, 0.01이 '+ones+'개)</span>';
-      var q10=el.querySelector('[data-act="p10"]');
-      if(q10){
-        q10.disabled=hund>90; el.querySelector('[data-act="m10"]').disabled=hund<10;
-        el.querySelector('[data-act="p1"]').disabled=hund>=100; el.querySelector('[data-act="m1"]').disabled=hund<=0;
+      var val, tenths=Math.floor(hund/10), ones=hund%10;
+      if(grade==='low'){
+        // 저학년: 0.1 단위 — 분수 숨김, "0.1이 N개"만
+        val=(hund/100).toFixed(1);
+        statusEl.innerHTML='<span style="font-size:50px;color:#1565C0;">'+val+'</span>'
+          +'<span style="font-size:24px;color:#5a7894;">    (0.1짜리 줄이 '+tenths+'개!)</span>';
+      } else {
+        // 중·고: 소수 ⇄ 분수 연결
+        val=(hund/100).toFixed(2);
+        statusEl.innerHTML='<span style="font-size:50px;color:#1565C0;">'+val+'</span>'
+          +'<span style="font-size:28px;color:#1B3A57;"> ＝ </span>'
+          +'<span style="display:inline-block;vertical-align:middle;text-align:center;line-height:1;">'
+            +'<span style="display:block;font-size:34px;color:#0CA678;">'+hund+'</span>'
+            +'<span style="display:block;height:4px;background:#1B3A57;border-radius:2px;margin:2px 0;"></span>'
+            +'<span style="display:block;font-size:34px;color:#1565C0;">100</span></span>'
+          +'<span style="font-size:22px;color:#5a7894;">    (0.1이 '+tenths+'개, 0.01이 '+ones+'개)</span>';
       }
+      // 버튼 비활성 가드 (현재 학년의 step만)
+      G().steps.forEach(function(dd){
+        var p=el.querySelector('[data-d="'+dd+'"]'), m=el.querySelector('[data-d="-'+dd+'"]');
+        if(p)p.disabled=hund+dd>100; if(m)m.disabled=hund-dd<0;
+      });
     }
     shuffleQuiz();
     build();
