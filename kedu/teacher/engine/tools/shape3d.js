@@ -44,13 +44,35 @@
 
   window.KLab.register('shape3d', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 용어/난이도 사다리 ── */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         quiz: false, missionN: 2, quizN: 0 },
+      mid:  { modes: ['free', 'mission', 'quiz'], quiz: true,  missionN: 4, quizN: 3 },
+      high: { modes: ['free', 'mission', 'quiz'], quiz: true,  missionN: 4, quizN: 5 }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     var shapes  = (config.shapes  && config.shapes.length)  ? config.shapes  : ['box', 'cylinder', 'ball'];
     var actions = (config.actions && config.actions.length) ? config.actions : ['roll', 'flip'];
-    var terms   = LABELS[config.terms] ? config.terms : 'daily';
+    // 용어: config 우선, 없으면 고학년 잠금일 때만 수학 용어(직육면체·원기둥·구), 그 외 일상어
+    var terms   = (config.terms && LABELS[config.terms]) ? config.terms : ((config.grade === 'high') ? 'math' : 'daily');
     var L = LABELS[terms], LS = SHORT[terms];
     var canRollAction = actions.indexOf('roll') >= 0;
     var canFlipAction = actions.indexOf('flip') >= 0;
+
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      mStep = 0; mDone = false; mLock = false;
+      mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
+      rolling = false; cylUp = true; applyCyl(); drawStatus();
+      shapes.forEach(function (k) { var gp = groups[k]; if (gp) { gp.position.x = gp.userData.homeX; gp.rotation.set(0, 0, 0); gp.userData.phase = 0; gp.userData.wobble = -1; } });
+      if (mode === 'quiz') shuffleQuiz();
+      buildChrome();
+    } });
 
     /* ───────────── 미션 (관찰 행동 4단계) ───────────── */
     var mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
@@ -65,13 +87,15 @@
         check: function () { return mFlags.resetDone; } }
     ];
     var mStep = 0, mDone = false, mLock = false;
+    function curMissions() { return MISSIONS.slice(0, G().missionN); }
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true; ui.toast(el, true);
         setTimeout(function () {
           mLock = false; mStep++;
-          if (mStep >= MISSIONS.length) mDone = true;
+          if (mStep >= M.length) mDone = true;
           buildChrome();
         }, 1500);
       }
@@ -86,8 +110,9 @@
       { q: '축구공처럼 어디로든 굴러가야 하는 물건은 어떤 모양이 좋을까요?', answer: LS.ball, choices: [LS.ball, LS.box, LS.cylinder] }
     ];
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+    function quizPool() { return QUIZ_POOL.slice(0, G().quizN || QUIZ_POOL.length); }
     function shuffleQuiz() {
-      qList = QUIZ_POOL.slice();
+      qList = quizPool().slice();
       for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
       qIdx = 0; qScore = 0; qCount = 0;
     }
@@ -115,8 +140,8 @@
 
     function buildChrome() {
       var topEl = el.querySelector('.s3d-top'), barEl = el.querySelector('.s3d-bars'), footEl = el.querySelector('.s3d-foot');
-      topEl.innerHTML = ui.modeTabs(['free', 'mission', 'quiz'], mode);
-      if (mode === 'mission') barEl.innerHTML = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+      topEl.innerHTML = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
+      if (mode === 'mission') { var M = curMissions(); barEl.innerHTML = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); }
       else if (mode === 'quiz') barEl.innerHTML = ui.quizBar(qList[qIdx].q, qScore, qCount);
       else barEl.innerHTML = '';
       var quiz = (mode === 'quiz');
@@ -147,6 +172,7 @@
           }, 1400);
         });
       });
+      bands.bind(el);
     }
 
     var stage  = el.querySelector('.s3d-stage');
