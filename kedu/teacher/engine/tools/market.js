@@ -15,7 +15,26 @@
   if (!window.KLab) return;
   window.KLab.register('market', function (el, config) {
     var ui = window.KLab.ui;
-    var mode = (['free', 'mission', 'quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        infl:false, quiz:false, missionN:2 },
+      mid:  { modes:['free','mission','quiz'], infl:true,  quiz:true,  missionN:3 },
+      high: { modes:['free','mission','quiz'], infl:true,  quiz:true,  missionN:4 }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false;
+      demand=5; supply=5; infl=1.0; price=100; last=null; sit=null; sold0=false; coins=0;
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
 
     /* ── 경제 모델 (초등 직관용 단순화) ──
        적정가 fair = BASE × (손님/물건) × 물가
@@ -50,7 +69,8 @@
       infl = Math.round((infl + s.di) * 100) / 100;
       price = fairPrice(); last = null; sold0 = false;
     }
-    function randomSit() { return SITS[Math.floor(Math.random() * SITS.length)]; }
+    function randomSit() { var pool = availSits(); return pool[Math.floor(Math.random() * pool.length)]; }
+    function availSits() { return G().infl ? SITS : SITS.filter(function (s) { return s.di === 0; }); } // 인플레이션(물가) 카드는 중·고만
 
     /* ───────────── 미션 (생각형 — 가격 판단) ───────────── */
     // 각 미션 = 상황을 깔고, "가격을 어떻게?" 3선택지(올린다/내린다/그대로) 중 고르기
@@ -64,6 +84,7 @@
       { setup: SITS[5], q: '💰 마을에 용돈이 잔뜩 풀려 다들 지갑이 두둑해요! 가격을 어떻게 할까요?',
         ch: ['값을 올린다', '값을 내린다', '그대로 둔다'], a: 0, why: '돈이 많이 풀리면 물가가 올라요. 올려도 손님이 척척 사 가죠 — 이게 인플레이션!' }
     ];
+    function curMissions() { return MTASK.slice(0, G().missionN); }
     var mStep = 0, mDone = false;
 
     /* ───────────── 퀴즈 (경제 어휘·상황 판단) ───────────── */
@@ -76,26 +97,29 @@
     ];
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffle(a) { var c = a.slice(); for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = c[i]; c[i] = c[j]; c[j] = t; } return c; }
-    function shuffleQuiz() { qList = shuffle(QUIZ_POOL); qIdx = 0; qScore = 0; qCount = 0; }
+    // 중학년 = 기본 3문(손님↑·물건↑·손님↓), 고학년 = 전체 5문(흉년·물가 포함)
+    function quizPool() { return (grade === 'mid') ? [QUIZ_POOL[0], QUIZ_POOL[1], QUIZ_POOL[4]] : QUIZ_POOL; }
+    function shuffleQuiz() { qList = shuffle(quizPool()); qIdx = 0; qScore = 0; qCount = 0; }
 
     /* ───────────── 빌드 ───────────── */
     var btn = 'font-size:23px;padding:12px 22px;border-radius:16px;border:3px solid #12B886;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     var cardBtn = 'font-size:18px;padding:11px 15px;border-radius:14px;border:3px solid #F59F00;background:#fff;color:#B25E00;cursor:pointer;font-weight:800;font-family:inherit;line-height:1.25;';
 
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', ctrl = '', foot = '';
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', ctrl = '', foot = '';
 
       if (mode === 'mission') {
-        if (!mDone) { drawSit(MTASK[mStep].setup); }
-        bar = mDone ? ui.doneBar() : ui.missionBar(MTASK[mStep].q, mStep, MTASK.length);
+        var M = curMissions();
+        if (!mDone) { drawSit(M[mStep].setup); }
+        bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].q, mStep, M.length);
       } else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         bar = ui.quizBar(q.q, qScore, qCount);
         foot = ui.choices(shuffle(q.ch).map(function (v) { return { v: v, label: v }; }));
       } else {
-        // 자유탐구: 상황 카드 뽑기 줄
+        // 자유탐구: 상황 카드 뽑기 줄 (인플레이션 카드는 학년칸으로 게이팅)
         ctrl = '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-          + SITS.map(function (s, i) { return '<button class="mk-sit" data-i="' + i + '" style="' + cardBtn + '">' + s.ic + ' ' + s.t + '</button>'; }).join('')
+          + availSits().map(function (s) { var i = SITS.indexOf(s); return '<button class="mk-sit" data-i="' + i + '" style="' + cardBtn + '">' + s.ic + ' ' + s.t + '</button>'; }).join('')
           + '</div>';
       }
 
@@ -128,6 +152,7 @@
         if (m2 === 'free') coins = 0;
         build();
       });
+      bands.bind(el);
 
       // 상황 카드
       el.querySelectorAll('.mk-sit').forEach(function (b) {
@@ -170,7 +195,8 @@
     /* ───────────── 미션 생각 선택지 (정답 시 다음 단계) ───────────── */
     function mountThink() {
       if (mode !== 'mission' || mDone) return;
-      var m = MTASK[mStep];
+      var MS = curMissions();
+      var m = MS[mStep];
       var box = document.createElement('div');
       box.className = 'mk-think';
       box.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:12px 10px 4px;';
@@ -187,7 +213,7 @@
             + '<span style="font-size:19px;font-weight:800;color:#0B7A5C;">✅ 정답! ' + m.why + '</span></div>';
           setTimeout(function () {
             mStep++;
-            if (mStep >= MTASK.length) mDone = true;
+            if (mStep >= MS.length) mDone = true;
             build();
           }, 2600);
         });
@@ -246,8 +272,8 @@
         svg.appendChild(svgEl('rect', { x: VBW / 2 - 95, y: 96, width: 190, height: 96, rx: 16, fill: '#fff', stroke: '#12B886', 'stroke-width': 4 }));
         txt(svg, VBW / 2, 126, '내 가격', 18, '#0B7A5C');
         txt(svg, VBW / 2, 168, price + '원', 38, '#0B7A5C');
-        // 물가 배지
-        if (infl > 1.001) {
+        // 물가 배지 (중·고만)
+        if (G().infl && infl > 1.001) {
           svg.appendChild(svgEl('rect', { x: VBW / 2 - 70, y: 198, width: 140, height: 30, rx: 12, fill: '#FFE3E3', stroke: '#E64980', 'stroke-width': 2.5 }));
           txt(svg, VBW / 2, 219, '🎈 물가 ×' + infl.toFixed(2), 17, '#C2255C');
         }
