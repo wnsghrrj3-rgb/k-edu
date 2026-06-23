@@ -22,18 +22,42 @@
 
   window.KLab.register('cubes', function (el, config) {
     var ui = window.KLab.ui;
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         views: false, quiz: false, volume: false, missionN: 2, quizN: 0 },
+      mid:  { modes: ['free', 'mission', 'quiz'], views: true,  quiz: true,  volume: true,  missionN: 3, quizN: 3 },
+      high: { modes: ['free', 'mission', 'quiz'], views: true,  quiz: true,  volume: true,  missionN: 4, quizN: 5 }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+
     var editable = (config.editable === false) ? false : true;
     var maxCount = (typeof config.maxCount === 'number' && config.maxCount > 0) ? config.maxCount : 80;
     var startShape = Array.isArray(config.shape) ? config.shape : DEFAULT_SHAPE;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
 
-    // ---- 미션 ----
-    var MISSIONS = [
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      if (!G().views) { viewMode = 'free'; }
+      mStep = 0; mDone = false; mLock = false;
+      if (mode === 'quiz') shuffleQuiz();
+      cleanup3d(); buildUI();
+    } });
+
+    // ---- 미션 (학년칸별 풀) ----
+    var LOW_MISSIONS = [
+      { text: '쌓기나무를 <b style="color:#7048E8;">5개</b> 쌓아 봐요! (+쌓기 버튼이나 면을 클릭하세요)',
+        check: function(cubes) { return Object.keys(cubes).length === 5; } },
+      { text: '이번엔 <b style="color:#7048E8;">8개</b>를 쌓아 봐요! 모두 몇 개인지 세어 봐요!',
+        check: function(cubes) { return Object.keys(cubes).length === 8; } }
+    ];
+    var BASE_MISSIONS = [
       { text: '쌓기나무를 <b style="color:#7048E8;">5개</b> 쌓아 봐요! (+쌓기 버튼이나 면을 클릭하세요)',
         check: function(cubes) { return Object.keys(cubes).length === 5; } },
       { text: '이번엔 <b style="color:#7048E8;">↺ 처음으로</b> 누른 뒤, <b style="color:#7048E8;">위에서 본 모양</b>이 ㄴ자(3칸+1칸)가 되게 쌓아 봐요!',
         check: function(cubes) {
-          // 바닥층(y=0)에 ㄴ자 = 4칸, 높이는 모두 1층
           var ks=Object.keys(cubes); if(ks.length!==4) return false;
           var allFlat=true; ks.forEach(function(k){if(cubes[k].userData.gy!==0)allFlat=false;});
           return allFlat;
@@ -56,10 +80,10 @@
         }
       }
     ];
+    function curMissions() { return (grade==='low') ? LOW_MISSIONS : BASE_MISSIONS.slice(0, G().missionN); }
     var mStep = 0, mDone = false, mLock = false;
 
-    // ---- 퀴즈 ----
-    // 모양별 정답 개수
+    // ---- 퀴즈 (중·고만) ----
     var QUIZ_POOL = [
       { q: '쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[0,0,1]], answer:'5', choices:['4','5','6','7'] },
       { q: '쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1]], answer:'6', choices:['5','6','7','8'] },
@@ -67,9 +91,11 @@
       { q: '쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[2,0,0],[1,1,0],[1,0,1]], answer:'5', choices:['4','5','6','8'] },
       { q: '앞에서 보면 최대 층 높이는?', shape:[[0,0,0],[1,0,0],[0,1,0],[0,2,0],[1,1,0]], answer:'3층', choices:['1층','2층','3층','4층'] },
     ];
+    // 중학년 = 개수 세기만(정사영 읽기 제외), 고학년 = 전체(위에서·앞에서 정사영 포함)
+    function quizPool() { return (grade==='mid') ? [QUIZ_POOL[0], QUIZ_POOL[1], QUIZ_POOL[3]] : QUIZ_POOL; }
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffleQuiz() {
-      qList = QUIZ_POOL.slice();
+      qList = quizPool().slice();
       for(var i=qList.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=qList[i];qList[i]=qList[j];qList[j]=tmp;}
       qIdx=0; qScore=0; qCount=0;
     }
@@ -78,26 +104,30 @@
     var viewBtn = 'font-size:22px;padding:12px 18px;border-radius:14px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
     function buildUI() {
-      var top = ui.modeTabs(['free','mission','quiz'], mode);
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
       var bar = '', foot = '';
 
       if (mode === 'mission') {
-        bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+        var M = curMissions();
+        bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length);
       } else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         bar = ui.quizBar(q.q, qScore, qCount);
         foot = ui.choices(q.choices.map(function(v){ return {v:v,label:v}; }));
       }
 
+      var viewRow = G().views
+        ? '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
+          + '<span style="font-size:20px;font-weight:800;color:#5a7894;align-self:center;">시점</span>'
+          + '<button class="cb-view cb-btn cb-on" data-view="free"  style="'+viewBtn+'">자유</button>'
+          + '<button class="cb-view cb-btn" data-view="top"   style="'+viewBtn+'">위에서</button>'
+          + '<button class="cb-view cb-btn" data-view="front" style="'+viewBtn+'">앞에서</button>'
+          + '<button class="cb-view cb-btn" data-view="side"  style="'+viewBtn+'">옆에서</button>'
+          + '</div>' : '';
+
       el.innerHTML = '<style>.cb-btn:active{transform:translateY(2px);}.cb-btn.cb-on{background:#0B7285 !important;color:#fff !important;}.cb-view.cb-on{background:#0B7285 !important;color:#fff !important;}.kl-choice{min-width:80px !important;}</style>'
         + top + bar
-        + '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
-        + '<span style="font-size:20px;font-weight:800;color:#5a7894;align-self:center;">시점</span>'
-        + '<button class="cb-view cb-btn cb-on" data-view="free"  style="'+viewBtn+'">자유</button>'
-        + '<button class="cb-view cb-btn" data-view="top"   style="'+viewBtn+'">위에서</button>'
-        + '<button class="cb-view cb-btn" data-view="front" style="'+viewBtn+'">앞에서</button>'
-        + '<button class="cb-view cb-btn" data-view="side"  style="'+viewBtn+'">옆에서</button>'
-        + '</div>'
+        + viewRow
         + (editable && mode !== 'quiz'
           ? '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'
             + '<span style="font-size:20px;font-weight:800;color:#5a7894;align-self:center;">손으로</span>'
@@ -118,6 +148,7 @@
         cleanup3d();
         buildUI();
       });
+      bands.bind(el);
 
       init3d();
 
@@ -245,6 +276,7 @@
         if(!statusEl) return;
         var n=Object.keys(cubes).length;
         if(mode==='quiz'){statusEl.innerHTML='<span style="font-size:22px;color:#5a7894;">시점을 돌려 보고 개수를 세어 선택하세요!</span>';}
+        else if(!G().volume){statusEl.innerHTML='<span style="font-size:30px;">모두 </span><span style="font-size:48px;color:#1565C0;">'+n+'</span><span style="font-size:30px;">개!</span>';}
         else{statusEl.innerHTML='<span style="font-size:30px;">쌓기나무 </span><span style="font-size:48px;color:#1565C0;">'+n+'</span><span style="font-size:30px;">개  ＝  부피 </span><span style="font-size:48px;color:#0CA678;">'+n+'</span><span style="font-size:30px;"> 세제곱</span>';}
       }
       updateStatus();
@@ -276,11 +308,12 @@
 
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock || !cubes) return;
-      if (MISSIONS[mStep].check(cubes)) {
+      var M = curMissions();
+      if (M[mStep].check(cubes)) {
         mLock=true; ui.toast(el,true);
         setTimeout(function(){
           mStep++;
-          if(mStep>=MISSIONS.length){mDone=true;cleanup3d();buildUI();return;}
+          if(mStep>=M.length){mDone=true;cleanup3d();buildUI();return;}
           mLock=false; cleanup3d(); buildUI();
         },1500);
       }
