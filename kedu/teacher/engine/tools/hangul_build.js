@@ -28,14 +28,33 @@
     var defJong = ['ㄱ', 'ㄴ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ', 'ㅇ', 'ㄲ', 'ㅆ'];
     var cons = (config.consonants && config.consonants.length) ? config.consonants : defCons;
     var vows = (config.vowels && config.vowels.length) ? config.vowels : defVow;
-    var useJong = config.batchims !== false; // false = 받침 줄 숨김(v1 동작)
     var jongs = (config.batchims && config.batchims.length) ? config.batchims : defJong;
     var ui = window.KLab.ui;
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes:['free','mission'],        jong:false, quiz:false, missionN:2 },
+      mid:  { modes:['free','mission','quiz'], jong:true,  quiz:true,  missionN:3 },
+      high: { modes:['free','mission','quiz'], jong:true,  quiz:true,  missionN:4 }
+    };
+    var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G(){ return GRADES[grade]; }
+    function useJong(){ return G().jong && config.batchims !== false; } // 받침 줄 노출 여부
+
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
     function startCho(){ return (config.consonant && CHO.indexOf(config.consonant) >= 0) ? config.consonant : cons[0]; }
     function startJung(){ return (config.vowel && JUNG.indexOf(config.vowel) >= 0) ? config.vowel : vows[0]; }
-    function startJong(){ return (useJong && config.batchim && JONG.indexOf(config.batchim) >= 0) ? config.batchim : ''; }
+    function startJong(){ return (useJong() && config.batchim && JONG.indexOf(config.batchim) >= 0) ? config.batchim : ''; }
     var cho = startCho(), jung = startJung(), jong = startJong();
+
+    var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
+      grade=g;
+      if(G().modes.indexOf(mode)<0) mode='free';
+      mStep=0; mDone=false; mLock=false;
+      cho=startCho(); jung=startJung(); jong=startJong();
+      if(mode==='quiz') shuffleQuiz();
+      build();
+    }});
 
     function compose(c, j, b) {
       var ci = CHO.indexOf(c), ji = JUNG.indexOf(j);
@@ -45,45 +64,57 @@
       return String.fromCharCode(0xAC00 + (ci * 21 + ji) * 28 + bi);
     }
 
-    /* ───────────── 미션 ───────────── */
-    var MISSIONS = [
-      { text: 'ㄱ과 ㅏ를 골라 <b style="color:#7048E8;">〈가〉</b>를 만들어 봐요!',
-        check: function () { return compose(cho, jung, jong) === '가'; } },
-      { text: '모음만 바꿔 <b style="color:#7048E8;">〈고〉</b>를 만들어 봐요!',
-        check: function () { return compose(cho, jung, jong) === '고'; } },
-      { text: '받침 ㅁ을 끼워 <b style="color:#7048E8;">〈곰〉</b>! 받침은 글자 아래에 들어가요!',
-        check: function () { return compose(cho, jung, jong) === '곰'; } },
-      { text: '자음·모음·받침을 바꿔 <b style="color:#7048E8;">〈산〉</b>을 만들어 봐요!',
-        check: function () { return compose(cho, jung, jong) === '산'; } }
-    ];
-    if (!useJong) {  // 받침 줄이 없는 구성에서는 받침 미션 대신 받침 없는 글자로
-      MISSIONS[2] = { text: '자음을 바꿔 <b style="color:#7048E8;">〈노〉</b>를 만들어 봐요!', check: function () { return compose(cho, jung, jong) === '노'; } };
-      MISSIONS[3] = { text: '<b style="color:#7048E8;">〈수〉</b>를 만들어 봐요!', check: function () { return compose(cho, jung, jong) === '수'; } };
+    /* ───────────── 미션 (학년칸·받침 여부 동적) ───────────── */
+    function curMissions() {
+      var hasJong = useJong();
+      var M = [
+        { text: 'ㄱ과 ㅏ를 골라 <b style="color:#7048E8;">〈가〉</b>를 만들어 봐요!',
+          check: function () { return compose(cho, jung, jong) === '가'; } },
+        { text: '모음만 바꿔 <b style="color:#7048E8;">〈고〉</b>를 만들어 봐요!',
+          check: function () { return compose(cho, jung, jong) === '고'; } },
+        hasJong
+          ? { text: '받침 ㅁ을 끼워 <b style="color:#7048E8;">〈곰〉</b>! 받침은 글자 아래에 들어가요!',
+              check: function () { return compose(cho, jung, jong) === '곰'; } }
+          : { text: '자음을 바꿔 <b style="color:#7048E8;">〈노〉</b>를 만들어 봐요!',
+              check: function () { return compose(cho, jung, jong) === '노'; } },
+        hasJong
+          ? { text: '자음·모음·받침을 바꿔 <b style="color:#7048E8;">〈산〉</b>을 만들어 봐요!',
+              check: function () { return compose(cho, jung, jong) === '산'; } }
+          : { text: '<b style="color:#7048E8;">〈수〉</b>를 만들어 봐요!',
+              check: function () { return compose(cho, jung, jong) === '수'; } }
+      ];
+      return M.slice(0, G().missionN);
     }
     var mStep = 0, mDone = false, mLock = false;
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true; ui.toast(el, true);
         setTimeout(function () {
           mLock = false; mStep++;
-          if (mStep >= MISSIONS.length) mDone = true;
+          if (mStep >= M.length) mDone = true;
           build();
         }, 1500);
       }
     }
 
     /* ───────────── 퀴즈 (조합식을 보고 글자 고르기 — 결과 가림) ───────────── */
-    var QUIZ_POOL = [
+    var ALL_QUIZ = [
       { cho: 'ㄱ', jung: 'ㅏ', jong: '',  answer: '가', choices: ['가', '거', '기'] },
       { cho: 'ㄴ', jung: 'ㅗ', jong: '',  answer: '노', choices: ['노', '누', '나'] },
       { cho: 'ㄱ', jung: 'ㅏ', jong: 'ㅁ', answer: '감', choices: ['감', '강', '곰'] },
       { cho: 'ㅂ', jung: 'ㅏ', jong: 'ㅂ', answer: '밥', choices: ['밥', '법', '봅'] },
       { cho: 'ㅎ', jung: 'ㅏ', jong: 'ㄴ', answer: '한', choices: ['한', '함', '혼'] }
-    ].filter(function (q) { return useJong || !q.jong; });
+    ];
+    // 받침 가능 여부로 거르고, 중학년은 기본 3문, 고학년은 전체
+    function quizPool() {
+      var base = ALL_QUIZ.filter(function (q) { return useJong() || !q.jong; });
+      return (grade === 'mid') ? base.slice(0, 3) : base;
+    }
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffleQuiz() {
-      qList = QUIZ_POOL.slice();
+      qList = quizPool().slice();
       for (var i = qList.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
       qIdx = 0; qScore = 0; qCount = 0;
     }
@@ -101,8 +132,8 @@
 
     var resultEl, breakEl, consWrap, vowsWrap, jongsWrap;
     function build() {
-      var top = ui.modeTabs(['free', 'mission', 'quiz'], mode), bar = '', foot = '';
-      if (mode === 'mission') { bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length); }
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', foot = '';
+      if (mode === 'mission') { var M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); }
       else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         cho = q.cho; jung = q.jung; jong = q.jong;
@@ -132,7 +163,7 @@
           + '<div class="hb-cons" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
           + '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_VOW + ';margin-bottom:7px;">모음 (홀소리)</div>'
           + '<div class="hb-vows" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
-          + (useJong
+          + (useJong()
             ? '<div><div style="font-size:clamp(15px,2vw,18px);font-weight:800;color:' + C_JNG + ';margin-bottom:7px;">받침 (글자 아래에 끼워요)</div>'
               + '<div class="hb-jongs" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div></div>'
             : '')
@@ -148,7 +179,7 @@
       jongsWrap = el.querySelector('.hb-jongs');
       makeKeys(consWrap, cons, 'cho');
       makeKeys(vowsWrap, vows, 'jung');
-      if (useJong) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
+      if (useJong()) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
 
       ui.bindModeTabs(el, function (m2) {
         mode = m2; mStep = 0; mDone = false; mLock = false;
@@ -157,6 +188,7 @@
         if (m2 === 'quiz') shuffleQuiz();
         build();
       });
+      bands.bind(el);
       el.querySelectorAll('.kl-choice').forEach(function (b) {
         b.addEventListener('click', function () {
           if (qLock) return; qLock = true; qCount++;
@@ -191,7 +223,7 @@
     }
     makeKeys(consWrap, cons, 'cho');
     makeKeys(vowsWrap, vows, 'jung');
-    if (useJong) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
+    if (useJong()) makeKeys(jongsWrap, [''].concat(jongs), 'jong');
 
     function paint() {
       if (!resultEl) return;
