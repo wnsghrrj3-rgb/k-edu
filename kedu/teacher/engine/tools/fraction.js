@@ -31,22 +31,35 @@
   var ALLM=['area','line','set','quotient'], MLABEL={area:'▭ 면적',line:'┼ 수직선',set:'⦿ 묶음',quotient:'➗ 나눗셈'};
 
   window.KLab.register('fraction', function (el, config) {
-    var maxDenom=(typeof config.maxDenom==='number'&&config.maxDenom>=2)?config.maxDenom:12;
-    var maxWholes=(typeof config.maxWholes==='number'&&config.maxWholes>=1)?config.maxWholes:3;
     var ui=window.KLab.ui;
+
+    /* ── 학년 칸 (헌법 3장) — D칸 표상/난이도 사다리 ── */
+    var GRADES={
+      low:  { modes:['free','mission'],        models:['area'],                       notation:false, equiv:false, compare:false, maxDenom:6,  quizDirs:[] },
+      mid:  { modes:['free','mission','quiz'], models:['area','line'],                notation:true,  equiv:true,  compare:true,  maxDenom:12, quizDirs:['make'] },
+      high: { modes:['free','mission','quiz'], models:['area','line','set','quotient'], notation:true, equiv:true,  compare:true,  maxDenom:12, quizDirs:['make','guess'] }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+
+    var maxDenom=(typeof config.maxDenom==='number'&&config.maxDenom>=2)?Math.min(config.maxDenom,G().maxDenom):G().maxDenom;
+    var maxWholes=(typeof config.maxWholes==='number'&&config.maxWholes>=1)?config.maxWholes:3;
     var klMode;                                   // 겉 셸: free | mission | quiz
     if(config.mode==='mission')klMode='mission';
-    else if(config.mode==='quiz')klMode='quiz';
+    else if(config.mode==='quiz'&&G().modes.indexOf('quiz')>=0)klMode='quiz';
     else klMode='free';                           // free·single·compare·미지정 → 자유탐구
+    if(G().modes.indexOf(klMode)<0)klMode='free';
     var mode=(['single','compare'].indexOf(config.mode)>=0)?config.mode:'single';
+    if(mode==='compare'&&!G().compare)mode='single';
     if(klMode==='quiz')mode='quiz';
     var shape=(['bar','circle','grid'].indexOf(config.shape)>=0)?config.shape:'bar';
-    var notation=(config.notation==='mixed')?'mixed':'improper';
+    var notation=(G().notation&&config.notation==='mixed')?'mixed':'improper';
     var models=(Array.isArray(config.models)&&config.models.length)?config.models.filter(function(m){return ALLM.indexOf(m)>=0;}):ALLM.slice();
-    if(!models.length)models=['area'];
+    models=models.filter(function(m){return G().models.indexOf(m)>=0;});
+    if(!models.length)models=[G().models[0]];
     var model=(models.indexOf(config.model)>=0)?config.model:models[0];
     var setPer=(typeof config.setPer==='number'&&config.setPer>=1)?Math.min(config.setPer,6):2;
-    var equivOn=(config.equiv!==false), commonOn=(config.commonize!==false), showQuiz=(config.showQuiz===true);
+    var equivOn=(config.equiv!==false)&&G().equiv, commonOn=(config.commonize!==false)&&G().compare, showQuiz=(config.showQuiz===true)&&(G().modes.indexOf('quiz')>=0);
     if(mode==='quiz') showQuiz=true;
     var Sd=(typeof config.denom==='number'&&config.denom>=1)?Math.min(config.denom,maxDenom):4;
     var Sn=(typeof config.numer==='number')?Math.max(0,Math.min(config.numer,Sd*maxWholes)):0;
@@ -54,7 +67,19 @@
     var Ad=Math.min(ca.denom||4,maxDenom),An=(ca.numer!=null?ca.numer:3);
     var Bd=Math.min(cb.denom||3,maxDenom),Bn=(cb.numer!=null?cb.numer:2);
     var commonized=false;
-    var qN=0,qD=2,qPhase='try',qDir=(config.quizDir==='guess')?'guess':'make',gN=1,gD=2; // 맞히기: 사용자 답 gN/gD
+    var qN=0,qD=2,qPhase='try',qDir=(G().quizDirs.indexOf('guess')>=0&&config.quizDir==='guess')?'guess':(G().quizDirs[0]||'make'),gN=1,gD=2; // 맞히기: 사용자 답 gN/gD
+
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g;
+      maxDenom=(typeof config.maxDenom==='number'&&config.maxDenom>=2)?Math.min(config.maxDenom,G().maxDenom):G().maxDenom;
+      models=ALLM.slice().filter(function(m){return G().models.indexOf(m)>=0;}); if(!models.length)models=[G().models[0]];
+      model=models[0]; equivOn=(config.equiv!==false)&&G().equiv; commonOn=(config.commonize!==false)&&G().compare;
+      if(G().modes.indexOf(klMode)<0)klMode='free';
+      mode='single'; shape='bar'; notation='improper'; Sd=4; Sn=0; commonized=false;
+      mStep=0; mDone=false; mLock=false;
+      if(klMode==='quiz'){ qDir=G().quizDirs[0]||'make'; mode='quiz'; qScore=0; qCount=0; newQuiz(); }
+      buildUI();
+    }});
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function pt(cx,cy,r,d){var x=(d-90)*Math.PI/180;return[cx+r*Math.cos(x),cy+r*Math.sin(x)];}
@@ -70,8 +95,22 @@
     var nextBtn='font-size:24px;padding:12px 22px;border-radius:16px;border:3px solid #7048E8;background:#7048E8;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     var dirBtn='font-size:22px;padding:11px 18px;border-radius:14px;border:3px solid #C24E0E;background:#fff;color:#C24E0E;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
-    /* ───────────── 미션 (KLab.ui 표준) ───────────── */
-    var MISSIONS=[
+    /* ───────────── 미션 (학년칸별 풀) ───────────── */
+    var LOW_MISSIONS=[
+      { text:'＋조각 버튼으로 <b style="color:#7048E8;">3/4</b>을 만들어 봐요! (4조각 중 3조각)',
+        check:function(){ return mode==='single'&&Sn===3&&Sd===4; } },
+      { text:'등분을 바꿔 <b style="color:#7048E8;">절반(1/2)</b>을 만들어 봐요!',
+        check:function(){ return mode==='single'&&Sn===1&&Sd===2; } }
+    ];
+    var MID_MISSIONS=[
+      { text:'＋조각 버튼으로 <b style="color:#7048E8;">3/4</b>을 만들어 봐요!',
+        check:function(){ return mode==='single'&&Sn===3&&Sd===4; } },
+      { text:'등분·조각을 바꿔 3/4과 <b style="color:#7048E8;">같은 양인 6/8</b>을 만들어 봐요! (동치분수)',
+        check:function(){ return mode==='single'&&Sn===6&&Sd===8; } },
+      { text:'표상을 <b style="color:#7048E8;">┼ 수직선</b>으로 바꾸고, <b style="color:#7048E8;">절반(1/2) 지점</b>에 점을 놓아 봐요!',
+        check:function(){ return mode==='single'&&model==='line'&&Sd>0&&Sn*2===Sd&&Sn>0; } }
+    ];
+    var HIGH_MISSIONS=[
       { text:'＋조각 버튼으로 <b style="color:#7048E8;">3/4</b>을 만들어 봐요!',
         check:function(){ return mode==='single'&&Sn===3&&Sd===4; } },
       { text:'등분·조각을 바꿔 3/4과 <b style="color:#7048E8;">같은 양인 6/8</b>을 만들어 봐요! (동치분수)',
@@ -81,13 +120,15 @@
       { text:'<b style="color:#7048E8;">두 개 비교</b>로 가서 <b style="color:#7048E8;">⚖ 같은 크기로 맞추기</b>(통분)를 눌러 봐요!',
         check:function(){ return mode==='compare'&&commonized===true; } }
     ];
+    function curMissions(){ return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS; }
     var mStep=0,mDone=false,mLock=false;
     function checkMission(){
       if(klMode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check()){
+      var M=curMissions();
+      if(M[mStep].check()){
         mLock=true; ui.toast(el,true);
         setTimeout(function(){ mLock=false; mStep++;
-          if(mStep>=MISSIONS.length)mDone=true;
+          if(mStep>=M.length)mDone=true;
           updateShellBar();
         },1500);
       }
@@ -95,7 +136,8 @@
     var qScore=0,qCount=0,qCounted=false;
     function updateShellBar(){
       var host=el.querySelector('.fr-bars'); if(!host)return;
-      if(klMode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length);
+      var M=curMissions();
+      if(klMode==='mission')host.innerHTML=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length);
       else if(klMode==='quiz')host.innerHTML=ui.quizBar(qDir==='make'?'🎯 목표 분수만큼 색칠하고 ✓ 확인을 눌러요!':'🔍 그림이 나타내는 분수를 맞히고 ✓ 확인을 눌러요!',qScore,qCount);
       else host.innerHTML='';
     }
@@ -119,9 +161,9 @@
             +'<button class="fr-sbtn fr-btn" data-shape="bar" style="'+sbtn+'">▭</button>'
             +'<button class="fr-sbtn fr-btn" data-shape="circle" style="'+sbtn+'">◔</button>'
             +'<button class="fr-sbtn fr-btn" data-shape="grid" style="'+sbtn+'">▦</button>'
-            +'<span style="width:8px;"></span>'
-            +'<button class="fr-nbtn fr-btn" data-notation="improper" style="'+nbtn+'">가분수</button>'
-            +'<button class="fr-nbtn fr-btn" data-notation="mixed" style="'+nbtn+'">대분수</button>';
+            +(G().notation?('<span style="width:8px;"></span>'
+              +'<button class="fr-nbtn fr-btn" data-notation="improper" style="'+nbtn+'">가분수</button>'
+              +'<button class="fr-nbtn fr-btn" data-notation="mixed" style="'+nbtn+'">대분수</button>'):'');
         } else if(model==='set'){
           ctrl+='<span style="width:8px;"></span>'
             +'<button class="fr-btn" data-act="perminus" style="'+sbtn+'">－ 묶음개수</button>'
@@ -141,9 +183,11 @@
             +'<button class="fr-btn" data-set="B" data-k="d" data-d="1" style="'+btn+'background:'+C.b+';color:#fff;border-color:'+C.b+';">＋등분</button>';
         if(commonOn) ctrl+='<span style="width:10px;"></span><button class="fr-cmn fr-btn'+(commonized?' fr-on':'')+'" style="'+cmnBtn+'">⚖ 같은 크기로 맞추기</button>';
       } else { // quiz
-        modelRow='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
-          +'<button class="fr-dir'+(qDir==='make'?' fr-on':'')+'" data-dir="make" style="'+dirBtn+'">🎯 만들기</button>'
-          +'<button class="fr-dir'+(qDir==='guess'?' fr-on':'')+'" data-dir="guess" style="'+dirBtn+'">🔍 맞히기</button></div>';
+        var dirBtns=G().quizDirs.map(function(dir){
+          var lab=(dir==='make')?'🎯 만들기':'🔍 맞히기';
+          return '<button class="fr-dir'+(qDir===dir?' fr-on':'')+'" data-dir="'+dir+'" style="'+dirBtn+'">'+lab+'</button>';
+        }).join('');
+        modelRow=(G().quizDirs.length>1)?('<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'+dirBtns+'</div>'):'';
         if(qDir==='make'){
           ctrl='<button class="fr-btn" data-act="nminus" style="'+btn+'background:#fff;color:'+C.num+';border-color:'+C.num+';">－ 조각</button>'
             +'<button class="fr-btn" data-act="nplus" style="'+btn+'background:'+C.num+';color:#fff;border-color:'+C.num+';">＋ 조각</button>'
@@ -161,7 +205,7 @@
             +'<button class="fr-next fr-btn" style="'+nextBtn+'">↻ 다음 문제</button>';
       }
       var modeButtons=(klMode==='quiz')?'':('<button class="fr-mbtn'+(mode==='single'?' fr-on':'')+'" data-mode="single" style="'+modeBtn+'">한 개 보기</button>'
-          +'<button class="fr-mbtn'+(mode==='compare'?' fr-on':'')+'" data-mode="compare" style="'+modeBtn+'">두 개 비교</button>');
+          +(G().compare?('<button class="fr-mbtn'+(mode==='compare'?' fr-on':'')+'" data-mode="compare" style="'+modeBtn+'">두 개 비교</button>'):''));
       var resetBtn=(mode==='quiz')?'':'<span style="width:8px;"></span><button class="fr-btn" data-act="reset" style="font-size:24px;padding:12px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>';
       el.innerHTML='<style>'
         +'.fr-btn:active,.fr-sbtn:active,.fr-mbtn:active,.fr-nbtn:active,.fr-cmn:active,.fr-chk:active,.fr-next:active,.fr-mdl:active,.fr-dir:active{transform:translateY(2px);}'
@@ -175,7 +219,7 @@
         +'.fr-piece{cursor:pointer;transition:fill-opacity .25s,transform .18s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}'
         +'.fr-piece:hover{transform:scale(1.04);}'
         +'</style>'
-        + ui.modeTabs(['free','mission','quiz'],klMode)
+        + bands.selectorHTML() + ui.modeTabs(G().modes,klMode)
         +'<div class="fr-bars"></div>'
         +(modeButtons?('<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'+modeButtons+'</div>'):'')
         +modelRow
@@ -183,14 +227,14 @@
         +'<div class="kl-stage-host" style="position:relative;"><div class="fr-stage" style="width:100%;height:'+(klMode==='quiz'?'48vh':'52vh')+';min-height:'+(klMode==='quiz'?'340':'370')+'px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>';
       ui.bindModeTabs(el,function(m2){
         klMode=m2; mStep=0;mDone=false;mLock=false; commonized=false;
-        if(m2==='quiz'){ mode='quiz'; qScore=0;qCount=0; newQuiz(); }
+        if(m2==='quiz'){ mode='quiz'; qDir=G().quizDirs[0]||'make'; qScore=0;qCount=0; newQuiz(); }
         else if(m2==='mission'){ mode='single'; model='area'; shape='bar'; notation='improper'; Sd=4; Sn=0; }
         else { mode='single'; model=(models.indexOf(config.model)>=0)?config.model:models[0];
                Sd=(typeof config.denom==='number')?Math.min(config.denom,maxDenom):4;
                Sn=(typeof config.numer==='number')?Math.max(0,config.numer):0; }
         buildUI();
       });
-      bindUI(); updateShellBar(); render();
+      bindUI(); updateShellBar(); render(); bands.bind(el);
     }
 
     function defs(svg){var d=svgEl('defs',{});d.innerHTML=
@@ -274,6 +318,13 @@
       if(equivOn && reduced && shape==='bar'){var rn=Sn/g,rd=Sd/g;barsAt(svg,SX,300,SW,120,rd,rn,'S');txt(svg,SX,290,'↓ 같은 양을 더 적은 조각으로 (약분)',22,C.whole,'start');drawFrac(svg,SX+SW+95,360,rn,rd,'improper',false);}
       var px=750, other=(notation==='improper')?'mixed':'improper';
       drawFrac(svg,px,140,Sn,Sd,notation,true);
+      if(!G().equiv){
+        // 저학년: 약분/대분수 없이 "○분의 △ 읽기" 일상어 닻
+        txt(svg,px,300,'전체를 똑같이 '+Sd+'로 나눈 한 조각',22,'#5a7894');
+        txt(svg,px,346,Sd+'분의 '+Sn+' 이라고 읽어요',24,C.whole);
+        txt(svg,px,392,'색칠한 조각 '+Sn+'개 = '+Sn+'/'+Sd,21,C.good);
+        return;
+      }
       var o2=notate(Sn,Sd,other), sub=(other==='mixed')?(o2.m!==null?(o2.whole?o2.whole+'과 ':'')+o2.m+'/'+o2.n:o2.whole):(o2.m+'/'+o2.n);
       txt(svg,px,300,'＝ '+sub,30,'#5a7894');
       txt(svg,px,360,'전체 1을 '+Sd+'로 나눈 조각 '+Sn+'개',23,'#1B3A57');
