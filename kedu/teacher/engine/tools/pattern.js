@@ -1,13 +1,14 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 규칙·패턴 (pattern) v2
+   케이랩 도구 모듈 — 규칙·패턴 (pattern) v3
    초점 (2학년 규칙 찾기) = 패턴을 만들고, 반복 규칙을 찾고, 다음을 예측.
    v2: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
-     · 자유탐구 — 팔레트로 패턴 만들기, [규칙 찾기] 코어 자동 탐지 + 다음 예측.
-     · 미션 — "두 색 반복 패턴 6칸", "세 색 반복 패턴", "규칙 찾기로 확인"
-       단계 과제, 달성 자동 감지.
-     · 퀴즈 — 패턴을 보여 주고 "다음에 올 색은?" 색 선택지 출제.
+   v3: 학년 칸(low/mid/high) — D칸 표상 전환 사다리.
+     · 저 = 두 색(AB) 반복·★규칙 찾기 시 반복 마디 교차 배경 띠로 "여기까지 한
+            묶음, 또 반복!"을 끊어 보는 신규 닻·일상어·퀴즈 숨김.
+     · 중 = 세 색(ABC)·코어 2~3칸·퀴즈.
+     · 고 = 기존 전부 유지(4색·코어 4칸 자유 도전·퀴즈).
    - 의존: window.KLab (THREE 불필요)
-   - config: { colors(기본 4색), preset([인덱스 배열]), mode:"free"|"mission"|"quiz" }
+   - config: { colors(기본 4색), preset, grade:"low|mid|high", mode:"free"|"mission"|"quiz" }
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
@@ -15,11 +16,34 @@
   var NAME=['빨강','파랑','노랑','초록','보라','주황'];
   window.KLab.register('pattern', function (el, config) {
     var ui=window.KLab.ui;
-    var colors=(config.colors&&config.colors.length)?config.colors:DEF;
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
+       저=두 색 반복·반복 마디 띠 닻·퀴즈 숨김 / 중=세 색·퀴즈 / 고=기존 유지(4색). */
+    var GRADES={
+      low:  { modes:['free','mission'],        palN:2, bandHint:true  },
+      mid:  { modes:['free','mission','quiz'], palN:3, bandHint:false },
+      high: { modes:['free','mission','quiz'], palN:4, bandHint:false }
+    };
+    var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
+    function G(){ return GRADES[grade]; }
+    var allColors=(config.colors&&config.colors.length)?config.colors:DEF;
+    function palCount(){ return (config.colors&&config.colors.length)?config.colors.length:Math.min(DEF.length,G().palN); }
+    var colors=allColors.slice(0,palCount());
+
     var seq=Array.isArray(config.preset)?config.preset.slice():[];
     var showRule=false;
-    var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    var mode=(G().modes.indexOf(config.mode)>=0)?config.mode:'free';
     var btn='font-size:24px;padding:13px 22px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
+
+    var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
+      grade=g; colors=allColors.slice(0,palCount());
+      if(G().modes.indexOf(mode)<0) mode='free';
+      // 새 팔레트에 없는 색 인덱스 제거
+      seq=seq.filter(function(i){return i<colors.length;});
+      mStep=0; mDone=false; mLock=false; showRule=false;
+      if(mode==='quiz'){ qScore=0; qCount=0; newQuiz(); }
+      build();
+    }});
 
     function findCoreOf(s){
       for(var L=1;L<=Math.floor(s.length/2);L++){var ok=true;for(var i=L;i<s.length;i++)if(s[i]!==s[i%L]){ok=false;break;}if(ok)return L;}
@@ -27,8 +51,24 @@
     }
     function distinct(s){var set={},n=0;for(var i=0;i<s.length;i++)if(!set[s[i]]){set[s[i]]=1;n++;}return n;}
 
-    // ---- 미션 ----
-    var MISSIONS=[
+    // ---- 미션 (학년칸별 풀) ----
+    var LOW_MISSIONS=[
+      {text:'<b style="color:#7048E8;">두 가지 색</b>을 번갈아 <b style="color:#7048E8;">6칸</b> 만들어 봐요! (예: 빨강-파랑-빨강-파랑…)',
+        check:function(act){var c=findCoreOf(seq);return seq.length>=6&&c>0&&c<=2&&distinct(seq)===2;}},
+      {text:'<b style="color:#7048E8;">🔍 규칙 찾기</b>를 눌러 — 어디까지가 한 묶음이고 다음 색이 뭔지 봐요!',
+        check:function(act){return act==='rule'&&showRule&&findCoreOf(seq)>0;}},
+      {text:'두 가지 색 반복을 <b style="color:#7048E8;">8칸</b>까지 길게 이어 봐요!',
+        check:function(act){var c=findCoreOf(seq);return seq.length>=8&&c>0&&c<=2&&distinct(seq)===2;}}
+    ];
+    var MID_MISSIONS=[
+      {text:'<b style="color:#7048E8;">두 가지 색</b>이 반복되는 패턴을 <b style="color:#7048E8;">6칸 이상</b> 만들어 봐요!',
+        check:function(act){var c=findCoreOf(seq);return seq.length>=6&&c>0&&c<=2&&distinct(seq)===2;}},
+      {text:'이번엔 <b style="color:#7048E8;">세 가지 색</b>이 반복되는 패턴을 <b style="color:#7048E8;">6칸 이상</b>!',
+        check:function(act){var c=findCoreOf(seq);return seq.length>=6&&c===3&&distinct(seq)===3;}},
+      {text:'<b style="color:#7048E8;">🔍 규칙 찾기</b>를 눌러 케이가 찾은 규칙과 "다음" 색을 확인해 봐요!',
+        check:function(act){return act==='rule'&&showRule&&findCoreOf(seq)>0;}}
+    ];
+    var HIGH_MISSIONS=[
       {text:'<b style="color:#7048E8;">두 가지 색</b>이 반복되는 패턴을 <b style="color:#7048E8;">6칸 이상</b> 만들어 봐요! (예: 빨강-파랑-빨강-파랑…)',
         check:function(act){var c=findCoreOf(seq);return seq.length>=6&&c>0&&c<=2&&distinct(seq)===2;}},
       {text:'이번엔 <b style="color:#7048E8;">세 가지 색</b>이 반복되는 패턴을 <b style="color:#7048E8;">6칸 이상</b>!',
@@ -38,6 +78,12 @@
       {text:'자유 도전! 규칙 단위가 <b style="color:#7048E8;">4칸</b>인 패턴을 <b style="color:#7048E8;">8칸 이상</b> 만들어 봐요!',
         check:function(act){var c=findCoreOf(seq);return seq.length>=8&&c===4;}}
     ];
+    function curMissions(){
+      var pool=(grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS;
+      // 세 색 미션은 팔레트 3색 이상일 때만
+      var f=pool.filter(function(m){ if(/세 가지 색/.test(m.text)) return colors.length>=3; return true; });
+      return f.length?f:pool.slice(0,1);
+    }
     var mStep=0, mDone=false, mLock=false;
 
     // ---- 퀴즈 ----
@@ -58,7 +104,7 @@
     }
 
     function build(){
-      var top=ui.modeTabs(['free','mission','quiz'],mode), bar='', body='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
       var pal=colors.map(function(c,i){return '<button class="pt-pal" data-i="'+i+'" style="width:54px;height:54px;border-radius:14px;border:4px solid #fff;background:'+c+';cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.18);"></button>';}).join('');
       var palRow='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:10px;">'
         +'<span style="font-size:20px;font-weight:800;color:#5a7894;">색 고르기</span>'+pal+'</div>';
@@ -66,7 +112,7 @@
         +'<button class="pt-btn" data-act="rule" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;">🔍 규칙 찾기</button>'
         +'<button class="pt-btn" data-act="back" style="'+btn+'background:#fff;color:#1565C0;">← 하나 지우기</button>'
         +'<button class="pt-btn" data-act="reset" style="font-size:24px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 비우기</button></div>';
-      if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(MISSIONS[mStep].text,mStep,MISSIONS.length); body=palRow+btnRow; }
+      if(mode==='mission'){ var _M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(_M[mStep].text,mStep,_M.length); body=palRow+btnRow; }
       else if(mode==='quiz'){ bar=ui.quizBar('다음에 올 색은 무엇일까요?',qScore,qCount); foot=ui.choices(quizChoices()); }
       else body=palRow+btnRow;
       el.innerHTML='<style>.pt-btn:active,.pt-pal:active,.kl-choice:active{transform:translateY(2px);}.pt-pal:hover{transform:scale(1.06);}.pt-cell{transition:transform .15s;}.kl-choice{min-width:64px !important;}</style>'
@@ -77,7 +123,7 @@
       ui.bindModeTabs(el,function(m){mode=m;mStep=0;mDone=false;seq=[];showRule=false;
         if(m==='quiz'){qScore=0;qCount=0;newQuiz();}
         build();});
-      bind(); render();
+      bind(); bands.bind(el); render();
     }
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
@@ -95,12 +141,21 @@
       var total=S.length+(showNext||qMark?1:0);
       var size=Math.min(72,(VBW-60)/Math.max(total,1)-12), gap=12;
       var rowW=total*(size+gap)-gap, x0=(VBW-rowW)/2, y=VBH/2-size/2;
+      // ★저학년 닻: 반복 마디 교차 배경 띠 (규칙 찾기 켰을 때만)
+      if(G().bandHint && core>0 && S.length>=core){
+        for(var mB=0; mB*core<S.length; mB++){
+          if(mB%2===1) continue; // 한 칸 걸러 띠
+          var bs=mB*core, be=Math.min(bs+core,S.length);
+          var bxL=x0+bs*(size+gap)-6, bxR=x0+(be-1)*(size+gap)+size+6;
+          svg.appendChild(svgEl('rect',{x:bxL,y:y-14,width:bxR-bxL,height:size+28,rx:16,fill:'#7048E8','fill-opacity':0.10}));
+        }
+      }
       for(var i=0;i<S.length;i++){
         var bx=x0+i*(size+gap);
         if(core>0 && i<core) svg.appendChild(svgEl('rect',{x:bx-5,y:y-5,width:size+10,height:size+10,rx:14,fill:'none',stroke:'#7048E8','stroke-width':4,'stroke-dasharray':'8 5'}));
         svg.appendChild(svgEl('rect',{x:bx,y:y,width:size,height:size,rx:12,fill:colors[S[i]],stroke:'#fff','stroke-width':4,class:'pt-cell',filter:'url(#ptSh)'}));
       }
-      if(core>0){var t=svgEl('text',{x:x0+(core*(size+gap)-gap)/2,y:y-18,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#7048E8'});t.textContent='규칙';svg.appendChild(t);}
+      if(core>0){var t=svgEl('text',{x:x0+(core*(size+gap)-gap)/2,y:y-18,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#7048E8'});t.textContent=(G().bandHint?'반복 마디':'규칙');svg.appendChild(t);}
       if(showNext){
         var bx2=x0+S.length*(size+gap);
         svg.appendChild(svgEl('rect',{x:bx2,y:y,width:size,height:size,rx:12,fill:colors[nextIdx],stroke:'#7048E8','stroke-width':4,'stroke-dasharray':'7 5',filter:'url(#ptSh)'}));
@@ -115,18 +170,28 @@
       stage.appendChild(svg);
       var st=el.querySelector('.pt-status');
       if(isQuiz){ st.textContent='패턴의 규칙을 찾아 ? 자리에 올 색을 골라요'; }
-      else if(showRule){ var c2=findCoreOf(S); st.textContent=(c2>0)?('규칙 단위 '+c2+'개가 반복돼요 → 다음은 '+NAME[S[S.length%c2]]):'아직 반복 규칙이 안 보여요 (블록을 더 넣어 보세요)'; }
+      else if(showRule){
+        var c2=findCoreOf(S);
+        if(c2>0){
+          if(G().bandHint){
+            var unit=[]; for(var u=0;u<c2;u++) unit.push(NAME[S[u]]);
+            st.textContent='『'+unit.join('-')+'』가 계속 반복돼요! → 다음은 '+NAME[S[S.length%c2]];
+          } else st.textContent='규칙 단위 '+c2+'개가 반복돼요 → 다음은 '+NAME[S[S.length%c2]];
+        } else st.textContent='아직 반복 규칙이 안 보여요 (블록을 더 넣어 보세요)';
+      }
       else st.textContent='색 블록을 눌러 패턴을 만들고 [규칙 찾기]를 눌러요';
     }
 
     function checkMission(act){
       if(mode!=='mission'||mDone||mLock)return;
-      if(MISSIONS[mStep].check(act)){
+      var _M=curMissions();
+      if(_M[mStep].check(act)){
         mLock=true;
         window.KLab.ui.toast(el,true);
         setTimeout(function(){
           mLock=false;
-          if(mStep<MISSIONS.length-1){mStep++; if(mStep!==2){seq=[];showRule=false;}}
+          var _M2=curMissions();
+          if(mStep<_M2.length-1){mStep++; if(!/규칙 찾기/.test(_M2[mStep].text)){seq=[];showRule=false;}}
           else mDone=true;
           build();
         },1500);
