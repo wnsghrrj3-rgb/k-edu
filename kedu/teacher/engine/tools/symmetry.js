@@ -10,11 +10,30 @@
   if (!window.KLab) return;
   window.KLab.register('symmetry', function (el, config) {
     var ui = window.KLab.ui;
+
+    /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
+    var GRADES = {
+      low:  { modes: ['free', 'mission'],         point: false, hAxis: false, quiz: false },
+      mid:  { modes: ['free', 'mission', 'quiz'], point: false, hAxis: true,  quiz: true  },
+      high: { modes: ['free', 'mission', 'quiz'], point: true,  hAxis: true,  quiz: true  }
+    };
+    var grade = (['low', 'mid', 'high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
+    function G() { return GRADES[grade]; }
+
     var n = Math.max(4, Math.min(config.n || 8, 12));
-    var mode = (['free','mission','quiz'].indexOf(config.mode) >= 0) ? config.mode : 'free';
-    var symMode = (config.mode === 'point') ? 'point' : 'line';
-    var axis = (config.axis === 'h') ? 'h' : 'v';
+    var mode = (G().modes.indexOf(config.mode) >= 0) ? config.mode : 'free';
+    var symMode = (G().point && config.mode === 'point') ? 'point' : 'line';
+    var axis = (G().hAxis && config.axis === 'h') ? 'h' : 'v';
     var src = {};
+
+    var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
+      grade = g;
+      if (G().modes.indexOf(mode) < 0) mode = 'free';
+      symMode = 'line'; axis = 'v'; src = {};
+      mStep = 0; mDone = false; mLock = false;
+      if (mode === 'quiz') shuffleQuiz();
+      build();
+    } });
 
     function mirror(c, r) {
       if (symMode === 'point') return [n-1-c, n-1-r];
@@ -22,8 +41,22 @@
     }
     function countSrc() { var n=0; for(var k in src) if(src[k]) n++; return n; }
 
-    // ---- 미션 ----
-    var MISSIONS = [
+    // ---- 미션 (학년칸별 풀) ----
+    var LOW_MISSIONS = [
+      { text: '<b style="color:#7048E8;">선대칭(세로축)</b>! 왼쪽에 <b style="color:#7048E8;">3칸 이상</b> 색칠해 봐요 — 오른쪽이 똑같이 채워져요!',
+        check: function() { return symMode==='line' && axis==='v' && countSrc()>=3; } },
+      { text: '<b style="color:#7048E8;">5칸 이상</b> 색칠해서 양쪽이 똑같은 대칭 도형을 만들어 봐요!',
+        check: function() { return countSrc()>=5; } }
+    ];
+    var MID_MISSIONS = [
+      { text: '<b style="color:#7048E8;">선대칭(세로축)</b> 모드에서 왼쪽에 <b style="color:#7048E8;">3칸 이상</b> 색칠해 봐요!',
+        check: function() { return symMode==='line' && axis==='v' && countSrc()>=3; } },
+      { text: '<b style="color:#7048E8;">선대칭(가로축)</b> 모드로 바꾸고 위쪽에 <b style="color:#7048E8;">4칸 이상</b> 색칠해 봐요!',
+        check: function() { return symMode==='line' && axis==='h' && countSrc()>=4; } },
+      { text: '자유탐구! <b style="color:#7048E8;">6칸 이상</b> 색칠해서 아름다운 대칭 도형을 만들어 봐요!',
+        check: function() { return countSrc()>=6; } }
+    ];
+    var HIGH_MISSIONS = [
       { text: '<b style="color:#7048E8;">선대칭(세로축)</b> 모드에서 왼쪽에 <b style="color:#7048E8;">3칸 이상</b> 색칠해 봐요!',
         check: function() { return symMode==='line' && axis==='v' && countSrc()>=3; } },
       { text: '<b style="color:#7048E8;">선대칭(가로축)</b> 모드로 바꾸고 위쪽에 <b style="color:#7048E8;">4칸 이상</b> 색칠해 봐요!',
@@ -33,9 +66,10 @@
       { text: '자유탐구! <b style="color:#7048E8;">6칸 이상</b> 색칠해서 아름다운 대칭 도형을 만들어 봐요!',
         check: function() { return countSrc()>=6; } }
     ];
+    function curMissions() { return (grade==='low') ? LOW_MISSIONS : (grade==='mid') ? MID_MISSIONS : HIGH_MISSIONS; }
     var mStep = 0, mDone = false, mLock = false;
 
-    // ---- 퀴즈 ----
+    // ---- 퀴즈 (중·고만) ----
     var QUIZ_POOL = [
       { q: '이 도형은 어떤 대칭인가요?', type:'classify', symMode:'line', axis:'v',
         preset:{'1,1':1,'1,2':1,'1,3':1}, answer:'선대칭', choices:['선대칭','점대칭','둘 다','대칭 아님'] },
@@ -48,9 +82,11 @@
       { q: '선대칭(가로축)으로 위쪽 칸을 색칠하면 반사 칸은?', type:'concept', symMode:'line', axis:'h', preset:{'2,0':1,'3,0':1},
         answer:'아래쪽', choices:['위쪽','왼쪽','아래쪽','오른쪽'] },
     ];
+    // 중학년 = 선대칭 관련만(점대칭 분류·중심 제외), 고학년 = 전체
+    function quizPool() { return (grade==='mid') ? [QUIZ_POOL[0], QUIZ_POOL[2], QUIZ_POOL[4]] : QUIZ_POOL; }
     var qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
     function shuffleQuiz() {
-      qList = QUIZ_POOL.slice();
+      qList = quizPool().slice();
       for(var i=qList.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=qList[i];qList[i]=qList[j];qList[j]=tmp;}
       qIdx=0; qScore=0; qCount=0;
     }
@@ -62,13 +98,13 @@
     var tg = 'font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #7048E8;background:#fff;color:#7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
     function build() {
-      var top = ui.modeTabs(['free','mission','quiz'], mode);
+      var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
       var bar = '', foot = '';
 
       var modeRow = '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="sy-tg sy-mode" data-mode="line" style="'+tg+'">선대칭</button>'
-        + '<button class="sy-tg sy-mode" data-mode="point" style="'+tg+'">점대칭</button>'
-        + (symMode==='line'
+        + (G().point ? '<button class="sy-tg sy-mode" data-mode="point" style="'+tg+'">점대칭</button>' : '')
+        + (symMode==='line' && G().hAxis
           ? '<span style="width:10px;"></span><button class="sy-ax" data-axis="v" style="'+tg.replace('#7048E8','#0B7285')+'">세로축</button><button class="sy-ax" data-axis="h" style="'+tg.replace('#7048E8','#0B7285')+'">가로축</button>'
           : '')
         + '<span style="width:10px;"></span>'
@@ -76,7 +112,8 @@
         + '</div>';
 
       if (mode === 'mission') {
-        bar = mDone ? ui.doneBar() : ui.missionBar(MISSIONS[mStep].text, mStep, MISSIONS.length);
+        var M = curMissions();
+        bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length);
       } else if (mode === 'quiz') {
         var q = qList[qIdx] || qList[0];
         applyQuizState(q);
@@ -132,6 +169,7 @@
       });
 
       render();
+      bands.bind(el);
     }
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
@@ -173,7 +211,9 @@
           statusEl.textContent = '도형을 보고 아래에서 선택하세요!';
         } else {
           statusEl.textContent = (symMode==='line')
-            ? '한쪽 칸을 누르면 '+(axis==='v'?'세로':'가로')+'축 반대편에 대칭으로 채워져요'
+            ? (!G().hAxis
+                ? '한쪽 칸을 누르면 반대편이 똑같이 채워져요 — 접으면 양쪽이 딱 맞아요!'
+                : '한쪽 칸을 누르면 '+(axis==='v'?'세로':'가로')+'축 반대편에 대칭으로 채워져요')
             : '칸을 누르면 가운데 점 기준 반대편에 채워져요';
         }
       }
@@ -181,16 +221,17 @@
 
     function checkMission() {
       if (mode !== 'mission' || mDone || mLock) return;
-      if (MISSIONS[mStep].check()) {
+      var M = curMissions();
+      if (M[mStep].check()) {
         mLock = true;
         ui.toast(el, true);
         setTimeout(function() {
           mStep++;
-          if (mStep >= MISSIONS.length) { mDone = true; build(); return; }
-          // 미션 2: 가로축으로 전환, 미션 3: 점대칭으로 전환, 미션 4: 유지
-          if (mStep === 1) { symMode='line'; axis='h'; src={}; }
-          else if (mStep === 2) { symMode='point'; src={}; }
-          else if (mStep === 3) { src={}; }
+          if (mStep >= M.length) { mDone = true; build(); return; }
+          // 다음 단계 진입 상태 — 학년칸별로 안전하게 전환
+          if (grade === 'low') { src = {}; }                                  // 저: 선대칭 세로 유지
+          else if (grade === 'mid') { if (mStep === 1) { symMode='line'; axis='h'; } src = {}; }  // 중: 가로축까지
+          else { if (mStep === 1) { symMode='line'; axis='h'; src={}; } else if (mStep === 2) { symMode='point'; src={}; } else { src={}; } }
           mLock = false; build();
         }, 1500);
       }
