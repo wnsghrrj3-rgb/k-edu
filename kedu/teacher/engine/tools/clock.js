@@ -13,6 +13,8 @@
   if (!window.KLab) return;
   window.KLab.register('clock', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
+    var dragging=false, dragHour=0, lastMin=0; // 와우 ① 분침 직접 드래그
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
        저=정각·30분 닻(±30분, 퀴즈 숨김) / 중=5분 단위·퀴즈 / 고=기존 유지(1분·분 전). */
@@ -31,6 +33,20 @@
     function hh(){ var h = Math.floor(tm/60)%12; return h===0?12:h; }
     function mm(){ return tm%60; }
     function timeStr(){ return hh()+'시'+(mm()===0?' 정각':' '+mm()+'분'); }
+
+    // 와우 ②④: tm 변경 공통 진입 — 분침이 한 바퀴 돌아 시(時)가 바뀌면 마법모먼트(톱니 연동).
+    function applyTm(newTm, viaMinute){
+      var oldH=Math.floor(tm/60), oldMin=tm%60;
+      tm=((newTm%720)+720)%720;
+      var newH=Math.floor(tm/60), newMin=tm%60;
+      // 분침 한 바퀴 = 시가 바뀌었고, 그게 분침 회전(분값 변화) 때문일 때만
+      var revolved=(newH!==oldH) && (newMin!==oldMin);
+      if(revolved){ snd('select'); render({flash:true}); }   // 정시 도달 포함(분침 한 바퀴→시침 한 칸)
+      else if(newMin!==oldMin || (viaMinute&&newTm!==oldH*60+oldMin)){ snd('tap'); render({}); } // 똑딱
+      else { render({}); }
+      if(mode==='mission')checkMission();
+    }
+    function step(delta){ applyTm(tm+delta, false); }
 
     var btn='font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
@@ -151,12 +167,11 @@
       bands.bind(el);
       el.querySelectorAll('.ck-btn').forEach(function(b){
         b.addEventListener('click',function(){
-          if(b.dataset.d==='reset'){ tm=(mode==='mission')?0:startM; }
-          else { tm=((tm + (+b.dataset.d))%720+720)%720; }
-          render();
-          if(mode==='mission')checkMission();
+          if(b.dataset.d==='reset'){ tm=(mode==='mission')?0:startM; render({}); if(mode==='mission')checkMission(); }
+          else step(+b.dataset.d);
         });
       });
+      bindDrag();
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true; qCount++;
@@ -175,7 +190,41 @@
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function txt(svg,x,y,s,sz,f){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
 
-    function render(){
+    /* 와우 ① 분침 직접 드래그 — 스테이지 중심 기준 각도로 분(分) 산출, 한 바퀴 넘으면 시(時) 칸 이동 */
+    function minuteFromEvent(e){
+      var stage=el.querySelector('.ck-stage'); if(!stage)return null;
+      var r=stage.getBoundingClientRect();
+      var px=(e.clientX!=null)?e.clientX:(e.touches&&e.touches[0]?e.touches[0].clientX:null);
+      var py=(e.clientY!=null)?e.clientY:(e.touches&&e.touches[0]?e.touches[0].clientY:null);
+      if(px==null||py==null||!r.width)return null;
+      var dx=px-(r.left+r.width/2), dy=py-(r.top+r.height/2);
+      var ang=Math.atan2(dx,-dy); if(ang<0)ang+=2*Math.PI;
+      return Math.round(ang/(2*Math.PI)*60)%60;
+    }
+    function dragStart(e){ if(mode==='quiz')return; dragging=true; dragHour=Math.floor(tm/60); lastMin=tm%60; if(e.preventDefault)e.preventDefault(); }
+    function dragMove(e){
+      if(!dragging)return;
+      var minute=minuteFromEvent(e); if(minute==null)return;
+      if(lastMin>=45 && minute<=15) dragHour=(dragHour+1)%12;        // 앞으로 한 바퀴
+      else if(lastMin<=15 && minute>=45) dragHour=(dragHour+11)%12;  // 뒤로 한 바퀴
+      lastMin=minute;
+      applyTm(dragHour*60+minute, true);
+      if(e.preventDefault)e.preventDefault();
+    }
+    function dragEnd(){ dragging=false; }
+    function bindDrag(){
+      var stage=el.querySelector('.ck-stage'); if(!stage)return;
+      stage.addEventListener('pointerdown',dragStart);
+      stage.addEventListener('pointermove',dragMove);
+      stage.addEventListener('pointerup',dragEnd);
+      stage.addEventListener('pointerleave',dragEnd);
+      stage.addEventListener('touchstart',dragStart,{passive:false});
+      stage.addEventListener('touchmove',dragMove,{passive:false});
+      stage.addEventListener('touchend',dragEnd);
+    }
+
+    function render(opts){
+      opts=opts||{};
       var stage=el.querySelector('.ck-stage'); if(!stage)return;
       stage.innerHTML='';
       var VB=440, cx=VB/2, cy=VB/2, R=185;
