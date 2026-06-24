@@ -43,7 +43,7 @@
       var revolved=(newH!==oldH) && (newMin!==oldMin);
       if(revolved){ snd('select'); render({flash:true}); }   // 정시 도달 포함(분침 한 바퀴→시침 한 칸)
       else if(newMin!==oldMin || (viaMinute&&newTm!==oldH*60+oldMin)){ snd('tap'); render({}); } // 똑딱
-      else { render({}); }
+      else { snd('tap'); render({}); }   // +1시간 등 순수 시 변경(분침 안 돔) — 피드백만, flash 금지
       if(mode==='mission')checkMission();
     }
     function step(delta){ applyTm(tm+delta, false); }
@@ -150,7 +150,11 @@
         bar=ui.quizBar(q.q,qScore,qCount);
         foot=ui.choices(shuffled(q.choices).map(function(v){return {v:v,label:v};}));
       }
-      el.innerHTML='<style>.ck-btn:active{transform:translateY(2px);}.kl-choice{min-width:130px !important;}</style>'
+      el.innerHTML='<style>.ck-btn:active{transform:translateY(2px);}.kl-choice{min-width:130px !important;}'
+        +'.ck-mhand{cursor:grab;}.ck-mhand:active{cursor:grabbing;}'   /* 와우 ① 분침 드래그 표식 */
+        +'.ck-flash{animation:ckFlashKf 1.7s ease both;}@keyframes ckFlashKf{0%{opacity:0;}14%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}'   /* 와우 ④ 마법 배너 */
+        +'.ck-gear{animation:ckGearKf .8s ease both;}@keyframes ckGearKf{0%{stroke-width:14;}45%{stroke-width:22;stroke:#7048E8;}100%{stroke-width:14;}}'   /* 와우 ④ 시침 톱니 펄스 */
+        +'</style>'
         + top + bar + ctrl
         +'<div class="kl-stage-host" style="position:relative;">'
         +'<div class="ck-stage" style="width:100%;height:'+(mode==='quiz'?'42vh':'48vh')+';min-height:'+(mode==='quiz'?'300':'330')+'px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
@@ -261,16 +265,26 @@
       }
       // 바늘 — 시침: tm 비례(분까지 반영), 분침: mm
       var ha=(tm/720)*2*Math.PI, ma=(mm()/60)*2*Math.PI;
-      // 시침(짧고 굵은 파랑)
+      // 시침(짧고 굵은 파랑) — 마법모먼트엔 톱니 펄스(ck-gear)
       svg.appendChild(svgEl('line',{x1:cx-18*Math.sin(ha),y1:cy+18*Math.cos(ha),
         x2:cx+(R-105)*Math.sin(ha),y2:cy-(R-105)*Math.cos(ha),
-        stroke:'#1565C0','stroke-width':14,'stroke-linecap':'round'}));
-      // 분침(길고 가는 주황)
+        stroke:'#1565C0','stroke-width':14,'stroke-linecap':'round',class:(opts.flash?'ck-gear':'')}));
+      // 분침(길고 가는 주황) — 비퀴즈 모드에선 잡고 돌리는 드래그 대상(ck-mhand)
+      var mhClass=(mode!=='quiz')?'ck-mhand':'', mhStyle=(mode!=='quiz')?'cursor:grab;':'';
       svg.appendChild(svgEl('line',{x1:cx-22*Math.sin(ma),y1:cy+22*Math.cos(ma),
         x2:cx+(R-42)*Math.sin(ma),y2:cy-(R-42)*Math.cos(ma),
-        stroke:'#FF8A3D','stroke-width':9,'stroke-linecap':'round'}));
+        stroke:'#FF8A3D','stroke-width':9,'stroke-linecap':'round',class:mhClass,style:mhStyle}));
       svg.appendChild(svgEl('circle',{cx:cx,cy:cy,r:11,fill:'#1B3A57'}));
       svg.appendChild(svgEl('circle',{cx:cx,cy:cy,r:4.5,fill:'#fff'}));
+      // 와우 ④ 마법모먼트 배너 — 분침이 12를 지나 시침이 정확히 한 칸(톱니 연동). 1회성(다음 render 자동 해제).
+      if(opts.flash){
+        var fg=svgEl('g',{class:'ck-flash'});
+        fg.appendChild(svgEl('rect',{x:14,y:4,width:VB-28,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#ckSh)'}));
+        var ft=svgEl('text',{x:cx,y:24,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
+        ft.textContent='🔗 분침이 12를 지나 시침이 한 칸! 두 바늘이 톱니처럼 연동돼요';
+        fg.appendChild(ft);
+        svg.appendChild(fg);
+      }
       stage.appendChild(svg);
 
       var st=el.querySelector('.ck-status'); if(!st)return;
@@ -282,7 +296,8 @@
         ? '긴바늘(주황)이 <b>12 위</b>면 정각, <b>6 아래</b>면 30분이에요!'
         : '짧은바늘(파랑)이 <b>시</b>, 긴바늘(주황)이 <b>분</b>이에요. 긴바늘이 한 바퀴(60분) 돌면 짧은바늘이 숫자 한 칸 움직여요.';
       st.innerHTML='<span style="font-size:44px;color:#1565C0;">'+timeStr()+'</span>'
-        +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">'+hint+'</div>';
+        +'<div style="font-size:17px;color:#5a7894;margin-top:5px;">'+hint+'</div>'
+        +'<div style="font-size:15px;color:#FF8A3D;margin-top:3px;font-weight:800;">✋ 긴바늘(주황)을 잡고 돌려 보세요 — 시침이 톱니처럼 따라와요</div>';
     }
 
     shuffleQuiz();
