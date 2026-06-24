@@ -14,6 +14,8 @@
   if (!window.KLab) return;
   window.KLab.register('division', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
+    var prevRem=-1; // 나머지 등장 감지(마법모먼트 1회 플래시)
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES={
@@ -111,7 +113,10 @@
         foot=ui.choices(quizChoices());
       }
       else body=tgs+'<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'+ctrl+'</div>';
-      el.innerHTML='<style>.dv-btn:active,.dv-tg:active,.kl-choice:active{transform:translateY(2px);}.dv-btn[disabled]{opacity:.35;cursor:not-allowed;}.dv-tg.on{background:#7048E8 !important;color:#fff !important;}.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}</style>'
+      el.innerHTML='<style>.dv-btn:active,.dv-tg:active,.kl-choice:active{transform:translateY(2px);}.dv-btn[disabled]{opacity:.35;cursor:not-allowed;}.dv-tg.on{background:#7048E8 !important;color:#fff !important;}'
+        +'.dv-rem-pop{animation:dvRemPop .6s cubic-bezier(.2,1.5,.4,1) both;transform-origin:center;transform-box:fill-box;}@keyframes dvRemPop{0%{transform:scale(0) translateY(-16px);opacity:0;}60%{transform:scale(1.3);opacity:1;}100%{transform:scale(1);opacity:1;}}'
+        +'.dv-flash{animation:dvFlashKf 1.7s ease both;}@keyframes dvFlashKf{0%{opacity:0;}14%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}'
+        +'.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}</style>'
         +top+bar+body
         +'<div class="kl-stage-host" style="position:relative;"><div class="dv-stage" style="width:100%;height:'+(mode==='quiz'?'42vh':'48vh')+';min-height:310px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         +foot
@@ -126,7 +131,8 @@
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=880,VBH=380;
-    function render(){
+    function render(opts){
+      opts=opts||{};
       var stage=el.querySelector('.dv-stage'); stage.innerHTML='';
       var T,G2,S,isQuiz=(mode==='quiz');
       if(isQuiz){T=qT;G2=qG;S=null;}
@@ -137,6 +143,12 @@
       var rem=(useMode==='partition')?(T-per*G2):(T-S*(Math.floor(T/S)));
       var nb=(useMode==='partition')?G2:Math.floor(T/S);
       if(useMode==='quotition'){g=nb+(rem>0?1:0); if(g<1)g=1;}
+      // 와우 ③④: 분배 drop / 나머지 tick + 나머지 새로 생기면 마법모먼트 플래시
+      var doFlash=false;
+      if(!isQuiz && opts.act==='dist'){
+        snd('pop');                                   // 분배(drop)
+        if(rem>0){ snd('tap'); if(rem!==prevRem) doFlash=true; }  // 나머지(tick) + 등장 플래시
+      }
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'});
       var d=svgEl('defs',{});d.innerHTML='<filter id="dvSh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#13315C" flood-opacity="0.20"/></filter>';svg.appendChild(d);
       var cols=Math.min(g,5), rows=Math.ceil(g/cols);
@@ -159,9 +171,15 @@
         }
       }
       if(useMode==='partition'&&rem>0&&!hide){
-        for(var rr=0;rr<rem;rr++){var dotR2=13,dx2=VBW-50,dy2=40+rr*(dotR2*2+6)+dotR2;svg.appendChild(svgEl('circle',{cx:dx2,cy:dy2,r:dotR2,fill:'#FF8A3D',stroke:'#C24E0E','stroke-width':2}));}
+        for(var rr=0;rr<rem;rr++){var dotR2=13,dx2=VBW-50,dy2=40+rr*(dotR2*2+6)+dotR2;svg.appendChild(svgEl('circle',{cx:dx2,cy:dy2,r:dotR2,fill:'#FF8A3D',stroke:'#C24E0E','stroke-width':2,class:(doFlash?'dv-rem-pop':'')}));}
         var tl=svgEl('text',{x:VBW-50,y:30,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#C24E0E'});tl.textContent=(G().eqSign?'나머지':'남은 것');svg.appendChild(tl);
       }
+      if(doFlash){
+        var fx=svgEl('text',{x:VBW/2,y:24,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#C24E0E',class:'dv-flash'});
+        fx.textContent='어! '+rem+'개가 어디에도 못 들어가 따로 남았어요 (나머지 '+rem+')';
+        svg.appendChild(fx);
+      }
+      if(!isQuiz) prevRem=rem;
       if(isQuiz){
         for(var i=0;i<qT;i++){var ddR=11,ddx=VBW/2-(qT*(ddR*2+5)-5)/2+i*(ddR*2+5)+ddR, ddy=8+ddR;
           svg.appendChild(svgEl('circle',{cx:ddx,cy:ddy,r:ddR,fill:'#1565C0',stroke:'#0B447C','stroke-width':2}));}
@@ -200,9 +218,9 @@
 
     function bind(){
       el.querySelectorAll('.dv-tg').forEach(function(b){b.addEventListener('click',function(){if(dMode!==b.dataset.mode){dMode=b.dataset.mode;build();}});});
-      var H={tp:function(){if(total<maxTotal()){total++;render();}},tm:function(){if(total>1){total--;render();}},
-        gp:function(){if(groups<10){groups++;render();}},gm:function(){if(groups>1){groups--;render();}},
-        sp:function(){if(size<maxTotal()){size++;render();}},sm:function(){if(size>1){size--;render();}},
+      var H={tp:function(){if(total<maxTotal()){total++;render({act:'dist'});}},tm:function(){if(total>1){total--;render({act:'dist'});}},
+        gp:function(){if(groups<10){groups++;render({act:'dist'});}},gm:function(){if(groups>1){groups--;render({act:'dist'});}},
+        sp:function(){if(size<maxTotal()){size++;render({act:'dist'});}},sm:function(){if(size>1){size--;render({act:'dist'});}},
         reset:function(){total=Math.min(config.total||12,maxTotal());groups=config.groups||3;size=config.size||4;render();}};
       el.querySelectorAll('.dv-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f)f();});});
       el.querySelectorAll('.kl-choice').forEach(function(b){
