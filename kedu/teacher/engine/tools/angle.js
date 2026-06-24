@@ -12,6 +12,8 @@
   if (!window.KLab) return;
   window.KLab.register('angle', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
+    var armLong = false; // 와우 ④ 변 길이 — 늘여도 각도 불변(길이=각크기 오개념 반증)
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES={
@@ -35,7 +37,7 @@
       grade=g;
       if(G().modes.indexOf(mode)<0) mode='free';
       if(!G().twoway) startSide='right';
-      deg=defDeg(); mStep=0; mDone=false; mLock=false;
+      deg=defDeg(); mStep=0; mDone=false; mLock=false; armLong=false;
       if(mode==='quiz') shuffleQuiz();
       build();
     }});
@@ -102,6 +104,7 @@
         + '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="ag-btn" data-act="minus" style="' + btn + 'background:#fff;color:#1565C0;">－ 각</button>'
         + '<button class="ag-btn" data-act="plus"  style="' + btn + 'background:#1565C0;color:#fff;">＋ 각</button>'
+        + '<button class="ag-btn" data-act="arm" style="' + btn + 'background:' + (armLong?'#7048E8':'#fff') + ';color:' + (armLong?'#fff':'#7048E8') + ';border-color:#7048E8;">🔭 ' + (armLong?'변 줄이기':'변 늘이기') + '</button>'
         + '<button class="ag-btn" data-act="reset" style="font-size:24px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>'
         + '</div>';
 
@@ -115,7 +118,10 @@
       }
 
       var showCtrl = (mode !== 'quiz');
-      el.innerHTML = '<style>.ag-btn:active,.ag-side:active{transform:translateY(2px);}.ag-stage{cursor:grab;}.ag-stage.drag{cursor:grabbing;}.ag-side.ag-on{background:#0B7285 !important;color:#fff !important;}.kl-choice{min-width:90px !important;}</style>'
+      el.innerHTML = '<style>.ag-btn:active,.ag-side:active{transform:translateY(2px);}.ag-stage{cursor:grab;}.ag-stage.drag{cursor:grabbing;}.ag-side.ag-on{background:#0B7285 !important;color:#fff !important;}.kl-choice{min-width:90px !important;}'
+        + '.ag-flash{animation:agFlashKf 1.8s ease both;}@keyframes agFlashKf{0%{opacity:0;}12%{opacity:1;}82%{opacity:1;}100%{opacity:0;}}'   /* 와우 ④ 길이 불변 배너 */
+        + '.ag-hold{display:inline-block;animation:agHoldKf 1.1s ease both;transform-origin:center;}@keyframes agHoldKf{0%{transform:scale(1);}25%{transform:scale(1.35);color:#7048E8;}55%{transform:scale(.9);}100%{transform:scale(1);}}'   /* 와우 ④ 각도는 그대로 펄스 */
+        + '</style>'
         + top + bar
         + (showCtrl ? ctrlRow : '')
         + '<div class="kl-stage-host" style="position:relative;">'
@@ -125,7 +131,7 @@
         + '<div class="ag-status" style="text-align:center;margin-top:12px;font-weight:800;font-family:inherit;"></div>';
 
       ui.bindModeTabs(el, function(m) {
-        mode = m; deg = defDeg(); if(!G().twoway) startSide = 'right';
+        mode = m; deg = defDeg(); if(!G().twoway) startSide = 'right'; armLong = false;
         mStep = 0; mDone = false; mLock = false;
         if (m === 'quiz') shuffleQuiz();
         build();
@@ -141,7 +147,8 @@
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function txt(svg,x,y,s,sz,fill,fw){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':fw||800,fill:fill});t.textContent=s;svg.appendChild(t);}
 
-    function render(quizDeg) {
+    function render(quizDeg, opts) {
+      opts = opts || {};
       var stage = el.querySelector('.ag-stage');
       var statusEl = el.querySelector('.ag-status');
       if (!stage) return;
@@ -155,6 +162,7 @@
       var right = (startSide === 'right');
       var posA = right ? d : (180 - d);
       var baseA = right ? 0 : 180;
+      var armLen = R * (armLong ? 1.32 : 1.0); // 와우 ④ 변만 길어짐(호·눈금·각도 숫자는 R 그대로)
       if(d > 0) {
         var rr = R*0.60, pb = P(baseA, rr), pm = P(posA, rr), lg = (d>180)?1:0, sweep = right?0:1;
         svg.appendChild(svgEl('path',{d:'M '+cx+' '+cy+' L '+pb[0]+' '+pb[1]+' A '+rr+' '+rr+' 0 '+lg+' '+sweep+' '+pm[0]+' '+pm[1]+' Z',fill:kc,'fill-opacity':0.15}));
@@ -170,7 +178,7 @@
           if(G().twoway) txt(svg,pIn[0],pIn[1]+6,String(180-a),inActive?22:16,inActive?kc:'#B0C4DA',inActive?800:600);
         }
       }
-      var base=P(baseA,R), mov=P(posA,R);
+      var base=P(baseA,armLen), mov=P(posA,armLen);
       svg.appendChild(svgEl('line',{x1:cx,y1:cy,x2:base[0],y2:base[1],stroke:'#1B3A57','stroke-width':7,'stroke-linecap':'round'}));
       svg.appendChild(svgEl('line',{x1:cx,y1:cy,x2:mov[0],y2:mov[1],stroke:kc,'stroke-width':8,'stroke-linecap':'round'}));
       // ★저학년 직각 기호 닻: d===90이면 꼭짓점에 반듯한 코너(┐)
@@ -195,18 +203,27 @@
         svg.appendChild(svgEl('circle',{cx:rd[0],cy:rd[1],r:5,fill:kc}));
         txt(svg,rd2[0],rd2[1]+(rd2[1]<cy?-8:20),'③ 여기 눈금 읽기',17,kc);
       }
+      // 와우 ④ 마법모먼트 — 변을 늘여도 각도기 숫자는 꿈쩍 안 함(길이=각크기 오개념 반증). 1회성.
+      if(opts.flash){
+        var fg=svgEl('g',{class:'ag-flash','pointer-events':'none'});
+        fg.appendChild(svgEl('rect',{x:cx-330,y:8,width:660,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#agSh)'}));
+        var ft=svgEl('text',{x:cx,y:28,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#fff'});
+        ft.textContent='✋ 변을 늘여도 각의 크기는 그대로! 각은 길이가 아니라 두 변이 벌어진 정도';
+        fg.appendChild(ft); svg.appendChild(fg);
+      }
       stage.appendChild(svg);
 
       if (statusEl) {
+        var hold = opts.flash ? ' ag-hold' : '';
         if (mode === 'quiz') {
           statusEl.innerHTML = '<span style="font-size:22px;color:#5a7894;">각도를 확인하고 아래에서 선택하세요!</span>';
         } else if (grade==='low') {
           // ★저학년: 각도 숫자 없이 벌어짐 일상어
           var lw = lowWord(d);
-          statusEl.innerHTML = lw[0] ? ('<span style="font-size:36px;color:'+lw[1]+';">'+lw[0]+'</span>') : '<span style="font-size:24px;color:#5a7894;">두 변을 벌려 봐요!</span>';
+          statusEl.innerHTML = lw[0] ? ('<span class="'+('agw'+hold)+'" style="font-size:36px;color:'+lw[1]+';">'+lw[0]+'</span>') : '<span style="font-size:24px;color:#5a7894;">두 변을 벌려 봐요!</span>';
         } else {
           var k = kind(d);
-          statusEl.innerHTML = '<span style="font-size:32px;color:'+kc+';">'+d+'°</span>'
+          statusEl.innerHTML = '<span class="'+('agw'+hold)+'" style="font-size:32px;color:'+kc+';">'+d+'°</span>'
             + (G().kindWord && k[0]?'<span style="font-size:26px;color:#1B3A57;"> — </span><span style="font-size:32px;color:'+kc+';">'+k[0]+'</span>':'');
         }
         var pb=el.querySelector('[data-act="plus"]'), mb=el.querySelector('[data-act="minus"]');
@@ -255,16 +272,21 @@
       var plusBtn = el.querySelector('[data-act="plus"]');
       var minusBtn = el.querySelector('[data-act="minus"]');
       var resetBtn = el.querySelector('[data-act="reset"]');
+      var armBtn = el.querySelector('[data-act="arm"]');
       if (plusBtn) plusBtn.addEventListener('click', function() {
-        deg = Math.min(180, deg + curStep()); render();
+        deg = Math.min(180, deg + curStep()); snd(deg===90?'select':'tap'); render(); // 직각 스냅
         if (mode === 'mission') checkMission('change');
       });
       if (minusBtn) minusBtn.addEventListener('click', function() {
-        deg = Math.max(0, deg - curStep()); render();
+        deg = Math.max(0, deg - curStep()); snd(deg===90?'select':'tap'); render();
         if (mode === 'mission') checkMission('change');
       });
       if (resetBtn) resetBtn.addEventListener('click', function() {
-        deg = defDeg(); if(!G().twoway) startSide = 'right'; render();
+        deg = defDeg(); if(!G().twoway) startSide = 'right'; armLong = false; build();
+      });
+      // 와우 ④ 변 늘이기 — 늘이는 순간(짧→긺)에만 길이 불변 마법(각도 그대로). 줄이기는 조용히.
+      if (armBtn) armBtn.addEventListener('click', function() {
+        armLong = !armLong; snd(armLong?'whoosh':'tap'); build(); render(null, {flash:armLong});
       });
       el.querySelectorAll('.ag-side').forEach(function(b){
         b.addEventListener('click', function() {
