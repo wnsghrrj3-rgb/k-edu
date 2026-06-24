@@ -32,6 +32,7 @@
 
   window.KLab.register('place_value', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
     /* ── 학년 칸 (헌법 3장) — 카드 D칸 사다리(표상 전환) ──
        저=묶음 구체물·십 묶기(일상어 닻, 퀴즈 숨김, 두 자리 작게) /
        중=묶음↔숫자 자리값 분해(20+3)·퀴즈 /
@@ -157,6 +158,11 @@
         + '.pv-suck{animation:pvSuck .42s ease-in both;}'
         + '@keyframes pvSuck{0%{transform:scale(1);opacity:1;}100%{transform:scale(.2) translateY(-30px);opacity:0;}}'
         + '.pv-frameglow rect.pv-fcell{stroke:' + C.glow + ';stroke-width:4;}'
+        + '.pv-fcell.pv-fillable{cursor:pointer;}'
+        + '.pv-fillable:hover{fill:rgba(112,72,232,0.16) !important;}'
+        + '.pv-bundleable{cursor:pointer;}'
+        + '.pv-flash{animation:pvFlashKf 1.6s ease both;}'
+        + '@keyframes pvFlashKf{0%{opacity:0;}15%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}'
         + '.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}'
         + '</style>'
         + top + bar + ctrlRow
@@ -243,17 +249,20 @@
       for (var f = 0; f < framesNeeded; f++) {
         var fx = oneAreaX + f * (frameW + frameGap);
         var inThisFrame = Math.min(10, O - f * 10);
-        var fg = svgEl('g', { class: 'pv-frame' + (inThisFrame === 10 && opts.glow ? ' pv-frameglow' : '') });
+        var fg = svgEl('g', { class: 'pv-frame' + (inThisFrame === 10 && opts.glow ? ' pv-frameglow' : '') + (inThisFrame === 10 && ones >= 10 && !busy && mode !== 'quiz' ? ' pv-bundleable' : '') });
         for (var r = 0; r < 5; r++) {
           for (var c = 0; c < 2; c++) {
             var idxInFrame = r * 2 + c;
             var cx = fx + c * (cell + cellGap);
             var cy = fTop + r * (cell + cellGap);
+            var globalOne = f * 10 + idxInFrame;
+            var emptyCell = (idxInFrame >= inThisFrame);
             fg.appendChild(svgEl('rect', {
               x: cx, y: cy, width: cell, height: cell, rx: 9,
               fill: 'rgba(255,255,255,0.45)', stroke: C.frame,
               'stroke-width': 2.5, 'stroke-dasharray': '5 5',
-              class: 'pv-fcell'
+              class: 'pv-fcell' + (emptyCell && mode !== 'quiz' && !busy ? ' pv-fillable' : ''),
+              'data-one': globalOne
             }));
             if (idxInFrame < inThisFrame) {
               var filled = (f * 10 + idxInFrame);
@@ -271,7 +280,27 @@
         svg.appendChild(fg);
       }
 
+      if (opts.flash) {
+        var fl = svgEl('text', { x: VBW / 2, y: 28, 'text-anchor': 'middle',
+          'font-family': 'Jua, "Apple SD Gothic Neo", sans-serif', 'font-size': 25, 'font-weight': 800,
+          fill: '#7048E8', class: 'pv-flash' });
+        fl.textContent = '🔁 낱개 10개가 십 한 묶음으로 올라갔어요! (10 : 1 교환)';
+        svg.appendChild(fl);
+      }
+
       stage.appendChild(svg);
+      // 와우 ①직접조작: 빈 낱개 칸 직접 탭 채우기 / 꽉 찬 십틀 탭으로 바로 묶기
+      if (mode !== 'quiz' && !busy) {
+        stage.querySelectorAll('.pv-fillable').forEach(function (rc) {
+          rc.addEventListener('click', function () {
+            var gi = +rc.dataset.one, cap = max - tens * 10, nv = Math.min(gi + 1, cap);
+            if (nv > ones) { ones = nv; snd('tap'); render({ newOne: nv - 1, glow: ones >= 10 }); }
+          });
+        });
+        stage.querySelectorAll('.pv-bundleable').forEach(function (fr) {
+          fr.addEventListener('click', function () { if (ones >= 10 && !busy) bundle(); });
+        });
+      }
       updateStatus();
       updateButtons();
       checkMission(opts.act);
@@ -337,7 +366,7 @@
     // ---------- 동작 ----------
     function plus() {
       if (busy || value() >= max) return;
-      ones += 1;
+      ones += 1; snd('tap');
       render({ newOne: ones - 1, glow: ones >= 10 });
     }
     function minus() {
@@ -347,19 +376,19 @@
     }
     function bundle() {
       if (busy || ones < 10) return;
-      busy = true;
+      busy = true; snd('pop');                      // 묶음(clamp)
       updateButtons();
       render({ suckFrame: 0, glow: false });
       setTimeout(function () {
         tens += 1;
         ones -= 10;
-        busy = false;
-        render({ newBar: tens - 1, glow: ones >= 10, act: 'bundle' });
+        busy = false; snd('whoosh');                // 자리 이동(slide)
+        render({ newBar: tens - 1, glow: ones >= 10, act: 'bundle', flash: true });
       }, 430);
     }
     function unbundle() {
       if (busy || tens < 1) return;
-      busy = true;
+      busy = true; snd('select');
       updateButtons();
       tens -= 1;
       ones += 10;
