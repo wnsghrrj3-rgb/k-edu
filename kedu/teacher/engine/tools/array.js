@@ -16,6 +16,7 @@
   var C={topD:'#4DABF7',dot:'#1565C0',dotEdge:'#0B447C',empty:'#E7F1FB'};
   window.KLab.register('array', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
        저=묶어세기 동수누가 닻(×기호 없음)·퀴즈/교환 숨김 / 중=곱셈식·교환·퀴즈 /
@@ -77,6 +78,7 @@
       return f.length?f:pool.slice(0,1);
     }
     var mStep=0, mDone=false, mLock=false;
+    var H={}; // 동작 핸들러(클로저 — render의 탭-회전에서도 참조)
 
     // ---- 퀴즈 ----
     var qR=3,qC=4,qScore=0,qCount=0,qLock=false;
@@ -106,7 +108,11 @@
       else if(mode==='quiz'){ bar=ui.quizBar('이 배열의 곱은 얼마일까요?',qScore,qCount); foot=ui.choices(quizChoices()); }
       else ctrl=ctlHtml;
       el.innerHTML='<style>.ar-btn:active,.kl-choice:active{transform:translateY(2px);}.ar-btn[disabled]{opacity:.35;cursor:not-allowed;}'
-        +'.ar-cell{transition:transform .2s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}</style>'
+        +'.ar-cell{transition:transform .2s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}'
+        +'.ar-rotate{animation:arRotate .5s cubic-bezier(.3,1.2,.4,1) both;transform-origin:center;transform-box:fill-box;}'
+        +'@keyframes arRotate{0%{transform:rotate(-90deg) scale(.82);}60%{transform:rotate(8deg) scale(1.02);}100%{transform:rotate(0) scale(1);}}'
+        +'.ar-flash{animation:arFlashKf 1.6s ease both;}@keyframes arFlashKf{0%{opacity:0;}15%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}'
+        +'.ar-tappable{cursor:pointer;}.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}</style>'
         +top+bar
         +(ctrl?'<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">'+ctrl+'</div>':'')
         +'<div class="kl-stage-host" style="position:relative;"><div class="ar-stage" style="width:100%;height:'+(mode==='quiz'?'42vh':'50vh')+';min-height:330px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
@@ -120,7 +126,8 @@
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=900,VBH=440;
-    function render(){
+    function render(opts){
+      opts=opts||{};
       var stage=el.querySelector('.ar-stage'); stage.innerHTML='';
       var R=(mode==='quiz')?qR:rows, Co=(mode==='quiz')?qC:cols;
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'});
@@ -129,14 +136,22 @@
       var padX=80,padY=50,areaW=VBW-padX*2,areaH=VBH-padY*2;
       var cw=areaW/Co, ch=areaH/R, s=Math.min(cw,ch,86), size=s*0.66;
       var gridW=s*Co, gridH=s*R, x0=(VBW-gridW)/2, y0=(VBH-gridH)/2;
-      var g=svgEl('g',{filter:'url(#arSh)'});
+      var canRotate=(mode!=='quiz' && !!G().swap);   // 와우 ①: 배열 직접 탭→회전(교환법칙 노출 학년만)
+      var g=svgEl('g',{filter:'url(#arSh)',class:'ar-grid'+(opts.rotate?' ar-rotate':'')+(canRotate?' ar-tappable':'')});
       for(var r=0;r<R;r++)for(var c=0;c<Co;c++){
         var cx=x0+c*s+s/2, cy=y0+r*s+s/2;
         if(shape==='square') g.appendChild(svgEl('rect',{x:cx-size/2,y:cy-size/2,width:size,height:size,rx:8,fill:'url(#arG)',stroke:'#fff','stroke-width':3,class:'ar-cell'}));
         else g.appendChild(svgEl('circle',{cx:cx,cy:cy,r:size/2,fill:'url(#arG)',stroke:C.dotEdge,'stroke-width':3,class:'ar-cell'}));
       }
       svg.appendChild(g);
+      // 와우 ④ 마법모먼트: 돌려도 개수 그대로(교환법칙)
+      if(opts.flash){
+        var fl=svgEl('text',{x:VBW/2,y:34,'text-anchor':'middle','font-family':'Jua, "Apple SD Gothic Neo", sans-serif','font-size':26,'font-weight':800,fill:'#7048E8',class:'ar-flash'});
+        fl.textContent='돌려도 개수는 그대로! '+cols+' × '+rows+' ＝ '+rows+' × '+cols+' ＝ '+(rows*cols)+' (교환법칙)';
+        svg.appendChild(fl);
+      }
       stage.appendChild(svg);
+      if(canRotate){ g.addEventListener('click',function(){ H.swap(); }); }
       var st=el.querySelector('.ar-status');
       if(mode==='quiz'){
         st.innerHTML='<span style="font-size:34px;color:#1565C0;">'+qR+'</span><span style="font-size:26px;color:#1B3A57;"> 줄 × 한 줄 </span><span style="font-size:34px;color:#1565C0;">'+qC+'</span><span style="font-size:26px;color:#1B3A57;">개 ＝ </span><span style="font-size:40px;color:#F59F00;">?</span>';
@@ -183,9 +198,9 @@
     }
 
     function bind(){
-      var H={rp:function(){if(rows<maxR){rows++;render();checkMission();}},rm:function(){if(rows>1){rows--;render();checkMission();}},
-        cp:function(){if(cols<maxC){cols++;render();checkMission();}},cm:function(){if(cols>1){cols--;render();checkMission();}},
-        swap:function(){var t=rows;rows=Math.min(cols,maxR);cols=Math.min(t,maxC);render();checkMission('swap');},
+      H={rp:function(){if(rows<maxR){rows++;snd('pop');render();checkMission();}},rm:function(){if(rows>1){rows--;snd('pop');render();checkMission();}},
+        cp:function(){if(cols<maxC){cols++;snd('pop');render();checkMission();}},cm:function(){if(cols>1){cols--;snd('pop');render();checkMission();}},
+        swap:function(){var t=rows;rows=Math.min(cols,maxR);cols=Math.min(t,maxC);snd('whoosh');render({rotate:true,flash:true});checkMission('swap');},
         reset:function(){rows=Math.min(config.rows||3,maxR);cols=Math.min(config.cols||4,maxC);render();}};
       el.querySelectorAll('.ar-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f)f();});});
       el.querySelectorAll('.kl-choice').forEach(function(b){
