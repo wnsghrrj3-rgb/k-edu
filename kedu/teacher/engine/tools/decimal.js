@@ -16,6 +16,18 @@
   if (!window.KLab) return;
   window.KLab.register('decimal', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
+
+    // 와우 ②④: hund(채운 칸) 변경 공통 진입 — 모눈이 꽉 차 1.0이 되면 10:1 교환 마법
+    //   (0.1이 10개면 1 — 소수점 아래도 한 자리 위로 올라감, place_value와 같은 원리).
+    function applyHund(newHund){
+      var old=hund;
+      hund=Math.max(0,Math.min(100,newHund));
+      if(hund===old){ render({}); }
+      else if(hund===100 && old<100){ snd('whoosh'); render({flash:true}); } // 자리 올림(슬라이드)
+      else { snd('tap'); render({}); }                                       // 채우기 똑딱
+      if(mode==='mission')checkMission();
+    }
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ──
        저=0.1 단위·줄 스냅 닻(0.01·분수·퀴즈 숨김) / 중=0.01+분수+퀴즈 / 고=기존 유지. */
@@ -119,7 +131,11 @@
         bar=ui.quizBar(q.q,qScore,qCount);
         foot=ui.choices(shuffled(q.choices).map(function(v){return {v:v,label:v};}));
       }
-      el.innerHTML='<style>.dc-btn:active{transform:translateY(2px);}.dc-btn[disabled]{opacity:.35;cursor:not-allowed;}.dc-cell{cursor:pointer;transition:fill .12s;}.kl-choice{min-width:120px !important;}</style>'
+      el.innerHTML='<style>.dc-btn:active{transform:translateY(2px);}.dc-btn[disabled]{opacity:.35;cursor:not-allowed;}.dc-cell{cursor:pointer;transition:fill .12s;}.kl-choice{min-width:120px !important;}'
+        +'.dc-fillable:hover{fill:rgba(112,72,232,0.16) !important;}'   /* 와우 ① 빈 칸 직접 채우기 어포던스 */
+        +'.dc-flash{animation:dcFlashKf 1.6s ease both;}@keyframes dcFlashKf{0%{opacity:0;}15%{opacity:1;}80%{opacity:1;}100%{opacity:0;}}'   /* 와우 ④ 교환 배너 */
+        +'.dc-merge{animation:dcMergeKf .8s ease both;}@keyframes dcMergeKf{0%{opacity:0;stroke-width:5;}40%{opacity:1;stroke-width:13;}100%{opacity:0;stroke-width:5;}}'   /* 와우 ④ 한 판=1 글로우 */
+        +'</style>'
         + top + bar + ctrl
         +'<div class="kl-stage-host" style="position:relative;">'
         +'<div class="dc-stage" style="width:100%;height:'+(mode==='quiz'?'40vh':'50vh')+';min-height:'+(mode==='quiz'?'300':'350')+'px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
@@ -135,13 +151,13 @@
       bands.bind(el);
       var H={};
       G().steps.forEach(function(d){
-        H[d]=function(){hund=Math.min(100,hund+d);render();};
-        H[-d]=function(){hund=Math.max(0,hund-d);render();};
+        H[d]=function(){ applyHund(hund+d); };
+        H[-d]=function(){ applyHund(hund-d); };
       });
-      H.reset=function(){hund=(mode==='mission')?0:((grade==='low')?snap01(startH):startH);render();};
+      H.reset=function(){ hund=(mode==='mission')?0:((grade==='low')?snap01(startH):startH); render({}); if(mode==='mission')checkMission(); };
       el.querySelectorAll('.dc-btn').forEach(function(b){b.addEventListener('click',function(){
         var key=(b.dataset.d==='reset')?'reset':(+b.dataset.d);
-        var f=H[key];if(f){f();if(mode==='mission')checkMission();}
+        var f=H[key];if(f){f();}
       });});
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
@@ -157,7 +173,8 @@
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=820,VBH=400;
-    function render(){
+    function render(opts){
+      opts=opts||{};
       var stage=el.querySelector('.dc-stage'), statusEl=el.querySelector('.dc-status');
       if(!stage)return;
       stage.innerHTML='';
@@ -172,7 +189,7 @@
         // 완성된 줄(10칸 다 참)은 진하게
         var rowFull=(Math.floor(hund/10)>r);
         var fill=on?(rowFull?'#1565C0':'#63E6BE'):'#F4F9FF';
-        g.appendChild(svgEl('rect',{x:x0+c*cell,y:y0+r*cell,width:cell,height:cell,fill:fill,stroke:'#9AB7D4','stroke-width':1.5,'data-k':k,class:'dc-cell'}));
+        g.appendChild(svgEl('rect',{x:x0+c*cell,y:y0+r*cell,width:cell,height:cell,fill:fill,stroke:'#9AB7D4','stroke-width':1.5,'data-k':k,class:'dc-cell'+(!on&&mode!=='quiz'?' dc-fillable':'')}));
         k++;
       }
       g.appendChild(svgEl('rect',{x:x0,y:y0,width:grid,height:grid,fill:'none',stroke:'#0B447C','stroke-width':5,'pointer-events':'none'}));
@@ -190,12 +207,20 @@
         }
       }
       stage.appendChild(svg);
+      // 와우 ④ 마법모먼트 — 모눈이 꽉 차 1.0: 황금 글로우(한 판=1) + 10:1 교환 배너. 1회성(다음 render 자동 해제).
+      if(opts.flash){
+        svg.appendChild(svgEl('rect',{x:x0-5,y:y0-5,width:grid+10,height:grid+10,rx:7,fill:'none',stroke:'#F59F00','stroke-width':6,'pointer-events':'none',class:'dc-merge'}));
+        var fg=svgEl('g',{class:'dc-flash','pointer-events':'none'});
+        fg.appendChild(svgEl('rect',{x:VBW/2-292,y:2,width:584,height:34,rx:17,fill:'#7048E8',opacity:'0.96',filter:'url(#dcSh)'}));
+        var fl=svgEl('text',{x:VBW/2,y:20,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:'#fff'});
+        fl.textContent='🔁 0.1이 10개 = 1! 소수점 아래도 10칸이 차면 1로 합쳐져요 (10 : 1 교환)';
+        fg.appendChild(fl); svg.appendChild(fg);
+      }
       if(mode!=='quiz'){
         stage.querySelectorAll('.dc-cell').forEach(function(p){p.addEventListener('click',function(){
-          if(grade==='low'){ hund=(Math.floor((+p.dataset.k)/10)+1)*10; } // ★저학년: 줄 전체 채움(0.1 스냅)
-          else { hund=(+p.dataset.k)+1; }
-          if(hund>100)hund=100;
-          render();if(mode==='mission')checkMission();
+          var nv=(grade==='low')?(Math.floor((+p.dataset.k)/10)+1)*10  // ★저학년: 줄 전체 채움(0.1 스냅)
+                                :(+p.dataset.k)+1;
+          applyHund(nv);
         });});
       }
       if(mode==='quiz'){
