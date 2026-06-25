@@ -12,6 +12,7 @@
   if (!window.KLab) return;
   window.KLab.register('area', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES={
@@ -108,6 +109,7 @@
         + '<button class="aa-btn" data-act="hm" style="' + btn + 'background:#fff;color:#1565C0;">－</button>'
         + '<button class="aa-btn" data-act="hp" style="' + btn + 'background:#1565C0;color:#fff;">＋</button>'
         + '<span style="width:8px;"></span>'
+        + (G().perim ? '<button class="aa-btn" data-act="morph" style="' + btn + 'background:#7048E8;color:#fff;border-color:#7048E8;">🔁 둘레 그대로</button><span style="width:8px;"></span>' : '')
         + '<button class="aa-btn" data-act="reset" style="font-size:25px;padding:13px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>'
         + '</div>';
 
@@ -121,7 +123,10 @@
         applyQuizState(q);
       }
 
-      el.innerHTML = '<style>.aa-btn:active{transform:translateY(2px);}.aa-btn[disabled]{opacity:.35;cursor:not-allowed;}.aa-cell{cursor:pointer;transition:fill .15s;}.kl-choice{min-width:90px !important;}</style>'
+      el.innerHTML = '<style>.aa-btn:active{transform:translateY(2px);}.aa-btn[disabled]{opacity:.35;cursor:not-allowed;}.aa-cell{cursor:pointer;transition:fill .15s;}.kl-choice{min-width:90px !important;}'
+        + '.aa-flash{animation:aaFlashKf 1.8s ease both;}@keyframes aaFlashKf{0%{opacity:0;}12%{opacity:1;}82%{opacity:1;}100%{opacity:0;}}'   /* 와우 ④ 둘레 불변 배너 */
+        + '.aa-hold{display:inline-block;animation:aaHoldKf 1.1s ease both;transform-origin:center;}@keyframes aaHoldKf{0%{transform:scale(1);}25%{transform:scale(1.3);color:#7048E8;}55%{transform:scale(.92);}100%{transform:scale(1);}}'   /* 와우 ④ 둘레는 그대로 펄스 */
+        + '</style>'
         + top + bar
         + (mode !== 'quiz' ? ctrlRow : '')
         + '<div class="kl-stage-host" style="position:relative;">'
@@ -157,7 +162,8 @@
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=860, VBH=400;
 
-    function render() {
+    function render(opts) {
+      opts = opts || {};
       var stage = el.querySelector('.aa-stage');
       var statusEl = el.querySelector('.aa-status');
       if (!stage) return;
@@ -183,12 +189,20 @@
       }
       g.appendChild(svgEl('rect',{x:x0,y:y0,width:gw,height:gh,fill:'none',stroke:'#0B7A5C','stroke-width':5,'pointer-events':'none'}));
       svg.appendChild(g);
+      // 와우 ④ 마법모먼트 — 둘레 그대로 모양만 길쭉하게: 둘레 불변인데 넓이가 달라짐(둘레=넓이 직관 반증). 1회성.
+      if(opts.flash){
+        var fg=svgEl('g',{class:'aa-flash','pointer-events':'none'});
+        fg.appendChild(svgEl('rect',{x:VBW/2-330,y:6,width:660,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#aaSh)'}));
+        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:'#fff'});
+        ft.textContent='✋ 둘레는 '+(2*(w+h))+'㎝ 그대로인데 넓이가 달라졌어요! 둘레와 넓이는 따로 논다';
+        fg.appendChild(ft); svg.appendChild(fg);
+      }
       stage.appendChild(svg);
 
       if (mode !== 'quiz') {
         stage.querySelectorAll('.aa-cell').forEach(function(p){
           p.addEventListener('click',function(){
-            var k=p.dataset.c+','+p.dataset.r; filled[k]=!filled[k]; render();
+            var k=p.dataset.c+','+p.dataset.r; filled[k]=!filled[k]; snd('tap'); render();
             if (mode === 'mission') checkMission();
           });
         });
@@ -215,7 +229,7 @@
             + (mult?'<span style="font-size:30px;color:#0CA678;">'+w+' × '+h+' ＝ </span>':'<span style="font-size:28px;color:#1B3A57;">덮은 칸 </span>')
             + '<span style="font-size:48px;color:#0CA678;">'+n+'</span>'
             + '<span style="font-size:28px;color:#1B3A57;"> '+unit+'</span>'
-            + ((G().perim && isRect)?'<span style="font-size:24px;color:#5a7894;">   (둘레 '+(2*(w+h))+'㎝)</span>':'');
+            + ((G().perim && isRect)?'<span class="'+(opts.flash?'aa-hold':'')+'" style="font-size:24px;color:#5a7894;">   (둘레 '+(2*(w+h))+'㎝)</span>':'');
           var wp=el.querySelector('[data-act="wp"]'),wm=el.querySelector('[data-act="wm"]');
           var hp=el.querySelector('[data-act="hp"]'),hm=el.querySelector('[data-act="hm"]');
           if(wp)wp.disabled=w>=maxW; if(wm)wm.disabled=w<=1;
@@ -243,11 +257,16 @@
 
     function bind() {
       var H = {
-        wp:function(){if(w<maxW){w++;fill_init();render();checkMission();}},
-        wm:function(){if(w>1){w--;fill_init();render();checkMission();}},
-        hp:function(){if(h<maxH){h++;fill_init();render();checkMission();}},
-        hm:function(){if(h>1){h--;fill_init();render();checkMission();}},
-        reset:function(){w=startW();h=startH();fill_init();render();}
+        wp:function(){if(w<maxW){w++;fill_init();snd('pop');render();checkMission();}},
+        wm:function(){if(w>1){w--;fill_init();snd('pop');render();checkMission();}},
+        hp:function(){if(h<maxH){h++;fill_init();snd('pop');render();checkMission();}},
+        hm:function(){if(h>1){h--;fill_init();snd('pop');render();checkMission();}},
+        // 와우 ④: 둘레 2(w+h) 고정한 채 길쭉하게(w+1,h-1) — 둘레는 그대로인데 넓이가 줄어듦.
+        morph:function(){
+          if(w<maxW && h>1){ w++; h--; fill_init(); snd('whoosh'); render({flash:true}); checkMission(); }
+          else { w=startW(); h=startH(); fill_init(); snd('pop'); render(); } // 더 못 늘이면 처음 모양으로(다시 시도)
+        },
+        reset:function(){w=startW();h=startH();fill_init();snd('pop');render();}
       };
       el.querySelectorAll('.aa-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f)f();});});
     }
