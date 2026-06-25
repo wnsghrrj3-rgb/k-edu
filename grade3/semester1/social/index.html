@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3학년 1학기 사회 | K-edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:#F5F7FA;min-height:100vh;color:#1A202C}
+
+.top-bar{background:#fff;border-bottom:1px solid #E2E8F0;height:52px;display:flex;align-items:center;padding:0 24px;gap:12px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#718096;text-decoration:none;font-weight:500;transition:color .15s}
+.back-link:hover{color:#1A202C}
+.top-title{font-family:'Jua',sans-serif;font-size:16px;color:#1A202C}
+
+main{max-width:800px;margin:0 auto;padding:28px 20px 60px}
+
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.subject-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;font-family:'Jua',sans-serif;font-size:18px;color:#fff;background:#16A34A}
+.page-title{font-family:'Jua',sans-serif;font-size:26px}
+
+.unit-section{margin-bottom:30px}
+.unit-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding-bottom:8px;border-bottom:2px solid #E2E8F0}
+.unit-num{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:16px;color:#fff}
+.unit-name{font-family:'Jua',sans-serif;font-size:18px;color:#1A202C}
+.unit-count{font-size:13px;color:#A0AEC0;margin-left:auto}
+
+.sub-header{font-size:13px;font-weight:700;color:#718096;margin:16px 0 8px;padding-left:2px}
+
+.lesson-list{display:flex;flex-direction:column;gap:8px}
+.lesson-card{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 1px 8px rgba(0,0,0,.05);cursor:pointer;text-decoration:none;color:#1A202C;border:2px solid transparent;transition:transform .15s,border-color .15s,box-shadow .15s}
+.lesson-card:hover{transform:translateY(-2px);border-color:var(--uc);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.lesson-num{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Jua',sans-serif;font-size:14px;color:#fff;background:var(--uc);flex-shrink:0}
+.lesson-title{font-size:14px;font-weight:500;flex:1}
+.lesson-arrow{color:#CBD5E0;font-size:16px}
+.lesson-badge{font-size:11px;padding:2px 8px;border-radius:50px;font-weight:500;flex-shrink:0}
+.badge-tb{background:#EBF8FF;color:#2B6CB0}
+.badge-soon{background:#EDF2F7;color:#A0AEC0}
+
+.lesson-card-soon{background:#FAFAFA;box-shadow:none;border:1px dashed #E2E8F0;cursor:default;opacity:.7}
+.lesson-card-soon:hover{transform:none;border-color:#E2E8F0;box-shadow:none}
+.lesson-card-soon .lesson-num{background:#CBD5E0!important}
+.lesson-card-soon .lesson-title{color:#A0AEC0}
+
+footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;background:#fff}
+.footer-text{font-size:12px;color:#A0AEC0}
+.footer-text strong{color:#718096;font-weight:500}
+.footer-text a{color:#5B8EF8;text-decoration:none;margin-left:10px}
+.footer-text a:hover{text-decoration:underline}
+
+@media(max-width:600px){
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .page-title{font-size:22px}
+  .lesson-card{padding:12px 14px}
+}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+
+<div class="top-bar">
+  <a class="back-link" href="../../../index.html">← 홈</a>
+  <span style="color:#E2E8F0">|</span>
+  <span class="top-title">🌏 3학년 1학기 사회</span>
+</div>
+
+<main>
+  <div class="page-header">
+    <div class="subject-badge">🍀 3학년 · 1학기</div>
+    <div class="page-title">🌏 사회</div>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<footer>
+  <p class="footer-text">Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School) · All rights reserved.
+  <a href="/privacy/">개인정보 처리방침</a>
+  <a href="/terms/">서비스 이용약관</a></p>
+</footer>
+
+<script>
+const DIR1 = "1단원_우리가사는곳/";
+const DIR2 = "2단원_일상에서만나는과거/";
+
+const UNITS = [
+  {
+    num: 1, name: "우리가 사는 곳", emoji: "🏘️", color: "#16A34A",
+    subunits: [
+      { sub: "① 우리가 사는 곳의 여러 장소", lessons: [
+        {n:1, file:DIR1+"g3_social_u1_l01_여러장소.html", title:"우리가 사는 곳의 여러 장소를 알아볼까요", track:"tb"},
+        {n:2, file:DIR1+"g3_social_u1_l02_분류해요.html", title:"여러 장소를 살펴보고 분류해요", track:"tb"},
+        {n:3, file:DIR1+"g3_social_u1_l03_경험과느낌.html", title:"장소에서의 경험과 느낌을 이야기해요", track:"tb"},
+        {n:4, title:"여러 장소를 표현하고 소개해요", track:"soon"},
+        {n:5, title:"[할 수 있어요] 공유 앱으로 여러 장소 알리기", track:"soon"},
+        {n:6, title:"[생각을 펼쳐요] 우리가 사는 곳 표현·정리", track:"soon"}
+      ]},
+      { sub: "② 우리 생활에 도움을 주는 장소", lessons: [
+        {n:1, file:DIR1+"g3_social_u1_l07_도움주는장소.html", title:"우리 생활에 도움을 주는 장소를 알아볼까요", track:"tb"},
+        {n:2, file:DIR1+"g3_social_u1_l08_하는일.html", title:"도움을 주는 장소에서 하는 일 살펴보기", track:"tb"},
+        {n:3, file:DIR1+"g3_social_u1_l09_지도찾기.html", title:"생활에 도움 주는 장소 찾아보기", track:"tb"},
+        {n:4, file:DIR1+"g3_social_u1_l10_지도활용.html", title:"디지털 영상 지도를 직접 써 볼까요", track:"tb"},
+        {n:5, file:DIR1+"g3_social_u1_l11_살기좋은곳.html", title:"살기 좋은 곳은 어떤 곳일까요", track:"tb"},
+        {n:6, file:DIR1+"g3_social_u1_l12_방안탐색.html", title:"더 살기 좋은 곳으로 만드는 방법을 찾아요", track:"tb"},
+        {n:7, file:DIR1+"g3_social_u1_l13_단원정리.html", title:"1단원 우리가 사는 곳 정리", track:"tb"}
+      ]}
+    ]
+  },
+  {
+    num: 2, name: "일상에서 만나는 과거", emoji: "🕰️", color: "#0D9488",
+    subunits: [
+      { sub: "① 생활 속에서 만나는 시간의 흐름", lessons: [
+        {n:1, file:DIR2+"g3_social_u2_l01_시간을나타내는말.html", title:"일상에서 시간을 나타내는 말을 살펴볼까요", track:"tb"},
+        {n:2, file:DIR2+"g3_social_u2_l02_중요한일.html", title:"나에게 있었던 중요한 일을 떠올려요", track:"tb"},
+        {n:3, file:DIR2+"g3_social_u2_l03_조사하기.html", title:"가족·학교에 있었던 중요한 일 조사하기", track:"tb"},
+        {n:4, title:"시간의 흐름에 따라 연표 만들기", track:"soon"},
+        {n:5, title:"[할 수 있어요] 순서가 드러나는 연표 만들기", track:"soon"},
+        {n:6, title:"[생각을 펼쳐요] 시간의 흐름 정리", track:"soon"}
+      ]},
+      { sub: "② 주변에서 만나는 과거의 모습", lessons: [
+        {n:1, title:"옛날 사람들의 생활 모습은 무엇으로 알까요", track:"soon"},
+        {n:2, title:"오래된 물건으로 옛 생활 모습 살펴보기", track:"soon"},
+        {n:3, title:"자료와 증언으로 옛 생활 모습 살펴보기", track:"soon"},
+        {n:4, title:"[할 수 있어요] 자료 분석해 과거 살펴보기", track:"soon"},
+        {n:5, title:"옛 생활 모습 전시관 꾸미기", track:"soon"},
+        {n:6, title:"[생각을 펼쳐요] 과거의 모습 정리", track:"soon"}
+      ]},
+      { sub: "③ 우리 지역 사람들의 달라진 생활 모습", lessons: [
+        {n:1, title:"지역의 옛 생활 모습은 어떻게 알까요", track:"soon"},
+        {n:2, title:"옛이야기로 지역의 생활 모습 알아보기", track:"soon"},
+        {n:3, title:"여러 자료로 지역의 옛 생활 모습 살펴보기", track:"soon"},
+        {n:4, title:"지역 사람들의 달라진 생활 모습 조사하기", track:"soon"},
+        {n:5, title:"[할 수 있어요] 영상으로 달라진 모습 표현하기", track:"soon"},
+        {n:6, title:"[생각을 펼쳐요] 2단원 정리", track:"soon"}
+      ]}
+    ]
+  }
+];
+
+const content = document.getElementById('content');
+UNITS.forEach((unit) => {
+  const allLessons = unit.subunits.flatMap(s => s.lessons);
+  const tbCount = allLessons.filter(l => l.track === 'tb').length;
+  const soonCount = allLessons.filter(l => l.track === 'soon').length;
+
+  const section = document.createElement('div');
+  section.className = 'unit-section';
+
+  let html = `
+    <div class="unit-header">
+      <div class="unit-num" style="background:${unit.color}">${unit.num}</div>
+      <div class="unit-name">${unit.emoji} ${unit.num}단원: ${unit.name}</div>
+      <div class="unit-count">라이브 ${tbCount}차시${soonCount ? ' · 준비 중 ' + soonCount : ''}</div>
+    </div>
+  `;
+
+  unit.subunits.forEach(su => {
+    html += `<div class="sub-header">${su.sub}</div>`;
+    html += `<div class="lesson-list">`;
+    html += su.lessons.map(l => l.track === 'tb' ? `
+      <a class="lesson-card" href="${l.file}" style="--uc:${unit.color}">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-tb">교과서</span>
+        <div class="lesson-arrow">›</div>
+      </a>
+    ` : `
+      <div class="lesson-card lesson-card-soon">
+        <div class="lesson-num">${l.n}</div>
+        <div class="lesson-title">${l.title}</div>
+        <span class="lesson-badge badge-soon">준비 중</span>
+      </div>
+    `).join('');
+    html += `</div>`;
+  });
+
+  section.innerHTML = html;
+  content.appendChild(section);
+});
+</script>
+</body>
+</html>
