@@ -44,6 +44,7 @@
 
   window.KLab.register('shape3d', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
 
     /* ── 학년 칸 (헌법 3장) — D칸 용어/난이도 사다리 ── */
     var GRADES = {
@@ -65,6 +66,7 @@
 
     var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
       grade = g;
+      if (typeof clearFlash === 'function') clearFlash();
       if (G().modes.indexOf(mode) < 0) mode = 'free';
       mStep = 0; mDone = false; mLock = false;
       mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
@@ -136,7 +138,13 @@
         + 'box-shadow:inset 0 0 0 3px rgba(21,101,192,0.12);"></div>'
       + '</div>'
       + '<div class="s3d-foot"></div>'
-      + '<div class="s3d-status" style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>';
+      + '<div class="s3d-status" style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;"></div>'
+      + '<style>'
+        + '.s3d-flash{animation:s3dFlashKf 2.6s ease both;}'   /* 와우 ④ 마법모먼트 배너 */
+        + '@keyframes s3dFlashKf{0%{opacity:0;transform:translateX(-50%) translateY(-8px);}10%{opacity:1;transform:translateX(-50%) translateY(0);}85%{opacity:1;transform:translateX(-50%) translateY(0);}100%{opacity:0;transform:translateX(-50%) translateY(0);}}'
+        + '.s3d-hold{display:inline-block;animation:s3dHoldKf 1.1s ease both;transform-origin:center;}'   /* 와우 ④ 기둥 상태 펄스 */
+        + '@keyframes s3dHoldKf{0%{transform:scale(1);}25%{transform:scale(1.18);color:#7048E8;}55%{transform:scale(.94);}100%{transform:scale(1);}}'
+      + '</style>';
 
     function buildChrome() {
       var topEl = el.querySelector('.s3d-top'), barEl = el.querySelector('.s3d-bars'), footEl = el.querySelector('.s3d-foot');
@@ -152,6 +160,7 @@
           + '<style>.kl-choice{min-width:130px !important;}</style>'
         : '';
       ui.bindModeTabs(el, function (m2) {
+        clearFlash();
         mode = m2; mStep = 0; mDone = false; mLock = false;
         mFlags = { rolled: false, laid: false, rolledLying: false, resetDone: false };
         rolling = false; cylUp = true; applyCyl(); drawStatus();
@@ -177,6 +186,26 @@
 
     var stage  = el.querySelector('.s3d-stage');
     var statusRow = el.querySelector('.s3d-status');
+    var stageHost = el.querySelector('.kl-stage-host');
+
+    // 와우 ④ 마법모먼트 배너 (1회성 — 오개념 방향: 둥근데 안 굴러감 / 해소: 눕히니 굴러감)
+    function clearFlash(){ var f = stageHost.querySelector('.s3d-flash'); if (f && f.parentNode) f.parentNode.removeChild(f); }
+    function flashMagic(kind){
+      clearFlash();
+      var stop = (kind === 'stop');
+      var div = document.createElement('div');
+      div.className = 's3d-flash';
+      div.style.cssText = 'position:absolute;left:50%;top:14px;transform:translateX(-50%);'
+        + 'max-width:92%;z-index:5;pointer-events:none;text-align:center;'
+        + 'background:' + (stop ? '#7048E8' : '#12B886') + ';color:#fff;'
+        + 'font-weight:800;font-size:19px;line-height:1.45;'
+        + 'padding:13px 20px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,0.18);';
+      div.innerHTML = stop
+        ? LS.cylinder + '은 둥근데 세우니까 <b>안 굴러가요!</b> 🤔<br>바닥에 닿은 면이 평평해서예요 — 둥글다고 다 굴러가는 건 아니에요'
+        : '이번엔 눕혔더니 <b>데구르르!</b> ✨<br>닿는 면이 둥그니까 굴러가요';
+      stageHost.appendChild(div);
+      setTimeout(function(){ if (div && div.parentNode) div.parentNode.removeChild(div); }, 2600);
+    }
 
     // ---------- three 씬 ----------
     var W = stage.clientWidth || 720, H = stage.clientHeight || 360;
@@ -327,11 +356,13 @@
       if (kind === 'cylinder') return L.cylinder + (cylUp ? ' — 세우면 안 굴러가요' : ' — 눕히면 잘 굴러가요');
       return '';
     }
-    function drawStatus() {
+    function drawStatus(holdCyl) {
       statusRow.innerHTML = shapes.map(function (k) {
+        var t = statusText(k);
+        if (holdCyl && k === 'cylinder') t = '<span class="s3d-hold">' + t + '</span>';
         return '<div style="font-size:21px;font-weight:800;color:' + COLORCSS[k]
           + ';background:#fff;border-radius:14px;padding:11px 18px;border:2px solid '
-          + COLORCSS[k] + '33;">' + statusText(k) + '</div>';
+          + COLORCSS[k] + '33;">' + t + '</div>';
       }).join('');
       var flipBtn = el.querySelector('[data-act="flip"]');
       if (flipBtn) flipBtn.textContent = cylUp ? '기둥 눕히기' : '기둥 세우기';
@@ -354,12 +385,28 @@
           rolling = true;
           mFlags.rolled = true; if (!cylUp) mFlags.rolledLying = true;
           shapes.forEach(function (k) { groups[k].userData.phase = 0; groups[k].userData.wobble = canRoll(k) ? -1 : 0; });
+          // 와우 ②③④ — 효과음 + 마법모먼트
+          var cyl = groups.cylinder;
+          var magic = !!cyl && cylUp;                 // 둥근데 세워서 안 굴러가는 순간 = "둥글면 다 구른다" 반증
+          var anyRoll = shapes.some(function (k) { return canRoll(k); });
+          if (magic) {
+            snd('rumble');                            // 쿵(thud) — 예상이 깨짐
+            flashMagic('stop'); drawStatus(true);     // 보라 배너 + 기둥 상태 펄스
+          } else {
+            if (anyRoll) snd('whoosh');               // 데구르르(swish)
+            if (cyl && !cylUp) { snd('success'); flashMagic('roll'); }  // 눕히니 굴러가는 해소(초록)
+            if (!anyRoll) snd('rumble');              // 전부 평평(예: 상자만) — 쿵, 배너 없음
+          }
         } else if (act === 'flip') {
+          clearFlash();
           cylUp = !cylUp; applyCyl(); drawStatus();
+          snd('select');                              // 눕히기/세우기 — 조작음
           if (!cylUp) mFlags.laid = true;
           var g = groups.cylinder; if (g) { g.rotation.z = 0; g.userData.phase = 0; g.userData.wobble = (rolling && !canRoll('cylinder')) ? 0 : -1; }
         } else if (act === 'reset') {
+          clearFlash();
           rolling = false; cylUp = true; applyCyl(); drawStatus();
+          snd('tap');
           if (mode === 'mission' && mStep === 3) mFlags.resetDone = true;   // 마지막 단계에서만 인정
           shapes.forEach(function (k) { var g = groups[k]; g.position.x = g.userData.homeX; g.rotation.set(0, 0, 0); g.userData.phase = 0; g.userData.wobble = -1; });
         }
