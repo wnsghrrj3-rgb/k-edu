@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 3-1 · 2단원 일상에서 만나는 과거 · ① 생활 속에서 만나는 시간의 흐름 · 3차시
+K-edu 사회 3-1 · 2단원 일상에서 만나는 과거 · ① 생활 속에서 만나는 시간의 흐름 · 1차시
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사02-01] · 교과서 p.78~83
+성취기준 [4사02-01] · 교과서 p.72~74
 중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>가족·학교의 중요한 일 조사하기 · 사회 3-1</title>
+<title>순서가 드러나는 연표 만들기 · 사회 3-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -200,52 +200,64 @@ function compareTwo(aKey,aCap,bKey,bCap){
   return `<div class="scene-row">${sceneCard(aKey,aCap)}<div style="display:flex;align-items:center;font-size:24px;color:#64748B;font-weight:700">↔</div>${sceneCard(bKey,bCap)}</div>`;
 }
 
+/* ===== 연표·단계 헬퍼 (소단원① 4~6차시) ===== */
+function timeline(items){
+  const n=items.length, x0=66, x1=474, gap=(x1-x0)/(n-1>0?n-1:1);
+  let nodes="";
+  items.forEach((it,i)=>{ const x=x0+gap*i;
+    nodes+=`<g><circle cx="${x}" cy="56" r="9" fill="#15803D"/><text x="${x}" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#15803D">${it[0]}</text><text x="${x}" y="82" text-anchor="middle" font-size="12" fill="#475569">${it[1]}</text></g>`;});
+  return `<div class="village"><svg viewBox="0 0 540 100" style="width:100%;height:auto"><defs><marker id="ahL" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6Z" fill="#94A3B8"/></marker></defs><line x1="${x0}" y1="56" x2="${x1+6}" y2="56" stroke="#94A3B8" stroke-width="3" marker-end="url(#ahL)"/>${nodes}</svg></div>`;
+}
+function stepFlow(steps){
+  return `<div class="scene-row" style="flex-wrap:wrap;gap:6px">${steps.map((s,i)=>`<div style="flex:1;min-width:84px;background:#F1FBF4;border:2px solid #BBF7D0;border-radius:12px;padding:9px 6px;text-align:center"><div style="width:24px;height:24px;border-radius:50%;background:#15803D;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 6px">${i+1}</div><div style="font-size:12.5px;color:#0F172A;line-height:1.3">${s}</div></div>${i<steps.length-1?'<div style="display:flex;align-items:center;color:#15803D;font-weight:700;font-size:18px">→</div>':''}`).join("")}</div>`;
+}
+
 /* ===== 차시 데이터 ===== */
-const META = "2단원 일상에서 만나는 과거 · ① 시간의 흐름 · 3차시";
+const META = "2단원 일상에서 만나는 과거 · ① 시간의 흐름 · 5차시";
 
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"여러 가지 일을 시간 순서대로 정리한 표를 무엇이라고 할까요?", scene:"record",
-   opts:["달력","연표","지도","일기 예보"], correct:1, pts:POINTS_BASIC,
-   reason:"일을 시간 순서대로 정리한 표를 ‘연표’라고 해요.",
-   h1:"시간 순서대로 늘어놓은 표를 떠올려 봐요.",
-   h2:"‘연-표’라는 두 글자 낱말이에요."},
-  {stem:"우리 가족에게 있었던 중요한 일을 알아보기에 좋은 자료는 무엇일까요?", scene:"album",
-   opts:["가족 사진과 앨범","내일의 날씨","수학 문제집","미래의 계획표"], correct:0, pts:POINTS_BASIC,
-   reason:"가족 사진과 앨범에는 지난 일이 담겨 있어 가족의 중요한 일을 알 수 있어요.",
-   h1:"지나간 일이 담긴 자료를 골라요.",
-   h2:"가족의 옛 모습이 담긴 것을 떠올려 봐요."},
-  {stem:"우리 학교의 옛날 모습을 알아보려면 어떻게 하면 좋을까요?", scene:"schoolold",
-   opts:["내일 일기를 쓴다","숙제를 한다","학교 누리집이나 옛 사진을 살펴본다","점심을 먹는다"], correct:2, pts:POINTS_BASIC,
-   reason:"학교 누리집이나 옛 사진을 보면 학교가 어떻게 달라졌는지 알 수 있어요.",
-   h1:"학교의 지난 모습이 담긴 곳을 떠올려 봐요.",
-   h2:"학교 누리집·옛 사진에 학교의 옛 모습이 있어요."},
-  {stem:"어른께 옛일을 여쭤보며 알아보는 조사 방법을 무엇이라고 할까요?", scene:"interview",
-   opts:["그림 그리기","면담(여쭤보기)","달리기","청소"], correct:1, pts:POINTS_BASIC,
-   reason:"어른께 직접 여쭤보며 알아보는 것을 ‘면담’이라고 해요.",
-   h1:"사람을 만나 직접 물어보는 방법이에요.",
-   h2:"할머니·할아버지께 옛일을 여쭤보는 것을 무엇이라 할까요?"},
+  {stem:"연표를 만들 때 가장 먼저 해야 할 일은 무엇일까요?", 
+   opts:["꾸미기","있었던 일과 자료 모으기","친구에게 소개하기","색칠하기"], correct:1, pts:POINTS_BASIC,
+   reason:"연표를 만들 때는 먼저 있었던 일과 자료를 모아요.",
+   h1:"무엇을 알아야 연표를 만들 수 있을까요?",
+   h2:"먼저 ‘있었던 일’부터 떠올려 모아요."},
+  {stem:"있었던 일을 모은 다음에 할 일은 무엇일까요?", scene:"calendar", 
+   opts:["시간 순서 정하기","바로 발표하기","그림 지우기","책 덮기"], correct:0, pts:POINTS_BASIC,
+   reason:"일을 모은 다음에는 시간 순서를 정해요.",
+   h1:"연표는 ‘순서’가 가장 중요해요.",
+   h2:"모은 일을 어떤 차례로 둘지 정해요."},
+  {stem:"순서를 정한 다음, 일을 어디에 차례로 적을까요?", 
+   opts:["지도 위","시간 띠 위","사진 뒤","책상 밑"], correct:1, pts:POINTS_BASIC,
+   reason:"정한 순서대로 시간 띠 위에 때와 일을 적어요.",
+   h1:"연표는 가로로 긴 띠 모양이에요.",
+   h2:"시간 띠 위에 차례로 적어요."},
+  {stem:"연표를 만드는 마지막 단계는 무엇일까요?", 
+   opts:["그림·설명으로 꾸미기","자료 모으기","순서 정하기","띠에 적기"], correct:0, pts:POINTS_BASIC,
+   reason:"마지막에는 그림이나 설명을 더해 보기 좋게 꾸며요.",
+   h1:"연표를 더 잘 보이게 하는 단계예요.",
+   h2:"그림·사진·설명을 더하는 단계예요."},
   // 4단계 적용 (+15)
-  {stem:"가족의 중요한 일을 시간 순서대로 정리하려고 해요. 가장 알맞은 방법은?",
-   opts:["좋아하는 일만 적는다","순서를 섞어 적는다","미래의 일만 적는다","일어난 차례대로 연표로 정리한다"], correct:3, pts:POINTS_APPLY,
-   reason:"일어난 차례대로 연표로 정리하면 가족의 변화가 한눈에 보여요.",
-   h1:"시간 순서가 잘 드러나는 방법을 골라요.",
-   h2:"먼저 일어난 일부터 차례대로 표로 정리해요."},
-  {stem:"다음 조사 방법과 알맞은 자료가 가장 잘 어울리는 것은?", scene:"interview",
-   opts:["면담 — 어른의 이야기","면담 — 내일 날씨","사진 보기 — 수학 점수","누리집 — 점심 메뉴"], correct:0, pts:POINTS_APPLY,
-   reason:"면담은 어른의 이야기를 듣는 방법이에요. 조사 방법에 알맞은 자료를 골라야 해요.",
-   h1:"면담은 무엇을 알아보는 방법일까요?",
-   h2:"어른께 여쭤보면 지난 일의 이야기를 들을 수 있어요."},
-  {stem:"우리 학교의 옛 모습과 지금 모습을 비교했어요. 알 수 있는 것은?",
-   opts:["학교는 변하지 않는다","시간이 흐르며 학교도 달라졌다","옛날 학교가 더 크다","지금 학교가 더 오래됐다"], correct:1, pts:POINTS_APPLY,
-   reason:"옛 모습과 지금 모습을 비교하면 시간이 흐르며 학교가 달라진 것을 알 수 있어요.",
-   h1:"옛 학교와 지금 학교, 무엇이 달라졌나요?",
-   h2:"시간이 흐르면 학교의 모습도 달라져요."},
-  {stem:"조사 결과를 정리할 때 바르게 말한 친구는 누구일까요?",
-   opts:["“시간 순서대로 정리하면 흐름이 잘 보여.”","“순서는 중요하지 않아.”","“미래의 일만 적으면 돼.”","“자료는 살펴볼 필요 없어.”"], correct:0, pts:POINTS_APPLY,
-   reason:"조사한 일을 시간 순서대로 정리하면 변화의 흐름이 잘 보여요.",
-   h1:"오늘 배운 연표를 떠올려 봐요.",
-   h2:"먼저 일어난 일부터 차례대로 정리해야 흐름이 보여요."}
+  {stem:"연표를 만드는 차례를 바르게 늘어놓은 것은 무엇일까요?", 
+   opts:["꾸미기 → 모으기 → 적기 → 순서 정하기","자료 모으기 → 순서 정하기 → 띠에 적기 → 꾸미기","적기 → 꾸미기 → 모으기 → 순서 정하기","순서 정하기 → 꾸미기 → 모으기 → 적기"], correct:1, pts:POINTS_APPLY,
+   reason:"자료 모으기 → 순서 정하기 → 띠에 적기 → 꾸미기 차례가 바른 순서예요.",
+   h1:"먼저 무엇을 모아야 만들 수 있어요.",
+   h2:"모으고 → 순서 정하고 → 적고 → 꾸며요."},
+  {stem:"연표를 더 잘 보이게 하려면 무엇을 더하면 좋을까요?", scene:"album", 
+   opts:["그림이나 사진","빈 종이","지우개 자국","아무것도 안 함"], correct:0, pts:POINTS_APPLY,
+   reason:"그림이나 사진을 더하면 연표가 한눈에 잘 보여요.",
+   h1:"눈으로 보기 좋게 만드는 방법이에요.",
+   h2:"그림·사진을 넣으면 잘 보여요."},
+  {stem:"연표를 <b>잘못</b> 만든 친구는 누구일까요?", 
+   opts:["“시간 순서대로 적었어.”","“때와 있었던 일을 함께 적었어.”","“나중 일을 맨 앞에, 먼저 일을 맨 뒤에 적었어.”","“그림을 더해 보기 좋게 꾸몄어.”"], correct:2, pts:POINTS_APPLY,
+   reason:"먼저 일어난 일이 앞에 와야 해요. 나중 일을 맨 앞에 두면 순서가 틀려요.",
+   h1:"연표는 먼저 일어난 일이 앞이에요.",
+   h2:"순서를 거꾸로 적은 친구를 찾아요."},
+  {stem:"내가 만든 연표를 친구에게 소개할 때, 무엇을 함께 말하면 좋을까요?", 
+   opts:["때와 있었던 일","좋아하는 색깔","오늘 날씨","친구 전화번호"], correct:0, pts:POINTS_APPLY,
+   reason:"연표를 소개할 때는 언제(때) 무슨 일이 있었는지 함께 말하면 좋아요.",
+   h1:"연표에 들어간 두 가지를 떠올려 봐요.",
+   h2:"‘언제, 무슨 일’을 설명해요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -253,51 +265,52 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">가족·학교에 있었던 중요한 일을 조사해요</h2>
-  <div class="ka-grp">${compareTwo('schoolold','옛날 학교','schoolnow','지금 학교')}
-    <div class="note">오늘은 나를 넘어 <b style="color:#15803D">가족과 학교</b>의 지난 일을 자료로 조사해 봐요.</div>
+  <h2 class="ka-t">순서가 잘 드러나는 연표를 만들어 볼까요?</h2>
+  <div class="ka-grp">${stepFlow(['자료 모으기','순서 정하기','띠에 적기','꾸미기'])}
+    <div class="note">오늘은 나만의 연표를 <b style="color:#15803D">직접</b> 만드는 차례를 알아봐요.</div>
   </div>`});
-// 2 발문(관찰)
+// 2 발문
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">옛일은 무엇으로 알 수 있을까요? 🤔</h2>
-  <div class="ka-bub">우리 가족과 학교에 있었던 지난 일을 어떻게 알아볼 수 있을까요?</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('album','사진·앨범')}${sceneCard('interview','어른께 여쭤보기')}${sceneCard('record','누리집·기록')}</div>
-  <div class="note">사진, 어른의 이야기, 누리집 기록 같은 여러 자료가 도움이 돼요.</div></div>`});
+  <h2 class="ka-t">연표를 만들려면 먼저 무엇이 필요할까요? 🤔</h2>
+  <div class="ka-bub">연표를 만들려면, 내게 있었던 일을 먼저 떠올려야 해요. 사진이나 이야기도 도움이 돼요.</div>
+  <div class="ka-grp">${compareTwo('album','옛 사진','record','조사한 기록')}
+  <div class="note">이런 자료를 모으면 연표를 만들기 쉬워져요.</div></div>`});
 // 3 발문 답(reveal)
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">여러 자료로 옛일을 알 수 있어요</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('album','사진')}${sceneCard('interview','면담')}${sceneCard('record','기록')}</div>
-  ${st.revealed?`<div class="answer-box">사진·앨범을 보거나, 어른께 <span class="ka-emph">여쭤보거나</span>, 누리집의 기록을 살펴보면 가족·학교의 지난 일을 알 수 있어요.</div>`
+  <h2 class="ka-t">어떤 차례로 만들면 좋을까요?</h2>
+  <div class="ka-grp">${stepFlow(['자료 모으기','순서 정하기','띠에 적기','꾸미기'])}
+  ${st.revealed?`<div class="answer-box"><span class="ka-emph">자료 모으기 → 순서 정하기 → 띠에 적기 → 꾸미기</span> 차례로 만들면 순서가 잘 드러나는 연표가 돼요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 조사 방법
+// 4 살펴보기: 1·2단계
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">어떤 방법으로 조사할까요?</h2>
-  <div class="ka-bub">지난 일은 <span class="ka-emph">사진 보기</span>, 어른께 <span class="ka-emph">여쭤보기(면담)</span>, <span class="ka-emph">누리집</span> 살펴보기로 알아봐요.</div>
-  <div class="ka-grp">${sceneCard('interview','어른께 여쭤보기')}
-  <div class="note">면담은 어른께 직접 여쭤보며 옛일을 알아보는 방법이에요.</div></div>`});
-// 5 살펴보기: 학교의 변화
+  <h2 class="ka-t">1·2단계: 모으고, 순서 정하기</h2>
+  <div class="ka-bub">먼저 내게 <span class="ka-emph">있었던 일</span>과 자료를 모아요. 그 다음 <span class="ka-emph">시간 순서</span>를 정해요.</div>
+  <div class="ka-grp">${orderRow([['baby','태어남'],['kid','걸음마'],['student','입학']])}
+  <div class="note">먼저 일어난 일부터 차례를 정하면 돼요.</div></div>`});
+// 5 살펴보기: 3단계
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">학교도 시간이 흐르며 달라졌어요</h2>
-  <div class="ka-grp">${compareTwo('schoolold','옛날 우리 학교','schoolnow','지금 우리 학교')}
-  <div class="note">옛 사진과 지금 모습을 비교하면 학교가 어떻게 <b style="color:#15803D">달라졌는지</b> 알 수 있어요.</div></div>`});
-// 6 살펴보기: 연표(reveal)
+  <h2 class="ka-t">3단계: 띠에 차례로 적기</h2>
+  <div class="ka-bub">정한 순서대로 <span class="ka-emph">때</span>와 <span class="ka-emph">있었던 일</span>을 띠 위에 차례로 적어요.</div>
+  <div class="ka-grp">${timeline([["1살","태어남"],["3살","걸음마"],["8살","입학"]])}
+  <div class="note">왼쪽에서 오른쪽으로 갈수록 나중 일이에요.</div></div>`});
+// 6 살펴보기: 4단계 + reveal
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">조사한 일을 어떻게 정리할까요?</h2>
-  <div class="ka-grp">${sceneCard('record','연표')}
-  ${st.revealed?`<div class="answer-box">조사한 일을 시간 순서대로 정리한 표를 <span class="ka-emph">연표</span>라고 해요. 연표를 보면 변화가 한눈에 보여요.</div>`
-    :`<div class="note">여러 일을 시간 순서대로 정리한 표를 무엇이라고 할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">4단계: 그림·설명으로 꾸미기</h2>
+  <div class="ka-grp">${stepFlow(['자료 모으기','순서 정하기','띠에 적기','꾸미기'])}
+  ${st.revealed?`<div class="answer-box">마지막으로 <b>그림이나 사진, 짧은 설명</b>을 더하면 한눈에 잘 보이는 연표가 완성돼요.</div>`
+    :`<div class="note">연표를 더 잘 보이게 하려면 무엇을 더하면 좋을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
 // 7 살펴보기: 정리(닻)
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">여기까지 정리해 봐요</h2>
-  <div class="ka-bub">가족·학교의 옛일은 사진·면담·누리집으로 조사하고, 조사한 일은 시간 순서대로 <span class="ka-emph">연표</span>로 정리해요.</div>
+  <div class="ka-bub">연표는 <span class="ka-emph">자료 모으기 → 순서 정하기 → 띠에 적기 → 꾸미기</span> 차례로 만들어요.</div>
   <div class="note">이제 문제로 확인해 봐요. 천천히 생각하고 골라요.</div>`});
 // 8~15 문제
 Q.forEach((q,i)=>{
@@ -309,18 +322,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div>가족·학교의 옛일은 <b style="color:#15803D">사진·면담·누리집</b>으로 조사할 수 있어요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div>여러 일을 시간 순서대로 정리한 표를 <b style="color:#15803D">연표</b>라고 해요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>옛 모습과 지금 모습을 비교하면 <b style="color:#15803D">달라진 점</b>을 알 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div>연표는 <b style="color:#15803D">자료 모으기 → 순서 정하기 → 띠에 적기 → 꾸미기</b> 차례로 만들어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>일은 <b style="color:#15803D">시간 순서</b>대로 적어야 순서가 잘 드러나요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div><b style="color:#15803D">그림·설명</b>을 더하면 더 잘 보이는 연표가 돼요.</div></div>
   </div></div>`});
 // 17 자기평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"가족·학교의 옛일을 조사하는 방법을 말할 수 있어요",st)}
-    ${selfCheck(1,"연표가 무엇인지 알아요",st)}
-    ${selfCheck(2,"옛 모습과 지금 모습을 비교할 수 있어요",st)}
+    ${selfCheck(0,"연표 만드는 차례를 말할 수 있어요",st)}
+    ${selfCheck(1,"일을 시간 순서대로 적을 수 있어요",st)}
+    ${selfCheck(2,"연표를 그림·설명으로 꾸밀 수 있어요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -330,7 +343,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">가족·학교의 중요한 일을 조사하고 연표로 정리하는 법을 알아봤어요.</div>
+    <div class="note">순서가 드러나는 연표를 만드는 차례를 알아봤어요.</div>
   </div>`;
 }});
 
@@ -363,7 +376,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g3_social_u2_l03";
+const LS_KEY = "kedu_progress_g3_social_u2_l05";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -441,7 +454,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g3_social_u2_l04_연표만들기.html'; }
+function goNextLesson(e){ location.href='g3_social_u2_l06_단원정리.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){

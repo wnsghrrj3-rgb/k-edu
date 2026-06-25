@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 3-1 · 2단원 일상에서 만나는 과거 · ① 생활 속에서 만나는 시간의 흐름 · 3차시
+K-edu 사회 3-1 · 2단원 일상에서 만나는 과거 · ① 생활 속에서 만나는 시간의 흐름 · 1차시
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사02-01] · 교과서 p.78~83
+성취기준 [4사02-01] · 교과서 p.72~74
 중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>가족·학교의 중요한 일 조사하기 · 사회 3-1</title>
+<title>시간의 흐름 정리 · 사회 3-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -200,52 +200,64 @@ function compareTwo(aKey,aCap,bKey,bCap){
   return `<div class="scene-row">${sceneCard(aKey,aCap)}<div style="display:flex;align-items:center;font-size:24px;color:#64748B;font-weight:700">↔</div>${sceneCard(bKey,bCap)}</div>`;
 }
 
+/* ===== 연표·단계 헬퍼 (소단원① 4~6차시) ===== */
+function timeline(items){
+  const n=items.length, x0=66, x1=474, gap=(x1-x0)/(n-1>0?n-1:1);
+  let nodes="";
+  items.forEach((it,i)=>{ const x=x0+gap*i;
+    nodes+=`<g><circle cx="${x}" cy="56" r="9" fill="#15803D"/><text x="${x}" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#15803D">${it[0]}</text><text x="${x}" y="82" text-anchor="middle" font-size="12" fill="#475569">${it[1]}</text></g>`;});
+  return `<div class="village"><svg viewBox="0 0 540 100" style="width:100%;height:auto"><defs><marker id="ahL" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L7 3 L0 6Z" fill="#94A3B8"/></marker></defs><line x1="${x0}" y1="56" x2="${x1+6}" y2="56" stroke="#94A3B8" stroke-width="3" marker-end="url(#ahL)"/>${nodes}</svg></div>`;
+}
+function stepFlow(steps){
+  return `<div class="scene-row" style="flex-wrap:wrap;gap:6px">${steps.map((s,i)=>`<div style="flex:1;min-width:84px;background:#F1FBF4;border:2px solid #BBF7D0;border-radius:12px;padding:9px 6px;text-align:center"><div style="width:24px;height:24px;border-radius:50%;background:#15803D;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 6px">${i+1}</div><div style="font-size:12.5px;color:#0F172A;line-height:1.3">${s}</div></div>${i<steps.length-1?'<div style="display:flex;align-items:center;color:#15803D;font-weight:700;font-size:18px">→</div>':''}`).join("")}</div>`;
+}
+
 /* ===== 차시 데이터 ===== */
-const META = "2단원 일상에서 만나는 과거 · ① 시간의 흐름 · 3차시";
+const META = "2단원 일상에서 만나는 과거 · ① 시간의 흐름 · 6차시";
 
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"여러 가지 일을 시간 순서대로 정리한 표를 무엇이라고 할까요?", scene:"record",
-   opts:["달력","연표","지도","일기 예보"], correct:1, pts:POINTS_BASIC,
-   reason:"일을 시간 순서대로 정리한 표를 ‘연표’라고 해요.",
-   h1:"시간 순서대로 늘어놓은 표를 떠올려 봐요.",
-   h2:"‘연-표’라는 두 글자 낱말이에요."},
-  {stem:"우리 가족에게 있었던 중요한 일을 알아보기에 좋은 자료는 무엇일까요?", scene:"album",
-   opts:["가족 사진과 앨범","내일의 날씨","수학 문제집","미래의 계획표"], correct:0, pts:POINTS_BASIC,
-   reason:"가족 사진과 앨범에는 지난 일이 담겨 있어 가족의 중요한 일을 알 수 있어요.",
-   h1:"지나간 일이 담긴 자료를 골라요.",
-   h2:"가족의 옛 모습이 담긴 것을 떠올려 봐요."},
-  {stem:"우리 학교의 옛날 모습을 알아보려면 어떻게 하면 좋을까요?", scene:"schoolold",
-   opts:["내일 일기를 쓴다","숙제를 한다","학교 누리집이나 옛 사진을 살펴본다","점심을 먹는다"], correct:2, pts:POINTS_BASIC,
-   reason:"학교 누리집이나 옛 사진을 보면 학교가 어떻게 달라졌는지 알 수 있어요.",
-   h1:"학교의 지난 모습이 담긴 곳을 떠올려 봐요.",
-   h2:"학교 누리집·옛 사진에 학교의 옛 모습이 있어요."},
-  {stem:"어른께 옛일을 여쭤보며 알아보는 조사 방법을 무엇이라고 할까요?", scene:"interview",
-   opts:["그림 그리기","면담(여쭤보기)","달리기","청소"], correct:1, pts:POINTS_BASIC,
-   reason:"어른께 직접 여쭤보며 알아보는 것을 ‘면담’이라고 해요.",
-   h1:"사람을 만나 직접 물어보는 방법이에요.",
-   h2:"할머니·할아버지께 옛일을 여쭤보는 것을 무엇이라 할까요?"},
+  {stem:"이미 지나간 때를 나타내는 말은 무엇일까요?", scene:"moon", 
+   opts:["미래","과거","내일","앞으로"], correct:1, pts:POINTS_BASIC,
+   reason:"이미 지나간 때는 ‘과거’예요.",
+   h1:"지나가서 다시 오지 않는 때예요.",
+   h2:"‘어제·옛날’이 나타내는 때예요."},
+  {stem:"나에게 있었던 중요한 일을 정리할 때 좋은 방법은 무엇일까요?", 
+   opts:["시간 순서로 떠올려 적기","아무 순서로 적기","숫자만 적기","이름만 적기"], correct:0, pts:POINTS_BASIC,
+   reason:"중요한 일은 시간 순서로 떠올려 적으면 한눈에 잘 보여요.",
+   h1:"연표를 만들 때 쓰던 방법이에요.",
+   h2:"시간 순서로 정리해요."},
+  {stem:"가족이나 학교에 있었던 일을 조사하는 방법으로 알맞은 것은?", scene:"interview", 
+   opts:["어른께 여쭤보기(면담)","눈을 감고 상상하기","날씨 보기","계산하기"], correct:0, pts:POINTS_BASIC,
+   reason:"가족이나 학교의 일은 어른께 여쭤보거나(면담) 누리집에서 찾아 조사할 수 있어요.",
+   h1:"직접 물어보는 방법이 있어요.",
+   h2:"어른께 여쭤보는 것을 ‘면담’이라고 해요."},
+  {stem:"조사한 일을 한눈에 보이게 정리하는 표는 무엇일까요?", 
+   opts:["지도","연표","계산표","날씨표"], correct:1, pts:POINTS_BASIC,
+   reason:"일을 시간 순서로 정리한 표는 ‘연표’예요.",
+   h1:"때와 일을 시간 순서로 적은 표예요.",
+   h2:"이번 소단원에서 만든 표의 이름이에요."},
   // 4단계 적용 (+15)
-  {stem:"가족의 중요한 일을 시간 순서대로 정리하려고 해요. 가장 알맞은 방법은?",
-   opts:["좋아하는 일만 적는다","순서를 섞어 적는다","미래의 일만 적는다","일어난 차례대로 연표로 정리한다"], correct:3, pts:POINTS_APPLY,
-   reason:"일어난 차례대로 연표로 정리하면 가족의 변화가 한눈에 보여요.",
-   h1:"시간 순서가 잘 드러나는 방법을 골라요.",
-   h2:"먼저 일어난 일부터 차례대로 표로 정리해요."},
-  {stem:"다음 조사 방법과 알맞은 자료가 가장 잘 어울리는 것은?", scene:"interview",
-   opts:["면담 — 어른의 이야기","면담 — 내일 날씨","사진 보기 — 수학 점수","누리집 — 점심 메뉴"], correct:0, pts:POINTS_APPLY,
-   reason:"면담은 어른의 이야기를 듣는 방법이에요. 조사 방법에 알맞은 자료를 골라야 해요.",
-   h1:"면담은 무엇을 알아보는 방법일까요?",
-   h2:"어른께 여쭤보면 지난 일의 이야기를 들을 수 있어요."},
-  {stem:"우리 학교의 옛 모습과 지금 모습을 비교했어요. 알 수 있는 것은?",
-   opts:["학교는 변하지 않는다","시간이 흐르며 학교도 달라졌다","옛날 학교가 더 크다","지금 학교가 더 오래됐다"], correct:1, pts:POINTS_APPLY,
-   reason:"옛 모습과 지금 모습을 비교하면 시간이 흐르며 학교가 달라진 것을 알 수 있어요.",
-   h1:"옛 학교와 지금 학교, 무엇이 달라졌나요?",
-   h2:"시간이 흐르면 학교의 모습도 달라져요."},
-  {stem:"조사 결과를 정리할 때 바르게 말한 친구는 누구일까요?",
-   opts:["“시간 순서대로 정리하면 흐름이 잘 보여.”","“순서는 중요하지 않아.”","“미래의 일만 적으면 돼.”","“자료는 살펴볼 필요 없어.”"], correct:0, pts:POINTS_APPLY,
-   reason:"조사한 일을 시간 순서대로 정리하면 변화의 흐름이 잘 보여요.",
-   h1:"오늘 배운 연표를 떠올려 봐요.",
-   h2:"먼저 일어난 일부터 차례대로 정리해야 흐름이 보여요."}
+  {stem:"‘타임캡슐’은 지금의 물건을 언제 다시 꺼내 보는 것일까요?", scene:"calendar", 
+   opts:["과거","어제","먼 미래","지난주"], correct:2, pts:POINTS_APPLY,
+   reason:"타임캡슐은 지금의 물건을 담아 두었다가 먼 미래에 다시 꺼내 봐요.",
+   h1:"지금 담아서 ‘앞으로’ 꺼내 봐요.",
+   h2:"아직 오지 않은 때, 곧 미래예요."},
+  {stem:"시간의 흐름을 바르게 말한 친구는 누구일까요?", 
+   opts:["“과거 → 현재 → 미래로 흘러.”","“미래 → 과거로 흘러.”","“시간은 멈춰 있어.”","“시간은 거꾸로도 가.”"], correct:0, pts:POINTS_APPLY,
+   reason:"시간은 과거에서 현재로, 다시 미래로 한 방향으로 흘러요.",
+   h1:"지나간 때가 먼저, 앞으로 올 때가 나중이에요.",
+   h2:"과거 → 현재 → 미래 순서예요."},
+  {stem:"연표를 만들 때 <b>가장 중요한</b> 것은 무엇일까요?", 
+   opts:["예쁜 색깔","일이 일어난 시간 순서","글자 크기","종이 모양"], correct:1, pts:POINTS_APPLY,
+   reason:"연표에서 가장 중요한 것은 일이 일어난 시간 순서예요.",
+   h1:"연표는 ‘순서’를 보여 주는 표예요.",
+   h2:"시간 순서가 가장 중요해요."},
+  {stem:"이번 소단원에서 배운 내용으로 알맞지 <b>않은</b> 것은 무엇일까요?", 
+   opts:["시간을 나타내는 말","중요한 일 떠올리기","연표 만들기","물건값 계산하기"], correct:3, pts:POINTS_APPLY,
+   reason:"물건값 계산은 이번 소단원에서 배운 내용이 아니에요. 나머지는 모두 시간의 흐름과 관련 있어요.",
+   h1:"‘시간의 흐름’과 관련 없는 것을 찾아요.",
+   h2:"계산은 시간의 흐름과 상관없어요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -253,51 +265,52 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">가족·학교에 있었던 중요한 일을 조사해요</h2>
-  <div class="ka-grp">${compareTwo('schoolold','옛날 학교','schoolnow','지금 학교')}
-    <div class="note">오늘은 나를 넘어 <b style="color:#15803D">가족과 학교</b>의 지난 일을 자료로 조사해 봐요.</div>
+  <h2 class="ka-t">지금까지 배운 것을 정리하고 펼쳐 볼까요?</h2>
+  <div class="ka-grp">${timeBand('')}
+    <div class="note">시간을 나타내는 말부터 연표까지, <b style="color:#15803D">시간의 흐름</b>을 한 번에 정리해 봐요.</div>
   </div>`});
-// 2 발문(관찰)
+// 2 발문(타임캡슐)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">옛일은 무엇으로 알 수 있을까요? 🤔</h2>
-  <div class="ka-bub">우리 가족과 학교에 있었던 지난 일을 어떻게 알아볼 수 있을까요?</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('album','사진·앨범')}${sceneCard('interview','어른께 여쭤보기')}${sceneCard('record','누리집·기록')}</div>
-  <div class="note">사진, 어른의 이야기, 누리집 기록 같은 여러 자료가 도움이 돼요.</div></div>`});
+  <h2 class="ka-t">‘타임캡슐’을 알고 있나요? 🤔</h2>
+  <div class="ka-bub">지금의 물건이나 편지를 상자에 담아 두었다가 <b>먼 미래</b>에 다시 꺼내 보는 것을 타임캡슐이라고 해요.</div>
+  <div class="ka-grp">${compareTwo('record','오늘의 편지','calendar','먼 미래에 열기')}
+  <div class="note">타임캡슐은 ‘지금’을 ‘미래’에 전하는 시간의 흐름과 닿아 있어요.</div></div>`});
 // 3 발문 답(reveal)
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">여러 자료로 옛일을 알 수 있어요</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('album','사진')}${sceneCard('interview','면담')}${sceneCard('record','기록')}</div>
-  ${st.revealed?`<div class="answer-box">사진·앨범을 보거나, 어른께 <span class="ka-emph">여쭤보거나</span>, 누리집의 기록을 살펴보면 가족·학교의 지난 일을 알 수 있어요.</div>`
+  <h2 class="ka-t">우리는 무엇을 배웠을까요?</h2>
+  <div class="ka-grp">${timeline([["1","시간을 나타내는 말"],["2","나의 중요한 일"],["3","조사하기"],["4","연표"]])}
+  ${st.revealed?`<div class="answer-box"><span class="ka-emph">시간을 나타내는 말 · 중요한 일 · 조사 방법 · 연표</span> — 모두 시간의 흐름을 알아보는 방법이에요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 조사 방법
+// 4 살펴보기: 핵심1·2
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">어떤 방법으로 조사할까요?</h2>
-  <div class="ka-bub">지난 일은 <span class="ka-emph">사진 보기</span>, 어른께 <span class="ka-emph">여쭤보기(면담)</span>, <span class="ka-emph">누리집</span> 살펴보기로 알아봐요.</div>
-  <div class="ka-grp">${sceneCard('interview','어른께 여쭤보기')}
-  <div class="note">면담은 어른께 직접 여쭤보며 옛일을 알아보는 방법이에요.</div></div>`});
-// 5 살펴보기: 학교의 변화
+  <h2 class="ka-t">핵심 정리 ① 시간을 나타내는 말</h2>
+  <div class="ka-bub">시간을 나타내는 말에는 <span class="ka-emph">과거·현재·미래</span>가 있고, 시간은 한 방향으로 흘러요.</div>
+  <div class="ka-grp">${timeBand('now')}
+  <div class="note">‘어제·오늘·내일’처럼 때를 나타내는 말을 떠올려 봐요.</div></div>`});
+// 5 살펴보기: 핵심2·3
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">학교도 시간이 흐르며 달라졌어요</h2>
-  <div class="ka-grp">${compareTwo('schoolold','옛날 우리 학교','schoolnow','지금 우리 학교')}
-  <div class="note">옛 사진과 지금 모습을 비교하면 학교가 어떻게 <b style="color:#15803D">달라졌는지</b> 알 수 있어요.</div></div>`});
-// 6 살펴보기: 연표(reveal)
+  <h2 class="ka-t">핵심 정리 ② 중요한 일 떠올리고 조사하기</h2>
+  <div class="ka-bub">나에게 있었던 <span class="ka-emph">중요한 일</span>을 떠올리고, 가족·학교의 일은 <span class="ka-emph">면담·누리집</span>으로 조사할 수 있어요.</div>
+  <div class="ka-grp">${compareTwo('interview','면담하기','record','누리집 조사')}
+  <div class="note">직접 묻거나, 자료를 찾아 조사할 수 있어요.</div></div>`});
+// 6 살펴보기: 핵심4 + reveal
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">조사한 일을 어떻게 정리할까요?</h2>
-  <div class="ka-grp">${sceneCard('record','연표')}
-  ${st.revealed?`<div class="answer-box">조사한 일을 시간 순서대로 정리한 표를 <span class="ka-emph">연표</span>라고 해요. 연표를 보면 변화가 한눈에 보여요.</div>`
-    :`<div class="note">여러 일을 시간 순서대로 정리한 표를 무엇이라고 할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">핵심 정리 ③ 연표로 정리하기</h2>
+  <div class="ka-grp">${timeline([["1살","태어남"],["8살","입학"],["10살","지금"]])}
+  ${st.revealed?`<div class="answer-box">조사한 일을 <b>연표</b>로 정리하면, 일의 <b>순서와 변화</b>가 한눈에 보여요.</div>`
+    :`<div class="note">조사한 일을 한눈에 보려면 무엇으로 정리하면 좋을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
 // 7 살펴보기: 정리(닻)
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">여기까지 정리해 봐요</h2>
-  <div class="ka-bub">가족·학교의 옛일은 사진·면담·누리집으로 조사하고, 조사한 일은 시간 순서대로 <span class="ka-emph">연표</span>로 정리해요.</div>
+  <div class="ka-bub">시간을 나타내는 말 → 중요한 일 → 조사 → <span class="ka-emph">연표</span>까지, 시간의 흐름을 알아보는 방법을 모두 배웠어요.</div>
   <div class="note">이제 문제로 확인해 봐요. 천천히 생각하고 골라요.</div>`});
 // 8~15 문제
 Q.forEach((q,i)=>{
@@ -307,30 +320,30 @@ Q.forEach((q,i)=>{
 // 16 정리
 slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">오늘 배운 것</h2>
+  <h2 class="ka-t">‘시간의 흐름’에서 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div>가족·학교의 옛일은 <b style="color:#15803D">사진·면담·누리집</b>으로 조사할 수 있어요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div>여러 일을 시간 순서대로 정리한 표를 <b style="color:#15803D">연표</b>라고 해요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>옛 모습과 지금 모습을 비교하면 <b style="color:#15803D">달라진 점</b>을 알 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div>시간을 나타내는 말에는 <b style="color:#15803D">과거·현재·미래</b>가 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>중요한 일은 떠올리고, 가족·학교의 일은 <b style="color:#15803D">면담·누리집</b>으로 조사해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>조사한 일을 <b style="color:#15803D">연표</b>로 정리하면 순서와 변화가 보여요.</div></div>
   </div></div>`});
 // 17 자기평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"가족·학교의 옛일을 조사하는 방법을 말할 수 있어요",st)}
-    ${selfCheck(1,"연표가 무엇인지 알아요",st)}
-    ${selfCheck(2,"옛 모습과 지금 모습을 비교할 수 있어요",st)}
+    ${selfCheck(0,"과거·현재·미래를 말할 수 있어요",st)}
+    ${selfCheck(1,"가족·학교의 일을 조사하는 방법을 알아요",st)}
+    ${selfCheck(2,"연표로 시간의 흐름을 정리할 수 있어요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
   const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
   return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t" style="text-align:center">오늘 학습을 마쳤어요</h2>
+  <h2 class="ka-t" style="text-align:center">‘시간의 흐름’을 모두 마쳤어요</h2>
   <div class="ka-grp">
     <div class="end-score">⭐ ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">가족·학교의 중요한 일을 조사하고 연표로 정리하는 법을 알아봤어요.</div>
+    <div class="note">다음에는 주변에서 만나는 과거의 모습을 알아볼 거예요.</div>
   </div>`;
 }});
 
@@ -363,7 +376,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g3_social_u2_l03";
+const LS_KEY = "kedu_progress_g3_social_u2_l06";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -441,7 +454,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g3_social_u2_l04_연표만들기.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
