@@ -17,12 +17,13 @@
   var PI=3.14;
   window.KLab.register('circle', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); } // 와우 ③ 효과음
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES={
-      low:  { modes:['free','mission'],        areaView:false, circumf:false, twoRadius:true,  quiz:false },
-      mid:  { modes:['free','mission','quiz'], areaView:false, circumf:true,  twoRadius:false, quiz:true  },
-      high: { modes:['free','mission','quiz'], areaView:true,  circumf:true,  twoRadius:false, quiz:true  }
+      low:  { modes:['free','mission'],        areaView:false, circumf:false, twoRadius:true,  quiz:false, dbl:false },
+      mid:  { modes:['free','mission','quiz'], areaView:false, circumf:true,  twoRadius:false, quiz:true,  dbl:false },
+      high: { modes:['free','mission','quiz'], areaView:true,  circumf:true,  twoRadius:false, quiz:true,  dbl:true  }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -112,6 +113,7 @@
       var ctrl=(view==='draw')
         ?'<span style="font-size:20px;font-weight:800;color:#1565C0;align-self:center;">반지름</span><button class="cr-btn" data-act="rm" style="'+btn+'background:#fff;color:#1565C0;">－</button><button class="cr-btn" data-act="rp" style="'+btn+'background:#1565C0;color:#fff;">＋</button>'
         :'<span style="font-size:20px;font-weight:800;color:#1565C0;align-self:center;">조각 수</span><button class="cr-btn" data-act="pm" style="'+btn+'background:#fff;color:#1565C0;">－</button><button class="cr-btn" data-act="pp" style="'+btn+'background:#1565C0;color:#fff;">＋</button>';
+      if(view==='draw' && G().dbl) ctrl+='<span style="width:10px;"></span><button class="cr-btn" data-act="dbl" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;font-size:21px;">🔭 반지름 2배</button>';
       var viewRow=G().areaView
         ?'<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'
           +'<button class="cr-tg" data-view="draw" style="'+tg+'">원 그리기</button>'
@@ -128,7 +130,10 @@
         bar=ui.quizBar(q.q,qScore,qCount);
         foot=ui.choices(shuffled(q.choices).map(function(v){return {v:v,label:v};}));
       }
-      el.innerHTML='<style>.cr-btn:active,.cr-tg:active{transform:translateY(2px);}.cr-btn[disabled]{opacity:.35;cursor:not-allowed;}.cr-tg.on{background:#7048E8 !important;color:#fff !important;}.kl-choice{min-width:130px !important;}</style>'
+      el.innerHTML='<style>.cr-btn:active,.cr-tg:active{transform:translateY(2px);}.cr-btn[disabled]{opacity:.35;cursor:not-allowed;}.cr-tg.on{background:#7048E8 !important;color:#fff !important;}.kl-choice{min-width:130px !important;}'
+        +'.cr-flash{animation:crFlashKf 2s ease both;}@keyframes crFlashKf{0%{opacity:0;}10%{opacity:1;}85%{opacity:1;}100%{opacity:0;}}'   /* 와우 ④ 마법 배너 */
+        +'.cr-hold{display:inline-block;animation:crHoldKf 1.1s ease both;transform-origin:center;}@keyframes crHoldKf{0%{transform:scale(1);}25%{transform:scale(1.35);color:#7048E8;}55%{transform:scale(.92);}100%{transform:scale(1);}}'   /* 와우 ④ 넓이 4배 펄스 */
+        +'</style>'
         + top + bar + rows
         +'<div class="kl-stage-host" style="position:relative;">'
         +'<div class="cr-stage" style="width:100%;height:'+(mode==='quiz'?'38vh':'50vh')+';min-height:'+(mode==='quiz'?'280':'350')+'px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
@@ -156,11 +161,22 @@
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function txt(svg,x,y,s,sz,f,an){var t=svgEl('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
     var VBW=860,VBH=400, UNIT=26;
-    function render(){
+    function render(opts){
+      opts=opts||{};
       var stage=el.querySelector('.cr-stage'); if(!stage)return; stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'});
       var d=svgEl('defs',{});d.innerHTML='<filter id="crSh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#13315C" flood-opacity="0.16"/></filter>';svg.appendChild(d);
       if(view==='draw') drawCircle(svg); else drawArea(svg);
+      // 와우 ④ 마법모먼트 배너 — 1회성(다음 render에서 opts 없이 호출되며 자동 해제)
+      if(opts.flash){
+        var msg=(opts.flash==='dbl')
+          ?'✋ 반지름을 2배로! 둘레(원주)는 2배인데 넓이는 4배! 넓이는 반지름을 두 번 곱하니까요'
+          :'✨ 조각을 잘게 펴니 매끈한 직사각형! 이 직사각형이 곧 원의 넓이예요';
+        var fg=svgEl('g',{'class':'cr-flash','pointer-events':'none'});
+        fg.appendChild(svgEl('rect',{x:VBW/2-348,y:6,width:696,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#crSh)'}));
+        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
+        ft.textContent=msg; fg.appendChild(ft); svg.appendChild(fg);
+      }
       stage.appendChild(svg);
       var st=el.querySelector('.cr-status');
       if(mode==='quiz'){
@@ -175,7 +191,8 @@
         } else {
           st.innerHTML='<span style="font-size:24px;color:#1B3A57;">반지름 </span><span style="font-size:34px;color:#1565C0;">'+r+'</span>'
             +'<span style="font-size:24px;color:#1B3A57;">   지름 </span><span style="font-size:34px;color:#0CA678;">'+(2*r)+'</span>'
-            +(G().circumf?'<span style="font-size:24px;color:#1B3A57;">   원주 ≈ 지름×3.14 ＝ </span><span style="font-size:34px;color:#E8590C;">'+(2*r*PI).toFixed(2)+'</span>':'');
+            +(G().circumf?'<span style="font-size:24px;color:#1B3A57;">   원주 ≈ 지름×3.14 ＝ </span><span style="font-size:34px;color:#E8590C;">'+(2*r*PI).toFixed(2)+'</span>':'')
+            +((opts.flash==='dbl')?'<div style="margin-top:9px;font-size:23px;color:#1B3A57;">둘레는 <b style="color:#E8590C;">2배</b>인데 넓이는 <span class="cr-hold" style="color:#7048E8;font-size:32px;">4배</span>! <span style="font-size:19px;color:#5a7894;">(넓이 '+(PI*(r/2)*(r/2)).toFixed(2)+' → '+(PI*r*r).toFixed(2)+')</span></div>':'');
         }
       } else {
         st.innerHTML='<span style="font-size:22px;color:#5a7894;">조각이 많을수록 직사각형! </span>'
@@ -226,10 +243,17 @@
     }
     function bind(){
       el.querySelectorAll('.cr-tg').forEach(function(b){b.addEventListener('click',function(){
-        if(view!==b.dataset.view){view=b.dataset.view;build();if(mode==='mission')checkMission();}});});
-      var H={rp:function(){if(r<8){r++;render();}},rm:function(){if(r>1){r--;render();}},
-        pp:function(){if(pieces<24){pieces+=2;render();}},pm:function(){if(pieces>4){pieces-=2;render();}},
-        reset:function(){r=(mode==='mission')?2:sr;pieces=8;render();}};
+        if(view!==b.dataset.view){view=b.dataset.view;snd('select');build();if(mode==='mission')checkMission();}});});
+      var H={
+        rp:function(){if(r<8){r++;snd('tap');render();}},
+        rm:function(){if(r>1){r--;snd('tap');render();}},
+        pp:function(){if(pieces<24){var was=pieces;pieces+=2;
+              if(was<16&&pieces>=16){snd('success');render({flash:'rect'});} else {snd('pop');render();} }},
+        pm:function(){if(pieces>4){pieces-=2;snd('pop');render();}},
+        // 와우 ④ 헤드라인 마법: 반지름 2배 → 둘레는 2배·넓이는 4배(반지름² 의 힘). 더 못 키우면 작게 되돌려 다시 시도.
+        dbl:function(){ if(r*2<=8){r*=2;snd('whoosh');render({flash:'dbl'});} else {r=2;snd('pop');render();} },
+        reset:function(){r=(mode==='mission')?2:sr;pieces=8;snd('pop');render();}
+      };
       el.querySelectorAll('.cr-btn').forEach(function(b){b.addEventListener('click',function(){var f=H[b.dataset.act];if(f){f();if(mode==='mission')checkMission();}});});
     }
     shuffleQuiz();
