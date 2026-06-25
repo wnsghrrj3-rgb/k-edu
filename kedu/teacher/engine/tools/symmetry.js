@@ -1,15 +1,21 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 대칭 (symmetry) v2
+   케이랩 도구 모듈 — 대칭 (symmetry) v3
    v2: 자유탐구 / 미션 / 퀴즈 3모드 (KLab.ui 표준).
      · 자유탐구 — v1 자산(선대칭 세로/가로축·점대칭 토글, 즉각 반사) 유지.
      · 미션 — 선대칭 세로 3칸→가로 4칸→점대칭 3칸→양쪽 합치기 6칸 4단계.
      · 퀴즈 — 주어진 패턴이 선대칭/점대칭인지, 대칭 결과 모양 선택.
+   v3: 와우 표준(F칸) — ①직접조작=칸 누르면 반대편 자동 채움(기존) ②물성=반사 채움
+     ③효과음=KLab.sound(칸 tap·전환 select·접기 whoosh/success) ④마법모먼트=접어보기 도전.
+     마법(예측 빗나감형) — 거의 닮은 모양을 두고 "접으면 딱 겹칠까?" 예측 → 접기 →
+     짝이 없는 칸이 빨강으로 드러남("닮았다고 다 선대칭은 아니다"). 완전대칭/거의대칭을
+     반반 섞어 진짜 예측이 필요하게. 저학년은 칸 채우기 닻이라 접어보기 도전 숨김(area 둘레와 동일).
    - 의존: window.KLab
    ============================================================================ */
 (function () {
   if (!window.KLab) return;
   window.KLab.register('symmetry', function (el, config) {
     var ui = window.KLab.ui;
+    function snd(n) { if (window.KLab.sound && window.KLab.sound.play) window.KLab.sound.play(n); }
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES = {
@@ -26,10 +32,18 @@
     var axis = (G().hAxis && config.axis === 'h') ? 'h' : 'v';
     var src = {};
 
+    /* ── 와우 ④마법모먼트 — 접어보기 도전 상태 ── */
+    var foldOn = false;       // 접어보기 도전 진입 여부 (mid/high 자유탐구만)
+    var foldCells = {};       // 도전 모양(자동 반사 없이 그대로 그림)
+    var foldResult = 'ready'; // 'ready' | 'done'
+    var missKeys = [];        // 접었을 때 짝이 없는 칸
+    var foldFlash = false;    // 1회성 마법 배너 플래그
+
     var bands = ui.gradeBands({ grade: grade, locked: !!config.grade, onChange: function (g) {
       grade = g;
       if (G().modes.indexOf(mode) < 0) mode = 'free';
       symMode = 'line'; axis = 'v'; src = {};
+      foldOn = false; foldResult = 'ready'; missKeys = []; foldFlash = false; foldCells = {};
       mStep = 0; mDone = false; mLock = false;
       if (mode === 'quiz') shuffleQuiz();
       build();
@@ -40,6 +54,53 @@
       return (axis === 'v') ? [n-1-c, r] : [c, n-1-r];
     }
     function countSrc() { var n=0; for(var k in src) if(src[k]) n++; return n; }
+
+    /* ── 접어보기 도전: 모양 생성·접기 판정 ──
+       대칭 씨앗 + (절반 확률) 짝 없는 한 칸 → 거의-대칭. 모두 자동 반사 OFF로 그대로 그림. */
+    var FOLD_SEEDS = [
+      [[1,1],[2,2],[1,3]],
+      [[2,1],[1,2],[3,3]],
+      [[1,2],[2,2],[1,4]],
+      [[2,1],[2,2],[1,3],[3,4]],
+      [[1,1],[1,2],[2,4]]
+    ];
+    var foldSym = true;
+    function loadFold() {
+      foldOn = true; foldResult = 'ready'; foldFlash = false; missKeys = []; foldCells = {};
+      symMode = 'line'; axis = 'v';
+      var seeds = FOLD_SEEDS[Math.floor(Math.random() * FOLD_SEEDS.length)];
+      seeds.forEach(function (p) {
+        var c = Math.min(p[0], n-1), r = Math.min(p[1], n-1);
+        foldCells[c+','+r] = true;
+        var m = mirror(c, r); foldCells[m[0]+','+m[1]] = true;
+      });
+      foldSym = Math.random() < 0.5; // true=완전 대칭(딱 겹침) / false=거의 대칭(한 칸 어긋남)
+      if (!foldSym) {
+        var placed = false, t = 0;
+        while (t++ < 80 && !placed) {
+          var c = Math.floor(Math.random()*n), r = Math.floor(Math.random()*n);
+          var k = c+','+r, m = mirror(c, r), mk = m[0]+','+m[1];
+          if (k === mk) continue;              // 축 위 칸(자기 자신이 짝)은 제외
+          if (!foldCells[k] && !foldCells[mk]) { foldCells[k] = true; placed = true; }
+        }
+        if (!placed) foldSym = true;           // 빈 곳 못 찾으면 완전 대칭으로
+      }
+    }
+    function doFold() {
+      missKeys = [];
+      for (var k in foldCells) {
+        if (!foldCells[k]) continue;
+        var p = k.split(','), m = mirror(+p[0], +p[1]), mk = m[0]+','+m[1];
+        if (!foldCells[mk]) missKeys.push(k);  // 반대편에 짝이 없음
+      }
+      foldResult = 'done';
+      foldFlash = missKeys.length > 0;         // 짝 없는 칸이 있을 때만 마법 배너
+      snd(missKeys.length > 0 ? 'whoosh' : 'success');
+      build();
+    }
+    function exitFold() {
+      foldOn = false; foldResult = 'ready'; missKeys = []; foldFlash = false; foldCells = {}; src = {};
+    }
 
     // ---- 미션 (학년칸별 풀) ----
     var LOW_MISSIONS = [
@@ -101,15 +162,33 @@
       var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode);
       var bar = '', foot = '';
 
-      var modeRow = '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-        + '<button class="sy-tg sy-mode" data-mode="line" style="'+tg+'">선대칭</button>'
-        + (G().point ? '<button class="sy-tg sy-mode" data-mode="point" style="'+tg+'">점대칭</button>' : '')
-        + (symMode==='line' && G().hAxis
-          ? '<span style="width:10px;"></span><button class="sy-ax" data-axis="v" style="'+tg.replace('#7048E8','#0B7285')+'">세로축</button><button class="sy-ax" data-axis="h" style="'+tg.replace('#7048E8','#0B7285')+'">가로축</button>'
-          : '')
-        + '<span style="width:10px;"></span>'
-        + '<button class="sy-btn" data-act="reset" style="font-size:24px;padding:12px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 지우기</button>'
-        + '</div>';
+      var resetBtn = '<button class="sy-btn" data-act="reset" style="font-size:24px;padding:12px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺ 지우기</button>';
+      // 와우 ④ 접어보기 도전 진입 버튼 — 중·고 자유탐구만(저학년은 채우기 닻이라 숨김)
+      var foldBtn = (mode==='free' && G().hAxis)
+        ? '<button class="sy-btn" data-act="foldenter" style="font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #E8590C;background:#FFF4E6;color:#E8590C;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">🪞 접어보기 도전</button>'
+        : '';
+
+      var modeRow;
+      if (foldOn) {
+        modeRow = '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+          + (foldResult==='ready'
+              ? '<button class="sy-btn" data-act="dofold" style="font-size:24px;padding:13px 22px;border-radius:16px;border:3px solid #E8590C;background:#E8590C;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">🪞 접기!</button>'
+              : '<button class="sy-btn" data-act="foldnew" style="font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #7048E8;background:#fff;color:#7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">🔄 새 도전</button>')
+          + '<span style="width:8px;"></span>'
+          + '<button class="sy-btn" data-act="foldout" style="font-size:23px;padding:12px 18px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↩ 나가기</button>'
+          + '</div>';
+      } else {
+        modeRow = '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+          + '<button class="sy-tg sy-mode" data-mode="line" style="'+tg+'">선대칭</button>'
+          + (G().point ? '<button class="sy-tg sy-mode" data-mode="point" style="'+tg+'">점대칭</button>' : '')
+          + (symMode==='line' && G().hAxis
+            ? '<span style="width:10px;"></span><button class="sy-ax" data-axis="v" style="'+tg.replace('#7048E8','#0B7285')+'">세로축</button><button class="sy-ax" data-axis="h" style="'+tg.replace('#7048E8','#0B7285')+'">가로축</button>'
+            : '')
+          + '<span style="width:10px;"></span>'
+          + resetBtn
+          + (foldBtn ? '<span style="width:8px;"></span>'+foldBtn : '')
+          + '</div>';
+      }
 
       if (mode === 'mission') {
         var M = curMissions();
@@ -121,7 +200,7 @@
         foot = ui.choices(q.choices.map(function(v){ return {v:v,label:v}; }));
       }
 
-      el.innerHTML = '<style>.sy-btn:active,.sy-tg:active{transform:translateY(2px);}.sy-mode.sy-on{background:#7048E8 !important;color:#fff !important;}.sy-ax.sy-on{background:#0B7285 !important;color:#fff !important;border-color:#0B7285 !important;}.sy-cell{cursor:pointer;transition:fill .15s;}.kl-choice{min-width:120px !important;}</style>'
+      el.innerHTML = '<style>.sy-btn:active,.sy-tg:active{transform:translateY(2px);}.sy-mode.sy-on{background:#7048E8 !important;color:#fff !important;}.sy-ax.sy-on{background:#0B7285 !important;color:#fff !important;border-color:#0B7285 !important;}.sy-cell{cursor:pointer;transition:fill .15s;}.sy-miss{animation:syMiss .6s ease;}@keyframes syMiss{0%,100%{opacity:1;}40%{opacity:.3;}}.sy-flash{animation:syFlash .5s ease;}@keyframes syFlash{from{transform:translateY(-6px);opacity:0;}to{transform:translateY(0);opacity:1;}}.sy-hold{animation:syHold .7s ease infinite;}@keyframes syHold{0%,100%{color:#E8590C;}50%{color:#FF8787;}}.kl-choice{min-width:120px !important;}</style>'
         + top + bar
         + (mode !== 'quiz' ? modeRow : '')
         + '<div class="kl-stage-host" style="position:relative;">'
@@ -135,6 +214,7 @@
 
       ui.bindModeTabs(el, function(m) {
         mode = m; symMode = 'line'; axis = 'v'; src = {};
+        foldOn = false; foldResult = 'ready'; missKeys = []; foldFlash = false; foldCells = {};
         mStep = 0; mDone = false; mLock = false;
         if (m === 'quiz') shuffleQuiz();
         build();
@@ -142,17 +222,27 @@
 
       el.querySelectorAll('.sy-mode').forEach(function(b) {
         b.addEventListener('click', function() {
-          if (symMode !== b.dataset.mode) { symMode = b.dataset.mode; src = {}; build(); }
+          if (symMode !== b.dataset.mode) { symMode = b.dataset.mode; src = {}; snd('select'); build(); }
         });
       });
       el.querySelectorAll('.sy-ax').forEach(function(b) {
         b.addEventListener('click', function() {
-          axis = b.dataset.axis; src = {}; build();
+          axis = b.dataset.axis; src = {}; snd('select'); build();
           if (mode === 'mission') checkMission();
         });
       });
       var rs = el.querySelector('[data-act="reset"]');
-      if (rs) rs.addEventListener('click', function() { src = {}; render(); });
+      if (rs) rs.addEventListener('click', function() { src = {}; snd('tap'); render(); });
+
+      // 와우 ④ 접어보기 도전 버튼 배선
+      var fEnter = el.querySelector('[data-act="foldenter"]');
+      if (fEnter) fEnter.addEventListener('click', function() { snd('pop'); loadFold(); build(); });
+      var fDo = el.querySelector('[data-act="dofold"]');
+      if (fDo) fDo.addEventListener('click', function() { doFold(); });
+      var fNew = el.querySelector('[data-act="foldnew"]');
+      if (fNew) fNew.addEventListener('click', function() { snd('pop'); loadFold(); build(); });
+      var fOut = el.querySelector('[data-act="foldout"]');
+      if (fOut) fOut.addEventListener('click', function() { snd('select'); exitFold(); build(); });
 
       el.querySelectorAll('.kl-choice').forEach(function(b) {
         b.addEventListener('click', function() {
@@ -181,6 +271,47 @@
       var VBW=440, VBH=440;
       var cell = Math.min(VBW,VBH)/(n+0.5), x0=(VBW-cell*n)/2, y0=(VBH-cell*n)/2;
       var svg = svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%',style:'max-height:46vh;display:block;margin:0 auto;'});
+
+      // ── 와우 ④ 접어보기 도전 화면 (자동 반사 없이 모양 그대로 + 접기 결과) ──
+      if (foldOn) {
+        var missSet = {}; for (var mi=0;mi<missKeys.length;mi++) missSet[missKeys[mi]] = true;
+        for (var fr=0;fr<n;fr++) for (var fc=0;fc<n;fc++) {
+          var fk = fc+','+fr, on = !!foldCells[fk];
+          var ffill, isMiss = (foldResult==='done' && missSet[fk]);
+          if (isMiss) ffill = '#FF5252';
+          else if (on) ffill = (foldResult==='done') ? '#12B886' : '#9775FA';
+          else ffill = '#F4F9FF';
+          var fcell = svgEl('rect',{x:x0+fc*cell,y:y0+fr*cell,width:cell,height:cell,fill:ffill,stroke:'#B8CFE8','stroke-width':1.2});
+          if (isMiss) fcell.setAttribute('class','sy-cell sy-miss');
+          svg.appendChild(fcell);
+        }
+        var fax = x0+cell*n/2;
+        svg.appendChild(svgEl('line',{x1:fax,y1:y0-6,x2:fax,y2:y0+cell*n+6,stroke:'#7048E8','stroke-width':4,'stroke-dasharray':'10 7'}));
+        stage.appendChild(svg);
+
+        if (foldFlash) {
+          var host = el.querySelector('.kl-stage-host');
+          var fb = document.createElement('div');
+          fb.className = 'sy-flash';
+          fb.style.cssText = 'position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:5;background:#7048E8;color:#fff;font-weight:800;font-family:inherit;font-size:18px;padding:11px 18px;border-radius:16px;box-shadow:0 6px 18px rgba(112,72,232,.35);max-width:92%;text-align:center;line-height:1.35;';
+          fb.innerHTML = '🔎 한 칸이 짝이 없어요! 거의 닮았지만 <b>선대칭이 아니에요</b>';
+          if (host) host.appendChild(fb);
+          foldFlash = false; // 1회성 — 다음 render에서 사라짐
+        }
+
+        var fStatus = el.querySelector('.sy-status');
+        if (fStatus) {
+          if (foldResult === 'ready') {
+            fStatus.innerHTML = '접으면 양쪽이 <b>딱 겹칠까요?</b> 🤔 예상해 보고 <b style="color:#E8590C;">🪞 접기!</b>를 눌러요';
+          } else if (missKeys.length > 0) {
+            fStatus.innerHTML = '<span class="sy-hold">빨강 칸은 접어도 짝이 없어요</span> — 닮았다고 다 선대칭은 아니에요!';
+          } else {
+            fStatus.innerHTML = '✅ 딱 겹쳤어요! 이 모양은 <b style="color:#12B886;">선대칭이 맞아요</b>';
+          }
+        }
+        return;
+      }
+
       var ref = {}; for(var k in src){ if(src[k]){ var p=k.split(','),m=mirror(+p[0],+p[1]); ref[m[0]+','+m[1]]=true; } }
       for(var r=0;r<n;r++) for(var c=0;c<n;c++){
         var key=c+','+r, isSrc=!!src[key], isRef=!!ref[key]&&!isSrc;
@@ -199,7 +330,7 @@
       if (mode !== 'quiz') {
         stage.querySelectorAll('.sy-cell').forEach(function(p){
           p.addEventListener('click', function() {
-            var k=p.dataset.c+','+p.dataset.r; src[k]=!src[k]; render();
+            var k=p.dataset.c+','+p.dataset.r; src[k]=!src[k]; snd('tap'); render();
             if (mode === 'mission') checkMission();
           });
         });
