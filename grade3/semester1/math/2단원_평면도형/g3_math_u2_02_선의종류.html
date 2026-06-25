@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u2_l02 — 선의 종류 (선분·반직선·직선) [3학년 2단원 02차시, 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g3/unit2/02차_선의_종류/draft.html
+  지도서: _SOURCE.md (지도서 p.212-217, 교과서 34-37, 교과서 2~3차시 통합)
+  성취기준: [4수03-01] 직선·선분·반직선 이해·구별
+  학습 본질: 곧은 선 → 선분(두 점 곧게)·반직선(한쪽 끝없음)·직선(양쪽 끝없음) 구별
+  메카닉: lineFig(선 도형 SVG·신규) + setupMcq 단일 엔진 (선 식별·이름·○✕·오개념)
+  점수: 기본 4×10(q8~11) + 응용 4×15(q12~15) = 100
+  부품: lineFig(segment/ray/line/curve/straight) 신규 · setupMcq 공통
+  톤: (B) v14 그린 #15803D 계승 (1단원 base)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_math_u2_l02_v1">
+<title>선의 종류 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+</style>
+
+/* ───── lineFig (선 도형 — 단원 시그니처 부품) ───── */
+.line-stage{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,16px);max-width:var(--mw-lg);width:100%;}
+.line-compare{display:flex;flex-direction:column;gap:clamp(8px,1.5vw,13px);}
+.lc-row{display:flex;align-items:center;gap:clamp(10px,2vw,18px);background:#fff;border:2px solid var(--line);border-radius:16px;padding:clamp(8px,1.4vw,12px) clamp(14px,2.6vw,20px);box-shadow:var(--shadow);}
+.lc-name{font-family:var(--f-title);font-size:var(--fs-caption);color:var(--coral-deep);min-width:clamp(86px,15vw,124px);}
+.lf-holder{display:flex;justify-content:center;align-items:center;background:#fff;border:2px solid var(--line);border-radius:18px;padding:clamp(8px,1.6vw,14px) clamp(14px,2.6vw,22px);box-shadow:var(--shadow);}
+.lf-svg{display:block;max-width:100%;height:auto;}
+.mcq-opt.cmp4{font-size:var(--fs-body);}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">2차시</span>
+    <span class="ka-where">수학 3-1 · <b>2. 평면도형</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 흥미 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">선의 종류에는 어떤 것이 있을까요?</h2>
+      <div class="intro-q">교통안전 지도에는 여러 가지 선이 있어요.<br><strong>곧은 선</strong>도 있고 <strong>굽은 선</strong>도 있어요. 어떻게 다를까요?</div>
+      <div class="line-stage">
+        <div class="lc-row"><div class="lc-name">곧은 선</div><div id="fig-straight"></div></div>
+        <div class="lc-row"><div class="lc-name">굽은 선</div><div id="fig-curve"></div></div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 곧은 선의 종류를 배워요</h2>
+      <ul class="goal-list">
+        <li><strong>선분</strong>을 알아봐요</li>
+        <li><strong>반직선</strong>을 알아봐요</li>
+        <li><strong>직선</strong>을 알아보고 셋을 구별해요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 곧은 선/굽은 선 분류 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 곧은 선과 굽은 선</div>
+      <h2 class="slide-title">곧은 선과 굽은 선으로 나눠요</h2>
+      <div class="line-stage">
+        <div class="concept-box">삼각자로 그을 수 있는 <strong>곧은 선</strong>과, 구부러진 <strong>굽은 선</strong>이 있어요. 오늘은 <strong>곧은 선</strong>을 자세히 알아봐요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 선분 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 선분</div>
+      <h2 class="slide-title">두 점을 곧게 이으면 선분</h2>
+      <div class="line-stage">
+        <div class="lf-holder" id="fig-seg"></div>
+        <div class="concept-box">두 점을 곧게 이은 선을 <strong>선분</strong>이라고 해요.<br>이 선은 <strong>선분 ㄱㄴ</strong>(또는 선분 ㄴㄱ)이에요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 반직선 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 반직선</div>
+      <h2 class="slide-title">한쪽으로 끝없이 늘이면 반직선</h2>
+      <div class="line-stage">
+        <div class="lf-holder" id="fig-ray"></div>
+        <div class="concept-box">점 ㄱ에서 시작해 점 ㄴ을 지나 <strong>한쪽으로 끝없이</strong> 늘인 곧은 선을 <strong>반직선 ㄱㄴ</strong>이라고 해요.<br>시작점을 먼저 읽어요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 직선 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 직선</div>
+      <h2 class="slide-title">양쪽으로 끝없이 늘이면 직선</h2>
+      <div class="line-stage">
+        <div class="lf-holder" id="fig-line"></div>
+        <div class="concept-box">점 ㄱ과 점 ㄴ을 지나 <strong>양쪽으로 끝없이</strong> 늘인 곧은 선을 <strong>직선 ㄱㄴ</strong>(또는 직선 ㄴㄱ)이라고 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 비교 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 비교</div>
+      <h2 class="slide-title">선분·반직선·직선을 비교해요</h2>
+      <div class="line-stage">
+        <div class="line-compare">
+          <div class="lc-row"><div class="lc-name">선분 ㄱㄴ</div><div id="fig-c-seg"></div></div>
+          <div class="lc-row"><div class="lc-name">반직선 ㄱㄴ</div><div id="fig-c-ray"></div></div>
+          <div class="lc-row"><div class="lc-name">직선 ㄱㄴ</div><div id="fig-c-line"></div></div>
+        </div>
+        <div class="concept-box">같은 점: 모두 <strong>곧은 선</strong>. 다른 점: <strong>끝</strong>이 정해진 정도가 달라요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본 q8: 선분 식별 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 선의 이름은 무엇일까요?</div>
+        <div class="lf-holder" id="q8-fig"></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt cmp4" data-correct="1">선분 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">반직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">굽은 선</button>
+        </div>
+        <div class="mcq-hint" data-hints='["양쪽 끝에 점이 콕 찍혀 있어요.","두 점을 곧게 이은 선은 선분이에요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본 q9: 반직선 식별 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 선의 이름은 무엇일까요?</div>
+        <div class="lf-holder" id="q9-fig"></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt cmp4" data-correct="0">선분 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="1">반직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">굽은 선</button>
+        </div>
+        <div class="mcq-hint" data-hints='["한쪽 끝에만 화살표가 있어요.","한쪽으로 끝없이 늘인 곧은 선은 반직선이에요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본 q10: 직선 식별 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 선의 이름은 무엇일까요?</div>
+        <div class="lf-holder" id="q10-fig"></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt cmp4" data-correct="0">선분 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">반직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="1">직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">굽은 선</button>
+        </div>
+        <div class="mcq-hint" data-hints='["양쪽 끝에 화살표가 있어요.","양쪽으로 끝없이 늘인 곧은 선은 직선이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본 q11: 빈칸 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">두 점을 곧게 이은 선을<br>무엇이라고 할까요?</div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt cmp4" data-correct="1">선분</button>
+          <button class="mcq-opt cmp4" data-correct="0">반직선</button>
+          <button class="mcq-opt cmp4" data-correct="0">직선</button>
+          <button class="mcq-opt cmp4" data-correct="0">굽은 선</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 점이 정해져 있어요.","두 점을 곧게 이으면 양쪽 끝이 정해진 선분이에요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12: 반직선 방향 ○✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">반직선 ㄱㄴ과 반직선 ㄴㄱ은<br>같은 반직선일까요?</div>
+        <div class="lf-holder" id="q12-fig"></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt cmp4" data-correct="0">⭕ 같아요</button>
+          <button class="mcq-opt cmp4" data-correct="1">❌ 달라요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["시작점이 어디인지 살펴보세요.","ㄱ에서 시작한 것과 ㄴ에서 시작한 것은 방향이 달라요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13: 직선 ○✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">직선 ㄱㄴ과 직선 ㄴㄱ은<br>같은 직선일까요?</div>
+        <div class="lf-holder" id="q13-fig"></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt cmp4" data-correct="1">⭕ 같아요</button>
+          <button class="mcq-opt cmp4" data-correct="0">❌ 달라요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["직선은 양쪽 끝이 어떤가요?","양쪽이 끝없으니 시작점을 따로 정할 수 없어 같아요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: 정확한 이름 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 선의 정확한 이름은?</div>
+        <div class="lf-holder" id="q14-fig"></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt cmp4" data-correct="1">반직선 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">반직선 ㄴㄱ</button>
+          <button class="mcq-opt cmp4" data-correct="0">선분 ㄱㄴ</button>
+          <button class="mcq-opt cmp4" data-correct="0">직선 ㄱㄴ</button>
+        </div>
+        <div class="mcq-hint" data-hints='["시작점을 먼저 읽어요.","ㄱ에서 시작해 ㄴ을 지나니 반직선 ㄱㄴ이에요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: 잘못 말한 친구 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 반직선을 보고 <strong>잘못 말한</strong> 친구는?</div>
+        <div class="lf-holder" id="q15-fig"></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt cmp4" data-correct="0">서윤: 이건 반직선 ㄱㄴ이야</button>
+          <button class="mcq-opt cmp4" data-correct="1">시우: 반직선 ㄱㄴ은 반직선 ㄴㄱ이라고도 해</button>
+          <button class="mcq-opt cmp4" data-correct="0">은우: 시작점은 점 ㄱ이야</button>
+          <button class="mcq-opt cmp4" data-correct="0">하랑: 한쪽으로 끝이 없어</button>
+        </div>
+        <div class="mcq-hint" data-hints='["반직선은 방향이 중요해요.","반직선 ㄱㄴ과 반직선 ㄴㄱ은 시작점·방향이 달라요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 배운 것 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card"><strong>선분</strong> = 두 점을 곧게 이은 선<br><strong>반직선</strong> = 한쪽으로 끝없는 곧은 선<br><strong>직선</strong> = 양쪽으로 끝없는 곧은 선<br>모두 <strong>곧은 선</strong>이에요!</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">📐</div>
+          <div class="next-label">각을 알아봐요</div>
+        </div>
+        <div class="home-prompt">집에서 곧은 선과 굽은 선을 찾아보세요!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_math_u2_l02';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+
+
+// ════════════════════════════════════════
+// lineFig — 선 도형 SVG (단원 시그니처 부품 · 신규)
+//   type: 'segment'(양끝점) | 'ray'(한끝 화살표) | 'line'(양끝 화살표)
+//         | 'curve'(굽은선) | 'straight'(라벨없는 곧은선)
+//   labels: ['ㄱ','ㄴ']  /  opts: {W, dir:'right'|'left', color}
+// ════════════════════════════════════════
+function lineFig(type, labels, opts) {
+  opts = opts || {}; labels = labels || [];
+  const W = opts.W || 340, H = 92, y = 50;
+  const col = opts.color || '#15803D';
+  const x0 = opts.x0 != null ? opts.x0 : 92;
+  const x1 = opts.x1 != null ? opts.x1 : (W - 92);
+  function pt(x, lab) {
+    let g = `<circle cx="${x}" cy="${y}" r="6.5" fill="${col}"/>`;
+    if (lab) g += `<text x="${x}" y="${y-17}" text-anchor="middle" font-family="'Gowun Dodum',sans-serif" font-size="25" fill="#243043">${lab}</text>`;
+    return g;
+  }
+  function arrow(x, dir) {
+    const d = dir === 'left' ? 1 : -1;
+    return `<polygon points="${x},${y} ${x+14*d},${y-8} ${x+14*d},${y+8}" fill="${col}"/>`;
+  }
+  let s = `<svg class="lf-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  if (type === 'segment') {
+    s += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+    s += pt(x0, labels[0]) + pt(x1, labels[1]);
+  } else if (type === 'ray') {
+    const xe = W - 14;
+    s += `<line x1="${x0}" y1="${y}" x2="${xe-8}" y2="${y}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+    s += arrow(xe, 'right');
+    s += pt(x0, labels[0]) + pt(x1, labels[1]);
+  } else if (type === 'line') {
+    const xa = 14, xe = W - 14;
+    s += `<line x1="${xa+8}" y1="${y}" x2="${xe-8}" y2="${y}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+    s += arrow(xa, 'left') + arrow(xe, 'right');
+    s += pt(x0, labels[0]) + pt(x1, labels[1]);
+  } else if (type === 'curve') {
+    s += `<path d="M${x0} ${y} Q ${(x0+x1)/2} ${y-40}, ${x1} ${y}" stroke="${col}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  } else if (type === 'straight') {
+    s += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${col}" stroke-width="4" stroke-linecap="round"/>`;
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ───── setupMcq (단일 선택 문제 공통 엔진) ─────
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong');
+        fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+
+// ───── 슬별 도형 렌더 ─────
+(function renderFigs(){
+  document.getElementById('fig-straight').innerHTML = lineFig('straight', [], {W:240, x0:30, x1:210});
+  document.getElementById('fig-curve').innerHTML    = lineFig('curve',    [], {W:240, x0:30, x1:210});
+  document.getElementById('fig-seg').innerHTML      = lineFig('segment', ['ㄱ','ㄴ']);
+  document.getElementById('fig-ray').innerHTML      = lineFig('ray',     ['ㄱ','ㄴ'], {dir:'right'});
+  document.getElementById('fig-line').innerHTML     = lineFig('line',    ['ㄱ','ㄴ']);
+  document.getElementById('fig-c-seg').innerHTML    = lineFig('segment', ['ㄱ','ㄴ'], {W:300});
+  document.getElementById('fig-c-ray').innerHTML    = lineFig('ray',     ['ㄱ','ㄴ'], {W:300, dir:'right'});
+  document.getElementById('fig-c-line').innerHTML   = lineFig('line',    ['ㄱ','ㄴ'], {W:300});
+  document.getElementById('q8-fig').innerHTML       = lineFig('segment', ['ㄱ','ㄴ']);
+  document.getElementById('q9-fig').innerHTML       = lineFig('ray',     ['ㄱ','ㄴ'], {dir:'right'});
+  document.getElementById('q10-fig').innerHTML      = lineFig('line',    ['ㄱ','ㄴ']);
+  document.getElementById('q12-fig').innerHTML      = lineFig('ray',     ['ㄱ','ㄴ'], {dir:'right'});
+  document.getElementById('q13-fig').innerHTML      = lineFig('line',    ['ㄱ','ㄴ']);
+  document.getElementById('q14-fig').innerHTML      = lineFig('ray',     ['ㄱ','ㄴ'], {dir:'right'});
+  document.getElementById('q15-fig').innerHTML      = lineFig('ray',     ['ㄱ','ㄴ'], {dir:'right'});
+})();
+
+setupMcq('q8',  '맞아요! 두 점을 곧게 이은 선분이에요.');
+setupMcq('q9',  '맞아요! 한쪽으로 끝없는 반직선이에요.');
+setupMcq('q10', '맞아요! 양쪽으로 끝없는 직선이에요.');
+setupMcq('q11', '맞아요! 두 점을 곧게 이은 선은 선분이에요.');
+setupMcq('q12', '맞아요! 시작점·방향이 달라 서로 달라요.');
+setupMcq('q13', '맞아요! 직선은 양쪽이 끝없어 같은 직선이에요.');
+setupMcq('q14', '맞아요! ㄱ에서 시작했으니 반직선 ㄱㄴ이에요.');
+setupMcq('q15', '맞아요! 반직선 ㄱㄴ은 반직선 ㄴㄱ과 달라요.');
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+
+</script>
+</body>
+</html>
