@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u2_l07 — 평면도형으로 그림을 그려요 (창의) [3학년 2단원 07차시, 40분]
+  지도서: _SOURCE.md (p.236-239, 교과서 50-51 알지오매스 키즈 → K-edu 도형 식별·세기로 재구성)
+  본질: 배운 도형(선분·직각삼각형·직사각형·정사각형)으로 그린 그림에서 도형 찾기·세기
+  메카닉: catScene(도형 합성 SVG·차시전용) + 부품 총동원 + setupMcq (신규 부품 0)
+  점수: 기본 4×10 + 응용 4×15 = 100 · 톤 (B) v14 그린
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_math_u2_l07_v1">
+<title>평면도형으로 그림을 그려요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+</style>
+
+/* ───── 도형 합성 장면 (창의) ───── */
+.scene-stage{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,16px);max-width:var(--mw-lg);width:100%;}
+.scene-holder{display:flex;justify-content:center;align-items:center;background:#fff;border:2px solid var(--line);border-radius:18px;padding:clamp(10px,2vw,16px);box-shadow:var(--shadow);}
+.scene-svg{display:block;max-width:100%;height:auto;}
+.legend{display:flex;gap:clamp(8px,1.6vw,14px);flex-wrap:wrap;justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:6px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:clamp(6px,1.2vw,10px) clamp(10px,2vw,14px);box-shadow:var(--shadow);font-size:var(--fs-caption);}
+.legend-sw{width:18px;height:18px;border-radius:4px;border:2px solid var(--ink-soft);flex-shrink:0;}
+.gallery{display:flex;gap:clamp(8px,1.6vw,14px);flex-wrap:wrap;justify-content:center;}
+.gallery-item{display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:clamp(8px,1.6vw,12px);box-shadow:var(--shadow);}
+.gallery-name{font-family:var(--f-title);font-size:var(--fs-label);color:var(--coral-deep);}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">7차시</span>
+    <span class="ka-where">수학 3-1 · <b>2. 평면도형</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">평면도형으로 그림을 그려요</h2>
+      <div class="intro-q">이 단원에서 배운 <strong>평면도형</strong>으로<br>고양이를 그렸어요. 어떤 도형이 쓰였을까요?</div>
+      <div class="scene-holder" id="cat-intro"></div>
+    </div>
+
+    <!-- 슬 2 — 도입: 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">배운 도형으로 그림을 그려요</h2>
+      <ul class="goal-list">
+        <li>그림에 쓰인 <strong>평면도형</strong>을 찾아봐요</li>
+        <li>각 도형이 <strong>몇 개</strong> 쓰였는지 세어 봐요</li>
+        <li>어떤 도형으로 그렸는지 <strong>설명</strong>해 봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 어떤 도형 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 복습</div>
+      <h2 class="slide-title">우리가 배운 평면도형</h2>
+      <div class="scene-stage">
+        <div class="gallery" id="gallery"></div>
+        <div class="concept-box">이 도형들을 모아 <strong>나만의 그림</strong>을 그릴 수 있어요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 부분별 도형 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 부분 찾기</div>
+      <h2 class="slide-title">각 부분은 무슨 도형일까요?</h2>
+      <div class="scene-stage">
+        <div class="scene-holder" id="cat-parts"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-sw" style="background:#DCFCE7"></span>얼굴 = 정사각형</div>
+          <div class="legend-item"><span class="legend-sw" style="background:#F6B526"></span>귀 = 직각삼각형</div>
+          <div class="legend-item"><span class="legend-sw" style="background:#BFE3FF"></span>눈 = 직사각형</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 수염 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 선분</div>
+      <h2 class="slide-title">수염은 선분으로 그렸어요</h2>
+      <div class="scene-stage">
+        <div class="concept-box">고양이 <strong>수염</strong>은 곧은 <strong>선분</strong>으로 그렸어요.<br>선분·직각삼각형·직사각형·정사각형을 모으면 멋진 그림이 돼요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 도형 세기 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 세기</div>
+      <h2 class="slide-title">도형이 몇 개씩 쓰였나요?</h2>
+      <div class="scene-stage">
+        <div class="scene-holder" id="cat-count"></div>
+        <div class="concept-box">정사각형 <strong>1</strong> · 직각삼각형 <strong>2</strong> · 직사각형 <strong>2</strong> · 선분 <strong>4</strong>가 쓰였어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 나만의 그림 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 창의</div>
+      <h2 class="slide-title">나만의 그림을 떠올려 봐요</h2>
+      <div class="scene-stage">
+        <div class="concept-box">집·강아지·로봇… 무엇이든 좋아요!<br>배운 <strong>평면도형</strong>을 골라 어떻게 그릴지 생각해 봐요. 그리고 어떤 도형을 썼는지 친구에게 설명해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본 q8: 얼굴 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">고양이 <strong>얼굴</strong>은 무슨 도형일까요?</div>
+        <div class="scene-holder" id="q8-fig"></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt cmp4" data-correct="1">정사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직각삼각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">선분</button>
+          <button class="mcq-opt cmp4" data-correct="0">원</button>
+        </div>
+        <div class="mcq-hint" data-hints='["네 각이 직각이고 네 변이 같아요.","네 변이 모두 같은 정사각형이에요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본 q9: 귀 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">고양이 <strong>귀</strong>는 무슨 도형일까요?</div>
+        <div class="scene-holder" id="q9-fig"></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt cmp4" data-correct="1">직각삼각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">정사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">선분</button>
+        </div>
+        <div class="mcq-hint" data-hints='["뾰족하고 직각이 있어요.","직각이 있는 삼각형이에요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본 q10: 눈 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">고양이 <strong>눈</strong>은 무슨 도형일까요?</div>
+        <div class="scene-holder" id="q10-fig"></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt cmp4" data-correct="1">직사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직각삼각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">선분</button>
+          <button class="mcq-opt cmp4" data-correct="0">원</button>
+        </div>
+        <div class="mcq-hint" data-hints='["네 각이 직각이고 가로가 길어요.","네 각이 직각인 직사각형이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본 q11: 수염 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">고양이 <strong>수염</strong>은 무엇으로<br>그렸을까요?</div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt cmp4" data-correct="1">선분</button>
+          <button class="mcq-opt cmp4" data-correct="0">직사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직각삼각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">정사각형</button>
+        </div>
+        <div class="mcq-hint" data-hints='["두 점을 곧게 이은 선이에요.","곧은 선분으로 수염을 그렸어요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12: 직각삼각형 개수 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">그림에서 <strong>직각삼각형</strong>은<br>몇 개일까요?</div>
+        <div class="scene-holder" id="q12-fig"></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt cmp4" data-correct="1">2개</button>
+          <button class="mcq-opt cmp4" data-correct="0">1개</button>
+          <button class="mcq-opt cmp4" data-correct="0">3개</button>
+          <button class="mcq-opt cmp4" data-correct="0">4개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["귀를 세어 보세요.","양쪽 귀 2개가 직각삼각형이에요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13: 직사각형 개수 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">그림에서 <strong>직사각형</strong>은<br>몇 개일까요?</div>
+        <div class="scene-holder" id="q13-fig"></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt cmp4" data-correct="1">2개</button>
+          <button class="mcq-opt cmp4" data-correct="0">1개</button>
+          <button class="mcq-opt cmp4" data-correct="0">3개</button>
+          <button class="mcq-opt cmp4" data-correct="0">0개</button>
+        </div>
+        <div class="mcq-hint" data-hints='["눈을 세어 보세요.","양쪽 눈 2개가 직사각형이에요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: 안 쓰인 도형 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 그림에 <strong>쓰이지 않은</strong> 도형은?</div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt cmp4" data-correct="1">원</button>
+          <button class="mcq-opt cmp4" data-correct="0">정사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직사각형</button>
+          <button class="mcq-opt cmp4" data-correct="0">직각삼각형</button>
+        </div>
+        <div class="mcq-hint" data-hints='["얼굴·귀·눈·수염을 떠올려 보세요.","둥근 원은 이 그림에 쓰이지 않았어요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: 종합 설명 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 그림을 <strong>바르게 설명한 것</strong>은?</div>
+        <div class="scene-holder" id="q15-fig"></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt cmp4" data-correct="1">얼굴은 정사각형, 귀는 직각삼각형으로 그렸다</button>
+          <button class="mcq-opt cmp4" data-correct="0">얼굴은 원, 귀는 직사각형으로 그렸다</button>
+          <button class="mcq-opt cmp4" data-correct="0">눈은 직각삼각형으로 그렸다</button>
+          <button class="mcq-opt cmp4" data-correct="0">수염은 정사각형으로 그렸다</button>
+        </div>
+        <div class="mcq-hint" data-hints='["각 부분이 무슨 도형인지 다시 보세요.","얼굴 정사각형·귀 직각삼각형·눈 직사각형·수염 선분이에요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">배운 <strong>평면도형</strong>(선분·직각삼각형·직사각형·정사각형)을 모으면<br>멋진 <strong>나만의 그림</strong>을 그릴 수 있어요.<br>어떤 도형을 썼는지 <strong>설명</strong>할 수 있으면 더 좋아요!</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🏁</div>
+          <div class="next-label">단원을 스스로 마무리해요</div>
+        </div>
+        <div class="home-prompt">배운 도형으로 나만의 그림을 그려 보세요!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_math_u2_l07';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+
+
+// ───── 도형 합성 장면 (lineFig/triangleFig/quadFig 좌표 패턴 재사용, 단일 SVG) ─────
+function catScene() {
+  return `<svg viewBox="0 0 280 215" width="280" height="215" class="scene-svg">
+    <polygon points="92,72 188,72 188,168 92,168" fill="#DCFCE7" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/>
+    <polygon points="92,72 92,34 128,72" fill="#F6B526" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/>
+    <polygon points="188,72 188,34 152,72" fill="#F6B526" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/>
+    <polygon points="112,100 134,100 134,116 112,116" fill="#BFE3FF" stroke="#15803D" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="146,100 168,100 168,116 146,116" fill="#BFE3FF" stroke="#15803D" stroke-width="3" stroke-linejoin="round"/>
+    <line x1="104" y1="134" x2="58" y2="126" stroke="#243043" stroke-width="3" stroke-linecap="round"/>
+    <line x1="104" y1="144" x2="58" y2="152" stroke="#243043" stroke-width="3" stroke-linecap="round"/>
+    <line x1="176" y1="134" x2="222" y2="126" stroke="#243043" stroke-width="3" stroke-linecap="round"/>
+    <line x1="176" y1="144" x2="222" y2="152" stroke="#243043" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ───── setupMcq (단일 선택 문제 공통 엔진) ─────
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong');
+        fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+
+// ───── 슬별 렌더 ─────
+(function renderFigs(){
+  document.getElementById('cat-intro').innerHTML = catScene();
+  document.getElementById('cat-parts').innerHTML = catScene();
+  document.getElementById('cat-count').innerHTML = catScene();
+  document.getElementById('q8-fig').innerHTML  = catScene();
+  document.getElementById('q9-fig').innerHTML  = catScene();
+  document.getElementById('q10-fig').innerHTML = catScene();
+  document.getElementById('q12-fig').innerHTML = catScene();
+  document.getElementById('q13-fig').innerHTML = catScene();
+  document.getElementById('q15-fig').innerHTML = catScene();
+  // 도형 갤러리 (복습)
+  document.getElementById('gallery').innerHTML =
+    `<div class="gallery-item"><svg viewBox="0 0 120 70" width="120" height="70" class="scene-svg"><line x1="20" y1="35" x2="100" y2="35" stroke="#15803D" stroke-width="4" stroke-linecap="round"/><circle cx="20" cy="35" r="5" fill="#15803D"/><circle cx="100" cy="35" r="5" fill="#15803D"/></svg><div class="gallery-name">선분</div></div>` +
+    `<div class="gallery-item"><svg viewBox="0 0 110 90" width="110" height="90" class="scene-svg"><polygon points="25,75 25,22 92,75" fill="#DCFCE7" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/><path d="M 25 57 L 41 57 L 41 75" stroke="#F0451F" stroke-width="2.5" fill="none"/></svg><div class="gallery-name">직각삼각형</div></div>` +
+    `<div class="gallery-item"><svg viewBox="0 0 120 90" width="120" height="90" class="scene-svg"><polygon points="18,22 102,22 102,72 18,72" fill="#DCFCE7" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/></svg><div class="gallery-name">직사각형</div></div>` +
+    `<div class="gallery-item"><svg viewBox="0 0 100 90" width="100" height="90" class="scene-svg"><polygon points="22,20 78,20 78,76 22,76" fill="#DCFCE7" stroke="#15803D" stroke-width="4" stroke-linejoin="round"/></svg><div class="gallery-name">정사각형</div></div>`;
+})();
+
+setupMcq('q8',  '맞아요! 얼굴은 네 변이 같은 정사각형이에요.');
+setupMcq('q9',  '맞아요! 귀는 직각이 있는 직각삼각형이에요.');
+setupMcq('q10', '맞아요! 눈은 직사각형이에요.');
+setupMcq('q11', '맞아요! 수염은 선분으로 그렸어요.');
+setupMcq('q12', '맞아요! 직각삼각형 귀는 2개예요.');
+setupMcq('q13', '맞아요! 직사각형 눈은 2개예요.');
+setupMcq('q14', '맞아요! 원은 이 그림에 쓰이지 않았어요.');
+setupMcq('q15', '맞아요! 얼굴은 정사각형, 귀는 직각삼각형이에요.');
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+
+</script>
+</body>
+</html>
