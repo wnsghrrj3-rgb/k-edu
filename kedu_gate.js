@@ -11,8 +11,8 @@
 (function () {
   // ── 켜고 끄는 스위치 (이 한 줄만 바꾸면 됨) ─────────────
   var KEDU_TEMP_LOCK = true;     // true = 잠금,  false = 해제
-  var GATE_ID = '1';             // 아이디
-  var GATE_PW = '1';             // 비밀번호
+  var GATE_ID = '11';            // 아이디
+  var GATE_PW = '11';            // 비밀번호
   // ────────────────────────────────────────────────────────
 
   if (!KEDU_TEMP_LOCK) return;
