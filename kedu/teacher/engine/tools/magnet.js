@@ -19,7 +19,9 @@
   var C={N:'#E03131',S:'#1C7ED6',ink:'#1B3A57',sub:'#5a7894',good:'#12B886',line:'#7048E8'};
   window.KLab.register('magnet', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    var cutPieces=null, cutGap=0;   // 와우: 반으로 자르기 상태(null=안 자름 · 양수 gap=벌어짐)
     function oneMag(){ return [{x:450,y:250,ang:0}]; }
     function twoMag(){ return [{x:330,y:250,ang:0},{x:580,y:250,ang:Math.PI}]; }
     var mags = (config.count===2)?twoMag():oneMag();
@@ -97,9 +99,9 @@
         check:function(){ return triedNon; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],         missions:LOW_MISSIONS,             showView:false, showCnt:false, startCnt:1, hint:'물건을 탭해 자석에 붙는지 확인해 봐요. 쇠붙이만 붙어요!' },
-      mid:  { modes:['free','mission','quiz'], missions:[MISSIONS[1],MISSIONS[2]], showView:false, showCnt:true,  startCnt:2, hint:'자석 2개의 극을 마주 보게 옮겨, 끌리는지 밀어내는지 봐요. (돌리기로 극 방향 바꾸기)' },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS,                  showView:true,  showCnt:true,  startCnt:1, hint:'자기력선·나침반으로 눈에 안 보이는 자기장을 살펴봐요. 자석을 돌리면 자기장도 따라 돌아요.' }
+      low:  { modes:['free','mission'],         missions:LOW_MISSIONS,             showView:false, showCnt:false, showCut:false, startCnt:1, hint:'물건을 탭해 자석에 붙는지 확인해 봐요. 쇠붙이만 붙어요!' },
+      mid:  { modes:['free','mission','quiz'], missions:[MISSIONS[1],MISSIONS[2]], showView:false, showCnt:true,  showCut:true,  startCnt:2, hint:'자석 2개의 극을 마주 보게 옮겨, 끌리는지 밀어내는지 봐요. (돌리기로 극 방향 바꾸기)' },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,                  showView:true,  showCnt:true,  showCut:true,  startCnt:1, hint:'자기력선·나침반으로 눈에 안 보이는 자기장을 살펴봐요. 자석을 돌리면 자기장도 따라 돌아요.' }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function curMissions(){ return GRADES[grade].missions; }
@@ -108,7 +110,7 @@
       else { mags=(GRADES[grade].startCnt===2)?twoMag():oneMag(); view='lines'; }
     }
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false; applyGradeStage(); buildUI();
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false; cutPieces=null; cutGap=0; applyGradeStage(); buildUI();
     }});
     applyGradeStage();
     function checkMission(){
@@ -148,6 +150,28 @@
       return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
     }
 
+    /* ───────────── 와우 ④ 마법모먼트 — 반으로 자르기(예측 빗나감형) ─────────────
+       오개념: "자석을 반으로 자르면 N극 조각·S극 조각으로 나뉜다."
+       반증: 각 조각이 다시 N극과 S극을 가진 작은 자석이 됨 — 자른 곳에 새 극 한 쌍이 생김. */
+    function clearFlash(){ var f=el.querySelector('.mg-flash'); if(f&&f.parentNode)f.parentNode.removeChild(f); }
+    function mgFlash(html){
+      clearFlash();
+      var host=el.querySelector('.kl-stage-host'); if(!host)return;
+      var d=document.createElement('div'); d.className='mg-flash'; d.innerHTML=html; host.appendChild(d);
+      setTimeout(function(){ var f=el.querySelector('.mg-flash'); if(f===d&&f.parentNode)f.parentNode.removeChild(f); },2800);
+    }
+    function animateGap(){
+      var target=80, steps=9, i=0;
+      (function step(){ i++; cutGap=target*i/steps; if(cutPieces)render(); if(i<steps)requestAnimationFrame(step); })();
+    }
+    function doCut(){
+      if(cutPieces||mode!=='free'||!GRADES[grade].showCut||mags.length!==1)return;
+      cutPieces=true; cutGap=0; snd('whoosh'); snd('success'); buildUI();
+      mgFlash('✂️ 반으로 잘랐는데 <b>양쪽 다 다시 N극과 S극</b>이 생겼어요! 자석은 아무리 잘라도 한 극만 떼어낼 수 없어요 — 자른 곳에 새 극이 생겨요.');
+      animateGap();
+    }
+    function unCut(){ cutPieces=null; cutGap=0; clearFlash(); snd('select'); buildUI(); }
+
     function buildUI(){
       var rot=mags.map(function(m,i){return '<button class="mg-btn" data-rot="'+i+'" style="'+btn+'background:#fff;color:#7048E8;border-color:#7048E8;">↻ 자석'+(mags.length>1?(i+1):'')+' 돌리기</button>';}).join('');
       var top=bands.selectorHTML()+ui.modeTabs(GRADES[grade].modes,mode), bar='', foot='';
@@ -161,18 +185,29 @@
           +'<span style="width:6px;"></span>'+rot
         +'</div>'):'';
       var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">'+GRADES[grade].hint+'</div>';
-      var mid=viewRow+cntRow+hint;
+      var canCut=(mode==='free'&&GRADES[grade].showCut&&mags.length===1&&!cutPieces);
+      var cutRow = cutPieces
+        ? '<div style="display:flex;justify-content:center;margin-bottom:6px;"><button class="mg-uncut" style="'+btn+'background:#fff;color:#12B886;border-color:#12B886;">↩️ 도로 붙이기</button></div>'
+        : (canCut ? '<div style="display:flex;justify-content:center;margin-bottom:6px;"><button class="mg-cut" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;">✂️ 반으로 잘라보기</button></div>' : '');
+      var mid = cutPieces
+        ? (cutRow+'<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">자석을 반으로 잘라도 각 조각이 다시 N극과 S극을 가진 작은 자석이 돼요.</div>')
+        : (viewRow+cntRow+cutRow+hint);
       if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); mid=''; foot=ui.choices(quizChoices()); }
       el.innerHTML='<style>.mg-btn:active,.kl-choice:active{transform:translateY(2px);}.mg-stage{cursor:default;touch-action:none;}.mg-mag{cursor:grab;}.mg-stage.drag .mg-mag{cursor:grabbing;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
-        +'.mg-view.on{background:#7048E8 !important;color:#fff !important;}</style>'
+        +'.mg-view.on{background:#7048E8 !important;color:#fff !important;}'
+        +'.mg-flash{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#7048E8;color:#fff;padding:11px 18px;border-radius:14px;font-family:Jua,sans-serif;font-size:16px;font-weight:800;line-height:1.45;box-shadow:0 6px 18px rgba(112,72,232,0.4);max-width:88%;text-align:center;z-index:5;animation:mgPop .4s ease;}'
+        +'@keyframes mgPop{from{opacity:0;transform:translate(-50%,-10px);}to{opacity:1;transform:translate(-50%,0);}}'
+        +'.mg-hold{display:inline-block;animation:mgHold 1s ease 2;}@keyframes mgHold{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}'
+        +'.mg-spark{animation:mgSpark 1.1s ease infinite;}@keyframes mgSpark{0%,100%{opacity:.4;}50%{opacity:1;}}'
+        +'.mg-newpole{animation:mgGlow 1.2s ease infinite;}@keyframes mgGlow{0%,100%{stroke-opacity:.4;}50%{stroke-opacity:1;}}</style>'
         + top + bar + mid
         +'<div class="kl-stage-host" style="position:relative;"><div class="mg-stage" style="width:100%;height:'+(mode==='quiz'?'36vh':'42vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 50% 25%,#FCFEFF 0%,#EFF4F9 75%,#E2EAF3 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
         +'<div class="mg-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;color:'+C.sub+';font-size:18px;line-height:1.4;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false;
+        mode=m; mStep=0;mDone=false;mLock=false; rotCount=0; rotInCompass=false; cutPieces=null; cutGap=0;
         applyGradeStage();
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
@@ -215,10 +250,34 @@
         svg.appendChild(g);
       });
     }
+    function piece(svg,cx,cy,newLeft){
+      // 잘린 작은 자석 [S | N], 반길이 PML. newLeft=true 면 왼쪽(S)이 새 극, false 면 오른쪽(N)이 새 극.
+      var PML=ML/2, h=MW, g=svgEl('g',{class:'mg-piece'});
+      g.appendChild(svgEl('rect',{x:cx-PML,y:cy-h/2+4,width:PML*2,height:h,rx:8,fill:'#1A3357','fill-opacity':0.16}));
+      g.appendChild(svgEl('rect',{x:cx-PML,y:cy-h/2,width:PML,height:h,rx:8,fill:C.S}));
+      g.appendChild(svgEl('rect',{x:cx,y:cy-h/2,width:PML,height:h,rx:8,fill:C.N}));
+      g.appendChild(svgEl('rect',{x:cx-PML,y:cy-h/2,width:PML*2,height:h,rx:8,fill:'none',stroke:'#fff','stroke-width':2,'stroke-opacity':0.5}));
+      var tS=svgEl('text',{x:cx-PML/2,y:cy+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tS.textContent='S';g.appendChild(tS);
+      var tN=svgEl('text',{x:cx+PML/2,y:cy+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
+      var npx=newLeft?cx-PML:cx+PML;   // 새로 생긴 극(잘린 면) 강조
+      g.appendChild(svgEl('circle',{class:'mg-newpole',cx:npx,cy:cy,r:17,fill:'none',stroke:C.line,'stroke-width':3,'stroke-opacity':0.9}));
+      var sp=svgEl('text',{class:'mg-spark',x:npx,y:cy-h/2-7,'text-anchor':'middle','font-size':22});sp.textContent='✨';g.appendChild(sp);
+      svg.appendChild(g);
+    }
+    function renderCut(svg){
+      var cx0=450, cy=215, PML=ML/2, gap=cutGap;
+      var leftCx=cx0-gap/2-PML, rightCx=cx0+gap/2+PML;
+      if(gap>8){ var sc=svgEl('text',{x:cx0,y:cy-MW/2-20,'text-anchor':'middle','font-size':26});sc.textContent='✂️';svg.appendChild(sc); }
+      piece(svg,leftCx,cy,false);   // 왼쪽 조각: 잘린 면(오른쪽 N)이 새 극
+      piece(svg,rightCx,cy,true);   // 오른쪽 조각: 잘린 면(왼쪽 S)이 새 극
+      var lab=svgEl('text',{x:cx0,y:cy+MW+40,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,fill:C.line});
+      lab.textContent='✨ 자른 곳에 새 극이 생겼어요 — 조각마다 N극·S극 한 쌍씩'; svg.appendChild(lab);
+    }
     function render(){
       stage=el.querySelector('.mg-stage'); stage.innerHTML='';
       var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,width:'100%',height:'100%'});
       if(grade==='low'){ renderAttract(svg); stage.appendChild(svg); renderStatus(); checkMission(); return; }
+      if(cutPieces){ renderCut(svg); stage.appendChild(svg); renderStatus(); checkMission(); return; }
       if(view==='lines'){ fieldLines(svg); }
       else { var cols=11, rows=6, mx=70, my=60;
         for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var x=mx+(VBW-2*mx)*c/(cols-1), y=my+(VBH-2*my)*r/(rows-1); compass(svg,x,y);} }
@@ -230,6 +289,10 @@
     function renderStatus(){
       var s=el.querySelector('.mg-status');
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:19px;">그림 속 자석과 자기장을 보고 답을 골라요!</div>'; return; }
+      if(cutPieces){
+        s.innerHTML='<div style="font-size:20px;"><span class="mg-hold" style="color:'+C.line+';">자석은 잘라도 한 극만 따로 떼어낼 수 없어요.</span> 자른 곳마다 N극과 S극이 새로 한 쌍씩 생겨요.</div>';
+        return;
+      }
       if(grade==='low'){
         var att=OBJECTS.filter(function(o){return o.attached;}).length;
         s.innerHTML='<div style="font-size:19px;">🧲 쇠붙이(철)로 만든 물건만 자석에 붙어요! '+(att>0?('지금까지 '+att+'개 붙였어요 ✨'):'물건을 탭해 확인해 봐요.')+'</div>';
@@ -269,9 +332,11 @@
         });
       }
       bands.bind(el);
-      el.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){if(view!==b.dataset.view){view=b.dataset.view;buildUI();}});});
-      el.querySelectorAll('[data-cnt]').forEach(function(b){b.addEventListener('click',function(){var n=+b.dataset.cnt;if(n!==mags.length){mags=(n===2)?[{x:330,y:250,ang:0},{x:580,y:250,ang:Math.PI}]:[{x:450,y:250,ang:0}];buildUI();}});});
-      el.querySelectorAll('[data-rot]').forEach(function(b){b.addEventListener('click',function(){var i=+b.dataset.rot;mags[i].ang+=Math.PI/6;rotCount++;if(view==='compass')rotInCompass=true;render();});});
+      var cb=el.querySelector('.mg-cut'); if(cb)cb.addEventListener('click',doCut);
+      var ub=el.querySelector('.mg-uncut'); if(ub)ub.addEventListener('click',unCut);
+      el.querySelectorAll('[data-view]').forEach(function(b){b.addEventListener('click',function(){if(view!==b.dataset.view){clearFlash();snd('select');view=b.dataset.view;buildUI();}});});
+      el.querySelectorAll('[data-cnt]').forEach(function(b){b.addEventListener('click',function(){var n=+b.dataset.cnt;if(n!==mags.length){clearFlash();snd('select');cutPieces=null;cutGap=0;mags=(n===2)?[{x:330,y:250,ang:0},{x:580,y:250,ang:Math.PI}]:[{x:450,y:250,ang:0}];buildUI();}});});
+      el.querySelectorAll('[data-rot]').forEach(function(b){b.addEventListener('click',function(){var i=+b.dataset.rot;mags[i].ang+=Math.PI/6;rotCount++;snd('tap');if(view==='compass')rotInCompass=true;render();});});
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true;
