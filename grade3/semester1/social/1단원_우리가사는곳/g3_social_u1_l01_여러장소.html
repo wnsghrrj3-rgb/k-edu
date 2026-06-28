@@ -186,6 +186,48 @@ function villageSVG(){return `<div class="village"><svg viewBox="0 0 540 150" st
   <circle cx="500" cy="118" r="9" fill="#F472B6"/><text x="500" y="112" font-size="10" fill="#BE185D" text-anchor="middle" font-weight="700">놀이터</text>
 </svg></div>`;}
 
+/* ===== 눌러서 찾는 동네(직접 조작) ===== */
+const PLACES = {
+  school:    {name:"학교",   x:14,  y:54,  w:80, h:64, desc:"공부하고 친구들과 함께 지내는 곳이에요."},
+  market:    {name:"시장",   x:114, y:62,  w:76, h:56, desc:"여러 가지 물건을 사고파는 곳이에요."},
+  library:   {name:"도서관", x:208, y:60,  w:72, h:58, desc:"책을 빌리고 조용히 읽는 곳이에요."},
+  river:     {name:"강",     x:298, y:98,  w:96, h:24, desc:"물이 흐르는 자연 장소예요."},
+  mountain:  {name:"산",     x:424, y:64,  w:64, h:54, desc:"나무가 우거진 자연 장소예요."},
+  playground:{name:"놀이터", x:482, y:98,  w:42, h:42, desc:"친구들과 즐겁게 노는 곳이에요."}
+};
+function villageInteractive(st){
+  const found = st.found || {};
+  const total = Object.keys(PLACES).length;
+  const cnt = Object.keys(found).length;
+  const hot = Object.entries(PLACES).map(([k,p])=>{
+    const on = !!found[k];
+    return `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="6"
+      fill="${on?'rgba(21,128,61,.16)':'rgba(255,255,255,0.01)'}"
+      stroke="${on?'#15803D':'#94A3B8'}" stroke-width="${on?'2.4':'1.4'}" stroke-dasharray="${on?'0':'4 4'}"
+      style="cursor:pointer" onclick="discoverPlace('${k}')"></rect>`
+      + (on?`<circle cx="${p.x+p.w-9}" cy="${p.y+10}" r="8" fill="#15803D"/><text x="${p.x+p.w-9}" y="${p.y+14}" font-size="11" fill="#fff" text-anchor="middle" font-weight="800">✓</text>`:'');
+  }).join("");
+  const last = st._lastFound && PLACES[st._lastFound];
+  const info = last
+    ? `<div class="answer-box" style="text-align:center;max-width:560px"><b style="color:#15803D">${last.name}</b> — ${last.desc}</div>`
+    : `<div class="note">동네 그림에서 <b style="color:#15803D">장소</b>를 하나씩 눌러 찾아봐요.</div>`;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">찾은 장소 ${cnt} / ${total}</div>`;
+  const finale = (cnt>=total)
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px">우리 동네 한 곳에 이렇게 <span class="ka-emph">여러 장소</span>가 모여 있어요! 장소마다 하는 일이 서로 달라요.</div>`
+    : '';
+  return `<div class="village"><svg viewBox="0 0 540 150" style="width:100%;height:auto">
+  <rect width="540" height="150" fill="#F4FFF8"/>
+  <rect y="118" width="540" height="32" fill="#DCEFE0"/>
+  <rect x="20" y="78" width="70" height="40" fill="#9DD6F5"/><path d="M16 78 L55 56 L94 78Z" fill="#2D7BB6"/><text x="55" y="103" font-size="11" fill="#0F172A" text-anchor="middle" font-weight="700">학교</text>
+  <rect x="120" y="84" width="64" height="34" fill="#FBBF77"/><path d="M116 84 L152 66 L188 84Z" fill="#E0792E"/><text x="152" y="106" font-size="11" fill="#0F172A" text-anchor="middle" font-weight="700">시장</text>
+  <rect x="214" y="82" width="60" height="36" fill="#C4B5FD"/><path d="M210 82 L244 64 L278 82Z" fill="#7C5BD8"/><text x="244" y="105" font-size="11" fill="#0F172A" text-anchor="middle" font-weight="700">도서관</text>
+  <path d="M300 118 Q346 104 392 118" stroke="#7FC8E8" stroke-width="10" fill="none"/><text x="346" y="112" font-size="11" fill="#0369A1" text-anchor="middle" font-weight="700">강</text>
+  <path d="M430 118 L460 70 L484 110 L430 118Z" fill="#86C28B"/><text x="456" y="112" font-size="11" fill="#166534" text-anchor="middle" font-weight="700">산</text>
+  <circle cx="500" cy="118" r="9" fill="#F472B6"/><text x="500" y="112" font-size="10" fill="#BE185D" text-anchor="middle" font-weight="700">놀이터</text>
+  ${hot}
+</svg></div>${counter}${info}${finale}`;
+}
+
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
 const META = "1단원 우리가 사는 곳 · ① 여러 장소 · 1차시";
@@ -267,15 +309,14 @@ slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">‘장소’란 무엇일까요?</h2>
-  <div class="ka-bub"><span class="ka-emph">장소</span>는 사람들이 주로 이용하거나 우리가 사는 곳을 이루고 있는 부분이에요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('mountain','산')}${sceneCard('river','강')}</div>
-  <div class="note">산·강처럼 자연이 만든 장소도, 시장·학교처럼 사람들이 만든 장소도 있어요.</div></div>`});
-// 5 살펴보기: 우리 동네 여러 장소
-slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-bub"><span class="ka-emph">장소</span>는 사람들이 생활하면서 이용하는 곳, 또는 우리가 사는 곳을 이루는 한 부분이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('mountain','산')}${sceneCard('river','강')}${sceneCard('school','학교')}</div>
+  <div class="note"><b style="color:#166534">자연이 만든 장소</b>(산·강)도 있고, <b style="color:#0369A1">사람들이 만든 장소</b>(학교·시장)도 있어요. 모두 우리 생활과 이어져 있어요.</div></div>`});
+// 5 살펴보기: 우리 동네 여러 장소(직접 찾기)
+slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리가 사는 곳에는 여러 장소가 있어요</h2>
-  <div class="ka-grp">${villageSVG()}
-  <div class="note">한 동네 안에도 학교·시장·도서관·강·산·놀이터처럼 <b style="color:#15803D">여러 장소</b>가 모여 있어요.</div></div>`});
+  <h2 class="ka-t">동네에서 여러 장소를 직접 찾아봐요</h2>
+  <div class="ka-grp">${villageInteractive(st)}</div>`});
 // 6 살펴보기: 장소마다 하는 일이 다름(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -360,6 +401,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  found:{}, _lastFound:null,
   startTs: Date.now(),
   attempt: 1
 };
@@ -395,6 +437,20 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+/* 동네 장소 직접 찾기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+function discoverPlace(k){
+  if(!PLACES[k]) return;
+  if(!state.found) state.found={};
+  const wasNew = !state.found[k];
+  state.found[k]=true; state._lastFound=k;
+  const total=Object.keys(PLACES).length, cnt=Object.keys(state.found).length;
+  if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
+  main.innerHTML=slides[state.idx].render(state);
+}
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
