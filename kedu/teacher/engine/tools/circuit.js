@@ -17,11 +17,13 @@
 
   window.KLab.register('circuit', function (el, config) {
     var ui=window.KLab.ui;
+    function snd(n){if(window.KLab.sound&&window.KLab.sound.play)window.KLab.sound.play(n);}
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
     var circ=(config.mode==='parallel'||config.circ==='parallel')?'parallel':'series';
     function defS(){return [{t:'battery',dir:1},{t:'wire'},{t:'bulb'},{t:'wire'},{t:'switch',open:false},{t:'wire'},{t:'bulb'},{t:'wire'}];}
     function defP(){return [{t:'battery',dir:1},{t:'switch',open:false},{t:'bulb'},{t:'bulb'},{t:'wire'}];} // 0본선전지,1본선스위치,2~4가지
     var sSlots=defS(), pSlots=defP(), tool='bulb';
+    var predictArmed=false;
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     var VBW=900,VBH=470, lft=130,rgt=770,top=140,bot=360, midx=(lft+rgt)/2, midy=(top+bot)/2;
@@ -84,14 +86,14 @@
         check:function(r){ return r.flow; } }
     ];
     var GRADES={
-      low:  { showCirc:false, missions:LOW_MISSIONS, hint:'부품을 골라 빈 자리를 탭해 놓아요. 스위치를 탭하면 여닫을 수 있어요.' },
-      mid:  { showCirc:false, missions:MID_MISSIONS, hint:'스위치를 탭해 여닫아 보세요. 직렬은 한 곳만 끊겨도 전부 꺼져요.' },
-      high: { showCirc:true,  missions:MISSIONS,     hint:'직렬·병렬을 바꿔 가며 밝기와 독립성을 비교해 보세요. 스위치 탭=여닫기, 전지 탭=＋－ 방향.' }
+      low:  { showCirc:false, showWow:false, missions:LOW_MISSIONS, hint:'부품을 골라 빈 칸을 탭해 놓아요. 스위치를 탭하면 여닫을 수 있어요.' },
+      mid:  { showCirc:false, showWow:false, missions:MID_MISSIONS, hint:'스위치를 탭해 여닫아 보세요. 직렬은 한 곳만 끊겨도 전부 꺼져요.' },
+      high: { showCirc:true,  showWow:true,  missions:MISSIONS,     hint:'직렬·병렬을 바꿔 가며 밝기와 독립성을 비교해 보세요. 스위치 탭=여닫기, 전지 탭=＋－ 방향.' }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function curMissions(){ return GRADES[grade].missions; }
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; circ='series'; sSlots=defS();pSlots=defP(); tool='bulb'; buildUI();
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; circ='series'; sSlots=defS();pSlots=defP(); tool='bulb'; predictArmed=false; buildUI();
     }});
     function checkMission(r){
       if(mode!=='mission'||mDone||mLock)return;
@@ -130,6 +132,32 @@
       return idx.map(function(i){ return {v:i,label:'<span style="font-size:19px;">'+q.ch[i]+'</span>'}; });
     }
 
+    /* ── 와우(고학년) — '직렬에 전구를 더 달면 더 밝다?' 예측 빗나감형 ──
+       ① 전구 1개 환하게 켜고 예측을 무장 ② 하나 더 달면 오히려 1/N로 어두워짐을 보여 줌. 반복 가능. */
+    function clearCiFlash(){var h=el.querySelector('.kl-stage-host');if(!h)return;var f=h.querySelector('.ci-flash');if(f)f.remove();}
+    function ciFlash(html,magic){
+      var h=el.querySelector('.kl-stage-host'); if(!h)return; clearCiFlash();
+      var d=document.createElement('div'); d.className='ci-flash'+(magic?' ci-flash-magic':'');
+      d.innerHTML=html; h.appendChild(d);
+      setTimeout(function(){if(d.parentNode)d.remove();}, magic?2800:2600);
+    }
+    function firstWire(){for(var i=0;i<sSlots.length;i++)if(sSlots[i].t==='wire')return i; return -1;}
+    function wowSetup(){
+      circ='series';
+      sSlots=[{t:'battery',dir:1},{t:'wire'},{t:'bulb'},{t:'wire'},{t:'switch',open:false},{t:'wire'},{t:'wire'},{t:'wire'}];
+      predictArmed=true; snd('tap'); render();
+      ciFlash('🔭 전구 <b>1개</b>가 환하게 켜졌어요.<br>여기에 전구를 <b>하나 더</b> 달면… 더 밝아질까요? 예상해 봐요!', false);
+    }
+    function wowReveal(){
+      if(!predictArmed){ snd('select'); ciFlash('먼저 <b>「전구 늘리면 더 밝다?」</b>를 눌러 예상해 봐요!', false); return; }
+      var wi=firstWire();
+      if(wi<0){ snd('select'); ciFlash('전구가 이미 가득해요. ↺ 처음을 눌러 다시 해 봐요.', false); return; }
+      sSlots[wi]={t:'bulb'};
+      snd('whoosh'); snd('success'); render();
+      var L=calc().L;
+      ciFlash('💡 전구를 하나 더 달았는데 <b>오히려 더 어두워졌어요!</b><br>직렬은 전압을 <b>나눠 써서</b>, 전구가 '+L+'개면 각 전구는 <b>1/'+L+' 밝기</b>예요.', true);
+    }
+
     function buildUI(){
       var pal=TOOLS.map(function(t){return '<button class="cir-tool'+(t.k===tool?' on':'')+'" data-tool="'+t.k+'" style="'+btn+(t.k===tool?'background:#1565C0;color:#fff;':'background:#fff;color:#1565C0;')+'">'+t.l+'</button>';}).join('');
       var top=bands.selectorHTML()+ui.modeTabs(['free','mission','quiz'],mode), bar='', mid='', foot='';
@@ -137,24 +165,33 @@
           +'<button class="cir-mode'+(circ==='series'?' on':'')+'" data-mode="series" style="'+mbtn+'">직렬</button>'
           +'<button class="cir-mode'+(circ==='parallel'?' on':'')+'" data-mode="parallel" style="'+mbtn+'">병렬</button>'
         +'</div>'):'';
+      var wowRow=(GRADES[grade].showWow&&circ==='series')?('<div style="display:flex;gap:8px;justify-content:center;margin-bottom:7px;flex-wrap:wrap;">'
+          +'<button class="cir-wow" data-wow="setup" style="'+mbtn+'">🔭 전구 늘리면 더 밝다?</button>'
+          +'<button class="cir-wow" data-wow="reveal" style="'+mbtn+'background:#7048E8;color:#fff;">💡 정말 전구 하나 더 달기</button>'
+        +'</div>'):'';
       var palRow='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:5px;">'+pal
           +'<button class="cir-tool" data-tool="reset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 처음</button></div>';
       var hint='<div style="text-align:center;font-size:15px;color:'+C.sub+';margin-bottom:6px;">'+GRADES[grade].hint+'</div>';
       if(mode==='mission'){ var CMB=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length); mid=palRow+hint; }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
-      else mid=circRow+palRow+hint;
+      else mid=circRow+wowRow+palRow+hint;
       el.innerHTML='<style>'
-        +'.cir-tool:active,.cir-mode:active,.kl-choice:active{transform:translateY(2px);}'
+        +'.cir-tool:active,.cir-mode:active,.cir-wow:active,.kl-choice:active{transform:translateY(2px);}'
         +'.cir-tool.on{background:#1565C0 !important;color:#fff !important;}.cir-mode.on{background:#7048E8 !important;color:#fff !important;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.cir-hit{cursor:pointer;}@keyframes cirFlow{to{stroke-dashoffset:-30;}}.cir-flow{stroke-dasharray:3 13;stroke-linecap:round;animation:cirFlow .55s linear infinite;}'
+        +'.ci-flash{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:88%;background:linear-gradient(135deg,#EAF2FF,#DCE8FF);color:#1B3A57;border:3px solid #7BA7E8;border-radius:16px;padding:12px 18px;font-size:18px;font-weight:800;line-height:1.45;text-align:center;box-shadow:0 8px 24px rgba(21,101,192,0.22);z-index:5;animation:ciPop .32s cubic-bezier(.34,1.56,.64,1);}'
+        +'.ci-flash-magic{background:linear-gradient(135deg,#F3ECFF,#E7DBFF);border-color:#9B7BE8;color:#3A2A6B;box-shadow:0 10px 30px rgba(112,72,232,0.30);}'
+        +'@keyframes ciPop{0%{opacity:0;transform:translateX(-50%) translateY(-10px) scale(.9);}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}'
+        +'.ci-hold{display:inline-block;margin-top:5px;color:#7048E8;font-size:16px;font-weight:800;animation:ciHold 1.1s ease-in-out infinite;}'
+        +'@keyframes ciHold{0%,100%{opacity:.55;}50%{opacity:1;}}'
         +'</style>'
         + top + bar + mid
         +'<div class="kl-stage-host" style="position:relative;"><div class="cir-stage" style="width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'250':'320')+'px;background:radial-gradient(120% 120% at 50% 30%,#FCFDFF 0%,#EAF1FA 70%,#DCE8F6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
         +'<div class="cir-status" style="text-align:center;margin-top:9px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; sSlots=defS();pSlots=defP(); tool='bulb';
+        mode=m; mStep=0;mDone=false;mLock=false; sSlots=defS();pSlots=defP(); tool='bulb'; predictArmed=false;
         if(m==='mission'){ var fm=curMissions()[0]; circ=fm.circ; sSlots=defS();pSlots=defP(); if(fm.setup)fm.setup(); }
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
@@ -259,15 +296,19 @@
         else{msg='<span style="color:'+C.good+';">가지마다 따로 켜짐 ✨</span>';sub='병렬 — 가지가 독립이라 한 가지 전구를 빼도 나머지는 그대로 켜지고, 전구가 많아도 밝기가 유지돼요.';}
       }
       if(msg.indexOf('span')<0)msg='<span style="color:'+(r.short?C.warn:C.sub)+';">'+msg+'</span>';
-      s.innerHTML='<div style="font-size:25px;">'+msg+'</div><div style="font-size:17px;color:'+C.sub+';margin-top:5px;line-height:1.4;">'+sub+'</div>';
+      var holdHtml=(predictArmed&&circ==='series'&&r.flow&&r.L>=2)?'<div class="ci-hold">전구가 늘수록 각 전구는 1/전구수 밝기로 어두워져요</div>':'';
+      s.innerHTML='<div style="font-size:25px;">'+msg+'</div><div style="font-size:17px;color:'+C.sub+';margin-top:5px;line-height:1.4;">'+sub+'</div>'+holdHtml;
     }
 
     function bind(){
-      el.querySelectorAll('.cir-mode').forEach(function(b){b.addEventListener('click',function(){if(circ!==b.dataset.mode){circ=b.dataset.mode;buildUI();}});});
+      el.querySelectorAll('.cir-wow').forEach(function(b){b.addEventListener('click',function(){
+        if(b.dataset.wow==='setup')wowSetup(); else wowReveal();
+      });});
+      el.querySelectorAll('.cir-mode').forEach(function(b){b.addEventListener('click',function(){if(circ!==b.dataset.mode){snd('select');circ=b.dataset.mode;predictArmed=false;clearCiFlash();buildUI();}});});
       el.querySelectorAll('.cir-tool').forEach(function(b){b.addEventListener('click',function(){
         var k=b.dataset.tool;
-        if(k==='reset'){sSlots=defS();pSlots=defP();tool='bulb';buildUI();return;}
-        tool=k; el.querySelectorAll('.cir-tool').forEach(function(x){x.classList.toggle('on',x.dataset.tool===tool);});
+        if(k==='reset'){snd('select');sSlots=defS();pSlots=defP();tool='bulb';predictArmed=false;clearCiFlash();buildUI();return;}
+        snd('select'); tool=k; el.querySelectorAll('.cir-tool').forEach(function(x){x.classList.toggle('on',x.dataset.tool===tool);});
       });});
       el.querySelector('.cir-stage').addEventListener('click',function(e){
         if(mode==='quiz')return;
@@ -277,7 +318,7 @@
         else if(tool==='switch'){ if(s.t==='switch') s.open=!s.open; else {s.t='switch';s.open=false;} }
         else if(tool==='battery'){ if(s.t==='battery') s.dir=(s.dir||1)*-1; else {s.t='battery';s.dir=1;} }
         else { s.t='bulb'; }
-        render();
+        snd('tap'); clearCiFlash(); render();
       });
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
