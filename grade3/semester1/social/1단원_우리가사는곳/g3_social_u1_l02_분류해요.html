@@ -197,6 +197,56 @@ function groupBox(label,color,items){
 }
 function sortTwo(g1,g2){return `<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;width:100%">${g1}${g2}</div>`;}
 
+/* ===== 효과음 (브라우저에서만, jsdom 안전 가드) ===== */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+/* ===== 직접 분류 조작 (기준①: 누가 만들었나 — 자연/사람) ===== */
+const CLASSIFY = [
+  ['mountain','산','nature'],['river','강','nature'],
+  ['market','시장','human'],['school','학교','human'],['library','도서관','human'],['playground','놀이터','human']
+];
+const BINS = {nature:{label:'🌿 자연이 만든 곳',color:'#15803D'}, human:{label:'🏠 사람이 만든 곳',color:'#0891B2'}};
+function classifyGame(st){
+  const placed = st.cls || {};
+  const done = Object.keys(placed).length, total = CLASSIFY.length;
+  const pool = CLASSIFY.filter(([k])=>!placed[k]).map(([k,c])=>{
+    const sh = st.clsWrong===k ? ' style="animation:shakeNo .4s ease"' : '';
+    return `<div class="scene"${sh}>${SVG[k]}<div class="cap">${c}</div>
+      <div style="display:flex;gap:4px;padding:0 6px 8px">
+        <button onclick="classifyPick('${k}','nature')" style="flex:1;border:none;border-radius:8px;padding:6px 2px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;background:#DCFCE7;color:#15803D">🌿 자연</button>
+        <button onclick="classifyPick('${k}','human')" style="flex:1;border:none;border-radius:8px;padding:6px 2px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;background:#E0F2FE;color:#0369A1">🏠 사람</button>
+      </div></div>`;
+  }).join("");
+  const binBox = (bin)=>{
+    const cards = CLASSIFY.filter(([k])=>placed[k]===bin).map(([k,c])=>sceneCard(k,c)).join("");
+    const b=BINS[bin];
+    return `<div style="flex:1;min-width:0;border:2px dashed ${b.color};border-radius:14px;padding:10px;background:#F8FFFB">
+      <div style="background:${b.color};color:#fff;font-weight:700;font-size:clamp(12px,2vw,15px);padding:5px 12px;border-radius:30px;display:inline-block;margin-bottom:10px">${b.label}</div>
+      <div class="scene-row" style="min-height:42px">${cards||'<div class="note" style="padding:10px 0">여기로 넣어요</div>'}</div></div>`;
+  };
+  const poolHTML = pool ? `<div class="scene-row" style="margin-bottom:12px">${pool}</div>` : '';
+  const status = (done>=total)
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">잘했어요! <span class="ka-emph">하나의 기준</span>(누가 만들었나)으로 여섯 장소가 두 무리로 깔끔하게 나뉘었어요.</div>`
+    : `<div class="note" style="font-weight:700;color:#15803D">분류한 곳 ${done} / ${total} — 카드 아래 버튼을 눌러 알맞은 무리에 넣어요</div>`;
+  return `${poolHTML}<div style="display:flex;gap:12px;width:100%;max-width:640px">${binBox('nature')}${binBox('human')}</div>${status}`;
+}
+function classifyPick(key,bin){
+  if(!state.cls) state.cls={};
+  if(state.cls[key]) return;
+  const item = CLASSIFY.find(c=>c[0]===key); if(!item) return;
+  if(item[2]===bin){
+    state.cls[key]=bin; state.clsWrong=null;
+    (Object.keys(state.cls).length>=CLASSIFY.length)?playChime():playBlip();
+    main.innerHTML=slides[state.idx].render(state);
+  } else {
+    state.clsWrong=key; main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ state.clsWrong=null; main.innerHTML=slides[state.idx].render(state); },600);
+  }
+}
+
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
 const META = "1단원 우리가 사는 곳 · ① 여러 장소 · 2차시";
@@ -281,15 +331,12 @@ slides.push({stage:2,badge:"개념",render:()=>`
   <h2 class="ka-t">‘기준’이 무엇일까요?</h2>
   <div class="ka-bub"><span class="ka-emph">기준</span>은 ‘무엇을 보고 나눌지’ 정하는 약속이에요. 기준이 있어야 비슷한 것끼리 무리지을 수 있어요.</div>
   <div class="ka-grp"><div class="note">예를 들어 <b style="color:#0891B2">‘누가 만들었는가’</b>를 기준으로 정하면, 장소를 두 무리로 나눌 수 있어요.</div></div>`});
-// 5 살펴보기: 기준 1 (자연/사람) 분류 시연
-slides.push({stage:2,badge:"개념",render:()=>`
+// 5 살펴보기: 기준 1 (자연/사람) — 직접 분류 조작
+slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">기준 ① 누가 만들었나요?</h2>
-  <div class="ka-grp">${sortTwo(
-    groupBox('🌿 자연이 만든 곳','#15803D',[['mountain','산'],['river','강']]),
-    groupBox('🏠 사람이 만든 곳','#0891B2',[['market','시장'],['school','학교'],['playground','놀이터']])
-  )}
-  <div class="note">같은 장소들도 <b style="color:#15803D">하나의 기준</b>으로 묶으면 두 무리로 깔끔하게 나뉘어요.</div></div>`});
+  <div class="ka-bub" style="margin-bottom:12px">아래 장소를 <b style="color:#15803D">‘누가 만들었나’</b> 기준으로 직접 나눠 봐요. 카드의 버튼을 눌러 알맞은 무리에 넣어요.</div>
+  <div class="ka-grp">${classifyGame(st)}</div>`});
 // 6 살펴보기: 기준 2 (하는 일) — 발문
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -374,6 +421,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  cls:{}, clsWrong:null,
   startTs: Date.now(),
   attempt: 1
 };
