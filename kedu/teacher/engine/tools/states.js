@@ -33,6 +33,13 @@
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function clamp(v,a,b){return Math.max(a,Math.min(v,b));}
     function snd(n){ if(window.KLab.sound&&window.KLab.sound.play)window.KLab.sound.play(n); }
+    /* ── 입자 비주얼: 실사 분자 스프라이트(입체 구슬) ── 헌법 6장: 로직 불변, 연출만 교체.
+       이미지 로드 성공 시 입자를 <circle>→<image>로 승급. 실패하면 기존 SVG 그라디언트 원으로 폴백(안 깨짐). */
+    var MOL_SPRITE='/kedu/teacher/engine/tools/assets/states/molecule.png';
+    var useSprite=false, _molImg=new Image();
+    _molImg.onload=function(){ useSprite=true; if(stage&&partsLayer)drawStage(); };
+    _molImg.onerror=function(){ useSprite=false; };
+    _molImg.src=MOL_SPRITE;
     /* ── 와우(F칸) 질량 보존 — 예측 빗나감형 11호 ──
        「상태가 바뀌면(끓으면/녹으면) 무게가 변한다/사라진다」 오개념을 정면 반증.
        밀폐 통 + 저울: 얼음을 데워 물·수증기로 다 바꿔도 입자 개수가 그대로라 무게도 그대로.
@@ -193,7 +200,18 @@
       svg.appendChild(svgEl('path',{d:'M '+(BX-14)+' '+(BY-8)+' L '+(BX-14)+' '+(BY+BH+16)+' Q '+(BX-14)+' '+(BY+BH+30)+' '+BX+' '+(BY+BH+30)+' L '+(BX+BW)+' '+(BY+BH+30)+' Q '+(BX+BW+14)+' '+(BY+BH+30)+' '+(BX+BW+14)+' '+(BY+BH+16)+' L '+(BX+BW+14)+' '+(BY-8),fill:'rgba(214,234,248,0.4)',stroke:'#74A4C9','stroke-width':4,'stroke-linejoin':'round','stroke-linecap':'round'}));
       bubbleLayer=svgEl('g',{}); svg.appendChild(bubbleLayer);
       partsLayer=svgEl('g',{}); svg.appendChild(partsLayer);
-      ps.forEach(function(p){p.el=svgEl('circle',{cx:p.x,cy:p.y,r:12,fill:'url(#stLiq)',stroke:'#1864AB','stroke-width':1.5}); partsLayer.appendChild(p.el);});
+      ps.forEach(function(p){
+        if(useSprite){
+          p.isImg=true;
+          p.el=svgEl('image',{x:(p.x-13).toFixed(1),y:(p.y-13).toFixed(1),width:26,height:26});
+          p.el.setAttributeNS('http://www.w3.org/1999/xlink','href',MOL_SPRITE);
+          p.el.setAttribute('href',MOL_SPRITE);
+        } else {
+          p.isImg=false;
+          p.el=svgEl('circle',{cx:p.x,cy:p.y,r:12,fill:'url(#stLiq)',stroke:'#1864AB','stroke-width':1.5});
+        }
+        partsLayer.appendChild(p.el);
+      });
       if(massArmed){
         // 밀폐 뚜껑 — 닫힌 통(수증기가 빠져나가지 못함 → 무게 보존이 성립)
         svg.appendChild(svgEl('rect',{x:BX-22,y:BY-30,width:BW+44,height:22,rx:10,fill:'#CED4DA',stroke:'#868E96','stroke-width':3}));
@@ -225,8 +243,11 @@
           if(gas){ p.vy-=0.05; if(p.vy<-2.6)p.vy=-2.6; }   // 기체 부력(위로)
           else { p.vy+=0.045; }                            // 액체 약한 중력(아래 고임)
         }
-        if(p.el){p.el.setAttribute('cx',p.x.toFixed(1));p.el.setAttribute('cy',p.y.toFixed(1));
-          p.el.setAttribute('fill', gas?'url(#stGas)':(free?'url(#stLiq)':'url(#stSol)'));}
+        if(p.el){
+          if(p.isImg){ p.el.setAttribute('x',(p.x-13).toFixed(1)); p.el.setAttribute('y',(p.y-13).toFixed(1)); }
+          else { p.el.setAttribute('cx',p.x.toFixed(1)); p.el.setAttribute('cy',p.y.toFixed(1));
+            p.el.setAttribute('fill', gas?'url(#stGas)':(free?'url(#stLiq)':'url(#stSol)')); }
+        }
       }
       // 끓는 중 기포 (바닥에서 솟는 작은 거품)
       if(bubbleLayer){ bubbleLayer.innerHTML='';
