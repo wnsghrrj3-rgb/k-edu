@@ -1,6 +1,8 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 산과 염기 (acid) v1  [과학 10호 · 물질 영역]
+   케이랩 도구 모듈 — 산과 염기 (acid) v2  [과학 10호 · 물질 영역]
    5학년 산과 염기. KLab.ui 3모드(자유탐구/미션/퀴즈) 표준.
+   ★와우(F칸·고학년·free·mix 전용) = 중화점 급반전: 라이브 선형 게이지가 가린 "끝까지 빨강→딱 한 방울에 확 파랑"을
+     2단 예측(🔮 어디서 확 변할까?)→확인(💧 결정적 한 방울)으로 드러냄. "비례해 조금씩 변한다" 오개념 반증. 기존 render 보존(헌법 6장).
    디지털 우위: 약품·유리 기구 없이 안전하게, 몇 번이고 즉시 지시약 검사.
    변수 → 현상 → 발견:
      ▸ 🧪 지시약 검사 — 용액 6종(식초·레몬즙·사이다 / 비눗물·석회수·유리세정제)
@@ -24,6 +26,24 @@
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
     function mix(a,b,k){ var pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16),o='#';
       for(var s=16;s>=0;s-=8){ var va=(pa>>s)&255,vb=(pb>>s)&255,v=Math.round(va+(vb-va)*k); o+=('0'+v.toString(16)).slice(-2);} return o; }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }
+    /* 와우 배너 — .kl-stage-host(relative)에 absolute 주입 + 자동 제거 (헌법 6장: 연출만 얹기) */
+    var bnFlashTo=null;
+    function bnFlash(cls,html,ms){
+      var host=el.querySelector('.kl-stage-host'); if(!host)return;
+      host.querySelectorAll('.bn-flash,.bn-flash-magic,.bn-nudge,.bn-solve').forEach(function(n){n.remove();});
+      var col=(cls==='bn-flash-magic')?{bg:'#F3F0FF',bd:C.vio,tx:C.vio}
+             :(cls==='bn-solve')?{bg:'#E6FCF5',bd:C.good,tx:'#0B7285'}
+             :(cls==='bn-nudge')?{bg:'#FFF9DB',bd:'#F59F00',tx:'#B8860B'}
+             :{bg:'#E7F5FF',bd:C.base,tx:C.base};
+      var d=document.createElement('div'); d.className=cls;
+      d.setAttribute('style','position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:92%;z-index:9;'
+        +'background:'+col.bg+';border:3px solid '+col.bd+';color:'+col.tx+';border-radius:16px;'
+        +'padding:12px 18px;font-size:18px;font-weight:800;font-family:inherit;line-height:1.35;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.10);');
+      d.innerHTML=html; host.appendChild(d);
+      if(bnFlashTo)clearTimeout(bnFlashTo);
+      bnFlashTo=setTimeout(function(){ if(d&&d.parentNode)d.parentNode.removeChild(d); bnFlashTo=null; },ms||2800);
+    }
 
     /* ───────────── 데이터 ───────────── */
     var SOLS=[
@@ -50,7 +70,8 @@
 
     /* ───────────── 상태 ───────────── */
     var exp, selSol, selInd, tested, mixN, lowAdd; // mixN: 섞기 실험 염기 방울 수(0=새빨강) / lowAdd: 저학년 마법물에 넣은 것 null|'acid'|'base'
-    function reset(){ exp='test'; selSol=-1; selInd=null; tested={}; mixN=0; lowAdd=null; }
+    var wowArmed=false, wowFlipped=false, wowOverride=null, wowDrops=0; // 중화점 급반전 와우(고학년·free·mix 전용)
+    function reset(){ exp='test'; selSol=-1; selInd=null; tested={}; mixN=0; lowAdd=null; wowArmed=false; wowFlipped=false; wowOverride=null; wowDrops=0; }
     reset();
     function addLow(kind){ lowAdd=kind; renderScene(); renderStatus(); checkMission(); }
     function applyInd(ind){
@@ -60,12 +81,33 @@
     }
     function pickSol(i){ selSol=i; selInd=null; renderScene(); renderStatus(); }
     function drop(kind){
+      if(wowOverride!=null){ wowOverride=null; wowArmed=false; wowFlipped=false; } // 와우 데모에서 빠져나와 보통(선형) 섞기로
       if(kind==='base')mixN=Math.min(10,mixN+1); else mixN=Math.max(0,mixN-1);
       renderScene(); renderStatus(); checkMission();
     }
     function mixCol(){ // 0..10: 붉음→보라→푸름
       var k=mixN/10;
       return k<0.5?mix('#E03131','#9C36B5',k*2):mix('#9C36B5','#1971C2',(k-0.5)*2);
+    }
+
+    /* ── 와우(F칸) — 중화점 급반전 ──
+       ★예측 빗나감형: 라이브 mix 게이지는 10방울에 걸쳐 매끄럽게(선형) 붉음→보라→푸름 →
+       "방울 수에 비례해 조금씩 변한다"는 인상. 실제 적정은 끝까지 거의 빨강이다가 *중화점에서 딱 한 방울에 확 뒤집힘*.
+       도구가 이미 가르치는 "섞으면 약해진다(중화)"가 아니라, 게이지가 가린 *급반전*을 정조준(★dissolve/burn 교훈).
+       기존 선형 render 보존 — wowOverride!=null일 때만 색을 비선형으로 덮어씀(헌법 6장). 고학년·free·mix 전용 2단. */
+    function wowArm(){
+      wowArmed=true; wowFlipped=false; wowOverride='#E03131'; wowDrops=0; mixN=0; // 무대를 새빨간 산성에서 출발(기존 render 재사용)
+      snd('charge');
+      renderScene(); renderStatus();
+      bnFlash('bn-flash','🔴 새빨간 산성 용액이에요. 염기를 한 방울씩 넣으면 — <b>조금씩 매끄럽게 변할까요, 아니면 어느 순간 확 뒤집힐까요?</b> 예상해 봐요!',3200);
+    }
+    function wowReveal(){
+      if(!wowArmed){ snd('select'); bnFlash('bn-nudge','먼저 🔮 버튼으로 <b>어디서 확 변할지</b> 예상부터 해 봐요!',2600); return; }
+      wowFlipped=true; wowOverride='#1971C2'; wowDrops=9; // 결정적 한 방울 = 빨강→파랑 즉시 스냅(매끄러운 ramp는 "급반전"을 오히려 약화)
+      snd('whoosh'); snd('success');
+      renderScene(); renderStatus();
+      bnFlash('bn-flash-magic','딱 한 방울에 <b>확 뒤집혔어요!</b> 🔵 여태 거의 빨강 그대로였는데 <b>결정적 한 방울(중화점)</b>에서 단번에 파랑으로 — 산+염기는 비례해 조금씩이 아니라 <b>한 점에서 확</b> 바뀌어요.',4400);
+      wowArmed=false;
     }
 
     /* ───────────── 미션 ───────────── */
@@ -102,9 +144,9 @@
         keep:true, check:function(){ return exp==='mix'&&mixN>=8; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['test'],       inds:['cab'],        low:true  },
-      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['test'],       inds:['cab','phen'], low:false },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['test','mix'], inds:'all',          low:false }
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['test'],       inds:['cab'],        low:true,  showWow:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['test'],       inds:['cab','phen'], low:false, showWow:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['test','mix'], inds:'all',          low:false, showWow:true  }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -165,10 +207,18 @@
           +'<button class="ac-btn" data-act="low-acid" style="'+btn+'border-color:'+C.acid+';background:#fff;color:'+C.acid+';">🍋 식초 넣기</button>'
           +'<button class="ac-btn" data-act="low-base" style="'+btn+'border-color:'+C.base+';background:#fff;color:'+C.base+';">🧼 비눗물 넣기</button>'
           +'<button class="ac-btn" data-act="reset" style="'+btn+'border-color:#9aa;background:#fff;color:#667;">↺ 새 마법 물</button></div>';
-      if(exp!=='test')return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">'
+      if(exp!=='test'){
+        var wow='';
+        if(G().showWow && mode==='free'){
+          wow='<button class="ac-btn" data-act="wow-arm" style="'+btn+'border-color:'+C.vio+';background:#fff;color:'+C.vio+';">🔮 어디서 확 변할까?</button>'
+             +'<button class="ac-btn" data-act="wow-reveal" style="'+btn+'border-color:'+C.base+';background:#fff;color:'+C.base+';">💧 결정적 한 방울</button>';
+        }
+        return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">'
+        + wow
         +'<button class="ac-btn" data-act="drop-base" style="'+btn+'border-color:'+C.base+';background:#fff;color:'+C.base+';">💧 염기 한 방울</button>'
         +'<button class="ac-btn" data-act="drop-acid" style="'+btn+'border-color:'+C.acid+';background:#fff;color:'+C.acid+';">💧 산 한 방울</button>'
         +'<button class="ac-btn" data-act="reset" style="'+btn+'border-color:#9aa;background:#fff;color:#667;">↺ 처음부터</button></div>';
+      }
       var inds=(G().inds==='all')?INDS:INDS.filter(function(d){return G().inds.indexOf(d.id)>=0;});
       return '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:center;margin-bottom:8px;">'
         +'<span style="font-size:17px;font-weight:800;color:'+C.sub+';">지시약</span>'
@@ -228,7 +278,8 @@
       if(G().low){ renderLowScene(); return; }
       if(exp==='mix'){
         // 큰 비커: 식초+양배추 지시약
-        var col=mixCol();
+        var col=wowOverride||mixCol();
+        var markN=(wowOverride!=null)?(wowFlipped?10:0):mixN; // 게이지 마커: 와우 땐 빨강(0)↔파랑(10) 급반전 따라감
         var g0=svgEl('g',{}); svg.appendChild(g0);
         beaker(g0,450,360,220,250,col,180,'#78909C',4);
         // 거품/방울 애니
@@ -238,12 +289,12 @@
         t0.textContent='식초 + 양배추 지시약'; svg.appendChild(t0);
         // 색 띠 게이지 (산←→염기)
         for(var s2=0;s2<=10;s2++){ var k=s2/10, gc=k<0.5?mix('#E03131','#9C36B5',k*2):mix('#9C36B5','#1971C2',(k-0.5)*2);
-          svg.appendChild(svgEl('rect',{x:640+0,y:120+s2*22,width:34,height:20,rx:4,fill:gc,'fill-opacity':(s2===mixN?1:0.45),
-            stroke:(s2===mixN?C.ink:'none'),'stroke-width':3})); }
+          svg.appendChild(svgEl('rect',{x:640+0,y:120+s2*22,width:34,height:20,rx:4,fill:gc,'fill-opacity':(s2===markN?1:0.45),
+            stroke:(s2===markN?C.ink:'none'),'stroke-width':3})); }
         var ta=svgEl('text',{x:700,y:135,'font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.acid}); ta.textContent='← 산성'; svg.appendChild(ta);
         var tb=svgEl('text',{x:700,y:345,'font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.base}); tb.textContent='← 염기성'; svg.appendChild(tb);
-        var tn=svgEl('text',{x:450,y:402,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:C.sub,'data-mixn':mixN});
-        tn.textContent='넣은 염기: '+mixN+'방울'; svg.appendChild(tn);
+        var tn=svgEl('text',{x:450,y:402,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:C.sub,'data-mixn':(wowOverride!=null?wowDrops:mixN)});
+        tn.textContent='넣은 염기: '+(wowOverride!=null?wowDrops:mixN)+'방울'; svg.appendChild(tn);
         return;
       }
       // 지시약 검사: 비커 6개
@@ -296,6 +347,11 @@
       }
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">검사해 본 걸 떠올리며 답을 골라요</div>'; return; }
       if(exp==='mix'){
+        if(wowOverride!=null){
+          if(wowFlipped)h='<div style="font-size:24px;color:'+C.base+';">중화점! 결정적 한 방울에 확 뒤집혔어요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">여태 거의 빨강 그대로였는데 <b>딱 한 방울</b>에서 단번에 파랑으로 — 매끄럽게가 아니라 <b>한 점에서 확</b> 바뀌어요.</div>';
+          else h='<div style="font-size:24px;color:'+C.acid+';">🔴 새빨간 산성 — 어디서 확 변할까요?</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">염기를 한 방울씩 넣으면 조금씩일까요, 어느 순간 확일까요? <b>예상</b>하고 💧 결정적 한 방울을 눌러 봐요.</div>';
+          s.innerHTML=h; return;
+        }
         if(mixN===0)h='<div style="font-size:24px;color:'+C.acid+';">새빨간 산성 용액이에요</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">💧 염기를 한 방울씩 넣으며 색을 지켜봐요 — 무슨 일이 일어날까요?</div>';
         else if(mixN<5)h='<div style="font-size:24px;color:#C2255C;">색이 변하기 시작했어요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">염기를 넣을수록 <b>산성이 점점 약해져요</b>.</div>';
         else if(mixN<8)h='<div style="font-size:24px;color:#9C36B5;">보라색 — 산성도 염기성도 아닌 중간쯤!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">계속 넣으면 어떻게 될까요?</div>';
@@ -322,6 +378,8 @@
         else if(a==='low-base')addLow('base');
         else if(a==='drop-base')drop('base');
         else if(a==='drop-acid')drop('acid');
+        else if(a==='wow-arm')wowArm();
+        else if(a==='wow-reveal')wowReveal();
         else if(a==='reset'){ var e0=exp; reset(); exp=e0; build(); }
       }); });
       el.querySelectorAll('.kl-choice').forEach(function(b){
@@ -337,6 +395,6 @@
 
     if(mode==='quiz')newQuiz();
     build(); loop();
-    return function cleanup(){ if(raf)cancelAnimationFrame(raf); };
+    return function cleanup(){ if(raf)cancelAnimationFrame(raf); if(bnFlashTo)clearTimeout(bnFlashTo); };
   });
 })();
