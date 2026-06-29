@@ -132,6 +132,14 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
   .ka-f{grid-template-columns:1fr 1fr}
   .ka-nav.mob-hide{display:none}
 }
+.expl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px;margin:0 auto}
+.expl-card{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;background:#fff;border:2px solid #CBD5E1;border-radius:14px;padding:12px 14px;font-family:inherit;cursor:pointer;transition:.15s}
+.expl-card:hover{border-color:var(--green);background:var(--bub)}
+.expl-card.on{border-color:var(--green);background:var(--amber-bg);box-shadow:0 2px 8px rgba(21,128,61,.12)}
+.expl-name{font-weight:800;font-size:clamp(15px,2.4vw,18px);color:var(--green)}
+.expl-card.on .expl-name::before{content:'✓ '}
+.expl-desc{font-size:clamp(12px,2vw,14px);color:var(--muted);line-height:1.5}
+.expl-card.on .expl-desc{color:#0F172A}
 </style>
 </head>
 <body>
@@ -253,6 +261,20 @@ const Q = [
    h2:"여러 장소를 한눈에 알려요."}
 ];
 
+/* ===== 효과음 (jsdom 안전) ===== */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+/* 표현 방법 탐험 데이터 (무점수 체험) */
+const EXPR_METHODS = [
+  {key:'draw', name:'그림', desc:'색과 그림으로 장소의 모습과 그때의 느낌을 그려요.'},
+  {key:'news', name:'신문', desc:'사진·소개 글·소식을 모아 여러 장소를 한눈에 알려요.'},
+  {key:'song', name:'노래', desc:'가락에 느낌을 담아 부르며 마음을 전해요.'},
+  {key:'model', name:'모형', desc:'장소를 작게 만들어 입체로 직접 보여 줘요.'}
+];
+
 /* ===== 슬라이드 구성 (18) ===== */
 const slides = [];
 // 1 표지
@@ -268,14 +290,27 @@ slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-bub">말로만 전하면 금방 잊혀요. 더 생생하게 남기고 전하는 방법이 없을까요?</div>
   <div class="ka-grp"><div class="scene-row">${placeCard('park','공원','가족과 산책했어요','상쾌해요')}</div>
   <div class="note">이 경험과 느낌을 친구에게 어떻게 보여 줄 수 있을까요?</div></div>`});
-// 3 발문 답(reveal)
-slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
+// 3 발문 답 → 표현 방법 탐험(직접조작·무점수)
+slides.push({stage:1,badge:"생각 열기",render:(st)=>{
+  const cards = EXPR_METHODS.map(m=>{
+    const on = !!st.expl[m.key];
+    return `<button class="expl-card${on?' on':''}" onclick="exploreMethod('${m.key}')">
+      <span class="expl-name">${m.name}</span>
+      <span class="expl-desc">${on?m.desc:'눌러서 살펴보기'}</span>
+    </button>`;
+  }).join("");
+  const n = Object.keys(st.expl).length;
+  const done = n>=2
+    ? `<div class="answer-box">방법은 하나가 아니에요. 같은 장소도 <span class="ka-emph">그림·신문·노래·모형</span>처럼 여러 방법으로 표현할 수 있고, 그러면 경험과 느낌이 더 생생히 전해져요.</div>`
+    : `<div class="note">방법 카드를 <b>두 가지 이상</b> 눌러 살펴봐요. (점수 없이 자유롭게 탐험해요)</div>`;
+  return `
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">여러 방법으로 표현할 수 있어요</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('artwork','그림')}${sceneCard('newspaper','신문')}</div>
-  ${st.revealed?`<div class="answer-box">장소의 경험과 느낌은 <span class="ka-emph">그림·신문·노래</span> 등 여러 방법으로 표현할 수 있어요. 그러면 더 생생히 전해져요.</div>`
-    :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
-  </div>`});
+  <h2 class="ka-t">어떤 방법으로 표현해 볼까요?</h2>
+  <div class="ka-grp">
+    <div class="expl-grid">${cards}</div>
+    ${done}
+  </div>`;
+}});
 // 4 살펴보기: 그림으로 표현
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -373,6 +408,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  expl:{}, explChimed:false,
   startTs: Date.now(),
   attempt: 1
 };
@@ -407,7 +443,14 @@ function render(){
 }
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
-function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; playBlip(); main.innerHTML=s.render(state); }
+function exploreMethod(key){
+  const first = !state.expl[key];
+  state.expl[key]=true;
+  if(first) playBlip();
+  if(Object.keys(state.expl).length>=2 && !state.explChimed){ state.explChimed=true; playChime(); }
+  main.innerHTML = slides[state.idx].render(state);
+}
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
