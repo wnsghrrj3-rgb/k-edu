@@ -19,9 +19,9 @@
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES = {
-      low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2 },
-      mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3 },
-      high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4 }
+      low:  { modes:['free','mission'],        compare:false, quiz:false, missionN:2, showWow:false },
+      mid:  { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:3, showWow:true  },
+      high: { modes:['free','mission','quiz'], compare:true,  quiz:true,  missionN:4, showWow:true  }
     };
     var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
     function G(){ return GRADES[grade]; }
@@ -33,6 +33,54 @@
     var btn = 'font-size:22px;padding:12px 20px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
     function clamp(v,a,b){ return Math.max(a,Math.min(v,b)); }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }
+
+    /* ── 와우(예측 빗나감형): 「발아엔 빛이 꼭 필요하다」 반증 ──
+       라이브 tickDay는 빛이 꺼져 있어도 g를 올려 싹을 틔운다(else 분기 p.g+=0.6).
+       그 「빛 없이도 발아」를 전면화 = 흔한 오개념(빛=발아 필수) 직격.
+       2단 예측→확인: 🌑 무장(물O·빛X 깜깜 셋업) → ⏩ 드러냄(며칠 → 깜깜한데도 싹틈). */
+    var germArmed=false, germRevealed=false, germSeq=null;
+    function clearPlFlash(){ var host=el&&el.querySelector('.kl-stage-host'); if(!host)return;
+      host.querySelectorAll('.pl-flash,.pl-flash-magic,.pl-nudge').forEach(function(n){ n.remove(); }); }
+    function plFlash(cls, html, ms){
+      var host=el.querySelector('.kl-stage-host'); if(!host)return; clearPlFlash();
+      var col=(cls==='pl-flash-magic')?C.vio:((cls==='pl-flash')?C.water:'#868E96');
+      var d=document.createElement('div'); d.className=cls;
+      d.style.cssText='position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;'
+        +'background:'+col+';color:#fff;font-family:Jua,sans-serif;font-weight:800;font-size:19px;'
+        +'padding:13px 20px;border-radius:18px;box-shadow:0 6px 22px rgba(0,0,0,0.22);'
+        +'text-align:center;line-height:1.45;z-index:20;';
+      d.innerHTML=html; host.appendChild(d);
+      if(germSeq2)clearTimeout(germSeq2); germSeq2=setTimeout(function(){ if(d.parentNode)d.remove(); }, ms||3000);
+    }
+    var germSeq2=null;
+    function holdPulse(txt){ return '<div class="pl-hold" style="display:inline-block;margin-top:8px;font-size:18px;'
+      +'font-weight:800;color:'+C.vio+';background:#F3F0FF;border:2px solid '+C.vio+';border-radius:12px;'
+      +'padding:6px 14px;animation:plPulse 1s ease-in-out infinite;">'+txt+'</div>'; }
+    function disarm(){ germArmed=false; germRevealed=false; if(germSeq){clearTimeout(germSeq);germSeq=null;} clearPlFlash(); }
+    function wowArm(){
+      if(mode==='quiz')return;
+      reset(); germRevealed=false;
+      pots[0].water=true; pots[0].light=false;
+      if(G().compare){ pots[1].water=true; pots[1].light=false; }
+      germArmed=true; snd('charge');
+      build();
+      plFlash('pl-flash',
+        '🌑 💧물은 주고 ☀️빛은 껐어요 — 깜깜한 곳이에요.<br>이대로 며칠 지나면 씨앗이 <b>싹틀까요</b>, 빛이 없어 <b>못 틀까요</b>? 예상해 봐요!', 4200);
+    }
+    function wowReveal(){
+      if(mode==='quiz')return;
+      if(!germArmed){ snd('select');
+        plFlash('pl-nudge', '먼저 🌑 버튼으로 “싹틀까, 못 틀까” 예상부터 해 봐요!', 2600); return; }
+      // 즉시 마법(jsdom 검증 가능) — 빛 꺼진 채 발아까지 진행(라이브 로직 그대로: 빛 없어도 g 상승)
+      snd('whoosh'); snd('success');
+      for(var d2=0; d2<8 && stageOf(pots[0])<1; d2++){ tickDay(); }
+      germRevealed=true;
+      renderScene(); renderStatus();
+      plFlash('pl-flash-magic',
+        '🌱 깜깜한데도 <b>싹이 텄어요!</b> 씨앗은 빛이 없어도 <b>물·온도·공기</b>만 있으면 싹터요 —<br>'
+        +'빛은 <b>싹이 튼 뒤 잎이 자랄 때</b> 필요해요. (그래서 빛 없이 자란 싹은 가늘고 노랗게 웃자라요)', 5200);
+    }
 
     /* ───────────── 상태 ───────────── */
     var day, playing, pots, frame=0;
@@ -44,7 +92,7 @@
     var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
       grade=g;
       if(G().modes.indexOf(mode)<0) mode='free';
-      mStep=0; mDone=false; mLock=false; reset();
+      mStep=0; mDone=false; mLock=false; disarm(); reset();
       if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
       build();
     }});
@@ -134,18 +182,25 @@
         + (G().compare ? potCtrl(1) : '')
         +'</div>';
     }
+    function wowRow(){
+      if(!(G().showWow && mode==='free')) return '';
+      return '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:0 0 10px;">'
+        +'<button class="pl-wow" data-wow="arm" style="'+btn+'background:#fff;color:'+C.water+';border-color:'+C.water+';">🌑 빛 없이도 싹이 틀까?</button>'
+        +'<button class="pl-wow" data-wow="reveal" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">⏩ 며칠 지내보기</button>'
+        +'</div>';
+    }
     function build(){
       var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
       if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
-      else body=ctrlRow();
-      el.innerHTML='<style>.pl-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}</style>'
+      else body=ctrlRow()+wowRow();
+      el.innerHTML='<style>.pl-btn:active,.kl-choice:active,.pl-wow:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}@keyframes plPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}</style>'
         + top + bar + body
         +'<div class="kl-stage-host" style="position:relative;"><div class="pl-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:linear-gradient(180deg,#E7F5FF 0%,#F4FCE3 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
         +'<div class="pl-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0; mDone=false; mLock=false; reset();
+        mode=m; mStep=0; mDone=false; mLock=false; disarm(); reset();
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
@@ -242,6 +297,16 @@
 
     function renderStatus(){
       var s=el.querySelector('.pl-status'); if(!s)return;
+      if(germArmed){
+        if(germRevealed){
+          s.innerHTML='<div style="font-size:24px;color:'+C.good+';">🌱 '+day+'일째 — 빛 없이도 싹이 텄어요!</div>'
+            + holdPulse('빛 없이 자란 싹은 가늘고 노랗게 웃자라요 — 빛은 싹튼 뒤 자람에 필요해요');
+        } else {
+          s.innerHTML='<div style="font-size:24px;color:'+C.water+';">🌑 깜깜한 곳 · '+day+'일째 — 싹이 틀까요, 안 틀까요?</div>'
+            + holdPulse('씨앗 속엔 싹틔울 양분이 들어 있어요 — 빛은 그 다음 이야기');
+        }
+        return;
+      }
       if(mode==='quiz'){ s.innerHTML='<div style="font-size:18px;color:'+C.sub+';">키워 본 걸 떠올리며 답을 골라요</div>'; return; }
       var p0=pots[0],p1=pots[1],h;
       if(!G().compare){
@@ -269,11 +334,14 @@
     function bind(){
       el.querySelectorAll('.pl-btn').forEach(function(b){ b.addEventListener('click',function(){
         var a=b.dataset.act, i=+b.dataset.i;
-        if(a==='water'){ pots[i].water=!pots[i].water; build(); }
-        else if(a==='light'){ pots[i].light=!pots[i].light; build(); }
-        else if(a==='play'){ playing=!playing; build(); }
-        else if(a==='step'){ tickDay(); renderScene(); }
-        else if(a==='reset'){ reset(); build(); }
+        if(a==='water'){ disarm(); pots[i].water=!pots[i].water; snd('select'); build(); }
+        else if(a==='light'){ disarm(); pots[i].light=!pots[i].light; snd('select'); build(); }
+        else if(a==='play'){ disarm(); playing=!playing; snd('select'); build(); }
+        else if(a==='step'){ disarm(); tickDay(); snd('tap'); renderScene(); }
+        else if(a==='reset'){ disarm(); reset(); snd('select'); build(); }
+      }); });
+      el.querySelectorAll('.pl-wow').forEach(function(b){ b.addEventListener('click',function(){
+        if(b.dataset.wow==='arm') wowArm(); else wowReveal();
       }); });
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
