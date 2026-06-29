@@ -23,29 +23,50 @@
               good:'#12B886', vio:'#7048E8', blue:'#1565C0', glass:'#A5D8FF' };
     var btn = 'font-size:20px;padding:11px 16px;border-radius:14px;border:3px solid;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }
+    /* 와우 배너 — .kl-stage-host(relative)에 absolute 주입 + 자동 제거 (헌법 6장: 연출만 얹기) */
+    var bnFlashTo=null;
+    function clearBnFlash(){ if(bnFlashTo){clearTimeout(bnFlashTo);bnFlashTo=null;} var host=el.querySelector('.kl-stage-host'); if(host){ host.querySelectorAll('.bn-flash,.bn-flash-magic,.bn-nudge,.bn-solve').forEach(function(n){n.remove();}); } }
+    function bnFlash(cls,html,ms){
+      var host=el.querySelector('.kl-stage-host'); if(!host)return;
+      host.querySelectorAll('.bn-flash,.bn-flash-magic,.bn-nudge,.bn-solve').forEach(function(n){n.remove();});
+      var col=(cls==='bn-flash-magic')?{bg:'#F3F0FF',bd:C.vio,tx:C.vio}
+             :(cls==='bn-solve')?{bg:'#E6FCF5',bd:C.good,tx:'#0B7285'}
+             :(cls==='bn-nudge')?{bg:'#FFF9DB',bd:'#F59F00',tx:'#B8860B'}
+             :{bg:'#E7F5FF',bd:C.blue,tx:C.blue};
+      var d=document.createElement('div'); d.className=cls;
+      d.setAttribute('style','position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:92%;z-index:9;'
+        +'background:'+col.bg+';border:3px solid '+col.bd+';color:'+col.tx+';border-radius:16px;'
+        +'padding:12px 18px;font-size:18px;font-weight:800;font-family:inherit;line-height:1.35;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.10);');
+      d.innerHTML=html; host.appendChild(d);
+      if(bnFlashTo)clearTimeout(bnFlashTo);
+      bnFlashTo=setTimeout(function(){ if(d&&d.parentNode)d.parentNode.removeChild(d); bnFlashTo=null; },ms||2800);
+    }
 
     /* ───────────── 상태 ───────────── */
     var exp; // 'cond' | 'ext'
     var cd, ex;
+    var oilFire=false, oilArmed=false, oilFlare=0, oilOut=false; // 와우: 기름(유류) 화재
+    function oilReset(){ oilFire=false; oilArmed=false; oilFlare=0; oilOut=false; }
     function cdReset(){ cd={ lit:false, cup:[false,false], oxy:[100,100], out:[false,false], candleH:[1,1], chips:{fuel:false,oxy:false,temp:false} }; stopRaf(); }
-    function exReset(){ ex={ burning:true, used:{water:false,cover:false,remove:false}, why:'' }; }
-    function resetAll(){ exp='cond'; cdReset(); exReset(); }
+    function exReset(){ ex={ burning:true, used:{water:false,cover:false,remove:false}, why:'' }; oilReset(); }
+    function resetAll(){ exp='cond'; cdReset(); exReset(); clearBnFlash(); }
     function stopRaf(){ if(raf){cancelAnimationFrame(raf);raf=null;} lastTs=null; }
     resetAll();
 
     var RATE=[30,12]; // %/초 — 작은 컵 / 큰 컵
     function light(){
       if(cd.lit){ ui.toast(el,false,'이미 타고 있어요!'); return; }
-      cd.lit=true; ensureRaf(); renderScene(); renderStatus(); checkMission();
+      cd.lit=true; snd('tap'); ensureRaf(); renderScene(); renderStatus(); checkMission();
     }
     function cover(i){
       if(!cd.lit){ ui.toast(el,false,'먼저 🔥 불을 붙여야 해요!'); return; }
       if(cd.cup[i]){ ui.toast(el,false,'이미 덮여 있어요!'); return; }
-      cd.cup[i]=true; ensureRaf(); renderScene(); renderStatus();
+      cd.cup[i]=true; snd('select'); ensureRaf(); renderScene(); renderStatus();
     }
     function chip(k){
       if(!cd.lit){ ui.toast(el,false,'불을 붙인 뒤 조건을 확인해 봐요!'); return; }
-      cd.chips[k]=true;
+      cd.chips[k]=true; snd('tap');
       var M={ fuel:'🕯️ 탈 물질 — 초가 있어야 타요!', oxy:'💨 산소 — 공기 속 산소가 필요!', temp:'🌡️ 발화점 이상의 온도 — 뜨거워야 불이 붙어요!' };
       ui.toast(el,true,M[k]); renderScene(); renderStatus(); checkMission();
     }
@@ -78,16 +99,58 @@
       }
       if(active)raf=requestAnimationFrame(tick); else lastTs=null;
     }
+
+    /* ───────── 와우 F칸 — 「물은 만능 소화제」 오개념 반증 (유류 화재, 예측 빗나감형) ─────────
+       라이브 소화(ext)는 물=항상 꺼짐만 보여줌 → 기름 불에 물을 뿌리면 *꺼지긴커녕 확 번짐*은 빠져 있던 반직관.
+       물이 기름보다 무거워 가라앉았다 순식간에 끓어오르며 기름을 사방으로 튀김. 카드 C②(기름불엔 물 금지) 정조준.
+       고학년·자유탐구·소화(ext) 전용(ext는 고학년만), 2단 예측(🔮 무장)→확인(💧 그래도 물). */
+    function wowArm(){
+      exReset();             // ex.burning=true, 기존 배지 초기화
+      oilFire=true; oilArmed=true; oilFlare=0; oilOut=false;
+      snd('charge');
+      renderScene(); renderStatus();
+      bnFlash('bn-flash','지글지글 — 튀김 기름에 불이 붙었어요. 물을 뿌리면 <b>꺼질까요, 더 커질까요?</b> 예상해 봐요!',2700);
+    }
+    function wowReveal(){    // 「그래도 물 뿌리기」 = 기름 불에 물
+      if(!oilArmed){
+        snd('select');
+        bnFlash('bn-nudge','먼저 🔮 버튼으로 <b>꺼질지·더 커질지</b> 예상부터 해 봐요!',2600);
+        return;
+      }
+      snd('whoosh'); snd('erupt');
+      oilFlare=0.34; renderScene();
+      var steps=[0.6,0.85,1], i=0;
+      (function ramp(){
+        if(i>=steps.length)return;
+        oilFlare=steps[i++]; renderScene();
+        setTimeout(ramp,150);
+      })();
+      bnFlash('bn-flash-magic','물을 뿌렸더니 불이 <b>확 커졌어요!</b> 🔥 기름은 물보다 가벼워 물 위로 떠서 타고, 가라앉은 물이 갑자기 끓어 기름을 사방으로 튀겨요 — <b>기름 불엔 물을 쓰면 안 돼요!</b>',3600);
+      renderStatus(); checkMission();
+    }
+    function oilExtinguish(method){  // 기름 불 = 덮어서 산소 차단(또는 탈 물질 치우기)으로 끄기
+      ex.burning=false; oilOut=true; oilFlare=0;
+      if(method==='remove'){ ex.used.remove=true; ex.why='탈 물질(기름)을 치웠어요!'; }
+      else { ex.used.cover=true; ex.why='덮어서 산소를 막았어요!'; }
+      snd('success');
+      renderScene(); renderStatus(); checkMission();
+      bnFlash('bn-solve',(method==='remove'?'✂️ 탈 물질(기름)을 치우니 꺼졌어요!':'🫙 덮어 산소를 막으니 꺼졌어요!')+' 기름 불은 <b>물 말고 덮거나 소화기</b>로 꺼야 안전해요.',3200);
+    }
     function douse(k){
+      if(oilFire && ex.burning){           // 와우: 기름 불 진행 중이면 분기
+        if(k==='water'){ wowReveal(); return; }
+        if(k==='cover'){ oilExtinguish('cover'); return; }
+        if(k==='remove'){ oilExtinguish('remove'); return; }
+      }
       if(!ex.burning){ ui.toast(el,false,'불이 이미 꺼졌어요 — 🔥 다시 피워서 다른 방법도!'); return; }
       ex.burning=false; ex.used[k]=true;
-      var M={ water:{why:'온도를 발화점보다 낮췄어요!', t:'💧 치익— 물이 온도를 낮춰서 꺼졌어요'},
-              cover:{why:'산소를 차단했어요!', t:'🪣 덮으니 산소가 못 들어와 꺼졌어요'},
-              remove:{why:'탈 물질을 없앴어요!', t:'✂️ 탈 것이 없으니 꺼졌어요'} };
-      ex.why=M[k].why; ui.toast(el,true,M[k].t);
+      var M={ water:{why:'온도를 발화점보다 낮췄어요!', t:'💧 치익— 물이 온도를 낮춰서 꺼졌어요', s:'whoosh'},
+              cover:{why:'산소를 차단했어요!', t:'🪣 덮으니 산소가 못 들어와 꺼졌어요', s:'select'},
+              remove:{why:'탈 물질을 없앴어요!', t:'✂️ 탈 것이 없으니 꺼졌어요', s:'select'} };
+      ex.why=M[k].why; snd(M[k].s); ui.toast(el,true,M[k].t);
       renderScene(); renderStatus(); checkMission();
     }
-    function relight(){ ex.burning=true; ex.why=''; renderScene(); renderStatus(); }
+    function relight(){ ex.burning=true; ex.why=''; oilOut=false; oilFlare=0; clearBnFlash(); snd('tap'); renderScene(); renderStatus(); }
 
     /* ───────────── 미션 (고학년 = 기존 v1) ───────────── */
     var MISSIONS=[
@@ -116,9 +179,9 @@
         check:function(){ return exp==='cond' && cd.out[0] && cd.out[1]; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['cond'],       chips:false, cups:false, burndown:true  },
-      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['cond'],       chips:false, cups:true,  burndown:false },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['cond','ext'], chips:true,  cups:true,  burndown:false }
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['cond'],       chips:false, cups:false, burndown:true,  showWow:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['cond'],       chips:false, cups:true,  burndown:false, showWow:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['cond','ext'], chips:true,  cups:true,  burndown:false, showWow:true  }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -185,11 +248,16 @@
         s+='<button class="bn-btn" data-act="cdReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 초</button></div>';
         return s;
       }
-      return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
-        +'<button class="bn-btn" data-act="water" style="'+btn+'background:#fff;color:'+C.blue+';border-color:'+C.blue+';">💧 물 뿌리기</button>'
+      var er='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">';
+      if(G().showWow && mode==='free'){
+        er+='<button class="bn-wow" data-wow="arm" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">🔮 기름 불에도 물?</button>'
+          +'<button class="bn-wow" data-wow="reveal" style="'+btn+'background:#fff;color:'+C.blue+';border-color:'+C.blue+';">💧 그래도 물 뿌리기</button>';
+      }
+      er+='<button class="bn-btn" data-act="water" style="'+btn+'background:#fff;color:'+C.blue+';border-color:'+C.blue+';">💧 물 뿌리기</button>'
         +'<button class="bn-btn" data-act="cover" style="'+btn+'background:#fff;color:'+C.org+';border-color:'+C.org+';">🪣 덮기</button>'
         +'<button class="bn-btn" data-act="remove" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">✂️ 탈 물질 치우기</button>'
         +'<button class="bn-btn" data-act="relight" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 다시 피우기</button></div>';
+      return er;
     }
 
     function build(){
@@ -268,18 +336,22 @@
     }
     function drawExt(svg){
       var g=svgEl('g',{}); svg.appendChild(g);
-      var h='<rect x="60" y="372" width="780" height="22" rx="10" fill="#C8B6A6"/>'
-        // 모닥불 장작
-        +'<g'+(ex.burning?'':' opacity="0.55"')+'><line x1="380" y1="370" x2="520" y2="320" stroke="#8D6E63" stroke-width="16" stroke-linecap="round"/>'
-        +'<line x1="520" y1="370" x2="380" y2="320" stroke="#6E4226" stroke-width="16" stroke-linecap="round"/></g>';
-      if(ex.burning){
-        h+='<ellipse cx="450" cy="282" rx="52" ry="74" fill="'+C.org+'"/>'
-          +'<ellipse cx="450" cy="298" rx="30" ry="46" fill="'+C.yel+'"/>'
-          +'<text x="450" y="180" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.hot+'" font-family="inherit">🔥 활활 타는 중 — 어떻게 끌까요?</text>';
+      var h='<rect x="60" y="372" width="780" height="22" rx="10" fill="#C8B6A6"/>';
+      if(oilFire){
+        h+=oilSceneHtml();
       } else {
-        h+='<path d="M 450 330 q -12 -26 4 -48 q 14 -22 2 -44" stroke="#ADB5BD" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85"/>'
-          +'<text x="450" y="150" text-anchor="middle" font-size="24" font-weight="800" fill="'+C.good+'" font-family="inherit">불이 꺼졌어요!</text>'
-          +'<text x="450" y="188" text-anchor="middle" font-size="20" font-weight="800" fill="'+C.vio+'" font-family="inherit">'+ex.why+'</text>';
+        // 모닥불 장작
+        h+='<g'+(ex.burning?'':' opacity="0.55"')+'><line x1="380" y1="370" x2="520" y2="320" stroke="#8D6E63" stroke-width="16" stroke-linecap="round"/>'
+          +'<line x1="520" y1="370" x2="380" y2="320" stroke="#6E4226" stroke-width="16" stroke-linecap="round"/></g>';
+        if(ex.burning){
+          h+='<ellipse cx="450" cy="282" rx="52" ry="74" fill="'+C.org+'"/>'
+            +'<ellipse cx="450" cy="298" rx="30" ry="46" fill="'+C.yel+'"/>'
+            +'<text x="450" y="180" text-anchor="middle" font-size="22" font-weight="800" fill="'+C.hot+'" font-family="inherit">🔥 활활 타는 중 — 어떻게 끌까요?</text>';
+        } else {
+          h+='<path d="M 450 330 q -12 -26 4 -48 q 14 -22 2 -44" stroke="#ADB5BD" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85"/>'
+            +'<text x="450" y="150" text-anchor="middle" font-size="24" font-weight="800" fill="'+C.good+'" font-family="inherit">불이 꺼졌어요!</text>'
+            +'<text x="450" y="188" text-anchor="middle" font-size="20" font-weight="800" fill="'+C.vio+'" font-family="inherit">'+ex.why+'</text>';
+        }
       }
       // 체험 배지
       var BD=[['water','💧 온도 낮추기'],['cover','🪣 산소 차단'],['remove','✂️ 탈 물질 없애기']];
@@ -289,6 +361,30 @@
           +'<text x="'+(x+wdt/2)+'" y="'+(y+27)+'" text-anchor="middle" font-size="17" font-weight="800" fill="'+(on?'#fff':'#94A3B8')+'" font-family="inherit">'+b[1]+(on?' ✓':'')+'</text>';
       });
       g.innerHTML=h;
+    }
+    function oilSceneHtml(){
+      var burning=ex.burning, fl=oilFlare, cx=450, panY=344, panW=212, panH=28;
+      var h='<rect x="'+(cx-panW/2)+'" y="'+panY+'" width="'+panW+'" height="'+panH+'" rx="12" fill="#495057"/>'
+        +'<rect x="'+(cx-panW/2+8)+'" y="'+(panY+5)+'" width="'+(panW-16)+'" height="13" rx="6" fill="#FFA94D" opacity="0.92"/>'   // 기름
+        +'<rect x="'+(cx+panW/2-2)+'" y="'+(panY+8)+'" width="84" height="10" rx="5" fill="#343A40"/>'                            // 손잡이
+        +'<text x="'+cx+'" y="425" text-anchor="middle" font-size="17" font-weight="800" fill="'+C.ink+'" font-family="inherit">🍳 튀김 기름</text>';
+      if(burning){
+        var baseY=panY+5, ry=72*(1+fl*0.95), rx=50*(1+fl*0.55);
+        h+='<ellipse cx="'+cx+'" cy="'+(baseY-ry*0.52)+'" rx="'+rx+'" ry="'+ry+'" fill="'+(fl>0?C.hot:C.org)+'"/>'
+          +'<ellipse cx="'+cx+'" cy="'+(baseY-ry*0.44)+'" rx="'+(rx*0.55)+'" ry="'+(ry*0.6)+'" fill="'+C.yel+'"/>';
+        if(fl>0){
+          var sp=[[-128,250],[150,240],[-86,205],[120,295],[6,162],[-30,300]];
+          for(var i=0;i<sp.length;i++){ var dx=sp[i][0]*(0.5+fl*0.6); h+='<circle cx="'+(cx+dx)+'" cy="'+(sp[i][1]-fl*28)+'" r="'+(5+fl*4)+'" fill="'+C.org+'"/>'; }
+          h+='<text x="'+cx+'" y="150" text-anchor="middle" font-size="23" font-weight="800" fill="'+C.hot+'" font-family="inherit">🔥 불이 확 번졌어요!</text>';
+        } else {
+          h+='<text x="'+cx+'" y="168" text-anchor="middle" font-size="21" font-weight="800" fill="'+C.hot+'" font-family="inherit">🍳 기름에 불이 붙었어요 — 물을 뿌리면?</text>';
+        }
+      } else {
+        h+='<path d="M '+cx+' '+(panY-12)+' q -12 -26 4 -48 q 14 -22 2 -44" stroke="#ADB5BD" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85"/>'
+          +'<text x="'+cx+'" y="150" text-anchor="middle" font-size="24" font-weight="800" fill="'+C.good+'" font-family="inherit">불이 꺼졌어요!</text>'
+          +'<text x="'+cx+'" y="188" text-anchor="middle" font-size="20" font-weight="800" fill="'+C.vio+'" font-family="inherit">'+ex.why+'</text>';
+      }
+      return h;
     }
 
     /* ───────────── 상태줄 ───────────── */
@@ -306,6 +402,11 @@
         else if(cd.cup[0]||cd.cup[1]) msg='<span style="color:'+C.ink+';font-size:19px;">컵 속 산소가 점점 줄어요…</span>';
         else if(cd.lit) msg='<span style="color:'+C.ink+';font-size:19px;">'+(G().chips?'조건 칩을 확인하고, 컵을 덮어 봐요!':'🥛 컵을 덮어 어떻게 되는지 봐요!')+'</span>';
         else msg='<span style="color:'+C.sub+';font-size:19px;">🔥 촛불을 켜고 연소의 조건을 알아봐요</span>';
+      } else if(oilFire){
+        if(oilOut) msg='<span style="color:'+C.good+';font-size:19px;">기름 불은 <b>물 말고 덮거나 소화기</b>로 꺼야 안전해요!</span>';
+        else if(oilFlare>0) msg='<span style="color:'+C.hot+';font-size:19px;">불이 더 번졌어요! 기름 불에 물은 위험 — 🪣 덮기로 꺼 봐요</span>';
+        else if(oilArmed) msg='<span class="bn-hold" style="color:'+C.vio+';font-size:19px;">물이 만능 소화제일까요? 기름 불은 다를 수 있어요 — 먼저 예상부터!</span>';
+        else msg='<span style="color:'+C.sub+';font-size:19px;">🍳 기름에 붙은 불 — 어떻게 꺼야 할까요?</span>';
       } else {
         var n=(ex.used.water?1:0)+(ex.used.cover?1:0)+(ex.used.remove?1:0);
         msg='<span style="color:'+(n===3?C.good:C.sub)+';font-size:19px;">'+(n===3?'세 조건 중 하나만 없애도 불은 꺼져요 — 이게 소화!':'소화 방법 체험 '+n+'/3 — 조건 하나를 없애면 꺼져요')+'</span>';
@@ -316,7 +417,14 @@
     /* ───────────── 바인딩 ───────────── */
     function bind(){
       el.querySelectorAll('.bn-exp').forEach(function(b){
-        b.addEventListener('click',function(){ exp=b.dataset.e; stopRaf(); build(); });
+        b.addEventListener('click',function(){ exp=b.dataset.e; snd('select'); clearBnFlash(); stopRaf(); build(); });
+      });
+      el.querySelectorAll('.bn-wow').forEach(function(b){
+        b.addEventListener('click',function(){
+          var w=b.dataset.wow;
+          if(w==='arm')wowArm();
+          else if(w==='reveal')wowReveal();
+        });
       });
       el.querySelectorAll('.bn-btn').forEach(function(b){
         b.addEventListener('click',function(){
@@ -324,7 +432,7 @@
           if(a==='light')light();
           else if(a==='cup0')cover(0);
           else if(a==='cup1')cover(1);
-          else if(a==='cdReset'){ cdReset(); build(); }
+          else if(a==='cdReset'){ snd('select'); cdReset(); build(); }
           else if(a==='water')douse('water');
           else if(a==='cover')douse('cover');
           else if(a==='remove')douse('remove');
@@ -340,6 +448,7 @@
           if(qLock)return; qLock=true;
           var q=QUIZ[qIdx], ok=(+b.dataset.v===q.a);
           qCount++; if(ok)qScore++;
+          snd(ok?'success':'fail');
           ui.toast(el,ok);
           setTimeout(function(){ newQuiz(); build(); },1500);
         });
