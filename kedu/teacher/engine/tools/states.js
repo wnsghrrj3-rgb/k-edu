@@ -32,6 +32,15 @@
     var btn='font-size:23px;padding:12px 22px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
     function clamp(v,a,b){return Math.max(a,Math.min(v,b));}
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play)window.KLab.sound.play(n); }
+    /* ── 와우(F칸) 질량 보존 — 예측 빗나감형 11호 ──
+       「상태가 바뀌면(끓으면/녹으면) 무게가 변한다/사라진다」 오개념을 정면 반증.
+       밀폐 통 + 저울: 얼음을 데워 물·수증기로 다 바꿔도 입자 개수가 그대로라 무게도 그대로.
+       중·고·free 전용(저학년은 양 보존 개념 과함 → 숨김). 2단 예측→확인. */
+    var MASS_G=200;            // 밀폐 통 전체 무게(입자 개수에 비례 → 상태 변화와 무관하게 일정)
+    var massArmed=false;       // 와우 예측 무장
+    var rampTimer=null;        // 드러냄 가열 연출 타이머
+    function wowWeight(){ return MASS_G; }   // temp와 무관하게 항상 같은 값 = 질량 보존의 핵심
 
     // ── 물리: 온도 → 자유도(고체→액체)·기화비율(액체→기체)·속도
     function liqFrac(t){ if(t<=-3)return 0; if(t>=3)return 1; return (t+3)/6; }      // 0℃ 부근 녹음
@@ -79,14 +88,14 @@
         check:function(p){ return p==='boil' && lastDir<0; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],        missions:LOW_MISSIONS },
-      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS }
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, showWow:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, showWow:true  },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     showWow:true  }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function curMissions(){ return GRADES[grade].missions; }
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; lastDir=1; temp=25; buildUI();
+      grade=g; mode='free'; mStep=0;mDone=false;mLock=false; lastDir=1; temp=25; massArmed=false; buildUI();
     }});
 
     var mStep=0,mDone=false,mLock=false;
@@ -131,20 +140,30 @@
           +'<input class="st-range" type="range" min="-20" max="120" value="'+temp+'" style="width:min(44vw,300px);">'
           +'<button class="st-btn" data-act="heat" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 데우기</button>'
         +'</div>';
+      var wowRow='';
+      if(mode==='free' && GRADES[grade].showWow){
+        wowRow='<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:8px;flex-wrap:wrap;">'
+          +'<button class="st-wow" data-wow="arm" style="'+btn+'background:#fff;color:#7048E8;border-color:#7048E8;">🔮 녹으면·끓으면 무게는?</button>'
+          +'<button class="st-wow" data-wow="reveal" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;">🔥 끝까지 데우기</button>'
+          +'</div>';
+      }
       if(mode==='mission'){ var M=curMissions(); bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl=''; foot=ui.choices(quizChoices()); }
-      el.innerHTML='<style>.st-btn:active,.kl-choice:active{transform:translateY(2px);}'
+      el.innerHTML='<style>.st-btn:active,.st-wow:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 22px !important;}'
+        +'@keyframes stHold{0%,100%{opacity:1;}50%{opacity:0.45;}}'
+        +'.st-hold{animation:stHold 1.1s ease-in-out infinite;}'
         +'.st-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#4DABF7,#FFD43B,#FF6B6B);outline:none;}'
         +'.st-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'.st-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'</style>'
-        + top + bar + ctrl
+        + top + bar + ctrl + wowRow
         +'<div class="kl-stage-host" style="position:relative;"><div class="st-stage" style="width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 50% 20%,#FCFEFF 0%,#EAF3FB 75%,#DCEAF6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
         +'<div class="st-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0;mDone=false;mLock=false; lastDir=1; temp=25;
+        mode=m; mStep=0;mDone=false;mLock=false; lastDir=1; temp=25; massArmed=false;
+        if(rampTimer){clearTimeout(rampTimer);rampTimer=null;}
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
@@ -175,6 +194,17 @@
       bubbleLayer=svgEl('g',{}); svg.appendChild(bubbleLayer);
       partsLayer=svgEl('g',{}); svg.appendChild(partsLayer);
       ps.forEach(function(p){p.el=svgEl('circle',{cx:p.x,cy:p.y,r:12,fill:'url(#stLiq)',stroke:'#1864AB','stroke-width':1.5}); partsLayer.appendChild(p.el);});
+      if(massArmed){
+        // 밀폐 뚜껑 — 닫힌 통(수증기가 빠져나가지 못함 → 무게 보존이 성립)
+        svg.appendChild(svgEl('rect',{x:BX-22,y:BY-30,width:BW+44,height:22,rx:10,fill:'#CED4DA',stroke:'#868E96','stroke-width':3}));
+        var lt=svgEl('text',{x:BX+BW/2,y:BY-13,'font-family':'Jua,sans-serif','font-size':15,fill:'#495057','font-weight':800,'text-anchor':'middle'}); lt.textContent='🔒 뚜껑 닫음'; svg.appendChild(lt);
+        // 저울 — 통 전체 무게(상태가 바뀌어도 입자 개수가 그대로라 그대로)
+        var sg=svgEl('g',{'class':'st-scale'});
+        sg.appendChild(svgEl('rect',{x:702,y:78,width:178,height:80,rx:15,fill:'#fff',stroke:'#7048E8','stroke-width':3}));
+        var s1=svgEl('text',{x:791,y:106,'font-family':'Jua,sans-serif','font-size':16,fill:'#7048E8','font-weight':800,'text-anchor':'middle'}); s1.textContent='⚖️ 통 전체 무게'; sg.appendChild(s1);
+        var s2=svgEl('text',{x:791,y:144,'font-family':'Jua,sans-serif','font-size':32,fill:'#1B3A57','font-weight':800,'text-anchor':'middle','class':'st-weight'}); s2.textContent=wowWeight()+' g'; sg.appendChild(s2);
+        svg.appendChild(sg);
+      }
       stage.appendChild(svg);
     }
 
@@ -237,9 +267,46 @@
         col=C.hot;
       }
       else{nm='기체 (수증기)';col='#868E96';sub='입자가 멀리 흩어져 빠르게 날아다녀요. 공간을 가득 채워요.';}
-      s.innerHTML='<div style="font-size:29px;color:'+col+';">'+temp+'℃ — '+nm+'</div>'
+      var html='<div style="font-size:29px;color:'+col+';">'+temp+'℃ — '+nm+'</div>'
         +'<div style="font-size:18px;color:'+C.sub+';margin-top:6px;line-height:1.4;">'+sub+'</div>';
+      if(massArmed && mode==='free') html+='<div class="st-hold" style="font-size:18px;color:#7048E8;margin-top:8px;font-weight:800;">상태가 바뀌어도 입자 개수는 그대로 — 무게도 그대로예요.</div>';
+      s.innerHTML=html;
       checkMission(p);
+    }
+
+    /* ── 와우 배너/연출 헬퍼 ── */
+    function host(){ return el.querySelector('.kl-stage-host'); }
+    function clearStFlash(){ var h=host(); if(!h)return;
+      ['.st-flash','.st-flash-magic','.st-nudge'].forEach(function(sel){ var n=h.querySelector(sel); if(n&&n.parentNode)n.parentNode.removeChild(n); }); }
+    function stFlash(cls,html,ms){ var h=host(); if(!h)return; clearStFlash();
+      var bg=cls==='st-flash-magic'?'#F3F0FF':(cls==='st-nudge'?'#FFF4E6':'#E7F5FF');
+      var bd=cls==='st-flash-magic'?'#7048E8':(cls==='st-nudge'?'#FF8A3D':'#1565C0');
+      var fg=cls==='st-flash-magic'?'#5f3dc4':(cls==='st-nudge'?'#E8590C':'#1565C0');
+      var d=document.createElement('div'); d.className=cls;
+      d.style.cssText='position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:90%;'
+        +'background:'+bg+';border:3px solid '+bd+';color:'+fg+';border-radius:16px;padding:11px 18px;'
+        +'font-family:inherit;font-weight:800;font-size:18px;line-height:1.4;text-align:center;z-index:6;'
+        +'box-shadow:0 6px 18px rgba(0,0,0,0.12);';
+      d.innerHTML=html; h.appendChild(d);
+      setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); }, ms||2800); }
+
+    function wowArm(){
+      massArmed=true;
+      if(rampTimer){clearTimeout(rampTimer);rampTimer=null;}
+      drawStage();                 // 뚜껑+저울 표시
+      setTemp(-15);                // 얼음(고체) 셋업 — renderStatus가 .st-hold 추가
+      snd('charge');
+      stFlash('st-flash','지금은 꽁꽁 언 <b>얼음(고체)</b>이에요. 데워서 물로, 수증기로 다 바꾸면 무게가 <b>늘까요? 줄까요? 그대로일까요?</b> 예상해 봐요.',2600);
+    }
+    function wowReveal(){
+      if(!massArmed){ snd('select'); stFlash('st-nudge','먼저 🔮 버튼으로 무게가 어떻게 될지 <b>예상부터</b> 해 봐요.',2600); return; }
+      snd('whoosh'); snd('success');
+      // 얼음 → 물 → 수증기까지 가열 연출 (저울 무게는 내내 그대로)
+      if(rampTimer){clearTimeout(rampTimer);rampTimer=null;}
+      setTemp(-15);
+      var seq=[5,40,75,100,115], k=0;
+      (function tick(){ if(k<seq.length){ setTemp(seq[k]); k++; rampTimer=setTimeout(tick,260); } else rampTimer=null; })();
+      stFlash('st-flash-magic','고체→액체→기체로 다 바뀌었는데 무게는 <b>'+wowWeight()+' g 그대로!</b> 입자 개수가 변하지 않아서 — 뚜껑 닫은 통에선 <b>상태가 바뀌어도 무게는 그대로</b>예요.',3000);
     }
 
     function setTemp(v){ var prev=temp; temp=clamp(Math.round(v),-20,120);
@@ -250,8 +317,11 @@
       var rg=el.querySelector('.st-range');
       if(rg)rg.addEventListener('input',function(e){setTemp(+e.target.value);});
       var hb=el.querySelector('[data-act="heat"]'), cb=el.querySelector('[data-act="cool"]');
-      if(hb)hb.addEventListener('click',function(){setTemp(temp+15);});
-      if(cb)cb.addEventListener('click',function(){setTemp(temp-15);});
+      if(hb)hb.addEventListener('click',function(){snd('tap');setTemp(temp+15);});
+      if(cb)cb.addEventListener('click',function(){snd('tap');setTemp(temp-15);});
+      el.querySelectorAll('.st-wow').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+      });
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true;
@@ -263,6 +333,6 @@
       });
     }
     buildUI();
-    return function cleanup(){ if(raf)cancelAnimationFrame(raf); };
+    return function cleanup(){ if(raf)cancelAnimationFrame(raf); if(rampTimer)clearTimeout(rampTimer); };
   });
 })();
