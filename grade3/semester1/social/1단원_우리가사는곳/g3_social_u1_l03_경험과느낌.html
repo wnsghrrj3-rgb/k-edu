@@ -198,6 +198,36 @@ function placeCard(scene,name,exp,feel){
     </div></div>`;
 }
 
+/* ===== 효과음 (브라우저에서만, jsdom 안전 가드) ===== */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+
+/* ===== 정답 없는 '느낌 골라보기' 조작 (느낌은 사람마다 다름을 직접 체험) ===== */
+const FEELS = ['😌 편안해요','🤔 조금 답답해요','✨ 신나요','😊 즐거워요','😮 신기해요'];
+function feelGame(st){
+  const picked = st.feels || {}, n = Object.keys(picked).length, last = st.feelLast;
+  const examples = `<div class="scene-row">
+    ${placeCard('library','도서관 · 민수','조용히 책을 읽었어요','편안해요')}
+    ${placeCard('library','도서관 · 지아','너무 조용했어요','조금 답답해요')}</div>`;
+  const chips = FEELS.map((fl,i)=>{
+    const on = picked[i];
+    return `<button onclick="feelPick(${i})" style="border:2px solid ${on?'#15803D':'#E2E8F0'};background:${on?'#DCFCE7':'#fff'};color:${on?'#15803D':'#475569'};border-radius:30px;padding:8px 16px;font-family:inherit;font-weight:700;font-size:clamp(13px,2.2vw,16px);cursor:pointer;margin:4px">${fl}</button>`;
+  }).join("");
+  const myCard = last!=null ? `<div class="scene-row" style="margin-top:4px">${placeCard('library','도서관 · 나','조용히 책을 읽었어요',FEELS[last].replace(/^\S+\s*/,''))}</div>` : '';
+  const status = n>=2
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">느낌엔 <span class="ka-emph">정답이 없어요</span>. 골라본 느낌은 모두 소중해요. 같은 장소라도 사람마다, 때마다 느낌이 달라요.</div>`
+    : `<div class="note">아래 느낌을 눌러 <b style="color:#15803D">‘나의 느낌’</b>을 골라봐요. 무엇을 골라도 괜찮아요.</div>`;
+  return `${examples}<div style="display:flex;flex-wrap:wrap;justify-content:center;margin:10px 0">${chips}</div>${myCard}${status}`;
+}
+function feelPick(i){
+  if(!state.feels) state.feels={};
+  const fresh = !state.feels[i];
+  state.feels[i]=true; state.feelLast=i;
+  if(fresh) playBlip();
+  main.innerHTML=slides[state.idx].render(state);
+}
+
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
 const META = "1단원 우리가 사는 곳 · ① 여러 장소 · 3차시";
@@ -285,15 +315,11 @@ slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-bub"><span class="ka-emph">경험</span>은 그 장소에서 <b>겪은 일</b>이에요. <b style="color:#F57F17">느낌</b>은 그때 든 <b>마음</b>이에요. 즐거움·뿌듯함·무서움처럼요.</div>
   <div class="ka-grp"><div class="scene-row">${placeCard('school','학교','발표를 잘 해냈어요','뿌듯해요')}</div>
   <div class="note">경험과 느낌은 늘 짝을 이뤄요.</div></div>`});
-// 5 살펴보기: 같은 장소, 다른 느낌
-slides.push({stage:2,badge:"개념",render:()=>`
+// 5 살펴보기: 같은 장소, 다른 느낌 — 직접 골라보기
+slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">같은 장소인데 느낌이 달라요</h2>
-  <div class="ka-grp"><div class="scene-row">
-    ${placeCard('library','도서관 · 민수','조용히 책을 읽었어요','편안해요')}
-    ${placeCard('library','도서관 · 지아','너무 조용했어요','조금 답답해요')}
-  </div>
-  <div class="note">같은 도서관이라도 사람마다 <b style="color:#15803D">경험과 느낌</b>이 달라요. 누가 맞고 틀린 게 아니에요.</div></div>`});
+  <div class="ka-grp">${feelGame(st)}</div>`});
 // 6 살펴보기: 장소 카드란? (발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -378,6 +404,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  feels:{}, feelLast:null,
   startTs: Date.now(),
   attempt: 1
 };
@@ -412,7 +439,7 @@ function render(){
 }
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
-function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; playBlip(); main.innerHTML=s.render(state); }
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
