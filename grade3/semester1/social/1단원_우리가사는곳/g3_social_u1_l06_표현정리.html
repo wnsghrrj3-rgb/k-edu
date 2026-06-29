@@ -132,6 +132,15 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
   .ka-f{grid-template-columns:1fr 1fr}
   .ka-nav.mob-hide{display:none}
 }
+.dia-card{background:#FFFDF5;border:2px dashed #E2B007;border-radius:16px;padding:14px 16px;width:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.dia-title{font-weight:800;color:#B45309;font-size:clamp(14px,2.3vw,17px)}
+.dia-empty{color:var(--muted);font-size:clamp(13px,2.1vw,15px);text-align:center;padding:6px 0}
+.dia-line{display:flex;gap:8px;align-items:flex-start;background:#fff;border-radius:10px;padding:8px 11px;font-size:clamp(13px,2.1vw,16px);line-height:1.5;animation:diaIn .25s ease}
+.dia-ic{font-size:18px;flex-shrink:0}
+@keyframes diaIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.dia-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.dia-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;border-radius:999px;padding:8px 15px;font-size:clamp(13px,2.1vw,15px);cursor:pointer;transition:.12s}
+.dia-btn:hover{background:var(--bub)}
 </style>
 </head>
 <body>
@@ -253,6 +262,19 @@ const Q = [
    h2:"좋은 점을 찾아 칭찬해요."}
 ];
 
+/* ===== 효과음 (jsdom 안전) ===== */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+/* 그림일기 채우기 데이터 (조립 체험·무점수) */
+const DIARY = [
+  {key:'place', label:'장소', icon:'📍', line:'오늘 동네 놀이터에 갔다.'},
+  {key:'exp',   label:'경험', icon:'🤸', line:'친구와 술래잡기를 하며 신나게 놀았다.'},
+  {key:'feel',  label:'느낌', icon:'💛', line:'땀이 났지만 정말 즐거웠다!'}
+];
+
 /* ===== 슬라이드 구성 (18) ===== */
 const slides = [];
 // 1 표지
@@ -268,14 +290,26 @@ slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-bub">우리 동네에서 겪은 일과 그때의 마음을 그림과 글로 담아 봐요.</div>
   <div class="ka-grp"><div class="scene-row">${placeCard('playground','놀이터','친구와 신나게 놀았어요','즐거워요')}</div>
   <div class="note">어떤 장소, 어떤 경험, 어떤 느낌을 담으면 좋을까요?</div></div>`});
-// 3 발문 답(reveal)
-slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
+// 3 발문 답 → 그림일기 채우기(조립 체험·무점수)
+slides.push({stage:1,badge:"생각 열기",render:(st)=>{
+  const lines = DIARY.filter(d=>st.diary[d.key]).map(d=>
+    `<div class="dia-line"><span class="dia-ic">${d.icon}</span><span><b>${d.label}</b> · ${d.line}</span></div>`).join("");
+  const btns = DIARY.filter(d=>!st.diary[d.key]).map(d=>
+    `<button class="dia-btn" onclick="addDiary('${d.key}')">${d.icon} ${d.label} 담기</button>`).join("");
+  const done = DIARY.every(d=>st.diary[d.key]);
+  return `
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">그림일기에 담을 세 가지는?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('diary','그림일기')}</div>
-  ${st.revealed?`<div class="answer-box">그림일기에는 <span class="ka-emph">장소</span>·<span class="ka-emph">경험</span>·<span class="ka-emph">느낌</span>을 그림과 글로 함께 담아요.</div>`
-    :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
-  </div>`});
+  <h2 class="ka-t">그림일기를 직접 채워 봐요</h2>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="dia-card">
+      <div class="dia-title">📔 우리 동네 그림일기</div>
+      ${lines||'<div class="dia-empty">아래에서 담을 거리를 골라 일기를 완성해요.</div>'}
+    </div>
+    ${btns?`<div class="dia-btns">${btns}</div>`:''}
+    ${done?`<div class="answer-box">그림일기에는 <span class="ka-emph">장소</span>·<span class="ka-emph">경험</span>·<span class="ka-emph">느낌</span> 세 가지를 그림과 글로 함께 담아요. 그래야 그날의 일이 생생히 남아요.</div>`
+      :`<div class="note">장소·경험·느낌을 모두 담으면 그림일기가 완성돼요. (점수 없이 만들어 봐요)</div>`}
+  </div>`;
+}});
 // 4 살펴보기: 되짚기 ① 여러 장소·경험·느낌
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -373,6 +407,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  diary:{}, diaryChimed:false,
   startTs: Date.now(),
   attempt: 1
 };
@@ -407,7 +442,13 @@ function render(){
 }
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
-function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; playBlip(); main.innerHTML=s.render(state); }
+function addDiary(key){
+  if(state.diary[key]) return;
+  state.diary[key]=true; playBlip();
+  if(DIARY.every(d=>state.diary[d.key]) && !state.diaryChimed){ state.diaryChimed=true; playChime(); }
+  main.innerHTML = slides[state.idx].render(state);
+}
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
