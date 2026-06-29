@@ -124,6 +124,43 @@ button{font-family:inherit;cursor:pointer}
   .swatch,.custom-wrap{flex-shrink:0}
   .dgrid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
 }
+
+/* ===== 캐릭터 빌더 ===== */
+.bld{background:var(--panel);border-radius:22px;box-shadow:var(--shadow-lg);width:min(900px,100%);height:min(90vh,760px);display:flex;flex-direction:column;overflow:hidden}
+.bld-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 12px}
+.bld-head h3{font-family:'Jua',sans-serif;font-size:20px;display:flex;align-items:center;gap:8px}
+.bld-body{flex:1;display:flex;min-height:0;gap:14px;padding:0 22px}
+.bld-stage-wrap{flex:1;min-width:0;background:linear-gradient(160deg,#F7F9FC,#EEF2F8);border:1.5px solid var(--border);border-radius:18px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#bstage{touch-action:none;cursor:grab}
+.bld-hint{position:absolute;color:var(--faint);font-size:14px;font-weight:600;pointer-events:none;text-align:center;padding:0 20px}
+.bld-side{width:300px;flex-shrink:0;display:flex;flex-direction:column;min-height:0}
+.bld-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.bld-tab{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 9px;border:1.5px solid var(--border);background:var(--panel);border-radius:11px;font-size:16px;color:var(--sub);transition:all .12s}
+.bld-tab span{font-size:10px;font-weight:600}
+.bld-tab.on{border-color:var(--primary);background:var(--primary-light);color:var(--primary)}
+.bld-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px;align-content:start;padding-right:4px}
+.bld-card{aspect-ratio:1;border:2px solid var(--border);border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;gap:2px;padding:5px;transition:all .12s;overflow:hidden}
+.bld-card:hover{border-color:var(--primary);background:var(--primary-light);transform:translateY(-1px)}
+.bld-card img{max-width:100%;max-height:100%;object-fit:contain}
+.bld-empty{color:var(--faint);font-size:13px;padding:20px;grid-column:1/-1}
+.bld-ctrl{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 22px;border-top:1px solid var(--border)}
+.bld-scale{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);font-weight:600}
+.bld-scale input{width:120px;accent-color:var(--primary)}
+.bld-cbtn{height:40px;padding:0 14px;border:1.5px solid var(--border);background:var(--panel);border-radius:11px;color:var(--sub);font-size:13px;font-weight:600;transition:all .12s}
+.bld-cbtn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.bld-cbtn.warn:hover{border-color:#F87171;color:#E53E3E;background:#FFF5F5}
+.bld-cbtn.primary{margin-left:auto;background:linear-gradient(120deg,var(--primary),#7AA6FF);color:#fff;border:none;font-family:'Jua',sans-serif;font-size:14px;padding:0 20px;box-shadow:0 5px 14px rgba(91,142,248,.28)}
+@media(max-width:760px){
+  .bld{height:94vh;width:100%}
+  .bld-body{flex-direction:column;gap:10px;overflow-y:auto}
+  .bld-stage-wrap{flex:none;height:44vh}
+  .bld-side{width:100%;flex:none}
+  .bld-grid{max-height:30vh;grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+  .bld-ctrl{padding:12px}
+  .bld-scale{width:100%;order:-1}
+  .bld-cbtn.primary{margin-left:0;width:100%;order:5}
+}
+
 </style>
   <script src="/kedu_gate.js"></script>
 </head>
@@ -143,6 +180,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="tb-spacer"></div>
   <div class="tb-group">
     <button class="tb-btn" onclick="openSheet()" title="도면·배경"><span style="font-size:17px">🗂️</span></button>
+    <button class="tb-btn" onclick="openBuilder()" title="캐릭터 만들기"><span style="font-size:17px">👤</span></button>
     <button class="tb-btn" onclick="openOrigami()" title="색종이접기"><span style="font-size:17px">✈️</span></button>
     <div class="tb-divider"></div>
     <button class="tb-btn" id="undo-btn" onclick="doUndo()" title="되돌리기 (Ctrl+Z)" disabled>↩</button>
@@ -900,6 +938,169 @@ function renderOrigamiStep(){
   document.getElementById('ori-next').disabled=_oIdx===n-1;
 }
 document.getElementById('origami-mask').addEventListener('click', e=>{ if(e.target.id==='origami-mask') closeOrigami(); });
+</script>
+
+
+<!-- 캐릭터 빌더 패널 -->
+<div class="sheet-mask" id="builder-mask">
+  <div class="bld">
+    <div class="bld-head">
+      <h3>👤 캐릭터 만들기</h3>
+      <button class="sheet-close" style="position:static;float:none" onclick="closeBuilder()">✕</button>
+    </div>
+    <div class="bld-body">
+      <div class="bld-stage-wrap" id="bld-stage-wrap">
+        <canvas id="bstage"></canvas>
+        <div class="bld-hint" id="bld-hint">아래에서 파츠를 눌러 얼굴을 만들어요</div>
+      </div>
+      <div class="bld-side">
+        <div class="bld-tabs" id="bld-tabs"></div>
+        <div class="bld-grid" id="bld-grid"></div>
+      </div>
+    </div>
+    <div class="bld-ctrl">
+      <div class="bld-scale"><span>크기</span><input type="range" id="bld-scale" min="20" max="320" value="100" oninput="bScale(this.value)"></div>
+      <button class="bld-cbtn" onclick="bSendBack()">⬇ 뒤로</button>
+      <button class="bld-cbtn" onclick="bSendFront()">⬆ 앞으로</button>
+      <button class="bld-cbtn warn" onclick="bDelete()">🗑️ 선택 삭제</button>
+      <button class="bld-cbtn" onclick="bClear()">비우기</button>
+      <button class="bld-cbtn primary" onclick="bPlace()">✓ 캔버스에 올리기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* ============== 캐릭터 빌더 ============== */
+const BCAT = {
+  face:{label:'얼굴',emoji:'🙂',z:1,pos:[.5,.5],size:.58,dim:'h'},
+  hair:{label:'머리',emoji:'💇',z:6,pos:[.5,.33],size:.62,dim:'w'},
+  eye:{label:'눈',emoji:'👁️',z:3,pos:[.5,.47],size:.17,dim:'w',pair:true,dx:.12},
+  brow:{label:'눈썹',emoji:'〰️',z:4,pos:[.5,.37],size:.17,dim:'w',pair:true,dx:.12},
+  mouth:{label:'입',emoji:'👄',z:5,pos:[.5,.62],size:.2,dim:'w'},
+  ear:{label:'귀',emoji:'👂',z:2,pos:[.5,.5],size:.46,dim:'w',pair:true,dx:.2},
+  top:{label:'옷',emoji:'👕',z:0,pos:[.5,.92],size:.52,dim:'w'},
+  head:{label:'완성',emoji:'🧑',z:9,pos:[.5,.5],size:.6,dim:'h'}
+};
+const BORDER = ['face','hair','eye','brow','mouth','ear','top','head'];
+let bMeta=null, bActive='face', bLayers=[], bSel=null, bImgCache={};
+let bStageS=0, bDpr=1, bInit=false, bDragging=false, bDragOff={x:0,y:0}, bIdSeq=1;
+
+function openBuilder(){
+  document.getElementById('builder-mask').classList.add('on');
+  if(!bInit){ bInitOnce(); bInit=true; }
+  requestAnimationFrame(()=>{ bSizeStage(); bRenderTabs(); bRenderGrid(); bRender(); });
+}
+function closeBuilder(){ document.getElementById('builder-mask').classList.remove('on'); }
+
+function bInitOnce(){
+  fetch('assets/builder/_meta.json').then(r=>r.json()).then(m=>{ bMeta=m; bRenderGrid(); }).catch(()=>{ bMeta={categories:{}}; bRenderGrid(); });
+  const bm=document.getElementById('builder-mask');
+  bm.addEventListener('click', e=>{ if(e.target.id==='builder-mask') closeBuilder(); });
+  const cvs=document.getElementById('bstage');
+  cvs.addEventListener('pointerdown', bPointerDown);
+  cvs.addEventListener('pointermove', bPointerMove);
+  window.addEventListener('pointerup', ()=>{ bDragging=false; });
+}
+
+function bSizeStage(){
+  const wrap=document.getElementById('bld-stage-wrap'), cvs=document.getElementById('bstage');
+  const r=wrap.getBoundingClientRect();
+  const S=Math.max(80, Math.floor(Math.min(r.width, r.height)) - 8);
+  bStageS=S; bDpr=Math.max(1, window.devicePixelRatio||1);
+  cvs.width=S*bDpr; cvs.height=S*bDpr; cvs.style.width=S+'px'; cvs.style.height=S+'px';
+}
+
+function bRenderTabs(){
+  document.getElementById('bld-tabs').innerHTML = BORDER.map(c=>
+    `<button class="bld-tab ${c===bActive?'on':''}" onclick="bTab('${c}')">${BCAT[c].emoji}<span>${BCAT[c].label}</span></button>`).join('');
+}
+function bTab(c){ bActive=c; bRenderTabs(); bRenderGrid(); }
+
+function bRenderGrid(){
+  const grid=document.getElementById('bld-grid');
+  if(!bMeta){ grid.innerHTML='<div class="bld-empty">불러오는 중…</div>'; return; }
+  const cat=bMeta.categories && bMeta.categories[bActive];
+  if(!cat || !cat.parts || !cat.parts.length){ grid.innerHTML='<div class="bld-empty">파츠가 없어요</div>'; return; }
+  const parts=cat.parts, cfg=BCAT[bActive];
+  let html='';
+  if(cfg.pair){
+    for(let i=0;i<parts.length;i+=2){
+      const a=parts[i], b=parts[i+1]||parts[i];
+      html+=`<button class="bld-card" onclick="bAddPair('${a.file}','${b.file}')"><img loading="lazy" src="assets/builder/${a.file}"><img loading="lazy" src="assets/builder/${b.file}"></button>`;
+    }
+  } else {
+    for(const p of parts){
+      html+=`<button class="bld-card" onclick="bAdd('${p.file}')"><img loading="lazy" src="assets/builder/${p.file}"></button>`;
+    }
+  }
+  grid.innerHTML=html;
+}
+
+function bImg(file, cb){
+  if(bImgCache[file]){ const im=bImgCache[file]; if(im.complete && im.naturalWidth) cb&&cb(im); else im.addEventListener('load',()=>cb&&cb(im)); return im; }
+  const im=new Image(); im.onload=()=>{ cb&&cb(im); }; im.src='assets/builder/'+file; bImgCache[file]=im; return im;
+}
+function bMakeLayer(file, im, cfg, x, y){
+  const S=bStageS; let w,h;
+  if(cfg.dim==='h'){ h=S*cfg.size; w=h*im.naturalWidth/im.naturalHeight; }
+  else { w=S*cfg.size; h=w*im.naturalHeight/im.naturalWidth; }
+  return {id:bIdSeq++, cat:bActive, im, x, y, baseW:w, baseH:h, scale:1, z:cfg.z};
+}
+function bAdd(file){
+  const cfg=BCAT[bActive], S=bStageS;
+  bImg(file,(im)=>{ const L=bMakeLayer(file,im,cfg,cfg.pos[0]*S,cfg.pos[1]*S); bLayers.push(L); bSel=L.id; bSyncScale(); bRender(); });
+}
+function bAddPair(fa, fb){
+  const cfg=BCAT[bActive], S=bStageS, dx=(cfg.dx||.12)*S;
+  bImg(fa,(im)=>{ const L=bMakeLayer(fa,im,cfg,cfg.pos[0]*S-dx,cfg.pos[1]*S); bLayers.push(L); bSel=L.id; bRender(); });
+  bImg(fb,(im)=>{ const L=bMakeLayer(fb,im,cfg,cfg.pos[0]*S+dx,cfg.pos[1]*S); bLayers.push(L); bSel=L.id; bSyncScale(); bRender(); });
+}
+
+function bDrawTo(x, S){
+  x.clearRect(0,0,S,S);
+  const order=[...bLayers].sort((a,b)=> a.z-b.z || a.id-b.id);
+  for(const L of order){ if(!L.im.complete) continue; const w=L.baseW*L.scale, h=L.baseH*L.scale; x.drawImage(L.im, L.x-w/2, L.y-h/2, w, h); }
+}
+function bRender(){
+  const cvs=document.getElementById('bstage'); const x=cvs.getContext('2d');
+  x.setTransform(bDpr,0,0,bDpr,0,0);
+  bDrawTo(x, bStageS);
+  const sel=bLayers.find(l=>l.id===bSel);
+  if(sel){ const w=sel.baseW*sel.scale, h=sel.baseH*sel.scale;
+    x.strokeStyle='#5B8EF8'; x.lineWidth=2; x.setLineDash([6,4]);
+    x.strokeRect(sel.x-w/2, sel.y-h/2, w, h); x.setLineDash([]); }
+  document.getElementById('bld-hint').style.display = bLayers.length ? 'none' : 'block';
+}
+
+function bPt(e){ const cvs=document.getElementById('bstage'), r=cvs.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+function bHit(px, py){
+  const order=[...bLayers].sort((a,b)=> a.z-b.z || a.id-b.id);
+  for(let i=order.length-1;i>=0;i--){ const L=order[i], w=L.baseW*L.scale, h=L.baseH*L.scale;
+    if(px>=L.x-w/2 && px<=L.x+w/2 && py>=L.y-h/2 && py<=L.y+h/2) return L; }
+  return null;
+}
+function bPointerDown(e){ const p=bPt(e), L=bHit(p.x,p.y); if(L){ bSel=L.id; bDragging=true; bDragOff={x:p.x-L.x,y:p.y-L.y}; bSyncScale(); } else { bSel=null; } bRender(); }
+function bPointerMove(e){ if(!bDragging) return; const p=bPt(e), L=bLayers.find(l=>l.id===bSel); if(!L) return; L.x=p.x-bDragOff.x; L.y=p.y-bDragOff.y; bRender(); }
+
+function bScale(v){ const L=bLayers.find(l=>l.id===bSel); if(!L) return; L.scale=v/100; bRender(); }
+function bSyncScale(){ const L=bLayers.find(l=>l.id===bSel), s=document.getElementById('bld-scale'); if(L && s) s.value=Math.round(L.scale*100); }
+function bDelete(){ if(bSel==null) return; bLayers=bLayers.filter(l=>l.id!==bSel); bSel=null; bRender(); }
+function bClear(){ bLayers=[]; bSel=null; bRender(); }
+function bSendFront(){ const L=bLayers.find(l=>l.id===bSel); if(!L||!bLayers.length) return; L.z=Math.max(...bLayers.map(l=>l.z))+1; bRender(); }
+function bSendBack(){ const L=bLayers.find(l=>l.id===bSel); if(!L||!bLayers.length) return; L.z=Math.min(...bLayers.map(l=>l.z))-1; bRender(); }
+
+function bPlace(){
+  if(!bLayers.length){ toast('먼저 파츠를 골라 얼굴을 만들어요'); return; }
+  const S=bStageS, off=document.createElement('canvas'); off.width=S; off.height=S;
+  bDrawTo(off.getContext('2d'), S);
+  const f=Math.min(cssW,cssH)/S*0.92, dw=S*f, dh=S*f, dx=(cssW-dw)/2, dy=(cssH-dh)/2;
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over'; ctx.shadowBlur=0;
+  ctx.drawImage(off, dx, dy, dw, dh);
+  hasDrawn=true; pushUndo();
+  closeBuilder(); toast('캐릭터를 캔버스에 올렸어요 — 꾸며보세요');
+}
+
 </script>
 
 </body>
