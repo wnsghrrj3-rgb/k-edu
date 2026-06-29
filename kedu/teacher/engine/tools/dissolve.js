@@ -23,6 +23,10 @@
     var btn = 'font-size:22px;padding:12px 20px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
     function clamp(v,a,b){ return Math.max(a,Math.min(v,b)); }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play)window.KLab.sound.play(n); }
+    /* 재결정 와우(예측 빗나감형): 다 녹아 맑은 따뜻한 용액을 차게 식히면 녹았던 설탕이 도로 나옴(석출).
+       라이브 update()의 석출 로직을 예측→확인 2단으로 연출만 얹음(헌법 6장: 비주얼 대수술 X). */
+    var coolArmed=false, coolRevealing=false, coolTimer=null;
 
     /* ───────────── 상태 ───────────── */
     var B = { x:230, y:100, w:430, h:300 };          // 비커 내부(물)
@@ -73,15 +77,16 @@
         keep:false, check:function(){ return st.stir && pending()>0 && st.dots.length>0; } }
     ];
     var GRADES = {
-      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, sand:true,  temp:false, scale:false, gauge:false },
-      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, sand:false, temp:true,  scale:true,  gauge:false },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS,     sand:false, temp:true,  scale:true,  gauge:true  }
+      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, sand:true,  temp:false, scale:false, gauge:false, showWow:false },
+      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, sand:false, temp:true,  scale:true,  gauge:false, showWow:false },
+      high: { modes:['free','mission','quiz'], missions:MISSIONS,     sand:false, temp:true,  scale:true,  gauge:true,  showWow:true  }
     };
     var grade = (['low','mid','high'].indexOf(config.grade)>=0) ? config.grade : 'high';
     function G(){ return GRADES[grade]; }
     function curMissions(){ return G().missions; }
     var bands = ui.gradeBands({ grade:grade, locked:!!config.grade, onChange:function(g){
       grade=g; mode='free'; mStep=0; mDone=false; mLock=false;
+      coolArmed=false; coolRevealing=false; if(coolTimer){clearTimeout(coolTimer);coolTimer=null;}
       var t=st?st.temp:20; reset(); if(!G().temp)st.temp=20; else st.temp=t;
       build();
     }});
@@ -144,17 +149,26 @@
       var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
-      else body=ctrlRow();
+      else body=ctrlRow()+(G().showWow?wowRow():'');
       el.innerHTML='<style>.dv-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}'
         +'.dv-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#4DABF7,#FFD43B,#FF6B6B);outline:none;}'
         +'.dv-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
-        +'.dv-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
+        +'.dv-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
+        +'.dv-wow:active{transform:translateY(2px);}'
+        +'.dv-flash,.dv-flash-magic,.dv-nudge{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:88%;padding:13px 20px;border-radius:16px;font-weight:800;font-size:20px;line-height:1.42;text-align:center;z-index:5;box-shadow:0 6px 22px rgba(0,0,0,0.16);animation:dvPop .35s ease;}'
+        +'.dv-flash{background:#E7F1FF;color:#1862C6;border:3px solid #4DABF7;}'
+        +'.dv-flash-magic{background:#F3EDFF;color:#6A36D9;border:3px solid #9775FA;}'
+        +'.dv-nudge{background:#FFF4E0;color:#B5651D;border:3px solid #FFC078;}'
+        +'@keyframes dvPop{from{opacity:0;transform:translateX(-50%) translateY(-8px) scale(.96);}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}'
+        +'.dv-hold{font-size:18px;color:#6A36D9;margin-top:6px;animation:dvHold 1.1s ease-in-out infinite;}'
+        +'@keyframes dvHold{0%,100%{opacity:.5;}50%{opacity:1;}}</style>'
         + top + bar + body
         +'<div class="kl-stage-host" style="position:relative;"><div class="dv-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:radial-gradient(120% 120% at 50% 20%,#FCFEFF 0%,#EAF3FB 75%,#DCEAF6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
         +'<div class="dv-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){
         mode=m; mStep=0; mDone=false; mLock=false; reset(); if(!G().temp)st.temp=20;
+        coolArmed=false; coolRevealing=false; if(coolTimer){clearTimeout(coolTimer);coolTimer=null;}
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
@@ -235,7 +249,7 @@
           }
         }
         // 석출: 온도를 내려 한계를 넘으면 도로 가라앉음
-        if(st.dots.length>lim && frame%18===0){
+        if(st.dots.length>lim && frame%(coolRevealing?5:18)===0){
           var rm=st.dots.pop(); if(rm.el)rm.el.remove();
         }
         if(pending()>0 && st.dots.length>=lim) st.satEver=true;
@@ -285,27 +299,77 @@
       else if(pd>0&&n>=lim)h='<div style="font-size:24px;color:'+C.sugar+';">더 못 녹고 가라앉았어요 — 포화!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">지금 온도('+st.temp+'℃)에서 녹을 수 있는 양이 꽉 찼어요. 🌡️ 온도를 올리면 마저 녹일 수 있어요. 그래도 무게는 전체 '+(100+st.total)+'g 그대로!</div>';
       else if(pd>0)h='<div style="font-size:24px;color:'+C.sugar+';">설탕이 입자로 풀려 물속으로 퍼지는 중…</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">🥄 저으면 훨씬 빨리 녹아요. 온도가 높아도 빨리, 더 많이 녹아요.</div>';
       else h='<div style="font-size:24px;color:'+C.good+';">다 녹아서 안 보여요 — 하지만 사라진 게 아니에요!</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">입자가 물속에 <b>골고루</b> 섞여 있어요. 그래서 저울도 물 100g + 설탕 '+st.total+'g = <b>'+(100+st.total)+'g 그대로</b>. 어디를 마셔도 똑같이 달아요.</div>';
+      if(coolArmed&&mode==='free') h+='<div class="dv-hold">🧊 녹을 수 있는 양은 온도가 낮을수록 줄어들어요 — 넘치면 도로 나와요</div>';
       s.innerHTML=h;
+    }
+
+    /* ───────────── 재결정 와우 ───────────── */
+    function wowRow(){
+      return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin:2px 0 10px;">'
+        +'<button class="dv-wow" data-wow="arm" style="'+btn+'background:#fff;color:'+C.vio+';border-color:'+C.vio+';">🔮 다 녹은 설탕물, 식히면?</button>'
+        +'<button class="dv-wow" data-wow="reveal" style="'+btn+'background:'+C.cold+';color:#fff;border-color:'+C.cold+';">❄️ 차갑게 식히기</button>'
+        +'</div>';
+    }
+    function host(){ return el.querySelector('.kl-stage-host'); }
+    function clearDvFlash(){ var h=host(); if(!h)return; h.querySelectorAll('.dv-flash,.dv-flash-magic,.dv-nudge').forEach(function(n){ n.remove(); }); }
+    function dvFlash(cls,msg,ms){ var h=host(); if(!h)return; clearDvFlash(); var d=document.createElement('div'); d.className=cls; d.innerHTML=msg; h.appendChild(d); setTimeout(function(){ if(d.parentNode)d.remove(); },ms); }
+    // 따뜻한 물에 설탕이 다 녹은(맑은) 상태를 즉시 구성 — 예측 셋업
+    function prefillDissolved(){
+      st.dots=[];
+      for(var i=0;i<st.total;i++){
+        var d=newDot(B.x+B.w/2+(Math.random()-0.5)*Math.min(150,40+st.total*2), B.y+18+Math.random()*(B.h-36));
+        st.dots.push(d);
+      }
+      st.erode=0; st.satEver=false;
+    }
+    function wowArm(){
+      if(coolTimer){ clearTimeout(coolTimer); coolTimer=null; } coolRevealing=false;
+      reset(); st.temp=70; st.total=54;      // limit(70)=60 → 54점 전부 녹는 따뜻한 맑은 용액
+      prefillDissolved();
+      coolArmed=true;
+      build();
+      snd('charge');
+      dvFlash('dv-flash','🔮 따뜻한 물에 설탕이 <b>다 녹아 맑아요</b>. 이대로 차게 <b>식히면</b> — 그대로 맑을까요, 아니면 설탕이 <b>도로 나올까요</b>? 예상해 봐요!',3000);
+    }
+    function wowReveal(){
+      if(!coolArmed){ snd('select'); dvFlash('dv-nudge','먼저 <b>🔮</b> 버튼으로 식히면 어떻게 될지 <b>예상</b>부터 해 봐요!',2600); return; }
+      if(coolTimer){ clearTimeout(coolTimer); coolTimer=null; }
+      clearDvFlash();
+      snd('whoosh'); snd('success');
+      dvFlash('dv-flash-magic','❄️ 맑던 설탕물에서 <b>설탕이 도로 나왔어요!</b> 차가운 물은 녹일 수 있는 양이 <b>적어서</b> — 넘친 만큼 다시 알갱이로 (<b>재결정</b>)',3400);
+      coolRevealing=true;
+      var seq=[55,40,28,16,5], k=0;
+      (function tick(){
+        if(k<seq.length){
+          st.temp=seq[k++];
+          var tEl=el.querySelector('.dv-temp'); if(tEl)tEl.textContent=st.temp+'℃';
+          var rEl=el.querySelector('.dv-range'); if(rEl)rEl.value=st.temp;
+          snd('tap');
+          coolTimer=setTimeout(tick,440);
+        } else { coolTimer=setTimeout(function(){ coolRevealing=false; coolTimer=null; },1400); }
+      })();
     }
 
     /* ───────────── 바인딩 ───────────── */
     function bind(){
       var H={
-        add:function(){ st.total+=DOTS_PER_CUBE; renderStatus(); },
+        add:function(){ st.total+=DOTS_PER_CUBE; snd('tap'); renderStatus(); },
         sand:function(){
           for(var i=0;i<DOTS_PER_CUBE;i++){
             var pd=Math.min(60, st.sand+1), spread=Math.min(170, 36+st.sand*2);
             st.sandSeed.push({ x:B.x+B.w/2+(Math.random()-0.5)*spread, y:B.y+B.h-8-Math.random()*(10+pd*0.55), r:3+Math.random()*2 });
             st.sand++;
           }
-          drawSand(); renderStatus();
+          snd('tap'); drawSand(); renderStatus();
         },
-        stir:function(){ st.stir=!st.stir; st.stirT=0; build(); },
-        reset:function(){ var t=st.temp; reset(); if(G().temp)st.temp=t; build(); }
+        stir:function(){ st.stir=!st.stir; st.stirT=0; snd('select'); build(); },
+        reset:function(){ var t=st.temp; coolArmed=false; coolRevealing=false; if(coolTimer){clearTimeout(coolTimer);coolTimer=null;} reset(); if(G().temp)st.temp=t; snd('select'); build(); }
       };
       el.querySelectorAll('.dv-btn').forEach(function(b){ b.addEventListener('click',function(){ var f=H[b.dataset.act]; if(f)f(); }); });
+      el.querySelectorAll('.dv-wow').forEach(function(b){ b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); }); });
       var r=el.querySelector('.dv-range');
       if(r)r.addEventListener('input',function(e){ st.temp=clamp(Math.round(+e.target.value),0,80);
+        if(coolArmed){ coolArmed=false; clearDvFlash(); }   // 직접 온도 조작 시 예측 무장 해제
         var t=el.querySelector('.dv-temp'); if(t)t.textContent=st.temp+'℃'; renderStatus(); });
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
@@ -320,6 +384,6 @@
 
     if(mode==='quiz')newQuiz();
     build(); loop();
-    return function cleanup(){ if(raf)cancelAnimationFrame(raf); };
+    return function cleanup(){ if(raf)cancelAnimationFrame(raf); if(coolTimer)clearTimeout(coolTimer); };
   });
 })();
