@@ -44,6 +44,31 @@
   window.KLab = { register: register, mount: mount, has: has, list: list };
 
   /* --------------------------------------------------------------------------
+     KLab.sprite — 실사 에셋 공용 로더 (실사 트랙 표준 · states/melt 패턴 승급)
+     도구 외형 PNG를 미리 로드. 파일 없음/로드 실패면 get()이 null → 도구는 기존
+     코드 묘사로 폴백한다(절대 안 깨짐). PNG는 "있으면 더 멋진" 외형 레이어일 뿐,
+     커지고·작아지고·돌리고·누르는 조작과 물성 모션·연출은 도구 코드가 그대로 처리.
+     경로 규약: /kedu/teacher/engine/tools/assets/{tool}/{name}.png
+     사용:  var SPR = KLab.sprite('dissolve', ['sugar','glass_clear','crystal_out'], redraw);
+            var im = SPR.get('sugar');  if (im) { <image href> } else { 기존 코드 묘사 }
+     -------------------------------------------------------------------------- */
+  window.KLab.sprite = function (tool, names, onReady) {
+    var base = '/kedu/teacher/engine/tools/assets/' + tool + '/';
+    var map = {}, pending = (names || []).length;
+    function done() { pending--; if (pending <= 0 && typeof onReady === 'function') onReady(); }
+    (names || []).forEach(function (n) {
+      var im = new Image();
+      im.onload = function () { map[n] = im; done(); };
+      im.onerror = function () { done(); };   // 파일 없음 → map[n] 비움 → get() null → 폴백
+      im.src = base + n + '.png';
+    });
+    return {
+      get: function (n) { var im = map[n]; return (im && im.complete && im.naturalWidth) ? im : null; },
+      ready: function () { return pending <= 0; }
+    };
+  };
+
+  /* --------------------------------------------------------------------------
      KLab.ui — 전 도구 공통 모드 시스템 헬퍼 (v2 깊이 표준)
      모든 도구는 mode: "free"(자유탐구) | "mission"(단계 미션) | "quiz"(문제)
      를 지원하는 것을 표준으로 한다. 아래 헬퍼로 UI를 통일한다.
