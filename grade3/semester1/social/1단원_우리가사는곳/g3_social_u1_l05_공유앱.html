@@ -132,6 +132,19 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
   .ka-f{grid-template-columns:1fr 1fr}
   .ka-nav.mob-hide{display:none}
 }
+.cmt-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:480px;margin:0 auto}
+.cmt-row{display:flex;align-items:center;gap:10px;justify-content:space-between;background:#fff;border:2px solid #CBD5E1;border-radius:14px;padding:11px 14px}
+.cmt-text{font-size:clamp(13px,2.1vw,16px);line-height:1.5;color:#0F172A;flex:1}
+.cmt-btns{display:flex;gap:6px;flex-shrink:0}
+.cmt-b{font-size:18px;background:#fff;border:2px solid #CBD5E1;border-radius:10px;padding:4px 9px;cursor:pointer;font-family:inherit;transition:.12s}
+.cmt-b.up:hover{border-color:var(--green);background:var(--bub)}
+.cmt-b.down:hover{border-color:var(--red);background:#FEF2F2}
+.cmt-row.done{flex-direction:column;align-items:flex-start;gap:5px}
+.cmt-row.done.good{border-color:var(--green);background:var(--amber-bg)}
+.cmt-row.done.bad{border-color:var(--red);background:#FEF2F2}
+.cmt-tag{font-size:clamp(12px,2vw,14px);font-weight:600;color:#334155}
+.cmt-row.shake{animation:shakeX .4s}
+@keyframes shakeX{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 </style>
 </head>
 <body>
@@ -253,6 +266,20 @@ const Q = [
    h2:"고운 말로 예절을 지켜요."}
 ];
 
+/* ===== 효과음 (jsdom 안전) ===== */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+
+/* 댓글 예절 판단 데이터 (옳고 그름 명확 → 채점형, 단 점수에는 미반영) */
+const COMMENTS = [
+  {text:'그림 색이 정말 예뻐! 공원이 가 보고 싶어졌어.', ok:true,  why:'좋은 점을 고운 말로 칭찬했어요.'},
+  {text:'이게 뭐야, 진짜 못 그렸네 ㅋㅋ', ok:false, why:'친구를 흉보는 말이에요. 고운 말로 바꿔요.'},
+  {text:'어디를 표현했는지 더 알려 줄래? 궁금해!', ok:true,  why:'예의 바르게 더 묻는 좋은 댓글이에요.'},
+  {text:'○○이 집 주소는 행복동 12번지야.', ok:false, why:'다른 사람의 정보를 함부로 올리면 안 돼요.'}
+];
+
 /* ===== 슬라이드 구성 (18) ===== */
 const slides = [];
 // 1 표지
@@ -288,14 +315,35 @@ slides.push({stage:2,badge:"개념",render:()=>`
   <h2 class="ka-t">② 친구 작품 보고 댓글 달기</h2>
   <div class="ka-bub">친구 작품을 보고 <span class="ka-emph">고운 말</span>로 댓글을 달아요. 좋은 점을 칭찬하면 친구도 기뻐해요.</div>
   <div class="ka-grp"><div class="scene-row">${placeCard('library','도서관','친구 작품에 댓글을 달았어요','즐거워요')}</div></div>`});
-// 6 살펴보기: 예절 + reveal
-slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+// 6 살펴보기: 예절 → 댓글 예절 판단(직접조작·무점수)
+slides.push({stage:2,badge:"개념",render:(st)=>{
+  const rows = COMMENTS.map((c,i)=>{
+    const judged = st.cmt[i];
+    const wrong = st.cmtWrong===i;
+    if(judged){
+      return `<div class="cmt-row done ${c.ok?'good':'bad'}">
+        <div class="cmt-text">${c.text}</div>
+        <div class="cmt-tag">${c.ok?'👍 알맞아요':'👎 고쳐요'} · ${c.why}</div></div>`;
+    }
+    return `<div class="cmt-row${wrong?' shake':''}">
+      <div class="cmt-text">${c.text}</div>
+      <div class="cmt-btns">
+        <button class="cmt-b up" onclick="judgeComment(${i},true)">👍</button>
+        <button class="cmt-b down" onclick="judgeComment(${i},false)">👎</button>
+      </div></div>`;
+  }).join("");
+  const all = Object.keys(st.cmt).length===COMMENTS.length;
+  const tail = all
+    ? `<div class="answer-box"><span class="ka-emph">고운 말</span>로 칭찬하기, 친구를 <span class="ka-emph">흉보지 않기</span>, 남의 <span class="ka-emph">정보를 함부로 올리지 않기</span> — 공유할 때 이 예절을 지켜요.</div>`
+    : `<div class="note">댓글이 알맞으면 👍, 고쳐야 하면 👎를 눌러 직접 판단해 봐요. (점수에는 반영되지 않아요)</div>`;
+  return `
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">③ 공유할 때 지킬 예절</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('app','바른 공유')}</div>
-  ${st.revealed?`<div class="answer-box"><span class="ka-emph">고운 말</span>로 댓글 달기, 친구를 <span class="ka-emph">흉보지 않기</span>, 다른 사람의 정보를 함부로 올리지 않기를 지켜요.</div>`
-    :`<div class="note">공유 앱을 쓸 때 어떤 점을 조심해야 할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
-  </div>`});
+  <h2 class="ka-t">③ 공유할 때 지킬 예절 — 댓글 골라보기</h2>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="cmt-list">${rows}</div>
+    ${tail}
+  </div>`;
+}});
 // 7 살펴보기: 닻
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
@@ -373,6 +421,7 @@ const state = {
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
+  cmt:{}, cmtWrong:null, cmtChimed:false,
   startTs: Date.now(),
   attempt: 1
 };
@@ -407,7 +456,18 @@ function render(){
 }
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
-function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; playBlip(); main.innerHTML=s.render(state); }
+function judgeComment(i, guess){
+  if(state.cmt[i]) return;
+  if(guess===COMMENTS[i].ok){
+    state.cmt[i]=true; playBlip();
+    if(Object.keys(state.cmt).length===COMMENTS.length && !state.cmtChimed){ state.cmtChimed=true; playChime(); }
+    main.innerHTML = slides[state.idx].render(state);
+  } else {
+    state.cmtWrong=i; main.innerHTML = slides[state.idx].render(state);
+    setTimeout(()=>{ state.cmtWrong=null; if(slides[state.idx] && !slides[state.idx].q) main.innerHTML=slides[state.idx].render(state); },600);
+  }
+}
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
