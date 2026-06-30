@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u5_l04 — m보다 큰 단위는 무엇일까요 (km) [3학년 5단원 04차시, 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g3/unit5/04차_m보다_큰_단위는_무엇일까요_km/draft.html
+  지도서: _SOURCE.md (5단원 길이와 시간 — km 도입)
+  성취기준: [4수03-15] 1 km 알고 측정·어림 / [4수03-16] 1 km와 1 m 관계, 몇 km 몇 m·몇 m 표현
+  학습 본질: 1000 m = 1 km. 몇 km 몇 m ↔ 몇 m. m 불편 → km 필요.
+  메카닉: kmLine(km 수직선/산책로 SVG·신규) + setupMcq 단일 엔진
+  점수: 기본 4×10(q8~11) + 응용 4×15(q12~15) = 100
+  범위: m·km만. 1 km=1000 m. 어림은 05차. 지나친 환산 X(1 km와 1 cm 관계 X).
+  톤: (B) v14 그린 #15803D 계승 (u5 03차 base)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_math_u5_l04_v1">
+<title>m보다 큰 단위는 무엇일까요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── rulerFig (자 — 측정 시그니처 부품 · 신규). 범용 mm-holder/svg/caption 재사용 ───── */
+.mul-stage{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,16px);max-width:var(--mw-lg);width:100%;}
+.mm-holder{display:flex;justify-content:center;align-items:center;background:#fff;border:2px solid var(--line);border-radius:18px;padding:clamp(8px,1.6vw,14px) clamp(12px,2.4vw,20px);box-shadow:var(--shadow);max-width:100%;overflow:hidden;}
+.mm-svg{display:block;max-width:100%;height:auto;}
+.mm-caption{font-size:var(--fs-caption);color:var(--ink-soft);text-align:center;}
+.mm-caption b{color:var(--coral-deep);font-family:var(--f-title);font-weight:400;}
+.mcq-opt.cmp4{font-size:var(--fs-body);}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">4차시</span>
+    <span class="ka-where">수학 3-1 · <b>5. 길이와 시간</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 흥미 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 환경 체험</div>
+      <h2 class="slide-title">m보다 큰 단위는 무엇일까요?</h2>
+      <div class="intro-q">수목원에 <strong>100 m</strong>마다 색이 바뀌는 산책로가 있어요. 전체 길이는 <strong>1000 m</strong>! 이렇게 긴 길이를 <strong>간단히</strong> 나타낼 수 없을까요?</div>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-intro"></div>
+        <div class="mm-caption">산책로 전체는 <b>1000 m</b></div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 km를 배워요</h2>
+      <ul class="goal-list">
+        <li>길이 단위 <strong>1 km</strong>를 알고 쓰고 읽어요</li>
+        <li><strong>1 km = 1000 m</strong> 관계를 알아요</li>
+        <li>길이를 <strong>몇 km 몇 m</strong>와 <strong>몇 m</strong>로 나타내요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 상기 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 떠올려요</div>
+      <h2 class="slide-title">m로 나타내면 불편해요</h2>
+      <div class="recall-box">긴 길이를 <strong>m</strong>로만 나타내면 앞의 수가 자꾸 커져서 불편해요. 그래서 <strong>m보다 큰 단위</strong>가 필요해요!</div>
+    </div>
+
+    <!-- 슬 4 — 전개: 1 km = 1000 m -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1 km</div>
+      <h2 class="slide-title">1000 m를 1 km라고 해요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c1"></div>
+        <div class="concept-box"><strong>1000 m</strong>를 <strong>1 km</strong>라 쓰고 <strong>1 킬로미터</strong>라고 읽어요. 100 m가 <strong>10번</strong>이면 1000 m, 곧 <strong>1 km = 1000 m</strong>!</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 몇 km 몇 m -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 몇 km 몇 m</div>
+      <h2 class="slide-title">1 km보다 300 m 더 길어요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c2"></div>
+        <div class="concept-box">다리 길이가 <strong>1 km보다 300 m 더 길면</strong> <strong>1 km 300 m</strong>! 1 km=1000 m이니까 <strong>1 km 300 m = 1300 m</strong>예요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 큰 거리 변환 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 바꿔 쓰기</div>
+      <h2 class="slide-title">두 가지로 나타내요</h2>
+      <div class="mul-stage">
+        <div class="concept-box">같은 거리를 <strong>몇 km 몇 m</strong>와 <strong>몇 m</strong> 두 가지로 나타낼 수 있어요.<br>예) <strong>3750 m = 3 km 750 m</strong>, <strong>6 km 927 m = 6927 m</strong>.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 생활 속 km -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 생활 속 km</div>
+      <h2 class="slide-title">어디서 km를 봤나요?</h2>
+      <div class="mul-stage">
+        <div class="concept-box">길에서 <strong>표지판</strong>이나 등산 안내도에 <strong>km</strong>가 쓰여 있어요. 먼 거리를 나타낼 때 km가 아주 편리해요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본 q8 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">1000 m를 나타내는 더 큰 단위는?</div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt cmp4" data-correct="1">1 km</button>
+          <button class="mcq-opt cmp4" data-correct="0">1 cm</button>
+          <button class="mcq-opt cmp4" data-correct="0">1 mm</button>
+          <button class="mcq-opt cmp4" data-correct="0">100 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["m보다 큰 단위예요.","1000 m = 1 km(1 킬로미터) 예요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본 q9 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">1 km는 몇 m와 같을까요?</div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt cmp4" data-correct="1">1000 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">100 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">10 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">500 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["100 m가 10번이면?","1 km = 1000 m 예요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본 q10 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">1 km 300 m는 몇 m일까요?</div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt cmp4" data-correct="1">1300 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">130 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">1003 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">13 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1 km는 1000 m 예요.","1000 m + 300 m = 1300 m 예요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본 q11 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">100 m가 <strong>10번</strong> 있으면 모두 몇 m일까요?</div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt cmp4" data-correct="1">1000 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">100 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">110 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">10000 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["100 × 10 을 생각해요.","100 m × 10번 = 1000 m = 1 km 예요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">활주로 길이 <strong>3750 m</strong>는<br>몇 km 몇 m일까요?</div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt cmp4" data-correct="1">3 km 750 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">37 km 50 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">3 km 75 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">375 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["3000 m는 몇 km 인가요?","3000 m = 3 km, 남은 750 m 더해서 3 km 750 m 예요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">2 km 15 m는 몇 m일까요?</div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt cmp4" data-correct="1">2015 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">215 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">2150 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">235 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["2 km는 2000 m 예요.","2000 m + 15 m = 2015 m 예요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: 오개념 ○✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어떤 친구가 <strong>2 km 63 m</strong>를<br><strong>263 m</strong>라고 했어요. 맞을까요?</div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt cmp4" data-correct="0">⭕ 맞아요</button>
+          <button class="mcq-opt cmp4" data-correct="1">❌ 틀려요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["2 km는 몇 m 인가요?","2 km = 2000 m! 2 km 63 m = 2063 m 예요. 263 m는 틀려요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: 잘못 말한 친구 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">km와 m 관계를<br><strong>잘못 말한</strong> 친구는?</div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt cmp4" data-correct="0">도윤: 1 km = 1000 m야</button>
+          <button class="mcq-opt cmp4" data-correct="0">하은: 4820 m = 4 km 820 m야</button>
+          <button class="mcq-opt cmp4" data-correct="1">서준: 2 km = 200 m야</button>
+          <button class="mcq-opt cmp4" data-correct="0">유나: 1 km 500 m = 1500 m야</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1 km는 1000 m 예요.","2 km = 2000 m! 200 m라고 한 서준이가 틀렸어요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 배운 것 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">m보다 큰 단위는 <strong>km</strong>! <strong>1 km = 1000 m</strong>예요.<br>거리를 <strong>몇 km 몇 m</strong>와 <strong>몇 m</strong> 두 가지로 나타낼 수 있어요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🗺️</div>
+          <div class="next-label">m와 km로 거리를 어림하고 재어 볼까요?</div>
+        </div>
+        <div class="home-prompt">가까운 곳까지의 거리를 km로 나타낸 표지판을 찾아보세요!</div>
+      </div>
+    </div>
+
+    <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_math_u5_l04';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+
+// ════════════════════════════════════════
+// rulerFig — 자 SVG (측정 시그니처 부품 · 신규)
+//   {cm, objMm, objColor, tag} → cm 큰 눈금(숫자)+5mm 중간 눈금+1mm 작은 눈금 자.
+//   objMm>0이면 0에서 objMm까지 물건 막대(green). tag 있으면 막대 위 읽기 라벨.
+//   1 cm=10 mm 시각화. 02·03·09·10차 재사용.
+// ════════════════════════════════════════
+function rulerFig(opts){
+  opts = opts || {};
+  const cm = opts.cm || 10;
+  const objMm = (opts.objMm != null) ? opts.objMm : 0;
+  const objColor = opts.objColor || '#15803D';
+  const tag = opts.tag || '';
+  const mmPx = 7, padX = 18, padTop = 12;
+  const objH = 20, objGap = 7, rulerH = 52;
+  const totalMm = cm * 10;
+  const hasObj = objMm > 0;
+  const hasTag = hasObj && !!tag;
+  const tagH = hasTag ? 22 : 0;
+  const objTop = padTop + tagH;
+  const rulerTop = objTop + (hasObj ? objH + objGap : 0);
+  const W = padX * 2 + totalMm * mmPx;
+  const H = rulerTop + rulerH + 6;
+  let s = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // 자 몸체
+  s += `<rect x="${padX}" y="${rulerTop}" width="${totalMm*mmPx}" height="${rulerH}" rx="7" fill="#FFF6E0" stroke="#1FA8A0" stroke-width="2.5"/>`;
+  // 눈금 + cm 숫자
+  for (let m = 0; m <= totalMm; m++) {
+    const x = padX + m * mmPx;
+    let th, sw, col;
+    if (m % 10 === 0) { th = 22; sw = 2.2; col = '#147F79'; }
+    else if (m % 5 === 0) { th = 14; sw = 1.5; col = '#147F79'; }
+    else { th = 8; sw = 1; col = '#3DBDB4'; }
+    s += `<line x1="${x}" y1="${rulerTop}" x2="${x}" y2="${rulerTop+th}" stroke="${col}" stroke-width="${sw}"/>`;
+    if (m % 10 === 0) {
+      s += `<text x="${x}" y="${rulerTop+rulerH-7}" text-anchor="middle" font-size="15" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${m/10}</text>`;
+    }
+  }
+  // 물건 막대
+  if (hasObj) {
+    const ow = objMm * mmPx;
+    s += `<rect x="${padX}" y="${objTop}" width="${ow}" height="${objH}" rx="5" fill="${objColor}" stroke="#0F5C2E" stroke-width="1.5" opacity="0.92"/>`;
+    s += `<line x1="${padX}" y1="${objTop}" x2="${padX}" y2="${rulerTop}" stroke="#0F5C2E" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.55"/>`;
+    s += `<line x1="${padX+ow}" y1="${objTop}" x2="${padX+ow}" y2="${rulerTop}" stroke="#0F5C2E" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.55"/>`;
+    if (hasTag) {
+      s += `<text x="${padX+ow/2}" y="${padTop+15}" text-anchor="middle" font-size="16" fill="#0F5C2E" font-family="Nunito,sans-serif" font-weight="800">${tag}</text>`;
+    }
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// kmLine — km 수직선/산책로 SVG (측정 시그니처 부품 · 신규)
+//   mode 'bar': 100 m 간격 색 띠(0~1000 m, 10칸) — 1 km=1000 m 시각화.
+//   mode 'line': 수직선 0~maxKm — km 큰 눈금·100 m 작은 눈금, markM 위치 화살표+라벨.
+//   04·05차 재사용.
+// ════════════════════════════════════════
+function kmLine(opts){
+  opts = opts || {};
+  const mode = opts.mode || 'bar';
+  const padX = 26;
+  if (mode === 'bar') {
+    const segs = 10, segW = 56, h = 34, padTop = 30, botH = 26;
+    const W = padX*2 + segs*segW, H = padTop + h + botH;
+    const colors = ['#FCA5A5','#FCD34D','#86EFAC','#7DD3FC','#C4B5FD'];
+    let s = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+    for (let i = 0; i < segs; i++) {
+      const x = padX + i*segW;
+      s += `<rect x="${x}" y="${padTop}" width="${segW}" height="${h}" fill="${colors[i%5]}" stroke="#fff" stroke-width="2"/>`;
+    }
+    s += `<rect x="${padX}" y="${padTop}" width="${segs*segW}" height="${h}" fill="none" stroke="#147F79" stroke-width="2.5" rx="3"/>`;
+    // 아래 눈금 라벨 (0, 500, 1000 m)
+    for (let i = 0; i <= segs; i++) {
+      const x = padX + i*segW;
+      s += `<line x1="${x}" y1="${padTop+h}" x2="${x}" y2="${padTop+h+6}" stroke="#147F79" stroke-width="1.4"/>`;
+      if (i===0 || i===5 || i===10) {
+        s += `<text x="${x}" y="${padTop+h+22}" text-anchor="middle" font-size="14" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${i*100} m</text>`;
+      }
+    }
+    // 위 라벨: 1 km
+    s += `<text x="${padX + segs*segW/2}" y="${padTop-9}" text-anchor="middle" font-size="16" fill="#0F5C2E" font-family="Nunito,sans-serif" font-weight="800">전체 1 km = 1000 m</text>`;
+    s += `</svg>`;
+    return s;
+  } else {
+    const maxKm = opts.maxKm || 2;
+    const markM = (opts.markM != null) ? opts.markM : -1;
+    const markLabel = opts.markLabel || '';
+    const maxM = maxKm * 1000;
+    const pxPerM = 0.34;
+    const axisY = 56, padTop = 18;
+    const W = padX*2 + maxM*pxPerM, H = axisY + 30;
+    let s = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+    s += `<line x1="${padX}" y1="${axisY}" x2="${padX+maxM*pxPerM}" y2="${axisY}" stroke="#147F79" stroke-width="2.5"/>`;
+    for (let m = 0; m <= maxM; m += 100) {
+      const x = padX + m*pxPerM;
+      const major = (m % 1000 === 0);
+      s += `<line x1="${x}" y1="${axisY}" x2="${x}" y2="${axisY+(major?12:6)}" stroke="#147F79" stroke-width="${major?2.2:1.2}"/>`;
+      if (major) {
+        s += `<text x="${x}" y="${axisY+28}" text-anchor="middle" font-size="14" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${m/1000} km</text>`;
+      }
+    }
+    if (markM >= 0) {
+      const x = padX + markM*pxPerM;
+      s += `<polygon points="${x-7},${axisY-10} ${x+7},${axisY-10} ${x},${axisY-1}" fill="#F0451F"/>`;
+      s += `<line x1="${x}" y1="${axisY-10}" x2="${x}" y2="${axisY}" stroke="#F0451F" stroke-width="2"/>`;
+      if (markLabel) {
+        s += `<text x="${x}" y="${padTop+4}" text-anchor="middle" font-size="15" fill="#F0451F" font-family="Nunito,sans-serif" font-weight="800">${markLabel}</text>`;
+      }
+    }
+    s += `</svg>`;
+    return s;
+  }
+}
+
+// ───── setupMcq (단일 선택 문제 공통 엔진) ─────
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong');
+        fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+
+// ───── 슬별 모형 렌더 ─────
+(function renderFigs(){
+  document.getElementById('fig-intro').innerHTML = kmLine({mode:'bar'});
+  document.getElementById('fig-c1').innerHTML    = kmLine({mode:'bar'});
+  document.getElementById('fig-c2').innerHTML    = kmLine({mode:'line', maxKm:2, markM:1300, markLabel:'1 km 300 m'});
+})();
+
+setupMcq('q8',  '맞아요! 1000 m를 1 km(1 킬로미터)라고 해요.');
+setupMcq('q9',  '맞아요! 1000 m = 1 km 예요.');
+setupMcq('q10', '맞아요! 1 km = 1000 m 이니까 1 km 300 m = 1300 m 예요.');
+setupMcq('q11', '맞아요! 100 m 가 10번이면 1000 m = 1 km 예요.');
+setupMcq('q12', '맞아요! 3750 m = 3000 m + 750 m = 3 km 750 m 예요.');
+setupMcq('q13', '맞아요! 2 km = 2000 m 이니까 2 km 15 m = 2015 m 예요.');
+setupMcq('q14', '맞아요! 2 km = 2000 m 라서 2 km 63 m = 2063 m 예요. 263 m는 틀려요.');
+setupMcq('q15', '맞아요! 2 km = 2000 m 인데 200 m 라고 한 서준이가 틀렸어요.');
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
