@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u5_l06 — 분보다 작은 단위는 무엇일까요 (초) [3학년 5단원 06차시, 40분]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g3/unit5/06차_분보다_작은_단위는_무엇일까요_초/draft.html
+  지도서: _SOURCE.md (5단원 길이와 시간 — 초 도입 · 시간 영역 진입)
+  성취기준: [4수03-16] 시간 단위(초)를 알고 시각·시간을 다룬다
+  학습 본질: 분보다 작은 단위 '초'. 1분=60초. 몇 시 몇 분 몇 초 읽기. 60진법 변환(185초=3분 5초). 시각·시간 구별.
+  메카닉: clockFig(시계 신규) + setupMcq 단일 엔진
+  점수: 기본 4×10(q8~11) + 응용 4×15(q12~15) = 100
+  범위: 초 단위 시각 읽기·60진법 변환. 시간 덧셈·뺄셈은 07~08차. 3-2 측정 단위(용량·질량·각)는 다루지 않음.
+  톤: (B) v14 그린 #15803D 계승 (u5 05차 base) · 시간 영역 첫 차시
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_math_u5_l06_v1">
+<title>분보다 작은 단위는 무엇일까요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── clockFig (시계 — 시간 시그니처 부품 · 신규). 범용 mm-holder/svg/caption 재사용 ───── */
+.mul-stage{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,16px);max-width:var(--mw-lg);width:100%;}
+.mm-holder{display:flex;justify-content:center;align-items:center;background:#fff;border:2px solid var(--line);border-radius:18px;padding:clamp(8px,1.6vw,14px) clamp(12px,2.4vw,20px);box-shadow:var(--shadow);max-width:100%;overflow:hidden;}
+.mm-svg{display:block;max-width:100%;height:auto;}
+.mm-caption{font-size:var(--fs-caption);color:var(--ink-soft);text-align:center;}
+.mm-caption b{color:var(--coral-deep);font-family:var(--f-title);font-weight:400;}
+.mcq-opt.cmp4{font-size:var(--fs-body);}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">6차시</span>
+    <span class="ka-where">수학 3-1 · <b>5. 길이와 시간</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+
+    <!-- 슬 1 — 도입: 흥미 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 환경 체험</div>
+      <h2 class="slide-title">분보다 짧은 시간을 알아봐요</h2>
+      <div class="intro-q">컴퓨터를 켜는 데 걸리는 시간처럼 <strong>1분보다 짧은 시간</strong>은 어떻게 나타낼까요? 시계에서 <strong>가장 빠르게 움직이는 바늘</strong>을 찾아봐요!</div>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-intro"></div>
+        <div class="mm-caption">가장 빠른 바늘 = <b>초바늘</b></div>
+      </div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 ‘초’를 배워요</h2>
+      <ul class="goal-list">
+        <li>분보다 작은 단위 <strong>‘초’</strong>를 알아요</li>
+        <li><strong>1분 = 60초</strong> 관계를 알아요</li>
+        <li><strong>몇 시 몇 분 몇 초</strong>를 읽어요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 전시 학습 상기 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 떠올려요</div>
+      <h2 class="slide-title">지난 시간 시계 읽기</h2>
+      <div class="recall-box">2학년에서 <strong>몇 시 몇 분</strong>을 읽고 <strong>1시간 = 60분</strong>을 배웠어요. 짧은바늘은 <strong>시</strong>, 긴바늘은 <strong>분</strong>! 오늘은 더 빠른 <strong>초바늘</strong>을 만나요.</div>
+    </div>
+
+    <!-- 슬 4 — 전개: 1초 약속 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1초</div>
+      <h2 class="slide-title">1초를 알아봐요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c1"></div>
+        <div class="concept-box">초바늘이 <strong>작은 눈금 한 칸</strong>을 가는 동안이 <strong>1초</strong>예요. 시계에는 작은 눈금이 <strong>60칸</strong> 있어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 1분 = 60초 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 1분 = 60초</div>
+      <h2 class="slide-title">초바늘이 한 바퀴 돌면?</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c2"></div>
+        <div class="concept-box">초바늘이 시계를 <strong>한 바퀴</strong> 돌면 <strong>60초</strong>! 그러면 긴바늘(분)이 한 칸 움직여요. 곧 <strong>60초 = 1분</strong>이에요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 초 단위 시각 읽기 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 시각 읽기</div>
+      <h2 class="slide-title">몇 시 몇 분 몇 초</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c3"></div>
+        <div class="concept-box">큰 눈금 한 칸은 <strong>5초</strong>예요. 짧은바늘로 <strong>시</strong>, 긴바늘로 <strong>분</strong>, 초바늘로 <strong>초</strong>를 차례로 읽어요. → <strong>4시 10분 30초</strong></div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 60진법 변환 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 초로 바꾸기</div>
+      <h2 class="slide-title">분과 초를 바꿔요</h2>
+      <div class="mul-stage">
+        <div class="concept-box"><strong>1분 = 60초</strong>예요.<br>2분 = 60 + 60 = <strong>120초</strong><br>185초 = 180 + 5 = 3분 5초 → <strong>3분 5초</strong> (60씩 묶어요!)</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본 q8: 1분=몇초 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>1분</strong>은 몇 초일까요?</div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt cmp4" data-correct="1">60초</button>
+          <button class="mcq-opt cmp4" data-correct="0">100초</button>
+          <button class="mcq-opt cmp4" data-correct="0">10초</button>
+          <button class="mcq-opt cmp4" data-correct="0">600초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["초바늘이 한 바퀴 도는 동안이 1분이에요.","작은 눈금이 60칸! 1분 = 60초 예요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본 q9: 초 단위 시각 읽기 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">시계가 가리키는 시각은?</div>
+        <div class="mm-holder" id="fig-q9"></div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt cmp4" data-correct="1">4시 10분 30초</button>
+          <button class="mcq-opt cmp4" data-correct="0">4시 30분 10초</button>
+          <button class="mcq-opt cmp4" data-correct="0">10시 4분 30초</button>
+          <button class="mcq-opt cmp4" data-correct="0">4시 10분 6초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["짧은바늘=시, 긴바늘=분, 초바늘=초 순서로 읽어요.","긴바늘이 2(10분), 초바늘이 6(30초)! 4시 10분 30초 예요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본 q10: 2분=몇초 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>2분</strong>은 몇 초일까요?</div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt cmp4" data-correct="1">120초</button>
+          <button class="mcq-opt cmp4" data-correct="0">20초</button>
+          <button class="mcq-opt cmp4" data-correct="0">60초</button>
+          <button class="mcq-opt cmp4" data-correct="0">200초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1분이 60초니까 2분은 60을 두 번 더해요.","60 + 60 = 120! 2분 = 120초 예요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본 q11: 1분 30초=몇초 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>1분 30초</strong>는 몇 초일까요?</div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt cmp4" data-correct="1">90초</button>
+          <button class="mcq-opt cmp4" data-correct="0">130초</button>
+          <button class="mcq-opt cmp4" data-correct="0">60초</button>
+          <button class="mcq-opt cmp4" data-correct="0">75초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1분을 먼저 초로 바꿔요.","1분(60초) + 30초 = 90초 예요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12: 185초=몇분몇초 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>185초</strong>는 몇 분 몇 초일까요?</div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt cmp4" data-correct="1">3분 5초</button>
+          <button class="mcq-opt cmp4" data-correct="0">1분 85초</button>
+          <button class="mcq-opt cmp4" data-correct="0">18분 5초</button>
+          <button class="mcq-opt cmp4" data-correct="0">3분 50초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["60초씩 묶어 몇 분인지 세어 봐요.","180초는 3분, 남은 5초! 3분 5초 예요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13: 오개념 ○✕ -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>1분 25초 = 125초</strong><br>맞을까요?</div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt cmp4" data-correct="0">⭕ 맞아요</button>
+          <button class="mcq-opt cmp4" data-correct="1">❌ 틀려요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1분은 100초가 아니에요. 1분은 몇 초일까요?","1분 = 60초! 60 + 25 = 85초 라서 틀려요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: 시각 vs 시간 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">‘<strong>시각</strong>’을 나타낸 것은 무엇일까요?</div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt cmp4" data-correct="1">수업은 9시에 시작해요</button>
+          <button class="mcq-opt cmp4" data-correct="0">달리기를 30초 동안 했어요</button>
+          <button class="mcq-opt cmp4" data-correct="0">숙제를 20분 동안 했어요</button>
+          <button class="mcq-opt cmp4" data-correct="0">영화는 2시간이에요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["시각은 ‘몇 시’ 처럼 한 시점을 말해요.","‘9시에 시작’은 시각! 나머지는 동안(시간)을 나타내요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: 잘못 말한 친구 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">시간을 <strong>잘못 말한</strong> 친구는?</div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt cmp4" data-correct="0">도윤: 1분은 60초야</button>
+          <button class="mcq-opt cmp4" data-correct="0">하은: 2분은 120초야</button>
+          <button class="mcq-opt cmp4" data-correct="1">서준: 1분 25초는 125초야</button>
+          <button class="mcq-opt cmp4" data-correct="0">유나: 60초는 1분이야</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1분 25초를 초로 바꾸면 몇 초일까요?","1분 25초 = 85초! 125초라고 한 서준이가 틀렸어요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 배운 것 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card">분보다 작은 단위는 <strong>초</strong>! 초바늘이 작은 눈금 한 칸 = <strong>1초</strong>, 한 바퀴 = <strong>60초 = 1분</strong>.<br><strong>몇 시 몇 분 몇 초</strong>를 읽고, 60씩 묶어 분과 초를 바꿔요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">➕⏱️</div>
+          <div class="next-label">시간의 덧셈을 해 볼까요?</div>
+        </div>
+        <div class="home-prompt">집에서 ‘15초 동안 할 수 있는 일’을 가족과 함께 찾아보세요!</div>
+      </div>
+    </div>
+
+
+
+    <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_math_u5_l06';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+
+// ════════════════════════════════════════
+// clockFig — 아날로그 시계 SVG (시간 영역 시그니처 부품 · 신규)
+//   {h,m,s} → 시·분·초 세 바늘. 바늘 회전: 시(h%12*30+m*0.5)·분(m*6)·초(s*6).
+//   큰 눈금 12(숫자)·작은 눈금 60. 초바늘 red(#F0451F) 강조. s 생략 시 초바늘 X.
+//   06·07·08·09·10차 재사용.
+// ════════════════════════════════════════
+function clockFig(opts){
+  opts = opts || {};
+  const h = opts.h || 0, m = opts.m || 0;
+  const s = (opts.s != null) ? opts.s : -1;
+  const showSec = (s >= 0);
+  const cx = 110, cy = 112, R = 92;
+  const W = 220, H = 224;
+  const P = (deg, len) => {
+    const r = (deg - 90) * Math.PI / 180;
+    return [cx + len*Math.cos(r), cy + len*Math.sin(r)];
+  };
+  let svg = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // 시계판
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#FFFFFF" stroke="#1FA8A0" stroke-width="4"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R-7}" fill="none" stroke="#CFEDEA" stroke-width="1.5"/>`;
+  // 눈금 60 (큰 눈금 12 강조)
+  for (let i = 0; i < 60; i++){
+    const major = (i % 5 === 0);
+    const a = (i*6 - 90) * Math.PI / 180;
+    const r1 = R - (major ? 13 : 7), r2 = R - 3;
+    const x1 = cx + r1*Math.cos(a), y1 = cy + r1*Math.sin(a);
+    const x2 = cx + r2*Math.cos(a), y2 = cy + r2*Math.sin(a);
+    svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${major?'#147F79':'#9CD9D3'}" stroke-width="${major?2.4:1.2}"/>`;
+  }
+  // 시각 숫자 1~12
+  for (let n = 1; n <= 12; n++){
+    const a = (n*30 - 90) * Math.PI / 180;
+    const rr = R - 26;
+    const x = cx + rr*Math.cos(a), y = cy + rr*Math.sin(a);
+    svg += `<text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-size="17" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${n}</text>`;
+  }
+  // 바늘: 시(굵고 짧음 green) → 분(teal) → 초(red 가늘고 김)
+  const [hx, hy] = P((h%12)*30 + m*0.5, R*0.50);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#15803D" stroke-width="6" stroke-linecap="round"/>`;
+  const [mx, my] = P(m*6, R*0.72);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#147F79" stroke-width="4" stroke-linecap="round"/>`;
+  if (showSec){
+    const [sx, sy] = P(s*6, R*0.80);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="#F0451F" stroke-width="2" stroke-linecap="round"/>`;
+  }
+  svg += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="#15803D"/>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+// ───── setupMcq (단일 선택 문제 공통 엔진) ─────
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong');
+        fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+
+// ───── 슬별 모형 렌더 ─────
+(function renderFigs(){
+  document.getElementById('fig-intro').innerHTML = clockFig({h:10, m:8, s:42});
+  document.getElementById('fig-c1').innerHTML    = clockFig({h:12, m:0, s:1});
+  document.getElementById('fig-c2').innerHTML    = clockFig({h:12, m:1, s:0});
+  document.getElementById('fig-c3').innerHTML    = clockFig({h:4, m:10, s:30});
+  document.getElementById('fig-q9').innerHTML    = clockFig({h:4, m:10, s:30});
+})();
+
+setupMcq('q8',  '맞아요! 초바늘이 한 바퀴 돌면 60초, 곧 1분이에요.');
+setupMcq('q9',  '맞아요! 4시 10분 30초 예요. (시→분→초 순서로 읽어요)');
+setupMcq('q10', '맞아요! 60 + 60 = 120! 2분 = 120초 예요.');
+setupMcq('q11', '맞아요! 1분(60초) + 30초 = 90초 예요.');
+setupMcq('q12', '맞아요! 180초(3분) + 5초 = 3분 5초 예요.');
+setupMcq('q13', '맞아요! 1분은 60초라서 60 + 25 = 85초! 125초가 아니에요.');
+setupMcq('q14', '맞아요! ‘9시에 시작’은 한 시점, 곧 시각이에요.');
+setupMcq('q15', '맞아요! 1분 25초는 85초인데 125초라고 한 서준이가 틀렸어요.');
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
