@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<!--
+  g3_sci_u4_l05 — 식물이 자라는 데 필요한 조건
+  ════════════════════════════════════════════════════════════
+  위치: kedu/curriculum/science/g3/unit4/06차_식물이자라는조건/draft.html
+  계획: _PLAN.md (2026-07-01)
+  지도서: _SOURCE.md (지도서 PDF 확보 단원 + 단원 지도 기반 — 과학 p.90-91)
+  표준: kedu/curriculum/standards/표준.md (통합 표준 v1) + 차시운영_표준.md
+  베이스: 4단원 05차(씨가 싹 트는 데 필요한 조건, varTest) — 외부 골격·엔진·퀴즈 핸들러·.vt-* CSS 100% 무수정
+
+  ★ 4단원 「생물의 한살이」 6차시 — varTest 재사용(변인통제 실험) ★
+  - 외부 골격·퀴즈 엔진·varTest 엔진·.vt-* CSS = l05와 100% 동일. COND 테이블·결과 이모지·슬라이드만 교체.
+  - 시뮬 ① 물 실험(고정) · 시뮬 ② 물·햇빛 골라 실험 → 각각 한쪽만 잘 자람(물·햇빛 둘 다 필요)
+  - 결과: 씨(싹틈🌱) 대신 어린 식물(🌱) → 잘 자람🌿 / 잘 못 자람🥀
+  - ★핵심 대비: 식물 자라는 조건 = 물·햇빛 / l05 씨 싹트는 조건 = 물·온도. 빛은 싹트는 덴 불필요였지만 자라는 덴 필요!
+  - 성취기준 [4과04-02]. 자라는 조건 = 물·햇빛으로 제한 · '조작/통제변인'→'다르게/같게 할 조건' · 떡잎 등 식물 구조 용어 X
+  - 점수: 기본 4슬 × 10점 + 응용 4슬 × 15점 = 100점 만점
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_sci_u4_l05_v1">
+<title>식물이 자라는 데 필요한 조건 · K-edu 3학년 과학 (생물의 한살이)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:     #15803D;
+  --green-d:   #166534;
+  --green-bg:  #DCFCE7;
+  --green-2:   #0891B2;
+  --green-pg:  #F0FDF4;
+  --red:       #DC2626;
+  --gold-bg:   #FFF8E1;
+  --gold:      #F57F17;
+  --fs-title:   clamp(24px, 4vw, 44px);
+  --fs-heading: clamp(21px, 3.4vw, 34px);
+  --fs-body:    clamp(18px, 3vw, 28px);
+  --fs-caption: clamp(16px, 2.6vw, 24px);
+  --fs-label:   clamp(13px, 2vw, 17px);
+  --em-sm: clamp(28px, 4.2vw, 46px);
+  --em-md: clamp(40px, 6.5vw, 72px);
+  --em-lg: clamp(60px, 9.5vw, 116px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(780px, 96vw);
+  --mw-lg: min(860px, 96vw);
+  --rd: clamp(12px, 2.2vw, 18px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--green-pg); display: flex; align-items: center; justify-content: center; font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif; font-weight: 400; touch-action: manipulation; }
+
+@keyframes ka-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ka-pop { 0% { opacity: 0; transform: scale(0.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-popBig { 0% { opacity: 0; transform: scale(0.4); } 60% { opacity: 1; transform: scale(1.25); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ka-pulse { 0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(21,128,61,0.32); } 50% { transform: scale(1.04); box-shadow: 0 6px 20px rgba(21,128,61,0.5); } }
+@keyframes ka-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes ka-drawLine { to { transform: scaleX(1); } }
+@keyframes ka-roll { 0% { transform: translateX(0) rotate(0); } 100% { transform: translateX(var(--roll, 220px)) rotate(720deg); } }
+@keyframes ka-fall { 0% { transform: rotate(0); } 100% { transform: rotate(82deg); } }
+@keyframes ka-wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-7deg); } 75% { transform: rotate(7deg); } }
+
+/* ───── 컨테이너 골격 ───── */
+.ka { background: white; width: 100vw; height: 100vh; height: 100dvh; padding: clamp(8px, 1.5vw, 14px) clamp(12px, 2.2vw, 22px); color: #0F172A; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+.ka-h { display: flex; align-items: center; gap: clamp(6px, 1.2vw, 10px); margin-bottom: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-lb { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.5vw, 12px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; font-family: inherit; font-weight: 700; color: #475569; flex-shrink: 0; font-size: var(--fs-label); }
+.ka-bar { flex: 1; height: clamp(3px, 0.5vw, 5px); background: var(--green-pg); border-radius: 999px; overflow: hidden; min-width: clamp(40px, 6vw, 80px); }
+.ka-bar > div { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-2)); border-radius: 999px; transition: width 0.45s ease; }
+.ka-pg { color: var(--green); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; }
+.ka-score { color: var(--gold); font-family: 'Nunito', sans-serif; font-weight: 800; font-size: var(--fs-label); flex-shrink: 0; background: var(--gold-bg); padding: clamp(3px, 0.7vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; }
+.ka-score.bump { animation: ka-popBig 0.4s ease; }
+.ka-mute { background: #F1F5F9; border: none; padding: clamp(4px, 0.9vw, 7px); border-radius: clamp(8px, 1.5vw, 12px); cursor: pointer; flex-shrink: 0; color: var(--green); font-size: clamp(12px, 2vw, 16px); width: clamp(28px, 4.5vw, 36px); height: clamp(28px, 4.5vw, 36px); display: flex; align-items: center; justify-content: center; }
+
+.ka-m { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; position: relative; overflow: hidden; }
+.slide { display: none; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 1.5vw, 14px); height: 100%; width: 100%; animation: ka-fadeUp 0.45s ease both; padding: clamp(8px, 1.6vw, 16px) 0; }
+.slide.active { display: flex; }
+.slide-title { font-size: var(--fs-title); margin: 0; line-height: 1.3; color: var(--green); font-weight: 700; text-align: center; flex-shrink: 0; letter-spacing: -0.3px; }
+.slide-sub { font-size: var(--fs-caption); color: #64748B; text-align: center; flex-shrink: 0; }
+.stage-badge { position: absolute; top: clamp(6px, 1.2vw, 12px); left: clamp(10px, 2vw, 18px); background: var(--green-bg); color: var(--green); padding: clamp(3px, 0.6vw, 5px) clamp(8px, 1.5vw, 12px); border-radius: 999px; font-size: clamp(10px, 1.6vw, 13px); font-family: 'Nunito', sans-serif; font-weight: 800; z-index: 5; }
+
+/* 말풍선 */
+.bub { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2.2vw, 16px) clamp(14px, 3vw, 22px); font-size: var(--fs-body); line-height: 1.6; color: #0F172A; max-width: var(--mw-sm); border-left: clamp(3px, 0.7vw, 4px) solid var(--green); text-align: center; }
+
+/* 빨간 색연필 강조 */
+.emph { position: relative; display: inline-block; color: var(--green); font-weight: 700; padding-right: 3px; }
+.emph::after { content: ''; position: absolute; bottom: 2px; left: 0; right: 3px; height: clamp(2.5px, 0.6vw, 3.5px); background: var(--red); border-radius: 2px; }
+
+/* ───── 푸터 3-button ───── */
+.ka-f { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: clamp(6px, 1.2vw, 10px); padding-top: clamp(6px, 1.2vw, 10px); flex-shrink: 0; }
+.ka-prev, .ka-hint, .ka-next { border: none; padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2vw, 16px); border-radius: clamp(10px, 1.7vw, 14px); font-family: inherit; font-weight: 700; font-size: clamp(13px, 2.2vw, 17px); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ka-prev { background: #F1F5F9; color: #64748B; }
+.ka-hint { background: var(--gold-bg); color: var(--gold); }
+.ka-hint:hover { background: #FFECB3; }
+.ka-next { background: var(--green); color: white; box-shadow: 0 4px 14px rgba(21,128,61,0.32); font-size: clamp(14px, 2.4vw, 18px); }
+.ka-next:hover { background: var(--green-d); }
+.ka-next.hl { animation: ka-pulse 1.8s ease-in-out infinite; }
+.ka-prev:disabled, .ka-next:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+.ka-hint:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ───── 도입 슬 ───── */
+.intro { display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2.6vw, 22px); max-width: var(--mw-md); }
+.intro-meta { font-size: var(--fs-label); color: #94A3B8; }
+.intro-row { display: flex; gap: clamp(16px, 3.2vw, 32px); font-size: var(--em-lg); align-items: flex-end; }
+.intro-row span { display: inline-block; animation: ka-pop 0.6s ease both; }
+.intro-row span:nth-child(2) { animation-delay: 0.25s; }
+.goal-list { display: flex; flex-direction: column; gap: clamp(10px, 1.8vw, 14px); font-size: var(--fs-body); max-width: var(--mw-sm); list-style: none; }
+.goal-list li { background: var(--green-bg); padding: clamp(10px, 1.8vw, 15px) clamp(16px, 2.8vw, 24px); border-radius: var(--rd); display: flex; gap: 10px; align-items: center; }
+.recall { background: var(--gold-bg); padding: clamp(14px, 2.6vw, 20px) clamp(18px, 3.2vw, 28px); border-radius: var(--rd); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+/* ───── 시뮬 공통 ───── */
+.sim { width: var(--mw-md); max-width: 100%; }
+.sim-ctrl { display: flex; gap: clamp(8px, 1.6vw, 14px); justify-content: center; margin-top: clamp(10px, 2vw, 16px); flex-wrap: wrap; }
+.sim-btn { background: var(--green); color: white; border: none; padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3vw, 24px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(21,128,61,0.3); }
+.sim-btn.alt { background: #ECFEFF; color: var(--green-2); border: 2px solid var(--green-2); box-shadow: none; }
+.sim-fb { text-align: center; margin-top: clamp(8px, 1.6vw, 12px); font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; }
+
+/* ───── 특징 태그 (슬 4 관찰 카드) ───── */
+.feat-tags { display: flex; flex-wrap: wrap; gap: clamp(6px, 1.2vw, 10px); justify-content: center; }
+.feat-tag { font-size: var(--fs-caption); font-weight: 700; border-radius: 999px; padding: clamp(5px, 1vw, 8px) clamp(10px, 2vw, 15px); animation: ka-fadeUp 0.3s ease both; }
+.feat-tag.yes { background: var(--green-bg); color: var(--green-d); }
+.feat-tag.no { background: #F1F5F9; color: #94A3B8; }
+
+/* ───── 분류 기준 적용 (슬 5) ───── */
+.crit-pick { display: flex; gap: clamp(6px, 1.4vw, 12px); justify-content: center; flex-wrap: wrap; }
+.crit-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.4vw, 20px); cursor: pointer; font-family: inherit; font-weight: 700; font-size: var(--fs-caption); color: var(--green-d); transition: all 0.15s; }
+.crit-btn:hover { border-color: var(--green-2); }
+.crit-btn.on { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.sort-stage { margin-top: clamp(10px, 2vw, 16px); display: flex; gap: clamp(8px, 1.8vw, 16px); max-width: var(--mw-md); }
+.sort-bin { flex: 1; background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); min-height: clamp(90px, 16vw, 140px); display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); }
+.sort-bin.no { background: #F1F5F9; }
+.sort-bin-head { font-size: var(--fs-caption); font-weight: 700; color: var(--green-d); text-align: center; }
+.sort-bin.no .sort-bin-head { color: #64748B; }
+.sort-row { display: flex; flex-wrap: wrap; gap: clamp(4px, 0.9vw, 8px); justify-content: center; }
+.sort-an { font-size: var(--fs-caption); font-weight: 700; background: white; border-radius: 999px; padding: clamp(4px, 0.9vw, 7px) clamp(8px, 1.6vw, 13px); animation: ka-pop 0.35s ease both; }
+.feat-pick { display: flex; gap: clamp(8px, 1.8vw, 14px); justify-content: center; flex-wrap: wrap; }
+.feat-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.2vw, 18px); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; transition: all 0.15s; }
+.feat-btn .fb-emoji { font-size: var(--em-md); }
+.feat-btn .fb-name { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.feat-btn:hover { border-color: var(--green-2); }
+.feat-btn.on { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.feat-card { margin-top: clamp(10px, 2vw, 16px); background: var(--green-bg); border-radius: var(--rd); padding: clamp(12px, 2.4vw, 20px); max-width: var(--mw-sm); min-height: clamp(80px, 14vw, 120px); display: flex; flex-direction: column; gap: clamp(6px, 1.2vw, 10px); align-items: center; justify-content: center; }
+.feat-card .fc-head { font-size: var(--fs-heading); color: var(--green); font-weight: 700; }
+.feat-card .fc-list { display: flex; flex-direction: column; gap: 6px; }
+.feat-card .fc-item { font-size: var(--fs-body); color: #0F172A; animation: ka-fadeUp 0.3s ease both; }
+
+/* 생김새·생활 방식 도식 (슬 6·7) */
+.fx-row { display: flex; gap: clamp(12px, 2.6vw, 22px); flex-wrap: wrap; justify-content: center; max-width: var(--mw-lg); }
+.fx-card { background: var(--green-bg); border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px); display: flex; flex-direction: column; align-items: center; gap: clamp(5px, 1vw, 8px); min-width: clamp(120px, 20vw, 180px); }
+.fx-emoji { font-size: var(--em-md); }
+.fx-label { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; text-align: center; }
+
+/* ───── 4지선다 ───── */
+.mcq { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-md); width: 100%; }
+.mcq-opt { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.2vw, 18px) clamp(16px, 3vw, 24px); font-size: var(--fs-body); cursor: pointer; text-align: center; transition: all 0.15s; font-family: inherit; color: #0F172A; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mcq-opt:hover { border-color: var(--green-2); }
+.mcq-opt.correct { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.mcq-opt.wrong { border-color: var(--red); background: #FEF2F2; animation: ka-shake 0.4s; }
+.mcq-opt:disabled { cursor: default; opacity: 0.55; }
+.mcq-opt.correct:disabled, .mcq-opt.wrong:disabled { opacity: 1; }
+.q-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; font-weight: 700; margin-top: clamp(4px, 1vw, 8px); }
+.q-fb.wrong { color: var(--red); }
+.mcq-hint { display: none; background: var(--green-bg); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(14px, 2.6vw, 20px); font-size: var(--fs-caption); color: var(--green-d); max-width: var(--mw-sm); text-align: center; margin-top: clamp(6px, 1.2vw, 10px); }
+.mcq-hint.show { display: block; animation: ka-fadeUp 0.3s ease; }
+
+/* ───── 클릭 분류 ───── */
+.cls-items { display: flex; gap: clamp(8px, 1.8vw, 14px); flex-wrap: wrap; justify-content: center; margin-bottom: clamp(10px, 2vw, 16px); max-width: var(--mw-md); }
+.cls-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px) clamp(12px, 2.2vw, 18px); font-size: var(--fs-caption); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
+.cls-item .ci-emoji { font-size: var(--em-sm); }
+.cls-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.cls-item.placed { opacity: 0; pointer-events: none; height: 0; padding: 0; margin: -7px; }
+.cls-bins { display: flex; gap: clamp(12px, 2.4vw, 22px); justify-content: center; max-width: var(--mw-lg); width: 100%; }
+.cls-bin { flex: 1; min-height: clamp(110px, 20vw, 170px); background: #F8FAFC; border: 3px dashed var(--green-2); border-radius: var(--rd); padding: clamp(8px, 1.6vw, 12px); display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: all 0.15s; }
+.cls-bin.armed { border-color: var(--green); background: var(--green-bg); }
+.cls-bin-name { font-size: var(--fs-caption); font-weight: 700; color: var(--green-d); margin-bottom: 4px; }
+.cls-chip { background: white; border: 2px solid var(--green); border-radius: 10px; padding: 4px 10px; font-size: var(--fs-caption); display: flex; align-items: center; gap: 6px; animation: ka-pop 0.3s ease; }
+
+/* ───── 매칭 ───── */
+.mt-wrap { display: flex; gap: clamp(18px, 4vw, 50px); justify-content: center; max-width: var(--mw-md); width: 100%; }
+.mt-col { display: flex; flex-direction: column; gap: clamp(10px, 2vw, 16px); flex: 1; }
+.mt-cell { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: clamp(54px, 9vw, 72px); }
+.mt-cell .mt-emoji { font-size: var(--em-sm); }
+.mt-cell.sel { border-color: var(--green); background: var(--green-bg); }
+.mt-cell.done { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; cursor: default; }
+.mt-cell.miss { border-color: var(--red); animation: ka-shake 0.4s; }
+
+/* ───── 다중 선택 ───── */
+.ms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 20vw, 160px), 1fr)); gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-lg); width: 100%; }
+.ms-item { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(10px, 2vw, 16px); font-size: var(--fs-caption); cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.15s; font-family: inherit; }
+.ms-item .msi-emoji { font-size: var(--em-sm); }
+.ms-item.sel { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.ms-item.lock-ok { border-color: var(--green); background: var(--green-bg); color: var(--green-d); font-weight: 700; }
+.ms-item.lock-miss { border-color: var(--red); background: #FEF2F2; }
+.ms-check { margin-top: clamp(8px, 1.8vw, 14px); background: var(--green); color: white; border: none; padding: clamp(8px, 1.8vw, 13px) clamp(20px, 4vw, 34px); border-radius: var(--rd); font-family: inherit; font-weight: 700; font-size: var(--fs-caption); cursor: pointer; box-shadow: 0 4px 14px rgba(21,128,61,0.3); }
+.ms-check:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+/* ───── 정리 ───── */
+.sum-list { display: flex; flex-direction: column; gap: clamp(8px, 1.6vw, 12px); max-width: var(--mw-sm); width: 100%; }
+.sum-item { background: var(--green-bg); border-radius: var(--rd); padding: clamp(10px, 2vw, 15px) clamp(16px, 2.8vw, 24px); font-size: var(--fs-body); display: flex; gap: 10px; align-items: center; }
+.sum-item .si-i { font-size: var(--em-sm); flex-shrink: 0; }
+.wrap-msg { font-size: var(--fs-heading); color: var(--green); font-weight: 700; text-align: center; }
+.self-row { display: flex; gap: clamp(10px, 2.2vw, 18px); justify-content: center; flex-wrap: wrap; }
+.self-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(12px, 2.4vw, 18px) clamp(16px, 3vw, 26px); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: inherit; transition: all 0.15s; }
+.self-btn:hover { border-color: var(--green-2); }
+.self-btn.picked { border-color: var(--green); background: var(--green-bg); }
+.self-emoji { font-size: var(--em-sm); }
+.self-name { font-size: var(--fs-caption); color: var(--green-d); font-weight: 700; }
+.self-fb { text-align: center; font-size: var(--fs-caption); color: var(--green-d); min-height: 1.6em; margin-top: clamp(6px, 1.2vw, 10px); font-weight: 700; }
+.next-preview { background: var(--gold-bg); border-radius: var(--rd); padding: clamp(14px, 2.8vw, 22px); font-size: var(--fs-body); color: #6D4C41; max-width: var(--mw-sm); text-align: center; line-height: 1.6; }
+
+@media (max-width: 600px) {
+  .ka-lb { font-size: 0; padding: 7px; }
+  .ka-lb::before { content: '📋'; font-size: 14px; }
+  .pp-row, .fx-row { flex-direction: column; }
+}
+
+/* ── varTest (씨 싹트는 조건 변인통제 실험) — 4단원 5차 신규 ── */
+.vt-crit { display: flex; gap: clamp(6px,1.4vw,12px); justify-content: center; flex-wrap: wrap; margin-bottom: clamp(8px,1.6vw,14px); }
+.vt-crit-btn { background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(7px,1.4vw,11px) clamp(12px,2.2vw,18px); cursor: pointer; font-family: inherit; font-weight: 700; font-size: var(--fs-caption); color: var(--green-d); transition: all .15s; }
+.vt-crit-btn:hover { border-color: var(--green-2); }
+.vt-crit-btn.on { border-color: var(--green); background: var(--green-bg); transform: translateY(-3px); }
+.vt-cups { display: flex; gap: clamp(10px,2.4vw,22px); justify-content: center; max-width: var(--mw-md); width: 100%; }
+.vt-cup { flex: 1; background: white; border: 3px solid #E2E8F0; border-radius: var(--rd); padding: clamp(8px,1.8vw,14px); display: flex; flex-direction: column; align-items: center; gap: clamp(5px,1vw,9px); }
+.vt-cup-head { font-weight: 800; color: var(--green-d); font-size: var(--fs-caption); }
+.vt-cond { font-weight: 700; font-size: var(--fs-caption); background: var(--green-bg); color: var(--green-d); border-radius: 999px; padding: clamp(4px,.9vw,7px) clamp(9px,1.8vw,14px); text-align: center; min-height: 1.4em; }
+.vt-pot { width: 100%; height: clamp(70px,13vw,100px); background: linear-gradient(to bottom, #FDFAF3 54%, #C8956A 54%); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.vt-seed { font-size: clamp(28px,6vw,44px); transition: all .3s; }
+.vt-result { font-weight: 800; font-size: var(--fs-caption); min-height: 1.4em; color: var(--green-d); }
+.vt-same { font-size: clamp(11px,2.2vw,14px); color: #64748B; text-align: center; margin-top: clamp(6px,1.2vw,10px); }
+.vt-same b { color: var(--green-d); }
+.vt-obs { margin-top: clamp(8px,1.6vw,14px); background: var(--green); color: white; border: none; border-radius: 999px; padding: clamp(8px,1.6vw,12px) clamp(16px,3vw,26px); font-family: inherit; font-weight: 800; font-size: var(--fs-caption); cursor: pointer; transition: all .15s; }
+.vt-obs:hover { filter: brightness(1.06); transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">📋 차시 목록</button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <span class="ka-pg" id="pg">1 / 18</span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 · 도입: 흥미 유발 -->
+    <div class="slide active" data-stage="도입">
+      <span class="stage-badge">쑥쑥 자라요</span>
+      <div class="intro">
+        <div class="intro-meta">4단원 · 생물의 한살이</div>
+        <div class="intro-row"><span>🌱</span><span>💧</span><span>☀️</span></div>
+        <h2 class="slide-title">식물이 쑥쑥 자라려면 무엇이 필요할까요?</h2>
+        <div class="bub">지난 시간엔 씨가 <span class="emph">싹 트는</span> 조건을 알아봤어요. 오늘은 어린 식물이 <span class="emph">잘 자라는</span> 데 무엇이 필요한지 <span class="emph">실험</span>으로 알아봐요!</div>
+      </div>
+    </div>
+
+    <!-- 슬 2 · 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">학습 목표</span>
+      <h2 class="slide-title">오늘 우리는</h2>
+      <ul class="goal-list">
+        <li>🌿 식물이 자라는 데 필요한 <span class="emph">조건</span>을 알아봐요.</li>
+        <li>🧪 <span class="emph">실험</span>으로 물·햇빛을 확인해요.</li>
+        <li>⚖️ <span class="emph">다르게 할 조건</span>과 <span class="emph">같게 할 조건</span>을 정해요.</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 · 도입: 공정한 실험 복습 -->
+    <div class="slide" data-stage="도입">
+      <span class="stage-badge">생각해요</span>
+      <h2 class="slide-title">실험은 어떻게 하기로 했죠?</h2>
+      <div class="recall">두 식물을 비교할 때는<br><span class="emph">다르게 할 조건</span>을 딱 하나만 정하고<br>나머지는 모두 <span class="emph">같게</span> 해요. 🧪</div>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">🔀</div><div class="fx-label">다르게 할 조건<br>딱 한 가지만</div></div>
+        <div class="fx-card"><div class="fx-emoji">🟰</div><div class="fx-label">같게 할 조건<br>나머지 모두</div></div>
+      </div>
+    </div>
+
+    <!-- 슬 4 · 전개: varTest 시뮬 ① 물 실험(고정) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">실험해요</span>
+      <h2 class="slide-title">물을 준 식물과 안 준 식물, 어떻게 될까요?</h2>
+      <div class="sim">
+        <div id="vt1">
+          <div class="vt-cups">
+            <div class="vt-cup" data-cup="ga">
+              <div class="vt-cup-head">(가)</div>
+              <div class="vt-cond"></div>
+              <div class="vt-pot"><span class="vt-seed">🌱</span></div>
+              <div class="vt-result"></div>
+            </div>
+            <div class="vt-cup" data-cup="na">
+              <div class="vt-cup-head">(나)</div>
+              <div class="vt-cond"></div>
+              <div class="vt-pot"><span class="vt-seed">🌱</span></div>
+              <div class="vt-result"></div>
+            </div>
+          </div>
+          <div class="vt-same"></div>
+          <button class="vt-obs">▶ 며칠 지나기</button>
+          <div class="sim-fb vt-fb">「며칠 지나기」를 눌러 결과를 봐요.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 5 · 전개: varTest 시뮬 ② 조건 골라 실험(물·햇빛) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">다르게 해봐요</span>
+      <h2 class="slide-title">다르게 할 조건을 골라 실험해요</h2>
+      <div class="sim">
+        <div id="vt2">
+          <div class="vt-crit">
+            <button class="vt-crit-btn" data-cond="water">💧 물</button>
+            <button class="vt-crit-btn" data-cond="light">☀️ 햇빛</button>
+          </div>
+          <div class="vt-cups">
+            <div class="vt-cup" data-cup="ga">
+              <div class="vt-cup-head">(가)</div>
+              <div class="vt-cond">조건을 골라요</div>
+              <div class="vt-pot"><span class="vt-seed">🌱</span></div>
+              <div class="vt-result"></div>
+            </div>
+            <div class="vt-cup" data-cup="na">
+              <div class="vt-cup-head">(나)</div>
+              <div class="vt-cond">조건을 골라요</div>
+              <div class="vt-pot"><span class="vt-seed">🌱</span></div>
+              <div class="vt-result"></div>
+            </div>
+          </div>
+          <div class="vt-same"></div>
+          <button class="vt-obs">▶ 며칠 지나기</button>
+          <div class="sim-fb vt-fb">다르게 할 조건을 하나 골라요.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬 6 · 전개: 식물 자라는 조건 정리 -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">알아봤어요</span>
+      <h2 class="slide-title">식물이 자라는 데 필요한 조건</h2>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">💧</div><div class="fx-label">물<br>→ 있어야 자라요</div></div>
+        <div class="fx-card"><div class="fx-emoji">☀️</div><div class="fx-label">햇빛<br>→ 있어야 자라요</div></div>
+      </div>
+      <div class="bub">식물이 잘 자라려면 <span class="emph">물</span>과 <span class="emph">햇빛</span>이 모두 필요해요. 하나라도 없으면 잘 자라지 못해요!</div>
+    </div>
+
+    <!-- 슬 7 · 전개: ★핵심 대비 (싹틀 때 vs 자랄 때) -->
+    <div class="slide" data-stage="전개">
+      <span class="stage-badge">비교해요</span>
+      <h2 class="slide-title">싹 틀 때와 자랄 때, 무엇이 다를까요?</h2>
+      <div class="fx-row">
+        <div class="fx-card"><div class="fx-emoji">🫘</div><div class="fx-label">씨가 싹 틀 때<br>물 · 알맞은 온도<br><small>(빛은 없어도 돼요)</small></div></div>
+        <div class="fx-card"><div class="fx-emoji">🌿</div><div class="fx-label">식물이 자랄 때<br>물 · 햇빛<br><small>(햇빛이 필요해요)</small></div></div>
+      </div>
+      <div class="bub">씨가 싹 틀 때는 빛이 <span class="emph">없어도</span> 되지만, 식물이 자랄 때는 <span class="emph">햇빛</span>이 꼭 필요해요!</div>
+    </div>
+
+    <!-- 슬 8 · 기본문제 1 (4지선다, 10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <span class="stage-badge">기본 문제 1</span>
+      <h2 class="slide-title">식물이 자라는 데 꼭 필요한 것은?</h2>
+      <div class="mcq">
+        <button class="mcq-opt" data-correct="1">물</button>
+        <button class="mcq-opt">소리</button>
+        <button class="mcq-opt">돌</button>
+        <button class="mcq-opt">어둠</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["물을 준 식물과 안 준 식물을 떠올려 봐요.","물을 준 식물만 잘 자랐어요. 물이 필요해요."]'></div>
+    </div>
+
+    <!-- 슬 9 · 기본문제 2 (클릭 분류, 10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <span class="stage-badge">기본 문제 2</span>
+      <h2 class="slide-title">자라는 데 필요할까요, 필요 없을까요?</h2>
+      <div class="cls-items" id="cls9">
+        <button class="cls-item" data-bin="need"><span class="ci-emoji">💧</span>물</button>
+        <button class="cls-item" data-bin="no"><span class="ci-emoji">🔊</span>소리</button>
+        <button class="cls-item" data-bin="need"><span class="ci-emoji">☀️</span>햇빛</button>
+        <button class="cls-item" data-bin="no"><span class="ci-emoji">🌑</span>어둠</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="need"><div class="cls-bin-name">✅ 필요해요</div></div>
+        <div class="cls-bin" data-bin="no"><div class="cls-bin-name">🚫 필요 없어요</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["실험에서 무엇이 다를 때 잘 자랐는지 떠올려 봐요.","물·햇빛은 필요, 소리·어둠은 필요 없어요."]'></div>
+    </div>
+
+    <!-- 슬 10 · 기본문제 3 (4지선다, 10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <span class="stage-badge">기본 문제 3</span>
+      <h2 class="slide-title">햇빛을 받은 식물과 못 받은 식물, 잘 자라는 것은?</h2>
+      <div class="mcq">
+        <button class="mcq-opt" data-correct="1">햇빛을 받은 식물</button>
+        <button class="mcq-opt">햇빛을 못 받은 식물</button>
+        <button class="mcq-opt">둘 다 잘 자라요</button>
+        <button class="mcq-opt">둘 다 못 자라요</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["햇빛이 있어야 식물이 잘 자라요.","햇빛을 받은 식물만 잘 자랐어요."]'></div>
+    </div>
+
+    <!-- 슬 11 · 기본문제 4 (매칭, 10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <span class="stage-badge">기본 문제 4</span>
+      <h2 class="slide-title">실험과 결과를 짝지어요</h2>
+      <div class="mt-wrap">
+        <div class="mt-col" id="mt11L">
+          <div class="mt-cell mt-left" data-pair="yes"><span class="mt-emoji">💧</span>물을 준 식물</div>
+          <div class="mt-cell mt-left" data-pair="no"><span class="mt-emoji">🚱</span>물을 안 준 식물</div>
+        </div>
+        <div class="mt-col" id="mt11R">
+          <div class="mt-cell mt-right" data-pair="no">잘 자라지 못했어요</div>
+          <div class="mt-cell mt-right" data-pair="yes">잘 자랐어요</div>
+        </div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["물을 준 식물은 어떻게 됐을까요?","물을 준 식물은 잘 자랐고, 안 준 식물은 못 자랐어요."]'></div>
+    </div>
+
+    <!-- 슬 12 · 응용문제 1 (다중 선택, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <span class="stage-badge">응용 문제 1</span>
+      <h2 class="slide-title">식물이 자라는 데 필요한 조건을 모두 골라요</h2>
+      <div class="ms-grid" id="ms12">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">💧</span>물</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🔊</span>소리</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">☀️</span>햇빛</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🌑</span>어둠</button>
+      </div>
+      <button class="ms-check" id="chk12">확인</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["실험으로 확인한 조건을 골라요.","물과 햇빛이 모두 필요해요."]'></div>
+    </div>
+
+    <!-- 슬 13 · 응용문제 2 (클릭 분류, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <span class="stage-badge">응용 문제 2</span>
+      <h2 class="slide-title">햇빛 실험에서 다르게 할까요, 같게 할까요?</h2>
+      <div class="cls-items" id="cls13">
+        <button class="cls-item" data-bin="diff"><span class="ci-emoji">☀️</span>햇빛</button>
+        <button class="cls-item" data-bin="same"><span class="ci-emoji">💧</span>물</button>
+        <button class="cls-item" data-bin="same"><span class="ci-emoji">🪴</span>흙</button>
+        <button class="cls-item" data-bin="same"><span class="ci-emoji">🌱</span>식물</button>
+      </div>
+      <div class="cls-bins">
+        <div class="cls-bin" data-bin="diff"><div class="cls-bin-name">🔀 다르게 할 조건</div></div>
+        <div class="cls-bin" data-bin="same"><div class="cls-bin-name">🟰 같게 할 조건</div></div>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["햇빛이 필요한지 알아보는 실험이에요.","햇빛만 다르게, 물·흙·식물은 같게 해요."]'></div>
+    </div>
+
+    <!-- 슬 14 · 응용문제 3 (4지선다 추론, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <span class="stage-badge">응용 문제 3</span>
+      <h2 class="slide-title">햇빛을 받은 식물만 잘 자랐어요. 알 수 있는 것은?</h2>
+      <div class="mcq">
+        <button class="mcq-opt" data-correct="1">식물이 자라려면 햇빛이 필요해요</button>
+        <button class="mcq-opt">식물은 햇빛 없이도 잘 자라요</button>
+        <button class="mcq-opt">식물이 자라려면 소리가 필요해요</button>
+        <button class="mcq-opt">식물은 어두울수록 잘 자라요</button>
+      </div>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["햇빛만 다르게 한 실험이에요.","햇빛을 받은 식물만 잘 자랐으니 햇빛이 필요해요."]'></div>
+    </div>
+
+    <!-- 슬 15 · 응용문제 4 (다중 선택 종합·대비, 15점) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <span class="stage-badge">응용 문제 4</span>
+      <h2 class="slide-title">오늘 알게 된 것을 모두 골라요</h2>
+      <div class="ms-grid" id="ms15">
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">💧</span>식물이 자라려면 물이 필요해요</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">☀️</span>식물이 자라려면 햇빛이 필요해요</button>
+        <button class="ms-item" data-correct="1"><span class="msi-emoji">🫘</span>씨가 싹 틀 때는 빛이 없어도 됐어요</button>
+        <button class="ms-item" data-correct="0"><span class="msi-emoji">🌑</span>식물은 어두운 곳에서도 잘 자라요</button>
+      </div>
+      <button class="ms-check" id="chk15">확인</button>
+      <div class="q-fb"></div>
+      <div class="mcq-hint" data-hints='["오늘 실험과 지난 시간 실험을 함께 떠올려 봐요.","자라는 데는 햇빛이 필요해요. 어두운 곳에서는 잘 못 자라요."]'></div>
+    </div>
+
+    <!-- 슬 16 · 정리: 핵심 요약 -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">정리해요</span>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="sum-list">
+        <div class="sum-item"><span class="si-i">🌿</span>식물이 자라려면 <span class="emph">물</span>과 <span class="emph">햇빛</span>이 필요해요.</div>
+        <div class="sum-item"><span class="si-i">🫘</span>씨가 싹 틀 때(물·온도)와 달리 자랄 때는 <span class="emph">햇빛</span>이 필요해요.</div>
+        <div class="sum-item"><span class="si-i">⚖️</span>공정한 실험은 <span class="emph">다르게 할 조건 하나</span>만 정하고 나머지는 같게 해요.</div>
+      </div>
+      <div class="wrap-msg" id="wrap-msg"></div>
+    </div>
+
+    <!-- 슬 17 · 정리: 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">자기 평가</span>
+      <h2 class="slide-title">식물이 자라는 조건을 실험으로 설명할 수 있나요?</h2>
+      <div class="self-row">
+        <button class="self-btn"><span class="self-emoji">😆</span><span class="self-name">잘할 수 있어요</span></button>
+        <button class="self-btn"><span class="self-emoji">🙂</span><span class="self-name">할 수 있어요</span></button>
+        <button class="self-btn"><span class="self-emoji">🤔</span><span class="self-name">조금 더 연습할래요</span></button>
+      </div>
+      <div class="self-fb" id="self-fb"></div>
+    </div>
+
+    <!-- 슬 18 · 정리: 다음 차시 예고 -->
+    <div class="slide" data-stage="정리">
+      <span class="stage-badge">다음 시간</span>
+      <h2 class="slide-title">다음에는</h2>
+      <div class="next-preview">🌻 <span class="emph">여러 가지 식물의 한살이</span>를<br>비교해 봐요!</div>
+      <div class="intro-row" style="font-size: var(--em-md);"><span>🌻</span><span>🌳</span><span>🌾</span></div>
+    </div>
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 준수 — 점수·힌트·다시 시도·진도 저장·진입 종료
+// 과학 정규 차시 최초 레퍼런스 엔진 (수학 차시 엔진과 동일 골격)
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g3_sci_u4_l05';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const SCORE_QIDS = ['q8','q9','q10','q11','q12','q13','q14','q15'];
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function slides() { return document.querySelectorAll('.slide'); }
+function currentSlide() { return slides()[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  slides().forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.getElementById('pg').textContent = (cur + 1) + ' / ' + TOTAL;
+  document.getElementById('bar').style.width = ((cur + 1) / TOTAL * 100) + '%';
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  const nextBtn = document.getElementById('next');
+  if (cur === TOTAL - 1) { nextBtn.textContent = '마치기 →'; saveProgress(true); }
+  else { nextBtn.textContent = '다음 →'; }
+
+  if (cur === 15) document.getElementById('wrap-msg').textContent = wrapMsg(score);
+}
+
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요! 햇빛 실험왕 🏅';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+
+function addScore(n) {
+  score += n;
+  const el = document.getElementById('score');
+  el.textContent = '⭐ ' + score;
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
+function showHint() {
+  const qid = currentQId();
+  if (!qid) return;
+  const st = getQState(qid);
+  if (st.solved || st.hintLevel >= 2) return;
+  const hintEl = currentSlide().querySelector('.mcq-hint');
+  if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+
+function pointsForQ(qid) {
+  const slide = document.querySelector('[data-q-id="' + qid + '"]');
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+function solveQ(qid, fbEl, msg) {
+  const st = getQState(qid);
+  st.solved = true;
+  const earn = pointsForQ(qid);
+  addScore(earn);
+  if (fbEl) { fbEl.textContent = (msg || '정답이에요!') + ' +' + earn + '점'; fbEl.classList.remove('wrong'); }
+  updateUI();
+}
+
+// ───── 4지선다 (슬 8·10·14) ─────
+document.querySelectorAll('.mcq').forEach(box => {
+  const slide = box.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  box.querySelectorAll('.mcq-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved) return;
+      st.attempts++;
+      if (opt.dataset.correct === '1') {
+        box.querySelectorAll('.mcq-opt').forEach(o => o.disabled = true);
+        opt.classList.add('correct');
+        solveQ(qid, fb, '맞아요!');
+      } else {
+        st.wrongCount++;
+        opt.classList.add('wrong');
+        fb.textContent = '다시 한 번 생각해 볼까요?';
+        fb.classList.add('wrong');
+        setTimeout(() => opt.classList.remove('wrong'), 500);
+      }
+    });
+  });
+});
+
+// ───── 클릭 분류 (슬 9·13) ─────
+document.querySelectorAll('.cls-items').forEach(itemBox => {
+  const slide = itemBox.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const bins = slide.querySelectorAll('.cls-bin');
+  const items = itemBox.querySelectorAll('.cls-item');
+  const total = items.length;
+  let placed = 0;
+  let selected = null;
+
+  function arm() { bins.forEach(b => b.classList.toggle('armed', !!selected)); }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      if (getQState(qid).solved || item.classList.contains('placed')) return;
+      items.forEach(i => i.classList.remove('sel'));
+      if (selected === item) { selected = null; } else { selected = item; item.classList.add('sel'); }
+      arm();
+    });
+  });
+
+  bins.forEach(bin => {
+    bin.addEventListener('click', () => {
+      const st = getQState(qid);
+      if (st.solved || !selected) return;
+      st.attempts++;
+      if (selected.dataset.bin === bin.dataset.bin) {
+        const chip = document.createElement('div');
+        chip.className = 'cls-chip';
+        chip.innerHTML = selected.innerHTML;
+        bin.appendChild(chip);
+        selected.classList.add('placed');
+        selected.classList.remove('sel');
+        selected = null; placed++; arm();
+        if (placed === total) solveQ(qid, fb, '모두 맞췄어요!');
+        else { fb.textContent = '좋아요! 계속 골라요'; fb.classList.remove('wrong'); }
+      } else {
+        st.wrongCount++;
+        bin.classList.add('armed');
+        fb.textContent = '여기가 맞을까요? 다시 보세요';
+        fb.classList.add('wrong');
+        const cur = selected; cur.classList.add('sel');
+        setTimeout(() => { fb.classList.remove('wrong'); }, 700);
+      }
+    });
+  });
+});
+
+// ───── 매칭 (슬 11) ─────
+document.querySelectorAll('.mt-wrap').forEach(wrap => {
+  const slide = wrap.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const lefts = wrap.querySelectorAll('.mt-left');
+  const rights = wrap.querySelectorAll('.mt-right');
+  const total = lefts.length;
+  let done = 0;
+  let selLeft = null;
+
+  lefts.forEach(l => l.addEventListener('click', () => {
+    if (getQState(qid).solved || l.classList.contains('done')) return;
+    lefts.forEach(x => x.classList.remove('sel'));
+    if (selLeft === l) { selLeft = null; } else { selLeft = l; l.classList.add('sel'); }
+  }));
+
+  rights.forEach(r => r.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved || r.classList.contains('done') || !selLeft) return;
+    st.attempts++;
+    if (selLeft.dataset.pair === r.dataset.pair) {
+      selLeft.classList.add('done'); selLeft.classList.remove('sel');
+      r.classList.add('done');
+      selLeft = null; done++;
+      if (done === total) solveQ(qid, fb, '짝을 다 찾았어요!');
+      else { fb.textContent = '좋아요! 다음 짝도 찾아요'; fb.classList.remove('wrong'); }
+    } else {
+      st.wrongCount++;
+      r.classList.add('miss');
+      fb.textContent = '다시 짝을 찾아볼까요?';
+      fb.classList.add('wrong');
+      setTimeout(() => r.classList.remove('miss'), 500);
+    }
+  }));
+});
+
+// ───── 다중 선택 (슬 12·15) ─────
+document.querySelectorAll('.ms-grid').forEach(grid => {
+  const slide = grid.closest('.slide');
+  const qid = slide.dataset.qId;
+  const fb = slide.querySelector('.q-fb');
+  const check = slide.querySelector('.ms-check');
+  const items = grid.querySelectorAll('.ms-item');
+
+  items.forEach(it => it.addEventListener('click', () => {
+    if (getQState(qid).solved) return;
+    it.classList.toggle('sel');
+  }));
+
+  check.addEventListener('click', () => {
+    const st = getQState(qid);
+    if (st.solved) return;
+    st.attempts++;
+    let ok = true;
+    items.forEach(it => {
+      const want = it.dataset.correct === '1';
+      const got = it.classList.contains('sel');
+      if (want !== got) ok = false;
+    });
+    if (ok) {
+      items.forEach(it => {
+        it.classList.remove('sel');
+        if (it.dataset.correct === '1') it.classList.add('lock-ok');
+      });
+      check.disabled = true;
+      solveQ(qid, fb, '모두 맞췄어요!');
+    } else {
+      st.wrongCount++;
+      fb.textContent = '한 번 더 살펴볼까요?';
+      fb.classList.add('wrong');
+    }
+  });
+});
+
+// ───── 슬 4·5 시뮬: 변인통제 실험 (varTest 재사용) — 식물 자라는 조건 ─────
+// '다르게 할 조건' 하나만 다르게(나머지 같게) → 두 식물 결과 비교(잘 자람/못 자람).
+// 물·햇빛 = 각각 한쪽만 잘 자람(둘 다 자라는 데 필요). ※ 씨 싹트는 조건(물·온도)과 대비 — 햇빛은 자라는 데는 필요!
+(function varTest() {
+  const COND = {
+    water: { gaL: '💧 물을 줘요', naL: '🚱 물을 안 줘요', same: '햇빛 비춤 · 같은 흙 · 같은 식물', ga: true, na: false,
+             msg: '물을 다르게 하니 <b>물을 준 식물만</b> 잘 자랐어요. 자라려면 <b>물</b>이 필요해요!' },
+    light: { gaL: '☀️ 햇빛을 비춰요', naL: '🌑 어둡게 해요', same: '물을 줌 · 같은 흙 · 같은 식물', ga: true, na: false,
+             msg: '햇빛을 다르게 하니 <b>햇빛을 받은 식물만</b> 잘 자랐어요. 자라려면 <b>햇빛</b>이 필요해요!' },
+  };
+  function init(rootId, fixed) {
+    const root = document.getElementById(rootId);
+    if (!root) return;
+    const gaCond = root.querySelector('[data-cup="ga"] .vt-cond');
+    const naCond = root.querySelector('[data-cup="na"] .vt-cond');
+    const gaSeed = root.querySelector('[data-cup="ga"] .vt-seed');
+    const naSeed = root.querySelector('[data-cup="na"] .vt-seed');
+    const gaRes  = root.querySelector('[data-cup="ga"] .vt-result');
+    const naRes  = root.querySelector('[data-cup="na"] .vt-result');
+    const same   = root.querySelector('.vt-same');
+    const fb     = root.querySelector('.vt-fb');
+    const obs    = root.querySelector('.vt-obs');
+    let cur = fixed || null;
+    function reset() { gaSeed.textContent = '🌱'; naSeed.textContent = '🌱'; gaRes.textContent = ''; naRes.textContent = ''; }
+    function setCond(key) {
+      cur = key;
+      const c = COND[key];
+      gaCond.textContent = c.gaL; naCond.textContent = c.naL;
+      if (same) same.innerHTML = '같게 할 조건: <b>' + c.same + '</b>';
+      reset();
+      fb.textContent = '「며칠 지나기」를 눌러 결과를 봐요.';
+      root.querySelectorAll('.vt-crit-btn').forEach(b => b.classList.toggle('on', b.dataset.cond === key));
+    }
+    obs.addEventListener('click', () => {
+      if (!cur) { fb.textContent = '먼저 다르게 할 조건을 골라요.'; return; }
+      const c = COND[cur];
+      gaSeed.textContent = c.ga ? '🌿' : '🥀';
+      naSeed.textContent = c.na ? '🌿' : '🥀';
+      gaRes.textContent = c.ga ? '잘 자랐어요 🌿' : '잘 자라지 못했어요 🥀';
+      naRes.textContent = c.na ? '잘 자랐어요 🌿' : '잘 자라지 못했어요 🥀';
+      fb.innerHTML = c.msg;
+    });
+    root.querySelectorAll('.vt-crit-btn').forEach(btn => {
+      btn.addEventListener('click', () => setCond(btn.dataset.cond));
+    });
+    if (fixed) setCond(fixed);
+  }
+  init('vt1', 'water');   // 슬4: 물 실험 고정
+  init('vt2', null);      // 슬5: 물·햇빛 골라 실험
+})();
+
+// ───── 자기 평가 (슬 17) — 점수 X ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    document.getElementById('self-fb').textContent = btn.querySelector('.self-name').textContent + '을 골랐어요! 🌱';
+  });
+});
+
+// ───── 진도 저장 (차시운영 §4) ─────
+function saveProgress(completed) {
+  const wrongArr = [], hintArr = [];
+  SCORE_QIDS.forEach(qid => { const st = getQState(qid); wrongArr.push(st.wrongCount); hintArr.push(st.hintLevel); });
+  const prev = loadProgress();
+  const data = {
+    score: score, max_score: 100, completed: completed,
+    completed_at: completed ? new Date().toISOString() : (prev ? prev.completed_at : null),
+    first_attempt_score: prev && prev.first_attempt_score != null ? prev.first_attempt_score : (completed ? score : null),
+    attempt_count: prev ? (prev.attempt_count || 1) : 1,
+    hint_used: hintArr, wrong_count: wrongArr,
+    duration_sec: Math.floor((Date.now() - startedAt) / 1000),
+    last_slide: cur + 1
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+function loadProgress() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+
+updateUI();
+</script>
+</body>
+</html>
