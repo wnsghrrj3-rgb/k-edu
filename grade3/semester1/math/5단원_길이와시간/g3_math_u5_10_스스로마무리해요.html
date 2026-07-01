@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<!--
+  g3_math_u5_l10 — 스스로 마무리해요 [3학년 5단원 10차시, 40분 · 단원 평가]
+  ════════════════════════════════════════════════════════════
+  파일: kedu/curriculum/math/g3/unit5/10차_스스로마무리하기/draft.html
+  지도서: _SOURCE.md (5단원 길이와 시간 — 단원 평가·마무리)
+  성취기준: 통합 [4수03-13·14·15·16] 길이 단위+변환 · 초 단위 시각 · 시간 덧셈뺄셈 총괄
+  학습 본질: 단원 개념 총정리 후 8문항으로 길이·단위·시각·시간계산을 스스로 점검. self_3d 자기평가.
+  메카닉: rulerFig(길이)+clockFig(시각)+timeCalc(덧셈뺄셈) 총동원 + setupMcq 단일 엔진 + self_3d(3차원 자기평가, u4 08차 계승). 신규 0.
+  점수: 기본 4×10(q8~11) + 응용 4×15(q12~15) = 100
+  범위: 02~09차 통합. 새 개념 0. 3-2 이후 측정 영역 단위 X.
+  톤: (B) v14 그린 #15803D 계승 (u5 09차 base + self_3d) · 단원 완결
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g3_math_u5_l10_v1">
+<title>스스로 마무리해요 · K-edu 3학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── self_3d (단원 평가 3차원 자기평가 · u4 08차 계승) ───── */
+.self-3d { display:flex; flex-direction:column; gap:clamp(10px,1.8vw,16px); max-width:var(--mw-sm); }
+.self-block { display:flex; flex-direction:column; gap:clamp(4px,0.8vw,7px); }
+.self-q { font-family:var(--f-title); font-size:var(--fs-body); color:var(--ink); text-align:center; }
+.self-q strong { color:var(--emph); font-weight:400; }
+.self-stars { display:flex; gap:clamp(6px,1.2vw,10px); justify-content:center; }
+.self-star { background:#fff; border:2px solid var(--line); border-radius:12px; padding:clamp(5px,1vw,8px) clamp(12px,2vw,18px); cursor:pointer; font-size:clamp(13px,1.8vw,17px); color:#CBD5E0; font-family:var(--f-num); transition:transform .12s, border-color .15s, color .15s, background .15s; }
+.self-star:hover { transform:translateY(-2px); }
+.self-star.on { color:var(--gold); border-color:var(--gold); background:var(--mark); }
+.blank-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,13px); max-width:var(--mw-sm); width:100%; }
+.blank-item { background:#fff; border:2px solid var(--line); border-radius:16px; padding:clamp(10px,2vw,15px) clamp(16px,3vw,24px); font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.blank-item b { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+
+/* ───── clockFig·timeCalc (시간 시그니처 부품). 범용 mm-holder/svg/caption 재사용 ───── */
+.mul-stage{display:flex;flex-direction:column;align-items:center;gap:clamp(10px,2vw,16px);max-width:var(--mw-lg);width:100%;}
+.mm-holder{display:flex;justify-content:center;align-items:center;background:#fff;border:2px solid var(--line);border-radius:18px;padding:clamp(8px,1.6vw,14px) clamp(12px,2.4vw,20px);box-shadow:var(--shadow);max-width:100%;overflow:hidden;}
+.mm-svg{display:block;max-width:100%;height:auto;}
+.mm-caption{font-size:var(--fs-caption);color:var(--ink-soft);text-align:center;}
+.mm-caption b{color:var(--coral-deep);font-family:var(--f-title);font-weight:400;}
+.mcq-opt.cmp4{font-size:var(--fs-body);}
+</style>
+  <script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">10차시</span>
+    <span class="ka-where">수학 3-1 · <b>5. 길이와 시간</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입: 단원 핵심 질문 상기 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입 · 단원 마무리</div>
+      <h2 class="slide-title">길이와 시간을 어림하고 재어 볼까요?</h2>
+      <div class="intro-q">5단원에서 <strong>mm·cm·m·km</strong>로 길이를 재고, <strong>초·분·시</strong>로 시각을 읽고 시간을 계산했어요. 오늘은 배운 내용을 <strong>스스로 점검</strong>해요!</div>
+    </div>
+
+    <!-- 슬 2 — 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">오늘은 스스로 마무리해요</h2>
+      <ul class="goal-list">
+        <li>단원에서 배운 <strong>개념을 정리</strong>해요</li>
+        <li>길이·단위·시각·시간 <strong>8가지 문제</strong>를 풀어요</li>
+        <li>나의 성장을 <strong>스스로 평가</strong>해요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 도입: 개념 빈칸 정리 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 개념 정리</div>
+      <h2 class="slide-title">배운 것을 채워 봐요</h2>
+      <div class="blank-grid">
+        <div class="blank-item">1 cm = <b>10 mm</b> · 1 km = <b>1000 m</b></div>
+        <div class="blank-item">1분 = <b>60초</b> · 1시간 = <b>60분</b></div>
+        <div class="blank-item">걸린 시간 = 끝난 시각 <b>−</b> 시작 시각</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 길이 개념 총정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 길이 정리</div>
+      <h2 class="slide-title">길이 단위를 모아요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c1"></div>
+        <div class="concept-box">작은 것은 <strong>mm·cm</strong>, 큰 것은 <strong>m·km</strong>로 재요. <strong>1 cm=10 mm</strong>, <strong>1 km=1000 m</strong> 예요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 시각 개념 총정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 시각 정리</div>
+      <h2 class="slide-title">시각을 읽어요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c2"></div>
+        <div class="concept-box">짧은 바늘은 <strong>시</strong>, 긴 바늘은 <strong>분</strong>, 가는 빨간 바늘은 <strong>초</strong>예요. 초바늘까지 읽으면 정확한 시각을 알아요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 시간 계산 총정리 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 시간 계산</div>
+      <h2 class="slide-title">시간을 더하고 빼요</h2>
+      <div class="mul-stage">
+        <div class="mm-holder" id="fig-c3"></div>
+        <div class="concept-box">같은 단위끼리 계산해요(시는 시·분은 분·초는 초). 초가 60이 넘으면 <strong>받아올림</strong>, 모자라면 <strong>1분(60초)·1시간(60분)을 빌려</strong> 받아내림 해요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 스스로 풀기 안내 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 준비 완료</div>
+      <h2 class="slide-title">이제 스스로 풀어 봐요</h2>
+      <div class="recall-box">길이 <strong>4문제</strong>와 시간 <strong>4문제</strong>, 모두 <strong>8문제</strong>예요. 어려우면 <strong>💡 힌트</strong>를 눌러요. 배운 것을 떠올리며 하나씩 풀어 봐요!</div>
+    </div>
+
+    <!-- 슬 8 — 기본 q8: ① 길이 cm·mm 변환 (rulerFig) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">크레파스의 길이는<br>몇 cm 몇 mm일까요?</div>
+        <div class="mm-holder" id="fig-q8"></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt cmp4" data-correct="1">8 cm 5 mm</button>
+          <button class="mcq-opt cmp4" data-correct="0">5 cm 8 mm</button>
+          <button class="mcq-opt cmp4" data-correct="0">8 cm 50 mm</button>
+          <button class="mcq-opt cmp4" data-correct="0">80 cm 5 mm</button>
+        </div>
+        <div class="mcq-hint" data-hints='["큰 눈금(cm)을 먼저 세고, 남은 작은 눈금(mm)을 세요.","0부터 큰 눈금 8칸(8 cm), 작은 눈금 5칸(5 mm) → 8 cm 5 mm 예요!"]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본 q9: ② 알맞은 단위 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">서울에서 부산까지의 <strong>거리</strong>를<br>나타내기에 알맞은 단위는?</div>
+        <div class="mcq-opts" id="q9-opts">
+          <button class="mcq-opt cmp4" data-correct="1">약 400 km</button>
+          <button class="mcq-opt cmp4" data-correct="0">약 400 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">약 400 cm</button>
+          <button class="mcq-opt cmp4" data-correct="0">약 400 mm</button>
+        </div>
+        <div class="mcq-hint" data-hints='["도시와 도시 사이는 아주 먼 거리예요.","먼 거리는 가장 큰 단위 km로 나타내요. 약 400 km 예요!"]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본 q10: ③ 분·초 변환 (60진법) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">2분 30초는 몇 초일까요?</div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt cmp4" data-correct="1">150초</button>
+          <button class="mcq-opt cmp4" data-correct="0">230초</button>
+          <button class="mcq-opt cmp4" data-correct="0">250초</button>
+          <button class="mcq-opt cmp4" data-correct="0">90초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1분은 60초예요. 2분은 몇 초일까요?","2분=120초, 120+30=150초 예요! 230초는 숫자를 그냥 이어 쓴 거예요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본 q11: ④ 초 단위 시각 (clockFig) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">시계가 나타내는 시각은?</div>
+        <div class="mm-holder" id="fig-q11"></div>
+        <div class="mcq-opts" id="q11-opts">
+          <button class="mcq-opt cmp4" data-correct="1">8시 10분 25초</button>
+          <button class="mcq-opt cmp4" data-correct="0">8시 25분 10초</button>
+          <button class="mcq-opt cmp4" data-correct="0">10시 8분 25초</button>
+          <button class="mcq-opt cmp4" data-correct="0">8시 10분</button>
+        </div>
+        <div class="mcq-hint" data-hints='["짧은 바늘=시, 긴 바늘=분, 가는 빨간 바늘=초예요.","시 8·분 10·초 25 → 8시 10분 25초 예요!"]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용 q12: ⑤ 시간 덧셈 (timeCalc·받아올림) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">2시 30분 45초 + 15분 20초는?</div>
+        <div class="mm-holder" id="fig-q12"></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt cmp4" data-correct="1">2시 46분 5초</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시 45분 65초</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시 46분 65초</button>
+          <button class="mcq-opt cmp4" data-correct="0">3시 46분 5초</button>
+        </div>
+        <div class="mcq-hint" data-hints='["초끼리 더하면 45+20=65. 60초가 넘어요!","65초=1분 5초. 5초 쓰고 1분 받아올림 → 분 30+15+1=46. 2시 46분 5초 예요!"]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용 q13: ⑥ 복명수↔단명수 (km·m) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">3 km 70 m는 몇 m일까요?</div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt cmp4" data-correct="1">3070 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">370 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">3700 m</button>
+          <button class="mcq-opt cmp4" data-correct="0">307 m</button>
+        </div>
+        <div class="mcq-hint" data-hints='["1 km는 1000 m예요. 3 km는 몇 m일까요?","3 km=3000 m, 3000+70=3070 m 예요! 370 m는 숫자를 그냥 이어 쓴 거예요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용 q14: ⑦ 시간 덧셈 문장제 (timeCalc·받아올림) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">영화가 <strong>1시 50분</strong>에 시작해<br><strong>1시간 25분</strong> 상영됐어요. 끝난 시각은?</div>
+        <div class="mm-holder" id="fig-q14"></div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt cmp4" data-correct="1">3시 15분</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시 15분</button>
+          <button class="mcq-opt cmp4" data-correct="0">3시 75분</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시 75분</button>
+        </div>
+        <div class="mcq-hint" data-hints='["끝난 시각 = 시작 시각 + 걸린 시간이에요.","분 50+25=75 → 60분 받아올림. 15분 쓰고 시 1+1+1=3 → 3시 15분 예요!"]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용 q15: ⑧ 시간 뺄셈 문장제 (timeCalc·받아내림) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">기차가 <strong>3시 10분</strong>에 출발해<br><strong>5시 5분</strong>에 도착했어요. 걸린 시간은?</div>
+        <div class="mm-holder" id="fig-q15"></div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt cmp4" data-correct="1">1시간 55분</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시간 55분</button>
+          <button class="mcq-opt cmp4" data-correct="0">1시간 5분</button>
+          <button class="mcq-opt cmp4" data-correct="0">2시간 5분</button>
+        </div>
+        <div class="mcq-hint" data-hints='["걸린 시간 = 도착 시각 − 출발 시각이에요.","분 5−10 모자라 1시간(60분) 빌려 65−10=55분, 시 4−3=1 → 1시간 55분 예요!"]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리: 배운 것 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">5단원을 정리해요</h2>
+      <div class="summary-stage">
+        <div class="summary-card">길이는 <strong>mm·cm·m·km</strong>로 재고 서로 바꿔 나타내요. 시각은 <strong>초</strong>까지 읽고, 시간은 같은 단위끼리 <strong>받아올림·받아내림</strong>하며 더하고 뺐어요. 정말 많이 배웠어요!</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 정리: 자기 평가 3차원 (self_3d) -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">스스로 돌아봐요</h2>
+      <div class="self-stage self-3d">
+        <div class="self-block">
+          <div class="self-q">길이 단위(mm·cm·m·km)와 <strong>관계</strong>를 알고 있나요?</div>
+          <div class="self-stars"><button class="self-star">★</button><button class="self-star">★★</button><button class="self-star">★★★</button></div>
+        </div>
+        <div class="self-block">
+          <div class="self-q">시각을 읽고 시간을 <strong>바르게 계산</strong>하나요?</div>
+          <div class="self-stars"><button class="self-star">★</button><button class="self-star">★★</button><button class="self-star">★★★</button></div>
+        </div>
+        <div class="self-block">
+          <div class="self-q">길이와 시간 단위의 <strong>필요성</strong>을 느끼나요?</div>
+          <div class="self-stars"><button class="self-star">★</button><button class="self-star">★★</button><button class="self-star">★★★</button></div>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 정리: 단원 완결 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">5단원 완성! 🎉</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">🏆📏</div>
+          <div class="next-label">길이와 시간 단원을 끝까지 해냈어요!</div>
+        </div>
+        <div class="home-prompt">집에서 좋아하는 물건의 길이를 mm·cm로 재고, 활동의 걸린 시간을 구해 보세요!</div>
+      </div>
+    </div>
+
+    <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g3_math_u5_l10';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+
+// ════════════════════════════════════════
+// rulerFig — 자 SVG (길이 시그니처 부품 · 02차 복원)
+//   {cm,objMm,objColor,tag} → cm 큰 눈금 + mm 작은 눈금. 물건 0 정렬·읽기.
+//   09차 창의: 발 길이(약 220 mm) 단서 표현에 재사용.
+// ════════════════════════════════════════
+function rulerFig(opts){
+  opts = opts || {};
+  const cm = opts.cm || 10;
+  const objMm = (opts.objMm != null) ? opts.objMm : 0;
+  const objColor = opts.objColor || '#15803D';
+  const tag = opts.tag || '';
+  const mmPx = 7, padX = 18, padTop = 12;
+  const objH = 20, objGap = 7, rulerH = 52;
+  const totalMm = cm * 10;
+  const hasObj = objMm > 0;
+  const hasTag = hasObj && !!tag;
+  const tagH = hasTag ? 22 : 0;
+  const objTop = padTop + tagH;
+  const rulerTop = objTop + (hasObj ? objH + objGap : 0);
+  const W = padX * 2 + totalMm * mmPx;
+  const H = rulerTop + rulerH + 6;
+  let s = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // 자 몸체
+  s += `<rect x="${padX}" y="${rulerTop}" width="${totalMm*mmPx}" height="${rulerH}" rx="7" fill="#FFF6E0" stroke="#1FA8A0" stroke-width="2.5"/>`;
+  // 눈금 + cm 숫자
+  for (let m = 0; m <= totalMm; m++) {
+    const x = padX + m * mmPx;
+    let th, sw, col;
+    if (m % 10 === 0) { th = 22; sw = 2.2; col = '#147F79'; }
+    else if (m % 5 === 0) { th = 14; sw = 1.5; col = '#147F79'; }
+    else { th = 8; sw = 1; col = '#3DBDB4'; }
+    s += `<line x1="${x}" y1="${rulerTop}" x2="${x}" y2="${rulerTop+th}" stroke="${col}" stroke-width="${sw}"/>`;
+    if (m % 10 === 0) {
+      s += `<text x="${x}" y="${rulerTop+rulerH-7}" text-anchor="middle" font-size="15" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${m/10}</text>`;
+    }
+  }
+  // 물건 막대
+  if (hasObj) {
+    const ow = objMm * mmPx;
+    s += `<rect x="${padX}" y="${objTop}" width="${ow}" height="${objH}" rx="5" fill="${objColor}" stroke="#0F5C2E" stroke-width="1.5" opacity="0.92"/>`;
+    s += `<line x1="${padX}" y1="${objTop}" x2="${padX}" y2="${rulerTop}" stroke="#0F5C2E" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.55"/>`;
+    s += `<line x1="${padX+ow}" y1="${objTop}" x2="${padX+ow}" y2="${rulerTop}" stroke="#0F5C2E" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.55"/>`;
+    if (hasTag) {
+      s += `<text x="${padX+ow/2}" y="${padTop+15}" text-anchor="middle" font-size="16" fill="#0F5C2E" font-family="Nunito,sans-serif" font-weight="800">${tag}</text>`;
+    }
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// clockFig — 아날로그 시계 SVG (시간 영역 시그니처 부품 · 신규)
+//   {h,m,s} → 시·분·초 세 바늘. 바늘 회전: 시(h%12*30+m*0.5)·분(m*6)·초(s*6).
+//   큰 눈금 12(숫자)·작은 눈금 60. 초바늘 red(#F0451F) 강조. s 생략 시 초바늘 X.
+//   06·07·08·09·10차 재사용.
+// ════════════════════════════════════════
+function clockFig(opts){
+  opts = opts || {};
+  const h = opts.h || 0, m = opts.m || 0;
+  const s = (opts.s != null) ? opts.s : -1;
+  const showSec = (s >= 0);
+  const cx = 110, cy = 112, R = 92;
+  const W = 220, H = 224;
+  const P = (deg, len) => {
+    const r = (deg - 90) * Math.PI / 180;
+    return [cx + len*Math.cos(r), cy + len*Math.sin(r)];
+  };
+  let svg = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // 시계판
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#FFFFFF" stroke="#1FA8A0" stroke-width="4"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${R-7}" fill="none" stroke="#CFEDEA" stroke-width="1.5"/>`;
+  // 눈금 60 (큰 눈금 12 강조)
+  for (let i = 0; i < 60; i++){
+    const major = (i % 5 === 0);
+    const a = (i*6 - 90) * Math.PI / 180;
+    const r1 = R - (major ? 13 : 7), r2 = R - 3;
+    const x1 = cx + r1*Math.cos(a), y1 = cy + r1*Math.sin(a);
+    const x2 = cx + r2*Math.cos(a), y2 = cy + r2*Math.sin(a);
+    svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${major?'#147F79':'#9CD9D3'}" stroke-width="${major?2.4:1.2}"/>`;
+  }
+  // 시각 숫자 1~12
+  for (let n = 1; n <= 12; n++){
+    const a = (n*30 - 90) * Math.PI / 180;
+    const rr = R - 26;
+    const x = cx + rr*Math.cos(a), y = cy + rr*Math.sin(a);
+    svg += `<text x="${x.toFixed(1)}" y="${(y+5).toFixed(1)}" text-anchor="middle" font-size="17" fill="#147F79" font-family="Nunito,sans-serif" font-weight="800">${n}</text>`;
+  }
+  // 바늘: 시(굵고 짧음 green) → 분(teal) → 초(red 가늘고 김)
+  const [hx, hy] = P((h%12)*30 + m*0.5, R*0.50);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#15803D" stroke-width="6" stroke-linecap="round"/>`;
+  const [mx, my] = P(m*6, R*0.72);
+  svg += `<line x1="${cx}" y1="${cy}" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#147F79" stroke-width="4" stroke-linecap="round"/>`;
+  if (showSec){
+    const [sx, sy] = P(s*6, R*0.80);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="#F0451F" stroke-width="2" stroke-linecap="round"/>`;
+  }
+  svg += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="#15803D"/>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+// ════════════════════════════════════════
+// timeCalc — 시·분·초 세로셈 SVG (시간 시그니처 부품)
+//   {units,a,b,sum,carry,op,strike,small} → 단위끼리 자리맞춤 세로셈.
+//   carry={m:1}: 받아올림(받는 열 윗수 위 작은 red, 덧셈). 
+//   받아내림(뺄셈 op:'-'): strike={m:true} 윗수 빗금 + small={m:'0',s:'70'} 윗수 위 작은 보라 수.
+//   units 배열 단위만 그림(빈 칸 허용). 07 덧셈·08 뺄셈 공용.
+// ════════════════════════════════════════
+function timeCalc(opts){
+  opts = opts || {};
+  const units = opts.units || ['h','m','s'];
+  const LAB = {h:'시', m:'분', s:'초'};
+  const a = opts.a || {}, b = opts.b || {}, sum = opts.sum || {};
+  const carry = opts.carry || {}, strike = opts.strike || {}, small = opts.small || {};
+  const op = opts.op || '+';
+  const n = units.length;
+  const colW = 76, padX = 30, opW = 30, padTop = 12, rowH = 36;
+  const W = padX*2 + opW + n*colW;
+  const labelY = padTop + 17;
+  const aY = labelY + rowH + 4;
+  const bY = aY + rowH;
+  const lineY = bY + 14;
+  const sumY = lineY + rowH - 2;
+  const H = sumY + 12;
+  const colX = i => padX + opW + colW*i + colW/2;
+  const T = (x,y,t,fill,fs,w) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="${fs}" fill="${fill}" font-family="Nunito,sans-serif" font-weight="${w||800}">${t}</text>`;
+  let s = `<svg class="mm-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  // 단위 라벨
+  units.forEach((u,i)=>{ s += T(colX(i), labelY, LAB[u], '#147F79', 14); });
+  // 받아내림 작은 수(보라) / 받아올림 carry(red) — 윗수 위
+  units.forEach((u,i)=>{
+    if (small[u] != null) s += T(colX(i), aY-19, small[u], '#7C3AED', 14);
+    else if (carry[u] != null) s += T(colX(i)-20, aY-19, carry[u], '#F0451F', 13);
+  });
+  // 수1 (+ 받아내림 빗금)
+  units.forEach((u,i)=>{
+    if (a[u] != null){
+      s += T(colX(i), aY, a[u], '#2A3550', 23, 800);
+      if (strike[u]) s += `<line x1="${(colX(i)-13).toFixed(1)}" y1="${(aY-15).toFixed(1)}" x2="${(colX(i)+13).toFixed(1)}" y2="${(aY-1).toFixed(1)}" stroke="#7C3AED" stroke-width="2"/>`;
+    }
+  });
+  // 연산자 + 수2
+  s += T(padX + opW/2, bY, op, '#2A3550', 23, 800);
+  units.forEach((u,i)=>{ if (b[u] != null) s += T(colX(i), bY, b[u], '#2A3550', 23, 800); });
+  // 가로줄
+  s += `<line x1="${padX}" y1="${lineY}" x2="${W-padX}" y2="${lineY}" stroke="#2A3550" stroke-width="2.5"/>`;
+  // 합/차
+  units.forEach((u,i)=>{ if (sum[u] != null) s += T(colX(i), sumY, sum[u], '#15803D', 25, 800); });
+  s += `</svg>`;
+  return s;
+}
+
+// ───── setupMcq (단일 선택 문제 공통 엔진) ─────
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong');
+        fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+
+// ───── 슬별 모형 렌더 ─────
+(function renderFigs(){
+  // 개념 총정리(전개)
+  document.getElementById('fig-c1').innerHTML = rulerFig({cm:12, objMm:85, objColor:'#15803D', tag:'8 cm 5 mm'});
+  document.getElementById('fig-c2').innerHTML = clockFig({h:8, m:10, s:25});
+  document.getElementById('fig-c3').innerHTML = timeCalc({units:['h','m','s'], a:{h:2,m:30,s:45}, b:{m:15,s:20}, sum:{h:2,m:46,s:5}, carry:{m:1}});
+  // 기본·응용 문항
+  document.getElementById('fig-q8').innerHTML  = rulerFig({cm:12, objMm:85, objColor:'#15803D', tag:'크레파스'});
+  document.getElementById('fig-q11').innerHTML = clockFig({h:8, m:10, s:25});
+  document.getElementById('fig-q12').innerHTML = timeCalc({units:['h','m','s'], a:{h:2,m:30,s:45}, b:{m:15,s:20}, sum:{h:2,m:46,s:5}, carry:{m:1}});
+  document.getElementById('fig-q14').innerHTML = timeCalc({units:['h','m'], a:{h:1,m:50}, b:{h:1,m:25}, sum:{h:3,m:15}, carry:{h:1}});
+  document.getElementById('fig-q15').innerHTML = timeCalc({op:'−', units:['h','m'], a:{h:5,m:5}, b:{h:3,m:10}, sum:{h:1,m:55}, strike:{h:true,m:true}, small:{h:'4',m:'65'}});
+})();
+
+setupMcq('q8',  '맞아요! 큰 눈금 8칸·작은 눈금 5칸 → 8 cm 5 mm 예요.');
+setupMcq('q9',  '맞아요! 도시 사이 먼 거리는 km로 나타내요. 약 400 km 예요.');
+setupMcq('q10', '맞아요! 2분=120초, 120+30=150초 예요.');
+setupMcq('q11', '맞아요! 시 8·분 10·초 25 → 8시 10분 25초 예요.');
+setupMcq('q12', '맞아요! 초 65=1분 5초, 받아올림해서 2시 46분 5초 예요.');
+setupMcq('q13', '맞아요! 3 km=3000 m, 3000+70=3070 m 예요.');
+setupMcq('q14', '맞아요! 분 75=1시간 15분, 받아올림해서 3시 15분 예요.');
+setupMcq('q15', '맞아요! 1시간 빌려 65−10=55분, 시 4−3=1 → 1시간 55분 예요.');
+
+// ───── 슬17 자기 평가 3차원 (self_3d · u4 08차 계승) ─────
+document.querySelectorAll('.self-stars').forEach(row => {
+  const stars = [...row.querySelectorAll('.self-star')];
+  stars.forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      stars.forEach((b, j) => b.classList.toggle('on', j <= i));
+      const allDone = [...document.querySelectorAll('.self-stars')].every(r => r.querySelector('.self-star.on'));
+      if (allDone) document.getElementById('self-fb').textContent = '스스로 잘 돌아봤어요! 5단원을 완성했어요 🎉';
+    });
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
