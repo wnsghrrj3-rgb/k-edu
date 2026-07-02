@@ -21,6 +21,7 @@ window.MATERIAL_CATS = [
   ['floral', '플로럴'],
   ['tape', '테이프·라벨'],
   ['season', '시즌'],
+  ['life', '웨딩·라이프'],
   ['photo', '실사 사진'],
 ];
 
