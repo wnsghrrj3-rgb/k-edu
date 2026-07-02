@@ -282,7 +282,9 @@ function renderBgGrid() {
   const grid = document.getElementById('bgGrid');
   let html = `<button class="ip-item bg-none" data-none="1"><span style="font-size:20px">⬜</span>배경 없음</button>`;
   html += KM_MOTION.bgItemsHTML();
-  html += list.map((b, idx) => `<button class="ip-item" data-idx="${idx}" title="${b.n}"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">${b.s}</svg></button>`).join('');
+  html += list.map((b, idx) => `<button class="ip-item" data-idx="${idx}" title="${b.n}">${b.img
+    ? `<img src="${b.img}" alt="${b.n}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">`
+    : `<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">${b.s}</svg>`}</button>`).join('');
   if (!list.length) html += `<div class="ip-empty" style="grid-column:1/-1">정적 배경도 준비 중이에요 ✨</div>`;
   grid.innerHTML = html;
   grid.querySelector('[data-none]').onclick = () => { KM_MOTION.setMotionBg(null); clearBackground(); renderBgGrid(); };
@@ -291,6 +293,14 @@ function renderBgGrid() {
 }
 function applyBackground(bg) {
   canvas.getObjects().filter(o => o.kmType === 'background').forEach(o => canvas.remove(o));
+  if (bg.img) { // v2 실사 이미지 배경 — 캔버스를 덮도록 커버핏, 중앙 정렬
+    fabric.Image.fromURL(bg.img, img => {
+      const s = Math.max(baseW / img.width, baseH / img.height) * 1.01; // 직렬화 반올림 틈 방지 여유
+      img.set({ left: baseW / 2, top: baseH / 2, originX: 'center', originY: 'center', scaleX: s, scaleY: s, selectable: false, evented: false, kmType: 'background' });
+      canvas.add(img); img.sendToBack(); canvas.requestRenderAll(); pushHistory();
+    }, { crossOrigin: 'anonymous' });
+    return;
+  }
   const svg = `<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">${bg.s}</svg>`;
   fabric.loadSVGFromString(svg, (objs, opts) => {
     const g = fabric.util.groupSVGElements(objs, opts);
