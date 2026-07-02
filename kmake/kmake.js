@@ -6,7 +6,7 @@
 
 /* 슬롯 커스텀 속성 직렬화 */
 fabric.Object.prototype.toObject = (function (orig) {
-  return function (extra) { return orig.call(this, ['kmSlot', 'kmType'].concat(extra || [])); };
+  return function (extra) { return orig.call(this, ['kmSlot', 'kmType', 'anim'].concat(extra || [])); };
 })(fabric.Object.prototype.toObject);
 
 /* ---------- 데이터 ---------- */
@@ -113,6 +113,7 @@ function goHome() {
   doRestoreHome();
 }
 function doRestoreHome() {
+  KM_MOTION.exitPlay(); KM_MOTION.setMotionBg(null);
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
@@ -177,6 +178,7 @@ function initCanvas() {
   canvas.on('object:removed', () => { if (!lockHistory) pushHistory(); });
   canvas.on('mouse:up', clearGuides);
   canvas.on('after:render', drawSlotHints);
+  KM_MOTION.mountBg();
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -279,11 +281,13 @@ function renderBgGrid() {
   if (bgCat !== 'all') list = list.filter(b => b.c === bgCat);
   const grid = document.getElementById('bgGrid');
   let html = `<button class="ip-item bg-none" data-none="1"><span style="font-size:20px">⬜</span>배경 없음</button>`;
+  html += KM_MOTION.bgItemsHTML();
   html += list.map((b, idx) => `<button class="ip-item" data-idx="${idx}" title="${b.n}"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">${b.s}</svg></button>`).join('');
-  if (!list.length) html += `<div class="ip-empty" style="grid-column:1/-1">멋진 배경을 준비 중이에요 ✨</div>`;
+  if (!list.length) html += `<div class="ip-empty" style="grid-column:1/-1">정적 배경도 준비 중이에요 ✨</div>`;
   grid.innerHTML = html;
-  grid.querySelector('[data-none]').onclick = clearBackground;
-  grid.querySelectorAll('.ip-item[data-idx]').forEach(b => b.onclick = () => applyBackground(list[+b.dataset.idx]));
+  grid.querySelector('[data-none]').onclick = () => { KM_MOTION.setMotionBg(null); clearBackground(); renderBgGrid(); };
+  grid.querySelectorAll('.mbg-item').forEach(b => b.onclick = () => { KM_MOTION.setMotionBg(b.dataset.mbg); pushHistory(); renderBgGrid(); });
+  grid.querySelectorAll('.ip-item[data-idx]').forEach(b => b.onclick = () => { KM_MOTION.setMotionBg(null); applyBackground(list[+b.dataset.idx]); renderBgGrid(); });
 }
 function applyBackground(bg) {
   canvas.getObjects().filter(o => o.kmType === 'background').forEach(o => canvas.remove(o));
@@ -532,6 +536,8 @@ function buildPanel(o) {
     <div class="field"><label>투명도</label><div class="range-row"><input type="range" id="pOp" min="10" max="100" value="${Math.round((o.opacity ?? 1) * 100)}"><span class="val" id="pOpV">${Math.round((o.opacity ?? 1) * 100)}%</span></div></div>
     <div class="dim-grid"><div class="field"><label>너비</label><input id="pW" value="${Math.round(o.getScaledWidth())}" inputmode="numeric"></div>
     <div class="field"><label>높이</label><input id="pH" value="${Math.round(o.getScaledHeight())}" inputmode="numeric"></div></div></div>`;
+  // ✨ 움직임 (모션 엔진)
+  h += KM_MOTION.panelHTML(o);
   // 슬롯
   const on = !!(o.kmSlot && o.kmSlot.on);
   h += `<div class="panel-sec"><div class="slot-box">
@@ -559,6 +565,7 @@ function bindPanel(o, isText) {
   if ($('pOp')) $('pOp').onchange = () => pushHistory();
   if ($('pW')) $('pW').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToWidth(v); render(); pushHistory(); syncPanelDims(); } };
   if ($('pH')) $('pH').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToHeight(v); render(); pushHistory(); syncPanelDims(); } };
+  KM_MOTION.bindPanel(o);
   if ($('pSlot')) $('pSlot').onchange = e => { o.kmSlot = e.target.checked ? { on: true, label: (o.kmSlot && o.kmSlot.label) || '' } : { on: false }; pushHistory(); buildPanel(o); };
   if ($('pSlotLabel')) $('pSlotLabel').onchange = e => { o.kmSlot = { on: true, label: e.target.value }; pushHistory(); };
 }
@@ -668,8 +675,13 @@ document.getElementById('btnRedo').onclick = redo;
 /* ============ 내보내기 ============ */
 document.getElementById('btnExport').onclick = e => { e.stopPropagation(); const m = document.getElementById('exportMenu'); const open = !m.classList.contains('hidden'); closePops(); if (!open) m.classList.remove('hidden'); };
 function snapshot(scale) {
-  const z = zoom; canvas.discardActiveObject(); canvas.setZoom(1); canvas.setDimensions({ width: baseW, height: baseH }); canvas.renderAll();
-  const url = canvas.toDataURL({ format: 'png', multiplier: scale || 2 }); applyZoom(z); return url;
+  const z = zoom; canvas.discardActiveObject();
+  const mb = KM_MOTION.bgBaseColor(), prevBg = canvas.backgroundColor;
+  if (mb) canvas.backgroundColor = mb; // 모션 배경은 인쇄물에선 기본색으로
+  canvas.setZoom(1); canvas.setDimensions({ width: baseW, height: baseH }); canvas.renderAll();
+  const url = canvas.toDataURL({ format: 'png', multiplier: scale || 2 });
+  if (mb) canvas.backgroundColor = prevBg;
+  applyZoom(z); return url;
 }
 function exportPNG() { closePops(); const a = document.createElement('a'); a.href = snapshot(2.5); a.download = '케이메이커.png'; a.click(); toast('PNG 저장 완료'); }
 function exportPDF() {
@@ -693,7 +705,7 @@ function exportPPTX() {
 
 /* ============ 저장 / 불러오기 ============ */
 document.getElementById('btnSave').onclick = () => {
-  const data = { v: 2, baseW, baseH, audience, canvas: canvas.toJSON(['kmSlot']) };
+  const data = { v: 3, baseW, baseH, audience, motionBg: KM_MOTION.getBgKey(), canvas: canvas.toJSON(['kmSlot']) };
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = '케이메이커.kmake'; a.click(); toast('작업파일 저장 완료');
 };
 document.getElementById('btnOpen').onclick = () => document.getElementById('jsonInput').click();
@@ -702,7 +714,7 @@ document.getElementById('jsonInput').addEventListener('change', function (e) {
   r.onload = ev => { try {
     const d = JSON.parse(ev.target.result); baseW = d.baseW; baseH = d.baseH; audience = d.audience || 'teacher';
     lockHistory = true; canvas.clear(); canvas.backgroundColor = '#fff';
-    canvas.loadFromJSON(d.canvas, () => { zoomFit(); applyMode(); canvas.requestRenderAll(); lockHistory = false; undoStack = []; redoStack = []; pushHistory(); onSelect(); toast('불러오기 완료'); });
+    canvas.loadFromJSON(d.canvas, () => { KM_MOTION.setMotionBg(d.motionBg || null, { keepBgColor: !!d.motionBg }); zoomFit(); applyMode(); canvas.requestRenderAll(); lockHistory = false; undoStack = []; redoStack = []; pushHistory(); onSelect(); toast('불러오기 완료'); });
   } catch (err) { toast('파일을 읽을 수 없어요'); } };
   r.readAsText(f); e.target.value = '';
 });
