@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔬 과학 실험실 — 무엇을 언제 배우나</title>
+<script src="/kedu_gate.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Jua',sans-serif;background:#F4F7FF;color:#1B3A57;padding:14px 14px 50px;}
+  h1{font-size:26px;text-align:center;color:#1565C0;margin:6px 0 2px;}
+  .sub{text-align:center;font-size:14px;color:#6b8199;margin-bottom:14px;}
+  /* 학년 필터 */
+  .filter{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
+  .filter b{align-self:center;font-size:14px;color:#6b8199;margin-right:2px;}
+  .gbtn{font-family:inherit;font-size:15px;font-weight:800;padding:9px 15px;border-radius:999px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;line-height:1;}
+  .gbtn.on{background:#1565C0;border-color:#1565C0;color:#fff;}
+  .hint{text-align:center;font-size:12.5px;color:#8aa0b6;margin-bottom:16px;}
+  /* 영역 섹션 */
+  .area{max-width:1080px;margin:0 auto 26px;}
+  .area h2{font-size:20px;margin:0 0 3px;padding-left:4px;}
+  .area .desc{font-size:13px;color:#6b8199;padding-left:4px;margin-bottom:10px;}
+  .a-earth h2{color:#1565C0;} .a-matter h2{color:#E8590C;}
+  .a-life h2{color:#12B886;} .a-force h2{color:#7048E8;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+  .card{background:#fff;border:2.5px solid #E3EAF5;border-radius:18px;padding:13px 14px;display:flex;flex-direction:column;gap:7px;transition:.15s;}
+  .card.dim{opacity:.32;filter:grayscale(.6);}
+  .card .top{display:flex;align-items:center;gap:7px;}
+  .card .ico{font-size:26px;}
+  .card .nm{font-size:17px;font-weight:800;line-height:1.15;}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;}
+  .bd{font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:999px;line-height:1;}
+  .bd-g{background:#E7F0FF;color:#1565C0;}       /* 학년 */
+  .bd-u{background:#F0EDFF;color:#6B3FD4;}        /* 단원 */
+  .bd-new{background:#FFE8D6;color:#E8590C;}
+  .card .why{font-size:12.5px;color:#6b8199;line-height:1.4;flex:1;}
+  .card a{margin-top:2px;text-align:center;text-decoration:none;font-size:15px;font-weight:800;padding:9px;border-radius:12px;background:#1565C0;color:#fff;}
+  .card.hero{border-color:#FF8A3D;box-shadow:0 4px 14px rgba(255,138,61,.18);}
+  .card.hero a{background:#FF8A3D;}
+  .rmap{max-width:1080px;margin:0 auto 20px;background:#fff;border:2.5px solid #E3EAF5;border-radius:16px;padding:12px 14px;}
+  .rmap .t{font-size:14px;font-weight:800;color:#1565C0;margin-bottom:6px;}
+  .rmap .row{display:flex;gap:6px;flex-wrap:wrap;font-size:12.5px;color:#5a7894;line-height:1.8;}
+  .rmap .yr{background:#F4F7FF;border:2px solid #E3EAF5;border-radius:10px;padding:3px 9px;font-weight:800;}
+</style>
+</head>
+<body>
+<h1>🔬 과학 실험실</h1>
+<div class="sub">만지며 발견하는 과학 교구 — <b>몇 학년, 어느 단원</b>에서 쓰는지 한눈에</div>
+
+<div class="filter">
+  <b>학년 골라보기</b>
+  <button class="gbtn on" data-g="all">전체</button>
+  <button class="gbtn" data-g="3">3학년</button>
+  <button class="gbtn" data-g="4">4학년</button>
+  <button class="gbtn" data-g="5">5학년</button>
+  <button class="gbtn" data-g="6">6학년</button>
+</div>
+<div class="hint">학년을 고르면 그 학년에서 쓸 수 있는 교구만 또렷하게 보여요 · 배지: <span class="bd bd-g">학년·학기</span> <span class="bd bd-u">단원</span></div>
+
+<div class="rmap">
+  <div class="t">📚 과학 나선형 로드맵 — 같은 주제가 학년마다 깊어져요</div>
+  <div class="row">
+    <span class="yr">3학년</span> 물질의 상태·자석·동물 한살이·지표
+    <span class="yr">4학년</span> 식물 한살이·화산과 지진·물의 상태변화·전기
+    <span class="yr">5학년</span> 용해와 용액·태양계와 별·생태계·산과 염기
+    <span class="yr">6학년</span> 지구와 달의 운동·계절 변화·연소·우리 몸
+  </div>
+</div>
+
+<div id="areas"></div>
+
+<script>
+(function(){
+  // grade: 교구가 쓰이는 학년 배열. from=hub 로 케이랩 진입.
+  var TOOLS={
+    earth:[
+      {t:'earthsun',ico:'🌏',nm:'지구와 태양 — 발견의 여정',gr:[6],unit:'6-1 지구와 달·계절',why:'자전·공전·계절·남중고도를 한 무대에서. 하루 살아보기 → 계절의 범인 찾기.',hero:true,proto:'/labs/earthsun_proto.html'},
+      {t:'earth',ico:'🌍',nm:'지구 자전·낮밤',gr:[6],unit:'6-1 지구와 달의 운동',why:'지구가 돌아 낮과 밤이 생기는 원리. 실사 지구 텍스처.'},
+      {t:'season',ico:'🍂',nm:'계절의 변화',gr:[6],unit:'6-2 계절의 변화',why:'자전축 기울기가 만드는 사계절. 위도·거리 실험.'},
+      {t:'moon',ico:'🌙',nm:'달의 위상',gr:[6],unit:'6-1 지구와 달의 운동',why:'달 모양이 변하는 까닭. 달 잡기·관측 시각·일식/월식.'},
+      {t:'solar',ico:'☀️',nm:'태양계와 별',gr:[5],unit:'5-1 태양계와 별',why:'8행성 실제 비율. 공전 멈추면 어떻게 될까?'},
+      {t:'constellation',ico:'✨',nm:'계절별 별자리',gr:[5],unit:'5-1 태양계와 별',why:'계절마다 다른 별자리와 북극성 찾기.'},
+      {t:'volcano',ico:'🌋',nm:'화산과 지진',gr:[4],unit:'4-2 화산과 지진',why:'3D 화산 분출·화성암·지진 대비.'},
+      {t:'strata',ico:'🪨',nm:'지층과 화석',gr:[4],unit:'4-1 지층과 화석',why:'지층 쌓기·화석·융기 — 산에서 조개가 나오는 까닭.'}
+    ],
+    matter:[
+      {t:'states',ico:'🧊',nm:'물질의 상태',gr:[3],unit:'3-1 물질의 상태',why:'고체·액체·기체. 밀폐하면 무게는 그대로!'},
+      {t:'melt',ico:'💧',nm:'물의 상태변화',gr:[4],unit:'4-2 물의 상태변화',why:'얼음↔물↔수증기, 증발과 응결.'},
+      {t:'dissolve',ico:'🥄',nm:'용해와 용액',gr:[5],unit:'5-1 용해와 용액',why:'설탕이 녹는 원리. 식히면 도로 나오는 재결정!'},
+      {t:'acid',ico:'🧪',nm:'산과 염기',gr:[5],unit:'5-2 산과 염기',why:'산·염기 중화. 중화점에서 색이 확 뒤집혀요.'},
+      {t:'burn',ico:'🔥',nm:'연소와 소화',gr:[6],unit:'6-2 연소와 소화',why:'타는 조건과 끄는 법. 기름 불엔 물 금지!'},
+      {t:'heat',ico:'🌡️',nm:'열의 이동',gr:[5],unit:'5-1 온도와 열',why:'전도·대류·복사로 열이 옮겨가는 길.'}
+    ],
+    life:[
+      {t:'plant',ico:'🌱',nm:'식물의 한살이',gr:[4],unit:'4-1 식물의 한살이',why:'씨앗→꽃→열매. 빛 없이도 싹이 틀까?'},
+      {t:'animal',ico:'🦋',nm:'동물의 한살이',gr:[3],unit:'3-2 동물의 한살이',why:'완전·불완전 변태. 어른벌레는 더 안 자라요.'},
+      {t:'foodchain',ico:'🦅',nm:'먹이사슬·먹이그물',gr:[5],unit:'5-2 생물과 환경',why:'최상위 포식자를 없애면? 생태계 연쇄 붕괴!'},
+      {t:'bodysys',ico:'🫁',nm:'우리 몸 기관계',gr:[6],unit:'6-2 우리 몸의 구조와 기능',why:'소화·호흡·순환·배설이 이어지는 길.'}
+    ],
+    force:[
+      {t:'magnet',ico:'🧲',nm:'자석의 성질',gr:[3],unit:'3-1 자석의 이용',why:'반으로 잘라도 양쪽 다 N·S극!'},
+      {t:'circuit',ico:'💡',nm:'전기 회로',gr:[4],unit:'4-2 전기의 이용',why:'직렬에 전구 늘리면 오히려 어두워져요.'},
+      {t:'light',ico:'🔦',nm:'빛의 성질',gr:[6],unit:'6-1 빛과 렌즈',why:'빛의 직진·반사·굴절과 그림자.'},
+      {t:'sound',ico:'🔊',nm:'소리의 성질',gr:[3],unit:'3-2 소리의 성질',why:'진동이 만드는 소리, 높낮이와 세기.'},
+      {t:'motion',ico:'🏃',nm:'물체의 운동',gr:[5],unit:'5-2 물체의 운동',why:'속력 = 거리 ÷ 시간. 빠르기 비교.'}
+    ]
+  };
+  var AREAS=[
+    {k:'earth',cls:'a-earth',nm:'🌏 지구와 우주',desc:'지구·달·태양·별, 그리고 우리가 사는 땅'},
+    {k:'matter',cls:'a-matter',nm:'🧪 물질과 변화',desc:'상태·용해·산과 염기·연소 — 물질이 변하는 이야기'},
+    {k:'life',cls:'a-life',nm:'🌱 생명',desc:'식물·동물·생태계·우리 몸'},
+    {k:'force',cls:'a-force',nm:'⚡ 힘과 에너지',desc:'자석·전기·빛·소리·운동'}
+  ];
+  function gradeBand(gr){ return (gr.indexOf(3)>=0||gr.indexOf(4)>=0)?(gr[0]<=3?'low':'mid'):'high'; }
+  // 학년→케이랩 학년칸: 3=low, 4=mid, 5·6=high (도구 학년칸 규약)
+  function toBand(g){ return g<=3?'low':g<=4?'mid':'high'; }
+
+  var host=document.getElementById('areas'), curG='all';
+  function link(tool){
+    if(tool.proto) return tool.proto;
+    var g=(curG==='all')?tool.gr[0]:+curG;
+    return '../teacher/klab.html?tool='+encodeURIComponent(tool.t)
+      +'&label='+encodeURIComponent(tool.nm)
+      +'&grade='+toBand(g)+'&from=hub';
+  }
+  function render(){
+    host.innerHTML='';
+    AREAS.forEach(function(A){
+      var sec=document.createElement('div'); sec.className='area '+A.cls;
+      var cards=TOOLS[A.k].map(function(x){
+        var vis=(curG==='all')||x.gr.indexOf(+curG)>=0;
+        var gtxt=x.gr.map(function(g){return g+'학년';}).join('·');
+        return '<div class="card'+(x.hero?' hero':'')+(vis?'':' dim')+'">'
+          +'<div class="top"><span class="ico">'+x.ico+'</span><span class="nm">'+x.nm+'</span></div>'
+          +'<div class="badges"><span class="bd bd-g">'+gtxt+'</span><span class="bd bd-u">'+x.unit+'</span>'+(x.hero?'<span class="bd bd-new">NEW</span>':'')+'</div>'
+          +'<div class="why">'+x.why+'</div>'
+          +'<a href="'+link(x)+'">열기 →</a></div>';
+      }).join('');
+      sec.innerHTML='<h2>'+A.nm+'</h2><div class="desc">'+A.desc+'</div><div class="grid">'+cards+'</div>';
+      host.appendChild(sec);
+    });
+  }
+  document.querySelectorAll('.gbtn').forEach(function(b){
+    b.onclick=function(){ curG=b.dataset.g;
+      document.querySelectorAll('.gbtn').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on'); render(); };
+  });
+  render();
+})();
+</script>
+</body>
+</html>
