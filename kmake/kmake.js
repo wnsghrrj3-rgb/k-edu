@@ -6,7 +6,7 @@
 
 /* 슬롯 커스텀 속성 직렬화 */
 fabric.Object.prototype.toObject = (function (orig) {
-  return function (extra) { return orig.call(this, ['kmSlot', 'kmType', 'anim'].concat(extra || [])); };
+  return function (extra) { return orig.call(this, ['kmSlot', 'kmType', 'anim', 'kmPhoto'].concat(extra || [])); };
 })(fabric.Object.prototype.toObject);
 
 /* ---------- 데이터 ---------- */
@@ -226,21 +226,22 @@ function makeArrow(x1, y1, x2, y2, color, w) {
 }
 document.getElementById('imgInput').addEventListener('change', function (e) {
   const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => fabric.Image.fromURL(ev.target.result, img => {
+  KM_PHOTO.loadImageFile(f, url => fabric.Image.fromURL(url, img => {
     if (imgTarget) {
       const t = imgTarget; img.set({ left: t.left, top: t.top, originX: t.originX, originY: t.originY, angle: t.angle });
       img.scaleToWidth(t.getScaledWidth()); img.kmSlot = t.kmSlot;
+      KM_PHOTO.inherit(img, t); // 마스크·보정·모션 상속 (템플릿 사진 교체의 핵심)
       const i = canvas.getObjects().indexOf(t); canvas.remove(t); canvas.add(img); img.moveTo(i);
       applyMode(); imgTarget = null;
+      if (mode === 'edit') { canvas.setActiveObject(img); onSelect(); }
     } else {
       const max = Math.min(baseW * 0.65, baseH * 0.65), s = Math.min(max / img.width, max / img.height, 1);
       img.set({ left: ctr().left, top: ctr().top, originX: 'center', originY: 'center', scaleX: s, scaleY: s });
       canvas.add(img); canvas.setActiveObject(img);
     }
     canvas.requestRenderAll();
-  }, { crossOrigin: 'anonymous' });
-  r.readAsDataURL(f); e.target.value = '';
+  }, { crossOrigin: 'anonymous' }), m => toast(m));
+  e.target.value = '';
 });
 
 /* ============ 스마트 정렬 가이드 ============ */
@@ -592,6 +593,8 @@ function buildPanel(o) {
     <div class="field"><label>투명도</label><div class="range-row"><input type="range" id="pOp" min="10" max="100" value="${Math.round((o.opacity ?? 1) * 100)}"><span class="val" id="pOpV">${Math.round((o.opacity ?? 1) * 100)}%</span></div></div>
     <div class="dim-grid"><div class="field"><label>너비</label><input id="pW" value="${Math.round(o.getScaledWidth())}" inputmode="numeric"></div>
     <div class="field"><label>높이</label><input id="pH" value="${Math.round(o.getScaledHeight())}" inputmode="numeric"></div></div></div>`;
+  // 📸 사진 (마스크·보정 — photo.js)
+  if (o.type === 'image' && o.kmType !== 'background') h += KM_PHOTO.panelHTML(o);
   // ✨ 움직임 (모션 엔진)
   h += KM_MOTION.panelHTML(o);
   // 슬롯
@@ -622,6 +625,11 @@ function bindPanel(o, isText) {
   if ($('pW')) $('pW').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToWidth(v); render(); pushHistory(); syncPanelDims(); } };
   if ($('pH')) $('pH').onchange = e => { const v = parseInt(e.target.value); if (v > 0) { o.scaleToHeight(v); render(); pushHistory(); syncPanelDims(); } };
   KM_MOTION.bindPanel(o);
+  if (o.type === 'image' && o.kmType !== 'background') KM_PHOTO.bindPanel(o, {
+    render, pushHistory,
+    rebuildPanel: buildPanel,
+    requestSwap: t => { imgTarget = t; document.getElementById('imgInput').click(); },
+  });
   if ($('pSlot')) $('pSlot').onchange = e => { o.kmSlot = e.target.checked ? { on: true, label: (o.kmSlot && o.kmSlot.label) || '' } : { on: false }; pushHistory(); buildPanel(o); };
   if ($('pSlotLabel')) $('pSlotLabel').onchange = e => { o.kmSlot = { on: true, label: e.target.value }; pushHistory(); };
 }
