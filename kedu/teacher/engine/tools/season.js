@@ -15,6 +15,16 @@
    - 의존: THREE (전역, preview의 vendor/three.min.js), window.KLab
    v3 · 3층: 미션 6단계(만들기↔생각형) + 🌀 만약에(기울기 90°=진짜 천왕성!,
        남반구 호주=크리스마스가 한여름, 공전 멈춤=영원한 한 계절).
+   v4 · 탐구 표준 v2 (redesigns/season.md 카드 구현 — 미션·퀴즈·학년칸 100% 보존, 자유탐구만 증축):
+       ▸ 1층 변수 개방(자유탐구): 📏 태양까지 거리 0.8~1.2 AU 슬라이더(고 · 원본 E칸 미이행분
+         — 아무리 당겨도 남중고도·낮 길이 불변 = "거리는 계절의 원인이 아니다" 반례)
+         · 🧭 관측 위도 -90~+90° 슬라이더(중·고 · 37.5° 고정 해제 — 남반구 반전·극지 백야)
+         · 🌍 지구 잡기 → 무대 가로 드래그 = 궤도 위 지구 드래그(고)
+       ▸ 2층 만약에 +1: 🥚 궤도가 심하게 찌그러진 타원이라면(고) — 거리차에도 남중고도 불변
+         + 진짜 지구의 근일점 = 북반구 한겨울(1월 초) 반전 2연타
+       ▸ 3층 예측 노트: 거리·위도 실험 = 🔮 예측 선택 후 확인, 만약에 정리 = 자동 기록.
+         ✔적중/✘빗나감 칩 세션 누적, 5칩 = 꼬마 과학자 토스트
+       ▸ 4층 표현력: assets/textures/earth/earth_day.png 재사용 승급 로더(폴백·상태 라벨)
    - config: { orb(0~360, 0=춘분·90=하지·180=추분·270=동지, 기본 90),
                tilt(0~35, 기본 23.5), lat(기본 37.5), mode:"free"|"mission"|"quiz" }
    ============================================================================ */
@@ -51,16 +61,24 @@
     var lat  = (config.lat!=null)?config.lat:37.5;
     var ui=window.KLab.ui;
     var mode=(['free','mission','quiz'].indexOf(config.mode)>=0)?config.mode:'free';
+    /* ── v2 자유탐구 변수 (탐구 표준 v2 1층) ── */
+    var distAU=1, latV=lat, grabOrb=false;
+    /* ── v2 예측 노트 (3층) — 세션 메모리 칩, localStorage 불요 ── */
+    var chips=[], chipDone=false, tiltChipDone=false;
+    function snd(n){ if(window.KLab&&window.KLab.sound) window.KLab.sound.play(n); }
+    function v2reset(){ distAU=1; latV=lat; grabOrb=false; }
+    /* 남반구 계절 반전 표 (v2 위도 변수·만약에 south 공용) */
+    var FLIP={summer:['❄️','겨울'],winter:['☀️','여름'],spring:['🍂','가을'],fall:['🌸','봄'],none:['⚪','계절 없음']};
     /* ── 학년 칸 (헌법 3장) — 같은 기울기 무대 공유, 노출(슬라이더)·미션·만약에·모드탭만 칸별 스왑 ──
        저=사계절 통합(계절 버튼만) / 중=계절과 태양높이(재생+공전) / 고=자전축 기울기 원리(기울기 슬라이더 풀버전). */
     var GRADES={
-      low:  { modes:['free','mission','quiz'],          showPlay:false, showOrb:false, showTilt:false, mIdx:[0,1,2],       wif:[],                       hint:'계절 버튼을 눌러 봄·여름·가을·겨울 해의 높이를 비교해 봐요.' },
-      mid:  { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:false, mIdx:[0,1,2],       wif:['south'],                hint:'▶ 1년 재생으로 계절마다 해 높이·낮 길이가 달라지는 걸 봐요.' },
-      high: { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:true,  mIdx:[0,1,2,3,4,5], wif:['ura','south','stops'],  hint:'🌐 자전축 기울기를 0으로 내려 보세요 — 계절이 사라질까요?' }
+      low:  { modes:['free','mission','quiz'],          showPlay:false, showOrb:false, showTilt:false, mIdx:[0,1,2],       wif:[],                             v2:{},                              hint:'계절 버튼을 눌러 봄·여름·가을·겨울 해의 높이를 비교해 봐요.' },
+      mid:  { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:false, mIdx:[0,1,2],       wif:['south'],                      v2:{lat:true},                      hint:'▶ 1년 재생으로 계절마다 해 높이·낮 길이가 달라지는 걸 봐요.' },
+      high: { modes:['free','mission','quiz','whatif'],  showPlay:true,  showOrb:true,  showTilt:true,  mIdx:[0,1,2,3,4,5], wif:['ura','south','stops','ell'],  v2:{lat:true,dist:true,grab:true},  hint:'🌐 자전축 기울기를 0으로 내려 보세요 — 계절이 사라질까요?' }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; playing=false; orb=90; tilt=23.5; dayCnt=0; southOn=false;
+      grade=g; wif.reset(); mode='free'; mStep=0;mDone=false;mLock=false; playing=false; orb=90; tilt=23.5; dayCnt=0; southOn=false; v2reset();
       makeWif(); buildUI();
     }});
     function curMissions(){ return GRADES[grade].mIdx.map(function(i){return MISSIONS[i];}); }
@@ -132,7 +150,12 @@
         q:'지구가 공전을 딱 멈추면, 계절은 어떻게 될까요?',
         ch:['한 계절이 영원히 계속돼요','지금처럼 돌아요','계절이 더 빨라져요'], a:0,
         reveal:'계절이 바뀌는 건 기울어진 채 공전하기 때문! 멈추면 그 위치의 계절이 영원히 — 여름에서 멈췄다면 끝나지 않는 여름이에요.',
-        tip:'▶ 시간 흐르기 — 날짜가 흘러도 남중고도·계절이 그대로!' }
+        tip:'▶ 시간 흐르기 — 날짜가 흘러도 남중고도·계절이 그대로!' },
+      ell:{ icon:'🥚', title:'궤도가 심하게 찌그러진 타원이라면?',
+        q:'궤도가 찌그러져 태양에 바짝 가까워지는 때가 생기면, 그때가 여름이 될까요?',
+        ch:['네! 가까우면 여름이 돼요','아니요 — 계절은 자전축 기울기가 정해요','궤도가 찌그러지면 계절이 사라져요'], a:1,
+        reveal:'지구가 태양에 바짝 다가와도 남중고도는 꿈쩍 안 해요 — 계절은 거리가 아니라 기울기가 정해요! 놀라운 사실 하나 더: 진짜 지구 궤도도 살짝 타원인데, 태양에 가장 가까운 날은 오히려 북반구의 한겨울(1월 초)이에요. "여름=가까워서"는 진짜 지구가 스스로 반증하는 오개념!',
+        tip:'▶ 1년 재생 — 지구가 태양에 바짝 붙어도 남중고도 숫자가 그대로인 걸 확인해요!' }
     };
     var wif;
     function makeWif(){
@@ -142,10 +165,10 @@
         scenarios:scen,
         rebuild:function(){buildUI();},
         footEl:function(){return el.querySelector('.se-foot');},
-        onSelect:function(k){ playing=false; dayCnt=0; southOn=(k==='south');
+        onSelect:function(k){ playing=false; dayCnt=0; southOn=(k==='south'); v2reset();
           tilt=(k==='ura')?90:23.5; orb=90; },
         onPlay:function(){ dayCnt=0; },
-        onExit:function(){ playing=false; dayCnt=0; southOn=false; tilt=23.5; orb=90; }
+        onExit:function(){ playing=false; dayCnt=0; southOn=false; tilt=23.5; orb=90; v2reset(); }
       });
     }
     makeWif();
@@ -192,6 +215,31 @@
       if(mode==='mission'){var CMB=curMissions();bar=mDone?ui.doneBar():ui.missionBar(CMB[mStep].text,mStep,CMB.length);}
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); }
+      /* ── v2 예측 노트 (3층) — 만약에 정리 화면 도달 시 칩 1개 기록 ── */
+      if(mode==='whatif'){
+        if(wif.state.phase==='reveal'&&!chipDone){
+          chipDone=true;
+          var cw=WHATIF[wif.state.key];
+          chips.push({k:wif.state.key,hit:(wif.state.choice===cw.a)});
+          chipToast();
+          snd(wif.state.choice===cw.a?'success':'pop');
+        } else if(wif.state.phase!=='reveal'){ chipDone=false; }
+      }
+      /* ── v2 변수 행 (탐구 표준 v2 1층 — 자유탐구 전용, 학년 게이팅) ── */
+      var g2=GRADES[grade].v2||{}, sbt='font-size:16px;padding:9px 13px;border-radius:12px;border:2.5px solid;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
+      var v2row='';
+      if(mode==='free'&&(g2.lat||g2.dist||g2.grab)){
+        v2row='<div class="se-v2" style="display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          +(g2.dist?('<span style="font-size:15px;font-weight:800;color:#5a7894;font-family:inherit;">📏 태양까지 거리</span>'
+            +'<input class="se-dist" type="range" min="0.8" max="1.2" step="0.01" value="'+distAU+'" style="width:120px;">'
+            +'<span class="se-distv" style="font-size:15px;font-weight:800;color:#1565C0;min-width:62px;font-family:inherit;">'+distAU.toFixed(2)+' AU</span>'):'')
+          +(g2.lat?('<span style="font-size:15px;font-weight:800;color:#5a7894;font-family:inherit;">🧭 관측 위도</span>'
+            +'<input class="se-lat" type="range" min="-90" max="90" step="1" value="'+Math.round(latV)+'" style="width:120px;">'
+            +'<span class="se-latv" style="font-size:15px;font-weight:800;color:#C24106;min-width:46px;font-family:inherit;">'+Math.round(latV)+'°</span>'):'')
+          +(g2.grab?('<button class="se-grab" style="'+sbt+'border-color:#0B7285;'+(grabOrb?'background:#0B7285;color:#fff;':'background:#fff;color:#0B7285;')+'">'+(grabOrb?'✅ 지구 놓기':'🌍 지구 잡기')+'</button>'):'')
+        +'</div>';
+      }
+      var chipsRow=(mode==='free'||mode==='whatif')?'<div class="se-chips" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;"></div>':'';
       el.innerHTML='<style>.se-btn:active,.se-sea:active,.kl-choice:active{transform:translateY(2px);}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.se-sea.on{background:#1565C0 !important;border-color:#1565C0 !important;color:#fff !important;}'
@@ -215,7 +263,9 @@
           +'<span class="se-tval" style="font-size:18px;font-weight:800;color:#E8590C;min-width:54px;text-align:center;font-family:inherit;"></span>'
         +'</div>'):'')
         +'</div>'
+        + v2row
         +'<div class="kl-stage-host" style="position:relative;"><div class="se-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'42vh')+';min-height:'+(mode==='quiz'?'260':'320')+'px;background:radial-gradient(120% 120% at 60% 35%,#0D1430 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
+          +(mode==='quiz'?'':'<div class="se-texlab" style="position:absolute;top:10px;left:12px;font-size:12px;font-weight:800;color:#8fa3cc;background:rgba(8,12,26,0.55);border-radius:10px;padding:4px 9px;pointer-events:none;font-family:inherit;"></div>')
           +'<div class="se-sunpath" style="position:absolute;bottom:12px;left:12px;width:226px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
             +'<svg class="se-spsvg" viewBox="-84 -50 168 92" width="218" height="118">'
               +'<defs><linearGradient id="seSp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2a52"/><stop offset="1" stop-color="#314a86"/></linearGradient></defs>'
@@ -244,21 +294,109 @@
           +'</div>'
         +'</div></div>'
         +'<div class="se-foot">'+foot+'</div>'
-        +'<div class="se-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>';
+        +'<div class="se-status" style="text-align:center;margin-top:10px;font-weight:800;font-family:inherit;line-height:1.4;"></div>'
+        + chipsRow;
       ui.bindModeTabs(el,function(m){
         wif.reset();
         mode=m; mStep=0;mDone=false;mLock=false; playing=false; orb=(m==='mission')?0:90; tilt=23.5;
-        dayCnt=0; southOn=false;
+        dayCnt=0; southOn=false; v2reset();   /* v2: 미션·퀴즈 결정성 보호 */
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
       });
       initThree(); bind(); bindChoices(); bands.bind(el);
       if(mode==='whatif')wif.bind(el);
       if(mode==='mission')missionFoot();
+      renderChips(); texLabel();
       render(); renderStatus();
     }
 
-    var stage,scene,camera,renderer,earthPivot,earthSphere,pin,orbitR=5;
+    /* ── v2 예측 노트 칩 (3층) — 세션 누적, 5칩 토스트 ── */
+    var CHIP_LABEL={ ura:'🪐 기울기90 → 극단 계절', south:'🦘 남반구 → 계절 반전', stops:'⏸ 공전 멈춤 → 계절 고정',
+      ell:'🥚 타원 궤도 → 계절 그대로', dist:'📏 거리 실험 → 계절 그대로', lat:'🧭 위도 실험 → 계절 반전', tilt0:'🌐 기울기 0 → 계절 소멸' };
+    function chipToast(){ if(chips.length===5){ setTimeout(function(){ ui.toast(el,true,'🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!'); },80); } }
+    function renderChips(){
+      var host=el.querySelector('.se-chips'); if(!host)return;
+      host.innerHTML=chips.map(function(c){
+        var tag=c.confirm?'✔확인':(c.hit?'✔예측적중':'✘예측빗나감');
+        return '<span class="se-chip" style="font-size:13.5px;font-weight:800;padding:5px 10px;border-radius:999px;border:2px solid '+(c.hit?'#12B886':'#E8590C')+';color:'+(c.hit?'#0B7A5C':'#C24106')+';background:#fff;font-family:inherit;">'
+          +CHIP_LABEL[c.k]+' '+tag+'</span>';
+      }).join('');
+    }
+
+    /* ── v2 예측 무장 (3층) — 거리·위도 실험: 첫 조작 = 🔮 예측 → 확인 = 해소·칩 ── */
+    var pred={ dist:{asked:false,ch:-1,lo:false,hi:false,done:false},
+               lat: {asked:false,ch:-1,done:false} };
+    var PRED={
+      dist:{ q:'🔮 예측 먼저! 태양까지 거리를 바꾸면 계절은 어떻게 될까요?',
+        ch:['가까우면 여름이 된다','지구가 받는 빛만 달라질 뿐, 계절(남중고도·낮 길이)은 그대로','아무 변화 없다'],
+        tip:'이제 슬라이더를 양 끝(0.8 ↔ 1.2 AU)까지 움직여 확인해 봐요!' },
+      lat:{ q:'🔮 예측 먼저! 남반구(위도 −)로 내려가면 계절은 어떻게 될까요?',
+        ch:['남반구도 같은 계절','정반대 계절','남반구엔 계절이 없다'],
+        tip:'위도를 −20° 아래로 내려 남반구에서 확인해 봐요!' }
+    };
+    function predPrompt(kind){
+      var fc=el.querySelector('.se-foot'); if(!fc||mode!=='free')return;
+      var P=PRED[kind];
+      fc.innerHTML='<div class="se-pred" style="text-align:center;margin-top:8px;">'
+        +'<div style="font-size:17px;font-weight:800;color:#7048E8;margin-bottom:7px;font-family:inherit;">'+P.q+'</div>'
+        +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+        +P.ch.map(function(c,i){ return '<button class="se-pch" data-kind="'+kind+'" data-v="'+i+'" style="font-size:15.5px;padding:10px 14px;border-radius:12px;border:2.5px solid #845EF7;background:#fff;color:#5F3DC4;cursor:pointer;font-weight:800;font-family:inherit;line-height:1.3;">'+c+'</button>'; }).join('')
+        +'</div></div>';
+      fc.querySelectorAll('.se-pch').forEach(function(b){
+        b.addEventListener('click',function(){
+          pred[kind].ch=+b.dataset.v; snd('select');
+          fc.innerHTML='<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:800;color:#0B7285;font-family:inherit;">📝 예측 접수! '+PRED[kind].tip+'</div>';
+        });
+      });
+    }
+    function predResolve(kind){
+      var p=pred[kind]; if(p.done||p.ch<0)return; p.done=true;
+      var hit,msg;
+      if(kind==='dist'){
+        hit=(p.ch!==0);
+        msg=(p.ch===1)?'✔ 예측 적중 — 거리를 아무리 바꿔도 남중고도·낮 길이는 그대로! 거리는 계절의 원인이 아니에요.'
+           :(p.ch===2)?'✔ 절반 적중 — 계절은 그대로 맞아요! 다만 "아무 변화 없음"은 아니에요. 지구 전체가 받는 빛의 양은 달라져요(온 지구가 더워지거나 추워짐). 계절의 원인이 아닐 뿐!'
+           :'✘ 예측 빗나감 — 가까워져도 여름이 되지 않았죠? 계절은 거리가 아니라 자전축 기울기가 정해요.';
+      } else {
+        hit=(p.ch===1);
+        msg=hit?'✔ 예측 적중 — 남반구는 계절이 정반대! 북반구가 태양 쪽으로 기울 때 남반구는 반대쪽으로 기울어요.'
+           :'✘ 예측 빗나감 — 남반구는 계절이 정반대예요! 호주의 크리스마스가 한여름인 까닭이죠.';
+      }
+      chips.push({k:kind,hit:hit}); renderChips(); chipToast(); snd(hit?'success':'pop');
+      var fc=el.querySelector('.se-foot');
+      if(fc&&mode==='free')fc.innerHTML='<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:800;color:'+(hit?'#0B7A5C':'#C24106')+';font-family:inherit;max-width:640px;margin-left:auto;margin-right:auto;line-height:1.5;">'+msg+'</div>';
+    }
+
+    var stage,scene,camera,renderer,earthPivot,earthSphere,pin,orbGrp,orbitR=5;
+    /* ── v2 4층: 실사 텍스처 승급 로더 — earth 자산 재사용, 없으면 캔버스 그림 폴백(절대 안 깨짐) ── */
+    var texReal=false, texTried=false, texImg=null;
+    function loadTex(){
+      if(texTried)return; texTried=true;
+      try{
+        var im=new Image();
+        im.onload=function(){ texImg=im; texReal=true; applyTex(); texLabel(); render(); };
+        im.onerror=function(){ texReal=false; texLabel(); };
+        im.src='/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png';
+      }catch(e){ texReal=false; }
+    }
+    function applyTex(){
+      if(!texImg||!earthSphere)return;
+      try{
+        var c=document.createElement('canvas'); c.width=texImg.naturalWidth||1024; c.height=texImg.naturalHeight||512;
+        var x=c.getContext('2d'); if(!x||!x.drawImage)return;
+        x.drawImage(texImg,0,0);
+        earthSphere.material.map=new T.CanvasTexture(c); earthSphere.material.needsUpdate=true;
+      }catch(e){}
+    }
+    function texLabel(){
+      var lb=el.querySelector('.se-texlab'); if(!lb)return;
+      lb.textContent=texReal?'🖼️ 실사 지구 텍스처':'🎨 기본 그림 지구';
+    }
+    function pinPos(){
+      if(!pin)return;
+      var latr=latV*Math.PI/180, pr=0.64;
+      pin.position.set(Math.cos(latr)*pr, Math.sin(latr)*pr, 0);
+    }
     function earthTex(){
       var c=document.createElement('canvas'); c.width=256; c.height=128; var x=c.getContext('2d');
       x.fillStyle='#1565C0'; x.fillRect(0,0,256,128);
@@ -285,21 +423,21 @@
       sx.fillStyle=g; sx.fillRect(0,0,128,128);
       var sunSpr=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(sc),transparent:true,depthTest:false}));
       sunSpr.position.set(0,0,0); sunSpr.scale.set(2.6,2.6,1); scene.add(sunSpr);
-      // 궤도 링
+      // 궤도 그룹(링+4계절 마커) — v2: 거리(distAU)·타원(만약에 ell) 변형을 그룹 스케일/오프셋으로
+      orbGrp=new T.Group(); scene.add(orbGrp);
       var ring=new T.Mesh(new T.RingGeometry(orbitR-0.025,orbitR+0.025,80), new T.MeshBasicMaterial({color:0x3a4a6a,side:T.DoubleSide,transparent:true,opacity:0.55}));
-      ring.rotation.x=Math.PI/2; scene.add(ring);
-      // 4계절 위치 마커(궤도 위, 고정)
-      SEASONS.forEach(function(s){ var p=earthPos(s.o);
+      ring.rotation.x=Math.PI/2; orbGrp.add(ring);
+      SEASONS.forEach(function(s){ var p=basePos(s.o);
         var m=new T.Mesh(new T.SphereGeometry(0.1,12,8), new T.MeshBasicMaterial({color:0x6b7da0}));
-        m.position.set(p.x,0,p.z); scene.add(m); });
+        m.position.set(p.x,0,p.z); orbGrp.add(m); });
       // 지구 pivot(공전 위치) — 자전축 기울기는 pivot.rotation.z로 '월드 고정 방향'
       earthPivot=new T.Group(); scene.add(earthPivot);
       earthSphere=new T.Mesh(new T.SphereGeometry(0.62,40,28), new T.MeshStandardMaterial({map:earthTex(),roughness:1,metalness:0}));
       earthPivot.add(earthSphere);
-      // 우리나라 핀(자전 따라감 → earthSphere 자식, 위도 lat·경도 0)
-      var latr=lat*Math.PI/180, pr=0.64;
+      // 우리나라 핀(자전 따라감 → earthSphere 자식, 위도 latV 가변·경도 0)
       pin=new T.Mesh(new T.SphereGeometry(0.07,14,10), new T.MeshBasicMaterial({color:0xE03131}));
-      pin.position.set(Math.cos(latr)*pr, Math.sin(latr)*pr, 0); earthSphere.add(pin);
+      earthSphere.add(pin); pinPos();
+      loadTex(); if(texImg)applyTex();
       // 자전축 선(기울기만, 자전 안 함 → pivot 직속)
       var axis=new T.Mesh(new T.CylinderGeometry(0.022,0.022,2.0,8), new T.MeshBasicMaterial({color:0xFFD43B}));
       earthPivot.add(axis);
@@ -313,17 +451,25 @@
       camera.lookAt(0,0,0); }
 
     // 지구 궤도 위치: φ=(orb+90)° → orb=90(하지) 때 지구 -X(북극이 태양 쪽), orb=270(동지) 때 +X
-    function earthPos(o){ var ph=(o+90)*Math.PI/180; return {x:orbitR*Math.cos(ph), z:orbitR*Math.sin(ph)}; }
+    function basePos(o){ var ph=(o+90)*Math.PI/180; return {x:orbitR*Math.cos(ph), z:orbitR*Math.sin(ph)}; }
+    /* v2 궤도 기하 — 기본 원(반지름 distAU 배) / 만약에 ell = 이심률 0.55 타원(태양=초점) */
+    function wifEll(){ return wif.active()&&wif.state.key==='ell'; }
+    function orbGeom(){
+      if(wifEll()){ var e=0.55, a=orbitR, b=a*Math.sqrt(1-e*e); return {a:a,b:b,cx:-a*e}; }
+      var r=orbitR*distAU; return {a:r,b:r,cx:0};
+    }
+    function earthPos(o){ var g=orbGeom(), ph=(o+90)*Math.PI/180; return {x:g.cx+g.a*Math.cos(ph), z:g.b*Math.sin(ph)}; }
+    function sunDistAU(o){ var p=earthPos(o); return Math.sqrt(p.x*p.x+p.z*p.z)/orbitR; }
 
     function renderSunPath(){
       var g=el.querySelector('.se-spg'); if(!g)return;
       g.innerHTML='';
       function S(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-      var alt=Math.max(0,noonAlt(orb,tilt,lat)), dh=Math.max(0.5,dayHours(orb,tilt,lat));
+      var alt=Math.max(0,noonAlt(orb,tilt,latV)), dh=Math.max(0.5,dayHours(orb,tilt,latV));
       var half=Math.min(76, dh/24*152/2+18);          // 낮 길이 → 경로 폭
       var peak=26-(alt/90)*62;                        // 남중고도 → 꼭대기 높이
       // 참조: 기울기 0°(계절 없음)의 경로 — 점선
-      var alt0=90-Math.abs(lat), peak0=26-(alt0/90)*62, half0=Math.min(76,12/24*152/2+18);
+      var alt0=90-Math.abs(latV), peak0=26-(alt0/90)*62, half0=Math.min(76,12/24*152/2+18);
       g.appendChild(S('path',{d:'M '+(-half0)+' 26 Q 0 '+peak0.toFixed(1)+' '+half0+' 26',stroke:'#7d8db5','stroke-width':1.4,fill:'none','stroke-dasharray':'4 4',opacity:0.65}));
       // 현재 경로
       g.appendChild(S('path',{d:'M '+(-half)+' 26 Q 0 '+peak.toFixed(1)+' '+half+' 26',stroke:'#FFD43B','stroke-width':2.6,fill:'none',class:'se-sparc'}));
@@ -344,13 +490,15 @@
       if(cap)cap.textContent=(tilt<=1)?'기울기 0° — 일 년 내내 같은 길, 같은 그림자':('남중고도 '+Math.round(alt)+'° → 그림자가 '+(alt>=60?'짧아요':(alt<=35?'길어요':'중간이에요'))+' · 낮 '+dh.toFixed(1)+'시간');
     }
     function render(){
+      if(orbGrp){ var og=orbGeom();                    // v2: 거리·타원을 궤도 그룹에 반영
+        orbGrp.scale.set(og.a/orbitR,1,og.b/orbitR); orbGrp.position.x=og.cx; }
       if(earthPivot){
         var p=earthPos(orb); earthPivot.position.set(p.x,0,p.z);
         earthPivot.rotation.z = tilt*Math.PI/180;     // 월드 고정 방향(+X쪽)으로 기울기
       }
       if(earthSphere) earthSphere.rotation.y = spin;   // 자전(시각 디테일)
-      // 2D 패널: 남중고도 호
-      var alt=Math.max(0,noonAlt(orb,tilt,lat));
+      // 2D 패널: 남중고도 호 (v2: 관측 위도 latV 반영)
+      var alt=Math.max(0,noonAlt(orb,tilt,latV));
       var altH = alt/90*60;                            // 정점 높이(픽셀)
       var arc=el.querySelector('.se-arc'), sun2d=el.querySelector('.se-sun2d');
       if(arc) arc.setAttribute('d','M -55 22 Q 0 '+(22-2*altH).toFixed(1)+' 55 22');
@@ -379,44 +527,91 @@
         var seaW=seasonOf(orb,tilt);
         if(wif.state.key==='stops'){ sw.innerHTML='<div style="font-size:32px;color:#0B7285;">📅 +'+Math.floor(dayCnt)+'일</div><div style="font-size:18px;color:#5a7894;margin-top:3px;">날짜가 흘러도 '+seaW.emo+' '+seaW.nm+' 그대로 — 계절은 공전이 만들어요!</div>'; return; }
         if(wif.state.key==='south'){
-          var FLIP={summer:['❄️','겨울'],winter:['☀️','여름'],spring:['🍂','가을'],fall:['🌸','봄'],none:['⚪','계절 없음']};
           var f=FLIP[seaW.k]||FLIP.none;
           sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🦘 호주 기준: 지금은 '+f[0]+' <b>'+f[1]+'</b>! (우리나라는 '+seaW.emo+' '+seaW.nm+')</div>'
             +'<div style="font-size:17px;color:#5a7894;margin-top:4px;">북반구와 남반구는 기우는 방향이 반대 — 계절도 정반대예요.</div>'; return; }
-        sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🪐 기울기 90° — 진짜 천왕성처럼! 남중고도 '+Math.round(noonAlt(orb,tilt,lat))+'°</div>'
+        if(wif.state.key==='ell'){
+          var dNow=sunDistAU(orb);
+          sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🥚 거리 '+dNow.toFixed(2)+' AU'+(dNow<0.7?' — 바짝!':(dNow>1.3?' — 멀리!':''))+' · 남중고도 '+Math.round(noonAlt(orb,tilt,latV))+'° <b>그대로</b></div>'
+            +'<div style="font-size:17px;color:#5a7894;margin-top:4px;">가까워져도 계절은 기울기가 정해요. 진짜 지구도 한겨울(1월 초)에 태양과 가장 가까워요!</div>'; return; }
+        sw.innerHTML='<div style="font-size:22px;color:#0B7285;">🪐 기울기 90° — 진짜 천왕성처럼! 남중고도 '+Math.round(noonAlt(orb,tilt,latV))+'°</div>'
           +'<div style="font-size:17px;color:#5a7894;margin-top:4px;">공전 위치에 따라 해가 안 뜨거나, 종일 떠 있는 극단의 계절이에요.</div>'; return;
       }
-      var alt=noonAlt(orb,tilt,lat), dh=dayHours(orb,tilt,lat), sea=seasonOf(orb,tilt);
+      var alt=noonAlt(orb,tilt,latV), dh=dayHours(orb,tilt,latV), sea=seasonOf(orb,tilt);
+      /* v2: 관측 위도가 남반구면 계절 표시 반전 */
+      var south=(latV<0), disp={emo:sea.emo,nm:sea.nm,col:sea.col};
+      if(south&&sea.k!=='none'){ var fd=FLIP[sea.k]; disp={emo:fd[0],nm:fd[1],col:sea.col}; }
       var s=el.querySelector('.se-status'), sub;
       if(sea.k==='none')
-        sub='자전축이 똑바로 서 있어요(기울기 0°). 공전 위치를 아무리 바꿔도 남중고도 52°·낮 12시간 그대로 — 계절이 생기지 않아요.';
+        sub='자전축이 똑바로 서 있어요(기울기 0°). 공전 위치를 아무리 바꿔도 남중고도·낮 길이 그대로 — 계절이 생기지 않아요.';
       else if(sea.k==='summer')
         sub='북반구가 태양 쪽으로 기울어 태양을 정면에 가깝게 받아요. 그래서 남중고도가 높고 낮이 길어 더워요.';
       else if(sea.k==='winter')
         sub='북반구가 태양 반대쪽으로 기울어 태양을 비스듬히 받아요. 그래서 남중고도가 낮고 낮이 짧아 추워요.';
       else
         sub='북반구가 태양 쪽도 반대쪽도 아니에요. 남중고도와 낮 길이가 여름·겨울의 중간이에요.';
-      s.innerHTML='<div style="font-size:25px;color:'+sea.col+';">'+sea.emo+' '+sea.nm
-          +(sea.k!=='none'?' · 남중고도 '+Math.round(alt)+'° · 낮 '+dh.toFixed(1)+'시간':'')+'</div>'
+      s.innerHTML='<div style="font-size:25px;color:'+disp.col+';">'+disp.emo+' '+disp.nm
+          +(sea.k!=='none'?' · 남중고도 '+Math.round(alt)+'° · 낮 '+dh.toFixed(1)+'시간':'')
+          +(south?' <span style="font-size:16px;color:#0B7285;">(남반구 기준)</span>':'')+'</div>'
         +'<div style="font-size:17px;color:'+C.sub+';margin-top:5px;">'+sub+'</div>'
-        +'<div style="font-size:15px;color:'+C.mute+';margin-top:4px;">계절이 생기는 건 지구-태양 거리 때문이 아니라, 자전축이 기울어진 채 공전하기 때문이에요.</div>';
+        +'<div style="font-size:15px;color:'+C.mute+';margin-top:4px;">계절이 생기는 건 지구-태양 거리 때문이 아니라, 자전축이 기울어진 채 공전하기 때문이에요.</div>'
+        /* ── v2 자유탐구 상태 줄 ── */
+        +((mode==='free'&&distAU!==1)?'<div class="se-distline" style="font-size:15px;color:#1565C0;margin-top:4px;">📏 거리 '+distAU.toFixed(2)+' AU — 남중고도·낮 길이는 그대로! 거리는 계절의 원인이 아니에요.</div>':'')
+        +((mode==='free'&&south)?'<div class="se-southline" style="font-size:15px;color:#0B7285;margin-top:4px;">🧭 남반구 관측 — 북반구와 계절이 정반대예요.</div>':'')
+        +((mode==='free'&&tilt>1&&dh>=23.5)?'<div class="se-polar" style="font-size:15px;color:#7048E8;margin-top:4px;">🧊 백야 — 하루 종일 해가 지지 않아요! (극지방 × 기울어진 지구)</div>':'')
+        +((mode==='free'&&tilt>1&&dh<=0.5)?'<div class="se-polar" style="font-size:15px;color:#7048E8;margin-top:4px;">🌑 극야 — 하루 종일 해가 뜨지 않아요! (극지방 × 기울어진 지구)</div>':'')
+        +((mode==='free'&&grabOrb)?'<div class="se-grabhint" style="font-size:15px;color:#0B7285;margin-top:4px;">🌍 무대를 좌우로 끌어 지구를 궤도 위에서 직접 옮겨요!</div>':'');
       // 계절 버튼 활성 표시
       el.querySelectorAll('.se-sea').forEach(function(b){ var on=Math.abs(((orb-(+b.dataset.o))%360+360)%360)<8 || Math.abs(((orb-(+b.dataset.o))%360+360)%360-360)<8;
         b.classList.toggle('on', on); });
       checkMission();
     }
     function setOrb(v){ if(wif.active()&&wif.state.key==='stops')return; orb=((v%360)+360)%360; var r=el.querySelector('.se-range'); if(r&&+r.value!==orb)r.value=orb; render(); renderStatus(); }
-    function setTilt(v){ if(wif.active()&&(wif.state.key==='stops'||wif.state.key==='ura'))return; tilt=Math.max(0,Math.min(35,v)); var r=el.querySelector('.se-tilt'); if(r&&+r.value!==tilt)r.value=tilt; render(); renderStatus(); }
+    function setTilt(v){ if(wif.active()&&(wif.state.key==='stops'||wif.state.key==='ura'))return; tilt=Math.max(0,Math.min(35,v)); var r=el.querySelector('.se-tilt'); if(r&&+r.value!==tilt)r.value=tilt;
+      /* v2 예측 노트: 자유탐구에서 기울기 0 도달 = 계절 소멸 확인 칩 */
+      if(mode==='free'&&tilt<=1&&!tiltChipDone){ tiltChipDone=true; chips.push({k:'tilt0',hit:true,confirm:true}); renderChips(); chipToast(); snd('success'); }
+      render(); renderStatus(); }
     var _mv,_up;
     function bind(){
       var rg=el.querySelector('.se-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setOrb(+e.target.value); });
       var tg=el.querySelector('.se-tilt'); if(tg)tg.addEventListener('input',function(e){ setTilt(+e.target.value); });
       var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',togglePlay);
       el.querySelectorAll('.se-sea').forEach(function(b){b.addEventListener('click',function(){ if(playing)togglePlay(); setOrb(+b.dataset.o); });});
+      /* ── v2 변수 컨트롤 바인딩 (자유탐구 전용) ── */
+      var dg=el.querySelector('.se-dist'); if(dg)dg.addEventListener('input',function(e){
+        if(!pred.dist.asked){ pred.dist.asked=true; predPrompt('dist'); }
+        distAU=+e.target.value;
+        var v=el.querySelector('.se-distv'); if(v)v.textContent=distAU.toFixed(2)+' AU';
+        if(distAU<=0.82)pred.dist.lo=true; if(distAU>=1.18)pred.dist.hi=true;
+        if(pred.dist.lo&&pred.dist.hi)predResolve('dist');
+        render(); renderStatus();
+      });
+      var lg=el.querySelector('.se-lat'); if(lg)lg.addEventListener('input',function(e){
+        if(!pred.lat.asked){ pred.lat.asked=true; predPrompt('lat'); }
+        latV=Math.max(-90,Math.min(90,+e.target.value));
+        var v=el.querySelector('.se-latv'); if(v)v.textContent=Math.round(latV)+'°';
+        if(latV<=-20)predResolve('lat');
+        pinPos(); render(); renderStatus();
+      });
+      var gb=el.querySelector('.se-grab'); if(gb)gb.addEventListener('click',function(){
+        grabOrb=!grabOrb; snd('select');
+        gb.textContent=grabOrb?'✅ 지구 놓기':'🌍 지구 잡기';
+        gb.style.background=grabOrb?'#0B7285':'#fff'; gb.style.color=grabOrb?'#fff':'#0B7285';
+        if(stage)stage.style.cursor=grabOrb?'ew-resize':'grab';
+        renderStatus();
+      });
+      // 카메라 드래그 (우주 시점 회전) / v2: 지구 잡기 중엔 가로 드래그 = 궤도 위 지구 이동
       var drag=false,px=0,py=0;
-      function dn(e){drag=true;stage.style.cursor='grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
-      function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;theta-=(p.clientX-px)*0.008;phi-=(p.clientY-py)*0.006;phi=Math.max(0.25,Math.min(1.45,phi));px=p.clientX;py=p.clientY;camPos();render();if(e.touches)e.preventDefault();}
-      function up(){drag=false;if(stage)stage.style.cursor='grab';}
+      function dn(e){drag=true;stage.style.cursor=grabOrb?'ew-resize':'grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
+      function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;
+        if(grabOrb){
+          if(playing)togglePlay();
+          setOrb(orb+(p.clientX-px)*0.7);
+          px=p.clientX;py=p.clientY;
+          if(e.touches)e.preventDefault(); return;
+        }
+        theta-=(p.clientX-px)*0.008;phi-=(p.clientY-py)*0.006;phi=Math.max(0.25,Math.min(1.45,phi));px=p.clientX;py=p.clientY;camPos();render();if(e.touches)e.preventDefault();}
+      function up(){drag=false;if(stage)stage.style.cursor=grabOrb?'ew-resize':'grab';}
       stage.addEventListener('mousedown',dn); stage.addEventListener('touchstart',dn,{passive:false});
       stage.addEventListener('touchmove',function(e){if(drag){mv(e);e.preventDefault();}},{passive:false});
       stage.addEventListener('touchend',up);
