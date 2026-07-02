@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<!--
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 2차시
+영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
+성취기준 [4사05-01] · 교과서 p.16~18
+중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
+직접조작: 방위표(나침반)로 위치 찾기 — 8방위 건물을 누르면 바늘이 회전하고 "학교에서 ○쪽에 △가 있어요"가 뜸 + 효과음. l01 엔진 100% 복제.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방위를 알아볼까요 · 사회 4-1</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#15803D; --green-d:#0F6B33; --cyan:#0891B2;
+  --bg:#F0FDF4; --bub:#DCFCE7; --ink:#0F172A; --muted:#64748B;
+  --amber-bg:#FFF8E1; --amber:#F57F17; --red:#DC2626;
+  --card:#ffffff; --line:#E2E8F0;
+}
+html,body{height:100%}
+body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;padding:14px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+@keyframes popBig{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes drawLine{to{transform:scaleX(1)}}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 4px 14px rgba(21,128,61,.32)}50%{transform:scale(1.04);box-shadow:0 6px 20px rgba(21,128,61,.5)}}
+@keyframes shakeNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.ka{background:var(--card);border-radius:18px;width:100%;max-width:1024px;height:min(92vh,820px);
+  padding:18px clamp(16px,3vw,30px);box-shadow:0 10px 30px rgba(0,0,0,.10);
+  display:flex;flex-direction:column;animation:fadeUp .5s ease both}
+
+/* 헤더 */
+.ka-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ka-lb{background:#F1F5F9;border:none;padding:7px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;font-weight:700;color:#475569;flex-shrink:0;font-size:13px}
+.ka-lb svg{width:15px;height:15px}
+.ka-bar{flex:1;height:5px;background:var(--bg);border-radius:999px;overflow:hidden}
+.ka-bar>div{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:999px;transition:width .35s ease;width:6%}
+.ka-pg{color:var(--green);font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;flex-shrink:0}
+.ka-sc{background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:999px;display:flex;align-items:center;gap:5px;flex-shrink:0;font-weight:700}
+.ka-sc svg{width:14px;height:14px}
+.ka-sc-n{font-family:'Nunito',sans-serif;font-weight:800;font-size:16px}
+.ka-sc-u{font-size:12px}
+
+/* 메인 */
+.ka-m{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.ka-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ka-bg{background:var(--amber-bg);color:var(--amber);padding:5px 14px;border-radius:30px;font-size:13px;
+  display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.ka-bg.s2{background:#E0F2FE;color:#0369A1}
+.ka-bg.s3{background:#EDE9FE;color:#6D28D9}
+.ka-bg.s4{background:#FCE7F3;color:#BE185D}
+.ka-bg.s5{background:#DCFCE7;color:var(--green)}
+.ka-bg svg{width:13px;height:13px}
+.ka-meta{font-size:13px;color:var(--muted)}
+.ka-t{font-size:clamp(20px,3.4vw,29px);margin-bottom:16px;line-height:1.4;color:var(--green);letter-spacing:-.3px;font-weight:700;animation:fadeUp .4s .15s ease both}
+.ka-bub{background:var(--bub);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);line-height:1.7;
+  margin-bottom:16px;border-left:4px solid var(--green);animation:fadeUp .4s .3s ease both}
+.ka-emph{position:relative;display:inline-block;font-weight:700;color:var(--green)}
+.ka-emph::after{content:'';position:absolute;bottom:2px;left:0;right:0;height:3px;background:var(--red);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:drawLine .6s .6s ease forwards}
+
+/* 시각 자료 */
+.ka-grp{display:flex;flex-direction:column;align-items:center;gap:14px}
+.scene-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.scene{width:clamp(120px,20vw,160px);border-radius:14px;overflow:hidden;border:2px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;animation:pop .4s ease both}
+.scene svg{width:100%;height:clamp(74px,11vw,96px);display:block}
+.scene .cap{padding:7px 4px;text-align:center;font-weight:700;font-size:clamp(13px,2.1vw,16px);color:var(--ink);background:#F8FAFC}
+.village{width:min(560px,92%);border:2px solid var(--line);border-radius:16px;background:#F8FFFB;padding:10px}
+.note{font-size:clamp(13px,2.1vw,16px);color:var(--muted);text-align:center}
+
+/* 발문 답 보기 */
+.reveal-btn{background:#fff;border:2px solid var(--green);color:var(--green);font-weight:700;font-family:inherit;
+  padding:10px 22px;border-radius:12px;cursor:pointer;font-size:clamp(14px,2.3vw,17px);margin-top:4px}
+.reveal-btn:hover{background:var(--bub)}
+.answer-box{background:var(--amber-bg);border-radius:14px;padding:14px 20px;font-size:clamp(15px,2.4vw,19px);
+  line-height:1.7;border-left:4px solid var(--amber);animation:fadeUp .4s ease both;max-width:620px}
+
+/* 문제 */
+.q-stem{font-size:clamp(16px,2.6vw,21px);font-weight:700;line-height:1.6;margin-bottom:14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:620px}
+.opt{background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:13px 14px;font-size:clamp(14px,2.3vw,17px);
+  font-weight:500;cursor:pointer;text-align:center;font-family:inherit;color:var(--ink);transition:.15s}
+.opt:hover{border-color:var(--green);background:var(--bub)}
+.opt.correct{border-color:var(--green);background:#DCFCE7;animation:pop .4s ease}
+.opt.wrong{border-color:var(--red);background:#FEE2E2;animation:shakeNo .4s ease}
+.opt:disabled{cursor:default}
+.fb{margin-top:14px;font-size:clamp(14px,2.3vw,17px);line-height:1.6;text-align:center;animation:fadeUp .35s ease both;max-width:620px}
+.fb.ok{color:var(--green);font-weight:700}
+.hint{margin-top:12px;background:#E0F2FE;border-radius:12px;padding:11px 16px;font-size:clamp(13px,2.2vw,16px);
+  line-height:1.6;color:#0C4A6E;max-width:560px;animation:fadeUp .35s ease both}
+
+/* 정리 자기평가 */
+.sum-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:600px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:#F8FFFB;border:2px solid var(--line);border-radius:12px;padding:12px 14px;font-size:clamp(14px,2.3vw,17px);line-height:1.5}
+.sum-item .n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.check{display:flex;align-items:center;gap:9px;background:#F8FAFC;border:2px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer;font-size:clamp(13px,2.2vw,16px);font-weight:500}
+.check .box{width:22px;height:22px;border:2px solid #94A3B8;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check.on{border-color:var(--green);background:var(--bub)}
+.check.on .box{background:var(--green);border-color:var(--green)}
+.check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
+
+/* 종료 */
+.end-score{font-family:'Nunito',sans-serif;font-weight:800;font-size:clamp(40px,9vw,66px);color:var(--amber);animation:popBig .5s ease both;text-align:center}
+.end-msg{font-size:clamp(17px,3vw,24px);font-weight:700;color:var(--green);text-align:center;margin-top:4px}
+
+/* 푸터 */
+.ka-f{display:grid;grid-template-columns:1fr 1.2fr 1fr 1.3fr;gap:8px;margin-top:14px}
+.ka-nav{background:#F1F5F9;color:var(--ink);border:none;padding:12px 6px;font-size:clamp(13px,2.3vw,16px);border-radius:12px;
+  cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.ka-nav svg{width:16px;height:16px}
+.ka-nav:disabled{opacity:.4;cursor:not-allowed}
+.ka-nav-prev{color:var(--muted)}
+.ka-nav-next{background:var(--green);color:#fff;font-size:clamp(14px,2.5vw,17px);box-shadow:0 4px 14px rgba(21,128,61,.32)}
+.ka-nav-next:disabled{background:#94A3B8;box-shadow:none}
+
+.end3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.end3 a{text-decoration:none;text-align:center;padding:12px 6px;border-radius:12px;font-weight:700;font-size:clamp(13px,2.2vw,16px);font-family:inherit}
+.end3 .a1{background:var(--amber-bg);color:var(--amber)}
+.end3 .a2{background:var(--green);color:#fff}
+.end3 .a3{background:#F1F5F9;color:var(--muted)}
+
+@media(max-width:560px){
+  .ka-lb span{display:none}
+  .ka-meta{display:none}
+  .opts{grid-template-columns:1fr}
+  .ka-f{grid-template-columns:1fr 1fr}
+  .ka-nav.mob-hide{display:none}
+}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">
+      <svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/><rect x="9" y="9" width="5.5" height="5.5" rx="1.2" fill="currentColor"/></svg>
+      <span>차시 목록</span>
+    </button>
+    <div class="ka-bar"><div id="bar"></div></div>
+    <div class="ka-pg" id="pg">1 / 18</div>
+    <div class="ka-sc">
+      <svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#F57F17"/></svg>
+      <span class="ka-sc-n" id="score">0</span><span class="ka-sc-u">점</span>
+    </div>
+  </div>
+
+  <div class="ka-m" id="main"></div>
+
+  <div class="ka-f">
+    <button class="ka-nav ka-nav-prev" id="prev" onclick="prev()">← 이전</button>
+    <button class="ka-nav mob-hide" id="listen" disabled title="음성은 준비 중이에요">
+      <svg viewBox="0 0 16 16"><path d="M 3 6 L 3 10 L 6 10 L 10 13 L 10 3 L 6 6 Z" fill="currentColor"/><path d="M 12 5 Q 14 8 12 11" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      다시 듣기
+    </button>
+    <button class="ka-nav" id="hint" onclick="useHint()">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="4" fill="currentColor"/><rect x="6" y="9.5" width="4" height="2.5" fill="currentColor"/><rect x="6.5" y="12.5" width="3" height="1" fill="currentColor"/></svg>
+      힌트
+    </button>
+    <button class="ka-nav ka-nav-next" id="next" onclick="next()">다음 →</button>
+  </div>
+</div>
+
+<script>
+/* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
+const SVG = {
+  // 사람 기준의 혼란: 마주 본 두 친구가 같은 곳을 오른쪽/왼쪽 다르게 말함
+  confuse:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF3C7"/><circle cx="40" cy="34" r="10" fill="#FCD9B6"/><rect x="30" y="46" width="20" height="26" rx="5" fill="#60A5FA"/><circle cx="120" cy="34" r="10" fill="#FCD9B6"/><rect x="110" y="46" width="20" height="26" rx="5" fill="#F472B6"/><rect x="72" y="20" width="16" height="16" rx="2" fill="#86C28B"/><text x="80" y="14" font-size="9" fill="#166534" text-anchor="middle" font-weight="700">학교</text><path d="M52 40 L68 30" stroke="#2563EB" stroke-width="2" stroke-dasharray="3 2"/><path d="M108 40 L92 30" stroke="#DB2777" stroke-width="2" stroke-dasharray="3 2"/><text x="40" y="90" font-size="8" fill="#1E3A8A" text-anchor="middle" font-weight="700">"왼쪽!"</text><text x="120" y="90" font-size="8" fill="#9D174D" text-anchor="middle" font-weight="700">"오른쪽!"</text></svg>`,
+  // 4방위표
+  compass4:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/><circle cx="80" cy="48" r="34" fill="#fff" stroke="#93C5FD" stroke-width="2"/><path d="M80 18 L86 48 L80 44 L74 48Z" fill="#DC2626"/><path d="M80 78 L74 48 L80 52 L86 48Z" fill="#334155"/><text x="80" y="14" font-size="12" fill="#DC2626" text-anchor="middle" font-weight="800">북</text><text x="80" y="94" font-size="12" fill="#334155" text-anchor="middle" font-weight="800">남</text><text x="122" y="52" font-size="12" fill="#334155" text-anchor="middle" font-weight="800">동</text><text x="38" y="52" font-size="12" fill="#334155" text-anchor="middle" font-weight="800">서</text></svg>`,
+  // 8방위표
+  compass8:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/><circle cx="80" cy="48" r="34" fill="#fff" stroke="#86EFAC" stroke-width="2"/><path d="M80 18 L86 48 L80 44 L74 48Z" fill="#DC2626"/><path d="M80 78 L74 48 L80 52 L86 48Z" fill="#334155"/><text x="80" y="14" font-size="11" fill="#DC2626" text-anchor="middle" font-weight="800">북</text><text x="80" y="94" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">남</text><text x="124" y="52" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">동</text><text x="36" y="52" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">서</text><text x="116" y="24" font-size="8" fill="#0891B2" text-anchor="middle" font-weight="700">북동</text><text x="116" y="80" font-size="8" fill="#0891B2" text-anchor="middle" font-weight="700">남동</text><text x="44" y="80" font-size="8" fill="#0891B2" text-anchor="middle" font-weight="700">남서</text><text x="44" y="24" font-size="8" fill="#0891B2" text-anchor="middle" font-weight="700">북서</text></svg>`,
+  // 방위표가 있는 지도(위=북)
+  mapnorth:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/><rect x="0" y="42" width="160" height="10" fill="#FDE68A"/><rect x="74" y="0" width="10" height="96" fill="#FDE68A"/><rect x="20" y="12" width="20" height="16" fill="none" stroke="#0369A1" stroke-width="2"/><path d="M96 30 L106 14 L116 30Z" fill="#166534"/><path d="M22 64 Q40 56 58 64" stroke="#0891B2" stroke-width="3" fill="none"/><path d="M142 14 L142 34 M136 20 L142 14 L148 20" stroke="#DC2626" stroke-width="2.4" fill="none"/><text x="142" y="46" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="800">북</text></svg>`,
+  // 지도에 방위표가 없을 때(위=북 규칙)
+  norule:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF2F2"/><rect x="18" y="14" width="124" height="68" rx="4" fill="#fff" stroke="#FCA5A5" stroke-width="2"/><rect x="34" y="26" width="22" height="16" fill="none" stroke="#0369A1" stroke-width="2"/><path d="M100 48 L110 32 L120 48Z" fill="#166534"/><text x="80" y="12" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="800">↑ 위쪽 = 북쪽</text><text x="80" y="94" font-size="9" fill="#334155" text-anchor="middle" font-weight="700">아래=남 · 오른=동 · 왼=서</text></svg>`,
+  // 나침반
+  needle:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/><circle cx="80" cy="48" r="32" fill="#fff" stroke="#64748B" stroke-width="2.5"/><circle cx="80" cy="48" r="4" fill="#334155"/><path d="M80 20 L74 48 L86 48Z" fill="#DC2626"/><path d="M80 76 L74 48 L86 48Z" fill="#94A3B8"/><text x="80" y="16" font-size="9" fill="#DC2626" text-anchor="middle" font-weight="800">N</text></svg>`
+};
+function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
+
+/* (미사용 placeholder — 엔진 호환용) */
+function villageSVG(){return '';}
+
+/* ===== 방위표로 위치 찾기(직접 조작) =====
+   중앙의 '우리 학교'를 기준으로 8방위에 건물이 있어요.
+   방향을 누르면 나침반 바늘이 그쪽을 가리키고, 건물이 강조돼요. */
+const CX=270, CY=132, R=96;   // 지도 중심·반지름 (viewBox 540x264)
+const PLACES = {
+  n :{ko:"북",   deg:0,   name:"도서관", emoji:"📚", col:"#60A5FA"},
+  ne:{ko:"북동", deg:45,  name:"우체국", emoji:"📮", col:"#F87171"},
+  e :{ko:"동",   deg:90,  name:"시장",   emoji:"🏬", col:"#FBBF77"},
+  se:{ko:"남동", deg:135, name:"병원",   emoji:"🏥", col:"#FDA4AF"},
+  s :{ko:"남",   deg:180, name:"놀이터", emoji:"🎠", col:"#86EFAC"},
+  sw:{ko:"남서", deg:225, name:"소방서", emoji:"🚒", col:"#EF4444"},
+  w :{ko:"서",   deg:270, name:"은행",   emoji:"🏦", col:"#A78BFA"},
+  nw:{ko:"북서", deg:315, name:"산",     emoji:"⛰️", col:"#166534"}
+};
+function _dirXY(deg,r){ // 북=위(0°), 시계방향
+  const rad=(deg-90)*Math.PI/180;
+  return [CX + r*Math.cos(rad), CY + r*Math.sin(rad)];
+}
+function villageInteractive(st){
+  const found = st.found || {};
+  const total = Object.keys(PLACES).length;
+  const cnt = Object.keys(found).length;
+  // 8방위 건물 + 클릭 영역
+  const nodes = Object.entries(PLACES).map(([k,d])=>{
+    const [x,y]=_dirXY(d.deg,R);
+    const on=!!found[k];
+    return `<g style="cursor:pointer" onclick="discoverPlace('${k}')">
+      <circle cx="${x}" cy="${y}" r="26" fill="${on?d.col:'#E2E8F0'}" stroke="${on?'#F59E0B':'#94A3B8'}" stroke-width="${on?'3':'1.6'}" stroke-dasharray="${on?'0':'4 4'}"/>
+      <text x="${x}" y="${y-2}" font-size="20" text-anchor="middle">${d.emoji}</text>
+      <text x="${x}" y="${y+16}" font-size="11" text-anchor="middle" font-weight="800" fill="${on?'#1E293B':'#64748B'}">${d.name}</text>
+      ${on?`<text x="${x}" y="${y-26}" font-size="12" text-anchor="middle" font-weight="800" fill="#B45309">${d.ko}쪽</text>`:''}
+    </g>`;
+  }).join("");
+  // 나침반 바늘: 마지막 누른 방향
+  let needleDeg = st._lastFound && PLACES[st._lastFound] ? PLACES[st._lastFound].deg : null;
+  let needle="";
+  if(needleDeg!=null){
+    const [nx,ny]=_dirXY(needleDeg, 34);
+    const [tx,ty]=_dirXY(needleDeg+180, 20);
+    needle=`<line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="#DC2626" stroke-width="4" stroke-linecap="round"/>
+      <path d="M${nx} ${ny}" /><circle cx="${nx}" cy="${ny}" r="4" fill="#DC2626"/>`;
+  }
+  const map = `<div class="village"><svg viewBox="0 0 540 264" style="width:100%;height:auto">
+    <rect width="540" height="264" fill="#EEF7F0"/>
+    <!-- 방위표(고정, 좌상단) -->
+    <g transform="translate(60,58)">
+      <circle r="30" fill="#fff" stroke="#93C5FD" stroke-width="2"/>
+      <path d="M0 -30 L5 0 L0 -4 L-5 0Z" fill="#DC2626"/><path d="M0 30 L-5 0 L0 4 L5 0Z" fill="#334155"/>
+      <text x="0" y="-22" font-size="11" fill="#DC2626" text-anchor="middle" font-weight="800">북</text>
+      <text x="0" y="28" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">남</text>
+      <text x="24" y="4" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">동</text>
+      <text x="-24" y="4" font-size="11" fill="#334155" text-anchor="middle" font-weight="800">서</text>
+      <text x="0" y="50" font-size="10" fill="#2563EB" text-anchor="middle" font-weight="700">방위표</text>
+    </g>
+    <!-- 중심: 우리 학교 -->
+    <circle cx="${CX}" cy="${CY}" r="30" fill="#FEF9C3" stroke="#F59E0B" stroke-width="2.5"/>
+    <text x="${CX}" y="${CY-4}" font-size="20" text-anchor="middle">🏫</text>
+    <text x="${CX}" y="${CY+16}" font-size="12" text-anchor="middle" font-weight="800" fill="#92400E">학교</text>
+    ${needle}
+    ${nodes}
+  </svg></div>`;
+  const last = st._lastFound && PLACES[st._lastFound];
+  const info = last
+    ? `<div class="answer-box" style="text-align:center;max-width:560px">우리 학교에서 <b style="color:#DC2626">${last.ko}쪽</b>에 <b style="color:#15803D">${last.name}</b>이(가) 있어요.</div>`
+    : `<div class="note">가운데가 <b style="color:#92400E">우리 학교</b>예요. 둘레의 <b style="color:#15803D">건물</b>을 눌러, 방위표로 어느 쪽에 있는지 알아봐요.</div>`;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">방위로 확인한 곳 ${cnt} / ${total}</div>`;
+  const finale = (cnt>=total)
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#DC2626;background:#FEF2F2;max-width:560px">여덟 방향을 모두 <span class="ka-emph">방위</span>로 말했어요! 이렇게 <b>동서남북</b>을 쓰면 누가 어디서 보아도 위치가 <b>똑같이</b> 전해져요.</div>`
+    : '';
+  return `${map}${counter}${info}${finale}`;
+}
+
+/* ===== 차시 데이터 ===== */
+const POINTS_BASIC=10, POINTS_APPLY=15;
+const META = "1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 2차시";
+
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [1,3,0,2,3,1,2,0]
+const Q = [
+  // 3단계 확인 (+10)
+  {stem:"앞쪽·뒤쪽·오른쪽·왼쪽처럼 사람을 기준으로 위치를 말하면 어떤 점이 불편할까요?", scene:"confuse",
+   opts:["말하기가 너무 어려워서","보는 방향에 따라 달라져 듣는 사람이 헷갈려서","글자가 너무 길어서","소리가 잘 안 들려서"], correct:1, pts:POINTS_BASIC,
+   reason:"어디를 바라보느냐에 따라 오른쪽·왼쪽이 달라져요. 그래서 사람마다 다르게 말하게 돼요.",
+   h1:"두 친구가 같은 곳을 두고 \u2018오른쪽\u2019, \u2018왼쪽\u2019 다르게 말했어요.",
+   h2:"바라보는 방향이 바뀌면 오른쪽·왼쪽도 함께 바뀌어요."},
+  {stem:"지도에서 동서남북의 방향으로 나타낸 위치를 무엇이라고 할까요?", scene:"compass4",
+   opts:["기호","거리","축척","방위"], correct:3, pts:POINTS_BASIC,
+   reason:"동서남북의 방향으로 나타낸 위치를 \u2018방위\u2019라고 해요. 방위를 쓰면 위치를 정확히 말할 수 있어요.",
+   h1:"오늘 배우는 핵심 낱말이에요. 두 글자예요.",
+   h2:"동·서·남·북 \u2018방\u2019향의 위치를 뜻하는 말이에요."},
+  {stem:"지도에서 방위를 알려 주는 표시를 무엇이라고 할까요?", scene:"needle",
+   opts:["방위표","달력","눈금자","범례"], correct:0, pts:POINTS_BASIC,
+   reason:"방위표를 보면 지도에서 어느 쪽이 북쪽·동쪽인지 알 수 있어요.",
+   h1:"방위를 \u2018표\u2019시해 주는 것이에요.",
+   h2:"이름 안에 \u2018방위\u2019가 들어 있어요."},
+  {stem:"지도에 방위표가 없으면, 위쪽은 어느 방향으로 약속되어 있을까요?", scene:"norule",
+   opts:["동쪽","서쪽","북쪽","남쪽"], correct:2, pts:POINTS_BASIC,
+   reason:"방위표가 없으면 위쪽이 북쪽, 아래쪽이 남쪽, 오른쪽이 동쪽, 왼쪽이 서쪽이에요.",
+   h1:"방위표가 없을 때의 약속을 떠올려 봐요.",
+   h2:"지도의 \u2018위쪽\u2019은 늘 이 방향이에요. 나침반의 N."},
+  // 4단계 적용 (+15)
+  {stem:"방위표에서 오른쪽은 어느 방위일까요?", scene:"compass4",
+   opts:["북쪽","서쪽","남쪽","동쪽"], correct:3, pts:POINTS_APPLY,
+   reason:"방위표에서 위쪽은 북, 아래쪽은 남, 오른쪽은 동, 왼쪽은 서예요.",
+   h1:"방위표 그림을 보고 오른쪽 글자를 찾아봐요.",
+   h2:"\u2018동\u2019쪽이 오른쪽이에요. (동쪽에서 해가 떠요.)"},
+  {stem:"북쪽과 동쪽의 사이에 있는 방위는 무엇일까요?", scene:"compass8",
+   opts:["남동쪽","북동쪽","남서쪽","북서쪽"], correct:1, pts:POINTS_APPLY,
+   reason:"북과 동 사이는 \u2018북동쪽\u2019이에요. 8방위는 네 방위 사이에 북동·남동·남서·북서를 더한 거예요.",
+   h1:"두 방위 이름을 이어서 부르면 돼요. \u2018북\u2019 + \u2018동\u2019.",
+   h2:"8방위표에서 북과 동 사이를 찾아봐요."},
+  {stem:"\u201C학교에서 북쪽에 도서관이 있어.\u201D처럼 방위로 위치를 말하면 좋은 점은 무엇일까요?",
+   opts:["말이 짧아져서","글씨가 예뻐서","누가 어디서 보아도 위치가 똑같이 전해져서","색깔을 알 수 있어서"], correct:2, pts:POINTS_APPLY,
+   reason:"방위를 쓰면 사람이나 건물의 방향과 관계없이 위치를 정확하게 말할 수 있어요.",
+   h1:"직접 조작에서 여덟 방향을 방위로 말했을 때를 떠올려 봐요.",
+   h2:"오른쪽·왼쪽과 달리, 방위는 보는 방향이 바뀌어도 그대로예요."},
+  {stem:"방위표가 없을 때, 지도 위에서 실제 북쪽을 찾으려면 무엇을 이용하면 좋을까요?",
+   opts:["나침반","시계","돋보기","가위"], correct:0, pts:POINTS_APPLY,
+   reason:"나침반이나 나침반 애플리케이션을 이용하면 실제 북쪽을 찾을 수 있어요.",
+   h1:"항상 북쪽을 가리키는 도구예요.",
+   h2:"바늘이 스스로 북쪽을 향하는 도구, \u2018나\u2019로 시작해요."}
+];
+
+/* ===== 슬라이드 구성 (18) ===== */
+const slides = [];
+// 1 표지
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">방위를 알아볼까요?</h2>
+  <div class="ka-bub">두 친구가 <b>같은 곳</b>을 두고 이렇게 말했어요. 한 친구는 \u201C학교는 <b>왼쪽</b>이야\u201D, 다른 친구는 \u201C아니야, <b>오른쪽</b>이야\u201D. 누구 말이 맞을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('confuse','같은 곳, 다른 말')}</div>
+    <div class="note">오늘은 위치를 <b style="color:#DC2626">정확하게</b> 말하는 방법, <b style="color:#15803D">방위</b>를 알아봐요.</div>
+  </div>`});
+// 2 발문(관찰)
+slides.push({stage:1,badge:"생각 열기",render:()=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">왜 서로 다르게 말했을까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">사람들은 위치를 말할 때 흔히 <b>자신을 기준</b>으로 앞쪽·뒤쪽·오른쪽·왼쪽이라고 해요. 그런데 두 친구는 왜 같은 곳을 다르게 말했을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('confuse','마주 본 두 친구')}</div>
+  <div class="note">두 친구가 <b>바라보는 방향</b>이 어떤지 살펴봐요.</div></div>`});
+// 3 발문 답
+slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">무엇이 있어야 헷갈리지 않을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('confuse','서로 마주 본 채로')}</div>
+  ${st.revealed?`<div class="answer-box">바라보는 방향에 따라 <b>오른쪽·왼쪽이 달라져요.</b> 그래서 누구에게나 똑같은 <b>일정한 기준</b>이 필요해요. 그 기준이 바로 <span class="ka-emph">방위</span>예요.</div>`
+    :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 4 살펴보기: 방위란
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">\u2018방위\u2019란 무엇일까요?</h2>
+  <div class="ka-bub">지도에서 <b>동·서·남·북</b>의 방향으로 나타낸 위치를 <span class="ka-emph">방위</span>라고 해요. 방위를 쓰면 사람이나 건물의 방향과 <b>관계없이</b> 위치를 정확하게 말할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('compass4','방위표(4방위)')}${sceneCard('needle','나침반')}</div>
+  <div class="note">방위는 지도에 표시된 <b style="color:#2563EB">방위표</b>를 보고 알 수 있어요.</div></div>`});
+// 5 살펴보기: 방위표로 위치 찾기(직접 조작)
+slides.push({stage:2,badge:"개념",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">방위표로 직접 위치를 찾아봐요</h2>
+  <div class="ka-grp">${villageInteractive(st)}</div>`});
+// 6 살펴보기: 방위표가 없으면?(발문)
+slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">지도에 방위표가 없다면?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('norule','방위표가 없는 지도')}</div>
+  ${st.revealed?`<div class="answer-box">방위표가 없으면 <b>위쪽이 북쪽</b>, 아래쪽이 남쪽, 오른쪽이 동쪽, 왼쪽이 서쪽으로 약속되어 있어요.</div>`
+    :`<div class="note">방위표가 없어도 위치를 알 수 있게, 우리끼리 정한 약속이 있어요. 위쪽은 어느 쪽일까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  </div>`});
+// 7 살펴보기: 4방위/8방위 정리(닻)
+slides.push({stage:2,badge:"개념",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">4방위와 8방위</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('compass4','4방위표')}${sceneCard('compass8','8방위표')}</div>
+  <div class="ka-bub"><b>4방위</b>는 동·서·남·북이에요. 그 사이를 더 자세히 나타낼 땐 <b>북동·남동·남서·북서</b>를 더한 <span class="ka-emph">8방위</span>를 써요.</div>
+  <div class="note">이제 문제로 확인해 봐요. 천천히 생각하고 골라요.</div></div>`});
+// 8~15 문제 (확인 4 + 적용 4)
+Q.forEach((q,i)=>{
+  const apply = i>=4;
+  slides.push({stage:apply?4:3, badge:apply?"적용":"확인", q:i, render:(st)=>questionHTML(q,i,st)});
+});
+// 16 정리: 오늘 배운 것
+slides.push({stage:5,badge:"정리",render:()=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">오늘 배운 것</h2>
+  <div class="ka-grp"><div class="sum-list">
+    <div class="sum-item"><span class="n">1</span><div>앞·뒤·오른쪽·왼쪽은 <b style="color:#DC2626">보는 방향에 따라 달라져요.</b> 그래서 일정한 기준이 필요해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>지도에서 <b style="color:#15803D">동서남북</b>의 방향으로 나타낸 위치를 <b style="color:#15803D">방위</b>라고 해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>방위는 <b style="color:#2563EB">방위표</b>로 알 수 있고, 방위표가 없으면 <b>위쪽이 북쪽</b>이에요.</div></div>
+  </div></div>`});
+// 17 정리: 자기 평가
+slides.push({stage:5,badge:"정리",render:(st)=>`
+  <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t">스스로 돌아봐요</h2>
+  <div class="ka-grp"><div class="sum-list">
+    ${selfCheck(0,"방위가 무엇인지 말할 수 있어요",st)}
+    ${selfCheck(1,"방위표를 보고 동서남북을 찾을 수 있어요",st)}
+    ${selfCheck(2,"방위로 장소의 위치를 설명할 수 있어요",st)}
+  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+// 18 종료
+slides.push({stage:5,badge:"정리",end:true,render:()=>{
+  const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
+  return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
+  <h2 class="ka-t" style="text-align:center">오늘 학습을 마쳤어요</h2>
+  <div class="ka-grp">
+    <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
+    <div class="end-msg">${msg}</div>
+    <div class="note">방위를 알아봤어요. 다음 시간엔 \u2018기호와 범례\u2019를 배워요.</div>
+  </div>`;
+}});
+
+/* ===== 헬퍼 ===== */
+function star(){return `<svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/></svg>`;}
+function questionHTML(q,i,st){
+  const qs = st.q[i];
+  const opts = q.opts.map((o,k)=>{
+    let cls="opt";
+    if(qs.done && k===q.correct) cls+=" correct";
+    if(qs.wrongPick===k) cls+=" wrong";
+    return `<button class="${cls}" ${qs.done?'disabled':''} onclick="pick(${i},${k})">${o}</button>`;
+  }).join("");
+  let fb="";
+  if(qs.done) fb=`<div class="fb ok">⭕ 정답이에요! +${q.pts}점<br><span style="font-weight:500;color:#0F172A">${q.reason}</span></div>`;
+  else if(qs.wrongPick!=null) fb=`<div class="fb" style="color:#DC2626;font-weight:700">다시 해 봐요.</div>`;
+  let hintHTML="";
+  if(qs.hint>=1) hintHTML+=`<div class="hint">💡 ${q.h1}</div>`;
+  if(qs.hint>=2) hintHTML+=`<div class="hint">💡 ${q.h2}</div>`;
+  return `<div class="ka-tags"><div class="ka-bg ${i>=4?'s4':'s3'}">${star()} ${i>=4?'적용 문제':'확인 문제'} ${(i%4)+1}/4</div><div class="ka-meta">${META}</div></div>
+  <div class="ka-grp" style="align-items:stretch">
+    <div class="q-stem">${q.stem}</div>
+    ${q.scene?`<div style="display:flex;justify-content:center;margin-bottom:6px">${sceneCard(q.scene,'')}</div>`:''}
+    <div class="opts">${opts}</div>
+    ${fb}${hintHTML}
+  </div>`;
+}
+function selfCheck(k,label,st){
+  return `<div class="check ${st.self[k]?'on':''}" onclick="toggleSelf(${k})"><span class="box"></span><span>${label}</span></div>`;
+}
+
+/* ===== 상태·엔진 ===== */
+const LS_KEY = "kedu_progress_g4_social_u1_l02";
+const state = {
+  idx:0, score:0,
+  q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
+  self:[false,false,false],
+  revealed:false,
+  found:{}, _lastFound:null,
+  startTs: Date.now(),
+  attempt: 1
+};
+// 재방문 처리
+try{
+  const prev = JSON.parse(localStorage.getItem(LS_KEY)||"null");
+  if(prev && prev.attempt_count) state.attempt = prev.attempt_count+1;
+}catch(e){}
+
+const main=document.getElementById('main');
+function render(){
+  const s=slides[state.idx];
+  state.revealed = false; // 슬라이드별 reveal 초기화
+  // reveal 슬라이드는 자체 상태 유지를 위해 임시 필드 사용
+  if(s.reveal){ state.revealed = !!s._revealed; }
+  main.innerHTML = s.render(state);
+  document.getElementById('pg').textContent = (state.idx+1)+" / 18";
+  document.getElementById('bar').style.width = ((state.idx+1)/18*100)+"%";
+  document.getElementById('score').textContent = state.score;
+  // 버튼 상태
+  document.getElementById('prev').disabled = state.idx===0;
+  const hintBtn=document.getElementById('hint');
+  hintBtn.style.visibility = (s.q!=null && !state.q[s.q].done) ? 'visible':'hidden';
+  const nextBtn=document.getElementById('next');
+  if(s.end){ nextBtn.style.display='none'; showEndButtons(); }
+  else { nextBtn.style.display=''; removeEndButtons();
+    // 문제 슬라이드는 정답 전까지 다음 잠금
+    nextBtn.disabled = (s.q!=null && !state.q[s.q].done);
+    nextBtn.textContent = '다음 →';
+  }
+  main.scrollTop=0;
+}
+function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
+function prev(){ if(state.idx>0){ state.idx--; render(); } }
+function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
+/* 동네 장소 직접 찾기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+let _actx=null;
+function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
+function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
+function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
+function discoverPlace(k){
+  if(!PLACES[k]) return;
+  if(!state.found) state.found={};
+  const wasNew = !state.found[k];
+  state.found[k]=true; state._lastFound=k;
+  const total=Object.keys(PLACES).length, cnt=Object.keys(state.found).length;
+  if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
+  main.innerHTML=slides[state.idx].render(state);
+}
+function pick(i,k){
+  const qs=state.q[i], q=Q[i];
+  if(qs.done) return;
+  if(k===q.correct){
+    qs.done=true; qs.wrongPick=null;
+    let gained=q.pts;
+    if(qs.hint===1) gained-=2; if(qs.hint===2) gained-=5;
+    if(gained<0) gained=0;
+    state.score+=gained;
+    document.getElementById('score').textContent=state.score;
+    render();
+  } else {
+    qs.wrongPick=k; qs.wrongCount++;
+    main.innerHTML=slides[state.idx].render(state);
+    setTimeout(()=>{ qs.wrongPick=null; if(state.idx===slides.findIndex(s=>s.q===i)) main.innerHTML=slides[state.idx].render(state); },700);
+  }
+}
+function useHint(){
+  const s=slides[state.idx]; if(s.q==null) return;
+  const qs=state.q[s.q]; if(qs.done) return;
+  if(qs.hint<2){ qs.hint++; main.innerHTML=s.render(state); }
+  else { /* 3번째 = 안내만 */ const tip=document.createElement('div'); }
+}
+function toggleSelf(k){ state.self[k]=!state.self[k]; main.innerHTML=slides[state.idx].render(state); }
+
+/* 종료 화면 버튼/저장 */
+function showEndButtons(){
+  removeEndButtons();
+  const wrap=document.createElement('div'); wrap.className='end3'; wrap.id='end3';
+  wrap.innerHTML=`
+    <a class="a1" href="#" onclick="return false" title="문제 더 풀기는 준비 중이에요">📘 문제 더 풀기</a>
+    <a class="a2" href="#" onclick="goNextLesson(event);return false">다음 차시 →</a>
+    <a class="a3" href="#" onclick="goHub();return false">차시 목록</a>`;
+  document.querySelector('.ka-f').after(wrap);
+  saveProgress();
+}
+function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
+function goNextLesson(e){ location.href='g4_social_u1_l03_기호와범례.html'; }
+function goHub(){ location.href='../index.html'; }
+
+function saveProgress(){
+  const dur=Math.round((Date.now()-state.startTs)/1000);
+  const data={
+    score:state.score, max_score:100, completed:true,
+    completed_at:new Date().toISOString(),
+    first_attempt_score: (()=>{try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'null');return p&&p.first_attempt_score!=null?p.first_attempt_score:state.score;}catch(e){return state.score;}})(),
+    attempt_count: state.attempt,
+    hint_used: state.q.map(x=>x.hint),
+    wrong_count: state.q.map(x=>x.wrongCount),
+    duration_sec: dur, last_slide: 18
+  };
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); }catch(e){}
+  // 학급 도입 시 Supabase 동기화 (tracker)
+  if(window.kedu && window.kedu.recordLessonEnd && !window.__keduScored){
+    window.__keduScored = true;
+    window.kedu.recordLessonEnd(state.score, 100);
+  }
+}
+
+render();
+</script>
+<!-- 진도/점수 추적 (학급 도입 시 Supabase 동기화) -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+</body>
+</html>
