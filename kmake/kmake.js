@@ -11,10 +11,22 @@ fabric.Object.prototype.toObject = (function (orig) {
 
 /* ---------- 데이터 ---------- */
 const KO_FONTS = [
+  ['—', '제목 · 임팩트'],
   ['Jua', '주아'], ['Black Han Sans', '검은고딕'], ['Do Hyeon', '도현'],
-  ['Noto Sans KR', '본문고딕'], ['Gowun Dodum', '고운돋움'], ['Hahmlet', '함렛 명조'],
-  ['Gaegu', '개구'], ['Gamja Flower', '감자꽃'], ['Nanum Pen Script', '나눔펜'],
+  ['Bagel Fat One', '베이글'], ['Dongle', '동글'],
+  ['—', '본문 · 고딕'],
+  ['Pretendard', '프리텐다드'], ['Noto Sans KR', '본문고딕'],
+  ['IBM Plex Sans KR', '플렉스 고딕'], ['Gowun Dodum', '고운돋움'],
+  ['—', '명조 · 세리프'],
+  ['Gowun Batang', '고운바탕'], ['Nanum Myeongjo', '나눔명조'],
+  ['Song Myung', '송명'], ['Hahmlet', '함렛 명조'], ['Diphylleia', '디필리아 명조'],
+  ['—', '손글씨 · 감성'],
+  ['Nanum Pen Script', '나눔펜'], ['Nanum Brush Script', '나눔붓'],
+  ['Gaegu', '개구'], ['Gamja Flower', '감자꽃'], ['Hi Melody', '하이멜로디'],
+  ['Poor Story', '푸어스토리'], ['East Sea Dokdo', '동해독도'],
+  ['Yeon Sung', '연성'], ['Cute Font', '귀여운체'],
 ];
+const FONT_OF = f => KO_FONTS.find(x => x[0] === f && x[0] !== '—');
 const PALETTE = ['#2D3748', '#718096', '#CBD5E0', '#FFFFFF', '#000000', '#5B8EF8',
   '#2563EB', '#DC2626', '#F97316', '#F59E0B', '#FACC15', '#22C55E',
   '#14B8A6', '#06B6D4', '#8B5CF6', '#A855F7', '#EC4899', '#92400E'];
@@ -452,9 +464,11 @@ function buildCtxbar(o) {
   bindCtx(o);
 }
 function fontDD(o) {
-  const cur = KO_FONTS.find(f => f[0] === o.fontFamily) || KO_FONTS[0];
+  const cur = FONT_OF(o.fontFamily) || FONT_OF('Jua');
   return `<div class="font-dd"><button data-pop="font"><span style="font-family:'${cur[0]}'">${cur[1]}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
-    <div class="font-list hidden">${KO_FONTS.map(f => `<button class="font-item ${f[0] === o.fontFamily ? 'sel' : ''}" data-font="${f[0]}" style="font-family:'${f[0]}'">가나다 ABC<span class="fname">${f[1]}</span></button>`).join('')}</div></div>`;
+    <div class="font-list hidden">${KO_FONTS.map(f => f[0] === '—'
+      ? `<div class="font-div">${f[1]}</div>`
+      : `<button class="font-item ${f[0] === o.fontFamily ? 'sel' : ''}" data-font="${f[0]}" style="font-family:'${f[0]}'">가나다 ABC<span class="fname">${f[1]}</span></button>`).join('')}</div></div>`;
 }
 function stepper(key, val, title) {
   return `<div class="stepper" title="${title}"><button data-step="${key}:-">−</button><input data-num="${key}" value="${val}" inputmode="numeric"><button data-step="${key}:+">+</button></div>`;
@@ -481,7 +495,18 @@ function bindCtx(o) {
     const [k, d] = b.dataset.step.split(':'); stepVal(o, k, d === '+' ? 1 : -1); buildCtxbar(o);
   });
   ctxbar.querySelectorAll('[data-num]').forEach(inp => inp.onchange = () => { setNum(o, inp.dataset.num, parseInt(inp.value)); });
-  ctxbar.querySelectorAll('[data-font]').forEach(b => b.onclick = () => { o.set('fontFamily', b.dataset.font); render(); pushHistory(); buildCtxbar(o); });
+  ctxbar.querySelectorAll('[data-font]').forEach(b => b.onclick = () => {
+    const fam = b.dataset.font;
+    o.set('fontFamily', fam); render(); pushHistory(); buildCtxbar(o);
+    // 웹폰트가 아직 안 내려왔으면 로드 완료 후 캔버스 재렌더 (fabric 폰트 측정 갱신)
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load(`20px "${fam}"`).then(() => {
+        if (!canvas) return;
+        o.initDimensions && o.initDimensions();
+        canvas.requestRenderAll();
+      }).catch(() => {});
+    }
+  });
   // 팝오버 토글
   ctxbar.querySelectorAll('[data-pop]').forEach(b => b.onclick = ev => {
     ev.stopPropagation();
