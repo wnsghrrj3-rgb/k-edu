@@ -150,12 +150,35 @@
     im.onload=function(){var c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;
       c.getContext('2d').drawImage(im,0,0);earth.material.map=new THREE.CanvasTexture(c);earth.material.needsUpdate=true;};
     im.src='/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png';})();
-  var axis=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,3.2,8),new THREE.MeshBasicMaterial({color:0xFF8A3D}));
+  var axis=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,3.6,8),new THREE.MeshBasicMaterial({color:0xFF8A3D}));
   tiltGrp.add(axis);
+  var npole=new THREE.Mesh(new THREE.ConeGeometry(.11,.24,10),new THREE.MeshBasicMaterial({color:0xFF8A3D}));
+  npole.position.y=1.86; tiltGrp.add(npole);   // 북극 화살
+  var refAxis=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,3.4,8),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.32}));
+  earthPos.add(refAxis);                        // 궤도면 수직 기준선(흰) — 주황 축과의 벌어짐 = 23.4°
   var pin=new THREE.Mesh(new THREE.SphereGeometry(.07,12,10),new THREE.MeshBasicMaterial({color:0xFF5D5D}));
   spinGrp.add(pin);
   function pinPos(){var lr=lat*D2R;pin.position.set(Math.cos(lr),Math.sin(lr),0).multiplyScalar(1.12);}
   pinPos();
+  /* 4계절 고스트 — 궤도 네 자리에 축이 '평행하게' 기운 반투명 지구 (교과서 그림의 3D판) */
+  var ghostGrp=new THREE.Group(); scene.add(ghostGrp);
+  var ghostAxes=[];
+  function lblSprite(txt,col){
+    var c=document.createElement('canvas');c.width=180;c.height=64;var x=c.getContext('2d');
+    x.font='800 40px Jua, sans-serif'; x.fillStyle=col; x.textAlign='center'; x.fillText(txt,90,46);
+    var s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));
+    s.scale.set(2.1,.75,1); return s;
+  }
+  [[0,'동지','#7FA8FF'],[Math.PI/2,'춘분','#5CE1B9'],[Math.PI,'하지','#FF8A3D'],[3*Math.PI/2,'추분','#D8B4FF']].forEach(function(gd){
+    var grp=new THREE.Group();
+    grp.position.set(Math.cos(gd[0])*ORB,0,Math.sin(gd[0])*ORB);
+    var tg=new THREE.Group(); grp.add(tg); ghostAxes.push(tg);
+    tg.add(new THREE.Mesh(new THREE.SphereGeometry(.5,20,14),new THREE.MeshLambertMaterial({color:0x9CC2FF,transparent:true,opacity:.34})));
+    var ax=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,1.8,8),new THREE.MeshBasicMaterial({color:0xFF8A3D,transparent:true,opacity:.85}));
+    tg.add(ax);
+    var lb=lblSprite(gd[1],gd[2]); lb.position.y=1.5; grp.add(lb);
+    ghostGrp.add(grp);
+  });
   var th=0.85,ph=0.95;
   function camUpd(){
     var t=(view==='space')?new THREE.Vector3(0,0,0):earthPos.position.clone();
@@ -265,7 +288,7 @@
     else if(stage===2){
       view='space'; setGround(false);
       show('cDate'); show('cAlt'); show('cLen');
-      tag.textContent='🌌 우주에서 — 지구가 태양 둘레를 도는 길(공전)';
+      tag.textContent='🌌 우주 — 지구는 자전축(주황)이 흰 기준선에서 23.4° 기울어진 채 공전! 네 자리 축이 전부 같은 쪽(평행)을 봐요';
       c.innerHTML='<button class="big" id="p2">🍂 한 달 감기 (+30일)</button><span class="lbl" id="mCnt">0 / 12달</span>';
       E('p2').onclick=function(){
         simDay+=30; if(simDay>=365.25)simDay-=365.25;
@@ -367,7 +390,9 @@
     }
     var a=orbA();
     earthPos.position.set(Math.cos(a)*ORB,0,Math.sin(a)*ORB);
-    tiltGrp.rotation.z=tilt*D2R;
+    tiltGrp.rotation.z=-tilt*D2R;   /* 축은 늘 +X 쪽(우주 고정) — a=0(동지)에 북극이 태양 반대쪽 = decl() 수식과 일치 */
+    ghostGrp.visible=(view==='space'&&stage>=2);
+    for(var gi=0;gi<ghostAxes.length;gi++)ghostAxes[gi].rotation.z=-tilt*D2R;   /* 네 축이 언제나 평행 */
     spinGrp.rotation.y=(simHour/24)*Math.PI*2-a+Math.PI;
     camUpd(); renderer.render(scene,camera);
     requestAnimationFrame(frame);
