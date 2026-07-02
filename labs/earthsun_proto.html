@@ -79,6 +79,17 @@
       <rect id="bDay" x="4" y="8" width="0" height="14" rx="7" fill="#FFB84D"/>
     </svg><div class="s" id="dLen">—</div></div>
   <div class="card" id="cLat"><div class="t">🧭 관측 위도</div><div class="v" id="dLat">37.5°</div><div class="s" id="dLatNm">서울 근처</div></div>
+  <div class="card" id="cSun" style="min-width:158px;"><div class="t">🔦 땅 1칸이 받는 정오 햇빛</div>
+    <svg viewBox="0 0 120 56" width="130" height="60">
+      <polygon id="rayPoly" points="" fill="#FFD43B" opacity="0.32"/>
+      <line id="rayL1" x1="0" y1="0" x2="0" y2="0" stroke="#FFD43B" stroke-width="1.6"/>
+      <line id="rayL2" x1="0" y1="0" x2="0" y2="0" stroke="#FFD43B" stroke-width="1.6"/>
+      <line x1="4" y1="46" x2="116" y2="46" stroke="#6b8a4a" stroke-width="3"/>
+      <rect id="rayFoot" x="0" y="44" width="0" height="5" rx="2" fill="#FF8A3D"/>
+    </svg><div class="s" id="dSunPct">—</div></div>
+  <div class="card" id="cSpd" style="min-width:158px;"><div class="t">🚀 지금 너의 속도</div>
+    <div class="v" id="dSpin" style="font-size:16px;">—</div>
+    <div class="s" id="dOrb">공전: 시속 107,000 km</div></div>
 </div>
 
 <div class="stagewrap" id="wrap">
@@ -160,6 +171,9 @@
   spinGrp.add(pin);
   function pinPos(){var lr=lat*D2R;pin.position.set(Math.cos(lr),Math.sin(lr),0).multiplyScalar(1.12);}
   pinPos();
+  var pin2=new THREE.Mesh(new THREE.SphereGeometry(.06,12,10),new THREE.MeshBasicMaterial({color:0x5CE1B9}));
+  (function(){var lr=-33.9*D2R;pin2.position.set(Math.cos(lr),Math.sin(lr),0).multiplyScalar(1.12);})();
+  pin2.visible=false; spinGrp.add(pin2);   // 🎄 시드니 핀 — 자유 실험실에서
   /* 4계절 고스트 — 궤도 네 자리에 축이 '평행하게' 기운 반투명 지구 (교과서 그림의 3D판) */
   var ghostGrp=new THREE.Group(); scene.add(ghostGrp);
   var ghostAxes=[];
@@ -210,6 +224,34 @@
         var t=S('text',{x:5,y:y+2,'font-size':6.4,fill:gd[2],'font-weight':800,'font-family':'inherit'});
         t.textContent=gd[1]+' 남중 '+Math.round(a)+'°';sky.appendChild(t);});
     }
+    /* 🌅 일출 방위 마커 (3단계+) — 해 뜨는 자리가 계절따라 움직인다! 정동은 춘·추분뿐 */
+    if(stage>=3){
+      var dl0=dayLen();
+      if(dl0>0.01&&dl0<23.99){
+        var rx=(12-dl0/2-12)*8;
+        sky.appendChild(S('path',{d:'M '+rx.toFixed(1)+' '+HOR+' l -3.4 6 l 6.8 0 Z',fill:'#FFB84D'}));
+        var rt=S('text',{x:rx.toFixed(1),y:HOR+15,'text-anchor':'middle','font-size':6,fill:'#FFB84D','font-weight':800,'font-family':'inherit'});
+        rt.textContent='🌅 해 뜨는 곳'; sky.appendChild(rt);
+      }
+      sky.appendChild(S('line',{x1:-48,y1:HOR-2,x2:-48,y2:HOR+2,stroke:'#5CE1B9','stroke-width':1.4}));
+      var et=S('text',{x:-48,y:HOR-4,'text-anchor':'middle','font-size':5.4,fill:'#5CE1B9','font-weight':800,'font-family':'inherit'});
+      et.textContent='정동(춘·추분만!)'; sky.appendChild(et);
+    }
+    /* 🕯️ 그림자 막대 (3단계·자유 실험실) — 여름 정오 그림자가 가장 짧다! */
+    if(stage===3||stage===5){
+      var stkX=(stage===3)?0:34, stkH=8;
+      var aNow=sunAlt(simHour);
+      sky.appendChild(S('line',{x1:stkX,y1:HOR,x2:stkX,y2:HOR-stkH,stroke:'#D8C6A8','stroke-width':2.6,'stroke-linecap':'round'}));
+      if(aNow>1){
+        var cpx=(simHour-12)*8;
+        var sdir=(cpx>=stkX)?-1:1;
+        var slen=Math.min(stkH/Math.tan(aNow*D2R),78);
+        sky.appendChild(S('line',{x1:stkX,y1:HOR,x2:(stkX+sdir*slen).toFixed(1),y2:HOR,stroke:'#2E3A22','stroke-width':2.8,opacity:.85,'stroke-linecap':'round'}));
+        var sm=S('text',{x:stkX,y:HOR+15,'text-anchor':'middle','font-size':6,fill:'#D8C6A8','font-weight':800,'font-family':'inherit'});
+        sm.textContent='🕯️ 막대 1m → 그림자 '+(1/Math.tan(aNow*D2R)).toFixed(1)+'m';
+        sky.appendChild(sm);
+      }
+    }
     var cp=XY(simHour);
     if(cp.a>0){
       sky.appendChild(S('circle',{cx:cp.x,cy:cp.y,r:5,fill:'#FFD43B'}));
@@ -240,6 +282,21 @@
     E('bDay').setAttribute('width',(dl/24*192).toFixed(1));
     E('dLen').textContent=(dl>=23.99)?'백야 — 24시간 낮!':(dl<=0.01)?'극야 — 해가 안 떠요':'낮 '+dl.toFixed(1)+'시간';
     E('dLat').textContent=lat.toFixed(1)+'°';
+    /* 🔦 햇빛 다발 — 같은 굵기의 빛이 비스듬하면 넓게 퍼져 1칸 에너지가 준다 (겨울이 추운 진짜 이유) */
+    var aa=Math.max(3,Math.min(90,noonAlt())), ar=aa*D2R, GY=46, BW=15;
+    var f=Math.min(BW/Math.sin(ar),100), x1=60-f/2, x2=60+f/2, L=36;
+    var dx=Math.cos(ar), dy=Math.sin(ar);
+    var s1x=x1+dx*L, s1y=GY-dy*L, s2x=x2+dx*L, s2y=GY-dy*L;
+    E('rayPoly').setAttribute('points',s1x.toFixed(1)+','+s1y.toFixed(1)+' '+s2x.toFixed(1)+','+s2y.toFixed(1)+' '+x2.toFixed(1)+','+GY+' '+x1.toFixed(1)+','+GY);
+    E('rayL1').setAttribute('x1',s1x.toFixed(1));E('rayL1').setAttribute('y1',s1y.toFixed(1));E('rayL1').setAttribute('x2',x1.toFixed(1));E('rayL1').setAttribute('y2',GY);
+    E('rayL2').setAttribute('x1',s2x.toFixed(1));E('rayL2').setAttribute('y1',s2y.toFixed(1));E('rayL2').setAttribute('x2',x2.toFixed(1));E('rayL2').setAttribute('y2',GY);
+    E('rayFoot').setAttribute('x',x1.toFixed(1));E('rayFoot').setAttribute('width',f.toFixed(1));
+    var en=Math.round(Math.max(0,Math.sin((Math.max(0,noonAlt()))*D2R))*100);
+    E('rayFoot').setAttribute('fill', en>75?'#12B886':en>45?'#FFB84D':'#FF5D5D');
+    E('dSunPct').textContent=(noonAlt()<0)?'극야 — 0%':'같은 햇빛이 '+(f/BW).toFixed(1)+'배로 퍼짐 → 에너지 '+en+'%';
+    /* 🚀 속도 — 자전 선속도 = 1674×cos(위도) km/h */
+    var spin=Math.round(1674*Math.cos(lat*D2R));
+    E('dSpin').textContent='자전: 시속 '+spin.toLocaleString()+' km'+(spin>1200?' (소리보다 빨라!)':spin<50?' (극점은 제자리 팽이!)':'');
     E('dLatNm').textContent=Math.abs(lat-37.5)<1?'서울 근처':(lat>66.5?'북극권!':(lat<-66.5?'남극권!':(lat<0?'남반구':'북반구')));
   }
 
@@ -315,6 +372,7 @@
     }
     else if(stage===4){
       view='ground'; setGround(true);
+      show('cSun');   /* 🔦 햇빛 다발 카드 등장 — 기울기→비스듬함→에너지 인과 연결 */
       tag.textContent='🧍 하늘에 남중 점 3개가 떴어 — 하짓날·춘분·동짓날 정오의 태양 자리';
       c.innerHTML='<span class="lbl">🌀 자전축 기울기</span><input id="s4" type="range" min="0" max="35" step="0.1" value="23.4" style="width:min(46vw,260px);"><span class="val" id="v4">23.4°</span><button id="r4" style="font-size:13.5px;padding:8px 11px;">↺ 실제 23.4°</button>';
       E('pred').style.display='block';
@@ -332,7 +390,7 @@
         if(tilt<=0.5&&!predDone){
           predDone=true;
           var hit=(predCh===0);
-          discover((hit?'🎯 <b>예측 적중!</b>':'💥 <b>예측과 달랐지?</b>')+' 축을 똑바로 세우니 — 하짓날·춘분·동짓날 남중 점이 <b>한 점에 겹치고</b>, 낮은 일 년 내내 12시간! <b>계절이 통째로 사라졌어.</b> 계절의 진짜 범인은 태양과의 거리도, 자전도 아니고 — <b>자전축의 기울기(23.4°)</b>였던 거야! 지구가 기울어진 채 공전하니까, 태양 쪽으로 기운 계절엔 볕을 곧게(여름), 반대 계절엔 비스듬히(겨울) 받는 거지.','🔓 자유 실험실 열기');
+          discover((hit?'🎯 <b>예측 적중!</b>':'💥 <b>예측과 달랐지?</b>')+' 축을 똑바로 세우니 — 하짓날·춘분·동짓날 남중 점이 <b>한 점에 겹치고</b>, 낮은 일 년 내내 12시간! <b>계절이 통째로 사라졌어.</b> 계절의 진짜 범인은 태양과의 거리도, 자전도 아니고 — <b>자전축의 기울기(23.4°)</b>였던 거야! 지구가 기울어진 채 공전하니까, 태양 쪽으로 기운 계절엔 볕을 곧게(여름), 반대 계절엔 비스듬히(겨울) 받는 거지. 새로 나온 <b>🔦 햇빛 카드</b>를 봐 — 비스듬하면 같은 빛이 넓게 퍼져 땅 1칸 에너지가 뚝! <b>겨울이 추운 진짜 이유</b>야(태양이 멀어져서가 아니고!).','🔓 자유 실험실 열기');
         } else if(!predDone){
           E('status').innerHTML='기울기 '+tilt.toFixed(1)+'° — 남중 점 3개의 <span class="hl">사이가 좁아지고</span> 있어…';
         }
@@ -341,7 +399,8 @@
       E('status').innerHTML='';
     }
     else{ /* 5단계 — 자유 실험실 (전부 해금) */
-      show('cClock');show('cDate');show('cAlt');show('cLen');show('cLat');
+      show('cClock');show('cDate');show('cAlt');show('cLen');show('cLat');show('cSun');show('cSpd');
+      pin2.visible=true;
       setGround(view==='ground');
       tag.textContent=(view==='space')?'🌌 우주 — 드래그로 둘러보기':(view==='earth')?'🌍 지구 가까이':'🧍 운동장 하늘';
       c.innerHTML=
@@ -352,7 +411,9 @@
         +'<div style="flex-basis:100%;height:0;"></div>'
         +'<span class="lbl">📅</span><input id="f_date" type="range" min="0" max="365" step="1" value="'+Math.floor(simDay)+'" style="width:min(28vw,190px);">'
         +'<span class="lbl">🧭 위도</span><input id="f_lat" type="range" min="-90" max="90" step="0.5" value="'+lat+'" style="width:min(22vw,150px);">'
-        +'<span class="lbl">🌀 기울기</span><input id="f_tilt" type="range" min="0" max="35" step="0.1" value="'+tilt.toFixed(1)+'" style="width:min(22vw,150px);"><span class="val" id="f_vt">'+tilt.toFixed(1)+'°</span>';
+        +'<span class="lbl">🌀 기울기</span><input id="f_tilt" type="range" min="0" max="35" step="0.1" value="'+tilt.toFixed(1)+'" style="width:min(22vw,150px);"><span class="val" id="f_vt">'+tilt.toFixed(1)+'°</span>'
+        +'<div style="flex-basis:100%;height:0;"></div>'
+        +'<span class="lbl">✈️ 순간이동</span><button class="tp" data-p="seoul">🏠 서울</button><button class="tp" data-p="pole">🧊 북극</button><button class="tp" data-p="syd">🎄 시드니</button>';
       E('f_play').onclick=function(){playing=!playing;this.textContent=playing?'⏸ 멈춤':'▶ 시간';this.classList.toggle('on',playing);};
       document.querySelectorAll('.unit').forEach(function(b){b.onclick=function(){unit=b.dataset.u;
         document.querySelectorAll('.unit').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
@@ -363,7 +424,16 @@
       E('f_date').oninput=function(e){simDay=+e.target.value;dash();drawSky();};
       E('f_lat').oninput=function(e){lat=+e.target.value;pinPos();dash();drawSky();};
       E('f_tilt').oninput=function(e){tilt=+e.target.value;E('f_vt').textContent=tilt.toFixed(1)+'°';dash();drawSky();};
-      E('status').innerHTML='조합해 봐: <span class="hl">북극(위도 89°) × 1달 감기</span> = 백야와 극야! · <span class="hl">남반구 × 1월</span> = 한여름 크리스마스!';
+      document.querySelectorAll('.tp').forEach(function(b){b.onclick=function(){
+        var p=b.dataset.p;
+        if(p==='seoul'){lat=37.5;E('status').innerHTML='🏠 서울 — 사계절의 나라. <span class="hl">🚀 카드</span>를 봐, 넌 지금 소리보다 빠르게 돌고 있어!';}
+        if(p==='pole'){lat=89.5;simDay=182;view='ground';setGround(true);document.querySelectorAll('.vw').forEach(function(x){x.classList.toggle('on',x.dataset.v==='ground');});buildCtrlTagOnly();
+          E('status').innerHTML='🧊 북극의 하지 — 태양이 <span class="hl">지평선을 빙 돌며 하루 종일 안 져!</span> (백야) ▶을 1시간 단위로 틀어 봐. 날짜를 동지로 밀면 극야도!';}
+        if(p==='syd'){lat=-33.9;E('status').innerHTML='🎄 시드니 — 계절 카드를 봐, <span class="hl">서울과 정반대!</span> 12월 크리스마스가 한여름이야. 지구본의 초록 핀이 시드니.';}
+        var fl=E('f_lat');if(fl)fl.value=lat;var fd=E('f_date');if(fd)fd.value=Math.floor(simDay);
+        pinPos();dash();drawSky();fit();
+      };});
+      E('status').innerHTML='숨은 발견: <span class="hl">해가 정동에서 뜨는 날은 1년에 딱 이틀</span>(춘·추분)! · 여름 정오 <span class="hl">그림자가 제일 짧아</span> · 위도를 90°로 밀면 자전 속도가 0!';
     }
   }
   function buildCtrlTagOnly(){
