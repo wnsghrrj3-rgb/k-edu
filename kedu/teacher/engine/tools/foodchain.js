@@ -29,6 +29,7 @@
     var C = { ink: '#1B3A57', sub: '#5a7894', good: '#12B886', vio: '#7048E8', arrow: '#FF8A3D' };
     var btn = 'font-size:21px;padding:11px 17px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t, a) { var e = document.createElementNS('http://www.w3.org/2000/svg', t); for (var k in a) e.setAttribute(k, a[k]); return e; }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }
 
     // 생물 정의: 종류 role(prod 생산자 / cons 소비자 / dec 분해자), 화면 좌표(viewBox 700x440)
     var ORG = {
@@ -57,7 +58,22 @@
     function webOrgs() { return ['rice', 'grass', 'hopper', 'rabbit', 'frog', 'snake', 'hawk', 'fox', 'mush']; }
 
     var view, sel, removed;
-    function reset() { view = (G().web && config.view === 'web') ? 'web' : 'chain'; sel = ''; removed = ''; }
+    // ── 와우(연쇄 효과) 상태 ── 최상위 포식자를 없애면 아래 생물이 다 잘 살 것 같지만,
+    //    피식자 폭증 → 그 아래 먹이 초토화 → 결국 모두 굶음(trophic cascade).
+    //    라이브 affected()는 removed를 '먹던'(위쪽) 생물만 잡음 → 아래 방향 연쇄는 라이브에 없던 반직관.
+    var cascadeArmed = false, cascadeRevealed = false, cascadeSeq = null;
+    var pop = {};            // 생물별 개체수 배율(1=보통, >1 폭증, 0=바닥)
+    // 연쇄 단계: 매 제거 후 사슬을 시차를 두고 타고 내려감(먹히던 쪽부터 폭증 → 그 먹이 고갈)
+    // 각 단계 = { up:폭증할 생물들, down:줄어들 생물들, msg }
+    var CASCADE_STEPS = [
+      { up:['snake','frog'],           down:[],                  msg:'매가 없어지니 뱀·개구리가 마음 놓고 불어나요…' },
+      { up:['snake','frog','hopper'],  down:[],                  msg:'그 뱀·개구리가 메뚜기를 마구 잡아먹어… 처음엔 메뚜기도 잠깐 늘고' },
+      { up:['snake','frog'],           down:['hopper'],          msg:'곧 메뚜기가 싹쓸이돼 확 줄어들어요' },
+      { up:['snake','frog'],           down:['hopper','rice'],   msg:'메뚜기가 없어지자 이번엔 벼(생산자)까지… 먹이가 바닥나요' },
+      { up:[],                         down:['hopper','rice','frog','snake'], msg:'결국 먹이가 다 떨어져 뱀·개구리도 굶어요 — 모두 무너졌어요!' }
+    ];
+    function clearCascade(){ cascadeArmed=false; cascadeRevealed=false; pop={}; if(cascadeSeq){clearTimeout(cascadeSeq);cascadeSeq=null;} clearFcFlash(); }
+    function reset() { view = (G().web && config.view === 'web') ? 'web' : 'chain'; sel = ''; removed = ''; cascadeArmed=false; cascadeRevealed=false; pop={}; if(cascadeSeq){clearTimeout(cascadeSeq);cascadeSeq=null;} }
     reset();
 
     var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
@@ -68,12 +84,83 @@
       build();
     }});
 
-    function setView(v) { view = v; sel = ''; removed = ''; renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
+    /* ── 와우 배너 머신 (.kl-stage-host에 absolute 주입 + 자동 제거) ── */
+    var fcFlashTimer = null;
+    function clearFcFlash() {
+      var host = el.querySelector('.kl-stage-host'); if (!host) return;
+      var f = host.querySelectorAll('.fc-flash,.fc-flash-magic,.fc-nudge'); f.forEach(function(n){ n.parentNode && n.parentNode.removeChild(n); });
+      if (fcFlashTimer) { clearTimeout(fcFlashTimer); fcFlashTimer = null; }
+    }
+    function fcFlash(kind, html, ms) {
+      var host = el.querySelector('.kl-stage-host'); if (!host) return;
+      clearFcFlash();
+      var cls = (kind === 'magic') ? 'fc-flash-magic' : (kind === 'nudge' ? 'fc-nudge' : 'fc-flash');
+      var bg = (kind === 'magic') ? 'rgba(112,72,232,0.96)' : (kind === 'nudge' ? 'rgba(90,120,148,0.95)' : 'rgba(21,101,192,0.96)');
+      var d = document.createElement('div');
+      d.className = cls;
+      d.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;max-width:92%;'
+        + 'background:' + bg + ';color:#fff;padding:12px 18px;border-radius:16px;font-family:Jua,sans-serif;'
+        + 'font-size:18px;font-weight:800;line-height:1.45;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.22);';
+      d.innerHTML = html;
+      host.appendChild(d);
+      if (ms) fcFlashTimer = setTimeout(function(){ clearFcFlash(); }, ms);
+    }
+
+    /* ── 와우: 최상위 포식자 제거 → 연쇄 효과 ── */
+    function cascadeArm() {
+      if (mode !== 'free') return;
+      clearCascade();
+      view = 'chain'; sel = ''; removed = 'hawk';      // 사슬에서 매 제거 셋업(라이브 removed 재사용)
+      cascadeArmed = true; pop = {};
+      snd('charge');
+      renderScene(); renderStatus();
+      fcFlash('arm', '🦅 <b>매</b>가 사라졌어요. 매에게 잡아먹히던 뱀·개구리는<br>이제 마음 놓고 <b>잘 살까요?</b> 시간이 흐르면 어떻게 될지 예상해 봐요!', 4200);
+      updateStatusHold('🦅 최상위 포식자가 사라지면 아래 생물들은 늘기만 할까요?');
+    }
+    function cascadeReveal() {
+      if (mode !== 'free') return;
+      if (!cascadeArmed) {   // 무장 없이 누르면 넛지만(마법음 차단)
+        snd('select');
+        fcFlash('nudge', '먼저 🔮 <b>매를 없애면?</b> 버튼으로 예상부터 해 봐요.', 2600);
+        return;
+      }
+      cascadeRevealed = true;
+      snd('whoosh');
+      var i = 0;
+      function stepOne() {
+        if (i >= CASCADE_STEPS.length) {
+          snd('erupt');
+          fcFlash('magic', '💥 매가 없어지자 뱀·개구리가 불어나 <b>메뚜기를 싹쓸이</b>하고,<br>메뚜기가 사라지자 <b>벼(생산자)까지 초토화</b> — 결국 먹이가 바닥나 <b>모두 굶어요!</b><br>최상위 포식자는 아래 생물의 수를 조절해 <b>먹이그물의 균형</b>을 지켜요(연쇄 효과).', 7200);
+          updateStatusHold('💥 최상위 포식자를 없애면 → 피식자 폭증 → 그 먹이 초토화 → 모두 붕괴');
+          cascadeSeq = null;
+          return;
+        }
+        var s = CASCADE_STEPS[i];
+        pop = {};
+        s.up.forEach(function(k){ pop[k] = 2; });
+        s.down.forEach(function(k){ pop[k] = 0; });
+        snd(i === CASCADE_STEPS.length - 1 ? 'rumble' : 'pop');
+        renderScene();
+        var st = el.querySelector('.fc-status');
+        if (st) st.innerHTML = '<div style="font-size:21px;color:#E8590C;">⏩ 시간이 흐르면…</div>'
+          + '<div style="font-size:18px;color:' + C.sub + ';margin-top:5px;">' + s.msg + '</div>';
+        i++;
+        cascadeSeq = setTimeout(stepOne, 1150);
+      }
+      stepOne();
+    }
+    function updateStatusHold(txt) {
+      var st = el.querySelector('.fc-status'); if (!st) return;
+      st.innerHTML = '<div class="fc-hold" style="font-size:19px;color:' + C.vio + ';font-weight:800;">' + txt + '</div>';
+    }
+
+    function setView(v) { view = v; sel = ''; removed = ''; clearCascade(); renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
     function pickOrg(k) {
       if (mode === 'mission' && mStep === 3) {
         // 미션4: 사라지면? — 클릭으로 제거 토글
         removed = (removed === k) ? '' : k;
       } else {
+        if (cascadeArmed || cascadeRevealed) clearCascade();  // 손으로 만지면 무장 해제
         sel = k;
       }
       renderScene(); renderStatus();
@@ -139,13 +226,22 @@
     }
 
     /* ───────────── UI ───────────── */
+    // 와우 버튼: 고학년·자유탐구 전용(remove=high, 생태 평형/연쇄는 5학년 고학년 칸 개념)
+    function showWow() { return G().remove && mode === 'free'; }
     function viewTabs() {
+      var wowRow = '';
+      if (showWow()) {
+        wowRow = '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">'
+          + '<button class="fc-btn" data-act="wowArm" style="' + btn + 'background:#fff;color:#7048E8;border-color:#7048E8;">🔮 매를 없애면?</button>'
+          + '<button class="fc-btn" data-act="wowReveal" style="' + btn + 'background:#7048E8;color:#fff;border-color:#7048E8;">⏩ 시간이 흐르면?</button>'
+          + '</div>';
+      }
       return '<div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
         + '<button class="fc-view" data-view="chain" style="' + btn + (view === 'chain' ? 'background:#1565C0;color:#fff;' : 'background:#fff;color:#1565C0;') + '">🔗 먹이사슬</button>'
         + (G().web ? '<button class="fc-view" data-view="web" style="' + btn + (view === 'web' ? 'background:#1565C0;color:#fff;' : 'background:#fff;color:#1565C0;') + '">🕸 먹이그물</button>' : '')
         + '<span style="width:8px;"></span>'
         + '<button class="fc-btn" data-act="reset" style="' + btn + 'background:#fff;color:#666;border-color:#9aa;">↺ 처음으로</button>'
-        + '</div>';
+        + '</div>' + wowRow;
     }
     function legend() {
       if (!G().roles) return '';
@@ -223,16 +319,22 @@
         var o = ORG[k], role = ROLE[o.role];
         var isRemoved = (removed === k);
         var isAff = aff[k];
+        var pv = pop[k];                            // 와우 개체수 배율(undefined=보통)
+        var boom = (pv > 1), gone = (pv === 0);
+        var rr = boom ? 40 : (gone ? 18 : 30);      // 폭증=크게, 바닥=작게
         g.appendChild(svgEl('circle', {
-          cx: o.x, cy: o.y, r: 30,
-          fill: isRemoved ? '#E9ECEF' : (sel === k ? '#fff' : role.col),
-          stroke: isAff ? '#E8590C' : role.col, 'stroke-width': isAff ? 5 : 4,
-          opacity: isRemoved ? 0.4 : 1, class: 'fc-org', 'data-k': k
+          cx: o.x, cy: o.y, r: rr,
+          fill: isRemoved ? '#E9ECEF' : (gone ? '#F1F3F5' : (boom ? '#FFE8CC' : (sel === k ? '#fff' : role.col))),
+          stroke: boom ? '#E8590C' : (gone ? '#ADB5BD' : (isAff ? '#E8590C' : role.col)), 'stroke-width': (boom || isAff) ? 5 : 4,
+          opacity: isRemoved ? 0.4 : (gone ? 0.5 : 1), class: 'fc-org', 'data-k': k
         }));
-        var emo = svgEl('text', { x: o.x, y: o.y + 9, 'text-anchor': 'middle', 'font-size': 26, 'pointer-events': 'none', opacity: isRemoved ? 0.4 : 1 });
+        var emo = svgEl('text', { x: o.x, y: o.y + (boom ? 12 : (gone ? 6 : 9)), 'text-anchor': 'middle', 'font-size': boom ? 34 : (gone ? 16 : 26), 'pointer-events': 'none', opacity: isRemoved ? 0.4 : (gone ? 0.5 : 1) });
         emo.textContent = o.emo; g.appendChild(emo);
-        var lab = svgEl('text', { x: o.x, y: o.y + 48, 'text-anchor': 'middle', 'font-family': 'Jua,sans-serif', 'font-size': 16, 'font-weight': 800, fill: isAff ? '#E8590C' : C.ink, 'pointer-events': 'none' });
-        lab.textContent = o.nm + (isRemoved ? ' (사라짐)' : (isAff ? ' ⚠' : ''));
+        // 개체수 변화 화살표(폭증 ↑↑ / 바닥 ↓)
+        if (boom) { var up = svgEl('text', { x: o.x + rr - 4, y: o.y - rr + 12, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: '#E8590C', 'pointer-events': 'none' }); up.textContent = '⬆⬆'; g.appendChild(up); }
+        else if (gone) { var dn = svgEl('text', { x: o.x + rr, y: o.y - rr + 6, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 800, fill: '#868E96', 'pointer-events': 'none' }); dn.textContent = '⬇'; g.appendChild(dn); }
+        var lab = svgEl('text', { x: o.x, y: o.y + (boom ? 58 : 48), 'text-anchor': 'middle', 'font-family': 'Jua,sans-serif', 'font-size': 16, 'font-weight': 800, fill: boom ? '#E8590C' : (gone ? '#868E96' : (isAff ? '#E8590C' : C.ink)), 'pointer-events': 'none' });
+        lab.textContent = o.nm + (isRemoved ? ' (사라짐)' : (boom ? ' 폭증!' : (gone ? ' 바닥' : (isAff ? ' ⚠' : ''))));
         g.appendChild(lab);
       });
       svg.appendChild(g);
@@ -273,9 +375,13 @@
     }
 
     function bind() {
-      el.querySelectorAll('.fc-view').forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.view); }); });
+      el.querySelectorAll('.fc-view').forEach(function (b) { b.addEventListener('click', function () { snd('select'); setView(b.dataset.view); }); });
       var rb = el.querySelector('[data-act="reset"]');
-      if (rb) rb.addEventListener('click', function () { sel = ''; removed = ''; renderScene(); renderStatus(); });
+      if (rb) rb.addEventListener('click', function () { snd('select'); sel = ''; removed = ''; clearCascade(); renderScene(); renderStatus(); });
+      var aw = el.querySelector('[data-act="wowArm"]');
+      if (aw) aw.addEventListener('click', function () { cascadeArm(); });
+      var rv = el.querySelector('[data-act="wowReveal"]');
+      if (rv) rv.addEventListener('click', function () { cascadeReveal(); });
       el.querySelectorAll('.kl-choice').forEach(function (b) {
         b.addEventListener('click', function () {
           if (qLock) return; qLock = true;
