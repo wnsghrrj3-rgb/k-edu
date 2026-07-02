@@ -343,6 +343,7 @@ function initIconPanel() {
     const done = () => { buildCatChips(); renderIconGrid(); };
     if (iconMode === 'color') loadAsset('stickers.js', 'STICKERS', done);
     else if (iconMode === 'illust') loadAsset('illust.js', 'ILLUSTS', done);
+    else if (iconMode === 'photo') loadAsset('materials.js', 'MATERIALS', done);
     else done();
   });
   document.getElementById('ipSearch').oninput = renderIconGrid;
@@ -361,12 +362,14 @@ function curCats() {
   if (iconMode === 'color') return window.STICKER_CATS || [];
   if (iconMode === 'illust') return [];
   if (iconMode === 'shape') return window.SHAPE_CATS || [];
+  if (iconMode === 'photo') return window.MATERIAL_CATS || [];
   return ICON_CATS;
 }
 function curList() {
   if (iconMode === 'color') return window.STICKERS || [];
   if (iconMode === 'illust') return window.ILLUSTS || [];
   if (iconMode === 'shape') return window.SHAPES || [];
+  if (iconMode === 'photo') return window.MATERIALS || [];
   return ICONS;
 }
 function buildCatChips() {
@@ -385,21 +388,39 @@ function renderIconGrid() {
   else if (iconCat !== 'all') list = list.filter(i => i.c === iconCat);
   const grid = document.getElementById('ipGrid');
   grid.classList.toggle('illust', iconMode === 'illust');
-  if (!list.length) { grid.innerHTML = `<div class="ip-empty">결과가 없어요</div>`; return; }
+  grid.classList.toggle('photo', iconMode === 'photo');
+  if (!list.length) {
+    grid.innerHTML = (iconMode === 'photo' && !q && iconCat === 'all')
+      ? `<div class="ip-empty">실사 재료 입고 준비 중이에요 ✨<br><span style="font-size:11.5px">금박·플로럴·시즌 장식이 곧 들어와요</span></div>`
+      : `<div class="ip-empty">결과가 없어요</div>`;
+    return;
+  }
   const show = list.slice(0, 400);
   const lineAttr = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
   grid.innerHTML = show.map((i, idx) => {
+    if (iconMode === 'photo')
+      return `<button class="ip-item" data-idx="${idx}" title="${i.n}"><img src="${i.img}" alt="${i.n}" loading="lazy" style="width:100%;height:100%;object-fit:contain;display:block"></button>`;
     const vb = iconMode === 'color' ? '0 0 72 72' : (iconMode === 'illust' || iconMode === 'shape') ? i.vb : '0 0 24 24';
     const attr = iconMode === 'line' ? lineAttr : '';
     return `<button class="ip-item" data-idx="${idx}" title="${i.n}"><svg viewBox="${vb}" ${attr}>${i.s}</svg></button>`;
   }).join('');
   grid.querySelectorAll('.ip-item').forEach(b => b.onclick = () => {
     const it = show[+b.dataset.idx];
-    if (iconMode === 'color') addSticker(it.s);
+    if (iconMode === 'photo') addMaterial(it);
+    else if (iconMode === 'color') addSticker(it.s);
     else if (iconMode === 'illust') addIllust(it);
     else if (iconMode === 'shape') addShape(it);
     else addIcon(it.s);
   });
+}
+function addMaterial(it) { // v2 실사 PNG 재료 — 파일 참조, 직렬화 시 src 자동 보존
+  fabric.Image.fromURL(it.img, img => {
+    if (!img || !img.width) { toast('재료를 불러올 수 없어요'); return; }
+    img.set({ left: baseW / 2, top: baseH / 2, originX: 'center', originY: 'center' });
+    img.scaleToWidth(Math.min(baseW, baseH) * 0.35);
+    img.kmType = 'material';
+    canvas.add(img); canvas.setActiveObject(img); canvas.requestRenderAll();
+  }, { crossOrigin: 'anonymous' });
 }
 function addShape(it) {
   insertSvg(`<svg viewBox="${it.vb}" xmlns="http://www.w3.org/2000/svg">${it.s}</svg>`, 'shape', Math.min(baseW, baseH) * 0.22);
