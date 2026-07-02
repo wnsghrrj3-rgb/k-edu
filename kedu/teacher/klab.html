@@ -299,7 +299,43 @@ var curTool=null, curCfg=null;
 var shareBar=document.createElement('div');
 shareBar.id='share-bar';
 shareBar.style.cssText='display:none;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin:10px 0 4px;';
-(function(){var m=document.querySelector('.mount'); m.parentNode.insertBefore(shareBar,m);})();
+/* ── ⚙️ 왼쪽 서랍 — 보조 버튼 격납 (2026-07-02 준호 정돈 지시: 화면엔 모드탭+교구 버튼만) ── */
+var klDrawer=document.createElement('div'); klDrawer.id='kl-drawer';
+klDrawer.innerHTML='<div style="font-size:19px;font-weight:800;color:#1565C0;margin-bottom:12px;font-family:Jua,sans-serif;">⚙️ 교구 설정</div>'
+ +'<div style="font-size:13px;font-weight:800;color:#8aa0b6;margin:8px 0 6px;">학년 칸</div>'
+ +'<div id="dw-grades"><div id="dw-grades-note" style="font-size:13px;color:#9AB7D4;line-height:1.5;">이 교구는 학년이 자동으로 맞춰져 있어요</div></div>'
+ +'<div style="font-size:13px;font-weight:800;color:#8aa0b6;margin:16px 0 6px;">수업 공유</div><div id="dw-share"></div>';
+document.body.appendChild(klDrawer);
+var klHandle=document.createElement('button'); klHandle.id='kl-drawer-handle'; klHandle.textContent='⚙️'; klHandle.title='교구 설정';
+document.body.appendChild(klHandle);
+var klDcss=document.createElement('style');
+klDcss.textContent='#kl-drawer{position:fixed;left:0;top:0;bottom:0;width:256px;background:#fff;box-shadow:4px 0 24px rgba(13,28,74,.16);padding:64px 16px 22px;z-index:60;transform:translateX(-100%);transition:transform .28s ease;overflow-y:auto;font-family:Jua,sans-serif;}'
+ +'#kl-drawer.open{transform:translateX(0);}'
+ +'#kl-drawer .kl-grades{flex-direction:column;align-items:stretch;margin:0 !important;}'
+ +'#kl-drawer .kl-grade{width:100%;}'
+ +'#kl-drawer #dw-share{display:flex;flex-direction:column;gap:8px;}'
+ +'#kl-drawer #share-bar{display:flex !important;flex-direction:column;gap:8px;margin:0 !important;align-items:stretch !important;}'
+ +'#kl-drawer-handle{position:fixed;left:0;top:42%;z-index:61;font-size:21px;padding:13px 11px;border:2.5px solid #1565C0;border-left:none;border-radius:0 15px 15px 0;background:#fff;color:#1565C0;cursor:pointer;box-shadow:2px 2px 12px rgba(21,101,192,.16);font-family:inherit;}'
+ +'#kl-drawer-handle.nudge{animation:klNud 1.1s ease 2;}@keyframes klNud{0%,100%{transform:translateX(0);}50%{transform:translateX(5px);}}';
+document.head.appendChild(klDcss);
+function klToggleDrawer(o){klDrawer.classList.toggle('open',o);}
+klHandle.addEventListener('click',function(e){e.stopPropagation();klToggleDrawer(!klDrawer.classList.contains('open'));});
+document.addEventListener('click',function(e){
+  if(klDrawer.classList.contains('open')&&!klDrawer.contains(e.target)&&e.target!==klHandle)klToggleDrawer(false);
+});
+document.getElementById('dw-share').appendChild(shareBar);   /* 링크복사·모드칩 줄 = 서랍으로 */
+/* 도구가 그리는 학년군(.kl-grades)을 서랍으로 이동 — 도구가 다시 그릴 때마다 */
+(function(){
+  var mEl=document.getElementById('mountEl'); if(!mEl)return;
+  new MutationObserver(function(){
+    var g=mEl.querySelector('.kl-grades'); if(!g)return;
+    var slot=document.getElementById('dw-grades');
+    var note=document.getElementById('dw-grades-note'); if(note)note.style.display='none';
+    Array.prototype.slice.call(slot.querySelectorAll('.kl-grades')).forEach(function(x){x.remove();});
+    slot.appendChild(g);
+    klHandle.classList.add('nudge'); setTimeout(function(){klHandle.classList.remove('nudge');},2300);
+  }).observe(mEl,{childList:true,subtree:true});
+})();
 function shareURL(mode){
   var cfg={}; var src=curCfg||{}; for(var k in src)cfg[k]=src[k];
   if(mode)cfg.mode=mode;
