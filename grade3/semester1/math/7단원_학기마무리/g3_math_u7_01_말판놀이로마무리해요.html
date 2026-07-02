@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>말판 놀이로 1학기를 마무리해요 · 수학 3-1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --purple:#7C3AED; --purple-deep:#5B21B6; --purple-soft:#EDE9FE;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --u1:#15803D; --u2:#1FA8A0; --u3:#8B5CF6; --u4:#EA580C; --u5:#0EA5E9; --u6:#EC4899;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --fs-title: clamp(26px, 4.4vw, 48px);
+  --fs-heading: clamp(22px, 3.5vw, 34px);
+  --fs-body: clamp(18px, 3vw, 27px);
+  --fs-caption: clamp(16px, 2.6vw, 23px);
+  --fs-label: clamp(13px, 2vw, 17px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-hop { 0%{transform:translateY(0);} 40%{transform:translateY(-22px);} 100%{transform:translateY(0);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-7px);} 75%{transform:translateX(7px);} }
+@keyframes ka-glow { 0%{filter:drop-shadow(0 0 0 rgba(246,181,38,0));} 50%{filter:drop-shadow(0 0 14px rgba(246,181,38,.9));} 100%{filter:drop-shadow(0 0 0 rgba(246,181,38,0));} }
+@keyframes ka-spin { from{transform:rotate(0);} to{transform:rotate(360deg);} }
+@keyframes dash-draw { to{stroke-dashoffset:0;} }
+@keyframes star-burst { 0%{opacity:1; transform:scale(.2) translateY(0);} 100%{opacity:0; transform:scale(1.4) translateY(-40px);} }
+
+.stage { width:min(980px,100vw); height:min(700px,100vh); background:#fff; border-radius:clamp(0px,2vw,26px); box-shadow:0 14px 34px -18px rgba(36,48,67,.4); display:flex; flex-direction:column; overflow:hidden; position:relative; }
+
+/* header */
+.ka-h { display:flex; align-items:center; gap:clamp(6px,1.4vw,12px); padding:clamp(9px,1.5vw,15px) clamp(14px,2.6vw,26px); border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:active { transform:scale(.94); }
+.ka-pill { font-family:var(--f-title); background:var(--purple); color:#fff; padding:6px 15px; border-radius:999px; font-size:clamp(14px,1.7vw,19px); flex-shrink:0; }
+.ka-where { font-family:var(--f-title); color:var(--ink-soft); font-size:clamp(13px,1.7vw,18px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ka-where b { color:var(--purple-deep); }
+.ka-spacer { flex:1; }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 15px; border-radius:999px; font-size:clamp(14px,1.7vw,19px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); width:clamp(34px,5vw,42px); height:clamp(34px,5vw,42px); border-radius:50%; cursor:pointer; font-size:clamp(15px,2vw,20px); flex-shrink:0; }
+
+/* main */
+.ka-m { flex:1; position:relative; overflow:hidden; }
+.phase { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:clamp(14px,2.4vw,28px); animation:ka-fadeUp .4s ease; }
+.phase.active { display:flex; }
+
+/* intro */
+.intro-emoji { font-size:clamp(56px,10vw,96px); animation:ka-hop 1.6s ease infinite; }
+.intro-title { font-family:var(--f-title); font-size:var(--fs-title); color:var(--purple-deep); text-align:center; margin-top:4px; }
+.intro-sub { font-size:var(--fs-body); color:var(--ink-soft); text-align:center; max-width:min(660px,92vw); margin-top:14px; line-height:1.5; }
+.how-box { background:var(--purple-soft); border-radius:20px; padding:clamp(14px,2.4vw,22px) clamp(18px,3vw,30px); margin-top:20px; max-width:min(640px,92vw); }
+.how-box li { font-family:var(--f-body); font-size:var(--fs-caption); color:var(--ink); margin:8px 0; list-style:none; display:flex; gap:10px; align-items:flex-start; line-height:1.4; }
+.how-box li .n { background:var(--purple); color:#fff; font-family:var(--f-title); width:1.7em; height:1.7em; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.9em; }
+.big-btn { margin-top:26px; font-family:var(--f-title); font-size:var(--fs-heading); background:var(--gold); color:#7A4B00; border:none; border-radius:999px; padding:clamp(12px,1.8vw,17px) clamp(36px,6vw,60px); cursor:pointer; box-shadow:0 6px 0 #D99A10; transition:transform .12s; }
+.big-btn:active { transform:translateY(4px); box-shadow:0 2px 0 #D99A10; }
+
+/* board */
+.board-wrap { flex:1; width:100%; position:relative; }
+#board { width:100%; height:100%; display:block; }
+.cell-hit { cursor:default; }
+.pawn { font-size:clamp(22px,3.4vw,34px); transition:none; pointer-events:none; }
+.control-bar { flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:clamp(16px,3vw,34px); padding:clamp(10px,1.8vw,18px); border-top:2px solid var(--line); background:#FFFDF9; }
+.dice { width:clamp(58px,9vw,78px); height:clamp(58px,9vw,78px); border-radius:18px; background:#fff; border:3px solid var(--purple-soft); box-shadow:0 6px 0 var(--purple-soft); cursor:pointer; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:12%; gap:6%; transition:transform .12s; }
+.dice:active { transform:translateY(4px); box-shadow:0 2px 0 var(--purple-soft); }
+.dice.rolling { animation:ka-spin .5s linear; }
+.pip { border-radius:50%; background:var(--purple-deep); align-self:center; justify-self:center; width:80%; height:80%; opacity:0; }
+.pip.on { opacity:1; }
+.dice-hint { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.lap-badge { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--purple-deep); background:var(--purple-soft); padding:6px 16px; border-radius:999px; }
+
+/* question modal */
+.modal-bg { position:absolute; inset:0; background:rgba(36,48,67,.55); display:none; align-items:center; justify-content:center; z-index:20; padding:clamp(14px,3vw,30px); }
+.modal-bg.show { display:flex; animation:ka-fadeUp .25s ease; }
+.modal { background:#fff; border-radius:24px; padding:clamp(18px,3vw,32px); max-width:min(560px,94vw); width:100%; box-shadow:0 18px 40px -12px rgba(0,0,0,.4); animation:ka-pop .35s ease; }
+.modal.wrong { animation:ka-shake .4s ease; }
+.q-tag { display:inline-flex; align-items:center; gap:7px; font-family:var(--f-title); color:#fff; padding:5px 15px; border-radius:999px; font-size:var(--fs-label); }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; margin:16px 0; line-height:1.35; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:clamp(34px,6vw,58px); color:var(--purple-deep); text-align:center; margin:6px 0 18px; letter-spacing:1px; }
+.opt-grid { display:grid; grid-template-columns:1fr 1fr; gap:clamp(9px,1.6vw,14px); }
+.opt { background:#fff; border:3px solid var(--purple-soft); border-radius:16px; padding:clamp(11px,2vw,16px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .1s,border-color .18s,background .18s; box-shadow:0 5px 0 var(--purple-soft); text-align:center; }
+.opt.txt { font-family:var(--f-title); font-size:var(--fs-body); font-weight:400; }
+.opt:active { transform:translateY(3px); box-shadow:0 2px 0 var(--purple-soft); }
+.opt.correct { border-color:var(--u1); background:var(--u1); color:#fff; box-shadow:0 5px 0 #0f5c2e; }
+.opt.miss { border-color:var(--emph); opacity:.5; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); text-align:center; min-height:1.4em; margin-top:14px; }
+.q-fb.ok { color:var(--u1); }
+.q-fb.no { color:var(--emph); }
+.modal-next { display:none; margin:16px auto 0; font-family:var(--f-title); font-size:var(--fs-body); background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 34px; cursor:pointer; box-shadow:0 5px 0 var(--purple-deep); }
+.modal-next:active { transform:translateY(3px); box-shadow:0 2px 0 var(--purple-deep); }
+.modal-next.show { display:block; animation:ka-pop .3s ease; }
+
+/* connect phase */
+.connect-head { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--purple-deep); text-align:center; }
+.connect-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; margin-top:6px; margin-bottom:8px; }
+.connect-wrap { flex:1; width:100%; position:relative; }
+#connect-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.node { position:absolute; transform:translate(-50%,-50%); background:#fff; border:3px solid var(--line); border-radius:16px; padding:clamp(7px,1.4vw,11px) clamp(10px,1.8vw,15px); font-family:var(--f-title); font-size:clamp(13px,1.9vw,19px); color:var(--ink); cursor:pointer; text-align:center; box-shadow:0 4px 12px -4px rgba(0,0,0,.25); transition:transform .12s,border-color .15s; min-width:clamp(74px,13vw,110px); z-index:3; line-height:1.15; }
+.node small { display:block; font-family:var(--f-num); font-weight:800; font-size:.82em; color:var(--ink-soft); }
+.node:active { transform:translate(-50%,-50%) scale(.94); }
+.node.sel { border-color:var(--gold); box-shadow:0 0 0 4px var(--mark); animation:ka-glow 1.2s ease infinite; }
+.node.done { border-color:var(--u1); }
+.reason-toast { position:absolute; left:50%; bottom:clamp(14px,3vw,26px); transform:translateX(-50%); background:var(--purple-deep); color:#fff; font-family:var(--f-body); font-size:var(--fs-caption); padding:clamp(10px,1.8vw,15px) clamp(18px,3vw,26px); border-radius:16px; max-width:min(600px,92vw); text-align:center; opacity:0; transition:opacity .3s; z-index:6; line-height:1.4; box-shadow:0 10px 30px -8px rgba(0,0,0,.5); }
+.reason-toast.show { opacity:1; }
+.reason-toast b { color:var(--mark); }
+.connect-progress { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--purple-deep); flex-shrink:0; padding:clamp(8px,1.4vw,12px); }
+
+/* finale */
+.finale-emoji { font-size:clamp(60px,11vw,104px); animation:ka-pop .6s ease; }
+.finale-title { font-family:var(--f-title); font-size:var(--fs-title); color:var(--purple-deep); text-align:center; margin-top:8px; }
+.finale-stats { display:flex; gap:clamp(14px,3vw,30px); margin-top:20px; }
+.stat { background:var(--purple-soft); border-radius:18px; padding:clamp(12px,2vw,18px) clamp(18px,3vw,28px); text-align:center; }
+.stat .big { font-family:var(--f-num); font-weight:800; font-size:clamp(30px,5vw,46px); color:var(--purple-deep); }
+.stat .lbl { font-family:var(--f-title); font-size:var(--fs-label); color:var(--ink-soft); margin-top:2px; }
+.next-sem { background:#FFF8E1; border-radius:18px; padding:clamp(13px,2.2vw,20px) clamp(18px,3vw,28px); margin-top:22px; max-width:min(600px,92vw); text-align:center; font-size:var(--fs-caption); color:var(--ink); line-height:1.5; }
+.next-sem b { color:#F57F17; font-family:var(--f-title); font-weight:400; }
+
+.confetti { position:absolute; top:-20px; font-size:20px; pointer-events:none; z-index:30; }
+</style>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="stage">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">마무리</span>
+    <span class="ka-where">수학 3-1 · <b>1학기를 마무리해요</b></span>
+    <span class="ka-spacer"></span>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <div class="ka-m">
+
+    <!-- PHASE 0: 도입 -->
+    <div class="phase active" id="p-intro">
+      <div class="intro-emoji">🎲</div>
+      <h1 class="intro-title">3학년 1학기를 마무리해요</h1>
+      <p class="intro-sub">한 학기 동안 배운 여섯 단원을 <b>말판 놀이</b>로 되돌아봐요. 주사위를 굴려 말을 옮기고, 도착한 칸의 문제를 풀어요. 마지막엔 <b>서로 연결되는 단원끼리 선으로 이어</b> 봐요!</p>
+      <ul class="how-box">
+        <li><span class="n">1</span><span>주사위를 굴려 나온 수만큼 말을 옮겨요.</span></li>
+        <li><span class="n">2</span><span>도착한 칸의 문제를 풀어요. (덧셈·도형·나눗셈·곱셈·길이·분수)</span></li>
+        <li><span class="n">3</span><span>도착 칸까지 한 바퀴를 돌면 놀이가 끝나요.</span></li>
+        <li><span class="n">4</span><span>마지막에 <b>연결되는 단원끼리 이어</b> 보고 그 까닭을 알아봐요.</span></li>
+      </ul>
+      <button class="big-btn" onclick="startBoard()">놀이 시작 🚀</button>
+    </div>
+
+    <!-- PHASE 1: 말판 놀이 -->
+    <div class="phase" id="p-board">
+      <div class="board-wrap">
+        <svg id="board" viewBox="0 0 960 500" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="pawn-layer"></div>
+      </div>
+      <div class="control-bar">
+        <span class="lap-badge" id="lap">칸 0 / <span id="lap-total">?</span></span>
+        <div class="dice" id="dice" onclick="rollDice()">
+          <div class="pip" data-p="0"></div><div class="pip" data-p="1"></div><div class="pip" data-p="2"></div>
+          <div class="pip" data-p="3"></div><div class="pip" data-p="4"></div><div class="pip" data-p="5"></div>
+          <div class="pip" data-p="6"></div><div class="pip" data-p="7"></div><div class="pip" data-p="8"></div>
+        </div>
+        <span class="dice-hint" id="dice-hint">주사위를 눌러요!</span>
+      </div>
+      <!-- question modal -->
+      <div class="modal-bg" id="modal-bg">
+        <div class="modal" id="modal">
+          <span class="q-tag" id="q-tag">단원</span>
+          <div class="q-prompt" id="q-prompt"></div>
+          <div class="q-display" id="q-display"></div>
+          <div class="opt-grid" id="opt-grid"></div>
+          <div class="q-fb" id="q-fb"></div>
+          <button class="modal-next" id="modal-next" onclick="closeModal()">계속 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 2: 연결선 잇기 -->
+    <div class="phase" id="p-connect">
+      <div class="connect-progress" id="connect-progress"></div>
+      <div class="connect-head">연결되는 단원끼리 이어 봐요</div>
+      <div class="connect-sub">서로 관련 있다고 생각하는 카드 <b>두 개</b>를 차례로 눌러요.</div>
+      <div class="connect-wrap" id="connect-wrap">
+        <svg id="connect-svg" viewBox="0 0 960 460" preserveAspectRatio="none"></svg>
+        <div class="reason-toast" id="reason-toast"></div>
+      </div>
+    </div>
+
+    <!-- PHASE 3: 마무리 -->
+    <div class="phase" id="p-finale">
+      <div class="finale-emoji">🏁</div>
+      <h1 class="finale-title">3학년 1학기 끝! 정말 잘했어요</h1>
+      <div class="finale-stats">
+        <div class="stat"><div class="big" id="f-star">0</div><div class="lbl">모은 별</div></div>
+        <div class="stat"><div class="big" id="f-link">0</div><div class="lbl">이은 연결</div></div>
+      </div>
+      <div class="next-sem">2학기에는 더 큰 수의 곱셈·나눗셈, <b>원</b>, <b>들이와 무게</b>, <b>분수의 덧셈</b>을 만나요. 오늘 이은 단원들이 그때 또 이어질 거예요!</div>
+      <button class="big-btn" onclick="location.reload()">다시 놀기 🔁</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const LESSON_ID = 'g3_math_u7_l01';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+let score = 0, muted = false, linksMade = 0;
+
+/* ---------- sound (Web Audio, 즉석 합성) ---------- */
+let AC = null;
+function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tone(freq, dur, type, vol){
+  if(muted) return; const c = ac(); if(!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type||'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol||0.14, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + (dur||0.15));
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + (dur||0.15));
+}
+function sfxRoll(){ if(muted) return; let i=0; const iv=setInterval(()=>{ tone(180+Math.random()*140, 0.05, 'square', 0.06); if(++i>6) clearInterval(iv); }, 55); }
+function sfxHop(){ tone(520, 0.08, 'sine', 0.12); }
+function sfxRight(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.16,'triangle',0.13), i*80)); }
+function sfxWrong(){ tone(196,0.22,'sine',0.12); setTimeout(()=>tone(147,0.28,'sine',0.1),120); }
+function sfxLink(){ [659,880,1109].forEach((f,i)=>setTimeout(()=>tone(f,0.3,'triangle',0.12), i*70)); }
+function sfxFanfare(){ [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>tone(f,0.3,'triangle',0.14), i*110)); }
+function toggleMute(){ muted=!muted; document.getElementById('mute').textContent = muted?'🔇':'🔊'; if(!muted) ac(); }
+
+function addScore(n){ score+=n; document.getElementById('score').textContent='⭐ '+score; }
+function goHub(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({score, done:false})); }catch(e){} location.href='../index.html'; }
+
+/* ---------- board data ---------- */
+// 단원 색
+const UC = { 1:'#15803D', 2:'#1FA8A0', 3:'#8B5CF6', 4:'#EA580C', 5:'#0EA5E9', 6:'#EC4899', rest:'#94A3B8', start:'#7C3AED', goal:'#F6B526' };
+const UEMOJI = { 1:'➕', 2:'📐', 3:'➗', 4:'✖️', 5:'📏', 6:'🍰' };
+const UNAME = { 1:'덧셈과 뺄셈', 2:'평면도형', 3:'나눗셈', 4:'곱셈', 5:'길이와 시간', 6:'분수와 소수' };
+
+// 문제 은행 (단원별)
+const QBANK = {
+  1: [
+    { prompt:'세 자리 수의 덧셈이에요.', disp:'724 + 297', opts:['1021','1011','921','1121'], ans:'1021', tag:'세 자리 수 덧셈' },
+    { prompt:'세 자리 수의 뺄셈이에요.', disp:'759 − 413', opts:['346','356','246','336'], ans:'346', tag:'세 자리 수 뺄셈' },
+  ],
+  2: [
+    { prompt:'끝이 양쪽으로 <b>끝없이</b> 늘어나는 곧은 선은?', opts:['직선','선분','반직선','곡선'], ans:'직선', tag:'선의 종류', txt:true },
+    { prompt:'한 각이 <b>직각</b>인 삼각형을 무엇이라 할까요?', opts:['직각삼각형','정삼각형','예각삼각형','직사각형'], ans:'직각삼각형', tag:'직각삼각형', txt:true },
+  ],
+  3: [
+    { prompt:'나눗셈의 몫을 구해요.', disp:'12 ÷ 4', opts:['3','4','2','6'], ans:'3', tag:'나눗셈의 몫' },
+    { prompt:'4 × 3 = 12 이면, 12 ÷ 3 은?', disp:'12 ÷ 3', opts:['4','3','6','2'], ans:'4', tag:'곱셈과 나눗셈' },
+  ],
+  4: [
+    { prompt:'(몇십) × (몇) 을 계산해요.', disp:'20 × 4', opts:['80','60','24','800'], ans:'80', tag:'(몇십)×(몇)' },
+    { prompt:'(몇십몇) × (몇) 을 계산해요.', disp:'72 × 3', opts:['216','215','206','226'], ans:'216', tag:'(몇십몇)×(몇)' },
+  ],
+  5: [
+    { prompt:'1 mm 는 어떻게 읽을까요?', opts:['1 밀리미터','1 센티미터','1 미터','1 킬로미터'], ans:'1 밀리미터', tag:'작은 길이 단위', txt:true },
+    { prompt:'시간의 합을 구해요.', disp:'11시 30분 50초<br>+ 　　4분 20초', opts:['11시 35분 10초','11시 34분 70초','11시 35분 70초','12시 35분 10초'], ans:'11시 35분 10초', tag:'시간의 합', txt:true },
+  ],
+  6: [
+    { prompt:'소수의 크기를 비교해요.', disp:'0.9 ◯ 0.7', opts:['0.9 > 0.7','0.9 < 0.7','0.9 = 0.7','알 수 없음'], ans:'0.9 > 0.7', tag:'소수의 크기 비교', txt:true },
+    { prompt:'단위분수의 크기를 비교해요.', disp:'1/6 ◯ 1/4', opts:['1/6 < 1/4','1/6 > 1/4','1/6 = 1/4','알 수 없음'], ans:'1/6 < 1/4', tag:'분수의 크기 비교', txt:true },
+  ],
+};
+
+// 말판 칸 순서 (출발 → 6단원 두 바퀴 섞기 + 쉬는 칸 → 도착)
+const CELLS = [
+  { type:'start', label:'출발' },
+  { type:'q', unit:1, qi:0 },
+  { type:'q', unit:2, qi:0 },
+  { type:'q', unit:3, qi:0 },
+  { type:'rest', label:'쉬었다\n가세요' },
+  { type:'q', unit:4, qi:0 },
+  { type:'q', unit:5, qi:0 },
+  { type:'q', unit:6, qi:0 },
+  { type:'q', unit:1, qi:1 },
+  { type:'q', unit:3, qi:1 },
+  { type:'rest', label:'쉬었다\n가세요' },
+  { type:'q', unit:5, qi:1 },
+  { type:'q', unit:6, qi:1 },
+  { type:'q', unit:2, qi:1 },
+  { type:'q', unit:4, qi:1 },
+  { type:'goal', label:'도착' },
+];
+document.getElementById('lap-total').textContent = CELLS.length - 1;
+
+// 말판 칸의 좌표 (뱀 모양 경로, viewBox 960x500)
+const cellPos = [];
+(function layoutBoard(){
+  // 4행 x 4열 뱀 경로
+  const cols=4, rows=4, x0=120, y0=70, dx=240, dy=125;
+  let idx=0;
+  for(let r=0; r<rows; r++){
+    const rowCells=[];
+    for(let c=0; c<cols; c++){
+      rowCells.push({ x:x0 + c*dx, y:y0 + r*dy });
+    }
+    if(r%2===1) rowCells.reverse();
+    rowCells.forEach(p=>{ if(idx<CELLS.length){ cellPos[idx]=p; idx++; } });
+  }
+})();
+
+let pawnAt = 0, rolling=false, awaitingClose=false, boardCleared=false;
+const solved = new Set();
+
+function renderBoard(){
+  const svg = document.getElementById('board');
+  let s = '';
+  // 경로 선
+  s += '<polyline points="' + cellPos.map(p=>`${p.x},${p.y}`).join(' ') + '" fill="none" stroke="#ECE3D6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>';
+  cellPos.forEach((p,i)=>{
+    const cell = CELLS[i];
+    let fill='#fff', stroke='#ECE3D6', emoji='', sub='';
+    if(cell.type==='start'){ fill=UC.start; stroke=UC.start; }
+    else if(cell.type==='goal'){ fill=UC.goal; stroke=UC.goal; }
+    else if(cell.type==='rest'){ fill='#F1F5F9'; stroke=UC.rest; emoji='😴'; }
+    else { stroke=UC[cell.unit]; emoji=UEMOJI[cell.unit]; }
+    const done = solved.has(i);
+    s += `<g class="cell-hit">`;
+    s += `<circle cx="${p.x}" cy="${p.y}" r="44" fill="${cell.type==='q'?'#fff':fill}" stroke="${stroke}" stroke-width="${done?'6':'4'}"/>`;
+    if(done) s += `<circle cx="${p.x+30}" cy="${p.y-30}" r="13" fill="${UC[cell.unit]}"/><text x="${p.x+30}" y="${p.y-24}" text-anchor="middle" font-size="16" fill="#fff">✓</text>`;
+    if(cell.type==='q'){
+      s += `<text x="${p.x}" y="${p.y-4}" text-anchor="middle" font-size="26">${emoji}</text>`;
+      s += `<text x="${p.x}" y="${p.y+22}" text-anchor="middle" font-size="15" fill="${stroke}" font-family="Jua,sans-serif">${cell.unit}단원</text>`;
+    } else if(cell.type==='rest'){
+      s += `<text x="${p.x}" y="${p.y+2}" text-anchor="middle" font-size="26">${emoji}</text>`;
+      s += `<text x="${p.x}" y="${p.y+26}" text-anchor="middle" font-size="13" fill="#64748B" font-family="Jua,sans-serif">쉬어요</text>`;
+    } else {
+      s += `<text x="${p.x}" y="${p.y+8}" text-anchor="middle" font-size="22" fill="#fff" font-family="Jua,sans-serif">${cell.label}</text>`;
+    }
+    s += `</g>`;
+  });
+  svg.innerHTML = s;
+  placePawn();
+}
+
+function placePawn(){
+  const layer = document.getElementById('pawn-layer');
+  const svg = document.getElementById('board');
+  const vb = svg.viewBox.baseVal;
+  const rect = svg.getBoundingClientRect();
+  const p = cellPos[pawnAt];
+  const sx = rect.width / vb.width, sy = rect.height / vb.height;
+  const scale = Math.min(sx, sy);
+  const offX = (rect.width - vb.width*scale)/2, offY = (rect.height - vb.height*scale)/2;
+  const px = offX + p.x*scale, py = offY + p.y*scale;
+  layer.innerHTML = `<div class="pawn" style="position:absolute; left:${px}px; top:${py-6}px; transform:translate(-50%,-50%);">🐶</div>`;
+}
+window.addEventListener('resize', ()=>{ if(document.getElementById('p-board').classList.contains('active')) placePawn(); });
+
+function showPips(n){
+  const map = {
+    1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]
+  };
+  document.querySelectorAll('.dice .pip').forEach((pip,i)=> pip.classList.toggle('on', map[n].includes(i)));
+}
+
+function startBoard(){
+  ac();
+  switchPhase('p-board');
+  renderBoard();
+  showPips(1);
+}
+
+function rollDice(){
+  if(rolling || awaitingClose || boardCleared) return;
+  rolling = true;
+  const dice = document.getElementById('dice');
+  dice.classList.add('rolling');
+  sfxRoll();
+  document.getElementById('dice-hint').textContent = '굴리는 중...';
+  let flips=0;
+  const iv = setInterval(()=>{ showPips(1+Math.floor(Math.random()*6)); if(++flips>7){ clearInterval(iv); finishRoll(); } }, 60);
+
+  function finishRoll(){
+    const n = 1 + Math.floor(Math.random()*6);
+    showPips(n);
+    dice.classList.remove('rolling');
+    document.getElementById('dice-hint').textContent = n + ' 칸 이동!';
+    movePawn(n);
+  }
+}
+
+function movePawn(steps){
+  let remaining = steps;
+  function step(){
+    if(remaining<=0){ rolling=false; arrive(); return; }
+    if(pawnAt < CELLS.length-1) pawnAt++;
+    remaining--;
+    sfxHop();
+    const layer = document.getElementById('pawn-layer').firstChild;
+    if(layer){ layer.style.animation='none'; void layer.offsetWidth; layer.style.animation='ka-hop .3s ease'; }
+    placePawn();
+    document.getElementById('lap').innerHTML = '칸 '+pawnAt+' / <span id="lap-total">'+(CELLS.length-1)+'</span>';
+    if(pawnAt>=CELLS.length-1){ remaining=0; }
+    setTimeout(step, 320);
+  }
+  step();
+}
+
+function arrive(){
+  const cell = CELLS[pawnAt];
+  if(cell.type==='goal'){ setTimeout(finishBoard, 500); return; }
+  if(cell.type==='rest'){ document.getElementById('dice-hint').textContent='😴 한 번 쉬고 다시 굴려요!'; return; }
+  if(cell.type==='q'){
+    if(solved.has(pawnAt)){ document.getElementById('dice-hint').textContent='이미 푼 칸이에요. 다시 굴려요!'; return; }
+    openQuestion(pawnAt);
+  }
+}
+
+/* ---------- question modal ---------- */
+let curCell = null;
+function openQuestion(cellIdx){
+  curCell = cellIdx;
+  const cell = CELLS[cellIdx];
+  const q = QBANK[cell.unit][cell.qi];
+  awaitingClose = true;
+  const tag = document.getElementById('q-tag');
+  tag.style.background = UC[cell.unit];
+  tag.innerHTML = UEMOJI[cell.unit] + ' ' + cell.unit + '단원 · ' + q.tag;
+  document.getElementById('q-prompt').innerHTML = q.prompt;
+  const disp = document.getElementById('q-display');
+  if(q.disp){ disp.style.display='block'; disp.innerHTML = q.disp; } else { disp.style.display='none'; }
+  const grid = document.getElementById('opt-grid');
+  grid.innerHTML='';
+  const opts = shuffle(q.opts.slice());
+  opts.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt' + (q.txt?' txt':'');
+    b.innerHTML = o;
+    b.onclick = ()=> pickOpt(b, o, q.ans, UC[cell.unit]);
+    grid.appendChild(b);
+  });
+  document.getElementById('q-fb').textContent='';
+  document.getElementById('q-fb').className='q-fb';
+  document.getElementById('modal-next').classList.remove('show');
+  document.getElementById('modal').classList.remove('wrong');
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+let answered=false;
+function pickOpt(btn, val, ans, color){
+  if(answered) return;
+  const fb = document.getElementById('q-fb');
+  if(val===ans){
+    answered=true;
+    btn.classList.add('correct');
+    btn.style.background=color; btn.style.borderColor=color; btn.style.boxShadow='0 5px 0 rgba(0,0,0,.18)';
+    fb.textContent='정답이에요! ⭐'; fb.className='q-fb ok';
+    sfxRight();
+    addScore(10);
+    solved.add(curCell);
+    burstStars();
+    document.getElementById('modal-next').classList.add('show');
+  } else {
+    btn.classList.add('miss');
+    fb.textContent='다시 한 번 생각해 봐요!'; fb.className='q-fb no';
+    sfxWrong();
+    document.getElementById('modal').classList.add('wrong');
+    setTimeout(()=>document.getElementById('modal').classList.remove('wrong'), 420);
+  }
+}
+
+function closeModal(){
+  answered=false; awaitingClose=false;
+  document.getElementById('modal-bg').classList.remove('show');
+  renderBoard();
+  document.getElementById('dice-hint').textContent='주사위를 눌러요!';
+}
+
+function finishBoard(){
+  boardCleared=true;
+  setTimeout(()=>{ switchPhase('p-connect'); buildConnect(); }, 300);
+}
+
+/* ---------- connect phase (마법 모먼트) ---------- */
+// 노드 정의 + 정답 연결쌍 + 까닭
+const NODES = [
+  { id:'add',  label:'세 자리 수<br>덧셈', sub:'724+297', x:16, y:20, u:1 },
+  { id:'timesum', label:'시간의 합', sub:'11:30+…', x:50, y:14, u:5 },
+  { id:'mm',   label:'1 mm', sub:'작은 길이', x:84, y:20, u:5 },
+  { id:'decimal', label:'소수', sub:'0.1', x:84, y:78, u:6 },
+  { id:'div',  label:'나눗셈', sub:'12÷4', x:16, y:78, u:3 },
+  { id:'frac', label:'분수', sub:'1/6', x:50, y:86, u:6 },
+  { id:'rect', label:'직사각형<br>정사각형', sub:'도형', x:16, y:50, u:2 },
+  { id:'mul',  label:'곱셈', sub:'20×4', x:84, y:50, u:4 },
+];
+const LINKS = [
+  { a:'add', b:'timesum', reason:'<b>덧셈</b>을 할 수 있어야 <b>시간의 합</b>도 구할 수 있어요. 그래서 이어져요!' },
+  { a:'mm', b:'decimal', reason:'놀랍게도… <b>1 mm = 0.1 cm</b>! 길이도 <b>소수</b>로 나타낼 수 있어서 이어져요!' },
+  { a:'mul', b:'div', reason:'<b>곱셈</b>을 알면 <b>나눗셈</b>의 몫이 쉽게 보여요. (4×3=12 → 12÷3=4)' },
+  { a:'div', b:'frac', reason:'똑같이 <b>나누는</b> 활동이 곧 <b>분수</b>의 시작이에요. 그래서 이어져요!' },
+  { a:'rect', b:'frac', reason:'<b>직사각형</b>을 똑같이 나눈 한 조각이 바로 <b>분수</b>예요!' },
+];
+const linkKey = (a,b)=> [a,b].sort().join('|');
+const LINKSET = {}; LINKS.forEach(l=> LINKSET[linkKey(l.a,l.b)] = l.reason);
+const madeLinks = new Set();
+let selNode = null;
+
+function buildConnect(){
+  const wrap = document.getElementById('connect-wrap');
+  // clear old nodes (keep svg + toast)
+  wrap.querySelectorAll('.node').forEach(n=>n.remove());
+  NODES.forEach(n=>{
+    const el = document.createElement('div');
+    el.className='node'; el.id='node-'+n.id;
+    el.style.left = n.x+'%'; el.style.top = n.y+'%';
+    el.style.borderColor = UC[n.u];
+    el.innerHTML = n.label + '<small>'+n.sub+'</small>';
+    el.onclick = ()=> tapNode(n.id);
+    wrap.appendChild(el);
+  });
+  updateConnectProgress();
+}
+function updateConnectProgress(){
+  document.getElementById('connect-progress').textContent = '이은 연결 '+madeLinks.size+' / '+LINKS.length;
+}
+
+function tapNode(id){
+  const el = document.getElementById('node-'+id);
+  if(selNode===null){
+    selNode = id; el.classList.add('sel'); sfxHop();
+    return;
+  }
+  if(selNode===id){
+    selNode=null; el.classList.remove('sel');
+    return;
+  }
+  const first = selNode;
+  const prev = document.getElementById('node-'+first);
+  const key = linkKey(first, id);
+  selNode = null;
+  prev.classList.remove('sel');
+  if(LINKSET[key] && !madeLinks.has(key)){
+    madeLinks.add(key); linksMade++;
+    drawLink(first, id, UC[NODES.find(n=>n.id===first).u]);
+    prev.classList.add('done'); el.classList.add('done');
+    showReason(LINKSET[key]);
+    sfxLink(); addScore(8); burstStars();
+    updateConnectProgress();
+    if(madeLinks.size>=LINKS.length) setTimeout(finaleFromConnect, 1800);
+  } else if(madeLinks.has(key)){
+    showReason('이미 이은 연결이에요!');
+  } else {
+    el.classList.add('sel'); void el.offsetWidth;
+    showReason('음… 이 둘은 잘 이어지지 않아요. 다시 생각해 봐요!');
+    sfxWrong();
+    setTimeout(()=>el.classList.remove('sel'), 500);
+  }
+}
+
+function nodeCenterPct(id){ const n = NODES.find(x=>x.id===id); return {x:n.x, y:n.y}; }
+function drawLink(a,b,color){
+  const svg = document.getElementById('connect-svg');
+  const pa = nodeCenterPct(a), pb = nodeCenterPct(b);
+  const x1 = pa.x/100*960, y1 = pa.y/100*460, x2 = pb.x/100*960, y2 = pb.y/100*460;
+  const len = Math.hypot(x2-x1, y2-y1);
+  const ns='http://www.w3.org/2000/svg';
+  const line = document.createElementNS(ns,'line');
+  line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+  line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+  line.setAttribute('stroke',color); line.setAttribute('stroke-width','5');
+  line.setAttribute('stroke-linecap','round');
+  line.setAttribute('stroke-dasharray',len); line.setAttribute('stroke-dashoffset',len);
+  line.style.animation='dash-draw .6s ease forwards';
+  svg.appendChild(line);
+}
+function showReason(html){
+  const t = document.getElementById('reason-toast');
+  t.innerHTML = html; t.classList.add('show');
+  clearTimeout(t._to); t._to = setTimeout(()=>t.classList.remove('show'), 3600);
+}
+
+function finaleFromConnect(){
+  switchPhase('p-finale');
+  document.getElementById('f-star').textContent = score;
+  document.getElementById('f-link').textContent = madeLinks.size;
+  sfxFanfare();
+  confettiBurst();
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({score, done:true})); }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+function switchPhase(id){
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='p-board') setTimeout(placePawn, 60);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function burstStars(){
+  const stage = document.querySelector('.stage');
+  for(let i=0;i<6;i++){
+    const s=document.createElement('div');
+    s.textContent='⭐'; s.style.cssText=`position:absolute; left:${40+Math.random()*20}%; top:${40+Math.random()*15}%; font-size:${14+Math.random()*14}px; z-index:40; pointer-events:none; animation:star-burst .8s ease forwards;`;
+    stage.appendChild(s); setTimeout(()=>s.remove(), 800);
+  }
+}
+function confettiBurst(){
+  const stage=document.querySelector('.stage'); const em=['🎉','⭐','🎊','✨','🌟'];
+  for(let i=0;i<32;i++){
+    const c=document.createElement('div'); c.className='confetti';
+    c.textContent=em[Math.floor(Math.random()*em.length)];
+    c.style.left=Math.random()*100+'%'; c.style.fontSize=(14+Math.random()*16)+'px';
+    const dur=1.6+Math.random()*1.4;
+    c.animate([{transform:'translateY(0) rotate(0)',opacity:1},{transform:`translateY(${520}px) rotate(${360+Math.random()*360}deg)`,opacity:.2}],{duration:dur*1000,easing:'ease-in'});
+    stage.appendChild(c); setTimeout(()=>c.remove(), dur*1000);
+  }
+}
+</script>
+</body>
+</html>
