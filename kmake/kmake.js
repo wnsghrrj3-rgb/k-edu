@@ -547,16 +547,21 @@ function bindCtx(o) {
     const [k, d] = b.dataset.step.split(':'); stepVal(o, k, d === '+' ? 1 : -1); buildCtxbar(o);
   });
   ctxbar.querySelectorAll('[data-num]').forEach(inp => inp.onchange = () => { setNum(o, inp.dataset.num, parseInt(inp.value)); });
-  // 폰트 피커 지연 로딩 — 화면에 보이는 항목만 해당 폰트로 렌더 (50종 일괄 다운로드 방지)
-  if (window.__fontIO) window.__fontIO.disconnect();
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(es => es.forEach(en => {
-      if (en.isIntersecting) { en.target.style.fontFamily = `'${en.target.dataset.font}'`; io.unobserve(en.target); }
-    }), { root: ctxbar.querySelector('.font-list'), rootMargin: '80px' });
-    ctxbar.querySelectorAll('.font-item').forEach(el => io.observe(el));
-    window.__fontIO = io;
-  } else {
-    ctxbar.querySelectorAll('.font-item').forEach(el => { el.style.fontFamily = `'${el.dataset.font}'`; });
+  // 폰트 피커 지연 로딩 — 팝업 열림·스크롤 시점에 보이는 항목만 해당 폰트로 렌더
+  // (50종 원본 woff 일괄 다운로드 방지. IO는 숨김 루트에서 미발화 사례가 있어 rect 직접 계산)
+  const flist = ctxbar.querySelector('.font-list');
+  if (flist) {
+    const applyVisible = () => {
+      const r = flist.getBoundingClientRect();
+      flist.querySelectorAll('.font-item:not(.ffed)').forEach(el => {
+        const b = el.getBoundingClientRect();
+        if (b.bottom >= r.top - 120 && b.top <= r.bottom + 120) {
+          el.style.fontFamily = `'${el.dataset.font}'`; el.classList.add('ffed');
+        }
+      });
+    };
+    flist.addEventListener('scroll', applyVisible, { passive: true });
+    flist.__lazyApply = applyVisible;
   }
   ctxbar.querySelectorAll('[data-font]').forEach(b => b.onclick = () => {
     const fam = b.dataset.font;
@@ -574,7 +579,10 @@ function bindCtx(o) {
   ctxbar.querySelectorAll('[data-pop]').forEach(b => b.onclick = ev => {
     ev.stopPropagation();
     const pop = b.nextElementSibling, wasOpen = !pop.classList.contains('hidden');
-    closePops(); if (!wasOpen) { pop.classList.remove('hidden'); openPop = pop; }
+    closePops(); if (!wasOpen) {
+      pop.classList.remove('hidden'); openPop = pop;
+      if (pop.__lazyApply) requestAnimationFrame(pop.__lazyApply); // 폰트 미리보기 지연 로딩 발화
+    }
   });
   ctxbar.querySelectorAll('[data-color]').forEach(b => b.onclick = () => {
     const [k, c] = b.dataset.color.split(':');
