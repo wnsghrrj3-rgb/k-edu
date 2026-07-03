@@ -136,6 +136,7 @@
       <button class="btn prime" id="addBtn">+ 새 에셋</button>
       <button class="btn" id="exportBtn">⬇ 파일로 저장 (드라이브용)</button>
       <button class="btn" id="importBtn">↻ 파일 불러오기</button>
+      <button class="btn" id="gptBatchBtn">🤖 GPT 일괄 복사</button>
       <input type="file" id="importInput" accept=".html,.json" style="display:none">
       <span class="saved" id="saved"></span>
     </div>
@@ -314,6 +315,20 @@ document.getElementById('exportBtn').onclick=()=>{
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   const d=new Date();a.href=url;a.download=`kedu_board_${d.getMonth()+1}월${d.getDate()}일.html`;a.click();
   URL.revokeObjectURL(url);
+};
+
+// GPT 일괄 복사: '프롬프트' 단계(status 1) 카드를 모아 GPT 작업지시문으로 클립보드에 복사
+document.getElementById('gptBatchBtn').onclick=async()=>{
+  const jobs=STATE.filter(a=>a.status===1 && a.prompt && !a.ph && a.type!=='REF');
+  if(!jobs.length){alert("'프롬프트' 단계(주황)에 있는 카드가 없어. 프롬프트가 준비된 카드를 2번째 단계로 옮겨줘.");return;}
+  const head=`[작업 지시]\n아래는 이미지 생성 프롬프트 ${jobs.length}개야. #1부터 순서대로 하나씩 이미지를 생성해줘.\n- 프롬프트는 그대로 사용하고 임의로 수정·요약하지 마.\n- 이미지 1장이 완성되면 곧바로 다음 번호를 이어서 생성해. 매번 나에게 물어보지 마.\n- 각 이미지 바로 위에 해당 [ID]를 반드시 표시해줘 (파일 정리용).\n- 전부 끝나면 "완료: ${jobs.length}장"이라고 말해줘.\n`;
+  const body=jobs.map((a,i)=>`\n────────────────\n#${i+1} [${a.id}] ${a.name}\n${a.prompt}`).join('\n');
+  try{await navigator.clipboard.writeText(head+body);}
+  catch(_){const t=document.createElement('textarea');t.value=head+body;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
+  flash(document.getElementById('gptBatchBtn'),`✓ 복사 완료 (${jobs.length}개)`);
+  if(confirm(`${jobs.length}개 프롬프트를 복사했어. GPT에 붙여넣으면 돼.\n\n이 카드들을 '생성 중' 단계로 옮겨둘까?`)){
+    jobs.forEach(a=>a.status=2);save();render();
+  }
 };
 
 // import (.html or .json)
