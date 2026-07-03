@@ -66,6 +66,13 @@ const PRESETS = {
     { name: '포스터 (A4)', w: 794, h: 1123, t: 'doc' },
     { name: '발표 슬라이드', w: 1280, h: 720, t: 'slide' },
   ],
+  life: [ // 라이프 확장 (설계서 층1)
+    { name: '모바일 카드', w: 720, h: 1280, t: 'card' },
+    { name: '정방형 카드', w: 1080, h: 1080, t: 'card' },
+    { name: '포토카드', w: 650, h: 1004, t: 'card' },
+    { name: '인화 4×6', w: 1200, h: 1800, t: 'doc' },
+    { name: '포스터 3:4', w: 810, h: 1080, t: 'doc' },
+  ],
 };
 
 /* ---------- 상태 ---------- */
@@ -131,6 +138,12 @@ function openEditor(w, h) {
 }
 function openTemplate(key) {
   const t = KM_TEMPLATES[key]; if (!t) return;
+  if (t.doc) { // v4 다중 씬 doc형 템플릿 (라이프 청첩장 등)
+    const d = JSON.parse(JSON.stringify(t.doc)); // 원본 보호 깊은 복사
+    openEditor(d.baseW, d.baseH);
+    KM_SCENE.loadDoc(d, () => { zoomFit(); toast('템플릿 열림 — 글자를 눌러 내용만 바꾸면 완성! 재생 ▶으로 미리 봐요'); });
+    return;
+  }
   openEditor(t.w, t.h);
   loadSVGTemplate(t);
 }
