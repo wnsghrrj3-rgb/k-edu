@@ -701,7 +701,7 @@ function drawSlotHints() {
     ctx.setLineDash([6, 4]);
     ctx.strokeRect(r.left - 4, r.top - 4, r.width + 8, r.height + 8);
     const label = '✏️ ' + (o.kmSlot.label || (o.type === 'image' ? '사진' : '글자'));
-    ctx.font = '700 12px "Noto Sans KR", sans-serif';
+    ctx.font = '700 12px "Gowun Dodum", "Noto Sans KR", sans-serif';
     const tw = ctx.measureText(label).width;
     const cx = r.left - 4, cy = r.top - 4 - 20;
     ctx.setLineDash([]);
