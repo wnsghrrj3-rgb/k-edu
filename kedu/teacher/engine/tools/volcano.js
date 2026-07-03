@@ -1,9 +1,18 @@
 /* ============================================================================
-   케이랩 도구 모듈 — 화산과 지진 (volcano) v2  [과학 12호 · 지구 영역]
-   4학년 화산과 지진. KLab.ui 3모드(자유탐구/미션/퀴즈) 표준.
+   케이랩 도구 모듈 — 화산과 지진 (volcano) v3  [과학 12호 · 지구 영역 · 탐구 표준 v2]
+   4학년 화산과 지진. KLab.ui 4모드(자유탐구/미션/퀴즈/만약에) 표준.
    v2: 🌋 화산을 three.js 3D 무대로 — 황혼 하늘·별 아래, 안에서 차오르는 마그마 발광과
        분출 파티클(용암 분수+화산재 기둥+가스). 드래그 회전·휠/핀치 줌.
        (지진은 SVG 유지, 퀴즈 썸네일도 SVG. 학습 흐름·미션·퀴즈는 동일.)
+   v3 (탐구 표준 v2 4층):
+     1층 변수 개방 — 🍯 점성 슬라이더(묽음~끈적, 한계 압력·분출 형태를 정함) +
+       ➡️ 지진 힘 세기 슬라이더(약~강, 한 번에 쌓이는 양). 고학년 자유탐구 전용.
+       압력 펌프·식는 속도·단면 보기는 기존 이산 유지(누적 손맛·교과 개념 그대로).
+     2층 만약에 — 🍯 끈적 마그마(막혔다 대폭발=원본 F칸 마법모먼트) ·
+       🫧 가스 갇힘(산체 통째 대폭발) · ⏳ 티끌 지진(약한 힘도 쌓이면 파단). 중=⏳만, 고=3종.
+     3층 예측 노트 — 점성·힘세기 첫 조작 = 🔮 예측 무장 → 해소·칩 누적·5칩 토스트.
+     4층 텍스처 승급 — rock_surface(산체 tileable)·basalt_close·granite_close(결과 카드).
+       로드 실패 = 기존 절차 텍스처·단색 폴백(절대 안 깨짐).
    디지털 우위: 위험해서 못 보는 화산 분출·지진을 안전하게 입체로 체험.
    변수 → 현상 → 발견:
      ▸ 🌋 화산 — 🔥 버튼으로 마그마 방 압력을 키우면 분출! 분출물 3종
@@ -30,17 +39,34 @@
     /* ───────────── 상태 ───────────── */
     var exp; // 'volcano' | 'quake'
     var vol, qk;
-    function volReset(){ vol={ press:0, erupting:false, t:0, seen:{lava:false,ash:false,gas:false}, made:{basalt:false,granite:false} }; }
-    function qkReset(){ qk={ stress:0, broken:false, t:0 }; }
+    function volReset(){ vol={ press:0, erupting:false, style:'', t:0, seen:{lava:false,ash:false,gas:false}, made:{basalt:false,granite:false} }; }
+    function qkReset(){ qk={ stress:0, broken:false, pushes:0, t:0 }; }
     function resetAll(){ exp='volcano'; volReset(); qkReset(); }
     resetAll();
     var v3d=null; // 3D 화산 무대 컨트롤러
     var cutView=false; // 단면 보기 토글
+    /* ── v2 1층 변수 — 점성(묽음~끈적)·지진 힘 세기(약~강). 기본값 = 기존 라이브와 동일 거동 ── */
+    var visc=0.5, qforce=0.5, sealed=false;
+    function v2reset(){ visc=0.5; qforce=0.5; sealed=false; }
+    function thrOf(){ return sealed?160:Math.round(60+visc*80); }      // 한계 압력: 묽음60·중간100·끈적140·밀봉160
+    function styleOf(){ return sealed?'mega':(visc>=0.7?'boom':(visc<0.35?'quiet':'normal')); }
+    function pushInc(){ return 8+Math.round(qforce*24); }              // 한 번에 쌓이는 힘: 약+8·중+20(기존)·강+32
+    function viscName(){ return (visc>=0.7?'🍯 끈적':(visc<0.35?'💧 묽음':'중간'))+' · 한계 '+thrOf()+'%'; }
+    function qfName(){ return (qforce<=0.3?'🪶 약':(qforce>=0.7?'💪 강':'중간'))+' · 한 번 +'+pushInc()+'%'; }
 
     function pump(){
       if(vol.erupting){ ui.toast(el,false,'이미 분출 중이에요! ↺ 새 화산으로'); return; }
-      vol.press=Math.min(100,vol.press+20);
-      if(vol.press>=100){ vol.erupting=true; vol.t=0; ui.toast(el,true,'🌋 콰과광! 화산이 분출했어요!','erupt'); }
+      var thr=thrOf();
+      vol.press=Math.min(thr,vol.press+20);
+      if(vol.press>=thr){
+        vol.erupting=true; vol.t=0; vol.style=styleOf();
+        var EM={ quiet:'🌋 스르륵~ 묽은 용암이 조용히 흘러넘쳐요 (넓적한 순상 화산)',
+                 boom:'💥 콰콰콰쾅!! 막혔던 통로가 뚫리며 대폭발! (뾰족한 종상 화산)',
+                 mega:'💥💥 빠질 곳 없던 압력이 산을 통째로 날렸어요!! 초대형 폭발!',
+                 normal:'🌋 콰과광! 화산이 분출했어요!' };
+        ui.toast(el,true,EM[vol.style]||EM.normal,'erupt');
+        checkPred();
+      }
       else { if(window.KLab.sound) window.KLab.sound.play('charge'); }
       renderScene(); renderStatus(); checkMission();
     }
@@ -59,8 +85,9 @@
     }
     function push(){
       if(qk.broken){ ui.toast(el,false,'이미 끊어졌어요! ↺ 새 땅으로'); return; }
-      qk.stress=Math.min(100,qk.stress+20);
-      if(qk.stress>=100){ qk.broken=true; qk.t=0; ui.toast(el,true,'🌍 우지끈! 땅이 끊어지며 지진!','rumble'); }
+      qk.pushes++;
+      qk.stress=Math.min(100,qk.stress+pushInc());
+      if(qk.stress>=100){ qk.broken=true; qk.t=0; ui.toast(el,true,'🌍 우지끈! 땅이 끊어지며 지진!','rumble'); checkPred(); }
       else { if(window.KLab.sound) window.KLab.sound.play('charge'); }
       renderScene(); renderStatus(); checkMission();
     }
@@ -70,7 +97,7 @@
        저=땅속은 뜨겁다·마그마(분출 1변수, 압력→분출만·용어 없는 일상어, 지진/식힘/단면 숨김) /
        중=마그마→용암·식어 굳음(압력 분출+분출물+현무암+지진, 화강암/단면은 고) /
        고=점성·분출형태·화성암(기존 v1 전부 유지).
-       ※ 점성 만약에 모드(끈적할수록 갇혔다 대폭발=마법모먼트)는 후속 분리(burn/dissolve/acid 패턴 동일). */
+       ※ 점성 만약에(끈적할수록 갇혔다 대폭발=마법모먼트)는 탐구 표준 v2 2층으로 이행 완료. */
     var LOW_MISSIONS=[
       { exp:'volcano', text:'🔥 <b style="color:#7048E8;">압력 키우기</b>를 눌러 땅속 마그마를 밀어 올려요!',
         check:function(){ return exp==='volcano' && vol.press>=20; } },
@@ -98,16 +125,109 @@
         check:function(){ return exp==='quake' && qk.broken; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],        missions:LOW_MISSIONS, exps:['volcano'],         cool:'none',   cut:false, ejecta:false },
-      mid:  { modes:['free','mission','quiz'], missions:MID_MISSIONS, exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true  },
-      high: { modes:['free','mission','quiz'], missions:MISSIONS,     exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true  }
+      low:  { modes:['free','mission'],                  missions:LOW_MISSIONS, exps:['volcano'],         cool:'none',   cut:false, ejecta:false, wif:[],                               v2:false },
+      mid:  { modes:['free','mission','quiz','whatif'],  missions:MID_MISSIONS, exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true,  wif:['slowforce'],                    v2:false },
+      high: { modes:['free','mission','quiz','whatif'],  missions:MISSIONS,     exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true,  wif:['sticky','gasblock','slowforce'], v2:true }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
     function curMissions(){ return G().missions; }
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; resetAll(); build();
+      grade=g; mode='free'; mStep=0; mDone=false; mLock=false; resetAll(); v2reset();
+      if(wif)wif.reset(); makeWif(); build();
     }});
+
+    /* ───────────── 🌀 만약에 (v2 2층 — 원본 F/G칸 마법모먼트 이행) ───────────── */
+    var WHATIF={
+      sticky:{ icon:'🍯', title:'아주 끈적한 마그마라면?',
+        q:'묽은 마그마와 끈적한 마그마 — 어느 쪽이 더 크게 터질까요?',
+        ch:['묽고 뜨거운 쪽이 크게 터져요','끈적한 쪽이 막혔다가 훨씬 크게 터져요','점성은 상관없어요'], a:1,
+        reveal:'끈적한 마그마는 가스가 못 빠져나가 압력이 안에 갇혀요! 사이다 병을 흔들고 꽉 막아 둔 것처럼 — 통로가 막혔다가 뻥! 훨씬 크게 폭발해요. 묽은 마그마는 가스가 술술 빠져 조용히 흘러내리죠.',
+        tip:'🔥 압력을 계속 키워 봐요 — 100%가 넘어도 막혀 있다가…!' },
+      gasblock:{ icon:'🫧', title:'가스가 빠질 구멍이 하나도 없다면?',
+        q:'가스가 빠질 구멍을 몽땅 막아 버리면, 분출도 없어질까요?',
+        ch:['분출이 아예 없어져요','산이 통째로 날아가는 초대형 폭발이 나요','지금과 똑같아요'], a:1,
+        reveal:'압력은 사라지지 않고 계속 쌓여요! 구멍을 막으면 분출이 없어지는 게 아니라 산체가 통째로 날아가는 대폭발이 돼요. 화산 분출은 지구가 속의 압력을 빼내는 방법이에요.',
+        tip:'구멍을 꽉 막았어요. 🔥 압력을 끝까지 쌓아 봐요…!' },
+      slowforce:{ icon:'⏳', title:'힘을 아주 조금씩만 가한다면?',
+        q:'땅을 살살, 조금씩만 밀면 지진이 안 날까요?',
+        ch:['살살 밀면 지진이 안 나요','천천히 쌓여도 한계가 오면 결국 끊어져요','오히려 더 크게 나요'], a:1,
+        reveal:'힘의 크기가 아니라 쌓인 양이 정해요! 조금씩이라도 계속 쌓이면 한계에서 결국 우지끈. 그래서 지진은 예고 없이 와요 — 평소에 대비해 두는 게 답이에요.',
+        tip:'➡️ 약한 힘을 여러 번 — 게이지가 천천히 차다가 결국…!' }
+    };
+    var wif;
+    function makeWif(){
+      var scen={}; G().wif.forEach(function(k){ scen[k]=WHATIF[k]; });
+      wif=ui.whatifEngine({
+        scenarios:scen,
+        rebuild:function(){ build(); },
+        footEl:function(){ return el.querySelector('.vc-foot'); },
+        onSelect:function(k){ v2reset(); volReset(); qkReset(); cutView=false; exp=(k==='slowforce')?'quake':'volcano'; },
+        onPlay:function(k){
+          if(k==='sticky'){ exp='volcano'; volReset(); sealed=false; visc=1; }
+          else if(k==='gasblock'){ exp='volcano'; volReset(); sealed=true; visc=0.5; }
+          else { exp='quake'; qkReset(); qforce=0; }
+        },
+        onExit:function(){ v2reset(); volReset(); qkReset(); exp='volcano'; }
+      });
+    }
+    makeWif();
+
+    /* ── v2 예측 무장 (3층) — 점성·힘세기 슬라이더 첫 조작 = 🔮 예측 → 조건 도달 = 해소·칩 ── */
+    var chips=[], chipDone=false;
+    var pred={ visc:{asked:false,ch:-1,done:false}, qf:{asked:false,ch:-1,done:false} };
+    var PRED={
+      visc:{ q:'🔮 예측 먼저! 어떤 마그마가 더 크게 터질까요?',
+        ch:['묽고 뜨거운 마그마','끈적끈적한 마그마','점성은 상관없다'],
+        tip:'슬라이더를 🍯 끈적 끝까지 밀고 🔥 압력을 한계까지 채워 봐요!' },
+      qf:{ q:'🔮 예측 먼저! 아주 약한 힘만 계속 가하면 어떻게 될까요?',
+        ch:['지진이 안 난다','조금씩 쌓여 결국 끊어진다','땅이 더 단단해진다'],
+        tip:'힘 세기를 🪶 약 끝까지 내리고 ➡️ 계속 밀어 봐요!' }
+    };
+    function predArm(kind){
+      if(mode!=='free'||pred[kind].asked)return; pred[kind].asked=true;
+      var fc=el.querySelector('.vc-foot'); if(!fc)return;
+      var P=PRED[kind];
+      fc.innerHTML='<div class="vc-pred" style="text-align:center;margin-top:8px;">'
+        +'<div style="font-size:17px;font-weight:800;color:#7048E8;margin-bottom:7px;font-family:inherit;">'+P.q+'</div>'
+        +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'
+        +P.ch.map(function(c,i){ return '<button class="vc-pch" data-kind="'+kind+'" data-v="'+i+'" style="font-size:15.5px;padding:10px 14px;border-radius:12px;border:2.5px solid #845EF7;background:#fff;color:#5F3DC4;cursor:pointer;font-weight:800;font-family:inherit;line-height:1.3;">'+c+'</button>'; }).join('')
+        +'</div></div>';
+      fc.querySelectorAll('.vc-pch').forEach(function(b){
+        b.addEventListener('click',function(){
+          pred[kind].ch=+b.dataset.v; if(window.KLab.sound)window.KLab.sound.play('select');
+          fc.innerHTML='<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:800;color:#0B7285;font-family:inherit;">📝 예측 접수! '+PRED[kind].tip+'</div>';
+        });
+      });
+    }
+    function predResolve(kind){
+      var p=pred[kind]; if(p.done||p.ch<0)return; p.done=true;
+      var hit=(p.ch===1), msg;
+      if(kind==='visc') msg=hit?'✔ 예측 적중 — 끈적한 마그마가 훨씬 크게! 가스가 갇혀 압력이 폭발적으로 터져요.'
+                               :'✘ 예측 빗나감 — 끈적할수록 크게 터져요! 가스가 못 빠져나가 압력이 갇혔다가 한꺼번에 터지거든요.';
+      else msg=hit?'✔ 예측 적중 — 약해도 쌓이면 결국 끊어져요! 지진은 힘의 크기가 아니라 쌓인 양이 정해요.'
+                  :'✘ 예측 빗나감 — 약한 힘도 계속 쌓이면 결국 우지끈! 쌓인 양이 지진을 정해요.';
+      chips.push({k:kind,hit:hit}); renderChips(); chipToast();
+      if(window.KLab.sound)window.KLab.sound.play(hit?'success':'pop');
+      var fc=el.querySelector('.vc-foot');
+      if(fc&&mode==='free')fc.innerHTML='<div style="text-align:center;margin-top:8px;font-size:16px;font-weight:800;color:'+(hit?'#0B7A5C':'#C24106')+';font-family:inherit;max-width:640px;margin-left:auto;margin-right:auto;line-height:1.5;">'+msg+'</div>';
+    }
+    function checkPred(){
+      if(mode!=='free')return;
+      if(pred.visc.ch>=0&&!pred.visc.done&&vol.erupting&&visc>=0.7)predResolve('visc');
+      if(pred.qf.ch>=0&&!pred.qf.done&&qk.broken&&qforce<=0.3)predResolve('qf');
+    }
+    /* ── v2 예측 노트 칩 (3층) — 세션 누적, 5칩 토스트 (earth·season·moon·solar 규약) ── */
+    var CHIPNM={sticky:'🍯 끈적마그마',gasblock:'🫧 가스갇힘',slowforce:'⏳ 티끌지진',visc:'🌡 점성실험',qf:'🪶 약한힘실험'};
+    function chipToast(){ if(chips.length===5){ setTimeout(function(){ ui.toast(el,true,'🌋 꼬마 화산학자 — 오늘 가설 5개를 실험했어요!'); },80); } }
+    function renderChips(){
+      var host=el.querySelector('.vc-chips'); if(!host)return;
+      host.innerHTML=chips.map(function(c){
+        var tag=c.hit?'✔예측적중':'✘예측빗나감';
+        return '<span class="vc-chip2" style="font-size:13.5px;font-weight:800;padding:5px 10px;border-radius:999px;border:2px solid '+(c.hit?'#12B886':'#E8590C')+';color:'+(c.hit?'#0B7A5C':'#C24106')+';background:#fff;font-family:inherit;">'
+          +(CHIPNM[c.k]||c.k)+' · '+tag+'</span>';
+      }).join('');
+    }
 
     var mStep=0, mDone=false, mLock=false;
     function checkMission(){
@@ -157,17 +277,33 @@
               +'background:'+(on?C.hot:'#fff')+';color:'+(on?'#fff':C.hot)+';">'+x[1]+'</button>'; }).join('')
         + '</div>';
     }
+    function v2Row(){
+      if(mode!=='free'||!G().v2) return '';
+      var sl='font-size:15px;font-weight:800;color:#5a7894;font-family:inherit;';
+      if(exp==='volcano')
+        return '<div class="vc-v2" style="display:flex;gap:9px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          +'<span style="'+sl+'">💧 묽음</span>'
+          +'<input class="vc-visc" type="range" min="0" max="1" step="0.01" value="'+visc+'" style="width:150px;">'
+          +'<span style="'+sl+'">🍯 끈적</span>'
+          +'<span class="vc-visclab" style="font-size:15px;font-weight:800;color:#E8590C;min-width:128px;font-family:inherit;">'+viscName()+'</span></div>';
+      return '<div class="vc-v2" style="display:flex;gap:9px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          +'<span style="'+sl+'">🪶 약</span>'
+          +'<input class="vc-qf" type="range" min="0" max="1" step="0.01" value="'+qforce+'" style="width:150px;">'
+          +'<span style="'+sl+'">💪 강</span>'
+          +'<span class="vc-qflab" style="font-size:15px;font-weight:800;color:'+C.vio+';min-width:128px;font-family:inherit;">'+qfName()+'</span></div>';
+    }
     function ctrlRow(){
+      var wifOn=(mode==='whatif');
       if(exp==='volcano'){
         var canCool=vol.erupting, gc=G().cool;
         var s='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
           +'<button class="vc-btn" data-act="pump" style="'+btn+'background:#fff;color:'+C.hot+';border-color:'+C.hot+';">🔥 압력 키우기</button>';
-        if(gc==='basalt'||gc==='all')
+        if(!wifOn&&(gc==='basalt'||gc==='all'))
           s+='<button class="vc-btn" data-act="basalt" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:'+C.basalt:'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">🪨 빨리 식히기 → 현무암</button>';
-        if(gc==='all')
+        if(!wifOn&&gc==='all')
           s+='<button class="vc-btn" data-act="granite" style="'+btn+(canCool?'background:#fff;color:'+C.ink+';border-color:#C9A227':'background:#f1f3f5;color:#adb5bd;border-color:#dee2e6')+';">💎 천천히 식히기 → 화강암</button>';
         s+='<button class="vc-btn" data-act="volReset" style="'+btn+'background:#fff;color:#666;border-color:#9aa;">↺ 새 화산</button>';
-        if(G().cut)
+        if(!wifOn&&G().cut)
           s+='<button class="vc-btn" data-act="toggleCut" style="'+btn+'background:#fff;color:#1565C0;border-color:#1565C0;">'+(cutView?'🌋 겉 보기':'🪓 단면 보기')+'</button>';
         return s+'</div>';
       }
@@ -179,22 +315,59 @@
     function build(){
       if(v3d){ v3d.dispose(); v3d=null; }
       var M=curMissions();
-      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', body='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode,{whatif:'🌀 만약에'}), bar='', body='', foot='';
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(M[mStep].text,mStep,M.length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
-      else body=expTabs()+ctrlRow();
+      else if(mode==='whatif'){ bar=wif.barHTML(); body=(wif.active()?ctrlRow():''); }
+      else body=expTabs()+v2Row()+ctrlRow();
+      /* ── v2 3층 — 만약에 정리 화면 도달 시 칩 1개 자동 기록 ── */
+      if(mode==='whatif'&&wif.state.key){
+        if(wif.state.phase==='reveal'&&!chipDone){
+          chipDone=true;
+          var cw=WHATIF[wif.state.key];
+          chips.push({k:wif.state.key,hit:(wif.state.choice===cw.a)});
+          chipToast(); if(window.KLab.sound)window.KLab.sound.play(wif.state.choice===cw.a?'success':'pop');
+        } else if(wif.state.phase!=='reveal'){ chipDone=false; }
+      }
       el.innerHTML='<style>.vc-btn:active,.vc-exp:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}@keyframes vcShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-7px,3px);}40%{transform:translate(6px,-3px);}60%{transform:translate(-5px,2px);}80%{transform:translate(4px,-2px);}}</style>'
         + top + bar + body
-        +'<div class="kl-stage-host" style="position:relative;"><div class="vc-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:radial-gradient(120% 120% at 50% 20%,#FCFEFF 0%,#EAF3FB 75%,#DCEAF6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
-        + foot
-        +'<div class="vc-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>';
+        +'<div class="kl-stage-host" style="position:relative;"><div class="vc-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:radial-gradient(120% 120% at 50% 20%,#FCFEFF 0%,#EAF3FB 75%,#DCEAF6 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div>'
+          +(mode==='quiz'?'':'<div class="vc-texlab" style="position:absolute;top:12px;right:14px;font-size:12px;font-weight:800;color:#9fb6e6;background:rgba(8,12,26,0.55);padding:4px 9px;border-radius:9px;pointer-events:none;z-index:3;font-family:inherit;"></div>')
+        +'</div>'
+        +'<div class="vc-foot">'+foot+'</div>'
+        +'<div class="vc-status" style="text-align:center;margin-top:11px;font-weight:800;font-family:inherit;"></div>'
+        +((mode==='free'||mode==='whatif')?'<div class="vc-chips" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;"></div>':'');
       ui.bindModeTabs(el,function(m){
-        mode=m; mStep=0; mDone=false; mLock=false; resetAll();
+        wif.reset();
+        mode=m; mStep=0; mDone=false; mLock=false; resetAll(); v2reset(); cutView=false;
         if(m==='mission')exp=curMissions()[0].exp;
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         build();
       });
-      renderScene(); bind(); bands.bind(el); renderStatus();
+      renderScene(); bind(); bindV2(); bands.bind(el); renderChips(); texLabel(); renderStatus();
+      if(mode==='whatif')wif.bind(el);
+    }
+
+    /* ───────────── v2 4층: 실사 텍스처 승급 로더 — 실패 시 기존 절차 텍스처 폴백(절대 안 깨짐) ───────────── */
+    var TEXSRC={ rock:'/kedu/teacher/engine/tools/assets/textures/volcano/rock_surface.png',
+                 basalt:'/kedu/teacher/engine/tools/assets/textures/volcano/basalt_close.png',
+                 granite:'/kedu/teacher/engine/tools/assets/textures/volcano/granite_close.png' };
+    var texImg={}, texTried=false, texApply=null;
+    function loadTex(){
+      if(texTried)return; texTried=true;
+      Object.keys(TEXSRC).forEach(function(k){
+        try{
+          var im=new Image();
+          im.onload=function(){ texImg[k]=im; if(texApply)texApply(k); texLabel(); };
+          im.onerror=function(){ texLabel(); };
+          im.src=TEXSRC[k];
+        }catch(e){}
+      });
+    }
+    function texLabel(){
+      var lb=el.querySelector('.vc-texlab'); if(!lb)return;
+      var n=Object.keys(texImg).length;
+      lb.textContent=n>0?('🖼️ 실사 재질 '+n+'종'):'🎨 기본 그림';
     }
 
     /* ───────────── 3D 화산 무대 (three.js) ─────────────
@@ -206,7 +379,7 @@
       function CW(){ return host.clientWidth || 800; }
       function CH(){ return host.clientHeight || 480; }
       var alive3 = true, raf3 = null, last = performance.now();
-      var S = { press:0, erupting:false, seen:{}, made:{}, cut:false };
+      var S = { press:0, erupting:false, style:'', seen:{}, made:{}, cut:false };
 
       host.style.position = 'relative';
       var wrap = document.createElement('div');
@@ -432,6 +605,21 @@
       var chipLava=mkChip('lava','🔥 용암','#FFB266','left:50%;bottom:14px;transform:translateX(-50%);');
       var chipAsh =mkChip('ash','🌫️ 화산재','#CED4DA','left:50%;top:12px;transform:translateX(-50%);');
       var chipGas =mkChip('gas','💨 화산 가스','#E9ECEF','right:12px;top:42%;');
+      /* ── v2 4층: 현무암/화강암 결과 클로즈업 카드 (basalt_close·granite_close 승급, 이미지 실패=텍스트만) ── */
+      function mkResCard(key,title,desc,color,top){
+        var d=document.createElement('div');
+        d.style.cssText='position:absolute;left:12px;top:'+top+'px;display:none;pointer-events:none;background:rgba(8,12,26,.78);border:2.5px solid '+color+';border-radius:14px;padding:8px 10px;font-family:inherit;color:#fff;max-width:150px;text-align:center;z-index:2;';
+        var im=document.createElement('img');
+        im.style.cssText='width:84px;height:84px;border-radius:12px;display:block;margin:0 auto 5px;object-fit:cover;';
+        im.onerror=function(){ im.style.display='none'; };
+        im.src=TEXSRC[key]; im.alt='';
+        d.appendChild(im);
+        var t=document.createElement('div');
+        t.innerHTML='<b style="font-size:15px;color:'+color+';">'+title+'</b><br><span style="font-weight:700;font-size:11.5px;color:#dbe4f0;">'+desc+'</span>';
+        d.appendChild(t); chipBox.appendChild(d); return d;
+      }
+      var cardBas=mkResCard('basalt','현무암','밖에서 빨리 식음 · 구멍 송송','#CED4DA',48);
+      var cardGra=mkResCard('granite','화강암','속에서 천천히 식음 · 알갱이 큼','#E9D8C8',216);
       function updateChips(){
         var show=S.erupting && opts.ejecta!==false; // 저학년=분출물 라벨 숨김(터지는 모습만)
         [['lava',chipLava],['ash',chipAsh],['gas',chipGas]].forEach(function(o){
@@ -440,6 +628,8 @@
           var base=b===chipLava?'🔥 용암':b===chipAsh?'🌫️ 화산재':'💨 화산 가스';
           b.innerHTML=base+(seen?' ✓':''); b.style.opacity=seen?'0.75':'1';
         });
+        cardBas.style.display=(S.made&&S.made.basalt&&!S.cut)?'':'none';
+        cardGra.style.display=(S.made&&S.made.granite&&!S.cut)?'':'none';
       }
 
       // 단면 안내 라벨 (단면 모드에서 3D 위치에 따라다님)
@@ -491,7 +681,10 @@
         var now=performance.now(), dt=Math.min(0.05,(now-last)/1000); last=now;
         if(!drag && !S.cut){ idle+=dt; if(idle>1.2){ theta+=dt*0.08; place(); } }
         var cooled=!!(S.made&&(S.made.basalt||S.made.granite));
-        var strength=S.erupting?(cooled?0.18:1):0;
+        /* v2 — 분출 형태: quiet(순상)=분수 약·흐름 많음 / boom(종상)=대폭발 / mega=산체 폭발 */
+        var styleK=S.style||'normal';
+        var styleMul={quiet:0.4,normal:1,boom:1.9,mega:2.8}[styleK]||1;
+        var strength=S.erupting?(cooled?0.18:styleMul):0;
         // 발광
         var gT=S.erupting?(cooled?1.0:2.6):(S.press/100)*0.95;
         gI+=(gT-gI)*Math.min(1,dt*6); glow.intensity=gI;
@@ -512,15 +705,16 @@
         var sOp = shellMode==='rock'?0.96 : (shellMode==='flow'?0.92:0);
         flowShellMat.opacity += (sOp-flowShellMat.opacity)*Math.min(1,dt*3);
         if(shellMode==='flow') lrTex.offset.y -= dt*0.4;
-        // 흔들림
+        // 흔들림 — 대폭발일수록 크게
         var trembling=(!S.erupting&&S.press>=60)|| (S.erupting&&!cooled);
-        shake=trembling?Math.min(0.18,shake+dt*0.4):Math.max(0,shake-dt*0.6);
+        var shakeCap={quiet:0.08,normal:0.18,boom:0.27,mega:0.36}[styleK]||0.18;
+        shake=trembling?Math.min(shakeCap,shake+dt*0.4):Math.max(0,shake-dt*0.6);
         volGroup.position.x=(Math.random()-0.5)*shake; volGroup.position.z=(Math.random()-0.5)*shake;
-        // 방출
+        // 방출 — quiet=분수 약·흐름 넉넉(조용히 흘러넘침), boom/mega=분수·재 폭증
         var flowing=S.erupting && !cooled;
         if(strength>0){ emit(lava, Math.round(7*strength), spawnLava); emit(ash, Math.round(4*strength), spawnAsh); emit(gas, Math.round(3*strength), spawnGas); }
         else if(S.press>0){ if(Math.random()<0.5) emit(gas,1,spawnGas); }
-        if(flowing){ emit(flow, 11, spawnFlow); }
+        if(flowing){ emit(flow, styleK==='quiet'?16:(styleK==='boom'||styleK==='mega'?8:11), spawnFlow); }
         stepSys(lava,dt,16,lavaFade); stepSys(flow,dt,2.2,flowFade); stepSys(ash,dt,1.0,ashFade); stepSys(gas,dt,1.4,gasFade);
         // 단면 모드
         if(S.cut){
@@ -544,13 +738,32 @@
       }
       loop();
 
+      /* ── v2 4층: 실사 텍스처 적용기 — 산체 tileable + 단면 결과 메시 승급 ── */
+      function toTex(im){
+        var c=document.createElement('canvas'); c.width=im.naturalWidth||512; c.height=im.naturalHeight||512;
+        var x=c.getContext('2d'); if(!x||!x.drawImage)return null;
+        x.drawImage(im,0,0);
+        return new T.CanvasTexture(c);
+      }
+      function applyTex(k){
+        try{
+          var im=texImg[k]; if(!im)return;
+          var tx=toTex(im); if(!tx)return;
+          if(k==='rock'){ tx.wrapS=tx.wrapT=T.RepeatWrapping; tx.repeat.set(4,2); volMat.map=tx; volMat.needsUpdate=true; }
+          if(k==='basalt'&&basaltMesh){ basaltMesh.material.map=tx; basaltMesh.material.needsUpdate=true; }
+          if(k==='granite'&&graniteMesh){ graniteMesh.material.map=tx; graniteMesh.material.needsUpdate=true; }
+        }catch(e){}
+      }
+      texApply=applyTex; loadTex();
+      Object.keys(texImg).forEach(function(k){ applyTex(k); });
+
       return {
-        sync:function(v){ S.press=v.press; S.erupting=v.erupting; S.seen=v.seen; S.made=v.made; updateChips(); },
+        sync:function(v){ S.press=v.press; S.erupting=v.erupting; S.style=v.style||''; S.seen=v.seen; S.made=v.made; updateChips(); },
         setCut:function(b){ S.cut=!!b;
           if(b){ theta=0; phi=1.2; radius=34; target.set(0,0.5,0); } else { theta=0.6; phi=1.05; radius=38; target.set(0,4.5,0); }
-          place();
+          place(); updateChips();
         },
-        dispose:function(){ alive3=false; if(raf3)cancelAnimationFrame(raf3);
+        dispose:function(){ alive3=false; if(raf3)cancelAnimationFrame(raf3); texApply=null;
           window.removeEventListener('pointermove',onMove); window.removeEventListener('pointerup',onUp); if(ro)ro.disconnect();
           try{ renderer.dispose(); }catch(e){}
           try{ scene.traverse(function(o){ if(o.geometry)o.geometry.dispose&&o.geometry.dispose(); if(o.material){ var m=o.material; if(m.map)m.map.dispose&&m.map.dispose(); m.dispose&&m.dispose(); } }); }catch(e){}
@@ -589,9 +802,9 @@
         +'<ellipse cx="450" cy="395" rx="120" ry="52" fill="'+C.lava+'" opacity="0.95"/>'
         +'<rect x="436" y="92" width="28" height="310" fill="'+C.lava+'" opacity="'+(vol.press>=40?0.95:0.45)+'"/>'
         +'<text x="450" y="402" text-anchor="middle" font-size="20" font-weight="800" fill="#fff" font-family="inherit">마그마 방</text>'
-        // 압력 게이지
+        // 압력 게이지 (v2: 한계가 100%를 넘는 끈적/밀봉 상태에선 바는 가득, 숫자는 실제 %)
         +'<rect x="40" y="300" width="34" height="130" rx="10" fill="#fff" stroke="'+C.hot+'" stroke-width="3"/>'
-        +'<rect x="44" y="'+(426-118*vol.press/100)+'" width="26" height="'+(118*vol.press/100)+'" rx="7" fill="'+C.hot+'"/>'
+        +'<rect x="44" y="'+(426-118*Math.min(100,vol.press)/100)+'" width="26" height="'+(118*Math.min(100,vol.press)/100)+'" rx="7" fill="'+C.hot+'"/>'
         +'<text x="57" y="290" text-anchor="middle" font-size="17" font-weight="800" fill="'+C.hot+'" font-family="inherit">압력 '+vol.press+'%</text>';
       if(vol.erupting){
         var e=svgEl('g',{class:'vc-erupt'}); g.appendChild(e);
@@ -669,19 +882,35 @@
       var s=el.querySelector('.vc-status'); if(!s)return;
       var pic=(mode==='quiz')?QUIZ[qIdx].pic:exp, msg;
       if(pic==='volcano'){
+        var thr=thrOf();
         if(G().low){
           if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">펑! 화산이 터졌어요 🌋 땅속 뜨거운 마그마가 솟아올라요!</span>';
           else if(vol.press>0) msg='<span style="color:'+C.ink+';font-size:19px;">압력이 차오르고 있어요… 가득 차면 펑! 터져요 (압력 '+vol.press+'%)</span>';
           else msg='<span style="color:'+C.sub+';font-size:19px;">땅속 깊은 곳은 아주 뜨거워 돌이 녹아 있어요(마그마). 🔥 압력을 키워 봐요!</span>';
         }
-        else if(vol.erupting) msg='<span style="color:'+C.hot+';font-size:19px;">🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요</span>';
-        else if(vol.press>0) msg='<span style="color:'+C.ink+';font-size:19px;">압력 '+vol.press+'% — 100%가 되면 분출해요!</span>';
+        else if(vol.erupting){
+          var SM={ quiet:'💧 묽은 용암이 조용히 넓게 흘러요 — 넓적한 순상 화산이 만들어져요',
+                   boom:'🍯 갇혔던 압력이 한꺼번에 뻥! 대폭발 — 뾰족한 종상 화산이 만들어져요',
+                   mega:'🫧 빠질 곳 없던 압력이 산을 통째로 날렸어요 — 압력은 사라지지 않고 쌓여요!' };
+          msg='<span style="color:'+C.hot+';font-size:19px;">'+(SM[vol.style]||'🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요')+'</span>';
+        }
+        else if(vol.press>=100&&thr>100)
+          msg='<span style="color:#C24106;font-size:19px;">'+(sealed?'🫧 구멍이 꽉 막혔어요! 압력이 계속 쌓여요… ':'🍯 끈적한 마그마가 통로를 막았어요! ')+'압력 '+vol.press+'% (한계 '+thr+'%)</span>';
+        else if(vol.press>0) msg='<span style="color:'+C.ink+';font-size:19px;">압력 '+vol.press+'% — '+thr+'%가 되면 분출해요!</span>';
         else msg='<span style="color:'+C.sub+';font-size:19px;">땅속 마그마 방에 🔥 압력을 키워 봐요</span>';
       } else {
-        if(qk.broken) msg='<span style="color:'+C.hot+';font-size:19px;">땅이 큰 힘을 오래 받으면 끊어지면서 지진이 나요</span>';
-        else msg='<span style="color:'+C.sub+';font-size:19px;">➡️ 양쪽에서 미는 힘을 계속 가해 봐요 (쌓인 힘 '+qk.stress+'%)</span>';
+        if(qk.broken) msg='<span style="color:'+C.hot+';font-size:19px;">'+(qforce<=0.3?'약한 힘도 쌓이면 결국 우지끈! 힘의 크기가 아니라 쌓인 양이 지진을 정해요':'땅이 큰 힘을 오래 받으면 끊어지면서 지진이 나요')+'</span>';
+        else msg='<span style="color:'+C.sub+';font-size:19px;">➡️ 양쪽에서 미는 힘을 계속 가해 봐요 (쌓인 힘 '+qk.stress+'%'+(mode==='free'&&G().v2?' · '+qk.pushes+'번':'')+')</span>';
       }
       s.innerHTML=msg;
+      /* ── v2 검증 관측점 — jsdom에서 물리 상태를 단언할 수 있게 dataset 기록 ── */
+      var stg=el.querySelector('.vc-stage');
+      if(stg){
+        stg.dataset.press=String(vol.press); stg.dataset.thr=String(thrOf());
+        stg.dataset.erupt=vol.erupting?'1':'0'; stg.dataset.style=vol.style||'';
+        stg.dataset.stress=String(qk.stress); stg.dataset.broken=qk.broken?'1':'0';
+        stg.dataset.pushes=String(qk.pushes); stg.dataset.visc=visc.toFixed(2); stg.dataset.qf=qforce.toFixed(2);
+      }
     }
 
     /* ───────────── 바인딩 ───────────── */
@@ -713,6 +942,20 @@
           ui.toast(el,ok);
           setTimeout(function(){ newQuiz(); build(); },1500);
         });
+      });
+    }
+
+    /* ── v2 변수 행 바인딩 (1층) — 첫 조작 = 🔮 예측 무장 ── */
+    function bindV2(){
+      var vs=el.querySelector('.vc-visc'); if(vs)vs.addEventListener('input',function(){
+        visc=+vs.value; predArm('visc');
+        var lb=el.querySelector('.vc-visclab'); if(lb)lb.textContent=viscName();
+        renderStatus();
+      });
+      var qs=el.querySelector('.vc-qf'); if(qs)qs.addEventListener('input',function(){
+        qforce=+qs.value; predArm('qf');
+        var lb=el.querySelector('.vc-qflab'); if(lb)lb.textContent=qfName();
+        renderStatus();
       });
     }
 
