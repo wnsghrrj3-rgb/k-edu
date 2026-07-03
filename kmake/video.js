@@ -135,7 +135,8 @@
         // 내보내기 해상도로 줌 (FXR·getBoundingRect가 이 좌표계를 쓴다)
         cv.setZoom(scale); cv.setDimensions({ width: W, height: H });
 
-        var mbg = KM_MOTION.offlineMbg(sc.motionBg, W, H);
+        var over = cv.getObjects().some(function (o) { return o.kmType === 'background'; }) && KM_MOTION.mbgOverlay(sc.motionBg);
+        var mbg = KM_MOTION.offlineMbg(sc.motionBg, W, H, over);
         var frames = Math.max(1, Math.round(sc.dur * FPS));
         KM_MOTION.offlineBegin();
 
@@ -144,12 +145,14 @@
           var t = f / FPS;
           KM_MOTION.offlineFrame(t);
 
-          // 합성: 바닥색 → 모션배경 → fabric → FX
+          // 합성: 바닥색 → (모션배경) → fabric → (오버레이 모션) → FX
           octx.globalAlpha = 1;
-          octx.fillStyle = (mbg && mbg.base) || '#ffffff';
+          octx.fillStyle = (mbg && !mbg.overlay && mbg.base) || '#ffffff';
           octx.fillRect(0, 0, W, H);
-          if (mbg) { mbg.frame(mbgCtx, t, 1 / FPS); octx.drawImage(mbgCv, 0, 0, W, H); }
+          if (mbg) mbg.frame(mbgCtx, t, 1 / FPS);
+          if (mbg && !mbg.overlay) octx.drawImage(mbgCv, 0, 0, W, H);
           octx.drawImage(cv.lowerCanvasEl, 0, 0, W, H);
+          if (mbg && mbg.overlay) octx.drawImage(mbgCv, 0, 0, W, H);
           octx.drawImage(fxCv, 0, 0, W, H);
 
           // 전환: 이전 씬 마지막 프레임을 걷어내기

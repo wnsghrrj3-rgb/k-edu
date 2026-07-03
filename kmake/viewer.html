@@ -50,7 +50,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:#101423;overflow:hidden;dis
 #stageWrap{position:relative}
 #stage{position:relative;transform-origin:top left;border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5);background:#fff}
 #stage canvas{position:absolute;left:0;top:0;width:100%!important;height:100%!important}
-#mbgCv{z-index:1} #fabCv{z-index:2} #fxCv{z-index:3;pointer-events:none} #ovCv{z-index:4;pointer-events:none;transition:opacity .6s ease,transform .6s ease}
+#mbgCv{z-index:1} #fabCv{z-index:2} #mbgCv.over{z-index:3} #fxCv{z-index:4;pointer-events:none} #ovCv{z-index:5;pointer-events:none;transition:opacity .6s ease,transform .6s ease}
 #ovCv.out-fade{opacity:0}
 #ovCv.out-slideL{transform:translateX(-104%)}
 #ovCv.out-zoom{opacity:0;transform:scale(1.18)}
@@ -138,11 +138,12 @@ body{font-family:'Gowun Dodum',sans-serif;background:#101423;overflow:hidden;dis
   function loadScene(sc) {
     return new Promise(function (res) { canvas.loadFromJSON(sc.canvas, function () { canvas.renderAll(); res(); }); });
   }
-  function snapshotOverlay(mbgOn) {
+  function snapshotOverlay(mbg) {
     ovCtx.clearRect(0, 0, baseW, baseH);
     ovCtx.fillStyle = '#fff'; ovCtx.fillRect(0, 0, baseW, baseH);
-    if (mbgOn) ovCtx.drawImage($('mbgCv'), 0, 0);
+    if (mbg && !mbg.overlay) ovCtx.drawImage($('mbgCv'), 0, 0);
     ovCtx.drawImage(canvas.lowerCanvasEl, 0, 0, baseW, baseH);
+    if (mbg && mbg.overlay) ovCtx.drawImage($('mbgCv'), 0, 0);
     ovCtx.drawImage($('fxCv'), 0, 0);
     var ov = $('ovCv');
     ov.className = ''; ov.style.opacity = 1;
@@ -153,12 +154,17 @@ body{font-family:'Gowun Dodum',sans-serif;background:#101423;overflow:hidden;dis
     if (kind === 'none') { ov.style.transition = 'none'; ov.style.opacity = 0; requestAnimationFrame(function () { ov.style.transition = ''; }); return; }
     requestAnimationFrame(function () { ov.classList.add('out-' + (kind === 'slideL' || kind === 'zoom' ? kind : 'fade')); });
   }
+  function hasBgImg(sc) {
+    return ((sc.canvas && sc.canvas.objects) || []).some(function (o) { return o.kmType === 'background'; });
+  }
   function playScene(i) {
     var sc = scenes[i];
     return loadScene(sc).then(function () {
-      var mbg = KM_MOTION.offlineMbg(sc.motionBg, baseW, baseH);
+      var over = hasBgImg(sc) && KM_MOTION.mbgOverlay(sc.motionBg); // 실사 배경 위 꽃잎·눈 오버레이
+      var mbg = KM_MOTION.offlineMbg(sc.motionBg, baseW, baseH, over);
+      $('mbgCv').classList.toggle('over', !!(mbg && mbg.overlay));
       mbgCtx.clearRect(0, 0, baseW, baseH);
-      if (mbg) { mbgCtx.fillStyle = mbg.base || '#fff'; mbgCtx.fillRect(0, 0, baseW, baseH); }
+      if (mbg && !mbg.overlay) { mbgCtx.fillStyle = mbg.base || '#fff'; mbgCtx.fillRect(0, 0, baseW, baseH); }
       KM_MOTION.offlineBegin();
       overlayOut(prevTrans);
       skip = false;
@@ -170,7 +176,7 @@ body{font-family:'Gowun Dodum',sans-serif;background:#101423;overflow:hidden;dis
           lastT = t;
           KM_MOTION.offlineFrame(t);
           if (t >= sc.dur || skip) {
-            snapshotOverlay(!!mbg);
+            snapshotOverlay(mbg);
             prevTrans = sc.transition;
             KM_MOTION.offlineEnd();
             res();

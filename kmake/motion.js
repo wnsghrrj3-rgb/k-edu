@@ -862,15 +862,38 @@
     FXR.reset();
     canvas.renderAll();
   }
-  function offlineMbg(key, w, h) { // 오프라인 모션 배경 드라이버 (suspendBg(true) 상태에서만)
+  // 실사 배경 위 오버레이 가능한 파티클류 (밤하늘류는 배경이 본체라 제외)
+  const MBG_OVERLAY = ['sakura', 'snow', 'confetti', 'bubbles'];
+  function mbgOverlay(key) { return MBG_OVERLAY.includes(key); }
+  function overlayCtxOf(ctx, w, h) { // step의 첫 전면 배경 채움(fillRect 0,0,w,h) 1회만 무시 — 파티클만 통과
+    let skipped = false;
+    return new Proxy(ctx, {
+      get(t, k) {
+        if (k === 'fillRect') return (x, y, ww, hh) => {
+          if (!skipped && x === 0 && y === 0 && ww === w && hh === h) { skipped = true; return; }
+          t.fillRect(x, y, ww, hh);
+        };
+        const v = t[k]; return typeof v === 'function' ? v.bind(t) : v;
+      },
+      set(t, k, v) { t[k] = v; return true; },
+    });
+  }
+  function offlineMbg(key, w, h, overlay) { // 오프라인 모션 배경 드라이버 (suspendBg(true) 상태에서만)
     if (!key || !MBG[key]) return null;
     MBG[key].init(w, h);
-    return { base: MBG[key].base, frame: (ctx, t, dt) => MBG[key].step(ctx, w, h, t, dt) };
+    const over = !!overlay && mbgOverlay(key);
+    return {
+      base: MBG[key].base, overlay: over,
+      frame: (ctx, t, dt) => {
+        if (over) { ctx.clearRect(0, 0, w, h); MBG[key].step(overlayCtxOf(ctx, w, h), w, h, t, dt); }
+        else MBG[key].step(ctx, w, h, t, dt);
+      },
+    };
   }
   function fxOverride(c) { FXR.setOverride(c); }
 
   window.KM_MOTION = {
-    suspendBg, offlineBegin, offlineFrame, offlineEnd, offlineMbg, fxOverride,
+    suspendBg, offlineBegin, offlineFrame, offlineEnd, offlineMbg, fxOverride, mbgOverlay,
     panelHTML, bindPanel, previewObj,
     enterPlay, exitPlay, isPlaying: () => playing,
     mountBg, resizeBg, setMotionBg, getBgKey, bgBaseColor, bgItemsHTML,
