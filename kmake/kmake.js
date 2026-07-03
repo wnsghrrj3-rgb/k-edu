@@ -125,7 +125,7 @@ function goHome() {
   doRestoreHome();
 }
 function doRestoreHome() {
-  KM_MOTION.exitPlay(); KM_MOTION.setMotionBg(null);
+  KM_MOTION.exitPlay(); KM_MOTION.setMotionBg(null); KM_SCENE.teardown();
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
@@ -191,6 +191,21 @@ function initCanvas() {
   canvas.on('mouse:up', clearGuides);
   canvas.on('after:render', drawSlotHints);
   KM_MOTION.mountBg();
+  // 씬 엔진 훅 주입 (scene.js) — fabric·히스토리 조작은 전부 이 훅 안에서만
+  KM_SCENE.init({
+    snapshot: () => ({ json: canvas.toJSON(['kmSlot']), motionBg: KM_MOTION.getBgKey(), thumb: sceneThumb() }),
+    blankJson: () => ({ version: '5.3.0', objects: [], background: '#fff' }),
+    load: (sc, done) => {
+      lockHistory = true; canvas.discardActiveObject(); canvas.clear(); canvas.backgroundColor = '#fff';
+      canvas.loadFromJSON(sc.json, () => {
+        KM_MOTION.setMotionBg(sc.motionBg || null, { keepBgColor: !!sc.motionBg });
+        applyMode(); canvas.requestRenderAll(); lockHistory = false;
+        undoStack = []; redoStack = []; pushHistory(); onSelect();
+        if (done) done();
+      });
+    },
+  });
+  KM_SCENE.boot();
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -717,9 +732,14 @@ function applyMode() {
     }
   });
   canvas.requestRenderAll();
+  KM_SCENE.setEditable(mode !== 'fill');
 }
 
 /* ============ 줌 ============ */
+function sceneThumb() { // 씬 스트립용 소형 JPEG — 줌 무관 폭 140px
+  try { return canvas.toDataURL({ format: 'jpeg', quality: 0.55, multiplier: 140 / (baseW * zoom) }); }
+  catch (e) { return null; }
+}
 function applyZoom(z) { zoom = z; canvas.setZoom(z); canvas.setDimensions({ width: baseW * z, height: baseH * z }); document.getElementById('zoomFit').textContent = Math.round(z * 100) + '%'; }
 function zoomFit() { const w = document.getElementById('canvasWrap'), pad = 80; applyZoom(Math.max(0.1, Math.min((w.clientWidth - pad) / baseW, (w.clientHeight - pad) / baseH, 2))); }
 document.getElementById('zoomIn').onclick = () => applyZoom(Math.min(4, zoom + 0.1));
@@ -748,28 +768,37 @@ function snapshot(scale) {
   applyZoom(z); return url;
 }
 function exportPNG() { closePops(); const a = document.createElement('a'); a.href = snapshot(2.5); a.download = '케이메이커.png'; a.click(); toast('PNG 저장 완료'); }
-function exportPDF() {
-  closePops(); const { jsPDF } = window.jspdf; const url = snapshot(2.5);
-  const mmW = baseW / 96 * 25.4, mmH = baseH / 96 * 25.4;
-  const pdf = new jsPDF({ orientation: mmW > mmH ? 'l' : 'p', unit: 'mm', format: [mmW, mmH] });
-  pdf.addImage(url, 'PNG', 0, 0, mmW, mmH); pdf.save('케이메이커.pdf'); toast('PDF 저장 완료');
+function exportPDF() { // 씬 = 페이지 (scene.js eachScene 순회)
+  closePops(); const { jsPDF } = window.jspdf;
+  const mmW = baseW / 96 * 25.4, mmH = baseH / 96 * 25.4, ori = mmW > mmH ? 'l' : 'p';
+  const pdf = new jsPDF({ orientation: ori, unit: 'mm', format: [mmW, mmH] });
+  let first = true;
+  KM_SCENE.eachScene(() => {
+    if (!first) pdf.addPage([mmW, mmH], ori);
+    first = false;
+    pdf.addImage(snapshot(2.5), 'PNG', 0, 0, mmW, mmH);
+  }).then(() => {
+    pdf.save('케이메이커.pdf');
+    toast(KM_SCENE.count() > 1 ? `PDF 저장 완료 (${KM_SCENE.count()}페이지)` : 'PDF 저장 완료');
+  });
 }
 function exportPPTX() {
   closePops();
   if (!window.PptxGenJS) { toast('PPT 모듈 로딩 중… 잠시 후 다시'); return; }
-  const url = snapshot(3);
   const inW = baseW / 96, inH = baseH / 96;
   const pptx = new PptxGenJS();
   pptx.defineLayout({ name: 'KM', width: inW, height: inH });
   pptx.layout = 'KM';
-  const s = pptx.addSlide();
-  s.addImage({ data: url, x: 0, y: 0, w: inW, h: inH });
-  pptx.writeFile({ fileName: '케이메이커.pptx' }).then(() => toast('PPT 저장 완료'));
+  KM_SCENE.eachScene(() => { // 씬 = 슬라이드
+    const s = pptx.addSlide();
+    s.addImage({ data: snapshot(3), x: 0, y: 0, w: inW, h: inH });
+  }).then(() => pptx.writeFile({ fileName: '케이메이커.pptx' }))
+    .then(() => toast(KM_SCENE.count() > 1 ? `PPT 저장 완료 (${KM_SCENE.count()}슬라이드)` : 'PPT 저장 완료'));
 }
 
 /* ============ 저장 / 불러오기 ============ */
 document.getElementById('btnSave').onclick = () => {
-  const data = { v: 3, baseW, baseH, audience, motionBg: KM_MOTION.getBgKey(), canvas: canvas.toJSON(['kmSlot']) };
+  const data = KM_SCENE.serializeDoc({ baseW, baseH, audience }); // v4 다중 씬 (scene.js)
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' })); a.download = '케이메이커.kmake'; a.click(); toast('작업파일 저장 완료');
 };
 document.getElementById('btnOpen').onclick = () => document.getElementById('jsonInput').click();
@@ -777,8 +806,7 @@ document.getElementById('jsonInput').addEventListener('change', function (e) {
   const f = e.target.files[0]; if (!f) return; const r = new FileReader();
   r.onload = ev => { try {
     const d = JSON.parse(ev.target.result); baseW = d.baseW; baseH = d.baseH; audience = d.audience || 'teacher';
-    lockHistory = true; canvas.clear(); canvas.backgroundColor = '#fff';
-    canvas.loadFromJSON(d.canvas, () => { KM_MOTION.setMotionBg(d.motionBg || null, { keepBgColor: !!d.motionBg }); zoomFit(); applyMode(); canvas.requestRenderAll(); lockHistory = false; undoStack = []; redoStack = []; pushHistory(); onSelect(); toast('불러오기 완료'); });
+    KM_SCENE.loadDoc(d, () => { zoomFit(); toast(KM_SCENE.count() > 1 ? `불러오기 완료 (씬 ${KM_SCENE.count()}개)` : '불러오기 완료'); });
   } catch (err) { toast('파일을 읽을 수 없어요'); } };
   r.readAsText(f); e.target.value = '';
 });
