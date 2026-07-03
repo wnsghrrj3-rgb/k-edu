@@ -207,6 +207,14 @@ input,textarea,select{font-family:inherit}
 .sc-meta input{width:44px;border:1px solid var(--line);border-radius:7px;padding:4px 5px;font-size:12px;text-align:center}
 .sc-meta select{border:1px solid var(--line);border-radius:7px;padding:4px 5px;font-size:11.5px;background:#fff}
 @media (max-width:640px){.scene-strip{bottom:8px;max-width:96%}.sc-thumbs{max-width:60vw}.sc-meta{display:none}}
+/* 🎬 영상 진행 오버레이 (video.js) */
+.vid-progress{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(20,24,34,.45);backdrop-filter:blur(3px)}
+.vp-card{background:#fff;border-radius:18px;box-shadow:var(--sh-lg);padding:22px 26px;min-width:300px;max-width:86%}
+.vp-title{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:14px}
+.vp-bar{height:10px;background:var(--bg);border-radius:6px;overflow:hidden}
+.vp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),#8B5CF6);border-radius:6px;transition:width .15s}
+.vp-row{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:700;color:var(--gray)}
+.vp-hint{margin-top:12px;font-size:11.5px;color:var(--gray-l)}
 .zoombar button{width:32px;height:32px;border:none;background:none;border-radius:50%;font-size:18px;color:var(--gray);display:flex;align-items:center;justify-content:center;transition:.12s}
 .zoombar button:hover{background:var(--bg);color:var(--ink)}
 .zoombar .zlabel{font-size:12.5px;color:var(--ink-2);min-width:46px;text-align:center;font-weight:700}
@@ -275,6 +283,7 @@ input,textarea,select{font-family:inherit}
 .export-wrap{position:relative}
 .export-menu{position:absolute;top:46px;right:0;background:var(--white);border:1px solid var(--line);border-radius:13px;box-shadow:var(--sh-pop);padding:7px;z-index:60;min-width:172px}
 .export-menu button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:none;background:none;padding:11px 13px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink-2);transition:.1s}
+.em-sub{font-size:10.5px;color:var(--gray-l);font-weight:600;margin-top:1px}
 .export-menu button:hover{background:var(--blue-ll);color:var(--blue)}
 .export-menu button .em-ico{width:30px;height:30px;border-radius:8px;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
 
@@ -350,6 +359,7 @@ input,textarea,select{font-family:inherit}
         <button onclick="exportPNG()"><span class="em-ico">🖼</span><div><div>PNG 이미지</div></div></button>
         <button onclick="exportPDF()"><span class="em-ico">📄</span><div><div>PDF 문서</div></div></button>
         <button onclick="exportPPTX()"><span class="em-ico">📊</span><div><div>PPT 파워포인트</div></div></button>
+        <button onclick="closePops();KM_VIDEO.exportMP4()"><span class="em-ico">🎬</span><div><div>영상 (MP4)</div><div class="em-sub">씬 · 모션 · 전환이 그대로 영상으로</div></div></button>
       </div>
     </div>
   </div>
@@ -403,6 +413,14 @@ input,textarea,select{font-family:inherit}
       <div class="canvas-stage"><canvas id="c"></canvas></div>
       <div class="mode-banner hidden" id="modeBanner">📝 채우기 모드 — 노란 점선 칸을 눌러 내용만 바꾸세요</div>
       <div class="scene-strip hidden" id="sceneStrip"></div>
+      <div class="vid-progress hidden" id="vidProgress">
+        <div class="vp-card">
+          <div class="vp-title">🎬 영상 만드는 중</div>
+          <div class="vp-bar"><i></i></div>
+          <div class="vp-row"><span class="vp-label"></span><span class="vp-pct">0%</span></div>
+          <div class="vp-hint">창을 닫지 말고 잠시만요 — 프레임을 한 장 한 장 그리고 있어요</div>
+        </div>
+      </div>
       <div class="zoombar">
         <button id="zoomOut" title="축소">−</button>
         <button class="zlabel" id="zoomFit" title="화면 맞춤" style="border-radius:8px;width:auto;padding:0 4px">100%</button>
@@ -426,6 +444,7 @@ input,textarea,select{font-family:inherit}
 <script src="motion.js"></script>
 <script src="photo.js"></script>
 <script src="scene.js"></script>
+<script src="video.js"></script>
 <script src="kmake.js"></script>
 </body>
 </html>

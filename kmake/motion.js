@@ -120,6 +120,12 @@
      ============================================================ */
   const FXR = (function () {
     let cv = null, fired = new Set(), parts = [], last = 0;
+    let cvDom = null; // 오프라인 렌더(MP4)용 오버라이드 — DOM 캔버스 임시 보관
+    function setOverride(c) {
+      if (c) { if (!cvDom) cvDom = cv; cv = c; }
+      else if (cvDom) { cv = cvDom; cvDom = null; }
+      last = 0;
+    }
     // 프레임별 등록 큐 (매 프레임 begin()에서 비움)
     let spots = [], neons = [], chars = [];
 
@@ -131,6 +137,7 @@
       st.appendChild(cv);
     }
     function fit() {
+      if (cvDom) return; // 오버라이드 중엔 고정 크기 (오프라인 렌더)
       if (!cv) return;
       const st = cv.parentNode; if (!st) return;
       const w = st.clientWidth || 1, h = st.clientHeight || 1;
@@ -365,7 +372,7 @@
       ctx.fill();
     }
 
-    return { mount, fit, begin, render, reset, clearCanvas, active, burstOnce, stampOnce, trail, spot, neon, charpop };
+    return { mount, fit, begin, render, reset, clearCanvas, active, burstOnce, stampOnce, trail, spot, neon, charpop, setOverride };
   })();
 
   /* ============================================================
@@ -646,6 +653,12 @@
     };
     mbgRaf = requestAnimationFrame(loop);
   }
+  let mbgSuspend = false;
+  function suspendBg(on) { // MP4 내보내기 중 라이브 mbg 루프 정지 (MBG 상태를 오프라인이 독점)
+    mbgSuspend = !!on;
+    if (on) { cancelAnimationFrame(mbgRaf); if (mbgCanvas) mbgCanvas.style.display = 'none'; }
+    else { mbgInitKey = null; if (mbgKey) startBgLoop(); else if (mbgCanvas) mbgCanvas.style.display = 'none'; }
+  }
   function setMotionBg(key, opts) {
     mbgKey = (key && MBG[key]) ? key : null;
     if (typeof canvas !== 'undefined' && canvas) {
@@ -658,7 +671,7 @@
       }
       canvas.requestRenderAll();
     }
-    if (mbgKey) startBgLoop();
+    if (mbgKey) { if (!mbgSuspend) startBgLoop(); }
     else { cancelAnimationFrame(mbgRaf); if (mbgCanvas) mbgCanvas.style.display = 'none'; }
   }
   function getBgKey() { return mbgKey; }
@@ -825,7 +838,39 @@
   }
 
   /* ---------- 공개 API ---------- */
+  /* ============================================================
+     오프라인 렌더 API (video.js 전용) — 결정적 시간 t 주입
+     라이브 경로(tick·startBgLoop)와 완전 분리. 사용 규약:
+     suspendBg(true) → [씬마다: offlineBegin → offlineFrame(t)* → offlineEnd]
+     → suspendBg(false). FX 캔버스는 fxOverride로 리다이렉트.
+     ============================================================ */
+  let offBases = null;
+  function offlineBegin() {
+    offBases = new Map();
+    canvas.forEachObject(o => offBases.set(o, baseOf(o)));
+    FXR.reset();
+  }
+  function offlineFrame(t) { // t: 초 (씬 로컬). FXR엔 ms 합성 시계 주입
+    if (!offBases) return;
+    FXR.begin();
+    offBases.forEach((B, o) => animFrame(o, B, getAnim(o), t, true));
+    FXR.render(t * 1000);
+    canvas.renderAll();
+  }
+  function offlineEnd() {
+    if (offBases) { offBases.forEach((B, o) => restore(o, B)); offBases = null; }
+    FXR.reset();
+    canvas.renderAll();
+  }
+  function offlineMbg(key, w, h) { // 오프라인 모션 배경 드라이버 (suspendBg(true) 상태에서만)
+    if (!key || !MBG[key]) return null;
+    MBG[key].init(w, h);
+    return { base: MBG[key].base, frame: (ctx, t, dt) => MBG[key].step(ctx, w, h, t, dt) };
+  }
+  function fxOverride(c) { FXR.setOverride(c); }
+
   window.KM_MOTION = {
+    suspendBg, offlineBegin, offlineFrame, offlineEnd, offlineMbg, fxOverride,
     panelHTML, bindPanel, previewObj,
     enterPlay, exitPlay, isPlaying: () => playing,
     mountBg, resizeBg, setMotionBg, getBgKey, bgBaseColor, bgItemsHTML,
