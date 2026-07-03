@@ -10,10 +10,23 @@ fabric.Object.prototype.toObject = (function (orig) {
 })(fabric.Object.prototype.toObject);
 
 /* ---------- 데이터 ---------- */
-const KO_FONTS = [
+const KO_FONTS = [ // 총 50종 (2026-07-04 확장) — 신규는 index.html #kmake-palette-fonts에 @font-face
   ['—', '제목 · 임팩트'],
   ['Jua', '주아'], ['Black Han Sans', '검은고딕'], ['Do Hyeon', '도현'],
   ['Bagel Fat One', '베이글'], ['Dongle', '동글'],
+  ['Hakgyoansim Moheomga', '모험가'], ['CookieRun', '쿠키런'],
+  ['Cafe24 Ssurround', '써라운드'], ['ONE Mobile POP', '팝'],
+  ['Gmarket Sans', '지마켓'], ['Paperlogy', '페이퍼로지'], ['NanumSquare Neo', '스퀘어네오'],
+  ['—', '학교안심 시리즈'],
+  ['Hakgyoansim Jeomsimsigan', '점심시간'], ['Hakgyoansim Mulgyeol', '물결'],
+  ['Hakgyoansim Monggeul', '몽글몽글'], ['Hakgyoansim Mabeopsa', '마법사'],
+  ['Hakgyoansim Gureum', '구름'], ['Hakgyoansim Eunhasu', '은하수'],
+  ['Hakgyoansim Kkokkoma', '꼬꼬마'], ['Hakgyoansim Namu', '나무'],
+  ['Hakgyoansim Sonagi', '소나기'], ['Hakgyoansim Yeohaeng', '여행'],
+  ['Hakgyoansim Undongjang', '운동장'], ['Hakgyoansim Jiugae', '지우개'],
+  ['—', '둥근 · 레트로'],
+  ['NanumSquareRound', '스퀘어라운드'], ['DungGeunMo', '둥근모 픽셀'],
+  ['BM EULJIRO', '을지로'], ['Binggrae Melona', '멜로나'], ['Cafe24 Dongdong', '동동'],
   ['—', '본문 · 고딕'],
   ['Pretendard', '프리텐다드'], ['Noto Sans KR', '본문고딕'],
   ['IBM Plex Sans KR', '플렉스 고딕'], ['Gowun Dodum', '고운돋움'],
@@ -25,6 +38,8 @@ const KO_FONTS = [
   ['Gaegu', '개구'], ['Gamja Flower', '감자꽃'], ['Hi Melody', '하이멜로디'],
   ['Poor Story', '푸어스토리'], ['East Sea Dokdo', '동해독도'],
   ['Yeon Sung', '연성'], ['Cute Font', '귀여운체'],
+  ['Cafe24 Shiningstar', '샤이닝스타'], ['Cafe24 Oneprettynight', '어느멋진밤'],
+  ['BM KIRANGHAERANG', '기랑해랑'],
 ];
 const FONT_OF = f => KO_FONTS.find(x => x[0] === f && x[0] !== '—');
 const PALETTE = ['#2D3748', '#718096', '#CBD5E0', '#FFFFFF', '#000000', '#5B8EF8',
@@ -505,7 +520,7 @@ function fontDD(o) {
   return `<div class="font-dd"><button data-pop="font"><span style="font-family:'${cur[0]}'">${cur[1]}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
     <div class="font-list hidden">${KO_FONTS.map(f => f[0] === '—'
       ? `<div class="font-div">${f[1]}</div>`
-      : `<button class="font-item ${f[0] === o.fontFamily ? 'sel' : ''}" data-font="${f[0]}" style="font-family:'${f[0]}'">가나다 ABC<span class="fname">${f[1]}</span></button>`).join('')}</div></div>`;
+      : `<button class="font-item ${f[0] === o.fontFamily ? 'sel' : ''}" data-font="${f[0]}">가나다 ABC<span class="fname">${f[1]}</span></button>`).join('')}</div></div>`;
 }
 function stepper(key, val, title) {
   return `<div class="stepper" title="${title}"><button data-step="${key}:-">−</button><input data-num="${key}" value="${val}" inputmode="numeric"><button data-step="${key}:+">+</button></div>`;
@@ -532,6 +547,17 @@ function bindCtx(o) {
     const [k, d] = b.dataset.step.split(':'); stepVal(o, k, d === '+' ? 1 : -1); buildCtxbar(o);
   });
   ctxbar.querySelectorAll('[data-num]').forEach(inp => inp.onchange = () => { setNum(o, inp.dataset.num, parseInt(inp.value)); });
+  // 폰트 피커 지연 로딩 — 화면에 보이는 항목만 해당 폰트로 렌더 (50종 일괄 다운로드 방지)
+  if (window.__fontIO) window.__fontIO.disconnect();
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) { en.target.style.fontFamily = `'${en.target.dataset.font}'`; io.unobserve(en.target); }
+    }), { root: ctxbar.querySelector('.font-list'), rootMargin: '80px' });
+    ctxbar.querySelectorAll('.font-item').forEach(el => io.observe(el));
+    window.__fontIO = io;
+  } else {
+    ctxbar.querySelectorAll('.font-item').forEach(el => { el.style.fontFamily = `'${el.dataset.font}'`; });
+  }
   ctxbar.querySelectorAll('[data-font]').forEach(b => b.onclick = () => {
     const fam = b.dataset.font;
     o.set('fontFamily', fam); render(); pushHistory(); buildCtxbar(o);
