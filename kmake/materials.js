@@ -22,6 +22,7 @@ window.MATERIAL_CATS = [
   ['tape', '테이프·라벨'],
   ['season', '시즌'],
   ['life', '웨딩·라이프'],
+  ['emoji', '3D 이모지·아이콘'],
   ['photo', '실사 사진'],
 ];
 
