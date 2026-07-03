@@ -120,10 +120,10 @@
      ============================================================ */
   const FXR = (function () {
     let cv = null, fired = new Set(), parts = [], last = 0;
-    let cvDom = null; // 오프라인 렌더(MP4)용 오버라이드 — DOM 캔버스 임시 보관
+    let cvDom = null, cvOverridden = false; // 오버라이드(MP4·뷰어) — cv가 null(마운트 전)이어도 동작해야 함
     function setOverride(c) {
-      if (c) { if (!cvDom) cvDom = cv; cv = c; }
-      else if (cvDom) { cv = cvDom; cvDom = null; }
+      if (c) { if (!cvOverridden) { cvDom = cv; cvOverridden = true; } cv = c; }
+      else if (cvOverridden) { cv = cvDom; cvDom = null; cvOverridden = false; }
       last = 0;
     }
     // 프레임별 등록 큐 (매 프레임 begin()에서 비움)
@@ -137,7 +137,7 @@
       st.appendChild(cv);
     }
     function fit() {
-      if (cvDom) return; // 오버라이드 중엔 고정 크기 (오프라인 렌더)
+      if (cvOverridden) return; // 오버라이드 중엔 고정 크기 (오프라인 렌더·뷰어)
       if (!cv) return;
       const st = cv.parentNode; if (!st) return;
       const w = st.clientWidth || 1, h = st.clientHeight || 1;

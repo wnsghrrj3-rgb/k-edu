@@ -254,6 +254,31 @@ function makeArrow(x1, y1, x2, y2, color, w) {
   const head = new fabric.Triangle({ left: x2, top: y2, originX: 'center', originY: 'center', width: w * 5, height: w * 5, fill: color, angle: ang + 90 });
   return new fabric.Group([line, head], { originX: 'center', originY: 'center' });
 }
+
+/* ---------- 카드 링크 (뷰어 공유) — 라이프 확장 v1: 해시 링크 ---------- */
+function loadLZ() {
+  return new Promise((res, rej) => {
+    if (window.LZString) return res();
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js';
+    sc.onload = res; sc.onerror = () => rej(new Error('압축 모듈 로드 실패'));
+    document.head.appendChild(sc);
+  });
+}
+async function makeCardLink() {
+  closePops();
+  try {
+    const json = JSON.stringify(KM_SCENE.serializeDoc({ baseW, baseH, audience }));
+    if (json.includes('data:image')) { toast('업로드한 사진이 든 카드는 링크 공유 준비 중 — 재료창고 실사·배경은 괜찮아요'); return; }
+    await loadLZ();
+    const c = LZString.compressToEncodedURIComponent(json);
+    if (c.length > 8000) { toast('카드가 너무 커서 링크로 만들 수 없어요 — 씬이나 재료를 조금 줄여보세요'); return; }
+    const url = location.origin + '/kmake/viewer.html#c=' + c;
+    await navigator.clipboard.writeText(url);
+    toast('💌 카드 링크 복사 완료! 카톡·문자에 붙여넣으면 움직이는 카드로 열려요');
+  } catch (e) { toast(e.message || '링크 만들기에 실패했어요'); }
+}
+
 document.getElementById('imgInput').addEventListener('change', function (e) {
   const f = e.target.files[0]; if (!f) return;
   KM_PHOTO.loadImageFile(f, url => fabric.Image.fromURL(url, img => {
