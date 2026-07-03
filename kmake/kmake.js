@@ -581,6 +581,11 @@ function bindCtx(o) {
     const pop = b.nextElementSibling, wasOpen = !pop.classList.contains('hidden');
     closePops(); if (!wasOpen) {
       pop.classList.remove('hidden'); openPop = pop;
+      // ctxbar는 overflow-x:auto(클리핑 컨테이너) — 팝업을 fixed로 승격해 잘림 탈출
+      const r = b.getBoundingClientRect();
+      pop.style.position = 'fixed';
+      pop.style.top = (r.bottom + 6) + 'px';
+      pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 10)) + 'px';
       if (pop.__lazyApply) requestAnimationFrame(pop.__lazyApply); // 폰트 미리보기 지연 로딩 발화
     }
   });
