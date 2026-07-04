@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이아트 미술실 — 왕관 만들기</title>
+<!--
+  케이아트 미술실(ArtLab) 양산 1호 — 왕관 만들기 (황금 샘플 복사→스왑, 신기술 0).
+  검증 기법(설계서 §2 카탈로그 조합):
+    · 절취선 자르기 = 톱니 절취선(가위가 윗변 톱니선만 스닙)
+    · 스냅 조인트 = 보석 붙이기·테이프로 양 끝 잇기(attach)
+    · 작동 와우 = 왕관을 머리에 씌우기(안착 지속=성공)
+  + 재료 트레이(고르기=학습·평가, 오답 재료는 "왜 아닌지" 피드백)
+  + 예측→확인(평평한 띠도 왕관이 될까?) + 씌우기 성공 연출
+  기반: klab3 코어(engine3) · three r185 벤더 · 스튜디오 표준 v3 (§1 토큰·§2-A 재질)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  #hint{bottom:120px !important}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  /* 만들기 단계 패널 */
+  #steps{top:50px;left:14px;min-width:150px}
+  #steps .tt{font-size:12px;color:var(--mut);margin-bottom:8px}
+  .stp{display:flex;align-items:center;gap:7px;font-size:13px;color:#8fa3b8;
+    padding:3px 0;transition:color .3s}
+  .stp .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16);
+    transition:background .3s,box-shadow .3s;flex:0 0 auto}
+  .stp.cur{color:#fff}
+  .stp.cur .dot{background:var(--kor);box-shadow:0 0 9px var(--kor)}
+  .stp.done{color:#7CF0C9}
+  .stp.done .dot{background:#12B886}
+
+  /* 미션 패널 */
+  #mission{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:21;
+    background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
+    border-radius:16px;padding:11px 16px;color:#fff;max-width:92vw;text-align:center}
+  #mission .mt{font-size:14.5px}
+  #mission .mp{font-size:12px;color:#b9c9da;margin-top:4px;line-height:1.5}
+  #mission .prog{margin-top:8px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .chip{font-size:11.5px;padding:3px 10px;border-radius:999px;
+    background:rgba(255,255,255,.10);color:#9fb3c8;border:1px solid transparent}
+  .chip.on{background:rgba(18,184,134,.22);color:#7CF0C9;border-color:rgba(18,184,134,.4)}
+
+  /* 조작 버튼 */
+  #ctrls{position:fixed;right:14px;top:50px;z-index:21;display:flex;flex-direction:column;gap:9px}
+  .k3-btn.wind{background:linear-gradient(135deg,#4FC3F7,#1E88E5);border:none}
+  .k3-btn.wind.on{background:linear-gradient(135deg,#FF8A3D,#F4511E)}
+
+  #loading{position:fixed;inset:0;z-index:50;background:var(--studio);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:12px;color:#cfe3f5;font-size:14px;transition:opacity .5s}
+  #loading.hide{opacity:0;pointer-events:none}
+  #loading .em{font-size:46px;animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+</style>
+</head>
+<body class="k3">
+<div id="stage"></div>
+
+<div class="k3-topbar">
+  <span class="title">🎨 케이아트 미술실</span>
+  <span class="badge">미션 · 왕관</span>
+</div>
+
+<div class="k3-panel" id="steps">
+  <div class="tt">만들기 순서</div>
+  <div class="stp" data-s="cut"><span class="dot"></span>톱니 자르기</div>
+  <div class="stp" data-s="gem"><span class="dot"></span>보석 붙이기 <span id="gemN"></span></div>
+  <div class="stp" data-s="roll"><span class="dot"></span>둥글게 말기</div>
+  <div class="stp" data-s="tape"><span class="dot"></span>테이프로 잇기</div>
+  <div class="stp" data-s="wear"><span class="dot"></span>머리에 쓰기</div>
+</div>
+
+<div id="mission">
+  <div class="mt">🎯 미션: 반짝반짝 왕관 만들기</div>
+  <div class="mp">아래 재료함에서 <b>필요한 재료만</b> 골라 책상에 준비하세요. 무엇이 필요할까요?</div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<div id="ctrls">
+  <button class="k3-btn wind" id="wearBtn" disabled>👑 머리에 쓰기</button>
+  <button class="k3-btn" id="modeBtn">🎨 자유 만들기</button>
+  <button class="k3-btn" id="resetBtn">↺ 처음부터</button>
+</div>
+
+<div class="k3-tray" id="tray"></div>
+<div class="k3-hint" id="hint" style="opacity:0"></div>
+
+<div id="loading"><div class="em">🎨</div><div>미술실 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (렌더러 무관 · node 테스트 대상) ═══ -->
+<script id="artlab-logic">
+(function(){
+  'use strict';
+
+  /* ── 미션 정의 (미션 = 데이터. 다음 만들기는 이 형식의 객체만 추가) ── */
+  var MISSION_CROWN = {
+    id:'crown',
+    title:'왕관 만들기',
+    required:['paper','scissors','gem','tape'],
+    // 절차 규칙: 이 재료를 꺼내려면 먼저 있어야 하는 것
+    needs:{
+      scissors:{ pre:['paper'], msg:'자를 띠 종이가 먼저 있어야죠 — <b>색종이 띠부터</b> 꺼내요!' },
+      gem:     { pre:['paper'], msg:'보석을 붙일 왕관이 먼저 필요해요 — <b>색종이 띠</b>를 꺼내요!' },
+      tape:    { pre:['paper'], msg:'이을 왕관이 먼저 있어야죠 — <b>색종이 띠</b>를 꺼내요!' }
+    },
+    // 오답 재료: 왜 아닌지가 곧 학습
+    wrong:{
+      glue:'🧴 풀은 마를 때까지 잡고 있어야 해요 — 왕관은 <b>테이프</b>로 이으면 바로 붙어요!',
+      ruler:'📏 자로 재지 않아도 돼요 — 왕관 띠는 <b>머리 둘레</b>에 맞춰 두르면 돼요!',
+      pin:'📌 압정은 뾰족해서 머리에 쓰면 위험해요! 왕관은 <b>테이프</b>로 안전하게 이어요.',
+      crayon:'🖍️ 크레파스로 색칠은 좋지만 — 왕관을 <b>완성</b>하는 데 꼭 필요하진 않아요.'
+    }
+  };
+
+  /* ── 재료 고르기 러너 (과학실 검증본과 동일 계약) ── */
+  function createMissionRun(M){
+    var placed={}, wrongCount=0, ready=false;
+    function pick(id, freeMode){
+      if(placed[id]) return {act:'already'};
+      if(!freeMode && M.wrong[id]) { wrongCount++; return {act:'wrong', msg:M.wrong[id]}; }
+      var rule = M.needs[id];
+      if(rule){
+        for(var i=0;i<rule.pre.length;i++)
+          if(!placed[rule.pre[i]]) return {act:'blocked', msg:rule.msg};
+      }
+      placed[id]=true;
+      ready = M.required.every(function(r){return placed[r];});
+      return {act:'placed', ready:ready};
+    }
+    function remove(id){
+      if(!placed[id]) return false;
+      Object.keys(M.needs).forEach(function(k){
+        if(placed[k] && M.needs[k].pre.indexOf(id)>=0) remove(k);
+      });
+      delete placed[id];
+      ready=false;
+      return true;
+    }
+    function count(){ return M.required.filter(function(r){return placed[r];}).length; }
+    return { placed:placed, pick:pick, remove:remove, count:count,
+             isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
+  }
+
+  /* ── 만들기 단계 러너 (미술실 고유 — 정의된 절차만 진행, 어기면 안내) ── */
+  var CRAFT_GUIDE = {
+    cut:'✂️ 가위를 눌러 <b>톱니 선을 따라</b> 왕관 끝을 뾰족뾰족 잘라요',
+    gem:'💎 보석을 눌러 왕관에 <b>한 개씩</b> 붙여 꾸며요',
+    roll:'색종이 띠를 눌러 <b>둥글게</b> 말아요 — 머리에 씌울 고리로!',
+    tape:'📎 테이프를 눌러 왕관 <b>양 끝을 이어요</b>',
+    wear:'왕관을 눌러 <b>머리에 써</b> 봐요! 👑'
+  };
+  function createCraftRun(){
+    var ORDER=['cut','gem','roll','tape','wear'];
+    var idx=0, gems=0, done=false;
+    function stage(){ return done?'done':ORDER[idx]; }
+    function act(a){
+      if(done) return {act:'already'};
+      var cur=ORDER[idx];
+      if(a!==cur) return {act:'blocked', msg:CRAFT_GUIDE[cur]};
+      if(cur==='gem'){
+        gems++;
+        if(gems>=3) idx++;
+        return {act:'ok', step:'gem', gems:gems};
+      }
+      idx++;
+      if(idx>=ORDER.length) done=true;
+      return {act:'ok', step:cur, done:done};
+    }
+    return { act:act, stage:stage, gems:function(){return gems;},
+             isDone:function(){return done;}, GUIDE:CRAFT_GUIDE };
+  }
+
+  /* ── 씌우기 시뮬 (머리에 쓰기 → 안착 지속=성공) ── */
+  function createWearSim(){
+    var S={ h:0, sustain:0, worn:false };   // h: 씌워진 정도 0→1
+    var RATE=2.4, HTH=0.92, HOLD=1.2;
+    function step(dt, inp){
+      if(dt>0.05) dt=0.05;
+      var target=(inp.wearing && inp.taped)?1:0;
+      S.h += (target-S.h)*Math.min(RATE*dt,1);
+      if(S.h<0.001 && target===0) S.h=0;
+      if(inp.taped && S.h>=HTH){ S.sustain+=dt; if(S.sustain>=HOLD) S.worn=true; }
+      else S.sustain=0;
+      return S;
+    }
+    return { state:S, step:step, HTH:HTH };
+  }
+
+  var API = { MISSION_CROWN:MISSION_CROWN, createMissionRun:createMissionRun,
+              createCraftRun:createCraftRun, createWearSim:createWearSim };
+  if(typeof window!=='undefined'){ window.ArtLab=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+import { makeGrab } from '/kedu/teacher/engine3/klab3-grab.js';
+import { makeToast, makeCards } from '/kedu/teacher/engine3/klab3-ui.js';
+import { makeDropper } from '/kedu/teacher/engine3/klab3-fx.js';
+
+/* ═════════ 씬 부트 (코어) ═════════ */
+const stageEl = document.getElementById('stage');
+const { renderer, scene, camera, controls, tickQuality, onLowQuality } =
+  initScene(stageEl, { camPos:[0.72,0.86,1.34], target:[0,0.18,0], fov:41 });
+const MAT = makeMaterials();
+makeStage(scene, { deskStyle:'wood' });     // 미술실 = 원목 책상
+const dropper = makeDropper();
+const toast = makeToast();
+const cards = makeCards();
+
+/* ═════════ 사운드 (임시 로컬 — 코어 사운드 §2-C 확정 전) ═════════ */
+let AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function env(g,t0,a,d,v){ g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(v,t0+a);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+a+d); }
+function tone(f,dur,type,vol,slide){ const c=ac(); if(!c)return;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f,c.currentTime);
+  if(slide) o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+dur);
+  env(g,c.currentTime,0.005,dur,vol||0.12);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur+0.06); }
+function noiseS(dur,vol,fc){ const c=ac(); if(!c)return;
+  const n=c.sampleRate*dur|0, b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=c.createBufferSource(); s.buffer=b;
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=fc||1400;
+  const g=c.createGain(); env(g,c.currentTime,0.012,dur,vol||0.1);
+  s.connect(f); f.connect(g); g.connect(c.destination); s.start(); }
+const snd = {
+  tap(){ tone(520,0.07,'triangle',0.10); },
+  snip(){ noiseS(0.05,0.16,2600); tone(1900,0.04,'square',0.05); },
+  fold(){ noiseS(0.18,0.07,900); },
+  pop(){ tone(300,0.09,'sine',0.12,540); },
+  whoosh(){ noiseS(0.55,0.10,700); },
+  chime(){ tone(660,0.35,'sine',0.10); setTimeout(()=>tone(880,0.4,'sine',0.10),120);
+           setTimeout(()=>tone(1320,0.5,'sine',0.08),260); },
+  nope(){ tone(220,0.12,'triangle',0.08,175); }
+};
+addEventListener('pointerdown',()=>{ const c=ac(); if(c && c.state==='suspended') c.resume(); });
+
+/* ═════════ 만들기 매트 (셀프힐링 커팅매트 — 미술실의 무대) ═════════ */
+const matTex = canvasTexture(512,352,(g,w,h)=>{
+  const gr=g.createLinearGradient(0,0,w,h);
+  gr.addColorStop(0,'#2f6b54'); gr.addColorStop(1,'#27573f');
+  g.fillStyle=gr; g.fillRect(0,0,w,h);
+  g.strokeStyle='rgba(255,255,255,.13)'; g.lineWidth=1;
+  for(let x=16;x<w;x+=32){ g.beginPath(); g.moveTo(x,10); g.lineTo(x,h-10); g.stroke(); }
+  for(let y=16;y<h;y+=32){ g.beginPath(); g.moveTo(10,y); g.lineTo(w-10,y); g.stroke(); }
+  g.strokeStyle='rgba(255,255,255,.24)'; g.lineWidth=1.6;
+  for(let x=16;x<w;x+=160){ g.beginPath(); g.moveTo(x,10); g.lineTo(x,h-10); g.stroke(); }
+  g.beginPath(); g.moveTo(16,16); g.lineTo(w-16,h-16); g.moveTo(w-16,16); g.lineTo(16,h-16);
+  g.strokeStyle='rgba(255,255,255,.10)'; g.stroke();
+  g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2;
+  g.strokeRect(10,10,w-20,h-20);
+  g.fillStyle='rgba(255,255,255,.5)';
+  for(let x=16;x<w-16;x+=16) g.fillRect(x,10,1.2,x%160===16?9:5);
+});
+const mat = new THREE.Mesh(
+  new THREE.BoxGeometry(1.18,0.008,0.80),
+  new THREE.MeshStandardMaterial({ map:matTex, roughness:0.62, metalness:0.02 })
+);
+mat.position.set(0,0.008,0.03);
+mat.receiveShadow=true; mat.castShadow=true; scene.add(mat);
+
+/* ═════════ 색종이 띠 (양면 · 톱니 윗변 — 절취선 자르기 + 링 말기) ═════════ */
+const BAND_W=0.62, BAND_H=0.15;        // 띠 가로/세로 (펼친 상태)
+const TEETH=5;                          // 톱니 개수
+const PAPER_Y=0.016, PAPER_Z=0.03;
+const COL_FRONT=0xFFCA3A, COL_BACK=0xF08A24;   // 양면 색종이(앞 금빛 · 뒤 주황)
+function paperTex(hex){
+  return canvasTexture(256,96,(g,w,h)=>{
+    g.fillStyle='#'+hex.toString(16).padStart(6,'0'); g.fillRect(0,0,w,h);
+    for(let i=0;i<600;i++){ const v=Math.random()*0.09;
+      g.fillStyle=`rgba(255,255,255,${v})`;
+      g.fillRect(Math.random()*w,Math.random()*h,1.3,1.3); }
+  });
+}
+const pmFront=new THREE.MeshStandardMaterial({ map:paperTex(COL_FRONT), roughness:0.82, side:THREE.FrontSide });
+const pmBack =new THREE.MeshStandardMaterial({ map:paperTex(COL_BACK ), roughness:0.82, side:THREE.BackSide  });
+function twoSided(shape){                       // 같은 지오메트리 2메시(앞/뒤 색) = z파이팅 없음
+  const geo=new THREE.ShapeGeometry(shape), grp=new THREE.Group();
+  const a=new THREE.Mesh(geo,pmFront), b=new THREE.Mesh(geo,pmBack);
+  a.castShadow=b.castShadow=true;
+  grp.add(a,b); return grp;
+}
+/* 왕관 띠 셰이프: 아래는 직선, 위는 톱니(뾰족뾰족). 자르기 전=밋밋한 직사각, 자른 뒤=톱니 */
+function bandShape(toothed){
+  const s=new THREE.Shape();
+  const x0=-BAND_W/2, x1=BAND_W/2, y0=-BAND_H/2, y1=BAND_H/2;
+  s.moveTo(x0,y0); s.lineTo(x1,y0);              // 아랫변
+  if(toothed){
+    const seg=BAND_W/TEETH;
+    for(let i=0;i<TEETH;i++){
+      const xa=x1-i*seg, xb=xa-seg;
+      s.lineTo(xa-seg*0.5, y1);                  // 톱니 꼭짓점
+      s.lineTo(xb, y0+BAND_H*0.34);              // 톱니 골
+    }
+  } else {
+    s.lineTo(x1,y1); s.lineTo(x0,y1);            // 밋밋한 윗변
+  }
+  s.closePath(); return s;
+}
+/* 세그먼트 분할 띠 = 둥글게 말기용(N등분 각 조각을 원호로 배치) */
+const ROLL_SEG=24;
+const PAPER=new THREE.Group();
+PAPER.position.set(0,PAPER_Y,PAPER_Z);
+PAPER.rotation.x=-Math.PI/2;                     // 셰이프 XY → 책상 평면, z=위
+PAPER.visible=false; scene.add(PAPER);
+
+/* 톱니 절취선(윗변 지그재그) — 점선 세그먼트 */
+const CREASE=(function(){
+  const g=new THREE.Group();
+  const m=new THREE.MeshBasicMaterial({ color:0x8a4a2a, transparent:true, opacity:0.5 });
+  const seg=BAND_W/TEETH, x1=BAND_W/2;
+  for(let i=0;i<TEETH;i++){
+    const xa=x1-i*seg;
+    for(let k=0;k<6;k++){
+      const t=k/6;
+      const px=xa - seg*0.5*t, py=BAND_H*0.5*t + (-BAND_H*0.16);
+      const s2=new THREE.Mesh(new THREE.PlaneGeometry(0.016,0.0035), m);
+      s2.position.set(px,py,0.0016); s2.rotation.z=Math.atan2(BAND_H*0.5,-seg*0.5);
+      g.add(s2);
+    }
+  }
+  g.visible=false; PAPER.add(g); return g;
+})();
+
+/* 왕관 본체 그룹 (자르기 전 = 밋밋한 띠 1장) */
+let bandMesh=twoSided(bandShape(false));
+PAPER.add(bandMesh);
+function reshapeBand(toothed){
+  PAPER.remove(bandMesh);
+  bandMesh=twoSided(bandShape(toothed));
+  PAPER.add(bandMesh);
+  return bandMesh;
+}
+
+/* ═════════ 재료 3D 오브젝트 ═════════ */
+function grp(...ms){ const g=new THREE.Group(); ms.forEach(m=>{ m.castShadow=true; g.add(m); }); return g; }
+
+/* 가위 */
+function buildScissors(){
+  const blade=()=>new THREE.Mesh(new THREE.BoxGeometry(0.135,0.004,0.016), MAT.METAL);
+  const ring =()=>new THREE.Mesh(new THREE.TorusGeometry(0.022,0.006,10,20),
+    new THREE.MeshStandardMaterial({ color:0xE53935, roughness:0.45 }));
+  const b1=blade(), b2=blade(), r1=ring(), r2=ring();
+  b1.position.x=0.055; b2.position.x=0.055;
+  const a1=new THREE.Group(), a2=new THREE.Group();
+  a1.add(b1); a2.add(b2);
+  r1.position.set(-0.033,0,0.014); r2.position.set(-0.033,0,-0.014);
+  r1.rotation.x=r2.rotation.x=Math.PI/2;
+  a1.rotation.y=0.10; a2.rotation.y=-0.10;
+  a1.add(r1); a2.add(r2);
+  const g=new THREE.Group(); g.add(a1,a2);
+  g.userData.arms=[a1,a2];
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  return g;
+}
+/* 보석 스티커 (자유 배치 3개 — 붙이기 스냅) */
+const GEM_COLORS=[0xE53935,0x1E88E5,0x43A047];
+function buildGem(idx){
+  const c=GEM_COLORS[idx%GEM_COLORS.length];
+  const m=new THREE.MeshPhysicalMaterial({ color:c, roughness:0.12, metalness:0.1,
+    clearcoat:1, clearcoatRoughness:0.08, envMapIntensity:1.4 });
+  const g=new THREE.Mesh(new THREE.OctahedronGeometry(0.026,0), m);
+  g.scale.set(1,1,0.55);
+  const grpG=new THREE.Group(); g.castShadow=true; grpG.add(g);
+  grpG.userData.gemIdx=idx;
+  return grpG;
+}
+/* 테이프 디스펜서 */
+function buildTape(){
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.05,0.022,16,32),
+    new THREE.MeshPhysicalMaterial({ color:0xBFE3FF, roughness:0.15, transmission:0.5,
+      thickness:0.04, transparent:true, opacity:0.85, ior:1.3 }));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.024;
+  const core=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,0.045,24),
+    new THREE.MeshStandardMaterial({ color:0xF4F1EA, roughness:0.6 }));
+  core.position.y=0.024;
+  return grp(core,ring);
+}
+/* 오답 재료(자유 모드용) */
+function buildGlue(){
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.021,0.021,0.085,16),
+    new THREE.MeshStandardMaterial({ color:0xF4F1EA, roughness:0.55 }));
+  body.position.y=0.0425;
+  const capM=new THREE.Mesh(new THREE.CylinderGeometry(0.019,0.021,0.024,16),
+    new THREE.MeshStandardMaterial({ color:0xFF8A3D, roughness:0.4 }));
+  capM.position.y=0.097;
+  return grp(body,capM);
+}
+function buildRuler(){
+  const t=canvasTexture(256,48,(g)=>{
+    g.fillStyle='rgba(255,225,130,1)'; g.fillRect(0,0,256,48);
+    g.fillStyle='#7a6320';
+    for(let x=8;x<256;x+=12) g.fillRect(x,0,1.6,x%60===8?16:9);
+  });
+  const r=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.004,0.036),
+    new THREE.MeshPhysicalMaterial({ map:t, roughness:0.3, transparent:true, opacity:0.92 }));
+  return grp(r);
+}
+function buildPin(){
+  const needle=new THREE.Mesh(new THREE.CylinderGeometry(0.0035,0.001,0.045,8), MAT.METAL);
+  needle.position.y=0.0225;
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(0.017,0.019,0.013,20),
+    new THREE.MeshStandardMaterial({ color:0xE53935, roughness:0.35 }));
+  head.position.y=0.051;
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(0.017,20,12,0,Math.PI*2,0,Math.PI/2),
+    head.material);
+  cap.position.y=0.0575;
+  return grp(needle,head,cap);
+}
+function buildCrayon(){
+  const m=new THREE.MeshStandardMaterial({ color:0x9B7BF5, roughness:0.6 });
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.011,0.011,0.09,12), m);
+  body.position.y=0.045;
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(0.011,0.024,12), m);
+  tip.position.y=0.102;
+  return grp(body,tip);
+}
+
+/* 배치 좌표 */
+const SCIS=buildScissors(); SCIS.position.set(0.43,0.018,0.30); SCIS.rotation.y=-2.1; SCIS.visible=false; scene.add(SCIS);
+const TAPE=buildTape();     TAPE.position.set(-0.44,0.012,0.27); TAPE.visible=false; scene.add(TAPE);
+/* 보석 3개 (트레이의 'gem' 하나로 대표, 실제 오브젝트는 3개 풀) */
+const GEMS=[buildGem(0),buildGem(1),buildGem(2)];
+GEMS.forEach((g,i)=>{ g.position.set(-0.40+i*0.06,0.012,-0.30); g.visible=false; scene.add(g); });
+const GEM_TARGET=[[-0.18,0.028],[0,0.036],[0.18,0.028]];   // 왕관 위 붙일 자리(로컬 x,y)
+const GEM=GEMS[0];          // 트레이 표시·프록시 대표
+
+const GLUE=buildGlue(), RULER=buildRuler(), PIN=buildPin(), CRAYON=buildCrayon();
+[GLUE,RULER,PIN,CRAYON].forEach(o=>{ o.visible=false; scene.add(o); });
+
+const EQ_OBJ={ paper:PAPER, scissors:SCIS, gem:GEM, tape:TAPE,
+               glue:GLUE, ruler:RULER, pin:PIN, crayon:CRAYON };
+const BASE_Y={ paper:PAPER_Y, scissors:0.018, gem:0.012, tape:0.012,
+               glue:0.012, ruler:0.012, pin:0.012, crayon:0.012 };
+const FREE_SPOTS=[[-0.30,0.33],[0.18,0.36],[-0.14,-0.30],[0.34,-0.28]];
+let spotIdx=0;
+function nextSpot(){ const s=FREE_SPOTS[spotIdx%FREE_SPOTS.length]; spotIdx++; return s; }
+
+/* ═════════ 왕관 머리 (씌우기 대상 — 마네킹 머리) ═════════ */
+const HEAD=new THREE.Group();
+HEAD.position.set(0,0.30,PAPER_Z-0.02);
+{
+  const skin=new THREE.MeshStandardMaterial({ color:0xF0C9A0, roughness:0.7 });
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.11,32,24), skin);
+  head.scale.set(1,1.12,1); head.castShadow=true;
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.07,0.12,20), skin);
+  neck.position.y=-0.13; neck.castShadow=true;
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.016,0.03,12), skin);
+  nose.position.set(0,-0.005,0.108); nose.rotation.x=Math.PI/2; nose.castShadow=true;
+  const eyeM=new THREE.MeshStandardMaterial({ color:0x33251a, roughness:0.4 });
+  [-0.04,0.04].forEach(x=>{
+    const e=new THREE.Mesh(new THREE.SphereGeometry(0.011,12,10), eyeM);
+    e.position.set(x,0.02,0.098); HEAD.add(e);
+  });
+  HEAD.add(head,neck,nose);
+}
+HEAD.visible=false; scene.add(HEAD);
+onLowQuality(()=>{});
+
+/* ═════════ 게임 상태 ═════════ */
+const { MISSION_CROWN, createMissionRun, createCraftRun, createWearSim } = window.ArtLab;
+let run   = createMissionRun(MISSION_CROWN);
+let craft = createCraftRun();
+let wsim  = createWearSim();
+let freeMode=false, wearOn=false, taped=false, rolled=false;
+let prediction=null, predictShown=false, succeeded=false, busy=false;
+const gemPlaced=[false,false,false];
+
+const $=id=>document.getElementById(id);
+const trayEl=$('tray'), progEl=$('prog'), hintEl=$('hint');
+const wearBtn=$('wearBtn'), modeBtn=$('modeBtn'), resetBtn=$('resetBtn');
+const missionEl=$('mission');
+
+/* ═════════ 재료 트레이 ═════════ */
+const EQUIP=[
+  { id:'paper',    ic:'🟨', nm:'색종이 띠' },
+  { id:'scissors', ic:'✂️', nm:'가위' },
+  { id:'gem',      ic:'💎', nm:'보석' },
+  { id:'tape',     ic:'📎', nm:'테이프' },
+  { id:'glue',     ic:'🧴', nm:'풀' },
+  { id:'ruler',    ic:'📏', nm:'자' },
+  { id:'pin',      ic:'📌', nm:'압정' },
+  { id:'crayon',   ic:'🖍️', nm:'크레파스' }
+];
+EQUIP.sort(()=>Math.random()-0.5);             // 매번 셔플 = 자리 외우기 방지
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='k3-eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onPick(e.id,d));
+  trayEl.appendChild(d);
+});
+
+function shake(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function renderProg(){
+  const n=run.count(), total=MISSION_CROWN.required.length;
+  let html=`<span class="chip ${n?'on':''}">재료 ${n} / ${total}</span>`;
+  MISSION_CROWN.required.forEach(id=>{
+    if(run.placed[id]){
+      const e=EQUIP.find(x=>x.id===id);
+      html+=`<span class="chip on">${e.ic} ${e.nm}</span>`;
+    }
+  });
+  progEl.innerHTML=html;
+}
+function syncTray(){
+  EQUIP.forEach(e=>$('eq_'+e.id).classList.toggle('placed', !!run.placed[e.id]));
+}
+function setHint(html){
+  if(html){ hintEl.innerHTML=html; hintEl.style.opacity=1; }
+  else hintEl.style.opacity=0;
+}
+function renderSteps(){
+  const st=craft.stage();
+  const order=['cut','gem','roll','tape','wear'];
+  const started=run.isReady()||craft.gems()>0||st!=='cut';
+  document.querySelectorAll('.stp').forEach(el=>{
+    const s=el.dataset.s;
+    const si=order.indexOf(s), ci=st==='done'?99:order.indexOf(st);
+    el.classList.toggle('done', si<ci || st==='done');
+    el.classList.toggle('cur', started && si===ci);
+  });
+  $('gemN').textContent = craft.stage()==='gem'||craft.gems()>0 ? `${craft.gems()}/3` : '';
+}
+renderProg(); renderSteps();
+
+
+/* ═════════ 트윈 헬퍼 ═════════ */
+const tweens=[];
+function tw(dur,fn){ return new Promise(res=>tweens.push({ t:0, dur, fn, res })); }
+const eo3=k=>1-Math.pow(1-k,3);
+const eio=k=>k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ═════════ 재료 꺼내기 / 회수 ═════════ */
+function onPick(id, cardEl){
+  if(busy) return;
+  if(succeeded && !freeMode) return;
+  if(run.placed[id]){
+    if(craft.stage()!=='cut' && ['paper','scissors','gem','tape'].includes(id)){
+      toast('만들기가 시작됐어요 — 다시 하려면 <b>↺ 처음부터</b>!', true); return;
+    }
+    run.remove(id);
+    Object.keys(EQ_OBJ).forEach(k=>{ if(!run.placed[k]) EQ_OBJ[k].visible=false; });
+    GEMS.forEach(g=>{ if(!run.placed.gem) g.visible=false; });
+    syncTray(); renderProg();
+    return;
+  }
+  const r=run.pick(id, freeMode);
+  if(r.act==='wrong'){ shake(cardEl); snd.nope(); toast(r.msg, true, 4400); return; }
+  if(r.act==='blocked'){ shake(cardEl); snd.nope(); toast(r.msg, true, 3800); return; }
+  if(r.act==='placed'){
+    if(id==='gem'){                              // 보석은 3개 풀 전부 트레이에 등장
+      GEMS.forEach((g,i)=>{ dropper.drop(g, BASE_Y.gem); });
+    } else {
+      const o=EQ_OBJ[id];
+      if(!MISSION_CROWN.required.includes(id)){
+        const [x,z]=nextSpot(); o.position.x=x; o.position.z=z;
+      }
+      dropper.drop(o, BASE_Y[id]);
+    }
+    snd.tap();
+    syncTray(); renderProg();
+    if(r.ready && !freeMode && !predictShown){
+      predictShown=true;
+      setTimeout(async ()=>{
+        toast('✅ 재료 준비 끝!');
+        prediction = await cards.showPredict(
+          '만들기 전에 예측 — 평평한 색종이 띠를 그대로 머리에 대면, 왕관이 될까요?',
+          [ { id:'flat', label:'① 평평한 띠도 왕관이 된다' },
+            { id:'ring', label:'② 둥글게 말아 이어야 왕관이 된다' } ]);
+        toast('좋아요! 직접 만들어서 확인해 봐요');
+        setHint(craft.GUIDE.cut);
+        renderSteps();
+      }, 450);
+    } else if(r.ready && freeMode){
+      setHint(craft.GUIDE.cut);
+    }
+  }
+}
+
+/* ═════════ 만들기 애니메이션 ═════════ */
+const placedGems=[];   // 왕관에 붙은 보석(로컬 좌표 저장)
+
+async function animCut(){
+  busy=true; setHint('');
+  CREASE.visible=true;
+  const home={ p:SCIS.position.clone(), r:SCIS.rotation.y };
+  const arms=SCIS.userData.arms;
+  const y1=BAND_H/2, x1=BAND_W/2, seg=BAND_W/TEETH;
+  /* 톱니 윗변 지그재그를 왼→오 스닙 (설계된 절취선에서만) */
+  const startX=-x1, endX=x1;
+  const worldZ=y=> PAPER_Z - y;                         // 셰이프 y → 월드 z
+  let from=SCIS.position.clone();
+  await tw(0.32,q=>{ SCIS.position.lerpVectors(from,
+    new THREE.Vector3(startX,0.03,worldZ(y1*0.2)), eo3(q)); });
+  for(let i=0;i<TEETH;i++){
+    const xa=-x1+i*seg;
+    const path=[ [xa, y1*0.2], [xa+seg*0.5, y1], [xa+seg, y1*0.2] ]; // 골→봉우리→골
+    for(let s=0;s<path.length-1;s++){
+      const [ax,ay]=path[s], [bx,by]=path[s+1];
+      snd.snip();
+      await tw(0.13,q=>{
+        const open=Math.sin(q*Math.PI)*0.24;
+        arms[0].rotation.y=0.10+open; arms[1].rotation.y=-0.10-open;
+        SCIS.position.x=ax+(bx-ax)*q;
+        SCIS.position.z=worldZ(ay+(by-ay)*q);
+      });
+      SCIS.rotation.y=Math.atan2(worldZ(by)-worldZ(ay), bx-ax);
+    }
+  }
+  reshapeBand(true);                                     // 밋밋한 띠 → 톱니 띠
+  CREASE.visible=false;
+  const back=SCIS.position.clone();
+  await tw(0.35,q=>{ SCIS.position.lerpVectors(back, home.p, eo3(q)); });
+  SCIS.rotation.y=home.r;
+  snd.pop();
+  toast('왕관 끝이 <b>뾰족뾰족</b>해졌어요! 이제 보석으로 꾸며요 💎');
+  busy=false;
+  setHint(craft.GUIDE.gem); renderSteps();
+}
+
+async function animGem(idx, gemObj){
+  busy=true;
+  const [gx,gy]=GEM_TARGET[placedGems.length];
+  const start=gemObj.position.clone();
+  const midY=0.2;
+  await tw(0.4,k=>{
+    const e=eo3(k);
+    gemObj.position.x=start.x+(gx-start.x)*e;
+    gemObj.position.z=start.z+((PAPER_Z-gy)-start.z)*e;
+    gemObj.position.y=BASE_Y.gem + Math.sin(k*Math.PI)*midY;
+  });
+  snd.pop();
+  /* 스냅: 보석이 왕관 띠에 붙음 (로컬 좌표 기록 — 말 때 함께 휨) */
+  PAPER.attach(gemObj);
+  placedGems.push({ obj:gemObj, lx:gx, ly:gy });
+  busy=false;
+  renderSteps();
+  if(craft.stage()==='roll'){ setHint(craft.GUIDE.roll); toast('보석 세 개로 반짝반짝! 이제 둥글게 말아요'); }
+}
+
+/* 평평한 띠 → 원통(고리)로 굽히기: 세그먼트 지오메트리를 원호로 재배치 */
+let ringMode=false;
+const RING_R=BAND_W/(2*Math.PI);                         // 둘레=BAND_W인 원의 반지름
+function bendBand(t){
+  // t: 0=평평, 1=완전한 고리. 각 정점 x를 원호로 매핑
+  const geoA=bandMesh.children[0].geometry;
+  const geoB=bandMesh.children[1].geometry;
+  [geoA,geoB].forEach(geo=>{
+    const pos=geo.attributes.position;
+    if(!geo.userData.flat){                              // 원본 평면 좌표 백업
+      geo.userData.flat=pos.array.slice();
+    }
+    const flat=geo.userData.flat;
+    for(let i=0;i<pos.count;i++){
+      const fx=flat[i*3], fy=flat[i*3+1];
+      const ang=(fx/BAND_W)*Math.PI*2*t;                 // 둘레를 각도로
+      const r=RING_R;
+      const bx=t>0.001 ? Math.sin(ang)*r : fx;
+      const bz=t>0.001 ? (Math.cos(ang)*r - r) : 0;      // 앞으로 볼록
+      pos.setXYZ(i, bx, fy, bz);
+    }
+    pos.needsUpdate=true; geo.computeVertexNormals();
+  });
+  // 붙은 보석도 함께 휘게
+  placedGems.forEach(g=>{
+    const fx=g.lx;
+    const ang=(fx/BAND_W)*Math.PI*2*t;
+    const r=RING_R+0.006;
+    g.obj.position.set(t>0.001?Math.sin(ang)*r:fx, g.ly, t>0.001?(Math.cos(ang)*r-RING_R):0.002);
+    if(t>0.001) g.obj.rotation.y=ang;
+  });
+}
+async function animRoll(){
+  busy=true; setHint('');
+  snd.fold();
+  await tw(0.9,k=>{ bendBand(eio(k)); });
+  ringMode=true; rolled=true;
+  snd.pop();
+  toast('둥근 고리가 됐어요! 양 끝을 <b>테이프</b>로 이으면 완성 🔗');
+  busy=false;
+  setHint(craft.GUIDE.tape); renderSteps();
+}
+
+async function animTape(){
+  busy=true; setHint('');
+  const start=TAPE.position.clone();
+  const joinPos=new THREE.Vector3(0,PAPER_Y,PAPER_Z+RING_R*2-0.02); // 고리 이음새(뒤쪽)
+  await tw(0.5,k=>{ TAPE.position.lerpVectors(start,
+    new THREE.Vector3(joinPos.x,0.18,joinPos.z), eo3(k)); });
+  await tw(0.3,k=>{ TAPE.position.y=0.18+(PAPER_Y-0.18)*eio(k); });
+  snd.snip();
+  /* 이음새에 작은 테이프 조각 남기고 디스펜서는 복귀 */
+  const tab=new THREE.Mesh(new THREE.PlaneGeometry(0.03,BAND_H*0.9),
+    new THREE.MeshPhysicalMaterial({ color:0xffffff, roughness:0.2, transmission:0.4,
+      transparent:true, opacity:0.5, side:THREE.DoubleSide }));
+  tab.position.set(0,0,-RING_R); tab.rotation.y=0;
+  PAPER.attach(tab);
+  await pause(150);
+  const back=TAPE.position.clone();
+  await tw(0.4,k=>{ TAPE.position.lerpVectors(back, start, eo3(k)); });
+  taped=true; wearBtn.disabled=false;
+  snd.pop();
+  toast('🎉 왕관 완성! 이제 <b>👑 머리에 써</b> 봐요');
+  setHint('👑 버튼을 눌러 머리에 씌워요!');
+  busy=false;
+  renderSteps();
+}
+
+/* 씌우기: 왕관을 머리 위로 올림 (버튼으로 토글, 시뮬이 안착 판정) */
+const CROWN_HOME=new THREE.Vector3(0,PAPER_Y,PAPER_Z);
+const CROWN_HEAD=new THREE.Vector3(0,0.365,PAPER_Z-0.02);
+function applyWear(h){
+  PAPER.position.lerpVectors(CROWN_HOME, CROWN_HEAD, h);
+}
+
+/* ═════════ 탭 라우팅 (코어 grab — 전부 탭, fixed) ═════════ */
+const grab=makeGrab(renderer, camera, controls, 0);
+function tapItem(target, r, h, y, onTap, enabled){
+  const proxy=grab.makeProxy(target, r, h, y);
+  grab.add({ proxy, target, fixed:true, onTap, enabled });
+}
+function tryCraft(a, anim){
+  if(busy) return;
+  const r=craft.act(a);
+  if(r.act==='blocked'){ snd.nope(); toast(r.msg, true, 3600); return; }
+  if(r.act==='ok') anim();
+}
+/* 보석 3개 개별 탭 — 종이(띠) 프록시보다 먼저 등록해야 가로채이지 않음 */
+GEMS.forEach((g,i)=>{
+  grab.add({ proxy:g, target:g, fixed:true,
+    enabled:()=>g.visible && craft.stage()==='gem' && !gemPlaced[i] && !busy,
+    onTap:()=>{
+      const r=craft.act('gem');
+      if(r.act==='ok'){ gemPlaced[i]=true; animGem(i,g); }
+    } });
+});
+tapItem(SCIS, 0.14, 0.08, 0.02, ()=>tryCraft('cut', animCut), ()=>SCIS.visible && craft.stage()==='cut');
+/* 색종이 띠 탭 = 말기 (roll 단계에서만) */
+tapItem(PAPER, 0.34, 0.06, 0.02, ()=>{
+  if(craft.stage()==='gem'){ toast(craft.GUIDE.gem, true); return; }
+  if(craft.stage()==='done'||craft.stage()==='wear') return;
+  tryCraft('roll', animRoll);
+}, ()=>PAPER.visible && !taped);
+tapItem(TAPE, 0.06, 0.06, 0.024, ()=>tryCraft('tape', animTape), ()=>TAPE.visible && rolled && !taped);
+
+/* ═════════ 씌우기 · 성공 ═════════ */
+wearBtn.addEventListener('click',()=>{
+  if(!taped) return;
+  wearOn=!wearOn;
+  wearBtn.textContent=wearOn?'🙌 다시 내리기':'👑 머리에 쓰기';
+  wearBtn.classList.toggle('on', wearOn);
+  if(wearOn){ HEAD.visible=true; snd.whoosh(); }
+});
+async function showSuccess(){
+  snd.chime();
+  const guess = prediction==='ring'
+    ? '🔮 <b>예측 적중!</b> 평평한 띠를 <b>둥글게 말아 이어야</b> 머리에 씌울 수 있어요.'
+    : (prediction==='flat'
+        ? '🔮 예측과 달랐죠? 평평한 띠는 머리를 <b>감싸지 못해요</b> — 둥글게 말아 이어야 왕관이 돼요.'
+        : '평평한 띠를 <b>둥글게 말아 이어야</b> 머리에 씌울 수 있어요.');
+  const wrongN=run.wrongCount();
+  const matMsg = wrongN===0
+    ? '재료도 <b>한 번에 딱</b> 맞게 골랐어요! 💎'
+    : `아니었던 재료를 ${wrongN}번 골랐어요 — 다음엔 한 번에!`;
+  const v=await cards.showCard(
+    `<div style="font-size:38px;text-align:center">👑</div>
+     <h3 style="text-align:center">미션 성공 — 왕관!</h3>
+     <p style="font-size:13px;line-height:1.65">${guess}<br>${matMsg}</p>`,
+    [ { label:'🎨 자유 만들기', cls:'pri', value:'free' },
+      { label:'↺ 다시 하기', value:'again' } ], true);
+  if(v==='free' && !freeMode) modeBtn.click();
+  if(v==='again') resetAll(true);
+}
+
+/* ═════════ 모드 · 리셋 ═════════ */
+modeBtn.addEventListener('click',()=>{
+  freeMode=!freeMode;
+  modeBtn.textContent=freeMode?'🎯 미션 모드':'🎨 자유 만들기';
+  missionEl.style.display=freeMode?'none':'';
+  document.querySelector('.k3-topbar .badge').textContent=freeMode?'자유 만들기':'미션 · 왕관';
+  toast(freeMode?'자유 만들기 — 무엇이든 꺼내 놓아 봐요':'미션 모드 — 필요한 재료만!');
+});
+function resetAll(keepMode){
+  run=createMissionRun(MISSION_CROWN);
+  craft=createCraftRun(); wsim=createWearSim();
+  wearOn=false; taped=false; rolled=false; ringMode=false;
+  succeeded=false; busy=false;
+  prediction=null; predictShown=false; spotIdx=0;
+  gemPlaced[0]=gemPlaced[1]=gemPlaced[2]=false;
+  /* 왕관 원복: 붙은 보석·테이프 회수 + 밋밋한 띠로 재생성 */
+  placedGems.forEach(g=>{ scene.attach(g.obj); g.obj.visible=false; });
+  placedGems.length=0;
+  reshapeBand(false);
+  bendBand(0);
+  PAPER.position.set(0,PAPER_Y,PAPER_Z); PAPER.rotation.set(-Math.PI/2,0,0);
+  SCIS.position.set(0.43,0.018,0.30); SCIS.rotation.set(0,-2.1,0);
+  TAPE.position.set(-0.44,0.012,0.27); TAPE.rotation.set(0,0,0);
+  GEMS.forEach((g,i)=>{ g.position.set(-0.40+i*0.06,0.012,-0.30); g.rotation.set(0,0,0); });
+  HEAD.visible=false;
+  Object.keys(EQ_OBJ).forEach(k=>EQ_OBJ[k].visible=false);
+  GEMS.forEach(g=>g.visible=false);
+  wearBtn.disabled=true; wearBtn.textContent='👑 머리에 쓰기'; wearBtn.classList.remove('on');
+  camTargetY=0.20;
+  cards.hide(); setHint('');
+  syncTray(); renderProg(); renderSteps();
+  if(!keepMode && freeMode) modeBtn.click();
+}
+resetBtn.addEventListener('click',()=>resetAll(true));
+
+/* ═════════ 루프 ═════════ */
+let camTargetY=0.20;
+let last=null;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(last===null) last=ts;
+  let dt=(ts-last)/1000; last=ts;
+  if(dt<0) dt=0; if(dt>0.05) dt=0.05;
+
+  /* 트윈 */
+  for(let i=tweens.length-1;i>=0;i--){
+    const w=tweens[i]; w.t+=dt;
+    const k=Math.min(w.t/w.dur,1);
+    w.fn(k);
+    if(k>=1){ tweens.splice(i,1); w.res(); }
+  }
+  dropper.tick(dt);
+
+  /* 씌우기 */
+  const S=wsim.step(dt,{ wearing:wearOn, taped });
+  if(taped && !busy) applyWear(S.h);
+  if(wearOn && taped) camTargetY=0.30; else if(!succeeded) camTargetY=0.20;
+  if(S.worn && !succeeded){ succeeded=true;
+    setHint(''); setTimeout(showSuccess, 350); }
+
+  controls.target.y += (camTargetY-controls.target.y)*Math.min(dt*3,1);
+  controls.update();
+  tickQuality();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+setTimeout(()=>document.getElementById('loading').classList.add('hide'), 600);
+setHint('재료함에서 <b>필요한 재료</b>를 골라 꺼내요');
+</script>
+</body>
+</html>
