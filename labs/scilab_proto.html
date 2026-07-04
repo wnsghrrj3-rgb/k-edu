@@ -273,12 +273,12 @@ const DARKMETAL = new THREE.MeshStandardMaterial({
 });
 
 function waterMat(colorHex){
-  // ⚠ transmission 금지 — transmission 유리 너머에서는 transmission 액체가 안 그려짐(three 사양).
-  //   블렌딩(transparent+opacity) 액체는 유리의 transmission 버퍼에 포함되어 정상 표시.
+  // ⚠ three 규칙: transmission 유리의 "너머" 버퍼에는 불투명 물체만 포함됨.
+  //   (transmission 액체 → 제외 / transparent 블렌딩 액체 → 제외 / 불투명 → 포함)
+  //   ∴ 액체는 불투명(색소 탄 물 느낌) + clearcoat 광택으로 — 유리 굴절도 제대로 받음.
   return new THREE.MeshPhysicalMaterial({
-    color: colorHex, metalness: 0, roughness: 0.12,
-    transparent: true, opacity: 0.82, depthWrite: false,
-    clearcoat: 0.6, clearcoatRoughness: 0.15, envMapIntensity: 0.9
+    color: colorHex, metalness: 0, roughness: 0.14,
+    clearcoat: 0.85, clearcoatRoughness: 0.12, envMapIntensity: 0.9
   });
 }
 
@@ -434,10 +434,10 @@ for(let i = 0; i < B_N; i++){
 bGeo.setAttribute('position', new THREE.BufferAttribute(bPos, 3));
 const bubbles = new THREE.Points(bGeo, new THREE.PointsMaterial({
   color: 0xeaf7ff, size: 0.0105, transparent: true, opacity: 0.85,
-  depthWrite: false, sizeAttenuation: true
+  depthWrite: false, depthTest: false, sizeAttenuation: true
 }));
 bubbles.frustumCulled = false;
-bubbles.renderOrder = 2;
+bubbles.renderOrder = 10;   // 불투명 물 위에 항상 그려지도록
 RIG.add(bubbles);
 let bubbleMax = B_N;
 
