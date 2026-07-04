@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 막대자석 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 황금 샘플 1호 — 막대자석 (2026-07-04)
+  스튜디오 표준 5요소 시연:
+    ① 다크 스튜디오 + 원목 책상  ② 실물 질감(자석·철가루·나침반)
+    ③ 직접 조작(자석 드래그·회전, 나침반 드래그)
+    ④ 즉각 반응(철가루 1,800개가 자기장을 따라 실시간 정렬 — 자석을 움직이면 장이 따라옴)
+    ⑤ 와우(예측→반으로 자르기→각 조각에 N·S가 다시 생김: "자르면 한 극만 남는다" 오개념 반증)
+  klab3 코어 사용 1호 = 코어 검증 겸함. 미션·퀴즈·학년칸은 양산 패스에서 이식.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+
+<div class="k3-topbar">
+  <span class="title">🧲 케이랩 · 막대자석</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div id="ctrls" style="position:fixed;top:50px;right:14px;z-index:20;display:flex;flex-direction:column;gap:8px">
+  <button class="k3-btn accent" id="cutBtn">✂️ 반으로 자르면?</button>
+  <button class="k3-btn" id="rotBtn">↻ 자석 돌리기</button>
+  <button class="k3-btn" id="resetBtn" style="font-size:12.5px">↺ 처음부터</button>
+</div>
+
+<div class="k3-hint" id="hint">자석을 <b>끌어서</b> 철가루 위를 움직여 보세요 · 나침반도 옮길 수 있어요</div>
+<div class="k3-loading" id="loading"><div class="ic">🧲</div><div>실험 준비 중…</div></div>
+
+<!-- ═══ 순수 자기장 로직 (node 테스트 대상) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* 자석 = {x,z,ang,len,q} — N극은 +축 끝, S극은 -축 끝 (ang=0이면 N이 +x 쪽) */
+  function poles(m){
+    var h = m.len/2, c = Math.cos(m.ang), s = Math.sin(m.ang);
+    return {
+      nx: m.x + c*h, nz: m.z + s*h,
+      sx: m.x - c*h, sz: m.z - s*h
+    };
+  }
+  /* 점 (px,pz)에서의 자기장 (두 자기홀 근사, 다자석 중첩) */
+  function fieldAt(px, pz, magnets){
+    var bx=0, bz=0;
+    for(var i=0;i<magnets.length;i++){
+      var m=magnets[i], p=poles(m), q=m.q||1;
+      var dx=px-p.nx, dz=pz-p.nz;
+      var r2=dx*dx+dz*dz+1e-6, r3=Math.pow(r2,1.5);
+      bx += q*dx/r3; bz += q*dz/r3;
+      dx=px-p.sx; dz=pz-p.sz;
+      r2=dx*dx+dz*dz+1e-6; r3=Math.pow(r2,1.5);
+      bx -= q*dx/r3; bz -= q*dz/r3;
+    }
+    return { x:bx, z:bz, mag:Math.hypot(bx,bz) };
+  }
+  /* 반으로 자르기: 자석 1개 → 절반 2개 (각각 새 N·S — 잘린 면에 새 극) */
+  function cutMagnet(m, gap){
+    gap = gap===undefined ? 0.05 : gap;
+    var c=Math.cos(m.ang), s=Math.sin(m.ang), q=(m.q||1)*0.5, hl=m.len/4;
+    var off = m.len/4 + gap/2;
+    return [
+      { x:m.x + c*off, z:m.z + s*off, ang:m.ang, len:m.len/2, q:q },  // N쪽 절반
+      { x:m.x - c*off, z:m.z - s*off, ang:m.ang, len:m.len/2, q:q }   // S쪽 절반
+    ];
+  }
+  var API={ poles:poles, fieldAt:fieldAt, cutMagnet:cutMagnet };
+  if(typeof window!=='undefined') window.MagnetSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+import { makeGrab } from '/kedu/teacher/engine3/klab3-grab.js';
+import { makeToast, makeCards } from '/kedu/teacher/engine3/klab3-ui.js';
+
+const { poles, fieldAt, cutMagnet } = window.MagnetSim;
+
+/* ── 씬 ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0, 1.35, 1.15], target: [0, 0.02, -0.04], fov: 42,
+  minDist: 0.5, maxDist: 2.8, maxPolar: 1.35
+});
+const { renderer, scene, camera, controls } = app;
+const MAT = makeMaterials();
+makeStage(scene, { deskStyle: 'wood' });
+const toast = makeToast();
+const cards = makeCards();
+
+/* 철가루 매트(밝은 아크릴 판 — 철가루가 잘 보이게) */
+const PAD_W = 1.7, PAD_D = 1.05, PAD_Y = 0.006;
+{
+  const pad = new THREE.Mesh(
+    new THREE.BoxGeometry(PAD_W, 0.012, PAD_D),
+    new THREE.MeshPhysicalMaterial({ color: 0xEDE8DE, roughness: 0.55, clearcoat: 0.5, clearcoatRoughness: 0.3 })
+  );
+  pad.position.y = PAD_Y - 0.006 + 0.006;
+  pad.receiveShadow = true; pad.castShadow = true;
+  scene.add(pad);
+}
+
+/* ── 자석 상태 (순수 로직과 3D 오브젝트를 연결) ── */
+const MAG_LEN = 0.26;
+let magnets = [{ x: 0, z: -0.06, ang: 0, len: MAG_LEN, q: 1 }];
+let cutState = false;
+
+function poleLabel(txt) {
+  return canvasTexture(64, 64, (g) => {
+    g.clearRect(0, 0, 64, 64);
+    g.fillStyle = '#fff'; g.font = 'bold 46px sans-serif'; g.textAlign = 'center';
+    g.fillText(txt, 32, 48);
+  });
+}
+const TEX_N = poleLabel('N'), TEX_S = poleLabel('S');
+
+/* 자석 3D — mode: 'full'(빨N+파S) | 'half-n'(빨, 잘린면 S) | 'half-s'(파, 잘린면 N) */
+function buildMagnetMesh(len, mode) {
+  const gp = new THREE.Group();
+  const H = 0.03, D = 0.042, y = H / 2 + PAD_Y + 0.006;
+  const redM = new THREE.MeshStandardMaterial({ color: 0xE04545, roughness: 0.42, metalness: 0.08 });
+  const bluM = new THREE.MeshStandardMaterial({ color: 0x3B6FD6, roughness: 0.42, metalness: 0.08 });
+  function seg(matl, x, w) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, H, D), matl);
+    m.position.set(x, y, 0); m.castShadow = true; gp.add(m);
+  }
+  function lab(tex, x) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.036, 0.036),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+    p.rotation.x = -Math.PI / 2; p.position.set(x, y + H / 2 + 0.001, 0);
+    gp.add(p);
+  }
+  if (mode === 'full') {
+    seg(bluM, -len / 4, len / 2); seg(redM, len / 4, len / 2);
+    lab(TEX_N, len * 0.36); lab(TEX_S, -len * 0.36);
+  } else if (mode === 'half-n') {   // 원래 N쪽(빨강) 조각 — 잘린 면(-x)에 새 S극
+    seg(redM, 0, len);
+    lab(TEX_N, len * 0.32); lab(TEX_S, -len * 0.32);
+  } else {                          // 원래 S쪽(파랑) 조각 — 잘린 면(+x)에 새 N극
+    seg(bluM, 0, len);
+    lab(TEX_N, len * 0.32); lab(TEX_S, -len * 0.32);
+  }
+  return gp;
+}
+
+const magGroup = new THREE.Group(); scene.add(magGroup);
+let magMeshes = [];
+const grab = makeGrab(renderer, camera, controls, PAD_Y);
+
+function rebuildMagnets() {
+  magMeshes.forEach(m => magGroup.remove(m.obj));
+  magMeshes = [];
+  magnets.forEach((m, i) => {
+    const mode = !cutState ? 'full' : (i === 0 ? 'half-n' : 'half-s');
+    const obj = buildMagnetMesh(m.len, mode);
+    obj.position.set(m.x, 0, m.z);
+    obj.rotation.y = -m.ang;   // three의 +y 회전은 x→-z라 부호 반전
+    magGroup.add(obj);
+    const proxy = grab.makeProxy(obj, Math.max(0.1, m.len * 0.62), 0.16, 0.03);
+    const item = grab.add({
+      proxy, target: obj,
+      clamp: { x: [-PAD_W / 2 + 0.1, PAD_W / 2 - 0.1], z: [-PAD_D / 2 + 0.08, PAD_D / 2 - 0.08] },
+      onMove: t => { m.x = t.position.x; m.z = t.position.z; }
+    });
+    magMeshes.push({ obj, item, m });
+  });
+}
+rebuildMagnets();
+
+/* ── 나침반 ── */
+const compass = new THREE.Group();
+let needle;
+{
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.056, 0.018, 32), MAT.DARKMETAL);
+  base.position.y = 0.009 + PAD_Y + 0.006; base.castShadow = true; compass.add(base);
+  const face = new THREE.Mesh(new THREE.CircleGeometry(0.047, 32),
+    new THREE.MeshStandardMaterial({ color: 0xF4F1E8, roughness: 0.6 }));
+  face.rotation.x = -Math.PI / 2; face.position.y = 0.0185 + PAD_Y + 0.006;
+  compass.add(face);
+  needle = new THREE.Group();
+  const nHalf = new THREE.Mesh(new THREE.ConeGeometry(0.009, 0.037, 4),
+    new THREE.MeshStandardMaterial({ color: 0xD64545, roughness: 0.4 }));
+  nHalf.rotation.z = -Math.PI / 2; nHalf.position.x = 0.0185;
+  const sHalf = new THREE.Mesh(new THREE.ConeGeometry(0.009, 0.037, 4),
+    new THREE.MeshStandardMaterial({ color: 0x8B93A0, roughness: 0.4 }));
+  sHalf.rotation.z = Math.PI / 2; sHalf.position.x = -0.0185;
+  needle.add(nHalf, sHalf);
+  needle.position.y = 0.021 + PAD_Y + 0.006;
+  compass.add(needle);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.05, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), MAT.GLASS);
+  dome.scale.y = 0.5; dome.position.y = 0.019 + PAD_Y + 0.006;
+  compass.add(dome);
+}
+compass.position.set(0.55, 0, 0.28);
+scene.add(compass);
+{
+  const proxy = grab.makeProxy(compass, 0.09, 0.14, 0.05);
+  grab.add({
+    proxy, target: compass,
+    clamp: { x: [-PAD_W / 2 + 0.08, PAD_W / 2 - 0.08], z: [-PAD_D / 2 + 0.08, PAD_D / 2 - 0.08] }
+  });
+}
+
+/* ── 철가루: InstancedMesh 1,800 — 자기장 따라 실시간 정렬 ── */
+const F_N = 1800;
+const filGeo = new THREE.BoxGeometry(0.012, 0.0016, 0.0019);
+const filMat = new THREE.MeshStandardMaterial({ color: 0x2c2f34, metalness: 0.8, roughness: 0.5 });
+const filings = new THREE.InstancedMesh(filGeo, filMat, F_N);
+filings.castShadow = false;
+scene.add(filings);
+const fPos = [], fBase = [], fCur = [];
+{
+  for (let i = 0; i < F_N; i++) {
+    const x = (Math.random() - 0.5) * (PAD_W - 0.12);
+    const z = (Math.random() - 0.5) * (PAD_D - 0.1);
+    const a = Math.random() * Math.PI * 2;
+    fPos.push(x, z);
+    fBase.push(Math.cos(a), Math.sin(a));
+    fCur.push(Math.cos(a), Math.sin(a));
+  }
+}
+const dummy = new THREE.Object3D();
+let filActive = F_N;
+app.onLowQuality(() => { filActive = Math.floor(F_N * 0.55); filings.count = filActive; });
+
+const ALIGN_K = 260;   // |B|→정렬 강도 스케일
+function tickFilings(dt) {
+  const lerp = Math.min(dt * 6, 1);
+  for (let i = 0; i < filActive; i++) {
+    const px = fPos[i * 2], pz = fPos[i * 2 + 1];
+    const B = fieldAt(px, pz, magnets);
+    let s = B.mag * ALIGN_K; if (s > 1) s = 1;
+    // 목표 방향 = 무작위 기본 ↔ 장 방향 혼합(장이 셀수록 정렬)
+    let tx = fBase[i * 2], tz = fBase[i * 2 + 1];
+    if (B.mag > 1e-9) {
+      const bx = B.x / B.mag, bz = B.z / B.mag;
+      // 철가루는 극성 없음 — 기존 방향과 가까운 쪽 부호 선택(휙 뒤집힘 방지)
+      const dot = bx * fCur[i * 2] + bz * fCur[i * 2 + 1];
+      const sx = dot >= 0 ? bx : -bx, sz = dot >= 0 ? bz : -bz;
+      tx = tx * (1 - s) + sx * s; tz = tz * (1 - s) + sz * s;
+    }
+    let cx = fCur[i * 2] + (tx - fCur[i * 2]) * lerp;
+    let cz = fCur[i * 2 + 1] + (tz - fCur[i * 2 + 1]) * lerp;
+    const cl = Math.hypot(cx, cz) || 1; cx /= cl; cz /= cl;
+    fCur[i * 2] = cx; fCur[i * 2 + 1] = cz;
+
+    dummy.position.set(px, PAD_Y + 0.0075, pz);
+    dummy.rotation.set(0, Math.atan2(-cz, cx), 0);
+    const g = 0.85 + 0.45 * s;
+    dummy.scale.set(g, 1, 1);
+    dummy.updateMatrix();
+    filings.setMatrixAt(i, dummy.matrix);
+  }
+  filings.instanceMatrix.needsUpdate = true;
+}
+
+/* ── 와우: 반으로 자르기 (예측 무장 → 반전 드러냄) ── */
+const cutBtn = document.getElementById('cutBtn');
+const rotBtn = document.getElementById('rotBtn');
+let prediction = null, revealed = false;
+
+cutBtn.addEventListener('click', async () => {
+  if (!cutState) {
+    if (!prediction) {
+      prediction = await cards.showPredict(
+        '자석을 반으로 자르면 어떻게 될까요?',
+        [{ id: 'one', label: '① N극만 있는 자석, S극만 있는 자석이 된다' },
+         { id: 'both', label: '② 두 조각 모두 N극과 S극이 다시 생긴다' }]
+      );
+    }
+    const m = magnets[0];
+    magnets = cutMagnet(m, 0.06);
+    cutState = true;
+    rebuildMagnets();
+    cutBtn.textContent = '🧲 다시 붙이기';
+    rotBtn.disabled = true;
+    if (!revealed) {
+      revealed = true;
+      setTimeout(() => {
+        const ok = prediction === 'both';
+        cards.showCard(
+          `<h3 style="color:${ok ? '#0d7a5c' : '#B9522F'}">${ok ? '🎯 예측 적중!' : '🤔 예측과 달랐죠?'}</h3>
+           <p style="font-size:13px;line-height:1.7;color:#41546a">
+           잘린 면에 <b>새 극이 생겨서</b>, 두 조각 모두 N극과 S극을 가져요.<br>
+           철가루 무늬를 보세요 — 작은 자석 <b>두 개</b>의 무늬가 됐죠?<br>
+           자석은 아무리 잘게 잘라도 <b>한 극만 가질 수 없어요.</b></p>`,
+          [{ label: '신기해! 계속 실험', cls: 'pri', value: 1 }], false
+        );
+      }, 1600);
+    } else {
+      toast('두 조각 모두 N·S — 철가루 무늬가 두 개의 자석!');
+    }
+  } else {
+    magnets = [{ x: 0, z: -0.06, ang: 0, len: MAG_LEN, q: 1 }];
+    cutState = false;
+    rebuildMagnets();
+    cutBtn.textContent = '✂️ 반으로 자르면?';
+    rotBtn.disabled = false;
+    toast('원래 자석으로 돌아왔어요');
+  }
+});
+
+rotBtn.addEventListener('click', () => {
+  if (cutState) return;
+  magnets[0].ang += Math.PI / 4;
+  magMeshes[0].obj.rotation.y = -magnets[0].ang;
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  magnets = [{ x: 0, z: -0.06, ang: 0, len: MAG_LEN, q: 1 }];
+  cutState = false; prediction = null; revealed = false;
+  rebuildMagnets();
+  compass.position.set(0.55, 0, 0.28);
+  cutBtn.textContent = '✂️ 반으로 자르면?';
+  rotBtn.disabled = false;
+  cards.hide();
+});
+
+/* ── 루프 ── */
+const clock = new THREE.Clock();
+let hintHidden = false;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+
+  tickFilings(dt);
+
+  // 나침반 바늘: 그 자리 자기장 방향으로 (N=빨강이 장 방향)
+  const B = fieldAt(compass.position.x, compass.position.z, magnets);
+  if (B.mag > 1e-9) {
+    const target = Math.atan2(-B.z, B.x);
+    let d = target - needle.rotation.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    needle.rotation.y += d * Math.min(dt * 5, 1);
+  }
+
+  if (!hintHidden && magnets[0] && (Math.abs(magnets[0].x) > 0.2 || Math.abs(magnets[0].z + 0.06) > 0.15)) {
+    hintHidden = true;
+    document.getElementById('hint').classList.add('hide');
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+document.getElementById('loading').classList.add('hide');
+toast('자석을 움직여 철가루 무늬를 바꿔 봐요 — 준비되면 ✂️');
+animate();
+</script>
+</body>
+</html>
