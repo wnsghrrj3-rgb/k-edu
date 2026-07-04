@@ -273,10 +273,12 @@ const DARKMETAL = new THREE.MeshStandardMaterial({
 });
 
 function waterMat(colorHex){
+  // ⚠ transmission 금지 — transmission 유리 너머에서는 transmission 액체가 안 그려짐(three 사양).
+  //   블렌딩(transparent+opacity) 액체는 유리의 transmission 버퍼에 포함되어 정상 표시.
   return new THREE.MeshPhysicalMaterial({
-    color: colorHex, metalness: 0, roughness: 0.09,
-    transmission: 0.72, thickness: 0.12, ior: 1.33,
-    envMapIntensity: 0.9
+    color: colorHex, metalness: 0, roughness: 0.12,
+    transparent: true, opacity: 0.82, depthWrite: false,
+    clearcoat: 0.6, clearcoatRoughness: 0.15, envMapIntensity: 0.9
   });
 }
 
@@ -408,7 +410,8 @@ const BK_R = 0.115, BK_H = 0.21;
 const WATER_H0 = 0.145;
 const waterGeo = new THREE.CylinderGeometry(BK_R - 0.012, BK_R - 0.014, WATER_H0, 48, 1, false);
 const waterBase = waterGeo.attributes.position.array.slice();
-const water = new THREE.Mesh(waterGeo, waterMat(0x9fd4f2));
+const water = new THREE.Mesh(waterGeo, waterMat(0x5FB9E8));
+water.renderOrder = 1;
 RIG.add(water);
 function layoutWater(vol){
   const h = WATER_H0 * vol;
@@ -434,6 +437,7 @@ const bubbles = new THREE.Points(bGeo, new THREE.PointsMaterial({
   depthWrite: false, sizeAttenuation: true
 }));
 bubbles.frustumCulled = false;
+bubbles.renderOrder = 2;
 RIG.add(bubbles);
 let bubbleMax = B_N;
 
