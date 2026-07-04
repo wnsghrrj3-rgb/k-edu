@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이아트 미술실 — 바람개비 만들기</title>
+<!--
+  케이아트 미술실(ArtLab) 황금 샘플 — 과학실(SciLab v0.2)의 미술 버전.
+  검증 목표(형태 변형 우회로 3종을 한 미션에서):
+    · 접기 = 정의된 접기 단계(대각선 2회 실접기 — 자를 선 만들기)
+    · 자르기 = 설계된 절취선에서만(가위가 대각선 4곳만 자름)
+    · 붙이기/조립 = 스냅 조인트(날개 모으기→압정→수수깡)
+  + 재료 트레이(고르기=학습·평가, 오답 재료는 "왜 아닌지" 피드백)
+  + 예측→확인(평평한 종이도 돌까?) + 바람 성공 연출(스핀 지속=성공)
+  기반: klab3 코어(engine3) · three r185 벤더 · 스튜디오 표준 v3 (§1 토큰·§2-A 재질)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  #hint{bottom:120px !important}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  /* 만들기 단계 패널 */
+  #steps{top:50px;left:14px;min-width:150px}
+  #steps .tt{font-size:12px;color:var(--mut);margin-bottom:8px}
+  .stp{display:flex;align-items:center;gap:7px;font-size:13px;color:#8fa3b8;
+    padding:3px 0;transition:color .3s}
+  .stp .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.16);
+    transition:background .3s,box-shadow .3s;flex:0 0 auto}
+  .stp.cur{color:#fff}
+  .stp.cur .dot{background:var(--kor);box-shadow:0 0 9px var(--kor)}
+  .stp.done{color:#7CF0C9}
+  .stp.done .dot{background:#12B886}
+
+  /* 미션 패널 */
+  #mission{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:21;
+    background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
+    border-radius:16px;padding:11px 16px;color:#fff;max-width:92vw;text-align:center}
+  #mission .mt{font-size:14.5px}
+  #mission .mp{font-size:12px;color:#b9c9da;margin-top:4px;line-height:1.5}
+  #mission .prog{margin-top:8px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .chip{font-size:11.5px;padding:3px 10px;border-radius:999px;
+    background:rgba(255,255,255,.10);color:#9fb3c8;border:1px solid transparent}
+  .chip.on{background:rgba(18,184,134,.22);color:#7CF0C9;border-color:rgba(18,184,134,.4)}
+
+  /* 조작 버튼 */
+  #ctrls{position:fixed;right:14px;top:50px;z-index:21;display:flex;flex-direction:column;gap:9px}
+  .k3-btn.wind{background:linear-gradient(135deg,#4FC3F7,#1E88E5);border:none}
+  .k3-btn.wind.on{background:linear-gradient(135deg,#FF8A3D,#F4511E)}
+
+  #loading{position:fixed;inset:0;z-index:50;background:var(--studio);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:12px;color:#cfe3f5;font-size:14px;transition:opacity .5s}
+  #loading.hide{opacity:0;pointer-events:none}
+  #loading .em{font-size:46px;animation:bob 1.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+</style>
+</head>
+<body class="k3">
+<div id="stage"></div>
+
+<div class="k3-topbar">
+  <span class="title">🎨 케이아트 미술실</span>
+  <span class="badge">미션 · 바람개비</span>
+</div>
+
+<div class="k3-panel" id="steps">
+  <div class="tt">만들기 순서</div>
+  <div class="stp" data-s="fold"><span class="dot"></span>접기 — 자를 선 만들기</div>
+  <div class="stp" data-s="cut"><span class="dot"></span>자르기 — 선을 따라</div>
+  <div class="stp" data-s="curl"><span class="dot"></span>날개 모으기 <span id="curlN"></span></div>
+  <div class="stp" data-s="pin"><span class="dot"></span>압정 꽂기</div>
+  <div class="stp" data-s="mount"><span class="dot"></span>수수깡 끼우기</div>
+</div>
+
+<div id="mission">
+  <div class="mt">🎯 미션: 빙글빙글 바람개비 만들기</div>
+  <div class="mp">아래 재료함에서 <b>필요한 재료만</b> 골라 책상에 준비하세요. 무엇이 필요할까요?</div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<div id="ctrls">
+  <button class="k3-btn wind" id="windBtn" disabled>🌬️ 바람 불기</button>
+  <button class="k3-btn" id="modeBtn">🎨 자유 만들기</button>
+  <button class="k3-btn" id="resetBtn">↺ 처음부터</button>
+</div>
+
+<div class="k3-tray" id="tray"></div>
+<div class="k3-hint" id="hint" style="opacity:0"></div>
+
+<div id="loading"><div class="em">🎨</div><div>미술실 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (렌더러 무관 · node 테스트 대상) ═══ -->
+<script id="artlab-logic">
+(function(){
+  'use strict';
+
+  /* ── 미션 정의 (미션 = 데이터. 다음 만들기는 이 형식의 객체만 추가) ── */
+  var MISSION_PINWHEEL = {
+    id:'pinwheel',
+    title:'바람개비 만들기',
+    required:['paper','scissors','pin','stick'],
+    // 절차 규칙: 이 재료를 꺼내려면 먼저 있어야 하는 것
+    needs:{
+      scissors:{ pre:['paper'], msg:'자를 종이가 먼저 있어야죠 — <b>색종이부터</b> 꺼내요!' }
+    },
+    // 오답 재료: 왜 아닌지가 곧 학습
+    wrong:{
+      glue:'🧴 풀로 날개를 붙이면 바람개비가 못 돌아요! 날개는 붙이지 않고 <b>압정으로 함께 꽂아요</b>.',
+      ruler:'📏 자가 없어도 돼요 — 색종이를 <b>반씩 접으면</b> 자를 선이 생겨요!',
+      eraser:'⬜ 지우개는 연필 자국을 지울 때! 이 만들기에는 필요 없어요.',
+      crayon:'🖍️ 크레파스는 꾸밀 때 좋아요 — 바람개비가 <b>돌아가는 데</b> 꼭 필요하진 않아요.'
+    }
+  };
+
+  /* ── 재료 고르기 러너 (과학실 검증본과 동일 계약) ── */
+  function createMissionRun(M){
+    var placed={}, wrongCount=0, ready=false;
+    function pick(id, freeMode){
+      if(placed[id]) return {act:'already'};
+      if(!freeMode && M.wrong[id]) { wrongCount++; return {act:'wrong', msg:M.wrong[id]}; }
+      var rule = M.needs[id];
+      if(rule){
+        for(var i=0;i<rule.pre.length;i++)
+          if(!placed[rule.pre[i]]) return {act:'blocked', msg:rule.msg};
+      }
+      placed[id]=true;
+      ready = M.required.every(function(r){return placed[r];});
+      return {act:'placed', ready:ready};
+    }
+    function remove(id){
+      if(!placed[id]) return false;
+      Object.keys(M.needs).forEach(function(k){
+        if(placed[k] && M.needs[k].pre.indexOf(id)>=0) remove(k);
+      });
+      delete placed[id];
+      ready=false;
+      return true;
+    }
+    function count(){ return M.required.filter(function(r){return placed[r];}).length; }
+    return { placed:placed, pick:pick, remove:remove, count:count,
+             isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
+  }
+
+  /* ── 만들기 단계 러너 (미술실 고유 — 정의된 절차만 진행, 어기면 안내) ── */
+  var CRAFT_GUIDE = {
+    fold:'색종이를 눌러 보세요 — <b>반씩 접어</b> 자를 선(대각선)을 만들어요',
+    cut:'✂️ 가위를 눌러 <b>접은 선을 따라</b> 잘라요 — 가운데는 남기고!',
+    curl:'날개 끝을 눌러 <b>한 장씩 가운데로</b> 모아요',
+    pin:'📌 압정을 눌러 모은 날개 <b>가운데에</b> 꽂아요',
+    mount:'수수깡을 눌러 바람개비 머리를 <b>끼워요</b>'
+  };
+  function createCraftRun(){
+    var ORDER=['fold','cut','curl','pin','mount'];
+    var idx=0, curls=0, done=false;
+    function stage(){ return done?'done':ORDER[idx]; }
+    function act(a){
+      if(done) return {act:'already'};
+      var cur=ORDER[idx];
+      if(a!==cur) return {act:'blocked', msg:CRAFT_GUIDE[cur]};
+      if(cur==='curl'){
+        curls++;
+        if(curls>=4) idx++;
+        return {act:'ok', step:'curl', curls:curls};
+      }
+      idx++;
+      if(idx>=ORDER.length) done=true;
+      return {act:'ok', step:cur, done:done};
+    }
+    return { act:act, stage:stage, curls:function(){return curls;},
+             isDone:function(){return done;}, GUIDE:CRAFT_GUIDE };
+  }
+
+  /* ── 회전 시뮬 (바람 → 스핀, 지속=성공) ── */
+  function createSpinSim(){
+    var S={ v:0, sustain:0, spun:false };
+    var VMAX=9.0, RATE=2.2, VTH=5.5, HOLD=2.0;
+    function step(dt, inp){
+      if(dt>0.05) dt=0.05;
+      var target=(inp.wind && inp.mounted)?VMAX:0;
+      S.v += (target-S.v)*Math.min(RATE*dt,1);
+      if(S.v<0.001 && target===0) S.v=0;
+      if(inp.mounted && S.v>=VTH){ S.sustain+=dt; if(S.sustain>=HOLD) S.spun=true; }
+      else S.sustain=0;
+      return S;
+    }
+    return { state:S, step:step, VTH:VTH };
+  }
+
+  var API = { MISSION_PINWHEEL:MISSION_PINWHEEL, createMissionRun:createMissionRun,
+              createCraftRun:createCraftRun, createSpinSim:createSpinSim };
+  if(typeof window!=='undefined'){ window.ArtLab=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+import { makeGrab } from '/kedu/teacher/engine3/klab3-grab.js';
+import { makeToast, makeCards } from '/kedu/teacher/engine3/klab3-ui.js';
+import { makeSteam, makeDropper } from '/kedu/teacher/engine3/klab3-fx.js';
+
+/* ═════════ 씬 부트 (코어) ═════════ */
+const stageEl = document.getElementById('stage');
+const { renderer, scene, camera, controls, tickQuality, onLowQuality } =
+  initScene(stageEl, { camPos:[0.72,0.86,1.34], target:[0,0.18,0], fov:41 });
+const MAT = makeMaterials();
+makeStage(scene, { deskStyle:'wood' });     // 미술실 = 원목 책상
+const dropper = makeDropper();
+const toast = makeToast();
+const cards = makeCards();
+
+/* ═════════ 사운드 (임시 로컬 — 코어 사운드 §2-C 확정 전) ═════════ */
+let AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function env(g,t0,a,d,v){ g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(v,t0+a);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+a+d); }
+function tone(f,dur,type,vol,slide){ const c=ac(); if(!c)return;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f,c.currentTime);
+  if(slide) o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+dur);
+  env(g,c.currentTime,0.005,dur,vol||0.12);
+  o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+dur+0.06); }
+function noiseS(dur,vol,fc){ const c=ac(); if(!c)return;
+  const n=c.sampleRate*dur|0, b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=c.createBufferSource(); s.buffer=b;
+  const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=fc||1400;
+  const g=c.createGain(); env(g,c.currentTime,0.012,dur,vol||0.1);
+  s.connect(f); f.connect(g); g.connect(c.destination); s.start(); }
+const snd = {
+  tap(){ tone(520,0.07,'triangle',0.10); },
+  snip(){ noiseS(0.05,0.16,2600); tone(1900,0.04,'square',0.05); },
+  fold(){ noiseS(0.18,0.07,900); },
+  pop(){ tone(300,0.09,'sine',0.12,540); },
+  whoosh(){ noiseS(0.55,0.10,700); },
+  chime(){ tone(660,0.35,'sine',0.10); setTimeout(()=>tone(880,0.4,'sine',0.10),120);
+           setTimeout(()=>tone(1320,0.5,'sine',0.08),260); },
+  nope(){ tone(220,0.12,'triangle',0.08,175); }
+};
+addEventListener('pointerdown',()=>{ const c=ac(); if(c && c.state==='suspended') c.resume(); });
+
+/* ═════════ 만들기 매트 (셀프힐링 커팅매트 — 미술실의 무대) ═════════ */
+const matTex = canvasTexture(512,352,(g,w,h)=>{
+  const gr=g.createLinearGradient(0,0,w,h);
+  gr.addColorStop(0,'#2f6b54'); gr.addColorStop(1,'#27573f');
+  g.fillStyle=gr; g.fillRect(0,0,w,h);
+  g.strokeStyle='rgba(255,255,255,.13)'; g.lineWidth=1;
+  for(let x=16;x<w;x+=32){ g.beginPath(); g.moveTo(x,10); g.lineTo(x,h-10); g.stroke(); }
+  for(let y=16;y<h;y+=32){ g.beginPath(); g.moveTo(10,y); g.lineTo(w-10,y); g.stroke(); }
+  g.strokeStyle='rgba(255,255,255,.24)'; g.lineWidth=1.6;
+  for(let x=16;x<w;x+=160){ g.beginPath(); g.moveTo(x,10); g.lineTo(x,h-10); g.stroke(); }
+  g.beginPath(); g.moveTo(16,16); g.lineTo(w-16,h-16); g.moveTo(w-16,16); g.lineTo(16,h-16);
+  g.strokeStyle='rgba(255,255,255,.10)'; g.stroke();
+  g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=2;
+  g.strokeRect(10,10,w-20,h-20);
+  g.fillStyle='rgba(255,255,255,.5)';
+  for(let x=16;x<w-16;x+=16) g.fillRect(x,10,1.2,x%160===16?9:5);
+});
+const mat = new THREE.Mesh(
+  new THREE.BoxGeometry(1.18,0.008,0.80),
+  new THREE.MeshStandardMaterial({ map:matTex, roughness:0.62, metalness:0.02 })
+);
+mat.position.set(0,0.008,0.03);
+mat.receiveShadow=true; mat.castShadow=true; scene.add(mat);
+
+/* ═════════ 색종이 (양면 · 4날개+접히는 귀 — 정의된 접기/절취선) ═════════ */
+const H=0.19;                          // 반 변 길이 (0.38 정사각)
+const PAPER_Y=0.016, PAPER_Z=0.03;
+const COL_FRONT=0xFF6B81, COL_BACK=0xFFD54F;   // 양면 색종이(앞 코랄 · 뒤 노랑)
+function paperTex(hex){
+  return canvasTexture(128,128,(g)=>{
+    g.fillStyle='#'+hex.toString(16).padStart(6,'0'); g.fillRect(0,0,128,128);
+    for(let i=0;i<520;i++){ const v=Math.random()*0.09;
+      g.fillStyle=`rgba(255,255,255,${v})`;
+      g.fillRect(Math.random()*128,Math.random()*128,1.3,1.3); }
+  });
+}
+const pmFront=new THREE.MeshStandardMaterial({ map:paperTex(COL_FRONT), roughness:0.88, side:THREE.FrontSide });
+const pmBack =new THREE.MeshStandardMaterial({ map:paperTex(COL_BACK ), roughness:0.88, side:THREE.BackSide  });
+function twoSided(shape){                       // 같은 지오메트리 2메시(앞/뒤 색) = z파이팅 없음
+  const geo=new THREE.ShapeGeometry(shape), grp=new THREE.Group();
+  const a=new THREE.Mesh(geo,pmFront), b=new THREE.Mesh(geo,pmBack);
+  a.castShadow=b.castShadow=true;
+  grp.add(a,b); return grp;
+}
+/* 날개(4분면 삼각) = 몸통 오각형 + 접히는 귀(경첩 F1(0,H)~F2(H/2,H/2) — π 회전 시 귀끝(H,H)→정확히 중심) */
+const baseShape=new THREE.Shape();
+baseShape.moveTo(0,0); baseShape.lineTo(-H,H); baseShape.lineTo(0,H);
+baseShape.lineTo(H*0.5,H*0.5); baseShape.closePath();
+const FL_L=H*Math.SQRT1_2;                     // 경첩 길이
+const flapShape=new THREE.Shape();             // 경첩-로컬 좌표(x=경첩 방향)
+flapShape.moveTo(0,0); flapShape.lineTo(FL_L,0); flapShape.lineTo(FL_L,FL_L); flapShape.closePath();
+
+const PAPER=new THREE.Group();
+PAPER.position.set(0,PAPER_Y,PAPER_Z);
+PAPER.rotation.x=-Math.PI/2;                   // 셰이프 XY → 책상 평면, z=위
+PAPER.visible=false; scene.add(PAPER);
+
+const WING=[], FLAP=[], qBase=[];
+for(let i=0;i<4;i++){
+  const w=new THREE.Group();
+  w.rotation.z=i*Math.PI/2;
+  qBase.push(w.quaternion.clone());
+  w.add(twoSided(baseShape));
+  const hinge=new THREE.Group();               // 경첩 피벗: F1에서 경첩 방향으로 x축 정렬
+  hinge.position.set(0,H,0);
+  hinge.rotation.z=-Math.PI/4;
+  const fl=twoSided(flapShape);
+  hinge.add(fl);
+  w.add(hinge);
+  PAPER.add(w);
+  WING.push(w); FLAP.push(hinge);
+}
+/* 접은 선(대각선 크리스) — 점선 세그먼트 */
+function dashLine(angle){
+  const g=new THREE.Group();
+  const m=new THREE.MeshBasicMaterial({ color:0x8a4a2a, transparent:true, opacity:0.55 });
+  for(let k=-5;k<=5;k++){
+    if(k===0) continue;
+    const seg=new THREE.Mesh(new THREE.PlaneGeometry(0.026,0.004), m);
+    seg.position.set(k*0.048,0,0.0016);
+    g.add(seg);
+  }
+  g.rotation.z=angle; g.visible=false;
+  PAPER.add(g); return g;
+}
+const CREASE=[ dashLine(Math.PI/4), dashLine(-Math.PI/4) ];
+
+/* ═════════ 재료 3D 오브젝트 ═════════ */
+function grp(...ms){ const g=new THREE.Group(); ms.forEach(m=>{ m.castShadow=true; g.add(m); }); return g; }
+
+/* 가위 */
+function buildScissors(){
+  const blade=()=>new THREE.Mesh(new THREE.BoxGeometry(0.135,0.004,0.016), MAT.METAL);
+  const ring =()=>new THREE.Mesh(new THREE.TorusGeometry(0.022,0.006,10,20),
+    new THREE.MeshStandardMaterial({ color:0xE53935, roughness:0.45 }));
+  const b1=blade(), b2=blade(), r1=ring(), r2=ring();
+  b1.position.x=0.055; b2.position.x=0.055;
+  const a1=new THREE.Group(), a2=new THREE.Group();
+  a1.add(b1); a2.add(b2);
+  r1.position.set(-0.033,0,0.014); r2.position.set(-0.033,0,-0.014);
+  r1.rotation.x=r2.rotation.x=Math.PI/2;
+  a1.rotation.y=0.10; a2.rotation.y=-0.10;
+  a1.add(r1); a2.add(r2);
+  const g=new THREE.Group(); g.add(a1,a2);
+  g.userData.arms=[a1,a2];
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
+  return g;
+}
+/* 압정 */
+function buildPin(){
+  const needle=new THREE.Mesh(new THREE.CylinderGeometry(0.0035,0.001,0.045,8), MAT.METAL);
+  needle.position.y=0.0225;
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(0.017,0.019,0.013,20),
+    new THREE.MeshStandardMaterial({ color:0xE53935, roughness:0.35 }));
+  head.position.y=0.051;
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(0.017,20,12,0,Math.PI*2,0,Math.PI/2),
+    head.material);
+  cap.position.y=0.0575;
+  return grp(needle,head,cap);
+}
+/* 수수깡 (마디 줄무늬) */
+const STICK_LEN=0.46;
+function buildStick(){
+  const t=canvasTexture(64,256,(g)=>{
+    g.fillStyle='#A5D66A'; g.fillRect(0,0,64,256);
+    g.fillStyle='rgba(255,255,255,.35)';
+    for(let y=18;y<256;y+=44) g.fillRect(0,y,64,5);
+    g.fillStyle='rgba(90,140,50,.25)';
+    for(let i=0;i<40;i++) g.fillRect(Math.random()*64,Math.random()*256,2,10);
+  });
+  const c=new THREE.Mesh(new THREE.CylinderGeometry(0.0125,0.0125,STICK_LEN,14),
+    new THREE.MeshStandardMaterial({ map:t, roughness:0.8 }));
+  return grp(c);
+}
+/* 오답 재료(자유 모드용) */
+function buildGlue(){
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.021,0.021,0.085,16),
+    new THREE.MeshStandardMaterial({ color:0xF4F1EA, roughness:0.55 }));
+  body.position.y=0.0425;
+  const capM=new THREE.Mesh(new THREE.CylinderGeometry(0.019,0.021,0.024,16),
+    new THREE.MeshStandardMaterial({ color:0xFF8A3D, roughness:0.4 }));
+  capM.position.y=0.097;
+  return grp(body,capM);
+}
+function buildRuler(){
+  const t=canvasTexture(256,48,(g)=>{
+    g.fillStyle='rgba(255,225,130,1)'; g.fillRect(0,0,256,48);
+    g.fillStyle='#7a6320';
+    for(let x=8;x<256;x+=12) g.fillRect(x,0,1.6,x%60===8?16:9);
+  });
+  const r=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.004,0.036),
+    new THREE.MeshPhysicalMaterial({ map:t, roughness:0.3, transparent:true, opacity:0.92 }));
+  return grp(r);
+}
+function buildEraser(){
+  const e=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.02,0.032),
+    new THREE.MeshStandardMaterial({ color:0xFAFAF6, roughness:0.7 }));
+  e.position.y=0.01;
+  const band=new THREE.Mesh(new THREE.BoxGeometry(0.057,0.011,0.034),
+    new THREE.MeshStandardMaterial({ color:0x5B9BF0, roughness:0.6 }));
+  band.position.y=0.006;
+  return grp(e,band);
+}
+function buildCrayon(){
+  const m=new THREE.MeshStandardMaterial({ color:0x9B7BF5, roughness:0.6 });
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.011,0.011,0.09,12), m);
+  body.position.y=0.045;
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(0.011,0.024,12), m);
+  tip.position.y=0.102;
+  return grp(body,tip);
+}
+/* 받침(수수깡 세우는 나무토막 — 소품) */
+const stand=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.065,0.05,22), MAT.WOOD);
+stand.position.set(0,0.033,PAPER_Z);
+stand.castShadow=stand.receiveShadow=true; stand.visible=false; scene.add(stand);
+
+/* 배치 좌표 */
+const SCIS=buildScissors(); SCIS.position.set(0.43,0.018,0.30); SCIS.rotation.y=-2.1; SCIS.visible=false; scene.add(SCIS);
+const PIN=buildPin();       PIN.position.set(-0.44,0.012,0.27);  PIN.visible=false; scene.add(PIN);
+const STICK=buildStick();   STICK.rotation.z=Math.PI/2; STICK.position.set(0.02,0.026,-0.31); STICK.visible=false; scene.add(STICK);
+const GLUE=buildGlue(), RULER=buildRuler(), ERASER=buildEraser(), CRAYON=buildCrayon();
+[GLUE,RULER,ERASER,CRAYON].forEach(o=>{ o.visible=false; scene.add(o); });
+
+const EQ_OBJ={ paper:PAPER, scissors:SCIS, pin:PIN, stick:STICK,
+               glue:GLUE, ruler:RULER, eraser:ERASER, crayon:CRAYON };
+const BASE_Y={ paper:PAPER_Y, scissors:0.018, pin:0.012, stick:0.026,
+               glue:0.012, ruler:0.012, eraser:0.012, crayon:0.012 };
+const FREE_SPOTS=[[-0.30,0.33],[0.18,0.36],[-0.14,-0.30],[0.34,-0.28]];
+let spotIdx=0;
+function nextSpot(){ const s=FREE_SPOTS[spotIdx%FREE_SPOTS.length]; spotIdx++; return s; }
+
+/* ═════════ 바람 (코어 김 파티클을 눕혀 수평 바람줄기로) ═════════ */
+const wind=makeSteam({ color:0xcfe8ff, rise:1.05, spawnR:0.11, rate:0.55, alpha:0.28, count:100 });
+const windGrp=new THREE.Group();
+windGrp.add(wind.obj);
+windGrp.rotation.z=-Math.PI/2;                 // 상승(+y) → 수평(+x)
+windGrp.position.set(-0.88,0.46,0.07);
+scene.add(windGrp);
+onLowQuality(()=>{ /* 저사양: 바람 입자 알파만 낮춤 */ wind.uni.uAlpha.value=0.18; });
+
+/* ═════════ 게임 상태 ═════════ */
+const { MISSION_PINWHEEL, createMissionRun, createCraftRun, createSpinSim } = window.ArtLab;
+let run   = createMissionRun(MISSION_PINWHEEL);
+let craft = createCraftRun();
+let spin  = createSpinSim();
+let freeMode=false, windOn=false, mounted=false;
+let prediction=null, predictShown=false, succeeded=false, busy=false;
+const curled=[false,false,false,false];
+
+const $=id=>document.getElementById(id);
+const trayEl=$('tray'), progEl=$('prog'), hintEl=$('hint');
+const windBtn=$('windBtn'), modeBtn=$('modeBtn'), resetBtn=$('resetBtn');
+const missionEl=$('mission');
+
+/* ═════════ 재료 트레이 ═════════ */
+const EQUIP=[
+  { id:'paper',    ic:'🟧', nm:'색종이' },
+  { id:'scissors', ic:'✂️', nm:'가위' },
+  { id:'pin',      ic:'📌', nm:'압정' },
+  { id:'stick',    ic:'🥢', nm:'수수깡' },
+  { id:'glue',     ic:'🧴', nm:'풀' },
+  { id:'ruler',    ic:'📏', nm:'자' },
+  { id:'eraser',   ic:'⬜', nm:'지우개' },
+  { id:'crayon',   ic:'🖍️', nm:'크레파스' }
+];
+EQUIP.sort(()=>Math.random()-0.5);             // 매번 셔플 = 자리 외우기 방지
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='k3-eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onPick(e.id,d));
+  trayEl.appendChild(d);
+});
+
+function shake(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function renderProg(){
+  const n=run.count(), total=MISSION_PINWHEEL.required.length;
+  let html=`<span class="chip ${n?'on':''}">재료 ${n} / ${total}</span>`;
+  MISSION_PINWHEEL.required.forEach(id=>{
+    if(run.placed[id]){
+      const e=EQUIP.find(x=>x.id===id);
+      html+=`<span class="chip on">${e.ic} ${e.nm}</span>`;
+    }
+  });
+  progEl.innerHTML=html;
+}
+function syncTray(){
+  EQUIP.forEach(e=>$('eq_'+e.id).classList.toggle('placed', !!run.placed[e.id]));
+}
+function setHint(html){
+  if(html){ hintEl.innerHTML=html; hintEl.style.opacity=1; }
+  else hintEl.style.opacity=0;
+}
+function renderSteps(){
+  const st=craft.stage();
+  const started=run.isReady()||craft.curls()>0||st!=='fold';
+  document.querySelectorAll('.stp').forEach(el=>{
+    const s=el.dataset.s;
+    const order=['fold','cut','curl','pin','mount'];
+    const si=order.indexOf(s), ci=st==='done'?99:order.indexOf(st);
+    el.classList.toggle('done', si<ci || st==='done');
+    el.classList.toggle('cur', started && si===ci);
+  });
+  $('curlN').textContent = craft.stage()==='curl'||craft.curls()>0 ? `${craft.curls()}/4` : '';
+}
+renderProg(); renderSteps();
+
+/* ═════════ 트윈 헬퍼 ═════════ */
+const tweens=[];
+function tw(dur,fn){ return new Promise(res=>tweens.push({ t:0, dur, fn, res })); }
+const eo3=k=>1-Math.pow(1-k,3);
+const eio=k=>k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ═════════ 재료 꺼내기 / 회수 ═════════ */
+function onPick(id, cardEl){
+  if(busy) return;
+  if(succeeded && !freeMode) return;
+  if(run.placed[id]){
+    if(craft.stage()!=='fold' && ['paper','scissors','pin','stick'].includes(id)){
+      toast('만들기가 시작됐어요 — 다시 하려면 <b>↺ 처음부터</b>!', true); return;
+    }
+    run.remove(id);
+    Object.keys(EQ_OBJ).forEach(k=>{ if(!run.placed[k]) EQ_OBJ[k].visible=false; });
+    syncTray(); renderProg();
+    return;
+  }
+  const r=run.pick(id, freeMode);
+  if(r.act==='wrong'){ shake(cardEl); snd.nope(); toast(r.msg, true, 4400); return; }
+  if(r.act==='blocked'){ shake(cardEl); snd.nope(); toast(r.msg, true, 3800); return; }
+  if(r.act==='placed'){
+    const o=EQ_OBJ[id];
+    if(!MISSION_PINWHEEL.required.includes(id)){
+      const [x,z]=nextSpot(); o.position.x=x; o.position.z=z;
+    }
+    snd.tap();
+    dropper.drop(o, BASE_Y[id]);
+    syncTray(); renderProg();
+    if(r.ready && !freeMode && !predictShown){
+      predictShown=true;
+      setTimeout(async ()=>{
+        toast('✅ 재료 준비 끝!');
+        prediction = await cards.showPredict(
+          '만들기 전에 예측 — 평평한 색종이 그대로 바람을 불면, 빙글빙글 돌까요?',
+          [ { id:'flat', label:'① 평평해도 잘 돈다' },
+            { id:'fold', label:'② 날개를 접어 모아야 돈다' } ]);
+        toast('좋아요! 직접 만들어서 확인해 봐요');
+        setHint(craft.GUIDE.fold);
+        renderSteps();
+      }, 450);
+    } else if(r.ready && freeMode){
+      setHint(craft.GUIDE.fold);
+    }
+  }
+}
+
+/* ═════════ 만들기 애니메이션 ═════════ */
+const AX1=new THREE.Vector3(Math.SQRT1_2, Math.SQRT1_2,0);   // 대각선 ↗
+const AX2=new THREE.Vector3(-Math.SQRT1_2, Math.SQRT1_2,0);  // 대각선 ↖
+async function foldPair(pair, axis){
+  const q=new THREE.Quaternion();
+  await tw(0.62,k=>{
+    q.setFromAxisAngle(axis, eio(k)*Math.PI*0.93);
+    pair.forEach(i=>WING[i].quaternion.copy(q).multiply(qBase[i]));
+  });
+  snd.fold();
+  await tw(0.55,k=>{
+    q.setFromAxisAngle(axis, (1-eio(k))*Math.PI*0.93);
+    pair.forEach(i=>WING[i].quaternion.copy(q).multiply(qBase[i]));
+  });
+  pair.forEach(i=>WING[i].quaternion.copy(qBase[i]));
+}
+async function animFold(){
+  busy=true; setHint('');
+  snd.fold();
+  await foldPair([0,3], AX1); CREASE[0].visible=true;   // ↗ 대각선 (날개 N·W 접힘)
+  await pause(160);
+  snd.fold();
+  await foldPair([0,1], AX2); CREASE[1].visible=true;   // ↖ 대각선 (날개 N·E 접힘)
+  toast('접은 자리에 <b>선</b>이 생겼어요 — 이 선을 따라 자를 거예요!');
+  busy=false;
+  setHint(craft.GUIDE.cut); renderSteps();
+}
+
+async function animCut(){
+  busy=true; setHint('');
+  const home={ p:SCIS.position.clone(), r:SCIS.rotation.y };
+  const arms=SCIS.userData.arms;
+  const CORNERS=[[H,H],[H,-H],[-H,-H],[-H,H]];           // 셰이프 좌표 → 월드(x, z=PZ−y)
+  for(let k=0;k<4;k++){
+    const [cx,cy]=CORNERS[k];
+    const sx=cx*1.32, sz=PAPER_Z-cy*1.32;
+    const ex=cx*0.34, ez=PAPER_Z-cy*0.34;
+    const from=SCIS.position.clone();
+    await tw(0.3,q=>{
+      SCIS.position.lerpVectors(from, new THREE.Vector3(sx,0.03,sz), eo3(q));
+    });
+    SCIS.rotation.y=Math.atan2(sz-ez, ex-sx);
+    for(let s=0;s<3;s++){
+      snd.snip();
+      await tw(0.14,q=>{
+        const open=Math.sin(q*Math.PI)*0.22;
+        arms[0].rotation.y=0.10+open; arms[1].rotation.y=-0.10-open;
+        const f=(s+q)/3;
+        SCIS.position.x=sx+(ex-sx)*f; SCIS.position.z=sz+(ez-sz)*f;
+      });
+    }
+    /* 절취 = 날개가 살짝 벌어짐 (설계된 절취선에서만) */
+    const w=WING[k], dir=new THREE.Vector2(0,1).rotateAround(new THREE.Vector2(), k*Math.PI/2);
+    await tw(0.14,q=>{ w.position.set(dir.x*0.007*q, dir.y*0.007*q, 0); });
+  }
+  CREASE[0].visible=CREASE[1].visible=false;
+  const back=SCIS.position.clone();
+  await tw(0.35,q=>{ SCIS.position.lerpVectors(back, home.p, eo3(q)); });
+  SCIS.rotation.y=home.r;
+  toast('네 날개로 나뉘었어요 — 가운데는 붙어 있어요!');
+  busy=false;
+  setHint(craft.GUIDE.curl); renderSteps();
+}
+
+let curlOrder=0;
+async function animCurl(i){
+  busy=true;
+  const from=FLAP[i].rotation.x, to=2.98-curlOrder*0.07;  // 겹겹이 쌓이게 살짝 층
+  curlOrder++;
+  snd.pop();
+  await tw(0.62,k=>{ FLAP[i].rotation.x=from+(to-from)*eio(k); });
+  busy=false;
+  renderSteps();
+  if(craft.stage()==='pin'){ setHint(craft.GUIDE.pin); toast('날개 네 장이 가운데에 모였어요!'); }
+}
+
+async function animPin(){
+  busy=true; setHint('');
+  const start=PIN.position.clone();
+  const mid=new THREE.Vector3(0,0.17,PAPER_Z);
+  const end=new THREE.Vector3(0,PAPER_Y+0.028,PAPER_Z);
+  await tw(0.42,k=>{ PIN.position.lerpVectors(start, mid, eo3(k)); });
+  snd.tap();
+  await tw(0.3,k=>{ PIN.position.lerpVectors(mid, end, eio(k)); });
+  PAPER.attach(PIN);                                    // 스냅 조인트: 압정이 종이에 붙음
+  toast('📌 딱! 날개가 고정됐어요 — 돌 수 있게 <b>살짝 헐겁게</b> 꽂았어요');
+  busy=false;
+  setHint(craft.GUIDE.mount); renderSteps();
+}
+
+async function animMount(){
+  busy=true; setHint('');
+  stand.visible=true; dropper.drop(stand, 0.033);
+  await pause(300);
+  /* 수수깡 세우기 */
+  const sp=STICK.position.clone(), sr=STICK.rotation.z;
+  const sTo=new THREE.Vector3(0, 0.055+STICK_LEN/2, PAPER_Z);
+  await tw(0.55,k=>{
+    STICK.position.lerpVectors(sp, sTo, eio(k));
+    STICK.rotation.z=sr*(1-eio(k));
+  });
+  snd.tap();
+  /* 바람개비 머리 올려 끼우기 (스냅) */
+  const headY=0.055+STICK_LEN-0.035, headZ=PAPER_Z+0.052;
+  await tw(0.8,k=>{
+    const e=eio(k);
+    PAPER.position.set(0, PAPER_Y+(headY-PAPER_Y)*e, PAPER_Z+(headZ-PAPER_Z)*e);
+    PAPER.rotation.x=-Math.PI/2*(1-e);                  // 눕은 종이 → 세워져 정면
+  });
+  snd.pop();
+  mounted=true;
+  windBtn.disabled=false;
+  /* 카메라 시선 위로 */
+  camTargetY=0.33;
+  toast('🎉 바람개비 완성! 이제 <b>🌬️ 바람</b>을 불어 봐요');
+  setHint('🌬️ 바람 버튼을 눌러 보세요!');
+  busy=false;
+  renderSteps();
+}
+
+/* ═════════ 탭 라우팅 (코어 grab — 전부 탭, fixed) ═════════ */
+const grab=makeGrab(renderer, camera, controls, 0);
+function tapItem(target, r, h, y, onTap, enabled){
+  const proxy=grab.makeProxy(target, r, h, y);
+  grab.add({ proxy, target, fixed:true, onTap, enabled });
+}
+function tryCraft(a, anim){
+  if(busy) return;
+  const r=craft.act(a);
+  if(r.act==='blocked'){ snd.nope(); toast(r.msg, true, 3600); return; }
+  if(r.act==='ok') anim();
+}
+/* 날개별 탭 (모으기) — 종이 전체 프록시보다 먼저 등록해야 가로채이지 않음 */
+WING.forEach((w,i)=>{
+  const proxy=new THREE.Mesh(new THREE.CylinderGeometry(0.105,0.105,0.05,10),
+    new THREE.MeshBasicMaterial({ visible:false }));
+  proxy.position.set(0.32*H, 0.72*H, 0.012);
+  proxy.rotation.x=Math.PI/2;
+  w.add(proxy);
+  grab.add({ proxy, target:w, fixed:true,
+    enabled:()=>PAPER.visible && craft.stage()==='curl' && !curled[i] && !busy,
+    onTap:()=>{
+      const r=craft.act('curl');
+      if(r.act==='ok'){ curled[i]=true; animCurl(i); }
+    } });
+});
+tapItem(PAPER, 0.30, 0.06, 0.02, ()=>{
+  if(craft.stage()==='curl'){ toast(craft.GUIDE.curl, true); return; }
+  if(craft.stage()==='done') return;
+  tryCraft('fold', animFold);
+}, ()=>PAPER.visible && !mounted);
+tapItem(SCIS, 0.14, 0.08, 0.02, ()=>tryCraft('cut', animCut), ()=>SCIS.visible);
+tapItem(PIN, 0.05, 0.09, 0.045, ()=>tryCraft('pin', animPin), ()=>PIN.visible && !mounted);
+tapItem(STICK, 0.09, 0.3, 0.02, ()=>tryCraft('mount', animMount), ()=>STICK.visible && !mounted);
+
+/* ═════════ 바람 · 성공 ═════════ */
+windBtn.addEventListener('click',()=>{
+  if(!mounted) return;
+  windOn=!windOn;
+  windBtn.textContent=windOn?'🍃 바람 멈추기':'🌬️ 바람 불기';
+  windBtn.classList.toggle('on', windOn);
+  if(windOn) snd.whoosh();
+});
+async function showSuccess(){
+  snd.chime();
+  const guess = prediction==='fold'
+    ? '🔮 <b>예측 적중!</b> 날개가 바람을 <b>비스듬히</b> 받아야 도는 힘이 생겨요.'
+    : (prediction==='flat'
+        ? '🔮 예측과 달랐죠? 평평한 종이는 바람에 <b>밀리기만</b> 해요 — 날개를 접어 모아야 비스듬히 받아 돌아요.'
+        : '날개가 바람을 <b>비스듬히</b> 받아야 도는 힘이 생겨요.');
+  const wrongN=run.wrongCount();
+  const matMsg = wrongN===0
+    ? '재료도 <b>한 번에 딱</b> 맞게 골랐어요! 🏵️'
+    : `아니었던 재료를 ${wrongN}번 골랐어요 — 다음엔 한 번에!`;
+  const v=await cards.showCard(
+    `<div style="font-size:38px;text-align:center">🏅</div>
+     <h3 style="text-align:center">미션 성공 — 바람개비!</h3>
+     <p style="font-size:13px;line-height:1.65">${guess}<br>${matMsg}</p>`,
+    [ { label:'🎨 자유 만들기', cls:'pri', value:'free' },
+      { label:'↺ 다시 하기', value:'again' } ], true);
+  if(v==='free' && !freeMode) modeBtn.click();
+  if(v==='again') resetAll(true);
+}
+
+/* ═════════ 모드 · 리셋 ═════════ */
+modeBtn.addEventListener('click',()=>{
+  freeMode=!freeMode;
+  modeBtn.textContent=freeMode?'🎯 미션 모드':'🎨 자유 만들기';
+  missionEl.style.display=freeMode?'none':'';
+  document.querySelector('.k3-topbar .badge').textContent=freeMode?'자유 만들기':'미션 · 바람개비';
+  toast(freeMode?'자유 만들기 — 무엇이든 꺼내 놓아 봐요':'미션 모드 — 필요한 재료만!');
+});
+function resetAll(keepMode){
+  run=createMissionRun(MISSION_PINWHEEL);
+  craft=createCraftRun(); spin=createSpinSim();
+  windOn=false; mounted=false; succeeded=false; busy=false;
+  prediction=null; predictShown=false; curlOrder=0; spotIdx=0;
+  curled[0]=curled[1]=curled[2]=curled[3]=false;
+  /* 종이 원복 */
+  if(PIN.parent!==scene) scene.attach(PIN);
+  PAPER.position.set(0,PAPER_Y,PAPER_Z); PAPER.rotation.set(-Math.PI/2,0,0);
+  WING.forEach((w,i)=>{ w.quaternion.copy(qBase[i]); w.position.set(0,0,0); });
+  FLAP.forEach(f=>f.rotation.x=0);
+  CREASE[0].visible=CREASE[1].visible=false;
+  PIN.position.set(-0.44,0.012,0.27); PIN.rotation.set(0,0,0);
+  STICK.position.set(0.02,0.026,-0.31); STICK.rotation.set(0,0,Math.PI/2);
+  stand.visible=false;
+  Object.keys(EQ_OBJ).forEach(k=>EQ_OBJ[k].visible=false);
+  windBtn.disabled=true; windBtn.textContent='🌬️ 바람 불기'; windBtn.classList.remove('on');
+  camTargetY=0.18;
+  cards.hide(); setHint('');
+  syncTray(); renderProg(); renderSteps();
+  if(!keepMode && freeMode) modeBtn.click();
+}
+resetBtn.addEventListener('click',()=>resetAll(true));
+
+/* ═════════ 루프 ═════════ */
+let camTargetY=0.18;
+let last=null;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(last===null) last=ts;
+  let dt=(ts-last)/1000; last=ts;
+  if(dt<0) dt=0; if(dt>0.05) dt=0.05;
+  const t=ts/1000;
+
+  /* 트윈 */
+  for(let i=tweens.length-1;i>=0;i--){
+    const w=tweens[i]; w.t+=dt;
+    const k=Math.min(w.t/w.dur,1);
+    w.fn(k);
+    if(k>=1){ tweens.splice(i,1); w.res(); }
+  }
+  dropper.tick(dt);
+  wind.tick(t, windOn?1:0, dt);
+
+  /* 스핀 */
+  const S=spin.step(dt,{ wind:windOn, mounted });
+  if(mounted) PAPER.rotation.z+=S.v*dt;
+  if(S.spun && !succeeded){ succeeded=true; windOn=false;
+    windBtn.textContent='🌬️ 바람 불기'; windBtn.classList.remove('on');
+    setHint(''); setTimeout(showSuccess, 350); }
+
+  controls.target.y += (camTargetY-controls.target.y)*Math.min(dt*3,1);
+  controls.update();
+  tickQuality();
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(loop);
+setTimeout(()=>document.getElementById('loading').classList.add('hide'), 600);
+setHint('재료함에서 <b>필요한 재료</b>를 골라 꺼내요');
+</script>
+</body>
+</html>
