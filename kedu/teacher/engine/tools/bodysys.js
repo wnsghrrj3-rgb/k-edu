@@ -17,9 +17,9 @@
 
     /* ── 학년 칸 (헌법 3장) — D칸 사다리 ── */
     var GRADES = {
-      low:  { modes:['free','mission'],        systems:['digest','breath'],                    quiz:false, missionN:2 },
-      mid:  { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:3 },
-      high: { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:4 }
+      low:  { modes:['free','mission'],        systems:['digest','breath'],                    quiz:false, missionN:2, showWow:false },
+      mid:  { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:3, showWow:false },
+      high: { modes:['free','mission','quiz'], systems:['digest','breath','blood','excrete'], quiz:true,  missionN:4, showWow:true }
     };
     var grade = (['low','mid','high'].indexOf(config.grade) >= 0) ? config.grade : 'high';
     function G(){ return GRADES[grade]; }
@@ -60,19 +60,39 @@
     function reset() { sys = (SYS[config.system] && G().systems.indexOf(config.system)>=0) ? config.system : G().systems[0]; sel = ''; flowIdx = -1; playing = false; }
     reset();
 
+    /* ── 효과음 헬퍼 (라이브 bodysys는 snd 미보유였음) ── */
+    function snd(n){ if(window.KLab.sound && window.KLab.sound.play) window.KLab.sound.play(n); }
+
+    /* ── 와우: 「각 기관계는 따로 논다」 반증 = 4기관계가 심장(피)을 허브로 하나로 이어짐 ──
+       ★교훈: 도구가 이미 가르치는 것(기관계 구분·각 기관 기능·한 기관계 내 흐름)이 아니라,
+       도구가 구조적으로 오히려 심는 오개념(4개를 완전히 따로 토글=따로 논다)을 정조준.
+       5학년 성취기준 「여러 기관계가 관련을 맺으며 생명 활동 유지」 + foodchain 연쇄와 유사. */
+    var CROSS_STEPS = [
+      { organ:'sintest', col:SYS.digest.col,  label:'🍚 영양분', msg:'소화 기관계 — 작은창자가 얻은 <b>영양분</b>을 피(순환)로 넘겨요.' },
+      { organ:'lungL',   col:SYS.breath.col,  label:'💨 산소',   msg:'호흡 기관계 — 폐가 받은 <b>산소</b>도 피(순환)로 넘겨요.' },
+      { organ:'heart',   col:SYS.blood.col,   label:'❤️ 피',     msg:'순환 기관계 — 피가 영양분과 산소를 <b>온몸 구석구석</b> 실어 날라요.' },
+      { organ:'kidneyL', col:SYS.excrete.col, label:'💧 노폐물', msg:'배설 기관계 — 몸에서 생긴 <b>노폐물</b>을 피가 콩팥으로 보내 오줌으로 걸러요.' }
+    ];
+    var linkArmed = false, linkActive = false, linkRevealed = false, linkStep = -1, linkTimer = null;
+    var holdMsg = '';
+    function clearLinkTimers(){ if(linkTimer){ clearTimeout(linkTimer); linkTimer = null; } }
+    function clearLink(){ clearLinkTimers(); linkArmed = false; linkActive = false; linkRevealed = false; linkStep = -1; holdMsg = ''; clearBsFlash(); }
+
     var bands = ui.gradeBands({grade:grade, locked:!!config.grade, onChange:function(g){
       grade=g;
       if(G().modes.indexOf(mode)<0) mode='free';
       mStep=0; mDone=false; mLock=false;
       if(raf){ clearTimeout(raf); raf=null; }
+      clearLink();
       reset();
       if(mode==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
       build();
     }});
 
-    function setSys(s) { sys = s; sel = ''; flowIdx = -1; playing = false; renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
+    function setSys(s) { if(linkArmed||linkActive||linkRevealed){clearLink();} snd('select'); sys = s; sel = ''; flowIdx = -1; playing = false; renderScene(); renderStatus(); if (mode === 'mission') checkMission(); }
     function pickOrgan(k) {
-      sel = k; renderScene(); renderStatus();
+      if(linkArmed||linkActive||linkRevealed){ clearLink(); build(); return; }
+      snd('tap'); sel = k; renderScene(); renderStatus();
       if (mode === 'mission') checkMission();
     }
     function tickFlow() {
@@ -80,6 +100,58 @@
       flowIdx = (flowIdx + 1) % (p.length + 1);
       renderScene(); renderStatus();
       if (flowIdx === p.length && mode === 'mission') checkMission();
+    }
+
+    /* ───────────── 와우 (예측→확인 2단) ───────────── */
+    var flashTimer = null;
+    function clearBsFlash(){
+      if(flashTimer){ clearTimeout(flashTimer); flashTimer = null; }
+      var host = el.querySelector('.kl-stage-host'); if(!host) return;
+      host.querySelectorAll('.bs-flash,.bs-flash-magic,.bs-nudge').forEach(function(n){ n.remove(); });
+    }
+    function bsFlash(kind, msg){
+      var host = el.querySelector('.kl-stage-host'); if(!host) return;
+      clearBsFlash();
+      var cls = kind==='magic' ? 'bs-flash-magic' : (kind==='nudge' ? 'bs-nudge' : 'bs-flash');
+      var bg  = kind==='magic' ? C.vio : (kind==='nudge' ? '#8a97a6' : '#1565C0');
+      var d = document.createElement('div');
+      d.className = cls;
+      d.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;max-width:92%;background:'+bg+';color:#fff;padding:12px 18px;border-radius:16px;font-family:Jua,sans-serif;font-size:18px;font-weight:800;line-height:1.42;box-shadow:0 6px 20px rgba(0,0,0,0.18);text-align:center;';
+      d.innerHTML = msg;
+      host.appendChild(d);
+      var dur = kind==='magic' ? 6800 : (kind==='nudge' ? 2600 : 4200);
+      flashTimer = setTimeout(function(){ if(d.parentNode) d.remove(); flashTimer = null; }, dur);
+    }
+    function wowArm(){
+      clearLinkTimers();
+      linkArmed = true; linkActive = false; linkRevealed = false; linkStep = -1;
+      sys = 'digest'; sel = ''; flowIdx = -1; playing = false;
+      snd('charge');
+      renderScene(); renderStatus();
+      bsFlash('arm', '지금 켜진 건 <b>소화 기관계</b> 하나예요. 소화·호흡·순환·배설은 서로 <b>상관없이 따로따로</b> 일할까요? 예상해 봐요!');
+      holdMsg = '한 기관계만 멈춰도 온몸이 괜찮을까요?';
+      renderStatus();
+    }
+    function wowReveal(){
+      if(!linkArmed){ snd('select'); bsFlash('nudge', '먼저 🔮 버튼으로 예상부터 해 봐요.'); return; }
+      clearLinkTimers();
+      linkActive = true; linkRevealed = false; linkStep = -1;
+      snd('whoosh');
+      var advance = function(){
+        linkStep++;
+        if(linkStep < CROSS_STEPS.length){
+          snd('pop');
+          renderScene(); renderStatus();
+          linkTimer = setTimeout(advance, 1250);
+        } else {
+          clearLinkTimers();
+          linkActive = false; linkRevealed = true; linkArmed = false; holdMsg = '';
+          snd('success');
+          renderScene(); renderStatus();
+          bsFlash('magic', '4개 기관계는 따로 노는 게 아니라 <b>하나로 이어져</b> 있어요! 소화가 얻은 영양분과 호흡이 얻은 산소를 <b>순환(피)</b>이 온몸에 실어 나르고, 생긴 노폐물을 다시 순환이 콩팥으로 보내 배설해요 — 한 곳이 멈추면 온몸이 멈춰요.');
+        }
+      };
+      advance();
     }
 
     /* ───────────── 미션 ───────────── */
@@ -152,12 +224,19 @@
         + '<button class="bs-btn" data-act="reset" style="' + btn + 'background:#fff;color:#666;border-color:#9aa;">↺ 처음으로</button>'
         + '</div>';
     }
+    function wowBtns() {
+      if (!G().showWow || mode !== 'free') return '';
+      return '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:9px;">'
+        + '<button class="bs-wow" data-wow="arm" style="' + btn + 'background:#fff;color:' + C.vio + ';border-color:' + C.vio + ';">🔮 소화·호흡은 서로 상관없다?</button>'
+        + '<button class="bs-wow" data-wow="reveal" style="' + btn + 'background:' + C.vio + ';color:#fff;border-color:' + C.vio + ';">🔗 몸속을 이어보기</button>'
+        + '</div>';
+    }
     function build() {
       var top = bands.selectorHTML() + ui.modeTabs(G().modes, mode), bar = '', body = '', foot = '';
       if (mode === 'mission') { var M = curMissions(); bar = mDone ? ui.doneBar() : ui.missionBar(M[mStep].text, mStep, M.length); body = sysTabs() + ctrlRow(); }
       else if (mode === 'quiz') { bar = ui.quizBar(QUIZ[qIdx].q, qScore, qCount); foot = ui.choices(quizChoices()); }
-      else body = sysTabs() + ctrlRow();
-      el.innerHTML = '<style>.bs-btn:active,.bs-sys:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.bs-organ{cursor:pointer;}</style>'
+      else body = sysTabs() + wowBtns() + ctrlRow();
+      el.innerHTML = '<style>.bs-btn:active,.bs-sys:active,.bs-wow:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.bs-organ{cursor:pointer;}@keyframes bsHoldPulse{0%,100%{opacity:1;}50%{opacity:.45;}}.bs-hold{animation:bsHoldPulse 1.1s ease-in-out infinite;}</style>'
         + top + bar + body
         + '<div class="kl-stage-host" style="position:relative;"><div class="bs-stage" style="width:100%;height:' + (mode === 'quiz' ? '36vh' : '46vh') + ';min-height:' + (mode === 'quiz' ? '260' : '330') + 'px;background:linear-gradient(180deg,#EAF4FF 0%,#F3FBFF 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         + foot
@@ -165,6 +244,7 @@
       ui.bindModeTabs(el, function (m) {
         mode = m; mStep = 0; mDone = false; mLock = false;
         if (raf) { clearTimeout(raf); raf = null; }
+        clearLink();
         reset();
         if (m === 'quiz') { qScore = 0; qCount = 0; qUsed = []; newQuiz(); }
         build();
@@ -188,11 +268,56 @@
         fill: '#FCEEE3', stroke: '#D9B79C', 'stroke-width': 3
       }));
     }
+    function bindOrganClicks() {
+      svg.querySelectorAll('.bs-organ').forEach(function (c) {
+        c.addEventListener('click', function () { pickOrgan(c.dataset.k); });
+      });
+    }
+    function renderLink(g) {
+      var HUB = ORGAN.heart;
+      // 심장(허브) ↔ 각 기관계 대표 기관 연결선 (진행 단계까지만 진하게)
+      var spokes = [
+        { k:'sintest', col:SYS.digest.col,  step:0 },
+        { k:'lungL',   col:SYS.breath.col,  step:1 },
+        { k:'kidneyL', col:SYS.excrete.col, step:3 }
+      ];
+      spokes.forEach(function (n) {
+        var o = ORGAN[n.k];
+        var on = (linkRevealed || linkStep >= n.step);
+        g.appendChild(svgEl('line', { x1:o.x, y1:o.y, x2:HUB.x, y2:HUB.y, stroke:n.col, 'stroke-width':(on?6:3), 'stroke-linecap':'round', opacity:(on?0.85:0.22) }));
+      });
+      // 순환이 온몸으로 배달(step2) — 심장에서 몸통 아래로
+      var bodyOn = (linkRevealed || linkStep >= 2);
+      g.appendChild(svgEl('line', { x1:HUB.x, y1:HUB.y, x2:HUB.x, y2:345, stroke:SYS.blood.col, 'stroke-width':(bodyOn?6:3), 'stroke-linecap':'round', opacity:(bodyOn?0.7:0.18) }));
+      // 노드 원 (심장=허브 크게)
+      var drawn = {};
+      function node(k, col, big) {
+        var o = ORGAN[k]; if (drawn[o.nm]) return; drawn[o.nm] = true;
+        var r = big ? 24 : 18;
+        g.appendChild(svgEl('circle', { cx:o.x, cy:o.y, r:r, fill:col, stroke:'#fff', 'stroke-width':3, class:'bs-organ', 'data-k':k }));
+        var t = svgEl('text', { x:o.x, y:o.y+5, 'text-anchor':'middle', 'font-family':'Jua,sans-serif', 'font-size':12, 'font-weight':800, fill:'#fff', 'pointer-events':'none' });
+        t.textContent = o.nm.replace(/\(.*\)/, ''); g.appendChild(t);
+      }
+      node('sintest', SYS.digest.col, false);
+      node('lungL',   SYS.breath.col, false);
+      node('kidneyL', SYS.excrete.col, false);
+      node('bladder', SYS.excrete.col, false);
+      node('heart',   SYS.blood.col, true); // 허브
+      // 현재 이동 중인 물질 라벨
+      if (linkActive && linkStep >= 0 && linkStep < CROSS_STEPS.length) {
+        var s = CROSS_STEPS[linkStep], hd = ORGAN[s.organ];
+        g.appendChild(svgEl('circle', { cx:hd.x, cy:hd.y, r:29, fill:'none', stroke:C.vio, 'stroke-width':3, 'stroke-dasharray':'5 5', opacity:0.85 }));
+        var lbl = svgEl('text', { x:180, y:502, 'text-anchor':'middle', 'font-family':'Jua,sans-serif', 'font-size':22, 'font-weight':800, fill:C.vio });
+        lbl.textContent = s.label + ' 이동!';
+        g.appendChild(lbl);
+      }
+    }
     function renderScene() {
       if (!svg) return;
       svg.innerHTML = '';
       var g = svgEl('g', {});
       bodyOutline(g);
+      if (linkActive || linkRevealed) { renderLink(g); svg.appendChild(g); bindOrganClicks(); return; }
       var s = SYS[sys], path = s.path;
       // 기관계 연결선(경로) 먼저
       var prev = null;
@@ -227,13 +352,19 @@
         g.appendChild(svgEl('circle', { cx: head.x, cy: head.y, r: 28, fill: 'none', stroke: s.col, 'stroke-width': 3, 'stroke-dasharray': '5 5', opacity: 0.8 }));
       }
       svg.appendChild(g);
-      svg.querySelectorAll('.bs-organ').forEach(function (c) {
-        c.addEventListener('click', function () { pickOrgan(c.dataset.k); });
-      });
+      bindOrganClicks();
     }
     function renderStatus() {
       var st = el.querySelector('.bs-status'); if (!st) return;
       if (mode === 'quiz') { st.innerHTML = '<div style="font-size:19px;color:#8aa0b6;">사람 그림 속 기관과 하는 일을 떠올리며 답을 골라요!</div>'; return; }
+      if (linkActive || linkRevealed) {
+        var lh = '<div style="font-size:23px;color:' + C.vio + ';">🔗 몸속은 하나로 이어져요</div>';
+        var ls;
+        if (linkActive && linkStep >= 0 && linkStep < CROSS_STEPS.length) ls = '<div style="font-size:18px;color:' + C.ink + ';margin-top:5px;">' + CROSS_STEPS[linkStep].msg + '</div>';
+        else if (linkRevealed) ls = '<div style="font-size:18px;color:' + C.good + ';margin-top:5px;">소화·호흡·순환·배설이 <b>심장(피)</b>을 통해 하나로 이어졌어요! ✨</div>';
+        else ls = '';
+        st.innerHTML = lh + ls; return;
+      }
       var s = SYS[sys];
       var head = '<div style="font-size:24px;color:' + s.col + ';">' + s.emo + ' ' + s.nm + '</div>';
       var sub;
@@ -241,17 +372,23 @@
       else if (flowIdx >= 0 && flowIdx < s.path.length) sub = '<div style="font-size:19px;color:' + C.sub + ';margin-top:5px;">' + s.flow + '이(가) <b>' + ORGAN[s.path[flowIdx]].nm + '</b>을(를) 지나가요.</div>';
       else if (flowIdx >= s.path.length) sub = '<div style="font-size:19px;color:' + C.good + ';margin-top:5px;">' + s.flow + '이(가) ' + s.nm + '을(를) 끝까지 지나갔어요! ✨</div>';
       else sub = '<div style="font-size:17px;color:' + C.sub + ';margin-top:5px;">기관을 눌러 하는 일을 보고, ▶ 길 따라가기로 ' + s.flow + '의 길을 따라가 봐요.</div>';
+      if (holdMsg) sub += '<div class="bs-hold" style="font-size:17px;color:' + C.vio + ';margin-top:7px;font-weight:800;">💡 ' + holdMsg + '</div>';
       st.innerHTML = head + sub;
     }
 
     function bind() {
       el.querySelectorAll('.bs-sys').forEach(function (b) { b.addEventListener('click', function () { setSys(b.dataset.sys); }); });
+      el.querySelectorAll('.bs-wow').forEach(function (b) {
+        b.addEventListener('click', function () { if (b.dataset.wow === 'arm') wowArm(); else wowReveal(); });
+      });
       var pb = el.querySelector('[data-act="flow"]');
       if (pb) pb.addEventListener('click', function () {
         if (raf) return;
+        if (linkArmed || linkActive || linkRevealed) { clearLink(); build(); return; }
+        snd('select');
         var p = SYS[sys].path; flowIdx = -1;
         var step = function () {
-          flowIdx++;
+          flowIdx++; snd('pop');
           renderScene(); renderStatus();
           if (flowIdx >= p.length) { raf = null; if (mode === 'mission') checkMission(); return; }
           raf = setTimeout(step, 750);
@@ -259,7 +396,7 @@
         step();
       });
       var rb = el.querySelector('[data-act="reset"]');
-      if (rb) rb.addEventListener('click', function () { if (raf) { clearTimeout(raf); raf = null; } sel = ''; flowIdx = -1; renderScene(); renderStatus(); });
+      if (rb) rb.addEventListener('click', function () { if (raf) { clearTimeout(raf); raf = null; } if (linkArmed || linkActive || linkRevealed) { clearLink(); build(); return; } snd('select'); sel = ''; flowIdx = -1; renderScene(); renderStatus(); });
       el.querySelectorAll('.kl-choice').forEach(function (b) {
         b.addEventListener('click', function () {
           if (qLock) return; qLock = true;
@@ -273,6 +410,6 @@
 
     newQuiz();
     build();
-    return function cleanup() { if (raf) { clearTimeout(raf); raf = null; } };
+    return function cleanup() { if (raf) { clearTimeout(raf); raf = null; } clearLinkTimers(); if(flashTimer){clearTimeout(flashTimer);flashTimer=null;} };
   });
 })();
