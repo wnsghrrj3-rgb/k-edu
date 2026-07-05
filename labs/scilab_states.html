@@ -991,23 +991,29 @@ modeBtn.addEventListener('click',()=>{
   freeMode=!freeMode;
   modeBtn.textContent=freeMode?'🎯 미션 모드':'🧪 자유 실험';
   missionEl.style.display=freeMode?'none':'';
-  document.querySelector('#topbar .badge').textContent=freeMode?'자유 실험':'미션 · 물 끓이기';
+  document.querySelector('#topbar .badge').textContent=freeMode?'자유 실험':'미션 · 물의 세 가지 상태';
   toast(freeMode?'자유 실험 — 무엇이든 꺼내 놓아 봐요':'미션 모드 — 필요한 기구만!');
 });
 
 function resetAll(keepMode){
-  sim=createSciSim(); run=createMissionRun(MISSION_BOIL);
+  sim=createStateSim(); run=createMissionRun(MISSION_STATES);
   Object.keys(EQ_OBJ).forEach(k=>{ EQ_OBJ[k].visible=false; });
   LAMP.position.copy(LAMP_HOME);
   setFire(false); lit=false;
   prediction=null; predictShown=false; succeeded=false; successAt=0;
+  prediction2=null; predict2Shown=false; meltDone=false; boilStart=0;
+  lidOpen=false; lidBtn.textContent='🫙 뚜껑 열기'; lidBtn.style.display='none';
   flags.warm=flags.low=false;
   spotIdx=0;
-  layoutWater(1);
+  const top0=layoutWater(0.35);
+  iceCubes.forEach(c=>{ c.visible=true; c.scale.setScalar(1); });
+  updateIce(1, top0);
+  lidMesh.userData.open=0; lidMesh.position.x=0; lidMesh.position.y=BK_H+0.006;
   volwrap.style.display='none';
+  masswrap.style.display='none'; massEl.textContent='— g';
   tempEl.className='na';
   tempEl.innerHTML='🌡️ 온도계를 설치하면<br>온도가 보여요';
-  predictEl.classList.add('hide'); successEl.classList.add('hide');
+  predictEl.classList.add('hide'); predict2El.classList.add('hide'); successEl.classList.add('hide');
   syncTray(); renderProg(); updateFireBtn();
   if(!keepMode && freeMode){ modeBtn.click(); }
 }
@@ -1132,20 +1138,32 @@ function animate(){
     if(k>=1){ d.o.position.y=d.o.userData.baseY; drops.splice(i,1); }
   }
 
-  const ready = !!(run.placed.tripod && run.placed.gauze && run.placed.beaker);
-  const S=sim.step(dt,{lit, dist:lampDist(), ready});
+  const ready = !!(run.placed.tripod && run.placed.gauze && run.placed.beaker_ice);
+  const S=sim.step(dt,{lit, dist:lampDist(), ready, lid:!lidOpen});
 
   // HUD — 온도는 온도계가 있어야 보임
   if(run.placed.thermo){
     tempEl.className='';
     tempEl.innerHTML=S.temp.toFixed(1)+'<small> ℃</small>';
-    thermoCol.scale.y=0.02+(S.temp-20)/80*0.155;
+    thermoCol.scale.y=0.02+(S.temp+10)/120*0.155;   // 부록 A-5: −10~110℃ 매핑
     volEl.style.width=(S.vol*100).toFixed(0)+'%';
   }
+  if(run.placed.scale) massEl.textContent=S.mass+' g';
+
+  // ★와우 — 융해 완료 순간, 밀폐 상태면 질량 보존 2차 예측 (중/고학년)
+  if(!meltDone && S.ice<=0){
+    meltDone=true;
+    if(showWow && !lidOpen && !predict2Shown && !freeMode){
+      predict2Shown=true;
+      predict2El.classList.remove('hide');
+    }
+  }
+
   let st='';
   if(succeeded) st='🏅 미션 성공!';
+  else if(S.phase==='melt') st='🧊 녹는 중 — 0℃에 머물러요!';
   else if(S.boiling) st='💨 끓는 중 — 100℃에 머물러요!';
-  else if(S.heatK>0 && lit) st='🔥 가열 중…';
+  else if(S.heatK>0 && lit) st=(S.phase==='solid')?'🔥 얼음이 데워지는 중…':'🔥 가열 중…';
   else if(lit && !ready) st='가열하려면 비커까지 준비!';
   else if(lit) st='램프를 비커 아래로 옮겨요';
   else if(S.temp>35) st='식는 중…';
@@ -1157,31 +1175,47 @@ function animate(){
   }
   if(S.boiling){
     if(!successAt) successAt=t;
+    if(!boilStart) boilStart=t;
+    // (안전) 밀폐한 채 30초 이상 끓이면 자동으로 뚜껑을 살짝 열어줌 — 부록 A-2
+    if(!lidOpen && t-boilStart>30){
+      lidOpen=true; lidBtn.textContent='🫙 뚜껑 닫기';
+      toast('⚠️ 밀폐한 채 오래 끓이면 위험해요 — 안전을 위해 뚜껑을 살짝 열었어요!', true, 5200);
+    }
     if(!succeeded && t-successAt>2){
       succeeded=true;
       const w=run.wrongCount();
-      let msg='끓는 동안 온도는 <b>100℃에서 멈춰요.</b> 남는 열은 물을 눈에 안 보이는 물(수증기)로 바꾸는 데 쓰이거든요.';
-      if(prediction) msg=(prediction==='stay'?'🎯 <b>예측 적중!</b> ':'🤔 예측과 달랐죠? ')+msg;
+      let msg='온도가 <b>멈추는 곳이 두 군데</b> 있었죠 — 녹는 동안 <b>0℃</b>, 끓는 동안 <b>100℃</b>. 남는 열은 온도를 올리는 대신 <b>상태를 바꾸는 데</b> 쓰이거든요.';
+      if(prediction) msg=(prediction==='stay'?'🎯 <b>1차 예측 적중!</b> ':'🤔 1차 예측과 달랐죠? ')+msg;
+      if(prediction2) msg+= (prediction2==='same')
+        ? '<br>🎯 <b>2차도 적중</b> — 밀폐하면 상태가 바뀌어도 <b>무게는 그대로</b>(물 알갱이 개수 보존)!'
+        : '<br>🤔 2차 예측은 달랐죠? 밀폐하면 수증기도 통 안에 있어서 <b>무게는 그대로</b>예요!';
       msg+= w===0 ? '<br><b>기구도 한 번에 딱 맞게 골랐어요!</b>' :
                     `<br>기구 고르기 다시 생각해 본 횟수: ${w}번 — 그것도 배움이에요!`;
       $('sucMsg').innerHTML=msg;
       if(!freeMode) successEl.classList.remove('hide');
       else toast('💨 끓기 시작 — 온도는 100℃ 고정!',false,5200);
     }
-  } else successAt=0;
+  } else { successAt=0; boilStart=0; }
   if(!flags.low && S.vol<=sim.state.minVol+0.001){
     flags.low=true;
     toast('⚠️ 물이 거의 다 줄었어요! 실제 실험에서는 다 마르기 전에 불을 꺼야 안전해요', true, 5200);
   }
 
-  // 물·기포·김 (비커가 있을 때만)
-  if(run.placed.beaker){
+  // 물·기포·김·얼음·뚜껑 (비커가 있을 때만)
+  if(run.placed.beaker_ice){
     const topLocal=layoutWater(S.vol);
     rippleWater(t, 0.0012+0.0055*S.bubble);
     stepBubbles(dt, S.bubble, topLocal);
     steam.position.y=topLocal+0.005;
     steamUni.uTime.value=t;
     steamUni.uIntensity.value+=(S.steam-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
+    updateIce(S.ice, topLocal);
+    // 뚜껑 개폐 트윈 — 옆으로 미끄러지며 살짝 뜸
+    const tgt = lidOpen?1:0;
+    lidMesh.userData.open += (tgt-lidMesh.userData.open)*Math.min(dt*4,1);
+    const op=lidMesh.userData.open;
+    lidMesh.position.x = op*0.16;
+    lidMesh.position.y = BK_H+0.006 + op*0.05;
   }
 
   if(lit){
