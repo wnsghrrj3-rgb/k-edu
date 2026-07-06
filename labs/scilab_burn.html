@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 과학실 — 연소와 소화(컵 덮기) 미션</title>
+<!--
+  케이랩 과학실(SciLab) E-5 연소·소화 · 컵 덮기 파트 — 황금 샘플(scilab.html 물 끓이기 v0.2) 복사→스왑.
+  흡수: v2 burn.js(컵 덮기 = 연소의 조건). SPEC_E5.md 기반. 유류 화재 ★와우는 페이블 증축 대기(2단 출시).
+    · 미션: 초 2자루(작은 컵용·큰 컵용) → 촛불 켜기 → 컵 대·소 덮기
+    · 현상: 컵 속 산소가 줄어 촛불이 꺼짐 — 작은 컵이 먼저(산소 적음), 큰 컵은 오래 탐
+    · ★와우(중/고): 큰 컵이 왜 오래 탈까? — 산소가 더 많아서 (연소의 조건 = 탈물질·산소·발화점)
+    · 관측 = 촛불 크기(산소 비례)·산소 게이지 (o2meter 설치 시)
+  렌더 표준(데모 1호 확정): three r185 벤더 · ACES · RoomEnvironment PMREM · PCFSoft · 유리=블렌딩 · 품질 자동
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#5B9BF0; --orange:#FF8A3D; --green:#12B886; --purple:#9B7BF5;
+    --ink:#1d2733; --hud:rgba(20,25,32,.74); --hudline:rgba(255,255,255,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#171b21;font-family:'Gowun Dodum',sans-serif}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;pointer-events:none;z-index:20}
+  #topbar .title{color:#fff;font-size:17px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  #topbar .badge{background:var(--purple);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px}
+
+  /* 온도 패널 */
+  #panel{position:fixed;top:50px;left:14px;z-index:20;background:var(--hud);
+    backdrop-filter:blur(8px);border:1px solid var(--hudline);border-radius:16px;
+    padding:13px 17px;color:#fff;min-width:166px}
+  #o2na{font-size:14px;color:#9fb3c8;line-height:1.5;padding:4px 0}
+  #stateline{font-size:13.5px;margin-top:8px;color:#ffe3b8;min-height:18px;line-height:1.45}
+  .o2row .lab{font-size:11px;color:#9fb3c8;display:block;margin-bottom:3px}
+  .o2bar{width:150px;height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+  .o2bar i{display:block;height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg,#63E6BE,#4FC3F7);transition:width .2s}
+
+  /* 미션 패널 */
+  #mission{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:21;
+    background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
+    border-radius:16px;padding:11px 16px;color:#fff;max-width:min(420px,92vw);text-align:center}
+  #mission .mt{font-size:14.5px;color:#ffe3b8}
+  #mission .mp{font-size:12.5px;color:#c6d6e5;margin-top:4px;line-height:1.5}
+  #mission .prog{margin-top:7px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+  #mission .chip{font-size:11px;padding:3px 9px;border-radius:999px;
+    background:rgba(255,255,255,.08);border:1px solid var(--hudline);color:#9fb3c8}
+  #mission .chip.on{background:rgba(18,184,134,.22);border-color:#12B886;color:#7CF0C9}
+
+  /* 버튼 */
+  #ctrls{position:fixed;top:50px;right:14px;z-index:20;display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:'Gowun Dodum';font-size:14px;border:none;border-radius:13px;padding:10px 15px;
+    cursor:pointer;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .12s}
+  .btn:active{transform:scale(.95)}
+  #fireBtn{background:linear-gradient(135deg,#FF8A3D,#F4511E)}
+  #fireBtn.off{background:linear-gradient(135deg,#455A64,#37474F)}
+  #fireBtn:disabled{opacity:.35;cursor:default}
+  #modeBtn{background:rgba(155,123,245,.25);border:1px solid rgba(155,123,245,.5)}
+  #resetBtn{background:rgba(255,255,255,.14);border:1px solid var(--hudline);font-size:12.5px}
+
+  /* 기구 트레이 */
+  #tray{position:fixed;bottom:0;left:0;right:0;z-index:22;padding:10px 12px 12px;
+    display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;
+    background:linear-gradient(transparent, rgba(10,13,17,.85) 40%)}
+  #tray::-webkit-scrollbar{display:none}
+  .eq{flex:0 0 auto;width:86px;background:rgba(255,255,255,.06);border:1px solid var(--hudline);
+    border-radius:15px;padding:9px 6px 8px;text-align:center;color:#dbe7f2;cursor:pointer;
+    backdrop-filter:blur(6px);transition:transform .13s,border-color .2s;user-select:none}
+  .eq:active{transform:scale(.93)}
+  .eq .ic{font-size:26px;line-height:1.15}
+  .eq .nm{font-size:11.5px;margin-top:4px;line-height:1.25}
+  .eq.placed{opacity:.42}
+  .eq.placed .nm::after{content:' ✓';color:#7CF0C9}
+  .eq.shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}
+    50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+
+  /* 예측 카드 · 성공 패널 */
+  .card{position:fixed;left:50%;transform:translateX(-50%);z-index:26;
+    background:rgba(255,255,255,.97);border-radius:18px;padding:16px 18px;max-width:350px;width:92vw;
+    box-shadow:0 12px 40px rgba(0,0,0,.5);color:var(--ink);transition:opacity .3s,transform .3s}
+  .card.hide{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(12px)}
+  #predict{bottom:120px}
+  #predict2{bottom:120px}
+  #predict h3,#predict2 h3{font-size:14.5px;margin-bottom:10px;color:#1565C0}
+  #predict .opts,#predict2 .opts{display:flex;flex-direction:column;gap:8px}
+  #predict button,#predict2 button,#success button{font-family:'Gowun Dodum';font-size:14px;border:2px solid #dbe4ee;
+    background:#fff;border-radius:12px;padding:10px;cursor:pointer;color:var(--ink)}
+  #predict button:hover,#predict2 button:hover{border-color:#1565C0;background:#f0f7ff}
+  #success{bottom:50%;transform:translate(-50%,50%);text-align:center}
+  #success.hide{transform:translate(-50%,50%) translateY(12px)}
+  #success .big{font-size:38px}
+  #success h3{font-size:18px;color:#0d7a5c;margin:6px 0 4px}
+  #success p{font-size:13px;line-height:1.65;color:#41546a}
+  #success .row{display:flex;gap:8px;margin-top:13px}
+  #success button{flex:1}
+  #success button.pri{background:#12B886;border-color:#12B886;color:#fff}
+
+  #toast{position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:30;
+    background:rgba(255,255,255,.97);color:var(--ink);font-size:13.5px;padding:11px 17px;
+    border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:88vw;text-align:center;
+    line-height:1.55;transition:opacity .35s;border-left:5px solid var(--green)}
+  #toast.warn{border-left-color:var(--orange)}
+  #toast.hide{opacity:0;pointer-events:none}
+
+  #loading{position:fixed;inset:0;z-index:50;background:#171b21;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#cfe3f5;
+    transition:opacity .5s}
+  #loading .flask{font-size:44px;animation:bob 1.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #loading.hide{opacity:0;pointer-events:none}
+
+  @media (max-width:560px){
+    #panel{top:auto;bottom:118px;padding:9px 12px;min-width:0}
+    #temp{font-size:24px}
+    #mission{max-width:86vw;padding:9px 12px}
+    #mission .mp{display:none}
+    .eq{width:76px} .eq .ic{font-size:23px}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="topbar">
+  <span class="title">🧪 케이랩 과학실</span>
+  <span class="badge">미션 · 연소와 소화</span>
+</div>
+
+<div id="panel">
+  <div id="o2na" class="na">산소 측정기를 설치하면<br>산소량이 보여요</div>
+  <div class="o2wrap" id="o2wrap" style="display:none">
+    <div class="o2row"><span class="lab">🥛 작은 컵 산소</span>
+      <div class="o2bar"><i id="o2fill0"></i></div></div>
+    <div class="o2row" style="margin-top:7px"><span class="lab">🫙 큰 컵 산소</span>
+      <div class="o2bar"><i id="o2fill1"></i></div></div>
+  </div>
+  <div id="stateline"></div>
+</div>
+
+<div id="mission">
+  <div class="mt">🎯 미션: 촛불을 컵으로 덮어 어느 컵이 먼저 꺼지는지 알아보세요</div>
+  <div class="mp">아래 선반에서 <b>필요한 기구만</b> 골라 실험대에 준비하세요. 무엇이 필요할까요?</div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<div id="ctrls">
+  <button class="btn off" id="fireBtn" disabled>🕯️ 촛불 켜기</button>
+  <button class="btn" id="modeBtn">🧪 자유 실험</button>
+  <button class="btn" id="resetBtn">↺ 처음부터</button>
+</div>
+
+<div id="tray"></div>
+
+<div class="card hide" id="predict">
+  <h3>🔮 작은 컵과 큰 컵을 동시에 덮으면, 촛불은?</h3>
+  <div class="opts">
+    <button data-pick="same">① 동시에 꺼진다</button>
+    <button data-pick="small">② 작은 컵 촛불이 먼저 꺼진다</button>
+    <button data-pick="large">③ 큰 컵 촛불이 먼저 꺼진다</button>
+  </div>
+</div>
+
+<div class="card hide" id="predict2">
+  <h3>🔮 큰 컵 촛불은 왜 아직 탈까요?</h3>
+  <div class="opts">
+    <button data-pick="o2">① 컵이 커서 산소가 더 많아서</button>
+    <button data-pick="candle">② 초가 더 좋은 초라서</button>
+  </div>
+</div>
+
+<div class="card hide" id="success">
+  <div class="big">🏅</div>
+  <h3>미션 성공 — 연소와 소화!</h3>
+  <p id="sucMsg"></p>
+  <div class="row">
+    <button id="sucFree" class="pri">🧪 자유 실험 하기</button>
+    <button id="sucAgain">↺ 다시 하기</button>
+  </div>
+</div>
+
+<div id="toast" class="hide"></div>
+<div id="loading"><div class="flask">⚗️</div><div>과학실 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (렌더러 무관 · node 테스트 대상) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 연소 시뮬 (SPEC_E5 A-2 — 컵 속 산소 소진. 작은 컵 먼저 꺼짐) ── */
+  function createBurnSim(){
+    // 인덱스 0 = 작은 컵 쪽 초, 1 = 큰 컵 쪽 초
+    var S = { lit:false, o2:[100,100], covered:[false,false], out:[false,false], bothOut:false, flame:[0,0] };
+    var RATE=[12.5, 5];    // %/s — 작은 컵 ≈8s · 큰 컵 ≈20s (v2 비율 2.5:1 유지)
+    var OUT_FLICKER=15;    // o2 15% 아래 = 꺼지기 직전 흔들림 신호
+    function ignite(){ S.lit=true; S.flame=[1,1]; S.out=[false,false]; }
+    function cover(i){ if(!S.lit||S.out[i]) return false; S.covered[i]=true; return true; }
+    function uncover(i){ S.covered[i]=false; }
+    function step(dt, inp){
+      if(dt>0.05) dt=0.05;
+      if(!inp.ready || !S.lit) return S;   // ready 게이트 — 준비 전 진행 없음
+      for(var i=0;i<2;i++){
+        if(S.covered[i] && !S.out[i]){
+          S.o2[i] -= RATE[i]*dt;
+          if(S.o2[i]<=0){ S.o2[i]=0; S.out[i]=true; S.flame[i]=0; }
+        }
+        S.flame[i] = S.out[i] ? 0 : (S.covered[i] ? Math.max(0.25, S.o2[i]/100) : 1);
+      }
+      S.bothOut = S.out[0] && S.out[1];
+      return S;
+    }
+    return { state:S, step:step, ignite:ignite, cover:cover, uncover:uncover, RATE:RATE, OUT_FLICKER:OUT_FLICKER };
+  }
+
+  /* ── 미션 정의 (SPEC_E5 A-1) ── */
+  var MISSION_BURN = {
+    id:'burn_cups',
+    title:'연소의 조건 — 어느 컵이 먼저 꺼질까?',
+    required:['candle','cup_s','cup_l','o2meter'],
+    needs:{
+      cup_s:  { pre:['candle'], msg:'컵으로 덮을 <b>촛불이 먼저</b> 있어야죠!' },
+      cup_l:  { pre:['candle'], msg:'컵으로 덮을 <b>촛불이 먼저</b> 있어야죠!' },
+      o2meter:{ pre:['candle'], msg:'산소 측정기는 <b>잴 대상(촛불)이 먼저</b>!' }
+    },
+    wrong:{
+      magnet:'🧲 자석은 철을 끌어당기는 도구 — 불과 산소 실험에는 필요 없어요.',
+      thermo:'🌡️ 온도계는 온도를 잴 때 — 오늘 지켜볼 것은 <b>산소</b>예요!',
+      rod:'🥢 유리막대는 저을 때 쓰는 기구 — 촛불은 젓지 않아요!',
+      beaker_w:'💧 물 비커는 <b>소화</b> 실험에서 만나요! 오늘은 산소가 줄어드는 걸 관찰해요.'
+    }
+  };
+
+  function createMissionRun(M){
+    var placed={}, wrongCount=0, ready=false;
+    function pick(id, freeMode){
+      if(placed[id]) return {act:'already'};
+      if(!freeMode && M.wrong[id]) { wrongCount++; return {act:'wrong', msg:M.wrong[id]}; }
+      var rule = M.needs[id];
+      if(rule){
+        for(var i=0;i<rule.pre.length;i++)
+          if(!placed[rule.pre[i]]) return {act:'blocked', msg:rule.msg};
+      }
+      placed[id]=true;
+      ready = M.required.every(function(r){return placed[r];});
+      return {act:'placed', ready:ready};
+    }
+    function remove(id){
+      if(!placed[id]) return false;
+      Object.keys(M.needs).forEach(function(k){
+        if(placed[k] && M.needs[k].pre.indexOf(id)>=0) remove(k);
+      });
+      delete placed[id];
+      ready=false;
+      return true;
+    }
+    function count(){ return M.required.filter(function(r){return placed[r];}).length; }
+    return { placed:placed, pick:pick, remove:remove, count:count,
+             isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
+  }
+
+  var API = { createBurnSim:createBurnSim, MISSION_BURN:MISSION_BURN, createMissionRun:createMissionRun };
+  if(typeof window!=='undefined'){ window.SciLab=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ═════════ 렌더 기반 (데모 1호 확정 표준) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#2b3340'); gr.addColorStop(.55,'#1b2129'); gr.addColorStop(1,'#12161c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x161b22, 4.2, 9.5);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
+camera.position.set(0.95, 0.9, 1.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.32, -0.02);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.65; controls.maxDistance=3.4;
+controls.maxPolarAngle=1.46; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.6);
+sun.position.set(1.8,3.4,1.6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.8; sun.shadow.camera.right=1.8;
+sun.shadow.camera.top=2.2; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=9;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.35));
+
+/* 재질 — 유리=블렌딩, 액체=굴절(데모 1호 확정) */
+const GLASS = new THREE.MeshPhysicalMaterial({
+  color:0xffffff, metalness:0, roughness:0.03,
+  transparent:true, opacity:0.18, depthWrite:false,
+  clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
+});
+const METAL = new THREE.MeshStandardMaterial({ color:0xb8bec6, metalness:0.92, roughness:0.32, envMapIntensity:1.1 });
+const DARKMETAL = new THREE.MeshStandardMaterial({ color:0x555b63, metalness:0.85, roughness:0.45 });
+const WOOD = new THREE.MeshStandardMaterial({ color:0xC49A6C, roughness:0.8 });
+function waterMat(hex){
+  return new THREE.MeshPhysicalMaterial({
+    color:0xffffff, metalness:0, roughness:0.05,
+    transmission:1, thickness:0.15, ior:1.33,
+    attenuationColor:new THREE.Color(hex), attenuationDistance:0.16, envMapIntensity:1.0
+  });
+}
+
+/* ═════════ 실험대 ═════════ */
+const BENCH_Y = 0.0;
+{
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(7,48),
+    new THREE.MeshStandardMaterial({color:0x6e747d, roughness:0.95}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.86; floor.receiveShadow=true; scene.add(floor);
+
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const g=c.getContext('2d');
+  g.fillStyle='#22262c'; g.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){
+    const v=30+Math.random()*26|0;
+    g.fillStyle=`rgba(${v},${v+3},${v+7},${0.16+Math.random()*0.2})`;
+    g.fillRect(Math.random()*256, Math.random()*256, 1.4, 1.4);
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,2);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.09,1.7),
+    new THREE.MeshStandardMaterial({map:tex, roughness:0.34, metalness:0.05, envMapIntensity:0.7}));
+  top.position.y=BENCH_Y-0.045; top.receiveShadow=true; top.castShadow=true; scene.add(top);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
+    new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
+  body.position.y=BENCH_Y-0.09-0.38; body.receiveShadow=true; body.castShadow=true; scene.add(body);
+}
+
+/* ═════════ 기구 빌더 (전부 스냅 좌표에 미리 생성 → 배치=등장 연출) ═════════ */
+const yAxis = new THREE.Vector3(0,1,0);
+const TRIPOD_H = 0.30;
+const RIG = new THREE.Group(); RIG.position.set(0, BENCH_Y, -0.05); scene.add(RIG);
+
+const EQ_OBJ = {};   // id → {group, baseY}
+function registerEq(id, group){
+  group.userData.baseY = group.position.y;
+  group.visible = false;
+  EQ_OBJ[id] = group;
+}
+
+/* ── 공용 상수 (E-5 연소) ── */
+const CANDLE_X = [-0.20, 0.20];   // 0 = 작은 컵 쪽, 1 = 큰 컵 쪽
+const CANDLE_H = 0.09;
+const CUP_R = [0.045, 0.062], CUP_H = [0.11, 0.15];
+
+/* 불꽃 텍스처 (촛불·컵 공용) */
+function flameTexture(inner,outer){
+  const c=document.createElement('canvas'); c.width=c.height=128;
+  const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,78,4,64,64,60);
+  gr.addColorStop(0,inner); gr.addColorStop(.45,outer); gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr; g.fillRect(0,0,128,128);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const FLAME_OUT_TEX=flameTexture('rgba(255,244,200,1)','rgba(255,150,40,0.85)');
+const FLAME_IN_TEX =flameTexture('rgba(190,230,255,1)','rgba(70,140,255,0.7)');
+
+/* 초 2자루 (+ 불꽃·PointLight 2세트) */
+let candleFlame=[];   // [{outer, inner, light, baseY}]
+{
+  const gp = new THREE.Group();
+  for(let i=0;i<2;i++){
+    const x=CANDLE_X[i];
+    const wax=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.013,CANDLE_H,20),
+      new THREE.MeshStandardMaterial({color:0xF3EDE0, roughness:0.75}));
+    wax.position.set(x, CANDLE_H/2, 0); wax.castShadow=true; gp.add(wax);
+    const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0013,0.0013,0.012,8),
+      new THREE.MeshStandardMaterial({color:0x222222, roughness:1}));
+    wick.position.set(x, CANDLE_H+0.005, 0); gp.add(wick);
+    // 불꽃
+    const fy=CANDLE_H+0.022;
+    const outer=new THREE.Sprite(new THREE.SpriteMaterial({map:FLAME_OUT_TEX,
+      blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+    const inner=new THREE.Sprite(new THREE.SpriteMaterial({map:FLAME_IN_TEX,
+      blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+    outer.position.set(x, fy+0.006, 0); inner.position.set(x, fy-0.004, 0);
+    outer.visible=inner.visible=false;
+    gp.add(outer, inner);
+    const light=new THREE.PointLight(0xFFA640, 0, 0.9, 2);
+    light.position.set(x, fy, 0); gp.add(light);
+    candleFlame.push({outer, inner, light, x, fy});
+  }
+  gp.position.set(0, BENCH_Y, -0.02);
+  RIG.add(gp); registerEq('candle', gp);
+}
+
+/* 유리컵 대·소 (뒤집어 덮음 — openEnded + 바닥 뚜껑) */
+let cupMesh=[];   // [group_s, group_l]
+[['cup_s',0],['cup_l',1]].forEach(([id,i])=>{
+  const gp=new THREE.Group();
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R[i],CUP_R[i],CUP_H[i],40,1,true), GLASS.clone());
+  wall.position.y=CUP_H[i]/2; gp.add(wall);
+  const topCap=new THREE.Mesh(new THREE.CircleGeometry(CUP_R[i],40), GLASS.clone());
+  topCap.rotation.x=-Math.PI/2; topCap.position.y=CUP_H[i]; gp.add(topCap);   // 뒤집힌 컵 = 위가 막힘
+  gp.position.set(CANDLE_X[i], BENCH_Y+0.30, -0.02);   // 초기엔 위(덮기 전)
+  gp.userData.coverY=BENCH_Y;      // 덮었을 때 바닥 y
+  gp.userData.upY=BENCH_Y+0.30;    // 안 덮었을 때
+  gp.userData.covered=false;
+  RIG.add(gp); registerEq(id, gp);
+  cupMesh.push(gp);
+});
+
+/* 산소 측정기 (설치 시 산소 게이지 HUD) */
+{
+  const gp=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(0.10,0.05,0.06),
+    new THREE.MeshStandardMaterial({color:0x2f3640, metalness:0.6, roughness:0.4}));
+  body.position.y=0.025; body.castShadow=true; gp.add(body);
+  // 표시창
+  const c=document.createElement('canvas'); c.width=128; c.height=64;
+  const g=c.getContext('2d'); g.fillStyle='#0a1a0f'; g.fillRect(0,0,128,64);
+  g.fillStyle='#63E6BE'; g.font='bold 22px sans-serif'; g.textAlign='center';
+  g.fillText('O₂', 64, 40);
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(0.07,0.035),
+    new THREE.MeshBasicMaterial({map:tex}));
+  screen.position.set(0,0.03,0.031); gp.add(screen);
+  gp.position.set(0, BENCH_Y, 0.30);
+  RIG.add(gp); registerEq('o2meter', gp);
+}
+
+/* 물 비커 (오답 기구 beaker_w — 정적. 소화 실험에서 쓰는 것) */
+{
+  const gp=new THREE.Group();
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.078,0.002),
+    new THREE.Vector2(0.082,0.014), new THREE.Vector2(0.082,0.13),
+    new THREE.Vector2(0.088,0.14)
+  ];
+  gp.add(new THREE.Mesh(new THREE.LatheGeometry(pts,40), GLASS.clone()));
+  const w=new THREE.Mesh(new THREE.CylinderGeometry(0.068,0.070,0.088,40), waterMat(0x5FB9E8));
+  w.position.y=0.048; gp.add(w);
+  gp.position.set(0, BENCH_Y, 0); gp.visible=false;
+  gp.userData.baseY=BENCH_Y; gp.userData.free=true;
+  EQ_OBJ['beaker_w']=gp; scene.add(gp);
+}
+
+
+/* ── 오답·자유 기구들 (실험대 앞쪽 자유 자리) ── */
+const FREE_SPOTS=[[-1.0,0.38],[-0.32,0.46],[0.34,0.46],[1.0,0.36]];
+let spotIdx=0;
+function nextSpot(){ const s=FREE_SPOTS[spotIdx%FREE_SPOTS.length]; spotIdx++; return s; }
+
+function makeMagnet(){
+  const gp=new THREE.Group();
+  const red=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.028,0.04),
+    new THREE.MeshStandardMaterial({color:0xE04545, roughness:0.5}));
+  red.position.x=-0.04;
+  const blue=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.028,0.04),
+    new THREE.MeshStandardMaterial({color:0x3B6FD6, roughness:0.5}));
+  blue.position.x=0.04;
+  red.position.y=blue.position.y=0.014;
+  red.castShadow=blue.castShadow=true;
+  gp.add(red,blue);
+  const c=document.createElement('canvas'); c.width=128; c.height=64;
+  const g=c.getContext('2d'); g.clearRect(0,0,128,64);
+  g.fillStyle='#fff'; g.font='bold 40px sans-serif'; g.textAlign='center';
+  g.fillText('N',32,46); g.fillText('S',96,46);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+  const lab=new THREE.Mesh(new THREE.PlaneGeometry(0.15,0.026),
+    new THREE.MeshBasicMaterial({map:t, transparent:true}));
+  lab.rotation.x=-Math.PI/2; lab.position.y=0.0285; gp.add(lab);
+  return gp;
+}
+function makeMagnifier(){
+  const gp=new THREE.Group();
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.05,0.007,12,32), METAL);
+  rim.rotation.x=Math.PI/2; rim.position.y=0.012;
+  const lens=new THREE.Mesh(new THREE.CircleGeometry(0.045,32), GLASS.clone());
+  lens.rotation.x=-Math.PI/2; lens.position.y=0.012;
+  const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.011,0.1,12), WOOD);
+  handle.rotation.z=Math.PI/2; handle.rotation.y=0.4;
+  handle.position.set(0.095,0.012,0.04);
+  rim.castShadow=handle.castShadow=true;
+  gp.add(rim,lens,handle);
+  return gp;
+}
+function makeTubes(){
+  const gp=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.018,0.06), WOOD);
+  base.position.y=0.009; base.castShadow=true; gp.add(base);
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.012,0.06), WOOD);
+  plate.position.y=0.095; plate.castShadow=true; gp.add(plate);
+  [[-0.045],[0.045]].forEach(([x])=>{
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.09,10), WOOD);
+    post.position.set(x+0.06*(x<0?-1:1),0.05,0); gp.add(post);
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.11,20,1,true), GLASS.clone());
+    tube.position.set(x,0.075,0);
+    const bot=new THREE.Mesh(new THREE.SphereGeometry(0.014,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), GLASS.clone());
+    bot.position.set(x,0.02,0);
+    gp.add(tube,bot);
+  });
+  return gp;
+}
+function makeRod(){
+  const gp=new THREE.Group();
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.2,12), GLASS.clone());
+  rod.rotation.z=Math.PI/2; rod.rotation.y=0.25; rod.position.y=0.006;
+  gp.add(rod);
+  return gp;
+}
+function makeThermo(){
+  const gp=new THREE.Group();
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.011,18,14),
+    new THREE.MeshStandardMaterial({color:0xD64545, roughness:0.35}));
+  gp.add(bulb);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.0055,0.0055,0.20,14), GLASS.clone());
+  stem.position.y=0.1; gp.add(stem);
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(0.0026,0.0026,0.08,10),
+    new THREE.MeshBasicMaterial({color:0xE53935}));
+  col.position.y=0.04; gp.add(col);
+  gp.rotation.z=0.5;
+  return gp;
+}
+[['magnet',makeMagnet],['thermo',makeThermo],['rod',makeRod]]
+.forEach(([id,fn])=>{
+  const gp=fn();
+  gp.position.set(0, BENCH_Y, 0); gp.visible=false;
+  gp.userData.baseY=BENCH_Y; gp.userData.free=true;
+  scene.add(gp); EQ_OBJ[id]=gp;
+});
+
+/* 상시 소품(트레이 아님): 삼각플라스크 + 알코올 시약병 — 과학실 분위기 */
+{
+  const flaskPts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.085,0.004),
+    new THREE.Vector2(0.03,0.15), new THREE.Vector2(0.03,0.185),
+    new THREE.Vector2(0.034,0.19)
+  ];
+  const flask=new THREE.Mesh(new THREE.LatheGeometry(flaskPts,40), GLASS);
+  flask.position.set(0.62,BENCH_Y,-0.32); scene.add(flask);
+  const fl=[
+    new THREE.Vector2(0.003,0.006), new THREE.Vector2(0.078,0.007),
+    new THREE.Vector2(0.055,0.06)
+  ];
+  const fliq=new THREE.Mesh(new THREE.LatheGeometry(fl,32), waterMat(0x8FE3B0));
+  fliq.position.copy(flask.position); scene.add(fliq);
+
+  const bottle=new THREE.Mesh(new THREE.CylinderGeometry(0.046,0.046,0.15,28),
+    new THREE.MeshPhysicalMaterial({color:0x9c6a2a, metalness:0, roughness:0.08,
+      transparent:true, opacity:0.55, depthWrite:false,
+      clearcoat:0.8, clearcoatRoughness:0.1, envMapIntensity:1.3}));
+  bottle.position.set(0.85,BENCH_Y+0.075,-0.1); bottle.castShadow=true; scene.add(bottle);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.028,0.03,20), DARKMETAL);
+  cap.position.set(0.85,BENCH_Y+0.163,-0.1); scene.add(cap);
+  const lc=document.createElement('canvas'); lc.width=256; lc.height=128;
+  const lg=lc.getContext('2d');
+  lg.fillStyle='#F6F1E7'; lg.fillRect(0,0,256,128);
+  lg.strokeStyle='#B9522F'; lg.lineWidth=8; lg.strokeRect(8,8,240,112);
+  lg.fillStyle='#243043'; lg.font='bold 52px sans-serif'; lg.textAlign='center';
+  lg.fillText('알코올',128,82);
+  const lTex=new THREE.CanvasTexture(lc); lTex.colorSpace=THREE.SRGBColorSpace;
+  const label=new THREE.Mesh(new THREE.PlaneGeometry(0.062,0.032),
+    new THREE.MeshStandardMaterial({map:lTex, roughness:0.9}));
+  label.position.set(0.85,BENCH_Y+0.08,-0.053); scene.add(label);
+}
+
+/* ═════════ 기구 사전 · 트레이 UI ═════════ */
+const EQUIP=[
+  {id:'candle',   ic:'🕯️', nm:'초 2자루'},
+  {id:'cup_s',    ic:'🥛', nm:'작은 컵'},
+  {id:'cup_l',    ic:'🫙', nm:'큰 컵'},
+  {id:'o2meter',  ic:'📟', nm:'산소 측정기'},
+  {id:'magnet',   ic:'🧲', nm:'막대자석'},
+  {id:'thermo',   ic:'🌡️', nm:'온도계'},
+  {id:'rod',      ic:'🥢', nm:'유리막대'},
+  {id:'beaker_w', ic:'💧', nm:'물 비커'}
+];
+// 카드 순서는 매번 섞어서 정답 위치 고정 방지
+for(let i=EQUIP.length-1;i>0;i--){
+  const j=Math.random()*(i+1)|0; [EQUIP[i],EQUIP[j]]=[EQUIP[j],EQUIP[i]];
+}
+
+const trayEl=document.getElementById('tray');
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onPick(e.id,d));
+  trayEl.appendChild(d);
+});
+
+/* ═════════ 게임 상태 ═════════ */
+const { createBurnSim, MISSION_BURN, createMissionRun } = window.SciLab;
+let sim = createBurnSim();
+let run = createMissionRun(MISSION_BURN);
+let freeMode=false, predictShown=false, prediction=null;
+let predict2Shown=false, prediction2=null, smallOutShown=false;
+let succeeded=false, successAt=0;
+const drops=[];   // 등장 연출 목록
+function KLabSnd(n){ try{ if(window.KLab&&window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }catch(e){} }
+
+// URL config — grade (기본 mid). low = ★와우 2차(큰 컵 산소량) 숨김 (v2 burn GRADES 승계)
+const GRADE = (new URLSearchParams(location.search).get('grade')||'mid');
+const showWow = (GRADE!=='low');
+
+const $=id=>document.getElementById(id);
+const stateEl=$('stateline'), o2naEl=$('o2na'), o2wrapEl=$('o2wrap');
+const o2fill=[$('o2fill0'), $('o2fill1')];
+const fireBtn=$('fireBtn'), resetBtn=$('resetBtn'), modeBtn=$('modeBtn');
+const toastEl=$('toast'), missionEl=$('mission'), progEl=$('prog');
+const predictEl=$('predict'), predict2El=$('predict2'), successEl=$('success');
+
+let toastTimer=null;
+function toast(msg, warn, ms){
+  toastEl.innerHTML=msg;
+  toastEl.classList.toggle('warn', !!warn);
+  toastEl.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.add('hide'), ms||3400);
+}
+
+function renderProg(){
+  const n=run.count(), total=MISSION_BURN.required.length;
+  let html=`<span class="chip ${n?'on':''}">준비물 ${n} / ${total}</span>`;
+  MISSION_BURN.required.forEach(id=>{
+    if(run.placed[id]){
+      const e=EQUIP.find(x=>x.id===id);
+      html+=`<span class="chip on">${e.ic} ${e.nm}</span>`;
+    }
+  });
+  progEl.innerHTML=html;
+}
+renderProg();
+
+function dropIn(id){
+  const o=EQ_OBJ[id];
+  o.visible=true;
+  o.position.y=o.userData.baseY+0.28;
+  drops.push({o, t:0});
+}
+
+function updateO2HUD(){
+  if(run.placed.o2meter){
+    o2naEl.style.display='none'; o2wrapEl.style.display='';
+    for(let i=0;i<2;i++){
+      const c=sim.state.covered[i];
+      o2fill[i].style.width=(c?sim.state.o2[i]:100)+'%';
+      o2fill[i].style.opacity = c?1:0.35;
+    }
+  } else {
+    o2naEl.style.display=''; o2wrapEl.style.display='none';
+  }
+}
+
+function onPick(id, cardEl){
+  if(succeeded && !freeMode) return;
+  if(run.placed[id]){
+    // 재탭 = 회수 (컵이면 uncover)
+    if(id==='cup_s'){ sim.uncover(0); EQ_OBJ.cup_s.userData.covered=false; }
+    if(id==='cup_l'){ sim.uncover(1); EQ_OBJ.cup_l.userData.covered=false; }
+    run.remove(id);
+    Object.keys(EQ_OBJ).forEach(k=>{ if(!run.placed[k]) EQ_OBJ[k].visible=false; });
+    syncTray(); renderProg(); updateFireBtn(); updateO2HUD();
+    return;
+  }
+  const r=run.pick(id, freeMode);
+  if(r.act==='wrong' || r.act==='blocked'){
+    cardEl.classList.remove('shake'); void cardEl.offsetWidth; cardEl.classList.add('shake');
+    toast(r.msg, true, r.act==='wrong'?4200:3800);
+    return;
+  }
+  if(r.act==='placed'){
+    const o=EQ_OBJ[id];
+    if(o.userData.free){ const [x,z]=nextSpot(); o.position.x=x; o.position.z=z; }
+    dropIn(id);
+    // 컵 = 대응 초 덮기
+    if(id==='cup_s'){ if(sim.cover(0)){ o.userData.covered=true; } else toast('먼저 🕯️ 촛불을 켜야 덮을 수 있어요', true); }
+    if(id==='cup_l'){ if(sim.cover(1)){ o.userData.covered=true; } else toast('먼저 🕯️ 촛불을 켜야 덮을 수 있어요', true); }
+    syncTray(); renderProg(); updateFireBtn(); updateO2HUD();
+    if(r.ready && !freeMode && !predictShown){
+      predictShown=true;
+      setTimeout(()=>{ predictEl.classList.remove('hide');
+        toast('✅ 준비 끝! 예측을 골라 봐요'); }, 500);
+    } else if(r.ready && freeMode){
+      toast('준비 완료 — 🕯️ 촛불을 켜고 컵으로 덮어 봐요');
+    }
+  }
+}
+function syncTray(){
+  EQUIP.forEach(e=>{
+    $('eq_'+e.id).classList.toggle('placed', !!run.placed[e.id]);
+  });
+}
+function updateFireBtn(){
+  fireBtn.disabled = !run.placed.candle;
+}
+
+predictEl.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    prediction=b.dataset.pick;
+    predictEl.classList.add('hide');
+    toast('좋아요! 🕯️ 촛불을 켜고 두 컵으로 덮어 봐요');
+  });
+});
+predict2El.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    prediction2=b.dataset.pick;
+    predict2El.classList.add('hide');
+    toast(prediction2==='o2' ? '🎯 예측 접수! 큰 컵이 꺼질 때까지 지켜봐요'
+                             : '🤔 정말요? 큰 컵을 지켜봐요!', false, 4200);
+  });
+});
+
+function setFire(on){
+  if(on && !run.placed.candle) return;
+  if(on) sim.ignite();
+  candleFlame.forEach(cf=>{ cf.outer.visible=cf.inner.visible=on && sim.state.lit; });
+  fireBtn.textContent=on?'🧯 촛불 끄기':'🕯️ 촛불 켜기';
+  fireBtn.classList.toggle('off',!on);
+  if(!on){ sim.state.lit=false; candleFlame.forEach(cf=>{ cf.outer.visible=cf.inner.visible=false; cf.light.intensity=0; }); }
+}
+fireBtn.addEventListener('click',()=>setFire(!sim.state.lit));
+
+modeBtn.addEventListener('click',()=>{
+  freeMode=!freeMode;
+  modeBtn.textContent=freeMode?'🎯 미션 모드':'🧪 자유 실험';
+  missionEl.style.display=freeMode?'none':'';
+  document.querySelector('#topbar .badge').textContent=freeMode?'자유 실험':'미션 · 연소와 소화';
+  toast(freeMode?'자유 실험 — 무엇이든 꺼내 놓아 봐요':'미션 모드 — 필요한 기구만!');
+});
+
+function resetAll(keepMode){
+  sim=createBurnSim(); run=createMissionRun(MISSION_BURN);
+  Object.keys(EQ_OBJ).forEach(k=>{ EQ_OBJ[k].visible=false; });
+  prediction=null; predictShown=false; succeeded=false; successAt=0;
+  prediction2=null; predict2Shown=false; smallOutShown=false;
+  spotIdx=0;
+  candleFlame.forEach(cf=>{ cf.outer.visible=cf.inner.visible=false; cf.light.intensity=0; });
+  cupMesh.forEach((c,i)=>{ c.position.y=c.userData.upY; c.userData.covered=false; });
+  fireBtn.textContent='🕯️ 촛불 켜기'; fireBtn.classList.add('off');
+  stateEl.textContent='촛불을 켜고 컵으로 덮어 어느 쪽이 먼저 꺼지는지 봐요';
+  predictEl.classList.add('hide'); predict2El.classList.add('hide'); successEl.classList.add('hide');
+  syncTray(); renderProg(); updateFireBtn(); updateO2HUD();
+  if(!keepMode && freeMode){ modeBtn.click(); }
+}
+resetBtn.addEventListener('click',()=>resetAll(true));
+$('sucAgain').addEventListener('click',()=>resetAll(true));
+$('sucFree').addEventListener('click',()=>{
+  successEl.classList.add('hide');
+  if(!freeMode) modeBtn.click();
+});
+
+
+/* ═════════ 품질 자동 ═════════ */
+let frames=0, fpsStart=performance.now(), qualityChecked=false;
+function checkQuality(now){
+  frames++;
+  if(qualityChecked) return;
+  if(now-fpsStart>4000){
+    qualityChecked=true;
+    const fps=frames/((now-fpsStart)/1000);
+    if(fps<38){
+      renderer.setPixelRatio(1);
+      sun.shadow.mapSize.set(1024,1024);
+      if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; }
+      sun.shadow.radius=3;
+    }
+  }
+}
+
+/* ═════════ 메인 루프 ═════════ */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.elapsedTime;
+
+  // 등장 연출
+  for(let i=drops.length-1;i>=0;i--){
+    const d=drops[i]; d.t+=dt*3.2;
+    const k=Math.min(d.t,1), e=1-Math.pow(1-k,3);
+    d.o.position.y=d.o.userData.baseY+0.28*(1-e);
+    if(k>=1){ d.o.position.y=d.o.userData.baseY; drops.splice(i,1); }
+  }
+
+  const ready = run.isReady();
+  const S=sim.step(dt,{ready});
+
+  // 컵 하강/상승 트윈 (덮기 연출)
+  cupMesh.forEach((c,i)=>{
+    if(!run.placed[i===0?'cup_s':'cup_l']) return;
+    const tgt = c.userData.covered ? c.userData.coverY : c.userData.upY;
+    c.position.y += (tgt - c.position.y)*Math.min(dt*4,1);
+  });
+
+  // 촛불 불꽃 = 산소 비례 (꺼지면 0)
+  if(sim.state.lit){
+    for(let i=0;i<2;i++){
+      const cf=candleFlame[i], fl=S.flame[i];
+      const flick = (S.o2[i]<sim.OUT_FLICKER && S.covered[i] && !S.out[i]) ? 2 : 1;
+      const f=1+0.10*Math.sin(t*23*flick)+0.06*Math.sin(t*57*flick+1.7);
+      cf.outer.scale.set(0.03*fl*f, 0.058*fl*f, 1);
+      cf.inner.scale.set(0.017*fl*f, 0.03*fl*f, 1);
+      cf.outer.visible=cf.inner.visible = fl>0;
+      cf.light.intensity = fl>0 ? (1.1+0.4*Math.sin(t*19)*Math.sin(t*7))*fl : 0;
+      // 소등 순간 연기 한 줄 (flame 0 전이) — light 잔광 페이드는 위에서 처리
+    }
+  }
+
+  // 산소 HUD
+  if(run.placed.o2meter){
+    for(let i=0;i<2;i++){
+      o2fill[i].style.width=(S.covered[i]?S.o2[i]:100).toFixed(0)+'%';
+      o2fill[i].style.opacity = S.covered[i]?1:0.35;
+    }
+  }
+
+  // ★와우 2차 — 작은 컵 소등 순간(중/고), "큰 컵은 왜 아직?"
+  if(!smallOutShown && S.out[0]){
+    smallOutShown=true;
+    if(showWow && !predict2Shown && !freeMode && !S.out[1]){
+      predict2Shown=true;
+      predict2El.classList.remove('hide');
+    }
+  }
+
+  // 상태줄
+  let st='';
+  if(succeeded) st='🏅 미션 성공!';
+  else if(!sim.state.lit && ready) st='🕯️ 촛불을 켜고 컵으로 덮어 봐요';
+  else if(sim.state.lit && !S.covered[0] && !S.covered[1]) st='컵을 덮어 봐요 — 안의 산소가 줄기 시작해요';
+  else if(S.bothOut) st='두 촛불 다 꺼졌어요 — 산소를 다 썼거든요!';
+  else if(S.out[0] && !S.out[1]) st='🥛 작은 컵 먼저! 큰 컵은 아직 타요';
+  else if((S.covered[0]&&S.o2[0]<sim.OUT_FLICKER&&!S.out[0]) || (S.covered[1]&&S.o2[1]<sim.OUT_FLICKER&&!S.out[1])) st='촛불이 가물가물…';
+  else if(S.covered[0]||S.covered[1]) st='💨 컵 속 산소가 줄어드는 중…';
+  stateEl.textContent=st;
+
+  // 성공 판정 — 두 촛불 다 소등 2초 지속
+  if(S.bothOut){
+    if(!successAt) successAt=t;
+    if(!succeeded && t-successAt>2){
+      succeeded=true;
+      const w=run.wrongCount();
+      let msg='불이 타려면 <b>탈 물질 · 산소 · 발화점 이상의 온도</b> 세 가지가 필요해요(연소의 조건). 컵을 덮어 <b>산소</b>를 끊으니 꺼졌죠 — 큰 컵이 오래 탄 건 <b>산소가 더 많아서</b>예요.';
+      if(prediction) msg=(prediction==='small'?'🎯 <b>1차 예측 적중!</b> ':'🤔 1차 예측과 달랐죠? ')+msg;
+      if(prediction2) msg+= (prediction2==='o2')
+        ? '<br>🎯 <b>2차도 적중</b> — 큰 컵은 산소가 더 많아 오래 탔어요!'
+        : '<br>🤔 2차는 달랐죠? 초는 같아요 — 큰 컵은 <b>산소가 더 많아서</b> 오래 탄 거예요!';
+      msg+= w===0 ? '<br><b>기구도 한 번에 딱 맞게 골랐어요!</b>' :
+                    `<br>기구 고르기 다시 생각해 본 횟수: ${w}번 — 그것도 배움이에요!`;
+      $('sucMsg').innerHTML=msg;
+      if(!freeMode) successEl.classList.remove('hide');
+      else toast('🥛 작은 컵 먼저, 큰 컵은 오래 — 산소량 차이!',false,5200);
+    }
+  } else successAt=0;
+
+  controls.update();
+  renderer.render(scene,camera);
+  checkQuality(performance.now());
+}
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+document.getElementById('loading').classList.add('hide');
+toast('🎯 미션: 선반에서 <b>필요한 기구만</b> 골라 실험을 준비해 봐요!', false, 5200);
+animate();
+</script>
+</body>
+</html>
