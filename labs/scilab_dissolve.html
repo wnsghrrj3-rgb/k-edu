@@ -630,19 +630,6 @@ const EQUIP=[
   {id:'cup_l',    ic:'🫙', nm:'빈 컵'},
   {id:'candle',   ic:'🕯️', nm:'초'}
 ];
-// 카드 순서는 매번 섞어서 정답 위치 고정 방지
-for(let i=EQUIP.length-1;i>0;i--){
-  const j=Math.random()*(i+1)|0; [EQUIP[i],EQUIP[j]]=[EQUIP[j],EQUIP[i]];
-}
-
-const trayEl=document.getElementById('tray');
-EQUIP.forEach(e=>{
-  const d=document.createElement('div');
-  d.className='eq'; d.id='eq_'+e.id;
-  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
-  d.addEventListener('click',()=>onPick(e.id,d));
-  trayEl.appendChild(d);
-});
 
 /* ═════════ 게임 상태 ═════════ */
 const { createDissolveSim, MISSION_DISSOLVE, createMissionRun } = window.SciLab;
@@ -945,6 +932,22 @@ addEventListener('resize',()=>{
 
 document.getElementById('loading').classList.add('hide');
 toast('🎯 미션: 선반에서 <b>필요한 기구만</b> 골라 실험을 준비해 봐요!', false, 5200);
+
+/* 트레이 UI 생성 — 모든 함수·상태 정의 후 (클릭 핸들러 안전) */
+// 카드 순서는 매번 섞어서 정답 위치 고정 방지
+for(let i=EQUIP.length-1;i>0;i--){
+  const j=Math.random()*(i+1)|0; [EQUIP[i],EQUIP[j]]=[EQUIP[j],EQUIP[i]];
+}
+
+const trayEl=document.getElementById('tray');
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onPick(e.id,d));
+  trayEl.appendChild(d);
+});
+
 animate();
 </script>
 </body>
