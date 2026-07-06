@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 과학실 — 산과 염기(중화) 미션</title>
+<!--
+  케이랩 과학실(SciLab) E-6 산·염기 중화 — 황금 샘플(scilab.html 물 끓이기 v0.2) 복사→스왑.
+  흡수: v2 acid.js ★와우(중화점 급반전). SPEC_E6.md 기반. 가열 없음(램프=오답 기구로만 출연).
+    · 미션: 스탠드 → 삼각플라스크(산+지시약) → 스포이트 → 유리막대
+    · 현상: 스포이트 탭 1회 = 염기 한 방울. 8방울까지 새빨강 → 9번째(중화점)에 확 파랑 (급반전)
+    · ★와우(중/고): "조금씩 변할까 확 뒤집힐까?" — 선형 오개념 직격, 결정적 한 방울
+    · 방울 = 작은 Sphere 낙하 트윈(§3-C 액체 옮기기 우회로 — 물줄기 셰이더 불필요)
+  렌더 표준(데모 1호 확정): three r185 벤더 · ACES · RoomEnvironment PMREM · PCFSoft · 유리=블렌딩 · 액체=굴절 · 품질 자동
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#5B9BF0; --orange:#FF8A3D; --green:#12B886; --purple:#9B7BF5;
+    --ink:#1d2733; --hud:rgba(20,25,32,.74); --hudline:rgba(255,255,255,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#171b21;font-family:'Gowun Dodum',sans-serif}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;pointer-events:none;z-index:20}
+  #topbar .title{color:#fff;font-size:17px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  #topbar .badge{background:var(--purple);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px}
+
+  /* 온도 패널 */
+  #panel{position:fixed;top:50px;left:14px;z-index:20;background:var(--hud);
+    backdrop-filter:blur(8px);border:1px solid var(--hudline);border-radius:16px;
+    padding:13px 17px;color:#fff;min-width:166px}
+  #panel .plabel{font-size:11px;color:#9fb3c8;margin-bottom:5px}
+  #dropcount{font-size:32px;line-height:1.05}
+  #dropcount.na{font-size:14px;color:#9fb3c8;line-height:1.5;padding:4px 0}
+  #stateline{font-size:13.5px;margin-top:7px;color:#ffe3b8;min-height:18px;line-height:1.45}
+  .volwrap{margin-top:9px}
+  .volwrap .lab{font-size:11px;color:#9fb3c8;margin-bottom:4px}
+  .volbar{width:136px;height:8px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden}
+  .volbar i{display:block;height:100%;width:100%;border-radius:999px;
+    background:linear-gradient(90deg,#4FC3F7,#81D4FA);transition:width .3s}
+
+  /* 미션 패널 */
+  #mission{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:21;
+    background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
+    border-radius:16px;padding:11px 16px;color:#fff;max-width:min(420px,92vw);text-align:center}
+  #mission .mt{font-size:14.5px;color:#ffe3b8}
+  #mission .mp{font-size:12.5px;color:#c6d6e5;margin-top:4px;line-height:1.5}
+  #mission .prog{margin-top:7px;display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+  #mission .chip{font-size:11px;padding:3px 9px;border-radius:999px;
+    background:rgba(255,255,255,.08);border:1px solid var(--hudline);color:#9fb3c8}
+  #mission .chip.on{background:rgba(18,184,134,.22);border-color:#12B886;color:#7CF0C9}
+
+  /* 버튼 */
+  #ctrls{position:fixed;top:50px;right:14px;z-index:20;display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:'Gowun Dodum';font-size:14px;border:none;border-radius:13px;padding:10px 15px;
+    cursor:pointer;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .12s}
+  .btn:active{transform:scale(.95)}
+  #fireBtn{background:linear-gradient(135deg,#FF8A3D,#F4511E)}
+  #fireBtn.off{background:linear-gradient(135deg,#455A64,#37474F)}
+  #fireBtn:disabled{opacity:.35;cursor:default}
+  #modeBtn{background:rgba(155,123,245,.25);border:1px solid rgba(155,123,245,.5)}
+  #resetBtn{background:rgba(255,255,255,.14);border:1px solid var(--hudline);font-size:12.5px}
+
+  /* 기구 트레이 */
+  #tray{position:fixed;bottom:0;left:0;right:0;z-index:22;padding:10px 12px 12px;
+    display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;
+    background:linear-gradient(transparent, rgba(10,13,17,.85) 40%)}
+  #tray::-webkit-scrollbar{display:none}
+  .eq{flex:0 0 auto;width:86px;background:rgba(255,255,255,.06);border:1px solid var(--hudline);
+    border-radius:15px;padding:9px 6px 8px;text-align:center;color:#dbe7f2;cursor:pointer;
+    backdrop-filter:blur(6px);transition:transform .13s,border-color .2s;user-select:none}
+  .eq:active{transform:scale(.93)}
+  .eq .ic{font-size:26px;line-height:1.15}
+  .eq .nm{font-size:11.5px;margin-top:4px;line-height:1.25}
+  .eq.placed{opacity:.42}
+  .eq.placed .nm::after{content:' ✓';color:#7CF0C9}
+  .eq.shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}
+    50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+
+  /* 예측 카드 · 성공 패널 */
+  .card{position:fixed;left:50%;transform:translateX(-50%);z-index:26;
+    background:rgba(255,255,255,.97);border-radius:18px;padding:16px 18px;max-width:350px;width:92vw;
+    box-shadow:0 12px 40px rgba(0,0,0,.5);color:var(--ink);transition:opacity .3s,transform .3s}
+  .card.hide{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(12px)}
+  #predict{bottom:120px}
+  #predict2{bottom:120px}
+  #predict h3,#predict2 h3{font-size:14.5px;margin-bottom:10px;color:#1565C0}
+  #predict .opts,#predict2 .opts{display:flex;flex-direction:column;gap:8px}
+  #predict button,#predict2 button,#success button{font-family:'Gowun Dodum';font-size:14px;border:2px solid #dbe4ee;
+    background:#fff;border-radius:12px;padding:10px;cursor:pointer;color:var(--ink)}
+  #predict button:hover,#predict2 button:hover{border-color:#1565C0;background:#f0f7ff}
+  #success{bottom:50%;transform:translate(-50%,50%);text-align:center}
+  #success.hide{transform:translate(-50%,50%) translateY(12px)}
+  #success .big{font-size:38px}
+  #success h3{font-size:18px;color:#0d7a5c;margin:6px 0 4px}
+  #success p{font-size:13px;line-height:1.65;color:#41546a}
+  #success .row{display:flex;gap:8px;margin-top:13px}
+  #success button{flex:1}
+  #success button.pri{background:#12B886;border-color:#12B886;color:#fff}
+
+  #toast{position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:30;
+    background:rgba(255,255,255,.97);color:var(--ink);font-size:13.5px;padding:11px 17px;
+    border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:88vw;text-align:center;
+    line-height:1.55;transition:opacity .35s;border-left:5px solid var(--green)}
+  #toast.warn{border-left-color:var(--orange)}
+  #toast.hide{opacity:0;pointer-events:none}
+
+  #loading{position:fixed;inset:0;z-index:50;background:#171b21;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#cfe3f5;
+    transition:opacity .5s}
+  #loading .flask{font-size:44px;animation:bob 1.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #loading.hide{opacity:0;pointer-events:none}
+
+  @media (max-width:560px){
+    #panel{top:auto;bottom:118px;padding:9px 12px;min-width:0}
+    #temp{font-size:24px}
+    #mission{max-width:86vw;padding:9px 12px}
+    #mission .mp{display:none}
+    .eq{width:76px} .eq .ic{font-size:23px}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="topbar">
+  <span class="title">🧪 케이랩 과학실</span>
+  <span class="badge">미션 · 산과 염기</span>
+</div>
+
+<div id="panel">
+  <div class="plabel">💧 넣은 염기 방울 수</div>
+  <div id="dropcount" class="na">스포이트를 설치하면<br>방울을 셀 수 있어요</div>
+  <div id="stateline"></div>
+</div>
+
+<div id="mission">
+  <div class="mt">🎯 미션: 산성 용액에 염기를 한 방울씩 — 색이 언제 변하는지 알아보세요</div>
+  <div class="mp">아래 선반에서 <b>필요한 기구만</b> 골라 실험대에 준비하세요. 무엇이 필요할까요?</div>
+  <div class="prog" id="prog"></div>
+</div>
+
+<div id="ctrls">
+  <button class="btn" id="modeBtn">🧪 자유 실험</button>
+  <button class="btn" id="resetBtn">↺ 처음부터</button>
+</div>
+
+<div id="tray"></div>
+
+<div class="card hide" id="predict">
+  <h3>🔮 새빨간 산성 용액에 염기를 한 방울씩 넣으면, 색은?</h3>
+  <div class="opts">
+    <button data-pick="linear">① 방울 수에 비례해 조금씩 매끄럽게 변한다</button>
+    <button data-pick="snap">② 거의 그대로다가 어느 한 방울에 확 뒤집힌다</button>
+  </div>
+</div>
+
+<div class="card hide" id="predict2">
+  <h3>🔮 여태 거의 빨강 그대로 — 다음 한 방울이면?</h3>
+  <div class="opts">
+    <button data-pick="same">① 그래도 비슷할 것</button>
+    <button data-pick="flip">② 단번에 확 변할 것</button>
+  </div>
+</div>
+
+<div class="card hide" id="success">
+  <div class="big">🏅</div>
+  <h3>미션 성공 — 산과 염기!</h3>
+  <p id="sucMsg"></p>
+  <div class="row">
+    <button id="sucFree" class="pri">🧪 자유 실험 하기</button>
+    <button id="sucAgain">↺ 다시 하기</button>
+  </div>
+</div>
+
+<div id="toast" class="hide"></div>
+<div id="loading"><div class="flask">⚗️</div><div>과학실 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (렌더러 무관 · node 테스트 대상) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 중화 시뮬 (SPEC_E6 A-2 — 이벤트 구동: addDrop 호출당 방울 1. 중간 보라 없음 = 급반전) ── */
+  function createNeutralSim(){
+    var S = { drops:0, flipped:false, col:'#E03131', stirred:false, over:false, phase:'acid' };
+    var NEUT_POINT=9;    // v2 acid wowDrops=9 승계 — 9번째 방울 = 중화점
+    var MAX_DROPS=14;
+    function addDrop(){
+      if(S.drops>=MAX_DROPS) return {act:'over'};
+      S.drops++;
+      if(S.drops < NEUT_POINT){ S.col='#E03131'; S.phase='acid'; return {act:'drop', n:S.drops}; }   // 끝까지 빨강
+      if(S.drops === NEUT_POINT){ S.flipped=true; S.col='#1971C2'; S.phase='base'; return {act:'flip'}; }  // ★딱 한 방울에 확
+      S.over=(S.drops>NEUT_POINT+2); S.col='#1971C2'; return {act:'more'};
+    }
+    function stir(){ S.stirred=true; return {act:'stir'}; }   // 젓기 연출 트리거 — 색 판정 무관(절차 습관)
+    function step(dt, inp){ if(dt>0.05) dt=0.05; return S; }   // 시간 경과 현상 없음(계약 형태 유지)
+    return { state:S, step:step, addDrop:addDrop, stir:stir, NEUT_POINT:NEUT_POINT, MAX_DROPS:MAX_DROPS };
+  }
+
+  /* ── 미션 정의 (SPEC_E6 A-1) ── */
+  var MISSION_ACID = {
+    id:'acid_neutral',
+    title:'산과 염기 — 결정적 한 방울',
+    required:['stand','flask','dropper','rod'],
+    needs:{
+      flask:   { pre:['stand'], msg:'플라스크는 스탠드에 고정해요 — <b>스탠드가 먼저</b>!' },
+      dropper: { pre:['flask'], msg:'염기를 떨어뜨릴 <b>플라스크(산성 용액)가 먼저</b> 있어야죠!' },
+      rod:     { pre:['flask'], msg:'유리막대로 저으려면 <b>저을 용액(플라스크)이 먼저</b>!' }
+    },
+    wrong:{
+      magnet:'🧲 자석은 철을 끌어당기는 도구 — 용액의 성질을 바꾸는 실험에는 필요 없어요.',
+      magnifier:'🔍 돋보기는 작은 것을 관찰할 때! 색 변화는 맨눈에 확 보여요.',
+      lamp:'🔥 알코올램프는 가열 실험에서! 중화는 <b>섞기만으로</b> 일어나요 — 데우지 않아요.',
+      thermo:'🌡️ 온도계는 온도를 잴 때 — 오늘 지켜볼 것은 <b>색</b>이에요!'
+    }
+  };
+
+  function createMissionRun(M){
+    var placed={}, wrongCount=0, ready=false;
+    function pick(id, freeMode){
+      if(placed[id]) return {act:'already'};
+      if(!freeMode && M.wrong[id]) { wrongCount++; return {act:'wrong', msg:M.wrong[id]}; }
+      var rule = M.needs[id];
+      if(rule){
+        for(var i=0;i<rule.pre.length;i++)
+          if(!placed[rule.pre[i]]) return {act:'blocked', msg:rule.msg};
+      }
+      placed[id]=true;
+      ready = M.required.every(function(r){return placed[r];});
+      return {act:'placed', ready:ready};
+    }
+    function remove(id){
+      if(!placed[id]) return false;
+      Object.keys(M.needs).forEach(function(k){
+        if(placed[k] && M.needs[k].pre.indexOf(id)>=0) remove(k);
+      });
+      delete placed[id];
+      ready=false;
+      return true;
+    }
+    function count(){ return M.required.filter(function(r){return placed[r];}).length; }
+    return { placed:placed, pick:pick, remove:remove, count:count,
+             isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
+  }
+
+  var API = { createNeutralSim:createNeutralSim, MISSION_ACID:MISSION_ACID, createMissionRun:createMissionRun };
+  if(typeof window!=='undefined'){ window.SciLab=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ═════════ 렌더 기반 (데모 1호 확정 표준) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#2b3340'); gr.addColorStop(.55,'#1b2129'); gr.addColorStop(1,'#12161c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x161b22, 4.2, 9.5);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
+camera.position.set(0.95, 0.9, 1.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.32, -0.02);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.65; controls.maxDistance=3.4;
+controls.maxPolarAngle=1.46; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.6);
+sun.position.set(1.8,3.4,1.6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.8; sun.shadow.camera.right=1.8;
+sun.shadow.camera.top=2.2; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=9;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.35));
+
+/* 재질 — 유리=블렌딩, 액체=굴절(데모 1호 확정) */
+const GLASS = new THREE.MeshPhysicalMaterial({
+  color:0xffffff, metalness:0, roughness:0.03,
+  transparent:true, opacity:0.18, depthWrite:false,
+  clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
+});
+const METAL = new THREE.MeshStandardMaterial({ color:0xb8bec6, metalness:0.92, roughness:0.32, envMapIntensity:1.1 });
+const DARKMETAL = new THREE.MeshStandardMaterial({ color:0x555b63, metalness:0.85, roughness:0.45 });
+const WOOD = new THREE.MeshStandardMaterial({ color:0xC49A6C, roughness:0.8 });
+function waterMat(hex){
+  return new THREE.MeshPhysicalMaterial({
+    color:0xffffff, metalness:0, roughness:0.05,
+    transmission:1, thickness:0.15, ior:1.33,
+    attenuationColor:new THREE.Color(hex), attenuationDistance:0.16, envMapIntensity:1.0
+  });
+}
+
+/* ═════════ 실험대 ═════════ */
+const BENCH_Y = 0.0;
+{
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(7,48),
+    new THREE.MeshStandardMaterial({color:0x6e747d, roughness:0.95}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.86; floor.receiveShadow=true; scene.add(floor);
+
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const g=c.getContext('2d');
+  g.fillStyle='#22262c'; g.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){
+    const v=30+Math.random()*26|0;
+    g.fillStyle=`rgba(${v},${v+3},${v+7},${0.16+Math.random()*0.2})`;
+    g.fillRect(Math.random()*256, Math.random()*256, 1.4, 1.4);
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,2);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.09,1.7),
+    new THREE.MeshStandardMaterial({map:tex, roughness:0.34, metalness:0.05, envMapIntensity:0.7}));
+  top.position.y=BENCH_Y-0.045; top.receiveShadow=true; top.castShadow=true; scene.add(top);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
+    new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
+  body.position.y=BENCH_Y-0.09-0.38; body.receiveShadow=true; body.castShadow=true; scene.add(body);
+}
+
+/* ═════════ 기구 빌더 (전부 스냅 좌표에 미리 생성 → 배치=등장 연출) ═════════ */
+const yAxis = new THREE.Vector3(0,1,0);
+const TRIPOD_H = 0.30;
+const RIG = new THREE.Group(); RIG.position.set(0, BENCH_Y, -0.05); scene.add(RIG);
+
+const EQ_OBJ = {};   // id → {group, baseY}
+function registerEq(id, group){
+  group.userData.baseY = group.position.y;
+  group.visible = false;
+  EQ_OBJ[id] = group;
+}
+
+/* ── 공용 상수 (E-6 중화) — 플라스크·용액 색 ── */
+const STAND_H = 0.34;
+const FLASK_POS = new THREE.Vector3(0, 0, -0.02);   // RIG 로컬 플라스크 중심(바닥)
+const ACID_HEX = 0xE03131, BASE_HEX = 0x1971C2;      // v2 acid 원본 — 산성 빨강 / 중화 후 파랑
+
+/* 스탠드 (기둥 + 바닥 + 거치 링) — 플라스크 목을 잡음 */
+{
+  const gp = new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(0.20,0.02,0.16), DARKMETAL);
+  base.position.y=0.01; base.castShadow=base.receiveShadow=true; gp.add(base);
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.009,STAND_H,16), DARKMETAL);
+  post.position.set(0.10, STAND_H/2, 0); post.castShadow=true; gp.add(post);
+  // 거치 링(플라스크 목 높이)
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.032,0.005,10,28), DARKMETAL);
+  ring.rotation.x=Math.PI/2; ring.position.set(0.0, 0.20, 0); ring.castShadow=true; gp.add(ring);
+  const arm=new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.10,12), DARKMETAL);
+  arm.rotation.z=Math.PI/2; arm.position.set(0.055, 0.20, 0); gp.add(arm);
+  gp.position.set(0, BENCH_Y, -0.02);
+  RIG.add(gp); registerEq('stand', gp);
+}
+
+/* 삼각플라스크 (산+지시약 용액) — 액체 색이 중화점에서 급반전 */
+let flaskLiquidMat;
+{
+  const gp = new THREE.Group();
+  // LatheGeometry: 바닥 넓고 목 좁은 원뿔대
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.058,0.004),
+    new THREE.Vector2(0.052,0.02), new THREE.Vector2(0.014,0.15),
+    new THREE.Vector2(0.014,0.185), new THREE.Vector2(0.017,0.19)
+  ];
+  gp.add(new THREE.Mesh(new THREE.LatheGeometry(pts,44), GLASS.clone()));
+  // 액체 (원뿔대 하부를 채움) — attenuation 색이 바뀜
+  flaskLiquidMat = waterMat(ACID_HEX);
+  flaskLiquidMat.attenuationDistance = 0.05;
+  const lpts=[
+    new THREE.Vector2(0.003,0.004), new THREE.Vector2(0.052,0.006),
+    new THREE.Vector2(0.03,0.085)
+  ];
+  const liq=new THREE.Mesh(new THREE.LatheGeometry(lpts,40), flaskLiquidMat);
+  liq.position.y=0.002; gp.add(liq);
+  gp.position.copy(FLASK_POS); gp.position.y=BENCH_Y;
+  RIG.add(gp); registerEq('flask', gp);
+}
+
+/* 스포이트 (탭 = 염기 한 방울) — 고무 헤드 + 유리관 + 탭 히트박스 */
+let dropperTip, dropperProxy;
+{
+  const gp = new THREE.Group();
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.011,20,16),
+    new THREE.MeshStandardMaterial({color:0x8B3A3A, roughness:0.6}));
+  head.position.y=0.075; head.castShadow=true; gp.add(head);
+  const glass=new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.0022,0.07,14), GLASS.clone());
+  glass.position.y=0.03; gp.add(glass);
+  // 관 안 염기 용액(옅은 파랑 살짝)
+  const inner=new THREE.Mesh(new THREE.CylinderGeometry(0.0018,0.0014,0.05,12), waterMat(0x8FC7EE));
+  inner.position.y=0.028; gp.add(inner);
+  dropperTip = new THREE.Object3D(); dropperTip.position.y=-0.006; gp.add(dropperTip);
+  // 탭 히트박스
+  dropperProxy=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.13,10),
+    new THREE.MeshBasicMaterial({visible:false}));
+  dropperProxy.position.y=0.05; gp.add(dropperProxy);
+  // 플라스크 목 위에 배치
+  gp.position.set(0, BENCH_Y+0.20, -0.02);
+  RIG.add(gp); registerEq('dropper', gp);
+}
+
+/* 유리막대 (탭 = 젓기) */
+let rodMesh, rodProxy;
+{
+  const gp = new THREE.Group();
+  rodMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.16,14), GLASS.clone());
+  rodMesh.position.y=0.06; gp.add(rodMesh);
+  rodProxy=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.18,10),
+    new THREE.MeshBasicMaterial({visible:false}));
+  rodProxy.position.y=0.06; gp.add(rodProxy);
+  // 플라스크 옆에 비스듬히 꽂힘
+  gp.position.set(0.03, BENCH_Y+0.03, -0.02);
+  gp.rotation.z=-0.28;
+  RIG.add(gp); registerEq('rod', gp);
+}
+
+/* 알코올램프 (드래그·탭 점화) */
+const LAMP = new THREE.Group();
+const LAMP_HOME = new THREE.Vector3(-0.62, BENCH_Y, 0.28);
+LAMP.position.copy(LAMP_HOME);
+scene.add(LAMP);
+let flameOuter, flameInner, flameLight, dragProxy;
+{
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.066,0.004),
+    new THREE.Vector2(0.092,0.05), new THREE.Vector2(0.066,0.104),
+    new THREE.Vector2(0.032,0.114)
+  ];
+  LAMP.add(new THREE.Mesh(new THREE.LatheGeometry(pts,40), GLASS));
+  const fpts=[
+    new THREE.Vector2(0.003,0.006), new THREE.Vector2(0.058,0.008),
+    new THREE.Vector2(0.078,0.05), new THREE.Vector2(0.058,0.072)
+  ];
+  LAMP.add(new THREE.Mesh(new THREE.LatheGeometry(fpts,32), waterMat(0xC9A6F0)));
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.034,0.03,24), METAL);
+  collar.position.y=0.124; collar.castShadow=true; LAMP.add(collar);
+  const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0085,0.0085,0.03,12),
+    new THREE.MeshStandardMaterial({color:0xEFE6D2, roughness:0.95}));
+  wick.position.y=0.15; LAMP.add(wick);
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.0087,0.0087,0.006,12),
+    new THREE.MeshStandardMaterial({color:0x3a3025, roughness:1}));
+  tip.position.y=0.166; LAMP.add(tip);
+
+  function flameTexture(inner,outer){
+    const c=document.createElement('canvas'); c.width=c.height=128;
+    const g=c.getContext('2d');
+    const gr=g.createRadialGradient(64,78,4,64,64,60);
+    gr.addColorStop(0,inner); gr.addColorStop(.45,outer); gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=gr; g.fillRect(0,0,128,128);
+    const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+  }
+  flameOuter=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(255,244,200,1)','rgba(255,150,40,0.85)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  flameInner=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(190,230,255,1)','rgba(70,140,255,0.7)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  flameOuter.position.y=0.205; flameInner.position.y=0.182;
+  flameOuter.visible=flameInner.visible=false;
+  LAMP.add(flameOuter, flameInner);
+  flameLight=new THREE.PointLight(0xFFA640, 0, 1.6, 2);
+  flameLight.position.y=0.2; LAMP.add(flameLight);
+  dragProxy=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.3,12),
+    new THREE.MeshBasicMaterial({visible:false}));
+  dragProxy.position.y=0.12; LAMP.add(dragProxy);
+}
+LAMP.visible=false;
+LAMP.userData.baseY=BENCH_Y;
+EQ_OBJ['lamp']=LAMP;
+
+/* ── 오답·자유 기구들 (실험대 앞쪽 자유 자리) ── */
+const FREE_SPOTS=[[-1.0,0.38],[-0.32,0.46],[0.34,0.46],[1.0,0.36]];
+let spotIdx=0;
+function nextSpot(){ const s=FREE_SPOTS[spotIdx%FREE_SPOTS.length]; spotIdx++; return s; }
+
+function makeMagnet(){
+  const gp=new THREE.Group();
+  const red=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.028,0.04),
+    new THREE.MeshStandardMaterial({color:0xE04545, roughness:0.5}));
+  red.position.x=-0.04;
+  const blue=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.028,0.04),
+    new THREE.MeshStandardMaterial({color:0x3B6FD6, roughness:0.5}));
+  blue.position.x=0.04;
+  red.position.y=blue.position.y=0.014;
+  red.castShadow=blue.castShadow=true;
+  gp.add(red,blue);
+  const c=document.createElement('canvas'); c.width=128; c.height=64;
+  const g=c.getContext('2d'); g.clearRect(0,0,128,64);
+  g.fillStyle='#fff'; g.font='bold 40px sans-serif'; g.textAlign='center';
+  g.fillText('N',32,46); g.fillText('S',96,46);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+  const lab=new THREE.Mesh(new THREE.PlaneGeometry(0.15,0.026),
+    new THREE.MeshBasicMaterial({map:t, transparent:true}));
+  lab.rotation.x=-Math.PI/2; lab.position.y=0.0285; gp.add(lab);
+  return gp;
+}
+function makeMagnifier(){
+  const gp=new THREE.Group();
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.05,0.007,12,32), METAL);
+  rim.rotation.x=Math.PI/2; rim.position.y=0.012;
+  const lens=new THREE.Mesh(new THREE.CircleGeometry(0.045,32), GLASS.clone());
+  lens.rotation.x=-Math.PI/2; lens.position.y=0.012;
+  const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.011,0.1,12), WOOD);
+  handle.rotation.z=Math.PI/2; handle.rotation.y=0.4;
+  handle.position.set(0.095,0.012,0.04);
+  rim.castShadow=handle.castShadow=true;
+  gp.add(rim,lens,handle);
+  return gp;
+}
+function makeTubes(){
+  const gp=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.018,0.06), WOOD);
+  base.position.y=0.009; base.castShadow=true; gp.add(base);
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.012,0.06), WOOD);
+  plate.position.y=0.095; plate.castShadow=true; gp.add(plate);
+  [[-0.045],[0.045]].forEach(([x])=>{
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.09,10), WOOD);
+    post.position.set(x+0.06*(x<0?-1:1),0.05,0); gp.add(post);
+    const tube=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.11,20,1,true), GLASS.clone());
+    tube.position.set(x,0.075,0);
+    const bot=new THREE.Mesh(new THREE.SphereGeometry(0.014,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), GLASS.clone());
+    bot.position.set(x,0.02,0);
+    gp.add(tube,bot);
+  });
+  return gp;
+}
+function makeThermo(){
+  const gp=new THREE.Group();
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.011,18,14),
+    new THREE.MeshStandardMaterial({color:0xD64545, roughness:0.35}));
+  gp.add(bulb);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.0055,0.0055,0.20,14), GLASS.clone());
+  stem.position.y=0.1; gp.add(stem);
+  const col=new THREE.Mesh(new THREE.CylinderGeometry(0.0026,0.0026,0.08,10),
+    new THREE.MeshBasicMaterial({color:0xE53935}));
+  col.position.y=0.04; gp.add(col);
+  gp.rotation.z=0.5;   // 눕혀 놓임
+  return gp;
+}
+[['magnet',makeMagnet],['magnifier',makeMagnifier],['thermo',makeThermo]]
+.forEach(([id,fn])=>{
+  const gp=fn();
+  gp.position.set(0, BENCH_Y, 0); gp.visible=false;
+  gp.userData.baseY=BENCH_Y; gp.userData.free=true;
+  scene.add(gp); EQ_OBJ[id]=gp;
+});
+
+/* 상시 소품(트레이 아님): 삼각플라스크 + 알코올 시약병 — 과학실 분위기 */
+{
+  const flaskPts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.085,0.004),
+    new THREE.Vector2(0.03,0.15), new THREE.Vector2(0.03,0.185),
+    new THREE.Vector2(0.034,0.19)
+  ];
+  const flask=new THREE.Mesh(new THREE.LatheGeometry(flaskPts,40), GLASS);
+  flask.position.set(0.62,BENCH_Y,-0.32); scene.add(flask);
+  const fl=[
+    new THREE.Vector2(0.003,0.006), new THREE.Vector2(0.078,0.007),
+    new THREE.Vector2(0.055,0.06)
+  ];
+  const fliq=new THREE.Mesh(new THREE.LatheGeometry(fl,32), waterMat(0x8FE3B0));
+  fliq.position.copy(flask.position); scene.add(fliq);
+
+  const bottle=new THREE.Mesh(new THREE.CylinderGeometry(0.046,0.046,0.15,28),
+    new THREE.MeshPhysicalMaterial({color:0x9c6a2a, metalness:0, roughness:0.08,
+      transparent:true, opacity:0.55, depthWrite:false,
+      clearcoat:0.8, clearcoatRoughness:0.1, envMapIntensity:1.3}));
+  bottle.position.set(0.85,BENCH_Y+0.075,-0.1); bottle.castShadow=true; scene.add(bottle);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.028,0.03,20), DARKMETAL);
+  cap.position.set(0.85,BENCH_Y+0.163,-0.1); scene.add(cap);
+  const lc=document.createElement('canvas'); lc.width=256; lc.height=128;
+  const lg=lc.getContext('2d');
+  lg.fillStyle='#F6F1E7'; lg.fillRect(0,0,256,128);
+  lg.strokeStyle='#B9522F'; lg.lineWidth=8; lg.strokeRect(8,8,240,112);
+  lg.fillStyle='#243043'; lg.font='bold 52px sans-serif'; lg.textAlign='center';
+  lg.fillText('알코올',128,82);
+  const lTex=new THREE.CanvasTexture(lc); lTex.colorSpace=THREE.SRGBColorSpace;
+  const label=new THREE.Mesh(new THREE.PlaneGeometry(0.062,0.032),
+    new THREE.MeshStandardMaterial({map:lTex, roughness:0.9}));
+  label.position.set(0.85,BENCH_Y+0.08,-0.053); scene.add(label);
+}
+
+/* ═════════ 기구 사전 · 트레이 UI ═════════ */
+const EQUIP=[
+  {id:'stand',    ic:'🗼', nm:'스탠드'},
+  {id:'flask',    ic:'⚗️', nm:'삼각플라스크'},
+  {id:'dropper',  ic:'💉', nm:'스포이트'},
+  {id:'rod',      ic:'🥢', nm:'유리막대'},
+  {id:'magnet',   ic:'🧲', nm:'막대자석'},
+  {id:'magnifier',ic:'🔍', nm:'돋보기'},
+  {id:'lamp',     ic:'🔥', nm:'알코올램프'},
+  {id:'thermo',   ic:'🌡️', nm:'온도계'}
+];
+// 카드 순서는 매번 섞어서 정답 위치 고정 방지
+for(let i=EQUIP.length-1;i>0;i--){
+  const j=Math.random()*(i+1)|0; [EQUIP[i],EQUIP[j]]=[EQUIP[j],EQUIP[i]];
+}
+
+const trayEl=document.getElementById('tray');
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onPick(e.id,d));
+  trayEl.appendChild(d);
+});
+
+/* ═════════ 게임 상태 ═════════ */
+const { createNeutralSim, MISSION_ACID, createMissionRun } = window.SciLab;
+let sim = createNeutralSim();
+let run = createMissionRun(MISSION_ACID);
+let freeMode=false, predictShown=false, prediction=null;
+let predict2Shown=false, prediction2=null, wowArmed=false;
+let succeeded=false, successAt=0;
+const drops=[];         // 기구 등장 연출 목록
+const dropAnims=[];      // 염기 방울 낙하 연출 목록
+function KLabSnd(n){ try{ if(window.KLab&&window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }catch(e){} }
+
+// URL config — grade (기본 mid). low = ★와우 2차(급반전 예측) 숨김 (v2 acid GRADES 승계)
+const GRADE = (new URLSearchParams(location.search).get('grade')||'mid');
+const showWow = (GRADE!=='low');
+
+const $=id=>document.getElementById(id);
+const dropCountEl=$('dropcount'), stateEl=$('stateline');
+const resetBtn=$('resetBtn'), modeBtn=$('modeBtn');
+const toastEl=$('toast'), missionEl=$('mission'), progEl=$('prog');
+const predictEl=$('predict'), predict2El=$('predict2'), successEl=$('success');
+
+// 액체 색 급반전 목표 (렌더 루프에서 lerp)
+const targetCol=new THREE.Color(ACID_HEX);
+let colorSpeed=0.8;
+
+let toastTimer=null;
+function toast(msg, warn, ms){
+  toastEl.innerHTML=msg;
+  toastEl.classList.toggle('warn', !!warn);
+  toastEl.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toastEl.classList.add('hide'), ms||3400);
+}
+
+function renderProg(){
+  const n=run.count(), total=MISSION_ACID.required.length;
+  let html=`<span class="chip ${n?'on':''}">준비물 ${n} / ${total}</span>`;
+  MISSION_ACID.required.forEach(id=>{
+    if(run.placed[id]){
+      const e=EQUIP.find(x=>x.id===id);
+      html+=`<span class="chip on">${e.ic} ${e.nm}</span>`;
+    }
+  });
+  progEl.innerHTML=html;
+}
+renderProg();
+
+function dropIn(id){
+  const o=EQ_OBJ[id];
+  o.visible=true;
+  o.position.y=o.userData.baseY+0.28;
+  drops.push({o, t:0});
+}
+
+function updateDropCount(){
+  if(run.placed.dropper){
+    dropCountEl.classList.remove('na');
+    dropCountEl.innerHTML=sim.state.drops+'<small style="font-size:15px;color:#9fb3c8"> 방울</small>';
+  } else {
+    dropCountEl.classList.add('na');
+    dropCountEl.innerHTML='스포이트를 설치하면<br>방울을 셀 수 있어요';
+  }
+}
+
+function onPick(id, cardEl){
+  if(succeeded && !freeMode) return;
+  if(run.placed[id]){
+    // 재탭 = 회수 (의존물 함께)
+    run.remove(id);
+    Object.keys(EQ_OBJ).forEach(k=>{
+      if(!run.placed[k]) EQ_OBJ[k].visible=false;
+    });
+    syncTray(); renderProg(); updateDropCount();
+    return;
+  }
+  const r=run.pick(id, freeMode);
+  if(r.act==='wrong' || r.act==='blocked'){
+    cardEl.classList.remove('shake'); void cardEl.offsetWidth; cardEl.classList.add('shake');
+    toast(r.msg, true, r.act==='wrong'?4200:3800);
+    return;
+  }
+  if(r.act==='placed'){
+    const o=EQ_OBJ[id];
+    if(o.userData.free){ const [x,z]=nextSpot(); o.position.x=x; o.position.z=z; }
+    if(id==='lamp'){ LAMP.position.copy(LAMP_HOME); }
+    dropIn(id);
+    syncTray(); renderProg(); updateDropCount();
+    if(r.ready && !freeMode && !predictShown){
+      predictShown=true;
+      setTimeout(()=>{ predictEl.classList.remove('hide');
+        toast('✅ 준비 끝! 예측을 골라 봐요'); }, 500);
+    } else if(r.ready && freeMode){
+      toast('준비 완료 — 💉 스포이트를 탭해 염기를 한 방울씩 넣어 봐요');
+    }
+  }
+}
+function syncTray(){
+  EQUIP.forEach(e=>{
+    $('eq_'+e.id).classList.toggle('placed', !!run.placed[e.id]);
+  });
+}
+
+predictEl.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    prediction=b.dataset.pick;
+    predictEl.classList.add('hide');
+    toast('좋아요! 💉 스포이트를 탭해 염기를 한 방울씩 넣어 봐요');
+  });
+});
+predict2El.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    prediction2=b.dataset.pick;
+    predict2El.classList.add('hide');
+    toast(prediction2==='flip' ? '🎯 예측 접수! 다음 한 방울을 넣어 봐요'
+                               : '🤔 정말요? 다음 한 방울을 넣어 확인해 봐요!', false, 4200);
+  });
+});
+
+/* 스포이트 탭 = 염기 한 방울 */
+function doDrop(){
+  if(!run.placed.dropper || !run.placed.flask) return;
+  if(succeeded && !freeMode) return;
+  // ★와우 2차: 8방울 시점(중화점 직전)에서 예측 카드 (중/고, 미션 모드)
+  if(!freeMode && showWow && !predict2Shown && !wowArmed && sim.state.drops===8){
+    predict2Shown=true; wowArmed=true;
+    predict2El.classList.remove('hide');
+    return;   // 예측 먼저 — 이 탭은 소비하지 않음
+  }
+  const r=sim.addDrop();
+  if(r.act==='over'){ toast('염기를 더 넣으면 이제 염기성이 강해져요 — 중화점은 지났어요', false, 4000); updateDropCount(); return; }
+  // 방울 낙하 연출
+  spawnDropAnim();
+  updateDropCount();
+  if(r.act==='flip'){
+    targetCol.set(BASE_HEX); colorSpeed=6.0;   // 급반전
+    KLabSnd('whoosh'); KLabSnd('success');
+    rippleFlask();
+  } else {
+    targetCol.set(sim.state.col==='#1971C2'?BASE_HEX:ACID_HEX); colorSpeed=0.8;
+    KLabSnd('tap');
+  }
+}
+function doStir(){
+  if(!run.placed.rod || !run.placed.flask) return;
+  sim.stir();
+  stirAnim();
+  KLabSnd('select');
+}
+
+function spawnDropAnim(){
+  const d=new THREE.Mesh(new THREE.SphereGeometry(0.006,12,10), waterMat(0x8FC7EE));
+  d.position.set(FLASK_POS.x, BENCH_Y+0.19, FLASK_POS.z);
+  RIG.add(d);
+  dropAnims.push({o:d, t:0, y0:0.19, y1:0.088});
+}
+let flaskRipple=0;
+function rippleFlask(){ flaskRipple=1; }
+let stirT=-1;
+function stirAnim(){ stirT=0; }
+
+modeBtn.addEventListener('click',()=>{
+  freeMode=!freeMode;
+  modeBtn.textContent=freeMode?'🎯 미션 모드':'🧪 자유 실험';
+  missionEl.style.display=freeMode?'none':'';
+  document.querySelector('#topbar .badge').textContent=freeMode?'자유 실험':'미션 · 산과 염기';
+  toast(freeMode?'자유 실험 — 무엇이든 꺼내 놓아 봐요':'미션 모드 — 필요한 기구만!');
+});
+
+function resetAll(keepMode){
+  sim=createNeutralSim(); run=createMissionRun(MISSION_ACID);
+  Object.keys(EQ_OBJ).forEach(k=>{ EQ_OBJ[k].visible=false; });
+  LAMP.position.copy(LAMP_HOME);
+  prediction=null; predictShown=false; succeeded=false; successAt=0;
+  prediction2=null; predict2Shown=false; wowArmed=false;
+  spotIdx=0;
+  // 액체 색 리셋
+  targetCol.set(ACID_HEX); colorSpeed=0.8;
+  flaskLiquidMat.attenuationColor.set(ACID_HEX);
+  // 방울 연출 정리
+  dropAnims.forEach(d=>RIG.remove(d.o)); dropAnims.length=0;
+  flaskRipple=0; stirT=-1;
+  stateEl.textContent='산성 용액에 염기를 한 방울씩 — 색 변화를 지켜봐요';
+  updateDropCount();
+  predictEl.classList.add('hide'); predict2El.classList.add('hide'); successEl.classList.add('hide');
+  syncTray(); renderProg();
+  if(!keepMode && freeMode){ modeBtn.click(); }
+}
+resetBtn.addEventListener('click',()=>resetAll(true));
+$('sucAgain').addEventListener('click',()=>resetAll(true));
+$('sucFree').addEventListener('click',()=>{
+  successEl.classList.add('hide');
+  if(!freeMode) modeBtn.click();
+});
+
+
+/* ═════════ 탭 상호작용 (스포이트 = 방울 / 유리막대 = 젓기) ═════════ */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let downPos=null;
+function toNDC(e){
+  ndc.x=(e.clientX/innerWidth)*2-1;
+  ndc.y=-(e.clientY/innerHeight)*2+1;
+}
+renderer.domElement.addEventListener('pointerdown', e=>{
+  downPos={x:e.clientX,y:e.clientY};
+});
+renderer.domElement.addEventListener('pointermove', e=>{
+  // 호버 커서: 스포이트/막대 위
+  if(downPos) return;
+  toNDC(e); ray.setFromCamera(ndc,camera);
+  let hot=false;
+  if(run.placed.dropper && ray.intersectObject(dropperProxy,false).length) hot=true;
+  if(run.placed.rod && ray.intersectObject(rodProxy,false).length) hot=true;
+  renderer.domElement.style.cursor=hot?'pointer':'';
+});
+renderer.domElement.addEventListener('pointerup', e=>{
+  const moved = downPos && Math.hypot(e.clientX-downPos.x,e.clientY-downPos.y)>6;
+  downPos=null;
+  if(moved) return;   // 카메라 회전 제스처는 무시
+  toNDC(e); ray.setFromCamera(ndc,camera);
+  if(run.placed.dropper && ray.intersectObject(dropperProxy,false).length){ doDrop(); return; }
+  if(run.placed.rod && ray.intersectObject(rodProxy,false).length){ doStir(); return; }
+});
+
+
+/* ═════════ 품질 자동 ═════════ */
+let frames=0, fpsStart=performance.now(), qualityChecked=false;
+function checkQuality(now){
+  frames++;
+  if(qualityChecked) return;
+  if(now-fpsStart>4000){
+    qualityChecked=true;
+    const fps=frames/((now-fpsStart)/1000);
+    if(fps<38){
+      renderer.setPixelRatio(1);
+      sun.shadow.mapSize.set(1024,1024);
+      if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; }
+      sun.shadow.radius=3;
+    }
+  }
+}
+
+/* ═════════ 메인 루프 ═════════ */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.elapsedTime;
+
+  // 등장 연출
+  for(let i=drops.length-1;i>=0;i--){
+    const d=drops[i]; d.t+=dt*3.2;
+    const k=Math.min(d.t,1), e=1-Math.pow(1-k,3);
+    d.o.position.y=d.o.userData.baseY+0.28*(1-e);
+    if(k>=1){ d.o.position.y=d.o.userData.baseY; drops.splice(i,1); }
+  }
+
+  // 액체 색 급반전 lerp
+  if(run.placed.flask){
+    flaskLiquidMat.attenuationColor.lerp(targetCol, Math.min(dt*colorSpeed,1));
+  }
+  // 방울 낙하 연출
+  for(let i=dropAnims.length-1;i>=0;i--){
+    const d=dropAnims[i]; d.t+=dt*2.6;
+    const k=Math.min(d.t,1), e=k*k;   // 가속 낙하
+    d.o.position.y = d.y0 + (d.y1-d.y0)*e;
+    if(k>=1){ RIG.remove(d.o); dropAnims.splice(i,1); flaskRipple=1; }
+  }
+  // 플라스크 수면 리플(방울 착수·급반전 순간) — 액체 살짝 출렁 스케일
+  if(flaskRipple>0){
+    flaskRipple=Math.max(0, flaskRipple-dt*2.5);
+    const liq = EQ_OBJ.flask && EQ_OBJ.flask.children[1];
+    if(liq) liq.scale.set(1+0.04*flaskRipple, 1-0.03*flaskRipple, 1+0.04*flaskRipple);
+  }
+  // 유리막대 젓기 애니메이션
+  if(stirT>=0){
+    stirT+=dt;
+    if(EQ_OBJ.rod){ EQ_OBJ.rod.rotation.y=Math.sin(stirT*10)*0.5; }
+    if(stirT>1.2){ stirT=-1; if(EQ_OBJ.rod) EQ_OBJ.rod.rotation.y=0; }
+  }
+
+  // 상태줄
+  const d0=sim.state.drops;
+  let st='';
+  if(succeeded) st='🔵 확 뒤집혔어요 — 중화점!';
+  else if(sim.state.flipped) st='🔵 파랑으로 뒤집혔어요!';
+  else if(d0===0 && run.placed.dropper) st='💉 스포이트를 탭해 염기를 한 방울씩 넣어 봐요';
+  else if(d0>=1 && d0<=5) st='💧 '+d0+'방울 — 아직 새빨간 산성이에요';
+  else if(d0>=6 && d0<=8) st='거의 그대로… 언제 변할까요?';
+  else if(!run.placed.dropper && run.isReady && run.isReady()) st='💉 스포이트를 탭해 봐요';
+  stateEl.textContent=st;
+
+  // 성공 판정 — flip 2초 지속
+  if(sim.state.flipped){
+    if(!successAt) successAt=t;
+    if(!succeeded && t-successAt>2){
+      succeeded=true;
+      const w=run.wrongCount();
+      let msg='여태 거의 빨강 그대로였는데 <b>결정적 한 방울(중화점)</b>에서 단번에 파랑으로 — 산+염기는 비례해 조금씩이 아니라 <b>한 점에서 확</b> 바뀌어요.';
+      if(prediction) msg=(prediction==='snap'?'🎯 <b>1차 예측 적중!</b> ':'🤔 1차 예측과 달랐죠? ')+msg;
+      if(prediction2) msg+= (prediction2==='flip')
+        ? '<br>🎯 <b>2차도 적중</b> — 결정적 한 방울에 단번에 변했죠!'
+        : '<br>🤔 2차는 달랐죠? 거의 그대로다가 <b>한 방울에 확</b> 뒤집혔어요!';
+      msg+= w===0 ? '<br><b>기구도 한 번에 딱 맞게 골랐어요!</b>' :
+                    `<br>기구 고르기 다시 생각해 본 횟수: ${w}번 — 그것도 배움이에요!`;
+      $('sucMsg').innerHTML=msg;
+      if(!freeMode) successEl.classList.remove('hide');
+      else toast('🔵 딱 한 방울에 확 뒤집혔어요 — 중화점!',false,5200);
+    }
+  } else successAt=0;
+
+  controls.update();
+  renderer.render(scene,camera);
+  checkQuality(performance.now());
+}
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+document.getElementById('loading').classList.add('hide');
+toast('🎯 미션: 선반에서 <b>필요한 기구만</b> 골라 실험을 준비해 봐요!', false, 5200);
+animate();
+</script>
+</body>
+</html>
