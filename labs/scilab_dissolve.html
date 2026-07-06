@@ -449,16 +449,21 @@ const precipCur=new Float32Array(PRECIP_MAX);
   RIG.add(precipMesh);
 }
 
-/* 설탕 (각설탕 — 투입 시 수면에서 녹아 사라짐) */
-let sugarCube;
+/* 설탕 (접시 + 각설탕 3개 — 비커 옆 고정. 투입은 '설탕 넣기' 버튼으로) */
+let sugarCubes=[];
 {
   const gp=new THREE.Group();
-  sugarCube=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.016,0.02),
-    new THREE.MeshStandardMaterial({color:0xF7F2E8, roughness:0.85}));
-  sugarCube.position.y=0.01; sugarCube.castShadow=true; gp.add(sugarCube);
-  gp.position.set(0, BENCH_Y, 0); gp.visible=false;
-  gp.userData.baseY=BENCH_Y; gp.userData.free=true;
-  EQ_OBJ['sugar']=gp; scene.add(gp);
+  const dish=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.032,0.008,28),
+    new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.3, metalness:0.1}));
+  dish.position.y=0.004; dish.receiveShadow=true; gp.add(dish);
+  for(let i=0;i<3;i++){
+    const c=new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.016),
+      new THREE.MeshStandardMaterial({color:0xF7F2E8, roughness:0.85}));
+    c.position.set((i-1)*0.019, 0.015, 0); c.castShadow=true;
+    gp.add(c); sugarCubes.push(c);
+  }
+  gp.position.set(BK_R+0.07, BENCH_Y, -0.02);   // 비커 오른쪽 옆 고정
+  RIG.add(gp); registerEq('sugar', gp);
 }
 
 /* 유리막대 (젓기) */
@@ -727,11 +732,21 @@ function syncTray(){ EQUIP.forEach(e=>{ $('eq_'+e.id).classList.toggle('placed',
 
 // ── 컨트롤 버튼 ──
 let sugarAnimT=-1;
+const sugarFly=[];   // 물로 떨어지는 각설탕 연출
+function spawnSugarDrop(){
+  const c=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.013,0.015),
+    new THREE.MeshStandardMaterial({color:0xF7F2E8, roughness:0.85}));
+  c.position.set(BK_R+0.07, 0.05, -0.02);   // 설탕 접시 위에서 시작 (RIG 로컬)
+  c.castShadow=true;
+  RIG.add(c);
+  sugarFly.push({o:c, t:0});
+}
 sugarBtn.addEventListener('click',()=>{
-  if(!run.isReady()) return;
+  if(!run.isReady()){ toast('먼저 물 비커·설탕·유리막대·온도계를 모두 준비하세요', true); return; }
   sim.addSugar(3);   // 각설탕 3개
-  sugarAnimT=0;      // 투입 연출
+  spawnSugarDrop();
   KLabSnd('tap');
+  toast('🍬 설탕을 넣었어요 — 🥄 저으면 더 빨리 녹아요');
   updateHUD();
 });
 let stirring=false, stirReleaseT=0;
@@ -782,12 +797,13 @@ function resetAll(keepMode){
   prediction=null; predictShown=false; succeeded=false; successAt=0;
   prediction2=null; predict2Shown=false; precipShown=false; clearedOnce=false;
   stirring=false; sugarAnimT=-1; spotIdx=0;
+  sugarFly.forEach(f=>RIG.remove(f.o)); sugarFly.length=0;
+  sugarCubes.forEach(c=>{ c.visible=true; c.scale.setScalar(1); });
   stirBtn.textContent='🥄 젓기'; stirBtn.classList.add('off');
   // 석출·물색 리셋
   precipMesh.visible=false;
   for(let i=0;i<PRECIP_MAX;i++){ precipTarget[i]=0; precipCur[i]=0; }
   dissolveWaterMat.attenuationColor.set(0xBFE3F5);
-  if(sugarCube) sugarCube.scale.setScalar(1);
   stateEl.textContent='설탕을 넣고 저어 녹여 봐요 — 그다음 식혀 보세요';
   predictEl.classList.add('hide'); predict2El.classList.add('hide'); successEl.classList.add('hide');
   syncTray(); renderProg(); updateCtrls(); updateHUD();
@@ -832,10 +848,15 @@ function animate(){
   const ready = run.isReady();
   const S=sim.step(dt, {});
 
-  // 설탕 투입 연출 (수면에서 녹아 사라짐)
-  if(sugarAnimT>=0){
-    sugarAnimT+=dt;
-    // 각설탕 아이콘 낙하는 dropIn이 처리 — 여기선 물색 진하게
+  // 설탕 투입 연출 — 접시 위 → 비커 수면 낙하 → 녹으며 사라짐
+  for(let i=sugarFly.length-1;i>=0;i--){
+    const f=sugarFly[i]; f.t+=dt*1.4;
+    const k=Math.min(f.t,1);
+    f.o.position.x = (BK_R+0.07)*(1-k);            // 접시 → 비커 중앙
+    f.o.position.y = 0.05 + (WATER_H-0.05)*k;      // 위 → 수면
+    if(k>0.55){ const m=(k-0.55)/0.45; f.o.scale.setScalar(1-m); }  // 수면 닿은 뒤 녹음
+    f.o.rotation.y += dt*3;
+    if(k>=1){ RIG.remove(f.o); sugarFly.splice(i,1); }
   }
   // 물색: 녹은 설탕 농도 반영 (맑은 청 → 살짝 황갈, dissolve 비례)
   if(run.placed.beaker_w){
