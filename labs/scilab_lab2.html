@@ -1,29 +1,139 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>케이랩 과학실 2.0 — 조합형 현상 엔진 (P1 엔진 코어)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 과학실 2.0 — 조합형 현상 엔진</title>
 <!--
   scilab_lab2.html — 케이랩 과학실 2.0 «조합형 현상 엔진 + 데이터 렌즈»
-  SPEC_LAB2.md 양산. 단계 게이트 §1: [P1] 엔진 코어(순수 로직만·렌더 0줄).
-  P1 = SUBSTANCES(§3) + LAWS 파이프라인(§4) + World/Station/act(§5) + Recorder(§7-1) + 술어 평가기(§8).
-  렌더(<script type="module">)는 P2에서 조립. 이 단계는 test_lab2_engine.js 44단언이 유일한 게이트.
+  SPEC_LAB2.md 양산. 단계 게이트 §1: [P1] 엔진 코어 ✅(45/45) → [P2] 렌더 어댑터 + 무대(스테이션 2) + 동사 조작 ← 현재.
+  · 1층 순수 로직(window.KLab2)은 P1 그대로 — 렌더층은 상태필드 조회만(§2, 판단·물리 금지).
+  · 프리미티브 전부 검증 원본 복사(§6): 기포·김=scilab.html / 얼음·뚜껑=states / 석출 InstancedMesh=dissolve /
+    지시약 lerp=acid / 불꽃 2겹=burn / 물줄기 3안 ?stream=pour_test / oil 상층 원판=기존 조합.
+  · 동시 활성 상한: 김 2 · 불꽃 2 · InstancedMesh 3(석출2+모래1). C-2 좌표: St0 x=−0.30 / St1 x=+0.30.
   ⚠️ 모든 수치는 SPEC_LAB2 확정값 — 창작 금지. 갭은 §1-④로 역반영.
 -->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;height:100%;background:#0f1621;color:#cfe0f0;font-family:system-ui,sans-serif}
-  #p1note{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
-  #p1note b{color:#8FC7EE}
+  :root{
+    --blue:#5B9BF0; --orange:#FF8A3D; --green:#12B886; --purple:#9B7BF5;
+    --ink:#1d2733; --hud:rgba(20,25,32,.74); --hudline:rgba(255,255,255,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#171b21;font-family:'Gowun Dodum',sans-serif}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;pointer-events:none;z-index:20}
+  #topbar .title{color:#fff;font-size:17px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  #topbar .badge{background:var(--purple);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px}
+
+  /* 관측 패널 (활성 스테이션) */
+  #panel{position:fixed;top:50px;left:14px;z-index:20;background:var(--hud);
+    backdrop-filter:blur(8px);border:1px solid var(--hudline);border-radius:16px;
+    padding:13px 17px;color:#fff;min-width:172px}
+  #stname{font-size:12px;color:#B9A7F8;margin-bottom:3px}
+  #temp{font-size:30px;line-height:1.05}
+  #temp small{font-size:15px;color:#9fb3c8}
+  #temp.na{font-size:13px;color:#9fb3c8;line-height:1.5;padding:3px 0}
+  #massline{font-size:12.5px;margin-top:5px;color:#FFD43B;min-height:16px}
+  #stateline{font-size:12.5px;margin-top:5px;color:#ffd9a3;min-height:17px}
+
+  /* 버튼 */
+  #ctrls{position:fixed;top:50px;right:14px;z-index:20;display:flex;flex-direction:column;gap:8px}
+  .btn{font-family:'Gowun Dodum';font-size:14px;border:none;border-radius:13px;padding:10px 15px;
+    cursor:pointer;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .12s}
+  .btn:active{transform:scale(.95)}
+  #fireBtn{background:linear-gradient(135deg,#FF8A3D,#F4511E)}
+  #fireBtn.off{background:linear-gradient(135deg,#455A64,#37474F)}
+  #fireBtn:disabled{opacity:.35;cursor:default}
+  #stirBtn{background:rgba(91,155,240,.28);border:1px solid rgba(91,155,240,.55)}
+  #stirBtn.on{background:linear-gradient(135deg,#5B9BF0,#1971C2)}
+  #lidBtn{background:rgba(255,255,255,.14);border:1px solid var(--hudline);display:none}
+  #resetBtn{background:rgba(255,255,255,.14);border:1px solid var(--hudline);font-size:12.5px}
+
+  /* 스테이션 선택 + 물질 선반 + 기구 트레이 */
+  #dock{position:fixed;bottom:0;left:0;right:0;z-index:22;
+    background:linear-gradient(transparent, rgba(10,13,17,.88) 30%);padding-top:6px}
+  #stsel{display:flex;gap:8px;justify-content:center;padding:4px 12px 6px}
+  .stbtn{font-family:'Gowun Dodum';font-size:12.5px;border-radius:999px;padding:6px 14px;cursor:pointer;
+    color:#9fb3c8;background:rgba(255,255,255,.07);border:1px solid var(--hudline);transition:all .15s}
+  .stbtn.on{color:#fff;background:rgba(155,123,245,.30);border-color:#9B7BF5}
+  #shelf{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 12px 6px;
+    height:56px;align-items:center;justify-content:safe center}
+  #shelf::-webkit-scrollbar{display:none}
+  .sub{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.07);
+    border:1px solid var(--hudline);border-radius:999px;padding:7px 13px;color:#dbe7f2;
+    cursor:pointer;font-size:12.5px;user-select:none;transition:transform .13s}
+  .sub:active{transform:scale(.92)}
+  .sub .ic{font-size:17px}
+  #tray{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding:2px 12px 12px}
+  #tray::-webkit-scrollbar{display:none}
+  .eq{flex:0 0 auto;width:82px;background:rgba(255,255,255,.06);border:1px solid var(--hudline);
+    border-radius:15px;padding:8px 6px 7px;text-align:center;color:#dbe7f2;cursor:pointer;
+    backdrop-filter:blur(6px);transition:transform .13s,border-color .2s;user-select:none}
+  .eq:active{transform:scale(.93)}
+  .eq .ic{font-size:24px;line-height:1.15}
+  .eq .nm{font-size:11px;margin-top:4px;line-height:1.25}
+  .eq.shake,.sub.shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}
+    50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+
+  #toast{position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:30;
+    background:rgba(255,255,255,.97);color:var(--ink);font-size:13.5px;padding:11px 17px;
+    border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45);max-width:88vw;text-align:center;
+    line-height:1.55;transition:opacity .35s;border-left:5px solid var(--green)}
+  #toast.warn{border-left-color:var(--orange)}
+  #toast.hide{opacity:0;pointer-events:none}
+
+  #loading{position:fixed;inset:0;z-index:50;background:#171b21;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#cfe3f5;
+    transition:opacity .5s}
+  #loading .flask{font-size:44px;animation:bob 1.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #loading.hide{opacity:0;pointer-events:none}
+
+  @media (max-width:560px){
+    #panel{top:auto;bottom:196px;padding:9px 12px;min-width:0}
+    #temp{font-size:22px}
+    .eq{width:74px} .eq .ic{font-size:21px}
+  }
 </style>
 </head>
 <body>
-<div id="p1note">
-  <div>
-    🧪 <b>케이랩 과학실 2.0</b> — 엔진 코어(P1) 로드됨.<br>
-    <small>이 단계는 순수 로직(창발 엔진)만 담겨 있어요. 3D 무대·데이터 렌즈는 P2~P3에서 조립됩니다.</small>
-  </div>
+<div id="stage"></div>
+
+<div id="topbar">
+  <span class="title">🧪 케이랩 과학실 2.0</span>
+  <span class="badge">조합형 실험실</span>
 </div>
+
+<div id="panel">
+  <div id="stname">🅰 왼쪽 실험대</div>
+  <div id="temp" class="na">온도계를 설치하면<br>온도가 보여요</div>
+  <div id="massline"></div>
+  <div id="stateline">먼저 <b>비커</b>를 놓아 봐요 — 모든 실험의 시작!</div>
+</div>
+
+<div id="ctrls">
+  <button class="btn off" id="fireBtn" disabled>🔥 불 켜기</button>
+  <button class="btn" id="stirBtn">🌀 젓기</button>
+  <button class="btn" id="lidBtn">🫙 뚜껑 열기</button>
+  <button class="btn" id="resetBtn">↺ 처음부터</button>
+</div>
+
+<div id="dock">
+  <div id="stsel">
+    <button class="stbtn on" id="stA">🅰 왼쪽 실험대</button>
+    <button class="stbtn" id="stB">🅱 오른쪽 실험대</button>
+  </div>
+  <div id="shelf"></div>
+  <div id="tray"></div>
+</div>
+
+<div id="toast" class="hide"></div>
+<div id="loading"><div class="flask">⚗️</div><div>과학실 준비 중…</div></div>
 
 <!-- ═════════ 순수 로직 (1층 엔진 — window.KLab2 · THREE 참조 0 · node 단독 실행) ═════════ -->
 <script>
@@ -379,6 +489,1163 @@
   if(typeof window!=='undefined'){ window.KLab2=API; }
   if(typeof module!=='undefined' && module.exports){ module.exports=API; }
 })();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ═════════ 렌더 기반 (데모 1호 확정 표준 — scilab_filter.html 승계) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#2b3340'); gr.addColorStop(.55,'#1b2129'); gr.addColorStop(1,'#12161c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x161b22, 4.2, 9.5);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
+camera.position.set(0.9, 0.86, 1.5);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.24, -0.02);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.65; controls.maxDistance=3.4;
+controls.maxPolarAngle=1.46; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.6);
+sun.position.set(1.8,3.4,1.6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.8; sun.shadow.camera.right=1.8;
+sun.shadow.camera.top=2.2; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=9;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.35));
+
+/* 재질 — 유리=블렌딩, 액체=transmission 굴절(데모 1호 확정) */
+const GLASS = new THREE.MeshPhysicalMaterial({
+  color:0xffffff, metalness:0, roughness:0.03,
+  transparent:true, opacity:0.18, depthWrite:false,
+  clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
+});
+function waterMat(hex){
+  return new THREE.MeshPhysicalMaterial({
+    color:0xffffff, metalness:0, roughness:0.05,
+    transmission:1, thickness:0.15, ior:1.33,
+    attenuationColor:new THREE.Color(hex), attenuationDistance:0.16, envMapIntensity:1.0
+  });
+}
+
+/* ═════════ 실험대 ═════════ */
+const BENCH_Y = 0.0;
+{
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(7,48),
+    new THREE.MeshStandardMaterial({color:0x6e747d, roughness:0.95}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.86; floor.receiveShadow=true; scene.add(floor);
+
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const g=c.getContext('2d');
+  g.fillStyle='#22262c'; g.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){
+    const v=30+Math.random()*26|0;
+    g.fillStyle=`rgba(${v},${v+3},${v+7},${0.16+Math.random()*0.2})`;
+    g.fillRect(Math.random()*256, Math.random()*256, 1.4, 1.4);
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,2);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.09,1.7),
+    new THREE.MeshStandardMaterial({map:tex, roughness:0.34, metalness:0.05, envMapIntensity:0.7}));
+  top.position.y=BENCH_Y-0.045; top.receiveShadow=true; top.castShadow=true; scene.add(top);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
+    new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
+  body.position.y=BENCH_Y-0.09-0.38; body.receiveShadow=true; body.castShadow=true; scene.add(body);
+}
+
+const RIG = new THREE.Group(); RIG.position.set(0, BENCH_Y, -0.05); scene.add(RIG);
+
+/* ═════════ 엔진 연결 (1층 조회 전용 — §2) ═════════ */
+const K = window.KLab2;
+const OPTS = { collig: new URLSearchParams(location.search).get('collig')==='1' };
+let world = K.createWorld(OPTS);
+const IND_ACID = K.IND_ACID, IND_BASE = K.IND_BASE;
+/* SPEC 확정 상수 미러 (기법 B-1 · §4) — 물리 판단은 전부 엔진, 여기선 연출 게이트만 */
+const POUR_RATE=0.22, TILT_ON=-0.55, TILT_MAX=-0.9, TILT_SPEED=1.2;
+const HEAT_R = K.consts.HEAT_R;
+
+/* ═════════ 공용 헬퍼 (검증 원본 복사) ═════════ */
+
+/* 액체 (filter makeLiquid — 실린더 + scale.y 수위 + 착수 리플) */
+function makeLiquid(rTop, rBot, h0, hex, atten){
+  const geo=new THREE.CylinderGeometry(rTop, rBot, h0, 40, 1, false);
+  const base=geo.attributes.position.array.slice();
+  const mat=waterMat(hex); if(atten!=null) mat.attenuationDistance=atten;
+  const mesh=new THREE.Mesh(geo, mat); mesh.renderOrder=1;
+  function layout(vol){
+    const h=h0*Math.max(vol,0);
+    mesh.scale.y=Math.max(vol,0.0001);
+    mesh.position.y=0.004+h/2;
+    mesh.visible = vol>0.001;
+    return 0.004+h;
+  }
+  function ripple(t,amp){
+    const pos=geo.attributes.position, arr=pos.array, topHalf=h0/2-0.0001;
+    for(let i=0;i<arr.length;i+=3){
+      if(base[i+1]>=topHalf){
+        const x=base[i], z=base[i+2];
+        arr[i+1]=base[i+1]+amp*Math.sin(t*4.2+x*55+z*47)+amp*0.6*Math.sin(t*6.8+x*90-z*60);
+      }
+    }
+    pos.needsUpdate=true; geo.computeVertexNormals();
+  }
+  return { mesh, geo, mat, layout, ripple };
+}
+
+/* 석출 InstancedMesh (E-4 검증 — 불투명 필수·transmission 금지) */
+function makePrecip(count, per, colorHex, radius, spreadR, y0, layerN){
+  const dummy=new THREE.Object3D();
+  const target=new Float32Array(count), cur=new Float32Array(count);
+  const geo=new THREE.OctahedronGeometry(radius, 0);
+  const mat=new THREE.MeshStandardMaterial({color:colorHex, roughness:0.35, metalness:0});
+  const mesh=new THREE.InstancedMesh(geo, mat, count);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const pos=[];
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2, r=Math.sqrt(Math.random())*spreadR;
+    const layer=Math.floor(i/layerN);
+    pos.push({ x:Math.cos(a)*r, z:Math.sin(a)*r, y:y0+layer*radius*1.4+Math.random()*radius,
+               rx:Math.random()*Math.PI, ry:Math.random()*Math.PI });
+    dummy.position.set(0,-1,0); dummy.scale.setScalar(0.001); dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate=true; mesh.visible=false;
+  function update(ratio, dt){
+    const showN=Math.min(count, Math.floor(ratio*per));
+    mesh.visible = showN>0;
+    for(let i=0;i<count;i++){
+      target[i]=(i<showN)?1:0;
+      cur[i]+=(target[i]-cur[i])*Math.min(dt*5,1);
+      if(cur[i]<0.001 && target[i]===0) cur[i]=0;
+      const p=pos[i];
+      dummy.position.set(p.x,p.y,p.z); dummy.rotation.set(p.rx,p.ry,0);
+      dummy.scale.setScalar(cur[i]<0.001?0.001:cur[i]); dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate=true;
+    return showN;
+  }
+  function reset(){ for(let i=0;i<count;i++){ target[i]=0; cur[i]=0; } mesh.visible=false; }
+  return { mesh, update, reset };
+}
+
+/* ═════════ 용기 지오메트리 (검증 원본 3종) ═════════ */
+const BK_R=0.088, BK_H=0.16, WATER_H0=0.115;
+const DISH_R=0.062, DISH_H=0.02;
+const GLASS_ATT=0.16;
+
+function buildBeaker(){   // filter beakerShell
+  const gp=new THREE.Group();
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(BK_R-0.016,0.002),
+    new THREE.Vector2(BK_R,0.014), new THREE.Vector2(BK_R,BK_H-0.018),
+    new THREE.Vector2(BK_R+0.005,BK_H-0.005), new THREE.Vector2(BK_R+0.008,BK_H)
+  ];
+  const glass=new THREE.Mesh(new THREE.LatheGeometry(pts,44), GLASS);
+  glass.renderOrder=0; gp.add(glass);
+  return gp;
+}
+function buildFlask(){    // acid 삼각플라스크
+  const gp=new THREE.Group();
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.058,0.004),
+    new THREE.Vector2(0.052,0.02), new THREE.Vector2(0.014,0.15),
+    new THREE.Vector2(0.014,0.185), new THREE.Vector2(0.017,0.19)
+  ];
+  const glass=new THREE.Mesh(new THREE.LatheGeometry(pts,44), GLASS.clone());
+  glass.renderOrder=0; gp.add(glass);
+  return gp;
+}
+function buildDish(){     // filter 증발접시
+  const gp=new THREE.Group();
+  const bowl=new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(0.002,0.004), new THREE.Vector2(DISH_R*0.7,0.002),
+    new THREE.Vector2(DISH_R,DISH_H), new THREE.Vector2(DISH_R+0.004,DISH_H+0.002)
+  ],44), new THREE.MeshStandardMaterial({color:0xf3f0ea, roughness:0.4, metalness:0.02}));
+  bowl.castShadow=true; bowl.receiveShadow=true; gp.add(bowl);
+  return gp;
+}
+/* 용기별 파라미터: 액체 실린더·입술(lip)·뚜껑 반경·기포 반경 */
+const VESSELS = {
+  beaker:{ build:buildBeaker, liq:[BK_R-0.01, BK_R-0.012, WATER_H0],
+           lip:new THREE.Vector3(BK_R+0.008, BK_H, 0), lidR:BK_R+0.004, bubR:BK_R-0.03 },
+  flask: { build:buildFlask,  liq:[0.042, 0.05, 0.085],
+           lip:new THREE.Vector3(0.017, 0.19, 0),      lidR:0.02,       bubR:0.035 },
+  dish:  { build:buildDish,   liq:[DISH_R-0.006, DISH_R-0.012, DISH_H*0.7],
+           lip:new THREE.Vector3(DISH_R+0.004, DISH_H, 0), lidR:DISH_R+0.004, bubR:DISH_R-0.02 }
+};
+
+/* ═════════ 스테이션 2 (C-2: St0 x=−0.30 / St1 x=+0.30) ═════════ */
+const ST_X = [-0.30, 0.30];
+const B_N=140, S_N=110;   // 기포·김 원본 값 그대로(성능 예산 §6)
+
+function buildStation(idx){
+  const grp=new THREE.Group(); grp.position.set(ST_X[idx], 0, 0); RIG.add(grp);
+
+  // 스테이션 표시 패드 (탭 = 스테이션 선택)
+  const pad=new THREE.Mesh(new THREE.CircleGeometry(0.15,40),
+    new THREE.MeshStandardMaterial({color:0x2b3340, roughness:0.9, transparent:true, opacity:0.55}));
+  pad.rotation.x=-Math.PI/2; pad.position.y=0.001; pad.receiveShadow=true; grp.add(pad);
+  const padRing=new THREE.Mesh(new THREE.RingGeometry(0.145,0.155,48),
+    new THREE.MeshBasicMaterial({color:0x9B7BF5, transparent:true, opacity:0.0, side:THREE.DoubleSide}));
+  padRing.rotation.x=-Math.PI/2; padRing.position.y=0.0015; grp.add(padRing);
+
+  // 용기 3종 미리 생성(숨김) + 용기별 액체
+  const vg={}, liq={};
+  for(const type in VESSELS){
+    const V=VESSELS[type];
+    const g=V.build(); g.visible=false; g.position.y=0.005; grp.add(g);
+    vg[type]=g;
+    const L=makeLiquid(V.liq[0],V.liq[1],V.liq[2], 0xBFE3F5, GLASS_ATT);
+    L.layout(0); g.add(L.mesh); liq[type]=L;
+  }
+
+  /* ── 페노메나 킷 (스테이션당 1세트 — 활성 용기에 재부모화) ── */
+  const kit=new THREE.Group(); kit.visible=false;
+
+  // 기포 (황금 샘플 CPU Points)
+  const bGeo=new THREE.BufferGeometry();
+  const bPos=new Float32Array(B_N*3), bMeta=[];
+  for(let i=0;i<B_N;i++){
+    const a=Math.random()*Math.PI*2, r=Math.random()*(BK_R-0.03);
+    bMeta.push({x:Math.cos(a)*r, z:Math.sin(a)*r, sp:0.6+Math.random()*0.8, y:Math.random()});
+    bPos[i*3+1]=-999;
+  }
+  bGeo.setAttribute('position', new THREE.BufferAttribute(bPos,3));
+  const bubbles=new THREE.Points(bGeo, new THREE.PointsMaterial({
+    color:0xeaf7ff, size:0.0105, transparent:true, opacity:0.85,
+    depthWrite:false, depthTest:false, sizeAttenuation:true
+  }));
+  bubbles.frustumCulled=false; bubbles.renderOrder=10; kit.add(bubbles);
+
+  // 김 (황금 샘플 GPU 셰이더 Points)
+  const sGeo=new THREE.BufferGeometry();
+  sGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(S_N*3),3));
+  const seeds=new Float32Array(S_N);
+  for(let i=0;i<S_N;i++) seeds[i]=Math.random();
+  sGeo.setAttribute('aSeed', new THREE.BufferAttribute(seeds,1));
+  const steamUni={ uTime:{value:0}, uIntensity:{value:0}, uScale:{value:innerHeight*0.5} };
+  const steam=new THREE.Points(sGeo, new THREE.ShaderMaterial({
+    uniforms:steamUni, transparent:true, depthWrite:false,
+    vertexShader:`
+      attribute float aSeed;
+      uniform float uTime,uIntensity,uScale;
+      varying float vA;
+      float h(float n){return fract(sin(n)*43758.5453);}
+      void main(){
+        float sp=mix(0.55,1.0,h(aSeed*7.13));
+        float life=fract(uTime*0.26*sp+aSeed);
+        float ang=h(aSeed*3.31)*6.28318;
+        float r0=h(aSeed*9.71)*0.05;
+        vec3 p=vec3(cos(ang)*r0,0.0,sin(ang)*r0);
+        p.y+=life*0.52;
+        p.x+=sin(uTime*1.25+aSeed*21.0)*(0.015+0.09*life)+life*life*0.04;
+        p.z+=cos(uTime*1.05+aSeed*13.0)*(0.015+0.07*life);
+        vec4 mv=modelViewMatrix*vec4(p,1.0);
+        gl_Position=projectionMatrix*mv;
+        vA=smoothstep(0.0,0.15,life)*(1.0-life)*uIntensity;
+        gl_PointSize=mix(0.05,0.30,life)*uScale/max(-mv.z,0.1);
+      }`,
+    fragmentShader:`
+      varying float vA;
+      void main(){
+        float d=length(gl_PointCoord-0.5);
+        gl_FragColor=vec4(0.93,0.95,0.98, smoothstep(0.5,0.06,d)*vA*0.34);
+      }`
+  }));
+  steam.frustumCulled=false; kit.add(steam);
+
+  // 얼음 3조각 (states — 불투명·투명인간 함정 회피)
+  const iceMat=new THREE.MeshPhysicalMaterial({
+    color:0xEAF6FF, roughness:0.25, clearcoat:0.6, clearcoatRoughness:0.2,
+    metalness:0, envMapIntensity:1.2 });
+  const icePos=[[-0.025,0.015],[0.028,-0.016],[0.0,0.032]];
+  const iceCubes=[];
+  for(let i=0;i<3;i++){
+    const sz=0.042+Math.random()*0.01;
+    const cube=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*0.8,sz), iceMat);
+    cube.position.set(icePos[i][0], 0.03, icePos[i][1]);
+    cube.rotation.set(Math.random()*0.5, Math.random()*Math.PI, Math.random()*0.5);
+    cube.castShadow=true; cube.userData.sz=sz; cube.visible=false;
+    kit.add(cube); iceCubes.push(cube);
+  }
+
+  // 석출 결정 (E-4 원본 매핑: OctahedronGeometry r0.004 · showN = precip×12)
+  const precip=makePrecip(300, 300, 0xffffff, 0.004, BK_R-0.035, 0.008, 40);
+  kit.add(precip.mesh);
+
+  // 기름 상층 원판 (§6 신규 조합 — 프리미티브는 기존 실린더+waterMat)
+  const oilMat=waterMat(0xE8C56A); oilMat.attenuationDistance=0.05;
+  const oilDisc=new THREE.Mesh(new THREE.CylinderGeometry(BK_R-0.014, BK_R-0.014, WATER_H0, 36), oilMat);
+  oilDisc.renderOrder=2; oilDisc.visible=false; kit.add(oilDisc);
+
+  // 뚜껑 (states — 열면 옆으로 미끄러지며 살짝 뜸)
+  const lidMesh=new THREE.Mesh(new THREE.CylinderGeometry(BK_R+0.004, BK_R+0.004, 0.012, 48), GLASS.clone());
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(0.011,16,12), GLASS.clone());
+  knob.position.y=0.012; lidMesh.add(knob);
+  lidMesh.position.y=BK_H+0.006; lidMesh.userData.open=1; lidMesh.visible=false;
+  kit.add(lidMesh);
+
+  // 온도계 (황금 샘플 — 빨간 기둥 = 실제 온도, −10~110℃ 재매핑)
+  const thermoGrp=new THREE.Group(); thermoGrp.visible=false;
+  {
+    const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.011,20,16),
+      new THREE.MeshStandardMaterial({color:0xD64545, roughness:0.35}));
+    thermoGrp.add(bulb);
+    const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.0052,0.0052,0.2,14), GLASS.clone());
+    stem.position.y=0.1; thermoGrp.add(stem);
+    const colGeo=new THREE.CylinderGeometry(0.0024,0.0024,1,10);
+    colGeo.translate(0,0.5,0);
+    const col=new THREE.Mesh(colGeo, new THREE.MeshBasicMaterial({color:0xE53935}));
+    col.position.y=0.006; col.scale.y=0.02; thermoGrp.add(col);
+    thermoGrp.userData.col=col;
+    thermoGrp.position.set(BK_R*0.5, 0.02, 0); thermoGrp.rotation.z=-0.14;
+  }
+  kit.add(thermoGrp);
+  grp.add(kit);
+
+  // 저울 (스테이션 앞 — 기울임과 무관하게 실험대 고정)
+  const scaleGrp=new THREE.Group(); scaleGrp.visible=false;
+  {
+    const body=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.055,0.014,32),
+      new THREE.MeshStandardMaterial({color:0x3b424c, metalness:0.6, roughness:0.4}));
+    body.position.y=0.007; body.castShadow=true; scaleGrp.add(body);
+    const disp=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.008,0.02),
+      new THREE.MeshStandardMaterial({color:0x9FE8C9, emissive:0x2a5a44, roughness:0.3}));
+    disp.position.set(0,0.014,0.032); scaleGrp.add(disp);
+    scaleGrp.position.set(0.16, 0.005, 0.14);
+  }
+  grp.add(scaleGrp);
+
+  // 촛불 (burn 계열 — 왁스+심지+불꽃 2겹+PointLight, 스테이션당 1)
+  const candleGrp=new THREE.Group(); candleGrp.visible=false;
+  candleGrp.position.set(0, 0.005, 0.15);
+  {
+    const wax=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.018,0.07,24),
+      new THREE.MeshStandardMaterial({color:0xF6EEDA, roughness:0.6}));
+    wax.position.y=0.035; wax.castShadow=true; candleGrp.add(wax);
+    const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0022,0.0022,0.016,8),
+      new THREE.MeshStandardMaterial({color:0x3a3025, roughness:1}));
+    wick.position.y=0.078; candleGrp.add(wick);
+  }
+  const flameOuter=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(255,244,200,1)','rgba(255,150,40,0.85)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  const flameInner=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(190,230,255,1)','rgba(70,140,255,0.7)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  flameOuter.visible=flameInner.visible=false;
+  const flameLight=new THREE.PointLight(0xFFA640, 0, 1.4, 2);
+  grp.add(flameOuter, flameInner, flameLight);
+  const candleProxy=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.14,10),
+    new THREE.MeshBasicMaterial({visible:false}));
+  candleProxy.position.set(0,0.07,0.15); grp.add(candleProxy);
+  grp.add(candleGrp);
+
+  // 컵 (burn — 뒤집힌 유리컵, 촛불 덮기. small/large)
+  const cups={};
+  [['small',0.038,0.10],['large',0.052,0.145]].forEach(([sz,r,h])=>{
+    const g=new THREE.Group();
+    const wall=new THREE.Mesh(new THREE.CylinderGeometry(r,r*0.94,h,32,1,true), GLASS.clone());
+    wall.position.y=h/2; g.add(wall);
+    const cap=new THREE.Mesh(new THREE.CircleGeometry(r,32), GLASS.clone());
+    cap.rotation.x=-Math.PI/2; cap.position.y=h; g.add(cap);
+    g.visible=false; g.position.set(0, 0.005, 0.15); g.userData.h=h; g.userData.lift=1;
+    grp.add(g); cups[sz]=g;
+  });
+
+  return { grp, pad, padRing, vg, liq, kit,
+           bubbles:{geo:bGeo,pos:bPos,meta:bMeta}, steam, steamUni,
+           iceCubes, precip, oilDisc, lidMesh, thermoGrp, scaleGrp,
+           candleGrp, flameOuter, flameInner, flameLight, candleProxy, cups,
+           vesselType:null, tilt:0, colorSpeed:0.8, lastColorHex:null,
+           candlePlaced:false, cupSize:null, warnedAutoOpen:false, flipToasted:false };
+}
+
+function flameTexture(inner,outer){
+  const c=document.createElement('canvas'); c.width=c.height=128;
+  const g=c.getContext('2d');
+  const gr=g.createRadialGradient(64,78,4,64,64,60);
+  gr.addColorStop(0,inner); gr.addColorStop(.45,outer); gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr; g.fillRect(0,0,128,128);
+  const tx=new THREE.CanvasTexture(c); tx.colorSpace=THREE.SRGBColorSpace; return tx;
+}
+
+const ST3D=[ buildStation(0), buildStation(1) ];
+
+/* 모래 InstancedMesh — 공용 1개 (상한 준수: 석출2+모래1), 모래 있는 스테이션에 부착 */
+const sandShared = makePrecip(120, 120, 0xC2A878, 0.0045, BK_R-0.035, 0.006, 30);
+let sandOwner=-1;
+
+/* ═════════ 알코올램프 (황금 샘플 드래그·탭 점화) ═════════ */
+const LAMP = new THREE.Group();
+const LAMP_HOME = new THREE.Vector3(-0.62, BENCH_Y, 0.30);
+LAMP.position.copy(LAMP_HOME); scene.add(LAMP);
+let lampFlameO, lampFlameI, lampLight, dragProxy;
+{
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(0.066,0.004),
+    new THREE.Vector2(0.092,0.05), new THREE.Vector2(0.066,0.104),
+    new THREE.Vector2(0.032,0.114)
+  ];
+  LAMP.add(new THREE.Mesh(new THREE.LatheGeometry(pts,40), GLASS));
+  const fpts=[
+    new THREE.Vector2(0.003,0.006), new THREE.Vector2(0.058,0.008),
+    new THREE.Vector2(0.078,0.05), new THREE.Vector2(0.058,0.072)
+  ];
+  LAMP.add(new THREE.Mesh(new THREE.LatheGeometry(fpts,32), waterMat(0xC9A6F0)));
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.034,0.03,24),
+    new THREE.MeshStandardMaterial({ color:0xb8bec6, metalness:0.92, roughness:0.32 }));
+  collar.position.y=0.124; collar.castShadow=true; LAMP.add(collar);
+  const wick=new THREE.Mesh(new THREE.CylinderGeometry(0.0085,0.0085,0.03,12),
+    new THREE.MeshStandardMaterial({color:0xEFE6D2, roughness:0.95}));
+  wick.position.y=0.15; LAMP.add(wick);
+  const tip=new THREE.Mesh(new THREE.CylinderGeometry(0.0087,0.0087,0.006,12),
+    new THREE.MeshStandardMaterial({color:0x3a3025, roughness:1}));
+  tip.position.y=0.166; LAMP.add(tip);
+  lampFlameO=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(255,244,200,1)','rgba(255,150,40,0.85)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  lampFlameI=new THREE.Sprite(new THREE.SpriteMaterial({
+    map:flameTexture('rgba(190,230,255,1)','rgba(70,140,255,0.7)'),
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  lampFlameO.position.y=0.205; lampFlameI.position.y=0.182;
+  lampFlameO.visible=lampFlameI.visible=false;
+  LAMP.add(lampFlameO, lampFlameI);
+  lampLight=new THREE.PointLight(0xFFA640, 0, 1.6, 2);
+  lampLight.position.y=0.2; LAMP.add(lampLight);
+  dragProxy=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.3,12),
+    new THREE.MeshBasicMaterial({visible:false}));
+  dragProxy.position.y=0.12; LAMP.add(dragProxy);
+}
+LAMP.visible=false;
+
+/* ═════════ UI: 스테이션 선택 · 물질 선반 · 기구 트레이 ═════════ */
+const $=id=>document.getElementById(id);
+const stateEl=$('stateline'), tempEl=$('temp'), massEl=$('massline'), stnameEl=$('stname');
+const fireBtn=$('fireBtn'), stirBtn=$('stirBtn'), lidBtn=$('lidBtn'), resetBtn=$('resetBtn');
+const toastEl=$('toast');
+let ACTIVE=0, lampPlaced=false, lit=false;
+
+let toastTimer=null;
+function toast(msg, warn, ms){
+  toastEl.innerHTML=msg; toastEl.classList.toggle('warn', !!warn);
+  toastEl.classList.remove('hide');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastEl.classList.add('hide'), ms||3400);
+}
+function shake(el){ el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),420); }
+
+function setActive(i){
+  ACTIVE=i;
+  $('stA').classList.toggle('on', i===0);
+  $('stB').classList.toggle('on', i===1);
+  stnameEl.textContent = i===0 ? '🅰 왼쪽 실험대' : '🅱 오른쪽 실험대';
+  syncBtns();
+}
+$('stA').addEventListener('click',()=>setActive(0));
+$('stB').addEventListener('click',()=>setActive(1));
+
+/* 물질 선반 (§5 — 트레이 위 한 줄. 염기 = 스포이트 문법: 탭 = 한 방울) */
+const SHELF=[
+  {id:'salt',  ic:'🧂', nm:'소금',  col:0xffffff},
+  {id:'sugar', ic:'🍬', nm:'설탕',  col:0xF7F2E8},
+  {id:'sand',  ic:'🏖️', nm:'모래',  col:0xC2A878},
+  {id:'oil',   ic:'🫒', nm:'기름'},
+  {id:'acid',  ic:'🔴', nm:'산성 용액'},
+  {id:'base',  ic:'💧', nm:'염기(스포이트)'}
+];
+const shelfEl=$('shelf');
+SHELF.forEach(s=>{
+  const d=document.createElement('div');
+  d.className='sub'; d.innerHTML=`<span class="ic">${s.ic}</span><span>${s.nm}</span>`;
+  d.addEventListener('click',()=>onShelf(s, d));
+  shelfEl.appendChild(d);
+});
+
+/* 기구 트레이 (P2 무대용 — 미션 JSON 트레이는 P4) */
+const EQUIP=[
+  {id:'beaker', ic:'🥛', nm:'비커(물)'},
+  {id:'flask',  ic:'⚗️', nm:'삼각플라스크'},
+  {id:'dish',   ic:'🍽️', nm:'증발접시'},
+  {id:'ice',    ic:'🧊', nm:'얼음'},
+  {id:'lid',    ic:'🫙', nm:'뚜껑'},
+  {id:'thermo', ic:'🌡️', nm:'온도계'},
+  {id:'scale',  ic:'⚖️', nm:'저울'},
+  {id:'lamp',   ic:'🔥', nm:'알코올램프'},
+  {id:'candle', ic:'🕯️', nm:'촛불'},
+  {id:'cup_s',  ic:'🥃', nm:'유리컵(작은)'},
+  {id:'cup_l',  ic:'🍺', nm:'유리컵(큰)'}
+];
+const trayEl=$('tray');
+
+/* 낙하 트윈 (E-6 방울·E-4 각설탕 계열) */
+const fallAnims=[];
+function spawnFall(stIdx, colorHex, isDrop){
+  const S=ST3D[stIdx];
+  const V=S.vesselType?VESSELS[S.vesselType]:null;
+  const topY = V ? 0.02 + V.liq[2]*Math.min(1, world.stations[stIdx].contents.vol) : 0.05;
+  const o = isDrop
+    ? new THREE.Mesh(new THREE.SphereGeometry(0.006,10,8), waterMat(colorHex||0x8FC7EE))
+    : new THREE.Mesh(new THREE.BoxGeometry(0.014,0.012,0.014),
+        new THREE.MeshStandardMaterial({color:colorHex||0xffffff, roughness:0.5}));
+  o.position.set(0, 0.3, 0); S.grp.add(o);
+  fallAnims.push({o, grp:S.grp, t:0, y0:0.3, y1:topY});
+}
+
+function activeSt(){ return world.stations[ACTIVE]; }
+function needVessel(el){
+  if(activeSt().vessel) return true;
+  shake(el); toast('먼저 <b>비커</b>를 놓아 봐요 — 모든 실험의 시작!', true);
+  return false;
+}
+
+function onShelf(s, el){
+  if(!needVessel(el)) return;
+  const c=activeSt().contents;
+  if(s.id==='salt'||s.id==='sugar'||s.id==='sand'){
+    if(c.vol<=0.001 && s.id!=='sand'){ toast('물이 없어요 — 녹일 물부터!', true); shake(el); return; }
+    world.act('addSpoon',{st:ACTIVE, sub:s.id, n:1});
+    spawnFall(ACTIVE, s.col, false);
+    const so=c.solutes[s.id];
+    toast(`${s.ic} ${s.nm} 한 숟갈 (${so.spoons}숟갈째) — 어떻게 될까요?`);
+  } else if(s.id==='oil'){
+    world.act('addLiquid',{st:ACTIVE, sub:'oil', vol:0.3});
+    toast('🫒 기름을 부었어요 — 물과 섞일까요?');
+  } else if(s.id==='acid'){
+    if(c.acidUnits>0){ toast('이미 산성 용액이 들어 있어요', true); shake(el); return; }
+    world.act('addLiquid',{st:ACTIVE, sub:'acid', vol:0.3});
+    toast('🔴 산성 용액 + 지시약 — 새빨갛죠? 염기를 넣으면?');
+  } else if(s.id==='base'){
+    if(!c._hadAcid){ toast('염기는 <b>산성 용액</b>에 떨어뜨려요 — 산부터!', true); shake(el); return; }
+    world.act('dropBase',{st:ACTIVE, drops:1});
+    spawnFall(ACTIVE, 0x8FC7EE, true);
+    const left=c.acidUnits;
+    if(left>0) toast(`💧 한 방울… 아직 빨강 (남은 산 ${left})`);
+  }
+  syncBtns();
+}
+
+function onEquip(e, el){
+  const st=activeSt(), c=st.contents, S=ST3D[ACTIVE];
+  switch(e.id){
+    case 'beaker': case 'flask': case 'dish': {
+      if(st.vessel){ toast('이 실험대에는 이미 용기가 있어요 — 다른 실험대를 선택!', true); shake(el); return; }
+      world.act('placeVessel',{st:ACTIVE, type:e.id});
+      if(e.id==='beaker') world.act('addWater',{st:ACTIVE, vol:1.0});   // E-1 원본: 비커(물)
+      mountVessel(ACTIVE, e.id);
+      toast(e.id==='beaker' ? '🥛 물이 든 비커 — 이제 뭐든 실험할 수 있어요!'
+           : e.id==='flask' ? '⚗️ 삼각플라스크 — 산·염기 실험에 딱!'
+           : '🍽️ 증발접시 — 액체를 부어 증발시켜 봐요');
+      break;
+    }
+    case 'ice':
+      if(!needVessel(el)) return;
+      if(c.iceFrac>0){ toast('얼음이 이미 들어 있어요', true); shake(el); return; }
+      world.act('addIce',{st:ACTIVE, frac:1});
+      toast('🧊 얼음을 넣었어요 — 램프로 데우면?');
+      break;
+    case 'lid':
+      if(!needVessel(el)) return;
+      if(st.lid){ toast('이미 덮여 있어요', true); shake(el); return; }
+      S.cupSize=null;
+      world.act('placeLid',{st:ACTIVE});
+      toast('🫙 뚜껑을 덮었어요 — 끓이면 무게가 어떻게 될까요?');
+      break;
+    case 'thermo':
+      if(!needVessel(el)) return;
+      if(st.thermo){ shake(el); return; }
+      world.act('placeThermo',{st:ACTIVE});
+      toast('🌡️ 이제 온도가 보여요');
+      break;
+    case 'scale':
+      if(!needVessel(el)) return;
+      if(st.scale){ shake(el); return; }
+      world.act('placeScale',{st:ACTIVE});
+      toast('⚖️ 저울 — 전체 무게를 지켜봐요');
+      break;
+    case 'lamp':
+      if(lampPlaced){ shake(el); return; }
+      lampPlaced=true; LAMP.visible=true; fireBtn.disabled=false;
+      toast('🔥 램프를 <b>드래그</b>해 용기 아래로, <b>탭</b>하면 점화!');
+      break;
+    case 'candle':
+      if(S.candlePlaced){ shake(el); return; }
+      S.candlePlaced=true; S.candleGrp.visible=true;
+      toast('🕯️ 촛불을 <b>탭</b>하면 불이 붙어요');
+      break;
+    case 'cup_s': case 'cup_l': {
+      if(!S.candlePlaced && !c.flame.on){ toast('덮을 <b>촛불</b>이 먼저 필요해요!', true); shake(el); return; }
+      if(st.lid){ toast('이미 덮여 있어요', true); shake(el); return; }
+      const size = e.id==='cup_l' ? 'large' : 'small';
+      S.cupSize=size;
+      world.act('coverCup',{st:ACTIVE, size});
+      toast(size==='large' ? '🍺 큰 컵으로 덮었어요 — 산소가 얼마나 갈까요?'
+                           : '🥃 작은 컵으로 덮었어요 — 산소가 얼마나 갈까요?');
+      break;
+    }
+  }
+  syncBtns();
+}
+
+/* 트레이·선반 DOM은 모든 함수 정의 뒤에 생성 (C-4) — animate 직전 §하단 */
+
+/* 용기 장착: 페노메나 킷 재부모화 */
+function mountVessel(stIdx, type){
+  const S=ST3D[stIdx];
+  S.vesselType=type;
+  for(const t in S.vg) S.vg[t].visible=(t===type);
+  const V=VESSELS[type];
+  S.vg[type].add(S.kit); S.kit.visible=true;
+  S.lidMesh.geometry.dispose();
+  S.lidMesh.geometry=new THREE.CylinderGeometry(V.lidR, V.lidR, 0.012, 48);
+  S.lidMesh.position.y=V.lip.y+0.004;
+  // 등장 연출
+  S.vg[type].position.y=0.005+0.28; S.vg[type].userData.dropT=0;
+}
+
+/* ═════════ 버튼 ═════════ */
+function setFire(on){
+  if(!lampPlaced) return;
+  lit=on;
+  world.act('ignite',{on});
+  lampFlameO.visible=lampFlameI.visible=on;
+  fireBtn.textContent=on?'🧯 불 끄기':'🔥 불 켜기';
+  fireBtn.classList.toggle('off',!on);
+}
+fireBtn.addEventListener('click',()=>setFire(!lit));
+
+stirBtn.addEventListener('click',()=>{
+  const c=activeSt().contents;
+  if(!activeSt().vessel){ toast('저을 용기가 없어요', true); return; }
+  world.act('stir',{st:ACTIVE, on:!c.stir});
+  syncBtns();
+  toast(activeSt().contents.stir?'🌀 젓는 중 — 더 빨리 녹아요':'젓기를 멈췄어요');
+});
+
+lidBtn.addEventListener('click',()=>{
+  const st=activeSt();
+  if(st.lid){ world.act('removeLid',{st:ACTIVE}); toast('뚜껑을 열었어요'); }
+  else { world.act('placeLid',{st:ACTIVE}); toast('다시 덮었어요'); }
+  syncBtns();
+});
+
+function syncBtns(){
+  const st=activeSt(), c=st.contents, S=ST3D[ACTIVE];
+  stirBtn.classList.toggle('on', !!c.stir);
+  const hasCover = st.lid || S.cupSize || c._autoOpened || st._cupSize;
+  lidBtn.style.display = hasCover ? '' : 'none';
+  lidBtn.textContent = st.lid ? (st._cupSize?'🥃 컵 들기':'🫙 뚜껑 열기')
+                              : (st._cupSize?'🥃 컵 덮기':'🫙 뚜껑 덮기');
+}
+
+function resetAll(){
+  world = K.createWorld(OPTS);
+  lit=false; lampPlaced=false; sandOwner=-1;
+  LAMP.visible=false; LAMP.position.copy(LAMP_HOME);
+  lampFlameO.visible=lampFlameI.visible=false; lampLight.intensity=0;
+  fireBtn.disabled=true; fireBtn.textContent='🔥 불 켜기'; fireBtn.classList.add('off');
+  sandShared.reset(); if(sandShared.mesh.parent) sandShared.mesh.parent.remove(sandShared.mesh);
+  ST3D.forEach((S,i)=>{
+    S.vesselType=null; S.tilt=0; S.colorSpeed=0.8; S.lastColorHex=null;
+    S.candlePlaced=false; S.cupSize=null; S.warnedAutoOpen=false; S.flipToasted=false;
+    for(const t in S.vg){ S.vg[t].visible=false; S.vg[t].rotation.z=0; S.vg[t].position.y=0.005; S.liq[t].layout(0); S.liq[t].mat.attenuationColor.set(0xBFE3F5); }
+    S.kit.visible=false;
+    S.precip.reset(); S.oilDisc.visible=false;
+    S.iceCubes.forEach(ic=>ic.visible=false);
+    S.steamUni.uIntensity.value=0;
+    S.thermoGrp.visible=false; S.scaleGrp.visible=false;
+    S.candleGrp.visible=false; S.flameOuter.visible=S.flameInner.visible=false; S.flameLight.intensity=0;
+    for(const k in S.cups){ S.cups[k].visible=false; S.cups[k].userData.lift=1; }
+    S.lidMesh.visible=false; S.lidMesh.userData.open=1;
+  });
+  pour.phase='idle'; pour.tilt=0; pour.acc=0;
+  fallAnims.forEach(f=>f.grp.remove(f.o)); fallAnims.length=0;
+  lampQ={st:-2,d:-1};
+  setActive(0); syncBtns();
+  stateEl.innerHTML='먼저 <b>비커</b>를 놓아 봐요 — 모든 실험의 시작!';
+  tempEl.className='na'; tempEl.innerHTML='온도계를 설치하면<br>온도가 보여요'; massEl.textContent='';
+  toast('↺ 새 실험대 — 무엇이든 조합해 봐요!');
+}
+resetBtn.addEventListener('click', resetAll);
+
+/* ═════════ 물줄기 3안 (SPEC 기법 B-2 · ?stream 전환 — 단독 티어 선택 금지) ═════════ */
+const STREAM = (new URLSearchParams(location.search).get('stream')) || 'tube';
+const streamMat_tube = (()=>{ const m=waterMat(0x9FD4F2); m.attenuationDistance=0.03; return m; })();
+const streamMat_glassy = new THREE.MeshPhysicalMaterial({
+  color:0xBFE3F5, metalness:0, roughness:0.08, transparent:true, opacity:0.55, envMapIntensity:1.4, depthWrite:false });
+const dropMatClear = waterMat(0xBFE3F5);
+function makeStreamMesh(){
+  if(STREAM==='drops') return null;
+  const mat = STREAM==='tube' ? streamMat_tube : streamMat_glassy;
+  const m=new THREE.Mesh(new THREE.BufferGeometry(), mat);
+  m.renderOrder=3; m.visible=false; m.frustumCulled=false; scene.add(m); return m;
+}
+const streamMesh=makeStreamMesh();
+const CHAIN_N=14;
+const chain=(()=>{
+  if(STREAM!=='drops') return [];
+  const geo=new THREE.SphereGeometry(0.005,10,8), arr=[];
+  for(let i=0;i<CHAIN_N;i++){ const d=new THREE.Mesh(geo, dropMatClear);
+    d.renderOrder=3; d.visible=false; d.frustumCulled=false; scene.add(d); arr.push(d); }
+  return arr;
+})();
+function renderStream(cv, rateRatio, t){
+  const radius=0.0015+0.0027*rateRatio;
+  if(streamMesh){
+    if(cv){ streamMesh.geometry.dispose(); streamMesh.geometry=new THREE.TubeGeometry(cv,24,radius,8,false); streamMesh.visible=true; }
+    else streamMesh.visible=false;
+  }
+  if(chain.length){
+    if(cv){ const sc=0.7+0.5*rateRatio;
+      for(let i=0;i<CHAIN_N;i++){ const u=(t*1.6+i/CHAIN_N)%1; cv.getPoint(u, chain[i].position); chain[i].scale.setScalar(sc); chain[i].visible=true; }
+    } else chain.forEach(d=>d.visible=false);
+  }
+}
+
+/* pour 상태 — 한 번에 한 방향. act('pour')는 0.02 단위 양자화(액션로그 폭주 방지·결정론 유지) */
+const pour={ from:-1, to:-1, phase:'idle', tilt:0, acc:0 };
+function srcLiquid(i){
+  const c=world.stations[i].contents;
+  return c.vol + c.layers.reduce((s,l)=>s+l.vol,0);
+}
+function canPour(i){
+  const other=1-i;
+  return world.stations[i].vessel && world.stations[other].vessel && srcLiquid(i)>0.03 && !world.stations[i].lid;
+}
+function togglePour(i){
+  if(pour.phase==='idle'){ pour.from=i; pour.to=1-i; pour.phase='pouring'; }
+  else if(pour.from===i){ pour.phase = pour.phase==='pouring' ? 'returning' : 'pouring'; }
+}
+function flushPour(){
+  if(pour.acc>0.0005){ world.act('pour',{from:pour.from, to:pour.to, amount:pour.acc}); pour.acc=0; }
+}
+
+/* ═════════ 조작 (램프 드래그·탭 + 용기 탭 따르기 + 촛불 탭 + 패드 탭) ═════════ */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+const dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0), -BENCH_Y);
+const hitPt=new THREE.Vector3(), lip=new THREE.Vector3(), hitV=new THREE.Vector3(), ctrl=new THREE.Vector3();
+let dragging=false, downPos=null, moved=false;
+function toNDC(e){ ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1; }
+
+renderer.domElement.addEventListener('pointerdown', e=>{
+  downPos={x:e.clientX,y:e.clientY}; moved=false;
+  if(LAMP.visible){
+    toNDC(e); ray.setFromCamera(ndc,camera);
+    if(ray.intersectObject(dragProxy,false).length){
+      dragging=true; controls.enabled=false; renderer.domElement.setPointerCapture(e.pointerId);
+    }
+  }
+});
+renderer.domElement.addEventListener('pointermove', e=>{
+  if(dragging){
+    if(downPos && Math.hypot(e.clientX-downPos.x,e.clientY-downPos.y)>6) moved=true;
+    toNDC(e); ray.setFromCamera(ndc,camera);
+    if(ray.ray.intersectPlane(dragPlane,hitPt)){
+      LAMP.position.x=THREE.MathUtils.clamp(hitPt.x,-1.35,1.35);
+      LAMP.position.z=THREE.MathUtils.clamp(hitPt.z,-0.6,0.6);
+    }
+    return;
+  }
+  if(downPos) return;
+  toNDC(e); ray.setFromCamera(ndc,camera);
+  let hot=false;
+  if(LAMP.visible && ray.intersectObject(dragProxy,false).length) hot=true;
+  for(let i=0;i<2;i++){
+    const S=ST3D[i];
+    if(S.vesselType && canPour(i) && ray.intersectObject(S.vg[S.vesselType],true).length) hot=true;
+    if(S.candlePlaced && ray.intersectObject(S.candleProxy,false).length) hot=true;
+  }
+  renderer.domElement.style.cursor=hot?'pointer':'';
+});
+function endPointer(e){
+  if(dragging){ dragging=false; controls.enabled=true; if(!moved) setFire(!lit); downPos=null; return; }
+  const mv = downPos && Math.hypot(e.clientX-downPos.x,e.clientY-downPos.y)>6;
+  downPos=null;
+  if(mv) return;
+  toNDC(e); ray.setFromCamera(ndc,camera);
+  for(let i=0;i<2;i++){
+    const S=ST3D[i];
+    // 촛불 탭 = 점화 (ignflame)
+    if(S.candlePlaced && !world.stations[i].contents.flame.on
+       && ray.intersectObject(S.candleProxy,false).length){
+      world.act('ignflame',{st:i}); setActive(i);
+      toast('🕯️ 촛불을 켰어요'+(world.stations[i].contents.flame.oilFire?' — ⚠️ 기름 위 불꽃!':''));
+      return;
+    }
+    // 용기 탭 = 따르기 토글 (pour)
+    if(S.vesselType && ray.intersectObject(S.vg[S.vesselType],true).length){
+      setActive(i);
+      if(pour.phase!=='idle' && pour.from!==i) return;
+      if(pour.phase==='idle' && !canPour(i)){
+        if(!world.stations[1-i].vessel) toast('부을 <b>상대 용기</b>가 먼저 필요해요!', true);
+        return;
+      }
+      togglePour(i);
+      return;
+    }
+    // 패드 탭 = 스테이션 선택
+    if(ray.intersectObject(S.pad,false).length){ setActive(i); return; }
+  }
+}
+renderer.domElement.addEventListener('pointerup', endPointer);
+renderer.domElement.addEventListener('pointercancel', ()=>{ if(dragging){dragging=false;controls.enabled=true;} downPos=null; });
+
+/* 램프 → 엔진 moveLamp (양자화 — 변화 있을 때만 act) */
+let lampQ={st:-2, d:-1};
+const stWorld=new THREE.Vector3();
+function syncLamp(){
+  if(!LAMP.visible) return;
+  let best=0, bestD=1e9;
+  for(let i=0;i<2;i++){
+    ST3D[i].grp.getWorldPosition(stWorld);
+    const d=Math.hypot(LAMP.position.x-stWorld.x, LAMP.position.z-stWorld.z);
+    if(d<bestD){ bestD=d; best=i; }
+  }
+  const qd=Math.round(bestD/0.005)*0.005;
+  if(best!==lampQ.st || Math.abs(qd-lampQ.d)>1e-9){
+    lampQ={st:best, d:qd};
+    world.act('moveLamp',{st:best, dist:qd});
+  }
+}
+
+/* ═════════ 관측 HUD (활성 스테이션) ═════════ */
+const PHASE_MSG={
+  melting:'🧊 융해 중 — 녹는 동안 0℃ 고정!',
+  boiling:'💨 끓는 중 — 100℃ 고정(잠열)',
+  precip:'✨ 못 녹은 알갱이가 가라앉아요',
+  neutral:'💙 중화! 색이 확 바뀌었어요',
+  out:'🕯️ 산소가 다 떨어져 불이 꺼졌어요',
+  heating:'🔥 데우는 중…',
+  idle:''
+};
+function updateHUD(){
+  const st=activeSt(), c=st.contents;
+  if(st.thermo){
+    tempEl.className='';
+    tempEl.innerHTML=`${c.temp.toFixed(1)}<small> ℃</small>`;
+  } else {
+    tempEl.className='na';
+    tempEl.innerHTML=st.vessel?'온도계를 설치하면<br>온도가 보여요':'용기가 아직 없어요';
+  }
+  massEl.textContent = st.scale ? `⚖️ ${Math.round(c.mass||0)} g` : '';
+  let s='';
+  if(!st.vessel){ stateEl.innerHTML='먼저 <b>비커</b>를 놓아 봐요 — 모든 실험의 시작!'; return; }
+  const tag=K.phaseTag(st);
+  s=PHASE_MSG[tag]||'';
+  if(tag==='boiling' && st.lid) s='💨 끓는 중 — 밀폐! 증기가 갇혀 무게 그대로';
+  if(tag==='idle'){
+    if(c.iceFrac>0) s='🧊 얼음이 떠 있어요 — 데우면?';
+    else if(c._hasOilLayer) s='🫒 기름이 위에 떠 있어요 — 안 섞여요(밀도)';
+    else if(c.acidUnits>0) s=`🔴 산성 — 염기 ${c.acidUnits}방울이면 중화`;
+    else if(c.vol>0.001) s='실험을 이어가 봐요 — 무엇을 조합할까요?';
+    else s='액체를 부어 봐요 (따르기·선반)';
+  }
+  stateEl.innerHTML=s;
+}
+
+/* 트레이·선반 생성은 위(§UI)에서 DOM 리스너 바인딩 완료 — 기구 트레이만 여기서 생성 (C-4: 전 함수 정의 뒤) */
+EQUIP.forEach(e=>{
+  const d=document.createElement('div');
+  d.className='eq'; d.id='eq_'+e.id;
+  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+  d.addEventListener('click',()=>onEquip(e,d));
+  trayEl.appendChild(d);
+});
+
+/* ═════════ 품질 자동 ═════════ */
+let frames=0, fpsStart=performance.now(), qualityChecked=false;
+function checkQuality(now){
+  frames++; if(qualityChecked) return;
+  if(now-fpsStart>4000){ qualityChecked=true;
+    const fps=frames/((now-fpsStart)/1000);
+    if(fps<38){ renderer.setPixelRatio(1); sun.shadow.mapSize.set(1024,1024);
+      if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } sun.shadow.radius=3; }
+  }
+}
+
+/* ═════════ 스테이션 렌더 바인딩 (엔진 필드 → 프리미티브 §6 — 조회만) ═════════ */
+const BASE_COL=new THREE.Color(0xBFE3F5), tmpCol=new THREE.Color();
+function stepBubblesFor(S, dt, intensity, topLocal, bubR){
+  const {pos:bPos, meta:bMeta, geo:bGeo}=S.bubbles;
+  const active=Math.floor(B_N*intensity);
+  const bottom=0.012, span=Math.max(topLocal-bottom-0.008,0.01);
+  for(let i=0;i<B_N;i++){
+    if(i>=active){ bPos[i*3+1]=-999; continue; }
+    const m=bMeta[i];
+    m.y+=(0.16+0.45*intensity)*m.sp*dt/span;
+    if(m.y>1){ m.y=0;
+      const a=Math.random()*Math.PI*2, r=Math.random()*bubR;
+      m.x=Math.cos(a)*r; m.z=Math.sin(a)*r;
+    }
+    bPos[i*3]  =m.x+Math.sin(m.y*22+i)*0.004;
+    bPos[i*3+1]=bottom+m.y*span;
+    bPos[i*3+2]=m.z+Math.cos(m.y*19+i)*0.004;
+  }
+  bGeo.attributes.position.needsUpdate=true;
+}
+
+function renderStation(i, dt, t){
+  const S=ST3D[i], st=world.stations[i], c=st.contents;
+  if(!S.vesselType) return 0;
+  const V=VESSELS[S.vesselType], vgrp=S.vg[S.vesselType], L=S.liq[S.vesselType];
+
+  // 등장 낙하 이징
+  if(vgrp.userData.dropT!=null){
+    vgrp.userData.dropT+=dt*3.2;
+    const k=Math.min(vgrp.userData.dropT,1), e=1-Math.pow(1-k,3);
+    vgrp.position.y=0.005+0.28*(1-e);
+    if(k>=1){ vgrp.position.y=0.005; delete vgrp.userData.dropT; }
+  }
+
+  // 액체 수위·리플·색
+  const top=L.layout(Math.min(c.vol,1.2));
+  L.ripple(t, 0.0012+0.0055*c.bubble);
+  tmpCol.set(c.colorHex ? c.colorHex : BASE_COL);
+  if(S.lastColorHex!==c.colorHex){ S.colorSpeed = (c.colorHex===IND_BASE)?6.0:0.8; S.lastColorHex=c.colorHex; }
+  L.mat.attenuationColor.lerp(tmpCol, Math.min(dt*S.colorSpeed,1));
+  if(c._flip && !S.flipToasted){ S.flipToasted=true; toast('💙 <b>확!</b> 빨강 → 파랑 — 중화점이에요'); }
+
+  // 기름 상층 원판
+  const oilVol=c.layers.reduce((s,l)=>s+(l.sub==='oil'?l.vol:0),0);
+  if(oilVol>0.003){
+    S.oilDisc.visible=true;
+    S.oilDisc.scale.y=Math.max(oilVol*0.6,0.02);
+    S.oilDisc.position.y=top + (WATER_H0*oilVol*0.6)/2 + 0.001;
+  } else S.oilDisc.visible=false;
+
+  // 기포·김
+  stepBubblesFor(S, dt, c.bubble, top, V.bubR);
+  S.steam.position.y=top+0.005;
+  S.steamUni.uTime.value=t;
+  S.steamUni.uIntensity.value+=(c.steam-S.steamUni.uIntensity.value)*Math.min(dt*2.5,1);
+
+  // 얼음
+  S.iceCubes.forEach(cube=>{
+    if(c.iceFrac<=0.001){ cube.visible=false; return; }
+    cube.visible=true;
+    const sc=Math.max(c.iceFrac,0.001);
+    cube.scale.setScalar(sc);
+    cube.position.y=Math.min(top - cube.userData.sz*sc*0.3, 0.03+top*0.2);
+  });
+
+  // 석출 (E-4 매핑: showN = precip그램×12)
+  let sandG=0, precipCryst=0;
+  for(const sub in c.solutes){
+    const so=c.solutes[sub], SS=K.SUBSTANCES[sub];
+    const tot=so.spoons*(SS.spoonG||0);
+    if(SS.kind==='insoluble') sandG+=tot;
+    else if(SS.kind==='solute') precipCryst+=Math.max(0, tot-so.dissolved);
+  }
+  S.precip.update(Math.min(1, precipCryst*12/300), dt);
+
+  // 뚜껑/컵
+  const cupSize=st._cupSize && st.lid ? st._cupSize : (S.cupSize && st.lid ? S.cupSize : null);
+  if(cupSize){
+    S.lidMesh.visible=false;
+    const cup=S.cups[cupSize==='large'?'large':'small'];
+    for(const k in S.cups) S.cups[k].visible = S.cups[k]===cup;
+    cup.userData.lift += (0-cup.userData.lift)*Math.min(dt*4,1);
+    cup.position.y=0.005+cup.userData.lift*0.22;
+  } else {
+    for(const k in S.cups){
+      const cup=S.cups[k];
+      if(cup.visible){
+        cup.userData.lift += (1-cup.userData.lift)*Math.min(dt*4,1);
+        cup.position.y=0.005+cup.userData.lift*0.22;
+        if(cup.userData.lift>0.98) cup.visible=false;
+      }
+    }
+    const lidOn = st.lid && !st._cupSize;
+    S.lidMesh.visible = lidOn || S.lidMesh.userData.open<0.98;
+    const tgt = lidOn?0:1;
+    S.lidMesh.userData.open += (tgt-S.lidMesh.userData.open)*Math.min(dt*4,1);
+    const op=S.lidMesh.userData.open;
+    S.lidMesh.position.x=op*0.14;
+    S.lidMesh.position.y=V.lip.y+0.004+op*0.05;
+    if(op>0.98 && !lidOn) S.lidMesh.visible=false;
+  }
+  if(c._autoOpened && !S.warnedAutoOpen){
+    S.warnedAutoOpen=true;
+    toast('⚠️ 밀폐한 채 오래 끓여서 뚜껑이 <b>저절로 열렸어요</b> — 실험 안전!', true, 4600);
+  }
+
+  // 촛불·불꽃 (oilFire면 용기 액면 위로 이동 + 붉은 빛)
+  const f=c.flame;
+  if(f.on){
+    const fl=1+0.10*Math.sin(t*23+i)+0.06*Math.sin(t*57+1.7);
+    const base=f.oilFire?1.4:1;
+    S.flameOuter.visible=S.flameInner.visible=true;
+    S.flameOuter.scale.set(0.058*fl*f.size*base, 0.115*fl*f.size*base*(1+0.05*Math.sin(t*31)), 1);
+    S.flameInner.scale.set(0.034*fl*f.size*base, 0.06*fl*f.size*base, 1);
+    let fx=0, fy=0, fz=0.15;
+    if(f.oilFire){ fx=0; fz=0; fy=top+(S.oilDisc.visible?WATER_H0*oilVol*0.6:0)+0.02; }
+    else fy=0.005+0.086;
+    S.flameOuter.position.set(fx, fy+0.028, fz);
+    S.flameInner.position.set(fx, fy+0.012, fz);
+    S.flameLight.position.set(fx, fy+0.05, fz);
+    S.flameLight.color.set(f.oilFire?0xFF6A2A:0xFFA640);
+    S.flameLight.intensity=(1.4+0.5*Math.sin(t*19+i))*f.size*base;
+    if(c.o2<15 && st.lid){ S.flameOuter.material.rotation=Math.sin(t*40)*0.15; }
+  } else {
+    S.flameOuter.visible=S.flameInner.visible=false;
+    S.flameLight.intensity=0;
+  }
+  if(S.candlePlaced) S.candleGrp.visible=true;
+
+  // 온도계·저울 3D
+  S.thermoGrp.visible=st.thermo;
+  if(st.thermo){
+    const col=S.thermoGrp.userData.col;
+    const frac=Math.max(0, Math.min(1, (c.temp+10)/120));   // −10~110℃ 재매핑 (states)
+    col.scale.y=0.02+0.16*frac;
+  }
+  S.scaleGrp.visible=st.scale;
+
+  return top;
+}
+
+/* ═════════ 메인 루프 ═════════ */
+const clock=new THREE.Clock();
+let hudAcc=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.elapsedTime;
+
+  // 낙하 트윈 (선반 물질·염기 방울)
+  for(let i=fallAnims.length-1;i>=0;i--){
+    const d=fallAnims[i]; d.t+=dt*2.6;
+    const k=Math.min(d.t,1), e=k*k;
+    d.o.position.y=d.y0+(d.y1-d.y0)*e;
+    if(k>=1){ d.grp.remove(d.o); fallAnims.splice(i,1); }
+  }
+
+  // 램프 → 엔진 (양자화 act)
+  syncLamp();
+
+  // pour: 기울임 트윈 + 양자화 act('pour')
+  let cv=null, rr=0;
+  if(pour.phase!=='idle'){
+    const S=ST3D[pour.from], V=VESSELS[S.vesselType];
+    const tgt = pour.phase==='pouring'?TILT_MAX:0;
+    S.tilt += (S.tilt>tgt?-1:1)*TILT_SPEED*dt;
+    if((S.tilt<=tgt&&pour.phase==='pouring')||(S.tilt>=tgt&&pour.phase==='returning')) S.tilt=tgt;
+    S.vg[S.vesselType].rotation.z=S.tilt;
+    const pouring = S.tilt<TILT_ON && srcLiquid(pour.from)>0.02;
+    if(pouring){
+      const rate=POUR_RATE*Math.min((TILT_ON-S.tilt)/0.35,1);
+      rr=rate/POUR_RATE;
+      pour.acc+=rate*dt;
+      if(pour.acc>=0.02) flushPour();
+      // 물줄기 곡선 (기법 B-1 — lip → 상대 수면, 2차 베지어)
+      const src=S.vg[S.vesselType];
+      src.updateMatrixWorld(true);
+      lip.copy(V.lip); src.localToWorld(lip);
+      const T=ST3D[pour.to], TV=VESSELS[T.vesselType];
+      const tTop=0.02+TV.liq[2]*Math.min(world.stations[pour.to].contents.vol,1);
+      hitV.set(0, tTop, 0); T.vg[T.vesselType].localToWorld(hitV);
+      ctrl.copy(lip).lerp(hitV,0.5); ctrl.y-=0.015; ctrl.x+=Math.sin(t*7)*0.002;
+      cv=new THREE.QuadraticBezierCurve3(lip.clone(), ctrl.clone(), hitV.clone());
+      ST3D[pour.to].liq[T.vesselType] && ST3D[pour.to].liq[T.vesselType].ripple(t, 0.0016+0.003*rr);
+    }
+    if(srcLiquid(pour.from)<=0.03 && pour.phase==='pouring'){ pour.phase='returning'; }
+    if(pour.phase==='returning' && S.tilt>=-1e-4){
+      flushPour();
+      S.tilt=0; S.vg[S.vesselType].rotation.z=0; pour.phase='idle';
+    }
+  }
+  renderStream(cv, rr, t);
+
+  // 엔진 전진 (1층 — 물리는 전부 여기)
+  world.step(dt);
+
+  // 스테이션 렌더 바인딩
+  renderStation(0, dt, t);
+  renderStation(1, dt, t);
+
+  // 모래 공용 InstancedMesh — 모래 가장 많은 스테이션에 부착
+  let sMax=0, sIdx=-1;
+  for(let i=0;i<2;i++){
+    const so=world.stations[i].contents.solutes.sand;
+    const g=so?so.spoons*K.SUBSTANCES.sand.spoonG:0;
+    if(g>sMax){ sMax=g; sIdx=i; }
+  }
+  if(sIdx!==sandOwner){
+    if(sandShared.mesh.parent) sandShared.mesh.parent.remove(sandShared.mesh);
+    if(sIdx>=0 && ST3D[sIdx].vesselType) ST3D[sIdx].kit.add(sandShared.mesh);
+    sandOwner=sIdx;
+  }
+  if(sandOwner>=0) sandShared.update(Math.min(1, sMax*12/120), dt);
+
+  // 램프 불꽃
+  if(lit){
+    const f=1+0.10*Math.sin(t*23)+0.06*Math.sin(t*57+1.7);
+    lampFlameO.scale.set(0.058*f, 0.115*f*(1+0.05*Math.sin(t*31)), 1);
+    lampFlameI.scale.set(0.034*f, 0.06*f, 1);
+    lampLight.intensity=2.3+0.6*Math.sin(t*19)*Math.sin(t*7);
+  } else lampLight.intensity=0;
+
+  // 스테이션 선택 링 하이라이트
+  for(let i=0;i<2;i++){
+    const tgtO=(i===ACTIVE)?0.6:0.0;
+    const m=ST3D[i].padRing.material;
+    m.opacity += (tgtO-m.opacity)*Math.min(dt*6,1);
+  }
+
+  // HUD (8Hz 갱신)
+  hudAcc+=dt;
+  if(hudAcc>0.12){ hudAcc=0; updateHUD(); syncBtns(); }
+
+  controls.update();
+  renderer.render(scene,camera);
+  checkQuality(performance.now());
+}
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  ST3D.forEach(S=>{ S.steamUni.uScale.value=innerHeight*0.5; });
+});
+
+document.getElementById('loading').classList.add('hide');
+toast('🧪 <b>과학실 2.0</b> — 실험대 두 곳에 무엇이든 조합해 봐요!', false, 5200);
+updateHUD();
+animate();
 </script>
 </body>
 </html>
