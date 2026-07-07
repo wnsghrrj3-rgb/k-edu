@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>케이랩 과학실 2.0 — 조합형 현상 엔진 (P1 엔진 코어)</title>
+<!--
+  scilab_lab2.html — 케이랩 과학실 2.0 «조합형 현상 엔진 + 데이터 렌즈»
+  SPEC_LAB2.md 양산. 단계 게이트 §1: [P1] 엔진 코어(순수 로직만·렌더 0줄).
+  P1 = SUBSTANCES(§3) + LAWS 파이프라인(§4) + World/Station/act(§5) + Recorder(§7-1) + 술어 평가기(§8).
+  렌더(<script type="module">)는 P2에서 조립. 이 단계는 test_lab2_engine.js 44단언이 유일한 게이트.
+  ⚠️ 모든 수치는 SPEC_LAB2 확정값 — 창작 금지. 갭은 §1-④로 역반영.
+-->
+<style>
+  html,body{margin:0;height:100%;background:#0f1621;color:#cfe0f0;font-family:system-ui,sans-serif}
+  #p1note{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+  #p1note b{color:#8FC7EE}
+</style>
+</head>
+<body>
+<div id="p1note">
+  <div>
+    🧪 <b>케이랩 과학실 2.0</b> — 엔진 코어(P1) 로드됨.<br>
+    <small>이 단계는 순수 로직(창발 엔진)만 담겨 있어요. 3D 무대·데이터 렌즈는 P2~P3에서 조립됩니다.</small>
+  </div>
+</div>
+
+<!-- ═════════ 순수 로직 (1층 엔진 — window.KLab2 · THREE 참조 0 · node 단독 실행) ═════════ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── §3. SUBSTANCES — 물질 DB (v1 7종, 수치 확정) ── */
+  var SUBSTANCES = {
+    water: { kind:'solvent', melt:0, boil:100, heatRate:3.4, coolRate:0.018,
+             evapRate:0.011, meltRate:0.05, rest:-8, massK:160, col:0xBFE3F5 },
+    salt:  { kind:'solute', limit:function(t){return Math.round(35+t*0.02);},
+             spoonG:6, crystalCol:0xffffff },
+    sugar: { kind:'solute', limit:function(t){return Math.round(18+t*0.6);},
+             spoonG:8, crystalCol:0xF7F2E8 },
+    sand:  { kind:'insoluble', spoonG:10, grainCol:0xC2A878 },
+    oil:   { kind:'liquid', immiscible:true, floats:true, flammable:true, col:0xE8C56A, massK:130 },
+    acid:  { kind:'liquid', ph:'acid', units:9, col:0xE03131, massK:160 },
+    base:  { kind:'reagent', ph:'base', col:0x8FC7EE }
+  };
+  var IND_ACID='#E03131', IND_BASE='#1971C2';   // E-6 지시약 색 원본 — 중간색 금지
+
+  /* 상수 (§4 확정) */
+  var DT_CLAMP=0.05;
+  var HEAT_RATE=3.4, COOL_RATE=0.018, HEAT_R=0.24;   // L-HEAT
+  var MELT_RATE=0.05, MELT_VOL_K=0.25, EVAP_RATE=0.011, STEAM_CAP=0.4, LID_AUTO_OPEN=30; // L-PHASE
+  var BUBBLE_GATE=60, STEAM_GATE=85;
+  var VOL_REF=1.0, STIR_RATE=0.9, STILL_RATE=0.3, PRECIP_RATE=0.6;   // L-DISSOLVE (G-1)
+  var ACID_CAP=14;                                                    // L-ACIDBASE
+  var BURN_K=250, VREL_SMALL=20, VREL_LARGE=50, FLAME_MIN=0.25;       // L-BURN
+  var POUR_RATE=0.22, TILT_ON=-0.55;                                  // L-MIX (기법 SPEC B-1)
+  var COLLIG_BP=0.5, COLLIG_FP=2.0;                                   // L-COLLIG (10단위당)
+  var VESSEL_TARE={ beaker:100, flask:90, dish:40 };   // ⟨역반영 §1-④⟩ SPEC 미명시 → 구현 확정(질량 불변 테스트는 절대값 무관)
+
+  /* ── §5. Station 초기화 ── */
+  function newContents(init){
+    var c = { vol:0, temp:20, iceFrac:0, solutes:{}, layers:[], acidUnits:0,
+              flame:{on:false, size:0, oilFire:false}, o2:100, evapAcc:0, trappedSteam:0,
+              boiling:false, bubble:0, steam:0, colorHex:null, _k:0, _lidBoilT:0, _autoOpened:false };
+    if(init) for(var key in init){
+      if(key==='solutes'){ for(var s in init.solutes){ c.solutes[s]={ spoons:init.solutes[s].spoons||0, dissolved:init.solutes[s].dissolved||0 }; } }
+      else if(key==='layers'){ c.layers = init.layers.map(function(l){return {sub:l.sub, vol:l.vol};}); }
+      else c[key]=init[key];
+    }
+    return c;
+  }
+  function newStation(init){
+    init=init||{};
+    return { vessel:init.vessel||null, lid:!!init.lid, thermo:!!init.thermo, scale:!!init.scale,
+             contents:newContents(init.contents) };
+  }
+
+  /* heatK: 램프가 이 스테이션을 가리키고 점화 중이면 거리 비례(0~1) */
+  function heatK(world, idx){
+    var L=world.lamp;
+    if(L.station!==idx || !L.lit) return 0;
+    var k = 1 - L.dist/HEAT_R;
+    return k<0?0:(k>1?1:k);
+  }
+
+  /* ── §4. LAWS — 고정 순서 파이프라인 ── */
+
+  // L-HEAT: 열 출입 (전이 고정 구간 제외)
+  function lHeat(st, dt, world, idx){
+    var c=st.contents, k=heatK(world, idx);
+    c._k = k;
+    var melting = c.iceFrac>0 && c.temp>=0;
+    var boiling = c.temp>=99.9 && k>0;
+    if(melting || boiling) return;      // 잠열 구간 — L-PHASE가 온도 고정
+    var rest = c.iceFrac>0 ? -8 : 20;
+    c.temp += (HEAT_RATE*k - (c.temp-rest)*COOL_RATE)*dt;
+  }
+
+  // L-PHASE: 상태변화(잠열 고정) + 증발/밀폐
+  function lPhase(st, dt, world){
+    var c=st.contents, k=c._k;
+    // 융해
+    if(c.iceFrac>0 && c.temp>=0){
+      c.temp=0;
+      var dm=MELT_RATE*k*dt; if(dm>c.iceFrac) dm=c.iceFrac;
+      c.iceFrac-=dm; c.vol+=MELT_VOL_K*dm;
+    }
+    // 끓음
+    if(c.temp>=99.9 && k>0){
+      c.temp=100; c.boiling=true;
+      if(!st.lid){
+        var dv=EVAP_RATE*k*dt; if(dv>c.vol) dv=c.vol;
+        c.vol-=dv; c.evapAcc+=dv;
+        c._lidBoilT=0;
+      } else {
+        // 밀폐: 증발 정지 → 부피·총질량 불변(창발②). steam은 김서림 연출만(질량 무관)
+        c.steam = Math.min(STEAM_CAP, c.steam + EVAP_RATE*k*dt*2);
+        c._lidBoilT += dt;
+        if(c._lidBoilT>=LID_AUTO_OPEN){ st.lid=false; c._autoOpened=true; c._lidBoilT=0; }
+      }
+    } else {
+      c.boiling=false;
+      if(!st.lid) c._lidBoilT=0;
+    }
+    // bubble/steam 게이트 (관측 파생)
+    c.bubble = c.temp>=BUBBLE_GATE ? Math.min(1,(c.temp-BUBBLE_GATE)/40) : 0;
+    if(!st.lid) c.steam = c.temp>=STEAM_GATE ? Math.min(STEAM_CAP,(c.temp-STEAM_GATE)/15*STEAM_CAP) : 0;
+  }
+
+  // L-DISSOLVE: 용해·석출 (G-1 부피 비례 — 창발의 열쇠)
+  function lDissolve(st, dt, world){
+    var c=st.contents;
+    for(var sub in c.solutes){
+      var S=SUBSTANCES[sub]; if(!S || S.kind!=='solute') continue;
+      var so=c.solutes[sub];
+      var totalG = so.spoons*S.spoonG;
+      var lim_eff = S.limit(c.temp) * (c.vol / VOL_REF);   // ★G-1
+      if(c.vol<=0.0001){ // 물이 없으면 전량 석출
+        so.dissolved=0; continue;
+      }
+      if(so.dissolved < lim_eff && so.dissolved < totalG){
+        var room = Math.min(lim_eff, totalG) - so.dissolved;
+        var rate = (c.stir?STIR_RATE:STILL_RATE)*dt;
+        so.dissolved += Math.min(room, rate);
+      } else if(so.dissolved > lim_eff){
+        so.dissolved -= PRECIP_RATE*dt;
+        if(so.dissolved<lim_eff) so.dissolved=lim_eff;
+        if(so.dissolved<0) so.dissolved=0;
+      }
+    }
+  }
+
+  // L-ACIDBASE: 중화 (색 스냅·중간색 금지)
+  function lAcidBase(st, dt, world){
+    var c=st.contents;
+    if(c.acidUnits>0){ c.colorHex=IND_ACID; }
+    else if(c._hadAcid){ c.colorHex=IND_BASE; }
+  }
+
+  // L-BURN: 연소·산소 (밀폐 반비례 소진)
+  function lBurn(st, dt, world){
+    var c=st.contents, f=c.flame;
+    if(!f.on) return;
+    if(st.lid){
+      var Vrel = st._cupSize==='large'?VREL_LARGE:VREL_SMALL;
+      c.o2 -= (BURN_K/Vrel)*dt;
+      if(c.o2<0) c.o2=0;
+      if(c.o2<=0){ f.on=false; f.size=0; c._flameOut=true; return; }
+    }
+    f.size = Math.max(FLAME_MIN, c.o2/100);
+  }
+
+  // L-MIX: 옮기기(pour) — world.act(pour)에서 처리. 여기선 층 분리 파생만.
+  function lMix(st, dt, world){
+    var c=st.contents;
+    // oil 층: immiscible → 상층 플래그(렌더용, P2)
+    c._hasOilLayer = c.layers.some(function(l){return l.sub==='oil' && l.vol>0;});
+  }
+
+  // L-COLLIG: 총괄성 (기본 OFF, world.opts.collig)
+  function lCollig(st, dt, world){
+    if(!world.opts || !world.opts.collig) return;
+    var c=st.contents, units=0;
+    for(var sub in c.solutes){ units += c.solutes[sub].spoons; }
+    // bp/fp 이동 — L-PHASE 게이트에 반영되도록 파생 저장
+    c._bpShift = COLLIG_BP*(units/10);
+    c._fpShift = -COLLIG_FP*(units/10);
+  }
+
+  // 파생 계산: 질량·용해총량·석출총량
+  function derive(st){
+    var c=st.contents, S;
+    var mass = (c.vessel && VESSEL_TARE[c.vessel]) || (st.vessel && VESSEL_TARE[st.vessel]) || 0;
+    var dissolvedTotal=0, precipTotal=0;
+    for(var sub in c.solutes){
+      S=SUBSTANCES[sub];
+      var so=c.solutes[sub], totalG=so.spoons*S.spoonG;
+      mass += totalG;
+      dissolvedTotal += so.dissolved;
+      precipTotal += Math.max(0, totalG - so.dissolved);
+    }
+    for(var i=0;i<c.layers.length;i++){
+      var Ls=SUBSTANCES[c.layers[i].sub];
+      mass += c.layers[i].vol * (Ls && Ls.massK || 0);
+    }
+    mass += c.vol*SUBSTANCES.water.massK;
+    mass += c.trappedSteam*SUBSTANCES.water.massK;   // 밀폐 증기 질량 포함 → 총질량 불변
+    c.mass = mass; c.dissolvedTotal=dissolvedTotal; c.precipTotal=precipTotal;
+    return c;
+  }
+
+  var LAWS = [lHeat, lPhase, lDissolve, lAcidBase, lBurn, lMix, lCollig];
+
+  /* ── §7-1. Recorder (순수 로직 1층) ── */
+  var SAMPLE_DT=0.25, REC_CAP=480, PLATEAU_WIN=2.0, PLATEAU_EPS=0.15;
+  function newRecorder(nStations){
+    var chans=[]; for(var i=0;i<nStations;i++) chans.push([]);
+    return { chans:chans, markers:[], _acc:0, _plateauBuf:[] };
+  }
+  function recSample(world){
+    var R=world.recorder; if(!R) return;
+    for(var i=0;i<world.stations.length;i++){
+      var st=world.stations[i]; derive(st); var c=st.contents;
+      var buf=R.chans[i];
+      buf.push({ t:world.t, temp:c.temp, vol:c.vol, dissolvedTotal:c.dissolvedTotal||0,
+                 precipTotal:c.precipTotal||0, o2:c.o2, mass:c.mass||0, tag:phaseTag(st) });
+      if(buf.length>REC_CAP){        // 2:1 다운샘플 (짝수 인덱스 유지)
+        var ds=[]; for(var j=0;j<buf.length;j+=2) ds.push(buf[j]); R.chans[i]=ds;
+      }
+    }
+  }
+  // 플래토 감지: heatK>0 && 창 2.0s 내 |Δtemp|<0.15 (station 0 기준 반환, 다채널은 호출측)
+  function detectPlateau(buf, k){
+    if(k<=0 || buf.length<2) return false;
+    var last=buf[buf.length-1], t1=last.t-PLATEAU_WIN, lo=last.temp, hi=last.temp, found=false;
+    for(var i=buf.length-1;i>=0;i--){
+      if(buf[i].t<t1) break;
+      if(buf[i].temp<lo)lo=buf[i].temp; if(buf[i].temp>hi)hi=buf[i].temp; found=true;
+    }
+    return found && (hi-lo)<PLATEAU_EPS;
+  }
+  function phaseTag(st){
+    var c=st.contents;
+    if(c.iceFrac>0 && c.temp<=0.01) return 'melting';
+    if(c.boiling) return 'boiling';
+    if(c._flameOut) return 'out';
+    if((c.precipTotal||0)>0.01) return 'precip';
+    if(c.acidUnits===0 && c._hadAcid) return 'neutral';
+    if(c._k>0) return 'heating';
+    return 'idle';
+  }
+
+  /* ── §5/§8. World + 동사(act) + 술어 평가기 ── */
+  function createWorld(opts){
+    var world = {
+      stations:[ newStation(), newStation() ],
+      lamp:{ station:-1, lit:false, dist:0 },
+      t:0, actionLog:[], opts:opts||{},
+      recorder:null, _recAcc:0
+    };
+    world.recorder = newRecorder(world.stations.length);
+
+    world.step = function(dt){
+      if(dt>DT_CLAMP) dt=DT_CLAMP;
+      world.t += dt;
+      for(var i=0;i<world.stations.length;i++){
+        var st=world.stations[i];
+        for(var L=0;L<LAWS.length;L++) LAWS[L](st, dt, world, i);
+        derive(st);
+      }
+      // 레코더 샘플링 (SAMPLE_DT 간격)
+      world._recAcc += dt;
+      while(world._recAcc >= SAMPLE_DT){ world._recAcc -= SAMPLE_DT; recSample(world); }
+      return world;
+    };
+
+    world.act = function(verb, args){
+      args=args||{};
+      world.actionLog.push({ t:world.t, verb:verb, args:JSON.parse(JSON.stringify(args)) });
+      var st = (args.st!=null) ? world.stations[args.st] : null;
+      switch(verb){
+        case 'placeVessel': st.vessel=args.type; st.contents.vessel=args.type; break;
+        case 'placeLid':    st.lid=true; break;
+        case 'removeLid':   st.lid=false; break;
+        case 'placeThermo': st.thermo=true; break;
+        case 'placeScale':  st.scale=true; break;
+        case 'moveLamp':    world.lamp.station=args.st; world.lamp.dist=(args.dist!=null?args.dist:0); break;
+        case 'ignite':      world.lamp.lit=!!args.on; break;
+        case 'addSpoon': {
+          var sub=args.sub; if(!st.contents.solutes[sub]) st.contents.solutes[sub]={spoons:0,dissolved:0};
+          st.contents.solutes[sub].spoons += (args.n||1); break;
+        }
+        case 'addWater':    st.contents.vol += (args.vol||0); break;
+        case 'addLiquid': {
+          var L2=args.sub;
+          if(L2==='acid'){ st.contents.acidUnits=SUBSTANCES.acid.units; st.contents._hadAcid=true; st.contents.vol+=(args.vol||0.3); st.contents.colorHex=IND_ACID; }
+          else if(L2==='oil'){ st.contents.layers.push({sub:'oil', vol:(args.vol||0.3)}); }
+          else st.contents.vol += (args.vol||0.3);
+          break;
+        }
+        case 'addIce':      st.contents.iceFrac += (args.frac||1); break;
+        case 'stir':        st.contents.stir=!!args.on; break;
+        case 'dropBase': {
+          var n=args.drops||1;
+          st.contents.acidUnits = Math.max(0, Math.min(ACID_CAP, st.contents.acidUnits) - n);
+          if(st.contents.acidUnits===0 && st.contents._hadAcid){ st.contents.colorHex=IND_BASE; st.contents._flip=true; }
+          break;
+        }
+        case 'coverCup':    st.lid=true; st._cupSize=args.size||'small'; break;
+        case 'ignflame':    st.contents.flame.on=true; st.contents.flame.size=1;
+                            if(st.contents.layers.some(function(l){return l.sub==='oil'&&l.vol>0;})) st.contents.flame.oilFire=true; break;
+        case 'pour': {
+          var A=world.stations[args.from], B=world.stations[args.to];
+          var layerVol=A.contents.layers.reduce(function(s,l){return s+l.vol;},0);
+          var totalLiq=A.contents.vol + layerVol;
+          var give=Math.min(args.amount!=null?args.amount:totalLiq, totalLiq);
+          var frac = totalLiq>0 ? give/totalLiq : 0;
+          // 물(용매) 이동 — 수위 보존
+          var giveVol=A.contents.vol*frac;
+          A.contents.vol-=giveVol; B.contents.vol+=giveVol;
+          // 용질 동반 이동(농도 보존)
+          for(var s in A.contents.solutes){
+            if(!B.contents.solutes[s]) B.contents.solutes[s]={spoons:0,dissolved:0};
+            var mv=A.contents.solutes[s].spoons*frac;
+            A.contents.solutes[s].spoons-=mv; B.contents.solutes[s].spoons+=mv;
+            var mvd=A.contents.solutes[s].dissolved*frac;
+            A.contents.solutes[s].dissolved-=mvd; B.contents.solutes[s].dissolved+=mvd;
+          }
+          // oil 등 immiscible 층 이동
+          for(var li=0;li<A.contents.layers.length;li++){
+            var lv=A.contents.layers[li].vol*frac;
+            A.contents.layers[li].vol-=lv;
+            B.contents.layers.push({sub:A.contents.layers[li].sub, vol:lv});
+          }
+          break;
+        }
+      }
+      return world;
+    };
+
+    // 술어 평가기 (§8) — op: >= <= == flag
+    world.evalGoal = function(goal){
+      if(!goal || !goal.all) return false;
+      return goal.all.every(function(p){
+        var st=world.stations[p.st!=null?p.st:0], c=st.contents; derive(st);
+        var val;
+        switch(p.ch){
+          case 'temp': val=c.temp; break;
+          case 'vol': val=c.vol; break;
+          case 'dissolvedTotal': val=c.dissolvedTotal||0; break;
+          case 'precipTotal': val=c.precipTotal||0; break;
+          case 'o2': val=c.o2; break;
+          case 'mass': val=c.mass||0; break;
+          case 'acidUnits': val=c.acidUnits; break;
+          case 'flag': return !!c[p.v];   // flag: 필드명 진리값
+          default: val=c[p.ch];
+        }
+        switch(p.op){
+          case '>=': return val>=p.v;
+          case '<=': return val<=p.v;
+          case '==': return Math.abs(val-p.v)<1e-6;
+          case '>':  return val>p.v;
+          case '<':  return val<p.v;
+          default: return false;
+        }
+      });
+    };
+
+    return world;
+  }
+
+  var API = {
+    SUBSTANCES:SUBSTANCES, IND_ACID:IND_ACID, IND_BASE:IND_BASE,
+    createWorld:createWorld, detectPlateau:detectPlateau, phaseTag:phaseTag,
+    consts:{ DT_CLAMP:DT_CLAMP, HEAT_R:HEAT_R, VOL_REF:VOL_REF, ACID_CAP:ACID_CAP,
+             VREL_SMALL:VREL_SMALL, VREL_LARGE:VREL_LARGE, BURN_K:BURN_K,
+             SAMPLE_DT:SAMPLE_DT, REC_CAP:REC_CAP, PLATEAU_EPS:PLATEAU_EPS, PLATEAU_WIN:PLATEAU_WIN }
+  };
+  if(typeof window!=='undefined'){ window.KLab2=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+</body>
+</html>
