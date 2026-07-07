@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>케이랩 과학실 — 물 끓이기 미션</title>
+<title>케이랩 과학실 — 화산 모형실험 미션</title>
 <!--
   케이랩 과학실(SciLab) v0.2 — 데모 1호(scilab_proto) 검수 통과 렌더 표준 위에
   "과학실 본체" 구조를 얹은 첫 판:
@@ -90,11 +90,12 @@
     box-shadow:0 12px 40px rgba(0,0,0,.5);color:var(--ink);transition:opacity .3s,transform .3s}
   .card.hide{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(12px)}
   #predict{bottom:120px}
-  #predict h3{font-size:14.5px;margin-bottom:10px;color:#1565C0}
-  #predict .opts{display:flex;flex-direction:column;gap:8px}
-  #predict button,#success button{font-family:'Gowun Dodum';font-size:14px;border:2px solid #dbe4ee;
+  #predict2{bottom:120px}
+  #predict h3,#predict2 h3{font-size:14.5px;margin-bottom:10px;color:#1565C0}
+  #predict .opts,#predict2 .opts{display:flex;flex-direction:column;gap:8px}
+  #predict button,#predict2 button,#success button{font-family:'Gowun Dodum';font-size:14px;border:2px solid #dbe4ee;
     background:#fff;border-radius:12px;padding:10px;cursor:pointer;color:var(--ink)}
-  #predict button:hover{border-color:#1565C0;background:#f0f7ff}
+  #predict button:hover,#predict2 button:hover{border-color:#1565C0;background:#f0f7ff}
   #success{bottom:50%;transform:translate(-50%,50%);text-align:center}
   #success.hide{transform:translate(-50%,50%) translateY(12px)}
   #success .big{font-size:38px}
@@ -132,21 +133,20 @@
 
 <div id="topbar">
   <span class="title">🧪 케이랩 과학실</span>
-  <span class="badge">미션 · 물 끓이기</span>
+  <span class="badge">미션 · 화산 모형실험</span>
 </div>
 
 <div id="panel">
-  <div id="temp" class="na">🌡️ 온도계를 설치하면<br>온도가 보여요</div>
   <div id="stateline"></div>
-  <div class="volwrap" id="volwrap" style="display:none">
-    <div class="lab">비커 속 물의 양</div>
-    <div class="volbar"><i id="volfill"></i></div>
+  <div class="volwrap" id="preswrap" style="display:none">
+    <div class="lab">화산 속 압력</div>
+    <div class="volbar"><i id="presfill"></i></div>
   </div>
 </div>
 
 <div id="mission">
-  <div class="mt">🎯 미션: 물을 100℃까지 끓여 보세요</div>
-  <div class="mp">아래 선반에서 <b>필요한 기구만</b> 골라 실험대에 준비하세요. 무엇이 필요할까요?</div>
+  <div class="mt">🎯 미션: 화산을 분출시키고, 식혀서 굳혀 보세요</div>
+  <div class="mp">아래 선반에서 <b>화산 모형실험에 필요한 기구만</b> 골라 준비하세요. 무엇이 필요할까요?</div>
   <div class="prog" id="prog"></div>
 </div>
 
@@ -159,16 +159,24 @@
 <div id="tray"></div>
 
 <div class="card hide" id="predict">
-  <h3>🔮 준비 끝! 예측 — 물이 끓기 시작한 뒤에도 계속 가열하면, 온도는?</h3>
+  <h3>🔮 준비 끝! 예측 — 계속 가열하면 화산은 어떻게 될까요?</h3>
   <div class="opts">
-    <button data-pick="up">① 100℃를 넘어 계속 올라간다</button>
-    <button data-pick="stay">② 100℃에서 더 올라가지 않는다</button>
+    <button data-pick="stay">① 겉모습 그대로 있다</button>
+    <button data-pick="erupt">② 마그마가 분출한다</button>
+  </div>
+</div>
+
+<div class="card hide" id="predict2">
+  <h3>🔮 흐르던 용암에 불을 끄면?</h3>
+  <div class="opts">
+    <button data-pick="flow">① 계속 흐른다</button>
+    <button data-pick="harden">② 식어서 굳는다 (돌이 된다)</button>
   </div>
 </div>
 
 <div class="card hide" id="success">
   <div class="big">🏅</div>
-  <h3>미션 성공 — 물 끓이기!</h3>
+  <h3>미션 성공 — 화산 모형실험!</h3>
   <p id="sucMsg"></p>
   <div class="row">
     <button id="sucFree" class="pri">🧪 자유 실험 하기</button>
@@ -922,57 +930,68 @@ function animate(){
     if(k>=1){ d.o.position.y=d.o.userData.baseY; drops.splice(i,1); }
   }
 
-  const ready = !!(run.placed.tripod && run.placed.gauze && run.placed.beaker);
+  // C-9 조작 문법: 램프 드래그로 화산 아래를 가열. C-3: 화산이 모든 것의 선행.
+  const ready = !!(run.placed.volcano && run.placed.stand && run.placed.marshmallow);
   const S=sim.step(dt,{lit, dist:lampDist(), ready});
 
-  // HUD — 온도는 온도계가 있어야 보임
-  if(run.placed.thermo){
-    tempEl.className='';
-    tempEl.innerHTML=S.temp.toFixed(1)+'<small> ℃</small>';
-    thermoCol.scale.y=0.02+(S.temp-20)/80*0.155;
-    volEl.style.width=(S.vol*100).toFixed(0)+'%';
+  // ── 압력 바 HUD (분출 전만 표시) ──
+  if(ready){ preswrap.style.display=''; presEl.style.width=(S.pressure*100).toFixed(0)+'%'; }
+  else preswrap.style.display='none';
+
+  // ── 용암 발광띠 (flow=성장 / cooled=굳음 색 lerp) ──
+  lavaTube.geometry.setDrawRange(0, Math.floor(lavaGeoIdx * S.flow));
+  lavaMat.color.copy(LAVA_HOT).lerp(LAVA_ROCK, S.cooled);   // 굳으면 화성암색
+  lavaLight.intensity = 1.4 * S.flow * (1 - S.cooled);
+  lavaLight.color.copy(lavaMat.color);
+
+  // ── 마시멜로(마그마) 흡수 — 분출 시작하면 용암에 삼켜짐 ──
+  if(marshMesh && run.placed.marshmallow){
+    const target = S.erupting ? 0.001 : 1;
+    marshMesh.scale.x += (target-marshMesh.scale.x)*Math.min(dt*4,1);
+    marshMesh.scale.y=marshMesh.scale.z=marshMesh.scale.x;
   }
+
+  // ── 분출 스프라이트 (uIntensity: 압력 쌓임→분출, 굳으면 0) ──
+  if(steamUni){ steamUni.uTime.value=t;
+    const eInt = S.erupting ? (1-S.cooled) : S.pressure*0.5;   // 분출 전 예열 김 살짝
+    steamUni.uIntensity.value += (eInt - steamUni.uIntensity.value)*Math.min(dt*2.5,1);
+  }
+
+  // ── 상태줄 (SPEC A-3) ──
   let st='';
   if(succeeded) st='🏅 미션 성공!';
-  else if(S.boiling) st='💨 끓는 중 — 100℃에 머물러요!';
-  else if(S.heatK>0 && lit) st='🔥 가열 중…';
-  else if(lit && !ready) st='가열하려면 비커까지 준비!';
-  else if(lit) st='램프를 비커 아래로 옮겨요';
-  else if(S.temp>35) st='식는 중…';
+  else if(S.phase==='rock') st='🪨 굳어서 화성암이 됐어요!';
+  else if(S.phase==='cooling') st='불을 껐어요 — 용암이 식는 중…';
+  else if(S.phase==='flowing') st='🌋 분출! 용암이 흘러내려요';
+  else if(S.phase==='heating') st='🔥 마그마가 데워지는 중… 압력이 쌓여요';
+  else if(lit && !ready) st='램프를 화산 아래로 옮겨요';
+  else st='화산과 받침을 준비하고, 아래를 가열해 봐요';
   stateEl.textContent=st;
 
-  if(!flags.warm && S.temp>60 && S.temp<99){
-    flags.warm=true;
-    toast('🫧 60℃가 넘으니 바닥에서 작은 기포가 생기기 시작해요');
+  // ── ★와우 2차 (분출 시작 순간·중고 · 불 끄면 굳음?) ──
+  if(!eruptShown && S.erupting){
+    eruptShown=true;
+    if(showWow && !predict2Shown && !freeMode){ predict2Shown=true; predict2El.classList.remove('hide'); }
   }
-  if(S.boiling){
+
+  // ── 성공 판정 (cooled>=0.95 2초 지속 = 분출→굳음 관찰) ──
+  if(S.cooled>=0.95){
     if(!successAt) successAt=t;
     if(!succeeded && t-successAt>2){
       succeeded=true;
       const w=run.wrongCount();
-      let msg='끓는 동안 온도는 <b>100℃에서 멈춰요.</b> 남는 열은 물을 눈에 안 보이는 물(수증기)로 바꾸는 데 쓰이거든요.';
-      if(prediction) msg=(prediction==='stay'?'🎯 <b>예측 적중!</b> ':'🤔 예측과 달랐죠? ')+msg;
+      let msg='땅속 <b>마그마</b>가 압력으로 분출해 <b>용암</b>이 되고, <b>식으면 굳어 화성암</b>이 돼요. 제주 현무암·한탄강 주상절리가 이렇게 생겼어요!';
+      if(prediction) msg=(prediction==='erupt'?'🎯 <b>1차 예측 적중!</b> ':'🤔 1차 예측과 달랐죠? ')+msg;
+      if(prediction2) msg+= (prediction2==='harden')
+        ? '<br>🎯 <b>2차도 적중</b> — 불을 끄니 용암이 식어 굳었죠(화성암).'
+        : '<br>🤔 2차는 달랐죠? 불을 끄면(열이 식으면) 용암이 굳어 <b>화성암</b>이 돼요.';
       msg+= w===0 ? '<br><b>기구도 한 번에 딱 맞게 골랐어요!</b>' :
                     `<br>기구 고르기 다시 생각해 본 횟수: ${w}번 — 그것도 배움이에요!`;
       $('sucMsg').innerHTML=msg;
       if(!freeMode) successEl.classList.remove('hide');
-      else toast('💨 끓기 시작 — 온도는 100℃ 고정!',false,5200);
+      else toast('🪨 용암이 굳어 화성암이 됐어요!',false,5200);
     }
   } else successAt=0;
-  if(!flags.low && S.vol<=sim.state.minVol+0.001){
-    flags.low=true;
-    toast('⚠️ 물이 거의 다 줄었어요! 실제 실험에서는 다 마르기 전에 불을 꺼야 안전해요', true, 5200);
-  }
-
-  // 물·기포·김 (비커가 있을 때만)
-  if(run.placed.beaker){
-    const topLocal=layoutWater(S.vol);
-    rippleWater(t, 0.0012+0.0055*S.bubble);
-    stepBubbles(dt, S.bubble, topLocal);
-    steam.position.y=topLocal+0.005;
-    steamUni.uTime.value=t;
-    steamUni.uIntensity.value+=(S.steam-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
-  }
 
   if(lit){
     const f=1+0.10*Math.sin(t*23)+0.06*Math.sin(t*57+1.7);
