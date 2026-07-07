@@ -1,0 +1,260 @@
+/* ========================================================
+   teacher-v3.css — 케이티처 v3 대개조 C1 (크롬 오버레이)
+   신설: 2026-07-07 (오퍼스)
+   설계 단일 정답: kedu/teacher/표준/케이티처_v3_대개조_설계.md §2·§3 C1
+   토큰 원본(동일값 복붙): engine3/klab3-ui.css §1 · 폰트: hub/klab.html
+   ────────────────────────────────────────────────────────
+   원칙:
+   · 전 셀렉터 body.kt3 스코프 — teacher-styles.css 한 줄도 안 고침.
+   · 롤백 = URL ?theme=classic → init 앞 스니펫이 kt3 제거 → 즉시 구스킨.
+   · C1 범위 = 크롬만(홈·사이드바·툴바·extras 오버레이 + 무대 배경).
+     슬라이드 본문 카드(.slide 내부)는 C2 몫 — 여기선 미변경.
+   · "다크 무대 + 밝은 종이": slide-stage만 다크로 → 밝은 .slide가 위에 뜸.
+   · 과목 악센트 = body class subj-math / subj-korean (엔진 불변).
+   ======================================================== */
+
+@font-face{
+  font-family:'Hakgyoansim Moheomga';
+  src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');
+  font-display:swap;
+}
+
+/* ── 토큰 (klab3-ui.css §1 동일값) ── */
+body.kt3{
+  --studio:linear-gradient(180deg,#2b3340 0%,#1b2129 46%,#12161c 100%);
+  --ink:#E8EEF5; --mut:#8fa3b8; --card-ink:#1d2733;
+  --line3:rgba(255,255,255,.09); --glass:rgba(255,255,255,.045);
+  --hud:rgba(20,25,32,.74); --hudline:rgba(255,255,255,.10);
+  --green:#12B886; --orange:#FF8A3D;
+  --acc:#5B9BF0;                 /* 기본 = 수학. subj-*로 갱신 */
+  --kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif;
+
+  background:var(--studio) fixed;
+  color:var(--ink);
+}
+body.kt3.subj-math{--acc:#5B9BF0}
+body.kt3.subj-korean{--acc:#FFA25C}
+
+/* 무대 위에서 옛 라이트 배경 토큰이 새어나오지 않게 크롬 컨테이너만 투명화 */
+body.kt3 .home-view,
+body.kt3 main{background:transparent}
+
+/* ════════════════════════════════════════════════════════
+   1. 홈 화면 (다크 무대 + 히어로)
+   ════════════════════════════════════════════════════════ */
+body.kt3 .home-view{padding:44px 40px 90px}
+
+/* 히어로 = 단원 위 헤더를 스튜디오 카드로 */
+body.kt3 .home-header{
+  margin-bottom:38px;padding:34px 36px;border-radius:24px;
+  border:1px solid var(--line3);
+  border-bottom:1px solid var(--line3);
+  background:
+    radial-gradient(120% 150% at 84% 8%, rgba(91,155,240,.16), transparent 55%),
+    radial-gradient(95% 130% at 10% 100%, rgba(45,212,160,.09), transparent 60%),
+    rgba(255,255,255,.03);
+  position:relative;overflow:hidden;
+}
+body.kt3.subj-korean .home-header{
+  background:
+    radial-gradient(120% 150% at 84% 8%, rgba(255,162,92,.17), transparent 55%),
+    radial-gradient(95% 130% at 10% 100%, rgba(155,123,245,.08), transparent 60%),
+    rgba(255,255,255,.03);
+}
+body.kt3 .home-header .brand{
+  color:var(--acc);letter-spacing:.18em;font-size:12px;
+  text-transform:uppercase;font-weight:600;margin-bottom:12px;
+}
+body.kt3 .home-header h1{
+  font-family:var(--kedu-title);font-size:33px;letter-spacing:.5px;
+  color:#fff;font-weight:400;margin-bottom:9px;
+}
+body.kt3 .home-header .sub{color:#b9c8d6;font-size:14px;line-height:1.7}
+/* 케이에듀로 가기 버튼 = 유리 톤 */
+body.kt3 .home-header a[href="/"]{
+  border:1px solid var(--line3) !important;
+  background:var(--glass) !important;color:var(--ink) !important;
+  backdrop-filter:blur(6px);transition:.15s;
+}
+body.kt3 .home-header a[href="/"]:hover{
+  border-color:rgba(255,255,255,.28) !important;background:rgba(255,255,255,.07) !important;
+}
+
+/* 단원 헤더 = 좌측 악센트 바 */
+body.kt3 .unit-header{
+  border-bottom:1px solid var(--line3);
+  padding-left:14px;border-left:4px solid var(--acc);
+  padding-bottom:9px;margin-bottom:18px;
+}
+body.kt3 .unit-header .unit-num{
+  font-family:var(--kedu-title);color:var(--acc);
+  background:rgba(255,255,255,.06);border:1px solid var(--line3);
+  border-radius:999px;padding:3px 12px;letter-spacing:.5px;
+}
+body.kt3 .unit-header h2{font-family:var(--kedu-title);color:var(--ink);font-weight:400;font-size:20px}
+body.kt3 .unit-header .unit-meta{color:var(--mut)}
+
+/* 차시 카드 = 글래스 + 글로우 */
+body.kt3 .lesson-card{
+  background:var(--glass);border:1px solid var(--line3);border-radius:16px;
+  transition:.16s;position:relative;overflow:hidden;
+}
+body.kt3 .lesson-card::after{
+  content:'';position:absolute;inset:0;border-radius:16px;opacity:0;transition:.2s;
+  box-shadow:inset 0 0 0 1.5px var(--acc), 0 8px 26px -10px var(--acc);pointer-events:none;
+}
+body.kt3 .lesson-card:hover{
+  transform:translateY(-3px);background:rgba(255,255,255,.07);border-color:var(--line3);
+  box-shadow:none;
+}
+body.kt3 .lesson-card:hover::after{opacity:.7}
+body.kt3 .lesson-card:active{transform:scale(.98)}
+body.kt3 .lesson-card.ready{
+  border-color:var(--line3);
+  background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+}
+body.kt3 .lesson-card.disabled{
+  background:rgba(255,255,255,.02);opacity:.5;border-style:dashed;
+}
+body.kt3 .lesson-card.disabled:hover{transform:none;background:rgba(255,255,255,.02)}
+body.kt3 .lesson-card.disabled:hover::after{opacity:0}
+
+body.kt3 .lesson-card .lc-num{
+  font-family:var(--c-font-mono);color:var(--mut);
+  background:rgba(255,255,255,.06);border:1px solid var(--line3);
+}
+body.kt3 .lesson-card.ready .lc-num{background:var(--acc);color:#0c1622;border-color:transparent}
+body.kt3 .lesson-card .lc-title{color:var(--ink)}
+body.kt3 .lesson-card .lc-tag{color:var(--mut);background:rgba(255,255,255,.06)}
+body.kt3 .lesson-card .lc-concept{color:#b9c8d6;border-top:1px dashed var(--line3)}
+body.kt3 .lesson-card .lc-status{color:var(--mut)}
+body.kt3 .lesson-card.ready .lc-status{color:var(--acc)}
+
+/* ════════════════════════════════════════════════════════
+   2. 슬라이드쇼 크롬 — 사이드바 (유리 패널)
+   ════════════════════════════════════════════════════════ */
+body.kt3 aside{
+  background:var(--hud);backdrop-filter:blur(10px);
+  border-right:1px solid var(--hudline);
+}
+body.kt3 aside header{border-bottom:1px solid var(--hudline)}
+body.kt3 aside header h1{color:var(--ink);font-family:var(--kedu-title);font-weight:400}
+body.kt3 aside header .meta{color:var(--mut)}
+body.kt3 aside header .tag{
+  background:rgba(255,255,255,.06);color:var(--mut);border:1px solid var(--line3);
+}
+body.kt3 aside .tabs{border-bottom:1px solid var(--hudline)}
+body.kt3 aside .tab{color:var(--mut)}
+body.kt3 aside .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+body.kt3 aside .tab:hover:not(.active){color:var(--ink)}
+body.kt3 aside .tab-panel::-webkit-scrollbar-thumb{background:var(--line3)}
+
+/* 슬라이드 목록 */
+body.kt3 .stage-label{color:var(--mut)}
+body.kt3 .slide-list-item{color:var(--ink)}
+body.kt3 .slide-list-item:hover{background:rgba(255,255,255,.05)}
+body.kt3 .slide-list-item.current{
+  background:rgba(91,155,240,.14);color:var(--ink);
+}
+body.kt3.subj-korean .slide-list-item.current{background:rgba(255,162,92,.16)}
+body.kt3 .slide-list-item .checkbox{border-color:var(--line3)}
+body.kt3 .slide-list-item .checkbox.checked{background:var(--acc);border-color:var(--acc)}
+body.kt3 .slide-list-item.current .slide-num{color:var(--acc)}
+body.kt3 .slide-list-item .extra-count{background:rgba(255,255,255,.08);color:var(--mut)}
+
+/* 보조자료 카드 */
+body.kt3 .extras-hint{color:var(--mut)}
+body.kt3 .extras-filter button{
+  background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--line3);
+}
+body.kt3 .extras-filter button:hover{background:rgba(255,255,255,.09)}
+body.kt3 .extras-filter button.active{background:var(--acc);color:#0c1622}
+body.kt3 .extra-card{
+  background:var(--glass);border:1px solid var(--line3);color:var(--ink);
+}
+body.kt3 .extra-card:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.07)}
+body.kt3 .extra-card.attached{
+  border-color:var(--acc);background:rgba(91,155,240,.12);
+}
+body.kt3.subj-korean .extra-card.attached{background:rgba(255,162,92,.14)}
+body.kt3 .extra-card .extra-icon{opacity:.9}
+body.kt3 .extra-card .extra-title{color:var(--ink)}
+body.kt3 .extra-card .extra-attach{border:1px solid var(--line3);color:var(--mut)}
+body.kt3 .extra-card:hover .extra-attach{border-color:var(--acc);color:var(--acc)}
+body.kt3 .extra-card.attached .extra-attach{background:var(--acc);color:#0c1622;border-color:var(--acc)}
+body.kt3 .extra-card .extra-desc{color:var(--mut)}
+
+/* 블록 추가 탭 */
+body.kt3 .block-section h3{color:var(--mut)}
+body.kt3 .block-card{
+  background:var(--glass);border:1px solid var(--line3);
+}
+body.kt3 .block-card:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.07)}
+body.kt3 .block-card .block-name{color:var(--ink)}
+body.kt3 .block-card .block-desc{color:var(--mut)}
+
+/* ════════════════════════════════════════════════════════
+   3. 툴바 (HUD)
+   ════════════════════════════════════════════════════════ */
+body.kt3 .toolbar{
+  background:var(--hud);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--hudline);
+}
+body.kt3 .icon-btn{
+  background:rgba(255,255,255,.08);color:var(--ink);
+  border:1px solid var(--hudline);box-shadow:0 3px 12px rgba(0,0,0,.28);
+}
+body.kt3 .icon-btn:hover{border-color:var(--acc);color:#fff;background:rgba(255,255,255,.13)}
+body.kt3 .icon-btn:disabled:hover{border-color:var(--hudline);color:var(--ink)}
+body.kt3 .icon-btn.reveal-btn.revealed{background:rgba(18,184,134,.22);border-color:var(--green);color:#fff}
+body.kt3 .btn{background:var(--acc);border-color:var(--acc);color:#0c1622}
+body.kt3 .btn:hover{filter:brightness(1.08)}
+body.kt3 .toolbar-sep{background:var(--hudline)}
+body.kt3 .save-status{color:var(--mut)}
+body.kt3 .save-status .dot{background:var(--mut)}
+body.kt3 .save-status.just-saved .dot{background:var(--green)}
+body.kt3 .save-status.just-saved{color:var(--green)}
+body.kt3 .reset-btn{background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--hudline)}
+body.kt3 .reset-btn:hover{border-color:var(--orange);color:var(--orange)}
+body.kt3 .position{color:var(--mut)}
+body.kt3 .position .stage-tag{color:var(--ink)}
+
+/* ════════════════════════════════════════════════════════
+   4. 무대 배경 (다크) — 밝은 슬라이드가 위에 뜨는 구도
+   ════════════════════════════════════════════════════════ */
+body.kt3 .slide-stage{background:var(--studio)}
+/* 보조자료 패널(무대 우측) = 유리 */
+body.kt3 .extras-panel{
+  background:var(--hud);backdrop-filter:blur(8px);
+  border:1px solid var(--hudline);border-radius:14px;
+}
+body.kt3 .extras-panel .ep-label{color:var(--mut)}
+body.kt3 .extras-panel::-webkit-scrollbar-thumb{background:var(--line3)}
+
+/* ════════════════════════════════════════════════════════
+   5. 자료 오버레이 (이미 다크 → HUD 톤으로 승격)
+   ════════════════════════════════════════════════════════ */
+body.kt3 .ext-overlay{background:rgba(18,22,28,.9)}
+body.kt3 .ext-overlay-bar{
+  background:var(--hud);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--hudline);
+}
+body.kt3 .ext-overlay-bar .eo-title{color:#fff}
+body.kt3 .ext-overlay-bar .eo-close{
+  background:rgba(255,255,255,.1);border:1px solid var(--hudline);color:#fff;
+}
+body.kt3 .ext-overlay-bar .eo-close:hover{background:rgba(255,255,255,.18)}
+
+/* 전체화면 종료 버튼도 HUD */
+body.kt3 .fs-exit{background:var(--hud);border:1px solid var(--hudline);color:#fff}
+
+/* ════════════════════════════════════════════════════════
+   6. 모달 크롬 (자료 팝업)
+   ════════════════════════════════════════════════════════ */
+body.kt3 .modal{background:rgba(12,16,22,.72)}
+body.kt3 .modal-content{
+  background:#1b2129;border:1px solid var(--hudline);color:var(--ink);
+}
+body.kt3 .modal-content h3{color:#fff;font-family:var(--kedu-title);font-weight:400}
+body.kt3 .modal-close{background:var(--acc);color:#0c1622}
+body.kt3 .modal-close:hover{filter:brightness(1.08)}

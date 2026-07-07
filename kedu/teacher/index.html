@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>케이티처 · K-edu Teacher</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="engine/teacher-v3.css">
 <style>
 /* ============================================================
    케이티처 통합 허브 — 학년 → 과목 선택 진입
@@ -158,10 +159,31 @@ main{flex:1; width:100%; max-width:880px; margin:0 auto; padding:44px 24px 56px;
   .subject-grid{grid-template-columns:1fr;}
   main{padding:32px 18px 44px;}
 }
+/* ════════ v3 오버레이 (허브) — body.kt3 스코프, ?theme=classic 롤백 ════════ */
+body.kt3{
+  --c-text:#E8EEF5; --c-text-light:#b9c8d6; --c-text-mute:#8fa3b8;
+  --c-line:rgba(255,255,255,.09); --c-line-soft:rgba(255,255,255,.05);
+  --c-card:rgba(255,255,255,.045);
+  --c-accent:#5B9BF0; --c-accent-soft:rgba(91,155,240,.16); --c-accent-text:#9cc0f7;
+  --c-warm:#FFA25C; --c-warm-soft:rgba(255,162,92,.14);
+  --c-shadow:0 4px 16px rgba(0,0,0,.32); --c-shadow-md:0 10px 30px rgba(0,0,0,.44);
+  background:linear-gradient(180deg,#2b3340 0%,#1b2129 46%,#12161c 100%) fixed;
+}
+body.kt3 .topbar{background:rgba(20,25,32,.74); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.10);}
+body.kt3 .brand .en{color:var(--c-text-mute);}
+body.kt3 .grade-card,body.kt3 .subject-card,body.kt3 .wide-card{position:relative; overflow:hidden; backdrop-filter:blur(6px);}
+body.kt3 .grade-card::after,body.kt3 .subject-card.ready::after{
+  content:''; position:absolute; inset:0; border-radius:12px; opacity:0; transition:.2s; pointer-events:none;
+  box-shadow:inset 0 0 0 1.5px var(--c-accent), 0 8px 26px -10px var(--c-accent);
+}
+body.kt3 .grade-card:hover::after,body.kt3 .subject-card.ready:hover::after{opacity:.7;}
+body.kt3 .grade-card:hover,body.kt3 .subject-card.ready:hover,body.kt3 .wide-card:hover{background:rgba(255,255,255,.07);}
+body.kt3 .wide-card.disabled .wc-ic,body.kt3 .subject-card.disabled .sc-ic{background:rgba(255,255,255,.06);}
+body.kt3 .subject-card.ready .sc-status{background:var(--c-accent); color:#0c1622;}
 </style>
   <script src="/kedu_gate.js"></script>
 </head>
-<body>
+<body class="kt3 subj-math">
 
 <div class="topbar">
   <div class="brand"><span class="dot"></span><b>케이티처</b><span class="en">K-edu Teacher</span></div>
@@ -212,6 +234,8 @@ main{flex:1; width:100%; max-width:880px; margin:0 auto; padding:44px 24px 56px;
 </main>
 
 <script>
+/* v3 롤백: URL ?theme=classic → kt3 제거 → 즉시 구스킨 복귀 */
+if(new URLSearchParams(location.search).get('theme')==='classic')document.body.classList.remove('kt3');
 // ============================================================
 // 진입 가능 카탈로그 — 실물 파일(g{N}_{subject}.html)이 있을 때만 ready:true
 // 케이티처 실물 양산이 끝나는 학년·과목을 여기에 등재한다.
