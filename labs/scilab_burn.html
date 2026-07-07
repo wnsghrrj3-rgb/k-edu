@@ -757,6 +757,9 @@ function buildTray(){
     trayEl.appendChild(d);
   });
 }
+// 스테이지: 'cups'(컵 덮기 = 1막) / 'oil'(유류 화재 ★와우 = 2막). ?stage=oil 로 직접 진입.
+// ⚠️ 2026-07-08 핫픽스(페이블): 이 선언은 반드시 buildTray() 이전 — curEquip()이 stage를 참조(TDZ로 페이지 전체 부팅 불가였음).
+let stage = (new URLSearchParams(location.search).get('stage')==='oil') ? 'oil' : 'cups';
 buildTray();
 
 /* ═════════ 게임 상태 ═════════ */
@@ -767,8 +770,7 @@ let freeMode=false, predictShown=false, prediction=null;
 let predict2Shown=false, prediction2=null, smallOutShown=false;
 let succeeded=false, successAt=0;
 
-// 스테이지: 'cups'(컵 덮기 = 1막) / 'oil'(유류 화재 ★와우 = 2막). ?stage=oil 로 직접 진입.
-let stage = (new URLSearchParams(location.search).get('stage')==='oil') ? 'oil' : 'cups';
+// (stage 선언은 buildTray() 이전으로 이동 — 2026-07-08 TDZ 핫픽스, 아래 주석 참조)
 let oilSim=null, oilRun=null;
 let oilPredictShown=false, oilPrediction=null, oilFlareShown=false;
 let oilSucceeded=false, oilSuccessAt=0;
