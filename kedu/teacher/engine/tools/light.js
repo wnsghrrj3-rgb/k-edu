@@ -329,7 +329,7 @@
         var oa=Math.max(b1.a,b2.a), ob=Math.min(b1.b,b2.b);
         if(ob>oa){
           svg.appendChild(svgEl('line',{x1:SCRX-4,y1:oa,x2:SCRX-4,y2:ob,stroke:'#141C26','stroke-width':11,'stroke-opacity':0.95,'stroke-linecap':'round'}));
-          svg.appendChild(svgEl('text',{x:SCRX-38,y:(oa+ob)/2+6,'text-anchor':'end','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:'#141C26'})).textContent='겹침 — 진해요!';
+          svg.appendChild(svgEl('text',{x:SCRX-38,y:(oa+ob)/2+6,'text-anchor':'end','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:'#141C26'})).textContent='겹침 — 진해요!';
         }
       }
       drawScreenObj(svg); sun(svg,src.x,src.y,'src'); sun(svg,src2.x,src2.y,'src2');
@@ -344,11 +344,11 @@
           var midY=(ty<obj.y)?(obj.y-obj.h/2-70-k*4):(obj.y+obj.h/2+70+(8-k)*4);   // 물체를 크게 우회
           svg.appendChild(svgEl('path',{d:'M '+src.x+' '+src.y+' Q '+obj.x+' '+midY+' '+SCRX+' '+ty,stroke:C.ray,'stroke-width':2.2,fill:'none','stroke-opacity':0.65}));
         }
-        var lb=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'}); lb.textContent='🌀 휘는-빛 세상 — 그림자가 없어요!'; svg.appendChild(lb);
+        var lb=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'}); lb.textContent='🌀 휘는-빛 세상 — 그림자가 없어요!'; svg.appendChild(lb);
         drawScreenObj(svg); sun(svg,src.x,src.y);
       } else {
         renderShadow(svg);
-        var lb2=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.ink}); lb2.textContent='↔ 직진 세상 — 그림자가 돌아왔어요'; svg.appendChild(lb2);
+        var lb2=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:C.ink}); lb2.textContent='↔ 직진 세상 — 그림자가 돌아왔어요'; svg.appendChild(lb2);
       }
     }
 
@@ -384,7 +384,7 @@
         svg.appendChild(svgEl('line',{x1:pts[p2i][0],y1:pts[p2i][1],x2:pts[p2i+1][0],y2:pts[p2i+1][1],stroke:(p2i===0?C.ray:C.rayHot),'stroke-width':3,'stroke-opacity':Math.max(0.25,1-p2i*0.11),'stroke-linecap':'round'}));
         if(p2i>0)svg.appendChild(svgEl('circle',{cx:pts[p2i][0],cy:pts[p2i][1],r:5,fill:C.rayHot}));
       }
-      var cnt=svgEl('text',{x:545,y:70,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'}); cnt.textContent='튕긴 횟수: '+b+'번!'; svg.appendChild(cnt);
+      var cnt=svgEl('text',{x:545,y:70,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'}); cnt.textContent='튕긴 횟수: '+b+'번!'; svg.appendChild(cnt);
       sun(svg,src.x,src.y);
     }
 

@@ -159,7 +159,7 @@
         var col=gi%cols, row=Math.floor(gi/cols), bx=x0+col*(bw+16), by=y0+row*(bh+16);
         svg.appendChild(svgEl('rect',{x:bx,y:by,width:bw,height:bh,rx:14,fill:'rgba(255,255,255,0.5)',stroke:'#1565C0','stroke-width':3,filter:'url(#dvSh)'}));
         if(hide){
-          var tq=svgEl('text',{x:bx+bw/2,y:by+bh/2+12,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':40,'font-weight':800,fill:'#F59F00'});tq.textContent='?';svg.appendChild(tq);
+          var tq=svgEl('text',{x:bx+bw/2,y:by+bh/2+12,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':40,'font-weight':800,fill:'#F59F00'});tq.textContent='?';svg.appendChild(tq);
           continue;
         }
         var inThis=(useMode==='partition')?per:(gi<nb?S:rem);
@@ -172,10 +172,10 @@
       }
       if(useMode==='partition'&&rem>0&&!hide){
         for(var rr=0;rr<rem;rr++){var dotR2=13,dx2=VBW-50,dy2=40+rr*(dotR2*2+6)+dotR2;svg.appendChild(svgEl('circle',{cx:dx2,cy:dy2,r:dotR2,fill:'#FF8A3D',stroke:'#C24E0E','stroke-width':2,class:(doFlash?'dv-rem-pop':'')}));}
-        var tl=svgEl('text',{x:VBW-50,y:30,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#C24E0E'});tl.textContent=(G().eqSign?'나머지':'남은 것');svg.appendChild(tl);
+        var tl=svgEl('text',{x:VBW-50,y:30,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:'#C24E0E'});tl.textContent=(G().eqSign?'나머지':'남은 것');svg.appendChild(tl);
       }
       if(doFlash){
-        var fx=svgEl('text',{x:VBW/2,y:24,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#C24E0E',class:'dv-flash'});
+        var fx=svgEl('text',{x:VBW/2,y:24,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:'#C24E0E',class:'dv-flash'});
         fx.textContent='어! '+rem+'개가 어디에도 못 들어가 따로 남았어요 (나머지 '+rem+')';
         svg.appendChild(fx);
       }

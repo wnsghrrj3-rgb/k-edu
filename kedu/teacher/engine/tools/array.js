@@ -146,7 +146,7 @@
       svg.appendChild(g);
       // 와우 ④ 마법모먼트: 돌려도 개수 그대로(교환법칙)
       if(opts.flash){
-        var fl=svgEl('text',{x:VBW/2,y:34,'text-anchor':'middle','font-family':'Jua, "Apple SD Gothic Neo", sans-serif','font-size':26,'font-weight':800,fill:'#7048E8',class:'ar-flash'});
+        var fl=svgEl('text',{x:VBW/2,y:34,'text-anchor':'middle','font-family':'Gowun Dodum, "Apple SD Gothic Neo", sans-serif','font-size':26,'font-weight':800,fill:'#7048E8',class:'ar-flash'});
         fl.textContent='돌려도 개수는 그대로! '+cols+' × '+rows+' ＝ '+rows+' × '+cols+' ＝ '+(rows*cols)+' (교환법칙)';
         svg.appendChild(fl);
       }

@@ -145,7 +145,7 @@
     function kind(d) { if(d===0)return['','']; if(d<90)return['예각','#0CA678']; if(d===90)return['직각','#1565C0']; if(d<180)return['둔각','#E8590C']; return['평각','#7048E8']; }
     function lowWord(d) { if(d===0)return['','#5a7894']; if(d<90)return['조금 벌어진 각','#0CA678']; if(d===90)return['반듯한 직각!','#1565C0']; if(d<180)return['많이 벌어진 각','#E8590C']; return['쭉 펴진 각','#7048E8']; }
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-    function txt(svg,x,y,s,sz,fill,fw){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':fw||800,fill:fill});t.textContent=s;svg.appendChild(t);}
+    function txt(svg,x,y,s,sz,fill,fw){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':sz,'font-weight':fw||800,fill:fill});t.textContent=s;svg.appendChild(t);}
 
     function render(quizDeg, opts) {
       opts = opts || {};
@@ -207,7 +207,7 @@
       if(opts.flash){
         var fg=svgEl('g',{class:'ag-flash','pointer-events':'none'});
         fg.appendChild(svgEl('rect',{x:cx-330,y:8,width:660,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#agSh)'}));
-        var ft=svgEl('text',{x:cx,y:28,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#fff'});
+        var ft=svgEl('text',{x:cx,y:28,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:'#fff'});
         ft.textContent='✋ 변을 늘여도 각의 크기는 그대로! 각은 길이가 아니라 두 변이 벌어진 정도';
         fg.appendChild(ft); svg.appendChild(fg);
       }

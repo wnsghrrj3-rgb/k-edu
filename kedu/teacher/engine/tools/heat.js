@@ -420,9 +420,9 @@
         // 손잡이 온도 게이지
         svg.appendChild(svgEl('rect',{x:cx-52,y:py-118,width:104,height:22,rx:9,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
         var gg=svgEl('rect',{x:cx-49,y:py-115,width:0,height:16,rx:7,fill:heatColor(0)}); svg.appendChild(gg); dyn.pan[i].gauge=gg;
-        var gt=svgEl('text',{x:cx,y:py-128,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:C.ink}); gt.textContent='손잡이 온도'; svg.appendChild(gt);
-        var gv=svgEl('text',{x:cx,y:py-82,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:C.hot}); svg.appendChild(gv); dyn.pan[i].tval=gv;
-        var nm=svgEl('text',{x:cx,y:py+72,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); nm.textContent=(P.steel?'🔩 ':'🪵 ')+P.nm; svg.appendChild(nm);
+        var gt=svgEl('text',{x:cx,y:py-128,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:C.ink}); gt.textContent='손잡이 온도'; svg.appendChild(gt);
+        var gv=svgEl('text',{x:cx,y:py-82,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:C.hot}); svg.appendChild(gv); dyn.pan[i].tval=gv;
+        var nm=svgEl('text',{x:cx,y:py+72,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); nm.textContent=(P.steel?'🔩 ':'🪵 ')+P.nm; svg.appendChild(nm);
       }
     }
 
@@ -436,19 +436,19 @@
         svg.appendChild(svgEl('rect',{x:265-60*sz,y:340-96*sz,width:120*sz,height:96*sz,rx:16*sz,fill:'#D0EBFF',stroke:'#74C0FC','stroke-width':3.5,opacity:0.95}));
       }
       if(t>0.15)svg.appendChild(svgEl('ellipse',{cx:265,cy:349,rx:34+t*76,ry:5+t*6,fill:'#A5D8FF',opacity:0.8}));
-      var l1=svgEl('text',{x:265,y:410,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); l1.textContent='🧊 맨 얼음'+(t>=1?' — 다 녹았어요!':''); svg.appendChild(l1);
+      var l1=svgEl('text',{x:265,y:410,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); l1.textContent='🧊 맨 얼음'+(t>=1?' — 다 녹았어요!':''); svg.appendChild(l1);
       // 오른쪽: 단열통 속 얼음(그대로)
       svg.appendChild(svgEl('rect',{x:540,y:222,width:200,height:146,rx:20,fill:'#F1F3F5',stroke:'#868E96','stroke-width':7}));
       svg.appendChild(svgEl('rect',{x:552,y:234,width:176,height:122,rx:14,fill:'#FFF9DB',stroke:'#E9C46A','stroke-width':3,'stroke-dasharray':'7 5'}));
       svg.appendChild(svgEl('rect',{x:580,y:252,width:120,height:96,rx:16,fill:'#D0EBFF',stroke:'#74C0FC','stroke-width':3.5}));
-      var l2=svgEl('text',{x:640,y:410,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); l2.textContent='🧤 단열통 얼음 — 그대로!'; svg.appendChild(l2);
-      var tl=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.vio}); tl.textContent='⏱ 시간 '+Math.round(t*100)+'% 흐름'; svg.appendChild(tl);
+      var l2=svgEl('text',{x:640,y:410,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:C.ink}); l2.textContent='🧤 단열통 얼음 — 그대로!'; svg.appendChild(l2);
+      var tl=svgEl('text',{x:450,y:70,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.vio}); tl.textContent='⏱ 시간 '+Math.round(t*100)+'% 흐름'; svg.appendChild(tl);
     }
 
     function drawConduct(svg){
       dyn.rod=[];
       for(var i=0;i<3;i++){ var y=ROD_Y[i], r=RODS[i];
-        var nm=svgEl('text',{x:ROD_X-70,y:y+ROD_H/2+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,fill:C.ink,'font-weight':800}); nm.textContent=r.name; svg.appendChild(nm);
+        var nm=svgEl('text',{x:ROD_X-70,y:y+ROD_H/2+8,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':24,fill:C.ink,'font-weight':800}); nm.textContent=r.name; svg.appendChild(nm);
         // 불꽃 (왼쪽 끝 아래)
         var fl=svgEl('path',{d:'M '+(ROD_X+8)+' '+(y+ROD_H+34)+' q -16 -18 0 -38 q 5 10 10 13 q 8 -10 6 -22 q 14 18 2 42 q -9 9 -18 5 z',fill:'url(#htFlame)',opacity:cd.heating?1:0.18}); svg.appendChild(fl); dyn.rod.push({flame:fl});
         // 막대 본체
@@ -463,7 +463,7 @@
         // 버터
         var bt=svgEl('g',{}); var bx=ROD_X+ROD_W-6;
         bt.appendChild(svgEl('rect',{x:bx-16,y:y-22,width:32,height:20,rx:6,fill:'#FFE066',stroke:'#F59F00','stroke-width':2.5}));
-        var bl=svgEl('text',{x:bx,y:y-34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':15,fill:C.sub}); bl.textContent='버터'; bt.appendChild(bl);
+        var bl=svgEl('text',{x:bx,y:y-34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':15,fill:C.sub}); bl.textContent='버터'; bt.appendChild(bl);
         svg.appendChild(bt); dyn.rod[i].butter=bt; dyn.rod[i].by=y;
       }
     }
@@ -476,43 +476,43 @@
       dyn.lqFlame=svgEl('path',{d:'M '+(B.x+B.w/2)+' '+(B.y+B.h+60)+' q -20 -20 0 -44 q 6 12 12 15 q 9 -12 7 -25 q 17 21 2 49 q -10 10 -21 5 z',fill:'url(#htFlame)'}); svg.appendChild(dyn.lqFlame);
       dyn.lqLamp=svgEl('g',{});
       dyn.lqLamp.appendChild(svgEl('rect',{x:B.x+B.w/2-46,y:B.y-34,width:92,height:18,rx:9,fill:'#FA5252'}));
-      var lt=svgEl('text',{x:B.x+B.w/2,y:B.y-42,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':16,fill:C.hot,'font-weight':800}); lt.textContent='가열 막대'; dyn.lqLamp.appendChild(lt);
+      var lt=svgEl('text',{x:B.x+B.w/2,y:B.y-42,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':16,fill:C.hot,'font-weight':800}); lt.textContent='가열 막대'; dyn.lqLamp.appendChild(lt);
       svg.appendChild(dyn.lqLamp);
       // 입자
       dyn.lqParts=svgEl('g',{}); svg.appendChild(dyn.lqParts);
       lq.ps.forEach(function(p){ p.el=svgEl('circle',{cx:p.x,cy:p.y,r:9,fill:heatColor(p.t)}); dyn.lqParts.appendChild(p.el); });
       // 위/아래 온도 표시
-      dyn.lqTop=svgEl('text',{x:B.x+B.w+40,y:B.y+40,'font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.lqTop);
-      dyn.lqBot=svgEl('text',{x:B.x+B.w+40,y:B.y+B.h-10,'font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.lqBot);
+      dyn.lqTop=svgEl('text',{x:B.x+B.w+40,y:B.y+40,'font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.lqTop);
+      dyn.lqBot=svgEl('text',{x:B.x+B.w+40,y:B.y+B.h-10,'font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.lqBot);
     }
 
     function drawGas(svg,ceil){
       var B=GS_BOX;
       // 방 단면
       svg.appendChild(svgEl('rect',{x:B.x-10,y:B.y-10,width:B.w+20,height:B.h+20,rx:18,fill:'rgba(233,240,248,0.5)',stroke:'#74A4C9','stroke-width':4}));
-      var rl=svgEl('text',{x:B.x+10,y:B.y-20,'font-family':'Jua,sans-serif','font-size':18,fill:C.sub,'font-weight':800}); rl.textContent='교실 옆모습'; svg.appendChild(rl);
+      var rl=svgEl('text',{x:B.x+10,y:B.y-20,'font-family':'Gowun Dodum,sans-serif','font-size':18,fill:C.sub,'font-weight':800}); rl.textContent='교실 옆모습'; svg.appendChild(rl);
       if(ceil){
         /* ── v2 만약에 🔥 — 난로를 천장에! (기존 난로·에어컨 자리는 비움) ── */
         var cg=svgEl('g',{});
         cg.appendChild(svgEl('rect',{x:B.x+B.w/2-55,y:B.y,width:110,height:36,rx:10,fill:'#FF8A3D',stroke:'#E8590C','stroke-width':3}));
-        var ct=svgEl('text',{x:B.x+B.w/2,y:B.y+25,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,fill:'#fff','font-weight':800}); ct.textContent='난로(천장?!)'; cg.appendChild(ct);
+        var ct=svgEl('text',{x:B.x+B.w/2,y:B.y+25,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':18,fill:'#fff','font-weight':800}); ct.textContent='난로(천장?!)'; cg.appendChild(ct);
         svg.appendChild(cg);
       } else {
         // 난로(바닥 왼쪽)
         dyn.gsHeater=svgEl('g',{});
         dyn.gsHeater.appendChild(svgEl('rect',{x:B.x+30,y:B.y+B.h-46,width:80,height:46,rx:10,fill:'#FF8A3D',stroke:'#E8590C','stroke-width':3}));
-        var ht2=svgEl('text',{x:B.x+70,y:B.y+B.h-16,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,fill:'#fff','font-weight':800}); ht2.textContent='난로'; dyn.gsHeater.appendChild(ht2);
+        var ht2=svgEl('text',{x:B.x+70,y:B.y+B.h-16,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':19,fill:'#fff','font-weight':800}); ht2.textContent='난로'; dyn.gsHeater.appendChild(ht2);
         svg.appendChild(dyn.gsHeater);
         // 에어컨(천장 오른쪽)
         dyn.gsAc=svgEl('g',{});
         dyn.gsAc.appendChild(svgEl('rect',{x:B.x+B.w-130,y:B.y,width:100,height:34,rx:10,fill:'#4DABF7',stroke:'#1971C2','stroke-width':3}));
-        var at=svgEl('text',{x:B.x+B.w-80,y:B.y+24,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,fill:'#fff','font-weight':800}); at.textContent='에어컨'; dyn.gsAc.appendChild(at);
+        var at=svgEl('text',{x:B.x+B.w-80,y:B.y+24,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':18,fill:'#fff','font-weight':800}); at.textContent='에어컨'; dyn.gsAc.appendChild(at);
         svg.appendChild(dyn.gsAc);
       }
       dyn.gsParts=svgEl('g',{}); svg.appendChild(dyn.gsParts);
       gs.ps.forEach(function(p){ p.el=svgEl('circle',{cx:p.x,cy:p.y,r:8,fill:heatColor(p.t)}); dyn.gsParts.appendChild(p.el); });
-      dyn.gsTop=svgEl('text',{x:B.x+14,y:B.y+34,'font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.gsTop);
-      dyn.gsBot=svgEl('text',{x:B.x+B.w-180,y:B.y+B.h-58,'font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.gsBot);
+      dyn.gsTop=svgEl('text',{x:B.x+14,y:B.y+34,'font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.gsTop);
+      dyn.gsBot=svgEl('text',{x:B.x+B.w-180,y:B.y+B.h-58,'font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); svg.appendChild(dyn.gsBot);
     }
 
     /* ─────────────────────────────── 갱신 ─────────────────────────────── */

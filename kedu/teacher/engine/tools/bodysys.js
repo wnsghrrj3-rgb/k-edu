@@ -116,7 +116,7 @@
       var bg  = kind==='magic' ? C.vio : (kind==='nudge' ? '#8a97a6' : '#1565C0');
       var d = document.createElement('div');
       d.className = cls;
-      d.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;max-width:92%;background:'+bg+';color:#fff;padding:12px 18px;border-radius:16px;font-family:Jua,sans-serif;font-size:18px;font-weight:800;line-height:1.42;box-shadow:0 6px 20px rgba(0,0,0,0.18);text-align:center;';
+      d.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;max-width:92%;background:'+bg+';color:#fff;padding:12px 18px;border-radius:16px;font-family:Gowun Dodum,sans-serif;font-size:18px;font-weight:800;line-height:1.42;box-shadow:0 6px 20px rgba(0,0,0,0.18);text-align:center;';
       d.innerHTML = msg;
       host.appendChild(d);
       var dur = kind==='magic' ? 6800 : (kind==='nudge' ? 2600 : 4200);
@@ -295,7 +295,7 @@
         var o = ORGAN[k]; if (drawn[o.nm]) return; drawn[o.nm] = true;
         var r = big ? 24 : 18;
         g.appendChild(svgEl('circle', { cx:o.x, cy:o.y, r:r, fill:col, stroke:'#fff', 'stroke-width':3, class:'bs-organ', 'data-k':k }));
-        var t = svgEl('text', { x:o.x, y:o.y+5, 'text-anchor':'middle', 'font-family':'Jua,sans-serif', 'font-size':12, 'font-weight':800, fill:'#fff', 'pointer-events':'none' });
+        var t = svgEl('text', { x:o.x, y:o.y+5, 'text-anchor':'middle', 'font-family':'Gowun Dodum,sans-serif', 'font-size':12, 'font-weight':800, fill:'#fff', 'pointer-events':'none' });
         t.textContent = o.nm.replace(/\(.*\)/, ''); g.appendChild(t);
       }
       node('sintest', SYS.digest.col, false);
@@ -307,7 +307,7 @@
       if (linkActive && linkStep >= 0 && linkStep < CROSS_STEPS.length) {
         var s = CROSS_STEPS[linkStep], hd = ORGAN[s.organ];
         g.appendChild(svgEl('circle', { cx:hd.x, cy:hd.y, r:29, fill:'none', stroke:C.vio, 'stroke-width':3, 'stroke-dasharray':'5 5', opacity:0.85 }));
-        var lbl = svgEl('text', { x:180, y:502, 'text-anchor':'middle', 'font-family':'Jua,sans-serif', 'font-size':22, 'font-weight':800, fill:C.vio });
+        var lbl = svgEl('text', { x:180, y:502, 'text-anchor':'middle', 'font-family':'Gowun Dodum,sans-serif', 'font-size':22, 'font-weight':800, fill:C.vio });
         lbl.textContent = s.label + ' 이동!';
         g.appendChild(lbl);
       }
@@ -341,7 +341,7 @@
             opacity: (flowIdx < 0 || isFlowHead || passed) ? 1 : 0.85,
             class: 'bs-organ', 'data-k': k
           }));
-          var lab = svgEl('text', { x: o.x, y: o.y + 5, 'text-anchor': 'middle', 'font-family': 'Jua,sans-serif', 'font-size': 12, 'font-weight': 800, fill: (sel === k ? s.col : '#fff'), 'pointer-events': 'none' });
+          var lab = svgEl('text', { x: o.x, y: o.y + 5, 'text-anchor': 'middle', 'font-family': 'Gowun Dodum,sans-serif', 'font-size': 12, 'font-weight': 800, fill: (sel === k ? s.col : '#fff'), 'pointer-events': 'none' });
           lab.textContent = o.nm.replace(/\(.*\)/, '');
           g.appendChild(lab);
         }

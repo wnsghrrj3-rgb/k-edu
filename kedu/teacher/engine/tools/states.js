@@ -349,8 +349,8 @@
       if(bpv>=-20&&bpv<=120)marks.push([bpv,bpv+'℃ 끓는점','#E8590C','st-mark-bp']);
       marks.forEach(function(m){var yy=TB-((m[0]+20)/140)*(TB-TT);
         svg.appendChild(svgEl('line',{x1:TX-16,y1:yy,x2:TX+30,y2:yy,stroke:m[2],'stroke-width':2.5,'stroke-dasharray':'5 4','class':m[3]}));
-        var tx=svgEl('text',{x:TX+34,y:yy+6,'font-family':'Jua,sans-serif','font-size':16,fill:m[2],'font-weight':800,'class':m[3]});tx.textContent=m[1];svg.appendChild(tx);});
-      if(mpv>120){ var im=svgEl('text',{x:TX+34,y:TT+16,'font-family':'Jua,sans-serif','font-size':15,fill:'#868E96','font-weight':800,'class':'st-mark-out'}); im.textContent='녹는점 '+mpv+'℃ — 저 위에!'; svg.appendChild(im); }
+        var tx=svgEl('text',{x:TX+34,y:yy+6,'font-family':'Gowun Dodum,sans-serif','font-size':16,fill:m[2],'font-weight':800,'class':m[3]});tx.textContent=m[1];svg.appendChild(tx);});
+      if(mpv>120){ var im=svgEl('text',{x:TX+34,y:TT+16,'font-family':'Gowun Dodum,sans-serif','font-size':15,fill:'#868E96','font-weight':800,'class':'st-mark-out'}); im.textContent='녹는점 '+mpv+'℃ — 저 위에!'; svg.appendChild(im); }
       mercuryEl._tt=TT; mercuryEl._tb=TB;
       // 비커
       svg.appendChild(svgEl('path',{d:'M '+(BX-14)+' '+(BY-8)+' L '+(BX-14)+' '+(BY+BH+16)+' Q '+(BX-14)+' '+(BY+BH+30)+' '+BX+' '+(BY+BH+30)+' L '+(BX+BW)+' '+(BY+BH+30)+' Q '+(BX+BW+14)+' '+(BY+BH+30)+' '+(BX+BW+14)+' '+(BY+BH+16)+' L '+(BX+BW+14)+' '+(BY-8),fill:'rgba(214,234,248,0.4)',stroke:'#74A4C9','stroke-width':4,'stroke-linejoin':'round','stroke-linecap':'round'}));
@@ -371,12 +371,12 @@
       if(massArmed){
         // 밀폐 뚜껑 — 닫힌 통(수증기가 빠져나가지 못함 → 무게 보존이 성립)
         svg.appendChild(svgEl('rect',{x:BX-22,y:BY-30,width:BW+44,height:22,rx:10,fill:'#CED4DA',stroke:'#868E96','stroke-width':3}));
-        var lt=svgEl('text',{x:BX+BW/2,y:BY-13,'font-family':'Jua,sans-serif','font-size':15,fill:'#495057','font-weight':800,'text-anchor':'middle'}); lt.textContent='🔒 뚜껑 닫음'; svg.appendChild(lt);
+        var lt=svgEl('text',{x:BX+BW/2,y:BY-13,'font-family':'Gowun Dodum,sans-serif','font-size':15,fill:'#495057','font-weight':800,'text-anchor':'middle'}); lt.textContent='🔒 뚜껑 닫음'; svg.appendChild(lt);
         // 저울 — 통 전체 무게(상태가 바뀌어도 입자 개수가 그대로라 그대로)
         var sg=svgEl('g',{'class':'st-scale'});
         sg.appendChild(svgEl('rect',{x:702,y:78,width:178,height:80,rx:15,fill:'#fff',stroke:'#7048E8','stroke-width':3}));
-        var s1=svgEl('text',{x:791,y:106,'font-family':'Jua,sans-serif','font-size':16,fill:'#7048E8','font-weight':800,'text-anchor':'middle'}); s1.textContent='⚖️ 통 전체 무게'; sg.appendChild(s1);
-        var s2=svgEl('text',{x:791,y:144,'font-family':'Jua,sans-serif','font-size':32,fill:'#1B3A57','font-weight':800,'text-anchor':'middle','class':'st-weight'}); s2.textContent=wowWeight()+' g'; sg.appendChild(s2);
+        var s1=svgEl('text',{x:791,y:106,'font-family':'Gowun Dodum,sans-serif','font-size':16,fill:'#7048E8','font-weight':800,'text-anchor':'middle'}); s1.textContent='⚖️ 통 전체 무게'; sg.appendChild(s1);
+        var s2=svgEl('text',{x:791,y:144,'font-family':'Gowun Dodum,sans-serif','font-size':32,fill:'#1B3A57','font-weight':800,'text-anchor':'middle','class':'st-weight'}); s2.textContent=wowWeight()+' g'; sg.appendChild(s2);
         svg.appendChild(sg);
       }
       stage.appendChild(svg);

@@ -50,7 +50,7 @@
       var col=(cls==='an-flash-magic')?C.vio:((cls==='an-flash')?C.water:'#868E96');
       var d=document.createElement('div'); d.className=cls;
       d.style.cssText='position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;'
-        +'background:'+col+';color:#fff;font-family:Jua,sans-serif;font-weight:800;font-size:19px;'
+        +'background:'+col+';color:#fff;font-family:Gowun Dodum,sans-serif;font-weight:800;font-size:19px;'
         +'padding:13px 20px;border-radius:18px;box-shadow:0 6px 22px rgba(0,0,0,0.22);'
         +'text-align:center;line-height:1.45;z-index:20;';
       d.innerHTML=html; host.appendChild(d);
@@ -228,14 +228,14 @@
           g.appendChild(svgEl('line',{x1:mkX,y1:mkY0,x2:mkX,y2:mkY1,stroke:C.vio,'stroke-width':3,'stroke-linecap':'round','data-bfsize':'64'}));
           g.appendChild(svgEl('line',{x1:mkX-9,y1:mkY0,x2:mkX+9,y2:mkY0,stroke:C.vio,'stroke-width':3,'stroke-linecap':'round'}));
           g.appendChild(svgEl('line',{x1:mkX-9,y1:mkY1,x2:mkX+9,y2:mkY1,stroke:C.vio,'stroke-width':3,'stroke-linecap':'round'}));
-          var lbl=svgEl('text',{x:mkX+15,y:(mkY0+mkY1)/2+6,'font-family':'Jua,sans-serif','font-size':16,'font-weight':800,fill:C.vio}); lbl.textContent='크기 그대로'; g.appendChild(lbl);
+          var lbl=svgEl('text',{x:mkX+15,y:(mkY0+mkY1)/2+6,'font-family':'Gowun Dodum,sans-serif','font-size':16,'font-weight':800,fill:C.vio}); lbl.textContent='크기 그대로'; g.appendChild(lbl);
         }
         if(s>=4){ for(var e3=0;e3<3;e3++)g.appendChild(svgEl('ellipse',{cx:cx-16+e3*16,cy:gy-16,rx:5,ry:7,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
-          var t4=svgEl('text',{x:cx,y:gy-60,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
+          var t4=svgEl('text',{x:cx,y:gy-60,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
       }
       // 이름표 + 단계
-      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':25,'font-weight':800,fill:(picked==='bf'?C.vio:C.ink)}); nm.textContent='🦋 배추흰나비'; g.appendChild(nm);
-      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-bfstage':s}); st.textContent=BF[s][1]; g.appendChild(st);
+      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':25,'font-weight':800,fill:(picked==='bf'?C.vio:C.ink)}); nm.textContent='🦋 배추흰나비'; g.appendChild(nm);
+      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-bfstage':s}); st.textContent=BF[s][1]; g.appendChild(st);
     }
     function drawDragonfly(g,cx){ // 불완전 변태 패널
       var s=stageOf(DF), wy=300;
@@ -262,10 +262,10 @@
         g.appendChild(svgEl('rect',{x:cx-5,y:by2-6,width:10,height:64,rx:5,fill:'#1098AD'}));
         g.appendChild(svgEl('circle',{cx:cx,cy:by2-14,r:9,fill:'#0B7285'}));
         if(s>=3){ for(var e3=0;e3<4;e3++)g.appendChild(svgEl('circle',{cx:cx-24+e3*14,cy:wy+70,r:4.5,fill:'#FFE066',stroke:'#E6B400','stroke-width':1.5}));
-          var t4=svgEl('text',{x:cx,y:wy-30,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
+          var t4=svgEl('text',{x:cx,y:wy-30,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:C.good}); t4.textContent='🥚 다시 알! 한살이 완성'; g.appendChild(t4); }
       }
-      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':25,'font-weight':800,fill:(picked==='df'?C.vio:C.ink)}); nm.textContent='🜲 잠자리'; g.appendChild(nm);
-      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-dfstage':s});
+      var nm=svgEl('text',{x:cx,y:62,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':25,'font-weight':800,fill:(picked==='df'?C.vio:C.ink)}); nm.textContent='🜲 잠자리'; g.appendChild(nm);
+      var st=svgEl('text',{x:cx,y:444,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.sub,'data-dfstage':s});
       st.textContent=DF[s][1]+(s>=2?' — 번데기 없이!':''); g.appendChild(st);
     }
     function renderScene(){

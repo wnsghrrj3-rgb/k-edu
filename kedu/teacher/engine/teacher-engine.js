@@ -1731,6 +1731,8 @@
   //   키: 정확한 차시 키("u4_l05") 또는 단원 키("u4" — 그 단원 모든 차시에 노출)
   //   값: [{ tool, label, desc, cfg }]
   const KLAB_PAGE_URL = 'klab.html';
+  // C3(v3): 구형 klab.js 도구는 슬라이드 위 오버레이로 즉석 마운트한다. cleanup 훅 보관.
+  let _klabOverlayCleanup = null;
 
   function klabRecsFor(key) {
     const map = global.KLAB_MAP || {};
@@ -1782,18 +1784,75 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && panel.style.display !== 'none') panel.style.display = 'none';
     });
+
+    // C3(v3): 오버레이 레이어 1회 생성 (extras 오버레이와 같은 레이어 사상, 동적 주입 → html 4종 불변)
+    // 기본 레이아웃은 인라인(classic 모드에서도 동작) + body.kt3일 때 teacher-v3.css가 유리 스킨만 얹음.
+    if (!document.getElementById('klab-overlay')) {
+      const ov = document.createElement('div');
+      ov.id = 'klab-overlay';
+      ov.className = 'klab-overlay';
+      ov.style.cssText = 'display:none;position:fixed;inset:0;z-index:300;background:rgba(20,25,32,.62);flex-direction:column;';
+      ov.innerHTML =
+        '<div class="klab-overlay-bar" style="display:flex;align-items:center;gap:12px;padding:12px 20px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.12);">'
+        + '<span class="ko-icon" style="font-size:22px;">🧊</span>'
+        + '<span class="ko-title" id="klab-overlay-title" style="font-size:19px;font-weight:800;color:#1B3A57;flex:1;"></span>'
+        + '<button class="ko-close" id="klab-overlay-close" style="font-size:16px;font-weight:800;font-family:inherit;border:none;border-radius:12px;padding:9px 18px;background:#EAF2FB;color:#1565C0;cursor:pointer;">닫기 (ESC)</button>'
+        + '</div>'
+        + '<div class="klab-overlay-body" style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:26px 20px;">'
+        + '<div class="klab-overlay-mount" id="klab-overlay-mount" style="width:100%;max-width:960px;"></div></div>';
+      document.body.appendChild(ov);
+      document.getElementById('klab-overlay-close').addEventListener('click', closeKlabOverlay);
+      ov.addEventListener('click', e => {
+        if (e.target === ov || e.target.classList.contains('klab-overlay-body')) closeKlabOverlay();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && ov.style.display !== 'none') closeKlabOverlay();
+      });
+    }
+  }
+
+  // C3(v3): 구형 도구를 슬라이드 위 오버레이로 즉석 마운트. 수업 슬라이드 상태(slides·curIdx·조립)는
+  // 건드리지 않음 → 닫으면 그대로. mount의 cleanup 반환값을 보관했다가 닫을 때 호출(누수 방지).
+  function openKlabOverlay(rec) {
+    if (!rec || !window.KLab) return;
+    const ov = document.getElementById('klab-overlay');
+    if (!ov) return;
+    const mountEl = document.getElementById('klab-overlay-mount');
+    const titleEl = document.getElementById('klab-overlay-title');
+    if (titleEl) titleEl.textContent = rec.label || rec.tool || '케이랩 교구';
+    if (_klabOverlayCleanup) { try { _klabOverlayCleanup(); } catch (e) {} _klabOverlayCleanup = null; }
+    mountEl.innerHTML = '';
+    ov.style.display = 'flex';
+    try {
+      _klabOverlayCleanup = window.KLab.mount(mountEl, rec.tool, rec.cfg || {}) || null;
+    } catch (e) {
+      mountEl.textContent = '교구를 불러오지 못했어요.';
+    }
+  }
+
+  function closeKlabOverlay() {
+    const ov = document.getElementById('klab-overlay');
+    if (!ov) return;
+    if (_klabOverlayCleanup) { try { _klabOverlayCleanup(); } catch (e) {} _klabOverlayCleanup = null; }
+    ov.style.display = 'none';
+    const mountEl = document.getElementById('klab-overlay-mount');
+    if (mountEl) mountEl.innerHTML = '';
   }
 
   function openKlabDock(btn, panel) {
     const recs = klabRecsFor(currentLessonKey);
     let html = '<div style="font-size:19px;font-weight:800;color:#1B3A57;margin:2px 4px 10px;">🧊 케이랩 교구 — 이 차시 추천</div>';
     if (recs.length) {
-      html += recs.map((r, i) =>
-        '<div class="klab-dock-item" data-i="' + i + '" style="cursor:pointer;border:3px solid #D7E6F5;border-radius:14px;padding:12px 14px;margin-bottom:8px;transition:border-color .15s,background .15s;">'
-        + '<div style="font-size:19px;font-weight:800;color:#1565C0;">' + esc(r.label || r.tool) + ' <span style="float:right;font-size:15px;color:#8aa9c6;">새 탭 ↗</span></div>'
-        + (r.desc ? '<div style="font-size:15px;color:#5a7894;margin-top:3px;line-height:1.4;">' + esc(r.desc) + '</div>' : '')
-        + '</div>'
-      ).join('');
+      html += recs.map((r, i) => {
+        const local = !!(window.KLab && window.KLab.has(r.tool));
+        const badge = local
+          ? '<span style="float:right;font-size:14px;color:#12B886;font-weight:800;">바로 열기 ▸</span>'
+          : '<span style="float:right;font-size:15px;color:#8aa9c6;">새 탭 ↗</span>';
+        return '<div class="klab-dock-item" data-i="' + i + '" data-local="' + (local ? '1' : '0') + '" style="cursor:pointer;border:3px solid #D7E6F5;border-radius:14px;padding:12px 14px;margin-bottom:8px;transition:border-color .15s,background .15s;">'
+          + '<div style="font-size:19px;font-weight:800;color:#1565C0;">' + esc(r.label || r.tool) + ' ' + badge + '</div>'
+          + (r.desc ? '<div style="font-size:15px;color:#5a7894;margin-top:3px;line-height:1.4;">' + esc(r.desc) + '</div>' : '')
+          + '</div>';
+      }).join('');
     } else {
       html += '<div style="font-size:16px;color:#5a7894;padding:6px 4px 10px;line-height:1.5;">이 차시에 등록된 추천 교구가 아직 없어요.<br>전체 목록에서 골라 쓸 수 있어요.</div>';
     }
@@ -1806,8 +1865,10 @@
       el.addEventListener('mouseleave', () => { el.style.borderColor = '#D7E6F5'; el.style.background = '#fff'; });
       el.addEventListener('click', () => {
         const r = recs[Number(el.dataset.i)];
-        if (r) window.open(klabDeepUrl(r), '_blank', 'noopener');
         panel.style.display = 'none';
+        if (!r) return;
+        if (el.dataset.local === '1') openKlabOverlay(r);   // 구형 도구 = 슬라이드 위 오버레이 즉석 마운트
+        else window.open(klabDeepUrl(r), '_blank', 'noopener');  // v3 재건 도구 = 새 탭 딥링크
       });
     });
     const allEl = panel.querySelector('.klab-dock-all');

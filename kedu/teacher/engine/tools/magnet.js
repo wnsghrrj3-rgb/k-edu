@@ -197,7 +197,7 @@
       el.innerHTML='<style>.mg-btn:active,.kl-choice:active{transform:translateY(2px);}.mg-stage{cursor:default;touch-action:none;}.mg-mag{cursor:grab;}.mg-stage.drag .mg-mag{cursor:grabbing;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.mg-view.on{background:#7048E8 !important;color:#fff !important;}'
-        +'.mg-flash{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#7048E8;color:#fff;padding:11px 18px;border-radius:14px;font-family:Jua,sans-serif;font-size:16px;font-weight:800;line-height:1.45;box-shadow:0 6px 18px rgba(112,72,232,0.4);max-width:88%;text-align:center;z-index:5;animation:mgPop .4s ease;}'
+        +'.mg-flash{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#7048E8;color:#fff;padding:11px 18px;border-radius:14px;font-family:Gowun Dodum,sans-serif;font-size:16px;font-weight:800;line-height:1.45;box-shadow:0 6px 18px rgba(112,72,232,0.4);max-width:88%;text-align:center;z-index:5;animation:mgPop .4s ease;}'
         +'@keyframes mgPop{from{opacity:0;transform:translate(-50%,-10px);}to{opacity:1;transform:translate(-50%,0);}}'
         +'.mg-hold{display:inline-block;animation:mgHold 1s ease 2;}@keyframes mgHold{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}'
         +'.mg-spark{animation:mgSpark 1.1s ease infinite;}@keyframes mgSpark{0%,100%{opacity:.4;}50%{opacity:1;}}'
@@ -232,8 +232,8 @@
       g.appendChild(svgEl('rect',{x:m.x,y:m.y-MW/2,width:ML,height:MW,rx:8,fill:C.N}));
       g.appendChild(svgEl('rect',{x:m.x-ML,y:m.y-MW/2,width:ML*2,height:MW,rx:8,fill:'none',stroke:'#fff','stroke-width':2,'stroke-opacity':0.5}));
       g.appendChild(svgEl('rect',{x:m.x-ML,y:m.y-MW/2,width:ML*2,height:MW*0.4,rx:8,fill:'#fff','fill-opacity':0.18}));
-      var tS=svgEl('text',{x:m.x-ML/2,y:m.y+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,'font-weight':800,fill:'#fff'});tS.textContent='S';g.appendChild(tS);
-      var tN=svgEl('text',{x:m.x+ML/2,y:m.y+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
+      var tS=svgEl('text',{x:m.x-ML/2,y:m.y+8,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':24,'font-weight':800,fill:'#fff'});tS.textContent='S';g.appendChild(tS);
+      var tN=svgEl('text',{x:m.x+ML/2,y:m.y+8,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':24,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
       svg.appendChild(g);
     }
     function renderAttract(svg){
@@ -257,8 +257,8 @@
       g.appendChild(svgEl('rect',{x:cx-PML,y:cy-h/2,width:PML,height:h,rx:8,fill:C.S}));
       g.appendChild(svgEl('rect',{x:cx,y:cy-h/2,width:PML,height:h,rx:8,fill:C.N}));
       g.appendChild(svgEl('rect',{x:cx-PML,y:cy-h/2,width:PML*2,height:h,rx:8,fill:'none',stroke:'#fff','stroke-width':2,'stroke-opacity':0.5}));
-      var tS=svgEl('text',{x:cx-PML/2,y:cy+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tS.textContent='S';g.appendChild(tS);
-      var tN=svgEl('text',{x:cx+PML/2,y:cy+8,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
+      var tS=svgEl('text',{x:cx-PML/2,y:cy+8,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tS.textContent='S';g.appendChild(tS);
+      var tN=svgEl('text',{x:cx+PML/2,y:cy+8,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#fff'});tN.textContent='N';g.appendChild(tN);
       var npx=newLeft?cx-PML:cx+PML;   // 새로 생긴 극(잘린 면) 강조
       g.appendChild(svgEl('circle',{class:'mg-newpole',cx:npx,cy:cy,r:17,fill:'none',stroke:C.line,'stroke-width':3,'stroke-opacity':0.9}));
       var sp=svgEl('text',{class:'mg-spark',x:npx,y:cy-h/2-7,'text-anchor':'middle','font-size':22});sp.textContent='✨';g.appendChild(sp);
@@ -270,7 +270,7 @@
       if(gap>8){ var sc=svgEl('text',{x:cx0,y:cy-MW/2-20,'text-anchor':'middle','font-size':26});sc.textContent='✂️';svg.appendChild(sc); }
       piece(svg,leftCx,cy,false);   // 왼쪽 조각: 잘린 면(오른쪽 N)이 새 극
       piece(svg,rightCx,cy,true);   // 오른쪽 조각: 잘린 면(왼쪽 S)이 새 극
-      var lab=svgEl('text',{x:cx0,y:cy+MW+40,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,fill:C.line});
+      var lab=svgEl('text',{x:cx0,y:cy+MW+40,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':19,fill:C.line});
       lab.textContent='✨ 자른 곳에 새 극이 생겼어요 — 조각마다 N극·S극 한 쌍씩'; svg.appendChild(lab);
     }
     function render(){

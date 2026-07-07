@@ -222,7 +222,7 @@
 
     /* ───────────── 렌더 (SVG 가게) ───────────── */
     function svgEl(t, a) { var e = document.createElementNS('http://www.w3.org/2000/svg', t); for (var k in a) e.setAttribute(k, a[k]); return e; }
-    function txt(svg, x, y, s, sz, f, an) { var t = svgEl('text', { x: x, y: y, 'text-anchor': an || 'middle', 'font-family': 'Jua,sans-serif', 'font-size': sz, 'font-weight': 800, fill: f }); t.textContent = s; svg.appendChild(t); }
+    function txt(svg, x, y, s, sz, f, an) { var t = svgEl('text', { x: x, y: y, 'text-anchor': an || 'middle', 'font-family': 'Gowun Dodum,sans-serif', 'font-size': sz, 'font-weight': 800, fill: f }); t.textContent = s; svg.appendChild(t); }
     function emo(svg, x, y, ch, sz) { var t = svgEl('text', { x: x, y: y, 'text-anchor': 'middle', 'font-size': sz }); t.textContent = ch; svg.appendChild(t); }
     var VBW = 820, VBH = 380;
 

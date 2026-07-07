@@ -308,7 +308,7 @@
         svg.appendChild(svgEl('rect',{x:0,y:0,width:VBW,height:VBH,fill:(medium==='water'?'#1971C2':'#495057'),'fill-opacity':0.08}));
       }
       if(G().showMedium||wk==='water'){
-        var ml=svgEl('text',{x:VBW-24,y:44,'text-anchor':'end','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:(medium==='vacuum'?'#1E40AF':'#5a3fb8')});
+        var ml=svgEl('text',{x:VBW-24,y:44,'text-anchor':'end','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:(medium==='vacuum'?'#1E40AF':'#5a3fb8')});
         ml.textContent=MEDIA[medium].ic+' '+MEDIA[medium].nm+' — '+(MEDIA[medium].v?('약 '+MEDIA[medium].v.toLocaleString()+'m/s'):'전달 안 됨');
         svg.appendChild(ml);
       }
@@ -321,10 +321,10 @@
       var kid=svgEl('text',{x:150,y:310,'text-anchor':'middle','font-size':64}); kid.textContent='🧒'; svg.appendChild(kid);
       var mg=svgEl('text',{x:212,y:262,'text-anchor':'middle','font-size':34}); mg.textContent='📢'; svg.appendChild(mg);
       dyn.wall=svgEl('rect',{x:ec.wall,y:80,width:26,height:300,rx:6,fill:'#5C6B84',stroke:'#8A9AB5','stroke-width':3}); svg.appendChild(dyn.wall);
-      var wl=svgEl('text',{x:ec.wall+13,y:66,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:'#8A9AB5'}); wl.textContent='동굴 벽'; svg.appendChild(wl); dyn.wallLab=wl;
+      var wl=svgEl('text',{x:ec.wall+13,y:66,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:'#8A9AB5'}); wl.textContent='동굴 벽'; svg.appendChild(wl); dyn.wallLab=wl;
       dyn.pulse=svgEl('circle',{cx:-50,cy:280,r:16,fill:'none',stroke:'#FFD43B','stroke-width':5,opacity:0}); svg.appendChild(dyn.pulse);
-      dyn.ecLab=svgEl('text',{x:450,y:120,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#FFD43B'}); svg.appendChild(dyn.ecLab);
-      dyn.ecSub=svgEl('text',{x:450,y:154,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:'#9FB3D4'}); svg.appendChild(dyn.ecSub);
+      dyn.ecLab=svgEl('text',{x:450,y:120,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:'#FFD43B'}); svg.appendChild(dyn.ecLab);
+      dyn.ecSub=svgEl('text',{x:450,y:154,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:'#9FB3D4'}); svg.appendChild(dyn.ecSub);
     }
     function stepEcho(){
       if(ec.phase==='go'){ ec.p+=7; ec.f++; if(ec.p>=ec.wall-4){ ec.p=ec.wall-4; ec.phase='back'; snd('select'); } }
@@ -346,9 +346,9 @@
       var cl=svgEl('text',{x:180,y:120,'text-anchor':'middle','font-size':84}); cl.textContent='🌩️'; svg.appendChild(cl);
       dyn.boltEl=svgEl('path',{d:'M 180 140 L 158 210 L 186 206 L 150 300',fill:'none',stroke:'#FFD43B','stroke-width':9,'stroke-linecap':'round','stroke-linejoin':'round',opacity:0}); svg.appendChild(dyn.boltEl);
       var kid=svgEl('text',{x:720,y:360,'text-anchor':'middle','font-size':60}); kid.textContent='🧒'; svg.appendChild(kid);
-      dyn.thLab=svgEl('text',{x:470,y:200,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':26,'font-weight':800,fill:'#FFD43B'}); svg.appendChild(dyn.thLab);
-      dyn.thSec=svgEl('text',{x:470,y:242,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#9FB3D4'}); svg.appendChild(dyn.thSec);
-      dyn.thDist=svgEl('text',{x:470,y:428,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#8A9AB5'}); svg.appendChild(dyn.thDist);
+      dyn.thLab=svgEl('text',{x:470,y:200,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':26,'font-weight':800,fill:'#FFD43B'}); svg.appendChild(dyn.thLab);
+      dyn.thSec=svgEl('text',{x:470,y:242,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:'#9FB3D4'}); svg.appendChild(dyn.thSec);
+      dyn.thDist=svgEl('text',{x:470,y:428,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:'#8A9AB5'}); svg.appendChild(dyn.thDist);
     }
     function stepThunder(){
       if(th.phase==='wait'){ th.f++; if(th.f>=th.km*30){ th.phase='boom'; snd('erupt'); renderStatus(); } }

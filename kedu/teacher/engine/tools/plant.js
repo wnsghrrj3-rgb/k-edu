@@ -47,7 +47,7 @@
       var col=(cls==='pl-flash-magic')?C.vio:((cls==='pl-flash')?C.water:'#868E96');
       var d=document.createElement('div'); d.className=cls;
       d.style.cssText='position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;'
-        +'background:'+col+';color:#fff;font-family:Jua,sans-serif;font-weight:800;font-size:19px;'
+        +'background:'+col+';color:#fff;font-family:Gowun Dodum,sans-serif;font-weight:800;font-size:19px;'
         +'padding:13px 20px;border-radius:18px;box-shadow:0 6px 22px rgba(0,0,0,0.22);'
         +'text-align:center;line-height:1.45;z-index:20;';
       d.innerHTML=html; host.appendChild(d);
@@ -275,11 +275,11 @@
               if(st2>=5){ for(var sd=0;sd<3;sd++)g.appendChild(svgEl('circle',{cx:px,cy:py+12+sd*11,r:4.5,fill:'#B5651D'})); }
             }
           }
-          if(st2>=5){ var t5=svgEl('text',{x:cx,y:gy-h-34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:C.good}); t5.textContent='🌱 다시 씨앗! 한살이 완성'; g.appendChild(t5); }
+          if(st2>=5){ var t5=svgEl('text',{x:cx,y:gy-h-34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:C.good}); t5.textContent='🌱 다시 씨앗! 한살이 완성'; g.appendChild(t5); }
         }
       }
       // 단계 라벨
-      var lb=svgEl('text',{x:cx,y:gy+88,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink});
+      var lb=svgEl('text',{x:cx,y:gy+88,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink});
       lb.textContent=STAGES[st2][1]+(p.wilt>=2?' · 시들시들':'')+(p.etio>=3?' · 웃자람':''); g.appendChild(lb);
     }
     function renderScene(){

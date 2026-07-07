@@ -270,7 +270,7 @@
         svg.appendChild(g);
       }
     }
-    function txt(svg,x,y,s,size,fill,anchor){var t=svgEl('text',{x:x,y:y,'text-anchor':anchor||'middle','font-family':'Jua, sans-serif','font-size':size,'font-weight':800,fill:fill});t.textContent=s;svg.appendChild(t);}
+    function txt(svg,x,y,s,size,fill,anchor){var t=svgEl('text',{x:x,y:y,'text-anchor':anchor||'middle','font-family':'Gowun Dodum,sans-serif','font-size':size,'font-weight':800,fill:fill});t.textContent=s;svg.appendChild(t);}
     function notate(m,n,style){var W=Math.floor(m/n),r=m%n;if(style==='mixed'){if(r===0)return{whole:String(W),m:null,n:null};return{whole:(W>0?String(W):''),m:String(r),n:String(n)};}return{whole:'',m:String(m),n:String(n)};}
     function drawFrac(svg,cx,cy,m,n,style,big){
       var o=notate(m,n,style), s=big?86:48, gap=big?20:12, lw=big?130:74, fx=cx;

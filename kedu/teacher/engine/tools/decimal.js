@@ -202,7 +202,7 @@
         for(var ri=0;ri<rows;ri++){
           var cy=y0+ri*cell+(cell-ch)/2;
           g.appendChild(svgEl('rect',{x:cx,y:cy,width:cw,height:ch,rx:8,fill:'#1565C0','pointer-events':'none'}));
-          var lt=svgEl('text',{x:cx+cw/2,y:cy+ch/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#fff'});
+          var lt=svgEl('text',{x:cx+cw/2,y:cy+ch/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:'#fff'});
           lt.textContent='0.1'; g.appendChild(lt);
         }
       }
@@ -212,7 +212,7 @@
         svg.appendChild(svgEl('rect',{x:x0-5,y:y0-5,width:grid+10,height:grid+10,rx:7,fill:'none',stroke:'#F59F00','stroke-width':6,'pointer-events':'none',class:'dc-merge'}));
         var fg=svgEl('g',{class:'dc-flash','pointer-events':'none'});
         fg.appendChild(svgEl('rect',{x:VBW/2-292,y:2,width:584,height:34,rx:17,fill:'#7048E8',opacity:'0.96',filter:'url(#dcSh)'}));
-        var fl=svgEl('text',{x:VBW/2,y:20,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:'#fff'});
+        var fl=svgEl('text',{x:VBW/2,y:20,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:'#fff'});
         fl.textContent='🔁 0.1이 10개 = 1! 소수점 아래도 10칸이 차면 1로 합쳐져요 (10 : 1 교환)';
         fg.appendChild(fl); svg.appendChild(fg);
       }

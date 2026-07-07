@@ -108,10 +108,10 @@
         svg.appendChild(svgEl('circle',{cx:pt.x,cy:pt.y,r:r,fill:col,stroke:'rgba(0,0,0,0.18)','stroke-width':1,'data-mixtype':pt.type}));
       });
       if(mixSettled){
-        var lb=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.vio});
+        var lb=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.vio});
         lb.textContent='⬇ 무거운 자갈부터 가라앉아 아래 · 고운 진흙은 맨 위'; svg.appendChild(lb);
       } else {
-        var lb2=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:'#1565C0'});
+        var lb2=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:'#1565C0'});
         lb2.textContent='🌀 섞인 흙탕물 — 🌀 한꺼번에 쏟기를 눌러 봐요!'; svg.appendChild(lb2);
       }
     }
@@ -493,8 +493,8 @@
       // v2 1층: 하구~먼바다 축 (물살 켜짐일 때)
       if(fOn){
         svg.appendChild(svgEl('line',{x1:595,y1:150,x2:595,y2:GY+8,stroke:'#1565C0','stroke-width':2.5,'stroke-dasharray':'8 7','stroke-opacity':0.5}));
-        var t1=svgEl('text',{x:GX+NW/2,y:GY+34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:'#fff'}); t1.textContent='⬅ 하구 (강이 흘러드는 곳)'; svg.appendChild(t1);
-        var t2=svgEl('text',{x:FX+FW/2,y:GY+34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,fill:'#fff'}); t2.textContent='먼바다 ➡'; svg.appendChild(t2);
+        var t1=svgEl('text',{x:GX+NW/2,y:GY+34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:'#fff'}); t1.textContent='⬅ 하구 (강이 흘러드는 곳)'; svg.appendChild(t1);
+        var t2=svgEl('text',{x:FX+FW/2,y:GY+34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,fill:'#fff'}); t2.textContent='먼바다 ➡'; svg.appendChild(t2);
       }
       // 지층 (하구) — 층 두께 = th, 누적 높이로 배치
       acc=0;
@@ -513,7 +513,7 @@
         }
         // 순서 번호 (층 선택 시 전체 표시)
         if(sel>=0&&L.prog>=1){
-          var nb=svgEl('text',{x:GX-34,y:y+h-Math.min(10,h*0.3),'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:(i===sel?C.vio:C.sub)});
+          var nb=svgEl('text',{x:GX-34,y:y+h-Math.min(10,h*0.3),'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:(i===sel?C.vio:C.sub)});
           nb.textContent=(i+1)+'번째'; svg.appendChild(nb);
         }
         acc+=h;
@@ -538,7 +538,7 @@
         for(var gr=0;gr<7;gr++){ var gx2=GX+30+gr*(NW/7);
           svg.appendChild(svgEl('path',{d:'M '+gx2+' '+topY+' q 4 -16 8 0 M '+(gx2+9)+' '+topY+' q 4 -13 8 0',fill:'none',stroke:'#2F9E44','stroke-width':3,'stroke-linecap':'round','stroke-opacity':(up-0.65)/0.35})); }
         var bd=svgEl('text',{x:240+Math.sin(frame/30)*30,y:90,'font-size':22,opacity:(up-0.65)/0.35}); bd.textContent='🐦'; svg.appendChild(bd);
-        var lb2=svgEl('text',{x:GX+NW*0.5,y:topY-34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:C.good,opacity:(up-0.65)/0.35});
+        var lb2=svgEl('text',{x:GX+NW*0.5,y:topY-34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:C.good,opacity:(up-0.65)/0.35});
         lb2.textContent='⛰️ 땅 위로 드러난 지층!'; svg.appendChild(lb2);
       }
       // 만약에 침식 — 비바람 연출

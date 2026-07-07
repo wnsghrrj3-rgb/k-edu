@@ -357,3 +357,61 @@ body.kt3 .slide.blk-cover > .center{ position:relative; z-index:1 }
 @media (prefers-reduced-motion: reduce){
   body.kt3 .slide.blk-cover::after{ animation:none }
 }
+
+/* ════════════════════════════════════════════════════════
+   C3 — 조작 층 (2026-07-07, 오퍼스)
+   설계 §3 C3 · D5(케이랩 오버레이 승격 + 인터랙티브 2-B 질감)
+   · klab 오버레이 = 다크 무대 + HUD 바 + 밝은 종이 마운트 (기본 레이아웃은 엔진 인라인, 여기선 색만)
+   · 인터랙티브 블록 5종 + klab 인라인 = 밝은 종이 위 2-B 질감(광원·부상 그림자), 로직·레이아웃 불변
+   · 도크 팝업은 흰 카드 유지(어두운 인라인 텍스트 가독성 보존) — 오버라이드 안 함
+   ════════════════════════════════════════════════════════ */
+
+/* ── 1. 케이랩 오버레이 (다크 무대 + HUD 바 + 밝은 종이 마운트) ── */
+body.kt3 #klab-overlay{ background:rgba(12,16,22,.9) !important; }
+body.kt3 #klab-overlay .klab-overlay-bar{
+  background:var(--hud) !important;
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--hudline);
+  box-shadow:none !important;
+}
+body.kt3 #klab-overlay .ko-title{ color:#fff !important; font-family:var(--kedu-title); font-weight:400; }
+body.kt3 #klab-overlay .ko-close{ background:var(--acc) !important; color:#0c1622 !important; }
+body.kt3 #klab-overlay .ko-close:hover{ filter:brightness(1.08); }
+/* 마운트 = 다크 무대 위 밝은 종이 한 장 (도구 SVG는 밝은 면에서 읽힘) */
+body.kt3 #klab-overlay .klab-overlay-mount{
+  background:
+    linear-gradient(158deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 38%),
+    #F4F7FA;
+  border:1px solid rgba(255,255,255,.5);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255,255,255,.85),
+    0 28px 64px -22px rgba(6,10,16,.75);
+}
+
+/* ── 2. 인터랙티브 블록 5종 + klab 인라인 = 밝은 종이 위 2-B 질감 (로직·레이아웃 불변, 광택/그림자만) ── */
+body.kt3 .slide .i-tf-grid,
+body.kt3 .slide .i-card-row,
+body.kt3 .slide .klab-mount{
+  background-image:linear-gradient(158deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,0) 42%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.8),
+    0 4px 14px -4px rgba(8,12,18,.28);
+}
+body.kt3 .slide .i-card{
+  background-image:linear-gradient(158deg, rgba(255,255,255,.7) 0%, rgba(255,255,255,0) 45%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.9),
+    0 4px 12px -2px rgba(91,122,110,.28);
+}
+body.kt3 .slide .i-card:hover{
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.9),
+    0 8px 20px -4px rgba(91,122,110,.4);
+}
+/* 큐브 스택·수직선 = 종이 위 부상감 (요소 자체 배경 없어 drop-shadow) */
+body.kt3 .slide .i-cube-area,
+body.kt3 .slide .i-number-line{
+  filter:drop-shadow(0 3px 8px rgba(8,12,18,.16));
+}

@@ -224,7 +224,7 @@
       opts = opts || {};
       var t = svgEl('text', {
         x: x, y: y, 'text-anchor': opts.anchor || 'middle',
-        'font-family': 'Jua, "Apple SD Gothic Neo", sans-serif',
+        'font-family': 'Gowun Dodum, "Apple SD Gothic Neo", sans-serif',
         'font-size': opts.size || 18, 'font-weight': 800,
         fill: opts.fill || '#1B3A57'
       });

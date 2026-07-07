@@ -192,7 +192,7 @@
     }
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-    function txt(svg,x,y,s,sz,f){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
+    function txt(svg,x,y,s,sz,f){var t=svgEl('text',{x:x,y:y,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
 
     /* 와우 ① 분침 직접 드래그 — 스테이지 중심 기준 각도로 분(分) 산출, 한 바퀴 넘으면 시(時) 칸 이동 */
     function minuteFromEvent(e){
@@ -280,7 +280,7 @@
       if(opts.flash){
         var fg=svgEl('g',{class:'ck-flash'});
         fg.appendChild(svgEl('rect',{x:14,y:4,width:VB-28,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#ckSh)'}));
-        var ft=svgEl('text',{x:cx,y:24,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
+        var ft=svgEl('text',{x:cx,y:24,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
         ft.textContent='🔗 분침이 12를 지나 시침이 한 칸! 두 바늘이 톱니처럼 연동돼요';
         fg.appendChild(ft);
         svg.appendChild(fg);

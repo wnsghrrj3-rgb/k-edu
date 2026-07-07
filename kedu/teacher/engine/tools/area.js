@@ -183,7 +183,7 @@
         g.appendChild(cellEl);
         if(G().count && on){
           cnt++;
-          var num=svgEl('text',{x:x0+c*cell+cell/2,y:y0+r*cell+cell/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':Math.min(cell*0.5,30),'font-weight':800,fill:'#fff','pointer-events':'none'});
+          var num=svgEl('text',{x:x0+c*cell+cell/2,y:y0+r*cell+cell/2,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':Math.min(cell*0.5,30),'font-weight':800,fill:'#fff','pointer-events':'none'});
           num.textContent=cnt; g.appendChild(num);
         }
       }
@@ -193,7 +193,7 @@
       if(opts.flash){
         var fg=svgEl('g',{class:'aa-flash','pointer-events':'none'});
         fg.appendChild(svgEl('rect',{x:VBW/2-330,y:6,width:660,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#aaSh)'}));
-        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:'#fff'});
+        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':19,'font-weight':800,fill:'#fff'});
         ft.textContent='✋ 둘레는 '+(2*(w+h))+'㎝ 그대로인데 넓이가 달라졌어요! 둘레와 넓이는 따로 논다';
         fg.appendChild(ft); svg.appendChild(fg);
       }

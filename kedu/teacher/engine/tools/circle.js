@@ -159,7 +159,7 @@
       bind(); render(); bands.bind(el);
     }
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-    function txt(svg,x,y,s,sz,f,an){var t=svgEl('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
+    function txt(svg,x,y,s,sz,f,an){var t=svgEl('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'Gowun Dodum,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
     var VBW=860,VBH=400, UNIT=26;
     function render(opts){
       opts=opts||{};
@@ -174,7 +174,7 @@
           :'✨ 조각을 잘게 펴니 매끈한 직사각형! 이 직사각형이 곧 원의 넓이예요';
         var fg=svgEl('g',{'class':'cr-flash','pointer-events':'none'});
         fg.appendChild(svgEl('rect',{x:VBW/2-348,y:6,width:696,height:38,rx:19,fill:'#7048E8',opacity:'0.96',filter:'url(#crSh)'}));
-        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
+        var ft=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','dominant-baseline':'central','font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:'#fff'});
         ft.textContent=msg; fg.appendChild(ft); svg.appendChild(fg);
       }
       stage.appendChild(svg);

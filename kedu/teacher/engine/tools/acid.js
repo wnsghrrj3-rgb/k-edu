@@ -265,9 +265,9 @@
       beaker(g,450,365,210,250,col,185,'#78909C',4);
       for(var b=0;b<4;b++){ var by=352-((frame*1.1+b*42)%150);
         g.appendChild(svgEl('circle',{cx:402+b*32,cy:by,r:4,fill:'#fff','fill-opacity':0.5})); }
-      var t=svgEl('text',{x:450,y:120,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:C.ink});
+      var t=svgEl('text',{x:450,y:120,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:C.ink});
       t.textContent='🥬 색이 변하는 마법 물'; svg.appendChild(t);
-      var sub=svgEl('text',{x:450,y:158,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,
+      var sub=svgEl('text',{x:450,y:158,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,
         fill:(lowAdd==='acid')?C.acid:(lowAdd==='base')?C.base:C.sub,'data-lowadd':(lowAdd||'none')});
       sub.textContent=(lowAdd==='acid')?'붉은색으로 변했어요!':(lowAdd==='base')?'푸른색으로 변했어요!':'무얼 넣으면 색이 변할까요? 👇';
       svg.appendChild(sub);
@@ -285,15 +285,15 @@
         // 거품/방울 애니
         for(var b2=0;b2<4;b2++){ var byy=350-((frame*1.2+b2*40)%160);
           g0.appendChild(svgEl('circle',{cx:400+b2*32,cy:byy,r:4,fill:'#fff','fill-opacity':0.5})); }
-        var t0=svgEl('text',{x:450,y:140,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:C.ink});
+        var t0=svgEl('text',{x:450,y:140,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:C.ink});
         t0.textContent='식초 + 양배추 지시약'; svg.appendChild(t0);
         // 색 띠 게이지 (산←→염기)
         for(var s2=0;s2<=10;s2++){ var k=s2/10, gc=k<0.5?mix('#E03131','#9C36B5',k*2):mix('#9C36B5','#1971C2',(k-0.5)*2);
           svg.appendChild(svgEl('rect',{x:640+0,y:120+s2*22,width:34,height:20,rx:4,fill:gc,'fill-opacity':(s2===markN?1:0.45),
             stroke:(s2===markN?C.ink:'none'),'stroke-width':3})); }
-        var ta=svgEl('text',{x:700,y:135,'font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.acid}); ta.textContent='← 산성'; svg.appendChild(ta);
-        var tb=svgEl('text',{x:700,y:345,'font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.base}); tb.textContent='← 염기성'; svg.appendChild(tb);
-        var tn=svgEl('text',{x:450,y:402,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:C.sub,'data-mixn':(wowOverride!=null?wowDrops:mixN)});
+        var ta=svgEl('text',{x:700,y:135,'font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:C.acid}); ta.textContent='← 산성'; svg.appendChild(ta);
+        var tb=svgEl('text',{x:700,y:345,'font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:C.base}); tb.textContent='← 염기성'; svg.appendChild(tb);
+        var tn=svgEl('text',{x:450,y:402,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':19,'font-weight':800,fill:C.sub,'data-mixn':(wowOverride!=null?wowDrops:mixN)});
         tn.textContent='넣은 염기: '+(wowOverride!=null?wowDrops:mixN)+'방울'; svg.appendChild(tn);
         return;
       }
@@ -315,16 +315,16 @@
           var dy=by-160+((frame*3)%18);
           g.appendChild(svgEl('circle',{cx:cx,cy:dy,r:5,fill:selInd==='cab'?'#9C36B5':'#CED4DA',stroke:'#888','stroke-width':1}));
         }
-        var lb=svgEl('text',{x:cx,y:by+34,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':19,'font-weight':800,fill:(selSol===i?C.vio:C.ink)});
+        var lb=svgEl('text',{x:cx,y:by+34,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':19,'font-weight':800,fill:(selSol===i?C.vio:C.ink)});
         lb.textContent=s.nm; svg.appendChild(lb);
         // 양배추 검사 완료 분류 라벨
         if(tested[s.id+'_cab']){
-          var cl=svgEl('text',{x:cx,y:by+60,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':17,'font-weight':800,
+          var cl=svgEl('text',{x:cx,y:by+60,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':17,'font-weight':800,
             fill:(s.kind==='acid'?C.acid:C.base),'data-class':s.kind});
           cl.textContent=(s.kind==='acid'?'산성':'염기성'); svg.appendChild(cl);
         }
       }
-      var tip=svgEl('text',{x:450,y:60,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.sub});
+      var tip=svgEl('text',{x:450,y:60,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.sub});
       tip.textContent=(selSol<0?'먼저 비커를 골라요 👇':'지시약을 골라 검사해 봐요 👆'); svg.appendChild(tip);
       svg.querySelectorAll('.ac-sol').forEach(function(g2){
         g2.addEventListener('click',function(){ pickSol(+g2.getAttribute('data-i')); });

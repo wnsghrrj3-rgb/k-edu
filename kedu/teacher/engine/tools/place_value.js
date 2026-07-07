@@ -222,7 +222,7 @@
         }
         var lbl = svgEl('text', {
           x: bx + barW / 2, y: barTop - 14, 'text-anchor': 'middle',
-          'font-family': 'Jua, "Apple SD Gothic Neo", sans-serif',
+          'font-family': 'Gowun Dodum, "Apple SD Gothic Neo", sans-serif',
           'font-size': 30, 'font-weight': 800, fill: C.tenLine
         });
         lbl.textContent = '10';
@@ -282,7 +282,7 @@
 
       if (opts.flash) {
         var fl = svgEl('text', { x: VBW / 2, y: 28, 'text-anchor': 'middle',
-          'font-family': 'Jua, "Apple SD Gothic Neo", sans-serif', 'font-size': 25, 'font-weight': 800,
+          'font-family': 'Gowun Dodum, "Apple SD Gothic Neo", sans-serif', 'font-size': 25, 'font-weight': 800,
           fill: '#7048E8', class: 'pv-flash' });
         fl.textContent = '🔁 낱개 10개가 십 한 묶음으로 올라갔어요! (10 : 1 교환)';
         svg.appendChild(fl);

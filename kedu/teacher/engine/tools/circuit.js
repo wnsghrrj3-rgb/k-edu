@@ -226,7 +226,7 @@
       var plusX=dir>0?(x+w/2-2):(x-w/2-5);
       svg.appendChild(svgEl('rect',{x:plusX,y:y-9,width:7,height:18,rx:2,fill:'#D7DEE7',stroke:'#8497AA','stroke-width':1}));
       var tx=dir>0?(x+w/2-13):(x-w/2+13);
-      var t=svgEl('text',{x:tx,y:y+7,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#fff'});t.textContent='＋';svg.appendChild(t);
+      var t=svgEl('text',{x:tx,y:y+7,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:'#fff'});t.textContent='＋';svg.appendChild(t);
     }
     function leverSwitch(svg,x,y,open){
       svg.appendChild(svgEl('rect',{x:x-32,y:y-7,width:64,height:14,rx:7,fill:'#E3EAF2',stroke:'#A9BACB','stroke-width':2}));
@@ -256,7 +256,7 @@
         if(flow)svg.appendChild(svgEl('path',{d:d,fill:'none',stroke:'#FFF7E0','stroke-width':5,class:'cir-flow'}));
         sSlots.forEach(function(s,i){var x=SSLOT[i][0],y=SSLOT[i][1];part(svg,s,x,y,r.bright);});
         sSlots.forEach(function(s,i){var x=SSLOT[i][0],y=SSLOT[i][1];if(s.t==='wire')emptyDot(svg,x,y);hit(svg,x,y,i);});
-        if(r.short)svg.appendChild(svgEl('text',{x:midx,y:midy,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':26,'font-weight':800,fill:C.warn})).textContent='⚠ 합선! 전구를 넣어요';
+        if(r.short)svg.appendChild(svgEl('text',{x:midx,y:midy,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':26,'font-weight':800,fill:C.warn})).textContent='⚠ 합선! 전구를 넣어요';
       } else {
         var mf=r.mainFlow;
         // 위·아래 버스
@@ -273,7 +273,7 @@
         // 부품
         pSlots.forEach(function(s,i){var p=pslot(i);part(svg,s,p[0],p[1],r.bright);});
         pSlots.forEach(function(s,i){var p=pslot(i);if(s.t==='wire')emptyDot(svg,p[0],p[1]);hit(svg,p[0],p[1],i);});
-        if(r.short)svg.appendChild(svgEl('text',{x:midx+120,y:midy,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,'font-weight':800,fill:C.warn})).textContent='⚠ 가지에 전구를 넣어요';
+        if(r.short)svg.appendChild(svgEl('text',{x:midx+120,y:midy,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':24,'font-weight':800,fill:C.warn})).textContent='⚠ 가지에 전구를 넣어요';
       }
       stage.appendChild(svg);
       renderStatus(r);

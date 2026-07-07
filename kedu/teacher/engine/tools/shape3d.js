@@ -272,7 +272,7 @@
       ctx.arcTo(x, y, x + w, y, r);
       ctx.closePath();
       ctx.fill(); ctx.stroke();
-      ctx.font = '800 70px "Jua", "Apple SD Gothic Neo", sans-serif';
+      ctx.font = '800 70px "Gowun Dodum", "Apple SD Gothic Neo", sans-serif';
       ctx.fillStyle = css;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(text, 160, 82);

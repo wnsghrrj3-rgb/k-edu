@@ -220,7 +220,7 @@
       bind(); render(); bands.bind(el);
     }
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-    function txt(svg,x,y,s,sz,f,an){var t=svgEl('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'Jua,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
+    function txt(svg,x,y,s,sz,f,an){var t=svgEl('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'Gowun Dodum,sans-serif','font-size':sz,'font-weight':800,fill:f});t.textContent=s;svg.appendChild(t);}
     var VBW=820,VBH=360;
     function roll(n){for(var i=0;i<n;i++){var f=faces[Math.floor(Math.random()*faces.length)];counts[f]++;total++;last=f;}snd('tap');render();}
     function render(){

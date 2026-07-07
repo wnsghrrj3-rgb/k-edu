@@ -361,15 +361,15 @@
       if(G().scale){
         var SX=720, SY=150;
         svg.appendChild(svgEl('rect',{x:SX-22,y:SY-38,width:190,height:170,rx:18,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
-        var t1=svgEl('text',{x:SX+73,y:SY-10,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); t1.textContent='⚖️ 저울'; svg.appendChild(t1);
-        dyn.sW=svgEl('text',{x:SX-6,y:SY+26,'font-family':'Jua,sans-serif','font-size':19,fill:C.sub,'font-weight':800}); svg.appendChild(dyn.sW);
-        dyn.sS=svgEl('text',{x:SX-6,y:SY+56,'font-family':'Jua,sans-serif','font-size':19,fill:C.sugar,'font-weight':800}); svg.appendChild(dyn.sS);
+        var t1=svgEl('text',{x:SX+73,y:SY-10,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':21,'font-weight':800,fill:C.ink}); t1.textContent='⚖️ 저울'; svg.appendChild(t1);
+        dyn.sW=svgEl('text',{x:SX-6,y:SY+26,'font-family':'Gowun Dodum,sans-serif','font-size':19,fill:C.sub,'font-weight':800}); svg.appendChild(dyn.sW);
+        dyn.sS=svgEl('text',{x:SX-6,y:SY+56,'font-family':'Gowun Dodum,sans-serif','font-size':19,fill:C.sugar,'font-weight':800}); svg.appendChild(dyn.sS);
         svg.appendChild(svgEl('line',{x1:SX-6,y1:SY+72,x2:SX+152,y2:SY+72,stroke:'#C9D7E6','stroke-width':3}));
-        dyn.sT=svgEl('text',{x:SX-6,y:SY+104,'font-family':'Jua,sans-serif','font-size':22,fill:C.ink,'font-weight':800}); svg.appendChild(dyn.sT);
+        dyn.sT=svgEl('text',{x:SX-6,y:SY+104,'font-family':'Gowun Dodum,sans-serif','font-size':22,fill:C.ink,'font-weight':800}); svg.appendChild(dyn.sT);
       }
       // 용해도 게이지(왼쪽): 지금 온도에서 녹을 수 있는 양 — 고학년만 (포화·온도 닻)
       if(G().gauge){
-        dyn.gT=svgEl('text',{x:120,y:130,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':18,'font-weight':800,fill:C.sub}); dyn.gT.textContent='녹을 수 있는 양'; svg.appendChild(dyn.gT);
+        dyn.gT=svgEl('text',{x:120,y:130,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':18,'font-weight':800,fill:C.sub}); dyn.gT.textContent='녹을 수 있는 양'; svg.appendChild(dyn.gT);
         svg.appendChild(svgEl('rect',{x:96,y:145,width:48,height:240,rx:12,fill:'#fff',stroke:'#C9D7E6','stroke-width':3}));
         dyn.gFill=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:'#FFD8A8'}); svg.appendChild(dyn.gFill);
         dyn.gNow=svgEl('rect',{x:102,y:385,width:36,height:0,rx:9,fill:C.sugar,'fill-opacity':0.85}); svg.appendChild(dyn.gNow);

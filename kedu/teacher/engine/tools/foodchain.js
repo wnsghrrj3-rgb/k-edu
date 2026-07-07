@@ -99,7 +99,7 @@
       var d = document.createElement('div');
       d.className = cls;
       d.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;max-width:92%;'
-        + 'background:' + bg + ';color:#fff;padding:12px 18px;border-radius:16px;font-family:Jua,sans-serif;'
+        + 'background:' + bg + ';color:#fff;padding:12px 18px;border-radius:16px;font-family:Gowun Dodum,sans-serif;'
         + 'font-size:18px;font-weight:800;line-height:1.45;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,0.22);';
       d.innerHTML = html;
       host.appendChild(d);
@@ -333,7 +333,7 @@
         // 개체수 변화 화살표(폭증 ↑↑ / 바닥 ↓)
         if (boom) { var up = svgEl('text', { x: o.x + rr - 4, y: o.y - rr + 12, 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: '#E8590C', 'pointer-events': 'none' }); up.textContent = '⬆⬆'; g.appendChild(up); }
         else if (gone) { var dn = svgEl('text', { x: o.x + rr, y: o.y - rr + 6, 'text-anchor': 'middle', 'font-size': 18, 'font-weight': 800, fill: '#868E96', 'pointer-events': 'none' }); dn.textContent = '⬇'; g.appendChild(dn); }
-        var lab = svgEl('text', { x: o.x, y: o.y + (boom ? 58 : 48), 'text-anchor': 'middle', 'font-family': 'Jua,sans-serif', 'font-size': 16, 'font-weight': 800, fill: boom ? '#E8590C' : (gone ? '#868E96' : (isAff ? '#E8590C' : C.ink)), 'pointer-events': 'none' });
+        var lab = svgEl('text', { x: o.x, y: o.y + (boom ? 58 : 48), 'text-anchor': 'middle', 'font-family': 'Gowun Dodum,sans-serif', 'font-size': 16, 'font-weight': 800, fill: boom ? '#E8590C' : (gone ? '#868E96' : (isAff ? '#E8590C' : C.ink)), 'pointer-events': 'none' });
         lab.textContent = o.nm + (isRemoved ? ' (사라짐)' : (boom ? ' 폭증!' : (gone ? ' 바닥' : (isAff ? ' ⚠' : ''))));
         g.appendChild(lab);
       });

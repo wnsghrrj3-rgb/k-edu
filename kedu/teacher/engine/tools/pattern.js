@@ -165,27 +165,27 @@
         var cls='pt-cell'+(opts.gen&&i===S.length-1?' pt-pop':'');  // 와우 ②: ▶로 막 생성된 칸이 척척 등장
         svg.appendChild(svgEl('rect',{x:bx,y:y,width:size,height:size,rx:12,fill:colors[S[i]],stroke:'#fff','stroke-width':4,class:cls,filter:'url(#ptSh)'}));
       }
-      if(core>0){var t=svgEl('text',{x:x0+(core*(size+gap)-gap)/2,y:y-18,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':20,'font-weight':800,fill:'#7048E8'});t.textContent=(G().bandHint?'반복 마디':'규칙');svg.appendChild(t);}
+      if(core>0){var t=svgEl('text',{x:x0+(core*(size+gap)-gap)/2,y:y-18,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':20,'font-weight':800,fill:'#7048E8'});t.textContent=(G().bandHint?'반복 마디':'규칙');svg.appendChild(t);}
       if(showNext){
         var bx2=x0+S.length*(size+gap);
         svg.appendChild(svgEl('rect',{x:bx2,y:y,width:size,height:size,rx:12,fill:colors[nextIdx],stroke:'#7048E8','stroke-width':4,'stroke-dasharray':'7 5',filter:'url(#ptSh)'}));
-        var t2=svgEl('text',{x:bx2+size/2,y:y-18,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'});t2.textContent='다음!';svg.appendChild(t2);
+        var t2=svgEl('text',{x:bx2+size/2,y:y-18,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#7048E8'});t2.textContent='다음!';svg.appendChild(t2);
       }
       if(qMark){
         var bx3=x0+S.length*(size+gap);
         svg.appendChild(svgEl('rect',{x:bx3,y:y,width:size,height:size,rx:12,fill:'#fff',stroke:'#F59F00','stroke-width':4,'stroke-dasharray':'7 5',filter:'url(#ptSh)'}));
-        var t3=svgEl('text',{x:bx3+size/2,y:y+size/2+14,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':40,'font-weight':800,fill:'#F59F00'});t3.textContent='?';svg.appendChild(t3);
+        var t3=svgEl('text',{x:bx3+size/2,y:y+size/2+14,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':40,'font-weight':800,fill:'#F59F00'});t3.textContent='?';svg.appendChild(t3);
       }
-      if(S.length===0){var t4=svgEl('text',{x:VBW/2,y:VBH/2,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':24,'font-weight':800,fill:'#9AB7D4'});t4.textContent='색을 눌러 패턴을 만들어 보세요';svg.appendChild(t4);}
+      if(S.length===0){var t4=svgEl('text',{x:VBW/2,y:VBH/2,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':24,'font-weight':800,fill:'#9AB7D4'});t4.textContent='색을 눌러 패턴을 만들어 보세요';svg.appendChild(t4);}
       // ── 와우 ④ 일반항 점프: ⋯ 건너뛰고 100번째 칸을 규칙으로 바로 보여줌 ──
       if(jShow){
         var exX=x0+S.length*(size+gap)+size/2;
-        var te=svgEl('text',{x:exX,y:y+size/2+10,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':34,'font-weight':800,fill:'#9AB7D4'});te.textContent='⋯';svg.appendChild(te);
+        var te=svgEl('text',{x:exX,y:y+size/2+10,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':34,'font-weight':800,fill:'#9AB7D4'});te.textContent='⋯';svg.appendChild(te);
         var jx=x0+(S.length+1)*(size+gap);
         svg.appendChild(svgEl('rect',{x:jx,y:y,width:size,height:size,rx:12,fill:colors[jump100],stroke:'#FF8A3D','stroke-width':5,class:'pt-spark',filter:'url(#ptSh)'}));
-        var ts=svgEl('text',{x:jx+size/2,y:y-16,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':22,'font-weight':800,fill:'#C24E0E'});ts.textContent='✨100번째';svg.appendChild(ts);
+        var ts=svgEl('text',{x:jx+size/2,y:y-16,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':22,'font-weight':800,fill:'#C24E0E'});ts.textContent='✨100번째';svg.appendChild(ts);
         if(opts.magic){
-          var fx=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':23,'font-weight':800,fill:'#C24E0E',class:'pt-flash'});
+          var fx=svgEl('text',{x:VBW/2,y:26,'text-anchor':'middle','font-family':'Gowun Dodum,sans-serif','font-size':23,'font-weight':800,fill:'#C24E0E',class:'pt-flash'});
           fx.textContent='✨ 세어 보지 않아도, 규칙이면 100번째 색도 바로 알 수 있어요!';
           svg.appendChild(fx);
         }
