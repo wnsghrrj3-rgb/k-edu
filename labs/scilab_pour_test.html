@@ -349,7 +349,8 @@ const EDGE_N=4, edgeDrops=[];
 const { createPourSim } = window.SciLab;
 const sim = createPourSim();
 let tilt=0, targetTilt=0;                    // rotation.z 트윈 (0 → -0.9)
-const TILT_MAX=-0.9, TILT_SPEED=1.2;         // rad/s (≈0.8s easeInOut 근사)
+const TILT_MAX=-0.62, TILT_SPEED=1.2;        // rad/s — 입술이 받는 비커 수면보다 위에 오도록 완화
+const SRC_X=-0.26, POUR_LIFT=0.075, POUR_SHIFT=0.05;   // 붓는 동안 들어올림·앞으로 이동량
 let phase='idle';                            // idle → pouring → returning
 let dstTopWorld=new THREE.Vector3();
 let curve=null;
@@ -396,7 +397,8 @@ function updateStream(t){
 
   if(!S.pouring){ return null; }
 
-  ctrl.copy(lip).lerp(hit,0.5); ctrl.y-=0.015;
+  // 포물선 낙하: 입술에서 수평으로 나가(제어점 y=lip.y) 받는 비커 수면으로 떨어짐
+  ctrl.set(lip.x*0.4 + hit.x*0.6, lip.y, (lip.z+hit.z)*0.5);
   ctrl.x += Math.sin(t*7)*0.002;               // 미세 출렁임(값 고정)
   const cv=new THREE.QuadraticBezierCurve3(lip.clone(), ctrl.clone(), hit.clone());
   return cv;
@@ -431,6 +433,11 @@ function animate(){
     if((dir<0 && tilt<=targetTilt) || (dir>0 && tilt>=targetTilt)) tilt=targetTilt;
     src.gp.rotation.z=tilt;
   }
+
+  // 붓는 자세: 기울임 비례로 살짝 들어올리고 받는 비커 쪽으로 (idle이면 tilt=0 → 원위치)
+  const liftK = tilt/TILT_MAX;   // 0~1
+  src.gp.position.y = BEAKER_Y + POUR_LIFT*liftK;
+  src.gp.position.x = SRC_X + POUR_SHIFT*liftK;
 
   // 시뮬 (tilt 입력)
   const S=sim.step(dt, { tilt });
