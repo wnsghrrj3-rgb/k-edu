@@ -225,12 +225,12 @@
   var MISSION_VOLCANO = {
     id:'volcano_model',
     title:'화산 모형실험 — 분출과 굳음',
-    required:['volcano','marshmallow','stand','lamp'],
-    // 절차 규칙: 이 기구를 놓으려면 먼저 있어야 하는 것
+    required:['stand','volcano','marshmallow','lamp'],
+    // 절차 규칙: 받침을 놓고 그 위에 화산 → 화산 안에 마그마 → 아래에 램프
     needs:{
-      marshmallow:{ pre:['volcano'], msg:'마그마(마시멜로)를 담을 <b>화산 모형이 먼저</b>!' },
-      stand:{ pre:['volcano'], msg:'화산을 올릴 <b>받침(스탠드)</b> — 화산이 먼저 있어야죠!' },
-      lamp:{ pre:['volcano','stand'], msg:'가열하려면 <b>화산과 받침이 먼저</b> 준비돼야 해요!' }
+      volcano:{ pre:['stand'], msg:'화산을 올려놓을 <b>받침(스탠드)이 먼저</b> 필요해요!' },
+      marshmallow:{ pre:['stand','volcano'], msg:'마그마(마시멜로)는 화산 안에 넣어요 — <b>화산이 먼저</b>!' },
+      lamp:{ pre:['stand','volcano'], msg:'가열하려면 <b>받침과 화산이 먼저</b> 준비돼야 해요!' }
     },
     // 오답 기구: 왜 아닌지가 곧 학습
     wrong:{
@@ -965,7 +965,7 @@ function animate(){
   else if(S.phase==='flowing') st='🌋 분출! 용암이 흘러내려요';
   else if(S.phase==='heating') st='🔥 마그마가 데워지는 중… 압력이 쌓여요';
   else if(lit && !ready) st='램프를 화산 아래로 옮겨요';
-  else st='화산과 받침을 준비하고, 아래를 가열해 봐요';
+  else st='받침 위에 화산을 올리고, 아래를 가열해 봐요';
   stateEl.textContent=st;
 
   // ── ★와우 2차 (분출 시작 순간·중고 · 불 끄면 굳음?) ──

@@ -480,22 +480,27 @@ let bubbleMax=B_N;
       varying float vA;
       float h(float n){return fract(sin(n)*43758.5453);}
       void main(){
-        float sp=mix(0.6,1.0,h(aSeed*7.13));
-        float life=fract(uTime*0.22*sp+aSeed);
-        // 대류 소용돌이(SPEC_E7 A-8): 가열점(바닥 중앙)에서 데워진 물이 돌며 상승
-        float ang=life*6.28318*1.5 + aSeed*6.28318;
-        float r=0.02+life*0.035;
-        vec3 p=vec3(cos(ang)*r, life*0.09, sin(ang)*r);
+        float sp=mix(0.75,1.0,h(aSeed*7.13));
+        float life=fract(uTime*0.15*sp+aSeed);
+        // 대류 순환 롤(SPEC_E7 A-8-R): 중앙 바닥서 데워져 상승 → 위에서 가장자리로 → 가장자리 하강
+        float ang=aSeed*6.28318 + uTime*0.5;
+        float H=0.075;               // 물속 순환 높이
+        float rad, yy;
+        if(life<0.5){ float ph=life*2.0;          // 전반 = 중앙 상승
+          rad=0.006+ph*0.012; yy=ph*H; }
+        else { float ph=(life-0.5)*2.0;           // 후반 = 가장자리 하강
+          rad=0.018+ph*0.030; yy=H*(1.0-ph); }
+        vec3 p=vec3(cos(ang)*rad, 0.012+yy, sin(ang)*rad);
         vec4 mv=modelViewMatrix*vec4(p,1.0);
         gl_Position=projectionMatrix*mv;
-        vA=smoothstep(0.0,0.12,life)*(1.0-life)*uIntensity;
-        gl_PointSize=mix(0.08,0.22,life)*uScale/max(-mv.z,0.1);
+        vA=(0.4+0.6*sin(life*3.14159))*uIntensity;    // 궤적 중간에 가장 진하게
+        gl_PointSize=mix(0.16,0.30,sin(life*3.14159))*uScale/max(-mv.z,0.1);
       }`,
     fragmentShader:`
       varying float vA;
       void main(){
         float d=length(gl_PointCoord-0.5);
-        gl_FragColor=vec4(0.23,0.43,0.84, smoothstep(0.5,0.06,d)*vA*0.7);  // 청색 잉크
+        gl_FragColor=vec4(0.14,0.34,0.88, smoothstep(0.5,0.04,d)*vA*0.9);  // 진한 청색 잉크
       }`
   }));
   steam.frustumCulled=false; gp.add(steam);
@@ -983,7 +988,8 @@ function animate(){
     rippleWater(t, 0.0016);
     steam.position.y=0.02;           // 잉크는 물속(바닥 가열점)에서 발생해 돌며 상승
     steamUni.uTime.value=t;
-    steamUni.uIntensity.value+=(S.flow-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
+    var inkInt=Math.min(1, S.flow*1.6);   // 가열 초반부터 잉크가 진하게 보이도록(시각만·로직 무변경)
+    steamUni.uIntensity.value+=(inkInt-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
   }
 
   if(lit){
