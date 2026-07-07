@@ -2125,6 +2125,13 @@
       initTheme();
       setupKlabDock();
       setupProgressTools();
+      // 딥링크(검수·공유용): ?unit=2&lesson=3 (u2/l03 접두도 허용) → 자동 차시 진입.
+      // 무효·미준비 차시면 openShow 자체 가드(LESSONS 미존재 시 return)로 홈 유지. ?theme=classic과 공존.
+      try {
+        const q = new URLSearchParams(location.search);
+        const u = q.get('unit'), l = q.get('lesson');
+        if (u && l) openShow(String(u).replace(/^u/i, ''), String(l).replace(/^l/i, ''));
+      } catch (e) { /* 딥링크 무시 — 홈 유지 */ }
     },
     // 디버그·외부 호출용
     openShow,
