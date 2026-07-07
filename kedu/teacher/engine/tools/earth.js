@@ -49,6 +49,19 @@
     var chips=[], chipDone=false;
     function snd(n){ if(window.KLab&&window.KLab.sound) window.KLab.sound.play(n); }
     function v2reset(){ spinSpd=1; dirRev=false; pinGrab=false; viewMode='space'; latV=lat; }
+    /* ── 와우(예측 빗나감형) — 「낮인 곳이 밤인 곳보다 태양에 더 가깝다」 거리 오개념 직격 ──
+       라이브는 이미 「향한 면=낮·등진 면=밤」을 전면 교습하지만, 학생 머릿속의 '낮=가깝다/밤=멀다'
+       거리 직관은 반증 안 함. 실제로 지구는 태양에서 아주 멀어(지구 지름은 그 거리의 0.008%뿐)
+       낮·밤 지점의 태양까지 거리는 거의 같음 = 낮밤은 거리가 아니라 향한 방향의 차이. */
+    var distArmed=false;
+    var SUN_DIST_KM=149600000, EARTH_R_KM=6371;         // 지구-태양 평균거리 · 지구 반지름
+    function dayDistKm(){ return SUN_DIST_KM-EARTH_R_KM; }    // 낮(정오) 지점: 태양 쪽으로 R 가까움
+    function nightDistKm(){ return SUN_DIST_KM+EARTH_R_KM; }  // 밤(자정) 지점: R 멀음
+    function distDiffKm(){ return 2*EARTH_R_KM; }            // 차이 = 지구 지름
+    function distDiffPct(){ return 2*EARTH_R_KM/SUN_DIST_KM*100; }  // ≈0.0085%
+    function fmtKm(n){ n=Math.round(n);                     // 149593629 → "1억 4959만 3629"
+      var eok=Math.floor(n/100000000), man=Math.floor((n%100000000)/10000), rest=n%10000, s='';
+      if(eok)s+=eok+'억 '; if(man)s+=man+'만 '; if(rest||!s)s+=rest; return s.trim(); }
     var C={ink:'#1B3A57',sub:'#9DB2C8',good:'#37D67A',day:'#FFD43B',night:'#5C7CFA'};
     var btn='font-size:21px;padding:11px 18px;border-radius:14px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
 
@@ -92,15 +105,15 @@
         check:function(){ return spinAcc>=24; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],                 missions:LOW_MISSIONS, low:true,  v2:{} },
-      mid:  { modes:['free','mission','quiz'],          missions:MID_MISSIONS, low:false, v2:{pin:true} },
-      high: { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, v2:{pin:true,spd:true,dir:true,view:true} }
+      low:  { modes:['free','mission'],                 missions:LOW_MISSIONS, low:true,  showWow:false, v2:{} },
+      mid:  { modes:['free','mission','quiz'],          missions:MID_MISSIONS, low:false, showWow:false, v2:{pin:true} },
+      high: { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, showWow:true,  v2:{pin:true,spd:true,dir:true,view:true} }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
     function curMissions(){ return G().missions; }
     var bands=ui.gradeBands({grade:grade,locked:!!config.grade,onChange:function(g){
-      grade=g; wif.reset(); mode='free'; mStep=0; mDone=false; mLock=false; playing=false; spinAcc=0; hrCnt=0; hour=12; v2reset(); buildUI();
+      grade=g; wif.reset(); mode='free'; mStep=0; mDone=false; mLock=false; playing=false; spinAcc=0; hrCnt=0; hour=12; v2reset(); distArmed=false; buildUI();
     }});
     var mStep=0,mDone=false,mLock=false;
     function advanceMission(){
@@ -220,6 +233,14 @@
           +(g2.view?('<button class="ea-viewbtn" style="'+sbt+'border-color:#0B7285;'+(viewMode==='pin'?'background:#0B7285;color:#fff;':'background:#fff;color:#0B7285;')+'">'+(viewMode==='pin'?'🌌 우주에서 보기':'📍 핀 위에서 보기')+'</button>'):'')
         +'</div>';
       }
+      /* ── 와우 버튼 (예측 빗나감형 — 고학년·자유탐구 전용, 거리 오개념 직격) ── */
+      var wowRow='';
+      if(mode==='free' && G().showWow){
+        wowRow='<div class="ea-wowrow" style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+          +'<button class="ea-wow" data-wow="arm" style="'+btn+'background:#fff;color:#7048E8;border-color:#7048E8;">🔮 낮이 밤보다 태양에 가까울까?</button>'
+          +'<button class="ea-wow" data-wow="reveal" style="'+btn+'background:#7048E8;color:#fff;border-color:#7048E8;">📏 거리 재보기</button>'
+        +'</div>';
+      }
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(curMissions()[mStep].text,mStep,curMissions().length); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); ctrl=''; foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); if(wif.state.phase==='pick'||wif.state.phase==='predict')ctrl=''; }
@@ -234,12 +255,13 @@
         } else if(wif.state.phase!=='reveal'){ chipDone=false; }
       }
       var chipsRow=(mode==='free'||mode==='whatif')?'<div class="ea-chips" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px;"></div>':'';
-      el.innerHTML='<style>.ea-btn:active,.kl-choice:active{transform:translateY(2px);}'
+      el.innerHTML='<style>.ea-btn:active,.kl-choice:active,.ea-wow:active{transform:translateY(2px);}'
+        +'@keyframes eaHold{0%,100%{opacity:1;}50%{opacity:0.42;}}.ea-hold{animation:eaHold 1.1s ease-in-out infinite;}'
         +'.kl-choice{min-width:auto !important;padding:14px 18px !important;}'
         +'.ea-range{-webkit-appearance:none;appearance:none;height:14px;border-radius:8px;background:linear-gradient(90deg,#1A2B4A,#5C7CFA,#FFD43B,#5C7CFA,#1A2B4A);outline:none;}'
         +'.ea-range::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}'
         +'.ea-range::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:4px solid #1565C0;cursor:pointer;}</style>'
-        + top + '<div class="ea-bars">'+bar+'</div>' + ctrl + v2row
+        + top + '<div class="ea-bars">'+bar+'</div>' + ctrl + v2row + wowRow
         +'<div class="kl-stage-host" style="position:relative;"><div class="ea-stage" style="position:relative;width:100%;height:'+(mode==='quiz'?'36vh':'44vh')+';min-height:'+(mode==='quiz'?'260':'330')+'px;background:radial-gradient(120% 120% at 70% 30%,#10183A 0%,#070B1E 70%,#03060F 100%);border-radius:26px;overflow:hidden;cursor:grab;touch-action:none;box-shadow:inset 0 0 0 3px rgba(92,124,250,0.18);">'
           +(mode==='quiz'?'':'<div class="ea-texlab" style="position:absolute;top:10px;left:12px;font-size:12px;font-weight:800;color:#8fa3cc;background:rgba(8,12,26,0.55);border-radius:10px;padding:4px 9px;pointer-events:none;font-family:inherit;"></div>')
           +(mode==='quiz'?'':'<div class="ea-skypanel" style="position:absolute;bottom:12px;left:12px;width:212px;text-align:center;pointer-events:none;background:rgba(8,12,26,0.62);border-radius:14px;padding:7px 6px 5px;">'
@@ -262,7 +284,7 @@
       ui.bindModeTabs(el,function(m){
         wif.reset();
         mode=m; mStep=0;mDone=false;mLock=false; playing=false; spinAcc=0; hrCnt=0; hour=(m==='mission')?9:12;
-        pinGrab=false; viewMode='space'; latV=lat;   /* v2: 미션·퀴즈 결정성 보호(속도·방향은 자유탐구 전용 노출이라 그대로) */
+        pinGrab=false; viewMode='space'; latV=lat; distArmed=false;   /* v2: 미션·퀴즈 결정성 보호(속도·방향은 자유탐구 전용 노출이라 그대로) */
         if(m==='mission'){ spinSpd=1; dirRev=false; }
         if(m==='quiz'){ qScore=0;qCount=0;qUsed=[];newQuiz(); }
         buildUI();
@@ -450,40 +472,92 @@
         /* ── v2 자유탐구 상태 줄 ── */
         +((mode==='free'&&pinGrab)?'<div class="ea-pinhint" style="font-size:15px;color:#C24106;margin-top:4px;">🧲 지구를 위아래로 끌어 핀(관찰 위치)을 옮겨요 — 위도 '+Math.round(latV)+'°</div>':'')
         +((mode==='free'&&Math.abs(latV)>=80)?'<div class="ea-polar" style="font-size:15px;color:#0B7285;margin-top:4px;">🧊 극지방 — (축이 안 기운 이 지구에선) 태양이 지평선에 딱 붙어 돌아요. 계절 도구에서 기울기를 만나면 백야가 생겨요!</div>':'')
-        +((mode==='free'&&viewMode==='pin')?'<div class="ea-pinview" style="font-size:15px;color:#0B7285;margin-top:4px;">📍 핀 위 시점 — 하늘(태양)이 도는 게 아니라 우리가 돌고 있어요!</div>':'');
+        +((mode==='free'&&viewMode==='pin')?'<div class="ea-pinview" style="font-size:15px;color:#0B7285;margin-top:4px;">📍 핀 위 시점 — 하늘(태양)이 도는 게 아니라 우리가 돌고 있어요!</div>':'')
+        +((mode==='free'&&distArmed)?'<div class="ea-hold" style="font-size:18px;color:#7048E8;margin-top:8px;font-weight:800;">낮과 밤을 가르는 건 ‘거리’일까요, 태양을 ‘향한 방향’일까요? 📏</div>':'');
       checkMission();
     }
+    /* ───────────── 와우: 거리 오개념 배너 머신 (states 패턴) ───────────── */
+    function host(){ return el.querySelector('.kl-stage-host'); }
+    function clearEaFlash(){ var h=host(); if(!h)return;
+      ['.ea-flash','.ea-flash-magic','.ea-nudge'].forEach(function(sel){ var n=h.querySelector(sel); if(n&&n.parentNode)n.parentNode.removeChild(n); }); }
+    function eaFlash(cls,html,ms){ var h=host(); if(!h)return; clearEaFlash();
+      var bg=cls==='ea-flash-magic'?'#F3F0FF':(cls==='ea-nudge'?'#FFF4E6':'#E7F5FF');
+      var bd=cls==='ea-flash-magic'?'#7048E8':(cls==='ea-nudge'?'#FF8A3D':'#1565C0');
+      var fg=cls==='ea-flash-magic'?'#5f3dc4':(cls==='ea-nudge'?'#E8590C':'#1565C0');
+      var d=document.createElement('div'); d.className=cls;
+      d.style.cssText='position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:92%;'
+        +'background:'+bg+';border:3px solid '+bd+';color:'+fg+';border-radius:16px;padding:11px 18px;'
+        +'font-family:inherit;font-weight:800;font-size:17px;line-height:1.42;text-align:center;z-index:6;'
+        +'box-shadow:0 6px 18px rgba(0,0,0,0.14);';
+      d.innerHTML=html; h.appendChild(d);
+      setTimeout(function(){ if(d.parentNode)d.parentNode.removeChild(d); }, ms||2800); }
+
+    /* 실제 비율 거리 막대 — 낮·밤 두 선이 사실상 같은 길이(차이 0.008%는 픽셀로 표현 불가 = 그게 요점) */
+    function distBarsSVG(){
+      return '<svg viewBox="0 0 300 66" width="290" height="64" style="margin:8px auto 4px;display:block;">'
+        +'<text x="2" y="12" font-size="11" font-weight="800" fill="#C24106" font-family="inherit">☀️ 낮인 곳 → 태양</text>'
+        +'<line x1="18" y1="20" x2="286" y2="20" stroke="#FF922B" stroke-width="7" stroke-linecap="round"/>'
+        +'<text x="18" y="33" font-size="10.5" font-weight="800" fill="#5a7894" font-family="inherit">'+fmtKm(dayDistKm())+' km</text>'
+        +'<text x="2" y="50" font-size="11" font-weight="800" fill="#1565C0" font-family="inherit">🌙 밤인 곳 → 태양</text>'
+        +'<line x1="18" y1="58" x2="286" y2="58" stroke="#5C7CFA" stroke-width="7" stroke-linecap="round"/>'
+        +'<text x="18" y="66" font-size="10.5" font-weight="800" fill="#5a7894" font-family="inherit" dy="-1">'+fmtKm(nightDistKm())+' km</text>'
+        +'</svg>';
+    }
+    function wowArm(){
+      distArmed=true;
+      /* 정오 셋업 — 우리나라(빨간 핀)가 태양 정면인 환한 낮, 반대편은 밤 */
+      if(playing)togglePlay();
+      hour=12; spinSpd=1; dirRev=false; pinGrab=false; viewMode='space';
+      var r=el.querySelector('.ea-range'); if(r)r.value=hour;
+      if(stage)stage.style.cursor='grab';
+      render(); renderStatus();
+      snd('charge');
+      eaFlash('ea-flash','지금 빨간 핀(우리나라)은 태양을 향한 <b>환한 낮</b>, 지구 반대편은 <b>깜깜한 밤</b>이에요. 낮인 곳이 밤인 곳보다 <b>태양에 더 가까울까요?</b> 예상해 봐요!',4200);
+    }
+    function wowReveal(){
+      if(!distArmed){ snd('select'); eaFlash('ea-nudge','먼저 🔮 버튼으로 <b>예상부터</b> 해 봐요.',2600); return; }
+      snd('whoosh'); snd('success');
+      eaFlash('ea-flash-magic','📏 거리를 재봤어요!'+distBarsSVG()
+        +'낮인 곳도 밤인 곳도 태양까지 <b>거의 똑같아요!</b> 차이는 <b>지구 지름(약 '+fmtKm(distDiffKm())+' km)</b>뿐 — 태양까지 거리의 <b>'+distDiffPct().toFixed(3)+'%</b>예요. 낮과 밤은 <b>‘거리’가 아니라</b> 태양을 <b>‘향했느냐 등졌느냐’</b>의 차이!',7200);
+    }
+    /* 직접 조작 시 무장 해제(예측→확인 구조 보호) */
+    function clearDist(){ if(!distArmed)return; distArmed=false; clearEaFlash(); renderStatus(); }
+
     function setHour(v){ hour=Math.max(0,Math.min(24,v)); var r=el.querySelector('.ea-range'); if(r&&+r.value!==hour)r.value=hour; render(); renderStatus(); }
     function bind(){
-      var rg=el.querySelector('.ea-range'); if(rg)rg.addEventListener('input',function(e){ if(playing)togglePlay(); setHour(+e.target.value); });
-      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',togglePlay);
+      /* 와우 버튼 (arm/reveal) — reveal은 clearDist 유발 안 함 */
+      el.querySelectorAll('.ea-wow').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+      });
+      var rg=el.querySelector('.ea-range'); if(rg)rg.addEventListener('input',function(e){ clearDist(); if(playing)togglePlay(); setHour(+e.target.value); });
+      var pb=el.querySelector('[data-act="play"]'); if(pb)pb.addEventListener('click',function(){ clearDist(); togglePlay(); });
       /* ── v2 변수 컨트롤 바인딩 (자유탐구 전용) ── */
       var sp=el.querySelector('.ea-spd'); if(sp)sp.addEventListener('input',function(e){
-        spinSpd=+e.target.value;
+        clearDist(); spinSpd=+e.target.value;
         var v=el.querySelector('.ea-spdv'); if(v)v.textContent=spinSpd+'×';
       });
       var db=el.querySelector('.ea-dir'); if(db)db.addEventListener('click',function(){
-        dirRev=!dirRev; snd('select');
+        clearDist(); dirRev=!dirRev; snd('select');
         db.textContent=dirRev?'🔄 역방향':'➡️ 정방향';
         db.style.background=dirRev?'#845EF7':'#fff'; db.style.color=dirRev?'#fff':'#845EF7';
         render(); renderStatus();
       });
       var pk=el.querySelector('.ea-pinbtn'); if(pk)pk.addEventListener('click',function(){
-        pinGrab=!pinGrab; snd('select');
+        clearDist(); pinGrab=!pinGrab; snd('select');
         pk.textContent=pinGrab?'✅ 핀 놓기':'🧲 핀 잡기';
         pk.style.background=pinGrab?'#E03131':'#fff'; pk.style.color=pinGrab?'#fff':'#E03131';
         if(stage)stage.style.cursor=pinGrab?'ns-resize':'grab';
         renderStatus();
       });
       var vb=el.querySelector('.ea-viewbtn'); if(vb)vb.addEventListener('click',function(){
-        viewMode=(viewMode==='pin')?'space':'pin'; snd('whoosh');
+        clearDist(); viewMode=(viewMode==='pin')?'space':'pin'; snd('whoosh');
         vb.textContent=(viewMode==='pin')?'🌌 우주에서 보기':'📍 핀 위에서 보기';
         vb.style.background=(viewMode==='pin')?'#0B7285':'#fff'; vb.style.color=(viewMode==='pin')?'#fff':'#0B7285';
         camPos(); render(); renderStatus();
       });
       // 카메라 드래그 (우주 시점 회전) / v2: 핀 잡기 중엔 세로 드래그 = 위도 이동
       var drag=false,px=0,py=0;
-      function dn(e){drag=true;stage.style.cursor=pinGrab?'ns-resize':'grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
+      function dn(e){drag=true;clearDist();stage.style.cursor=pinGrab?'ns-resize':'grabbing';var p=e.touches?e.touches[0]:e;px=p.clientX;py=p.clientY;}
       function mv(e){if(!drag)return;var p=e.touches?e.touches[0]:e;
         if(pinGrab){
           latV=Math.max(-90,Math.min(90, latV+(py-p.clientY)*0.4 ));
