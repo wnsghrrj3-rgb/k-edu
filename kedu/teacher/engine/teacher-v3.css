@@ -258,3 +258,102 @@ body.kt3 .modal-content{
 body.kt3 .modal-content h3{color:#fff;font-family:var(--kedu-title);font-weight:400}
 body.kt3 .modal-close{background:var(--acc);color:#0c1622}
 body.kt3 .modal-close:hover{filter:brightness(1.08)}
+
+/* ════════════════════════════════════════════════════════
+   C2 — v3 슬라이드 본문 (2026-07-07, 오퍼스)
+   설계 §3 C2 · D3(다크 무대+밝은 종이)·D4(모션)
+   · 22종 블록 공통 래퍼(.slide) = 밝은 종이(2-B 질감 1·3번: 노이즈·좌상단 광원·부상 그림자)
+   · 풀다크 4종(.kt-dk = cover·summary·next_lesson·game) = 스튜디오 유리 카드 + 밝은 잉크
+   · 전환 220ms transform+opacity, prefers-reduced-motion 존중
+   · 데이터·엔진 로직 불가침 — 엔진은 blk-*/kt-dk 클래스 훅 1곳만(스킨 전용)
+   ════════════════════════════════════════════════════════ */
+
+/* ── 1. 종이 카드 (기본 = 밝은 면 유지, 다크 무대 위에 떠 있음) ── */
+body.kt3 .slide{
+  color:var(--c-text);                 /* 무배경 텍스트가 body --ink(밝은잉크)로 새지 않게 고정 */
+  background:
+    /* 2-B ① 미세 종이 그레인 */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E"),
+    /* 좌상단 광원 sheen */
+    linear-gradient(158deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%),
+    var(--c-card);
+  border:1px solid rgba(255,255,255,.55);
+  /* 2-B ③ 좌상단 하이라이트 + 무대 위 부상 그림자 */
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255,255,255,.85),
+    0 2px 6px rgba(8,12,18,.30),
+    0 28px 64px -22px rgba(6,10,16,.75);
+}
+body.kt3 .slide.user-added::before{
+  background:var(--glass);color:var(--acc);border:1px solid var(--line3);
+}
+
+/* ── 2. 풀다크 4종 (방송 오프닝/엔딩 톤) ── */
+body.kt3 .slide.kt-dk{
+  color:var(--ink);
+  background:
+    radial-gradient(120% 145% at 82% 4%, rgba(91,155,240,.15), transparent 55%),
+    radial-gradient(90% 120% at 8% 100%, rgba(45,212,160,.07), transparent 60%),
+    linear-gradient(165deg, rgba(255,255,255,.05), rgba(255,255,255,.014) 45%),
+    #171c23;
+  border:1px solid var(--line3);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.06),
+    0 28px 64px -22px rgba(0,0,0,.82);
+}
+body.kt3.subj-korean .slide.kt-dk{
+  background:
+    radial-gradient(120% 145% at 82% 4%, rgba(255,162,92,.16), transparent 55%),
+    radial-gradient(90% 120% at 8% 100%, rgba(155,123,245,.07), transparent 60%),
+    linear-gradient(165deg, rgba(255,255,255,.05), rgba(255,255,255,.014) 45%),
+    #171c23;
+}
+/* 다크 카드 위 무배경 텍스트 → 밝은 잉크 (자체 배경 인셋: big-q·표·ord-item·bidirect·afs-item·ten-frame은 밝은 종이로 그대로 둠) */
+body.kt3 .slide.kt-dk h1,
+body.kt3 .slide.kt-dk h2,
+body.kt3 .slide.kt-dk .center-text,
+body.kt3 .slide.kt-dk .small-text,
+body.kt3 .slide.kt-dk .points-list,
+body.kt3 .slide.kt-dk .point-item,
+body.kt3 .slide.kt-dk .steps-list,
+body.kt3 .slide.kt-dk .steps-list li,
+body.kt3 .slide.kt-dk .seq-label{ color:var(--ink) }
+body.kt3 .slide.kt-dk h1,
+body.kt3 .slide.kt-dk h2{ font-family:var(--kedu-title); font-weight:400 }
+/* cover 큰 글자 = 타이틀 폰트로 방송 오프닝 톤 */
+body.kt3 .slide.blk-cover .center-text{ font-family:var(--kedu-title); color:#fff }
+
+/* ── 3. cover 앰비언트 (D4 = CSS 그라데 드리프트. three 씬은 페이블 몫) ── */
+body.kt3 .slide.blk-cover{ overflow:hidden }
+body.kt3 .slide.blk-cover::after{
+  content:'';position:absolute;inset:-25%;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(38% 38% at 30% 32%, rgba(91,155,240,.22), transparent 62%),
+    radial-gradient(44% 44% at 72% 66%, rgba(45,212,160,.15), transparent 62%);
+  filter:blur(22px);
+  animation:kt3-cover-drift 15s ease-in-out infinite alternate;
+}
+body.kt3.subj-korean .slide.blk-cover::after{
+  background:
+    radial-gradient(38% 38% at 30% 32%, rgba(255,162,92,.22), transparent 62%),
+    radial-gradient(44% 44% at 72% 66%, rgba(155,123,245,.15), transparent 62%);
+}
+body.kt3 .slide.blk-cover > .center{ position:relative; z-index:1 }
+@keyframes kt3-cover-drift{
+  0%{ transform:translate(0,0) scale(1) }
+  100%{ transform:translate(4%,-3%) scale(1.09) }
+}
+
+/* ── 4. 전환 모션 (220ms, 저사양 대비 GPU 속성만) ── */
+@media (prefers-reduced-motion: no-preference){
+  body.kt3 .slide.active{
+    animation:kt3-slide-in 220ms cubic-bezier(.22,.61,.36,1) both;
+  }
+}
+@keyframes kt3-slide-in{
+  from{ opacity:0; transform:translateY(10px) }
+  to{ opacity:1; transform:translateY(0) }
+}
+@media (prefers-reduced-motion: reduce){
+  body.kt3 .slide.blk-cover::after{ animation:none }
+}

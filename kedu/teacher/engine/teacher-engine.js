@@ -1032,7 +1032,10 @@
   function renderCurrentSlide() {
     const cur = slides[curIdx];
     if (renderCurrentSlide._cleanup) { try { renderCurrentSlide._cleanup(); } catch (e) {} renderCurrentSlide._cleanup = null; }
-    document.getElementById('slide-content').innerHTML = `<div class="slide active ${cur.user_added ? 'user-added' : ''}">${renderSlide(cur)}</div>`;
+    // v3 C2: 블록 타입 훅(스킨 전용, classic 모드엔 대응 CSS 없어 무변화) + 풀다크 4종 마커
+    const _blk = cur.block || '';
+    const _dk = (_blk === 'cover' || _blk === 'summary' || _blk === 'next_lesson' || _blk === 'game') ? ' kt-dk' : '';
+    document.getElementById('slide-content').innerHTML = `<div class="slide active blk-${_blk}${_dk} ${cur.user_added ? 'user-added' : ''}">${renderSlide(cur)}</div>`;
     const _mt = document.querySelector('#slide-content .klab-mount');
     if (_mt && window.KLab) {
       try {
