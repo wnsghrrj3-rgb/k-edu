@@ -32,6 +32,27 @@
               mud:'#A1887F', mudLine:'#8D6E63', rock:'#6E4226' };
     var btn = 'font-size:20px;padding:11px 16px;border-radius:14px;border:3px solid;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
     function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+    function snd(n){ if(window.KLab.sound&&window.KLab.sound.play)window.KLab.sound.play(n); }
+    /* ── 와우 배너 머신 (지구과학군 공통 — .kl-stage-host 위 absolute 오버레이 + 자동 제거) ── */
+    var stFlashT=null;
+    function clearStFlash(){ if(stFlashT){clearTimeout(stFlashT);stFlashT=null;}
+      var h=el&&el.querySelector('.kl-stage-host'); if(!h)return;
+      var f=h.querySelector('.st-flash,.st-flash-magic,.st-nudge'); if(f)f.remove();
+      var hd=el.querySelector('.st-hold'); if(hd)hd.classList.remove('st-hold'); }
+    function stBanner(cls,html,ms){
+      var h=el&&el.querySelector('.kl-stage-host'); if(!h)return;
+      var old=h.querySelector('.st-flash,.st-flash-magic,.st-nudge'); if(old)old.remove();
+      if(stFlashT){clearTimeout(stFlashT);stFlashT=null;}
+      var col=(cls==='st-flash-magic')?'#7048E8':(cls==='st-nudge'?'#E8590C':'#1565C0');
+      var bg=(cls==='st-flash-magic')?'#F3F0FF':(cls==='st-nudge'?'#FFF4E6':'#E7F5FF');
+      var d=document.createElement('div'); d.className=cls;
+      d.style.cssText='position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:9;max-width:88%;'
+        +'background:'+bg+';border:3px solid '+col+';border-radius:16px;padding:12px 18px;'
+        +'font-family:inherit;font-weight:800;font-size:17.5px;line-height:1.5;color:'+col+';'
+        +'box-shadow:0 6px 22px rgba(21,101,192,0.18);text-align:center;';
+      d.innerHTML=html; h.appendChild(d);
+      if(ms)stFlashT=setTimeout(function(){ if(d&&d.parentNode)d.remove(); stFlashT=null; },ms);
+    }
 
     /* ───────────── 상태 ───────────── */
     var TYPES = { gravel:{nm:'자갈',fill:C.gravel}, sand:{nm:'모래',fill:C.sand}, mud:{nm:'진흙',fill:C.mud} };
@@ -39,8 +60,61 @@
     var GX=150, GW=600, GY=400, LH=34, MAXL=7;
     var FX=610, FW=140;                    // v2 먼바다 칸 (물살 켜짐일 때)
     var layers, farLayers, pending, up, uplifting, sel, clickedOldest;
-    function reset(){ layers=[]; farLayers=[]; pending=null; up=0; uplifting=false; sel=-1; clickedOldest=false; }
+    function reset(){ layers=[]; farLayers=[]; pending=null; up=0; uplifting=false; sel=-1; clickedOldest=false; clearMix(); }
     reset();
+    /* ── 와우(27호): 「몽땅 섞어 부으면?」 = 분급(graded bedding) ──
+       학생 직관 「자갈·모래·진흙을 섞어 한꺼번에 부으면 뒤죽박죽 덩어리」 → 실제론 무거운
+       자갈이 먼저 가라앉고 그 위 모래·맨 위 고운 진흙 = 저절로 아래굵고 위고운 줄무늬.
+       라이브는 '한 종류씩 차례로 쌓기'만(줄무늬=여러 번 나눠 쌓아야) + flow 예측은 수평
+       거리 → '섞어 붓기·수직 자동 분급'은 아예 없던 묻힌 반직관. 4학년 지층 생성 실험
+       (흙 섞어 흔든 뒤 가라앉히기)의 정확한 짝. mid/high·free 전용. */
+    var mixArmed=false, mixSettled=false, mixParticles=null;
+    var GRAV={gravel:0.052, sand:0.030, mud:0.014}; // 무게(가라앉는 빠르기) — 자갈>모래>진흙
+    var MIXY={gravel:GY-24, sand:GY-58, mud:GY-84};  // 분리 후 바닥부터 자갈→모래→진흙 목표대
+    function makeMixParticles(){
+      var arr=[], seq=['gravel','sand','mud'], id=0;
+      for(var t=0;t<seq.length;t++){ var ty=seq[t], n=(ty==='gravel'?9:(ty==='sand'?12:14));
+        for(var i=0;i<n;i++){
+          var s=Math.sin((id+1)*12.9898)*43758.5453; s-=Math.floor(s);
+          var s2=Math.sin((id+7)*78.233)*43758.5453; s2-=Math.floor(s2);
+          arr.push({ type:ty, x:GX+40+s*(GW-80), y:150+s2*180, tx:0, id:id++ }); }
+      }
+      return arr;
+    }
+    function clearMix(){ if(!mixArmed&&!mixSettled)return;
+      mixArmed=false; mixSettled=false; mixParticles=null; clearStFlash(); }
+    function wowArm(){
+      reset(); v2reset(); mode='free';
+      mixArmed=true; mixSettled=false; mixParticles=makeMixParticles(); snd('charge');
+      stBanner('st-flash','🌀 자갈·모래·진흙을 <b>몽땅 섞어</b> 잔잔한 물에 부었어요.<br>이대로 가라앉으면 — <b>뒤죽박죽 섞인 덩어리</b>가 될까요, <b>줄무늬</b>가 생길까요? 예상해 봐요!',4600);
+      renderScene(); renderStatus();
+    }
+    function wowReveal(){
+      if(!mixArmed){ snd('select'); stBanner('st-nudge','먼저 🔮 <b>몽땅 섞어 부으면?</b> 버튼으로 예상부터 해 봐요!',2600); return; }
+      snd('whoosh'); snd('success'); mixSettled=true;
+      stBanner('st-flash-magic','✨ 한꺼번에 부었는데 <b>저절로 줄무늬</b>가 생겼어요!<br>무거운 <b>자갈이 먼저</b> 가라앉고, 그 위에 <b>모래</b>, 맨 위에 고운 <b>진흙</b> — 알갱이 크기가 다르면 가라앉는 빠르기가 달라 <b>아래는 굵고 위는 고운</b> 층이 저절로 나뉘어요!',7200);
+      renderScene(); renderStatus();
+    }
+    function renderMix(){
+      if(!svg)return; svg.innerHTML='';
+      svg.appendChild(svgEl('circle',{cx:790,cy:74,r:26,fill:'#F59F00','fill-opacity':0.55}));
+      svg.appendChild(svgEl('rect',{x:100,y:118,width:700,height:GY-118+40,rx:14,fill:C.water,'fill-opacity':0.32}));
+      for(var wv=0;wv<3;wv++){ var wx=140+wv*240+Math.sin(frame/22+wv)*14;
+        svg.appendChild(svgEl('path',{d:'M '+wx+' 126 q 22 -9 44 0 q 22 9 44 0',fill:'none',stroke:'#fff','stroke-width':3,'stroke-opacity':0.5})); }
+      svg.appendChild(svgEl('rect',{x:GX-14,y:GY,width:GW+28,height:46,rx:8,fill:C.rock}));
+      if(mixParticles)mixParticles.forEach(function(pt){
+        var col=(pt.type==='gravel'?C.gravelDot:(pt.type==='sand'?C.sandDot:C.mudLine));
+        var r=(pt.type==='gravel'?6:(pt.type==='sand'?3.4:2.2));
+        svg.appendChild(svgEl('circle',{cx:pt.x,cy:pt.y,r:r,fill:col,stroke:'rgba(0,0,0,0.18)','stroke-width':1,'data-mixtype':pt.type}));
+      });
+      if(mixSettled){
+        var lb=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:C.vio});
+        lb.textContent='⬇ 무거운 자갈부터 가라앉아 아래 · 고운 진흙은 맨 위'; svg.appendChild(lb);
+      } else {
+        var lb2=svgEl('text',{x:GX+GW/2,y:150,'text-anchor':'middle','font-family':'Jua,sans-serif','font-size':21,'font-weight':800,fill:'#1565C0'});
+        lb2.textContent='🌀 섞인 흙탕물 — 🌀 한꺼번에 쏟기를 눌러 봐요!'; svg.appendChild(lb2);
+      }
+    }
     function embeddedFossils(){ var r=[]; for(var i=0;i<layers.length;i++)if(layers[i].fossil)r.push(layers[i].fossil); return r; }
     /* ── v2 1층 변수 — 물살 세기·쌓는 시간. 기본값 = 기존 라이브와 동일 거동 ── */
     var flow=0.2, dur=0.5;                 // 잔잔·보통 = 전부 하구·두께 ×1.0(기존)
@@ -57,7 +131,7 @@
     function sumTh(list){ var s=0; for(var i=0;i<list.length;i++)s+=list[i].th; return s; }
     function flowOn(){ return (mode==='free'&&G().v2&&G().v2.flow) || (mode==='whatif'&&wif&&wif.active()&&wif.state.key==='storm'); }
 
-    function deposit(type){
+    function deposit(type){ clearMix();
       if(up>0){ ui.toast(el,false,'🌊 지층은 물속에서 쌓여요 — ↺ 처음부터!'); return; }
       var zone=flowOn()?zoneOf(type):'near';
       if(zone==='away'){
@@ -71,31 +145,31 @@
       list.push({ type:type, fossil:f, prog:0, th:thOf() });
       sel=-1; checkPred(zone); renderScene(); renderStatus(); checkMission();
     }
-    function placeFossil(kind){
+    function placeFossil(kind){ clearMix();
       if(up>0){ ui.toast(el,false,'물이 빠진 뒤엔 생물이 가라앉지 못해요 — ↺ 처음부터!'); return; }
       if(layers.length>=MAXL){ ui.toast(el,false,'덮을 자리가 없어요!'); return; }
       pending=kind; renderScene(); renderStatus();
     }
-    function doUplift(){
+    function doUplift(){ clearMix();
       if(up>0)return;
       if(layers.length===0){ ui.toast(el,false,'먼저 지층을 쌓아야 들어 올리죠!'); return; }
       if(pending){ pending=null; ui.toast(el,false,'덮이지 못한 생물은 화석이 못 돼요…'); }
       uplifting=true; renderStatus(); checkMission();
     }
-    function clickLayer(i){
+    function clickLayer(i){ clearMix();
       sel=i; renderScene(); renderStatus();
       if(mode==='mission'&&mStep===1&&!mLock&&layers.length>=3&&i!==0)ui.toast(el,false);
       if(layers.length>=3&&i===0)clickedOldest=true;
       checkMission();
     }
     /* ── v2 2층 액션 — 침식(위부터 깎기)·습곡단층(양옆에서 밀기) ── */
-    function erode(){
+    function erode(){ clearMix();
       if(layers.length<=1){ ui.toast(el,false,layers.length?'🏜️ 가장 오래된 층까지 다 드러났어요!':'깎을 층이 없어요'); return; }
       layers.pop(); erodeN++; sel=-1;
       ui.toast(el,true, layers.length===1?'🏜️ 맨 아래 — 가장 오래된 층이 드러났어요!':'🌬 위층이 깎여 나갔어요 — 더 옛날 층이 보여요!');
       renderScene(); renderStatus();
     }
-    function pushFold(){
+    function pushFold(){ clearMix();
       if(foldN>=3){ ui.toast(el,false,'이미 끊어졌어요 — 🔁 더 가지고 놀기로 새 지층!'); return; }
       foldN++;
       if(foldN===1)ui.toast(el,true,'으으… 딱딱한 지층이 휘기 시작해요 (습곡)');
@@ -128,9 +202,9 @@
         keep:true, check:function(){ return embeddedFossils().length>0; } }
     ];
     var GRADES={
-      low:  { modes:['free','mission'],                 missions:LOW_MISSIONS, low:true,  v2:null,                      wif:[] },
-      mid:  { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, v2:{dur:true},                wif:['erosion','storm'] },
-      high: { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, v2:{flow:true,dur:true},      wif:['erosion','fold','storm'] }
+      low:  { modes:['free','mission'],                 missions:LOW_MISSIONS, low:true,  v2:null,                      wif:[], wow:false },
+      mid:  { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, v2:{dur:true},                wif:['erosion','storm'], wow:true },
+      high: { modes:['free','mission','quiz','whatif'], missions:MISSIONS,     low:false, v2:{flow:true,dur:true},      wif:['erosion','fold','storm'], wow:true }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -295,6 +369,14 @@
         + bt('reset','↺ 처음부터','#889')
         +'</div>';
     }
+    /* ── 와우 헤드라인 버튼 (free·mid/high 전용) — 2단 예측→확인 ── */
+    function wowRow(){
+      if(mode!=='free'||!G().wow) return '';
+      return '<div class="st-wow" style="display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;">'
+        +'<button class="st-wowbtn" data-wow="arm" style="'+btn+'border-color:#7048E8;background:#F3F0FF;color:#5F3DC4;">🔮 몽땅 섞어 부으면?</button>'
+        +'<button class="st-wowbtn" data-wow="reveal" style="'+btn+'border-color:#12B886;background:#fff;color:#0B7A5C;">🌀 한꺼번에 쏟기</button>'
+        +'</div>';
+    }
     /* ── v2 변수 행 (1층 — 자유탐구 전용, 학년 게이팅) ── */
     function v2Row(){
       if(mode!=='free'||!G().v2) return '';
@@ -315,7 +397,7 @@
       if(mode==='mission'){ bar=mDone?ui.doneBar():ui.missionBar(curMissions()[mStep].text,mStep,curMissions().length); body=ctrlRow(); }
       else if(mode==='quiz'){ bar=ui.quizBar(QUIZ[qIdx].q,qScore,qCount); foot=ui.choices(quizChoices()); }
       else if(mode==='whatif'){ bar=wif.barHTML(); body=(wif.active()?ctrlRow():''); }
-      else body=v2Row()+ctrlRow();
+      else body=wowRow()+v2Row()+ctrlRow();
       /* ── v2 3층 — 만약에 정리 화면 도달 시 칩 1개 자동 기록 ── */
       if(mode==='whatif'&&wif.state.key){
         if(wif.state.phase==='reveal'&&!chipDone){
@@ -325,7 +407,7 @@
           chipToast(); if(window.KLab.sound)window.KLab.sound.play(wif.state.choice===cw.a?'success':'pop');
         } else if(wif.state.phase!=='reveal'){ chipDone=false; }
       }
-      el.innerHTML='<style>.st-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.st-layer{cursor:pointer;}</style>'
+      el.innerHTML='<style>.st-btn:active,.kl-choice:active{transform:translateY(2px);}.kl-choice{min-width:auto !important;padding:14px 20px !important;}.st-layer{cursor:pointer;}.st-hold{animation:st_pulse 1s ease-in-out infinite;}@keyframes st_pulse{0%,100%{opacity:1;}50%{opacity:.48;}}.st-wowbtn:active{transform:translateY(2px);}</style>'
         + top + bar + body
         +'<div class="kl-stage-host" style="position:relative;"><div class="st-stage" style="width:100%;height:'+(mode==='quiz'?'34vh':'44vh')+';min-height:'+(mode==='quiz'?'240':'320')+'px;background:linear-gradient(180deg,#D0EBFF 0%,#E7F5FF 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
         +'<div class="st-foot">'+foot+'</div>'
@@ -381,6 +463,7 @@
     }
     function renderScene(){
       if(!svg)return;
+      if(mixArmed||mixSettled){ renderMix(); return; }
       svg.innerHTML='';
       var fOn=flowOn(), NW=fOn?430:GW;                // 물살 켜짐 = 하구 폭 축소 + 먼바다 칸
       var acc=0, hcur=[], i;
@@ -476,6 +559,14 @@
       farLayers.forEach(function(L){ if(L.prog<1){ L.prog=Math.min(1,L.prog+0.06); busy=true; } });
       if(uplifting){ up=Math.min(1,up+0.018); busy=true;
         if(up>=1){ uplifting=false; renderStatus(); checkMission(); } }
+      if((mixArmed||mixSettled)&&mixParticles){
+        mixParticles.forEach(function(pt){
+          if(mixSettled){ var ty=MIXY[pt.type], g=GRAV[pt.type]*300;
+            if(pt.y<ty)pt.y=Math.min(ty,pt.y+g); }
+          else pt.y+=Math.sin(frame/12+pt.id)*0.5;
+        });
+        busy=true;
+      }
       if(mode!=='quiz'&&(busy||frame%3===0||flowOn()))renderScene();
       raf=requestAnimationFrame(loop);
     }
@@ -483,6 +574,14 @@
     function renderStatus(){
       var s=el.querySelector('.st-status'); if(!s)return;
       var fos=embeddedFossils(), h;
+      if(mixArmed&&!mixSettled){
+        h='<div class="st-hold" style="font-size:23px;color:#7048E8;">🌀 흙탕물이 가라앉는 중… 뒤죽박죽일까요, 줄무늬일까요?</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">무거운 알갱이와 가벼운 알갱이는 <b>가라앉는 빠르기</b>가 다를까요?</div>';
+        s.innerHTML=h; setMixData(); return;
+      }
+      if(mixSettled){
+        h='<div style="font-size:24px;color:'+C.good+';">✨ 저절로 줄무늬! 아래는 굵은 자갈, 위는 고운 진흙</div><div style="font-size:18px;color:'+C.sub+';margin-top:5px;">한 종류씩 안 쌓았는데도 — 알갱이 크기가 다르면 <b>가라앉는 빠르기</b>가 달라 <b>저절로 층</b>이 나뉘어요.</div>';
+        s.innerHTML=h; setMixData(); return;
+      }
       if(mode==='quiz'){ h='<div style="font-size:18px;color:'+C.sub+';">지층을 쌓아 본 걸 떠올리며 답을 골라요</div>'; }
       else if(mode==='whatif'&&wif.active()&&wif.state.key==='erosion'){
         h=layers.length===1
@@ -524,11 +623,17 @@
         stg.dataset.up=up.toFixed(2); stg.dataset.erode=String(erodeN); stg.dataset.fold=String(foldN);
         stg.dataset.pend=pending?'1':'0'; stg.dataset.fossils=String(embeddedFossils().length);
         stg.dataset.lastth=layers.length?layers[layers.length-1].th.toFixed(1):'0';
+        stg.dataset.mixarmed=mixArmed?'1':'0'; stg.dataset.mixsettled=mixSettled?'1':'0';
       }
     }
+    function setMixData(){ var stg=el.querySelector('.st-stage');
+      if(stg){ stg.dataset.mixarmed=mixArmed?'1':'0'; stg.dataset.mixsettled=mixSettled?'1':'0'; } }
 
     /* ───────────── 바인딩 ───────────── */
     function bind(){
+      el.querySelectorAll('.st-wowbtn').forEach(function(b){ b.addEventListener('click',function(){
+        if(b.dataset.wow==='arm')wowArm(); else wowReveal();
+      }); });
       el.querySelectorAll('.st-btn').forEach(function(b){ b.addEventListener('click',function(){
         var a=b.dataset.act;
         if(a.indexOf('d-')===0)deposit(a.slice(2));
@@ -551,12 +656,12 @@
     /* ── v2 변수 행 바인딩 (1층) — 첫 조작 = 🔮 예측 무장 ── */
     function bindV2(){
       var fs=el.querySelector('.st-flow'); if(fs)fs.addEventListener('input',function(){
-        flow=+fs.value; predArm('flow');
+        flow=+fs.value; clearMix(); predArm('flow');
         var lb=el.querySelector('.st-flowlab'); if(lb)lb.textContent=flowName();
         renderScene(); renderStatus();
       });
       var ds=el.querySelector('.st-dur'); if(ds)ds.addEventListener('input',function(){
-        dur=+ds.value; predArm('dur');
+        dur=+ds.value; clearMix(); predArm('dur');
         var lb=el.querySelector('.st-durlab'); if(lb)lb.textContent=durName();
         renderStatus();
       });
