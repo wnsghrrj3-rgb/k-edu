@@ -1088,6 +1088,7 @@
     renderExtrasPanel();
     renderAttachedExtras();
     renderCurrentSlide();
+    clearAnnotationOnNav();
     const showView = document.getElementById('show-view');
     if (showView && showView.classList.contains('active')) saveState();
   }
@@ -1209,6 +1210,7 @@
 
   function backToHome() {
     inShow = false;
+    progressToolsReset();
     document.getElementById('show-view').classList.remove('active');
     document.getElementById('home-view').classList.add('active');
     if (document.body.classList.contains('fullscreen')) {
@@ -1440,7 +1442,30 @@
         for (let k = 0; k < count; k++) if (s.picked.indexOf(k) < 0) remaining.push(k);
         if (remaining.length === 0) return;
         const pick = remaining[Math.floor(Math.random() * remaining.length)];
-        setIState(sid, { picked: s.picked.concat([pick]), current: pick });
+        // C4 호명 연출: 룰렛 감속 이징 → 이름 확정 팝 + 차임. (남은 1명·중복 클릭 시 즉시 확정)
+        const d = (slides[curIdx] && slides[curIdx].data) || {};
+        const nameEl = document.querySelector('.kt-pr-name');
+        const labelOf = function (n) { return (d.names && d.names[n]) ? String(d.names[n]) : (n + 1) + '번 친구'; };
+        if (!nameEl || remaining.length === 1 || t.dataset.spinning) {
+          progressChime('pick');
+          setIState(sid, { picked: s.picked.concat([pick]), current: pick });
+          return;
+        }
+        t.dataset.spinning = '1'; t.disabled = true;
+        const card = nameEl.closest('.kt-pr-card'); if (card) card.classList.add('spin');
+        let elapsed = 0, delay = 55; const total = 1500;
+        (function tick() {
+          const r = remaining[Math.floor(Math.random() * remaining.length)];
+          nameEl.textContent = labelOf(r);
+          elapsed += delay;
+          delay = 55 + Math.pow(Math.min(1, elapsed / total), 2.2) * 240; // 감속
+          if (elapsed < total) { setTimeout(tick, delay); }
+          else {
+            nameEl.textContent = labelOf(pick);
+            progressChime('pick');
+            setIState(sid, { picked: s.picked.concat([pick]), current: pick }); // 재렌더 = .pop 등장
+          }
+        })();
         return;
       }
       if (t.dataset.action === 'kt-pr-reset') {
@@ -1884,6 +1909,212 @@
     panel.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - panel.offsetWidth - 8)) + 'px';
   }
 
+
+  /* ================= C4(v3): 진행 도구 4종 (타이머·스포트라이트·판서·호명 연출) =================
+     순수 DOM. 엔진 코어·데이터 불가침. 저장 로직(STORAGE_KEY)과 무간섭.
+     기능 CSS는 아래 _injectPTStyle이 #pt-style로 1회 주입(classic에서도 동작) — teacher-v3.css는 다크 유리 스킨만 얹음. */
+
+  // 차임: KLab.sound 있으면 재사용(수학 페이지·정책 준수 공유), 없으면 인라인 합성(국어 페이지에서도 소리).
+  let _ptAudio = null;
+  function _ptTone(freq, dur, delay, peak) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      if (!_ptAudio) _ptAudio = new AC();
+      const c = _ptAudio; if (c.state === 'suspended') { try { c.resume(); } catch (e) {} }
+      const t0 = c.currentTime + (delay || 0);
+      const osc = c.createOscillator(), g = c.createGain();
+      osc.type = 'sine'; osc.frequency.setValueAtTime(freq, t0);
+      const p = (peak == null ? 0.26 : peak);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(p, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(c.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.03);
+    } catch (e) {}
+  }
+  function progressChime(kind) {
+    if (window.KLab && window.KLab.sound) { window.KLab.sound.play(kind === 'pick' ? 'pop' : 'success'); return; }
+    if (kind === 'pick') { _ptTone(520, 0.12, 0, 0.30); _ptTone(780, 0.10, 0.03, 0.24); }
+    else { _ptTone(660, 0.10, 0, 0.28); _ptTone(880, 0.12, 0.10, 0.26); _ptTone(1175, 0.18, 0.20, 0.24); }
+  }
+
+  // 화면 펄스: 타이머 종료 신호(주변 글로우 1회).
+  function screenPulse() {
+    let el = document.getElementById('pt-pulse');
+    if (!el) { el = document.createElement('div'); el.id = 'pt-pulse'; document.body.appendChild(el); }
+    el.style.display = 'block'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    clearTimeout(screenPulse._t);
+    screenPulse._t = setTimeout(function () { el.style.display = 'none'; el.classList.remove('on'); }, 1400);
+  }
+
+  // ---- ⏱ 타이머 (HUD, 슬라이드 이동에도 유지 — 슬라이드 상태와 무관한 고정 오버레이) ----
+  let _tmId = null, _tmLeft = 0, _tmTotal = 0, _tmRun = false;
+  function _tmFmt(s) { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+  function _tmPaint() {
+    const el = document.getElementById('pt-time'); if (!el) return;
+    el.textContent = _tmFmt(_tmLeft);
+    el.classList.toggle('warn', _tmRun && _tmLeft <= 10 && _tmLeft > 0);
+    const go = document.getElementById('pt-timer-go'); if (go) go.textContent = _tmRun ? '⏸ 멈춤' : '▶ 시작';
+  }
+  function _tmTick() {
+    if (!_tmRun) return;
+    _tmLeft -= 1;
+    if (_tmLeft <= 0) {
+      _tmLeft = 0; _tmRun = false; if (_tmId) { clearInterval(_tmId); _tmId = null; }
+      const el = document.getElementById('pt-time');
+      if (el) { el.classList.remove('warn'); el.classList.add('done'); setTimeout(function () { if (el) el.classList.remove('done'); }, 3200); }
+      progressChime('end'); screenPulse();
+    }
+    _tmPaint();
+  }
+  function timerSet(sec) {
+    _tmTotal = sec; _tmLeft = sec; _tmRun = false;
+    if (_tmId) { clearInterval(_tmId); _tmId = null; }
+    const el = document.getElementById('pt-time'); if (el) el.classList.remove('done', 'warn');
+    _tmPaint();
+  }
+  function timerToggleRun() {
+    if (_tmLeft <= 0) return;
+    _tmRun = !_tmRun;
+    if (_tmRun) { _tmId = setInterval(_tmTick, 1000); } else if (_tmId) { clearInterval(_tmId); _tmId = null; }
+    _tmPaint();
+  }
+  function ensureTimer() {
+    if (document.getElementById('pt-timer')) return;
+    const p = document.createElement('div'); p.id = 'pt-timer'; p.className = 'pt-hud'; p.style.display = 'none';
+    p.innerHTML =
+      '<div class="pt-time" id="pt-time">00:00</div>'
+      + '<div class="pt-presets">' + ['1', '3', '5', '10'].map(function (m) { return '<button class="pt-chip" data-min="' + m + '">' + m + '분</button>'; }).join('') + '</div>'
+      + '<div class="pt-row"><input class="pt-custom" id="pt-custom" type="number" min="1" max="99" placeholder="분"><button class="pt-btn sec" id="pt-custom-set">맞춤</button></div>'
+      + '<div class="pt-row" style="margin-top:8px;"><button class="pt-btn go" id="pt-timer-go">▶ 시작</button><button class="pt-btn sec" id="pt-timer-reset">되돌림</button><button class="pt-btn sec" id="pt-timer-close">✕</button></div>';
+    document.body.appendChild(p);
+    p.querySelectorAll('.pt-chip').forEach(function (b) { b.addEventListener('click', function () { timerSet(parseInt(b.dataset.min, 10) * 60); }); });
+    p.querySelector('#pt-custom-set').addEventListener('click', function () { const v = parseInt(document.getElementById('pt-custom').value, 10); if (v > 0) timerSet(v * 60); });
+    p.querySelector('#pt-timer-go').addEventListener('click', timerToggleRun);
+    p.querySelector('#pt-timer-reset').addEventListener('click', function () { timerSet(_tmTotal || 0); });
+    p.querySelector('#pt-timer-close').addEventListener('click', function () { p.style.display = 'none'; });
+    timerSet(300);
+  }
+  function toggleTimer() { ensureTimer(); const p = document.getElementById('pt-timer'); p.style.display = (p.style.display === 'none') ? 'block' : 'none'; }
+
+  // ---- 🔦 스포트라이트 (화면 어둡게 + 포인터 따라 하이라이트, 반경 2단계, ESC 해제) ----
+  let _spotOn = false, _spotR = 150;
+  function _spotMove(e) { if (!_spotOn) return; const ov = document.getElementById('pt-spot'); if (ov) { ov.style.setProperty('--pt-x', e.clientX + 'px'); ov.style.setProperty('--pt-y', e.clientY + 'px'); } }
+  function ensureSpot() {
+    if (document.getElementById('pt-spot')) return;
+    const ov = document.createElement('div'); ov.id = 'pt-spot'; document.body.appendChild(ov);
+    const bar = document.createElement('div'); bar.id = 'pt-spot-bar'; bar.className = 'pt-hud';
+    bar.innerHTML = '<span class="pt-spot-lbl">🔦 스포트라이트</span> <button class="pt-btn sec" id="pt-spot-r">반경 ◑</button> <button class="pt-btn sec" id="pt-spot-x">닫기 (ESC)</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('#pt-spot-r').addEventListener('click', function () { _spotR = (_spotR >= 150) ? 90 : 150; ov.style.setProperty('--pt-r', _spotR + 'px'); });
+    bar.querySelector('#pt-spot-x').addEventListener('click', closeSpotlight);
+    window.addEventListener('pointermove', _spotMove);
+  }
+  function openSpotlight() { ensureSpot(); _spotOn = true; _spotR = 150; const ov = document.getElementById('pt-spot'); ov.style.setProperty('--pt-r', '150px'); ov.style.display = 'block'; document.getElementById('pt-spot-bar').style.display = 'flex'; }
+  function closeSpotlight() { _spotOn = false; const ov = document.getElementById('pt-spot'); if (ov) ov.style.display = 'none'; const b = document.getElementById('pt-spot-bar'); if (b) b.style.display = 'none'; }
+  function toggleSpotlight() { _spotOn ? closeSpotlight() : openSpotlight(); }
+
+  // ---- ✏️ 판서 (슬라이드 위 canvas, 펜 2색·형광펜·지우개·전체 지움, 슬라이드 이동 시 자동 클리어, 저장 안 함) ----
+  let _drawOn = false, _drawCtx = null, _drawing = false, _drawTool = 'pen1', _drawLast = null, _drawLastIdx = -1;
+  const _drawColors = { pen1: '#E03131', pen2: '#1565C0', hl: 'rgba(255,214,0,.42)' };
+  function _sizeDraw() { const cv = document.getElementById('pt-draw'); if (!cv) return; cv.width = window.innerWidth; cv.height = window.innerHeight; if (_drawCtx) { _drawCtx.lineCap = 'round'; _drawCtx.lineJoin = 'round'; } }
+  function _dPos(e) { return { x: e.clientX, y: e.clientY }; }
+  function _dStart(e) { if (!_drawOn) return; _drawing = true; _drawLast = _dPos(e); e.preventDefault(); }
+  function _dMove(e) {
+    if (!_drawOn || !_drawing) return; const p = _dPos(e); const ctx = _drawCtx; if (!ctx) return;
+    ctx.beginPath(); ctx.moveTo(_drawLast.x, _drawLast.y); ctx.lineTo(p.x, p.y);
+    if (_drawTool === 'eraser') { ctx.globalCompositeOperation = 'destination-out'; ctx.lineWidth = 36; ctx.strokeStyle = 'rgba(0,0,0,1)'; }
+    else { ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = _drawColors[_drawTool] || '#E03131'; ctx.lineWidth = (_drawTool === 'hl') ? 22 : 4; }
+    ctx.stroke(); ctx.globalCompositeOperation = 'source-over'; _drawLast = p;
+  }
+  function _dEnd() { _drawing = false; _drawLast = null; }
+  function clearAnnotation() { if (_drawCtx) _drawCtx.clearRect(0, 0, _drawCtx.canvas.width, _drawCtx.canvas.height); }
+  function _selectDrawTool(t, bar) { _drawTool = t; bar.querySelectorAll('[data-tool]').forEach(function (el) { el.classList.toggle('sel', el.dataset.tool === t); }); }
+  function ensureDraw() {
+    if (document.getElementById('pt-draw')) return;
+    const cv = document.createElement('canvas'); cv.id = 'pt-draw'; document.body.appendChild(cv);
+    _drawCtx = cv.getContext('2d'); _sizeDraw();
+    window.addEventListener('resize', function () { if (document.getElementById('pt-draw')) _sizeDraw(); });
+    cv.addEventListener('pointerdown', _dStart);
+    cv.addEventListener('pointermove', _dMove);
+    window.addEventListener('pointerup', _dEnd);
+    const bar = document.createElement('div'); bar.id = 'pt-draw-bar'; bar.className = 'pt-toolbar';
+    bar.innerHTML =
+      '<span class="pt-swatch sel" data-tool="pen1" style="background:#E03131;"></span>'
+      + '<span class="pt-swatch" data-tool="pen2" style="background:#1565C0;"></span>'
+      + '<span class="pt-swatch" data-tool="hl" style="background:#FFD600;"></span>'
+      + '<button class="pt-tool" data-tool="eraser" title="지우개">🧽</button>'
+      + '<button class="pt-tool" id="pt-draw-clear" title="전체 지움">🗑</button>'
+      + '<button class="pt-tool" id="pt-draw-x" title="닫기 (ESC)">✕</button>';
+    document.body.appendChild(bar);
+    bar.querySelectorAll('[data-tool]').forEach(function (el) { el.addEventListener('click', function () { _selectDrawTool(el.dataset.tool, bar); }); });
+    bar.querySelector('#pt-draw-clear').addEventListener('click', clearAnnotation);
+    bar.querySelector('#pt-draw-x').addEventListener('click', function () { setDrawActive(false); });
+  }
+  function setDrawActive(on) {
+    ensureDraw(); _drawOn = !!on;
+    const cv = document.getElementById('pt-draw'), bar = document.getElementById('pt-draw-bar');
+    if (on) { cv.classList.add('on'); bar.classList.add('on'); _drawLastIdx = curIdx; }
+    else { cv.classList.remove('on'); bar.classList.remove('on'); _drawing = false; }
+  }
+  function toggleDraw() { setDrawActive(!_drawOn); }
+  // 슬라이드 이동 시 자동 클리어 (rebuild 훅). curIdx가 바뀐 경우에만 지움 → reveal·룰렛 재렌더엔 무동작.
+  function clearAnnotationOnNav() { if (curIdx !== _drawLastIdx) { _drawLastIdx = curIdx; clearAnnotation(); } }
+  // 차시 목록 복귀 시 진행 도구 정리(홈 화면에 잔존 방지). 켜져 있을 때만 동작 → 미사용 시 DOM 생성 안 함.
+  function progressToolsReset() { if (_spotOn) closeSpotlight(); if (_drawOn) setDrawActive(false); }
+
+  // ---- 기능 스타일 1회 주입 (html·styles.css 불변, classic에서도 동작) ----
+  function _injectPTStyle() {
+    if (document.getElementById('pt-style')) return;
+    const st = document.createElement('style'); st.id = 'pt-style';
+    st.textContent =
+      ".pt-hud,.pt-toolbar{font-family:inherit}"
+      + ".pt-hud{position:fixed;z-index:420;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);padding:14px}"
+      + "#pt-timer{right:22px;bottom:22px;min-width:236px;text-align:center}"
+      + ".pt-time{font-size:52px;font-weight:800;letter-spacing:1px;color:#1B3A57;line-height:1.1;font-variant-numeric:tabular-nums}"
+      + ".pt-time.warn{color:#E8590C}.pt-time.done{color:#E03131;animation:pt-blink .5s steps(1) 6}"
+      + "@keyframes pt-blink{50%{opacity:.15}}"
+      + ".pt-presets{display:flex;gap:6px;justify-content:center;margin:10px 0 8px;flex-wrap:wrap}"
+      + ".pt-chip{border:2px solid #D7E6F5;background:#F4F9FF;color:#1565C0;font-weight:800;font-size:15px;border-radius:10px;padding:7px 12px;cursor:pointer;font-family:inherit}"
+      + ".pt-chip:hover{border-color:#1565C0}"
+      + ".pt-row{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:4px}"
+      + ".pt-btn{border:none;border-radius:10px;padding:8px 15px;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit}"
+      + ".pt-btn.go{background:#1565C0;color:#fff}.pt-btn.sec{background:#EAF2FB;color:#1565C0}"
+      + ".pt-custom{width:58px;text-align:center;border:2px solid #D7E6F5;border-radius:8px;padding:6px;font-size:15px;font-family:inherit}"
+      + "#pt-spot-bar{left:50%;top:16px;transform:translateX(-50%);display:none;gap:8px;align-items:center;padding:10px 14px}"
+      + ".pt-spot-lbl{font-weight:800;color:#1B3A57;font-size:15px}"
+      + "#pt-spot{position:fixed;inset:0;z-index:320;pointer-events:none;display:none;background:radial-gradient(circle var(--pt-r,150px) at var(--pt-x,50%) var(--pt-y,50%),rgba(0,0,0,0) 0,rgba(0,0,0,0) var(--pt-r,150px),rgba(0,0,0,.80) calc(var(--pt-r,150px) + 64px))}"
+      + "#pt-draw{position:fixed;inset:0;z-index:350;display:none;touch-action:none;cursor:crosshair}#pt-draw.on{display:block}"
+      + ".pt-toolbar{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:420;display:none;gap:8px;align-items:center;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.22);padding:10px 12px}"
+      + ".pt-toolbar.on{display:flex}"
+      + ".pt-swatch{width:34px;height:34px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #D7E6F5;cursor:pointer}.pt-swatch.sel{box-shadow:0 0 0 3px #1B3A57}"
+      + ".pt-tool{border:2px solid #D7E6F5;background:#F4F9FF;border-radius:10px;padding:8px 10px;font-size:18px;cursor:pointer;font-family:inherit}.pt-tool.sel{border-color:#1B3A57;background:#E7F0FB}"
+      + "#pt-pulse{position:fixed;inset:0;z-index:360;pointer-events:none;display:none}#pt-pulse.on{animation:pt-pulse 1.3s ease-out}"
+      + "@keyframes pt-pulse{0%{box-shadow:inset 0 0 0 0 rgba(21,101,192,0)}18%{box-shadow:inset 0 0 130px 20px rgba(21,101,192,.55)}100%{box-shadow:inset 0 0 0 0 rgba(21,101,192,0)}}"
+      + ".kt-pr-card.spin .kt-pr-name{opacity:.92;transform:scale(.98)}";
+    document.head.appendChild(st);
+  }
+
+  // ---- 툴바 주입 + ESC 체인 ----
+  function setupProgressTools() {
+    if (document.getElementById('pt-timer-btn')) return;
+    const fullBtn = document.getElementById('full-btn');
+    if (!fullBtn || !fullBtn.parentNode) return;
+    _injectPTStyle();
+    const parent = fullBtn.parentNode;
+    const anchor = document.getElementById('klab-dock-btn') || fullBtn; // 도크 옆(왼쪽)에 나란히
+    function mk(id, txt, title, fn) { const b = document.createElement('button'); b.className = 'icon-btn'; b.id = id; b.textContent = txt; b.title = title; b.addEventListener('click', function (e) { e.stopPropagation(); fn(); }); return b; }
+    parent.insertBefore(mk('pt-timer-btn', '⏱ 타이머', '수업 타이머 (1·3·5·10분)', toggleTimer), anchor);
+    parent.insertBefore(mk('pt-spot-btn', '🔦 집중', '스포트라이트 — 화면 어둡게 + 포인터 하이라이트 (ESC 해제)', toggleSpotlight), anchor);
+    parent.insertBefore(mk('pt-draw-btn', '✏️ 판서', '슬라이드 위 판서 — 펜·형광펜·지우개 (ESC 해제, 슬라이드 이동 시 지워짐)', toggleDraw), anchor);
+    // ESC 체인: 캡처 단계에서 스포트라이트 → 판서 순으로만 소비. 그 외(케이랩 오버레이·전체화면)는 기존 핸들러에 위임.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (_spotOn) { closeSpotlight(); e.preventDefault(); e.stopImmediatePropagation(); return; }
+      if (_drawOn) { setDrawActive(false); e.preventDefault(); e.stopImmediatePropagation(); return; }
+    }, true);
+  }
+
   global.Teacher = {
     init(config) {
       CURRICULUM = config.curriculum || [];
@@ -1893,6 +2124,7 @@
       bindEvents();
       initTheme();
       setupKlabDock();
+      setupProgressTools();
     },
     // 디버그·외부 호출용
     openShow,
