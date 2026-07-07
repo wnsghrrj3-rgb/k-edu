@@ -286,7 +286,7 @@ function makeBeaker(fillVol){
   }
   layout(fillVol);
   scene.add(gp);
-  return { gp, layout, ripple };
+  return { gp, layout, ripple, water:w };
 }
 
 // 왼쪽 = 물 가득, 오른쪽 = 빈 것. 비커 바닥을 실험대 위(y≈0.005)에 배치.
@@ -350,7 +350,7 @@ const { createPourSim } = window.SciLab;
 const sim = createPourSim();
 let tilt=0, targetTilt=0;                    // rotation.z 트윈 (0 → -0.9)
 const TILT_MAX=-0.62, TILT_SPEED=1.2;        // rad/s — 입술이 받는 비커 수면보다 위에 오도록 완화
-const SRC_X=-0.26, POUR_LIFT=0.075, POUR_SHIFT=0.05;   // 붓는 동안 들어올림·앞으로 이동량
+const SRC_X=-0.26, POUR_LIFT=0.14, POUR_SHIFT=0.06;   // 붓는 동안 들어올림·앞으로 이동량
 let phase='idle';                            // idle → pouring → returning
 let dstTopWorld=new THREE.Vector3();
 let curve=null;
@@ -438,6 +438,10 @@ function animate(){
   const liftK = tilt/TILT_MAX;   // 0~1
   src.gp.position.y = BEAKER_Y + POUR_LIFT*liftK;
   src.gp.position.x = SRC_X + POUR_SHIFT*liftK;
+
+  // 물 표면은 중력 방향(수평) 유지 — 비커 회전을 물 메쉬에서 상쇄 + 낮은 쪽으로 쏠림
+  src.water.rotation.z = -tilt;
+  src.water.position.x = Math.sin(-tilt)*0.045;   // 기울면 물이 입술 반대쪽 낮은 곳으로 고임
 
   // 시뮬 (tilt 입력)
   const S=sim.step(dt, { tilt });
