@@ -449,6 +449,14 @@
         let body = '';
         if (d.content) body += `<div class="center-text">${md(d.content)}</div>`;
         if (d.desc) body += `<div class="center-text">${md(d.desc)}</div>`;
+        // L0-① 전시학습 상기 문항형: d.items 있으면 탭→정답 카드(기존 kt-flip 재사용). from=출처 차시 계보(렌더 안 함).
+        if (d.items) {
+          const stRv = getIState(slide.id, { flipped: d.items.map(function () { return false; }) });
+          body += `<div class="kt-rv-grid">${d.items.map((it, i) => {
+            const on = !!(stRv.flipped && stRv.flipped[i]);
+            return `<div class="kt-rv-card${on ? ' on' : ''}" data-action="kt-flip" data-slide-id="${slide.id}" data-ci="${i}"><div class="kt-rv-q">${md(it.q || '')}</div><div class="kt-rv-a">${on ? md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인'}</div></div>`;
+          }).join('')}</div>`;
+        }
         if (d.table) body += renderTableNumKorHan(d.table);
         if (d.sequence) body += renderSequenceNumbers(d.sequence);
         if (d.ten_frame_strip) body += renderTenFrameStrip(d.ten_frame_strip);
@@ -464,6 +472,7 @@
 
       case 'motivate': {
         let body = '';
+        if (d.img) body += `<div class="kt-scene-img"><img src="${d.img}" alt="" loading="lazy" onerror="var p=this.closest('.kt-scene-img'); if(p)p.style.display='none'"></div>`;
         if (d.desc) body += `<div class="motivate-desc">${md(d.desc)}</div>`;
         if (d.emojis) body += `<div class="emoji-row">${d.emojis.map(e => `<span class="big-emoji">${e}</span>`).join('')}</div>`;
         if (d.emoji && d.count !== undefined) body += renderEmojiCount(d.emoji, d.count);
@@ -477,6 +486,7 @@
 
       case 'concept': {
         let body = '';
+        if (d.img) body += `<div class="kt-scene-img"><img src="${d.img}" alt="" loading="lazy" onerror="var p=this.closest('.kt-scene-img'); if(p)p.style.display='none'"></div>`;
         if (d.content) body += `<div class="center-text">${md(d.content)}</div>`;
         if (d.kids_after) body += `<div class="scene">${d.kids_after.map(k => `<div class="kid ${k.dir || ''}"><div class="face">${k.face}</div><div class="cards">${k.label || ''}</div>${k.delta ? `<div class="delta">${k.delta}</div>` : ''}</div>`).join('')}</div>`;
         if (d.items) {
@@ -672,6 +682,38 @@
       case 'number_line_demo':
         return `<h2>${md(d.title)}</h2><div class="center">${renderNumberLine(d.nl.range, d.nl.anchor)}${d.caption ? `<div class="small-text">${md(d.caption)}</div>` : ''}</div>`;
 
+      // L0-⑤ 수준별 문제층 (학년칸 사상 이식): 기본·도전·심화 탭 전환 + reveal. open:true=개방형.
+      case 'leveled_problem': {
+        const levels = d.levels || {};
+        const keys = Object.keys(levels);
+        const stLv = getIState(slide.id, { level: keys[0] || '기본', revealed: false });
+        const curKey = levels[stLv.level] ? stLv.level : (keys[0] || '');
+        const lv = levels[curKey] || {};
+        const tone = { '기본': 'basic', '도전': 'chall', '심화': 'deep' };
+        const tabs = keys.map(k => `<button class="kt-lv-tab kt-lv-${tone[k] || 'basic'}${k === curKey ? ' on' : ''}" data-action="kt-lv-tab" data-slide-id="${slide.id}" data-level="${k}">${md(k)}</button>`).join('');
+        let ans = '';
+        if (stLv.revealed) {
+          if (lv.open) ans = `<div class="kt-lv-ans open">💡 여러 답이 가능해요${lv.a ? ' — ' + md(String(lv.a)) : ''}</div>`;
+          else ans = `<div class="kt-lv-ans">✅ ${md(String(lv.a !== undefined ? lv.a : ''))}</div>`;
+          if (lv.steps && lv.steps.length) ans += `<div class="kt-lv-steps">${lv.steps.map(s => `<span class="kt-lv-step">${md(s)}</span>`).join('<span class="kt-lv-arr">→</span>')}</div>`;
+        }
+        return `<h2>${md(d.title)}</h2><div class="center" style="gap:18px;"><div class="kt-lv-tabs">${tabs}</div><div class="kt-lv-body kt-lv-${tone[curKey] || 'basic'}"><div class="kt-lv-q">${md(lv.q || '')}</div>${ans}</div><button class="i-btn coral" data-action="kt-lv-reveal" data-slide-id="${slide.id}">${stLv.revealed ? '🙈 정답 숨기기' : '정답 보기 ✨'}</button>${d.note ? `<div class="small-text">${md(d.note)}</div>` : ''}</div>`;
+      }
+
+      // L0-⑥ 출구 퀴즈: 좌측 확인 3문(kt-flip 재사용) + 우측 신호등(손들기 진행용·집계/저장 없음, 집계는 3층 케이플 예약).
+      case 'exit_ticket': {
+        const items = d.items || [];
+        const stEt = getIState(slide.id, { flipped: items.map(function () { return false; }) });
+        const qs = items.map((it, i) => {
+          const on = !!(stEt.flipped && stEt.flipped[i]);
+          return `<div class="kt-et-card${on ? ' on' : ''}" data-action="kt-flip" data-slide-id="${slide.id}" data-ci="${i}"><div class="kt-et-q">${md(it.q || '')}</div><div class="kt-et-a">${on ? '✅ ' + md(String(it.a !== undefined ? it.a : '')) : '❓ 눌러서 확인'}</div></div>`;
+        }).join('');
+        const self = d.self || [];
+        const lights = ['🟢', '🟡', '🔴'];
+        const signal = self.length ? `<div class="kt-et-signal"><div class="kt-et-signal-t">지금 내 마음은?</div>${self.map((s, i) => `<div class="kt-et-light"><span class="kt-et-dot">${lights[i] || '⚪'}</span><span class="kt-et-lbl">${md(s)}</span></div>`).join('')}</div>` : '';
+        return `<h2>${md(d.title || '오늘 확인해요')}</h2><div class="center"><div class="kt-et-wrap"><div class="kt-et-qs">${qs}</div>${signal}</div></div>`;
+      }
+
       default:
         return `<h2>${md(d.title || '새 슬라이드')}</h2><div class="center"><div class="center-text">${md(d.content || '내용을 추가하세요')}</div></div>`;
     }
@@ -796,20 +838,24 @@
   }
 
   function renderOfflineActivity(d) {
-    return `<h2>${md(d.title)}</h2>
-      <div class="center">
-        <div class="i-offline-card">
-          <div class="i-offline-tag">${d.tag || '교실에서 함께 해요'}</div>
-          <div class="i-offline-icon">${d.icon || '🙋'}</div>
-          <div class="i-offline-body">${md(d.body || '')}</div>
-          ${d.materials ? `<div class="i-offline-materials"><strong>필요한 것:</strong> ${d.materials}</div>` : ''}
-        </div>
-      </div>`;
+    // L0-④ 짝·모둠 활동 표준: type/goal/steps/materials(칩)/minutes 확장. 기존 tag/icon/body/문자열 materials 경로 하위호환.
+    const typeLabel = { pair: '👋 짝 활동', group: '👥 모둠 활동', whole: '🙌 다 함께 활동' };
+    const typeIcon = { pair: '🤝', group: '👥', whole: '🙌' };
+    const tag = d.tag || (d.type && typeLabel[d.type]) || '교실에서 함께 해요';
+    let inner = `<div class="i-offline-tag">${md(tag)}</div>`;
+    inner += `<div class="i-offline-icon">${d.icon || (d.type && typeIcon[d.type]) || '🙋'}</div>`;
+    if (d.goal) inner += `<div class="kt-oa-goal">🎯 ${md(d.goal)}</div>`;
+    if (d.body) inner += `<div class="i-offline-body">${md(d.body)}</div>`;
+    if (d.steps && d.steps.length) inner += `<ol class="kt-oa-steps">${d.steps.map(s => `<li>${md(s)}</li>`).join('')}</ol>`;
+    if (Array.isArray(d.materials) && d.materials.length) inner += `<div class="kt-oa-mats"><span class="kt-oa-mats-lbl">준비물</span>${d.materials.map(m => `<span class="kt-oa-chip">${md(m)}</span>`).join('')}</div>`;
+    else if (typeof d.materials === 'string' && d.materials) inner += `<div class="i-offline-materials"><strong>필요한 것:</strong> ${md(d.materials)}</div>`;
+    if (d.minutes) inner += `<button class="kt-oa-timer" data-action="kt-oa-timer" data-min="${d.minutes}">⏱ ${d.minutes}분 타이머 켜기</button>`;
+    return `<h2>${md(d.title)}</h2><div class="center"><div class="i-offline-card">${inner}</div></div>`;
   }
 
   // =================== 사이드바 — 슬라이드/보조자료/블록 ===================
   function blockShortLabel(block) {
-    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',klab:'🧊 케이랩',math_tool:'🧊 케이랩',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동'})[block] || block;
+    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',klab:'🧊 케이랩',math_tool:'🧊 케이랩',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동',leveled_problem:'🎚 수준별 문제',exit_ticket:'🎫 출구 퀴즈'})[block] || block;
   }
 
   function renderSlidesPanel() {
@@ -1065,6 +1111,8 @@
         revealBtn.style.display = 'none';
       }
     }
+    // L0-⑦ 발문 바 동기화 — 토글 켜져 있을 때만 현재 슬라이드 tnote 갱신
+    if (_tnoteOn) paintTnote();
   }
 
   function toggleReveal() {
@@ -1470,6 +1518,26 @@
       }
       if (t.dataset.action === 'kt-pr-reset') {
         resetIState(t.dataset.slideId, { picked: [], current: null });
+        return;
+      }
+      // L0-④ 활동 타이머: C4 타이머(1호) 존재 감지 후 분 프리셋 설정 + HUD 표시. 미존재면 무동작(표기만).
+      if (t.dataset.action === 'kt-oa-timer') {
+        if (typeof ensureTimer === 'function' && typeof timerSet === 'function') {
+          const min = parseInt(t.dataset.min, 10) || 5;
+          ensureTimer(); timerSet(min * 60);
+          const p = document.getElementById('pt-timer'); if (p) p.style.display = 'block';
+        }
+        return;
+      }
+      // L0-⑤ 수준별 문제: 탭 전환(정답 초기화) / 정답 공개 토글
+      if (t.dataset.action === 'kt-lv-tab') {
+        setIState(t.dataset.slideId, { level: t.dataset.level, revealed: false });
+        return;
+      }
+      if (t.dataset.action === 'kt-lv-reveal') {
+        const sid = t.dataset.slideId;
+        const s = global.interactiveState[sid] || { level: '기본', revealed: false };
+        setIState(sid, { level: s.level, revealed: !s.revealed });
         return;
       }
     });
@@ -2061,7 +2129,7 @@
   // 슬라이드 이동 시 자동 클리어 (rebuild 훅). curIdx가 바뀐 경우에만 지움 → reveal·룰렛 재렌더엔 무동작.
   function clearAnnotationOnNav() { if (curIdx !== _drawLastIdx) { _drawLastIdx = curIdx; clearAnnotation(); } }
   // 차시 목록 복귀 시 진행 도구 정리(홈 화면에 잔존 방지). 켜져 있을 때만 동작 → 미사용 시 DOM 생성 안 함.
-  function progressToolsReset() { if (_spotOn) closeSpotlight(); if (_drawOn) setDrawActive(false); }
+  function progressToolsReset() { if (_spotOn) closeSpotlight(); if (_drawOn) setDrawActive(false); if (_tnoteOn) { _tnoteOn = false; const b = document.getElementById('kt-tnote-bar'); if (b) b.style.display = 'none'; const btn = document.getElementById('pt-tnote-btn'); if (btn) btn.classList.remove('on'); } }
 
   // ---- 기능 스타일 1회 주입 (html·styles.css 불변, classic에서도 동작) ----
   function _injectPTStyle() {
@@ -2107,6 +2175,7 @@
     parent.insertBefore(mk('pt-timer-btn', '⏱ 타이머', '수업 타이머 (1·3·5·10분)', toggleTimer), anchor);
     parent.insertBefore(mk('pt-spot-btn', '🔦 집중', '스포트라이트 — 화면 어둡게 + 포인터 하이라이트 (ESC 해제)', toggleSpotlight), anchor);
     parent.insertBefore(mk('pt-draw-btn', '✏️ 판서', '슬라이드 위 판서 — 펜·형광펜·지우개 (ESC 해제, 슬라이드 이동 시 지워짐)', toggleDraw), anchor);
+    parent.insertBefore(mk('pt-tnote-btn', '👩‍🏫 발문', '교사 발문 메모 — 화면 하단에 표시 (학생 화면 가림 최소)', toggleTnote), anchor);
     // ESC 체인: 캡처 단계에서 스포트라이트 → 판서 순으로만 소비. 그 외(케이랩 오버레이·전체화면)는 기존 핸들러에 위임.
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
@@ -2115,11 +2184,104 @@
     }, true);
   }
 
+  // ---- L0-⑦ 발문 토글: 툴바 👩‍🏫 → 화면 하단 얇은 HUD에 현재 슬라이드 tnote(즉석 발문). 세션 유지(메모리만·localStorage 무간섭). ----
+  let _tnoteOn = false;
+  function ensureTnoteBar() {
+    if (document.getElementById('kt-tnote-bar')) return;
+    const bar = document.createElement('div'); bar.id = 'kt-tnote-bar'; bar.style.display = 'none';
+    document.body.appendChild(bar);
+  }
+  function paintTnote() {
+    const bar = document.getElementById('kt-tnote-bar'); if (!bar) return;
+    if (!_tnoteOn) { bar.style.display = 'none'; return; }
+    const cur = slides[curIdx]; const tn = cur && cur.tnote;
+    if (!tn || ((!tn.ask || !tn.ask.length) && !tn.watch)) {
+      bar.innerHTML = '<span class="kt-tn-empty">이 슬라이드에는 발문 메모가 없어요</span>';
+    } else {
+      let html = '<span class="kt-tn-badge">👩‍🏫 발문</span>';
+      if (tn.ask && tn.ask.length) html += tn.ask.map(function (a) { return '<span class="kt-tn-ask">' + md(a) + '</span>'; }).join('');
+      if (tn.watch) html += '<span class="kt-tn-watch">⚠ ' + md(tn.watch) + '</span>';
+      if (tn.min) html += '<span class="kt-tn-min">⏱ ' + tn.min + '분</span>';
+      bar.innerHTML = html;
+    }
+    bar.style.display = 'flex';
+  }
+  function toggleTnote() {
+    _tnoteOn = !_tnoteOn; ensureTnoteBar(); paintTnote();
+    const b = document.getElementById('pt-tnote-btn'); if (b) b.classList.toggle('on', _tnoteOn);
+  }
+
+  // ---- L0(40분 수업 채움) 신설·확장 블록 기능 CSS 1회 주입 (teacher-styles.css·teacher-v3.css 불변, classic·v3 양쪽 동작) ----
+  function _injectL0Style() {
+    if (document.getElementById('kt-l0-style')) return;
+    const st = document.createElement('style'); st.id = 'kt-l0-style';
+    st.textContent =
+      // ① review 문항형
+      ".kt-rv-grid{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;width:100%}"
+      + ".kt-rv-card{min-width:190px;max-width:340px;flex:1 1 230px;background:var(--c-card);border:2.5px solid var(--c-accent-soft);border-radius:16px;padding:18px 20px;cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(0,0,0,.06)}"
+      + ".kt-rv-card:hover{transform:translateY(-2px);border-color:var(--c-accent);box-shadow:0 8px 22px rgba(0,0,0,.1)}"
+      + ".kt-rv-card.on{border-color:var(--c-accent);background:var(--c-accent-soft)}"
+      + ".kt-rv-q{font-size:clamp(17px,2.4cqw,23px);font-weight:800;color:var(--c-text);margin-bottom:10px;line-height:1.4}"
+      + ".kt-rv-a{font-size:clamp(15px,2.1cqw,20px);font-weight:700;color:var(--c-accent-text);min-height:1.4em}"
+      + ".kt-rv-card:not(.on) .kt-rv-a{color:var(--c-text-mute);font-weight:600}"
+      // ② 실사 장면 이미지 (motivate·concept)
+      + ".kt-scene-img{width:100%;max-width:720px;margin:0 auto}"
+      + ".kt-scene-img img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.14);display:block}"
+      // ④ 짝·모둠 활동 표준
+      + ".kt-oa-goal{font-size:clamp(16px,2.1cqw,20px);font-weight:800;color:var(--c-accent-text);margin:2px 0 4px}"
+      + ".kt-oa-steps{counter-reset:oa;list-style:none;padding:0;margin:6px 0;display:flex;flex-direction:column;gap:10px;width:100%;max-width:520px}"
+      + ".kt-oa-steps li{counter-increment:oa;position:relative;padding:12px 16px 12px 52px;background:var(--c-card);border:2px solid var(--c-accent-soft);border-radius:12px;font-size:clamp(15px,2cqw,19px);font-weight:600;color:var(--c-text);text-align:left}"
+      + ".kt-oa-steps li::before{content:counter(oa);position:absolute;left:12px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--c-accent);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:16px}"
+      + ".kt-oa-mats{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin-top:6px}"
+      + ".kt-oa-mats-lbl{font-weight:800;color:var(--c-text-light);font-size:14px}"
+      + ".kt-oa-chip{background:var(--c-warm-soft);color:var(--c-warm);border-radius:999px;padding:6px 14px;font-weight:700;font-size:14px}"
+      + ".kt-oa-timer{margin-top:12px;border:none;border-radius:12px;padding:11px 22px;background:var(--c-accent);color:#fff;font-weight:800;font-size:16px;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.12)}"
+      + ".kt-oa-timer:hover{filter:brightness(1.06)}"
+      // ⑤ 수준별 문제층
+      + ".kt-lv-tabs{display:flex;gap:8px;justify-content:center}"
+      + ".kt-lv-tab{border:2.5px solid transparent;background:var(--c-accent-soft);color:var(--c-text-light);font-weight:800;font-size:clamp(15px,1.9cqw,18px);border-radius:12px 12px 0 0;padding:10px 22px;cursor:pointer;font-family:inherit;opacity:.6;transition:opacity .15s}"
+      + ".kt-lv-tab.on{opacity:1}"
+      + ".kt-lv-tab.kt-lv-basic.on{background:#E6F4EA;color:#2B8A3E;border-color:#2B8A3E}"
+      + ".kt-lv-tab.kt-lv-chall.on{background:#E7F0FB;color:#1565C0;border-color:#1565C0}"
+      + ".kt-lv-tab.kt-lv-deep.on{background:#F3EAFB;color:#7048C0;border-color:#7048C0}"
+      + ".kt-lv-body{width:100%;max-width:640px;background:var(--c-card);border:2.5px solid var(--c-accent-soft);border-radius:0 16px 16px 16px;padding:24px 26px;box-shadow:0 6px 20px rgba(0,0,0,.07)}"
+      + ".kt-lv-body.kt-lv-basic{border-color:#2B8A3E}.kt-lv-body.kt-lv-chall{border-color:#1565C0}.kt-lv-body.kt-lv-deep{border-color:#7048C0}"
+      + ".kt-lv-q{font-size:clamp(19px,2.7cqw,27px);font-weight:800;color:var(--c-text);line-height:1.5}"
+      + ".kt-lv-ans{margin-top:16px;font-size:clamp(18px,2.4cqw,24px);font-weight:800;color:#2B8A3E;background:#E6F4EA;border-radius:12px;padding:12px 18px}"
+      + ".kt-lv-ans.open{color:#7048C0;background:#F3EAFB}"
+      + ".kt-lv-steps{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}"
+      + ".kt-lv-step{background:var(--c-bg);border:1.5px solid var(--c-accent-soft);border-radius:8px;padding:6px 12px;font-weight:700;font-size:15px;color:var(--c-text)}"
+      + ".kt-lv-arr{color:var(--c-text-mute);font-weight:800}"
+      // ⑥ 출구 퀴즈
+      + ".kt-et-wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;align-items:stretch;width:100%}"
+      + ".kt-et-qs{flex:1 1 340px;max-width:520px;display:flex;flex-direction:column;gap:12px}"
+      + ".kt-et-card{background:var(--c-card);border:2.5px solid var(--c-accent-soft);border-radius:14px;padding:16px 20px;cursor:pointer;transition:border-color .15s,transform .15s;box-shadow:0 3px 12px rgba(0,0,0,.05)}"
+      + ".kt-et-card:hover{transform:translateY(-2px);border-color:var(--c-accent)}"
+      + ".kt-et-card.on{border-color:var(--c-accent);background:var(--c-accent-soft)}"
+      + ".kt-et-q{font-size:clamp(16px,2.1cqw,21px);font-weight:800;color:var(--c-text);margin-bottom:8px}"
+      + ".kt-et-a{font-size:clamp(15px,1.9cqw,19px);font-weight:700;color:var(--c-accent-text)}"
+      + ".kt-et-card:not(.on) .kt-et-a{color:var(--c-text-mute);font-weight:600}"
+      + ".kt-et-signal{flex:0 1 260px;background:var(--c-bg);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;justify-content:center}"
+      + ".kt-et-signal-t{font-weight:800;color:var(--c-text-light);font-size:15px;text-align:center;margin-bottom:2px}"
+      + ".kt-et-light{display:flex;align-items:center;gap:10px;background:var(--c-card);border-radius:12px;padding:10px 14px;font-weight:700;font-size:clamp(14px,1.8cqw,17px);color:var(--c-text)}"
+      + ".kt-et-dot{font-size:22px}"
+      // ⑦ 발문 하단 바
+      + "#kt-tnote-bar{position:fixed;left:0;right:0;bottom:0;z-index:400;background:rgba(27,58,87,.96);color:#fff;padding:10px 18px;display:none;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px;box-shadow:0 -4px 20px rgba(0,0,0,.25)}"
+      + ".kt-tn-badge{background:#fff;color:#1B3A57;font-weight:800;border-radius:8px;padding:4px 11px;font-size:13px;white-space:nowrap}"
+      + ".kt-tn-ask{background:rgba(255,255,255,.16);border-radius:8px;padding:4px 12px;font-weight:600}"
+      + ".kt-tn-watch{background:rgba(232,89,12,.92);border-radius:8px;padding:4px 12px;font-weight:600}"
+      + ".kt-tn-min{background:rgba(255,255,255,.16);border-radius:8px;padding:4px 12px;font-weight:700;white-space:nowrap}"
+      + ".kt-tn-empty{opacity:.7}"
+      + "#pt-tnote-btn.on{background:#1B3A57;color:#fff}";
+    document.head.appendChild(st);
+  }
+
   global.Teacher = {
     init(config) {
       CURRICULUM = config.curriculum || [];
       LESSONS = config.lessons || {};
       SUBJECT_INFO = config.subject || {};
+      _injectL0Style();
       renderHome();
       bindEvents();
       initTheme();
