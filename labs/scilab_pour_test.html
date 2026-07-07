@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 과학실 — 물줄기 기법 시제(검수 전용)</title>
+<!--
+  scilab_pour_test.html — 물줄기(따르기) 기법 검수 전용 시제 페이지
+  SPEC_기법_물줄기.md 구현. 미션 아님(트레이·미션·예측 전부 제거).
+    · 비커 2개(왼쪽 물 가득 / 오른쪽 빈 것) + "따르기" 버튼
+    · ?stream=tube|glassy|drops 3안 전환 — 준호가 실기기에서 물줄기 티어를 눈으로 고르는 용도
+    · 순수 로직 createPourSim(수위 보존) — test_scilab_pour.js 대상
+  렌더 표준(황금 샘플 승계): three r185 벤더 · ACES · RoomEnvironment PMREM · PCFSoft ·
+    유리=블렌딩 / 액체=transmission 굴절(attenuation 깊이색)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#5B9BF0; --orange:#FF8A3D; --green:#12B886; --purple:#9B7BF5;
+    --ink:#1d2733; --hud:rgba(20,25,32,.74); --hudline:rgba(255,255,255,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:#171b21;font-family:'Gowun Dodum',sans-serif}
+  #stage{position:fixed;inset:0;touch-action:none}
+  canvas{display:block}
+
+  #topbar{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+    padding:10px 16px;pointer-events:none;z-index:20}
+  #topbar .title{color:#fff;font-size:17px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+  #topbar .badge{background:var(--purple);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px}
+
+  /* 티어 표시 패널 */
+  #tierpanel{position:fixed;top:50px;left:14px;z-index:20;background:var(--hud);
+    backdrop-filter:blur(8px);border:1px solid var(--hudline);border-radius:16px;
+    padding:12px 16px;color:#fff;min-width:172px}
+  #tierpanel .lab{font-size:11px;color:#9fb3c8;margin-bottom:3px}
+  #tierpanel .tier{font-size:19px;color:#7CF0C9}
+  #tierpanel .sub{font-size:11.5px;color:#c6d6e5;margin-top:5px;line-height:1.5}
+  #tierpanel .flip{margin-top:9px;display:flex;gap:6px}
+  #tierpanel .flip a{flex:1;text-align:center;font-size:11px;padding:5px 0;border-radius:9px;
+    color:#cfe0ef;text-decoration:none;background:rgba(255,255,255,.07);border:1px solid var(--hudline)}
+  #tierpanel .flip a.on{background:rgba(155,123,245,.28);border-color:#9B7BF5;color:#fff}
+
+  #volpanel{position:fixed;top:50px;right:14px;z-index:20;background:var(--hud);
+    backdrop-filter:blur(8px);border:1px solid var(--hudline);border-radius:16px;
+    padding:11px 15px;color:#fff;min-width:150px}
+  #volpanel .row{display:flex;justify-content:space-between;font-size:12px;color:#9fb3c8;margin-bottom:5px}
+  #volpanel .row b{color:#cfe0ef}
+  .volbar{width:100%;height:7px;border-radius:999px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:9px}
+  .volbar i{display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,#4FC3F7,#81D4FA);transition:width .12s}
+
+  #ctrls{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:22;
+    display:flex;gap:10px}
+  .btn{font-family:'Gowun Dodum';font-size:15px;border:none;border-radius:14px;padding:13px 22px;
+    cursor:pointer;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.4);transition:transform .12s}
+  .btn:active{transform:scale(.95)}
+  .btn:disabled{opacity:.4;cursor:default}
+  #pourBtn{background:linear-gradient(135deg,#5B9BF0,#3B6FD4)}
+  #resetBtn{background:rgba(255,255,255,.14);border:1px solid var(--hudline);font-size:13px}
+
+  #loading{position:fixed;inset:0;z-index:50;background:#171b21;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#cfe3f5;
+    transition:opacity .5s}
+  #loading .flask{font-size:44px;animation:bob 1.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  #loading.hide{opacity:0;pointer-events:none}
+
+  @media (max-width:560px){
+    #tierpanel{padding:9px 12px;min-width:0}
+    #volpanel{padding:9px 12px;min-width:0}
+    #tierpanel .sub{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="topbar">
+  <span class="title">🧪 물줄기 기법 시제</span>
+  <span class="badge">검수 전용 · 미션 아님</span>
+</div>
+
+<div id="tierpanel">
+  <div class="lab">렌더 티어</div>
+  <div class="tier" id="tierName">—</div>
+  <div class="sub" id="tierDesc"></div>
+  <div class="flip">
+    <a href="?stream=tube"   id="fTube">튜브</a>
+    <a href="?stream=glassy" id="fGlassy">의사유리</a>
+    <a href="?stream=drops"  id="fDrops">방울</a>
+  </div>
+</div>
+
+<div id="volpanel">
+  <div class="row"><span>왼쪽 비커</span><b id="srcTxt">100%</b></div>
+  <div class="volbar"><i id="srcFill" style="width:100%"></i></div>
+  <div class="row"><span>오른쪽 비커</span><b id="dstTxt">0%</b></div>
+  <div class="volbar"><i id="dstFill" style="width:0%"></i></div>
+</div>
+
+<div id="ctrls">
+  <button class="btn" id="pourBtn">🫗 따르기</button>
+  <button class="btn" id="resetBtn">↺ 리셋</button>
+</div>
+
+<div id="loading"><div class="flask">⚗️</div><div>과학실 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (렌더러 무관 · node 테스트 대상) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 따르기 시뮬 (SPEC_기법_물줄기 B-1 · 수위 보존) ── */
+  function createPourSim(){
+    var S = { pouring:false, tilt:0, srcVol:1.0, dstVol:0.0, rate:0 };
+    var POUR_RATE=0.22, TILT_ON=-0.55;
+    function step(dt, inp){
+      if(dt>0.05) dt=0.05;
+      S.tilt = inp.tilt;
+      S.pouring = (S.tilt < TILT_ON) && (S.srcVol > 0.02);
+      S.rate = S.pouring ? POUR_RATE * Math.min((TILT_ON - S.tilt)/0.35, 1) : 0;
+      if(S.pouring){
+        var d = Math.min(S.rate*dt, S.srcVol - 0.02);
+        S.srcVol -= d; S.dstVol += d;          // ★보존: 합 항상 일정
+      }
+      return S;
+    }
+    return { state:S, step:step, POUR_RATE:POUR_RATE, TILT_ON:TILT_ON };
+  }
+
+  var API = { createPourSim:createPourSim };
+  if(typeof window!=='undefined'){ window.SciLab=API; }
+  if(typeof module!=='undefined' && module.exports){ module.exports=API; }
+})();
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ═════════ 렌더 기반 (황금 샘플 확정 표준) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#2b3340'); gr.addColorStop(.55,'#1b2129'); gr.addColorStop(1,'#12161c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x161b22, 4.2, 9.5);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
+camera.position.set(0.72, 0.78, 1.72);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.16, -0.02);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.65; controls.maxDistance=3.4;
+controls.maxPolarAngle=1.46; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.6);
+sun.position.set(1.8,3.4,1.6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.8; sun.shadow.camera.right=1.8;
+sun.shadow.camera.top=2.2; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=9;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.35));
+
+/* 재질 — 유리=블렌딩, 액체=굴절(황금 샘플 확정) */
+const GLASS = new THREE.MeshPhysicalMaterial({
+  color:0xffffff, metalness:0, roughness:0.03,
+  transparent:true, opacity:0.18, depthWrite:false,
+  clearcoat:1, clearcoatRoughness:0.06, side:THREE.DoubleSide, envMapIntensity:1.6
+});
+function waterMat(hex){
+  return new THREE.MeshPhysicalMaterial({
+    color:0xffffff, metalness:0, roughness:0.05,
+    transmission:1, thickness:0.15, ior:1.33,
+    attenuationColor:new THREE.Color(hex), attenuationDistance:0.16, envMapIntensity:1.0
+  });
+}
+
+/* ═════════ 실험대 ═════════ */
+const BENCH_Y = 0.0;
+{
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(7,48),
+    new THREE.MeshStandardMaterial({color:0x6e747d, roughness:0.95}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.86; floor.receiveShadow=true; scene.add(floor);
+
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const g=c.getContext('2d');
+  g.fillStyle='#22262c'; g.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){
+    const v=30+Math.random()*26|0;
+    g.fillStyle=`rgba(${v},${v+3},${v+7},${0.16+Math.random()*0.2})`;
+    g.fillRect(Math.random()*256, Math.random()*256, 1.4, 1.4);
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,2);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.09,1.7),
+    new THREE.MeshStandardMaterial({map:tex, roughness:0.34, metalness:0.05, envMapIntensity:0.7}));
+  top.position.y=BENCH_Y-0.045; top.receiveShadow=true; top.castShadow=true; scene.add(top);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
+    new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
+  body.position.y=BENCH_Y-0.09-0.38; body.receiveShadow=true; body.castShadow=true; scene.add(body);
+}
+
+/* ═════════ 비커 빌더 (황금 샘플 비커 → 함수화 · 기포/김 제거) ═════════ */
+const BK_R=0.115, BK_H=0.21, WATER_H0=0.145;
+const LIP_X = BK_R + 0.01;                 // 입 테두리 최외곽 반지름
+function makeBeaker(fillVol){
+  const gp=new THREE.Group();
+  const pts=[
+    new THREE.Vector2(0.004,0.002), new THREE.Vector2(BK_R-0.02,0.002),
+    new THREE.Vector2(BK_R,0.016), new THREE.Vector2(BK_R,BK_H-0.02),
+    new THREE.Vector2(BK_R+0.006,BK_H-0.006), new THREE.Vector2(BK_R+0.01,BK_H)
+  ];
+  const glass=new THREE.Mesh(new THREE.LatheGeometry(pts,48), GLASS);
+  glass.renderOrder=0; gp.add(glass);
+
+  // 눈금
+  const c=document.createElement('canvas'); c.width=512; c.height=256;
+  const g=c.getContext('2d');
+  g.clearRect(0,0,512,256);
+  g.strokeStyle='rgba(255,255,255,0.85)'; g.fillStyle='rgba(255,255,255,0.85)';
+  g.lineWidth=3; g.font='26px sans-serif';
+  [[200,70],[100,150]].forEach(([ml,y])=>{
+    g.beginPath();g.moveTo(300,y);g.lineTo(360,y);g.stroke(); g.fillText(ml+'',368,y+9);
+  });
+  for(let y=90;y<150;y+=20){ g.beginPath();g.moveTo(300,y);g.lineTo(332,y);g.stroke(); }
+  const sTex=new THREE.CanvasTexture(c); sTex.colorSpace=THREE.SRGBColorSpace;
+  const sc=new THREE.Mesh(new THREE.CylinderGeometry(BK_R+0.0015,BK_R+0.0015,BK_H-0.03,48,1,true),
+    new THREE.MeshBasicMaterial({map:sTex, transparent:true, depthWrite:false}));
+  sc.position.y=(BK_H-0.03)/2+0.01; gp.add(sc);
+
+  // 물 (렌더 순서: 유리 0 · 액체 1)
+  const wGeo=new THREE.CylinderGeometry(BK_R-0.012, BK_R-0.014, WATER_H0, 48, 1, false);
+  const wBase=wGeo.attributes.position.array.slice();
+  const w=new THREE.Mesh(wGeo, waterMat(0x5FB9E8));
+  w.renderOrder=1; gp.add(w);
+  function layout(vol){
+    const h=WATER_H0*Math.max(vol,0);
+    w.scale.y=Math.max(vol,0.0001);
+    w.position.y=0.004+h/2;
+    w.visible = vol>0.001;
+    return 0.004+h;                          // gp 로컬 수면 y
+  }
+  function ripple(t,amp){
+    const pos=wGeo.attributes.position, arr=pos.array;
+    const topHalf=WATER_H0/2-0.0001;
+    for(let i=0;i<arr.length;i+=3){
+      if(wBase[i+1]>=topHalf){
+        const x=wBase[i], z=wBase[i+2];
+        arr[i+1]=wBase[i+1]+amp*Math.sin(t*4.2+x*55+z*47)+amp*0.6*Math.sin(t*6.8+x*90-z*60);
+      }
+    }
+    pos.needsUpdate=true; wGeo.computeVertexNormals();
+  }
+  layout(fillVol);
+  scene.add(gp);
+  return { gp, layout, ripple };
+}
+
+// 왼쪽 = 물 가득, 오른쪽 = 빈 것. 비커 바닥을 실험대 위(y≈0.005)에 배치.
+const BEAKER_Y = 0.005;
+const src = makeBeaker(1.0);  src.gp.position.set(-0.26, BEAKER_Y, -0.02);
+const dst = makeBeaker(0.0);  dst.gp.position.set( 0.26, BEAKER_Y, -0.02);
+
+/* ═════════ 물줄기 3안 (SPEC B-2 · ?stream 전환) ═════════ */
+const STREAM = (new URLSearchParams(location.search).get('stream')) || 'tube';
+const TIER_META = {
+  tube:   { name:'튜브 (굴절)',   desc:'TubeGeometry + transmission 굴절. 목표 품질 — 유리 겹침 각도 아티팩트 확인.' },
+  glassy: { name:'의사 유리',     desc:'transmission 미사용. 하이라이트로 유리 느낌, 겹침 함정 원천 회피.' },
+  drops:  { name:'방울 사슬',     desc:'E-6 검증 방울 14개 사슬. 렌더 실패 불가 보장선.' }
+};
+{
+  const meta = TIER_META[STREAM] || TIER_META.tube;
+  document.getElementById('tierName').textContent = meta.name;
+  document.getElementById('tierDesc').textContent = meta.desc;
+  const map={tube:'fTube',glassy:'fGlassy',drops:'fDrops'};
+  const on=document.getElementById(map[STREAM]||'fTube'); if(on) on.classList.add('on');
+}
+
+// 물줄기 재질 (티어별)
+const streamMat_tube = (()=>{ const m=waterMat(0x9FD4F2); m.attenuationDistance=0.03; return m; })();
+const streamMat_glassy = new THREE.MeshPhysicalMaterial({
+  color:0xBFE3F5, metalness:0, roughness:0.08,
+  transparent:true, opacity:0.55, envMapIntensity:1.4, depthWrite:false
+});
+const dropMat = waterMat(0x5FB9E8);
+
+// 튜브/의사유리 = 매 프레임 재생성되는 단일 mesh. renderOrder=3(유리0·액체1·스트림3)
+let streamMesh=null;
+if(STREAM==='tube' || STREAM==='glassy'){
+  streamMesh=new THREE.Mesh(new THREE.BufferGeometry(), STREAM==='tube'?streamMat_tube:streamMat_glassy);
+  streamMesh.renderOrder=3; streamMesh.visible=false; streamMesh.frustumCulled=false;
+  scene.add(streamMesh);
+}
+// 방울 사슬 (drops 티어) — 일반 Mesh 배열 N=14
+const CHAIN_N=14, chainDrops=[];
+if(STREAM==='drops'){
+  const dgeo=new THREE.SphereGeometry(0.005,10,8);
+  for(let i=0;i<CHAIN_N;i++){
+    const d=new THREE.Mesh(dgeo, dropMat);
+    d.renderOrder=3; d.visible=false; d.frustumCulled=false; scene.add(d);
+    chainDrops.push(d);
+  }
+}
+// 시작/끝 마감 방울 (티어 무관 공통) — lead 2 + trail 2
+const EDGE_N=4, edgeDrops=[];
+{
+  const dgeo=new THREE.SphereGeometry(0.005,10,8);
+  for(let i=0;i<EDGE_N;i++){
+    const d=new THREE.Mesh(dgeo, dropMat);
+    d.renderOrder=3; d.visible=false; d.frustumCulled=false; scene.add(d);
+    edgeDrops.push({ o:d, u:0, active:false });
+  }
+}
+
+/* ═════════ 따르기 상태·트윈 ═════════ */
+const sim = createPourSim();
+let tilt=0, targetTilt=0;                    // rotation.z 트윈 (0 → -0.9)
+const TILT_MAX=-0.9, TILT_SPEED=1.2;         // rad/s (≈0.8s easeInOut 근사)
+let phase='idle';                            // idle → pouring → returning
+let dstTopWorld=new THREE.Vector3();
+let curve=null;
+
+const pourBtn=document.getElementById('pourBtn');
+const resetBtn=document.getElementById('resetBtn');
+const srcFill=document.getElementById('srcFill'), dstFill=document.getElementById('dstFill');
+const srcTxt=document.getElementById('srcTxt'),  dstTxt=document.getElementById('dstTxt');
+
+function startPour(){
+  if(phase!=='idle') return;
+  if(sim.state.srcVol<=0.02){ return; }
+  phase='pouring'; targetTilt=TILT_MAX;
+  pourBtn.disabled=true;
+}
+function resetAll(){
+  phase='idle'; tilt=0; targetTilt=0;
+  src.gp.rotation.z=0;
+  sim.state.srcVol=1.0; sim.state.dstVol=0.0; sim.state.pouring=false; sim.state.rate=0; sim.state.tilt=0;
+  src.layout(1.0); dst.layout(0.0);
+  if(streamMesh) streamMesh.visible=false;
+  chainDrops.forEach(d=>d.visible=false);
+  edgeDrops.forEach(e=>{ e.active=false; e.o.visible=false; });
+  pourBtn.disabled=false;
+}
+pourBtn.addEventListener('click', startPour);
+resetBtn.addEventListener('click', resetAll);
+
+// 소리 훅 자리(표준: 루프 사운드 금지 · 0.4s 간격 개별 재생). 자산 없어 no-op.
+let sndAcc=0;
+function snd(){ /* placeholder */ }
+
+/* ═════════ 물줄기 경로/렌더 갱신 ═════════ */
+const lip=new THREE.Vector3(), hit=new THREE.Vector3(), ctrl=new THREE.Vector3();
+function updateStream(t){
+  const S=sim.state;
+  // 입술(lip) = 왼쪽 비커 입 테두리 +x 최저점 (기울임 반영) — 매 프레임 재계산
+  src.gp.updateMatrixWorld(true);
+  lip.set(LIP_X, BK_H, 0); src.gp.localToWorld(lip);
+  // 도착(hit) = 오른쪽 비커 수면 중심
+  const dTop=dst.layout(S.dstVol);
+  dst.gp.updateMatrixWorld(true);
+  hit.set(0, dTop, 0); dst.gp.localToWorld(hit);
+
+  if(!S.pouring){ return null; }
+
+  ctrl.copy(lip).lerp(hit,0.5); ctrl.y-=0.015;
+  ctrl.x += Math.sin(t*7)*0.002;               // 미세 출렁임(값 고정)
+  const cv=new THREE.QuadraticBezierCurve3(lip.clone(), ctrl.clone(), hit.clone());
+  return cv;
+}
+
+/* ═════════ 메인 루프 ═════════ */
+let frames=0, fpsStart=performance.now(), qualityChecked=false;
+function checkQuality(now){
+  frames++;
+  if(qualityChecked) return;
+  if(now-fpsStart>4000){
+    qualityChecked=true;
+    const fps=frames/((now-fpsStart)/1000);
+    if(fps<38){
+      renderer.setPixelRatio(1);
+      sun.shadow.mapSize.set(1024,1024);
+      if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; }
+      sun.shadow.radius=3;
+    }
+  }
+}
+
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.elapsedTime;
+
+  // 기울임 트윈
+  if(phase==='pouring' || phase==='returning'){
+    const dir = (tilt>targetTilt)? -1 : 1;
+    tilt += dir*TILT_SPEED*dt;
+    if((dir<0 && tilt<=targetTilt) || (dir>0 && tilt>=targetTilt)) tilt=targetTilt;
+    src.gp.rotation.z=tilt;
+  }
+
+  // 시뮬 (tilt 입력)
+  const S=sim.step(dt, { tilt });
+
+  // 소진 → 복귀
+  if(phase==='pouring' && S.srcVol<=0.021){ phase='returning'; targetTilt=0; }
+  if(phase==='returning' && tilt>=-0.0001){ phase='idle'; tilt=0; src.gp.rotation.z=0; pourBtn.disabled=false; }
+
+  // 수위 반영 + 착수 리플
+  src.layout(S.srcVol);
+  const cv = updateStream(t);
+  if(S.pouring){ dst.ripple(t, 0.0016+0.004*(S.rate/sim.POUR_RATE)); curve=cv; }
+  else { dst.ripple(t, 0.0006); }
+  src.ripple(t, 0.0009);
+
+  // ── 물줄기 렌더 ──
+  const radius = 0.0015 + 0.0027*(S.pouring? (S.rate/sim.POUR_RATE):0);
+  if(streamMesh){
+    if(S.pouring && cv){
+      streamMesh.geometry.dispose();
+      streamMesh.geometry=new THREE.TubeGeometry(cv, 24, radius, 8, false);
+      streamMesh.visible=true;
+    } else streamMesh.visible=false;
+  }
+  if(STREAM==='drops'){
+    if(S.pouring && cv){
+      const sc=0.7+0.5*(S.rate/sim.POUR_RATE);
+      for(let i=0;i<CHAIN_N;i++){
+        const u=(t*1.6 + i/CHAIN_N)%1;
+        cv.getPoint(u, chainDrops[i].position);
+        chainDrops[i].scale.setScalar(sc);
+        chainDrops[i].visible=true;
+      }
+    } else chainDrops.forEach(d=>d.visible=false);
+  }
+
+  // ── 시작/끝 마감 방울 (공통) ──
+  // 스트림 on 이면서 경로가 있으면, 첫 방울 몇 개를 경로 앞부분에 흘려 "뚝뚝→주르륵" 느낌
+  if(S.pouring && cv){
+    for(let i=0;i<EDGE_N;i++){
+      const e=edgeDrops[i];
+      e.u += dt*1.9;
+      if(e.u>1 || !e.active){ e.active=true; e.u = (i/EDGE_N)*0.5; }
+      cv.getPoint(Math.min(e.u,1), e.o.position);
+      e.o.scale.setScalar(0.8);
+      e.o.visible = (STREAM!=='drops');       // drops 티어는 이미 사슬이라 중복 억제
+    }
+  } else {
+    edgeDrops.forEach(e=>{ e.active=false; e.o.visible=false; });
+  }
+
+  // 착수 사운드 훅 (0.4s 간격, no-op)
+  if(S.pouring){ sndAcc+=dt; if(sndAcc>=0.4){ sndAcc=0; snd(); } } else sndAcc=0;
+
+  // HUD
+  srcFill.style.width=(S.srcVol*100).toFixed(0)+'%'; srcTxt.textContent=(S.srcVol*100).toFixed(0)+'%';
+  dstFill.style.width=(S.dstVol*100).toFixed(0)+'%'; dstTxt.textContent=(S.dstVol*100).toFixed(0)+'%';
+
+  controls.update();
+  renderer.render(scene,camera);
+  checkQuality(performance.now());
+}
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+document.getElementById('loading').classList.add('hide');
+animate();
+</script>
+</body>
+</html>
