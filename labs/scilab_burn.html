@@ -173,11 +173,20 @@
   </div>
 </div>
 
+<div class="card hide" id="predictOil">
+  <h3>🔮 불붙은 튀김 기름에 물을 뿌리면, 불은?</h3>
+  <div class="opts">
+    <button data-pick="out">① 물에 꺼진다</button>
+    <button data-pick="flare">② 오히려 더 커진다</button>
+  </div>
+</div>
+
 <div class="card hide" id="success">
   <div class="big">🏅</div>
   <h3>미션 성공 — 연소와 소화!</h3>
   <p id="sucMsg"></p>
   <div class="row">
+    <button id="sucOil" class="pri" style="display:none">🔥 유류 화재편 도전</button>
     <button id="sucFree" class="pri">🧪 자유 실험 하기</button>
     <button id="sucAgain">↺ 다시 하기</button>
   </div>
@@ -262,7 +271,52 @@
              isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
   }
 
-  var API = { createBurnSim:createBurnSim, MISSION_BURN:MISSION_BURN, createMissionRun:createMissionRun };
+  /* ── 유류 화염 시뮬 (SPEC_E5 A-8 — 2막 ★와우: 물→확산, 덮기/모래/소화기→소화) ── */
+  /* 안전 프레임: 물은 위험 시연(확 번짐), 올바른 소화(덮기·모래·소화기)로만 out. */
+  function createOilFireSim(){
+    // spread 0~1 = 불꽃 확산 정도. wateredFirst = 물을 먼저 뿌린 위험 시연 여부.
+    var S = { lit:false, flareUp:false, doused:false, out:false, spread:0, method:null, wateredFirst:false };
+    var SPREAD_RATE=2.4;   // 물 투입 순간 확산 (spread 0→1 ≈0.42s = 확 번짐)
+    var DOUSE_RATE=1.6;    // 올바른 소화 시 잦아듦 (spread 1→0 ≈0.63s)
+    function ignite(){ S.lit=true; S.out=false; S.spread=0; S.flareUp=false; S.doused=false; S.method=null; S.wateredFirst=false; }
+    function apply(method){
+      if(!S.lit || S.out) return { ok:false };
+      if(method==='water'){
+        if(S.doused) return { ok:false };          // 이미 소화 진행 중이면 물 무시
+        if(!S.flareUp) S.wateredFirst=true;         // 처음 뿌린 물 = 위험 시연
+        S.flareUp=true; S.method='water';
+        return { ok:true, effect:'flare' };
+      }
+      // lid | sand | extinguisher = 올바른 소화
+      S.doused=true; S.method=method;
+      return { ok:true, effect:'douse' };
+    }
+    function step(dt){
+      if(dt>0.05) dt=0.05;
+      if(!S.lit || S.out) return S;
+      if(S.doused){
+        S.spread -= DOUSE_RATE*dt;
+        if(S.spread<=0){ S.spread=0; S.out=true; }
+      } else if(S.flareUp){
+        S.spread += SPREAD_RATE*dt;
+        if(S.spread>1) S.spread=1;
+      }
+      return S;
+    }
+    return { state:S, step:step, ignite:ignite, apply:apply, SPREAD_RATE:SPREAD_RATE, DOUSE_RATE:DOUSE_RATE };
+  }
+
+  /* ── 유류 화재 미션 (SPEC_E5 A-8) — pan_oil만 필수 배치, 소화 도구는 '행동' ── */
+  var MISSION_OILFIRE = {
+    id:'burn_oilfire',
+    title:'유류 화재 — 기름 불엔 물을 쓰면 안 돼요',
+    required:['pan_oil'],
+    needs:{},
+    wrong:{}
+  };
+
+  var API = { createBurnSim:createBurnSim, MISSION_BURN:MISSION_BURN, createMissionRun:createMissionRun,
+              createOilFireSim:createOilFireSim, MISSION_OILFIRE:MISSION_OILFIRE };
   if(typeof window!=='undefined'){ window.SciLab=API; }
   if(typeof module!=='undefined' && module.exports){ module.exports=API; }
 })();
@@ -283,7 +337,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ═════════ 렌더 기반 (데모 1호 확정 표준) ═════════ */
-const stage = document.getElementById('stage');
+const stageEl = document.getElementById('stage');
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -291,7 +345,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-stage.appendChild(renderer.domElement);
+stageEl.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 {
@@ -478,6 +532,75 @@ let cupMesh=[];   // [group_s, group_l]
   EQ_OBJ['beaker_w']=gp; scene.add(gp);
 }
 
+/* ═════════ 유류 화재편(2막) 3D — SPEC_E5 A-8 (오퍼스 §3-B 승격: 불꽃 스프라이트 배열 확산) ═════════ */
+const PAN_X=0, PAN_Z=-0.02;
+const oilFlames=[];      // 확산용 불꽃 스프라이트 배열
+let oilCenterFlame=null, oilLight=null, oilPanGroup=null, oilLidGroup=null;
+const oilSmoke=[];
+
+/* 기름 냄비 pan_oil (넓고 낮은 튀김냄비 + 기름 액체) */
+{
+  const gp=new THREE.Group();
+  const pan=new THREE.Mesh(new THREE.CylinderGeometry(0.092,0.084,0.05,44),
+    new THREE.MeshStandardMaterial({color:0x2b2f36, metalness:0.85, roughness:0.35}));
+  pan.position.y=0.025; pan.castShadow=true; gp.add(pan);
+  const innerBot=new THREE.Mesh(new THREE.CircleGeometry(0.084,44),
+    new THREE.MeshStandardMaterial({color:0x1a1d22, metalness:0.7, roughness:0.5}));
+  innerBot.rotation.x=-Math.PI/2; innerBot.position.y=0.006; gp.add(innerBot);
+  const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.13,12),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:0.7}));
+  handle.rotation.z=Math.PI/2; handle.position.set(0.15,0.03,0); handle.castShadow=true; gp.add(handle);
+  const oil=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,0.016,44),
+    new THREE.MeshPhysicalMaterial({color:0xC89A3C, metalness:0, roughness:0.25,
+      transmission:0.6, thickness:0.05, ior:1.47, attenuationColor:new THREE.Color(0xB07820),
+      attenuationDistance:0.05, envMapIntensity:1.2, clearcoat:0.5}));
+  oil.position.y=0.014; gp.add(oil);
+  gp.position.set(PAN_X, BENCH_Y, PAN_Z);
+  RIG.add(gp); registerEq('pan_oil', gp); oilPanGroup=gp;
+}
+
+/* 중앙 불꽃 + 확산 불꽃 배열(N=10) + 붉은 라이트 + 연기 (전부 scene 직결, 스테이지에서 제어) */
+{
+  const oy=BENCH_Y+0.05;
+  const c=new THREE.Sprite(new THREE.SpriteMaterial({map:FLAME_OUT_TEX,
+    blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+  c.position.set(PAN_X, oy+0.03, PAN_Z); c.visible=false; scene.add(c); oilCenterFlame=c;
+  const N=10;
+  for(let i=0;i<N;i++){
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:FLAME_OUT_TEX,
+      blending:THREE.AdditiveBlending, depthWrite:false, transparent:true}));
+    s.visible=false; scene.add(s);
+    oilFlames.push({sprite:s, angle:(i/N)*Math.PI*2, oy});
+  }
+  oilLight=new THREE.PointLight(0xFF6A2B, 0, 1.7, 2);
+  oilLight.position.set(PAN_X, oy+0.05, PAN_Z); scene.add(oilLight);
+  const sc=document.createElement('canvas'); sc.width=sc.height=64;
+  const sg=sc.getContext('2d'); const sgr=sg.createRadialGradient(32,32,2,32,32,30);
+  sgr.addColorStop(0,'rgba(150,150,150,0.85)'); sgr.addColorStop(1,'rgba(110,110,110,0)');
+  sg.fillStyle=sgr; sg.fillRect(0,0,64,64);
+  const smokeTex=new THREE.CanvasTexture(sc);
+  for(let i=0;i<5;i++){
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:smokeTex, transparent:true, opacity:0, depthWrite:false}));
+    s.visible=false; scene.add(s);
+    oilSmoke.push({sprite:s, off:(i/5)*Math.PI*2});
+  }
+}
+
+/* 냄비 뚜껑 lid (덮기 = 하강 트윈 연출) */
+{
+  const gp=new THREE.Group();
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.098,0.098,0.01,44),
+    new THREE.MeshStandardMaterial({color:0x9aa0a8, metalness:0.8, roughness:0.3}));
+  disc.castShadow=true; gp.add(disc);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(0.014,18,14),
+    new THREE.MeshStandardMaterial({color:0x1a1a1a, roughness:0.6}));
+  knob.position.y=0.014; gp.add(knob);
+  gp.userData.upY=BENCH_Y+0.34; gp.userData.coverY=BENCH_Y+0.055;
+  gp.position.set(PAN_X, gp.userData.upY, PAN_Z);
+  gp.userData.baseY=gp.userData.upY; gp.visible=false;
+  scene.add(gp); oilLidGroup=gp; EQ_OBJ['lid']=gp;
+}
+
 
 /* ── 오답·자유 기구들 (실험대 앞쪽 자유 자리) ── */
 const FREE_SPOTS=[[-1.0,0.38],[-0.32,0.46],[0.34,0.46],[1.0,0.36]];
@@ -609,27 +732,47 @@ const EQUIP=[
   {id:'rod',      ic:'🥢', nm:'유리막대'},
   {id:'beaker_w', ic:'💧', nm:'물 비커'}
 ];
-// 카드 순서는 매번 섞어서 정답 위치 고정 방지
+// 유류 화재편(2막) — pan_oil 먼저(선행 안내, C-3), 소화 도구는 '행동' 탭
+const EQUIP_OIL=[
+  {id:'pan_oil',      ic:'🍳', nm:'기름 냄비'},
+  {id:'water_pour',   ic:'💧', nm:'물'},
+  {id:'lid',          ic:'🥘', nm:'냄비 뚜껑'},
+  {id:'sand',         ic:'🪣', nm:'모래'},
+  {id:'extinguisher', ic:'🧯', nm:'소화기'}
+];
+// 컵 미션 카드 순서는 매번 섞어서 정답 위치 고정 방지 (유류편은 pan_oil 선행 고정)
 for(let i=EQUIP.length-1;i>0;i--){
   const j=Math.random()*(i+1)|0; [EQUIP[i],EQUIP[j]]=[EQUIP[j],EQUIP[i]];
 }
 
 const trayEl=document.getElementById('tray');
-EQUIP.forEach(e=>{
-  const d=document.createElement('div');
-  d.className='eq'; d.id='eq_'+e.id;
-  d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
-  d.addEventListener('click',()=>onPick(e.id,d));
-  trayEl.appendChild(d);
-});
+function curEquip(){ return stage==='oil' ? EQUIP_OIL : EQUIP; }
+function buildTray(){
+  trayEl.innerHTML='';
+  curEquip().forEach(e=>{
+    const d=document.createElement('div');
+    d.className='eq'; d.id='eq_'+e.id;
+    d.innerHTML=`<div class="ic">${e.ic}</div><div class="nm">${e.nm}</div>`;
+    d.addEventListener('click',()=> stage==='oil' ? onPickOil(e.id,d) : onPick(e.id,d));
+    trayEl.appendChild(d);
+  });
+}
+buildTray();
 
 /* ═════════ 게임 상태 ═════════ */
-const { createBurnSim, MISSION_BURN, createMissionRun } = window.SciLab;
+const { createBurnSim, MISSION_BURN, createMissionRun, createOilFireSim, MISSION_OILFIRE } = window.SciLab;
 let sim = createBurnSim();
 let run = createMissionRun(MISSION_BURN);
 let freeMode=false, predictShown=false, prediction=null;
 let predict2Shown=false, prediction2=null, smallOutShown=false;
 let succeeded=false, successAt=0;
+
+// 스테이지: 'cups'(컵 덮기 = 1막) / 'oil'(유류 화재 ★와우 = 2막). ?stage=oil 로 직접 진입.
+let stage = (new URLSearchParams(location.search).get('stage')==='oil') ? 'oil' : 'cups';
+let oilSim=null, oilRun=null;
+let oilPredictShown=false, oilPrediction=null, oilFlareShown=false;
+let oilSucceeded=false, oilSuccessAt=0;
+
 const drops=[];   // 등장 연출 목록
 function KLabSnd(n){ try{ if(window.KLab&&window.KLab.sound&&window.KLab.sound.play) window.KLab.sound.play(n); }catch(e){} }
 
@@ -654,6 +797,13 @@ function toast(msg, warn, ms){
 }
 
 function renderProg(){
+  if(stage==='oil'){
+    const placed=oilRun && oilRun.placed.pan_oil;
+    progEl.innerHTML = placed
+      ? `<span class="chip on">🍳 기름 냄비 · 🔥 불이 붙었어요</span>`
+      : `<span class="chip">🍳 기름 냄비부터 꺼내요</span>`;
+    return;
+  }
   const n=run.count(), total=MISSION_BURN.required.length;
   let html=`<span class="chip ${n?'on':''}">준비물 ${n} / ${total}</span>`;
   MISSION_BURN.required.forEach(id=>{
@@ -721,8 +871,15 @@ function onPick(id, cardEl){
   }
 }
 function syncTray(){
+  if(stage==='oil'){
+    EQUIP_OIL.forEach(e=>{
+      const el=$('eq_'+e.id); if(!el) return;
+      el.classList.toggle('placed', e.id==='pan_oil' && !!(oilRun && oilRun.placed.pan_oil));
+    });
+    return;
+  }
   EQUIP.forEach(e=>{
-    $('eq_'+e.id).classList.toggle('placed', !!run.placed[e.id]);
+    const el=$('eq_'+e.id); if(el) el.classList.toggle('placed', !!run.placed[e.id]);
   });
 }
 function updateFireBtn(){
@@ -745,6 +902,84 @@ predict2El.querySelectorAll('button').forEach(b=>{
   });
 });
 
+/* ═════════ 유류 화재편(2막) — SPEC_E5 A-8 ═════════ */
+/* 조작 문법(C-9): 배치=동작(E-5 컵 계열). 냄비 꺼내기=점화, 소화 도구 탭=apply. */
+const predictOilEl=$('predictOil');
+
+function onPickOil(id, cardEl){
+  if(oilSucceeded) return;
+  // 기름 냄비 꺼내기 = 배치 + 점화
+  if(id==='pan_oil'){
+    if(oilRun.placed.pan_oil) return;
+    oilRun.pick('pan_oil', false);
+    dropIn('pan_oil');
+    oilSim.ignite();
+    syncTray(); renderProg();
+    if(!oilPredictShown){
+      oilPredictShown=true;
+      setTimeout(()=>{ predictOilEl.classList.remove('hide');
+        toast('🔥 기름에 불이 붙었어요! 어떻게 꺼야 할까요?'); }, 500);
+    }
+    return;
+  }
+  // 소화 도구·물 = 행동 (냄비 선행 필수, C-3)
+  if(!oilRun.placed.pan_oil){
+    cardEl.classList.remove('shake'); void cardEl.offsetWidth; cardEl.classList.add('shake');
+    toast('먼저 🍳 <b>기름 냄비</b>를 꺼내야 실험을 시작해요!', true, 3800);
+    return;
+  }
+  const method = (id==='water_pour') ? 'water' : id;   // lid | sand | extinguisher
+  const r=oilSim.apply(method);
+  if(!r.ok) return;
+  if(r.effect==='flare'){
+    oilFlareShown=true;
+    // 예측 카드가 떠 있으면 닫고 결과로 대조
+    if(!predictOilEl.classList.contains('hide')){ predictOilEl.classList.add('hide'); }
+    toast('💥 <b>불이 확 커졌어요!</b> 기름 불엔 물을 쓰면 안 돼요 — 이제 <b>덮거나 모래·소화기</b>로 꺼야 안전해요!', true, 5600);
+  } else {
+    if(id==='lid' && oilLidGroup){ oilLidGroup.visible=true; oilLidGroup.userData.covering=true; }
+    const how = id==='lid' ? '뚜껑으로 덮어' : (id==='sand' ? '모래를 부어' : '소화기로');
+    toast('🧯 '+how+' 불을 끄는 중…', false, 3200);
+  }
+}
+
+/* 스테이지 전환 — 컵 덮기(1막) → 유류 화재(2막) */
+function goStage(next){
+  stage=next;
+  successEl.classList.add('hide');
+  predictEl.classList.add('hide'); predict2El.classList.add('hide'); predictOilEl.classList.add('hide');
+  if(next==='oil'){
+    // 컵 미션 기구·불꽃 전부 숨김
+    ['candle','cup_s','cup_l','o2meter','beaker_w','magnet','thermo','rod'].forEach(k=>{ if(EQ_OBJ[k]) EQ_OBJ[k].visible=false; });
+    candleFlame.forEach(cf=>{ cf.outer.visible=cf.inner.visible=false; cf.light.intensity=0; });
+    cupMesh.forEach(c=>{ c.position.y=c.userData.upY; c.userData.covered=false; });
+    // 유류 상태 초기화
+    oilSim=createOilFireSim(); oilRun=createMissionRun(MISSION_OILFIRE);
+    oilPredictShown=false; oilPrediction=null; oilFlareShown=false;
+    oilSucceeded=false; oilSuccessAt=0;
+    if(oilPanGroup) oilPanGroup.visible=false;
+    if(oilLidGroup){ oilLidGroup.visible=false; oilLidGroup.position.y=oilLidGroup.userData.upY; oilLidGroup.userData.covering=false; }
+    // UI 전환
+    document.querySelector('#topbar .badge').textContent='미션 · 유류 화재 ⚠️';
+    missionEl.querySelector('.mt').innerHTML='🎯 미션: 불붙은 튀김 기름을 안전하게 꺼 보세요';
+    missionEl.querySelector('.mp').innerHTML='기름 냄비를 꺼내면 불이 붙어요. <b>물·뚜껑·모래·소화기</b> 중 무엇으로 꺼야 안전할까요?';
+    missionEl.style.display='';
+    fireBtn.style.display='none'; modeBtn.style.display='none';
+    o2naEl.style.display='none'; o2wrapEl.style.display='none';
+    stateEl.textContent='🍳 기름 냄비를 꺼내 실험을 시작해요';
+  }
+  buildTray(); syncTray(); renderProg();
+}
+
+predictOilEl.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    oilPrediction=b.dataset.pick;
+    predictOilEl.classList.add('hide');
+    toast(oilPrediction==='flare' ? '🎯 좋은 예측! 물을 뿌려서 확인해 봐요'
+                                  : '정말 꺼질까요? 물을 뿌려 확인해 봐요', false, 4200);
+  });
+});
+
 function setFire(on){
   if(on && !run.placed.candle) return;
   if(on) sim.ignite();
@@ -764,6 +999,21 @@ modeBtn.addEventListener('click',()=>{
 });
 
 function resetAll(keepMode){
+  if(stage==='oil'){
+    oilSim=createOilFireSim(); oilRun=createMissionRun(MISSION_OILFIRE);
+    oilPredictShown=false; oilPrediction=null; oilFlareShown=false;
+    oilSucceeded=false; oilSuccessAt=0;
+    if(oilPanGroup) oilPanGroup.visible=false;
+    if(oilLidGroup){ oilLidGroup.visible=false; oilLidGroup.position.y=oilLidGroup.userData.upY; oilLidGroup.userData.covering=false; }
+    oilFlames.forEach(f=>{ f.sprite.visible=false; });
+    if(oilCenterFlame) oilCenterFlame.visible=false;
+    if(oilLight) oilLight.intensity=0;
+    oilSmoke.forEach(s=>{ s.sprite.visible=false; s.sprite.material.opacity=0; });
+    predictOilEl.classList.add('hide'); successEl.classList.add('hide');
+    stateEl.textContent='🍳 기름 냄비를 꺼내 실험을 시작해요';
+    syncTray(); renderProg();
+    return;
+  }
   sim=createBurnSim(); run=createMissionRun(MISSION_BURN);
   Object.keys(EQ_OBJ).forEach(k=>{ EQ_OBJ[k].visible=false; });
   prediction=null; predictShown=false; succeeded=false; successAt=0;
@@ -779,6 +1029,7 @@ function resetAll(keepMode){
 }
 resetBtn.addEventListener('click',()=>resetAll(true));
 $('sucAgain').addEventListener('click',()=>resetAll(true));
+$('sucOil').addEventListener('click',()=>goStage('oil'));
 $('sucFree').addEventListener('click',()=>{
   successEl.classList.add('hide');
   if(!freeMode) modeBtn.click();
@@ -814,6 +1065,88 @@ function animate(){
     const k=Math.min(d.t,1), e=1-Math.pow(1-k,3);
     d.o.position.y=d.o.userData.baseY+0.28*(1-e);
     if(k>=1){ d.o.position.y=d.o.userData.baseY; drops.splice(i,1); }
+  }
+
+  // ═══ 유류 화재편(2막) 렌더 — SPEC_E5 A-8 ═══
+  if(stage==='oil'){
+    if(oilSim){
+      const S=oilSim.step(dt);
+      const pulse=1+0.12*Math.sin(t*24)+0.07*Math.sin(t*53+1.4);
+      // 중앙 불꽃 (확산되면 살짝 작아짐)
+      if(oilCenterFlame){
+        const on=S.lit && !S.out;
+        oilCenterFlame.visible=on;
+        if(on){
+          const cs=(1-S.spread*0.25)*pulse;
+          oilCenterFlame.scale.set(0.06*cs, 0.11*cs, 1);
+        }
+      }
+      // 확산 불꽃 배열 (물 투입 → 방사)
+      oilFlames.forEach(f=>{
+        const vis=S.spread>0.02 && !S.out;
+        f.sprite.visible=vis;
+        if(vis){
+          const r=0.115*S.spread;
+          const jit=1+0.15*Math.sin(t*30+f.angle*3);
+          f.sprite.position.set(PAN_X+Math.cos(f.angle)*r, BENCH_Y+0.045+0.02*jit, PAN_Z+Math.sin(f.angle)*r);
+          const sc=(0.6+1.9*S.spread)*pulse*jit;
+          f.sprite.scale.set(0.045*sc, 0.08*sc, 1);
+          f.sprite.material.opacity=Math.min(1, S.spread*1.6);
+        }
+      });
+      // 붉은 화염 라이트
+      if(oilLight) oilLight.intensity=(S.lit && !S.out) ? (1.3+2.6*S.spread)*pulse : 0;
+      // 뚜껑 하강 트윈 (덮기)
+      if(oilLidGroup && oilLidGroup.userData.covering){
+        const tgt=oilLidGroup.userData.coverY;
+        oilLidGroup.position.y += (tgt-oilLidGroup.position.y)*Math.min(dt*5,1);
+      }
+      // 연기 (소화 진행 = doused 시 위로 페이드)
+      const smoking=S.doused && S.lit;
+      oilSmoke.forEach(s=>{
+        if(smoking){
+          s.sprite.visible=true;
+          const life=(t*0.5+s.off)%1;
+          s.sprite.position.set(PAN_X+0.03*Math.sin(s.off+t), BENCH_Y+0.09+life*0.34, PAN_Z+0.03*Math.cos(s.off+t*1.1));
+          const sc=0.06+life*0.14; s.sprite.scale.set(sc,sc,1);
+          s.sprite.material.opacity=Math.max(0,1-life)*0.55;
+        } else if(!smoking && s.sprite.visible && S.out){
+          s.sprite.material.opacity*=0.94;
+          if(s.sprite.material.opacity<0.02) s.sprite.visible=false;
+        }
+      });
+      // 상태줄
+      let st='';
+      if(oilSucceeded) st='🏅 안전하게 껐어요!';
+      else if(S.out) st='🧯 불이 꺼졌어요 — 안전하게 마무리!';
+      else if(S.doused) st='🌫️ 불이 잦아드는 중…';
+      else if(S.flareUp) st='💥 불이 확 번졌어요! 덮거나 소화기로!';
+      else if(S.lit) st='🔥 기름에 불이 붙었어요 — 어떻게 끌까요?';
+      else st='🍳 기름 냄비를 꺼내 실험을 시작해요';
+      stateEl.textContent=st;
+      // 성공 판정 — 올바른 소화로 out 1.5초 지속
+      if(S.out){
+        if(!oilSuccessAt) oilSuccessAt=t;
+        if(!oilSucceeded && t-oilSuccessAt>1.5){
+          oilSucceeded=true;
+          let msg='';
+          if(oilPrediction) msg+=(oilPrediction==='flare' ? '🎯 <b>예측 적중!</b> ' : '🤔 예측과 달랐죠? ');
+          if(S.wateredFirst){
+            msg+='물을 뿌렸더니 불이 <b>확 커졌어요!</b> 기름은 물보다 가벼워 물 위로 떠서 타고, 가라앉은 물이 갑자기 끓어 기름을 사방으로 튀겨요 — <b>기름 불엔 물을 쓰면 안 돼요!</b> 대신 <b>덮거나 모래·소화기</b>로 산소를 끊어야 안전해요.';
+          } else {
+            msg+='기름 불을 <b>덮어(모래·소화기)</b> 산소를 끊어 안전하게 껐어요! 만약 <b>물을 뿌렸다면 불이 확 커졌을 거예요</b> — 기름은 물 위로 떠서 타고, 끓은 물이 기름을 튀기거든요. 기름 불엔 물 대신 <b>덮개·소화기</b>!';
+          }
+          $('sucMsg').innerHTML=msg;
+          document.querySelector('#success h3').textContent='미션 성공 — 유류 화재 안전!';
+          $('sucOil').style.display='none'; $('sucFree').style.display='none';
+          successEl.classList.remove('hide');
+        }
+      } else oilSuccessAt=0;
+    }
+    controls.update();
+    renderer.render(scene,camera);
+    checkQuality(performance.now());
+    return;
   }
 
   const ready = run.isReady();
@@ -882,7 +1215,11 @@ function animate(){
       msg+= w===0 ? '<br><b>기구도 한 번에 딱 맞게 골랐어요!</b>' :
                     `<br>기구 고르기 다시 생각해 본 횟수: ${w}번 — 그것도 배움이에요!`;
       $('sucMsg').innerHTML=msg;
-      if(!freeMode) successEl.classList.remove('hide');
+      document.querySelector('#success h3').textContent='미션 성공 — 연소와 소화!';
+      if(!freeMode){
+        $('sucOil').style.display=''; $('sucFree').style.display='';
+        successEl.classList.remove('hide');
+      }
       else toast('🥛 작은 컵 먼저, 큰 컵은 오래 — 산소량 차이!',false,5200);
     }
   } else successAt=0;
@@ -899,7 +1236,12 @@ addEventListener('resize',()=>{
 });
 
 document.getElementById('loading').classList.add('hide');
-toast('🎯 미션: 선반에서 <b>필요한 기구만</b> 골라 실험을 준비해 봐요!', false, 5200);
+if(stage==='oil'){
+  goStage('oil');
+  toast('🔥 유류 화재편 — 🍳 기름 냄비를 꺼내 실험을 시작해요!', false, 5200);
+} else {
+  toast('🎯 미션: 선반에서 <b>필요한 기구만</b> 골라 실험을 준비해 봐요!', false, 5200);
+}
 animate();
 </script>
 </body>
