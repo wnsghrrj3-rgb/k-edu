@@ -671,7 +671,8 @@ const OPTS = { collig: new URLSearchParams(location.search).get('collig')==='1' 
 let world = K.createWorld(OPTS);
 const IND_ACID = K.IND_ACID, IND_BASE = K.IND_BASE;
 /* SPEC 확정 상수 미러 (기법 B-1 · §4) — 물리 판단은 전부 엔진, 여기선 연출 게이트만 */
-const POUR_RATE=0.22, TILT_ON=-0.55, TILT_MAX=-0.9, TILT_SPEED=1.2;
+const POUR_RATE=0.22, TILT_ON=-0.55, TILT_MAX=-0.62, TILT_SPEED=1.2; // pour_test 원본 — 입술이 받는 수면 위
+const POUR_LIFT=0.14, POUR_SHIFT=0.16;  // 붓는 동안 들어올림·타겟 쪽 이동(원본 0.06 → 스테이션 간격 0.6 보정)
 const HEAT_R = K.consts.HEAT_R;
 
 /* ═════════ 공용 헬퍼 (검증 원본 복사) ═════════ */
@@ -1258,7 +1259,7 @@ function resetAll(){
   ST3D.forEach((S,i)=>{
     S.vesselType=null; S.tilt=0; S.colorSpeed=0.8; S.lastColorHex=null;
     S.candlePlaced=false; S.cupSize=null; S.warnedAutoOpen=false; S.flipToasted=false;
-    for(const t in S.vg){ S.vg[t].visible=false; S.vg[t].rotation.z=0; S.vg[t].position.y=0.005; S.liq[t].layout(0); S.liq[t].mat.attenuationColor.set(0xBFE3F5); }
+    for(const t in S.vg){ S.vg[t].visible=false; S.vg[t].rotation.z=0; S.vg[t].position.y=0.005; S.vg[t].position.x=0; S.liq[t].layout(0); S.liq[t].mesh.rotation.z=0; S.liq[t].mesh.position.x=0; S.liq[t].mat.attenuationColor.set(0xBFE3F5); }
     S.kit.visible=false;
     S.precip.reset(); S.oilDisc.visible=false;
     S.iceCubes.forEach(ic=>ic.visible=false);
@@ -1818,35 +1819,48 @@ function animate(){
   // 램프 → 엔진 (양자화 act)
   syncLamp();
 
-  // pour: 기울임 트윈 + 양자화 act('pour')
+  // pour: 원본 pour_test 연출 승계 — 기울임 트윈 + 들어올림·타겟 쪽 이동 + 물 수평 유지
   let cv=null, rr=0;
   if(pour.phase!=='idle'){
     const S=ST3D[pour.from], V=VESSELS[S.vesselType];
+    const dir = ST_X[pour.to]>ST_X[pour.from] ? 1 : -1;   // 따르는 방향 (+x / −x)
+    const vgrp=S.vg[S.vesselType], L=S.liq[S.vesselType];
     const tgt = pour.phase==='pouring'?TILT_MAX:0;
     S.tilt += (S.tilt>tgt?-1:1)*TILT_SPEED*dt;
     if((S.tilt<=tgt&&pour.phase==='pouring')||(S.tilt>=tgt&&pour.phase==='returning')) S.tilt=tgt;
-    S.vg[S.vesselType].rotation.z=S.tilt;
+    vgrp.rotation.z=S.tilt*dir;
+
+    // 붓는 자세(원본): 기울임 비례 들어올림 + 받는 스테이션 쪽 이동
+    const liftK=S.tilt/TILT_MAX;                            // 0~1
+    vgrp.position.y=0.005 + POUR_LIFT*liftK;
+    vgrp.position.x=POUR_SHIFT*liftK*dir;
+    // 물 표면 수평 유지(원본): 용기 회전 상쇄 + 낮은 쪽으로 쏠림
+    L.mesh.rotation.z=-S.tilt*dir;
+    L.mesh.position.x=Math.sin(-S.tilt)*0.045*dir;
+
     const pouring = S.tilt<TILT_ON && srcLiquid(pour.from)>0.02;
     if(pouring){
       const rate=POUR_RATE*Math.min((TILT_ON-S.tilt)/0.35,1);
       rr=rate/POUR_RATE;
       pour.acc+=rate*dt;
       if(pour.acc>=0.02) flushPour();
-      // 물줄기 곡선 (기법 B-1 — lip → 상대 수면, 2차 베지어)
-      const src=S.vg[S.vesselType];
-      src.updateMatrixWorld(true);
-      lip.copy(V.lip); src.localToWorld(lip);
+      // 물줄기 곡선(원본): 입술에서 수평으로 나가(제어점 y=lip.y) 받는 수면으로 낙하
+      vgrp.updateMatrixWorld(true);
+      lip.set(V.lip.x*dir, V.lip.y, 0); vgrp.localToWorld(lip);
       const T=ST3D[pour.to], TV=VESSELS[T.vesselType];
       const tTop=0.02+TV.liq[2]*Math.min(world.stations[pour.to].contents.vol,1);
       hitV.set(0, tTop, 0); T.vg[T.vesselType].localToWorld(hitV);
-      ctrl.copy(lip).lerp(hitV,0.5); ctrl.y-=0.015; ctrl.x+=Math.sin(t*7)*0.002;
+      ctrl.set(lip.x*0.4+hitV.x*0.6, lip.y, (lip.z+hitV.z)*0.5);
+      ctrl.x+=Math.sin(t*7)*0.002;
       cv=new THREE.QuadraticBezierCurve3(lip.clone(), ctrl.clone(), hitV.clone());
-      ST3D[pour.to].liq[T.vesselType] && ST3D[pour.to].liq[T.vesselType].ripple(t, 0.0016+0.003*rr);
+      ST3D[pour.to].liq[T.vesselType] && ST3D[pour.to].liq[T.vesselType].ripple(t, 0.0016+0.004*rr);
     }
     if(srcLiquid(pour.from)<=0.03 && pour.phase==='pouring'){ pour.phase='returning'; }
     if(pour.phase==='returning' && S.tilt>=-1e-4){
       flushPour();
-      S.tilt=0; S.vg[S.vesselType].rotation.z=0; pour.phase='idle';
+      S.tilt=0; vgrp.rotation.z=0; vgrp.position.x=0; vgrp.position.y=0.005;
+      L.mesh.rotation.z=0; L.mesh.position.x=0;
+      pour.phase='idle';
     }
   }
   renderStream(cv, rr, t);
