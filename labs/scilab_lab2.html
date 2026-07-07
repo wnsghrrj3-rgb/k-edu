@@ -97,29 +97,32 @@
   /* ── 데이터 렌즈 (§7-2 · Canvas 2D · 좌하단 접이식) ── */
   #lens{position:fixed;left:14px;bottom:150px;z-index:21;width:300px;
     background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
-    border-radius:16px;padding:9px 11px 7px;color:#fff;transition:transform .25s,opacity .25s}
-  #lens.collapsed{transform:translateY(calc(100% - 34px))}
-  #lensHead{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+    border-radius:16px;padding:8px 11px;color:#fff}
+  #lens.collapsed{width:auto}
+  #lens.collapsed #lensBody{display:none}
+  #lensHead{display:flex;align-items:center;gap:8px}
   #lensToggle{font-family:'Gowun Dodum';font-size:12.5px;color:#fff;background:none;border:none;
-    cursor:pointer;padding:2px 2px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    cursor:pointer;padding:2px;display:flex;align-items:center;gap:5px;white-space:nowrap}
   #lensToggle .chev{transition:transform .25s;font-size:10px;color:#B9A7F8}
   #lens.collapsed #lensToggle .chev{transform:rotate(180deg)}
-  #lensChans{display:flex;gap:4px;flex:1;overflow-x:auto;scrollbar-width:none}
-  #lensChans::-webkit-scrollbar{display:none}
+  #lensSpan{margin-left:auto;font-family:'Gowun Dodum';font-size:10.5px;border-radius:999px;
+    padding:3px 8px;cursor:pointer;color:#B9A7F8;background:rgba(155,123,245,.16);
+    border:1px solid rgba(155,123,245,.4)}
+  #lens.collapsed #lensSpan{display:none}
+  #lensChans{display:flex;gap:4px;flex-wrap:wrap;margin:7px 0 6px}
   .lch{flex:0 0 auto;font-family:'Gowun Dodum';font-size:11px;border-radius:999px;
     padding:3px 9px;cursor:pointer;color:#9fb3c8;background:rgba(255,255,255,.07);
     border:1px solid var(--hudline);transition:all .14s}
   .lch.on{color:#fff;border-color:currentColor}
   .lch.temp.on{color:#FF8A5C} .lch.vol.on{color:#4FC3F7} .lch.dissolved.on{color:#B197FC}
   .lch.o2.on{color:#63E6BE} .lch.mass.on{color:#FFD43B}
-  #lensSpan{flex:0 0 auto;font-family:'Gowun Dodum';font-size:10.5px;border-radius:999px;
-    padding:3px 8px;cursor:pointer;color:#B9A7F8;background:rgba(155,123,245,.16);
-    border:1px solid rgba(155,123,245,.4)}
   #lensCanvas{display:block;width:100%;border-radius:9px;background:rgba(10,14,20,.55);cursor:crosshair}
   #lensTip{position:absolute;pointer-events:none;background:rgba(255,255,255,.97);color:var(--ink);
     font-size:11.5px;padding:6px 10px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);
     max-width:180px;line-height:1.45;transition:opacity .18s;border-left:4px solid var(--purple);z-index:23}
   #lensTip.hide{opacity:0}
+  #lensTip .qz{pointer-events:auto}
+  #lensTip:not(.hide){pointer-events:auto}
   #lens.hidden{display:none}
 
   @media (max-width:560px){
@@ -164,6 +167,9 @@
 <div id="lens" class="collapsed">
   <div id="lensHead">
     <button id="lensToggle"><span class="chev">▲</span>📊 데이터 렌즈</button>
+    <button id="lensSpan">최근 60초</button>
+  </div>
+  <div id="lensBody">
     <div id="lensChans">
       <button class="lch temp on" data-ch="temp">온도</button>
       <button class="lch vol" data-ch="vol">부피</button>
@@ -171,9 +177,8 @@
       <button class="lch o2" data-ch="o2">산소</button>
       <button class="lch mass" data-ch="mass">무게</button>
     </div>
-    <button id="lensSpan">최근 60초</button>
+    <canvas id="lensCanvas"></canvas>
   </div>
-  <canvas id="lensCanvas"></canvas>
   <div id="lensTip" class="hide"></div>
 </div>
 
@@ -595,12 +600,12 @@ const scene = new THREE.Scene();
   const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
   scene.background=bg;
 }
-scene.fog = new THREE.Fog(0x161b22, 4.2, 9.5);
+scene.fog = new THREE.Fog(0x14181e, 3.4, 8.5);
 
 const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
-camera.position.set(0.9, 0.86, 1.5);
+camera.position.set(0.88, 0.76, 1.42);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0.24, -0.02);
+controls.target.set(0, 0.18, -0.02);
 controls.enableDamping=true; controls.dampingFactor=0.08;
 controls.minDistance=0.65; controls.maxDistance=3.4;
 controls.maxPolarAngle=1.46; controls.enablePan=false;
@@ -637,12 +642,12 @@ function waterMat(hex){
 const BENCH_Y = 0.0;
 {
   const floor=new THREE.Mesh(new THREE.CircleGeometry(7,48),
-    new THREE.MeshStandardMaterial({color:0x6e747d, roughness:0.95}));
+    new THREE.MeshStandardMaterial({color:0x3a3f45, roughness:0.95}));
   floor.rotation.x=-Math.PI/2; floor.position.y=-0.86; floor.receiveShadow=true; scene.add(floor);
 
   const c=document.createElement('canvas'); c.width=c.height=256;
   const g=c.getContext('2d');
-  g.fillStyle='#22262c'; g.fillRect(0,0,256,256);
+  g.fillStyle='#1b1f24'; g.fillRect(0,0,256,256);
   for(let i=0;i<2600;i++){
     const v=30+Math.random()*26|0;
     g.fillStyle=`rgba(${v},${v+3},${v+7},${0.16+Math.random()*0.2})`;
@@ -651,7 +656,7 @@ const BENCH_Y = 0.0;
   const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace;
   tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(3,2);
   const top=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.09,1.7),
-    new THREE.MeshStandardMaterial({map:tex, roughness:0.34, metalness:0.05, envMapIntensity:0.7}));
+    new THREE.MeshStandardMaterial({map:tex, roughness:0.44, metalness:0.05, envMapIntensity:0.45}));
   top.position.y=BENCH_Y-0.045; top.receiveShadow=true; top.castShadow=true; scene.add(top);
   const body=new THREE.Mesh(new THREE.BoxGeometry(3.15,0.76,1.5),
     new THREE.MeshStandardMaterial({color:0xE8E2D6, roughness:0.8}));
@@ -789,7 +794,7 @@ function buildStation(idx){
 
   // 스테이션 표시 패드 (탭 = 스테이션 선택)
   const pad=new THREE.Mesh(new THREE.CircleGeometry(0.15,40),
-    new THREE.MeshStandardMaterial({color:0x2b3340, roughness:0.9, transparent:true, opacity:0.55}));
+    new THREE.MeshStandardMaterial({color:0x1e242c, roughness:0.85, transparent:true, opacity:0.85}));
   pad.rotation.x=-Math.PI/2; pad.position.y=0.001; pad.receiveShadow=true; grp.add(pad);
   const padRing=new THREE.Mesh(new THREE.RingGeometry(0.145,0.155,48),
     new THREE.MeshBasicMaterial({color:0x9B7BF5, transparent:true, opacity:0.0, side:THREE.DoubleSide}));
