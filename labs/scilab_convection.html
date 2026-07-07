@@ -414,7 +414,7 @@ function registerEq(id, group){
 /* 비커(물 포함) + 기포 + 김 */
 const BEAKER_BASE = TRIPOD_H + 0.011;
 const BK_R=0.115, BK_H=0.21, WATER_H0=0.145;
-let waterGeo, waterBase, water, layoutWater, bGeo, bPos, bMeta, bubbles, steam, steamUni;
+let waterGeo, waterBase, water, layoutWater, bGeo, bPos, bMeta, bubbles, steam, steamUni, inkDrop;
 const B_N=140, S_N=110;
 let bubbleMax=B_N;
 {
@@ -504,6 +504,12 @@ let bubbleMax=B_N;
       }`
   }));
   steam.frustumCulled=false; gp.add(steam);
+
+  // 잉크 방울 — 물에 떨어뜨린 잉크가 바닥에 가라앉은 상태. 가열하면 솟아 퍼짐.
+  inkDrop=new THREE.Mesh(new THREE.SphereGeometry(0.02,20,16),
+    new THREE.MeshBasicMaterial({color:0x1636c8, transparent:true, opacity:0.92, depthWrite:false}));
+  inkDrop.position.set(0,0.02,0); inkDrop.scale.set(1,0.55,1);   // 바닥 중앙, 납작한 방울
+  inkDrop.renderOrder=9; gp.add(inkDrop);
 
   RIG.add(gp); registerEq('beaker_conv', gp);
 }
@@ -845,6 +851,8 @@ function resetAll(keepMode){
   prediction=null; predictShown=false; succeeded=false; successAt=0;
   spotIdx=0;
   layoutWater(1);
+  if(inkDrop){ inkDrop.position.set(0,0.02,0); inkDrop.scale.set(1,0.55,1); inkDrop.material.opacity=0.92; }
+  if(steamUni) steamUni.uIntensity.value=0;
   predictEl.classList.add('hide'); successEl.classList.add('hide');
   syncTray(); renderProg(); updateFireBtn();
   if(!keepMode && freeMode){ modeBtn.click(); }
@@ -962,7 +970,7 @@ function animate(){
   else if(S.flow>0.3) st='🔵 데워진 물이 위로 오르기 시작해요…';
   else if(S.heatK>0 && lit) st='🔥 비커 바닥이 데워지는 중…';
   else if(lit && !ready) st='램프를 잉크 비커 아래로 옮겨요';
-  else if(lit) st='잉크 물 비커를 준비하고, 아래를 가열해요';
+  else if(ready) st='🔵 잉크가 바닥에 가라앉아 있어요 — 불을 붙여 아래를 가열해 봐요!';
   else st='삼발이·그물·잉크 비커를 준비하고 불을 붙여요';
   stateEl.textContent=st;
 
@@ -988,8 +996,15 @@ function animate(){
     rippleWater(t, 0.0016);
     steam.position.y=0.02;           // 잉크는 물속(바닥 가열점)에서 발생해 돌며 상승
     steamUni.uTime.value=t;
-    var inkInt=Math.min(1, S.flow*1.6);   // 가열 초반부터 잉크가 진하게 보이도록(시각만·로직 무변경)
+    var inkInt=Math.min(1, S.flow*1.6);   // 가열 초반부터 순환 잉크가 잘 보이도록(시각만)
     steamUni.uIntensity.value+=(inkInt-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
+    // 잉크 방울: 가열 전 바닥에 뭉쳐 있다가(방울), 가열되면 위로 솟아 커지며 옅어짐 = 퍼져 섞임
+    if(inkDrop){
+      var f=S.flow;
+      inkDrop.position.y = 0.02 + f*0.028;                 // 데워진 물 따라 상승
+      inkDrop.scale.set(1+f*2.4, 0.55+f*2.8, 1+f*2.4);     // 위·옆으로 퍼짐
+      inkDrop.material.opacity = 0.92*(1-f*0.96);          // 섞이며 옅어짐(거의 투명 = 다 섞임)
+    }
   }
 
   if(lit){
