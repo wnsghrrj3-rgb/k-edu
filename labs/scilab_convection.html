@@ -249,7 +249,23 @@
              isReady:function(){return ready;}, wrongCount:function(){return wrongCount;} };
   }
 
-  var API = { createConvectionSim:createConvectionSim, MISSION_CONVECTION:MISSION_CONVECTION, createMissionRun:createMissionRun };
+  /* ── 잉크 확산 스테이지 (SPEC_E7 v2 §3-1) — flow → 뭉침→상승→확산→균일 가중치.
+        셰이더는 이 가중치를 uniform으로 받기만 함(계산 없음) → 시각 인과가 여기서 테스트됨 ── */
+  function smoothstepJS(a,b,x){
+    var t=Math.min(1,Math.max(0,(x-a)/(b-a)));
+    return t*t*(3-2*t);
+  }
+  function inkStageWeights(flow){
+    var f=(typeof flow==='number' && isFinite(flow)) ? Math.min(1,Math.max(0,flow)) : 0;
+    return {
+      puddle:  1 - smoothstepJS(0.10,0.45,f),    // ① 바닥 뭉침 1→0
+      plumeH:  smoothstepJS(0.05,0.50,f),        // ② 상승 도달 높이 0→1
+      spread:  smoothstepJS(0.35,0.75,f),        // ③ 상단 퍼짐+벽면 하강
+      uniform: smoothstepJS(0.70,1.00,f)*0.55    // ④ 균일 틴트(상한 0.55="옅게 섞임")
+    };
+  }
+
+  var API = { createConvectionSim:createConvectionSim, MISSION_CONVECTION:MISSION_CONVECTION, createMissionRun:createMissionRun, inkStageWeights:inkStageWeights };
   if(typeof window!=='undefined'){ window.SciLab=API; }
   if(typeof module!=='undefined' && module.exports){ module.exports=API; }
 })();
@@ -415,6 +431,7 @@ function registerEq(id, group){
 const BEAKER_BASE = TRIPOD_H + 0.011;
 const BK_R=0.115, BK_H=0.21, WATER_H0=0.145;
 let waterGeo, waterBase, water, layoutWater, bGeo, bPos, bMeta, bubbles, steam, steamUni, inkDrop;
+let WATER_E7, INK_E7;   // E-7 색 표준 (SPEC_E7 v2 §2): 물=거의 무색, 잉크=자홍(다크 씬 최고 대비)
 const B_N=140, S_N=110;
 let bubbleMax=B_N;
 {
@@ -424,7 +441,9 @@ let bubbleMax=B_N;
     new THREE.Vector2(BK_R,0.016), new THREE.Vector2(BK_R,BK_H-0.02),
     new THREE.Vector2(BK_R+0.006,BK_H-0.006), new THREE.Vector2(BK_R+0.01,BK_H)
   ];
-  gp.add(new THREE.Mesh(new THREE.LatheGeometry(pts,48), GLASS));
+  // SPEC_E7 v2 §4: 유리는 마지막에 그림(renderOrder 4) — 안의 잉크가 소거되지 않게
+  const glassE7=new THREE.Mesh(new THREE.LatheGeometry(pts,48), GLASS);
+  glassE7.renderOrder=4; gp.add(glassE7);
 
   const c=document.createElement('canvas'); c.width=512; c.height=256;
   const g=c.getContext('2d');
@@ -438,11 +457,19 @@ let bubbleMax=B_N;
   const sTex=new THREE.CanvasTexture(c); sTex.colorSpace=THREE.SRGBColorSpace;
   const sc=new THREE.Mesh(new THREE.CylinderGeometry(BK_R+0.0015,BK_R+0.0015,BK_H-0.03,48,1,true),
     new THREE.MeshBasicMaterial({map:sTex, transparent:true, depthWrite:false}));
-  sc.position.y=(BK_H-0.03)/2+0.01; gp.add(sc);
+  sc.position.y=(BK_H-0.03)/2+0.01; sc.renderOrder=5; gp.add(sc);
 
   waterGeo=new THREE.CylinderGeometry(BK_R-0.012, BK_R-0.014, WATER_H0, 48, 1, false);
   waterBase=waterGeo.attributes.position.array.slice();
-  water=new THREE.Mesh(waterGeo, waterMat(0x5FB9E8));
+  // SPEC_E7 v2 §1-4·§4: transmission 물 금지 — 굴절 패스가 내부 '투명' 잉크를 통째로 소거함.
+  // 관측 대상이 물 '안'이면 순수 투명(opacity) 물. 색도 거의 무색(#dff3ff) — 잉크 대비 확보.
+  WATER_E7=new THREE.Color(0xdff3ff); INK_E7=new THREE.Color(0xff2d6f);
+  water=new THREE.Mesh(waterGeo, new THREE.MeshPhysicalMaterial({
+    color:WATER_E7.clone(), metalness:0, roughness:0.05,
+    transparent:true, opacity:0.07, depthWrite:false,
+    clearcoat:0.6, clearcoatRoughness:0.1, envMapIntensity:0.8
+  }));
+  water.renderOrder=1;
   gp.add(water);
   layoutWater=function(vol){
     const h=WATER_H0*vol;
@@ -466,50 +493,63 @@ let bubbleMax=B_N;
   }));
   bubbles.frustumCulled=false; bubbles.renderOrder=10; gp.add(bubbles);
 
-  const sGeo=new THREE.BufferGeometry();
-  sGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(S_N*3),3));
-  const seeds=new Float32Array(S_N);
-  for(let i=0;i<S_N;i++) seeds[i]=Math.random();
-  sGeo.setAttribute('aSeed', new THREE.BufferAttribute(seeds,1));
-  steamUni={ uTime:{value:0}, uIntensity:{value:0}, uScale:{value:innerHeight*0.5} };
-  steam=new THREE.Points(sGeo, new THREE.ShaderMaterial({
-    uniforms:steamUni, transparent:true, depthWrite:false,
+  /* ── 잉크 플룸 — 십자 평면 ×2 + 농도장 셰이더 (SPEC_E7 v2 §3-2)
+        파티클 폐기: 확산은 위치가 아니라 '농도'의 변화 → fbm 셰이더로 실처럼 피어오르는 연속체.
+        십자 배치라 궤도 카메라 전 각도에서 최소 1장 정면 노출(빌보드 불필요). ── */
+  steamUni={ uTime:{value:0}, uPuddle:{value:1}, uPlumeH:{value:0}, uSpread:{value:0},
+             uUniform:{value:0}, uInkColor:{value:INK_E7.clone()}, uScale:{value:innerHeight*0.5} };
+  const plumeMat=new THREE.ShaderMaterial({
+    uniforms:steamUni, transparent:true, depthWrite:false, side:THREE.DoubleSide,
     vertexShader:`
-      attribute float aSeed;
-      uniform float uTime,uIntensity,uScale;
-      varying float vA;
-      float h(float n){return fract(sin(n)*43758.5453);}
-      void main(){
-        float sp=mix(0.75,1.0,h(aSeed*7.13));
-        float life=fract(uTime*0.15*sp+aSeed);
-        // 대류 순환 롤(SPEC_E7 A-8-R): 중앙 바닥서 데워져 상승 → 위에서 가장자리로 → 가장자리 하강
-        float ang=aSeed*6.28318 + uTime*0.5;
-        float H=0.075;               // 물속 순환 높이
-        float rad, yy;
-        if(life<0.5){ float ph=life*2.0;          // 전반 = 중앙 상승
-          rad=0.006+ph*0.012; yy=ph*H; }
-        else { float ph=(life-0.5)*2.0;           // 후반 = 가장자리 하강
-          rad=0.018+ph*0.030; yy=H*(1.0-ph); }
-        vec3 p=vec3(cos(ang)*rad, 0.012+yy, sin(ang)*rad);
-        vec4 mv=modelViewMatrix*vec4(p,1.0);
-        gl_Position=projectionMatrix*mv;
-        vA=(0.4+0.6*sin(life*3.14159))*uIntensity;    // 궤적 중간에 가장 진하게
-        gl_PointSize=mix(0.16,0.30,sin(life*3.14159))*uScale/max(-mv.z,0.1);
-      }`,
+      varying vec2 vUv;
+      void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
     fragmentShader:`
-      varying float vA;
+      uniform float uTime,uPuddle,uPlumeH,uSpread,uUniform;
+      uniform vec3 uInkColor; varying vec2 vUv;
+      float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+      float noise(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),
+                   mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y); }
+      float fbm(vec2 p){ float v=0.0,a=0.5;
+        for(int i=0;i<3;i++){ v+=a*noise(p); p*=2.1; a*=0.5; } return v; }
       void main(){
-        float d=length(gl_PointCoord-0.5);
-        gl_FragColor=vec4(0.14,0.34,0.88, smoothstep(0.5,0.04,d)*vA*0.9);  // 진한 청색 잉크
+        vec2 uv=vUv; float cx=abs(uv.x-0.5)*2.0; float t=uTime;
+        float wob=fbm(vec2(uv.x*6.0, uv.y*3.0 - t*0.45));
+        float threads=fbm(vec2(uv.x*14.0 + wob*2.0, uv.y*5.0 - t*0.7));
+        // ① 바닥 뭉침
+        float puddle=uPuddle*smoothstep(0.16,0.0,uv.y)*smoothstep(0.55,0.1,cx);
+        // ② 상승 플룸: 중심 기둥 + 부드러운 머리 + 실 가닥 텍스처
+        float head=smoothstep(uPlumeH+0.06, uPlumeH-0.18, uv.y);
+        float column=smoothstep(0.30+wob*0.18, 0.02, cx);
+        float plume=column*head*step(0.001,uPlumeH);
+        plume*=0.55+0.45*smoothstep(0.35,0.75,threads);
+        // ③ 상단 퍼짐 + 벽면 하강(순환)
+        float top=uSpread*smoothstep(0.55,0.92,uv.y)*(0.5+0.5*wob);
+        float wall=uSpread*smoothstep(0.62,0.95,cx)*smoothstep(0.95,0.25,uv.y)*0.6;
+        // ④ 균일화: 구조가 옅은 균일 틴트로 수렴 (섞임 완료)
+        float C=clamp(puddle+plume+top+wall,0.0,1.0);
+        C=max(C*(1.0-uUniform*0.8), uUniform);
+        // 평면 테두리 페이드 — "평면 티" 제거
+        float edge=smoothstep(0.0,0.06,uv.y)*smoothstep(1.0,0.94,uv.y)*smoothstep(1.0,0.9,cx);
+        gl_FragColor=vec4(uInkColor, C*0.9*edge);
       }`
-  }));
-  steam.frustumCulled=false; gp.add(steam);
+  });
+  const plumeGeo=new THREE.PlaneGeometry((BK_R-0.012)*1.88, WATER_H0*0.985);
+  steam=new THREE.Group();
+  [0, Math.PI/2].forEach(ry=>{
+    const p=new THREE.Mesh(plumeGeo, plumeMat);
+    p.rotation.y=ry; p.renderOrder=3; p.frustumCulled=false;
+    steam.add(p);
+  });
+  steam.position.y=0.004+WATER_H0/2;
+  gp.add(steam);
 
-  // 잉크 방울 — 물에 떨어뜨린 잉크가 바닥에 가라앉은 상태. 가열하면 솟아 퍼짐.
+  // 잉크 방울 — 물에 떨어뜨린 잉크가 바닥에 가라앉은 상태. 가열하면 플룸으로 이관되며 축소.
+  // SPEC_E7 v2 §2: 다크 씬 잉크 = 밝고 고채도(#ff2d6f). 진한 색은 배경에 먹힘.
   inkDrop=new THREE.Mesh(new THREE.SphereGeometry(0.02,20,16),
-    new THREE.MeshBasicMaterial({color:0x1636c8, transparent:true, opacity:0.92, depthWrite:false}));
+    new THREE.MeshBasicMaterial({color:0xff2d6f, transparent:true, opacity:0.95, depthWrite:false}));
   inkDrop.position.set(0,0.02,0); inkDrop.scale.set(1,0.55,1);   // 바닥 중앙, 납작한 방울
-  inkDrop.renderOrder=9; gp.add(inkDrop);
+  inkDrop.renderOrder=2; gp.add(inkDrop);
 
   RIG.add(gp); registerEq('beaker_conv', gp);
 }
@@ -729,8 +769,9 @@ EQUIP.forEach(e=>{
 });
 
 /* ═════════ 게임 상태 ═════════ */
-const { createConvectionSim, MISSION_CONVECTION, createMissionRun } = window.SciLab;
+const { createConvectionSim, MISSION_CONVECTION, createMissionRun, inkStageWeights } = window.SciLab;
 let sim = createConvectionSim();
+let inkLatch = 0;   // 균일 틴트 래치 — 섞인 잉크는 불을 꺼도 되돌아가지 않음
 let run = createMissionRun(MISSION_CONVECTION);
 let freeMode=false, lit=false, predictShown=false, prediction=null;
 let successAt=0, succeeded=false;
@@ -851,8 +892,13 @@ function resetAll(keepMode){
   prediction=null; predictShown=false; succeeded=false; successAt=0;
   spotIdx=0;
   layoutWater(1);
-  if(inkDrop){ inkDrop.position.set(0,0.02,0); inkDrop.scale.set(1,0.55,1); inkDrop.material.opacity=0.92; }
-  if(steamUni) steamUni.uIntensity.value=0;
+  inkLatch=0;
+  if(inkDrop){ inkDrop.position.set(0,0.02,0); inkDrop.scale.set(1,0.55,1); inkDrop.material.opacity=0.95; }
+  if(steamUni){
+    steamUni.uPuddle.value=1; steamUni.uPlumeH.value=0;
+    steamUni.uSpread.value=0; steamUni.uUniform.value=0;
+  }
+  if(water){ water.material.color.copy(WATER_E7); water.material.opacity=0.07; }
   predictEl.classList.add('hide'); successEl.classList.add('hide');
   syncTray(); renderProg(); updateFireBtn();
   if(!keepMode && freeMode){ modeBtn.click(); }
@@ -990,20 +1036,26 @@ function animate(){
     }
   } else successAt=0;
 
-  // ── 물·잉크 소용돌이 (비커 있을 때) — 물은 유지, 잉크 = flow 추종 ──
+  // ── 잉크 확산 (SPEC_E7 v2): 뭉침→상승→확산→균일. 섞인 잉크는 되돌아가지 않음(래치) ──
   if(run.placed.beaker_conv){
     layoutWater(1);                  // 물 가득 (증발 없음)
     rippleWater(t, 0.0016);
-    steam.position.y=0.02;           // 잉크는 물속(바닥 가열점)에서 발생해 돌며 상승
+    var w=inkStageWeights(S.flow);
+    inkLatch=Math.max(inkLatch, w.uniform);            // 불 꺼도 균일 틴트 유지 (과학적 비가역)
     steamUni.uTime.value=t;
-    var inkInt=Math.min(1, S.flow*1.6);   // 가열 초반부터 순환 잉크가 잘 보이도록(시각만)
-    steamUni.uIntensity.value+=(inkInt-steamUni.uIntensity.value)*Math.min(dt*2.5,1);
-    // 잉크 방울: 가열 전 바닥에 뭉쳐 있다가(방울), 가열되면 위로 솟아 커지며 옅어짐 = 퍼져 섞임
+    steamUni.uPuddle.value=w.puddle;
+    steamUni.uPlumeH.value=w.plumeH;
+    steamUni.uSpread.value=w.spread;
+    steamUni.uUniform.value=inkLatch;
+    // 물 전체 옅은 분홍 틴트 — "다 섞였다"의 최종 표식
+    water.material.color.copy(WATER_E7).lerp(INK_E7, inkLatch*0.35);
+    water.material.opacity=0.07+inkLatch*0.13;
+    // 잉크 방울: 뭉침 가중치 추종 — 플룸이 클수록 방울은 작아짐 (질량 보존의 인상)
     if(inkDrop){
-      var f=S.flow;
-      inkDrop.position.y = 0.02 + f*0.028;                 // 데워진 물 따라 상승
-      inkDrop.scale.set(1+f*2.4, 0.55+f*2.8, 1+f*2.4);     // 위·옆으로 퍼짐
-      inkDrop.material.opacity = 0.92*(1-f*0.96);          // 섞이며 옅어짐(거의 투명 = 다 섞임)
+      var pw=0.35+0.65*w.puddle;
+      inkDrop.position.y=0.02;
+      inkDrop.scale.set(pw, pw*0.55, pw);
+      inkDrop.material.opacity=0.95*w.puddle;
     }
   }
 
