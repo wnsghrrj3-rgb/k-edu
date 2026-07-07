@@ -94,10 +94,39 @@
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   #loading.hide{opacity:0;pointer-events:none}
 
+  /* ── 데이터 렌즈 (§7-2 · Canvas 2D · 좌하단 접이식) ── */
+  #lens{position:fixed;left:14px;bottom:150px;z-index:21;width:300px;
+    background:var(--hud);backdrop-filter:blur(8px);border:1px solid var(--hudline);
+    border-radius:16px;padding:9px 11px 7px;color:#fff;transition:transform .25s,opacity .25s}
+  #lens.collapsed{transform:translateY(calc(100% - 34px))}
+  #lensHead{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  #lensToggle{font-family:'Gowun Dodum';font-size:12.5px;color:#fff;background:none;border:none;
+    cursor:pointer;padding:2px 2px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  #lensToggle .chev{transition:transform .25s;font-size:10px;color:#B9A7F8}
+  #lens.collapsed #lensToggle .chev{transform:rotate(180deg)}
+  #lensChans{display:flex;gap:4px;flex:1;overflow-x:auto;scrollbar-width:none}
+  #lensChans::-webkit-scrollbar{display:none}
+  .lch{flex:0 0 auto;font-family:'Gowun Dodum';font-size:11px;border-radius:999px;
+    padding:3px 9px;cursor:pointer;color:#9fb3c8;background:rgba(255,255,255,.07);
+    border:1px solid var(--hudline);transition:all .14s}
+  .lch.on{color:#fff;border-color:currentColor}
+  .lch.temp.on{color:#FF8A5C} .lch.vol.on{color:#4FC3F7} .lch.dissolved.on{color:#B197FC}
+  .lch.o2.on{color:#63E6BE} .lch.mass.on{color:#FFD43B}
+  #lensSpan{flex:0 0 auto;font-family:'Gowun Dodum';font-size:10.5px;border-radius:999px;
+    padding:3px 8px;cursor:pointer;color:#B9A7F8;background:rgba(155,123,245,.16);
+    border:1px solid rgba(155,123,245,.4)}
+  #lensCanvas{display:block;width:100%;border-radius:9px;background:rgba(10,14,20,.55);cursor:crosshair}
+  #lensTip{position:absolute;pointer-events:none;background:rgba(255,255,255,.97);color:var(--ink);
+    font-size:11.5px;padding:6px 10px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);
+    max-width:180px;line-height:1.45;transition:opacity .18s;border-left:4px solid var(--purple);z-index:23}
+  #lensTip.hide{opacity:0}
+  #lens.hidden{display:none}
+
   @media (max-width:560px){
     #panel{top:auto;bottom:196px;padding:9px 12px;min-width:0}
     #temp{font-size:22px}
     .eq{width:74px} .eq .ic{font-size:21px}
+    #lens{left:8px;right:8px;width:auto;bottom:150px}
   }
 </style>
 </head>
@@ -130,6 +159,22 @@
   </div>
   <div id="shelf"></div>
   <div id="tray"></div>
+</div>
+
+<div id="lens" class="collapsed">
+  <div id="lensHead">
+    <button id="lensToggle"><span class="chev">▲</span>📊 데이터 렌즈</button>
+    <div id="lensChans">
+      <button class="lch temp on" data-ch="temp">온도</button>
+      <button class="lch vol" data-ch="vol">부피</button>
+      <button class="lch dissolved" data-ch="dissolvedTotal">녹은양</button>
+      <button class="lch o2" data-ch="o2">산소</button>
+      <button class="lch mass" data-ch="mass">무게</button>
+    </div>
+    <button id="lensSpan">최근 60초</button>
+  </div>
+  <canvas id="lensCanvas"></canvas>
+  <div id="lensTip" class="hide"></div>
 </div>
 
 <div id="toast" class="hide"></div>
@@ -339,6 +384,29 @@
       }
     }
   }
+  // 이벤트 마커: 전이(상승/하강 엣지)를 결정론적으로 감지 → R.markers (SPEC §7-1)
+  function detectMarkers(world){
+    var R=world.recorder; if(!R) return;
+    if(!world._mkPrev){
+      world._mkPrev=[]; for(var a=0;a<world.stations.length;a++)
+        world._mkPrev.push({ boiling:false, ice:false, flip:false, flameOn:false, flameOut:false });
+      world._mkLamp=false;
+    }
+    for(var i=0;i<world.stations.length;i++){
+      var c=world.stations[i].contents, p=world._mkPrev[i];
+      var ice=(c.iceFrac||0)>0.001, flameOn=!!(c.flame&&c.flame.on), flameOut=!!c._flameOut, flip=!!c._flip;
+      if(c.boiling && !p.boiling) R.markers.push({ t:world.t, type:'boilStart', station:i });
+      if(!ice && p.ice)           R.markers.push({ t:world.t, type:'meltEnd',   station:i });
+      if(flip && !p.flip)         R.markers.push({ t:world.t, type:'flip',      station:i });
+      if(flameOn && !p.flameOn)   R.markers.push({ t:world.t, type:'ignite',    station:i });
+      if(flameOut && !p.flameOut) R.markers.push({ t:world.t, type:'out',       station:i });
+      p.boiling=c.boiling; p.ice=ice; p.flip=flip; p.flameOn=flameOn; p.flameOut=flameOut;
+    }
+    var lampLit=!!(world.lamp&&world.lamp.lit);
+    if(lampLit && !world._mkLamp && world.lamp.station>=0)
+      R.markers.push({ t:world.t, type:'ignite', station:world.lamp.station });
+    world._mkLamp=lampLit;
+  }
   // 플래토 감지: heatK>0 && 창 2.0s 내 |Δtemp|<0.15 (station 0 기준 반환, 다채널은 호출측)
   function detectPlateau(buf, k){
     if(k<=0 || buf.length<2) return false;
@@ -378,7 +446,8 @@
         for(var L=0;L<LAWS.length;L++) LAWS[L](st, dt, world, i);
         derive(st);
       }
-      // 레코더 샘플링 (SAMPLE_DT 간격)
+      // 레코더 샘플링 (SAMPLE_DT 간격) + 이벤트 마커 전이 감지(매 step)
+      detectMarkers(world);
       world._recAcc += dt;
       while(world._recAcc >= SAMPLE_DT){ world._recAcc -= SAMPLE_DT; recSample(world); }
       return world;
@@ -1543,6 +1612,192 @@ function renderStation(i, dt, t){
 /* ═════════ 메인 루프 ═════════ */
 const clock=new THREE.Clock();
 let hudAcc=0;
+/* ═════════ §7 데이터 렌즈 (2층 · Canvas 2D · 외부 라이브러리 0) ═════════ */
+const GRADE = (new URLSearchParams(location.search).get('grade')) || 'high'; // low|mid|high (기본 high)
+const LENS_CH = {
+  temp:          { label:'온도',  color:'#FF8A5C', unit:'℃',  min:()=>-10, max:()=>110 },
+  vol:           { label:'부피',  color:'#4FC3F7', unit:'L',   min:()=>0,   max:b=>Math.max(0.3, ...b.map(s=>s.vol)) },
+  dissolvedTotal:{ label:'녹은양',color:'#B197FC', unit:'g',   min:()=>0,   max:b=>Math.max(5, ...b.map(s=>s.dissolvedTotal)) },
+  o2:            { label:'산소',  color:'#63E6BE', unit:'%',   min:()=>0,   max:()=>100 },
+  mass:          { label:'무게',  color:'#FFD43B', unit:'g',   min:()=>0,   max:b=>Math.max(10, ...b.map(s=>s.mass)) }
+};
+const MK_ICON = { boilStart:'💨', meltEnd:'💧', flip:'💙', ignite:'🔥', out:'🕯️' };
+const MK_MSG  = { boilStart:'끓기 시작', meltEnd:'다 녹음', flip:'중화(색 반전)', ignite:'불 붙음', out:'불 꺼짐' };
+
+const lensEl   = document.getElementById('lens');
+const lensCv   = document.getElementById('lensCanvas');
+const lensTip  = document.getElementById('lensTip');
+const lctx     = lensCv.getContext('2d');
+let lensSel = null;          // 선택된 2번째 채널 (temp는 항상)
+let lensSpanAll = false;     // false=최근 60초, true=전체
+let lensPulse = null;        // {st, t0} 용기 scale 펄스
+const LENS_W_DESK = 300, LENS_H = window.innerWidth <= 560 ? 130 : 150;
+
+if (GRADE === 'low') lensEl.classList.add('hidden');           // 저학년: 렌즈 숨김(큰 온도계만)
+if (GRADE === 'mid') document.getElementById('lensChans').style.display = 'none'; // 중학년: temp 단일
+
+function lensResize(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = lensEl.clientWidth - 22; // padding 보정
+  lensCv.style.height = LENS_H + 'px';
+  lensCv.width  = Math.round(cssW * dpr);
+  lensCv.height = Math.round(LENS_H * dpr);
+  lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  lensCv._cssW = cssW; lensCv._cssH = LENS_H;
+}
+
+// tag(문자열) → 한국어 회상 문구 (§7-3)
+const TAG_RECALL = {
+  melting:'🧊 융해 중 — 0℃ 고정', boiling:'💨 끓는 중 — 100℃ 고정',
+  precip:'✨ 알갱이 석출', neutral:'💙 중화점', out:'🕯️ 소등',
+  heating:'🔥 데우는 중', idle:'· 안정 상태'
+};
+
+function drawLens(){
+  if (GRADE === 'low' || lensEl.classList.contains('collapsed')) return;
+  const buf = world.recorder.chans[ACTIVE];
+  const W = lensCv._cssW, H = lensCv._cssH, PAD_L = 26, PAD_R = 8, PAD_T = 8, PAD_B = 14;
+  lctx.clearRect(0, 0, W, H);
+  if (!buf || buf.length < 2){
+    lctx.fillStyle = 'rgba(255,255,255,.4)'; lctx.font = '11px Gowun Dodum';
+    lctx.fillText('실험을 시작하면 그래프가 자라나요', 10, H/2);
+    return;
+  }
+  const tNow = buf[buf.length-1].t;
+  const t0 = lensSpanAll ? buf[0].t : Math.max(buf[0].t, tNow - 60);
+  const span = Math.max(0.5, tNow - t0);
+  const gx = t => PAD_L + (t - t0) / span * (W - PAD_L - PAD_R);
+  const vis = buf.filter(s => s.t >= t0);
+
+  // 채널 목록: temp 항상 + 선택(mid/low는 temp만)
+  const chans = ['temp'];
+  if (GRADE === 'high' && lensSel && lensSel !== 'temp') chans.push(lensSel);
+
+  // 플래토 밴드 (§7-2): tag ∈ {boiling,melting} 연속 구간 = 잠열(온도 정지) — heatK 필드 회피, 물리 동치
+  let bs = null;
+  for (let i = 0; i < vis.length; i++){
+    const plateau = (vis[i].tag === 'boiling' || vis[i].tag === 'melting');
+    if (plateau && bs === null) bs = vis[i].t;
+    if ((!plateau || i === vis.length-1) && bs !== null){
+      const be = vis[i].t;
+      const x1 = gx(bs), x2 = gx(be);
+      if (x2 - x1 > 2){
+        lctx.fillStyle = 'rgba(255,138,60,.16)';
+        lctx.fillRect(x1, PAD_T, x2 - x1, H - PAD_T - PAD_B);
+        lctx.fillStyle = 'rgba(255,170,110,.9)'; lctx.font = '9px Gowun Dodum';
+        lctx.fillText('여기서 멈춤!', x1 + 2, PAD_T + 9);
+      }
+      lensEl._plateau = { x1: gx(bs), x2: gx(be) }; // high 퀴즈 히트영역
+      bs = null;
+    }
+  }
+  if (bs === null && !vis.some(s => s.tag==='boiling'||s.tag==='melting')) lensEl._plateau = null;
+
+  // 각 채널 선 그리기
+  chans.forEach(ch => {
+    const def = LENS_CH[ch], mn = def.min(vis), mx = def.max(vis), rng = Math.max(1e-3, mx - mn);
+    const gy = v => PAD_T + (1 - (v - mn) / rng) * (H - PAD_T - PAD_B);
+    lctx.strokeStyle = def.color; lctx.lineWidth = 1.8; lctx.beginPath();
+    vis.forEach((s, k) => { const x = gx(s.t), y = gy(s[ch]); k ? lctx.lineTo(x, y) : lctx.moveTo(x, y); });
+    lctx.stroke();
+    // 최신값 점 + 라벨
+    const last = vis[vis.length-1];
+    lctx.fillStyle = def.color; lctx.beginPath();
+    lctx.arc(gx(last.t), gy(last[ch]), 2.6, 0, 7); lctx.fill();
+  });
+  // Y축 라벨 (temp 기준)
+  const tdef = LENS_CH.temp;
+  lctx.fillStyle = 'rgba(255,255,255,.45)'; lctx.font = '9px Gowun Dodum';
+  lctx.fillText('110', 2, PAD_T + 8); lctx.fillText('0', 2, gyTemp(0, H, PAD_T, PAD_B));
+
+  // 이벤트 마커 (§7-2): 활성 스테이션 필터 → 세로 점선 + 아이콘
+  const mks = world.recorder.markers.filter(m => m.station === ACTIVE && m.t >= t0);
+  mks.forEach(m => {
+    const x = gx(m.t);
+    lctx.strokeStyle = 'rgba(255,255,255,.28)'; lctx.lineWidth = 1;
+    lctx.setLineDash([2,2]); lctx.beginPath();
+    lctx.moveTo(x, PAD_T); lctx.lineTo(x, H - PAD_B); lctx.stroke(); lctx.setLineDash([]);
+    lctx.font = '10px sans-serif'; lctx.fillText(MK_ICON[m.type] || '•', x - 5, H - PAD_B - 1);
+  });
+
+  // 현재 커서 (§7-2)
+  const cx = gx(tNow);
+  lctx.strokeStyle = 'rgba(255,255,255,.5)'; lctx.lineWidth = 1; lctx.beginPath();
+  lctx.moveTo(cx, PAD_T); lctx.lineTo(cx, H - PAD_B); lctx.stroke();
+
+  // X축 라벨 (경과 시간)
+  lctx.fillStyle = 'rgba(255,255,255,.4)'; lctx.font = '9px Gowun Dodum';
+  lctx.fillText((lensSpanAll ? '전체' : '−60s'), PAD_L, H - 2);
+  lctx.fillText(Math.round(tNow) + 's', W - PAD_R - 20, H - 2);
+}
+function gyTemp(v, H, PT, PB){ return PT + (1 - (v + 10) / 120) * (H - PT - PB); }
+
+/* ── 채널/스팬 토글 UI ── */
+document.querySelectorAll('.lch').forEach(b => {
+  b.addEventListener('click', () => {
+    const ch = b.dataset.ch;
+    if (ch === 'temp') return; // temp 고정
+    if (GRADE !== 'high') { toast('2채널 비교는 고학년 모드예요', true); return; }
+    if (lensSel === ch){ lensSel = null; b.classList.remove('on'); }
+    else {
+      document.querySelectorAll('.lch').forEach(x => x.dataset.ch !== 'temp' && x.classList.remove('on'));
+      lensSel = ch; b.classList.add('on');
+    }
+  });
+});
+document.getElementById('lensSpan').addEventListener('click', e => {
+  lensSpanAll = !lensSpanAll;
+  e.target.textContent = lensSpanAll ? '전체 보기' : '최근 60초';
+});
+document.getElementById('lensToggle').addEventListener('click', () => {
+  lensEl.classList.toggle('collapsed');
+  if (!lensEl.classList.contains('collapsed')){ lensResize(); drawLens(); }
+});
+
+/* ── §7-3 양방향: 그래프 탭 → 최근접 샘플 회상 (말풍선 + 용기 scale 펄스) ── */
+lensCv.addEventListener('pointerdown', ev => {
+  const buf = world.recorder.chans[ACTIVE];
+  if (!buf || buf.length < 2) return;
+  const rect = lensCv.getBoundingClientRect();
+  const px = (ev.clientX - rect.left);
+  const W = lensCv._cssW, PAD_L = 26, PAD_R = 8;
+  const tNow = buf[buf.length-1].t;
+  const t0 = lensSpanAll ? buf[0].t : Math.max(buf[0].t, tNow - 60);
+  const span = Math.max(0.5, tNow - t0);
+  const tHit = t0 + (px - PAD_L) / (W - PAD_L - PAD_R) * span;
+
+  // high 모드 + 플래토 밴드 안 탭 → 퀴즈 (§7-4)
+  if (GRADE === 'high' && lensEl._plateau && px >= lensEl._plateau.x1 && px <= lensEl._plateau.x2){
+    showPlateauQuiz(ev.clientX, ev.clientY); return;
+  }
+  // 최근접 샘플
+  let best = buf[0], bd = 1e9;
+  for (const s of buf){ const d = Math.abs(s.t - tHit); if (d < bd){ bd = d; best = s; } }
+  const recall = TAG_RECALL[best.tag] || '· 실험 진행';
+  lensTip.innerHTML = `<b>${Math.round(best.t)}초</b> — ${recall}<br>온도 ${best.temp.toFixed(1)}℃`;
+  lensTip.style.left = Math.min(ev.clientX - 40, window.innerWidth - 190) + 'px';
+  lensTip.style.top  = (ev.clientY - 60) + 'px';
+  lensTip.classList.remove('hide');
+  clearTimeout(lensTip._to); lensTip._to = setTimeout(() => lensTip.classList.add('hide'), 2600);
+  lensPulse = { st: ACTIVE, t0: performance.now() / 1000 }; // 용기 펄스 트리거
+});
+
+function showPlateauQuiz(cx, cy){
+  lensTip.innerHTML = `<b>왜 온도가 멈췄을까?</b><br>
+    <button class="qz" data-a="1" style="margin:4px 3px 0;padding:3px 7px;border-radius:8px;border:none;background:#B197FC;color:#fff;font-size:11px;cursor:pointer">열이 상태변화에 쓰여서</button>
+    <button class="qz" data-a="0" style="margin:4px 3px 0;padding:3px 7px;border-radius:8px;border:1px solid #ccc;background:#fff;font-size:11px;cursor:pointer">온도계가 고장나서</button>`;
+  lensTip.style.left = Math.min(cx - 40, window.innerWidth - 200) + 'px';
+  lensTip.style.top  = (cy - 80) + 'px';
+  lensTip.classList.remove('hide');
+  clearTimeout(lensTip._to);
+  lensTip.querySelectorAll('.qz').forEach(q => q.addEventListener('click', () => {
+    lensTip.innerHTML = q.dataset.a === '1'
+      ? '🎉 맞아요! 잠열 — 녹거나 끓는 동안 열은 상태를 바꾸는 데 쓰여 온도가 그대로예요.'
+      : '🤔 다시 볼까요? 온도계는 정상! 열이 상태변화(융해·기화)에 쓰이는 중이에요.';
+    lensTip._to = setTimeout(() => lensTip.classList.add('hide'), 3400);
+  }));
+}
+
 function animate(){
   requestAnimationFrame(animate);
   const dt=clock.getDelta(), t=clock.elapsedTime;
@@ -1629,7 +1884,15 @@ function animate(){
 
   // HUD (8Hz 갱신)
   hudAcc+=dt;
-  if(hudAcc>0.12){ hudAcc=0; updateHUD(); syncBtns(); }
+  if(hudAcc>0.12){ hudAcc=0; updateHUD(); syncBtns(); drawLens(); }
+
+  // 렌즈 탭 회상 → 용기 scale 펄스 (§7-3, 1→1.04→1 · 0.6s)
+  if(lensPulse){
+    const el=performance.now()/1000 - lensPulse.t0;
+    const S=ST3D[lensPulse.st];
+    if(el>=0.6 || !S.vesselType){ if(S.vesselType) S.vg[S.vesselType].scale.setScalar(1); lensPulse=null; }
+    else { const p=Math.sin(el/0.6*Math.PI); S.vg[S.vesselType].scale.setScalar(1+0.04*p); }
+  }
 
   controls.update();
   renderer.render(scene,camera);
@@ -1640,9 +1903,11 @@ addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
   ST3D.forEach(S=>{ S.steamUni.uScale.value=innerHeight*0.5; });
+  lensResize();
 });
 
 document.getElementById('loading').classList.add('hide');
+lensResize();
 toast('🧪 <b>과학실 2.0</b> — 실험대 두 곳에 무엇이든 조합해 봐요!', false, 5200);
 updateHUD();
 animate();
