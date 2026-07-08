@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>케이랩 · 빛 실험실 «꺾이고, 모이고, 갈라진다»</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d1117;color:#e6edf3;font-family:'Gowun Dodum',system-ui,sans-serif;overflow:hidden}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#8b949e;z-index:50}
+  #loading.hide{display:none}
+</style>
+</head>
+<body>
+<div id="loading">빛 실험실 준비 중…</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     순수 로직 (P1 게이트: 렌더 0줄 · window.KLight / module.exports)
+     — 광선 추적 엔진. 렌더 어댑터(P2)는 별도 module script.
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   빛 실험실 P1 «광선 추적 엔진» — 순수 로직 (렌더 0줄)
+   근거: SPEC_LIGHT.md §2 광학 모델(수치 확정) · §5 테스트 계약
+   좌표: 2D 광학대 평면 (x=진행 주축, z=횡). 방향은 정규화 벡터.
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  // ── §2 굴절률 확정 (창작 금지) ──
+  var IOR = { air: 1.00, glass: 1.50, water: 1.33 };
+  // 프리즘 7색 굴절률 (빨→보 단조 증가)
+  var PRISM_N = [
+    { key: 'red',    ko: '빨', n: 1.485 },
+    { key: 'orange', ko: '주', n: 1.490 },
+    { key: 'yellow', ko: '노', n: 1.495 },
+    { key: 'green',  ko: '초', n: 1.500 },
+    { key: 'blue',   ko: '파', n: 1.505 },
+    { key: 'indigo', ko: '남', n: 1.510 },
+    { key: 'violet', ko: '보', n: 1.515 }
+  ];
+  // 얇은 렌즈 초점 (볼록 +, 오목 −) · h 상한 클램프(§7)
+  var LENS_F = { convex: 0.12, concave: -0.12 };
+  var LENS_H_MAX = 0.06;
+  var MAX_BOUNCE = 4;       // §2 최대 반사/굴절 4회
+  var FAR = 2.0;            // 무한대 대체 세그먼트 길이
+  var EPS = 1e-6;
+  var HIT_EPS = 1e-4;       // 재교차 방지 오프셋
+  var DEFAULT_BOUNDS = { xmin: -0.5, xmax: 0.5, zmin: -0.4, zmax: 0.4 };
+
+  // ── 벡터 유틸 (2D: x,z) ──
+  function v(x, z) { return { x: x, z: z }; }
+  function add(a, b) { return v(a.x + b.x, a.z + b.z); }
+  function sub(a, b) { return v(a.x - b.x, a.z - b.z); }
+  function mul(a, s) { return v(a.x * s, a.z * s); }
+  function dot(a, b) { return a.x * b.x + a.z * b.z; }
+  function len(a) { return Math.sqrt(a.x * a.x + a.z * a.z); }
+  function norm(a) { var L = len(a); return L < EPS ? v(0, 0) : v(a.x / L, a.z / L); }
+  function perp(a) { return v(-a.z, a.x); }           // 반시계 90°
+  function rot(a, ang) {
+    var c = Math.cos(ang), s = Math.sin(ang);
+    return v(a.x * c - a.z * s, a.x * s + a.z * c);
+  }
+  function deg(rad) { return rad * 180 / Math.PI; }
+  function rad(d) { return d * Math.PI / 180; }
+
+  // ── 각도 헬퍼 (테스트/UI 공용) ──
+  // 방향 dir 이 법선 normal 과 이루는 입사각(0~90°, 도 단위)
+  function angleFromNormal(dir, normal) {
+    var d = norm(dir), n = norm(normal);
+    var c = Math.abs(dot(d, n));
+    if (c > 1) c = 1;
+    return deg(Math.acos(c));
+  }
+  // +x축 기준 방향 각(도, −180~180)
+  function angleOf(dir) { return deg(Math.atan2(dir.z, dir.x)); }
+
+  // ── 반사 (입사각 = 반사각) ──
+  function reflect(dir, normal) {
+    var d = norm(dir), n = norm(normal);
+    var k = dot(d, n);
+    return norm(v(d.x - 2 * k * n.x, d.z - 2 * k * n.z));
+  }
+
+  // ── 스넬 굴절 (전반사 처리) ──
+  // dir: 입사 진행방향, normal: 경계 법선(어느쪽이든 — 내부에서 입사면 정렬), n1→n2
+  // return { dir, tir } — tir(전반사)면 dir 은 반사방향
+  function snell(dir, normal, n1, n2) {
+    var d = norm(dir), n = norm(normal);
+    var cosI = -dot(d, n);
+    if (cosI < 0) { n = mul(n, -1); cosI = -cosI; } // 법선을 입사쪽으로
+    var r = n1 / n2;
+    var sinT2 = r * r * (1 - cosI * cosI);
+    if (sinT2 > 1) { return { dir: reflect(d, n), tir: true }; } // 전반사
+    var cosT = Math.sqrt(1 - sinT2);
+    var t = v(r * d.x + (r * cosI - cosT) * n.x, r * d.z + (r * cosI - cosT) * n.z);
+    return { dir: norm(t), tir: false };
+  }
+
+  // 임계각(도) — n1 > n2 일 때만 유효
+  function criticalAngle(n1, n2) {
+    if (n1 <= n2) return null;
+    return deg(Math.asin(n2 / n1));
+  }
+
+  // ── 얇은 렌즈 (§2 근사식 θ_out = θ_in − h/f) ──
+  // dir: 입사방향, hit: 렌즈면 통과점, lens:{center, axis(광축 단위벡터), f}
+  function thinLens(dir, hit, lens) {
+    var axis = norm(lens.axis);
+    var pp = perp(axis);
+    var rel = sub(hit, lens.center);
+    var h = dot(rel, pp);
+    if (h > LENS_H_MAX) h = LENS_H_MAX;          // §7 근축 클램프
+    if (h < -LENS_H_MAX) h = -LENS_H_MAX;
+    var d = norm(dir);
+    // 광축 대비 입사각(부호 포함)
+    var thIn = Math.atan2(dot(d, pp), dot(d, axis));
+    var thOut = thIn - h / lens.f;
+    return norm(add(mul(axis, Math.cos(thOut)), mul(pp, Math.sin(thOut))));
+  }
+
+  // ── 소자 → 면(face) 컴파일 ──
+  // element 공통: { type, x, z, angle?, size?, kind?('convex'|'concave'), n? }
+  // face: { a, b, type, ...상호작용 파라미터, ref }
+  function faceSeg(cx, cz, angle, half) {
+    // 중심(cx,cz)에서 angle 방향으로 ±half 뻗은 선분
+    var dir = rot(v(1, 0), angle);
+    var a = v(cx - dir.x * half, cz - dir.z * half);
+    var b = v(cx + dir.x * half, cz + dir.z * half);
+    return { a: a, b: b, mid: v(cx, cz), tangent: dir, normal: perp(dir) };
+  }
+
+  function compileFaces(elements) {
+    var faces = [];
+    for (var i = 0; i < elements.length; i++) {
+      var e = elements[i];
+      var ang = e.angle || 0;
+      var half = e.size != null ? e.size : 0.08;
+      if (e.type === 'mirror') {
+        var s = faceSeg(e.x, e.z, ang, half);
+        faces.push({ a: s.a, b: s.b, normal: s.normal, type: 'mirror', ref: e });
+      } else if (e.type === 'screen') {
+        var s2 = faceSeg(e.x, e.z, ang + Math.PI / 2, half); // 광축에 수직으로 세움
+        faces.push({ a: s2.a, b: s2.b, normal: s2.normal, type: 'screen', ref: e });
+      } else if (e.type === 'lens') {
+        // 렌즈 평면: angle=0 이면 z축 평행(세로), 광축 = +x
+        var axis = rot(v(1, 0), ang);
+        var plane = faceSeg(e.x, e.z, ang + Math.PI / 2, half);
+        var f = e.f != null ? e.f : LENS_F[e.kind || 'convex'];
+        faces.push({
+          a: plane.a, b: plane.b, normal: axis, type: 'lens',
+          lens: { center: v(e.x, e.z), axis: axis, f: f }, ref: e
+        });
+      } else if (e.type === 'glassface') {
+        // 단일 굴절 경계(스넬 테스트용). normal +쪽 = nPlus, −쪽 = nMinus
+        var g = faceSeg(e.x, e.z, ang, half);
+        faces.push({
+          a: g.a, b: g.b, normal: g.normal, type: 'refract',
+          nPlus: e.nPlus != null ? e.nPlus : IOR.air,
+          nMinus: e.nMinus != null ? e.nMinus : IOR.glass, ref: e
+        });
+      } else if (e.type === 'prism' || e.type === 'water_tri' || e.type === 'glass_tri') {
+        // 정삼각형 3변 = 굴절면 3개 (안=유리/물, 밖=공기)
+        var R = e.size != null ? e.size : 0.09;      // 외접원 반지름
+        var nIn = e.n != null ? e.n : (e.type === 'water_tri' ? IOR.water : IOR.glass);
+        var verts = [];
+        for (var k = 0; k < 3; k++) {
+          var a0 = ang + Math.PI / 2 + k * (2 * Math.PI / 3); // 꼭지 위 기본
+          verts.push(v(e.x + R * Math.cos(a0), e.z + R * Math.sin(a0)));
+        }
+        var cen = v(e.x, e.z);
+        for (var k2 = 0; k2 < 3; k2++) {
+          var p0 = verts[k2], p1 = verts[(k2 + 1) % 3];
+          var mid = v((p0.x + p1.x) / 2, (p0.z + p1.z) / 2);
+          var outward = norm(sub(mid, cen));  // 바깥 법선
+          faces.push({
+            a: p0, b: p1, normal: outward, type: 'refract',
+            nPlus: IOR.air, nMinus: nIn, ref: e, prism: true
+          });
+        }
+      }
+    }
+    return faces;
+  }
+
+  // ── 반직선 vs 선분 교차 (t>eps 최근접) ──
+  function raySegHit(o, d, a, b) {
+    var e1 = sub(b, a);          // 선분 방향
+    var denom = d.x * e1.z - d.z * e1.x;
+    if (Math.abs(denom) < EPS) return null; // 평행
+    var diff = sub(a, o);
+    var t = (diff.x * e1.z - diff.z * e1.x) / denom;  // 광선 파라미터
+    var u = (diff.x * d.z - diff.z * d.x) / denom;    // 선분 파라미터
+    if (t > HIT_EPS && u >= -1e-9 && u <= 1 + 1e-9) {
+      return { t: t, point: v(o.x + d.x * t, o.z + d.z * t) };
+    }
+    return null;
+  }
+
+  function inBounds(p, bd) {
+    return p.x >= bd.xmin - 1e-6 && p.x <= bd.xmax + 1e-6 &&
+           p.z >= bd.zmin - 1e-6 && p.z <= bd.zmax + 1e-6;
+  }
+
+  // ── 핵심: traceRay ──
+  // origin, dir, elements[], opts{ maxBounce, bounds, dispersionN }
+  // → { segments:[{from,to,kind}], hit:{screen 도달점|null}, bounces }
+  function traceRay(origin, dir, elements, opts) {
+    opts = opts || {};
+    var maxB = opts.maxBounce != null ? opts.maxBounce : MAX_BOUNCE;
+    var bd = opts.bounds || DEFAULT_BOUNDS;
+    var faces = compileFaces(elements || []);
+    var segments = [];
+    var o = v(origin.x, origin.z);
+    var d = norm(dir);
+    var hitScreen = null;
+    var bounces = 0;
+
+    for (var b = 0; b <= maxB; b++) {
+      // 최근접 면
+      var best = null, bestFace = null;
+      for (var i = 0; i < faces.length; i++) {
+        var h = raySegHit(o, d, faces[i].a, faces[i].b);
+        if (h && (!best || h.t < best.t)) { best = h; bestFace = faces[i]; }
+      }
+      if (!best) {
+        // 면 없음 → 경계까지(또는 FAR)
+        segments.push({ from: o, to: v(o.x + d.x * FAR, o.z + d.z * FAR), kind: 'exit' });
+        break;
+      }
+      var kind = 'ray';
+      if (bestFace.type === 'screen') kind = 'screen';
+      segments.push({ from: o, to: best.point, kind: kind });
+
+      if (bestFace.type === 'screen') { hitScreen = best.point; break; }
+
+      // 상호작용
+      if (bestFace.type === 'mirror') {
+        d = reflect(d, bestFace.normal);
+      } else if (bestFace.type === 'lens') {
+        d = thinLens(d, best.point, bestFace.lens);
+      } else if (bestFace.type === 'refract') {
+        // 진행방향과 법선 부호로 n1→n2 결정
+        var facing = dot(d, bestFace.normal);
+        var n1, n2, nrm;
+        if (facing < 0) { // +쪽에서 진입
+          n1 = bestFace.nPlus; n2 = bestFace.nMinus; nrm = bestFace.normal;
+        } else {          // −쪽(안)에서 진출
+          n1 = bestFace.nMinus; n2 = bestFace.nPlus; nrm = mul(bestFace.normal, -1);
+        }
+        if (bestFace.prism && opts.dispersionN != null) {
+          // 프리즘 색 분산: 유리쪽 굴절률 오버라이드
+          if (facing < 0) n2 = opts.dispersionN; else n1 = opts.dispersionN;
+        }
+        var r = snell(d, nrm, n1, n2);
+        d = r.dir;
+      }
+      bounces++;
+      o = add(best.point, mul(d, HIT_EPS * 2)); // 재교차 방지 전진
+      if (!inBounds(o, bd)) {
+        segments.push({ from: o, to: v(o.x + d.x * FAR, o.z + d.z * FAR), kind: 'exit' });
+        break;
+      }
+    }
+    return { segments: segments, hit: hitScreen, bounces: bounces };
+  }
+
+  // ── 프리즘 분산: 백색광 → 7색 traceRay ──
+  function prismSpectrum(origin, dir, elements, opts) {
+    opts = opts || {};
+    var out = [];
+    for (var i = 0; i < PRISM_N.length; i++) {
+      var res = traceRay(origin, dir, elements,
+        Object.assign({}, opts, { dispersionN: PRISM_N[i].n }));
+      var last = res.segments[res.segments.length - 1];
+      var outDir = norm(sub(last.to, last.from));
+      out.push({ color: PRISM_N[i].key, ko: PRISM_N[i].ko, n: PRISM_N[i].n,
+                 result: res, exitDir: outDir, exitAngle: angleOf(outDir) });
+    }
+    return out;
+  }
+
+  var API = {
+    IOR: IOR, PRISM_N: PRISM_N, LENS_F: LENS_F, LENS_H_MAX: LENS_H_MAX,
+    MAX_BOUNCE: MAX_BOUNCE,
+    v: v, add: add, sub: sub, mul: mul, dot: dot, len: len, norm: norm,
+    perp: perp, rot: rot, deg: deg, rad: rad,
+    angleFromNormal: angleFromNormal, angleOf: angleOf,
+    reflect: reflect, snell: snell, criticalAngle: criticalAngle,
+    thinLens: thinLens, compileFaces: compileFaces, raySegHit: raySegHit,
+    traceRay: traceRay, prismSpectrum: prismSpectrum
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  if (typeof window !== 'undefined') window.KLight = API;
+})();
+</script>
+
+<!-- P2 렌더 어댑터(광학대·소자 3D·광선 3안)는 다음 페이즈에서 증축 -->
+
+</body>
+</html>
