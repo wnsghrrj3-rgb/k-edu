@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>애니메이션 공방 | 케이아트</title>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+<script src="/kedu_collect.js"></script>
 <style id="kedu-title-font">/* 케이에듀 제목 폰트 토큰 (학교안심 모험가) — v3 표준 */
 @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
 :root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
@@ -147,9 +148,96 @@
              fps:function(){return fps;}, mode:function(){return mode;} };
   }
 
+  /* ── 미션 9종 (데이터 = 학년칸 3×3) ──
+     미션 = 권장 장수 + 각 장 안내. 완성 = 권장 장수만큼 각 장에 그림이 있음.
+     needGuide: 겹쳐보기 참조가 특히 중요한 미션(걷기) 표시. */
+  var MISSIONS = [
+    { id:'ball',   grade:'1-2', title:'공 튀기기', frames:3, fps:6,
+      hint:'3장이면 공이 통통 튑니다!',
+      guides:['화면 위쪽에 동그란 공','바닥에 닿아 납작해진 공','다시 위로 튀어오른 공'] },
+    { id:'blink',  grade:'1-2', title:'깜빡이는 별', frames:3, fps:5,
+      hint:'커졌다 작아지면 반짝여요',
+      guides:['활짝 빛나는 별','조금 작고 흐린 별','다시 활짝 빛나는 별'] },
+    { id:'frog',   grade:'1-2', title:'폴짝 개구리', frames:3, fps:6,
+      hint:'웅크리고 → 점프 → 착지',
+      guides:['웅크린 개구리','공중으로 뛰어오른 개구리','바닥에 착지한 개구리'] },
+    { id:'flower', grade:'3-4', title:'꽃 피어나기', frames:6, fps:5,
+      hint:'6장에 걸쳐 조금씩 자라게 그려요',
+      guides:['땅속 씨앗','뾰족 올라온 새싹','줄기와 잎','꽃봉오리','반쯤 핀 꽃','활짝 핀 꽃'] },
+    { id:'cloud',  grade:'3-4', title:'흘러가는 구름', frames:4, fps:4,
+      hint:'구름이 해를 지나 천천히 흘러가요',
+      guides:['왼쪽에 구름, 오른쪽에 해','조금 오른쪽으로 온 구름','해에 가까워진 구름','해를 지나는 구름'] },
+    { id:'candle', grade:'3-4', title:'흔들리는 촛불', frames:4, fps:6,
+      hint:'불꽃이 살랑살랑 흔들려요',
+      guides:['똑바로 선 불꽃','왼쪽으로 기운 불꽃','다시 똑바로 선 불꽃','오른쪽으로 기운 불꽃'] },
+    { id:'walk',   grade:'5-6', title:'걷기 사이클', frames:8, fps:8, needGuide:true,
+      hint:'겹쳐보기로 앞 장을 따라 그리면 자연스러워요',
+      guides:['오른발 앞으로(바닥 딛기)','몸이 가장 높이 뜬 순간','왼발이 지나가며','왼발 바닥 딛기',
+              '왼발 앞으로(바닥 딛기)','몸이 가장 높이 뜬 순간','오른발이 지나가며','오른발 바닥 딛기'] },
+    { id:'arc',    grade:'5-6', title:'포물선 튀는 공', frames:6, fps:8,
+      hint:'포물선을 그리며 점점 낮게 튀어요',
+      guides:['왼쪽 위에서 출발','내려오며 오른쪽으로','바닥에 닿아 눌림','튀어오르며','정점(조금 낮게)','다시 내려오기'] },
+    { id:'face',   grade:'5-6', title:'표정 바꾸기', frames:6, fps:5,
+      hint:'얼굴 윤곽은 그대로, 눈·입만 조금씩 바꿔요',
+      guides:['무표정한 얼굴','눈이 조금 커지고','입꼬리가 올라가며','미소','활짝 웃음','눈웃음까지'] }
+  ];
+  function findMission(id){ for(var i=0;i<MISSIONS.length;i++) if(MISSIONS[i].id===id) return MISSIONS[i]; return null; }
+  function missionsByGrade(g){ return MISSIONS.filter(function(m){return m.grade===g;}); }
+
+  function createMissionRun(M){
+    // filledArr[i] = i번 장에 그림이 있는가(렌더러가 픽셀 검사로 채움)
+    function status(filledArr){
+      filledArr = filledArr || [];
+      var have = 0;
+      for(var i=0;i<M.frames;i++) if(filledArr[i]) have++;
+      return { need:M.frames, have:have, done:have>=M.frames };
+    }
+    return { mission:M, status:status };
+  }
+
+  /* ── CRC32 + 무압축(store) zip 빌더 (라이브러리 0) ──
+     PNG 시퀀스 내보내기용. files=[{name, data:Uint8Array}] → zip Uint8Array. */
+  function crc32(bytes){
+    var T = crc32._t;
+    if(!T){ T=crc32._t=new Array(256);
+      for(var n=0;n<256;n++){ var c=n; for(var k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); T[n]=c>>>0; } }
+    var crc=0xFFFFFFFF;
+    for(var i=0;i<bytes.length;i++) crc=(crc>>>8)^T[(crc^bytes[i])&0xFF];
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+  function buildStoreZip(files){
+    var enc = (typeof TextEncoder!=='undefined') ? new TextEncoder()
+              : { encode:function(s){ var a=[]; for(var i=0;i<s.length;i++) a.push(s.charCodeAt(i)&0xFF); return new Uint8Array(a); } };
+    var chunks=[], central=[], offset=0;
+    function u16(n){ return [n&0xFF,(n>>8)&0xFF]; }
+    function u32(n){ return [n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>>24)&0xFF]; }
+    files.forEach(function(f){
+      var name=enc.encode(f.name), data=f.data, crc=crc32(data);
+      var lh=[].concat(u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),
+        u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0));
+      chunks.push(new Uint8Array(lh)); chunks.push(name); chunks.push(data);
+      var ch=[].concat(u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),
+        u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),
+        u32(0),u32(offset));
+      central.push(new Uint8Array(ch)); central.push(name);
+      offset += lh.length+name.length+data.length;
+    });
+    var cstart=offset, csize=0;
+    central.forEach(function(c){ csize+=c.length; });
+    var eocd=new Uint8Array([].concat(u32(0x06054b50),u16(0),u16(0),
+      u16(files.length),u16(files.length),u32(csize),u32(cstart),u16(0)));
+    var all=chunks.concat(central,[eocd]), total=0;
+    all.forEach(function(a){ total+=a.length; });
+    var out=new Uint8Array(total), p=0;
+    all.forEach(function(a){ out.set(a,p); p+=a.length; });
+    return out;
+  }
+
   var API = { MAX_FRAMES:MAX_FRAMES, MIN_FRAMES:MIN_FRAMES, clampFps:clampFps,
               createFrameStore:createFrameStore, onionLayers:onionLayers,
-              createPlayback:createPlayback };
+              createPlayback:createPlayback, MISSIONS:MISSIONS, findMission:findMission,
+              missionsByGrade:missionsByGrade, createMissionRun:createMissionRun,
+              crc32:crc32, buildStoreZip:buildStoreZip };
   if(typeof module!=='undefined' && module.exports){ module.exports = API; }
   if(typeof window!=='undefined'){ window.AnimLab = API; }
 })();
@@ -274,6 +362,60 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:80vw}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(4px)}
 
+/* 미션 가이드 밴드 */
+.guide-band{position:absolute;left:0;right:0;bottom:0;z-index:6;display:none;
+  background:linear-gradient(0deg,rgba(20,25,32,.90),rgba(20,25,32,.72) 70%,transparent);
+  color:#fff;padding:20px 16px 12px;font-size:14px;line-height:1.4;text-align:center;pointer-events:none}
+.guide-band.show{display:block}
+.guide-band .gstep{color:var(--accent);font-family:var(--kedu-title);margin-right:7px}
+.guide-band .gprog{display:block;margin-top:5px;font-size:12px;color:var(--mut)}
+
+/* 슬라이드 패널 공통 */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,13,18,.5);opacity:0;pointer-events:none;
+  transition:opacity .22s;z-index:40}
+.sheet-bg.show{opacity:1;pointer-events:auto}
+.panel{position:fixed;top:0;right:0;height:100%;width:340px;max-width:88vw;z-index:50;
+  background:linear-gradient(180deg,#232a34,#191e26);border-left:1px solid var(--hud-bd);
+  box-shadow:-16px 0 50px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;padding:18px 18px 20px;overflow-y:auto}
+.panel.show{transform:translateX(0)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.panel-head b{font-family:var(--kedu-title);font-size:18px}
+.xbtn{width:34px;height:34px;border:none;border-radius:10px;background:rgba(255,255,255,.06);
+  color:var(--mut);font-size:15px}
+.xbtn:hover{background:rgba(255,255,255,.12);color:var(--ink)}
+.panel-sub{font-size:12.5px;color:var(--mut);line-height:1.5;margin-bottom:14px}
+
+/* 학년 탭 */
+.grade-tabs{display:flex;gap:6px;margin-bottom:14px}
+.gt{flex:1;height:36px;border:1px solid var(--hud-bd);background:rgba(255,255,255,.04);
+  color:var(--mut);border-radius:10px;font-size:13px;transition:all .13s}
+.gt.on{border-color:var(--accent);color:var(--accent);background:rgba(255,155,199,.14)}
+.mlist{display:flex;flex-direction:column;gap:9px;flex:1}
+.mcard{text-align:left;border:1px solid var(--hud-bd);background:rgba(255,255,255,.04);
+  border-radius:13px;padding:12px 14px;transition:all .14s;position:relative}
+.mcard:hover{border-color:var(--accent);background:rgba(255,155,199,.09);transform:translateY(-1px)}
+.mcard.active{border-color:var(--accent);background:rgba(255,155,199,.14)}
+.mcard .mt{font-family:var(--kedu-title);font-size:15px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.mcard .mf{font-size:11px;color:var(--accent);background:rgba(255,155,199,.15);padding:1px 8px;border-radius:20px}
+.mcard .mh{font-size:12px;color:var(--mut);margin-top:5px;line-height:1.45}
+.mcard .mdone{position:absolute;top:12px;right:12px;font-size:13px;color:#12B886;display:none}
+.mcard.completed .mdone{display:block}
+.mfree{margin-top:14px}
+.mfree .pbtn{width:100%}
+
+/* 내보내기 항목 */
+.exp-item{display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  border:1px solid var(--hud-bd);background:rgba(255,255,255,.04);border-radius:13px;
+  padding:14px;margin-bottom:10px;transition:all .14s}
+.exp-item:hover{border-color:var(--accent);background:rgba(255,155,199,.09)}
+.exp-item:disabled{opacity:.45;cursor:not-allowed}
+.ei-ico{font-size:24px;flex-shrink:0}
+.ei-txt{display:flex;flex-direction:column;gap:2px}
+.ei-txt b{font-family:var(--kedu-title);font-size:14.5px}
+.ei-txt small{font-size:11.5px;color:var(--mut)}
+.exp-note{font-size:12px;color:var(--mut);line-height:1.5;margin-top:6px;min-height:18px}
+
 @media(max-width:640px){
   .dock{width:60px}
   .tool{width:44px;height:44px;font-size:18px}
@@ -286,7 +428,9 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 <div class="topbar">
   <div class="logo"><span class="kk">케이아트</span><span class="badge">애니 공방</span></div>
   <div class="tb-spacer"></div>
-  <div class="hint">그림을 그리고 → 장을 늘려가며 조금씩 바꾸면 → 움직입니다 ▶</div>
+  <button class="pbtn" id="missionBtn">🎯 오늘의 미션</button>
+  <button class="pbtn" id="exportBtn">⬇ 내보내기</button>
+  <div class="hint" style="margin-left:6px">조금씩 바꾸며 장을 늘리면 → 움직입니다 ▶</div>
 </div>
 
 <div class="main">
@@ -308,6 +452,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
       <canvas id="onion"></canvas>
       <canvas id="draw"></canvas>
       <div class="frame-badge" id="badge">1 / 1</div>
+      <div class="guide-band" id="guideBand"></div>
     </div>
   </div>
   <div class="side"></div>
@@ -332,6 +477,46 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 미션 패널 -->
+<div class="sheet-bg" id="missionBg"></div>
+<aside class="panel" id="missionPanel">
+  <div class="panel-head">
+    <b>🎯 오늘의 미션</b>
+    <button class="xbtn" id="missionClose">✕</button>
+  </div>
+  <p class="panel-sub">학년에 맞는 미션을 골라 그려보세요. 권장 장수를 다 채우면 완성!</p>
+  <div class="grade-tabs" id="gradeTabs">
+    <button class="gt on" data-g="1-2">1~2학년</button>
+    <button class="gt" data-g="3-4">3~4학년</button>
+    <button class="gt" data-g="5-6">5~6학년</button>
+  </div>
+  <div class="mlist" id="mlist"></div>
+  <div class="mfree"><button class="pbtn" id="freeBtn">✎ 자유롭게 그리기</button></div>
+</aside>
+
+<!-- 내보내기 시트 -->
+<div class="sheet-bg" id="exportBg"></div>
+<aside class="panel" id="exportPanel">
+  <div class="panel-head">
+    <b>⬇ 내보내기</b>
+    <button class="xbtn" id="exportClose">✕</button>
+  </div>
+  <p class="panel-sub">완성한 애니메이션을 저장해요.</p>
+  <button class="exp-item" id="expWebm">
+    <span class="ei-ico">🎬</span>
+    <span class="ei-txt"><b>동영상 (WebM)</b><small>움직이는 영상으로 — 발표·공유에 좋아요</small></span>
+  </button>
+  <button class="exp-item" id="expZip">
+    <span class="ei-ico">🖼️</span>
+    <span class="ei-txt"><b>그림 묶음 (PNG · zip)</b><small>장마다 낱장 그림으로 — 인쇄·편집에 좋아요</small></span>
+  </button>
+  <button class="exp-item" id="expBox">
+    <span class="ei-ico">📦</span>
+    <span class="ei-txt"><b>케이박스에 담기</b><small>내 작품 보관함에 저장</small></span>
+  </button>
+  <div class="exp-note" id="expNote"></div>
+</aside>
 
 <script>
 (function(){
@@ -427,6 +612,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     if(!drawing) return; drawing=false;
     drawCtx.globalCompositeOperation='source-over';
     commitToFrame();                  // 현재 프레임 픽셀 저장 + 썸네일 갱신
+    refreshMission();
   }
   function applyBrush(){
     if(tool==='eraser'){ drawCtx.globalCompositeOperation='destination-out'; drawCtx.fillStyle='#000'; }
@@ -440,7 +626,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   function loadFrame(){                // 스토어 현재 프레임 픽셀을 그리기 캔버스로
     var f=store.get(); var c=frameCanvas(f);
     drawCtx.clearRect(0,0,W,H); drawCtx.drawImage(c,0,0);
-    renderOnion(); renderBadge();
+    renderOnion(); renderBadge(); renderGuide();
   }
   function commitToFrame(){            // 그리기 캔버스 → 현재 프레임 픽셀 저장
     var f=store.get(); var c=frameCanvas(f); var cx=c.getContext('2d');
@@ -617,6 +803,180 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     toastEl.innerHTML=msg; toastEl.classList.add('show');
     clearTimeout(toast._t); toast._t=setTimeout(function(){ toastEl.classList.remove('show'); },2000);
   }
+
+  // ══ 미션 ══════════════════════════════════════════
+  var activeMission=null, missionRun=null, curGrade='1-2';
+  var guideBand=document.getElementById('guideBand');
+  var completedIds={};
+
+  function frameFilled(f){             // 프레임에 그림이 있는지(축소 스캔)
+    if(!pixMap[f.id]) return false;
+    var s=document.createElement('canvas'); s.width=48; s.height=32;
+    var g=s.getContext('2d'); g.drawImage(pixMap[f.id],0,0,48,32);
+    var d=g.getImageData(0,0,48,32).data;
+    for(var i=3;i<d.length;i+=4) if(d[i]>8) return true;
+    return false;
+  }
+  function missionStatus(){
+    if(!missionRun) return null;
+    var filled=[]; for(var i=0;i<store.count();i++) filled[i]=frameFilled(store.frameAt(i));
+    return missionRun.status(filled);
+  }
+  function renderGuide(){
+    if(!activeMission || play.isPlaying()){ guideBand.classList.remove('show'); return; }
+    var st=missionStatus(), cur=store.current(), M=activeMission;
+    var g = M.guides[cur] || '자유롭게 더 그려도 좋아요';
+    guideBand.innerHTML='<span class="gstep">'+(cur+1)+'장</span>'+g+
+      '<span class="gprog">'+st.have+' / '+st.need+' 장 완성'+
+      (st.done?' — 다 채웠어요! ▶ 재생해보세요':'')+'</span>';
+    guideBand.classList.add('show');
+  }
+  function refreshMission(){
+    if(!activeMission) return;
+    var st=missionStatus();
+    if(st.done && !completedIds[activeMission.id]){
+      completedIds[activeMission.id]=true;
+      toast('🎉 '+activeMission.title+' 완성! ▶ 재생하거나 내보내기 하세요');
+    }
+    renderGuide();
+  }
+  function selectMission(id){
+    var M=L.findMission(id); if(!M) return;
+    commitToFrame();
+    activeMission=M; missionRun=L.createMissionRun(M);
+    while(store.count()<M.frames){ if(!store.add().ok) break; }
+    store.setCurrent(0); loadFrame(); buildStrip();
+    play.setFps(M.fps); document.getElementById('fps').value=M.fps;
+    document.getElementById('fpsLbl').textContent=M.fps+' fps';
+    if(M.needGuide){ onionOn=true; document.getElementById('onionBtn').classList.add('on'); renderOnion(); }
+    refreshMission(); closeMission();
+    toast('미션: '+M.title+' — '+M.hint);
+  }
+  function clearMission(){
+    activeMission=null; missionRun=null; guideBand.classList.remove('show');
+    closeMission(); toast('자유 그리기로 바꿨어요');
+  }
+
+  var missionBg=document.getElementById('missionBg'), missionPanel=document.getElementById('missionPanel');
+  function buildMissionList(){
+    var box=document.getElementById('mlist'); box.innerHTML='';
+    L.missionsByGrade(curGrade).forEach(function(M){
+      var el=document.createElement('button');
+      el.className='mcard'+(activeMission&&activeMission.id===M.id?' active':'')+(completedIds[M.id]?' completed':'');
+      el.innerHTML='<div class="mt">'+M.title+' <span class="mf">'+M.frames+'장</span></div>'+
+        '<div class="mh">'+M.hint+'</div><span class="mdone">✓ 완성</span>';
+      el.addEventListener('click', function(){ selectMission(M.id); });
+      box.appendChild(el);
+    });
+  }
+  function openMission(){ buildMissionList(); missionBg.classList.add('show'); missionPanel.classList.add('show'); }
+  function closeMission(){ missionBg.classList.remove('show'); missionPanel.classList.remove('show'); }
+  document.getElementById('missionBtn').addEventListener('click', openMission);
+  document.getElementById('missionClose').addEventListener('click', closeMission);
+  missionBg.addEventListener('click', closeMission);
+  document.getElementById('freeBtn').addEventListener('click', clearMission);
+  document.getElementById('gradeTabs').addEventListener('click', function(e){
+    var b=e.target.closest('.gt'); if(!b) return;
+    curGrade=b.dataset.g;
+    [].forEach.call(this.children, function(c){ c.classList.toggle('on', c===b); });
+    buildMissionList();
+  });
+
+  // ══ 내보내기 ══════════════════════════════════════
+  var exportBg=document.getElementById('exportBg'), exportPanel=document.getElementById('exportPanel');
+  var expNote=document.getElementById('expNote');
+  function openExport(){
+    commitToFrame();
+    var n=store.count();
+    expNote.textContent = n+'장 · '+play.fps()+'fps 애니메이션을 내보냅니다.';
+    if(!supportsWebm()){ document.getElementById('expWebm').disabled=true; }
+    exportBg.classList.add('show'); exportPanel.classList.add('show');
+  }
+  function closeExport(){ exportBg.classList.remove('show'); exportPanel.classList.remove('show'); }
+  document.getElementById('exportBtn').addEventListener('click', openExport);
+  document.getElementById('exportClose').addEventListener('click', closeExport);
+  exportBg.addEventListener('click', closeExport);
+
+  function download(blob, name){
+    var u=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=u; a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ a.remove(); URL.revokeObjectURL(u); }, 3000);
+  }
+  function flatFrame(i){               // 종이 배경 합성한 한 장 (내보내기·썸네일용)
+    var ec=document.createElement('canvas'); ec.width=W; ec.height=H;
+    var g=ec.getContext('2d'); g.fillStyle='#FCFAF5'; g.fillRect(0,0,W,H);
+    g.drawImage(frameCanvas(store.frameAt(i)),0,0);
+    return ec;
+  }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+
+  function supportsWebm(){
+    return typeof MediaRecorder!=='undefined' &&
+      (MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ||
+       MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ||
+       MediaRecorder.isTypeSupported('video/webm'));
+  }
+  function webmMime(){
+    var t=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+    for(var i=0;i<t.length;i++) if(MediaRecorder.isTypeSupported(t[i])) return t[i];
+    return 'video/webm';
+  }
+  async function exportWebm(){
+    closeExport(); toast('🎬 영상 만드는 중…');
+    var ec=document.createElement('canvas'); ec.width=W; ec.height=H;
+    var g=ec.getContext('2d'); var stream=ec.captureStream();
+    var chunks=[], rec=new MediaRecorder(stream,{mimeType:webmMime()});
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
+    var done=new Promise(function(res){ rec.onstop=res; });
+    rec.start();
+    var spf=1000/play.fps(), n=store.count(), loops=3;
+    for(var l=0;l<loops;l++){
+      for(var i=0;i<n;i++){
+        g.fillStyle='#FCFAF5'; g.fillRect(0,0,W,H);
+        g.drawImage(frameCanvas(store.frameAt(i)),0,0);
+        await sleep(spf);
+      }
+    }
+    rec.stop(); await done;
+    download(new Blob(chunks,{type:'video/webm'}), animName()+'.webm');
+    toast('🎬 영상을 저장했어요');
+  }
+  async function exportZip(){
+    closeExport(); toast('🖼️ 그림 묶는 중…');
+    var files=[], n=store.count();
+    for(var i=0;i<n;i++){
+      var ec=flatFrame(i);
+      var blob=await new Promise(function(r){ ec.toBlob(r,'image/png'); });
+      var buf=new Uint8Array(await blob.arrayBuffer());
+      files.push({ name:'frame_'+String(i+1).padStart(2,'0')+'.png', data:buf });
+    }
+    var zip=L.buildStoreZip(files);
+    download(new Blob([zip],{type:'application/zip'}), animName()+'_frames.zip');
+    toast('🖼️ 그림 묶음을 저장했어요 ('+n+'장)');
+  }
+  function bestThumb(){                // 그림이 있는 첫 장의 썸네일
+    for(var i=0;i<store.count();i++) if(frameFilled(store.frameAt(i))){
+      var ec=flatFrame(i), t=document.createElement('canvas'); t.width=160; t.height=110;
+      t.getContext('2d').drawImage(ec,0,0,160,110); return t.toDataURL('image/png');
+    }
+    return flatFrame(0).toDataURL('image/png');
+  }
+  function animName(){ return activeMission? ('animlab_'+activeMission.id) : 'animlab_free'; }
+  function exportBox(){
+    closeExport();
+    var ok = (window.KEDU && KEDU.collect) && KEDU.collect({
+      kind:'artwork', app:'animlab',
+      id: activeMission? activeMission.id : ('free_'+Date.now()),
+      title: activeMission? activeMission.title : '자유 애니메이션',
+      meta:{ frames:store.count(), fps:play.fps(), mode:play.mode(),
+             grade: activeMission? activeMission.grade : null },
+      thumb: bestThumb(), at:Date.now()
+    });
+    toast(ok ? '📦 케이박스에 담았어요' : '케이박스에 담지 못했어요 (저장 공간 확인)');
+  }
+  document.getElementById('expWebm').addEventListener('click', function(){ if(!this.disabled) exportWebm(); });
+  document.getElementById('expZip').addEventListener('click', exportZip);
+  document.getElementById('expBox').addEventListener('click', exportBox);
 
   // ── init
   buildStrip(); loadFrame(); renderBadge();
