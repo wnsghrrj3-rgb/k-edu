@@ -187,6 +187,27 @@
   #lensTip:not(.hide){pointer-events:auto}
   #lens.hidden{display:none}
 
+  /* ── §BRANCH P2. 타임라인 바(되돌리기·스크럽) — 렌즈 하단, 접힘/low 시 자동 숨김 ── */
+  #timebar{margin-top:9px}
+  #tbTrack{position:relative;height:26px;border-radius:8px;background:rgba(10,14,20,.55);
+    border:1px solid var(--hudline);cursor:pointer;margin-bottom:6px;touch-action:none}
+  #tbFill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:8px 0 0 8px;
+    background:rgba(155,123,245,.20);pointer-events:none}
+  #tbHandle{position:absolute;top:-3px;left:0;width:4px;height:32px;border-radius:3px;
+    background:var(--purple);box-shadow:0 0 8px rgba(155,123,245,.85);
+    transform:translateX(-2px);pointer-events:none}
+  .tbMk{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:12px;
+    pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+  #tbCtrl{display:flex;align-items:center;gap:7px}
+  #tbResume{font-family:'Gowun Dodum';font-size:11.5px;border-radius:999px;padding:4px 12px;
+    cursor:pointer;color:#fff;background:rgba(99,230,190,.18);border:1px solid rgba(99,230,190,.5);display:none}
+  #tbResume.on{display:inline-block}
+  #tbFork{font-family:'Gowun Dodum';font-size:11.5px;border-radius:999px;padding:4px 12px;
+    cursor:pointer;color:#fff;background:rgba(255,138,92,.16);border:1px solid rgba(255,138,92,.45);display:none}
+  #tbFork.on{display:inline-block}
+  #tbTime{font-family:'Gowun Dodum';font-size:10.5px;color:#9fb3c8;margin-left:auto;white-space:nowrap}
+  #lens.scrubbing #tbTrack{border-color:rgba(155,123,245,.7);box-shadow:0 0 0 1px rgba(155,123,245,.35)}
+
   @media (max-width:560px){
     #panel{top:auto;bottom:196px;padding:9px 12px;min-width:0}
     #temp{font-size:22px}
@@ -240,6 +261,14 @@
       <button class="lch mass" data-ch="mass">무게</button>
     </div>
     <canvas id="lensCanvas"></canvas>
+    <div id="timebar">
+      <div id="tbTrack"><div id="tbFill"></div><div id="tbHandle"></div></div>
+      <div id="tbCtrl">
+        <button id="tbResume">▶ 지금으로</button>
+        <button id="tbFork">🔀 여기서 갈라지기</button>
+        <span id="tbTime"></span>
+      </div>
+    </div>
   </div>
   <div id="lensTip" class="hide"></div>
 </div>
@@ -1357,6 +1386,7 @@ function needVessel(el){
 }
 
 function onShelf(s, el){
+  if(!canInteract()) return;
   if(!needVessel(el)) return;
   const c=activeSt().contents;
   if(s.id==='salt'||s.id==='sugar'||s.id==='sand'){
@@ -1383,6 +1413,7 @@ function onShelf(s, el){
 }
 
 function onEquip(e, el){
+  if(!canInteract()) return;
   const st=activeSt(), c=st.contents, S=ST3D[ACTIVE];
   switch(e.id){
     case 'beaker': case 'flask': case 'dish': {
@@ -1462,6 +1493,7 @@ function mountVessel(stIdx, type){
 
 /* ═════════ 버튼 ═════════ */
 function setFire(on){
+  if(!canInteract()) return;
   if(!lampPlaced) return;
   lit=on;
   world.act('ignite',{on});
@@ -1472,6 +1504,7 @@ function setFire(on){
 fireBtn.addEventListener('click',()=>setFire(!lit));
 
 stirBtn.addEventListener('click',()=>{
+  if(!canInteract()) return;
   const c=activeSt().contents;
   if(!activeSt().vessel){ toast('저을 용기가 없어요', true); return; }
   world.act('stir',{st:ACTIVE, on:!c.stir});
@@ -1480,6 +1513,7 @@ stirBtn.addEventListener('click',()=>{
 });
 
 lidBtn.addEventListener('click',()=>{
+  if(!canInteract()) return;
   const st=activeSt();
   if(st.lid){ world.act('removeLid',{st:ACTIVE}); toast('뚜껑을 열었어요'); }
   else { world.act('placeLid',{st:ACTIVE}); toast('다시 덮었어요'); }
@@ -1496,6 +1530,7 @@ function syncBtns(){
 }
 
 function resetAll(){
+  if(scrubbing) resumeLive();   // 되돌리기 중 리셋 = 라이브 복귀 후 새 실험
   world = K.createWorld(OPTS);
   lit=false; lampPlaced=false; sandOwner=-1;
   LAMP.visible=false; LAMP.position.copy(LAMP_HOME);
@@ -1626,6 +1661,7 @@ function canPour(i){
   return world.stations[i].vessel && world.stations[other].vessel && srcLiquid(i)>0.03 && !world.stations[i].lid;
 }
 function togglePour(i){
+  if(!canInteract()) return;
   if(pour.phase==='idle'){ pour.from=i; pour.to=1-i; pour.phase='pouring'; }
   else if(pour.from===i){ pour.phase = pour.phase==='pouring' ? 'returning' : 'pouring'; }
 }
@@ -1944,6 +1980,78 @@ const LENS_W_DESK = 300, LENS_H = window.innerWidth <= 560 ? 130 : 150;
 if (GRADE === 'low') lensEl.classList.add('hidden');           // 저학년: 렌즈 숨김(큰 온도계만)
 if (GRADE === 'mid') document.getElementById('lensChans').style.display = 'none'; // 중학년: temp 단일
 
+/* ═════════ §BRANCH P2. 타임라인 스크럽(되돌리기) — replayTo(τ)로 world 스왑, step 정지 ═════════ */
+const FREE_BRANCH = new URLSearchParams(location.search).get('free_branch')==='1';
+const timebar=document.getElementById('timebar'), tbTrack=document.getElementById('tbTrack'),
+      tbFill=document.getElementById('tbFill'), tbHandle=document.getElementById('tbHandle'),
+      tbResume=document.getElementById('tbResume'), tbFork=document.getElementById('tbFork'),
+      tbTime=document.getElementById('tbTime');
+let scrubbing=false, liveWorld=null, scrubTotal=0, scrubTau=0, _tbDrag=false, _tbMkEls=[];
+const _fmtT = s => s.toFixed(1)+'s';
+
+// 조작 가드: 되돌리기(스크럽) 중엔 관찰만 — 조작 진입 함수 초입에서 호출
+function canInteract(){
+  if(scrubbing){ toast('되돌리기 중엔 관찰만 — ▶ 지금으로 눌러 돌아오세요', true); return false; }
+  return true;
+}
+
+function renderTimebar(){
+  const total = scrubbing ? scrubTotal : world.t;
+  if(GRADE==='low' || total<0.5){ timebar.style.display='none'; return; }
+  timebar.style.display='block';
+  const R=(scrubbing?liveWorld:world).recorder, mks=R?R.markers:[];
+  if(_tbMkEls.length!==mks.length){                    // 마커 개수 변할 때만 재생성(MK_ICON/MK_MSG 재사용)
+    _tbMkEls.forEach(e=>e.remove()); _tbMkEls=[];
+    mks.forEach(mk=>{ const e=document.createElement('span'); e.className='tbMk';
+      e.textContent=MK_ICON[mk.type]||'•'; e.title=MK_MSG[mk.type]||''; tbTrack.appendChild(e); _tbMkEls.push(e); });
+  }
+  for(let i=0;i<mks.length;i++){ const p=total>0?Math.min(1,mks[i].t/total):0;
+    _tbMkEls[i].style.left=(p*100).toFixed(1)+'%'; }
+  const cur = scrubbing ? scrubTau : total;
+  const hp = total>0 ? Math.min(1,cur/total) : 1;
+  tbHandle.style.left=(hp*100).toFixed(1)+'%';
+  tbFill.style.width=(hp*100).toFixed(1)+'%';
+  tbTime.textContent = scrubbing ? (_fmtT(scrubTau)+' / '+_fmtT(total)) : _fmtT(total);
+}
+
+function enterScrub(){
+  if(scrubbing) return true;
+  if(typeof pour!=='undefined' && pour.phase!=='idle'){ toast('물을 다 따른 뒤에 되돌릴 수 있어요',true); return false; }
+  if(world.t<0.5){ toast('아직 되돌릴 게 없어요',true); return false; }
+  liveWorld=world; scrubTotal=world.t; scrubTau=scrubTotal; scrubbing=true;
+  lensEl.classList.add('scrubbing');
+  tbResume.classList.add('on');
+  if(GRADE==='high') tbFork.classList.add('on');        // 분기(🔀)는 고학년만 · P3
+  return true;
+}
+function scrubTo(tau){
+  if(!scrubbing && !enterScrub()) return;
+  scrubTau=Math.max(0, Math.min(scrubTotal, tau));
+  world=K.replayTo(OPTS, liveWorld.actionLog, scrubTau); // 전역 world 스왑 → 렌더가 그 시점 상태를 그림
+  renderTimebar();
+}
+function resumeLive(){
+  if(!scrubbing) return;
+  world=liveWorld; liveWorld=null; scrubbing=false;
+  lensEl.classList.remove('scrubbing');
+  tbResume.classList.remove('on'); tbFork.classList.remove('on');
+  renderTimebar();
+}
+function tbTauFromEvent(ev){
+  const r=tbTrack.getBoundingClientRect();
+  const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left;
+  return Math.max(0, Math.min(1, cx/r.width)) * (scrubbing?scrubTotal:world.t);
+}
+tbTrack.addEventListener('pointerdown', ev=>{ ev.preventDefault();
+  if(!enterScrub()) return; _tbDrag=true;
+  try{ tbTrack.setPointerCapture(ev.pointerId); }catch(e){}
+  scrubTo(tbTauFromEvent(ev)); });
+tbTrack.addEventListener('pointermove', ev=>{ if(_tbDrag) scrubTo(tbTauFromEvent(ev)); });
+tbTrack.addEventListener('pointerup',   ()=>{ _tbDrag=false; });
+tbTrack.addEventListener('pointercancel',()=>{ _tbDrag=false; });
+tbResume.addEventListener('click', resumeLive);
+// tbFork(🔀 여기서 갈라지기)는 P3에서 분기 로직 연결 예정
+
 function lensResize(){
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const cssW = lensEl.clientWidth - 22; // padding 보정
@@ -2123,7 +2231,7 @@ function animate(){
 
   // pour: 원본 pour_test 연출 승계 — 기울임 트윈 + 들어올림·타겟 쪽 이동 + 물 수평 유지
   let cv=null, rr=0;
-  if(pour.phase!=='idle'){
+  if(!scrubbing && pour.phase!=='idle'){
     const S=ST3D[pour.from], V=VESSELS[S.vesselType];
     const dir = ST_X[pour.to]>ST_X[pour.from] ? 1 : -1;   // 따르는 방향 (+x / −x)
     const vgrp=S.vg[S.vesselType], L=S.liq[S.vesselType];
@@ -2163,16 +2271,18 @@ function animate(){
   }
   renderStream(cv, rr, t);
 
-  // 엔진 전진 (1층 — 물리는 전부 여기)
-  world.step(dt);
+  // 엔진 전진 (1층 — 물리는 전부 여기). 스크럽(되돌리기) 중엔 정지 — replayTo(τ) 스왑 상태를 그대로 표시.
+  if(!scrubbing){
+    world.step(dt);
 
-  // 미션 판정·예측·성공 (P4 — 순수 러너 위 UI 트리거만)
-  if(missionRun){
-    let pred; if(!predictOpen && (pred=missionRun.pollPrediction())) showPredict(pred);
-    const wasDone=missionRun.done; missionRun.tick(dt);
-    const fill=$m('goalBar').querySelector('.gProgFill');
-    if(fill) fill.style.width=(missionRun.progress()*100).toFixed(0)+'%';
-    if(missionRun.done && !wasDone){ const done=curMission; endMissionKeepBanner(); showSuccess(done); }
+    // 미션 판정·예측·성공 (P4 — 순수 러너 위 UI 트리거만)
+    if(missionRun){
+      let pred; if(!predictOpen && (pred=missionRun.pollPrediction())) showPredict(pred);
+      const wasDone=missionRun.done; missionRun.tick(dt);
+      const fill=$m('goalBar').querySelector('.gProgFill');
+      if(fill) fill.style.width=(missionRun.progress()*100).toFixed(0)+'%';
+      if(missionRun.done && !wasDone){ const done=curMission; endMissionKeepBanner(); showSuccess(done); }
+    }
   }
 
   // 스테이션 렌더 바인딩
@@ -2211,7 +2321,7 @@ function animate(){
 
   // HUD (8Hz 갱신)
   hudAcc+=dt;
-  if(hudAcc>0.12){ hudAcc=0; updateHUD(); syncBtns(); drawLens(); }
+  if(hudAcc>0.12){ hudAcc=0; updateHUD(); syncBtns(); drawLens(); renderTimebar(); }
 
   // 렌즈 탭 회상 → 용기 scale 펄스 (§7-3, 1→1.04→1 · 0.6s)
   if(lensPulse){
