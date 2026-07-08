@@ -62,9 +62,47 @@
     padding:5px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
   #hint.show{opacity:1}
 
-  @media(max-width:560px){
-    #panel{width:170px;right:8px} #brand{font-size:15px}
-  }
+  /* ── P3 미션 UI ── */
+  #mBtn{position:fixed;left:16px;bottom:16px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#0d130c;background:var(--leaf);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(95,191,106,.35)}
+  #mBanner{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:21;max-width:88vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--leaf);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide,#diag.hide,#lensPanel.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(8,12,8,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#141d13;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ,#dgQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt,.dgOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right,.dgOpt.right{background:rgba(95,191,106,.25);border-color:var(--leaf)}
+  .mpOpt.wrong,.dgOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain,#dgExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;
+    background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#0d130c;background:var(--leaf);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:17px;text-align:center;margin-bottom:16px}
+
+  /* 데이터 렌즈(키-시간 곡선) */
+  #lensBtn{position:fixed;right:16px;bottom:16px;z-index:21;font-family:'Jua';font-size:13px;color:var(--ink);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 14px;cursor:pointer}
+  #lensPanel{position:fixed;right:16px;bottom:58px;z-index:21;width:280px;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:12px;backdrop-filter:blur(8px)}
+  #lensPanel h4{margin:0 0 8px;font-family:'Jua';font-size:13px}
+  #lensCanvas{width:100%;height:150px;display:block;border-radius:8px;background:rgba(0,0,0,.25)}
+  #lensLegend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--sub)}
+  #lensLegend span{display:flex;align-items:center;gap:4px}
+  #lensLegend i{width:10px;height:3px;border-radius:2px;display:inline-block}
+
+
 </style>
 </head>
 <body>
@@ -555,7 +593,176 @@ bp.onclick=()=>setPlay(true,false); bpa.onclick=()=>setPlay(false,false); bf.onc
 if(GRADE==='low'){ stations.forEach((s,i)=>{ if(i>0) s.group.visible=false; }); }
 else if(GRADE==='mid'){ stations.forEach((s,i)=>{ if(i>1) s.group.visible=false; }); }
 
-/* ═════════ 루프 ═════════ */
+/* ═══════════════════════════════════════════════════════════════
+   P3 미션 3종 + ★와우 웃자람 예측 + 데이터 렌즈 (SPEC_SEED §4)
+   판정은 순수(KSeed.tallestPot·diagnose·stageOf). UI만 배선.
+   ═══════════════════════════════════════════════════════════════ */
+const MISSIONS = {
+  'S-1': { icon:'🌱', title:'새싹을 틔워라',
+    brief:'물과 온도를 맞춰 씨앗에서 새싹이 나오게 해보세요.',
+    hint:'화분을 탭해 물을 주고, 온도를 20~28℃로 맞춰요.',
+    evalFn:(sts)=> sts.some(s=>s.group.visible && s.pot.progress>=3) },
+  'S-2': { icon:'📏', title:'가장 크게 키워라',
+    brief:'네 화분의 조건을 다르게 줘서 어떤 게 가장 크게 자라는지 찾아요.',
+    hint:'물·빛·온도를 화분마다 다르게! 꽃까지 피우면 성공.',
+    evalFn:(sts)=> sts.some(s=>s.group.visible && s.pot.progress>=17),
+    predict:{ q:'☂️ 빛을 안 준(그늘) 화분은 어떻게 될까요?',
+      opts:['자라지 않는다','오히려 더 길게 자란다 (그런데 약하고 노랗게)'], answer:1,
+      explain:'빛이 없으면 식물은 빛을 찾아 무리해서 길게 자라요. 그래서 길지만 약하고 노랗답니다 — 콩나물이 하얗고 긴 게 바로 이 때문이에요(웃자람). 예측이 ①이었다면, 진짜 식물은 예상과 다르게 움직인 거예요!' } },
+  'S-3': { icon:'🥀', title:'왜 시들었을까',
+    brief:'시든 화분을 탭해서 무엇 때문에 힘들었는지 맞혀보세요.',
+    hint:'잎 색과 상태가 힌트예요. 화분을 탭하면 진단 카드가 나와요.',
+    diagnose:true },
+};
+const GRADE_MISSIONS = { low:['S-1'], mid:['S-1','S-2'], high:['S-1','S-2','S-3'] };
+const DIAG_LABEL = { drought:'물이 부족했어요 (가뭄)', overwater:'물을 너무 많이 줬어요 (과습)',
+  cold:'너무 추웠어요 (저온)', healthy:'건강해요' };
+let activeMission=null, missionCleared=false, predictAnswered=false, diagDone=0;
+
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>🌱 씨앗 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 재배하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">키워보기 🌱</button></div></div>
+   <div id="diag" class="movl hide"><div class="mcard"><div id="dgQ"></div>
+     <div id="dgOpts"></div><div id="dgExplain" class="hide"></div>
+     <button class="mcBtn hide" id="dgGo">다음</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 재배</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  document.getElementById('dgGo').onclick=()=>document.getElementById('diag').classList.add('hide');
+  renderList();
+}
+function renderList(){
+  const list=document.getElementById('mList'); list.innerHTML='';
+  GRADE_MISSIONS[GRADE].forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); });
+}
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear','diag'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){
+  activeMission=id; missionCleared=false; predictAnswered=false; diagDone=0;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide');
+    if(id==='S-3') setupDiagnose();
+    else resetGarden();
+    if(m.predict) showPredict();
+  } else bn.classList.add('hide');
+}
+// 미션 재시작 시 화분 초기화(씨앗부터)
+function resetGarden(){
+  stations.forEach(st=>{ st.pot=K.createPot({}); st.hist=[]; updatePlant(st); });
+  elapsedDays=0; setPlay(true,false);
+}
+// S-3: 4화분을 서로 다른 스트레스로 세팅(가뭄·과습·저온·건강)
+function setupDiagnose(){
+  const setups=[ {water:0.04,progress:11}, {water:0.98,progress:11}, {temp:4,progress:11}, {water:0.6,temp:22,light:0.9,progress:14} ];
+  stations.forEach((st,i)=>{ const s=setups[i]||setups[3];
+    st.pot=K.createPot(s);
+    for(let t=0;t<8;t+=0.1) K.grow(st.pot,0.1);  // 시든 상태 성숙(가뭄 화분 wilted 누적)
+    // grow가 바꾼 조건값 복원 → 진단 원인 유지(과습·저온이 물 감소로 사라지지 않게)
+    if(s.water!=null) st.pot.water=s.water;
+    if(s.temp!=null) st.pot.temp=s.temp;
+    st.diagOK=false; updatePlant(st); });
+  setPlay(false,false);
+}
+function showDiag(st){
+  const box=document.getElementById('diag'); box.classList.remove('hide');
+  const truth=K.diagnose(st.pot);
+  document.getElementById('dgQ').textContent=(st.idx+1)+'번 화분이 힘든 이유는?';
+  const opts=document.getElementById('dgOpts'); opts.innerHTML='';
+  const ex=document.getElementById('dgExplain'), go=document.getElementById('dgGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  const choices=['drought','overwater','cold','healthy'];
+  choices.forEach(c=>{ const b=document.createElement('button'); b.className='dgOpt'; b.textContent=DIAG_LABEL[c];
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      const right=(c===truth);
+      b.classList.add(right?'right':'wrong');
+      if(!right) [...opts.children].find(x=>x.textContent===DIAG_LABEL[truth]).classList.add('right');
+      ex.textContent = right ? '맞았어요! 잎 색과 상태가 그 증거였죠.' : '아쉬워요 — 정답은 「'+DIAG_LABEL[truth]+'」예요.';
+      ex.classList.remove('hide'); go.classList.remove('hide');
+      if(right && !st.diagOK){ st.diagOK=true; diagDone++;
+        const need=stations.filter(s=>K.diagnose(s.pot)!=='healthy').length;
+        if(diagDone>=need){ setTimeout(()=>{ document.getElementById('diag').classList.add('hide'); showCleared(); },700); } }
+    };
+    opts.appendChild(b); });
+}
+function showPredict(){
+  const m=MISSIONS[activeMission]; if(!m.predict) return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ predictAnswered=true; opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); });
+}
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onGrown(){
+  if(!activeMission||missionCleared||MISSIONS[activeMission].diagnose) return;
+  if(MISSIONS[activeMission].evalFn(stations)){ missionCleared=true; showCleared(); }
+}
+// S-3 진단 탭(기존 선택 리스너와 공존 — S-3일 때만 진단 카드)
+renderer.domElement.addEventListener('pointerdown',(e)=>{
+  if(activeMission!=='S-3') return;
+  const p=new THREE.Vector2((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
+  const r=new THREE.Raycaster(); r.setFromCamera(p,camera);
+  const hits=r.intersectObjects(stations.map(s=>s.group),true);
+  if(hits.length){ let g=hits[0].object; while(g.parent&&!stations.find(s=>s.group===g)) g=g.parent;
+    const st=stations.find(s=>s.group===g); if(st) showDiag(st); }
+});
+
+/* ── 데이터 렌즈(4화분 키-시간 곡선 — 대류/분기 렌즈 문법) ── */
+const LENS_COL=['#5fbf6a','#5aa9e0','#f5c542','#e0715a'];
+let lensOpen=false;
+function buildLensUI(){
+  const b=document.createElement('button'); b.id='lensBtn'; b.textContent='📈 성장 곡선';
+  document.body.appendChild(b);
+  const p=document.createElement('div'); p.id='lensPanel'; p.className='hide';
+  p.innerHTML=`<h4>키 – 시간 곡선</h4><canvas id="lensCanvas" width="256" height="150"></canvas>
+    <div id="lensLegend"></div>`; document.body.appendChild(p);
+  const lg=document.getElementById('lensLegend');
+  stations.forEach((s,i)=> lg.innerHTML+=`<span><i style="background:${LENS_COL[i]}"></i>${i+1}번</span>`);
+  b.onclick=()=>{ lensOpen=!lensOpen; p.classList.toggle('hide',!lensOpen); if(lensOpen) drawLens(); };
+}
+function drawLens(){
+  const cv=document.getElementById('lensCanvas'); if(!cv) return;
+  const ctx=cv.getContext('2d'); const W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+  const maxDay=20, maxH=K.HMAX*1.4;
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1;
+  for(let d=0;d<=20;d+=5){ const x=d/maxDay*W; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  stations.forEach((st,i)=>{ if(!st.group.visible||!st.hist||st.hist.length<2) return;
+    ctx.strokeStyle=LENS_COL[i]; ctx.lineWidth=2.2; ctx.beginPath();
+    st.hist.forEach((pt,j)=>{ const x=Math.min(1,pt.day/maxDay)*W, y=H-(pt.h/maxH)*H*0.92-4;
+      j?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke(); });
+}
+
+
 const clock=new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate);
@@ -563,9 +770,15 @@ function animate(){
   if(playing){
     const sdt=dt*speed;
     elapsedDays += sdt/K.DAY_SEC;
-    stations.forEach(st=>{ K.grow(st.pot, sdt); updatePlant(st); stepDrops(st,sdt); });
+    stations.forEach(st=>{ K.grow(st.pot, sdt); updatePlant(st); stepDrops(st,sdt);
+      if(!st.hist) st.hist=[];
+      const last=st.hist[st.hist.length-1];
+      if(!last || elapsedDays-last.day>=0.25) st.hist.push({ day:elapsedDays, h:K.plantShape(st.pot).height });
+    });
     document.getElementById('dayCount').textContent=Math.floor(elapsedDays)+'일째';
     if(selected) syncPanel();
+    onGrown();
+    if(lensOpen) drawLens();
   } else {
     stations.forEach(st=> stepDrops(st,dt));
   }
@@ -576,14 +789,21 @@ addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.up
   renderer.setSize(innerWidth,innerHeight); });
 
 // 초기 1회 갱신 + 로딩 해제
-stations.forEach(updatePlant);
+stations.forEach(st=>{ st.hist=[]; updatePlant(st); });
 document.getElementById('loading').classList.add('hide');
+buildMissionUI(); buildLensUI();
 animate();
 
 // 데모: ?t=<progress> 로 특정 성장 단계 미리보기
 if(P.get('t')!=null){ const t=parseFloat(P.get('t')); stations.forEach((st,i)=>{ st.pot.progress=t+i*3; updatePlant(st); }); }
+// ?mission= 직접 진입 / 저학년은 미션 홈 자동 오픈
+{ const mq=P.get('mission');
+  if(mq && MISSIONS[mq]) setMission(mq);
+  else if(GRADE==='low') openHome(); }
 
-window.__SEED_P2__ = { stations, updatePlant, K };  // 검증 훅
+window.__SEED_P2__ = { stations, updatePlant, K,
+  MISSIONS, setMission, showDiag, drawLens, onGrown,
+  get activeMission(){ return activeMission; } };  // 검증 훅(P2+P3)
 </script>
 </body>
 </html>
