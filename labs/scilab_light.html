@@ -6,12 +6,32 @@
 <title>케이랩 · 빛 실험실 «꺾이고, 모이고, 갈라진다»</title>
 <style>
   html,body{margin:0;height:100%;background:#0d1117;color:#e6edf3;font-family:'Gowun Dodum',system-ui,sans-serif;overflow:hidden}
+  #stage{position:fixed;inset:0;z-index:0}
+  #stage canvas{display:block}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#8b949e;z-index:50}
   #loading.hide{display:none}
 </style>
 </head>
 <body>
+<div id="stage"></div>
 <div id="loading">빛 실험실 준비 중…</div>
+
+<!-- 하단 트레이 + HUD(P2 · runreal이 잡도록 순수로직 앞에 배치) -->
+<div id="tray"></div>
+<div id="hud"></div>
+<div id="hint">소자를 골라 광학대에 놓아 봐요. 놓인 소자를 탭하면 15°씩 돌아가요.</div>
+<style>
+  :root{--blue:#5B9BF0;--hudline:rgba(255,255,255,.12)}
+  #tray{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(10,13,18,.92),rgba(10,13,18,0));z-index:30}
+  #tray button{min-width:64px;padding:9px 10px;border:1px solid var(--hudline);border-radius:14px;
+    background:rgba(28,34,44,.82);color:#e6edf3;font-family:inherit;font-size:12px;line-height:1.35;cursor:pointer;text-align:center;transition:transform .1s,background .15s}
+  #tray button .ic{font-size:20px;display:block;margin-bottom:2px}
+  #tray button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  #tray button.reset{background:rgba(60,30,30,.7)}
+  #hud{position:fixed;top:12px;left:0;right:0;text-align:center;color:#cdd6e0;font-size:13px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #hint{position:fixed;top:38px;left:0;right:0;text-align:center;color:#9fb0c2;font-size:12px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+</style>
 
 <!-- ═══════════════════════════════════════════════════════════
      순수 로직 (P1 게이트: 렌더 0줄 · window.KLight / module.exports)
@@ -294,7 +314,381 @@
 })();
 </script>
 
-<!-- P2 렌더 어댑터(광학대·소자 3D·광선 3안)는 다음 페이즈에서 증축 -->
+<script type="importmap">
+{ "imports": { "three":"./vendor/three185/three.module.min.js", "three/addons/":"./vendor/three185/addons/" } }
+</script>
 
+<script type="module">
+/* ═══════════════════════════════════════════════════════════════
+   빛 실험실 P2 «렌더 어댑터» — 광학대·소자 3D + 광선 렌더 3안(?ray=)
+   근거: SPEC_LIGHT.md §2(무대: 2D 광학대 평면 y=RAY_Y) · §3(광선 3안) · §4(기구·배치 슬롯)
+   · 3층 분리: 순수 로직 window.KLight의 traceRay/prismSpectrum 결과 «세그먼트»만 조회(물리·판단 금지).
+   · 좌표: P1 (x,z) 광학대 평면 → 3D (x, RAY_Y, z) 수평면 매핑. 광선은 상판 위 한 평면에만(§2).
+   · 소자 회전: P1 angle(반시계, x-z) ↔ mesh.rotation.y = −angle.
+   · 미션 성공 판정·예측·★와우 = P3.
+   ═══════════════════════════════════════════════════════════════ */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KLight;
+const P = new URLSearchParams(location.search);
+const RAY_TIER = (['glow','line','dots'].includes(P.get('ray')) ? P.get('ray') : 'glow');
+const GRADE = (['low','mid','high'].includes(P.get('grade')) ? P.get('grade') : 'high');
+
+/* ═════════ 렌더 기반(황금 표준 승계) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', (e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#e8ecf2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#5B9BF0;color:#fff;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#20262f'); gr.addColorStop(.55,'#161b22'); gr.addColorStop(1,'#0e1218');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x11151b, 3.4, 8.5);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.03, 30);
+camera.position.set(0.16, 1.02, 0.86);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.09, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.55; controls.maxDistance=2.6;
+controls.maxPolarAngle=1.35; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.2);
+sun.position.set(1.4,3.0,1.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.2; sun.shadow.camera.right=1.2;
+sun.shadow.camera.top=1.4; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.4; sun.shadow.camera.far=8; sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.32));
+
+/* ═════════ 광학대(테이블 + 보드) ═════════ */
+const BENCH_Y = 0.0;           // 상판
+const RAY_Y   = BENCH_Y + 0.10; // §2 광선 평면
+const BOUNDS  = { xmin:-0.5, xmax:0.5, zmin:-0.4, zmax:0.4 };
+const SLOTS_X = [-0.30,-0.15,0,0.15,0.30]; // §4 C-2 고정 슬롯
+const SRC = { x:-0.44, z:0 };  // 광원 위치(광축 z=0)
+const DIR = { x:1, z:0 };      // +x 발사
+
+// 상판(짙은 무광) — 광선/발광이 살아나도록 다크 스튜디오 톤
+{
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 0.05, 0.95),
+    new THREE.MeshStandardMaterial({ color:0x2a2f37, roughness:0.72, metalness:0.05 }));
+  top.position.set(0, BENCH_Y-0.025, 0); top.receiveShadow=true; scene.add(top);
+  // 광학대 보드(밝은 눈금 판) — 슬롯 라인
+  const board = new THREE.Mesh(
+    new THREE.BoxGeometry(0.98, 0.012, 0.34),
+    new THREE.MeshStandardMaterial({ color:0x323a45, roughness:0.55, metalness:0.15 }));
+  board.position.set(0, BENCH_Y+0.006, 0); board.receiveShadow=true; board.name='board'; scene.add(board);
+  // 광축 홈 라인
+  const axis = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.002, 0.006),
+    new THREE.MeshStandardMaterial({ color:0x1b2028, roughness:0.9 }));
+  axis.position.set(0, BENCH_Y+0.013, 0); scene.add(axis);
+  // 슬롯 마커
+  SLOTS_X.forEach(sx=>{
+    const m=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.003,16),
+      new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:0.6 }));
+    m.position.set(sx, BENCH_Y+0.014, 0); scene.add(m);
+  });
+}
+
+/* ═════════ 소자 3D 빌더 ═════════ */
+const GLASS = () => new THREE.MeshPhysicalMaterial({ // §7 굴절 없는 블렌딩 유리(광선이 유일한 진실)
+  color:0xbfe0ff, roughness:0.06, metalness:0, transparent:true, opacity:0.20,
+  clearcoat:1, clearcoatRoughness:0.05, side:THREE.DoubleSide, depthWrite:false });
+const MIRROR_MAT = () => new THREE.MeshStandardMaterial({ color:0xdfe8f0, roughness:0.06, metalness:1.0 });
+const FRAME_MAT = () => new THREE.MeshStandardMaterial({ color:0x3b434f, roughness:0.5, metalness:0.4 });
+
+function buildFlashlight(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.032,0.11,20),
+    new THREE.MeshStandardMaterial({ color:0x4a5260, roughness:0.35, metalness:0.7 }));
+  body.rotation.z=Math.PI/2; body.castShadow=true; g.add(body);
+  const head=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.03,0.03,20),
+    new THREE.MeshStandardMaterial({ color:0x2f3540, roughness:0.4, metalness:0.6 }));
+  head.rotation.z=Math.PI/2; head.position.x=0.066; g.add(head);
+  const lens=new THREE.Mesh(new THREE.CircleGeometry(0.03,20),
+    new THREE.MeshStandardMaterial({ color:0xfff4d6, emissive:0xfff0c8, emissiveIntensity:1.6 }));
+  lens.rotation.y=Math.PI/2; lens.position.x=0.081; g.add(lens);
+  g.position.set(SRC.x, RAY_Y, SRC.z);
+  return g;
+}
+function buildMirror(){
+  const g=new THREE.Group();
+  // P1 mirror 규약: angle=0 → 면이 x축 방향(광축 평행)·법선 ±z. 3D도 동일하게(폭 x·높이 y·두께 z).
+  const face=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,0.006), MIRROR_MAT());
+  face.castShadow=true; g.add(face);
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(0.185,0.185,0.014), FRAME_MAT());
+  frame.position.z=-0.007; g.add(frame);
+  return g; // 거울면 = 로컬 xy평면(법선 ±z). P1 mirror half=0.08(=0.16/2). rotation.y=−angle로 P1 angle과 정합.
+}
+function buildLens(kind){
+  const g=new THREE.Group();
+  // 얇은 볼록/오목 실루엣(블렌딩) — 광축 = 로컬 +x, 렌즈면 = yz평면
+  const prof=[];
+  const H=0.09, T=(kind==='convex')?0.03:0.012;
+  for(let i=0;i<=10;i++){ const t=i/10, y=(-1+2*t)*H;
+    const bulge=(kind==='convex')? Math.cos(t*Math.PI-Math.PI/2) : (1-Math.cos(t*Math.PI-Math.PI/2));
+    prof.push(new THREE.Vector2(0.004+T*bulge, y)); }
+  const geo=new THREE.LatheGeometry(prof, 24); // 회전체(광축 중심) → 원형 렌즈
+  geo.rotateZ(Math.PI/2); // 회전축 y→x(광축)
+  const lens=new THREE.Mesh(geo, GLASS()); lens.castShadow=true; g.add(lens);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(H,0.008,10,28), FRAME_MAT());
+  ring.rotation.y=Math.PI/2; g.add(ring);
+  return g;
+}
+function buildPrism(){
+  const g=new THREE.Group();
+  // 정삼각 기둥(축=세로 y) — P1 prism 3변과 정합(꼭지 위)
+  const R=0.09, shape=new THREE.Shape();
+  for(let k=0;k<3;k++){ const a=Math.PI/2 + k*(2*Math.PI/3);
+    const x=R*Math.cos(a), z=R*Math.sin(a);
+    if(k===0) shape.moveTo(x,z); else shape.lineTo(x,z); }
+  shape.closePath();
+  const geo=new THREE.ExtrudeGeometry(shape,{ depth:0.14, bevelEnabled:false });
+  geo.rotateX(-Math.PI/2); geo.translate(0,0.07,0); // 기둥 세로로 세움(광선 평면 관통)
+  const pr=new THREE.Mesh(geo, GLASS()); pr.castShadow=true; pr.position.y=-0.02; g.add(pr);
+  return g;
+}
+function buildScreen(){
+  const g=new THREE.Group();
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(0.006,0.18,0.20),
+    new THREE.MeshStandardMaterial({ color:0xe9edf2, roughness:0.9, transparent:true, opacity:0.55 }));
+  panel.castShadow=true; g.add(panel);
+  const foot=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.02,0.09), FRAME_MAT());
+  foot.position.y=-0.10; g.add(foot);
+  // 도달점 밝은 점(스프라이트) — rebuildRays에서 위치·표시 갱신
+  const dotTex=makeDotTexture('#fff6d8');
+  const dot=new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, transparent:true,
+    blending:THREE.AdditiveBlending, depthWrite:false }));
+  dot.scale.set(0.05,0.05,1); dot.visible=false; dot.name='hitDot'; g.add(dot);
+  g.userData.dot=dot;
+  return g;
+}
+function makeDotTexture(col){
+  const c=document.createElement('canvas'); c.width=c.height=64;
+  const x=c.getContext('2d'); const gr=x.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,col); gr.addColorStop(0.4,col); gr.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=gr; x.beginPath(); x.arc(32,32,32,0,7); x.fill();
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+
+// 소자 카탈로그(트레이) — 광원은 상시(제거 대상 아님)
+const CATALOG = {
+  mirror:       { ic:'🪞', label:'평면거울',   build:()=>buildMirror(),        el:(o)=>({type:'mirror', x:o.x, z:o.z, angle:o.angle, size:0.08}) },
+  lens_convex:  { ic:'🔎', label:'볼록렌즈',   build:()=>buildLens('convex'),  el:(o)=>({type:'lens', kind:'convex', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
+  lens_concave: { ic:'🥃', label:'오목렌즈',   build:()=>buildLens('concave'), el:(o)=>({type:'lens', kind:'concave', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
+  prism:        { ic:'🔺', label:'프리즘',     build:()=>buildPrism(),         el:(o)=>({type:'prism', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
+  screen:       { ic:'🎯', label:'스크린',     build:()=>buildScreen(),        el:(o)=>({type:'screen', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
+};
+// 학년칸(§4): 저=거울만 / 중=거울·렌즈·스크린 / 고=전체
+const TOOLS_BY_GRADE = {
+  low:  ['mirror','screen'],
+  mid:  ['mirror','lens_convex','screen'],
+  high: ['mirror','lens_convex','lens_concave','prism','screen'],
+};
+
+/* ═════════ 배치 상태 + 트레이 UI ═════════ */
+const placed = [];         // { key, x, z, angle, group, catalog }
+let activeTool = null;     // 선택된 트레이 소자 key
+const flashlight = buildFlashlight(); scene.add(flashlight);
+
+function buildTray(){
+  const tray=document.getElementById('tray'); tray.innerHTML='';
+  TOOLS_BY_GRADE[GRADE].forEach(key=>{
+    const c=CATALOG[key]; const b=document.createElement('button');
+    b.dataset.key=key; b.innerHTML=`<span class="ic">${c.ic}</span>${c.label}`;
+    b.onclick=()=>{ activeTool=(activeTool===key?null:key); syncTray(); };
+    tray.appendChild(b);
+  });
+  const r=document.createElement('button'); r.className='reset'; r.innerHTML='<span class="ic">↺</span>비우기';
+  r.onclick=resetAll; tray.appendChild(r);
+}
+function syncTray(){
+  document.querySelectorAll('#tray button[data-key]').forEach(b=>{
+    b.classList.toggle('on', b.dataset.key===activeTool);
+  });
+  document.getElementById('hud').textContent = activeTool
+    ? `${CATALOG[activeTool].label} 선택됨 — 광학대 빈 자리를 탭해 놓아요`
+    : `광선 모드: ${RAY_TIER}`;
+}
+function nextFreeSlot(){
+  for(const sx of SLOTS_X){ if(!placed.some(p=>Math.abs(p.x-sx)<1e-6)) return sx; }
+  return null;
+}
+function placeAt(key, x){
+  const c=CATALOG[key]; const grp=c.build();
+  grp.position.set(x, RAY_Y, 0); scene.add(grp);
+  const item={ key, x, z:0, angle:0, group:grp, catalog:c };
+  placed.push(item); rebuildRays();
+  return item;
+}
+function rotateItem(item){
+  item.angle += 15*Math.PI/180;                 // §4 탭 = 15° 회전
+  item.group.rotation.y = -item.angle;          // P1 angle(x-z 반시계) ↔ mesh y = −angle
+  rebuildRays();
+}
+function resetAll(){
+  placed.forEach(p=>scene.remove(p.group)); placed.length=0;
+  activeTool=null; syncTray(); rebuildRays();
+}
+
+/* ═════════ 광선 렌더 3안(§3) ═════════ */
+const rayGroup = new THREE.Group(); scene.add(rayGroup);
+const WHITE = 0xFFF4D6;
+const COLOR_HEX = { red:0xff3b30, orange:0xff9500, yellow:0xffe000, green:0x34c759,
+                    blue:0x2a9bff, indigo:0x5a54ff, violet:0xb04dff };
+let dotSprites = []; // dots 티어 흐름 애니용
+
+function clearRayGroup(){
+  while(rayGroup.children.length){ const c=rayGroup.children.pop();
+    if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); rayGroup.remove(c); }
+  dotSprites = [];
+}
+const W = (p)=> new THREE.Vector3(p.x, RAY_Y, p.z); // (x,z) → 3D
+
+function drawSegment(from, to, hex){
+  const A=W(from), B=W(to);
+  if(RAY_TIER==='line'){
+    const geo=new THREE.BufferGeometry().setFromPoints([A,B]);
+    const mat=new THREE.LineBasicMaterial({ color:hex, transparent:true, opacity:0.92, blending:THREE.AdditiveBlending, depthWrite:false });
+    rayGroup.add(new THREE.Line(geo, mat));
+  } else if(RAY_TIER==='dots'){
+    const L=A.distanceTo(B), n=Math.max(1, Math.floor(L/0.012));
+    const tex=makeDotTexture('#fff'); 
+    for(let i=0;i<n;i++){
+      const t=i/n, p=A.clone().lerp(B,t);
+      const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, color:hex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false }));
+      s.scale.set(0.02,0.02,1); s.position.copy(p);
+      s.userData={ A:A.clone(), B:B.clone(), base:t }; rayGroup.add(s); dotSprites.push(s);
+    }
+  } else { // glow(기본): 얇은 TubeGeometry 발광 + additive
+    const path=new THREE.LineCurve3(A,B);
+    const geo=new THREE.TubeGeometry(path, 1, 0.0022, 6, false);
+    const mat=new THREE.MeshBasicMaterial({ color:hex, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false });
+    rayGroup.add(new THREE.Mesh(geo, mat));
+  }
+}
+
+function markHits(reset){
+  placed.forEach(p=>{ if(p.key==='screen' && p.group.userData.dot){ p.group.userData.dot.visible=false; } });
+}
+function showHitDot(hit){
+  // 가장 가까운 스크린에 밝은 점
+  let best=null, bd=Infinity;
+  placed.forEach(p=>{ if(p.key!=='screen')return;
+    const d=Math.hypot(p.x-hit.x, p.z-hit.z); if(d<bd){bd=d;best=p;} });
+  if(best && best.group.userData.dot){
+    const dot=best.group.userData.dot;
+    best.group.updateWorldMatrix(true,false); // 방금 배치/회전된 group의 matrixWorld 갱신 후 역변환
+    dot.position.copy(best.group.worldToLocal(W(hit)));
+    dot.visible=true;
+  }
+}
+
+function toElements(){ return placed.map(p=>p.catalog.el(p)); }
+
+function rebuildRays(){
+  clearRayGroup(); markHits();
+  const els=toElements();
+  const hasPrism=els.some(e=>e.type==='prism');
+  if(hasPrism){
+    // 프리즘 7색 — 무지개는 물리에서(prismSpectrum). 프리즘 전 구간은 7색 겹쳐 흰색 근사.
+    const spec=K.prismSpectrum(SRC, DIR, els, { bounds:BOUNDS });
+    spec.forEach(s=>{
+      const hex=COLOR_HEX[s.color]||WHITE;
+      s.result.segments.forEach(seg=>drawSegment(seg.from, seg.to, hex));
+      if(s.result.hit) showHitDot(s.result.hit);
+    });
+  } else {
+    const res=K.traceRay(SRC, DIR, els, { bounds:BOUNDS });
+    res.segments.forEach(seg=>drawSegment(seg.from, seg.to, WHITE));
+    if(res.hit) showHitDot(res.hit);
+  }
+}
+
+/* ═════════ 입력(탭: 배치 / 회전) ═════════ */
+const ray=new THREE.Raycaster(); const ndc=new THREE.Vector2();
+let downXY=null;
+renderer.domElement.addEventListener('pointerdown', e=>{ downXY={x:e.clientX,y:e.clientY}; });
+renderer.domElement.addEventListener('pointerup', e=>{
+  if(!downXY) return;
+  const moved=Math.hypot(e.clientX-downXY.x, e.clientY-downXY.y); downXY=null;
+  if(moved>6) return; // 드래그(궤도 회전)와 탭 구분
+  ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ndc, camera);
+  // 1) 이미 놓인 소자 히트 → 회전
+  const meshes=[]; placed.forEach(p=>p.group.traverse(o=>{ if(o.isMesh){ o.userData._owner=p; meshes.push(o); } }));
+  const hitObj=ray.intersectObjects(meshes,false)[0];
+  if(hitObj){ rotateItem(hitObj.object.userData._owner); return; }
+  // 2) 트레이 소자 선택 상태면 보드 탭 → 다음 빈 슬롯 배치
+  if(activeTool){
+    const board=scene.getObjectByName('board');
+    const bHit=ray.intersectObject(board,false)[0];
+    if(bHit){
+      // 탭한 x에 가장 가까운 빈 슬롯(없으면 다음 빈 슬롯)
+      let sx=null, bd=Infinity;
+      SLOTS_X.forEach(s=>{ if(placed.some(p=>Math.abs(p.x-s)<1e-6))return;
+        const d=Math.abs(bHit.point.x-s); if(d<bd){bd=d;sx=s;} });
+      if(sx===null) sx=nextFreeSlot();
+      if(sx!==null){ placeAt(activeTool, sx); activeTool=null; syncTray(); }
+    }
+  }
+});
+
+/* ═════════ 루프 ═════════ */
+let t0=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(), dt=Math.min(0.05,(now-t0)/1000); t0=now;
+  // dots 흐름 애니(§3: 광원→진행 방향 흐름)
+  if(RAY_TIER==='dots' && dotSprites.length){
+    const flow=(now/1000*0.35)%1;
+    dotSprites.forEach(s=>{ const u=(s.userData.base+flow)%1; s.position.copy(s.userData.A.clone().lerp(s.userData.B,u)); });
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+/* ═════════ 부팅 ═════════ */
+buildTray(); syncTray();
+// ?demo= 초기 배치(데모 링크 겸 검증) — 슬롯 순서대로 자동 배치
+{
+  const DEMO=P.get('demo');
+  const PLAN={ mirror:['mirror','screen'], lens:['lens_convex','screen'],
+    concave:['lens_concave','screen'], prism:['prism','screen'],
+    all:['mirror','lens_convex','prism','screen'] }[DEMO];
+  if(PLAN){ let si=0; PLAN.forEach(k=>{ const sx=SLOTS_X[si++]; if(sx!==undefined && CATALOG[k]) placeAt(k,sx); }); }
+}
+rebuildRays(); animate();
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+{ const l=document.getElementById('loading'); if(l) l.classList.add('hide'); }
+</script>
 </body>
 </html>
