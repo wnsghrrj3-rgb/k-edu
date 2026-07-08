@@ -6,13 +6,101 @@
 <title>씨앗의 한살이 · 케이랩</title>
 <!-- P1 = 생장 순수 로직만(렌더 0줄). P2에서 황금 샘플 head(importmap·three185)·module 렌더 증축. -->
 <style>
-  html,body{margin:0;height:100%;background:#0d1117;color:#e8edf4;
-    font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
-  .stub{opacity:.5;font-size:14px}
+  :root{ --ink:#eaf1e4; --sub:#9fb090; --panel:rgba(16,22,16,.82); --line:rgba(255,255,255,.1);
+         --leaf:#5fbf6a; --water:#5aa9e0; --sun:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0d130c;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0d130c;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+
+  /* 시간 압축 배지(상시·정직성) */
+  #timeBadge{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 15px;
+    font-size:13px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:8px}
+  #timeBadge b{font-family:'Jua';color:var(--sun)}
+  #dayCount{font-family:'Jua';color:var(--leaf)}
+
+  /* 상단 타이틀 */
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--leaf)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  /* 시간 컨트롤 */
+  #timeCtl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;
+    display:flex;gap:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:999px;padding:6px;backdrop-filter:blur(6px)}
+  #timeCtl button{font-family:'Jua';font-size:15px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:999px;width:42px;height:38px;cursor:pointer;transition:.15s}
+  #timeCtl button.on{background:var(--leaf);color:#0d130c;border-color:var(--leaf)}
+
+  /* 화분 조건 패널 (선택 시) */
+  #panel{position:fixed;right:16px;top:64px;z-index:20;width:210px;background:var(--panel);
+    border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px);
+    box-shadow:0 16px 40px rgba(0,0,0,.4);display:none}
+  #panel.show{display:block}
+  #panel h3{margin:0 0 4px;font-family:'Jua';font-size:15px}
+  #panel .stat{font-size:12px;color:var(--sub);margin-bottom:12px}
+  #panel .stat b{color:var(--ink);font-family:'Jua'}
+  .row{margin:11px 0}
+  .row label{font-size:12.5px;display:flex;justify-content:space-between;margin-bottom:5px}
+  .row label b{font-family:'Jua'}
+  .waterBtn{width:100%;font-family:'Jua';font-size:14px;color:#fff;background:var(--water);
+    border:0;border-radius:11px;padding:10px;cursor:pointer}
+  .lightSeg{display:flex;gap:6px}
+  .lightSeg button{flex:1;font-family:'Gowun Dodum';font-size:12.5px;color:var(--sub);
+    background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:9px;padding:8px;cursor:pointer}
+  .lightSeg button.on{background:var(--sun);color:#3a2c00;border-color:var(--sun)}
+  input[type=range]{width:100%;accent-color:var(--leaf)}
+
+  /* 하단 힌트 */
+  #hint{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(13,19,12,.6);border-radius:999px;
+    padding:5px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+
+  @media(max-width:560px){
+    #panel{width:170px;right:8px} #brand{font-size:15px}
+  }
 </style>
 </head>
 <body>
-<div class="stub">🌱 씨앗의 한살이 — P1 엔진(렌더는 P2에서)</div>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">🌱 씨앗을 심는 중…</div>
+
+<div id="brand">🌱 씨앗의 <span class="k">한살이</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+
+<div id="timeBadge"><b>⏱ 1초 = 8시간</b><span>·</span><span id="dayCount">0일째</span></div>
+
+<div id="timeCtl">
+  <button id="btnPlay" class="on" title="재생">▶</button>
+  <button id="btnPause" title="정지">⏸</button>
+  <button id="btnFast" title="2배속">⏩</button>
+</div>
+
+<div id="hint"></div>
+
+<div id="panel">
+  <h3 id="pTitle">🪴 1번 화분</h3>
+  <div class="stat" id="pStat">씨앗 · 물 60% · 22℃</div>
+  <button class="waterBtn" id="pWater">💧 물 주기</button>
+  <div class="row">
+    <label>햇빛</label>
+    <div class="lightSeg">
+      <button data-light="0.9" id="lSun">☀️ 창가</button>
+      <button data-light="0.15" id="lShade">☂️ 그늘</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>온도 <b id="pTempV">22℃</b></label>
+    <input type="range" id="pTemp" min="5" max="35" step="1" value="22">
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KSeed 생장 모델 (SPEC_SEED §2). THREE·DOM 참조 0. node 단독 테스트.
@@ -142,7 +230,7 @@
     const leafHex = lerpHex(LEAF_ETIO, LEAF_HEALTHY, colorT);
     const flowerT = smoothstep(17, 20, p);            // 개화 진행 0→1
     return {
-      stage: pot.stage,
+      stage: pot.wilted ? 'wilt' : stageOf(p),   // progress 기준 자체 계산(pot.stage 미의존 — 데모/렌더 정합)
       height: height,
       nodeCount: nodeCount,
       nodeGap: nodeGap,
@@ -186,6 +274,316 @@
     tallestPot, diagnose
   };
 });
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 프로시저럴 식물 렌더 (🔴 신규 시각 언어 — 마디 스택). SPEC_SEED §3.
+     3층 분리: window.KSeed의 grow/plantShape «형태 파라미터»만 매핑(렌더 물리 0).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KSeed;
+const P = new URLSearchParams(location.search);
+const GRADE = (['low','mid','high'].includes(P.get('grade')) ? P.get('grade') : 'high');
+
+/* ═════════ 렌더 기반(황금 표준 승계) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', (e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,14,10,.93);color:#eaf1e4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#5fbf6a;color:#fff;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#1a241a'); gr.addColorStop(.55,'#121a12'); gr.addColorStop(1,'#0c110c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x0f150e, 2.4, 6.5);
+
+const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.03, 30);
+camera.position.set(0.02, 0.62, 1.02);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.16, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.5; controls.maxDistance=2.2;
+controls.maxPolarAngle=1.42; controls.enablePan=false; controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+// 태양 = 빛 조건 시각화용(창가 기준 위치). 그늘 화분은 개별 그림자로 표현.
+const sun = new THREE.DirectionalLight(0xfff2d8, 2.0);
+sun.position.set(1.2, 2.6, 1.0); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1; sun.shadow.camera.right=1;
+sun.shadow.camera.top=1; sun.shadow.camera.bottom=-0.5;
+sun.shadow.camera.near=0.3; sun.shadow.camera.far=7; sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x9fc4a0, 0x241f16, 0.4));
+
+/* ═════════ 무대: 선반(테이블) ═════════ */
+{
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 0.05, 0.55),
+    new THREE.MeshStandardMaterial({ color:0x2a3326, roughness:0.8, metalness:0.04 }));
+  top.position.y=-0.025; top.receiveShadow=true; scene.add(top);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8,8),
+    new THREE.MeshStandardMaterial({ color:0x141a12, roughness:1 }));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.06; floor.receiveShadow=true; scene.add(floor);
+}
+
+/* ═════════ 프로시저럴 텍스처(꽃·흙) ═════════ */
+function flowerTex(){
+  const s=128, c=document.createElement('canvas'); c.width=c.height=s;
+  const g=c.getContext('2d'); g.clearRect(0,0,s,s);
+  const cx=s/2, cy=s/2;
+  for(let k=0;k<5;k++){                       // 꽃잎 5장 방사
+    const a=k/5*Math.PI*2 - Math.PI/2;
+    g.save(); g.translate(cx,cy); g.rotate(a);
+    const grd=g.createRadialGradient(0,-30,4,0,-30,30);
+    grd.addColorStop(0,'#ffe27a'); grd.addColorStop(1,'#f7a53d');
+    g.fillStyle=grd; g.beginPath(); g.ellipse(0,-30,15,26,0,0,Math.PI*2); g.fill(); g.restore();
+  }
+  g.fillStyle='#8a5a1e'; g.beginPath(); g.arc(cx,cy,15,0,Math.PI*2); g.fill();
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const FLOWER_TEX = flowerTex();
+
+/* ═════════ 화분 + 프로시저럴 식물(마디 스택) ═════════ */
+const POT_X = K.POT_X;                          // §2 [-0.36,-0.12,0.12,0.36]
+const STEM_UNIT = 0.04;                         // 마디 기본 지오 높이(scale.y로 gap 맞춤)
+const ZIG = [0.06,-0.05,0.07,-0.06,0.05,-0.07,0.05,-0.04]; // 마디 지그재그(자연스러움)
+const stations = [];
+
+const stemGeo = new THREE.CylinderGeometry(0.6, 1.0, 1, 6); // r 테이퍼는 scale로, 단위 h=1
+const leafGeo = new THREE.PlaneGeometry(0.03, 0.052);
+const cotGeo  = new THREE.CircleGeometry(0.016, 12);
+
+function makeStation(x, idx){
+  const group = new THREE.Group(); group.position.set(x, 0, 0); scene.add(group);
+
+  // 화분(LatheGeometry 원뿔대 테라코타)
+  const pts=[]; for(let i=0;i<=6;i++){ const t=i/6; pts.push(new THREE.Vector2(0.055-0.014*t, t*0.075)); }
+  const pot = new THREE.Mesh(new THREE.LatheGeometry(pts, 20),
+    new THREE.MeshStandardMaterial({ color:0xA0522D, roughness:0.9 }));
+  pot.castShadow=true; pot.receiveShadow=true; group.add(pot);
+  // 흙
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.02,20),
+    new THREE.MeshStandardMaterial({ color:0x3E2B22, roughness:1 }));
+  soil.position.y=0.072; soil.receiveShadow=true; group.add(soil);
+
+  // 식물 그룹(흙 위)
+  const plant = new THREE.Group(); plant.position.y=0.082; group.add(plant);
+  const segs=[], leaves=[];
+  for(let i=0;i<K.NODE_MAX;i++){
+    const seg=new THREE.Mesh(stemGeo, new THREE.MeshStandardMaterial({ color:K.STEM_HEX, roughness:0.7 }));
+    seg.castShadow=true; seg.visible=false; plant.add(seg); segs.push(seg);
+    for(let s=0;s<2;s++){
+      const lf=new THREE.Mesh(leafGeo, new THREE.MeshStandardMaterial({
+        color:K.LEAF_HEALTHY, roughness:0.6, side:THREE.DoubleSide }));
+      lf.castShadow=true; lf.visible=false; plant.add(lf); leaves.push(lf);
+    }
+  }
+  // 떡잎 2장(새싹)
+  const cots=[]; for(let s=0;s<2;s++){
+    const ct=new THREE.Mesh(cotGeo, new THREE.MeshStandardMaterial({
+      color:0x8FCf7a, roughness:0.6, side:THREE.DoubleSide }));
+    ct.visible=false; plant.add(ct); cots.push(ct);
+  }
+  // 꽃(스프라이트)
+  const flower=new THREE.Sprite(new THREE.SpriteMaterial({ map:FLOWER_TEX, transparent:true }));
+  flower.scale.setScalar(0.001); flower.visible=false; plant.add(flower);
+
+  // 선택 하이라이트 링
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.06,0.072,24),
+    new THREE.MeshBasicMaterial({ color:0x5fbf6a, transparent:true, opacity:0.85, side:THREE.DoubleSide }));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.001; ring.visible=false; group.add(ring);
+
+  const st = { idx, pot:K.createPot({}), group, potMesh:pot, soil, plant, segs, leaves, cots, flower, ring,
+               drops:[] };
+  stations.push(st);
+  return st;
+}
+POT_X.forEach((x,i)=> makeStation(x,i));
+
+/* ═════════ 식물 갱신(plantShape 파라미터만 매핑) ═════════ */
+function updatePlant(st){
+  const sh = K.plantShape(st.pot);
+  // 흙 부풀음(씨앗 단계 미세 피드백 — "기다림도 관찰")
+  st.soil.scale.y = (sh.stage==='seed') ? 1 + 0.18*Math.min(1, st.pot.progress/3) : 1;
+
+  if (sh.stage==='seed'){                        // 흙 속(안 보임)
+    st.segs.forEach(s=>s.visible=false); st.leaves.forEach(l=>l.visible=false);
+    st.cots.forEach(c=>c.visible=false); st.flower.visible=false; return;
+  }
+
+  const gap = sh.nodeGap, droop = sh.droop ? 0.5 : 0;
+  let y = 0;
+  const bend = st.pot.light < 0.5 ? 0.12 : 0.04;  // phototropism: 어두우면 더 굽음(빛 찾기)
+  for (let i=0;i<K.NODE_MAX;i++){
+    const on = i < sh.nodeCount;
+    const seg = st.segs[i], l0=st.leaves[i*2], l1=st.leaves[i*2+1];
+    seg.visible = on;
+    if (on){
+      const rt = 0.008 * (1 - i*0.06);           // 상단 테이퍼
+      seg.scale.set(rt/1, gap/STEM_UNIT, rt/1);
+      seg.position.set(i*0.002*bend, y + gap/2, 0);
+      seg.rotation.z = ZIG[i] + bend*i*0.02;
+      seg.material.color.setHex(sh.stemHex);
+      // 잎 2쌍(양쪽 ±60°, 위 20°)
+      const ly = y + gap*0.72, sc = sh.leafScale * K.smoothstep(0,0.3,(st.pot.progress-3-i*1.3));
+      [l0,l1].forEach((lf,s)=>{
+        lf.visible = sc>0.02;
+        const dir = s===0?1:-1;
+        lf.position.set(dir*0.014, ly, 0.002);
+        lf.rotation.set(-0.35+droop, 0, dir*(1.05) - droop*dir);
+        lf.scale.setScalar(Math.max(0.02, sc));
+        lf.material.color.setHex(sh.leafHex);
+      });
+      y += gap;
+    } else { l0.visible=l1.visible=false; }
+  }
+  // 새싹 떡잎(마디 0~1, grow 진입 후 탈락)
+  const showCot = (sh.stage==='sprout');
+  st.cots.forEach((ct,s)=>{
+    ct.visible=showCot;
+    if(showCot){ const dir=s===0?1:-1;
+      ct.position.set(dir*0.012, sh.height*0.6+0.006, 0);
+      ct.rotation.set(-0.6, 0, dir*0.5);
+      ct.material.color.setHex(sh.leafHex);
+    }
+  });
+  // 꽃
+  st.flower.visible = sh.flowerT>0.01;
+  if (st.flower.visible){
+    st.flower.scale.setScalar(0.02 + 0.05*sh.flowerT);
+    st.flower.position.y = Math.max(y, sh.height) + 0.012;
+  }
+}
+
+/* ═════════ 물방울 트윈(물주기 피드백) ═════════ */
+const dropGeo=new THREE.SphereGeometry(0.006,8,8);
+const dropMat=new THREE.MeshStandardMaterial({ color:0x5aa9e0, transparent:true, opacity:0.85,
+  roughness:0.2, metalness:0.1 });
+function splash(st){
+  for(let k=0;k<5;k++){
+    const d=new THREE.Mesh(dropGeo, dropMat.clone());
+    d.position.set((Math.random()-0.5)*0.05, 0.22+Math.random()*0.05, (Math.random()-0.5)*0.03);
+    d.userData.vy = -0.3-Math.random()*0.2; st.group.add(d); st.drops.push(d);
+  }
+  st.soil.material.color.lerp(new THREE.Color(0x2a1c14), 0.4); // 젖음
+}
+function stepDrops(st, dt){
+  for(let i=st.drops.length-1;i>=0;i--){
+    const d=st.drops[i]; d.userData.vy -= 1.2*dt; d.position.y += d.userData.vy*dt;
+    if(d.position.y<0.078){ st.group.remove(d); st.drops.splice(i,1); }
+  }
+}
+
+/* ═════════ 조작 (화분 선택 → 조건 패널) ═════════ */
+let selected=null, waterMode=false;
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+const panel=document.getElementById('panel');
+function selectStation(st){
+  selected=st; stations.forEach(s=>s.ring.visible=(s===st));
+  panel.classList.add('show'); syncPanel();
+}
+function syncPanel(){
+  if(!selected)return; const p=selected.pot;
+  document.getElementById('pTitle').textContent='🪴 '+(selected.idx+1)+'번 화분';
+  const stageKo={seed:'씨앗',sprout:'새싹',grow:'자라는 중',bud:'꽃봉오리',bloom:'꽃',wilt:'시듦'}[p.stage]||p.stage;
+  document.getElementById('pStat').innerHTML='<b>'+stageKo+'</b> · 물 '+Math.round(p.water*100)+'% · '+Math.round(p.temp)+'℃';
+  document.getElementById('pTempV').textContent=Math.round(p.temp)+'℃';
+  document.getElementById('pTemp').value=Math.round(p.temp);
+  document.getElementById('lSun').classList.toggle('on', p.light>0.5);
+  document.getElementById('lShade').classList.toggle('on', p.light<=0.5);
+}
+renderer.domElement.addEventListener('pointerdown', (e)=>{
+  ptr.x=(e.clientX/innerWidth)*2-1; ptr.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(stations.map(s=>s.group),true);
+  if(hits.length){
+    let g=hits[0].object; while(g.parent && !stations.find(s=>s.group===g)) g=g.parent;
+    const st=stations.find(s=>s.group===g);
+    if(st){ selectStation(st);
+      if(waterMode){ K.waterPlant(st.pot); splash(st); syncPanel(); toast('💧 물을 주었어요'); } }
+  }
+});
+document.getElementById('pWater').onclick=()=>{ if(selected){ K.waterPlant(selected.pot); splash(selected); syncPanel(); }};
+document.querySelectorAll('.lightSeg button').forEach(b=> b.onclick=()=>{
+  if(!selected)return; selected.pot.light=parseFloat(b.dataset.light); syncPanel();
+});
+document.getElementById('pTemp').oninput=(e)=>{ if(selected){ selected.pot.temp=parseFloat(e.target.value); syncPanel(); }};
+
+let hintT=0;
+function toast(msg){ const h=document.getElementById('hint'); h.textContent=msg; h.classList.add('show'); hintT=1.6; }
+
+/* ═════════ 시간 컨트롤 ═════════ */
+let playing=true, speed=1, elapsedDays=0;
+const bp=document.getElementById('btnPlay'), bpa=document.getElementById('btnPause'), bf=document.getElementById('btnFast');
+function setPlay(on,fast){ playing=on; speed=fast?2:1;
+  bp.classList.toggle('on', on&&!fast); bpa.classList.toggle('on', !on); bf.classList.toggle('on', on&&fast); }
+bp.onclick=()=>setPlay(true,false); bpa.onclick=()=>setPlay(false,false); bf.onclick=()=>setPlay(true,true);
+
+/* 학년칸: 저=1화분만 활성(나머지 흐림) */
+if(GRADE==='low'){ stations.forEach((s,i)=>{ if(i>0) s.group.visible=false; }); }
+else if(GRADE==='mid'){ stations.forEach((s,i)=>{ if(i>1) s.group.visible=false; }); }
+
+/* ═════════ 루프 ═════════ */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  let dt=Math.min(clock.getDelta(),0.05);
+  if(playing){
+    const sdt=dt*speed;
+    elapsedDays += sdt/K.DAY_SEC;
+    stations.forEach(st=>{ K.grow(st.pot, sdt); updatePlant(st); stepDrops(st,sdt); });
+    document.getElementById('dayCount').textContent=Math.floor(elapsedDays)+'일째';
+    if(selected) syncPanel();
+  } else {
+    stations.forEach(st=> stepDrops(st,dt));
+  }
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); });
+
+// 초기 1회 갱신 + 로딩 해제
+stations.forEach(updatePlant);
+document.getElementById('loading').classList.add('hide');
+animate();
+
+// 데모: ?t=<progress> 로 특정 성장 단계 미리보기
+if(P.get('t')!=null){ const t=parseFloat(P.get('t')); stations.forEach((st,i)=>{ st.pot.progress=t+i*3; updatePlant(st); }); }
+
+window.__SEED_P2__ = { stations, updatePlant, K };  // 검증 훅
 </script>
 </body>
 </html>
