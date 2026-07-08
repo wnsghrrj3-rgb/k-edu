@@ -107,6 +107,27 @@
   #tlPanel.show{opacity:1;max-height:220px}
   #tlPanel .pt{font-size:19px;font-weight:800;color:var(--ok)}
   #tlPanel .pd{margin-top:8px;line-height:1.65;color:#e8dccb;font-size:15px}
+
+  /* ── 박물관 (T2-2) ── */
+  #museumHud{position:fixed;inset:0;z-index:31;background:linear-gradient(180deg,#141a24,#0b0e14);
+    color:var(--ink-light);flex-direction:column;align-items:center;justify-content:flex-start;padding:26px 20px;gap:16px;overflow:auto;font-family:'Jua'}
+  #muHead{text-align:center}
+  #muHead .tt{font-size:22px;font-weight:800}
+  #muHead .tt b{color:#8fd0ff}
+  #muRate{margin-top:10px;display:inline-flex;align-items:center;gap:10px;font-size:14px;color:#c7d2df}
+  #muRate .bar{width:180px;height:10px;border-radius:6px;background:rgba(255,255,255,.10);overflow:hidden}
+  #muRate .fill{height:100%;width:0;background:linear-gradient(90deg,#5B9BF0,#12B886);transition:width .5s}
+  #muGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px;max-width:720px;width:100%;margin-top:4px}
+  .muCase{border-radius:16px;padding:12px 10px 14px;text-align:center;position:relative;
+    background:linear-gradient(180deg,rgba(150,190,235,.14),rgba(255,255,255,.03));
+    border:1px solid rgba(150,190,235,.25);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 6px 18px rgba(0,0,0,.35)}
+  .muCase.locked{background:rgba(255,255,255,.04);border-color:var(--hudline)}
+  .muCase canvas{display:block;margin:0 auto;width:104px;height:104px}
+  .muCase .nm{font-weight:800;font-size:14px;margin-top:6px}
+  .muCase .er{font-size:11px;color:#9fb2c8;margin-top:2px}
+  .muCase.locked .nm{color:#6b7280}
+  .muCase.locked .er{color:#565f6b}
+  .muCase .shelf{position:absolute;left:8px;right:8px;bottom:52px;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
 </style>
 </head>
 <body>
@@ -119,6 +140,7 @@
     <button class="btn" id="recBtn">📸 기록</button>
     <button class="btn acc" id="liftBtn" disabled>⬆ 들어올리기</button>
     <button class="btn" id="newBtn">🕳 새 구덩이</button>
+    <button class="btn" id="muOpen">🏛 박물관</button>
   </div>
   <button class="btn" id="sndtog" style="position:fixed;right:16px;bottom:18px;z-index:12">🔊</button>
 
@@ -171,6 +193,16 @@
     <div id="tlTrack"></div>
     <div id="tlPanel"></div>
     <button class="btn acc" id="tlBack">🕳 새 유물 발굴하기</button>
+  </div>
+
+  <!-- ══ 박물관 (T2-2) — 수집 유물 진열·도감률 ══ -->
+  <div id="museumHud" style="display:none">
+    <div id="muHead">
+      <div class="tt">🏛 나의 <b>유물 박물관</b></div>
+      <div id="muRate"><span id="muRateTxt">도감 0 / 0</span><span class="bar"><span class="fill" id="muFill"></span></span></div>
+    </div>
+    <div id="muGrid"></div>
+    <button class="btn acc" id="muBack">🕳 발굴실로</button>
   </div>
 
   <div class="card" id="predict"></div>
@@ -390,6 +422,29 @@
     return { ok: ok, era: art.era, chosen: chosenEra, msg: msg };
   }
 
+  /* 박물관 도감 요약 — collected(id 배열)와 전체 id로 도감률·항목 산출. */
+  function museumSummary(collected, allIds) {
+    var set = {}; (collected || []).forEach(function (id) { set[id] = true; });
+    var items = allIds.map(function (id) { return { id: id, got: !!set[id] }; });
+    var got = 0; items.forEach(function (it) { if (it.got) got++; });
+    return { total: allIds.length, collected: got, ratio: allIds.length ? got / allIds.length : 0, items: items };
+  }
+  /* 회전체 프로파일 → 2D 좌우대칭 실루엣 폴리곤 점 배열(박물관 미니 도감·3D 없이). */
+  function silhouettePath(profile, W, H, pad) {
+    pad = pad || 6;
+    var minY = profile[0][1], maxY = profile[profile.length - 1][1], maxR = 0;
+    for (var i = 0; i < profile.length; i++) if (profile[i][0] > maxR) maxR = profile[i][0];
+    var spanY = (maxY - minY) || 1;
+    var s = Math.min((H - 2 * pad) / spanY, (W / 2 - pad) / (maxR || 1));
+    var cx = W / 2, baseY = H - pad, right = [], left = [];
+    for (var j = 0; j < profile.length; j++) {
+      var px = profile[j][0] * s, py = (profile[j][1] - minY) * s;
+      right.push([cx + px, baseY - py]);
+      left.push([cx - px, baseY - py]);
+    }
+    return right.concat(left.reverse());   // 오른쪽 아래→위 + 왼쪽 위→아래 = 닫힌 실루엣
+  }
+
   var API = {
     GW: GW, GH: GH, TOOLS: TOOLS,
     mulberry32: mulberry32, hashStr: hashStr,
@@ -400,7 +455,8 @@
     snapOk: snapOk, latheValid: latheValid,
     restoreLayout: restoreLayout, restoreProgress: restoreProgress,
     restoreDone: restoreDone, shardYSpan: shardYSpan,
-    ERA_ORDER: ERA_ORDER, eraIndex: eraIndex, timelineResult: timelineResult
+    ERA_ORDER: ERA_ORDER, eraIndex: eraIndex, timelineResult: timelineResult,
+    museumSummary: museumSummary, silhouettePath: silhouettePath
   };
   root.DigLab = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -755,7 +811,7 @@ function enterRestore(){
   // 발굴실 UI·오브젝트 숨김
   ['tools','expose','panel'].forEach(id=>{ const el=document.getElementById(id); if(el)el.style.display='none'; });
   document.querySelector('.tabs').style.display='none';
-  ['gridBtn','recBtn','liftBtn','newBtn'].forEach(id=>document.getElementById(id).style.display='none');
+  ['gridBtn','recBtn','liftBtn','newBtn','muOpen'].forEach(id=>document.getElementById(id).style.display='none');
   soil.visible=false; box.visible=false; grid.visible=false; if(artMesh)artMesh.visible=false; cracks.forEach(c=>c.visible=false);
   document.getElementById('restoreHud').style.display='';
   document.querySelector('.topbar .title').innerHTML='🧩 케이랩 <b>복원실</b> <span style="color:var(--warn);font-size:14px">'+art.name+'</span>';
@@ -868,9 +924,12 @@ function tlPick(era, el){
     el.insertAdjacentHTML('beforeend','<div class="badge">🏅</div>');
     const info=(window.ERA_INFO&&window.ERA_INFO[era])||{desc:''};
     const tp=document.getElementById('tlPanel');
-    tp.innerHTML='<div class="pt">🏛 '+art.name+' · '+era+'</div><div class="pd">'+(info.desc||'')+'</div>';
+    tp.innerHTML='<div class="pt">🏛 '+art.name+' · '+era+'</div><div class="pd">'+(info.desc||'')+'</div>'+
+      '<button class="btn acc" id="tlToMuseum" style="margin-top:12px">🏛 내 박물관에 전시하기</button>';
     tp.classList.add('show');
     document.getElementById('tlQ').textContent='발굴 → 복원 → 시대까지 완주했어요!';
+    addCollected(art.id);
+    document.getElementById('tlToMuseum').onclick=()=>{ Snd.play('tap'); enterMuseum(); };
     Snd.play('reveal'); toast('🏅 '+r.msg);
     try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('tl_'+art.id); }catch(e){}
   } else {
@@ -890,6 +949,62 @@ function exitTimeline(){
   exitRestore();   // 복원 잔재 정리 + 발굴 UI 복원 + resetDig (mode='dig')
 }
 document.getElementById('tlBack').onclick=()=>{ Snd.play('tap'); exitTimeline(); };
+
+/* ══════════ 박물관 (T2-2) — 수집 유물 진열·도감률 ══════════ */
+const museumHud=document.getElementById('museumHud');
+const COLL_KEY='kedu_dig_collected';
+function readCollected(){ try{ return JSON.parse(localStorage.getItem(COLL_KEY)||'[]'); }catch(e){ return []; } }
+function addCollected(id){ const c=readCollected(); if(c.indexOf(id)<0){ c.push(id); try{ localStorage.setItem(COLL_KEY, JSON.stringify(c)); }catch(e){} } }
+function drawSilhouette(cv, a, got){
+  const g=cv.getContext('2d'); const W=cv.width, H=cv.height; g.clearRect(0,0,W,H);
+  if(a.geo.type!=='lathe'){ g.fillStyle=got?(a.geo.tint||'#B08860'):'#3a4048';
+    g.beginPath(); g.arc(W/2,H/2,W*0.26,0,Math.PI*2); g.fill(); return; }
+  const pts=DL.silhouettePath(a.geo.profile, W, H, 10);
+  g.beginPath(); g.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) g.lineTo(pts[i][0],pts[i][1]); g.closePath();
+  if(got){ g.fillStyle=a.geo.tint||'#B08860'; g.fill();
+    if(a.geo.pattern==='comb_lines'){ g.save(); g.clip(); g.strokeStyle='rgba(50,32,20,.5)'; g.lineWidth=1.5;
+      for(let x=-H;x<W;x+=9){ g.beginPath(); g.moveTo(x,0); g.lineTo(x+H,H); g.stroke(); } g.restore(); }
+    else if(a.geo.pattern==='inlay'){ g.save(); g.clip(); g.strokeStyle='rgba(245,245,235,.75)'; g.lineWidth=2;
+      for(let y=H*0.35;y<H*0.75;y+=10){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); } g.restore(); }
+    else if(a.geo.pattern==='blue_paint'){ g.save(); g.clip(); g.strokeStyle='rgba(38,66,150,.8)'; g.lineWidth=2.4; g.lineCap='round';
+      for(let cx2=W*0.35;cx2<W;cx2+=W*0.3){ g.beginPath(); g.moveTo(cx2,H*0.62); g.quadraticCurveTo(cx2-8,H*0.5,cx2,H*0.38); g.stroke(); } g.restore(); }
+    g.strokeStyle='rgba(255,255,255,.25)'; g.lineWidth=1; g.stroke();
+  } else { g.fillStyle='rgba(120,132,148,.35)'; g.fill();
+    g.fillStyle='#8892a0'; g.font='700 30px Jua,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('?',W/2,H/2); }
+}
+function renderMuseum(){
+  const allIds=Object.keys(ARTS);
+  const sum=DL.museumSummary(readCollected(), allIds);
+  document.getElementById('muRateTxt').textContent='도감 '+sum.collected+' / '+sum.total;
+  document.getElementById('muFill').style.width=Math.round(sum.ratio*100)+'%';
+  const grid=document.getElementById('muGrid'); grid.innerHTML='';
+  sum.items.forEach(it=>{
+    const a=ARTS[it.id];
+    const cell=document.createElement('div'); cell.className='muCase'+(it.got?'':' locked'); cell.dataset.id=it.id;
+    const cv=document.createElement('canvas'); cv.width=104; cv.height=104;
+    cell.appendChild(cv);
+    cell.insertAdjacentHTML('beforeend','<div class="shelf"></div><div class="nm">'+(it.got?a.name:'???')+'</div><div class="er">'+(it.got?a.era:'미발굴')+'</div>');
+    grid.appendChild(cell);
+    drawSilhouette(cv, a, it.got);
+  });
+}
+let museumFrom='dig';
+function enterMuseum(){
+  museumFrom=(mode==='museum'?museumFrom:mode);
+  mode='museum';
+  document.getElementById('info').classList.remove('show');
+  document.getElementById('restoreHud').style.display='none';
+  tlHud.style.display='none';
+  renderMuseum();
+  museumHud.style.display='flex'; Snd.play('reveal');
+}
+function exitMuseum(){
+  museumHud.style.display='none';
+  if(museumFrom==='dig'){ mode='dig'; }              // 발굴 화면 그대로 복귀
+  else { tlHud.style.display='none'; exitRestore(); } // 복원/연표에서 왔으면 정리+새 구덩이
+}
+document.getElementById('muOpen').onclick=()=>{ Snd.play('tap'); enterMuseum(); };
+document.getElementById('muBack').onclick=()=>{ Snd.play('tap'); exitMuseum(); };
 
 /* ── 복원실 인터랙션 ── */
 const rsRay=new THREE.Raycaster(), rsNdc=new THREE.Vector2();
@@ -935,7 +1050,7 @@ function exitRestore(){
   document.getElementById('restoreHud').style.display='none';
   ['tools','expose','panel'].forEach(id=>{ const el=document.getElementById(id); if(el)el.style.display=''; });
   document.querySelector('.tabs').style.display='';
-  ['gridBtn','recBtn','liftBtn','newBtn'].forEach(id=>document.getElementById(id).style.display='');
+  ['gridBtn','recBtn','liftBtn','newBtn','muOpen'].forEach(id=>document.getElementById(id).style.display='');
   document.querySelector('.topbar .title').innerHTML='🏺 케이랩 <b>발굴실</b> <span id="artName"></span>';
   soil.visible=true; box.visible=true; if(artMesh)artMesh.visible=true;
   camera.position.set(0.2,2.3,2.7); controls.target.set(0,-0.35,0); controls.minDistance=1.4; controls.maxDistance=5.5; controls.maxPolarAngle=1.35;
@@ -961,6 +1076,7 @@ document.getElementById('loading').style.display='none';
 const php=parseInt(params.get('hp')||'0',10); if(php>0) hpLost=Math.min(php,art.hp);
 if(params.get('stage')==='restore'){ lifted=true; enterRestore(); }
 if(params.get('stage')==='timeline'){ lifted=true; enterTimeline(); }   // 교사·검수 직행
+if(params.get('stage')==='museum'){ enterMuseum(); }                    // 박물관 직행
 
 // 스모크 노출
 window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get hpLost(){return hpLost;},
@@ -976,7 +1092,12 @@ window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get h
   // 연표실 훅
   enterTimeline, exitTimeline, get tlDone(){return tlDone;},
   get tlEraCount(){return document.querySelectorAll('.tlEra').length;},
-  tlPickEra(era){ const el=document.querySelector('.tlEra[data-era="'+era+'"]'); if(el&&el.onclick)el.onclick(); return tlDone; } };
+  tlPickEra(era){ const el=document.querySelector('.tlEra[data-era="'+era+'"]'); if(el&&el.onclick)el.onclick(); return tlDone; },
+  // 박물관 훅
+  enterMuseum, exitMuseum,
+  get museumCaseCount(){return document.querySelectorAll('.muCase').length;},
+  get museumGotCount(){return document.querySelectorAll('.muCase:not(.locked)').length;},
+  get museumRate(){return document.getElementById('muFill').style.width;} };
 </script>
 </body>
 </html>
