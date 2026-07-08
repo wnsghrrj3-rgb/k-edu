@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>자석 · 케이랩</title>
+<!-- P1 = 쌍극자 자기장 순수 로직만(렌더 0줄). P2에서 자석·나침반·철가루·자기력선 dots 렌더 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#9fb0c0; --panel:rgba(12,16,24,.85); --line:rgba(255,255,255,.1);
+         --mag:#c05a9a; --npole:#e0504a; --spole:#3a6ac0; --ok:#5fbf6a; --gold:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0d13;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a0d13;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--mag)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  #phase{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'Jua';font-size:13.5px;backdrop-filter:blur(6px)}
+  #forceBadge{position:fixed;top:50px;right:16px;z-index:20;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:11.5px;color:var(--sub);opacity:0;transition:opacity .3s}
+  #forceBadge.show{opacity:1}
+
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;width:min(94vw,420px);
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px)}
+  .btnRow{display:flex;gap:8px;flex-wrap:wrap}
+  .aBtn{flex:1;min-width:72px;font-family:'Jua';font-size:12px;padding:9px;border-radius:11px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink)}
+  .aBtn.on{background:var(--mag);color:#fff;border-color:var(--mag)}
+
+  #hint{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(10,13,19,.7);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s;max-width:82vw;text-align:center}
+  #hint.show{opacity:1}
+
+  #mBtn{position:fixed;left:16px;top:86px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#fff;background:var(--mag);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(192,90,154,.35)}
+  #mBanner{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:21;max-width:72vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--mag);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(6,9,14,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#121821;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#fff;background:var(--mag);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:16px;text-align:center;margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">🧲 자석을 준비하는 중…</div>
+<div id="brand">🧲 <span class="k">자석</span> 실험실</div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+<div id="phase">🧲 나침반과 자석으로 보이지 않는 힘을 찾아요</div>
+<div id="forceBadge"></div>
+
+<div id="ctl">
+  <div class="btnRow" style="margin-bottom:9px">
+    <button class="aBtn" id="btnCompass">🧭 나침반</button>
+    <button class="aBtn" id="btnMag2">🧲 자석 추가</button>
+    <button class="aBtn" id="btnFlip">🔄 극 뒤집기</button>
+  </div>
+  <div class="btnRow">
+    <button class="aBtn" id="btnFilings">✨ 철가루</button>
+    <button class="aBtn" id="btnCut">✂️ 자르기</button>
+    <button class="aBtn" id="btnReset">↺ 리셋</button>
+  </div>
+</div>
+<div id="hint"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KMagnet 쌍극자 자기장 (SPEC_BATCH_A T-7). THREE·DOM 참조 0.
+     N(+)·S(−) 점자하 역제곱 합·나침반 정렬·극 상호작용(같은극 반발/다른극 인력)·자르기(홀극 없음).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="magnet-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KMagnet = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (SPEC_BATCH_A T-7) ── */
+  const MAG_LEN   = 0.24;   // 막대자석 길이(N↔S 거리)
+  const MAG_STR   = 1.0;    // 자극 세기(q)
+  const NEEDLE_K  = 8.0;    // 나침반 바늘 정렬 속도(/s, 트윈)
+  const FORCE_K   = 0.02;   // 극 상호작용 계수(쿨롱 유사)
+  const SOFT      = 0.0009; // 특이점 방지 소프트닝(r²+soft)
+  const DT_CLAMP  = 0.1;
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function angDiff(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
+
+  /* ── 막대자석: center(x,y)·angle. moment 방향 = S→N. flip이면 극 반전. ──
+     N극 = center + axis·L/2, S극 = center − axis·L/2. (flip이면 N↔S 스왑) */
+  function makeMagnet(x, y, angle, flip) {
+    return { x: x, y: y, angle: angle || 0, flip: !!flip };
+  }
+  // 극 위치 반환 {N:{x,y}, S:{x,y}}
+  function poles(m) {
+    const ax = Math.cos(m.angle), ay = Math.sin(m.angle);
+    const half = MAG_LEN / 2;
+    const pos = { x: m.x + ax * half, y: m.y + ay * half };
+    const neg = { x: m.x - ax * half, y: m.y - ay * half };
+    return m.flip ? { N: neg, S: pos } : { N: pos, S: neg };
+  }
+  // moment 단위벡터(S→N)
+  function moment(m) {
+    const ax = Math.cos(m.angle), ay = Math.sin(m.angle);
+    return m.flip ? { x: -ax, y: -ay } : { x: ax, y: ay };
+  }
+
+  /* ── 자기장: 모든 자석의 N(+)·S(−) 점자하 역제곱 합 ──
+     B(p) = Σ q·(p−pole)/|p−pole|³  (단위벡터/r² = 역제곱) */
+  function fieldAt(magnets, p) {
+    let bx = 0, by = 0;
+    for (const m of magnets) {
+      const pl = poles(m);
+      let dx = p.x - pl.N.x, dy = p.y - pl.N.y;
+      let r2 = dx * dx + dy * dy + SOFT, r = Math.sqrt(r2);
+      bx += MAG_STR * dx / (r2 * r); by += MAG_STR * dy / (r2 * r);
+      dx = p.x - pl.S.x; dy = p.y - pl.S.y;
+      r2 = dx * dx + dy * dy + SOFT; r = Math.sqrt(r2);
+      bx -= MAG_STR * dx / (r2 * r); by -= MAG_STR * dy / (r2 * r);
+    }
+    return { x: bx, y: by };
+  }
+  function fieldMag(magnets, p) { const b = fieldAt(magnets, p); return Math.hypot(b.x, b.y); }
+  function fieldAngle(magnets, p) { const b = fieldAt(magnets, p); return Math.atan2(b.y, b.x); }
+
+  /* ── 두 자석 극 상호작용 부호 ──
+     가장 가까운 극쌍 기준: 같은 극 → 반발(+) / 다른 극 → 인력(−). */
+  function interactionForce(a, b) {
+    const pa = poles(a), pb = poles(b);
+    const combos = [
+      { s: +1, p: pa.N, q: pb.N }, { s: +1, p: pa.S, q: pb.S },
+      { s: -1, p: pa.N, q: pb.S }, { s: -1, p: pa.S, q: pb.N },
+    ];
+    let best = null, bestR = Infinity;
+    for (const c of combos) {
+      const r2 = (c.p.x - c.q.x) ** 2 + (c.p.y - c.q.y) ** 2 + SOFT;
+      if (r2 < bestR) { bestR = r2; best = c; }
+    }
+    return best.s * FORCE_K / bestR;   // ＋반발 / −인력
+  }
+
+  /* ── 자석 자르기: 반으로 → 각 조각이 다시 N·S(자기 홀극 없음) ── */
+  function splitMagnet(m) {
+    const ax = Math.cos(m.angle), ay = Math.sin(m.angle);
+    const q = MAG_LEN / 4;
+    const c1 = { x: m.x - ax * q, y: m.y - ay * q };
+    const c2 = { x: m.x + ax * q, y: m.y + ay * q };
+    return [ makeMagnet(c1.x, c1.y, m.angle, m.flip), makeMagnet(c2.x, c2.y, m.angle, m.flip) ];
+  }
+
+  /* ── 자기력선 경로: N극에서 옆으로 벌려 출발 → 장 따라 S극으로 수렴 ── */
+  function fieldLine(magnets, startNear, steps, ds, side) {
+    steps = steps || 140; ds = ds || 0.015;
+    const m = magnets[startNear || 0];
+    const pl = poles(m), mo = moment(m);
+    const perp = { x: -mo.y, y: mo.x };
+    const sgn = side === -1 ? -1 : 1;
+    let p = { x: pl.N.x + mo.x * 0.015 + perp.x * 0.03 * sgn,
+              y: pl.N.y + mo.y * 0.015 + perp.y * 0.03 * sgn };
+    const path = [{ x: p.x, y: p.y }];
+    for (let i = 0; i < steps; i++) {
+      const b = fieldAt(magnets, p); const mag = Math.hypot(b.x, b.y) + 1e-9;
+      p = { x: p.x + (b.x / mag) * ds, y: p.y + (b.y / mag) * ds };
+      path.push({ x: p.x, y: p.y });
+      if (Math.hypot(p.x - pl.S.x, p.y - pl.S.y) < 0.04) break;
+    }
+    return path;
+  }
+
+  /* ── 상태 ── */
+  function createMag(opts) {
+    opts = opts || {};
+    return {
+      magnets: opts.magnets || [makeMagnet(0, 0, 0, false)],
+      compass: { x: 0.25, y: -0.12, needleAngle: 0, active: false },
+      filings: false, cut: false, lastForce: 0,
+      phase: 'single'   // single → twoMagnets → cut
+    };
+  }
+  function addMagnet(g, x, y, angle, flip) {
+    g.magnets.push(makeMagnet(x != null ? x : 0.3, y != null ? y : 0, angle || 0, !!flip));
+    g.phase = 'twoMagnets';
+    return g;
+  }
+  function placeCompass(g, x, y) {
+    g.compass.x = x; g.compass.y = y; g.compass.active = true;
+    g.compass.needleAngle = fieldAngle(g.magnets, g.compass);
+    return g;
+  }
+  function cut(g) {
+    if (g.magnets.length && !g.cut) {
+      const pieces = splitMagnet(g.magnets[0]);
+      g.magnets.splice(0, 1, pieces[0], pieces[1]);
+      g.cut = true; g.phase = 'cut';
+    }
+    return g;
+  }
+
+  /* ── 1스텝: 나침반 바늘 트윈 + 두 자석 힘 ── */
+  function step(g, dt) {
+    dt = clamp(dt, 0, DT_CLAMP);
+    if (g.compass.active) {
+      const target = fieldAngle(g.magnets, g.compass);
+      const d = angDiff(target, g.compass.needleAngle);
+      g.compass.needleAngle += d * Math.min(1, NEEDLE_K * dt);
+    }
+    if (g.magnets.length >= 2) g.lastForce = interactionForce(g.magnets[0], g.magnets[1]);
+    else g.lastForce = 0;
+    return { force: g.lastForce, needle: g.compass.needleAngle };
+  }
+
+  /* ── 미션 판정 ── */
+  function isCompassAligned(g) {
+    if (!g.compass.active) return false;
+    const target = fieldAngle(g.magnets, g.compass);
+    return Math.abs(angDiff(target, g.compass.needleAngle)) < 0.08;
+  }
+  function isRepelling(g) { return g.magnets.length >= 2 && g.lastForce > 0; }
+  function isFieldShown(g) { return g.filings === true; }
+
+  return {
+    MAG_LEN, MAG_STR, NEEDLE_K, FORCE_K, SOFT, DT_CLAMP,
+    clamp, angDiff, makeMagnet, poles, moment, fieldAt, fieldMag, fieldAngle,
+    interactionForce, splitMagnet, fieldLine,
+    createMag, addMagnet, placeCompass, cut, step,
+    isCompassAligned, isRepelling, isFieldShown
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 자석 렌더 — KMagnet 순수 로직만 매핑. SPEC_BATCH_A T-7.
+     자석(N빨강/S파랑)·나침반 바늘 트윈·철가루 InstancedMesh 정렬·자기력선 dots(?field=dots|arrows|off).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KMagnet;
+const P = new URLSearchParams(location.search);
+const FIELD_MODE = (P.get('field') || 'dots'); // dots | arrows | off
+
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(8,11,16,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#c05a9a;color:#fff;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene=new THREE.Scene();
+{ const c=document.createElement('canvas'); c.width=4;c.height=256; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,'#1a2230');gr.addColorStop(.6,'#0f1620');gr.addColorStop(1,'#080b11');
+  g.fillStyle=gr; g.fillRect(0,0,4,256); const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg; }
+scene.fog=new THREE.Fog(0x0c121a,2.8,7.5);
+
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.03,30);
+camera.position.set(0.05,0.72,0.86);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0.05,0,0); controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.5; controls.maxDistance=2.4; controls.maxPolarAngle=1.45; controls.enablePan=false; controls.update();
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const sun=new THREE.DirectionalLight(0xffffff,2.0); sun.position.set(1.0,2.6,1.0); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-1;sun.shadow.camera.right=1;
+sun.shadow.camera.top=1;sun.shadow.camera.bottom=-1; sun.shadow.camera.near=0.3;sun.shadow.camera.far=6;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({color:0x0d1219,roughness:1}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+// 작업대(밝은 흰 판 — 철가루가 잘 보이게)
+{ const desk=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.02,0.8),
+    new THREE.MeshStandardMaterial({color:0xe8ecf0,roughness:0.9}));
+  desk.position.set(0.05,-0.011,0); desk.receiveShadow=true; scene.add(desk); }
+
+/* ── 좌표: 순수 (x,y) → 3D (x, HEIGHT, z=y) 수평면 ── */
+const HY=0.02;
+const P2 = (p)=> new THREE.Vector3(p.x, HY, p.y);
+
+const NCOL=0xe0504a, SCOL=0x3a6ac0;
+
+/* ── 막대자석 mesh 팩토리(N 빨강 + S 파랑) ── */
+function makeBar(m){
+  const grp=new THREE.Group();
+  const L=K.MAG_LEN, w=0.05, h=0.05;
+  const nMat=new THREE.MeshStandardMaterial({color:NCOL,roughness:0.5,metalness:0.3});
+  const sMat=new THREE.MeshStandardMaterial({color:SCOL,roughness:0.5,metalness:0.3});
+  const nHalf=new THREE.Mesh(new THREE.BoxGeometry(L/2,h,w), nMat); nHalf.position.x= L/4; nHalf.castShadow=true;
+  const sHalf=new THREE.Mesh(new THREE.BoxGeometry(L/2,h,w), sMat); sHalf.position.x=-L/4; sHalf.castShadow=true;
+  grp.add(nHalf); grp.add(sHalf);
+  // N/S 라벨(작은 스프라이트 대신 색으로 구분 — 라벨 텍스트는 canvas 스프라이트)
+  grp.userData.nMat=nMat; grp.userData.sMat=sMat;
+  return grp;
+}
+function syncBar(grp, m){
+  grp.position.set(m.x, HY+h2(), m.y);
+  // flip이면 N/S 절반 색 교체
+  grp.userData.nMat.color.set(m.flip?SCOL:NCOL);
+  grp.userData.sMat.color.set(m.flip?NCOL:SCOL);
+  grp.rotation.y = -m.angle;  // 순수 x,y 평면의 angle → 3D y축 회전(z=y라 부호 반전)
+}
+function h2(){ return 0.025; }
+
+let barMeshes=[]; // 자석 개수만큼
+function rebuildBars(){
+  for(const b of barMeshes) scene.remove(b);
+  barMeshes=[];
+  g.magnets.forEach(m=>{ const bar=makeBar(m); syncBar(bar,m); scene.add(bar); barMeshes.push(bar); });
+}
+
+/* ── 나침반(원판 + 빨강 N 바늘) ── */
+const compass=new THREE.Group();
+{ const dial=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.012,28),
+    new THREE.MeshStandardMaterial({color:0xf4f6f8,roughness:0.5}));
+  dial.castShadow=true; compass.add(dial);
+  const needle=new THREE.Group();
+  const nArm=new THREE.Mesh(new THREE.ConeGeometry(0.012,0.04,4),
+    new THREE.MeshStandardMaterial({color:NCOL})); nArm.rotation.z=-Math.PI/2; nArm.position.x=0.02; nArm.position.y=0.01;
+  const sArm=new THREE.Mesh(new THREE.ConeGeometry(0.012,0.04,4),
+    new THREE.MeshStandardMaterial({color:0x556070})); sArm.rotation.z=Math.PI/2; sArm.position.x=-0.02; sArm.position.y=0.01;
+  needle.add(nArm); needle.add(sArm); compass.add(needle);
+  compass.userData.needle=needle;
+}
+compass.visible=false; scene.add(compass);
+function syncCompass(){
+  compass.visible=g.compass.active;
+  compass.position.set(g.compass.x, HY+0.006, g.compass.y);
+  compass.userData.needle.rotation.y = -g.compass.needleAngle;
+}
+
+/* ── 철가루 InstancedMesh(격자, B 방향 정렬) ── */
+const GRID=13, GN=GRID*GRID;
+const filings=new THREE.InstancedMesh(new THREE.BoxGeometry(0.028,0.004,0.007),
+  new THREE.MeshStandardMaterial({color:0x8a8f98,roughness:0.6,metalness:0.4}), GN);
+filings.visible=false; scene.add(filings);
+const _m4=new THREE.Matrix4(), _q=new THREE.Quaternion(), _pos=new THREE.Vector3(), _sc=new THREE.Vector3(1,1,1);
+function syncFilings(){
+  filings.visible=g.filings;
+  if(!g.filings) return;
+  let i=0;
+  for(let gx=0;gx<GRID;gx++)for(let gy=0;gy<GRID;gy++){
+    const x=-0.42+gx*0.07, y=-0.3+gy*0.05;
+    const ang=K.fieldAngle(g.magnets,{x,y});
+    const mg=Math.min(1,K.fieldMag(g.magnets,{x,y})*0.5);
+    _pos.set(x,HY+0.002,y);
+    _q.setFromAxisAngle(new THREE.Vector3(0,1,0),-ang);
+    _sc.set(0.5+mg,1,1);
+    _m4.compose(_pos,_q,_sc); filings.setMatrixAt(i++,_m4);
+  }
+  filings.instanceMatrix.needsUpdate=true;
+}
+
+/* ── 자기력선 dots(N→S 경로 점 사슬, ?field=dots|arrows|off) ── */
+let fieldGroup=new THREE.Group(); scene.add(fieldGroup);
+const DOT_GEO=new THREE.SphereGeometry(0.007,8,8);
+const DOT_MAT=new THREE.MeshBasicMaterial({color:0xbfe0ff});
+function rebuildField(){
+  scene.remove(fieldGroup); fieldGroup=new THREE.Group(); scene.add(fieldGroup);
+  if(FIELD_MODE==='off') return;
+  // 각 자석 N극에서 양쪽으로 여러 자기력선
+  g.magnets.forEach((m,mi)=>{
+    for(const side of [1,-1]){
+      const path=K.fieldLine(g.magnets, mi, 140, 0.015, side);
+      const every=Math.max(1,Math.floor(path.length/22));
+      for(let i=0;i<path.length;i+=every){
+        if(FIELD_MODE==='arrows'){
+          const a=path[i], b=path[Math.min(path.length-1,i+every)];
+          const dir=Math.atan2(b.y-a.y,b.x-a.x);
+          const cone=new THREE.Mesh(new THREE.ConeGeometry(0.008,0.02,5), DOT_MAT.clone());
+          cone.position.copy(P2(a)); cone.position.y=HY+0.008;
+          cone.rotation.z=-Math.PI/2; cone.rotation.y=-dir; fieldGroup.add(cone);
+        } else {
+          const d=new THREE.Mesh(DOT_GEO, DOT_MAT);
+          d.position.copy(P2(path[i])); d.position.y=HY+0.008; fieldGroup.add(d);
+        }
+      }
+    }
+  });
+}
+
+/* ── 상태 ── */
+let g=K.createMag();
+let running=true;
+
+/* ── 조작 ── */
+document.getElementById('btnCompass').onclick=()=>{ 
+  if(!g.compass.active){ K.placeCompass(g,0.28,-0.14); document.getElementById('btnCompass').classList.add('on'); toast('나침반이 자기장 방향으로 돌아가요'); }
+  else { g.compass.active=false; document.getElementById('btnCompass').classList.remove('on'); toast('나침반을 치웠어요'); }
+  syncCompass(); };
+document.getElementById('btnMag2').onclick=()=>{
+  if(g.magnets.length>=2){ toast('자석은 두 개까지예요'); return; }
+  K.addMagnet(g,0.34,0,0,true);  // 기본: 마주보는 극이 같은 극(반발)
+  rebuildBars(); rebuildField(); toast('자석을 하나 더 놓았어요 — 가까이 대 보세요'); };
+document.getElementById('btnFlip').onclick=()=>{
+  const idx=g.magnets.length-1; g.magnets[idx].flip=!g.magnets[idx].flip;
+  syncBar(barMeshes[idx],g.magnets[idx]); rebuildField();
+  toast('자석의 N극과 S극을 뒤집었어요'); };
+document.getElementById('btnFilings').onclick=()=>{
+  g.filings=!g.filings; document.getElementById('btnFilings').classList.toggle('on',g.filings);
+  syncFilings(); toast(g.filings?'철가루가 자기력선을 따라 늘어서요':'철가루를 치웠어요'); };
+document.getElementById('btnCut').onclick=()=>{
+  if(g.cut){ toast('이미 잘랐어요'); return; }
+  if(g.magnets.length>1){ toast('자르기는 자석 하나일 때만'); return; }
+  K.cut(g); rebuildBars(); rebuildField();
+  toast('잘라도 각 조각이 N극과 S극을 모두 가져요! (홀극 없음)'); };
+document.getElementById('btnReset').onclick=()=>{ g=K.createMag(); running=true;
+  document.getElementById('btnCompass').classList.remove('on'); document.getElementById('btnFilings').classList.remove('on');
+  rebuildBars(); rebuildField(); syncCompass(); syncFilings(); onReset(); toast('처음으로'); };
+
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=2.2; }
+
+const PHASE_TXT={ single:'🧲 자석 하나 — 나침반·철가루로 힘을 찾아요', twoMagnets:'🧲🧲 두 자석 — 가까이 대면?', cut:'✂️ 잘라도 N·S가 함께!' };
+function syncHUD(){ document.getElementById('phase').textContent=PHASE_TXT[g.phase]||'🧲';
+  const fb=document.getElementById('forceBadge');
+  if(g.magnets.length>=2){ fb.classList.add('show');
+    fb.textContent = g.lastForce>0 ? '↔️ 밀어냄(반발)' : '→←  끌어당김(인력)'; }
+  else fb.classList.remove('show');
+}
+
+/* ═══════ P3 미션 3종 + ★와우(자르면 각 조각 N·S) ═══════ */
+const MISSIONS={
+  'G-1':{icon:'🧭',title:'N극을 찾아라',brief:'나침반을 놓아 자석 주위 자기장 방향을 찾아요.',
+    hint:'«나침반» 버튼을 누르면 바늘이 자기장 방향으로 돌아가요.',
+    check:()=> K.isCompassAligned(g) },
+  'G-2':{icon:'↔️',title:'밀어내라',brief:'두 자석의 같은 극을 마주 대어 밀어내는 힘을 느껴요.',
+    hint:'«자석 추가» → 같은 극이 마주 보면 서로 밀어내요(반발).',
+    predict:{ q:'🧲 자석을 반으로 자르면 어떻게 될까?',
+      opts:['N극 조각과 S극 조각으로 나뉜다','두 조각 모두 N극과 S극이 생긴다'], answer:1,
+      explain:'두 조각 모두 N극과 S극이 생겨요! 자석은 아무리 잘게 잘라도 N극과 S극이 «항상 함께» 나타나요. N극만, S극만 있는 «홀극»은 자연에 없답니다. «자르기» 버튼으로 직접 확인해 보세요. 그리고 같은 극끼리는 손을 대지 않아도 서로 밀어내지요 — 이것이 보이지 않는 «자기력»이에요.' },
+    check:()=> K.isRepelling(g) },
+  'G-3':{icon:'✨',title:'자기력선을 그려라',brief:'철가루를 뿌려 눈에 보이지 않는 자기력선을 나타내요.',
+    hint:'«철가루» 버튼을 누르면 철가루가 자기력선을 따라 늘어서요.',
+    check:()=> K.isFieldShown(g) },
+};
+let activeMission=null, cleared=false;
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>🧲 자석 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">해보기 🧲</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); }); }
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){ activeMission=id; cleared=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide'); if(m.predict) showPredict();
+  } else bn.classList.add('hide'); }
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict)return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); }); }
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onReset(){ cleared=false; }
+function checkMission(){ if(!activeMission||cleared)return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,400); } }
+
+/* ── 학년칸: 저=G-1 / 중=G-1,3 / 고=전체. ?grade=low|mid|high ── */
+const GRADE_MISSIONS={ low:['G-1'], mid:['G-1','G-3'], high:['G-1','G-2','G-3'] };
+
+/* ── 층/자석 탭(raycast)로 나침반 이동 ── */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let pDown=null;
+renderer.domElement.addEventListener('pointerdown',(e)=>{ pDown={x:e.clientX,y:e.clientY}; });
+renderer.domElement.addEventListener('pointerup',(e)=>{
+  if(!pDown) return; const dx=e.clientX-pDown.x, dy=e.clientY-pDown.y; pDown=null;
+  if(Math.hypot(dx,dy)>6) return;
+  if(!g.compass.active) return;
+  // 데스크 평면과 교차 → 나침반 이동
+  ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ndc,camera);
+  const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-HY);
+  const hit=new THREE.Vector3();
+  if(ray.ray.intersectPlane(plane,hit)){
+    g.compass.x=hit.x; g.compass.y=hit.z; syncCompass(); }
+});
+
+/* ── 루프 ── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  K.step(g,dt);
+  syncCompass(); syncHUD(); checkMission();
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+rebuildBars(); rebuildField(); syncCompass(); syncFilings(); buildMissionUI();
+document.getElementById('loading').classList.add('hide');
+animate();
+{ const gr=P.get('grade'); if(gr==='low') openHome(); }
+{ const mq=P.get('mission'); if(mq&&MISSIONS[mq]) setMission(mq); }
+{ const demo=P.get('demo');
+  if(demo==='two'){ document.getElementById('btnMag2').click(); }
+  if(demo==='compass'){ document.getElementById('btnCompass').click(); }
+  if(demo==='filings'){ document.getElementById('btnFilings').click(); } }
+
+window.__MAGNET_P2__={ get g(){return g;}, K, MISSIONS, setMission, checkMission, FIELD_MODE,
+  get activeMission(){return activeMission;}, get cleared(){return cleared;},
+  placeCompass(x,y){ K.placeCompass(g,x,y); syncCompass(); },
+  addMagnet(){ document.getElementById('btnMag2').click(); },
+  toggleFilings(){ document.getElementById('btnFilings').click(); },
+  doCut(){ K.cut(g); rebuildBars(); rebuildField(); },
+  pumpStep(dt){ K.step(g,dt); }, rebuildField, rebuildBars };
+</script>
+</body>
+</html>
