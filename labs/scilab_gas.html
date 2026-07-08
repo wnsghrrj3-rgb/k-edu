@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>기체 발생 · 케이랩</title>
+<!-- P1 = CO₂ 발생 순수 로직만(렌더 0줄). P2에서 반응·기포·집기병·촛불·석회수 렌더 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#9fb0c0; --panel:rgba(14,18,24,.85); --line:rgba(255,255,255,.1);
+         --gas:#8fd4a0; --flame:#f5a742; --ok:#5fbf6a; --gold:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0f14;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0c0f14;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--gas)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  #phase{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'Jua';font-size:13.5px;backdrop-filter:blur(6px)}
+
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;width:min(92vw,380px);
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px)}
+  .row{margin-bottom:11px} .row:last-child{margin-bottom:0}
+  .row label{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;margin-bottom:5px}
+  input[type=range]{width:100%;margin:0;accent-color:var(--gas)}
+  .btnRow{display:flex;gap:8px;flex-wrap:wrap}
+  .aBtn{flex:1;min-width:80px;font-family:'Jua';font-size:12.5px;padding:9px;border-radius:11px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink)}
+  .aBtn.go{background:var(--gas);color:#0c2010;border-color:var(--gas)}
+  .aBtn.on{background:var(--gold);color:#3a2c00;border-color:var(--gold)}
+
+  #hint{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(12,15,20,.6);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+
+  #mBtn{position:fixed;left:16px;top:86px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#0c2010;background:var(--gas);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(143,212,160,.35)}
+  #mBanner{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:21;max-width:72vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--gas);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(8,11,16,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#141a22;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#0c2010;background:var(--gas);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:16px;text-align:center;margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">💨 실험 기구를 놓는 중…</div>
+<div id="brand">💨 기체 <span class="k">발생</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+<div id="phase">🧪 식초와 소다를 넣고 반응을 시작하세요</div>
+
+<div id="ctl">
+  <div class="row">
+    <label>🧴 식초 <b id="vinV">1.0</b></label>
+    <input type="range" id="vin" min="0.2" max="1.5" step="0.1" value="1.0">
+  </div>
+  <div class="row">
+    <label>🥄 베이킹소다 <b id="sodaV">1.0</b></label>
+    <input type="range" id="soda" min="0.2" max="1.5" step="0.1" value="1.0">
+  </div>
+  <div class="row btnRow">
+    <button class="aBtn go" id="btnReact">▶ 반응 시작</button>
+    <button class="aBtn" id="btnCandle">🕯️ 촛불 넣기</button>
+    <button class="aBtn" id="btnLime">🧪 석회수 연결</button>
+    <button class="aBtn" id="btnReset">↺ 리셋</button>
+  </div>
+</div>
+<div id="hint"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KGas CO₂ 발생 (SPEC_BATCH_A T-9). THREE·DOM 참조 0.
+     식초+베이킹소다 → CO₂. 포집(수상치환)·촛불 소등(E-5)·석회수 검출(지시약).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="gas-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KGas = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (SPEC T-9) ── */
+  const K_REACT    = 0.3;     // gasRate = min(vinegar,soda)·k
+  const DT_CLAMP   = 0.1;
+  const JAR_CAP    = 1.0;     // 집기병 용량(포집 CO₂ 상한)
+  const CANDLE_OUT = 0.5;     // 촛불 소등 CO₂ 농도 임계(집기병 내 비율)
+  const LIME_MAX   = 1.0;     // 석회수 탁도 상한
+  const LIME_GAIN  = 0.6;     // 석회수 탁해지는 속도(CO₂ 접촉당)
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 상태 생성 ──
+     vinegar/soda = 남은 반응물 / volCO2 = 발생 CO₂ 총량
+     jar = 집기병에 포집된 CO₂ / waterLevel = 수상치환 수위(1→0)
+     candleLit = 촛불 / lime = 석회수 탁도 ── */
+  function createGas(opts) {
+    opts = opts || {};
+    return {
+      vinegar: opts.vinegar != null ? opts.vinegar : 1.0,
+      soda:    opts.soda != null ? opts.soda : 1.0,
+      volCO2:  0,        // 누적 발생
+      jar:     0,        // 집기병 포집량
+      collecting: !!opts.collecting,  // 집기병으로 포집 중?
+      candleLit:  true,
+      candleIn:   false, // 촛불을 집기병에 넣었나
+      lime:       0,     // 석회수 탁도(0 맑음 → 1 뿌옇)
+      limeIn:     false, // 석회수에 CO₂ 통과 중?
+      phase:      'idle' // idle → reacting → done
+    };
+  }
+
+  /* ── 반응률: 최소 반응물이 지배(둘 중 적은 쪽) ── */
+  function reactRate(g) { return K_REACT * Math.min(g.vinegar, g.soda); }
+
+  /* ── 집기병 CO₂ 농도(비율) ── */
+  function jarConc(g) { return clamp(g.jar / JAR_CAP, 0, 1); }
+  /* ── 수상치환 수위(포집량만큼 물이 밀려남) ── */
+  function waterLevel(g) { return clamp(1 - g.jar / JAR_CAP, 0, 1); }
+
+  /* ── 1스텝 ── */
+  function step(g, dt) {
+    dt = clamp(dt, 0, DT_CLAMP);
+    // ① 반응: 반응물 소진까지 CO₂ 발생 (rate는 min 반응물에 비례)
+    const rate = reactRate(g);
+    let produced = Math.min(rate * dt, g.vinegar, g.soda);
+    // 잔량이 극소면 남은 반응물 전량 소비(지수 감쇠 꼬리 제거 · 역반영)
+    if (produced > 0 && Math.min(g.vinegar, g.soda) < 0.02) produced = Math.min(g.vinegar, g.soda);
+    if (produced > 0) {
+      g.vinegar = Math.max(0, g.vinegar - produced);
+      g.soda    = Math.max(0, g.soda - produced);
+      g.volCO2 += produced;
+      // ② 포집: 발생분이 집기병으로
+      if (g.collecting) g.jar = clamp(g.jar + produced, 0, JAR_CAP);
+      // ③ 석회수 통과 시 탁해짐
+      if (g.limeIn) g.lime = clamp(g.lime + produced * LIME_GAIN, 0, LIME_MAX);
+    }
+    // ④ 촛불: 집기병에 넣고 CO₂ 농도 임계 초과 시 소등
+    if (g.candleIn && jarConc(g) >= CANDLE_OUT) g.candleLit = false;
+    // ⑤ phase
+    if (g.vinegar <= 1e-6 || g.soda <= 1e-6) g.phase = 'done';
+    else if (produced > 0) g.phase = 'reacting';
+    else g.phase = 'idle';
+    return { produced: produced };
+  }
+
+  /* ── 촛불 투입(집기병 안으로) ── */
+  function putCandle(g) { g.candleIn = true; return g; }
+  /* ── 석회수 연결 ── */
+  function connectLime(g) { g.limeIn = true; return g; }
+
+  /* ── 미션 판정 ── */
+  // G-1: 기체를 모아라(집기병 절반 이상 포집)
+  function isCollected(g) { return g.jar >= JAR_CAP * 0.5; }
+  // G-2: 촛불을 꺼라(CO₂로 소등)
+  function isCandleOut(g) { return g.candleIn && !g.candleLit; }
+  // G-3: 이산화탄소 확인(석회수 뿌옇게)
+  function isLimeCloudy(g) { return g.lime >= 0.5; }
+
+  return {
+    K_REACT, DT_CLAMP, JAR_CAP, CANDLE_OUT, LIME_MAX, LIME_GAIN,
+    clamp, createGas, reactRate, jarConc, waterLevel, step,
+    putCandle, connectLime, isCollected, isCandleOut, isLimeCloudy
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 기체 발생 렌더 — KGas 순수 로직만 매핑. SPEC_BATCH_A T-9.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KGas;
+const P = new URLSearchParams(location.search);
+
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#8fd4a0;color:#0c2010;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene=new THREE.Scene();
+{ const c=document.createElement('canvas'); c.width=4;c.height=256; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,'#18242b');gr.addColorStop(.6,'#111820');gr.addColorStop(1,'#0b1016');
+  g.fillStyle=gr; g.fillRect(0,0,4,256); const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg; }
+scene.fog=new THREE.Fog(0x0e141c,2.8,7.5);
+
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.03,30);
+camera.position.set(0.05,0.28,1.05);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0.13,0); controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.6; controls.maxDistance=2.2; controls.maxPolarAngle=1.45; controls.enablePan=false; controls.update();
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const sun=new THREE.DirectionalLight(0xffffff,2.0); sun.position.set(1.2,2.4,1.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-1;sun.shadow.camera.right=1;
+sun.shadow.camera.top=1;sun.shadow.camera.bottom=-0.5; sun.shadow.camera.near=0.3;sun.shadow.camera.far=6;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({color:0x0f141b,roughness:1}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+
+const glassMat=()=>new THREE.MeshPhysicalMaterial({color:0xcfe3f0,roughness:0.1,transmission:0.9,transparent:true,opacity:0.3,side:THREE.DoubleSide});
+
+/* ── 반응 플라스크(좌) ── */
+const FX=-0.3;
+{ const flask=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.16,24,1,true), glassMat());
+  flask.position.set(FX,0.08,0); scene.add(flask); }
+const liquid=new THREE.Mesh(new THREE.CylinderGeometry(0.058,0.075,0.05,24),
+  new THREE.MeshStandardMaterial({color:0xd8c98a,roughness:0.3,transparent:true,opacity:0.75}));
+liquid.position.set(FX,0.05,0); scene.add(liquid);
+// 기포 InstancedMesh
+const BUB=24; const bubbles=new THREE.InstancedMesh(new THREE.SphereGeometry(0.006,8,8),
+  new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:0.6}), BUB);
+scene.add(bubbles);
+const bubData=[]; for(let i=0;i<BUB;i++) bubData.push({y:Math.random(),x:(Math.random()-0.5)*0.08,active:false});
+const _m=new THREE.Matrix4();
+
+/* ── 집기병(중앙·수상치환) ── */
+const JX=0.0;
+{ const jar=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.18,24,1,true), glassMat());
+  jar.position.set(JX,0.13,0); scene.add(jar); }
+const jarWater=new THREE.Mesh(new THREE.CylinderGeometry(0.052,0.052,1,24),
+  new THREE.MeshStandardMaterial({color:0x3a90c0,roughness:0.25,transparent:true,opacity:0.6}));
+scene.add(jarWater);
+function setJarWater(frac){ const h=Math.max(0.001,0.17*frac); jarWater.scale.y=h; jarWater.position.set(JX,0.05+h/2,0); }
+// 수조
+{ const tub=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.05,0.18),
+    new THREE.MeshPhysicalMaterial({color:0x2a4658,roughness:0.3,transmission:0.5,transparent:true,opacity:0.5}));
+  tub.position.set(JX,0.025,0); scene.add(tub); }
+
+/* ── 촛불(집기병에 넣을 수 있음) ── */
+const candle=new THREE.Group(); candle.position.set(0.32,0.05,0); scene.add(candle);
+{ const stick=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.06,12),
+    new THREE.MeshStandardMaterial({color:0xf0e0c0,roughness:0.7})); stick.position.y=0.03; candle.add(stick); }
+const flame=new THREE.Mesh(new THREE.ConeGeometry(0.012,0.035,10),
+  new THREE.MeshBasicMaterial({color:0xf5a742})); flame.position.y=0.078; candle.add(flame);
+const flameGlow=new THREE.PointLight(0xf5a742,0.4,0.4); flameGlow.position.y=0.08; candle.add(flameGlow);
+
+/* ── 석회수 병(우) ── */
+const LX=0.5;
+{ const lb=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.05,0.12,20,1,true), glassMat());
+  lb.position.set(LX,0.06,0); scene.add(lb); }
+const limeLiquid=new THREE.Mesh(new THREE.CylinderGeometry(0.043,0.048,0.09,20),
+  new THREE.MeshStandardMaterial({color:0xdfeef5,roughness:0.3,transparent:true,opacity:0.7}));
+limeLiquid.position.set(LX,0.05,0); scene.add(limeLiquid);
+const clearCol=new THREE.Color(0xdfeef5), cloudyCol=new THREE.Color(0xf2f6f0);
+
+/* ── 상태 ── */
+let g=K.createGas({vinegar:1.0,soda:1.0});
+let reacting=false;
+
+/* ── HUD ── */
+const vin=document.getElementById('vin'), soda=document.getElementById('soda');
+vin.addEventListener('input',()=>{ document.getElementById('vinV').textContent=parseFloat(vin.value).toFixed(1); if(!reacting){ g.vinegar=parseFloat(vin.value);} });
+soda.addEventListener('input',()=>{ document.getElementById('sodaV').textContent=parseFloat(soda.value).toFixed(1); if(!reacting){ g.soda=parseFloat(soda.value);} });
+document.getElementById('btnReact').onclick=()=>{ g=K.createGas({vinegar:parseFloat(vin.value),soda:parseFloat(soda.value),collecting:true});
+  if(candleInBtn) K.putCandle(g); if(limeBtn) K.connectLime(g);
+  reacting=true; toast('반응 시작! 기포가 CO₂예요'); };
+let candleInBtn=false, limeBtn=false;
+document.getElementById('btnCandle').onclick=()=>{ candleInBtn=!candleInBtn;
+  document.getElementById('btnCandle').classList.toggle('on',candleInBtn);
+  candle.position.set(candleInBtn?JX:0.32, candleInBtn?0.06:0.05, 0);
+  if(reacting&&candleInBtn) K.putCandle(g);
+  toast(candleInBtn?'촛불을 집기병 안으로':'촛불을 꺼냈어요'); };
+document.getElementById('btnLime').onclick=()=>{ limeBtn=!limeBtn;
+  document.getElementById('btnLime').classList.toggle('on',limeBtn);
+  if(reacting&&limeBtn) K.connectLime(g);
+  toast(limeBtn?'석회수를 연결했어요':'석회수 분리'); };
+document.getElementById('btnReset').onclick=()=>{ reacting=false; candleInBtn=false; limeBtn=false;
+  vin.value=1.0; soda.value=1.0; document.getElementById('vinV').textContent='1.0'; document.getElementById('sodaV').textContent='1.0';
+  document.getElementById('btnCandle').classList.remove('on'); document.getElementById('btnLime').classList.remove('on');
+  candle.position.set(0.32,0.05,0); g=K.createGas({vinegar:1,soda:1}); onReset(); toast('처음으로'); };
+
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=1.8; }
+
+const PHASE_TXT={ idle:'🧪 준비됨', reacting:'💨 CO₂ 발생 중!(기포=이산화탄소)', done:'✅ 반응 끝(반응물 소진)' };
+function syncHUD(){ document.getElementById('phase').textContent=PHASE_TXT[g.phase]||'🧪';
+  liquid.scale.y=Math.max(0.1, (g.vinegar+g.soda)/2);
+  setJarWater(K.waterLevel(g));
+  flame.visible=g.candleLit; flameGlow.intensity=g.candleLit?0.4:0;
+  const t=K.clamp(g.lime,0,1); limeLiquid.material.color.copy(clearCol).lerp(cloudyCol,t);
+  limeLiquid.material.opacity=0.7+t*0.25;
+}
+
+/* ═══════ P3 미션 3종 + ★와우(CO₂로 촛불 끄기) ═══════ */
+const MISSIONS={
+  'G-1':{icon:'🫙',title:'기체를 모아라',brief:'식초와 소다를 반응시켜 집기병에 CO₂를 모아요.',
+    hint:'반응을 시작하면 기포가 집기병으로 모여요(수상치환).',
+    check:()=> K.isCollected(g) },
+  'G-2':{icon:'🕯️',title:'촛불을 꺼라',brief:'모은 이산화탄소로 촛불을 꺼요.',
+    hint:'촛불 넣기 → 반응 시작! CO₂가 쌓이면 촛불이 꺼져요.',
+    predict:{ q:'🕯️ 보이지 않는 기체를 담아 촛불에 부으면?',
+      opts:['아무 일도 없다','촛불이 꺼진다'], answer:1,
+      explain:'촛불이 꺼져요! 이산화탄소는 공기보다 무거워 아래로 흐르고, 산소를 밀어내 불이 탈 수 없게 해요. 눈에 보이지 않아도 «무게»가 있는 진짜 기체랍니다. 소화기가 불을 끄는 원리도 이것과 같아요.' },
+    check:()=> K.isCandleOut(g) },
+  'G-3':{icon:'🧪',title:'이산화탄소를 확인하라',brief:'석회수를 뿌옇게 만들어 CO₂를 검출해요.',
+    hint:'석회수 연결 → 반응 시작! 이산화탄소가 지나가면 뿌옇게 변해요.',
+    check:()=> K.isLimeCloudy(g) },
+};
+let activeMission=null, cleared=false;
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>💨 기체 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">해보기 💨</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); }); }
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){ activeMission=id; cleared=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide'); if(m.predict) showPredict();
+  } else bn.classList.add('hide'); }
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict)return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); }); }
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onReset(){ cleared=false; }
+function checkMission(){ if(!activeMission||cleared)return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,400); } }
+
+/* ── 루프 ── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(reacting){ const r=K.step(g,dt);
+    // 기포 활성
+    for(let i=0;i<BUB;i++){ const b=bubData[i];
+      if(g.phase==='reacting'){ b.active=true; b.y-=dt*(1.2+Math.random()*0.6);
+        if(b.y<0){ b.y=1; b.x=(Math.random()-0.5)*0.08; } }
+      else b.active=false;
+      _m.makeTranslation(FX+b.x, 0.03+b.y*0.1, (Math.random()-0.5)*0.06);
+      _m.elements[0]=_m.elements[5]=_m.elements[10]=b.active?1:0.0001;
+      bubbles.setMatrixAt(i,_m); }
+    bubbles.instanceMatrix.needsUpdate=true;
+  }
+  syncHUD(); checkMission();
+  flame.scale.y=g.candleLit?(1+Math.sin(performance.now()*0.01)*0.15):1;
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+setJarWater(1.0); buildMissionUI();
+document.getElementById('loading').classList.add('hide');
+animate();
+{ const mq=P.get('mission'); if(mq&&MISSIONS[mq]) setMission(mq); }
+
+window.__GAS_P2__={ get g(){return g;}, K, MISSIONS, setMission, checkMission,
+  get activeMission(){return activeMission;}, get cleared(){return cleared;},
+  startReact(v,s,opts){ g=K.createGas({vinegar:v,soda:s,collecting:true,...(opts||{})}); reacting=true; return g; },
+  putCandle(){ K.putCandle(g); }, connectLime(){ K.connectLime(g); } };
+</script>
+</body>
+</html>
