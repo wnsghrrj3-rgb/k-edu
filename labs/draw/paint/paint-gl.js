@@ -178,6 +178,7 @@
   uniform sampler2D uHgt;
   uniform vec3 uBg;
   uniform float uLit;
+  uniform float uInkAlpha;   // 1=잉크 있는 곳만 불투명(본체 합성/bake), 0=배경 불투명(데모)
   float hgtAt(vec2 p){ return texture(uHgt,(p+0.5)*uTexel).r; }
   void main(){
     vec2 P = floor(uv*uSize);
@@ -190,9 +191,7 @@
       float lin = clamp(reflectKS(ks)*shade, 0.0, 1.0);
       col[c] = pow(lin, 1.0/2.2);
     }
-    // 무착색 영역은 종이 배경색(검은 도화지 등). 착색량으로 혼합.
     float ink = clamp(dot(pig+dry, vec3(1.0))*4.0, 0.0, 1.0);
-    col = mix(uBg, col, ink);
     // 🖌️ 임파스토 조명(SPEC §3): 유화일 때 hgt 구배 → 좌상 광원 shade
     if(uLit>0.5){
       float dhx = (hgtAt(P+vec2(1,0)) - hgtAt(P-vec2(1,0)))*0.5;
@@ -201,7 +200,9 @@
       vec3 L = normalize(vec3(-0.5,-0.7,0.6));
       col *= (0.75 + 0.45*max(dot(n,L),0.0));
     }
-    frag = vec4(clamp(col,0.0,1.0), 1.0);
+    col = clamp(col, 0.0, 1.0);
+    if(uInkAlpha>0.5){ frag = vec4(col*ink, ink); }     // 프리멀티플(본체 위 합성)
+    else { frag = vec4(mix(uBg, col, ink), 1.0); }      // 배경 포함(단독 데모)
   }`;
 
   // ── 🖌️ 유화 스탬프(브리슬 1개): MRT state(pig+=) + hgt(+=0.008·p·f). 확산 없음.
@@ -380,8 +381,9 @@
    * ------------------------------------------------------------------- */
   function PaintGL(canvas, opts){
     opts = opts || {};
-    const size = opts.size || 512;
-    this.size = size;
+    const W = opts.width || opts.size || 512;
+    const H = opts.height || opts.size || W;
+    this.w = W; this.h = H; this.size = W; // size=하위호환(정사각일 때 W=H)
     this.supported = false;
     const gl = canvas.getContext('webgl2', { antialias:false, preserveDrawingBuffer:true });
     if(!gl){ this._reason = 'webgl2-none'; return; }
@@ -406,17 +408,17 @@
 
     this.vao = gl.createVertexArray();
 
-    // 텍스처: state 핑퐁 2 · dry 핑퐁 2 · paper · wax
-    this.stateA = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.stateB = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.dryA   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.dryB   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.paperT = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.waxT   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.saltA  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.saltB  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.hgtA   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
-    this.hgtB   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    // 텍스처: state 핑퐁 2 · dry 핑퐁 2 · paper · wax · salt · hgt (전부 w×h)
+    this.stateA = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.stateB = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.dryA   = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.dryB   = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.paperT = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.waxT   = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.saltA  = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.saltB  = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.hgtA   = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
+    this.hgtB   = this._tex(gl, W, H, gl.RGBA16F, gl.RGBA);
     this.lit = false;
     this.fbo = gl.createFramebuffer();
 
@@ -432,10 +434,10 @@
     this.reset(opts.paperKind || 'watercolor', opts.seed);
   }
 
-  PaintGL.prototype._tex = function(gl, size, internal, fmt){
+  PaintGL.prototype._tex = function(gl, w, h, internal, fmt){
     const t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texImage2D(gl.TEXTURE_2D, 0, internal, size, size, 0, fmt, gl.FLOAT, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, internal, w, h, 0, fmt, gl.FLOAT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -445,16 +447,15 @@
 
   // 종이 필드 업로드(CPU makePaper 결과가 있으면 그걸, 없으면 GL 자체 노이즈). paint-core 있으면 재사용.
   PaintGL.prototype.reset = function(paperKind, seed){
-    const gl = this.gl, size = this.size;
-    // paint-core.makePaper 재사용(동일 종이) — 있으면.
+    const gl = this.gl, W = this.w, H = this.h, N = W*H;
     const G = (typeof globalThis!=='undefined'?globalThis:(typeof window!=='undefined'?window:{}));
     const PC = G.PaintCore;
-    const buf = new Float32Array(size*size*4);
+    const buf = new Float32Array(N*4);
     let aniso = 0, bg = [1,1,1];
     if(PC && PC.makePaper){
-      const pp = PC.makePaper(size, size, paperKind, seed);
+      const pp = PC.makePaper(W, H, paperKind, seed);
       aniso = pp.aniso || 0;
-      for(let i=0;i<size*size;i++){
+      for(let i=0;i<N;i++){
         buf[i*4]   = pp.ph[i];
         buf[i*4+1] = pp.aniso>0 ? (pp.pd[i]/(2*Math.PI)) : 0;
         buf[i*4+2] = pp.pa[i];
@@ -462,16 +463,16 @@
       }
       if(pp.bg && pp.bg[0]==='#'){ const h=pp.bg; bg=[parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255]; }
     } else {
-      for(let i=0;i<size*size;i++){ buf[i*4]=0.5; buf[i*4+2]=0.6; buf[i*4+3]=1; }
+      for(let i=0;i<N;i++){ buf[i*4]=0.5; buf[i*4+2]=0.6; buf[i*4+3]=1; }
     }
     this.aniso = aniso; this.bg = bg;
     gl.bindTexture(gl.TEXTURE_2D, this.paperT);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,buf);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,W,H,0,gl.RGBA,gl.FLOAT,buf);
     // state/dry/wax = 0
-    const zero = new Float32Array(size*size*4);
+    const zero = new Float32Array(W*H*4);
     for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.waxT,this.saltA,this.saltB,this.hgtA,this.hgtB]){
       gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,zero);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,W,H,0,gl.RGBA,gl.FLOAT,zero);
     }
     this.cur = 0; // stateA=현재
     this.curDry = 0; // dryA=현재
@@ -494,8 +495,8 @@
   PaintGL.prototype._bindCommon = function(prog){
     const gl = this.gl, k = this.k;
     gl.useProgram(prog);
-    gl.uniform2f(gl.getUniformLocation(prog,'uTexel'), 1/this.size, 1/this.size);
-    gl.uniform2f(gl.getUniformLocation(prog,'uSize'), this.size, this.size);
+    gl.uniform2f(gl.getUniformLocation(prog,'uTexel'), 1/this.w, 1/this.h);
+    gl.uniform2f(gl.getUniformLocation(prog,'uSize'), this.w, this.h);
     gl.uniform1f(gl.getUniformLocation(prog,'uKd'), this.diff===8?0.09:0.16);
     gl.uniform1i(gl.getUniformLocation(prog,'uDiff'), this.diff);
     gl.uniform1f(gl.getUniformLocation(prog,'uAniso'), this.aniso);
@@ -533,7 +534,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-    gl.viewport(0,0,this.size,this.size);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES,0,3);
     this.cur ^= 1; // 스왑
@@ -548,7 +549,7 @@
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._dryBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-    gl.viewport(0,0,this.size,this.size);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES,0,3);
     // COLOR_ATTACHMENT1 해제(다음 단일 패스 오염 방지)
@@ -568,7 +569,7 @@
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._saltBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-    gl.viewport(0,0,this.size,this.size);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
     this.cur ^= 1; this.curSalt ^= 1;
@@ -604,7 +605,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._saltBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-    gl.viewport(0,0,this.size,this.size);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
     this.curSalt ^= 1; this._saltActive = true;
   };
@@ -622,11 +623,22 @@
 
   PaintGL.prototype.setMedia = function(name){ if(MEDIA[name]){ this.media = MEDIA[name]; if(this.media.height) this.lit = true; } };
 
+  // bake 후: 종이·프로그램은 유지하고 잉크 상태만 0으로.
+  PaintGL.prototype.clearInk = function(){
+    if(!this.supported) return;
+    const gl = this.gl, zero = new Float32Array(this.w*this.h*4);
+    for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.saltA,this.saltB,this.hgtA,this.hgtB]){
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,this.w,this.h,0,gl.RGBA,gl.FLOAT,zero);
+    }
+    this.cur=0; this.curDry=0; this.curSalt=0; this.curHgt=0; this._saltActive=false; this.lit=false;
+  };
+
   // 🖌️ 유화붓: 브리슬 6~10개(JS에서 위치 산포) 각각 MRT 스탬프(state pig + hgt)
   PaintGL.prototype.oilBrush = function(x, y, r, p, colorName){
     if(!this.supported) return;
     const gl = this.gl, prog = this.progOilStamp;
-    const ks = PIGMENTS[colorName] || PIGMENTS.blue;
+    const ks = Array.isArray(colorName) ? colorName : (PIGMENTS[colorName] || PIGMENTS.blue);
     const nB = 6 + (Math.random()*5|0);
     for(let b=0;b<nB;b++){
       const ang = Math.random()*Math.PI*2, rad = Math.random()*r*0.8;
@@ -643,7 +655,7 @@
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._hgtBack(), 0);
       gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-      gl.viewport(0,0,this.size,this.size);
+      gl.viewport(0,0,this.w,this.h);
       gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
       this.cur ^= 1; this.curHgt ^= 1;
@@ -665,7 +677,7 @@
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._hgtBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-    gl.viewport(0,0,this.size,this.size); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.viewport(0,0,this.w,this.h); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
     this.cur ^= 1; this.curHgt ^= 1;
   };
@@ -680,7 +692,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-    gl.viewport(0,0,this.size,this.size); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.viewport(0,0,this.w,this.h); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
     this.cur ^= 1;
   };
 
@@ -690,7 +702,7 @@
     const gl = this.gl, prog = this.progBrush;
     const typeMap = { water:0, color:1, lift:2, dry:3 };
     const t = typeMap[type] != null ? typeMap[type] : 1;
-    const ks = PIGMENTS[colorName] || PIGMENTS.blue;
+    const ks = Array.isArray(colorName) ? colorName : (PIGMENTS[colorName] || PIGMENTS.blue);
     this._bindCommon(prog);
     this._bindTex(prog, this._state());
     gl.uniform2f(gl.getUniformLocation(prog,'uBrush'), x, y);
@@ -703,7 +715,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
-    gl.viewport(0,0,this.size,this.size);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES,0,3);
     this.cur ^= 1;
@@ -718,9 +730,11 @@
     gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this._hgt());
     gl.uniform1i(gl.getUniformLocation(prog,'uHgt'), 5);
     gl.uniform1f(gl.getUniformLocation(prog,'uLit'), this.lit?1.0:0.0);
+    gl.uniform1f(gl.getUniformLocation(prog,'uInkAlpha'), this.inkAlpha?1.0:0.0);
     gl.uniform3f(gl.getUniformLocation(prog,'uBg'), this.bg[0],this.bg[1],this.bg[2]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0,0,this.size,this.size);
+    gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.viewport(0,0,this.w,this.h);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES,0,3);
   };

@@ -81,6 +81,20 @@
     ];
   }
 
+  // 임의 sRGB(0..255) → K/S 3채널 (단상수 KM 역변환: K/S = (1−R)²/(2R)).
+  //   본체 색상환의 자유색을 물감 안료로 주입할 때 사용(W3 통합). γ=2.2 선형화 후 채널별.
+  function ksFromRGB(rgb) {
+    const out = [0, 0, 0];
+    for (let c = 0; c < 3; c++) {
+      let R = Math.pow(Math.max(0, Math.min(255, rgb[c])) / 255, 2.2);
+      if (R < 0.004) R = 0.004; if (R > 0.996) R = 0.996;
+      let ks = (1 - R) * (1 - R) / (2 * R);
+      if (ks > 6) ks = 6;
+      out[c] = ks;
+    }
+    return out;
+  }
+
   // 표시색: R(dry_c + 1.15·pig_c) → 종이 명암 ×(0.94+0.12·ph) → sRGB(γ=1/2.2)
   // dry3/pig3 = 누적 K/S 3채널. ph = 종이 요철 0..1. 반환 = [r,g,b] 0..255.
   function composite(dry3, pig3, ph) {
@@ -517,7 +531,7 @@
   Field.prototype.colorBrush = function (cx, cy, r, p, color, medium, opts) {
     opts = opts || {};
     const m = MEDIA[medium] || MEDIA.watercolor;
-    const ks = PIGMENTS[color] || PIGMENTS.blue;
+    const ks = Array.isArray(color) ? color : (PIGMENTS[color] || PIGMENTS.blue);
     const dens = opts.density != null ? opts.density : 1.0; // 붓 안료량 0.5~1.4
     const dryBrush = !!opts.dry;
     const wet = dryBrush ? 0 : m.wet;
@@ -561,7 +575,7 @@
 
   // 크레용: wax=1 획 + 표시엔 왁스색 dry 직접 기록(§2 우회, 불투명)
   Field.prototype.crayon = function (cx, cy, r, color) {
-    const ks = PIGMENTS[color] || PIGMENTS.brown;
+    const ks = Array.isArray(color) ? color : (PIGMENTS[color] || PIGMENTS.brown);
     const self = this;
     this._stamp(cx, cy, r, function (i, f) {
       if (f < 0.15) return;
@@ -618,7 +632,7 @@
   // 🪥 스퍼터링(뿌리기): 획 방향 dir ±25° 원뿔로 방울 6~14개(r 2~5px) 산포. 방울=물+안료(시뮬 합류).
   Field.prototype.spatter = function (cx, cy, dir, color, medium, seed) {
     const m = MEDIA[medium] || MEDIA.watercolor;
-    const ks = PIGMENTS[color] || PIGMENTS.blue;
+    const ks = Array.isArray(color) ? color : (PIGMENTS[color] || PIGMENTS.blue);
     let s = (seed == null ? ((cx * 374761393) ^ (cy * 668265263)) >>> 0 : seed) >>> 0;
     const rnd = function () { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     const nDrop = 6 + Math.floor(rnd() * 9); // 6~14
@@ -636,7 +650,7 @@
   // 🖌️ 유화붓: 브리슬 6~10개 오프셋으로 hgt 쌓고 pig 직치환(확산 없음, 불투명 두께).
   //   SPEC §3: hgt += 0.008·p(브리슬당), pig 직접 갱신. 조명용 lit 플래그 on.
   Field.prototype.oilBrush = function (cx, cy, r, p, color, medium, seed) {
-    const ks = PIGMENTS[color] || PIGMENTS.blue;
+    const ks = Array.isArray(color) ? color : (PIGMENTS[color] || PIGMENTS.blue);
     const hgt = this.hgt, w = this.w, h = this.h;
     let s = (seed == null ? ((cx * 2654435761) ^ (cy * 40503)) >>> 0 : seed) >>> 0;
     const rnd = function () { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -749,7 +763,7 @@
   return {
     mulberry32, valueNoise, fbm2,
     PIGMENTS, MEDIA, PAPERS,
-    reflect, mixWhite, composite,
+    reflect, mixWhite, composite, ksFromRGB,
     makePaper, Field,
   };
 });
