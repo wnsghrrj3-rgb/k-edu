@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>속력 실험실 · 케이랩</title>
+<!-- P1 = 운동 순수 로직만(렌더 0줄). P2에서 트랙 렌더 + 데이터 렌즈(x-t 그래프) 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#9fb0c0; --panel:rgba(14,18,24,.85); --line:rgba(255,255,255,.1);
+         --c1:#e0715a; --c2:#5aa9e0; --ok:#5fbf6a; --gold:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0f14;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;top:0;left:0;right:0;bottom:190px}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0c0f14;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--c1)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  /* 차 컨트롤(좌상단) */
+  #ctl{position:fixed;top:48px;left:16px;z-index:20;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:12px;backdrop-filter:blur(6px);width:190px}
+  .carRow{margin-bottom:12px} .carRow:last-child{margin-bottom:0}
+  .carRow .nm{font-family:'Jua';font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  .carRow .sw{width:11px;height:11px;border-radius:3px}
+  .carRow label{font-size:11.5px;color:var(--sub);display:flex;justify-content:space-between;margin:5px 0 2px}
+  input[type=range]{width:100%;margin:0}
+  #c1 input{accent-color:var(--c1)} #c2 input{accent-color:var(--c2)}
+
+  /* 출발/리셋 */
+  #run{position:fixed;top:48px;right:16px;z-index:20;display:flex;flex-direction:column;gap:8px}
+  #run button{font-family:'Jua';font-size:14px;border:1px solid var(--line);border-radius:12px;
+    padding:11px 16px;cursor:pointer;background:rgba(255,255,255,.06);color:var(--ink)}
+  #btnGo{background:var(--ok);color:#0c0f14;border-color:var(--ok)}
+
+  /* 데이터 렌즈(위치-시간 그래프) = 본체 */
+  #lens{position:fixed;left:0;right:0;bottom:0;height:190px;z-index:20;
+    background:var(--panel);border-top:1px solid var(--line);padding:10px 14px;backdrop-filter:blur(8px)}
+  #lens h4{margin:0 0 6px;font-family:'Jua';font-size:13px;display:flex;align-items:center;gap:8px}
+  #lens h4 small{color:var(--sub);font-weight:400;font-family:'Gowun Dodum'}
+  #lensCanvas{width:100%;height:135px;display:block;border-radius:8px;background:rgba(0,0,0,.25)}
+
+  #hint{position:fixed;bottom:200px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(12,15,20,.6);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+
+  /* P3 미션 */
+  #mBtn{position:fixed;left:16px;bottom:200px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#0c0f14;background:var(--c1);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(224,113,90,.35)}
+  #mBanner{position:fixed;top:48px;left:50%;transform:translateX(-50%);z-index:21;max-width:70vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--c1);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(8,11,16,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#141a22;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#0c0f14;background:var(--c1);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:16px;text-align:center;margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">🏎️ 트랙을 까는 중…</div>
+<div id="brand">🏎️ 속력 <span class="k">실험실</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+
+<div id="ctl">
+  <div class="carRow" id="c1">
+    <div class="nm"><span class="sw" style="background:var(--c1)"></span>1번 차</div>
+    <label>속력 <b id="c1vV">0.20</b></label>
+    <input type="range" id="c1v" min="0.05" max="0.5" step="0.01" value="0.2">
+    <label>가속 <b id="c1aV">0.00</b></label>
+    <input type="range" id="c1a" min="0" max="0.2" step="0.01" value="0">
+  </div>
+  <div class="carRow" id="c2">
+    <div class="nm"><span class="sw" style="background:var(--c2)"></span>2번 차</div>
+    <label>속력 <b id="c2vV">0.35</b></label>
+    <input type="range" id="c2v" min="0.05" max="0.5" step="0.01" value="0.35">
+    <label>가속 <b id="c2aV">0.00</b></label>
+    <input type="range" id="c2a" min="0" max="0.2" step="0.01" value="0">
+  </div>
+</div>
+
+<div id="run">
+  <button id="btnGo">▶ 출발</button>
+  <button id="btnReset">↺ 리셋</button>
+</div>
+
+<div id="lens">
+  <h4>📈 위치–시간 그래프 <small>기울기가 가파를수록 빠른 차</small></h4>
+  <canvas id="lensCanvas" width="600" height="135"></canvas>
+</div>
+<div id="hint"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KMotion 1D 운동 (SPEC_BATCH_A T-8). THREE·DOM 참조 0.
+     x = x0 + v·t + ½a·t². 속력 = 위치-시간 그래프의 기울기.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="motion-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KMotion = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 ── */
+  const TRACK_LEN = 1.0;         // 트랙 길이(m, 정규화) — 결승선
+  const DT_CLAMP  = 0.1;
+  const V_MAX     = 0.5;         // 속력 상한(m/s)
+  const A_MAX     = 0.2;         // 가속도 상한(m/s²)
+  const SAMPLE_DT = 0.1;         // 데이터 렌즈 샘플 간격(s)
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 차 생성 ── {x0, v, a} → 상태 {x, t, finished, finishT, hist} ── */
+  function createCar(opts) {
+    opts = opts || {};
+    return {
+      x0: opts.x0 || 0,
+      v:  clamp(opts.v != null ? opts.v : 0.2, 0, V_MAX),
+      a:  clamp(opts.a || 0, -A_MAX, A_MAX),
+      x:  opts.x0 || 0,
+      t:  0,
+      finished: false,
+      finishT: null,
+      hist: [{ t: 0, x: opts.x0 || 0 }]   // 데이터 렌즈용 시계열
+    };
+  }
+
+  /* ── 위치 공식 (순수): x(t) = x0 + v·t + ½a·t² ── */
+  function posAt(car, t) { return car.x0 + car.v * t + 0.5 * car.a * t * t; }
+  /* ── 순간 속력: v + a·t ── */
+  function speedAt(car, t) { return car.v + car.a * t; }
+
+  /* ── 1스텝 전진 ── */
+  function step(car, dt) {
+    dt = clamp(dt, 0, DT_CLAMP);
+    car.t += dt;
+    car.x = posAt(car, car.t);
+    // 결승 도달(등속·등가속 모두 t로 판정)
+    if (!car.finished && car.x >= TRACK_LEN) { car.finished = true; car.finishT = car.t; }
+    // 데이터 렌즈 샘플(간격마다)
+    const last = car.hist[car.hist.length - 1];
+    if (car.t - last.t >= SAMPLE_DT - 1e-9) car.hist.push({ t: car.t, x: Math.min(car.x, TRACK_LEN) });
+    return car;
+  }
+
+  /* ── 평균 속력 = Δx/Δt (그래프 기울기) ── */
+  function avgSpeed(car, t0, t1) {
+    return (posAt(car, t1) - posAt(car, t0)) / (t1 - t0);
+  }
+  /* ── 히스토리 두 점 기울기(렌즈에서 읽는 값) ── */
+  function slopeOf(hist, i, j) {
+    return (hist[j].x - hist[i].x) / (hist[j].t - hist[i].t);
+  }
+
+  /* ── 미션 판정 ── */
+  // M-1: 결승 먼저 도달한 차 index(동시=−1)
+  function winner(cars) {
+    let best = -1, bt = Infinity;
+    cars.forEach((c, i) => { if (c.finished && c.finishT < bt - 1e-9) { bt = c.finishT; best = i; } });
+    // 동시 도달 검사
+    const finishers = cars.filter(c => c.finished);
+    if (finishers.length >= 2) {
+      const times = finishers.map(c => c.finishT).sort((a, b) => a - b);
+      if (Math.abs(times[0] - times[1]) < 1e-6) return -1;
+    }
+    return best;
+  }
+  // M-2: 등속 두 차 중 그래프 기울기 큰(=빠른) 차 index
+  function faster(cars) {
+    let best = 0, bs = -Infinity;
+    cars.forEach((c, i) => { const s = c.v; if (s > bs) { bs = s; best = i; } });
+    return best;
+  }
+  // 결승 도달 시각(등속: TRACK/v, 등가속: 2차 공식)
+  function timeToFinish(car) {
+    const D = TRACK_LEN - car.x0;
+    if (Math.abs(car.a) < 1e-9) return car.v > 0 ? D / car.v : Infinity;
+    // ½a t² + v t − D = 0 → t = (−v + √(v²+2aD)) / a
+    const disc = car.v * car.v + 2 * car.a * D;
+    if (disc < 0) return Infinity;
+    return (-car.v + Math.sqrt(disc)) / car.a;
+  }
+
+  return {
+    TRACK_LEN, DT_CLAMP, V_MAX, A_MAX, SAMPLE_DT,
+    clamp, createCar, posAt, speedAt, step, avgSpeed, slopeOf,
+    winner, faster, timeToFinish
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 트랙 렌더 + 데이터 렌즈(위치-시간 그래프 = 본체). SPEC_BATCH_A T-8.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KMotion;
+const P = new URLSearchParams(location.search);
+const TRACK_3D = 1.8;                       // 3D 트랙 길이(정규화 1.0 → 1.8m)
+const SCALE = TRACK_3D / K.TRACK_LEN;
+const COL = [0xe0715a, 0x5aa9e0];
+
+/* ── 렌더 기반(황금 승계) ── */
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+function fitSize(){ return { w:innerWidth, h:Math.max(1, innerHeight-190) }; }
+{ const s=fitSize(); renderer.setSize(s.w,s.h); }
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#e0715a;color:#fff;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene=new THREE.Scene();
+{ const c=document.createElement('canvas'); c.width=4;c.height=256; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,'#18202b');gr.addColorStop(.6,'#111820');gr.addColorStop(1,'#0b1016');
+  g.fillStyle=gr; g.fillRect(0,0,4,256); const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg; }
+scene.fog=new THREE.Fog(0x0e141c,3.5,9);
+
+const camera=new THREE.PerspectiveCamera(42,fitSize().w/fitSize().h,0.03,30);
+camera.position.set(0.15,1.0,1.8);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0.05,0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=1.0; controls.maxDistance=3.5; controls.maxPolarAngle=1.4; controls.enablePan=false; controls.update();
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const sun=new THREE.DirectionalLight(0xffffff,2.1); sun.position.set(1,2.6,1.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-1.5;sun.shadow.camera.right=1.5;
+sun.shadow.camera.top=1;sun.shadow.camera.bottom=-1; sun.shadow.camera.near=0.3;sun.shadow.camera.far=8;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
+
+/* ── 트랙 2레인 + 결승선 ── */
+const X0 = -TRACK_3D/2;                     // 출발선 x
+[-0.16,0.16].forEach((z,i)=>{
+  const lane=new THREE.Mesh(new THREE.BoxGeometry(TRACK_3D+0.1,0.02,0.24),
+    new THREE.MeshStandardMaterial({color:i?0x1c2530:0x20272f,roughness:0.9}));
+  lane.position.set(0,-0.01,z); lane.receiveShadow=true; scene.add(lane);
+});
+{ // 출발선/결승선
+  const mkLine=(x,c)=>{ const l=new THREE.Mesh(new THREE.BoxGeometry(0.015,0.02,0.5),
+    new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.3})); l.position.set(x,0.001,0); scene.add(l); };
+  mkLine(X0,0x6b7d90); mkLine(X0+TRACK_3D,0xf5c542);
+}
+
+/* ── 차 2대 ── */
+const cars=[]; const carMeshes=[];
+function buildCars(){
+  carMeshes.forEach(m=>scene.remove(m)); carMeshes.length=0; cars.length=0;
+  [0,1].forEach(i=>{
+    const car=K.createCar(readCar(i)); cars.push(car);
+    const m=new THREE.Group();
+    const body=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.05,0.09),
+      new THREE.MeshStandardMaterial({color:COL[i],roughness:0.4,metalness:0.2}));
+    body.position.y=0.04; body.castShadow=true; m.add(body);
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.035,0.075),
+      new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.3,transparent:true,opacity:0.5}));
+    cab.position.set(-0.01,0.08,0); m.add(cab);
+    m.position.set(X0, 0, i?0.16:-0.16);
+    scene.add(m); carMeshes.push(m);
+  });
+  positionCars();
+}
+function positionCars(){ cars.forEach((c,i)=>{ carMeshes[i].position.x = X0 + c.x*SCALE; }); }
+
+/* ── 슬라이더 → 차 설정 ── */
+function readCar(i){ const p=i+1;
+  return { v:parseFloat(document.getElementById('c'+p+'v').value),
+           a:parseFloat(document.getElementById('c'+p+'a').value), x0:0 }; }
+['c1v','c1a','c2v','c2a'].forEach(id=> document.getElementById(id).addEventListener('input',(e)=>{
+  document.getElementById(id+'V').textContent=parseFloat(e.target.value).toFixed(2);
+  if(!running){ buildCars(); drawGraph(); }
+}));
+
+/* ── 데이터 렌즈: 위치-시간 그래프(본체) ── */
+const lensCanvas=document.getElementById('lensCanvas');
+function drawGraph(){
+  const cv=lensCanvas, ctx=cv.getContext('2d'); const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  const pad=24, gw=W-pad*2, gh=H-pad*1.4;
+  // 축
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,6); ctx.lineTo(pad,pad+gh); ctx.lineTo(pad+gw,pad+gh); ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='11px sans-serif';
+  ctx.fillText('위치',4,14); ctx.fillText('시간 →',pad+gw-38,pad+gh+16);
+  // 결승선 점선(y=TRACK_LEN)
+  ctx.strokeStyle='rgba(245,197,66,.4)'; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pad,6); ctx.lineTo(pad+gw,6); ctx.stroke(); ctx.setLineDash([]);
+  const maxT=Math.max(6, ...cars.map(c=>c.t), elapsed);
+  cars.forEach((c,i)=>{ if(!c.hist||c.hist.length<1)return;
+    ctx.strokeStyle='#'+COL[i].toString(16).padStart(6,'0'); ctx.lineWidth=2.4; ctx.beginPath();
+    c.hist.forEach((pt,j)=>{ const x=pad + Math.min(1,pt.t/maxT)*gw;
+      const y=6 + (1-Math.min(1,pt.x/K.TRACK_LEN))*gh;
+      j?ctx.lineTo(x,y):ctx.moveTo(x,y); }); ctx.stroke();
+    // 현재 점
+    const last=c.hist[c.hist.length-1];
+    const cx=pad+Math.min(1,last.t/maxT)*gw, cy=6+(1-Math.min(1,last.x/K.TRACK_LEN))*gh;
+    ctx.fillStyle='#'+COL[i].toString(16).padStart(6,'0'); ctx.beginPath(); ctx.arc(cx,cy,3.5,0,7); ctx.fill();
+  });
+}
+
+/* ── 출발/리셋 ── */
+let running=false, elapsed=0;
+document.getElementById('btnGo').onclick=()=>{ if(running)return; buildCars(); running=true; elapsed=0; toast('출발!'); };
+document.getElementById('btnReset').onclick=()=>{ running=false; elapsed=0; buildCars(); drawGraph(); onReset(); };
+
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=1.6; }
+
+/* ═══════ P3 미션 3종 + ★와우(기울기=속력) ═══════ */
+const MISSIONS={
+  'M-1':{icon:'🏁',title:'결승선에 먼저',brief:'속력을 정해 상대보다 먼저 결승선에 닿아요.',
+    hint:'속력 슬라이더를 올리고 ▶출발! 어느 차가 먼저 도착할까요?',
+    check:()=> cars.some(c=>c.finished) },
+  'M-2':{icon:'📈',title:'그래프를 읽어라',brief:'차를 보지 않고 그래프의 기울기만으로 빠른 차를 알아내요.',
+    hint:'가파른 선이 더 빠른 차예요!',
+    predict:{ q:'📈 위치-시간 그래프에서 기울기가 가파른 차는?',
+      opts:['더 느리다','더 빠르다'], answer:1,
+      explain:'가파를수록 빨라요! 같은 시간에 더 멀리 갔다는 뜻이니까요. 그래프의 기울기 = 「간 거리 ÷ 걸린 시간」 = 속력. 숫자가 없어도 선의 기울기만 보면 누가 빠른지 바로 알 수 있어요 — 이게 그래프를 읽는 힘이에요.' },
+    check:()=> cars.some(c=>c.finished) },
+  'M-3':{icon:'🤝',title:'같은 시간에 도착',brief:'두 차의 속력을 조절해 결승선에 «동시»에 닿게 해요.',
+    hint:'둘 다 도착했을 때 시간 차가 거의 없으면 성공!',
+    check:()=> cars.every(c=>c.finished) && Math.abs(cars[0].finishT-cars[1].finishT)<0.25 },
+};
+let activeMission=null, cleared=false;
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>🏎️ 속력 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">해보기 🏎️</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); }); }
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){ activeMission=id; cleared=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide');
+    running=false; buildCars(); drawGraph();
+    if(m.predict) showPredict();
+  } else bn.classList.add('hide'); }
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict)return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); }); }
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onReset(){ cleared=false; }
+function checkMission(){ if(!activeMission||cleared)return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,400); } }
+
+/* ── 루프 ── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(running){
+    elapsed+=dt;
+    let allDone=true;
+    cars.forEach(c=>{ if(!c.finished){ K.step(c,dt); allDone=false; } });
+    positionCars(); drawGraph();
+    if(allDone || elapsed>14){ running=false; checkMission();
+      const w=K.winner(cars);
+      if(activeMission==null) toast(w<0?'동시 도착!':(w+1)+'번 차 승리! 🏁'); }
+    else checkMission();
+  }
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{ const s=fitSize(); camera.aspect=s.w/s.h; camera.updateProjectionMatrix();
+  renderer.setSize(s.w,s.h); drawGraph(); });
+
+buildCars(); drawGraph(); buildMissionUI();
+document.getElementById('loading').classList.add('hide');
+animate();
+{ const mq=P.get('mission'); if(mq&&MISSIONS[mq]) setMission(mq); }
+
+window.__MOTION_P2__={ cars, carMeshes, K, buildCars, drawGraph, MISSIONS, setMission, checkMission,
+  get running(){return running;}, set running(v){running=v;}, get activeMission(){return activeMission;},
+  get cleared(){return cleared;}, positionCars };
+</script>
+</body>
+</html>
