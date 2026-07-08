@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>수평 잡기 · 케이랩</title>
+<!-- P1 = 토크 순수 로직만(렌더 0줄). P2에서 황금 샘플 head·module 렌더 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#9fb0c0; --panel:rgba(14,18,24,.82); --line:rgba(255,255,255,.1);
+         --steel:#8fa9c4; --gold:#f5c542; --ok:#5fbf6a; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0f14;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0c0f14;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--steel)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  /* 수평 표시등 */
+  #balState{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'Jua';font-size:14px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:8px}
+  #balDot{width:10px;height:10px;border-radius:50%;background:#e05a5a;transition:background .2s}
+  #balState.level #balDot{background:var(--ok)}
+  #torqueRead{font-size:11.5px;color:var(--sub);font-family:'Gowun Dodum'}
+
+  /* 추 트레이 */
+  #tray{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;
+    display:flex;gap:8px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:10px 12px;backdrop-filter:blur(6px);align-items:center}
+  #tray .lbl{font-size:12px;color:var(--sub);margin-right:2px}
+  .wBtn{font-family:'Jua';font-size:14px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:11px;padding:9px 13px;cursor:pointer;transition:.15s}
+  .wBtn.on{background:var(--gold);color:#3a2c00;border-color:var(--gold)}
+  #reset{font-family:'Gowun Dodum';font-size:12.5px;color:var(--sub);background:none;
+    border:1px solid var(--line);border-radius:11px;padding:9px 12px;cursor:pointer;margin-left:4px}
+
+  #hint{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(12,15,20,.6);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+
+  /* P3 미션 */
+  #mBtn{position:fixed;left:16px;bottom:16px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#0c0f14;background:var(--steel);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(143,169,196,.35)}
+  #mBanner{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:21;max-width:88vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--steel);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(8,11,16,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#141a22;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#0c0f14;background:var(--steel);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:17px;text-align:center;margin-bottom:16px}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">⚖️ 저울을 세우는 중…</div>
+<div id="brand">⚖️ 수평 <span class="k">잡기</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+<div id="balState"><span id="balDot"></span><span id="balTxt">기울어짐</span>
+  <span id="torqueRead">L 0 · R 0</span></div>
+<div id="tray">
+  <span class="lbl">추</span>
+  <button class="wBtn on" data-w="10">10g</button>
+  <button class="wBtn" data-w="20">20g</button>
+  <button class="wBtn" data-w="50">50g</button>
+  <button id="reset">↺ 비우기</button>
+</div>
+<div id="hint"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KBalance 토크 모델 (SPEC_BATCH_A T-6). THREE·DOM 참조 0.
+     양팔저울: τ=Σ(w·d), tilt, 균형 / 용수철저울: 훅 법칙 늘어남=w/K.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="balance-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KBalance = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (SPEC T-6) ── */
+  const K_TILT   = 0.6;          // tilt = k·(τR−τL)
+  const MAX_A    = 0.5;          // 최대 기울기(rad ≈ 28.6°) — 역반영 확정(SPEC maxA 미명시 갭)
+  const EPS_BAL  = 0.05;         // 수평 판정 임계(|net|<ε)
+  const WEIGHTS  = [10, 20, 50]; // 추 무게(g)
+  const SLOT_D   = 0.06;         // 슬롯 1칸 거리(m)
+  const SLOT_MAX = 5;            // 받침점~끝 5칸
+  const SPRING_K = 200;          // 용수철 상수(N/m 근사)
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 슬롯(1~5) → 받침점 거리(m) ── */
+  function slotDist(slot) { return clamp(slot, 1, SLOT_MAX) * SLOT_D; }
+
+  /* ── 저울 생성 ── */
+  function createBalance() { return { left: [], right: [] }; }
+  // side 'L'|'R' 팔에 추 얹기(무게 w[g], 슬롯 1~5)
+  function addWeight(bal, side, w, slot) {
+    (side === 'L' ? bal.left : bal.right).push({ w: w, slot: clamp(slot, 1, SLOT_MAX) });
+    return bal;
+  }
+  function clearArm(bal, side) { if (side === 'L') bal.left = []; else bal.right = []; return bal; }
+
+  /* ── 한 팔의 토크 합 τ = Σ(w·d) ── */
+  function armTorque(items) {
+    let t = 0;
+    for (let i = 0; i < items.length; i++) t += items[i].w * slotDist(items[i].slot);
+    return t;
+  }
+  // 저울 전체: {tauL, tauR, net}  (net = τR − τL, 우로 기울면 +)
+  function torque(bal) {
+    const tauL = armTorque(bal.left), tauR = armTorque(bal.right);
+    return { tauL: tauL, tauR: tauR, net: tauR - tauL };
+  }
+
+  /* ── 기울기(rad): 우 + / 좌 − ── */
+  function tiltOf(bal) {
+    const net = torque(bal).net;
+    return clamp(K_TILT * net, -MAX_A, MAX_A);
+  }
+  /* ── 수평 여부 ── */
+  function isBalanced(bal) { return Math.abs(torque(bal).net) < EPS_BAL; }
+
+  /* ── 훅 법칙 용수철저울: 늘어남 ∝ 무게 ── */
+  function springStretch(w) { return w / SPRING_K; }
+  // 늘어남으로 무게 역산(B-3 측정 원리)
+  function weightFromStretch(s) { return s * SPRING_K; }
+
+  /* ── 미션 판정 ── */
+  // B-2 지렛대 성립: 가벼운 쪽이 더 먼 거리로 무거운 쪽과 균형인가
+  function isLeverBalanced(bal) {
+    if (!isBalanced(bal)) return false;
+    const wL = bal.left.reduce((a, b) => a + b.w, 0);
+    const wR = bal.right.reduce((a, b) => a + b.w, 0);
+    if (wL === wR) return false;              // 같은 무게면 지렛대 아님(단순 대칭)
+    // 가벼운 쪽 평균 거리가 더 멀어야 지렛대
+    const dL = armTorque(bal.left) / (wL || 1), dR = armTorque(bal.right) / (wR || 1);
+    return (wL < wR) ? dL > dR : dR > dL;
+  }
+  // B-3 무게 재기: 미지 추(unknownSide) 균형 시 무게 = 반대편 토크 / 자기 거리
+  function measureWeight(bal, unknownSide, unknownSlot) {
+    const t = torque(bal);
+    const oppTorque = unknownSide === 'L' ? t.tauR : t.tauL;
+    return oppTorque / slotDist(unknownSlot);
+  }
+
+  return {
+    K_TILT, MAX_A, EPS_BAL, WEIGHTS, SLOT_D, SLOT_MAX, SPRING_K,
+    clamp, slotDist,
+    createBalance, addWeight, clearArm,
+    armTorque, torque, tiltOf, isBalanced,
+    springStretch, weightFromStretch,
+    isLeverBalanced, measureWeight
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 양팔저울 렌더 (SPEC_BATCH_A T-6). KBalance 순수 로직만 매핑(렌더 물리 0).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KBalance;
+const P = new URLSearchParams(location.search);
+
+/* ── 렌더 기반(황금 표준 승계) ── */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', (e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#8fa9c4;color:#0c0f14;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#18202b'); gr.addColorStop(.55,'#111820'); gr.addColorStop(1,'#0b1016');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x0e141c, 2.6, 7);
+
+const camera = new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.03, 30);
+camera.position.set(0, 0.42, 1.15);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.14, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.6; controls.maxDistance=2.2;
+controls.maxPolarAngle=1.45; controls.enablePan=false; controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.1);
+sun.position.set(1.4, 2.4, 1.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.2; sun.shadow.camera.right=1.2;
+sun.shadow.camera.top=1; sun.shadow.camera.bottom=-0.5;
+sun.shadow.camera.near=0.3; sun.shadow.camera.far=7; sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa9c4e0, 0x1a1f26, 0.45));
+
+/* ── 무대: 테이블 + 바닥 ── */
+{
+  const top=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.05,0.6),
+    new THREE.MeshStandardMaterial({ color:0x2a2f38, roughness:0.85 }));
+  top.position.y=-0.025; top.receiveShadow=true; scene.add(top);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({ color:0x0f141b, roughness:1 }));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.06; floor.receiveShadow=true; scene.add(floor);
+}
+
+/* ── 양팔저울 ── */
+const PIVOT_Y = 0.34;                     // 받침점 높이
+const ARM_HALF = K.SLOT_MAX * K.SLOT_D + 0.05;  // 팔 절반 길이
+const metal = new THREE.MeshStandardMaterial({ color:0x8fa9c4, roughness:0.35, metalness:0.6 });
+
+// 받침점 기둥 + 삼각
+{
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,PIVOT_Y,16), metal);
+  post.position.y=PIVOT_Y/2; post.castShadow=true; scene.add(post);
+  const tri=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.07,4),
+    new THREE.MeshStandardMaterial({ color:0xb0c4d8, roughness:0.4, metalness:0.5 }));
+  tri.position.y=PIVOT_Y+0.01; tri.rotation.y=Math.PI/4; scene.add(tri);
+}
+
+// 저울 팔(pivot 중심 회전 그룹)
+const arm = new THREE.Group(); arm.position.y=PIVOT_Y+0.04; scene.add(arm);
+{
+  const beam=new THREE.Mesh(new THREE.BoxGeometry(ARM_HALF*2, 0.02, 0.04), metal);
+  beam.castShadow=true; arm.add(beam);
+}
+// 슬롯 마커(좌우 5칸) — raycast 타겟
+const slotNodes = []; // {mesh, side, slot}
+[['L',-1],['R',1]].forEach(([side,sign])=>{
+  for(let s=1;s<=K.SLOT_MAX;s++){
+    const x=sign*K.slotDist(s);
+    const peg=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.05,8),
+      new THREE.MeshStandardMaterial({ color:0x6b7d90, roughness:0.6 }));
+    peg.position.set(x, 0.03, 0); arm.add(peg);
+    const hit=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.14,8),
+      new THREE.MeshBasicMaterial({ visible:false }));
+    hit.position.set(x, 0.06, 0); hit.userData={side,slot:s}; arm.add(hit);
+    slotNodes.push(hit);
+  }
+});
+
+/* ── 추(무게별 크기·색) ── */
+const bal = K.createBalance();
+const weightMeshes = []; // {mesh, side, slot}
+const W_COL = { 10:0xf5c542, 20:0xe0915a, 50:0xe0715a };
+function wSize(w){ return 0.02 + (w/50)*0.03; }  // 무게 → 크기
+function placeWeight(side, w, slot){
+  K.addWeight(bal, side, w, slot);
+  const sign = side==='L' ? -1 : 1;
+  const r=wSize(w);
+  const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r*0.7,r,r*2.2,18),
+    new THREE.MeshStandardMaterial({ color:W_COL[w]||0xf5c542, roughness:0.4, metalness:0.3 }));
+  mesh.castShadow=true;
+  // 같은 슬롯 이미 쌓인 개수만큼 위로
+  const stack=weightMeshes.filter(m=>m.side===side && m.slot===slot).length;
+  mesh.position.set(sign*K.slotDist(slot), 0.03 + r*1.1 + stack*r*2.3, 0);
+  arm.add(mesh);
+  weightMeshes.push({ mesh, side, slot, w });
+}
+function clearAll(){
+  weightMeshes.forEach(m=>arm.remove(m.mesh)); weightMeshes.length=0;
+  K.clearArm(bal,'L'); K.clearArm(bal,'R');
+}
+
+/* ── 용수철저울(사이드 · 훅 법칙 시연) ── */
+const spring = new THREE.Group(); spring.position.set(0.52, PIVOT_Y+0.06, 0); scene.add(spring);
+let springMesh, springPan;
+{
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.012,0.04), metal); bar.position.y=0.02; spring.add(bar);
+  springMesh=new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,1,10),
+    new THREE.MeshStandardMaterial({ color:0xb0c4d8, roughness:0.5, metalness:0.5 }));
+  spring.add(springMesh);
+  springPan=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.028,0.012,18),
+    new THREE.MeshStandardMaterial({ color:0x6b7d90, roughness:0.6 })); spring.add(springPan);
+}
+let springW = 0;
+function updateSpring(){
+  const stretch = K.springStretch(springW);       // 0~0.25
+  const len = 0.05 + stretch;
+  springMesh.scale.y = len; springMesh.position.y = -len/2;
+  springPan.position.y = -len - 0.006;
+}
+updateSpring();
+
+/* ── 조작: 추 선택 → 슬롯 탭 ── */
+let selW = 10;
+document.querySelectorAll('.wBtn').forEach(b=> b.onclick=()=>{
+  selW=parseInt(b.dataset.w); document.querySelectorAll('.wBtn').forEach(x=>x.classList.toggle('on',x===b));
+});
+document.getElementById('reset').onclick=()=>{ clearAll(); springW=0; updateSpring(); syncState(); };
+
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown',(e)=>{
+  ptr.x=(e.clientX/innerWidth)*2-1; ptr.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ptr,camera);
+  // 저울 슬롯
+  const hits=ray.intersectObjects(slotNodes,false);
+  if(hits.length){ const {side,slot}=hits[0].object.userData;
+    placeWeight(side,selW,slot); syncState(); onCheck(); toast(selW+'g → '+(side==='L'?'왼쪽':'오른쪽')+' '+slot+'칸'); return; }
+  // 용수철저울(당 추 얹기)
+  const sh=ray.intersectObject(springPan,false);
+  if(sh.length){ springW+=selW; updateSpring(); toast('용수철저울: '+springW+'g'); }
+});
+
+/* ── 상태 표시 ── */
+function syncState(){
+  const t=K.torque(bal);
+  const el=document.getElementById('balState');
+  const lvl=K.isBalanced(bal);
+  el.classList.toggle('level',lvl);
+  document.getElementById('balTxt').textContent = lvl ? '수평!' : (t.net>0?'오른쪽으로 기욺':'왼쪽으로 기욺');
+  document.getElementById('torqueRead').textContent='L '+t.tauL.toFixed(2)+' · R '+t.tauR.toFixed(2);
+}
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=1.6; }
+
+/* ═══════ P3 미션 3종 + ★와우 지렛대 예측 (SPEC_BATCH_A T-6) ═══════ */
+const MISSIONS = {
+  'B-1': { icon:'⚖️', title:'수평을 맞춰라',
+    brief:'양쪽에 추를 올려 저울을 수평으로 만들어요.',
+    hint:'같은 무게라면 같은 칸에! 추를 고르고 저울 칸을 탭하세요.',
+    setup:()=>{ clearAll(); },
+    check:()=> (bal.left.length+bal.right.length)>=2 && K.isBalanced(bal) },
+  'B-2': { icon:'🎠', title:'적은 추로 이겨라',
+    brief:'가벼운 추를 멀리 놓아 무거운 추와 균형을 맞춰요(지렛대).',
+    hint:'무거운 추는 안쪽, 가벼운 추는 바깥쪽으로!',
+    setup:()=>{ clearAll(); placeWeight('L',50,2); syncState(); },
+    check:()=> K.isLeverBalanced(bal),
+    predict:{ q:'⚖️ 10g 추 하나로 50g을 들 수 있을까?',
+      opts:['불가능하다','거리를 멀리 두면 가능하다'], answer:1,
+      explain:'가능해요! 가벼운 추라도 받침점에서 멀리 놓으면 「무게 × 거리」가 커져 무거운 추와 균형이 잡혀요. 시소에서 무거운 친구랑 균형 잡으려면 가벼운 내가 뒤로 더 가서 앉는 것과 똑같아요 — 이게 지렛대의 원리랍니다.' } },
+  'B-3': { icon:'🔎', title:'무게를 재라',
+    brief:'무게를 모르는 추(왼쪽)를, 아는 추로 균형을 맞춰 알아내요.',
+    hint:'오른쪽에 추를 놓아 수평을 만들면, 균형의 원리로 무게를 알 수 있어요.',
+    setup:()=>{ clearAll(); placeWeight('L',20,3); syncState(); },
+    check:()=> bal.right.length>=1 && K.isBalanced(bal),
+    measured:true },
+};
+let activeMission=null, cleared=false, predicted=false;
+
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>⚖️ 수평 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">해보기 ⚖️</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); });
+}
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){
+  activeMission=id; cleared=false; predicted=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide');
+    if(m.setup) m.setup();
+    if(m.predict) showPredict();
+  } else bn.classList.add('hide');
+}
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict) return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ predicted=true; opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); });
+}
+function showCleared(){ const m=MISSIONS[activeMission];
+  let msg=m.icon+' '+m.title+' — 성공!';
+  if(m.measured){ const w=Math.round(K.measureWeight(bal,'L',3)); msg='🔎 왼쪽 추는 '+w+'g! (수평의 원리로 측정)'; }
+  document.getElementById('mcMsg').textContent=msg;
+  document.getElementById('mClear').classList.remove('hide'); }
+function onCheck(){
+  if(!activeMission||cleared) return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,300); }
+}
+
+
+let curTilt=0;
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  const target=K.tiltOf(bal);
+  curTilt += (target-curTilt)*Math.min(1,dt*6);   // 부드러운 트윈
+  arm.rotation.z = -curTilt;                        // 우 토크 + → 우측이 내려감(시계반대는 -)
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+syncState();
+document.getElementById('loading').classList.add('hide');
+buildMissionUI();
+animate();
+
+// 데모: ?demo=lever → 지렛대 예시 배치
+if(P.get('demo')==='lever'){ placeWeight('L',50,1); placeWeight('R',10,5); syncState(); }
+// ?mission= 직접 진입
+{ const mq=P.get('mission'); if(mq && MISSIONS[mq]) setMission(mq); }
+
+window.__BAL_P2__ = { bal, K, placeWeight, clearAll, syncState, get tilt(){return curTilt;}, slotNodes, weightMeshes,
+  MISSIONS, setMission, onCheck, showCleared, get activeMission(){return activeMission;}, get cleared(){return cleared;} };
+</script>
+</body>
+</html>
