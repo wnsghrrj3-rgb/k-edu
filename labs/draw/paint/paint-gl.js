@@ -175,7 +175,10 @@
   // ── 렌더(KM 합성) → 화면
   const FRAG_RENDER = HEAD + `
   out vec4 frag;
+  uniform sampler2D uHgt;
   uniform vec3 uBg;
+  uniform float uLit;
+  float hgtAt(vec2 p){ return texture(uHgt,(p+0.5)*uTexel).r; }
   void main(){
     vec2 P = floor(uv*uSize);
     vec4 si = stAt(P); vec3 pig = si.gba; vec3 dry = dryAt(P);
@@ -190,7 +193,64 @@
     // 무착색 영역은 종이 배경색(검은 도화지 등). 착색량으로 혼합.
     float ink = clamp(dot(pig+dry, vec3(1.0))*4.0, 0.0, 1.0);
     col = mix(uBg, col, ink);
-    frag = vec4(col, 1.0);
+    // 🖌️ 임파스토 조명(SPEC §3): 유화일 때 hgt 구배 → 좌상 광원 shade
+    if(uLit>0.5){
+      float dhx = (hgtAt(P+vec2(1,0)) - hgtAt(P-vec2(1,0)))*0.5;
+      float dhy = (hgtAt(P+vec2(0,1)) - hgtAt(P-vec2(0,1)))*0.5;
+      vec3 n = normalize(vec3(-dhx*14.0, -dhy*14.0, 1.0));
+      vec3 L = normalize(vec3(-0.5,-0.7,0.6));
+      col *= (0.75 + 0.45*max(dot(n,L),0.0));
+    }
+    frag = vec4(clamp(col,0.0,1.0), 1.0);
+  }`;
+
+  // ── 🖌️ 유화 스탬프(브리슬 1개): MRT state(pig+=) + hgt(+=0.008·p·f). 확산 없음.
+  const FRAG_OILSTAMP = HEAD + `
+  uniform sampler2D uHgt;
+  uniform vec2 uBrush; uniform float uRadius; uniform vec3 uKS; uniform float uP;
+  layout(location=0) out vec4 outState;
+  layout(location=1) out vec4 outHgt;
+  void main(){
+    vec2 P = floor(uv*uSize);
+    vec4 si = stAt(P); float hg = texture(uHgt,(P+0.5)*uTexel).r;
+    float d = distance(P+0.5, uBrush);
+    if(d<=uRadius){
+      float t = cos((d/uRadius)*PI*0.5); float f=t*t;
+      hg += 0.008*uP*f;
+      si = vec4(si.r, si.gba + uKS*(0.9*uP*f));
+    }
+    outState = si; outHgt = vec4(hg,0.0,0.0,1.0);
+  }`;
+
+  // ── 🔪 나이프: hgt 3×3 평활(lerp 0.5) + 진행 방향 pig 끌기 0.5(반경 내).
+  const FRAG_KNIFE = HEAD + `
+  uniform sampler2D uHgt;
+  uniform vec2 uBrush; uniform float uRadius; uniform vec2 uDir;
+  layout(location=0) out vec4 outState;
+  layout(location=1) out vec4 outHgt;
+  float hgtAt(vec2 p){ return texture(uHgt,(p+0.5)*uTexel).r; }
+  void main(){
+    vec2 P = floor(uv*uSize);
+    vec4 si = stAt(P); float hg = hgtAt(P); vec3 pig = si.gba;
+    if(distance(P+0.5, uBrush)<=uRadius){
+      float sum=0.0,n=0.0;
+      for(int yy=-1;yy<=1;yy++)for(int xx=-1;xx<=1;xx++){
+        vec2 Q=P+vec2(float(xx),float(yy)); if(oob(Q))continue; sum+=hgtAt(Q); n+=1.0; }
+      hg += (sum/n - hg)*0.5;
+      vec2 Su = P - uDir; if(!oob(Su)) pig = mix(pig, stAt(Su).gba, 0.5);
+    }
+    outState = vec4(si.r, pig); outHgt = vec4(hg,0.0,0.0,1.0);
+  }`;
+
+  // ── 💨 스미어: pig = lerp(pig, pig[P−dir], 0.35·p) (반경 내)
+  const FRAG_SMEAR = HEAD + `
+  uniform vec2 uBrush; uniform float uRadius; uniform vec2 uDir; uniform float uP;
+  layout(location=0) out vec4 outState;
+  void main(){
+    vec2 P = floor(uv*uSize);
+    vec4 si = stAt(P); vec3 pig = si.gba;
+    if(distance(P+0.5, uBrush)<=uRadius){ vec2 Su=P-uDir; if(!oob(Su)) pig = mix(pig, stAt(Su).gba, 0.35*uP); }
+    outState = vec4(si.r, pig);
   }`;
 
   // ── 브러시 스탬프(폴오프 cos²). type: 0 water · 1 color · 2 lift · 3 dry(갈필)
@@ -340,6 +400,9 @@
     this.progFold    = program(gl, FRAG_FOLD);
     this.progSalt    = program(gl, FRAG_SALT);
     this.progSaltBrush = program(gl, FRAG_SALTBRUSH);
+    this.progOilStamp = program(gl, FRAG_OILSTAMP);
+    this.progKnife   = program(gl, FRAG_KNIFE);
+    this.progSmear   = program(gl, FRAG_SMEAR);
 
     this.vao = gl.createVertexArray();
 
@@ -352,6 +415,9 @@
     this.waxT   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
     this.saltA  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
     this.saltB  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    this.hgtA   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    this.hgtB   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    this.lit = false;
     this.fbo = gl.createFramebuffer();
 
     this.media = MEDIA[opts.media || 'watercolor'];
@@ -403,13 +469,15 @@
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,buf);
     // state/dry/wax = 0
     const zero = new Float32Array(size*size*4);
-    for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.waxT,this.saltA,this.saltB]){
+    for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.waxT,this.saltA,this.saltB,this.hgtA,this.hgtB]){
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,zero);
     }
     this.cur = 0; // stateA=현재
     this.curDry = 0; // dryA=현재
     this.curSalt = 0; // saltA=현재
+    this.curHgt = 0; // hgtA=현재
+    this.lit = false;
     this._saltActive = false;
   };
 
@@ -419,6 +487,8 @@
   PaintGL.prototype._dryBack = function(){ return this.curDry===1?this.dryA:this.dryB; };
   PaintGL.prototype._salt = function(){ return this.curSalt===1?this.saltB:this.saltA; };
   PaintGL.prototype._saltBack = function(){ return this.curSalt===1?this.saltA:this.saltB; };
+  PaintGL.prototype._hgt = function(){ return this.curHgt===1?this.hgtB:this.hgtA; };
+  PaintGL.prototype._hgtBack = function(){ return this.curHgt===1?this.hgtA:this.hgtB; };
 
   // 공통 유니폼 세팅
   PaintGL.prototype._bindCommon = function(prog){
@@ -504,9 +574,10 @@
     this.cur ^= 1; this.curSalt ^= 1;
   };
 
-  // 한 시뮬 스텝: ①② → ②′ → ③ → ③′(소금) → ④⑤
+  // 한 시뮬 스텝: ①② → ②′ → ③ → ③′(소금) → ④⑤. 유화/아크릴은 §1 우회(높이필드 전용).
   PaintGL.prototype.step = function(){
     if(!this.supported) return;
+    if(this.media && this.media.height){ this.lit = true; return; } // 유화·아크릴: 시뮬 없음
     this._pass(this.progDiffuse);
     if(this.k.drift>0) this._pass(this.progDrift);
     this._pass(this.progEvap);
@@ -549,7 +620,69 @@
     }
   };
 
-  PaintGL.prototype.setMedia = function(name){ if(MEDIA[name]) this.media = MEDIA[name]; };
+  PaintGL.prototype.setMedia = function(name){ if(MEDIA[name]){ this.media = MEDIA[name]; if(this.media.height) this.lit = true; } };
+
+  // 🖌️ 유화붓: 브리슬 6~10개(JS에서 위치 산포) 각각 MRT 스탬프(state pig + hgt)
+  PaintGL.prototype.oilBrush = function(x, y, r, p, colorName){
+    if(!this.supported) return;
+    const gl = this.gl, prog = this.progOilStamp;
+    const ks = PIGMENTS[colorName] || PIGMENTS.blue;
+    const nB = 6 + (Math.random()*5|0);
+    for(let b=0;b<nB;b++){
+      const ang = Math.random()*Math.PI*2, rad = Math.random()*r*0.8;
+      const bx = x+Math.cos(ang)*rad, by = y+Math.sin(ang)*rad, br = r*(0.28+Math.random()*0.18);
+      this._bindCommon(prog);
+      this._bindTex(prog, this._state());
+      gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this._hgt());
+      gl.uniform1i(gl.getUniformLocation(prog,'uHgt'), 5);
+      gl.uniform2f(gl.getUniformLocation(prog,'uBrush'), bx, by);
+      gl.uniform1f(gl.getUniformLocation(prog,'uRadius'), br);
+      gl.uniform3f(gl.getUniformLocation(prog,'uKS'), ks[0],ks[1],ks[2]);
+      gl.uniform1f(gl.getUniformLocation(prog,'uP'), p!=null?p:1.0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._hgtBack(), 0);
+      gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+      gl.viewport(0,0,this.size,this.size);
+      gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
+      this.cur ^= 1; this.curHgt ^= 1;
+    }
+    this.lit = true;
+  };
+
+  // 🔪 나이프 / 💨 스미어
+  PaintGL.prototype.knife = function(x, y, r, dx, dy){
+    if(!this.supported) return;
+    const gl = this.gl, prog = this.progKnife;
+    this._bindCommon(prog); this._bindTex(prog, this._state());
+    gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this._hgt());
+    gl.uniform1i(gl.getUniformLocation(prog,'uHgt'), 5);
+    gl.uniform2f(gl.getUniformLocation(prog,'uBrush'), x, y);
+    gl.uniform1f(gl.getUniformLocation(prog,'uRadius'), r);
+    gl.uniform2f(gl.getUniformLocation(prog,'uDir'), Math.round(dx||0), Math.round(dy||0));
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._hgtBack(), 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+    gl.viewport(0,0,this.size,this.size); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
+    this.cur ^= 1; this.curHgt ^= 1;
+  };
+  PaintGL.prototype.smear = function(x, y, r, dx, dy, p){
+    if(!this.supported) return;
+    const gl = this.gl, prog = this.progSmear;
+    this._bindCommon(prog); this._bindTex(prog, this._state());
+    gl.uniform2f(gl.getUniformLocation(prog,'uBrush'), x, y);
+    gl.uniform1f(gl.getUniformLocation(prog,'uRadius'), r);
+    gl.uniform2f(gl.getUniformLocation(prog,'uDir'), Math.round(dx||0), Math.round(dy||0));
+    gl.uniform1f(gl.getUniformLocation(prog,'uP'), p!=null?p:1.0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    gl.viewport(0,0,this.size,this.size); gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    this.cur ^= 1;
+  };
 
   // 브러시 스탬프
   PaintGL.prototype.brush = function(type, x, y, r, p, colorName, o){
@@ -582,6 +715,9 @@
     const gl = this.gl, prog = this.progRender;
     this._bindCommon(prog);
     this._bindTex(prog, this._state(), this._dry());
+    gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, this._hgt());
+    gl.uniform1i(gl.getUniformLocation(prog,'uHgt'), 5);
+    gl.uniform1f(gl.getUniformLocation(prog,'uLit'), this.lit?1.0:0.0);
     gl.uniform3f(gl.getUniformLocation(prog,'uBg'), this.bg[0],this.bg[1],this.bg[2]);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0,0,this.size,this.size);

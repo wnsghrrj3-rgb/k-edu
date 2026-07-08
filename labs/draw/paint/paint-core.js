@@ -101,9 +101,10 @@
   const MEDIA = {
     watercolor: { mobility: 0.85, gran: 1.0,  wet: 0.30 },
     ink:        { mobility: 0.98, gran: 0.25, wet: 0.34 }, // 수묵(먹)
-    gouache:    { mobility: 0.25, gran: 0.15, wet: 0.10 }, // 과슈
-    // 유화·아크릴은 §3 전용 경로(높이 필드) — W2. 여기선 §1 폴백 값만 참고.
-    acrylic:    { mobility: 0.30, gran: 0.15, wet: 0.10 },
+    gouache:    { mobility: 0.25, gran: 0.15, wet: 0.10 }, // 과슈(불투명)
+    // 유화·아크릴 = §3 전용 높이필드 경로(§1 우회). mobility/gran/wet는 폴백용.
+    oil:        { mobility: 0.30, gran: 0.15, wet: 0.05, height: true },
+    acrylic:    { mobility: 0.30, gran: 0.15, wet: 0.05, height: true, fastDry: true },
   };
 
   /* ---------------------------------------------------------------------
@@ -216,6 +217,23 @@
     const m = MEDIA[medium] || MEDIA.watercolor;
     flags = flags || {};
     const on = function (k) { return flags[k] !== false; };
+
+    // §3 유화·아크릴 = 높이필드 전용 경로: §1(물/확산/증발/침착) 전면 우회.
+    //   붓·나이프·스미어가 hgt·pig를 직접 갱신하고, 표시는 임파스토 조명(render).
+    //   아크릴(fastDry): ~6초(360프레임) 지난 획은 pig를 dry로 동결.
+    if (m.height) {
+      this.lit = true;
+      if (m.fastDry) {
+        const pigA = this.pig, dryA = this.dry, age = this._acrylicAge || (this._acrylicAge = new Float32Array(this.N));
+        for (let i = 0; i < this.N; i++) {
+          if (pigA[0][i] + pigA[1][i] + pigA[2][i] > 0.0001) {
+            age[i] += 1;
+            if (age[i] > 360) { for (let c = 0; c < 3; c++) { dryA[c][i] += pigA[c][i]; pigA[c][i] = 0; } }
+          }
+        }
+      }
+      return this; // 확산/증발/침착 없음
+    }
 
     const w = this.w, h = this.h, N = this.N;
     const wat = this.wat, pig = this.pig, dry = this.dry, wax = this.wax;
@@ -615,21 +633,112 @@
     return this;
   };
 
+  // 🖌️ 유화붓: 브리슬 6~10개 오프셋으로 hgt 쌓고 pig 직치환(확산 없음, 불투명 두께).
+  //   SPEC §3: hgt += 0.008·p(브리슬당), pig 직접 갱신. 조명용 lit 플래그 on.
+  Field.prototype.oilBrush = function (cx, cy, r, p, color, medium, seed) {
+    const ks = PIGMENTS[color] || PIGMENTS.blue;
+    const hgt = this.hgt, w = this.w, h = this.h;
+    let s = (seed == null ? ((cx * 2654435761) ^ (cy * 40503)) >>> 0 : seed) >>> 0;
+    const rnd = function () { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const nBristle = 6 + Math.floor(rnd() * 5); // 6~10
+    const self = this;
+    for (let b = 0; b < nBristle; b++) {
+      const ang = rnd() * Math.PI * 2, rad = rnd() * r * 0.8;
+      const bx = cx + Math.cos(ang) * rad, by = cy + Math.sin(ang) * rad;
+      const br = r * (0.28 + rnd() * 0.18);
+      this._stamp(bx, by, br, function (i, f) {
+        hgt[i] += 0.008 * p * f;               // 임파스토 두께
+        const amt = 0.9 * p * f;
+        self.pig[0][i] += ks[0] * amt;         // 직치환(누적), 확산 없음
+        self.pig[1][i] += ks[1] * amt;
+        self.pig[2][i] += ks[2] * amt;
+      });
+    }
+    this.lit = true;
+    return this;
+  };
+
+  // 🔪 나이프: hgt = lerp(hgt, 이웃평균, 0.5) 평활 + 진행 방향으로 pig 끌기 0.5.
+  Field.prototype.knife = function (cx, cy, r, dirx, diry) {
+    const w = this.w, h = this.h, hgt = this.hgt, pig = this.pig;
+    const dx = Math.round(dirx || 0), dy = Math.round(diry || 0);
+    const cells = [];
+    this._stamp(cx, cy, r, function (i, f) { cells.push(i); });
+    // hgt 평활
+    for (let t = 0; t < cells.length; t++) {
+      const i = cells[t], x = i % w, y = (i / w) | 0;
+      let sum = 0, n = 0;
+      for (let k = -1; k <= 1; k++) for (let l = -1; l <= 1; l++) {
+        const nx = x + l, ny = y + k; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        sum += hgt[ny * w + nx]; n++;
+      }
+      hgt[i] += (sum / n - hgt[i]) * 0.5;
+    }
+    // pig 끌기(진행 방향 이웃으로)
+    if (dx || dy) {
+      for (let t = 0; t < cells.length; t++) {
+        const i = cells[t], x = i % w, y = (i / w) | 0;
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const j = ny * w + nx;
+        for (let c = 0; c < 3; c++) { const mv = pig[c][i] * 0.5; pig[c][j] += mv; pig[c][i] -= mv; }
+      }
+    }
+    return this;
+  };
+
+  // 💨 스미어: pig[i] = lerp(pig[i], pig[i−dir], 0.35·p) — 획 방향 안료 당김.
+  Field.prototype.smear = function (cx, cy, r, dirx, diry, p) {
+    const w = this.w, h = this.h, pig = this.pig;
+    const dx = Math.round(dirx || 0), dy = Math.round(diry || 0);
+    if (!dx && !dy) return this;
+    const k = 0.35 * (p == null ? 1 : p);
+    const cells = [];
+    this._stamp(cx, cy, r, function (i, f) { cells.push(i); });
+    // 스냅샷(동시 갱신)
+    const snap = cells.map(i => [pig[0][i], pig[1][i], pig[2][i]]);
+    for (let t = 0; t < cells.length; t++) {
+      const i = cells[t], x = i % w, y = (i / w) | 0;
+      const sx = x - dx, sy = y - dy; if (sx < 0 || sy < 0 || sx >= w || sy >= h) continue;
+      const src = (sy * w + sx);
+      for (let c = 0; c < 3; c++) pig[c][i] = pig[c][i] + (pig[c][src] - pig[c][i]) * k;
+    }
+    return this;
+  };
+
   /* ---------------------------------------------------------------------
    * 렌더 — 필드 → RGBA (Uint8ClampedArray). 데모/검수용.
    * ------------------------------------------------------------------- */
   Field.prototype.render = function (out) {
-    const N = this.N;
+    const N = this.N, w = this.w, h = this.h;
     const buf = out || new Uint8ClampedArray(N * 4);
-    const ph = this.paper.ph;
+    const ph = this.paper.ph, hgt = this.hgt;
+    const lit = !!this.lit;
+    // 임파스토 조명 상수(SPEC §3): S=14, L=norm(−0.5,−0.7,0.6), shade=0.75+0.45·max(0,n·L)
+    const S = 14, Lx = -0.5, Ly = -0.7, Lz = 0.6;
+    const Ln = Math.sqrt(Lx * Lx + Ly * Ly + Lz * Lz), lx = Lx / Ln, ly = Ly / Ln, lz = Lz / Ln;
     for (let i = 0; i < N; i++) {
       const rgb = composite(
         [this.dry[0][i], this.dry[1][i], this.dry[2][i]],
         [this.pig[0][i], this.pig[1][i], this.pig[2][i]],
         ph[i]
       );
+      let sh = 1;
+      if (lit) {
+        const x = i % w, y = (i / w) | 0;
+        const xl = x > 0 ? i - 1 : i, xr = x < w - 1 ? i + 1 : i;
+        const yt = y > 0 ? i - w : i, yb = y < h - 1 ? i + w : i;
+        const dhx = (hgt[xr] - hgt[xl]) * 0.5, dhy = (hgt[yb] - hgt[yt]) * 0.5;
+        let nx = -dhx * S, ny = -dhy * S, nz = 1;
+        const nn = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        nx /= nn; ny /= nn; nz /= nn;
+        let ndl = nx * lx + ny * ly + nz * lz; if (ndl < 0) ndl = 0;
+        sh = 0.75 + 0.45 * ndl;
+      }
       const o = i * 4;
-      buf[o] = rgb[0]; buf[o + 1] = rgb[1]; buf[o + 2] = rgb[2]; buf[o + 3] = 255;
+      buf[o] = Math.min(255, rgb[0] * sh);
+      buf[o + 1] = Math.min(255, rgb[1] * sh);
+      buf[o + 2] = Math.min(255, rgb[2] * sh);
+      buf[o + 3] = 255;
     }
     return buf;
   };
