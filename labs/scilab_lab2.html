@@ -700,7 +700,7 @@ function makeLiquid(rTop, rBot, h0, hex, atten){
     }
     pos.needsUpdate=true; geo.computeVertexNormals();
   }
-  return { mesh, geo, mat, layout, ripple };
+  return { mesh, geo, mat, layout, ripple, h0 };
 }
 
 /* 석출 InstancedMesh (E-4 검증 — 불투명 필수·transmission 금지) */
@@ -1281,9 +1281,9 @@ resetBtn.addEventListener('click', resetAll);
 
 /* ═════════ 물줄기 3안 (SPEC 기법 B-2 · ?stream 전환 — 단독 티어 선택 금지) ═════════ */
 const STREAM = (new URLSearchParams(location.search).get('stream')) || 'tube';
-const streamMat_tube = (()=>{ const m=waterMat(0x9FD4F2); m.attenuationDistance=0.03; return m; })();
+const streamMat_tube = (()=>{ const m=waterMat(0x9FD4F2); m.attenuationDistance=0.03; m.emissive=new THREE.Color(0x9FD4F2); m.emissiveIntensity=0.32; return m; })(); // 어두운 무대 적응
 const streamMat_glassy = new THREE.MeshPhysicalMaterial({
-  color:0xBFE3F5, metalness:0, roughness:0.08, transparent:true, opacity:0.55, envMapIntensity:1.4, depthWrite:false });
+  color:0xBFE3F5, metalness:0, roughness:0.08, transparent:true, opacity:0.72, envMapIntensity:1.4, depthWrite:false, emissive:0x9FD4F2, emissiveIntensity:0.28 });
 const dropMatClear = waterMat(0xBFE3F5);
 function makeStreamMesh(){
   if(STREAM==='drops') return null;
@@ -1300,8 +1300,22 @@ const chain=(()=>{
     d.renderOrder=3; d.visible=false; d.frustumCulled=false; scene.add(d); arr.push(d); }
   return arr;
 })();
+
+/* 붓는 동안 물 자세: 부분 상쇄(0.55)로 수면 살짝 기울이고, 바닥 피벗 고정으로 용기 이탈 방지 */
+function applyPourWaterPose(){
+  if(pour.phase==='idle') return;
+  const S=ST3D[pour.from]; if(!S.vesselType) return;
+  const L=S.liq[S.vesselType]; if(!L || !L.mesh.visible) return;
+  const dir=ST_X[pour.to]>ST_X[pour.from]?1:-1;
+  const thc=-S.tilt*dir*0.55;
+  const h=L.h0*L.mesh.scale.y;
+  L.mesh.rotation.z=thc;
+  L.mesh.position.x=-(h/2)*Math.sin(thc) + Math.sin(-S.tilt)*0.03*dir;
+  L.mesh.position.y=0.004 + (h/2)*Math.cos(thc);
+}
+
 function renderStream(cv, rateRatio, t){
-  const radius=0.0015+0.0027*rateRatio;
+  const radius=0.003+0.005*rateRatio; // 무대 거리(카메라 ~1.7m) 가시 두께
   if(streamMesh){
     if(cv){ streamMesh.geometry.dispose(); streamMesh.geometry=new THREE.TubeGeometry(cv,24,radius,8,false); streamMesh.visible=true; }
     else streamMesh.visible=false;
@@ -1834,10 +1848,6 @@ function animate(){
     const liftK=S.tilt/TILT_MAX;                            // 0~1
     vgrp.position.y=0.005 + POUR_LIFT*liftK;
     vgrp.position.x=POUR_SHIFT*liftK*dir;
-    // 물 표면 수평 유지(원본): 용기 회전 상쇄 + 낮은 쪽으로 쏠림
-    L.mesh.rotation.z=-S.tilt*dir;
-    L.mesh.position.x=Math.sin(-S.tilt)*0.045*dir;
-
     const pouring = S.tilt<TILT_ON && srcLiquid(pour.from)>0.02;
     if(pouring){
       const rate=POUR_RATE*Math.min((TILT_ON-S.tilt)/(TILT_ON-TILT_MAX),1); // 최대 기울임=유량 100%
@@ -1871,6 +1881,7 @@ function animate(){
   // 스테이션 렌더 바인딩
   renderStation(0, dt, t);
   renderStation(1, dt, t);
+  applyPourWaterPose(); // layout(y 갱신) 뒤에 적용해야 유효
 
   // 모래 공용 InstancedMesh — 모래 가장 많은 스테이션에 부착
   let sMax=0, sIdx=-1;
