@@ -228,6 +228,62 @@
     outState = vec4(wat, pig);
   }`;
 
+  // ── 🦋 데칼코마니: 좌우 미러 합성 (자기+거울)×0.55. 중앙열 이중합산 없음(대칭식이라 안전).
+  const FRAG_FOLD = HEAD + `
+  layout(location=0) out vec4 outState;
+  void main(){
+    vec2 P = floor(uv*uSize);
+    vec2 Pm = vec2(uSize.x-1.0-P.x, P.y);   // 좌우 거울
+    vec4 a = stAt(P); vec4 b = stAt(Pm);
+    // wat·pig 동시 미러 평균 ×0.55
+    outState = (a + b)*0.55;
+  }`;
+
+  // ── 🧂 소금 패스 (gather·질량보존): 활성 소금 이웃이 i로 밀어준 안료 수취 + i 자신이 활성이면 유출.
+  //   MRT: state(wat 증발·pig 재분배) + salt(프레임 감소). paint-core ③′와 동형.
+  const FRAG_SALT = HEAD + `
+  uniform sampler2D uSalt;   // r = 잔여 프레임
+  uniform float uEvap;
+  layout(location=0) out vec4 outState;
+  layout(location=1) out vec4 outSalt;
+  float saltAt(vec2 p){ return texture(uSalt,(p+0.5)*uTexel).r; }
+  void main(){
+    vec2 P = floor(uv*uSize);
+    vec4 si = stAt(P); float wi = si.r; vec3 pi = si.gba;
+    float sI = saltAt(P);
+    bool activeI = (sI>0.0 && wi>0.15);
+    vec3 net = vec3(0.0);
+    vec2 offs[4] = vec2[4](vec2(1,0),vec2(-1,0),vec2(0,1),vec2(0,-1));
+    // 수취: 활성 소금 이웃 j가 i로 0.03(=0.12/4)씩 밀어줌
+    for(int k=0;k<4;k++){
+      vec2 Q=P+offs[k]; if(oob(Q)) continue;
+      float sJ = saltAt(Q); vec4 sj = stAt(Q);
+      if(sJ>0.0 && sj.r>0.15) net += sj.gba*0.03;
+    }
+    float wn = wi; float sn = sI;
+    if(activeI){
+      wn = max(wi - uEvap*2.0, 0.0);   // 증발 ×3(추가분)
+      net -= pi*0.12;                   // 유출(총 0.12)
+      sn = sI - 1.0;                    // 프레임 소진
+    }
+    outState = vec4(wn, max(pi+net, vec3(0.0)));
+    outSalt  = vec4(max(sn,0.0), 0.0, 0.0, 1.0);
+  }`;
+
+  // ── 소금 스탬프(반경 내 희소 입자 = 프레임 40 기록)
+  const FRAG_SALTBRUSH = HEAD + `
+  uniform sampler2D uSalt;
+  uniform vec2 uBrush; uniform float uRadius; uniform float uSeed;
+  layout(location=0) out vec4 outSalt;
+  float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7))+uSeed)*43758.5453); }
+  void main(){
+    vec2 P = floor(uv*uSize);
+    float cur = texture(uSalt,(P+0.5)*uTexel).r;
+    float d = distance(P+0.5, uBrush);
+    if(d<=uRadius && hash(P)<0.22) cur = 40.0;   // 희소
+    outSalt = vec4(cur,0.0,0.0,1.0);
+  }`;
+
   // KM 11색 K/S (CPU PIGMENTS와 동일)
   const PIGMENTS = {
     yellow:[0.10,0.14,2.60], orange:[0.10,1.10,2.50], red:[0.18,2.40,2.20],
@@ -281,6 +337,9 @@
     this.progDeposit = program(gl, FRAG_DEPOSIT);
     this.progRender  = program(gl, FRAG_RENDER);
     this.progBrush   = program(gl, FRAG_BRUSH);
+    this.progFold    = program(gl, FRAG_FOLD);
+    this.progSalt    = program(gl, FRAG_SALT);
+    this.progSaltBrush = program(gl, FRAG_SALTBRUSH);
 
     this.vao = gl.createVertexArray();
 
@@ -291,6 +350,8 @@
     this.dryB   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
     this.paperT = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
     this.waxT   = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    this.saltA  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
+    this.saltB  = this._tex(gl, size, gl.RGBA16F, gl.RGBA);
     this.fbo = gl.createFramebuffer();
 
     this.media = MEDIA[opts.media || 'watercolor'];
@@ -342,18 +403,22 @@
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,buf);
     // state/dry/wax = 0
     const zero = new Float32Array(size*size*4);
-    for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.waxT]){
+    for(const t of [this.stateA,this.stateB,this.dryA,this.dryB,this.waxT,this.saltA,this.saltB]){
       gl.bindTexture(gl.TEXTURE_2D, t);
       gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,size,size,0,gl.RGBA,gl.FLOAT,zero);
     }
     this.cur = 0; // stateA=현재
     this.curDry = 0; // dryA=현재
+    this.curSalt = 0; // saltA=현재
+    this._saltActive = false;
   };
 
   PaintGL.prototype._state = function(){ return this.cur===0?this.stateA:this.stateB; };
   PaintGL.prototype._stateBack = function(){ return this.cur===0?this.stateB:this.stateA; };
   PaintGL.prototype._dry = function(){ return this.curDry===1?this.dryB:this.dryA; };
   PaintGL.prototype._dryBack = function(){ return this.curDry===1?this.dryA:this.dryB; };
+  PaintGL.prototype._salt = function(){ return this.curSalt===1?this.saltB:this.saltA; };
+  PaintGL.prototype._saltBack = function(){ return this.curSalt===1?this.saltA:this.saltB; };
 
   // 공통 유니폼 세팅
   PaintGL.prototype._bindCommon = function(prog){
@@ -421,15 +486,70 @@
     this.cur ^= 1; this.curDry ^= 1;
   };
 
-  // 한 시뮬 스텝: ①② → ②′ → ③ → ④⑤
+  // 🧂 소금 패스: MRT(state+salt) → 양쪽 스왑
+  PaintGL.prototype._passSalt = function(){
+    const gl = this.gl, prog = this.progSalt;
+    this._bindCommon(prog);
+    this._bindTex(prog, this._state(), this._dry());
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this._salt());
+    gl.uniform1i(gl.getUniformLocation(prog,'uSalt'), 4);
+    gl.uniform1f(gl.getUniformLocation(prog,'uEvap'), this.k.evapBulk); // ×2 는 셰이더 내
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._stateBack(), 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this._saltBack(), 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+    gl.viewport(0,0,this.size,this.size);
+    gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, null, 0);
+    this.cur ^= 1; this.curSalt ^= 1;
+  };
+
+  // 한 시뮬 스텝: ①② → ②′ → ③ → ③′(소금) → ④⑤
   PaintGL.prototype.step = function(){
     if(!this.supported) return;
-    this.curDry = this.curDry|0;
     this._pass(this.progDiffuse);
     if(this.k.drift>0) this._pass(this.progDrift);
     this._pass(this.progEvap);
+    if(this._saltActive) this._passSalt();
     this._passDeposit();
   };
+
+  // 🦋 데칼코마니: 좌우 미러 합성 1패스
+  PaintGL.prototype.fold = function(){
+    if(!this.supported) return;
+    this._pass(this.progFold);
+  };
+
+  // 🧂 소금 살포: salt 텍스처에 프레임 기록
+  PaintGL.prototype.saltBrush = function(x, y, r){
+    if(!this.supported) return;
+    const gl = this.gl, prog = this.progSaltBrush;
+    this._bindCommon(prog);
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this._salt());
+    gl.uniform1i(gl.getUniformLocation(prog,'uSalt'), 4);
+    gl.uniform2f(gl.getUniformLocation(prog,'uBrush'), x, y);
+    gl.uniform1f(gl.getUniformLocation(prog,'uRadius'), r);
+    gl.uniform1f(gl.getUniformLocation(prog,'uSeed'), Math.random()*1000.0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._saltBack(), 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    gl.viewport(0,0,this.size,this.size);
+    gl.bindVertexArray(this.vao); gl.drawArrays(gl.TRIANGLES,0,3);
+    this.curSalt ^= 1; this._saltActive = true;
+  };
+
+  // 🪥 스퍼터: 원뿔 방울을 채색 브러시 반복으로(방울=시뮬 합류)
+  PaintGL.prototype.spatter = function(x, y, dir, colorName){
+    if(!this.supported) return;
+    const n = 6 + (Math.random()*9|0);
+    for(let d=0; d<n; d++){
+      const ang = dir + (Math.random()-0.5)*(50*Math.PI/180);
+      const dist = 6 + Math.random()*34, dr = 2 + Math.random()*3;
+      this.brush('color', x+Math.cos(ang)*dist, y+Math.sin(ang)*dist, dr, 0.6+Math.random()*0.5, colorName, {density:1.0});
+    }
+  };
+
+  PaintGL.prototype.setMedia = function(name){ if(MEDIA[name]) this.media = MEDIA[name]; };
 
   // 브러시 스탬프
   PaintGL.prototype.brush = function(type, x, y, r, p, colorName, o){

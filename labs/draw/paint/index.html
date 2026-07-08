@@ -130,6 +130,8 @@
         <button class="tool" data-tool="water">맑은물<small>번짐</small></button>
         <button class="tool" data-tool="dry">갈필<small>마른붓</small></button>
         <button class="tool" data-tool="lift">닦기<small>흡수</small></button>
+        <button class="tool" data-tool="salt">소금<small>별무늬</small></button>
+        <button class="tool" data-tool="spatter">뿌리기<small>스퍼터</small></button>
       </div>
       <div class="swatches" id="swatches"></div>
       <div class="row">
@@ -142,6 +144,10 @@
         <input type="range" id="wet" min="20" max="140" value="100">
         <output id="wetOut">1.0</output>
       </div>
+      <div class="paper-sel" id="media" style="margin-top:12px">
+        <button class="chip on" data-m="watercolor">수채</button>
+        <button class="chip" data-m="ink">수묵(먹)</button>
+      </div>
     </div>
 
     <div class="card">
@@ -152,12 +158,16 @@
         <button class="chip" data-p="kent">켄트지</button>
       </div>
       <div class="actions" style="margin-top:14px">
+        <button class="btn" id="foldBtn">🦋 데칼코마니</button>
+      </div>
+      <div class="actions" style="margin-top:8px">
         <button class="btn warm" id="dryBtn">싹 말리기</button>
         <button class="btn" id="clearBtn">비우기</button>
       </div>
       <p class="note">
-        W0 = <code>paint-core.js</code> CPU 참조 구현. §1 시뮬 ①확산 ②이류 ②′모세관드리프트 ③증발 ④침착 ⑤클램프.
-        번진 뒤 <b style="color:var(--accent)">싹 말리기</b>를 누르면 테두리에 안료가 쌓이는 <b style="color:var(--accent)">커피링</b>이 보인다.
+        <code>paint-core.js</code>(CPU) + <code>paint-gl.js</code>(WebGL2). §1 ①확산 ②이류 ②′드리프트 ③증발 ③′소금 ④침착 ⑤클램프.
+        번진 뒤 <b style="color:var(--accent)">싹 말리기</b> = 커피링. <b style="color:var(--accent)">소금</b>은 젖었을 때 뿌리면 별무늬. <b style="color:var(--accent)">데칼코마니</b>는 젖은 상태에서.
+        <br>URL <code>?cpu=1</code> = CPU·GL 나란히 비교.
       </p>
     </div>
   </aside>
@@ -176,6 +186,7 @@
 
   let paper = 'watercolor';
   let tool = 'color', color = 'blue', size = 14, wet = 1.0, drying = false;
+  let media = 'watercolor', strokeDir = 0;
 
   // 팔레트 — KM 11색
   const COLORS = [
@@ -195,7 +206,10 @@
   document.getElementById('tools').addEventListener('click',e=>{ const t=e.target.closest('.tool'); if(!t)return;
     tool=t.dataset.tool; document.querySelectorAll('.tool').forEach(x=>x.classList.toggle('on',x===t)); });
   document.getElementById('papers').addEventListener('click',e=>{ const t=e.target.closest('.chip'); if(!t)return;
-    paper=t.dataset.p; document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===t)); engines.forEach(en=>en.reset()); });
+    paper=t.dataset.p; document.querySelectorAll('#papers .chip').forEach(x=>x.classList.toggle('on',x===t)); engines.forEach(en=>en.reset()); });
+  document.getElementById('media').addEventListener('click',e=>{ const t=e.target.closest('.chip'); if(!t)return;
+    media=t.dataset.m; document.querySelectorAll('#media .chip').forEach(x=>x.classList.toggle('on',x===t)); });
+  document.getElementById('foldBtn').onclick=()=>engines.forEach(en=>en.fold&&en.fold());
   const sizeEl=document.getElementById('size'),sizeOut=document.getElementById('sizeOut');
   sizeEl.oninput=()=>{ size=+sizeEl.value; sizeOut.textContent=size; };
   const wetEl=document.getElementById('wet'),wetOut=document.getElementById('wetOut');
@@ -213,10 +227,13 @@
       stroke(x,y){
         if(tool==='water') f.waterBrush(x,y,size,wet);
         else if(tool==='lift') f.lift(x,y,size);
-        else if(tool==='dry') f.colorBrush(x,y,size,1.0,color,'watercolor',{dry:true,density:1.2});
-        else f.colorBrush(x,y,size,wet,color,'watercolor',{density:1.0});
+        else if(tool==='dry') f.colorBrush(x,y,size,1.0,color,media,{dry:true,density:1.2});
+        else if(tool==='salt') f.saltBrush(x,y,Math.max(6,size));
+        else if(tool==='spatter') f.spatter(x,y,strokeDir,color,media);
+        else f.colorBrush(x,y,size,wet,color,media,{density:1.0});
       },
-      step(){ f._local.fill(drying?0.005:0); f.step('watercolor',{}); },
+      fold(){ f.fold(); },
+      step(){ f._local.fill(drying?0.005:0); f.step(media,{}); },
       paint(){ f.render(buf); img.data.set(buf); ctx.putImageData(img,0,0); },
       water(){return f.totalWater();}, pig(){return f.totalPigment();} };
   }
@@ -229,9 +246,12 @@
         if(tool==='water') g.brush('water',x,y,size,wet,color);
         else if(tool==='lift') g.brush('lift',x,y,size,1.0,color);
         else if(tool==='dry') g.brush('dry',x,y,size,1.0,color,{density:1.2});
+        else if(tool==='salt') g.saltBrush(x,y,Math.max(6,size));
+        else if(tool==='spatter') g.spatter(x,y,strokeDir,color);
         else g.brush('color',x,y,size,wet,color,{density:1.0});
       },
-      step(){ g.setDrying(drying); g.step(); },
+      fold(){ g.fold(); },
+      step(){ g.setMedia(media); g.setDrying(drying); g.step(); },
       paint(){ g.render(); },
       water(){return NaN;}, pig(){return NaN;} };
   }
@@ -276,7 +296,8 @@
     canvas.addEventListener('pointerdown',e=>{ painting=true; const [x,y]=toField(canvas,e); lastX=x;lastY=y; strokeAll(x,y); e.preventDefault(); });
     canvas.addEventListener('pointermove',e=>{ if(!painting)return; const [x,y]=toField(canvas,e);
       const d=Math.hypot(x-lastX,y-lastY), n=Math.max(1,Math.floor(d/2));
-      for(let s=1;s<=n;s++) strokeAll(lastX+(x-lastX)*s/n, lastY+(y-lastY)*s/n);
+      if(d>0.5) strokeDir=Math.atan2(y-lastY, x-lastX);
+      if(tool!=='spatter'){ for(let s=1;s<=n;s++) strokeAll(lastX+(x-lastX)*s/n, lastY+(y-lastY)*s/n); }
       lastX=x;lastY=y; e.preventDefault(); });
   }
   window.addEventListener('pointerup',()=>painting=false);

@@ -167,6 +167,7 @@
     this.dry = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
     this.wax = new Float32Array(N);
     this.hgt = new Float32Array(N);
+    this.salt = new Float32Array(N); // 🧂 소금 잔여 활성 프레임(>0 = 활성)
     this.paper = opts.paper || makePaper(w, h, opts.paperKind || 'watercolor', opts.seed);
     // 손맛 N안 (검수가 고름) — SPEC 기본값
     this.diff = opts.diff === 8 ? 8 : 4;    // ?diff = 4|8
@@ -353,6 +354,48 @@
       }
     }
 
+    // ③' 🧂 소금 — 활성 소금 셀(wat>0.15)은 안료를 바깥으로 밀고(프레임당 0.12) 증발 ×3.
+    //   물을 급히 빨아들여 마른 반점을 만들고 안료를 방사형으로 밀어냄 → 별무늬 창발(SPEC §도구·기법6).
+    if (on('evaporate') && this._saltActive) {
+      const salt = this.salt, off4s = off4;
+      const dps = this._dp; dps[0].fill(0); dps[1].fill(0); dps[2].fill(0);
+      let anyActive = false;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = y * w + x;
+          if (salt[i] <= 0) continue;
+          if (wat[i] > 0.15) {
+            // 증발 ×3(추가분) — 소금이 물을 빨아들임
+            wat[i] -= this.evap * 2; if (wat[i] < 0) wat[i] = 0;
+            // 안료를 4방으로 밀어냄(총 0.12)
+            let nb = 0; const js = [];
+            for (let k = 0; k < 4; k++) {
+              const nx = x + off4s[k][0], ny = y + off4s[k][1];
+              if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+              js.push(ny * w + nx); nb++;
+            }
+            if (nb > 0) {
+              const share = 0.12 / nb;
+              for (let t = 0; t < js.length; t++) {
+                const j = js[t];
+                for (let c = 0; c < 3; c++) {
+                  const mv = pig[c][i] * share;
+                  dps[c][i] -= mv; dps[c][j] += mv;
+                }
+              }
+            }
+            salt[i] -= 1; // 활성 프레임 소진(젖은 동안만)
+          }
+          if (salt[i] > 0) anyActive = true;
+        }
+      }
+      for (let c = 0; c < 3; c++) {
+        const pc = pig[c], d = dps[c];
+        for (let i = 0; i < N; i++) { pc[i] += d[i]; if (pc[i] < 0) pc[i] = 0; }
+      }
+      this._saltActive = anyActive;
+    }
+
     // ④ 침착 + 건조 전선 에지
     //   젖음 게이팅: 흠뻑 젖은 셀(wat 높음)은 안료가 물에 떠 자유 이동 → 침착 억제.
     //   물이 얕아질수록(마를수록) 정착. 완전 마름(wat≈0)이면 잔여 안료 전량 정착.
@@ -533,6 +576,42 @@
     };
     doField(this.wat);
     for (let c = 0; c < 3; c++) doField(this.pig[c]);
+    return this;
+  };
+
+  // 🧂 소금: 반경 내 입자 살포(희소). 활성 프레임=40. 젖은 동안 안료를 방사형으로 밀어 별무늬.
+  //   (SPEC §도구: wat>0.15인 동안 40프레임 pig 바깥 이동 0.12/f + 증발 ×3 — 스텝 ③′에서 처리.)
+  Field.prototype.saltBrush = function (cx, cy, r, seed) {
+    const w = this.w, h = this.h;
+    let s = (seed == null ? ((cx * 73856093) ^ (cy * 19349663)) >>> 0 : seed) >>> 0;
+    const rnd = function () { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(w - 1, Math.ceil(cx + r));
+    const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(h - 1, Math.ceil(cy + r));
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (Math.hypot(x - cx, y - cy) > r) continue;
+        if (rnd() < 0.22) this.salt[y * w + x] = 40; // 희소 입자
+      }
+    }
+    this._saltActive = true;
+    return this;
+  };
+
+  // 🪥 스퍼터링(뿌리기): 획 방향 dir ±25° 원뿔로 방울 6~14개(r 2~5px) 산포. 방울=물+안료(시뮬 합류).
+  Field.prototype.spatter = function (cx, cy, dir, color, medium, seed) {
+    const m = MEDIA[medium] || MEDIA.watercolor;
+    const ks = PIGMENTS[color] || PIGMENTS.blue;
+    let s = (seed == null ? ((cx * 374761393) ^ (cy * 668265263)) >>> 0 : seed) >>> 0;
+    const rnd = function () { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), s | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const nDrop = 6 + Math.floor(rnd() * 9); // 6~14
+    for (let d = 0; d < nDrop; d++) {
+      const ang = dir + (rnd() - 0.5) * (50 * Math.PI / 180); // ±25°
+      const dist = 6 + rnd() * 34;
+      const dr = 2 + rnd() * 3; // r 2~5
+      const dx = cx + Math.cos(ang) * dist, dy = cy + Math.sin(ang) * dist;
+      const p = 0.6 + rnd() * 0.5;
+      this.colorBrush(dx, dy, dr, p, color, medium, { density: 1.0 });
+    }
     return this;
   };
 
