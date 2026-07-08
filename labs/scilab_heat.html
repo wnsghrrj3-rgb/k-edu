@@ -294,6 +294,18 @@ renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.appendChild(renderer.domElement);
+// ⚠️ WebGL 컨텍스트 유실 가드(강건성표준 R4, 2026-07-08 페이블): 전자칠판·태블릿 장시간 사용 후 검은 화면 방지
+renderer.domElement.addEventListener('webglcontextlost',function(e){ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  var o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#e8ecf2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  var t=document.createElement('div'); t.textContent='화면이 잠시 멈췄어요'; t.style.cssText='font-size:20px;font-weight:700';
+  var b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#5B9BF0;color:#fff;font-size:16px;cursor:pointer';
+  b.addEventListener('click',function(){ location.reload(); });
+  o.appendChild(t); o.appendChild(b); document.body.appendChild(o);
+});
+
 
 const scene = new THREE.Scene();
 {
