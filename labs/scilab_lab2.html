@@ -1530,7 +1530,8 @@ function syncBtns(){
 }
 
 function resetAll(){
-  if(scrubbing) resumeLive();   // 되돌리기 중 리셋 = 라이브 복귀 후 새 실험
+  if(branching) exitBranch();          // 분기 중 리셋 = 라이브 복귀 후
+  else if(scrubbing) resumeLive();     // 되돌리기 중 리셋 = 라이브 복귀 후
   world = K.createWorld(OPTS);
   lit=false; lampPlaced=false; sandOwner=-1;
   LAMP.visible=false; LAMP.position.copy(LAMP_HOME);
@@ -1833,8 +1834,8 @@ function stepBubblesFor(S, dt, intensity, topLocal, bubR){
   bGeo.attributes.position.needsUpdate=true;
 }
 
-function renderStation(i, dt, t){
-  const S=ST3D[i], st=world.stations[i], c=st.contents;
+function renderStation(i, dt, t, srcSt){
+  const S=ST3D[i], st=srcSt||world.stations[i], c=st.contents;
   if(!S.vesselType) return 0;
   const V=VESSELS[S.vesselType], vgrp=S.vg[S.vesselType], L=S.liq[S.vesselType];
 
@@ -1989,8 +1990,13 @@ const timebar=document.getElementById('timebar'), tbTrack=document.getElementByI
 let scrubbing=false, liveWorld=null, scrubTotal=0, scrubTau=0, _tbDrag=false, _tbMkEls=[];
 const _fmtT = s => s.toFixed(1)+'s';
 
-// 조작 가드: 되돌리기(스크럽) 중엔 관찰만 — 조작 진입 함수 초입에서 호출
+// 조작 가드: 되돌리기(스크럽) 중엔 관찰만 · 분기 중엔 통제변인(동사 1회, ?free_branch 해제)
 function canInteract(){
+  if(branching){
+    const added = world.actionLog.length - branchBaseLen;
+    if(!K.branchCanAct(added, FREE_BRANCH)){ toast('통제변인: 딱 하나만 바꿔 봐요 — 지금은 관찰!', true); return false; }
+    return true;
+  }
   if(scrubbing){ toast('되돌리기 중엔 관찰만 — ▶ 지금으로 눌러 돌아오세요', true); return false; }
   return true;
 }
@@ -2019,6 +2025,7 @@ function enterScrub(){
   if(typeof pour!=='undefined' && pour.phase!=='idle'){ toast('물을 다 따른 뒤에 되돌릴 수 있어요',true); return false; }
   if(world.t<0.5){ toast('아직 되돌릴 게 없어요',true); return false; }
   liveWorld=world; scrubTotal=world.t; scrubTau=scrubTotal; scrubbing=true;
+  branchSrcIdx=ACTIVE;                                   // 분기 시 이 실험대가 A/B의 원본
   lensEl.classList.add('scrubbing');
   tbResume.classList.add('on');
   if(GRADE==='high') tbFork.classList.add('on');        // 분기(🔀)는 고학년만 · P3
@@ -2043,14 +2050,55 @@ function tbTauFromEvent(ev){
   return Math.max(0, Math.min(1, cx/r.width)) * (scrubbing?scrubTotal:world.t);
 }
 tbTrack.addEventListener('pointerdown', ev=>{ ev.preventDefault();
+  if(branching) return;                                 // 분기 중엔 스크럽 비활성
   if(!enterScrub()) return; _tbDrag=true;
   try{ tbTrack.setPointerCapture(ev.pointerId); }catch(e){}
   scrubTo(tbTauFromEvent(ev)); });
 tbTrack.addEventListener('pointermove', ev=>{ if(_tbDrag) scrubTo(tbTauFromEvent(ev)); });
 tbTrack.addEventListener('pointerup',   ()=>{ _tbDrag=false; });
 tbTrack.addEventListener('pointercancel',()=>{ _tbDrag=false; });
-tbResume.addEventListener('click', resumeLive);
-// tbFork(🔀 여기서 갈라지기)는 P3에서 분기 로직 연결 예정
+tbResume.addEventListener('click', ()=>{ if(branching) exitBranch(); else resumeLive(); });
+
+/* ═════════ §BRANCH P3. 분기(두 세계 나란히) — St0=세계A(원본 자동재생) / St1=세계B(라이브 조작) ═════════ */
+let branching=false, worldA=null, worldB=null, branchTau=0, branchSrcIdx=0, branchBaseLen=0;
+let autoA={log:[],i:0};
+// 로그의 조작 대상 station 인덱스 리매핑(원본 SRC → A는 0 / B는 1) — 렌더·조작 인덱스 정합
+function remapLog(log, fromIdx, toIdx){
+  return log.map(a=>{ const na={t:a.t, verb:a.verb, args:JSON.parse(JSON.stringify(a.args))};
+    if(na.args && na.args.st===fromIdx) na.args.st=toIdx; return na; });
+}
+function enterBranch(){
+  if(!scrubbing) return;
+  const tau=scrubTau, src=liveWorld, srcIdx=branchSrcIdx;
+  const f=K.fork(src.actionLog, tau);
+  const logA0=remapLog(f.logA, srcIdx, 0);           // 세계 A → station0
+  const logB1=remapLog(f.logB, srcIdx, 1);           // 세계 B → station1
+  worldA=K.replayTo(OPTS, logA0, tau);
+  autoA={ log:logA0.filter(a=>a.t>tau).sort((x,y)=>x.t-y.t), i:0 };  // τ 이후 원본 자동재생 큐
+  worldB=K.replayTo(OPTS, logB1, tau);
+  branchTau=tau; branchBaseLen=worldB.actionLog.length;
+  branching=true; scrubbing=false; liveWorld=src;    // liveWorld는 유지(exitBranch 복귀용)
+  world=worldB; setActive(1);                        // 조작 대상 = B(오른쪽)
+  LAMP.visible=false; lampLight.intensity=0;         // 분기 중 이동 램프 시각 숨김(각 세계 물리는 자체 가열)
+  lensEl.classList.remove('scrubbing'); lensEl.classList.add('branching');
+  tbResume.textContent='▶ 원래대로'; tbFork.classList.remove('on');
+  stateEl.innerHTML='🔀 <b>딱 하나만</b> 바꿔 봐요 — 왼쪽(원래)과 어떻게 달라질까요?';
+  toast('🔀 두 세계로 갈라졌어요 — 오른쪽에서 하나만 바꿔 보세요!');
+  renderTimebar();
+}
+function exitBranch(){
+  if(!branching) return;
+  const restore=liveWorld;
+  branching=false; worldA=null; worldB=null; autoA={log:[],i:0};
+  world=restore; liveWorld=null; scrubbing=false;
+  lit=restore.lamp.lit; LAMP.visible=lampPlaced;        // 램프·불꽃 시각 복원
+  setActive(branchSrcIdx);
+  lensEl.classList.remove('branching');
+  tbResume.textContent='▶ 지금으로'; tbResume.classList.remove('on'); tbFork.classList.remove('on');
+  stateEl.innerHTML='실험을 계속해 봐요!';
+  renderTimebar();
+}
+tbFork.addEventListener('click', enterBranch);
 
 function lensResize(){
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -2231,7 +2279,7 @@ function animate(){
 
   // pour: 원본 pour_test 연출 승계 — 기울임 트윈 + 들어올림·타겟 쪽 이동 + 물 수평 유지
   let cv=null, rr=0;
-  if(!scrubbing && pour.phase!=='idle'){
+  if(!scrubbing && !branching && pour.phase!=='idle'){
     const S=ST3D[pour.from], V=VESSELS[S.vesselType];
     const dir = ST_X[pour.to]>ST_X[pour.from] ? 1 : -1;   // 따르는 방향 (+x / −x)
     const vgrp=S.vg[S.vesselType], L=S.liq[S.vesselType];
@@ -2271,8 +2319,12 @@ function animate(){
   }
   renderStream(cv, rr, t);
 
-  // 엔진 전진 (1층 — 물리는 전부 여기). 스크럽(되돌리기) 중엔 정지 — replayTo(τ) 스왑 상태를 그대로 표시.
-  if(!scrubbing){
+  // 엔진 전진 (1층). 스크럽 중 정지 / 분기 중 두 세계(A 자동재생 + B 라이브) 각각 step.
+  if(branching){
+    worldA.step(dt);
+    while(autoA.i<autoA.log.length && worldA.t>=autoA.log[autoA.i].t){ const a=autoA.log[autoA.i++]; worldA._apply(a.verb, a.args); }
+    worldB.step(dt);
+  } else if(!scrubbing){
     world.step(dt);
 
     // 미션 판정·예측·성공 (P4 — 순수 러너 위 UI 트리거만)
@@ -2285,9 +2337,14 @@ function animate(){
     }
   }
 
-  // 스테이션 렌더 바인딩
-  renderStation(0, dt, t);
-  renderStation(1, dt, t);
+  // 스테이션 렌더 바인딩 (분기 중엔 ST3D[0]←세계A / ST3D[1]←세계B)
+  if(branching){
+    renderStation(0, dt, t, worldA.stations[0]);
+    renderStation(1, dt, t, worldB.stations[1]);
+  } else {
+    renderStation(0, dt, t);
+    renderStation(1, dt, t);
+  }
   applyPourWaterPose(dt); // layout(y 갱신) 뒤에 적용해야 유효
 
   // 모래 공용 InstancedMesh — 모래 가장 많은 스테이션에 부착
