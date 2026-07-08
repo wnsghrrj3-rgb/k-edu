@@ -103,6 +103,8 @@
   <div class="spacer"></div>
   <button class="btn" id="mapBtn">🗺 마을 바꾸기</button>
   <button class="btn" id="fireBtn">🔥 불이 났어요</button>
+  <button class="btn" id="medBtn">🚑 응급 환자</button>
+  <button class="btn" id="policeBtn">🚨 신고 출동</button>
   <button class="btn" id="clearBtn">↺ 비우기</button>
 </div>
 
@@ -279,7 +281,7 @@ let mode = params.get('mode') === 'mission' ? 'mission' : 'free';
 let selFac = null;             // 팔레트 선택 시설
 let lensFac = null, lensMode = 'walk';   // 히트맵 대상
 let mission = null, missionGive = null;   // 미션 시 시설 예산(잔여)
-let fireAnim = null;
+let evAnim = null;   // 진행 중인 사건 애니(소방/구급/순찰 공용)
 
 /* ── 사운드(간단 Web Audio) ── */
 const Snd = (function () {
@@ -348,22 +350,22 @@ function draw() {
     const px = ox + x * cell, py = oy + y * cell; g.fillStyle = f.color; roundRect(px + 2, py + 2, cell - 4, cell - 4, Math.max(4, cell * .18)); g.fill();
     g.fillStyle = '#fff'; g.font = Math.floor(cell * .62) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(f.emoji, px + cell / 2, py + cell / 2 + 1);
   }
-  // 사건 소방차
-  if (fireAnim) {
-    const p = fireAnim.path, prog = fireAnim.prog;
+  // 사건(소방차·구급차·순찰차 공용)
+  if (evAnim) {
+    const p = evAnim.path, prog = evAnim.prog, cfg = evAnim.cfg;
     // 지나온 경로 강조
-    g.strokeStyle = 'rgba(232,80,58,.85)'; g.lineWidth = Math.max(3, cell * .18); g.lineCap = 'round'; g.beginPath();
+    g.strokeStyle = cfg.color; g.lineWidth = Math.max(3, cell * .18); g.lineCap = 'round'; g.beginPath();
     const upto = Math.floor(prog);
     for (let i = 0; i <= Math.min(upto, p.length - 1); i++) { const cx = ox + p[i].x * cell + cell / 2, cy = oy + p[i].y * cell + cell / 2; if (i === 0) g.moveTo(cx, cy); else g.lineTo(cx, cy); }
     g.stroke();
-    // 불난 집
-    const tgt = fireAnim.target, tx = ox + tgt.x * cell + cell / 2, ty = oy + tgt.y * cell + cell / 2;
-    g.font = Math.floor(cell * .7) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🔥', tx, ty);
-    // 소방차 현재 위치
+    // 사건 발생 집
+    const tgt = evAnim.target, tx = ox + tgt.x * cell + cell / 2, ty = oy + tgt.y * cell + cell / 2;
+    g.font = Math.floor(cell * .7) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(cfg.tgtEmoji, tx, ty);
+    // 출동 차량 현재 위치
     const i = Math.min(upto, p.length - 1), j = Math.min(i + 1, p.length - 1), f = prog - upto;
     const cx = (ox + p[i].x * cell + cell / 2) + ((p[j].x - p[i].x) * cell) * f;
     const cy = (oy + p[i].y * cell + cell / 2) + ((p[j].y - p[i].y) * cell) * f;
-    g.font = Math.floor(cell * .8) + 'px serif'; g.fillText('🚒', cx, cy);
+    g.font = Math.floor(cell * .8) + 'px serif'; g.fillText(cfg.vehEmoji, cx, cy);
   }
 }
 function getCSS(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#ccc'; }
@@ -430,30 +432,46 @@ function scoreMission() {
 function fmt(v) { return (Math.round(v * 10) / 10).toString(); }
 function collect(id) { try { if (window.parent && parent !== window && parent.KEDU_COLLECT) parent.KEDU_COLLECT(id); } catch (e) {} }
 
-/* ── 사건(불) ── */
-function startFire() {
+/* ── 사건(소방·구급·순찰 공용) — fireResponse(type)로 최근접 시설 경로·시간 판정 ── */
+const EVENTS = {
+  fire:   { fac: 'fire',     vehEmoji: '🚒', tgtEmoji: '🔥', color: 'rgba(232,80,58,.85)',  limit: 5,
+            goMsg: '🔥 불이 났어요!',        vehName: '소방차', reachName: '소방서',
+            okMsg: '골든타임(5분) 안에 도착했어요 👍', noMsg: '5분을 넘겼어요. 소방서 자리를 다시 볼까요?',
+            noReach: '소방서가 없거나 강 건너라 길이 막혔어요.' },
+  med:    { fac: 'hospital', vehEmoji: '🚑', tgtEmoji: '🤕', color: 'rgba(232,67,147,.85)', limit: 5,
+            goMsg: '🚑 응급 환자가 생겼어요!', vehName: '구급차', reachName: '병원',
+            okMsg: '5분 안에 병원 구급차가 닿았어요 👍', noMsg: '5분을 넘겼어요. 병원 자리를 다시 볼까요?',
+            noReach: '병원이 없거나 강 건너라 길이 막혔어요.' },
+  crime:  { fac: 'police',   vehEmoji: '🚓', tgtEmoji: '🚨', color: 'rgba(59,125,216,.85)', limit: 5,
+            goMsg: '🚨 신고가 들어왔어요!',   vehName: '순찰차', reachName: '경찰서',
+            okMsg: '5분 안에 순찰차가 출동했어요 👍', noMsg: '5분을 넘겼어요. 경찰서 자리를 다시 볼까요?',
+            noReach: '경찰서가 없어 출동하지 못했어요.' }
+};
+function runEvent(type) {
+  const cfg = EVENTS[type] || EVENTS.fire;
+  if (evAnim) return;
   const houses = TL.houseCells(state.map); if (!houses.length) return;
   const tgt = houses[Math.floor(Math.random() * houses.length)];
-  const res = TL.fireResponse(state, tgt, 'fire');
+  const res = TL.fireResponse(state, tgt, cfg.fac);
   const gb = document.getElementById('golden');
   if (!res || !res.reached) {
-    gb.innerHTML = `<div>🔥 불이 났어요!</div><div class="big no">소방차가 닿지 못했어요</div><div>소방서가 없거나 강 건너라 길이 막혔어요.</div>`;
+    gb.innerHTML = `<div>${cfg.goMsg}</div><div class="big no">${cfg.vehName}가 닿지 못했어요</div><div>${cfg.noReach}</div>`;
     gb.classList.add('show'); Snd.no(); setTimeout(() => gb.classList.remove('show'), 4200);
-    lensFac = 'fire'; lensMode = 'fire'; document.getElementById('legend').classList.add('show'); buildLens(); draw();
+    lensFac = cfg.fac; lensMode = 'fire'; document.getElementById('legend').classList.add('show'); buildLens(); draw();
     return;
   }
   Snd.siren();
-  fireAnim = { path: res.path, target: tgt, prog: 0, t0: performance.now(), dur: 200 + res.path.length * 130 };
+  evAnim = { path: res.path, target: tgt, prog: 0, cfg: cfg, t0: performance.now(), dur: 200 + res.path.length * 130 };
   (function anim(now) {
-    const u = Math.min(1, (now - fireAnim.t0) / fireAnim.dur);
-    fireAnim.prog = u * (fireAnim.path.length - 1); draw();
+    const u = Math.min(1, (now - evAnim.t0) / evAnim.dur);
+    evAnim.prog = u * (evAnim.path.length - 1); draw();
     if (u < 1) requestAnimationFrame(anim);
     else {
-      const ok = res.minutes <= 5;
-      gb.innerHTML = `<div>🚒 소방차 도착!</div><div class="big ${ok ? 'ok' : 'no'}">${fmt(res.minutes)}분</div>` +
-        `<div>${ok ? '골든타임(5분) 안에 도착했어요 👍' : '5분을 넘겼어요. 소방서 자리를 다시 볼까요?'}</div>`;
+      const ok = res.minutes <= cfg.limit;
+      gb.innerHTML = `<div>${cfg.vehEmoji} ${cfg.vehName} 도착!</div><div class="big ${ok ? 'ok' : 'no'}">${fmt(res.minutes)}분</div>` +
+        `<div>${ok ? cfg.okMsg : cfg.noMsg}</div>`;
       gb.classList.add('show'); ok ? Snd.ok() : Snd.no();
-      setTimeout(() => { gb.classList.remove('show'); fireAnim = null; draw(); }, 4200);
+      setTimeout(() => { gb.classList.remove('show'); evAnim = null; draw(); }, 4200);
     }
   })(performance.now());
 }
@@ -465,7 +483,7 @@ function cellFromEvent(e) {
   return TL.inb(state.map, x, y) ? { x, y } : null;
 }
 function onTap(e) {
-  if (fireAnim) return;
+  if (evAnim) return;
   const c = cellFromEvent(e); if (!c) return;
   const existing = TL.facAt(state, c.x, c.y);
   if (existing) { TL.remove(state, c.x, c.y); Snd.remove(); afterEdit(); return; }   // 재탭 = 제거
@@ -483,7 +501,9 @@ document.getElementById('mapBtn').onclick = () => {
   mapIdx = (mapIdx + 1) % mapIds.length; state = TL.makeState(TL.parse(MAPS[mapIds[mapIdx]]));
   layout(); draw(); toast('🗺 ' + state.map.name);
 };
-document.getElementById('fireBtn').onclick = startFire;
+document.getElementById('fireBtn').onclick = () => runEvent('fire');
+document.getElementById('medBtn').onclick = () => runEvent('med');
+document.getElementById('policeBtn').onclick = () => runEvent('crime');
 document.getElementById('clearBtn').onclick = () => { state.placed = {}; afterEdit(); draw(); toast('시설을 모두 비웠어요'); };
 
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {

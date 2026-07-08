@@ -51,6 +51,75 @@
     ]
   };
 
+  // 샛강 마을 — 가로 샛강이 마을을 위·아래로 가르고 다리 2곳(x5·x17)으로만 건넘. 병원(구급차) 골든타임.
+  T['village3'] = {
+    name: '샛강 마을', W: 24, H: 16,
+    rows: [
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "WWWWWBWWWWWWWWWWWBWWWWWW",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R"
+    ]
+  };
+
+  // 바닷마을 — 오른쪽 6칸이 바다(집 없음). 뭍이 길게 뻗어 끝집까지 도보 통학 거리가 멂. 학교(도보).
+  T['village4'] = {
+    name: '바닷마을', W: 24, H: 16,
+    rows: [
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW",
+      "RRRRRRRRRRRRRRRRRRWWWWWW",
+      "RH.H.H.H.H.H.H.H.RWWWWWW"
+    ]
+  };
+
+  // 한밭 신도시 — 가운데 넓은 광장(빈터 6×4). 광장=중심지: 한 자리에서 온 동네로 뻗음. 경찰·소방 함께.
+  T['village5'] = {
+    name: '한밭 신도시', W: 24, H: 16,
+    rows: [
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRR......RRRRRRRRR",
+      "RH.H.H.H.......H.H.H.H.R",
+      "RRRRRRRRR......RRRRRRRRR",
+      "RH.H.H.H.......H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R",
+      "RRRRRRRRRRRRRRRRRRRRRRRR",
+      "RH.H.H.H.H.H.H.H.H.H.H.R"
+    ]
+  };
+
   // 시설 8종 — 4학년 공공기관·중심지.
   root.TOWN_FAC = {
     fire:     { name: '소방서', emoji: '🚒', color: '#E8503A' },
@@ -86,6 +155,27 @@
       give: { fire: 2 },
       goals: [{ fac: 'fire', mode: 'fire', limit: 6, kind: 'coverage', label: '강 양쪽 모든 집이 소방차로 6분 안에' }],
       hint: '다리는 두 곳뿐이에요. 소방서 하나로 강 건너까지 닿을 수 있을까요?'
+    },
+    {
+      id: 'm4', map: 'village3', title: '강 건너 병원',
+      give: { hospital: 2 },
+      goals: [{ fac: 'hospital', mode: 'fire', limit: 5, kind: 'coverage', label: '샛강 양쪽 모든 집이 구급차로 5분 안에' }],
+      hint: '샛강이 마을을 위·아래로 가르고 다리는 두 곳뿐이에요. 병원을 한쪽에만 두면 강 건너까지 늦어요.'
+    },
+    {
+      id: 'm5', map: 'village4', title: '걸어서 가는 학교',
+      give: { school: 2 },
+      goals: [{ fac: 'school', mode: 'walk', limit: 12, kind: 'coverage', label: '모든 집이 학교까지 걸어서 12분 안에' }],
+      hint: '바다 쪽으로 길게 뻗은 마을이에요. 학교 하나로는 끝집까지 멀어요 — 둘로 나눠 볼까요?'
+    },
+    {
+      id: 'm6', map: 'village5', title: '온 동네 지킴이',
+      give: { police: 1, fire: 1 },
+      goals: [
+        { fac: 'police', mode: 'fire', limit: 5, kind: 'coverage', label: '모든 집이 순찰차로 5분 안에' },
+        { fac: 'fire', mode: 'fire', limit: 5, kind: 'coverage', label: '모든 집이 소방차로 5분 안에' }
+      ],
+      hint: '가운데 넓은 광장이 있어요. 어디에 두면 한 자리에서 온 동네를 지킬 수 있을까요? (중심지)'
     }
   ];
 
