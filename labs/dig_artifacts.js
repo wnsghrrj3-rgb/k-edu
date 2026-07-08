@@ -101,6 +101,61 @@
     predict: { q: '푸른 무늬는 어떻게 냈을까요?', options: ['붓으로 파란 물감을 칠해 구워서', '파란 돌을 붙여서', '햇빛에 말려서'], a: 0 }
   };
 
+  /* ── composite형 (비회전체 — 프리미티브 합성 · "박물관 미니어처" 톤 고정) ──
+     prim 1개 = 복원 조각 1개(절단 없음). 형태↔기능 명확한 것만 정답화(정직 원칙·창작 서사 금지).
+     좌표계 = lathe와 공유(y 0≈바닥, 정규화; buildArtifact가 ART_SC 곱함). */
+
+  A['jumeok'] = {
+    id: 'jumeok', name: '주먹도끼', era: '구석기',
+    geo: {
+      type: 'composite', tint: '#7A7268',
+      prims: [
+        // 위 넓은 몸통(쥐는 곳) → 아래 좁은 날(찍는 곳)
+        { prim: 'box', size: [0.30, 0.34, 0.11], pos: [0, 0.42, 0], rot: [0, 0, 0], tint: '#7A7268' },
+        { prim: 'box', size: [0.19, 0.32, 0.09], pos: [0, 0.13, 0], rot: [0, 0, 0], tint: '#8A8176' }
+      ]
+    },
+    depth: 0.52, hp: 2, shards_base: 3,
+    card: { use: '찍고 자르는 만능 도구', why_shape: '돌의 양쪽을 떼어 날을 세우고, 위쪽은 손에 쥐기 좋게 했어요. (박물관 미니어처)' },
+    timeline_wrong: { '신석기': '돌을 갈지 않고 깨뜨려 만들었어요 — 더 오래된 시대예요.', '조선': '가장 오래된 뗀석기 시대의 도구예요!' },
+    predict: { q: '주먹도끼는 어떻게 만들었을까요?', options: ['돌을 깨뜨려 날을 세워서', '흙을 구워서', '쇠를 녹여서'], a: 0 }
+  };
+
+  A['bipa'] = {
+    id: 'bipa', name: '비파형동검', era: '청동기',
+    geo: {
+      type: 'composite', tint: '#9A8A52',
+      prims: [
+        // 청동 칼날 → 자루 → 자루 끝 장식
+        { prim: 'box', size: [0.13, 0.50, 0.05], pos: [0, 0.44, 0], rot: [0, 0, 0], tint: '#9A8A52' },
+        { prim: 'cyl', size: [0.10, 0.16, 0.10], pos: [0, 0.11, 0], rot: [0, 0, 0], tint: '#6E5E3A' },
+        { prim: 'sphere', size: [0.12, 0.12, 0.12], pos: [0, 0.02, 0], rot: [0, 0, 0], tint: '#7E6E44' }
+      ]
+    },
+    depth: 0.50, hp: 2, shards_base: 3,
+    card: { use: '귀한 사람이 지녔던 청동 검', why_shape: '칼날 가운데가 볼록한 비파(악기) 모양이라 비파형동검이라 불러요. (박물관 미니어처)' },
+    timeline_wrong: { '삼국': '철기보다 앞선 청동기 시대예요.', '신석기': '금속(청동)을 녹여 만들었어요 — 돌 시대보다 뒤예요.' },
+    predict: { q: '동검은 무엇으로 만들었을까요?', options: ['돌을 갈아서', '청동을 녹여 부어서', '나무를 깎아서'], a: 1 }
+  };
+
+  A['geumgwan'] = {
+    id: 'geumgwan', name: '금관', era: '삼국',
+    geo: {
+      type: 'composite', tint: '#D4AF37',
+      prims: [
+        // 관테(머리띠) + 세움장식 3개
+        { prim: 'cyl', size: [0.44, 0.13, 0.44], pos: [0, 0.10, 0], rot: [0, 0, 0], tint: '#D4AF37' },
+        { prim: 'box', size: [0.09, 0.40, 0.035], pos: [0, 0.37, 0.20], rot: [0, 0, 0], tint: '#E0BE4A' },
+        { prim: 'box', size: [0.08, 0.30, 0.03], pos: [-0.17, 0.31, 0.15], rot: [0, 0.5, 0], tint: '#E0BE4A' },
+        { prim: 'box', size: [0.08, 0.30, 0.03], pos: [0.17, 0.31, 0.15], rot: [0, -0.5, 0], tint: '#E0BE4A' }
+      ]
+    },
+    depth: 0.45, hp: 3, shards_base: 4,
+    card: { use: '왕·귀한 사람이 쓴 금관', why_shape: '나뭇가지·사슴뿔을 닮은 장식을 금으로 세워 만들었어요. (박물관 미니어처)' },
+    timeline_wrong: { '조선': '조선보다 앞선 삼국 시대에 만들었어요.', '신석기': '금을 다루는 뛰어난 솜씨가 필요해요 — 훨씬 뒤예요.' },
+    predict: { q: '금관의 세움장식은 무엇을 닮았을까요?', options: ['나뭇가지와 사슴뿔', '물고기', '바퀴'], a: 0 }
+  };
+
   root.DIG_ARTIFACTS = A;
   if (typeof module !== 'undefined' && module.exports) module.exports = A;
 })(typeof window !== 'undefined' ? window : this);

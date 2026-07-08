@@ -330,6 +330,12 @@
      ⚠️ SPEC 본문 공식 채택(괄호의 'N=5 각도5구간' 예시와 상충 → 본문·검산 불변식 우선). */
   function splitShards(art, hpLost) {
     hpLost = hpLost || 0;
+    // composite: 부품 1개 = 조각 1개(절단 없음). 손상량과 무관하게 조각 수 = prim 수.
+    if (art.geo.type === 'composite') {
+      var prims = art.geo.prims || [];
+      var cshards = prims.map(function (p, i) { return { id: i, primIndex: i, composite: true }; });
+      return { N: prims.length, A: prims.length, yc: 0, composite: true, angleSegs: [], shards: cshards };
+    }
     var N = art.shards_base + 2 * hpLost;
     var A = Math.ceil(N / 2);
     var rng = mulberry32((hashStr(art.id) ^ Math.imul(hpLost + 1, 0x9E3779B9)) >>> 0);
@@ -380,6 +386,19 @@
     var info = splitShards(art, hpLost);
     var N = info.N;
     var rng = mulberry32((hashStr(art.id) ^ Math.imul(hpLost + 7, 0x85EBCA6B)) >>> 0);
+    // composite: 각 조각의 목표 = 부품 pos(제자리 조립). th/y 없음. 트레이 산개 + rot0deg 흐트러짐만.
+    if (info.composite) {
+      var cprims = art.geo.prims || [];
+      var cslots = info.shards.map(function (s, k) {
+        var p = cprims[s.primIndex], pos = p.pos || [0, 0, 0];
+        var trayAngle = (k / N) * 2 * Math.PI + (rng() - 0.5) * 0.5;
+        var steps = 1 + Math.floor(rng() * 11);
+        return { id: s.id, primIndex: s.primIndex, composite: true,
+          target: { x: pos[0], y: pos[1], z: pos[2] },
+          trayAngle: trayAngle, rot0deg: (steps * 30) % 360, placed: false };
+      });
+      return { N: N, yc: 0, composite: true, slots: cslots, shards: info.shards };
+    }
     var slots = info.shards.map(function (s, k) {
       var c = shardCenter(s);
       var trayAngle = (k / N) * 2 * Math.PI + (rng() - 0.5) * 0.5;   // 링 균등 + 지터
@@ -408,6 +427,19 @@
     for (var i = 0; i < profile.length; i++) {
       if (profile[i][0] < 0) return false;                  // 반지름 음수 불가
       if (i > 0 && profile[i][1] < profile[i - 1][1]) return false;  // y 비감소
+    }
+    return true;
+  }
+
+  /* ── composite 프리미티브 목록 유효성 (박물관 미니어처 계보) ── */
+  function compositeValid(prims) {
+    if (!prims || !prims.length) return false;
+    for (var i = 0; i < prims.length; i++) {
+      var p = prims[i];
+      if (['box', 'cyl', 'sphere'].indexOf(p.prim) < 0) return false;
+      if (!p.size || p.size.length !== 3) return false;
+      if (!p.pos || p.pos.length !== 3) return false;
+      for (var j = 0; j < 3; j++) if (!(p.size[j] > 0)) return false;   // 크기 양수
     }
     return true;
   }
@@ -452,7 +484,7 @@
     layerColor: layerColor, layerName: layerName,
     exposeRatio: exposeRatio, damageAt: damageAt,
     splitShards: splitShards, shardCenter: shardCenter,
-    snapOk: snapOk, latheValid: latheValid,
+    snapOk: snapOk, latheValid: latheValid, compositeValid: compositeValid,
     restoreLayout: restoreLayout, restoreProgress: restoreProgress,
     restoreDone: restoreDone, shardYSpan: shardYSpan,
     ERA_ORDER: ERA_ORDER, eraIndex: eraIndex, timelineResult: timelineResult,
@@ -570,13 +602,40 @@ function latheTexture(a){
       g.beginPath(); g.moveTo(cx,cy+20); g.quadraticCurveTo(cx-42,cy,cx-58,cy+22); g.stroke(); } }
   const tx=new THREE.CanvasTexture(cv); tx.colorSpace=THREE.SRGBColorSpace; return tx;
 }
+/* ── composite 프리미티브 헬퍼 (박물관 미니어처: 발굴·복원·치유 공용) ── */
+function primGeometry(p){
+  const s=p.size;
+  if(p.prim==='box')    return new THREE.BoxGeometry(s[0]*ART_SC, s[1]*ART_SC, s[2]*ART_SC);
+  if(p.prim==='cyl')    return new THREE.CylinderGeometry(s[0]/2*ART_SC, s[0]/2*ART_SC, s[1]*ART_SC, 28);
+  return new THREE.SphereGeometry(s[0]/2*ART_SC, 22, 16);
+}
+function primMetalness(){ return (art.era==='청동기'||art.era==='삼국')?0.55:0.12; }
+function primMesh(p, matOpts){
+  const geo=primGeometry(p);
+  const mat=new THREE.MeshStandardMaterial(Object.assign(
+    { color:new THREE.Color(p.tint||art.geo.tint||'#B08860'), roughness:0.6, metalness:primMetalness() }, matOpts||{}));
+  const m=new THREE.Mesh(geo,mat);
+  m.position.set((p.pos[0]||0)*ART_SC, (p.pos[1]||0)*ART_SC, (p.pos[2]||0)*ART_SC);
+  if(p.rot) m.rotation.set(p.rot[0]||0, p.rot[1]||0, p.rot[2]||0);
+  return m;
+}
+function compositeGroup(matOpts){ const g=new THREE.Group(); for(const p of art.geo.prims) g.add(primMesh(p,matOpts)); return g; }
+function compositeTopY(prims){ let t=0; for(const p of prims){ const top=(p.pos[1]||0)+(p.size[1]||0)/2; if(top>t)t=top; } return t*ART_SC; }
+function disposeObj(o){ o.traverse?o.traverse(x=>{ if(x.geometry)x.geometry.dispose(); }):(o.geometry&&o.geometry.dispose()); }
+
 function buildArtifact(){
-  if(artMesh){ scene.remove(artMesh); artMesh.geometry.dispose(); }
+  if(artMesh){ scene.remove(artMesh); disposeObj(artMesh); }
+  if(art.geo.type==='composite'){
+    artMesh=compositeGroup();
+    artMesh.traverse(o=>{ if(o.isMesh) o.castShadow=false; });   // D-2: 그림자 스포일러 방지
+    const topY=compositeTopY(art.geo.prims);
+    place={ ax:0.5, az:0.5, rx:0.15, rz:0.16, d_a:0.42 };
+    artMesh.position.set(nx2wx(place.ax), -place.d_a*DEP - topY, nz2wz(place.az));
+    scene.add(artMesh); return;
+  }
   let geo;
-  if(art.geo.type==='lathe'){
-    const pts=art.geo.profile.map(p=>new THREE.Vector2(Math.max(0.001,p[0])*ART_SC, p[1]*ART_SC));
-    geo=new THREE.LatheGeometry(pts,48);
-  } else { geo=new THREE.SphereGeometry(0.18,16,12); }   // composite는 T2-2
+  const pts=art.geo.profile.map(p=>new THREE.Vector2(Math.max(0.001,p[0])*ART_SC, p[1]*ART_SC));
+  geo=new THREE.LatheGeometry(pts,48);
   const mat=new THREE.MeshStandardMaterial({map:latheTexture(art),roughness:0.82,metalness:0.02});
   artMesh=new THREE.Mesh(geo,mat);
   artMesh.castShadow=false;                              // D-2: 흙 위 그림자 스포일러 방지
@@ -755,6 +814,7 @@ function rAtProfile(profile, y){
 }
 /* 부분 라티스 쉘: 조각 [θ0,θ1]×[y0,y1] → 외피+내피+절단 측벽. 정점색으로 내부/측벽 어둡게. */
 function buildShardGeo(profile, shard){
+  if(shard.composite){ return primGeometry(art.geo.prims[shard.primIndex]); }   // 부품 1개 = 조각 1개
   const span=DL.shardYSpan(profile, shard), yLo=span.yLo, yHi=span.yHi;
   // y 행: 경계 보간 + 내부 원프로파일 점
   const ys=[yLo]; for(const p of profile){ if(p[1]>yLo+1e-4 && p[1]<yHi-1e-4) ys.push(p[1]); } ys.push(yHi);
@@ -798,6 +858,10 @@ function buildShardGeo(profile, shard){
   return geo;
 }
 function fullVesselMesh(healed){
+  if(art.geo.type==='composite'){
+    const g=compositeGroup(healed?{roughness:0.34, metalness:Math.min(0.85,primMetalness()+0.2)}:{});
+    g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g;
+  }
   const pts=art.geo.profile.map(p=>new THREE.Vector2(Math.max(0.001,p[0])*ART_SC,p[1]*ART_SC));
   const geo=new THREE.LatheGeometry(pts,48);
   const mat = healed
@@ -833,13 +897,20 @@ function buildRestore(){
   for(const s of L.shards){
     const slot=L.slots.find(z=>z.id===s.id);
     const geo=buildShardGeo(art.geo.profile,s);
-    const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(art.geo.tint||'#B08860'),vertexColors:true,roughness:0.8,metalness:0.02,side:THREE.DoubleSide});
+    let mat;
+    if(s.composite){
+      const p=art.geo.prims[s.primIndex];
+      mat=new THREE.MeshStandardMaterial({color:new THREE.Color(p.tint||art.geo.tint||'#B08860'),roughness:0.6,metalness:primMetalness(),side:THREE.DoubleSide});
+    } else {
+      mat=new THREE.MeshStandardMaterial({color:new THREE.Color(art.geo.tint||'#B08860'),vertexColors:true,roughness:0.8,metalness:0.02,side:THREE.DoubleSide});
+    }
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true;
     const g=new THREE.Group(); g.add(mesh);
     const ang=slot.trayAngle;
     g.position.set(Math.cos(ang)*RS.ringR, RS.hoverY, Math.sin(ang)*RS.ringR);
     g.rotation.y=slot.rot0deg*Math.PI/180;
-    g.userData={ id:s.id, slot, mesh, placed:false, baseCol:0x000000 };
+    const tgt = slot.target ? {x:slot.target.x*ART_SC, y:slot.target.y*ART_SC, z:slot.target.z*ART_SC} : {x:0,y:0,z:0};
+    g.userData={ id:s.id, slot, mesh, placed:false, baseCol:0x000000, target:tgt };
     scene.add(g); RS.groups.push(g);
   }
   RS.built=true; updateRestoreProgress();
@@ -863,14 +934,15 @@ function now0(){ return (performance&&performance.now)?performance.now():0; }
 /* 조각 배치 시도(스냅). posOK·rotOK → 흡착 애니메이션. 반환 성공 여부. */
 function tryPlace(g){
   if(g.userData.placed) return false;
-  const p=g.position, dpos=Math.hypot(p.x, p.z);                     // 목표=중앙(0,0)
+  const tgt=g.userData.target||{x:0,y:0,z:0};
+  const p=g.position, dpos=Math.hypot(p.x-tgt.x, p.z-tgt.z);       // 목표=조각 제자리(lathe=중앙)
   const drotDeg=Math.abs(normAngle(g.rotation.y))*180/Math.PI;
   if(!(dpos<RS.snapPosW && DL.snapOk(0, drotDeg, 0.06))) return false; // 위치=월드톨, 회전=SPEC 12°
   g.userData.placed=true; g.userData.slot.placed=true;
   const x0=p.x,y0=p.y,z0=p.z,r0=g.rotation.y,t0=now0();
   (function a(now){ let u=(now-t0)/260; if(u>1)u=1; const e=1-Math.pow(1-u,3);
-    g.position.set(x0*(1-e),(y0+(0-y0)*e),z0*(1-e)); g.rotation.y=r0*(1-e);
-    if(u<1)requestAnimationFrame(a); else { g.position.set(0,0,0); g.rotation.y=0; seamGlow(g); } })(t0);
+    g.position.set(x0+(tgt.x-x0)*e, y0+(tgt.y-y0)*e, z0+(tgt.z-z0)*e); g.rotation.y=r0*(1-e);
+    if(u<1)requestAnimationFrame(a); else { g.position.set(tgt.x,tgt.y,tgt.z); g.rotation.y=0; seamGlow(g); } })(t0);
   Snd.play('success'); updateRestoreProgress();
   if(RS.sel===g) RS.sel=null;
   if(DL.restoreDone(RS.layout.slots)) setTimeout(healVessel,360);
@@ -884,7 +956,7 @@ function healVessel(){
   const t0=now0();
   (function a(now){ let u=(now-t0)/1600; if(u>1)u=1;
     healed.rotation.y=u*Math.PI*4;                                  // 2바퀴
-    if(healed.material.emissive){ healed.material.emissive.set(0xFFD966); healed.material.emissiveIntensity=0.5*Math.max(0,1-u*1.4); }
+    if(healed.material && healed.material.emissive){ healed.material.emissive.set(0xFFD966); healed.material.emissiveIntensity=0.5*Math.max(0,1-u*1.4); }
     if(u<1)requestAnimationFrame(a); else showArtifactCard(); })(t0);
   Snd.play('reveal');
 }
@@ -955,10 +1027,28 @@ const museumHud=document.getElementById('museumHud');
 const COLL_KEY='kedu_dig_collected';
 function readCollected(){ try{ return JSON.parse(localStorage.getItem(COLL_KEY)||'[]'); }catch(e){ return []; } }
 function addCollected(id){ const c=readCollected(); if(c.indexOf(id)<0){ c.push(id); try{ localStorage.setItem(COLL_KEY, JSON.stringify(c)); }catch(e){} } }
+function drawCompositeSil(g, a, got, W, H){
+  const prims=a.geo.prims, pad=12;
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  for(const p of prims){ const hx=p.size[0]/2, hy=p.size[1]/2, cx=p.pos[0], cy=p.pos[1];
+    minX=Math.min(minX,cx-hx); maxX=Math.max(maxX,cx+hx); minY=Math.min(minY,cy-hy); maxY=Math.max(maxY,cy+hy); }
+  const spanX=(maxX-minX)||1, spanY=(maxY-minY)||1;
+  const s=Math.min((W-2*pad)/spanX, (H-2*pad)/spanY);
+  const midX=(minX+maxX)/2, baseY=H-pad;
+  const sx=x=>W/2+(x-midX)*s, sy=y=>baseY-(y-minY)*s;
+  for(const p of prims){
+    const cx=sx(p.pos[0]), cy=sy(p.pos[1]), w=p.size[0]*s, h=p.size[1]*s;
+    g.fillStyle = got ? (p.tint||a.geo.tint||'#B08860') : 'rgba(120,132,148,.35)';
+    if(p.prim==='sphere'){ g.beginPath(); g.arc(cx,cy,Math.max(w,h)/2,0,Math.PI*2); g.fill();
+      if(got){ g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=1; g.stroke(); } }
+    else { g.fillRect(cx-w/2, cy-h/2, w, h);
+      if(got){ g.strokeStyle='rgba(255,255,255,.22)'; g.lineWidth=1; g.strokeRect(cx-w/2,cy-h/2,w,h); } }
+  }
+  if(!got){ g.fillStyle='#8892a0'; g.font='700 30px Jua,sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('?',W/2,H/2); }
+}
 function drawSilhouette(cv, a, got){
   const g=cv.getContext('2d'); const W=cv.width, H=cv.height; g.clearRect(0,0,W,H);
-  if(a.geo.type!=='lathe'){ g.fillStyle=got?(a.geo.tint||'#B08860'):'#3a4048';
-    g.beginPath(); g.arc(W/2,H/2,W*0.26,0,Math.PI*2); g.fill(); return; }
+  if(a.geo.type==='composite'){ drawCompositeSil(g,a,got,W,H); return; }
   const pts=DL.silhouettePath(a.geo.profile, W, H, 10);
   g.beginPath(); g.moveTo(pts[0][0],pts[0][1]); for(let i=1;i<pts.length;i++) g.lineTo(pts[i][0],pts[i][1]); g.closePath();
   if(got){ g.fillStyle=a.geo.tint||'#B08860'; g.fill();
