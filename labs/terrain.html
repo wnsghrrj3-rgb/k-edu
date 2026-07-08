@@ -83,6 +83,45 @@
   #loading .spin{width:44px;height:44px;border:4px solid rgba(155,123,245,.25);border-top-color:var(--acc);
     border-radius:50%;animation:sp 1s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ── T1-1 미션·퀴즈 ── */
+  #missionHud{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;display:none;
+    background:rgba(24,28,36,.94);border:1px solid rgba(155,123,245,.4);border-radius:14px;
+    padding:9px 14px;max-width:88vw;text-align:center;box-shadow:0 8px 26px rgba(0,0,0,.4)}
+  #missionHud .mt{font-family:'Jua';font-size:14.5px;color:#cdbcff}
+  #missionHud .mp{font-size:12.5px;color:#9fb0c4;margin-top:3px;line-height:1.45}
+  #missionHud .quit{margin-top:6px;font-size:12px;color:#8a9bb0;background:none;border:none;cursor:pointer;text-decoration:underline}
+  .board{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,90vw);
+    background:#fff;border-radius:20px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.4);
+    opacity:0;pointer-events:none;transition:opacity .25s;max-height:82vh;overflow:auto}
+  .board.show{opacity:1;pointer-events:auto}
+  .board h3{margin:0 0 4px;font-family:'Jua';font-size:19px;color:var(--ink)}
+  .board .sub{color:#7c8aa0;font-size:12.5px;margin:0 0 14px}
+  .board .mrow{display:flex;align-items:center;gap:11px;border:2px solid #ece7f6;border-radius:13px;
+    padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:.15s}
+  .board .mrow:hover{border-color:var(--acc);background:#f7f3ff}
+  .board .mrow.done{border-color:var(--ok);background:#effaf4}
+  .board .mrow .ic{font-size:22px}
+  .board .mrow .tx{flex:1}
+  .board .mrow .tx b{display:block;font-size:14.5px;color:var(--ink)}
+  .board .mrow .tx span{font-size:12px;color:#8a9bb0}
+  .board .mrow .st{font-size:18px;color:var(--ok)}
+  .board .gtag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#efeafe;color:#7a5cd0;margin-left:6px}
+  #readMap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:22;display:none;
+    background:#fff;border-radius:18px;padding:14px;box-shadow:0 20px 54px rgba(0,0,0,.4);text-align:center}
+  #readMap .rl{font-family:'Jua';font-size:14px;color:var(--ink);margin-bottom:8px}
+  #readMap canvas{border-radius:12px;background:#f4f0ff;cursor:crosshair;touch-action:none}
+  #readMap .rn{margin-top:8px;font-size:12.5px;color:#7c8aa0}
+  #badge{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.9);z-index:40;
+    background:linear-gradient(160deg,#fff,#f4efff);border-radius:22px;padding:26px 30px;text-align:center;
+    box-shadow:0 26px 64px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:.3s}
+  #badge.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  #badge .em{font-size:52px}
+  #badge h3{margin:8px 0 4px;font-family:'Jua';font-size:20px;color:var(--ink)}
+  #badge p{margin:0 0 14px;color:#6b788c;font-size:13.5px}
+  .secopt{border:2px solid #e3e8ef;border-radius:12px;padding:6px;cursor:pointer;background:#fff;transition:.15s}
+  .secopt:hover{border-color:var(--acc)}
+  .secopt.pick{border-color:var(--acc);background:#f6f2ff}
 </style>
 <script type="importmap">
 {
@@ -104,6 +143,11 @@
   <button class="btn" id="sndtog">🔊</button>
 
   <div class="tabs">
+    <div class="seg learn" id="learnTabs">
+      <button data-learn="free" class="on">🧭 자유탐구</button>
+      <button data-learn="mission">🎯 미션</button>
+      <button data-learn="quiz">❓ 퀴즈</button>
+    </div>
     <div class="seg mode" id="modeTabs">
       <button data-mode="stack" class="on">🧱 쌓기</button>
       <button data-mode="cut">🔪 자르기</button>
@@ -115,6 +159,21 @@
       <button data-grade="high">고학년</button>
     </div>
   </div>
+
+  <div id="missionHud">
+    <div class="mt" id="hudTitle"></div>
+    <div class="mp" id="hudHint"></div>
+    <button class="quit" id="hudQuit">← 미션 목록으로</button>
+  </div>
+
+  <div class="board" id="board"></div>
+  <div id="readMap">
+    <div class="rl" id="readLabel"></div>
+    <canvas id="readCv" width="260" height="260"></canvas>
+    <div class="rn">📏 지도 폭 2km · 등고선을 읽고 한 곳을 탭하세요</div>
+  </div>
+  <div class="card" id="quizCard"></div>
+  <div id="badge"></div>
 
   <div class="panel" id="panel"><span class="hint" id="panelHint">등고선 판을 낮은 층부터 쌓아 산을 만들어요.</span></div>
 
@@ -510,6 +569,176 @@
 
 </script>
 
+<script id="terrain-missions">
+/* ═══════════════════════════════════════════════════════════════════
+   케이랩 사회실 · 지형실(Terrain) 미션·퀴즈 순수 로직 — window.TerrainMissions
+   SPEC_지형실_구현.md §6 (미션 = 데이터 · goal:stack|read|section · 퀴즈 4문)
+   THREE 무관. window.Terrain 의존(같은 파일 위쪽 인라인). jsdom/node 검산 대상.
+   ═══════════════════════════════════════════════════════════════════ */
+(function (root) {
+  'use strict';
+  var T = root.Terrain;
+
+  /* ── 미션 12종 (미션 = 데이터. 늘리려면 이 배열에 객체만 추가) ──
+     grade: low|mid|high  ·  goal: stack|read|section
+     read.kind: 'peak'(최고봉) | 'steep'(가파른 곳)
+     학년칸: 저=stack만 · 중=stack+read · 고=전부 (SPEC §6)               */
+  var MISSIONS = [
+    // 저학년 — 쌓기 4
+    { id: 'L1', grade: 'low',  goal: 'stack', seed: 3301, target: 'full', title: '첫 산을 쌓아요',        hint: '등고선 판을 낮은 층부터 모두 쌓아요.' },
+    { id: 'L2', grade: 'low',  goal: 'stack', seed: 3302, target: 'full', title: '봉우리까지 차곡차곡',    hint: '가장 높은 층까지 순서대로 올려요.' },
+    { id: 'L3', grade: 'low',  goal: 'stack', seed: 3303, target: 'full', title: '산 하나 더 만들기',      hint: '다른 산도 판을 다 쌓아 완성해요.' },
+    { id: 'L4', grade: 'low',  goal: 'stack', seed: 3304, target: 'full', title: '높은 산 완성',          hint: '층을 다 쌓으면 매끈한 산으로 변해요.' },
+    // 중학년 — 쌓기 2 + 지도읽기 2
+    { id: 'M1', grade: 'mid',  goal: 'stack', seed: 3311, target: 'full', title: '산을 완성해요',          hint: '판을 다 쌓아 산을 만들어요.' },
+    { id: 'M2', grade: 'mid',  goal: 'read',  seed: 3312, read: 'peak',   title: '최고봉을 찾아라',        hint: '등고선이 가장 안쪽(작은 고리) — 제일 높은 곳을 짚어요.' },
+    { id: 'M3', grade: 'mid',  goal: 'read',  seed: 3313, read: 'steep',  title: '가파른 비탈 찾기',        hint: '등고선이 촘촘한 곳 = 가파른 곳을 짚어요.' },
+    { id: 'M4', grade: 'mid',  goal: 'read',  seed: 3314, read: 'peak',   title: '지도에서 정상 찾기',      hint: '동심원의 한가운데가 정상이에요.' },
+    // 고학년 — 지도읽기 1 + 단면 2 + 쌓기 1
+    { id: 'H1', grade: 'high', goal: 'read',    seed: 3321, read: 'steep', title: '가장 가파른 곳',          hint: '선 간격이 가장 좁은 비탈을 짚어요.' },
+    { id: 'H2', grade: 'high', goal: 'section', seed: 3322,                 title: '이 등산로의 단면은?',      hint: '지도의 경로를 옆에서 본 모습을 골라요.' },
+    { id: 'H3', grade: 'high', goal: 'section', seed: 3323,                 title: '어느 단면이 맞을까?',      hint: '오르내림 모양이 경로와 같은 것을 골라요.' },
+    { id: 'H4', grade: 'high', goal: 'stack',   seed: 3324, target: 'full', title: '고난도 지형 완성',        hint: '봉우리가 여럿이어도 층 순서는 하나예요.' }
+  ];
+
+  /* ── 격자 헬퍼 ── */
+  function argmaxCell(H, G) {
+    var bi = 0, bv = -Infinity;
+    for (var idx = 0; idx < H.length; idx++) { if (H[idx] > bv) { bv = H[idx]; bi = idx; } }
+    var i = bi % G, j = (bi / G) | 0;
+    return { i: i, j: j, x: i / (G - 1), y: j / (G - 1), h: bv };
+  }
+  // 가파른 셀: |∇H| 최대(등고선 밀집). 정상/바닥(H<0.1 또는 봉우리 평평부) 근처는 자연히 작음.
+  function steepestCell(H, G) {
+    var bi = -1, bj = -1, bg = -1;
+    for (var j = 2; j < G - 2; j++) {
+      for (var i = 2; i < G - 2; i++) {
+        var gx = (H[j * G + (i + 1)] - H[j * G + (i - 1)]) * 0.5;
+        var gy = (H[(j + 1) * G + i] - H[(j - 1) * G + i]) * 0.5;
+        var g = Math.sqrt(gx * gx + gy * gy);
+        if (g > bg) { bg = g; bi = i; bj = j; }
+      }
+    }
+    return { i: bi, j: bj, x: bi / (G - 1), y: bj / (G - 1), grad: bg };
+  }
+  function maxGrad(H, G) {
+    var m = 0;
+    for (var j = 2; j < G - 2; j++) for (var i = 2; i < G - 2; i++) {
+      var gx = (H[j * G + (i + 1)] - H[j * G + (i - 1)]) * 0.5;
+      var gy = (H[(j + 1) * G + i] - H[(j - 1) * G + i]) * 0.5;
+      var g = Math.sqrt(gx * gx + gy * gy);
+      if (g > m) m = g;
+    }
+    return m;
+  }
+
+  var SECT_N = 24;
+  // ax..by = 정규화 [0,1] → section은 격자좌표(0..G-1) 요구하므로 변환
+  function silhouette(H, ax, ay, bx, by) {
+    var g = T.G - 1;
+    var prof = T.section(H, ax * g, ay * g, bx * g, by * g, SECT_N);
+    return prof.map(function (p) { return p.h; });
+  }
+  // 두 실루엣 최대 표본 차
+  function silDist(a, b) {
+    var m = 0; for (var i = 0; i < a.length; i++) { var d = Math.abs(a[i] - b[i]); if (d > m) m = d; }
+    return m;
+  }
+  // 정답(및 기존 오답들)과 충분히 다른 오답 실루엣 확보(딴 산 seed를 옮겨가며 탐색)
+  function distinctSil(correct, seed, ax, ay, bx, by, avoid) {
+    for (var off = 0; off < 40; off++) {
+      var t = T.makeTerrain((seed + off * 131) >>> 0);
+      var s = silhouette(t.H, ax, ay, bx, by);
+      var okv = silDist(s, correct) > 0.06;
+      if (okv && avoid) for (var a = 0; a < avoid.length; a++) if (silDist(s, avoid[a]) <= 0.04) okv = false;
+      if (okv) return s;
+    }
+    return silhouette(T.makeTerrain((seed + 999) >>> 0).H, ax, ay, bx, by);
+  }
+
+  /* ── 미션 정답 계산 (Terrain 로직으로 결정론 도출) ── */
+  function resolve(m) {
+    var t = T.makeTerrain(m.seed);
+    var H = t.H, G = t.G;
+    var out = { seed: m.seed, G: G, K: t.K };
+    if (m.goal === 'read') {
+      out.answer = (m.read === 'peak') ? argmaxCell(H, G) : steepestCell(H, G);
+      out.tolerance = 0.14;            // 정답 반경(정규화 좌표)
+      out.maxGrad = maxGrad(H, G);
+    } else if (m.goal === 'section') {
+      // 정답 경로 = 대각선, 오답 = 뚜렷이 다른 두 실루엣(딴 산에서 뽑되 정답과 충분히 다름 보장)
+      var correct = silhouette(H, 0.20, 0.20, 0.80, 0.80);
+      var d1 = distinctSil(correct, m.seed + 17, 0.20, 0.80, 0.80, 0.20, []);
+      var d2 = distinctSil(correct, m.seed + 53, 0.15, 0.50, 0.85, 0.50, [d1]);
+      var opts = [correct, d1, d2];
+      var order = shuffleIdx(m.seed, 3);
+      out.options = order.map(function (k) { return opts[k]; });
+      out.correct = order.indexOf(0);
+      out.path = [0.20, 0.20, 0.80, 0.80];
+    } else { // stack
+      out.levels = T.LEVELS;           // 완주 = LEVELS개 층 전부 안착
+    }
+    return out;
+  }
+
+  // seed 고정 셔플 인덱스
+  function shuffleIdx(seed, n) {
+    var a = [], r = ((seed * 2654435761) >>> 0);
+    for (var i = 0; i < n; i++) a.push(i);
+    for (var j = n - 1; j > 0; j--) {
+      r = (r * 1103515245 + 12345) >>> 0;
+      var k = r % (j + 1); var tmp = a[j]; a[j] = a[k]; a[k] = tmp;
+    }
+    return a;
+  }
+
+  /* ── 미션별 확인 퀴즈(1문) — 골 달성 뒤 개념 못박기 ── */
+  function quizFor(m) {
+    if (m.goal === 'read' && m.read === 'peak')
+      return { q: '등고선 지도에서 가장 높은 곳은 어떤 모습일까요?', opts: ['가장 바깥 큰 고리', '가장 안쪽 작은 고리', '선이 없는 곳'], correct: 1 };
+    if (m.goal === 'read' && m.read === 'steep')
+      return { q: '등고선 간격이 좁을수록 그 비탈은?', opts: ['완만하다', '가파르다', '평평하다'], correct: 1 };
+    if (m.goal === 'section')
+      return { q: '산을 수평으로 자른 테두리 모양은?', opts: ['직선', '닫힌 고리(동심원)', '네모'], correct: 1 };
+    return { q: '등고선 판을 쌓을 때 순서는?', opts: ['아무렇게나', '높은 층부터', '낮은 층부터'], correct: 2 };
+  }
+
+  /* ── 독립 퀴즈 4문 (한 산에서 결정론 생성) ── */
+  function makeQuiz(seed) {
+    var t = T.makeTerrain(seed), H = t.H, G = t.G;
+    var pk = argmaxCell(H, G), st = steepestCell(H, G);
+    // 문항 4개(정답 인덱스는 셔플)
+    var raw = [
+      { q: '등고선이 촘촘하게 모인 곳은?', opts: ['가파른 비탈', '완만한 들판', '강 바닥'], correct: 0 },
+      { q: '등고선의 가장 안쪽 작은 고리는 무엇을 뜻할까?', opts: ['가장 낮은 곳', '가장 높은 봉우리', '바다'], correct: 1 },
+      { q: '산 위에 떨어진 물방울은 어디로 갈까?', opts: ['위(봉우리)로', '낮은 골짜기로', '제자리'], correct: 1 },
+      { q: '같은 산을 수평으로 자르면 지도에는 무엇이 그려질까?', opts: ['닫힌 등고선', '직선 한 개', '아무것도'], correct: 0 }
+    ];
+    return raw.map(function (item, i) {
+      var order = shuffleIdx(seed + i * 91, item.opts.length);
+      return {
+        q: item.q,
+        opts: order.map(function (k) { return item.opts[k]; }),
+        correct: order.indexOf(item.correct)
+      };
+    });
+  }
+
+  function byGrade(grade) {
+    var rank = { low: 0, mid: 1, high: 2 };
+    return MISSIONS.filter(function (m) { return rank[m.grade] <= rank[grade]; });
+  }
+
+  var API = {
+    MISSIONS: MISSIONS, byGrade: byGrade,
+    resolve: resolve, quizFor: quizFor, makeQuiz: makeQuiz,
+    argmaxCell: argmaxCell, steepestCell: steepestCell, maxGrad: maxGrad, SECT_N: SECT_N
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  root.TerrainMissions = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -692,7 +921,8 @@ function morphToMountain(){
     }
     if(u<1){ requestAnimationFrame(anim); }
     else{ plateGroup.visible=false; spinCamera(); Snd.play('success');
-      showSuccess('🏔 산 완성!','계단처럼 쌓인 등고선 판이 매끈한 산이 되었어요. 평면의 동심원 = 입체의 산!'); }
+      if(learnMode==='mission' && curMission && curMission.goal==='stack'){ setTimeout(onGoalDone,700); }
+      else showSuccess('🏔 산 완성!','계단처럼 쌓인 등고선 판이 매끈한 산이 되었어요. 평면의 동심원 = 입체의 산!'); }
   }
   requestAnimationFrame(anim);
 }
@@ -899,12 +1129,195 @@ document.querySelectorAll('#modeTabs button').forEach(b=>{
 });
 document.querySelectorAll('#gradeTabs button').forEach(b=>{
   b.onclick=()=>{ grade=b.dataset.grade; Snd.play('tap');
-    document.querySelectorAll('#gradeTabs button').forEach(x=>x.classList.toggle('on',x===b)); applyMode(); };
+    document.querySelectorAll('#gradeTabs button').forEach(x=>x.classList.toggle('on',x===b));
+    applyMode(); if(learnMode==='mission'&&!curMission) openBoard(); };
 });
 document.getElementById('newMt').onclick=()=>{
   Snd.play('tap'); dropLines.forEach(l=>scene.remove(l)); dropLines=[]; sectionPts=[]; plateGroup.visible=true;
   regen((Math.random()*1e9)>>>0);
 };
+
+/* ══════════ T1-1 · 학습 모드(자유탐구/미션/퀴즈) ══════════ */
+const TM = window.TerrainMissions;
+let learnMode='free', curMission=null, curResolve=null;
+const doneMissions = new Set();
+const $=id=>document.getElementById(id);
+const board=$('board'), hud=$('missionHud'), readMap=$('readMap'), readCv=$('readCv'), rctx=readCv.getContext('2d');
+const quizCard=$('quizCard'), badgeEl=$('badge');
+
+function applyLearn(){
+  const isFree=learnMode==='free';
+  $('modeTabs').style.display=isFree?'':'none';
+  panel.style.display=isFree?'':'none';
+  if(isFree){ hideMissionUI(); curMission=null; applyMode(); }
+}
+function hideMissionUI(){
+  hud.style.display='none'; board.classList.remove('show');
+  readMap.style.display='none'; quizCard.classList.remove('show');
+  glass.classList.add('hide');
+}
+document.querySelectorAll('#learnTabs button').forEach(b=>{
+  b.onclick=()=>{ learnMode=b.dataset.learn; Snd.play('tap');
+    document.querySelectorAll('#learnTabs button').forEach(x=>x.classList.toggle('on',x===b));
+    curMission=null; hideMissionUI(); applyLearn();
+    if(learnMode==='mission') openBoard();
+    else if(learnMode==='quiz') startQuiz();
+  };
+});
+
+/* ── 미션 목록 ── */
+function openBoard(){
+  hideMissionUI(); curMission=null;
+  const list=TM.byGrade(grade);
+  const gLabel={low:'저학년',mid:'중학년',high:'고학년'}[grade];
+  const gIcon={stack:'🧱',read:'🗺',section:'⛰'};
+  board.innerHTML=`<h3>🎯 지형 미션</h3><p class="sub">${gLabel} · ${list.length}개 — 하나를 골라 도전!</p>`+
+    list.map(m=>`<div class="mrow ${doneMissions.has(m.id)?'done':''}" data-id="${m.id}">
+        <div class="ic">${gIcon[m.goal]}</div>
+        <div class="tx"><b>${m.title}</b><span>${m.hint}</span></div>
+        <div class="st">${doneMissions.has(m.id)?'✓':''}</div></div>`).join('');
+  board.querySelectorAll('.mrow').forEach(row=>{
+    row.onclick=()=>{ const m=list.find(x=>x.id===row.dataset.id); startMission(m); };
+  });
+  board.classList.add('show');
+}
+
+/* ── 미션 시작 ── */
+function startMission(m){
+  hideMissionUI();
+  curMission=m; curResolve=TM.resolve(m);
+  dropLines.forEach(l=>scene.remove(l)); dropLines=[]; sectionPts=[];
+  regen(m.seed);
+  hud.style.display=''; $('hudTitle').textContent='🎯 '+m.title; $('hudHint').textContent=m.hint;
+  if(m.goal==='stack'){ mode='stack'; plateGroup.visible=true; applyMode(); }
+  else if(m.goal==='read'){ plateGroup.visible=false; if(mtnMesh){mtnMesh.visible=true;mtnMesh.material.opacity=1;mtnMesh.material.clippingPlanes=[];} startRead(m); }
+  else if(m.goal==='section'){ plateGroup.visible=false; if(mtnMesh){mtnMesh.visible=true;mtnMesh.material.opacity=1;mtnMesh.material.clippingPlanes=[];} startSection(m); }
+}
+$('hudQuit').onclick=()=>{ Snd.play('tap'); openBoard(); };
+
+/* ── 지도 읽기 미션 ── */
+function drawContourMap(mark){
+  const S=readCv.width;
+  rctx.clearRect(0,0,S,S); rctx.fillStyle='#f4f0ff'; rctx.fillRect(0,0,S,S);
+  rctx.lineWidth=1.4; rctx.strokeStyle='#9B7BF5';
+  for(let k=0;k<T.LEVELS;k++){ cset[k].polys.forEach(p=>{
+    rctx.beginPath(); p.forEach((q,i)=>{ const X=q[0]/(T.G-1)*S, Y=q[1]/(T.G-1)*S; i?rctx.lineTo(X,Y):rctx.moveTo(X,Y); });
+    rctx.closePath(); rctx.stroke(); }); }
+  if(mark){ // 정답·선택 지점 표시
+    if(mark.ans){ dot(mark.ans.x*S,mark.ans.y*S,'#12B886','정답'); }
+    if(mark.pick){ dot(mark.pick.x*S,mark.pick.y*S, mark.ok?'#12B886':'#e0555f', mark.ok?'':'내 선택'); }
+  }
+  function dot(x,y,c,t){ rctx.beginPath(); rctx.arc(x,y,8,0,7); rctx.fillStyle=c; rctx.fill();
+    rctx.lineWidth=2; rctx.strokeStyle='#fff'; rctx.stroke();
+    if(t){ rctx.fillStyle=c; rctx.font='bold 12px Gowun Dodum'; rctx.fillText(t,x+11,y+4); } }
+}
+function startRead(m){
+  $('readLabel').textContent = m.read==='peak' ? '🗺 가장 높은 곳(최고봉)을 탭하세요' : '🗺 가장 가파른 곳(선이 촘촘)을 탭하세요';
+  drawContourMap(null); readMap.style.display='';
+  readCv.onpointerdown=(e)=>{
+    const r=readCv.getBoundingClientRect();
+    const nx=(e.clientX-r.left)/r.width, ny=(e.clientY-r.top)/r.height;
+    const a=curResolve.answer, d=Math.hypot(nx-a.x,ny-a.y);
+    const ok=d<=curResolve.tolerance;
+    drawContourMap({ans:a,pick:{x:nx,y:ny},ok});
+    readCv.onpointerdown=null;
+    if(ok){ Snd.play('success');
+      setTimeout(()=>{ readMap.style.display='none'; onGoalDone(); },900); }
+    else{ Snd.play('nope'); toast(m.read==='peak'?'가장 <b>안쪽 작은 고리</b>가 최고봉이에요':'선이 가장 <b>촘촘한</b> 곳이 가파른 곳이에요');
+      setTimeout(()=>{ startRead(m); },1500); }
+  };
+}
+
+/* ── 단면 맞히기 미션 ── */
+function silSvg(hs,W,Hh){
+  const pad=8; let d='';
+  hs.forEach((h,i)=>{ const X=pad+i/(hs.length-1)*(W-2*pad); const Y=Hh-pad-h*(Hh-2*pad); d+=(i?'L':'M')+X.toFixed(1)+' '+Y.toFixed(1)+' '; });
+  return `<svg width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}"><rect width="${W}" height="${Hh}" rx="9" fill="#f4f0ff"/>
+    <path d="${d}" fill="none" stroke="#9B7BF5" stroke-width="2.5"/>
+    <line x1="${pad}" y1="${Hh-pad}" x2="${W-pad}" y2="${Hh-pad}" stroke="#c9bde8"/></svg>`;
+}
+function startSection(m){
+  // 지도에 경로선을 그린 안내 + 3개 실루엣 후보
+  const R=curResolve; const pathHint=drawSectionRoute(R.path);
+  quizCard.innerHTML=`<h3>⛰ 이 경로의 단면은?</h3>${pathHint}
+    <p style="margin:2px 0 12px;font-size:12.5px;color:#7c8aa0">보라 선 경로를 옆에서 본 모습을 골라요</p>
+    <div class="opts" style="gap:11px">${R.options.map((hs,i)=>`<div class="secopt" data-i="${i}">${silSvg(hs,180,74)}</div>`).join('')}</div>`;
+  quizCard.querySelectorAll('.secopt').forEach(op=>{
+    op.onclick=()=>{ const i=+op.dataset.i;
+      if(i===R.correct){ Snd.play('success'); op.classList.add('pick');
+        quizCard.classList.remove('show'); onGoalDone(); }
+      else{ Snd.play('nope'); op.style.borderColor='#e0555f';
+        toast('오르내림 모양을 경로와 다시 비교해봐요'); }
+    };
+  });
+  quizCard.classList.add('show');
+}
+function drawSectionRoute(p){
+  const S=150; const c=document.createElement('canvas'); c.width=S;c.height=S; const x=c.getContext('2d');
+  x.fillStyle='#f4f0ff'; x.fillRect(0,0,S,S); x.lineWidth=1.2; x.strokeStyle='#c9bde8';
+  for(let k=0;k<T.LEVELS;k++){ cset[k].polys.forEach(pl=>{ x.beginPath(); pl.forEach((q,i)=>{ const X=q[0]/(T.G-1)*S,Y=q[1]/(T.G-1)*S; i?x.lineTo(X,Y):x.moveTo(X,Y);}); x.closePath(); x.stroke(); }); }
+  x.strokeStyle='#9B7BF5'; x.lineWidth=3; x.beginPath(); x.moveTo(p[0]*S,p[1]*S); x.lineTo(p[2]*S,p[3]*S); x.stroke();
+  x.fillStyle='#9B7BF5'; [[p[0],p[1]],[p[2],p[3]]].forEach(pt=>{x.beginPath();x.arc(pt[0]*S,pt[1]*S,4,0,7);x.fill();});
+  return `<img src="${c.toDataURL()}" width="150" height="150" style="border-radius:10px;display:block;margin:0 auto 6px">`;
+}
+
+/* ── 골 달성 → 확인 퀴즈 → 클리어 ── */
+function onGoalDone(){
+  const m=curMission; if(!m) return;
+  const q=TM.quizFor(m);
+  quizCard.innerHTML=`<h3>✨ 잘했어요! 하나만 확인</h3><p style="margin:0 0 12px;font-size:14px">${q.q}</p>
+    <div class="opts">${q.opts.map((o,i)=>`<button data-i="${i}">${o}</button>`).join('')}</div>`;
+  quizCard.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{ const i=+b.dataset.i;
+      if(i===q.correct){ Snd.play('success'); quizCard.classList.remove('show'); clearMission(m); }
+      else{ Snd.play('nope'); b.style.borderColor='#e0555f'; toast('다시 한 번 생각해봐요'); }
+    };
+  });
+  quizCard.classList.add('show');
+}
+function clearMission(m){
+  const first=doneMissions.size===0 && !localStorage.terrain_first_mt;
+  doneMissions.add(m.id);
+  if(first){ awardBadge(); }
+  else { showSuccess('🎉 미션 완료!','"'+m.title+'" 성공! 다음 미션에 도전해봐요.'); setTimeout(()=>{ $('success').classList.remove('show'); openBoard(); },1400); }
+}
+function awardBadge(){
+  localStorage.terrain_first_mt='1';
+  try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('terrain_first_mountain'); }catch(e){}
+  badgeEl.innerHTML=`<div class="em">🏔</div><h3>첫 산 완성 배지</h3><p>등고선을 산으로, 산을 지도로 — 첫 미션을 해냈어요!</p>
+    <div class="opts" style="justify-content:center"><button class="pri" id="bgOk" style="border:none;background:var(--acc);color:#fff;border-radius:12px;padding:11px 22px;cursor:pointer;font-family:'Gowun Dodum';font-size:14px">계속하기</button></div>`;
+  badgeEl.querySelector('#bgOk').onclick=()=>{ badgeEl.classList.remove('show'); openBoard(); };
+  badgeEl.classList.add('show'); Snd.play('success');
+}
+
+/* ── 독립 퀴즈 4문 ── */
+function startQuiz(){
+  hideMissionUI();
+  const qs=TM.makeQuiz((Date.now()&0x7fffffff)>>>0);
+  let idx=0, score=0;
+  function render(){
+    if(idx>=qs.length){
+      quizCard.innerHTML=`<h3>🏁 퀴즈 끝!</h3><p style="font-size:16px;margin:0 0 14px">4문제 중 <b style="color:var(--acc)">${score}문제</b> 정답!</p>
+        <div class="opts"><button class="pri" id="qAgain">다시 풀기</button></div>`;
+      quizCard.querySelector('#qAgain').onclick=()=>startQuiz();
+      return;
+    }
+    const q=qs[idx];
+    quizCard.innerHTML=`<h3>❓ 퀴즈 ${idx+1} / ${qs.length}</h3><p style="margin:0 0 12px;font-size:14.5px">${q.q}</p>
+      <div class="opts">${q.opts.map((o,i)=>`<button data-i="${i}">${o}</button>`).join('')}</div>`;
+    quizCard.querySelectorAll('button').forEach(b=>{
+      b.onclick=()=>{ const i=+b.dataset.i;
+        if(i===q.correct){ Snd.play('success'); score++; b.classList.add('pri'); }
+        else{ Snd.play('nope'); b.style.borderColor='#e0555f';
+          quizCard.querySelectorAll('button')[q.correct].classList.add('pri'); }
+        quizCard.querySelectorAll('button').forEach(x=>x.disabled=true);
+        setTimeout(()=>{ idx++; render(); },900);
+      };
+    });
+  }
+  render(); quizCard.classList.add('show');
+}
+
 
 /* ══════════ 루프 ══════════ */
 function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); }
@@ -917,7 +1330,8 @@ loop();
 document.getElementById('loading').style.display='none';
 
 // 노출(스모크 마운트 확인용)
-window.__TERRAIN_SCENE={ regen, get mode(){return mode;}, get grade(){return grade;}, get stackedCount(){return stackedCount;} };
+window.__TERRAIN_SCENE={ regen, get mode(){return mode;}, get grade(){return grade;}, get stackedCount(){return stackedCount;},
+  get learnMode(){return learnMode;}, get curMission(){return curMission&&curMission.id;}, TM };
 </script>
 </body>
 </html>
