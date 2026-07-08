@@ -67,7 +67,7 @@ for (const [key, arg] of MAP) {
     ok(/i-offline-card/.test(ALL), '④ offline 짝 활동 미렌더');
     ok(/kt-et/.test(ALL) && /🟢/.test(ALL) && /🔴/.test(ALL), '⑥ exit 미렌더');
     if (!NO_REVIEW.includes(key)) ok(/kt-rv/.test(ALL), '① review 미렌더');
-    ok(/겹받침|분위기|소리|시|읽/.test(ALL), '③ 분위기·겹받침 서사 확인');
+    ok(/겹받침|분위기|소리|시|읽/.test(ALL), '③ 분위기/겹받침 서사 흔적 없음');
   });
 }
 
