@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 전시실 · K-edu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{
+  --bg0:#0c1a14; --bg1:#12161c; --ink:#E8EEF5; --mut:#8fa3b8;
+  --glass:rgba(255,255,255,.045); --line:rgba(255,255,255,.09);
+  --artifact:#FFA25C; --artwork:#F06292; --technique:#2DD4A0; --badge:#ffd489; --record:#9B7BF5;
+  --title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:'Gowun Dodum',sans-serif; color:var(--ink); min-height:100vh;
+  background:
+    radial-gradient(1100px 620px at 78% -8%, rgba(45,212,160,.10), transparent 60%),
+    radial-gradient(900px 520px at 8% 4%, rgba(155,123,245,.08), transparent 55%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  background-attachment:fixed;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:clamp(22px,5vw,52px) clamp(16px,4vw,32px) 72px}
+
+/* 헤더 — 서재의 문패 */
+.eyebrow{font-size:12px;letter-spacing:.34em;color:var(--mut);text-transform:uppercase}
+h1{font-family:var(--title);font-weight:400;font-size:clamp(30px,6vw,50px);margin:.28em 0 .12em;line-height:1.04}
+.sub{color:var(--mut);font-size:15px;margin:0}
+
+/* 집계 칩 = 필터 */
+.tally{display:flex;flex-wrap:wrap;gap:9px;margin:26px 0 20px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;
+  padding:8px 14px;border-radius:999px;border:1px solid var(--line);
+  background:var(--glass);color:var(--ink);font:inherit;font-size:14px;
+  transition:border-color .18s, background .18s, transform .12s;
+}
+.chip:hover{transform:translateY(-1px)}
+.chip .n{color:var(--mut);font-size:13px}
+.chip[aria-pressed="true"]{background:rgba(255,255,255,.09)}
+.chip.k-all[aria-pressed="true"]{border-color:var(--ink)}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip:focus-visible{outline:2px solid #cfe6ff;outline-offset:2px}
+
+/* 선반 — 과목 벽 없는 한 판 */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(154px,1fr));gap:15px}
+.card{
+  position:relative;border:1px solid var(--line);border-top-width:3px;border-radius:15px;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+  overflow:hidden;transition:transform .16s ease, border-color .16s;
+}
+.card:hover{transform:translateY(-4px)}
+.card:focus-within{outline:2px solid #cfe6ff;outline-offset:2px}
+.thumb{
+  aspect-ratio:1/1;display:grid;place-items:center;font-size:44px;
+  background:radial-gradient(120% 120% at 50% 18%, rgba(255,255,255,.06), transparent 70%);
+}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.body{padding:11px 13px 13px}
+.ttl{font-size:15px;line-height:1.3;margin:0 0 6px;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:11.5px;color:var(--mut)}
+.badge-k{padding:1px 8px;border-radius:999px;font-size:11px;color:#0c1a14;font-weight:400}
+.origin{color:var(--mut)}
+.at{margin-left:auto}
+
+/* 빈 상태 — 초대 */
+.empty{
+  border:1px dashed var(--line);border-radius:18px;background:var(--glass);
+  padding:56px 24px;text-align:center;color:var(--mut)
+}
+.empty .big{font-size:44px;margin-bottom:12px;opacity:.85}
+.empty p{margin:6px 0;font-size:15px}
+.empty .hint{font-size:13px;opacity:.8}
+
+/* demo 배너 */
+.demo{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px;
+  padding:10px 14px;border-radius:12px;border:1px solid rgba(255,162,92,.35);
+  background:rgba(255,162,92,.08);color:#ffd489;font-size:13px}
+.demo button{font:inherit;font-size:13px;cursor:pointer;color:#0c1a14;background:#ffd489;
+  border:0;border-radius:999px;padding:5px 13px}
+.demo a{color:#ffd489}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.card{animation:rise .42s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">K-EDU · 세계층</div>
+  <h1>내 전시실</h1>
+  <p class="sub">과목 벽 없는, 내가 모은 것들 — 유물 옆에 그림 옆에 뱃지.</p>
+
+  <div class="demo" id="demoBar">
+    <span>미리보기 데이터를 보고 있어요 (demo).</span>
+    <button id="clearDemo">비우기</button>
+    <a href="./전시실.html">demo 끄기</a>
+  </div>
+
+  <div class="tally" id="tally"></div>
+  <div id="stage"></div>
+</div>
+
+<script src="/kedu_collect.js"></script>
+<script>
+(function(){
+  var KIND = {
+    artifact:  { label:"유물", icon:"🏺", c:"var(--artifact)" },
+    artwork:   { label:"작품", icon:"🎨", c:"var(--artwork)"  },
+    technique: { label:"기법", icon:"🖌️", c:"var(--technique)"},
+    badge:     { label:"뱃지", icon:"🏅", c:"var(--badge)"    },
+    record:    { label:"기록", icon:"📝", c:"var(--record)"   }
+  };
+  var ORDER = ["artifact","artwork","technique","badge","record"];
+  var APP = {
+    paintlab:"물감", diglab:"발굴실", terrain:"지형실", printlab:"판화",
+    potterylab:"도예", artlab:"미술실", social:"사회", science:"과학실",
+    kmake:"케이메이커", kbox:"케이박스"
+  };
+  function appName(a){ return APP[a] || a; }
+  function when(ts){
+    if(!ts) return "";
+    var d=new Date(ts), diff=(Date.now()-ts)/86400000;
+    if(diff<1) return "오늘";
+    if(diff<2) return "어제";
+    return (d.getMonth()+1)+"월 "+d.getDate()+"일";
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  var active = null; // 활성 kind 필터 (null = 전체)
+  var tally = document.getElementById("tally");
+  var stage = document.getElementById("stage");
+
+  function render(){
+    var all = (window.KEDU && KEDU.all()) || [];
+
+    // 집계 칩 (전체 + kind별)
+    var chips = ['<button class="chip k-all" data-k="" aria-pressed="'+(active===null)+'">전체 <span class="n">'+all.length+'</span></button>'];
+    ORDER.forEach(function(k){
+      var n = all.filter(function(e){return e.kind===k;}).length;
+      if(!n) return;
+      chips.push(
+        '<button class="chip" data-k="'+k+'" aria-pressed="'+(active===k)+'" style="border-color:'+(active===k?KIND[k].c:"var(--line)")+'">'+
+          '<span class="dot" style="background:'+KIND[k].c+'"></span>'+KIND[k].label+' <span class="n">'+n+'</span>'+
+        '</button>'
+      );
+    });
+    tally.innerHTML = chips.join("");
+    [].forEach.call(tally.querySelectorAll(".chip"), function(b){
+      b.addEventListener("click", function(){ active = b.dataset.k || null; render(); });
+    });
+
+    // 선반
+    var items = active ? all.filter(function(e){return e.kind===active;}) : all;
+    if(!items.length){
+      stage.innerHTML =
+        '<div class="empty"><div class="big">🗄️</div>'+
+        '<p>'+(all.length? '이 칸은 아직 비어 있어요.' : '아직 전시실이 비어 있어요.')+'</p>'+
+        '<p class="hint">'+(all.length? '다른 칸을 눌러 보세요.' : '도구에서 무언가를 완성하면 여기에 모여요 — 유물·작품·기법·뱃지·기록.')+'</p></div>';
+      return;
+    }
+    stage.innerHTML = '<div class="shelf">'+ items.map(function(e,i){
+      var meta = KIND[e.kind] || { label:e.kind, icon:"⭐", c:"var(--line)" };
+      var thumb = e.thumb
+        ? '<img src="'+esc(e.thumb)+'" alt="">'
+        : '<span aria-hidden="true">'+meta.icon+'</span>';
+      return (
+        '<article class="card" tabindex="0" style="border-top-color:'+meta.c+';animation-delay:'+Math.min(i*32,360)+'ms">'+
+          '<div class="thumb">'+thumb+'</div>'+
+          '<div class="body">'+
+            '<p class="ttl">'+esc(e.title)+'</p>'+
+            '<div class="meta">'+
+              '<span class="badge-k" style="background:'+meta.c+'">'+meta.label+'</span>'+
+              '<span class="origin">'+esc(appName(e.app))+'</span>'+
+              '<span class="at">'+when(e.at)+'</span>'+
+            '</div>'+
+          '</div>'+
+        '</article>'
+      );
+    }).join("") + '</div>';
+  }
+
+  // ── demo 미리보기 (?demo=1) — 라이브에서 뷰어 눈으로 확인용 ──
+  function tinyThumb(hex){
+    var svg='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><radialGradient id="g" cx="50%" cy="30%"><stop offset="0" stop-color="'+hex+'"/><stop offset="1" stop-color="#0c1a14"/></radialGradient></defs><rect width="64" height="64" fill="url(#g)"/></svg>';
+    return "data:image/svg+xml;utf8,"+encodeURIComponent(svg);
+  }
+  if(/[?&]demo=1/.test(location.search) && window.KEDU){
+    document.getElementById("demoBar").style.display="flex";
+    var now=Date.now();
+    [
+      {kind:"artifact", app:"diglab",     id:"demo_bitsal",  title:"빗살무늬토기", thumb:tinyThumb("#FFA25C"), at:now-1000},
+      {kind:"artwork",  app:"paintlab",   id:"demo_night",   title:"소금으로 그린 밤하늘", thumb:tinyThumb("#F06292"), at:now-86400000},
+      {kind:"technique",app:"paintlab",   id:"demo_salt",    title:"소금 기법", at:now-2*86400000},
+      {kind:"badge",    app:"paintlab",   id:"demo_master",  title:"물감 장인 뱃지", at:now-3*86400000},
+      {kind:"artwork",  app:"potterylab", id:"demo_pot",     title:"내가 빚은 항아리", thumb:tinyThumb("#5B9BF0"), at:now-4*86400000},
+      {kind:"record",   app:"social",     id:"demo_old",     title:"옛물건 조사 수첩", at:now-5*86400000},
+      {kind:"artwork",  app:"draw",       id:"demo_plane",   title:"접은 종이비행기", at:now-6*86400000}
+    ].forEach(function(x){ KEDU.collect(x); });
+    document.getElementById("clearDemo").addEventListener("click", function(){
+      ["demo_bitsal","demo_night","demo_salt","demo_master","demo_pot","demo_old","demo_plane"]
+        .forEach(function(id){ ["diglab","paintlab","potterylab","social","draw"].forEach(function(a){ KEDU.remove(a,id); }); });
+      render();
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
