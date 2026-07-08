@@ -164,22 +164,18 @@
 </div>
 
 <script src="./paint-core.js"></script>
+<script src="./paint-gl.js"></script>
 <script>
 (function(){
   const PC = window.PaintCore;
+  const GLNS = window.PaintGL;
   const S = 256;
-  const view = document.getElementById('view');
-  const vctx = view.getContext('2d');
-  const img = vctx.createImageData(S, S);
+  const params = new URLSearchParams(location.search);
+  const wantGL = params.has('gl') || params.has('cpu');
+  const compare = params.has('cpu');   // CPU·GL 나란히 비교(P-8)
 
   let paper = 'watercolor';
-  let field = new PC.Field(S, S, { paperKind: paper, media: 'watercolor', seed: 20260708 });
-  let tool = 'color';
-  let color = 'blue';
-  let size = 14;
-  let wet = 1.0;
-  let drying = false;      // 싹 말리기 모드(전역 증발 가속)
-  let running = true;
+  let tool = 'color', color = 'blue', size = 14, wet = 1.0, drying = false;
 
   // 팔레트 — KM 11색
   const COLORS = [
@@ -189,87 +185,111 @@
     ['brown','#8a5a34'],['black','#20242c']
   ];
   const swWrap = document.getElementById('swatches');
-  COLORS.forEach(([k,hex],idx)=>{
-    const b = document.createElement('div');
-    b.className = 'sw' + (k===color?' on':''); b.style.background = hex; b.dataset.c = k;
-    b.title = k; swWrap.appendChild(b);
+  COLORS.forEach(([k,hex])=>{
+    const b=document.createElement('div');
+    b.className='sw'+(k===color?' on':''); b.style.background=hex; b.dataset.c=k; b.title=k;
+    swWrap.appendChild(b);
   });
-  swWrap.addEventListener('click', e=>{
-    const t = e.target.closest('.sw'); if(!t) return;
-    color = t.dataset.c;
-    swWrap.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on', s===t));
-  });
-
-  document.getElementById('tools').addEventListener('click', e=>{
-    const t = e.target.closest('.tool'); if(!t) return;
-    tool = t.dataset.tool;
-    document.querySelectorAll('.tool').forEach(x=>x.classList.toggle('on', x===t));
-  });
-  document.getElementById('papers').addEventListener('click', e=>{
-    const t = e.target.closest('.chip'); if(!t) return;
-    paper = t.dataset.p;
-    document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on', x===t));
-    resetField();
-  });
-
-  const sizeEl=document.getElementById('size'), sizeOut=document.getElementById('sizeOut');
+  swWrap.addEventListener('click',e=>{ const t=e.target.closest('.sw'); if(!t)return;
+    color=t.dataset.c; swWrap.querySelectorAll('.sw').forEach(s=>s.classList.toggle('on',s===t)); });
+  document.getElementById('tools').addEventListener('click',e=>{ const t=e.target.closest('.tool'); if(!t)return;
+    tool=t.dataset.tool; document.querySelectorAll('.tool').forEach(x=>x.classList.toggle('on',x===t)); });
+  document.getElementById('papers').addEventListener('click',e=>{ const t=e.target.closest('.chip'); if(!t)return;
+    paper=t.dataset.p; document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===t)); engines.forEach(en=>en.reset()); });
+  const sizeEl=document.getElementById('size'),sizeOut=document.getElementById('sizeOut');
   sizeEl.oninput=()=>{ size=+sizeEl.value; sizeOut.textContent=size; };
-  const wetEl=document.getElementById('wet'), wetOut=document.getElementById('wetOut');
+  const wetEl=document.getElementById('wet'),wetOut=document.getElementById('wetOut');
   wetEl.oninput=()=>{ wet=+wetEl.value/100; wetOut.textContent=wet.toFixed(1); };
-
-  document.getElementById('clearBtn').onclick=resetField;
+  document.getElementById('clearBtn').onclick=()=>engines.forEach(en=>en.reset());
   const dryBtn=document.getElementById('dryBtn');
-  dryBtn.onclick=()=>{ drying=!drying; dryBtn.classList.toggle('warm', drying); dryBtn.textContent = drying?'말리는 중…':'싹 말리기'; };
+  dryBtn.onclick=()=>{ drying=!drying; dryBtn.classList.toggle('warm',drying); dryBtn.textContent=drying?'말리는 중…':'싹 말리기'; };
 
-  function resetField(){
-    field = new PC.Field(S, S, { paperKind: paper, media: 'watercolor', seed: 20260708 });
-    drying=false; dryBtn.classList.add('warm'); dryBtn.textContent='싹 말리기';
+  // ── 엔진 어댑터
+  function makeCPU(canvas){
+    const ctx=canvas.getContext('2d'); const img=ctx.createImageData(S,S); const buf=new Uint8ClampedArray(S*S*4);
+    let f=new PC.Field(S,S,{paperKind:paper,media:'watercolor',seed:20260708});
+    return { kind:'cpu', canvas,
+      reset(){ f=new PC.Field(S,S,{paperKind:paper,media:'watercolor',seed:20260708}); },
+      stroke(x,y){
+        if(tool==='water') f.waterBrush(x,y,size,wet);
+        else if(tool==='lift') f.lift(x,y,size);
+        else if(tool==='dry') f.colorBrush(x,y,size,1.0,color,'watercolor',{dry:true,density:1.2});
+        else f.colorBrush(x,y,size,wet,color,'watercolor',{density:1.0});
+      },
+      step(){ f._local.fill(drying?0.005:0); f.step('watercolor',{}); },
+      paint(){ f.render(buf); img.data.set(buf); ctx.putImageData(img,0,0); },
+      water(){return f.totalWater();}, pig(){return f.totalPigment();} };
+  }
+  function makeGL(canvas){
+    const g=new GLNS.PaintGL(canvas,{paperKind:paper,media:'watercolor',size:S,seed:20260708});
+    if(!g.supported) return null;
+    return { kind:'gl', canvas, _g:g,
+      reset(){ g.reset(paper,20260708); },
+      stroke(x,y){
+        if(tool==='water') g.brush('water',x,y,size,wet,color);
+        else if(tool==='lift') g.brush('lift',x,y,size,1.0,color);
+        else if(tool==='dry') g.brush('dry',x,y,size,1.0,color,{density:1.2});
+        else g.brush('color',x,y,size,wet,color,{density:1.0});
+      },
+      step(){ g.setDrying(drying); g.step(); },
+      paint(){ g.render(); },
+      water(){return NaN;}, pig(){return NaN;} };
   }
 
-  // ── 입력 → 좌표
-  let painting=false, lastX=0, lastY=0;
-  function toField(e){
-    const r=view.getBoundingClientRect();
-    const px=(e.clientX-r.left)/r.width*S, py=(e.clientY-r.top)/r.height*S;
-    return [px, py];
+  // ── 캔버스 배치
+  const wrap = document.querySelector('.canvas-wrap');
+  const baseView = document.getElementById('view');
+  const engines = [];
+  function mkCanvas(label){
+    const c=document.createElement('canvas'); c.width=S; c.height=S; c.className=baseView.className; c.style.cssText=baseView.style.cssText;
+    const box=document.createElement('div'); box.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:center';
+    const lab=document.createElement('div'); lab.textContent=label; lab.style.cssText='font-family:"Space Mono",monospace;font-size:11px;letter-spacing:.2em;color:#7f8794';
+    box.appendChild(c); box.appendChild(lab); return {c,box};
   }
-  function stroke(x,y){
-    if(tool==='water')      field.waterBrush(x,y,size,wet);
-    else if(tool==='lift')  field.lift(x,y,size);
-    else if(tool==='dry')   field.colorBrush(x,y,size,1.0,color,'watercolor',{dry:true,density:1.2});
-    else                    field.colorBrush(x,y,size,wet,color,'watercolor',{density:1.0});
-  }
-  function down(e){ painting=true; const [x,y]=toField(e); lastX=x;lastY=y; stroke(x,y); e.preventDefault(); }
-  function move(e){
-    if(!painting) return;
-    const [x,y]=toField(e);
-    const d=Math.hypot(x-lastX,y-lastY), stepN=Math.max(1,Math.floor(d/2));
-    for(let s=1;s<=stepN;s++){ stroke(lastX+(x-lastX)*s/stepN, lastY+(y-lastY)*s/stepN); }
-    lastX=x;lastY=y; e.preventDefault();
-  }
-  function up(){ painting=false; }
-  view.addEventListener('pointerdown',down);
-  view.addEventListener('pointermove',move);
-  window.addEventListener('pointerup',up);
 
-  // ── 시뮬 + 렌더 루프
-  const buf = new Uint8ClampedArray(S*S*4);
-  const hudW=document.getElementById('hudWater'), hudP=document.getElementById('hudPig'), hudF=document.getElementById('hudFps');
-  let fpsT=performance.now(), fpsN=0;
+  let hudSrc=null;
+  if(compare){
+    baseView.remove();
+    const row=document.createElement('div'); row.style.cssText='display:flex;gap:14px;flex-wrap:wrap;justify-content:center';
+    const a=mkCanvas('CPU · 참조'); const b=mkCanvas('GL · 셰이더');
+    row.appendChild(a.box); row.appendChild(b.box); wrap.appendChild(row);
+    const cpu=makeCPU(a.c); engines.push(cpu); hudSrc=cpu;
+    const gl=makeGL(b.c);
+    if(gl){ engines.push(gl); } else { b.box.querySelector('div').textContent='GL 미지원(폴백)'; const cpu2=makeCPU(b.c); engines.push(cpu2); }
+    [a.c,b.c].forEach(c=>bindInput(c));
+  } else if(wantGL){
+    const gl=makeGL(baseView);
+    if(gl){ engines.push(gl); hudSrc=gl; }
+    else { const cpu=makeCPU(baseView); engines.push(cpu); hudSrc=cpu;
+      const n=document.querySelector('.note'); if(n) n.insertAdjacentHTML('afterbegin','<b style="color:var(--stain)">GL 미지원 기기 — CPU 폴백.</b> '); }
+    bindInput(baseView);
+  } else {
+    const cpu=makeCPU(baseView); engines.push(cpu); hudSrc=cpu; bindInput(baseView);
+  }
 
+  // ── 입력 → 좌표(모든 활성 엔진에 동일 적용)
+  let painting=false,lastX=0,lastY=0;
+  function toField(canvas,e){ const r=canvas.getBoundingClientRect();
+    return [ (e.clientX-r.left)/r.width*S, (e.clientY-r.top)/r.height*S ]; }
+  function strokeAll(x,y){ engines.forEach(en=>en.stroke(x,y)); }
+  function bindInput(canvas){
+    canvas.addEventListener('pointerdown',e=>{ painting=true; const [x,y]=toField(canvas,e); lastX=x;lastY=y; strokeAll(x,y); e.preventDefault(); });
+    canvas.addEventListener('pointermove',e=>{ if(!painting)return; const [x,y]=toField(canvas,e);
+      const d=Math.hypot(x-lastX,y-lastY), n=Math.max(1,Math.floor(d/2));
+      for(let s=1;s<=n;s++) strokeAll(lastX+(x-lastX)*s/n, lastY+(y-lastY)*s/n);
+      lastX=x;lastY=y; e.preventDefault(); });
+  }
+  window.addEventListener('pointerup',()=>painting=false);
+
+  // ── 루프
+  const hudW=document.getElementById('hudWater'),hudP=document.getElementById('hudPig'),hudF=document.getElementById('hudFps');
+  let fpsT=performance.now(),fpsN=0;
   function loop(){
-    // 싹 말리기: 전역 증발 가속(모든 셀 local 증발)
-    if(drying){ field._local.fill(0.005); } else { field._local.fill(0); }
-    field.step('watercolor', {});
-    field.render(buf);
-    img.data.set(buf);
-    vctx.putImageData(img,0,0);
-
-    fpsN++;
-    const now=performance.now();
+    engines.forEach(en=>{ en.step(); en.paint(); });
+    fpsN++; const now=performance.now();
     if(now-fpsT>500){
-      hudW.textContent=field.totalWater().toFixed(0);
-      hudP.textContent=field.totalPigment().toFixed(0);
+      if(hudSrc){ const w=hudSrc.water(),p=hudSrc.pig();
+        hudW.textContent=isNaN(w)?'GPU':w.toFixed(0); hudP.textContent=isNaN(p)?'GPU':p.toFixed(0); }
       hudF.textContent=Math.round(fpsN*1000/(now-fpsT))+'fps';
       fpsT=now; fpsN=0;
     }
