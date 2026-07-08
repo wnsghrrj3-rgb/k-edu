@@ -11,9 +11,12 @@
 (function () {
   'use strict';
   var PC = window.PaintCore, GL = window.PaintGL;
-  if (!PC || !GL) return;
+  console.log('[paint] integrate 로드 · PaintCore=' + !!PC + ' PaintGL=' + !!GL);
+  if (!PC || !GL) { console.warn('[paint] 엔진 스크립트 미로드(경로/404 확인) → 기존 2D 유지'); return; }
   // host 감지 — 본체가 아니면(전역 없음) 조용히 종료.
-  if (typeof cv === 'undefined' || typeof ctx === 'undefined' || typeof getXY === 'undefined') return;
+  if (typeof cv === 'undefined' || typeof ctx === 'undefined' || typeof getXY === 'undefined') {
+    console.warn('[paint] host 전역 미검출 → 통합 비활성'); return;
+  }
 
   // 물감 도구 → {매질, 종이}. crayon은 기존 2D 유지(배틱은 W-later).
   var PAINT = {
@@ -40,7 +43,7 @@
     return true;
   }
 
-  // 캔버스 크기/도구에 맞춰 엔진 준비(필요 시 재생성). 실패=엔진 없음(폴백).
+  // 캔버스 크기/도구에 맞춰 엔진 준비(필요 시 재생성). 실패=엔진 없음(기존 2D 폴백).
   function ensureEngine() {
     ensurePV();
     var scale = Math.min(1, MAXSIDE / Math.max(1, Math.max(cssW, cssH)));
@@ -48,11 +51,19 @@
     var H = Math.max(1, Math.round(cssH * scale));
     var paperKind = PAINT[tool].paper;
     if (paint && paint.supported && W === pvw && H === pvh && paperKind === curPaper) return true;
-    // (재)생성
     pv.width = W; pv.height = H; pvw = W; pvh = H; curPaper = paperKind;
-    paint = new GL.PaintGL(pv, { width: W, height: H, paperKind: paperKind, media: PAINT[tool].media, seed: 20260708 });
-    if (!paint.supported) { paint = null; return false; }
+    try {
+      paint = new GL.PaintGL(pv, { width: W, height: H, paperKind: paperKind, media: PAINT[tool].media, seed: 20260708 });
+    } catch (err) {
+      console.warn('[paint] 엔진 생성 실패 → 기존 2D 폴백:', err && err.message ? err.message : err);
+      paint = null; return false;
+    }
+    if (!paint.supported) {
+      console.warn('[paint] WebGL2 미지원(' + (paint._reason || '?') + ') → 기존 2D 폴백');
+      paint = null; return false;
+    }
     paint.inkAlpha = true;          // 잉크 있는 곳만 불투명(본체 위 합성)
+    console.log('[paint] 엔진 활성 · ' + W + '×' + H + ' · ' + PAINT[tool].media + '/' + paperKind);
     return true;
   }
 
