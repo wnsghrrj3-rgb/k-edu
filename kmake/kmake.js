@@ -125,6 +125,7 @@ document.querySelectorAll('.start-tab').forEach(t => t.onclick = () => {
   t.classList.add('on'); audience = t.dataset.aud; renderPresets();
 });
 renderPresets();
+renderGenGrid();
 
 /* ============ 에디터 진입 ============ */
 var editorOpen = false;
@@ -147,6 +148,72 @@ function openTemplate(key) {
   openEditor(t.w, t.h);
   loadSVGTemplate(t);
 }
+
+/* ============ 뚝딱 만들기 (M1 생성기 접합) ============ */
+const GEN_KINDS = [
+  { k: 'award',     ico: '🏆', n: '상장',     w: 1123, h: 794,  aud: 'teacher' },
+  { k: 'card',      ico: '💌', n: '축하 카드', w: 540,  h: 740,  aud: 'student' },
+  { k: 'worksheet', ico: '📝', n: '학습지',   w: 794,  h: 1123, aud: 'teacher' },
+  { k: 'nametag',   ico: '🏷️', n: '이름표',   w: 700,  h: 260,  aud: 'teacher' },
+  { k: 'notice',    ico: '📢', n: '안내장',   w: 1123, h: 794,  aud: 'teacher' },
+  { k: 'poster',    ico: '🎨', n: '포스터',   w: 794,  h: 1123, aud: 'student' },
+];
+let lastGen = null;
+function renderGenGrid() {
+  const g = document.getElementById('genGrid'); if (!g || !window.KM_GEN) return;
+  g.innerHTML = GEN_KINDS.map(s =>
+    `<button class="gen-card" data-k="${s.k}"><div class="gi">${s.ico}</div><div class="gn">${s.n}</div></button>`).join('');
+  g.querySelectorAll('.gen-card').forEach(c => c.onclick = () => generateTemplate(c.dataset.k));
+}
+function measureText(text, fontSize, fontFamily) {
+  if (typeof fabric === 'undefined') return 0;
+  let w = 0;
+  String(text).split('\n').forEach(l => { const t = new fabric.Text(l || ' ', { fontSize, fontFamily }); w = Math.max(w, t.width); });
+  return w;
+}
+function generateTemplate(kind) {
+  const spec = GEN_KINDS.find(x => x.k === kind); if (!spec || !window.KM_GEN) return;
+  lastGen = { kind: kind, seeds: KM_GEN.newSeeds(), spec: spec };
+  buildGen();
+}
+function buildGen() {
+  const { kind, seeds, spec } = lastGen;
+  const doc = KM_GEN.generate(kind, seeds, { w: spec.w, h: spec.h, _aud: spec.aud }, { measure: measureText });
+  if (!editorOpen) openEditor(doc.baseW, doc.baseH);
+  else { baseW = doc.baseW; baseH = doc.baseH; }
+  KM_SCENE.loadDoc(doc, () => { zoomFit(); showReroll(); });
+}
+function doReroll(which) {
+  if (!lastGen) return;
+  lastGen.seeds = KM_GEN.rerollSeeds(lastGen.seeds, which);  // §0 전체 재실행
+  buildGen();
+}
+function ensureRerollBar() {
+  let bar = document.getElementById('rerollBar');
+  if (bar) return bar;
+  const wrap = document.querySelector('.canvas-wrap'); if (!wrap) return null;
+  bar = document.createElement('div'); bar.id = 'rerollBar';
+  bar.innerHTML =
+    '<button class="rb primary" data-r="all">🎲 전부</button>' +
+    '<button class="rb" data-r="color">🎨 색</button>' +
+    '<button class="rb" data-r="font">🔤 글꼴</button>' +
+    '<button class="rb" data-r="material">🖼 배경</button>' +
+    '<div class="rb-div"></div>' +
+    '<button class="rb fill" data-r="fill">✏️ 글자 채우기</button>';
+  wrap.appendChild(bar);
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('.rb'); if (!b) return;
+    if (b.dataset.r === 'fill') { hideReroll(); enterFillMode(); }
+    else doReroll(b.dataset.r);
+  });
+  return bar;
+}
+function showReroll() { const b = ensureRerollBar(); if (b) b.classList.add('show'); }
+function hideReroll() { const b = document.getElementById('rerollBar'); if (b) b.classList.remove('show'); }
+function enterFillMode() {
+  const btn = document.querySelector('#modeToggle button[data-mode="fill"]');
+  if (btn) btn.click();
+}
 // 홈 버튼/로고 → 브라우저 뒤로가기와 동일 경로(popstate)로 처리해 confirm·복원을 일원화
 function goHome() {
   if (editorOpen) { history.back(); return; }
@@ -156,6 +223,7 @@ function doRestoreHome() {
   KM_MOTION.exitPlay(); KM_MOTION.setMotionBg(null); KM_SCENE.teardown();
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
+  lastGen = null; hideReroll();
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
   document.getElementById('iconPanel').classList.add('hidden');
@@ -213,7 +281,7 @@ function initCanvas() {
   canvas.on('selection:updated', onSelect);
   canvas.on('selection:cleared', onSelect);
   canvas.on('object:moving', onMoving);
-  canvas.on('object:modified', () => { clearGuides(); pushHistory(); syncPanelDims(); });
+  canvas.on('object:modified', () => { clearGuides(); pushHistory(); syncPanelDims(); hideReroll(); });
   canvas.on('object:added', () => { if (!lockHistory) pushHistory(); });
   canvas.on('object:removed', () => { if (!lockHistory) pushHistory(); });
   canvas.on('mouse:up', clearGuides);
