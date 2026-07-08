@@ -16,6 +16,27 @@
 <div id="stage"></div>
 <div id="loading">전기 실험실 준비 중…</div>
 
+<!-- 하단 트레이 + HUD(P2 · runreal이 잡도록 순수로직 앞에 배치) -->
+<div id="tray"></div>
+<div id="hud"></div>
+<div id="hint">소자를 골라 회로판의 칸을 탭해서 놓아 봐요. 놓인 소자를 다시 탭하면 동작해요.</div>
+<div id="shortBanner" class="hide">⚠️ <b>전선이 뜨거워져요!</b> 진짜 전지는 이렇게 하면 위험해요 — 전구를 꼭 끼워요. (콘센트에는 절대 하지 않기)</div>
+<style>
+  :root{--amber:#F0A93B;--hudline:rgba(255,255,255,.12)}
+  #tray{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(10,13,18,.92),rgba(10,13,18,0));z-index:30}
+  #tray button{min-width:60px;padding:9px 10px;border:1px solid var(--hudline);border-radius:14px;
+    background:rgba(28,34,44,.82);color:#e6edf3;font-family:inherit;font-size:12px;line-height:1.35;cursor:pointer;text-align:center;transition:transform .1s,background .15s}
+  #tray button .ic{font-size:20px;display:block;margin-bottom:2px}
+  #tray button.on{background:var(--amber);border-color:var(--amber);color:#1a1206}
+  #tray button.reset{background:rgba(60,30,30,.7)}
+  #hud{position:fixed;top:12px;left:0;right:0;text-align:center;color:#cdd6e0;font-size:13px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #hint{position:fixed;top:38px;left:0;right:0;text-align:center;color:#9fb0c2;font-size:12px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #shortBanner{position:fixed;top:64px;left:50%;transform:translateX(-50%);max-width:min(92vw,540px);z-index:34;
+    padding:11px 15px;border-radius:14px;background:rgba(70,32,20,.95);border:1px solid var(--amber);color:#ffe6c8;font-size:13px;line-height:1.5;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .hide{display:none!important}
+</style>
+
 <!-- ═══════════════════════════════════════════════════════════
      순수 로직 (P1 게이트: 렌더 0줄 · window.KCircuit / module.exports)
      — 회로 해석 엔진(노드 전압법 + 가우스 소거). 렌더 어댑터(P2)는 별도 module script.
@@ -257,6 +278,404 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   if (typeof window !== 'undefined') window.KCircuit = API;
 })();
+</script>
+
+<script type="importmap">
+{ "imports": { "three":"./vendor/three185/three.module.min.js", "three/addons/":"./vendor/three185/addons/" } }
+</script>
+
+<script type="module">
+/* ═══════════════════════════════════════════════════════════════
+   전기 실험실 P2 «렌더 어댑터» — 격자 보드·소자 3D + 전류 렌더 3안(?flow=)
+   근거: SPEC_CIRCUIT.md §2(격자·소자) · §3(전류 3안) · §4(기구·조작)
+   · 3층 분리: 순수 로직 window.KCircuit.solve 결과(전류·밝기)만 조회(물리·판단 금지).
+   · 좌표: P1 노드 인덱스 → 3D 격자점(GRID_X, RAY 평면, GRID_Z). 소자는 변에 스냅.
+   · 미션 UI·예측·★와우 = P3.
+   ═══════════════════════════════════════════════════════════════ */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KCircuit;
+const P = new URLSearchParams(location.search);
+const FLOW = (['dots','pulse','off'].includes(P.get('flow')) ? P.get('flow') : 'dots');   // R5 화이트리스트
+const GRADE = (['low','mid','high'].includes(P.get('grade')) ? P.get('grade') : 'high');
+
+/* ═════════ 렌더 기반(황금 표준 승계 · 다크 스튜디오) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', (e)=>{ e.preventDefault();   // R4
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#e8ecf2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#F0A93B;color:#1a1206;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#1d232c'); gr.addColorStop(.55,'#141a21'); gr.addColorStop(1,'#0d1117');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x10151b, 3.2, 8.0);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.03, 30);
+camera.position.set(0.02, 0.92, 0.72);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.04, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.5; controls.maxDistance=2.4;
+controls.maxPolarAngle=1.32; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.0);
+sun.position.set(1.2,2.8,1.0); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.0; sun.shadow.camera.right=1.0;
+sun.shadow.camera.top=1.0; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.4; sun.shadow.camera.far=7; sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fb4d8, 0x2b241c, 0.30));
+
+/* ═════════ 회로판(테이블 + 격자 보드) ═════════ */
+const BENCH_Y = 0.0;
+const NODE_Y  = BENCH_Y + 0.02;
+const GX = K.GRID_X, GZ = K.GRID_Z, NX = K.NX;
+function nodePos(n){ return new THREE.Vector3(GX[n % NX], NODE_Y, GZ[Math.floor(n / NX)]); }
+
+{ // 상판(짙은 무광)
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.05, 0.85),
+    new THREE.MeshStandardMaterial({ color:0x272c34, roughness:0.74, metalness:0.05 }));
+  top.position.set(0, BENCH_Y-0.025, 0); top.receiveShadow=true; scene.add(top);
+  // 회로 보드
+  const board = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.014, 0.44),
+    new THREE.MeshStandardMaterial({ color:0x2f3742, roughness:0.6, metalness:0.12 }));
+  board.position.set(0, BENCH_Y+0.007, 0); board.receiveShadow=true; scene.add(board);
+}
+
+// 격자 노드점 + 변 히트
+const NODE_MAT = new THREE.MeshStandardMaterial({ color:0x5a6675, roughness:0.5, metalness:0.3 });
+for(let n=0;n<K.NNODE;n++){
+  const dot=new THREE.Mesh(new THREE.CylinderGeometry(0.009,0.009,0.006,18), NODE_MAT);
+  dot.position.copy(nodePos(n)); dot.position.y=BENCH_Y+0.016; scene.add(dot);
+}
+// 변 목록(가로 9 + 세로 8 = 17)
+const EDGES = [];
+for(let iy=0;iy<3;iy++) for(let ix=0;ix<3;ix++){ const a=iy*NX+ix, b=iy*NX+ix+1; EDGES.push({key:a+'_'+b,a,b}); }
+for(let iy=0;iy<2;iy++) for(let ix=0;ix<4;ix++){ const a=iy*NX+ix, b=(iy+1)*NX+ix; EDGES.push({key:a+'_'+b,a,b}); }
+
+const edgeHit = [];  // {key,a,b,mid,dir,len,hit}
+EDGES.forEach(E=>{
+  const pa=nodePos(E.a), pb=nodePos(E.b);
+  const mid=pa.clone().add(pb).multiplyScalar(0.5);
+  const len=pa.distanceTo(pb), dir=pb.clone().sub(pa).normalize();
+  // 히트 실린더 r=0.05 (§7) — 투명
+  const hit=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,len,10),
+    new THREE.MeshBasicMaterial({ visible:false }));
+  hit.position.copy(mid); hit.position.y=BENCH_Y+0.05;
+  // 실린더 기본 y축 → 변 방향으로
+  hit.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir);
+  hit.userData.edge=E; scene.add(hit);
+  edgeHit.push({ key:E.key, a:E.a, b:E.b, mid, dir, len, hit });
+});
+function edgeByKey(k){ return edgeHit.find(e=>e.key===k); }
+
+/* ═════════ 소자 3D 빌더 ═════════ */
+const GLASS = () => new THREE.MeshPhysicalMaterial({ color:0xcfe6ff, roughness:0.08, metalness:0,
+  transparent:true, opacity:0.2, clearcoat:1, clearcoatRoughness:0.06, envMapIntensity:1.1 });
+const COPPER = new THREE.MeshStandardMaterial({ color:0xB87333, roughness:0.35, metalness:0.85 });
+const FILA_COLD = new THREE.Color(0x3a2a18), FILA_HOT = new THREE.Color(0xFFF4D6);
+
+// 변 방향에 맞춰 그룹 정렬(가로변=x축, 세로변=z축)
+function orientToEdge(grp, E){
+  const eh=edgeByKey(E.key);
+  grp.position.copy(eh.mid); grp.position.y=NODE_Y+0.006;
+  // 기본은 x축 정렬 소자 → 변 방향으로 회전(수평면 within, y회전)
+  const ang=Math.atan2(eh.dir.z, eh.dir.x);
+  grp.rotation.y=-ang;
+}
+
+function buildWire(E){
+  const eh=edgeByKey(E.key);
+  const pa=nodePos(E.a).clone(), pb=nodePos(E.b).clone(); pa.y=NODE_Y+0.006; pb.y=NODE_Y+0.006;
+  const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(pa,pb),1,0.004,8,false),
+    new THREE.MeshStandardMaterial({ color:0x9aa4b0, roughness:0.4, metalness:0.6 }));
+  tube.castShadow=true;
+  const grp=new THREE.Group(); grp.add(tube); scene.add(grp);
+  return { grp, kind:'wire' };
+}
+function buildBattery(E){
+  const grp=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.026,0.09,20),
+    new THREE.MeshStandardMaterial({ color:0x2b3440, roughness:0.5, metalness:0.4 }));
+  body.rotation.z=Math.PI/2; body.castShadow=true; grp.add(body);
+  // +극(구리 캡, 돌기) / −극(평평)
+  const capP=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.012,16), COPPER);
+  capP.rotation.z=Math.PI/2; capP.position.x=0.051; grp.add(capP);
+  const capN=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.026,0.006,20),
+    new THREE.MeshStandardMaterial({ color:0x8a939e, roughness:0.5, metalness:0.6 }));
+  capN.rotation.z=Math.PI/2; capN.position.x=-0.046; grp.add(capN);
+  scene.add(grp);
+  return { grp, kind:'battery', capP, capN };
+}
+function buildBulb(E){
+  const grp=new THREE.Group();
+  const socket=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.02,0.022,18),
+    new THREE.MeshStandardMaterial({ color:0x6b7482, roughness:0.4, metalness:0.7 }));
+  socket.position.y=0.011; socket.castShadow=true; grp.add(socket);
+  const glass=new THREE.Mesh(new THREE.SphereGeometry(0.028,24,20), GLASS());
+  glass.position.y=0.05; glass.renderOrder=4; grp.add(glass);
+  // 필라멘트 W자
+  const pts=[new THREE.Vector3(-0.011,0.038,0),new THREE.Vector3(-0.005,0.056,0),
+    new THREE.Vector3(0,0.04,0),new THREE.Vector3(0.005,0.056,0),new THREE.Vector3(0.011,0.038,0)];
+  const filaMat=new THREE.MeshStandardMaterial({ color:0x3a2a18, emissive:FILA_COLD.clone(), emissiveIntensity:0, roughness:0.5, metalness:0.3 });
+  const fila=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,0.0012,6,false), filaMat);
+  grp.add(fila);
+  // 내부 글로우 스프라이트
+  const glowTex=makeGlowTex();
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({ map:glowTex, color:0xFFE9B0, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false }));
+  glow.scale.set(0.001,0.001,1); glow.position.y=0.05; grp.add(glow);
+  const light=new THREE.PointLight(0xFFE3A8, 0, 0.6, 2); light.position.y=0.05; grp.add(light);
+  scene.add(grp);
+  return { grp, kind:'bulb', filaMat, glow, light };
+}
+function buildSwitch(E){
+  const grp=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.008,0.024),
+    new THREE.MeshStandardMaterial({ color:0x2a323d, roughness:0.6, metalness:0.2 }));
+  base.castShadow=true; grp.add(base);
+  const p1=new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.01,10), COPPER); p1.position.set(-0.02,0.008,0); grp.add(p1);
+  const p2=new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.01,10), COPPER); p2.position.set(0.02,0.008,0); grp.add(p2);
+  const lever=new THREE.Mesh(new THREE.BoxGeometry(0.044,0.004,0.006), COPPER);
+  const pivot=new THREE.Group(); pivot.position.set(-0.02,0.012,0);
+  lever.position.x=0.02; pivot.add(lever); grp.add(pivot);
+  scene.add(grp);
+  return { grp, kind:'switch', pivot };
+}
+function buildRod(E, type){
+  const grp=new THREE.Group();
+  const mat = type==='rod_copper' ? COPPER.clone() : GLASS();
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.11,16), mat);
+  rod.rotation.z=Math.PI/2; rod.castShadow=true; if(type==='rod_glass') rod.renderOrder=4; grp.add(rod);
+  scene.add(grp);
+  return { grp, kind:type };
+}
+function makeGlowTex(){
+  const c=document.createElement('canvas'); c.width=c.height=64;
+  const g=c.getContext('2d'); const rg=g.createRadialGradient(32,32,0,32,32,32);
+  rg.addColorStop(0,'rgba(255,240,200,1)'); rg.addColorStop(.4,'rgba(255,225,150,.6)'); rg.addColorStop(1,'rgba(255,220,140,0)');
+  g.fillStyle=rg; g.fillRect(0,0,64,64);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+const DOT_TEX = makeGlowTex();
+
+/* ═════════ 배치 상태 + solve 연동 ═════════ */
+const placed = new Map();   // key → {E, item, edgeData:{id,type,a,b,open,flip}, dots}
+let lastRes = { branches:[], brightness:{}, shorted:false, open:true };
+
+function placedEdgesArr(){ return [...placed.values()].map(p=>p.edgeData); }
+
+function rebuild(){
+  const arr = placedEdgesArr();
+  const res = K.solve(arr);
+  lastRes = res;
+  // 밝기·전류 반영
+  placed.forEach(p=>{
+    const br = res.branches.find(b=>b.id===p.edgeData.id);
+    p.curr = br ? br.I : 0;
+    if(p.item.kind==='bulb'){
+      const B = res.brightness[p.edgeData.id] || 0;
+      const t = Math.min(1, B/1.5);
+      p.item.filaMat.emissive.copy(FILA_COLD).lerp(FILA_HOT, t);
+      p.item.filaMat.emissiveIntensity = B<=0 ? 0 : (0.4 + 1.8*Math.min(1,B/2.5));
+      p.item.filaMat.color.copy(B<=0 ? new THREE.Color(0x3a2a18) : new THREE.Color(0xFFECC0));
+      p.item.light.intensity = 0.4 * B;
+      const gs = B<=0 ? 0.001 : (0.05 + 0.05*Math.min(2.5,B));
+      p.item.glow.scale.set(gs,gs,1);
+      p.item.glow.material.opacity = Math.min(0.9, B*0.5);
+    }
+    // dots 표시 갱신
+    if(p.dots) p.dots.visible = (FLOW==='dots' && Math.abs(p.curr)>K.OPEN_I);
+  });
+  // 단락 배너
+  document.getElementById('shortBanner').classList.toggle('hide', !res.shorted);
+  updateHud(res);
+}
+
+function updateHud(res){
+  const nBulb = [...placed.values()].filter(p=>p.item.kind==='bulb').length;
+  const lit = Object.values(res.brightness).filter(b=>b>0).length;
+  let msg;
+  if(placed.size===0) msg='전지·전구·전선을 골라 회로판 칸에 놓아 보세요.';
+  else if(res.shorted) msg='⚠️ 전선만으로 전지를 이으면 위험해요 — 전구를 끼워요.';
+  else if(nBulb===0) msg='전구를 놓아 불을 켜 봐요.';
+  else if(lit>0) msg=`불이 켜진 전구 ${lit}개 · 회로가 이어졌어요!`;
+  else msg='회로가 아직 안 이어졌어요. 한 바퀴 도는지 살펴봐요.';
+  document.getElementById('hud').textContent = msg;
+}
+
+/* ═════════ 전류 dots(흐름 ∝ I) ═════════ */
+function buildDots(p){
+  const eh=edgeByKey(p.E.key);
+  const n=Math.max(3, Math.round(eh.len/0.018));
+  const grp=new THREE.Group();
+  const arr=[];
+  for(let i=0;i<n;i++){
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({ map:DOT_TEX, color:0x7fd4ff, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false }));
+    s.scale.set(0.012,0.012,1); grp.add(s); arr.push(s);
+  }
+  grp.userData={ eh, arr, n, off:0 }; grp.visible=false; scene.add(grp);
+  return grp;
+}
+function animateDots(dt){
+  if(FLOW!=='dots') return;
+  placed.forEach(p=>{
+    if(!p.dots || !p.dots.visible) return;
+    const u=p.dots.userData; const I=p.curr||0;
+    u.off = (u.off + I*0.35*dt/Math.max(u.eh.len,1e-3)); u.off -= Math.floor(u.off);
+    const pa=nodePos(p.E.a).clone(), pb=nodePos(p.E.b).clone(); pa.y=NODE_Y+0.02; pb.y=NODE_Y+0.02;
+    for(let i=0;i<u.n;i++){
+      let t=((i/u.n)+u.off)%1; if(t<0)t+=1;
+      u.arr[i].position.lerpVectors(pa,pb,t);
+    }
+  });
+}
+
+/* ═════════ 소자 배치/조작 ═════════ */
+function makeItem(type, E){
+  if(type==='wire') return buildWire(E);
+  if(type==='battery'){ const it=buildBattery(E); orientToEdge(it.grp,E); return it; }
+  if(type==='bulb'){ const it=buildBulb(E); orientToEdge(it.grp,E); return it; }
+  if(type==='switch'){ const it=buildSwitch(E); orientToEdge(it.grp,E); return it; }
+  if(type==='rod_copper'||type==='rod_glass'){ const it=buildRod(E,type); orientToEdge(it.grp,E); return it; }
+}
+function placeAt(E, type){
+  if(placed.has(E.key)) return;
+  const item=makeItem(type,E);
+  const edgeData={ id:E.key, type, a:E.a, b:E.b };
+  if(type==='switch') edgeData.open=false;
+  const rec={ E, item, edgeData, curr:0, dots:null };
+  if(type!=='wire' || FLOW==='dots'){ rec.dots=buildDots(rec); }
+  placed.set(E.key, rec);
+  rebuild();
+}
+function removeAt(key){
+  const rec=placed.get(key); if(!rec) return;
+  scene.remove(rec.item.grp); if(rec.dots) scene.remove(rec.dots);
+  placed.delete(key); rebuild();
+}
+function tapPlaced(rec){
+  const t=rec.edgeData.type;
+  if(t==='battery'){ rec.edgeData.flip=!rec.edgeData.flip; rec.item.grp.rotation.y += Math.PI; rebuild(); }
+  else if(t==='switch'){ rec.edgeData.open=!rec.edgeData.open;
+    rec.item.pivot.rotation.z = rec.edgeData.open ? 0.7 : 0; rebuild(); }
+  else { removeAt(rec.E.key); }
+}
+
+/* ═════════ 트레이(P2 자유 팔레트) ═════════ */
+const TRAY = [
+  { type:'battery', ic:'🔋', label:'전지' },
+  { type:'bulb', ic:'💡', label:'전구' },
+  { type:'wire', ic:'➖', label:'전선' },
+  { type:'switch', ic:'🎚️', label:'스위치' },
+  { type:'rod_copper', ic:'🟤', label:'구리막대' },
+  { type:'rod_glass', ic:'⬜', label:'유리막대' }
+];
+let sel = null;
+function buildTray(){
+  const tray=document.getElementById('tray'); tray.innerHTML='';
+  const list = GRADE==='low' ? TRAY.filter(t=>['battery','bulb','wire'].includes(t.type)) : TRAY;
+  list.forEach(t=>{
+    const b=document.createElement('button');
+    b.innerHTML=`<span class="ic">${t.ic}</span>${t.label}`;
+    b.onclick=()=>{ sel = (sel===t.type ? null : t.type);
+      [...tray.children].forEach(c=>c.classList.remove('on'));
+      if(sel===t.type) b.classList.add('on'); };
+    tray.appendChild(b);
+  });
+  const r=document.createElement('button'); r.className='reset'; r.innerHTML='<span class="ic">↺</span>비우기';
+  r.onclick=()=>{ [...placed.keys()].forEach(removeAt); sel=null; [...tray.children].forEach(c=>c.classList.remove('on')); };
+  tray.appendChild(r);
+}
+
+/* ═════════ 입력(탭=배치/조작 · 드래그=궤도 · 길게=회수) ═════════ */
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let downXY=null, downT=0, longTimer=null;
+function pick(clientX, clientY, targets){
+  ptr.x=(clientX/innerWidth)*2-1; ptr.y=-(clientY/innerHeight)*2+1;
+  ray.setFromCamera(ptr, camera);
+  return ray.intersectObjects(targets, true);
+}
+function onDown(e){
+  downXY={ x:e.clientX, y:e.clientY }; downT=performance.now();
+  // 길게 = 회수
+  const hit=pick(e.clientX,e.clientY, edgeHit.map(x=>x.hit));
+  if(hit.length){
+    const key=hit[0].object.userData.edge.key;
+    if(placed.has(key)){ longTimer=setTimeout(()=>{ removeAt(key); longTimer=null; downXY=null; }, 500); }
+  }
+}
+function onUp(e){
+  if(longTimer){ clearTimeout(longTimer); longTimer=null; }
+  if(!downXY) return;
+  const moved=Math.hypot(e.clientX-downXY.x, e.clientY-downXY.y);
+  downXY=null;
+  if(moved>6) return;  // 드래그=궤도
+  const hit=pick(e.clientX,e.clientY, edgeHit.map(x=>x.hit));
+  if(!hit.length) return;
+  const E=hit[0].object.userData.edge;
+  if(placed.has(E.key)){ tapPlaced(placed.get(E.key)); }
+  else if(sel){ placeAt(E, sel); }
+}
+function onCancel(){ if(longTimer){ clearTimeout(longTimer); longTimer=null; } downXY=null; }  // R3
+renderer.domElement.addEventListener('pointerdown', onDown);
+renderer.domElement.addEventListener('pointerup', onUp);
+renderer.domElement.addEventListener('pointercancel', onCancel);
+
+addEventListener('resize', ()=>{   // R7
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ═════════ 루프 ═════════ */
+let last=performance.now();
+function frame(now){
+  let dt=(now-last)/1000; last=now; if(dt>0.05) dt=0.05;   // R2 클램프
+  controls.update();
+  animateDots(dt);
+  // pulse 티어: 전구 글로우 미세 파동
+  if(FLOW==='pulse'){
+    const ph=0.5+0.5*Math.sin(now*0.005);
+    placed.forEach(p=>{ if(p.item.kind==='bulb' && Math.abs(p.curr)>K.OPEN_I){
+      p.item.glow.material.opacity = Math.min(0.9,(0.4+0.4*ph)); } });
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+/* ═════════ init (R1: 상태 선언 뒤 단일 진입) ═════════ */
+function init(){
+  buildTray();
+  rebuild();
+  document.getElementById('loading').classList.add('hide');
+  requestAnimationFrame(frame);
+}
+init();
 </script>
 </body>
 </html>
