@@ -82,6 +82,31 @@
     gap:14px;background:#171310;color:#cbb8a3;font-family:'Jua'}
   .spin{width:38px;height:38px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ── 연표실 (T2-2) ── */
+  #timelineHud{position:fixed;inset:0;z-index:30;background:linear-gradient(180deg,#1c150e,#0e0a07);
+    color:var(--ink-light);flex-direction:column;align-items:center;justify-content:center;padding:22px;gap:18px;font-family:'Jua'}
+  #tlHead{text-align:center}
+  #tlHead .tt{font-size:21px;font-weight:800}
+  #tlHead .tt b{color:var(--warn)}
+  #tlQ{margin-top:6px;color:#c9bba9;font-size:14px}
+  #tlChip{display:inline-flex;align-items:center;gap:10px;margin-top:14px;padding:10px 20px;border-radius:999px;
+    background:var(--hud);border:1px solid var(--hudline);font-size:17px;font-weight:700}
+  #tlChip .dot{width:18px;height:18px;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,.18)}
+  #tlTrack{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:840px}
+  .tlEra{position:relative;min-width:96px;padding:16px 12px;border-radius:14px;cursor:pointer;text-align:center;
+    background:rgba(255,255,255,.06);border:1px solid var(--hudline);transition:transform .12s,background .2s;user-select:none}
+  .tlEra:hover{transform:translateY(-3px);background:rgba(255,255,255,.13)}
+  .tlEra .en{font-weight:800;font-size:16px}
+  .tlEra .sp{font-size:11px;color:#b7a99c;margin-top:4px}
+  .tlEra.ok{background:linear-gradient(180deg,rgba(18,184,134,.38),rgba(18,184,134,.12));border-color:var(--ok);cursor:default;transform:translateY(-3px)}
+  .tlEra.ok .badge{position:absolute;top:-12px;right:-8px;font-size:22px}
+  .tlEra.wrong{animation:tlShake .4s}
+  @keyframes tlShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}60%{transform:translateX(7px)}80%{transform:translateX(-4px)}}
+  #tlPanel{max-width:560px;text-align:center;opacity:0;max-height:0;overflow:hidden;transition:opacity .35s,max-height .4s}
+  #tlPanel.show{opacity:1;max-height:220px}
+  #tlPanel .pt{font-size:19px;font-weight:800;color:var(--ok)}
+  #tlPanel .pd{margin-top:8px;line-height:1.65;color:#e8dccb;font-size:15px}
 </style>
 </head>
 <body>
@@ -134,6 +159,18 @@
       <button class="tool" id="rsDigBack">🕳<small>발굴실</small></button>
     </div>
     <div class="panel" id="rsPanel">조각을 눌러 들어요. <b>↻ 돌리기</b>로 방향을 맞추고, 항아리 중앙으로 끌어다 놓으면 딱 붙어요.</div>
+  </div>
+
+  <!-- ══ 연표실 (T2-2) — 복원 완료 후 시대 배치 ══ -->
+  <div id="timelineHud" style="display:none">
+    <div id="tlHead">
+      <div class="tt">📜 유물은 어느 <b>시대</b>에 만들어졌을까요?</div>
+      <div id="tlQ">복원한 유물을 알맞은 시대 칸에 놓아 보세요.</div>
+      <div id="tlChip"></div>
+    </div>
+    <div id="tlTrack"></div>
+    <div id="tlPanel"></div>
+    <button class="btn acc" id="tlBack">🕳 새 유물 발굴하기</button>
   </div>
 
   <div class="card" id="predict"></div>
@@ -343,6 +380,16 @@
     return true;
   }
 
+  var ERA_ORDER = ['구석기', '신석기', '청동기', '삼국', '고려', '조선', '근대'];
+  function eraIndex(era) { return ERA_ORDER.indexOf(era); }
+  /* 연표실 판정 — 순수 로직. chosenEra가 유물 시대면 ok, 아니면 timeline_wrong 맞춤 문구(없으면 기본). */
+  function timelineResult(art, chosenEra) {
+    var ok = (chosenEra === art.era);
+    var msg = ok ? ('맞았어요! ' + art.name + '은(는) ' + art.era + ' 유물이에요.')
+      : ((art.timeline_wrong && art.timeline_wrong[chosenEra]) || '다시 생각해봐요 — 이 유물의 재료와 생김새를 떠올려요.');
+    return { ok: ok, era: art.era, chosen: chosenEra, msg: msg };
+  }
+
   var API = {
     GW: GW, GH: GH, TOOLS: TOOLS,
     mulberry32: mulberry32, hashStr: hashStr,
@@ -352,7 +399,8 @@
     splitShards: splitShards, shardCenter: shardCenter,
     snapOk: snapOk, latheValid: latheValid,
     restoreLayout: restoreLayout, restoreProgress: restoreProgress,
-    restoreDone: restoreDone, shardYSpan: shardYSpan
+    restoreDone: restoreDone, shardYSpan: shardYSpan,
+    ERA_ORDER: ERA_ORDER, eraIndex: eraIndex, timelineResult: timelineResult
   };
   root.DigLab = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -788,10 +836,60 @@ function showArtifactCard(){
   const c=document.getElementById('info');
   c.innerHTML='<h3>✨ '+art.name+' 복원 완료!</h3>'+
     '<div style="line-height:1.7"><b>시대</b> '+art.era+'<br><b>쓰임</b> '+art.card.use+'<br><b>생김새</b> '+art.card.why_shape+'</div>'+
-    '<button class="cbtn" id="rsOk">도감에 담기</button>';
+    '<button class="cbtn" id="rsOk">📜 시대 맞히기 →</button>';
   c.classList.add('show');
-  document.getElementById('rsOk').onclick=()=>{ c.classList.remove('show'); toast('🏛 '+art.name+'을(를) 도감에 담았어요'); };
+  document.getElementById('rsOk').onclick=()=>{ c.classList.remove('show'); toast('🏛 '+art.name+'을(를) 도감에 담았어요'); enterTimeline(); };
 }
+
+/* ══════════ 연표실 (T2-2) — 발굴→복원→시대 완주 ══════════ */
+const tlHud=document.getElementById('timelineHud');
+let tlDone=false;
+function renderTimeline(){
+  tlDone=false;
+  document.getElementById('tlChip').innerHTML='<span class="dot" style="background:'+(art.geo.tint||'#B08860')+'"></span>'+art.name;
+  document.getElementById('tlQ').textContent='복원한 유물을 알맞은 시대 칸에 놓아 보세요.';
+  const tp=document.getElementById('tlPanel'); tp.className=''; tp.innerHTML='';
+  const track=document.getElementById('tlTrack'); track.innerHTML='';
+  DL.ERA_ORDER.forEach(era=>{
+    const info=(window.ERA_INFO&&window.ERA_INFO[era])||{span:''};
+    const el=document.createElement('div'); el.className='tlEra'; el.dataset.era=era;
+    el.innerHTML='<div class="en">'+era+'</div><div class="sp">'+(info.span||'')+'</div>';
+    el.onclick=()=>tlPick(era, el);
+    track.appendChild(el);
+  });
+}
+function tlPick(era, el){
+  if(tlDone) return;
+  const r=DL.timelineResult(art, era);
+  if(r.ok){
+    tlDone=true;
+    document.querySelectorAll('.tlEra').forEach(x=>{ if(x!==el) x.style.opacity='.4'; x.style.cursor='default'; x.onclick=null; });
+    el.classList.add('ok'); el.style.opacity='1';
+    el.insertAdjacentHTML('beforeend','<div class="badge">🏅</div>');
+    const info=(window.ERA_INFO&&window.ERA_INFO[era])||{desc:''};
+    const tp=document.getElementById('tlPanel');
+    tp.innerHTML='<div class="pt">🏛 '+art.name+' · '+era+'</div><div class="pd">'+(info.desc||'')+'</div>';
+    tp.classList.add('show');
+    document.getElementById('tlQ').textContent='발굴 → 복원 → 시대까지 완주했어요!';
+    Snd.play('reveal'); toast('🏅 '+r.msg);
+    try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('tl_'+art.id); }catch(e){}
+  } else {
+    el.classList.remove('wrong'); void el.offsetWidth; el.classList.add('wrong');
+    Snd.play('fail'); toast(r.msg);
+  }
+}
+function enterTimeline(){
+  mode='timeline';
+  document.getElementById('info').classList.remove('show');
+  document.getElementById('restoreHud').style.display='none';
+  renderTimeline();
+  tlHud.style.display='flex';
+}
+function exitTimeline(){
+  tlHud.style.display='none';
+  exitRestore();   // 복원 잔재 정리 + 발굴 UI 복원 + resetDig (mode='dig')
+}
+document.getElementById('tlBack').onclick=()=>{ Snd.play('tap'); exitTimeline(); };
 
 /* ── 복원실 인터랙션 ── */
 const rsRay=new THREE.Raycaster(), rsNdc=new THREE.Vector2();
@@ -862,6 +960,7 @@ document.getElementById('loading').style.display='none';
 // 딥링크: ?stage=restore → 발굴 건너뛰고 복원실 직행(교사·검수용). hp=n으로 손상 조각수 프리셋.
 const php=parseInt(params.get('hp')||'0',10); if(php>0) hpLost=Math.min(php,art.hp);
 if(params.get('stage')==='restore'){ lifted=true; enterRestore(); }
+if(params.get('stage')==='timeline'){ lifted=true; enterTimeline(); }   // 교사·검수 직행
 
 // 스모크 노출
 window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get hpLost(){return hpLost;},
@@ -873,7 +972,11 @@ window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get h
   // 테스트 헬퍼: 조각을 목표 자세로 세팅 후 스냅 시도
   rsForcePlace(i){ const g=RS.groups[i]; if(!g)return false; g.position.set(0,0,0); g.rotation.y=0; RS.sel=g; return tryPlace(g); },
   rsPlaceAll(){ let n=0; RS.groups.slice().forEach((g,i)=>{ g.position.set(0,0,0); g.rotation.y=0; RS.sel=g; if(tryPlace(g))n++; }); return n; },
-  get restoreDone(){return RS.done;} };
+  get restoreDone(){return RS.done;},
+  // 연표실 훅
+  enterTimeline, exitTimeline, get tlDone(){return tlDone;},
+  get tlEraCount(){return document.querySelectorAll('.tlEra').length;},
+  tlPickEra(era){ const el=document.querySelector('.tlEra[data-era="'+era+'"]'); if(el&&el.onclick)el.onclick(); return tlDone; } };
 </script>
 </body>
 </html>
