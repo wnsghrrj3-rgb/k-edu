@@ -207,6 +207,13 @@
   #tbFork.on{display:inline-block}
   #tbTime{font-family:'Gowun Dodum';font-size:10.5px;color:#9fb3c8;margin-left:auto;white-space:nowrap}
   #lens.scrubbing #tbTrack{border-color:rgba(155,123,245,.7);box-shadow:0 0 0 1px rgba(155,123,245,.35)}
+  /* §BRANCH P3-b: 분기(두 세계 비교) 시각 강조 */
+  #lens.branching #lensCanvas{animation:branchGlow 2.6s ease-in-out infinite}
+  @keyframes branchGlow{0%,100%{box-shadow:0 0 0 1.5px rgba(155,123,245,.5),0 0 14px rgba(155,123,245,.22)}
+    50%{box-shadow:0 0 0 1.5px rgba(240,120,200,.6),0 0 22px rgba(240,120,200,.32)}}
+  #lens.branching #tbTrack{border-color:rgba(240,120,200,.62);box-shadow:0 0 0 1px rgba(240,120,200,.32)}
+  #lens.branching #lensToggle{color:#e7a6dd}
+  #lens.branching #lensToggle::after{content:' · 🔀 두 세계';font-size:10.5px;color:#e59bd8}
 
   @media (max-width:560px){
     #panel{top:auto;bottom:196px;padding:9px 12px;min-width:0}
@@ -289,6 +296,8 @@
     <div id="mListMission"></div>
     <div class="mGroup">🏆 도전</div>
     <div id="mListChallenge"></div>
+    <div class="mGroup">🔀 갈라지기 — 하나만 바꿔 비교하기</div>
+    <div id="mListBranch"></div>
     <div class="mFree"><button id="mFreeBtn">✨ 그냥 자유롭게 실험할래요</button></div>
   </div>
 </div>
@@ -785,7 +794,22 @@
       tray:['beaker'], shelf:['acid','base'],
       wrong:{}, needs:{ base:{ pre:'acid', msg:'염기는 산성 용액에 떨어뜨려요 — 산부터!' } },
       predictions:[],
-      goal:{ all:[ {ch:'flag', st:0, v:'_flip'} ] } }
+      goal:{ all:[ {ch:'flag', st:0, v:'_flip'} ] } },
+
+    // ── 갈라지기 도전 2종 (§BRANCH §4 — 성공 없음, 변인 통제 탐구) ──
+    { id:'lid_alibi', kind:'branch', icon:'🫙', title:'뚜껑의 알리바이',
+      brief:'같은 세기로 데우되, 뚜껑만 다르게 해 보세요. 무게 곡선이 어떻게 갈라질까요?',
+      hint:'먼저 뚜껑 없이 끓여 무게가 주는 걸 본 뒤 → 타임바를 ⏪ 되돌려 🔀 갈라지기 → 이번엔 뚜껑만 덮어 봐요.',
+      tray:['beaker','scale','lamp'], shelf:[],
+      vary:'뚜껑', watch:'mass',
+      wrong:{}, needs:{}, predictions:[] },
+
+    { id:'stir_power', kind:'branch', icon:'🥄', title:'젓기의 힘',
+      brief:'같은 설탕을 같은 물에. 젓기만 다르게 하면 녹는 속도 곡선이 갈라질까요?',
+      hint:'먼저 설탕만 넣고 기다린 뒤 → 타임바를 ⏪ 되돌려 🔀 갈라지기 → 이번엔 저어 봐요.',
+      tray:['beaker'], shelf:['sugar'],
+      vary:'젓기', watch:'dissolvedTotal',
+      wrong:{}, needs:{}, predictions:[] }
   ];
   function missionById(id){
     for(var i=0;i<MISSIONS.length;i++) if(MISSIONS[i].id===id) return MISSIONS[i];
@@ -2119,6 +2143,7 @@ const TAG_RECALL = {
 
 function drawLens(){
   if (GRADE === 'low' || lensEl.classList.contains('collapsed')) return;
+  if (branching){ drawLensBranch(); return; }              // §BRANCH P3-b: 반사실 렌즈
   const buf = world.recorder.chans[ACTIVE];
   const W = lensCv._cssW, H = lensCv._cssH, PAD_L = 26, PAD_R = 8, PAD_T = 8, PAD_B = 14;
   lctx.clearRect(0, 0, W, H);
@@ -2191,6 +2216,79 @@ function drawLens(){
 
   // X축 라벨 (경과 시간)
   lctx.fillStyle = 'rgba(255,255,255,.4)'; lctx.font = '9px Gowun Dodum';
+  lctx.fillText((lensSpanAll ? '전체' : '−60s'), PAD_L, H - 2);
+  lctx.fillText(Math.round(tNow) + 's', W - PAD_R - 20, H - 2);
+}
+/* §BRANCH P3-b: 반사실 렌즈 — 세계 A(원래, 실선)·세계 B(바꿈, 점선)를 같은 채널로 겹쳐
+   그려 τ(분기점)부터 두 곡선이 벌어지는 그림을 보여 준다. 분기점 세로선 + 범례. */
+function drawLensBranch(){
+  const bufA = worldA && worldA.recorder ? worldA.recorder.chans[0] : null;  // 원래(왼쪽) → 실선
+  const bufB = worldB && worldB.recorder ? worldB.recorder.chans[1] : null;  // 바꿈(오른쪽) → 점선
+  const W = lensCv._cssW, H = lensCv._cssH, PAD_L = 26, PAD_R = 8, PAD_T = 18, PAD_B = 14;
+  lctx.clearRect(0, 0, W, H); lctx.globalAlpha = 1; lctx.setLineDash([]);
+  if (!bufA || !bufB || bufB.length < 2){
+    lctx.fillStyle = 'rgba(255,255,255,.4)'; lctx.font = '11px Gowun Dodum';
+    lctx.fillText('두 세계가 갈라지는 중…', 10, H/2);
+    return;
+  }
+  // 두 world는 매 프레임 같은 dt로 step → 시간축 정합. 공통 tNow·t0.
+  const tNow = Math.max(bufA[bufA.length-1].t, bufB[bufB.length-1].t);
+  const t0 = lensSpanAll ? 0 : Math.max(0, tNow - 60);
+  const span = Math.max(0.5, tNow - t0);
+  const gx = t => PAD_L + (t - t0) / span * (W - PAD_L - PAD_R);
+  const visA = bufA.filter(s => s.t >= t0), visB = bufB.filter(s => s.t >= t0);
+
+  // 채널: temp 항상 + high 선택 1개(도전 카드가 watch 채널을 lensSel로 지정)
+  const chans = ['temp'];
+  if (GRADE === 'high' && lensSel && lensSel !== 'temp') chans.push(lensSel);
+
+  // 분기점 세로선(τ) — 이 지점부터 두 곡선이 벌어짐
+  const bx = gx(branchTau);
+  if (bx >= PAD_L - 1 && bx <= W - PAD_R + 1){
+    lctx.strokeStyle = 'rgba(155,123,245,.9)'; lctx.lineWidth = 1.4;
+    lctx.setLineDash([3,3]); lctx.beginPath();
+    lctx.moveTo(bx, PAD_T); lctx.lineTo(bx, H - PAD_B); lctx.stroke(); lctx.setLineDash([]);
+    lctx.fillStyle = 'rgba(200,180,252,.95)'; lctx.font = '9px Gowun Dodum';
+    lctx.fillText('🔀', Math.min(bx + 2, W - 16), PAD_T + 8);
+  }
+
+  chans.forEach(ch => {
+    const def = LENS_CH[ch], both = visA.concat(visB);
+    const mn = def.min(both), mx = def.max(both), rng = Math.max(1e-3, mx - mn);
+    const gy = v => PAD_T + (1 - (v - mn) / rng) * (H - PAD_T - PAD_B);
+    // A(원래) = 실선, 반투명
+    lctx.strokeStyle = def.color; lctx.globalAlpha = 0.5; lctx.lineWidth = 1.8; lctx.setLineDash([]);
+    lctx.beginPath();
+    visA.forEach((s,k)=>{ const x=gx(s.t), y=gy(s[ch]); k?lctx.lineTo(x,y):lctx.moveTo(x,y); });
+    lctx.stroke();
+    // B(바꿈) = 점선, 진하게
+    lctx.globalAlpha = 1; lctx.lineWidth = 2.1; lctx.setLineDash([5,3]);
+    lctx.beginPath();
+    visB.forEach((s,k)=>{ const x=gx(s.t), y=gy(s[ch]); k?lctx.lineTo(x,y):lctx.moveTo(x,y); });
+    lctx.stroke(); lctx.setLineDash([]);
+    // 끝점 표시
+    const la = visA[visA.length-1], lb = visB[visB.length-1];
+    lctx.globalAlpha = 0.5; lctx.fillStyle = def.color;
+    lctx.beginPath(); lctx.arc(gx(la.t), gy(la[ch]), 2.4, 0, 7); lctx.fill();
+    lctx.globalAlpha = 1;
+    lctx.beginPath(); lctx.arc(gx(lb.t), gy(lb[ch]), 2.9, 0, 7); lctx.fill();
+  });
+  lctx.globalAlpha = 1;
+
+  // 범례(상단): 실선 스와치=원래, 점선 스와치=바꿈
+  const ly = 8;
+  lctx.strokeStyle = '#cfe0ff'; lctx.globalAlpha = 0.55; lctx.lineWidth = 1.8; lctx.setLineDash([]);
+  lctx.beginPath(); lctx.moveTo(PAD_L, ly); lctx.lineTo(PAD_L+14, ly); lctx.stroke();
+  lctx.globalAlpha = 1; lctx.fillStyle = 'rgba(255,255,255,.6)'; lctx.font = '9px Gowun Dodum';
+  lctx.fillText('원래', PAD_L+18, ly+3);
+  lctx.strokeStyle = '#e7a6dd'; lctx.lineWidth = 2.1; lctx.setLineDash([5,3]);
+  lctx.beginPath(); lctx.moveTo(PAD_L+46, ly); lctx.lineTo(PAD_L+60, ly); lctx.stroke(); lctx.setLineDash([]);
+  lctx.fillStyle = 'rgba(255,255,255,.92)'; lctx.fillText('바꿈', PAD_L+64, ly+3);
+
+  // Y축 라벨(temp 기준) + X축
+  lctx.fillStyle = 'rgba(255,255,255,.45)'; lctx.font = '9px Gowun Dodum';
+  lctx.fillText('110', 2, PAD_T + 6); lctx.fillText('0', 2, gyTemp(0, H, PAD_T, PAD_B));
+  lctx.fillStyle = 'rgba(255,255,255,.4)';
   lctx.fillText((lensSpanAll ? '전체' : '−60s'), PAD_L, H - 2);
   lctx.fillText(Math.round(tNow) + 's', W - PAD_R - 20, H - 2);
 }
@@ -2408,17 +2506,39 @@ function openModal(id){ $m(id).classList.add('on'); }
 function closeModal(id){ $m(id).classList.remove('on'); }
 
 function buildMissionHome(){
-  const mm=$m('mListMission'), mc=$m('mListChallenge'); mm.innerHTML=''; mc.innerHTML='';
+  const mm=$m('mListMission'), mc=$m('mListChallenge'), mb=$m('mListBranch');
+  mm.innerHTML=''; mc.innerHTML=''; mb.innerHTML='';
   MISSION_LIST.forEach(ms=>{
     const el=document.createElement('div'); el.className='mItem';
     el.innerHTML=`<div class="mIc">${ms.icon||'🧪'}</div><div><div class="mTt">${ms.title}</div><div class="mBr">${ms.brief}</div></div>`;
     el.addEventListener('click',()=>{ closeModal('missionHome'); startMission(ms); });
-    (ms.kind==='challenge'?mc:mm).appendChild(el);
+    (ms.kind==='branch'?mb:ms.kind==='challenge'?mc:mm).appendChild(el);
   });
+  // 갈라지기는 high 학년 전용(분기 UI가 high) — 아니면 섹션 숨김
+  const branchSec=mb.previousElementSibling;
+  if(GRADE!=='high'){ mb.style.display='none'; if(branchSec) branchSec.style.display='none'; }
 }
 function startMission(ms){
-  curMission=ms; missionRun=K.createMissionRun(world, ms); predictOpen=false;
+  curMission=ms; predictOpen=false;
   const bar=$m('goalBar');
+  if(ms.kind==='branch'){
+    // §BRANCH §4: 성공 개념 없음(탐구 도구). 채점 러너 없음 — 안내 배너 + watch 채널 자동 선택.
+    missionRun=null;
+    bar.querySelector('.gIcon').textContent='🔀';
+    bar.querySelector('.gTitle').textContent=ms.title;
+    bar.querySelector('.gHint').innerHTML='👉 '+(ms.hint||ms.brief);
+    bar.querySelector('.gProgFill').style.width='0%';
+    bar.classList.add('on');
+    // watch 채널을 렌즈에 켜고 펼침(high 전용)
+    if(GRADE==='high' && ms.watch && LENS_CH[ms.watch]){
+      lensSel=ms.watch;
+      document.querySelectorAll('.lch').forEach(b=>{ b.classList.toggle('on', b.dataset.ch===ms.watch || b.dataset.ch==='temp'); });
+    }
+    lensEl.classList.remove('collapsed'); lensResize(); drawLens();
+    toast('🔀 <b>'+ms.title+'</b> — '+(ms.hint||ms.brief), false, 6000);
+    return;
+  }
+  missionRun=K.createMissionRun(world, ms);
   bar.querySelector('.gIcon').textContent = ms.kind==='challenge'?'🏆':'🎯';
   bar.querySelector('.gTitle').textContent = ms.title;
   bar.querySelector('.gHint').innerHTML = (ms.kind==='challenge'?'🔍 '+ms.brief:'👉 '+(ms.hint||ms.brief));
