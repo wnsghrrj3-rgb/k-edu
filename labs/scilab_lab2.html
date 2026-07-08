@@ -582,6 +582,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 /* ═════════ 렌더 기반 (데모 1호 확정 표준 — scilab_filter.html 승계) ═════════ */
 const stage = document.getElementById('stage');
 const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.localClippingEnabled = true; // pour 수면 클리핑
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1259,7 +1260,7 @@ function resetAll(){
   ST3D.forEach((S,i)=>{
     S.vesselType=null; S.tilt=0; S.colorSpeed=0.8; S.lastColorHex=null;
     S.candlePlaced=false; S.cupSize=null; S.warnedAutoOpen=false; S.flipToasted=false;
-    for(const t in S.vg){ S.vg[t].visible=false; S.vg[t].rotation.z=0; S.vg[t].position.y=0.005; S.vg[t].position.x=0; S.liq[t].layout(0); S.liq[t].mesh.rotation.z=0; S.liq[t].mesh.position.x=0; S.liq[t].mat.attenuationColor.set(0x5FB9E8); }
+    for(const t in S.vg){ S.vg[t].visible=false; S.vg[t].rotation.z=0; S.vg[t].position.y=0.005; S.vg[t].position.x=0; S.liq[t].layout(0); S.liq[t].mesh.rotation.z=0; S.liq[t].mesh.position.x=0; S.liq[t].mat.clippingPlanes=null; S.liq[t].mat.attenuationColor.set(0x5FB9E8); }
     S.kit.visible=false;
     S.precip.reset(); S.oilDisc.visible=false;
     S.iceCubes.forEach(ic=>ic.visible=false);
@@ -1301,17 +1302,59 @@ const chain=(()=>{
   return arr;
 })();
 
-/* 붓는 동안 물 자세: 부분 상쇄(0.55)로 수면 살짝 기울이고, 바닥 피벗 고정으로 용기 이탈 방지 */
-function applyPourWaterPose(){
-  if(pour.phase==='idle') return;
-  const S=ST3D[pour.from]; if(!S.vesselType) return;
-  const L=S.liq[S.vesselType]; if(!L || !L.mesh.visible) return;
-  const dir=ST_X[pour.to]>ST_X[pour.from]?1:-1;
-  const thc=-S.tilt*dir*0.55;
-  const h=L.h0*L.mesh.scale.y;
-  L.mesh.rotation.z=thc;
-  L.mesh.position.x=-(h/2)*Math.sin(thc) + Math.sin(-S.tilt)*0.03*dir;
-  L.mesh.position.y=0.004 + (h/2)*Math.cos(thc);
+/* 붓는 동안 물 표현 — 물리 정공법(클리핑 수면):
+   물은 용기와 함께 기울고(자식 그대로), 월드 수평 클리핑 평면이 수면을 자른다.
+   pouring 중 수면 = 입술 바로 아래(넘침면 — 실제 물리), returning엔 남은 부피 수면으로 하강.
+   수면 캡 원판은 기운 원통의 수평 단면 타원(장축 r/cosθ)로 보정. */
+const pourClip = new THREE.Plane(new THREE.Vector3(0,-1,0), 0); // y ≤ constant 영역만 렌더
+const pourClipArr = [pourClip];
+const surfCap = new THREE.Mesh(new THREE.CircleGeometry(1, 40),
+  new THREE.MeshPhysicalMaterial({ color:0x8FCBEE, roughness:0.06, metalness:0,
+    transparent:true, opacity:0.92, envMapIntensity:1.2, depthWrite:false }));
+surfCap.rotation.x = -Math.PI/2; surfCap.renderOrder = 2; surfCap.visible = false;
+scene.add(surfCap);
+const axisO = new THREE.Vector3(), axisD = new THREE.Vector3(), surfV = new THREE.Vector3();
+const capWhite = new THREE.Color(0xEAF6FF);
+let pourSurfY = null;
+
+function applyPourWaterPose(dt){
+  if(pour.phase === 'idle'){
+    if(pourSurfY !== null){ // 클리핑 해제 — layout이 다음 프레임부터 정상 복원
+      ST3D.forEach(S => { for(const ty in S.liq) S.liq[ty].mat.clippingPlanes = null; });
+      surfCap.visible = false; pourSurfY = null;
+    }
+    return;
+  }
+  const S = ST3D[pour.from]; if(!S.vesselType) return;
+  const L = S.liq[S.vesselType], V = VESSELS[S.vesselType];
+  const vgrp = S.vg[S.vesselType];
+  const dir = ST_X[pour.to] > ST_X[pour.from] ? 1 : -1;
+  const vol = Math.min(Math.max(world.stations[pour.from].contents.vol, 0), 1.2);
+
+  // 물 = 풀 볼륨으로 용기에 정렬(함께 기움) — 수위는 클리핑이 담당
+  L.mesh.rotation.z = 0; L.mesh.position.x = 0;
+  L.mesh.scale.y = 1; L.mesh.position.y = 0.004 + L.h0/2;
+  L.mesh.visible = vol > 0.001;
+  L.mat.clippingPlanes = pourClipArr;
+
+  // 수면 목표 높이(월드): pouring=입술 6mm 아래(넘침면) / returning=남은 부피의 수면
+  vgrp.updateMatrixWorld(true);
+  lip.set(V.lip.x*dir, V.lip.y, 0); vgrp.localToWorld(lip);
+  surfV.set(0, 0.004 + V.liq[2]*Math.min(vol,1), 0); vgrp.localToWorld(surfV);
+  const target = (pour.phase === 'pouring') ? (lip.y - 0.006) : surfV.y;
+  pourSurfY = (pourSurfY === null) ? target : pourSurfY + (target - pourSurfY) * Math.min(dt*6, 1);
+  pourClip.constant = pourSurfY;
+
+  // 수면 캡: 용기 축과 수면 평면의 교점 + 타원 보정(장축=기움 방향)
+  axisO.set(0,0,0); vgrp.localToWorld(axisO);
+  axisD.set(0,1,0).transformDirection(vgrp.matrixWorld);
+  const k = (pourSurfY - axisO.y) / Math.max(axisD.y, 1e-4);
+  surfCap.position.copy(axisO).addScaledVector(axisD, k);
+  surfCap.position.y = pourSurfY + 0.0004;
+  const rIn = V.liq[0] - 0.0015, tiltAbs = Math.min(Math.abs(S.tilt), 1.2);
+  surfCap.scale.set(rIn / Math.cos(tiltAbs), rIn, 1);
+  surfCap.material.color.copy(L.mat.attenuationColor).lerp(capWhite, 0.4);
+  surfCap.visible = L.mesh.visible && k > 0.004 && k < L.h0 + 0.02;
 }
 
 function renderStream(cv, rateRatio, t){
@@ -1881,7 +1924,7 @@ function animate(){
   // 스테이션 렌더 바인딩
   renderStation(0, dt, t);
   renderStation(1, dt, t);
-  applyPourWaterPose(); // layout(y 갱신) 뒤에 적용해야 유효
+  applyPourWaterPose(dt); // layout(y 갱신) 뒤에 적용해야 유효
 
   // 모래 공용 InstancedMesh — 모래 가장 많은 스테이션에 부착
   let sMax=0, sIdx=-1;
