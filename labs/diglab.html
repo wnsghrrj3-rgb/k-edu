@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>케이랩 · 발굴실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --acc:#9B7BF5; --acc2:#7856d6; --ink:#1d2733;
+    --hud:rgba(20,24,31,.78); --hudline:rgba(255,255,255,.10);
+    --ok:#12B886; --info:#5B9BF0; --ink-light:#e8eef6; --warn:#e8a13a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171310;font-family:'Gowun Dodum',sans-serif}
+  canvas{display:block;touch-action:none}
+  #stage{position:fixed;inset:0}
+
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:12;display:flex;align-items:center;gap:10px;
+    padding:12px 16px;background:linear-gradient(180deg,rgba(18,14,11,.86),rgba(18,14,11,0));color:var(--ink-light)}
+  .topbar .title{font-family:'Jua';font-size:20px;letter-spacing:.5px}
+  .topbar .title b{color:var(--acc)}
+  .topbar .title #artName{color:var(--warn);font-size:14px}
+  .topbar .spacer{flex:1}
+  .btn{border:0;border-radius:12px;padding:9px 15px;font-family:'Gowun Dodum';font-size:14px;
+    cursor:pointer;background:rgba(255,255,255,.10);color:var(--ink-light);border:1px solid var(--hudline)}
+  .btn:hover{background:rgba(255,255,255,.18)}
+  .btn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+  .btn.acc:hover{background:var(--acc2)}
+  .btn[disabled]{opacity:.4;pointer-events:none}
+
+  /* 도구 트레이(하단 중앙) */
+  .tools{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:12;
+    display:flex;align-items:center;gap:8px;padding:8px;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:16px;backdrop-filter:blur(8px)}
+  .tools .tool{border:0;background:transparent;color:#cbb;font-family:'Gowun Dodum';font-size:22px;
+    width:52px;height:52px;border-radius:12px;cursor:pointer;position:relative}
+  .tools .tool small{display:block;font-size:10px;color:#9a8f86;margin-top:-4px}
+  .tools .tool.on{background:var(--acc);color:#fff}
+  .tools .tool.on small{color:#eee}
+
+  /* 학습/학년 탭 */
+  .tabs{position:fixed;top:56px;left:16px;z-index:12;display:flex;flex-direction:column;gap:8px}
+  .seg{display:flex;background:var(--hud);border:1px solid var(--hudline);border-radius:14px;padding:4px;backdrop-filter:blur(8px)}
+  .seg button{border:0;background:transparent;color:#aeb8c6;font-family:'Gowun Dodum';font-size:13.5px;
+    padding:7px 13px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .seg button.on{background:var(--acc);color:#fff}
+  .seg.grade button.on{background:#5a4632;color:#fff}
+
+  /* 노출 게이지(우상단) */
+  #expose{position:fixed;right:16px;top:60px;z-index:12;width:190px;padding:12px 14px;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:14px;backdrop-filter:blur(8px);color:var(--ink-light)}
+  #expose .lab{font-size:12px;color:#b7a99c;margin-bottom:6px}
+  #expose .bar{height:10px;border-radius:6px;background:rgba(255,255,255,.10);overflow:hidden}
+  #expose .fill{height:100%;width:0;background:linear-gradient(90deg,var(--warn),var(--ok));transition:width .2s}
+  #expose .pct{font-size:12px;margin-top:6px;text-align:right;color:#cdbca8}
+  #expose .note{font-size:11px;color:#8f8378;margin-top:6px;line-height:1.4}
+
+  .panel{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);z-index:11;
+    padding:9px 16px;max-width:min(92vw,640px);background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);color:#cdbca8;font-size:13px;text-align:center}
+  .panel.hide{display:none}
+
+  .card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:30;
+    background:rgba(255,255,255,.98);border-radius:20px;padding:22px 24px;min-width:260px;max-width:88vw;
+    box-shadow:0 20px 60px rgba(0,0,0,.55);color:var(--ink);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+  .card.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  .card h3{margin:.1em 0 .5em;font-family:'Jua';color:var(--acc2)}
+  .card .opt{display:block;width:100%;text-align:left;margin:6px 0;padding:11px 14px;border-radius:12px;
+    border:1px solid #e2e2ea;background:#f7f7fb;cursor:pointer;font-family:'Gowun Dodum';font-size:15px}
+  .card .opt:hover{background:#efeafb}
+  .card .cbtn{margin-top:12px;width:100%;padding:12px;border:0;border-radius:12px;background:var(--acc);color:#fff;
+    font-family:'Jua';font-size:16px;cursor:pointer}
+
+  #toast{position:fixed;left:50%;top:76px;transform:translateX(-50%) translateY(-8px);z-index:40;
+    background:rgba(24,18,14,.94);color:#f4ead9;padding:11px 18px;border-radius:12px;font-size:14px;
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:86vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:#171310;color:#cbb8a3;font-family:'Jua'}
+  .spin{width:38px;height:38px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <div class="topbar">
+    <div class="title">🏺 케이랩 <b>발굴실</b> <span id="artName"></span></div>
+    <div class="spacer"></div>
+    <button class="btn" id="gridBtn">📐 조사격자</button>
+    <button class="btn" id="recBtn">📸 기록</button>
+    <button class="btn acc" id="liftBtn" disabled>⬆ 들어올리기</button>
+    <button class="btn" id="newBtn">🕳 새 구덩이</button>
+  </div>
+  <button class="btn" id="sndtog" style="position:fixed;right:16px;bottom:18px;z-index:12">🔊</button>
+
+  <div class="tabs">
+    <div class="seg grade" id="gradeTabs">
+      <button data-grade="low">저학년</button>
+      <button data-grade="mid" class="on">중학년</button>
+      <button data-grade="high">고학년</button>
+    </div>
+  </div>
+
+  <div id="expose">
+    <div class="lab">🔎 유물이 드러난 정도</div>
+    <div class="bar"><div class="fill" id="exFill"></div></div>
+    <div class="pct" id="exPct">0%</div>
+    <div class="note" id="exNote">붓으로 살살 파 보세요. 85%까지 드러나면 들어올릴 수 있어요.</div>
+  </div>
+
+  <div class="tools" id="tools">
+    <button class="tool on" data-tool="brush">🖌<small>붓</small></button>
+    <button class="tool" data-tool="trowel">🪏<small>꽃삽</small></button>
+  </div>
+
+  <div class="panel" id="panel">흙을 문질러 파 보세요. 깊이 들어갈수록 옛 지층이 드러나요.</div>
+
+  <div class="card" id="predict"></div>
+  <div class="card" id="info"></div>
+  <div id="toast"></div>
+
+  <div id="loading"><div class="spin"></div><div>발굴실 준비 중…</div></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+  }
+}
+</script>
+
+<script src="./dig_artifacts.js"></script>
+
+<script id="diglab-logic">
+/* ══════════ 발굴실 순수 로직 (window.DigLab) — THREE 무관·jsdom 검산 대상 ══════════
+   SPEC_발굴실_구현.md §1(흙 필드·도구 프로파일)·§2(노출·손상)·§4(조각 분할 — 심장)·§5(스냅) 수식.
+   diglab.html에 <script id="diglab-logic">로 인라인. */
+(function (root) {
+  'use strict';
+  var GW = 192, GH = 128;                 // 구덩이 격자(가로 넓게, SPEC §1)
+
+  /* ── 결정론 PRNG·해시 (물감 SPEC §6 공통) ── */
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s) {                    // FNV-1a 32bit
+    var h = 2166136261 >>> 0;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
+  /* ── §1 흙 필드 : D[i] = 파낸 깊이 0..1 ── */
+  function makeField() { return new Float32Array(GW * GH); }   // 0 = 안 판 상태
+  function idx(i, j) { return j * GW + i; }
+
+  /* 도구 프로파일 (SPEC §1 표) */
+  var TOOLS = {
+    brush:  { R: 0.040, dz: 0.0045, rim: 0.00, particles: 8 },   // 느리고 안전(정답 도구)
+    trowel: { R: 0.075, dz: 0.030,  rim: 0.25, particles: 0 }    // 빠르고 넓게 — 유물 코앞이면 손상
+  };
+
+  /* 스탬프: (cx,cz) 정규화[0,1]에 도구 프로파일 감산(→ D 증가). 반환 = 더티 셀 목록(D-1 최적화). */
+  function stamp(D, cx, cz, toolName, rng) {
+    var t = TOOLS[toolName]; if (!t) return { dirty: [] };
+    rng = rng || Math.random;
+    var R = t.R, R2 = R * R;
+    var i0 = Math.max(0, Math.floor((cx - R) * (GW - 1))), i1 = Math.min(GW - 1, Math.ceil((cx + R) * (GW - 1)));
+    var j0 = Math.max(0, Math.floor((cz - R) * (GH - 1))), j1 = Math.min(GH - 1, Math.ceil((cz + R) * (GH - 1)));
+    var dirty = [];
+    for (var j = j0; j <= j1; j++) {
+      for (var i = i0; i <= i1; i++) {
+        var x = i / (GW - 1), z = j / (GH - 1);
+        var dx = x - cx, dz = z - cz, d2 = dx * dx + dz * dz;
+        if (d2 > R2) continue;
+        var r = Math.sqrt(d2) / R;                 // 0..1
+        var falloff = Math.cos(Math.PI / 2 * r); falloff *= falloff;   // cos² 감쇠
+        var add = t.dz * falloff;
+        if (t.rim > 0 && r > 0.6) add *= (1 + (rng() - 0.5) * 2 * t.rim);  // 꽃삽 림 노이즈 ±25%
+        var k = idx(i, j), nv = D[k] + add; if (nv > 1) nv = 1;
+        if (nv !== D[k]) { D[k] = nv; dirty.push(k); }
+      }
+    }
+    return { dirty: dirty };
+  }
+
+  /* ── §1 지층 밴드 색 (파 내려갈수록 옛 층) ── */
+  function layerColor(depth) {
+    if (depth < 0.18) return '#6b4f2f';   // 겉흙
+    if (depth < 0.45) return '#8a6a3d';   // 갈색층
+    if (depth < 0.75) return '#b99a63';   // 모래층
+    return '#7a6a55';                     // 점토층
+  }
+  function layerName(depth) {
+    if (depth < 0.18) return '겉흙';
+    if (depth < 0.45) return '갈색층';
+    if (depth < 0.75) return '모래층';
+    return '점토층';
+  }
+
+  /* ── §2 노출률 : 유물 xz 바운딩 내 셀 중 D>d_a 비율 (D-3: 바운딩만 스캔) ──
+     place = { ax, az, rx, rz, d_a }  (정규화 중심·반경·유물 상단 깊이) */
+  function exposeRatio(D, place) {
+    var i0 = Math.max(0, Math.floor((place.ax - place.rx) * (GW - 1)));
+    var i1 = Math.min(GW - 1, Math.ceil((place.ax + place.rx) * (GW - 1)));
+    var j0 = Math.max(0, Math.floor((place.az - place.rz) * (GH - 1)));
+    var j1 = Math.min(GH - 1, Math.ceil((place.az + place.rz) * (GH - 1)));
+    var tot = 0, exp = 0;
+    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+      var x = i / (GW - 1), z = j / (GH - 1);
+      // 타원 바운딩 내부만
+      var nx = (x - place.ax) / place.rx, nz = (z - place.az) / place.rz;
+      if (nx * nx + nz * nz > 1) continue;
+      tot++; if (D[idx(i, j)] > place.d_a) exp++;
+    }
+    return tot ? exp / tot : 0;
+  }
+
+  /* ── §2 손상 판정 (꽃삽만·스탬프 시점, D-5) ──
+     스탬프 중심이 유물 바운딩+0.02 안 && 그 지점 D > d_a − 0.05 (유물 코앞) → true. */
+  function damageAt(D, cx, cz, place, toolName) {
+    if (toolName !== 'trowel') return false;
+    var nx = (cx - place.ax) / (place.rx + 0.02), nz = (cz - place.az) / (place.rz + 0.02);
+    if (nx * nx + nz * nz > 1) return false;
+    var i = Math.round(cx * (GW - 1)), j = Math.round(cz * (GH - 1));
+    if (i < 0 || i > GW - 1 || j < 0 || j > GH - 1) return false;
+    return D[idx(i, j)] > (place.d_a - 0.05);
+  }
+
+  /* ── §4 조각(shard) 분할 — 파라미터 공간(θ,y) 분할 [이 SPEC의 심장] ──
+     N = shards_base + 2·hp_lost. 각도 구간 A = ceil(N/2)(균등+지터, 간격≥0.5rad 보장).
+     수평 절단선 1개 y_c∈[0.35,0.6]을 각폭 넓은 구간부터 (N−A)개에 적용 → 조각 수 = A+(N−A)=N 정확.
+     결정론: rng = mulberry32(hashStr(id) ^ hp_lost) → 같은 유물·같은 손상이면 같은 조각.
+     ⚠️ SPEC 본문 공식 채택(괄호의 'N=5 각도5구간' 예시와 상충 → 본문·검산 불변식 우선). */
+  function splitShards(art, hpLost) {
+    hpLost = hpLost || 0;
+    var N = art.shards_base + 2 * hpLost;
+    var A = Math.ceil(N / 2);
+    var rng = mulberry32((hashStr(art.id) ^ Math.imul(hpLost + 1, 0x9E3779B9)) >>> 0);
+    var seg = 2 * Math.PI / A;
+
+    // A개 각도 경계 = 균등 + 지터(±15% → 최소간격 ≥0.7·seg ≥0.73rad)
+    var bounds = [];
+    for (var i = 0; i < A; i++) bounds.push(i * seg + (rng() - 0.5) * seg * 0.30);
+    bounds.sort(function (a, b) { return a - b; });
+    var segs = [];
+    for (i = 0; i < A; i++) {
+      var t0 = bounds[i], t1 = (i < A - 1) ? bounds[i + 1] : bounds[0] + 2 * Math.PI;
+      segs.push({ th0: t0, th1: t1, w: t1 - t0 });
+    }
+    // 각폭 넓은 순 (N−A)개 구간에 수평 절단
+    var order = segs.map(function (s, ix) { return ix; }).sort(function (a, b) { return segs[b].w - segs[a].w; });
+    var cut = {}; for (var k = 0; k < (N - A); k++) cut[order[k]] = true;
+    var yc = 0.35 + rng() * 0.25;                       // [0.35,0.60]
+
+    var shards = [], id = 0;
+    for (i = 0; i < A; i++) {
+      var s = segs[i];
+      if (cut[i]) {
+        shards.push({ id: id++, th0: s.th0, th1: s.th1, y0: 0, y1: yc, cut: true });
+        shards.push({ id: id++, th0: s.th0, th1: s.th1, y0: yc, y1: 1, cut: true });
+      } else {
+        shards.push({ id: id++, th0: s.th0, th1: s.th1, y0: 0, y1: 1, cut: false });
+      }
+    }
+    return { N: N, A: A, yc: yc, angleSegs: segs, shards: shards };
+  }
+
+  /* 조각의 원 파라미터 중심(복원 스냅 목표 계산 보조) */
+  function shardCenter(shard) {
+    return { th: (shard.th0 + shard.th1) / 2, y: (shard.y0 + shard.y1) / 2 };
+  }
+
+  /* ── §5 복원 스냅 판정 ── */
+  function snapOk(dpos, drotDeg, tol) {
+    return dpos < (tol || 0.06) && Math.abs(drotDeg) < 12;
+  }
+
+  /* ── §3 lathe 프로파일 유효성 (회전체 원산지) ── */
+  function latheValid(profile) {
+    if (!profile || profile.length < 3) return false;
+    for (var i = 0; i < profile.length; i++) {
+      if (profile[i][0] < 0) return false;                  // 반지름 음수 불가
+      if (i > 0 && profile[i][1] < profile[i - 1][1]) return false;  // y 비감소
+    }
+    return true;
+  }
+
+  var API = {
+    GW: GW, GH: GH, TOOLS: TOOLS,
+    mulberry32: mulberry32, hashStr: hashStr,
+    makeField: makeField, idx: idx, stamp: stamp,
+    layerColor: layerColor, layerName: layerName,
+    exposeRatio: exposeRatio, damageAt: damageAt,
+    splitShards: splitShards, shardCenter: shardCenter,
+    snapOk: snapOk, latheValid: latheValid
+  };
+  root.DigLab = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(typeof window !== 'undefined' ? window : this);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const DL = window.DigLab;
+const ARTS = window.DIG_ARTIFACTS;
+const params = new URLSearchParams(location.search);
+
+/* 무대 좌표: 흙판 가로 3(X)·세로 2(Z), 깊이 스케일 DEP. 정규화(cx,cz)∈[0,1] ↔ 월드. */
+const SX = 3.0, SZ = 2.0, DEP = 1.2;
+const nx2wx = cx => (cx - 0.5) * SX, nz2wz = cz => (cz - 0.5) * SZ;
+
+/* ══════════ 사운드 (KLab.sound 미니) ══════════ */
+const Snd = (function(){
+  let ctx=null, on=localStorage.getItem('dig_snd')!=='0';
+  function ac(){ if(!ctx){ try{ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return ctx; }
+  function beep(f,d,type,g){ const c=ac(); if(!c||!on)return; const o=c.createOscillator(),ga=c.createGain();
+    o.type=type||'sine'; o.frequency.value=f; ga.gain.value=g||0.05; o.connect(ga); ga.connect(c.destination);
+    const t=c.currentTime; o.start(t); ga.gain.setValueAtTime(g||0.05,t); ga.gain.exponentialRampToValueAtTime(0.0001,t+d); o.stop(t+d); }
+  return {
+    play(n){ if(n==='dig')beep(150+Math.random()*40,.07,'sawtooth',.035);
+      else if(n==='brush')beep(2200+Math.random()*300,.03,'triangle',.015);
+      else if(n==='tap')beep(520,.06,'triangle');
+      else if(n==='reveal'){beep(560,.12,'sine',.06);setTimeout(()=>beep(760,.16,'sine',.06),90);}
+      else if(n==='success'){beep(660,.12,'sine',.07);setTimeout(()=>beep(880,.18,'sine',.07),110);setTimeout(()=>beep(1040,.2,'sine',.06),240);}
+      else if(n==='nope'){beep(180,.16,'square',.05);} },
+    toggle(){ on=!on; localStorage.setItem('dig_snd',on?'1':'0'); return on; }
+  };
+})();
+document.getElementById('sndtog').onclick=e=>{ e.currentTarget.textContent=Snd.toggle()?'🔊':'🔈'; };
+
+/* ══════════ 씬 (klab3 코어 — r185·PMREM·ACESFilmic) ══════════ */
+const stageEl=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.1;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stageEl.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x171310);
+scene.fog=new THREE.Fog(0x171310,5,11);
+
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.05,50);
+camera.position.set(0.2,2.3,2.7);
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+
+const sun=new THREE.DirectionalLight(0xfff0d8,2.0);
+sun.position.set(2.5,5,2.5); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024); sun.shadow.camera.near=0.5; sun.shadow.camera.far=14;
+sun.shadow.camera.left=-3; sun.shadow.camera.right=3; sun.shadow.camera.top=3; sun.shadow.camera.bottom=-3;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xcdd8ff,0x2a1e14,0.5));
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=1.4; controls.maxDistance=5.5;
+controls.maxPolarAngle=1.35; controls.enablePan=false;
+controls.target.set(0,-0.35,0);
+
+/* ══════════ 흙 상자(측벽) ══════════ */
+const wallMat=new THREE.MeshStandardMaterial({color:0x5c4630,roughness:1});
+const box=new THREE.Mesh(new THREE.BoxGeometry(SX,DEP,SZ),wallMat);
+box.position.y=-DEP/2; box.receiveShadow=true; scene.add(box);
+
+/* ══════════ 흙 표면(정점색=지층·y=-D·DEP) ══════════ */
+const GW=DL.GW, GH=DL.GH;
+const soilGeo=new THREE.PlaneGeometry(SX,SZ,GW-1,GH-1);
+soilGeo.rotateX(-Math.PI/2);
+const soilCol=new Float32Array(GW*GH*3);
+soilGeo.setAttribute('color',new THREE.BufferAttribute(soilCol,3));
+const soilMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,flatShading:false});
+const soil=new THREE.Mesh(soilGeo,soilMat); soil.receiveShadow=true; scene.add(soil);
+const soilPos=soilGeo.attributes.position;
+const _c=new THREE.Color();
+function vtxIndex(i,j){ return j*GW+i; }   // PlaneGeometry 정점 순서 = 행우선(위→아래)
+function paintVtx(i,j){
+  const k=vtxIndex(i,j), d=D[DL.idx(i,j)];
+  soilPos.setY(k,-d*DEP);
+  _c.set(DL.layerColor(d)); soilCol[k*3]=_c.r; soilCol[k*3+1]=_c.g; soilCol[k*3+2]=_c.b;
+}
+function repaintAll(){ for(let j=0;j<GH;j++)for(let i=0;i<GW;i++)paintVtx(i,j);
+  soilPos.needsUpdate=true; soilGeo.attributes.color.needsUpdate=true; soilGeo.computeVertexNormals(); }
+
+/* ══════════ 유물(LatheGeometry) ══════════ */
+const ART_SC=0.62;                     // 유물 스케일
+let art=ARTS[params.get('artifact')]||ARTS['bitsal'];
+let artMesh=null, place=null;
+function latheTexture(a){
+  const cv=document.createElement('canvas'); cv.width=cv.height=512; const g=cv.getContext('2d');
+  g.fillStyle=a.geo.tint||'#B08860'; g.fillRect(0,0,512,512);
+  if(a.geo.pattern==='comb_lines'){ g.strokeStyle='rgba(60,40,25,.42)'; g.lineWidth=2.5;
+    for(let x=-512;x<512;x+=14){ g.beginPath(); g.moveTo(x,0); g.lineTo(x+256,512); g.stroke(); } }
+  else if(a.geo.pattern==='inlay'){ g.strokeStyle='rgba(245,245,235,.7)'; g.lineWidth=3;
+    for(let y=120;y<420;y+=90){ g.beginPath(); g.moveTo(0,y); g.lineTo(512,y); g.stroke(); }
+    g.strokeStyle='rgba(30,30,30,.6)'; for(let y=126;y<426;y+=90){ g.beginPath(); g.moveTo(0,y); g.lineTo(512,y); g.stroke(); } }
+  const tx=new THREE.CanvasTexture(cv); tx.colorSpace=THREE.SRGBColorSpace; return tx;
+}
+function buildArtifact(){
+  if(artMesh){ scene.remove(artMesh); artMesh.geometry.dispose(); }
+  let geo;
+  if(art.geo.type==='lathe'){
+    const pts=art.geo.profile.map(p=>new THREE.Vector2(Math.max(0.001,p[0])*ART_SC, p[1]*ART_SC));
+    geo=new THREE.LatheGeometry(pts,48);
+  } else { geo=new THREE.SphereGeometry(0.18,16,12); }   // composite는 T2-2
+  const mat=new THREE.MeshStandardMaterial({map:latheTexture(art),roughness:0.82,metalness:0.02});
+  artMesh=new THREE.Mesh(geo,mat);
+  artMesh.castShadow=false;                              // D-2: 흙 위 그림자 스포일러 방지
+  // 배치: 앵커 중앙, top 깊이 = place.d_a. profile 최고 y = 마지막 점.
+  const topY=art.geo.profile[art.geo.profile.length-1][1]*ART_SC;
+  place={ ax:0.5, az:0.5, rx:0.10, rz:0.14, d_a:0.42 };
+  artMesh.position.set(nx2wx(place.ax), -place.d_a*DEP - topY, nz2wz(place.az));
+  scene.add(artMesh);
+}
+
+/* ══════════ 상태 ══════════ */
+let D=DL.makeField();
+let tool='brush', grade='mid', hpLost=0, lifted=false, gridOn=false;
+let predicted=false;
+
+function resetDig(){
+  D=DL.makeField(); hpLost=0; lifted=false;
+  buildArtifact(); repaintAll();
+  document.getElementById('liftBtn').disabled=true;
+  updateExpose();
+  cracks.forEach(c=>scene.remove(c)); cracks=[];
+  if(artMesh) artMesh.position.y=-place.d_a*DEP - art.geo.profile[art.geo.profile.length-1][1]*ART_SC;
+}
+
+/* ══════════ 노출 게이지 ══════════ */
+const exFill=document.getElementById('exFill'), exPct=document.getElementById('exPct'), exNote=document.getElementById('exNote');
+function updateExpose(){
+  const r=DL.exposeRatio(D,place), pc=Math.round(r*100);
+  exFill.style.width=pc+'%'; exPct.textContent=pc+'%';
+  const lift=document.getElementById('liftBtn');
+  if(r>=0.85 && !lifted){ lift.disabled=false; exNote.textContent='다 드러났어요! ⬆ 들어올리기를 눌러요.'; }
+  else if(!lifted){ exNote.textContent='붓으로 살살 파 보세요. 85%까지 드러나면 들어올릴 수 있어요.'; }
+  return r;
+}
+
+/* ══════════ 크랙 데칼(간이) ══════════ */
+let cracks=[];
+function addCrack(){
+  const g=new THREE.BufferGeometry(); const pts=[];
+  const base=artMesh.position.clone(); base.y+=art.geo.profile[art.geo.profile.length-1][1]*ART_SC*0.6;
+  let p=base.clone().add(new THREE.Vector3((Math.random()-.5)*.14,0,(Math.random()-.5)*.14));
+  for(let s=0;s<5;s++){ pts.push(p.x,p.y,p.z); p=p.clone().add(new THREE.Vector3((Math.random()-.5)*.06,-0.03,(Math.random()-.5)*.06)); }
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+  const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:0x000000,transparent:true,opacity:0.55}));
+  scene.add(l); cracks.push(l);
+}
+function shake(){ const p=camera.position.clone(); let n=0;
+  const iv=setInterval(()=>{ camera.position.set(p.x+(Math.random()-.5)*.05,p.y+(Math.random()-.5)*.05,p.z); if(++n>6){clearInterval(iv);camera.position.copy(p);} },22); }
+
+/* ══════════ 발굴 인터랙션 ══════════ */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let digging=false;
+function hitSoil(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  ndc.x=((ev.clientX-r.left)/r.width)*2-1; ndc.y=-((ev.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ndc,camera);
+  const hit=ray.intersectObject(soil,false)[0];
+  if(!hit) return null;
+  const cx=hit.point.x/SX+0.5, cz=hit.point.z/SZ+0.5;
+  if(cx<0||cx>1||cz<0||cz>1) return null;
+  return {cx,cz};
+}
+function digAt(cx,cz){
+  if(lifted) return;
+  // 손상 판정(스탬프 시점)
+  if(DL.damageAt(D,cx,cz,place,tool)){
+    if(hpLost<art.hp){ hpLost++; addCrack(); shake(); Snd.play('nope');
+      toast('조심! 유물이에요 — 🖌 붓으로 살살 파요'); }
+    else { shake(); }
+  }
+  const res=DL.stamp(D,cx,cz,tool,Math.random);
+  for(const k of res.dirty){ const j=(k/GW)|0, i=k-j*GW; paintVtx(i,j); }
+  if(res.dirty.length){ soilPos.needsUpdate=true; soilGeo.attributes.color.needsUpdate=true; soilGeo.computeVertexNormals(); }
+  Snd.play(tool==='brush'?'brush':'dig');
+  const prevR=lastR; lastR=updateExpose();
+  if(prevR<0.85 && lastR>=0.85) Snd.play('reveal');
+}
+let lastR=0;
+renderer.domElement.addEventListener('pointerdown',ev=>{
+  const h=hitSoil(ev); if(h){ digging=true; controls.enabled=false;
+    // 꽃삽 첫 사용 = 예측 카드(반증 학습)
+    if(tool==='trowel' && !predicted){ predicted=true; showPredict(); return; }
+    digAt(h.cx,h.cz); }
+});
+renderer.domElement.addEventListener('pointermove',ev=>{ if(!digging)return; const h=hitSoil(ev); if(h)digAt(h.cx,h.cz); });
+addEventListener('pointerup',()=>{ digging=false; controls.enabled=true; });
+
+/* ══════════ 도구·학년·버튼 ══════════ */
+document.querySelectorAll('#tools .tool').forEach(b=>{ b.onclick=()=>{ tool=b.dataset.tool; Snd.play('tap');
+  document.querySelectorAll('#tools .tool').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('panel').textContent = tool==='brush'
+    ? '🖌 붓 — 느리지만 안전해요. 유물 가까이는 붓으로.'
+    : '🪏 꽃삽 — 빠르지만 유물에 닿으면 금이 가요.'; }; });
+document.querySelectorAll('#gradeTabs button').forEach(b=>{ b.onclick=()=>{ grade=b.dataset.grade; Snd.play('tap');
+  document.querySelectorAll('#gradeTabs button').forEach(x=>x.classList.toggle('on',x===b)); applyGrade(); }; });
+function applyGrade(){
+  // 저학년 = 붓만
+  const tw=document.querySelector('#tools .tool[data-tool="trowel"]');
+  if(grade==='low'){ tw.style.display='none'; if(tool==='trowel'){ tool='brush';
+    document.querySelectorAll('#tools .tool').forEach(x=>x.classList.toggle('on',x.dataset.tool==='brush')); } }
+  else tw.style.display='';
+  // 고학년 = 격자·기록 의무 안내
+  document.getElementById('panel').textContent = grade==='high'
+    ? '고학년 — 📐 조사격자를 설치하고 📸 기록하며 발굴해요.' : '흙을 문질러 파 보세요. 깊이 들어갈수록 옛 지층이 드러나요.';
+}
+document.getElementById('newBtn').onclick=()=>{ Snd.play('tap'); resetDig(); };
+document.getElementById('gridBtn').onclick=e=>{ gridOn=!gridOn; grid.visible=gridOn; e.currentTarget.classList.toggle('acc',gridOn); Snd.play('tap');
+  if(gridOn) toast('📐 조사 격자 설치 — 구획을 기록하며 발굴해요'); };
+document.getElementById('recBtn').onclick=()=>{ Snd.play('tap');
+  const r=Math.round(DL.exposeRatio(D,place)*100);
+  toast('📸 기록 — 노출 '+r+'% · 이 층은 '+DL.layerName(place.d_a)+' (깊을수록 오래된 층)'); };
+document.getElementById('liftBtn').onclick=()=>{ if(lifted)return; lifted=true; liftArtifact(); };
+
+/* 조사 격자 오버레이(4×3) */
+const grid=new THREE.Group(); grid.visible=false;
+(function(){ const mat=new THREE.LineBasicMaterial({color:0xffe08a,transparent:true,opacity:0.5});
+  for(let c=0;c<=4;c++){ const x=nx2wx(c/4); const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,0.01,-SZ/2),new THREE.Vector3(x,0.01,SZ/2)]); grid.add(new THREE.Line(g,mat)); }
+  for(let r=0;r<=3;r++){ const z=nz2wz(r/3); const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-SX/2,0.01,z),new THREE.Vector3(SX/2,0.01,z)]); grid.add(new THREE.Line(g,mat)); }
+})(); scene.add(grid);
+
+/* ══════════ 들어올리기 연출 → 발굴 완료(복원실=T2-1) ══════════ */
+function liftArtifact(){
+  controls.enabled=false;
+  const y0=artMesh.position.y, y1=0.6, t0=performance.now(), dur=1100;
+  (function a(now){ let u=(now-t0)/dur; if(u>1)u=1; const e=1-Math.pow(1-u,3);
+    artMesh.position.y=y0+(y1-y0)*e; artMesh.rotation.y=e*Math.PI*2;
+    if(u<1)requestAnimationFrame(a);
+    else{ Snd.play('success'); controls.enabled=true;
+      const info=DL.splitShards(art,hpLost);
+      try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('dig_'+art.id); }catch(e){}
+      showSuccess('🏺 '+art.name+' 발굴!',
+        art.card.why_shape+'<br><br>'+(hpLost>0
+          ? '꽃삽에 금이 가 조각이 <b>'+info.N+'개</b>로 늘었어요('+hpLost+'번 손상). 다음엔 붓으로 살살!'
+          : '깨끗하게 발굴했어요 — 조각 <b>'+info.N+'개</b>. (복원실은 다음 시간에!)')); }
+  })(performance.now());
+}
+
+/* ══════════ 카드·토스트 (klab3) ══════════ */
+function showPredict(){
+  const c=document.getElementById('predict'); const p=art.predict;
+  c.innerHTML='<h3>🔮 예측</h3><div style="margin-bottom:6px">'+p.q+'</div>'+
+    p.options.map((o,i)=>'<button class="opt" data-i="'+i+'">'+o+'</button>').join('');
+  c.classList.add('show');
+  c.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ c.classList.remove('show'); Snd.play('tap');
+    toast(+b.dataset.i===p.a?'맞아요! 그래서 붓으로 조심조심 파요.':'꽃삽으로 세게 파면 유물에 금이 가요 — 붓을 써요.'); });
+}
+function showSuccess(t,body){
+  const c=document.getElementById('info');
+  c.innerHTML='<h3>'+t+'</h3><div style="line-height:1.6">'+body+'</div><button class="cbtn" id="okBtn">좋아요</button>';
+  c.classList.add('show'); document.getElementById('okBtn').onclick=()=>c.classList.remove('show');
+}
+function toast(msg){ const el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),2600); }
+
+/* ══════════ 루프·시작 ══════════ */
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+(function loop(){ requestAnimationFrame(loop); controls.update();
+  if(grid.visible){} renderer.render(scene,camera); })();
+
+// 딥링크 학년
+const pg=params.get('grade'); if(pg&&['low','mid','high'].includes(pg)){ grade=pg;
+  document.querySelectorAll('#gradeTabs button').forEach(x=>x.classList.toggle('on',x.dataset.grade===grade)); }
+buildArtifact(); repaintAll(); applyGrade(); lastR=updateExpose();
+document.getElementById('loading').style.display='none';
+
+// 스모크 노출
+window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get hpLost(){return hpLost;},
+  get exposeRatio(){return DL.exposeRatio(D,place);}, get lifted(){return lifted;},
+  digAt, resetDig, get artName(){return art.name;} };
+</script>
+</body>
+</html>
