@@ -561,9 +561,9 @@
       return world;
     };
 
-    world.act = function(verb, args){
+    // _apply: 순수 상태 적용(로그 없음 — 리플레이 재적용 경로). act = 로그 push + _apply 위임.
+    world._apply = function(verb, args){
       args=args||{};
-      world.actionLog.push({ t:world.t, verb:verb, args:JSON.parse(JSON.stringify(args)) });
       var st = (args.st!=null) ? world.stations[args.st] : null;
       switch(verb){
         case 'placeVessel': st.vessel=args.type; st.contents.vessel=args.type; break;
@@ -624,6 +624,11 @@
       }
       return world;
     };
+    world.act = function(verb, args){
+      args=args||{};
+      world.actionLog.push({ t:world.t, verb:verb, args:JSON.parse(JSON.stringify(args)) });
+      return world._apply(verb, args);
+    };
 
     // 술어 평가기 (§8) — op: >= <= == flag
     world.evalGoal = function(goal){
@@ -656,6 +661,47 @@
 
     return world;
   }
+
+  /* ── §BRANCH(P5). 리플레이·포크 코어 (순수 로직 — LAB2 계약 위, 신규 물리 0) ──
+     · replayTo(opts, actionLog, τ, dt) = createWorld(opts) 후 t≤τ 액션 재적용하며 고정 dt step 배치
+       (틱 인덱스 = round(t/dt)로 매칭 — 부동소수 누적오차 방지, 결정론 재현)
+     · fork(actionLog, τ) = {logA: 원본 전체(격리 복제), logB: t≤τ 절단본} — B 조작이 A에 불침투
+     · branchCanAct(addedCount, free) = 통제변인 게이트(분기 후 동사 1회만 / free 해제) */
+  var REPLAY_DT = 0.05;
+  function _cloneLog(log){
+    var out=[];
+    for(var i=0;i<log.length;i++) out.push({ t:log[i].t, verb:log[i].verb, args:JSON.parse(JSON.stringify(log[i].args)) });
+    return out;
+  }
+  function replayTo(opts, actionLog, tau, dt){
+    dt = dt || REPLAY_DT;
+    var w = createWorld(opts);
+    var tauTick = Math.round(tau/dt);
+    var byTick = {};
+    for(var j=0;j<actionLog.length;j++){
+      var tk = Math.round(actionLog[j].t/dt);
+      if(tk>tauTick) continue;
+      (byTick[tk] || (byTick[tk]=[])).push(actionLog[j]);
+    }
+    // 틱 k: [그 틱에 예정된 액션 적용] → step(dt). 마지막 틱(τ 경계)은 액션만 적용(step 없음).
+    for(var k=0;k<tauTick;k++){
+      var A=byTick[k]; if(A) for(var m=0;m<A.length;m++) w._apply(A[m].verb, A[m].args);
+      w.step(dt);
+    }
+    var last=byTick[tauTick]; if(last) for(var n=0;n<last.length;n++) w._apply(last[n].verb, last[n].args);
+    w._replaySteps = tauTick;   // 배치 스텝 수 검산용(§5)
+    return w;
+  }
+  function fork(actionLog, tau, dt){
+    dt = dt || REPLAY_DT;
+    var tauTick = Math.round(tau/dt);
+    var logB=[];
+    for(var i=0;i<actionLog.length;i++) if(Math.round(actionLog[i].t/dt)<=tauTick) logB.push(actionLog[i]);
+    var b=_cloneLog(logB);
+    return { logA:_cloneLog(actionLog), logB:b, forkTick:tauTick, baseLen:b.length };
+  }
+  // 통제변인 게이트: 분기 후 추가 동사 수(addedCount), free=?free_branch → 다음 동사 허용?
+  function branchCanAct(addedCount, free){ return !!free || addedCount < 1; }
 
   /* ── §8/§9. 미션 = 순수 JSON + 러너 ──
      · 술어 goal.all[*] = {ch,st,op,v,sustain} — evalGoal(단일 시점) 위에 sustain(연속 충족) 판정
@@ -754,6 +800,7 @@
     MISSIONS:MISSIONS, missionById:missionById, createMissionRun:createMissionRun,
     goalMaxSustain:goalMaxSustain,
     createWorld:createWorld, detectPlateau:detectPlateau, phaseTag:phaseTag,
+    replayTo:replayTo, fork:fork, branchCanAct:branchCanAct, REPLAY_DT:REPLAY_DT,
     consts:{ DT_CLAMP:DT_CLAMP, HEAT_R:HEAT_R, VOL_REF:VOL_REF, ACID_CAP:ACID_CAP,
              VREL_SMALL:VREL_SMALL, VREL_LARGE:VREL_LARGE, BURN_K:BURN_K,
              SAMPLE_DT:SAMPLE_DT, REC_CAP:REC_CAP, PLATEAU_EPS:PLATEAU_EPS, PLATEAU_WIN:PLATEAU_WIN }
