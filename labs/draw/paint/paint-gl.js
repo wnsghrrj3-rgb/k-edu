@@ -17,12 +17,13 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  // ── 공용 정점 셰이더(풀스크린 삼각형)
+  // ── 공용 정점 셰이더(풀스크린 삼각형). uv는 top-down(y 아래로 증가) = 마우스/캔버스 css 좌표계와 일치.
+  //   (WebGL 기본 화면 y는 아래가 0이므로 여기서 뒤집어 브러시 입력·텍스처·화면 출력을 일관되게 맞춤.)
   const VERT = `#version 300 es
   precision highp float;
   const vec2 P[3] = vec2[3](vec2(-1.0,-1.0), vec2(3.0,-1.0), vec2(-1.0,3.0));
   out vec2 uv;
-  void main(){ vec2 p = P[gl_VertexID]; uv = p*0.5+0.5; gl_Position = vec4(p,0.0,1.0); }`;
+  void main(){ vec2 p = P[gl_VertexID]; uv = vec2(p.x*0.5+0.5, 0.5-p.y*0.5); gl_Position = vec4(p,0.0,1.0); }`;
 
   // ── 공용 헤더(상수·유틸) — CPU와 동일 수치
   const HEAD = `#version 300 es
