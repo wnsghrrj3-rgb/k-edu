@@ -119,6 +119,23 @@
 
   <div class="panel" id="panel">흙을 문질러 파 보세요. 깊이 들어갈수록 옛 지층이 드러나요.</div>
 
+  <!-- ══ 복원실 HUD (기본 숨김) ══ -->
+  <div id="restoreHud" style="display:none">
+    <div id="restoreBar" style="position:fixed;right:16px;top:60px;z-index:12;width:200px;padding:12px 14px;
+      background:var(--hud);border:1px solid var(--hudline);border-radius:14px;backdrop-filter:blur(8px);color:var(--ink-light)">
+      <div style="font-size:12px;color:#b7a99c;margin-bottom:6px">🧩 조각 맞추기</div>
+      <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.10);overflow:hidden">
+        <div id="rsFill" style="height:100%;width:0;background:linear-gradient(90deg,var(--warn),var(--ok));transition:width .25s"></div></div>
+      <div id="rsPct" style="font-size:12px;margin-top:6px;text-align:right;color:#cdbca8">0 / 0</div>
+      <div id="rsNote" style="font-size:11px;color:#8f8378;margin-top:6px;line-height:1.4">트레이의 조각을 눌러 든 뒤, 항아리 위로 끌어 맞춰요.</div>
+    </div>
+    <div class="tools" id="restoreTools">
+      <button class="tool on" id="rsRotate">↻<small>돌리기</small></button>
+      <button class="tool" id="rsDigBack">🕳<small>발굴실</small></button>
+    </div>
+    <div class="panel" id="rsPanel">조각을 눌러 들어요. <b>↻ 돌리기</b>로 방향을 맞추고, 항아리 중앙으로 끌어다 놓으면 딱 붙어요.</div>
+  </div>
+
   <div class="card" id="predict"></div>
   <div class="card" id="info"></div>
   <div id="toast"></div>
@@ -286,6 +303,36 @@
     return dpos < (tol || 0.06) && Math.abs(drotDeg) < 12;
   }
 
+  /* ── §5 복원실 — 트레이 산개 레이아웃(결정론) ──
+     splitShards 결과를 소비. 각 조각 = { id, th·y(원 파라미터 홈), trayAngle(트레이 링 각), rot0deg(초기 흐트러짐 — 30°배수 1..11, 절대 0 아님 → 항상 돌릴 게 있음·↻30°로 정확 도달), placed }.
+     rng = mulberry32(hashStr(id) ^ (hpLost+7)…) → 같은 유물·같은 손상이면 같은 산개(재현). */
+  function restoreLayout(art, hpLost) {
+    hpLost = hpLost || 0;
+    var info = splitShards(art, hpLost);
+    var N = info.N;
+    var rng = mulberry32((hashStr(art.id) ^ Math.imul(hpLost + 7, 0x85EBCA6B)) >>> 0);
+    var slots = info.shards.map(function (s, k) {
+      var c = shardCenter(s);
+      var trayAngle = (k / N) * 2 * Math.PI + (rng() - 0.5) * 0.5;   // 링 균등 + 지터
+      var steps = 1 + Math.floor(rng() * 11);                        // 1..11
+      return { id: s.id, th: c.th, y: c.y, trayAngle: trayAngle, rot0deg: (steps * 30) % 360, placed: false };
+    });
+    return { N: N, yc: info.yc, slots: slots, shards: info.shards };
+  }
+  function restoreProgress(slots) {
+    var p = 0; for (var i = 0; i < slots.length; i++) if (slots[i].placed) p++;
+    return { placed: p, total: slots.length, ratio: slots.length ? p / slots.length : 0 };
+  }
+  function restoreDone(slots) {
+    for (var i = 0; i < slots.length; i++) if (!slots[i].placed) return false;
+    return slots.length > 0;
+  }
+  /* 조각의 실제 프로파일 y 구간(정규화 y0..y1 → 프로파일 좌표) — 부분 라티스 생성 기준 */
+  function shardYSpan(profile, shard) {
+    var y0 = profile[0][1], y1 = profile[profile.length - 1][1], H = y1 - y0;
+    return { yLo: y0 + shard.y0 * H, yHi: y0 + shard.y1 * H };
+  }
+
   /* ── §3 lathe 프로파일 유효성 (회전체 원산지) ── */
   function latheValid(profile) {
     if (!profile || profile.length < 3) return false;
@@ -303,7 +350,9 @@
     layerColor: layerColor, layerName: layerName,
     exposeRatio: exposeRatio, damageAt: damageAt,
     splitShards: splitShards, shardCenter: shardCenter,
-    snapOk: snapOk, latheValid: latheValid
+    snapOk: snapOk, latheValid: latheValid,
+    restoreLayout: restoreLayout, restoreProgress: restoreProgress,
+    restoreDone: restoreDone, shardYSpan: shardYSpan
   };
   root.DigLab = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
@@ -548,12 +597,21 @@ function liftArtifact(){
     if(u<1)requestAnimationFrame(a);
     else{ Snd.play('success'); controls.enabled=true;
       const info=DL.splitShards(art,hpLost);
-      try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('dig_'+art.id); }catch(e){}
-      showSuccess('🏺 '+art.name+' 발굴!',
-        art.card.why_shape+'<br><br>'+(hpLost>0
-          ? '꽃삽에 금이 가 조각이 <b>'+info.N+'개</b>로 늘었어요('+hpLost+'번 손상). 다음엔 붓으로 살살!'
-          : '깨끗하게 발굴했어요 — 조각 <b>'+info.N+'개</b>. (복원실은 다음 시간에!)')); }
+      showRestoreOffer(info.N);
+    }
   })(performance.now());
+}
+/* 발굴 완료 → 복원실 입장 제안 카드 */
+function showRestoreOffer(N){
+  const c=document.getElementById('info');
+  const dmg = hpLost>0
+    ? '꽃삽에 금이 가 조각이 <b>'+N+'개</b>로 늘었어요('+hpLost+'번 손상).'
+    : '땅속에서 조각난 채 묻혀 있었어요 — 조각 <b>'+N+'개</b>.';
+  c.innerHTML='<h3>🏺 '+art.name+' 발굴!</h3>'+
+    '<div style="line-height:1.6">'+art.card.why_shape+'<br><br>'+dmg+'<br>이제 조각을 맞춰 <b>복원</b>해 볼까요?</div>'+
+    '<button class="cbtn" id="toRestore">🧩 복원실로 →</button>';
+  c.classList.add('show');
+  document.getElementById('toRestore').onclick=()=>{ c.classList.remove('show'); enterRestore(); };
 }
 
 /* ══════════ 카드·토스트 (klab3) ══════════ */
@@ -573,10 +631,222 @@ function showSuccess(t,body){
 function toast(msg){ const el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show');
   clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),2600); }
 
+/* ══════════════════════ 복원실 (T2-1) — 한 파일 내 씬 전환 ══════════════════════
+   발굴 D상태·hpLost·splitShards 결과를 그대로 소비. 조각 = 부분 라티스 쉘(절단면 측벽 tint×0.6).
+   조각 들기→↻돌리기(30°)→항아리 중앙으로 드래그→스냅(이음선 발광·팅음)→전 조각 완료 시 치유·승격·2회전·수집. */
+let mode='dig';
+const RS = { built:false, layout:null, vessel:null, turntable:null, groups:[], sel:null,
+             hoverY:0.36, ringR:0.95, snapPosW:(params.get('snap')==='0.09'?0.30:0.22),
+             ground:null, healed:null, done:false };
+
+function rAtProfile(profile, y){
+  for(let i=0;i<profile.length-1;i++){ const a=profile[i], b=profile[i+1];
+    if(y>=a[1]-1e-9 && y<=b[1]+1e-9){ const t=(b[1]-a[1])?(y-a[1])/(b[1]-a[1]):0; return a[0]+(b[0]-a[0])*t; } }
+  return profile[profile.length-1][0];
+}
+/* 부분 라티스 쉘: 조각 [θ0,θ1]×[y0,y1] → 외피+내피+절단 측벽. 정점색으로 내부/측벽 어둡게. */
+function buildShardGeo(profile, shard){
+  const span=DL.shardYSpan(profile, shard), yLo=span.yLo, yHi=span.yHi;
+  // y 행: 경계 보간 + 내부 원프로파일 점
+  const ys=[yLo]; for(const p of profile){ if(p[1]>yLo+1e-4 && p[1]<yHi-1e-4) ys.push(p[1]); } ys.push(yHi);
+  const rows=ys.map(y=>({ r:rAtProfile(profile,y), y:y }));
+  const COLS=16, th0=shard.th0, th1=shard.th1;
+  const wall=Math.max(0.012, 0.03/ART_SC);           // 쉘 두께(프로파일-r 단위)
+  const pos=[], col=[], idx=[]; const R=rows.length, C=COLS+1;
+  const push=(r,y,th,shade)=>{ pos.push(Math.max(0.001,r)*Math.cos(th)*ART_SC, y*ART_SC, Math.max(0.001,r)*Math.sin(th)*ART_SC);
+    col.push(shade,shade,shade); return pos.length/3-1; };
+  // 외피(밝음 1.0) · 내피(0.55)
+  const outer=[], inner=[];
+  for(let ri=0;ri<R;ri++){ outer.push([]); inner.push([]);
+    for(let ci=0;ci<C;ci++){ const th=th0+(th1-th0)*ci/COLS; const rw=rows[ri];
+      outer[ri].push(push(rw.r, rw.y, th, 1.0));
+      inner[ri].push(push(Math.max(0.001,rw.r-wall), rw.y, th, 0.55)); } }
+  const quad=(a,b,c,d)=>{ idx.push(a,b,c, a,c,d); };
+  for(let ri=0;ri<R-1;ri++)for(let ci=0;ci<C-1;ci++){
+    quad(outer[ri][ci],outer[ri+1][ci],outer[ri+1][ci+1],outer[ri][ci+1]);        // 외피
+    quad(inner[ri][ci],inner[ri][ci+1],inner[ri+1][ci+1],inner[ri+1][ci]);        // 내피(역감김)
+  }
+  // 절단 측벽(어두움 0.42) — 4모서리에서 외↔내 연결
+  const S=0.42;
+  for(let ri=0;ri<R-1;ri++){ // 좌·우 각도 절단면
+    const oL0=outer[ri][0],oL1=outer[ri+1][0],iL0=inner[ri][0],iL1=inner[ri+1][0];
+    const a=push(rows[ri].r,rows[ri].y,th0,S), b=push(rows[ri+1].r,rows[ri+1].y,th0,S);
+    const c=push(Math.max(0.001,rows[ri+1].r-wall),rows[ri+1].y,th0,S), d=push(Math.max(0.001,rows[ri].r-wall),rows[ri].y,th0,S);
+    quad(a,b,c,d);
+    const e=push(rows[ri].r,rows[ri].y,th1,S), f=push(rows[ri+1].r,rows[ri+1].y,th1,S);
+    const g=push(Math.max(0.001,rows[ri+1].r-wall),rows[ri+1].y,th1,S), h=push(Math.max(0.001,rows[ri].r-wall),rows[ri].y,th1,S);
+    quad(e,h,g,f);
+  }
+  for(let ci=0;ci<C-1;ci++){ // 상·하 수평 절단면
+    const th=th0+(th1-th0)*ci/COLS, thN=th0+(th1-th0)*(ci+1)/COLS, top=rows[0], bot=rows[R-1];
+    let a=push(top.r,top.y,th,S), b=push(top.r,top.y,thN,S), c=push(Math.max(0.001,top.r-wall),top.y,thN,S), d=push(Math.max(0.001,top.r-wall),top.y,th,S); quad(a,d,c,b);
+    let e=push(bot.r,bot.y,th,S), f=push(bot.r,bot.y,thN,S), g=push(Math.max(0.001,bot.r-wall),bot.y,thN,S), h=push(Math.max(0.001,bot.r-wall),bot.y,th,S); quad(e,f,g,h);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  return geo;
+}
+function fullVesselMesh(healed){
+  const pts=art.geo.profile.map(p=>new THREE.Vector2(Math.max(0.001,p[0])*ART_SC,p[1]*ART_SC));
+  const geo=new THREE.LatheGeometry(pts,48);
+  const mat = healed
+    ? new THREE.MeshPhysicalMaterial({map:latheTexture(art),roughness:0.5,metalness:0.02,clearcoat:0.9,clearcoatRoughness:0.25})
+    : new THREE.MeshStandardMaterial({map:latheTexture(art),roughness:0.82});
+  const m=new THREE.Mesh(geo,mat); m.castShadow=true; return m;
+}
+function enterRestore(){
+  mode='restore';
+  try{ if(window.parent&&parent!==window&&parent.KEDU_COLLECT) parent.KEDU_COLLECT('dig_'+art.id); }catch(e){}
+  // 발굴실 UI·오브젝트 숨김
+  ['tools','expose','panel'].forEach(id=>{ const el=document.getElementById(id); if(el)el.style.display='none'; });
+  document.querySelector('.tabs').style.display='none';
+  ['gridBtn','recBtn','liftBtn','newBtn'].forEach(id=>document.getElementById(id).style.display='none');
+  soil.visible=false; box.visible=false; grid.visible=false; if(artMesh)artMesh.visible=false; cracks.forEach(c=>c.visible=false);
+  document.getElementById('restoreHud').style.display='';
+  document.querySelector('.topbar .title').innerHTML='🧩 케이랩 <b>복원실</b> <span style="color:var(--warn);font-size:14px">'+art.name+'</span>';
+  buildRestore();
+  camera.position.set(0.1,1.4,2.4); controls.target.set(0,0.2,0); controls.minDistance=1.2; controls.maxDistance=4.5; controls.maxPolarAngle=1.45;
+}
+function buildRestore(){
+  const L=DL.restoreLayout(art,hpLost); RS.layout=L; RS.done=false; RS.groups=[]; RS.sel=null;
+  // 턴테이블
+  const tt=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.66,0.05,48),
+    new THREE.MeshStandardMaterial({color:0x2c2620,roughness:0.7,metalness:0.2}));
+  tt.position.y=-0.025; tt.receiveShadow=true; scene.add(tt); RS.turntable=tt;
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.63,0.012,8,64),
+    new THREE.MeshStandardMaterial({color:0x9B7BF5,roughness:0.4,emissive:0x3a2c6a,emissiveIntensity:0.4}));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.005; scene.add(ring); RS.turntable.userData={ring};
+  RS.vessel=new THREE.Group(); scene.add(RS.vessel);              // 조립 완료 조각들이 여기 편입
+  RS.ground=new THREE.Plane(new THREE.Vector3(0,1,0), 0);         // 드래그 평면(y=hoverY로 상수 이동)
+  // 조각 생성·산개
+  for(const s of L.shards){
+    const slot=L.slots.find(z=>z.id===s.id);
+    const geo=buildShardGeo(art.geo.profile,s);
+    const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(art.geo.tint||'#B08860'),vertexColors:true,roughness:0.8,metalness:0.02,side:THREE.DoubleSide});
+    const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true;
+    const g=new THREE.Group(); g.add(mesh);
+    const ang=slot.trayAngle;
+    g.position.set(Math.cos(ang)*RS.ringR, RS.hoverY, Math.sin(ang)*RS.ringR);
+    g.rotation.y=slot.rot0deg*Math.PI/180;
+    g.userData={ id:s.id, slot, mesh, placed:false, baseCol:0x000000 };
+    scene.add(g); RS.groups.push(g);
+  }
+  RS.built=true; updateRestoreProgress();
+}
+function updateRestoreProgress(){
+  const pr=DL.restoreProgress(RS.layout.slots);
+  document.getElementById('rsFill').style.width=Math.round(pr.ratio*100)+'%';
+  document.getElementById('rsPct').textContent=pr.placed+' / '+pr.total;
+  document.getElementById('rsNote').textContent = pr.placed===0
+    ? '트레이의 조각을 눌러 든 뒤, 항아리 위로 끌어 맞춰요.'
+    : pr.placed<pr.total ? '좋아요! 남은 조각도 방향을 맞춰 붙여요.' : '완성!';
+}
+function normAngle(a){ a%=Math.PI*2; if(a>Math.PI)a-=Math.PI*2; if(a<-Math.PI)a+=Math.PI*2; return a; }
+function seamGlow(g){
+  const m=g.userData.mesh;
+  if(m.material.emissive){ m.material.emissive.set(0xFFD966); m.material.emissiveIntensity=0.9;
+    const t0=performance.now(); (function f(now){ let u=(now-t0)/400; if(u>1)u=1;
+      m.material.emissiveIntensity=0.9*(1-u); if(u<1)requestAnimationFrame(f); else m.material.emissiveIntensity=0; })(now0()); }
+}
+function now0(){ return (performance&&performance.now)?performance.now():0; }
+/* 조각 배치 시도(스냅). posOK·rotOK → 흡착 애니메이션. 반환 성공 여부. */
+function tryPlace(g){
+  if(g.userData.placed) return false;
+  const p=g.position, dpos=Math.hypot(p.x, p.z);                     // 목표=중앙(0,0)
+  const drotDeg=Math.abs(normAngle(g.rotation.y))*180/Math.PI;
+  if(!(dpos<RS.snapPosW && DL.snapOk(0, drotDeg, 0.06))) return false; // 위치=월드톨, 회전=SPEC 12°
+  g.userData.placed=true; g.userData.slot.placed=true;
+  const x0=p.x,y0=p.y,z0=p.z,r0=g.rotation.y,t0=now0();
+  (function a(now){ let u=(now-t0)/260; if(u>1)u=1; const e=1-Math.pow(1-u,3);
+    g.position.set(x0*(1-e),(y0+(0-y0)*e),z0*(1-e)); g.rotation.y=r0*(1-e);
+    if(u<1)requestAnimationFrame(a); else { g.position.set(0,0,0); g.rotation.y=0; seamGlow(g); } })(t0);
+  Snd.play('success'); updateRestoreProgress();
+  if(RS.sel===g) RS.sel=null;
+  if(DL.restoreDone(RS.layout.slots)) setTimeout(healVessel,360);
+  return true;
+}
+function healVessel(){
+  if(RS.done) return; RS.done=true;
+  RS.groups.forEach(g=>{ scene.remove(g); });                       // 조각 치우고
+  const healed=fullVesselMesh(true); scene.add(healed); RS.healed=healed;  // 매끈한 완성체
+  // 이음선 플래시 + 2회전 감상
+  const t0=now0();
+  (function a(now){ let u=(now-t0)/1600; if(u>1)u=1;
+    healed.rotation.y=u*Math.PI*4;                                  // 2바퀴
+    if(healed.material.emissive){ healed.material.emissive.set(0xFFD966); healed.material.emissiveIntensity=0.5*Math.max(0,1-u*1.4); }
+    if(u<1)requestAnimationFrame(a); else showArtifactCard(); })(t0);
+  Snd.play('reveal');
+}
+function showArtifactCard(){
+  const c=document.getElementById('info');
+  c.innerHTML='<h3>✨ '+art.name+' 복원 완료!</h3>'+
+    '<div style="line-height:1.7"><b>시대</b> '+art.era+'<br><b>쓰임</b> '+art.card.use+'<br><b>생김새</b> '+art.card.why_shape+'</div>'+
+    '<button class="cbtn" id="rsOk">도감에 담기</button>';
+  c.classList.add('show');
+  document.getElementById('rsOk').onclick=()=>{ c.classList.remove('show'); toast('🏛 '+art.name+'을(를) 도감에 담았어요'); };
+}
+
+/* ── 복원실 인터랙션 ── */
+const rsRay=new THREE.Raycaster(), rsNdc=new THREE.Vector2();
+let rsDragging=false;
+function rsPick(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  rsNdc.x=((ev.clientX-r.left)/r.width)*2-1; rsNdc.y=-((ev.clientY-r.top)/r.height)*2+1;
+  rsRay.setFromCamera(rsNdc,camera);
+  const meshes=RS.groups.filter(g=>!g.userData.placed).map(g=>g.userData.mesh);
+  const hit=rsRay.intersectObjects(meshes,false)[0];
+  if(!hit) return null;
+  let o=hit.object; while(o && RS.groups.indexOf(o)<0) o=o.parent;
+  return o;
+}
+function rsGroundXZ(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  rsNdc.x=((ev.clientX-r.left)/r.width)*2-1; rsNdc.y=-((ev.clientY-r.top)/r.height)*2+1;
+  rsRay.setFromCamera(rsNdc,camera);
+  const pt=new THREE.Vector3(); const plane=new THREE.Plane(new THREE.Vector3(0,1,0), -RS.hoverY);
+  rsRay.ray.intersectPlane(plane, pt);
+  return pt;
+}
+renderer.domElement.addEventListener('pointerdown',ev=>{ if(mode!=='restore')return;
+  const g=rsPick(ev); if(g){ RS.sel=g; rsDragging=true; controls.enabled=false;
+    RS.groups.forEach(x=>{ if(x.userData.mesh.material.emissive){ x.userData.mesh.material.emissiveIntensity=0; } });
+    if(g.userData.mesh.material.emissive){ g.userData.mesh.material.emissive.set(0x9B7BF5); g.userData.mesh.material.emissiveIntensity=0.35; }
+    Snd.play('tap'); } });
+renderer.domElement.addEventListener('pointermove',ev=>{ if(mode!=='restore'||!rsDragging||!RS.sel)return;
+  const p=rsGroundXZ(ev); if(p){ RS.sel.position.x=p.x; RS.sel.position.z=p.z; } });
+addEventListener('pointerup',()=>{ if(mode!=='restore')return; rsDragging=false; controls.enabled=true;
+  if(RS.sel && !RS.sel.userData.placed){ if(!tryPlace(RS.sel)){ /* 근접 힌트 */
+    const d=Math.hypot(RS.sel.position.x,RS.sel.position.z);
+    if(d<RS.snapPosW*1.6) toast('조금만 더! ↻ 돌리기로 방향을 맞춰봐요'); } } });
+document.getElementById('rsRotate').onclick=()=>{ if(!RS.sel||RS.sel.userData.placed){ toast('먼저 조각을 눌러 들어요'); return; }
+  const g=RS.sel, r0=g.rotation.y, r1=r0-Math.PI/6, t0=now0(); Snd.play('tap');
+  (function a(now){ let u=(now-t0)/140; if(u>1)u=1; g.rotation.y=r0+(r1-r0)*u; if(u<1)requestAnimationFrame(a); else g.rotation.y=r1; })(t0); };
+document.getElementById('rsDigBack').onclick=()=>{ exitRestore(); };
+function exitRestore(){
+  mode='dig';
+  RS.groups.forEach(g=>scene.remove(g)); if(RS.turntable)scene.remove(RS.turntable);
+  if(RS.turntable&&RS.turntable.userData&&RS.turntable.userData.ring)scene.remove(RS.turntable.userData.ring);
+  if(RS.healed)scene.remove(RS.healed); RS.built=false;
+  document.getElementById('restoreHud').style.display='none';
+  ['tools','expose','panel'].forEach(id=>{ const el=document.getElementById(id); if(el)el.style.display=''; });
+  document.querySelector('.tabs').style.display='';
+  ['gridBtn','recBtn','liftBtn','newBtn'].forEach(id=>document.getElementById(id).style.display='');
+  document.querySelector('.topbar .title').innerHTML='🏺 케이랩 <b>발굴실</b> <span id="artName"></span>';
+  soil.visible=true; box.visible=true; if(artMesh)artMesh.visible=true;
+  camera.position.set(0.2,2.3,2.7); controls.target.set(0,-0.35,0); controls.minDistance=1.4; controls.maxDistance=5.5; controls.maxPolarAngle=1.35;
+  resetDig();
+}
+
 /* ══════════ 루프·시작 ══════════ */
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+let _last=now0();
 (function loop(){ requestAnimationFrame(loop); controls.update();
-  if(grid.visible){} renderer.render(scene,camera); })();
+  if(mode==='restore' && RS.built && !RS.done){ const t=now0(), dt=(t-_last)/1000; _last=t;
+    if(RS.turntable){ RS.turntable.rotation.y+=0.15*dt; RS.vessel.rotation.y+=0.15*dt;
+      if(RS.turntable.userData&&RS.turntable.userData.ring) RS.turntable.userData.ring.rotation.z+=0.15*dt; } }
+  renderer.render(scene,camera); })();
 
 // 딥링크 학년
 const pg=params.get('grade'); if(pg&&['low','mid','high'].includes(pg)){ grade=pg;
@@ -584,10 +854,21 @@ const pg=params.get('grade'); if(pg&&['low','mid','high'].includes(pg)){ grade=p
 buildArtifact(); repaintAll(); applyGrade(); lastR=updateExpose();
 document.getElementById('loading').style.display='none';
 
+// 딥링크: ?stage=restore → 발굴 건너뛰고 복원실 직행(교사·검수용). hp=n으로 손상 조각수 프리셋.
+const php=parseInt(params.get('hp')||'0',10); if(php>0) hpLost=Math.min(php,art.hp);
+if(params.get('stage')==='restore'){ lifted=true; enterRestore(); }
+
 // 스모크 노출
 window.__DIG_SCENE={ get tool(){return tool;}, get grade(){return grade;}, get hpLost(){return hpLost;},
   get exposeRatio(){return DL.exposeRatio(D,place);}, get lifted(){return lifted;},
-  digAt, resetDig, get artName(){return art.name;} };
+  digAt, resetDig, get artName(){return art.name;},
+  get mode(){return mode;}, enterRestore, exitRestore,
+  get restoreProgress(){return RS.layout?DL.restoreProgress(RS.layout.slots):null;},
+  get restoreGroups(){return RS.groups.length;},
+  // 테스트 헬퍼: 조각을 목표 자세로 세팅 후 스냅 시도
+  rsForcePlace(i){ const g=RS.groups[i]; if(!g)return false; g.position.set(0,0,0); g.rotation.y=0; RS.sel=g; return tryPlace(g); },
+  rsPlaceAll(){ let n=0; RS.groups.slice().forEach((g,i)=>{ g.position.set(0,0,0); g.rotation.y=0; RS.sel=g; if(tryPlace(g))n++; }); return n; },
+  get restoreDone(){return RS.done;} };
 </script>
 </body>
 </html>
