@@ -31,6 +31,37 @@
   #tray button.reset{background:rgba(60,30,30,.7)}
   #hud{position:fixed;top:12px;left:0;right:0;text-align:center;color:#cdd6e0;font-size:13px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
   #hint{position:fixed;top:38px;left:0;right:0;text-align:center;color:#9fb0c2;font-size:12px;z-index:25;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  .hide{display:none!important}
+  #mBtn{position:fixed;top:12px;right:12px;z-index:35;padding:9px 15px;border:1px solid var(--hudline);border-radius:14px;
+    background:rgba(28,34,44,.9);color:#e6edf3;font-family:inherit;font-size:14px;cursor:pointer}
+  #mBanner{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:34;display:flex;align-items:center;gap:12px;
+    max-width:min(92vw,520px);padding:11px 14px;border-radius:16px;background:rgba(20,26,36,.94);border:1px solid var(--blue);
+    box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #mBanner #mbIcon{font-size:26px}
+  #mBanner #mbTitle{font-size:15px;font-weight:700;color:#fff}
+  #mBanner #mbHint{font-size:12px;color:#9fb0c2;margin-top:2px}
+  #mBanner #mbClose{margin-left:auto;background:none;border:0;color:#8b949e;font-size:18px;cursor:pointer}
+  #mHome,#mPredict,#mClear{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:rgba(8,11,16,.72);padding:20px}
+  .mcard{background:#161c26;border:1px solid var(--hudline);border-radius:20px;padding:22px;max-width:min(92vw,440px);width:100%;
+    box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .mcard h2{margin:0 0 14px;font-size:19px;text-align:center}
+  .mItem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-bottom:10px;padding:12px 14px;
+    border:1px solid var(--hudline);border-radius:14px;background:rgba(30,37,48,.7);color:#e6edf3;font-family:inherit;cursor:pointer}
+  .mItem .mi{font-size:26px}
+  .mItem small{color:#9fb0c2;font-size:12px;line-height:1.4}
+  #mFree{width:100%;margin-top:6px;padding:11px;border:1px dashed var(--hudline);border-radius:14px;background:none;color:#9fb0c2;font-family:inherit;cursor:pointer}
+  #mpQ{font-size:16px;font-weight:700;margin-bottom:14px;text-align:center}
+  .mpOpt{display:block;width:100%;margin-bottom:10px;padding:13px;border:1px solid var(--hudline);border-radius:14px;
+    background:rgba(30,37,48,.8);color:#e6edf3;font-family:inherit;font-size:15px;cursor:pointer}
+  .mpOpt.right{background:rgba(46,160,90,.9);border-color:#2ea05a;color:#fff}
+  .mpOpt.wrong{background:rgba(180,60,60,.85);border-color:#b04d4d;color:#fff}
+  #mpExplain{margin:8px 0 14px;font-size:13px;line-height:1.6;color:#cdd6e0}
+  #mpGo,#mcNext,#mcStay{padding:11px 18px;border:0;border-radius:14px;background:var(--blue);color:#fff;font-family:inherit;font-size:14px;cursor:pointer;margin:4px}
+  #mcStay{background:rgba(60,70,84,.8)}
+  .mcIcon{font-size:44px;text-align:center;margin-bottom:8px}
+  #mcMsg{font-size:18px;font-weight:700;text-align:center;margin-bottom:16px}
+  #mClear .mcard,#mPredict .mcard{text-align:center}
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -299,6 +330,70 @@
     return out;
   }
 
+  // ── P3 미션 판정 (순수 — traceRay/prismSpectrum 조합, node 단독 테스트) ──
+  var LIGHT_SRC = { x: -0.44, z: 0 };     // 광원 위치(UI와 동일)
+  var LIGHT_DIR = { x: 1, z: 0 };         // +x 발사
+  var BEAM_H = [-0.05, 0, 0.05];          // 평행광 다발 높이(광축 수직 offset)
+
+  // 평행광 다발: src에서 각 h의 나란한 광선 → traceRay 결과 배열
+  function traceBeam(elements, opts, hs, src, dir) {
+    hs = hs || BEAM_H; src = src || LIGHT_SRC; dir = dir || LIGHT_DIR;
+    var d = norm(dir), p = perp(d), out = [];
+    for (var i = 0; i < hs.length; i++) {
+      out.push(traceRay(add(src, mul(p, hs[i])), dir, elements, opts));
+    }
+    return out;
+  }
+  function hasType(els, pred) { for (var i = 0; i < els.length; i++) if (pred(els[i])) return true; return false; }
+  function screenZs(results) {
+    var zs = []; for (var i = 0; i < results.length; i++) if (results[i].hit) zs.push(results[i].hit.z);
+    return zs;
+  }
+
+  // L-1 거울 과녁: 반사(bounces≥1) 경유 + 스크린 도달
+  function missionMirror(elements, opts) {
+    var res = traceRay(LIGHT_SRC, LIGHT_DIR, elements, opts);
+    var mir = hasType(elements, function (e) { return e.type === 'mirror'; });
+    var scr = hasType(elements, function (e) { return e.type === 'screen'; });
+    return { done: mir && scr && res.bounces >= 1 && !!res.hit, bounces: res.bounces, hit: res.hit };
+  }
+  // L-2 볼록 초점: 평행광 다발이 스크린에서 수렴(도달점 z 퍼짐 < 임계)
+  function missionFocus(elements, opts) {
+    var cvx = hasType(elements, function (e) { return e.type === 'lens' && e.kind === 'convex'; });
+    var scr = hasType(elements, function (e) { return e.type === 'screen'; });
+    var beam = traceBeam(elements, opts);
+    var zs = screenZs(beam), spread = null, done = false;
+    if (cvx && scr && zs.length >= 2) {
+      spread = Math.max.apply(null, zs) - Math.min.apply(null, zs);
+      done = spread < 0.04;   // 초점 근처 슬롯이면 수렴(0.15 성공·0.30 실패)
+    }
+    return { done: done, spread: spread, hitCount: zs.length };
+  }
+  // L-3 프리즘 무지개: 프리즘 경유 7색이 스크린에 분리 도달(색별 도달점 퍼짐 > 임계)
+  function missionRainbow(elements, opts) {
+    var pri = hasType(elements, function (e) { return e.type === 'prism'; });
+    var scr = hasType(elements, function (e) { return e.type === 'screen'; });
+    var done = false, spread = null, colorsHit = 0;
+    if (pri && scr) {
+      var spec = prismSpectrum(LIGHT_SRC, LIGHT_DIR, elements, opts);
+      var zs = [];
+      for (var i = 0; i < spec.length; i++) if (spec[i].result.hit) { zs.push(spec[i].result.hit.z); colorsHit++; }
+      if (zs.length >= 2) { spread = Math.max.apply(null, zs) - Math.min.apply(null, zs); done = colorsHit >= 5 && spread > 0.015; }
+    }
+    return { done: done, spread: spread, colorsHit: colorsHit };
+  }
+  // ★와우: 볼록렌즈 초점(=lens.x+|f|) 위치에 종이가 놓이면 발화 — "빛이 모이면 뜨겁다"
+  function paperIgnites(elements) {
+    var paper = null, lens = null;
+    for (var i = 0; i < elements.length; i++) {
+      if (elements[i].type === 'paper') paper = elements[i];
+      if (elements[i].type === 'lens' && elements[i].kind === 'convex') lens = elements[i];
+    }
+    if (!paper || !lens) return { ignite: false, focusX: null };
+    var focusX = lens.x + Math.abs(LENS_F.convex);   // 볼록 초점 거리
+    return { ignite: Math.abs(paper.x - focusX) < 0.04, focusX: focusX, paperX: paper.x };
+  }
+
   var API = {
     IOR: IOR, PRISM_N: PRISM_N, LENS_F: LENS_F, LENS_H_MAX: LENS_H_MAX,
     MAX_BOUNCE: MAX_BOUNCE,
@@ -307,7 +402,10 @@
     angleFromNormal: angleFromNormal, angleOf: angleOf,
     reflect: reflect, snell: snell, criticalAngle: criticalAngle,
     thinLens: thinLens, compileFaces: compileFaces, raySegHit: raySegHit,
-    traceRay: traceRay, prismSpectrum: prismSpectrum
+    traceRay: traceRay, prismSpectrum: prismSpectrum,
+    LIGHT_SRC: LIGHT_SRC, LIGHT_DIR: LIGHT_DIR, BEAM_H: BEAM_H, traceBeam: traceBeam,
+    missionMirror: missionMirror, missionFocus: missionFocus,
+    missionRainbow: missionRainbow, paperIgnites: paperIgnites
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   if (typeof window !== 'undefined') window.KLight = API;
@@ -483,12 +581,42 @@ function buildScreen(){
   panel.castShadow=true; g.add(panel);
   const foot=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.02,0.09), FRAME_MAT());
   foot.position.y=-0.10; g.add(foot);
-  // 도달점 밝은 점(스프라이트) — rebuildRays에서 위치·표시 갱신
-  const dotTex=makeDotTexture('#fff6d8');
-  const dot=new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, transparent:true,
-    blending:THREE.AdditiveBlending, depthWrite:false }));
-  dot.scale.set(0.05,0.05,1); dot.visible=false; dot.name='hitDot'; g.add(dot);
-  g.userData.dot=dot;
+  // 도달점 밝은 점(스프라이트) — 다발 최대 3줄 → dot 3개, rebuildRays에서 위치·표시 갱신
+  const dots=[];
+  for(let i=0;i<3;i++){
+    const dotTex=makeDotTexture('#fff6d8');
+    const dot=new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, transparent:true,
+      blending:THREE.AdditiveBlending, depthWrite:false }));
+    dot.scale.set(0.05,0.05,1); dot.visible=false; dot.name='hitDot'+i; g.add(dot); dots.push(dot);
+  }
+  g.userData.dots=dots;
+  return g;
+}
+function makeFlameTexture(){
+  const c=document.createElement('canvas'); c.width=c.height=64;
+  const x=c.getContext('2d'); const gr=x.createRadialGradient(32,40,2,32,38,30);
+  gr.addColorStop(0,'#fff7d6'); gr.addColorStop(0.35,'#ffd166'); gr.addColorStop(0.7,'#ff7b2e'); gr.addColorStop(1,'rgba(200,40,0,0)');
+  x.fillStyle=gr; x.beginPath(); x.ellipse(32,38,18,26,0,0,7); x.fill();
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t;
+}
+function buildPaper(){
+  const g=new THREE.Group();
+  const paper=new THREE.Mesh(new THREE.BoxGeometry(0.003,0.13,0.11),
+    new THREE.MeshStandardMaterial({ color:0xf3ead6, roughness:0.95, side:THREE.DoubleSide }));
+  paper.castShadow=true; g.add(paper);
+  const foot=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.02,0.07), FRAME_MAT());
+  foot.position.y=-0.075; g.add(foot);
+  // 발화 연출(초기 숨김): 그을림·연기·불꽃
+  const scorch=new THREE.Mesh(new THREE.CircleGeometry(0.014,16),
+    new THREE.MeshBasicMaterial({ color:0x140d04, transparent:true, opacity:0 }));
+  scorch.position.set(0.002,0,0); scorch.rotation.y=Math.PI/2; g.add(scorch);
+  const flame=new THREE.Sprite(new THREE.SpriteMaterial({ map:makeFlameTexture(), transparent:true,
+    blending:THREE.AdditiveBlending, depthWrite:false, opacity:0 }));
+  flame.scale.set(0.06,0.10,1); flame.position.set(0.006,0.03,0); g.add(flame);
+  const smoke=new THREE.Sprite(new THREE.SpriteMaterial({ map:makeDotTexture('#c8ccd2'), transparent:true,
+    depthWrite:false, opacity:0 }));
+  smoke.scale.set(0.05,0.07,1); smoke.position.set(0.006,0.08,0); g.add(smoke);
+  g.userData={ scorch, flame, smoke, igniteT:-1, lit:false };
   return g;
 }
 function makeDotTexture(col){
@@ -506,12 +634,13 @@ const CATALOG = {
   lens_concave: { ic:'🥃', label:'오목렌즈',   build:()=>buildLens('concave'), el:(o)=>({type:'lens', kind:'concave', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
   prism:        { ic:'🔺', label:'프리즘',     build:()=>buildPrism(),         el:(o)=>({type:'prism', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
   screen:       { ic:'🎯', label:'스크린',     build:()=>buildScreen(),        el:(o)=>({type:'screen', x:o.x, z:o.z, angle:o.angle, size:0.09}) },
+  paper:        { ic:'📄', label:'종이',       build:()=>buildPaper(),         el:(o)=>({type:'paper', x:o.x, z:o.z, angle:o.angle, size:0.06}) },
 };
-// 학년칸(§4): 저=거울만 / 중=거울·렌즈·스크린 / 고=전체
+// 학년칸(§4): 저=거울만 / 중=거울·볼록·스크린·종이 / 고=전체(종이 포함)
 const TOOLS_BY_GRADE = {
   low:  ['mirror','screen'],
-  mid:  ['mirror','lens_convex','screen'],
-  high: ['mirror','lens_convex','lens_concave','prism','screen'],
+  mid:  ['mirror','lens_convex','screen','paper'],
+  high: ['mirror','lens_convex','lens_concave','prism','screen','paper'],
 };
 
 /* ═════════ 배치 상태 + 트레이 UI ═════════ */
@@ -597,29 +726,29 @@ function drawSegment(from, to, hex){
 }
 
 function markHits(reset){
-  placed.forEach(p=>{ if(p.key==='screen' && p.group.userData.dot){ p.group.userData.dot.visible=false; } });
+  placed.forEach(p=>{ if(p.key==='screen' && p.group.userData.dots){ p.group.userData.dots.forEach(d=>d.visible=false); } });
 }
 function showHitDot(hit){
-  // 가장 가까운 스크린에 밝은 점
+  // 가장 가까운 스크린에 밝은 점(다발 여러 도달점 → 빈 dot 슬롯 순차 사용)
   let best=null, bd=Infinity;
   placed.forEach(p=>{ if(p.key!=='screen')return;
     const d=Math.hypot(p.x-hit.x, p.z-hit.z); if(d<bd){bd=d;best=p;} });
-  if(best && best.group.userData.dot){
-    const dot=best.group.userData.dot;
-    best.group.updateWorldMatrix(true,false); // 방금 배치/회전된 group의 matrixWorld 갱신 후 역변환
-    dot.position.copy(best.group.worldToLocal(W(hit)));
-    dot.visible=true;
+  if(best && best.group.userData.dots){
+    best.group.updateWorldMatrix(true,false);
+    const slot=best.group.userData.dots.find(d=>!d.visible);
+    if(slot){ slot.position.copy(best.group.worldToLocal(W(hit))); slot.visible=true; }
   }
 }
 
 function toElements(){ return placed.map(p=>p.catalog.el(p)); }
 
+const PERP = (d)=>({x:-d.z, z:d.x});
 function rebuildRays(){
   clearRayGroup(); markHits();
   const els=toElements();
   const hasPrism=els.some(e=>e.type==='prism');
   if(hasPrism){
-    // 프리즘 7색 — 무지개는 물리에서(prismSpectrum). 프리즘 전 구간은 7색 겹쳐 흰색 근사.
+    // 프리즘 7색 — 무지개는 물리에서(prismSpectrum). 중앙 축 광선 1줄(다발은 겹쳐 지저분).
     const spec=K.prismSpectrum(SRC, DIR, els, { bounds:BOUNDS });
     spec.forEach(s=>{
       const hex=COLOR_HEX[s.color]||WHITE;
@@ -627,10 +756,16 @@ function rebuildRays(){
       if(s.result.hit) showHitDot(s.result.hit);
     });
   } else {
-    const res=K.traceRay(SRC, DIR, els, { bounds:BOUNDS });
-    res.segments.forEach(seg=>drawSegment(seg.from, seg.to, WHITE));
-    if(res.hit) showHitDot(res.hit);
+    // 평행광 다발 3줄(§5 — 볼록 초점 수렴 시각화). 광축 수직으로 ±h 나란히.
+    const p=PERP(DIR);
+    K.BEAM_H.forEach(h=>{
+      const o={ x:SRC.x+p.x*h, z:SRC.z+p.z*h };
+      const res=K.traceRay(o, DIR, els, { bounds:BOUNDS });
+      res.segments.forEach(seg=>drawSegment(seg.from, seg.to, WHITE));
+      if(res.hit) showHitDot(res.hit);
+    });
   }
+  if(typeof onRaysRebuilt==='function') onRaysRebuilt(els);
 }
 
 /* ═════════ 입력(탭: 배치 / 회전) ═════════ */
@@ -662,11 +797,127 @@ renderer.domElement.addEventListener('pointerup', e=>{
   }
 });
 
-/* ═════════ 루프 ═════════ */
+/* ═════════ P3 미션 3종 + ★와우(종이 발화) ═════════ */
+const MISSIONS = {
+  'L-1': { icon:'🪞', title:'빛을 과녁에 맞혀라',
+    brief:'평면거울을 돌려 빛을 스크린(과녁)에 맞혀 보세요.',
+    hint:'거울을 탭하면 15°씩 돌아가요 — 입사각과 반사각은 같아요!',
+    need:['mirror','screen'], evalFn:(els)=>K.missionMirror(els,{bounds:BOUNDS}) },
+  'L-2': { icon:'🔎', title:'빛을 한 점에 모아라',
+    brief:'볼록렌즈로 나란한 빛을 한 점에 모으고, 스크린을 그 자리에 놓아 보세요.',
+    hint:'스크린을 옮겨 점이 가장 작아지는 자리가 초점이에요.',
+    need:['lens_convex','screen'], evalFn:(els)=>K.missionFocus(els,{bounds:BOUNDS}), wow:true,
+    predict:{ q:'초점에 종이를 놓으면 종이는 어떻게 될까요?', opts:['아무 일 없다','탄다'], answer:1,
+      explain:'빛이 한 점에 모이면 그 자리가 뜨거워져요. 초점에 모인 빛은 종이를 태울 만큼 뜨겁답니다. (연소 3조건: 탈 물질·산소·발화점 — E-5와 연결!) 실제로 돋보기로 불을 붙이는 건 위험하니 꼭 어른과 함께 해요.' } },
+  'L-3': { icon:'🔺', title:'무지개를 꺼내라',
+    brief:'프리즘에 빛을 통과시켜 무지개(7색)를 스크린에 펼쳐 보세요.',
+    hint:'프리즘을 돌려 빛이 여러 색으로 갈라지는 각도를 찾아요.',
+    need:['prism','screen'], evalFn:(els)=>K.missionRainbow(els,{bounds:BOUNDS}) },
+};
+const GRADE_MISSIONS = { low:['L-1'], mid:['L-1','L-2'], high:['L-1','L-2','L-3'] };
+let activeMission=null, missionCleared=false, predictAnswered=false;
+
+// ── 미션 UI(오버레이·배너·예측·성공) DOM 생성 ──
+function buildMissionUI(){
+  const wrap=document.createElement('div'); wrap.id='mwrap'; document.body.appendChild(wrap);
+  wrap.innerHTML=`
+    <button id="mBtn">🎯 미션</button>
+    <div id="mBanner" class="hide"><span id="mbIcon"></span><div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+    <div id="mHome" class="hide"><div class="mcard"><h2>🔦 빛 미션</h2><div id="mList"></div><button id="mFree">자유 실험</button></div></div>
+    <div id="mPredict" class="hide"><div class="mcard"><div id="mpQ"></div><div id="mpOpts"></div><div id="mpExplain" class="hide"></div><button id="mpGo" class="hide">계속 실험하기</button></div></div>
+    <div id="mClear" class="hide"><div class="mcard"><div class="mcIcon">🎉</div><div id="mcMsg">미션 성공!</div><button id="mcNext">다른 미션</button><button id="mcStay">계속 실험</button></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>{ setMission(null); };
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){
+  const list=document.getElementById('mList'); list.innerHTML='';
+  GRADE_MISSIONS[GRADE].forEach(id=>{
+    const m=MISSIONS[id]; const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b);
+  });
+}
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){
+  activeMission=id; missionCleared=false; predictAnswered=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide');
+  } else bn.classList.add('hide');
+  rebuildRays();
+}
+function showPredict(){
+  const m=MISSIONS[activeMission]; if(!m||!m.predict) return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{
+      predictAnswered=true;
+      opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide');
+    };
+    opts.appendChild(b);
+  });
+}
+function showCleared(){
+  const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=`${m.icon} ${m.title} — 성공!`;
+  document.getElementById('mClear').classList.remove('hide');
+}
+// rebuildRays 끝 훅: 미션 진행 + ★와우 발화 판정
+function onRaysRebuilt(els){
+  // ★와우: 볼록 초점에 종이 → 발화 시작(예측 카드는 L-2 미션 중 첫 발화)
+  const ig=K.paperIgnites(els);
+  placed.forEach(p=>{ if(p.key!=='paper')return; const u=p.group.userData;
+    if(ig.ignite && !u.lit){ u.lit=true; u.igniteT=0;
+      if(activeMission==='L-2' && !predictAnswered) showPredict();
+    } else if(!ig.ignite && u.lit){ u.lit=false; u.igniteT=-1;
+      u.flame.material.opacity=0; u.smoke.material.opacity=0; u.scorch.material.opacity=0; }
+  });
+  // 미션 성공 판정
+  if(activeMission && !missionCleared){
+    const r=MISSIONS[activeMission].evalFn(els);
+    if(r.done){ missionCleared=true; showCleared(); }
+  }
+}
+// animate에서 매 프레임 호출 — 종이 발화 애니(연기 즉시 → 3초 후 불꽃)
+function stepPaperFire(now, dt){
+  placed.forEach(p=>{ if(p.key!=='paper')return; const u=p.group.userData;
+    if(!u.lit || u.igniteT<0) return;
+    u.igniteT+=dt;
+    const smokeA=Math.min(0.55, u.igniteT*0.5);
+    u.smoke.material.opacity=smokeA*(0.7+0.3*Math.sin(now/220));
+    u.smoke.position.y=0.08+Math.min(0.06,u.igniteT*0.012);
+    if(u.igniteT>3){
+      const f=Math.min(1,(u.igniteT-3)*1.4);
+      u.flame.material.opacity=f*(0.82+0.18*Math.sin(now/80));
+      u.scorch.material.opacity=Math.min(0.9,f);
+      u.flame.scale.set(0.06,0.10+0.02*Math.sin(now/110),1);
+    }
+  });
+}
+
+
 let t0=performance.now();
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now(), dt=Math.min(0.05,(now-t0)/1000); t0=now;
+  stepPaperFire(now, dt);
   // dots 흐름 애니(§3: 광원→진행 방향 흐름)
   if(RAY_TIER==='dots' && dotSprites.length){
     const flow=(now/1000*0.35)%1;
@@ -677,7 +928,7 @@ function animate(){
 }
 
 /* ═════════ 부팅 ═════════ */
-buildTray(); syncTray();
+buildTray(); syncTray(); buildMissionUI();
 // ?demo= 초기 배치(데모 링크 겸 검증) — 슬롯 순서대로 자동 배치
 {
   const DEMO=P.get('demo');
@@ -685,6 +936,12 @@ buildTray(); syncTray();
     concave:['lens_concave','screen'], prism:['prism','screen'],
     all:['mirror','lens_convex','prism','screen'] }[DEMO];
   if(PLAN){ let si=0; PLAN.forEach(k=>{ const sx=SLOTS_X[si++]; if(sx!==undefined && CATALOG[k]) placeAt(k,sx); }); }
+}
+// ?mission= 직접 진입 / 저학년(?grade=low)은 미션 홈 자동 오픈
+{
+  const mq=P.get('mission');
+  if(mq && MISSIONS[mq]) setMission(mq);
+  else if(GRADE==='low') openHome();
 }
 rebuildRays(); animate();
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
