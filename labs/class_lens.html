@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>학급 데이터 렌즈 · 케이랩</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --ink:#e8edf4; --sub:#9aa6b5;
+    --accent:#9b7bf5; --line:rgba(255,255,255,.08);
+    --temp:#ff8a3c; --mass:#7fd4a0; --diss:#8fb4ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:
+      radial-gradient(1200px 700px at 70% -10%, #1b2230 0%, var(--bg) 55%);
+      color:var(--ink);font-family:'Gowun Dodum',system-ui,sans-serif;overflow:hidden}
+  #app{display:flex;flex-direction:column;height:100%}
+
+  /* 상단 바 */
+  #bar{display:flex;align-items:center;gap:10px;padding:12px 16px;flex-wrap:wrap;
+       border-bottom:1px solid var(--line);background:rgba(13,17,23,.6);backdrop-filter:blur(6px)}
+  #title{font-family:'Jua';font-size:19px;letter-spacing:.3px}
+  #title .k{color:var(--accent)}
+  .pill{font-size:12.5px;color:var(--ink);background:rgba(255,255,255,.06);
+        border:1px solid var(--line);border-radius:999px;padding:5px 11px;display:inline-flex;
+        align-items:center;gap:6px;white-space:nowrap}
+  #code{font-family:'Jua';letter-spacing:2px;color:#ffe08a}
+  #live .dot{width:7px;height:7px;border-radius:50%;background:#57d17a;box-shadow:0 0 8px #57d17a;
+             display:inline-block;animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .seg{display:inline-flex;background:rgba(255,255,255,.05);border:1px solid var(--line);
+       border-radius:999px;overflow:hidden}
+  .seg button{font-family:'Gowun Dodum';font-size:12.5px;color:var(--sub);background:none;
+       border:none;padding:6px 12px;cursor:pointer;transition:.15s}
+  .seg button.on{background:var(--accent);color:#fff}
+  #spacer{flex:1}
+  .ghost{font-size:12px;color:var(--sub);text-decoration:none;border:1px solid var(--line);
+         border-radius:999px;padding:6px 11px}
+
+  /* 렌즈 무대 */
+  #stage{flex:1;position:relative;padding:14px 16px 4px}
+  #board{position:absolute;inset:14px 16px 4px;border-radius:16px;
+         background:linear-gradient(180deg,rgba(20,26,36,.72),rgba(10,14,20,.72));
+         border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 18px 50px rgba(0,0,0,.4);
+         overflow:hidden}
+  #lensCanvas{display:block;width:100%;height:100%;cursor:crosshair}
+  #empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+         justify-content:center;gap:10px;color:var(--sub);text-align:center;pointer-events:none}
+  #empty .big{font-family:'Jua';font-size:22px;color:var(--ink)}
+  #empty.hide{display:none}
+
+  /* 하단 인사이트 */
+  #foot{padding:10px 18px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+        border-top:1px solid var(--line);background:rgba(13,17,23,.55)}
+  #question{font-family:'Jua';font-size:15px;color:var(--ink);flex:1;min-width:220px;line-height:1.5}
+  #question b{color:var(--accent)}
+  #stats{display:flex;gap:14px;flex-wrap:wrap}
+  .stat{text-align:center;min-width:64px}
+  .stat .v{font-family:'Jua';font-size:20px}
+  .stat .l{font-size:11px;color:var(--sub);margin-top:1px}
+  #focusTag{font-size:12.5px;color:var(--sub)}
+  #focusTag b{color:#ffe08a;font-family:'Jua'}
+
+  @media (max-width:560px){
+    #title{font-size:16px} #question{font-size:13px}
+    .stat .v{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <div id="title">🔬 학급 데이터 <span class="k">렌즈</span></div>
+    <span class="pill">반 코드 <span id="code">····</span></span>
+    <span class="pill" id="live"><span class="dot"></span><span id="nCount">0</span>명 실험 중</span>
+    <div class="seg" id="chanSeg">
+      <button data-ch="temp" class="on">온도</button>
+      <button data-ch="mass">질량</button>
+      <button data-ch="dissolvedTotal">녹은 양</button>
+    </div>
+    <div class="seg" id="spanSeg">
+      <button data-span="all" class="on">전체</button>
+      <button data-span="60">최근</button>
+    </div>
+    <div id="spacer"></div>
+    <a class="ghost" href="scilab_hub.html">← 과학실</a>
+  </div>
+
+  <div id="stage">
+    <div id="board">
+      <canvas id="lensCanvas"></canvas>
+      <div id="empty">
+        <div class="big">아직 곡선이 없어요</div>
+        <div>친구들이 실험을 시작하면 여기에 곡선이 하나씩 피어나요 📡</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="foot">
+    <div id="question">왜 우리 반 <b>끓는점</b>이 다 100℃ 근처인데 <b>조금씩 다를까?</b></div>
+    <div id="focusTag"></div>
+    <div id="stats">
+      <div class="stat"><div class="v" id="sMed">–</div><div class="l">중앙값</div></div>
+      <div class="stat"><div class="v" id="sSpread">–</div><div class="l">퍼짐(사분위)</div></div>
+      <div class="stat"><div class="v" id="sRange">–</div><div class="l">최저~최고</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 순수 프로토콜(P1): 델타 인코더·병합기·statsAt -->
+<script src="classlab-proto.js"></script>
+
+<!-- ══ 순수 로직 ══ 어댑터·시뮬·렌즈 좌표(THREE·DOM 최소, 목 주입 테스트 대상) -->
+<script id="classlens-pure">
+(function(root){
+  'use strict';
+  var K = (typeof window!=='undefined' && window.KClassLab) ||
+          (typeof require!=='undefined' ? require('../labs/classlab-proto.js') : null);
+
+  /* ── broadcast 어댑터 (kple openChannel 패턴 · sci: 채널) ──
+     db(Supabase client)를 인자로 받아 목 주입 가능. self:false·ack 준수(kple 함정 승계). */
+  function openSciChannel(db, classCode, onMsg, onStatus){
+    var name = K.channelName(classCode);            // sci:{CODE}
+    var ch = db.channel(name, { config:{ broadcast:{ self:false, ack:true } } });
+    ch.on('broadcast', { event:'sc' }, function(e){
+      if (e && e.payload){ try{ onMsg(e.payload); }catch(err){ console.error('[SciLens] onMsg', err); } }
+    });
+    function send(payload){ return ch.send({ type:'broadcast', event:'sc', payload:payload }); }
+    function close(){ try{ ch.unsubscribe(); }catch(e){} try{ db.removeChannel(ch); }catch(e){} }
+    var conn = { send:send, close:close, name:name, raw:ch };
+    ch.subscribe(function(status){ if (onStatus) onStatus(status, conn); });
+    return conn;
+  }
+
+  /* ── 학생 송신부 (§2 델타 인코더 물림, 0.5Hz) ──
+     recorder = { raw() → [[t,v],…] } 를 주입. lab2·E미션 어디든 레코더만 있으면 물린다.
+     conn = openSciChannel 결과(또는 목). 교사 지각 접속 대비 resendAll(hello) 훅 포함. */
+  function createClassSender(conn, opts){
+    opts = opts || {};
+    var sid = opts.sid || makeSid();
+    var st  = opts.st != null ? opts.st : 0;
+    var ch  = opts.ch || 'temp';
+    var enc = K.createDeltaEncoder(sid, st, ch);
+    var recorder = opts.recorder;                    // { raw:function → [[t,v],…] }
+    return {
+      sid: sid,
+      // 신규 델타만 전송(없으면 skip). 반환 = 보낸 페이로드 or null.
+      flush: function(){
+        var raw = recorder ? recorder.raw() : [];
+        var p = enc.encode(raw);
+        if (p){ conn.send(p); }
+        return p;
+      },
+      // 교사가 늦게 들어와 앞부분을 놓쳤을 때: 인코더 리셋 후 전체를 다시 한 번 흘림.
+      resendAll: function(){
+        enc.reset();
+        return this.flush();
+      },
+      reset: function(){ enc.reset(); }
+    };
+  }
+
+  function makeSid(){
+    var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s='';
+    for (var i=0;i<4;i++) s+=A[Math.floor(Math.random()*A.length)];
+    return s;
+  }
+
+  /* ── 검수·데모용 가상 학생 (실 sender·encoder를 그대로 통과) ──
+     물 끓이기 곡선 + 개별 측정오차(끓는점·가열률·시작지연·노이즈)로 «곡선이 다 다른 이유»를 재현. */
+  function makeSimStudent(i){
+    var rnd = mulberry(1000 + i*97);
+    var lag  = rnd()*3.0;                 // 시작 지연 0~3s
+    var rate = 3.6 + (rnd()-0.5)*1.0;     // 가열률 ℃/s ±0.5
+    var boil = 100 + (rnd()-0.5)*2.2;     // 끓는점 ±1.1℃ (측정·해발 차이)
+    var noise= 0.25 + rnd()*0.2;          // 눈금 읽기 오차 ±
+    var raw = [];
+    return {
+      sid: 'S'+String(10+i),
+      raw: function(){ return raw; },
+      // 시각 t(초)까지 0.25s 격자로 raw를 채움(누적).
+      advanceTo: function(t){
+        var next = raw.length ? raw[raw.length-1][0] + K.REC_DT : 0;
+        for (var tt = next; tt <= t + 1e-9; tt += K.REC_DT){
+          var base = tt <= lag ? 20 : Math.min(boil, 20 + rate*(tt-lag));
+          var v = base + (base < boil-0.2 ? (rnd()-0.5)*2*noise : (rnd()-0.5)*noise*1.4);
+          raw.push([Math.round(tt*100)/100, Math.round(v*100)/100]);
+        }
+      }
+    };
+  }
+  function mulberry(a){ return function(){ a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+    t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296; }; }
+
+  /* ── 렌즈 좌표/집계 (순수 계산 — 렌더러가 이 geom만 그림) ──
+     curves = merger.all() 중 현 채널분. 격자 nGrid에서 statsAt(중앙값·사분위) 산출. */
+  function computeLensGeom(merger, ch, nGrid){
+    nGrid = nGrid || 90;
+    var curves = merger.all().filter(function(c){ return c.ch === ch; });
+    var tmin = Infinity, tmax = -Infinity, vmin = Infinity, vmax = -Infinity;
+    curves.forEach(function(c){
+      c.pts.forEach(function(p){
+        if (p[0]<tmin) tmin=p[0]; if (p[0]>tmax) tmax=p[0];
+        if (p[1]<vmin) vmin=p[1]; if (p[1]>vmax) vmax=p[1];
+      });
+    });
+    if (!curves.length || tmax<=tmin){ return { curves:curves, empty:true }; }
+    var stats = [];
+    for (var i=0;i<nGrid;i++){
+      var t = tmin + (tmax-tmin)*i/(nGrid-1);
+      var s = statsAtCh(merger, ch, t);
+      if (s) stats.push(Object.assign({ t:t }, s));
+    }
+    // 밴드/중앙값이 v범위를 넘지 않도록 안전 여백
+    var pad = Math.max(0.5, (vmax-vmin)*0.06);
+    return { curves:curves, stats:stats, empty:false,
+             tmin:tmin, tmax:tmax, vmin:vmin-pad, vmax:vmax+pad };
+  }
+  // merger.statsAt은 전 채널 곡선을 섞으므로, 채널 필터판을 별도 계산.
+  function statsAtCh(merger, ch, t){
+    var vals = [];
+    merger.all().forEach(function(c){
+      if (c.ch !== ch) return;
+      var v = K.sampleAt(c.pts, t);
+      if (v != null) vals.push(v);
+    });
+    if (!vals.length) return null;
+    vals.sort(function(a,b){ return a-b; });
+    return { n:vals.length, median:K.quantile(vals,0.5), q1:K.quantile(vals,0.25),
+             q3:K.quantile(vals,0.75), min:vals[0], max:vals[vals.length-1] };
+  }
+
+  var API = { openSciChannel:openSciChannel, createClassSender:createClassSender,
+              makeSimStudent:makeSimStudent, makeSid:makeSid,
+              computeLensGeom:computeLensGeom, statsAtCh:statsAtCh };
+  if (typeof window!=='undefined') window.KClassLens = API;
+  if (typeof module!=='undefined' && module.exports) module.exports = API;
+})(this);
+</script>
+
+<!-- ══ DOM 배선 (교사 뷰) ══ -->
+<script>
+(function(){
+  if (typeof window==='undefined') return;
+  var L = window.KClassLens, K = window.KClassLab;
+  if (!L || !K) return;
+
+  var qs = new URLSearchParams(location.search);
+  var classCode = (qs.get('code') || autoCode()).toUpperCase();
+  var curCh   = qs.get('ch')   || 'temp';
+  var spanAll = (qs.get('span') || 'all') !== '60';
+  var simN    = parseInt(qs.get('sim')||'0', 10) || 0;
+  function autoCode(){ var A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';
+    for(var i=0;i<4;i++)s+=A[Math.floor(Math.random()*A.length)];return s; }
+
+  var CHANS = {
+    temp:           { label:'온도', color:'#ff8a3c', unit:'℃' },
+    mass:           { label:'질량', color:'#7fd4a0', unit:'g' },
+    dissolvedTotal: { label:'녹은 양', color:'#8fb4ff', unit:'g' }
+  };
+
+  var merger = K.createMerger();
+  var focusSid = null;           // 곡선 탭 강조
+
+  function hexA(hex, a){
+    var h=String(hex).replace('#',''); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var n=parseInt(h,16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+  }
+  function r1(x){ return Math.round(x*10)/10; }
+
+  // ── DOM refs
+  var cv = document.getElementById('lensCanvas'), ctx = cv.getContext('2d');
+  var elCode=document.getElementById('code'), elN=document.getElementById('nCount');
+  var elEmpty=document.getElementById('empty');
+  var elMed=document.getElementById('sMed'), elSpread=document.getElementById('sSpread'),
+      elRange=document.getElementById('sRange'), elFocus=document.getElementById('focusTag');
+  elCode.textContent = classCode;
+
+  // ── 채널·범위 세그먼트
+  document.getElementById('chanSeg').addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    curCh=b.dataset.ch; segOn('chanSeg', b); focusSid=null; draw();
+  });
+  document.getElementById('spanSeg').addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    spanAll=(b.dataset.span==='all'); segOn('spanSeg', b); draw();
+  });
+  function segOn(id, btn){ document.querySelectorAll('#'+id+' button')
+    .forEach(function(x){ x.classList.toggle('on', x===btn); }); }
+  document.querySelectorAll('#chanSeg button').forEach(function(b){ b.classList.toggle('on', b.dataset.ch===curCh); });
+  document.querySelectorAll('#spanSeg button').forEach(function(b){ b.classList.toggle('on', (b.dataset.span==='all')===spanAll); });
+
+  // ── 렌즈 렌더
+  var G=null; // 마지막 geom(탭 히트용)
+  function resize(){
+    var r=cv.parentElement.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1);
+    cv.width=Math.max(1,r.width*dpr); cv.height=Math.max(1,r.height*dpr);
+    cv._w=r.width; cv._h=r.height; ctx.setTransform(dpr,0,0,dpr,0,0); draw();
+  }
+  window.addEventListener('resize', resize);
+
+  function draw(){
+    var W=cv._w||cv.width, H=cv._h||cv.height, PAD_L=44,PAD_R=16,PAD_T=18,PAD_B=26;
+    ctx.clearRect(0,0,W,H);
+    var geom = L.computeLensGeom(merger, curCh, 90); G=geom;
+    var n = geom.curves.length;
+    elN.textContent = n;
+    elEmpty.classList.toggle('hide', n>0);
+    if (geom.empty){ clearStats(); return; }
+
+    var cdef = CHANS[curCh] || CHANS.temp;
+    var tmax = geom.tmax;
+    var t0 = spanAll ? geom.tmin : Math.max(geom.tmin, tmax-60);
+    var span = Math.max(0.5, tmax-t0);
+    var vmin=geom.vmin, vmax=geom.vmax, vr=Math.max(1e-3, vmax-vmin);
+    var gx=function(t){ return PAD_L+(t-t0)/span*(W-PAD_L-PAD_R); };
+    var gy=function(v){ return PAD_T+(1-(v-vmin)/vr)*(H-PAD_T-PAD_B); };
+
+    // 격자 + 축
+    ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+    ctx.font='10px Gowun Dodum'; ctx.fillStyle='rgba(255,255,255,.4)';
+    for (var g=0; g<=4; g++){
+      var vy=vmin+vr*g/4, y=gy(vy);
+      ctx.beginPath(); ctx.moveTo(PAD_L,y); ctx.lineTo(W-PAD_R,y); ctx.stroke();
+      ctx.fillText(Math.round(vy)+'', 6, y+3);
+    }
+    ctx.fillStyle='rgba(255,255,255,.45)';
+    ctx.fillText(cdef.unit, 6, PAD_T-4);
+    ctx.fillText((spanAll?'0':'−60')+'s', PAD_L, H-8);
+    ctx.fillText(Math.round(tmax)+'s', W-PAD_R-24, H-8);
+
+    var visStats = geom.stats.filter(function(s){ return s.t>=t0; });
+
+    // 1) 사분위 밴드(q1~q3) — 이야기의 바탕
+    if (visStats.length>1){
+      ctx.beginPath();
+      visStats.forEach(function(s,k){ var x=gx(s.t),y=gy(s.q3); k?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      for (var k=visStats.length-1;k>=0;k--){ var s=visStats[k]; ctx.lineTo(gx(s.t),gy(s.q1)); }
+      ctx.closePath();
+      var grd=ctx.createLinearGradient(0,PAD_T,0,H-PAD_B);
+      grd.addColorStop(0,hexA(cdef.color,.20)); grd.addColorStop(1,hexA(cdef.color,.07));
+      ctx.fillStyle=grd; ctx.fill();
+    }
+
+    // 2) 개별 곡선(투명도 0.35) — focus면 그 곡선만 진하게, 나머지 더 흐리게
+    geom.curves.forEach(function(c){
+      var isFocus = focusSid && c.sid===focusSid;
+      var alpha = focusSid ? (isFocus?1:0.14) : 0.35;
+      ctx.strokeStyle=hexA(cdef.color,alpha);
+      ctx.lineWidth=isFocus?2.6:1.2;
+      ctx.beginPath(); var started=false;
+      c.pts.forEach(function(p){ if(p[0]<t0) return; var x=gx(p[0]),y=gy(p[1]);
+        started?ctx.lineTo(x,y):ctx.moveTo(x,y); started=true; });
+      ctx.stroke();
+      if (isFocus){ var lp=c.pts[c.pts.length-1];
+        ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(gx(lp[0]),gy(lp[1]),3.4,0,7); ctx.fill(); }
+    });
+
+    // 3) 중앙값 굵은 선 — 30개의 곡선, 하나의 발견
+    if (visStats.length>1){
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=3.4; ctx.lineJoin='round';
+      ctx.shadowColor=hexA(cdef.color,.7); ctx.shadowBlur=10;
+      ctx.beginPath();
+      visStats.forEach(function(s,k){ var x=gx(s.t),y=gy(s.median); k?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      ctx.stroke(); ctx.shadowBlur=0;
+      // 중앙값 최신 점 + 라벨
+      var last=visStats[visStats.length-1];
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(gx(last.t),gy(last.median),4,0,7); ctx.fill();
+      ctx.font='11px Jua'; ctx.fillStyle='#fff';
+      ctx.fillText('중앙값 '+r1(last.median)+cdef.unit, gx(last.t)-84, gy(last.median)-9);
+    }
+
+    // 하단 통계(최신 시점)
+    var latest = visStats.length ? visStats[visStats.length-1] : null;
+    if (latest){
+      elMed.textContent   = r1(latest.median)+cdef.unit;
+      elSpread.textContent= r1(latest.q3-latest.q1)+cdef.unit;
+      elRange.textContent = r1(latest.min)+'~'+r1(latest.max);
+    } else clearStats();
+
+    // focus 라벨
+    if (focusSid){ var fc=merger.getCurve(focusSid);
+      var fv=fc?K.sampleAt(fc.pts,tmax):null;
+      elFocus.innerHTML='👆 <b>'+focusSid+'</b> 친구'+(fv!=null?' · '+r1(fv)+cdef.unit:'')+' (탭하면 해제)';
+    } else elFocus.textContent='';
+  }
+  function clearStats(){ elMed.textContent=elSpread.textContent=elRange.textContent='–'; elFocus.textContent=''; }
+
+  // ── 곡선 탭 = 최근접 sid 강조
+  cv.addEventListener('pointerdown', function(e){
+    if (!G || G.empty) return;
+    var r=cv.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
+    var W=cv._w,H=cv._h,PAD_L=44,PAD_R=16,PAD_T=18,PAD_B=26;
+    var tmax=G.tmax, t0=spanAll?G.tmin:Math.max(G.tmin,tmax-60), span=Math.max(0.5,tmax-t0);
+    var vr=Math.max(1e-3,G.vmax-G.vmin);
+    var t=t0+(px-PAD_L)/(W-PAD_L-PAD_R)*span;
+    var best=null,bestD=22;
+    G.curves.forEach(function(c){
+      var v=K.sampleAt(c.pts,t); if(v==null) return;
+      var y=PAD_T+(1-(v-G.vmin)/vr)*(H-PAD_T-PAD_B);
+      var d=Math.abs(y-py); if(d<bestD){ bestD=d; best=c.sid; }
+    });
+    focusSid = (best && best===focusSid) ? null : best; draw();
+  });
+
+  // ── Supabase 연결 (교사 = 수신자). db 없으면 데모만.
+  var conn=null;
+  function connect(){
+    if (typeof getKeduDb!=='function' || !window.supabase) return null;
+    try{
+      var db=getKeduDb();
+      conn = L.openSciChannel(db, classCode, onDelta, function(status){
+        if (status==='SUBSCRIBED'){
+          // 지각 접속 resync: 접속하면 방에 hello를 쏴 학생들이 resendAll 하게(§2 kple resync 패턴)
+          try{ conn.send({ v:1, hello:1 }); }catch(e){}
+        }
+      });
+      return conn;
+    }catch(e){ console.warn('[SciLens] 연결 보류:', e.message); return null; }
+  }
+  function onDelta(p){
+    if (p && p.hello) return;          // 교사끼리 hello는 무시(학생 sender가 처리)
+    if (merger.ingest(p)) draw();
+  }
+  connect();
+
+  // ── 데모/검수: ?sim=N → 가상 학생 N명이 실제 sender·채널로 곡선을 흘린다.
+  if (simN>0){
+    var sims=[];
+    for (var i=0;i<simN;i++){
+      var stu=L.makeSimStudent(i);
+      var sconn = conn || { send:function(p){ merger.ingest(p); }, close:function(){} };
+      // 실제 채널이 있으면 로컬 화면(self:false)에도 보이도록 ingest 루프백을 함께 건다.
+      var wrapped = conn ? { send:function(p){ conn.send(p); merger.ingest(p); } } : sconn;
+      var sender=L.createClassSender(wrapped, { sid:stu.sid, ch:'temp', recorder:stu });
+      sims.push({ stu:stu, sender:sender });
+    }
+    var t=0;
+    setInterval(function(){
+      t+=0.25;
+      sims.forEach(function(s){ s.stu.advanceTo(t); });
+      if (Math.round(t/0.25)%2===0){ sims.forEach(function(s){ s.sender.flush(); }); draw(); }
+    }, 220);
+  }
+
+  // 초기 사이즈
+  requestAnimationFrame(resize);
+})();
+</script>
+</body>
+</html>
