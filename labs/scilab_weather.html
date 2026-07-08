@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>날씨 실험실 · 케이랩</title>
+<!-- P1 = 물의 순환 순수 로직만(렌더 0줄). P2에서 컵·얼음접시·김·응결·비 렌더 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#9fb0c0; --panel:rgba(14,18,24,.85); --line:rgba(255,255,255,.1);
+         --warm:#e0915a; --cold:#5aa9e0; --ok:#5fbf6a; --gold:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0c0f14;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0c0f14;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--cold)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  #phase{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'Jua';font-size:13.5px;backdrop-filter:blur(6px)}
+
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;width:min(92vw,360px);
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px)}
+  .row{margin-bottom:12px} .row:last-child{margin-bottom:0}
+  .row label{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;margin-bottom:5px}
+  input[type=range]{width:100%;margin:0} #warmR input{accent-color:var(--warm)} #coldR input{accent-color:var(--cold)}
+  .toggle{display:flex;align-items:center;gap:10px}
+  .tBtn{flex:1;font-family:'Jua';font-size:13px;padding:9px;border-radius:11px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink)}
+  .tBtn.on{background:var(--cold);color:#0c0f14;border-color:var(--cold)}
+  #reset{font-family:'Gowun Dodum';font-size:12.5px;color:var(--sub);background:none;
+    border:1px solid var(--line);border-radius:11px;padding:9px 12px;cursor:pointer}
+  #coldR.dim{opacity:.4;pointer-events:none}
+
+  #hint{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(12,15,20,.6);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+
+  #mBtn{position:fixed;left:16px;top:86px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#0c0f14;background:var(--cold);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(90,169,224,.35)}
+  #mBanner{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:21;max-width:72vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--cold);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(8,11,16,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#141a22;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#0c0f14;background:var(--cold);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:16px;text-align:center;margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">🌧️ 컵과 접시를 놓는 중…</div>
+<div id="brand">🌧️ 날씨 <span class="k">실험실</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+<div id="phase">☁️ 준비 완료 — 물을 데워 보세요</div>
+
+<div id="ctl">
+  <div class="row" id="warmR">
+    <label>🔥 물 데우기 <b id="warmV">20℃</b></label>
+    <input type="range" id="warm" min="20" max="90" step="1" value="20">
+  </div>
+  <div class="row">
+    <div class="toggle">
+      <button class="tBtn" id="dishBtn">🧊 얼음 접시 올리기</button>
+      <button id="reset">↺ 리셋</button>
+    </div>
+  </div>
+  <div class="row" id="coldR">
+    <label>🧊 접시 온도 <b id="coldV">20℃</b></label>
+    <input type="range" id="cold" min="0" max="20" step="1" value="5">
+  </div>
+</div>
+<div id="hint"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KWeather 물의 순환 (SPEC_BATCH_A T-5). THREE·DOM 참조 0.
+     증발(E-1 재사용) → 응결 → 비 → 회수. 물 보존.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="weather-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KWeather = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (SPEC T-5) ── */
+  const K_EVAP     = 0.008;   // 증발 계수 evapRate = k·(warmTemp−airTemp)
+  const K_COND     = 0.02;    // 응결 계수
+  const DROP_CRIT  = 0.02;    // 물방울 낙하 임계(질량)
+  const DT_CLAMP   = 0.1;
+  const AIR_TEMP   = 20;      // 대기 온도(℃)
+  const WARM_MAX   = 90;      // 물 가열 상한
+  const COLD_MIN   = 0;       // 얼음 접시 하한
+  const DEW_BASE   = 10;      // 이슬점 기준
+  const DEW_GAIN   = 30;      // 이슬점 = base + gain·humidity
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 상태 생성 ──
+     cupWater=컵 물량 / vapor=대기 수증기 / dish=접시 응결수
+     보존 총량 = cupWater + vapor + dish (비는 컵으로 회수됨).
+     rain = 누적 강수량 통계(보존 총량에 미포함 — 낙하 횟수·양 추적용) ── */
+  function createSky(opts) {
+    opts = opts || {};
+    return {
+      warmTemp: opts.warmTemp != null ? opts.warmTemp : AIR_TEMP, // 물 온도
+      coldT:    opts.coldT != null ? opts.coldT : AIR_TEMP,       // 얼음 접시 온도(없으면 대기온)
+      dishOn:   !!opts.dishOn,          // 얼음 접시 거치 여부
+      cupWater: opts.cupWater != null ? opts.cupWater : 1.0,
+      vapor:    0,
+      dish:     0,       // 접시 밑면 맺힌 물(응결)
+      rain:     0,       // 낙하해 컵으로 회수
+      dropMass: 0,       // 현재 맺히는 물방울 질량(임계 도달 시 낙하)
+      phase:    'dry'    // dry → evaporating → condensing → raining
+    };
+  }
+
+  /* ── 이슬점(수증기량 함수) ── */
+  function dewPoint(vapor) { return DEW_BASE + DEW_GAIN * clamp(vapor, 0, 1); }
+
+  /* ── 증발률 (E-1 재사용): 물이 대기보다 뜨거울수록 ↑ ── */
+  function evapRate(sky) { return K_EVAP * Math.max(0, sky.warmTemp - AIR_TEMP); }
+
+  /* ── 응결률: 접시가 이슬점보다 차가울수록 ↑ (접시 있을 때만) ── */
+  function condRate(sky) {
+    if (!sky.dishOn) return 0;
+    return sky.vapor * Math.max(0, dewPoint(sky.vapor) - sky.coldT) * K_COND;
+  }
+
+  /* ── 1스텝 ── */
+  function step(sky, dt) {
+    dt = clamp(dt, 0, DT_CLAMP);
+
+    // ① 증발: 컵 물 → 대기 수증기
+    const ev = Math.min(sky.cupWater, evapRate(sky) * dt);
+    sky.cupWater -= ev; sky.vapor += ev;
+
+    // ② 응결: 대기 수증기 → 접시 물방울
+    const co = Math.min(sky.vapor, condRate(sky) * dt);
+    sky.vapor -= co; sky.dish += co; sky.dropMass += co;
+
+    // ③ 비: 물방울 임계 도달 → 낙하(접시→컵 회수)
+    let rained = false;
+    if (sky.dropMass >= DROP_CRIT) {
+      const drop = sky.dropMass;
+      sky.dish -= drop; sky.rain += drop; sky.cupWater += drop; // 컵으로 회수
+      sky.dropMass = 0; rained = true;
+    }
+
+    // ④ phase 갱신
+    if (rained || (sky.dishOn && sky.dropMass > DROP_CRIT * 0.4)) sky.phase = 'raining';
+    else if (co > 1e-6) sky.phase = 'condensing';
+    else if (ev > 1e-6) sky.phase = 'evaporating';
+    else sky.phase = 'dry';
+
+    return { evaporated: ev, condensed: co, rained: rained };
+  }
+
+  /* ── 물 보존 총량 (비는 컵으로 회수 → rain은 통계라 제외) ── */
+  function totalWater(sky) { return sky.cupWater + sky.vapor + sky.dish; }
+
+  /* ── 미션 판정 ── */
+  // W-1: 김을 피워라(증발 진행 = vapor 누적)
+  function isSteaming(sky) { return sky.vapor > 0.02; }
+  // W-2: 비를 내려라(최소 1회 낙하 = rain 발생)
+  function hasRained(sky) { return sky.rain > 0; }
+  // W-3: 순환 완성(증발+응결+비 모두 경험, 물 회수 확인)
+  function isCycleComplete(sky, W0) {
+    return sky.vapor > 0 || sky.rain > 0 ? (hasRained(sky) && Math.abs(totalWater(sky) - W0) < 1e-6) : false;
+  }
+
+  return {
+    K_EVAP, K_COND, DROP_CRIT, DT_CLAMP, AIR_TEMP, WARM_MAX, COLD_MIN, DEW_BASE, DEW_GAIN,
+    clamp, createSky, dewPoint, evapRate, condRate, step, totalWater,
+    isSteaming, hasRained, isCycleComplete
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 날씨 렌더(컵·얼음접시·김·응결·비) — KWeather 순수 로직만 매핑. SPEC T-5.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KWeather;
+const P = new URLSearchParams(location.search);
+
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,12,16,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#5aa9e0;color:#0c0f14;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene=new THREE.Scene();
+{ const c=document.createElement('canvas'); c.width=4;c.height=256; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,'#182535');gr.addColorStop(.6,'#111820');gr.addColorStop(1,'#0b1016');
+  g.fillStyle=gr; g.fillRect(0,0,4,256); const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg; }
+scene.fog=new THREE.Fog(0x0e141c,2.6,7);
+
+const camera=new THREE.PerspectiveCamera(44,innerWidth/innerHeight,0.03,30);
+camera.position.set(0.1,0.35,0.95);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0.16,0); controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.55; controls.maxDistance=2; controls.maxPolarAngle=1.45; controls.enablePan=false; controls.update();
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const sun=new THREE.DirectionalLight(0xffffff,2.0); sun.position.set(1.2,2.4,1.2); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-1;sun.shadow.camera.right=1;
+sun.shadow.camera.top=1;sun.shadow.camera.bottom=-0.5; sun.shadow.camera.near=0.3;sun.shadow.camera.far=6;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xa9c4e0,0x1a1f26,0.45));
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({color:0x0f141b,roughness:1}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+
+/* ── 컵 + 물 ── */
+const CUP_Y=0.0, CUP_H=0.16, CUP_R=0.09;
+{ const glass=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R,CUP_R*0.85,CUP_H,32,1,true),
+    new THREE.MeshPhysicalMaterial({color:0xcfe3f0,roughness:0.1,transmission:0.9,transparent:true,opacity:0.35,side:THREE.DoubleSide}));
+  glass.position.y=CUP_H/2; scene.add(glass); }
+const water=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.92,CUP_R*0.8,1,32),
+  new THREE.MeshStandardMaterial({color:0x3aa0c8,roughness:0.25,transparent:true,opacity:0.8}));
+scene.add(water);
+function setWaterLevel(frac){ const h=Math.max(0.01,CUP_H*0.9*frac); water.scale.y=h; water.position.y=h/2+0.005; }
+
+/* ── 김(steam): 반투명 기둥 opacity로 증발 표현 ── */
+const steam=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*0.7,CUP_R*0.4,0.22,16,1,true),
+  new THREE.MeshBasicMaterial({color:0xdfeaf2,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+steam.position.y=CUP_H+0.12; scene.add(steam);
+
+/* ── 얼음 접시(상단 거치) ── */
+const dish=new THREE.Group(); dish.position.y=CUP_H+0.28; dish.visible=false; scene.add(dish);
+{ const plate=new THREE.Mesh(new THREE.CylinderGeometry(CUP_R*1.3,CUP_R*1.3,0.02,32),
+    new THREE.MeshStandardMaterial({color:0xbfe0f0,roughness:0.2,metalness:0.1,transparent:true,opacity:0.85}));
+  dish.add(plate);
+  const ice=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.06),
+    new THREE.MeshPhysicalMaterial({color:0xdff2ff,roughness:0.05,transmission:0.6,transparent:true,opacity:0.8}));
+  ice.position.y=0.03; dish.add(ice); }
+// 응결 물방울(접시 밑) — dropMass 비례 크기
+const cond=new THREE.Mesh(new THREE.SphereGeometry(1,12,12),
+  new THREE.MeshPhysicalMaterial({color:0xafd6ee,roughness:0.1,transmission:0.4,transparent:true,opacity:0.9}));
+cond.position.y=CUP_H+0.28-0.02; cond.scale.setScalar(0.001); scene.add(cond);
+// 낙하하는 비 방울
+const rainDrop=new THREE.Mesh(new THREE.SphereGeometry(0.012,10,10),
+  new THREE.MeshPhysicalMaterial({color:0x9fd0ee,roughness:0.1,transmission:0.4,transparent:true,opacity:0.9}));
+rainDrop.visible=false; scene.add(rainDrop);
+let rainAnim=null;
+
+/* ── 온도계(간이 라벨은 HUD로 대체) ── */
+
+/* ── 상태 ── */
+let sky=K.createSky({warmTemp:20,dishOn:false,coldT:5});
+const W0=K.totalWater(sky);
+function rebuild(){ sky=K.createSky({ warmTemp:parseFloat(warm.value), dishOn, coldT:parseFloat(cold.value) }); }
+
+/* ── HUD 조작 ── */
+const warm=document.getElementById('warm'), cold=document.getElementById('cold');
+let dishOn=false;
+warm.addEventListener('input',()=>{ document.getElementById('warmV').textContent=warm.value+'℃'; sky.warmTemp=parseFloat(warm.value); });
+cold.addEventListener('input',()=>{ document.getElementById('coldV').textContent=cold.value+'℃'; sky.coldT=parseFloat(cold.value); });
+document.getElementById('dishBtn').onclick=()=>{ dishOn=!dishOn; sky.dishOn=dishOn;
+  dish.visible=dishOn; document.getElementById('dishBtn').classList.toggle('on',dishOn);
+  document.getElementById('dishBtn').textContent = dishOn?'🧊 얼음 접시 치우기':'🧊 얼음 접시 올리기';
+  document.getElementById('coldR').classList.toggle('dim',!dishOn);
+  toast(dishOn?'얼음 접시를 올렸어요':'접시를 치웠어요'); };
+document.getElementById('coldR').classList.add('dim');
+document.getElementById('reset').onclick=()=>{ dishOn=false; warm.value=20; cold.value=5;
+  document.getElementById('warmV').textContent='20℃'; document.getElementById('coldV').textContent='20℃';
+  document.getElementById('dishBtn').classList.remove('on'); document.getElementById('dishBtn').textContent='🧊 얼음 접시 올리기';
+  dish.visible=false; document.getElementById('coldR').classList.add('dim'); rebuild(); onReset(); toast('처음으로'); };
+
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=1.8; }
+
+const PHASE_TXT={ dry:'☁️ 잠잠해요', evaporating:'💨 김이 올라와요(증발)', condensing:'💧 접시에 물방울이 맺혀요(응결)', raining:'🌧️ 비가 내려요!' };
+function syncHUD(){ document.getElementById('phase').textContent=PHASE_TXT[sky.phase]||'☁️';
+  setWaterLevel(sky.cupWater);
+  steam.material.opacity = Math.min(0.5, sky.vapor*3);
+  cond.scale.setScalar(dishOn ? Math.max(0.001, sky.dropMass/K.DROP_CRIT*0.05) : 0.001);
+}
+
+/* ═══════ P3 미션 3종 + ★와우(찬 접시 → 비) ═══════ */
+const MISSIONS={
+  'W-1':{icon:'💨',title:'김을 피워라',brief:'물을 데워 김(수증기)이 올라오게 해요.',
+    hint:'물 데우기 슬라이더를 올려 보세요!',
+    check:()=> K.isSteaming(sky) },
+  'W-2':{icon:'🌧️',title:'비를 내려라',brief:'따뜻한 물 위에 찬 얼음 접시를 올려 비를 만들어요.',
+    hint:'물을 데우고 → 얼음 접시를 올리면?',
+    predict:{ q:'🌧️ 따뜻한 물 위에 찬 접시를 놓으면?',
+      opts:['아무 일도 없다','접시 밑에 비가 맺혀 떨어진다'], answer:1,
+      explain:'비가 내려요! 데운 물에서 올라온 수증기가 차가운 접시에 닿아 식으면 다시 물방울이 돼요(응결). 물방울이 무거워지면 «비»가 되어 떨어지죠. 하늘의 구름도 똑같아요 — 증발한 물이 높은 곳에서 식어 비가 되어 내려요.' },
+    check:()=> K.hasRained(sky) },
+  'W-3':{icon:'🔄',title:'순환을 완성하라',brief:'증발 → 응결 → 비 → 회수. 물의 순환을 한 바퀴 돌려요.',
+    hint:'김을 피우고, 접시로 비를 만들면 물이 컵으로 돌아와요.',
+    check:()=> K.isCycleComplete(sky, W0) },
+};
+let activeMission=null, cleared=false;
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>🌧️ 날씨 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">해보기 🌧️</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); }); }
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){ activeMission=id; cleared=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide'); if(m.predict) showPredict();
+  } else bn.classList.add('hide'); }
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict)return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); }); }
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onReset(){ cleared=false; }
+function checkMission(){ if(!activeMission||cleared)return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,400); } }
+
+/* ── 루프 ── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  const res=K.step(sky,dt);
+  // 비 낙하 시각
+  if(res.rained && !rainAnim && dishOn){
+    rainDrop.visible=true; rainDrop.position.set(0,CUP_H+0.26,0); rainAnim=1;
+  }
+  if(rainAnim){ rainDrop.position.y-=dt*0.6;
+    if(rainDrop.position.y<=CUP_H*sky.cupWater+0.02){ rainDrop.visible=false; rainAnim=null; } }
+  syncHUD(); checkMission();
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+setWaterLevel(1.0); buildMissionUI();
+document.getElementById('loading').classList.add('hide');
+animate();
+{ const mq=P.get('mission'); if(mq&&MISSIONS[mq]) setMission(mq); }
+
+window.__WEATHER_P2__={ get sky(){return sky;}, K, W0, MISSIONS, setMission, checkMission, rebuild,
+  get activeMission(){return activeMission;}, get cleared(){return cleared;},
+  setWarm(t){ warm.value=t; sky.warmTemp=t; }, setCold(t){ cold.value=t; sky.coldT=t; },
+  toggleDish(on){ dishOn=on; sky.dishOn=on; dish.visible=on; } };
+</script>
+</body>
+</html>
