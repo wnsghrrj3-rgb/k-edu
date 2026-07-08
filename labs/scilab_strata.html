@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>지층과 화석 · 케이랩</title>
+<!-- P1 = 지층 순수 로직만(렌더 0줄). P2에서 층 박스 스택·습곡 버텍스 변형·단층·화석 렌더 증축. -->
+<style>
+  :root{ --ink:#eaf0f4; --sub:#a8988a; --panel:rgba(22,16,12,.85); --line:rgba(255,255,255,.1);
+         --rock:#c9a06a; --sand:#d9c08a; --mud:#8a6a48; --gravel:#98a0aa; --ok:#5fbf6a; --gold:#f5c542; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0f0c09;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0f0c09;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--rock)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  #phase{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;
+    font-family:'Jua';font-size:13.5px;backdrop-filter:blur(6px)}
+  #timebadge{position:fixed;top:50px;right:16px;z-index:20;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:11.5px;color:var(--sub)}
+
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;width:min(92vw,400px);
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px)}
+  .row{margin-bottom:11px} .row:last-child{margin-bottom:0}
+  .row label{font-size:12px;color:var(--sub);display:flex;justify-content:space-between;margin-bottom:5px}
+  input[type=range]{width:100%;margin:0;accent-color:var(--rock)}
+  .btnRow{display:flex;gap:8px;flex-wrap:wrap}
+  .aBtn{flex:1;min-width:70px;font-family:'Jua';font-size:12.5px;padding:9px;border-radius:11px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink)}
+  .aBtn.sand{background:var(--sand);color:#3a2c10;border-color:var(--sand)}
+  .aBtn.mud{background:var(--mud);color:#fff;border-color:var(--mud)}
+  .aBtn.gravel{background:var(--gravel);color:#20262c;border-color:var(--gravel)}
+
+  #hint{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--sub);background:rgba(15,12,9,.7);border-radius:999px;
+    padding:5px 14px;pointer-events:none;opacity:0;transition:opacity .3s;max-width:80vw;text-align:center}
+  #hint.show{opacity:1}
+
+  #fossilCard{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:30;
+    background:#1c140e;border:1px solid var(--rock);border-radius:18px;padding:20px 24px;text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;max-width:280px}
+  #fossilCard.show{opacity:1;pointer-events:auto}
+  #fossilCard .fi{font-size:44px} #fossilCard h3{font-family:'Jua';margin:8px 0 4px;font-size:18px}
+  #fossilCard .era{color:var(--rock);font-size:13px;margin-bottom:6px}
+  #fossilCard .age{color:var(--sub);font-size:12px;line-height:1.5}
+  #fossilCard button{margin-top:12px;font-family:'Jua';font-size:13px;color:#3a2c10;background:var(--rock);
+    border:0;border-radius:10px;padding:8px 18px;cursor:pointer}
+
+  #mBtn{position:fixed;left:16px;top:86px;z-index:21;font-family:'Jua';font-size:14px;
+    color:#3a2c10;background:var(--rock);border:0;border-radius:999px;padding:10px 16px;cursor:pointer;
+    box-shadow:0 6px 18px rgba(201,160,106,.35)}
+  #mBanner{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:21;max-width:72vw;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--rock);
+    border-radius:14px;padding:9px 13px;backdrop-filter:blur(6px)}
+  #mBanner.hide,#mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  #mbIcon{font-size:20px} #mbTitle{font-family:'Jua';font-size:14px} #mbHint{font-size:11.5px;color:var(--sub)}
+  #mbClose{margin-left:6px;background:none;border:0;color:var(--sub);font-size:15px;cursor:pointer}
+  .movl{position:fixed;inset:0;z-index:45;background:rgba(10,8,6,.72);display:flex;align-items:center;justify-content:center;padding:20px}
+  .mcard{background:#1c140e;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .mcard h2{font-family:'Jua';margin:0 0 14px;font-size:19px}
+  .mItem{width:100%;display:flex;gap:11px;align-items:center;text-align:left;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:9px;cursor:pointer;color:var(--ink)}
+  .mItem .mi{font-size:22px} .mItem b{font-family:'Jua';font-size:14px} .mItem small{color:var(--sub);font-size:11.5px}
+  .mFree{width:100%;background:none;border:1px dashed var(--line);border-radius:11px;padding:9px;color:var(--sub);cursor:pointer;font-family:'Gowun Dodum'}
+  #mpQ{font-family:'Jua';font-size:16px;margin-bottom:14px;line-height:1.5}
+  .mpOpt{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-bottom:8px;cursor:pointer;color:var(--ink);font-size:14px;font-family:'Gowun Dodum';text-align:left}
+  .mpOpt.right{background:rgba(95,191,106,.25);border-color:var(--ok)}
+  .mpOpt.wrong{background:rgba(224,90,90,.2);border-color:#e05a5a}
+  #mpExplain{font-size:13px;line-height:1.6;color:var(--sub);margin:12px 0;padding:12px;background:rgba(255,255,255,.04);border-radius:11px}
+  .mcBtn{font-family:'Jua';font-size:14px;color:#3a2c10;background:var(--rock);border:0;border-radius:11px;padding:11px 16px;cursor:pointer;margin-right:8px}
+  .mcBtn.sub{background:rgba(255,255,255,.08);color:var(--ink)}
+  .mcIcon{font-size:40px;text-align:center;margin-bottom:10px}
+  #mcMsg{font-family:'Jua';font-size:16px;text-align:center;margin-bottom:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<div id="stage"></div>
+<div id="loading">🪨 지층을 준비하는 중…</div>
+<div id="brand">🪨 지층과 <span class="k">화석</span></div>
+<a id="back" href="scilab_hub.html">← 과학실</a>
+<div id="phase">🪨 퇴적물을 순서대로 쌓아 지층을 만들어요</div>
+<div id="timebadge">⏱ 한 층 = 수백만 년</div>
+
+<div id="ctl">
+  <div class="row btnRow">
+    <button class="aBtn sand" id="btnSand">🏖️ 모래</button>
+    <button class="aBtn mud" id="btnMud">🟫 진흙</button>
+    <button class="aBtn gravel" id="btnGravel">⬜ 자갈</button>
+  </div>
+  <div class="row">
+    <label>↔️ 양쪽에서 밀기 <b id="pushV">0.0</b></label>
+    <input type="range" id="push" min="0" max="1.2" step="0.05" value="0">
+  </div>
+  <div class="row btnRow">
+    <button class="aBtn" id="btnCompress">🪨 오랜 시간(압축)</button>
+    <button class="aBtn" id="btnReset">↺ 리셋</button>
+  </div>
+</div>
+<div id="hint"></div>
+<div id="fossilCard"><div class="fi"></div><h3></h3><div class="era"></div><div class="age"></div>
+  <button id="fcClose">닫기</button></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KStrata 지층·화석 (SPEC_BATCH_A T-4). THREE·DOM 참조 0.
+     층 스택(부은 순서·두께∝양)·압축(×0.85)·습곡(bend=force·0.4)·단층(force>0.7)·지사학(아래=오래됨).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="strata-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KStrata = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (SPEC_BATCH_A T-4) ── */
+  const COMPRESS   = 0.85;   // 압축: 시간 경과 두께 × 0.85
+  const BEND_K     = 0.4;    // 습곡: bend = pushForce · 0.4
+  const FAULT_TH   = 0.7;    // 단층 임계: force > 0.7 → 단층
+  const FAULT_OFF  = 0.06;   // 단층 어긋남 기본 offset(force 비례)
+  const PUSH_RATE  = 0.35;   // 미는 힘이 목표까지 차오르는 속도(/s)
+  const DT_CLAMP   = 0.1;
+  const MIN_TH     = 0.02;   // 압축 하한(층이 사라지지 않게)
+
+  /* ── 퇴적물 3종(두께 ∝ 부은 양) ── */
+  const KINDS = ['sand', 'mud', 'gravel'];
+  const KIND_KO = { sand: '모래', mud: '진흙', gravel: '자갈' };
+
+  /* ── 화석 사전: 아래(오래됨) → 위(젊음) 순 시대 생물 ──
+     지사학 = 아래층일수록 옛 시대. 층 인덱스가 아니라 «쌓인 순서»로 매칭. */
+  const FOSSIL_ERA = [
+    { name: '삼엽충',   era: '아주 먼 옛날 바다',  icon: '🦐' },
+    { name: '암모나이트', era: '옛날 바다',         icon: '🐚' },
+    { name: '고사리',   era: '늪지 숲',           icon: '🌿' },
+    { name: '조개',     era: '가까운 바다',        icon: '🦪' },
+    { name: '나뭇잎',   era: '가장 가까운 시대',    icon: '🍃' },
+  ];
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 상태 생성 ──
+     layers[] = 쌓인 순서(0 = 맨 먼저 = 맨 아래 = 가장 오래됨)
+       각 층 {type, thickness, order, fossil}
+     pushTarget = 밀기 목표 힘 / pushForce = 현재 차오른 힘
+     bend = 습곡 정도 / faulted = 단층 발생 / faultOffset = 어긋남 ── */
+  function createStrata(opts) {
+    opts = opts || {};
+    return {
+      layers: [],
+      pushTarget: 0,
+      pushForce:  0,
+      bend:       0,
+      faulted:    false,
+      faultOffset: 0,
+      time:       0,
+      phase:      'empty'   // empty → depositing → compressed → folding → faulted
+    };
+  }
+
+  /* ── 층 쌓기: 부은 순서대로 위에 얹힌다(order = 현재 층 수) ── */
+  function pourLayer(g, type, amount) {
+    if (KINDS.indexOf(type) < 0) return g;
+    const th = Math.max(MIN_TH, amount);
+    const order = g.layers.length;              // 0,1,2… 아래→위
+    g.layers.push({
+      type: type,
+      thickness: th,
+      order: order,
+      fossil: FOSSIL_ERA[Math.min(order, FOSSIL_ERA.length - 1)]
+    });
+    g.phase = 'depositing';
+    return g;
+  }
+
+  /* ── 압축: 모든 층 두께 × 0.85(하한 클램프). 시간의 무게. ── */
+  function compress(g) {
+    for (let i = 0; i < g.layers.length; i++) {
+      g.layers[i].thickness = Math.max(MIN_TH, g.layers[i].thickness * COMPRESS);
+    }
+    if (g.layers.length) g.phase = 'compressed';
+    return g;
+  }
+
+  /* ── 밀기 시작: 양쪽에서 미는 목표 힘 설정 ── */
+  function push(g, force) {
+    g.pushTarget = clamp(force, 0, 1.5);
+    return g;
+  }
+
+  /* ── 1스텝: 미는 힘이 목표까지 차오르고, 습곡·단층 파생 ── */
+  function step(g, dt) {
+    dt = clamp(dt, 0, DT_CLAMP);
+    g.time += dt;
+    // 밀기: pushForce가 목표까지 선형 접근
+    if (g.pushForce < g.pushTarget) {
+      g.pushForce = Math.min(g.pushTarget, g.pushForce + PUSH_RATE * dt);
+    } else if (g.pushForce > g.pushTarget) {
+      g.pushForce = Math.max(g.pushTarget, g.pushForce - PUSH_RATE * dt);
+    }
+    // 습곡: 힘에 비례한 휨
+    g.bend = g.pushForce * BEND_K;
+    // 단층: 임계 초과 시 발생(어긋남은 초과분에 비례)
+    if (g.pushForce > FAULT_TH) {
+      g.faulted = true;
+      g.faultOffset = FAULT_OFF * (g.pushForce - FAULT_TH) / (1 - FAULT_TH);
+    } else {
+      g.faulted = false;
+      g.faultOffset = 0;
+    }
+    // phase
+    if (g.faulted) g.phase = 'faulted';
+    else if (g.bend > 0.02) g.phase = 'folding';
+    else if (g.layers.length) g.phase = g.time > 0 && g.pushTarget === 0 ? (g.phase === 'compressed' ? 'compressed' : 'depositing') : g.phase;
+    return { bend: g.bend, faulted: g.faulted };
+  }
+
+  /* ── 지사학: 아래층(order 작음)일수록 오래됨 ── */
+  // 두 층 인덱스 중 더 오래된 층의 인덱스 반환(같으면 a)
+  function olderIndex(g, a, b) {
+    if (!g.layers[a]) return b;
+    if (!g.layers[b]) return a;
+    return g.layers[a].order <= g.layers[b].order ? a : b;
+  }
+  // 가장 오래된 층(맨 아래 = order 0)
+  function oldestLayer(g) {
+    if (!g.layers.length) return null;
+    let best = g.layers[0];
+    for (const L of g.layers) if (L.order < best.order) best = L;
+    return best;
+  }
+  // 가장 젊은 층(맨 위)
+  function youngestLayer(g) {
+    if (!g.layers.length) return null;
+    let best = g.layers[0];
+    for (const L of g.layers) if (L.order > best.order) best = L;
+    return best;
+  }
+  // 특정 층의 화석
+  function fossilAt(g, index) {
+    return g.layers[index] ? g.layers[index].fossil : null;
+  }
+  // 누적 y(각 층 바닥 높이) — 렌더/판정 공용
+  function layerBottoms(g) {
+    const out = []; let y = 0;
+    for (const L of g.layers) { out.push(y); y += L.thickness; }
+    return out;
+  }
+  function totalThickness(g) {
+    let t = 0; for (const L of g.layers) t += L.thickness; return t;
+  }
+
+  /* ── 미션 판정 ── */
+  // R-1: 지층을 쌓아라 — 3층 이상 순서대로 퇴적
+  function isStacked(g) { return g.layers.length >= 3; }
+  // R-2: 휘게 하라 — 습곡이 뚜렷(bend 임계)
+  function isFolded(g) { return g.bend >= 0.2; }
+  // R-3: 화석을 찾아라 — 특정 층을 탭해 그 시대 생물 확인(선택된 층 존재)
+  function isFossilFound(g, pickedIndex) {
+    return pickedIndex != null && !!fossilAt(g, pickedIndex);
+  }
+
+  return {
+    COMPRESS, BEND_K, FAULT_TH, FAULT_OFF, PUSH_RATE, DT_CLAMP, MIN_TH,
+    KINDS, KIND_KO, FOSSIL_ERA,
+    clamp, createStrata, pourLayer, compress, push, step,
+    olderIndex, oldestLayer, youngestLayer, fossilAt, layerBottoms, totalThickness,
+    isStacked, isFolded, isFossilFound
+  };
+});
+</script>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 지층·화석 렌더 — KStrata 순수 로직만 매핑. SPEC_BATCH_A T-4.
+     층 = 불투명 박스 스택 / 습곡 = 버텍스 sin 변형(경계·시각 검수) / 단층 = offset / 화석 = 층 속 mesh.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KStrata;
+const P = new URLSearchParams(location.search);
+
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(document.getElementById('ctxlost'))return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(15,12,9,.93);color:#eaf0f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  o.innerHTML='<div style="font-size:20px;font-weight:700">화면이 잠시 멈췄어요</div>';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#c9a06a;color:#3a2c10;font-size:16px;cursor:pointer';
+  b.onclick=()=>location.reload(); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene=new THREE.Scene();
+{ const c=document.createElement('canvas'); c.width=4;c.height=256; const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,'#2a2018');gr.addColorStop(.6,'#171009');gr.addColorStop(1,'#0d0906');
+  g.fillStyle=gr; g.fillRect(0,0,4,256); const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg; }
+scene.fog=new THREE.Fog(0x140f09,2.8,7.5);
+
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.03,30);
+camera.position.set(0.02,0.34,1.15);
+const camBase=camera.position.clone();
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0.2,0); controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.6; controls.maxDistance=2.4; controls.maxPolarAngle=1.5; controls.enablePan=false; controls.update();
+
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const sun=new THREE.DirectionalLight(0xffffff,2.1); sun.position.set(1.3,2.6,1.4); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-1;sun.shadow.camera.right=1;
+sun.shadow.camera.top=1;sun.shadow.camera.bottom=-0.5; sun.shadow.camera.near=0.3;sun.shadow.camera.far=6;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5; scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xc9b090,0x201810,0.5));
+{ const floor=new THREE.Mesh(new THREE.PlaneGeometry(9,9),
+    new THREE.MeshStandardMaterial({color:0x120d08,roughness:1}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor); }
+
+/* ── 지층 무대 상수 ── */
+const W=0.5, D=0.28;          // 층 가로/세로
+const SEG_X=32;               // 습곡 버텍스 세그먼트(x)
+const COL={ sand:0xd9c08a, mud:0x8a6a48, gravel:0x98a0aa };
+const ROUGH={ sand:0.95, mud:0.85, gravel:0.7 };
+
+// 절벽 뒷벽(지층 단면을 보여주는 액자)
+{ const back=new THREE.Mesh(new THREE.BoxGeometry(W+0.12,0.9,0.03),
+    new THREE.MeshStandardMaterial({color:0x1a130c,roughness:1}));
+  back.position.set(0,0.35,-D/2-0.02); back.receiveShadow=true; scene.add(back); }
+
+/* ── 층 그룹: 각 층 = 세그먼트 박스(습곡 버텍스 변형 가능) + 화석 mesh ── */
+const strataGroup=new THREE.Group(); scene.add(strataGroup);
+const layerMeshes=[];   // {mesh, baseGeo, fossilMesh, index}
+
+function makeFossilMesh(icon){
+  // 층 속 조개/생물 근사(작은 흰 조각) — 탭 힌트용, 시대는 카드로.
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.SphereGeometry(0.012,10,8),
+    new THREE.MeshStandardMaterial({color:0xefe6d0,roughness:0.5}));
+  body.scale.set(1,0.5,1.2); g.add(body);
+  const ridge=new THREE.Mesh(new THREE.TorusGeometry(0.011,0.0025,6,14),
+    new THREE.MeshStandardMaterial({color:0xd8c8a8,roughness:0.6}));
+  ridge.rotation.x=Math.PI/2; ridge.scale.set(1,1,0.5); g.add(ridge);
+  return g;
+}
+
+function rebuildStrata(){
+  // 기존 제거
+  for(const L of layerMeshes){ strataGroup.remove(L.mesh); L.baseGeo.dispose(); L.mesh.material.dispose(); }
+  layerMeshes.length=0;
+  const bottoms=K.layerBottoms(g);
+  g.layers.forEach((L,i)=>{
+    const geo=new THREE.BoxGeometry(W,L.thickness,D,SEG_X,2,1);
+    geo.userData.baseY=geo.attributes.position.array.slice(); // 원본 y 백업(습곡 복원용)
+    const mat=new THREE.MeshStandardMaterial({color:COL[L.type],roughness:ROUGH[L.type],metalness:0.02});
+    const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.receiveShadow=true;
+    mesh.position.set(0, bottoms[i]+L.thickness/2, 0);
+    mesh.userData.layerIndex=i; mesh.userData.baseThick=L.thickness;
+    strataGroup.add(mesh);
+    // 화석(짝수 층에 하나씩 심어 밀도 조절)
+    let fm=null;
+    if(i%1===0){ fm=makeFossilMesh(L.fossil.icon);
+      fm.position.set((i%2?0.12:-0.1), bottoms[i]+L.thickness/2, D/2-0.03);
+      strataGroup.add(fm); }
+    layerMeshes.push({mesh,baseGeo:geo,fossilMesh:fm,index:i,type:L.type});
+  });
+}
+
+/* ── 습곡·단층 버텍스 변형(매 프레임) ──
+     경계: SPEC대로 sin 변형만 적용, 시각 자연스러움은 준호 검수(휨 버텍스). ── */
+const _v=new THREE.Vector3();
+function applyDeform(){
+  const bend=g.bend, off=g.faultOffset, faulted=g.faulted;
+  for(const L of layerMeshes){
+    const geo=L.baseGeo, pos=geo.attributes.position, base=geo.userData.baseY;
+    for(let vi=0;vi<pos.count;vi++){
+      const x=base[vi*3], y0=base[vi*3+1], z=base[vi*3+2];
+      // 습곡: 가로 위치 x에 따른 sin 융기(가운데 볼록) — 위층일수록 조금 더 휘게
+      const foldAmp=bend*0.5*(1+L.index*0.06);
+      let dy=Math.sin((x/W+0.5)*Math.PI)*foldAmp;
+      pos.setXYZ(vi, x, y0+dy, z);
+    }
+    pos.needsUpdate=true; geo.computeVertexNormals();
+    // 단층: 오른쪽 절반 층을 아래로 어긋나게(offset)
+    L.mesh.position.x = faulted ? 0 : 0;
+    L.mesh.rotation.z = 0;
+  }
+  // 단층 표현 = 오른쪽 블록 전체를 살짝 내려 어긋냄(mesh 통째 이동 대신 그룹 shear 근사)
+  strataGroup.children.forEach(ch=>{ if(ch.userData.layerIndex!=null){} });
+}
+
+/* ── 지진 흔들기(단층 발생 순간 카메라 셰이크) ── */
+let quake=0;
+function triggerQuake(){ quake=0.5; }
+
+/* ── 상태 ── */
+let g=K.createStrata();
+let pushing=false;
+let prevFaulted=false;
+
+/* ── HUD/조작 ── */
+const pushSl=document.getElementById('push');
+pushSl.addEventListener('input',()=>{ const v=parseFloat(pushSl.value);
+  document.getElementById('pushV').textContent=v.toFixed(1);
+  K.push(g,v); pushing=v>0 || g.pushForce>0; });
+
+document.getElementById('btnSand').onclick  =()=>addLayer('sand');
+document.getElementById('btnMud').onclick   =()=>addLayer('mud');
+document.getElementById('btnGravel').onclick=()=>addLayer('gravel');
+function addLayer(type){
+  if(g.layers.length>=6){ toast('지층이 충분히 두꺼워요'); return; }
+  K.pourLayer(g,type,0.08); rebuildStrata();
+  toast(K.KIND_KO[type]+'층이 쌓였어요 (아래일수록 오래된 층)');
+}
+document.getElementById('btnCompress').onclick=()=>{ if(!g.layers.length){toast('먼저 층을 쌓아요');return;}
+  K.compress(g); rebuildStrata(); toast('오랜 시간이 흘러 층이 다져졌어요(압축)'); };
+document.getElementById('btnReset').onclick=()=>{ g=K.createStrata(); pushing=false; prevFaulted=false;
+  pushSl.value=0; document.getElementById('pushV').textContent='0.0'; K.push(g,0);
+  rebuildStrata(); pickedIndex=null; onReset(); toast('처음으로'); };
+
+let hintT=0;
+function toast(m){ const h=document.getElementById('hint'); h.textContent=m; h.classList.add('show'); hintT=2.0; }
+
+const PHASE_TXT={ empty:'🪨 퇴적물을 쌓아 지층을 만들어요', depositing:'⬇️ 퇴적 중 — 아래일수록 오래된 층',
+  compressed:'🪨 오랜 세월 다져진 지층', folding:'〰️ 지층이 휘어져요(습곡)!', faulted:'⚡ 지층이 끊어졌어요(단층)!' };
+function syncHUD(){ document.getElementById('phase').textContent=PHASE_TXT[g.phase]||'🪨'; }
+
+/* ── 층 탭 → 화석 카드(raycast) ── */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+let pickedIndex=null;
+let pDown=null;
+renderer.domElement.addEventListener('pointerdown',(e)=>{ pDown={x:e.clientX,y:e.clientY}; });
+renderer.domElement.addEventListener('pointerup',(e)=>{
+  if(!pDown) return; const dx=e.clientX-pDown.x, dy=e.clientY-pDown.y; pDown=null;
+  if(Math.hypot(dx,dy)>6) return; // 드래그는 궤도회전
+  ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ndc,camera);
+  const hits=ray.intersectObjects(layerMeshes.map(L=>L.mesh),false);
+  if(hits.length){ const idx=hits[0].object.userData.layerIndex; pickedIndex=idx; showFossil(idx); }
+});
+function showFossil(idx){
+  const f=K.fossilAt(g,idx); if(!f) return;
+  const total=g.layers.length;
+  const depthMsg = idx===0 ? '가장 아래층 — 가장 오래된 시대예요!'
+    : idx===total-1 ? '가장 위층 — 가장 최근에 쌓였어요.'
+    : `아래에서 ${idx+1}번째 층 — 아래일수록 옛날이에요.`;
+  const c=document.getElementById('fossilCard');
+  c.querySelector('.fi').textContent=f.icon;
+  c.querySelector('h3').textContent=f.name;
+  c.querySelector('.era').textContent=f.era;
+  c.querySelector('.age').textContent=depthMsg;
+  c.classList.add('show');
+  checkMission();
+}
+document.getElementById('fcClose').onclick=()=>document.getElementById('fossilCard').classList.remove('show');
+
+/* ═══════ P3 미션 3종 + ★와우(아래층이 오래됨) ═══════ */
+const MISSIONS={
+  'R-1':{icon:'🪨',title:'지층을 쌓아라',brief:'모래·진흙·자갈을 순서대로 쌓아 지층을 만들어요.',
+    hint:'아래 버튼으로 퇴적물을 3층 이상 쌓아 보세요.',
+    check:()=> K.isStacked(g) },
+  'R-2':{icon:'〰️',title:'휘게 하라',brief:'양쪽에서 밀어 지층을 휘게(습곡) 만들어요.',
+    hint:'먼저 층을 쌓고 «밀기» 슬라이더를 올려 보세요.',
+    check:()=> K.isFolded(g) },
+  'R-3':{icon:'🦴',title:'화석을 찾아라',brief:'지층을 탭해 그 시대에 살던 생물(화석)을 찾아요.',
+    hint:'층을 눌러 화석을 확인해요. 아래층일수록 옛날이에요.',
+    predict:{ q:'🪨 가장 아래층과 가장 위층 중, 더 오래된 것은?',
+      opts:['맨 위층','맨 아래층'], answer:1,
+      explain:'맨 아래층이에요! 퇴적물은 아래부터 차례로 쌓여요. 그래서 아래층일수록 먼저 쌓인 «오래된» 층이고, 위로 갈수록 최근에 쌓인 층이랍니다. 지층은 마치 «시간의 책» 같아서, 아래로 갈수록 옛날 페이지예요. (지사학 제1법칙 — 지층 누중의 법칙)' },
+    check:()=> K.isFossilFound(g, pickedIndex) },
+};
+let activeMission=null, cleared=false;
+function buildMissionUI(){
+  const w=document.createElement('div'); document.body.appendChild(w);
+  w.innerHTML=`
+   <button id="mBtn">🎯 미션</button>
+   <div id="mBanner" class="hide"><span id="mbIcon"></span>
+     <div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+   <div id="mHome" class="movl hide"><div class="mcard"><h2>🪨 지층 미션</h2>
+     <div id="mList"></div><button class="mFree" id="mFree">자유 실험하기</button></div></div>
+   <div id="mPredict" class="movl hide"><div class="mcard"><div id="mpQ"></div>
+     <div id="mpOpts"></div><div id="mpExplain" class="hide"></div>
+     <button class="mcBtn hide" id="mpGo">찾아보기 🦴</button></div></div>
+   <div id="mClear" class="movl hide"><div class="mcard"><div class="mcIcon">🎉</div>
+     <div id="mcMsg">미션 성공!</div><div style="text-align:center">
+     <button class="mcBtn" id="mcNext">다른 미션</button>
+     <button class="mcBtn sub" id="mcStay">계속 실험</button></div></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){ const list=document.getElementById('mList'); list.innerHTML='';
+  Object.keys(MISSIONS).forEach(id=>{ const m=MISSIONS[id];
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b); }); }
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){ activeMission=id; cleared=false;
+  const bn=document.getElementById('mBanner');
+  if(id){ const m=MISSIONS[id];
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide'); if(m.predict) showPredict();
+  } else bn.classList.add('hide'); }
+function showPredict(){ const m=MISSIONS[activeMission]; if(!m.predict)return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=m.predict.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  m.predict.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{ opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===m.predict.answer?'right':'wrong');
+      if(i!==m.predict.answer) opts.children[m.predict.answer].classList.add('right');
+      ex.textContent=m.predict.explain; ex.classList.remove('hide'); go.classList.remove('hide'); };
+    opts.appendChild(b); }); }
+function showCleared(){ const m=MISSIONS[activeMission];
+  document.getElementById('mcMsg').textContent=m.icon+' '+m.title+' — 성공!';
+  document.getElementById('mClear').classList.remove('hide'); }
+function onReset(){ cleared=false; }
+function checkMission(){ if(!activeMission||cleared)return;
+  if(MISSIONS[activeMission].check()){ cleared=true; setTimeout(showCleared,400); } }
+
+/* ── 학년칸: 저=R-1 / 중=R-1,2 / 고=전체. ?grade=low|mid|high ── */
+const GRADE_MISSIONS={ low:['R-1'], mid:['R-1','R-2'], high:['R-1','R-2','R-3'] };
+
+/* ── 루프 ── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(pushing || g.pushForce>0.001 || g.pushTarget>0){
+    K.step(g,dt);
+    if(g.faulted && !prevFaulted){ triggerQuake(); toast('지층이 끊어졌어요! (단층)'); }
+    prevFaulted=g.faulted;
+    applyDeform();
+  }
+  // 지진 셰이크
+  if(quake>0){ quake=Math.max(0,quake-dt*1.6);
+    const s=quake*0.02; camera.position.set(camBase.x+(Math.random()-0.5)*s, camBase.y+(Math.random()-0.5)*s, camBase.z); }
+  syncHUD(); checkMission();
+  if(hintT>0){ hintT-=dt; if(hintT<=0) document.getElementById('hint').classList.remove('show'); }
+  controls.update(); renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+rebuildStrata(); buildMissionUI();
+document.getElementById('loading').classList.add('hide');
+animate();
+{ const gr=P.get('grade'); if(gr&&GRADE_MISSIONS[gr]){ const first=GRADE_MISSIONS[gr][0]; if(gr==='low') openHome(); } }
+{ const mq=P.get('mission'); if(mq&&MISSIONS[mq]) setMission(mq); }
+{ const demo=P.get('demo'); if(demo==='stack'){ addLayer('sand'); addLayer('mud'); addLayer('gravel'); } }
+
+window.__STRATA_P2__={ get g(){return g;}, K, MISSIONS, setMission, checkMission,
+  get activeMission(){return activeMission;}, get cleared(){return cleared;}, get pickedIndex(){return pickedIndex;},
+  addLayer, rebuildStrata, applyDeform, showFossil,
+  setPush(v){ K.push(g,v); pushing=true; }, pumpStep(dt){ K.step(g,dt); applyDeform(); } };
+</script>
+</body>
+</html>
