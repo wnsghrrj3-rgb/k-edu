@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>무한의 복도 · 케이랩 수학실</title>
+<!-- ④ 무한의 복도(Infinity Hall) — 큰 수·패턴·스케일.
+     P1 = 순수 로직만(렌더 0줄, P1 게이트). P2에서 2D canvas "백만까지 걷기" 스케일 은하수 +
+     규칙 핑퐁 수열 렌더 증축. 순수 로직엔 THREE·DOM·canvas·AudioContext 참조 0.
+     자릿수 스케일·수열(등차/등비/피보나치/제곱/삼각)은 표준 수학(수치 창작 아님). -->
+<style>
+  :root{ --ink:#eef0ff; --sub:#9aa0c8; --panel:rgba(14,16,30,.82); --line:rgba(255,255,255,.1);
+         --star:#ffd166; --bell:#7c8cff; --ten:#5ad1a0; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0c18;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a0c18;color:var(--sub);font-size:15px;z-index:50;text-align:center;padding:0 24px}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--bell)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="brand">케이<span class="k">랩</span> · 무한의 복도</div>
+<a id="back" href="./">← 수학실</a>
+<div id="loading">무한의 복도를 준비하고 있어요…</div>
+
+<!-- ════════════════ P1 : 순수 로직 (렌더 0줄) ════════════════ -->
+<script id="infinity-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KInfinity = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (§무한의 복도) ── */
+  const SEC_PER_DAY = 86400, SEC_PER_HOUR = 3600, SEC_PER_MIN = 60;
+  const GOLDEN_ANGLE = 137.5;   // 황금각(도) — 피보나치 나선·해바라기 씨앗 배치
+
+  /* ── 결정론 rng (mulberry32) ── */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 자릿수 스케일 (문자열 기반 — log10 부동소수 오차 회피) ── */
+  function digits(n) {                        // 자릿수 (n>=1)
+    n = Math.abs(Math.trunc(n));
+    return n === 0 ? 1 : String(n).length;
+  }
+  function magnitude(n) {                     // 10의 몇 승 자리 (1→0·10→1·백만→6)
+    n = Math.abs(Math.trunc(n));
+    return n === 0 ? 0 : digits(n) - 1;
+  }
+  function scaleStep(level) { return Math.pow(10, level); }   // level번째 계단 = 10^level
+  function commaFormat(n) {                   // 천 단위 콤마
+    const s = String(Math.trunc(Math.abs(n)));
+    return (n < 0 ? '-' : '') + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  /* ── 큰 수 한국어 자리 라벨 (만·억 경계) — 표준 수 체계 ── */
+  const KOREAN_UNITS = [
+    { value: 100000000, label: '억' },
+    { value: 10000,     label: '만' },
+    { value: 1000,      label: '천' },
+    { value: 100,       label: '백' },
+    { value: 10,        label: '십' }
+  ];
+  function koreanUnitLabel(n) {               // n이 속한 가장 큰 자리 라벨('만' 등)
+    n = Math.abs(Math.trunc(n));
+    for (const u of KOREAN_UNITS) if (n >= u.value) return u.label;
+    return '일';
+  }
+
+  /* ── ★"백만까지 걷기" — 스케일 앵커(교육 비유) ── */
+  const SCALE_ANCHORS = [
+    { value: 1,       label: '하나',   anchor: '점 하나' },
+    { value: 10,      label: '열',     anchor: '두 손의 손가락' },
+    { value: 100,     label: '백',     anchor: '우리 반을 세 번쯤' },
+    { value: 1000,    label: '천',     anchor: '우리 학교 전교생쯤' },
+    { value: 10000,   label: '만',     anchor: '큰 공연장을 가득' },
+    { value: 100000,  label: '십만',   anchor: '야구장 관중' },
+    { value: 1000000, label: '백만',   anchor: '야구장 관중의 스무 배' }
+  ];
+  function anchorFor(n) {                      // n 이하에서 가장 가까운 앵커
+    n = Math.abs(Math.trunc(n));
+    let best = SCALE_ANCHORS[0];
+    for (const a of SCALE_ANCHORS) if (n >= a.value) best = a;
+    return best;
+  }
+
+  /* ── "1초에 하나씩 세면?" — 세는 데 걸리는 시간 ── */
+  function secondsToCount(n) { return Math.max(0, Math.trunc(n)); }  // 1초에 하나 = n초
+  function humanizeDuration(sec) {            // 사람 말로 (일/시간/분/초)
+    sec = Math.max(0, Math.trunc(sec));
+    if (sec >= SEC_PER_DAY)  return { unit: '일',    value: Math.round(sec / SEC_PER_DAY) };
+    if (sec >= SEC_PER_HOUR) return { unit: '시간',  value: Math.round(sec / SEC_PER_HOUR) };
+    if (sec >= SEC_PER_MIN)  return { unit: '분',    value: Math.round(sec / SEC_PER_MIN) };
+    return { unit: '초', value: sec };
+  }
+  function countTimeLabel(n) {                // "백만까지 세면 약 12일" 문구용
+    const d = humanizeDuration(secondsToCount(n));
+    return { value: d.value, unit: d.unit, text: '약 ' + d.value + d.unit };
+  }
+
+  /* ── 수열 생성기 (표준 수열 — 수치 창작 아님) ── */
+  function arithmetic(start, diff, count) {   // 등차
+    const out = []; for (let i = 0; i < count; i++) out.push(start + diff * i); return out;
+  }
+  function geometric(start, ratio, count) {   // 등비
+    const out = []; let v = start; for (let i = 0; i < count; i++) { out.push(v); v *= ratio; } return out;
+  }
+  function fibonacci(count) {                  // 피보나치 [1,1,2,3,5,...]
+    const out = []; let a = 1, b = 1;
+    for (let i = 0; i < count; i++) { out.push(a); const t = a + b; a = b; b = t; }
+    return out;
+  }
+  function squares(count) {                    // 제곱수 [1,4,9,16,...]
+    const out = []; for (let i = 1; i <= count; i++) out.push(i * i); return out;
+  }
+  function triangular(count) {                 // 삼각수 [1,3,6,10,...]
+    const out = []; for (let i = 1; i <= count; i++) out.push(i * (i + 1) / 2); return out;
+  }
+
+  /* ── 규칙 판정 / 다음 수 (패턴 핑퐁) ── */
+  function isArithmetic(seq) {                 // 차분 일정?
+    if (seq.length < 2) return false;
+    const d = seq[1] - seq[0];
+    for (let i = 2; i < seq.length; i++) if (seq[i] - seq[i - 1] !== d) return false;
+    return true;
+  }
+  function isGeometric(seq) {                  // 비율 일정?
+    if (seq.length < 2 || seq[0] === 0) return false;
+    const r = seq[1] / seq[0];
+    for (let i = 1; i < seq.length; i++) { if (seq[i - 1] === 0) return false; if (seq[i] / seq[i - 1] !== r) return false; }
+    return true;
+  }
+  function isFibonacciLike(seq) {              // a[i]=a[i-1]+a[i-2]?
+    if (seq.length < 3) return false;
+    for (let i = 2; i < seq.length; i++) if (seq[i] !== seq[i - 1] + seq[i - 2]) return false;
+    return true;
+  }
+  function detectRule(seq) {                   // 판정 차례: 등차 → 등비 → 피보나치류
+    if (isArithmetic(seq)) return 'arithmetic';
+    if (isGeometric(seq))  return 'geometric';
+    if (isFibonacciLike(seq)) return 'fibonacci';
+    return 'unknown';
+  }
+  function nextTerm(seq) {                     // 규칙에 따른 다음 수 (모르면 null)
+    const rule = detectRule(seq), last = seq[seq.length - 1];
+    if (rule === 'arithmetic') return last + (seq[1] - seq[0]);
+    if (rule === 'geometric')  return last * (seq[1] / seq[0]);
+    if (rule === 'fibonacci')  return last + seq[seq.length - 2];
+    return null;
+  }
+  function checkNext(seq, guess) {             // 아이 추측 판정 (P3 물리반응용 — 점수·비교 아님)
+    const expected = nextTerm(seq);
+    return { correct: expected !== null && guess === expected, expected: expected, rule: detectRule(seq) };
+  }
+
+  /* ── 결정론 문제 생성 (규칙 핑퐁 출제) ── */
+  function genSequence(rng, kind) {            // kind: 'arithmetic'|'geometric'|'fibonacci' (미지정 시 rng 선택)
+    const kinds = ['arithmetic', 'geometric', 'fibonacci'];
+    const type = kind || kinds[Math.floor(rng() * kinds.length)];
+    let seq;
+    if (type === 'arithmetic') {
+      const start = 1 + Math.floor(rng() * 5);          // 1..5
+      const diff  = 2 + Math.floor(rng() * 4);          // 2..5
+      seq = arithmetic(start, diff, 5);
+    } else if (type === 'geometric') {
+      const start = 1 + Math.floor(rng() * 3);          // 1..3
+      const ratio = 2 + Math.floor(rng() * 2);          // 2..3
+      seq = geometric(start, ratio, 5);
+    } else {
+      seq = fibonacci(6);                                // 고정 피보나치(자연 패턴 연결)
+    }
+    return { type: type, shown: seq.slice(0, seq.length - 1), answer: seq[seq.length - 1], full: seq };
+  }
+
+  /* ── 방·시나리오 스키마 (P3에서 소비) ── */
+  const SCENARIOS = {
+    'I-1': { title: '백만까지 걷기', desc: '점 하나에서 백만까지 스케일이 은하수처럼 펼쳐져요', mode: 'scale', wow: true },
+    'I-2': { title: '규칙 핑퐁',     desc: '수가 던져 오면 다음 수를 맞혀요 — 규칙을 찾아라',    mode: 'pingpong' },
+    'I-3': { title: '자연 속 패턴',  desc: '피보나치가 나선이 되고 해바라기가 돼요',              mode: 'nature',  wow: true }
+  };
+  // ★와우1: 백만까지 걷기 — 스케일 감각
+  const WOW_MILLION = {
+    q: '1초에 하나씩 백만까지 세면 얼마나 걸릴까요?',
+    options: ['약 12일', '약 한 시간', '약 1년'],
+    answer: 0,
+    explain: '백만은 백만 초. 1초에 하나씩 쉬지 않고 세도 약 12일이 걸려요. 큰 수는 "많다"가 아니라 "얼마나 먼가"로 느껴 봐요.'
+  };
+  // ★와우2: 피보나치 나선 → 해바라기(자연 속 질서)
+  const WOW_SPIRAL = {
+    q: '1, 1, 2, 3, 5, 8… 이 수를 나선으로 그리면 무엇이 보일까요?',
+    options: ['해바라기 씨앗 무늬', '네모난 격자', '아무 무늬 없음'],
+    answer: 0,
+    explain: '앞의 두 수를 더하는 피보나치 규칙을 황금각(약 137.5°)으로 돌려 심으면 해바라기 씨앗과 똑같은 나선이 돼요. 수학이 자연에 숨어 있었던 거예요.'
+  };
+
+  return {
+    // 상수
+    SEC_PER_DAY, SEC_PER_HOUR, SEC_PER_MIN, GOLDEN_ANGLE,
+    // 유틸
+    mulberry32, clamp,
+    // 스케일
+    digits, magnitude, scaleStep, commaFormat, koreanUnitLabel, KOREAN_UNITS,
+    SCALE_ANCHORS, anchorFor, secondsToCount, humanizeDuration, countTimeLabel,
+    // 수열
+    arithmetic, geometric, fibonacci, squares, triangular,
+    // 규칙 판정
+    isArithmetic, isGeometric, isFibonacciLike, detectRule, nextTerm, checkNext, genSequence,
+    // 스키마
+    SCENARIOS, WOW_MILLION, WOW_SPIRAL
+  };
+});
+</script>
+
+<!-- P2에서 2D canvas 렌더 어댑터(__INFINITY_P2__ 훅), P3에서 미션+★와우 레이어 증축 예정.
+     순수 블록(infinity-pure)은 이후 바이트 불변(append-only). -->
+<script>
+  // P1 부팅 스텁 — 순수 로직 로드 확인만(렌더는 P2). 브라우저에서 열려도 깨지지 않게.
+  (function () {
+    var el = document.getElementById('loading');
+    if (window.KInfinity && typeof window.KInfinity.nextTerm === 'function') {
+      el.textContent = '무한의 복도 · P1 순수 로직 준비됨 (렌더는 P2에서 이어져요)';
+    } else {
+      el.textContent = '무한의 복도 로드에 문제가 생겼어요.';
+    }
+  })();
+</script>
+</body>
+</html>
