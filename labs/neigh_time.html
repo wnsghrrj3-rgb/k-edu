@@ -52,7 +52,7 @@
     border-radius:10px;padding:10px 12px;font-size:15px;font-family:inherit;min-width:0}
   .home .go{background:var(--soc);border:0;color:#fff;border-radius:10px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit}
   .home .hint{font-size:12px;color:var(--sub)}
-  .cands{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .cands{display:flex;flex-direction:column;gap:6px;margin-top:4px;max-height:240px;overflow:auto}
   .cwait{font-size:13px;color:var(--sub);padding:6px 2px}
   .cand{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;
     background:var(--bg1);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;font-family:inherit}
@@ -201,7 +201,7 @@
     ]
   };
 
-  var S = { home: null, grade: 'mid', t: 0, mode: 'travel', split: 0.5, found: [], curFind: null, drag: false, stage: false };
+  var S = { home: null, grade: 'mid', t: 0, mode: 'travel', split: 0.5, found: [], curFind: null, drag: false, stage: false, searchSeq: 0 };
 
   function sound(n) { try { if (window.KLab && window.KLab.sound) window.KLab.sound.play(n); } catch (e) {} }
   function collect(id) { try { if (window.parent && parent !== window && parent.KEDU_COLLECT) parent.KEDU_COLLECT(id); } catch (e) {} }
@@ -232,22 +232,30 @@
       $('#chg').onclick = clearHome;
     } else {
       c.innerHTML = '<div class="ask"><p>먼저 <b>우리 학교</b>를 검색해 정확히 골라요.</p>' +
-        '<div class="inrow"><input id="homeIn" placeholder="예: 금성초등학교" value="' + ((S.home && S.home.name) || '') + '" /><button class="go" id="homeGo">찾기</button></div>' +
+        '<div class="inrow"><input id="homeIn" placeholder="예: 금성초등학교 (타이핑하면 밑에 떠요)" value="' + ((S.home && S.home.name) || '') + '" autocomplete="off" /><button class="go" id="homeGo">찾기</button></div>' +
         '<div class="cands" id="cands"></div>' +
-        '<span class="hint">같은 이름 학교가 여럿이라 <b>주소로 우리 학교를 골라야</b> 정확히 열려요. (탐사대에서 정한 학교가 있으면 자동으로 이어져요)</span></div>';
+        '<span class="hint">같은 이름 학교가 여럿이라 <b>밑에 뜨는 후보에서 주소로 우리 학교를 골라야</b> 정확히 열려요. (탐사대에서 정한 학교가 있으면 자동으로 이어져요)</span></div>';
       $('#homeGo').onclick = doSearch;
-      $('#homeIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+      var inp = $('#homeIn'), deb;
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(deb); doSearch(); } });
+      inp.addEventListener('input', function () {
+        clearTimeout(deb);
+        var v = this.value.trim();
+        if (v.length < 2) { $('#cands').innerHTML = ''; return; }
+        deb = setTimeout(doSearch, 350); // 타이핑 멈추면 밑에 후보 자동 표시
+      });
     }
   }
   function clearHome() { S.home = null; renderHome(); syncSvc(); }
 
   function doSearch() {
     var v = ($('#homeIn').value || '').trim();
-    if (!v) { toast('학교 이름을 넣어줘요'); return; }
+    if (v.length < 2) { toast('두 글자 이상 입력해요'); return; }
     var box = $('#cands'); box.innerHTML = '<div class="cwait">🔍 찾는 중…</div>';
-    sound('tap');
+    var seq = ++S.searchSeq;
     if (!(window.Neigh && window.Neigh.geocodeMany)) { fallbackName(v); return; }
     window.Neigh.geocodeMany(v, function (err, list) {
+      if (seq !== S.searchSeq) return; // 더 최근 입력이 있으면 옛 응답 버림
       if (err || !list || !list.length) { fallbackName(v); return; }
       var h = '';
       list.forEach(function (it, i) {
