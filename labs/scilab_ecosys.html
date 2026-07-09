@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>케이랩 · 생태계 균형</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#e9f2e6; --sub:#9db89a; --panel:rgba(12,20,14,.82); --line:rgba(255,255,255,.1);
+         --grass:#6fcf5f; --rabbit:#f2f4ef; --fox:#f0913c; --hi:#ffd166; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#0a120c;color:var(--ink);overflow:hidden;
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a120c;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--grass)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #note{position:fixed;left:0;right:0;bottom:26px;text-align:center;color:var(--sub);font-size:12.5px;z-index:18}
+</style>
+</head>
+<body>
+<div id="loading">생태계 실험실 준비 중…</div>
+<div id="stage"></div>
+
+<div id="brand"><span class="k">케이</span>랩 · 생태계 균형</div>
+<a id="back" href="./scilab_hub.html">← 과학실</a>
+<div id="note">P1 — 개체군 동역학 순수 로직(렌더는 P2에서)</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KEcosys 개체군 동역학 (SPEC_ECOSYS §2). THREE·DOM 참조 0.
+     tick(state,dt): 풀·토끼·여우 한 스텝 진행(단순화 록카-볼테라, 이산 오일러).
+     equilibrium(): 파라미터의 공존 평형점(안정 고정점). removeSpecies(): 종 제거.
+     ⚠️ §2 확정 파라미터 변경 금지 — 창발이 성립하는 파라미터 창을 SPEC이 고정한다.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="ecosys-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KEcosys = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 파라미터 (SPEC_ECOSYS §2 · 창발 성립 창 · 변경 금지) ── */
+  const PARAMS = {
+    rG: 0.8,    // 풀 성장률
+    Kg: 100,    // 풀 수용력
+    aGR: 0.015, // 토끼가 풀 먹는 율
+    bRG: 0.5,   // 풀→토끼 변환효율
+    dR: 0.25,   // 토끼 자연사
+    aRF: 0.02,  // 여우가 토끼 먹는 율
+    bFR: 0.4,   // 토끼→여우 변환효율
+    dF: 0.22,   // 여우 자연사
+  };
+  const DT = 0.1;            // 이산 스텝(고정 · §2)
+  const DT_MAX = 0.2;        // 오일러 발산 방지 클램프(§7)
+  const EXTINCT_FLOOR = 0.5; // 개체수 <0.5 → 0 (멸종·불가역)
+  const CAPS = { grass: 100, rabbit: 40, fox: 20 }; // 군집 인스턴스 상한(§3)
+  const INIT = { G: 60, R: 20, F: 8 };              // 표준 초기값(§2)
+  const SPKEY = { grass: 'G', rabbit: 'R', fox: 'F' };
+
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+  function floorExtinct(v) { return v < EXTINCT_FLOOR ? 0 : v; }
+
+  /* 한 스텝 진행 (순수 — 입력 불변). dt는 DT_MAX로 클램프. */
+  function tick(s, dt) {
+    const h = clamp(dt == null ? DT : dt, 0, DT_MAX);
+    const G = s.G, R = s.R, F = s.F;
+    const G2 = G + h * (PARAMS.rG * G * (1 - G / PARAMS.Kg) - PARAMS.aGR * G * R);
+    const R2 = R + h * (PARAMS.bRG * PARAMS.aGR * G * R - PARAMS.dR * R - PARAMS.aRF * R * F);
+    const F2 = F + h * (PARAMS.bFR * PARAMS.aRF * R * F - PARAMS.dF * F);
+    return {
+      G: floorExtinct(Math.max(0, G2)),
+      R: floorExtinct(Math.max(0, R2)),
+      F: floorExtinct(Math.max(0, F2)),
+    };
+  }
+
+  /* 공존 평형점(주어진 파라미터의 안정 고정점). 오버라이드 가능(파라미터 실험). */
+  function eqWith(p) {
+    const P = p ? Object.assign({}, PARAMS, p) : PARAMS;
+    const R = P.dF / (P.bFR * P.aRF);
+    const G = P.Kg * (1 - P.aGR * R / P.rG);
+    const F = (P.bRG * P.aGR * G - P.dR) / P.aRF;
+    return { G: G, R: R, F: F };
+  }
+  function equilibrium() { return eqWith(null); }
+
+  /* 여우 없는 세계의 평형(풀+토끼만) — E-2 해설용 */
+  function foxFreeEquilibrium() {
+    const G = PARAMS.dR / (PARAMS.bRG * PARAMS.aGR);
+    const R = PARAMS.rG * (1 - G / PARAMS.Kg) / PARAMS.aGR;
+    return { G: G, R: R, F: 0 };
+  }
+
+  function removeSpecies(s, species) {
+    const k = SPKEY[species];
+    const out = { G: s.G, R: s.R, F: s.F };
+    if (k) out[k] = 0;
+    return out;
+  }
+
+  /* 결정론 궤적. mutate(state,i)는 각 tick 전에 상태를 조정(여우 제거·남획). */
+  function trajectory(s0, steps, mutate) {
+    let s = { G: s0.G, R: s0.R, F: s0.F };
+    const out = [s];
+    for (let i = 0; i < steps; i++) {
+      if (mutate) { const m = mutate(s, i); if (m) s = m; }
+      s = tick(s, DT);
+      out.push(s);
+    }
+    return out;
+  }
+
+  /* 개체수 → 군집 인스턴스 수(반올림·상한 클램프, §3·§5⑰) */
+  function instanceCount(species, pop) {
+    const cap = CAPS[species] != null ? CAPS[species] : 999;
+    return clamp(Math.round(pop), 0, cap);
+  }
+
+  /* 진동 안정 판정(E-1) — 구간 진폭 */
+  function amplitude(states, key, from) {
+    let lo = Infinity, hi = -Infinity;
+    for (let i = from; i < states.length; i++) {
+      const v = states[i][key];
+      if (v < lo) lo = v; if (v > hi) hi = v;
+    }
+    return hi - lo;
+  }
+  function isStable(states, thresh) {
+    const from = Math.floor(states.length * 0.6);
+    const t = thresh == null ? 6 : thresh;
+    return amplitude(states, 'R', from) <= t && amplitude(states, 'G', from) <= t * 2;
+  }
+
+  /* ── 시나리오 3종 (§4 — 미션보다 탐구 도구) ── */
+  const SCENARIOS = [
+    { id: 'E-1', icon: '⚖️', title: '균형 찾기', grade: 'mid',
+      brief: '세 생물이 함께 오래 사는 균형을 관찰하자.',
+      hint: '개체수는 계절처럼 오르내려요 — 크게 요동치지 않으면 안정!' },
+    { id: 'E-2', icon: '🦊', title: '천적을 없애면', grade: 'mid', wow: true,
+      brief: '여우(천적)를 모두 없애고 무슨 일이 벌어지는지 보자.',
+      hint: '여우가 사라지면 토끼와 풀은 어떻게 될까요?' },
+    { id: 'E-3', icon: '🎣', title: '너무 많이 잡으면', grade: 'high',
+      brief: '토끼를 갑자기 많이 잡으면 여우에게 무슨 일이?',
+      hint: '먹이가 줄면 포식자도 뒤따라 줄어요 — 사슬은 이어져 있어요.' },
+  ];
+  const GRADE_SCENARIOS = {
+    low:  ['E-2'],            // 관찰 데모만(개념 부하 — §4)
+    mid:  ['E-1', 'E-2'],
+    high: ['E-1', 'E-2', 'E-3'],
+  };
+  function scenarioById(id) { return SCENARIOS.find(function (s) { return s.id === id; }); }
+
+  /* ── ★와우 예측 (E-2 · §4) ──
+     ⚠️ SPEC §2 확정 파라미터에서 여우 제거의 실제 귀결은
+     "토끼 폭증→풀 고갈→토끼 대붕괴(멸종급)"가 아니라
+     "토끼 과증가(20→~42 오버슈트 후 ~36 새 균형)·풀 감소(60→~33)"이다.
+     즉 파국이 아닌 '균형 이동'. 문구·정답은 실제 동역학에 맞춰 정직화(붕괴 서사 미채택). */
+  const WOW_ECOSYS = {
+    at: 'E-2',
+    q: '여우(천적)를 모두 없애면 토끼와 풀은 어떻게 될까?',
+    opts: [
+      '토끼도 풀도 그대로 평화롭다',
+      '토끼가 크게 늘고 풀이 줄어 균형이 기운다',
+    ],
+    answer: 1,
+    explain: '천적이 사라지자 토끼가 크게 늘고(과증가), 늘어난 토끼가 풀을 많이 먹어 ' +
+             '풀이 줄어들어요. 겉보기엔 토끼에게 좋은 일 같지만 풀·토끼·여우가 맞물린 ' +
+             '균형이 한쪽으로 기울죠. 옐로스톤에서 늑대를 없앴다 되살렸더니 사슴·나무·' +
+             '강의 흐름까지 바뀐 것처럼, 하나를 건드리면 사슬 전체가 흔들려요.',
+  };
+
+  return {
+    PARAMS: PARAMS, DT: DT, DT_MAX: DT_MAX, EXTINCT_FLOOR: EXTINCT_FLOOR,
+    CAPS: CAPS, INIT: INIT, SPKEY: SPKEY,
+    clamp: clamp, tick: tick, equilibrium: equilibrium, eqWith: eqWith,
+    foxFreeEquilibrium: foxFreeEquilibrium, removeSpecies: removeSpecies,
+    trajectory: trajectory, instanceCount: instanceCount,
+    amplitude: amplitude, isStable: isStable,
+    SCENARIOS: SCENARIOS, GRADE_SCENARIOS: GRADE_SCENARIOS, scenarioById: scenarioById,
+    WOW_ECOSYS: WOW_ECOSYS,
+  };
+});
+</script>
+
+<script>
+  // P1 게이트 — 렌더 없음. 부팅 확인만.
+  document.getElementById('loading').classList.add('hide');
+</script>
+</body>
+</html>
