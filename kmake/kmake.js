@@ -307,6 +307,7 @@ function initCanvas() {
   KM_SCENE.boot();
   if (window.KM_MERGE) KM_MERGE.init({ meta: () => ({ baseW, baseH, audience }), toast });
   if (window.KM_ALIGN) KM_ALIGN.init({ getCanvas: () => canvas, getZoom: () => zoom, getBase: () => ({ w: baseW, h: baseH }), getMode: () => mode, pushHistory, toast });
+  if (window.KM_HARMONY) KM_HARMONY.init({ getCanvas: () => canvas, getBase: () => ({ w: baseW, h: baseH }), pushHistory, toast });
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -752,6 +753,7 @@ function buildPanel(o) {
     ${on ? `<div class="slot-label"><label>칸 이름</label><input id="pSlotLabel" value="${esc((o.kmSlot && o.kmSlot.label) || '')}" placeholder="예: 이름 / 날짜 / 사진"></div>` : ''}
     <div class="slot-hint">슬롯으로 지정하면 '채우기 모드'에서 이 칸만 바꿀 수 있어요. 틀은 그대로 두고 내용만 교체!</div>
   </div></div>`;
+  if (window.KM_HARMONY) h += KM_HARMONY.sectionHTML(o);
   panel.innerHTML = h;
   bindPanel(o, isText);
 }
@@ -779,6 +781,7 @@ function bindPanel(o, isText) {
   });
   if ($('pSlot')) $('pSlot').onchange = e => { o.kmSlot = e.target.checked ? { on: true, label: (o.kmSlot && o.kmSlot.label) || '' } : { on: false }; pushHistory(); buildPanel(o); };
   if ($('pSlotLabel')) $('pSlotLabel').onchange = e => { o.kmSlot = { on: true, label: e.target.value }; pushHistory(); };
+  if (window.KM_HARMONY) KM_HARMONY.bind(o);
 }
 function alignObj(o, k) {
   const b = o.getBoundingRect(true, true);
