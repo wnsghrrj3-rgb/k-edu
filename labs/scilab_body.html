@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🫀 케이랩 · 우리 몸 실험실</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#f2e9ec;--sub:#c99aa6;--panel:rgba(26,12,16,.82);--line:rgba(255,255,255,.1);
+         --heart:#e8546b;--lung:#5ab4e0;--blood:#d63a54;--o2:#6fcf9f;--hi:#ffd166; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#120609;color:var(--ink);overflow:hidden;
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#120609;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--heart)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:var(--sub);font-size:11px;z-index:18;opacity:.6}
+  #stage{position:fixed;inset:0}
+</style>
+</head>
+<body>
+<div id="loading">우리 몸 실험실 준비 중…</div>
+<div id="stage"></div>
+<div id="brand"><span class="k">케이</span>랩 · 우리 몸 실험실</div>
+<a id="back" href="./scilab_hub.html">← 과학실</a>
+<div id="note">P1 — 순환·호흡 엔진(순수 로직)</div>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  순수 로직 (P1 게이트 · 렌더 0줄) — window.KBody / module.exports
+  생리 = 표준 운동생리 근사 + 교과서값(창작 아님). effort 하나가 순환·호흡 함께 구동.
+  앵커: 안정 심박 70bpm·호흡 15/분·심박출량 ~4.9L/분 / 최대 190·45·19.0.
+  ★와우: effort↑ → 심박·호흡 동시↑ (몸은 하나로 이어진 시스템).
+  ═══════════════════════════════════════════════════════════════════
+-->
+<script id="body-pure">
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.KBody = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* ── 확정 상수(§2 · 표준 운동생리 근사·교과서값) ── */
+  var HR_REST=70,  HR_MAX=190;    // 심박수(bpm)
+  var SV_REST=70,  SV_MAX=100;    // 1회 박출량(mL)
+  var RR_REST=15,  RR_MAX=45;     // 호흡수(회/분)
+  var TV_REST=0.5, TV_MAX=2.0;    // 1회 호흡량(L)
+  var VO2_REST=0.25, VO2_MAX=3.5; // 산소 소비(L/분)
+  var SPO2_NORMAL=98, SPO2_FLOOR=70;
+  var HOLD_DROP=1.6, RECOVER=4.0; // 숨참기 하강율·재개 회복율(%/초)
+
+  function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
+  function lerp(a, b, e){ return a + clamp(e, 0, 1) * (b - a); }
+
+  /* ── 순환 ── */
+  function heartRate(effort){ return lerp(HR_REST, HR_MAX, effort); }            // bpm
+  function strokeVolume(effort){ return lerp(SV_REST, SV_MAX, effort); }         // mL
+  function cardiacOutput(effort){ return heartRate(effort) * strokeVolume(effort) / 1000; } // L/분
+
+  /* ── 호흡 ── */
+  function respRate(effort){ return lerp(RR_REST, RR_MAX, effort); }             // 회/분
+  function tidalVolume(effort){ return lerp(TV_REST, TV_MAX, effort); }          // L
+  function ventilation(effort){ return respRate(effort) * tidalVolume(effort); } // L/분
+
+  /* ── 산소 ── */
+  function o2Demand(effort){ return lerp(VO2_REST, VO2_MAX, effort); }           // L/분
+  function spo2(held, breathing){
+    if (breathing == null) breathing = (held <= 0);
+    if (breathing) return SPO2_NORMAL;
+    return clamp(SPO2_NORMAL - held * HOLD_DROP, SPO2_FLOOR, SPO2_NORMAL);        // 숨참기 하강
+  }
+  function o2Delivery(effort, sp){                                                // 산소 운반(순환×포화)
+    if (sp == null) sp = SPO2_NORMAL;
+    return cardiacOutput(effort) * (sp / 100);
+  }
+
+  /* ── 혈류 경로(렌더 파티클용 · bodysys 승계) ── */
+  function circPath(){ return ['heart', 'artery', 'body', 'vein', 'lungs', 'heart']; }
+
+  /* ── 기관 역할(bodysys job 텍스트 승계) ── */
+  var ORGANS = {
+    heart:  { nm: '심장', emo: '❤️', job: '쉬지 않고 뛰며 온몸으로 피를 보내는 펌프예요.' },
+    lungs:  { nm: '폐',   emo: '💨', job: '공기 속 산소를 받아 피로 보내요.' },
+    vessel: { nm: '혈관', emo: '🩸', job: '산소와 영양분을 실어 온몸으로 나르는 길이에요.' },
+  };
+
+  /* ── 시나리오 3종(§4) ── */
+  var SCENARIOS = [
+    { id: 'B-1', icon: '❤️', title: '심장을 뛰게', grade: 'low',
+      brief: '쉬는 상태에서 심장이 뛰고 피가 온몸을 도는 걸 관찰하자.',
+      hint: '심장은 쉬지 않고 뛰며 피를 온몸으로 보내요.' },
+    { id: 'B-2', icon: '🏃', title: '달리기', grade: 'mid', wow: true,
+      brief: '활동을 세게 하면 심장과 숨이 어떻게 변하는지 보자.',
+      hint: '활동 강도를 올려 심장과 호흡을 함께 지켜보세요.' },
+    { id: 'B-3', icon: '💨', title: '숨을 참으면', grade: 'high',
+      brief: '숨을 참으면 몸속 산소가 어떻게 되는지 관찰하자.',
+      hint: '실험은 화면에서만! 숨 참기 버튼으로 산소가 주는 걸 지켜보세요.' },
+  ];
+  var GRADE_SCENARIOS = { low: ['B-1'], mid: ['B-1', 'B-2'], high: ['B-1', 'B-2', 'B-3'] };
+  function scenarioById(id){ for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i]; return null; }
+
+  /* ── ★와우(B-2): 몸은 하나로 이어진 시스템 ── */
+  var WOW_EXERCISE = {
+    at: 'B-2',
+    q: '달리기를 하면 심장은 빨라져요. 그럼 숨은 어떻게 될까?',
+    opts: [
+      '숨은 평소처럼 그대로다',
+      '숨도 함께 가빠진다',
+    ],
+    answer: 1,
+    explain: '달릴 때는 근육이 산소를 훨씬 많이 써요. 그래서 심장은 더 빨리 뛰어 산소 실은 피를 나르고, ' +
+      '폐도 더 빨리 숨 쉬어 산소를 많이 들이마셔요. 심장만 빨라지는 게 아니라 심장과 폐가 함께 빨라지죠 — ' +
+      '우리 몸은 따로 노는 부품이 아니라 하나로 이어진 시스템이에요.',
+  };
+
+  return {
+    HR_REST: HR_REST, HR_MAX: HR_MAX, RR_REST: RR_REST, RR_MAX: RR_MAX,
+    SPO2_NORMAL: SPO2_NORMAL, SPO2_FLOOR: SPO2_FLOOR, HOLD_DROP: HOLD_DROP, RECOVER: RECOVER,
+    clamp: clamp, lerp: lerp,
+    heartRate: heartRate, strokeVolume: strokeVolume, cardiacOutput: cardiacOutput,
+    respRate: respRate, tidalVolume: tidalVolume, ventilation: ventilation,
+    o2Demand: o2Demand, spo2: spo2, o2Delivery: o2Delivery, circPath: circPath,
+    ORGANS: ORGANS, SCENARIOS: SCENARIOS, GRADE_SCENARIOS: GRADE_SCENARIOS,
+    scenarioById: scenarioById, WOW_EXERCISE: WOW_EXERCISE,
+  };
+});
+</script>
+</body>
+</html>
