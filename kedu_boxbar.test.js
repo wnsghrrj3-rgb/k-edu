@@ -14,6 +14,9 @@ function fresh(pathname, cache) {
   new Function('window', 'document', 'localStorage', 'location', 'requestAnimationFrame', 'setTimeout',
     fs.readFileSync(__dirname + '/kedu_boxbar.js', 'utf8'))
     (win, win.document, win.localStorage, win.location, win.requestAnimationFrame || function (f) { f(); }, win.setTimeout);
+  // 자동부팅은 readyState==='loading'이면 DOMContentLoaded(비동기)를 기다린다.
+  // 동기 검증이므로 명시 boot()으로 확정 — 캐시 없으면 no-op이라 무노출 케이스도 안전.
+  try { win.KeduBoxbar.boot(); } catch (e) {}
   return win;
 }
 

@@ -190,6 +190,7 @@ select.inp{appearance:none;-webkit-appearance:none;background-image:url("data:im
 }
 </style>
   <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
 </head>
 <body>
 
@@ -322,6 +323,7 @@ let pendingKind = null;
   const { data: teacher } = await db.from('teachers').select('*').eq('user_id', session.user.id).single();
   if(!teacher) return showGate('gate');
   currentTeacher = teacher;
+  try { window.KeduBoxbar && KeduBoxbar.markTeacher(); } catch(e){}   // 교사 확인 완료 → 담기 FAB 캐시
   const nt = document.getElementById('nav-teacher');
   nt.textContent = '👩‍🏫 ' + (teacher.name || '선생님') + ' 선생님';
   nt.style.display = 'inline-flex';
