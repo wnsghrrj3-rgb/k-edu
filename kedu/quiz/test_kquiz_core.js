@@ -11,6 +11,7 @@ require('./templates/g1_math_u1.js')(KQuiz);
 require('./templates/g1_math_u5.js')(KQuiz);
 require('./templates/g1_math_u2.js')(KQuiz);
 require('./templates/g1_math_u4.js')(KQuiz);
+require('./templates/g1_korean_u1.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -24,7 +25,24 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_math_u5_l02_03','g1_math_u5_l04','g1_math_u5_l05','g1_math_u5_l06',
   'g1_math_u5_l07','g1_math_u5_l08','g1_math_u5_l09','g1_math_u5_l10','g1_math_u5',
   'g1_math_u2_l02','g1_math_u2_l03','g1_math_u2_l05','g1_math_u2_l06','g1_math_u2',
-  'g1_math_u4_l02','g1_math_u4_l03','g1_math_u4_l04','g1_math_u4_l05','g1_math_u4_l06','g1_math_u4'];
+  'g1_math_u4_l02','g1_math_u4_l03','g1_math_u4_l04','g1_math_u4_l05','g1_math_u4_l06','g1_math_u4',
+  'g1_korean_u1_l03','g1_korean_u1_l04','g1_korean_u1_l05','g1_korean_u1_l06',
+  'g1_korean_u1_l07','g1_korean_u1_l08','g1_korean_u1_l09','g1_korean_u1_l10',
+  'g1_korean_u1_l11','g1_korean_u1_l12','g1_korean_u1'];
+
+// 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
+var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+var H_JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+function hCompose(c, j) {
+  var ci = H_CHO.indexOf(c), ji = H_JUNG.indexOf(j);
+  if (ci < 0 || ji < 0) return null;
+  return String.fromCharCode(0xAC00 + (ci * 21 + ji) * 28);
+}
+function hDecompose(ch) {
+  var code = ch.charCodeAt(0) - 0xAC00;
+  if (code < 0 || code > 11171 || code % 28 !== 0) return null;
+  return { cho: H_CHO[Math.floor(code / 28 / 21)], jung: H_JUNG[Math.floor(code / 28) % 21] };
+}
 
 // u4 독립 검산용: 비교어→(속성,방향) + 속성별 순서쌍 집합(더큰\u241F더작은) 별도 사본
 var U4_WORD2DIR = {
@@ -83,6 +101,14 @@ function expectChoice(q) {
   if ((m = q.match(/^(\d+)\s*−\s*(\d+)\s*=/))) return +m[1] - +m[2];   // u3 뺄셈
   if ((m = q.match(/^(\d+)\s*([+−])\s*(\d+)\s*=/)))                     // u3 혼합
     return m[2] === '+' ? +m[1] + +m[3] : +m[1] - +m[3];
+  if ((m = q.match(/자음자 「(.)」과\(와\) 모음자 「(.)」/)))            // 국어 자모조합
+    return hCompose(m[1], m[2]) || '__?__';
+  if ((m = q.match(/^「(.)」의 첫소리\(자음자\)/))) {                    // 국어 첫소리
+    var dc = hDecompose(m[1]); return dc ? dc.cho : '__?__';
+  }
+  if ((m = q.match(/^「(.)」의 모음자/))) {                             // 국어 모음자
+    var dj = hDecompose(m[1]); return dj ? dj.jung : '__?__';
+  }
   if (/●/.test(q)) {                                                  // u1 개수 세기
     var lines = q.split('\n');                                        // 렌더된 점 줄만 셈(프롬프트의 ● 제외)
     return (lines[lines.length - 1].match(/●/g) || []).length;
