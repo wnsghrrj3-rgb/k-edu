@@ -8,6 +8,7 @@ var KQuiz = require('./kquiz-core.js');
 // 템플릿 등록(factory에 core 주입)
 require('./templates/g1_math_u3.js')(KQuiz);
 require('./templates/g1_math_u1.js')(KQuiz);
+require('./templates/g1_math_u5.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -17,7 +18,9 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_math_u3_l06','g1_math_u3_l08','g1_math_u3_l09','g1_math_u3_l11',
   'g1_math_u3_l12','g1_math_u3_l13','g1_math_u3',
   'g1_math_u1_l06','g1_math_u1_l07','g1_math_u1_l08','g1_math_u1_l09',
-  'g1_math_u1_l10','g1_math_u1_l11','g1_math_u1'];
+  'g1_math_u1_l10','g1_math_u1_l11','g1_math_u1',
+  'g1_math_u5_l02_03','g1_math_u5_l04','g1_math_u5_l05','g1_math_u5_l06',
+  'g1_math_u5_l07','g1_math_u5_l08','g1_math_u5_l09','g1_math_u5_l10','g1_math_u5'];
 
 // ── 독립 재계산기: 문항 q를 파싱해 정답을 코드 밖에서 다시 계산 ─────────────────
 // (엔진의 answer를 신뢰하지 않고 문구만으로 재산출 → 진짜 대조)
@@ -31,7 +34,11 @@ function expectChoice(q) {
     var lines = q.split('\n');                                        // 렌더된 점 줄만 셈(프롬프트의 ● 제외)
     return (lines[lines.length - 1].match(/●/g) || []).length;
   }
-  if ((m = q.match(/(\d+)과\(와\) (\d+)을\(를\) 모으면/))) return +m[1] + +m[2];  // u3 모으기
+  if ((m = q.match(/10개씩 묶음 (\d+)개와 낱개 (\d+)개/))) return 10 * +m[1] + +m[2]; // u5 몇십몇/십몇 구성
+  if ((m = q.match(/10개씩 묶음 (\d+)개는 얼마/))) return 10 * +m[1];               // u5 몇십
+  if ((m = q.match(/(\d+)에서 10개씩 묶음은 몇 개/))) return Math.floor(+m[1] / 10); // u5 자릿값-십
+  if ((m = q.match(/(\d+)에서 낱개는 몇 개/))) return +m[1] % 10;                    // u5 자릿값-낱개
+  if ((m = q.match(/(\d+)과\(와\) (\d+)을\(를\) 모으면/))) return +m[1] + +m[2];  // u3·u5 모으기
   if ((m = q.match(/(\d+)을\(를\) (\d+)와\(과\) 몇으로 가를/))) return +m[1] - +m[2]; // u3 가르기
   if ((m = q.match(/(\d+)보다 1만큼 더 큰/))) return +m[1] + 1;        // u1 1큰수
   if ((m = q.match(/(\d+)보다 1만큼 더 작은/))) return +m[1] - 1;      // u1 1작은수
