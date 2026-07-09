@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>케이퀴즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+  :root{--kedu-title:'Hakgyoansim Moheomga','Jua',sans-serif;--bg:#F4F7FB}
+  *{margin:0;padding:0}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased}
+  .kq-top{background:#fff;border-bottom:1px solid #E3E8EF;height:56px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:10}
+  .kq-top b{font-family:var(--kedu-title);font-size:20px;color:#5B8EF8}
+  .kq-page{padding:22px 16px 60px}
+  .kq-load{text-align:center;padding:60px 20px;color:#627D98;font-size:15px}
+  .kq-err{max-width:420px;margin:50px auto;background:#fff;border:1px solid #E3E8EF;border-radius:16px;padding:28px;text-align:center;color:#627D98}
+  .kq-err b{display:block;font-family:var(--kedu-title);font-size:20px;color:#243B53;margin-bottom:8px}
+</style>
+</head>
+<body>
+  <div class="kq-top"><b>🧩 케이퀴즈</b></div>
+  <div class="kq-page"><div id="mount"><div class="kq-load">문제를 준비하고 있어요…</div></div></div>
+
+  <script src="./kquiz-core.js"></script>
+  <script src="./kquiz-ui.js"></script>
+  <script>
+  (function(){
+    var qs = new URLSearchParams(location.search);
+    var lesson = qs.get('lesson');
+    var n = parseInt(qs.get('n')||'10',10);
+    var seedRaw = qs.get('seed');
+    var seed = seedRaw!=null ? seedRaw : undefined;
+    var diff = (qs.get('difficulty')||'').split(',').filter(Boolean).map(Number);
+    var cwb = qs.get('cwb'), cwi = qs.get('cwi');  // 케이박스 딥링크(KBOX2 §3)
+    var mount = document.getElementById('mount');
+
+    function fail(msg){ mount.innerHTML = '<div class="kq-err"><b>앗, 문제를 열 수 없어요</b>'+msg+'</div>'; }
+    if(!lesson){ fail('주소에 <code>?lesson=</code>이 필요해요.'); return; }
+
+    // 템플릿 지연 로드: lesson → 단원 파일 추정 (g1_math_u3_l05 → g1_math_u3.js)
+    function templateFile(les){
+      var m = les.match(/^(g\d+_[a-z]+_u\d+)/);
+      return m ? ('./templates/'+m[1]+'.js') : null;
+    }
+    var tf = templateFile(lesson);
+    if(!tf){ fail('이 문제 묶음을 찾지 못했어요.'); return; }
+
+    var s = document.createElement('script');
+    s.src = tf;
+    s.onload = function(){
+      // 단원 파일이 UMD factory를 export하는 경우(node용)와 browser 자동등록 모두 대응
+      if(!KQuiz.core.has(lesson)){ fail('아직 준비 중인 문제예요. (<code>'+lesson+'</code>)'); return; }
+      var submit = null;
+      if(cwb && cwi && window.KBoxAdapter){  // 어댑터 있으면 제출 배선(KBOX2)
+        submit = function(payload){ return window.KBoxAdapter.submitQuiz(cwb, cwi, payload); };
+      }
+      KQuiz.mount(mount, {
+        mode:'student', lesson:lesson, n:n,
+        seed: seed, difficulty: diff.length?diff:undefined,
+        onSubmit: submit
+      });
+    };
+    s.onerror = function(){ fail('문제 묶음을 불러오지 못했어요.'); };
+    document.head.appendChild(s);
+  })();
+  </script>
+</body>
+</html>
