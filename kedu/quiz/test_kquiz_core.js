@@ -12,6 +12,7 @@ require('./templates/g1_math_u5.js')(KQuiz);
 require('./templates/g1_math_u2.js')(KQuiz);
 require('./templates/g1_math_u4.js')(KQuiz);
 require('./templates/g1_korean_u1.js')(KQuiz);
+require('./templates/g1_korean_u2.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -28,7 +29,9 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_math_u4_l02','g1_math_u4_l03','g1_math_u4_l04','g1_math_u4_l05','g1_math_u4_l06','g1_math_u4',
   'g1_korean_u1_l03','g1_korean_u1_l04','g1_korean_u1_l05','g1_korean_u1_l06',
   'g1_korean_u1_l07','g1_korean_u1_l08','g1_korean_u1_l09','g1_korean_u1_l10',
-  'g1_korean_u1_l11','g1_korean_u1_l12','g1_korean_u1'];
+  'g1_korean_u1_l11','g1_korean_u1_l12','g1_korean_u1',
+  'g1_korean_u2_l03','g1_korean_u2_l04','g1_korean_u2_l05','g1_korean_u2_l06',
+  'g1_korean_u2_l07','g1_korean_u2'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -42,6 +45,17 @@ function hDecompose(ch) {
   var code = ch.charCodeAt(0) - 0xAC00;
   if (code < 0 || code > 11171 || code % 28 !== 0) return null;
   return { cho: H_CHO[Math.floor(code / 28 / 21)], jung: H_JUNG[Math.floor(code / 28) % 21] };
+}
+var H_JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function hComposeJong(c, j, t) {
+  var ci = H_CHO.indexOf(c), ji = H_JUNG.indexOf(j), ki = H_JONG.indexOf(t || '');
+  if (ci < 0 || ji < 0 || ki < 0) return null;
+  return String.fromCharCode(0xAC00 + (ci * 21 + ji) * 28 + ki);
+}
+function hJongOf(ch) {
+  var code = ch.charCodeAt(0) - 0xAC00;
+  if (code < 0 || code > 11171) return null;
+  return H_JONG[code % 28];
 }
 
 // u4 독립 검산용: 비교어→(속성,방향) + 속성별 순서쌍 집합(더큰\u241F더작은) 별도 사본
@@ -103,6 +117,11 @@ function expectChoice(q) {
     return m[2] === '+' ? +m[1] + +m[3] : +m[1] - +m[3];
   if ((m = q.match(/자음자 「(.)」과\(와\) 모음자 「(.)」/)))            // 국어 자모조합
     return hCompose(m[1], m[2]) || '__?__';
+  if ((m = q.match(/자음자 「(.)」, 모음자 「(.)」, 받침 「(.)」/)))     // 국어 받침조합
+    return hComposeJong(m[1], m[2], m[3]) || '__?__';
+  if ((m = q.match(/^「(.)」의 받침은 무엇/))) {                        // 국어 받침찾기
+    var jj = hJongOf(m[1]); return jj != null ? jj : '__?__';
+  }
   if ((m = q.match(/^「(.)」의 첫소리\(자음자\)/))) {                    // 국어 첫소리
     var dc = hDecompose(m[1]); return dc ? dc.cho : '__?__';
   }
@@ -134,6 +153,8 @@ function expectOx(q) {
   if (m) return m[3] === '큽니다' ? (+m[1] > +m[2]) : (+m[1] < +m[2]);
   var ms = q.match(/(상자 모양|둥근 기둥 모양|공 모양)은\(는\) (.+)$/); // u2 성질 OX
   if (ms) { var k = U2_PHRASE2KEY[ms[2]]; if (k) return U2_PROPS[ms[1]][k]; }
+  var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
+  if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
 }
 
