@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>도형 정원 · 케이랩 수학실</title>
+<!-- P1 = 대칭 변환 + 정다각형/테셀레이션 순수 기하만(렌더 0줄, P1 게이트). P2에서 2D canvas
+     낙서-대칭 복제·나비/만다라·바닥 깔기 렌더 증축. 순수 로직엔 THREE·DOM·canvas 참조 0.
+     대칭·내각·테셀레이션 판정은 표준 기하(수치 창작 아님) — 내각=(n-2)·180/n 등. -->
+<style>
+  :root{ --ink:#eef0ff; --sub:#9aa0c8; --panel:rgba(14,16,30,.82); --line:rgba(255,255,255,.1);
+         --bell:#7c8cff; --leaf:#5ad1a0; --petal:#ff8fab; --wing:#ffd166; --water:#5ec8ff; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0c18;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a0c18;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--bell)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #hud{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:19;font-size:13px;color:var(--sub);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 15px;backdrop-filter:blur(6px);
+    display:flex;gap:12px;align-items:center;white-space:nowrap}
+  #hud b{font-family:'Jua';color:var(--ink)}
+  #hud .leaf{color:var(--leaf)}
+  #tip{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:18;font-size:13.5px;color:var(--ink);
+    background:rgba(14,16,30,.78);border:1px solid var(--line);border-radius:12px;padding:8px 15px;
+    pointer-events:none;transition:opacity .3s;text-align:center;max-width:88vw}
+  #tip.hide{opacity:0}
+  #sound{position:fixed;top:14px;right:96px;z-index:20;font-size:15px;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;width:38px;height:33px;cursor:pointer;color:var(--ink);line-height:1}
+</style>
+</head>
+<body>
+<div id="loading">도형 정원 준비 중…</div>
+<div id="stage"></div>
+<div id="brand"><span class="k">케이</span>랩 수학실 · 도형 정원</div>
+<a id="back" href="../hub/klab.html">← 케이랩</a>
+<button id="sound" title="소리">🔊</button>
+<div id="hud">심은 작품 <b class="leaf" id="hGarden">0</b></div>
+<div id="tip">한쪽에 그리면 거울처럼 반대쪽이 따라 그려져요.</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KShape 대칭·정다각형·테셀레이션 (MATHLAB 설계 §도형 정원). THREE·DOM 참조 0.
+     reflectX/Y: 축 반사(거울 나비). rotate/mandala: 회전 대칭(만다라).
+     interiorAngle/canTessellate: 정다각형 내각·바닥 깔기 판정(표준 기하).
+       한 정다각형만으로 규칙 테셀레이션 ⟺ (n−2)가 4의 약수 ⟺ n∈{3,4,6}.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="shape-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KShape = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (§도형 정원) ── */
+  const FULL = 360;                 // 한 꼭짓점 둘레(도)
+  const POLYS = [3, 4, 5, 6];       // 정삼각·정사각·정오각·정육각 (바닥 깔기 대상)
+
+  /* ── 결정론 rng (mulberry32) ── */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function deg2rad(d) { return d * Math.PI / 180; }
+
+  /* ── ★대칭 변환 (거울 나비) ── */
+  function reflectX(pt, axisX) { return { x: 2 * axisX - pt.x, y: pt.y }; }   // 세로축(x=axisX) 반사
+  function reflectY(pt, axisY) { return { x: pt.x, y: 2 * axisY - pt.y }; }   // 가로축(y=axisY) 반사
+  function reflectPath(path, axisX) {                                          // 경로 전체를 세로축 반사
+    const out = [];
+    for (let i = 0; i < path.length; i++) out.push(reflectX(path[i], axisX));
+    return out;
+  }
+
+  /* ── ★회전 대칭 (만다라) ── */
+  function rotate(pt, cx, cy, angleDeg) {
+    const a = deg2rad(angleDeg), dx = pt.x - cx, dy = pt.y - cy;
+    const c = Math.cos(a), s = Math.sin(a);
+    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c };
+  }
+  function mandala(path, cx, cy, n) {                                          // n방향 회전 복제 → n개 경로
+    const step = FULL / n, arms = [];
+    for (let k = 0; k < n; k++) {
+      const arm = [];
+      for (let i = 0; i < path.length; i++) arm.push(rotate(path[i], cx, cy, step * k));
+      arms.push(arm);
+    }
+    return arms;
+  }
+
+  /* ── 정다각형 기하 (표준 공식) ── */
+  function interiorAngle(n) { return (n - 2) * 180 / n; }   // 한 내각
+  function exteriorAngle(n) { return FULL / n; }            // 한 외각
+  function angleSum(n)      { return (n - 2) * 180; }        // 내각의 합
+
+  /* ── ★바닥 깔기(테셀레이션) 판정 ──
+     한 종류 정다각형만으로 한 꼭짓점을 빈틈·겹침 없이 채우려면 내각이 360을 나눠야 함.
+     360 / interiorAngle = 2n/(n−2) 가 정수 ⟺ (n−2) | 4 ⟺ n ∈ {3,4,6}. */
+  function canTessellate(n) { return n >= 3 && (4 % (n - 2)) === 0; }
+  function verticesAround(n) {                               // 한 꼭짓점에 몇 개 붙고 얼마 남나
+    const ang = interiorAngle(n);
+    const count = Math.floor(FULL / ang + 1e-9);
+    const gap = +(FULL - count * ang).toFixed(6);            // 남는 각(틈). 0이면 딱 맞음
+    return { count: count, gap: gap, exact: gap === 0 };
+  }
+
+  /* ── 정n각형 꼭짓점 좌표 (P2 렌더가 소비) ── */
+  function polygonVertices(n, cx, cy, r, rotDeg) {
+    const pts = [], base = (rotDeg || 0) - 90;               // -90 = 꼭짓점 하나를 위로
+    for (let i = 0; i < n; i++) {
+      const a = deg2rad(base + (FULL / n) * i);
+      pts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+    return pts;
+  }
+
+  /* ── 결정론 도형 생성 ── */
+  function genPolygon(rng) {                                 // 바닥 깔기용 랜덤 정다각형
+    const n = POLYS[Math.floor(rng() * POLYS.length)];
+    return { n: n, tess: canTessellate(n), around: verticesAround(n), interior: interiorAngle(n) };
+  }
+  function genMandalaArms(rng) {                             // 만다라 팔 수(4·5·6·8)
+    const opts = [4, 5, 6, 8];
+    return opts[Math.floor(rng() * opts.length)];
+  }
+
+  /* ── 방·시나리오 스키마 (P3에서 소비) ── */
+  const SCENARIOS = {
+    'S-1': { title: '거울 나비', desc: '한쪽에 그리면 거울처럼 대칭이 따라 그려져요',   mode: 'mirror' },
+    'S-2': { title: '만다라',    desc: '가운데를 중심으로 여러 방향이 함께 돌아요',        mode: 'mandala' },
+    'S-3': { title: '바닥 깔기', desc: '어떤 도형이 빈틈 없이 바닥을 채울까요?',           mode: 'tessellate', wow: true }
+  };
+  // ★와우: 정오각형만 바닥이 안 깔림(내각 108 → 360÷108 정수 아님 → 틈)
+  const WOW_TESS = {
+    q: '정오각형만 바닥을 빈틈 없이 못 깔아요. 왜 그럴까요?',
+    options: ['한 내각(108°)이 360°를 딱 나누지 못해서', '오각형이 너무 커서', '색이 달라서'],
+    answer: 0,
+    explain: '한 꼭짓점에 도형을 붙이면 내각이 모여 360°가 돼야 빈틈이 없어요. 정삼각형(60°)·정사각형(90°)·정육각형(120°)은 360°를 딱 나누지만, 정오각형은 108°라 세 개면 324°(36° 틈), 네 개면 432°(넘침) — 그래서 틈이 생겨요.'
+  };
+
+  return {
+    // 상수
+    FULL, POLYS,
+    // 유틸
+    mulberry32, clamp, deg2rad,
+    // 대칭
+    reflectX, reflectY, reflectPath,
+    // 회전
+    rotate, mandala,
+    // 정다각형·테셀레이션
+    interiorAngle, exteriorAngle, angleSum, canTessellate, verticesAround, polygonVertices,
+    // 생성
+    genPolygon, genMandalaArms,
+    // 스키마
+    SCENARIOS, WOW_TESS
+  };
+});
+</script>
+</body>
+</html>
