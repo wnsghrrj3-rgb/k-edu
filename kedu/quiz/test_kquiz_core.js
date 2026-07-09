@@ -9,6 +9,7 @@ var KQuiz = require('./kquiz-core.js');
 require('./templates/g1_math_u3.js')(KQuiz);
 require('./templates/g1_math_u1.js')(KQuiz);
 require('./templates/g1_math_u5.js')(KQuiz);
+require('./templates/g1_math_u2.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -20,12 +21,33 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_math_u1_l06','g1_math_u1_l07','g1_math_u1_l08','g1_math_u1_l09',
   'g1_math_u1_l10','g1_math_u1_l11','g1_math_u1',
   'g1_math_u5_l02_03','g1_math_u5_l04','g1_math_u5_l05','g1_math_u5_l06',
-  'g1_math_u5_l07','g1_math_u5_l08','g1_math_u5_l09','g1_math_u5_l10','g1_math_u5'];
+  'g1_math_u5_l07','g1_math_u5_l08','g1_math_u5_l09','g1_math_u5_l10','g1_math_u5',
+  'g1_math_u2_l02','g1_math_u2_l03','g1_math_u2_l05','g1_math_u2_l06','g1_math_u2'];
+
+// u2 독립 검산용 사전·성질행렬(템플릿과 별도 사본 — 정의/성질 오등록 catch)
+var U2_OBJ = {
+  '주사위': '상자 모양', '선물 상자': '상자 모양', '벽돌': '상자 모양', '티슈 상자': '상자 모양',
+  '음료수 캔': '둥근 기둥 모양', '두루마리 휴지': '둥근 기둥 모양', '통조림': '둥근 기둥 모양',
+  '축구공': '공 모양', '농구공': '공 모양', '지구본': '공 모양', '구슬': '공 모양'
+};
+var U2_PROPS = {
+  '상자 모양':      { rollAny: false, vertex: true,  flatFace: true,  roundSurface: false },
+  '둥근 기둥 모양': { rollAny: false, vertex: false, flatFace: true,  roundSurface: true  },
+  '공 모양':        { rollAny: true,  vertex: false, flatFace: false, roundSurface: true  }
+};
+var U2_PHRASE2KEY = {
+  '어느 쪽으로도 잘 굴러갑니다.': 'rollAny',
+  '뾰족한 곳이 있습니다.': 'vertex',
+  '평평한 면이 있습니다.': 'flatFace',
+  '둥근 부분이 있습니다.': 'roundSurface'
+};
 
 // ── 독립 재계산기: 문항 q를 파싱해 정답을 코드 밖에서 다시 계산 ─────────────────
 // (엔진의 answer를 신뢰하지 않고 문구만으로 재산출 → 진짜 대조)
 function expectChoice(q) {
   var m;
+  if ((m = q.match(/^「(.+?)」은\(는\) 어떤 모양/)))                    // u2 물건→모양
+    return U2_OBJ[m[1]] || '__미등록__';
   if ((m = q.match(/^(\d+)\s*\+\s*(\d+)\s*=/))) return +m[1] + +m[2];   // u3 덧셈
   if ((m = q.match(/^(\d+)\s*−\s*(\d+)\s*=/))) return +m[1] - +m[2];   // u3 뺄셈
   if ((m = q.match(/^(\d+)\s*([+−])\s*(\d+)\s*=/)))                     // u3 혼합
@@ -52,8 +74,10 @@ function expectChoice(q) {
 }
 function expectOx(q) {
   var m = q.match(/(\d+)은\(는\) (\d+)보다 (큽니다|작습니다)/);        // u1 크기비교 OX
-  if (!m) return null;
-  return m[3] === '큽니다' ? (+m[1] > +m[2]) : (+m[1] < +m[2]);
+  if (m) return m[3] === '큽니다' ? (+m[1] > +m[2]) : (+m[1] < +m[2]);
+  var ms = q.match(/(상자 모양|둥근 기둥 모양|공 모양)은\(는\) (.+)$/); // u2 성질 OX
+  if (ms) { var k = U2_PHRASE2KEY[ms[2]]; if (k) return U2_PROPS[ms[1]][k]; }
+  return null;
 }
 
 // ── §8-1 재현성: 같은 (lesson,n,seed) 2회 → deep-equal ──────────────────────
@@ -75,7 +99,7 @@ LESSONS.forEach(function (L) {
       total++;
       if (it.type === 'choice') {
         var e = expectChoice(it.q);
-        if (e !== null) { checked++; if (Number(it.choices[it.answer]) !== e) bad++; }
+        if (e !== null) { checked++; if (String(it.choices[it.answer]) !== String(e)) bad++; }
       } else if (it.type === 'ox') {
         var eo = expectOx(it.q);
         if (eo !== null) { checked++; if (it.answer !== eo) bad++; }
@@ -99,8 +123,9 @@ LESSONS.forEach(function (L) {
       var set = {}; var dup = false;
       it.choices.forEach(function (c) { if (set[c]) dup = true; set[c] = 1; });
       if (dup) dupOrBad++;
-      // 수식형이면 보기 전부 0..99(음수·비정상 없음) — 학년 세계 범위 sanity
-      it.choices.forEach(function (c) { var n = Number(c); if (!isFinite(n) || n < 0) rangeBad++; });
+      // 수치형 보기만 범위 sanity(0.. ) 검사 — 낱말 보기(모양 등)는 제외
+      var numeric = it.choices.every(function (c) { return isFinite(Number(c)); });
+      if (numeric) it.choices.forEach(function (c) { var n = Number(c); if (!isFinite(n) || n < 0) rangeBad++; });
       // 정답 인덱스 유효
       if (it.answer < 0 || it.answer >= it.choices.length) dupOrBad++;
     });
