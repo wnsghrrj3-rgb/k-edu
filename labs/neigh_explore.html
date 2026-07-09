@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 사회실 · 우리 동네 탐사대</title>
+<!--
+  케이랩 사회실 2.0 · R1 우리 동네 탐사대 (플래그십)
+  설계: klab/사회실2_설계.md (R0 코어 + R1). 레퍼런스 = jido_proto.html.
+  헌법: 모든 것이 실데이터(실지도·실POI) 위에. 가상(배치)은 점선으로 정직 표기.
+  시간은 직선거리 × κ 어림 → "약 ○분" + 상시 안내(정직 계약).
+  순수 로직·채점 = neigh_core.js(window.Neigh) / 미션 = neigh_missions.js.
+  렌더 감·실POI 재현율·타일 속도 = 준호 실기기 검수(T-5).
+-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{ --soc:#9B7BF5; --bg0:#151824; --bg1:#1d2130; --panel:#232838; --line:#333a4f;
+         --ink:#e9ecf5; --sub:#a6adc4; --ok:#7FD19B; --warn:#F0A85B; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg0);color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow:hidden}
+  .wrap{display:flex;flex-direction:column;height:100%}
+  /* 상단바 */
+  .top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg1);
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .brand{font-family:'Jua',sans-serif;font-size:19px;letter-spacing:.5px;
+    background:linear-gradient(90deg,#c3aefc,#9B7BF5);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand small{display:block;font-family:'Gowun Dodum';font-size:11px;color:var(--sub);letter-spacing:0}
+  .grades{display:flex;gap:4px;margin-left:auto}
+  .gbtn{background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:20px;
+    padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+  .gbtn.on{background:var(--soc);color:#fff;border-color:var(--soc)}
+  .sound{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    width:36px;height:34px;font-size:16px;cursor:pointer}
+  .search{display:flex;gap:6px;flex:1 1 220px;min-width:180px}
+  .search input{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:8px 11px;font-size:14px;font-family:inherit;min-width:0}
+  .search button{background:var(--soc);border:0;color:#fff;border-radius:10px;padding:0 14px;font-size:14px;cursor:pointer;font-family:inherit}
+  /* 모드 탭 */
+  .modes{display:flex;gap:6px;padding:8px 14px;background:var(--bg1);border-bottom:1px solid var(--line)}
+  .mtab{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:12px;
+    padding:8px;font-size:14px;cursor:pointer;font-family:inherit;text-align:center}
+  .mtab.on{background:#2c2140;border-color:var(--soc);color:#e7dcff}
+  /* 본문 */
+  .body{flex:1;position:relative;min-height:0}
+  #map{position:absolute;inset:0;background:#fff}
+  .leaflet-container{background:#eef1f6 !important;font-family:inherit}
+  /* 시설 칩 줄 */
+  .chips{position:absolute;left:10px;top:10px;right:10px;z-index:500;display:flex;gap:6px;
+    flex-wrap:wrap;pointer-events:none}
+  .chip{pointer-events:auto;background:rgba(29,33,48,.92);border:1px solid var(--line);color:var(--ink);
+    border-radius:20px;padding:6px 11px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;
+    backdrop-filter:blur(4px)}
+  .chip .cnt{background:#0006;border-radius:10px;padding:0 6px;font-size:11px;color:#cdd3e6;display:none}
+  .chip.on{border-color:var(--soc);box-shadow:0 0 0 2px rgba(155,123,245,.3)}
+  .chip.on .cnt{display:inline}
+  /* 오른쪽 렌즈 도크 */
+  .dock{position:absolute;right:10px;top:58px;z-index:500;display:flex;flex-direction:column;gap:6px}
+  .lbtn{background:rgba(29,33,48,.92);border:1px solid var(--line);color:var(--ink);border-radius:12px;
+    padding:8px 10px;font-size:13px;cursor:pointer;text-align:left;min-width:120px;backdrop-filter:blur(4px);font-family:inherit}
+  .lbtn.on{border-color:var(--soc);background:#2c2140;color:#e7dcff}
+  .lbtn.hide{display:none}
+  .lbtn small{display:block;color:var(--sub);font-size:10px}
+  /* 카드 패널(하단) */
+  .cards{position:absolute;left:10px;right:10px;bottom:10px;z-index:500;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  .card{pointer-events:auto;background:rgba(29,33,48,.95);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;font-size:14px;line-height:1.55;backdrop-filter:blur(6px);box-shadow:0 8px 24px #0006}
+  .card h4{margin:0 0 6px;font-size:15px;color:#e7dcff;font-family:'Jua'}
+  .card .row{display:flex;align-items:center;gap:8px;padding:3px 0;color:var(--ink)}
+  .card .row b{color:var(--soc)}
+  .opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .opt{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    padding:8px 14px;font-size:14px;cursor:pointer;font-family:inherit}
+  .opt:hover{border-color:var(--soc)}
+  .opt.ok{background:#26402f;border-color:var(--ok);color:#cdefd7}
+  .opt.no{background:#40262b;border-color:#c0616a}
+  .mini{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .mini button{background:var(--soc);border:0;color:#fff;border-radius:10px;padding:7px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+  .mini button.ghost{background:var(--panel);border:1px solid var(--line);color:var(--sub)}
+  .note{color:var(--warn);font-size:12px;margin-top:6px}
+  /* 정직 안내 배너(상시) */
+  .honest{position:absolute;left:10px;bottom:10px;z-index:400;background:rgba(21,24,36,.8);
+    border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:11px;color:var(--sub);pointer-events:none}
+  .cards + .honest{display:none}
+  /* 폴백 배너 */
+  .banner{position:absolute;left:50%;top:56px;transform:translateX(-50%);z-index:600;
+    background:#40262b;border:1px solid #c0616a;color:#f3d3d7;border-radius:10px;padding:8px 14px;font-size:13px;display:none}
+  /* 예산 칩 */
+  .budget{display:flex;align-items:center;gap:6px;margin-top:6px;color:var(--sub);font-size:13px}
+  .budget .dot{width:12px;height:12px;border-radius:50%;background:#333a4f}
+  .budget .dot.used{background:var(--soc)}
+  .vmark{width:30px;height:30px;border-radius:50%;border:2px dashed #fff;background:#F0616Acc;
+    display:flex;align-items:center;justify-content:center;font-size:15px}
+  @media (max-width:520px){ .lbtn{min-width:104px} .brand small{display:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">🧭 우리 동네 탐사대<small>케이랩 사회실 · 실제 지도로 우리 고장 살펴보기</small></div>
+    <div class="search">
+      <input id="q" placeholder="우리 학교·동네 검색 (예: 가평초등학교)" autocomplete="off">
+      <button id="qgo">검색</button>
+    </div>
+    <button class="sound" id="snd" title="소리 켜기/끄기">🔊</button>
+    <div class="grades" id="grades">
+      <button class="gbtn" data-g="low">저학년</button>
+      <button class="gbtn on" data-g="mid">중학년</button>
+      <button class="gbtn" data-g="high">고학년</button>
+    </div>
+  </div>
+  <div class="modes" id="modes">
+    <button class="mtab on" data-m="free">🧭 자유 탐구</button>
+    <button class="mtab" data-m="mission">🎯 미션</button>
+    <button class="mtab" data-m="quiz">❓ 퀴즈</button>
+  </div>
+  <div class="body">
+    <div id="map"></div>
+    <div class="chips" id="chips"></div>
+    <div class="dock" id="dock">
+      <button class="lbtn" id="lensTime" data-l="time">🕐 몇 분 렌즈<small>지도를 눌러 시간 재기</small></button>
+      <button class="lbtn" id="lensGolden" data-l="golden">🚒 골든타임 렌즈<small>등시권이 물들어요</small></button>
+      <button class="lbtn" id="lensCenter" data-l="center">🏙 중심지 렌즈<small>시설이 몰린 곳</small></button>
+      <button class="lbtn" id="lensVirtual" data-l="virtual">🏗 가상 배치<small>새 소방서 놓아보기</small></button>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="cards" id="cards"></div>
+    <div class="honest" id="honest">🧭 시간은 직선거리로 어림한 값이에요 — 진짜 길은 더 걸릴 수 있어요.</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="neigh_core.js"></script>
+<script src="neigh_missions.js"></script>
+<script id="neigh-explore-logic">
+(function () {
+  'use strict';
+  var N = window.Neigh, MISS = window.NEIGH_MISSIONS || {};
+  var $ = function (s) { return document.querySelector(s); };
+  var RADIUS = 2000; // 학교 앵커 반경 2km
+
+  var S = {
+    home: null, grade: 'mid', mode: 'free', lens: null, virtualMode: false,
+    active: {}, poisByCat: {}, markers: {}, virtual: [], budget: 2,
+    stage: null, homeMk: null, mission: null, guideLine: null
+  };
+
+  function sound(name) { try { if (window.KLab && window.KLab.sound) window.KLab.sound.play(name); } catch (e) {} }
+  function collect(id) { try { if (window.parent && parent !== window && parent.KEDU_COLLECT) parent.KEDU_COLLECT(id); } catch (e) {} }
+  function banner(msg) { var b = $('#banner'); if (!msg) { b.style.display = 'none'; return; } b.textContent = msg; b.style.display = 'block'; }
+
+  /* ── 학교 앵커(원점 철학) ── */
+  function resolveHome() {
+    var p = new URLSearchParams(location.search);
+    if (p.get('lat') && p.get('lng')) {
+      return { lat: parseFloat(p.get('lat')), lng: parseFloat(p.get('lng')), name: p.get('name') || '우리 학교' };
+    }
+    try { var raw = localStorage.getItem('kedu_home'); if (raw) return JSON.parse(raw); } catch (e) {}
+    return null;
+  }
+  function setHome(h, save) {
+    S.home = h;
+    try { if (save) localStorage.setItem('kedu_home', JSON.stringify(h)); } catch (e) {}
+    if (S.stage) {
+      if (S.homeMk) S.stage.layers.aux.removeLayer(S.homeMk);
+      var ic = window.L.divIcon({ className: '', html: '<div style="font-size:26px;filter:drop-shadow(0 2px 3px #0008)">⭐</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+      S.homeMk = window.L.marker([h.lat, h.lng], { icon: ic, zIndexOffset: 1000 }).addTo(S.stage.layers.aux);
+      S.homeMk.bindTooltip(h.name || '우리 학교', { permanent: false });
+      S.stage.map.setView([h.lat, h.lng], 15);
+    }
+  }
+
+  /* ── 시설 칩 ── */
+  function buildChips() {
+    var row = $('#chips');
+    N.CATS.forEach(function (c) {
+      var b = document.createElement('button');
+      b.className = 'chip'; b.dataset.cat = c.id;
+      b.innerHTML = '<span>' + c.ico + '</span>' + c.nm + '<span class="cnt" id="cnt-' + c.id + '">0</span>';
+      b.addEventListener('click', function () { toggleCat(c.id); });
+      row.appendChild(b);
+    });
+  }
+  function chipEl(id) { return document.querySelector('.chip[data-cat="' + id + '"]'); }
+
+  function toggleCat(id) {
+    if (!S.home) { promptHome(); return; }
+    var on = !S.active[id];
+    S.active[id] = on;
+    var el = chipEl(id); if (el) el.classList.toggle('on', on);
+    if (on) {
+      sound('tap');
+      if (S.poisByCat[id]) { drawMarkers(id); refreshLens(); }
+      else {
+        N.poiSearch(id, S.home, RADIUS, function (err, pois) {
+          S.poisByCat[id] = err ? [] : pois;
+          drawMarkers(id); refreshLens();
+        });
+      }
+    } else {
+      clearMarkers(id); refreshLens();
+    }
+  }
+  function drawMarkers(id) {
+    clearMarkers(id);
+    var pois = S.poisByCat[id] || [];
+    var grp = window.L.layerGroup();
+    pois.forEach(function (p) {
+      var mi = N.markerIcon(id, 32);
+      var ic = window.L.divIcon({ className: '', html: mi.html, iconSize: [mi.size, mi.size], iconAnchor: [mi.size / 2, mi.size / 2] });
+      var mk = window.L.marker([p.lat, p.lng], { icon: ic });
+      mk.bindTooltip(p.name, { direction: 'top' });
+      mk.on('click', function () { showPoiCard(p); });
+      grp.addLayer(mk);
+    });
+    grp.addTo(S.stage.layers.markers);
+    S.markers[id] = grp;
+    var cnt = $('#cnt-' + id); if (cnt) cnt.textContent = pois.length;
+    var el = chipEl(id); if (el) { var c = N.catInfo(id); el.title = '우리 동네 ' + c.nm + ' ' + pois.length + '곳'; }
+  }
+  function clearMarkers(id) {
+    if (S.markers[id]) { S.stage.layers.markers.removeLayer(S.markers[id]); delete S.markers[id]; }
+    var cnt = $('#cnt-' + id); if (cnt) cnt.textContent = 0;
+  }
+  function activeCats() { return Object.keys(S.active).filter(function (k) { return S.active[k]; }); }
+  function poolFor(cat) {
+    var base = (S.poisByCat[cat] || []).slice();
+    if (cat === 'fire' && S.virtual.length) base = base.concat(S.virtual);
+    return base;
+  }
+
+  /* ── 렌즈 ── */
+  function setLens(name) {
+    if (name === 'virtual') { toggleVirtual(); return; }
+    S.lens = (S.lens === name) ? null : name;
+    S.virtualMode = false; syncDock();
+    refreshLens();
+    if (S.lens === 'time') showCard({ title: '🕐 몇 분 렌즈', html: '지도에서 <b>우리 집</b>이나 아무 곳이나 눌러 보세요. 켜 둔 시설까지 얼마나 걸리는지 알려줄게요.' });
+  }
+  function refreshLens() {
+    S.stage.layers.lens.clearLayers();
+    if (S.lens === 'golden') drawGolden();
+    else if (S.lens === 'center') drawCenter();
+  }
+  function drawGolden() {
+    activeCats().forEach(function (cat) {
+      var c = N.catInfo(cat), lens = c.lens;
+      var r = N.isoRadius(lens.limitMin, lens.mode);
+      poolFor(cat).forEach(function (p) {
+        window.L.circle([p.lat, p.lng], { radius: r, color: lens.color, weight: 1, fillColor: lens.color, fillOpacity: 0.14 })
+          .addTo(S.stage.layers.lens);
+      });
+    });
+  }
+  function drawCenter() {
+    var all = []; activeCats().forEach(function (cat) { all = all.concat(poolFor(cat)); });
+    if (all.length < 2) { showCard({ title: '🏙 중심지 렌즈', html: '시설을 <b>두 종류 이상</b> 켜면, 시설이 몰린 “중심지”가 빛나요.' }); return; }
+    // 앵커 주변 격자 표본으로 히트 셀 표시
+    var cells = [], step = 0.004;
+    for (var dy = -3; dy <= 3; dy++) for (var dx = -3; dx <= 3; dx++)
+      cells.push({ lat: S.home.lat + dy * step, lng: S.home.lng + dx * step * 1.25 });
+    var heat = N.centerHeat(all, cells, 500);
+    heat.cells.forEach(function (o) {
+      if (o.v < 0.25) return;
+      window.L.circle([o.pt.lat, o.pt.lng], { radius: 220, color: 'transparent', fillColor: '#F5C24B', fillOpacity: 0.08 + o.v * 0.42 })
+        .addTo(S.stage.layers.lens);
+    });
+  }
+
+  /* ── 지도 클릭 ── */
+  function onMapClick(e) {
+    var pt = { lat: e.latlng.lat, lng: e.latlng.lng };
+    if (S.virtualMode) { placeVirtual(pt); return; }
+    if (S.mode === 'mission' && S.mission && S.mission.rule.type === 'coverage_gap') { checkCoverageTap(pt); return; }
+    if (S.lens === 'time') showTimeCards(pt);
+  }
+  function showTimeCards(pt) {
+    var cats = activeCats();
+    if (!cats.length) { showCard({ title: '🕐 몇 분 렌즈', html: '먼저 위에서 시설을 켜 주세요 (예: 🚒 소방서).' }); return; }
+    if (S.guideLine) { S.stage.layers.aux.removeLayer(S.guideLine); S.guideLine = null; }
+    var rows = '', firstNearest = null;
+    cats.forEach(function (cat) {
+      var c = N.catInfo(cat), nr = N.nearest(pt, poolFor(cat));
+      if (!nr) { rows += '<div class="row">' + c.ico + ' ' + c.nm + ' — <b>이 동네엔 아직 없어요</b></div>'; return; }
+      var t = N.aboutMin(nr.dist, c.lens.mode), by = N.bearing(pt, nr.poi);
+      var word = (c.lens.mode === 'emerg') ? '응급차로' : '걸어서';
+      rows += '<div class="row">' + c.ico + ' ' + c.nm + ' — ' + by + '쪽 <b>' + word + ' ' + t + '</b> (' + nr.poi.name + ')</div>';
+      if (!firstNearest) firstNearest = nr.poi;
+    });
+    if (firstNearest) {
+      S.guideLine = window.L.polyline([[pt.lat, pt.lng], [firstNearest.lat, firstNearest.lng]],
+        { color: '#9B7BF5', weight: 3, dashArray: '6 6' }).addTo(S.stage.layers.aux);
+    }
+    showCard({ title: '🕐 여기서 얼마나 걸릴까?', html: rows, note: '직선거리로 어림한 값이에요.' });
+    sound('select');
+  }
+  function showPoiCard(p) {
+    var c = N.catInfo(p.cat) || { ico: '📍', nm: '' };
+    var extra = '';
+    if (S.home) { var d = N.haversine(S.home, p); extra = '<div class="row">우리 학교에서 ' + N.bearing(S.home, p) + '쪽 · <b>걸어서 ' + N.aboutMin(d, 'walk') + '</b></div>'; }
+    showCard({ title: c.ico + ' ' + p.name, html: (p.addr ? '<div class="row">' + p.addr + '</div>' : '') + extra });
+  }
+
+  /* ── 가상 배치 ── */
+  function toggleVirtual() {
+    if (S.grade !== 'high') { showCard({ title: '🏗 가상 배치', html: '이 기능은 <b>고학년</b>에서 열려요. 위에서 학년을 바꿔 보세요.' }); return; }
+    S.virtualMode = !S.virtualMode;
+    if (S.virtualMode) { S.lens = 'golden'; if (!S.active.fire) toggleCat('fire'); }
+    syncDock(); refreshLens();
+    if (S.virtualMode) showCard({ title: '🏗 새 소방서를 놓아 보자', html: '지도를 누르면 <span class="vmark" style="display:inline-flex;vertical-align:middle;transform:scale(.7)">🚒</span> 가상 소방서(점선)가 놓이고, 골든타임이 다시 계산돼요.', budget: true });
+  }
+  function placeVirtual(pt) {
+    if (S.virtual.length >= S.budget) { showCard({ title: '예산을 다 썼어요', html: '가상 소방서는 최대 <b>' + S.budget + '곳</b>까지예요. 하나를 지우고 다시 놓아 보세요.', budget: true }); return; }
+    var v = { id: 'V' + Date.now(), name: '새 소방서(가상)', cat: 'fire', lat: pt.lat, lng: pt.lng, src: 'virtual' };
+    S.virtual.push(v);
+    var ic = window.L.divIcon({ className: '', html: '<div class="vmark">🚒</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+    var mk = window.L.marker([pt.lat, pt.lng], { icon: ic });
+    mk.on('click', function () { S.virtual = S.virtual.filter(function (x) { return x !== v; }); S.stage.layers.aux.removeLayer(mk); refreshLens(); updateBudget(); });
+    mk.addTo(S.stage.layers.aux);
+    refreshLens(); updateBudget(); sound('pop');
+    if (S.mode === 'mission' && S.mission && S.mission.rule.type === 'place_virtual') checkPlaceVirtual();
+  }
+  function updateBudget() { var b = $('#budgetDots'); if (!b) return; var h = ''; for (var i = 0; i < S.budget; i++) h += '<span class="dot' + (i < S.virtual.length ? ' used' : '') + '"></span>'; b.innerHTML = h; }
+
+  /* ── 카드 렌더 ── */
+  function showCard(o) {
+    var wrap = $('#cards'); wrap.innerHTML = '';
+    var el = document.createElement('div'); el.className = 'card';
+    var h = '<h4>' + (o.title || '') + '</h4>' + (o.html || '');
+    if (o.note) h += '<div class="note">🧭 ' + o.note + '</div>';
+    if (o.budget) h += '<div class="budget">가상 예산 <span id="budgetDots"></span></div>';
+    el.innerHTML = h;
+    if (o.opts) {
+      var od = document.createElement('div'); od.className = 'opts';
+      o.opts.forEach(function (opt, i) {
+        var b = document.createElement('button'); b.className = 'opt'; b.textContent = opt;
+        b.addEventListener('click', function () { o.onPick(i, b); });
+        od.appendChild(b);
+      });
+      el.appendChild(od);
+    }
+    if (o.actions) {
+      var m = document.createElement('div'); m.className = 'mini';
+      o.actions.forEach(function (a) {
+        var b = document.createElement('button'); b.textContent = a.label; if (a.ghost) b.className = 'ghost';
+        b.addEventListener('click', a.on); m.appendChild(b);
+      });
+      el.appendChild(m);
+    }
+    wrap.appendChild(el);
+    if (o.budget) updateBudget();
+  }
+  function clearCards() { $('#cards').innerHTML = ''; }
+
+  /* ── 미션 ── */
+  function missionsForGrade() {
+    var order = { low: 0, mid: 1, high: 2 }, gv = order[S.grade];
+    return Object.keys(MISS).map(function (k) { return MISS[k]; })
+      .filter(function (m) { return order[m.grade] <= gv; })
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  }
+  function startMissions() {
+    var list = missionsForGrade();
+    if (!list.length) { showCard({ title: '🎯 미션', html: '학년을 올리면 더 많은 미션이 열려요.' }); return; }
+    S.missionList = list; S.missionIdx = 0; runMission(list[0]);
+  }
+  function ctxFor(rule) {
+    var byCat = {}; N.CATS.forEach(function (c) { byCat[c.id] = poolFor(c.id); });
+    return { home: S.home, byCat: byCat, virtualPois: S.virtual, probes: gapProbes() };
+  }
+  function gapProbes() {
+    // 앵커 주변 격자 표본(가상 배치 미션 채점용)
+    var probes = [], step = 0.006;
+    for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++)
+      probes.push({ lat: S.home.lat + dy * step, lng: S.home.lng + dx * step * 1.25 });
+    return probes;
+  }
+  function ensureCat(cat, cb) {
+    if (S.active[cat] && S.poisByCat[cat]) { cb(); return; }
+    S.active[cat] = true; var el = chipEl(cat); if (el) el.classList.add('on');
+    if (S.poisByCat[cat]) { drawMarkers(cat); cb(); }
+    else N.poiSearch(cat, S.home, RADIUS, function (e, pois) { S.poisByCat[cat] = e ? [] : pois; drawMarkers(cat); cb(); });
+  }
+  function runMission(m) {
+    S.mission = m;
+    ensureCat(m.rule.cat, function () {
+      refreshLens();
+      if (m.predict) {
+        showCard({
+          title: '🎯 ' + m.q, html: '먼저 예상해 볼까? (예측)',
+          opts: m.predict.options,
+          onPick: function (i, btn) { revealMission(m, btn); }
+        });
+      } else {
+        // 상호작용형(coverage_gap / place_virtual)
+        if (m.rule.type === 'coverage_gap') { S.lens = 'golden'; syncDock(); refreshLens(); }
+        if (m.rule.type === 'place_virtual') { S.virtualMode = true; S.lens = 'golden'; syncDock(); refreshLens(); }
+        showCard({ title: '🎯 ' + m.q, html: m.hint || '지도에서 직접 해결해 봐!', budget: (m.rule.type === 'place_virtual') });
+      }
+    });
+  }
+  function revealMission(m, btn) {
+    var r = N.evalRule(m.rule, ctxFor(m.rule));
+    if (btn) btn.classList.add('ok');
+    var txt = N.fillDebrief(m.debrief, r.facts);
+    collect('nb_' + m.id); sound('success');
+    showCard({ title: '✨ 확인!', html: txt, actions: nextAction() });
+  }
+  function checkCoverageTap(pt) {
+    var r = N.evalRule(S.mission.rule, { home: S.home, byCat: mkByCat(), tapPt: pt });
+    if (r.ok) { collect('nb_' + S.mission.id); sound('success');
+      showCard({ title: '✨ 찾았다!', html: N.fillDebrief(S.mission.debrief, r.facts), note: '직선거리로 어림한 값이에요.', actions: nextAction() }); }
+    else { sound('fail'); showCard({ title: '조금 더!', html: '여기는 소방차 5분 <b>안</b>이야. 물들지 <b>않은</b> 곳을 찾아 눌러 봐.' }); }
+  }
+  function checkPlaceVirtual() {
+    var r = N.evalRule(S.mission.rule, ctxFor(S.mission.rule));
+    if (r.ok) { collect('nb_' + S.mission.id); sound('success'); S.virtualMode = false; syncDock();
+      showCard({ title: '✨ 온 동네가 물들었어!', html: N.fillDebrief(S.mission.debrief, r.facts), actions: nextAction() }); }
+    else { showCard({ title: '🏗 아직 남았어', html: N.fillDebrief(S.mission.debrief, r.facts) + '<br>미달 동네가 남았어 — 소방서를 옮기거나 하나 더 놓아 봐.', budget: true }); }
+  }
+  function mkByCat() { var byCat = {}; N.CATS.forEach(function (c) { byCat[c.id] = poolFor(c.id); }); return byCat; }
+  function nextAction() {
+    return [{ label: (S.missionIdx < (S.missionList.length - 1)) ? '다음 미션 ▶' : '미션 끝! 🎖', on: function () {
+      S.missionIdx++;
+      if (S.missionIdx < S.missionList.length) runMission(S.missionList[S.missionIdx]);
+      else { collect('nb_explore_master'); showCard({ title: '🎖 우리 동네 박사!', html: '우리 동네를 구석구석 살펴봤어. 조사 수첩에 차곡차곡 모였어.' }); }
+    } }];
+  }
+
+  /* ── 퀴즈(개념 확인 4문) ── */
+  var QUIZ = [
+    { q: '공공기관은 무엇을 하는 곳일까?', opts: ['개인이 돈을 벌려고 만든 곳', '우리 생활을 도와주는 곳', '아무나 못 들어가는 곳'], a: 1 },
+    { q: '불이 났을 때 가장 빨리 와야 하는 곳은?', opts: ['도서관', '소방서', '우체국'], a: 1 },
+    { q: '“골든타임”과 가장 관계있는 말은?', opts: ['빠르게 도착하는 시간', '문 여는 시간', '점심시간'], a: 0 },
+    { q: '시설이 한곳에 몰려 있는 곳을 뭐라 할까?', opts: ['중심지', '변두리', '들판'], a: 0 }
+  ];
+  function startQuiz() { S.qi = 0; S.qok = 0; askQuiz(); }
+  function askQuiz() {
+    if (S.qi >= QUIZ.length) { collect('nb_explore_quiz'); showCard({ title: '❓ 퀴즈 끝!', html: '<b>' + S.qok + ' / ' + QUIZ.length + '</b> 맞혔어. 잘했어!' }); return; }
+    var item = QUIZ[S.qi];
+    showCard({ title: '❓ ' + (S.qi + 1) + '. ' + item.q, opts: item.opts, onPick: function (i, btn) {
+      if (i === item.a) { btn.classList.add('ok'); S.qok++; sound('success'); } else { btn.classList.add('no'); sound('fail'); }
+      setTimeout(function () { S.qi++; askQuiz(); }, 650);
+    } });
+  }
+
+  /* ── 모드/학년/도크 ── */
+  function setMode(m) {
+    S.mode = m; S.virtualMode = false;
+    document.querySelectorAll('.mtab').forEach(function (t) { t.classList.toggle('on', t.dataset.m === m); });
+    clearCards(); syncDock();
+    if (m === 'mission') startMissions();
+    else if (m === 'quiz') startQuiz();
+  }
+  function setGrade(g) {
+    S.grade = g;
+    document.querySelectorAll('.gbtn').forEach(function (t) { t.classList.toggle('on', t.dataset.g === g); });
+    if (g === 'low') { S.lens = (S.lens === 'time') ? 'time' : null; S.virtualMode = false; }
+    syncDock(); refreshLens();
+    if (S.mode === 'mission') startMissions();
+  }
+  function syncDock() {
+    // 저학년: 몇 분 렌즈만. 중학년: +골든/중심지. 고학년: +가상 배치.
+    var showGolden = (S.grade !== 'low'), showCenter = (S.grade !== 'low'), showVirtual = (S.grade === 'high');
+    $('#lensGolden').classList.toggle('hide', !showGolden);
+    $('#lensCenter').classList.toggle('hide', !showCenter);
+    $('#lensVirtual').classList.toggle('hide', !showVirtual);
+    $('#lensTime').classList.toggle('on', S.lens === 'time');
+    $('#lensGolden').classList.toggle('on', S.lens === 'golden' && !S.virtualMode);
+    $('#lensCenter').classList.toggle('on', S.lens === 'center');
+    $('#lensVirtual').classList.toggle('on', S.virtualMode);
+  }
+
+  function promptHome() {
+    showCard({ title: '⭐ 먼저 우리 학교를 찾아요', html: '위 검색창에 <b>우리 학교 이름</b>을 넣어 보세요. 그곳이 탐사대의 출발점이 돼요.',
+      actions: [{ label: '검색창으로', on: function () { $('#q').focus(); } }] });
+  }
+  function doSearch(q) {
+    if (!q) return; banner('찾는 중…');
+    N.geocode(q, function (err, res) {
+      if (err || !res) { banner('못 찾았어요 — 다른 이름으로 (예: 가평군청, ○○초등학교)'); return; }
+      banner(''); setHome({ lat: res.lat, lng: res.lng, name: res.name }, true);
+      // 앵커 바뀌면 캐시된 POI·마커 초기화
+      S.poisByCat = {}; Object.keys(S.markers).forEach(clearMarkers);
+      activeCats().forEach(function (cat) { toggleCat(cat); toggleCat(cat); });
+      showCard({ title: '⭐ ' + res.name, html: '여기가 우리 탐사대의 출발점! 위에서 시설을 켜 보세요.' });
+    });
+  }
+
+  /* ── 초기화 ── */
+  function init() {
+    buildChips();
+    var stage = N.mount($('#map'), { onTileError: function () { banner('지도 타일을 못 불러왔어요 — 키/도메인 확인이 필요해요.'); } });
+    if (!stage) { banner('지도를 준비하지 못했어요.'); return; }
+    S.stage = stage;
+    stage.map.on('click', onMapClick);
+    var h = resolveHome();
+    if (h) setHome(h, false); else { stage.map.setView([37.8315, 127.5106], 13); promptHome(); }
+    // 이벤트
+    $('#qgo').addEventListener('click', function () { doSearch($('#q').value.trim()); });
+    $('#q').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(e.target.value.trim()); });
+    document.querySelectorAll('.gbtn').forEach(function (b) { b.addEventListener('click', function () { setGrade(b.dataset.g); }); });
+    document.querySelectorAll('.mtab').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.m); }); });
+    document.querySelectorAll('.lbtn').forEach(function (b) { b.addEventListener('click', function () { setLens(b.dataset.l); }); });
+    $('#snd').addEventListener('click', function () { try { if (window.KLab && window.KLab.sound) window.KLab.sound.toggle && window.KLab.sound.toggle(); } catch (e) {}
+      $('#snd').textContent = $('#snd').textContent === '🔊' ? '🔇' : '🔊'; });
+    syncDock();
+  }
+
+  // 스모크 훅(jsdom 검증용)
+  window.__NEIGH = {
+    S: S, toggleCat: toggleCat, setLens: setLens, setMode: setMode, setGrade: setGrade,
+    tapAt: function (lat, lng) { onMapClick({ latlng: { lat: lat, lng: lng } }); },
+    placeVirtual: function (lat, lng) { placeVirtual({ lat: lat, lng: lng }); },
+    activeCats: activeCats, poolFor: poolFor, runMission: runMission, missionsForGrade: missionsForGrade,
+    setHome: function (h) { setHome(h, false); }, cardText: function () { return ($('#cards').textContent || ''); }
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+</body>
+</html>
