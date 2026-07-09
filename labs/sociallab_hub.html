@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗺️ 케이랩 사회실 — 탐구 세트</title>
+<script src="/kedu_gate.js"></script>
+<!--
+  케이랩 사회실 정문 (2026-07-09 오퍼스)
+  · 역할: 흩어져 있던 사회 도구를 한 입구로 — 전문실 2(발굴실·지형실) + 탐구실 4(지도·마을 계획실·시간 거리·시장 놀이)
+  · 디자인 언어: 과학실 정문(scilab_hub.html) 검수 통과 톤 승계 — 다크 스튜디오 + 유리 패널 + 사회 악센트(보라)
+  · 시그니처: "현상 창" — 둥근 관찰창 안에서 각 도구의 핵심 장면이 CSS 미니어처로 살아 움직임
+    (과학실 관찰창 패턴을 사회 6도구로 확장 · prefers-reduced-motion 정지)
+  · 구조 라벨: T-번호 = 사회실 설계서 트랙 번호(mono) / 영역 3분류(공간·시간·경제)
+  · 도구 파일은 건드리지 않음 — 링크만.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<style>
+  :root{
+    --soc:#9B7BF5;
+    --space:#4FC3F7; --time:#F0A85B; --econ:#7FD19B;
+    --ink:#E8EEF5; --mut:#8fa3b8;
+    --line:rgba(255,255,255,.09); --glass:rgba(255,255,255,.045);
+    --mono:ui-monospace,'SF Mono','Cascadia Mono',Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Gowun Dodum',sans-serif;color:var(--ink);
+    background:
+      radial-gradient(90% 50% at 50% -8%, rgba(155,123,245,.12), transparent 60%),
+      linear-gradient(180deg,#2f2b3d 0%,#201d29 46%,#14121a 100%) fixed;
+    min-height:100vh;padding-bottom:72px;
+  }
+  .wrap{max-width:1020px;margin:0 auto;padding:0 18px}
+  a{color:inherit;text-decoration:none}
+  a:focus-visible{outline:2px solid var(--soc);outline-offset:3px;border-radius:8px}
+
+  /* ── 상단 ── */
+  header{padding:24px 0 8px;text-align:center;position:relative}
+  .back{position:absolute;left:0;top:26px;font-size:13px;color:var(--mut);
+    padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--glass);transition:.15s}
+  .back:hover{color:var(--ink);border-color:rgba(255,255,255,.25)}
+  header h1{font-family:var(--kedu-title);font-size:32px;letter-spacing:.5px}
+  header h1 .k{color:var(--soc)}
+  header .sub{font-size:13.5px;color:var(--mut);margin-top:7px;line-height:1.6}
+
+  /* ── 섹션 라벨 ── */
+  .seclabel{display:flex;align-items:center;gap:12px;margin:34px 0 14px}
+  .seclabel .t{font-family:var(--kedu-title);font-size:19px;letter-spacing:.5px}
+  .seclabel .d{font-size:12.5px;color:var(--mut)}
+  .seclabel::after{content:'';flex:1;height:1px;background:var(--line)}
+
+  /* ── 트랙 라벨(T-번호) ── */
+  .eno{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--mut);
+    padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,.18)}
+
+  /* ═══ 현상 창(공통 관찰창) ═══ */
+  .port{position:relative;width:86px;height:86px;flex:0 0 86px;border-radius:50%;overflow:hidden;
+    border:2px solid rgba(255,255,255,.14);
+    background:radial-gradient(120% 120% at 30% 20%, #2a2636, #12101a 70%);
+    box-shadow:inset 0 6px 18px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.35)}
+  .port::after{content:'';position:absolute;inset:0;border-radius:50%;
+    background:radial-gradient(70% 45% at 30% 14%, rgba(255,255,255,.14), transparent 60%);pointer-events:none;z-index:5}
+
+  @keyframes glowp{0%,100%{opacity:.6;filter:drop-shadow(0 0 2px currentColor)}50%{opacity:1;filter:drop-shadow(0 0 7px currentColor)}}
+
+  /* ── T2 발굴실(대형: 붓질로 드러나는 유물) ── */
+  .p-dig{width:150px;height:150px;flex:0 0 150px}
+  .p-dig .soil{position:absolute;inset:0;
+    background:linear-gradient(180deg,#7a5c3c 0 26%,#6b4f34 26% 50%,#5c4530 50% 72%,#4a3827 72%)}
+  .p-dig svg{position:absolute;inset:0;width:100%;height:100%}
+  .p-dig .glint{position:absolute;inset:0;z-index:3;
+    background:linear-gradient(112deg,transparent 42%,rgba(255,240,200,.30) 50%,transparent 58%);
+    background-size:260% 100%;animation:digsweep 3.6s ease-in-out infinite}
+  @keyframes digsweep{0%{background-position:125% 0}62%,100%{background-position:-45% 0}}
+  .p-dig .mote{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,236,200,.65);z-index:2;animation:motelift 3s ease-in infinite}
+  @keyframes motelift{0%{transform:translateY(0);opacity:0}22%{opacity:.85}100%{transform:translateY(-34px);opacity:0}}
+
+  /* ── T1 지형실(대형: 등고선이 산이 되다) ── */
+  .p-terrain{width:150px;height:150px;flex:0 0 150px}
+  .p-terrain svg{position:absolute;inset:0;width:100%;height:100%}
+  .p-terrain .ring{fill:none;stroke:#7fd0f5;stroke-width:1.9;animation:contourlift 3.6s ease-in-out infinite}
+  @keyframes contourlift{0%,100%{opacity:.32;transform:translateY(0)}50%{opacity:.92;transform:translateY(-3px)}}
+  .p-terrain .peak{color:#bfe8ff;animation:glowp 2.6s ease-in-out infinite}
+
+  /* ── 지도(나침반) ── */
+  .p-map .rose{position:absolute;inset:15%;border-radius:50%;border:1.5px solid rgba(120,200,245,.32)}
+  .p-map .rose::before{content:'';position:absolute;inset:20%;border-radius:50%;border:1px solid rgba(120,200,245,.18)}
+  .p-map .needle{position:absolute;left:50%;top:50%;width:3px;height:42px;margin:-21px 0 0 -1.5px;border-radius:2px;
+    background:linear-gradient(180deg,#ff6b6b 0 50%,#dfe9f5 50%);transform-origin:50% 50%;animation:spin 7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .p-map .tick{position:absolute;left:50%;top:50%;font-family:var(--mono);font-size:9px;color:#9fd0f0;transform:translate(-50%,-50%)}
+  .p-map .tN{margin-top:-30px}.p-map .tS{margin-top:30px}.p-map .tE{margin-left:30px}.p-map .tW{margin-left:-30px}
+
+  /* ── 마을 계획실(접근성 물결) ── */
+  .p-town .g{position:absolute;inset:22%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:3px}
+  .p-town .g i{background:rgba(200,225,255,.13);border-radius:2px}
+  .p-town .st{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:2px;background:var(--soc);z-index:2}
+  .p-town .wave{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;
+    border:2px solid rgba(155,123,245,.7);animation:cover 2.8s ease-out infinite}
+  .p-town .wave.d2{animation-delay:1.4s}
+  @keyframes cover{0%{transform:scale(.4);opacity:.9}100%{transform:scale(7);opacity:0}}
+
+  /* ── 시간 거리(시대 크로스페이드) ── */
+  .p-street .sky{position:absolute;inset:0;animation:skyshift 6.5s ease-in-out infinite}
+  @keyframes skyshift{0%,100%{background:linear-gradient(180deg,#f3c583,#c39a6e)}50%{background:linear-gradient(180deg,#9cc4e8,#5f7fa8)}}
+  .p-street .ground{position:absolute;left:0;right:0;bottom:0;height:24%;background:#3c352d;z-index:2}
+  .p-street svg{position:absolute;inset:0;width:100%;height:100%;z-index:2}
+  .p-street .old{animation:xf 6.5s ease-in-out infinite}
+  .p-street .new{animation:xf 6.5s ease-in-out infinite reverse}
+  @keyframes xf{0%,38%{opacity:1}62%,100%{opacity:0}}
+
+  /* ── 시장 놀이(동전 쌓기) ── */
+  .p-market .coin{position:absolute;left:50%;width:30px;height:9px;margin-left:-15px;border-radius:50%;
+    background:radial-gradient(60% 60% at 40% 32%,#ffe393,#e0a63c);border:1px solid #b6842c;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .p-market .c1{bottom:26%}.p-market .c2{bottom:36%}.p-market .c3{bottom:46%}
+  .p-market .won{position:absolute;left:50%;bottom:38%;margin-left:-4px;font-family:var(--mono);font-size:11px;color:#8a6a2c;z-index:3}
+  .p-market .drop{bottom:56%;animation:coindrop 2.6s ease-in infinite}
+  @keyframes coindrop{0%{bottom:82%;opacity:0}18%{opacity:1}66%,100%{bottom:56%;opacity:1}}
+
+  /* ═══ 전문실 카드(플래그십) ═══ */
+  .flag{display:flex;align-items:center;gap:26px;margin:14px 0;padding:28px 30px;border-radius:24px;
+    border:1px solid var(--line);position:relative;overflow:hidden;transition:.18s;
+    background:
+      radial-gradient(110% 150% at 85% 8%, rgba(240,168,91,.12), transparent 55%),
+      radial-gradient(80% 120% at 8% 100%, rgba(155,123,245,.08), transparent 60%),
+      rgba(255,255,255,.03)}
+  .flag.terr-fl{background:
+      radial-gradient(110% 150% at 12% 8%, rgba(79,195,247,.11), transparent 55%),
+      radial-gradient(80% 120% at 92% 100%, rgba(155,123,245,.09), transparent 60%),
+      rgba(255,255,255,.03)}
+  .flag:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.22);box-shadow:0 14px 34px rgba(0,0,0,.35)}
+  .flag .txt{flex:1;min-width:0}
+  .flag .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:2.5px;color:var(--time);margin-bottom:9px}
+  .flag.terr-fl .eyebrow{color:#9fdcff}
+  .flag h2{font-family:var(--kedu-title);font-size:25px;line-height:1.3;margin-bottom:9px}
+  .flag p{font-size:14px;line-height:1.75;color:#c6d6e5;margin-bottom:14px;max-width:520px}
+  .flag .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .flag .chip{font-size:12px;color:var(--mut);padding:6px 13px;border:1px solid var(--line);
+    border-radius:999px;background:rgba(0,0,0,.16);transition:.15s;cursor:pointer}
+  .flag .chip:hover{color:var(--ink);border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.06)}
+  .flag .chip b{color:var(--ink);font-weight:400;margin-right:4px}
+  .flag .cta{display:inline-block;margin-top:14px;font-size:13.5px;color:var(--time)}
+  .flag.terr-fl .cta{color:#9fdcff}
+
+  /* ═══ 탐구실 그리드 ═══ */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{display:flex;flex-direction:column;gap:13px;padding:20px 20px 18px;border-radius:20px;
+    border:1px solid var(--line);background:var(--glass);position:relative;transition:.18s}
+  .card:hover{transform:translateY(-3px);background:rgba(255,255,255,.065);box-shadow:0 12px 28px rgba(0,0,0,.32)}
+  .card[data-a="space"]:hover{border-color:rgba(79,195,247,.45)}
+  .card[data-a="time"]:hover{border-color:rgba(240,168,91,.45)}
+  .card[data-a="econ"]:hover{border-color:rgba(127,209,155,.45)}
+  .card .toprow{display:flex;align-items:center;justify-content:space-between}
+  .card .area{font-size:11.5px;letter-spacing:.5px}
+  .card[data-a="space"] .area{color:var(--space)}
+  .card[data-a="time"] .area{color:var(--time)}
+  .card[data-a="econ"] .area{color:var(--econ)}
+  .card .mid{display:flex;align-items:center;gap:16px}
+  .card h3{font-family:var(--kedu-title);font-size:17.5px;line-height:1.35;flex:1;min-width:0}
+  .card p{font-size:12.8px;line-height:1.7;color:var(--mut)}
+  .card .go{font-size:12.5px;color:#b6a8dd;margin-top:auto}
+  .card:hover .go{color:var(--ink)}
+
+  footer{margin-top:46px;text-align:center;font-size:12.5px;color:var(--mut)}
+  footer a{color:#b6a8dd;border-bottom:1px dotted rgba(255,255,255,.25);padding-bottom:1px}
+  footer a:hover{color:var(--ink)}
+
+  /* ── 반응형 ── */
+  @media(max-width:860px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .flag{flex-direction:column;align-items:flex-start;gap:18px;padding:24px 22px}
+    .flag .p-dig,.flag .p-terrain{align-self:center}
+    .back{position:static;display:inline-block;margin-bottom:12px}
+    header{text-align:center}
+  }
+  @media(max-width:540px){
+    .grid{grid-template-columns:1fr}
+    header h1{font-size:27px}
+    .flag h2{font-size:21px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <a class="back" href="/kedu/hub/klab.html">← 케이랩</a>
+  <h1>🗺️ <span class="k">케이랩</span> 사회실</h1>
+  <div class="sub">지도를 읽고, 흙을 파고, 마을을 세우고, 시대를 갈아입혀 보세요.<br>
+  공간과 시간을 손으로 만지는 사회 탐구 세트입니다.</div>
+</header>
+
+<div class="wrap">
+
+  <!-- ═══ 전문실(플래그십) ═══ -->
+  <div class="seclabel"><span class="t">전문실</span><span class="d">손으로 여는 사회 — 발굴·지형</span></div>
+
+  <a class="flag" href="/labs/diglab.html?grade=high">
+    <div class="txt">
+      <div class="eyebrow">T2 · 발굴 → 복원 → 연표 → 박물관</div>
+      <h2>발굴실 — 흙을 살살 파면, 시대가 드러난다</h2>
+      <p>붓으로 흙을 걷어 유물을 드러내고, 깨진 조각을 맞춰 복원하고, 지층으로 시대를 읽어
+      내 박물관에 전시합니다. 꽃삽으로 서두르면 유물에 금이 가요 — 도구를 고르는 것부터가 태도입니다.</p>
+      <div class="chips">
+        <span class="chip"><b>🖌️</b>붓·꽃삽 선택</span>
+        <span class="chip"><b>🧩</b>조각 복원</span>
+        <span class="chip"><b>📜</b>연표·박물관</span>
+      </div>
+      <div class="chips" style="margin-top:8px">
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=low'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=low'}">저학년</span>
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=mid'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=mid'}">중학년</span>
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=high'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/diglab.html?grade=high'}">고학년</span>
+      </div>
+      <span class="cta">발굴 시작하기 →</span>
+    </div>
+    <div class="port p-dig" aria-hidden="true">
+      <div class="soil"></div>
+      <svg viewBox="0 0 150 150" fill="none">
+        <path d="M55 80 Q52 63 61 57 Q75 51 89 57 Q98 63 95 80 Q98 98 87 106 Q75 112 63 106 Q52 98 55 80 Z" fill="#c9a06a" opacity=".93"/>
+        <path d="M58 73 h34 M56 84 h38 M60 95 h30" stroke="#8a6a44" stroke-width="1.4" opacity=".65"/>
+      </svg>
+      <span class="mote" style="left:38%;bottom:32%"></span>
+      <span class="mote" style="left:58%;bottom:28%;animation-delay:1.3s"></span>
+      <span class="mote" style="left:48%;bottom:40%;animation-delay:.7s"></span>
+      <div class="glint"></div>
+    </div>
+  </a>
+
+  <a class="flag terr-fl" href="/labs/terrain.html?mode=stack&grade=mid">
+    <div class="port p-terrain" aria-hidden="true">
+      <svg viewBox="0 0 150 150" fill="none">
+        <ellipse class="ring" cx="75" cy="94" rx="52" ry="20" style="animation-delay:0s"/>
+        <ellipse class="ring" cx="75" cy="88" rx="40" ry="15" style="animation-delay:.25s"/>
+        <ellipse class="ring" cx="75" cy="82" rx="28" ry="11" style="animation-delay:.5s"/>
+        <ellipse class="ring" cx="75" cy="76" rx="16" ry="7" style="animation-delay:.75s"/>
+        <circle class="peak" cx="75" cy="70" r="3.6" fill="#bfe8ff"/>
+      </svg>
+    </div>
+    <div class="txt">
+      <div class="eyebrow">T1 · 등고선 ↔ 산 양방향</div>
+      <h2>지형실 — 평면의 동심원이 입체의 산이 된다</h2>
+      <p>등고선 판을 낮은 층부터 쌓으면 매끈한 산으로 솟아오르고, 그 산을 수평으로 자르면 다시
+      등고선 지도가 그려집니다. 물방울을 굴려 골짜기를 찾고, 한라산·설악산·백두산도 올라 보세요.</p>
+      <div class="chips">
+        <span class="chip"><b>⛰️</b>쌓기·자르기</span>
+        <span class="chip"><b>💧</b>물방울 골짜기</span>
+        <span class="chip"><b>🗻</b>유명한 산</span>
+      </div>
+      <div class="chips" style="margin-top:8px">
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?mode=stack&grade=mid'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?mode=stack&grade=mid'}">쌓기</span>
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?mode=cut&grade=high'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?mode=cut&grade=high'}">자르기</span>
+        <span class="chip" role="link" tabindex="0" onclick="event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?preset=halla&mode=cut&grade=high'" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();location.href='/labs/terrain.html?preset=halla&mode=cut&grade=high'}">한라산</span>
+      </div>
+      <span class="cta">산에 올라보기 →</span>
+    </div>
+  </a>
+
+  <!-- ═══ 탐구실 ═══ -->
+  <div class="seclabel"><span class="t">탐구실</span><span class="d">공간 · 시간 · 경제</span></div>
+
+  <div class="grid">
+
+    <a class="card" data-a="space" href="/kedu/teacher/klab.html?tool=map&label=%EC%A7%80%EB%8F%84&from=hub">
+      <div class="toprow"><span class="eno">MAP</span><span class="area">공간</span></div>
+      <div class="mid">
+        <div class="port p-map" aria-hidden="true">
+          <div class="rose"></div>
+          <span class="tick tN">N</span><span class="tick tE">E</span><span class="tick tS">S</span><span class="tick tW">W</span>
+          <div class="needle"></div>
+        </div>
+        <h3>지도 · 기호와 방위</h3>
+      </div>
+      <p>전국 실제 지도와 항공사진을 오가고, 방위표로 방향을 잡고, 약속된 기호로 우리 고장을 읽어요.</p>
+      <span class="go">지도 열기 →</span>
+    </a>
+
+    <a class="card" data-a="space" href="/labs/townlab.html">
+      <div class="toprow"><span class="eno">T3</span><span class="area">공간</span></div>
+      <div class="mid">
+        <div class="port p-town" aria-hidden="true">
+          <div class="g"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <span class="wave"></span><span class="wave d2"></span>
+          <div class="st"></div>
+        </div>
+        <h3>마을 계획실</h3>
+      </div>
+      <p>시설을 놓으면 집까지 가까움이 색으로 물들어요. 소방차가 5분 안에 닿도록 — 골든타임을 지키는 자리 찾기.</p>
+      <span class="go">마을 세우기 →</span>
+    </a>
+
+    <a class="card" data-a="time" href="/labs/timestreet.html">
+      <div class="toprow"><span class="eno">T4</span><span class="area">시간</span></div>
+      <div class="mid">
+        <div class="port p-street" aria-hidden="true">
+          <div class="sky"></div>
+          <div class="ground"></div>
+          <svg class="old" viewBox="0 0 86 86" fill="none">
+            <path d="M18 64 Q43 40 68 64 Z" fill="#6b4f34"/>
+            <rect x="30" y="60" width="26" height="10" fill="#5a4028"/>
+          </svg>
+          <svg class="new" viewBox="0 0 86 86" fill="none">
+            <rect x="30" y="26" width="26" height="44" rx="2" fill="#5d6b86"/>
+            <rect x="35" y="32" width="5" height="5" fill="#cfe0f2"/><rect x="46" y="32" width="5" height="5" fill="#cfe0f2"/>
+            <rect x="35" y="42" width="5" height="5" fill="#cfe0f2"/><rect x="46" y="42" width="5" height="5" fill="#cfe0f2"/>
+          </svg>
+        </div>
+        <h3>시간 거리</h3>
+      </div>
+      <p>슬라이더를 밀면 조선 후기부터 오늘까지 — 집·탈것이 같은 자리에서 시대를 갈아입고, 옛 물건 도감을 채워요.</p>
+      <span class="go">시대 여행 →</span>
+    </a>
+
+    <a class="card" data-a="econ" href="/kedu/teacher/klab.html?tool=market&label=%EC%8B%9C%EC%9E%A5%20%EB%86%80%EC%9D%B4&from=hub">
+      <div class="toprow"><span class="eno">MARKET</span><span class="area">경제</span></div>
+      <div class="mid">
+        <div class="port p-market" aria-hidden="true">
+          <div class="coin c1"></div>
+          <div class="coin c2"></div>
+          <div class="coin c3"></div>
+          <span class="won">₩</span>
+          <div class="coin drop"></div>
+        </div>
+        <h3>시장 놀이</h3>
+      </div>
+      <p>상황 카드를 뽑아 값을 정해 팔고 이익을 모아요. 수요·공급과 물가의 오르내림을 손으로 겪어 봐요.</p>
+      <span class="go">가게 열기 →</span>
+    </a>
+
+  </div>
+
+  <footer>
+    케이랩 사회실 · 모든 도구는 태블릿과 전자칠판에서 동작합니다 &nbsp;·&nbsp;
+    <a href="/kedu/hub/klab.html">케이랩으로 돌아가기</a>
+  </footer>
+
+</div>
+
+</body>
+</html>
