@@ -24,6 +24,7 @@ require('./templates/g3_math_u1.js')(KQuiz);
 require('./templates/g3_math_u2.js')(KQuiz);
 require('./templates/g3_math_u3.js')(KQuiz);
 require('./templates/g3_math_u4.js')(KQuiz);
+require('./templates/g3_math_u5.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -57,7 +58,8 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g3_math_u1_l06','g3_math_u1_l07','g3_math_u1_l09','g3_math_u1',
   'g3_math_u2_l02','g3_math_u2_l03','g3_math_u2_l05','g3_math_u2_l06','g3_math_u2_l08','g3_math_u2',
   'g3_math_u3_l02','g3_math_u3_l03','g3_math_u3_l04','g3_math_u3_l05','g3_math_u3_l06','g3_math_u3_l08','g3_math_u3',
-  'g3_math_u4_l02','g3_math_u4_l03','g3_math_u4_l04','g3_math_u4_l05','g3_math_u4_l06','g3_math_u4_l08','g3_math_u4'];
+  'g3_math_u4_l02','g3_math_u4_l03','g3_math_u4_l04','g3_math_u4_l05','g3_math_u4_l06','g3_math_u4_l08','g3_math_u4',
+  'g3_math_u5_l02','g3_math_u5_l04','g3_math_u5_l06','g3_math_u5_l07','g3_math_u5_l08','g3_math_u5_l10','g3_math_u5'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -186,6 +188,16 @@ function expectChoice(q) {
     var la = +m[1], lb = +m[2];
     return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
   }
+  if ((m = q.match(/(\d+)cm (\d+)mm는 몇 mm/))) return +m[1] * 10 + +m[2];      // g3u5 cm mm→mm
+  if ((m = q.match(/(\d+)cm는 몇 mm/))) return +m[1] * 10;                       // g3u5 cm→mm
+  if ((m = q.match(/(\d+)km (\d+)m는 몇 m/))) return +m[1] * 1000 + +m[2];       // g3u5 km m→m
+  if ((m = q.match(/(\d+)km는 몇 m/))) return +m[1] * 1000;                      // g3u5 km→m
+  if ((m = q.match(/(\d+)분 (\d+)초는 몇 초/))) return +m[1] * 60 + +m[2];       // g3u5 분 초→초
+  if ((m = q.match(/(\d+)분은 몇 초/))) return +m[1] * 60;                       // g3u5 분→초
+  if ((m = q.match(/(\d+)시간 (\d+)분 \+ (\d+)시간 (\d+)분은 몇 시간 몇 분/)))    // g3u5 시간 덧셈
+    return (+m[1] + +m[3]) + '시간 ' + (+m[2] + +m[4]) + '분';
+  if ((m = q.match(/(\d+)시간 (\d+)분 \u2212 (\d+)시간 (\d+)분은 몇 시간 몇 분/))) // g3u5 시간 뺄셈
+    return (+m[1] - +m[3]) + '시간 ' + (+m[2] - +m[4]) + '분';
   if ((m = q.match(/^(\d+)\s*\u00F7\s*(\d+)\s*=/))) return +m[1] / +m[2];       // g3u3 나눗셈식
   if ((m = q.match(/(\d+)개를 (\d+)명에게 똑같이 나누어 주면/))) return +m[1] / +m[2]; // g3u3 등분
   if ((m = q.match(/(\d+)개를 (\d+)개씩 묶으면 몇 묶음/))) return +m[1] / +m[2];        // g3u3 포함
