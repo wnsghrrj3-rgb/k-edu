@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>수 공장 · 케이랩 수학실</title>
+<!-- P1 = 10의 자석 순수 로직만(렌더 0줄, P1 게이트). P2에서 2D canvas 수 블록 렌더 +
+     자석 붙기/갈라짐 애니 증축. 순수 로직엔 THREE·DOM·canvas 참조 0.
+     십진 보수·받아올림·받아내림은 표준 산술(수치 창작 아님) — 10의 보수 = 10−n. -->
+<style>
+  :root{ --ink:#eef0ff; --sub:#9aa0c8; --panel:rgba(14,16,30,.82); --line:rgba(255,255,255,.1);
+         --block:#ffd166; --block2:#f59e2c; --bell:#7c8cff; --ten:#5ad1a0; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a0c18;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a0c18;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--bell)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #hud{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:19;font-size:13px;color:var(--sub);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 15px;backdrop-filter:blur(6px);
+    display:flex;gap:12px;align-items:center;white-space:nowrap}
+  #hud b{font-family:'Jua';color:var(--ink)}
+  #tip{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:18;font-size:13.5px;color:var(--ink);
+    background:rgba(14,16,30,.78);border:1px solid var(--line);border-radius:12px;padding:8px 15px;
+    pointer-events:none;transition:opacity .3s;text-align:center;max-width:88vw}
+  #tip.hide{opacity:0}
+  #sound{position:fixed;top:14px;right:96px;z-index:20;font-size:15px;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;width:38px;height:33px;cursor:pointer;color:var(--ink);line-height:1}
+</style>
+</head>
+<body>
+<div id="loading">수 공장 준비 중…</div>
+<div id="stage"></div>
+<div id="brand"><span class="k">케이</span>랩 수학실 · 수 공장</div>
+<a id="back" href="../hub/klab.html">← 케이랩</a>
+<button id="sound" title="소리">🔊</button>
+<div id="hud">만든 10 <b id="hTen">0</b><span>레시피 <b id="hRecipe">0</b></span></div>
+<div id="tip">수 블록 두 개를 만나게 해서 딱 10을 만들어 봐요.</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KNumber "10의 자석" 모델 (MATHLAB 설계 §수 공장). THREE·DOM 참조 0.
+     magnetAdd(a,b): a를 10으로 채우는 데 필요한 만큼(보수)을 b에서 뜯어 붙임 → 받아올림.
+     magnetSub(a,b): 일의 자리가 부족하면 10 덩어리를 갈라서 뺌 → 받아내림.
+     complement/partnerToTen: 10의 보수(표준 산술). pairsOfTen: 10 가르기 짝.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="number-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KNumber = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (§수 공장) ── */
+  const BASE = 10;              // 십진 = 10의 자석
+  const N_MIN = 0, N_MAX = 18;  // 1학년 받아올림/받아내림 범위(한 자리+한 자리 ~ 십몇−한자리)
+
+  /* ── 결정론 rng (mulberry32) ── */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 10의 보수 (표준 산술) ── */
+  function complement(n)    { return BASE - n; }   // 10을 채우는 나머지
+  function partnerToTen(n)  { return BASE - n; }   // "n과 얼마를 만나면 10?"
+
+  /* ── 십진 분해 ── */
+  function toTensOnes(n) { return { tens: Math.floor(n / BASE), ones: n % BASE }; }
+
+  /* ── 10 가르기 짝 (모으기/가르기) ── */
+  function pairsOfTen(withEdges) {
+    const out = [], lo = withEdges ? 0 : 1, hi = withEdges ? BASE : BASE - 1;
+    for (let i = lo; i <= hi; i++) out.push([i, BASE - i]);
+    return out;                                    // false: [1,9]…[9,1] · true: [0,10]…[10,0]
+  }
+
+  /* ── ★자석 덧셈(받아올림) — a를 10으로 채우는 만큼 b에서 뜯어 붙임 ── */
+  function magnetAdd(a, b) {
+    a = a | 0; b = b | 0;
+    const sum = a + b;
+    const carried = sum >= BASE && a < BASE;
+    const t = Math.floor(sum / BASE), o = sum % BASE;
+    let need = 0, fromB = 0, left = b;
+    if (carried) {
+      need = BASE - a;                 // a를 10으로 채우는 데 필요한 양(=complement)
+      fromB = Math.min(need, b);       // b에서 자석처럼 뜯기는 양
+      left = b - fromB;                // 남은 일의 자리
+    }
+    return { a: a, b: b, sum: sum, carried: carried, tens: t, ones: o, need: need, fromB: fromB, left: left };
+  }
+
+  /* ── ★자석 뺄셈(받아내림) — 일의 자리 부족하면 10 덩어리를 갈라서 뺌 ── */
+  function magnetSub(a, b) {
+    a = a | 0; b = b | 0;
+    const diff = a - b;
+    const ones = a % BASE;
+    const borrowed = a >= BASE && ones < b && a >= b;
+    let fromTen = 0, keep = 0;
+    if (borrowed) {
+      fromTen = BASE - b;              // 갈라진 10에서 b를 뺀 나머지
+      keep = ones;                     // 원래 일의 자리
+      // diff = fromTen + keep
+    }
+    return { a: a, b: b, diff: diff, borrowed: borrowed, ones: ones, fromTen: fromTen, keep: keep };
+  }
+
+  /* ── 결정론 문제 생성 (표준 범위 보장) ── */
+  function genAddCarry(rng) {          // a,b 한 자리, a+b ∈ [11..18], 받아올림 보장
+    const a = 2 + Math.floor(rng() * 8);                 // 2..9
+    const bMin = Math.max(2, BASE + 1 - a);              // a+b>=11
+    const b = bMin + Math.floor(rng() * (9 - bMin + 1)); // bMin..9
+    return { a: a, b: b, answer: a + b };
+  }
+  function genSubBorrow(rng) {         // a ∈ [11..18], b 한 자리, a%10<b (받아내림 보장)
+    const ones = 1 + Math.floor(rng() * 8);              // 1..8
+    const a = BASE + ones;                               // 11..18
+    const b = (ones + 1) + Math.floor(rng() * (9 - (ones + 1) + 1)); // ones+1..9
+    return { a: a, b: b, answer: a - b };
+  }
+  function genMakeTen(rng) {           // 10 만들기 짝(한 조각 가리기)
+    const a = 1 + Math.floor(rng() * 9);                 // 1..9
+    return { a: a, partner: BASE - a, answer: BASE };
+  }
+
+  /* ── 방·시나리오 스키마 (P3에서 소비) ── */
+  const SCENARIOS = {
+    'N-1': { title: '10 만들기', desc: '두 수를 만나게 해서 딱 10을 만들어요',       mode: 'make10' },
+    'N-2': { title: '받아올림',  desc: '10을 넘는 더하기 — 10의 자석으로 채워요',    mode: 'addcarry', wow: true },
+    'N-3': { title: '받아내림',  desc: '10 덩어리를 갈라서 빼요',                      mode: 'subborrow' }
+  };
+  // ★와우: 10의 자석(보수만큼 뜯겨 붙어 받아올림)
+  const WOW_MAGNET = {
+    q: '7 옆에 5를 가져가면 어떻게 될까요?',
+    options: ['5에서 3이 뜯겨 7에 붙어 10이 돼요', '그냥 나란히 놓여요', '5가 7을 밀어내요'],
+    answer: 0,
+    explain: '한 수를 10으로 채우려면 부족한 만큼(10의 보수)이 옆 수에서 자석처럼 뜯겨 붙어요. 그래서 10 하나와 나머지가 남아요 — 이게 받아올림이에요.'
+  };
+
+  return {
+    // 상수
+    BASE, N_MIN, N_MAX,
+    // 유틸
+    mulberry32, clamp,
+    // 보수·분해·짝
+    complement, partnerToTen, toTensOnes, pairsOfTen,
+    // 자석 연산
+    magnetAdd, magnetSub,
+    // 문제 생성
+    genAddCarry, genSubBorrow, genMakeTen,
+    // 스키마
+    SCENARIOS, WOW_MAGNET
+  };
+});
+</script>
+</body>
+
+</html>
