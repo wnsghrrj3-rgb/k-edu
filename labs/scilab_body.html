@@ -20,6 +20,42 @@
     text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
   #note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:var(--sub);font-size:11px;z-index:18;opacity:.6}
   #stage{position:fixed;inset:0}
+  /* ── P2 UI (해부 톤) ── */
+  #hud{position:fixed;top:44px;left:0;right:0;text-align:center;z-index:18;pointer-events:none}
+  #hud .row{display:inline-flex;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:7px 16px;font-size:12.5px;backdrop-filter:blur(8px);flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #hud b{font-family:'Jua';font-weight:400;color:#fff}
+  #hud .hr b{color:var(--heart)} #hud .rr b{color:var(--lung)} #hud .co b{color:var(--blood)} #hud .o2 b{color:var(--o2)}
+  #lens{position:fixed;right:14px;top:88px;z-index:19;width:min(44vw,320px);background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:10px 12px 8px;backdrop-filter:blur(8px)}
+  #lens.hide{display:none}
+  #lensHead{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub);margin-bottom:6px}
+  #lensHead b{font-family:'Jua';font-weight:400;color:var(--ink)}
+  #gaugeCv{width:100%;height:150px;display:block}
+  #ctrl{position:fixed;left:0;right:0;bottom:30px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px}
+  #ctrl .box{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:16px;padding:11px 16px;backdrop-filter:blur(8px)}
+  #ctrl .sld{display:flex;flex-direction:column;gap:3px;min-width:170px}
+  #ctrl .sld label{font-size:11px;color:var(--sub);display:flex;justify-content:space-between}
+  #ctrl .sld label b{font-family:'Jua';font-weight:400;color:var(--ink)}
+  #ctrl input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;
+    background:linear-gradient(90deg,#3a6ea5,#e8546b);outline:none;cursor:pointer}
+  #ctrl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:3px solid var(--heart);cursor:pointer}
+  #ctrl input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--heart);cursor:pointer}
+  #ctrl .effortTags{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);margin-top:1px}
+  #ctrl .btns{display:flex;gap:8px}
+  #ctrl .btns button{font-family:'Jua';font-size:12.5px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:11px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+  #ctrl .btns button.on{background:var(--lung);color:#04121f;border-color:var(--lung)}
+  #ctrl .btns button:active{transform:scale(.95)}
+  #ctrl .sld.hide{display:none}
+  #hint{position:fixed;bottom:130px;left:50%;transform:translateX(-50%);z-index:19;font-size:12.5px;color:var(--ink);
+    background:rgba(18,6,9,.86);border:1px solid var(--line);border-radius:12px;padding:8px 15px;max-width:88vw;
+    text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
+  #ctxlost{position:fixed;inset:0;background:rgba(18,6,9,.94);color:#f2e9ec;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;z-index:9999}
 </style>
 </head>
 <body>
@@ -27,7 +63,35 @@
 <div id="stage"></div>
 <div id="brand"><span class="k">케이</span>랩 · 우리 몸 실험실</div>
 <a id="back" href="./scilab_hub.html">← 과학실</a>
-<div id="note">P1 — 순환·호흡 엔진(순수 로직)</div>
+
+<div id="hud"><span class="row">
+  <span class="hr">❤️ 심박 <b id="hHr">—</b></span>
+  <span class="rr">💨 호흡 <b id="hRr">—</b></span>
+  <span class="co">🩸 심박출량 <b id="hCo">—</b></span>
+  <span class="o2">🫧 산소 <b id="hO2">—</b></span>
+</span></div>
+
+<div id="lens">
+  <div id="lensHead"><b>📈 산소 게이지</b><span id="lensSub"></span></div>
+  <canvas id="gaugeCv" width="620" height="300"></canvas>
+</div>
+
+<div id="ctrl">
+  <div class="box">
+    <div class="sld" id="effortSld">
+      <label>🏃 활동 강도 <b id="lEffort"></b></label>
+      <input id="sEffort" type="range" min="0" max="1" step="0.01" value="0">
+      <div class="effortTags"><span>휴식</span><span>걷기</span><span>달리기</span></div>
+    </div>
+    <div class="btns">
+      <button id="holdBtn">💨 숨 참기</button>
+      <button id="resetBtn">🔄 처음부터</button>
+    </div>
+  </div>
+</div>
+
+<div id="hint"></div>
+<div id="note">P2 — 박동 심장 · 팽창 폐 · 혈류 · 산소 게이지</div>
 
 <!--
   ═══════════════════════════════════════════════════════════════════
@@ -130,5 +194,239 @@
   };
 });
 </script>
-</body>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three185/three.module.min.js",
+  "three/addons/": "./vendor/three185/addons/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KBody;
+const P = new URLSearchParams(location.search);
+const grade = P.get('grade') || 'high';
+
+/* ═════════ 렌더 기반 (황금 표준 · 해부 톤) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', function(e){ e.preventDefault();
+  const o=document.getElementById('ctxlost'); if(o){ o.style.display='flex'; } });
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#2a1016'); gr.addColorStop(.6,'#180a0e'); gr.addColorStop(1,'#0c0508');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace; scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x140a0e, 3.4, 8.5);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.05, 100);
+camera.position.set(0, 0.15, 3.15);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.12, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=1.8; controls.maxDistance=6; controls.maxPolarAngle=Math.PI*0.9;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+scene.add(new THREE.AmbientLight(0x40282e, 0.5));
+{
+  const key=new THREE.DirectionalLight(0xfff0f2, 1.1); key.position.set(2,3,4); scene.add(key);
+  const rim=new THREE.DirectionalLight(0x6a90c0, 0.5); rim.position.set(-3,1,-2); scene.add(rim);
+}
+
+/* ═════════ 몸 실루엣 (반투명 상체) ═════════ */
+{
+  let bodyGeo;
+  try { bodyGeo = new THREE.CapsuleGeometry(0.62, 0.85, 8, 24); }
+  catch(e){ bodyGeo = new THREE.CylinderGeometry(0.6, 0.55, 1.5, 24); }  // 하위 폴백
+  const body = new THREE.Mesh(bodyGeo, new THREE.MeshPhysicalMaterial({
+    color:0xffd5cf, transparent:true, opacity:0.09, roughness:0.55, metalness:0, transmission:0.35, thickness:0.5 }));
+  body.position.y=0.1; scene.add(body);
+}
+
+/* ═════════ 심장 (박동) ═════════ */
+const heart = new THREE.Group();
+const heartMat = new THREE.MeshStandardMaterial({ color:0xe8546b, roughness:0.42, emissive:0x3a0a12, emissiveIntensity:0.45 });
+{
+  const lobe = new THREE.SphereGeometry(0.13, 20, 16);
+  const lobeL = new THREE.Mesh(lobe, heartMat); lobeL.position.set(-0.075, 0.05, 0);
+  const lobeR = new THREE.Mesh(lobe, heartMat); lobeR.position.set(0.075, 0.05, 0);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.165, 0.26, 20), heartMat);
+  tip.position.set(0, -0.12, 0); tip.rotation.z = Math.PI;
+  heart.add(lobeL, lobeR, tip);
+}
+heart.position.set(-0.05, 0.2, 0.14);
+scene.add(heart);
+const heartLight = new THREE.PointLight(0xff5064, 0.5, 2.4); heart.add(heartLight);
+
+/* ═════════ 폐 (팽창/수축) ═════════ */
+const lungMat = new THREE.MeshPhysicalMaterial({ color:0x5ab4e0, transparent:true, opacity:0.55, roughness:0.4, transmission:0.15 });
+const LUNG_BASE = [0.7, 1.15, 0.55];
+function makeLung(sx){
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 16), lungMat);
+  m.scale.set(LUNG_BASE[0], LUNG_BASE[1], LUNG_BASE[2]);
+  m.position.set(sx, 0.36, 0.0); return m;
+}
+const lungL = makeLung(-0.33), lungR = makeLung(0.33);
+scene.add(lungL, lungR);
+
+/* ═════════ 혈류 (circPath 순환 파티클) ═════════ */
+const curve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-0.05, 0.18, 0.22),  // heart
+  new THREE.Vector3( 0.02, 0.66, 0.16),  // artery (위)
+  new THREE.Vector3( 0.06,-0.52, 0.16),  // body (아래)
+  new THREE.Vector3( 0.30, 0.06, 0.16),  // vein
+  new THREE.Vector3( 0.33, 0.36, 0.18),  // lungs
+  new THREE.Vector3(-0.05, 0.18, 0.22),  // → heart
+], true, 'catmullrom', 0.2);
+const BN = 26;
+const dummy = new THREE.Object3D();
+const bloodMesh = new THREE.InstancedMesh(
+  new THREE.SphereGeometry(0.022, 8, 8),
+  new THREE.MeshStandardMaterial({ color:0xd63a54, emissive:0x5a0a16, emissiveIntensity:0.7 }), BN);
+scene.add(bloodMesh);
+
+/* ═════════ 상태 ═════════ */
+let effort = 0, breathing = true, held = 0, curSpo2 = K.SPO2_NORMAL;
+let heartPhase = 0, lungPhase = 0, bloodU = 0;
+
+/* ═════════ 산소 게이지 렌즈 (Canvas2D) ═════════ */
+const lensEl = document.getElementById('lens');
+const cv = document.getElementById('gaugeCv'), cx = cv.getContext('2d');
+const HIST_MAX = 220; const hist = [];
+function drawGauge(){
+  const W=cv.width, H=cv.height, pad=8;
+  cx.clearRect(0,0,W,H);
+  // SpO2 곡선 (상단 2/3)
+  const gh = H*0.62;
+  cx.strokeStyle='rgba(255,255,255,.10)'; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(0,gh); cx.lineTo(W,gh); cx.stroke();
+  // 70~100% 범위
+  const yAt=v=> pad + (100-v)/(100-65)*(gh-pad*2);
+  cx.fillStyle='rgba(111,207,159,.7)'; cx.font='700 13px Jua, sans-serif';
+  cx.fillText('산소포화도 '+Math.round(curSpo2)+'%', 6, 16);
+  if(hist.length>1){
+    cx.strokeStyle='#6fcf9f'; cx.lineWidth=2.4; cx.beginPath();
+    for(let i=0;i<hist.length;i++){ const x=i/(HIST_MAX-1)*W, y=yAt(hist[i].spo2);
+      if(i===0)cx.moveTo(x,y); else cx.lineTo(x,y); }
+    cx.stroke();
+    // 위험선 90%
+    cx.strokeStyle='rgba(230,84,107,.4)'; cx.setLineDash([4,4]); cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(0,yAt(90)); cx.lineTo(W,yAt(90)); cx.stroke(); cx.setLineDash([]);
+  }
+  // 심박·호흡 막대 (하단)
+  const hr=K.heartRate(effort), rr=K.respRate(effort);
+  const by=gh+18, bw=W-16;
+  const bar=(y,label,val,max,col)=>{
+    cx.fillStyle='rgba(255,255,255,.5)'; cx.font='11px Gowun Dodum, sans-serif';
+    cx.fillText(label, 6, y-4);
+    cx.fillStyle='rgba(255,255,255,.08)'; cx.fillRect(8, y, bw, 12);
+    cx.fillStyle=col; cx.fillRect(8, y, bw*Math.min(1,val/max), 12);
+  };
+  bar(by, '심박 '+Math.round(hr)+' bpm', hr, 200, '#e8546b');
+  bar(by+34, '호흡 '+Math.round(rr)+' 회/분', rr, 50, '#5ab4e0');
+}
+
+/* ═════════ HUD ═════════ */
+function syncHud(){
+  const hr=K.heartRate(effort), rr=K.respRate(effort), co=K.cardiacOutput(effort);
+  document.getElementById('hHr').textContent=Math.round(hr)+' bpm';
+  document.getElementById('hRr').textContent=Math.round(rr)+'/분';
+  document.getElementById('hCo').textContent=co.toFixed(1)+' L/분';
+  document.getElementById('hO2').textContent=Math.round(curSpo2)+'%';
+  document.getElementById('lEffort').textContent = effort<0.15?'휴식':effort<0.6?'걷기':'달리기';
+  document.getElementById('lensSub').textContent = '산소 '+Math.round(curSpo2)+'%';
+}
+
+/* ═════════ 조작 ═════════ */
+let hintTimer=null;
+function showHint(msg){ const h=document.getElementById('hint'); h.textContent=msg; h.classList.add('show');
+  clearTimeout(hintTimer); hintTimer=setTimeout(()=>h.classList.remove('show'), 3400); }
+
+const sEffort=document.getElementById('sEffort');
+sEffort.addEventListener('input', ()=>{ effort=parseFloat(sEffort.value); syncHud(); });
+const holdBtn=document.getElementById('holdBtn');
+holdBtn.addEventListener('click', ()=>{
+  breathing=!breathing; if(!breathing) held=0;
+  holdBtn.classList.toggle('on', !breathing);
+  holdBtn.textContent = breathing ? '💨 숨 참기' : '💨 숨 참는 중…';
+  showHint(breathing ? '다시 숨을 쉬어요 — 산소가 회복돼요.' : '실험은 화면에서만! 산소가 어떻게 되는지 지켜보세요.');
+});
+const resetBtn=document.getElementById('resetBtn');
+resetBtn.addEventListener('click', ()=>{
+  effort=0; breathing=true; held=0; curSpo2=K.SPO2_NORMAL; sEffort.value=0;
+  holdBtn.classList.remove('on'); holdBtn.textContent='💨 숨 참기'; hist.length=0; syncHud();
+  showHint('처음 상태로 되돌렸어요.');
+});
+
+/* ═════════ 학년칸 (§4) — 저=게이지 숨김(관찰) ═════════ */
+if(grade==='low'){ lensEl.classList.add('hide'); }
+
+/* ═════════ 애니메이션 ═════════ */
+let t0=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(), dt=Math.min(0.05,(now-t0)/1000); t0=now;
+  const hr=K.heartRate(effort), rr=K.respRate(effort), co=K.cardiacOutput(effort);
+  // 심박 펄스 (주기 60/hr 초)
+  heartPhase += dt / (60/hr); if(heartPhase>=1) heartPhase-=1;
+  const hs = 1 + 0.14*Math.max(0, Math.sin(heartPhase*Math.PI)*Math.exp(-heartPhase*2.6));
+  heart.scale.setScalar(hs);
+  heartLight.intensity = 0.35 + 3.5*(hs-1);
+  // 폐 호흡 (주기 60/rr 초)
+  lungPhase += dt / (60/rr);
+  const br = 1 + 0.16*Math.sin(lungPhase*Math.PI*2);
+  lungL.scale.set(LUNG_BASE[0]*br, LUNG_BASE[1]*br, LUNG_BASE[2]*br);
+  lungR.scale.set(LUNG_BASE[0]*br, LUNG_BASE[1]*br, LUNG_BASE[2]*br);
+  // 혈류 흐름 (CO 비례 속도)
+  bloodU += dt * (0.05 + co/19*0.22);
+  for(let i=0;i<BN;i++){
+    const u=(bloodU + i/BN)%1; const p=curve.getPoint(u);
+    dummy.position.copy(p); dummy.scale.setScalar(1); dummy.updateMatrix();
+    bloodMesh.setMatrixAt(i, dummy.matrix);
+  }
+  bloodMesh.instanceMatrix.needsUpdate=true;
+  // 산소 (숨참기 하강 / 재개 회복)
+  if(breathing){ curSpo2 = Math.min(K.SPO2_NORMAL, curSpo2 + K.RECOVER*dt); }
+  else { held += dt; curSpo2 = K.spo2(held, false); }
+  hist.push({ spo2:curSpo2, hr, rr }); if(hist.length>HIST_MAX) hist.shift();
+  syncHud();
+  if(!lensEl.classList.contains('hide')) drawGauge();
+  controls.update();
+  renderer.render(scene, camera);
+}
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+syncHud();
+document.getElementById('loading').classList.add('hide');
+animate();
+
+/* 검증 훅 */
+window.__BODY_P2__ = {
+  K, heart, lungL, lungR, bloodMesh, BN,
+  get effort(){ return effort; },
+  get spo2(){ return curSpo2; },
+  get breathing(){ return breathing; },
+  setEffort(v){ effort=v; sEffort.value=v; syncHud(); },
+  toggleHold(){ holdBtn.click(); },
+  holdFor(sec){ if(!breathing){ held+=sec; curSpo2=K.spo2(held,false); syncHud(); } },
+  reset(){ effort=0; breathing=true; held=0; curSpo2=K.SPO2_NORMAL; sEffort.value=0; hist.length=0; syncHud(); },
+  drawGauge, syncHud,
+};
+</script>
 </html>
