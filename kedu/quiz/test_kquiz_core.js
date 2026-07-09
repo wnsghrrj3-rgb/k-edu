@@ -13,6 +13,7 @@ require('./templates/g1_math_u2.js')(KQuiz);
 require('./templates/g1_math_u4.js')(KQuiz);
 require('./templates/g1_korean_u1.js')(KQuiz);
 require('./templates/g1_korean_u2.js')(KQuiz);
+require('./templates/g2_math_u1.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -31,7 +32,9 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_korean_u1_l07','g1_korean_u1_l08','g1_korean_u1_l09','g1_korean_u1_l10',
   'g1_korean_u1_l11','g1_korean_u1_l12','g1_korean_u1',
   'g1_korean_u2_l03','g1_korean_u2_l04','g1_korean_u2_l05','g1_korean_u2_l06',
-  'g1_korean_u2_l07','g1_korean_u2'];
+  'g1_korean_u2_l07','g1_korean_u2',
+  'g2_math_u1_l02','g2_math_u1_l03','g2_math_u1_l04','g2_math_u1_l05',
+  'g2_math_u1_l06','g2_math_u1_l07','g2_math_u1_l08','g2_math_u1'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -128,6 +131,15 @@ function expectChoice(q) {
   if ((m = q.match(/^「(.)」의 모음자/))) {                             // 국어 모음자
     var dj = hDecompose(m[1]); return dj ? dj.jung : '__?__';
   }
+  if ((m = q.match(/100이 (\d+)개, 10이 (\d+)개, 1이 (\d+)개이면/)))    // g2 세자리 구성
+    return 100 * +m[1] + 10 * +m[2] + +m[3];
+  if ((m = q.match(/(\d+)이 (\d+)개이면 얼마/))) return +m[1] * +m[2];  // g2 몇백/백(단위×개수)
+  if ((m = q.match(/^(\d+)에서 (백|십|일)의 자리 숫자 (\d+)는 얼마를 나타/))) // g2 자릿값(나타내는 값)
+    return +m[3] * (m[2] === '백' ? 100 : m[2] === '십' ? 10 : 1);
+  if ((m = q.match(/^(\d+)에서 (백|십|일)의 자리 숫자는/))) {            // g2 자리 숫자
+    var N = +m[1]; return m[2] === '백' ? Math.floor(N / 100) % 10 : m[2] === '십' ? Math.floor(N / 10) % 10 : N % 10;
+  }
+  if ((m = q.match(/(\d+)부터 (\d+)씩 뛰어 세면/))) return +m[1] + 3 * +m[2]; // g2 뛰어세기
   if (/●/.test(q)) {                                                  // u1 개수 세기
     var lines = q.split('\n');                                        // 렌더된 점 줄만 셈(프롬프트의 ● 제외)
     return (lines[lines.length - 1].match(/●/g) || []).length;
