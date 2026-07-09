@@ -93,6 +93,14 @@
   .budget .dot.used{background:var(--soc)}
   .vmark{width:30px;height:30px;border-radius:50%;border:2px dashed #fff;background:#F0616Acc;
     display:flex;align-items:center;justify-content:center;font-size:15px}
+  /* 출동·등굣길 마커 */
+  .firemk{font-size:26px;filter:drop-shadow(0 2px 3px #0008);animation:firepulse .7s ease-in-out infinite alternate}
+  @keyframes firepulse{from{transform:scale(.9)}to{transform:scale(1.15)}}
+  .vehiclemk{font-size:26px;filter:drop-shadow(0 2px 4px #0009)}
+  .pathdot{display:flex;align-items:center;justify-content:center}
+  .pathdot.end{font-size:22px;filter:drop-shadow(0 2px 3px #0008)}
+  .pathdot.mid{width:12px;height:12px;border-radius:50%;background:#F5C24B;border:2px solid #fff;box-shadow:0 1px 3px #0007}
+  @media (prefers-reduced-motion:reduce){ .firemk{animation:none} }
   @media (max-width:520px){ .lbtn{min-width:104px} .brand small{display:none} }
 </style>
 </head>
@@ -123,7 +131,9 @@
       <button class="lbtn" id="lensTime" data-l="time">🕐 몇 분 렌즈<small>지도를 눌러 시간 재기</small></button>
       <button class="lbtn" id="lensGolden" data-l="golden">🚒 골든타임 렌즈<small>등시권이 물들어요</small></button>
       <button class="lbtn" id="lensCenter" data-l="center">🏙 중심지 렌즈<small>시설이 몰린 곳</small></button>
+      <button class="lbtn" id="lensDispatch" data-l="dispatch">🚨 출동!<small>불난 곳으로 달려가기</small></button>
       <button class="lbtn" id="lensVirtual" data-l="virtual">🏗 가상 배치<small>새 소방서 놓아보기</small></button>
+      <button class="lbtn" id="lensPath" data-l="path">✏️ 내 길 그리기<small>등굣길을 재 보기</small></button>
     </div>
     <div class="banner" id="banner"></div>
     <div class="cards" id="cards"></div>
@@ -144,8 +154,11 @@
   var S = {
     home: null, grade: 'mid', mode: 'free', lens: null, virtualMode: false,
     active: {}, poisByCat: {}, markers: {}, virtual: [], budget: 2,
-    stage: null, homeMk: null, mission: null, guideLine: null
+    stage: null, homeMk: null, mission: null, guideLine: null,
+    pathPts: [], pathLine: null, pathDots: [], dispatching: false,
+    fireMk: null, vehicleMk: null, dispatchLine: null
   };
+  var DISPATCH_CATS = ['fire', 'hospital', 'police']; // 출동 차량 3종(같은 코드)
 
   function sound(name) { try { if (window.KLab && window.KLab.sound) window.KLab.sound.play(name); } catch (e) {} }
   function collect(id) { try { if (window.parent && parent !== window && parent.KEDU_COLLECT) parent.KEDU_COLLECT(id); } catch (e) {} }
@@ -197,6 +210,7 @@
         N.poiSearch(id, S.home, RADIUS, function (err, pois) {
           S.poisByCat[id] = err ? [] : pois;
           drawMarkers(id); refreshLens();
+          if (!err && pois.length === 0 && S.mode === 'free') showEmptyCatCard(id);
         });
       }
     } else {
@@ -234,10 +248,178 @@
   /* ── 렌즈 ── */
   function setLens(name) {
     if (name === 'virtual') { toggleVirtual(); return; }
+    if (name === 'dispatch') { enterDispatch(); return; }
+    if (name === 'path') { enterPath(); return; }
+    clearTransient();
     S.lens = (S.lens === name) ? null : name;
     S.virtualMode = false; syncDock();
     refreshLens();
     if (S.lens === 'time') showCard({ title: '🕐 몇 분 렌즈', html: '지도에서 <b>우리 집</b>이나 아무 곳이나 눌러 보세요. 켜 둔 시설까지 얼마나 걸리는지 알려줄게요.' });
+    else if (S.lens === 'golden') ensureGoldenReady();
+    else if (S.lens === 'center') ensureCenterReady();
+  }
+
+  /* ── R1-1: 렌즈 무응답 0 (자동 켜서 반드시 화면이 변한다) ── */
+  function ensureGoldenReady() {
+    var hasEmerg = activeCats().some(function (c) { var i = N.catInfo(c); return i && i.lens.mode === 'emerg'; });
+    if (!hasEmerg) {
+      ensureCat('fire', function () { refreshLens(); });
+      showCard({ title: '🚒 골든타임 렌즈', html: '<b>소방서</b>가 5분 안에 닿는 곳이 물들었어요. 🚨경찰서·🏥병원도 켜 보세요.', note: '직선거리로 어림한 값이에요.' });
+    }
+  }
+  function ensureCenterReady() {
+    if (activeCats().length >= 2) return;
+    var need = ['library', 'market'].filter(function (c) { return !S.active[c]; }), i = 0;
+    (function nx() {
+      if (i >= need.length) { refreshLens(); showCard({ title: '🏙 중심지 렌즈', html: '시설을 여러 종류 켜니 <b>몰려 있는 곳</b>이 노랗게 빛나요. 더 켤수록 또렷해져요.' }); return; }
+      ensureCat(need[i++], function () { nx(); });
+    })();
+  }
+  function showEmptyCatCard(id) {
+    var c = N.catInfo(id);
+    showCard({ title: c.ico + ' ' + c.nm, html: '이 동네 반경 2km 안에 검색된 ' + c.nm + '이(가) 없어요.',
+      actions: [{ label: '🔍 더 넓게 찾기', on: function () { retryWider(id); } }] });
+  }
+  function retryWider(id) {
+    var c = N.catInfo(id); banner('더 넓게 찾는 중…');
+    N.poiSearch(id, S.home, 4000, function (err, pois) {
+      banner('');
+      S.poisByCat[id] = err ? [] : pois; drawMarkers(id); refreshLens();
+      if (!err && pois.length) showCard({ title: c.ico + ' ' + c.nm, html: '조금 넓혔더니 <b>' + pois.length + '곳</b> 찾았어요!' });
+      else showCard({ title: c.ico + ' ' + c.nm, html: '조금 넓혀도 못 찾았어요. 다른 시설을 켜 볼까요?' });
+    });
+  }
+
+  /* ── R1-2: 출동! 시뮬레이션 (실지도 위 골든타임) ── */
+  function enterDispatch() {
+    if (S.grade === 'low') { showCard({ title: '🚨 출동!', html: '이 기능은 <b>중·고학년</b>에서 열려요.' }); return; }
+    clearTransient();
+    var was = S.lens === 'dispatch';
+    S.lens = was ? null : 'dispatch'; S.virtualMode = false; syncDock(); refreshLens();
+    if (!was) {
+      ensureCat('fire', function () { refreshLens(); });
+      showCard({ title: '🚨 출동!', html: '지도에서 <b>불이 난 곳</b>을 누르면, 가장 가까운 소방서에서 🚒가 달려와요. 골든타임(5분) 안에 닿을까?' });
+    }
+  }
+  function runDispatch(pt, catId) {
+    if (S.dispatching) return;
+    var c = N.catInfo(catId || 'fire');
+    ensureCat(c.id, function () {
+      var pool = poolFor(c.id);
+      if (!pool.length) { showCard({ title: '🚨 출동!', html: '이 동네엔 아직 ' + c.nm + '이(가) 없어요. 🏗 가상 배치로 놓아 볼까요?' }); return; }
+      var res = N.dispatch(pt, pool, c.lens.mode, c.lens.limitMin);
+      if (S.fireMk) { S.stage.layers.aux.removeLayer(S.fireMk); S.fireMk = null; }
+      var fic = window.L.divIcon({ className: '', html: '<div class="firemk">🔥</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+      S.fireMk = window.L.marker([pt.lat, pt.lng], { icon: fic, zIndexOffset: 1500 }).addTo(S.stage.layers.aux);
+      animateVehicle(res.poi, pt, c, res);
+    });
+  }
+  function animateVehicle(from, to, c, res) {
+    S.dispatching = true;
+    if (S.vehicleMk) { S.stage.layers.aux.removeLayer(S.vehicleMk); S.vehicleMk = null; }
+    if (S.dispatchLine) { S.stage.layers.aux.removeLayer(S.dispatchLine); S.dispatchLine = null; }
+    S.dispatchLine = window.L.polyline([[from.lat, from.lng], [to.lat, to.lng]],
+      { color: c.lens.color, weight: 3, dashArray: '8 8' }).addTo(S.stage.layers.aux);
+    var vic = window.L.divIcon({ className: '', html: '<div class="vehiclemk">' + c.ico + '</div>', iconSize: [30, 30], iconAnchor: [15, 15] });
+    S.vehicleMk = window.L.marker([from.lat, from.lng], { icon: vic, zIndexOffset: 2000 }).addTo(S.stage.layers.aux);
+    sound('whoosh');
+    var raf = window.requestAnimationFrame;
+    if (!raf) { finishDispatch(from, to, c, res); return; }
+    var t0 = Date.now(), dur = 2000;
+    (function step() {
+      var k = Math.min(1, (Date.now() - t0) / dur);
+      var la = from.lat + (to.lat - from.lat) * k, ln = from.lng + (to.lng - from.lng) * k;
+      if (S.vehicleMk && S.vehicleMk.setLatLng) S.vehicleMk.setLatLng([la, ln]);
+      if (k < 1) raf(step); else finishDispatch(from, to, c, res);
+    })();
+  }
+  function finishDispatch(from, to, c, res) {
+    S.dispatching = false;
+    sound(res.ok ? 'success' : 'fail');
+    var v = Math.max(1, Math.round(res.min));
+    var head = res.ok
+      ? '✨ <b>약 ' + v + '분</b> — 골든타임(' + c.lens.limitMin + '분) 안에 도착!'
+      : '😥 <b>약 ' + v + '분</b> — 골든타임(' + c.lens.limitMin + '분)을 넘겼어요';
+    var virt = (res.poi && res.poi.src === 'virtual')
+      ? '<div class="row">🏗 <b>네가 놓은 ' + c.nm + '</b>이(가) 먼저 도착했어!</div>' : '';
+    showCard({
+      title: '🚨 ' + c.ico + ' 출동 결과',
+      html: '<div class="row">' + c.ico + ' ' + res.poi.name + ' → 🔥 불난 곳</div>' + virt + '<div class="row">' + head + '</div>',
+      note: '직선거리로 어림한 값이에요.',
+      actions: DISPATCH_CATS.map(function (dc) {
+        var ci = N.catInfo(dc);
+        return { label: ci.ico + ' ' + ci.nm + '로', ghost: dc !== c.id, on: function () { runDispatch(to, dc); } };
+      })
+    });
+    collect('nb_dispatch');
+  }
+
+  /* ── R1-3: 내 등굣길 그리기 (제1원리 — 내 삶이 지도 위에) ── */
+  function enterPath() {
+    clearTransient();
+    var was = S.lens === 'path';
+    S.lens = was ? null : 'path'; S.virtualMode = false; S.pathPts = []; syncDock(); refreshLens();
+    if (!was) showCard({
+      title: '✏️ 내 등굣길 그리기',
+      html: '지도를 <b>탭·탭·탭</b> 눌러 우리 집 🏠 → 학교 🏫 가는 길을 그려요.',
+      actions: [{ label: '✓ 다 그렸어', on: finishPath }, { label: '지우기', ghost: true, on: function () { clearTransient(); enterPath(); } }]
+    });
+  }
+  function addPathPoint(pt) {
+    S.pathPts.push(pt); redrawPath(); sound('tap');
+    if (S.pathPts.length >= 2) showCard({
+      title: '✏️ 등굣길 그리는 중',
+      html: '지금까지 <b>약 ' + Math.round(N.pathLength(S.pathPts)) + 'm</b> · 점 ' + S.pathPts.length + '개. 계속 이어 그리거나 [다 그렸어]를 눌러요.',
+      actions: [{ label: '✓ 다 그렸어', on: finishPath }, { label: '지우기', ghost: true, on: function () { clearTransient(); enterPath(); } }]
+    });
+  }
+  function redrawPath() {
+    if (S.pathLine) { S.stage.layers.aux.removeLayer(S.pathLine); S.pathLine = null; }
+    (S.pathDots || []).forEach(function (d) { S.stage.layers.aux.removeLayer(d); });
+    S.pathDots = [];
+    if (S.pathPts.length >= 2) {
+      S.pathLine = window.L.polyline(S.pathPts.map(function (p) { return [p.lat, p.lng]; }),
+        { color: '#F5C24B', weight: 5, opacity: 0.9 }).addTo(S.stage.layers.aux);
+    }
+    S.pathPts.forEach(function (p, i) {
+      var end = (i === 0) || (i === S.pathPts.length - 1);
+      var glyph = i === 0 ? '🏠' : (i === S.pathPts.length - 1 ? '🏫' : '');
+      var ic = window.L.divIcon({ className: '', html: '<div class="pathdot ' + (end ? 'end' : 'mid') + '">' + glyph + '</div>',
+        iconSize: [end ? 24 : 12, end ? 24 : 12], iconAnchor: [end ? 12 : 6, end ? 12 : 6] });
+      var mk = window.L.marker([p.lat, p.lng], { icon: ic }).addTo(S.stage.layers.aux);
+      S.pathDots.push(mk);
+    });
+  }
+  function finishPath() {
+    if (S.pathPts.length < 2) { showCard({ title: '✏️ 내 등굣길', html: '점을 <b>두 곳 이상</b> 찍어 길을 그려 주세요.' }); return; }
+    var m = N.pathLength(S.pathPts), min = N.pathWalkMin(m);
+    var along = N.poisAlongPath(S.pathPts, allCachedPois(), 80);
+    var seen = {}, names = [];
+    along.forEach(function (a) { if (seen[a.poi.id]) return; seen[a.poi.id] = 1; var c = N.catInfo(a.poi.cat) || { ico: '📍' }; names.push(c.ico + ' ' + a.poi.name); });
+    var start = S.pathPts[0], end = S.pathPts[S.pathPts.length - 1];
+    var straightMin = Math.max(1, Math.round(N.walkMin(N.haversine(start, end))));
+    var alongHtml = names.length
+      ? '<div class="row">가는 길에 ' + names.slice(0, 4).join(' · ') + ' 앞을 지나!</div>'
+      : '<div class="row" style="color:var(--sub)">시설을 켜면 지나는 곳도 알려줄게요.</div>';
+    showCard({
+      title: '✏️ 내 등굣길',
+      html: '<div class="row">네가 그린 길은 <b>약 ' + Math.round(m) + 'm</b> · 걸어서 <b>약 ' + min + '분</b></div>'
+        + alongHtml
+        + '<div class="row" style="color:var(--sub)">곧장 가면 약 ' + straightMin + '분인데, 네가 그린 길은 약 ' + min + '분이네.</div>',
+      note: '네가 그린 길을 따라 잰 값이에요.',
+      actions: [{ label: '다시 그리기', ghost: true, on: function () { clearTransient(); enterPath(); } }]
+    });
+    sound('success'); collect('nb_myway');
+  }
+  function allCachedPois() {
+    var out = []; Object.keys(S.poisByCat).forEach(function (k) { out = out.concat(S.poisByCat[k] || []); }); return out;
+  }
+  function clearTransient() {
+    ['fireMk', 'vehicleMk', 'dispatchLine', 'pathLine'].forEach(function (k) {
+      if (S[k]) { try { S.stage.layers.aux.removeLayer(S[k]); } catch (e) {} S[k] = null; }
+    });
+    (S.pathDots || []).forEach(function (d) { try { S.stage.layers.aux.removeLayer(d); } catch (e) {} });
+    S.pathDots = []; S.pathPts = []; S.dispatching = false;
   }
   function refreshLens() {
     S.stage.layers.lens.clearLayers();
@@ -274,11 +456,13 @@
     var pt = { lat: e.latlng.lat, lng: e.latlng.lng };
     if (S.virtualMode) { placeVirtual(pt); return; }
     if (S.mode === 'mission' && S.mission && S.mission.rule.type === 'coverage_gap') { checkCoverageTap(pt); return; }
+    if (S.lens === 'path') { addPathPoint(pt); return; }
+    if (S.lens === 'dispatch') { runDispatch(pt, 'fire'); return; }
     if (S.lens === 'time') showTimeCards(pt);
   }
   function showTimeCards(pt) {
     var cats = activeCats();
-    if (!cats.length) { showCard({ title: '🕐 몇 분 렌즈', html: '먼저 위에서 시설을 켜 주세요 (예: 🚒 소방서).' }); return; }
+    if (!cats.length) { ensureCat('fire', function () { showTimeCards(pt); }); return; }
     if (S.guideLine) { S.stage.layers.aux.removeLayer(S.guideLine); S.guideLine = null; }
     var rows = '', firstNearest = null;
     cats.forEach(function (cat) {
@@ -449,6 +633,7 @@
   /* ── 모드/학년/도크 ── */
   function setMode(m) {
     S.mode = m; S.virtualMode = false;
+    clearTransient();
     document.querySelectorAll('.mtab').forEach(function (t) { t.classList.toggle('on', t.dataset.m === m); });
     clearCards(); syncDock();
     if (m === 'mission') startMissions();
@@ -457,20 +642,29 @@
   function setGrade(g) {
     S.grade = g;
     document.querySelectorAll('.gbtn').forEach(function (t) { t.classList.toggle('on', t.dataset.g === g); });
-    if (g === 'low') { S.lens = (S.lens === 'time') ? 'time' : null; S.virtualMode = false; }
+    if (g === 'low') {
+      if (S.lens === 'dispatch') { clearTransient(); S.lens = null; }
+      if (S.lens !== 'time' && S.lens !== 'path') S.lens = (S.lens === null) ? null : S.lens;
+      if (S.lens === 'golden' || S.lens === 'center') S.lens = null;
+      S.virtualMode = false;
+    }
     syncDock(); refreshLens();
     if (S.mode === 'mission') startMissions();
   }
   function syncDock() {
-    // 저학년: 몇 분 렌즈만. 중학년: +골든/중심지. 고학년: +가상 배치.
+    // 저학년: 몇 분·내 길만. 중학년: +골든/중심지/출동. 고학년: +가상 배치.
     var showGolden = (S.grade !== 'low'), showCenter = (S.grade !== 'low'), showVirtual = (S.grade === 'high');
+    var showDispatch = (S.grade !== 'low');
     $('#lensGolden').classList.toggle('hide', !showGolden);
     $('#lensCenter').classList.toggle('hide', !showCenter);
+    $('#lensDispatch').classList.toggle('hide', !showDispatch);
     $('#lensVirtual').classList.toggle('hide', !showVirtual);
     $('#lensTime').classList.toggle('on', S.lens === 'time');
     $('#lensGolden').classList.toggle('on', S.lens === 'golden' && !S.virtualMode);
     $('#lensCenter').classList.toggle('on', S.lens === 'center');
+    $('#lensDispatch').classList.toggle('on', S.lens === 'dispatch');
     $('#lensVirtual').classList.toggle('on', S.virtualMode);
+    $('#lensPath').classList.toggle('on', S.lens === 'path');
   }
 
   function promptHome() {
@@ -515,7 +709,8 @@
     tapAt: function (lat, lng) { onMapClick({ latlng: { lat: lat, lng: lng } }); },
     placeVirtual: function (lat, lng) { placeVirtual({ lat: lat, lng: lng }); },
     activeCats: activeCats, poolFor: poolFor, runMission: runMission, missionsForGrade: missionsForGrade,
-    setHome: function (h) { setHome(h, false); }, cardText: function () { return ($('#cards').textContent || ''); }
+    setHome: function (h) { setHome(h, false); }, cardText: function () { return ($('#cards').textContent || ''); },
+    runDispatch: runDispatch, finishPath: finishPath, allCachedPois: allCachedPois
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

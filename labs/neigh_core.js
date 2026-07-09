@@ -152,6 +152,56 @@
     return { cells: out, max: max };
   };
 
+  /* ── 순수부: 출동 판정(R1-2) ────────────────────────────── */
+  // pt(불난 곳) → pool(소방서 등, 가상 포함) 중 최근접에서 출동. mode·limitMin으로 골든타임 판정.
+  N.dispatch = function (pt, pool, mode, limitMin) {
+    var nr = N.nearest(pt, pool || []);
+    if (!nr) return { poi: null, dist: Infinity, min: Infinity, ok: false };
+    var min = N.timeMin(nr.dist, mode || 'emerg');
+    return { poi: nr.poi, dist: nr.dist, min: min, ok: (min <= limitMin) };
+  };
+
+  /* ── 순수부: 경로 기하(R1-3 등굣길) ─────────────────────── */
+  // 경유점 배열 총 길이(m). 아이가 그린 길이므로 κ 미적용(실경로 그 자체).
+  N.pathLength = function (pts) {
+    var pts2 = pts || [], s = 0;
+    for (var i = 1; i < pts2.length; i++) s += N.haversine(pts2[i - 1], pts2[i]);
+    return s;
+  };
+  // 그린 길 도보 시간(κ 없음): m / 도보속도. 표시는 aboutMin과 동형("약 N분").
+  N.pathWalkMin = function (m) { var v = Math.round(m / SPEED.walk); return v < 1 ? 1 : v; };
+  // 점 p와 선분 a-b의 최단거리(m). 국소 등장방형 투영(a 원점·lat0=a.lat) 후 t 클램프.
+  //   불변식: a==b면 haversine(p,a)와 일치 / t는 [0,1]로 클램프(끝점 밖은 끝점까지).
+  N.pointSegDist = function (p, a, b) {
+    var lat0 = a.lat * DEG, k = R_EARTH * DEG;
+    function px(q) { return { x: (q.lng - a.lng) * k * Math.cos(lat0), y: (q.lat - a.lat) * k }; }
+    var A = { x: 0, y: 0 }, B = px(b), P = px(p);
+    var bb = B.x * B.x + B.y * B.y;
+    var t = bb > 0 ? (P.x * B.x + P.y * B.y) / bb : 0;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    var cx = A.x + t * B.x, cy = A.y + t * B.y;
+    var dx = P.x - cx, dy = P.y - cy;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+  // 경로(pts) 주변 tolM 안에 스치는 POI 발견 — "가는 길에 ○○을 지나!"
+  N.poisAlongPath = function (pts, pois, tolM) {
+    var pts2 = pts || [], tol = tolM || 80, out = [];
+    (pois || []).forEach(function (poi) {
+      var best = Infinity;
+      if (pts2.length < 2) {
+        if (pts2.length === 1) best = N.haversine(poi, pts2[0]);
+      } else {
+        for (var i = 1; i < pts2.length; i++) {
+          var d = N.pointSegDist(poi, pts2[i - 1], pts2[i]);
+          if (d < best) best = d;
+        }
+      }
+      if (best <= tol) out.push({ poi: poi, dist: best });
+    });
+    out.sort(function (x, y) { return x.dist - y.dist; });
+    return out;
+  };
+
   /* ── 순수부: 미션 rule 채점(장소 독립) ──────────────────── */
   // rule + ctx{home, pois(전체), byCat(cat→pois), tapPt, virtualPois, probes, mode}
   N.evalRule = function (rule, ctx) {
