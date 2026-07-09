@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 사회실 · 동네 시간여행</title>
+<!--
+  케이랩 사회실 2.0 · R2 동네 시간여행 (R2-0 골든)
+  설계: klab/사회실2_설계.md (R2). 심장 = 커튼을 밀면 우리 동네 40년이 갈라진다.
+  헌법: 실데이터(항공사진 지역 팩) 위에. R2-0은 데모 팩(코드 드로잉)으로 엔진 선검증 — 실팩은 준호 캡처.
+  순수 로직·알파 불변식·찾아라 판정 = neigh_timepack.js(window.TimePack, timestreet layerAlpha 승계).
+  정직 계약: 팩 출처·연도 하단 상시 표기 · 창작 서사 금지(why는 팩 확인 사실만).
+  렌더 감·커튼 손맛·프레임 정렬 = 준호 실기기 검수(T-5).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{ --soc:#9B7BF5; --bg0:#151824; --bg1:#1d2130; --panel:#232838; --line:#333a4f;
+         --ink:#e9ecf5; --sub:#a6adc4; --ok:#7FD19B; --warn:#F0A85B; --time:#F0A85B; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg0);color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;overflow:hidden}
+  .wrap{display:flex;flex-direction:column;height:100%}
+  .top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg1);
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .brand{font-family:'Jua',sans-serif;font-size:19px;letter-spacing:.5px;
+    background:linear-gradient(90deg,#f5cfa0,#F0A85B);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .brand small{display:block;font-family:'Gowun Dodum';font-size:11px;color:var(--sub);letter-spacing:0}
+  .grades{display:flex;gap:4px;margin-left:auto}
+  .gbtn{background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:20px;
+    padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit}
+  .gbtn.on{background:var(--soc);color:#fff;border-color:var(--soc)}
+  .sound{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    width:36px;height:34px;font-size:16px;cursor:pointer}
+  .modes{display:flex;gap:6px;padding:8px 14px;background:var(--bg1);border-bottom:1px solid var(--line)}
+  .mtab{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--sub);border-radius:12px;
+    padding:8px;font-size:14px;cursor:pointer;font-family:inherit;text-align:center}
+  .mtab.on{background:#3a2c1c;border-color:var(--time);color:#ffe7c9}
+  .mtab[disabled]{opacity:.4;pointer-events:none}
+  .body{flex:1;position:relative;min-height:0;background:#0d1017}
+  #stage{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* 연도 뱃지(현재) */
+  .yearbadge{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:6;
+    background:rgba(29,33,48,.9);border:1px solid var(--line);border-radius:24px;
+    padding:8px 20px;font-family:'Jua';font-size:26px;color:#ffe7c9;letter-spacing:1px;
+    backdrop-filter:blur(4px);pointer-events:none}
+  /* 프레임 노트 */
+  .note{position:absolute;left:12px;right:12px;top:62px;z-index:6;text-align:center;
+    font-size:13px;color:#e7dcff;pointer-events:none;text-shadow:0 1px 4px #000a}
+  /* 커튼 핸들 */
+  .curtain{position:absolute;top:0;bottom:0;width:2px;background:#fff8;z-index:5;
+    box-shadow:0 0 8px #000a;display:none;cursor:ew-resize;touch-action:none}
+  .curtain::before{content:'⟺';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:38px;height:38px;line-height:38px;text-align:center;background:var(--time);color:#3a2410;
+    border-radius:50%;font-size:18px;box-shadow:0 2px 8px #0007}
+  .curtain .lab{position:absolute;top:14px;font-size:12px;color:#fff;background:#0007;padding:2px 8px;border-radius:8px;white-space:nowrap}
+  .curtain .labL{right:8px} .curtain .labR{left:8px}
+  body.curtain-on .curtain{display:block}
+  /* 하단 슬라이더 도크 */
+  .dock{position:absolute;left:0;right:0;bottom:0;z-index:6;padding:12px 16px 14px;
+    background:linear-gradient(180deg,transparent,rgba(21,24,36,.92)34%)}
+  .slider-row{display:flex;align-items:center;gap:10px}
+  .yr{font-family:'Jua';font-size:14px;color:var(--sub);min-width:42px;text-align:center}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,#8a6a3a,#F0A85B);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:#fff;border:3px solid var(--time);cursor:pointer;box-shadow:0 2px 6px #0007}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--time);cursor:pointer}
+  .src{margin-top:8px;font-size:10.5px;color:#7f869c;text-align:center;line-height:1.4}
+  /* 카드(공통 팝업) */
+  .card{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:9;
+    width:min(420px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:15px 17px;box-shadow:0 10px 30px #000a;display:none}
+  .card.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  .card h3{margin:0 0 7px;font-family:'Jua';font-size:16px;color:#ffe7c9}
+  .card p{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--ink)}
+  .card .opts{display:flex;flex-direction:column;gap:7px;margin:9px 0 2px}
+  .opt{background:var(--bg1);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+    padding:10px;font-size:14px;cursor:pointer;font-family:inherit;text-align:left}
+  .opt.ok{background:#22402c;border-color:var(--ok);color:#d6ffe4}
+  .opt.no{background:#3f2427;border-color:#c9707a;color:#ffdada}
+  .cbtn{background:var(--time);border:0;color:#3a2410;border-radius:10px;padding:9px 14px;
+    font-size:14px;cursor:pointer;font-family:inherit;font-weight:bold;margin-top:4px}
+  .cbtn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line)}
+  .card .row{display:flex;gap:8px;margin-top:6px}
+  /* 찾아라 배너 */
+  .findbar{position:absolute;left:12px;right:12px;top:104px;z-index:6;text-align:center;
+    background:rgba(58,44,28,.9);border:1px solid var(--time);border-radius:12px;padding:9px 12px;
+    font-size:14px;color:#ffe7c9;display:none}
+  body.mode-find .findbar{display:block}
+  .findbar b{color:#fff}
+  /* 도감 오버레이 */
+  .book{position:absolute;inset:0;z-index:12;background:rgba(13,16,23,.96);display:none;
+    flex-direction:column;padding:18px}
+  body.mode-book .book{display:flex}
+  .book h2{font-family:'Jua';font-size:20px;color:#ffe7c9;margin:2px 0 4px}
+  .book .prog{font-size:13px;color:var(--sub);margin-bottom:12px}
+  .book .gauge{height:8px;background:var(--panel);border-radius:8px;overflow:hidden;margin:6px 0 14px}
+  .book .gfill{height:100%;background:linear-gradient(90deg,#8a6a3a,#F0A85B);width:0;transition:width .5s}
+  .cards{display:grid;grid-template-columns:1fr;gap:10px;overflow:auto}
+  .fcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+  .fcard.locked{opacity:.5}
+  .fcard .k{font-size:12px;color:var(--time);font-family:'Jua'}
+  .fcard .t{font-size:15px;color:var(--ink);margin:3px 0}
+  .fcard .w{font-size:13px;color:var(--sub);line-height:1.5}
+  .fcard.locked .w{color:#555c72;font-style:italic}
+  /* 토스트 */
+  .toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;
+    background:rgba(34,64,44,.96);border:1px solid var(--ok);color:#d6ffe4;border-radius:14px;
+    padding:14px 22px;font-size:16px;font-family:'Jua';display:none;box-shadow:0 8px 28px #000a}
+  .toast.show{display:block;animation:pop .3s ease}
+  .honest{display:inline-block;background:#0004;border:1px solid var(--line);border-radius:8px;
+    padding:2px 8px;font-size:11px;color:var(--sub);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">🕰 동네 시간여행<small id="place">우리 동네의 어제와 오늘</small></div>
+    <div class="grades" id="grades">
+      <button class="gbtn" data-g="low">저학년</button>
+      <button class="gbtn on" data-g="mid">중학년</button>
+      <button class="gbtn" data-g="high">고학년</button>
+    </div>
+    <button class="sound" id="snd" title="소리 켜기/끄기">🔊</button>
+  </div>
+  <div class="modes" id="modes">
+    <button class="mtab on" data-m="travel">🎞 시간여행</button>
+    <button class="mtab" data-m="find">🔍 찾아라</button>
+    <button class="mtab" data-m="book">📔 도감</button>
+  </div>
+  <div class="body">
+    <canvas id="stage"></canvas>
+    <div class="yearbadge" id="yb">—</div>
+    <div class="note" id="note"></div>
+    <div class="findbar" id="findbar"></div>
+
+    <div class="curtain" id="curtain" style="left:50%">
+      <span class="lab labL" id="curL">옛날</span>
+      <span class="lab labR" id="curR">오늘</span>
+    </div>
+
+    <div class="dock" id="dock">
+      <div class="slider-row">
+        <span class="yr" id="yrMin">—</span>
+        <input type="range" id="slider" min="0" max="1000" value="0">
+        <span class="yr" id="yrMax">—</span>
+      </div>
+      <div class="src" id="src"></div>
+    </div>
+
+    <div class="card" id="card"></div>
+
+    <div class="book">
+      <h2>📔 우리 동네 도감</h2>
+      <div class="prog" id="bookProg">0 / 0</div>
+      <div class="gauge"><div class="gfill" id="bookGauge"></div></div>
+      <div class="cards" id="bookCards"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script src="neigh_timepack.js"></script>
+<script id="neigh-time-logic">
+(function () {
+  'use strict';
+  var TP = window.TimePack;
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* 데모 팩 폴백(fetch 실패·오프라인·스모크 대비) — pack.json 과 동일 */
+  var DEMO = {
+    id: 'demo', title: '우리 동네(예시) — 논에서 아파트까지',
+    place: { name: '예시 동네' }, demo: true,
+    frames: [
+      { year: 1985, draw: 'rural', note: '온통 논밭과 낮은 집들이었어요.' },
+      { year: 2000, draw: 'village', note: '길이 넓어지고 가게와 학교가 생겼어요.' },
+      { year: 2024, draw: 'apartment', note: '논이 있던 자리에 아파트 단지가 들어섰어요.' }
+    ],
+    find: [
+      { id: 'd1', ya: 0, yb: 2, q: '그때는 있었는데 지금은 사라진 것은?', px: [0.30, 0.66, 0.13], why: '여기 넓은 논은 2000년대에 아파트 단지가 되었어요.', kind: 'gone' },
+      { id: 'd2', ya: 0, yb: 2, q: '지금은 있는데 그때는 없던 것은?', px: [0.72, 0.42, 0.12], why: '높은 아파트는 옛날 이 동네엔 없었어요.', kind: 'new' },
+      { id: 'd3', ya: 0, yb: 2, q: '오래도록 자리를 지킨 것은?', px: [0.50, 0.30, 0.10], why: '동네 뒷산은 예나 지금이나 그 자리에 있어요.', kind: 'kept' }
+    ],
+    predict: { q: '1985년, 지금 아파트가 선 자리는 무엇이었을까요?', options: ['넓은 논밭', '큰 시장', '기차역'], answer: 0 },
+    src: '예시 데이터(엔진 확인용 그림) — 실제 지역 팩은 국토지리정보원 국토정보플랫폼 항공사진으로 만들어요.'
+  };
+
+  var S = {
+    pack: null, N: 0, t: 0, mode: 'travel', grade: 'mid',
+    split: 0.5, found: [], predicted: false, curtainDrag: false, stage: false
+  };
+
+  function sound(name) { try { if (window.KLab && window.KLab.sound) window.KLab.sound.play(name); } catch (e) {} }
+  function collect(id) { try { if (window.parent && parent !== window && parent.KEDU_COLLECT) parent.KEDU_COLLECT(id); } catch (e) {} }
+  function qs(k) { try { return new URLSearchParams(location.search).get(k); } catch (e) { return null; } }
+
+  /* ── 코드 드로잉 씬(데모 프레임) ── */
+  function scene(ctx, type, w, h, a) {
+    if (a <= 0.001) return;
+    ctx.save(); ctx.globalAlpha = a;
+    // 하늘
+    var sky = ctx.createLinearGradient(0, 0, 0, h * 0.7);
+    if (type === 'rural') { sky.addColorStop(0, '#bfe3f5'); sky.addColorStop(1, '#eaf6e8'); }
+    else if (type === 'village') { sky.addColorStop(0, '#a9d4ef'); sky.addColorStop(1, '#e4eef4'); }
+    else { sky.addColorStop(0, '#93bfe0'); sky.addColorStop(1, '#dfe6ee'); }
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+    // 뒷산(항상 자리 지킴 — find d3)
+    ctx.fillStyle = '#8fb98a';
+    ctx.beginPath(); ctx.moveTo(w * 0.32, h * 0.42);
+    ctx.quadraticCurveTo(w * 0.5, h * 0.16, w * 0.68, h * 0.42);
+    ctx.lineTo(w * 0.68, h * 0.42); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#7aa876';
+    ctx.beginPath(); ctx.moveTo(w * 0.40, h * 0.40);
+    ctx.quadraticCurveTo(w * 0.5, h * 0.24, w * 0.60, h * 0.40); ctx.closePath(); ctx.fill();
+    // 지면
+    ctx.fillStyle = (type === 'rural') ? '#cfe0a8' : '#c7c9c0';
+    ctx.fillRect(0, h * 0.42, w, h * 0.58);
+    if (type === 'rural') {
+      // 넓은 논(격자) — find d1 자리
+      ctx.fillStyle = '#a9c77e';
+      for (var r = 0; r < 4; r++) for (var c = 0; c < 6; c++) {
+        ctx.fillRect(w * (0.06 + c * 0.15), h * (0.5 + r * 0.11), w * 0.13, h * 0.09);
+      }
+      ctx.strokeStyle = '#7f9b56'; ctx.lineWidth = 1;
+      for (var r2 = 0; r2 < 4; r2++) for (var c2 = 0; c2 < 6; c2++)
+        ctx.strokeRect(w * (0.06 + c2 * 0.15), h * (0.5 + r2 * 0.11), w * 0.13, h * 0.09);
+      // 낮은 집 두 채
+      lowHouse(ctx, w * 0.14, h * 0.48, w * 0.05, '#d8c39a', '#b89b6e');
+      lowHouse(ctx, w * 0.86, h * 0.47, w * 0.045, '#d8c39a', '#b89b6e');
+    } else if (type === 'village') {
+      // 길
+      ctx.fillStyle = '#9a9d9a'; ctx.fillRect(w * 0.0, h * 0.62, w, h * 0.06);
+      ctx.fillStyle = '#9a9d9a'; ctx.fillRect(w * 0.46, h * 0.42, w * 0.08, h * 0.58);
+      // 상가·학교·집
+      lowHouse(ctx, w * 0.18, h * 0.5, w * 0.06, '#e6d6b8', '#c58b5b');
+      lowHouse(ctx, w * 0.30, h * 0.52, w * 0.05, '#d9e2ea', '#8fa9bd');
+      building(ctx, w * 0.66, h * 0.44, w * 0.09, h * 0.18, '#e8e2d0', 2);
+      lowHouse(ctx, w * 0.80, h * 0.53, w * 0.05, '#e6d6b8', '#c58b5b');
+    } else {
+      // 아파트 단지 — find d2 자리(오른쪽 높은 동)
+      building(ctx, w * 0.10, h * 0.36, w * 0.10, h * 0.26, '#dfe3ea', 6);
+      building(ctx, w * 0.24, h * 0.30, w * 0.11, h * 0.32, '#e6e9ef', 8);
+      // d1 자리(옛 논)엔 낮은 동
+      building(ctx, w * 0.24, h * 0.55, w * 0.14, h * 0.10, '#d5d9e0', 2);
+      building(ctx, w * 0.66, h * 0.26, w * 0.12, h * 0.36, '#e6e9ef', 9);
+      building(ctx, w * 0.82, h * 0.34, w * 0.10, h * 0.28, '#dfe3ea', 7);
+      ctx.fillStyle = '#8a8d8a'; ctx.fillRect(0, h * 0.66, w, h * 0.05); // 도로
+    }
+    ctx.restore();
+  }
+  function lowHouse(ctx, cx, base, s, wall, roof) {
+    var w = s * 1.5, wh = s * 0.9;
+    ctx.fillStyle = wall; ctx.fillRect(cx - w / 2, base - wh, w, wh);
+    ctx.fillStyle = roof;
+    ctx.beginPath(); ctx.moveTo(cx - w / 2 - 4, base - wh);
+    ctx.quadraticCurveTo(cx, base - wh - s * 0.7, cx + w / 2 + 4, base - wh); ctx.closePath(); ctx.fill();
+  }
+  function building(ctx, x, y, w, h, col, floors) {
+    ctx.fillStyle = col; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = '#0002'; ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = '#9db4c9';
+    var cols = 3, fh = h / (floors || 4);
+    for (var f = 0; f < (floors || 4); f++) for (var c = 0; c < cols; c++) {
+      ctx.fillRect(x + w * (0.16 + c * 0.28), y + fh * (f + 0.25), w * 0.14, fh * 0.5);
+    }
+  }
+
+  /* ── 렌더 ── */
+  var cv = $('#stage'), ctx = cv && cv.getContext ? cv.getContext('2d') : null;
+  function resize() {
+    if (!cv) return; var b = cv.getBoundingClientRect();
+    cv.width = Math.max(2, b.width | 0); cv.height = Math.max(2, b.height | 0);
+    render();
+  }
+  function frameNode(f, ctx, w, h, a) {
+    if (f.draw) scene(ctx, f.draw, w, h, a);
+    else if (f.img && f._el && f._el.complete) { ctx.save(); ctx.globalAlpha = a; ctx.drawImage(f._el, 0, 0, w, h); ctx.restore(); }
+  }
+  function render() {
+    if (!ctx || !S.pack) return;
+    var w = cv.width, h = cv.height, F = S.pack.frames, N = S.N;
+    ctx.clearRect(0, 0, w, h);
+    if (S.mode === 'find' || document.body.classList.contains('curtain-on')) {
+      // 커튼: 왼쪽 = 첫 프레임(옛), 오른쪽 = 끝 프레임(오늘)
+      var sx = S.split * w;
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, sx, h); ctx.clip(); frameNode(F[0], ctx, w, h, 1); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.rect(sx, 0, w - sx, h); ctx.clip(); frameNode(F[N - 1], ctx, w, h, 1); ctx.restore();
+    } else {
+      for (var i = 0; i < N; i++) frameNode(F[i], ctx, w, h, TP.layerAlpha(S.t, i, N));
+    }
+    // 힌트: 찾아라 모드에서 정답 원 은은히
+    if (S.mode === 'find') {
+      var finds = visibleFinds();
+      ctx.save(); ctx.globalAlpha = 0.16; ctx.strokeStyle = '#F0A85B'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+      finds.forEach(function (fd) {
+        if (S.found.indexOf(fd.id) < 0) { ctx.beginPath(); ctx.arc(fd.px[0] * w, fd.px[1] * h, fd.px[2] * Math.min(w, h), 0, 7); ctx.stroke(); }
+      });
+      ctx.restore();
+    }
+  }
+
+  /* ── 상태 UI ── */
+  function updateYear() {
+    if (!S.pack) return;
+    var yrs = S.pack.frames.map(function (f) { return f.year; });
+    var y = TP.yearAt(S.t, yrs);
+    $('#yb').textContent = y + '년';
+    var dom = TP.dominantFrame(S.t, S.N);
+    $('#note').textContent = S.pack.frames[dom].note || '';
+  }
+
+  function visibleFinds() {
+    var finds = S.pack.find || [];
+    if (S.grade === 'low') finds = finds.filter(function (f) { return f.kind !== 'kept'; }); // 저학년: gone/new만
+    return finds;
+  }
+
+  function showCard(html) { var c = $('#card'); c.innerHTML = html; c.classList.add('show'); }
+  function hideCard() { $('#card').classList.remove('show'); }
+  function toast(msg) { var t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function () { t.classList.remove('show'); }, 1400); }
+
+  /* ── 모드 전환 ── */
+  function setMode(m) {
+    S.mode = m; hideCard();
+    document.body.classList.toggle('mode-find', m === 'find');
+    document.body.classList.toggle('mode-book', m === 'book');
+    document.body.classList.toggle('curtain-on', m === 'find');
+    $('#modes').querySelectorAll('.mtab').forEach(function (b) { b.classList.toggle('on', b.dataset.m === m); });
+    $('#dock').style.display = (m === 'find' || m === 'book') ? 'none' : '';
+    if (m === 'find') { S.split = 0.5; $('#curtain').style.left = '50%'; nextFind(); }
+    if (m === 'book') renderBook();
+    render();
+  }
+
+  function findbar(txt) { $('#findbar').innerHTML = txt; }
+  function nextFind() {
+    var finds = visibleFinds(), rem = finds.filter(function (f) { return S.found.indexOf(f.id) < 0; });
+    if (!rem.length) { findbar('모두 찾았어요! <b>도감</b>에서 확인해요 📔'); return; }
+    S.curFind = rem[0];
+    findbar('<b>' + S.curFind.q + '</b><br>커튼을 밀어 옛날↔오늘을 비교하고, 자리를 콕 눌러요');
+  }
+
+  /* ── 탭 판정(찾아라) ── */
+  function onStageTap(ev) {
+    if (S.mode !== 'find' || !S.curFind) return;
+    var b = cv.getBoundingClientRect();
+    var px = (ev.clientX - b.left) / b.width, py = (ev.clientY - b.top) / b.height;
+    var hit = TP.findAt(px, py, [S.curFind]); // 현재 타겟만 판정
+    if (hit) {
+      if (S.found.indexOf(hit.id) < 0) { S.found.push(hit.id); collect('nb_time_' + hit.id); }
+      sound('success');
+      var sum = TP.collectSummary(S.found, S.pack.find);
+      showCard('<h3>찾았다! ✨</h3><p>' + hit.why + '</p>' +
+        '<p style="color:var(--sub);font-size:13px">' + sum.found + ' / ' + sum.total + ' 발견</p>' +
+        '<button class="cbtn" id="cNext">다음 →</button>');
+      $('#cNext').onclick = function () { hideCard(); nextFind(); render(); };
+      render();
+    } else { sound('fail'); toast('음… 다른 곳을 살펴봐요'); }
+  }
+
+  /* ── 예측 v2 ── */
+  function askPredict(after) {
+    var p = S.pack.predict;
+    if (!p || S.predicted || S.grade === 'low') { after && after(); return; }
+    var h = '<h3>🔮 먼저 생각해 봐요</h3><p>' + p.q + '</p><div class="opts">';
+    p.options.forEach(function (o, i) { h += '<button class="opt" data-i="' + i + '">' + o + '</button>'; });
+    h += '</div>';
+    showCard(h);
+    $('#card').querySelectorAll('.opt').forEach(function (btn) {
+      btn.onclick = function () {
+        var i = +btn.dataset.i, r = TP.predictResult(i, p.answer);
+        $('#card').querySelectorAll('.opt').forEach(function (b) { b.classList.add('no'); b.disabled = true; });
+        $('#card').querySelectorAll('.opt')[p.answer].classList.remove('no');
+        $('#card').querySelectorAll('.opt')[p.answer].classList.add('ok');
+        sound(r.ok ? 'success' : 'tap');
+        S.predicted = true;
+        setTimeout(function () { hideCard(); after && after(); }, 900);
+      };
+    });
+  }
+
+  /* ── 인터뷰 카드(찾아라 완주 시) ── */
+  function maybeInterview() {
+    var sum = TP.collectSummary(S.found, S.pack.find);
+    if (!sum.done || S.grade === 'low') return;
+    collect('nb_time_done');
+    showCard('<h3>🎤 집에 가서 여쭤보기</h3>' +
+      '<p>어른들께 물어보세요 — <b>"이 동네가 변하는 걸 직접 보셨어요?"</b><br>' +
+      '지도가 못 보여주는 이야기는 사람에게 있어요.</p>' +
+      '<button class="cbtn" id="cOk">좋아요</button>');
+    $('#cOk').onclick = hideCard;
+  }
+
+  /* ── 도감 ── */
+  function renderBook() {
+    var finds = S.pack.find || [], sum = TP.collectSummary(S.found, finds);
+    $('#bookProg').textContent = sum.found + ' / ' + sum.total + ' 발견';
+    $('#bookGauge').style.width = sum.pct + '%';
+    var KIND = { gone: '사라진 것', new: '새로 생긴 것', kept: '자리를 지킨 것' };
+    var h = '';
+    finds.forEach(function (f) {
+      var got = S.found.indexOf(f.id) >= 0;
+      h += '<div class="fcard' + (got ? '' : ' locked') + '"><div class="k">' + (KIND[f.kind] || '발견') + '</div>' +
+        '<div class="t">' + (got ? f.q.replace('?', '') : '❓ 아직 못 찾았어요') + '</div>' +
+        '<div class="w">' + (got ? f.why : '지도에서 찾아보세요') + '</div></div>';
+    });
+    $('#bookCards').innerHTML = h;
+  }
+
+  /* ── 팩 로드 ── */
+  function loadPack(pack) {
+    var v = TP.packValidate(pack);
+    if (!v.ok) { console.warn('pack invalid', v.errors); pack = DEMO; }
+    S.pack = pack; S.N = pack.frames.length; S.found = []; S.predicted = false;
+    // img 프레임 프리로드(실팩)
+    pack.frames.forEach(function (f) {
+      if (f.img && typeof Image !== 'undefined') {
+        var el = new Image(); el.onload = render;
+        el.src = f.img.indexOf('/') === 0 || f.img.indexOf('http') === 0 ? f.img : ('neigh_packs/' + pack.id + '/' + f.img);
+        f._el = el;
+      }
+    });
+    $('#place').textContent = (pack.place && pack.place.name) || pack.title;
+    var yrs = pack.frames.map(function (f) { return f.year; });
+    $('#yrMin').textContent = yrs[0]; $('#yrMax').textContent = yrs[yrs.length - 1];
+    $('#src').innerHTML = '📍 ' + (pack.src || '') + (pack.demo ? ' <span class="honest">데모</span>' : '');
+    $('#curL').textContent = yrs[0]; $('#curR').textContent = yrs[yrs.length - 1];
+    updateYear(); render();
+  }
+
+  /* ── 커튼 드래그 ── */
+  function setSplit(clientX) {
+    var b = cv.getBoundingClientRect();
+    S.split = TP.clamp01((clientX - b.left) / b.width);
+    $('#curtain').style.left = (S.split * 100) + '%'; render();
+  }
+
+  /* ── 학년 게이팅 ── */
+  function setGrade(g) {
+    S.grade = g;
+    $('#grades').querySelectorAll('.gbtn').forEach(function (b) { b.classList.toggle('on', b.dataset.g === g); });
+    // 저학년: 찾아라 제한적 허용(gone/new)·예측/인터뷰 생략. 도감·시간여행 전부 허용.
+    if (S.mode === 'find') nextFind();
+    if (S.mode === 'book') renderBook();
+    render();
+  }
+
+  /* ── init ── */
+  function init() {
+    if (S.stage) return; S.stage = true;
+    // 슬라이더
+    $('#slider').addEventListener('input', function () {
+      S.t = (+this.value) / 1000;
+      if (!S.predicted && S.mode === 'travel' && S.t > 0.02 && S.grade !== 'low') {
+        // 처음 밀 때 예측 1회
+        this.value = 0; S.t = 0; askPredict(function () { }); render(); return;
+      }
+      updateYear(); sound('tick'); render();
+    });
+    // 모드/학년
+    $('#modes').addEventListener('click', function (e) { var b = e.target.closest('.mtab'); if (b) { setMode(b.dataset.m); sound('tap'); } });
+    $('#grades').addEventListener('click', function (e) { var b = e.target.closest('.gbtn'); if (b) { setGrade(b.dataset.g); sound('tap'); } });
+    // 사운드
+    $('#snd').addEventListener('click', function () { try { if (window.KLab && window.KLab.sound && window.KLab.sound.toggle) window.KLab.sound.toggle(); } catch (e) {} });
+    // 커튼 드래그
+    var cur = $('#curtain');
+    function dragStart(e) { S.curtainDrag = true; e.preventDefault(); }
+    function dragMove(e) { if (!S.curtainDrag) return; var x = (e.touches ? e.touches[0].clientX : e.clientX); setSplit(x); }
+    function dragEnd() { if (S.curtainDrag) { S.curtainDrag = false; sound('whoosh'); if (S.mode === 'find') maybeInterview(); } }
+    cur.addEventListener('mousedown', dragStart); cur.addEventListener('touchstart', dragStart, { passive: false });
+    window.addEventListener('mousemove', dragMove); window.addEventListener('touchmove', dragMove, { passive: false });
+    window.addEventListener('mouseup', dragEnd); window.addEventListener('touchend', dragEnd);
+    // 스테이지 탭(찾아라)
+    cv.addEventListener('click', onStageTap);
+    window.addEventListener('resize', resize);
+
+    // 팩 로드: ?pack= → fetch, 실패 시 데모
+    var pid = qs('pack') || 'demo';
+    if (pid !== 'demo' && typeof fetch !== 'undefined') {
+      fetch('neigh_packs/' + pid + '/pack.json').then(function (r) { return r.json(); })
+        .then(function (p) { loadPack(p); afterLoad(); })
+        .catch(function () { loadPack(DEMO); afterLoad(); });
+    } else { loadPack(DEMO); afterLoad(); }
+  }
+  function afterLoad() {
+    resize();
+    var m = qs('mode'); if (m === 'find' || m === 'book') setMode(m);
+    // 노출(스모크/케이티처 도크)
+    window.__TIME = {
+      S: S, TP: TP, setMode: setMode, setGrade: setGrade, loadPack: loadPack,
+      tapAt: function (nx, ny) { onStageTap({ clientX: nx * (cv.getBoundingClientRect().width || 1), clientY: ny * (cv.getBoundingClientRect().height || 1) }); },
+      slideTo: function (t) { S.t = TP.clamp01(t); S.predicted = true; updateYear(); render(); },
+      setSplitN: function (nx) { S.split = TP.clamp01(nx); render(); },
+      render: render, nextFind: nextFind
+    };
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
