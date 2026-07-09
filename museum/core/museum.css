@@ -1,0 +1,429 @@
+/* ═══════════════════════════════════════════════════════════════════
+   케이뮤지엄 — museum.css
+   
+   여기 없는 시각 결정은 임의 창작 금지 — 표준에서 유도, 유도 불가면 어둡게·적게·느리게.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── §1 토큰 (원문 그대로) ────────────────────────────────────────── */
+:root{
+  /* 밤 — 4단계뿐 */
+  --night-0:#050508;
+  --night-1:#07070c;
+  --night-2:#0d0d16;
+  --night-3:#151422;
+
+  /* 놋쇠 — 유일한 금속 */
+  --brass:#c9a961;
+  --brass-dim:#8a733f;
+  --brass-glow:rgba(201,169,97,.30);
+
+  /* 상아 — 순백 전면 금지 */
+  --ink:#f2ead8;
+  --ink-dim:#a89e88;
+  --ink-faint:#5f584a;
+
+  /* 관 악센트 — 화면당 1색, 면적 10% 이하 */
+  --math:#7c8cff; --social:#9b7bf5;
+  --science:#5ad1c0; --art:#e08fae;
+
+  /* 빛 */
+  --spot-warm:rgba(242,234,216,.10);
+  --flash:rgba(242,234,216,.85);
+
+  /* 모션 */
+  --ease-curtain:cubic-bezier(.77,0,.18,1);
+  --ease-rise:cubic-bezier(.2,.9,.25,1);
+  --ease-settle:cubic-bezier(.3,1.4,.4,1);
+}
+
+/* ── 리셋 ─────────────────────────────────────────────────────────── */
+*{ margin:0; padding:0; box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  background:var(--night-1);
+  color:var(--ink);
+  font-family:'Gowun Dodum',system-ui,sans-serif;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+/* §2-10: 텍스트 드래그 선택 금지 · 파란 포커스 아웃라인 → 상아 1px */
+body{ user-select:none; -webkit-user-select:none; }
+:focus{ outline:none; }
+:focus-visible{ outline:1px solid var(--ink); outline-offset:2px; }
+/* §2-10: 스크롤바 숨김(복도는 커스텀) */
+::-webkit-scrollbar{ width:0; height:0; }
+*{ scrollbar-width:none; }
+img{ -webkit-user-drag:none; user-drag:none; }
+
+/* ── §3 타이포그래피 스케일 ──────────────────────────────────────── */
+.t-hall{
+  font-family:'Gowun Batang',serif;
+  font-size:clamp(30px,5.4vw,54px);
+  letter-spacing:.30em;
+  color:var(--ink);
+  font-weight:700;
+}
+.t-exhibit{
+  font-family:'Gowun Batang',serif;
+  font-size:clamp(22px,3.4vw,34px);
+  letter-spacing:.18em;
+  color:var(--ink);
+  font-weight:700;
+}
+.t-teaser{
+  font-family:'Gowun Batang',serif;
+  font-size:16px;
+  letter-spacing:.12em;
+  color:var(--ink-dim);
+}
+.t-story{
+  font-family:'Gowun Dodum',sans-serif;
+  font-size:17px;
+  line-height:1.95;
+  letter-spacing:.02em;
+  color:var(--ink);
+}
+.t-num{
+  font-family:'Jua',sans-serif;
+  letter-spacing:0;
+  color:var(--ink);
+}
+.t-fine{
+  font-family:'Gowun Dodum',sans-serif;
+  font-size:12px;
+  letter-spacing:.22em;
+  color:var(--ink-faint);
+}
+
+/* ── §4a 명판(plaque) ────────────────────────────────────────────── */
+.plaque{
+  position:relative;
+  display:inline-block;
+  padding:22px 28px;
+  border-radius:2px;
+  border:1px solid var(--brass-dim);
+  background:linear-gradient(168deg,#171310,#0c0a07);
+  box-shadow:0 18px 40px rgba(0,0,0,.6);
+}
+.plaque::before{  /* 내곽 */
+  content:'';
+  position:absolute; inset:5px;
+  border:1px solid var(--brass-glow);
+  border-radius:1px;
+  pointer-events:none;
+}
+/* 네 모서리 3px 놋쇠 틱 — ::after에 4겹 배경으로 */
+.plaque::after{
+  content:'';
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(var(--brass),var(--brass)) left  2px top    2px/8px 1px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) left  2px top    2px/1px 8px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) right 2px top    2px/8px 1px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) right 2px top    2px/1px 8px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) left  2px bottom 2px/8px 1px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) left  2px bottom 2px/1px 8px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) right 2px bottom 2px/8px 1px no-repeat,
+    linear-gradient(var(--brass),var(--brass)) right 2px bottom 2px/1px 8px no-repeat;
+}
+.plaque__title{ display:block; }
+.plaque__story{ display:block; margin-top:9px; color:var(--ink-dim); }
+.plaque--small{ padding:12px 16px; }
+
+/* 명판 등장 모션: opacity 0→1 + translateY 14→0, 900ms ease-rise, 텍스트 시차 */
+.plaque[data-rise]{ opacity:0; transform:translateY(14px); }
+.plaque.is-risen{ opacity:1; transform:translateY(0); transition:opacity .9s var(--ease-rise), transform .9s var(--ease-rise); }
+.plaque.is-risen .plaque__title{ opacity:0; animation:rise-txt .6s var(--ease-rise) .0s forwards; }
+.plaque.is-risen .plaque__story{ opacity:0; animation:rise-txt .6s var(--ease-rise) .3s forwards; }
+@keyframes rise-txt{ from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
+/* ── §4c 스포트라이트 (2겹) ──────────────────────────────────────── */
+.spot-cone{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse 46% 60% at 50% 0%, var(--spot-warm), transparent 72%);
+  opacity:0; transition:opacity .12s ease;
+}
+.spot-pool{
+  position:absolute; inset:0;
+  pointer-events:none;
+  background:radial-gradient(ellipse 42% 10% at 50% 100%, rgba(242,234,216,.07), transparent 75%);
+  opacity:0; transition:opacity .12s ease;
+}
+.spot-on .spot-cone, .spot-on .spot-pool{ opacity:1; }
+
+/* ── §4b 문(door) ────────────────────────────────────────────────── */
+.door{
+  position:relative;
+  width:300px; height:460px;
+  flex:0 0 auto;
+  display:flex; flex-direction:column; align-items:center;
+}
+.door__leaf{
+  position:relative;
+  width:186px; height:360px;
+  background:var(--night-3);
+  border-top:2px solid var(--brass-dim);
+  border-left:1px solid var(--brass-dim);
+  border-right:1px solid var(--brass-dim);
+  border-bottom:1px solid rgba(138,115,63,.4);
+  overflow:hidden;
+  transition:box-shadow .5s ease;
+}
+/* 빛틈 — 개방문 호버 시 중앙 세로 1px 상아빛이 0→100% */
+.door__leaf::after{
+  content:'';
+  position:absolute; left:50%; top:50%;
+  width:1.5px; height:0;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(var(--ink),transparent);
+  box-shadow:0 0 18px 3px rgba(242,234,216,.5);
+  transition:height .5s var(--ease-rise);
+}
+.door--open{ cursor:pointer; }
+.door--open:hover .door__leaf::after,
+.door--open.is-peek .door__leaf::after{ height:100%; }
+.door--open:hover .door__leaf,
+.door--open.is-peek .door__leaf{ box-shadow:0 0 40px 4px var(--brass-glow); }
+
+/* 커튼문 (준비 중) */
+.door--curtain .door__leaf{
+  background:repeating-linear-gradient(90deg,#131019 0 18px,#0b0910 18px 36px);
+  border-top-color:var(--brass-dim);
+}
+.door--curtain:hover .door__leaf{
+  animation:curtain-sway 1.6s ease-in-out infinite;
+}
+@keyframes curtain-sway{
+  0%,100%{ transform:rotate(0deg); }
+  50%{ transform:rotate(.4deg); }
+}
+
+.door__plaque{ margin-top:16px; }
+.door__spot{ position:absolute; inset:-40px 0 auto; height:200px; }
+
+/* ── §4d 바닥 반사 ───────────────────────────────────────────────── */
+.reflect{
+  transform:scaleY(-1);
+  height:34%;
+  -webkit-mask-image:linear-gradient(#000 0%,transparent 78%);
+  mask-image:linear-gradient(#000 0%,transparent 78%);
+  opacity:.16;
+  pointer-events:none;
+}
+
+/* ── §4e 비네트 (최상층) ─────────────────────────────────────────── */
+.vignette{
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:60;
+  box-shadow:inset 0 0 22vmin 6vmin rgba(0,0,0,.55);
+}
+
+/* ── §4f 여운 카드(티켓) ─────────────────────────────────────────── */
+.ticket{
+  position:relative;
+  width:300px; height:188px;
+  border-radius:14px;
+  background:linear-gradient(168deg,#171310,#0c0a07);
+  border:1px solid var(--brass-dim);
+  display:flex;
+  overflow:hidden;
+}
+.ticket__art{
+  flex:0 0 25%;
+  position:relative;
+  border-right:1px dashed var(--brass-dim);
+}
+.ticket__art canvas{ width:100%; height:100%; display:block; }
+/* 절취선 상하 반원 펀치 */
+.ticket__art::before,.ticket__art::after{
+  content:''; position:absolute; right:-7px; width:14px; height:14px;
+  border-radius:50%; background:var(--night-1);
+}
+.ticket__art::before{ top:-7px; }
+.ticket__art::after{ bottom:-7px; }
+.ticket__body{ flex:1; padding:20px 22px; display:flex; flex-direction:column; justify-content:center; }
+.ticket__title{ margin-bottom:10px; }
+
+/* ── §2-6 크롬 버튼 ──────────────────────────────────────────────── */
+.chrome-btn{
+  position:fixed;
+  width:28px; height:28px;
+  display:grid; place-items:center;
+  color:var(--ink);
+  opacity:.35;
+  cursor:pointer;
+  z-index:70;
+  transition:opacity .25s ease;
+  background:none; border:none;
+}
+.chrome-btn:hover{ opacity:.8; }
+.chrome-btn svg{ width:22px; height:22px; stroke:currentColor; stroke-width:1.5; fill:none; }
+.chrome-back  { left:18px;  top:18px; }
+.chrome-mute  { right:18px; top:18px; }
+.chrome-ticket{ right:18px; bottom:18px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   로비 (index.html 전용)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 벽 — 밤 그라데이션 + 아주 미세한 세로 패널 라인(알파 .03) */
+#wall{
+  position:fixed; inset:0; z-index:0;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0 118px,
+      rgba(242,234,216,.03) 118px 119px,
+      transparent 119px 238px),
+    radial-gradient(ellipse 120% 80% at 50% -10%, var(--night-2), var(--night-1) 55%, var(--night-0) 100%);
+}
+
+/* 가로 복도 뷰포트 */
+#hall-viewport{
+  position:fixed; inset:0; z-index:10;
+  overflow:hidden;
+  cursor:grab;
+}
+#hall-viewport.is-dragging{ cursor:grabbing; }
+
+/* 실제 이동하는 트랙 */
+#hall{
+  position:absolute; top:0; left:0; height:100%;
+  display:flex; align-items:center;
+  padding:0 12vw;
+  gap:100px;
+  will-change:transform;
+}
+
+/* 아치 명판 — 복도 시작에 걸린 큰 명판 */
+.hall-arch{
+  flex:0 0 auto;
+  margin-right:40px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  opacity:0; transition:opacity 1.2s ease;
+}
+.hall-arch.is-in{ opacity:1; }
+.hall-arch .accent-line{
+  width:60px; height:1px;
+  background:linear-gradient(90deg,transparent,var(--math),transparent);
+  margin-top:6px;
+}
+
+/* 문 슬롯 — 각 문 + 반사 */
+.door-slot{
+  position:relative;
+  display:flex; flex-direction:column; align-items:center;
+  opacity:0; transform:translateY(10px);
+}
+.door-slot.is-in{ opacity:1; transform:translateY(0); transition:opacity .8s ease, transform .8s var(--ease-rise); }
+.door-slot .reflect-wrap{
+  position:absolute; top:100%; left:50%;
+  transform:translateX(-50%);
+  width:186px; height:120px;
+  overflow:hidden; pointer-events:none;
+}
+.door-slot .reflect-wrap .door__leaf{
+  transform:scaleY(-1);
+  -webkit-mask-image:linear-gradient(#000 0%,transparent 70%);
+  mask-image:linear-gradient(#000 0%,transparent 70%);
+  opacity:.14;
+}
+
+/* 타이틀 */
+#hall-title{
+  position:fixed; left:0; right:0; top:14vh;
+  text-align:center;
+  z-index:40;
+  opacity:0;
+  letter-spacing:.5em;      /* 시작 자간 넓게 → JS가 .3em로 좁힘 */
+  pointer-events:none;
+}
+
+/* 걸으라는 신호 — 우측 바닥 빛줄기 */
+#walk-hint{
+  position:fixed; right:5vw; bottom:14vh;
+  z-index:35;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  opacity:0; transition:opacity 1s ease;
+  pointer-events:none;
+}
+#walk-hint.is-in{ opacity:1; }
+#walk-hint .beam{
+  width:1px; height:44px;
+  background:linear-gradient(var(--ink-faint),transparent);
+  animation:beam-pulse 2.4s ease-in-out infinite;
+}
+#walk-hint .arrow{ color:var(--ink-faint); }
+@keyframes beam-pulse{ 0%,100%{opacity:.4;} 50%{opacity:.9;} }
+
+/* 잠정 응답 명판(개관 준비 중) */
+#temp-plaque{
+  position:fixed; left:50%; top:56%;
+  transform:translate(-50%,-50%) translateY(14px);
+  z-index:55;
+  opacity:0; pointer-events:none;
+  transition:opacity .5s ease, transform .5s var(--ease-rise);
+}
+#temp-plaque.is-show{ opacity:1; transform:translate(-50%,-50%) translateY(0); }
+
+/* ── 티켓북 서랍 ─────────────────────────────────────────────────── */
+#ticket-drawer{
+  position:fixed; left:0; right:0; bottom:0;
+  z-index:65;
+  background:var(--night-2);
+  border-top:1px solid var(--brass-dim);
+  padding:26px 32px 34px;
+  transform:translateY(102%);
+  transition:transform .6s var(--ease-curtain);
+}
+#ticket-drawer.is-open{ transform:translateY(0); }
+#ticket-drawer .drawer-head{
+  display:flex; align-items:baseline; gap:16px; margin-bottom:18px;
+}
+#ticket-drawer .drawer-close{
+  margin-left:auto; color:var(--ink-dim); cursor:pointer; opacity:.6;
+}
+#ticket-drawer .drawer-close:hover{ opacity:1; }
+#ticket-rail{
+  display:flex; gap:18px; overflow-x:auto; padding-bottom:6px;
+  min-height:200px; align-items:center;
+}
+#ticket-empty{ color:var(--ink-dim); font-family:'Gowun Batang',serif; letter-spacing:.08em; }
+
+/* 발급 애니메이션용 떠오르는 티켓 */
+#ticket-fly{
+  position:fixed; left:50%; bottom:-200px;
+  transform:translateX(-50%);
+  z-index:80; pointer-events:none; opacity:0;
+}
+
+/* 배반 플래시 오버레이 (전역) */
+#flash-layer{
+  position:fixed; inset:0; z-index:75;
+  pointer-events:none; opacity:0;
+}
+
+/* ── §8 반응형: 세로 모바일 = 세로 복도 ──────────────────────────── */
+@media (max-aspect-ratio:1/1){
+  #hall{
+    flex-direction:column;
+    height:auto; width:100%;
+    padding:14vh 0;
+    gap:60px;
+  }
+  #hall-viewport{ overflow-y:hidden; }
+  .door{ width:240px; height:380px; }
+  .door__leaf{ width:150px; height:290px; }
+  .hall-arch{ margin-right:0; margin-bottom:20px; }
+  #walk-hint{ right:auto; left:50%; transform:translateX(-50%); bottom:8vh; }
+  #walk-hint .arrow{ transform:rotate(90deg); }
+}
+
+/* ── §8 reduced-motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  *{ animation-duration:.01ms !important; transition-duration:.15s !important; }
+  .door--curtain:hover .door__leaf{ animation:none; }
+}

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="core/museum.css">
+<style>
+/* 입장 게이트 — 암전 위 은은한 명조 한 줄. 첫 입력에서 오디오+시퀀스 동시 점화 */
+#gate{
+  position:fixed; inset:0; z-index:100;
+  background:var(--night-0);
+  display:grid; place-items:center;
+  cursor:pointer;
+  transition:opacity 1.2s ease;
+}
+#gate .g-line{
+  font-family:'Gowun Batang',serif;
+  letter-spacing:.5em; color:var(--ink-faint);
+  font-size:15px;
+  animation:gate-breathe 3.2s ease-in-out infinite;
+}
+@keyframes gate-breathe{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
+#gate.is-gone{ opacity:0; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<!-- 벽 -->
+<div id="wall"></div>
+
+<!-- 복도 -->
+<div id="hall-viewport">
+  <div id="hall">
+    <!-- 아치 명판 -->
+    <div class="hall-arch" id="arch">
+      <div class="plaque">
+        <span class="plaque__title t-exhibit">수학관</span>
+        <span class="plaque__story t-teaser" style="letter-spacing:.22em">숫자들의 밤</span>
+      </div>
+      <div class="accent-line"></div>
+    </div>
+    <!-- 문들은 JS가 주입 -->
+  </div>
+</div>
+
+<!-- 타이틀 -->
+<div id="hall-title" class="t-hall">케이뮤지엄</div>
+
+<!-- 걷기 힌트 -->
+<div id="walk-hint">
+  <div class="beam"></div>
+  <div class="arrow t-fine">→</div>
+</div>
+
+<!-- 잠정 응답 명판(개관 준비 중) -->
+<div id="temp-plaque">
+  <div class="plaque">
+    <span class="plaque__title t-exhibit">개관 준비 중</span>
+    <span class="plaque__story t-story">첫 전시가 곧 옵니다.</span>
+  </div>
+</div>
+
+<!-- 크롬: 소리 · 티켓북 (↩ 없음 — 로비는 나갈 곳이 없다) -->
+<button class="chrome-btn chrome-mute" id="btn-mute" aria-label="소리">
+  <svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8c1.5 1.5 1.5 6.5 0 8"/></svg>
+</button>
+<button class="chrome-btn chrome-ticket" id="btn-ticket" aria-label="티켓북">
+  <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M9 6v12"/><path d="M9 9h.01M9 12h.01M9 15h.01"/></svg>
+</button>
+
+<!-- 티켓북 서랍 -->
+<div id="ticket-drawer">
+  <div class="drawer-head">
+    <span class="t-exhibit">티켓북</span>
+    <span class="drawer-close t-story" id="drawer-close">닫기</span>
+  </div>
+  <div id="ticket-rail"></div>
+</div>
+
+<!-- 최상층 -->
+<div class="vignette"></div>
+<div id="flash-layer"></div>
+<div id="ticket-fly"></div>
+
+<script src="core/museum.js"></script>
+<script>
+(function(){
+  var isPortrait = window.matchMedia('(max-aspect-ratio:1/1)').matches;
+
+  /* ── 문 정의 (개관판) ─────────────────────────────────────────── */
+  var DOORS = [
+    { type:'open',    id:'gauss', teaser:'선생님을 이긴 아이', url:'math/ex01_gauss.html' },
+    { type:'curtain', teaser:'다음 전시 준비 중' },
+    { type:'curtain', teaser:'다음 전시 준비 중' }
+  ];
+  var hall = document.getElementById('hall');
+  DOORS.forEach(function(d){
+    var slot = document.createElement('div'); slot.className='door-slot';
+    var door = document.createElement('div');
+    door.className = 'door ' + (d.type==='open' ? 'door--open' : 'door--curtain');
+    var spot = document.createElement('div'); spot.className='door__spot spot-on';
+    spot.innerHTML = '<div class="spot-cone"></div>';
+    var leaf = document.createElement('div'); leaf.className='door__leaf';
+    var pl = document.createElement('div'); pl.className='door__plaque';
+    pl.innerHTML = '<div class="plaque plaque--small"><span class="plaque__title t-teaser">'+d.teaser+'</span></div>';
+    door.appendChild(spot); door.appendChild(leaf); door.appendChild(pl);
+    slot.appendChild(door);
+    // 바닥 반사
+    var rf = document.createElement('div'); rf.className='reflect-wrap';
+    var rleaf = leaf.cloneNode(true); rf.appendChild(rleaf);
+    slot.appendChild(rf);
+    hall.appendChild(slot);
+    d._el = door; d._slot = slot; d._spot = spot;
+    if(d.type==='open') door.addEventListener('click', function(){ openDoor(d); });
+  });
+  var slots = Array.prototype.slice.call(document.querySelectorAll('.door-slot'));
+
+  /* ── 개방문 클릭 = 커튼 반쯤 열리다 멈춤 + 잠정 명판 ──────────── */
+  var tempEl = document.getElementById('temp-plaque');
+  var tempTimer = null;
+  function openDoor(d){
+    if(Museum.isLocked()) return;
+    d._el.classList.add('is-peek');
+    Museum.sound.play('paper');
+    tempEl.classList.add('is-show');
+    clearTimeout(tempTimer);
+    tempTimer = setTimeout(function(){
+      tempEl.classList.remove('is-show');
+      d._el.classList.remove('is-peek');
+    }, 2500);
+    // M1 완성 후: Museum.curtainTo(d.url);
+  }
+
+  /* ── 복도 스크롤 (휠 세로→가로 + 드래그 + 키 + 관성) ──────────── */
+  var pos=0, vel=0, target=0, min=0, max=0, dragging=false, lastP=0, dragMoved=0;
+  var vp = document.getElementById('hall-viewport');
+  function measure(){
+    if(isPortrait){
+      max = Math.max(0, hall.scrollHeight - window.innerHeight);
+    } else {
+      max = Math.max(0, hall.scrollWidth - window.innerWidth);
+    }
+  }
+  function apply(){
+    if(isPortrait) hall.style.transform = 'translateY('+(-pos)+'px)';
+    else           hall.style.transform = 'translateX('+(-pos)+'px)';
+  }
+  function clamp(v){ return Math.max(min, Math.min(max, v)); }
+
+  // 휠 (세로 휠도 복도 진행으로)
+  vp.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    target = clamp(target + d);
+    vel = 0;
+  }, {passive:false});
+
+  // 드래그
+  function pStart(x,y){ dragging=true; lastP=isPortrait?y:x; dragMoved=0; vel=0; vp.classList.add('is-dragging'); }
+  function pMove(x,y){
+    if(!dragging) return;
+    var cur=isPortrait?y:x, dp=lastP-cur; lastP=cur;
+    dragMoved += Math.abs(dp);
+    target = clamp(target + dp); pos = target; vel = dp; apply();
+  }
+  function pEnd(){ dragging=false; vp.classList.remove('is-dragging'); target = clamp(pos + vel*12); }
+  vp.addEventListener('mousedown', function(e){ pStart(e.clientX,e.clientY); });
+  window.addEventListener('mousemove', function(e){ pMove(e.clientX,e.clientY); });
+  window.addEventListener('mouseup', pEnd);
+  vp.addEventListener('touchstart', function(e){ pStart(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
+  vp.addEventListener('touchmove', function(e){ pMove(e.touches[0].clientX,e.touches[0].clientY); }, {passive:true});
+  vp.addEventListener('touchend', pEnd);
+
+  // 키보드
+  window.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='ArrowDown'){ target=clamp(target+220); }
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ target=clamp(target-220); }
+  });
+
+  // 관성 루프 (감쇠 0.92)
+  (function tick(){
+    requestAnimationFrame(tick);
+    if(dragging) return;
+    var diff = target - pos;
+    pos += diff * 0.12;
+    if(Math.abs(diff) < 0.4) pos = target;
+    pos = clamp(pos);
+    apply();
+  })();
+
+  /* ── 입장 점등 시퀀스 ─────────────────────────────────────────── */
+  var visited = sessionStorage.getItem('kmuseum.entered') === '1';
+  var SP = visited ? 1/3 : 1;   // 재방문 1/3 배속
+  function seq(){
+    measure();
+    Museum.sound.roomtone(true);        // roomtone 페이드인 1.5s
+    var t = 0.9;
+    // 화면 내 문만 순차 점등 (개관판은 전부 화면 근처 → 순차)
+    slots.forEach(function(sl, i){
+      setTimeout(function(){
+        sl.classList.add('is-in');
+        Museum.sound.play('click_light', { pitch: -0.03*i });
+      }, (0.9 + i*0.35)*1000*SP);
+    });
+    setTimeout(function(){ document.getElementById('arch').classList.add('is-in'); }, 700*SP);
+    // 2.2s 타이틀 등장
+    var title = document.getElementById('hall-title');
+    setTimeout(function(){
+      title.style.transition = 'opacity 1.4s ease, letter-spacing 1.4s var(--ease-rise)';
+      title.style.opacity = '1';
+      title.style.letterSpacing = '.3em';
+    }, 2200*SP);
+    // 3.8s 타이틀 상주 + 걷기 힌트
+    setTimeout(function(){
+      title.style.transition = 'opacity 1s ease, transform 1s var(--ease-rise)';
+      title.style.opacity = '.25';
+      title.style.transform = 'translateY(-12px)';
+      document.getElementById('walk-hint').classList.add('is-in');
+    }, 3800*SP);
+    sessionStorage.setItem('kmuseum.entered','1');
+  }
+
+  /* ── 입장 게이트 (오디오 정책 + 입장 연출) ────────────────────── */
+  var gate = document.createElement('div');
+  gate.id='gate';
+  gate.innerHTML = '<div class="g-line">눌러서 입장</div>';
+  document.body.appendChild(gate);
+  var entered = false;
+  function enter(){
+    if(entered) return; entered=true;
+    gate.classList.add('is-gone');
+    setTimeout(function(){ gate.remove(); }, 1200);
+    seq();
+  }
+  gate.addEventListener('click', enter);
+  gate.addEventListener('touchstart', enter, {passive:true});
+  window.addEventListener('keydown', function h(e){ enter(); window.removeEventListener('keydown',h); });
+
+  /* ── 크롬: 소리 · 티켓북 ──────────────────────────────────────── */
+  var muted=false;
+  document.getElementById('btn-mute').addEventListener('click', function(){
+    muted=!muted; Museum.sound.mute(muted);
+    this.style.opacity = muted ? '.7' : '';
+    if(!muted && entered) Museum.sound.roomtone(true);
+  });
+
+  var drawer = document.getElementById('ticket-drawer');
+  var rail = document.getElementById('ticket-rail');
+  function renderBook(){
+    var all = Museum.ticket.all(), ids = Object.keys(all);
+    rail.innerHTML='';
+    if(ids.length===0){
+      rail.innerHTML = '<div id="ticket-empty" class="t-story">아직 비어 있어요. 전시가 당신을 기다립니다.</div>';
+      return;
+    }
+    ids.forEach(function(id){
+      var meta = all[id];
+      var card = Museum.buildTicketCard({ id:id, title:meta.title, date:meta.date, fine:meta.fine });
+      rail.appendChild(card);
+    });
+  }
+  function openBook(){ renderBook(); drawer.classList.add('is-open'); }
+  function closeBook(){ drawer.classList.remove('is-open'); }
+  document.getElementById('btn-ticket').addEventListener('click', openBook);
+  document.getElementById('drawer-close').addEventListener('click', closeBook);
+  window.addEventListener('museum:openbook', openBook);
+
+  window.addEventListener('resize', measure);
+})();
+</script>
+</body>
+</html>
