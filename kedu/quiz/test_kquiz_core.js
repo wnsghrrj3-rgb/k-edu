@@ -22,6 +22,7 @@ require('./templates/g2_math_u5.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
 require('./templates/g3_math_u1.js')(KQuiz);
 require('./templates/g3_math_u2.js')(KQuiz);
+require('./templates/g3_math_u3.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -53,7 +54,8 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6',
   'g3_math_u1_l02','g3_math_u1_l03','g3_math_u1_l04','g3_math_u1_l05',
   'g3_math_u1_l06','g3_math_u1_l07','g3_math_u1_l09','g3_math_u1',
-  'g3_math_u2_l02','g3_math_u2_l03','g3_math_u2_l05','g3_math_u2_l06','g3_math_u2_l08','g3_math_u2'];
+  'g3_math_u2_l02','g3_math_u2_l03','g3_math_u2_l05','g3_math_u2_l06','g3_math_u2_l08','g3_math_u2',
+  'g3_math_u3_l02','g3_math_u3_l03','g3_math_u3_l04','g3_math_u3_l05','g3_math_u3_l06','g3_math_u3_l08','g3_math_u3'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -182,6 +184,10 @@ function expectChoice(q) {
     var la = +m[1], lb = +m[2];
     return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
   }
+  if ((m = q.match(/^(\d+)\s*\u00F7\s*(\d+)\s*=/))) return +m[1] / +m[2];       // g3u3 나눗셈식
+  if ((m = q.match(/(\d+)개를 (\d+)명에게 똑같이 나누어 주면/))) return +m[1] / +m[2]; // g3u3 등분
+  if ((m = q.match(/(\d+)개를 (\d+)개씩 묶으면 몇 묶음/))) return +m[1] / +m[2];        // g3u3 포함
+  if ((m = q.match(/어떤 수에 (\d+)을\(를\) 곱하면 (\d+)이\(가\) 됩니다/))) return +m[2] / +m[1]; // g3u3 관계
   if ((m = q.match(/^다음 설명에 알맞은 것은 무엇일까요\?\n(.+)$/)))    // g3u2 정의→용어
     return G3U2_DEF2TERM[m[1]] || '__미등록정의__';
   if ((m = q.match(/^다음 설명에 알맞은 도형은 무엇일까요\?\n(.+)$/)))  // g3u2 설명→도형
