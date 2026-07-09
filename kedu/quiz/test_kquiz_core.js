@@ -14,6 +14,7 @@ require('./templates/g1_math_u4.js')(KQuiz);
 require('./templates/g1_korean_u1.js')(KQuiz);
 require('./templates/g1_korean_u2.js')(KQuiz);
 require('./templates/g2_math_u1.js')(KQuiz);
+require('./templates/g2_math_u3.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -34,7 +35,9 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_korean_u2_l03','g1_korean_u2_l04','g1_korean_u2_l05','g1_korean_u2_l06',
   'g1_korean_u2_l07','g1_korean_u2',
   'g2_math_u1_l02','g2_math_u1_l03','g2_math_u1_l04','g2_math_u1_l05',
-  'g2_math_u1_l06','g2_math_u1_l07','g2_math_u1_l08','g2_math_u1'];
+  'g2_math_u1_l06','g2_math_u1_l07','g2_math_u1_l08','g2_math_u1',
+  'g2_math_u3_l02','g2_math_u3_l03','g2_math_u3_l04','g2_math_u3_l05','g2_math_u3_l06',
+  'g2_math_u3_l07','g2_math_u3_l08','g2_math_u3_l09','g2_math_u3_l10','g2_math_u3_l11','g2_math_u3'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -114,6 +117,14 @@ function expectChoice(q) {
     if (moreItem === null) return '__미등록쌍__';
     return d[1] === 'more' ? moreItem : (moreItem === x ? y : x);
   }
+  if ((m = q.match(/^(\d+)\s*([+\u2212])\s*(\d+)\s*([+\u2212])\s*(\d+)\s*=/))) { // g2 세 수 계산
+    var mid = m[2] === '+' ? +m[1] + +m[3] : +m[1] - +m[3];
+    return m[4] === '+' ? mid + +m[5] : mid - +m[5];
+  }
+  if ((m = q.match(/^□ \+ (\d+) = (\d+)/))) return +m[2] - +m[1];       // g2 □+b=c
+  if ((m = q.match(/^(\d+) \+ □ = (\d+)/))) return +m[2] - +m[1];       // g2 a+□=c
+  if ((m = q.match(/^□ \u2212 (\d+) = (\d+)/))) return +m[2] + +m[1];   // g2 □−b=c
+  if ((m = q.match(/^(\d+) \u2212 □ = (\d+)/))) return +m[1] - +m[2];   // g2 a−□=c
   if ((m = q.match(/^(\d+)\s*\+\s*(\d+)\s*=/))) return +m[1] + +m[2];   // u3 덧셈
   if ((m = q.match(/^(\d+)\s*−\s*(\d+)\s*=/))) return +m[1] - +m[2];   // u3 뺄셈
   if ((m = q.match(/^(\d+)\s*([+−])\s*(\d+)\s*=/)))                     // u3 혼합
