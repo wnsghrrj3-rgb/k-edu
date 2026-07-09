@@ -83,12 +83,14 @@
 <script src="games/co-draw.js"></script>
 <script src="games/catch-mind.js"></script>
 <script src="kple-deck.js"></script>
+<script src="kple-party.js"></script>
 <script>
 (function () {
   var app = document.getElementById('app');
   var conn = document.getElementById('conn');
   var pickHTML = app.innerHTML;   // 게임 선택 화면 보존
   var activeCtx = null;
+  var activeParty = null;
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
 
   // 실제 방 열기 (config = 덱 주입 결과 또는 {})
@@ -97,6 +99,7 @@
     try { ctx = Kple.host(game, { el: app, config: config || {} }); }
     catch (e) { setConn(String(e.message || e), 'err'); return; }
     activeCtx = ctx;
+    if (window.KpleParty) { try { activeParty = KpleParty.attach(ctx, { el: app }); } catch (e) {} }
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s + ' (망 차단 가능성)', 'err');
@@ -225,6 +228,7 @@
   }
 
   function backToPick() {
+    if (activeParty) { try { activeParty.dispose(); } catch (e) {} activeParty = null; }
     if (activeCtx) { try { activeCtx.close(); } catch (e) {} activeCtx = null; }
     app.innerHTML = pickHTML;
     bindCards();

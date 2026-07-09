@@ -34,12 +34,14 @@
 <script src="games/speed-quiz.js"></script>
 <script src="games/co-draw.js"></script>
 <script src="games/catch-mind.js"></script>
+<script src="kple-party.js"></script>
 <script>
 (function () {
   var root = document.getElementById('root');
   var conn = document.getElementById('conn');
   var gateHTML = root.innerHTML;   // 방코드 입력 화면 보존
   var activeCtx = null;
+  var activeParty = null;
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
 
   function bindGate() {
@@ -64,6 +66,7 @@
       try { ctx = Kple.join(code, name, { el: playEl }); }
       catch (e) { setConn(String(e.message || e), 'err'); root.innerHTML = gateHTML; bindGate(); return; }
       activeCtx = ctx;
+      if (window.KpleParty) { try { activeParty = KpleParty.attachPlayer(ctx, { el: playEl }); } catch (e) {} }
       ctx.on('status', function (s) {
         if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
         else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
@@ -75,6 +78,7 @@
   }
 
   function backToGate() {
+    if (activeParty) { try { activeParty.dispose(); } catch (e) {} activeParty = null; }
     if (activeCtx) { try { activeCtx.leave(); } catch (e) {} activeCtx = null; }
     root.innerHTML = gateHTML;
     bindGate();
