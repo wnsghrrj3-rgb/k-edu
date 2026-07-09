@@ -10,6 +10,7 @@ require('./templates/g1_math_u3.js')(KQuiz);
 require('./templates/g1_math_u1.js')(KQuiz);
 require('./templates/g1_math_u5.js')(KQuiz);
 require('./templates/g1_math_u2.js')(KQuiz);
+require('./templates/g1_math_u4.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -22,7 +23,30 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_math_u1_l10','g1_math_u1_l11','g1_math_u1',
   'g1_math_u5_l02_03','g1_math_u5_l04','g1_math_u5_l05','g1_math_u5_l06',
   'g1_math_u5_l07','g1_math_u5_l08','g1_math_u5_l09','g1_math_u5_l10','g1_math_u5',
-  'g1_math_u2_l02','g1_math_u2_l03','g1_math_u2_l05','g1_math_u2_l06','g1_math_u2'];
+  'g1_math_u2_l02','g1_math_u2_l03','g1_math_u2_l05','g1_math_u2_l06','g1_math_u2',
+  'g1_math_u4_l02','g1_math_u4_l03','g1_math_u4_l04','g1_math_u4_l05','g1_math_u4_l06','g1_math_u4'];
+
+// u4 독립 검산용: 비교어→(속성,방향) + 속성별 순서쌍 집합(더큰\u241F더작은) 별도 사본
+var U4_WORD2DIR = {
+  '더 긴': ['길이', 'more'], '더 짧은': ['길이', 'less'],
+  '더 무거운': ['무게', 'more'], '더 가벼운': ['무게', 'less'],
+  '더 넓은': ['넓이', 'more'], '더 좁은': ['넓이', 'less'],
+  '더 많이 담을 수 있는': ['들이', 'more'], '더 적게 담을 수 있는': ['들이', 'less']
+};
+var U4_SEP = '\u241F';
+var U4_MORE = {};
+(function () {
+  var raw = {
+    '길이': [['기차', '연필'], ['버스', '자전거'], ['코끼리 코', '생쥐 꼬리'], ['기린 목', '강아지 다리'], ['국수 가락', '바늘']],
+    '무게': [['코끼리', '나비'], ['냉장고', '풍선'], ['수박', '포도 한 알'], ['자동차', '축구공'], ['바위', '깃털']],
+    '넓이': [['운동장', '손수건'], ['교실 문', '공책'], ['이불', '손바닥'], ['칠판', '우표'], ['농구장', '방석']],
+    '들이': [['욕조', '컵'], ['양동이', '종이컵'], ['물통', '숟가락'], ['수영장', '물병'], ['드럼통', '찻잔']]
+  };
+  Object.keys(raw).forEach(function (a) {
+    U4_MORE[a] = {};
+    raw[a].forEach(function (pr) { U4_MORE[a][pr[0] + U4_SEP + pr[1]] = true; });
+  });
+})();
 
 // u2 독립 검산용 사전·성질행렬(템플릿과 별도 사본 — 정의/성질 오등록 catch)
 var U2_OBJ = {
@@ -48,6 +72,13 @@ function expectChoice(q) {
   var m;
   if ((m = q.match(/^「(.+?)」은\(는\) 어떤 모양/)))                    // u2 물건→모양
     return U2_OBJ[m[1]] || '__미등록__';
+  if ((m = q.match(/^「(.+?)」와\(과\) 「(.+?)」 중에서 (.+?) 것은/))) { // u4 비교
+    var d = U4_WORD2DIR[m[3]]; if (!d) return '__미등록어__';
+    var attr = d[0], x = m[1], y = m[2];
+    var moreItem = U4_MORE[attr][x + U4_SEP + y] ? x : (U4_MORE[attr][y + U4_SEP + x] ? y : null);
+    if (moreItem === null) return '__미등록쌍__';
+    return d[1] === 'more' ? moreItem : (moreItem === x ? y : x);
+  }
   if ((m = q.match(/^(\d+)\s*\+\s*(\d+)\s*=/))) return +m[1] + +m[2];   // u3 덧셈
   if ((m = q.match(/^(\d+)\s*−\s*(\d+)\s*=/))) return +m[1] - +m[2];   // u3 뺄셈
   if ((m = q.match(/^(\d+)\s*([+−])\s*(\d+)\s*=/)))                     // u3 혼합
