@@ -184,7 +184,7 @@
           originX: 'center', originY: 'top', fontSize: Math.round(size),
           fontFamily: ff, fill: fill, textAlign: 'center', lineHeight: 1.4,
           anim: animOf(zn) };
-        if (zn.slot) o.kmSlot = { on: true };
+        if (zn.slot) o.kmSlot = { on: true, label: zn.slot };
         objects.push(o);
       }
     });

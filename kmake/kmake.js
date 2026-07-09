@@ -178,7 +178,7 @@ function generateTemplate(kind) {
 }
 function buildGen() {
   const { kind, seeds, spec } = lastGen;
-  const doc = KM_GEN.generate(kind, seeds, { w: spec.w, h: spec.h, _aud: spec.aud }, { measure: measureText });
+  const doc = KM_GEN.generate(kind, seeds, { w: spec.w, h: spec.h, _aud: spec.aud }, { measure: measureText, kitColor: (window.KM_MERGE && KM_MERGE.kitColor()) || null });
   if (!editorOpen) openEditor(doc.baseW, doc.baseH);
   else { baseW = doc.baseW; baseH = doc.baseH; }
   KM_SCENE.loadDoc(doc, () => { zoomFit(); showReroll(); });
@@ -224,6 +224,7 @@ function doRestoreHome() {
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   lastGen = null; hideReroll();
+  if (window.KM_MERGE) KM_MERGE.reset();
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
   document.getElementById('iconPanel').classList.add('hidden');
@@ -302,6 +303,7 @@ function initCanvas() {
     },
   });
   KM_SCENE.boot();
+  if (window.KM_MERGE) KM_MERGE.init({ meta: () => ({ baseW, baseH, audience }), toast });
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -831,6 +833,7 @@ function setMode(m) {
   document.getElementById('modeBanner').classList.toggle('hidden', m !== 'fill');
   document.getElementById('toolbar').classList.toggle('locked', m === 'fill');
   canvas.discardActiveObject(); applyMode(); onSelect();
+  if (window.KM_MERGE) KM_MERGE.onMode(m);
 }
 /* 채우기 모드 — 슬롯 위치를 노란 점선과 라벨 칩으로 표시 */
 function drawSlotHints() {
