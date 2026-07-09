@@ -5,6 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>케이플 — 진행(전자칠판)</title>
 <link rel="stylesheet" href="kple.css">
+<style>
+  /* K0 덱 고르기 오버레이 (host 전용 · kple.css 불변) */
+  .kp-deck-ov{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;
+    background:rgba(10,16,32,.72);backdrop-filter:blur(3px);padding:20px;font-family:inherit;}
+  .kp-deck-box{position:relative;width:min(560px,94vw);max-height:88vh;overflow:auto;
+    background:#141d33;color:#eef2ff;border-radius:20px;padding:26px 24px 28px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .kp-deck-x{position:absolute;top:12px;right:14px;width:34px;height:34px;border:none;border-radius:10px;
+    background:rgba(255,255,255,.1);color:#eef2ff;font-size:22px;line-height:1;cursor:pointer;}
+  .kp-deck-x:hover{background:rgba(255,255,255,.2);}
+  .kp-deck-h{font-size:22px;font-weight:800;margin:2px 0 16px;}
+  .kp-deck-go{width:100%;border:none;border-radius:14px;padding:15px;cursor:pointer;font-family:inherit;
+    background:var(--kp-yellow,#ffd23f);color:#1a2540;font-size:18px;font-weight:800;text-align:left;margin-bottom:6px;}
+  .kp-deck-go span{display:block;font-size:13px;font-weight:600;opacity:.7;margin-top:3px;}
+  .kp-deck-go:hover{filter:brightness(1.04);}
+  .kp-deck-sec{font-size:14px;font-weight:800;opacity:.85;margin:18px 2px 10px;}
+  .kp-dk-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .kp-dk-card{border:1px solid rgba(255,255,255,.14);border-radius:13px;padding:13px 12px;cursor:pointer;
+    background:rgba(255,255,255,.05);color:#eef2ff;text-align:left;font-family:inherit;transition:.12s;}
+  .kp-dk-card:hover{background:rgba(255,255,255,.12);border-color:var(--kp-yellow,#ffd23f);transform:translateY(-1px);}
+  .kp-dk-t{font-size:15px;font-weight:700;margin-bottom:3px;}
+  .kp-dk-s{font-size:12px;opacity:.65;}
+  .kp-deck-note{font-size:13px;line-height:1.55;opacity:.75;background:rgba(255,255,255,.05);
+    border-radius:12px;padding:12px 14px;}
+  @media(max-width:420px){.kp-dk-grid{grid-template-columns:1fr;}}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../kedu_config.js"></script>
   <script src="/kedu_gate.js"></script>
@@ -46,6 +71,7 @@
 <script src="games/speed-quiz.js"></script>
 <script src="games/co-draw.js"></script>
 <script src="games/catch-mind.js"></script>
+<script src="kple-deck.js"></script>
 <script>
 (function () {
   var app = document.getElementById('app');
@@ -54,22 +80,63 @@
   var activeCtx = null;
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kp-conn' + (cls ? ' ' + cls : ''); }
 
+  // 실제 방 열기 (config = 덱 주입 결과 또는 {})
+  function startHosted(game, config) {
+    var ctx;
+    try { ctx = Kple.host(game, { el: app, config: config || {} }); }
+    catch (e) { setConn(String(e.message || e), 'err'); return; }
+    activeCtx = ctx;
+    ctx.on('status', function (s) {
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
+      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s + ' (망 차단 가능성)', 'err');
+      else setConn(s);
+    });
+    try { history.pushState({ kple: 'game' }, ''); } catch (e) {}
+    setHomeBtn();
+  }
+
+  // 덱 고르기 오버레이: 바로 시작(샘플) / 그냥 놀기(놀이덱) / 우리 반 배운 것(게이트 후)
+  var DRAW_GAMES = { co_draw: 1, catch_mind: 1 };   // 덱=주제·어휘 중심
+  function chooseDeck(game, cb) {
+    if (!window.KpleDeck) { cb({}); return; }        // 어댑터 없으면 안전하게 바로 시작
+    var cat = KpleDeck.playCatalog();
+    var playCards = cat.map(function (d) {
+      return '<button class="kp-dk-card" data-play="' + d.id + '">' +
+        '<div class="kp-dk-t">' + d.title + '</div>' +
+        '<div class="kp-dk-s">' + d.subject + ' · ' + d.count + '문항</div></button>';
+    }).join('');
+    var ov = document.createElement('div');
+    ov.className = 'kp-deck-ov';
+    ov.innerHTML =
+      '<div class="kp-deck-box">' +
+        '<button class="kp-deck-x" data-act="close" aria-label="닫기">×</button>' +
+        '<div class="kp-deck-h">무엇으로 놀까요?</div>' +
+        '<button class="kp-deck-go" data-act="sample">▶ 바로 시작 <span>샘플 문제로 가볍게</span></button>' +
+        '<div class="kp-deck-sec">🎲 그냥 놀기</div>' +
+        '<div class="kp-dk-grid">' + playCards + '</div>' +
+        '<div class="kp-deck-sec">📚 우리 반 배운 것</div>' +
+        '<div class="kp-deck-note">케이티처에서 차시를 열고 「▶ 케이플로 열기」를 누르면 그 차시 문제가 자동으로 들어와요.</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    function done(config) { try { ov.remove(); } catch (e) {} cb(config); }
+    ov.querySelector('[data-act="close"]').onclick = function () { try { ov.remove(); } catch (e) {} };
+    ov.querySelector('[data-act="sample"]').onclick = function () { done({}); };
+    [].forEach.call(ov.querySelectorAll('[data-play]'), function (b) {
+      b.onclick = function () {
+        var deck = KpleDeck.from(b.getAttribute('data-play'));
+        var config = KpleDeck.toGame(deck, game);
+        if (!config && !DRAW_GAMES[game]) { setConn('이 게임엔 이 덱을 쓸 수 없어요 (문항 부족)', 'err'); return; }
+        done(config || {});
+      };
+    });
+  }
+
   function bindCards() {
     [].forEach.call(document.querySelectorAll('.kp-pick-card'), function (card) {
       card.onclick = function () {
         if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
         var game = card.getAttribute('data-game');
-        var ctx;
-        try { ctx = Kple.host(game, { el: app, config: {} }); }
-        catch (e) { setConn(String(e.message || e), 'err'); return; }
-        activeCtx = ctx;
-        ctx.on('status', function (s) {
-          if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
-          else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s + ' (망 차단 가능성)', 'err');
-          else setConn(s);
-        });
-        try { history.pushState({ kple: 'game' }, ''); } catch (e) {}
-        setHomeBtn();
+        chooseDeck(game, function (config) { startHosted(game, config); });
       };
     });
   }
