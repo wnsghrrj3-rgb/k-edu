@@ -13,6 +13,7 @@ require('./templates/g1_math_u2.js')(KQuiz);
 require('./templates/g1_math_u4.js')(KQuiz);
 require('./templates/g1_korean_u1.js')(KQuiz);
 require('./templates/g1_korean_u2.js')(KQuiz);
+require('./templates/g1_korean_u3.js')(KQuiz);
 require('./templates/g2_math_u1.js')(KQuiz);
 require('./templates/g2_math_u2.js')(KQuiz);
 require('./templates/g2_math_u3.js')(KQuiz);
@@ -38,6 +39,7 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_korean_u1_l11','g1_korean_u1_l12','g1_korean_u1',
   'g1_korean_u2_l03','g1_korean_u2_l04','g1_korean_u2_l05','g1_korean_u2_l06',
   'g1_korean_u2_l07','g1_korean_u2',
+  'g1_korean_u3_l06_07','g1_korean_u3',
   'g2_math_u1_l02','g2_math_u1_l03','g2_math_u1_l04','g2_math_u1_l05',
   'g2_math_u1_l06','g2_math_u1_l07','g2_math_u1_l08','g2_math_u1',
   'g2_math_u2_l02','g2_math_u2_l03','g2_math_u2_l04','g2_math_u2_l08','g2_math_u2',
@@ -253,6 +255,9 @@ function expectOx(q) {
     if (SUBJ5[m5[1]]) return false;
     return null;
   }
+  // g1국어u3 된소리 자음자 판별 OX
+  var md = q.match(/「(.)」은\(는\) 된소리 자음자입니다/);
+  if (md) return ['ㄲ', 'ㄸ', 'ㅃ', 'ㅆ', 'ㅉ'].indexOf(md[1]) >= 0;
   var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
   if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
