@@ -529,6 +529,255 @@
   };
 })();
 </script>
+
+<!-- ═══ P3 미션 레이어 — 시나리오(N-1/N-2/N-3)·★와우 예측카드·10의 자석 창발·레시피 노트 렌즈·학년칸.
+     __NUMBER_P2__ 훅만 소비(순수·P2 렌더 0줄 변경). DOM 오버레이만 추가. 운명의 방 p3-mission 패턴 승계. ═══ -->
+<script id="number-p3">
+(function(){
+  'use strict';
+  var H = window.__NUMBER_P2__;
+  if (!H) return;
+  var K = H.K;
+
+  // ── 학년(?grade=low|mid|high, 저/중/고·1/2/3 허용) ──
+  var grade = 'mid';
+  try{
+    var g = (new URLSearchParams(location.search).get('grade') || '').toLowerCase();
+    if (g === 'low' || g === '저' || g === '1') grade = 'low';
+    else if (g === 'high' || g === '고' || g === '3') grade = 'high';
+  }catch(e){}
+
+  var scene = 'N-2';          // N-1 10만들기 · N-2 받아올림★ · N-3 받아내림
+  var seen = {};              // 방별 예측카드 시청 여부
+  var lastPick = -1, lastAnswer = -1;
+  var busy = false;
+  var rng = K.mulberry32((Date.now() >>> 0) || 1);
+
+  function raf(fn){ (window.requestAnimationFrame || function(f){ return setTimeout(f, 16); })(fn); }
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  // ── 스타일 주입(운명의 방 톤 승계) ──
+  var css = el('style');
+  css.textContent =
+    '#p3-scene{position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:21;display:flex;gap:6px;' +
+      'flex-wrap:wrap;justify-content:center;max-width:94vw}' +
+    '.p3-pill{font-family:\'Jua\';font-size:12.5px;color:var(--sub);background:var(--panel);' +
+      'border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;transition:.14s;backdrop-filter:blur(6px)}' +
+    '.p3-pill:active{transform:scale(.94)}' +
+    '.p3-pill.on{background:var(--bell);color:#0a0c18;border-color:var(--bell)}' +
+    '#p3-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;' +
+      'background:rgba(6,7,16,.72);backdrop-filter:blur(4px);padding:20px}' +
+    '#p3-modal.show{display:flex}' +
+    '.p3-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 20px;' +
+      'max-width:400px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.5);text-align:center}' +
+    '.p3-q{font-family:\'Jua\';font-size:17px;color:var(--ink);line-height:1.5;margin-bottom:16px}' +
+    '.p3-opt{display:block;width:100%;font-family:\'Gowun Dodum\',sans-serif;font-size:14.5px;color:var(--ink);' +
+      'background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:13px;padding:13px 14px;' +
+      'margin:8px 0;cursor:pointer;transition:.14s;text-align:left}' +
+    '.p3-opt:active{transform:scale(.98)}' +
+    '.p3-opt:hover{background:rgba(124,140,255,.16);border-color:var(--bell)}' +
+    '#p3-wow{position:fixed;top:120px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:40;' +
+      'max-width:90vw;background:linear-gradient(135deg,rgba(124,140,255,.95),rgba(90,104,220,.95));color:#0a0c18;' +
+      'border-radius:15px;padding:13px 18px;font-size:13.5px;line-height:1.55;box-shadow:0 16px 44px rgba(60,72,180,.5);' +
+      'opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;text-align:center}' +
+    '#p3-wow.show{opacity:1;transform:translateX(-50%) translateY(0)}' +
+    '#p3-wow b{font-family:\'Jua\'}' +
+    '#p3-recipe{position:fixed;top:120px;right:14px;z-index:22;background:var(--panel);border:1px solid var(--line);' +
+      'border-radius:14px;padding:10px 13px;min-width:118px;max-width:40vw;box-shadow:0 10px 30px rgba(0,0,0,.4);' +
+      'display:none}' +
+    '#p3-recipe.show{display:block}' +
+    '#p3-recipe .rt{font-family:\'Jua\';font-size:12px;color:var(--sub);margin-bottom:6px}' +
+    '#p3-recipe .rl{font-family:\'Jua\';font-size:13.5px;color:var(--ink);line-height:1.65;max-height:38vh;overflow:auto}' +
+    '#p3-recipe .rl .ok{color:var(--ten)}';
+  document.head.appendChild(css);
+
+  // ── 시나리오 배너 ──
+  var SCN = [
+    { id:'N-1', label:'🧲 10 만들기', mode:'add' },
+    { id:'N-2', label:'➕ 받아올림 ★', mode:'add' },
+    { id:'N-3', label:'➖ 받아내림', mode:'sub' }
+  ];
+  var scene_el = el('div'); scene_el.id = 'p3-scene';
+  SCN.forEach(function(s){
+    var p = el('button', 'p3-pill', s.label);
+    p.setAttribute('data-scn', s.id);
+    p.addEventListener('click', function(){ setScene(s.id); });
+    scene_el.appendChild(p);
+  });
+  document.body.appendChild(scene_el);
+
+  // ── 예측카드 모달 ──
+  var modal = el('div'); modal.id = 'p3-modal';
+  var card = el('div', 'p3-card');
+  var qEl = el('div', 'p3-q', '');
+  var optBox = el('div');
+  card.appendChild(qEl); card.appendChild(optBox);
+  modal.appendChild(card);
+  modal.addEventListener('click', function(e){ if (e.target === modal) closeCard(); });
+  document.body.appendChild(modal);
+
+  // ── 창발 배너 + 레시피 노트 ──
+  var wow = el('div'); wow.id = 'p3-wow'; document.body.appendChild(wow);
+  var wowTimer = null;
+  var recipeEl = el('div'); recipeEl.id = 'p3-recipe';
+  recipeEl.innerHTML = '<div class="rt">📒 레시피 노트</div><div class="rl" id="p3-rl"></div>';
+  document.body.appendChild(recipeEl);
+
+  // ── 방별 문제 생성(결정론 rng) ──
+  function newSceneProblem(){
+    var q;
+    if (scene === 'N-1'){ q = K.genMakeTen(rng); H.spawn(q.a, q.partner, 'add'); }
+    else if (scene === 'N-2'){ q = K.genAddCarry(rng); H.spawn(q.a, q.b, 'add'); }
+    else { q = K.genSubBorrow(rng); H.spawn(q.a, q.b, 'sub'); }
+  }
+
+  // ── 예측카드 데이터(방별 동적) ──
+  function cardFor(){
+    if (scene === 'N-2') return { q: K.WOW_MAGNET.q, options: K.WOW_MAGNET.options.slice(), answer: K.WOW_MAGNET.answer };
+    if (scene === 'N-1'){
+      var a = H.a, partner = K.partnerToTen(a);                 // 조회만
+      var opts = [partner, K.clamp(partner + 1, 0, 10), K.clamp(partner - 1, 0, 10)];
+      // 중복 제거 후 셔플
+      var uniq = []; opts.forEach(function(v){ if (uniq.indexOf(v) < 0) uniq.push(v); });
+      while (uniq.length < 3){ var c = 1 + Math.floor(rng() * 9); if (uniq.indexOf(c) < 0) uniq.push(c); }
+      for (var i = uniq.length - 1; i > 0; i--){ var j = Math.floor(rng() * (i + 1)); var t = uniq[i]; uniq[i] = uniq[j]; uniq[j] = t; }
+      return { q: a + '과(와) 얼마를 만나야 딱 10이 될까요?', options: uniq.map(function(v){ return v + ''; }), answer: uniq.indexOf(partner) };
+    }
+    // N-3
+    return { q: H.a + '에서 ' + H.b + '을(를) 빼려는데 일의 자리가 모자라요. 어떻게 할까요?',
+      options: ['10 덩어리를 갈라서 거기서 빼요', '그냥 뺄 수 없어요', '더 큰 수로 바꿔요'], answer: 0 };
+  }
+  function openCard(){
+    var c = cardFor(); lastAnswer = c.answer;
+    qEl.innerHTML = c.q; optBox.innerHTML = '';
+    c.options.forEach(function(opt, i){
+      var b = el('button', 'p3-opt', opt);
+      b.addEventListener('click', function(){ pick(i); });
+      optBox.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeCard(){ modal.classList.remove('show'); }
+  function pick(i, instant){ lastPick = i; seen[scene] = true; closeCard(); runCombine(!!instant); }
+
+  // ── 결합 실행 + 완료 감지 ──
+  function combineIntent(){
+    if (busy) return;
+    if (!seen[scene]){ openCard(); return; }     // 첫 만남 = 예측카드 먼저
+    runCombine(false);
+  }
+  function runCombine(instant){
+    if (busy) return; busy = true; hideWow();
+    if (instant){ H.combine(true); busy = false; onComplete(); return; }
+    H.combine(false);
+    var guard = 0;
+    (function poll(){
+      guard++;
+      if ((!H.busy && H.phase === 'done') || guard > 3000){ busy = false; onComplete(); return; }
+      raf(poll);
+    })();
+  }
+  function onComplete(){ showWow(); renderRecipe(); }
+
+  // ── ★와우: 방별 창발 연출(H.result 조회) ──
+  function showWow(){
+    var r = H.result; if (!r) return;
+    var head, body;
+    if (scene === 'N-3'){
+      if (r.borrowed){
+        head = (lastPick === 0 ? '🎯 맞혔어요! ' : '🎯 ') + '10 덩어리가 갈라졌어요';
+        body = (grade === 'low')
+          ? '10을 열 개로 갈라서 거기서 <b>' + H.b + '</b>을 뺐어요!'
+          : '일의 자리가 모자라면 10 덩어리 하나를 갈라(' + r.fromTen + ' 남김) 거기서 빼요 — 이게 <b>받아내림</b>이에요.';
+      } else { head = '➖ 일의 자리에서 바로 뺐어요'; body = H.a + ' − ' + H.b + ' = <b>' + r.diff + '</b>. 10을 가를 필요가 없었죠.'; }
+      flashWow('<b>' + head + '</b><br>' + body, 6500); return;
+    }
+    // N-1 · N-2 (더하기)
+    if (r.carried){
+      var hit = (scene === 'N-2' ? lastPick === K.WOW_MAGNET.answer : lastPick === lastAnswer);
+      head = (hit ? '🧲 맞혔어요! ' : '🧲 ') + (r.sum === 10 ? '딱 10을 만들었어요' : '10 하나를 만들었어요');
+      body = (grade === 'low')
+        ? '부족한 만큼이 자석처럼 뜯겨 붙어 <b>10</b>이 됐어요' + (r.left ? '. 그리고 ' + r.left + '이 남았어요!' : '!')
+        : (scene === 'N-2' ? K.WOW_MAGNET.explain
+           : H.a + '과 ' + K.partnerToTen(H.a) + '은 10의 단짝이에요 — 자석처럼 붙어 딱 10!');
+    } else {
+      head = '➕ 아직 10이 안 됐어요';
+      body = H.a + '과 ' + H.b + '을 모아도 프레임이 다 안 찼어요. 두 수의 합이 10보다 작으면 자석이 안 생겨요.';
+    }
+    flashWow('<b>' + head + '</b><br>' + body, 6500);
+  }
+  function flashWow(html, ms){
+    wow.innerHTML = html; wow.classList.add('show');
+    if (wowTimer) clearTimeout(wowTimer);
+    wowTimer = setTimeout(function(){ wow.classList.remove('show'); }, ms || 5000);
+  }
+  function hideWow(){ wow.classList.remove('show'); if (wowTimer) clearTimeout(wowTimer); }
+
+  // ── 레시피 노트(데이터 렌즈) — recipe 배열 누적. 서열·비교 노출 없음(헌법). ──
+  function renderRecipe(){
+    var rec = H.recipe; if (!rec || !rec.length){ recipeEl.classList.remove('show'); return; }
+    var rl = $('p3-rl'); if (!rl) return;
+    var html = '';
+    var start = Math.max(0, rec.length - 8);          // 최근 8개
+    for (var i = start; i < rec.length; i++){
+      var e = rec[i], op = e.mode === 'add' ? '+' : '−';
+      var made10 = (e.mode === 'add' && e.carried);
+      html += '<div' + (made10 ? ' class="ok"' : '') + '>' + e.a + ' ' + op + ' ' + e.b + ' = ' + e.result + (made10 ? ' ✓' : '') + '</div>';
+    }
+    rl.innerHTML = html; recipeEl.classList.add('show');
+  }
+
+  // ── 시나리오 전환 ──
+  function setScene(s){
+    scene = s; hideWow();
+    var pills = scene_el.querySelectorAll('.p3-pill');
+    for (var i = 0; i < pills.length; i++)
+      pills[i].classList.toggle('on', pills[i].getAttribute('data-scn') === s);
+    newSceneProblem();
+    var e = $('tip');
+    if (e){
+      e.textContent = s === 'N-1' ? '🧲 두 블록을 만나게 해서 딱 10을 만들어 봐요. 얼마를 만나야 할까요?'
+        : s === 'N-2' ? (grade === 'high' ? '➕ 옆에 가져가면 어떻게 될지 먼저 예상하고 🧲로 확인해요!' : '➕ 두 수를 만나게 하면 10이 어떻게 만들어질까요? 🧲!')
+        : '➖ 일의 자리가 모자라면 10을 어떻게 할까요? 먼저 예상하고 🧲로 확인해요!';
+      e.classList.remove('hide');
+    }
+  }
+
+  // ── bGo/bNew 인터셉트(캡처) ──
+  var bgo = $('bGo');
+  if (bgo) bgo.addEventListener('click', function(e){
+    e.stopImmediatePropagation(); if (e.preventDefault) e.preventDefault();
+    combineIntent();
+  }, true);
+  var bnew = $('bNew');
+  if (bnew) bnew.addEventListener('click', function(e){
+    e.stopImmediatePropagation(); if (e.preventDefault) e.preventDefault();
+    hideWow(); newSceneProblem();
+  }, true);
+
+  // ── 초기 진입 ──
+  function boot(){
+    try{
+      var qs = new URLSearchParams(location.search);
+      var sc = (qs.get('scenario') || qs.get('scene') || '').toUpperCase();
+      if (sc === 'N-1' || sc === 'N-2' || sc === 'N-3'){ setScene(sc); return; }
+    }catch(e){}
+    setScene(grade === 'low' ? 'N-1' : grade === 'high' ? 'N-3' : 'N-2');
+  }
+  boot();
+
+  // ── 훅(P3 스모크) ──
+  window.__NUMBER_P3__ = {
+    get scene(){ return scene; }, get grade(){ return grade; },
+    get cardSeen(){ return !!seen[scene]; }, get lastPick(){ return lastPick; }, get lastAnswer(){ return lastAnswer; },
+    get wowShown(){ return wow.classList.contains('show'); }, get recipeShown(){ return recipeEl.classList.contains('show'); },
+    get recipeCount(){ return H.recipe.length; }, H: H,
+    setScene: setScene, openCard: openCard, closeCard: closeCard, cardFor: cardFor,
+    pick: pick, combineIntent: combineIntent, runCombine: runCombine, newSceneProblem: newSceneProblem
+  };
+})();
+</script>
 </body>
 
 </html>
