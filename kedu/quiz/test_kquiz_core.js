@@ -14,6 +14,7 @@ require('./templates/g1_math_u4.js')(KQuiz);
 require('./templates/g1_korean_u1.js')(KQuiz);
 require('./templates/g1_korean_u2.js')(KQuiz);
 require('./templates/g2_math_u1.js')(KQuiz);
+require('./templates/g2_math_u2.js')(KQuiz);
 require('./templates/g2_math_u3.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
 
@@ -37,6 +38,7 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g1_korean_u2_l07','g1_korean_u2',
   'g2_math_u1_l02','g2_math_u1_l03','g2_math_u1_l04','g2_math_u1_l05',
   'g2_math_u1_l06','g2_math_u1_l07','g2_math_u1_l08','g2_math_u1',
+  'g2_math_u2_l02','g2_math_u2_l03','g2_math_u2_l04','g2_math_u2_l08','g2_math_u2',
   'g2_math_u3_l02','g2_math_u3_l03','g2_math_u3_l04','g2_math_u3_l05','g2_math_u3_l06',
   'g2_math_u3_l07','g2_math_u3_l08','g2_math_u3_l09','g2_math_u3_l10','g2_math_u3_l11','g2_math_u3',
   'g2_math_u6_l02','g2_math_u6_l03','g2_math_u6_l04','g2_math_u6_l05',
@@ -107,12 +109,37 @@ var U2_PHRASE2KEY = {
   '둥근 부분이 있습니다.': 'roundSurface'
 };
 
+// g2u2 평면도형 독립 검산용: 개수 성질행렬 + 특징행렬(템플릿과 별도 사본)
+var P2_PROP = {
+  '삼각형': { sides: 3, vertices: 3 },
+  '사각형': { sides: 4, vertices: 4 },
+  '원':     { sides: 0, vertices: 0 }
+};
+var P2_BY_SV = {};
+Object.keys(P2_PROP).forEach(function (s) { P2_BY_SV[P2_PROP[s].sides + '_' + P2_PROP[s].vertices] = s; });
+var P2_FEAT = {
+  '삼각형': { straightSide: true,  vertex: true,  round: false },
+  '사각형': { straightSide: true,  vertex: true,  round: false },
+  '원':     { straightSide: false, vertex: false, round: true  }
+};
+var P2_FEAT_P2K = {
+  '곧은 변이 있습니다.': 'straightSide',
+  '뾰족한 꼭짓점이 있습니다.': 'vertex',
+  '굽은 선으로 되어 있습니다.': 'round'
+};
+
 // ── 독립 재계산기: 문항 q를 파싱해 정답을 코드 밖에서 다시 계산 ─────────────────
 // (엔진의 answer를 신뢰하지 않고 문구만으로 재산출 → 진짜 대조)
 function expectChoice(q) {
   var m;
   if ((m = q.match(/^「(.+?)」은\(는\) 어떤 모양/)))                    // u2 물건→모양
     return U2_OBJ[m[1]] || '__미등록__';
+  if ((m = q.match(/^곧은 변이 (\d+)개, 꼭짓점이 (\d+)개인 도형은/)))   // g2u2 성질→도형
+    return P2_BY_SV[m[1] + '_' + m[2]] || '__미등록__';
+  if ((m = q.match(/^「(삼각형|사각형|원)」의 곧은 변은 몇 개/)))       // g2u2 변 개수
+    return P2_PROP[m[1]].sides;
+  if ((m = q.match(/^「(삼각형|사각형|원)」의 꼭짓점은 몇 개/)))        // g2u2 꼭짓점 개수
+    return P2_PROP[m[1]].vertices;
   if ((m = q.match(/^「(.+?)」와\(과\) 「(.+?)」 중에서 (.+?) 것은/))) { // u4 비교
     var d = U4_WORD2DIR[m[3]]; if (!d) return '__미등록어__';
     var attr = d[0], x = m[1], y = m[2];
@@ -185,6 +212,14 @@ function expectOx(q) {
   if (m) return m[3] === '큽니다' ? (+m[1] > +m[2]) : (+m[1] < +m[2]);
   var ms = q.match(/(상자 모양|둥근 기둥 모양|공 모양)은\(는\) (.+)$/); // u2 성질 OX
   if (ms) { var k = U2_PHRASE2KEY[ms[2]]; if (k) return U2_PROPS[ms[1]][k]; }
+  // g2u2 개수 OX(숫자 포함 — 특징 OX보다 먼저)
+  var m2s = q.match(/「(삼각형|사각형)」은\(는\) 곧은 변이 (\d+)개 있습니다/);
+  if (m2s) return P2_PROP[m2s[1]].sides === +m2s[2];
+  var m2v = q.match(/「(삼각형|사각형)」은\(는\) 꼭짓점이 (\d+)개 있습니다/);
+  if (m2v) return P2_PROP[m2v[1]].vertices === +m2v[2];
+  // g2u2 특징 OX(숫자 없음)
+  var m2f = q.match(/「(삼각형|사각형|원)」은\(는\) (.+)$/);
+  if (m2f) { var fk = P2_FEAT_P2K[m2f[2]]; if (fk) return P2_FEAT[m2f[1]][fk]; }
   var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
   if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
