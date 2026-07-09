@@ -439,5 +439,168 @@
   };
 })();
 </script>
+
+<!-- ═══ P3 미션 레이어 — 시나리오(S-1/S-2/S-3)·★바닥 깔기 예측카드·정오각형 틈 창발·정원 누적·학년칸.
+     __SHAPE_P2__ 훅만 소비(순수·P2 렌더 0줄 변경). DOM 오버레이만 추가. 수 공장 p3 패턴 승계. ═══ -->
+<script id="shape-p3">
+(function(){
+  'use strict';
+  var H = window.__SHAPE_P2__;
+  if (!H) return;
+  var K = H.K;
+
+  var grade = 'mid';
+  try{
+    var g = (new URLSearchParams(location.search).get('grade') || '').toLowerCase();
+    if (g === 'low' || g === '저' || g === '1') grade = 'low';
+    else if (g === 'high' || g === '고' || g === '3') grade = 'high';
+  }catch(e){}
+
+  var scene = 'S-1';
+  var seen = {}, lastPick = -1, lastAnswer = -1;
+
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  // ── 스타일(수 공장 p3 톤 승계) ──
+  var css = el('style');
+  css.textContent =
+    '#p3-scene{position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:21;display:flex;gap:6px;' +
+      'flex-wrap:wrap;justify-content:center;max-width:94vw}' +
+    '.p3-pill{font-family:\'Jua\';font-size:12.5px;color:var(--sub);background:var(--panel);' +
+      'border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;transition:.14s;backdrop-filter:blur(6px)}' +
+    '.p3-pill:active{transform:scale(.94)}' +
+    '.p3-pill.on{background:var(--bell);color:#0a0c18;border-color:var(--bell)}' +
+    '#p3-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;' +
+      'background:rgba(6,7,16,.72);backdrop-filter:blur(4px);padding:20px}' +
+    '#p3-modal.show{display:flex}' +
+    '.p3-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 20px;' +
+      'max-width:400px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.5);text-align:center}' +
+    '.p3-q{font-family:\'Jua\';font-size:17px;color:var(--ink);line-height:1.5;margin-bottom:16px}' +
+    '.p3-opt{display:block;width:100%;font-family:\'Gowun Dodum\',sans-serif;font-size:14.5px;color:var(--ink);' +
+      'background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:13px;padding:13px 14px;' +
+      'margin:8px 0;cursor:pointer;transition:.14s;text-align:left}' +
+    '.p3-opt:active{transform:scale(.98)}' +
+    '.p3-opt:hover{background:rgba(124,140,255,.16);border-color:var(--bell)}' +
+    '#p3-wow{position:fixed;top:120px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:40;' +
+      'max-width:90vw;background:linear-gradient(135deg,rgba(124,140,255,.95),rgba(90,104,220,.95));color:#0a0c18;' +
+      'border-radius:15px;padding:13px 18px;font-size:13.5px;line-height:1.55;box-shadow:0 16px 44px rgba(60,72,180,.5);' +
+      'opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;text-align:center}' +
+    '#p3-wow.show{opacity:1;transform:translateX(-50%) translateY(0)}' +
+    '#p3-wow b{font-family:\'Jua\'}';
+  document.head.appendChild(css);
+
+  // ── 시나리오 배너 ──
+  var SCN = [
+    { id:'S-1', label:'🦋 거울 나비', mode:'mirror' },
+    { id:'S-2', label:'❄️ 만다라', mode:'mandala' },
+    { id:'S-3', label:'🧩 바닥 깔기 ★', mode:'tessellate' }
+  ];
+  var scene_el = el('div'); scene_el.id = 'p3-scene';
+  SCN.forEach(function(s){
+    var p = el('button', 'p3-pill', s.label);
+    p.setAttribute('data-scn', s.id);
+    p.addEventListener('click', function(){ setScene(s.id); });
+    scene_el.appendChild(p);
+  });
+  document.body.appendChild(scene_el);
+
+  // ── 예측카드 모달 ──
+  var modal = el('div'); modal.id = 'p3-modal';
+  var card = el('div', 'p3-card');
+  var qEl = el('div', 'p3-q', '');
+  var optBox = el('div');
+  card.appendChild(qEl); card.appendChild(optBox);
+  modal.appendChild(card);
+  modal.addEventListener('click', function(e){ if (e.target === modal) closeCard(); });
+  document.body.appendChild(modal);
+
+  // ── 창발 배너 ──
+  var wow = el('div'); wow.id = 'p3-wow'; document.body.appendChild(wow);
+  var wowTimer = null;
+  function flashWow(html, ms){
+    wow.innerHTML = html; wow.classList.add('show');
+    if (wowTimer) clearTimeout(wowTimer);
+    wowTimer = setTimeout(function(){ wow.classList.remove('show'); }, ms || 6000);
+  }
+  function hideWow(){ wow.classList.remove('show'); if (wowTimer) clearTimeout(wowTimer); }
+
+  // ── 예측카드(바닥 깔기 = WOW_TESS) ──
+  function openCard(){
+    lastAnswer = K.WOW_TESS.answer;
+    qEl.innerHTML = K.WOW_TESS.q; optBox.innerHTML = '';
+    K.WOW_TESS.options.forEach(function(opt, i){
+      var b = el('button', 'p3-opt', opt);
+      b.addEventListener('click', function(){ pick(i); });
+      optBox.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeCard(){ modal.classList.remove('show'); }
+  function pick(i){
+    lastPick = i; seen[scene] = true; closeCard();
+    H.setPoly(5);                                     // 오각형으로 이동 → 틈 즉시 보임
+    var hit = (i === K.WOW_TESS.answer);
+    var head = (hit ? '🧩 맞혔어요! ' : '🧩 ') + '정오각형만 빈틈이 남아요';
+    var body = (grade === 'low')
+      ? '정오각형은 세 개를 모아도 <b>36°</b> 틈이 남아 물이 새요. 삼각형·사각형·육각형은 딱 맞아요!'
+      : K.WOW_TESS.explain;
+    flashWow('<b>' + head + '</b><br>' + body, 8000);
+  }
+
+  // ── 시나리오 전환 ──
+  function setScene(s){
+    scene = s; hideWow();
+    var pills = scene_el.querySelectorAll('.p3-pill');
+    for (var i = 0; i < pills.length; i++)
+      pills[i].classList.toggle('on', pills[i].getAttribute('data-scn') === s);
+    var sc = SCN.filter(function(x){ return x.id === s; })[0];
+    H.setMode(sc.mode);
+    if (s === 'S-3' && !seen[s]) openCard();          // 첫 진입 = 예측카드
+  }
+
+  // ── 정원 심기 창발(작품 누적 렌즈) ──
+  function onPlant(){
+    var head = scene === 'S-1' ? '🦋 대칭 나비가 날아올랐어요' : scene === 'S-2' ? '❄️ 만다라 꽃이 피었어요' : '🧩 바닥 무늬를 심었어요';
+    flashWow('<b>' + head + '</b><br>정원에 <b>' + H.garden + '번째</b> 작품이 쌓였어요!', 5000);
+  }
+
+  // ── 인터셉트: 심기(창발) · 바닥 깔기 도형 선택(틈 재확인) ──
+  var bp = $('bPlant');
+  if (bp) bp.addEventListener('click', function(){
+    // P2 plant 먼저 실행되게(캡처 아님) → 이후 창발
+    setTimeout(onPlant, 0);
+  }, false);
+  var poly = $('poly');
+  if (poly) poly.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('button') : null; if (!b) return;
+    setTimeout(function(){
+      var t = H.tessInfo;
+      if (!t.can) flashWow('<b>🧩 정' + hangul(t.n) + '각형은 틈이 남아요</b><br>' + t.count + '개를 모아도 <b>' + t.gap + '°</b>가 부족해 물이 새요.', 6000);
+      else hideWow();
+    }, 0);
+  }, false);
+  function hangul(n){ return ({3:'삼',4:'사',5:'오',6:'육'})[n] || (n+''); }
+
+  // ── 초기 진입 ──
+  function boot(){
+    try{
+      var qs = new URLSearchParams(location.search);
+      var sc = (qs.get('scenario') || qs.get('scene') || '').toUpperCase();
+      if (sc === 'S-1' || sc === 'S-2' || sc === 'S-3'){ setScene(sc); return; }
+    }catch(e){}
+    setScene(grade === 'low' ? 'S-1' : grade === 'high' ? 'S-3' : 'S-2');
+  }
+  boot();
+
+  // ── 훅(P3 스모크) ──
+  window.__SHAPE_P3__ = {
+    get scene(){ return scene; }, get grade(){ return grade; },
+    get cardSeen(){ return !!seen[scene]; }, get lastPick(){ return lastPick; }, get lastAnswer(){ return lastAnswer; },
+    get wowShown(){ return wow.classList.contains('show'); }, get garden(){ return H.garden; }, H: H,
+    setScene: setScene, openCard: openCard, closeCard: closeCard, pick: pick, onPlant: onPlant
+  };
+})();
+</script>
 </body>
 </html>
