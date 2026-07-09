@@ -125,7 +125,6 @@ document.querySelectorAll('.start-tab').forEach(t => t.onclick = () => {
   t.classList.add('on'); audience = t.dataset.aud; renderPresets();
 });
 renderPresets();
-renderGenGrid();
 
 /* ============ 에디터 진입 ============ */
 var editorOpen = false;
@@ -171,6 +170,7 @@ function renderGenGrid(tries) {
     `<button class="gen-card" data-k="${s.k}"><div class="gi">${s.ico}</div><div class="gn">${s.n}</div></button>`).join('');
   g.querySelectorAll('.gen-card').forEach(c => c.onclick = () => generateTemplate(c.dataset.k));
 }
+renderGenGrid();
 function measureText(text, fontSize, fontFamily) {
   if (typeof fabric === 'undefined') return 0;
   let w = 0;
