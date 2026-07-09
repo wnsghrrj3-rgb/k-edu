@@ -125,11 +125,36 @@
     return { ok: errs.length === 0, errors: errs };
   }
 
+  /* ── 실서비스 딥링크(R2 런처의 심장 — 팩 없이 진짜 우리 학교로 점프) ──
+     헌법: 실데이터는 원본 서비스가 담당. 우리는 학교 좌표로 관문만 연다. */
+  function validCoord(lat, lng) {
+    return isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && !(lat === 0 && lng === 0);
+  }
+  function cleanName(name) { return String(name || '우리 학교').replace(/[,\/\\'"]/g, ' ').trim() || '우리 학교'; }
+
+  // 카카오맵: 좌표 있으면 그 자리로(map/이름,위도,경도), 이름만 있으면 검색(search/이름)
+  function kakaoMapLink(home) {
+    if (!home) return null;
+    if (validCoord(home.lat, home.lng))
+      return 'https://map.kakao.com/link/map/' + encodeURIComponent(cleanName(home.name)) + ',' + home.lat + ',' + home.lng;
+    if (home.name) return 'https://map.kakao.com/link/search/' + encodeURIComponent(cleanName(home.name));
+    return null;
+  }
+  // 카카오 로드뷰: 좌표 필요(거리의 변화 = 옛↔오늘 거리뷰)
+  function kakaoRoadviewLink(home) {
+    if (home && validCoord(home.lat, home.lng)) return 'https://map.kakao.com/link/roadview/' + home.lat + ',' + home.lng;
+    return null;
+  }
+  // 국토정보플랫폼(70~80년대 옛 항공사진 — 딥링크 미공개라 홈 진입 후 검색 안내)
+  function ngiiLink() { return 'https://map.ngii.go.kr/'; }
+
   var T = {
     clamp01: clamp01, frameAt: frameAt, layerAlpha: layerAlpha,
     dominantFrame: dominantFrame, yearAt: yearAt, curtainSide: curtainSide,
     hitTest: hitTest, findAt: findAt, collectSummary: collectSummary,
-    predictResult: predictResult, packValidate: packValidate
+    predictResult: predictResult, packValidate: packValidate,
+    validCoord: validCoord, cleanName: cleanName,
+    kakaoMapLink: kakaoMapLink, kakaoRoadviewLink: kakaoRoadviewLink, ngiiLink: ngiiLink
   };
   W.TimePack = T;
   if (typeof module !== 'undefined' && module.exports) module.exports = T;
