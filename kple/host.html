@@ -28,7 +28,18 @@
   .kp-dk-s{font-size:12px;opacity:.65;}
   .kp-deck-note{font-size:13px;line-height:1.55;opacity:.75;background:rgba(255,255,255,.05);
     border-radius:12px;padding:12px 14px;}
-  @media(max-width:420px){.kp-dk-grid{grid-template-columns:1fr;}}
+  .kp-lt{margin:2px 0 10px;}
+  .kp-lt-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;}
+  .kp-lt-sep{width:1px;height:20px;background:rgba(255,255,255,.16);margin:0 2px;}
+  .kp-lt-pill{border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 14px;cursor:pointer;
+    font-family:inherit;font-size:13px;font-weight:700;background:transparent;color:inherit;}
+  .kp-lt-pill.on{background:var(--kp-yellow,#ffd23f);color:#1a1a1a;border-color:transparent;}
+  .kp-lt-units{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .kp-lt-u{border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:12px 6px;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:700;background:rgba(255,255,255,.05);color:inherit;}
+  .kp-lt-u:hover:not(:disabled){background:rgba(255,255,255,.12);border-color:var(--kp-yellow,#ffd23f);}
+  .kp-lt-u:disabled{opacity:.6;cursor:default;}
+  @media(max-width:420px){.kp-dk-grid{grid-template-columns:1fr;}.kp-lt-units{grid-template-columns:repeat(3,1fr);}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../kedu_config.js"></script>
@@ -95,8 +106,49 @@
     setHomeBtn();
   }
 
-  // 덱 고르기 오버레이: 바로 시작(샘플) / 그냥 놀기(놀이덱) / 우리 반 배운 것(게이트 후)
   var DRAW_GAMES = { co_draw: 1, catch_mind: 1 };   // 덱=주제·어휘 중심
+
+  // ── 우리 반 배운 것: 차시 데이터(window.LESSONS) 온디맨드 로드 ──
+  // 파일=단원 하나. 키는 u{단원}_l{차시} (학년·과목 접두 없음 → 한 번에 한 파일만).
+  // 화이트리스트(아래 매니페스트)에 있는 파일만 로드 — URL 파라미터 임의 주입 차단.
+  var UNIT_MAP = { 1: { 국어: [1,2,3,4,5,6,7], 수학: [1,2,3,4,5,6] },
+                   2: { 국어: [1,2,3,4,5,6,7,8], 수학: [1,2,3,5,6] } };
+  var SUBJ_SLUG = { 국어: 'korean', 수학: 'math' };
+  var UNIT_MANIFEST = {};   // file -> {grade, subject, unit}
+  Object.keys(UNIT_MAP).forEach(function (g) {
+    Object.keys(UNIT_MAP[g]).forEach(function (subj) {
+      UNIT_MAP[g][subj].forEach(function (u) {
+        UNIT_MANIFEST['g' + g + '_' + SUBJ_SLUG[subj] + '_u' + u] = { grade: +g, subject: subj, unit: u };
+      });
+    });
+  });
+  var _deckCache = {};
+  function loadLessonDeck(file) {
+    if (!UNIT_MANIFEST[file]) return Promise.reject(new Error('알 수 없는 차시'));
+    if (_deckCache[file]) return Promise.resolve(_deckCache[file]);
+    return new Promise(function (res, rej) {
+      function finish() {
+        var keys = Object.keys(window.LESSONS || {}).filter(function (k) { return /^u\d+_l\d+$/.test(k); });
+        if (!keys.length) { rej(new Error('빈 차시')); return; }
+        var deck = KpleDeck.from({ lessons: keys });
+        if (!deck || !deck.items || !deck.items.length) { rej(new Error('문항 없음')); return; }
+        var m = UNIT_MANIFEST[file];
+        deck.title = m.grade + '학년 ' + m.subject + ' ' + m.unit + '단원';
+        _deckCache[file] = deck; res(deck);
+      }
+      window.LESSONS = {};   // 단원 격리(키 충돌 방지)
+      if (typeof window.__kpleLoadUnit === 'function') {   // 테스트 심(가짜 로더)
+        try { window.__kpleLoadUnit(file); finish(); } catch (e) { rej(e); } return;
+      }
+      var s = document.createElement('script');
+      s.src = '../kedu/teacher/data/' + file + '.js';
+      s.onload = finish;
+      s.onerror = function () { rej(new Error('차시 로드 실패')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  // 덱 고르기 오버레이: 바로 시작(샘플) / 그냥 놀기(놀이덱) / 우리 반 배운 것(차시 트리)
   function chooseDeck(game, cb) {
     if (!window.KpleDeck) { cb({}); return; }        // 어댑터 없으면 안전하게 바로 시작
     var cat = KpleDeck.playCatalog();
@@ -115,20 +167,51 @@
         '<div class="kp-deck-sec">🎲 그냥 놀기</div>' +
         '<div class="kp-dk-grid">' + playCards + '</div>' +
         '<div class="kp-deck-sec">📚 우리 반 배운 것</div>' +
-        '<div class="kp-deck-note">케이티처에서 차시를 열고 「▶ 케이플로 열기」를 누르면 그 차시 문제가 자동으로 들어와요.</div>' +
+        '<div class="kp-lt" data-role="tree"></div>' +
+        '<div class="kp-deck-note">케이티처에서 차시를 열고 「▶ 케이플로 열기」를 눌러도 그 차시 문제가 바로 들어와요.</div>' +
       '</div>';
     document.body.appendChild(ov);
     function done(config) { try { ov.remove(); } catch (e) {} cb(config); }
+    function consume(deck) {
+      var config = KpleDeck.toGame(deck, game);
+      if (!config && !DRAW_GAMES[game]) { setConn('이 게임엔 이 덱을 쓸 수 없어요 (문항 부족)', 'err'); return false; }
+      done(config || {}); return true;
+    }
     ov.querySelector('[data-act="close"]').onclick = function () { try { ov.remove(); } catch (e) {} };
     ov.querySelector('[data-act="sample"]').onclick = function () { done({}); };
     [].forEach.call(ov.querySelectorAll('[data-play]'), function (b) {
-      b.onclick = function () {
-        var deck = KpleDeck.from(b.getAttribute('data-play'));
-        var config = KpleDeck.toGame(deck, game);
-        if (!config && !DRAW_GAMES[game]) { setConn('이 게임엔 이 덱을 쓸 수 없어요 (문항 부족)', 'err'); return; }
-        done(config || {});
-      };
+      b.onclick = function () { consume(KpleDeck.from(b.getAttribute('data-play'))); };
     });
+    renderLessonTree(ov.querySelector('[data-role="tree"]'), consume);
+  }
+
+  // 학년 → 과목 → 단원 트리. 단원 클릭 시 그 차시 덱을 로드해 consume(deck).
+  function renderLessonTree(host, consume) {
+    var grade = 1, subject = '수학';
+    function pill(label, on, attr) {
+      return '<button class="kp-lt-pill' + (on ? ' on' : '') + '" ' + attr + '>' + label + '</button>';
+    }
+    function draw() {
+      var units = (UNIT_MAP[grade] && UNIT_MAP[grade][subject]) || [];
+      host.innerHTML =
+        '<div class="kp-lt-row">' + pill('1학년', grade === 1, 'data-g="1"') + pill('2학년', grade === 2, 'data-g="2"') +
+          '<span class="kp-lt-sep"></span>' + pill('국어', subject === '국어', 'data-s="국어"') + pill('수학', subject === '수학', 'data-s="수학"') + '</div>' +
+        '<div class="kp-lt-units">' + units.map(function (u) {
+          return '<button class="kp-lt-u" data-u="' + u + '">' + u + '단원</button>';
+        }).join('') + '</div>';
+      [].forEach.call(host.querySelectorAll('[data-g]'), function (b) { b.onclick = function () { grade = +b.getAttribute('data-g'); draw(); }; });
+      [].forEach.call(host.querySelectorAll('[data-s]'), function (b) { b.onclick = function () { subject = b.getAttribute('data-s'); draw(); }; });
+      [].forEach.call(host.querySelectorAll('[data-u]'), function (b) {
+        b.onclick = function () {
+          var file = 'g' + grade + '_' + SUBJ_SLUG[subject] + '_u' + b.getAttribute('data-u');
+          b.textContent = '불러오는 중…'; b.disabled = true;
+          loadLessonDeck(file).then(consume).catch(function (e) {
+            setConn(String((e && e.message) || e), 'err'); b.textContent = b.getAttribute('data-u') + '단원'; b.disabled = false;
+          });
+        };
+      });
+    }
+    draw();
   }
 
   function bindCards() {
@@ -170,6 +253,24 @@
 
   bindCards();
   setHomeBtn();
+
+  // 도킹 수신부: ?deck=<파일>&game=<게임id> → 그 차시 덱 로드 후 바로 방 열기.
+  // (케이티처 「▶ 케이플로 열기」가 이 URL을 만든다 — 생성부는 케이티처 쪽·게이트 후.)
+  (function () {
+    var q = {};
+    (location.search || '').replace(/^\?/, '').split('&').forEach(function (kv) {
+      if (!kv) return; var p = kv.split('='); q[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || '');
+    });
+    if (!q.deck || !q.game || !window.KpleDeck) return;
+    if (!/^(quiz_show|speed_quiz|co_draw|catch_mind)$/.test(q.game)) return;
+    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
+    setConn('차시 불러오는 중…', '');
+    loadLessonDeck(q.deck).then(function (deck) {
+      var config = KpleDeck.toGame(deck, q.game);
+      if (!config && !DRAW_GAMES[q.game]) { setConn('이 차시로는 이 게임을 열 수 없어요 (문항 부족)', 'err'); return; }
+      startHosted(q.game, config || {});
+    }).catch(function (e) { setConn(String((e && e.message) || e), 'err'); });
+  })();
 })();
 </script>
 </body>
