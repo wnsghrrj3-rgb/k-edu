@@ -495,7 +495,316 @@
 })();
 </script>
 
-<!-- P3에서 미션+★와우 레이어(__INFINITY_P2__ 훅만 소비·오버레이만) 증축 예정.
-     순수 블록(infinity-pure)·P2 블록(infinity-p2)은 이후 바이트 불변(append-only). -->
+<!-- ════════════ P3 : 미션 + ★와우 레이어 ════════════
+     __INFINITY_P2__ 훅만 소비. 순수 블록(infinity-pure)·P2 블록(infinity-p2)은 바이트 불변(append-only).
+     I-1 백만까지 걷기★(WOW_MILLION 스케일 감각) · I-2 규칙 핑퐁(규칙 이름 창발 + 규칙 노트 렌즈)
+     I-3 자연 속 패턴★(황금각 137.5° 나선 씨앗 → 해바라기 무늬, P3 자체 오버레이 캔버스). -->
+<script id="infinity-p3">
+(function(){
+  'use strict';
+  var H = window.__INFINITY_P2__;
+  if (!H) return;
+  var K = H.K;
+
+  // ── 학년(?grade=low|mid|high, 저/중/고·1/2/3 허용) ──
+  var grade = 'mid';
+  try{
+    var g = (new URLSearchParams(location.search).get('grade') || '').toLowerCase();
+    if (g === 'low' || g === '저' || g === '1') grade = 'low';
+    else if (g === 'high' || g === '고' || g === '3') grade = 'high';
+  }catch(e){}
+
+  var scene = 'I-1';          // I-1 백만까지 걷기★ · I-2 규칙 핑퐁 · I-3 자연 속 패턴★
+  var seen = {};              // 방별 예측카드 시청 여부
+  var lastPick = -1, lastAnswer = -1;
+  var busy = false;
+  var note = [];              // I-2 규칙 노트(데이터 렌즈) — 이어붙인 규칙 누적
+  // I-3 나선 상태
+  var seedsPlanted = 0, seedTarget = 300, natureRevealed = false;
+
+  function raf(fn){ (window.requestAnimationFrame || function(f){ return setTimeout(f, 16); })(fn); }
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, html){ var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  // ── 스타일 주입(수 공장·운명의 방 톤 승계) ──
+  var css = el('style');
+  css.textContent =
+    '#ip3-scene{position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:21;display:flex;gap:6px;' +
+      'flex-wrap:wrap;justify-content:center;max-width:94vw}' +
+    '.ip3-pill{font-family:\'Jua\';font-size:12.5px;color:var(--sub);background:var(--panel);' +
+      'border:1px solid var(--line);border-radius:999px;padding:6px 13px;cursor:pointer;transition:.14s;backdrop-filter:blur(6px)}' +
+    '.ip3-pill:active{transform:scale(.94)}' +
+    '.ip3-pill.on{background:var(--bell);color:#0a0c18;border-color:var(--bell)}' +
+    '#ip3-act{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:22;display:none}' +
+    '#ip3-act.show{display:block}' +
+    '#ip3-act button{font-family:\'Jua\';font-size:15px;color:#0a0c18;background:var(--star);' +
+      'border:1px solid var(--star);border-radius:14px;padding:12px 22px;cursor:pointer;transition:.14s;' +
+      'box-shadow:0 10px 30px rgba(255,209,102,.35)}' +
+    '#ip3-act button:active{transform:scale(.94)}' +
+    '#ip3-modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;' +
+      'background:rgba(6,7,16,.72);backdrop-filter:blur(4px);padding:20px}' +
+    '#ip3-modal.show{display:flex}' +
+    '.ip3-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 20px;' +
+      'max-width:400px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.5);text-align:center}' +
+    '.ip3-q{font-family:\'Jua\';font-size:17px;color:var(--ink);line-height:1.5;margin-bottom:16px}' +
+    '.ip3-opt{display:block;width:100%;font-family:\'Gowun Dodum\',sans-serif;font-size:14.5px;color:var(--ink);' +
+      'background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:13px;padding:13px 14px;' +
+      'margin:8px 0;cursor:pointer;transition:.14s;text-align:left}' +
+    '.ip3-opt:active{transform:scale(.98)}' +
+    '.ip3-opt:hover{background:rgba(124,140,255,.16);border-color:var(--bell)}' +
+    '#ip3-wow{position:fixed;top:120px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:40;' +
+      'max-width:90vw;background:linear-gradient(135deg,rgba(124,140,255,.95),rgba(90,104,220,.95));color:#0a0c18;' +
+      'border-radius:15px;padding:13px 18px;font-size:13.5px;line-height:1.55;box-shadow:0 16px 44px rgba(60,72,180,.5);' +
+      'opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;text-align:center}' +
+    '#ip3-wow.show{opacity:1;transform:translateX(-50%) translateY(0)}' +
+    '#ip3-wow b{font-family:\'Jua\'}' +
+    '#ip3-note{position:fixed;top:120px;right:14px;z-index:22;background:var(--panel);border:1px solid var(--line);' +
+      'border-radius:14px;padding:10px 13px;min-width:130px;max-width:44vw;box-shadow:0 10px 30px rgba(0,0,0,.4);display:none}' +
+    '#ip3-note.show{display:block}' +
+    '#ip3-note .nt{font-family:\'Jua\';font-size:12px;color:var(--sub);margin-bottom:6px}' +
+    '#ip3-note .nl{font-family:\'Jua\';font-size:12.5px;color:var(--ink);line-height:1.7;max-height:44vh;overflow:auto}' +
+    '#ip3-note .nl .r{color:var(--star)}' +
+    '#ip3-canvas{position:fixed;inset:0;z-index:15;display:none;background:#0a0c18}' +
+    '#ip3-canvas.show{display:block}';
+  document.head.appendChild(css);
+
+  // ── I-3 해바라기 오버레이 캔버스(P2 board 위, 배너 아래) ──
+  var natCv = document.createElement('canvas'); natCv.id = 'ip3-canvas';
+  document.body.appendChild(natCv);
+  var nctx = natCv.getContext('2d');
+  var NW=0, NH=0, NDPR=1;
+  function natResize(){
+    NDPR = Math.min(window.devicePixelRatio||1, 2);
+    NW = natCv.clientWidth || (window.innerWidth||1024);
+    NH = natCv.clientHeight || (window.innerHeight||768);
+    natCv.width = NW*NDPR; natCv.height = NH*NDPR;
+    if (nctx && nctx.setTransform) nctx.setTransform(NDPR,0,0,NDPR,0,0);
+  }
+  window.addEventListener('resize', function(){ natResize(); if (scene==='I-3') drawNature(); });
+
+  // ── 시나리오 배너 ──
+  var SCN = [
+    { id:'I-1', label:'🚶 백만까지 걷기 ★' },
+    { id:'I-2', label:'🏓 규칙 핑퐁' },
+    { id:'I-3', label:'🌻 자연 속 패턴 ★' }
+  ];
+  var scene_el = el('div'); scene_el.id = 'ip3-scene';
+  SCN.forEach(function(s){
+    var p = el('button', 'ip3-pill', s.label);
+    p.setAttribute('data-scn', s.id);
+    p.addEventListener('click', function(){ setScene(s.id); });
+    scene_el.appendChild(p);
+  });
+  document.body.appendChild(scene_el);
+
+  // ── 방별 액션 버튼(I-1 백만까지 · I-3 씨앗 심기) ──
+  var actBox = el('div'); actBox.id = 'ip3-act';
+  var actBtn = el('button', null, '🚀 백만까지');
+  actBtn.addEventListener('click', function(){ actIntent(); });
+  actBox.appendChild(actBtn);
+  document.body.appendChild(actBox);
+
+  // ── 예측카드 모달 ──
+  var modal = el('div'); modal.id = 'ip3-modal';
+  var card = el('div', 'ip3-card');
+  var qEl = el('div', 'ip3-q', '');
+  var optBox = el('div');
+  card.appendChild(qEl); card.appendChild(optBox);
+  modal.appendChild(card);
+  modal.addEventListener('click', function(e){ if (e.target === modal) closeCard(); });
+  document.body.appendChild(modal);
+
+  // ── 창발 배너 + 규칙 노트 ──
+  var wow = el('div'); wow.id = 'ip3-wow'; document.body.appendChild(wow);
+  var wowTimer = null;
+  var noteEl = el('div'); noteEl.id = 'ip3-note';
+  noteEl.innerHTML = '<div class="nt">📒 규칙 노트</div><div class="nl" id="ip3-nl"></div>';
+  document.body.appendChild(noteEl);
+
+  // ── 예측카드 데이터(방별) ──
+  function cardFor(){
+    if (scene === 'I-1') return { q: K.WOW_MILLION.q, options: K.WOW_MILLION.options.slice(), answer: K.WOW_MILLION.answer };
+    if (scene === 'I-3') return { q: K.WOW_SPIRAL.q, options: K.WOW_SPIRAL.options.slice(), answer: K.WOW_SPIRAL.answer };
+    return null;   // I-2는 예측카드 없음(핑퐁 직접)
+  }
+  function openCard(){
+    var c = cardFor(); if (!c) return;
+    lastAnswer = c.answer;
+    qEl.innerHTML = c.q; optBox.innerHTML = '';
+    c.options.forEach(function(opt, i){
+      var b = el('button', 'ip3-opt', opt);
+      b.addEventListener('click', function(){ pick(i); });
+      optBox.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
+  function closeCard(){ modal.classList.remove('show'); }
+  function pick(i, instant){
+    lastPick = i; seen[scene] = true; closeCard();
+    if (scene === 'I-1'){ H.setLevel(6); showScaleWow(); }
+    else if (scene === 'I-3'){ plantSpiral(!!instant); }
+  }
+
+  // ── 액션 진입(방별 첫 실행 = 예측카드 먼저) ──
+  function actIntent(){
+    if (busy) return;
+    if ((scene === 'I-1' || scene === 'I-3') && !seen[scene]){ openCard(); return; }
+    if (scene === 'I-1'){ H.setLevel(6); showScaleWow(); }
+    else if (scene === 'I-3'){ plantSpiral(false); }
+  }
+
+  // ── ★와우1: 백만까지 걷기 — 스케일 감각(H.count·anchor·countTimeLabel 조회) ──
+  function showScaleWow(){
+    var hit = (lastPick === K.WOW_MILLION.answer);
+    var t = K.countTimeLabel(H.count);         // 백만 → 약 12일
+    var a = H.anchor;
+    var head = (hit ? '🎯 맞혔어요! ' : '🚶 ') + K.commaFormat(H.count) + '까지 걸어왔어요';
+    var body = (grade === 'low')
+      ? '백만은 <b>' + a.anchor + '</b>만큼 많아요. 정말 멀죠!'
+      : '1초에 하나씩 쉬지 않고 세도 <b>' + t.text + '</b>이 걸려요. 큰 수는 "많다"가 아니라 <b>"얼마나 먼가"</b>로 느껴 봐요.';
+    flashWow('<b>' + head + '</b><br>' + body, 6800);
+  }
+
+  // ── ★와우2: 자연 속 패턴 — 황금각 나선 해바라기(P3 오버레이 캔버스) ──
+  function seedXY(i){
+    // phyllotaxis: 각 씨앗을 황금각(GOLDEN_ANGLE)씩 돌리고 r=c*√i (표준 배치)
+    var ang = i * K.GOLDEN_ANGLE * Math.PI / 180;
+    var c = Math.min(NW, NH) * 0.030;
+    var r = c * Math.sqrt(i);
+    return { x: NW/2 + r * Math.cos(ang), y: NH/2 + r * Math.sin(ang), r: r, i: i };
+  }
+  function drawNature(){
+    if (!nctx || !nctx.clearRect) return;
+    nctx.clearRect(0,0,NW,NH);
+    var maxR = Math.min(NW,NH)*0.030 * Math.sqrt(seedTarget);
+    for (var i=0;i<seedsPlanted;i++){
+      var s = seedXY(i);
+      var frac = s.r / (maxR || 1);                       // 가운데(진갈색)→바깥(노랑)
+      var rr = 3.4 + frac * 2.2;
+      // 색: 중심 갈색(#5a3a1e) → 바깥 노랑(#ffd166)
+      var cr = Math.round(90 + (255-90)*frac), cg = Math.round(58 + (209-58)*frac), cb = Math.round(30 + (102-30)*frac);
+      nctx.beginPath(); nctx.arc(s.x, s.y, rr, 0, 6.2832);
+      nctx.fillStyle = 'rgb(' + cr + ',' + cg + ',' + cb + ')'; nctx.fill();
+    }
+  }
+  function plantSpiral(instant){
+    busy = true; hideWow();
+    natureRevealed = true; natCv.classList.add('show');
+    natResize();
+    if (instant){ seedsPlanted = seedTarget; drawNature(); busy = false; showSpiralWow(); return; }
+    seedsPlanted = 0;
+    (function grow(){
+      seedsPlanted = Math.min(seedTarget, seedsPlanted + 6);
+      drawNature();
+      if (seedsPlanted < seedTarget){ raf(grow); }
+      else { busy = false; showSpiralWow(); }
+    })();
+  }
+  function showSpiralWow(){
+    var hit = (lastPick === K.WOW_SPIRAL.answer);
+    var fib = K.fibonacci(6).join(', ');                  // 1, 1, 2, 3, 5, 8
+    var head = (hit ? '🎯 맞혔어요! ' : '🌻 ') + '해바라기 씨앗 무늬가 피어났어요';
+    var body = (grade === 'low')
+      ? '수를 <b>황금각(약 137.5°)</b>으로 돌려 심었더니 해바라기가 됐어요!'
+      : fib + '… 피보나치를 황금각(약 ' + K.GOLDEN_ANGLE + '°)으로 돌려 심으면 해바라기 씨앗과 똑같은 나선이 돼요. <b>수학이 자연에 숨어 있었어요.</b>';
+    flashWow('<b>' + head + '</b><br>' + body, 7200);
+  }
+
+  // ── 창발 배너 헬퍼 ──
+  function flashWow(html, ms){
+    wow.innerHTML = html; wow.classList.add('show');
+    if (wowTimer) clearTimeout(wowTimer);
+    wowTimer = setTimeout(function(){ wow.classList.remove('show'); }, ms || 5000);
+  }
+  function hideWow(){ wow.classList.remove('show'); if (wowTimer) clearTimeout(wowTimer); }
+
+  // ── I-2 규칙 핑퐁: 다음 수 추측 후 규칙 이름 창발 + 규칙 노트 누적(데이터 렌즈) ──
+  function ruleName(r){ return r==='arithmetic'?'같은 만큼 더하기':r==='geometric'?'같은 배로 커지기':r==='fibonacci'?'앞 두 수를 더하기':'규칙'; }
+  function noteGuess(){
+    var lc = H.lastCheck; if (!lc) return;
+    var s = H.seq; if (!s) return;
+    if (lc.correct){
+      note.push({ seq: s.shown.concat([s.answer]), rule: lc.rule });
+      flashWow('<b>🏓 규칙을 찾았어요! — ' + ruleName(lc.rule) + '</b><br>' +
+        (grade === 'low' ? '다음 수가 규칙대로 이어졌어요!' :
+         '이 수열은 <b>' + ruleName(lc.rule) + '</b> 규칙이에요. 규칙만 알면 다음 수는 얼마든지 이어져요 — 그게 무한이에요.'), 6200);
+    } else {
+      flashWow('<b>🏓 규칙이 삐끗했어요</b><br>다시 살펴봐요. 규칙대로면 다음 수는 <b>' + K.commaFormat(lc.expected) + '</b>이에요.', 5200);
+    }
+    renderNote();
+  }
+  function renderNote(){
+    if (scene !== 'I-2' || !note.length){ noteEl.classList.remove('show'); return; }
+    var nl = $('ip3-nl'); if (!nl) return;
+    var html = '', start = Math.max(0, note.length - 8);
+    for (var i = start; i < note.length; i++){
+      var e = note[i];
+      html += '<div>' + e.seq.map(function(v){ return K.commaFormat(v); }).join(', ') +
+              ' <span class="r">· ' + ruleName(e.rule) + '</span></div>';
+    }
+    nl.innerHTML = html; noteEl.classList.add('show');
+  }
+  // P2 #choices 버블 감지(버튼 onclick=guess 실행 후 버블 → lastCheck 갱신됨)
+  var chEl = $('choices');
+  if (chEl) chEl.addEventListener('click', function(e){
+    var tgt = e.target;
+    if (scene === 'I-2' && tgt && tgt.tagName === 'BUTTON'){ noteGuess(); }
+  });
+
+  // ── 시나리오 전환 ──
+  function setScene(s){
+    scene = s; hideWow(); busy = false;
+    var pills = scene_el.querySelectorAll('.ip3-pill');
+    for (var i = 0; i < pills.length; i++)
+      pills[i].classList.toggle('on', pills[i].getAttribute('data-scn') === s);
+
+    if (s === 'I-1'){
+      natCv.classList.remove('show'); noteEl.classList.remove('show');
+      H.setMode('scale'); H.setLevel(0);
+      actBox.classList.add('show'); actBtn.innerHTML = '🚀 백만까지';
+    } else if (s === 'I-2'){
+      natCv.classList.remove('show'); actBox.classList.remove('show');
+      H.setMode('pingpong');
+      renderNote();
+    } else { // I-3
+      actBox.classList.add('show'); actBtn.innerHTML = '🌻 씨앗 심기';
+      noteEl.classList.remove('show');
+      seedsPlanted = 0; natureRevealed = false;
+      natCv.classList.add('show'); natResize(); drawNature();
+    }
+    var e = $('tip');
+    if (e){
+      e.textContent = s === 'I-1' ? '🚶 점 하나에서 백만까지 걸어가 봐요. 얼마나 멀지 먼저 예상하고 🚀!'
+        : s === 'I-2' ? '🏓 수가 어떻게 커지는지 규칙을 찾아 다음 수를 골라요.'
+        : (grade === 'high' ? '🌻 피보나치를 나선으로 심으면 뭐가 보일지 예상하고 씨앗을 심어 봐요!' : '🌻 씨앗을 심으면 어떤 무늬가 나올까요? 먼저 예상해 봐요!');
+      e.classList.remove('hide');
+    }
+  }
+
+  // ── 초기 진입 ──
+  function boot(){
+    natResize();
+    try{
+      var qs = new URLSearchParams(location.search);
+      var sc = (qs.get('scenario') || qs.get('scene') || '').toUpperCase();
+      if (sc === 'I-1' || sc === 'I-2' || sc === 'I-3'){ setScene(sc); return; }
+    }catch(e){}
+    setScene(grade === 'low' ? 'I-1' : grade === 'high' ? 'I-3' : 'I-2');
+  }
+  boot();
+
+  // ── 훅(P3 스모크) ──
+  window.__INFINITY_P3__ = {
+    get scene(){ return scene; }, get grade(){ return grade; },
+    get cardSeen(){ return !!seen[scene]; }, get lastPick(){ return lastPick; }, get lastAnswer(){ return lastAnswer; },
+    get wowShown(){ return wow.classList.contains('show'); }, get noteShown(){ return noteEl.classList.contains('show'); },
+    get noteCount(){ return note.length; }, get seedsPlanted(){ return seedsPlanted; },
+    get natureRevealed(){ return natureRevealed; }, get natureShown(){ return natCv.classList.contains('show'); }, H: H,
+    setScene: setScene, openCard: openCard, closeCard: closeCard, cardFor: cardFor,
+    pick: pick, actIntent: actIntent, plantSpiral: plantSpiral, seedXY: seedXY,
+    guessNote: function(v){ H.guess(v); noteGuess(); }, newRule: function(kind){ H.newSequence(kind); }
+  };
+})();
+</script>
 </body>
 </html>
