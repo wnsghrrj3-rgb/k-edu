@@ -74,6 +74,42 @@
     font-size:12.5px;color:var(--sub);background:rgba(10,18,16,.6);border-radius:999px;
     padding:5px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
   #hint.show{opacity:1}
+  /* ── P3 미션 UI ── */
+  #mBtn{position:fixed;top:12px;right:118px;z-index:35;padding:8px 14px;border:1px solid var(--hi);border-radius:999px;
+    background:rgba(12,20,18,.9);color:var(--hi);font-family:'Jua';font-size:13px;cursor:pointer}
+  #mBanner{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:34;display:flex;align-items:center;gap:11px;
+    max-width:min(92vw,500px);padding:10px 14px;border-radius:16px;background:rgba(12,20,18,.94);border:1px solid var(--hi);
+    box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #mBanner.hide{display:none}
+  #mbIcon{font-size:24px}
+  #mbTitle{font-size:14px;font-weight:700;color:var(--ink);font-family:'Jua'}
+  #mbHint{font-size:12px;color:var(--sub);margin-top:2px}
+  #mbClose{margin-left:auto;background:none;border:0;color:var(--sub);font-size:17px;cursor:pointer}
+  #mHome,#mPredict,#mClear{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,10,8,.74);padding:20px}
+  #mHome.hide,#mPredict.hide,#mClear.hide{display:none}
+  .mcard{background:#0e1917;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:min(92vw,430px);width:100%;
+    box-shadow:0 18px 50px rgba(0,0,0,.6)}
+  .mcard h2{margin:0 0 14px;font-size:18px;text-align:center;font-family:'Jua';color:var(--ink)}
+  .mItem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-bottom:10px;padding:12px 14px;
+    border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);color:var(--ink);font-family:inherit;cursor:pointer}
+  .mItem .mi{font-size:24px}
+  .mItem b{font-family:'Jua';font-weight:400;font-size:14px}
+  .mItem small{color:var(--sub);font-size:12px;line-height:1.4}
+  #mFree{width:100%;margin-top:4px;padding:11px;border:1px dashed var(--line);border-radius:14px;background:none;color:var(--sub);font-family:inherit;cursor:pointer}
+  #mpQ{font-size:15px;font-weight:700;margin-bottom:14px;text-align:center;color:var(--ink);font-family:'Jua'}
+  .mpOpt{display:block;width:100%;margin-bottom:10px;padding:13px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(255,255,255,.05);color:var(--ink);font-family:inherit;font-size:14.5px;cursor:pointer}
+  .mpOpt.right{background:rgba(45,212,160,.9);border-color:var(--wave);color:#062018}
+  .mpOpt.wrong{background:rgba(200,80,70,.85);border-color:#c85046;color:#fff}
+  #mpExplain{margin:8px 0 14px;font-size:13px;line-height:1.65;color:var(--ink)}
+  #mpExplain.hide{display:none}
+  #mpGo,#mcNext,#mcStay{padding:11px 18px;border:0;border-radius:14px;background:var(--wave);color:#062018;font-family:'Jua';font-size:13.5px;cursor:pointer;margin:4px}
+  #mpGo.hide{display:none}
+  #mcStay{background:rgba(255,255,255,.1);color:var(--ink)}
+  .mcIcon{font-size:42px;text-align:center;margin-bottom:8px}
+  #mcMsg{font-size:17px;font-weight:700;text-align:center;margin-bottom:16px;color:var(--ink);font-family:'Jua'}
+  #mClear .mcard,#mPredict .mcard{text-align:center}
 </style>
 </head>
 <body>
@@ -501,6 +537,7 @@ function strikeSource(id){
   syncTray();
   const model = modelOf(id);
   playModel(model);
+  if(typeof onStruck==='function') onStruck(id, model);
   showHint(id==='bell' && s.medium===0
     ? '종은 흔들리지만 소리가 안 들려요 — 공기가 없거든요!'
     : (id==='guitar' ? '줄을 짧게 짚으면 더 높은 소리!' : '떨림이 곧 소리예요'));
@@ -641,6 +678,86 @@ syncTray();
 document.getElementById('loading').classList.add('hide');
 animate();
 
+/* ═════════ P3 미션 3종 + ★와우(진공 무음) ═════════ */
+const MISSIONS = K.MISSIONS, GRADE_MISSIONS = K.GRADE_MISSIONS, WOW = K.WOW_VACUUM;
+let activeMission=null, missionCleared=false, predictAnswered=false;
+
+function buildMissionUI(){
+  const wrap=document.createElement('div'); wrap.id='mwrap'; document.body.appendChild(wrap);
+  wrap.innerHTML=`
+    <button id="mBtn">🎯 미션</button>
+    <div id="mBanner" class="hide"><span id="mbIcon"></span><div><div id="mbTitle"></div><div id="mbHint"></div></div><button id="mbClose">✕</button></div>
+    <div id="mHome" class="hide"><div class="mcard"><h2>🔊 소리 미션</h2><div id="mList"></div><button id="mFree">자유 실험</button></div></div>
+    <div id="mPredict" class="hide"><div class="mcard"><div id="mpQ"></div><div id="mpOpts"></div><div id="mpExplain" class="hide"></div><button id="mpGo" class="hide">계속 실험하기</button></div></div>
+    <div id="mClear" class="hide"><div class="mcard"><div class="mcIcon">🎉</div><div id="mcMsg">미션 성공!</div><button id="mcNext">다른 미션</button><button id="mcStay">계속 실험</button></div></div>`;
+  document.getElementById('mBtn').onclick=openHome;
+  document.getElementById('mbClose').onclick=()=>setMission(null);
+  document.getElementById('mFree').onclick=()=>{ setMission(null); closeAll(); };
+  document.getElementById('mpGo').onclick=()=>document.getElementById('mPredict').classList.add('hide');
+  document.getElementById('mcNext').onclick=openHome;
+  document.getElementById('mcStay').onclick=closeAll;
+  renderList();
+}
+function renderList(){
+  const list=document.getElementById('mList'); list.innerHTML='';
+  (GRADE_MISSIONS[grade]||GRADE_MISSIONS.high).forEach(id=>{
+    const m=K.missionById(id); if(!m) return;
+    const b=document.createElement('button'); b.className='mItem';
+    b.innerHTML=`<span class="mi">${m.icon}</span><span><b>${m.title}</b><br><small>${m.brief}</small></span>`;
+    b.onclick=()=>{ setMission(id); closeAll(); }; list.appendChild(b);
+  });
+}
+function openHome(){ closeAll(); document.getElementById('mHome').classList.remove('hide'); }
+function closeAll(){ ['mHome','mPredict','mClear'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+function setMission(id){
+  activeMission=id; missionCleared=false; predictAnswered=false;
+  const bn=document.getElementById('mBanner');
+  const m=id?K.missionById(id):null;
+  if(m){
+    document.getElementById('mbIcon').textContent=m.icon;
+    document.getElementById('mbTitle').textContent=m.title;
+    document.getElementById('mbHint').textContent=m.hint;
+    bn.classList.remove('hide');
+    if(id==='N-2'){ active='guitar'; syncTray(); }           // 높은 소리 = 기타 유도
+    if(id==='N-3' && WOW) showPredict();                      // ★와우 = 예측 먼저
+  } else bn.classList.add('hide');
+}
+function showPredict(){
+  if(!WOW) return;
+  const box=document.getElementById('mPredict'); box.classList.remove('hide');
+  document.getElementById('mpQ').textContent=WOW.q;
+  const opts=document.getElementById('mpOpts'); opts.innerHTML='';
+  const ex=document.getElementById('mpExplain'), go=document.getElementById('mpGo');
+  ex.classList.add('hide'); go.classList.add('hide');
+  WOW.opts.forEach((o,i)=>{
+    const b=document.createElement('button'); b.className='mpOpt'; b.textContent=o;
+    b.onclick=()=>{
+      predictAnswered=true;
+      opts.querySelectorAll('button').forEach(x=>x.disabled=true);
+      b.classList.add(i===WOW.answer?'right':'wrong');
+      if(i!==WOW.answer) opts.children[WOW.answer].classList.add('right');
+      ex.textContent=WOW.explain; ex.classList.remove('hide'); go.classList.remove('hide');
+    };
+    opts.appendChild(b);
+  });
+}
+function showCleared(){
+  const m=K.missionById(activeMission); if(!m) return;
+  document.getElementById('mcMsg').textContent=`${m.icon} ${m.title} — 성공!`;
+  document.getElementById('mClear').classList.remove('hide');
+}
+// strikeSource 훅: 친 음원 모델로 미션 판정
+function onStruck(id, model){
+  if(!activeMission || missionCleared) return;
+  if(K.evalMission(activeMission, model)){ missionCleared=true; showCleared(); }
+}
+
+buildMissionUI();
+{ const mq=new URLSearchParams(location.search).get('mission');
+  if(mq && K.missionById(mq)) setMission(mq);
+  else if(grade==='low') openHome(); }
+
 // 검증 훅
-window.__SOUND_P2__ = { S, OBJ, modelOf, strikeSource, drawWave, ensureAudio, playModel, K };
+window.__SOUND_P2__ = { S, OBJ, modelOf, strikeSource, drawWave, ensureAudio, playModel, K,
+  setMission, onStruck, get activeMission(){return activeMission;}, get missionCleared(){return missionCleared;} };
 </script>
