@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔢 케이랩 수학실 — 탐구 4실</title>
+<!--
+  케이랩 수학실 정문 (2026-07-10)
+  · 디자인 언어: 케이랩 허브(klab.html)·수학실 방(mathlab_*.html) 톤 승계 — 다크 우주 스튜디오 + 유리 패널 + 수학 악센트(--mat 파랑)
+  · 방 4개(수 공장·도형 정원·운명의 방·무한의 복도)로 가는 정문. 각 방은 P1→P2→P3 3게이트 교육 완결.
+  · 방 → 정문(여기) → 케이랩 메인(/kedu/hub/klab.html) 2단 복귀.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&family=Jua&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+  :root{
+    --kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif;
+    --mat:#5B9BF0;                                   /* 수학 악센트(파랑) */
+    --ink:#eef0ff; --mut:#9aa0c8; --line:rgba(255,255,255,.10);
+    --glass:rgba(255,255,255,.045); --panel:rgba(14,16,30,.82);
+    /* 방별 고유색(각 방 팔레트 반영) */
+    --c-num:#5ad1a0;   /* 수 공장 — 10의 자석 초록 */
+    --c-shape:#c78bff; /* 도형 정원 — 보라 */
+    --c-chance:#7c8cff;/* 운명의 방 — 종 곡선 파랑 */
+    --c-inf:#ffd166;   /* 무한의 복도 — 은하수 노랑 */
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;
+    background:radial-gradient(1200px 700px at 70% -10%,rgba(91,155,240,.10),transparent 60%),
+      linear-gradient(180deg,#0d1024 0%,#0a0c18 52%,#080910 100%) fixed}
+  .wrap{max-width:920px;margin:0 auto;padding:20px 18px 60px}
+  header{display:flex;align-items:center;gap:14px;padding:14px 2px 4px}
+  a.back{font-size:12.5px;color:var(--mut);text-decoration:none;
+    border:1px solid var(--line);border-radius:999px;padding:7px 14px;background:var(--glass);transition:.15s}
+  a.back:hover{color:var(--ink);border-color:rgba(255,255,255,.28)}
+  h1{font-family:var(--kedu-title);font-size:27px;letter-spacing:.5px;margin:0}
+  h1 .k{color:var(--mat)}
+
+  /* 히어로 */
+  .hero{margin:16px 0 30px;border-radius:24px;position:relative;overflow:hidden;
+    border:1px solid var(--line);display:flex;gap:22px;align-items:center;
+    padding:30px 30px;
+    background:linear-gradient(135deg,rgba(91,155,240,.12),rgba(124,140,255,.06) 60%,transparent),var(--glass)}
+  .hero .txt{flex:1;min-width:0}
+  .hero .eyebrow{font-size:12px;letter-spacing:2.5px;color:var(--mat);margin-bottom:10px}
+  .hero h2{font-family:var(--kedu-title);font-size:28px;line-height:1.25;margin:0 0 10px}
+  .hero p{font-size:13.8px;color:#c2c8ea;line-height:1.7;max-width:440px;margin:0}
+  .hero .grid4{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hero .gi{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;
+    font-size:28px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+  .hero .gi.n{box-shadow:inset 0 0 0 1.5px var(--c-num),0 6px 20px -8px var(--c-num)}
+  .hero .gi.s{box-shadow:inset 0 0 0 1.5px var(--c-shape),0 6px 20px -8px var(--c-shape)}
+  .hero .gi.c{box-shadow:inset 0 0 0 1.5px var(--c-chance),0 6px 20px -8px var(--c-chance)}
+  .hero .gi.i{box-shadow:inset 0 0 0 1.5px var(--c-inf),0 6px 20px -8px var(--c-inf)}
+
+  .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  a.room{display:block;text-decoration:none;color:var(--ink);position:relative;
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    padding:20px 20px 18px;transition:.16s;overflow:hidden}
+  a.room:hover{transform:translateY(-3px);background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.22)}
+  a.room::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--rc)}
+  .room .rtop{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+  .room .emo{font-size:32px;width:52px;height:52px;flex:0 0 auto;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);
+    box-shadow:inset 0 0 0 1.5px var(--rc)}
+  .room .nm{font-family:'Jua';font-size:19px;line-height:1.2}
+  .room .code{font-size:11px;color:var(--mut);margin-top:3px;letter-spacing:.5px}
+  .room .ds{font-size:13px;color:#b7bde0;line-height:1.62;margin:0 0 12px}
+  .room .meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .room .g{font-size:10.5px;color:var(--rc);border:1px solid;border-radius:999px;padding:3px 9px}
+  .room .wow{font-size:10.5px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .room .go{position:absolute;right:16px;bottom:16px;font-size:13px;color:var(--rc);opacity:.85}
+
+  footer{margin-top:34px;text-align:center;font-size:12px;color:var(--mut);line-height:1.7}
+  footer a{color:var(--mat);text-decoration:none}
+  @media(max-width:560px){
+    .hero{flex-direction:column;text-align:center;padding:26px 22px}
+    .hero p{margin:0 auto}.hero .grid4{margin:0 auto}
+    h1{font-size:23px}.hero h2{font-size:24px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="back" href="/kedu/hub/klab.html">← 케이랩</a>
+    <h1>🔢 <span class="k">케이랩</span> 수학실</h1>
+  </header>
+
+  <!-- 히어로 -->
+  <div class="hero">
+    <div class="txt">
+      <div class="eyebrow">MATH LAB · 탐구 4실</div>
+      <h2>손으로 만지고, 예측이 빗나가는 순간 배우는 수학</h2>
+      <p>수를 자석처럼 붙이고, 도형을 심어 정원을 가꾸고, 구슬 폭포에서 숨은 질서를 찾고,
+      백만까지 걸어가 자연의 나선을 만나요. 방마다 직접 조작 → 예측 → 창발의 3단계로 개념이 곧 장면이 됩니다.</p>
+    </div>
+    <div class="grid4" aria-hidden="true">
+      <div class="gi n">🧲</div><div class="gi s">🌸</div>
+      <div class="gi c">🎲</div><div class="gi i">🌌</div>
+    </div>
+  </div>
+
+  <!-- 방 4개 -->
+  <div class="rooms">
+
+    <a class="room" href="/labs/mathlab_number.html" style="--rc:var(--c-num)">
+      <div class="rtop">
+        <div class="emo">🧲</div>
+        <div><div class="nm">수 공장</div><div class="code">M-2 · 10의 자석</div></div>
+      </div>
+      <p class="ds">두 수 블록을 만나게 하면 부족한 만큼이 자석처럼 뜯겨 붙어 10이 돼요. 받아올림·받아내림을 손으로.</p>
+      <div class="meta">
+        <span class="g">1~2학년</span>
+        <span class="wow">★ 10의 자석</span><span class="wow">레시피 노트</span>
+      </div>
+      <span class="go">들어가기 →</span>
+    </a>
+
+    <a class="room" href="/labs/mathlab_shape.html" style="--rc:var(--c-shape)">
+      <div class="rtop">
+        <div class="emo">🌸</div>
+        <div><div class="nm">도형 정원</div><div class="code">M-3 · 대칭과 테셀레이션</div></div>
+      </div>
+      <p class="ds">거울 나비·만다라를 그리고, 도형으로 바닥을 깔아 봐요. 정오각형만 왜 못 깔리는지 틈이 알려줘요.</p>
+      <div class="meta">
+        <span class="g">3~5학년</span>
+        <span class="wow">★ 테셀레이션</span><span class="wow">정원 누적</span>
+      </div>
+      <span class="go">들어가기 →</span>
+    </a>
+
+    <a class="room" href="/labs/mathlab_chance.html" style="--rc:var(--c-chance)">
+      <div class="rtop">
+        <div class="emo">🎲</div>
+        <div><div class="nm">운명의 방</div><div class="code">M-1 · 가능성과 종 곡선</div></div>
+      </div>
+      <p class="ds">구슬을 폭포처럼 쏟으면 뒤죽박죽일 것 같지만 산 모양(종 곡선)이 저절로 나타나요. 무작위 속의 질서.</p>
+      <div class="meta">
+        <span class="g">5~6학년</span>
+        <span class="wow">★ 종 곡선 창발</span><span class="wow">핀 기울기</span>
+      </div>
+      <span class="go">들어가기 →</span>
+    </a>
+
+    <a class="room" href="/labs/mathlab_infinity.html" style="--rc:var(--c-inf)">
+      <div class="rtop">
+        <div class="emo">🌌</div>
+        <div><div class="nm">무한의 복도</div><div class="code">M-4 · 큰 수와 패턴</div></div>
+      </div>
+      <p class="ds">점 하나에서 백만까지 걸어가면 얼마나 멀까요? 피보나치를 황금각으로 심으면 해바라기 씨앗이 피어나요.</p>
+      <div class="meta">
+        <span class="g">1~6학년</span>
+        <span class="wow">★ 백만까지 걷기</span><span class="wow">★ 황금각 나선</span>
+      </div>
+      <span class="go">들어가기 →</span>
+    </a>
+
+  </div>
+
+  <footer>
+    케이랩 수학실 · 네 방 모두 태블릿·전자칠판에서 동작합니다 &nbsp;·&nbsp;
+    <a href="/kedu/hub/klab.html">케이랩으로 돌아가기</a>
+  </footer>
+
+</div>
+</body>
+</html>
