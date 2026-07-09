@@ -25,6 +25,7 @@ require('./templates/g3_math_u2.js')(KQuiz);
 require('./templates/g3_math_u3.js')(KQuiz);
 require('./templates/g3_math_u4.js')(KQuiz);
 require('./templates/g3_math_u5.js')(KQuiz);
+require('./templates/g3_math_u6.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -59,7 +60,8 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g3_math_u2_l02','g3_math_u2_l03','g3_math_u2_l05','g3_math_u2_l06','g3_math_u2_l08','g3_math_u2',
   'g3_math_u3_l02','g3_math_u3_l03','g3_math_u3_l04','g3_math_u3_l05','g3_math_u3_l06','g3_math_u3_l08','g3_math_u3',
   'g3_math_u4_l02','g3_math_u4_l03','g3_math_u4_l04','g3_math_u4_l05','g3_math_u4_l06','g3_math_u4_l08','g3_math_u4',
-  'g3_math_u5_l02','g3_math_u5_l04','g3_math_u5_l06','g3_math_u5_l07','g3_math_u5_l08','g3_math_u5_l10','g3_math_u5'];
+  'g3_math_u5_l02','g3_math_u5_l04','g3_math_u5_l06','g3_math_u5_l07','g3_math_u5_l08','g3_math_u5_l10','g3_math_u5',
+  'g3_math_u6_l02','g3_math_u6_l03','g3_math_u6_l04','g3_math_u6_l05','g3_math_u6_l06','g3_math_u6_l07','g3_math_u6_l08','g3_math_u6_l09','g3_math_u6'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -188,6 +190,18 @@ function expectChoice(q) {
     var la = +m[1], lb = +m[2];
     return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
   }
+  if ((m = q.match(/전체를 똑같이 (\d+)로 나눈 것 중 (\d+)는 분수로 얼마/))) return m[2] + '/' + m[1]; // g3u6 분수만들기
+  if ((m = q.match(/분수 (\d+)\/(\d+)에서 분모는/))) return +m[2];               // g3u6 분모
+  if ((m = q.match(/분수 (\d+)\/(\d+)에서 분자는/))) return +m[1];               // g3u6 분자
+  if ((m = q.match(/단위분수 1\/(\d+)과 1\/(\d+) 중에서 더 큰/)))                // g3u6 단위분수 비교
+    return '1/' + Math.min(+m[1], +m[2]);
+  if ((m = q.match(/^(\d+)\/(\d+)과 (\d+)\/(\d+) 중에서 더 큰 분수/)))            // g3u6 같은분모 비교
+    return Math.max(+m[1], +m[3]) + '/' + m[2];
+  if ((m = q.match(/(\d+)\/10은 소수로 얼마/))) return '0.' + m[1];              // g3u6 분모10→소수
+  if ((m = q.match(/0\.1이 (\d+)개이면 소수로 얼마/))) return '0.' + m[1];       // g3u6 소수만들기
+  if ((m = q.match(/0\.(\d)는 0\.1이 몇 개/))) return +m[1];                     // g3u6 소수 개수
+  if ((m = q.match(/0\.(\d)와 0\.(\d) 중에서 더 큰 수는/)))                      // g3u6 소수 비교
+    return '0.' + Math.max(+m[1], +m[2]);
   if ((m = q.match(/(\d+)cm (\d+)mm는 몇 mm/))) return +m[1] * 10 + +m[2];      // g3u5 cm mm→mm
   if ((m = q.match(/(\d+)cm는 몇 mm/))) return +m[1] * 10;                       // g3u5 cm→mm
   if ((m = q.match(/(\d+)km (\d+)m는 몇 m/))) return +m[1] * 1000 + +m[2];       // g3u5 km m→m
