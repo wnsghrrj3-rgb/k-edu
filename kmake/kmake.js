@@ -225,6 +225,7 @@ function doRestoreHome() {
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
   lastGen = null; hideReroll();
   if (window.KM_MERGE) KM_MERGE.reset();
+  if (window.KM_ALIGN) KM_ALIGN.reset();
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
   document.getElementById('iconPanel').classList.add('hidden');
@@ -282,6 +283,7 @@ function initCanvas() {
   canvas.on('selection:updated', onSelect);
   canvas.on('selection:cleared', onSelect);
   canvas.on('object:moving', onMoving);
+  canvas.on('object:scaling', onScaling);
   canvas.on('object:modified', () => { clearGuides(); pushHistory(); syncPanelDims(); hideReroll(); });
   canvas.on('object:added', () => { if (!lockHistory) pushHistory(); });
   canvas.on('object:removed', () => { if (!lockHistory) pushHistory(); });
@@ -304,6 +306,7 @@ function initCanvas() {
   });
   KM_SCENE.boot();
   if (window.KM_MERGE) KM_MERGE.init({ meta: () => ({ baseW, baseH, audience }), toast });
+  if (window.KM_ALIGN) KM_ALIGN.init({ getCanvas: () => canvas, getZoom: () => zoom, getBase: () => ({ w: baseW, h: baseH }), getMode: () => mode, pushHistory, toast });
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -382,29 +385,10 @@ document.getElementById('imgInput').addEventListener('change', function (e) {
   e.target.value = '';
 });
 
-/* ============ 스마트 정렬 가이드 ============ */
-function bounds(o) { const r = o.getBoundingRect(true, true); return { l: r.left, t: r.top, r: r.left + r.width, b: r.top + r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
-function onMoving(e) {
-  const o = e.target, snap = 7 / zoom, b = bounds(o);
-  const vs = [0, baseW / 2, baseW], hs = [0, baseH / 2, baseH];
-  canvas.forEachObject(t => { if (t === o || t.group) return; const tb = bounds(t); vs.push(tb.l, tb.cx, tb.r); hs.push(tb.t, tb.cy, tb.b); });
-  let gv = null, gh = null, bv = snap, bh = snap;
-  [b.l, b.cx, b.r].forEach(v => vs.forEach(p => { const d = Math.abs(v - p); if (d < bv) { bv = d; gv = { line: p, delta: p - v }; } }));
-  [b.t, b.cy, b.b].forEach(v => hs.forEach(p => { const d = Math.abs(v - p); if (d < bh) { bh = d; gh = { line: p, delta: p - v }; } }));
-  if (gv) o.left += gv.delta;
-  if (gh) o.top += gh.delta;
-  o.setCoords();
-  drawGuides(gv, gh);
-}
-function drawGuides(gv, gh) {
-  const ctx = canvas.contextTop; canvas.clearContext(ctx);
-  ctx.save(); ctx.strokeStyle = '#EC4899'; ctx.lineWidth = 1;
-  if (gv) { const x = gv.line * zoom; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.getHeight()); ctx.stroke(); dot(ctx, x, gh ? gh.line * zoom : canvas.getHeight() / 2); }
-  if (gh) { const y = gh.line * zoom; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.getWidth(), y); ctx.stroke(); }
-  ctx.restore();
-}
-function dot(ctx, x, y) { ctx.fillStyle = '#EC4899'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); }
-function clearGuides() { if (canvas) canvas.clearContext(canvas.contextTop); }
+/* ============ 지능 편집(스냅·정돈) → align.js 위임 ============ */
+function onMoving(e) { if (window.KM_ALIGN) KM_ALIGN.onMoving(e); }
+function onScaling(e) { if (window.KM_ALIGN) KM_ALIGN.onScaling(e); }
+function clearGuides() { if (window.KM_ALIGN) KM_ALIGN.clear(); else if (canvas) canvas.clearContext(canvas.contextTop); }
 
 /* ============ 배경 패널 ============ */
 let bgCat = 'all';
@@ -593,6 +577,7 @@ let openPop = null;
 function onSelect() {
   const o = canvas && canvas.getActiveObject();
   buildCtxbar(o); buildPanel(o);
+  if (window.KM_ALIGN) KM_ALIGN.onSelect(o);
 }
 function buildCtxbar(o) {
   closePops();
