@@ -125,6 +125,7 @@ document.querySelectorAll('.start-tab').forEach(t => t.onclick = () => {
   t.classList.add('on'); audience = t.dataset.aud; renderPresets();
 });
 renderPresets();
+{ const bs = document.getElementById('bulkStart'); if (bs) bs.onclick = openBulk; }
 
 /* ============ 에디터 진입 ============ */
 var editorOpen = false;
@@ -148,77 +149,27 @@ function openTemplate(key) {
   loadSVGTemplate(t);
 }
 
-/* ============ 뚝딱 만들기 (M1 생성기 접합) ============ */
-const GEN_KINDS = [
-  { k: 'award',     ico: '🏆', n: '상장',     w: 1123, h: 794,  aud: 'teacher' },
-  { k: 'card',      ico: '💌', n: '축하 카드', w: 540,  h: 740,  aud: 'student' },
-  { k: 'worksheet', ico: '📝', n: '학습지',   w: 794,  h: 1123, aud: 'teacher' },
-  { k: 'nametag',   ico: '🏷️', n: '이름표',   w: 700,  h: 260,  aud: 'teacher' },
-  { k: 'notice',    ico: '📢', n: '안내장',   w: 1123, h: 794,  aud: 'teacher' },
-  { k: 'poster',    ico: '🎨', n: '포스터',   w: 794,  h: 1123, aud: 'student' },
-];
-let lastGen = null;
-function renderGenGrid(tries) {
-  const g = document.getElementById('genGrid'); if (!g) return;
-  if (!window.KM_GEN) {
-    if ((tries || 0) < 60) { setTimeout(() => renderGenGrid((tries || 0) + 1), 50); return; }
-    g.innerHTML = '<div style="grid-column:1/-1;padding:14px 16px;border:1px dashed #f0a500;border-radius:12px;color:#b45309;font-size:13px;background:#fffbeb">⚠️ 생성기(generator.js)를 불러오지 못했어요. 새로고침(Ctrl+Shift+R) 후에도 그대로면 알려주세요. <span style="color:#94a3b8">[KM_GEN 미로딩]</span></div>';
-    console.error('[kmake] KM_GEN not loaded — generator.js failed to define window.KM_GEN');
-    return;
-  }
-  g.innerHTML = GEN_KINDS.map(s =>
-    `<button class="gen-card" data-k="${s.k}"><div class="gi">${s.ico}</div><div class="gn">${s.n}</div></button>`).join('');
-  g.querySelectorAll('.gen-card').forEach(c => c.onclick = () => generateTemplate(c.dataset.k));
-}
-renderGenGrid();
-function measureText(text, fontSize, fontFamily) {
-  if (typeof fabric === 'undefined') return 0;
-  let w = 0;
-  String(text).split('\n').forEach(l => { const t = new fabric.Text(l || ' ', { fontSize, fontFamily }); w = Math.max(w, t.width); });
-  return w;
-}
-function generateTemplate(kind) {
-  const spec = GEN_KINDS.find(x => x.k === kind); if (!spec || !window.KM_GEN) return;
-  lastGen = { kind: kind, seeds: KM_GEN.newSeeds(), spec: spec };
-  buildGen();
-}
-function buildGen() {
-  const { kind, seeds, spec } = lastGen;
-  const doc = KM_GEN.generate(kind, seeds, { w: spec.w, h: spec.h, _aud: spec.aud }, { measure: measureText, kitColor: (window.KM_MERGE && KM_MERGE.kitColor()) || null });
-  if (!editorOpen) openEditor(doc.baseW, doc.baseH);
-  else { baseW = doc.baseW; baseH = doc.baseH; }
-  KM_SCENE.loadDoc(doc, () => { zoomFit(); showReroll(); });
-}
-function doReroll(which) {
-  if (!lastGen) return;
-  lastGen.seeds = KM_GEN.rerollSeeds(lastGen.seeds, which);  // §0 전체 재실행
-  buildGen();
-}
-function ensureRerollBar() {
-  let bar = document.getElementById('rerollBar');
-  if (bar) return bar;
-  const wrap = document.querySelector('.canvas-wrap'); if (!wrap) return null;
-  bar = document.createElement('div'); bar.id = 'rerollBar';
-  bar.innerHTML =
-    '<button class="rb primary" data-r="all">🎲 전부</button>' +
-    '<button class="rb" data-r="color">🎨 색</button>' +
-    '<button class="rb" data-r="font">🔤 글꼴</button>' +
-    '<button class="rb" data-r="material">🖼 배경</button>' +
-    '<div class="rb-div"></div>' +
-    '<button class="rb fill" data-r="fill">✏️ 글자 채우기</button>';
-  wrap.appendChild(bar);
-  bar.addEventListener('click', e => {
-    const b = e.target.closest('.rb'); if (!b) return;
-    if (b.dataset.r === 'fill') { hideReroll(); enterFillMode(); }
-    else doReroll(b.dataset.r);
+/* ============ 대량 채우기: 슬롯 박힌 기본 상장 ============ */
+// 지금은 기능이 도는 최소 틀 — 준호가 자기 디자인 템플릿으로 교체할 자리.
+const BULK_AWARD = {
+  w: 1123, h: 794,
+  svg: "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1123 794'>"
+    + "<rect x='30' y='30' width='1063' height='734' fill='#ffffff' stroke='#C9A227' stroke-width='6' rx='12'/>"
+    + "<rect x='50' y='50' width='1023' height='694' fill='none' stroke='#E3C766' stroke-width='2' rx='7'/>"
+    + "<text x='561' y='215' font-family='Gowun Batang' font-size='82' fill='#2D3748' text-anchor='middle'>\uc0c1 \uc7a5</text>"
+    + "<text x='561' y='360' font-family='Gowun Batang' font-size='58' fill='#1A365D' text-anchor='middle'>\ud64d\uae38\ub3d9</text>"
+    + "<text x='561' y='475' font-family='Gowun Dodum' font-size='32' fill='#3A4658' text-anchor='middle'>\uc704 \ud559\uc0dd\uc740 \uc131\uc2e4\ud788 \ubc30\uc6c0\uc5d0 \uc784\ud558\uc600\uae30\uc5d0 \uc774 \uc0c1\uc7a5\uc744 \ub4dc\ub9bd\ub2c8\ub2e4.</text>"
+    + "<text x='561' y='650' font-family='Gowun Dodum' font-size='28' fill='#5A6678' text-anchor='middle'>2026\ub144 0\uc6d4 0\uc77c</text>"
+    + "</svg>",
+  textSlots: ['', '\uc774\ub984', '\ub0b4\uc6a9', '\ub0a0\uc9dc'],
+};
+function openBulk() {
+  openEditor(BULK_AWARD.w, BULK_AWARD.h);
+  loadSVGTemplate(BULK_AWARD, function () {
+    zoomFit();
+    setMode('fill');
+    if (window.KM_MERGE) KM_MERGE.open();
   });
-  return bar;
-}
-function showReroll() { const b = ensureRerollBar(); if (b) b.classList.add('show'); }
-function hideReroll() { const b = document.getElementById('rerollBar'); if (b) b.classList.remove('show'); }
-function enterFillMode() {
-  const btn = document.querySelector('#modeToggle button[data-mode="fill"]');
-  if (btn) btn.click();
 }
 // 홈 버튼/로고 → 브라우저 뒤로가기와 동일 경로(popstate)로 처리해 confirm·복원을 일원화
 function goHome() {
@@ -229,9 +180,7 @@ function doRestoreHome() {
   KM_MOTION.exitPlay(); KM_MOTION.setMotionBg(null); KM_SCENE.teardown();
   if (canvas) { canvas.dispose(); canvas = null; }
   undoStack = []; redoStack = []; mode = 'edit'; imgTarget = null; openPop = null;
-  lastGen = null; hideReroll();
   if (window.KM_MERGE) KM_MERGE.reset();
-  if (window.KM_ALIGN) KM_ALIGN.reset();
   document.querySelectorAll('#modeToggle button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'edit'));
   document.getElementById('modeBanner').classList.add('hidden');
   document.getElementById('iconPanel').classList.add('hidden');
@@ -251,7 +200,7 @@ window.addEventListener('popstate', function () {
   }
   doRestoreHome();
 });
-function loadSVGTemplate(t) {
+function loadSVGTemplate(t, done) {
   fabric.loadSVGFromString(t.svg, (objects) => {
     lockHistory = true;
     let ti = 0;
@@ -276,6 +225,7 @@ function loadSVGTemplate(t) {
     canvas.requestRenderAll();
     undoStack = []; redoStack = []; pushHistory();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
+    if (done) done();
   });
 }
 function initCanvas() {
@@ -289,8 +239,7 @@ function initCanvas() {
   canvas.on('selection:updated', onSelect);
   canvas.on('selection:cleared', onSelect);
   canvas.on('object:moving', onMoving);
-  canvas.on('object:scaling', onScaling);
-  canvas.on('object:modified', () => { clearGuides(); pushHistory(); syncPanelDims(); hideReroll(); });
+  canvas.on('object:modified', () => { clearGuides(); pushHistory(); syncPanelDims(); });
   canvas.on('object:added', () => { if (!lockHistory) pushHistory(); });
   canvas.on('object:removed', () => { if (!lockHistory) pushHistory(); });
   canvas.on('mouse:up', clearGuides);
@@ -312,8 +261,6 @@ function initCanvas() {
   });
   KM_SCENE.boot();
   if (window.KM_MERGE) KM_MERGE.init({ meta: () => ({ baseW, baseH, audience }), toast });
-  if (window.KM_ALIGN) KM_ALIGN.init({ getCanvas: () => canvas, getZoom: () => zoom, getBase: () => ({ w: baseW, h: baseH }), getMode: () => mode, pushHistory, toast });
-  if (window.KM_HARMONY) KM_HARMONY.init({ getCanvas: () => canvas, getBase: () => ({ w: baseW, h: baseH }), pushHistory, toast });
   zoomFit(); pushHistory(); onSelect(); updateUndoBtns();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => canvas && canvas.requestRenderAll());
 }
@@ -393,9 +340,28 @@ document.getElementById('imgInput').addEventListener('change', function (e) {
 });
 
 /* ============ 지능 편집(스냅·정돈) → align.js 위임 ============ */
-function onMoving(e) { if (window.KM_ALIGN) KM_ALIGN.onMoving(e); }
-function onScaling(e) { if (window.KM_ALIGN) KM_ALIGN.onScaling(e); }
-function clearGuides() { if (window.KM_ALIGN) KM_ALIGN.clear(); else if (canvas) canvas.clearContext(canvas.contextTop); }
+function bounds(o) { const r = o.getBoundingRect(true, true); return { l: r.left, t: r.top, r: r.left + r.width, b: r.top + r.height, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; }
+function onMoving(e) {
+  const o = e.target, snap = 7 / zoom, b = bounds(o);
+  const vs = [0, baseW / 2, baseW], hs = [0, baseH / 2, baseH];
+  canvas.forEachObject(t => { if (t === o || t.group) return; const tb = bounds(t); vs.push(tb.l, tb.cx, tb.r); hs.push(tb.t, tb.cy, tb.b); });
+  let gv = null, gh = null, bv = snap, bh = snap;
+  [b.l, b.cx, b.r].forEach(v => vs.forEach(p => { const d = Math.abs(v - p); if (d < bv) { bv = d; gv = { line: p, delta: p - v }; } }));
+  [b.t, b.cy, b.b].forEach(v => hs.forEach(p => { const d = Math.abs(v - p); if (d < bh) { bh = d; gh = { line: p, delta: p - v }; } }));
+  if (gv) o.left += gv.delta;
+  if (gh) o.top += gh.delta;
+  o.setCoords();
+  drawGuides(gv, gh);
+}
+function drawGuides(gv, gh) {
+  const ctx = canvas.contextTop; canvas.clearContext(ctx);
+  ctx.save(); ctx.strokeStyle = '#EC4899'; ctx.lineWidth = 1;
+  if (gv) { const x = gv.line * zoom; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.getHeight()); ctx.stroke(); dot(ctx, x, gh ? gh.line * zoom : canvas.getHeight() / 2); }
+  if (gh) { const y = gh.line * zoom; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.getWidth(), y); ctx.stroke(); }
+  ctx.restore();
+}
+function dot(ctx, x, y) { ctx.fillStyle = '#EC4899'; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill(); }
+function clearGuides() { if (canvas) canvas.clearContext(canvas.contextTop); }
 
 /* ============ 배경 패널 ============ */
 let bgCat = 'all';
@@ -584,7 +550,6 @@ let openPop = null;
 function onSelect() {
   const o = canvas && canvas.getActiveObject();
   buildCtxbar(o); buildPanel(o);
-  if (window.KM_ALIGN) KM_ALIGN.onSelect(o);
 }
 function buildCtxbar(o) {
   closePops();
@@ -759,7 +724,6 @@ function buildPanel(o) {
     ${on ? `<div class="slot-label"><label>칸 이름</label><input id="pSlotLabel" value="${esc((o.kmSlot && o.kmSlot.label) || '')}" placeholder="예: 이름 / 날짜 / 사진"></div>` : ''}
     <div class="slot-hint">슬롯으로 지정하면 '채우기 모드'에서 이 칸만 바꿀 수 있어요. 틀은 그대로 두고 내용만 교체!</div>
   </div></div>`;
-  if (window.KM_HARMONY) h += KM_HARMONY.sectionHTML(o);
   panel.innerHTML = h;
   bindPanel(o, isText);
 }
@@ -787,7 +751,6 @@ function bindPanel(o, isText) {
   });
   if ($('pSlot')) $('pSlot').onchange = e => { o.kmSlot = e.target.checked ? { on: true, label: (o.kmSlot && o.kmSlot.label) || '' } : { on: false }; pushHistory(); buildPanel(o); };
   if ($('pSlotLabel')) $('pSlotLabel').onchange = e => { o.kmSlot = { on: true, label: e.target.value }; pushHistory(); };
-  if (window.KM_HARMONY) KM_HARMONY.bind(o);
 }
 function alignObj(o, k) {
   const b = o.getBoundingRect(true, true);
