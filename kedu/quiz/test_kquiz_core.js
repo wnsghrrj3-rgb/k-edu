@@ -17,6 +17,7 @@ require('./templates/g2_math_u1.js')(KQuiz);
 require('./templates/g2_math_u2.js')(KQuiz);
 require('./templates/g2_math_u3.js')(KQuiz);
 require('./templates/g2_math_u4.js')(KQuiz);
+require('./templates/g2_math_u5.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
 
 var fails = 0, pass = 0;
@@ -43,6 +44,7 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g2_math_u3_l02','g2_math_u3_l03','g2_math_u3_l04','g2_math_u3_l05','g2_math_u3_l06',
   'g2_math_u3_l07','g2_math_u3_l08','g2_math_u3_l09','g2_math_u3_l10','g2_math_u3_l11','g2_math_u3',
   'g2_math_u4_l03','g2_math_u4_l04','g2_math_u4',
+  'g2_math_u5_l02','g2_math_u5_l04','g2_math_u5_l05','g2_math_u5_l06','g2_math_u5',
   'g2_math_u6_l02','g2_math_u6_l03','g2_math_u6_l04','g2_math_u6_l05',
   'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6'];
 
@@ -148,6 +150,16 @@ function expectChoice(q) {
     var la = +m[1], lb = +m[2];
     return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
   }
+  if ((m = q.match(/^빨간색 (\d+)개, 파란색 (\d+)개, 노란색 (\d+)개가 있습니다\. (.+)$/))) { // g2u5 빈도
+    var fa = +m[1], fb = +m[2], fc = +m[3], ask = m[4];
+    var cols = [['빨간색', fa], ['파란색', fb], ['노란색', fc]];
+    var mxv = Math.max(fa, fb, fc), mnv = Math.min(fa, fb, fc);
+    if (ask === '모두 몇 개일까요?') return fa + fb + fc;
+    if (ask === '가장 많은 색깔은 무엇일까요?') return cols.filter(function (x) { return x[1] === mxv; })[0][0];
+    if (ask === '가장 적은 색깔은 무엇일까요?') return cols.filter(function (x) { return x[1] === mnv; })[0][0];
+    if (ask === '가장 많은 색깔은 가장 적은 색깔보다 몇 개 더 많을까요?') return mxv - mnv;
+    return '__미등록질문__';
+  }
   if ((m = q.match(/^「(.+?)」와\(과\) 「(.+?)」 중에서 (.+?) 것은/))) { // u4 비교
     var d = U4_WORD2DIR[m[3]]; if (!d) return '__미등록어__';
     var attr = d[0], x = m[1], y = m[2];
@@ -231,6 +243,16 @@ function expectOx(q) {
   // g2u4 임의단위-횟수 개념 OX
   var m4 = q.match(/같은 길이를 잴 때, 단위가 (작을수록|클수록) 잰 횟수가 (많습니다|적습니다)/);
   if (m4) return m4[1] === '작을수록' ? (m4[2] === '많습니다') : (m4[2] === '적습니다');
+  // g2u5 분류 기준 적절성 OX (객관적 기준=O)
+  var m5 = q.match(/「(.+?)」은\(는\) 분류 기준으로 알맞습니다/);
+  if (m5) {
+    var OBJ5 = { '색깔': 1, '모양': 1, '크기': 1, '종류': 1 };
+    var SUBJ5 = { '예쁜 것과 예쁘지 않은 것': 1, '좋아하는 것과 싫어하는 것': 1,
+                  '맛있는 것과 맛없는 것': 1, '멋진 것과 멋지지 않은 것': 1 };
+    if (OBJ5[m5[1]]) return true;
+    if (SUBJ5[m5[1]]) return false;
+    return null;
+  }
   var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
   if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
