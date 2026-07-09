@@ -19,7 +19,35 @@
   #brand .k{color:var(--grass)}
   #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
     text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
-  #note{position:fixed;left:0;right:0;bottom:26px;text-align:center;color:var(--sub);font-size:12.5px;z-index:18}
+  #note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:var(--sub);font-size:11px;z-index:18;opacity:.6}
+  #hud{position:fixed;top:44px;left:0;right:0;text-align:center;z-index:18;pointer-events:none}
+  #hud .pop{display:inline-flex;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:7px 16px;font-size:13px;backdrop-filter:blur(8px)}
+  #hud .pop b{font-family:'Jua';font-weight:400}
+  #hud .g b{color:var(--grass)} #hud .r b{color:var(--rabbit)} #hud .f b{color:var(--fox)}
+  #timeBadge{position:fixed;top:82px;left:50%;transform:translateX(-50%);z-index:18;color:var(--sub);font-size:11.5px;
+    background:rgba(10,18,12,.55);border-radius:999px;padding:3px 12px;pointer-events:none}
+  #ctrl{position:fixed;left:0;right:0;bottom:34px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:20;padding:0 10px}
+  #ctrl button{font-family:'Jua';font-size:13px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:12px;padding:9px 14px;cursor:pointer;transition:.15s;
+    display:inline-flex;align-items:center;gap:6px}
+  #ctrl button:active{transform:scale(.95)}
+  #ctrl button.on{background:var(--grass);color:#04120c;border-color:var(--grass)}
+  #ctrl button.danger{border-color:var(--fox);color:var(--fox)}
+  #ctrl button.danger.gone{background:var(--fox);color:#1a0e04}
+  #lens{position:fixed;right:14px;top:96px;z-index:19;width:min(42vw,340px);background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:10px 12px 8px;backdrop-filter:blur(8px)}
+  #lens.hide{display:none}
+  #lensHead{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub);margin-bottom:6px}
+  #lensHead b{font-family:'Jua';font-weight:400;color:var(--ink)}
+  #lensLegend{display:flex;gap:10px;font-size:10.5px}
+  #lensLegend span{display:inline-flex;align-items:center;gap:3px}
+  #lensLegend i{width:9px;height:3px;border-radius:2px;display:inline-block}
+  #popCv{width:100%;height:150px;display:block}
+  #hint{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:19;
+    font-size:12.5px;color:var(--ink);background:rgba(10,18,12,.82);border:1px solid var(--line);border-radius:12px;
+    padding:8px 15px;max-width:88vw;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
 </style>
 </head>
 <body>
@@ -28,7 +56,24 @@
 
 <div id="brand"><span class="k">케이</span>랩 · 생태계 균형</div>
 <a id="back" href="./scilab_hub.html">← 과학실</a>
-<div id="note">P1 — 개체군 동역학 순수 로직(렌더는 P2에서)</div>
+
+<div id="hud"><span class="pop"><span class="g">🌿 풀 <b id="hudG">0</b></span><span class="r">🐰 토끼 <b id="hudR">0</b></span><span class="f">🦊 여우 <b id="hudF">0</b></span></span></div>
+<div id="timeBadge">⏱ 개체수는 계절처럼 오르내려요</div>
+
+<div id="lens">
+  <div id="lensHead"><b>📈 개체수 렌즈</b><span id="lensLegend"></span></div>
+  <canvas id="popCv" width="680" height="300"></canvas>
+</div>
+
+<div id="ctrl">
+  <button id="playBtn" class="on">⏸ 멈춤</button>
+  <button id="speedBtn">⏩ 1×</button>
+  <button id="foxBtn" class="danger">🦊 여우 없애기</button>
+  <button id="resetBtn">🔄 처음부터</button>
+</div>
+
+<div id="hint"></div>
+<div id="note">P2 — 3층 군집 + 개체수 렌즈</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KEcosys 개체군 동역학 (SPEC_ECOSYS §2). THREE·DOM 참조 0.
@@ -194,9 +239,277 @@
 });
 </script>
 
-<script>
-  // P1 게이트 — 렌더 없음. 부팅 확인만.
-  document.getElementById('loading').classList.add('hide');
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+} }
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 렌더 어댑터 — 초원 무대·3층 군집(InstancedMesh)·개체수 렌즈·시간/여우제거 조작.
+     3층 분리: window.KEcosys의 tick/equilibrium/instanceCount «결과»만 조회(동역학 판단 0).
+     개체수 = 군집 인스턴스 수(결정론 산포 — 진동해도 위치 안 튐). 여우제거=붕괴 연쇄 관찰.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KEcosys;
+const P = new URLSearchParams(location.search);
+const grade = P.get('grade') || 'high';
+
+/* ═════════ 렌더 기반 (황금 표준 승계 · 초원 톤) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', function(e){ e.preventDefault();
+  if(document.getElementById('ctxlost')) return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,18,12,.93);color:#e9f2e6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  const t=document.createElement('div'); t.textContent='화면이 잠시 멈췄어요'; t.style.cssText='font-size:20px;font-weight:700';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#6fcf5f;color:#04120c;font-size:16px;cursor:pointer';
+  b.addEventListener('click', ()=>location.reload());
+  o.appendChild(t); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#213a2a'); gr.addColorStop(.5,'#16281c'); gr.addColorStop(1,'#0a120c');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x101c14, 3.2, 9.5);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.05, 40);
+camera.position.set(0.0, 1.15, 2.35);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.12, 0);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=1.0; controls.maxDistance=4.2;
+controls.maxPolarAngle=1.44; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2d8, 2.5);
+sun.position.set(1.8,3.4,1.4); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-2.2; sun.shadow.camera.right=2.2;
+sun.shadow.camera.top=2.2; sun.shadow.camera.bottom=-1.2;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=9;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x9fe0b0, 0x1a2018, 0.42));
+
+/* ── 초원 바닥 ── */
+const MEADOW_R = 1.35;
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 56),
+  new THREE.MeshStandardMaterial({ color:0x2c4632, roughness:0.98 }));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const patch = new THREE.Mesh(
+  new THREE.CircleGeometry(MEADOW_R+0.12, 48),
+  new THREE.MeshStandardMaterial({ color:0x35543b, roughness:0.95 }));
+patch.rotation.x=-Math.PI/2; patch.position.y=0.001; patch.receiveShadow=true; scene.add(patch);
+
+/* ═════════ 결정론 산포 (mulberry32 — 진동해도 위치 안 튐) ═════════ */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function scatter(n, seed, rMax, rMin){
+  const rnd=mulberry32(seed); const out=[];
+  for(let i=0;i<n;i++){
+    const a=rnd()*Math.PI*2; const r=(rMin||0)+Math.sqrt(rnd())*(rMax-(rMin||0));
+    out.push({ x:Math.cos(a)*r, z:Math.sin(a)*r, rot:rnd()*Math.PI*2, ph:rnd()*Math.PI*2, sc:0.8+rnd()*0.5 });
+  }
+  return out;
+}
+
+/* ═════════ 3층 군집 (InstancedMesh · cap = SPEC §3) ═════════ */
+const CAPS = K.CAPS;               // grass100 rabbit40 fox20
+const dummy = new THREE.Object3D();
+
+// 풀 — 녹색 블레이드(가는 원뿔 3겹 느낌은 비용↑ → 단일 콘)
+const grassGeo = new THREE.ConeGeometry(0.018, 0.16, 5);
+grassGeo.translate(0, 0.08, 0);
+const grassMat = new THREE.MeshStandardMaterial({ color:0x6fcf5f, roughness:0.8 });
+const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, CAPS.grass);
+grassMesh.castShadow=true; grassMesh.receiveShadow=true;
+// 토끼 — 흰 몸통(구) + 귀 대신 살짝 길쭉
+const rabGeo = new THREE.SphereGeometry(0.05, 14, 12); rabGeo.scale(1,0.9,1.25); rabGeo.translate(0,0.05,0);
+const rabMat = new THREE.MeshStandardMaterial({ color:0xf2f4ef, roughness:0.6 });
+const rabMesh = new THREE.InstancedMesh(rabGeo, rabMat, CAPS.rabbit);
+rabMesh.castShadow=true;
+// 여우 — 주황 몸통(원뿔, 뾰족·조금 큼)
+const foxGeo = new THREE.ConeGeometry(0.055, 0.13, 8); foxGeo.translate(0,0.065,0);
+const foxMat = new THREE.MeshStandardMaterial({ color:0xf0913c, roughness:0.5, metalness:0.05 });
+const foxMesh = new THREE.InstancedMesh(foxGeo, foxMat, CAPS.fox);
+foxMesh.castShadow=true;
+scene.add(grassMesh, rabMesh, foxMesh);
+
+const POS = {
+  grass: scatter(CAPS.grass, 1337, MEADOW_R),
+  rabbit: scatter(CAPS.rabbit, 7331, MEADOW_R*0.86),
+  fox:   scatter(CAPS.fox, 9091, MEADOW_R*0.7),
+};
+const MESH = { grass:grassMesh, rabbit:rabMesh, fox:foxMesh };
+const aliveScale = { grass:new Float32Array(CAPS.grass), rabbit:new Float32Array(CAPS.rabbit), fox:new Float32Array(CAPS.fox) };
+
+function paintLayer(species, count, now){
+  const mesh=MESH[species], pos=POS[species], al=aliveScale[species];
+  for(let i=0;i<pos.length;i++){
+    const target = i<count ? 1 : 0;
+    al[i] += (target-al[i])*0.14;              // 등장 0→1 / 소멸 1→0 트윈
+    const s = al[i]*pos[i].sc;
+    const p = pos[i];
+    const bob = species==='grass' ? Math.sin(now*1.4+p.ph)*0.012*al[i]
+              : Math.abs(Math.sin(now*2.2+p.ph))*0.02*al[i];  // 토끼/여우 통통
+    dummy.position.set(p.x, bob, p.z);
+    dummy.rotation.set(0, p.rot, species==='grass'?Math.sin(now*1.1+p.ph)*0.12:0);
+    dummy.scale.set(s, s, s);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+}
+
+/* ═════════ 시뮬레이션 상태 ═════════ */
+const TIME_SCALE = 5;      // 실 1초 = 5 tick (§2)
+let sim = { ...K.INIT };
+let playing = true, speed = 1, foxRemoved = false;
+let acc = 0, simStep = 0, foxRemovedStep = -1;
+const SPEEDS = [1,2,4];
+
+// 개체수 렌즈 히스토리(링 — 최근 320 샘플)
+const HIST_MAX = 320;
+const hist = [];
+function recordHist(){ hist.push({ G:sim.G, R:sim.R, F:sim.F, rm:foxRemoved, step:simStep }); if(hist.length>HIST_MAX) hist.shift(); }
+recordHist();
+
+function stepSim(){
+  if(foxRemoved) sim.F = 0;
+  sim = K.tick(sim);
+  simStep++;
+  recordHist();
+}
+
+/* ═════════ 개체수 렌즈 (Canvas 2D) ═════════ */
+const lensEl = document.getElementById('lens');
+const cv = document.getElementById('popCv'), cx = cv.getContext('2d');
+const LCOL = { G:'#6fcf5f', R:'#f2f4ef', F:'#f0913c' };
+const Y_MAX = 110;   // 풀 수용력 100 + 여유(토끼 붕괴 피크 ~74 포함)
+function drawLens(){
+  const W=cv.width, H=cv.height, pad=6;
+  cx.clearRect(0,0,W,H);
+  // 축선
+  cx.strokeStyle='rgba(255,255,255,.10)'; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(0,H-pad); cx.lineTo(W,H-pad); cx.stroke();
+  if(hist.length<2){ return; }
+  const n=hist.length;
+  const xAt=i=> i/(HIST_MAX-1)*W;
+  const yAt=v=> (H-pad) - Math.min(v,Y_MAX)/Y_MAX*(H-pad*2);
+  // 여우 제거 마커
+  const rmIdx = hist.findIndex(h=>h.rm);
+  if(rmIdx>=0){ const x=xAt(rmIdx); cx.strokeStyle='rgba(240,145,60,.55)'; cx.setLineDash([4,4]); cx.lineWidth=1.4;
+    cx.beginPath(); cx.moveTo(x,pad); cx.lineTo(x,H-pad); cx.stroke(); cx.setLineDash([]); }
+  const drawCurve=(key,col)=>{
+    cx.strokeStyle=col; cx.lineWidth=2; cx.beginPath();
+    for(let i=0;i<n;i++){ const x=xAt(i), y=yAt(hist[i][key]); if(i===0)cx.moveTo(x,y); else cx.lineTo(x,y); }
+    cx.stroke();
+  };
+  drawCurve('G',LCOL.G); drawCurve('R',LCOL.R); drawCurve('F',LCOL.F);
+}
+document.getElementById('lensLegend').innerHTML =
+  `<span><i style="background:${LCOL.G}"></i>풀</span><span><i style="background:${LCOL.R}"></i>토끼</span><span><i style="background:${LCOL.F}"></i>여우</span>`;
+
+/* ═════════ HUD ═════════ */
+function syncHud(){
+  document.getElementById('hudG').textContent = Math.round(sim.G);
+  document.getElementById('hudR').textContent = Math.round(sim.R);
+  document.getElementById('hudF').textContent = Math.round(sim.F);
+}
+
+/* ═════════ 조작 ═════════ */
+let hintTimer=null;
+function showHint(msg){ const h=document.getElementById('hint'); h.textContent=msg; h.classList.add('show');
+  clearTimeout(hintTimer); hintTimer=setTimeout(()=>h.classList.remove('show'), 3200); }
+
+const playBtn=document.getElementById('playBtn');
+playBtn.addEventListener('click', ()=>{ playing=!playing;
+  playBtn.textContent = playing?'⏸ 멈춤':'▶ 재생'; playBtn.classList.toggle('on', playing); });
+const speedBtn=document.getElementById('speedBtn');
+speedBtn.addEventListener('click', ()=>{ const i=(SPEEDS.indexOf(speed)+1)%SPEEDS.length; speed=SPEEDS[i]; speedBtn.textContent='⏩ '+speed+'×'; });
+const foxBtn=document.getElementById('foxBtn');
+foxBtn.addEventListener('click', ()=>{
+  if(!foxRemoved){ foxRemoved=true; foxRemovedStep=simStep;
+    foxBtn.classList.add('gone'); foxBtn.textContent='🦊 없앴음';
+    showHint('여우를 없앴어요. 토끼가 어떻게 되는지 지켜보세요…'); }
+  else { foxRemoved=false; foxBtn.classList.remove('gone'); foxBtn.textContent='🦊 여우 없애기';
+    showHint('여우를 다시 데려왔어요. (이미 무너졌다면 처음부터로 되돌려요)'); }
+});
+const resetBtn=document.getElementById('resetBtn');
+resetBtn.addEventListener('click', ()=>{
+  sim={...K.INIT}; foxRemoved=false; foxRemovedStep=-1; simStep=0; acc=0;
+  hist.length=0; recordHist();
+  foxBtn.classList.remove('gone'); foxBtn.textContent='🦊 여우 없애기';
+  showHint('처음 상태로 되돌렸어요.');
+});
+
+/* ═════════ 학년칸 (§4) — 저=렌즈 숨김(관찰 데모) ═════════ */
+if(grade==='low'){ lensEl.classList.add('hide'); }
+
+/* ═════════ 애니메이션 ═════════ */
+let t0=performance.now();
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(), dt=Math.min(0.05,(now-t0)/1000); t0=now;
+  const tsec=now/1000;
+  if(playing){
+    acc += dt*TIME_SCALE*speed;
+    let guard=0;
+    while(acc>=1 && guard<40){ stepSim(); acc-=1; guard++; }
+  }
+  paintLayer('grass', K.instanceCount('grass', sim.G), tsec);
+  paintLayer('rabbit', K.instanceCount('rabbit', sim.R), tsec);
+  paintLayer('fox', K.instanceCount('fox', sim.F), tsec);
+  syncHud();
+  if(!lensEl.classList.contains('hide')) drawLens();
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+addEventListener('resize', ()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+document.getElementById('loading').classList.add('hide');
+animate();
+
+// 검증 훅
+window.__ECOSYS_P2__ = {
+  K, MESH, POS, CAPS,
+  get sim(){ return sim; },
+  get simStep(){ return simStep; },
+  get foxRemoved(){ return foxRemoved; },
+  get histLen(){ return hist.length; },
+  stepSim, drawLens, paintLayer,
+  removeFox(){ foxRemoved=true; foxRemovedStep=simStep; },
+  reset(){ sim={...K.INIT}; foxRemoved=false; simStep=0; acc=0; hist.length=0; recordHist(); },
+  countOf(sp){ return K.instanceCount(sp, sp==='grass'?sim.G:sp==='rabbit'?sim.R:sim.F); },
+};
 </script>
 </body>
 </html>
