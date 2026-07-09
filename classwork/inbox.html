@@ -159,8 +159,24 @@ const KINDS = {
   kteacher: {n:'케이티처', i:'📚', hex:'#FF85A1'}, selfstudy:{n:'자기주도', i:'🎒', hex:'#7E57C2'},
   klab:{n:'케이랩', i:'🧊', hex:'#3BAB72'}, kple:{n:'케이플', i:'🎮', hex:'#FFB347'},
   kmake:{n:'케이메이커', i:'🎨', hex:'#5B8EF8'}, english:{n:'영어', i:'🔤', hex:'#B7791F'},
+  quiz:{n:'케이퀴즈', i:'🧩', hex:'#4C82F7'},
   link:{n:'자료', i:'🔗', hex:'#94A3B8'},
 };
+
+// 케이퀴즈 per-student seed 파생 (SPEC §5-3: hash(item_id + profile_id), 결정론 — 재접속해도 같은 문제지)
+function kquizSeed(itemId, profileId){
+  var s = String(itemId)+'|'+String(profileId), h = 2166136261;
+  for(var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h>>>0);
+}
+// 케이퀴즈 항목 열기 URL — cwb/cwi 딥링크 + (seed 없으면) per-student seed 부여
+function quizOpenUrl(it){
+  if(!it.url) return '';
+  var sep = it.url.indexOf('?')>=0 ? '&' : '?';
+  var u = it.url + sep + 'cwb=' + encodeURIComponent(current.bundle.id) + '&cwi=' + encodeURIComponent(it.id);
+  if(!/[?&]seed=/.test(it.url) && me && me.profile_id) u += '&seed=' + kquizSeed(it.id, me.profile_id);
+  return u;
+}
 const db = getKeduDb();
 let me = null;          // my_seat_class 결과
 let inbox = [];         // 받은 박스 목록
@@ -243,9 +259,21 @@ function renderTasks(){
   const wrap = document.getElementById('tasks');
   wrap.innerHTML = current.items.map((it,idx)=>{
     const k = KINDS[it.kind] || KINDS.link;
-    const open = it.url ? `<a class="t-btn t-open" href="${esc(it.url)}" target="_blank" rel="noopener">▶ 열기</a>` : '';
+    const isQuiz = it.kind==='quiz';
+    const openHref = isQuiz ? quizOpenUrl(it) : it.url;
+    const openLabel = isQuiz ? (it.submitted?'▶ 다시 풀기':'▶ 문제 풀기') : '▶ 열기';
+    const open = openHref ? `<a class="t-btn t-open" href="${esc(openHref)}" target="_blank" rel="noopener">${openLabel}</a>` : '';
     let action, graded='', comment='';
-    if(it.status==='graded'){
+    if(isQuiz){
+      // 케이퀴즈: 플레이어에서 자동 채점·제출 → 수동 제출 버튼 없음. 제출되면 점수 표시.
+      action = '';
+      if(it.status==='graded' || it.submitted){
+        const sc = (it.payload && it.payload.score!=null) ? it.payload.score : it.score;
+        const mx = (it.payload && it.payload.max!=null) ? it.payload.max : null;
+        const scoreTxt = (sc!=null) ? (esc(String(sc))+(mx!=null?(' / '+esc(String(mx))):'')+'점') : '제출 완료';
+        graded = `<div class="graded"><div class="graded-score">⭐ ${scoreTxt}</div>${it.feedback? `<div class="graded-fb">${esc(it.feedback)}</div>`:''}</div>`;
+      }
+    } else if(it.status==='graded'){
       action = `<button class="t-btn t-redo" onclick="toggleSubmit(${idx})">✏️ 다시 제출</button>`;
       graded = `<div class="graded"><div class="graded-score">⭐ ${it.score!=null? esc(String(it.score))+'점' : '확인 완료'}</div>${it.feedback? `<div class="graded-fb">${esc(it.feedback)}</div>`:''}</div>`;
     } else if(it.submitted){

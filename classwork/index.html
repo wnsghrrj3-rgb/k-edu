@@ -303,6 +303,7 @@ const KINDS = {
   kple:     {n:'케이플',   i:'🎮', cl:'#FFF1DC', hex:'#FFB347', hint:'멀티 게임'},
   kmake:    {n:'케이메이커',i:'🎨', cl:'#E3EDFF', hex:'#5B8EF8', hint:'디자인 작품'},
   english:  {n:'영어',     i:'🔤', cl:'#F5ECD8', hex:'#B7791F', hint:'영어 활동'},
+  quiz:     {n:'케이퀴즈', i:'🧩', cl:'#E7F0FF', hex:'#4C82F7', hint:'자동 채점 문제'},
   link:     {n:'링크',     i:'🔗', cl:'#EEF1F6', hex:'#94A3B8', hint:'외부 자료'},
 };
 
@@ -312,6 +313,17 @@ let classes = [];        // 교사의 활성 학급
 let bundles = [];        // 박스 목록 (items·발송 합성)
 let draft = null;        // 편집 중 박스
 let pendingKind = null;
+let quizCatalog = null;  // 케이퀴즈 단원 카탈로그 (지연 로드)
+
+// 케이퀴즈 카탈로그 로드 (빌더에서 단원 고를 재료) — 실패해도 다른 종류는 정상
+async function ensureQuizCatalog(){
+  if(quizCatalog) return quizCatalog;
+  try {
+    const r = await fetch('/kedu/quiz/catalog.json', { cache:'no-cache' });
+    quizCatalog = await r.json();
+  } catch(e){ quizCatalog = { units: [] }; }
+  return quizCatalog;
+}
 
 // ============ 초기화: 교사 세션 확인 ============
 (async function init(){
@@ -365,7 +377,7 @@ async function loadBundles(){
     }
     bundles = (bs||[]).map(b=>({
       id:b.id, title:b.title, desc:b.description||'', status:b.status,
-      items: items.filter(it=>it.bundle_id===b.id).map(it=>({ id:it.id, kind:it.kind, name:it.title, url:it.url||'' })),
+      items: items.filter(it=>it.bundle_id===b.id).map(it=>({ id:it.id, kind:it.kind, name:it.title, url:it.url||'', config:it.config||{} })),
       className: (sends.find(s=>s.bundle_id===b.id)?.class_codes?.label) || '',
     }));
     return true;
@@ -467,6 +479,7 @@ function pickKind(key){
   pendingKind = key;
   const k = KINDS[key];
   const box = document.getElementById('additem');
+  if(key==='quiz'){ return pickQuiz(box, k); }
   box.innerHTML = `
     <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">무엇을 담을까요?</span></div>
     <input class="inp" id="ai-name" type="text" placeholder="콘텐츠 이름 (예: ${k.hint})" maxlength="50">
@@ -478,12 +491,68 @@ function pickKind(key){
   box.classList.add('on');
   setTimeout(()=>document.getElementById('ai-name').focus(), 50);
 }
+// 케이퀴즈 전용 폼 — 단원·문제수·출제방식 선택 (URL·config 조립은 confirmQuiz)
+async function pickQuiz(box, k){
+  box.innerHTML = `<div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">불러오는 중…</span></div>`;
+  box.classList.add('on');
+  await ensureQuizCatalog();
+  const units = quizCatalog.units || [];
+  const groups = {};
+  units.forEach(u=>{ const g=u.grade+'학년 '+u.subjectKo; (groups[g]=groups[g]||[]).push(u); });
+  const opts = Object.entries(groups).map(([g,us])=>
+    `<optgroup label="${g}">`+us.map(u=>`<option value="${u.key}">${u.unitNo}단원 「${esc(u.name)}」</option>`).join('')+`</optgroup>`
+  ).join('');
+  box.innerHTML = `
+    <div class="ai-head"><span class="tag" style="background:${k.hex}">${k.i} ${k.n}</span><span style="color:var(--sub);font-weight:500">어떤 문제를 낼까요?</span></div>
+    <select class="inp" id="q-unit" onchange="quizNameHint()">
+      <option value="">단원을 골라주세요</option>${opts}
+    </select>
+    <div style="display:flex;gap:8px">
+      <select class="inp" id="q-n" style="flex:1">
+        <option value="5">5문제</option><option value="10" selected>10문제</option>
+        <option value="15">15문제</option><option value="20">20문제</option>
+      </select>
+      <select class="inp" id="q-seed" style="flex:1.5">
+        <option value="per_student">학생마다 다른 문제</option>
+        <option value="fixed">전원 같은 문제</option>
+      </select>
+    </div>
+    <input class="inp" id="ai-name" type="text" placeholder="케이박스에 보일 이름 (단원 고르면 자동)" maxlength="50">
+    <div class="ai-btns">
+      <button class="ai-cancel" onclick="cancelAdd()">취소</button>
+      <button class="ai-add" onclick="confirmAdd()">담기</button>
+    </div>`;
+  if(units.length===0) toast('케이퀴즈 목록을 불러오지 못했어요');
+  else setTimeout(()=>document.getElementById('q-unit').focus(), 50);
+}
+function quizNameHint(){
+  const key=document.getElementById('q-unit').value;
+  const nm=document.getElementById('ai-name');
+  const u=(quizCatalog.units||[]).find(x=>x.key===key);
+  if(u && !nm.value.trim()) nm.value = u.grade+'학년 '+u.subjectKo+' '+u.unitNo+'단원 「'+u.name+'」 퀴즈';
+}
 function cancelAdd(){ pendingKind=null; const b=document.getElementById('additem'); b.classList.remove('on'); b.innerHTML=''; }
 function confirmAdd(){
+  if(pendingKind==='quiz'){ return confirmQuiz(); }
   const name = document.getElementById('ai-name').value.trim();
   const url  = document.getElementById('ai-url').value.trim();
   if(!name){ toast('콘텐츠 이름을 적어주세요'); document.getElementById('ai-name').focus(); return; }
   draft.items.push({ id:null, kind:pendingKind, name, url });
+  cancelAdd(); renderItems();
+}
+// 케이퀴즈 담기 — 플레이어 딥링크 URL + config 조립
+function confirmQuiz(){
+  const lesson = document.getElementById('q-unit').value;
+  if(!lesson){ toast('단원을 골라주세요'); document.getElementById('q-unit').focus(); return; }
+  const n = +document.getElementById('q-n').value;
+  const seedMode = document.getElementById('q-seed').value;   // per_student | fixed
+  const u = (quizCatalog.units||[]).find(x=>x.key===lesson);
+  const name = document.getElementById('ai-name').value.trim()
+    || (u ? (u.grade+'학년 '+u.subjectKo+' '+u.unitNo+'단원 「'+u.name+'」 퀴즈') : '케이퀴즈');
+  let url = '/kedu/quiz/index.html?lesson='+encodeURIComponent(lesson)+'&n='+n;
+  const config = { lesson, n, seedMode };
+  if(seedMode==='fixed'){ const seed=Math.floor(Math.random()*1e9); url += '&seed='+seed; config.seed=seed; }
+  draft.items.push({ id:null, kind:'quiz', name, url, config });
   cancelAdd(); renderItems();
 }
 function renderItems(){
@@ -491,8 +560,10 @@ function renderItems(){
   document.getElementById('item-count').textContent = (draft.items.length) + '개';
   if(draft.items.length===0){ wrap.innerHTML = `<div class="items-empty">위에서 콘텐츠 종류를 눌러 하나씩 담아보세요 📥</div>`; return; }
   wrap.innerHTML = draft.items.map((it,idx)=>{
-    const k = KINDS[it.kind];
-    const meta = it.url ? it.url : k.hint;
+    const k = KINDS[it.kind] || KINDS.link;
+    const meta = (it.kind==='quiz' && it.config && it.config.n)
+      ? ('문제 '+it.config.n+'개 · '+(it.config.seedMode==='fixed'?'전원 동일':'학생마다 다르게'))
+      : (it.url ? it.url : k.hint);
     return `<div class="item">
       <div class="dot" style="background:${k.hex}">${k.i}</div>
       <div class="item-body"><div class="item-name">${esc(it.name)}</div><div class="item-meta">${k.n} · ${esc(meta)}</div></div>
@@ -535,7 +606,7 @@ async function saveBundle(mode){
 
     await db.from('cw_items').delete().eq('bundle_id', bundleId);
     if(draft.items.length){
-      const rows = draft.items.map((it,i)=>({ bundle_id:bundleId, kind:it.kind, title:it.name, url:it.url||'', sort_order:i }));
+      const rows = draft.items.map((it,i)=>({ bundle_id:bundleId, kind:it.kind, title:it.name, url:it.url||'', sort_order:i, config: it.config||{} }));
       const { error } = await db.from('cw_items').insert(rows);
       if(error) throw error;
     }

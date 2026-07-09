@@ -23,6 +23,9 @@
   <div class="kq-top"><b>🧩 케이퀴즈</b></div>
   <div class="kq-page"><div id="mount"><div class="kq-load">문제를 준비하고 있어요…</div></div></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/kedu_config.js"></script>
+  <script src="/kedu_kbox_adapter.js"></script>
   <script src="./kquiz-core.js"></script>
   <script src="./kquiz-ui.js"></script>
   <script>
@@ -53,8 +56,14 @@
       // 단원 파일이 UMD factory를 export하는 경우(node용)와 browser 자동등록 모두 대응
       if(!KQuiz.core.has(lesson)){ fail('아직 준비 중인 문제예요. (<code>'+lesson+'</code>)'); return; }
       var submit = null;
-      if(cwb && cwi && window.KBoxAdapter){  // 어댑터 있으면 제출 배선(KBOX2)
-        submit = function(payload){ return window.KBoxAdapter.submitQuiz(cwb, cwi, payload); };
+      if(window.KBox && window.KBox.active){  // 케이박스 딥링크(cwb/cwi)로 열렸을 때만 제출 배선
+        submit = function(p){                 // p = {set,seed,n,score,max,spent_sec,items} (mount가 조립)
+          return window.KBox.submit({
+            tool:'quiz', kind:'auto',
+            score:p.score, max:p.max,
+            detail:{ set:p.set, seed:p.seed, n:p.n, items:p.items }
+          });
+        };
       }
       KQuiz.mount(mount, {
         mode:'student', lesson:lesson, n:n,
