@@ -159,8 +159,9 @@ const GEN_KINDS = [
   { k: 'poster',    ico: '🎨', n: '포스터',   w: 794,  h: 1123, aud: 'student' },
 ];
 let lastGen = null;
-function renderGenGrid() {
-  const g = document.getElementById('genGrid'); if (!g || !window.KM_GEN) return;
+function renderGenGrid(tries) {
+  const g = document.getElementById('genGrid'); if (!g) return;
+  if (!window.KM_GEN) { if ((tries || 0) < 60) setTimeout(() => renderGenGrid((tries || 0) + 1), 50); return; }
   g.innerHTML = GEN_KINDS.map(s =>
     `<button class="gen-card" data-k="${s.k}"><div class="gi">${s.ico}</div><div class="gn">${s.n}</div></button>`).join('');
   g.querySelectorAll('.gen-card').forEach(c => c.onclick = () => generateTemplate(c.dataset.k));
