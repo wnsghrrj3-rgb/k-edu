@@ -330,6 +330,26 @@
     })();
   };
 
+  // 다중 후보 지오코딩(동명 구분용 — place 여러 개 + 주소 동반, 사용자가 진짜 우리 학교 선택)
+  N.geocodeMany = function (query, done, size) {
+    if (!query) { done(null, []); return; }
+    var url = 'https://api.vworld.kr/req/search?service=search&request=search&version=2.0'
+      + '&crs=EPSG:4326&size=' + (size || 8) + '&page=1&type=place'
+      + '&query=' + encodeURIComponent(query) + '&format=json&errorformat=json&key=' + KEY;
+    N._jsonp(url, function (err, d) {
+      if (err) { done(err, []); return; }
+      var r = d && d.response, items = (r && r.result && r.result.items) || [], out = [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i]; if (!it.point) continue;
+        var addr = '';
+        if (it.address) { addr = it.address.road || it.address.parcel || it.address.bldnm || ''; if (typeof it.address === 'string') addr = it.address; }
+        var lat = parseFloat(it.point.y), lng = parseFloat(it.point.x);
+        if (isFinite(lat) && isFinite(lng)) out.push({ name: it.title || query, addr: addr, lat: lat, lng: lng });
+      }
+      done(null, out);
+    });
+  };
+
   // 카테고리 POI 검색(캐시 → 브이월드 place → 정규화 + 반경 필터)
   N.poiSearch = function (catId, center, radiusM, done) {
     var cat = CAT_BY[catId]; if (!cat) { done(new Error('unknown cat'), []); return; }

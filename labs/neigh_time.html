@@ -52,6 +52,14 @@
     border-radius:10px;padding:10px 12px;font-size:15px;font-family:inherit;min-width:0}
   .home .go{background:var(--soc);border:0;color:#fff;border-radius:10px;padding:0 16px;font-size:14px;cursor:pointer;font-family:inherit}
   .home .hint{font-size:12px;color:var(--sub)}
+  .cands{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+  .cwait{font-size:13px;color:var(--sub);padding:6px 2px}
+  .cand{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;
+    background:var(--bg1);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;font-family:inherit}
+  .cand:hover{border-color:var(--soc);background:#20233a}
+  .cand b{font-size:14px;color:#fff}
+  .cand span{font-size:12px;color:var(--sub)}
+  .cand.alt{border-style:dashed;margin-top:4px}
   /* 실서비스 버튼 */
   .svc{display:flex;flex-direction:column;gap:10px;margin-top:14px}
   .svc a{display:flex;align-items:center;gap:12px;text-decoration:none;background:var(--bg1);
@@ -172,6 +180,7 @@
   <div class="toast" id="toast"></div>
 </div>
 
+<script src="neigh_core.js"></script>
 <script src="neigh_timepack.js"></script>
 <script id="neigh-time-logic">
 (function () {
@@ -211,22 +220,54 @@
 
   function renderHome() {
     var c = $('#homeCard');
-    if (S.home && S.home.name) {
-      c.innerHTML = '<div class="cur"><span class="star">⭐</span><span>우리 학교: <b>' + S.home.name + '</b></span>' +
+    if (S.home && S.home.name && TP.validCoord(S.home.lat, S.home.lng)) {
+      c.innerHTML = '<div class="cur"><span class="star">⭐</span><span>우리 학교: <b>' + S.home.name + '</b>' +
+        (S.home.addr ? '<br><span class="hint">' + S.home.addr + '</span>' : '') + '</span>' +
         '<button class="change" id="chg">바꾸기</button></div>';
-      $('#chg').onclick = function () { S.home = null; renderHome(); syncSvc(); };
+      $('#chg').onclick = clearHome;
+    } else if (S.home && S.home.name) {
+      c.innerHTML = '<div class="cur"><span class="star">📍</span><span>우리 학교: <b>' + S.home.name + '</b>' +
+        '<br><span class="hint" style="color:var(--warn)">이름으로 검색 중 — 다른 곳이 뜨면 바꿔서 다시 골라요</span></span>' +
+        '<button class="change" id="chg">바꾸기</button></div>';
+      $('#chg').onclick = clearHome;
     } else {
-      c.innerHTML = '<div class="ask"><p>먼저 <b>우리 학교</b>를 알려주세요.</p>' +
-        '<div class="inrow"><input id="homeIn" placeholder="예: 금성초등학교" /><button class="go" id="homeGo">설정</button></div>' +
-        '<span class="hint">이름만 넣으면 카카오맵이 찾아줘요. (탐사대에서 정한 학교가 있으면 자동으로 이어져요)</span></div>';
-      var setIt = function () {
-        var v = ($('#homeIn').value || '').trim();
-        if (!v) { toast('학교 이름을 넣어줘요'); return; }
-        S.home = { name: v }; saveHome(S.home); sound('success'); renderHome(); syncSvc();
-      };
-      $('#homeGo').onclick = setIt;
-      $('#homeIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') setIt(); });
+      c.innerHTML = '<div class="ask"><p>먼저 <b>우리 학교</b>를 검색해 정확히 골라요.</p>' +
+        '<div class="inrow"><input id="homeIn" placeholder="예: 금성초등학교" value="' + ((S.home && S.home.name) || '') + '" /><button class="go" id="homeGo">찾기</button></div>' +
+        '<div class="cands" id="cands"></div>' +
+        '<span class="hint">같은 이름 학교가 여럿이라 <b>주소로 우리 학교를 골라야</b> 정확히 열려요. (탐사대에서 정한 학교가 있으면 자동으로 이어져요)</span></div>';
+      $('#homeGo').onclick = doSearch;
+      $('#homeIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
     }
+  }
+  function clearHome() { S.home = null; renderHome(); syncSvc(); }
+
+  function doSearch() {
+    var v = ($('#homeIn').value || '').trim();
+    if (!v) { toast('학교 이름을 넣어줘요'); return; }
+    var box = $('#cands'); box.innerHTML = '<div class="cwait">🔍 찾는 중…</div>';
+    sound('tap');
+    if (!(window.Neigh && window.Neigh.geocodeMany)) { fallbackName(v); return; }
+    window.Neigh.geocodeMany(v, function (err, list) {
+      if (err || !list || !list.length) { fallbackName(v); return; }
+      var h = '';
+      list.forEach(function (it, i) {
+        h += '<button class="cand" data-i="' + i + '"><b>' + it.name + '</b><span>' + (it.addr || '주소 정보 없음') + '</span></button>';
+      });
+      box.innerHTML = h;
+      box.querySelectorAll('.cand').forEach(function (btn) {
+        btn.onclick = function () {
+          var it = list[+btn.dataset.i];
+          S.home = { name: it.name, addr: it.addr, lat: it.lat, lng: it.lng };
+          saveHome(S.home); sound('success'); renderHome(); syncSvc();
+        };
+      });
+    });
+  }
+  // 검색 실패/코어 없음 → 이름만으로 진행(카카오 검색 링크, 정확도 낮음 안내)
+  function fallbackName(v) {
+    var box = $('#cands');
+    box.innerHTML = '<div class="cwait">검색 결과가 없어요. <button class="cand alt" id="justName"><b>"' + v + '" 이름으로 그냥 열기</b><span>카카오맵 검색으로 — 동명이 있으면 다른 곳이 뜰 수 있어요</span></button></div>';
+    $('#justName').onclick = function () { S.home = { name: v }; saveHome(S.home); sound('tap'); renderHome(); syncSvc(); };
   }
 
   function syncSvc() {
