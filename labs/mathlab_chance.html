@@ -21,6 +21,26 @@
   #brand .k{color:var(--bell)}
   #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
     text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #board{position:fixed;inset:0;display:block;touch-action:none}
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:7px;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px;backdrop-filter:blur(8px);
+    box-shadow:0 14px 40px rgba(0,0,0,.45);max-width:94vw;flex-wrap:wrap;justify-content:center}
+  #ctl button{font-family:'Jua';font-size:14px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.14s}
+  #ctl button:active{transform:scale(.93)}
+  #ctl button.pour{background:var(--ball);color:#3a2c00;border-color:var(--ball)}
+  #ctl button.on{background:var(--bell);color:#0a0c18;border-color:var(--bell)}
+  #hud{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:19;font-size:13px;color:var(--sub);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 15px;backdrop-filter:blur(6px);
+    display:flex;gap:12px;align-items:center;white-space:nowrap}
+  #hud b{font-family:'Jua';color:var(--ink)}
+  #hud .bell{color:var(--bell)}
+  #tip{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:18;font-size:13.5px;color:var(--ink);
+    background:rgba(14,16,30,.78);border:1px solid var(--line);border-radius:12px;padding:8px 15px;
+    pointer-events:none;transition:opacity .3s;text-align:center;max-width:88vw}
+  #tip.hide{opacity:0}
+  #sound{position:fixed;top:14px;right:96px;z-index:20;font-size:15px;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;width:38px;height:33px;cursor:pointer;color:var(--ink);line-height:1}
 </style>
 </head>
 <body>
@@ -28,6 +48,16 @@
 <div id="stage"></div>
 <div id="brand"><span class="k">케이</span>랩 수학실 · 운명의 방</div>
 <a id="back" href="../hub/klab.html">← 케이랩</a>
+<button id="sound" title="소리">🔊</button>
+<div id="hud">쌓인 구슬 <b id="hTotal">0</b><span>산꼭대기 칸 <b id="hMode">–</b></span><span class="bell" id="hLens" style="display:none">🔔 종 곡선</span></div>
+<div id="tip">구슬을 떨어뜨려 봐요. 한 알은 어디로 갈지 아무도 몰라요.</div>
+<div id="ctl">
+  <button id="bOne">💧 구슬 하나</button>
+  <button id="bPour" class="pour">🌊 구슬 폭포</button>
+  <button id="bPred">✏️ 예상 그리기</button>
+  <button id="bLens">🔔 종 곡선</button>
+  <button id="bReset">↺</button>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KGalton 갈톤 보드 모델 (MATHLAB 설계 §운명의 방). THREE·DOM 참조 0.
@@ -174,5 +204,278 @@
   };
 });
 </script>
+<!-- ═══ P2 렌더 어댑터 — 2D canvas 구슬 폭포. KGalton 조회만(물리 0줄). ═══ -->
+<script>
+(function(){
+  'use strict';
+  var K = window.KGalton;
+  var C = { ink:'#eef0ff', sub:'#9aa0c8', ball:'#ffd166', ball2:'#f59e2c',
+            bell:'#7c8cff', pin:'#565f9c', pred:'#ffd166', line:'rgba(255,255,255,.10)' };
+
+  var stage = document.getElementById('stage');
+  var cv = document.createElement('canvas'); cv.id = 'board'; stage.appendChild(cv);
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+
+  // ── 상태 ──
+  var rows = K.ROWS_DEFAULT;
+  var bins = new Array(rows + 1).fill(0);
+  var rng = K.mulberry32((Date.now() >>> 0) || 1);
+  var active = [], queue = 0, total = 0;
+  var lensOn = false, pred = null, predicting = false, soundOn = true, pourDone = false;
+  var looping = false, geo = {};
+  var STEP_FR = 5, EMIT = 8, CAP = 60;
+
+  // ── 레이아웃 ──
+  function layout(){
+    var pad = Math.max(18, Math.min(W, H) * 0.055);
+    var topBand = 92, botBand = 96;
+    geo.left = pad; geo.right = W - pad; geo.cx = W / 2;
+    geo.boardTop = topBand;
+    geo.binBase = H - botBand;
+    geo.stackH = Math.min(H * 0.32, 250);
+    geo.binTop = geo.binBase - geo.stackH;
+    geo.boardBot = geo.binTop - 14;
+    geo.rowGap = (geo.boardBot - geo.boardTop) / (rows + 1);
+    geo.binW = (geo.right - geo.left) / (rows + 1);
+    geo.pinGap = geo.binW;
+    geo.funnelY = topBand - 26;
+  }
+  function binX(k){ return geo.left + (k + 0.5) * geo.binW; }
+  function pinRowY(r){ return geo.boardTop + (r + 0.5) * geo.rowGap; }
+  function xToBin(px){ return K.clamp(Math.floor((px - geo.left) / geo.binW), 0, rows); }
+
+  function maxShown(){
+    var mb = 0; for (var k = 0; k < bins.length; k++) if (bins[k] > mb) mb = bins[k];
+    var peak = total > 0 ? K.normalPdf(K.mean(rows), K.mean(rows), K.stddev(rows)) * total : 0;
+    return Math.max(8, mb * 1.08, peak * 1.05);
+  }
+  function stackPx(k){ return (bins[k] / maxShown()) * geo.stackH; }
+
+  // ── 구슬 방출·낙하(웨이포인트 보간) ──
+  function spawn(){
+    var d = K.dropOne(rng, rows), wp = [{ x: geo.cx, y: geo.funnelY }], x = geo.cx;
+    for (var r = 0; r < rows; r++){ x += (d.path[r] === 'R' ? 1 : -1) * geo.pinGap * 0.5; wp.push({ x: x, y: pinRowY(r) }); }
+    wp.push({ x: binX(d.bin), y: geo.binBase - stackPx(d.bin) - 5 });
+    active.push({ wp: wp, seg: 0, t: 0, bin: d.bin, x: geo.cx, y: geo.funnelY });
+  }
+  function advance(b){
+    if (b.seg >= b.wp.length - 1) return true;
+    b.t += 1 / STEP_FR;
+    var a = b.wp[b.seg], c = b.wp[b.seg + 1], e = b.t > 1 ? 1 : b.t, ey = e * e * (3 - 2 * e);
+    b.x = a.x + (c.x - a.x) * e; b.y = a.y + (c.y - a.y) * ey;
+    if (b.t >= 1){ b.seg++; b.t = 0; if (b.seg < b.wp.length - 1) tick(); }
+    return b.seg >= b.wp.length - 1;
+  }
+
+  // ── 렌더 ──
+  function draw(){
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+    drawPins(); drawStacks(); if (lensOn) drawBell(); if (pred) drawPred(); drawActive();
+  }
+  function drawPins(){
+    ctx.fillStyle = C.pin;
+    for (var r = 0; r < rows; r++){
+      var y = pinRowY(r);
+      for (var i = 0; i <= r; i++){
+        var x = geo.cx + (i - r / 2) * geo.pinGap;
+        ctx.beginPath(); ctx.arc(x, y, 2.4, 0, 6.2832); ctx.fill();
+      }
+    }
+    // 투입구
+    ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(geo.cx - 22, geo.funnelY); ctx.lineTo(geo.cx, geo.boardTop - 6);
+    ctx.lineTo(geo.cx + 22, geo.funnelY); ctx.stroke();
+  }
+  function drawStacks(){
+    for (var k = 0; k <= rows; k++){
+      var h = stackPx(k); if (h < 0.5) continue;
+      var x = binX(k) - geo.binW * 0.42, w = geo.binW * 0.84, y = geo.binBase - h;
+      var g = ctx.createLinearGradient(0, y, 0, geo.binBase);
+      g.addColorStop(0, C.ball); g.addColorStop(1, C.ball2);
+      ctx.fillStyle = g;
+      roundRect(x, y, w, h, Math.min(6, w / 2)); ctx.fill();
+    }
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(geo.left, geo.binBase + 0.5); ctx.lineTo(geo.right, geo.binBase + 0.5); ctx.stroke();
+  }
+  function drawActive(){
+    for (var i = 0; i < active.length; i++){
+      var b = active[i], rr = geo.binW * 0.26;
+      var g = ctx.createRadialGradient(b.x - rr * 0.3, b.y - rr * 0.3, rr * 0.2, b.x, b.y, rr);
+      g.addColorStop(0, '#fff4cf'); g.addColorStop(1, C.ball2);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, rr, 0, 6.2832); ctx.fill();
+    }
+  }
+  function drawBell(){
+    if (total < 1) return;
+    var pts = K.bellCurve(rows, total, rows * 12), mx = maxShown();
+    ctx.save(); ctx.strokeStyle = C.bell; ctx.lineWidth = 3; ctx.shadowColor = C.bell; ctx.shadowBlur = 12;
+    ctx.beginPath();
+    for (var i = 0; i < pts.length; i++){
+      var X = geo.left + (pts[i].x + 0.5) * geo.binW, Y = geo.binBase - (pts[i].y / mx) * geo.stackH;
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  function drawPred(){
+    ctx.save(); ctx.strokeStyle = C.pred; ctx.lineWidth = 2.5; ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    for (var k = 0; k <= rows; k++){
+      var X = binX(k), Y = geo.binBase - (pred[k] || 0) * geo.stackH;
+      if (k === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+  }
+
+  // ── 루프 ──
+  function frame(){
+    looping = true;
+    var room = CAP - active.length, emit = Math.max(0, Math.min(queue, room, EMIT));
+    for (var e = 0; e < emit; e++){ spawn(); queue--; }
+    for (var i = active.length - 1; i >= 0; i--){
+      if (advance(active[i])){ var b = active[i]; bins[b.bin]++; total++; active.splice(i, 1); }
+    }
+    draw(); updHud();
+    if (queue > 0 || active.length > 0){ raf(frame); }
+    else { looping = false; onIdle(); }
+  }
+  function raf(fn){ (window.requestAnimationFrame || function(f){ return setTimeout(f, 16); })(fn); }
+  function ensureLoop(){ if (!looping) raf(frame); }
+  function onIdle(){
+    if (total > 0 && !pourDone && queue === 0){ pourDone = true; if (total >= K.POUR_SMALL) chime(); }
+    updHud();
+  }
+
+  // ── HUD ──
+  function updHud(){
+    var st = K.histStats(bins);
+    setTxt('hTotal', total);
+    setTxt('hMode', total ? (st.mode + 1) + '번 칸' : '–');
+    var hl = document.getElementById('hLens'); if (hl) hl.style.display = lensOn ? '' : 'none';
+  }
+  function setTxt(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
+  function tip(t){ var el = document.getElementById('tip'); if (el){ el.textContent = t; el.classList.remove('hide'); } }
+
+  // ── 사운드(WebAudio 미니 신스) ──
+  var actx = null, master = null, lastTick = 0;
+  function ensureAudio(){
+    if (actx) return;
+    try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      actx = new AC(); master = actx.createGain(); master.gain.value = 0.16; master.connect(actx.destination);
+    } catch (e){ actx = null; }
+  }
+  function tick(){
+    if (!soundOn || !actx) return;
+    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+    if (now - lastTick < 38) return; lastTick = now;
+    var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = 'triangle'; o.frequency.value = 430 + Math.random() * 200;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.1);
+  }
+  function chime(){
+    if (!soundOn || !actx) return;
+    [523, 659, 784, 1047].forEach(function(f, i){
+      var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.07;
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.55);
+    });
+  }
+
+  // ── 조작 API ──
+  function reset(){
+    bins = new Array(rows + 1).fill(0); active = []; queue = 0; total = 0; pourDone = false;
+    rng = K.mulberry32((Date.now() >>> 0) || 1); draw(); updHud();
+    tip('구슬을 떨어뜨려 봐요. 한 알은 어디로 갈지 아무도 몰라요.');
+  }
+  function pourOne(){ ensureAudio(); predicting = false; syncBtns(); queue += 1; ensureLoop(); }
+  function pourMany(n, instant){
+    ensureAudio(); predicting = false; syncBtns();
+    n = n || K.POUR_BIG;
+    if (instant){ var add = K.dropMany(rng, rows, n); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += n; pourDone = true; draw(); updHud(); return; }
+    tip('구슬 폭포! 아주 많이 부으면 어떤 모양이 될까요?');
+    queue += n; pourDone = false; ensureLoop();
+  }
+  function toggleLens(){ lensOn = !lensOn; syncBtns(); draw(); updHud(); }
+  function togglePredict(){
+    predicting = !predicting;
+    if (predicting){ if (!pred) pred = new Array(rows + 1).fill(0); tip('칸 위를 쓸어 예상 산 모양을 그려요. 다 그리면 폭포를 부어 확인!'); }
+    else tip('예상을 그렸어요. 🌊 구슬 폭포로 확인해 봐요!');
+    syncBtns(); draw();
+  }
+  function setPrediction(arr){ pred = arr ? arr.slice(0, rows + 1) : null; draw(); }
+  function setRows(r){ rows = K.clamp(r | 0, K.ROWS_MIN, K.ROWS_MAX); reset(); layout(); draw(); }
+  function settleAll(){ if (queue > 0){ var add = K.dropMany(rng, rows, queue); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += queue; queue = 0; } active = []; draw(); updHud(); }
+
+  // ── 입력(예측 그리기) ──
+  function onPointer(ev){
+    if (!predicting) return;
+    var rect = cv.getBoundingClientRect();
+    var px = (ev.clientX != null ? ev.clientX : (ev.touches && ev.touches[0].clientX)) - rect.left;
+    var py = (ev.clientY != null ? ev.clientY : (ev.touches && ev.touches[0].clientY)) - rect.top;
+    if (px == null || py == null) return;
+    var k = xToBin(px);
+    var hgt = K.clamp((geo.binBase - py) / geo.stackH, 0, 1);
+    if (!pred) pred = new Array(rows + 1).fill(0);
+    pred[k] = hgt; draw();
+  }
+
+  // ── 버튼 배선 ──
+  function syncBtns(){
+    tog('bLens', lensOn); tog('bPred', predicting);
+  }
+  function tog(id, on){ var b = document.getElementById(id); if (b) b.classList[on ? 'add' : 'remove']('on'); }
+  function bind(){
+    on('bOne', function(){ pourOne(); });
+    on('bPour', function(){ pourMany(K.POUR_BIG); });
+    on('bPred', function(){ ensureAudio(); togglePredict(); });
+    on('bLens', function(){ toggleLens(); });
+    on('bReset', function(){ reset(); });
+    on('sound', function(){ soundOn = !soundOn; var s = document.getElementById('sound'); if (s) s.textContent = soundOn ? '🔊' : '🔇'; });
+    var down = false;
+    cv.addEventListener('pointerdown', function(e){ down = true; onPointer(e); });
+    cv.addEventListener('pointermove', function(e){ if (down) onPointer(e); });
+    window.addEventListener('pointerup', function(){ down = false; });
+  }
+  function on(id, fn){ var el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
+
+  // ── 초기화 ──
+  function onResize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth || 1024; H = window.innerHeight || 768;
+    cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    if (ctx && ctx.setTransform) ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    layout(); draw();
+  }
+  function init(){
+    onResize(); window.addEventListener('resize', onResize); bind(); updHud();
+    var l = document.getElementById('loading'); if (l) l.classList.add('hide');
+    // 딥링크(P3에서 확장): ?rows=
+    try { var q = new URLSearchParams(location.search); if (q.get('rows')) setRows(parseInt(q.get('rows'), 10)); } catch (e){}
+    draw();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+
+  // ── 훅(스모크·P3용) ──
+  window.__CHANCE_P2__ = {
+    get bins(){ return bins.slice(); }, get total(){ return total; }, get rows(){ return rows; },
+    get lensOn(){ return lensOn; }, get pred(){ return pred ? pred.slice() : null; }, get predicting(){ return predicting; },
+    K: K, reset: reset, pourOne: pourOne, pourMany: pourMany, settleAll: settleAll,
+    toggleLens: toggleLens, togglePredict: togglePredict, setPrediction: setPrediction, setRows: setRows
+  };
+})();
+</script>
 </body>
+
 </html>
