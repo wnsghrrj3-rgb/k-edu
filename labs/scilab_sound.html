@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>소리 실험실 · 케이랩</title>
+<!-- P1 = 소리 물리 순수 로직만(렌더 0줄). P2에서 황금 샘플 head(importmap·three185)·module 렌더 +
+     발음 어댑터(WebAudio)·진동 3D·파형 렌즈 증축. 순수 로직엔 AudioContext 참조 0(§4·§6-⑮). -->
+<style>
+  :root{ --ink:#e8f4f0; --sub:#8fb0a6; --panel:rgba(12,20,18,.82); --line:rgba(255,255,255,.1);
+         --wave:#2DD4A0; --hi:#ffd166; --vac:#7aa0ff; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0a1210;color:var(--ink);
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #stage{position:fixed;inset:0}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#0a1210;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+</style>
+</head>
+<body>
+<div id="loading">소리 실험실 준비 중…</div>
+<div id="stage"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     순수 로직 — KSound 소리 모델 (SPEC_SOUND §2). THREE·DOM·AudioContext 참조 0.
+     strike(src,opts): 음원을 쳤을 때의 {freq,amp,waveType,env,heardAmp} 산출.
+     waveSample(freq,amp,waveType,n): 파형 렌즈·테스트가 읽는 진실(정규화 −1~1).
+     envelope(t,τ): 발음·시각 공용 감쇠. 발음(WebAudio)은 P2 어댑터가 이 파라미터를 물릴 뿐.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script id="sound-pure">
+(function (root, factory) {
+  const API = factory();
+  if (typeof window !== 'undefined') window.KSound = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})(this, function () {
+  'use strict';
+
+  /* ── 확정 상수 (§2) ── */
+  const GUITAR_BASE = 165;      // 기준 주파수(Hz) — L0에서
+  const GUITAR_L0   = 0.6;      // 기준 줄 길이(m)
+  const GUITAR_FRETS = [0.60, 0.42, 0.30, 0.21, 0.15]; // 5칸 길이 → freq 165~660(단조↑)
+  const WAVE_WINDOW = 0.02;     // 파형 렌즈 시간창(s) — 440Hz면 8.8주기
+  const DRUM_VIS_TAU = 0.006;   // 타악 파형 창 내 감쇠(시각 대리, 실 엔벨로프 τ와 별개)
+  const ATTACK      = 0.01;     // 엔벨로프 상승 시간(s)
+  const MASTER_VOL_MAX = 0.3;   // 마스터 볼륨 상한(전자칠판 스피커 보호, §4)
+  const MAX_VOICES  = 4;        // 동시 발음 상한(§4)
+  const N2_FREQ_GOAL = 400;     // N-2 "높은 소리" 판정 주파수(Hz)
+
+  // 음원 3종 (§2 표). guitar는 freq를 줄 길이(fret)로 결정.
+  const SOURCES = {
+    tuning: { name: '소리굽쇠', icon: '🔔', freq: 440, waveType: 'sine',     tau: 1.8 },
+    drum:   { name: '북',       icon: '🥁', freq: 90,  waveType: 'drum',     tau: 0.6 },
+    guitar: { name: '기타',     icon: '🎸', freq: null, waveType: 'sawtooth', tau: 1.2 },
+  };
+
+  /* ── 공용 순수 헬퍼 ── */
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  /* ── 줄 길이 ↔ 주파수 (§2 · freq = BASE·L0/L, 짧을수록 높음) ── */
+  function freqFromLength(L) { return GUITAR_BASE * GUITAR_L0 / L; }     // L 절반 → freq 2배
+  function guitarLength(fret) { return GUITAR_FRETS[clamp(fret | 0, 0, 4)]; }
+  function guitarFreq(fret)  { return freqFromLength(guitarLength(fret)); }
+
+  /* ── 엔벨로프 (§2 · attack 상승 + 지수 감쇠) ──
+     t<attack: 선형 상승 / t≥attack: e^(−t/τ)  →  t=τ 에서 e⁻¹≈0.37 (§6-⑤). */
+  function envelope(t, tau, attack) {
+    attack = (attack == null) ? ATTACK : attack;
+    if (t <= 0) return 0;
+    if (t < attack) return t / attack;
+    return Math.exp(-t / tau);
+  }
+
+  /* ── 파형 샘플 (§2·§3 · 파형 렌즈·테스트 공용 진실, 정규화 −1~1) ──
+     WAVE_WINDOW 고정 시간창에 n점. sine=매끈 / sawtooth=톱니 뾰족(불연속) / drum=감쇠 타악.
+     amp를 곱해 y스케일이 진폭에 비례(§6-⑧). 주파수↑ → 주기 촘촘 → 제로크로싱↑(§6-⑨). */
+  function waveSample(freq, amp, waveType, n) {
+    n = n | 0; if (n < 2) n = 2;
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const tau = (i / (n - 1)) * WAVE_WINDOW;    // 0 .. WAVE_WINDOW
+      const ph  = freq * tau;                      // 위상(주기 수)
+      let v;
+      if (waveType === 'sine') {
+        v = Math.sin(2 * Math.PI * ph);
+      } else if (waveType === 'sawtooth') {
+        v = 2 * (ph - Math.floor(ph + 0.5));       // −1..1 톱니(주기 경계 불연속)
+      } else if (waveType === 'drum') {
+        const dec = Math.exp(-tau / DRUM_VIS_TAU); // 창 내 빠른 감쇠(시각 대리)
+        v = (Math.sin(2 * Math.PI * ph) + 0.5 * Math.sin(2 * Math.PI * ph * 2)) * dec;
+      } else {
+        v = Math.sin(2 * Math.PI * ph);
+      }
+      out[i] = clamp(amp * v, -1, 1);
+    }
+    return out;
+  }
+
+  /* ── 파형 제로크로싱 수 (테스트·렌즈 공용 · 주파수↔파장 촘촘 지표) ── */
+  function zeroCrossings(samples) {
+    let c = 0;
+    for (let i = 1; i < samples.length; i++) {
+      if ((samples[i - 1] <= 0 && samples[i] > 0) ||
+          (samples[i - 1] >= 0 && samples[i] < 0)) c++;
+    }
+    return c;
+  }
+
+  /* ── 음원 치기/뜯기 → 소리 모델 (§2 핵심) ──
+     opts = { hitStrength 0~1, t(경과초), medium(air 1 / vacuum 0), fret(기타 0~4) }
+     반환 = { source, freq, waveType, tau, env, amp, heardAmp, medium }
+     amp = hitStrength·env  (진동=시각) / heardAmp = amp·medium  (소리=청각, 매질 게이트 §2). */
+  function strike(srcId, opts) {
+    opts = opts || {};
+    const src = SOURCES[srcId] || SOURCES.tuning;
+    const hitStrength = (opts.hitStrength == null) ? 1 : clamp(opts.hitStrength, 0, 1);
+    const t      = (opts.t == null) ? ATTACK : opts.t;          // 기본 = 피크(치는 순간)
+    const medium = (opts.medium == null) ? 1 : clamp(opts.medium, 0, 1);
+    const freq   = (srcId === 'guitar') ? guitarFreq(opts.fret == null ? 2 : opts.fret) : src.freq;
+    const env    = envelope(t, src.tau);
+    const amp    = clamp(hitStrength * env, 0, 1);
+    const heardAmp = amp * medium;
+    return { source: srcId, freq: freq, waveType: src.waveType, tau: src.tau,
+             env: env, amp: amp, heardAmp: heardAmp, medium: medium };
+  }
+
+  /* ── 발음 안전 헬퍼 (§4 · 순수 규칙만, 실제 노드 조작은 P2 어댑터) ── */
+  function clampVolume(v) { return clamp(v, 0, MASTER_VOL_MAX); }        // 마스터 상한 0.3
+  function canPlay(activeVoices) { return (activeVoices | 0) < MAX_VOICES; } // 동시 4 상한
+
+  /* ── 미션 (§5) ── */
+  const MISSIONS = [
+    { id: 'N-1', icon: '🔔', title: '소리를 내라', grade: 'low',
+      brief: '음원을 쳐서 소리를 내 보자.', hint: '소리굽쇠나 북을 톡!' },
+    { id: 'N-2', icon: '🎸', title: '높은 소리를 만들어라', grade: 'mid',
+      brief: '기타 줄을 짧게 짚어 높은 소리를 내자.', hint: '줄이 짧을수록 높아져요',
+      goalFreq: N2_FREQ_GOAL },
+    { id: 'N-3', icon: '🫙', title: '소리를 멈춰라', grade: 'high',
+      brief: '유리 종을 진공으로 만들어 소리만 사라뜨리자.', hint: '펌프로 공기를 빼 보세요' },
+  ];
+  const GRADE_MISSIONS = {
+    low:  ['N-1'],
+    mid:  ['N-1', 'N-2'],
+    high: ['N-1', 'N-2', 'N-3'],
+  };
+  function missionById(id) { return MISSIONS.find(function (m) { return m.id === id; }); }
+
+  // 판정 (순간 판정 — 상태 지속 아님)
+  function evalMission(id, model) {
+    if (!model) return false;
+    if (id === 'N-1') return model.heardAmp > 0.01;                       // 소리 남
+    if (id === 'N-2') return model.freq >= N2_FREQ_GOAL;                  // 높은 소리
+    if (id === 'N-3') return model.medium === 0 && model.heardAmp === 0;  // 진공→무음
+    return false;
+  }
+
+  /* ── ★와우 예측 (N-3 진공 종, §5) ── */
+  const WOW_VACUUM = {
+    at: 'N-3',
+    q: '종을 유리 안에 넣고 공기를 빼면?',
+    opts: ['소리 그대로', '종은 흔들리는데 소리가 사라진다'],
+    answer: 1,
+    explain: '소리는 공기(매질)가 없으면 전해지지 않아요. 종은 계속 떨리지만(진동) ' +
+             '전할 공기가 없어 소리는 사라지죠. — 그래서 우주는 조용합니다.',
+  };
+
+  return {
+    // 상수
+    SOURCES: SOURCES, GUITAR_FRETS: GUITAR_FRETS, GUITAR_BASE: GUITAR_BASE, GUITAR_L0: GUITAR_L0,
+    WAVE_WINDOW: WAVE_WINDOW, MASTER_VOL_MAX: MASTER_VOL_MAX, MAX_VOICES: MAX_VOICES,
+    N2_FREQ_GOAL: N2_FREQ_GOAL, ATTACK: ATTACK,
+    // 순수 함수
+    freqFromLength: freqFromLength, guitarLength: guitarLength, guitarFreq: guitarFreq,
+    envelope: envelope, waveSample: waveSample, zeroCrossings: zeroCrossings, strike: strike,
+    clampVolume: clampVolume, canPlay: canPlay, clamp: clamp,
+    // 미션
+    MISSIONS: MISSIONS, GRADE_MISSIONS: GRADE_MISSIONS, missionById: missionById,
+    evalMission: evalMission, WOW_VACUUM: WOW_VACUUM,
+  };
+});
+</script>
+</body>
+</html>
