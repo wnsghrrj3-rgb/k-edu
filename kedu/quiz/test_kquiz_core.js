@@ -16,6 +16,7 @@ require('./templates/g1_korean_u2.js')(KQuiz);
 require('./templates/g2_math_u1.js')(KQuiz);
 require('./templates/g2_math_u2.js')(KQuiz);
 require('./templates/g2_math_u3.js')(KQuiz);
+require('./templates/g2_math_u4.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
 
 var fails = 0, pass = 0;
@@ -41,6 +42,7 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g2_math_u2_l02','g2_math_u2_l03','g2_math_u2_l04','g2_math_u2_l08','g2_math_u2',
   'g2_math_u3_l02','g2_math_u3_l03','g2_math_u3_l04','g2_math_u3_l05','g2_math_u3_l06',
   'g2_math_u3_l07','g2_math_u3_l08','g2_math_u3_l09','g2_math_u3_l10','g2_math_u3_l11','g2_math_u3',
+  'g2_math_u4_l03','g2_math_u4_l04','g2_math_u4',
   'g2_math_u6_l02','g2_math_u6_l03','g2_math_u6_l04','g2_math_u6_l05',
   'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6'];
 
@@ -140,6 +142,12 @@ function expectChoice(q) {
     return P2_PROP[m[1]].sides;
   if ((m = q.match(/^「(삼각형|사각형|원)」의 꼭짓점은 몇 개/)))        // g2u2 꼭짓점 개수
     return P2_PROP[m[1]].vertices;
+  if ((m = q.match(/^1cm로 (\d+)번 잰 길이는 몇 cm/))) return +m[1];    // g2u4 cm 반복→길이
+  if ((m = q.match(/^「(\d+)cm」는 1cm로 몇 번/))) return +m[1];        // g2u4 길이→cm 횟수
+  if ((m = q.match(/^「(\d+)cm」와 「(\d+)cm」 중에서 (더 긴|더 짧은) 것은/))) { // g2u4 길이 비교
+    var la = +m[1], lb = +m[2];
+    return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
+  }
   if ((m = q.match(/^「(.+?)」와\(과\) 「(.+?)」 중에서 (.+?) 것은/))) { // u4 비교
     var d = U4_WORD2DIR[m[3]]; if (!d) return '__미등록어__';
     var attr = d[0], x = m[1], y = m[2];
@@ -220,6 +228,9 @@ function expectOx(q) {
   // g2u2 특징 OX(숫자 없음)
   var m2f = q.match(/「(삼각형|사각형|원)」은\(는\) (.+)$/);
   if (m2f) { var fk = P2_FEAT_P2K[m2f[2]]; if (fk) return P2_FEAT[m2f[1]][fk]; }
+  // g2u4 임의단위-횟수 개념 OX
+  var m4 = q.match(/같은 길이를 잴 때, 단위가 (작을수록|클수록) 잰 횟수가 (많습니다|적습니다)/);
+  if (m4) return m4[1] === '작을수록' ? (m4[2] === '많습니다') : (m4[2] === '적습니다');
   var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
   if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
