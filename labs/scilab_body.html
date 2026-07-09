@@ -56,6 +56,51 @@
   #hint.show{opacity:1}
   #ctxlost{position:fixed;inset:0;background:rgba(18,6,9,.94);color:#f2e9ec;display:none;flex-direction:column;
     align-items:center;justify-content:center;gap:16px;z-index:9999}
+  /* ── P3 시나리오 UI (해부 톤) ── */
+  #sBtn{position:fixed;top:12px;right:112px;z-index:35;padding:9px 15px;border:1px solid var(--line);
+    border-radius:14px;background:rgba(232,84,107,.16);color:var(--ink);font-family:'Jua';font-size:13px;cursor:pointer}
+  #sBtn:active{transform:scale(.96)}
+  #sBanner{position:fixed;top:82px;left:50%;transform:translateX(-50%);z-index:34;display:flex;align-items:center;gap:12px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 16px;max-width:min(92vw,460px);backdrop-filter:blur(8px)}
+  #sBanner.hide{display:none}
+  #sBanner.done{border-color:var(--o2);box-shadow:0 0 0 1px var(--o2)}
+  #sbIcon{font-size:26px}
+  #sbTitle{font-size:14.5px;font-weight:700;color:#fff;font-family:'Jua'}
+  #sbHint{font-size:11.5px;color:var(--sub);margin-top:2px}
+  #sbClose{margin-left:auto;background:none;border:0;color:var(--sub);font-size:18px;cursor:pointer}
+  #sHome,#sPredict{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:rgba(10,4,6,.76);backdrop-filter:blur(4px)}
+  #sHome.hide,#sPredict.hide{display:none}
+  .scard{background:#1a0c10;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:min(92vw,440px);width:100%;
+    box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  .scard h2{margin:0 0 6px;font-size:19px;text-align:center;font-family:'Jua';font-weight:400}
+  .scard .sub{text-align:center;color:var(--sub);font-size:12px;margin-bottom:16px}
+  .sItem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-bottom:10px;padding:12px 14px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;cursor:pointer;color:var(--ink);transition:.15s}
+  .sItem:hover{background:rgba(232,84,107,.14);border-color:var(--heart)}
+  .sItem.wow{border-color:rgba(255,209,102,.4)}
+  .sItem .si{font-size:26px}
+  .sItem b{font-family:'Jua';font-weight:400;font-size:14.5px}
+  .sItem small{display:block;color:var(--sub);font-size:11.5px;line-height:1.45;margin-top:2px}
+  #sFree{display:block;width:100%;margin-top:6px;padding:11px;border:1px dashed var(--line);border-radius:12px;
+    background:none;color:var(--sub);font-family:'Jua';font-size:13px;cursor:pointer}
+  #sPredict .scard{text-align:center}
+  #spQ{font-size:16px;font-family:'Jua';font-weight:400;margin-bottom:16px;line-height:1.4}
+  .spOpt{display:block;width:100%;margin-bottom:10px;padding:13px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(255,255,255,.05);color:var(--ink);font-size:13.5px;cursor:pointer;text-align:left;transition:.15s}
+  .spOpt:hover{background:rgba(255,255,255,.09)}
+  .spOpt.right{background:rgba(232,84,107,.9);border-color:var(--heart);color:#fff;font-weight:700}
+  .spOpt.wrong{background:rgba(120,120,130,.7);border-color:var(--line);color:#fff}
+  #spExplain{font-size:12.5px;color:var(--ink);line-height:1.65;text-align:left;margin:14px 2px 4px;
+    background:rgba(255,255,255,.04);border-radius:12px;padding:13px 15px}
+  #spExplain.hide{display:none}
+  #spGo{margin-top:14px;padding:11px 24px;border:0;border-radius:12px;background:var(--heart);color:#fff;
+    font-family:'Jua';font-size:14px;cursor:pointer}
+  #spGo.hide{display:none}
+  #effortSld.pulse input{box-shadow:0 0 0 3px rgba(255,209,102,.55);border-radius:4px}
+  #holdBtn.pulse{box-shadow:0 0 0 3px rgba(255,209,102,.55);animation:hpz 1.1s ease-in-out infinite}
+  @keyframes hpz{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  button.hide{display:none}
 </style>
 </head>
 <body>
@@ -91,7 +136,7 @@
 </div>
 
 <div id="hint"></div>
-<div id="note">P2 — 박동 심장 · 팽창 폐 · 혈류 · 산소 게이지</div>
+<div id="note">P3 — 시나리오 3종 · 달리기 ★와우(몸은 하나의 시스템)</div>
 
 <!--
   ═══════════════════════════════════════════════════════════════════
@@ -304,6 +349,7 @@ scene.add(bloodMesh);
 /* ═════════ 상태 ═════════ */
 let effort = 0, breathing = true, held = 0, curSpo2 = K.SPO2_NORMAL;
 let heartPhase = 0, lungPhase = 0, bloodU = 0;
+let startBloodU = 0;   // B-1 순환 완주 판정용(진입 시점 스냅샷)
 
 /* ═════════ 산소 게이지 렌즈 (Canvas2D) ═════════ */
 const lensEl = document.getElementById('lens');
@@ -407,6 +453,7 @@ function animate(){
   hist.push({ spo2:curSpo2, hr, rr }); if(hist.length>HIST_MAX) hist.shift();
   syncHud();
   if(!lensEl.classList.contains('hide')) drawGauge();
+  if(typeof checkScenario==='function') checkScenario();
   controls.update();
   renderer.render(scene, camera);
 }
@@ -428,5 +475,143 @@ window.__BODY_P2__ = {
   reset(){ effort=0; breathing=true; held=0; curSpo2=K.SPO2_NORMAL; sEffort.value=0; hist.length=0; syncHud(); },
   drawGauge, syncHud,
 };
-</script>
+
+/* ═════════ P3 시나리오 UI (§4 — 미션보다 "관찰 도구") ═════════ */
+const gradeScenarios = K.GRADE_SCENARIOS[grade] || K.GRADE_SCENARIOS.high;
+var activeScenario = null, scenarioCleared = false;   // var: animate() 내 checkScenario 초기 호출 TDZ 회피
+var wowAnswered = false;
+
+function bannerHint(msg){ const e=document.getElementById('sbHint'); if(e) e.textContent = msg; }
+
+function buildScenarioUI(){
+  const wrap=document.createElement('div');
+  wrap.innerHTML =
+    `<button id="sBtn">🫀 시나리오</button>
+     <div id="sBanner" class="hide"><span id="sbIcon"></span><div><div id="sbTitle"></div><div id="sbHint"></div></div><button id="sbClose">✕</button></div>
+     <div id="sHome" class="hide"><div class="scard"><h2>🫀 몸 관찰 시나리오</h2>
+       <div class="sub">심장·폐·혈관이 어떻게 하나로 이어져 일하는지 살펴봐요</div>
+       <div id="sList"></div><button id="sFree">자유 관찰</button></div></div>
+     <div id="sPredict" class="hide"><div class="scard">
+       <div id="spQ"></div><div id="spOpts"></div>
+       <div id="spExplain" class="hide"></div><button id="spGo" class="hide">직접 확인하기 →</button></div></div>`;
+  document.body.appendChild(wrap);
+  document.getElementById('sBtn').onclick = openHome;
+  document.getElementById('sbClose').onclick = exitScenario;
+  document.getElementById('sFree').onclick = ()=>{ closeAll(); exitScenario(); };
+  document.getElementById('spGo').onclick = ()=>{
+    document.getElementById('sPredict').classList.add('hide');
+    wowAnswered = true;
+    document.getElementById('effortSld').classList.add('pulse');
+    bannerHint('아래 «활동 강도»를 «달리기»까지 올려 보세요.');
+  };
+  const list=document.getElementById('sList');
+  gradeScenarios.forEach(id=>{
+    const s=K.scenarioById(id); if(!s) return;
+    const b=document.createElement('button');
+    b.className='sItem'+(s.wow?' wow':'');
+    b.innerHTML=`<span class="si">${s.icon}</span><span><b>${s.title}</b><small>${s.brief}</small></span>`;
+    b.onclick=()=>startScenario(id);
+    list.appendChild(b);
+  });
+}
+function openHome(){ closeAll(); document.getElementById('sHome').classList.remove('hide'); }
+function closeAll(){ ['sHome','sPredict'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+
+function clearPulse(){
+  document.getElementById('effortSld').classList.remove('pulse');
+  holdBtn.classList.remove('pulse');
+}
+
+function startScenario(id){
+  const s=K.scenarioById(id); if(!s) return;
+  activeScenario=id; scenarioCleared=false; wowAnswered=false;
+  closeAll(); clearPulse();
+  const bn=document.getElementById('sBanner'); bn.classList.remove('hide','done');
+  document.getElementById('sbIcon').textContent=s.icon;
+  document.getElementById('sbTitle').textContent=s.title;
+  document.getElementById('sbHint').textContent=s.hint;
+  if(id==='B-1'){
+    // 순환 관찰 — 휴식으로 되돌리고 혈류 1바퀴 완주를 지켜봄
+    effort=0; sEffort.value=0;
+    if(!breathing) holdBtn.click();
+    startBloodU=bloodU; syncHud();
+  } else if(id==='B-2'){
+    showWow();   // 예측 먼저 → 답 후 effort 슬라이더 pulse
+  } else if(id==='B-3'){
+    // 숨 참기 유도
+    if(!breathing) holdBtn.click();
+    holdBtn.classList.add('pulse');
+  }
+}
+function exitScenario(){
+  activeScenario=null; scenarioCleared=false;
+  closeAll(); clearPulse();
+  document.getElementById('sBanner').classList.add('hide');
+}
+
+/* ★와우 예측 (B-2) — WOW_EXERCISE */
+function showWow(){
+  const w=K.WOW_EXERCISE;
+  document.getElementById('spQ').textContent=w.q;
+  const opts=document.getElementById('spOpts'); opts.innerHTML='';
+  const exp=document.getElementById('spExplain'); exp.classList.add('hide');
+  const go=document.getElementById('spGo'); go.classList.add('hide');
+  w.opts.forEach((txt,i)=>{
+    const b=document.createElement('button'); b.className='spOpt'; b.textContent=txt;
+    b.onclick=()=>{
+      opts.querySelectorAll('.spOpt').forEach(o=>o.style.pointerEvents='none');
+      b.classList.add(i===w.answer?'right':'wrong');
+      if(i!==w.answer) opts.children[w.answer].classList.add('right');
+      exp.textContent=w.explain; exp.classList.remove('hide');
+      go.classList.remove('hide');
+    };
+    opts.appendChild(b);
+  });
+  document.getElementById('sPredict').classList.remove('hide');
+}
+
+/* 도달 판정(§4) — animate마다 호출(function 선언 = hoisted) */
+function checkScenario(){
+  if(!activeScenario || scenarioCleared) return;
+  let done=false, msg='';
+  if(activeScenario==='B-1'){
+    // 휴식 심박에서 혈류가 온몸을 한 바퀴 완주
+    if(effort<0.2 && (bloodU-startBloodU)>=1){
+      done=true; msg='🩸 피가 온몸을 한 바퀴 돌았어요! 심장은 쉬지 않고 뛰어요.';
+    }
+  } else if(activeScenario==='B-2'){
+    // 예측에 답한 뒤 활동 강도를 달리기까지 → 심박·호흡 동시 상승
+    if(wowAnswered && effort>=0.6){
+      done=true; msg='🏃 심장도 숨도 함께 빨라졌죠? 몸은 하나로 이어져 있어요!';
+    }
+  } else if(activeScenario==='B-3'){
+    // 숨을 참아 산소포화도가 위험선 아래로
+    if(!breathing && curSpo2<=90){
+      done=true; msg='🫧 산소가 이만큼 줄었어요. 이제 다시 숨을 쉬면 회복돼요!';
+    }
+  }
+  if(done){
+    scenarioCleared=true;
+    document.getElementById('sBanner').classList.add('done');
+    bannerHint(msg);
+    clearPulse();
+  }
+}
+
+buildScenarioUI();
+const qScenario = P.get('scenario');
+if(qScenario && K.scenarioById(qScenario)) startScenario(qScenario);
+else if(grade==='low') openHome();
+
+/* P3 검증 훅 확장 (getter는 defineProperty로) */
+window.__BODY_P2__.openHome = openHome;
+window.__BODY_P2__.startScenario = startScenario;
+window.__BODY_P2__.showWow = showWow;
+window.__BODY_P2__.exitScenario = exitScenario;
+window.__BODY_P2__.checkScenario = checkScenario;
+window.__BODY_P2__.gradeScenarios = gradeScenarios;
+window.__BODY_P2__.stepAnim = animate;   // 하니스: 혈류 누적(B-1 완주) 수동 구동용
+Object.defineProperty(window.__BODY_P2__, 'activeScenario', { get(){ return activeScenario; }, configurable:true });
+Object.defineProperty(window.__BODY_P2__, 'scenarioCleared', { get(){ return scenarioCleared; }, configurable:true });
+Object.defineProperty(window.__BODY_P2__, 'wowAnswered', { get(){ return wowAnswered; }, configurable:true });</script>
 </html>
