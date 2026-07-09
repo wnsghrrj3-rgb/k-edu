@@ -176,6 +176,44 @@
     return d / 2;   // 0(동일)~1(완전 불일치)
   }
 
+  /* ═══ C-3 핀 기울기(편향) 확장 — 기존 함수 불변, append만. pR=오른쪽 확률(공정핀=0.5). ═══ */
+  const TILT = { left: 0.35, center: 0.5, right: 0.65 };   // 기울기 프리셋(3단)
+  function meanP(rows, pR)     { return rows * pR; }                  // μ = n·pR
+  function varianceP(rows, pR) { return rows * pR * (1 - pR); }       // σ² = n·pR·(1-pR)
+  function stddevP(rows, pR)   { return Math.sqrt(varianceP(rows, pR)); }
+  function binomialPMFp(rows, k, pR) {                                // 편향 이항 PMF
+    if (k < 0 || k > rows) return 0;
+    return binomCoeff(rows, k) * Math.pow(pR, k) * Math.pow(1 - pR, rows - k);
+  }
+  function expectedCountsP(rows, count, pR) {
+    const arr = [];
+    for (let k = 0; k <= rows; k++) arr.push(binomialPMFp(rows, k, pR) * count);
+    return arr;
+  }
+  function bellCurveP(rows, count, pR, samples) {                     // 편향 종 곡선(정규근사)
+    const mu = meanP(rows, pR), sg = stddevP(rows, pR), pts = [];
+    const n = samples || (rows * 8);
+    for (let i = 0; i <= n; i++) {
+      const x = (i / n) * rows;
+      pts.push({ x: x, y: normalPdf(x, mu, sg) * count });
+    }
+    return pts;
+  }
+  function dropOneBiased(rng, rows, pR) {                             // 편향 한 알(pR=0.5면 dropOne과 동등)
+    let bin = 0; const path = [];
+    for (let r = 0; r < rows; r++) {
+      const right = rng() < pR;
+      if (right) bin++;
+      path.push(right ? 'R' : 'L');
+    }
+    return { bin: bin, path: path };
+  }
+  function dropManyBiased(rng, rows, count, pR) {
+    const bins = new Array(rows + 1).fill(0);
+    for (let i = 0; i < count; i++) bins[dropOneBiased(rng, rows, pR).bin]++;
+    return bins;
+  }
+
   /* ── 방·시나리오 스키마 (P3에서 소비) ── */
   const SCENARIOS = {
     'C-1': { title: '구슬 하나',   desc: '한 알을 떨어뜨려 어디로 갈지 지켜봐요', pour: 1 },
@@ -189,18 +227,27 @@
     answer: 0,
     explain: '구슬 한 알은 어디로 갈지 아무도 몰라요. 그런데 아주 많이 부으면 가운데가 가장 높은 산(종) 모양이 저절로 나타나요 — 무작위 속에 숨어 있던 질서예요.'
   };
+  // ★와우(C-3): 핀을 기울이면 산꼭대기가 옮겨간다
+  const WOW_TILT = {
+    q: '핀을 오른쪽으로 기울이면 산꼭대기는 어디로 갈까요?',
+    options: ['왼쪽으로 옮겨가요', '그대로 가운데예요', '오른쪽으로 옮겨가요'],
+    answer: 2,
+    explain: '핀이 한쪽으로 기울면 구슬이 그쪽으로 더 자주 튕겨요. 그래서 산 모양 전체가 그쪽으로 옮겨가요 — 공정하지 않은 핀은 결과도 한쪽으로 치우쳐요.'
+  };
 
   return {
     // 상수
-    ROWS_DEFAULT, ROWS_MIN, ROWS_MAX, P_RIGHT, BIN_CAP, POUR_SMALL, POUR_BIG,
+    ROWS_DEFAULT, ROWS_MIN, ROWS_MAX, P_RIGHT, BIN_CAP, POUR_SMALL, POUR_BIG, TILT,
     // 유틸
     mulberry32, clamp, binomCoeff,
     // 이론 분포
     binomialPMF, expectedCounts, mean, variance, stddev, normalPdf, bellCurve,
+    // 편향(C-3) 이론·시뮬
+    meanP, varianceP, stddevP, binomialPMFp, expectedCountsP, bellCurveP, dropOneBiased, dropManyBiased,
     // 시뮬 코어
     dropOne, dropMany, histStats, curveDistance,
     // 스키마
-    SCENARIOS, WOW_BELL
+    SCENARIOS, WOW_BELL, WOW_TILT
   };
 });
 </script>
@@ -223,6 +270,7 @@
   var rng = K.mulberry32((Date.now() >>> 0) || 1);
   var active = [], queue = 0, total = 0;
   var lensOn = false, pred = null, predicting = false, soundOn = true, pourDone = false;
+  var bias = K.P_RIGHT;   // C-3 핀 기울기(오른쪽 확률, 0.5=공정핀). P3가 setBias로 조정.
   var looping = false, geo = {};
   var STEP_FR = 5, EMIT = 8, CAP = 60;
 
@@ -247,14 +295,14 @@
 
   function maxShown(){
     var mb = 0; for (var k = 0; k < bins.length; k++) if (bins[k] > mb) mb = bins[k];
-    var peak = total > 0 ? K.normalPdf(K.mean(rows), K.mean(rows), K.stddev(rows)) * total : 0;
+    var peak = total > 0 ? K.normalPdf(K.meanP(rows, bias), K.meanP(rows, bias), K.stddevP(rows, bias)) * total : 0;
     return Math.max(8, mb * 1.08, peak * 1.05);
   }
   function stackPx(k){ return (bins[k] / maxShown()) * geo.stackH; }
 
   // ── 구슬 방출·낙하(웨이포인트 보간) ──
   function spawn(){
-    var d = K.dropOne(rng, rows), wp = [{ x: geo.cx, y: geo.funnelY }], x = geo.cx;
+    var d = K.dropOneBiased(rng, rows, bias), wp = [{ x: geo.cx, y: geo.funnelY }], x = geo.cx;
     for (var r = 0; r < rows; r++){ x += (d.path[r] === 'R' ? 1 : -1) * geo.pinGap * 0.5; wp.push({ x: x, y: pinRowY(r) }); }
     wp.push({ x: binX(d.bin), y: geo.binBase - stackPx(d.bin) - 5 });
     active.push({ wp: wp, seg: 0, t: 0, bin: d.bin, x: geo.cx, y: geo.funnelY });
@@ -310,7 +358,7 @@
   }
   function drawBell(){
     if (total < 1) return;
-    var pts = K.bellCurve(rows, total, rows * 12), mx = maxShown();
+    var pts = K.bellCurveP(rows, total, bias, rows * 12), mx = maxShown();
     ctx.save(); ctx.strokeStyle = C.bell; ctx.lineWidth = 3; ctx.shadowColor = C.bell; ctx.shadowBlur = 12;
     ctx.beginPath();
     for (var i = 0; i < pts.length; i++){
@@ -403,7 +451,7 @@
   function pourMany(n, instant){
     ensureAudio(); predicting = false; syncBtns();
     n = n || K.POUR_BIG;
-    if (instant){ var add = K.dropMany(rng, rows, n); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += n; pourDone = true; draw(); updHud(); return; }
+    if (instant){ var add = K.dropManyBiased(rng, rows, n, bias); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += n; pourDone = true; draw(); updHud(); return; }
     tip('구슬 폭포! 아주 많이 부으면 어떤 모양이 될까요?');
     queue += n; pourDone = false; ensureLoop();
   }
@@ -416,7 +464,7 @@
   }
   function setPrediction(arr){ pred = arr ? arr.slice(0, rows + 1) : null; draw(); }
   function setRows(r){ rows = K.clamp(r | 0, K.ROWS_MIN, K.ROWS_MAX); reset(); layout(); draw(); }
-  function settleAll(){ if (queue > 0){ var add = K.dropMany(rng, rows, queue); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += queue; queue = 0; } active = []; draw(); updHud(); }
+  function settleAll(){ if (queue > 0){ var add = K.dropManyBiased(rng, rows, queue, bias); for (var k = 0; k < add.length; k++) bins[k] += add[k]; total += queue; queue = 0; } active = []; draw(); updHud(); }
 
   // ── 입력(예측 그리기) ──
   function onPointer(ev){
@@ -471,6 +519,7 @@
   window.__CHANCE_P2__ = {
     get bins(){ return bins.slice(); }, get total(){ return total; }, get rows(){ return rows; },
     get lensOn(){ return lensOn; }, get pred(){ return pred ? pred.slice() : null; }, get predicting(){ return predicting; },
+    get bias(){ return bias; }, setBias: function(pR){ bias = K.clamp(pR, 0.05, 0.95); reset(); },
     K: K, reset: reset, pourOne: pourOne, pourMany: pourMany, settleAll: settleAll,
     toggleLens: toggleLens, togglePredict: togglePredict, setPrediction: setPrediction, setRows: setRows
   };
@@ -495,12 +544,14 @@
     else grade = 'mid';
   }catch(e){}
 
-  var scene = 'C-2';       // 현재 방(C-1 관찰 · C-2 폭포★ · C-3 핀 바꾸기[고학년 확장 예고])
-  var cardSeen = false;    // 예측카드 시청 여부(세션)
+  var scene = 'C-2';       // 현재 방(C-1 관찰 · C-2 폭포★ · C-3 핀 바꾸기)
+  var seen = {};           // 방별 예측카드 시청 여부(세션)
   var lastPick = -1;       // 마지막 3지선다 선택
   var lastScore = -1;      // 마지막 예측 실루엣 점수(%)
   var busy = false;        // 폭포 진행 중 중복 방지
-  var c3Ready = false;     // 핀 바꾸는 방 = 다음 확장(이번 사이클 예고)
+  var c3Ready = true;      // 핀 바꾸는 방(C-3) 활성
+  var curTilt = 'right';   // C-3 기울기(left/center/right)
+  var WOW = { 'C-2': K.WOW_BELL, 'C-3': K.WOW_TILT };   // 방별 예측카드
 
   function raf(fn){ (window.requestAnimationFrame || function(f){ return setTimeout(f, 16); })(fn); }
   function $(id){ return document.getElementById(id); }
@@ -538,35 +589,48 @@
       'display:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}' +
     '#p3-score.show{display:block}' +
     '#p3-score .st{font-family:\'Jua\';font-size:15px;color:var(--ball);letter-spacing:1px}' +
-    '#p3-score .sc{color:var(--sub);font-size:11.5px;margin-top:2px}';
+    '#p3-score .sc{color:var(--sub);font-size:11.5px;margin-top:2px}' +
+    '#p3-tilt{position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:22;display:none;gap:6px;' +
+      'background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px;backdrop-filter:blur(6px)}' +
+    '#p3-tilt.show{display:flex}' +
+    '.p3-tilt-b{font-family:\'Jua\';font-size:12.5px;color:var(--sub);background:rgba(255,255,255,.06);' +
+      'border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;transition:.14s}' +
+    '.p3-tilt-b:active{transform:scale(.94)}' +
+    '.p3-tilt-b.on{background:var(--ball);color:#3a2c00;border-color:var(--ball)}';
   document.head.appendChild(css);
 
   // ── 시나리오 배너 ──
   var SCN = [
     { id:'C-1', label:'💧 구슬 하나' },
     { id:'C-2', label:'🌊 구슬 폭포 ★' },
-    { id:'C-3', label:'🎯 핀을 바꾸면' }
+    { id:'C-3', label:'🎯 핀을 바꾸면 ★' }
   ];
   var scene_el = el('div'); scene_el.id = 'p3-scene';
   SCN.forEach(function(s){
     var p = el('button', 'p3-pill', s.label);
     p.setAttribute('data-scn', s.id);
-    if (s.id === 'C-3') p.classList.add('lock');
     p.addEventListener('click', function(){ setScene(s.id); });
     scene_el.appendChild(p);
   });
   document.body.appendChild(scene_el);
 
-  // ── 예측카드 모달 ──
+  // ── 기울기 컨트롤(C-3) ──
+  var tiltEl = el('div'); tiltEl.id = 'p3-tilt';
+  var TILTS = [ { d:'left', t:'⬅️ 왼쪽' }, { d:'center', t:'⚖️ 가운데' }, { d:'right', t:'➡️ 오른쪽' } ];
+  TILTS.forEach(function(o){
+    var b = el('button', 'p3-tilt-b', o.t);
+    b.setAttribute('data-tilt', o.d);
+    b.addEventListener('click', function(){ setTilt(o.d); });
+    tiltEl.appendChild(b);
+  });
+  document.body.appendChild(tiltEl);
+
+  // ── 예측카드 모달(방별 동적) ──
   var modal = el('div'); modal.id = 'p3-modal';
   var card = el('div', 'p3-card');
-  var q = el('div', 'p3-q', K.WOW_BELL.q);
-  card.appendChild(q);
-  K.WOW_BELL.options.forEach(function(opt, i){
-    var b = el('button', 'p3-opt', opt);
-    b.addEventListener('click', function(){ pick(i); });
-    card.appendChild(b);
-  });
+  var q = el('div', 'p3-q', '');
+  var optBox = el('div');
+  card.appendChild(q); card.appendChild(optBox);
   modal.appendChild(card);
   modal.addEventListener('click', function(e){ if (e.target === modal) closeCard(); });
   document.body.appendChild(modal);
@@ -578,34 +642,60 @@
 
   // ── 시나리오 전환 ──
   function setScene(s){
-    if (s === 'C-3' && !c3Ready){
-      flashWow('<b>🎯 핀을 바꾸는 방</b><br>한 줄을 기울이면 산꼭대기가 옮겨가요 — 곧 열려요!', 3200);
-      return;
-    }
     scene = s;
     var pills = scene_el.querySelectorAll('.p3-pill');
     for (var i = 0; i < pills.length; i++)
       pills[i].classList.toggle('on', pills[i].getAttribute('data-scn') === s);
+    hideWow(); hideScore();
+    tiltEl.classList.toggle('show', s === 'C-3');
+    if (s === 'C-3'){
+      setTilt(curTilt);                                  // 진입 시 현재 기울기 적용
+    } else if (H.bias !== K.P_RIGHT){
+      H.setBias(K.P_RIGHT);                              // 공정핀 복귀(reset 포함)
+    }
     if (s === 'C-1') tip('💧 구슬 하나를 떨어뜨려 어디로 갈지 지켜봐요. 한 알은 아무도 몰라요.');
     else if (s === 'C-2') tip(grade === 'high'
       ? '✏️ 예상 산 모양을 먼저 그린 뒤 🌊 폭포로 확인해 봐요!'
       : '🌊 많이 부으면 어떤 모양이 될지 먼저 예상해 봐요!');
+    else if (s === 'C-3') tip('핀을 한쪽으로 기울여 보고 🌊 폭포로 산꼭대기가 어디로 가는지 확인해요!');
+  }
+  function setTilt(dir){
+    curTilt = dir;
+    var pR = dir === 'left' ? K.TILT.left : dir === 'right' ? K.TILT.right : K.TILT.center;
+    H.setBias(pR);                                       // reset 포함(bins 비움)
+    hideWow(); hideScore();
+    var tb = tiltEl.querySelectorAll('.p3-tilt-b');
+    for (var i = 0; i < tb.length; i++)
+      tb[i].classList.toggle('on', tb[i].getAttribute('data-tilt') === dir);
+    tip(dir === 'center' ? '⚖️ 공정한 핀이에요. 🌊 부으면 산꼭대기는 가운데!'
+      : dir === 'right' ? '➡️ 오른쪽으로 기울였어요. 산꼭대기가 어디로 갈까요? 🌊로 확인!'
+      : '⬅️ 왼쪽으로 기울였어요. 산꼭대기가 어디로 갈까요? 🌊로 확인!');
   }
   function tip(t){ var e = $('tip'); if (e){ e.textContent = t; e.classList.remove('hide'); } }
 
-  // ── 예측카드 흐름 ──
-  function openCard(){ modal.classList.add('show'); }
+  // ── 예측카드 흐름(방별 동적) ──
+  function openCard(){
+    var w = WOW[scene] || K.WOW_BELL;
+    q.innerHTML = w.q;
+    optBox.innerHTML = '';
+    w.options.forEach(function(opt, i){
+      var b = el('button', 'p3-opt', opt);
+      b.addEventListener('click', function(){ pick(i); });
+      optBox.appendChild(b);
+    });
+    modal.classList.add('show');
+  }
   function closeCard(){ modal.classList.remove('show'); }
   function pick(i, instant){
-    lastPick = i; cardSeen = true; closeCard();
+    lastPick = i; seen[scene] = true; closeCard();
     runPour(!!instant);
   }
 
   // ── 폭포 실행 + 완료 감지 ──
   function pourIntent(){
     if (busy) return;
-    if (scene !== 'C-2') setScene('C-2');
-    if (!cardSeen){ openCard(); return; }   // 첫 폭포 = 예측카드 먼저
+    if (scene === 'C-1') setScene('C-2');                // 관찰방에서 폭포 = 예측방으로
+    if (!seen[scene]){ openCard(); return; }             // 첫 폭포 = 예측카드 먼저
     runPour(false);
   }
   function runPour(instant){
@@ -626,14 +716,26 @@
     showScore();
   }
 
-  // ── ★와우: 무작위 속 질서 ──
+  // ── ★와우: 방별 창발 연출 ──
   function showWow(){
+    if (scene === 'C-3'){
+      var st = K.histStats(H.bins), mode = st.mode, mid = H.rows / 2;
+      var dir = mode > mid + 0.5 ? '오른쪽' : mode < mid - 0.5 ? '왼쪽' : '가운데';
+      var hit = (lastPick === K.WOW_TILT.answer && curTilt === 'right') ||
+                (curTilt === 'left' && lastPick === 0) || (curTilt === 'center' && lastPick === 1);
+      var head = (hit ? '🎯 맞혔어요! ' : '🎯 ') + '산꼭대기가 ' + dir + '으로 옮겨갔어요';
+      var body = (grade === 'low')
+        ? '핀을 기울인 쪽으로 산이 <b>' + dir + '</b>으로 옮겨갔어요!'
+        : K.WOW_TILT.explain;
+      flashWow('<b>' + head + '</b><br>' + body, 6500);
+      return;
+    }
     var correct = (lastPick === K.WOW_BELL.answer);
-    var head = correct ? '🔔 맞혔어요! 무작위 속에 숨어 있던 질서' : '🔔 무작위 속에 숨어 있던 질서';
-    var body = (grade === 'low')
+    var head2 = correct ? '🔔 맞혔어요! 무작위 속에 숨어 있던 질서' : '🔔 무작위 속에 숨어 있던 질서';
+    var body2 = (grade === 'low')
       ? '가운데가 가장 높은 <b>산 모양</b>이 저절로 나타났어요!'
       : K.WOW_BELL.explain;
-    flashWow('<b>' + head + '</b><br>' + body, 6500);
+    flashWow('<b>' + head2 + '</b><br>' + body2, 6500);
   }
   function flashWow(html, ms){
     wow.innerHTML = html; wow.classList.add('show');
@@ -662,10 +764,9 @@
   }
   function hideScore(){ score.classList.remove('show'); }
 
-  // ── bPour 인터셉트(캡처) → 미션 흐름 ──
+  // ── bPour 인터셉트(캡처) → 미션 흐름(C-1/C-2/C-3 모두) ──
   var bp = $('bPour');
   if (bp) bp.addEventListener('click', function(e){
-    if (scene === 'C-3') return;
     e.stopImmediatePropagation();
     if (e.preventDefault) e.preventDefault();
     pourIntent();
@@ -685,10 +786,11 @@
   // ── 훅(P3 스모크) ──
   window.__CHANCE_P3__ = {
     get scene(){ return scene; }, get grade(){ return grade; },
-    get cardSeen(){ return cardSeen; }, get lastPick(){ return lastPick; },
+    get cardSeen(){ return !!seen[scene]; }, get lastPick(){ return lastPick; },
+    get tilt(){ return curTilt; }, get bias(){ return H.bias; },
     get lastScore(){ return lastScore; }, get wowShown(){ return wow.classList.contains('show'); },
     get scoreShown(){ return score.classList.contains('show'); },
-    setScene: setScene, openCard: openCard, closeCard: closeCard, pick: pick,
+    setScene: setScene, setTilt: setTilt, openCard: openCard, closeCard: closeCard, pick: pick,
     pourIntent: pourIntent, runPour: runPour
   };
 })();
