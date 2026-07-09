@@ -22,6 +22,30 @@
   #brand .k{color:var(--bell)}
   #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
     text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #hud{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:19;font-size:13px;color:var(--sub);
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 15px;backdrop-filter:blur(6px);
+    display:flex;gap:12px;align-items:center;white-space:nowrap;max-width:92vw}
+  #hud b{font-family:'Jua';color:var(--ink)}
+  #tip{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:18;font-size:13.5px;color:var(--ink);
+    background:rgba(14,16,30,.78);border:1px solid var(--line);border-radius:12px;padding:8px 15px;
+    pointer-events:none;transition:opacity .3s;text-align:center;max-width:88vw}
+  #tip.hide{opacity:0}
+  #sound{position:fixed;top:14px;right:96px;z-index:20;font-size:15px;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;width:38px;height:33px;cursor:pointer;color:var(--ink);line-height:1}
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:7px;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px;backdrop-filter:blur(8px);
+    box-shadow:0 14px 40px rgba(0,0,0,.45);max-width:94vw;flex-wrap:wrap;justify-content:center}
+  #ctl button{font-family:'Jua';font-size:14px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.14s}
+  #ctl button:active{transform:scale(.93)}
+  #ctl button.go{background:var(--bell);color:#0a0c18;border-color:var(--bell)}
+  #ctl .sep{width:1px;background:var(--line);margin:2px 3px}
+  #choices{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:19;display:none;gap:9px;
+    justify-content:center;flex-wrap:wrap;max-width:94vw}
+  #choices.show{display:flex}
+  #choices button{font-family:'Jua';font-size:19px;color:var(--ink);background:rgba(124,140,255,.12);
+    border:1px solid var(--line);border-radius:14px;padding:12px 20px;cursor:pointer;min-width:64px;transition:.14s}
+  #choices button:active{transform:scale(.93)}
 </style>
 </head>
 <body>
@@ -29,6 +53,11 @@
 <div id="brand">케이<span class="k">랩</span> · 무한의 복도</div>
 <a id="back" href="./">← 수학실</a>
 <div id="loading">무한의 복도를 준비하고 있어요…</div>
+<div id="hud"></div>
+<div id="tip"></div>
+<button id="sound" title="소리">🔊</button>
+<div id="choices"></div>
+<div id="ctl"></div>
 
 <!-- ════════════════ P1 : 순수 로직 (렌더 0줄) ════════════════ -->
 <script id="infinity-pure">
@@ -228,18 +257,245 @@
 });
 </script>
 
-<!-- P2에서 2D canvas 렌더 어댑터(__INFINITY_P2__ 훅), P3에서 미션+★와우 레이어 증축 예정.
-     순수 블록(infinity-pure)은 이후 바이트 불변(append-only). -->
-<script>
-  // P1 부팅 스텁 — 순수 로직 로드 확인만(렌더는 P2). 브라우저에서 열려도 깨지지 않게.
-  (function () {
-    var el = document.getElementById('loading');
-    if (window.KInfinity && typeof window.KInfinity.nextTerm === 'function') {
-      el.textContent = '무한의 복도 · P1 순수 로직 준비됨 (렌더는 P2에서 이어져요)';
-    } else {
-      el.textContent = '무한의 복도 로드에 문제가 생겼어요.';
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 렌더 어댑터 — 2D canvas. 순수 KInfinity 조회만(연산 0줄).
+     scale 모드 = "백만까지 걷기": 점 1개 → ×10 계단마다 은하수처럼 점이 불어나고
+       카운터·자리 라벨·앵커 비유가 갱신(magnitude/anchorFor/countTimeLabel 조회).
+     pingpong 모드 = "규칙 핑퐁": 수열 카드 [3][6][9][12][?] → 다음 수 후보 선택
+       (genSequence/nextTerm/checkNext 조회, 오답은 결정론 rng 셔플).
+     P3에서 미션+★와우(스케일 감각·피보나치 나선 해바라기)·학년칸 증축. ═══ -->
+<script id="infinity-p2">
+(function(){
+  'use strict';
+  var K = window.KInfinity;
+  var C = { ink:'#eef0ff', sub:'#9aa0c8', star:'#ffd166', bell:'#7c8cff', ten:'#5ad1a0',
+            line:'rgba(255,255,255,.10)', card:'rgba(124,140,255,.10)' };
+
+  var stage = document.getElementById('stage');
+  var cv = document.createElement('canvas'); cv.id = 'board'; stage.appendChild(cv);
+  var ctx = cv.getContext('2d');
+  var W=0, H=0, DPR=1;
+
+  // ── 상태 ──
+  var mode = 'scale';               // 'scale' | 'pingpong'
+  var level = 0;                    // 스케일 계단(0..6 → 1..백만)
+  var animScale = 0;                // 계단 전환 애니(0→1)
+  var soundOn = true;
+  var seqSeed = 20260709;           // 규칙 핑퐁 결정론 seed
+  var seqData = null;               // {type,shown,answer,full}
+  var choiceVals = [];              // 후보(정답+오답)
+  var lastCheck = null;             // 마지막 checkNext
+  var cardFill = [];                // 카드별 채움 애니
+  var wobble = 0;                   // 빗나감 뒤뚱
+  var starField = [];               // 은하수 점 좌표(결정론)
+
+  // ── 스케일 값 ──
+  function count(){ return K.scaleStep(level); }        // 현재 수 = 10^level
+  function anchor(){ return K.anchorFor(count()); }
+
+  // 별밭 결정론 생성(레벨별 대표 점 — 백만 다 못 그리니 샘플 + 카운터)
+  function buildStars(){
+    var n = count(), shown = Math.min(n, 240);          // 화면엔 최대 240점 샘플
+    var rng = K.mulberry32(1234 + level);
+    starField = [];
+    for (var i=0;i<shown;i++){
+      starField.push({ x: rng(), y: rng(), r: 0.6 + rng()*1.8, tw: rng()*6.28 });
     }
-  })();
+  }
+
+  // ── 규칙 핑퐁 ──
+  function newSequence(kind){
+    var rng = K.mulberry32(seqSeed);
+    seqData = K.genSequence(rng, kind);                 // shown/answer/full (answer=nextTerm(shown))
+    lastCheck = null; wobble = 0;
+    cardFill = seqData.shown.map(function(){ return 1; }).concat([0]);  // 마지막(?)은 0
+    // 후보 = 정답 + 결정론 오답 2개(±규칙 스텝 근처), 셔플
+    var ans = seqData.answer, cr = K.mulberry32(seqSeed ^ 0x9e37);
+    var offs = [ans];
+    var step = seqData.shown.length>=2 ? Math.abs(seqData.shown[1]-seqData.shown[0]) : 1;
+    var cand = [ans + Math.max(1,step), ans - Math.max(1,step), ans + 1, ans*2];
+    for (var i=0;i<cand.length && offs.length<3;i++){
+      if (cand[i] > 0 && offs.indexOf(cand[i]) < 0) offs.push(cand[i]);
+    }
+    // 셔플
+    for (var j=offs.length-1;j>0;j--){ var k2=Math.floor(cr()*(j+1)); var t=offs[j]; offs[j]=offs[k2]; offs[k2]=t; }
+    choiceVals = offs;
+    renderChoices();
+  }
+  function guess(n){                                    // 다음 수 추측 → 순수 checkNext 위임
+    if (!seqData) return null;
+    lastCheck = K.checkNext(seqData.shown, n);          // {correct,expected,rule}
+    if (lastCheck.correct){ cardFill[cardFill.length-1] = 1; blip(880); }
+    else { wobble = 1; blip(220); }
+    return lastCheck;
+  }
+
+  // ── 컨트롤 UI ──
+  var ctl = document.getElementById('ctl'), tipEl = document.getElementById('tip'),
+      hudEl = document.getElementById('hud'), chEl = document.getElementById('choices');
+  function btn(label, cls, fn){
+    var b = document.createElement('button'); b.textContent = label;
+    if (cls) b.className = cls; b.onclick = fn; return b;
+  }
+  function buildCtl(){
+    ctl.innerHTML = '';
+    ctl.appendChild(btn('🌌 스케일', mode==='scale'?'go':'', function(){ setMode('scale'); }));
+    ctl.appendChild(btn('🏓 규칙 핑퐁', mode==='pingpong'?'go':'', function(){ setMode('pingpong'); }));
+    var sep = document.createElement('div'); sep.className='sep'; ctl.appendChild(sep);
+    if (mode==='scale'){
+      ctl.appendChild(btn('÷10', '', function(){ stepDown(); }));
+      ctl.appendChild(btn('×10', 'go', function(){ stepUp(); }));
+      ctl.appendChild(btn('백만', '', function(){ setLevel(6); }));
+    } else {
+      ctl.appendChild(btn('↺ 새 규칙', 'go', function(){ seqSeed = (seqSeed*1103515245 + 12345) & 0x7fffffff; newSequence(); }));
+    }
+  }
+  function renderChoices(){
+    if (mode!=='pingpong' || !seqData){ chEl.className='choices'; chEl.classList.remove('show'); return; }
+    chEl.innerHTML=''; chEl.classList.add('show');
+    choiceVals.forEach(function(v){ chEl.appendChild(btn(K.commaFormat(v),'',function(){ guess(v); updateHud(); })); });
+  }
+  function updateHud(){
+    if (mode==='scale'){
+      var a = anchor(), t = K.countTimeLabel(count());
+      hudEl.innerHTML = '지금 <b>'+K.commaFormat(count())+'</b> ('+a.label+' 자리) · '+a.anchor;
+      tipEl.textContent = (level>=6)
+        ? '1초에 하나씩 세면 '+t.text+' — 큰 수는 "많다"가 아니라 "얼마나 먼가"예요'
+        : '×10을 눌러 다음 자리로 걸어가 봐요';
+    } else {
+      hudEl.innerHTML = seqData ? '규칙을 찾아 다음 수를 골라요 ('+(seqData.shown.length)+'개 보임)' : '';
+      tipEl.textContent = lastCheck
+        ? (lastCheck.correct ? '규칙이 이어졌어요! ('+ruleName(lastCheck.rule)+')' : '규칙이 삐끗 — 다시 살펴봐요 (정답은 '+K.commaFormat(lastCheck.expected)+')')
+        : '수가 어떻게 커지는지 규칙을 찾아봐요';
+    }
+    tipEl.classList.remove('hide');
+  }
+  function ruleName(r){ return r==='arithmetic'?'같은 만큼 더하기':r==='geometric'?'같은 배로 커지기':r==='fibonacci'?'앞 두 수를 더하기':'규칙'; }
+
+  // ── 모드/스케일 API ──
+  function setMode(m){
+    mode = (m==='pingpong')?'pingpong':'scale';
+    if (mode==='scale'){ chEl.classList.remove('show'); buildStars(); }
+    else { if(!seqData) newSequence(); renderChoices(); }
+    buildCtl(); updateHud();
+  }
+  function stepUp(){ setLevel(level+1); }
+  function stepDown(){ setLevel(level-1); }
+  function setLevel(l){ level = K.clamp(l|0, 0, 6); animScale = 0; buildStars(); blip(440 + level*70); buildCtl(); updateHud(); }
+
+  // ── 사운드(미니 신스) ──
+  var AC = null;
+  function ac(){ if(!AC){ var F = window.AudioContext||window.webkitAudioContext; if(F) AC = new F(); } return AC; }
+  function blip(freq){
+    if(!soundOn) return; var a = ac(); if(!a) return;
+    try{ var o=a.createOscillator(), g=a.createGain(); o.type='sine'; o.frequency.value=freq;
+      g.gain.value=0.0001; o.connect(g); g.connect(a.destination); var t=a.currentTime;
+      g.gain.exponentialRampToValueAtTime(0.12, t+0.01); g.gain.exponentialRampToValueAtTime(0.0001, t+0.18);
+      o.start(t); o.stop(t+0.2);
+    }catch(e){}
+  }
+  document.getElementById('sound').onclick = function(){ soundOn=!soundOn; this.textContent = soundOn?'🔊':'🔈'; };
+
+  // ── 렌더 ──
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio||1, 2);
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = W*DPR; cv.height = H*DPR; cv.style.width=W+'px'; cv.style.height=H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  function draw(){
+    if(!ctx) return;
+    ctx.clearRect(0,0,W,H);
+    if (mode==='scale') drawScale(); else drawPingpong();
+  }
+  function drawScale(){
+    var cx=W/2, cy=H*0.42, t = (typeof performance!=='undefined'?performance.now():0)/1000;
+    // 은하수 점(레벨 클수록 조밀)
+    var spread = Math.min(W,H)*0.42*(0.4+0.6*Math.min(level/6,1));
+    for (var i=0;i<starField.length;i++){
+      var s=starField[i], ang=(s.x-0.5)*6.28, rad=s.y*spread;
+      var px=cx+Math.cos(ang)*rad, py=cy+Math.sin(ang)*rad*0.8;
+      var tw=0.5+0.5*Math.sin(t*2+s.tw);
+      ctx.globalAlpha=0.35+0.55*tw; ctx.fillStyle=C.star;
+      ctx.beginPath(); ctx.arc(px,py,s.r,0,6.28); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // 카운터
+    ctx.textAlign='center'; ctx.fillStyle=C.ink;
+    ctx.font="700 "+Math.min(W*0.13,72)+"px Jua, sans-serif";
+    ctx.fillText(K.commaFormat(count()), cx, cy);
+    ctx.fillStyle=C.bell; ctx.font=Math.min(W*0.05,24)+"px Jua, sans-serif";
+    ctx.fillText(anchor().label+' 자리', cx, cy+Math.min(W*0.09,48));
+    ctx.fillStyle=C.sub; ctx.font="15px 'Gowun Dodum', sans-serif";
+    ctx.fillText(anchor().anchor, cx, cy+Math.min(W*0.09,48)+26);
+  }
+  function drawPingpong(){
+    if(!seqData) return;
+    var cx=W/2, cy=H*0.40, n=seqData.shown.length+1;
+    var cw=Math.min((W*0.86)/n, 92), gap=cw*0.14, tot=n*cw+(n-1)*gap;
+    var x0=cx-tot/2, wob = wobble>0 ? Math.sin((performance.now()/60))*6*wobble : 0;
+    for (var i=0;i<n;i++){
+      var x=x0+i*(cw+gap), y=cy, last=(i===n-1);
+      var yy = last ? y+wob : y;
+      // 카드
+      ctx.fillStyle = (cardFill[i]>=1) ? 'rgba(90,209,160,.16)' : C.card;
+      ctx.strokeStyle = (cardFill[i]>=1) ? C.ten : C.line; ctx.lineWidth=2;
+      roundRect(x, yy, cw, cw, 14); ctx.fill(); ctx.stroke();
+      // 값
+      ctx.textAlign='center'; ctx.font="700 "+Math.min(cw*0.4,34)+"px Jua, sans-serif";
+      ctx.fillStyle = last && cardFill[i]<1 ? C.bell : C.ink;
+      var label = last ? (cardFill[i]>=1 ? K.commaFormat(seqData.answer) : '?') : K.commaFormat(seqData.shown[i]);
+      ctx.fillText(label, x+cw/2, yy+cw/2+Math.min(cw*0.14,12));
+    }
+    if (wobble>0) wobble = Math.max(0, wobble-0.02);
+  }
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  var looping=false;
+  function loop(){ draw(); if(looping) requestAnimationFrame(loop); }
+
+  // ── 부팅 ──
+  function boot(){
+    resize(); window.addEventListener('resize', function(){ resize(); });
+    // 딥링크 ?mode= &level= &kind=
+    try{
+      var q = new URLSearchParams(location.search);
+      if (q.get('mode')) mode = (q.get('mode')==='pingpong')?'pingpong':'scale';
+      if (q.get('level')!=null) level = K.clamp(parseInt(q.get('level'),10)||0, 0, 6);
+      var kind = q.get('kind');
+      if (mode==='pingpong'){ newSequence(kind||undefined); }
+    }catch(e){}
+    buildStars(); buildCtl(); updateHud();
+    if (mode==='pingpong') renderChoices();
+    var l=document.getElementById('loading'); if(l) l.classList.add('hide');
+    looping=true; loop();
+  }
+
+  // ── 훅(테스트/딥링크/P3 소비) ──
+  window.__INFINITY_P2__ = {
+    K: K,
+    get mode(){ return mode; },
+    get level(){ return level; },
+    get count(){ return count(); },
+    get anchor(){ return anchor(); },
+    get seq(){ return seqData ? { type:seqData.type, shown:seqData.shown.slice(), answer:seqData.answer } : null; },
+    get choices(){ return choiceVals.slice(); },
+    get lastCheck(){ return lastCheck; },
+    get stars(){ return starField.length; },
+    get soundOn(){ return soundOn; },
+    setMode: setMode, stepUp: stepUp, stepDown: stepDown, setLevel: setLevel,
+    newSequence: function(kind){ newSequence(kind); }, guess: guess,
+    reset: function(){ level=0; lastCheck=null; wobble=0; setMode('scale'); }
+  };
+
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
 </script>
+
+<!-- P3에서 미션+★와우 레이어(__INFINITY_P2__ 훅만 소비·오버레이만) 증축 예정.
+     순수 블록(infinity-pure)·P2 블록(infinity-p2)은 이후 바이트 불변(append-only). -->
 </body>
 </html>
