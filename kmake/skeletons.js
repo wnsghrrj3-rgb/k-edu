@@ -8,6 +8,7 @@
    골격 스키마: zones:[{ z, rect:[x,y,w,h] 0~1 비율,
                          text?, slot?(문자열|false), font?(역할), material?, anim? }]
    font 역할: title | name | body | date  (generator가 페어링으로 실폰트 배정)
+   M1-1 (2026-07-09): 6종 전부 골격 5개까지 확장(총 30) · 페어링 16→30쌍.
    ============================================================ */
 
 /* 종류별 무드 태그 (폰트 페어링 교집합용) */
@@ -21,7 +22,7 @@ window.KM_KIND_MOOD = {
 };
 
 window.KM_SKELETONS = {
-  /* ── 상장 (골든 3) ── */
+  /* ── 상장 (5) ── */
   award: [
     { id:'award_classic', zones:[
       { z:'frame',  rect:[0.04,0.04,0.92,0.92], material:'금박테두리' },
@@ -44,9 +45,23 @@ window.KM_SKELETONS = {
       { z:'body',   rect:[0.13,0.50,0.74,0.22], text:'위 어린이는 우리 반의 자랑입니다.\n밝은 웃음과 따뜻한 마음을\n오래 기억하겠습니다.', slot:'내용', font:'body' },
       { z:'emblem', rect:[0.44,0.74,0.12,0.10], material:'엠블럼' },
       { z:'date',   rect:[0.30,0.86,0.40,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' } ] },
+    { id:'award_certificate', zones:[
+      { z:'frame',  rect:[0.05,0.05,0.90,0.90], material:'금박테두리' },
+      { z:'emblem', rect:[0.43,0.08,0.14,0.12], material:'엠블럼' },
+      { z:'title',  rect:[0.22,0.23,0.56,0.10], text:'감사장', slot:false, font:'title' },
+      { z:'name',   rect:[0.24,0.39,0.52,0.09], text:'박서연', slot:'이름', font:'name' },
+      { z:'body',   rect:[0.16,0.53,0.68,0.20], text:'위 학생은 맡은 자리에서\n늘 최선을 다하였기에\n그 정성을 기려 이 상을 드립니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.30,0.79,0.40,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
+      { z:'stamp',  rect:[0.65,0.82,0.12,0.12], material:'도장' } ] },
+    { id:'award_playful', zones:[
+      { z:'title',  rect:[0.14,0.10,0.72,0.13], text:'참 잘했어요', slot:false, font:'title' },
+      { z:'name',   rect:[0.20,0.30,0.60,0.11], text:'최지호', slot:'이름', font:'name' },
+      { z:'body',   rect:[0.14,0.47,0.72,0.20], text:'친구들과 사이좋게 지내고\n무엇이든 즐겁게 해내는\n너를 칭찬합니다.', slot:'내용', font:'body' },
+      { z:'emblem', rect:[0.10,0.72,0.16,0.16], material:'엠블럼' },
+      { z:'date',   rect:[0.34,0.80,0.40,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' } ] },
   ],
 
-  /* ── 카드 (골든 3) ── */
+  /* ── 카드 (5) ── */
   card: [
     { id:'card_center', zones:[
       { z:'bg',     rect:[0,0,1,1], material:'배경' },
@@ -62,9 +77,20 @@ window.KM_SKELETONS = {
       { z:'bg',     rect:[0,0,1,1], material:'배경' },
       { z:'title',  rect:[0.14,0.34,0.72,0.12], text:'응원해', slot:'제목', font:'title' },
       { z:'body',   rect:[0.18,0.52,0.64,0.14], text:'네가 걷는 그 길을\n조용히 응원할게.', slot:'내용', font:'body' } ] },
+    { id:'card_frame', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'frame',  rect:[0.06,0.06,0.88,0.88], material:'테두리' },
+      { z:'title',  rect:[0.14,0.22,0.72,0.13], text:'축하해요', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.16,0.42,0.68,0.24], text:'당신의 새로운 시작을\n진심으로 축하합니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.30,0.78,0.40,0.05], text:'2026. 7. 9.', slot:'날짜', font:'date' } ] },
+    { id:'card_bottom', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'body',   rect:[0.14,0.20,0.72,0.30], text:'함께한 모든 순간이\n소중한 선물이었어요.\n고맙습니다.', slot:'내용', font:'body' },
+      { z:'title',  rect:[0.14,0.60,0.72,0.14], text:'사랑을 담아', slot:'제목', font:'title' },
+      { z:'date',   rect:[0.28,0.82,0.44,0.05], text:'from. 준호', slot:'보내는이', font:'date' } ] },
   ],
 
-  /* ── 학습지 (1기 1, 오퍼스 확장 대상) ── */
+  /* ── 학습지 (5) ── */
   worksheet: [
     { id:'ws_basic', zones:[
       { z:'title',  rect:[0.08,0.05,0.66,0.07], text:'오늘의 학습지', slot:'제목', font:'title' },
@@ -72,53 +98,156 @@ window.KM_SKELETONS = {
       { z:'body',   rect:[0.08,0.16,0.84,0.20], text:'1. 다음 물음에 답해 봅시다.', slot:'문제1', font:'body' },
       { z:'body2',  rect:[0.08,0.40,0.84,0.20], text:'2. 알맞은 것을 골라 봅시다.', slot:'문제2', font:'body' },
       { z:'body3',  rect:[0.08,0.64,0.84,0.24], text:'3. 오늘 배운 것을 정리해 봅시다.', slot:'문제3', font:'body' } ] },
+    { id:'ws_grid2', zones:[
+      { z:'title',  rect:[0.08,0.05,0.60,0.07], text:'배움 공책', slot:'제목', font:'title' },
+      { z:'name',   rect:[0.62,0.05,0.30,0.06], text:'( )학년 ( )반 이름:', slot:'이름', font:'date' },
+      { z:'body',   rect:[0.08,0.16,0.84,0.34], text:'생각 열기\n오늘 무엇을 배우고 싶나요?', slot:'문제1', font:'body' },
+      { z:'body2',  rect:[0.08,0.54,0.84,0.38], text:'활동하기\n배운 내용을 그림과 글로 정리해요.', slot:'문제2', font:'body' } ] },
+    { id:'ws_wide', zones:[
+      { z:'title',  rect:[0.08,0.05,0.84,0.08], text:'복습 학습지', slot:'제목', font:'title' },
+      { z:'name',   rect:[0.08,0.15,0.40,0.05], text:'이름:', slot:'이름', font:'date' },
+      { z:'body',   rect:[0.08,0.23,0.84,0.16], text:'1. 빈칸에 알맞은 말을 써 봅시다.', slot:'문제1', font:'body' },
+      { z:'body2',  rect:[0.08,0.43,0.84,0.16], text:'2. 그림을 보고 문장을 만들어 봅시다.', slot:'문제2', font:'body' },
+      { z:'body3',  rect:[0.08,0.63,0.84,0.16], text:'3. 내 생각을 자유롭게 써 봅시다.', slot:'문제3', font:'body' },
+      { z:'date',   rect:[0.08,0.85,0.84,0.06], text:'스스로 점검: 오늘 학습 어땠나요? ⭐⭐⭐', slot:'꼬리말', font:'date' } ] },
+    { id:'ws_diary', zones:[
+      { z:'title',  rect:[0.08,0.05,0.55,0.07], text:'그림일기', slot:'제목', font:'title' },
+      { z:'name',   rect:[0.60,0.05,0.32,0.06], text:'날짜: 월 일 날씨:', slot:'날짜', font:'date' },
+      { z:'body',   rect:[0.08,0.16,0.84,0.48], text:'( 오늘 있었던 일을 그림으로 그려 보세요 )', slot:'그림칸', font:'body' },
+      { z:'body2',  rect:[0.08,0.68,0.84,0.24], text:'오늘 가장 기억에 남는 일을 써 봅시다.', slot:'글칸', font:'body' } ] },
+    { id:'ws_quiz', zones:[
+      { z:'title',  rect:[0.08,0.05,0.60,0.07], text:'쪽지 시험', slot:'제목', font:'title' },
+      { z:'name',   rect:[0.62,0.05,0.30,0.06], text:'이름:', slot:'이름', font:'date' },
+      { z:'body',   rect:[0.08,0.17,0.84,0.14], text:'1. ______________________', slot:'문제1', font:'body' },
+      { z:'body2',  rect:[0.08,0.34,0.84,0.14], text:'2. ______________________', slot:'문제2', font:'body' },
+      { z:'body3',  rect:[0.08,0.51,0.84,0.14], text:'3. ______________________', slot:'문제3', font:'body' },
+      { z:'body4',  rect:[0.08,0.70,0.84,0.14], text:'4. ______________________', slot:'문제4', font:'body' } ] },
   ],
 
-  /* ── 이름표 (1기 1) ── */
+  /* ── 이름표 (5) ── */
   nametag: [
     { id:'tag_basic', zones:[
       { z:'frame',  rect:[0.03,0.06,0.94,0.88], material:'테두리' },
       { z:'title',  rect:[0.08,0.16,0.84,0.34], text:'김하은', slot:'이름', font:'title' },
       { z:'body',   rect:[0.12,0.58,0.76,0.24], text:'2학년 3반', slot:'소속', font:'body' } ] },
+    { id:'tag_left', zones:[
+      { z:'emblem', rect:[0.04,0.20,0.24,0.60], material:'엠블럼' },
+      { z:'title',  rect:[0.32,0.20,0.62,0.38], text:'이도윤', slot:'이름', font:'title' },
+      { z:'body',   rect:[0.32,0.62,0.62,0.22], text:'1학년 2반', slot:'소속', font:'body' } ] },
+    { id:'tag_stripe', zones:[
+      { z:'frame',  rect:[0.02,0.05,0.96,0.90], material:'테두리' },
+      { z:'body',   rect:[0.08,0.12,0.84,0.16], text:'우리 반 친구', slot:'소속', font:'body' },
+      { z:'title',  rect:[0.08,0.34,0.84,0.44], text:'서하린', slot:'이름', font:'title' } ] },
+    { id:'tag_desk', zones:[
+      { z:'title',  rect:[0.06,0.14,0.88,0.44], text:'김민준', slot:'이름', font:'title' },
+      { z:'body',   rect:[0.10,0.62,0.80,0.22], text:'별명: 반짝이', slot:'별명', font:'body' } ] },
+    { id:'tag_badge', zones:[
+      { z:'frame',  rect:[0.03,0.08,0.94,0.84], material:'테두리' },
+      { z:'emblem', rect:[0.72,0.24,0.20,0.52], material:'엠블럼' },
+      { z:'title',  rect:[0.08,0.22,0.60,0.40], text:'한지우', slot:'이름', font:'title' },
+      { z:'body',   rect:[0.08,0.64,0.60,0.20], text:'2학년 1반', slot:'소속', font:'body' } ] },
   ],
 
-  /* ── 안내장 (1기 1) ── */
+  /* ── 안내장 (5) ── */
   notice: [
     { id:'notice_basic', zones:[
       { z:'title',  rect:[0.10,0.08,0.80,0.10], text:'가정통신문', slot:'제목', font:'title' },
       { z:'body',   rect:[0.10,0.24,0.80,0.44], text:'학부모님께 알려 드립니다.\n\n아래 내용을 확인해 주시기 바랍니다.', slot:'내용', font:'body' },
       { z:'date',   rect:[0.10,0.76,0.50,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
       { z:'sign',   rect:[0.50,0.84,0.44,0.06], text:'금성초등학교장', slot:'보내는이', font:'date' } ] },
+    { id:'notice_header', zones:[
+      { z:'title',  rect:[0.08,0.06,0.84,0.11], text:'알림장', slot:'제목', font:'title' },
+      { z:'body2',  rect:[0.08,0.20,0.84,0.06], text:'— 오늘의 안내 —', slot:'부제', font:'body' },
+      { z:'body',   rect:[0.08,0.30,0.84,0.40], text:'가정에서도 아이의 학습을\n따뜻하게 지켜봐 주시기 바랍니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.08,0.78,0.50,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
+      { z:'sign',   rect:[0.52,0.84,0.42,0.06], text:'담임 드림', slot:'보내는이', font:'date' } ] },
+    { id:'notice_event', zones:[
+      { z:'title',  rect:[0.10,0.08,0.80,0.13], text:'현장 체험학습 안내', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.10,0.26,0.80,0.14], text:'일시: 7월 20일 (목) 오전 9시\n장소: 어린이 과학관', slot:'일시장소', font:'body' },
+      { z:'body2',  rect:[0.10,0.46,0.80,0.24], text:'준비물과 유의 사항을 확인해 주세요.\n안전한 하루가 되도록 하겠습니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.10,0.80,0.50,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
+      { z:'sign',   rect:[0.52,0.84,0.40,0.06], text:'금성초등학교장', slot:'보내는이', font:'date' } ] },
+    { id:'notice_letter', zones:[
+      { z:'title',  rect:[0.10,0.08,0.60,0.09], text:'학부모님께', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.10,0.22,0.80,0.46], text:'안녕하세요.\n늘 학교 교육에 관심과 사랑을\n보내 주셔서 감사합니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.10,0.80,0.40,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
+      { z:'sign',   rect:[0.48,0.80,0.46,0.06], text:'담임 ○○○ 드림', slot:'보내는이', font:'date' } ] },
+    { id:'notice_checklist', zones:[
+      { z:'title',  rect:[0.10,0.07,0.80,0.11], text:'준비물 안내', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.10,0.24,0.80,0.44], text:'□ 필기도구\n□ 물통\n□ 편한 옷차림', slot:'목록', font:'body' },
+      { z:'date',   rect:[0.10,0.80,0.50,0.05], text:'2026년 7월 9일', slot:'날짜', font:'date' },
+      { z:'sign',   rect:[0.52,0.84,0.40,0.06], text:'담임 드림', slot:'보내는이', font:'date' } ] },
   ],
 
-  /* ── 포스터 (1기 1) ── */
+  /* ── 포스터 (5) · 전 골격 bg 존 필수(모션 배경 confetti 양립) ── */
   poster: [
     { id:'poster_center', zones:[
       { z:'bg',     rect:[0,0,1,1], material:'배경' },
       { z:'title',  rect:[0.10,0.14,0.80,0.18], text:'우리 반 축제', slot:'제목', font:'title' },
       { z:'body',   rect:[0.14,0.40,0.72,0.28], text:'모두 함께 즐겨요!\n7월 20일 오후 2시\n우리 교실에서', slot:'내용', font:'body' },
       { z:'date',   rect:[0.24,0.78,0.52,0.06], text:'2-3반 친구들 모두 환영', slot:'꼬리말', font:'date' } ] },
+    { id:'poster_top', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'title',  rect:[0.08,0.10,0.84,0.20], text:'독서 골든벨', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.12,0.40,0.76,0.30], text:'책 속 보물을 찾아라!\n많은 참여 바랍니다.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.18,0.82,0.64,0.06], text:'7월 25일 · 도서실', slot:'꼬리말', font:'date' } ] },
+    { id:'poster_band', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'title',  rect:[0.08,0.16,0.84,0.16], text:'알뜰 나눔 장터', slot:'제목', font:'title' },
+      { z:'body2',  rect:[0.12,0.34,0.76,0.07], text:'우리가 만드는 초록 학교', slot:'부제', font:'body' },
+      { z:'body',   rect:[0.12,0.46,0.76,0.24], text:'쓰지 않는 물건을 가져와\n친구와 나누어요.', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.20,0.82,0.60,0.06], text:'7월 30일 오후 1시', slot:'꼬리말', font:'date' } ] },
+    { id:'poster_event', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'title',  rect:[0.08,0.12,0.84,0.18], text:'가을 운동회', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.12,0.38,0.76,0.16], text:'일시: 10월 5일 (토)\n장소: 학교 운동장', slot:'일시장소', font:'body' },
+      { z:'body2',  rect:[0.12,0.60,0.76,0.14], text:'온 가족 모두 환영합니다!', slot:'내용', font:'body' },
+      { z:'date',   rect:[0.22,0.84,0.56,0.06], text:'금성초등학교', slot:'꼬리말', font:'date' } ] },
+    { id:'poster_minimal', zones:[
+      { z:'bg',     rect:[0,0,1,1], material:'배경' },
+      { z:'title',  rect:[0.10,0.36,0.80,0.20], text:'함께해요', slot:'제목', font:'title' },
+      { z:'body',   rect:[0.14,0.60,0.72,0.10], text:'우리 반 나눔 캠페인', slot:'내용', font:'body' } ] },
   ],
 };
 
-/* 폰트 페어링 표 (body는 본문·명조 카테고리만 — 하드 규칙) */
+/* 폰트 페어링 표 (body는 본문·명조 카테고리만 — 하드 규칙 / 30쌍) */
 window.KM_FONT_PAIRS = [
-  { title:'Hakgyoansim Moheomga', body:'Gowun Dodum',  mood:['상장','공식'] },
-  { title:'Black Han Sans',       body:'Gowun Batang', mood:['상장','공식'] },
-  { title:'Song Myung',           body:'Gowun Batang', mood:['상장','안내장'] },
-  { title:'Gmarket Sans',         body:'Noto Sans KR', mood:['안내장','공식'] },
-  { title:'Paperlogy',            body:'Pretendard',   mood:['안내장','학습지'] },
+  /* 상장·공식 */
+  { title:'Hakgyoansim Moheomga', body:'Gowun Dodum',    mood:['상장','공식'] },
+  { title:'Black Han Sans',       body:'Gowun Batang',   mood:['상장','공식'] },
+  { title:'Song Myung',           body:'Gowun Batang',   mood:['상장','안내장'] },
+  { title:'Hakgyoansim Mabeopsa', body:'Nanum Myeongjo', mood:['상장','공식'] },
+  { title:'Diphylleia',           body:'Song Myung',     mood:['상장','감성'] },
+  /* 안내장·공식 */
+  { title:'Gmarket Sans',         body:'Noto Sans KR',   mood:['안내장','공식'] },
+  { title:'Paperlogy',            body:'Pretendard',     mood:['안내장','학습지'] },
+  { title:'NanumSquare Neo',      body:'Pretendard',     mood:['공식','안내장'] },
+  { title:'BM EULJIRO',           body:'Noto Sans KR',   mood:['안내장','공식'] },
+  /* 학습지 */
   { title:'Do Hyeon',             body:'IBM Plex Sans KR', mood:['학습지','공식'] },
-  { title:'Hakgyoansim Kkokkoma', body:'Gowun Dodum',  mood:['학습지','아이'] },
-  { title:'Jua',                  body:'Gowun Dodum',  mood:['이름표','아이'] },
-  { title:'Bagel Fat One',        body:'Gowun Dodum',  mood:['이름표','파티'] },
-  { title:'CookieRun',            body:'Pretendard',   mood:['파티','포스터'] },
-  { title:'ONE Mobile POP',       body:'Noto Sans KR', mood:['파티','포스터'] },
-  { title:'Cafe24 Ssurround',     body:'Gowun Dodum',  mood:['포스터','아이'] },
-  { title:'Hakgyoansim Mulgyeol', body:'Gowun Batang', mood:['카드','감성'] },
-  { title:'Gowun Batang',         body:'Gowun Batang', mood:['카드','감성'] },
-  { title:'Hakgyoansim Monggeul', body:'Gowun Dodum',  mood:['카드','아이'] },
+  { title:'Hakgyoansim Kkokkoma', body:'Gowun Dodum',    mood:['학습지','아이'] },
+  { title:'NanumSquareRound',     body:'Noto Sans KR',   mood:['학습지','공식'] },
+  { title:'Gaegu',                body:'Gowun Dodum',    mood:['학습지','아이'] },
+  /* 이름표·아이 */
+  { title:'Jua',                  body:'Gowun Dodum',    mood:['이름표','아이'] },
+  { title:'Bagel Fat One',        body:'Gowun Dodum',    mood:['이름표','파티'] },
+  { title:'Cafe24 Dongdong',      body:'Gowun Dodum',    mood:['이름표','아이'] },
+  { title:'DungGeunMo',           body:'Gowun Dodum',    mood:['이름표','아이'] },
+  { title:'Binggrae Melona',      body:'Gowun Dodum',    mood:['이름표','파티'] },
+  /* 파티·포스터 */
+  { title:'CookieRun',            body:'Pretendard',     mood:['파티','포스터'] },
+  { title:'ONE Mobile POP',       body:'Noto Sans KR',   mood:['파티','포스터'] },
+  { title:'Cafe24 Ssurround',     body:'Gowun Dodum',    mood:['포스터','아이'] },
+  { title:'Hakgyoansim Undongjang', body:'Pretendard',   mood:['포스터','파티'] },
+  { title:'Dongle',               body:'Gowun Dodum',    mood:['포스터','아이'] },
+  /* 카드·감성 */
+  { title:'Hakgyoansim Mulgyeol', body:'Gowun Batang',   mood:['카드','감성'] },
+  { title:'Gowun Batang',         body:'Gowun Batang',   mood:['카드','감성'] },
+  { title:'Hakgyoansim Monggeul', body:'Gowun Dodum',    mood:['카드','아이'] },
   { title:'Nanum Myeongjo',       body:'Nanum Myeongjo', mood:['카드','공식'] },
+  { title:'Nanum Pen Script',     body:'Gowun Dodum',    mood:['카드','감성'] },
+  { title:'Cafe24 Oneprettynight', body:'Gowun Batang',  mood:['카드','감성'] },
+  { title:'Gamja Flower',         body:'Gowun Dodum',    mood:['카드','아이'] },
 ];
 
 /* 본문 허용 카테고리 폰트 (하드 규칙 검증용) */
