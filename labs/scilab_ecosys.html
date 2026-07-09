@@ -48,6 +48,50 @@
     font-size:12.5px;color:var(--ink);background:rgba(10,18,12,.82);border:1px solid var(--line);border-radius:12px;
     padding:8px 15px;max-width:88vw;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
   #hint.show{opacity:1}
+  /* ── P3 시나리오 UI (다크 초원 톤) ── */
+  #sBtn{position:fixed;top:12px;right:120px;z-index:35;padding:9px 15px;border:1px solid var(--line);
+    border-radius:14px;background:rgba(111,207,95,.14);color:var(--ink);font-family:'Jua';font-size:13px;cursor:pointer}
+  #sBtn:active{transform:scale(.96)}
+  #sBanner{position:fixed;top:112px;left:50%;transform:translateX(-50%);z-index:34;display:flex;align-items:center;gap:12px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 16px;max-width:min(92vw,460px);backdrop-filter:blur(8px)}
+  #sBanner.hide{display:none}
+  #sbIcon{font-size:26px}
+  #sbTitle{font-size:14.5px;font-weight:700;color:#fff;font-family:'Jua'}
+  #sbHint{font-size:11.5px;color:var(--sub);margin-top:2px}
+  #sbClose{margin-left:auto;background:none;border:0;color:var(--sub);font-size:18px;cursor:pointer}
+  #sHome,#sPredict{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:rgba(6,12,8,.72);backdrop-filter:blur(4px)}
+  #sHome.hide,#sPredict.hide{display:none}
+  .scard{background:#101c13;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:min(92vw,440px);width:100%;
+    box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .scard h2{margin:0 0 6px;font-size:19px;text-align:center;font-family:'Jua';font-weight:400}
+  .scard .sub{text-align:center;color:var(--sub);font-size:12px;margin-bottom:16px}
+  .sItem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;margin-bottom:10px;padding:12px 14px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;cursor:pointer;color:var(--ink);transition:.15s}
+  .sItem:hover{background:rgba(111,207,95,.12);border-color:var(--grass)}
+  .sItem.wow{border-color:rgba(255,209,102,.4)}
+  .sItem .si{font-size:26px}
+  .sItem b{font-family:'Jua';font-weight:400;font-size:14.5px}
+  .sItem small{display:block;color:var(--sub);font-size:11.5px;line-height:1.45;margin-top:2px}
+  #sFree{display:block;width:100%;margin-top:6px;padding:11px;border:1px dashed var(--line);border-radius:12px;
+    background:none;color:var(--sub);font-family:'Jua';font-size:13px;cursor:pointer}
+  #sPredict .scard{text-align:center}
+  #spQ{font-size:16px;font-family:'Jua';font-weight:400;margin-bottom:16px;line-height:1.4}
+  .spOpt{display:block;width:100%;margin-bottom:10px;padding:13px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(255,255,255,.05);color:var(--ink);font-size:13.5px;cursor:pointer;text-align:left;transition:.15s}
+  .spOpt:hover{background:rgba(255,255,255,.09)}
+  .spOpt.right{background:rgba(111,207,95,.9);border-color:var(--grass);color:#04120c;font-weight:700}
+  .spOpt.wrong{background:rgba(200,80,70,.85);border-color:#c85046;color:#fff}
+  #spExplain{font-size:12.5px;color:var(--ink);line-height:1.65;text-align:left;margin:14px 2px 4px;
+    background:rgba(255,255,255,.04);border-radius:12px;padding:13px 15px}
+  #spExplain.hide{display:none}
+  #spGo{margin-top:14px;padding:11px 24px;border:0;border-radius:12px;background:var(--grass);color:#04120c;
+    font-family:'Jua';font-size:14px;cursor:pointer}
+  #spGo.hide{display:none}
+  #foxBtn.pulse{animation:foxpulse 1.1s ease-in-out infinite}
+  @keyframes foxpulse{0%,100%{box-shadow:0 0 0 0 rgba(240,145,60,.5)}50%{box-shadow:0 0 0 8px rgba(240,145,60,0)}}
+  button.hide{display:none}
+  @media (prefers-reduced-motion:reduce){ #foxBtn.pulse{animation:none;box-shadow:0 0 0 3px rgba(240,145,60,.4)} }
 </style>
 </head>
 <body>
@@ -69,11 +113,12 @@
   <button id="playBtn" class="on">⏸ 멈춤</button>
   <button id="speedBtn">⏩ 1×</button>
   <button id="foxBtn" class="danger">🦊 여우 없애기</button>
+  <button id="harvestBtn" class="danger hide">🎣 토끼 많이 잡기</button>
   <button id="resetBtn">🔄 처음부터</button>
 </div>
 
 <div id="hint"></div>
-<div id="note">P2 — 3층 군집 + 개체수 렌즈</div>
+<div id="note">P3 — 시나리오 3종 + 천적 제거 ★와우</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KEcosys 개체군 동역학 (SPEC_ECOSYS §2). THREE·DOM 참조 0.
@@ -467,8 +512,120 @@ resetBtn.addEventListener('click', ()=>{
   showHint('처음 상태로 되돌렸어요.');
 });
 
+/* 🎣 토끼 남획 (E-3) — R 강제 급감 → 여우 후속 감소 연쇄(§5 ⑨) */
+const harvestBtn=document.getElementById('harvestBtn');
+function harvestRabbits(){
+  sim.R = Math.max(4, sim.R*0.18);   // 갑작스러운 대량 포획
+  showHint('토끼를 한꺼번에 많이 잡았어요. 여우 먹이가 줄면 여우는 어떻게 될까요?');
+}
+harvestBtn.addEventListener('click', harvestRabbits);
+
+
 /* ═════════ 학년칸 (§4) — 저=렌즈 숨김(관찰 데모) ═════════ */
 if(grade==='low'){ lensEl.classList.add('hide'); }
+
+/* ═════════ P3 시나리오 UI (§4 — 미션보다 "탐구 도구") ═════════ */
+const gradeList = K.GRADE_SCENARIOS[grade] || K.GRADE_SCENARIOS.high;
+let activeScenario = null;
+
+function buildScenarioUI(){
+  const wrap=document.createElement('div');
+  wrap.innerHTML =
+    `<button id="sBtn">🔬 시나리오</button>
+     <div id="sBanner" class="hide"><span id="sbIcon"></span><div><div id="sbTitle"></div><div id="sbHint"></div></div><button id="sbClose">✕</button></div>
+     <div id="sHome" class="hide"><div class="scard"><h2>🌱 생태계 시나리오</h2>
+       <div class="sub">세 생물이 어떻게 서로 이어져 있는지 살펴봐요</div>
+       <div id="sList"></div><button id="sFree">자유 관찰</button></div></div>
+     <div id="sPredict" class="hide"><div class="scard">
+       <div id="spQ"></div><div id="spOpts"></div>
+       <div id="spExplain" class="hide"></div><button id="spGo" class="hide">지켜보기 →</button></div></div>`;
+  document.body.appendChild(wrap);
+
+  document.getElementById('sBtn').onclick = openHome;
+  document.getElementById('sbClose').onclick = exitScenario;
+  document.getElementById('sFree').onclick = ()=>{ closeAll(); exitScenario(); };
+  document.getElementById('spGo').onclick = ()=>{
+    document.getElementById('sPredict').classList.add('hide');
+    foxBtn.classList.add('pulse');
+    showHint('아래 «여우 없애기»를 눌러 직접 확인해 보세요.');
+  };
+
+  // 학년별 시나리오 리스트
+  const list=document.getElementById('sList');
+  gradeList.forEach(id=>{
+    const s=K.scenarioById(id); if(!s) return;
+    const b=document.createElement('button');
+    b.className='sItem'+(s.wow?' wow':'');
+    b.innerHTML=`<span class="si">${s.icon}</span><span><b>${s.title}</b><small>${s.brief}</small></span>`;
+    b.onclick=()=>startScenario(id);
+    list.appendChild(b);
+  });
+}
+function openHome(){ closeAll(); document.getElementById('sHome').classList.remove('hide'); }
+function closeAll(){ ['sHome','sPredict'].forEach(i=>document.getElementById(i).classList.add('hide')); }
+
+function resetSim(){
+  sim={...K.INIT}; foxRemoved=false; foxRemovedStep=-1; simStep=0; acc=0;
+  hist.length=0; recordHist();
+  foxBtn.classList.remove('gone'); foxBtn.textContent='🦊 여우 없애기';
+}
+
+function startScenario(id){
+  const s=K.scenarioById(id); if(!s) return;
+  activeScenario=id;
+  closeAll();
+  resetSim();
+  foxBtn.classList.remove('pulse');
+  // 배너
+  document.getElementById('sbIcon').textContent=s.icon;
+  document.getElementById('sbTitle').textContent=s.title;
+  document.getElementById('sbHint').textContent=s.hint;
+  document.getElementById('sBanner').classList.remove('hide');
+  // 시나리오별 조작 노출
+  const harvest=(id==='E-3');
+  harvestBtn.classList.toggle('hide', !harvest);
+  foxBtn.classList.toggle('hide', harvest);   // 남획 시나리오에선 여우버튼 감춤
+  playing=true; playBtn.textContent='⏸ 멈춤'; playBtn.classList.add('on');
+  if(id==='E-2') showWow();
+  else if(id==='E-3') showHint('세 생물이 균형을 이룬 뒤, «토끼 많이 잡기»를 눌러 보세요.');
+  else showHint('개체수가 크게 요동치지 않고 안정되는지 지켜보세요.');
+}
+
+function exitScenario(){
+  activeScenario=null;
+  closeAll();
+  document.getElementById('sBanner').classList.add('hide');
+  foxBtn.classList.remove('hide','pulse');
+  harvestBtn.classList.add('hide');
+}
+
+/* ★와우 예측 (E-2) — WOW_ECOSYS */
+function showWow(){
+  const w=K.WOW_ECOSYS;
+  document.getElementById('spQ').textContent=w.q;
+  const opts=document.getElementById('spOpts'); opts.innerHTML='';
+  const exp=document.getElementById('spExplain'); exp.classList.add('hide');
+  const go=document.getElementById('spGo'); go.classList.add('hide');
+  w.opts.forEach((txt,i)=>{
+    const b=document.createElement('button'); b.className='spOpt'; b.textContent=txt;
+    b.onclick=()=>{
+      opts.querySelectorAll('.spOpt').forEach(o=>o.style.pointerEvents='none');
+      b.classList.add(i===w.answer?'right':'wrong');
+      if(i!==w.answer) opts.children[w.answer].classList.add('right');
+      exp.textContent=w.explain; exp.classList.remove('hide');
+      go.classList.remove('hide');
+    };
+    opts.appendChild(b);
+  });
+  document.getElementById('sPredict').classList.remove('hide');
+}
+
+buildScenarioUI();
+
+// 딥링크 ?scenario= / 저학년 부팅 시 홈 자동
+const qScenario=P.get('scenario');
+if(qScenario && K.scenarioById(qScenario)) startScenario(qScenario);
+else if(grade==='low') openHome();
 
 /* ═════════ 애니메이션 ═════════ */
 let t0=performance.now();
@@ -509,6 +666,10 @@ window.__ECOSYS_P2__ = {
   removeFox(){ foxRemoved=true; foxRemovedStep=simStep; },
   reset(){ sim={...K.INIT}; foxRemoved=false; simStep=0; acc=0; hist.length=0; recordHist(); },
   countOf(sp){ return K.instanceCount(sp, sp==='grass'?sim.G:sp==='rabbit'?sim.R:sim.F); },
+  // P3
+  openHome, startScenario, showWow, exitScenario, harvestRabbits,
+  get activeScenario(){ return activeScenario; },
+  gradeList,
 };
 </script>
 </body>
