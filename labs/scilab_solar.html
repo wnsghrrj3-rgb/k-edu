@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🌍 케이랩 · 태양계·달 관측소</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#e7ecf5; --sub:#93a4c4; --panel:rgba(10,14,26,.82); --line:rgba(255,255,255,.1);
+         --sun:#ffd466; --earth:#5aa0e0; --moon:#e9edf5; --hi:#ffd166; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#060912;color:var(--ink);overflow:hidden;
+    font-family:'Gowun Dodum',system-ui,sans-serif;touch-action:none}
+  #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:#060912;color:var(--sub);font-size:15px;z-index:50}
+  #loading.hide{display:none}
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--earth)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  #note{position:fixed;left:0;right:0;bottom:8px;text-align:center;color:var(--sub);font-size:11px;z-index:18;opacity:.6}
+  #stage{position:fixed;inset:0}
+</style>
+</head>
+<body>
+<div id="loading">태양계·달 관측소 준비 중…</div>
+<div id="stage"></div>
+<div id="brand"><span class="k">케이</span>랩 · 태양계·달 관측소</div>
+<a id="back" href="./scilab_hub.html">← 과학실</a>
+<div id="note">P1 — 천문 엔진(순수 로직)</div>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  순수 로직 (P1 게이트 · 렌더 0줄) — window.KSolar / module.exports
+  물리 = 표준 천문 공식 + earthsun_proto.html 승계(창작 아님).
+  교과서 앵커: 서울 37°N 남중고도 하지 76.5°·춘추분 53°·동지 29.5°.
+  declination(day): 태양 적위 asin(sin(tilt)·−cos(orbAngle))  (day=0 동지)
+  noonAltitude: 남중고도 90−|lat−decl|
+  sunAltitude: asin(sinφsinδ+cosφcosδcosHA)
+  달 위상: illum=(1−cos(frac·2π))/2  (frac 0삭·.25상현·.5망·.75하현)
+  ═══════════════════════════════════════════════════════════════════
+-->
+<script id="solar-pure">
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.KSolar = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  var D2R = Math.PI / 180;
+
+  /* ── 확정 상수(§2 — 교과서 정합·earthsun 승계) ── */
+  var TILT0 = 23.44;      // 지구 자전축 기울기(기본)
+  var LAT0  = 37;         // 서울 위도(교과서 남중고도 정합)
+  var YEAR_DAYS  = 365.25;
+  var MOON_CYCLE = 29.53; // 삭망월(일)
+
+  function clamp(v, lo, hi){ return v < lo ? lo : v > hi ? hi : v; }
+  function mod1(x){ return ((x % 1) + 1) % 1; }
+
+  /* ── 태양·계절 ── */
+  function orbAngle(day){ return day / YEAR_DAYS * Math.PI * 2; }               // day=0 동지
+
+  function declination(day, tilt){
+    if (tilt == null) tilt = TILT0;
+    return Math.asin(Math.sin(tilt * D2R) * (-Math.cos(orbAngle(day)))) / D2R;  // 태양 적위(도)
+  }
+  function noonAltitude(day, lat, tilt){
+    if (lat == null)  lat = LAT0;
+    if (tilt == null) tilt = TILT0;
+    return 90 - Math.abs(lat - declination(day, tilt));                          // 남중고도(도)
+  }
+  function sunAltitude(day, hour, lat, tilt){
+    if (lat == null)  lat = LAT0;
+    if (tilt == null) tilt = TILT0;
+    var f = lat * D2R, d = declination(day, tilt) * D2R, HA = (hour - 12) * 15 * D2R;
+    return Math.asin(Math.sin(f) * Math.sin(d) + Math.cos(f) * Math.cos(d) * Math.cos(HA)) / D2R;
+  }
+  function dayLength(day, lat, tilt){
+    if (lat == null)  lat = LAT0;
+    if (tilt == null) tilt = TILT0;
+    var f = lat * D2R, d = declination(day, tilt) * D2R;
+    var c = -Math.tan(f) * Math.tan(d);
+    if (c <= -1) return 24;   // 백야
+    if (c >=  1) return 0;    // 극야
+    return 2 * Math.acos(c) / D2R / 15;                                          // 낮 길이(시간)
+  }
+  function shadowLength(alt, poleH){
+    if (poleH == null) poleH = 1;
+    return alt > 0 ? poleH / Math.tan(alt * D2R) : Infinity;                     // 막대 그림자 길이
+  }
+  function season(day, tilt){
+    if (tilt == null) tilt = TILT0;
+    if (tilt < 1) return 'none';          // ★와우: 기울기 없으면 계절 없음(earthsun 승계)
+    var d = declination(day, tilt);       // 북반구 기준
+    return d > 1.5 ? 'summer' : d < -1.5 ? 'winter' : 'spring_fall';
+  }
+
+  /* ── 달 위상(표준 이각 근사) ── */
+  function moonFrac(dayInCycle){ return mod1((dayInCycle % MOON_CYCLE) / MOON_CYCLE); } // 0=삭
+  function moonIllum(frac){ return (1 - Math.cos(mod1(frac) * Math.PI * 2)) / 2; }       // 0삭·1망
+  function moonWaxing(frac){ return mod1(frac) < 0.5; }                                  // 차오름
+  function moonLitSide(frac){ return moonWaxing(frac) ? 'right' : 'left'; }              // 밝은 쪽(북반구)
+  function moonPhaseName(frac){
+    var f = mod1(frac), e = 0.03;
+    if (f < e || f > 1 - e)            return '삭';
+    if (Math.abs(f - 0.25) < e)        return '상현달';
+    if (Math.abs(f - 0.5)  < e)        return '망';
+    if (Math.abs(f - 0.75) < e)        return '하현달';
+    if (f < 0.25) return '초승달';
+    if (f < 0.5)  return '상현망간';
+    if (f < 0.75) return '하현망간';
+    return '그믐달';
+  }
+
+  /* ── 시나리오 3종(§4) ── */
+  var SCENARIOS = [
+    { id: 'A-1', icon: '🌗', title: '그림자 시계', grade: 'mid',
+      brief: '계절을 바꾸며 정오 태양의 높이와 그림자를 관찰하자.',
+      hint: '여름엔 태양이 높고 그림자가 짧아요. 겨울엔 낮고 길어요.' },
+    { id: 'A-2', icon: '🌍', title: '계절 만들기', grade: 'mid', wow: true,
+      brief: '지구의 기울어진 축을 똑바로 세우면 계절은 어떻게 될까?',
+      hint: '자전축 기울기를 0까지 내려 사계절 태양 높이를 비교해 보세요.' },
+    { id: 'A-3', icon: '🌕', title: '보름달 만들기', grade: 'low',
+      brief: '달을 공전시켜 보름달(망)을 만들어 보자.',
+      hint: '삭 → 상현 → 망(보름) → 하현 순서로 모양이 변해요.' },
+  ];
+  var GRADE_SCENARIOS = { low: ['A-3'], mid: ['A-1', 'A-3'], high: ['A-1', 'A-2', 'A-3'] };
+  function scenarioById(id){ for (var i = 0; i < SCENARIOS.length; i++) if (SCENARIOS[i].id === id) return SCENARIOS[i]; return null; }
+
+  /* ── ★와우(A-2): 계절의 원인 = 자전축 기울기 ── */
+  var WOW_SEASON = {
+    at: 'A-2',
+    q: '지구의 기울어진 축을 똑바로 세우면 계절은 어떻게 될까?',
+    opts: [
+      '지금처럼 사계절이 그대로 있다',
+      '사계절이 사라지고 늘 같은 날씨가 된다',
+    ],
+    answer: 1,
+    explain: '계절이 생기는 까닭은 태양과의 거리가 아니라 지구 자전축이 약 23.4° 기울어져 있기 때문이에요. ' +
+      '기울어진 채로 공전하니 어느 때는 햇빛을 비스듬히 받고(겨울), 어느 때는 곧게 받아요(여름). ' +
+      '축을 똑바로 세우면 1년 내내 정오 태양 높이가 같아 계절이 사라지죠. ' +
+      '「여름은 태양에 가까워서」라는 생각은 흔한 오해예요 — 진짜 원인은 「기울기」랍니다.',
+  };
+
+  return {
+    D2R: D2R, TILT0: TILT0, LAT0: LAT0, YEAR_DAYS: YEAR_DAYS, MOON_CYCLE: MOON_CYCLE,
+    clamp: clamp,
+    orbAngle: orbAngle, declination: declination, noonAltitude: noonAltitude,
+    sunAltitude: sunAltitude, dayLength: dayLength, shadowLength: shadowLength, season: season,
+    moonFrac: moonFrac, moonIllum: moonIllum, moonWaxing: moonWaxing,
+    moonLitSide: moonLitSide, moonPhaseName: moonPhaseName,
+    SCENARIOS: SCENARIOS, GRADE_SCENARIOS: GRADE_SCENARIOS, scenarioById: scenarioById,
+    WOW_SEASON: WOW_SEASON,
+  };
+});
+</script>
+</body>
+</html>
