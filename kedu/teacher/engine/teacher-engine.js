@@ -537,6 +537,8 @@
       case 'klab':
       case 'math_tool':
         return (d.title ? `<h2>${md(d.title)}</h2>` : '') + `<div class="klab-mount" data-tool="${d.tool || ''}" data-config="${encodeURIComponent(JSON.stringify(d.config || {}))}" style="width:100%;"></div>`;
+      case 'quiz_gen':
+        return (d.title ? `<h2>${md(d.title)}</h2>` : '') + `<div class="kquiz-mount" data-lesson="${d.lesson || ''}" data-config="${encodeURIComponent(JSON.stringify({ n: d.count || 5, difficulty: d.difficulty || [1, 2] }))}" style="width:100%;"></div>`;
       case 'card_arrange':
         return renderCardArrange(d, slide.id);
       case 'offline_activity':
@@ -855,7 +857,7 @@
 
   // =================== 사이드바 — 슬라이드/보조자료/블록 ===================
   function blockShortLabel(block) {
-    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',klab:'🧊 케이랩',math_tool:'🧊 케이랩',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동',leveled_problem:'🎚 수준별 문제',exit_ticket:'🎫 출구 퀴즈'})[block] || block;
+    return ({cover:'표지',review:'복습',motivate:'도입 상황',concept:'개념',visual_demo:'시각 자료',compare:'비교',basic_problem:'기본 문제',advanced_problem:'응용 문제',real_world:'생활 속',game:'활동·놀이',summary:'요약',question:'발문',next_lesson:'다음 차시',arrow_flow:'흐름',misconception:'오개념',number_line_demo:'수직선',interactive_ten_frame:'👆 십 배열판',interactive_cube_stairs:'👆 큐브 쌓기',interactive_number_line:'👆 수직선',klab:'🧊 케이랩',math_tool:'🧊 케이랩',quiz_gen:'🧩 케이퀴즈',card_arrange:'👆 카드 순서',offline_activity:'🙋 교실 활동',leveled_problem:'🎚 수준별 문제',exit_ticket:'🎫 출구 퀴즈'})[block] || block;
   }
 
   function renderSlidesPanel() {
@@ -1088,6 +1090,33 @@
         const _cfg = JSON.parse(decodeURIComponent(_mt.dataset.config || '%7B%7D'));
         renderCurrentSlide._cleanup = window.KLab.mount(_mt, _mt.dataset.tool, _cfg) || null;
       } catch (e) { _mt.textContent = '교구 로드 오류'; }
+    }
+    const _qz = document.querySelector('#slide-content .kquiz-mount');
+    if (_qz && window.KQuiz) {
+      const _qc = (() => { try { return JSON.parse(decodeURIComponent(_qz.dataset.config || '%7B%7D')); } catch (e) { return {}; } })();
+      const _lesson = _qz.dataset.lesson;
+      const _mountQuiz = () => {
+        if (_lesson && window.KQuiz.core && window.KQuiz.core.has(_lesson)) {
+          try {
+            renderCurrentSlide._cleanup = window.KQuiz.mount(_qz, {
+              mode: 'teacher', lesson: _lesson, n: _qc.n || 5, difficulty: _qc.difficulty,
+              onAddToBox: window.KEDU_BOXBAR_ADDQUIZ || null
+            }) || null;
+          } catch (e) { _qz.textContent = '문제 로드 오류'; }
+        } else {
+          _qz.innerHTML = '<div style="padding:20px;color:#94A3B8;font-size:14px">아직 준비 중인 문제예요' + (_lesson ? ' (' + _lesson + ')' : '') + '</div>';
+        }
+      };
+      // 템플릿 지연 로드: g1_math_u3_l05 → /kedu/quiz/templates/g1_math_u3.js
+      if (_lesson && window.KQuiz.core && !window.KQuiz.core.has(_lesson)) {
+        const _m = _lesson.match(/^(g\d+_[a-z]+_u\d+)/);
+        if (_m) {
+          const _s = document.createElement('script');
+          _s.src = '/kedu/quiz/templates/' + _m[1] + '.js';
+          _s.onload = _mountQuiz; _s.onerror = _mountQuiz;
+          document.head.appendChild(_s);
+        } else { _mountQuiz(); }
+      } else { _mountQuiz(); }
     }
     const visibleSlides = slides.filter(s => s.included);
     const visIdx = visibleSlides.indexOf(cur);
