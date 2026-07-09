@@ -161,7 +161,12 @@ const GEN_KINDS = [
 let lastGen = null;
 function renderGenGrid(tries) {
   const g = document.getElementById('genGrid'); if (!g) return;
-  if (!window.KM_GEN) { if ((tries || 0) < 60) setTimeout(() => renderGenGrid((tries || 0) + 1), 50); return; }
+  if (!window.KM_GEN) {
+    if ((tries || 0) < 60) { setTimeout(() => renderGenGrid((tries || 0) + 1), 50); return; }
+    g.innerHTML = '<div style="grid-column:1/-1;padding:14px 16px;border:1px dashed #f0a500;border-radius:12px;color:#b45309;font-size:13px;background:#fffbeb">⚠️ 생성기(generator.js)를 불러오지 못했어요. 새로고침(Ctrl+Shift+R) 후에도 그대로면 알려주세요. <span style="color:#94a3b8">[KM_GEN 미로딩]</span></div>';
+    console.error('[kmake] KM_GEN not loaded — generator.js failed to define window.KM_GEN');
+    return;
+  }
   g.innerHTML = GEN_KINDS.map(s =>
     `<button class="gen-card" data-k="${s.k}"><div class="gi">${s.ico}</div><div class="gn">${s.n}</div></button>`).join('');
   g.querySelectorAll('.gen-card').forEach(c => c.onclick = () => generateTemplate(c.dataset.k));
