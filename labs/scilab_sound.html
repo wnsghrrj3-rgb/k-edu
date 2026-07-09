@@ -16,11 +16,100 @@
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
     background:#0a1210;color:var(--sub);font-size:15px;z-index:50}
   #loading.hide{display:none}
+
+  /* 상단 브랜드/뒤로 */
+  #brand{position:fixed;top:12px;left:16px;z-index:20;font-family:'Jua';font-size:17px}
+  #brand .k{color:var(--wave)}
+  #back{position:fixed;top:14px;right:16px;z-index:20;font-size:12.5px;color:var(--sub);
+    text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+
+  /* 오디오 안내 바(첫 제스처 gate + 음소거) */
+  #audioBar{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:20;
+    display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;font-size:12.5px;backdrop-filter:blur(6px)}
+  #audioBar .dot{width:8px;height:8px;border-radius:50%;background:#e0663a}
+  #audioBar.ready .dot{background:var(--wave)}
+  #muteBtn{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;
+    color:var(--ink);font-size:13px;padding:4px 10px;cursor:pointer}
+  #muteBtn.muted{color:#e0663a;border-color:#e0663a}
+
+  /* 하단 음원 트레이 */
+  #tray{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;
+    display:flex;gap:9px;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:9px;backdrop-filter:blur(8px);flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #tray button{font-family:'Jua';font-size:13px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:12px;padding:9px 13px;cursor:pointer;transition:.15s;
+    display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px}
+  #tray button .ic{font-size:22px}
+  #tray button.on{background:var(--wave);color:#062018;border-color:var(--wave)}
+  #tray button.vac{border-color:var(--vac)}
+  #tray button.vac.on{background:var(--vac);color:#04122e;border-color:var(--vac)}
+
+  /* 기타 프렛 슬라이더 패널 */
+  #fretPanel{position:fixed;right:16px;top:96px;z-index:20;width:186px;background:var(--panel);
+    border:1px solid var(--line);border-radius:16px;padding:14px;backdrop-filter:blur(8px);display:none}
+  #fretPanel.show{display:block}
+  #fretPanel h3{margin:0 0 4px;font-family:'Jua';font-size:14px}
+  #fretPanel .freqNow{font-size:12px;color:var(--sub);margin-bottom:11px}
+  #fretPanel .freqNow b{color:var(--hi);font-family:'Jua'}
+  #fretPanel input[type=range]{width:100%;accent-color:var(--wave)}
+  #fretPanel .lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:5px}
+
+  /* 파형 렌즈(하단 우측 접이식) */
+  #lens{position:fixed;left:16px;bottom:96px;z-index:19;width:290px;max-width:82vw;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    backdrop-filter:blur(8px);box-shadow:0 14px 40px rgba(0,0,0,.4)}
+  #lens.collapsed #lensBody{display:none}
+  #lensHead{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:12.5px}
+  #lensHead .lt{font-family:'Jua';flex:1}
+  #lensHead .arw{color:var(--sub);font-size:11px}
+  #lensBody{padding:0 10px 10px}
+  #lensBody canvas{width:100%;display:block;border-radius:8px;background:rgba(0,0,0,.28)}
+  #lensLegend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--sub);margin-top:7px}
+  #lensLegend span{display:flex;align-items:center;gap:4px}
+  #lensLegend i{width:11px;height:3px;border-radius:2px;display:inline-block}
+
+  /* 하단 힌트 */
+  #hint{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:18;
+    font-size:12.5px;color:var(--sub);background:rgba(10,18,16,.6);border-radius:999px;
+    padding:5px 14px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
+  #hint.show{opacity:1}
 </style>
 </head>
 <body>
 <div id="loading">소리 실험실 준비 중…</div>
 <div id="stage"></div>
+
+<div id="brand"><span class="k">케이</span>랩 · 소리 실험실</div>
+<a id="back" href="./scilab_hub.html">← 과학실</a>
+
+<div id="audioBar"><span class="dot"></span><span id="audioMsg">음원을 탭하면 소리가 나요</span>
+  <button id="muteBtn">🔊</button></div>
+
+<div id="tray">
+  <button data-src="tuning" class="on"><span class="ic">🔔</span>소리굽쇠</button>
+  <button data-src="drum"><span class="ic">🥁</span>북</button>
+  <button data-src="guitar"><span class="ic">🎸</span>기타</button>
+  <button data-src="bell"><span class="ic">🫙</span>유리종</button>
+  <button id="pumpBtn" class="vac"><span class="ic">💨</span>공기빼기</button>
+</div>
+
+<div id="fretPanel">
+  <h3>🎸 기타 줄</h3>
+  <div class="freqNow">지금 음: <b id="freqLabel">330 Hz</b></div>
+  <input id="fret" type="range" min="0" max="4" step="1" value="2">
+  <div class="lbl"><span>낮은음(긴 줄)</span><span>높은음(짧은 줄)</span></div>
+</div>
+
+<div id="lens" class="collapsed">
+  <div id="lensHead"><span class="lt">📈 파형 렌즈</span><span class="arw" id="lensArw">▲ 펼치기</span></div>
+  <div id="lensBody">
+    <canvas id="waveCv" width="560" height="200"></canvas>
+    <div id="lensLegend"></div>
+  </div>
+</div>
+
+<div id="hint"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KSound 소리 모델 (SPEC_SOUND §2). THREE·DOM·AudioContext 참조 0.
@@ -179,5 +268,379 @@
   };
 });
 </script>
-</body>
-</html>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three185/three.module.min.js",
+    "three/addons/": "./vendor/three185/addons/"
+} }
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 렌더 어댑터 — 무대·음원 4종 진동 3D·발음(WebAudio)·파형 렌즈·조작.
+     3층 분리: window.KSound의 strike/waveSample/envelope «결과»만 조회(물리 판단 0).
+     ⚠️ AudioContext는 첫 유저 제스처 후 생성(§4). 진동은 실 freq 못 그려 12Hz 대리.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const K = window.KSound;
+const VIS_FREQ = 12;   // 진동 대리 주파수(실 440Hz는 못 그림 — 12Hz + "빠르게 떨림")
+
+/* ═════════ 렌더 기반 (황금 표준 승계 · 소리 톤) ═════════ */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', function(e){ e.preventDefault();
+  if(document.getElementById('ctxlost')) return;
+  const o=document.createElement('div'); o.id='ctxlost';
+  o.style.cssText='position:fixed;inset:0;background:rgba(10,18,16,.93);color:#e8f4f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999';
+  const t=document.createElement('div'); t.textContent='화면이 잠시 멈췄어요'; t.style.cssText='font-size:20px;font-weight:700';
+  const b=document.createElement('button'); b.textContent='다시 열기';
+  b.style.cssText='padding:10px 26px;border-radius:12px;border:0;background:#2DD4A0;color:#04120c;font-size:16px;cursor:pointer';
+  b.addEventListener('click', ()=>location.reload());
+  o.appendChild(t); o.appendChild(b); document.body.appendChild(o);
+});
+
+const scene = new THREE.Scene();
+{
+  const c=document.createElement('canvas'); c.width=4; c.height=256;
+  const g=c.getContext('2d');
+  const gr=g.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'#16241f'); gr.addColorStop(.55,'#101a17'); gr.addColorStop(1,'#0a1210');
+  g.fillStyle=gr; g.fillRect(0,0,4,256);
+  const bg=new THREE.CanvasTexture(c); bg.colorSpace=THREE.SRGBColorSpace;
+  scene.background=bg;
+}
+scene.fog = new THREE.Fog(0x0e1815, 3.6, 8.8);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.05, 30);
+camera.position.set(0.72, 0.66, 1.42);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.2, -0.02);
+controls.enableDamping=true; controls.dampingFactor=0.08;
+controls.minDistance=0.6; controls.maxDistance=3.0;
+controls.maxPolarAngle=1.46; controls.enablePan=false;
+controls.update();
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const sun = new THREE.DirectionalLight(0xfff2e0, 2.4);
+sun.position.set(1.6,3.2,1.5); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-1.6; sun.shadow.camera.right=1.6;
+sun.shadow.camera.top=2.0; sun.shadow.camera.bottom=-0.6;
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=8.5;
+sun.shadow.bias=-0.0004; sun.shadow.radius=5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x7fd8c0, 0x22201c, 0.34));
+
+/* ── 무대: 바닥 + 벤치 상판 ── */
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(6, 48),
+  new THREE.MeshStandardMaterial({ color:0x2a3833, roughness:0.95 }));
+floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; floor.receiveShadow=true; scene.add(floor);
+const bench = new THREE.Mesh(
+  new THREE.BoxGeometry(1.5, 0.04, 0.7),
+  new THREE.MeshStandardMaterial({ color:0x1b2a25, roughness:0.55, metalness:0.1 }));
+bench.position.set(0,-0.02,0); bench.receiveShadow=true; scene.add(bench);
+
+/* ═════════ 음원 3D 팩토리 ═════════ */
+// 위치: 벤치 위 4칸
+const SLOT_X = { tuning:-0.45, drum:-0.15, guitar:0.18, bell:0.5 };
+const METAL = (c)=>new THREE.MeshStandardMaterial({ color:c, metalness:0.85, roughness:0.28 });
+const MATTE = (c)=>new THREE.MeshStandardMaterial({ color:c, roughness:0.7 });
+
+function makeTuning(){
+  const g=new THREE.Group();
+  const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.09,16), METAL(0xcdd6d2));
+  handle.position.y=0.045; handle.castShadow=true; g.add(handle);
+  const prongMat=METAL(0xdfe8e4);
+  const pL=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.16,14), prongMat);
+  pL.position.set(-0.022,0.17,0); pL.castShadow=true;
+  const pR=pL.clone(); pR.position.x=0.022;
+  const base=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.012,0.03), METAL(0xdfe8e4));
+  base.position.y=0.096;
+  g.add(pL); g.add(pR); g.add(base);
+  g.userData.prongs=[pL,pR];
+  g.position.set(SLOT_X.tuning,0,0);
+  return g;
+}
+function makeDrum(){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.075,0.11,28), MATTE(0x8a4a2c));
+  body.position.y=0.055; body.castShadow=true; g.add(body);
+  const skin=new THREE.Mesh(new THREE.CircleGeometry(0.085,28),
+    new THREE.MeshStandardMaterial({ color:0xf1e4cf, roughness:0.55, side:THREE.DoubleSide }));
+  skin.rotation.x=-Math.PI/2; skin.position.y=0.111; g.add(skin);
+  g.userData.skin=skin; g.userData.skinY=0.111;
+  g.position.set(SLOT_X.drum,0,0);
+  return g;
+}
+function makeGuitar(){
+  const g=new THREE.Group();
+  const bodyMat=MATTE(0xb5793a);
+  const bodyShape=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.03,32), bodyMat);
+  bodyShape.rotation.x=Math.PI/2; bodyShape.position.set(0,0.09,0); bodyShape.castShadow=true; g.add(bodyShape);
+  const neck=new THREE.Mesh(new THREE.BoxGeometry(0.028,0.28,0.02), MATTE(0x5a3a20));
+  neck.position.set(0,0.28,0); g.add(neck);
+  // 진동 줄 (하나 대표 — 사인 정재파)
+  const string=new THREE.Mesh(new THREE.CylinderGeometry(0.0018,0.0018,0.34,8),
+    new THREE.MeshStandardMaterial({ color:0xe8eae0, metalness:0.6, roughness:0.4 }));
+  string.position.set(0,0.24,0.013); g.add(string);
+  g.userData.string=string;
+  g.position.set(SLOT_X.guitar,0,0);
+  return g;
+}
+function makeBell(){
+  const g=new THREE.Group();
+  // 종(금속) — LatheGeometry
+  const pts=[]; for(let i=0;i<=8;i++){ const u=i/8; pts.push(new THREE.Vector2(0.002+0.05*Math.sin(u*1.4), 0.11*u)); }
+  const bell=new THREE.Mesh(new THREE.LatheGeometry(pts,24), METAL(0xe0c46a));
+  bell.position.y=0.09; bell.castShadow=true; g.add(bell);
+  const bellPivot=new THREE.Group(); bellPivot.position.y=0.2; bellPivot.add(bell);
+  bell.position.y=-0.11;
+  g.add(bellPivot); g.userData.pivot=bellPivot;
+  // 유리 종 커버(진공 챔버)
+  const jar=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.22,24,1,true),
+    new THREE.MeshPhysicalMaterial({ color:0xffffff, metalness:0, roughness:0.05,
+      transparent:true, opacity:0.12, depthWrite:false, side:THREE.DoubleSide }));
+  jar.position.y=0.13; g.add(jar);
+  const jarTop=new THREE.Mesh(new THREE.CircleGeometry(0.085,24),
+    new THREE.MeshPhysicalMaterial({ color:0xffffff, metalness:0, roughness:0.05, transparent:true, opacity:0.14, depthWrite:false }));
+  jarTop.rotation.x=-Math.PI/2; jarTop.position.y=0.24; g.add(jarTop);
+  // 진공 안개(공기 뺀 표시)
+  const mist=new THREE.Mesh(new THREE.SphereGeometry(0.07,16,12),
+    new THREE.MeshBasicMaterial({ color:0x7aa0ff, transparent:true, opacity:0 }));
+  mist.position.y=0.13; g.add(mist); g.userData.mist=mist;
+  g.position.set(SLOT_X.bell,0,0);
+  return g;
+}
+
+const OBJ = { tuning:makeTuning(), drum:makeDrum(), guitar:makeGuitar(), bell:makeBell() };
+Object.values(OBJ).forEach(o=>scene.add(o));
+
+/* ── 음원 상태 ── */
+const now = ()=>performance.now()/1000;
+const S = {
+  tuning:{ kind:'tuning', struckAt:-99, hit:0, medium:1 },
+  drum:  { kind:'drum',   struckAt:-99, hit:0, medium:1 },
+  guitar:{ kind:'guitar', struckAt:-99, hit:0, medium:1, fret:2 },
+  bell:  { kind:'tuning', struckAt:-99, hit:0, medium:1, isBell:true }, // 종 소리모델=tuning
+};
+let active = 'tuning';       // 트레이 선택(파형 렌즈 대상)
+const lensSources = new Set(); // 친 적 있는 음원(파형 겹치기)
+
+function modelOf(id){
+  const s=S[id];
+  const t = now()-s.struckAt;
+  return K.strike(s.kind, { hitStrength: s.hit, t:t, medium:s.medium, fret:s.fret });
+}
+
+/* ═════════ 발음 어댑터 (WebAudio · §4) ═════════ */
+let ctx=null, master=null, muted=false, voices=0;
+function ensureAudio(){
+  if(!ctx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return false;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = K.MASTER_VOL_MAX;   // 상한 0.3
+    master.connect(ctx.destination);
+  }
+  if(ctx.state==='suspended') ctx.resume();
+  document.getElementById('audioBar').classList.add('ready');
+  document.getElementById('audioMsg').textContent = muted ? '음소거 중' : '소리 켜짐';
+  return true;
+}
+function playModel(model){
+  if(muted || model.heardAmp<=0.001) return;  // 진공/음소거 → 발음 스킵(시각만)
+  if(!ensureAudio()) return;
+  if(!K.canPlay(voices)) return;               // 동시 발음 상한 4
+  const t0=ctx.currentTime;
+  const osc=ctx.createOscillator();
+  osc.type = (model.waveType==='drum') ? 'sine' : model.waveType;
+  osc.frequency.setValueAtTime(model.waveType==='drum' ? model.freq : model.freq, t0);
+  const g=ctx.createGain();
+  const peak = K.clampVolume(model.heardAmp*0.26);
+  g.gain.setValueAtTime(0.0002, t0);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak,0.0003), t0+K.ATTACK);
+  g.gain.exponentialRampToValueAtTime(0.0002, t0+model.tau);
+  osc.connect(g); g.connect(master);
+  voices++;
+  osc.onended=()=>{ voices=Math.max(0,voices-1); };
+  osc.start(t0); osc.stop(t0+model.tau+0.05);
+  // 북 = 저주파 배음 한 겹
+  if(model.waveType==='drum' && voices<K.MAX_VOICES){
+    const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=model.freq*0.5;
+    const g2=ctx.createGain(); g2.gain.setValueAtTime(0.0002,t0);
+    g2.gain.exponentialRampToValueAtTime(Math.max(peak*0.5,0.0003),t0+K.ATTACK);
+    g2.gain.exponentialRampToValueAtTime(0.0002,t0+model.tau);
+    o2.connect(g2); g2.connect(master); voices++;
+    o2.onended=()=>{ voices=Math.max(0,voices-1); };
+    o2.start(t0); o2.stop(t0+model.tau+0.05);
+  }
+}
+
+/* ═════════ 조작 ═════════ */
+function strikeSource(id){
+  const s=S[id];
+  s.hit = 0.9;
+  s.struckAt = now();
+  lensSources.add(id);
+  active = id;
+  syncTray();
+  const model = modelOf(id);
+  playModel(model);
+  showHint(id==='bell' && s.medium===0
+    ? '종은 흔들리지만 소리가 안 들려요 — 공기가 없거든요!'
+    : (id==='guitar' ? '줄을 짧게 짚으면 더 높은 소리!' : '떨림이 곧 소리예요'));
+}
+
+// 레이캐스트 탭 = 치기
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let downXY=null;
+renderer.domElement.addEventListener('pointerdown', e=>{ downXY=[e.clientX,e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e=>{
+  if(!downXY) return;
+  const moved=Math.hypot(e.clientX-downXY[0], e.clientY-downXY[1]);
+  downXY=null;
+  if(moved>6) return; // 드래그=궤도
+  ptr.x=(e.clientX/innerWidth)*2-1; ptr.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(ptr, camera);
+  const hit=ray.intersectObjects(Object.values(OBJ), true)[0];
+  if(!hit) return;
+  for(const id of Object.keys(OBJ)){ if(isDesc(OBJ[id], hit.object)){ strikeSource(id); break; } }
+});
+function isDesc(root,node){ let n=node; while(n){ if(n===root) return true; n=n.parent; } return false; }
+
+// 트레이 버튼
+document.querySelectorAll('#tray button[data-src]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ strikeSource(btn.dataset.src); });
+});
+function syncTray(){
+  document.querySelectorAll('#tray button[data-src]').forEach(b=>{
+    b.classList.toggle('on', b.dataset.src===active);
+  });
+  document.getElementById('fretPanel').classList.toggle('show', active==='guitar');
+}
+
+// 기타 프렛
+const fret=document.getElementById('fret');
+fret.addEventListener('input', ()=>{
+  S.guitar.fret = +fret.value;
+  document.getElementById('freqLabel').textContent = Math.round(K.guitarFreq(S.guitar.fret))+' Hz';
+});
+document.getElementById('freqLabel').textContent = Math.round(K.guitarFreq(2))+' Hz';
+
+// 공기빼기 펌프 (★진공 = 종은 흔들리는데 소리 사라짐)
+const pumpBtn=document.getElementById('pumpBtn');
+pumpBtn.addEventListener('click', ()=>{
+  S.bell.medium = S.bell.medium===1 ? 0 : 1;
+  const vac = S.bell.medium===0;
+  pumpBtn.classList.toggle('on', vac);
+  pumpBtn.querySelector('.ic').textContent = vac ? '🫧' : '💨';
+  pumpBtn.childNodes[pumpBtn.childNodes.length-1].textContent = vac ? '공기채움' : '공기빼기';
+  showHint(vac ? '유리 종 안의 공기를 뺐어요 — 이제 종을 쳐 보세요' : '공기를 다시 넣었어요');
+});
+
+// 음소거
+const muteBtn=document.getElementById('muteBtn');
+muteBtn.addEventListener('click', ()=>{
+  muted=!muted;
+  muteBtn.classList.toggle('muted', muted);
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  if(master) master.gain.value = muted ? 0 : K.MASTER_VOL_MAX;
+  document.getElementById('audioMsg').textContent = muted ? '음소거 중' : (ctx?'소리 켜짐':'음원을 탭하면 소리가 나요');
+});
+
+let hintTimer=null;
+function showHint(msg){
+  const h=document.getElementById('hint'); h.textContent=msg; h.classList.add('show');
+  clearTimeout(hintTimer); hintTimer=setTimeout(()=>h.classList.remove('show'), 2600);
+}
+
+/* ═════════ 파형 렌즈 (Canvas 2D · waveSample 플롯) ═════════ */
+const WAVE_COL = { tuning:'#2DD4A0', drum:'#ff9a5a', guitar:'#ffd166', bell:'#7aa0ff' };
+const WAVE_NAME= { tuning:'소리굽쇠', drum:'북', guitar:'기타', bell:'유리종' };
+const cv=document.getElementById('waveCv'), cx=cv.getContext('2d');
+const lensEl=document.getElementById('lens');
+document.getElementById('lensHead').addEventListener('click', ()=>{
+  const col=lensEl.classList.toggle('collapsed');
+  document.getElementById('lensArw').textContent = col ? '▲ 펼치기' : '▼ 접기';
+  if(!col) drawWave();
+});
+function drawWave(){
+  const W=cv.width, H=cv.height, mid=H/2;
+  cx.clearRect(0,0,W,H);
+  // 중심선
+  cx.strokeStyle='rgba(255,255,255,.12)'; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(0,mid); cx.lineTo(W,mid); cx.stroke();
+  const N=560;
+  const legend=[];
+  lensSources.forEach(id=>{
+    const m=modelOf(id);
+    const amp = id==='guitar'||id==='drum'||id==='tuning'||id==='bell' ? m.amp : m.amp;
+    const samples=K.waveSample(m.freq, Math.max(amp,0.0), m.waveType, N);
+    cx.strokeStyle=WAVE_COL[id]; cx.lineWidth = (id===active)?2.4:1.3;
+    cx.globalAlpha = (id===active)?1:0.5;
+    cx.beginPath();
+    for(let i=0;i<N;i++){ const x=i/(N-1)*W; const y=mid - samples[i]*mid*0.86; if(i===0)cx.moveTo(x,y); else cx.lineTo(x,y); }
+    cx.stroke();
+    legend.push(id);
+  });
+  cx.globalAlpha=1;
+  const lg=document.getElementById('lensLegend');
+  lg.innerHTML = legend.map(id=>`<span><i style="background:${WAVE_COL[id]}"></i>${WAVE_NAME[id]} ${Math.round(modelOf(id).freq)}Hz</span>`).join('') ||
+    '<span>음원을 쳐 보세요</span>';
+}
+
+/* ═════════ 진동 애니메이션 ═════════ */
+function vibAmp(id){ const m=modelOf(id); return m.amp; }  // 진동=amp (medium 무관!)
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  const t=now();
+  // 소리굽쇠 두 갈래 좌우 진동
+  { const a=vibAmp('tuning'), tt=t-S.tuning.struckAt; const d=a*Math.sin(2*Math.PI*VIS_FREQ*tt)*0.01;
+    const [pL,pR]=OBJ.tuning.userData.prongs; pL.position.x=-0.022-d; pR.position.x=0.022+d; }
+  // 북 막 상하
+  { const a=vibAmp('drum'), tt=t-S.drum.struckAt; const sk=OBJ.drum.userData.skin;
+    sk.position.y=OBJ.drum.userData.skinY - a*Math.sin(2*Math.PI*VIS_FREQ*tt)*0.014; }
+  // 기타 줄 사인 정재파(굵기 스케일 + 미세 z)
+  { const a=vibAmp('guitar'), tt=t-S.guitar.struckAt; const st=OBJ.guitar.userData.string;
+    st.scale.x = 1 + a*Math.abs(Math.sin(2*Math.PI*VIS_FREQ*tt))*6; }
+  // 유리종 좌우 흔들림 (medium 무관 — 진공에서도 진동 유지 = ★분리 강조)
+  { const a=vibAmp('bell'), tt=t-S.bell.struckAt; const pv=OBJ.bell.userData.pivot;
+    pv.rotation.z = a*Math.sin(2*Math.PI*(VIS_FREQ*0.6)*tt)*0.32;
+    OBJ.bell.userData.mist.material.opacity = (S.bell.medium===0)?0.14:0; }
+  if(!lensEl.classList.contains('collapsed')) drawWave();
+  renderer.render(scene, camera);
+}
+
+addEventListener('resize', ()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// 학년칸(§5): 저=파형 렌즈 숨김, 고=진공 노출
+const grade = new URLSearchParams(location.search).get('grade') || 'high';
+if(grade==='low'){ lensEl.style.display='none'; pumpBtn.style.display='none'; }
+if(grade==='mid'){ pumpBtn.style.display='none'; }
+
+syncTray();
+document.getElementById('loading').classList.add('hide');
+animate();
+
+// 검증 훅
+window.__SOUND_P2__ = { S, OBJ, modelOf, strikeSource, drawWave, ensureAudio, playModel, K };
+</script>
