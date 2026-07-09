@@ -31,6 +31,15 @@
   #tip.hide{opacity:0}
   #sound{position:fixed;top:14px;right:96px;z-index:20;font-size:15px;background:var(--panel);
     border:1px solid var(--line);border-radius:999px;width:38px;height:33px;cursor:pointer;color:var(--ink);line-height:1}
+  #ctl{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:7px;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px;backdrop-filter:blur(8px);
+    box-shadow:0 14px 40px rgba(0,0,0,.45);max-width:94vw;flex-wrap:wrap;justify-content:center}
+  #ctl button{font-family:'Jua';font-size:14px;color:var(--ink);background:rgba(255,255,255,.06);
+    border:1px solid var(--line);border-radius:999px;padding:9px 15px;cursor:pointer;transition:.14s}
+  #ctl button:active{transform:scale(.93)}
+  #ctl button.go{background:var(--block);color:#3a2c00;border-color:var(--block)}
+  #ctl button.on{background:var(--bell);color:#0a0c18;border-color:var(--bell)}
+  #hud .ten{color:var(--ten)}
 </style>
 </head>
 <body>
@@ -39,8 +48,15 @@
 <div id="brand"><span class="k">케이</span>랩 수학실 · 수 공장</div>
 <a id="back" href="../hub/klab.html">← 케이랩</a>
 <button id="sound" title="소리">🔊</button>
-<div id="hud">만든 10 <b id="hTen">0</b><span>레시피 <b id="hRecipe">0</b></span></div>
+<div id="hud">만든 <b class="ten" id="hTen">0</b>개의 10<span>레시피 <b id="hRecipe">0</b></span></div>
 <div id="tip">수 블록 두 개를 만나게 해서 딱 10을 만들어 봐요.</div>
+<div id="ctl">
+  <button id="bNew">🎲 새 블록</button>
+  <button id="bGo" class="go">🧲 만나게 하기</button>
+  <button id="bAdd" class="on">➕ 더하기</button>
+  <button id="bSub">➖ 빼기</button>
+  <button id="bReset">↺</button>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      순수 로직 — KNumber "10의 자석" 모델 (MATHLAB 설계 §수 공장). THREE·DOM 참조 0.
@@ -163,6 +179,355 @@
     SCENARIOS, WOW_MAGNET
   };
 });
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     P2 렌더 어댑터 — 2D canvas 수 블록(텐프레임 자석). 순수 KNumber 조회만(연산 0줄).
+     블록 = 조각(unit) 묶음을 텐프레임(2×5)에 담은 물리 덩어리. 잡으면 출렁.
+     더하기: magnetAdd.need만큼 B에서 fromB 조각이 뜯겨 A 빈 칸으로 날아가 철컥 → 10 완성(쨍) + left 남음.
+     빼기: magnetSub — 십몇의 10 막대가 fromTen으로 와그작 갈라져 빠짐(받아내림).
+     운명의 방 P2 패턴(2D canvas + window.__NUMBER_P2__ 훅 + instant 경로) 승계. ═══ -->
+<script>
+(function(){
+  'use strict';
+  var K = window.KNumber;
+  var C = { ink:'#eef0ff', sub:'#9aa0c8', block:'#ffd166', block2:'#f59e2c',
+            bell:'#7c8cff', ten:'#5ad1a0', ten2:'#39a97e', slot:'rgba(255,255,255,.14)',
+            line:'rgba(255,255,255,.10)' };
+
+  var stage = document.getElementById('stage');
+  var cv = document.createElement('canvas'); cv.id = 'board'; stage.appendChild(cv);
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1, geo = {};
+
+  // ── 상태 ──
+  var mode = 'add';                 // 'add' | 'sub'
+  var curA = 7, curB = 5;           // 현재 두 수
+  var madeTens = 0, recipe = [];    // 만든 10 개수 · 레시피 노트(조합 기록)
+  var lastResult = null;            // 마지막 magnetAdd/Sub 반환
+  var soundOn = true;
+  var busy = false, looping = false;
+
+  // 렌더 모델: A(왼쪽 텐프레임) · B(오른쪽 무리) · flyer(이동 조각) · phase
+  var A = { tens:0, ones:0 };       // A 블록: 십의 자리 막대 수 + 일의 자리 조각
+  var B = 0;                        // B 블록 남은 조각
+  var flyers = [];                  // {x,y, tx,ty, seg, t, kind:'unit'|'gone', slot}
+  var phase = 'idle';               // idle|approach|magnet|split|complete|done
+  var phT = 0, approach = 0, flash = 0, bob = 0, grabbed = false;
+
+  // ── 레이아웃 ──
+  function layout(){
+    var cx = W/2, cy = H*0.46;
+    var unit = K.clamp(Math.min(W,H)*0.052, 20, 46);   // 조각 한 칸 크기
+    geo.unit = unit; geo.gap = unit*0.16;
+    geo.cellW = unit + geo.gap;
+    geo.cy = cy;
+    geo.frameW = geo.cellW*5;                          // 텐프레임 5열
+    geo.frameH = geo.cellW*2;                          // 2행
+    geo.aX = cx - geo.frameW - unit*1.4;               // A 프레임 좌상단 x
+    geo.aY = cy - geo.frameH/2;
+    geo.bX = cx + unit*1.4;                            // B 무리 좌상단 x
+    geo.bY = cy - geo.frameH/2;
+  }
+  // 텐프레임 슬롯 중심 (idx 0..9 → 2행5열)
+  function slotXY(idx){
+    var r = Math.floor(idx/5), c = idx%5;
+    return { x: geo.aX + (c+0.5)*geo.cellW, y: geo.aY + (r+0.5)*geo.cellW };
+  }
+  // B 무리 조각 중심 (idx 0..)
+  function bXY(idx){
+    var r = Math.floor(idx/5), c = idx%5;
+    return { x: geo.bX + (c+0.5)*geo.cellW, y: geo.bY + (r+0.5)*geo.cellW };
+  }
+
+  // ── 렌더 ──
+  function draw(){
+    if (!ctx) return;
+    ctx.clearRect(0,0,W,H);
+    drawSign();
+    drawTenBars();       // A의 십의 자리(완성 10 막대)
+    drawFrame();         // A 텐프레임 + 일의 조각
+    drawB();             // B 무리
+    drawFlyers();        // 이동 중 조각
+  }
+  function rr(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+    ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+    ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+    ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath();
+  }
+  function unitTile(x,y,c1,c2){
+    var u = geo.unit, s = u*0.82, o = -s/2;
+    var g = ctx.createLinearGradient(0, y+o, 0, y+o+s);
+    g.addColorStop(0, c1); g.addColorStop(1, c2);
+    ctx.fillStyle = g; rr(x+o, y+o, s, s, s*0.28); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; rr(x+o+s*0.16, y+o+s*0.12, s*0.5, s*0.22, s*0.11); ctx.fill();
+  }
+  function drawFrame(){
+    // 텐프레임 슬롯 10칸(점선 느낌)
+    ctx.strokeStyle = C.slot; ctx.lineWidth = 1.5;
+    for (var i=0;i<10;i++){ var p = slotXY(i), u=geo.unit*0.82;
+      rr(p.x-u/2, p.y-u/2, u, u, u*0.28); ctx.stroke(); }
+    // 프레임 외곽
+    ctx.strokeStyle = C.line; ctx.lineWidth = 2;
+    rr(geo.aX+2, geo.aY+2, geo.frameW-4, geo.frameH-4, 12); ctx.stroke();
+    // 일의 자리 조각(A.ones개) 채움 + 완성 플래시
+    var bobY = grabbed ? Math.sin(bob)*3 : 0;
+    for (var k=0;k<A.ones;k++){ var q = slotXY(k); unitTile(q.x, q.y+bobY, C.block, C.block2); }
+    if (flash > 0){
+      ctx.save(); ctx.globalAlpha = flash*0.5; ctx.fillStyle = C.ten;
+      rr(geo.aX, geo.aY, geo.frameW, geo.frameH, 12); ctx.fill(); ctx.restore();
+    }
+  }
+  function drawTenBars(){
+    // 완성한 10 = 초록 꽉 찬 텐프레임을 A 위쪽에 막대로 적재
+    for (var t=0;t<A.tens;t++){
+      var bx = geo.aX, by = geo.aY - (t+1)*(geo.cellW*0.62) - 10;
+      var g = ctx.createLinearGradient(0, by, 0, by+geo.cellW*0.5);
+      g.addColorStop(0, C.ten); g.addColorStop(1, C.ten2);
+      ctx.save(); ctx.shadowColor = C.ten; ctx.shadowBlur = 12; ctx.fillStyle = g;
+      rr(bx, by, geo.frameW, geo.cellW*0.5, 9); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#0a1a12'; ctx.font = "700 "+Math.round(geo.unit*0.62)+"px 'Jua',sans-serif";
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('10', bx+geo.frameW/2, by+geo.cellW*0.25);
+    }
+  }
+  function drawB(){
+    var ax = phase==='approach' ? -approach*(geo.bX-(geo.aX+geo.frameW+geo.unit)) : 0;
+    var bobY = 0;
+    for (var k=0;k<B;k++){ var p = bXY(k); unitTile(p.x-ax, p.y+bobY, C.block, C.block2); }
+  }
+  function drawFlyers(){
+    for (var i=0;i<flyers.length;i++){ var f = flyers[i];
+      if (f.kind==='gone'){ ctx.save(); ctx.globalAlpha = 1-f.t; unitTile(f.x, f.y, '#c9ccea', '#8f93c0'); ctx.restore(); }
+      else unitTile(f.x, f.y, '#fff4cf', C.block2);
+    }
+  }
+  function drawSign(){
+    ctx.fillStyle = C.sub; ctx.font = "700 "+Math.round(geo.unit*0.9)+"px 'Jua',sans-serif";
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    var op = mode==='add' ? '＋' : '－';
+    ctx.fillText(op, W/2, geo.cy);
+    // 식 라벨(하단)
+    ctx.fillStyle = C.ink; ctx.font = "700 "+Math.round(geo.unit*0.72)+"px 'Jua',sans-serif";
+    var eq = mode==='add' ? (curA+' + '+curB) : (curA+' − '+curB);
+    if (phase==='done' && lastResult){ eq += ' = ' + (mode==='add'? lastResult.sum : lastResult.diff); }
+    ctx.fillText(eq, W/2, geo.aY + geo.frameH + geo.unit*1.1);
+  }
+
+  // ── 루프 ──
+  function raf(fn){ (window.requestAnimationFrame || function(f){ return setTimeout(f,16); })(fn); }
+  function ensureLoop(){ if (!looping){ looping = true; raf(frame); } }
+  function frame(){
+    var alive = step();
+    if (grabbed) bob += 0.25;
+    if (flash > 0) flash = Math.max(0, flash - 0.06);
+    draw();
+    if (alive || flash > 0 || grabbed){ raf(frame); } else { looping = false; }
+  }
+
+  // ── 결합 애니 상태 머신 ──
+  var plan = null;   // {order:[{slot, srcIdx}], leftAfter, tensAfter, onesAfter, splitGone}
+  function step(){
+    if (phase==='idle' || phase==='done') return false;
+    phT += 0.045;
+    if (phase==='approach'){
+      approach = ease(phT);
+      if (phT >= 1){ phT = 0; approach = 1;
+        if (mode==='add') beginMagnet(); else beginSub();
+      }
+      return true;
+    }
+    if (phase==='magnet' || phase==='split'){
+      var allDone = true;
+      for (var i=0;i<flyers.length;i++){ var f = flyers[i];
+        if (f.arrived) continue;
+        f.t += 0.09;
+        var e = f.t>1?1:f.t, ey = e*e*(3-2*e);
+        var lift = Math.sin(e*Math.PI) * geo.unit * 0.9;
+        f.x = f.sx + (f.tx-f.sx)*e;
+        f.y = f.sy + (f.ty-f.sy)*ey - (f.kind==='unit'?lift:0);
+        if (f.t >= 1){ f.arrived = true; f.x=f.tx; f.y=f.ty;
+          if (f.kind==='unit'){ A.ones++; clack(); } else { clack(); }
+        } else allDone = false;
+      }
+      if (allDone){ finishCombine(); }
+      return true;
+    }
+    return false;
+  }
+  function ease(t){ return t<0?0:t>1?1:(t*t*(3-2*t)); }
+
+  function beginMagnet(){
+    phase = 'magnet'; phT = 0; flyers = [];
+    var r = lastResult;                         // magnetAdd 결과(조회만)
+    // 받아올림이면 need(=fromB)개, 무올림이면 b개 전부가 A 빈 슬롯으로 날아감
+    var movers = r.carried ? r.fromB : curB;
+    for (var i=0;i<movers;i++){
+      var src = bXY(B-1-i), dst = slotXY(A.ones + i);
+      flyers.push({ kind:'unit', sx:src.x, sy:src.y, x:src.x, y:src.y, tx:dst.x, ty:dst.y, t:0, arrived:false });
+    }
+    B -= movers;                                // B 무리에서 빠짐(받아올림=left 남음, 무올림=0)
+    if (movers === 0){ finishCombine(); }
+  }
+  function beginSub(){
+    var r = lastResult;                         // magnetSub 결과(조회만)
+    if (!r.borrowed){
+      // 무빌림: 일의 자리에서 b개가 그냥 빠져 아래로 사라짐
+      phase = 'split'; phT = 0; flyers = [];
+      for (var i=0;i<curB;i++){ var s = slotXY(A.ones-1-i);
+        flyers.push({ kind:'gone', sx:s.x, sy:s.y, x:s.x, y:s.y, tx:s.x, ty:s.y+geo.unit*2.4, t:0, arrived:false }); }
+      A.ones -= curB;   // 빠지는 조각은 flyer 잔상으로만
+      return;
+    }
+    // 받아내림: 10 막대 하나가 와그작 갈라져 조각 10개로 펼쳐짐 → b개 아래로 사라짐(fromTen 남음)
+    phase = 'split'; phT = 0; flyers = []; flash = 0.75;
+    A.tens -= 1;                                 // 막대 하나 소모(갈라짐)
+    A.ones = K.BASE;                             // 갈라진 10을 프레임에 펼침(원래 keep은 finish에서 재구성)
+    for (var j=0;j<curB;j++){ var g = slotXY(K.BASE-1-j);
+      flyers.push({ kind:'gone', sx:g.x, sy:g.y, x:g.x, y:g.y, tx:g.x, ty:g.y+geo.unit*2.4, t:0, arrived:false }); }
+  }
+  function finishCombine(){
+    var r = lastResult;
+    if (mode==='add'){
+      if (r.carried){ A.tens = r.tens; A.ones = 0; /* B=left 이미 반영 */ madeTens += 1; flash = 1; complete(); }
+      else { A.tens = 0; A.ones = r.ones; B = 0; }
+    } else {
+      var d = K.toTensOnes(r.diff);              // 조회만 — 남은 diff 재구성
+      A.tens = d.tens; A.ones = d.ones; B = 0;
+      chime();
+    }
+    recipe.push({ mode:mode, a:curA, b:curB, result:(mode==='add'?r.sum:r.diff), carried:!!r.carried, borrowed:!!r.borrowed });
+    phase = 'done'; flyers = []; busy = false; updHud();
+    tip(mode==='add'
+      ? (r.carried ? '철컥! '+curA+'을(를) 10으로 채우려고 '+curB+'에서 '+r.fromB+'이 뜯겨 붙었어요. 10 하나와 '+r.left+'이 남아요.'
+                   : curA+'과 '+curB+'을 모아도 아직 10이 안 됐어요. 프레임이 다 안 찼죠?')
+      : (r.borrowed ? '10 덩어리가 갈라졌어요! 거기서 '+curB+'을 빼고 '+r.fromTen+'이 남아 '+r.diff+'이 됐어요.'
+                    : '일의 자리에서 바로 '+curB+'을 뺐어요. '+r.diff+'이 남아요.'));
+  }
+
+  // ── 조작 API ──
+  function newProblem(){
+    if (mode==='add'){ curA = 1 + irnd(9); curB = 1 + irnd(9); }
+    else { curA = K.BASE + 1 + irnd(7); curB = 1 + irnd(9); if (curB > (curA-K.BASE)) {} }
+    setupBlocks();
+  }
+  function irnd(n){ return Math.floor(Math.random()*n); }   // [0..n-1]
+  function setupBlocks(){
+    lastResult = null; flyers = []; phase='idle'; phT=0; approach=0; flash=0; busy=false;
+    if (mode==='add'){ A.tens = 0; A.ones = curA; B = curB; }
+    else { var d = K.toTensOnes(curA); A.tens = d.tens; A.ones = d.ones; B = 0; }  // 빼기: A만 십몇, B는 빼는 수(무리 아님)
+    draw(); updHud();
+    tip(mode==='add' ? '두 블록을 만나게 해서 10을 만들어 봐요.' : curA+'에서 '+curB+'을 빼 볼까요? 일의 자리가 모자라면?');
+  }
+  function spawn(a, b, m){
+    if (m) mode = (m==='sub'?'sub':'add');
+    curA = a|0; curB = b|0; setupBlocks(); syncBtns();
+  }
+  function combine(instant){
+    if (busy || phase==='approach' || phase==='magnet' || phase==='split') return;
+    // 순수 로직 조회 — 물리 규칙은 여기서만(P2는 산술 0줄)
+    lastResult = (mode==='add') ? K.magnetAdd(curA, curB) : K.magnetSub(curA, curB);
+    busy = true;
+    if (instant){
+      // 애니 스킵 즉시 정산 (finishCombine과 동일 규칙)
+      if (mode==='add'){
+        if (lastResult.carried){ A.tens = lastResult.tens; A.ones = 0; B = lastResult.left; madeTens += 1; }
+        else { A.tens = 0; A.ones = lastResult.ones; B = 0; }
+      } else {
+        var d = K.toTensOnes(lastResult.diff); A.tens = d.tens; A.ones = d.ones; B = 0;
+      }
+      recipe.push({ mode:mode, a:curA, b:curB, result:(mode==='add'?lastResult.sum:lastResult.diff), carried:!!lastResult.carried, borrowed:!!lastResult.borrowed });
+      phase='done'; busy=false; draw(); updHud(); return;
+    }
+    ensureAudio(); phase='approach'; phT=0; approach=0; ensureLoop();
+  }
+  function reset(){
+    madeTens = 0; recipe = []; lastResult = null;
+    setupBlocks();
+  }
+  function setMode(m){ mode = (m==='sub'?'sub':'add'); syncBtns(); newProblem(); }
+
+  // ── HUD·팁 ──
+  function updHud(){ setTxt('hTen', madeTens); setTxt('hRecipe', recipe.length); }
+  function setTxt(id,v){ var el = document.getElementById(id); if (el) el.textContent = v; }
+  function tip(t){ var el = document.getElementById('tip'); if (el){ el.textContent = t; el.classList.remove('hide'); } }
+
+  // ── 사운드(WebAudio 미니 신스 — 와우 표준 재사용) ──
+  var actx=null, master=null, lastClack=0;
+  function ensureAudio(){ if (actx) return;
+    try { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      actx = new AC(); master = actx.createGain(); master.gain.value = 0.16; master.connect(actx.destination);
+    } catch(e){ actx=null; } }
+  function clack(){    // 철컥(짧은 클릭)
+    if (!soundOn || !actx) return;
+    var now = (window.performance&&performance.now)?performance.now():Date.now();
+    if (now - lastClack < 32) return; lastClack = now;
+    var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type='square'; o.frequency.value = 320 + Math.random()*120;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.4,t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.08);
+  }
+  function complete(){ chime(); }
+  function chime(){    // 완성 쨍(아르페지오)
+    if (!soundOn || !actx) return;
+    [523,659,784,1047].forEach(function(f,i){
+      var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i*0.06;
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.4,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t+0.55);
+    });
+  }
+
+  // ── 버튼 배선 ──
+  function syncBtns(){ tog('bAdd', mode==='add'); tog('bSub', mode==='sub'); }
+  function tog(id,on){ var b = document.getElementById(id); if (b) b.classList[on?'add':'remove']('on'); }
+  function on(id,fn){ var el = document.getElementById(id); if (el) el.addEventListener('click', fn); }
+  function bind(){
+    on('bNew', function(){ ensureAudio(); newProblem(); });
+    on('bGo',  function(){ ensureAudio(); combine(false); });
+    on('bAdd', function(){ setMode('add'); });
+    on('bSub', function(){ setMode('sub'); });
+    on('bReset', function(){ reset(); });
+    on('sound', function(){ soundOn = !soundOn; var s = document.getElementById('sound'); if (s) s.textContent = soundOn?'🔊':'🔇'; });
+    // 블록 잡기(출렁) — B 무리 근처 누르면 살짝 흔들림
+    cv.addEventListener('pointerdown', function(){ grabbed = true; ensureLoop(); });
+    window.addEventListener('pointerup', function(){ grabbed = false; });
+  }
+
+  // ── 초기화·리사이즈 ──
+  function onResize(){
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = window.innerWidth || 1024; H = window.innerHeight || 768;
+    cv.width = W*DPR; cv.height = H*DPR; cv.style.width = W+'px'; cv.style.height = H+'px';
+    if (ctx && ctx.setTransform) ctx.setTransform(DPR,0,0,DPR,0,0);
+    layout(); draw();
+  }
+  function init(){
+    onResize(); window.addEventListener('resize', onResize); bind(); syncBtns();
+    var l = document.getElementById('loading'); if (l) l.classList.add('hide');
+    // 딥링크 ?a=&b=&mode=
+    try { var q = new URLSearchParams(location.search);
+      if (q.get('mode')) mode = (q.get('mode')==='sub'?'sub':'add');
+      if (q.get('a') || q.get('b')){ curA = parseInt(q.get('a')||curA,10); curB = parseInt(q.get('b')||curB,10); }
+    } catch(e){}
+    setupBlocks();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+
+  // ── 훅(스모크·P3용) ──
+  window.__NUMBER_P2__ = {
+    get mode(){ return mode; }, get a(){ return curA; }, get b(){ return curB; },
+    get madeTens(){ return madeTens; }, get recipeCount(){ return recipe.length; },
+    get recipe(){ return recipe.slice(); }, get result(){ return lastResult; }, get busy(){ return busy; },
+    get blocks(){ return { A:{ tens:A.tens, ones:A.ones, value:A.tens*K.BASE+A.ones }, B:B, mode:mode }; },
+    get phase(){ return phase; },
+    K: K, spawn: spawn, combine: combine, reset: reset, setMode: setMode
+  };
+})();
 </script>
 </body>
 
