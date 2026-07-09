@@ -21,6 +21,7 @@ require('./templates/g2_math_u4.js')(KQuiz);
 require('./templates/g2_math_u5.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
 require('./templates/g3_math_u1.js')(KQuiz);
+require('./templates/g3_math_u2.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -51,7 +52,8 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g2_math_u6_l02','g2_math_u6_l03','g2_math_u6_l04','g2_math_u6_l05',
   'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6',
   'g3_math_u1_l02','g3_math_u1_l03','g3_math_u1_l04','g3_math_u1_l05',
-  'g3_math_u1_l06','g3_math_u1_l07','g3_math_u1_l09','g3_math_u1'];
+  'g3_math_u1_l06','g3_math_u1_l07','g3_math_u1_l09','g3_math_u1',
+  'g3_math_u2_l02','g3_math_u2_l03','g3_math_u2_l05','g3_math_u2_l06','g3_math_u2_l08','g3_math_u2'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -137,6 +139,31 @@ var P2_FEAT_P2K = {
   '굽은 선으로 되어 있습니다.': 'round'
 };
 
+// g3u2 평면도형 독립 검산용: 정의사전 + 도형설명사전 + 성질행렬(별도 사본)
+var G3U2_DEF2TERM = {
+  '두 점을 곧게 이은 선': '선분',
+  '한 점에서 시작하여 한쪽으로 끝없이 늘인 곧은 선': '반직선',
+  '양쪽으로 끝없이 늘인 곧은 선': '직선',
+  '한 점에서 그은 두 반직선으로 이루어진 도형': '각',
+  '각을 이루는 두 반직선': '변',
+  '각에서 두 반직선이 만나는 점': '꼭짓점'
+};
+var G3U2_SHAPE_BY_DESC = {
+  '직각이 한 개 있는 삼각형': '직각삼각형',
+  '네 각이 모두 직각이고, 네 변의 길이가 모두 같은 사각형': '정사각형',
+  '네 각이 모두 직각이고, 네 변의 길이가 모두 같지는 않은 사각형': '직사각형'
+};
+var G3U2_FEAT = {
+  '직각삼각형': { allRightAngle: false, allSidesEqual: false, oneRightAngle: true  },
+  '직사각형':   { allRightAngle: true,  allSidesEqual: false, oneRightAngle: false },
+  '정사각형':   { allRightAngle: true,  allSidesEqual: true,  oneRightAngle: false }
+};
+var G3U2_FEAT_P2K = {
+  '네 각이 모두 직각입니다.': 'allRightAngle',
+  '네 변의 길이가 모두 같습니다.': 'allSidesEqual',
+  '직각이 한 개 있습니다.': 'oneRightAngle'
+};
+
 // ── 독립 재계산기: 문항 q를 파싱해 정답을 코드 밖에서 다시 계산 ─────────────────
 // (엔진의 answer를 신뢰하지 않고 문구만으로 재산출 → 진짜 대조)
 function expectChoice(q) {
@@ -155,6 +182,10 @@ function expectChoice(q) {
     var la = +m[1], lb = +m[2];
     return (m[3] === '더 긴' ? Math.max(la, lb) : Math.min(la, lb)) + 'cm';
   }
+  if ((m = q.match(/^다음 설명에 알맞은 것은 무엇일까요\?\n(.+)$/)))    // g3u2 정의→용어
+    return G3U2_DEF2TERM[m[1]] || '__미등록정의__';
+  if ((m = q.match(/^다음 설명에 알맞은 도형은 무엇일까요\?\n(.+)$/)))  // g3u2 설명→도형
+    return G3U2_SHAPE_BY_DESC[m[1]] || '__미등록설명__';
   if ((m = q.match(/^빨간색 (\d+)개, 파란색 (\d+)개, 노란색 (\d+)개가 있습니다\. (.+)$/))) { // g2u5 빈도
     var fa = +m[1], fb = +m[2], fc = +m[3], ask = m[4];
     var cols = [['빨간색', fa], ['파란색', fb], ['노란색', fc]];
@@ -261,6 +292,9 @@ function expectOx(q) {
   // g1국어u3 된소리 자음자 판별 OX
   var md = q.match(/「(.)」은\(는\) 된소리 자음자입니다/);
   if (md) return ['ㄲ', 'ㄸ', 'ㅃ', 'ㅆ', 'ㅉ'].indexOf(md[1]) >= 0;
+  // g3u2 평면도형 성질 OX
+  var m3 = q.match(/「(직각삼각형|직사각형|정사각형)」은\(는\) (.+)$/);
+  if (m3) { var gk = G3U2_FEAT_P2K[m3[2]]; if (gk) return G3U2_FEAT[m3[1]][gk]; }
   var mj = q.match(/「(.)」에는 받침이 있습니다/);                       // 국어 받침 유무 OX
   if (mj) { var jo = hJongOf(mj[1]); return jo != null && jo !== ''; }
   return null;
