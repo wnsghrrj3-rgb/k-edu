@@ -20,6 +20,7 @@ require('./templates/g2_math_u3.js')(KQuiz);
 require('./templates/g2_math_u4.js')(KQuiz);
 require('./templates/g2_math_u5.js')(KQuiz);
 require('./templates/g2_math_u6.js')(KQuiz);
+require('./templates/g3_math_u1.js')(KQuiz);
 
 var fails = 0, pass = 0;
 function ok(cond, msg) { if (cond) { pass++; } else { fails++; console.log('  ✗ ' + msg); } }
@@ -48,7 +49,9 @@ var LESSONS = ['g1_math_u3_l02','g1_math_u3_l03','g1_math_u3_l04','g1_math_u3_l0
   'g2_math_u4_l03','g2_math_u4_l04','g2_math_u4',
   'g2_math_u5_l02','g2_math_u5_l04','g2_math_u5_l05','g2_math_u5_l06','g2_math_u5',
   'g2_math_u6_l02','g2_math_u6_l03','g2_math_u6_l04','g2_math_u6_l05',
-  'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6'];
+  'g2_math_u6_l06','g2_math_u6_l07','g2_math_u6_l08','g2_math_u6',
+  'g3_math_u1_l02','g3_math_u1_l03','g3_math_u1_l04','g3_math_u1_l05',
+  'g3_math_u1_l06','g3_math_u1_l07','g3_math_u1_l09','g3_math_u1'];
 
 // 국어 u1 독립 검산용: 자체 자모표 + 유니코드 compose/decompose(core와 별개 사본)
 var H_CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
