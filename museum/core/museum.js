@@ -95,6 +95,27 @@ var SOUND = {
     g.gain.exponentialRampToValueAtTime(0.12,t+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);
     src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t+0.15);
+  },
+  /* 캔버스 공통(무대미술 §5) — 분필 획: 하이패스 화이트노이즈 40ms */
+  chalk:function(){
+    var c=ctx(), t=c.currentTime;
+    var src=c.createBufferSource(); src.buffer=noiseBuffer(0.05,'white');
+    var f=c.createBiquadFilter(); f.type='highpass'; f.frequency.value=3200;
+    var g=c.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.05,t+0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.04);
+    src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t+0.05);
+  },
+  /* 캔버스 공통 — 접기 삐걱: 저역 대역 노이즈, 진행도 비례 피치(pitch −.3~+.3) */
+  creak:function(pitch){
+    var c=ctx(), t=c.currentTime, p=1+(pitch||0);
+    var src=c.createBufferSource(); src.buffer=noiseBuffer(0.08,'brown');
+    var f=c.createBiquadFilter(); f.type='bandpass'; f.Q.value=3.5;
+    f.frequency.value=140*p;
+    var g=c.createGain(); g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.05,t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
+    src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t+0.08);
   }
 };
 

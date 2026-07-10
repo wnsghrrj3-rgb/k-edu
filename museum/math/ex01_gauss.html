@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>가우스의 방 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  /* 여운 오버레이 (명판·수식·슬라이더 mount) */
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(26px,4vw,42px); letter-spacing:.16em; color:var(--ink); }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; }
+  /* 놋쇠 슬라이더 (라벨 없음) */
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp .ticks{ display:flex; justify-content:space-between; width:min(360px,70vw); margin-top:2px; }
+  #reexp .ticks span{ font-family:'Jua',sans-serif; font-size:11px; color:var(--ink-faint); }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="gauss-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumGauss=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function gaussSum(n){ return n*(n+1)/2; }
+  function pairValue(n){ return n+1; }
+  function pairs(n){
+    var out=[], i=1, j=n;
+    while(i<j){ out.push({a:i,b:j}); i++; j--; }
+    if(i===j) out.push({a:i,b:null,half:true});
+    return out;
+  }
+  function partial(list){ var s=0; for(var k=0;k<list.length;k++) s+=list[k]; return s; }
+  function oddSquare(n){
+    var odds=[], v; for(v=1;v<=n;v+=2) odds.push(v);
+    var k=odds.length, total=k*k, sum=0, i;
+    for(i=0;i<odds.length;i++) sum+=odds[i];
+    return { odds:odds, side:k, total:total, ok: sum===total };
+  }
+  return { gaussSum:gaussSum, pairs:pairs, pairValue:pairValue, partial:partial, oddSquare:oddSquare };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="0" max="4" step="1" value="2" id="nslider"></div>
+    <div class="ticks"><span>10</span><span>50</span><span>100</span><span>500</span><span>1000</span></div></div>
+</div>
+<div class="vignette"></div>
+<div id="flash-layer"></div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var G = KMuseumGauss;
+  var canvas = document.getElementById('stage-canvas');
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var reduced = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var replay = /[?&]replay=1/.test(location.search);
+
+  /* ── 레이아웃 상수 ─────────────────────────────────────────────── */
+  var FLOOR = 806;
+  var BOARD = { x:150, y:66, w:840, h:300 };
+  var SCALE = { hx:1350, hy:210, armW:150, panY:360 };
+  var COUNTER = { x:1350, y:150 };
+  var RIB = { x0:96, x1:1504, y:452 };
+
+  /* ── 상태 ──────────────────────────────────────────────────────── */
+  var S = {
+    phase:'boot', t:0,
+    n:100,
+    blocks:[],            // {n,x,y,vx,vy,w,grabbed,inDish,removed,rx,ry,scale}
+    dish:[],              // 담긴 블록 n
+    remainShown:100,
+    chalkReveal:0,        // 0~1 분필 진행
+    remainNote:'',
+    grab:null,            // 잡은 블록 ref
+    fold:0,               // 접기 진행 0~1
+    foldGrab:false,
+    pairs:[],             // G.pairs(n)
+    cols:[],              // 기둥 {mid, standH, target}
+    chainIdx:0, chainT:0,
+    counter:0, counterTarget:0,
+    sparks:[],
+    hidden:false,        // 히든 경로 여부
+    freeTimer:0,
+    spot:{x:BOARD.x+BOARD.w/2, y:BOARD.y+BOARD.h/2, r:560},
+    spotGrad:null
+  };
+
+  /* ── 블록 팩토리 ───────────────────────────────────────────────── */
+  function makeBlocks(n, forRibbon){
+    var arr=[], i;
+    var big = n>140;
+    for(i=1;i<=n;i++){
+      arr.push({ n:i, x:0,y:-80, vx:0,vy:0, w:big?Math.max(3,(RIB.x1-RIB.x0)/n-1):34,
+                 grabbed:false, inDish:false, removed:false, rx:0,ry:0, scale:1, settled:false });
+    }
+    if(forRibbon) layoutRibbon(arr,n);
+    return arr;
+  }
+  function layoutRibbon(arr,n){
+    var tw=(RIB.x1-RIB.x0)/n;
+    for(var i=0;i<arr.length;i++){
+      var b=arr[i];
+      b.rx = RIB.x0 + i*tw + tw/2;
+      b.ry = RIB.y;
+      b.tw = tw;
+    }
+  }
+
+  /* ── 스포트라이트 캐시(프레임 밖 생성) ─────────────────────────── */
+  function buildSpot(){
+    var s=S.spot, r=s.r;
+    var g=stage.ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,r);
+    g.addColorStop(0,'rgba(242,234,216,.10)');
+    g.addColorStop(.5,'rgba(242,234,216,.035)');
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    S.spotGrad=g;
+  }
+  function moveSpot(x,y,r){ S.spot.x=x; S.spot.y=y; S.spot.r=r||S.spot.r; buildSpot(); }
+
+  /* ── phase 전환 ────────────────────────────────────────────────── */
+  function setPhase(p){ S.phase=p; S.t=0; }
+
+  /* ── 시작 시퀀스 ───────────────────────────────────────────────── */
+  function boot(){
+    Museum.sound.roomtone(true);
+    Museum.curtainIn();
+    moveSpot(BOARD.x+BOARD.w/2, BOARD.y+BOARD.h/2, 560);
+    setPhase('chalk');
+    if(replay){ S.chalkReveal=1; setTimeout(startRain,300); }
+  }
+
+  /* ── 1막: 분필 ─────────────────────────────────────────────────── */
+  var CHALK_TEXT = '1부터 100까지, 모두 더할 것.';
+  var chalkSoundAt = 0;
+  function updateChalk(dt){
+    var dur = replay?0.2:2.2;
+    S.chalkReveal = Math.min(1, S.chalkReveal + dt/dur);
+    if(!replay && S.chalkReveal<1 && S.t-chalkSoundAt>0.09){ Museum.sound.play('chalk'); chalkSoundAt=S.t; }
+    if(!replay && S.t>3.4 && !S._rainQueued){ S._rainQueued=true; Museum.sound.play('click_light');
+      setTimeout(startRain,400); }
+  }
+  function startRain(){
+    moveSpot(W/2, FLOOR-60, 720);
+    S.blocks = makeBlocks(100,false);
+    // 낙하 준비: 화면 위 시차·좌우 산개
+    var rnd = Museum.rng(4242);
+    for(var i=0;i<S.blocks.length;i++){
+      var b=S.blocks[i];
+      b.tx = 180 + rnd()*(1240);           // 착지 목표 x(무질서)
+      b.x = b.tx + (rnd()-0.5)*40;
+      b.y = -80 - rnd()*(replay?300:1400);  // 시차
+      b.vy = 0;
+      b.landY = FLOOR - 34 - Math.floor(rnd()*3)*6; // 살짝 층
+    }
+    setPhase('rain');
+  }
+  /* ── 1막→2막: 낙하 물리 ────────────────────────────────────────── */
+  function updateRain(dt){
+    var moving=0, i;
+    for(i=0;i<S.blocks.length;i++){
+      var b=S.blocks[i];
+      if(b.settled) continue;
+      b.vy += 2200*dt;
+      b.y += b.vy*dt;
+      if(b.y>=b.landY){
+        b.y=b.landY; 
+        if(Math.abs(b.vy)>240){ b.vy=-b.vy*0.25; if(Math.random()<0.5) Museum.sound.play('clack'); }
+        else { b.vy=0; b.settled=true; }
+      } else moving++;
+    }
+    if(moving===0 && S.t>0.8){ setPhase('free'); S.freeTimer=0; }
+  }
+
+  /* ── 2막: 자유 조작 ────────────────────────────────────────────── */
+  function updateFree(dt){
+    S.freeTimer += dt;
+    // 히든/일반 전환 트리거: 12개 담기 또는 90초
+    if(S.dish.length>=12 || S.freeTimer>=90){ beginAlign(false); return; }
+    // 히든: 짝수 50개 전부 무대 밖(제거)
+    var evenRemoved=0, evenTotal=0;
+    for(var i=0;i<S.blocks.length;i++){ if(S.blocks[i].n%2===0){ evenTotal++; if(S.blocks[i].removed) evenRemoved++; } }
+    if(evenTotal>0 && evenRemoved===evenTotal){ beginAlign(true); return; }
+  }
+
+  /* ── 전환: 저울 쏟기 + 띠 정렬 ─────────────────────────────────── */
+  function beginAlign(isHidden){
+    S.hidden = isHidden;
+    S.dish = [];
+    moveSpot(W/2, RIB.y, 900);
+    // 대상 블록: 히든이면 홀수만, 아니면 전체(제거된 것 복귀)
+    var list=[], i;
+    for(i=0;i<S.blocks.length;i++){
+      var b=S.blocks[i];
+      if(isHidden && b.n%2===0){ b.removed=true; continue; }
+      b.removed=false; b.inDish=false; b.grabbed=false;
+      list.push(b);
+    }
+    S.alignList = list;
+    S.n = isHidden ? list.length : 100;         // 히든이면 홀수 개수(50)
+    // 각 블록의 정렬 목표 계산
+    var m = list.length, tw=(RIB.x1-RIB.x0)/m;
+    for(i=0;i<m;i++){
+      var bb=list[i];
+      bb.rx = RIB.x0 + i*tw + tw/2;
+      bb.ry = RIB.y; bb.tw=tw; bb.aFrom={x:bb.x,y:bb.y};
+    }
+    S.alignP=0;
+    setPhase('aligning');
+  }
+  function updateAligning(dt){
+    S.alignP = Math.min(1, S.alignP + dt/(reduced?0.3:2.5));
+    var e = easeInOut(S.alignP);
+    for(var i=0;i<S.alignList.length;i++){
+      var b=S.alignList[i];
+      b.x = b.aFrom.x + (b.rx-b.aFrom.x)*e;
+      b.y = b.aFrom.y + (b.ry-b.aFrom.y)*e;
+    }
+    if(S.alignP>=1){
+      S.pairs = G.pairs(S.n);
+      setPhase(S.hidden?'ribbon_odd':'ribbon');
+    }
+  }
+
+  /* ── 3막 대기: 띠(마지막 블록 글로우 들썩) ─────────────────────── */
+  function updateRibbon(dt){ /* 대기 — 렌더가 마지막 블록 숨쉬게 */ }
+
+  /* ── 3막: 접기 진행 ────────────────────────────────────────────── */
+  function updateFolding(dt){
+    if(!S.foldGrab){
+      // 놓은 상태: 60% 미만 스프링 복귀, 이상 자동 완주
+      if(S.fold>=0.6) S.fold=Math.min(1,S.fold+dt*1.6);
+      else            S.fold=Math.max(0,S.fold-dt*3.2);
+      if(S.fold<=0 && S._foldStarted){ S._foldStarted=false; setPhase(S.hidden?'ribbon_odd':'ribbon'); return; }
+    }
+    if(S.fold>=1 && !S._chainGo){ S._chainGo=true; startChain(); }
+  }
+
+  /* ── 연쇄: 쌍 결합 → 101 기둥 ──────────────────────────────────── */
+  function startChain(){
+    S.cols=[]; S.chainIdx=0; S.chainT=0;
+    setPhase(S.hidden?'square':'chain');
+    if(S.hidden){ startSquare(); }
+  }
+  function updateChain(dt){
+    if(reduced){ // 요약 컷
+      while(S.chainIdx<S.pairs.length){ addColumn(S.chainIdx); S.chainIdx++; }
+      startStanding(); return;
+    }
+    S.chainT+=dt;
+    var gap = Math.max(0.04, 0.22*Math.pow(0.86, S.chainIdx));  // 220ms→40ms 가속
+    if(S.chainT>=gap && S.chainIdx<S.pairs.length){
+      S.chainT=0; addColumn(S.chainIdx); S.chainIdx++;
+      Museum.sound.play('clack');
+    }
+    if(S.chainIdx>=S.pairs.length){ startStanding(); }
+  }
+  function addColumn(i){
+    var p=S.pairs[i];
+    var m=S.pairs.length;
+    var cw=Math.min(30,(RIB.x1-RIB.x0)/m-3);
+    var cx=RIB.x0 + (i+0.5)*((RIB.x1-RIB.x0)/m);
+    S.cols.push({ x:cx, w:cw, standH:0, targetH:p.half?110:200, half:!!p.half, born:0 });
+    // 결합 스파크
+    spark(cx, RIB.y, p.half?2:3);
+  }
+
+  /* ── 기립: 도미노 + 카운터 폭주 ────────────────────────────────── */
+  function startStanding(){ setPhase('standing'); S.standIdx=0; S.standT=0; S.counter=0;
+    S.counterTarget = G.gaussSum(S.n); }
+  function updateStanding(dt){
+    if(reduced){
+      for(var k=0;k<S.cols.length;k++) S.cols[k].standH=S.cols[k].targetH;
+      S.counter=S.counterTarget; doBetray(); return;
+    }
+    S.standT+=dt;
+    if(S.standT>=0.12 && S.standIdx<S.cols.length){
+      S.standT=0; S.cols[S.standIdx]._rising=true;
+      Museum.sound.play('boom'); // 기둥당 저역 톡 대용(짧게) — 실제 톡은 clack 계열
+      S.standIdx++;
+    }
+    // 상승 보간
+    var allUp=true;
+    for(var i=0;i<S.cols.length;i++){
+      var c=S.cols[i];
+      if(c._rising){ c.standH += (c.targetH-c.standH)*Math.min(1,dt*10); }
+      if(c.standH < c.targetH-1) allUp=false;
+    }
+    // 카운터 동기 롤링
+    var prog = S.standIdx/S.cols.length;
+    S.counter += (S.counterTarget*prog - S.counter)*Math.min(1,dt*6);
+    if(S.standIdx>=S.cols.length && allUp){
+      S.counter=S.counterTarget; doBetray();
+    }
+  }
+
+  /* ── 배반 ──────────────────────────────────────────────────────── */
+  function doBetray(){
+    if(S._betrayed) return; S._betrayed=true;
+    setPhase('betrayed');
+    var lastX = S.cols.length? S.cols[S.cols.length-1].x : W/2;
+    Museum.betray({ x:lastX/W, y:COUNTER.y/H }).then(showAfterglow);
+  }
+
+  /* ── 4막: 여운 ─────────────────────────────────────────────────── */
+  function showAfterglow(){
+    setPhase('afterglow');
+    var pv = G.pairValue(S.n), np = S.pairs.length, sum=G.gaussSum(S.n);
+    var f=document.getElementById('formula');
+    if(S.hidden){
+      var side=Math.round(Math.sqrt(sum));
+      f.innerHTML='<span class="num">'+side+'</span> × <span class="num">'+side+'</span> = <span class="num">'+fmt(sum)+'</span>';
+    } else {
+      f.innerHTML='<span class="num">'+np+'</span> × <span class="num">'+pv+'</span> = <span class="num">'+fmt(sum)+'</span>';
+    }
+    setTimeout(function(){ f.classList.add('is-in'); }, 300);
+    setTimeout(placard, 1800);
+  }
+  function placard(){
+    var mount=document.getElementById('overlay');
+    if(S.hidden){
+      Museum.plaque({ title:'정사각형의 비밀',
+        story:'홀수를 차례로 더하면 언제나 정사각형이 된다. 1, 4, 9, 16 … 방금 네 손이 그 규칙을 세웠다.',
+        fine:'1 + 3 + 5 + ⋯ = k²', mount:mount });
+      grantTicket('m1_odd_square','정사각형의 비밀', drawSquareArt);
+    } else {
+      Museum.plaque({ title:'가우스의 방',
+        story:'칼 프리드리히 가우스, 10살. 선생님이 벌로 낸 문제를 몇 초 만에 풀었다. 방법은 방금 네가 한 그것이다.',
+        fine:'1787년, 독일 브라운슈바이크', mount:mount });
+      grantTicket('m1_gauss','가우스의 방', drawFoldArt);
+    }
+    setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1400);
+  }
+  function grantTicket(id,title,drawFn){
+    Museum.ticket.grant({ id:id, title:title, drawFn:drawFn, fine:'가우스의 방' });
+  }
+
+  /* ── 히든: 정사각형 조립 ───────────────────────────────────────── */
+  function startSquare(){
+    // 홀수 1,3,5,.. 를 정사각형 타일로 (한 변 k)
+    var odds=G.oddSquare(S.n); S.sq={ k:odds.side, p:0, tiles:[] };
+    setPhase('square'); S.chainIdx=0;
+  }
+  function updateSquare(dt){
+    S.sq.p=Math.min(1, S.sq.p + dt/(reduced?0.3:2.2));
+    if(S.sq.p>=1 && !S._sqBetray){ S._sqBetray=true;
+      Museum.betray({x:0.5,y:0.42}).then(showAfterglow); setPhase('betrayed'); }
+  }
+
+  /* ── 슬라이더: n 재체험 ────────────────────────────────────────── */
+  var NVALS=[10,50,100,500,1000];
+  document.getElementById('nslider').addEventListener('input',function(e){
+    var n=NVALS[+e.target.value|0];
+    reexpWith(n);
+  });
+  function reexpWith(n){
+    S.n=n; S.hidden=false; S._betrayed=false; S._chainGo=false; S._sqBetray=false;
+    S.fold=0; S.foldGrab=false; S._foldStarted=false; S.cols=[]; S.counter=0;
+    S.blocks = makeBlocks(n,true);
+    S.alignList = S.blocks.slice();
+    S.pairs = G.pairs(n);
+    document.getElementById('formula').classList.remove('is-in');
+    var pl=document.querySelector('#overlay .plaque'); if(pl) pl.remove();
+    moveSpot(W/2, RIB.y, 900);
+    setPhase('ribbon');
+  }
+
+  /* ── 스파크 풀 ─────────────────────────────────────────────────── */
+  function spark(x,y,cnt){
+    for(var i=0;i<cnt;i++){
+      if(S.sparks.length>=400) S.sparks.shift();
+      var a=Math.random()*Math.PI*2, sp=60+Math.random()*140;
+      S.sparks.push({ x:x,y:y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-40, life:0.2 });
+    }
+  }
+  function updateSparks(dt){
+    for(var i=S.sparks.length-1;i>=0;i--){
+      var s=S.sparks[i]; s.life-=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy+=400*dt;
+      if(s.life<=0) S.sparks.splice(i,1);
+    }
+  }
+
+  /* ── update 디스패치 ───────────────────────────────────────────── */
+  var mainScene = {
+    update:function(dt){
+      S.t+=dt;
+      switch(S.phase){
+        case 'chalk': updateChalk(dt); break;
+        case 'rain': updateRain(dt); break;
+        case 'free': updateFree(dt); break;
+        case 'aligning': updateAligning(dt); break;
+        case 'ribbon': case 'ribbon_odd': updateRibbon(dt); break;
+        case 'folding': updateFolding(dt); break;
+        case 'chain': updateChain(dt); break;
+        case 'square': updateSquare(dt); break;
+        case 'standing': updateStanding(dt); break;
+      }
+      updateSparks(dt);
+    },
+    draw:function(ctx){ render(ctx); }
+  };
+
+  /* ── 렌더 ──────────────────────────────────────────────────────── */
+  function render(ctx){
+    // 배경 밤
+    ctx.fillStyle='#07070c'; ctx.fillRect(0,0,W,H);
+    // 바닥 라인
+    ctx.strokeStyle='rgba(138,115,63,.18)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,FLOOR+34); ctx.lineTo(W,FLOOR+34); ctx.stroke();
+    // 스포트
+    if(S.spotGrad){ ctx.fillStyle=S.spotGrad; ctx.fillRect(0,0,W,H); }
+
+    var p=S.phase;
+    if(p==='chalk'||p==='rain') drawChalkboard(ctx);
+    if(p==='rain'||p==='free') drawScale(ctx);
+    if(p==='rain'||p==='free') drawLooseBlocks(ctx);
+    if(p==='free') drawRemainNote(ctx);
+    if(p==='aligning') drawAligning(ctx);
+    if(p==='ribbon'||p==='ribbon_odd'||p==='folding') drawRibbon(ctx);
+    if(p==='chain'||p==='standing'||p==='betrayed'||p==='afterglow') drawColumns(ctx);
+    if(p==='square') drawSquare(ctx);
+    if(p==='standing'||p==='betrayed'||p==='afterglow'||p==='chain') drawCounter(ctx);
+    drawSparks(ctx);
+  }
+
+  function drawChalkboard(ctx){
+    ctx.save();
+    // 칠판 면
+    ctx.fillStyle='#0c1410'; ctx.strokeStyle='var(--brass-dim)';
+    roundRect(ctx,BOARD.x,BOARD.y,BOARD.w,BOARD.h,4); ctx.fill();
+    ctx.strokeStyle='rgba(138,115,63,.5)'; ctx.lineWidth=3; ctx.stroke();
+    // 분필 글씨(리빌)
+    var full=CHALK_TEXT, shown=Math.floor(full.length*S.chalkReveal);
+    ctx.font="42px 'Gowun Batang', serif";
+    ctx.fillStyle='rgba(242,234,216,.88)'; ctx.textBaseline='middle';
+    var tx=BOARD.x+56, ty=BOARD.y+BOARD.h/2;
+    var sub=full.slice(0,shown);
+    ctx.fillText(sub, tx, ty);
+    // 남은 글자 커서 지터
+    if(S.chalkReveal<1){ var w=ctx.measureText(sub).width;
+      ctx.fillRect(tx+w+2+(Math.random()-.5)*1.2, ty-20+(Math.random()-.5)*1.2, 2, 40); }
+    // 남은 블록 소문(2막 진입 후 free에서 갱신되지만 칠판 구석 표기)
+    ctx.restore();
+  }
+
+  function drawScale(ctx){
+    ctx.save();
+    var s=SCALE, tilt=Math.min(0.18, S.dish.length*0.012);
+    // 기둥
+    ctx.strokeStyle='rgba(138,115,63,.55)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(s.hx,s.hy); ctx.lineTo(s.hx,s.hy+120); ctx.stroke();
+    // 팔(기움)
+    ctx.translate(s.hx,s.hy); ctx.rotate(tilt);
+    ctx.beginPath(); ctx.moveTo(-s.armW,0); ctx.lineTo(s.armW,0); ctx.stroke();
+    // 접시(담는 쪽 = 오른쪽)
+    ctx.strokeStyle='rgba(201,169,97,.6)';
+    drawPan(ctx, s.armW, 70);
+    drawPan(ctx,-s.armW, 70);
+    ctx.restore();
+    // 접시 위 담긴 개수만큼 작은 표식
+    ctx.save();
+    ctx.font="15px 'Jua'"; ctx.fillStyle='var(--ink-dim)'; ctx.textAlign='center';
+    ctx.restore();
+  }
+  function drawPan(ctx,ox,drop){
+    ctx.beginPath(); ctx.moveTo(ox,0); ctx.lineTo(ox,drop); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ox,drop+16,28,0,Math.PI,false); ctx.stroke();
+  }
+
+  function drawBlock(ctx,b,x,y,w,glow){
+    var hw=w;
+    ctx.save();
+    if(glow){ var img=stage.glow(60,'rgba(242,234,216,.5)'); ctx.drawImage(img,x-60,y-60,120,120); }
+    ctx.translate(x,y);
+    var sc=b&&b.grabbed?1.08:1;
+    ctx.scale(sc,sc);
+    if(b&&b.grabbed){ ctx.fillStyle='rgba(0,0,0,.5)'; roundRect(ctx,-hw/2+3,-hw/2+5,hw,hw,4); ctx.fill(); }
+    ctx.fillStyle='#151422'; roundRect(ctx,-hw/2,-hw/2,hw,hw,Math.min(4,hw/6)); ctx.fill();
+    ctx.strokeStyle='rgba(138,115,63,.8)'; ctx.lineWidth=1; ctx.stroke();
+    if(w>=16 && b){ ctx.fillStyle='rgba(242,234,216,.92)'; ctx.font=(w*0.44|0)+"px 'Jua'";
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(b.n, 0, 1); }
+    ctx.restore();
+  }
+
+  function drawLooseBlocks(ctx){
+    for(var i=0;i<S.blocks.length;i++){ var b=S.blocks[i];
+      if(b.removed||b.inDish) continue;
+      drawBlock(ctx,b,b.x,b.y,b.w,false);
+    }
+    if(S.grab) drawBlock(ctx,S.grab,S.grab.x,S.grab.y,S.grab.w,false);
+  }
+
+  function drawRemainNote(ctx){
+    if(S.dish.length<5) return;
+    var rem=100-S.dish.length; rem = rem - (rem%10==0?0:rem%10); // 10단위 표기
+    var show=100-S.dish.length;
+    ctx.save(); ctx.font="18px 'Gowun Dodum'"; ctx.fillStyle='rgba(168,158,136,.7)';
+    ctx.textAlign='right'; ctx.fillText('남은 블록 '+show+'개', BOARD.x+BOARD.w-20, BOARD.y+BOARD.h-24);
+    ctx.restore();
+  }
+
+  function drawAligning(ctx){
+    for(var i=0;i<S.alignList.length;i++){ var b=S.alignList[i];
+      drawBlock(ctx,b,b.x,b.y, lerp(34,b.tw||34, S.alignP), false);
+    }
+  }
+
+  function drawRibbon(ctx){
+    var m=S.pairs.length, list=S.alignList||S.blocks;
+    var tw=(RIB.x1-RIB.x0)/S.n;
+    // 접기 시각: 오른쪽 절반이 파트너 위로 아크
+    for(var i=0;i<S.n;i++){
+      var b=list[i]; if(!b) continue;
+      var idx=i, num=b.n;
+      var baseX=RIB.x0 + idx*tw + tw/2, baseY=RIB.y;
+      var rightHalf = idx >= Math.ceil(S.n/2);
+      var x=baseX, y=baseY;
+      if(rightHalf && S.fold>0){
+        var partnerIdx = S.n-1-idx;
+        var px=RIB.x0 + partnerIdx*tw + tw/2;
+        var e=easeInOut(S.fold);
+        x = baseX + (px-baseX)*e;
+        y = baseY - Math.sin(S.fold*Math.PI)*150 - e*10;
+      }
+      var last = (idx===S.n-1);
+      var glow = last && S.phase.indexOf('ribbon')===0 && S.fold<0.02;
+      var breathe = glow? (1+Math.sin(S.t*3)*0.06):1;
+      drawBlock(ctx,b,x,y, Math.max(6,tw-1)*breathe, glow);
+    }
+    // 접기 안내는 텍스트 0 — 마지막 블록 글로우가 유일한 신호
+  }
+
+  function drawColumns(ctx){
+    for(var i=0;i<S.cols.length;i++){ var c=S.cols[i];
+      var h=c.standH, x=c.x, w=c.w;
+      var y=RIB.y+20;
+      // 기둥 몸통
+      ctx.fillStyle='#151422';
+      ctx.fillRect(x-w/2, y-h, w, h);
+      ctx.strokeStyle='rgba(124,140,255,.5)'; ctx.lineWidth=1;   // --math 악센트(테두리만)
+      ctx.strokeRect(x-w/2, y-h, w, h);
+      // 상단 캡 101
+      if(h>40 && w>=18){ ctx.save(); ctx.fillStyle='rgba(242,234,216,.9)';
+        ctx.font=(Math.min(13,w*0.5)|0)+"px 'Jua'"; ctx.textAlign='center';
+        ctx.translate(x, y-h-8); ctx.fillText(c.half?String(Math.ceil(S.n/2)):String(G.pairValue(S.n)),0,0); ctx.restore(); }
+    }
+  }
+
+  function drawCounter(ctx){
+    ctx.save();
+    ctx.font="72px 'Jua'"; ctx.fillStyle='rgba(242,234,216,.95)';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(fmt(Math.round(S.counter)), COUNTER.x, COUNTER.y);
+    ctx.restore();
+  }
+
+  function drawSquare(ctx){
+    var k=S.sq.k, e=easeInOut(S.sq.p);
+    var cell=Math.min(46, 520/k);
+    var ox=W/2-(k*cell)/2, oy=RIB.y-(k*cell)/2+40;
+    var shown=Math.floor(k*k*S.sq.p);
+    var cnt=0;
+    for(var r=0;r<k;r++) for(var col=0;col<k;col++){
+      if(cnt>=shown){ r=k; break; } cnt++;
+      var x=ox+col*cell+cell/2, y=oy+r*cell+cell/2;
+      drawBlock(ctx,{n:'',grabbed:false}, x,y, cell-3, false);
+    }
+  }
+
+  function drawSparks(ctx){
+    ctx.save();
+    for(var i=0;i<S.sparks.length;i++){ var s=S.sparks[i];
+      ctx.globalAlpha=Math.max(0,s.life/0.2)*0.9;
+      ctx.fillStyle='rgba(242,234,216,1)';
+      ctx.fillRect(s.x-1.5,s.y-1.5,3,3);
+    }
+    ctx.restore();
+  }
+
+  /* ── 티켓 문양(코드 드로잉) ────────────────────────────────────── */
+  function drawFoldArt(g,w,h){
+    g.fillStyle='#0c0a07'; g.fillRect(0,0,w,h);
+    g.strokeStyle='#c9a961'; g.lineWidth=2;
+    g.beginPath(); g.arc(w/2, h*0.62, w*0.32, Math.PI, 0, false); g.stroke(); // 접힌 아크
+    g.fillStyle='#f2ead8';
+    [-0.28,0,0.28].forEach(function(d){ g.beginPath(); g.arc(w/2+d*w, h*0.62, 2.4,0,7); g.fill(); }); // 철컥점 3개
+  }
+  function drawSquareArt(g,w,h){
+    g.fillStyle='#0c0a07'; g.fillRect(0,0,w,h);
+    g.strokeStyle='#c9a961'; g.lineWidth=1.4;
+    var k=4, cell=w*0.5/k, ox=w*0.25, oy=h*0.5-cell*k/2;
+    for(var r=0;r<k;r++)for(var c=0;c<k;c++) g.strokeRect(ox+c*cell,oy+r*cell,cell-1,cell-1);
+  }
+
+  /* ── 포인터 ────────────────────────────────────────────────────── */
+  function toLogic(ev){
+    var t=ev.touches?ev.touches[0]:ev;
+    return stage.toLogical(t.clientX,t.clientY);
+  }
+  function onDown(ev){
+    if(Museum.isLocked()) return;
+    var pt=toLogic(ev);
+    if(S.phase==='free'){
+      // 블록 잡기
+      for(var i=S.blocks.length-1;i>=0;i--){ var b=S.blocks[i];
+        if(b.removed||b.inDish) continue;
+        if(Math.abs(pt.x-b.x)<20 && Math.abs(pt.y-b.y)<20){ S.grab=b; b.grabbed=true; b.settled=true;
+          Museum.sound.play('clack'); return; }
+      }
+    } else if(S.phase==='ribbon'||S.phase==='ribbon_odd'){
+      // 마지막 블록(띠 우단) 잡기 → 접기
+      var tw=(RIB.x1-RIB.x0)/S.n, lastX=RIB.x0+(S.n-0.5)*tw;
+      if(Math.abs(pt.x-lastX)<Math.max(24,tw) && Math.abs(pt.y-RIB.y)<40){
+        S.foldGrab=true; S._foldStarted=true; setPhase('folding'); S._foldStartX=pt.x;
+      }
+    }
+  }
+  function onMove(ev){
+    if(!S.grab && !S.foldGrab) return;
+    var pt=toLogic(ev);
+    if(S.grab){ S.grab.x=pt.x; S.grab.y=pt.y; }
+    else if(S.foldGrab){
+      var tw=(RIB.x1-RIB.x0)/S.n, startX=RIB.x0+(S.n-0.5)*tw, targetX=RIB.x0+tw/2;
+      var f=(startX-pt.x)/(startX-targetX);
+      var nf=Math.max(0,Math.min(1,f));
+      if(Math.abs(nf-S.fold)>0.015){ Museum.sound.play('creak',{pitch:-0.3+nf*0.6}); }
+      S.fold=nf;
+    }
+  }
+  function onUp(ev){
+    if(S.grab){
+      var b=S.grab; b.grabbed=false;
+      // 무대 밖(좌우 어둠) = 제거(히든 경로)
+      if(b.x<60 || b.x>W-60){ b.removed=true; }
+      // 저울 접시 영역 = 담기
+      else if(b.x>SCALE.hx-SCALE.armW-90 && b.x>1150 && b.y>SCALE.hy+40){
+        b.inDish=true; S.dish.push(b.n); Museum.sound.play('clack');
+      }
+      S.grab=null;
+    }
+    if(S.foldGrab){ S.foldGrab=false; }
+  }
+  canvas.addEventListener('mousedown',onDown); window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+  canvas.addEventListener('touchstart',function(e){e.preventDefault();onDown(e);},{passive:false});
+  canvas.addEventListener('touchmove',function(e){e.preventDefault();onMove(e);},{passive:false});
+  canvas.addEventListener('touchend',onUp);
+
+  /* ── 유틸 ──────────────────────────────────────────────────────── */
+  function roundRect(ctx,x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function easeInOut(t){ return t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2; }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function fmt(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+  /* ── 시작 ──────────────────────────────────────────────────────── */
+  stage.add(mainScene);
+  stage.start();
+  boot();
+
+  // 테스트 훅(jsdom에서 phase 강제/조회)
+  window.__gaussState = S;
+  window.__gaussSet = setPhase;
+})();
+</script>
+</body>
+</html>
