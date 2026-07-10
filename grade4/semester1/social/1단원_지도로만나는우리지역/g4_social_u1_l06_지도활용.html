@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 5차시
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 6차시 [할 수 있어요]
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-01] · 교과서 p.25~27 · 지도서 6차시(축척을 알아볼까요) 근거
+성취기준 [4사05-01] · 교과서 p.28~30 · 지도서 7차시(일상생활에서 지도를 활용해 볼까요) 근거
 중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
-직접조작: 축척 막대자로 실제 거리 재기(두 장소 클릭 → 지도상 cm → 실제 km) + 효과음. l04 구조 복제.
+직접조작: 지하철 노선도 길찾기(출발·도착역 클릭 → 경로·환승 안내) + 효과음. l05 구조 복제.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>축척을 알아볼까요 · 사회 4-1</title>
+<title>일상생활에서 지도를 활용해 볼까요 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -112,7 +112,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 축척 거리 재기 조작 */
+/* 지하철 길찾기 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -183,128 +183,163 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 우리 지역을 실제 크기로? 거대한 종이(동기 유발)
-  bigpaper:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F1F5F9"/>
-    <rect x="10" y="10" width="140" height="76" rx="3" fill="#fff" stroke="#94A3B8" stroke-width="2"/>
-    <rect x="26" y="26" width="30" height="20" rx="2" fill="#9DD6F5"/><path d="M92 60 L110 34 L128 60Z" fill="#86C28B"/>
-    <path d="M22 66 Q60 56 100 64 T140 62" stroke="#7FC8E8" stroke-width="3" fill="none"/>
-    <circle cx="20" cy="82" r="7" fill="#FCD9B6"/><rect x="14" y="86" width="12" height="8" rx="2" fill="#DC2626"/>
-    <text x="96" y="22" font-size="9" fill="#DC2626" text-anchor="middle" font-weight="800">너무 커요!</text></svg>`,
-  // 축척 막대(1cm = 1km)
-  scalebar:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
-    <text x="80" y="26" font-size="12" fill="#0369A1" text-anchor="middle" font-weight="800">축척 막대</text>
-    <rect x="30" y="44" width="24" height="10" fill="#0F172A"/><rect x="54" y="44" width="24" height="10" fill="#fff" stroke="#0F172A" stroke-width="1.5"/><rect x="78" y="44" width="24" height="10" fill="#0F172A"/><rect x="102" y="44" width="24" height="10" fill="#fff" stroke="#0F172A" stroke-width="1.5"/>
-    <text x="30" y="70" font-size="8" fill="#475569" text-anchor="middle">0</text><text x="78" y="70" font-size="8" fill="#475569" text-anchor="middle">2</text><text x="126" y="70" font-size="8" fill="#475569" text-anchor="middle">4 km</text>
-    <text x="80" y="88" font-size="9" fill="#166534" text-anchor="middle" font-weight="700">지도 1 cm = 실제 1 km</text></svg>`,
-  // 많이 줄인 지도(넓은 범위) vs 덜 줄인 지도(좁고 자세)
-  wide:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
-    <rect x="12" y="12" width="136" height="72" rx="3" fill="#EAF6EE" stroke="#94A3B8" stroke-width="1.5"/>
-    <path d="M20 40 Q50 30 80 42 T140 38" stroke="#7FC8E8" stroke-width="2" fill="none"/>
-    <rect x="30" y="50" width="6" height="6" fill="#0F172A"/><rect x="64" y="60" width="6" height="6" fill="#0F172A"/><rect x="104" y="46" width="6" height="6" fill="#0F172A"/><rect x="124" y="66" width="6" height="6" fill="#0F172A"/>
-    <text x="80" y="24" font-size="9" fill="#0369A1" text-anchor="middle" font-weight="800">많이 줄인 지도 · 넓은 지역</text></svg>`,
-  detail:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
-    <rect x="12" y="12" width="136" height="72" rx="3" fill="#FFF" stroke="#94A3B8" stroke-width="1.5"/>
-    <rect x="0" y="46" width="160" height="8" fill="#FDE68A"/><rect x="76" y="12" width="8" height="72" fill="#FDE68A"/>
-    <rect x="24" y="22" width="20" height="16" fill="none" stroke="#166534" stroke-width="1.6"/><rect x="98" y="24" width="18" height="14" fill="#FBBF77"/><path d="M104 70 L114 58 L124 70Z" fill="#86C28B"/>
-    <text x="80" y="94" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">덜 줄인 지도 · 좁고 자세</text></svg>`,
-  // 자로 거리 재기
-  measure:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5F3FF"/>
-    <circle cx="30" cy="50" r="6" fill="#DC2626"/><text x="30" y="72" font-size="8" fill="#475569" text-anchor="middle" font-weight="700">시청</text>
-    <circle cx="120" cy="50" r="6" fill="#0891B2"/><text x="120" y="72" font-size="8" fill="#475569" text-anchor="middle" font-weight="700">역</text>
-    <line x1="30" y1="50" x2="120" y2="50" stroke="#7C5BD8" stroke-width="2" stroke-dasharray="4 3"/>
-    <text x="75" y="40" font-size="10" fill="#6D28D9" text-anchor="middle" font-weight="800">3 cm = 3 km</text></svg>`
+  // 관광 안내도
+  tourmap:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EAF6EE"/>
+    <path d="M0 60 Q40 50 80 60 T160 56" stroke="#7FC8E8" stroke-width="4" fill="none"/>
+    <path d="M20 40 L30 24 L40 40Z" fill="#86C28B"/><circle cx="70" cy="34" r="9" fill="#FBBF77"/>
+    <rect x="104" y="26" width="18" height="16" fill="#FDA4AF"/><path d="M132 44 L140 30 L148 44Z" fill="#86C28B"/>
+    <circle cx="30" cy="70" r="4" fill="#DC2626"/><circle cx="70" cy="72" r="4" fill="#DC2626"/><circle cx="120" cy="70" r="4" fill="#DC2626"/>
+    <text x="80" y="16" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">관광 안내도</text></svg>`,
+  // 약도
+  sketch:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    <path d="M20 76 L20 40 L90 40 L90 20" stroke="#334155" stroke-width="3" fill="none"/>
+    <path d="M90 40 L140 40" stroke="#334155" stroke-width="3" fill="none"/>
+    <rect x="84" y="8" width="16" height="12" fill="#DC2626"/><text x="112" y="34" font-size="9" fill="#334155" font-weight="700">결혼식장</text>
+    <circle cx="20" cy="80" r="4" fill="#0891B2"/><text x="20" y="94" font-size="8" fill="#475569" text-anchor="middle">출발</text>
+    <text x="80" y="70" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">약도</text></svg>`,
+  // 길 도우미(내비게이션)
+  navi:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
+    <rect x="40" y="10" width="80" height="76" rx="8" fill="#0F172A"/><rect x="46" y="18" width="68" height="52" rx="3" fill="#1E293B"/>
+    <path d="M56 62 L80 30 L86 40 L100 26" stroke="#38BDF8" stroke-width="3" fill="none"/>
+    <path d="M96 22 L104 26 L98 32Z" fill="#F87171"/>
+    <text x="80" y="82" font-size="9" fill="#93C5FD" text-anchor="middle" font-weight="700">길 도우미</text></svg>`,
+  // 지하철 노선도(작은 도식)
+  subway:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
+    <line x1="20" y1="50" x2="140" y2="50" stroke="#2563EB" stroke-width="5"/>
+    <line x1="90" y1="16" x2="90" y2="84" stroke="#EA580C" stroke-width="5"/>
+    <circle cx="20" cy="50" r="6" fill="#fff" stroke="#2563EB" stroke-width="2.5"/><circle cx="140" cy="50" r="6" fill="#fff" stroke="#2563EB" stroke-width="2.5"/>
+    <circle cx="90" cy="16" r="6" fill="#fff" stroke="#EA580C" stroke-width="2.5"/>
+    <circle cx="90" cy="50" r="8" fill="#fff" stroke="#7C3AED" stroke-width="3"/>
+    <text x="90" y="94" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="800">노선도 · 환승</text></svg>`,
+  // 대동여지도(옛 지도)
+  daedong:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5EEDD"/>
+    <rect x="10" y="8" width="140" height="80" fill="#EDE0C4" stroke="#8A6D3B" stroke-width="2"/>
+    <path d="M30 70 Q50 30 70 66 Q90 26 110 62 Q125 40 140 60" stroke="#5B4020" stroke-width="3" fill="none"/>
+    <path d="M20 78 Q60 70 100 80 T150 74" stroke="#3B6E8F" stroke-width="1.6" fill="none"/>
+    <path d="M20 82 Q60 74 100 84 T150 78" stroke="#3B6E8F" stroke-width="1.6" fill="none"/>
+    <path d="M24 30 L136 30" stroke="#7A5A2E" stroke-width="1" stroke-dasharray="2 5"/>
+    <text x="80" y="20" font-size="9" fill="#5B4020" text-anchor="middle" font-weight="800">대동여지도</text></svg>`,
+  // 체험학습 계획표
+  plan:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
+    <rect x="20" y="12" width="120" height="72" rx="4" fill="#fff" stroke="#94A3B8" stroke-width="1.5"/>
+    <line x1="20" y1="30" x2="140" y2="30" stroke="#E2E8F0" stroke-width="1"/><line x1="20" y1="48" x2="140" y2="48" stroke="#E2E8F0" stroke-width="1"/><line x1="20" y1="66" x2="140" y2="66" stroke="#E2E8F0" stroke-width="1"/>
+    <circle cx="32" cy="39" r="4" fill="#DC2626"/><circle cx="32" cy="57" r="4" fill="#EA580C"/><circle cx="32" cy="75" r="4" fill="#16A34A"/>
+    <rect x="44" y="36" width="60" height="6" fill="#CBD5E1"/><rect x="44" y="54" width="76" height="6" fill="#CBD5E1"/><rect x="44" y="72" width="50" height="6" fill="#CBD5E1"/>
+    <text x="80" y="24" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">체험학습 계획</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 축척 막대자로 실제 거리 재기(직접 조작) ===== */
-// 한 도로 위 4개 장소. x = 격자 칸(1칸 = 지도 1cm = 실제 1km). 지도서 근거(1cm=1km).
-const KM_PX = 22;         // 1km(=1cm) 당 픽셀
-const ORIGIN_X = 30, ROAD_Y = 92;
-const LOC = [
-  {k:'airport', name:'공항',   gx:1,  color:'#0891B2'},
-  {k:'city',    name:'시청',   gx:4,  color:'#DC2626'},
-  {k:'station', name:'역',     gx:7,  color:'#7C3AED'},
-  {k:'market',  name:'시장',   gx:11, color:'#EA580C'}
+/* ===== 지하철 노선도 길찾기(직접 조작) ===== */
+// 2호선(가로) 서면–수영–해운대 / 3호선(세로) 종합운동장–수영–대저. 수영 = 환승역. 지도서 근거.
+const STATIONS = [
+  {k:'seomyeon', name:'서면',       lines:[2],   x:70,  y:120},
+  {k:'suyeong',  name:'수영',       lines:[2,3], x:160, y:120, transfer:true},
+  {k:'haeundae', name:'해운대',     lines:[2],   x:250, y:120},
+  {k:'stadium',  name:'종합운동장', lines:[3],   x:160, y:52},
+  {k:'daejeo',   name:'대저',       lines:[3],   x:160, y:188}
 ];
-function px(gx){ return ORIGIN_X + gx*KM_PX; }
-function scaleInteractive(st){
-  const picks = st.picks || [];
-  const dots = LOC.map(p=>{
-    const on = picks.includes(p.k);
-    return `<circle cx="${px(p.gx)}" cy="${ROAD_Y}" r="${on?9:7}" fill="${on?p.color:'#fff'}" stroke="${p.color}" stroke-width="2.4" style="cursor:pointer" onclick="measurePick('${p.k}')"/>`
-      + `<text x="${px(p.gx)}" y="${ROAD_Y+24}" font-size="11" fill="#334155" text-anchor="middle" font-weight="700" style="pointer-events:none">${p.name}</text>`;
-  }).join('');
-  // 두 장소가 선택되면 자(막대) + 거리
-  let rulerSvg='', info;
+const LINE_COLOR = {2:'#2563EB', 3:'#EA580C'};
+function subwayInteractive(st){
+  const picks = st.route || [];
+  const stObj = k => STATIONS.find(s=>s.k===k);
+  // 경로 계산
+  let plan=null;
   if(picks.length===2){
-    const a=LOC.find(l=>l.k===picks[0]), b=LOC.find(l=>l.k===picks[1]);
-    const km=Math.abs(a.gx-b.gx);
-    const x1=px(Math.min(a.gx,b.gx)), x2=px(Math.max(a.gx,b.gx));
-    rulerSvg=`<rect x="${x1}" y="${ROAD_Y-40}" width="${x2-x1}" height="14" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.5"/>`;
-    for(let g=Math.min(a.gx,b.gx); g<=Math.max(a.gx,b.gx); g++){ rulerSvg+=`<line x1="${px(g)}" y1="${ROAD_Y-40}" x2="${px(g)}" y2="${ROAD_Y-26}" stroke="#7C3AED" stroke-width="1"/>`; }
-    rulerSvg+=`<text x="${(x1+x2)/2}" y="${ROAD_Y-46}" font-size="12" fill="#6D28D9" text-anchor="middle" font-weight="800">지도상 ${km} cm</text>`;
-    info=`<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b>${a.name}</b>에서 <b>${b.name}</b>까지 지도상 거리는 <b>${km} cm</b>. 축척이 <b>1 cm = 1 km</b>이니, 실제 거리는 <span class="ka-emph">${km} km</span>예요!</div>`;
-  } else {
-    info=`<div class="note">지도 위 <b style="color:#15803D">두 장소</b>를 차례로 누르면, 축척 막대자로 <b>지도상 거리(cm)</b>와 <b>실제 거리(km)</b>를 재 줘요.</div>`;
+    const a=stObj(picks[0]), b=stObj(picks[1]);
+    const shared = a.lines.filter(l=>b.lines.includes(l));
+    if(shared.length){ plan={type:'direct', line:shared[0], a, b}; }
+    else { plan={type:'transfer', l1:a.lines[0], l2:b.lines[0], a, b}; }
   }
-  const reset = picks.length>=1 ? `<button class="reveal-btn" style="padding:7px 16px;font-size:14px" onclick="resetMeasure()">다시 재기</button>` : '';
-  return `<div class="contour-wrap"><svg viewBox="0 0 320 140" style="width:min(360px,94%);height:auto">
-    <rect width="320" height="140" fill="#FFFDF5" rx="10"/>
-    <line x1="${px(0)}" y1="${ROAD_Y}" x2="${px(12)}" y2="${ROAD_Y}" stroke="#CBD5E1" stroke-width="6"/>
-    ${rulerSvg}${dots}
-    <rect x="${px(0)}" y="18" width="${KM_PX}" height="8" fill="#0F172A"/><rect x="${px(1)}" y="18" width="${KM_PX}" height="8" fill="#fff" stroke="#0F172A" stroke-width="1"/>
-    <text x="${px(1)+6}" y="14" font-size="9" fill="#166534" font-weight="700">축척: 1 cm = 1 km</text>
+  // 노선 그리기
+  let svg=`<line x1="70" y1="120" x2="250" y2="120" stroke="#BFDBFE" stroke-width="6"/>`
+        + `<line x1="160" y1="52" x2="160" y2="188" stroke="#FED7AA" stroke-width="6"/>`;
+  // 경로 하이라이트
+  if(plan){
+    if(plan.type==='direct'){
+      const c=LINE_COLOR[plan.line];
+      svg+=`<line x1="${plan.a.x}" y1="${plan.a.y}" x2="${plan.b.x}" y2="${plan.b.y}" stroke="${c}" stroke-width="6"/>`;
+    } else {
+      const sy=stObj('suyeong');
+      svg+=`<line x1="${plan.a.x}" y1="${plan.a.y}" x2="${sy.x}" y2="${sy.y}" stroke="${LINE_COLOR[plan.l1]}" stroke-width="6"/>`;
+      svg+=`<line x1="${sy.x}" y1="${sy.y}" x2="${plan.b.x}" y2="${plan.b.y}" stroke="${LINE_COLOR[plan.l2]}" stroke-width="6"/>`;
+    }
+  }
+  // 역 그리기
+  svg+=STATIONS.map(s=>{
+    const on=picks.includes(s.k);
+    const r=s.transfer?9:7;
+    const stroke=s.transfer?'#7C3AED':LINE_COLOR[s.lines[0]];
+    return `<circle cx="${s.x}" cy="${s.y}" r="${r}" fill="${on?stroke:'#fff'}" stroke="${stroke}" stroke-width="2.6" style="cursor:pointer" onclick="routePick('${s.k}')"/>`
+      + `<text x="${s.x}" y="${s.y + (s.k==='stadium'?-14:24)}" font-size="11" fill="#334155" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.name}</text>`;
+  }).join('');
+  // 안내
+  let info;
+  if(plan){
+    if(plan.type==='direct'){
+      info=`<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b>${plan.a.name}</b> → <b>${plan.b.name}</b>은 <span class="ka-emph">${plan.line}호선</span>을 타고 갈아타지 않고 바로 갈 수 있어요.</div>`;
+    } else {
+      info=`<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b>${plan.a.name}</b>에서 <b>${plan.l1}호선</b>을 타고 가다가 <b style="color:#7C3AED">수영역</b>에서 <b>${plan.l2}호선</b>으로 <span class="ka-emph">환승</span>하면 <b>${plan.b.name}</b>에 도착해요!</div>`;
+    }
+  } else {
+    info=`<div class="note"><b style="color:#15803D">출발역</b>과 <b style="color:#15803D">도착역</b>을 차례로 누르면, 노선도가 가는 길을 알려 줘요. 노선이 다르면 <b style="color:#7C3AED">수영역</b>에서 갈아타야 해요.</div>`;
+  }
+  const reset = picks.length>=1 ? `<button class="reveal-btn" style="padding:7px 16px;font-size:14px" onclick="resetRoute()">다시 찾기</button>` : '';
+  return `<div class="contour-wrap"><svg viewBox="0 0 320 220" style="width:min(360px,94%);height:auto">
+    <rect width="320" height="220" fill="#FFFDF5" rx="10"/>
+    ${svg}
+    <rect x="18" y="16" width="12" height="5" fill="#2563EB"/><text x="34" y="21" font-size="10" fill="#475569">2호선</text>
+    <rect x="18" y="30" width="12" height="5" fill="#EA580C"/><text x="34" y="35" font-size="10" fill="#475569">3호선</text>
   </svg>${reset}</div>${info}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 5차시";
+const META = "1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 6차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [3,1,2,0,0,3,1,2]
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [0,3,1,2,2,0,2,1]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"지도에서 실제 거리를 줄여 나타낸 정도를 무엇이라고 할까요?",
-   opts:["방위","등고선","범례","축척"], correct:3, pts:POINTS_BASIC,
-   reason:"지도에서 실제 거리를 줄여 나타낸 정도를 축척이라고 해요.",
-   h1:"오늘 배운 핵심 낱말이에요. 두 글자예요.",
-   h2:"지도 아래쪽 막대(1cm=1km)로 나타내는 \u2018줄인 정도\u2019예요."},
-  {stem:"우리가 사는 지역을 종이 지도에 나타내려면 어떻게 해야 할까요?",
-   opts:["실제 크기 그대로 그린다","실제보다 줄여서 나타낸다","더 크게 늘려서 그린다","글자로만 적는다"], correct:1, pts:POINTS_BASIC,
-   reason:"실제 크기로 그리면 종이가 지역만큼 커져야 해요. 그래서 실제보다 줄여서 나타내요.",
-   h1:"우리 지역만 한 종이는 너무 커서 쓸 수 없어요.",
-   h2:"실제보다 \u2018줄여서\u2019 나타내는 것이 지도예요."},
-  {stem:"축척 막대가 \u20181 cm = 1 km\u2019인 지도에서, 지도상 거리가 3 cm이면 실제 거리는 얼마일까요?", scene:"measure",
-   opts:["300 m","30 m","3 km","30 km"], correct:2, pts:POINTS_BASIC,
-   reason:"1 cm가 1 km이므로, 지도상 3 cm는 실제로 3 km예요.",
-   h1:"1 cm가 1 km라면, 3 cm는 몇 배일까요?",
-   h2:"3 cm × (1 km / 1 cm) = 3 km 예요."},
-  {stem:"지도에서 두 장소 사이의 실제 거리를 구하는 순서로 알맞은 것은?", scene:"scalebar",
-   opts:["지도 축척을 확인하고 → 축척 막대자로 지도상 거리를 잰다","색을 먼저 칠한다","방위표를 그린다","기호를 지운다"], correct:0, pts:POINTS_BASIC,
-   reason:"먼저 지도의 축척을 확인하고, 축척 막대자로 지도상 거리를 재면 실제 거리를 알 수 있어요.",
-   h1:"거리를 재기 전에 \u20181 cm가 몇 km인지\u2019부터 알아야 해요.",
-   h2:"① 축척 확인 → ② 막대자로 재기 순서예요."},
+  {stem:"지역에 어떤 관광지가 있고 어디에 있는지 알려 주는 지도를 무엇이라고 할까요?", scene:"tourmap",
+   opts:["관광 안내도","시간표","일기예보","성적표"], correct:0, pts:POINTS_BASIC,
+   reason:"관광 안내도는 지역의 관광지가 어디에 있는지 알려 주는 지도예요.",
+   h1:"여행 가서 \u2018어디를 구경할까\u2019 정할 때 보는 지도예요.",
+   h2:"\u2018관광\u2019하는 곳을 \u2018안내\u2019하는 지도예요."},
+  {stem:"목적지를 찾아갈 수 있도록 길을 간단히 그린 지도를 무엇이라고 할까요?", scene:"sketch",
+   opts:["세계지도","지구본","달력","약도"], correct:3, pts:POINTS_BASIC,
+   reason:"약도는 목적지까지 가는 길을 간단히 그린 지도예요. 청첩장에서 많이 봤을 거예요.",
+   h1:"결혼식장 위치를 간단히 그려 알려 주는 그림이에요.",
+   h2:"복잡한 것은 빼고 \u2018길만 간단히\u2019 그린 지도예요."},
+  {stem:"목적지를 입력하면 가장 좋은 이동 방법을 지도로 알려 주는 프로그램은 무엇일까요?", scene:"navi",
+   opts:["게임기","길 도우미(내비게이션)","텔레비전","라디오"], correct:1, pts:POINTS_BASIC,
+   reason:"길 도우미(내비게이션)는 목적지를 입력하면 가장 좋은 이동 방법을 지도로 알려 줘요.",
+   h1:"자동차에서 \u2018몇 미터 앞에서 우회전\u2019이라고 말해 주는 거예요.",
+   h2:"목적지를 넣으면 길을 안내해 주는 프로그램이에요."},
+  {stem:"상황과 목적이 서로 다른 여러 지도를 잘 활용하려면 어떻게 해야 할까요?",
+   opts:["아무 지도나 쓴다","가장 큰 지도만 쓴다","상황과 목적에 맞는 지도를 골라 쓴다","지도를 쓰지 않는다"], correct:2, pts:POINTS_BASIC,
+   reason:"지도마다 담긴 정보가 달라요. 상황과 목적에 맞는 지도를 골라 써야 편리해요.",
+   h1:"여행할 때와 길 찾을 때 필요한 지도가 다르겠죠?",
+   h2:"\u2018상황\u2019과 \u2018목적\u2019에 맞게 골라 쓰는 것이 좋아요."},
   // 4단계 적용 (+15)
-  {stem:"실제 거리를 많이 줄인 지도는 어떤 특징이 있을까요?", scene:"wide",
-   opts:["넓은 지역을 간략하게 보여 준다","좁은 지역을 아주 자세하게 보여 준다","글자가 하나도 없다","색을 칠할 수 없다"], correct:0, pts:POINTS_APPLY,
-   reason:"많이 줄인 지도는 넓은 지역을 간략하게, 덜 줄인 지도는 좁은 지역을 자세하게 보여 줘요.",
-   h1:"많이 줄이면 더 넓은 곳이 한 장에 들어가요.",
-   h2:"대신 자세함은 줄어들어 간략하게 보여요."},
-  {stem:"공산성 주변을 가장 자세하게 살펴보려면, 축척이 다른 세 지도 중 어느 것을 골라야 할까요?", scene:"detail",
-   opts:["가장 많이 줄인 지도","줄이지 않은 실제 땅","건물이 없는 지도","실제 거리를 가장 조금 줄인(덜 줄인) 지도"], correct:3, pts:POINTS_APPLY,
-   reason:"덜 줄인 지도일수록 좁은 지역이 자세히 나와요. 공산성을 자세히 보려면 가장 덜 줄인 지도가 좋아요.",
-   h1:"자세히 보려면 좁은 지역을 크게 담은 지도가 필요해요.",
-   h2:"실제 거리를 \u2018조금만\u2019 줄인 지도가 가장 자세해요."},
-  {stem:"1 cm = 1 km 지도에서 광주공항부터 동부 경찰서까지 지도상 거리가 10 cm였어요. 실제 거리는?",
-   opts:["1 km","10 km","100 m","1 m"], correct:1, pts:POINTS_APPLY,
-   reason:"1 cm가 1 km이므로 지도상 10 cm는 실제 10 km예요.",
-   h1:"지도상 1 cm마다 실제 1 km씩 늘어나요.",
-   h2:"10 cm × 1 km = 10 km 예요."},
-  {stem:"같은 크기의 종이에 그린 두 지도예요. 더 넓은 지역이 담긴 지도는 어느 쪽일까요?",
-   opts:["글자가 큰 지도","색이 예쁜 지도","실제 거리를 더 많이 줄인 지도","축척 막대가 없는 지도"], correct:2, pts:POINTS_APPLY,
-   reason:"실제 거리를 더 많이 줄일수록 같은 종이에 더 넓은 지역을 담을 수 있어요.",
-   h1:"많이 줄이면 넓은 지역이 한 장에 들어간다고 배웠어요.",
-   h2:"같은 종이라면 \u2018더 많이 줄인\u2019 쪽이 더 넓은 곳을 담아요."}
+  {stem:"종합운동장역(3호선)에서 해운대역(2호선)으로 갈 때, 수영역에서 다른 노선으로 갈아타는 것을 무엇이라고 할까요?", scene:"subway",
+   opts:["출발","도착","환승","정지"], correct:2, pts:POINTS_APPLY,
+   reason:"노선이 다르면 두 노선이 만나는 역(수영역)에서 갈아타야 해요. 이것을 환승이라고 해요.",
+   h1:"직접 길찾기에서 수영역에서 무엇을 했나요?",
+   h2:"타던 노선에서 다른 노선으로 \u2018갈아타는\u2019 것이에요."},
+  {stem:"처음 가 보는 야영장에 자동차로 갈 때, 가장 도움이 되는 것은 무엇일까요?",
+   opts:["길 도우미(내비게이션)","오래된 관광 엽서","동화책","시계"], correct:0, pts:POINTS_APPLY,
+   reason:"처음 가는 곳은 길 도우미에 목적지를 넣으면 가장 좋은 길을 안내받을 수 있어요.",
+   h1:"자동차에서 실시간으로 길을 안내해 주는 것을 떠올려 봐요.",
+   h2:"목적지만 넣으면 이동 방법을 알려 주는 프로그램이에요."},
+  {stem:"조선 시대 김정호가 만든 『대동여지도』에서, 산의 크기와 높이는 무엇으로 짐작할 수 있게 나타냈을까요?", scene:"daedong",
+   opts:["글자 크기","사진","선의 굵기","색칠"], correct:2, pts:POINTS_APPLY,
+   reason:"『대동여지도』는 산줄기를 이어 그리고, 선의 굵기로 산의 크기와 높이를 짐작할 수 있게 했어요.",
+   h1:"산줄기를 그린 선을 자세히 보면 두께가 달라요.",
+   h2:"굵은 선일수록 더 크고 높은 산을 뜻했어요."},
+  {stem:"『대동여지도』가 오늘날의 지도와 비슷한 점으로 알맞은 것은 무엇일까요?",
+   opts:["인터넷으로 검색할 수 있다","기호와 범례를 사용해 정보를 나타냈다","소리가 나온다","자동으로 길을 안내한다"], correct:1, pts:POINTS_APPLY,
+   reason:"『대동여지도』에도 오늘날 지도처럼 기호와 범례가 쓰였어요. 아주 옛날 지도인데도 신기하죠.",
+   h1:"오늘날 지도에서 약속으로 쓰는 \u2018기호\u2019를 떠올려 봐요.",
+   h2:"옛 지도에도 기호와 범례가 있었다는 점이 비슷해요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -312,56 +347,56 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">축척을 알아볼까요?</h2>
-  <div class="ka-bub">우리가 사는 지역을 종이에 <b>실제 크기 그대로</b> 그리려면, 얼마나 큰 종이가 필요할까요? 지역만 한 종이는 너무 커서 쓸 수가 없어요!</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('bigpaper','실제 크기로 그리면…')}</div>
-    <div class="note">오늘은 실제 거리를 <b style="color:#15803D">줄여</b> 지도에 담는 방법, <b style="color:#15803D">축척</b>을 알아봐요.</div>
+  <h2 class="ka-t">일상생활에서 지도를 활용해 볼까요?</h2>
+  <div class="ka-bub">우리는 이미 여러 곳에서 지도를 쓰고 있어요. 버스 노선도, 등산로 안내도, 스마트폰 지도 앱까지! 지도를 <b>언제, 어떻게</b> 써 봤나요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('navi','스마트폰 길 도우미')}</div>
+    <div class="note">오늘은 <b style="color:#15803D">다양한 지도</b>를 살펴보고 직접 활용해 봐요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">그럼 지도는 어떻게 만들까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">넓은 땅을 작은 종이 한 장에 담아야 해요. 실제 모습을 어떻게 바꿔야 종이에 들어갈 수 있을까요?</div>
+  <h2 class="ka-t">이런 지도들, 언제 쓸까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">지도마다 담긴 정보와 쓰임이 달라요. 아래 세 지도는 각각 어떤 상황에서 쓰면 좋을지 생각해 봐요.</div>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('bigpaper','너무 큰 실제 크기')}${sceneCard('scalebar','작은 지도')}
-  </div><div class="note">실제 거리를 그대로 둘까요, 아니면 어떻게 해야 할까요?</div></div>`});
+    ${sceneCard('tourmap','관광 안내도')}${sceneCard('sketch','약도')}${sceneCard('navi','길 도우미')}
+  </div><div class="note">여행 갈 때, 결혼식장 찾을 때, 처음 가는 길 안내받을 때 \u2014 어떤 지도가 어울릴까요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">실제 거리를 어떻게 해야 할까요?</h2>
+  <h2 class="ka-t">여러 지도를 어떻게 골라 쓸까요?</h2>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('scalebar','축척 막대')}
+    ${sceneCard('tourmap','관광 안내도')}${sceneCard('navi','길 도우미')}
   </div>
-  ${st.revealed?`<div class="answer-box">실제 거리를 <b>일정하게 줄여서</b> 나타내야 종이에 담을 수 있어요. 이렇게 <b>실제 거리를 줄인 정도</b>를 <span class="ka-emph">축척</span>이라고 해요.</div>`
+  ${st.revealed?`<div class="answer-box">지도마다 담긴 정보가 달라요. 그래서 <b>상황과 목적에 맞는 지도</b>를 골라 쓰면 돼요. 여행엔 관광 안내도, 처음 가는 길엔 길 도우미처럼요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 축척의 뜻
+// 4 살펴보기: 다양한 지도 종류
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">\u2018축척\u2019이란 무엇일까요?</h2>
-  <div class="ka-bub"><span class="ka-emph">축척</span>은 지도에서 <b>실제 거리를 줄여 나타낸 정도</b>예요. 지도 아래 <b>축척 막대</b>를 보면, 지도의 1 cm가 실제로 몇 km인지 알 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('scalebar','1 cm = 1 km')}</div>
-  <div class="note">축척 막대가 \u20181 cm = 1 km\u2019라면, 지도의 <b style="color:#0369A1">1 cm</b>는 실제로 <b style="color:#166534">1 km</b>라는 약속이에요.</div></div>`});
-// 5 살펴보기: 축척 막대자로 거리 재기(직접 조작)
+  <h2 class="ka-t">일상생활 속 다양한 지도</h2>
+  <div class="ka-bub"><b>관광 안내도</b>는 볼거리 위치를, <b>약도</b>는 목적지까지 가는 길을 간단히, <b>길 도우미</b>는 가장 좋은 이동 방법을 알려 줘요. <b>노선도</b>는 버스·지하철 길을 보여 주고요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('sketch','약도')}${sceneCard('subway','노선도')}${sceneCard('plan','체험학습 계획')}</div>
+  <div class="note">상황과 목적에 맞게 골라 쓰면, 이동을 <b style="color:#166534">미리 계획</b>할 수 있어 편리해요.</div></div>`});
+// 5 살펴보기: 지하철 노선도 길찾기(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">축척 막대자로 실제 거리를 재 봐요</h2>
-  <div class="ka-grp">${scaleInteractive(st)}</div>`});
-// 6 살펴보기: 많이 줄인 vs 덜 줄인(발문)
+  <h2 class="ka-t">지하철 노선도로 길을 찾아봐요</h2>
+  <div class="ka-grp">${subwayInteractive(st)}</div>`});
+// 6 살펴보기: 체험학습 계획(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">많이 줄인 지도와 덜 줄인 지도, 뭐가 다를까요?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('wide','많이 줄인 지도')}${sceneCard('detail','덜 줄인 지도')}</div>
-  ${st.revealed?`<div class="answer-box"><b>많이 줄인 지도</b>는 <b>넓은 지역</b>을 간략하게 보여 주고, <b>덜 줄인 지도</b>는 <b>좁은 지역</b>을 자세하게 보여 줘요. 목적에 맞게 골라 써요.</div>`
-    :`<div class="note">한 곳을 자세히 보고 싶을 땐 어떤 지도가 좋을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">지도 앱으로 체험학습을 계획한다면?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('plan','하루 체험학습 계획')}</div>
+  ${st.revealed?`<div class="answer-box">지도 앱으로 <b>가고 싶은 장소</b>를 정하고, <b>교통편·이동 시간·동선</b>을 살펴 효율적인 <b>이동 경로</b>를 정하면 하루 계획을 알차게 세울 수 있어요.</div>`
+    :`<div class="note">장소 세 곳을 고른다면, 무엇을 먼저 정해야 알찬 하루가 될까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 실제 거리 구하는 법 정리
+// 7 살펴보기: 대동여지도(옛 지도와 비교)
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지도로 실제 거리 구하는 방법</h2>
-  <div class="ka-bub">지도에서 두 장소 사이 실제 거리는 이렇게 구해요. ① 지도의 <b>축척을 확인</b>하고, ② <b>축척 막대자로 지도상 거리를 재면</b> 실제 거리를 알 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('measure','시청 → 역 = 3 km')}</div>
-  <div class="note">1 cm = 1 km 지도에서 지도상 <b>3 cm</b>는 실제 <b style="color:#166534">3 km</b>. 아주 쉽죠?</div></div>`});
+  <h2 class="ka-t">옛날에도 지도가 있었을까요?</h2>
+  <div class="ka-bub">조선 시대 <b>김정호</b>가 만든 <span class="ka-emph">대동여지도</span>는 다 펼치면 세로 약 7 m나 되는 초대형 지도예요. 놀랍게도 오늘날처럼 <b>기호와 범례</b>를 쓰고, <b>선의 굵기</b>로 산의 높이를 나타냈어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('daedong','대동여지도')}</div>
+  <div class="note">아주 옛날 지도인데도 지금 지도와 <b style="color:#166534">비슷한 약속</b>이 담겨 있다는 게 신기하죠?</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -372,18 +407,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">축척</b>은 지도에서 <b>실제 거리를 줄여 나타낸 정도</b>예요. 축척 막대로 알 수 있어요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div><b>많이 줄인 지도</b>는 넓은 지역을 간략하게, <b>덜 줄인 지도</b>는 좁은 지역을 자세하게 보여 줘요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>실제 거리는 <b>①축척 확인 → ②막대자로 재기</b>로 구해요. 1 cm = 1 km면 지도상 3 cm는 실제 3 km!</div></div>
+    <div class="sum-item"><span class="n">1</span><div>일상생활에는 <b style="color:#15803D">관광 안내도·약도·버스/지하철 노선도·길 도우미</b> 등 다양한 지도가 있어요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>상황과 목적에 맞는 지도</b>를 골라 쓰면, 이동을 미리 계획할 수 있어 편리해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>옛 지도 <b style="color:#5B4020">대동여지도</b>에도 오늘날처럼 기호·범례가 쓰였고, 선의 굵기로 산의 높이를 나타냈어요.</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"축척이 무엇인지 말할 수 있어요",st)}
-    ${selfCheck(1,"축척 막대자로 실제 거리를 구할 수 있어요",st)}
-    ${selfCheck(2,"많이 줄인 지도와 덜 줄인 지도의 차이를 알아요",st)}
+    ${selfCheck(0,"일상생활 속 다양한 지도를 말할 수 있어요",st)}
+    ${selfCheck(1,"상황과 목적에 맞는 지도를 고를 수 있어요",st)}
+    ${selfCheck(2,"지하철 노선도로 길을 찾을 수 있어요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -393,7 +428,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">축척을 알아봤어요. 다음 시간엔 \u2018일상생활에서 지도 활용하기\u2019를 배워요.</div>
+    <div class="note">다양한 지도를 활용해 봤어요. 다음 시간엔 \u2018다양한 정보가 담긴 지도\u2019를 정리해요.</div>
   </div>`;
 }});
 
@@ -426,13 +461,13 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l05";
+const LS_KEY = "kedu_progress_g4_social_u1_l06";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
-  picks:[], measured:0,
+  route:[], routed:0,
   startTs: Date.now(),
   attempt: 1
 };
@@ -466,21 +501,21 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 축척 거리 재기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 지하철 길찾기 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
-function measurePick(k){
-  if(!LOC.some(l=>l.k===k)) return;
-  if(!state.picks) state.picks=[];
-  if(state.picks.length>=2) state.picks=[]; // 새 측정 시작
-  if(state.picks.includes(k)) return;       // 같은 곳 두 번 방지
-  state.picks.push(k);
-  if(state.picks.length===2){ state.measured++; playChime(); } else { playBlip(); }
+function routePick(k){
+  if(!STATIONS.some(s=>s.k===k)) return;
+  if(!state.route) state.route=[];
+  if(state.route.length>=2) state.route=[]; // 새 길찾기 시작
+  if(state.route.includes(k)) return;       // 같은 역 두 번 방지
+  state.route.push(k);
+  if(state.route.length===2){ state.routed++; playChime(); } else { playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
-function resetMeasure(){ state.picks=[]; main.innerHTML=slides[state.idx].render(state); }
+function resetRoute(){ state.route=[]; main.innerHTML=slides[state.idx].render(state); }
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
@@ -518,7 +553,7 @@ function showEndButtons(){
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
 // 다음 차시(l05 축척)는 준비 중 — 목록으로 안내
-function goNextLesson(e){ location.href='g4_social_u1_l06_지도활용.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
