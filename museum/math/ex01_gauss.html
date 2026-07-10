@@ -84,7 +84,7 @@
   /* ── 레이아웃 상수 ─────────────────────────────────────────────── */
   var FLOOR = 806;
   var BOARD = { x:150, y:66, w:840, h:300 };
-  var SCALE = { hx:1350, hy:210, armW:150, panY:360 };
+  var SCALE = { hx:1350, hy:300, armW:150, panDrop:110 };
   var COUNTER = { x:1350, y:150 };
   var RIB = { x0:96, x1:1504, y:452 };
 
@@ -478,27 +478,50 @@
   }
 
   function drawScale(ctx){
+    var s=SCALE, n=S.dish.length;
+    var tilt=Math.min(0.16, n*0.011);
+    var dishX=s.hx-s.armW, dishY=s.hy+s.panDrop;
+    // 담는 접시 유도 글로우(담은 게 적을수록 강함 — "여기 담아라")
+    var lure=Math.max(0, 1-n/6)*(0.5+Math.sin(S.t*2.4)*0.5);
+    if(lure>0.02){
+      var img=stage.glow(130,'rgba(242,234,216,'+(0.16*lure).toFixed(3)+')');
+      ctx.drawImage(img, dishX-130, dishY-130, 260, 260);
+    }
     ctx.save();
-    var s=SCALE, tilt=Math.min(0.18, S.dish.length*0.012);
-    // 기둥
-    ctx.strokeStyle='rgba(138,115,63,.55)'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(s.hx,s.hy); ctx.lineTo(s.hx,s.hy+120); ctx.stroke();
-    // 팔(기움)
-    ctx.translate(s.hx,s.hy); ctx.rotate(tilt);
+    ctx.strokeStyle='rgba(138,115,63,.62)'; ctx.lineWidth=3; ctx.lineCap='round';
+    // 기둥 + 받침
+    ctx.beginPath(); ctx.moveTo(s.hx,s.hy); ctx.lineTo(s.hx,s.hy+170); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s.hx-42,s.hy+170); ctx.lineTo(s.hx+42,s.hy+170); ctx.stroke();
+    // 중심축 매듭
+    ctx.fillStyle='rgba(201,169,97,.5)'; ctx.beginPath(); ctx.arc(s.hx,s.hy,4,0,6.283); ctx.fill();
+    // 팔(담는 쪽으로 기움)
+    ctx.save(); ctx.translate(s.hx,s.hy); ctx.rotate(-tilt);
     ctx.beginPath(); ctx.moveTo(-s.armW,0); ctx.lineTo(s.armW,0); ctx.stroke();
-    // 접시(담는 쪽 = 오른쪽)
-    ctx.strokeStyle='rgba(201,169,97,.6)';
-    drawPan(ctx, s.armW, 70);
-    drawPan(ctx,-s.armW, 70);
+    drawTrayLocal(ctx,-s.armW,s.panDrop,n);   // 담는 접시(안쪽)
+    drawTrayLocal(ctx, s.armW,s.panDrop,0);   // 추(바깥)
     ctx.restore();
-    // 접시 위 담긴 개수만큼 작은 표식
-    ctx.save();
-    ctx.font="15px 'Jua'"; ctx.fillStyle='var(--ink-dim)'; ctx.textAlign='center';
     ctx.restore();
+    // partial 합 — 담는 접시 위에 크게(담기=세기)
+    if(n>0){ ctx.save(); ctx.textAlign='center';
+      ctx.font="42px 'Jua'"; ctx.fillStyle='rgba(242,234,216,.94)';
+      ctx.fillText(fmt(G.partial(S.dish)), dishX, s.hy-52);
+      ctx.font="13px 'Gowun Dodum'"; ctx.fillStyle='rgba(168,158,136,.6)';
+      ctx.fillText(n+' / 100', dishX, s.hy-26);
+      ctx.restore(); }
   }
-  function drawPan(ctx,ox,drop){
-    ctx.beginPath(); ctx.moveTo(ox,0); ctx.lineTo(ox,drop); ctx.stroke();
-    ctx.beginPath(); ctx.arc(ox,drop+16,28,0,Math.PI,false); ctx.stroke();
+  function drawTrayLocal(ctx,ox,drop,count){
+    ctx.strokeStyle='rgba(201,169,97,.62)'; ctx.lineWidth=1.5;
+    // 줄
+    ctx.beginPath(); ctx.moveTo(ox,0); ctx.lineTo(ox-26,drop); ctx.moveTo(ox,0); ctx.lineTo(ox+26,drop); ctx.stroke();
+    // 쟁반
+    ctx.beginPath(); ctx.ellipse(ox,drop,58,13,0,0,6.283); ctx.stroke();
+    // 담긴 블록 미니 스택
+    for(var i=0;i<count;i++){
+      var col=i%7, row=Math.floor(i/7);
+      var bx=ox-52+col*15, by=drop-15-row*11;
+      ctx.fillStyle='#151422'; roundRect(ctx,bx,by,13,13,2); ctx.fill();
+      ctx.strokeStyle='rgba(138,115,63,.7)'; ctx.lineWidth=1; ctx.stroke();
+    }
   }
 
   function drawBlock(ctx,b,x,y,w,glow){
@@ -667,9 +690,10 @@
       var b=S.grab; b.grabbed=false;
       // 무대 밖(좌우 어둠) = 제거(히든 경로)
       if(b.x<60 || b.x>W-60){ b.removed=true; }
-      // 저울 접시 영역 = 담기
-      else if(b.x>SCALE.hx-SCALE.armW-90 && b.x>1150 && b.y>SCALE.hy+40){
-        b.inDish=true; S.dish.push(b.n); Museum.sound.play('clack');
+      // 저울 담는 접시 = 담기
+      else {
+        var dX=SCALE.hx-SCALE.armW, dY=SCALE.hy+SCALE.panDrop;
+        if(Math.hypot(b.x-dX,b.y-dY)<150){ b.inDish=true; S.dish.push(b.n); Museum.sound.play('clack'); }
       }
       S.grab=null;
     }
