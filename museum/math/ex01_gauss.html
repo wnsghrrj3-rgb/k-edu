@@ -445,7 +445,9 @@
     if(S.spotGrad){ ctx.fillStyle=S.spotGrad; ctx.fillRect(0,0,W,H); }
 
     var p=S.phase;
-    if(p==='chalk'||p==='rain') drawChalkboard(ctx);
+    if(p==='chalk'||p==='rain') drawChalkboard(ctx,1);
+    if(p==='free') drawChalkboard(ctx,0.55);           // 전제 상주 — 조명만 낮춤
+    if(p==='free') drawRemainNote(ctx);
     if(p==='rain'||p==='free') drawScroll(ctx);
     if(p==='rain'||p==='free') drawLooseBlocks(ctx);
     if(p==='aligning') drawAligning(ctx);
@@ -456,8 +458,9 @@
     drawSparks(ctx);
   }
 
-  function drawChalkboard(ctx){
+  function drawChalkboard(ctx,alpha){
     ctx.save();
+    ctx.globalAlpha = (alpha==null?1:alpha);
     // 칠판 면
     ctx.fillStyle='#0c1410'; ctx.strokeStyle='var(--brass-dim)';
     roundRect(ctx,BOARD.x,BOARD.y,BOARD.w,BOARD.h,4); ctx.fill();
@@ -525,8 +528,6 @@
     if(n>0){ ctx.save(); ctx.textAlign='center';
       ctx.font="40px 'Jua'"; ctx.fillStyle='rgba(242,234,216,.95)';
       ctx.fillText(fmt(G.partial(S.dish)), rollX, rollY-48);
-      ctx.font="13px 'Gowun Dodum'"; ctx.fillStyle='rgba(168,158,136,.6)';
-      ctx.fillText(n+' / 100', rollX, rollY-24);
       ctx.restore(); }
   }
 
@@ -546,18 +547,26 @@
   }
 
   function drawLooseBlocks(ctx){
+    // 순서 유도: 담기지 않은 가장 작은 수가 숨쉰다(1→2→3…) — 강제 아님, 초대만
+    var next=null;
+    if(S.phase==='free'){
+      for(var j=0;j<S.blocks.length;j++){ var nb=S.blocks[j];
+        if(nb.removed||nb.inDish||nb.grabbed) continue;
+        if(next===null||nb.n<next.n) next=nb; }
+    }
     for(var i=0;i<S.blocks.length;i++){ var b=S.blocks[i];
-      if(b.removed||b.inDish) continue;
+      if(b.removed||b.inDish||b===next) continue;
       var wy=(b.settled && b.wobble && !b.grabbed)? Math.sin(S.t*2+b.wob)*1.6 : 0;
       drawBlock(ctx,b,b.x,b.y+wy,b.w,false);
     }
+    if(next && !next.grabbed){ var br=1+Math.sin(S.t*3)*0.07;
+      drawBlock(ctx,next,next.x,next.y+Math.sin(S.t*2.4)*2.2,next.w*br,true); }
     if(S.grab) drawBlock(ctx,S.grab,S.grab.x,S.grab.y,S.grab.w,false);
   }
 
   function drawRemainNote(ctx){
     if(S.dish.length<5) return;
-    var rem=100-S.dish.length; rem = rem - (rem%10==0?0:rem%10); // 10단위 표기
-    var show=100-S.dish.length;
+    var show=100-S.dish.length;   // 무심한 숫자 하나가 막막함을 만든다 (SPEC 2막)
     ctx.save(); ctx.font="18px 'Gowun Dodum'"; ctx.fillStyle='rgba(168,158,136,.7)';
     ctx.textAlign='right'; ctx.fillText('남은 블록 '+show+'개', BOARD.x+BOARD.w-20, BOARD.y+BOARD.h-24);
     ctx.restore();
