@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<!--
+  g4_math_u1_l06 — 큰 수를 뛰어 세어 볼까요 [4학년 1단원 06차시, 단일 40분]
+  ════════════════════════════════════════════════════════════
+  단원: 4학년 1학기 1단원 「큰 수」
+  지도서: 수학 4-1 교사용 지도서 p.182~185, 교과서 20~21, 수학익힘 16~17 (40분 단일)
+  base: g4_math_u1_05 (엔진·setupMcq 계승) + 신규 부품 jumpChain(뛰어세기 체인)
+
+  학습 본질: 같은 수만큼 일정하게 뛰어 세기 · 규칙 찾기/만들기 · 거꾸로 뛰어 세기 · 자리 넘어감(억)
+  메카닉: 답 직접 입력(count_input) + 4지선다 + 자기 평가
+  부품: jumpChain(수 박스 → 화살표+규칙 라벨, 빈칸 강조) — 뛰어세기 시그니처
+  점수: 기본 4슬 × 10점 + 응용 4슬 × 15점 = 100점 · 톤: 중학년 v14 · 저금 맥락
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g4_math_u1_l06_v1">
+<title>큰 수를 뛰어 세어 볼까요 · K-edu 4학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#15803D; --coral-deep:#166534; --coral-soft:#DCFCE7;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── pvChart (자릿값판 — 큰 수 단원 시그니처) ───── */
+.pvc-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.pvc { display:flex; gap:clamp(4px,1vw,8px); }
+.pvc-col { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.9vw,7px); }
+.pvc-head { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.pvc-cell { width:clamp(46px,9.2vw,74px); height:clamp(56px,11vw,88px); display:flex; align-items:center; justify-content:center; border:3px solid var(--line); border-radius:14px; font-family:var(--f-num); font-weight:800; font-size:var(--em-sm); background:#fff; color:var(--ink); box-shadow:0 4px 0 var(--line); }
+.pvc-cell.on { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.pvc-cell.zero { color:#C7CEDA; }
+/* ───── billRow (1000원 지폐) ───── */
+.bill-row { display:flex; flex-wrap:wrap; gap:clamp(4px,0.9vw,7px); justify-content:center; max-width:var(--mw-sm); }
+.bill { background:#E7F3EA; border:2px solid var(--coral-soft); border-radius:10px; padding:clamp(5px,1vw,8px) clamp(8px,1.6vw,12px); font-family:var(--f-title); font-size:var(--fs-label); color:var(--coral-deep); display:flex; flex-direction:column; align-items:center; gap:2px; }
+.bill .bem { font-size:var(--fs-body); line-height:1; }
+/* ───── bigLine (큰 수 수직선) ───── */
+.bl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.bl-svg { width:min(760px,94vw); height:auto; }
+.bl-svg text { font-family:var(--f-num); font-weight:800; }
+
+/* ───── pvChart 8칸 그룹(만/일 묶음) + 모바일 컴팩트 ───── */
+.pvc-groups { display:flex; gap:clamp(8px,1.8vw,16px); align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.pvc-grp { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.9vw,7px); }
+.pvc-grp-label { font-family:var(--f-title); font-size:var(--fs-label); color:#fff; background:var(--teal); border-radius:8px; padding:2px 14px; }
+.pvc.pvc-8 { gap:clamp(2px,0.7vw,5px); }
+.pvc.pvc-8 .pvc-cell { width:clamp(30px,10.6vw,58px); height:clamp(42px,13vw,72px); font-size:clamp(22px,6.4vw,42px); border-width:2px; }
+.pvc.pvc-8 .pvc-head { font-size:var(--fs-label); }
+
+/* ───── jumpChain (뛰어세기 체인) ───── */
+.jump-chain { display:flex; align-items:center; gap:clamp(2px,0.7vw,6px); flex-wrap:wrap; justify-content:center; max-width:var(--mw-lg); }
+.jump-box { background:#fff; border:2px solid var(--coral-soft); border-radius:12px; padding:clamp(6px,1.2vw,10px) clamp(9px,1.7vw,15px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-caption); color:var(--coral-deep); box-shadow:0 3px 0 var(--coral-soft); white-space:nowrap; }
+.jump-box.q { color:var(--emph); background:var(--mark); border-color:var(--gold); box-shadow:0 3px 0 var(--gold); }
+.jump-arrow { display:flex; flex-direction:column; align-items:center; color:var(--teal-deep); }
+.jump-arrow .ar { font-size:var(--fs-body); line-height:1; }
+.jump-arrow .jump-rule { font-family:var(--f-title); font-size:var(--fs-label); color:var(--teal-deep); white-space:nowrap; }
+</style>
+  <script src="/kedu_gate.js"></script>
+<script src="/kedu_boxbar.js"></script>
+</head>
+<body>
+<div class="ka">
+  <!-- ───── 헤더 ───── -->
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">6차시</span>
+    <span class="ka-where">수학 4-1 · <b>1. 큰 수</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+
+  <!-- ───── 슬라이드 본문 ───── -->
+  <div class="ka-m">
+
+    <!-- 슬 1 — 도입 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">매달 저금하는 두 친구</h2>
+      <div class="intro-q">건우는 매달 <strong>20000원</strong>씩, 동생은 <strong>10000원</strong>씩 저금해요.<br>몇 달 뒤 얼마가 될지 <strong>뛰어 세기</strong>로 알아볼까요?</div>
+    </div>
+
+    <!-- 슬 2 — 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">이번 시간에 배울 것</h2>
+      <ul class="goal-list">
+        <li><strong>규칙을 찾아</strong> 뛰어 세요</li>
+        <li><strong>규칙을 만들어</strong> 뛰어 세요</li>
+        <li>큰 수도 <strong>일정하게</strong> 커지는 규칙을 알아봐요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 — 뛰어세기 개념 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 뛰어 세기란</div>
+      <h2 class="slide-title">같은 수만큼 뛰어 세요</h2>
+      <div class="bl-stage">
+        <div id="m-basic"></div>
+        <div class="concept-box">같은 수만큼 <strong>일정하게</strong> 뛰어 세는 거예요.<br>10000씩 뛰어 세면 <strong>만의 자리</strong>가 1씩 커져요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 4 — 전개: 10만씩 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 10만씩</div>
+      <h2 class="slide-title">10만씩 뛰어 세기</h2>
+      <div class="bl-stage">
+        <div id="m-tenman"></div>
+        <div class="concept-box">10만씩 뛰어 세면 <strong>십만의 자리</strong>가 1씩 커져요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 5 — 전개: 2000만씩 (억 넘어감) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 자리 넘어감</div>
+      <h2 class="slide-title">억을 넘어 뛰어 세기</h2>
+      <div class="bl-stage">
+        <div id="m-eok"></div>
+        <div class="concept-box">2000만씩 뛰어 세다가 <strong>2억</strong>이 돼요.<br>자리가 넘어갈 때 새 단위(억)로 바뀌어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 — 전개: 거꾸로 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 거꾸로</div>
+      <h2 class="slide-title">거꾸로 뛰어 세기</h2>
+      <div class="bl-stage">
+        <div id="m-back"></div>
+        <div class="concept-box">거꾸로 뛰어 세면 같은 수만큼 <strong>작아져요</strong>.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 — 전개: 규칙 만들기 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 규칙 만들기</div>
+      <h2 class="slide-title">규칙을 만들어 뛰어 세기</h2>
+      <div class="bl-stage">
+        <div id="m-make"></div>
+        <div class="concept-box">내가 규칙을 정해 뛰어 셀 수도 있어요.<br>여기서는 <strong>10000씩</strong> 커지고 있어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 — 기본: 10000씩 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10000씩 뛰어 세기<br>30000 − 40000 − <strong>( )</strong> 의 빈칸은?</div>
+        <div class="q-display" id="q8-display">?</div>
+        <div class="q-pad" id="q8-pad"></div>
+        <div class="mcq-hint" data-hints='["10000씩 커져요.","40000 + 10000 이에요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 — 기본: 10만씩 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10만씩 뛰어 세기<br>4713000 다음 수는?</div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["십만의 자리가 1 커져요.","4713000 + 100000 이에요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 — 기본: 10만씩 이어서 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">10만씩 뛰어 세기<br>5013000 − 5113000 − <strong>( )</strong> 의 빈칸은?</div>
+        <div class="q-display" id="q10-display">?</div>
+        <div class="q-pad" id="q10-pad"></div>
+        <div class="mcq-hint" data-hints='["십만의 자리가 1 커져요.","5113000 + 100000 이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 — 기본: 거꾸로 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">20000씩 거꾸로 뛰어 세기<br>100000 − 80000 − 60000 − <strong>( )</strong> 의 빈칸은?</div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["20000씩 작아져요.","60000 − 20000 이에요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 — 응용: 2000만씩 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">2000만씩 뛰어 세기<br>1억6000만(160000000) 다음 수는?</div>
+        <div class="q-display" id="q12-display">?</div>
+        <div class="q-pad" id="q12-pad"></div>
+        <div class="mcq-hint" data-hints='["2000만(20000000)씩 커져요.","160000000 + 20000000 이에요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 — 응용: 규칙 찾기 (mcq) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">규칙에 맞는 수는?<br><span class="big-num" style="font-size:var(--em-sm)">37450000 − 38450000 − 39450000 − ( )</span></div>
+        <div class="mcq-opts" id="q13-opts">
+          <button class="mcq-opt" data-correct="1">40450000</button>
+          <button class="mcq-opt" data-correct="0">39460000</button>
+          <button class="mcq-opt" data-correct="0">49450000</button>
+          <button class="mcq-opt" data-correct="0">40350000</button>
+        </div>
+        <div class="mcq-hint" data-hints='["얼마씩 커지는지 봐요.","백만(1000000)씩 커져요."]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 — 응용: 거꾸로 처음 수 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">20000씩 거꾸로 뛰어 세기<br><strong>( )</strong> − 100000 − 80000 − 60000 의 빈칸은?</div>
+        <div class="q-display" id="q14-display">?</div>
+        <div class="q-pad" id="q14-pad"></div>
+        <div class="mcq-hint" data-hints='["100000보다 20000 큰 수예요.","100000 + 20000 이에요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 — 응용: 규칙 이해 (mcq) -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt"><strong>10000씩</strong> 뛰어 세면<br>어느 자리 숫자가 1씩 커질까요?</div>
+        <div class="mcq-opts" id="q15-opts">
+          <button class="mcq-opt" data-correct="1">만의 자리</button>
+          <button class="mcq-opt" data-correct="0">일의 자리</button>
+          <button class="mcq-opt" data-correct="0">백의 자리</button>
+          <button class="mcq-opt" data-correct="0">천의 자리</button>
+        </div>
+        <div class="mcq-hint" data-hints='["10000은 만이에요.","만의 자리가 1씩 커져요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 — 정리 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 만난 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card"><strong>뛰어 세기</strong>는 같은 수만큼 일정하게 세는 거예요.<br>10만씩 뛰어 세면 <strong>십만 자리</strong>가 1씩 커져요.<br>거꾸로 뛰어 세면 작아져요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 — 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 — 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">⚖️🔢</div>
+          <div class="next-label"><strong>큰 수의 크기</strong>를 비교해 봐요</div>
+        </div>
+        <div class="home-prompt">용돈을 매달 얼마씩 모으면 얼마가 될지 뛰어 세어 보세요!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 차시운영 표준 v1 — 점수·힌트·진도 저장·진입 종료
+// ════════════════════════════════════════
+const TOTAL = 18;
+const LESSON_ID = 'g4_math_u1_l06';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ════════════════════════════════════════
+// pvChart — 자릿값판 SVG (큰 수 단원 시그니처 부품)
+//   num: 수(문자열/숫자), digits: 자릿수(기본 5=만천백십일)
+//   on: 강조할 자리 인덱스 배열(왼→오, 0부터). 0 자리는 회색 처리.
+// ════════════════════════════════════════
+const PVC_LABELS5 = ['만','천','백','십','일'];
+function pvChart(num, opts) {
+  opts = opts || {};
+  const digits = opts.digits || 5;
+  const labels = opts.labels || PVC_LABELS5;
+  const on = opts.on || [];
+  const s = String(num).padStart(digits, '0').split('');
+  const cls8 = digits >= 8 ? ' pvc-8' : '';
+  function cell(i) {
+    const d = s[i];
+    let cls = 'pvc-cell';
+    if (on.indexOf(i) !== -1) cls += ' on';
+    else if (d === '0') cls += ' zero';
+    return `<div class="pvc-col"><div class="pvc-head">${labels[i]}</div><div class="${cls}">${d}</div></div>`;
+  }
+  if (opts.groups) {
+    let gi = 0, out = '';
+    opts.groups.forEach(g => {
+      let cols = '';
+      for (let k = 0; k < g.span; k++) { cols += cell(gi); gi++; }
+      out += `<div class="pvc-grp"><div class="pvc-grp-label">${g.label}</div><div class="pvc${cls8}">${cols}</div></div>`;
+    });
+    return `<div class="pvc-groups">${out}</div>`;
+  }
+  let cols = '';
+  for (let i = 0; i < digits; i++) cols += cell(i);
+  return `<div class="pvc${cls8}">${cols}</div>`;
+}
+
+// ════════════════════════════════════════
+// bigLine — 큰 수 수직선 SVG
+//   from·to·step 눈금, mark(빨간 점), 라벨 축약(3000→"3천" 아니고 원값 표시)
+// ════════════════════════════════════════
+function bigLine(opts) {
+  const from = opts.from, to = opts.to, step = opts.step;
+  const W = 760, H = 104, padX = 56, y = 56;
+  const x0 = padX, x1 = W - padX, span = x1 - x0;
+  const n = Math.round((to - from) / step);
+  function px(v) { return x0 + ((v - from) / (to - from)) * span; }
+  let s = `<svg class="bl-svg" viewBox="0 0 ${W} ${H}">`;
+  s += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="#90A4AE" stroke-width="3"/>`;
+  s += `<polygon points="${x1},${y} ${x1-12},${y-7} ${x1-12},${y+7}" fill="#90A4AE"/>`;
+  for (let i = 0; i <= n; i++) {
+    const v = from + i * step;
+    const x = px(v);
+    const big = (i === 0 || i === n);
+    s += `<line x1="${x}" y1="${y-(big?13:8)}" x2="${x}" y2="${y+(big?13:8)}" stroke="#90A4AE" stroke-width="${big?3:2}"/>`;
+    s += `<text x="${x}" y="${y+32}" text-anchor="middle" font-size="19" fill="#62708A">${v}</text>`;
+  }
+  if (opts.mark != null) {
+    const x = px(opts.mark);
+    s += `<circle cx="${x}" cy="${y}" r="11" fill="#DC2626"/>`;
+    s += `<text x="${x}" y="${y-19}" text-anchor="middle" font-size="21" fill="#DC2626">${opts.mark}</text>`;
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ════════════════════════════════════════
+// billRow — 1000원 지폐 n장 (이모지 통일)
+// ════════════════════════════════════════
+function billRow(n) {
+  let h = '';
+  for (let i = 0; i < n; i++) h += `<div class="bill"><span class="bem">💵</span>1000원</div>`;
+  return h;
+}
+
+// ════════════════════════════════════════
+// jumpChain — 뛰어세기 체인 (수 → 화살표+규칙 → 수 …)
+//   items: ['값', ...] 또는 [{v:'값', q:true}] (q=빈칸 강조)
+// ════════════════════════════════════════
+function jumpChain(items, rule) {
+  let h = '<div class="jump-chain">';
+  items.forEach((it, i) => {
+    const val = (typeof it === 'object') ? it.v : it;
+    const isq = (typeof it === 'object') && it.q;
+    if (i > 0) h += `<div class="jump-arrow"><span class="ar">\u2192</span><span class="jump-rule">${rule}</span></div>`;
+    h += `<div class="jump-box${isq ? ' q' : ''}">${val}</div>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+// ════════════════════════════════════════
+// 슬별 부품 렌더
+// ════════════════════════════════════════
+(function renderModels(){
+  document.getElementById('m-basic').innerHTML  = jumpChain(['10000','20000','30000','40000','50000'], '10000씩');
+  document.getElementById('m-tenman').innerHTML = jumpChain(['4713000','4813000','4913000','5013000','5113000'], '10만씩');
+  document.getElementById('m-eok').innerHTML    = jumpChain(['1억6000만','1억8000만','2억','2억2000만','2억4000만'], '2000만씩');
+  document.getElementById('m-back').innerHTML   = jumpChain(['120000','100000','80000','60000','40000'], '20000씩 ↓');
+  document.getElementById('m-make').innerHTML   = jumpChain(['34730000','34740000','34750000','34760000','34770000'], '10000씩');
+})();
+
+// ───── count_input (답 직접 입력) 공통 — 큰 수 대응(최대 6자리) ─────
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 9;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+setupPad('q8', 50000, 'q8-pad', 'q8-display', 'q8-fb', '맞아요! 40000+10000=50000');
+setupPad('q9', 4813000, 'q9-pad', 'q9-display', 'q9-fb', '맞아요! 4713000+100000=4813000');
+setupPad('q10', 5213000, 'q10-pad', 'q10-display', 'q10-fb', '맞아요! 5113000+100000=5213000');
+setupPad('q11', 40000, 'q11-pad', 'q11-display', 'q11-fb', '맞아요! 60000−20000=40000');
+setupPad('q12', 180000000, 'q12-pad', 'q12-display', 'q12-fb', '맞아요! 1억6000만+2000만=1억8000만');
+setupPad('q14', 120000, 'q14-pad', 'q14-display', 'q14-fb', '맞아요! 100000+20000=120000');
+
+function setupMcq(qid, doneMsg) {
+  document.querySelectorAll('#' + qid + '-opts .mcq-opt').forEach(o => {
+    o.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      st.attempts++;
+      const fb = document.getElementById(qid + '-fb');
+      if (o.dataset.correct === '1') {
+        st.solved = true; o.classList.add('correct');
+        const earn = pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent = doneMsg + ' +' + earn + '점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent = '다시 골라 보세요';
+        setTimeout(() => o.classList.remove('wrong'), 500);
+      }
+    });
+  });
+}
+setupMcq('q13', '맞아요! 백만씩 커져 40450000');
+setupMcq('q15', '맞아요! 10000씩 뛰면 만의 자리가 1씩');
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+</body>
+</html>
