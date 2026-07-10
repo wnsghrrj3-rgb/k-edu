@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 6차시 [할 수 있어요]
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 7차시 [생각을 펼쳐요]
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-01] · 교과서 p.28~30 · 지도서 7차시(일상생활에서 지도를 활용해 볼까요) 근거
-중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
-직접조작: 지하철 노선도 길찾기(출발·도착역 클릭 → 경로·환승 안내) + 효과음. l05 구조 복제.
+성취기준 [4사05-01] · 교과서 p.31~33 · 지도서 8차시(주제 마무리·생각을 펼쳐요) 근거
+중학년(3·4) v11 디자인 헌법 그린 톤 적용. 주제① 전체(지도·방위·기호범례·등고선·축척·활용) 종합 정리.
+직접조작: 완성 지도에서 지도 요소(방위·기호·등고선·축척) 종합 확인 + 효과음. l06 구조 복제.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>일상생활에서 지도를 활용해 볼까요 · 사회 4-1</title>
+<title>다양한 정보가 담긴 지도 정리 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -112,7 +112,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 지하철 길찾기 조작 */
+/* 지도 요소 종합 확인 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -183,163 +183,128 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 관광 안내도
-  tourmap:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EAF6EE"/>
-    <path d="M0 60 Q40 50 80 60 T160 56" stroke="#7FC8E8" stroke-width="4" fill="none"/>
-    <path d="M20 40 L30 24 L40 40Z" fill="#86C28B"/><circle cx="70" cy="34" r="9" fill="#FBBF77"/>
-    <rect x="104" y="26" width="18" height="16" fill="#FDA4AF"/><path d="M132 44 L140 30 L148 44Z" fill="#86C28B"/>
-    <circle cx="30" cy="70" r="4" fill="#DC2626"/><circle cx="70" cy="72" r="4" fill="#DC2626"/><circle cx="120" cy="70" r="4" fill="#DC2626"/>
-    <text x="80" y="16" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">관광 안내도</text></svg>`,
-  // 약도
-  sketch:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
-    <path d="M20 76 L20 40 L90 40 L90 20" stroke="#334155" stroke-width="3" fill="none"/>
-    <path d="M90 40 L140 40" stroke="#334155" stroke-width="3" fill="none"/>
-    <rect x="84" y="8" width="16" height="12" fill="#DC2626"/><text x="112" y="34" font-size="9" fill="#334155" font-weight="700">결혼식장</text>
-    <circle cx="20" cy="80" r="4" fill="#0891B2"/><text x="20" y="94" font-size="8" fill="#475569" text-anchor="middle">출발</text>
-    <text x="80" y="70" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">약도</text></svg>`,
-  // 길 도우미(내비게이션)
-  navi:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
-    <rect x="40" y="10" width="80" height="76" rx="8" fill="#0F172A"/><rect x="46" y="18" width="68" height="52" rx="3" fill="#1E293B"/>
-    <path d="M56 62 L80 30 L86 40 L100 26" stroke="#38BDF8" stroke-width="3" fill="none"/>
-    <path d="M96 22 L104 26 L98 32Z" fill="#F87171"/>
-    <text x="80" y="82" font-size="9" fill="#93C5FD" text-anchor="middle" font-weight="700">길 도우미</text></svg>`,
-  // 지하철 노선도(작은 도식)
-  subway:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F8FAFC"/>
-    <line x1="20" y1="50" x2="140" y2="50" stroke="#2563EB" stroke-width="5"/>
-    <line x1="90" y1="16" x2="90" y2="84" stroke="#EA580C" stroke-width="5"/>
-    <circle cx="20" cy="50" r="6" fill="#fff" stroke="#2563EB" stroke-width="2.5"/><circle cx="140" cy="50" r="6" fill="#fff" stroke="#2563EB" stroke-width="2.5"/>
-    <circle cx="90" cy="16" r="6" fill="#fff" stroke="#EA580C" stroke-width="2.5"/>
-    <circle cx="90" cy="50" r="8" fill="#fff" stroke="#7C3AED" stroke-width="3"/>
-    <text x="90" y="94" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="800">노선도 · 환승</text></svg>`,
-  // 대동여지도(옛 지도)
-  daedong:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5EEDD"/>
-    <rect x="10" y="8" width="140" height="80" fill="#EDE0C4" stroke="#8A6D3B" stroke-width="2"/>
-    <path d="M30 70 Q50 30 70 66 Q90 26 110 62 Q125 40 140 60" stroke="#5B4020" stroke-width="3" fill="none"/>
-    <path d="M20 78 Q60 70 100 80 T150 74" stroke="#3B6E8F" stroke-width="1.6" fill="none"/>
-    <path d="M20 82 Q60 74 100 84 T150 78" stroke="#3B6E8F" stroke-width="1.6" fill="none"/>
-    <path d="M24 30 L136 30" stroke="#7A5A2E" stroke-width="1" stroke-dasharray="2 5"/>
-    <text x="80" y="20" font-size="9" fill="#5B4020" text-anchor="middle" font-weight="800">대동여지도</text></svg>`,
-  // 체험학습 계획표
-  plan:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
-    <rect x="20" y="12" width="120" height="72" rx="4" fill="#fff" stroke="#94A3B8" stroke-width="1.5"/>
-    <line x1="20" y1="30" x2="140" y2="30" stroke="#E2E8F0" stroke-width="1"/><line x1="20" y1="48" x2="140" y2="48" stroke="#E2E8F0" stroke-width="1"/><line x1="20" y1="66" x2="140" y2="66" stroke="#E2E8F0" stroke-width="1"/>
-    <circle cx="32" cy="39" r="4" fill="#DC2626"/><circle cx="32" cy="57" r="4" fill="#EA580C"/><circle cx="32" cy="75" r="4" fill="#16A34A"/>
-    <rect x="44" y="36" width="60" height="6" fill="#CBD5E1"/><rect x="44" y="54" width="76" height="6" fill="#CBD5E1"/><rect x="44" y="72" width="50" height="6" fill="#CBD5E1"/>
-    <text x="80" y="24" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">체험학습 계획</text></svg>`
+  // 주제① 5요소 한눈에
+  recap:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EAF6EE"/>
+    <path d="M24 20 L24 40 M18 26 L24 20 L30 26" stroke="#DC2626" stroke-width="2.4" fill="none"/><text x="24" y="52" font-size="8" fill="#DC2626" text-anchor="middle" font-weight="800">방위</text>
+    <path d="M56 46 L64 32 L72 46Z" fill="#166534"/><text x="64" y="58" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">기호</text>
+    <ellipse cx="104" cy="34" rx="16" ry="12" fill="none" stroke="#86C28B" stroke-width="1.6"/><ellipse cx="104" cy="34" rx="8" ry="6" fill="none" stroke="#E39A4A" stroke-width="1.6"/><text x="104" y="58" font-size="8" fill="#9A3412" text-anchor="middle" font-weight="700">등고선</text>
+    <rect x="128" y="30" width="10" height="6" fill="#0F172A"/><rect x="138" y="30" width="10" height="6" fill="#fff" stroke="#0F172A"/><text x="138" y="58" font-size="8" fill="#0369A1" text-anchor="middle" font-weight="700">축척</text>
+    <text x="80" y="80" font-size="10" fill="#15803D" text-anchor="middle" font-weight="800">지도의 요소들</text></svg>`,
+  // 나만의 섬(등고선으로 그리기)
+  island:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBF0FA"/>
+    <ellipse cx="80" cy="56" rx="60" ry="34" fill="#EAF6D6" stroke="#86C28B" stroke-width="2"/>
+    <ellipse cx="80" cy="54" rx="40" ry="22" fill="none" stroke="#BEBE5A" stroke-width="1.8"/>
+    <ellipse cx="80" cy="52" rx="22" ry="12" fill="none" stroke="#E39A4A" stroke-width="1.8"/>
+    <ellipse cx="80" cy="50" rx="8" ry="5" fill="#9E5E36"/>
+    <text x="80" y="90" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">나만의 섬 만들기</text></svg>`,
+  // 안전 지도
+  safety:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF2F2"/>
+    <rect x="16" y="12" width="128" height="72" rx="4" fill="#fff" stroke="#94A3B8" stroke-width="1.5"/>
+    <path d="M42 30 L52 30 L52 40 L62 40 L62 50 L52 50 L52 60 L42 60 L42 50 L32 50 L32 40 L42 40Z" fill="#DC2626"/>
+    <circle cx="100" cy="34" r="9" fill="#F59E0B"/><text x="100" y="38" font-size="10" fill="#fff" text-anchor="middle" font-weight="800">!</text>
+    <rect x="92" y="54" width="18" height="14" rx="2" fill="#2563EB"/>
+    <text x="80" y="94" font-size="9" fill="#B91C1C" text-anchor="middle" font-weight="800">안전 지도 만들기</text></svg>`,
+  // 숨은 기호 찾기
+  hidden:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    <rect x="12" y="12" width="136" height="72" rx="4" fill="#F0FAF3" stroke="#CBD5E1" stroke-width="1.5"/>
+    <path d="M30 40 L38 28 L46 40Z" fill="#166534"/><rect x="70" y="30" width="14" height="12" fill="none" stroke="#0369A1" stroke-width="1.6"/>
+    <path d="M110 30 L118 30 L118 38 L126 38 L126 46 L118 46 L118 54 L110 54 L110 46 L102 46 L102 38 L110 38Z" fill="#DC2626"/>
+    <circle cx="52" cy="66" r="10" fill="none" stroke="#F59E0B" stroke-width="2.5"/><line x1="59" y1="73" x2="70" y2="84" stroke="#F59E0B" stroke-width="3"/>
+    <text x="118" y="76" font-size="9" fill="#15803D" text-anchor="middle" font-weight="800">기호 찾기</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 지하철 노선도 길찾기(직접 조작) ===== */
-// 2호선(가로) 서면–수영–해운대 / 3호선(세로) 종합운동장–수영–대저. 수영 = 환승역. 지도서 근거.
-const STATIONS = [
-  {k:'seomyeon', name:'서면',       lines:[2],   x:70,  y:120},
-  {k:'suyeong',  name:'수영',       lines:[2,3], x:160, y:120, transfer:true},
-  {k:'haeundae', name:'해운대',     lines:[2],   x:250, y:120},
-  {k:'stadium',  name:'종합운동장', lines:[3],   x:160, y:52},
-  {k:'daejeo',   name:'대저',       lines:[3],   x:160, y:188}
+/* ===== 완성 지도에서 지도 요소 종합 확인(직접 조작) ===== */
+// 방위·기호·등고선·축척 — 주제①에서 배운 요소를 한 지도에서 총복습. 지도서 '재미있게 확인해요' 근거.
+const ELEMENTS = [
+  {k:'compass', name:'방위표', color:'#DC2626', desc:'방향을 알려 줘요. 화살표가 가리키는 쪽이 <b>북쪽</b>이에요.'},
+  {k:'symbol',  name:'기호',   color:'#166534', desc:'약속된 그림으로 장소를 나타내요. 십자(＋)는 <b>병원</b>이에요.'},
+  {k:'contour', name:'등고선', color:'#9A3412', desc:'땅의 <b>높이가 같은 곳</b>을 이은 선. 안쪽일수록 높아요.'},
+  {k:'scale',   name:'축척',   color:'#0369A1', desc:'실제 거리를 줄인 정도예요. 1 cm가 실제 몇 km인지 알려 줘요.'}
 ];
-const LINE_COLOR = {2:'#2563EB', 3:'#EA580C'};
-function subwayInteractive(st){
-  const picks = st.route || [];
-  const stObj = k => STATIONS.find(s=>s.k===k);
-  // 경로 계산
-  let plan=null;
-  if(picks.length===2){
-    const a=stObj(picks[0]), b=stObj(picks[1]);
-    const shared = a.lines.filter(l=>b.lines.includes(l));
-    if(shared.length){ plan={type:'direct', line:shared[0], a, b}; }
-    else { plan={type:'transfer', l1:a.lines[0], l2:b.lines[0], a, b}; }
-  }
-  // 노선 그리기
-  let svg=`<line x1="70" y1="120" x2="250" y2="120" stroke="#BFDBFE" stroke-width="6"/>`
-        + `<line x1="160" y1="52" x2="160" y2="188" stroke="#FED7AA" stroke-width="6"/>`;
-  // 경로 하이라이트
-  if(plan){
-    if(plan.type==='direct'){
-      const c=LINE_COLOR[plan.line];
-      svg+=`<line x1="${plan.a.x}" y1="${plan.a.y}" x2="${plan.b.x}" y2="${plan.b.y}" stroke="${c}" stroke-width="6"/>`;
-    } else {
-      const sy=stObj('suyeong');
-      svg+=`<line x1="${plan.a.x}" y1="${plan.a.y}" x2="${sy.x}" y2="${sy.y}" stroke="${LINE_COLOR[plan.l1]}" stroke-width="6"/>`;
-      svg+=`<line x1="${sy.x}" y1="${sy.y}" x2="${plan.b.x}" y2="${plan.b.y}" stroke="${LINE_COLOR[plan.l2]}" stroke-width="6"/>`;
-    }
-  }
-  // 역 그리기
-  svg+=STATIONS.map(s=>{
-    const on=picks.includes(s.k);
-    const r=s.transfer?9:7;
-    const stroke=s.transfer?'#7C3AED':LINE_COLOR[s.lines[0]];
-    return `<circle cx="${s.x}" cy="${s.y}" r="${r}" fill="${on?stroke:'#fff'}" stroke="${stroke}" stroke-width="2.6" style="cursor:pointer" onclick="routePick('${s.k}')"/>`
-      + `<text x="${s.x}" y="${s.y + (s.k==='stadium'?-14:24)}" font-size="11" fill="#334155" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.name}</text>`;
-  }).join('');
-  // 안내
-  let info;
-  if(plan){
-    if(plan.type==='direct'){
-      info=`<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b>${plan.a.name}</b> → <b>${plan.b.name}</b>은 <span class="ka-emph">${plan.line}호선</span>을 타고 갈아타지 않고 바로 갈 수 있어요.</div>`;
-    } else {
-      info=`<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b>${plan.a.name}</b>에서 <b>${plan.l1}호선</b>을 타고 가다가 <b style="color:#7C3AED">수영역</b>에서 <b>${plan.l2}호선</b>으로 <span class="ka-emph">환승</span>하면 <b>${plan.b.name}</b>에 도착해요!</div>`;
-    }
-  } else {
-    info=`<div class="note"><b style="color:#15803D">출발역</b>과 <b style="color:#15803D">도착역</b>을 차례로 누르면, 노선도가 가는 길을 알려 줘요. 노선이 다르면 <b style="color:#7C3AED">수영역</b>에서 갈아타야 해요.</div>`;
-  }
-  const reset = picks.length>=1 ? `<button class="reveal-btn" style="padding:7px 16px;font-size:14px" onclick="resetRoute()">다시 찾기</button>` : '';
-  return `<div class="contour-wrap"><svg viewBox="0 0 320 220" style="width:min(360px,94%);height:auto">
-    <rect width="320" height="220" fill="#FFFDF5" rx="10"/>
-    ${svg}
-    <rect x="18" y="16" width="12" height="5" fill="#2563EB"/><text x="34" y="21" font-size="10" fill="#475569">2호선</text>
-    <rect x="18" y="30" width="12" height="5" fill="#EA580C"/><text x="34" y="35" font-size="10" fill="#475569">3호선</text>
-  </svg>${reset}</div>${info}`;
+function mapRecapInteractive(st){
+  const found = st.found || {};
+  const cnt = Object.keys(found).length;
+  const box = (k,x,y,w,h) => {
+    const on=!!found[k];
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="rgba(255,255,255,0.01)" stroke="${on?ELEMENTS.find(e=>e.k===k).color:'#94A3B8'}" stroke-width="${on?'2.4':'1.4'}" stroke-dasharray="${on?'0':'4 4'}" style="cursor:pointer" onclick="findElement('${k}')"/>`
+      + (on?`<circle cx="${x+w-9}" cy="${y+9}" r="7" fill="#15803D"/><text x="${x+w-9}" y="${y+13}" font-size="10" fill="#fff" text-anchor="middle" font-weight="800">✓</text>`:'');
+  };
+  const last = st._lastEl && ELEMENTS.find(e=>e.k===st._lastEl);
+  const info = last
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px"><b style="color:${last.color}">${last.name}</b> — ${last.desc}</div>`
+    : `<div class="note">완성된 지도 속에서 배운 <b style="color:#15803D">지도 요소</b>(방위·기호·등고선·축척)를 하나씩 눌러 확인해 봐요.</div>`;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">찾은 지도 요소 ${cnt} / ${ELEMENTS.length}</div>`;
+  const finale = (cnt>=ELEMENTS.length)
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:560px">지도의 모든 요소를 찾았어요! <span class="ka-emph">방위·기호·등고선·축척</span>이 모여 정보가 풍부한 지도가 완성돼요.</div>`
+    : '';
+  return `<div class="contour-wrap"><svg viewBox="0 0 320 210" style="width:min(360px,94%);height:auto">
+    <rect width="320" height="210" fill="#F0FAF3" rx="10" stroke="#CBD5E1" stroke-width="1.5"/>
+    <!-- 도로 -->
+    <rect x="0" y="120" width="320" height="12" fill="#E2E8F0"/><rect x="150" y="0" width="12" height="210" fill="#E2E8F0"/>
+    <!-- 등고선 산 -->
+    <ellipse cx="235" cy="70" rx="46" ry="34" fill="none" stroke="#86C28B" stroke-width="2"/><ellipse cx="235" cy="70" rx="28" ry="20" fill="none" stroke="#BEBE5A" stroke-width="2"/><ellipse cx="235" cy="70" rx="12" ry="8" fill="none" stroke="#9E5E36" stroke-width="2"/>
+    <!-- 병원 기호 -->
+    <path d="M56 150 L68 150 L68 162 L80 162 L80 174 L68 174 L68 186 L56 186 L56 174 L44 174 L44 162 L56 162Z" fill="#DC2626"/>
+    <!-- 방위표 -->
+    <path d="M40 30 L40 66 M28 42 L40 30 L52 42" stroke="#DC2626" stroke-width="3" fill="none"/><text x="40" y="82" font-size="13" fill="#DC2626" text-anchor="middle" font-weight="800">북</text>
+    <!-- 축척 막대 -->
+    <rect x="230" y="185" width="18" height="7" fill="#0F172A"/><rect x="248" y="185" width="18" height="7" fill="#fff" stroke="#0F172A" stroke-width="1"/><text x="248" y="204" font-size="10" fill="#0369A1" text-anchor="middle" font-weight="700">1 km</text>
+    ${box('compass',22,20,40,66)}
+    ${box('symbol',40,146,44,44)}
+    ${box('contour',188,34,94,72)}
+    ${box('scale',226,180,46,18)}
+  </svg>${counter}</div>${info}${finale}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 6차시";
+const META = "1단원 지도로 만나는 우리 지역 · ① 다양한 정보가 담긴 지도 · 7차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [0,3,1,2,2,0,2,1]
+// 문제 정의(확인 4 + 적용 4) — 주제① 종합 복습 · 정답 위치 다양화 [2,0,1,3,3,2,0,1]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"지역에 어떤 관광지가 있고 어디에 있는지 알려 주는 지도를 무엇이라고 할까요?", scene:"tourmap",
-   opts:["관광 안내도","시간표","일기예보","성적표"], correct:0, pts:POINTS_BASIC,
-   reason:"관광 안내도는 지역의 관광지가 어디에 있는지 알려 주는 지도예요.",
-   h1:"여행 가서 \u2018어디를 구경할까\u2019 정할 때 보는 지도예요.",
-   h2:"\u2018관광\u2019하는 곳을 \u2018안내\u2019하는 지도예요."},
-  {stem:"목적지를 찾아갈 수 있도록 길을 간단히 그린 지도를 무엇이라고 할까요?", scene:"sketch",
-   opts:["세계지도","지구본","달력","약도"], correct:3, pts:POINTS_BASIC,
-   reason:"약도는 목적지까지 가는 길을 간단히 그린 지도예요. 청첩장에서 많이 봤을 거예요.",
-   h1:"결혼식장 위치를 간단히 그려 알려 주는 그림이에요.",
-   h2:"복잡한 것은 빼고 \u2018길만 간단히\u2019 그린 지도예요."},
-  {stem:"목적지를 입력하면 가장 좋은 이동 방법을 지도로 알려 주는 프로그램은 무엇일까요?", scene:"navi",
-   opts:["게임기","길 도우미(내비게이션)","텔레비전","라디오"], correct:1, pts:POINTS_BASIC,
-   reason:"길 도우미(내비게이션)는 목적지를 입력하면 가장 좋은 이동 방법을 지도로 알려 줘요.",
-   h1:"자동차에서 \u2018몇 미터 앞에서 우회전\u2019이라고 말해 주는 거예요.",
-   h2:"목적지를 넣으면 길을 안내해 주는 프로그램이에요."},
-  {stem:"상황과 목적이 서로 다른 여러 지도를 잘 활용하려면 어떻게 해야 할까요?",
-   opts:["아무 지도나 쓴다","가장 큰 지도만 쓴다","상황과 목적에 맞는 지도를 골라 쓴다","지도를 쓰지 않는다"], correct:2, pts:POINTS_BASIC,
-   reason:"지도마다 담긴 정보가 달라요. 상황과 목적에 맞는 지도를 골라 써야 편리해요.",
-   h1:"여행할 때와 길 찾을 때 필요한 지도가 다르겠죠?",
-   h2:"\u2018상황\u2019과 \u2018목적\u2019에 맞게 골라 쓰는 것이 좋아요."},
+  {stem:"하늘에서 본 땅의 모습을 일정하게 줄여, 약속에 따라 나타낸 그림을 무엇이라고 할까요?",
+   opts:["사진","일기","지도","동화책"], correct:2, pts:POINTS_BASIC,
+   reason:"줄여서(축소) + 약속대로(기호) 나타낸 그림이 지도예요. 주제① 첫 시간에 배웠죠.",
+   h1:"이 주제의 이름에도 들어 있는 두 글자예요.",
+   h2:"길을 찾거나 위치를 알 때 펼쳐 보는 것이에요."},
+  {stem:"지도에서 동서남북 방향을 알려 주는 것을 무엇이라고 할까요?", scene:"recap",
+   opts:["방위","축척","범례","등고선"], correct:0, pts:POINTS_BASIC,
+   reason:"방위는 방향을 나타내요. 방위표의 화살표가 가리키는 쪽이 북쪽이에요.",
+   h1:"직접 찾기에서 화살표가 \u2018북\u2019을 가리키던 그것이에요.",
+   h2:"동·서·남·북 \u2018방향\u2019을 나타내는 낱말이에요."},
+  {stem:"지도에서 약속된 그림 표시(기호)와 그 뜻을 모아 놓은 것을 무엇이라고 할까요?",
+   opts:["방위표","기호와 범례","축척 막대","등고선"], correct:1, pts:POINTS_BASIC,
+   reason:"기호는 약속된 그림 표시이고, 그 뜻을 모아 놓은 것이 범례예요.",
+   h1:"지도 한쪽에 \u2018이 그림은 무엇\u2019이라고 풀이해 둔 표예요.",
+   h2:"\u2018기호\u2019와 그 뜻을 모은 \u2018◯◯\u2019를 함께 말해요."},
+  {stem:"땅의 높이가 같은 곳을 이어서 그린 선을 무엇이라고 할까요?",
+   opts:["도로","강줄기","글자","등고선"], correct:3, pts:POINTS_BASIC,
+   reason:"등고선은 땅의 높이가 같은 곳을 이은 선이에요. 안쪽으로 갈수록 높아요.",
+   h1:"산을 위에서 본 지도에서 구불구불한 곡선이었어요.",
+   h2:"\u2018같은 높이\u2019를 이은 선 \u2014 등고선이에요."},
   // 4단계 적용 (+15)
-  {stem:"종합운동장역(3호선)에서 해운대역(2호선)으로 갈 때, 수영역에서 다른 노선으로 갈아타는 것을 무엇이라고 할까요?", scene:"subway",
-   opts:["출발","도착","환승","정지"], correct:2, pts:POINTS_APPLY,
-   reason:"노선이 다르면 두 노선이 만나는 역(수영역)에서 갈아타야 해요. 이것을 환승이라고 해요.",
-   h1:"직접 길찾기에서 수영역에서 무엇을 했나요?",
-   h2:"타던 노선에서 다른 노선으로 \u2018갈아타는\u2019 것이에요."},
-  {stem:"처음 가 보는 야영장에 자동차로 갈 때, 가장 도움이 되는 것은 무엇일까요?",
-   opts:["길 도우미(내비게이션)","오래된 관광 엽서","동화책","시계"], correct:0, pts:POINTS_APPLY,
-   reason:"처음 가는 곳은 길 도우미에 목적지를 넣으면 가장 좋은 길을 안내받을 수 있어요.",
-   h1:"자동차에서 실시간으로 길을 안내해 주는 것을 떠올려 봐요.",
-   h2:"목적지만 넣으면 이동 방법을 알려 주는 프로그램이에요."},
-  {stem:"조선 시대 김정호가 만든 『대동여지도』에서, 산의 크기와 높이는 무엇으로 짐작할 수 있게 나타냈을까요?", scene:"daedong",
-   opts:["글자 크기","사진","선의 굵기","색칠"], correct:2, pts:POINTS_APPLY,
-   reason:"『대동여지도』는 산줄기를 이어 그리고, 선의 굵기로 산의 크기와 높이를 짐작할 수 있게 했어요.",
-   h1:"산줄기를 그린 선을 자세히 보면 두께가 달라요.",
-   h2:"굵은 선일수록 더 크고 높은 산을 뜻했어요."},
-  {stem:"『대동여지도』가 오늘날의 지도와 비슷한 점으로 알맞은 것은 무엇일까요?",
-   opts:["인터넷으로 검색할 수 있다","기호와 범례를 사용해 정보를 나타냈다","소리가 나온다","자동으로 길을 안내한다"], correct:1, pts:POINTS_APPLY,
-   reason:"『대동여지도』에도 오늘날 지도처럼 기호와 범례가 쓰였어요. 아주 옛날 지도인데도 신기하죠.",
-   h1:"오늘날 지도에서 약속으로 쓰는 \u2018기호\u2019를 떠올려 봐요.",
-   h2:"옛 지도에도 기호와 범례가 있었다는 점이 비슷해요."}
+  {stem:"지도에서 실제 거리를 줄여 나타낸 정도를 무엇이라고 할까요?",
+   opts:["방위","기호","등고선","축척"], correct:3, pts:POINTS_APPLY,
+   reason:"축척은 실제 거리를 줄인 정도예요. 축척 막대로 실제 거리를 구할 수 있어요.",
+   h1:"축척 막대자로 실제 거리를 재던 것을 떠올려 봐요.",
+   h2:"1 cm가 실제 몇 km인지 알려 주는 \u2018줄인 정도\u2019예요."},
+  {stem:"등고선의 간격이 좁게 그려진 곳은 실제로 어떤 곳일까요?",
+   opts:["평평한 곳","물이 고인 곳","경사가 급한 곳","길이 넓은 곳"], correct:2, pts:POINTS_APPLY,
+   reason:"등고선 간격이 좁을수록 경사가 급해요. 넓으면 경사가 완만하고요.",
+   h1:"짧은 거리에서 높이가 빠르게 올라가면 어떤 비탈일까요?",
+   h2:"촘촘한 등고선 = 가파른(급한) 경사예요."},
+  {stem:"처음 가 보는 곳에 자동차로 갈 때, 목적지를 넣으면 좋은 길을 안내해 주는 것은?",
+   opts:["길 도우미(내비게이션)","관광 엽서","등산화","달력"], correct:0, pts:POINTS_APPLY,
+   reason:"길 도우미는 목적지를 입력하면 가장 좋은 이동 방법을 지도로 안내해 줘요.",
+   h1:"지난 시간에 배운 \u2018일상생활 지도 활용\u2019을 떠올려 봐요.",
+   h2:"자동차에서 길을 실시간으로 안내하는 프로그램이에요."},
+  {stem:"방위·기호·등고선·축척이 모두 잘 나타난 지도의 좋은 점은 무엇일까요?",
+   opts:["색이 예쁘기만 하다","여러 정보를 정확하게 알 수 있다","글자가 많아 복잡하다","아무 쓸모가 없다"], correct:1, pts:POINTS_APPLY,
+   reason:"방위·기호·등고선·축척이 모여 방향·장소·높낮이·거리 정보를 정확히 알 수 있어요.",
+   h1:"지도 요소가 많을수록 얻을 수 있는 정보가 어떻게 될까요?",
+   h2:"여러 요소가 모이면 그만큼 \u2018정확한 정보\u2019를 얻을 수 있어요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -347,56 +312,52 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">일상생활에서 지도를 활용해 볼까요?</h2>
-  <div class="ka-bub">우리는 이미 여러 곳에서 지도를 쓰고 있어요. 버스 노선도, 등산로 안내도, 스마트폰 지도 앱까지! 지도를 <b>언제, 어떻게</b> 써 봤나요?</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('navi','스마트폰 길 도우미')}</div>
-    <div class="note">오늘은 <b style="color:#15803D">다양한 지도</b>를 살펴보고 직접 활용해 봐요.</div>
+  <h2 class="ka-t">배운 내용을 정리해 볼까요?</h2>
+  <div class="ka-bub">\u2018다양한 정보가 담긴 지도\u2019에서 우리는 참 많은 걸 배웠어요. 지도의 뜻부터 방위·기호·등고선·축척, 그리고 지도 활용까지! 오늘은 모두 <b>정리</b>해 봐요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recap','지도의 요소들')}</div>
+    <div class="note">배운 것을 떠올리며 <b style="color:#15803D">멋진 지도 전문가</b>가 되어 봐요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">이런 지도들, 언제 쓸까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">지도마다 담긴 정보와 쓰임이 달라요. 아래 세 지도는 각각 어떤 상황에서 쓰면 좋을지 생각해 봐요.</div>
-  <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('tourmap','관광 안내도')}${sceneCard('sketch','약도')}${sceneCard('navi','길 도우미')}
-  </div><div class="note">여행 갈 때, 결혼식장 찾을 때, 처음 가는 길 안내받을 때 \u2014 어떤 지도가 어울릴까요?</div></div>`});
+  <h2 class="ka-t">우리가 무엇을 배웠는지 떠올려 봐요 \uD83E\uDD14</h2>
+  <div class="ka-bub">이 주제에서 공부한 것들을 하나씩 떠올려 볼까요? 지도를 이루는 여러 <b>요소</b>들이 있었어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('recap','방위·기호·등고선·축척')}</div>
+  <div class="note">방위, 기호와 범례, 등고선, 축척 \u2014 각각 무엇을 나타냈는지 기억나나요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">여러 지도를 어떻게 골라 쓸까요?</h2>
-  <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('tourmap','관광 안내도')}${sceneCard('navi','길 도우미')}
-  </div>
-  ${st.revealed?`<div class="answer-box">지도마다 담긴 정보가 달라요. 그래서 <b>상황과 목적에 맞는 지도</b>를 골라 쓰면 돼요. 여행엔 관광 안내도, 처음 가는 길엔 길 도우미처럼요.</div>`
-    :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">이만큼이나 배웠어요!</h2>
+  <div class="ka-grp">
+  ${st.revealed?`<div class="answer-box"><b>지도</b>의 뜻과 필요성, <b>방위</b>(방향), <b>기호와 범례</b>(약속), <b>등고선</b>(높낮이), <b>축척</b>(거리), 그리고 <b>일상생활 지도 활용</b>까지 배웠어요. 정말 대단하죠!</div>`
+    :`<div class="scene-row">${sceneCard('recap','지도의 요소들')}</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 다양한 지도 종류
+// 4 살펴보기: 지도 요소 총정리
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">일상생활 속 다양한 지도</h2>
-  <div class="ka-bub"><b>관광 안내도</b>는 볼거리 위치를, <b>약도</b>는 목적지까지 가는 길을 간단히, <b>길 도우미</b>는 가장 좋은 이동 방법을 알려 줘요. <b>노선도</b>는 버스·지하철 길을 보여 주고요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('sketch','약도')}${sceneCard('subway','노선도')}${sceneCard('plan','체험학습 계획')}</div>
-  <div class="note">상황과 목적에 맞게 골라 쓰면, 이동을 <b style="color:#166534">미리 계획</b>할 수 있어 편리해요.</div></div>`});
-// 5 살펴보기: 지하철 노선도 길찾기(직접 조작)
+  <h2 class="ka-t">지도의 요소를 한눈에</h2>
+  <div class="ka-bub"><b>방위</b>는 방향을, <b>기호와 범례</b>는 약속된 장소 표시를, <b>등고선</b>은 땅의 높낮이를, <b>축척</b>은 실제 거리를 줄인 정도를 알려 줘요. 이 요소들이 모여 정보가 풍부한 지도가 돼요.</div>
+  <div class="ka-grp"><div class="note">이제 완성된 지도에서 이 요소들을 직접 찾아볼까요?</div></div>`});
+// 5 살펴보기: 지도 요소 종합 확인(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지하철 노선도로 길을 찾아봐요</h2>
-  <div class="ka-grp">${subwayInteractive(st)}</div>`});
-// 6 살펴보기: 체험학습 계획(발문)
+  <h2 class="ka-t">완성된 지도에서 요소를 찾아봐요</h2>
+  <div class="ka-grp">${mapRecapInteractive(st)}</div>`});
+// 6 살펴보기: 생각을 펼쳐요(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지도 앱으로 체험학습을 계획한다면?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('plan','하루 체험학습 계획')}</div>
-  ${st.revealed?`<div class="answer-box">지도 앱으로 <b>가고 싶은 장소</b>를 정하고, <b>교통편·이동 시간·동선</b>을 살펴 효율적인 <b>이동 경로</b>를 정하면 하루 계획을 알차게 세울 수 있어요.</div>`
-    :`<div class="note">장소 세 곳을 고른다면, 무엇을 먼저 정해야 알찬 하루가 될까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">배운 것으로 무엇을 만들 수 있을까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('island','나만의 섬')}${sceneCard('safety','안전 지도')}</div>
+  ${st.revealed?`<div class="answer-box"><b>등고선</b>으로 \u2018나만의 섬\u2019을 그리거나, 우리 지역의 안전 정보를 모아 \u2018안전 지도\u2019를 만들 수 있어요. 배운 지도 요소를 직접 써서 나만의 지도를 완성해 봐요!</div>`
+    :`<div class="note">등고선을 그려 섬을 만들거나, 안전 정보를 모아 지도를 만든다면 어떤 요소가 필요할까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 대동여지도(옛 지도와 비교)
+// 7 살펴보기: 주제① 핵심 한눈에
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">옛날에도 지도가 있었을까요?</h2>
-  <div class="ka-bub">조선 시대 <b>김정호</b>가 만든 <span class="ka-emph">대동여지도</span>는 다 펼치면 세로 약 7 m나 되는 초대형 지도예요. 놀랍게도 오늘날처럼 <b>기호와 범례</b>를 쓰고, <b>선의 굵기</b>로 산의 높이를 나타냈어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('daedong','대동여지도')}</div>
-  <div class="note">아주 옛날 지도인데도 지금 지도와 <b style="color:#166534">비슷한 약속</b>이 담겨 있다는 게 신기하죠?</div></div>`});
+  <h2 class="ka-t">주제 ① 핵심 한눈에</h2>
+  <div class="ka-bub"><span class="ka-emph">지도</span>는 땅을 줄여 약속대로 나타낸 그림이에요. <b>방위</b>(방향)·<b>기호와 범례</b>(약속)·<b>등고선</b>(높낮이)·<b>축척</b>(거리)이 담겨 있어, 상황과 목적에 맞게 활용할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('hidden','숨은 기호 찾기')}</div>
+  <div class="note">이제 문제로 배운 내용을 확인해 봐요. 천천히 떠올리며 골라요.</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -405,30 +366,30 @@ Q.forEach((q,i)=>{
 // 16 정리: 오늘 배운 것
 slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">오늘 배운 것</h2>
+  <h2 class="ka-t">주제 ① 총정리</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div>일상생활에는 <b style="color:#15803D">관광 안내도·약도·버스/지하철 노선도·길 도우미</b> 등 다양한 지도가 있어요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div><b>상황과 목적에 맞는 지도</b>를 골라 쓰면, 이동을 미리 계획할 수 있어 편리해요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>옛 지도 <b style="color:#5B4020">대동여지도</b>에도 오늘날처럼 기호·범례가 쓰였고, 선의 굵기로 산의 높이를 나타냈어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">지도</b>는 땅을 줄여 약속대로 나타낸 그림. <b>방위</b>는 방향, <b>기호와 범례</b>는 약속된 장소 표시예요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b style="color:#9A3412">등고선</b>은 땅의 높낮이를, <b style="color:#0369A1">축척</b>은 실제 거리를 줄인 정도를 알려 줘요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>이 요소들이 담긴 다양한 지도를 <b>상황과 목적</b>에 맞게 활용할 수 있어요.</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"일상생활 속 다양한 지도를 말할 수 있어요",st)}
-    ${selfCheck(1,"상황과 목적에 맞는 지도를 고를 수 있어요",st)}
-    ${selfCheck(2,"지하철 노선도로 길을 찾을 수 있어요",st)}
-  </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
+    ${selfCheck(0,"지도의 요소(방위·기호·등고선·축척)를 설명할 수 있어요",st)}
+    ${selfCheck(1,"완성된 지도에서 각 요소를 찾을 수 있어요",st)}
+    ${selfCheck(2,"상황에 맞는 지도를 골라 활용할 수 있어요",st)}
+  </div><div class="note">별이 적은 곳은 그 차시를 다시 살펴보면 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
   const s=state.score, msg = s>=100?"완벽해요!":s>=80?"잘했어요!":s>=60?"고생했어요!":"다시 해도 좋아요!";
   return `<div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t" style="text-align:center">오늘 학습을 마쳤어요</h2>
+  <h2 class="ka-t" style="text-align:center">주제 ①을 모두 마쳤어요! \uD83C\uDF89</h2>
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">다양한 지도를 활용해 봤어요. 다음 시간엔 \u2018다양한 정보가 담긴 지도\u2019를 정리해요.</div>
+    <div class="note">\u2018다양한 정보가 담긴 지도\u2019를 모두 정리했어요. 다음 주제에서는 <b>우리 지역의 위치와 지형</b>을 알아봐요.</div>
   </div>`;
 }});
 
@@ -461,13 +422,13 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l06";
+const LS_KEY = "kedu_progress_g4_social_u1_l07";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
   self:[false,false,false],
   revealed:false,
-  route:[], routed:0,
+  found:{}, _lastEl:null,
   startTs: Date.now(),
   attempt: 1
 };
@@ -501,21 +462,20 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 지하철 길찾기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 지도 요소 확인 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
-function routePick(k){
-  if(!STATIONS.some(s=>s.k===k)) return;
-  if(!state.route) state.route=[];
-  if(state.route.length>=2) state.route=[]; // 새 길찾기 시작
-  if(state.route.includes(k)) return;       // 같은 역 두 번 방지
-  state.route.push(k);
-  if(state.route.length===2){ state.routed++; playChime(); } else { playBlip(); }
+function findElement(k){
+  if(!ELEMENTS.some(e=>e.k===k)) return;
+  if(!state.found) state.found={};
+  const wasNew = !state.found[k];
+  state.found[k]=true; state._lastEl=k;
+  const total=ELEMENTS.length, cnt=Object.keys(state.found).length;
+  if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
-function resetRoute(){ state.route=[]; main.innerHTML=slides[state.idx].render(state); }
 function pick(i,k){
   const qs=state.q[i], q=Q[i];
   if(qs.done) return;
@@ -553,7 +513,7 @@ function showEndButtons(){
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
 // 다음 차시(l05 축척)는 준비 중 — 목록으로 안내
-function goNextLesson(e){ location.href='g4_social_u1_l07_정리.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
