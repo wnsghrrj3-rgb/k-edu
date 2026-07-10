@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 1차시(l08)
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 2차시(l09)
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-02] · 교과서 p.34~36 · 주제② 도입(우리 지역의 위치와 지형을 알아볼까요) 근거
+성취기준 [4사05-02] · 교과서 p.37~39 · 주제②(우리 지역의 면적과 인구를 알아볼까요) 근거
 중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
-직접조작: 지형 살펴보기(지도 위 지형 요소 클릭 → 산·강·들·바다·섬 이름·설명 채움) + 효과음. l04 구조 100% 복제.
-연계: 앞 차시 l02 방위 개념 재활용(위치를 방위로 설명). 지형 = 다음 면적·인구·기후 탐구의 바탕.
+직접조작: 인구 그래프 읽기(연도별 막대 클릭 → 그 해 인구 값 표시 + 변화 파악) + 효과음. l08 구조 100% 복제.
+정직 원칙: 인구·면적 수치는 '예시 자료'(특정 실제 지역 아님)로 명시.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우리 지역의 위치와 지형을 알아볼까요 · 사회 4-1</title>
+<title>우리 지역의 면적과 인구를 알아볼까요 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -113,7 +113,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 지형 살펴보기 조작 */
+/* 인구 그래프 읽기 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -184,135 +184,132 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 큰 지도 안에서 우리 지역의 '위치' — 도(윤곽) 안에 우리 지역 강조 + 방위표
-  region:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
-    <path d="M24 20 L96 14 L120 34 L112 70 L64 82 L30 62Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
-    <rect x="78" y="52" width="22" height="18" rx="3" fill="#F57F17" stroke="#B45309" stroke-width="1.5"/>
-    <text x="89" y="65" font-size="8" fill="#fff" text-anchor="middle" font-weight="800">우리</text>
-    <text x="60" y="30" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">○○도</text>
-    <g transform="translate(138,22)"><circle r="12" fill="#fff" stroke="#64748B" stroke-width="1.2"/>
-    <path d="M0 -9 L3 0 L0 9 L-3 0Z" fill="#DC2626"/><text x="0" y="-13" font-size="6" fill="#334155" text-anchor="middle" font-weight="800">북</text></g></svg>`,
-  // 지형이 어우러진 전경 — 산·강·들·바다
+  // 면적(땅의 넓이) — 넓은 땅 격자
+  area:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="24" y="20" width="112" height="60" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
+    <line x1="52" y1="20" x2="52" y2="80" stroke="#A6CD7E" stroke-width="1"/><line x1="80" y1="20" x2="80" y2="80" stroke="#A6CD7E" stroke-width="1"/><line x1="108" y1="20" x2="108" y2="80" stroke="#A6CD7E" stroke-width="1"/>
+    <line x1="24" y1="40" x2="136" y2="40" stroke="#A6CD7E" stroke-width="1"/><line x1="24" y1="60" x2="136" y2="60" stroke="#A6CD7E" stroke-width="1"/>
+    <text x="80" y="92" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">넓이 = 면적</text></svg>`,
+  // 인구(사람 수) — 여러 사람
+  people:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
+    ${[26,54,82,110,138].map((x,i)=>`<circle cx="${x}" cy="${34+(i%2)*6}" r="8" fill="#5AA9E6"/><rect x="${x-9}" y="${44+(i%2)*6}" width="18" height="22" rx="7" fill="#7CC4E8"/>`).join('')}
+    <text x="80" y="90" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">사람 수 = 인구</text></svg>`,
+  // 막대그래프(통계)
+  bar:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    <line x1="22" y1="78" x2="150" y2="78" stroke="#94A3B8" stroke-width="1.5"/><line x1="22" y1="14" x2="22" y2="78" stroke="#94A3B8" stroke-width="1.5"/>
+    <rect x="34" y="58" width="18" height="20" fill="#86C28B"/><rect x="62" y="46" width="18" height="32" fill="#86C28B"/><rect x="90" y="32" width="18" height="46" fill="#86C28B"/><rect x="118" y="22" width="18" height="56" fill="#86C28B"/>
+    <text x="86" y="92" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">막대그래프</text></svg>`,
+  // 인구 변화(증가 화살표)
+  grow:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <line x1="20" y1="80" x2="20" y2="16" stroke="#94A3B8" stroke-width="1.5"/><line x1="20" y1="80" x2="146" y2="80" stroke="#94A3B8" stroke-width="1.5"/>
+    <path d="M28 68 L60 54 L92 40 L128 22" fill="none" stroke="#DC2626" stroke-width="3"/>
+    <path d="M120 22 L128 22 L128 30Z" fill="#DC2626"/>
+    <text x="86" y="94" font-size="8" fill="#B91C1C" text-anchor="middle" font-weight="800">인구가 늘어요</text></svg>`,
+  // 넓은 지역 vs 좁은 지역
+  cmp:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
+    <rect x="10" y="26" width="60" height="50" fill="#C9E4A6" stroke="#8FBF6A" stroke-width="2"/>
+    <text x="40" y="88" font-size="8" fill="#166534" text-anchor="middle" font-weight="800">넓은 지역</text>
+    <rect x="96" y="46" width="30" height="30" fill="#FBD9A8" stroke="#E39A4A" stroke-width="2"/>
+    <text x="111" y="88" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">좁은 지역</text></svg>`,
+  // 지도(넓이+사람 함께)
   land:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
-    <rect x="118" y="0" width="42" height="96" fill="#7CC4E8"/>
-    <path d="M118 44 q-6 8 0 16 q6 8 0 16 q-6 8 0 20" fill="none" stroke="#fff" stroke-width="1.2" opacity=".6"/>
-    <path d="M0 96 L34 34 L60 62 L86 40 L118 74 L118 96Z" fill="#86C28B"/>
-    <path d="M30 40 L34 34 L39 41 L34 46Z" fill="#fff"/>
-    <rect x="0" y="74" width="118" height="22" fill="#C9E4A6"/>
-    <path d="M62 96 Q70 60 92 40 T118 30" fill="none" stroke="#5AA9E6" stroke-width="4" opacity=".85"/></svg>`,
-  // 산(우뚝 솟은 높은 땅)
-  mt:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EAF6EC"/><path d="M8 90 L58 24 L92 66 L120 34 L156 90Z" fill="#86C28B" stroke="#4F9E57" stroke-width="1.5"/><path d="M50 34 L58 24 L67 35 L58 42Z" fill="#fff"/><path d="M112 44 L120 34 L129 45 L120 51Z" fill="#fff"/></svg>`,
-  // 강(물이 흐르는 길)
-  river:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/><rect x="0" y="0" width="160" height="96" fill="#DCFCE7"/><path d="M18 8 Q40 40 30 60 Q22 80 60 88 L86 96" fill="none" stroke="#5AA9E6" stroke-width="10" stroke-linecap="round"/><path d="M18 8 Q40 40 30 60 Q22 80 60 88 L86 96" fill="none" stroke="#BFE3FA" stroke-width="3" stroke-linecap="round"/></svg>`,
-  // 들(넓고 평평한 땅)
-  plain:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F7FEE7"/><rect x="0" y="52" width="160" height="44" fill="#C9E4A6"/><line x1="12" y1="66" x2="150" y2="66" stroke="#A6CD7E" stroke-width="2"/><line x1="12" y1="80" x2="150" y2="80" stroke="#A6CD7E" stroke-width="2"/><rect x="24" y="56" width="14" height="8" fill="#8FBF6A"/><rect x="60" y="56" width="14" height="8" fill="#8FBF6A"/><rect x="96" y="56" width="14" height="8" fill="#8FBF6A"/></svg>`,
-  // 바다(넓게 펼쳐진 물)
-  sea:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#7CC4E8"/><rect x="0" y="0" width="160" height="28" fill="#DBEAFE"/><path d="M0 40 q20 -8 40 0 t40 0 t40 0 t40 0" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/><path d="M0 58 q20 -8 40 0 t40 0 t40 0 t40 0" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/><path d="M0 76 q20 -8 40 0 t40 0 t40 0 t40 0" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></svg>`,
-  // 섬(바다에 둘러싸인 땅)
-  island:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#7CC4E8"/><ellipse cx="80" cy="70" rx="46" ry="16" fill="#86C28B"/><path d="M56 70 L80 40 L104 70Z" fill="#6FB578"/><path d="M74 48 L80 40 L87 49 L80 55Z" fill="#fff"/><path d="M20 84 q18 -6 30 0" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/><path d="M112 84 q18 -6 30 0" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/></svg>`
+    <path d="M18 20 L96 12 L128 34 L118 74 L60 84 L26 60Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
+    <circle cx="60" cy="44" r="6" fill="#5AA9E6"/><circle cx="82" cy="52" r="6" fill="#5AA9E6"/><circle cx="72" cy="62" r="6" fill="#5AA9E6"/>
+    <text x="73" y="30" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">우리 지역</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 지형 살펴보기(직접 조작) ===== */
-// 지도 위 지형 요소를 누르면 이름·설명이 아래에 하나씩 채워짐 — l04 filled 패턴 재사용.
-const LANDFORMS = [
-  {k:'mt',     name:'산',   emoji:'⛰️', color:'#4F9E57', desc:'우뚝 솟은 <b>높은 땅</b>'},
-  {k:'river',  name:'강',   emoji:'🌊', color:'#3E8CD4', desc:'땅 위를 흐르는 <b>물줄기</b>'},
-  {k:'plain',  name:'들',   emoji:'🌾', color:'#8FBF6A', desc:'넓고 <b>평평한 땅</b>(평야)'},
-  {k:'sea',    name:'바다',  emoji:'🏖️', color:'#2E7CB8', desc:'넓게 펼쳐진 <b>큰 물</b>'},
-  {k:'island', name:'섬',   emoji:'🏝️', color:'#5AA06A', desc:'<b>바다에 둘러싸인</b> 땅'}
+/* ===== 인구 그래프 읽기(직접 조작) ===== */
+// 연도별 인구 막대를 누르면 그 해 값이 나타나고, 다 읽으면 변화(증가)를 파악 — l08 filled 패턴 재사용.
+// ⚠️ 정직 원칙: 아래 수치는 실제 특정 지역이 아닌 '예시 자료'.
+const YEARS = [
+  {k:'y1', year:'2000년', pop:8,  label:'8만 명'},
+  {k:'y2', year:'2005년', pop:12, label:'12만 명'},
+  {k:'y3', year:'2010년', pop:17, label:'17만 명'},
+  {k:'y4', year:'2015년', pop:23, label:'23만 명'},
+  {k:'y5', year:'2020년', pop:28, label:'28만 명'}
 ];
-// 지도 위 각 지형이 놓인 자리(클릭 히트존)
-const LF_SPOTS = {
-  mt:     {x:60,  y:44,  r:34},
-  river:  {x:150, y:118, r:26},
-  plain:  {x:96,  y:150, r:30},
-  sea:    {x:236, y:70,  r:34},
-  island: {x:236, y:150, r:24}
-};
-function terrainInteractive(st){
+const POP_MAX = 30; // 그래프 세로 최대(만 명)
+function statInteractive(st){
   const filled = st.filled || {};
   const cnt = Object.keys(filled).length;
-  // 배경 지도(간단한 우리 지역 지형도) + 클릭 히트존
-  const hits = LANDFORMS.map(lf=>{
-    const s = LF_SPOTS[lf.k]; const on = !!filled[lf.k];
-    return `<g onclick="paintBand('${lf.k}')" style="cursor:pointer">
-      <circle cx="${s.x}" cy="${s.y}" r="${s.r}" fill="${on?lf.color:'#FFFFFF'}" fill-opacity="${on?0.28:0.001}" stroke="${on?lf.color:'#94A3B8'}" stroke-width="${on?2.4:1.6}" stroke-dasharray="${on?'0':'4 3'}"/>
-      <text x="${s.x}" y="${s.y+6}" font-size="18" text-anchor="middle" style="pointer-events:none">${lf.emoji}</text>
-      ${on?`<text x="${s.x}" y="${s.y+s.r+12}" font-size="11" fill="${lf.color}" text-anchor="middle" font-weight="800" style="pointer-events:none">${lf.name}</text>`:''}
+  // 막대 영역: x축 y=168, y축 x=44, 그래프 높이 130
+  const baseY = 168, axX = 44, gH = 130, gW = 236, bw = 30;
+  const bars = YEARS.map((yr,i)=>{
+    const on = !!filled[yr.k];
+    const x = axX + 16 + i*44;
+    const h = (yr.pop / POP_MAX) * gH;
+    const y = baseY - h;
+    return `<g onclick="paintBand('${yr.k}')" style="cursor:pointer">
+      <rect x="${x}" y="${on?y:baseY-10}" width="${bw}" height="${on?h:10}" rx="3" fill="${on?'#4F9E57':'#D6E8DA'}" stroke="#4F9E57" stroke-width="1.4"/>
+      ${on?`<text x="${x+bw/2}" y="${y-5}" font-size="11" fill="#166534" text-anchor="middle" font-weight="800" style="pointer-events:none">${yr.label}</text>`:`<text x="${x+bw/2}" y="${baseY-16}" font-size="12" fill="#94A3B8" text-anchor="middle" style="pointer-events:none">?</text>`}
+      <text x="${x+bw/2}" y="${baseY+16}" font-size="10" fill="#475569" text-anchor="middle" font-weight="600" style="pointer-events:none">${yr.year}</text>
     </g>`;
   }).join('');
-  const list = LANDFORMS.map(lf=>{
-    const on = !!filled[lf.k];
-    return `<div class="sum-item" style="${on?`border-color:${lf.color};background:#F8FFFB`:'opacity:.45'}">
-      <span class="n" style="background:${on?lf.color:'#CBD5E1'}">${lf.emoji}</span>
-      <div>${on?`<b style="color:${lf.color}">${lf.name}</b> — ${lf.desc}`:'<span style="color:#94A3B8">지도에서 눌러 확인해요</span>'}</div></div>`;
-  }).join('');
-  const counter = `<div class="note" style="font-weight:700;color:#15803D">찾은 지형 ${cnt} / ${LANDFORMS.length}</div>`;
-  const done = cnt>=LANDFORMS.length;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">읽은 막대 ${cnt} / ${YEARS.length}</div>`;
+  const done = cnt>=YEARS.length;
   const info = done
-    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 찾았어요! 이렇게 땅이 이루는 <b>여러 가지 생김새</b>(산·강·들·바다·섬)를 <span class="ka-emph">지형</span>이라고 해요. 우리 지역에 어떤 지형이 있는지 알면 지역의 특성을 이해할 수 있어요.</div>`
-    : `<div class="note">지도 위 <b style="color:#15803D">지형</b>을 눌러 이름과 뜻을 확인해 봐요.</div>`;
-  return `<div class="contour-wrap"><svg viewBox="0 0 300 200" style="width:min(360px,94%);height:auto">
-    <rect width="300" height="200" fill="#EAF6EC" rx="12"/>
-    <rect x="200" y="0" width="100" height="200" fill="#BFE1F5"/>
-    <path d="M0 200 L60 78 L104 128 L150 90 L200 150 L200 200Z" fill="#B7DCA0"/>
-    <path d="M200 96 Q188 108 200 122 Q212 136 200 150 Q188 164 200 180" fill="none" stroke="#3E8CD4" stroke-width="8" opacity=".7"/>
-    <rect x="10" y="128" width="180" height="66" fill="#CDE9AD" opacity=".7"/>
-    <path d="M150 200 Q150 150 190 120" fill="none" stroke="#5AA9E6" stroke-width="6" opacity=".8"/>
-    ${hits}
-  </svg>${counter}</div>
-  <div class="sum-list" style="margin-top:8px">${list}</div>${info}`;
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 읽었어요! 막대가 갈수록 <b>길어지네요</b> — 이 지역의 <span class="ka-emph">인구가 점점 늘었어요</span>. 이렇게 <b>그래프</b>로 나타내면 인구가 어떻게 변했는지 한눈에 알 수 있어요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
+    : `<div class="note">막대를 눌러 각 해의 <b style="color:#15803D">인구</b>를 읽어 봐요. 막대가 <b>길수록</b> 인구가 많아요.</div>`;
+  return `<div class="contour-wrap"><svg viewBox="0 0 300 200" style="width:min(380px,96%);height:auto">
+    <rect width="300" height="200" fill="#FFFDF5" rx="12"/>
+    <line x1="${axX}" y1="20" x2="${axX}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.6"/>
+    <line x1="${axX}" y1="${baseY}" x2="${axX+gW}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.6"/>
+    <text x="${axX-6}" y="30" font-size="9" fill="#64748B" text-anchor="end">많음</text>
+    <text x="${axX-6}" y="${baseY}" font-size="9" fill="#64748B" text-anchor="end">0</text>
+    <text x="6" y="14" font-size="10" fill="#166534" font-weight="700">인구(만 명)</text>
+    ${bars}
+  </svg>${counter}</div>${info}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 1차시";
+const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 2차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [0,2,1,3,2,0,3,1]
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [1,3,0,2,3,1,0,2]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"어떤 곳이 다른 곳을 기준으로 어디쯤에 있는지를 나타낸 것을 무엇이라고 할까요?",
-   opts:["위치","넓이","이름","날씨"], correct:0, pts:POINTS_BASIC,
-   reason:"어떤 곳이 어디쯤에 있는지를 나타낸 것을 위치라고 해요.",
-   h1:"\u2018우리 학교는 시청 남쪽에 있어요\u2019처럼 나타내는 것이에요.",
-   h2:"어디에 있는지를 뜻하는 두 글자 낱말이에요."},
-  {stem:"지도에서 우리 지역의 위치를 나타낼 때, 방향을 알려 주는 <b>동·서·남·북</b>을 무엇이라고 할까요?",
-   opts:["범례","기호","방위","축척"], correct:2, pts:POINTS_BASIC,
-   reason:"동·서·남·북 네 방향을 방위라고 하고, 방위를 이용해 위치를 나타낼 수 있어요.",
-   h1:"앞 시간(2차시)에 배운 낱말이에요. 방위표로 확인했지요.",
-   h2:"동쪽·서쪽·남쪽·북쪽을 아우르는 두 글자 낱말이에요."},
-  {stem:"산·강·들·바다처럼 땅이 이루는 <b>여러 가지 생김새</b>를 무엇이라고 할까요?",
-   opts:["지도","지형","기호","축척"], correct:1, pts:POINTS_BASIC,
-   reason:"산·강·들·바다처럼 땅의 생김새를 지형이라고 해요.",
-   h1:"\u2018지형\u2019은 \u2018땅의 모양\u2019이라는 뜻이에요.",
-   h2:"오늘 지도에서 눌러 찾아본 산·강·들·바다·섬이 모두 지형이에요."},
-  {stem:"다음 중 <b>우뚝 솟은 높은 땅</b>을 가리키는 지형은 무엇일까요?", scene:"mt",
-   opts:["강","바다","들","산"], correct:3, pts:POINTS_BASIC,
-   reason:"우뚝 솟은 높은 땅을 산이라고 해요.",
-   h1:"올라가려면 힘이 드는, 위로 솟은 지형이에요.",
-   h2:"꼭대기에 정상이 있고 눈이 쌓이기도 하는 높은 땅이에요."},
+  {stem:"어떤 지역의 땅이 차지하는 <b>넓이</b>를 무엇이라고 할까요?",
+   opts:["인구","면적","위치","방위"], correct:1, pts:POINTS_BASIC,
+   reason:"땅이 차지하는 넓이를 면적이라고 해요.",
+   h1:"\u2018넓이\u2019를 뜻하는 두 글자 낱말이에요.",
+   h2:"운동장이 넓다·좁다처럼, 땅의 넓이를 나타내는 말이에요."},
+  {stem:"어떤 지역에 <b>사는 사람의 수</b>를 무엇이라고 할까요?",
+   opts:["면적","넓이","지형","인구"], correct:3, pts:POINTS_BASIC,
+   reason:"한 지역에 사는 사람의 수를 인구라고 해요.",
+   h1:"\u2018인\u2019은 \u2018사람\u2019, \u2018구\u2019는 \u2018수\u2019를 뜻해요.",
+   h2:"우리 지역에 사람이 몇 명 사는지를 나타내는 말이에요."},
+  {stem:"면적(넓이)을 나타낼 때 주로 쓰는 단위는 무엇일까요?",
+   opts:["제곱킬로미터(km²)","킬로그램(kg)","도(°C)","시간"], correct:0, pts:POINTS_BASIC,
+   reason:"땅의 넓이(면적)는 제곱킬로미터(km²) 같은 단위로 나타내요.",
+   h1:"넓이를 재는 단위예요. 무게(kg)나 온도(°C)가 아니에요.",
+   h2:"\u2018제곱\u2019이 들어간, 넓이를 재는 단위예요."},
+  {stem:"인구나 면적처럼 여러 자료를 <b>한눈에 보기 쉽게</b> 나타낸 것을 무엇이라고 할까요?",
+   opts:["일기","그래프·표","편지","노래"], correct:1, pts:POINTS_BASIC,
+   reason:"수를 막대·선 등으로 나타낸 그래프나 표를 이용하면 자료를 한눈에 알 수 있어요.",
+   h1:"오늘 인구를 막대로 읽어 본 그림을 무엇이라고 했나요?",
+   h2:"막대그래프·표처럼 자료를 정리해 보여 주는 것이에요."},
   // 4단계 적용 (+15)
-  {stem:"넓고 평평하게 펼쳐져 농사를 짓기 좋은 지형은 무엇일까요?", scene:"plain",
-   opts:["산","섬","들(평야)","바다"], correct:2, pts:POINTS_APPLY,
-   reason:"넓고 평평한 땅을 들 또는 평야라고 해요. 평평해서 농사를 짓기 좋아요.",
-   h1:"위아래로 솟거나 파이지 않고 고르게 펼쳐진 땅이에요.",
-   h2:"논과 밭이 넓게 이어진 평평한 지형이에요."},
-  {stem:"우리 지역의 위치를 알맞게 나타낸 말은 무엇일까요?", scene:"region",
-   opts:["○○도의 남쪽, □□시의 동쪽에 있어요","날씨가 맑고 따뜻해요","사람이 아주 많아요","시장이 크고 넓어요"], correct:0, pts:POINTS_APPLY,
-   reason:"위치는 방위(동·서·남·북)와 이웃한 지역을 기준으로 나타내요. 날씨·인구는 위치가 아니에요.",
-   h1:"위치는 \u2018어디에 있는지\u2019를 방위로 설명해요.",
-   h2:"\u2018무엇의 어느 쪽에 있다\u2019처럼 방위와 이웃 지역이 들어간 말을 찾아요."},
-  {stem:"바닷가에 있는 지역에서 주로 볼 수 있는 지형은 무엇일까요?", scene:"sea",
-   opts:["높은 산맥만","넓은 사막","깊은 동굴만","바다와 섬"], correct:3, pts:POINTS_APPLY,
-   reason:"바닷가 지역에서는 바다와 그 위에 떠 있는 섬을 볼 수 있어요.",
-   h1:"바다에 둘러싸인 땅을 무엇이라고 했나요?",
-   h2:"넓게 펼쳐진 물(바다)과, 물에 둘러싸인 땅(섬)을 함께 볼 수 있어요."},
-  {stem:"지역마다 지형이 서로 다른 것을 알면 무엇이 좋을까요?",
-   opts:["모든 지역이 똑같다는 것을 알 수 있다","지역의 특성과 사람들의 생활 모습을 이해할 수 있다","지형은 아무 쓸모가 없다","날씨를 바꿀 수 있다"], correct:1, pts:POINTS_APPLY,
-   reason:"지형에 따라 사람들의 생활 모습이 달라져요. 지형을 알면 우리 지역의 특성을 이해할 수 있어요.",
-   h1:"산이 많은 곳과 바다가 있는 곳은 사람들의 생활이 어떻게 다를까요?",
-   h2:"지형을 알면 그 지역이 어떤 곳인지, 사람들이 어떻게 사는지 이해하는 데 도움이 돼요."}
+  {stem:"인구 막대그래프에서 <b>막대가 길수록</b> 무엇을 뜻할까요?", scene:"bar",
+   opts:["인구가 적다","날씨가 춥다","면적이 좁다","인구가 많다"], correct:3, pts:POINTS_APPLY,
+   reason:"막대가 길수록 값이 커요. 인구 그래프에서는 인구가 많다는 뜻이에요.",
+   h1:"막대의 길이는 수의 크고 작음을 나타내요.",
+   h2:"길이가 길면 그만큼 값(사람 수)이 크다는 뜻이에요."},
+  {stem:"연도별 인구 막대가 <b>갈수록 길어지는</b> 그래프는 무엇을 알려 줄까요?", scene:"grow",
+   opts:["인구가 점점 늘고 있다","인구가 점점 줄고 있다","인구가 그대로다","면적이 넓어진다"], correct:0, pts:POINTS_APPLY,
+   reason:"막대가 해마다 길어지면 인구가 점점 늘고 있다는 뜻이에요.",
+   h1:"막대가 길어진다 = 값이 커진다예요.",
+   h2:"해가 갈수록 사람 수가 많아지고 있다는 뜻이에요."},
+  {stem:"두 지역의 지도를 비교할 때, 땅이 더 <b>넓게</b> 그려진 지역에 대해 알맞은 것은?", scene:"cmp",
+   opts:["면적이 더 넓다","인구가 반드시 많다","날씨가 더 덥다","반드시 바다가 있다"], correct:0, pts:POINTS_APPLY,
+   reason:"지도에서 더 넓게 그려진 지역은 면적이 더 넓어요. 넓다고 인구가 꼭 많은 것은 아니에요.",
+   h1:"\u2018넓이\u2019는 면적이에요. 넓게 그려졌다는 것은?",
+   h2:"땅이 넓게 그려졌으니 면적이 더 넓은 것이에요(인구와는 다른 정보)."},
+  {stem:"우리 지역의 면적과 인구를 알면 무엇에 도움이 될까요?",
+   opts:["날씨를 마음대로 바꿀 수 있다","모든 지역이 똑같다는 것을 알 수 있다","지역의 특성을 이해하고 살기 좋게 계획하는 데 도움이 된다","면적과 인구는 아무 쓸모가 없다"], correct:2, pts:POINTS_APPLY,
+   reason:"면적·인구를 알면 지역의 특성을 이해하고, 학교·공원처럼 필요한 시설을 계획하는 데 도움이 돼요.",
+   h1:"사람이 많은 곳과 적은 곳은 필요한 것이 다를 거예요.",
+   h2:"지역을 이해하고 살기 좋게 만드는 계획에 쓰여요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -320,56 +317,56 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역의 위치와 지형을 알아볼까요?</h2>
-  <div class="ka-bub">우리가 사는 지역은 넓은 지도에서 <b>어디쯤</b>에 있을까요? 그리고 우리 지역의 땅은 <b>어떻게 생겼을까요?</b></div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('region','우리 지역의 위치')}${sceneCard('land','우리 지역의 지형')}</div>
-    <div class="note">오늘은 우리 지역의 <b style="color:#15803D">위치</b>와 <b style="color:#15803D">지형</b>을 알아봐요.</div>
+  <h2 class="ka-t">우리 지역의 면적과 인구를 알아볼까요?</h2>
+  <div class="ka-bub">우리 지역은 얼마나 <b>넓을까요?</b> 그리고 <b>몇 명</b>이 살고 있을까요? 지역을 자세히 알려면 넓이와 사람 수도 살펴봐야 해요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('area','땅의 넓이')}${sceneCard('people','사는 사람 수')}</div>
+    <div class="note">오늘은 우리 지역의 <b style="color:#15803D">면적</b>과 <b style="color:#15803D">인구</b>를 알아봐요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역은 어디에, 어떻게 생겼을까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">넓은 지도를 펼쳐 보면 우리 지역이 어디에 있는지, 산·강·들·바다 같은 땅의 모습이 어떤지 알 수 있어요.</div>
+  <h2 class="ka-t">넓이와 사람 수, 어떻게 알 수 있을까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">우리 지역의 넓이나 사람 수는 눈으로 한 번에 세기 어려워요. 그래서 <b>자료</b>를 그림으로 나타내면 쉽게 알 수 있어요.</div>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('region','넓은 지도 속 우리 지역')}
-  </div><div class="note">우리 지역의 위치를 어떻게 <b>말</b>로 설명할 수 있을까요?</div></div>`});
+    ${sceneCard('bar','자료를 나타낸 그래프')}
+  </div><div class="note">이렇게 막대로 나타낸 그림을 무엇이라고 할까요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">위치는 어떻게 나타낼까요?</h2>
+  <h2 class="ka-t">자료를 그림으로 나타내면?</h2>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('region','방위로 나타낸 위치')}
+    ${sceneCard('bar','막대그래프')}
   </div>
-  ${st.revealed?`<div class="answer-box"><b>방위(동·서·남·북)</b>와 이웃한 지역을 기준으로 나타내요. 예를 들어 \u2018우리 지역은 ○○도의 <b>남쪽</b>, □□시의 <b>동쪽</b>에 있어요\u2019처럼요.</div>`
+  ${st.revealed?`<div class="answer-box">수를 막대의 길이로 나타낸 것을 <span class="ka-emph">막대그래프</span>라고 해요. 그래프나 표를 쓰면 <b>면적·인구</b> 같은 자료를 <b>한눈에</b> 비교할 수 있어요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 위치의 뜻(방위 연계)
+// 4 살펴보기: 면적·인구의 뜻
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">\u2018위치\u2019란 무엇일까요?</h2>
-  <div class="ka-bub">어떤 곳이 다른 곳을 기준으로 <b>어디쯤에 있는지</b>를 나타낸 것을 <span class="ka-emph">위치</span>라고 해요. 앞에서 배운 <b>방위</b>를 이용하면 위치를 정확하게 말할 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('region','○○도 안 우리 지역')}</div>
-  <div class="note">\u201c우리 지역은 <b style="color:#9A3412">○○도의 남쪽</b>에 있어요\u201d처럼 방위로 위치를 나타내요.</div></div>`});
-// 5 살펴보기: 지형 살펴보기(직접 조작)
+  <h2 class="ka-t">\u2018면적\u2019과 \u2018인구\u2019란 무엇일까요?</h2>
+  <div class="ka-bub"><span class="ka-emph">면적</span>은 땅이 차지하는 <b>넓이</b>예요(제곱킬로미터 km²로 나타내요). <span class="ka-emph">인구</span>는 그 지역에 <b>사는 사람의 수</b>예요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('area','면적 = 넓이')}${sceneCard('people','인구 = 사람 수')}</div>
+  <div class="note">면적은 <b style="color:#166534">넓이</b>, 인구는 <b style="color:#1D4ED8">사람 수</b> \u2014 서로 다른 정보예요.</div></div>`});
+// 5 살펴보기: 인구 그래프 읽기(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역의 지형을 직접 찾아봐요</h2>
-  <div class="ka-grp">${terrainInteractive(st)}</div>`});
-// 6 살펴보기: 지형에 따라 생활이 다르다(발문)
+  <h2 class="ka-t">인구 그래프를 직접 읽어 봐요</h2>
+  <div class="ka-grp">${statInteractive(st)}</div>`});
+// 6 살펴보기: 인구 변화 파악(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지형이 다르면 무엇이 달라질까요?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('mt','산이 많은 곳')}${sceneCard('sea','바다가 있는 곳')}</div>
-  ${st.revealed?`<div class="answer-box">지형에 따라 사람들의 <b>생활 모습</b>이 달라져요. 산이 많은 곳에서는 <b>밭농사·목장</b>을, 바다가 있는 곳에서는 <b>고기잡이·양식</b>을 많이 해요. 그래서 지형을 알면 지역의 특성을 이해할 수 있어요.</div>`
-    :`<div class="note">산이 많은 곳과 바다가 있는 곳, 사람들의 사는 모습은 같을까요 다를까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">막대가 갈수록 길어지면 무슨 뜻일까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('grow','해마다 길어지는 막대')}</div>
+  ${st.revealed?`<div class="answer-box">해가 갈수록 막대가 <b>길어지면</b> 인구가 <b>점점 늘고</b> 있다는 뜻이에요. 반대로 짧아지면 인구가 줄고 있는 것이고요. 그래프로 <b>변화</b>를 한눈에 알 수 있어요.</div>`
+    :`<div class="note">막대가 해마다 길어진다면, 사람 수는 늘어날까요 줄어들까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 지형 정리 + 다음 탐구 연결
+// 7 살펴보기: 면적 비교 + 다음 탐구 연결
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역의 지리 정보 살펴보기</h2>
-  <div class="ka-bub">위치와 지형은 우리 지역을 이해하는 <b>첫걸음</b>이에요. 여기에 <b>면적·인구·기후</b> 같은 정보를 더하면 우리 지역을 더 자세히 알 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('land','우리 지역의 땅')}</div>
-  <div class="note">다음 시간에는 우리 지역의 <b style="color:#15803D">면적</b>과 <b style="color:#15803D">인구</b>를 알아봐요.</div></div>`});
+  <h2 class="ka-t">지역마다 면적도 서로 달라요</h2>
+  <div class="ka-bub">지역마다 <b>면적(넓이)</b>도 다르고 <b>인구(사람 수)</b>도 달라요. 넓다고 사람이 꼭 많은 것은 아니에요 \u2014 면적과 인구는 <b>서로 다른 정보</b>랍니다.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('cmp','넓은 지역 / 좁은 지역')}</div>
+  <div class="note">다음 시간에는 우리 지역의 <b style="color:#15803D">기온</b>과 <b style="color:#15803D">강수량</b>을 알아봐요.</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -380,18 +377,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">위치</b>는 어떤 곳이 어디쯤에 있는지를 나타낸 것이에요. <b>방위(동·서·남·북)</b>와 이웃 지역으로 나타내요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div><b style="color:#15803D">지형</b>은 산·강·들·바다·섬처럼 땅이 이루는 <b>여러 가지 생김새</b>예요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>지형에 따라 사람들의 <b>생활 모습</b>이 달라져요. 위치와 지형을 알면 우리 지역의 <b>특성</b>을 이해할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">면적</b>은 땅이 차지하는 <b>넓이</b>(km²), <b style="color:#15803D">인구</b>는 지역에 <b>사는 사람의 수</b>예요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>그래프·표</b>로 나타내면 면적·인구를 <b>한눈에</b> 비교할 수 있어요. 막대가 길수록 값이 커요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>연도별 막대가 갈수록 길어지면 인구가 <b>늘고</b> 있는 것이에요. 면적·인구를 알면 지역의 <b>특성</b>을 이해할 수 있어요.</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"위치가 무엇인지 말할 수 있어요",st)}
-    ${selfCheck(1,"방위로 우리 지역의 위치를 나타낼 수 있어요",st)}
-    ${selfCheck(2,"산·강·들·바다 같은 지형을 구분할 수 있어요",st)}
+    ${selfCheck(0,"면적과 인구가 무엇인지 말할 수 있어요",st)}
+    ${selfCheck(1,"막대그래프에서 인구를 읽을 수 있어요",st)}
+    ${selfCheck(2,"그래프로 인구 변화를 파악할 수 있어요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -401,7 +398,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">우리 지역의 위치와 지형을 알아봤어요. 다음 시간엔 우리 지역의 \u2018면적과 인구\u2019를 배워요.</div>
+    <div class="note">우리 지역의 면적과 인구를 알아봤어요. 다음 시간엔 \u2018기온과 강수량\u2019을 배워요.</div>
   </div>`;
 }});
 
@@ -434,7 +431,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l08";
+const LS_KEY = "kedu_progress_g4_social_u1_l09";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -474,17 +471,17 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 지형 살펴보기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 인구 그래프 읽기 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
 function paintBand(k){
-  if(!LANDFORMS.some(b=>b.k===k)) return;
+  if(!YEARS.some(b=>b.k===k)) return;
   if(!state.filled) state.filled={};
   const wasNew = !state.filled[k];
   state.filled[k]=true; state._lastBand=k;
-  const total=LANDFORMS.length, cnt=Object.keys(state.filled).length;
+  const total=YEARS.length, cnt=Object.keys(state.filled).length;
   if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
@@ -524,7 +521,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g4_social_u1_l09_면적과인구.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
