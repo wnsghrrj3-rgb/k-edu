@@ -166,17 +166,26 @@
       setTimeout(startRain,400); }
   }
   function startRain(){
-    moveSpot(W/2, FLOOR-60, 720);
+    moveSpot(W/2, FLOOR-150, 840);
     S.blocks = makeBlocks(100,false);
-    // 낙하 준비: 화면 위 시차·좌우 산개
     var rnd = Museum.rng(4242);
+    // 바닥 더미: 열(column)별로 무질서하게 쌓아 올린다
+    var xMin=210, xMax=1390, colW=42;
+    var ncol=Math.floor((xMax-xMin)/colW);
+    var colH=[]; for(var c=0;c<ncol;c++) colH[c]=0;
     for(var i=0;i<S.blocks.length;i++){
       var b=S.blocks[i];
-      b.tx = 180 + rnd()*(1240);           // 착지 목표 x(무질서)
-      b.x = b.tx + (rnd()-0.5)*40;
-      b.y = -80 - rnd()*(replay?300:1400);  // 시차
+      // 낮은 열 선호(고르되 무질서하게 쌓기)
+      var col=Math.floor(rnd()*ncol);
+      for(var k=0;k<3;k++){ var c2=Math.floor(rnd()*ncol); if(colH[c2]<colH[col]) col=c2; }
+      var level=colH[col]; colH[col]++;
+      b.tx = xMin + col*colW + colW/2 + (rnd()-0.5)*10;
+      b.landY = FLOOR - 34 - level*30 - rnd()*4;      // 층마다 위로 쌓임
+      b.x = b.tx;
+      b.y = -80 - rnd()*(replay?300:1500);            // 시차 낙하(폭포)
       b.vy = 0;
-      b.landY = FLOOR - 34 - Math.floor(rnd()*3)*6; // 살짝 층
+      b.wob = rnd()*6.283;
+      b.wobble = rnd()<0.12;                          // 12%만 착지 후 미세 들썩(만지라는 신호)
     }
     setPhase('rain');
   }
@@ -510,7 +519,8 @@
   function drawLooseBlocks(ctx){
     for(var i=0;i<S.blocks.length;i++){ var b=S.blocks[i];
       if(b.removed||b.inDish) continue;
-      drawBlock(ctx,b,b.x,b.y,b.w,false);
+      var wy=(b.settled && b.wobble && !b.grabbed)? Math.sin(S.t*2+b.wob)*1.6 : 0;
+      drawBlock(ctx,b,b.x,b.y+wy,b.w,false);
     }
     if(S.grab) drawBlock(ctx,S.grab,S.grab.x,S.grab.y,S.grab.w,false);
   }
