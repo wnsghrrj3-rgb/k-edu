@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 2차시(l09)
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 3차시(l10)
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-02] · 교과서 p.37~39 · 주제②(우리 지역의 면적과 인구를 알아볼까요) 근거
+성취기준 [4사05-02] · 교과서 p.40~42 · 주제②(우리 지역의 기온과 강수량을 알아볼까요) 근거
 중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
-직접조작: 인구 그래프 읽기(연도별 막대 클릭 → 그 해 인구 값 표시 + 변화 파악) + 효과음. l08 구조 100% 복제.
-정직 원칙: 인구·면적 수치는 '예시 자료'(특정 실제 지역 아님)로 명시.
+직접조작: 기후 그래프 읽기(계절별 기온 꺾은선 + 강수량 막대 클릭 → 값 표시 + 계절 특징 파악) + 효과음. l09 구조 100% 복제.
+정직 원칙: 기온·강수량 수치는 '예시 자료'(특정 실제 지역 아님)로 명시.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우리 지역의 면적과 인구를 알아볼까요 · 사회 4-1</title>
+<title>우리 지역의 기온과 강수량을 알아볼까요 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -113,7 +113,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 인구 그래프 읽기 조작 */
+/* 기후 그래프 읽기 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -184,132 +184,137 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 면적(땅의 넓이) — 넓은 땅 격자
-  area:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
-    <rect x="24" y="20" width="112" height="60" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
-    <line x1="52" y1="20" x2="52" y2="80" stroke="#A6CD7E" stroke-width="1"/><line x1="80" y1="20" x2="80" y2="80" stroke="#A6CD7E" stroke-width="1"/><line x1="108" y1="20" x2="108" y2="80" stroke="#A6CD7E" stroke-width="1"/>
-    <line x1="24" y1="40" x2="136" y2="40" stroke="#A6CD7E" stroke-width="1"/><line x1="24" y1="60" x2="136" y2="60" stroke="#A6CD7E" stroke-width="1"/>
-    <text x="80" y="92" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">넓이 = 면적</text></svg>`,
-  // 인구(사람 수) — 여러 사람
-  people:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
-    ${[26,54,82,110,138].map((x,i)=>`<circle cx="${x}" cy="${34+(i%2)*6}" r="8" fill="#5AA9E6"/><rect x="${x-9}" y="${44+(i%2)*6}" width="18" height="22" rx="7" fill="#7CC4E8"/>`).join('')}
-    <text x="80" y="90" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">사람 수 = 인구</text></svg>`,
-  // 막대그래프(통계)
-  bar:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
-    <line x1="22" y1="78" x2="150" y2="78" stroke="#94A3B8" stroke-width="1.5"/><line x1="22" y1="14" x2="22" y2="78" stroke="#94A3B8" stroke-width="1.5"/>
-    <rect x="34" y="58" width="18" height="20" fill="#86C28B"/><rect x="62" y="46" width="18" height="32" fill="#86C28B"/><rect x="90" y="32" width="18" height="46" fill="#86C28B"/><rect x="118" y="22" width="18" height="56" fill="#86C28B"/>
-    <text x="86" y="92" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">막대그래프</text></svg>`,
-  // 인구 변화(증가 화살표)
-  grow:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
-    <line x1="20" y1="80" x2="20" y2="16" stroke="#94A3B8" stroke-width="1.5"/><line x1="20" y1="80" x2="146" y2="80" stroke="#94A3B8" stroke-width="1.5"/>
-    <path d="M28 68 L60 54 L92 40 L128 22" fill="none" stroke="#DC2626" stroke-width="3"/>
-    <path d="M120 22 L128 22 L128 30Z" fill="#DC2626"/>
-    <text x="86" y="94" font-size="8" fill="#B91C1C" text-anchor="middle" font-weight="800">인구가 늘어요</text></svg>`,
-  // 넓은 지역 vs 좁은 지역
-  cmp:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
-    <rect x="10" y="26" width="60" height="50" fill="#C9E4A6" stroke="#8FBF6A" stroke-width="2"/>
-    <text x="40" y="88" font-size="8" fill="#166534" text-anchor="middle" font-weight="800">넓은 지역</text>
-    <rect x="96" y="46" width="30" height="30" fill="#FBD9A8" stroke="#E39A4A" stroke-width="2"/>
-    <text x="111" y="88" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">좁은 지역</text></svg>`,
-  // 지도(넓이+사람 함께)
-  land:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
-    <path d="M18 20 L96 12 L128 34 L118 74 L60 84 L26 60Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
-    <circle cx="60" cy="44" r="6" fill="#5AA9E6"/><circle cx="82" cy="52" r="6" fill="#5AA9E6"/><circle cx="72" cy="62" r="6" fill="#5AA9E6"/>
-    <text x="73" y="30" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">우리 지역</text></svg>`
+  // 기온(온도계)
+  temp:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF2F2"/>
+    <rect x="74" y="16" width="12" height="52" rx="6" fill="#fff" stroke="#DC2626" stroke-width="2"/>
+    <circle cx="80" cy="74" r="12" fill="#DC2626"/><rect x="76" y="40" width="8" height="30" fill="#DC2626"/>
+    <line x1="90" y1="24" x2="98" y2="24" stroke="#F87171" stroke-width="1.5"/><line x1="90" y1="36" x2="98" y2="36" stroke="#F87171" stroke-width="1.5"/><line x1="90" y1="48" x2="98" y2="48" stroke="#F87171" stroke-width="1.5"/>
+    <text x="80" y="92" font-size="9" fill="#B91C1C" text-anchor="middle" font-weight="800">기온 (°C)</text></svg>`,
+  // 강수량(비/우산)
+  rain:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
+    <path d="M50 40 Q50 22 68 22 Q80 12 96 22 Q114 22 112 40Z" fill="#BFD9F0" stroke="#5AA9E6" stroke-width="1.5"/>
+    ${[54,68,82,96,108].map((x,i)=>`<line x1="${x}" y1="${48+(i%2)*4}" x2="${x-4}" y2="${62+(i%2)*4}" stroke="#3E8CD4" stroke-width="2.5" stroke-linecap="round"/>`).join('')}
+    <text x="80" y="92" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">강수량 (mm)</text></svg>`,
+  // 기후 그래프(꺾은선 기온 + 막대 강수량)
+  climate:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    <line x1="20" y1="76" x2="146" y2="76" stroke="#94A3B8" stroke-width="1.2"/>
+    <rect x="30" y="60" width="14" height="16" fill="#9EC7EA"/><rect x="60" y="34" width="14" height="42" fill="#5AA9E6"/><rect x="90" y="64" width="14" height="12" fill="#9EC7EA"/><rect x="120" y="70" width="14" height="6" fill="#9EC7EA"/>
+    <path d="M37 56 L67 26 L97 50 L127 66" fill="none" stroke="#DC2626" stroke-width="2.4"/>
+    ${[37,67,97,127].map((x,i)=>`<circle cx="${x}" cy="${[56,26,50,66][i]}" r="3" fill="#DC2626"/>`).join('')}
+    <text x="80" y="92" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">기후 그래프</text></svg>`,
+  // 여름(덥고 비 많음)
+  summer:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9E7"/><circle cx="80" cy="40" r="20" fill="#FBBF24"/>${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${80+Math.cos(r)*26}" y1="${40+Math.sin(r)*26}" x2="${80+Math.cos(r)*34}" y2="${40+Math.sin(r)*34}" stroke="#F59E0B" stroke-width="2.5"/>`}).join('')}<text x="80" y="88" font-size="10" fill="#B45309" text-anchor="middle" font-weight="800">여름 — 덥고 비 많음</text></svg>`,
+  // 겨울(춥고 건조)
+  winter:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>${[[50,30],[90,26],[110,44],[70,50],[40,58]].map(([x,y])=>`<g stroke="#7CC4E8" stroke-width="2"><line x1="${x-6}" y1="${y}" x2="${x+6}" y2="${y}"/><line x1="${x}" y1="${y-6}" x2="${x}" y2="${y+6}"/><line x1="${x-4}" y1="${y-4}" x2="${x+4}" y2="${y+4}"/><line x1="${x-4}" y1="${y+4}" x2="${x+4}" y2="${y-4}"/></g>`).join('')}<text x="80" y="88" font-size="10" fill="#1D4ED8" text-anchor="middle" font-weight="800">겨울 — 춥고 건조</text></svg>`,
+  // 계절(사계절)
+  seasons:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <rect x="8" y="20" width="34" height="40" rx="4" fill="#FBCFE8"/><text x="25" y="44" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">봄</text>
+    <rect x="46" y="20" width="34" height="40" rx="4" fill="#FDE68A"/><text x="63" y="44" font-size="9" fill="#B45309" text-anchor="middle" font-weight="800">여름</text>
+    <rect x="84" y="20" width="34" height="40" rx="4" fill="#FCD9A8"/><text x="101" y="44" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">가을</text>
+    <rect x="122" y="20" width="30" height="40" rx="4" fill="#BFDBFE"/><text x="137" y="44" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">겨울</text>
+    <text x="80" y="82" font-size="9" fill="#166534" text-anchor="middle" font-weight="700">계절에 따라 달라요</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 인구 그래프 읽기(직접 조작) ===== */
-// 연도별 인구 막대를 누르면 그 해 값이 나타나고, 다 읽으면 변화(증가)를 파악 — l08 filled 패턴 재사용.
-// ⚠️ 정직 원칙: 아래 수치는 실제 특정 지역이 아닌 '예시 자료'.
-const YEARS = [
-  {k:'y1', year:'2000년', pop:8,  label:'8만 명'},
-  {k:'y2', year:'2005년', pop:12, label:'12만 명'},
-  {k:'y3', year:'2010년', pop:17, label:'17만 명'},
-  {k:'y4', year:'2015년', pop:23, label:'23만 명'},
-  {k:'y5', year:'2020년', pop:28, label:'28만 명'}
+/* ===== 기후 그래프 읽기(직접 조작) ===== */
+// 계절 막대/점을 누르면 기온(°C)·강수량(mm)이 나타나고, 4/4 읽으면 계절 특징 파악 — l09 filled 패턴 재사용.
+// ⚠️ 정직 원칙: 아래 수치는 실제 특정 지역이 아닌 '예시 자료'(우리나라 중부 대략).
+const SEASONS = [
+  {k:'spring', name:'봄',   temp:12,  precip:80,  color:'#EC4899'},
+  {k:'summer', name:'여름', temp:25,  precip:280, color:'#F59E0B'},
+  {k:'fall',   name:'가을', temp:14,  precip:60,  color:'#EA8C4A'},
+  {k:'winter', name:'겨울', temp:-2,  precip:30,  color:'#3E8CD4'}
 ];
-const POP_MAX = 30; // 그래프 세로 최대(만 명)
-function statInteractive(st){
+const T_MIN=-10, T_MAX=30, P_MAX=300; // 기온 -10~30°C, 강수량 0~300mm
+function climateInteractive(st){
   const filled = st.filled || {};
   const cnt = Object.keys(filled).length;
-  // 막대 영역: x축 y=168, y축 x=44, 그래프 높이 130
-  const baseY = 168, axX = 44, gH = 130, gW = 236, bw = 30;
-  const bars = YEARS.map((yr,i)=>{
-    const on = !!filled[yr.k];
-    const x = axX + 16 + i*44;
-    const h = (yr.pop / POP_MAX) * gH;
-    const y = baseY - h;
-    return `<g onclick="paintBand('${yr.k}')" style="cursor:pointer">
-      <rect x="${x}" y="${on?y:baseY-10}" width="${bw}" height="${on?h:10}" rx="3" fill="${on?'#4F9E57':'#D6E8DA'}" stroke="#4F9E57" stroke-width="1.4"/>
-      ${on?`<text x="${x+bw/2}" y="${y-5}" font-size="11" fill="#166534" text-anchor="middle" font-weight="800" style="pointer-events:none">${yr.label}</text>`:`<text x="${x+bw/2}" y="${baseY-16}" font-size="12" fill="#94A3B8" text-anchor="middle" style="pointer-events:none">?</text>`}
-      <text x="${x+bw/2}" y="${baseY+16}" font-size="10" fill="#475569" text-anchor="middle" font-weight="600" style="pointer-events:none">${yr.year}</text>
+  const baseY=168, axX=48, gH=130, bw=32, gap=56;
+  const xOf = i => axX + 20 + i*gap;
+  const tempY = t => baseY - ((t - T_MIN) / (T_MAX - T_MIN)) * gH;
+  // 강수량 막대
+  const bars = SEASONS.map((s,i)=>{
+    const on=!!filled[s.k]; const x=xOf(i); const h=(s.precip/P_MAX)*gH; const y=baseY-h;
+    return `<rect x="${x}" y="${on?y:baseY-8}" width="${bw}" height="${on?h:8}" rx="3" fill="${on?'#9EC7EA':'#E2E8F0'}" stroke="#5AA9E6" stroke-width="1.2"/>`;
+  }).join('');
+  // 기온 꺾은선(읽은 계절만 잇기)
+  const pts = SEASONS.map((s,i)=>({x:xOf(i)+bw/2, y:tempY(s.temp), on:!!filled[s.k]}));
+  let line=''; let prev=null;
+  pts.forEach(p=>{ if(p.on){ if(prev) line+=`<line x1="${prev.x}" y1="${prev.y}" x2="${p.x}" y2="${p.y}" stroke="#DC2626" stroke-width="2.4"/>`; prev=p; } });
+  const dots = SEASONS.map((s,i)=>{ const p=pts[i]; return p.on?`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#DC2626"/>`:''; }).join('');
+  // 클릭 히트존 + 라벨
+  const hits = SEASONS.map((s,i)=>{
+    const on=!!filled[s.k]; const x=xOf(i);
+    return `<g onclick="paintBand('${s.k}')" style="cursor:pointer">
+      <rect x="${x-4}" y="20" width="${bw+8}" height="${baseY-20}" fill="#000" fill-opacity="0.001"/>
+      <text x="${x+bw/2}" y="${baseY+16}" font-size="11" fill="${on?s.color:'#94A3B8'}" text-anchor="middle" font-weight="800" style="pointer-events:none">${s.name}</text>
+      ${on?`<text x="${x+bw/2}" y="${baseY+30}" font-size="9" fill="#DC2626" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.temp}°C</text><text x="${x+bw/2}" y="${baseY+42}" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.precip}mm</text>`
+        :`<text x="${x+bw/2}" y="${baseY-16}" font-size="12" fill="#94A3B8" text-anchor="middle" style="pointer-events:none">?</text>`}
     </g>`;
   }).join('');
-  const counter = `<div class="note" style="font-weight:700;color:#15803D">읽은 막대 ${cnt} / ${YEARS.length}</div>`;
-  const done = cnt>=YEARS.length;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">읽은 계절 ${cnt} / ${SEASONS.length}</div>`;
+  const done = cnt>=SEASONS.length;
   const info = done
-    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 읽었어요! 막대가 갈수록 <b>길어지네요</b> — 이 지역의 <span class="ka-emph">인구가 점점 늘었어요</span>. 이렇게 <b>그래프</b>로 나타내면 인구가 어떻게 변했는지 한눈에 알 수 있어요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
-    : `<div class="note">막대를 눌러 각 해의 <b style="color:#15803D">인구</b>를 읽어 봐요. 막대가 <b>길수록</b> 인구가 많아요.</div>`;
-  return `<div class="contour-wrap"><svg viewBox="0 0 300 200" style="width:min(380px,96%);height:auto">
-    <rect width="300" height="200" fill="#FFFDF5" rx="12"/>
-    <line x1="${axX}" y1="20" x2="${axX}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.6"/>
-    <line x1="${axX}" y1="${baseY}" x2="${axX+gW}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.6"/>
-    <text x="${axX-6}" y="30" font-size="9" fill="#64748B" text-anchor="end">많음</text>
-    <text x="${axX-6}" y="${baseY}" font-size="9" fill="#64748B" text-anchor="end">0</text>
-    <text x="6" y="14" font-size="10" fill="#166534" font-weight="700">인구(만 명)</text>
-    ${bars}
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 읽었어요! <b style="color:#B45309">여름</b>은 기온이 높고 강수량도 많고, <b style="color:#1D4ED8">겨울</b>은 기온이 낮고 강수량이 적어요. 이렇게 <b>계절에 따라</b> 기온·강수량이 달라져요. <span class="ka-emph">빨간 꺾은선 = 기온</span>, <span class="ka-emph">파란 막대 = 강수량</span>이에요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
+    : `<div class="note">계절을 눌러 <b style="color:#DC2626">기온</b>과 <b style="color:#1D4ED8">강수량</b>을 읽어 봐요.</div>`;
+  return `<div class="contour-wrap"><svg viewBox="0 0 300 224" style="width:min(380px,96%);height:auto">
+    <rect width="300" height="224" fill="#FFFDF5" rx="12"/>
+    <line x1="${axX}" y1="20" x2="${axX}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.4"/>
+    <line x1="${axX}" y1="${baseY}" x2="272" y2="${baseY}" stroke="#94A3B8" stroke-width="1.4"/>
+    <text x="6" y="14" font-size="9" fill="#DC2626" font-weight="700">기온(°C)</text>
+    <text x="230" y="14" font-size="9" fill="#1D4ED8" font-weight="700">강수량(mm)</text>
+    ${bars}${line}${dots}${hits}
   </svg>${counter}</div>${info}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 2차시";
+const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 3차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [1,3,0,2,3,1,0,2]
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [0,1,2,3,1,1,0,2]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"어떤 지역의 땅이 차지하는 <b>넓이</b>를 무엇이라고 할까요?",
-   opts:["인구","면적","위치","방위"], correct:1, pts:POINTS_BASIC,
-   reason:"땅이 차지하는 넓이를 면적이라고 해요.",
-   h1:"\u2018넓이\u2019를 뜻하는 두 글자 낱말이에요.",
-   h2:"운동장이 넓다·좁다처럼, 땅의 넓이를 나타내는 말이에요."},
-  {stem:"어떤 지역에 <b>사는 사람의 수</b>를 무엇이라고 할까요?",
-   opts:["면적","넓이","지형","인구"], correct:3, pts:POINTS_BASIC,
-   reason:"한 지역에 사는 사람의 수를 인구라고 해요.",
-   h1:"\u2018인\u2019은 \u2018사람\u2019, \u2018구\u2019는 \u2018수\u2019를 뜻해요.",
-   h2:"우리 지역에 사람이 몇 명 사는지를 나타내는 말이에요."},
-  {stem:"면적(넓이)을 나타낼 때 주로 쓰는 단위는 무엇일까요?",
-   opts:["제곱킬로미터(km²)","킬로그램(kg)","도(°C)","시간"], correct:0, pts:POINTS_BASIC,
-   reason:"땅의 넓이(면적)는 제곱킬로미터(km²) 같은 단위로 나타내요.",
-   h1:"넓이를 재는 단위예요. 무게(kg)나 온도(°C)가 아니에요.",
-   h2:"\u2018제곱\u2019이 들어간, 넓이를 재는 단위예요."},
-  {stem:"인구나 면적처럼 여러 자료를 <b>한눈에 보기 쉽게</b> 나타낸 것을 무엇이라고 할까요?",
-   opts:["일기","그래프·표","편지","노래"], correct:1, pts:POINTS_BASIC,
-   reason:"수를 막대·선 등으로 나타낸 그래프나 표를 이용하면 자료를 한눈에 알 수 있어요.",
-   h1:"오늘 인구를 막대로 읽어 본 그림을 무엇이라고 했나요?",
-   h2:"막대그래프·표처럼 자료를 정리해 보여 주는 것이에요."},
+  {stem:"공기가 <b>따뜻하고 차가운 정도</b>를 무엇이라고 할까요?",
+   opts:["기온","강수량","면적","인구"], correct:0, pts:POINTS_BASIC,
+   reason:"공기의 따뜻하고 차가운 정도를 기온이라고 해요.",
+   h1:"온도계로 재는, 덥고 추운 정도예요.",
+   h2:"\u2018기\u2019는 공기, 온도를 뜻하는 두 글자 낱말이에요."},
+  {stem:"일정 기간 동안 내린 <b>비·눈 등의 양</b>을 무엇이라고 할까요?",
+   opts:["기온","강수량","방위","지형"], correct:1, pts:POINTS_BASIC,
+   reason:"비나 눈처럼 하늘에서 내린 물의 양을 강수량이라고 해요.",
+   h1:"비와 눈을 합쳐서 재는 양이에요.",
+   h2:"\u2018강수\u2019는 내린 물, 얼마나 내렸는지의 \u2018양\u2019을 뜻해요."},
+  {stem:"기온을 나타낼 때 쓰는 단위는 무엇일까요?",
+   opts:["밀리미터(mm)","제곱킬로미터(km²)","도(°C)","명"], correct:2, pts:POINTS_BASIC,
+   reason:"기온은 도(°C), 강수량은 밀리미터(mm) 단위로 나타내요.",
+   h1:"덥고 추운 정도를 재는 단위예요(강수량 mm와 달라요).",
+   h2:"온도계에 쓰여 있는, \u2018도\u2019가 붙는 단위예요."},
+  {stem:"기온과 강수량을 함께 나타내, 그 지역의 날씨 특징을 한눈에 보여 주는 그래프를 무엇이라고 할까요?",
+   opts:["막대만 있는 그래프","사진첩","일기장","기후 그래프"], correct:3, pts:POINTS_BASIC,
+   reason:"기온(꺾은선)과 강수량(막대)을 함께 나타낸 것을 기후 그래프라고 해요.",
+   h1:"오늘 계절별 기온·강수량을 읽어 본 그래프예요.",
+   h2:"기온과 강수량을 한 그림에 담아 지역의 기후를 보여 줘요."},
   // 4단계 적용 (+15)
-  {stem:"인구 막대그래프에서 <b>막대가 길수록</b> 무엇을 뜻할까요?", scene:"bar",
-   opts:["인구가 적다","날씨가 춥다","면적이 좁다","인구가 많다"], correct:3, pts:POINTS_APPLY,
-   reason:"막대가 길수록 값이 커요. 인구 그래프에서는 인구가 많다는 뜻이에요.",
-   h1:"막대의 길이는 수의 크고 작음을 나타내요.",
-   h2:"길이가 길면 그만큼 값(사람 수)이 크다는 뜻이에요."},
-  {stem:"연도별 인구 막대가 <b>갈수록 길어지는</b> 그래프는 무엇을 알려 줄까요?", scene:"grow",
-   opts:["인구가 점점 늘고 있다","인구가 점점 줄고 있다","인구가 그대로다","면적이 넓어진다"], correct:0, pts:POINTS_APPLY,
-   reason:"막대가 해마다 길어지면 인구가 점점 늘고 있다는 뜻이에요.",
-   h1:"막대가 길어진다 = 값이 커진다예요.",
-   h2:"해가 갈수록 사람 수가 많아지고 있다는 뜻이에요."},
-  {stem:"두 지역의 지도를 비교할 때, 땅이 더 <b>넓게</b> 그려진 지역에 대해 알맞은 것은?", scene:"cmp",
-   opts:["면적이 더 넓다","인구가 반드시 많다","날씨가 더 덥다","반드시 바다가 있다"], correct:0, pts:POINTS_APPLY,
-   reason:"지도에서 더 넓게 그려진 지역은 면적이 더 넓어요. 넓다고 인구가 꼭 많은 것은 아니에요.",
-   h1:"\u2018넓이\u2019는 면적이에요. 넓게 그려졌다는 것은?",
-   h2:"땅이 넓게 그려졌으니 면적이 더 넓은 것이에요(인구와는 다른 정보)."},
-  {stem:"우리 지역의 면적과 인구를 알면 무엇에 도움이 될까요?",
-   opts:["날씨를 마음대로 바꿀 수 있다","모든 지역이 똑같다는 것을 알 수 있다","지역의 특성을 이해하고 살기 좋게 계획하는 데 도움이 된다","면적과 인구는 아무 쓸모가 없다"], correct:2, pts:POINTS_APPLY,
-   reason:"면적·인구를 알면 지역의 특성을 이해하고, 학교·공원처럼 필요한 시설을 계획하는 데 도움이 돼요.",
-   h1:"사람이 많은 곳과 적은 곳은 필요한 것이 다를 거예요.",
-   h2:"지역을 이해하고 살기 좋게 만드는 계획에 쓰여요."}
+  {stem:"우리나라에서 <b>기온이 가장 높은</b> 계절은 언제일까요?", scene:"summer",
+   opts:["봄","여름","가을","겨울"], correct:1, pts:POINTS_APPLY,
+   reason:"우리나라는 여름에 기온이 가장 높아 덥고, 겨울에 가장 낮아 추워요.",
+   h1:"덥고 무더운, 방학이 있는 계절이에요.",
+   h2:"기후 그래프에서 기온 꺾은선이 가장 높이 올라간 계절이에요."},
+  {stem:"기후 그래프를 읽을 때, 우리나라에서 <b>강수량이 가장 많은</b> 계절은 언제일까요?", scene:"climate",
+   opts:["봄","여름","가을","겨울"], correct:1, pts:POINTS_APPLY,
+   reason:"우리나라는 여름에 장마와 소나기로 비가 많이 내려 강수량이 가장 많아요.",
+   h1:"장마가 있는 계절을 떠올려 봐요.",
+   h2:"강수량 막대가 가장 높이 솟은 계절이에요 \u2014 여름이에요."},
+  {stem:"기후 그래프에서 <b>기온</b>과 <b>강수량</b>은 각각 어떻게 나타낼까요?", scene:"climate",
+   opts:["기온 = 꺾은선 · 강수량 = 막대","기온 = 막대 · 강수량 = 꺾은선","둘 다 막대","둘 다 꺾은선"], correct:0, pts:POINTS_APPLY,
+   reason:"보통 기온은 꺾은선(빨강), 강수량은 막대(파랑)로 함께 나타내요.",
+   h1:"오늘 조작에서 빨간 선과 파란 막대를 봤어요.",
+   h2:"기온은 변화를 잇는 꺾은선, 강수량은 양을 나타내는 막대예요."},
+  {stem:"우리 지역의 기온과 강수량을 알면 무엇에 도움이 될까요?",
+   opts:["날씨를 마음대로 바꿀 수 있다","계절에 맞는 옷차림·농사·생활을 준비할 수 있다","기온과 강수량은 쓸모가 없다","모든 지역 날씨가 같아진다"], correct:1, pts:POINTS_APPLY,
+   reason:"기온·강수량을 알면 계절에 맞는 옷차림, 농사, 여러 생활을 미리 준비할 수 있어요.",
+   h1:"더운 여름과 추운 겨울에 우리는 무엇을 다르게 준비하나요?",
+   h2:"날씨를 알면 옷·농사·생활을 계절에 맞게 계획할 수 있어요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -317,56 +322,56 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역의 면적과 인구를 알아볼까요?</h2>
-  <div class="ka-bub">우리 지역은 얼마나 <b>넓을까요?</b> 그리고 <b>몇 명</b>이 살고 있을까요? 지역을 자세히 알려면 넓이와 사람 수도 살펴봐야 해요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('area','땅의 넓이')}${sceneCard('people','사는 사람 수')}</div>
-    <div class="note">오늘은 우리 지역의 <b style="color:#15803D">면적</b>과 <b style="color:#15803D">인구</b>를 알아봐요.</div>
+  <h2 class="ka-t">우리 지역의 기온과 강수량을 알아볼까요?</h2>
+  <div class="ka-bub">우리 지역은 계절마다 얼마나 <b>덥고 추울까요?</b> 비와 눈은 <b>얼마나</b> 내릴까요? 날씨를 알면 지역을 더 잘 이해할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('temp','기온')}${sceneCard('rain','강수량')}</div>
+    <div class="note">오늘은 우리 지역의 <b style="color:#DC2626">기온</b>과 <b style="color:#1D4ED8">강수량</b>을 알아봐요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">넓이와 사람 수, 어떻게 알 수 있을까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">우리 지역의 넓이나 사람 수는 눈으로 한 번에 세기 어려워요. 그래서 <b>자료</b>를 그림으로 나타내면 쉽게 알 수 있어요.</div>
+  <h2 class="ka-t">계절마다 날씨가 어떻게 달라질까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">봄·여름·가을·겨울, 계절이 바뀌면 기온도 강수량도 달라져요. 이 변화를 그래프로 나타내면 한눈에 볼 수 있어요.</div>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('bar','자료를 나타낸 그래프')}
-  </div><div class="note">이렇게 막대로 나타낸 그림을 무엇이라고 할까요?</div></div>`});
+    ${sceneCard('seasons','계절에 따라 달라요')}
+  </div><div class="note">기온과 강수량을 함께 나타낸 그래프를 무엇이라고 할까요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">자료를 그림으로 나타내면?</h2>
+  <h2 class="ka-t">기온과 강수량을 함께 나타내면?</h2>
   <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('bar','막대그래프')}
+    ${sceneCard('climate','기후 그래프')}
   </div>
-  ${st.revealed?`<div class="answer-box">수를 막대의 길이로 나타낸 것을 <span class="ka-emph">막대그래프</span>라고 해요. 그래프나 표를 쓰면 <b>면적·인구</b> 같은 자료를 <b>한눈에</b> 비교할 수 있어요.</div>`
+  ${st.revealed?`<div class="answer-box">기온(<b style="color:#DC2626">꺾은선</b>)과 강수량(<b style="color:#1D4ED8">막대</b>)을 함께 그린 것을 <span class="ka-emph">기후 그래프</span>라고 해요. 계절에 따른 날씨 변화를 한눈에 알 수 있어요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 면적·인구의 뜻
+// 4 살펴보기: 기온·강수량의 뜻
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">\u2018면적\u2019과 \u2018인구\u2019란 무엇일까요?</h2>
-  <div class="ka-bub"><span class="ka-emph">면적</span>은 땅이 차지하는 <b>넓이</b>예요(제곱킬로미터 km²로 나타내요). <span class="ka-emph">인구</span>는 그 지역에 <b>사는 사람의 수</b>예요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('area','면적 = 넓이')}${sceneCard('people','인구 = 사람 수')}</div>
-  <div class="note">면적은 <b style="color:#166534">넓이</b>, 인구는 <b style="color:#1D4ED8">사람 수</b> \u2014 서로 다른 정보예요.</div></div>`});
-// 5 살펴보기: 인구 그래프 읽기(직접 조작)
+  <h2 class="ka-t">\u2018기온\u2019과 \u2018강수량\u2019이란?</h2>
+  <div class="ka-bub"><span class="ka-emph">기온</span>은 공기의 <b>따뜻하고 차가운 정도</b>예요(도 °C로 나타내요). <span class="ka-emph">강수량</span>은 <b>비·눈이 내린 양</b>이에요(밀리미터 mm로 나타내요).</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('temp','기온 = 덥고 추운 정도')}${sceneCard('rain','강수량 = 내린 양')}</div>
+  <div class="note">기온은 <b style="color:#DC2626">°C</b>, 강수량은 <b style="color:#1D4ED8">mm</b> \u2014 서로 다른 정보예요.</div></div>`});
+// 5 살펴보기: 기후 그래프 읽기(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">인구 그래프를 직접 읽어 봐요</h2>
-  <div class="ka-grp">${statInteractive(st)}</div>`});
-// 6 살펴보기: 인구 변화 파악(발문)
+  <h2 class="ka-t">기후 그래프를 직접 읽어 봐요</h2>
+  <div class="ka-grp">${climateInteractive(st)}</div>`});
+// 6 살펴보기: 계절 특징 파악(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">막대가 갈수록 길어지면 무슨 뜻일까요?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('grow','해마다 길어지는 막대')}</div>
-  ${st.revealed?`<div class="answer-box">해가 갈수록 막대가 <b>길어지면</b> 인구가 <b>점점 늘고</b> 있다는 뜻이에요. 반대로 짧아지면 인구가 줄고 있는 것이고요. 그래프로 <b>변화</b>를 한눈에 알 수 있어요.</div>`
-    :`<div class="note">막대가 해마다 길어진다면, 사람 수는 늘어날까요 줄어들까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">여름과 겨울은 무엇이 다를까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('summer','여름')}${sceneCard('winter','겨울')}</div>
+  ${st.revealed?`<div class="answer-box"><b style="color:#B45309">여름</b>은 기온이 <b>높고</b> 비가 <b>많이</b> 내려요(장마·소나기). <b style="color:#1D4ED8">겨울</b>은 기온이 <b>낮고</b> 비·눈이 <b>적어요</b>. 이렇게 우리나라는 계절에 따라 날씨가 뚜렷이 달라져요.</div>`
+    :`<div class="note">여름과 겨울, 기온과 강수량은 어떻게 다를까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 면적 비교 + 다음 탐구 연결
+// 7 살펴보기: 자료 찾기 + 다음 탐구 연결
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지역마다 면적도 서로 달라요</h2>
-  <div class="ka-bub">지역마다 <b>면적(넓이)</b>도 다르고 <b>인구(사람 수)</b>도 달라요. 넓다고 사람이 꼭 많은 것은 아니에요 \u2014 면적과 인구는 <b>서로 다른 정보</b>랍니다.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('cmp','넓은 지역 / 좁은 지역')}</div>
-  <div class="note">다음 시간에는 우리 지역의 <b style="color:#15803D">기온</b>과 <b style="color:#15803D">강수량</b>을 알아봐요.</div></div>`});
+  <h2 class="ka-t">날씨 자료는 어디서 찾을까요?</h2>
+  <div class="ka-bub">우리 지역의 기온·강수량 자료는 <b>기상청</b>이나 <b>통계청</b> 누리집에서 찾을 수 있어요. 이런 자료를 그래프로 정리하면 우리 지역 날씨를 더 잘 알 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('climate','자료로 만든 기후 그래프')}</div>
+  <div class="note">다음 시간에는 우리 지역과 <b style="color:#15803D">다른 지역</b>의 지리 정보를 <b>비교</b>해 봐요.</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -377,18 +382,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">면적</b>은 땅이 차지하는 <b>넓이</b>(km²), <b style="color:#15803D">인구</b>는 지역에 <b>사는 사람의 수</b>예요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div><b>그래프·표</b>로 나타내면 면적·인구를 <b>한눈에</b> 비교할 수 있어요. 막대가 길수록 값이 커요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>연도별 막대가 갈수록 길어지면 인구가 <b>늘고</b> 있는 것이에요. 면적·인구를 알면 지역의 <b>특성</b>을 이해할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#DC2626">기온</b>은 공기의 따뜻하고 차가운 정도(°C), <b style="color:#1D4ED8">강수량</b>은 비·눈이 내린 양(mm)이에요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div><b>기후 그래프</b>는 기온(꺾은선)과 강수량(막대)을 함께 나타내, 계절에 따른 날씨를 한눈에 보여 줘요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>우리나라는 <b>여름에 덥고 비가 많고</b>, <b>겨울에 춥고 건조해요</b>. 기온·강수량을 알면 계절에 맞게 생활을 준비할 수 있어요.</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"면적과 인구가 무엇인지 말할 수 있어요",st)}
-    ${selfCheck(1,"막대그래프에서 인구를 읽을 수 있어요",st)}
-    ${selfCheck(2,"그래프로 인구 변화를 파악할 수 있어요",st)}
+    ${selfCheck(0,"기온과 강수량이 무엇인지 말할 수 있어요",st)}
+    ${selfCheck(1,"기후 그래프에서 기온·강수량을 읽을 수 있어요",st)}
+    ${selfCheck(2,"계절에 따라 날씨가 달라짐을 알아요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -398,7 +403,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">우리 지역의 면적과 인구를 알아봤어요. 다음 시간엔 \u2018기온과 강수량\u2019을 배워요.</div>
+    <div class="note">우리 지역의 기온과 강수량을 알아봤어요. 다음 시간엔 \u2018다른 지역과 비교하기\u2019를 해요.</div>
   </div>`;
 }});
 
@@ -431,7 +436,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l09";
+const LS_KEY = "kedu_progress_g4_social_u1_l10";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -471,17 +476,17 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 인구 그래프 읽기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 기후 그래프 읽기 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
 function paintBand(k){
-  if(!YEARS.some(b=>b.k===k)) return;
+  if(!SEASONS.some(b=>b.k===k)) return;
   if(!state.filled) state.filled={};
   const wasNew = !state.filled[k];
   state.filled[k]=true; state._lastBand=k;
-  const total=YEARS.length, cnt=Object.keys(state.filled).length;
+  const total=SEASONS.length, cnt=Object.keys(state.filled).length;
   if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
@@ -521,7 +526,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g4_social_u1_l10_기온과강수량.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
