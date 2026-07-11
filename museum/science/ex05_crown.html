@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>물방울의 왕관 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.08em; color:var(--ink); text-align:center;
+            max-width:min(860px,88vw); line-height:1.7; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--science); letter-spacing:.10em; opacity:.85; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 물리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="crown-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumCrown=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  // 물방울 충돌 8ms의 순수 모형.
+  // 왕관 테두리는 √t로 번진다(성장 서명) — 그리고 실시간의 눈은 이 사건을 볼 수 없다:
+  // onScreen(1)=8ms < 지각 문턱 0.25s ≤ onScreen(32). 왕관은 늘 피고 있었다.
+  function make(){
+    var G=9.8, H=0.35, T=0.008, N=16, PERCEIVE=0.25;
+    var PH=[ ['접촉',0], ['분화구',0.06], ['왕관',0.22], ['구슬',0.55], ['무너짐',0.68], ['물기둥',0.85] ];
+    var SPIKE_A=0.22, SPIKE_B=0.88;              // 스파이크 높이 지지(정점 = 0.55 = 구슬 시작)
+    function tImpact(){ return Math.sqrt(2*H/G); }
+    function vImpact(){ return Math.sqrt(2*G*H); }
+    function y(t){ return H-0.5*G*t*t; }
+    function phaseOf(ts){
+      var x=ts/T, name=PH[0][0];
+      for(var i=0;i<PH.length;i++) if(x>=PH[i][1]) name=PH[i][0];
+      return name;
+    }
+    function crownR(ts){                          // √t 성장 — R(4a)=2R(a)
+      var x=Math.min(1,Math.max(0,ts/T));
+      return Math.sqrt(x);
+    }
+    function spikeAngle(i){ return 2*Math.PI*i/N; }
+    function spikeH(ts){
+      var x=ts/T;
+      if(x<=SPIKE_A || x>=SPIKE_B) return 0;
+      return Math.sin(Math.PI*(x-SPIKE_A)/(SPIKE_B-SPIKE_A));
+    }
+    function jetH(ts){
+      var x=ts/T;
+      if(x<=0.85 || x>=1) return 0;
+      return Math.sin(Math.PI*(x-0.85)/0.15);
+    }
+    var beadTs=T*(SPIKE_A+SPIKE_B)/2;             // 정점 = 구슬의 순간
+    function onScreen(f){ return T*f; }
+    function minFactor(){ return Math.ceil(PERCEIVE/T); }
+    return { G:G, H:H, T:T, N:N, PERCEIVE:PERCEIVE, PH:PH,
+             tImpact:tImpact, vImpact:vImpact, y:y,
+             phaseOf:phaseOf, crownR:crownR, spikeAngle:spikeAngle,
+             spikeH:spikeH, jetH:jetH, beadTs:beadTs,
+             onScreen:onScreen, minFactor:minFactor };
+  }
+  return { make:make };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">물방울이, 일 초에 한 번 떨어집니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="0" max="100" value="90" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumCrown;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var drop = PURE.make();
+  var TI = drop.tImpact();
+
+  // ── 무대 상수 ────────────────────────────────────────────────────
+  var CX=800, NOZ_Y=150, SURF=620;
+  var FORM_T=0.55, RIPPLE_T=0.6;
+  var CAPS=[4,12,50,50];
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→live(순환: form→fall→event→ripple)→betrayed→after
+    cphase:'form', ct:0, ts:0,
+    F:1, holding:false, heldT:0, holdCount:0,
+    auto:false, betrayed:false,
+    sliderF:1000, time:0
+  };
+  var ripples=[];
+
+  function cap(){ return CAPS[Math.min(3,S.holdCount)]; }
+  function targetF(){
+    if(S.phase==='after') return S.sliderF;
+    if(S.auto) return 1000;
+    return S.holding ? cap() : 1;
+  }
+  function sliderToF(v){                          // 0~100 → 1~2000 (로그)
+    return Math.round(Math.exp(Math.log(1)+(v/100)*Math.log(2000)));
+  }
+
+  // ── 배반 = 구슬이 맺히는 순간 ────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    Museum.betray({x:CX/W, y:(SURF-70)/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after'; S.auto=false;
+    S.sliderF=1000; S.F=1000;
+    var f=document.getElementById('formula');
+    f.innerHTML='눈이 못 본 것이지 &mdash; 없었던 것이 아니다'
+      +'<span class="small">물방울의 왕관 &middot; 해럴드 에저튼(1957) &mdash; 8밀리초의 사건</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'물방울의 왕관',
+      story:'모든 순간은, 펼치면 사건이다. 왕관은 늘 피고 있었다 — 보이는 빠르기가 있었을 뿐.',
+      fine:'MILK DROP CORONET · H. EDGERTON · 1957' });
+    Museum.ticket.grant({ id:'c5_crown', title:'물방울의 왕관', fine:'빛의 밤',
+      drawFn:function(c,w,h){
+        var cx=w/2, cy=h*0.55, R=w*0.34;
+        c.strokeStyle='rgba(242,234,216,.92)'; c.lineWidth=1.4;
+        c.beginPath(); c.ellipse(cx,cy,R,R*0.3,0,0,Math.PI*2); c.stroke();
+        c.fillStyle='rgba(242,234,216,.92)';
+        for(var i=0;i<10;i++){
+          var a=Math.PI*2*i/10;
+          var bx=cx+Math.cos(a)*R, by=cy+Math.sin(a)*R*0.3;
+          c.beginPath(); c.moveTo(bx,by); c.lineTo(cx+Math.cos(a)*R*1.02, by-h*0.09); c.stroke();
+          c.beginPath(); c.arc(cx+Math.cos(a)*R*1.02, by-h*0.09, 2, 0, Math.PI*2); c.fill();
+        }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 문턱을 몸으로 찾는다 ─────────────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.sliderF=sliderToF(parseInt(slider.value,10)||0);
+  });
+
+  // ── 입력: 시간을 붙잡다 ──────────────────────────────────────────
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='live'; }
+    if(S.phase!=='live' && S.phase!=='after') return;
+    S.holding=true; S.heldT=0;
+  });
+  window.addEventListener('pointerup', function(){
+    if(!S.holding) return;
+    S.holding=false;
+    if(S.phase==='live' && !S.auto && S.heldT>0.8 && S.holdCount<3){
+      S.holdCount++;
+      Museum.sound.play('click_light');            // 손이 한 뼘 깊어졌다
+    }
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.holding) S.heldT+=dt;
+      // 시간 배율(로그 이징)
+      var ft=targetF();
+      var lf=Math.log(S.F), lt=Math.log(ft);
+      lf += (lt-lf)*Math.min(1, 5*dt);
+      S.F=Math.exp(lf);
+      if(S.phase!=='live' && S.phase!=='after') return;
+      var dp=dt/S.F;                               // 물리 시간
+      // 순환
+      if(S.cphase==='form'){
+        S.ct+=dp;
+        if(S.ct>=FORM_T){ S.cphase='fall'; S.ct=0; }
+      } else if(S.cphase==='fall'){
+        S.ct+=dp;
+        if(!S.betrayed && S.holdCount>=3 && !S.auto && S.ct>TI-0.06){
+          S.auto=true;                             // 세계가 스스로 가라앉는다
+        }
+        if(S.ct>=TI){
+          S.cphase='event'; S.ts=0;
+          if(S.auto) S.F=1000;                     // 침강 완료 — 사건의 시간
+          if(S.F<3) Museum.sound.play('clack');    // 실시간의 퐁
+          ripples.push({r:8, a:0.5});
+          if(ripples.length>12) ripples.shift();
+        }
+      } else if(S.cphase==='event'){
+        var prev=S.ts;
+        S.ts+=dp;
+        if(!S.betrayed && S.auto && prev<drop.beadTs && S.ts>=drop.beadTs){
+          S.ts=drop.beadTs;                        // 구슬이 맺히는 순간 — 정지
+          triggerBetray();
+          return;
+        }
+        if(prev<drop.T*0.22 && S.ts>=drop.T*0.22 && S.F>30) Museum.sound.play('creak',{pitch:-0.25});
+        if(S.ts>=drop.T){ S.cphase='ripple'; S.ct=0; }
+      } else if(S.cphase==='ripple'){
+        S.ct+=dp;
+        if(S.ct>=RIPPLE_T){ S.cphase='form'; S.ct=0; }
+      }
+      // 파문은 실시간으로 산다(세계의 배경)
+      for(var i=ripples.length-1;i>=0;i--){
+        var rp=ripples[i];
+        rp.r+=90*dp; rp.a-=0.55*dp;
+        if(rp.a<=0) ripples.splice(i,1);
+      }
+    },
+    draw:function(ctx){
+      // 스포트 원뿔(주광원 1개)
+      ctx.fillStyle='rgba(242,234,216,.05)';
+      ctx.beginPath();
+      ctx.moveTo(CX-60,0); ctx.lineTo(CX+60,0);
+      ctx.lineTo(CX+240,SURF); ctx.lineTo(CX-240,SURF);
+      ctx.closePath(); ctx.fill();
+      // 놋쇠 관
+      ctx.fillStyle='rgba(201,169,97,.85)';
+      ctx.fillRect(CX-9, 0, 18, NOZ_Y-14);
+      ctx.fillStyle='rgba(138,115,63,.9)';
+      ctx.fillRect(CX-13, NOZ_Y-16, 26, 8);
+      // 수면
+      ctx.strokeStyle='rgba(168,158,136,.5)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(CX-430,SURF); ctx.lineTo(CX+430,SURF); ctx.stroke();
+      // 파문
+      for(var i=0;i<ripples.length;i++){
+        var rp=ripples[i];
+        ctx.strokeStyle='rgba(242,234,216,'+Math.max(0,rp.a).toFixed(2)+')';
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.ellipse(CX,SURF,rp.r,rp.r*0.22,0,0,Math.PI*2); ctx.stroke();
+      }
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      // 방울 — 맺힘·낙하
+      if(S.cphase==='form'){
+        var g=Math.min(1,S.ct/FORM_T);
+        var r=3+6*g;
+        var a=(S.phase==='boot')?0.6+0.35*breath:0.92;
+        ctx.fillStyle='rgba(242,234,216,'+a.toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(CX, NOZ_Y-6+r, r, 0, Math.PI*2); ctx.fill();
+      } else if(S.cphase==='fall'){
+        var yPx=NOZ_Y + (1-drop.y(Math.min(TI,S.ct))/drop.H)*(SURF-NOZ_Y-10);
+        ctx.fillStyle='rgba(242,234,216,.92)';
+        if(S.F<8){                                 // 빠름의 정직한 묘사 — 잔상 줄무늬
+          ctx.fillRect(CX-2, yPx-30, 4, 34);
+        } else {
+          ctx.beginPath(); ctx.arc(CX, yPx, 9, 0, Math.PI*2); ctx.fill();
+        }
+      } else if(S.cphase==='event'){
+        // 사건 — E1이 유일한 진실
+        var ts=S.ts, x=ts/drop.T;
+        var R=drop.crownR(ts)*74;
+        var ph=drop.phaseOf(ts);
+        // 분화구
+        ctx.fillStyle='rgba(7,7,12,.9)';
+        ctx.beginPath(); ctx.ellipse(CX,SURF, R*0.8, R*0.22, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle='rgba(242,234,216,.75)'; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.ellipse(CX,SURF, R, R*0.3, 0, 0, Math.PI*2); ctx.stroke();
+        // 왕관 — 열여섯 갈래
+        var hSpike=drop.spikeH(ts)*66;
+        if(hSpike>0.5){
+          for(var k=0;k<drop.N;k++){
+            var a2=drop.spikeAngle(k);
+            var bx=CX+Math.cos(a2)*R, by=SURF+Math.sin(a2)*R*0.3;
+            var tx=CX+Math.cos(a2)*R*1.04, ty=by-hSpike;
+            ctx.strokeStyle='rgba(242,234,216,.9)'; ctx.lineWidth=2;
+            ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(tx,ty); ctx.stroke();
+            if(ph==='구슬' || (x>0.5 && x<0.68)){
+              ctx.fillStyle='rgba(242,234,216,.95)';
+              ctx.beginPath(); ctx.arc(tx,ty,3.4,0,Math.PI*2); ctx.fill();
+            }
+          }
+        }
+        // 물기둥
+        var hJet=drop.jetH(ts)*120;
+        if(hJet>0.5){
+          ctx.fillStyle='rgba(242,234,216,.9)';
+          ctx.fillRect(CX-4, SURF-hJet, 8, hJet);
+          ctx.beginPath(); ctx.arc(CX, SURF-hJet-4, 6, 0, Math.PI*2); ctx.fill();
+        }
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__C5 = {
+    S:S, PURE:drop, TI:TI,
+    holdStart:function(){
+      if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='live'; }
+      S.holding=true; S.heldT=0;
+    },
+    holdEnd:function(long){
+      S.holding=false;
+      if(long && S.phase==='live' && !S.auto && S.holdCount<3){ S.holdCount++; }
+    },
+    forceHolds:function(n){ S.holdCount=Math.min(3,n); },
+    gotoImpact:function(){
+      if(S.phase==='boot') S.phase='live';
+      S.cphase='fall'; S.ct=TI-0.01;
+    },
+    cap:cap, sliderToF:sliderToF
+  };
+})();
+</script>
+</body>
+</html>
