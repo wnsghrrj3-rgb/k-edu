@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>12장의 마법 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-spinning{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--art); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="zoe-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumZoe=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var TAU=Math.PI*2, ALIVE_FPS=12;
+  function norm(a){ a=a%TAU; return a<0 ? a+TAU : a; }
+  function frameOf(a,F){                                // 정면을 지나는 그 장
+    var i=Math.floor(norm(a)/(TAU/F));
+    return i>=F ? F-1 : i;
+  }
+  function fpsOf(omega,F){ return Math.abs(omega)*F/TAU; }
+  function alive(omega,F){ return fpsOf(omega,F)>=ALIVE_FPS; }
+  function decay(omega,mu,dt){ return omega*Math.exp(-mu*dt); }
+  function poseAt(p){                                   // 걷기 관절 모형 — 위상 p∈[0,1)
+    p=p-Math.floor(p);
+    var hipL=0.52*Math.sin(TAU*p);
+    var hipR=0.52*Math.sin(TAU*p+Math.PI);
+    var kneeL=0.85*Math.max(0,Math.sin(TAU*p));         // 스윙에서만 굽힘
+    var kneeR=0.85*Math.max(0,Math.sin(TAU*p+Math.PI));
+    var armL=-0.8*hipL, armR=-0.8*hipR;
+    var bob=0.06*Math.cos(TAU*2*p);
+    return { hipL:hipL, hipR:hipR, kneeL:kneeL, kneeR:kneeR, armL:armL, armR:armR, bob:bob };
+  }
+  return { TAU:TAU, ALIVE_FPS:ALIVE_FPS, norm:norm, frameOf:frameOf,
+           fpsOf:fpsOf, alive:alive, decay:decay, poseAt:poseAt };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">열두 장의 그림 &mdash; 전부 멈춰 있습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="3" max="24" value="12" step="3" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumZoe;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var TAU = PURE.TAU;
+
+  // ── 원판 상수 ────────────────────────────────────────────────────
+  var CX=W*0.5, CY=440, RX=470, RY=150;                 // 타원 궤도
+  var CARD_W=132, CARD_H=176, MU=0.42, ALIVE_HOLD=1.2;
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→spin→betrayed→after (after에 edit 삽입)
+    F:12, angle:0, omega:0,
+    aliveT:0, betrayed:false,
+    edit:-1,                 // 그리는 중인 장(여운 전용)
+    time:0
+  };
+  var strokes=[];            // 장별 사용자 획 [ [ {pts:[{x,y}..]} .. ] .. ] — 카드 로컬 좌표
+  function build(F){
+    S.F=F; S.angle=0; S.omega=0; S.aliveT=0; S.edit=-1;
+    strokes=[]; for(var i=0;i<F;i++) strokes.push([]);
+  }
+  build(12);
+
+  // ── 분필 인형 — 카드 로컬(0..1) 좌표에 그림 ─────────────────────
+  function drawWalker(ctx, x, y, w, h, phase, alpha){
+    var P=PURE.poseAt(phase);
+    var cx=x+w*0.5, top=y+h*(0.16+P.bob), unit=h*0.115;
+    var hipY=top+unit*2.6, u=unit*1.35, l=unit*1.25;
+    ctx.strokeStyle='rgba(242,234,216,'+alpha.toFixed(2)+')';
+    ctx.lineWidth=Math.max(1.4, w*0.022);
+    ctx.lineCap='round';
+    // 머리·몸통
+    ctx.beginPath(); ctx.arc(cx, top, unit*0.62, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, top+unit*0.62); ctx.lineTo(cx, hipY); ctx.stroke();
+    // 팔(1절)
+    var shY=top+unit*1.05;
+    [P.armL,P.armR].forEach(function(a){
+      ctx.beginPath(); ctx.moveTo(cx, shY);
+      ctx.lineTo(cx+Math.sin(a)*u*1.05, shY+Math.cos(a)*u*1.05); ctx.stroke();
+    });
+    // 다리(2절 — 무릎)
+    [[P.hipL,P.kneeL],[P.hipR,P.kneeR]].forEach(function(leg){
+      var hp=leg[0], kn=leg[1];
+      var kx=cx+Math.sin(hp)*u, ky=hipY+Math.cos(hp)*u;
+      var fx=kx+Math.sin(hp+kn)*l, fy=ky+Math.cos(hp+kn)*l;
+      ctx.beginPath(); ctx.moveTo(cx, hipY); ctx.lineTo(kx, ky); ctx.lineTo(fx, fy); ctx.stroke();
+    });
+    // 바닥선
+    ctx.strokeStyle='rgba(168,158,136,'+(alpha*0.5).toFixed(2)+')';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x+w*0.14, y+h*0.86); ctx.lineTo(x+w*0.86, y+h*0.86); ctx.stroke();
+  }
+  function drawStrokes(ctx, i, x, y, w, h, alpha){
+    var list=strokes[i]; if(!list || !list.length) return;
+    ctx.strokeStyle='rgba(242,234,216,'+alpha.toFixed(2)+')';
+    ctx.lineWidth=Math.max(1.4, w*0.024);
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    for(var s=0;s<list.length;s++){
+      var pts=list[s].pts; if(pts.length<2) continue;
+      ctx.beginPath(); ctx.moveTo(x+pts[0].x*w, y+pts[0].y*h);
+      for(var k=1;k<pts.length;k++) ctx.lineTo(x+pts[k].x*w, y+pts[k].y*h);
+      ctx.stroke();
+    }
+  }
+  function drawCardFace(ctx, i, x, y, w, h, alpha){
+    ctx.fillStyle='rgba(20,19,32,'+(alpha*0.95).toFixed(2)+')';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle='rgba(201,169,97,'+(alpha*0.55).toFixed(2)+')';
+    ctx.lineWidth=1;
+    ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+    drawWalker(ctx, x, y, w, h, i/S.F, alpha*0.92);
+    drawStrokes(ctx, i, x, y, w, h, alpha*0.92);
+  }
+
+  // ── 배반 = 탄생 ──────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    Museum.betray({x:0.5, y:(CY+RY)/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='그림은 한 장도 움직이지 않았다 &mdash; 당신의 눈이 이어 붙였다'
+      +'<span class="small">조이트로프(1834) &middot; 1초에 열두 장이면 눈은 속는다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'12장의 마법',
+      story:'영화도 만화영화도, 이 원판에서 태어났다. 원판이 멈추면 앞장에 덧그려 보세요 — 당신의 낙서가 걷습니다.',
+      fine:'ZOETROPE 1834 · PERSISTENCE OF VISION' });
+    Museum.ticket.grant({ id:'a4_zoetrope', title:'12장의 마법', fine:'그림의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        c.beginPath(); c.ellipse(w*0.5, h*0.56, w*0.4, h*0.2, 0, 0, TAU); c.stroke();
+        for(var k=0;k<12;k++){
+          var a=k/12*TAU;
+          var x=w*0.5+Math.sin(a)*w*0.4, y=h*0.56+Math.cos(a)*h*0.2;
+          c.strokeRect(x-3.5, y-9, 7, 12);
+        }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 장수가 부드러움을 정한다 ─────────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.edit>=0) return;
+    build(parseInt(slider.value,10)||12);
+    S.phase='after';
+    Museum.sound.play('paper');
+  });
+
+  // ── 정면 카드 히트 판정(그리기 진입용) ───────────────────────────
+  function frontRect(){
+    var s=1.16;
+    var w=CARD_W*s, h=CARD_H*s;
+    return { x:CX-w*0.5, y:CY+RY-h*0.55, w:w, h:h };
+  }
+  function inRect(p,r){ return p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h; }
+
+  // ── 입력: 돌리다 / (여운) 그리다 ─────────────────────────────────
+  var spinning=false, lastX=0, lastT=0, curStroke=null;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.edit>=0){                                      // 그리는 중
+      var r=frontRect();
+      if(inRect(p,r)){
+        curStroke={pts:[{x:(p.x-r.x)/r.w, y:(p.y-r.y)/r.h}]};
+        strokes[S.edit].push(curStroke);
+      } else {                                          // 바깥 = 제자리로
+        S.edit=-1; curStroke=null;
+        Museum.sound.play('paper');
+      }
+      return;
+    }
+    if(S.phase==='after' && Math.abs(S.omega)<0.15 && inRect(p,frontRect())){
+      S.edit=PURE.frameOf(-S.angle, S.F);               // 정면 장을 편다
+      S.omega=0;
+      Museum.sound.play('paper');
+      return;
+    }
+    if(S.phase==='boot'){
+      S.phase='spin';
+      document.getElementById('premise').classList.add('is-in');
+    }
+    if(S.phase!=='spin' && S.phase!=='after') return;
+    spinning=true; canvas.classList.add('is-spinning');
+    lastX=p.x; lastT=S.time;
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.edit>=0 && curStroke){
+      var r=frontRect();
+      curStroke.pts.push({ x:Math.max(0,Math.min(1,(p.x-r.x)/r.w)),
+                           y:Math.max(0,Math.min(1,(p.y-r.y)/r.h)) });
+      return;
+    }
+    if(!spinning) return;
+    var dx=p.x-lastX, dt=Math.max(0.004, S.time-lastT);
+    S.angle += dx/RX;
+    S.omega = 0.7*S.omega + 0.3*(dx/RX/dt);
+    lastX=p.x; lastT=S.time;
+  });
+  window.addEventListener('pointerup', function(){
+    spinning=false; curStroke=null;
+    canvas.classList.remove('is-spinning');
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  var lastClack=0;
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.edit>=0) return;                             // 그리는 동안 원판 정지
+      if(S.phase!=='spin' && S.phase!=='after') return;
+      if(!spinning) S.omega=PURE.decay(S.omega, MU, dt);
+      if(Math.abs(S.omega)<0.02 && !spinning) S.omega=0;
+      var prevFrame=PURE.frameOf(-S.angle, S.F);
+      S.angle += S.omega*dt;
+      var nowFrame=PURE.frameOf(-S.angle, S.F);
+      if(nowFrame!==prevFrame && S.time-lastClack>0.09){
+        Museum.sound.play('clack'); lastClack=S.time;
+      }
+      if(S.phase==='spin' && !S.betrayed){
+        if(PURE.alive(S.omega, S.F)){
+          S.aliveT+=dt;
+          if(S.aliveT>=ALIVE_HOLD) triggerBetray();
+        } else {
+          S.aliveT=0;
+        }
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var speed=Math.min(1, PURE.fpsOf(S.omega,S.F)/PURE.ALIVE_FPS);
+
+      // 축
+      ctx.strokeStyle='rgba(138,115,63,.5)';
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(CX, CY-RY-96); ctx.lineTo(CX, CY); ctx.stroke();
+      ctx.fillStyle='rgba(201,169,97,.85)';
+      ctx.beginPath(); ctx.arc(CX, CY, 5, 0, TAU); ctx.fill();
+
+      // 열두 장 — 깊이순
+      var order=[];
+      for(var i=0;i<S.F;i++){
+        var a=S.angle + i*TAU/S.F;
+        order.push({ i:i, sin:Math.sin(a), cos:Math.cos(a) });
+      }
+      order.sort(function(p,q){ return p.cos-q.cos; });  // 뒤부터
+      for(var k=0;k<order.length;k++){
+        var o=order[k];
+        var depth=(o.cos+1)/2;                           // 0 뒤 · 1 앞
+        var sc=0.52+0.64*depth;
+        var w=CARD_W*sc, h=CARD_H*sc;
+        var x=CX+o.sin*RX-w*0.5;
+        var y=CY+o.cos*RY-h*0.55;
+        var isFront = depth>0.94;
+        var alpha=(0.22+0.78*depth);
+        if(speed>0.25 && !isFront){                      // 고속 잔상 줄무늬
+          ctx.fillStyle='rgba(242,234,216,'+(0.05*(1-speed)+0.02).toFixed(3)+')';
+          ctx.fillRect(x, y+h*0.3, w, h*0.4);
+          continue;
+        }
+        drawCardFace(ctx, o.i, x, y, w, h, alpha*(isFront?1:(1-speed*0.6)));
+        if(S.phase==='boot' && o.i===0 && isFront){
+          ctx.fillStyle='rgba(242,234,216,'+(0.04+0.08*breath).toFixed(3)+')';
+          ctx.fillRect(x, y, w, h);
+        }
+      }
+
+      // 그리기 모드 — 정면 장을 크게 편다
+      if(S.edit>=0){
+        ctx.fillStyle='rgba(12,11,22,.62)';
+        ctx.fillRect(0,0,W,H);
+        var r=frontRect();
+        drawCardFace(ctx, S.edit, r.x, r.y, r.w, r.h, 1);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__A4 = {
+    S:S, PURE:PURE, strokes:function(){ return strokes; },
+    beginSpin:function(){ if(S.phase==='boot'){ S.phase='spin'; document.getElementById('premise').classList.add('is-in'); } },
+    setOmega:function(o){ S.omega=o; },
+    spinTo:function(a){ S.angle=a; },
+    frontFrame:function(){ return PURE.frameOf(-S.angle, S.F); },
+    frontRect:frontRect,
+    enterEdit:function(){ if(S.betrayed){ S.edit=PURE.frameOf(-S.angle,S.F); S.omega=0; } },
+    exitEdit:function(){ S.edit=-1; },
+    addStroke:function(pts){ if(S.edit>=0) strokes[S.edit].push({pts:pts}); },
+    build:build, ALIVE_HOLD:ALIVE_HOLD
+  };
+})();
+</script>
+</body>
+</html>
