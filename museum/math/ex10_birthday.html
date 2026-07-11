@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>생일 쌍둥이 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  /* 1막 전제 한 줄 */
+  #premise{ position:fixed; left:50%; bottom:12vh; transform:translateX(-50%) translateY(8px);
+            opacity:0; transition:opacity 1.6s ease, transform 1.6s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(14px,1.9vw,20px);
+            letter-spacing:.14em; color:var(--ink-faint); text-align:center; white-space:nowrap;
+            pointer-events:none; z-index:40; }
+  #premise.is-in{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #premise.is-out{ opacity:0; }
+  /* 여운 오버레이 */
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(19px,2.7vw,30px); letter-spacing:.09em;
+            color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; color:var(--brass); }
+  #formula .small{ display:block; margin-top:12px; font-size:clamp(13px,1.6vw,17px);
+                   color:var(--ink-faint); letter-spacing:.05em; }
+  /* 놋쇠 재체험 슬라이더 (라벨은 분필 소문 한 줄) */
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:9px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .whisper{ font-family:'Gowun Dodum',sans-serif; font-size:clamp(13px,1.6vw,16px);
+                   color:var(--ink-dim); letter-spacing:.08em; }
+  #reexp .whisper .num{ font-family:'Jua',sans-serif; color:var(--brass); }
+  #reexp .track{ position:relative; width:min(380px,72vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px;
+     background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="birthday-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumBirthday=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var D=365n;
+  function pNoMatch(n){                    // n명 전원 생일이 다를 정확분수(BigInt)
+    var num=1n, den=1n;
+    for(var i=0;i<n;i++){ num*=(D-BigInt(i)); den*=D; }
+    return {num:num, den:den};
+  }
+  function pMatchPermille(n){              // 충돌 확률 천분율 — 부동소수 0, BigInt 반올림
+    var f=pNoMatch(n);
+    var num=(f.den-f.num)*1000n;
+    var q=num/f.den, r=num%f.den;
+    if(r*2n>=f.den) q+=1n;
+    return Number(q);
+  }
+  function halfN(){                        // 충돌 확률이 처음 1/2을 넘는 인원
+    var n=1;
+    while(true){
+      var f=pNoMatch(n);
+      if((f.den-f.num)*2n>f.den) return n;
+      n++;
+    }
+  }
+  function certainN(){                     // 확률이 정확히 1이 되는 인원(비둘기집)
+    var n=1;
+    while(true){
+      if(pNoMatch(n).num===0n) return n;
+      n++;
+    }
+  }
+  function firstCollision(days){           // 첫 중복 확정 손님 번호(1-base) 또는 -1
+    var seen={};
+    for(var i=0;i<days.length;i++){
+      var d=days[i];
+      if(seen[d]) return i+1;
+      seen[d]=1;
+    }
+    return -1;
+  }
+  function simulate(rnd){                  // 충돌까지 균등 뽑기 — 시드 고정 시 재현
+    var days=[], seen={};
+    while(true){
+      var d=1+Math.floor(rnd()*365);
+      days.push(d);
+      if(seen[d]) return {n:days.length, day:d, days:days};
+      seen[d]=1;
+    }
+  }
+  return { pNoMatch:pNoMatch, pMatchPermille:pMatchPermille, halfN:halfN,
+           certainN:certainN, firstCollision:firstCollision, simulate:simulate, DAYS:365 };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">촛대는 삼백예순다섯 — 손님은 저마다 제 생일에 불을 붙입니다</div>
+
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp">
+    <div class="whisper" id="reexp-whisper"></div>
+    <div class="track"><input type="range" id="reexp-range" min="2" max="60" step="1" value="23"></div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var B = window.KMuseumBirthday;
+  var canvas = document.getElementById('stage-canvas');
+  var stage = Museum.stage(canvas);
+  var rnd = Museum.rng(Date.now() % 2147483647);
+
+  /* ── 팔레트(토큰 원문과 동일 계열 — 순백 금지) ─────────────────── */
+  var NIGHT0='#050508', NIGHT2='#0d0d16', NIGHT3='#151422';
+  var BRASS='#c9a961', BRASS_DIM='rgba(201,169,97,.16)';
+  var FLAME='#e8c27a', FLAME_CORE='#f2e3bd', EMBER='#d99a5b';
+  var CHALK='#ddd6c4', INKF='#5f584a';
+
+  /* ── 공간 — 촛대 벽 12열(월) × 최대 31칸 = 365 ──────────────────── */
+  var MLEN=[31,28,31,30,31,30,31,31,30,31,30,31];
+  var MOFF=[]; (function(){ var a=0; for(var i=0;i<12;i++){ MOFF.push(a); a+=MLEN[i]; } })();
+  var WX=150, WW=1300, WY=110, WH=520;
+  var COLW=WW/12, ROWH=WH/31;
+  function dayToCell(day){                 // day 1..365 → {col,row,x,y}
+    var d=day-1, col=11;
+    for(var m=0;m<12;m++){ if(d<MOFF[m]+MLEN[m]){ col=m; break; } }
+    var row=d-MOFF[col];
+    return { col:col, row:row,
+             x: WX+col*COLW+COLW/2,
+             y: WY+row*ROWH+ROWH/2 };
+  }
+  var DOOR={ x:800, y:668, w:150, h:150 };  // 연회장 겹문
+
+  /* ── 상태 ────────────────────────────────────────────────────────── */
+  var S = {
+    phase:'enter',            // enter → party → betrayed → after
+    introT:0,
+    lit:new Array(366).fill(false),
+    litCount:0,
+    days:[],                  // 입장 순 생일 기록(E1 정합 검증용)
+    guests:[],
+    flames:[],
+    count:0,                  // 입장 손님 수
+    autoT:0,
+    collision:null,           // {x,y,day,ord,t}
+    n:0,                      // 배반 손님 번호
+    forceQueue:[],            // 테스트 훅 — 다음 생일 강제
+    frozen:false,
+    ghostN:23,
+    time:0
+  };
+  window.addEventListener('museum:freeze',   function(){ S.frozen=true; });
+  window.addEventListener('museum:unfreeze', function(){ S.frozen=false; });
+
+  /* ── 손님 입장 ───────────────────────────────────────────────────── */
+  function admit(forcedDay){
+    if(S.phase!=='party' && S.phase!=='enter') return null;
+    if(S.phase==='enter') beginParty();
+    var day = (forcedDay!=null) ? forcedDay
+            : (S.forceQueue.length ? S.forceQueue.shift() : 1+Math.floor(rnd()*365));
+    S.count++; S.days.push(day);
+    var cell=dayToCell(day);
+    var g={ day:day, ord:S.count, t:0, dur:1.05,
+            fx:DOOR.x+(rnd()-0.5)*30, fy:DOOR.y+30,
+            tx:cell.x, ty:cell.y,
+            state:'walk', collide:!!S.lit[day], pauseT:0 };
+    S.guests.push(g);
+    Museum.sound.play('clack');
+    Museum.sound.play('creak', (rnd()-0.5)*0.3);
+    return g;
+  }
+
+  function igniteCandle(g){
+    S.lit[g.day]=true; S.litCount++;
+    S.flames.push({ day:g.day, x:g.tx, y:g.ty, born:S.time, seed:rnd()*6.28 });
+    Museum.sound.play('click_light', (dayToCell(g.day).col/11-0.5)*0.5);
+  }
+
+  function triggerBetray(g){
+    S.phase='betrayed';
+    S.n=g.ord;
+    S.collision={ x:g.tx, y:g.ty, day:g.day, ord:g.ord, t:0 };
+    S.guests.length=0;
+    var box=canvas.getBoundingClientRect();
+    var scale=stage._scale||1;
+    var px=(box.width -1600*scale)/2 + g.tx*scale;
+    var py=(box.height- 900*scale)/2 + g.ty*scale;
+    Museum.betray({ x: box.width? px/box.width:0.5, y: box.height? py/box.height:0.5 })
+          .then(showAfterglow);
+  }
+
+  /* ── 막 전환 ─────────────────────────────────────────────────────── */
+  function beginParty(){
+    S.phase='party';
+    var pm=document.getElementById('premise');
+    pm.classList.remove('is-in'); pm.classList.add('is-out');
+  }
+
+  function showAfterglow(){
+    S.phase='after';
+    var empty=365-S.litCount;
+    var f=document.getElementById('formula');
+    f.innerHTML='<span class="num">'+S.n+'</span>번째 손님이었다 — 촛대는 아직 '+
+                '<span class="num">'+empty+'</span>개나 비어 있었다'+
+                '<span class="small">같은 생일이 하나도 없을 확률 = 365×364×…×(365−n+1) / 365ⁿ — 스물셋이면 이미 절반이 무너진다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'생일 쌍둥이',
+                    story:'벽은 넓었고, 우연은 좁았다.', small:false });
+    Museum.ticket.grant({ id:'m10_birthday', title:'생일 쌍둥이', drawFn:ticketArt });
+    var re=document.getElementById('reexp');
+    re.classList.add('is-in');
+    updateWhisper(parseInt(document.getElementById('reexp-range').value,10));
+  }
+
+  function ticketArt(c,w,h){
+    c.fillStyle=NIGHT0; c.fillRect(0,0,w,h);
+    c.fillStyle=BRASS_DIM;
+    for(var i=0;i<40;i++){ c.fillRect(14+(i%5)*26, 20+Math.floor(i/5)*40, 3, 3); }
+    var g=c.createRadialGradient(w/2,h*0.44,2,w/2,h*0.44,34);
+    g.addColorStop(0,FLAME_CORE); g.addColorStop(0.4,FLAME); g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g; c.fillRect(w/2-36,h*0.44-36,72,72);
+    c.fillStyle=FLAME;
+    c.beginPath(); c.ellipse(w/2,h*0.44,7,13,0,0,6.29); c.fill();
+    c.fillStyle=CHALK; c.font='12px sans-serif'; c.textAlign='center';
+    c.fillText('23', w/2, h*0.78);
+  }
+
+  /* ── 재체험 슬라이더 — E1 정확 천분율 ────────────────────────────── */
+  function updateWhisper(n){
+    S.ghostN=n;
+    var pm=B.pMatchPermille(n);
+    var whole=Math.floor(pm/10), dec=pm%10;
+    document.getElementById('reexp-whisper').innerHTML=
+      '<span class="num">'+n+'</span>명이면 — 만날 확률 <span class="num">'+whole+'.'+dec+'%</span>';
+  }
+  document.getElementById('reexp-range').addEventListener('input', function(e){
+    updateWhisper(parseInt(e.target.value,10));
+    Museum.sound.play('click_light', (parseInt(e.target.value,10)-2)/58-0.5);
+  });
+
+  /* ── 갱신 ────────────────────────────────────────────────────────── */
+  function tick(dt){
+    if(S.frozen) return;
+    S.time+=dt;
+
+    if(S.phase==='enter'){
+      S.introT+=dt;
+      if(S.introT>2.4 && !S._premised){
+        S._premised=true;
+        document.getElementById('premise').classList.add('is-in');
+      }
+      return;
+    }
+    if(S.phase==='party'){
+      // 3막 — 8번째부터 문이 스스로 열린다(파티 개시, 가속). 생일 분포는 불변.
+      if(S.count>=8){
+        S.autoT+=dt;
+        var interval=Math.max(0.55, 1.6-(S.count-8)*0.045);
+        if(S.autoT>=interval){ S.autoT=0; admit(); }
+      }
+      for(var i=S.guests.length-1;i>=0;i--){
+        var g=S.guests[i];
+        if(g.state==='walk'){
+          g.t+=dt/g.dur;
+          if(g.t>=1){
+            g.t=1;
+            if(g.collide){ g.state='pause'; }
+            else { igniteCandle(g); S.guests.splice(i,1); }
+          }
+        } else if(g.state==='pause'){          // 배반 직전 정적 400ms
+          g.pauseT+=dt;
+          if(g.pauseT>=0.4){ g.state='flare'; g.flareT=0; }
+        } else if(g.state==='flare'){          // 두 불꽃이 하나로 치솟음
+          g.flareT+=dt;
+          if(g.flareT>=0.9){ triggerBetray(g); return; }
+        }
+      }
+    }
+    if(S.collision) S.collision.t+=dt;
+  }
+
+  /* ── 그리기 ──────────────────────────────────────────────────────── */
+  function ease(t){ return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+
+  function drawWall(c){
+    // 소켓 365 — 소등 시 희미한 놋쇠 점(광활한 어둠이 직관을 심는다)
+    var sweep = S.phase==='enter' ? Math.min(1, S.introT/2.2) : 1;
+    var sweepX = WX + WW*sweep;
+    c.fillStyle=BRASS_DIM;
+    for(var day=1;day<=365;day++){
+      var cell=dayToCell(day);
+      if(cell.x>sweepX) continue;
+      if(S.lit[day]) continue;
+      c.fillRect(cell.x-1.5, cell.y-1.5, 3, 3);
+    }
+    // 점화된 촛불 — 글로우 스프라이트 + 코어 흔들림
+    for(var i=0;i<S.flames.length;i++){
+      var fl=S.flames[i];
+      var age=S.time-fl.born;
+      var flick=1+0.12*Math.sin(S.time*7+fl.seed)+0.06*Math.sin(S.time*13+fl.seed*2);
+      var r=(10+3*Math.min(1,age*2))*flick;
+      c.drawImage(stage.glow(26,'rgba(232,194,122,.5)'), fl.x-26, fl.y-26);
+      c.fillStyle=FLAME;
+      c.beginPath(); c.ellipse(fl.x, fl.y-1, 2.4, 4.6*flick, 0, 0, 6.29); c.fill();
+      c.fillStyle=FLAME_CORE;
+      c.beginPath(); c.ellipse(fl.x, fl.y, 1.1, 2.0, 0, 0, 6.29); c.fill();
+      void r;
+    }
+  }
+
+  function drawDoor(c){
+    // 겹문 — 놋쇠 테두리 + 노커 숨쉼 글로우(유일한 초대)
+    c.fillStyle=NIGHT3;
+    c.fillRect(DOOR.x-DOOR.w/2, DOOR.y-DOOR.h/2, DOOR.w, DOOR.h);
+    c.strokeStyle=BRASS; c.lineWidth=2;
+    c.strokeRect(DOOR.x-DOOR.w/2, DOOR.y-DOOR.h/2, DOOR.w, DOOR.h);
+    c.beginPath(); c.moveTo(DOOR.x, DOOR.y-DOOR.h/2); c.lineTo(DOOR.x, DOOR.y+DOOR.h/2);
+    c.strokeStyle=BRASS_DIM; c.stroke();
+    var breath=0.5+0.5*Math.sin(S.time*2.1);
+    if(S.phase==='enter'||S.phase==='party'){
+      c.drawImage(stage.glow(30,'rgba(201,169,97,'+(0.18+0.22*breath)+')'), DOOR.x-30-26, DOOR.y-8-30);
+      c.drawImage(stage.glow(30,'rgba(201,169,97,'+(0.18+0.22*breath)+')'), DOOR.x+30-34, DOOR.y-8-30);
+    }
+    c.fillStyle=BRASS;
+    c.beginPath(); c.arc(DOOR.x-30, DOOR.y-8, 5, 0, 6.29); c.fill();
+    c.beginPath(); c.arc(DOOR.x+30, DOOR.y-8, 5, 0, 6.29); c.fill();
+    // 문 위 스포트(주광원 1)
+    var g=c.createRadialGradient(DOOR.x, DOOR.y-DOOR.h/2-40, 6, DOOR.x, DOOR.y-DOOR.h/2-40, 220);
+    g.addColorStop(0,'rgba(201,169,97,.12)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g;
+    c.fillRect(DOOR.x-220, DOOR.y-DOOR.h/2-260, 440, 320);
+  }
+
+  function drawGuests(c){
+    for(var i=0;i<S.guests.length;i++){
+      var g=S.guests[i], px, py;
+      if(g.state==='walk'){
+        var t=ease(g.t);
+        px=g.fx+(g.tx-g.fx)*t;
+        py=g.fy+(g.ty-g.fy)*t - Math.sin(t*3.14)*40;   // 떠오르는 궤적
+      } else { px=g.tx; py=g.ty; }
+      c.drawImage(stage.glow(18,'rgba(217,154,91,.4)'), px-18, py-18);
+      c.fillStyle=EMBER;
+      c.beginPath(); c.arc(px, py, 3.4, 0, 6.29); c.fill();
+      if(g.state==='flare'){
+        var ft=g.flareT/0.9;
+        var fr=30+90*ft;
+        c.drawImage(stage.glow(Math.round(fr),'rgba(242,227,189,'+(0.35+0.35*ft)+')'),
+                    g.tx-fr, g.ty-fr);
+        c.fillStyle=FLAME_CORE;
+        c.beginPath(); c.ellipse(g.tx, g.ty-8*ft, 3+3*ft, 9+26*ft, 0, 0, 6.29); c.fill();
+      }
+    }
+    if(S.collision && S.phase!=='party'){
+      var col=S.collision;
+      c.drawImage(stage.glow(70,'rgba(242,227,189,.55)'), col.x-70, col.y-70);
+      c.fillStyle=FLAME_CORE;
+      c.beginPath(); c.ellipse(col.x, col.y-12, 5, 30, 0, 0, 6.29); c.fill();
+    }
+  }
+
+  function drawAfterCurve(c){
+    if(S.phase!=='after') return;
+    // 분필 확률 호 n=2..60 (여운 전용 — E1 정확값)
+    var x0=WX+120, x1=WX+WW-120, y0=WY+WH+56, hh=70;
+    c.strokeStyle='rgba(221,214,196,.55)'; c.lineWidth=1.6;
+    c.beginPath();
+    for(var n=2;n<=60;n++){
+      var px=x0+(x1-x0)*(n-2)/58;
+      var py=y0-hh*(B.pMatchPermille(n)/1000);
+      if(n===2) c.moveTo(px,py); else c.lineTo(px,py);
+    }
+    c.stroke();
+    // 절반 눈금(23) — 분필 소품
+    var hx=x0+(x1-x0)*(23-2)/58, hy=y0-hh*0.507;
+    c.strokeStyle=INKF; c.setLineDash([3,4]);
+    c.beginPath(); c.moveTo(hx,y0); c.lineTo(hx,hy); c.stroke();
+    c.setLineDash([]);
+    // 놋쇠 마커 = 슬라이더 n
+    var mn=S.ghostN;
+    var mx=x0+(x1-x0)*(mn-2)/58, my=y0-hh*(B.pMatchPermille(mn)/1000);
+    c.drawImage(stage.glow(14,'rgba(201,169,97,.6)'), mx-14, my-14);
+    c.fillStyle=BRASS;
+    c.beginPath(); c.arc(mx,my,4,0,6.29); c.fill();
+  }
+
+  stage.add({
+    update:tick,
+    draw:function(c){
+      c.fillStyle=NIGHT2;
+      c.fillRect(-1600,-900,4800,2700);
+      var vg=c.createRadialGradient(800,430,180,800,430,900);
+      vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(5,5,8,.85)');
+      drawWall(c); drawDoor(c); drawGuests(c); drawAfterCurve(c);
+      c.fillStyle=vg; c.fillRect(-1600,-900,4800,2700);
+    }
+  });
+
+  /* ── 입력 — 문을 두드리면 손님이 든다(§8.5 원칙1) ─────────────────── */
+  function pressAt(lx,ly){
+    if(Museum.isLocked()) return;
+    if(S.phase==='after'||S.phase==='betrayed') return;
+    // 어디를 눌러도 문이 응답하되, 문 근처는 즉시 — 무설명 동선 확보
+    admit();
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    var p=stage.toLogical(e.clientX, e.clientY);
+    pressAt(p.x, p.y);
+  });
+
+  /* ── 부팅 ────────────────────────────────────────────────────────── */
+  Museum.sound.roomtone();
+  Museum.curtainIn();
+  stage.start();
+
+  /* ── 테스트 훅 ───────────────────────────────────────────────────── */
+  window.__M10 = {
+    S:S, B:B, admit:admit, tick:tick, pressAt:pressAt,
+    skipIntro:beginParty, dayToCell:dayToCell,
+    forceDays:function(arr){ S.forceQueue=arr.slice(); }
+  };
+})();
+</script>
+</body>
+</html>
