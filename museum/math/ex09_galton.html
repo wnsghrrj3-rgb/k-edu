@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>우연이 만드는 산 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(20px,3vw,32px); letter-spacing:.10em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; }
+  #formula .small{ display:block; margin-top:10px; font-size:clamp(13px,1.6vw,17px); color:var(--ink-faint); letter-spacing:.04em; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="galton-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumGalton=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var _rows={};                                            // 파스칼 행 캐시(BigInt)
+  function row(n){
+    if(_rows[n]) return _rows[n];
+    var r=[1n];
+    for(var i=1;i<=n;i++){
+      var nr=[1n];
+      for(var k=1;k<i;k++) nr.push(r[k-1]+r[k]);
+      nr.push(1n); r=nr;
+    }
+    return (_rows[n]=r);
+  }
+  function binom(n,k){                                     // 이항계수 BigInt
+    if(k<0||k>n) return 0n;
+    return row(n)[k];
+  }
+  function rowSum(n){ return 2n ** BigInt(n); }            // Σ binom(n,k) = 2^n
+  function pathBin(bits,n){                                // n비트 경로 → 도착 칸(오른쪽 횟수)
+    var c=0;
+    for(var i=0;i<n;i++) if(bits[i]) c++;
+    return c;
+  }
+  function heights(n,total){                               // 기대 도수 배열(이론 능선)
+    var r=row(n), d=Number(rowSum(n)), out=[];
+    for(var k=0;k<=n;k++) out.push(total*Number(r[k])/d);
+    return out;
+  }
+  function modeBin(n){ return Math.floor(n/2); }           // 산꼭대기 칸
+  return { binom:binom, rowSum:rowSum, pathBin:pathBin, heights:heights, modeBin:modeBin };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="4" max="24" value="12" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumGalton;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;                     // 1600 × 900 논리좌표
+
+  // ── 색(순백 금지·악센트=놋쇠 1색) ─────────────────────────────
+  var C_BRASS='#c9a961', C_BRASS_D='#8a733f', C_INK='#f2ead8',
+      C_INK_D='#a89e88', C_MARBLE='#e8dcc0', C_MOUND='#7a6c4e', C_MOUND_D='#463d2b';
+
+  var TARGET = 10000;                                // 만 개의 약속
+  var MANUAL = 8;                                    // 수동 낙하 알 수(크랭크 등장 게이트)
+  var rnd = Museum.rng(Date.now() % 2147483647);
+
+  // ── 보드 기하 — 층수 가변 ─────────────────────────────────────
+  var B = {};                                        // 기하 캐시
+  function buildBoard(rows){
+    B.rows = rows;
+    B.cx = W*0.5;
+    B.topY = 168; B.botY = 520;                      // 핀 밭
+    B.dy = (B.botY-B.topY)/Math.max(1,rows-1);
+    B.sx = Math.min(46, 760/rows);                   // 핀 가로 간격(깊을수록 촘촘)
+    B.binTop = B.botY + 42;
+    B.ground = 806;
+    B.bins = []; for(var i=0;i<=rows;i++) B.bins.push(0);
+    // 산꼭대기 기대치 → 화면 높이 스케일
+    var hts = PURE.heights(rows, TARGET);
+    B.apex = hts[PURE.modeBin(rows)];
+    B.pxPer = (B.ground - B.binTop - 26) / B.apex;   // 도수 1 → px
+    B.hopperY = 96;
+    B.crank = { x:B.cx + rows*B.sx*0.5 + 150, y:150, r:46 };
+  }
+  function pegPos(r,i){                              // r행(0-index)의 i번째 핀
+    return { x: B.cx + (i - r/2)*B.sx, y: B.topY + r*B.dy };
+  }
+  function binX(k){ return B.cx + (k - B.rows/2)*B.sx; }
+  function binHpx(k){ return B.bins[k]*B.pxPer; }
+
+  // ── 상태 ─────────────────────────────────────────────────────
+  var S = {
+    phase:'boot', t:0, run:1,
+    drops:0, simCount:0, acc:0,
+    marbles:[], rests:[], sparks:[], dust:[], trail:null,
+    ghost:null,                                      // 1차 산 능선(px 스냅숏)
+    sweepX:-1,
+    crank:{ ang:0, vel:0, dragging:false, lastA:0, alive:false, breath:0 },
+    betrayed:false, hint:1, finale:false, introA:1, lastClack:0, lastCreak:0
+  };
+  buildBoard(12);
+
+  function setPhase(p){ S.phase=p; S.t=0; }
+  function start(){
+    Museum.sound.roomtone();
+    setPhase('intro');
+  }
+
+  // ── 경로 생성(E1 pathBin 단일 경유) ───────────────────────────
+  function makePath(){
+    var bits=[]; for(var i=0;i<B.rows;i++) bits.push(rnd()<0.5?0:1);
+    return { bits:bits, bin:PURE.pathBin(bits,B.rows) };
+  }
+
+  // ── 수동 낙하(2막) ────────────────────────────────────────────
+  function dropOne(){
+    if(S.betrayed || S.phase==='sweep') return;
+    var p = makePath();
+    S.marbles.push({ bits:p.bits, bin:p.bin, row:-1, x:B.cx, y:B.hopperY+14,
+                     tx:B.cx, prog:0, speed:1, manual:true, done:false });
+    S.hint=0; S.introA=Math.min(S.introA,0.999);     // 첫 낙하부터 전제 서서히 소등
+    Museum.sound.play('click_light');
+  }
+
+  // ── 폭포 표본 구슬(빠른 낙하·소리 절제) ────────────────────────
+  function spawnSample(){
+    if(S.marbles.length>56) return;
+    var p = makePath();
+    S.marbles.push({ bits:p.bits, bin:p.bin, row:-1, x:B.cx+(rnd()-0.5)*10, y:B.hopperY+14,
+                     tx:B.cx, prog:0, speed:3.1+rnd()*0.8, manual:false, sample:true, done:false });
+  }
+
+  // ── 구슬 갱신 — 핀 행 사이 웨이포인트 이동 ─────────────────────
+  function stepMarble(m,dt){
+    m.prog += dt*1000/(320/m.speed);                 // 행 하나 320ms(수동 기준)
+    while(m.prog>=1){
+      m.prog-=1; m.row++;
+      if(m.row < B.rows){
+        // 지금까지 비트 누적 → 다음 목표 x
+        var right=0; for(var i=0;i<=m.row;i++) right+=m.bits[i];
+        m.fx = m.tx;
+        m.tx = B.cx + (right - (m.row+1)/2)*B.sx;
+        if(m.manual){
+          var now=performance.now();
+          if(now-S.lastClack>40){ Museum.sound.play('clack'); S.lastClack=now; }
+          var pp = pegPos(m.row, m.bits.slice(0,m.row+1).reduce(function(a,b){return a+b;},0));
+          spark(m.tx>m.fx? m.fx+3 : m.fx-3, B.topY+m.row*B.dy);
+        }
+      } else { land(m); return; }
+    }
+    var fromY = m.row<0 ? B.hopperY+14 : B.topY + m.row*B.dy;
+    var toY   = B.topY + (m.row+1)*B.dy;
+    m.y = fromY + (toY-fromY)*m.prog;
+    var fx = (m.row<0||m.fx===undefined) ? m.x : m.fx;
+    m.x = fx + ((m.tx||fx)-fx)*Math.min(1,m.prog*1.6);
+  }
+  function land(m){
+    m.done=true;
+    if(m.sample) return;                             // 표본은 이미 센 알의 시각 대표
+    B.bins[m.bin]++;
+    if(m.manual){
+      S.drops++;
+      S.rests.push({ x:binX(m.bin)+(rnd()-0.5)*10, y:B.ground-6-S.restsIn(m.bin)*9, squish:1 });
+      Museum.sound.play('clack');
+      S.trail = { bits:m.bits, bin:m.bin, life:0.7 }; // 직전 경로 잔광(목격)
+      if(S.drops>=MANUAL && !S.crank.alive){ S.crank.alive=true; setPhase('crank'); }
+    }
+    if(m.final){ triggerBetray(); }
+    S.simCount++;
+  }
+  S.restsIn = function(bin){ var c=0; S.rests.forEach(function(r){ if(Math.abs(r.x-binX(bin))<B.sx*0.5) c++; }); return c; };
+
+  function spark(x,y){
+    for(var i=0;i<3;i++) S.sparks.push({ x:x,y:y,vx:(rnd()-0.5)*80,vy:-40-rnd()*40,life:0.2 });
+  }
+
+  // ── 크랭크 → 비 ──────────────────────────────────────────────
+  function cascade(dt){
+    var rate = S.crank.vel * 62;                      // rad/s → 알/초
+    if(rate<=0) return;
+    S.acc += rate*dt;
+    var n = Math.floor(S.acc); S.acc-=n;
+    for(var i=0;i<n;i++){
+      if(S.simCount>=TARGET) break;
+      var p = makePath();
+      B.bins[p.bin]++; S.simCount++;
+    }
+    if(rnd()<Math.min(0.5, rate/240)) spawnSample();
+    var now=performance.now();
+    if(S.crank.vel>0.6 && now-S.lastCreak>340){ Museum.sound.play('creak'); S.lastCreak=now; }
+    if(S.simCount>=TARGET) reachTarget();
+  }
+  function reachTarget(){
+    S.crank.vel=0; S.crank.alive=false;
+    if(S.run===1){ setPhase('settle1'); }
+    else if(!S.finale){                               // 마지막 한 알 — 산꼭대기로
+      S.finale=true;
+      B.bins[PURE.modeBin(B.rows)]--; S.simCount--;   // 만 개째는 눈으로 떨어진다
+      var bits=[], mode=PURE.modeBin(B.rows);
+      for(var i=0;i<B.rows;i++) bits.push(i<mode?1:0);
+      S.marbles.push({ bits:bits, bin:mode, row:-1, x:B.cx, y:B.hopperY+14,
+                       tx:B.cx, prog:0, speed:1.4, manual:true, final:true, done:false });
+      setPhase('finale');
+    }
+  }
+
+  // ── 쓸기(1차 산 → 유령 능선) ──────────────────────────────────
+  function beginSweep(){
+    S.ghost = B.bins.map(function(v){ return v*B.pxPer; });
+    S.sweepX = binX(0)-B.sx;
+    Museum.sound.play('curtain');
+    setPhase('sweep');
+  }
+  function stepSweep(dt){
+    S.sweepX += dt*(binX(B.rows)-binX(0)+B.sx*2)/1.6;
+    for(var k=0;k<=B.rows;k++){
+      if(binX(k) < S.sweepX && B.bins[k]>0){
+        var take=Math.ceil(B.bins[k]*0.22)+30;
+        B.bins[k]=Math.max(0,B.bins[k]-take);
+        if(rnd()<0.4) S.dust.push({ x:binX(k)+(rnd()-0.5)*B.sx, y:B.ground-binHpx(k)-8, vy:60+rnd()*60, life:0.5 });
+      }
+    }
+    if(S.sweepX > binX(B.rows)+B.sx){
+      for(var j=0;j<=B.rows;j++) B.bins[j]=0;
+      S.rests.length=0; S.sweepX=-1;
+      S.run=2; S.simCount=0; S.acc=0; S.crank.alive=true;
+      setPhase('crank');
+    }
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return; S.betrayed=true;
+    setPhase('betrayed');
+    Museum.sound.play('boom');
+    Museum.betray({ x:0.5, y:0.55 }).then(showAfterglow);
+  }
+
+  // ── 여운 ─────────────────────────────────────────────────────
+  function showAfterglow(){
+    setPhase('afterglow');
+    var f=document.getElementById('formula');
+    f.innerHTML = '<span>우연 <span class="num">10,000</span>번은 약속이 된다</span>'+
+                  '<span class="small">이항분포는 정규분포로 다가간다 — 드무아브르 · 라플라스</span>';
+    setTimeout(function(){ f.classList.add('is-in'); }, 400);
+    Museum.plaque({ title:'우연이 만드는 산', story:'구슬은 제 갈 길을 몰랐다 — 만 개는 알고 있었다.', small:false });
+    Museum.ticket.grant({ id:'m9_galton', title:'우연이 만드는 산',
+      fine:'매번, 반드시, 같은 산.', drawFn:drawTicketArt });
+    setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1500);
+  }
+  function drawTicketArt(ctx,w,h){
+    ctx.strokeStyle=C_INK; ctx.globalAlpha=.85; ctx.lineWidth=1.4; ctx.beginPath();
+    for(var i=0;i<=24;i++){ var u=i/24, x=w*0.12+u*w*0.76;
+      var y=h*0.82 - Math.exp(-Math.pow((u-0.5)*3.4,2))*h*0.52;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke();
+    ctx.fillStyle=C_MARBLE;
+    [0.38,0.5,0.62].forEach(function(u,i){ ctx.beginPath();
+      ctx.arc(w*0.12+u*w*0.76, h*0.28-i*6, 2.4, 0, 6.3); ctx.fill(); });
+    ctx.globalAlpha=1;
+  }
+
+  // ── 재체험 슬라이더 — 층수 4~24, 자동 비 + 이론 분필 곡선 ───────
+  var reScale=0, reChalk=null;
+  var slider=document.querySelector('#reexp input');
+  if(slider){ slider.addEventListener('input', function(){
+    var rows=+slider.value;
+    buildBoard(rows);
+    S.rests.length=0; S.marbles.length=0; S.ghost=null; S.simCount=0;
+    reScale=0; reChalk=PURE.heights(rows, TARGET).map(function(v){ return v*B.pxPer; });
+    // 실난수 3000표본을 즉시 굴려 채움(정직) + 성장 애니로 노출
+    for(var k=0;k<=rows;k++) B.bins[k]=0;
+    for(var i=0;i<3000;i++){ var p=makePath(); B.bins[p.bin]+= TARGET/3000; }
+    Museum.sound.play('creak');
+  }); }
+
+  // ── 입력 ─────────────────────────────────────────────────────
+  function ptFromEvent(e){
+    var r=canvas.getBoundingClientRect();
+    return { x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H };
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked && Museum.isLocked()) return;
+    var pt=ptFromEvent(e);
+    if(S.phase==='boot'){ start(); return; }
+    if(S.crank.alive && Math.hypot(pt.x-B.crank.x, pt.y-B.crank.y)<150){
+      S.crank.dragging=true; S.crank.lastA=Math.atan2(pt.y-B.crank.y, pt.x-B.crank.x);
+      canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+    if(S.phase==='intro' || S.phase==='drop'){
+      if(S.phase==='intro') setPhase('drop');
+      dropOne();
+    }
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!S.crank.dragging) return;
+    var pt=ptFromEvent(e);
+    var a=Math.atan2(pt.y-B.crank.y, pt.x-B.crank.x);
+    var d=a-S.crank.lastA;
+    while(d>Math.PI) d-=Math.PI*2; while(d<-Math.PI) d+=Math.PI*2;
+    S.crank.vel=Math.min(11, Math.max(0, S.crank.vel + Math.abs(d)*2.4));
+    S.crank.ang+=d; S.crank.lastA=a;
+  });
+  window.addEventListener('pointerup', function(){ S.crank.dragging=false; });
+
+  // ── 업데이트 ─────────────────────────────────────────────────
+  function update(dt){
+    S.t+=dt;
+    if(S.introA>0 && S.introA<1) S.introA=Math.max(0,S.introA-dt*0.5);
+    S.crank.breath+=dt;
+    if(!S.crank.dragging) S.crank.vel*=Math.pow(0.4, dt);
+    if(S.crank.alive && S.crank.vel>0.02){ S.crank.ang+=S.crank.vel*dt; cascade(dt); }
+    for(var i=S.marbles.length-1;i>=0;i--){
+      var m=S.marbles[i]; stepMarble(m,dt);
+      if(m.done) S.marbles.splice(i,1);
+    }
+    if(S.trail){ S.trail.life-=dt; if(S.trail.life<=0) S.trail=null; }
+    for(i=S.sparks.length-1;i>=0;i--){ var sp=S.sparks[i]; sp.x+=sp.vx*dt; sp.y+=sp.vy*dt; sp.life-=dt; if(sp.life<=0) S.sparks.splice(i,1); }
+    for(i=S.dust.length-1;i>=0;i--){ var du=S.dust[i]; du.y+=du.vy*dt; du.life-=dt; if(du.life<=0) S.dust.splice(i,1); }
+    if(S.phase==='settle1' && S.t>0.9) beginSweep();
+    if(S.phase==='sweep') stepSweep(dt);
+  }
+
+  // ── 드로잉 ───────────────────────────────────────────────────
+  function moundPath(ctx, hs, base){
+    ctx.beginPath();
+    ctx.moveTo(binX(0)-B.sx*0.6, base);
+    for(var k=0;k<=B.rows;k++){
+      var x=binX(k), y=base-hs[k];
+      k===0 ? ctx.lineTo(x-B.sx*0.4, y) : 0;
+      ctx.quadraticCurveTo(x-B.sx*0.5, base-(hs[k-1]||hs[0]), x, y);
+    }
+    ctx.lineTo(binX(B.rows)+B.sx*0.6, base);
+  }
+  function draw(ctx){
+    // 스포트(호퍼 주광원 1개)
+    var g=stage.glow(300,'rgba(242,234,216,0.10)');
+    ctx.drawImage(g, B.cx-300, -140);
+    // 바닥선
+    ctx.strokeStyle='rgba(242,234,216,0.10)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(W*0.08,B.ground+8); ctx.lineTo(W*0.92,B.ground+8); ctx.stroke();
+
+    // 전제 한 줄(1막)
+    if(S.introA>0 && (S.phase==='intro'||S.phase==='drop')){
+      ctx.globalAlpha=Math.min(1,S.introA);
+      ctx.fillStyle=C_INK_D; ctx.font='17px "Gowun Batang", serif'; ctx.textAlign='center';
+      ctx.fillText('구슬은 어디로 갈지, 저도 모른다.', B.cx, 132);
+      ctx.globalAlpha=1;
+    }
+
+    // 호퍼(놋쇠 깔때기)
+    ctx.strokeStyle=C_BRASS_D; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(B.cx-42,B.hopperY-26); ctx.lineTo(B.cx-8,B.hopperY+8);
+    ctx.moveTo(B.cx+42,B.hopperY-26); ctx.lineTo(B.cx+8,B.hopperY+8); ctx.stroke();
+
+    // 매달린 구슬(부팅·인트로 숨쉼)
+    if(S.phase==='boot'||S.phase==='intro'){
+      var br=5+Math.sin(S.t*2.2)*0.8;
+      ctx.drawImage(stage.glow(26,'rgba(232,220,192,0.35)'), B.cx-26, B.hopperY-10);
+      ctx.fillStyle=C_MARBLE; ctx.beginPath(); ctx.arc(B.cx,B.hopperY+16,br,0,6.3); ctx.fill();
+    }
+
+    // 핀 밭(놋쇠 점)
+    ctx.fillStyle=C_BRASS;
+    for(var r=0;r<B.rows;r++){
+      ctx.globalAlpha=0.28+0.10*Math.sin(S.t*0.8+r);
+      for(var i=0;i<=r;i++){ var p=pegPos(r,i);
+        ctx.beginPath(); ctx.arc(p.x,p.y,2.6,0,6.3); ctx.fill(); }
+    }
+    ctx.globalAlpha=1;
+
+    // 직전 경로 잔광(목격 — 매번 다른 길)
+    if(S.trail){
+      ctx.strokeStyle=C_MARBLE; ctx.globalAlpha=S.trail.life*0.6; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(B.cx,B.hopperY+14);
+      var right=0;
+      for(var t=0;t<B.rows;t++){ right+=S.trail.bits[t];
+        ctx.lineTo(B.cx+(right-(t+1)/2)*B.sx, B.topY+(t+1)*B.dy); }
+      ctx.lineTo(binX(S.trail.bin), B.ground-8); ctx.stroke(); ctx.globalAlpha=1;
+    }
+
+    // 칸 칸막이(희미)
+    ctx.strokeStyle='rgba(138,115,63,0.35)'; ctx.lineWidth=1;
+    for(var k=0;k<=B.rows+1;k++){
+      var x=binX(k)-B.sx*0.5;
+      ctx.beginPath(); ctx.moveTo(x,B.binTop); ctx.lineTo(x,B.ground); ctx.stroke();
+    }
+
+    // 산(도수 실루엣) — 재체험 성장 스케일
+    var hs=[]; var grow = (S.phase==='afterglow'&&reChalk) ? (reScale=Math.min(1,reScale+0.02)) : 1;
+    for(k=0;k<=B.rows;k++) hs.push(binHpx(k)*grow);
+    if(hs.some(function(v){return v>0.5;})){
+      moundPath(ctx,hs,B.ground);
+      ctx.fillStyle=C_MOUND_D; ctx.fill();
+      moundPath(ctx,hs,B.ground);
+      ctx.strokeStyle=C_MOUND; ctx.lineWidth=2; ctx.stroke();
+      // 능선
+      ctx.strokeStyle=C_MARBLE; ctx.globalAlpha=0.7; ctx.lineWidth=1.4;
+      ctx.beginPath();
+      for(k=0;k<=B.rows;k++){ var xx=binX(k), yy=B.ground-hs[k];
+        k?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy); }
+      ctx.stroke(); ctx.globalAlpha=1;
+    }
+
+    // 유령 능선(1차 산의 분필 자국)
+    var ridge = S.ghost || reChalk;
+    if(ridge){
+      ctx.strokeStyle=C_INK; ctx.globalAlpha=0.5; ctx.lineWidth=1.2;
+      ctx.setLineDash([6,7]);
+      ctx.beginPath();
+      for(k=0;k<=B.rows;k++){
+        var gx=binX(k)+(rnd()-0.5)*0.8, gy=B.ground-ridge[k]+(rnd()-0.5)*0.8;
+        k?ctx.lineTo(gx,gy):ctx.moveTo(gx,gy);
+      }
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+    }
+
+    // 수동 안착 구슬(초반 여덟 알 — 무질서의 목격)
+    ctx.fillStyle=C_MARBLE;
+    S.rests.forEach(function(rr){ ctx.beginPath(); ctx.arc(rr.x,rr.y,4.4,0,6.3); ctx.fill(); });
+
+    // 낙하 구슬
+    S.marbles.forEach(function(m){
+      ctx.drawImage(stage.glow(14,'rgba(232,220,192,0.30)'), m.x-14, m.y-14);
+      ctx.fillStyle=C_MARBLE; ctx.beginPath(); ctx.arc(m.x,m.y,m.manual?5:3.4,0,6.3); ctx.fill();
+    });
+
+    // 스파크·먼지
+    ctx.fillStyle=C_INK;
+    S.sparks.forEach(function(sp){ ctx.globalAlpha=sp.life*4; ctx.fillRect(sp.x,sp.y,2,2); });
+    ctx.fillStyle=C_MOUND;
+    S.dust.forEach(function(du){ ctx.globalAlpha=du.life*1.6; ctx.fillRect(du.x,du.y,2.4,2.4); });
+    ctx.globalAlpha=1;
+
+    // 쓸기 빗대
+    if(S.sweepX>=0){
+      ctx.strokeStyle=C_BRASS; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(S.sweepX,B.binTop-10); ctx.lineTo(S.sweepX,B.ground); ctx.stroke();
+      ctx.drawImage(stage.glow(40,'rgba(201,169,97,0.30)'), S.sweepX-40, B.binTop+120);
+    }
+
+    // 크랭크(숨쉬는 놋쇠 손잡이)
+    if(S.crank.alive || S.crank.vel>0.02){
+      var c=B.crank, breath=0.24+0.14*(0.5+0.5*Math.sin(S.crank.breath*2.4));
+      ctx.drawImage(stage.glow(70,'rgba(201,169,97,'+breath.toFixed(2)+')'), c.x-70, c.y-70);
+      ctx.strokeStyle=C_BRASS; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,6.3); ctx.stroke();
+      ctx.beginPath(); ctx.arc(c.x,c.y,4,0,6.3); ctx.fillStyle=C_BRASS; ctx.fill();
+      var hx=c.x+Math.cos(S.crank.ang)*c.r, hy=c.y+Math.sin(S.crank.ang)*c.r;
+      ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(hx,hy); ctx.stroke();
+      ctx.beginPath(); ctx.arc(hx,hy,7,0,6.3); ctx.fill();
+      // 첫 회차 원호 힌트
+      if(S.hint>0 && S.run===1 && S.crank.vel<0.05){
+        ctx.strokeStyle=C_INK_D; ctx.globalAlpha=0.4+0.2*Math.sin(S.t*3);
+        ctx.beginPath(); ctx.arc(c.x,c.y,c.r+16, -0.6+S.t%1, 0.9+S.t%1); ctx.stroke(); ctx.globalAlpha=1;
+      }
+    }
+  }
+
+  stage.add({ update:update, draw:draw });
+  stage.start();
+
+  // 부팅 힌트 — 화면 어디든 탭
+  (function bootHint(){
+    var tries=0;
+    var iv=setInterval(function(){
+      tries++;
+      if(S.phase!=='boot' || tries>40){ clearInterval(iv); return; }
+    }, 500);
+  })();
+
+  // 테스트 훅
+  window.__M9 = {
+    S:S, B:B, PURE:PURE,
+    dropOne:dropOne, buildBoard:buildBoard,
+    spin:function(v){ S.crank.alive=true; S.crank.vel=v; if(S.phase!=='crank') setPhase('crank'); },
+    forceCount:function(n){
+      var hs=PURE.heights(B.rows, n);
+      for(var k=0;k<=B.rows;k++) B.bins[k]=Math.round(hs[k]);
+      S.simCount=n;
+      if(n>=TARGET) reachTarget();
+    },
+    beginSweep:beginSweep, triggerBetray:triggerBetray, TARGET:TARGET
+  };
+})();
+</script>
+</body>
+</html>
