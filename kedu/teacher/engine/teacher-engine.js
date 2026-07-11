@@ -110,9 +110,9 @@
           !(sl.block === 'activity' && sl.user_added && sl.stage === '응용문제' && i < _firstJeon));
       }
       const _purged = _before - slides.length;
-      curIdx = (typeof data.curIdx === 'number' && data.curIdx >= 0 && data.curIdx < slides.length) ? data.curIdx : 0;
-      // §21-6 복원 위생 ②: 활동 카드 착지 금지 — 차시는 항상 수업 첫 화면으로
-      if (slides[curIdx] && slides[curIdx].block === 'activity') curIdx = 0;
+      // §21-6 복원 위생 ② (개정): 복원은 '구성'(교사의 조립)만. '위치'는 복원하지 않는다 —
+      // 차시는 언제나 표지(첫 슬라이드)에서 시작한다. 수업의 시작은 항상 같은 얼굴이어야 한다.
+      curIdx = 0;
       if (_purged > 0) { try { setTimeout(saveState, 0); } catch (e) {} }
       global.interactiveState = data.interactiveState || {};
       showSaveStatus(data.ts, '이어서 작업');
