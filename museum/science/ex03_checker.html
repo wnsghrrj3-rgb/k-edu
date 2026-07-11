@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>속지 마 눈 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-pushing{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.08em; color:var(--ink); text-align:center;
+            max-width:min(860px,88vw); line-height:1.7; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--science); letter-spacing:.10em; opacity:.85; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 모형 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="checker-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumChecker=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  // 애덜슨 체커 그림자(1995)의 순수 모형.
+  // 반사율 두 값 × 그림자 감쇠 — 깊이 D=1−dark/light로 유도하면
+  // 빛 속의 어두운 칸(A)과 그림자 중심의 밝은 칸(B)의 도달 휘도가 정확히 같다.
+  function make(){
+    var N=5, DARK=0.36, LIGHT=0.62;
+    var A={i:0,j:2}, B={i:3,j:2};
+    var R0=0.55, R1=1.9;                       // g: 내반경 안 1 · 외반경 밖 0 (컴팩트 지지)
+    var D=1-DARK/LIGHT;
+    function reflect(i,j){ return ((i+j)%2===0)?DARK:LIGHT; }
+    function gAt(x,y){
+      var dx=x-(B.i+0.5), dy=y-(B.j+0.5);
+      var r=Math.sqrt(dx*dx+dy*dy);
+      if(r<=R0) return 1;
+      if(r>=R1) return 0;
+      var t=(r-R0)/(R1-R0);
+      return 1-t*t*(3-2*t);                    // 1−smoothstep — 부드러운 반그늘
+    }
+    function shade(x,y){ return 1-D*gAt(x,y); }
+    function lumXY(x,y){
+      var i=Math.min(N-1,Math.max(0,Math.floor(x)));
+      var j=Math.min(N-1,Math.max(0,Math.floor(y)));
+      return reflect(i,j)*shade(x,y);
+    }
+    function lum(i,j){ return reflect(i,j)*shade(i+0.5,j+0.5); }
+    function rgb(v){                            // 감마 1/2.2 — 단조·유계
+      var c=Math.round(255*Math.pow(Math.min(1,Math.max(0,v)),1/2.2));
+      return c;
+    }
+    return { N:N, DARK:DARK, LIGHT:LIGHT, A:A, B:B, R0:R0, R1:R1, D:D,
+             reflect:reflect, gAt:gAt, shade:shade, lum:lum, lumXY:lumXY, rgb:rgb };
+  }
+  return { make:make };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">체커판 위에, 기둥이 그림자를 드리우고 있습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="0" max="100" value="0" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumChecker;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var board = PURE.make();
+  var N = board.N, A = board.A, B = board.B;
+
+  // ── 사선 무대 변환(판 좌표 → 논리 좌표) ──────────────────────────
+  var OX=710, OY=255, UX=96, UY=26, VX=-60, VY=54;
+  function toL(bx,by){ return { x:OX+bx*UX+by*VX, y:OY+bx*UY+by*VY }; }
+  var DET=UX*VY-VX*UY;
+  function toB(lx,ly){
+    var dx=lx-OX, dy=ly-OY;
+    return { x:(VY*dx-VX*dy)/DET, y:(-UY*dx+UX*dy)/DET };
+  }
+  var AC={x:A.i+0.5, y:A.j+0.5}, BC={x:B.i+0.5, y:B.j+0.5};
+  var PATH=BC.x-AC.x;                           // 미는 길(같은 행)
+  var lumA=board.lum(A.i,A.j);
+  var GRAY=board.rgb(lumA);
+  function fillOf(v){ var c=board.rgb(v); return 'rgb('+c+','+c+','+c+')'; }
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→arm(전제)→push→reveal→dim→betrayed→after
+    progress:0, betrayed:false,
+    revealT:0, dimT:0, offCount:0, quietT:0,
+    ctx:1,                   // 맥락(주변 판·기둥) 밝기 — after에선 슬라이더가 쥔다
+    time:0
+  };
+  var ta=[], target=[];                         // 칸별 알파
+  for(var q=0;q<N*N;q++){ ta.push(1); target.push(1); }
+  var seed=Museum.rng(19950101);
+  var dimOrder=[];
+  for(var q2=0;q2<N*N;q2++){
+    var ii=Math.floor(q2/N), jj=q2%N;
+    if((ii===A.i&&jj===A.j)||(ii===B.i&&jj===B.j)) continue;
+    dimOrder.push(q2);
+  }
+  for(var s1=dimOrder.length-1;s1>0;s1--){ var r1=Math.floor(seed()*(s1+1)); var tmp=dimOrder[s1]; dimOrder[s1]=dimOrder[r1]; dimOrder[r1]=tmp; }
+  var cylA=1;
+
+  // ── 배반 = 마지막 불이 꺼지고 셋이 한 장이 되는 순간 ─────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var mid=toL((AC.x+BC.x)/2, AC.y);
+    Museum.betray({x:mid.x/W, y:mid.y/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='다르게 본 것은 판이 아니라 &mdash; 그림자를 빼고 계산한, 당신의 눈이었다'
+      +'<span class="small">속지 마 눈 &middot; 애덜슨 체커 그림자(1995) &mdash; 밝기는 맥락이 정한다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'속지 마 눈',
+      story:'눈은 빛을 재지 않는다. 세상을 해석한다 — 그래서 알고 난 뒤에도, 또 속는다.',
+      fine:'CHECKER SHADOW · E. H. ADELSON · 1995' });
+    Museum.ticket.grant({ id:'c3_checker', title:'속지 마 눈', fine:'빛의 밤',
+      drawFn:function(c,w,h){
+        var g=board.rgb(lumA);
+        var s=Math.min(w*0.6,h*0.16);
+        var y1=h*0.28, y2=h*0.62, x=(w-s)/2;
+        c.fillStyle='rgb('+g+','+g+','+g+')';
+        c.fillRect(x,y1,s,s); c.fillRect(x,y2,s,s);
+        c.fillRect(x+s*0.32,y1+s,s*0.36,y2-y1-s);
+        c.strokeStyle='rgba(201,169,97,.8)'; c.lineWidth=1;
+        c.strokeRect(x-6,y1-6,s+12,(y2-y1)+s+12);
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 불을 되살리기(알면서도 또 속는다) ────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.ctx=(parseInt(slider.value,10)||0)/100;
+    for(var q=0;q<N*N;q++){
+      var ii=Math.floor(q/N), jj=q%N;
+      if((ii===A.i&&jj===A.j)||(ii===B.i&&jj===B.j)) continue;
+      target[q]=S.ctx;
+    }
+  });
+
+  // ── 입력: 물감 띠를 밀다 ─────────────────────────────────────────
+  var pushing=false, lastPaper=0, lastProg=0;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='reveal'||S.phase==='dim'||S.phase==='betrayed'||S.phase==='after') return;
+    if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='arm'; }
+    var p=stage.toLogical(e.clientX,e.clientY), b=toB(p.x,p.y);
+    var hx=AC.x+PATH*S.progress;                // 그립 = A 또는 띠 머리에서만
+    var d=Math.min(Math.hypot(b.x-AC.x,b.y-AC.y), Math.hypot(b.x-hx,b.y-AC.y));
+    if(d>0.85) return;
+    pushing=true; canvas.classList.add('is-pushing');
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!pushing || Museum.isLocked() || S.phase!=='push' && S.phase!=='arm') return;
+    S.phase='push';
+    var p=stage.toLogical(e.clientX,e.clientY), b=toB(p.x,p.y);
+    if(Math.abs(b.y-AC.y)>1.1) return;
+    var t=Math.min(1,Math.max(0,(b.x-AC.x)/PATH));
+    if(t>S.progress) S.progress=t;              // 밀다 — 앞으로만
+    var now=performance.now();
+    if(S.progress-lastProg>0.03 && now-lastPaper>130){
+      lastPaper=now; lastProg=S.progress;
+      Museum.sound.play('paper');
+    }
+    if(S.progress>=1){ pushing=false; canvas.classList.remove('is-pushing'); S.phase='reveal'; }
+  });
+  window.addEventListener('pointerup', function(){
+    if(!pushing) return;
+    pushing=false; canvas.classList.remove('is-pushing');
+    if(S.phase==='push') S.phase='arm';         // 띠는 남는다 — 이어서 밀 수 있다
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      for(var q=0;q<N*N;q++){
+        if(ta[q]<target[q]) ta[q]=Math.min(target[q], ta[q]+3*dt);
+        else if(ta[q]>target[q]) ta[q]=Math.max(target[q], ta[q]-3*dt);
+      }
+      if(S.phase==='after'){ cylA += ((S.ctx)-cylA)*Math.min(1,3*dt); return; }
+      if(S.phase==='reveal'){
+        S.revealT+=dt;
+        if(S.revealT>0.9){ S.phase='dim'; S.dimT=0; }  // 정적 끝 — 판이 스스로 소등을 시작한다
+      } else if(S.phase==='dim'){
+        S.dimT+=dt;
+        var want=Math.min(dimOrder.length, Math.floor(S.dimT/0.14));
+        while(S.offCount<want){
+          target[dimOrder[S.offCount]]=0;
+          S.offCount++;
+          Museum.sound.play('click_light');
+        }
+        cylA=Math.max(0, 1-S.dimT/1.6);
+        if(S.offCount>=dimOrder.length){
+          var done=true;
+          for(var q3=0;q3<dimOrder.length;q3++) if(ta[dimOrder[q3]]>0.02) done=false;
+          if(done && cylA<=0.02){
+            S.quietT+=dt;
+            if(S.quietT>0.5) triggerBetray();
+          }
+        }
+      }
+    },
+    draw:function(ctx){
+      // 판 머리 위 스포트(주광원 1개)
+      ctx.fillStyle='rgba(242,234,216,.05)';
+      ctx.beginPath();
+      ctx.moveTo(W/2-70,0); ctx.lineTo(W/2+70,0);
+      ctx.lineTo(1240,470); ctx.lineTo(380,470);
+      ctx.closePath(); ctx.fill();
+      // 판 — 칸별 4×4 표본(색의 유일한 진실 = E1 lumXY)
+      for(var i=0;i<N;i++)for(var j=0;j<N;j++){
+        var isAB=(i===A.i&&j===A.j)||(i===B.i&&j===B.j);
+        var al=isAB?1:ta[i*N+j];
+        if(al<=0.005) continue;
+        ctx.globalAlpha=al;
+        for(var si=0;si<4;si++)for(var sj=0;sj<4;sj++){
+          var x0=i+si/4, y0=j+sj/4;
+          var p0=toL(x0,y0), p1=toL(x0+0.25,y0), p2=toL(x0+0.25,y0+0.25), p3=toL(x0,y0+0.25);
+          ctx.fillStyle=fillOf(board.lumXY(x0+0.125,y0+0.125));
+          ctx.beginPath();
+          ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x+0.5,p1.y); ctx.lineTo(p2.x+0.5,p2.y+0.5); ctx.lineTo(p3.x,p3.y+0.5);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha=1;
+      }
+      // 물감 띠 — A의 색 그대로, 불변
+      if(S.progress>0){
+        var hw=0.17;
+        var e=AC.x+PATH*S.progress;
+        var q0=toL(AC.x-hw,AC.y-hw), q1=toL(e+hw*(S.progress>=1?1:0),AC.y-hw),
+            q2=toL(e+hw*(S.progress>=1?1:0),AC.y+hw), q3=toL(AC.x-hw,AC.y+hw);
+        ctx.fillStyle='rgb('+GRAY+','+GRAY+','+GRAY+')';
+        ctx.beginPath();
+        ctx.moveTo(q0.x,q0.y); ctx.lineTo(q1.x,q1.y); ctx.lineTo(q2.x,q2.y); ctx.lineTo(q3.x,q3.y);
+        ctx.closePath(); ctx.fill();
+      }
+      // 원기둥 — 그림자의 임자
+      if(cylA>0.01){
+        ctx.globalAlpha=cylA;
+        var base=toL(4.5,2.5), cw=62, ch=175;
+        ctx.fillStyle='rgba(30,29,44,1)';
+        ctx.fillRect(base.x-cw/2, base.y-ch, cw, ch);
+        ctx.fillStyle='rgba(122,115,98,.55)';
+        ctx.fillRect(base.x+cw/2-14, base.y-ch, 14, ch);   // 빛은 오른쪽에서
+        ctx.fillStyle='rgba(90,86,74,.9)';
+        ctx.beginPath(); ctx.ellipse(base.x, base.y-ch, cw/2, 13, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(160,152,132,.35)';
+        ctx.beginPath(); ctx.ellipse(base.x, base.y-ch, cw/2, 13, 0, Math.PI, Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+      // 첫 초대 — A 칸의 숨쉼
+      if(S.phase==='boot'){
+        var breath=0.5+0.5*Math.sin(S.time*2.0);
+        var pA=toL(AC.x,AC.y);
+        var g=stage.glow(56,'rgba(201,169,97,.30)');
+        ctx.globalAlpha=0.35+0.5*breath;
+        ctx.drawImage(g,pA.x-56,pA.y-56);
+        ctx.globalAlpha=1;
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__C3 = {
+    S:S, PURE:board, GRAY:GRAY,
+    toClient:function(bx,by){
+      var l=toL(bx,by);
+      var box=canvas.getBoundingClientRect(), sc=stage._scale;
+      var ox=(box.width-W*sc)/2, oy=(box.height-H*sc)/2;
+      return { x:l.x*sc+ox+box.left, y:l.y*sc+oy+box.top };
+    },
+    pushTo:function(t){
+      if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='arm'; }
+      S.progress=Math.max(S.progress, Math.min(1,t));
+      if(S.progress>=1) S.phase='reveal'; else S.phase='push';
+    },
+    tileAlpha:function(i,j){ return ta[i*N+j]; },
+    offCount:function(){ return S.offCount; },
+    cylAlpha:function(){ return cylA; },
+    AC:AC, BC:BC
+  };
+})();
+</script>
+</body>
+</html>
