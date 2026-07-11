@@ -99,7 +99,10 @@ function initOrder(){const sl=document.getElementById('orderSlots7'),tk=document
 function pickOrder(t,r){if(answered[7])return;playClick();if(r===routines[orderSt.length]){t.classList.add('correct');t.style.pointerEvents='none';orderSt.push(r);const s=document.getElementById('orderSlots7').children[orderSt.length-1];s.textContent=r;s.classList.add('filled');playCorrect();if(orderSt.length===routines.length){addScore(25);setFB('fb7','✅ 완벽한 순서! +25점',true);answered[7]=true;document.querySelectorAll('#orderSlots7 .order-slot').forEach(s=>s.classList.add('correct-all'));}}else{t.classList.add('wrong');playWrong();combo=0;setFB('fb7','First → Then → Next → Finally! 💪',false);setTimeout(()=>t.classList.remove('wrong'),500);}}
 
 function restart(){score=0;combo=0;answered={};ms={};autoP={};orderSt=[];document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.ox-btn').forEach(b=>b.className='ox-btn');document.querySelectorAll('.match-item').forEach(m=>m.className='match-item');document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled');});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback';});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');initOrder();updateUI();}
-initOrder();updateUI();else if(d<-50)nextSlide();});
+initOrder();updateUI();
+
+/* swipe (재주입, 대점검 2026-07-11) */
+;(function(){if(typeof prevSlide!=='function'||typeof nextSlide!=='function')return;var _tx=0;document.addEventListener('touchstart',function(e){_tx=e.touches[0].clientX;},{passive:true});document.addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-_tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});})();
 </script>
 </body>
 </html>
