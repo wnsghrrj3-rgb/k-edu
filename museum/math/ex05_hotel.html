@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>끝없는 호텔 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  /* 여운 오버레이 */
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(20px,3vw,34px); letter-spacing:.10em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; }
+  #formula .small{ display:block; margin-top:10px; font-size:clamp(13px,1.6vw,17px); color:var(--ink-faint); letter-spacing:.04em; }
+  /* 놋쇠 슬라이더 (라벨 없음) */
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="hotel-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumHotel=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function shift(room,k){ return Math.floor(room)+Math.floor(k); }        // 기존 손님: n → n+k
+  function occupantOf(room,k){ room=Math.floor(room); k=Math.floor(k);    // 이동 후 room호의 원래 손님(0=빈방)
+    return room>k ? room-k : 0; }
+  function isVacated(room,k){ room=Math.floor(room);                      // 벨 k번 후 비는 방
+    return room>=1 && room<=Math.floor(k); }
+  function vacatedCount(k){ return Math.floor(k); }                       // 새 손님 수용량
+  function evenMap(room){ return 2*Math.floor(room); }                    // 히든(무한 버스): n → 2n
+  function isOddVacatedAfterEvenMap(room){ return Math.floor(room)%2===1; }
+  return { shift:shift, occupantOf:occupantOf, isVacated:isVacated,
+           vacatedCount:vacatedCount, evenMap:evenMap,
+           isOddVacatedAfterEvenMap:isOddVacatedAfterEvenMap };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="50" value="1" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+'use strict';
+var PURE = window.KMuseumHotel;
+var canvas = document.getElementById('stage-canvas');
+var stage = Museum.stage(canvas);
+var W = stage.W, H = stage.H;
+
+/* ── 팔레트(무대미술 표준 토큰 원문) ─────────────────────────── */
+var C_WALL='#12101a', C_WALL_D='#0c0b12', C_FLOOR='#0f0d16', C_CEIL='#0a0910',
+    C_DOOR='#1b1626', C_DOOR_E='#2a2338', C_BRASS='#c9a961', C_BRASS_DIM='#8a733f',
+    C_INK='#f2ead8', C_INK_DIM='#a89e88', C_INK_FAINT='#5f584a',
+    C_LAMP='rgba(224,168,96,', C_WARM='rgba(242,234,216,';
+
+/* ── 투시(1점) ───────────────────────────────────────────────── */
+var VPX=800, VPY=420, F=520;
+var Z_GAP=280, Z0=260;                       // i호실 문 z = Z0 + (i-1)*Z_GAP
+var CAM_FRONT=-430;                          // 프런트 시점
+function zDoor(i){ return Z0 + (i-1)*Z_GAP; }
+function proj(x,y,z){ var s=F/Math.max(40, F+(z-S.camZ)); return { x:VPX+(x-VPX)*s, y:VPY+(y-VPY)*s, s:s }; }
+
+/* ── 상태 ────────────────────────────────────────────────────── */
+var S = {
+  phase:'boot', t:0, walkT:0,
+  camZ:CAM_FRONT, camVel:0,
+  knocks:0, knockAnim:null,                  // {room,t}
+  vacatedK:0,                                // 1~k호 빈방
+  shiftAnim:null,                            // {k,t,first}
+  door1:0, caseT:-1,                         // 배반 후: 1호 문 열림·가방 입장
+  bellGlow:0, bellRing:0, entryPulse:0,
+  hintT:0, betrayed:false, introIn:0
+};
+function setPhase(p){ S.phase=p; S.t=0; }
+
+/* ── 시작 ────────────────────────────────────────────────────── */
+function start(){
+  setPhase('intro');
+  Museum.sound.roomtone();
+  Museum.sound.play('chime');
+}
+
+/* ── 노크 ────────────────────────────────────────────────────── */
+function knock(room){
+  if(S.knockAnim && S.knockAnim.t<0.5) return;
+  S.knockAnim = { room:room, t:0 };
+  S.knocks++;
+  Museum.sound.play('creak');
+}
+
+/* ── 3막: 벨 호출 → 귀환 ────────────────────────────────────── */
+function bellCall(){
+  setPhase('return');
+  S.bellRing = 1;
+  Museum.sound.play('chime');
+}
+function shouldReturn(){
+  if(S.phase!=='walk') return false;
+  if(S.camZ > zDoor(12)) return true;
+  if(S.walkT > 75 && S.camZ > zDoor(4)) return true;
+  return false;
+}
+
+/* ── 시프트(배반 본체) ───────────────────────────────────────── */
+function doShift(k, first){
+  S.shiftAnim = { k:k, t:0, first:!!first, done:false };
+  setPhase('shift');
+  S.bellGlow = 0;
+  Museum.sound.play('chime');
+}
+function triggerBetray(){
+  S.betrayed = true;
+  var lamp = lampPos(1);
+  Museum.betray({ x:lamp.x/W, y:lamp.y/H }).then(function(){
+    S.door1 = 0.001;                          // 1호 문 열림 시작
+    Museum.sound.play('creak');
+  });
+}
+function lampPos(i){
+  var z = zDoor(i)+70;
+  return proj(268, 236, z);
+}
+
+/* ── 여운 ────────────────────────────────────────────────────── */
+var shown=false;
+function showAfterglow(){
+  if(shown) return; shown=true;
+  setPhase('afterglow');
+  var f=document.getElementById('formula');
+  f.innerHTML = '<span class="num">n</span> \u2192 <span class="num">n+1</span>'+
+    '<span class="small">아무도 나가지 않았다 \u2014 그런데 방이 생겼다</span>';
+  f.classList.add('is-in');
+  Museum.plaque({ title:'끝없는 호텔', story:'만실인데, 방이 있다.',
+                  fine:'다비트 힐베르트 \u2014 무한 호텔의 역설' });
+  Museum.ticket.grant({ id:'m5_hotel', title:'끝없는 호텔',
+    fine:'n \u2192 n+1', drawFn:drawTicketArt });
+  setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1600);
+}
+function drawTicketArt(ctx,w,h){
+  ctx.fillStyle='#0d0d16'; ctx.fillRect(0,0,w,h);
+  var vx=w*0.5, vy=h*0.44;
+  for(var i=0;i<6;i++){
+    var s=1-i*0.15;
+    var dx=vx-(vx-w*0.16)*s, dy1=vy-(vy-h*0.2)*s, dy2=vy+(h*0.86-vy)*s;
+    ctx.fillStyle='#1b1626'; ctx.fillRect(dx, dy1, w*0.07*s, dy2-dy1);
+    ctx.fillStyle = i===0 ? '#26202f' : 'rgba(224,168,96,'+(0.5*s)+')';
+    ctx.beginPath(); ctx.arc(dx+w*0.035*s, dy1-4*s, 2.4*s, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.strokeStyle='#c9a961'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(w*0.12,h*0.86); ctx.lineTo(vx,vy); ctx.stroke();
+}
+
+/* ── 재체험(슬라이더) ────────────────────────────────────────── */
+var slider=document.querySelector('#reexp input');
+slider.addEventListener('input', function(){
+  if(S.phase!=='afterglow' && S.phase!=='replay') return;
+  var k=Math.max(1,Math.min(50, parseInt(slider.value,10)||1));
+  S.vacatedK=0; S.door1=0; S.caseT=-1;
+  S.camZ=CAM_FRONT; S.camVel=0;
+  setPhase('replay');
+  doShift(k, false);
+  var f=document.getElementById('formula');
+  f.innerHTML = '<span class="num">n</span> \u2192 <span class="num">n+'+k+'</span>'+
+    '<span class="small">새 손님 '+k+'명 \u2014 1호부터 '+k+'호까지 비었다</span>';
+});
+
+/* ── 입력: 드래그(관성)·휠·키·탭 ─────────────────────────────── */
+var drag=null;
+canvas.addEventListener('pointerdown', function(e){
+  var r=canvas.getBoundingClientRect();
+  drag={ x:e.clientX, y:e.clientY, moved:0, t:performance.now() };
+});
+canvas.addEventListener('pointermove', function(e){
+  if(!drag) return;
+  var dx=e.clientX-drag.x; drag.moved+=Math.abs(dx); drag.x=e.clientX;
+  if(S.phase==='walk' || S.phase==='intro'){
+    if(S.phase==='intro' && Math.abs(dx)>2) setPhase('walk');
+    S.camVel += -dx*4.2;
+  }
+});
+canvas.addEventListener('pointerup', function(e){
+  if(!drag) return;
+  var wasTap = drag.moved<8 && (performance.now()-drag.t)<400;
+  drag=null;
+  if(!wasTap) return;
+  if(Museum.isLocked && Museum.isLocked()) return;
+  onTap(e);
+});
+window.addEventListener('wheel', function(e){
+  if(S.phase==='walk' || S.phase==='intro'){
+    if(S.phase==='intro') setPhase('walk');
+    S.camVel += e.deltaY*2.4;
+  }
+}, {passive:true});
+window.addEventListener('keydown', function(e){
+  if(S.phase!=='walk' && S.phase!=='intro') return;
+  if(e.key==='ArrowRight'||e.key==='ArrowUp'){ if(S.phase==='intro') setPhase('walk'); S.camVel+=560; }
+  if(e.key==='ArrowLeft'||e.key==='ArrowDown'){ S.camVel-=560; }
+});
+function onTap(e){
+  if(S.phase==='boot'){ start(); return; }
+  if(S.phase==='intro'){ setPhase('walk'); return; }
+  if(S.phase==='walk'){
+    var p=stage.toLogical(e.clientX, e.clientY);
+    var hit=hitDoor(p.x,p.y);
+    if(hit>0) knock(hit);
+    return;
+  }
+  if(S.phase==='bell'){ doShift(1, true); return; }
+}
+function hitDoor(x,y){
+  for(var i=firstVisibleRoom(); i<firstVisibleRoom()+14; i++){
+    var q=doorQuad(i); if(!q) continue;
+    if(x>=q.x0-16 && x<=q.x1+16 && y>=q.y0-16 && y<=q.y1+16) return i;
+  }
+  return 0;
+}
+function firstVisibleRoom(){ return Math.max(1, Math.floor((S.camZ - Z0 + 60)/Z_GAP)+1); }
+function doorQuad(i){
+  var z0=zDoor(i), z1=z0+140;
+  if(z1 < S.camZ+50) return null;
+  var a=proj(206,300,z0), b=proj(206,860,z0), c=proj(206,300,z1), d=proj(206,860,z1);
+  return { x0:Math.min(a.x,c.x), x1:Math.max(a.x,c.x), y0:Math.min(a.y,c.y), y1:Math.max(b.y,d.y), a:a,b:b,c:c,d:d };
+}
+
+/* ── 업데이트 ────────────────────────────────────────────────── */
+function update(dt){
+  S.t+=dt;
+  if(S.phase==='boot') return;
+  if(S.phase==='intro'){ S.introIn=Math.min(1,S.introIn+dt*0.5); S.entryPulse+=dt; S.hintT+=dt; }
+  if(S.phase==='walk'){
+    S.walkT+=dt;
+    S.camZ += S.camVel*dt;
+    S.camVel *= Math.pow(0.06, dt);                        // 관성 감쇠
+    if(S.camZ<CAM_FRONT){ S.camZ=CAM_FRONT; S.camVel=0; }
+    if(shouldReturn()) bellCall();
+  }
+  if(S.phase==='return'){
+    S.camZ += (CAM_FRONT - S.camZ)*Math.min(1, dt*2.6);
+    S.bellRing=Math.max(0,S.bellRing-dt*0.5);
+    if(Math.abs(S.camZ-CAM_FRONT)<6){ S.camZ=CAM_FRONT; setPhase('bell'); }
+  }
+  if(S.phase==='bell'){ S.bellGlow += dt; }
+  if(S.shiftAnim && !S.shiftAnim.done){
+    var A=S.shiftAnim; A.t+=dt;
+    if(A.t>=0.55 && A.t-dt<0.55) Museum.sound.play('clack');
+    if(A.t>=1.5){
+      A.done=true;
+      S.vacatedK=A.k;
+      if(A.first){ triggerBetray(); }
+      else {
+        Museum.sound.play('clack');
+        setPhase('replay');
+      }
+    }
+  }
+  if(S.door1>0 && S.door1<1){
+    S.door1=Math.min(1,S.door1+dt*0.8);
+    if(S.door1>=1 && S.caseT<0){ S.caseT=0; Museum.sound.play('paper'); }
+  }
+  if(S.caseT>=0 && S.caseT<1.3){
+    S.caseT+=dt;
+    if(S.caseT>=1.3 && !shown) showAfterglow();
+  }
+  if(S.knockAnim){ S.knockAnim.t+=dt; if(S.knockAnim.t>1.1) S.knockAnim=null; }
+}
+
+/* ── 렌더 ────────────────────────────────────────────────────── */
+function render(ctx){
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#06060b'); bg.addColorStop(0.72,'#08070d'); bg.addColorStop(1,'#0b0a10');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  if(S.phase==='boot') return;
+
+  drawCorridor(ctx);
+  var first=firstVisibleRoom();
+  for(var i=first+13;i>=first;i--) drawDoor(ctx,i);       // 먼 문부터(깊이 정렬)
+  drawFrontDesk(ctx);
+  drawSuitcase(ctx);
+  if(S.phase==='intro') drawIntro(ctx);
+}
+
+function drawCorridor(ctx){
+  var zn=S.camZ+60, zf=S.camZ+4400;
+  function quad(x0,y0,x1,y1,col){
+    var a=proj(x0,y0,zn), b=proj(x1,y1,zn), c=proj(x1,y1,zf), d=proj(x0,y0,zf);
+    ctx.fillStyle=col; ctx.beginPath();
+    ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y);
+    ctx.closePath(); ctx.fill();
+  }
+  quad(180,860,1420,860,C_FLOOR);            // 바닥
+  quad(180,120,1420,120,C_CEIL);             // 천장
+  quad(180,120,180,860,C_WALL_D);            // 왼벽(문 벽)
+  quad(1420,120,1420,860,C_WALL);            // 오른벽
+  // 바닥 카펫 러너(놋쇠 희미)
+  var a=proj(560,858,zn), b=proj(1040,858,zn), c=proj(1040,858,zf), d=proj(560,858,zf);
+  ctx.fillStyle='rgba(138,115,63,0.10)'; ctx.beginPath();
+  ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill();
+  // 오른벽 등불(스콘스)
+  for(var i=firstVisibleRoom(); i<firstVisibleRoom()+14; i++){
+    var p=proj(1392, 320, zDoor(i)+70);
+    if(p.s<0.05) continue;
+    ctx.drawImage(stage.glow(26*p.s+4, 'rgba(224,168,96,0.20)'), p.x-26*p.s-4, p.y-26*p.s-4);
+  }
+  // 소실점 어둠
+  var vp=ctx.createRadialGradient(VPX,VPY,10,VPX,VPY,300);
+  vp.addColorStop(0,'rgba(5,5,8,0.9)'); vp.addColorStop(1,'rgba(5,5,8,0)');
+  ctx.fillStyle=vp; ctx.fillRect(VPX-320,VPY-320,640,640);
+}
+
+function drawDoor(ctx,i){
+  var q=doorQuad(i); if(!q || q.a.s<0.04) return;
+  var s=q.a.s;
+  var A=S.shiftAnim, sliding = A && !A.done;
+  var openAmt = 0;
+  if(sliding){
+    if(A.t<0.3) openAmt = A.t/0.3;
+    else if(A.t<1.2) openAmt = 1;
+    else openAmt = Math.max(0, 1-(A.t-1.2)/0.3);
+  }
+  var vac = i<=S.vacatedK;
+  if(S.phase==='replay' && vac) openAmt=Math.max(openAmt,0.55);   // 빈방 문은 반개(빛)
+  if(i===1 && S.door1>0) openAmt=Math.max(openAmt,S.door1);
+  // 문틀
+  ctx.fillStyle=C_DOOR_E;
+  ctx.beginPath(); ctx.moveTo(q.a.x,q.a.y); ctx.lineTo(q.c.x,q.c.y); ctx.lineTo(q.d.x,q.d.y); ctx.lineTo(q.b.x,q.b.y); ctx.closePath(); ctx.fill();
+  // 문 안쪽 빛 슬릿(열림)
+  if(openAmt>0){
+    ctx.fillStyle=C_WARM+(0.10+0.28*openAmt)+')';
+    ctx.beginPath(); ctx.moveTo(q.a.x,q.a.y); ctx.lineTo(q.c.x,q.c.y); ctx.lineTo(q.d.x,q.d.y); ctx.lineTo(q.b.x,q.b.y); ctx.closePath(); ctx.fill();
+  }
+  // 문짝(열린 만큼 좁아짐)
+  var kx=q.a.x+(q.c.x-q.a.x)*openAmt*0.9;
+  ctx.fillStyle=C_DOOR;
+  ctx.beginPath(); ctx.moveTo(kx,q.a.y+(q.c.y-q.a.y)*openAmt*0.9); ctx.lineTo(q.c.x,q.c.y); ctx.lineTo(q.d.x,q.d.y); ctx.lineTo(kx,q.b.y+(q.d.y-q.b.y)*openAmt*0.9); ctx.closePath(); ctx.fill();
+  // 노크 어른거림
+  if(S.knockAnim && S.knockAnim.room===i){
+    var kt=S.knockAnim.t, fl=(Math.sin(kt*26)*0.5+0.5)*Math.max(0,1-kt);
+    ctx.fillStyle=C_WARM+(0.18*fl)+')';
+    ctx.fillRect(q.x0, q.y1-8*s, (q.x1-q.x0), 6*s);
+  }
+  // 문패(호수 — 호텔 소품)
+  if(s>0.14){
+    var mid=proj(206, 396, zDoor(i)+70);
+    ctx.fillStyle='rgba(201,169,97,'+Math.min(0.85,s+0.15)+')';
+    ctx.font=(26*s|0)+"px 'Jua',sans-serif"; ctx.textAlign='center';
+    ctx.fillText(String(i), mid.x, mid.y);
+    ctx.textAlign='left';
+  }
+  // 램프(점유=호박빛 / 빈방=소등)
+  var lp=lampPos(i);
+  ctx.fillStyle='#26202f';
+  ctx.beginPath(); ctx.arc(lp.x, lp.y, 5*s+1.5, 0, Math.PI*2); ctx.fill();
+  if(!vac){
+    var br=0.55+0.1*Math.sin(S.t*2+i);
+    ctx.drawImage(stage.glow(30*s+6, C_LAMP+(0.30*br)+')'), lp.x-30*s-6, lp.y-30*s-6);
+    ctx.fillStyle=C_LAMP+'0.85)';
+    ctx.beginPath(); ctx.arc(lp.x, lp.y, 3*s+1, 0, Math.PI*2); ctx.fill();
+  }
+  // 이동 실루엣(시프트 중)
+  if(sliding && A.t>=0.3 && A.t<1.25){
+    var gp=Math.min(1,(A.t-0.3)/0.9), ease=gp*gp*(3-2*gp);
+    var zFrom=zDoor(i)+70, zTo=zDoor(i+A.k)+70;
+    var gz=zFrom+(zTo-zFrom)*ease;
+    var g=proj(250, 560, gz);
+    if(g.s>0.05){
+      ctx.fillStyle='rgba(18,14,24,0.92)';
+      ctx.beginPath(); ctx.ellipse(g.x, g.y, 26*g.s, 78*g.s, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(g.x, g.y-92*g.s, 20*g.s, 0, Math.PI*2); ctx.fill();
+    }
+  }
+}
+
+function drawFrontDesk(ctx){
+  var z0=-300, z1=-140;
+  if(z1<S.camZ+50) return;
+  var a=proj(940,600,z0), b=proj(1280,600,z0), c=proj(1280,860,z0), d=proj(940,860,z0);
+  var s=a.s;
+  // 데스크
+  ctx.fillStyle='#161226';
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(201,169,97,0.25)'; ctx.fillRect(a.x, a.y-3*s, b.x-a.x, 3*s);
+  // 벨(놋쇠 돔)
+  var bell=proj(1110,588,z0);
+  var glow = S.phase==='bell' ? (0.35+0.25*Math.sin(S.bellGlow*3.2)) : (S.bellRing>0 ? 0.5*S.bellRing : 0.12);
+  ctx.drawImage(stage.glow(44*s, 'rgba(201,169,97,'+glow+')'), bell.x-44*s, bell.y-44*s);
+  ctx.fillStyle=C_BRASS;
+  ctx.beginPath(); ctx.arc(bell.x, bell.y, 16*s, Math.PI, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=C_BRASS_DIM; ctx.fillRect(bell.x-20*s, bell.y, 40*s, 4*s);
+  // 팻말 "만실"
+  var sg=proj(1000,540,z0);
+  ctx.fillStyle='#1e1930'; ctx.fillRect(sg.x-52*s, sg.y-30*s, 104*s, 46*s);
+  ctx.strokeStyle='rgba(201,169,97,0.5)'; ctx.lineWidth=1;
+  ctx.strokeRect(sg.x-52*s, sg.y-30*s, 104*s, 46*s);
+  ctx.fillStyle=C_INK_DIM; ctx.font=(26*s|0)+"px 'Gowun Batang',serif"; ctx.textAlign='center';
+  ctx.fillText('만실', sg.x, sg.y+3*s);
+  ctx.textAlign='left';
+}
+
+function drawSuitcase(ctx){
+  if(S.phase==='afterglow' && S.caseT>=1.3) return;        // 입실 완료
+  var x=330, y=812;
+  if(S.caseT>=0){                                           // 1호실로 미끄러져 입장
+    var d1=doorQuad(1); if(!d1) return;
+    var p=Math.min(1,S.caseT/1.2), ease=p*p*(3-2*p);
+    var tx=(d1.x0+d1.x1)/2, ty=d1.y1-30;
+    x=x+(tx-x)*ease; y=y+(ty-y)*ease;
+    ctx.globalAlpha=1-Math.max(0,(S.caseT-0.9)/0.4);
+  }
+  ctx.fillStyle='#141020';
+  ctx.fillRect(x-34, y-52, 68, 52);
+  ctx.strokeStyle='rgba(201,169,97,0.45)'; ctx.lineWidth=2;
+  ctx.strokeRect(x-34, y-52, 68, 52);
+  ctx.strokeRect(x-12, y-64, 24, 12);                       // 손잡이
+  ctx.globalAlpha=1;
+}
+
+function drawIntro(ctx){
+  var a=Math.min(1,S.introIn*1.4);
+  // 이야기 한 줄(명판 소품 — 유일한 전제)
+  ctx.fillStyle=C_WARM+(0.72*a)+')';
+  ctx.font="26px 'Gowun Batang',serif"; ctx.textAlign='center';
+  ctx.fillText('방이 끝없이 많은 호텔이 있었다.', W/2, 190);
+  ctx.fillStyle=C_WARM+(0.55*a)+')';
+  ctx.fillText('오늘 밤, 방이 모두 찼다.', W/2, 232);
+  ctx.textAlign='left';
+  // 복도 입구 숨쉬는 유도
+  var pulse=0.5+0.5*Math.sin(S.entryPulse*2.2);
+  var e=proj(800,520, S.camZ+900);
+  ctx.drawImage(stage.glow(70, 'rgba(201,169,97,'+(0.10+0.10*pulse)+')'), e.x-70, e.y-70);
+  // 첫 회차 손 실루엣 힌트(1회 소멸)
+  if(S.hintT<3.4){
+    var hx=W*0.62 - (S.hintT%1.7)*120, ha=Math.max(0, 0.35-Math.abs((S.hintT%1.7)-0.85)*0.4);
+    ctx.fillStyle='rgba(242,234,216,'+ha+')';
+    ctx.beginPath(); ctx.arc(hx, H*0.62, 12, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ── 장면 등록·부팅 ──────────────────────────────────────────── */
+var mainScene = stage.add({ update:update, draw:render });
+stage.start();
+
+// 최초 입장 자막(boot)
+(function bootHint(){
+  var s=mainScene; var was=s.draw;
+  s.draw=function(ctx){
+    was.call(s,ctx);
+    if(S.phase==='boot'){
+      ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,192,0.6)';
+      ctx.font="24px 'Gowun Batang',serif";
+      ctx.fillText('눌러서 입장', W/2, H*0.5);
+      ctx.textAlign='left';
+    }
+  };
+})();
+
+// 테스트/외부 훅
+window.__M5={ S:S, start:start, setPhase:setPhase, doShift:doShift, bellCall:bellCall,
+              knock:knock, zDoor:zDoor, lampPos:lampPos, PURE:PURE };
+})();
+</script>
+</body>
+</html>
