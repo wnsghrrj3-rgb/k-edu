@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>아무도 모르는 줄무늬 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(19px,2.8vw,28px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--ink-faint); letter-spacing:.10em; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="ulam-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumUlam=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function spiralPos(n){                                    // 1=(0,0)·반시계·9=(1,-1)·25=(2,-2)
+    if(n<1) return null;
+    if(n===1) return {x:0,y:0};
+    var k=Math.ceil((Math.sqrt(n)-1)/2);
+    var s=(2*k-1)*(2*k-1);
+    var i=n-s;
+    if(i<=2*k) return {x:k, y:-k+i};                        // 우변 상행
+    if(i<=4*k) return {x:k-(i-2*k), y:k};                   // 상변 좌행
+    if(i<=6*k) return {x:-k, y:k-(i-4*k)};                  // 좌변 하행
+    return {x:-k+(i-6*k), y:-k};                            // 하변 우행
+  }
+  function posToN(x,y){
+    var k=Math.max(Math.abs(x),Math.abs(y));
+    if(k===0) return 1;
+    var s=(2*k-1)*(2*k-1);
+    if(x===k && y>-k) return s + (y+k);                     // 우변
+    if(y===k)         return s + 2*k + (k-x);               // 상변
+    if(x===-k)        return s + 4*k + (k-y);               // 좌변
+    return s + 6*k + (x+k);                                 // 하변
+  }
+  function isPrime(n){
+    if(n<2) return false;
+    if(n<4) return true;
+    if(n%2===0 || n%3===0) return false;
+    for(var d=5; d*d<=n; d+=6){
+      if(n%d===0 || n%(d+2)===0) return false;
+    }
+    return true;
+  }
+  function sieve(limit){
+    var s=new Uint8Array(limit+1);
+    if(limit>=2) for(var i=2;i<=limit;i++) s[i]=1;
+    for(var p=2;p*p<=limit;p++){
+      if(s[p]) for(var q=p*p;q<=limit;q+=p) s[q]=0;
+    }
+    return s;
+  }
+  function primeCount(limit){
+    var s=sieve(limit), c=0;
+    for(var i=0;i<=limit;i++) c+=s[i];
+    return c;
+  }
+  return { spiralPos:spiralPos, posToN:posToN, isPrime:isPrime, sieve:sieve, primeCount:primeCount };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">지루한 회의 &mdash; 한 수학자가 낙서를 시작했습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="2500" max="40000" value="10000" step="2500" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumUlam;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+
+  // ── 색(순백 금지·악센트=분필 상아 1색) ───────────────────────────
+  var C_INK_D='#a89e88', C_BRICK='#151422';
+
+  // ── 상수 ─────────────────────────────────────────────────────────
+  var N_MANUAL=220, N_MAX=10000, CELL=34;
+  var CX=W*0.5, CY=470;
+  var DIRECT_LIMIT=1500;                              // 이후 오프스크린 blit
+
+  var SIEVE = PURE.sieve(41000);
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',             // boot→wind→auto→still→sweep→betrayed→after
+    n:1,                      // 깔린 마지막 수
+    frac:0,                   // 칸 미만 누적(각→칸)
+    autoV:0,                  // 자동 감기 각속도(rad/s)
+    stillT:0,
+    sweep:null,               // {t,dur}
+    swept:false,              // 스윕 후 소수 점 밝기 유지
+    betrayed:false,
+    view:{ n:N_MAX },
+    time:0
+  };
+  var cam = { s:1.9 };                                // 균일 스케일(중심 고정)
+
+  function ringOf(n){ return n<=1 ? 0 : Math.ceil((Math.sqrt(n)-1)/2); }
+  function extent(n){ return (ringOf(n)+1.5)*CELL; }  // 나선 반너비(월드)
+
+  // ── 오프스크린 누적(원경·여운) ───────────────────────────────────
+  var OPX=6, off=null, offHalf=0, offDrawn=0;
+  function offInit(maxN){
+    var half=(ringOf(maxN)+2)*OPX;
+    off=document.createElement('canvas'); off.width=off.height=half*2; offHalf=half; offDrawn=0;
+  }
+  function offAdd(upto, bright){
+    if(!off) return;
+    var c=off.getContext('2d');
+    if(!c){ offDrawn=upto; return; }
+    for(var n=offDrawn+1;n<=upto;n++){
+      var p=PURE.spiralPos(n);
+      var x=offHalf+p.x*OPX, y=offHalf-p.y*OPX;
+      c.fillStyle='rgba(21,20,34,.6)';
+      c.fillRect(x-OPX*0.5, y-OPX*0.5, OPX-1, OPX-1);
+      if(SIEVE[n]){
+        c.fillStyle=bright ? 'rgba(242,234,216,.95)' : 'rgba(242,234,216,.8)';
+        c.fillRect(x-OPX*0.5+1, y-OPX*0.5+1, OPX-3, OPX-3);
+      }
+    }
+    offDrawn=upto;
+  }
+  function offRebuild(maxN, bright){ offInit(maxN); offAdd(maxN, bright); }
+  function drawOffFit(ctx){
+    if(!off) return;
+    var fit=Math.min((W-140)/off.width, (H-170)/off.height);
+    var dw=off.width*fit, dh=off.height*fit;
+    ctx.drawImage(off, CX-dw*0.5, CY-dh*0.5-10, dw, dh);
+  }
+
+  // ── 감기(각변위 → 칸) ────────────────────────────────────────────
+  var lastAng=null;
+  function windBy(dAng){                              // dAng: |각변위| (rad)
+    var laid=0;
+    S.frac += Math.abs(dAng);
+    while(S.n<N_MAX){
+      var need=2*Math.PI/Math.max(8, 8*ringOf(S.n+1));
+      if(S.frac<need) break;
+      S.frac-=need; S.n++; laid++;
+      if(SIEVE[S.n]) Museum.sound.play('chalk');
+      else Museum.sound.play('clack');
+      if(S.n>DIRECT_LIMIT) offAdd(S.n,false);
+    }
+    if(S.phase==='wind' && S.n>=N_MANUAL){
+      S.phase='auto'; S.autoV=0.6;
+      document.getElementById('premise').classList.remove('is-in');
+    }
+    if(S.n>=N_MAX && S.phase!=='still' && S.phase!=='sweep' && !S.betrayed){
+      S.phase='still'; S.stillT=0;
+    }
+    return laid;
+  }
+
+  // ── 4막 스윕 → 배반 ──────────────────────────────────────────────
+  function beginSweep(){
+    offRebuild(N_MAX,false);
+    S.sweep={t:0,dur:1.6};
+    S.phase='sweep';
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.swept=true; S.phase='betrayed';
+    offRebuild(N_MAX,true);
+    Museum.betray({x:0.5,y:0.47}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='낙서 속에서 줄무늬가 나타났다 &mdash; 왜인지는, 아직 아무도 모른다'
+      +'<span class="small">울람의 나선(1963) &middot; n&sup2;+n+41 &mdash; 마흔 개의 소수를 내리 낳는 식</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'아무도 모르는 줄무늬',
+      story:'컴퓨터로 수억까지 그려도 줄무늬는 계속된다. 증명은, 아직 없다.',
+      fine:'ULAM 1963 · EULER 1772' });
+    Museum.ticket.grant({ id:'m3_ulam', title:'아무도 모르는 줄무늬', fine:'패턴의 방',
+      drawFn:function(c,w,h){
+        var R=12, px=Math.min(w,h)/(2*R+1);
+        c.fillStyle='rgba(242,234,216,.9)';
+        for(var n=1;n<=(2*R+1)*(2*R+1);n++){
+          if(!SIEVE[n]) continue;
+          var p=PURE.spiralPos(n);
+          c.fillRect((p.x+R)*px, (R-p.y)*px, Math.max(1,px-0.5), Math.max(1,px-0.5));
+        }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 크기 재체험(줄무늬는 계속된다) ───────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    S.view.n=parseInt(slider.value,10)||N_MAX;
+    offRebuild(S.view.n,true);
+    Museum.sound.play('clack');
+  });
+
+  // ── 입력: 중앙을 도는 원운동 드래그 = 감기 ───────────────────────
+  var dragging=false;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='boot'){ S.phase='wind'; document.getElementById('premise').classList.add('is-in'); }
+    if(S.phase!=='wind' && S.phase!=='auto') return;
+    dragging=true;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    lastAng=Math.atan2(p.y-CY, p.x-CX);
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!dragging || Museum.isLocked()) return;
+    if(S.phase!=='wind' && S.phase!=='auto') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var a=Math.atan2(p.y-CY, p.x-CX);
+    if(lastAng!==null){
+      var d=a-lastAng;
+      if(d>Math.PI) d-=2*Math.PI;
+      if(d<-Math.PI) d+=2*Math.PI;
+      windBy(d);
+    }
+    lastAng=a;
+  });
+  window.addEventListener('pointerup', function(){ dragging=false; lastAng=null; });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked() && S.phase!=='betrayed') return;
+      S.time+=dt;
+      if(S.phase==='auto'){
+        S.autoV=Math.min(26, S.autoV*1.018 + dt*1.5);
+        windBy(S.autoV*dt);
+      }
+      if(S.phase==='wind' || S.phase==='auto' || S.phase==='still'){
+        var sT=Math.min(1.9, 380/extent(Math.max(S.n, 60)) * (CELL/34));
+        cam.s += (sT-cam.s)*Math.min(1, dt*2.4);
+      }
+      if(S.phase==='still'){
+        S.stillT+=dt;
+        if(S.stillT>=0.8) beginSweep();
+      }
+      else if(S.phase==='sweep'){
+        S.sweep.t+=dt;
+        if(S.sweep.t>=S.sweep.dur) triggerBetray();
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.2);
+      if(S.phase==='betrayed' || S.phase==='after'){
+        drawOffFit(ctx);
+        return;
+      }
+      if(S.n>DIRECT_LIMIT || S.phase==='sweep'){
+        // 원경: 오프스크린 blit(카메라 스케일)
+        if(!off) offRebuild(S.n,false);
+        var scl=cam.s*CELL/OPX;
+        ctx.drawImage(off, CX-offHalf*scl, CY-offHalf*scl, off.width*scl, off.height*scl);
+        if(S.phase==='sweep'){
+          // 대각 글로우 띠: 좌하→우상 방향으로 판을 쓸고 지나감
+          var u=S.sweep.t/S.sweep.dur;
+          var span=(W+H), c0=-H + u*span*1.2 - 120;
+          var g=ctx.createLinearGradient(c0, H, c0+H, 0);
+          g.addColorStop(0,'rgba(242,234,216,0)');
+          g.addColorStop(0.5,'rgba(242,234,216,.16)');
+          g.addColorStop(1,'rgba(242,234,216,0)');
+          ctx.fillStyle=g;
+          ctx.save();
+          ctx.translate(CX,CY); ctx.rotate(-Math.PI/4); ctx.translate(-CX,-CY);
+          ctx.fillRect(c0-260, -H, 520, H*3);
+          ctx.restore();
+        }
+        return;
+      }
+      // 근경: 깔린 칸 직접 렌더
+      for(var n=1;n<=S.n;n++){
+        var p=PURE.spiralPos(n);
+        var x=CX + p.x*CELL*cam.s, y=CY - p.y*CELL*cam.s;
+        var b=CELL*cam.s;
+        ctx.fillStyle=C_BRICK;
+        ctx.fillRect(x-b*0.5+1, y-b*0.5+1, b-2, b-2);
+        if(cam.s>0.5){
+          ctx.strokeStyle='rgba(138,115,63,'+(0.3*Math.min(1,cam.s)).toFixed(2)+')';
+          ctx.lineWidth=1;
+          ctx.strokeRect(x-b*0.5+1, y-b*0.5+1, b-2, b-2);
+        }
+        if(SIEVE[n]){
+          ctx.fillStyle='rgba(242,234,216,.85)';
+          ctx.fillRect(x-b*0.28, y-b*0.28, b*0.56, b*0.56);
+        }
+        if(b>17 && !SIEVE[n]){
+          ctx.fillStyle=C_INK_D;
+          ctx.font=Math.floor(b*0.42)+'px Jua, sans-serif';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(String(n), x, y+1);
+        }
+      }
+      if(S.phase==='boot'){
+        var b0=CELL*cam.s;
+        ctx.fillStyle='rgba(242,234,216,'+(0.06+0.10*breath).toFixed(3)+')';
+        ctx.fillRect(CX-b0*0.5+2, CY-b0*0.5+2, b0-4, b0-4);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__M3 = {
+    S:S, PURE:PURE, cam:cam, SIEVE:SIEVE,
+    windBy:windBy,
+    beginWind:function(){ if(S.phase==='boot'){ S.phase='wind'; document.getElementById('premise').classList.add('is-in'); } },
+    windTo:function(target){
+      while(S.n<Math.min(target,N_MAX)){
+        var need=2*Math.PI/Math.max(8, 8*ringOf(S.n+1));
+        windBy(need+1e-9);
+      }
+    },
+    beginSweep:beginSweep, triggerBetray:triggerBetray,
+    N_MANUAL:N_MANUAL, N_MAX:N_MAX
+  };
+})();
+</script>
+</body>
+</html>
