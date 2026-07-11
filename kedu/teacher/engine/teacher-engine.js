@@ -1400,15 +1400,48 @@
       });
     });
 
-    // 활동 삽입 훅 (§6-3 카탈로그 탭 → activity-host.js가 호출)
+    // 활동 삽입 훅 (§21-5: 비점프·phase 기반 위치. 화면은 그대로, 목록만 갱신 + 토스트)
     global.KEDU_INSERT_ACTIVITY = (data) => {
-      slides.splice(curIdx + 1, 0, {
-        stage: '응용문제', block: 'activity', data,
+      const phase = data.phase || 'practice';
+      const lastOf = (names) => {
+        let at = -1;
+        slides.forEach((sl, i) => { if (names.includes(sl.stage)) at = i; });
+        return at;
+      };
+      const firstOf = (name) => slides.findIndex(sl => sl.stage === name);
+      let at;
+      if (phase === 'intro') {
+        at = lastOf(['도입']);
+        if (at < 0) at = 0;
+        at += 1;
+      } else if (phase === 'wrapup') {
+        at = slides.length;
+      } else { // practice
+        at = lastOf(['응용문제', '기본문제']);
+        if (at >= 0) at += 1;
+        else { const w = firstOf('정리'); at = w >= 0 ? w : slides.length; }
+      }
+      const stage = phase === 'intro' ? '도입' : (phase === 'wrapup' ? '정리' : '응용문제');
+      slides.splice(at, 0, {
+        stage, block: 'activity', data: { id: data.id, params: data.params },
         id: 'u' + Date.now(), included: true,
         attached_extras: [], suggested_extras: [], user_added: true
       });
-      curIdx++;
-      rebuild();
+      if (curIdx >= at) curIdx++;          // 현재 보고 있는 슬라이드를 그대로 유지
+      rebuild();                            // 목록 갱신 (화면 이동 없음)
+      // 토스트
+      let t = document.getElementById('kact-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'kact-toast';
+        t.style.cssText = 'position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#92400e;color:#fff;padding:12px 22px;border-radius:14px;font-size:16px;z-index:9500;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:opacity .4s;opacity:0;pointer-events:none';
+        document.body.appendChild(t);
+      }
+      const visPos = slides.filter(sl => sl.included).indexOf(slides[at]) + 1;
+      t.textContent = '🎲 ' + visPos + '번째 슬라이드에 들어갔어요';
+      t.style.opacity = '1';
+      clearTimeout(t._h);
+      t._h = setTimeout(() => { t.style.opacity = '0'; }, 2600);
     };
 
     // 사용자 추가 슬라이드 삭제

@@ -359,7 +359,7 @@
     });
     form.querySelector('[data-kact-insert]').addEventListener('click', function () {
       if (typeof window.KEDU_INSERT_ACTIVITY === 'function') {
-        window.KEDU_INSERT_ACTIVITY({ id: a.id, params: chosen });
+        window.KEDU_INSERT_ACTIVITY({ id: a.id, params: chosen, phase: a.phase });
         form.remove();
       } else {
         form.querySelector('[data-kact-insert]').textContent = '엔진 훅 없음 (버전 확인)';
@@ -432,7 +432,7 @@
       });
       it.querySelector('[data-kp-ins]').addEventListener('click', function () {
         pop.classList.remove('active');
-        if (typeof window.KEDU_INSERT_ACTIVITY === 'function') window.KEDU_INSERT_ACTIVITY({ id: a.id, params: null });
+        if (typeof window.KEDU_INSERT_ACTIVITY === 'function') window.KEDU_INSERT_ACTIVITY({ id: a.id, params: null, phase: a.phase });
       });
     });
     pop.classList.add('active');
