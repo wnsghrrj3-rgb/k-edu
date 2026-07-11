@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 3차시(l10)
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 4차시(l11)
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-02] · 교과서 p.40~42 · 주제②(우리 지역의 기온과 강수량을 알아볼까요) 근거
-중학년(3·4) v11 디자인 헌법 그린 톤 적용. 발문 설계 원칙(관찰→발문→사고→답) 적용.
-직접조작: 기후 그래프 읽기(계절별 기온 꺾은선 + 강수량 막대 클릭 → 값 표시 + 계절 특징 파악) + 효과음. l09 구조 100% 복제.
-정직 원칙: 기온·강수량 수치는 '예시 자료'(특정 실제 지역 아님)로 명시.
+성취기준 [4사05-02] · 교과서 p.43~46 · 지도서(대단원1 지도안, 12~13차시) 근거
+직접조작: 지역 비교표 채우기(지리 정보 5항목 클릭 → 두 지역 값 나란히 채워 비교) + 효과음. l10 구조 100% 복제.
+지도서 근거: 역할 나눠 조사·비교(디지털 영상 지도·통계·기상청). 사회톡톡 독도 p.45(노랫말 변화=지리 정보는 변한다). 진로 지리 정보 전문가 p.46.
+정직 원칙: 두 비교 지역·수치는 '예시 자료'(특정 실제 지역 아님). 앞 l08~l10(위치·지형·면적·인구·기온) 종합 차시.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우리 지역의 기온과 강수량을 알아볼까요 · 사회 4-1</title>
+<title>우리 지역과 다른 지역의 지리 정보를 비교해 볼까요 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -113,7 +113,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 기후 그래프 읽기 조작 */
+/* 지역 비교표 채우기 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -184,137 +184,130 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 기온(온도계)
-  temp:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF2F2"/>
-    <rect x="74" y="16" width="12" height="52" rx="6" fill="#fff" stroke="#DC2626" stroke-width="2"/>
-    <circle cx="80" cy="74" r="12" fill="#DC2626"/><rect x="76" y="40" width="8" height="30" fill="#DC2626"/>
-    <line x1="90" y1="24" x2="98" y2="24" stroke="#F87171" stroke-width="1.5"/><line x1="90" y1="36" x2="98" y2="36" stroke="#F87171" stroke-width="1.5"/><line x1="90" y1="48" x2="98" y2="48" stroke="#F87171" stroke-width="1.5"/>
-    <text x="80" y="92" font-size="9" fill="#B91C1C" text-anchor="middle" font-weight="800">기온 (°C)</text></svg>`,
-  // 강수량(비/우산)
-  rain:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
-    <path d="M50 40 Q50 22 68 22 Q80 12 96 22 Q114 22 112 40Z" fill="#BFD9F0" stroke="#5AA9E6" stroke-width="1.5"/>
-    ${[54,68,82,96,108].map((x,i)=>`<line x1="${x}" y1="${48+(i%2)*4}" x2="${x-4}" y2="${62+(i%2)*4}" stroke="#3E8CD4" stroke-width="2.5" stroke-linecap="round"/>`).join('')}
-    <text x="80" y="92" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">강수량 (mm)</text></svg>`,
-  // 기후 그래프(꺾은선 기온 + 막대 강수량)
-  climate:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
-    <line x1="20" y1="76" x2="146" y2="76" stroke="#94A3B8" stroke-width="1.2"/>
-    <rect x="30" y="60" width="14" height="16" fill="#9EC7EA"/><rect x="60" y="34" width="14" height="42" fill="#5AA9E6"/><rect x="90" y="64" width="14" height="12" fill="#9EC7EA"/><rect x="120" y="70" width="14" height="6" fill="#9EC7EA"/>
-    <path d="M37 56 L67 26 L97 50 L127 66" fill="none" stroke="#DC2626" stroke-width="2.4"/>
-    ${[37,67,97,127].map((x,i)=>`<circle cx="${x}" cy="${[56,26,50,66][i]}" r="3" fill="#DC2626"/>`).join('')}
-    <text x="80" y="92" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">기후 그래프</text></svg>`,
-  // 여름(덥고 비 많음)
-  summer:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9E7"/><circle cx="80" cy="40" r="20" fill="#FBBF24"/>${[0,45,90,135,180,225,270,315].map(a=>{const r=a*Math.PI/180;return `<line x1="${80+Math.cos(r)*26}" y1="${40+Math.sin(r)*26}" x2="${80+Math.cos(r)*34}" y2="${40+Math.sin(r)*34}" stroke="#F59E0B" stroke-width="2.5"/>`}).join('')}<text x="80" y="88" font-size="10" fill="#B45309" text-anchor="middle" font-weight="800">여름 — 덥고 비 많음</text></svg>`,
-  // 겨울(춥고 건조)
-  winter:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>${[[50,30],[90,26],[110,44],[70,50],[40,58]].map(([x,y])=>`<g stroke="#7CC4E8" stroke-width="2"><line x1="${x-6}" y1="${y}" x2="${x+6}" y2="${y}"/><line x1="${x}" y1="${y-6}" x2="${x}" y2="${y+6}"/><line x1="${x-4}" y1="${y-4}" x2="${x+4}" y2="${y+4}"/><line x1="${x-4}" y1="${y+4}" x2="${x+4}" y2="${y-4}"/></g>`).join('')}<text x="80" y="88" font-size="10" fill="#1D4ED8" text-anchor="middle" font-weight="800">겨울 — 춥고 건조</text></svg>`,
-  // 계절(사계절)
-  seasons:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
-    <rect x="8" y="20" width="34" height="40" rx="4" fill="#FBCFE8"/><text x="25" y="44" font-size="9" fill="#9D174D" text-anchor="middle" font-weight="800">봄</text>
-    <rect x="46" y="20" width="34" height="40" rx="4" fill="#FDE68A"/><text x="63" y="44" font-size="9" fill="#B45309" text-anchor="middle" font-weight="800">여름</text>
-    <rect x="84" y="20" width="34" height="40" rx="4" fill="#FCD9A8"/><text x="101" y="44" font-size="9" fill="#9A3412" text-anchor="middle" font-weight="800">가을</text>
-    <rect x="122" y="20" width="30" height="40" rx="4" fill="#BFDBFE"/><text x="137" y="44" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">겨울</text>
-    <text x="80" y="82" font-size="9" fill="#166534" text-anchor="middle" font-weight="700">계절에 따라 달라요</text></svg>`
+  // 지리 정보(위치·지형·면적·인구·기후 아이콘 모음)
+  geoinfo:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    <circle cx="30" cy="34" r="13" fill="#fff" stroke="#64748B" stroke-width="1.4"/><path d="M30 26 L32 34 L30 42 L28 34Z" fill="#DC2626"/>
+    <path d="M56 46 L66 30 L76 46Z" fill="#86C28B"/><rect x="88" y="30" width="18" height="16" fill="#DCFCE7" stroke="#8FBF6A"/>
+    <circle cx="122" cy="34" r="6" fill="#5AA9E6"/><circle cx="136" cy="34" r="6" fill="#5AA9E6"/>
+    <text x="80" y="72" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">지리 정보</text>
+    <text x="80" y="86" font-size="8" fill="#475569" text-anchor="middle">위치·지형·면적·인구·기후</text></svg>`,
+  // 두 지역 비교
+  compare:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    <rect x="10" y="16" width="60" height="64" rx="6" fill="#DBEAFE" stroke="#5AA9E6" stroke-width="1.5"/>
+    <text x="40" y="32" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">우리 지역</text>
+    <rect x="90" y="16" width="60" height="64" rx="6" fill="#DCFCE7" stroke="#8FBF6A" stroke-width="1.5"/>
+    <text x="120" y="32" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">다른 지역</text>
+    <text x="80" y="54" font-size="16" fill="#F57F17" text-anchor="middle" font-weight="800">↔</text>
+    <text x="80" y="92" font-size="8" fill="#B45309" text-anchor="middle" font-weight="700">견주어 비교해요</text></svg>`,
+  // 조사 방법(지도·통계·기상청)
+  research:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
+    <rect x="12" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><path d="M18 44 L28 34 L36 42 L46 30" fill="none" stroke="#86C28B" stroke-width="2"/><text x="32" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">영상 지도</text>
+    <rect x="60" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><rect x="66" y="40" width="6" height="10" fill="#86C28B"/><rect x="76" y="34" width="6" height="16" fill="#86C28B"/><rect x="86" y="44" width="6" height="6" fill="#86C28B"/><text x="80" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">통계</text>
+    <rect x="108" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><circle cx="122" cy="38" r="6" fill="#FBBF24"/><path d="M132 46 q6 -8 12 0" fill="none" stroke="#7CC4E8" stroke-width="2"/><text x="128" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">기상청</text>
+    <text x="80" y="86" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">여러 곳에서 조사해요</text></svg>`,
+  // 독도(사회톡톡 — 지리 정보는 변한다)
+  dokdo:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#7CC4E8"/>
+    <ellipse cx="54" cy="60" rx="26" ry="12" fill="#86C28B"/><path d="M40 60 L54 38 L68 60Z" fill="#6FB578"/>
+    <ellipse cx="104" cy="64" rx="20" ry="9" fill="#86C28B"/><path d="M92 64 L104 46 L116 64Z" fill="#6FB578"/>
+    <path d="M20 82 q16 -5 28 0" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/>
+    <text x="80" y="20" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="800">독도</text>
+    <text x="80" y="92" font-size="8" fill="#0C4A6E" text-anchor="middle" font-weight="700">지리 정보는 변해요</text></svg>`,
+  // 지리 정보 전문가(진로)
+  expert:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5F3FF"/>
+    <circle cx="80" cy="36" r="14" fill="#C4B5FD"/><circle cx="80" cy="32" r="7" fill="#EDE9FE"/><path d="M62 66 q18 -16 36 0Z" fill="#A78BFA"/>
+    <rect x="104" y="26" width="22" height="18" rx="2" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/><path d="M108 40 L114 32 L118 38 L122 30" fill="none" stroke="#86C28B" stroke-width="1.6"/>
+    <text x="80" y="88" font-size="9" fill="#6D28D9" text-anchor="middle" font-weight="800">지리 정보 전문가</text></svg>`,
+  // 지도(종합)
+  map:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
+    <path d="M18 20 L96 12 L128 34 L118 74 L60 84 L26 60Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
+    <circle cx="30" cy="30" r="7" fill="#fff" stroke="#64748B" stroke-width="1"/><path d="M30 25 L31 30 L30 35 L29 30Z" fill="#DC2626"/>
+    <path d="M56 54 L64 42 L72 54Z" fill="#86C28B"/><circle cx="90" cy="52" r="5" fill="#5AA9E6"/>
+    <text x="88" y="30" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">우리 지역</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 기후 그래프 읽기(직접 조작) ===== */
-// 계절 막대/점을 누르면 기온(°C)·강수량(mm)이 나타나고, 4/4 읽으면 계절 특징 파악 — l09 filled 패턴 재사용.
-// ⚠️ 정직 원칙: 아래 수치는 실제 특정 지역이 아닌 '예시 자료'(우리나라 중부 대략).
-const SEASONS = [
-  {k:'spring', name:'봄',   temp:12,  precip:80,  color:'#EC4899'},
-  {k:'summer', name:'여름', temp:25,  precip:280, color:'#F59E0B'},
-  {k:'fall',   name:'가을', temp:14,  precip:60,  color:'#EA8C4A'},
-  {k:'winter', name:'겨울', temp:-2,  precip:30,  color:'#3E8CD4'}
+/* ===== 지역 비교표 채우기(직접 조작) ===== */
+// 지리 정보 5항목을 누르면 두 지역(예시) 값이 나란히 채워져 비교 — l10 filled 패턴 재사용.
+// ⚠️ 정직 원칙: 두 지역·값은 실제 특정 지역이 아닌 '예시 자료'(대비가 뚜렷한 가상 지역).
+const GEOINFO = [
+  {k:'loc',  icon:'📍', name:'위치',   ours:'동쪽 바닷가',      other:'가운데 내륙'},
+  {k:'land', icon:'⛰️', name:'지형',   ours:'바다·넓은 들',    other:'높은 산·강'},
+  {k:'area', icon:'🟩', name:'면적',   ours:'보통',           other:'넓음'},
+  {k:'pop',  icon:'👥', name:'인구',   ours:'많음',           other:'적음'},
+  {k:'clim', icon:'🌡️', name:'기후',   ours:'여름 덥고 비 많음', other:'겨울 춥고 눈 많음'}
 ];
-const T_MIN=-10, T_MAX=30, P_MAX=300; // 기온 -10~30°C, 강수량 0~300mm
-function climateInteractive(st){
+function climateInteractive(st){ return compareInteractive(st); } // 슬라이드 호출 호환
+function compareInteractive(st){
   const filled = st.filled || {};
   const cnt = Object.keys(filled).length;
-  const baseY=168, axX=48, gH=130, bw=32, gap=56;
-  const xOf = i => axX + 20 + i*gap;
-  const tempY = t => baseY - ((t - T_MIN) / (T_MAX - T_MIN)) * gH;
-  // 강수량 막대
-  const bars = SEASONS.map((s,i)=>{
-    const on=!!filled[s.k]; const x=xOf(i); const h=(s.precip/P_MAX)*gH; const y=baseY-h;
-    return `<rect x="${x}" y="${on?y:baseY-8}" width="${bw}" height="${on?h:8}" rx="3" fill="${on?'#9EC7EA':'#E2E8F0'}" stroke="#5AA9E6" stroke-width="1.2"/>`;
+  const rows = GEOINFO.map(g=>{
+    const on = !!filled[g.k];
+    return `<div onclick="paintBand('${g.k}')" style="cursor:pointer;display:grid;grid-template-columns:74px 1fr 1fr;gap:6px;align-items:stretch;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:5px;font-weight:800;color:#166534;background:#F0FDF4;border-radius:8px;padding:7px 8px;font-size:.9em">${g.icon} ${g.name}</div>
+      <div style="border-radius:8px;padding:7px 8px;font-size:.9em;background:${on?'#DBEAFE':'#F1F5F9'};color:${on?'#1D4ED8':'#94A3B8'};font-weight:${on?'700':'400'}">${on?g.ours:'눌러요'}</div>
+      <div style="border-radius:8px;padding:7px 8px;font-size:.9em;background:${on?'#DCFCE7':'#F1F5F9'};color:${on?'#166534':'#94A3B8'};font-weight:${on?'700':'400'}">${on?g.other:'눌러요'}</div>
+    </div>`;
   }).join('');
-  // 기온 꺾은선(읽은 계절만 잇기)
-  const pts = SEASONS.map((s,i)=>({x:xOf(i)+bw/2, y:tempY(s.temp), on:!!filled[s.k]}));
-  let line=''; let prev=null;
-  pts.forEach(p=>{ if(p.on){ if(prev) line+=`<line x1="${prev.x}" y1="${prev.y}" x2="${p.x}" y2="${p.y}" stroke="#DC2626" stroke-width="2.4"/>`; prev=p; } });
-  const dots = SEASONS.map((s,i)=>{ const p=pts[i]; return p.on?`<circle cx="${p.x}" cy="${p.y}" r="4" fill="#DC2626"/>`:''; }).join('');
-  // 클릭 히트존 + 라벨
-  const hits = SEASONS.map((s,i)=>{
-    const on=!!filled[s.k]; const x=xOf(i);
-    return `<g onclick="paintBand('${s.k}')" style="cursor:pointer">
-      <rect x="${x-4}" y="20" width="${bw+8}" height="${baseY-20}" fill="#000" fill-opacity="0.001"/>
-      <text x="${x+bw/2}" y="${baseY+16}" font-size="11" fill="${on?s.color:'#94A3B8'}" text-anchor="middle" font-weight="800" style="pointer-events:none">${s.name}</text>
-      ${on?`<text x="${x+bw/2}" y="${baseY+30}" font-size="9" fill="#DC2626" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.temp}°C</text><text x="${x+bw/2}" y="${baseY+42}" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="700" style="pointer-events:none">${s.precip}mm</text>`
-        :`<text x="${x+bw/2}" y="${baseY-16}" font-size="12" fill="#94A3B8" text-anchor="middle" style="pointer-events:none">?</text>`}
-    </g>`;
-  }).join('');
-  const counter = `<div class="note" style="font-weight:700;color:#15803D">읽은 계절 ${cnt} / ${SEASONS.length}</div>`;
-  const done = cnt>=SEASONS.length;
+  const head = `<div style="display:grid;grid-template-columns:74px 1fr 1fr;gap:6px;margin-bottom:6px">
+    <div style="font-weight:800;color:#475569;font-size:.85em;display:flex;align-items:center;padding-left:8px">지리 정보</div>
+    <div style="text-align:center;font-weight:800;color:#1D4ED8;background:#DBEAFE;border-radius:8px;padding:5px;font-size:.85em">우리 지역</div>
+    <div style="text-align:center;font-weight:800;color:#166534;background:#DCFCE7;border-radius:8px;padding:5px;font-size:.85em">다른 지역</div></div>`;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">비교한 항목 ${cnt} / ${GEOINFO.length}</div>`;
+  const done = cnt>=GEOINFO.length;
   const info = done
-    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 읽었어요! <b style="color:#B45309">여름</b>은 기온이 높고 강수량도 많고, <b style="color:#1D4ED8">겨울</b>은 기온이 낮고 강수량이 적어요. 이렇게 <b>계절에 따라</b> 기온·강수량이 달라져요. <span class="ka-emph">빨간 꺾은선 = 기온</span>, <span class="ka-emph">파란 막대 = 강수량</span>이에요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
-    : `<div class="note">계절을 눌러 <b style="color:#DC2626">기온</b>과 <b style="color:#1D4ED8">강수량</b>을 읽어 봐요.</div>`;
-  return `<div class="contour-wrap"><svg viewBox="0 0 300 224" style="width:min(380px,96%);height:auto">
-    <rect width="300" height="224" fill="#FFFDF5" rx="12"/>
-    <line x1="${axX}" y1="20" x2="${axX}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.4"/>
-    <line x1="${axX}" y1="${baseY}" x2="272" y2="${baseY}" stroke="#94A3B8" stroke-width="1.4"/>
-    <text x="6" y="14" font-size="9" fill="#DC2626" font-weight="700">기온(°C)</text>
-    <text x="230" y="14" font-size="9" fill="#1D4ED8" font-weight="700">강수량(mm)</text>
-    ${bars}${line}${dots}${hits}
-  </svg>${counter}</div>${info}`;
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 비교했어요! 같은 항목끼리 <b>견주어</b> 보니 두 지역의 <span class="ka-emph">지리 정보가 서로 다르네요</span>. 이렇게 우리 지역과 다른 지역을 비교하면 각 지역의 <b>특징</b>을 잘 알 수 있어요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
+    : `<div class="note">지리 정보 항목을 눌러 <b style="color:#1D4ED8">우리 지역</b>과 <b style="color:#166534">다른 지역</b>을 <b>비교</b>해 봐요.</div>`;
+  return `<div style="width:min(560px,98%);margin:0 auto">${head}${rows}${counter}</div>${info}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 3차시";
+const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 4차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [0,1,2,3,1,1,0,2]
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [1,0,2,3,2,0,1,3]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"공기가 <b>따뜻하고 차가운 정도</b>를 무엇이라고 할까요?",
-   opts:["기온","강수량","면적","인구"], correct:0, pts:POINTS_BASIC,
-   reason:"공기의 따뜻하고 차가운 정도를 기온이라고 해요.",
-   h1:"온도계로 재는, 덥고 추운 정도예요.",
-   h2:"\u2018기\u2019는 공기, 온도를 뜻하는 두 글자 낱말이에요."},
-  {stem:"일정 기간 동안 내린 <b>비·눈 등의 양</b>을 무엇이라고 할까요?",
-   opts:["기온","강수량","방위","지형"], correct:1, pts:POINTS_BASIC,
-   reason:"비나 눈처럼 하늘에서 내린 물의 양을 강수량이라고 해요.",
-   h1:"비와 눈을 합쳐서 재는 양이에요.",
-   h2:"\u2018강수\u2019는 내린 물, 얼마나 내렸는지의 \u2018양\u2019을 뜻해요."},
-  {stem:"기온을 나타낼 때 쓰는 단위는 무엇일까요?",
-   opts:["밀리미터(mm)","제곱킬로미터(km²)","도(°C)","명"], correct:2, pts:POINTS_BASIC,
-   reason:"기온은 도(°C), 강수량은 밀리미터(mm) 단위로 나타내요.",
-   h1:"덥고 추운 정도를 재는 단위예요(강수량 mm와 달라요).",
-   h2:"온도계에 쓰여 있는, \u2018도\u2019가 붙는 단위예요."},
-  {stem:"기온과 강수량을 함께 나타내, 그 지역의 날씨 특징을 한눈에 보여 주는 그래프를 무엇이라고 할까요?",
-   opts:["막대만 있는 그래프","사진첩","일기장","기후 그래프"], correct:3, pts:POINTS_BASIC,
-   reason:"기온(꺾은선)과 강수량(막대)을 함께 나타낸 것을 기후 그래프라고 해요.",
-   h1:"오늘 계절별 기온·강수량을 읽어 본 그래프예요.",
-   h2:"기온과 강수량을 한 그림에 담아 지역의 기후를 보여 줘요."},
+  {stem:"위치·지형·면적·인구·기후처럼 <b>어떤 지역에 관한 여러 정보</b>를 무엇이라고 할까요?",
+   opts:["날씨 정보","지리 정보","교통 정보","가격 정보"], correct:1, pts:POINTS_BASIC,
+   reason:"위치·지형·면적·인구·기후처럼 지역에 관한 정보를 지리 정보라고 해요.",
+   h1:"\u2018지리\u2019는 땅과 지역에 관한 것이에요.",
+   h2:"오늘 두 지역을 비교할 때 사용한 위치·지형·면적·인구·기후가 모두 지리 정보예요."},
+  {stem:"우리 지역과 다른 지역을 비교할 때 <b>바르게</b> 하는 방법은 무엇일까요?",
+   opts:["같은 항목끼리 견주어 본다","서로 다른 항목을 아무렇게나 비교한다","한 지역만 살펴본다","이름만 비교한다"], correct:0, pts:POINTS_BASIC,
+   reason:"위치는 위치끼리, 인구는 인구끼리 \u2014 같은 항목끼리 견주어야 바르게 비교할 수 있어요.",
+   h1:"인구를 지형과 비교하면 알맞을까요?",
+   h2:"같은 종류의 정보끼리 나란히 놓고 견주어야 해요."},
+  {stem:"우리 지역의 지리 정보를 <b>조사하는 방법</b>으로 알맞지 <u>않은</u> 것은?",
+   opts:["디지털 영상 지도로 위치·지형 살펴보기","통계 자료로 인구·면적 찾기","기상청에서 기온·강수량 찾기","친구 얼굴을 살펴보기"], correct:3, pts:POINTS_BASIC,
+   reason:"위치·지형은 영상 지도, 인구·면적은 통계, 기온·강수량은 기상청에서 조사해요. 친구 얼굴은 지리 정보가 아니에요.",
+   h1:"지리 정보를 어디서 찾는지 떠올려 봐요.",
+   h2:"영상 지도·통계·기상청은 맞고, 나머지 하나는 지역 정보와 관계없어요."},
+  {stem:"<b>[사회톡톡]</b> \u2018독도는 우리 땅\u2019 노랫말이 세월이 흐르며 바뀐 까닭은 무엇일까요?", scene:"dokdo",
+   opts:["노래가 유행이 지나서","가수가 바뀌어서","글자 수를 줄이려고","독도의 지리 정보가 변했기 때문에"], correct:3, pts:POINTS_BASIC,
+   reason:"독도의 우편번호·주소 같은 지리 정보가 바뀌면서 노랫말도 바뀌었어요. 지리 정보는 시간이 지나며 변할 수 있어요.",
+   h1:"노랫말 속에는 독도의 위치·주소 같은 정보가 담겨 있어요.",
+   h2:"지리 정보는 \u2018변하지 않는 것\u2019이 아니라 시간에 따라 바뀔 수 있어요."},
   // 4단계 적용 (+15)
-  {stem:"우리나라에서 <b>기온이 가장 높은</b> 계절은 언제일까요?", scene:"summer",
-   opts:["봄","여름","가을","겨울"], correct:1, pts:POINTS_APPLY,
-   reason:"우리나라는 여름에 기온이 가장 높아 덥고, 겨울에 가장 낮아 추워요.",
-   h1:"덥고 무더운, 방학이 있는 계절이에요.",
-   h2:"기후 그래프에서 기온 꺾은선이 가장 높이 올라간 계절이에요."},
-  {stem:"기후 그래프를 읽을 때, 우리나라에서 <b>강수량이 가장 많은</b> 계절은 언제일까요?", scene:"climate",
-   opts:["봄","여름","가을","겨울"], correct:1, pts:POINTS_APPLY,
-   reason:"우리나라는 여름에 장마와 소나기로 비가 많이 내려 강수량이 가장 많아요.",
-   h1:"장마가 있는 계절을 떠올려 봐요.",
-   h2:"강수량 막대가 가장 높이 솟은 계절이에요 \u2014 여름이에요."},
-  {stem:"기후 그래프에서 <b>기온</b>과 <b>강수량</b>은 각각 어떻게 나타낼까요?", scene:"climate",
-   opts:["기온 = 꺾은선 · 강수량 = 막대","기온 = 막대 · 강수량 = 꺾은선","둘 다 막대","둘 다 꺾은선"], correct:0, pts:POINTS_APPLY,
-   reason:"보통 기온은 꺾은선(빨강), 강수량은 막대(파랑)로 함께 나타내요.",
-   h1:"오늘 조작에서 빨간 선과 파란 막대를 봤어요.",
-   h2:"기온은 변화를 잇는 꺾은선, 강수량은 양을 나타내는 막대예요."},
-  {stem:"우리 지역의 기온과 강수량을 알면 무엇에 도움이 될까요?",
-   opts:["날씨를 마음대로 바꿀 수 있다","계절에 맞는 옷차림·농사·생활을 준비할 수 있다","기온과 강수량은 쓸모가 없다","모든 지역 날씨가 같아진다"], correct:1, pts:POINTS_APPLY,
-   reason:"기온·강수량을 알면 계절에 맞는 옷차림, 농사, 여러 생활을 미리 준비할 수 있어요.",
-   h1:"더운 여름과 추운 겨울에 우리는 무엇을 다르게 준비하나요?",
-   h2:"날씨를 알면 옷·농사·생활을 계절에 맞게 계획할 수 있어요."}
+  {stem:"두 지역의 <b>지형</b>을 비교했더니 한 곳은 \u2018바다·들\u2019, 다른 곳은 \u2018높은 산\u2019이었어요. 이를 통해 알 수 있는 것은?", scene:"compare",
+   opts:["두 지역의 인구가 같다","두 지역의 지형이 서로 다르다","두 지역이 똑같은 곳이다","지형은 비교할 수 없다"], correct:1, pts:POINTS_APPLY,
+   reason:"바다·들이 있는 곳과 높은 산이 있는 곳은 지형이 서로 달라요. 비교로 지역의 특징을 알 수 있어요.",
+   h1:"바닷가 지역과 산이 많은 지역, 땅의 모습이 같을까요?",
+   h2:"서로 다른 지형을 가졌다는 뜻이에요."},
+  {stem:"영상 지도·통계·기상청 자료를 모아 지역의 지리 정보를 조사하고 다루는 일을 하는 <b>직업</b>은?", scene:"expert",
+   opts:["지리 정보 전문가","요리사","운동선수","성악가"], correct:0, pts:POINTS_APPLY,
+   reason:"지리 정보 전문가는 여러 지리 정보를 모으고 분석해 지도·자료로 만드는 일을 해요.",
+   h1:"오늘 배운 지리 정보를 다루는 일과 관련된 직업이에요.",
+   h2:"\u2018지리 정보\u2019를 전문으로 다루는 사람이에요."},
+  {stem:"우리 지역과 다른 지역의 지리 정보를 비교하면 <b>좋은 점</b>은 무엇일까요?",
+   opts:["모든 지역이 같아진다","각 지역의 특징과 다른 점을 잘 알 수 있다","비교는 아무 도움이 안 된다","한 지역만 좋아진다"], correct:1, pts:POINTS_APPLY,
+   reason:"지역을 비교하면 우리 지역과 다른 지역이 어떻게 다른지, 각 지역의 특징이 무엇인지 잘 알 수 있어요.",
+   h1:"비교는 \u2018다른 점\u2019과 \u2018같은 점\u2019을 드러내 줘요.",
+   h2:"각 지역의 특징을 더 뚜렷이 이해하는 데 도움이 돼요."},
+  {stem:"지금까지 배운 <b>지리 정보 5가지</b>를 모두 바르게 묶은 것은?",
+   opts:["색·냄새·소리·맛·무게","위치·지형·면적·인구·기후","봄·여름·가을·겨울·눈","동·서·남·북·중앙"], correct:1, pts:POINTS_APPLY,
+   reason:"우리가 배운 지리 정보는 위치·지형·면적·인구·기후예요. 이 정보들로 지역을 이해하고 비교해요.",
+   h1:"l08~l11에서 하나씩 배운 것들을 떠올려 봐요.",
+   h2:"어디에(위치)·어떤 땅(지형)·얼마나 넓고(면적)·몇 명(인구)·어떤 날씨(기후)예요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -322,56 +315,53 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역의 기온과 강수량을 알아볼까요?</h2>
-  <div class="ka-bub">우리 지역은 계절마다 얼마나 <b>덥고 추울까요?</b> 비와 눈은 <b>얼마나</b> 내릴까요? 날씨를 알면 지역을 더 잘 이해할 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('temp','기온')}${sceneCard('rain','강수량')}</div>
-    <div class="note">오늘은 우리 지역의 <b style="color:#DC2626">기온</b>과 <b style="color:#1D4ED8">강수량</b>을 알아봐요.</div>
+  <h2 class="ka-t">우리 지역과 다른 지역을 비교해 볼까요?</h2>
+  <div class="ka-bub">지금까지 우리 지역의 <b>위치·지형·면적·인구·기후</b>를 알아봤어요. 이런 정보를 <b>다른 지역</b>과 견주어 보면 무엇을 알 수 있을까요?</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('compare','우리 지역 ↔ 다른 지역')}</div>
+    <div class="note">오늘은 두 지역의 <b style="color:#15803D">지리 정보</b>를 <b>비교</b>해 봐요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">계절마다 날씨가 어떻게 달라질까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">봄·여름·가을·겨울, 계절이 바뀌면 기온도 강수량도 달라져요. 이 변화를 그래프로 나타내면 한눈에 볼 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('seasons','계절에 따라 달라요')}
-  </div><div class="note">기온과 강수량을 함께 나타낸 그래프를 무엇이라고 할까요?</div></div>`});
+  <h2 class="ka-t">위치·지형·면적·인구·기후… 이걸 뭐라고 부를까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">우리가 배운 위치·지형·면적·인구·기후는 모두 우리 지역에 관한 정보예요. 이런 정보를 한데 묶어 부르는 말이 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('geoinfo','지역에 관한 여러 정보')}</div>
+  <div class="note">이런 정보들을 통틀어 무엇이라고 할까요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">기온과 강수량을 함께 나타내면?</h2>
-  <div class="ka-grp"><div class="scene-row">
-    ${sceneCard('climate','기후 그래프')}
-  </div>
-  ${st.revealed?`<div class="answer-box">기온(<b style="color:#DC2626">꺾은선</b>)과 강수량(<b style="color:#1D4ED8">막대</b>)을 함께 그린 것을 <span class="ka-emph">기후 그래프</span>라고 해요. 계절에 따른 날씨 변화를 한눈에 알 수 있어요.</div>`
+  <h2 class="ka-t">지역에 관한 여러 정보 =?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('geoinfo','지리 정보')}</div>
+  ${st.revealed?`<div class="answer-box">위치·지형·면적·인구·기후처럼 지역에 관한 정보를 <span class="ka-emph">지리 정보</span>라고 해요. 이 지리 정보를 <b>다른 지역과 비교</b>하면 우리 지역의 특징을 더 잘 알 수 있어요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 기온·강수량의 뜻
+// 4 살펴보기: 조사 방법
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">\u2018기온\u2019과 \u2018강수량\u2019이란?</h2>
-  <div class="ka-bub"><span class="ka-emph">기온</span>은 공기의 <b>따뜻하고 차가운 정도</b>예요(도 °C로 나타내요). <span class="ka-emph">강수량</span>은 <b>비·눈이 내린 양</b>이에요(밀리미터 mm로 나타내요).</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('temp','기온 = 덥고 추운 정도')}${sceneCard('rain','강수량 = 내린 양')}</div>
-  <div class="note">기온은 <b style="color:#DC2626">°C</b>, 강수량은 <b style="color:#1D4ED8">mm</b> \u2014 서로 다른 정보예요.</div></div>`});
-// 5 살펴보기: 기후 그래프 읽기(직접 조작)
+  <h2 class="ka-t">지리 정보는 어떻게 조사할까요?</h2>
+  <div class="ka-bub"><b>위치·지형</b>은 디지털 영상 지도로, <b>인구·면적</b>은 통계 자료로, <b>기온·강수량</b>은 기상청 자료로 조사해요. 역할을 나누어 조사하면 더 쉬워요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('research','영상 지도·통계·기상청')}</div>
+  <div class="note">알맞은 곳에서 지리 정보를 <b style="color:#15803D">조사</b>해 비교표를 채워요.</div></div>`});
+// 5 살펴보기: 지역 비교표 채우기(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">기후 그래프를 직접 읽어 봐요</h2>
-  <div class="ka-grp">${climateInteractive(st)}</div>`});
-// 6 살펴보기: 계절 특징 파악(발문)
+  <h2 class="ka-t">두 지역을 직접 비교해 봐요</h2>
+  <div class="ka-grp">${compareInteractive(st)}</div>`});
+// 6 살펴보기: 사회톡톡 독도(지리 정보는 변한다)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">여름과 겨울은 무엇이 다를까요?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('summer','여름')}${sceneCard('winter','겨울')}</div>
-  ${st.revealed?`<div class="answer-box"><b style="color:#B45309">여름</b>은 기온이 <b>높고</b> 비가 <b>많이</b> 내려요(장마·소나기). <b style="color:#1D4ED8">겨울</b>은 기온이 <b>낮고</b> 비·눈이 <b>적어요</b>. 이렇게 우리나라는 계절에 따라 날씨가 뚜렷이 달라져요.</div>`
-    :`<div class="note">여름과 겨울, 기온과 강수량은 어떻게 다를까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">[사회톡톡] 지리 정보는 변할까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('dokdo','독도')}</div>
+  ${st.revealed?`<div class="answer-box"><b>\u2018독도는 우리 땅\u2019</b> 노랫말은 세월이 흐르며 조금씩 바뀌었어요. 독도의 <b>주소·우편번호</b> 같은 지리 정보가 바뀌었기 때문이에요. 이처럼 지리 정보는 <b>고정된 것이 아니라 변할 수 있어요</b>.</div>`
+    :`<div class="note">노랫말 속 독도의 정보가 왜 바뀌었을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 자료 찾기 + 다음 탐구 연결
+// 7 살펴보기: 진로 지리 정보 전문가 + 다음 연결
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">날씨 자료는 어디서 찾을까요?</h2>
-  <div class="ka-bub">우리 지역의 기온·강수량 자료는 <b>기상청</b>이나 <b>통계청</b> 누리집에서 찾을 수 있어요. 이런 자료를 그래프로 정리하면 우리 지역 날씨를 더 잘 알 수 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('climate','자료로 만든 기후 그래프')}</div>
-  <div class="note">다음 시간에는 우리 지역과 <b style="color:#15803D">다른 지역</b>의 지리 정보를 <b>비교</b>해 봐요.</div></div>`});
+  <h2 class="ka-t">[별별 직업] 지리 정보 전문가</h2>
+  <div class="ka-bub"><b>지리 정보 전문가</b>는 영상 지도·통계·기상 자료처럼 여러 지리 정보를 모으고 분석해 <b>지도와 자료</b>로 만드는 일을 해요. 우리가 오늘 한 조사·비교가 바로 그 일의 첫걸음이에요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('expert','지리 정보 전문가')}</div>
+  <div class="note">다음 시간에는 <b style="color:#15803D">픽셀 아트</b>로 지역을 재미있게 확인하고 1단원을 정리해요.</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -382,18 +372,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div><b style="color:#DC2626">기온</b>은 공기의 따뜻하고 차가운 정도(°C), <b style="color:#1D4ED8">강수량</b>은 비·눈이 내린 양(mm)이에요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div><b>기후 그래프</b>는 기온(꺾은선)과 강수량(막대)을 함께 나타내, 계절에 따른 날씨를 한눈에 보여 줘요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>우리나라는 <b>여름에 덥고 비가 많고</b>, <b>겨울에 춥고 건조해요</b>. 기온·강수량을 알면 계절에 맞게 생활을 준비할 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">지리 정보</b>는 위치·지형·면적·인구·기후처럼 지역에 관한 여러 정보예요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>지리 정보는 <b>영상 지도·통계·기상청</b>에서 조사하고, <b>같은 항목끼리</b> 견주어 비교해요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>지역을 비교하면 각 지역의 <b>특징</b>을 잘 알 수 있어요. 지리 정보는 <b>시간에 따라 변할 수</b> 있어요(독도).</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"기온과 강수량이 무엇인지 말할 수 있어요",st)}
-    ${selfCheck(1,"기후 그래프에서 기온·강수량을 읽을 수 있어요",st)}
-    ${selfCheck(2,"계절에 따라 날씨가 달라짐을 알아요",st)}
+    ${selfCheck(0,"지리 정보가 무엇인지 말할 수 있어요",st)}
+    ${selfCheck(1,"두 지역의 지리 정보를 비교할 수 있어요",st)}
+    ${selfCheck(2,"지역을 비교하면 좋은 점을 알아요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -403,7 +393,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">우리 지역의 기온과 강수량을 알아봤어요. 다음 시간엔 \u2018다른 지역과 비교하기\u2019를 해요.</div>
+    <div class="note">우리 지역과 다른 지역을 비교해 봤어요. 다음 시간엔 \u2018픽셀 아트\u2019로 1단원을 정리해요.</div>
   </div>`;
 }});
 
@@ -436,7 +426,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l10";
+const LS_KEY = "kedu_progress_g4_social_u1_l11";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -476,17 +466,17 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 기후 그래프 읽기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 지역 비교표 채우기 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
 function paintBand(k){
-  if(!SEASONS.some(b=>b.k===k)) return;
+  if(!GEOINFO.some(b=>b.k===k)) return;
   if(!state.filled) state.filled={};
   const wasNew = !state.filled[k];
   state.filled[k]=true; state._lastBand=k;
-  const total=SEASONS.length, cnt=Object.keys(state.filled).length;
+  const total=GEOINFO.length, cnt=Object.keys(state.filled).length;
   if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
@@ -526,7 +516,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g4_social_u1_l11_지역비교.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
