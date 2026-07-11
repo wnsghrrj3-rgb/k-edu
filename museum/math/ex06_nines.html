@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>0.999…의 방 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(20px,3vw,34px); letter-spacing:.10em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; }
+  #formula .small{ display:block; margin-top:10px; font-size:clamp(13px,1.6vw,17px); color:var(--ink-faint); letter-spacing:.04em; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="nines-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumNines=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function nines(n){ n=Math.max(0,Math.floor(n)); var s='0.'; for(var i=0;i<n;i++) s+='9'; return s; }
+  function partialNum(n){ return 10n ** BigInt(Math.floor(n)) - 1n; }   // 부분합 분자
+  function partialDen(n){ return 10n ** BigInt(Math.floor(n)); }        // 부분합 분모
+  function gapNumerator(n){ return partialDen(n) - partialNum(n); }     // ★ 항상 1n — 자기유사
+  function gapDen(n){ return partialDen(n); }                           // 간극 = 1/10^n
+  function lessThanOne(n){ return partialNum(n) < partialDen(n); }      // 유한이면 언제나 간극
+  function thirds(n){ n=Math.max(0,Math.floor(n)); var s='0.'; for(var i=0;i<n;i++) s+='3'; return s; }
+  function timesThree(n){                                               // 0.33…3 × 3 = 0.99…9
+    var num = (partialDen(n) - 1n) / 3n * 3n;                           // (10^n−1)/3 × 3 = 10^n−1
+    var s = num.toString();
+    while(s.length < Math.floor(n)) s = '0'+s;
+    return '0.'+s;
+  }
+  return { nines:nines, partialNum:partialNum, partialDen:partialDen,
+           gapNumerator:gapNumerator, gapDen:gapDen, lessThanOne:lessThanOne,
+           thirds:thirds, timesThree:timesThree };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="15" value="1" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+'use strict';
+var PURE = window.KMuseumNines;
+var canvas = document.getElementById('stage-canvas');
+var stage = Museum.stage(canvas);
+var W = stage.W, H = stage.H;
+
+/* ── 팔레트(무대미술 표준 토큰 원문) ─────────────────────────── */
+var C_BRASS='#c9a961', C_BRASS_DIM='#8a733f', C_INK='#f2ead8',
+    C_INK_DIM='#a89e88', C_INK_FAINT='#5f584a',
+    C_WARM='rgba(242,234,216,', C_GAP='rgba(224,168,96,';
+
+/* ── 뷰: 로그 스케일·상대좌표 — 무한 줌의 정도(正道) ─────────────
+   절대 u좌표(부동소수)는 극한 줌에서 죽는다. "1"을 rel=0.82에 고정하고
+   간극·눈금을 전부 상대(rel)로 그린다. 줌 = logSpan(=log10 뷰 폭). */
+var LINE_Y=520, VIEW_L=200, VIEW_R=1400, REL_ONE=0.82;
+function rel2x(rel){ return VIEW_L + rel*(VIEW_R-VIEW_L); }
+function markerRel(){ return REL_ONE - Math.pow(10, S.logGap - S.logSpan); }
+function partialU(n){ return 1 - Math.pow(0.1, n); }   // 참고용 — 진리는 E1 BigInt
+
+/* ── 상태 ────────────────────────────────────────────────────── */
+var S = {
+  phase:'boot', t:0, introIn:0,
+  n:1,                                   // 9의 개수
+  logSpan:0, logSpanT:0,                 // 줌 = log10(뷰 폭) — 자기유사: 전진마다 −1
+  logGap:-1, logGapT:-1,                 // 간극 = log10(1−부분합) = −n
+  dragging:false, dragRel:null,
+  casc:false, cascT:0,
+  gapPulse:0, hintT:0, closing:0,        // closing: 간극 소멸 연출 0→1
+  betrayed:false
+};
+function setPhase(p){ S.phase=p; S.t=0; }
+
+function start(){
+  setPhase('intro');
+  Museum.sound.roomtone();
+  Museum.sound.play('chime');
+}
+
+/* ── 전진(9 하나 추가) — 철컥 + 줌인 ─────────────────────────── */
+function advance(){
+  if(S.n>=40) return;
+  S.n++;
+  S.logGapT  = -S.n;                     // 간극 1/10
+  S.logSpanT = -(S.n-1);                 // 줌인 ×10 — 간극이 같은 폭으로 복원(자기유사)
+  Museum.sound.play('clack');
+  Museum.sound.play('chalk');
+}
+
+/* ── 3막: 폭주(통제 상실) → 간극 소멸 ───────────────────────── */
+function startCascade(){
+  if(S.casc) return;
+  S.casc=true; S.cascT=0;
+  setPhase('cascade');
+  Museum.sound.play('creak');
+}
+function triggerBetray(){
+  if(S.betrayed) return;
+  S.betrayed=true;
+  Museum.betray({ x:rel2x(REL_ONE)/W, y:LINE_Y/H }).then(showAfterglow);
+}
+
+/* ── 여운 ────────────────────────────────────────────────────── */
+var shown=false;
+function showAfterglow(){
+  if(shown) return; shown=true;
+  setPhase('afterglow');
+  var f=document.getElementById('formula');
+  f.innerHTML = '<span class="num">0.999\u2026 = 1</span>'+
+    '<span class="small">9가 무한히 계속된다면 \u2014 간극이 있을 자리가 없다</span>';
+  f.classList.add('is-in');
+  Museum.plaque({ title:'0.999\u2026의 방', story:'영원히 닿지 못할 줄 알았다 \u2014 이미 닿아 있었다.',
+                  fine:'극한 \u2014 무한소수의 정체' });
+  Museum.ticket.grant({ id:'m6_nines', title:'0.999\u2026의 방',
+    fine:'0.999\u2026 = 1', drawFn:drawTicketArt });
+  setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1600);
+}
+function drawTicketArt(ctx,w,h){
+  ctx.fillStyle='#0d0d16'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#8a733f'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(w*0.2,h*0.5); ctx.lineTo(w*0.8,h*0.5); ctx.stroke();
+  ctx.fillStyle='#c9a961';
+  ctx.beginPath(); ctx.arc(w*0.8,h*0.5,5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#a89e88'; ctx.font="14px 'Jua',sans-serif"; ctx.textAlign='center';
+  for(var i=0;i<5;i++) ctx.fillText('9', w*0.28+i*w*0.1, h*0.5-14-i*3);
+  ctx.fillText('1', w*0.8, h*0.5+26);
+  ctx.textAlign='left';
+}
+
+/* ── 재체험(슬라이더): 유한이면 언제나 간극 ─────────────────── */
+var slider=document.querySelector('#reexp input');
+slider.addEventListener('input', function(){
+  if(S.phase!=='afterglow' && S.phase!=='replay') return;
+  var n=Math.max(1,Math.min(15, parseInt(slider.value,10)||1));
+  setPhase('replay');
+  S.casc=false; S.closing=0;
+  S.n=n;
+  S.logGap=-n; S.logGapT=-n;
+  S.logSpan=-(n-1); S.logSpanT=-(n-1);
+  Museum.sound.play('clack');
+});
+
+/* ── 입력: 마커 드래그(자석 스냅) + 간극 탭 ─────────────────── */
+var drag=null;
+function markerScreenX(){ return rel2x(markerRel()); }
+canvas.addEventListener('pointerdown', function(e){
+  var p=stage.toLogical(e.clientX, e.clientY);
+  drag={ x:e.clientX, moved:0, t:performance.now(),
+         onMarker: (S.phase==='pull' || S.phase==='intro') &&
+                   Math.abs(p.x-markerScreenX())<90 && Math.abs(p.y-LINE_Y)<120 };
+  if(drag.onMarker && S.phase==='intro') setPhase('pull');
+  if(drag.onMarker) S.dragging=true;
+});
+canvas.addEventListener('pointermove', function(e){
+  if(!drag) return;
+  drag.moved+=Math.abs(e.clientX-drag.x); drag.x=e.clientX;
+  if(S.dragging){
+    var p=stage.toLogical(e.clientX, e.clientY);
+    var rel=(p.x-VIEW_L)/(VIEW_R-VIEW_L);
+    var lim=REL_ONE - 0.1*Math.pow(10, S.logGap - S.logSpan);   // 자석 한계 = 다음 부분합
+    S.dragRel=Math.min(rel, lim + (rel>lim ? (rel-lim)*0.06 : 0)); // 넘기려 하면 강한 저항
+  }
+});
+canvas.addEventListener('pointerup', function(e){
+  if(!drag) return;
+  var wasTap = drag.moved<8 && (performance.now()-drag.t)<400;
+  var wasDrag = S.dragging;
+  S.dragging=false; drag=null;
+  if(Museum.isLocked && Museum.isLocked()) return;
+  if(wasDrag && S.dragRel!==null){
+    var pulled = S.dragRel > markerRel() + 0.03;
+    S.dragRel=null;
+    if(pulled) onForward();
+    return;
+  }
+  if(wasTap) onTap(e);
+});
+function onTap(e){
+  if(S.phase==='boot'){ start(); return; }
+  if(S.phase==='intro'){ setPhase('pull'); return; }
+  if(S.phase==='pull'){
+    var p=stage.toLogical(e.clientX, e.clientY);
+    if(p.x>markerScreenX()-40 && Math.abs(p.y-LINE_Y)<160) onForward();
+  }
+}
+function onForward(){
+  if(S.phase!=='pull') return;
+  if(S.n>=8){ startCascade(); return; }            // 8번째 이후 = 통제 상실
+  advance();
+}
+
+/* ── 업데이트 ────────────────────────────────────────────────── */
+function update(dt){
+  S.t+=dt; S.gapPulse+=dt;
+  if(S.phase==='boot') return;
+  if(S.phase==='intro'){ S.introIn=Math.min(1,S.introIn+dt*0.5); S.hintT+=dt; }
+
+  // 줌·간극 수렴(로그 lerp = 지수 줌)
+  S.logSpan += (S.logSpanT-S.logSpan)*Math.min(1, dt*3.2);
+  S.logGap  += (S.logGapT -S.logGap )*Math.min(1, dt*4.0);
+
+  // 3막 폭주: 9 자동 연쇄 가속 → n=40에서 간극 소멸
+  if(S.casc && !S.betrayed){
+    S.cascT+=dt;
+    var interval=Math.max(0.05, 0.34 - S.n*0.007);
+    if(S.cascT>=interval){ S.cascT=0; advance(); }
+    if(S.n>=40){
+      S.closing=Math.min(1, S.closing+dt*1.1);     // 간극이 닫힌다
+      if(S.closing>=1) triggerBetray();
+    }
+  }
+}
+
+/* ── 렌더 ────────────────────────────────────────────────────── */
+function render(ctx){
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#06060b'); bg.addColorStop(0.72,'#08070d'); bg.addColorStop(1,'#0b0a10');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  if(S.phase==='boot') return;
+
+  var mRel = S.dragging && S.dragRel!==null ? S.dragRel : markerRel();
+  var close = S.closing;
+  if(close>0){ mRel = mRel+(REL_ONE-mRel)*close; }   // 소멸: 마커가 1로 흡수
+  var mx=rel2x(mRel), ox=rel2x(REL_ONE);
+
+  // 수직선
+  ctx.strokeStyle='rgba(138,115,63,0.85)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,LINE_Y); ctx.lineTo(W,LINE_Y); ctx.stroke();
+
+  // 눈금 — "1"에 정박한 무한 줌 격자(로그 잔여분으로 간격 순환·재생성)
+  var frac = Math.ceil(S.logSpan) - S.logSpan;        // ∈ [0,1)
+  var relSp = 0.1*Math.pow(10, frac);                 // ∈ [0.1, 1)
+  var fade = 1 - frac*0.7;                            // 벌어질수록 옅어지다 재생성
+  ctx.strokeStyle='rgba(138,115,63,'+(0.35*fade)+')'; ctx.lineWidth=1;
+  for(var j=-2;j<=12;j++){
+    var x=rel2x(REL_ONE - j*relSp);
+    if(x<-20||x>W+20) continue;
+    ctx.beginPath(); ctx.moveTo(x,LINE_Y-8); ctx.lineTo(x,LINE_Y+8); ctx.stroke();
+  }
+
+  // "1" 눈금(놋쇠 강조 + 분필 라벨)
+  ctx.strokeStyle=C_BRASS; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(ox,LINE_Y-20); ctx.lineTo(ox,LINE_Y+20); ctx.stroke();
+  ctx.fillStyle=C_INK; ctx.font="30px 'Jua',sans-serif"; ctx.textAlign='center';
+  ctx.fillText('1', ox, LINE_Y+56);
+
+  // "0" 라벨(첫 화면 배율에서만 보임)
+  if(S.logSpan>-1.2){
+    var zx=rel2x(REL_ONE - Math.pow(10, -S.logSpan));
+    if(zx>-40){ ctx.fillStyle=C_INK_DIM; ctx.fillText('0', zx, LINE_Y+56); }
+  }
+  ctx.textAlign='left';
+
+  // 간극 — 어둠 속 빛의 틈(숨쉼)
+  if(close<1){
+    var pulse=0.5+0.5*Math.sin(S.gapPulse*2.4);
+    var gw=Math.max(2,(ox-mx));
+    var gg=ctx.createLinearGradient(mx,0,ox,0);
+    gg.addColorStop(0,C_GAP+'0)');
+    gg.addColorStop(0.5,C_GAP+((0.10+0.10*pulse)*(1-close))+')');
+    gg.addColorStop(1,C_GAP+'0)');
+    ctx.fillStyle=gg; ctx.fillRect(mx, LINE_Y-70, gw, 140);
+  }
+
+  // 마커(놋쇠 점) — 소멸 시 1과 합쳐짐
+  var mr = 9-2*close;
+  ctx.drawImage(stage.glow(30, 'rgba(201,169,97,'+(0.30+0.2*close)+')'), mx-30, LINE_Y-30);
+  ctx.fillStyle=C_BRASS;
+  ctx.beginPath(); ctx.arc(mx, LINE_Y, mr, 0, Math.PI*2); ctx.fill();
+
+  // 칠판 수(상단 분필) — 수 자체가 노동의 흔적
+  drawNumber(ctx);
+
+  if(S.phase==='intro') drawIntro(ctx);
+}
+
+function drawNumber(ctx){
+  var s = S.n<=14 ? PURE.nines(S.n)
+        : '0.999\u2026' + '9999'.slice(0,3) + '\u2026';   // 꼬리 흐름(폭주 표기)
+  ctx.fillStyle=C_WARM+'0.72)';
+  ctx.font="40px 'Gowun Dodum',sans-serif"; ctx.textAlign='center';
+  if(S.casc && !S.betrayed){                                // 폭주: 미세 떨림
+    var sh=Math.sin(S.t*40)*Math.min(3,S.n*0.1);
+    ctx.fillText(s, W/2+sh, 180);
+  } else {
+    ctx.fillText(s, W/2, 180);
+  }
+  ctx.textAlign='left';
+}
+
+function drawIntro(ctx){
+  var a=Math.min(1,S.introIn*1.4);
+  ctx.fillStyle=C_WARM+(0.72*a)+')';
+  ctx.font="26px 'Gowun Batang',serif"; ctx.textAlign='center';
+  ctx.fillText('1에 절대 닿을 수 없는 수가 있었다.', W/2, 300);
+  ctx.textAlign='left';
+  // 첫 회차 손 실루엣 힌트(마커→1 방향, 1회 소멸)
+  if(S.hintT<3.4){
+    var p=(S.hintT%1.7)/1.7;
+    var hx=rel2x(0.72)+p*(rel2x(REL_ONE)-rel2x(0.72))*0.6;
+    var ha=Math.max(0, 0.35-Math.abs(p-0.5)*0.5);
+    ctx.fillStyle='rgba(242,234,216,'+ha+')';
+    ctx.beginPath(); ctx.arc(hx, LINE_Y+40, 12, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ── 장면 등록·부팅 ──────────────────────────────────────────── */
+var mainScene = stage.add({ update:update, draw:render });
+stage.start();
+
+(function bootHint(){
+  var s=mainScene; var was=s.draw;
+  s.draw=function(ctx){
+    was.call(s,ctx);
+    if(S.phase==='boot'){
+      ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,192,0.6)';
+      ctx.font="24px 'Gowun Batang',serif";
+      ctx.fillText('눌러서 입장', W/2, H*0.5);
+      ctx.textAlign='left';
+    }
+  };
+})();
+
+// 테스트/외부 훅
+window.__M6={ S:S, start:start, setPhase:setPhase, advance:advance, onForward:onForward,
+              startCascade:startCascade, partialU:partialU, PURE:PURE };
+})();
+</script>
+</body>
+</html>
