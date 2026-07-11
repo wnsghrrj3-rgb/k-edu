@@ -56,8 +56,11 @@
     '.kact-chip{border:1.5px solid #f59e0b;background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:Jua,sans-serif;color:#92400e}',
     '.kact-chip.on{background:#f59e0b;color:#fff}',
     // §21-1 툴바 상설 버튼 + 팝오버
-    '#kact-tool-btn{position:relative}',
-    '#kact-tool-btn .kact-cnt{position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px}',
+    // 툴바 보호: 버튼 줄바꿈·찌그러짐 방지, 넘치면 가로 스크롤 (내 버튼 추가로 인한 파손 방지)
+    '.toolbar{overflow-x:auto;overflow-y:visible;scrollbar-width:thin}',
+    '.toolbar .icon-btn{white-space:nowrap;flex-shrink:0}',
+    '.toolbar .position{white-space:nowrap;flex-shrink:0}',
+    '#kact-tool-btn .kact-cnt{display:inline-block;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 4px;margin-left:5px;vertical-align:1px}',
     '#kact-pop{position:fixed;z-index:8000;background:#fffbf5;border:2px solid #f59e0b;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:14px 16px;width:min(92vw,380px);font-family:Jua,sans-serif;display:none}',
     '#kact-pop.active{display:block}',
     '#kact-pop .kp-h{font-size:15px;color:#92400e;margin-bottom:8px}',
@@ -401,7 +404,7 @@
       });
     }
     var r = recsForContext();
-    btn.innerHTML = '🎲 활동' + (r.rec.length ? '<span class="kact-cnt">' + r.rec.length + '</span>' : '');
+    btn.innerHTML = '🎲 활동' + (r.rec.length ? ' <span class="kact-cnt">' + r.rec.length + '</span>' : '');
     btn.style.display = (r.rec.length || r.unit.length) ? '' : 'none';   // 이 단원에 아무것도 없으면 숨김
   }
 
