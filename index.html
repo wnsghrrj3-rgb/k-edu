@@ -97,6 +97,9 @@ main{flex:1;max-width:900px;margin:0 auto;padding:36px 24px 48px;width:100%}
 .subject-grid{display:grid;gap:14px}
 .subject-card{background:#fff;border-radius:20px;padding:26px 10px 22px;text-align:center;cursor:pointer;border:2px solid transparent;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:transform .18s,border-color .18s,box-shadow .18s}
 .subject-card:hover{transform:translateY(-6px);border-color:var(--cs);box-shadow:0 12px 36px rgba(0,0,0,.12)}
+.subject-card.soon{opacity:.45;filter:grayscale(.5)}
+.subject-card.soon:hover{transform:none;border-color:transparent;box-shadow:0 2px 16px rgba(0,0,0,.07)}
+.soon-badge{display:inline-block;margin-top:6px;font-size:.68rem;font-weight:700;color:#8a8f98;background:#f0f1f4;border-radius:999px;padding:2px 10px}
 .subject-icon{font-size:36px;margin-bottom:10px}
 .subject-name{font-family:var(--kedu-title);font-size:17px}
 .back-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:none;font-family:'Gowun Dodum',sans-serif;font-size:14px;color:#A0AEC0;cursor:pointer;padding:0;margin-bottom:18px;transition:color .15s}
@@ -412,6 +415,19 @@ const SUB_HIGH = [
   {id:'science', n:'과학',i:'🔬',c:'#C05621'}
 ];
 
+// ⚠️ 새 학년·학기·과목 라이브 시 반드시 여기 갱신! (허브 404 가드 — 2026-07-11 대점검)
+// key = '학년-학기', value = 라이브된 과목 id 배열. 여기 없는 조합은 "준비 중" 토스트 처리됨.
+const CONTENT_MAP = {
+  '1-1': ['korean','math'],
+  '2-1': ['korean','math'],
+  '3-1': ['korean','math','science','social'],
+  '4-1': ['math','social']
+};
+function hasContent(subject){
+  var list = CONTENT_MAP[grade+'-'+semester];
+  return !!(list && list.indexOf(subject) !== -1);
+}
+
 // =============================================
 // 상태
 // =============================================
@@ -721,9 +737,11 @@ function showSubject(){
   const list = grade<=2 ? SUB_LOW : SUB_HIGH;
   document.getElementById('subject-grid').style.gridTemplateColumns = 'repeat('+list.length+',1fr)';
   document.getElementById('subject-grid').innerHTML = list.map(function(s){
-    return '<div class="subject-card" style="--cs:'+s.c+'" onclick="goContent(\''+s.id+'\')">' +
+    var ready = hasContent(s.id);
+    return '<div class="subject-card'+(ready?'':' soon')+'" style="--cs:'+s.c+'" onclick="goContent(\''+s.id+'\')">' +
       '<div class="subject-icon">'+s.i+'</div>' +
       '<div class="subject-name" style="color:'+s.c+'">'+s.n+'</div>' +
+      (ready?'':'<div class="soon-badge">준비 중</div>') +
     '</div>';
   }).join('');
   goTo('s-subject');
@@ -735,6 +753,10 @@ function showSubject(){
 function goContent(subject){
   if(subject === 'english'){
     window.location.href = 'english/index.html';
+    return;
+  }
+  if(!hasContent(subject)){
+    showToast('준비 중이에요 🌱 조금만 기다려 주세요!');
     return;
   }
   window.location.href = 'grade'+grade+'/semester'+semester+'/'+subject+'/index.html';
