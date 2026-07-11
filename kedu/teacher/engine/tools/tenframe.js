@@ -20,9 +20,9 @@
        저=한 판 보수 닻(유령 점)·퀴즈 숨김 / 중=두 판·가르기 명시·퀴즈 /
        고=기존 유지(config 우선·count/toTen 퀴즈). */
     var GRADES={
-      low:  { modes:['free','mission'],        frames:1,   cap:10,   ghost:true,  toTenQuiz:false },
-      mid:  { modes:['free','mission','quiz'], frames:2,   cap:20,   ghost:false, toTenQuiz:true  },
-      high: { modes:['free','mission','quiz'], frames:null, cap:null, ghost:false, toTenQuiz:true  }
+      low:  { modes:['free','discover','mission'],        frames:1,   cap:10,   ghost:true,  toTenQuiz:false },
+      mid:  { modes:['free','discover','mission','quiz'], frames:2,   cap:20,   ghost:false, toTenQuiz:true  },
+      high: { modes:['free','discover','mission','quiz'], frames:null, cap:null, ghost:false, toTenQuiz:true  }
     };
     var grade=(['low','mid','high'].indexOf(config.grade)>=0)?config.grade:'high';
     function G(){ return GRADES[grade]; }
@@ -42,6 +42,20 @@
     var blue={};
     var mode=(G().modes.indexOf(config.mode)>=0)?config.mode:'free';
     var bundleFx=false;   // 와우: 직전 조작에서 10묶음이 막 올라갔는가(1회 애니)
+
+    /* ── v5 깊이 층 (깊이 헌법 v1) ──
+       💡 발견 모드: 정답이 하나인 미션의 반대 — "t를 가르는 방법을 몇 가지나 찾을 수 있어?"
+       아이가 만든 모든 유효한 가르기를 도구가 '인정'하고 컬렉션 카드로 모은다.
+       저칸 = 5→10 진행(가르기 짝은 1..t-1), 중/고칸 = 수를 아이가 고름(0 포함 0..t). */
+    var dT=(typeof config.target==='number')?config.target:null;
+    var D_LOW=[5,6,7,8,9,10];
+    var dIdx=(dT!=null)?Math.max(0,Math.min(D_LOW.indexOf(dT)>=0?D_LOW.indexOf(dT):3,D_LOW.length-1)):0;
+    if(dT==null)dT=8;
+    var dFound={}, dDone=false;
+    function dTarget(){ return (grade==='low')?D_LOW[dIdx]:Math.max(2,Math.min(dT,capFor())); }
+    function dExpected(){ var t=dTarget(); return (grade==='low')?(t-1):t; }  // 저=파랑1..t-1 / 중고=파랑0..t-1(주황≥1)
+    function dCount(){ var n=0; for(var k in dFound)n++; return n; }
+    function dReset(){ dFound={}; dDone=false; blue={}; num=dTarget(); bundleFx=false; }
 
     // 와우: 점 수 변경의 단일 진입 — 효과음 + 10묶음(받아올림) 감지
     function setNum(nv){
@@ -109,7 +123,7 @@
     }
 
     function build(){
-      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', ctrl='', foot='';
+      var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode,{discover:'💡 발견'}), bar='', ctrl='', foot='';
       /* 케이랩 2.0 — 조작 버튼은 하단 독 한 곳 (pri 1개, 나머지 중립) */
       var ctrlBtns=ui.dock([
         {act:'minus', label:'－ 점', cls:'tf-btn'},
@@ -123,6 +137,9 @@
       } else if(mode==='quiz'){
         bar=ui.quizBar(qKind==='count'?'점이 모두 몇 개일까요?':'10이 되려면 몇 개 더 필요할까요?',qScore,qCount);
         foot=ui.choices(quizChoices());
+      } else if(mode==='discover'){
+        bar=discoverBar();
+        ctrl=ctrlBtns;
       } else {
         ctrl=ctrlBtns;
       }
@@ -132,17 +149,119 @@
         +'@keyframes tfFlash{0%{opacity:0;transform:translateY(8px);}18%{opacity:1;transform:translateY(0);}78%{opacity:1;}100%{opacity:0;}}'
         +'.tf-flash{animation:tfFlash 1.5s ease both;}</style>'
         +top+bar
-        +'<div class="kl-stage-host" style="position:relative;"><div class="tf-stage" style="width:100%;height:'+(mode==='quiz'?'40vh':'46vh')+';min-height:300px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
+        +'<div class="kl-stage-host" style="position:relative;"><div class="tf-stage" style="width:100%;height:'+(mode==='quiz'?'40vh':'42vh')+';min-height:280px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
+        +(mode!=='quiz'?'<div class="tf-rep" style="margin-top:10px;"></div>':'')
+        +(mode==='discover'?'<div class="tf-collect" style="margin-top:10px;"></div>':'')
         +(ctrl||'')
         +foot
-        +'<div class="tf-status" style="text-align:center;margin-top:14px;font-weight:800;font-family:inherit;"></div>';
+        +'<div class="tf-status" style="text-align:center;margin-top:12px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){mode=m;blue={};mStep=0;mDone=false;bundleFx=false;
-        if(m==='quiz'){qScore=0;qCount=0;newQuiz();} else {num=(m==='mission')?0:Math.max(0,Math.min(config.num!=null?config.num:7,max));}
+        if(m==='quiz'){qScore=0;qCount=0;newQuiz();}
+        else if(m==='discover'){dReset();}
+        else {num=(m==='mission')?0:Math.max(0,Math.min(config.num!=null?config.num:7,max));}
         build();});
       bind(); bands.bind(el); render();
     }
 
     function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+
+    /* ── v5 표상 동시 연결 — 점을 만지면 수식과 수직선이 같이 변한다 ── */
+    function renderRep(n,bc,oc){
+      var host=el.querySelector('.tf-rep'); if(!host)return;
+      var acc=(getComputedStyle(document.documentElement).getPropertyValue('--kl-accent')||'#3D74D9').trim()||'#3D74D9';
+      var eq;
+      if(oc>0){
+        eq='<span style="font-size:34px;color:#1565C0;">'+bc+'</span>'
+          +'<span style="font-size:24px;color:#7B8794;"> + </span>'
+          +'<span style="font-size:34px;color:#E8791E;">'+oc+'</span>'
+          +'<span style="font-size:24px;color:#7B8794;"> = </span>'
+          +'<span style="font-size:38px;color:#2A3442;">'+n+'</span>';
+      } else {
+        eq='<span style="font-size:38px;color:#2A3442;">'+n+'</span>';
+      }
+      // 수직선: 0→파랑칸(bc)→n. 20 초과면 생략(두 판 범위까지만 그린다)
+      var L=Math.min(Math.max(10,Math.ceil(n/10)*10),20), W=560, H=64, x0=20, x1=W-20;
+      function X(v){ return x0+(x1-x0)*v/L; }
+      var ticks='';
+      for(var i=0;i<=L;i++){
+        var lab=(L<=10)||(i%5===0);
+        ticks+='<line x1="'+X(i)+'" y1="26" x2="'+X(i)+'" y2="'+(lab?36:32)+'" stroke="#9AB7D4" stroke-width="2"/>'
+          +(lab?'<text x="'+X(i)+'" y="52" font-size="13" text-anchor="middle" fill="#7B8794" font-family="inherit">'+i+'</text>':'');
+      }
+      var arcs='';
+      if(bc>0) arcs+='<path d="M '+X(0)+' 26 Q '+X(bc/2)+' 0 '+X(bc)+' 26" fill="none" stroke="#1565C0" stroke-width="3.5" stroke-linecap="round"/>';
+      if(oc>0) arcs+='<path d="M '+X(bc)+' 26 Q '+X(bc+oc/2)+' 0 '+X(n)+' 26" fill="none" stroke="#E8791E" stroke-width="3.5" stroke-linecap="round"/>';
+      var mark=(n>0)?'<circle cx="'+X(n)+'" cy="26" r="6" fill="'+acc+'"/>':'';
+      host.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;border:1.5px solid #E3E8EF;border-radius:14px;padding:10px 14px 6px;">'
+        +'<div style="line-height:1;">'+eq+'</div>'
+        +'<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;display:block;">'
+        +'<line x1="'+x0+'" y1="26" x2="'+x1+'" y2="26" stroke="#9AB7D4" stroke-width="2.5"/>'
+        +ticks+arcs+mark+'</svg></div>';
+    }
+
+    /* ── v5 발견 모으기 ── */
+    function discoverBar(){
+      var t=dTarget(), picker='';
+      if(grade!=='low'){
+        picker='<span style="display:inline-flex;align-items:center;gap:4px;margin-left:auto;">'
+          +'<button class="tf-btn" data-act="tdown" style="font-size:16px;font-weight:700;font-family:inherit;padding:6px 11px;border-radius:8px;border:1.5px solid #E3E8EF;background:#fff;color:#7B8794;cursor:pointer;">◀</button>'
+          +'<span style="font-size:14px;color:#7B8794;">다른 수</span>'
+          +'<button class="tf-btn" data-act="tup" style="font-size:16px;font-weight:700;font-family:inherit;padding:6px 11px;border-radius:8px;border:1.5px solid #E3E8EF;background:#fff;color:#7B8794;cursor:pointer;">▶</button></span>';
+      }
+      var share=(window.KLab&&window.KLab.share)
+        ?'<button class="tf-btn" data-act="dshare" style="font-size:14px;font-weight:700;font-family:inherit;padding:7px 12px;border-radius:8px;border:1.5px solid #E3E8EF;background:#fff;color:#7B8794;cursor:pointer;'+(grade==='low'?'margin-left:auto;':'')+'">✉️ 친구에게 내기</button>':'';
+      return '<div class="kl-bar" style="align-items:center;">'
+        +'<span class="kl-chip">💡 발견 '+dCount()+'/'+dExpected()+'</span>'
+        +'<span class="kl-bar-text"><b style="color:var(--kl-accent);">'+t+'</b>'
+        +(grade==='low'?'을(를) 두 색으로 가르는 방법을 <b>모두</b> 찾아봐요! 점을 눌러 색을 바꿔요':'을(를) 가르는 방법은 몇 가지일까요? 전부 찾아봐요!')
+        +'</span>'+picker+share+'</div>';
+    }
+    function renderCollect(){
+      var host=el.querySelector('.tf-collect'); if(!host)return;
+      var t=dTarget(), lowMin=(grade==='low')?1:0, chips=[];
+      for(var b=lowMin;b<=t-1;b++){
+        var key=b+'+'+(t-b), got=!!dFound[key];
+        chips.push('<span style="font-size:17px;font-weight:700;font-family:inherit;padding:8px 13px;border-radius:10px;'
+          +(got?'border:1.5px solid var(--kl-accent);color:var(--kl-accent);background:#fff;'
+               :'border:1.5px dashed #C4CFDC;color:#C4CFDC;background:transparent;')
+          +'">'+(got?('<span style="color:#1565C0;">'+b+'</span><span style="color:#7B8794;">+</span><span style="color:#E8791E;">'+(t-b)+'</span>'):'?+?')+'</span>');
+      }
+      var doneMsg='';
+      if(dDone){
+        var nextBtn=(grade==='low'&&dIdx<D_LOW.length-1)
+          ?'<button class="tf-btn" data-act="dnext" style="font-size:17px;font-weight:700;font-family:inherit;padding:10px 18px;border-radius:10px;border:0;background:var(--kl-accent);color:#fff;cursor:pointer;margin-left:10px;">다음 수 → '+D_LOW[dIdx+1]+'</button>'
+          :'<button class="tf-btn" data-act="dagain" style="font-size:17px;font-weight:700;font-family:inherit;padding:10px 18px;border-radius:10px;border:1.5px solid var(--kl-accent);background:#fff;color:var(--kl-accent);cursor:pointer;margin-left:10px;">'+(grade==='low'?'처음부터 다시':'다른 수 도전')+'</button>';
+        doneMsg='<div class="kl-done" style="margin:10px 0 0;">🏆 '+t+' 가르기 <b>'+dExpected()+'가지</b>를 전부 발견했어요!'+nextBtn+'</div>';
+      }
+      host.innerHTML='<div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center;background:#fff;border:1.5px solid #E3E8EF;border-radius:14px;padding:11px 13px;">'+chips.join('')+'</div>'+doneMsg;
+      bindDiscover();
+    }
+    function checkDiscover(bc,oc){
+      if(mode!=='discover'||dDone)return;
+      var t=dTarget();
+      if(bc+oc!==t||oc<1)return;
+      if(grade==='low'&&bc<1)return;
+      var key=bc+'+'+oc;
+      if(dFound[key])return;
+      dFound[key]=1;
+      var got=dCount(), all=dExpected();
+      if(got>=all){
+        dDone=true; snd('success');
+        window.KLab.ui.toast(el,true,'🏆 전부 발견! '+t+' 가르기 완성!');
+        var chip=el.querySelector('.kl-chip'); if(chip)chip.textContent='💡 발견 '+got+'/'+all;
+      } else {
+        snd('pop');
+        window.KLab.ui.toast(el,true,'💡 발견! '+t+' = '+bc+'와 '+oc+'  ('+got+'/'+all+')');
+        var chip2=el.querySelector('.kl-chip'); if(chip2)chip2.textContent='💡 발견 '+got+'/'+all;
+      }
+      renderCollect();
+    }
+    function bindDiscover(){
+      var nx=el.querySelector('[data-act="dnext"]');
+      if(nx&&!nx._b){nx._b=1;nx.addEventListener('click',function(){dIdx++;dReset();build();});}
+      var ag=el.querySelector('[data-act="dagain"]');
+      if(ag&&!ag._b){ag._b=1;ag.addEventListener('click',function(){if(grade==='low')dIdx=0;dReset();build();});}
+    }
     var VBW=860,VBH=360;
 
     // 와우: 십의 자리 선반 — 완성된 10묶음 칩(받아올림의 결과)
@@ -208,23 +327,29 @@
         stage.querySelectorAll('.tf-cell.tf-fillable').forEach(function(rc){rc.addEventListener('click',function(){var k=+rc.dataset.cell; if(k>=shownNum) setNum(k+1);});});
       }
       var oc=0;for(var k in blue)if(blue[k]&&k<shownNum)oc++;var bc=shownNum-oc;
+      renderRep(shownNum,bc,oc);
       var st=el.querySelector('.tf-status');
       if(mode==='quiz'){ st.innerHTML='<span style="font-size:22px;color:#5a7894;">아래에서 답을 골라 누르세요</span>'; }
+      else if(mode==='discover'){
+        var t=dTarget();
+        st.innerHTML=(shownNum!==t)
+          ?'<span style="font-size:22px;color:#E8791E;">점을 <b>'+t+'개</b>로 맞춰 봐요 (지금 '+shownNum+'개)</span>'
+          :(oc<1&&!dDone?'<span style="font-size:22px;color:#5a7894;">점을 눌러 <b style="color:#E8791E;">주황</b>으로 갈라 봐요!</span>':'');
+      }
       else{
         var toTen=(shownNum<10)?(10-shownNum):(shownNum<20?20-shownNum:0);
         if(G().ghost){
-          // 저학년 일상어 닻: 빈 자리(보수)를 초록으로 또렷이
-          st.innerHTML='<span style="font-size:46px;color:#1565C0;">'+shownNum+'</span>'
-            +'<span style="font-size:26px;color:#1B3A57;">개</span>'
-            +(oc>0?'<span style="font-size:24px;color:#1B3A57;">  ＝ </span><span style="font-size:34px;color:#1565C0;">'+bc+'</span><span style="font-size:24px;color:#1B3A57;">과 </span><span style="font-size:34px;color:#FF8A3D;">'+oc+'</span><span style="font-size:24px;color:#1B3A57;">을 모으면 '+shownNum+'</span>':'')
-            +(shownNum<10?'<div style="font-size:26px;margin-top:6px;color:#12B886;">빈 칸을 눌러 채워 봐요 — '+toTen+'개만 더 모으면 <b>10</b>!</div>':(shownNum===10?'<div style="font-size:26px;margin-top:6px;color:#0CA678;">한 판 꽉 찼어요 — 10이 한 묶음!</div>':''));
+          st.innerHTML=(shownNum<10?'<div style="font-size:24px;color:#12B886;">빈 칸을 눌러 채워 봐요 — '+toTen+'개만 더 모으면 <b>10</b>!</div>':(shownNum===10?'<div style="font-size:24px;color:#0CA678;">한 판 꽉 찼어요 — 10이 한 묶음!</div>':''));
         } else {
-          st.innerHTML='<span style="font-size:46px;color:#1565C0;">'+shownNum+'</span>'
-            +(oc>0?'<span style="font-size:26px;color:#1B3A57;"> ＝ </span><span style="font-size:36px;color:#1565C0;">'+bc+'</span><span style="font-size:26px;color:#1B3A57;">(파랑) 와 </span><span style="font-size:36px;color:#FF8A3D;">'+oc+'</span><span style="font-size:26px;color:#1B3A57;">(주황)</span>':'')
-            +(toTen>0?'<span style="font-size:22px;color:#5a7894;">    10까지 '+toTen+'개 더</span>':(shownNum%10===0&&shownNum>0?'<span style="font-size:22px;color:#0CA678;">    꽉 찼어요 — 윗자리로 한 묶음!</span>':''));
+          st.innerHTML=(toTen>0?'<span style="font-size:20px;color:#5a7894;">10까지 '+toTen+'개 더</span>':(shownNum%10===0&&shownNum>0?'<span style="font-size:20px;color:#0CA678;">꽉 찼어요 — 윗자리로 한 묶음!</span>':''));
         }
         var p=el.querySelector('[data-act="plus"]'), m=el.querySelector('[data-act="minus"]');
         if(p)p.disabled=num>=max; if(m)m.disabled=num<=0;
+      }
+      if(mode==='discover'){
+        var p2=el.querySelector('[data-act="plus"]'), m2=el.querySelector('[data-act="minus"]');
+        if(p2)p2.disabled=num>=max; if(m2)m2.disabled=num<=0;
+        checkDiscover(bc,oc);
       }
       checkMission(oc);
     }
@@ -248,7 +373,17 @@
       var p=el.querySelector('[data-act="plus"]'), m=el.querySelector('[data-act="minus"]'), r=el.querySelector('[data-act="reset"]');
       if(p)p.addEventListener('click',function(){if(num<max){setNum(num+1);}});
       if(m)m.addEventListener('click',function(){if(num>0){delete blue[num-1];setNum(num-1);}});
-      if(r)r.addEventListener('click',function(){num=(mode==='mission')?0:(config.num!=null?config.num:7);blue={};bundleFx=false;render();});
+      if(r)r.addEventListener('click',function(){
+        if(mode==='discover'){blue={};num=dTarget();bundleFx=false;render();return;}
+        num=(mode==='mission')?0:(config.num!=null?config.num:7);blue={};bundleFx=false;render();});
+      var td=el.querySelector('[data-act="tdown"]'), tu=el.querySelector('[data-act="tup"]');
+      if(td)td.addEventListener('click',function(){dT=Math.max(2,dTarget()-1);dReset();build();});
+      if(tu)tu.addEventListener('click',function(){dT=Math.min(capFor(),dTarget()+1);dReset();build();});
+      var ds=el.querySelector('[data-act="dshare"]');
+      if(ds)ds.addEventListener('click',function(){
+        if(window.KLab.share)window.KLab.share({mode:'discover',target:dTarget(),grade:grade},ds,'✉️ "'+dTarget()+' 가르기, 너도 다 찾을 수 있어?"');
+      });
+      if(mode==='discover')renderCollect();
       el.querySelectorAll('.kl-choice').forEach(function(b){
         b.addEventListener('click',function(){
           if(qLock)return; qLock=true;
@@ -263,6 +398,7 @@
 
     if(mode==='quiz')newQuiz();
     if(mode==='mission'){num=0;blue={};}
+    if(mode==='discover'){dReset();}
     build();
     return function cleanup(){};
   });

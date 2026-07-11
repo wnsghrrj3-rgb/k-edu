@@ -358,6 +358,15 @@ function shareURL(mode){
   if(Object.keys(cfg).length)u+='&cfg='+encodeURIComponent(JSON.stringify(cfg));
   return u;
 }
+/* 깊이 헌법 ④ 아이가 출제자 — 도구가 자기 상태(cfg)를 문제 링크로 만들어 복사.
+   tool 쪽: KLab.share({mode:'discover',target:8}, 버튼el, 안내문구) */
+window.KLab=window.KLab||{};
+window.KLab.share=function(extraCfg,btn){
+  if(!curTool)return;
+  var base=location.href.split('?')[0];
+  var u=base+'?tool='+encodeURIComponent(curTool)+'&cfg='+encodeURIComponent(JSON.stringify(extraCfg||{}));
+  copyText(u,btn||{textContent:''});
+};
 function copyText(t,btn){
   function done(){var old=btn.textContent;btn.textContent='✓ 복사됐어요!';btn.disabled=true;setTimeout(function(){btn.textContent=old;btn.disabled=false;},1300);}
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){window.prompt('링크를 복사하세요',t);});}
