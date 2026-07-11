@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>체스판의 공포 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  /* 여운 오버레이 */
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(20px,3vw,34px); letter-spacing:.10em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; }
+  #formula .small{ display:block; margin-top:10px; font-size:clamp(13px,1.6vw,17px); color:var(--ink-faint); letter-spacing:.04em; }
+  /* 놋쇠 슬라이더 (라벨 없음) */
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="chess-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumChess=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function grains(k){ return 2n ** (BigInt(k) - 1n); }            // k번째 칸 낟알 = 2^(k-1)
+  function cumulative(k){ return 2n ** BigInt(k) - 1n; }          // 1~k 누적 = 2^k - 1
+  function total64(){ return 2n**64n - 1n; }                     // 체스판 총합
+  function digits(k){ return String(cumulative(k)).length; }      // 누적 자릿수
+  function firstOverflowCol(cap){                                // 누적이 cap 넘는 첫 칸
+    var c = BigInt(cap);
+    for(var k=1;k<=64;k++){ if(cumulative(k) > c) return k; }
+    return -1;
+  }
+  return { grains:grains, cumulative:cumulative, total64:total64, digits:digits, firstOverflowCol:firstOverflowCol };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="64" value="20" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumChess;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;             // 1600 × 900 논리좌표
+  var GROUND = H*0.865;                      // 지면 화면 y(카메라 후퇴와 무관한 시각 기준선)
+
+  // ── 색(순백 금지·악센트=놋쇠 1색) ──────────────────────────────
+  var C_RICE='#e6d8b8', C_RICE_D='#b49a6a', C_SHADOW='#2a2418',
+      C_REF='#171320', C_REF_E='#241d30', C_BRASS='#c9a961', C_INK='#e8dcc0';
+
+  // ── 배경 참조 실루엣(월드 높이 단위·지면에 섬) — 무설명, 라벨 없음 ──
+  //  사람→트럭→2층집→빌딩→큰 산. 카메라 후퇴 시 순차로 쌀 밑에서 소멸.
+  var REFS=[
+    {h:1.7,  w:0.6,  x:-3,   kind:'person'},
+    {h:4.0,  w:9,    x:-16,  kind:'truck'},
+    {h:9,    w:15,   x:14,   kind:'house'},
+    {h:64,   w:24,   x:-40,  kind:'tower'},
+    {h:340,  w:150,  x:70,   kind:'mtn'}
+  ];
+  var GRAIN_H = 0.0022;                       // 낟알 1톨의 월드 높이(사람 대비 극소)
+
+  var S={
+    phase:'boot', t:0, col:0,
+    moundH:0,                 // 월드 단위 쌀더미 높이
+    camScale:1, camTarget:1,
+    grains:[],                // 낙하 낟알 파티클
+    avalanche:false, avT:0,
+    hint:1,                   // 1막 손짓 힌트 페이드
+    shake:0,
+    digitStr:'', digitFlow:0, // 배반 직전 자릿수 폭주 연출
+    betrayed:false, lastX:W*0.5
+  };
+
+  function moundOf(col){ return col>0 ? GRAIN_H*Math.pow(2,col-1) : 0; }
+  function targetCam(mound){ return mound>0 ? (H*0.52)/mound : 1; }  // 산을 화면 52% 유지 목표
+
+  // ── phase 전환 ──────────────────────────────────────────────
+  function setPhase(p){ S.phase=p; S.t=0; }
+
+  function start(replay){
+    S.col=0; S.moundH=0; S.camScale=1; S.camTarget=1; S.grains.length=0;
+    S.avalanche=false; S.betrayed=false; S.hint=1; S.digitFlow=0;
+    Museum.sound.roomtone();
+    setPhase('intro');
+    if(replay){ S.hint=0; }
+  }
+
+  // ── 한 칸 넘기기 ──────────────────────────────────────────────
+  function advance(){
+    if(S.betrayed) return;
+    if(S.col>=64){ return; }
+    S.col++;
+    S.hint=0;
+    S.moundH = moundOf(S.col);
+    S.camTarget = targetCam(S.moundH);
+    spawnGrains(S.col);
+    Museum.sound.play(S.col<12 ? 'paper' : 'clack');
+    S.shake = Math.min(1, S.col/40);
+
+    // 20칸 넘어가면 통제 상실 — 쌀사태 자동 굴림 시작
+    if(S.col>=20 && !S.avalanche){ S.avalanche=true; S.avT=0; }
+    if(S.col===64) triggerBetray();
+  }
+
+  function spawnGrains(col){
+    var n = Math.min(Math.pow(2,col-1), 90);   // 파티클 상한(포화 스킵)
+    var topY = GROUND - S.moundH*S.camTarget;
+    for(var i=0;i<n;i++){
+      S.grains.push({
+        x: W*0.5 + (Math.random()-0.5)*Math.min(340, 60+col*14),
+        y: topY - 120 - Math.random()*160,
+        vy: 40+Math.random()*60, life:1,
+        r: 2.2+Math.random()*1.6, seed:Math.random()
+      });
+    }
+    if(S.grains.length>420) S.grains.splice(0, S.grains.length-420);
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return; S.betrayed=true;
+    setPhase('betrayed');
+    Museum.sound.play('boom');
+    Museum.betray({ x:0.5, y:0.4 }).then(showAfterglow);
+  }
+
+  // ── 여운 ─────────────────────────────────────────────────────
+  function showAfterglow(){
+    setPhase('afterglow');
+    var f=document.getElementById('formula');
+    var total = PURE.total64().toString();     // 18446744073709551615
+    var grouped = total.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    f.innerHTML = '<span>2<sup>64</sup> − 1 = <span class="num">'+grouped+'</span></span>'+
+                  '<span class="small">온 세상이 지은 쌀보다 많다.</span>';
+    setTimeout(function(){ f.classList.add('is-in'); }, 400);
+
+    Museum.plaque({ title:'체스판의 공포', story:'왕은 소원을 들어줄 수 없었다.', small:false });
+    Museum.ticket.grant({ id:'m7_chess', title:'체스판의 공포',
+      fine:'첫 칸에 쌀 한 톨.', drawFn:drawTicketArt });
+
+    setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1500);
+  }
+
+  function drawTicketArt(ctx,w,h){
+    ctx.fillStyle=C_RICE; ctx.globalAlpha=.9;
+    for(var i=0;i<40;i++){ var yy=h*0.9-i*0.6, ww=Math.max(2,(40-i)*1.4);
+      ctx.fillRect(w/2-ww/2, yy, ww, 1.6); }
+    ctx.globalAlpha=1;
+  }
+
+  // 재체험 슬라이더 — "이 칸이면?" 카메라가 그 스케일로 점프
+  var slider=document.querySelector('#reexp input');
+  if(slider){ slider.addEventListener('input', function(){
+    var c=+slider.value; S.col=c; S.moundH=moundOf(c);
+    S.camTarget=targetCam(S.moundH); S.avalanche=false; S.grains.length=0;
+    Museum.sound.play('creak');
+  }); }
+
+  // ── 입력 ─────────────────────────────────────────────────────
+  function onTap(e){
+    if(Museum.isLocked && Museum.isLocked()) return;
+    if(S.phase==='boot'){ start(false); return; }
+    if(S.phase==='intro' || S.phase==='feed'){
+      if(S.phase==='intro') setPhase('feed');
+      if(!S.avalanche) advance();
+    }
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    var r=canvas.getBoundingClientRect(); S.lastX=(e.clientX-r.left)/r.width*W; onTap(e);
+  });
+
+  // ── 업데이트 ─────────────────────────────────────────────────
+  function update(dt){
+    S.t+=dt;
+    if(S.phase==='boot') return;
+
+    // 카메라 부드러운 후퇴(lerp) — 산 2배 → 목표 절반 → 따라잡기
+    S.camScale += (S.camTarget - S.camScale) * Math.min(1, dt*3.4);
+
+    // 쌀사태(통제 상실): 20칸부터 자동으로 64까지 굴림, 배가 가속
+    if(S.avalanche && !S.betrayed && S.col<64){
+      S.avT+=dt;
+      var interval = Math.max(0.14, 0.5 - S.col*0.008);   // 칸 오를수록 빨라짐
+      if(S.avT>=interval){ S.avT=0; advance(); }
+    }
+
+    // 낟알 낙하
+    var topY = GROUND - S.moundH*S.camScale;
+    for(var i=S.grains.length-1;i>=0;i--){
+      var g=S.grains[i]; g.vy+=180*dt; g.y+=g.vy*dt;
+      if(g.y>=topY){ g.life-=dt*2.6; if(g.life<=0){ S.grains.splice(i,1); } }
+    }
+    // 자릿수 폭주(32칸~): 명판 수가 자릿수째 흐름
+    if(S.col>=32){ S.digitFlow=Math.min(1,S.digitFlow+dt*0.8);
+      S.digitStr = PURE.cumulative(S.col).toString(); }
+    else S.digitFlow=Math.max(0,S.digitFlow-dt);
+    if(S.shake>0) S.shake=Math.max(0,S.shake-dt*0.9);
+  }
+
+  // ── 렌더 ─────────────────────────────────────────────────────
+  function render(ctx){
+    // 밤 배경 + 지면 그라디언트
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#06060b'); bg.addColorStop(0.72,'#08070d'); bg.addColorStop(1,'#0b0a10');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+    var shakeX = S.shake>0 ? (Math.random()-0.5)*S.shake*10 : 0;
+    ctx.save(); ctx.translate(shakeX,0);
+
+    if(S.phase==='intro' && S.col===0){ drawIntro(ctx); }
+    else { drawWorld(ctx); }
+
+    ctx.restore();
+  }
+
+  // 1막 도입: 체스판 좌상단 한 칸 + 쌀 한 톨 + 이야기 자막
+  function drawIntro(ctx){
+    // 이야기 한 줄(전제 — 유일한 안내)
+    ctx.font="26px 'Gowun Batang',serif"; ctx.fillStyle='rgba(232,220,192,0.72)';
+    ctx.textAlign='center';
+    ctx.fillText('왕이 소원을 물었다. 현자가 답했다 —', W/2, H*0.26);
+    ctx.fillText('첫 칸에 쌀 한 톨, 다음 칸엔 그 두 배면 됩니다.', W/2, H*0.26+38);
+
+    // 작은 체스판 두 칸(현재·다음)
+    var cs=110, bx=W/2-cs, by=H*0.5;
+    ctx.fillStyle='#12101a'; ctx.fillRect(bx,by,cs,cs);
+    ctx.fillStyle='#0e0c14'; ctx.fillRect(bx+cs,by,cs,cs);
+    ctx.strokeStyle='rgba(201,169,97,0.25)'; ctx.lineWidth=1;
+    ctx.strokeRect(bx,by,cs,cs); ctx.strokeRect(bx+cs,by,cs,cs);
+
+    // 첫 칸 쌀 한 톨(스포트)
+    var sp=stage.glow ? null : null;
+    var gx=bx+cs/2, gy=by+cs/2;
+    var rg=ctx.createRadialGradient(gx,gy,0,gx,gy,70);
+    rg.addColorStop(0,'rgba(230,216,184,0.22)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg; ctx.fillRect(gx-70,gy-70,140,140);
+    ctx.fillStyle=C_RICE; ctx.beginPath();
+    ctx.ellipse(gx,gy,3.4,2.2,0.5,0,Math.PI*2); ctx.fill();
+
+    // 둘째 칸 숨쉬는 유도 글로우
+    var pulse=0.5+0.5*Math.sin(S.t*2.2);
+    var g2x=bx+cs*1.5, g2y=by+cs/2;
+    var rg2=ctx.createRadialGradient(g2x,g2y,0,g2x,g2y,54);
+    rg2.addColorStop(0,'rgba(201,169,97,'+(0.10+0.14*pulse)+')'); rg2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg2; ctx.fillRect(g2x-54,g2y-54,108,108);
+
+    // 손짓 힌트(첫 회차 1회)
+    if(S.hint>0){ ctx.globalAlpha=0.5*S.hint*(0.6+0.4*pulse);
+      ctx.font="30px 'Gowun Dodum'"; ctx.fillStyle=C_BRASS;
+      ctx.fillText('›', g2x+2, g2y+H*0.10); ctx.globalAlpha=1; }
+    ctx.textAlign='left';
+  }
+
+  // 2~3막: 쌀더미 + 배경 참조물(카메라 후퇴)
+  function drawWorld(ctx){
+    var cam=S.camScale;
+    ctx.textAlign='center';
+
+    // 배경 참조 실루엣 — 월드 높이 * cam. 서브픽셀되면 소멸.
+    for(var i=0;i<REFS.length;i++){
+      var r=REFS[i], sh=r.h*cam, sw=r.w*cam;
+      if(sh<0.8) continue;                       // 감당 불가 — 쌀 밑에서 사라짐
+      var rx=W/2 + r.x*cam*0.5;
+      drawRef(ctx, r.kind, rx, GROUND, Math.max(1,sw), sh);
+    }
+
+    // 쌀더미(실루엣 + 표층 낟알)
+    var mh=S.moundH*cam;
+    if(mh>1){
+      var half=Math.min(W*0.62, 120+mh*0.9);
+      var topY=GROUND-mh;
+      // 더미 실루엣
+      var mg=ctx.createLinearGradient(0,topY,0,GROUND);
+      mg.addColorStop(0,C_RICE); mg.addColorStop(0.5,C_RICE_D); mg.addColorStop(1,C_SHADOW);
+      ctx.fillStyle=mg; ctx.beginPath();
+      ctx.moveTo(W/2-half,GROUND);
+      ctx.quadraticCurveTo(W/2-half*0.35, topY+mh*0.12, W/2, topY);
+      ctx.quadraticCurveTo(W/2+half*0.35, topY+mh*0.12, W/2+half,GROUND);
+      ctx.closePath(); ctx.fill();
+      // 상단 글로우
+      var tg=ctx.createRadialGradient(W/2,topY,0,W/2,topY,Math.min(200,mh*0.5));
+      tg.addColorStop(0,'rgba(230,216,184,0.30)'); tg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=tg; ctx.fillRect(W/2-200,topY-120,400,240);
+      // 표층 낟알 텍스처(점묘 — 상한)
+      ctx.fillStyle='rgba(245,236,214,0.5)';
+      var dots=Math.min(120, 20+S.col*3);
+      for(var d=0;d<dots;d++){
+        var a=(d*2.399), rr=Math.sqrt((d+1)/dots);
+        var px=W/2+Math.cos(a)*half*0.82*rr;
+        var py=GROUND-mh*(0.1+0.8*(1-rr))*Math.abs(Math.sin(a));
+        ctx.fillRect(px,py,1.6,1.6);
+      }
+    }
+
+    // 낙하 낟알
+    for(var g2=0;g2<S.grains.length;g2++){ var gg=S.grains[g2];
+      ctx.globalAlpha=Math.max(0,gg.life); ctx.fillStyle=C_RICE;
+      ctx.beginPath(); ctx.ellipse(gg.x,gg.y,gg.r,gg.r*0.62,gg.seed*3,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+
+    // 자릿수 폭주(32칸~) — 명판 수가 자릿수째 흐름(진행도 아님, 배반 연출)
+    if(S.digitFlow>0 && S.digitStr){
+      ctx.globalAlpha=Math.min(0.6,S.digitFlow*0.6);
+      ctx.font="20px 'Jua'"; ctx.fillStyle=C_BRASS;
+      var shown=S.digitStr.slice(0, Math.max(1,Math.floor(S.digitStr.length*S.digitFlow)));
+      ctx.fillText(shown, W/2, H*0.14);
+      ctx.globalAlpha=1;
+    }
+    ctx.textAlign='left';
+  }
+
+  function drawRef(ctx,kind,cx,baseY,w,h){
+    ctx.fillStyle=C_REF; ctx.strokeStyle=C_REF_E; ctx.lineWidth=1;
+    if(kind==='person'){
+      ctx.beginPath(); ctx.arc(cx,baseY-h*0.86,h*0.14,0,Math.PI*2); ctx.fill();
+      ctx.fillRect(cx-w/2, baseY-h*0.72, w, h*0.72);
+    } else if(kind==='truck'){
+      ctx.fillRect(cx-w/2, baseY-h*0.6, w*0.66, h*0.6);
+      ctx.fillRect(cx-w/2+w*0.6, baseY-h, w*0.4, h);
+    } else if(kind==='house'){
+      ctx.fillRect(cx-w/2, baseY-h*0.6, w, h*0.6);
+      ctx.beginPath(); ctx.moveTo(cx-w/2,baseY-h*0.6); ctx.lineTo(cx,baseY-h);
+      ctx.lineTo(cx+w/2,baseY-h*0.6); ctx.closePath(); ctx.fill();
+    } else if(kind==='tower'){
+      ctx.fillRect(cx-w/2, baseY-h, w, h);
+      ctx.fillStyle='rgba(201,169,97,0.10)';
+      for(var r=0;r<Math.min(20,Math.floor(h/8));r++)
+        for(var c=0;c<3;c++) ctx.fillRect(cx-w/2+4+c*(w/3), baseY-h+6+r*8, w/5, 3);
+    } else { // mtn
+      ctx.beginPath(); ctx.moveTo(cx-w/2,baseY);
+      ctx.lineTo(cx-w*0.15,baseY-h*0.8); ctx.lineTo(cx,baseY-h);
+      ctx.lineTo(cx+w*0.2,baseY-h*0.78); ctx.lineTo(cx+w/2,baseY); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // ── 씬 등록 ──────────────────────────────────────────────────
+  var mainScene={
+    update:function(dt){ update(dt); },
+    draw:function(ctx){ render(ctx); }
+  };
+  stage.add(mainScene);
+
+  // 최초 입장 자막(boot)
+  (function bootHint(){
+    var s=mainScene; var was=s.draw;
+    s.draw=function(ctx){
+      was.call(s,ctx);
+      if(S.phase==='boot'){
+        ctx.textAlign='center'; ctx.fillStyle='rgba(232,220,192,0.6)';
+        ctx.font="24px 'Gowun Batang',serif";
+        ctx.fillText('눌러서 입장', W/2, H*0.5);
+        ctx.textAlign='left';
+      }
+    };
+  })();
+
+  // 테스트/외부 훅
+  window.__M7={ S:S, advance:advance, start:start, triggerBetray:triggerBetray, moundOf:moundOf, PURE:PURE };
+})();
+</script>
+</body>
+</html>
