@@ -77,19 +77,60 @@
   var RETRY  = ['🤔 음… 다시 한번 생각해 봐요!', '💪 괜찮아요, 한 번 더!', '🔍 아깝다! 다시 살펴볼까요?'];
 
   window.KLab.ui = {
+    /* ── 케이랩 2.0 공통 스타일 (2026-07-11 UI 헌법 v3) ──
+       원칙: ①액센트는 과목당 1색(--kl-accent) ②크롬(탭·배너·독)은 중립 회색
+             ③테두리 1.5px, 굵기 700 이하 ④조작 버튼은 하단 독 한 곳
+       과목 액센트는 허브(klab.html)가 mount 시 --kl-accent로 주입한다. */
+    ensureCss: function () {
+      if (document.getElementById('klabUiV3')) return;
+      var st = document.createElement('style'); st.id = 'klabUiV3';
+      st.textContent =
+        ':root{--kl-accent:#3D74D9;--kl-ink:#2A3442;--kl-mut:#7B8794;--kl-line:#E3E8EF;--kl-soft:#F1F4F8;}'
+        + '.kl-grades{display:flex;gap:6px;justify-content:flex-end;margin:0 0 8px;flex-wrap:wrap;}'
+        + '.kl-grade{font-size:13.5px;font-weight:700;font-family:inherit;line-height:1;padding:8px 12px;border-radius:999px;border:1.5px solid var(--kl-line);background:#fff;color:var(--kl-mut);cursor:pointer;transition:.15s;}'
+        + '.kl-grade.on{border-color:var(--kl-accent);color:var(--kl-accent);background:#fff;box-shadow:inset 0 0 0 1px var(--kl-accent);}'
+        + '.kl-modes{display:flex;justify-content:center;margin:0 0 12px;}'
+        + '.kl-seg{display:inline-flex;background:#EAEFF5;border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap;justify-content:center;}'
+        + '.kl-mode{font-size:16px;font-weight:700;font-family:inherit;line-height:1;padding:10px 18px;border-radius:9px;border:0;background:transparent;color:var(--kl-mut);cursor:pointer;transition:.15s;}'
+        + '.kl-mode.on{background:#fff;color:var(--kl-accent);box-shadow:0 1px 4px rgba(20,30,50,.12);}'
+        + '.kl-bar{display:flex;align-items:center;gap:10px;justify-content:flex-start;flex-wrap:wrap;background:#fff;border:1.5px solid var(--kl-line);border-left:4px solid var(--kl-accent);border-radius:0 12px 12px 0;padding:11px 15px;margin-bottom:12px;}'
+        + '.kl-chip{font-size:13px;font-weight:700;color:var(--kl-accent);background:var(--kl-soft);border-radius:7px;padding:5px 10px;white-space:nowrap;}'
+        + '.kl-bar-text{font-size:18px;font-weight:700;color:var(--kl-ink);line-height:1.35;}'
+        + '.kl-done{text-align:center;background:#EDFBF4;border:1.5px solid #9FE1CB;border-radius:12px;padding:14px;margin-bottom:12px;font-size:20px;font-weight:700;color:#0B7A5C;}'
+        + '.kl-choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px;}'
+        + '.kl-choice{font-size:24px;min-width:76px;padding:12px 20px;border-radius:13px;border:1.5px solid #D7DEE8;background:#fff;color:var(--kl-ink);font-weight:700;font-family:inherit;line-height:1.3;cursor:pointer;transition:transform .08s,border-color .15s,color .15s;}'
+        + '.kl-choice:hover{border-color:var(--kl-accent);color:var(--kl-accent);}'
+        + '.kl-choice:active{transform:scale(.96);}'
+        + '.kl-dock{display:flex;gap:8px;justify-content:center;align-items:center;background:#fff;border:1.5px solid var(--kl-line);border-radius:14px;padding:8px;width:max-content;max-width:100%;flex-wrap:wrap;margin:14px auto 0;box-shadow:0 3px 12px rgba(20,30,50,.07);}'
+        + '.kl-dock button{font-size:19px;font-weight:700;font-family:inherit;line-height:1;padding:12px 19px;border-radius:10px;border:1.5px solid transparent;background:var(--kl-soft);color:var(--kl-ink);cursor:pointer;transition:transform .08s;}'
+        + '.kl-dock button:active{transform:scale(.95);}'
+        + '.kl-dock button.pri{background:var(--kl-accent);color:#fff;}'
+        + '.kl-dock button.ghost{background:transparent;color:var(--kl-mut);}';
+      document.head.appendChild(st);
+    },
+    /* 하단 조작 독 — 도구별 조작 버튼을 담는 유일한 자리.
+       items=[{act,label,kind:'pri'|'ghost'|undefined,cls:'추가클래스'}]
+       버튼에는 data-act가 그대로 붙으므로 기존 바인딩 유지. 최대 3~4개 권장, pri는 1개만. */
+    dock: function (items) {
+      this.ensureCss();
+      return '<div class="kl-dock">'
+        + items.map(function (it) {
+            return '<button class="' + (it.cls ? it.cls + ' ' : '') + (it.kind || '') + '" data-act="' + it.act + '">' + it.label + '</button>';
+          }).join('')
+        + '</div>';
+    },
     // 모드 탭 HTML. modes=['free','mission','quiz',...] 중 도구가 지원하는 것만, cur=현재 모드
     // extraLabels(선택): { 커스텀모드키: '라벨' } — 도구별 확장 모드 탭(예: '🌀 만약에')
     modeTabs: function (modes, cur, extraLabels) {
-      var L = { free: '🧭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+      this.ensureCss();
+      var L = { free: '자유탐구', mission: '미션', quiz: '퀴즈' };
       if (extraLabels) for (var k in extraLabels) L[k] = extraLabels[k];
-      var base = 'font-size:21px;padding:11px 20px;border-radius:14px;border:3px solid #7048E8;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
-      return '<div class="kl-modes" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
+      return '<div class="kl-modes"><div class="kl-seg">'
         + modes.map(function (m) {
             var on = (m === cur);
-            return '<button class="kl-mode" data-mode="' + m + '" style="' + base
-              + 'background:' + (on ? '#7048E8' : '#fff') + ';color:' + (on ? '#fff' : '#7048E8') + ';">' + (L[m] || m) + '</button>';
+            return '<button class="kl-mode' + (on ? ' on' : '') + '" data-mode="' + m + '">' + (L[m] || m) + '</button>';
           }).join('')
-        + '</div>';
+        + '</div></div>';
     },
     // 모드 탭 클릭 바인딩. onChange(mode) 호출
     bindModeTabs: function (el, onChange) {
@@ -99,23 +140,23 @@
     },
     // 미션 배너 HTML. step은 0부터, total은 전체 미션 수
     missionBar: function (text, step, total) {
-      return '<div class="kl-mission" style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;'
-        + 'background:#F3F0FF;border:3px solid #7048E8;border-radius:18px;padding:12px 18px;margin-bottom:12px;">'
-        + '<span style="font-size:17px;font-weight:800;color:#fff;background:#7048E8;border-radius:10px;padding:6px 12px;white-space:nowrap;">미션 ' + (step + 1) + '/' + total + '</span>'
-        + '<span class="kl-mission-text" style="font-size:22px;font-weight:800;color:#4527A0;">' + text + '</span></div>';
+      this.ensureCss();
+      return '<div class="kl-mission kl-bar">'
+        + '<span class="kl-chip">미션 ' + (step + 1) + '/' + total + '</span>'
+        + '<span class="kl-mission-text kl-bar-text">' + text + '</span></div>';
     },
     // 퀴즈 질문 배너 HTML
     quizBar: function (text, score, count) {
-      return '<div class="kl-quiz" style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;'
-        + 'background:#FFF4E6;border:3px solid #F59F00;border-radius:18px;padding:12px 18px;margin-bottom:12px;">'
-        + '<span style="font-size:17px;font-weight:800;color:#fff;background:#F59F00;border-radius:10px;padding:6px 12px;white-space:nowrap;">⭐ ' + score + ' / ' + count + '</span>'
-        + '<span class="kl-quiz-text" style="font-size:22px;font-weight:800;color:#9A6700;">' + text + '</span></div>';
+      this.ensureCss();
+      return '<div class="kl-quiz kl-bar">'
+        + '<span class="kl-chip">⭐ ' + score + ' / ' + count + '</span>'
+        + '<span class="kl-quiz-text kl-bar-text">' + text + '</span></div>';
     },
     // 선택지 버튼 묶음 HTML. choices=[{v:값,label:표시}] / 클릭은 .kl-choice[data-v]로 바인딩
     choices: function (choices) {
-      var s = 'font-size:28px;min-width:84px;padding:14px 24px;border-radius:16px;border:3px solid #1565C0;background:#fff;color:#1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
-      return '<div class="kl-choices" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px;">'
-        + choices.map(function (c) { return '<button class="kl-choice" data-v="' + c.v + '" style="' + s + '">' + (c.label != null ? c.label : c.v) + '</button>'; }).join('')
+      this.ensureCss();
+      return '<div class="kl-choices">'
+        + choices.map(function (c) { return '<button class="kl-choice" data-v="' + c.v + '">' + (c.label != null ? c.label : c.v) + '</button>'; }).join('')
         + '</div>';
     },
     praise: function () { return PRAISE[Math.floor(Math.random() * PRAISE.length)]; },
@@ -128,7 +169,7 @@
       var d = document.createElement('div');
       d.className = 'kl-toast';
       d.style.cssText = 'position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:30;'
-        + 'font-size:26px;font-weight:800;font-family:inherit;padding:14px 26px;border-radius:18px;color:#fff;'
+        + 'font-size:21px;font-weight:700;font-family:inherit;padding:12px 22px;border-radius:12px;color:#fff;'
         + 'box-shadow:0 6px 18px rgba(0,0,0,.18);pointer-events:none;white-space:nowrap;'
         + 'background:' + (ok ? '#12B886' : '#FF8A3D') + ';animation:klToast 1.6s ease forwards;';
       d.textContent = msg || (ok ? this.praise() : this.retry());
@@ -158,8 +199,8 @@
           if (+b.dataset.v !== m.a) { ui.toast(el, false); return; }
           lock = true;
           var host = el.querySelector(sel.bar);
-          if (host) host.innerHTML = '<div style="text-align:center;background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:13px 16px;margin-bottom:12px;">'
-            + '<span style="font-size:21px;font-weight:800;color:#0B7A5C;">✅ 정답! ' + m.why + '</span></div>';
+          if (host) host.innerHTML = '<div style="text-align:center;background:#E6FCF5;border:1.5px solid #12B886;border-radius:12px;padding:13px 16px;margin-bottom:12px;">'
+            + '<span style="font-size:21px;font-weight:700;color:#0B7A5C;">✅ 정답! ' + m.why + '</span></div>';
           fc.innerHTML = '';
           setTimeout(onPass, 2400);
         });
@@ -174,10 +215,10 @@
       function active() { return !!st.key && (st.phase === 'play' || st.phase === 'reveal'); }
       function reset() { st.key = null; st.phase = 'pick'; st.choice = null; if (spec.onExit) spec.onExit(); }
       function barHTML() {
-        var card = 'font-size:19px;padding:14px 18px;border-radius:16px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;line-height:1.3;';
+        var card = 'font-size:19px;padding:14px 18px;border-radius:12px;border:1.5px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:700;font-family:inherit;line-height:1.3;';
         if (st.phase === 'pick') {
-          return '<div style="text-align:center;background:#E3FAFC;border:3px solid #0B7285;border-radius:18px;padding:12px 16px;margin-bottom:10px;">'
-            + '<div style="font-size:22px;font-weight:800;color:#0B7285;">🌀 만약에… 상상해 보고, 직접 확인해요!</div></div>'
+          return '<div style="text-align:center;background:#E3FAFC;border:1.5px solid #0B7285;border-radius:12px;padding:12px 16px;margin-bottom:10px;">'
+            + '<div style="font-size:22px;font-weight:700;color:#0B7285;">🌀 만약에… 상상해 보고, 직접 확인해요!</div></div>'
             + '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">'
             + Object.keys(spec.scenarios).map(function (k) { var w = spec.scenarios[k];
                 return '<button class="kl-wifcard" data-k="' + k + '" style="' + card + '">' + w.icon + ' ' + w.title + '</button>'; }).join('')
@@ -185,25 +226,25 @@
         }
         var w = spec.scenarios[st.key];
         if (st.phase === 'predict') {
-          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#F3F0FF;border:3px solid #7048E8;border-radius:18px;padding:12px 18px;margin-bottom:12px;">'
-            + '<span style="font-size:17px;font-weight:800;color:#fff;background:#7048E8;border-radius:10px;padding:6px 12px;white-space:nowrap;">🔮 예측</span>'
-            + '<span style="font-size:22px;font-weight:800;color:#4527A0;">' + w.icon + ' ' + w.q + '</span></div>';
+          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#F3F0FF;border:1.5px solid #7048E8;border-radius:12px;padding:12px 18px;margin-bottom:12px;">'
+            + '<span style="font-size:17px;font-weight:700;color:#fff;background:#7048E8;border-radius:10px;padding:6px 12px;white-space:nowrap;">🔮 예측</span>'
+            + '<span style="font-size:22px;font-weight:700;color:#4527A0;">' + w.icon + ' ' + w.q + '</span></div>';
         }
         if (st.phase === 'play') {
-          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#E3FAFC;border:3px solid #0B7285;border-radius:18px;padding:11px 16px;margin-bottom:10px;">'
-            + '<span style="font-size:17px;font-weight:800;color:#fff;background:#0B7285;border-radius:10px;padding:6px 12px;white-space:nowrap;">🧪 실험 중</span>'
-            + '<span style="font-size:20px;font-weight:800;color:#0B7285;">' + w.icon + ' ' + w.tip + '</span>'
-            + '<button class="kl-wifreveal" style="font-size:18px;padding:9px 16px;border-radius:12px;border:3px solid #7048E8;background:#7048E8;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;">💡 정리 보기</button>'
-            + '<button class="kl-wifback" style="font-size:16px;padding:8px 12px;border-radius:12px;border:2.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:800;font-family:inherit;">← 다른 만약에</button></div>';
+          return '<div style="display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;background:#E3FAFC;border:1.5px solid #0B7285;border-radius:12px;padding:11px 16px;margin-bottom:10px;">'
+            + '<span style="font-size:17px;font-weight:700;color:#fff;background:#0B7285;border-radius:10px;padding:6px 12px;white-space:nowrap;">🧪 실험 중</span>'
+            + '<span style="font-size:20px;font-weight:700;color:#0B7285;">' + w.icon + ' ' + w.tip + '</span>'
+            + '<button class="kl-wifreveal" style="font-size:18px;padding:9px 16px;border-radius:12px;border:1.5px solid #7048E8;background:#7048E8;color:#fff;cursor:pointer;font-weight:700;font-family:inherit;">💡 정리 보기</button>'
+            + '<button class="kl-wifback" style="font-size:16px;padding:8px 12px;border-radius:12px;border:1.5px solid #C9D7E6;background:#fff;color:#5a7894;cursor:pointer;font-weight:700;font-family:inherit;">← 다른 만약에</button></div>';
         }
         var mine = w.ch[st.choice != null ? st.choice : 0], hit = (st.choice === w.a);
-        return '<div style="background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:14px 18px;margin-bottom:10px;text-align:center;">'
-          + '<div style="font-size:21px;font-weight:800;color:#0B7A5C;">💡 ' + w.reveal + '</div>'
-          + '<div style="font-size:17px;font-weight:800;color:' + (hit ? '#0B7A5C' : '#E8590C') + ';margin-top:8px;">네 예측: “' + mine + '” → '
+        return '<div style="background:#E6FCF5;border:1.5px solid #12B886;border-radius:12px;padding:14px 18px;margin-bottom:10px;text-align:center;">'
+          + '<div style="font-size:21px;font-weight:700;color:#0B7A5C;">💡 ' + w.reveal + '</div>'
+          + '<div style="font-size:17px;font-weight:700;color:' + (hit ? '#0B7A5C' : '#E8590C') + ';margin-top:8px;">네 예측: “' + mine + '” → '
           + (hit ? '정확했어요! 🎯' : '실제는 달랐죠? 예측이 빗나갈 때 더 크게 배워요! 💪') + '</div>'
           + '<div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">'
-          + '<button class="kl-wifplay" style="font-size:17px;padding:9px 15px;border-radius:12px;border:3px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:800;font-family:inherit;">🔁 더 가지고 놀기</button>'
-          + '<button class="kl-wifback" style="font-size:17px;padding:9px 15px;border-radius:12px;border:3px solid #0B7285;background:#0B7285;color:#fff;cursor:pointer;font-weight:800;font-family:inherit;">🌀 다른 만약에</button></div></div>';
+          + '<button class="kl-wifplay" style="font-size:17px;padding:9px 15px;border-radius:12px;border:1.5px solid #0B7285;background:#fff;color:#0B7285;cursor:pointer;font-weight:700;font-family:inherit;">🔁 더 가지고 놀기</button>'
+          + '<button class="kl-wifback" style="font-size:17px;padding:9px 15px;border-radius:12px;border:1.5px solid #0B7285;background:#0B7285;color:#fff;cursor:pointer;font-weight:700;font-family:inherit;">🌀 다른 만약에</button></div></div>';
       }
       function bind(el) {
         el.querySelectorAll('.kl-wifcard').forEach(function (b) {
@@ -234,8 +275,8 @@
     },
     // 미션 전체 완료 배너
     doneBar: function () {
-      return '<div style="text-align:center;background:#E6FCF5;border:3px solid #12B886;border-radius:18px;padding:16px;margin-bottom:12px;">'
-        + '<span style="font-size:26px;font-weight:800;color:#0B7A5C;">🏆 모든 미션 완료! 정말 멋져요!</span></div>';
+      this.ensureCss();
+      return '<div class="kl-done">🏆 모든 미션 완료! 정말 멋져요!</div>';
     },
     /* ── 학년 칸 게이트 (헌법 3장 — 저/중/고 데이터 스왑 + 셀렉터) ──
        한 도구가 저(1~2)/중(3~4)/고(5~6) 세 칸을 가진다. 모드와 직교(한 겹 위 게이트).
@@ -249,12 +290,11 @@
       var locked = !!spec.locked;
       function selectorHTML() {
         if (locked) return '';
-        var base = 'font-size:16px;padding:8px 14px;border-radius:12px;border:2.5px solid #2F9E44;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;';
-        return '<div class="kl-grades" style="display:flex;gap:7px;justify-content:center;margin-bottom:9px;flex-wrap:wrap;">'
+        window.KLab.ui.ensureCss();
+        return '<div class="kl-grades">'
           + ORDER.map(function (g) {
               var on = (g === cur);
-              return '<button class="kl-grade" data-grade="' + g + '" style="' + base
-                + 'background:' + (on ? '#2F9E44' : '#fff') + ';color:' + (on ? '#fff' : '#2F9E44') + ';">' + L[g] + '</button>';
+              return '<button class="kl-grade' + (on ? ' on' : '') + '" data-grade="' + g + '">' + L[g] + '</button>';
             }).join('')
           + '</div>';
       }

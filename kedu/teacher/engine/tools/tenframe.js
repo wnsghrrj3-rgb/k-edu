@@ -42,7 +42,6 @@
     var blue={};
     var mode=(G().modes.indexOf(config.mode)>=0)?config.mode:'free';
     var bundleFx=false;   // 와우: 직전 조작에서 10묶음이 막 올라갔는가(1회 애니)
-    var btn='font-size:27px;padding:15px 30px;border-radius:16px;border:3px solid #1565C0;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;transition:transform .08s;';
 
     // 와우: 점 수 변경의 단일 진입 — 효과음 + 10묶음(받아올림) 감지
     function setNum(nv){
@@ -111,9 +110,12 @@
 
     function build(){
       var top=bands.selectorHTML()+ui.modeTabs(G().modes,mode), bar='', ctrl='', foot='';
-      var ctrlBtns='<button class="tf-btn" data-act="minus" style="'+btn+'background:#fff;color:#1565C0;">－ 점</button>'
-            +'<button class="tf-btn" data-act="plus" style="'+btn+'background:#1565C0;color:#fff;">＋ 점</button>'
-            +'<button class="tf-btn" data-act="reset" style="font-size:27px;padding:15px 22px;border-radius:16px;border:3px solid #9aa;background:#fff;color:#666;cursor:pointer;font-weight:800;font-family:inherit;line-height:1;">↺</button>';
+      /* 케이랩 2.0 — 조작 버튼은 하단 독 한 곳 (pri 1개, 나머지 중립) */
+      var ctrlBtns=ui.dock([
+        {act:'minus', label:'－ 점', cls:'tf-btn'},
+        {act:'plus',  label:'＋ 점', cls:'tf-btn', kind:'pri'},
+        {act:'reset', label:'↺',    cls:'tf-btn', kind:'ghost'}
+      ]);
       if(mode==='mission'){
         var _M=curMissions();
         bar=mDone?ui.doneBar():ui.missionBar(_M[mStep].text,mStep,_M.length);
@@ -124,14 +126,14 @@
       } else {
         ctrl=ctrlBtns;
       }
-      el.innerHTML='<style>.tf-btn:active,.kl-choice:active{transform:translateY(2px);}.tf-btn[disabled]{opacity:.35;cursor:not-allowed;}.tf-dot{cursor:pointer;transition:fill .15s,transform .18s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}.tf-dot:hover{transform:scale(1.08);}.tf-cell.tf-fillable{cursor:pointer;}.tf-cell.tf-fillable:hover{fill:rgba(112,72,232,0.12);}.kl-choice:hover{background:#1565C0 !important;color:#fff !important;}'
+      el.innerHTML='<style>.tf-btn:active,.kl-choice:active{transform:translateY(2px);}.tf-btn[disabled]{opacity:.35;cursor:not-allowed;}.tf-dot{cursor:pointer;transition:fill .15s,transform .18s cubic-bezier(.2,1.4,.4,1);transform-origin:center;transform-box:fill-box;}.tf-dot:hover{transform:scale(1.08);}.tf-cell.tf-fillable{cursor:pointer;}.tf-cell.tf-fillable:hover{fill:rgba(112,72,232,0.12);}.kl-choice:hover{border-color:var(--kl-accent);color:var(--kl-accent);}'
         +'@keyframes tfRise{0%{transform:translateY(78px) scale(.55);opacity:0;}55%{opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}'
         +'.tf-rise{animation:tfRise .6s cubic-bezier(.2,1.5,.35,1) both;transform-origin:center;transform-box:fill-box;}'
         +'@keyframes tfFlash{0%{opacity:0;transform:translateY(8px);}18%{opacity:1;transform:translateY(0);}78%{opacity:1;}100%{opacity:0;}}'
         +'.tf-flash{animation:tfFlash 1.5s ease both;}</style>'
         +top+bar
-        +(ctrl?'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">'+ctrl+'</div>':'')
         +'<div class="kl-stage-host" style="position:relative;"><div class="tf-stage" style="width:100%;height:'+(mode==='quiz'?'40vh':'46vh')+';min-height:300px;background:radial-gradient(120% 120% at 30% 0%,#FBFDFF 0%,#E4EFFB 70%,#D6E7F8 100%);border-radius:26px;overflow:hidden;box-shadow:inset 0 0 0 3px rgba(21,101,192,0.10);"></div></div>'
+        +(ctrl||'')
         +foot
         +'<div class="tf-status" style="text-align:center;margin-top:14px;font-weight:800;font-family:inherit;"></div>';
       ui.bindModeTabs(el,function(m){mode=m;blue={};mStep=0;mDone=false;bundleFx=false;
