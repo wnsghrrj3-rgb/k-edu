@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>진자의 파도 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-pulling{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(19px,2.8vw,28px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--science); letter-spacing:.10em; opacity:.85; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 물리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="wave-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumWave=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var TAU=Math.PI*2;
+  function make(N,N0,gamma){                         // f_i=(N0+i)/Γ — Γ마다 전원 위상 복귀
+    var freqs=new Array(N);
+    for(var i=0;i<N;i++) freqs[i]=(N0+i)/gamma;
+    function disp(i,t){ return Math.cos(TAU*freqs[i]*t); }
+    function order(t){                               // 쿠라모토 질서도 R∈[0,1]
+      var re=0,im=0;
+      for(var i=0;i<N;i++){ var a=TAU*freqs[i]*t; re+=Math.cos(a); im+=Math.sin(a); }
+      return Math.sqrt(re*re+im*im)/N;
+    }
+    function dirichlet(t){                           // 균일 간격의 닫힌식 = 디리클레 핵
+      var x=Math.PI*t/gamma, s=Math.sin(x);
+      if(Math.abs(s)<1e-12) return 1;
+      return Math.abs(Math.sin(N*x)/(N*s));
+    }
+    function lengths(g){                             // T=2π√(L/g) → L=g(Γ/2πn)²
+      var L=new Array(N);
+      for(var i=0;i<N;i++){ var T=gamma/(N0+i); L[i]=g*T*T/(TAU*TAU); }
+      return L;
+    }
+    function nextRealign(t){ return gamma*(Math.floor(t/gamma+1e-9)+1); }
+    return { N:N, N0:N0, gamma:gamma, freqs:freqs,
+             disp:disp, order:order, dirichlet:dirichlet,
+             lengths:lengths, nextRealign:nextRealign };
+  }
+  return { make:make };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">길이가 조금씩 다른, 열다섯 개의 진자입니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="9" max="30" value="15" step="3" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumWave;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+
+  // ── 무대 상수 ────────────────────────────────────────────────────
+  var N0=20, GAMMA=30, G=9.81, PXM=880;              // m→px
+  var BAR_Y=150, BAR_X0=250, BAR_X1=1350;
+  var TH_MAX=0.42, TH_MIN=0.16;                      // 당김 각(rad)
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→pull→swing→betrayed→after (after에서 pull↔swing 순환)
+    N:15, wave:null, lens:null, px:null,
+    t:0, amp:0, dir:1,
+    pull:0,                  // 당기는 중 공통 각
+    betrayed:false,
+    halfChimed:false,
+    returns:0,               // 귀환 횟수(여운 chime용)
+    time:0
+  };
+  function build(n){
+    S.N=n;
+    S.wave=PURE.make(n, N0, GAMMA);
+    var Lm=S.wave.lengths(G);
+    S.lens=Lm.map(function(L){ return L*PXM; });
+    S.px=[];
+    for(var i=0;i<n;i++) S.px.push(BAR_X0 + (BAR_X1-BAR_X0)*(n===1?0.5:i/(n-1)));
+  }
+  build(15);
+
+  // ── 잔상 트레일 ──────────────────────────────────────────────────
+  var trail=document.createElement('canvas'); trail.width=W; trail.height=H;
+  function trailFade(){
+    var c=trail.getContext('2d'); if(!c) return;
+    c.fillStyle='rgba(12,11,22,.10)';
+    c.fillRect(0,0,W,H);
+  }
+  function trailDot(x,y){
+    var c=trail.getContext('2d'); if(!c) return;
+    c.fillStyle='rgba(242,234,216,.28)';
+    c.beginPath(); c.arc(x,y,3.2,0,Math.PI*2); c.fill();
+  }
+  function trailClear(){
+    var c=trail.getContext('2d'); if(!c) return;
+    c.clearRect(0,0,W,H);
+  }
+
+  // ── 각도(렌더의 유일한 진실 = E1 disp) ───────────────────────────
+  function angleOf(i){
+    if(S.phase==='pull') return S.pull;
+    if(S.phase==='swing' || S.phase==='betrayed' || S.phase==='after')
+      return S.amp * S.dir * S.wave.disp(i, S.t);
+    return 0;
+  }
+  function ballPos(i){
+    var th=angleOf(i), L=S.lens[i];
+    return { x:S.px[i]+L*Math.sin(th), y:BAR_Y+L*Math.cos(th) };
+  }
+
+  // ── 놓다 = 일제 출발 ─────────────────────────────────────────────
+  function release(){
+    var a=Math.abs(S.pull);
+    if(a<0.06){ S.pull=0; S.phase=(S.betrayed?'after':'boot'); return; }
+    S.amp=Math.min(TH_MAX, Math.max(TH_MIN, a));
+    S.dir=S.pull>=0?1:-1;
+    S.t=0; S.pull=0; S.halfChimed=false;
+    S.phase=S.betrayed?'after':'swing';
+    trailClear();
+    Museum.sound.play('clack');
+  }
+
+  // ── 배반 = 귀환 ──────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true;
+    S.t=GAMMA;                                       // 완벽한 평행에서 정지
+    S.phase='betrayed';
+    var my=BAR_Y + (S.lens[0]+S.lens[S.N-1])*0.5;
+    Museum.betray({x:0.5, y:my/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after'; S.returns=1;
+    var f=document.getElementById('formula');
+    f.innerHTML='부서진 게 아니었다 &mdash; 모두 제 박자로 돌아오고 있었다'
+      +'<span class="small">진자의 파도 &middot; T = 2&pi;&radic;(L/g) &mdash; 길이가 박자를 정한다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'진자의 파도',
+      story:'무질서처럼 보이는 것에도 박자가 살아 있다. 삼십 초 — 모두가 함께 돌아오는 시간.',
+      fine:'PENDULUM WAVE · T=2π√(L/g)' });
+    Museum.ticket.grant({ id:'c1_wave', title:'진자의 파도', fine:'빛의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.4;
+        var n=13;
+        for(var i=0;i<n;i++){
+          var x=w*(0.12+0.76*i/(n-1));
+          var th=0.5*Math.cos(i*0.9);
+          c.beginPath(); c.moveTo(x, h*0.14);
+          c.lineTo(x+Math.sin(th)*h*0.42, h*0.14+Math.cos(th)*h*0.62);
+          c.stroke();
+        }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 진자 수가 달라져도 귀환은 온다 ───────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after' && S.phase!=='swing') return;
+    if(!S.betrayed) return;
+    build(parseInt(slider.value,10)||15);
+    S.amp=0.34; S.dir=1; S.t=0; S.halfChimed=false; S.phase='after';
+    trailClear();
+    Museum.sound.play('clack');
+  });
+
+  // ── 입력: 옆으로 당기다 ──────────────────────────────────────────
+  var pulling=false, pullX0=0, lastCreak=0;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); }
+    if(S.phase!=='boot' && S.phase!=='swing' && S.phase!=='after') return;
+    if(S.phase==='swing' && !S.betrayed) return;      // 첫 항해는 끊지 않는다
+    pulling=true; canvas.classList.add('is-pulling');
+    pullX0=stage.toLogical(e.clientX,e.clientY).x - S.pull*620;
+    S.phase='pull';
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!pulling || Museum.isLocked() || S.phase!=='pull') return;
+    var x=stage.toLogical(e.clientX,e.clientY).x;
+    var p=Math.max(-TH_MAX, Math.min(TH_MAX, (x-pullX0)/620));
+    if(Math.abs(p-lastCreak)>0.09){ Museum.sound.play('creak'); lastCreak=p; }
+    S.pull=p;
+  });
+  window.addEventListener('pointerup', function(){
+    if(!pulling) return;
+    pulling=false; canvas.classList.remove('is-pulling');
+    if(S.phase==='pull') release();
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.phase==='swing' || S.phase==='after'){
+        var prev=S.t;
+        S.t+=dt;
+        if(S.phase==='swing' && !S.betrayed){
+          if(!S.halfChimed && S.t>=GAMMA*0.5){ S.halfChimed=true; Museum.sound.play('chime'); }
+          if(S.t>=GAMMA) triggerBetray();
+        } else {
+          var pr=S.wave.nextRealign(prev);
+          if(prev<pr && S.t>=pr){ S.returns++; Museum.sound.play('chime'); }
+        }
+      }
+    },
+    draw:function(ctx){
+      // 잔상
+      if(S.phase==='swing' || S.phase==='after'){
+        trailFade();
+        for(var i=0;i<S.N;i++){ var b0=ballPos(i); trailDot(b0.x,b0.y); }
+      }
+      ctx.drawImage(trail,0,0);
+
+      // 놋쇠 봉
+      var grad=ctx.createLinearGradient(BAR_X0,0,BAR_X1,0);
+      grad.addColorStop(0,'rgba(138,115,63,.15)');
+      grad.addColorStop(0.5,'rgba(201,169,97,.75)');
+      grad.addColorStop(1,'rgba(138,115,63,.15)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(BAR_X0-40, BAR_Y-3, BAR_X1-BAR_X0+80, 6);
+
+      // 줄과 공
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      for(var i=0;i<S.N;i++){
+        var b=ballPos(i);
+        ctx.strokeStyle='rgba(168,158,136,.42)';
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(S.px[i], BAR_Y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        ctx.fillStyle='rgba(201,169,97,.9)';
+        ctx.beginPath(); ctx.arc(S.px[i], BAR_Y, 2.4, 0, Math.PI*2); ctx.fill();
+        var a=(S.phase==='boot' && i===7) ? 0.72+0.24*breath : 0.9;
+        ctx.fillStyle='rgba(242,234,216,'+a.toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(b.x, b.y, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(12,11,22,.55)';
+        ctx.beginPath(); ctx.arc(b.x+3.5, b.y+3.5, 5.5, 0, Math.PI*2); ctx.fill();
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__C1 = {
+    S:S, PURE:PURE,
+    anglesNow:function(){ var a=[]; for(var i=0;i<S.N;i++) a.push(angleOf(i)); return a; },
+    pullTo:function(p){
+      if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); }
+      S.phase='pull'; S.pull=p;
+    },
+    release:release,
+    jumpTo:function(t){
+      if(S.phase!=='swing' && S.phase!=='after'){ S.phase='swing'; S.amp=0.35; S.dir=1; }
+      S.t=t;
+    },
+    build:build, GAMMA:GAMMA, TH_MAX:TH_MAX
+  };
+})();
+</script>
+</body>
+</html>

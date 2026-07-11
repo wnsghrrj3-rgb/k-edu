@@ -104,10 +104,24 @@
     { type:'open',    id:'galton', teaser:'우연 만 번의 약속', url:'math/ex09_galton.html' },
     { type:'open',    id:'birthday', teaser:'스물셋이면 절반은 만난다', url:'math/ex10_birthday.html' },
     { type:'open',    id:'monty', teaser:'바꿔야 두 배로 이긴다', url:'math/ex11_monty.html' },
+    { type:'arch',    title:'과학관', story:'빛의 밤', accent:'var(--science)' },
+    { type:'open',    id:'wave', teaser:'흩어진 것들이 돌아온다', url:'science/ex01_wave.html' },
     { type:'curtain', teaser:'다음 전시 준비 중' }
   ];
   var hall = document.getElementById('hall');
   DOORS.forEach(function(d){
+    if(d.type==='arch'){
+      var arch = document.createElement('div');
+      arch.className='door-slot hall-arch';
+      arch.style.opacity='';
+      arch.innerHTML = '<div class="plaque">'
+        +'<span class="plaque__title t-exhibit">'+d.title+'</span>'
+        +'<span class="plaque__story t-teaser" style="letter-spacing:.22em">'+d.story+'</span>'
+        +'</div><div class="accent-line" style="background:linear-gradient(90deg,transparent,'+(d.accent||'var(--math)')+',transparent)"></div>';
+      hall.appendChild(arch);
+      d._slot = arch;
+      return;
+    }
     var slot = document.createElement('div'); slot.className='door-slot';
     var door = document.createElement('div');
     door.className = 'door ' + (d.type==='open' ? 'door--open' : 'door--curtain');
