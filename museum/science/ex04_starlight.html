@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>별빛의 시간 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:18px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.08em; color:var(--ink); text-align:center;
+            max-width:min(860px,88vw); line-height:1.7; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--science); letter-spacing:.10em; opacity:.85; }
+  #convert{ opacity:0; transition:opacity .8s ease; text-align:center; pointer-events:none;
+            font-family:'Gowun Dodum',sans-serif; font-size:15px; letter-spacing:.08em; color:var(--ink-dim); }
+  #convert.is-in{ opacity:1; }
+  #convert .yr{ font-family:'Jua',sans-serif; color:var(--ink); }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 모형 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="starlight-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumStarlight=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  // 빛의 여행 항등식: 출발 연도 = 도착 연도 − 광년.
+  // 실측 항성 13종(통용 광년값) — 밤하늘은 도착한 옛날들이다.
+  var STARS=[
+    {name:'시리우스',   ly:8.6},
+    {name:'프로키온',   ly:11.5},
+    {name:'알타이르',   ly:16.7},
+    {name:'베가',       ly:25},
+    {name:'폴룩스',     ly:34},
+    {name:'아크투루스', ly:37},
+    {name:'카펠라',     ly:43},
+    {name:'알데바란',   ly:65},
+    {name:'레굴루스',   ly:79},
+    {name:'스피카',     ly:250},
+    {name:'폴라리스',   ly:433},
+    {name:'베텔게우스', ly:640},
+    {name:'데네브',     ly:1500}
+  ];
+  var ERAS=[
+    {name:'현대',   from:1945},
+    {name:'근대',   from:1876},
+    {name:'조선',   from:1392},
+    {name:'고려',   from:918},
+    {name:'남북국', from:676},
+    {name:'삼국',   from:-57}
+  ];
+  function make(arrivalYear){
+    var MAX=STARS[STARS.length-1].ly;
+    function departure(ly){ return Math.round(arrivalYear-ly); }
+    function eraOf(year){
+      for(var i=0;i<ERAS.length;i++) if(year>=ERAS[i].from) return ERAS[i].name;
+      return '그 이전';
+    }
+    function u(yearsAgo){ return Math.log(1+yearsAgo)/Math.log(1+MAX); }
+    function yearsOf(uu){ return Math.exp(uu*Math.log(1+MAX))-1; }
+    function brightnessRel(ly){                 // 동일 광도 가정 — 역제곱, 시리우스=1
+      var base=STARS[0].ly;
+      return (base*base)/(ly*ly);
+    }
+    return { STARS:STARS, ERAS:ERAS, ARRIVAL:arrivalYear, MAX:MAX,
+             departure:departure, eraOf:eraOf, u:u, yearsOf:yearsOf,
+             brightnessRel:brightnessRel };
+  }
+  return { make:make };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">저 별빛은, 지금 막 도착했습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="convert"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="2000" value="433" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumStarlight;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var sky = PURE.make(2026);
+  var NS = sky.STARS.length, DENEB = NS-1;
+
+  // ── 하늘 배치(큐레이션 — 광년 순서와 무관한 자연스러운 산포) ────
+  var POS=[
+    [420,300],[980,210],[700,150],[1240,330],[250,190],[860,360],
+    [1120,140],[540,420],[1330,220],[180,380],[800,260],[1060,430],[640,90]
+  ];
+  function sizeOf(i){                            // 역제곱 밝기의 완만 매핑(4승근)
+    var b=sky.brightnessRel(sky.STARS[i].ly);
+    return 3.2+7.2*Math.pow(b,0.25);
+  }
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→sky→rewind→betrayed→after
+    target:-1, yearsAgo:0, rewT:0, rewDur:0,
+    visits:0, visited:[], arrivedHold:0, betrayLine:false, quietT:0,
+    betrayed:false, time:0
+  };
+  for(var q=0;q<NS;q++) S.visited.push(false);
+  function denebAwake(){ return S.betrayed || S.visits>=3; }
+  function nextInvite(){
+    for(var i=0;i<NS;i++){ if(i===DENEB) continue; if(!S.visited[i]) return i; }
+    return denebAwake()? DENEB : -1;
+  }
+
+  // ── 짚다 → 되감기 ────────────────────────────────────────────────
+  var arriveEl=null;
+  function pick(i){
+    if(i===DENEB && !denebAwake()) return false; // 하늘이 아직 얕다
+    S.target=i; S.yearsAgo=0; S.rewT=0; S.arrivedHold=0; S.betrayLine=false; S.quietT=0;
+    S.rewDur=2.2+3.3*sky.u(sky.STARS[i].ly);
+    S.phase='rewind';
+    Museum.sound.play('click_light');
+    if(arriveEl){ arriveEl.remove(); arriveEl=null; }
+    return true;
+  }
+  function arriveText(i){
+    var st=sky.STARS[i], y=sky.departure(st.ly), era=sky.eraOf(y);
+    var el=document.createElement('div');
+    el.style.cssText='position:fixed;left:0;right:0;top:16vh;text-align:center;z-index:45;pointer-events:none;'
+      +'font-family:Gowun Batang,serif;color:var(--ink);letter-spacing:.14em;opacity:0;transition:opacity 1s ease;';
+    el.innerHTML='<div style="font-size:clamp(22px,3.2vw,32px)">'+era+'</div>'
+      +'<div style="font-family:Jua,sans-serif;font-size:15px;color:var(--ink-dim);margin-top:8px;letter-spacing:.2em">'
+      +y+'년 — 이 빛이 출발한 해</div>';
+    document.body.appendChild(el);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.style.opacity='1'; }); });
+    return el;
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var p=POS[DENEB];
+    Museum.betray({x:p[0]/W, y:p[1]/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    for(var i=0;i<NS;i++) S.visited[i]=false;   // 재체험 — 전부 다시 열린다
+    S.visits=3;
+    var f=document.getElementById('formula');
+    f.innerHTML='밤하늘은 지금이 아니다 &mdash; 밤하늘은, 도착한 옛날들이다'
+      +'<span class="small">별빛의 시간 &middot; 1광년 = 빛이 1년을 달리는 거리</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'별빛의 시간',
+      story:'당신이 보는 것은 별이 아니라, 별이 보낸 옛날이다. 어떤 별은 이미 그 자리에 없다.',
+      fine:'LIGHT YEARS · c = 299,792 km/s' });
+    Museum.ticket.grant({ id:'c4_starlight', title:'별빛의 시간', fine:'빛의 밤',
+      drawFn:function(c,w,h){
+        c.fillStyle='rgba(242,234,216,.92)';
+        [[0.3,0.2,3],[0.7,0.14,2],[0.5,0.4,4],[0.24,0.55,2],[0.76,0.5,2.6],[0.42,0.72,2]].forEach(function(s){
+          c.beginPath(); c.arc(w*s[0],h*s[1],s[2],0,Math.PI*2); c.fill();
+        });
+        c.strokeStyle='rgba(201,169,97,.75)'; c.lineWidth=1;
+        c.beginPath(); c.moveTo(w*0.5,h*0.4); c.lineTo(w*0.5,h*0.9); c.stroke();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+    convert(433);
+  }
+
+  // ── 여운 슬라이더 — 광년 자유 환산 ──────────────────────────────
+  function convert(v){
+    var y=Math.round(2026-v), era=sky.eraOf(y);
+    var el=document.getElementById('convert');
+    el.innerHTML='빛으로 <span class="yr">'+v+'</span>년 &mdash; '+era+'('
+      +'<span class="yr">'+y+'</span>년)에 출발한 빛이 지금 도착합니다';
+    el.classList.add('is-in');
+  }
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    convert(parseInt(slider.value,10)||1);
+  });
+
+  // ── 입력: 별을 짚다 ──────────────────────────────────────────────
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='rewind' || S.phase==='betrayed') return;
+    if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='sky'; }
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var best=-1, bd=1e9;
+    for(var i=0;i<NS;i++){
+      var d=Math.hypot(p.x-POS[i][0], p.y-POS[i][1]);
+      if(d<bd){ bd=d; best=i; }
+    }
+    if(bd>72) return;
+    pick(best);
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  var RIBBON_Y=H-120;
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.phase==='rewind'){
+        var st=sky.STARS[S.target];
+        if(S.yearsAgo<st.ly){
+          S.rewT+=dt;
+          var t=Math.min(1, S.rewT/S.rewDur);
+          var ease=t*t*(3-2*t);
+          S.yearsAgo=sky.yearsOf(sky.u(st.ly)*ease);
+          if(t>=1){ S.yearsAgo=st.ly; }
+        } else {
+          if(S.arrivedHold===0){ arriveEl=arriveText(S.target); Museum.sound.play('chime'); }
+          S.arrivedHold+=dt;
+          if(S.target===DENEB && !S.betrayed){
+            if(S.arrivedHold>1.6 && !S.betrayLine){
+              S.betrayLine=true;
+              var el=document.createElement('div');
+              el.id='noline';
+              el.style.cssText='position:fixed;left:0;right:0;top:30vh;text-align:center;z-index:45;pointer-events:none;'
+                +'font-family:Gowun Batang,serif;font-size:clamp(17px,2.4vw,24px);color:var(--ink);'
+                +'letter-spacing:.12em;opacity:0;transition:opacity 1.4s ease;';
+              el.textContent='그리고 이 별은, 지금 그 자리에 없을지도 모릅니다.';
+              document.body.appendChild(el);
+              requestAnimationFrame(function(){ requestAnimationFrame(function(){ el.style.opacity='1'; }); });
+            }
+            if(S.betrayLine){
+              S.quietT+=dt;
+              if(S.quietT>1.8) triggerBetray();
+            }
+          } else if(S.arrivedHold>2.2){
+            if(!S.visited[S.target]){ S.visited[S.target]=true; if(S.target!==DENEB) S.visits++; }
+            if(arriveEl){ arriveEl.style.opacity='0'; }
+            S.phase=S.betrayed?'after':'sky';
+            S.target=-1; S.yearsAgo=0;
+          }
+        }
+      }
+    },
+    draw:function(ctx){
+      var dim=(S.phase==='rewind'||S.phase==='betrayed')?1:0;
+      // 별
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var invite=nextInvite();
+      for(var i=0;i<NS;i++){
+        var r=sizeOf(i), a=0.55+0.35*Math.min(1,r/8);
+        if(i===DENEB && !denebAwake()) a=0.14;               // 하늘이 아직 얕다
+        if(dim && i!==S.target) a*=0.16;
+        if(!dim && i===invite) a=0.45+0.5*breath;            // 초대의 숨쉼
+        if(S.visited[i] && !dim) a*=0.8;
+        var g=stage.glow(Math.ceil(r*3.2),'rgba(242,234,216,'+(0.30).toFixed(2)+')');
+        ctx.globalAlpha=a;
+        ctx.drawImage(g, POS[i][0]-r*3.2, POS[i][1]-r*3.2, r*6.4, r*6.4);
+        ctx.fillStyle='rgba(242,234,216,.95)';
+        ctx.beginPath(); ctx.arc(POS[i][0],POS[i][1],r*0.42,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+      // 지평선 실루엣
+      ctx.fillStyle='rgba(5,5,8,.92)';
+      ctx.beginPath();
+      ctx.moveTo(0,H); ctx.lineTo(0,H-190);
+      ctx.quadraticCurveTo(W*0.3,H-260,W*0.55,H-205);
+      ctx.quadraticCurveTo(W*0.8,H-160,W,H-215);
+      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+      // 빛줄기 + 시간 리본(되감기 중에만)
+      if(S.phase==='rewind' || (S.phase==='betrayed'&&S.target===DENEB)){
+        var p=POS[S.target];
+        ctx.strokeStyle='rgba(242,234,216,.30)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(W*0.5,RIBBON_Y-46); ctx.stroke();
+        // 리본: u축 — 시대 분필 명판이 지나간다(수치 0)
+        var uNow=sky.u(S.yearsAgo), px=1180;                 // 리본 배율(px per u)
+        ctx.strokeStyle='rgba(168,158,136,.35)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(60,RIBBON_Y); ctx.lineTo(W-60,RIBBON_Y); ctx.stroke();
+        ctx.font='15px "Gowun Batang", serif';
+        ctx.textAlign='center';
+        for(var e=0;e<sky.ERAS.length;e++){
+          var ya=2026-sky.ERAS[e].from;
+          if(ya<=0) continue;
+          var x=W*0.5 + (sky.u(ya)-uNow)*px;
+          if(x<40||x>W-40) continue;
+          ctx.fillStyle='rgba(242,234,216,.62)';
+          ctx.fillText(sky.ERAS[e].name, x, RIBBON_Y-14);
+          ctx.strokeStyle='rgba(201,169,97,.5)';
+          ctx.beginPath(); ctx.moveTo(x,RIBBON_Y-6); ctx.lineTo(x,RIBBON_Y+6); ctx.stroke();
+        }
+        // 지금 바늘(놋쇠)
+        ctx.strokeStyle='rgba(201,169,97,.9)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(W*0.5,RIBBON_Y-26); ctx.lineTo(W*0.5,RIBBON_Y+14); ctx.stroke();
+        ctx.textAlign='start';
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__C4 = {
+    S:S, PURE:sky, POS:POS, DENEB:DENEB,
+    toClient:function(lx,ly){
+      var box=canvas.getBoundingClientRect(), sc=stage._scale;
+      var ox=(box.width-W*sc)/2, oy=(box.height-H*sc)/2;
+      return { x:lx*sc+ox+box.left, y:ly*sc+oy+box.top };
+    },
+    pick:pick,
+    fastForward:function(){ S.rewT+=S.rewDur; },
+    holdSkip:function(){ S.arrivedHold+=5; }
+  };
+})();
+</script>
+</body>
+</html>
