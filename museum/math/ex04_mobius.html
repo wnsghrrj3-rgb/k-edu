@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>가위의 배신 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,30px); letter-spacing:.08em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-size:clamp(12px,1.5vw,16px); color:var(--ink-faint); }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:min(320px,64vw); height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="mobius-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumMobius=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function point(twists,u,v,R,width){
+    var hw=twists*u/2, rad=R+v*width*Math.cos(hw);
+    return { x:rad*Math.cos(u), y:rad*Math.sin(u), z:v*width*Math.sin(hw) };
+  }
+  function centerCut(twists){
+    if(twists%2===0) return { pieces:2, lenFactor:1, twists:twists, linked: twists>=2 };
+    return { pieces:1, lenFactor:2, twists:2*twists, linked:false };
+  }
+  function thirdCut(twists){
+    if(twists%2===1) return { pieces:2, lenFactor:[1,2], linked:true };
+    return { pieces:3, lenFactor:1, linked:false };
+  }
+  function edgeCount(twists){ return twists%2===1 ? 1 : 2; }
+  function sideCount(twists){ return twists%2===1 ? 1 : 2; }
+  return { point:point, centerCut:centerCut, thirdCut:thirdCut, edgeCount:edgeCount, sideCount:sideCount };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><input type="range" min="0" max="3" value="1" step="1" aria-hidden="true"></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumMobius;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+
+  var C_RICE='#e6d8b8', C_EDGE='#c9a961', C_DARK='#5a4d33', C_INK='#e8dcc0';
+  var USEG=72, VSEG=5;                     // 파라메트릭 격자
+  var TILT=0.95;                            // 카메라 X 틸트
+
+  var S={
+    phase:'boot', t:0, rotY:0,
+    twistL:0, twistR:1,                     // 왼쪽 보통(0) / 오른쪽 뫼비우스(1)
+    active:'L',                             // 지금 자를 고리
+    cutL:0, cutR:0,                         // 절단 진행 0~1 (드래그 누적)
+    spread:0,                               // 결과 펼침 0~1
+    dragging:false, lastPX:0, lastPY:0,
+    betrayed:false, hint:1, twistRe:1
+  };
+
+  function setPhase(p){ S.phase=p; S.t=0; }
+
+  function start(replay){
+    S.cutL=0; S.cutR=0; S.spread=0; S.betrayed=false; S.active='L'; S.hint= replay?0:1;
+    Museum.sound.roomtone(); setPhase('intro');
+  }
+
+  // ── 3D 투영 (리본 원=바닥 xy, 꼬임 z=수직) ────────────────────
+  function project(p, cx, cy, scale, rotY){
+    var cr=Math.cos(rotY), sr=Math.sin(rotY);
+    var x1=p.x*cr - p.y*sr, y1=p.x*sr + p.y*cr, z1=p.z;   // Y(수직축) 회전
+    var ct=Math.cos(TILT), st=Math.sin(TILT);
+    var y2=z1*ct - y1*st, depth=z1*st + y1*ct;            // X 틸트
+    return { sx:cx + x1*scale, sy:cy + y2*scale, depth:depth };
+  }
+
+  // 리본 하나를 quad strip으로 깊이정렬 렌더
+  function drawRibbon(ctx, opt){
+    // opt: {twists,R,width,cx,cy,scale, uFrom,uTo, cut, splitOffset, alpha}
+    var quads=[], t=opt.twists, R=opt.R, wd=opt.width;
+    var uFrom=opt.uFrom, uTo=opt.uTo, span=uTo-uFrom;
+    var cut=opt.cut||0, off=opt.splitOffset||0;
+    for(var i=0;i<USEG;i++){
+      var u0=uFrom+span*(i/USEG), u1=uFrom+span*((i+1)/USEG);
+      var uProg=(i+0.5)/USEG;
+      var isCut = cut>0 && uProg<=cut;      // 이 구간이 잘렸는가
+      for(var j=0;j<VSEG;j++){
+        var v0=-1+2*(j/VSEG), v1=-1+2*((j+1)/VSEG);
+        // 절단 시 v>0 / v<0 반쪽을 바깥으로 밀어 분리
+        var sep = isCut ? off*(v0>=0?1:-1) : 0;
+        var a=PURE.point(t,u0,v0,R,wd), b=PURE.point(t,u1,v0,R,wd),
+            c=PURE.point(t,u1,v1,R,wd), d=PURE.point(t,u0,v1,R,wd);
+        // 분리 offset을 반경 방향으로
+        if(sep){ a=radial(a,sep); b=radial(b,sep); c=radial(c,sep); d=radial(d,sep); }
+        var pa=project(a,opt.cx,opt.cy,opt.scale,S.rotY),
+            pb=project(b,opt.cx,opt.cy,opt.scale,S.rotY),
+            pc=project(c,opt.cx,opt.cy,opt.scale,S.rotY),
+            pd=project(d,opt.cx,opt.cy,opt.scale,S.rotY);
+        var dep=(pa.depth+pb.depth+pc.depth+pd.depth)/4;
+        // 명암: 꼬임 높이 z로 표층 명암
+        var lum=0.55+0.45*((a.z+c.z)/(2*wd+0.001)*0.5+0.5);
+        quads.push({pa:pa,pb:pb,pc:pc,pd:pd,dep:dep,lum:lum,edge:(j===0||j===VSEG-1)});
+      }
+    }
+    quads.sort(function(m,n){ return m.dep-n.dep; });      // painter: 뒤→앞
+    var al=opt.alpha==null?1:opt.alpha;
+    for(var q=0;q<quads.length;q++){
+      var Q=quads[q], sh=Math.max(0,Math.min(1,Q.lum));
+      var col=mix(C_DARK,C_RICE,sh);
+      ctx.globalAlpha=al; ctx.fillStyle=col;
+      ctx.beginPath(); ctx.moveTo(Q.pa.sx,Q.pa.sy); ctx.lineTo(Q.pb.sx,Q.pb.sy);
+      ctx.lineTo(Q.pc.sx,Q.pc.sy); ctx.lineTo(Q.pd.sx,Q.pd.sy); ctx.closePath(); ctx.fill();
+      if(Q.edge){ ctx.strokeStyle='rgba(201,169,97,0.35)'; ctx.lineWidth=1; ctx.stroke(); }
+    }
+    ctx.globalAlpha=1;
+  }
+  function radial(p,amt){ var r=Math.sqrt(p.x*p.x+p.y*p.y)||1; return {x:p.x+p.x/r*amt, y:p.y+p.y/r*amt, z:p.z}; }
+  function mix(a,b,t){
+    function h(c){ return [parseInt(c.substr(1,2),16),parseInt(c.substr(3,2),16),parseInt(c.substr(5,2),16)]; }
+    var A=h(a),B=h(b),o='#';
+    for(var i=0;i<3;i++){ var v=Math.round(A[i]+(B[i]-A[i])*t).toString(16); o+=(v.length<2?'0':'')+v; }
+    return o;
+  }
+
+  // ── 입력: 활성 고리 위 드래그 = 긋기(절단 누적) ────────────────
+  function onDown(e){
+    if(Museum.isLocked&&Museum.isLocked()) return;
+    if(S.phase==='boot'){ start(false); return; }
+    S.dragging=true; var r=canvas.getBoundingClientRect();
+    S.lastPX=(e.clientX-r.left)/r.width*W; S.lastPY=(e.clientY-r.top)/r.height*H;
+    if(S.phase==='intro') setPhase('cutting');
+  }
+  function onMove(e){
+    if(!S.dragging || S.betrayed) return;
+    var r=canvas.getBoundingClientRect();
+    var px=(e.clientX-r.left)/r.width*W, py=(e.clientY-r.top)/r.height*H;
+    var dist=Math.hypot(px-S.lastPX, py-S.lastPY); S.lastPX=px; S.lastPY=py;
+    var add=dist/ (W*0.9);                    // 화면폭 ~0.9 드래그 = 한 바퀴
+    S.hint=0;
+    if(S.active==='L'){ S.cutL=Math.min(1,S.cutL+add); if(S.cutL>0) Museum.sound.play('paper');
+      if(S.cutL>=1){ setPhase('split_normal'); S.active='wait'; } }
+    else if(S.active==='R'){ S.cutR=Math.min(1,S.cutR+add); if(S.cutR>0) Museum.sound.play('paper');
+      if(S.cutR>=1){ triggerBetray(); } }
+  }
+  function onUp(){ S.dragging=false; }
+  canvas.addEventListener('pointerdown',onDown);
+  canvas.addEventListener('pointermove',onMove);
+  window.addEventListener('pointerup',onUp);
+
+  function triggerBetray(){
+    if(S.betrayed) return; S.betrayed=true; setPhase('betrayed');
+    Museum.sound.play('creak'); setTimeout(function(){ Museum.sound.play('chime'); }, 240);
+    Museum.betray({ x:0.72, y:0.45 }).then(showAfterglow);
+  }
+
+  function showAfterglow(){
+    setPhase('afterglow');
+    var f=document.getElementById('formula');
+    f.innerHTML='<span>뫼비우스의 띠 — 안팎이 없는 세계.</span>'+
+                '<span class="small">가위는 정직했다. 세계가 정직하지 않았다.</span>';
+    setTimeout(function(){ f.classList.add('is-in'); }, 400);
+    Museum.plaque({ title:'가위의 배신', story:'자를수록 커지는 고리.', small:false });
+    Museum.ticket.grant({ id:'m4_mobius', title:'가위의 배신', fine:'한 번 꼬인 띠.', drawFn:drawTicketArt });
+    setTimeout(function(){ document.getElementById('reexp').classList.add('is-in'); }, 1500);
+  }
+  function drawTicketArt(ctx,w,h){
+    ctx.strokeStyle=C_EDGE; ctx.lineWidth=2; ctx.globalAlpha=.85;
+    ctx.beginPath(); for(var a=0;a<=6.3;a+=0.05){ var r=h*0.32*(1+0.28*Math.sin(a*1.5));
+      var x=w/2+Math.cos(a)*r, y=h*0.5+Math.sin(a)*r*0.5; a?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke(); ctx.globalAlpha=1;
+  }
+
+  var slider=document.querySelector('#reexp input');
+  if(slider){ slider.addEventListener('input',function(){
+    S.twistRe=+slider.value; S.twistR=S.twistRe; S.cutR=0; S.spread=0; S.betrayed=false;
+    setPhase('reexp'); Museum.sound.play('creak');
+  }); }
+
+  // ── 업데이트 ─────────────────────────────────────────────────
+  function update(dt){
+    S.t+=dt; if(S.phase==='boot') return;
+    S.rotY += dt*0.35;
+    // 보통 갈라짐 후 → 오른쪽 뫼비우스로 유도 전환
+    if(S.phase==='split_normal'){ S.spread=Math.min(1,S.spread+dt*0.8);
+      if(S.spread>=1 && S.t>1.2){ setPhase('cutting'); S.active='R'; S.spread=0; } }
+    // 배반 펼침
+    if(S.phase==='betrayed' || S.phase==='afterglow'){ S.spread=Math.min(1,S.spread+dt*0.9); }
+  }
+
+  // ── 렌더 ─────────────────────────────────────────────────────
+  function render(ctx){
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#06060b'); bg.addColorStop(1,'#0b0a10');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';
+
+    if(S.phase==='boot'){
+      ctx.fillStyle='rgba(232,220,192,0.6)'; ctx.font="24px 'Gowun Batang',serif";
+      ctx.fillText('눌러서 입장', W/2, H*0.5); ctx.textAlign='left'; return;
+    }
+
+    // 도입 이야기 한 줄(전제)
+    if(S.phase==='intro' || S.phase==='cutting'){
+      ctx.fillStyle='rgba(232,220,192,0.6)'; ctx.font="24px 'Gowun Batang',serif";
+      ctx.fillText('가위가 하나 있다. 가운데를 따라 자르면 —', W/2, H*0.14);
+    }
+
+    var scale=150;
+    if(S.phase==='reexp'){
+      // 재체험: 오른쪽 하나만, 꼬임 twistRe
+      drawRibbon(ctx,{twists:S.twistRe,R:2.2,width:0.9,cx:W/2,cy:H*0.52,scale:scale,uFrom:0,uTo:6.2832,cut:0});
+      ctx.textAlign='left'; return;
+    }
+
+    if(S.phase==='betrayed' || S.phase==='afterglow'){
+      // 뫼비우스 결과 = 하나의 2배 길이·큰 고리로 펼침
+      var R=2.0+S.spread*1.4, big=6.2832*(1+S.spread);   // 두 바퀴로 확장
+      drawRibbon(ctx,{twists:2,R:R,width:0.55,cx:W/2,cy:H*0.5,scale:scale*(1-S.spread*0.18),uFrom:0,uTo:big,cut:0});
+      ctx.textAlign='left'; return;
+    }
+
+    // 왼쪽 = 보통 고리 (예측 심기)
+    var leftCx=W*0.30, rightCx=W*0.70, cy=H*0.52;
+    if(S.phase==='split_normal'){
+      // 두 조각으로 갈라져 벌어짐
+      drawRibbon(ctx,{twists:0,R:2.0,width:0.42,cx:leftCx,cy:cy,scale:scale,uFrom:0,uTo:6.2832,cut:1,splitOffset:0.5+S.spread*1.2});
+    } else {
+      drawRibbon(ctx,{twists:0,R:2.0,width:0.9,cx:leftCx,cy:cy,scale:scale,uFrom:0,uTo:6.2832,
+        cut:(S.active==='L'?S.cutL:1), splitOffset:0.12});
+    }
+    // 오른쪽 = 뫼비우스 (아직 안 자름 or 자르는 중)
+    var showR = (S.phase!=='split_normal') || true;
+    var rAlpha = (S.active==='L' && S.phase!=='split_normal')?0.5:1;
+    drawRibbon(ctx,{twists:1,R:2.0,width:0.9,cx:rightCx,cy:cy,scale:scale,uFrom:0,uTo:6.2832,
+      cut:(S.active==='R'?S.cutR:0), splitOffset:0.12, alpha:rAlpha});
+
+    // 가위 위치 표시(활성 고리 절단 진행점) + 중앙선 숨쉼 유도
+    var actCx = S.active==='R'? rightCx : leftCx;
+    var prog = S.active==='R'? S.cutR : S.cutL;
+    var pulse=0.5+0.5*Math.sin(S.t*2.4);
+    if(prog<1 && S.phase!=='split_normal'){
+      ctx.globalAlpha=0.35+0.3*pulse; ctx.strokeStyle=C_EDGE; ctx.lineWidth=2;
+      var u=prog*6.2832, mp=project(PURE.point(S.active==='R'?1:0,u,0,2.0,0.9),actCx,cy,scale,S.rotY);
+      ctx.beginPath(); ctx.arc(mp.sx,mp.sy,10,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1;
+      if(S.hint>0){ ctx.globalAlpha=0.5*pulse; ctx.strokeStyle=C_EDGE; ctx.lineWidth=2;
+        var hx=mp.sx, hy=mp.sy-22;
+        ctx.beginPath(); ctx.arc(hx-5,hy+6,3.5,0,Math.PI*2); ctx.arc(hx+5,hy+6,3.5,0,Math.PI*2);
+        ctx.moveTo(hx-5,hy+6); ctx.lineTo(hx+4,hy-6); ctx.moveTo(hx+5,hy+6); ctx.lineTo(hx-4,hy-6); ctx.stroke();
+        ctx.globalAlpha=1; }
+    }
+    ctx.textAlign='left';
+  }
+
+  var mainScene={ update:function(dt){ update(dt); }, draw:function(ctx){ render(ctx); } };
+  stage.add(mainScene);
+
+  window.__M4={ S:S, start:start, triggerBetray:triggerBetray, PURE:PURE,
+    cutLeft:function(){ S.cutL=1; setPhase('split_normal'); S.active='wait'; },
+    cutRight:function(){ S.active='R'; S.cutR=1; triggerBetray(); } };
+})();
+</script>
+</body>
+</html>
