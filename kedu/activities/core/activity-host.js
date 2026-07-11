@@ -396,8 +396,10 @@
       btn = document.createElement('button');
       btn.id = 'kact-tool-btn';
       btn.className = 'icon-btn';
-      var anchor = bar.querySelector('.position');
-      bar.insertBefore(btn, anchor || null);
+      // §21-6: 좌측 내비(→) 바로 옆 고정 — 우측은 오버플로 시 스크롤 밖으로 사라짐
+      var nav = bar.querySelector('#next-btn');
+      if (nav) bar.insertBefore(btn, nav.nextSibling);
+      else bar.insertBefore(btn, bar.querySelector('.position') || null);
       btn.addEventListener('click', function (e) { e.stopPropagation(); togglePop(btn); });
       document.addEventListener('click', function (e) {
         if (pop && pop.classList.contains('active') && !pop.contains(e.target)) pop.classList.remove('active');

@@ -101,7 +101,19 @@
       if (data.v !== STORAGE_VERSION) return false;
       if (!Array.isArray(data.slides) || data.slides.length === 0) return false;
       slides = data.slides;
+      // §21-6 복원 위생 ①: 점프 버그 시대(07-11 이전)의 불량 위치 활동 슬라이드 자동 제거
+      // — stage '응용문제' activity가 첫 '전개' 슬라이드보다 앞 = §21-5 로직상 불가능한 배치
+      const _firstJeon = slides.findIndex(sl => sl.stage === '전개' || sl.stage === '기본문제');
+      const _before = slides.length;
+      if (_firstJeon > 0) {
+        slides = slides.filter((sl, i) =>
+          !(sl.block === 'activity' && sl.user_added && sl.stage === '응용문제' && i < _firstJeon));
+      }
+      const _purged = _before - slides.length;
       curIdx = (typeof data.curIdx === 'number' && data.curIdx >= 0 && data.curIdx < slides.length) ? data.curIdx : 0;
+      // §21-6 복원 위생 ②: 활동 카드 착지 금지 — 차시는 항상 수업 첫 화면으로
+      if (slides[curIdx] && slides[curIdx].block === 'activity') curIdx = 0;
+      if (_purged > 0) { try { setTimeout(saveState, 0); } catch (e) {} }
       global.interactiveState = data.interactiveState || {};
       showSaveStatus(data.ts, '이어서 작업');
       return true;
