@@ -227,8 +227,10 @@ function tfAnswer(btn,si,isCorrect,msg){if(answered[si])return;playClick();const
 function checkMulti9(){if(answered[9])return;const tokens=document.querySelectorAll('#multiQ9 .token');let ok=true;tokens.forEach(t=>{const isOk=t.dataset.ok==='true';const isSel=t.dataset.sel==='true';if(isOk&&isSel)t.classList.add('correct');else if(!isOk&&isSel){t.classList.add('wrong');ok=false}else if(isOk&&!isSel)ok=false});if(ok){playCorrect();addScore(20);setFB('fb9','✅ run, eat, swim은 행동동사라 -ing 가능! +20점',true);answered[9]=true;}else{playWrong();combo=0;setFB('fb9','행동동사만 -ing 가능! know, love, believe는 상태동사! 💪',false);setTimeout(()=>{tokens.forEach(t=>{t.classList.remove('correct','wrong');t.dataset.sel='false';t.style.outline='';t.style.background=''})},800)}}
 
 function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>{t.className='token';t.style.outline='';t.style.background='';if(t.dataset)t.dataset.sel='false'});document.querySelectorAll('.blank-box').forEach(b=>{b.textContent='___';b.classList.remove('filled')});document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.tf-btn').forEach(b=>b.className='tf-btn');document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
-:prevSlide()}});
 updateUI();
+
+/* swipe (재주입, 대점검 2026-07-11) */
+;(function(){if(typeof prevSlide!=='function'||typeof nextSlide!=='function')return;var _tx=0;document.addEventListener('touchstart',function(e){_tx=e.touches[0].clientX;},{passive:true});document.addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-_tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});})();
 </script>
 </body>
 </html>
