@@ -14,7 +14,7 @@ function ctxStub(){
   var c={};
   ['setTransform','clearRect','fillRect','strokeRect','beginPath','moveTo','lineTo',
    'arc','arcTo','stroke','fill','save','restore','translate','scale','rotate','closePath',
-   'fillText','drawImage','quadraticCurveTo','bezierCurveTo','clip','rect'].forEach(function(m){ c[m]=function(){}; });
+   'fillText','drawImage','quadraticCurveTo','bezierCurveTo','clip','rect','ellipse'].forEach(function(m){ c[m]=function(){}; });
   c.measureText=function(){ return {width:12}; };
   c.createRadialGradient=gradientStub; c.createLinearGradient=gradientStub;
   c.canvas={width:1366,height:768};
@@ -57,6 +57,15 @@ try{
   ok('부팅: KMuseumGauss gaussSum(100)=5050', !!win.KMuseumGauss && win.KMuseumGauss.gaussSum(100)===5050);
   tick(3);
   ok('초기 phase = chalk', S.phase==='chalk');
+
+  // 2막 재설계(2026-07-10): 칠판 수식 노동 — 항 분필 리빌 + 합계 지우고 다시쓰기
+  setPhase('free');
+  S.dish.push(3); tick(40);
+  ok('수식: 첫 항 분필 완성', S.eqShown===1);
+  S.dish.push(7); tick(80);
+  ok('수식: 둘째 항+합계 작성(=10)', S.eqShown===2 && S.sumState==='shown' && S.sumVal===10);
+  S.dish.push(12); tick(120);
+  ok('수식: 합계 지우고 다시쓰기(=22)', S.eqShown===3 && S.sumState==='shown' && S.sumVal===22);
 
   var slider=win.document.getElementById('nslider');
   slider.value='2'; slider.dispatchEvent(new win.Event('input'));

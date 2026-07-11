@@ -84,7 +84,7 @@
   /* ── 레이아웃 상수 ─────────────────────────────────────────────── */
   var FLOOR = 806;
   var BOARD = { x:150, y:66, w:840, h:300 };
-  var SCROLL = { x:1420, rollY:158, w:200, lineH:32 };
+  // (두루마리 저울 폐기 — 2026-07-10 2막 재설계: 노동은 칠판 위에서)
   var COUNTER = { x:1350, y:150 };
   var RIB = { x0:96, x1:1504, y:452 };
 
@@ -93,7 +93,10 @@
     phase:'boot', t:0,
     n:100,
     blocks:[],            // {n,x,y,vx,vy,w,grabbed,inDish,removed,rx,ry,scale}
-    dish:[],              // 담긴 블록 n
+    dish:[],              // 담긴 블록 n (= 칠판에 쓰인 항)
+    eqShown:0, eqP:0,     // 수식: 완성 항 수 · 현재 항 리빌 0~1
+    sumState:'none',      // 합계: none|erasing|writing|shown
+    sumP:0, sumVal:0,     // 합계 애니 진행 · 보이는 합(지울 땐 옛 값)
     remainShown:100,
     chalkReveal:0,        // 0~1 분필 진행
     remainNote:'',
@@ -207,8 +210,26 @@
   }
 
   /* ── 2막: 자유 조작 ────────────────────────────────────────────── */
+  function chalkTick(gap){ if(S.t-chalkSoundAt>gap){ Museum.sound.play('chalk'); chalkSoundAt=S.t; } }
+  /* 수식 분필 애니: 항 추가 시 — 옛 합계 문질러 지움 → 항 씀 → 새 합계 씀.
+     매번 지우고 다시 세는 손목의 노동 = 막막함의 실물. */
+  function updateEq(dt){
+    var pending = S.eqShown < S.dish.length;
+    if(pending && S.sumState==='shown'){ S.sumState='erasing'; S.sumP=0; }
+    if(S.sumState==='erasing'){ S.sumP+=dt/0.26; chalkTick(0.12);
+      if(S.sumP>=1){ S.sumState='none'; S.sumP=0; } return; }
+    if(pending){ S.eqP+=dt/0.32; chalkTick(0.09);
+      if(S.eqP>=1){ S.eqP=0; S.eqShown++;
+        if(S.eqShown===S.dish.length && S.dish.length>=2){
+          S.sumState='writing'; S.sumP=0; S.sumVal=G.partial(S.dish); } }
+      return; }
+    if(S.sumState==='writing'){ S.sumP+=dt/0.3; chalkTick(0.09);
+      if(S.sumP>=1){ S.sumState='shown'; S.sumP=1; } }
+  }
+
   function updateFree(dt){
     S.freeTimer += dt;
+    updateEq(dt);
     // 히든/일반 전환 트리거: 12개 담기 또는 90초
     if(S.dish.length>=12 || S.freeTimer>=90){ beginAlign(false); return; }
     // 히든: 짝수 50개 전부 무대 밖(제거)
@@ -221,6 +242,7 @@
   function beginAlign(isHidden){
     S.hidden = isHidden;
     S.dish = [];
+    S.eqShown=0; S.eqP=0; S.sumState='none'; S.sumP=0;
     moveSpot(W/2, RIB.y, 900);
     // 대상 블록: 히든이면 홀수만, 아니면 전체(제거된 것 복귀)
     var list=[], i;
@@ -446,9 +468,8 @@
 
     var p=S.phase;
     if(p==='chalk'||p==='rain') drawChalkboard(ctx,1);
-    if(p==='free') drawChalkboard(ctx,0.55);           // 전제 상주 — 조명만 낮춤
+    if(p==='free') drawChalkboard(ctx, S.dish.length?0.78:0.55);  // 먹일수록 칠판이 깨어난다
     if(p==='free') drawRemainNote(ctx);
-    if(p==='rain'||p==='free') drawScroll(ctx);
     if(p==='rain'||p==='free') drawLooseBlocks(ctx);
     if(p==='aligning') drawAligning(ctx);
     if(p==='ribbon'||p==='ribbon_odd'||p==='folding') drawRibbon(ctx);
@@ -465,71 +486,55 @@
     ctx.fillStyle='#0c1410'; ctx.strokeStyle='var(--brass-dim)';
     roundRect(ctx,BOARD.x,BOARD.y,BOARD.w,BOARD.h,4); ctx.fill();
     ctx.strokeStyle='rgba(138,115,63,.5)'; ctx.lineWidth=3; ctx.stroke();
-    // 분필 글씨(리빌)
+    // 분필 글씨(리빌) — 상단(아래는 수식이 자랄 자리)
     var full=CHALK_TEXT, shown=Math.floor(full.length*S.chalkReveal);
-    ctx.font="42px 'Gowun Batang', serif";
+    ctx.font="38px 'Gowun Batang', serif";
     ctx.fillStyle='rgba(242,234,216,.88)'; ctx.textBaseline='middle';
-    var tx=BOARD.x+56, ty=BOARD.y+BOARD.h/2;
+    var tx=BOARD.x+56, ty=BOARD.y+72;
     var sub=full.slice(0,shown);
     ctx.fillText(sub, tx, ty);
     // 남은 글자 커서 지터
     if(S.chalkReveal<1){ var w=ctx.measureText(sub).width;
-      ctx.fillRect(tx+w+2+(Math.random()-.5)*1.2, ty-20+(Math.random()-.5)*1.2, 2, 40); }
-    // 남은 블록 소문(2막 진입 후 free에서 갱신되지만 칠판 구석 표기)
+      ctx.fillRect(tx+w+2+(Math.random()-.5)*1.2, ty-19+(Math.random()-.5)*1.2, 2, 38); }
+    if(S.phase==='free') drawEquation(ctx);
     ctx.restore();
   }
 
-  function drawScroll(ctx){
-    var s=SCROLL, n=S.dish.length, rollX=s.x, rollY=s.rollY;
-    // 먹이는 곳(롤) 유도 글로우 — 담은 게 적을수록 강함
-    var lure=Math.max(0,1-n/6)*(0.5+Math.sin(S.t*2.4)*0.5);
-    if(lure>0.02){ var img=stage.glow(120,'rgba(242,234,216,'+(0.15*lure).toFixed(3)+')');
-      ctx.drawImage(img, rollX-120, rollY-110, 240, 240); }
-
-    var visible=Math.min(n,18), paperTop=rollY+26;
-    var paperBottom=paperTop + Math.max(1,visible)*s.lineH + 34;
-    // 종이 바탕(밤 계열, 하단 페이드 = 끝이 안 보임)
+  /* 수식이 칠판에 스스로 쓰인다 — 담기=더하기를 해석할 필요가 없게 */
+  function drawEquation(ctx){
+    if(!S.dish.length) return;
     ctx.save();
-    var pg=ctx.createLinearGradient(0,paperTop,0,paperBottom);
-    pg.addColorStop(0,'rgba(21,20,34,.96)'); pg.addColorStop(.82,'rgba(15,15,24,.7)'); pg.addColorStop(1,'rgba(13,13,22,0)');
-    ctx.fillStyle=pg; ctx.fillRect(rollX-s.w/2, paperTop, s.w, paperBottom-paperTop);
-    ctx.strokeStyle='rgba(138,115,63,.35)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(rollX-s.w/2,paperTop); ctx.lineTo(rollX-s.w/2,paperBottom-24); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(rollX+s.w/2,paperTop); ctx.lineTo(rollX+s.w/2,paperBottom-24); ctx.stroke();
-    ctx.restore();
-
-    // 항목 — 최신이 위(롤 근처)
-    ctx.save(); ctx.textBaseline='middle';
-    for(var i=0;i<visible;i++){
-      var idx=n-1-i, val=S.dish[idx], y=paperTop+22+i*s.lineH, a=Math.max(0.15, 1-i/17);
-      ctx.font="20px 'Jua'"; ctx.fillStyle='rgba(242,234,216,'+a.toFixed(2)+')';
-      ctx.textAlign='left'; ctx.fillText('+ '+val, rollX-s.w/2+22, y);
-      var cum=0; for(var k=0;k<=idx;k++) cum+=S.dish[k];
-      ctx.font="14px 'Jua'"; ctx.fillStyle='rgba(201,169,97,'+(a*0.8).toFixed(2)+')';
-      ctx.textAlign='right'; ctx.fillText(fmt(cum), rollX+s.w/2-18, y);
+    ctx.font="30px 'Gowun Batang', serif"; ctx.textBaseline='middle'; ctx.textAlign='left';
+    var x0=BOARD.x+56, x1=BOARD.x+BOARD.w-44, x=x0, y=BOARD.y+150, lh=46;
+    function put(str,a){ var w=ctx.measureText(str).width;
+      if(x+w>x1){ x=x0; y+=lh; }               // 줄바꿈 — 칠판이 모자라기 시작한다
+      ctx.fillStyle='rgba(242,234,216,'+a+')'; ctx.fillText(str,x,y);
+      var r={x:x,y:y,w:w}; x+=w; return r; }
+    var i;
+    for(i=0;i<S.eqShown;i++) put((i?' + ':'')+S.dish[i], .85);
+    if(S.eqShown<S.dish.length){               // 쓰는 중인 항: 글자 리빌 + 커서 지터
+      var t=(S.eqShown?' + ':'')+S.dish[S.eqShown];
+      var c=Math.max(0,Math.floor(t.length*S.eqP));
+      if(c) put(t.slice(0,c), .85);
+      ctx.fillStyle='rgba(242,234,216,.8)';
+      ctx.fillRect(x+2+(Math.random()-.5)*1.2, y-13+(Math.random()-.5)*1.2, 2, 26);
+    } else if(S.sumState!=='none' && S.dish.length>=2){
+      var sumStr=' = '+fmt(S.sumVal);
+      if(S.sumState==='writing'){              // 새 합계 분필 리빌
+        var sc=Math.max(0,Math.floor(sumStr.length*S.sumP));
+        if(sc) put(sumStr.slice(0,sc), .92);
+      } else {
+        var alpha = S.sumState==='erasing' ? .92*(1-S.sumP) : .92;
+        var r=put(sumStr, alpha);
+        if(S.sumState==='erasing'){            // 지우개 자국 — 분필 가루 스미어
+          ctx.fillStyle='rgba(242,234,216,'+(0.10+0.08*Math.sin(S.sumP*Math.PI))+')';
+          ctx.beginPath(); ctx.ellipse(r.x+r.w/2, r.y, r.w/2+14, 20, -0.08, 0, 6.283); ctx.fill();
+        }
+      }
     }
     ctx.restore();
-
-    // 흘러넘침 표식(18개 초과 = 끝이 안 보임)
-    if(n>18){ ctx.save(); ctx.fillStyle='rgba(168,158,136,.45)';
-      for(var d=0;d<3;d++){ ctx.beginPath(); ctx.arc(rollX, paperBottom+6+d*7, 1.6,0,6.283); ctx.fill(); }
-      ctx.restore(); }
-
-    // 롤(놋쇠 축) — 먹이는 곳
-    ctx.save();
-    ctx.fillStyle='rgba(201,169,97,.20)'; roundRect(ctx, rollX-s.w/2-12, rollY-13, s.w+24, 26, 6); ctx.fill();
-    ctx.strokeStyle='rgba(201,169,97,.7)'; ctx.lineWidth=2; ctx.stroke();
-    ctx.fillStyle='rgba(201,169,97,.6)';
-    ctx.beginPath(); ctx.arc(rollX-s.w/2-12, rollY,5,0,6.283); ctx.fill();
-    ctx.beginPath(); ctx.arc(rollX+s.w/2+12, rollY,5,0,6.283); ctx.fill();
-    ctx.restore();
-
-    // 현재 총합 — 롤 위 크게(담기=세기)
-    if(n>0){ ctx.save(); ctx.textAlign='center';
-      ctx.font="40px 'Jua'"; ctx.fillStyle='rgba(242,234,216,.95)';
-      ctx.fillText(fmt(G.partial(S.dish)), rollX, rollY-48);
-      ctx.restore(); }
   }
+
 
   function drawBlock(ctx,b,x,y,w,glow){
     var hw=w;
@@ -705,11 +710,11 @@
       var b=S.grab; b.grabbed=false;
       // 무대 밖(좌우 어둠) = 제거(히든 경로)
       if(b.x<60 || b.x>W-60){ b.removed=true; }
-      // 두루마리 롤·종이 영역 = 찍기(담기)
+      // 칠판 영역 = 먹이기: 블록이 분필 가루로 스미고 수식에 항이 쓰인다
       else {
-        var rX=SCROLL.x, rY=SCROLL.rollY;
-        if(Math.abs(b.x-rX)<SCROLL.w/2+34 && b.y>rY-60 && b.y<rY+260){
-          b.inDish=true; S.dish.push(b.n); Museum.sound.play('paper');
+        if(b.x>BOARD.x-24 && b.x<BOARD.x+BOARD.w+24 && b.y>BOARD.y-24 && b.y<BOARD.y+BOARD.h+48){
+          b.inDish=true; S.dish.push(b.n);
+          spark(b.x, b.y, 5); Museum.sound.play('chalk');
         }
       }
       S.grab=null;
