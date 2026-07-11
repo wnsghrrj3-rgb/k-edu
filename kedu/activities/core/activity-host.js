@@ -54,7 +54,17 @@
     '.kact-pick .pk-t{font-size:15px;color:#92400e}.kact-pick .pk-s{font-size:12px;color:#b45309}',
     '.kact-chiprow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}',
     '.kact-chip{border:1.5px solid #f59e0b;background:#fff;border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:Jua,sans-serif;color:#92400e}',
-    '.kact-chip.on{background:#f59e0b;color:#fff}'
+    '.kact-chip.on{background:#f59e0b;color:#fff}',
+    // §21-1 툴바 상설 버튼 + 팝오버
+    '#kact-tool-btn{position:relative}',
+    '#kact-tool-btn .kact-cnt{position:absolute;top:-7px;right:-7px;background:#ef4444;color:#fff;border-radius:999px;font-size:11px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px}',
+    '#kact-pop{position:fixed;z-index:8000;background:#fffbf5;border:2px solid #f59e0b;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:14px 16px;width:min(92vw,380px);font-family:Jua,sans-serif;display:none}',
+    '#kact-pop.active{display:block}',
+    '#kact-pop .kp-h{font-size:15px;color:#92400e;margin-bottom:8px}',
+    '.kp-item{border:1.5px solid #fbbf24;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}',
+    '.kp-item .pk-t{font-size:16px;color:#92400e}.kp-item .pk-s{font-size:12px;color:#b45309;margin:2px 0 8px}',
+    '.kp-item .kact-btns{gap:8px}',
+    '.kp-item .kact-btn{font-size:15px;padding:9px 14px;border-radius:10px}'
   ].join('\n');
   var st = document.createElement('style');
   st.textContent = css;
@@ -278,7 +288,7 @@
   // ─────────────────────────── 카탈로그 탭 (§6-3) ───────────────────────────
   function setContext(c) {
     ctx = c || ctx;
-    catalogPromise.then(renderPicker);
+    catalogPromise.then(function () { renderPicker(); renderToolbar(); });
   }
 
   function renderPicker() {
@@ -355,6 +365,84 @@
         form.querySelector('[data-kact-insert]').textContent = '엔진 훅 없음 (버전 확인)';
       }
     });
+  }
+
+  // ─────────────────────────── 툴바 상설 버튼 (§21-1 발견성 원칙) ───────────────────────────
+  var pop = null;
+
+  function recsForContext() {
+    if (!catalog) return { rec: [], unit: [] };
+    var all = Object.keys(catalog).map(function (k) { return catalog[k]; }).filter(function (a) {
+      return a.status !== 'retired' &&
+        (!ctx.grade || a.map.grade === ctx.grade) &&
+        (!ctx.subject || a.map.subject === ctx.subject);
+    });
+    var rec = all.filter(function (a) {
+      return ctx.unit && a.map.unit === ctx.unit &&
+        (ctx.lessons || []).some(function (l) { return (a.map.lessons || []).indexOf(l) >= 0; });
+    });
+    var unit = all.filter(function (a) { return ctx.unit && a.map.unit === ctx.unit && rec.indexOf(a) < 0; });
+    return { rec: rec, unit: unit };
+  }
+
+  function renderToolbar() {
+    var bar = document.querySelector('.toolbar');
+    if (!bar || !catalog) return;
+    var btn = document.getElementById('kact-tool-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'kact-tool-btn';
+      btn.className = 'icon-btn';
+      var anchor = bar.querySelector('.position');
+      bar.insertBefore(btn, anchor || null);
+      btn.addEventListener('click', function (e) { e.stopPropagation(); togglePop(btn); });
+      document.addEventListener('click', function (e) {
+        if (pop && pop.classList.contains('active') && !pop.contains(e.target)) pop.classList.remove('active');
+      });
+    }
+    var r = recsForContext();
+    btn.innerHTML = '🎲 활동' + (r.rec.length ? '<span class="kact-cnt">' + r.rec.length + '</span>' : '');
+    btn.style.display = (r.rec.length || r.unit.length) ? '' : 'none';   // 이 단원에 아무것도 없으면 숨김
+  }
+
+  function togglePop(btn) {
+    ensurePop();
+    if (pop.classList.contains('active')) { pop.classList.remove('active'); return; }
+    var r = recsForContext();
+    var list = r.rec.length ? r.rec : r.unit;
+    var head = r.rec.length ? '이 차시에 딱 맞는 활동' : '이 단원의 활동';
+    function item(a) {
+      return '<div class="kp-item" data-id="' + esc(a.id) + '">' +
+        '<div class="pk-t">🎲 ' + esc(a.title) + '</div>' +
+        '<div class="pk-s">' + esc(a.short) + (a.pages ? ' · 📖' + esc(a.pages) : '') + (a.minutesClass ? ' · ⏱' + a.minutesClass + '분' : '') + '</div>' +
+        '<div class="kact-btns">' +
+        '<button class="kact-btn primary" data-kp-go>바로 시작</button>' +
+        '<button class="kact-btn" data-kp-ins>슬라이드에 넣기</button>' +
+        '</div></div>';
+    }
+    pop.innerHTML = '<div class="kp-h">' + head + '</div>' + list.map(item).join('');
+    var rect = btn.getBoundingClientRect();
+    pop.style.top = (rect.bottom + 8) + 'px';
+    pop.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+    pop.querySelectorAll('.kp-item').forEach(function (it) {
+      var a = catalog[it.dataset.id];
+      it.querySelector('[data-kp-go]').addEventListener('click', function () {
+        pop.classList.remove('active');
+        launch(a, {});                                   // 기본 파라미터로 즉시 실행 — 두 탭 목표
+      });
+      it.querySelector('[data-kp-ins]').addEventListener('click', function () {
+        pop.classList.remove('active');
+        if (typeof window.KEDU_INSERT_ACTIVITY === 'function') window.KEDU_INSERT_ACTIVITY({ id: a.id, params: null });
+      });
+    });
+    pop.classList.add('active');
+  }
+
+  function ensurePop() {
+    if (pop) return;
+    pop = document.createElement('div');
+    pop.id = 'kact-pop';
+    document.body.appendChild(pop);
   }
 
   window.KActivity = { mount: mount, launch: launch, setContext: setContext };
