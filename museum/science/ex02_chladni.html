@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>소리가 그리는 그림 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-rubbing{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.08em; color:var(--ink); text-align:center;
+            max-width:min(860px,88vw); line-height:1.7; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--science); letter-spacing:.10em; opacity:.85; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 물리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="chladni-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumChladni=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var PI=Math.PI;
+  // 자유 정사각 판 클라드니 근사 — χ(x,y)=cos(mπx)cos(nπy)+s·cos(nπx)cos(mπy)
+  // 모래는 진동이 큰 곳에서 튕겨 마디선(χ=0)으로 모인다: 한 걸음 = −χ∇χ (χ² 최급하강)
+  var MODES=[                                  // 주파수 m²+n² 비내림 큐레이션 12곡
+    {m:1,n:2,s:-1},{m:1,n:3,s: 1},{m:1,n:3,s:-1},{m:2,n:3,s:-1},
+    {m:1,n:4,s:-1},{m:2,n:4,s: 1},{m:3,n:4,s:-1},{m:2,n:5,s:-1},
+    {m:3,n:5,s: 1},{m:4,n:5,s:-1},{m:3,n:6,s:-1},{m:5,n:6,s:-1}
+  ];
+  function make(){
+    function freq(k){ var d=MODES[k]; return d.m*d.m+d.n*d.n; }
+    function chi(k,x,y){
+      var d=MODES[k];
+      return Math.cos(d.m*PI*x)*Math.cos(d.n*PI*y) + d.s*Math.cos(d.n*PI*x)*Math.cos(d.m*PI*y);
+    }
+    function grad(k,x,y){                      // 해석 도함수(중앙차분과 전수 대조로 단언)
+      var d=MODES[k], m=d.m,n=d.n,s=d.s;
+      return {
+        gx: -m*PI*Math.sin(m*PI*x)*Math.cos(n*PI*y) - s*n*PI*Math.sin(n*PI*x)*Math.cos(m*PI*y),
+        gy: -n*PI*Math.cos(m*PI*x)*Math.sin(n*PI*y) - s*m*PI*Math.cos(n*PI*x)*Math.sin(m*PI*y)
+      };
+    }
+    function amp(k,x,y){ return Math.abs(chi(k,x,y)); }
+    function settleStep(k,x,y,h){              // 모래 한 걸음 — χ²의 최급하강
+      var c=chi(k,x,y), g=grad(k,x,y);
+      return { x:x-h*c*g.gx, y:y-h*c*g.gy };
+    }
+    function nodeShare(k,res,eps){             // |χ|<eps 격자 비율 — 무늬는 곡선(유계)
+      var cnt=0,tot=0;
+      for(var i=0;i<=res;i++)for(var j=0;j<=res;j++){
+        tot++;
+        if(Math.abs(chi(k,i/res,j/res))<eps) cnt++;
+      }
+      return cnt/tot;
+    }
+    return { MODES:MODES, count:MODES.length, freq:freq,
+             chi:chi, grad:grad, amp:amp, settleStep:settleStep, nodeShare:nodeShare };
+  }
+  return { make:make };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">쇠판 위에, 모래가 흩어져 있습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="12" value="12" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumChladni;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var plate = PURE.make();
+
+  // ── 무대 상수 ────────────────────────────────────────────────────
+  var PS=620, PX=(W-PS)/2, PY=140;             // 판(탑뷰 정사각)
+  var G=2400;                                   // 모래알(무대 사물 — 효과 파티클 아님)
+  var TUNE0=-0.75, HAND_LIMIT=2.35, FINAL=plate.count-1;
+  var LOCK_W=0.34;                              // 공명 잠금 폭
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→rub(손)→auto(판이 스스로)→betrayed→after
+    tune:TUNE0, drive:0, lock:0, modeIdx:0,
+    betrayed:false, lockedMode:-1,
+    autoT:0, holdT:0, sampleT:0, lastAmp:1,
+    time:0
+  };
+
+  // ── 모래 ─────────────────────────────────────────────────────────
+  var seed = Museum.rng(20260711);
+  var gx=new Float32Array(G), gy=new Float32Array(G), gs=new Float32Array(G);
+  for(var i=0;i<G;i++){ gx[i]=seed(); gy[i]=seed(); gs[i]=1.4+seed()*1.4; }
+
+  function lockOf(tune){
+    var k=Math.round(tune);
+    if(k<0 || k>FINAL) return {k:Math.max(0,Math.min(FINAL,k)), lock:0};
+    var d=Math.abs(tune-k);
+    return {k:k, lock:Math.max(0, 1-d/LOCK_W)};
+  }
+  function meanAmp(){                           // 표본 300알 평균 |χ| — 정착 계측(E1 정합)
+    var s=0, n=300;
+    for(var i=0;i<n;i++) s+=plate.amp(S.modeIdx, gx[i], gy[i]);
+    return s/n;
+  }
+
+  // ── 모래 갱신 — 튕김(진동 큰 곳) + 마디로의 최급하강 ─────────────
+  function updateSand(dt, driveEff){
+    var k=S.modeIdx, lock=S.lock;
+    var kick=dt*driveEff*0.55*(1-lock);         // 공명 아래: 판 전체가 흔들려 흩어진다
+    var kickA=dt*driveEff*1.05*lock;            // 공명: 진동 큰 곳(|χ|)만 튕긴다
+    var drift=dt*3.1*lock*driveEff;             // −χ∇χ 하강(E1 settleStep과 동형)
+    if(kick<=0 && kickA<=0 && drift<=0) return;
+    for(var i=0;i<G;i++){
+      var x=gx[i], y=gy[i];
+      var c=plate.chi(k,x,y);
+      var j=kick + kickA*Math.abs(c);
+      if(j>0){ x+=(seed()-0.5)*j; y+=(seed()-0.5)*j; }
+      if(drift>0){
+        var g=plate.grad(k,x,y);
+        var sx=-c*g.gx*drift, sy=-c*g.gy*drift;
+        var mg=Math.sqrt(sx*sx+sy*sy);
+        if(mg>0.012){ sx*=0.012/mg; sy*=0.012/mg; }
+        x+=sx; y+=sy;
+      }
+      if(x<0)x=-x; if(x>1)x=2-x; if(y<0)y=-y; if(y>1)y=2-y;
+      gx[i]=x; gy[i]=y;
+    }
+  }
+
+  // ── 배반 = 마지막 별이 완성되는 순간 ─────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var cy=(PY+PS*0.5)/H;
+    Museum.betray({x:0.5, y:cy}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after'; S.lock=1; S.drive=0;
+    var f=document.getElementById('formula');
+    f.innerHTML='모래는, 소리가 지나가지 않는 자리로 피했을 뿐이다 &mdash; 그 피난처가, 그림이 되었다'
+      +'<span class="small">소리가 그리는 그림 &middot; 클라드니 도형(1787) &mdash; 모래는 마디선 위에 모인다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'소리가 그리는 그림',
+      story:'아무도 모래에게 길을 가르쳐 주지 않았다. 소리는 보이지 않는다 — 모래가 대신 보여줄 뿐이다.',
+      fine:'CHLADNI FIGURES · 1787' });
+    Museum.ticket.grant({ id:'c2_chladni', title:'소리가 그리는 그림', fine:'빛의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(201,169,97,.8)'; c.lineWidth=1;
+        var s=Math.min(w,h*0.4), ox=(w-s)/2, oy=(h-s)/2;
+        c.strokeRect(ox,oy,s,s);
+        c.fillStyle='rgba(242,234,216,.9)';
+        var res=46;
+        for(var i=1;i<res;i++)for(var j=1;j<res;j++){
+          if(plate.amp(3, i/res, j/res)<0.13)
+            c.fillRect(ox+s*i/res-0.7, oy+s*j/res-0.7, 1.4, 1.4);
+        }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 열두 곡의 노래, 무늬 열두 장 ─────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    var v=parseInt(slider.value,10)||12;
+    S.modeIdx=v-1; S.tune=v-1; S.lock=1; S.drive=Math.max(S.drive,0.85);
+    Museum.sound.play('clack');
+  });
+
+  // ── 입력: 판을 문지르다 ──────────────────────────────────────────
+  var rubbing=false, lastRX=0, lastRY=0, lastCreak=0;
+  function inPlate(p){ return p.x>PX-30 && p.x<PX+PS+30 && p.y>PY-30 && p.y<PY+PS+30; }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='auto' || S.phase==='betrayed') return;   // 판이 스스로 우는 동안은 끊지 않는다
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(!inPlate(p)) return;
+    if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='rub'; }
+    rubbing=true; canvas.classList.add('is-rubbing');
+    lastRX=p.x; lastRY=p.y;
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!rubbing || Museum.isLocked()) return;
+    if(S.phase!=='rub' && S.phase!=='after') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var d=Math.sqrt((p.x-lastRX)*(p.x-lastRX)+(p.y-lastRY)*(p.y-lastRY));
+    lastRX=p.x; lastRY=p.y;
+    S.drive=Math.min(1, S.drive + d*0.004);
+    var now=performance.now();
+    if(S.drive>0.12 && now-lastCreak>110){
+      lastCreak=now;
+      Museum.sound.play('creak', {pitch: -0.25 + 0.55*(S.tune-TUNE0)/(FINAL-TUNE0)});
+    }
+  });
+  window.addEventListener('pointerup', function(){
+    if(!rubbing) return;
+    rubbing=false; canvas.classList.remove('is-rubbing');
+  });
+
+  // ── 판 그리기 재료(프레임 밖 생성) ───────────────────────────────
+  var plateGrad=null;
+  function plateFill(ctx){
+    if(!plateGrad){
+      plateGrad=ctx.createLinearGradient(PX,PY,PX+PS,PY+PS);
+      plateGrad.addColorStop(0,'#12111d'); plateGrad.addColorStop(1,'#0b0b13');
+    }
+    return plateGrad;
+  }
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      var driveEff;
+      if(S.phase==='auto'){
+        driveEff=1;
+        S.autoT+=dt;
+        if(S.tune<FINAL){
+          var rate=Math.min(1.6, 0.4+0.22*S.autoT);
+          S.tune=Math.min(FINAL, S.tune + rate*(1-0.7*S.lock)*dt);
+        }
+      } else {
+        S.drive*=Math.exp(-2.2*dt);
+        if(S.drive<0.001) S.drive=0;
+        driveEff=S.drive;
+        if(S.phase==='rub' && S.tune<HAND_LIMIT){
+          S.tune += S.drive*0.5*(1-0.7*S.lock)*dt;
+          if(S.tune>=HAND_LIMIT){ S.phase='auto'; S.autoT=0; }   // 판이 스스로 울기 시작
+        }
+      }
+      if(S.phase!=='after' && S.phase!=='betrayed'){
+        var lk=lockOf(S.tune);
+        S.modeIdx=lk.k; S.lock=lk.lock;
+        if(S.lock>0.5 && S.lockedMode!==S.modeIdx){              // 무늬 철컥
+          S.lockedMode=S.modeIdx;
+          Museum.sound.play('clack');
+        }
+      }
+      updateSand(dt, driveEff);
+      if(S.phase==='auto' && S.tune>=FINAL){                     // 마지막 별의 완성을 기다린다
+        S.holdT+=dt; S.sampleT+=dt;
+        if(S.sampleT>0.2){ S.sampleT=0; S.lastAmp=meanAmp(); }
+        if(S.lastAmp<0.26 || S.holdT>10) triggerBetray();
+      }
+    },
+    draw:function(ctx){
+      // 판 머리 위 스포트(§4c ① 원뿔) — 주광원 1개
+      ctx.fillStyle='rgba(242,234,216,.05)';
+      ctx.beginPath();
+      ctx.moveTo(W/2-70, 0); ctx.lineTo(W/2+70, 0);
+      ctx.lineTo(PX+PS+60, PY+PS*0.5); ctx.lineTo(PX-60, PY+PS*0.5);
+      ctx.closePath(); ctx.fill();
+      // 판
+      ctx.fillStyle=plateFill(ctx);
+      ctx.fillRect(PX,PY,PS,PS);
+      var bGlow=0.35+0.45*Math.min(1, (S.phase==='auto'?1:S.drive));
+      ctx.strokeStyle='rgba(201,169,97,'+bGlow.toFixed(2)+')';
+      ctx.lineWidth=1;
+      ctx.strokeRect(PX+0.5,PY+0.5,PS-1,PS-1);
+      ctx.strokeStyle='rgba(201,169,97,.9)'; ctx.lineWidth=2;
+      [[PX,PY],[PX+PS,PY],[PX,PY+PS],[PX+PS,PY+PS]].forEach(function(c,ci){
+        var dx=(ci%2===0)?1:-1, dy=(ci<2)?1:-1;
+        ctx.beginPath(); ctx.moveTo(c[0],c[1]+dy*10); ctx.lineTo(c[0],c[1]); ctx.lineTo(c[0]+dx*10,c[1]); ctx.stroke();
+      });
+      // 모래
+      ctx.fillStyle='rgba(242,234,216,.82)';
+      for(var i=0;i<G;i++){
+        var s=gs[i];
+        ctx.fillRect(PX+gx[i]*PS-s*0.5, PY+gy[i]*PS-s*0.5, s, s);
+      }
+      // 첫 초대 — 판 한켠의 숨쉼
+      if(S.phase==='boot'){
+        var breath=0.5+0.5*Math.sin(S.time*2.0);
+        var g=stage.glow(64,'rgba(201,169,97,.30)');
+        ctx.globalAlpha=0.35+0.5*breath;
+        ctx.drawImage(g, PX+PS*0.72-64, PY+PS*0.78-64);
+        ctx.globalAlpha=1;
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__C2 = {
+    S:S, PURE:plate, G:G,
+    grains:function(i){ return {x:gx[i], y:gy[i]}; },
+    meanAmp:meanAmp,
+    rubStart:function(){
+      if(S.phase==='boot'){ document.getElementById('premise').classList.add('is-in'); S.phase='rub'; }
+    },
+    pump:function(v){ S.drive=Math.min(1, v); },
+    jumpTune:function(t){ S.tune=t; },
+    HAND_LIMIT:HAND_LIMIT, FINAL:FINAL, TUNE0:TUNE0,
+    plate:{PX:PX, PY:PY, PS:PS}
+  };
+})();
+</script>
+</body>
+</html>
