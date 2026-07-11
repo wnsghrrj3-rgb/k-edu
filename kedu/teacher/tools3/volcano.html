@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 화산과 지진 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 화산과 지진 (2026-07-11 · 페이블)
+  v2 engine/tools/volcano.js(965줄) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 다크 스튜디오 + 실험대 위 화산 디오라마 모형
+    ② 실물 질감(바위 산체·발광 균열·원목 받침·지층 단면)
+    ③ 직접 조작(궤도 회전·압력 펌프·식히기·단면 열기·지진 힘·분출물 라벨 탭)
+    ④ 즉각 반응(압력→산체 발광, 분출 파티클, 지진 판 휨→파단)
+    ⑤ 🔴 용암 강(신기술 — 분화구→기슭 3줄기 setDrawRange 성장 + 식으면 현무암색 굳음, E-2 검증 기법)
+  v2 무손실: 학년칸(저/중/고)·미션(2/4/4)·퀴즈 5문·만약에 3종(끈적마그마·가스갇힘·티끌지진)
+    ·변수 슬라이더(점성·힘세기)·예측 무장/해소·예측 노트 칩(5칩 토스트)·분출물 3종·현무암/화강암·단면 보기.
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz|whatif
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .vc-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .vc-seg{display:flex;gap:5px}
+  .vc-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .vc-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .vc-seg button.hot{background:rgba(255,138,61,.3);border-color:rgba(255,138,61,.6)}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:7px;align-items:stretch;max-width:210px}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #gaugewrap{margin-top:2px}
+  #gaugewrap .lb{font-size:11.5px;color:#ffb08a;margin-bottom:3px}
+  #gauge{width:100%;height:9px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
+  #gauge i{display:block;height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#FF8A3D,#F4511E);transition:width .18s}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(620px,86vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:14px;backdrop-filter:blur(8px);
+    padding:9px 15px;font-size:14px;line-height:1.55;color:#e6edf5;max-width:min(700px,92vw);text-align:center}
+  #chips{position:fixed;left:50%;transform:translateX(-50%);bottom:66px;z-index:20;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:92vw}
+  .vc-chip{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;border:1.5px solid #12B886;color:#8CF0CD;background:rgba(10,14,18,.7)}
+  .vc-chip.miss{border-color:#FF8A3D;color:#FFC49C}
+  #v2row{bottom:100px;left:12px;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+  #v2row input[type=range]{width:150px;accent-color:#FF8A3D}
+  #v2row .vl{color:#FFB08A;font-weight:700}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #choices button{font-family:'Gowun Dodum';font-size:15px;padding:11px 16px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.88);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  #wifpick{top:96px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;min-width:min(340px,88vw)}
+  #wifpick .ti{font-size:14px;color:#CBB7FF;text-align:center}
+  #wifpick button{font-family:'Gowun Dodum';font-size:14px;padding:11px 13px;border-radius:12px;cursor:pointer;text-align:left;
+    border:1px solid rgba(155,123,245,.45);background:rgba(255,255,255,.06);color:#EDE9FF}
+  .vc-anno{position:absolute;pointer-events:none;font-weight:800;font-size:12.5px;padding:5px 10px;border-radius:10px;
+    background:rgba(8,12,20,.8);white-space:nowrap;transform:translate(-50%,-50%);display:none;border:1.5px solid;line-height:1.35;text-align:center}
+  .vc-anno.click{pointer-events:auto;cursor:pointer}
+  .vc-rock{position:fixed;left:12px;z-index:20;background:var(--hud);border:1.5px solid;border-radius:13px;
+    padding:7px 9px;text-align:center;max-width:132px;display:none}
+  .vc-rock canvas{width:74px;height:74px;border-radius:10px;display:block;margin:0 auto 4px}
+  .vc-rock .t1{font-size:13.5px;font-weight:800}
+  .vc-rock .t2{font-size:10.5px;color:#c6d2de;line-height:1.35}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🌋 케이랩 · 화산과 지진</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="vc-panel" id="hudL"></div>
+<div class="vc-panel" id="ctrls"></div>
+<div class="vc-panel" id="mbar" style="display:none"></div>
+<div class="vc-panel" id="v2row" style="display:none"></div>
+<div class="vc-panel" id="wifpick" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+<div id="status"></div>
+<div class="vc-rock" id="rockBas" style="top:118px;border-color:#9aa4ae"><canvas width="128" height="128"></canvas><div class="t1" style="color:#CED4DA">현무암</div><div class="t2">밖에서 빨리 식음<br>구멍 송송</div></div>
+<div class="vc-rock" id="rockGra" style="top:300px;border-color:#D9C08A"><canvas width="128" height="128"></canvas><div class="t1" style="color:#EBD9AF">화강암</div><div class="t2">속에서 천천히 식음<br>알갱이 큼</div></div>
+
+<div class="k3-hint" id="hint">화산 모형을 <b>끌어서</b> 돌려 보고, 🔥 압력을 키워 봐요</div>
+<div class="k3-loading" id="loading"><div class="ic">🌋</div><div>화산 모형 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.VolcanoSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var GRADES={
+    low:  { modes:['free','mission'],                 exps:['volcano'],         cool:'none',   cut:false, ejecta:false, wif:[],                               v2:false },
+    mid:  { modes:['free','mission','quiz','whatif'], exps:['volcano','quake'], cool:'basalt', cut:false, ejecta:true,  wif:['slowforce'],                    v2:false },
+    high: { modes:['free','mission','quiz','whatif'], exps:['volcano','quake'], cool:'all',    cut:true,  ejecta:true,  wif:['sticky','gasblock','slowforce'], v2:true }
+  };
+
+  /* ── 미션 (v2 문구·판정 무손실 — check는 상태 st를 받는 순수 함수) ── */
+  var LOW_MISSIONS=[
+    { exp:'volcano', text:'🔥 <b>압력 키우기</b>를 눌러 땅속 마그마를 밀어 올려요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.press>=20; } },
+    { exp:'volcano', text:'계속 눌러 압력을 가득 채우면 — 펑! <b>화산이 분출</b>해요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.erupting; } }
+  ];
+  var MID_MISSIONS=[
+    { exp:'volcano', text:'🔥 <b>압력 키우기</b>로 마그마 압력을 채워 <b>화산 분출</b>!',
+      check:function(st){ return st.exp==='volcano' && st.vol.erupting; } },
+    { exp:'volcano', text:'분출물 <b>용암·화산재·화산 가스</b> 라벨을 모두 눌러 이름을 확인해요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.erupting && st.vol.seen.lava && st.vol.seen.ash && st.vol.seen.gas; } },
+    { exp:'volcano', text:'🪨 빨리 식히면 굳어서 <b>현무암</b>이 돼요 — 만들어 봐요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.made.basalt; } },
+    { exp:'quake', text:'➡️ <b>힘 가하기</b>로 땅을 끊어 <b>지진</b>을 일으켜요!',
+      check:function(st){ return st.exp==='quake' && st.qk.broken; } }
+  ];
+  var HIGH_MISSIONS=[
+    { exp:'volcano', text:'🔥 <b>압력 키우기</b>를 눌러 마그마 방 압력을 한계까지 — <b>화산 분출</b>!',
+      check:function(st){ return st.exp==='volcano' && st.vol.erupting; } },
+    { exp:'volcano', text:'분출물 <b>용암·화산재·화산 가스</b> 라벨을 모두 눌러 이름을 확인해 봐요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.erupting && st.vol.seen.lava && st.vol.seen.ash && st.vol.seen.gas; } },
+    { exp:'volcano', text:'🪨 빨리 식혀 <b>현무암</b>, 💎 천천히 식혀 <b>화강암</b> — 둘 다 만들어 봐요!',
+      check:function(st){ return st.exp==='volcano' && st.vol.made.basalt && st.vol.made.granite; } },
+    { exp:'quake', text:'➡️ <b>힘 가하기</b>를 계속 눌러 땅을 끊어 봐요 — <b>지진</b> 발생!',
+      check:function(st){ return st.exp==='quake' && st.qk.broken; } }
+  ];
+  var MISSIONS={ low:LOW_MISSIONS, mid:MID_MISSIONS, high:HIGH_MISSIONS };
+
+  /* ── 퀴즈 5문 (v2 무손실) ── */
+  var QUIZ=[
+    { pic:'volcano', q:'땅속 깊은 곳에서 암석이 녹아 있는 것을 무엇이라고 할까요?', ch:['마그마','용암','화산재'], a:0 },
+    { pic:'volcano', q:'마그마가 땅 위로 흘러나온 것을 무엇이라고 할까요?', ch:['용암','마그마','화산 가스'], a:0 },
+    { pic:'volcano', q:'표면에서 빨리 식어 구멍이 송송 뚫린 어두운 암석은?', ch:['현무암','화강암','대리암'], a:0 },
+    { pic:'volcano', q:'땅속 깊은 곳에서 천천히 식어 알갱이가 큰 암석은?', ch:['화강암','현무암','석회암'], a:0 },
+    { pic:'quake', q:'건물 안에서 지진이 났을 때 가장 올바른 행동은?', ch:['책상 아래로 들어가 머리 보호','창문 옆에 서 있기','엘리베이터 타고 내려가기'], a:0 }
+  ];
+
+  /* ── 만약에 3종 (v2 무손실) — cond(st)=해소 조건, play(sim)=상태 세팅 ── */
+  var WHATIF={
+    sticky:{ icon:'🍯', title:'아주 끈적한 마그마라면?',
+      q:'묽은 마그마와 끈적한 마그마 — 어느 쪽이 더 크게 터질까요?',
+      ch:['묽고 뜨거운 쪽이 크게 터져요','끈적한 쪽이 막혔다가 훨씬 크게 터져요','점성은 상관없어요'], a:1,
+      reveal:'끈적한 마그마는 가스가 못 빠져나가 압력이 안에 갇혀요! 사이다 병을 흔들고 꽉 막아 둔 것처럼 — 통로가 막혔다가 뻥! 훨씬 크게 폭발해요. 묽은 마그마는 가스가 술술 빠져 조용히 흘러내리죠.',
+      tip:'🔥 압력을 계속 키워 봐요 — 100%가 넘어도 막혀 있다가…!',
+      play:function(sim){ sim.state.exp='volcano'; sim.volReset(); sim.state.sealed=false; sim.state.visc=1; },
+      cond:function(st){ return st.exp==='volcano' && st.vol.erupting; } },
+    gasblock:{ icon:'🫧', title:'가스가 빠질 구멍이 하나도 없다면?',
+      q:'가스가 빠질 구멍을 몽땅 막아 버리면, 분출도 없어질까요?',
+      ch:['분출이 아예 없어져요','산이 통째로 날아가는 초대형 폭발이 나요','지금과 똑같아요'], a:1,
+      reveal:'압력은 사라지지 않고 계속 쌓여요! 구멍을 막으면 분출이 없어지는 게 아니라 산체가 통째로 날아가는 대폭발이 돼요. 화산 분출은 지구가 속의 압력을 빼내는 방법이에요.',
+      tip:'구멍을 꽉 막았어요. 🔥 압력을 끝까지 쌓아 봐요…!',
+      play:function(sim){ sim.state.exp='volcano'; sim.volReset(); sim.state.sealed=true; sim.state.visc=0.5; },
+      cond:function(st){ return st.exp==='volcano' && st.vol.erupting; } },
+    slowforce:{ icon:'⏳', title:'힘을 아주 조금씩만 가한다면?',
+      q:'땅을 살살, 조금씩만 밀면 지진이 안 날까요?',
+      ch:['살살 밀면 지진이 안 나요','천천히 쌓여도 한계가 오면 결국 끊어져요','오히려 더 크게 나요'], a:1,
+      reveal:'힘의 크기가 아니라 쌓인 양이 정해요! 조금씩이라도 계속 쌓이면 한계에서 결국 우지끈. 그래서 지진은 예고 없이 와요 — 평소에 대비해 두는 게 답이에요.',
+      tip:'➡️ 약한 힘을 여러 번 — 게이지가 천천히 차다가 결국…!',
+      play:function(sim){ sim.state.exp='quake'; sim.qkReset(); sim.state.qforce=0; },
+      cond:function(st){ return st.exp==='quake' && st.qk.broken; } }
+  };
+
+  /* ── 예측 무장 2종 (v2 3층 무손실) — 정답 선택지=1 ── */
+  var PRED={
+    visc:{ q:'예측 먼저! 어떤 마그마가 더 크게 터질까요?',
+      ch:['묽고 뜨거운 마그마','끈적끈적한 마그마','점성은 상관없다'],
+      tip:'슬라이더를 🍯 끈적 끝까지 밀고 🔥 압력을 한계까지 채워 봐요!' },
+    qf:{ q:'예측 먼저! 아주 약한 힘만 계속 가하면 어떻게 될까요?',
+      ch:['지진이 안 난다','조금씩 쌓여 결국 끊어진다','땅이 더 단단해진다'],
+      tip:'힘 세기를 🪶 약 끝까지 내리고 ➡️ 계속 밀어 봐요!' }
+  };
+  var CHIPNM={sticky:'🍯 끈적마그마',gasblock:'🫧 가스갇힘',slowforce:'⏳ 티끌지진',visc:'🌡 점성실험',qf:'🪶 약한힘실험'};
+
+  /* ── 시뮬 생성 ── */
+  function createSim(grade){
+    grade=(['low','mid','high'].indexOf(grade)>=0)?grade:'high';
+    var sim={};
+    sim.grade=grade;
+    sim.G=function(){ return GRADES[sim.grade]; };
+    sim.state={ exp:'volcano', vol:null, qk:null, visc:0.5, qforce:0.5, sealed:false, cut:false };
+    sim.volReset=function(){ sim.state.vol={ press:0, erupting:false, style:'', flowT:0, hardT:0,
+      seen:{lava:false,ash:false,gas:false}, made:{basalt:false,granite:false} }; };
+    sim.qkReset=function(){ sim.state.qk={ stress:0, broken:false, pushes:0 }; };
+    sim.v2reset=function(){ sim.state.visc=0.5; sim.state.qforce=0.5; sim.state.sealed=false; };
+    sim.resetAll=function(){ sim.state.exp='volcano'; sim.state.cut=false; sim.volReset(); sim.qkReset(); };
+    sim.resetAll();
+
+    /* v2 변수 물리 (무손실): 한계 압력=밀봉160 / 60+점성*80 · 분출 형태 · 힘 증가량 */
+    sim.thrOf=function(){ return sim.state.sealed?160:Math.round(60+sim.state.visc*80); };
+    sim.styleOf=function(){ var s=sim.state; return s.sealed?'mega':(s.visc>=0.7?'boom':(s.visc<0.35?'quiet':'normal')); };
+    sim.pushInc=function(){ return 8+Math.round(sim.state.qforce*24); };
+    sim.viscName=function(){ var v=sim.state.visc; return (v>=0.7?'🍯 끈적':(v<0.35?'💧 묽음':'중간'))+' · 한계 '+sim.thrOf()+'%'; };
+    sim.qfName=function(){ var q=sim.state.qforce; return (q<=0.3?'🪶 약':(q>=0.7?'💪 강':'중간'))+' · 한 번 +'+sim.pushInc()+'%'; };
+
+    /* 조작 */
+    sim.pump=function(){
+      var v=sim.state.vol;
+      if(v.erupting) return {act:'already'};
+      var thr=sim.thrOf();
+      v.press=Math.min(thr, v.press+20);
+      if(v.press>=thr){ v.erupting=true; v.style=sim.styleOf(); return {act:'erupt', style:v.style}; }
+      return {act:'pump', press:v.press};
+    };
+    sim.cool=function(kind){
+      var v=sim.state.vol;
+      if(!v.erupting) return {act:'blocked'};
+      v.made[kind]=true;
+      return {act:'made', kind:kind};
+    };
+    sim.see=function(k){ sim.state.vol.seen[k]=true; return {act:'seen', k:k}; };
+    sim.push=function(){
+      var q=sim.state.qk;
+      if(q.broken) return {act:'already'};
+      q.pushes++;
+      q.stress=Math.min(100, q.stress+sim.pushInc());
+      if(q.stress>=100){ q.broken=true; return {act:'broke'}; }
+      return {act:'push', stress:q.stress};
+    };
+
+    /* 🔴 용암 강 — 분출 지속=흐름 성장(형태별 속도), 빨리 식히기=굳음(현무암색) */
+    sim.flowRate=function(){ return {quiet:0.34, normal:0.24, boom:0.15, mega:0.11}[sim.state.vol.style]||0.24; };
+    sim.tick=function(dt){
+      if(dt>0.05)dt=0.05;
+      var v=sim.state.vol;
+      if(v.erupting){
+        v.flowT=Math.min(1, v.flowT+sim.flowRate()*dt);
+        if(v.made.basalt) v.hardT=Math.min(1, v.hardT+0.45*dt);
+      }
+      return sim.state;
+    };
+
+    /* 미션 러너 */
+    sim.mStep=0; sim.mDone=false;
+    sim.missionList=function(){ return MISSIONS[sim.grade]; };
+    sim.missionStart=function(){ sim.mStep=0; sim.mDone=false; sim.resetAll(); sim.v2reset();
+      sim.state.exp=sim.missionList()[0].exp; };
+    sim.missionCheck=function(){
+      if(sim.mDone) return {act:'none'};
+      var M=sim.missionList();
+      if(!M[sim.mStep].check(sim.state)) return {act:'none'};
+      if(sim.mStep<M.length-1){
+        sim.mStep++;
+        var keep=(M[sim.mStep].exp===sim.state.exp);
+        sim.state.exp=M[sim.mStep].exp;
+        if(!keep){ sim.volReset(); sim.qkReset(); }
+        return {act:'next', step:sim.mStep};
+      }
+      sim.mDone=true;
+      return {act:'done'};
+    };
+
+    /* 예측 무장/해소 + 칩 (v2 3층) */
+    sim.chips=[];
+    sim.pred={ visc:{asked:false,ch:-1,done:false}, qf:{asked:false,ch:-1,done:false} };
+    sim.predArm=function(kind){ if(sim.pred[kind].asked) return false; sim.pred[kind].asked=true; return true; };
+    sim.predChoose=function(kind,i){ sim.pred[kind].ch=i; };
+    sim.checkPred=function(){
+      var out=[], st=sim.state;
+      ['visc','qf'].forEach(function(kind){
+        var p=sim.pred[kind]; if(p.done||p.ch<0)return;
+        var hitCond = kind==='visc' ? (st.vol.erupting && st.visc>=0.7)
+                                    : (st.qk.broken && st.qforce<=0.3);
+        if(!hitCond)return;
+        p.done=true;
+        var hit=(p.ch===1);
+        sim.chips.push({k:kind,hit:hit});
+        out.push({kind:kind,hit:hit});
+      });
+      return out;
+    };
+    sim.wifChip=function(key,choice){ sim.chips.push({k:key,hit:(choice===WHATIF[key].a)}); };
+
+    return sim;
+  }
+
+  var API={ GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, PRED:PRED, CHIPNM:CHIPNM, createSim:createSim };
+  if(typeof window!=='undefined') window.VolcanoSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.VolcanoSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high');
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+let quizIdx = 0, quizScore = 0, quizCount = 0, quizLock = false, quizUsed = [];
+let wifKey = null, wifChoice = -1, wifRevealed = false, wifPlaying = false;
+
+/* ── 씬 ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0.72, 0.78, 1.28], target: [0, 0.2, 0], fov: 42,
+  minDist: 0.55, maxDist: 2.9, maxPolar: 1.42
+});
+const { renderer, scene, camera, controls } = app;
+const MAT = makeMaterials();
+makeStage(scene, {});
+
+/* ═══════════ 화산 디오라마 ═══════════ */
+const VOL = { baseR: 0.30, rimY: 0.26, rimR: 0.075, craterY: 0.212 };
+const LAVA_HOT = new THREE.Color(0xFF6B2B), LAVA_ROCK = new THREE.Color(0x3a3632);
+const volGroup = new THREE.Group(); scene.add(volGroup);
+
+/* 원목 받침 + 흙 지형판 */
+{
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.48, 0.035, 48), MAT.WOOD.clone());
+  plinth.position.y = 0.0175; plinth.castShadow = plinth.receiveShadow = true; volGroup.add(plinth);
+  const dirtTex = canvasTexture(256, 256, g => {
+    g.fillStyle = '#2a211d'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 900; i++) {
+      const v = 34 + Math.random() * 34 | 0;
+      g.fillStyle = `rgba(${v},${v * 0.8 | 0},${v * 0.62 | 0},.55)`;
+      g.beginPath(); g.arc(Math.random() * 256, Math.random() * 256, Math.random() * 2.4, 0, 7); g.fill();
+    }
+  });
+  const terr = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.44, 0.02, 48),
+    new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 1 }));
+  terr.position.y = 0.045; terr.receiveShadow = true; volGroup.add(terr);
+}
+const TER_Y = 0.055; // 지형 윗면
+
+/* 산체: Lathe + 절차 바위 텍스처 + 발광 균열 emissive */
+function rockTex() {
+  return canvasTexture(512, 512, g => {
+    g.fillStyle = '#5b4636'; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 9000; i++) {
+      const sh = (Math.random() * 64 - 22) | 0;
+      g.fillStyle = `rgba(${92 + sh},${74 + sh * 0.8 | 0},${58 + sh * 0.7 | 0},0.5)`;
+      g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2);
+    }
+    for (let k = 0; k < 42; k++) {
+      g.strokeStyle = `rgba(38,28,22,${0.12 + Math.random() * 0.26})`;
+      g.lineWidth = 2 + Math.random() * 5; g.beginPath();
+      let xx = Math.random() * 512; g.moveTo(xx, 0);
+      for (let y = 0; y < 512; y += 14) { xx += (Math.random() - 0.5) * 9; g.lineTo(xx, y); }
+      g.stroke();
+    }
+  });
+}
+function crackTex() {
+  return canvasTexture(512, 512, g => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, 512, 512);
+    for (let k = 0; k < 24; k++) {
+      const x = Math.random() * 512; let y = Math.random() * 120;
+      g.strokeStyle = `rgba(255,${80 + Math.random() * 110 | 0},24,0.95)`;
+      g.lineWidth = 2 + Math.random() * 3; g.beginPath(); g.moveTo(x, y);
+      let xx = x; const len = 70 + Math.random() * 150;
+      for (let s = 0; s < len; s += 9) { xx += (Math.random() - 0.5) * 18; y += 9; g.lineTo(xx, y); }
+      g.stroke();
+    }
+  });
+}
+function slopeR(t) { return VOL.baseR - (VOL.baseR - VOL.rimR) * Math.pow(t, 0.82); } // t:0=기슭 1=정상
+const volMat = new THREE.MeshStandardMaterial({
+  map: rockTex(), roughness: 1, metalness: 0,
+  emissive: 0xff4a14, emissiveMap: crackTex(), emissiveIntensity: 0, side: THREE.DoubleSide
+});
+{ const rt = volMat.map; rt.wrapS = rt.wrapT = THREE.RepeatWrapping; rt.repeat.set(4, 2);
+  const ct = volMat.emissiveMap; ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(4, 1); }
+const mountain = new THREE.Group(); mountain.position.y = TER_Y; volGroup.add(mountain);
+{
+  const prof = [];
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24;
+    prof.push(new THREE.Vector2(Math.max(0.004, slopeR(t)), VOL.rimY * t));
+  }
+  prof.push(new THREE.Vector2(0.05, VOL.rimY - 0.018));
+  prof.push(new THREE.Vector2(0.03, VOL.craterY));
+  prof.push(new THREE.Vector2(0.0, VOL.craterY));
+  const geo = new THREE.LatheGeometry(prof, 96);
+  { // 능선 굴곡
+    const pos = geo.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      const rr = Math.hypot(v.x, v.z);
+      if (rr > 0.03 && v.y < VOL.rimY - 0.012) {
+        const a = Math.atan2(v.z, v.x);
+        const n = Math.sin(a * 9) * 0.5 + Math.sin(a * 15 + v.y * 26) * 0.32 + Math.sin(a * 23) * 0.18;
+        const s = (rr + n * 0.012) / rr;
+        pos.setXYZ(i, v.x * s, v.y, v.z * s);
+      }
+    }
+    geo.computeVertexNormals();
+  }
+  const cone = new THREE.Mesh(geo, volMat);
+  cone.castShadow = cone.receiveShadow = true; mountain.add(cone);
+}
+/* 분화구 발광 + 목구멍 */
+const craterGlowMat = new THREE.MeshBasicMaterial({ color: 0xff7a1e, transparent: true, opacity: 0, side: THREE.DoubleSide });
+{
+  const cg = new THREE.Mesh(new THREE.CircleGeometry(0.05, 28), craterGlowMat);
+  cg.rotation.x = -Math.PI / 2; cg.position.y = VOL.craterY + 0.002; mountain.add(cg);
+}
+const throatMat = new THREE.MeshBasicMaterial({ color: 0xffc24d, transparent: true, opacity: 0 });
+const throat = new THREE.Mesh(new THREE.SphereGeometry(0.036, 18, 14), throatMat);
+throat.position.y = VOL.craterY + 0.008; mountain.add(throat);
+const lavaLight = new THREE.PointLight(0xFF6B2B, 0, 1.3, 2);
+lavaLight.position.y = VOL.craterY + 0.05; mountain.add(lavaLight);
+
+/* 🔴 용암 강 3줄기 — setDrawRange 성장 + 굳음 색 lerp (E-2 검증 기법) */
+const rivers = [];
+{
+  const AZ = [0.45, 2.35, 4.35], STAG = [1, 0.85, 0.68];
+  AZ.forEach((az0, ri) => {
+    const pts = [];
+    const TT = [0.97, 0.78, 0.56, 0.34, 0.14, 0.0];
+    TT.forEach((t, i) => {
+      const az = az0 + Math.sin(i * 2.3 + ri) * 0.14;
+      const r = (t > 0.9 ? VOL.rimR * 0.8 : slopeR(t) * 1.015);
+      pts.push(new THREE.Vector3(Math.cos(az) * r, VOL.rimY * t + (t > 0.9 ? -0.03 : 0.004), Math.sin(az) * r));
+    });
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const tg = new THREE.TubeGeometry(curve, 44, 0.0085, 7, false);
+    const mat = new THREE.MeshBasicMaterial({ color: LAVA_HOT.clone() });
+    const tube = new THREE.Mesh(tg, mat);
+    tube.geometry.setDrawRange(0, 0);
+    mountain.add(tube);
+    rivers.push({ tube, mat, total: tg.index.count, stag: STAG[ri] });
+  });
+}
+
+/* 분출 파티클(CPU Points): 용암 분수 · 화산재 · 가스 */
+function spriteTex(col) {
+  return canvasTexture(64, 64, g => {
+    const rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, col); rg.addColorStop(0.4, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.beginPath(); g.arc(32, 32, 32, 0, 7); g.fill();
+  });
+}
+function makeSys(n, tex, blend, size, parent) {
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size, map: tex, blending: blend, transparent: true, depthWrite: false, vertexColors: true, sizeAttenuation: true
+  }));
+  pts.frustumCulled = false; parent.add(pts);
+  const P = [];
+  for (let i = 0; i < n; i++) { P.push({ life: 0, max: 1, vx: 0, vy: 0, vz: 0, x: 0, y: 0, z: 0, r: 0, g: 0, b: 0 }); pos[i * 3] = NaN; }
+  return { n, P, pos, col, geo, pts };
+}
+const sysLava = makeSys(150, spriteTex('rgba(255,225,140,1)'), THREE.AdditiveBlending, 0.05, mountain);
+const sysAsh  = makeSys(90,  spriteTex('rgba(120,112,108,0.95)'), THREE.NormalBlending, 0.11, mountain);
+const sysGas  = makeSys(60,  spriteTex('rgba(225,230,240,0.7)'), THREE.NormalBlending, 0.09, mountain);
+function emit(sys, count, spawn) { let got = 0; for (let i = 0; i < sys.n && got < count; i++) if (sys.P[i].life <= 0) { spawn(sys.P[i]); got++; } }
+function stepSys(sys, dt, grav, fade, floorY) {
+  const { P, pos, col } = sys;
+  for (let i = 0; i < sys.n; i++) {
+    const q = P[i];
+    if (q.life > 0) {
+      q.vy -= grav * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.life -= dt;
+      fade(q, q.life / q.max);
+      if (floorY !== undefined && q.y < floorY) q.life = 0;
+    }
+    if (q.life <= 0) { pos[i * 3] = NaN; }
+    else { pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z; col[i * 3] = q.r; col[i * 3 + 1] = q.g; col[i * 3 + 2] = q.b; }
+  }
+  sys.geo.attributes.position.needsUpdate = true;
+  sys.geo.attributes.color.needsUpdate = true;
+}
+const spawnLava = p => { const a = Math.random() * Math.PI * 2, out = 0.02 + Math.random() * 0.05;
+  p.x = Math.cos(a) * 0.012; p.y = VOL.craterY + 0.01; p.z = Math.sin(a) * 0.012;
+  p.vx = Math.cos(a) * out; p.vz = Math.sin(a) * out; p.vy = 0.34 + Math.random() * 0.26; p.life = p.max = 0.8 + Math.random() * 0.6; };
+const spawnAsh = p => { const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.02;
+  p.x = Math.cos(a) * rr; p.y = VOL.rimY + 0.01; p.z = Math.sin(a) * rr;
+  p.vx = Math.cos(a) * (0.012 + Math.random() * 0.03); p.vz = Math.sin(a) * (0.012 + Math.random() * 0.03);
+  p.vy = 0.12 + Math.random() * 0.1; p.life = p.max = 2.4 + Math.random() * 1.6; };
+const spawnGas = p => { const a = Math.random() * Math.PI * 2;
+  p.x = Math.cos(a) * 0.015 * Math.random(); p.y = VOL.rimY; p.z = Math.sin(a) * 0.015 * Math.random();
+  p.vx = Math.cos(a) * 0.02; p.vz = Math.sin(a) * 0.02; p.vy = 0.15 + Math.random() * 0.08; p.life = p.max = 1.4 + Math.random() * 1; };
+const fadeLava = (q, f) => { const age = 1 - f; q.r = 1; q.g = Math.max(0.12, 0.95 - age * 0.85); q.b = Math.max(0.04, 0.6 - age * 0.85); };
+const fadeAsh = (q, f) => { const s = 0.34 + (1 - f) * 0.16; q.r = s * 0.95; q.g = s * 0.9; q.b = s * 0.86;
+  if (q.y > VOL.rimY + 0.34) { q.vy *= 0.95; q.vx *= 1.03; q.vz *= 1.03; } };
+const fadeGas = (q, f) => { const s = 0.75 * f + 0.1; q.r = s; q.g = s * 1.02; q.b = s * 1.06; };
+
+/* ═══════════ 단면 모형 (고학년) ═══════════ */
+const UG = 0.24, CUT_D = 0.15;
+const cutGroup = new THREE.Group(); cutGroup.visible = false; scene.add(cutGroup);
+let cutBubbles, cutChamber, cutHalo, cutConduit, cutPool, cutGranite, cutBasalt;
+{
+  cutGroup.position.y = UG + 0.05;
+  // 원목 받침
+  const base = new THREE.Mesh(new THREE.BoxGeometry(VOL.baseR * 2 + 0.1, 0.03, CUT_D + 0.08), MAT.WOOD.clone());
+  base.position.y = -UG - 0.035; base.castShadow = base.receiveShadow = true; cutGroup.add(base);
+  // 흙·바위 슬래브 (산 실루엣 + 지하)
+  const sh = new THREE.Shape(); const N = 22;
+  sh.moveTo(-VOL.baseR, -UG); sh.lineTo(-VOL.baseR, 0);
+  for (let i = N; i >= 0; i--) { const t = i / N; sh.lineTo(-slopeR(t), VOL.rimY * t); }
+  sh.lineTo(0, VOL.craterY);
+  for (let j = 0; j <= N; j++) { const t = j / N; sh.lineTo(slopeR(t), VOL.rimY * t); }
+  sh.lineTo(VOL.baseR, 0); sh.lineTo(VOL.baseR, -UG); sh.lineTo(-VOL.baseR, -UG);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: CUT_D, bevelEnabled: false });
+  geo.translate(0, 0, -CUT_D / 2);
+  const slab = new THREE.Mesh(geo, [
+    new THREE.MeshStandardMaterial({ color: 0x6a5341, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: 0x46372a, roughness: 1 })
+  ]);
+  slab.castShadow = slab.receiveShadow = true; cutGroup.add(slab);
+  const FZ = CUT_D / 2;
+  // 지층 띠
+  [0x5c4636, 0x715844, 0x52402f, 0x66503c].forEach((c, b) => {
+    const band = new THREE.Mesh(new THREE.PlaneGeometry(VOL.baseR * 2 - 0.015, 0.038),
+      new THREE.MeshStandardMaterial({ color: c, roughness: 1 }));
+    band.position.set(0, -0.045 - b * 0.052, FZ + 0.002); cutGroup.add(band);
+  });
+  // 마그마방 + 후광
+  cutHalo = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.3),
+    new THREE.MeshBasicMaterial({ map: spriteTex('rgba(255,110,25,0.95)'), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }));
+  cutHalo.position.set(0, -0.155, FZ + 0.008); cutGroup.add(cutHalo);
+  cutChamber = new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 18), new THREE.MeshBasicMaterial({ color: 0xff5a1e }));
+  cutChamber.scale.set(1.7, 1.0, 0.5); cutChamber.position.set(0, -0.155, FZ + 0.016); cutGroup.add(cutChamber);
+  // 마그마 통로
+  cutConduit = new THREE.Mesh(new THREE.PlaneGeometry(0.036, VOL.craterY + 0.12),
+    new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0.95 }));
+  cutConduit.position.set(0, (VOL.craterY - 0.12) / 2, FZ + 0.012); cutGroup.add(cutConduit);
+  // 분화구 용암 못
+  cutPool = new THREE.Mesh(new THREE.CircleGeometry(0.042, 22),
+    new THREE.MeshBasicMaterial({ color: 0xffae3d, transparent: true, opacity: 0.6 }));
+  cutPool.position.set(0, VOL.craterY - 0.012, FZ + 0.012); cutGroup.add(cutPool);
+  // 상승 거품
+  cutBubbles = makeSys(30, spriteTex('rgba(255,210,120,1)'), THREE.AdditiveBlending, 0.028, cutGroup);
+  cutBubbles.pts.position.z = FZ + 0.014;
+  // 화강암(지하 천천히) · 현무암(지표 빨리)
+  const graTex = canvasTexture(64, 64, g => {
+    g.fillStyle = '#d8c7b0'; g.fillRect(0, 0, 64, 64);
+    for (let s = 0; s < 260; s++) { g.fillStyle = Math.random() < 0.5 ? '#b6a085' : '#efe3cf'; g.fillRect(Math.random() * 64, Math.random() * 64, 3, 3); }
+  });
+  cutGranite = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12), new THREE.MeshStandardMaterial({ map: graTex, roughness: 1 }));
+  cutGranite.scale.set(1.3, 1, 0.55); cutGranite.position.set(0.115, -0.145, FZ + 0.016); cutGranite.visible = false; cutGroup.add(cutGranite);
+  const basTex = canvasTexture(64, 64, g => {
+    g.fillStyle = '#2f2d33'; g.fillRect(0, 0, 64, 64);
+    for (let s = 0; s < 200; s++) { g.fillStyle = 'rgba(10,10,12,0.7)'; g.beginPath(); g.arc(Math.random() * 64, Math.random() * 64, Math.random() * 2, 0, 7); g.fill(); }
+  });
+  cutBasalt = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.06), new THREE.MeshStandardMaterial({ map: basTex, roughness: 1 }));
+  cutBasalt.position.set(0.135, 0.13, FZ + 0.012); cutBasalt.rotation.z = -0.5; cutBasalt.visible = false; cutGroup.add(cutBasalt);
+}
+const spawnBubble = p => { p.x = (Math.random() - 0.5) * 0.03; p.y = -0.14 + Math.random() * 0.02; p.z = 0;
+  p.vx = (Math.random() - 0.5) * 0.006; p.vz = 0; p.vy = 0.07 + Math.random() * 0.05; p.life = p.max = (VOL.craterY + 0.12) / 0.09; };
+const fadeBubble = (q, f) => { q.r = 1; q.g = 0.7 * f + 0.2; q.b = 0.15; };
+
+/* ═══════════ 지진 디오라마 ═══════════ */
+const quakeGroup = new THREE.Group(); quakeGroup.visible = false; scene.add(quakeGroup);
+let plateL, plateR, crackMesh, arrowL, arrowR;
+{
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.03, 0.62), MAT.WOOD.clone());
+  base.position.y = 0.015; base.castShadow = base.receiveShadow = true; quakeGroup.add(base);
+  const soilTex = canvasTexture(128, 128, g => {
+    g.fillStyle = '#6a5341'; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 700; i++) { const v = 74 + Math.random() * 40 | 0; g.fillStyle = `rgba(${v},${v * 0.78 | 0},${v * 0.6 | 0},.5)`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
+  });
+  function makePlate(sx) {
+    const gp = new THREE.Group();
+    const soil = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.06, 0.5), new THREE.MeshStandardMaterial({ map: soilTex, roughness: 1 }));
+    soil.castShadow = soil.receiveShadow = true; gp.add(soil);
+    const grass = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.012, 0.5), new THREE.MeshStandardMaterial({ color: sx < 0 ? 0x5D8C3F : 0x6FA34B, roughness: 0.95 }));
+    grass.position.y = 0.036; gp.add(grass);
+    gp.position.set(sx * 0.2255, 0.06, 0);
+    quakeGroup.add(gp);
+    return gp;
+  }
+  plateL = makePlate(-1); plateR = makePlate(1);
+  function prop(parent, x, z, build) { const g = new THREE.Group(); g.position.set(x, 0.042, z); build(g); parent.add(g); }
+  const wallM = new THREE.MeshStandardMaterial({ color: 0xE8E2D6, roughness: 0.85 });
+  const roofM = new THREE.MeshStandardMaterial({ color: 0xB9522F, roughness: 0.8 });
+  const leafM = new THREE.MeshStandardMaterial({ color: 0x2E7D4F, roughness: 0.9 });
+  const trunkM = new THREE.MeshStandardMaterial({ color: 0x6b4b2e, roughness: 0.95 });
+  prop(plateL, -0.1, 0.05, g => { // 집
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.06), wallM); b.position.y = 0.025; b.castShadow = true; g.add(b);
+    const r = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.035, 4), roofM); r.position.y = 0.068; r.rotation.y = Math.PI / 4; r.castShadow = true; g.add(r);
+  });
+  prop(plateL, 0.06, -0.12, g => { // 나무
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.035, 8), trunkM); t.position.y = 0.017; g.add(t);
+    const l = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.06, 8), leafM); l.position.y = 0.062; l.castShadow = true; g.add(l);
+  });
+  prop(plateR, 0.06, 0.02, g => { // 학교
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.07), wallM); b.position.y = 0.03; b.castShadow = true; g.add(b);
+    const f = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.05, 0.008), new THREE.MeshStandardMaterial({ color: 0x9aa4ae })); f.position.set(0.045, 0.085, 0); g.add(f);
+  });
+  prop(plateR, -0.08, -0.15, g => { // 나무
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.035, 8), trunkM); t.position.y = 0.017; g.add(t);
+    const l = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.065, 8), leafM); l.position.y = 0.065; l.castShadow = true; g.add(l);
+  });
+  // 단층 균열 (파단 후)
+  crackMesh = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.075, 0.52), new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 1 }));
+  crackMesh.position.set(0, 0.062, 0); crackMesh.visible = false; quakeGroup.add(crackMesh);
+  // 힘 화살표
+  function arrow(dir) {
+    const g = new THREE.Group();
+    const m = new THREE.MeshStandardMaterial({ color: 0x9B7BF5, emissive: 0x5a3fd0, emissiveIntensity: 0.6, roughness: 0.5 });
+    const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.1, 10), m);
+    sh.rotation.z = Math.PI / 2; g.add(sh);
+    const hd = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.05, 12), m);
+    hd.rotation.z = -dir * Math.PI / 2; hd.position.x = dir * 0.07; g.add(hd);
+    g.position.set(-dir * 0.56, 0.1, 0);
+    quakeGroup.add(g); return g;
+  }
+  arrowL = arrow(1); arrowR = arrow(-1);
+}
+
+/* ═══════════ DOM 주석 레이어 (분출물 라벨 · 단면 라벨) ═══════════ */
+const annoHost = document.getElementById('anno');
+function mkAnno(html, color, click) {
+  const d = document.createElement(click ? 'button' : 'div');
+  d.className = 'vc-anno' + (click ? ' click' : '');
+  d.style.color = color; d.style.borderColor = color;
+  d.innerHTML = html;
+  if (click) { d.style.background = 'rgba(8,12,20,.86)'; d.addEventListener('click', click); }
+  annoHost.appendChild(d);
+  return d;
+}
+const chipLava = mkAnno('🔥 용암', '#FFB266', () => doSee('lava'));
+const chipAsh  = mkAnno('🌫️ 화산재', '#CED4DA', () => doSee('ash'));
+const chipGas  = mkAnno('💨 화산 가스', '#E9ECEF', () => doSee('gas'));
+const labMag = mkAnno('🔴 마그마 방', '#FF8A5C');
+const labCon = mkAnno('↑ 마그마 통로', '#FFB266');
+const labCra = mkAnno('분화구', '#FFD8A8');
+const labBas = mkAnno('현무암<br><span style="font-weight:600;font-size:10px">밖에서 빨리 식음 · 어둡고 작은 알갱이</span>', '#CED4DA');
+const labGra = mkAnno('화강암<br><span style="font-weight:600;font-size:10px">땅속에서 천천히 식음 · 밝고 큰 알갱이</span>', '#E9D8C8');
+const _pv = new THREE.Vector3();
+function projectAnno(el2, obj, local, on) {
+  if (!on) { el2.style.display = 'none'; return; }
+  _pv.copy(local); obj.localToWorld(_pv); _pv.project(camera);
+  if (_pv.z > 1) { el2.style.display = 'none'; return; }
+  el2.style.left = ((_pv.x * 0.5 + 0.5) * innerWidth) + 'px';
+  el2.style.top = ((-_pv.y * 0.5 + 0.5) * innerHeight) + 'px';
+  el2.style.display = '';
+}
+
+/* 암석 결과 카드(썸네일 절차 드로잉) */
+{
+  const bg = document.querySelector('#rockBas canvas').getContext('2d');
+  bg.fillStyle = '#34383e'; bg.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 70; i++) { bg.fillStyle = 'rgba(12,12,15,.85)'; bg.beginPath(); bg.arc(Math.random() * 128, Math.random() * 128, 2 + Math.random() * 4, 0, 7); bg.fill(); }
+  const gg = document.querySelector('#rockGra canvas').getContext('2d');
+  gg.fillStyle = '#e2d3bc'; gg.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 180; i++) { gg.fillStyle = ['#b6a085', '#efe3cf', '#9aa5b1', '#d9b45b'][i % 4]; gg.fillRect(Math.random() * 122, Math.random() * 122, 5 + Math.random() * 5, 5 + Math.random() * 5); }
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), v2row = $('v2row'),
+      wifpick = $('wifpick'), choicesEl = $('choices'), chipsEl = $('chips'), statusEl = $('status');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈', whatif: '🌀 만약에' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="vc-seg">' + ['low', 'mid', 'high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="vc-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  if (mode === 'free' && sim.G().exps.length > 1) {
+    h += '<div class="vc-seg">' + [['volcano', '🌋 화산'], ['quake', '🌍 지진']].map(x =>
+      `<button data-e="${x[0]}" class="${sim.state.exp === x[0] ? 'on hot' : ''}">${x[1]}</button>`).join('') + '</div>';
+  }
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+  hudL.querySelectorAll('[data-e]').forEach(b => b.addEventListener('click', () => { hideHint(); setExp(b.dataset.e); }));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state, G = sim.G();
+  let h = '';
+  if (st.exp === 'volcano') {
+    h += '<button class="k3-btn fire" data-a="pump">🔥 압력 키우기</button>';
+    const can = st.vol.erupting, off = 'style="opacity:.4"';
+    if (mode !== 'whatif' && (G.cool === 'basalt' || G.cool === 'all'))
+      h += `<button class="k3-btn" data-a="basalt" ${can ? '' : off}>🪨 빨리 식히기 → 현무암</button>`;
+    if (mode !== 'whatif' && G.cool === 'all')
+      h += `<button class="k3-btn" data-a="granite" ${can ? '' : off}>💎 천천히 식히기 → 화강암</button>`;
+    if (mode !== 'whatif' && G.cut)
+      h += `<button class="k3-btn" data-a="cut">${st.cut ? '🌋 겉 보기' : '🪓 단면 보기'}</button>`;
+    h += '<button class="k3-btn" data-a="volReset">↺ 새 화산</button>';
+    h += `<div id="gaugewrap"><div class="lb">압력 <span id="gv">0</span>% · 한계 <span id="gt">${sim.thrOf()}</span>%</div><div id="gauge"><i></i></div></div>`;
+  } else {
+    h += '<button class="k3-btn accent" data-a="push">➡️ 힘 가하기</button>';
+    h += '<button class="k3-btn" data-a="qkReset">↺ 새 땅</button>';
+    h += '<div id="gaugewrap"><div class="lb" style="color:#CBB7FF">쌓인 힘 <span id="gv">0</span>%</div><div id="gauge"><i style="background:linear-gradient(90deg,#9B7BF5,#6E45E2)"></i></div></div>';
+  }
+  if (mode === 'whatif' && wifKey) h += '<button class="k3-btn" data-a="wifBack">🌀 다른 만약에</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+  updateGauge();
+}
+
+function updateGauge() {
+  const gv = $('gv'); if (!gv) return;
+  const st = sim.state;
+  if (st.exp === 'volcano') {
+    gv.textContent = st.vol.press;
+    const gt = $('gt'); if (gt) gt.textContent = sim.thrOf();
+    $('gauge').firstElementChild.style.width = Math.min(100, st.vol.press / sim.thrOf() * 100) + '%';
+  } else {
+    gv.textContent = st.qk.stress;
+    $('gauge').firstElementChild.style.width = st.qk.stress + '%';
+  }
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구로 더 실험해 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    mbar.innerHTML = `${Sim.QUIZ[quizIdx].q}<div class="st">점수 ${quizScore} / ${quizCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderV2() {
+  const G = sim.G(), st = sim.state;
+  if (mode !== 'free' || !G.v2) { v2row.style.display = 'none'; return; }
+  v2row.style.display = '';
+  if (st.exp === 'volcano') {
+    v2row.innerHTML = `<div>💧 묽음 <input id="slVisc" type="range" min="0" max="1" step="0.01" value="${st.visc}"> 🍯 끈적</div>
+      <div class="vl" id="slViscLb">${sim.viscName()}</div>`;
+    $('slVisc').addEventListener('input', e => {
+      st.visc = +e.target.value;
+      $('slViscLb').textContent = sim.viscName();
+      updateGauge(); renderStatus(); armPred('visc');
+    });
+  } else {
+    v2row.innerHTML = `<div>🪶 약 <input id="slQf" type="range" min="0" max="1" step="0.01" value="${st.qforce}"> 💪 강</div>
+      <div class="vl" id="slQfLb" style="color:#CBB7FF">${sim.qfName()}</div>`;
+    $('slQf').addEventListener('input', e => {
+      st.qforce = +e.target.value;
+      $('slQfLb').textContent = sim.qfName();
+      renderStatus(); armPred('qf');
+    });
+  }
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.chips.map(c =>
+    `<span class="vc-chip ${c.hit ? '' : 'miss'}">${Sim.CHIPNM[c.k] || c.k} · ${c.hit ? '✔예측적중' : '✘예측빗나감'}</span>`).join('');
+  chipsEl.style.display = (mode === 'free' || mode === 'whatif') ? '' : 'none';
+}
+
+function renderStatus() {
+  const st = sim.state, G = sim.G();
+  let msg;
+  const pic = mode === 'quiz' ? Sim.QUIZ[quizIdx].pic : st.exp;
+  if (pic === 'volcano') {
+    const thr = sim.thrOf(), v = st.vol;
+    if (sim.grade === 'low') {
+      if (v.erupting) msg = '<span style="color:#FF9E7A">펑! 화산이 터졌어요 🌋 땅속 뜨거운 마그마가 솟아올라요!</span>';
+      else if (v.press > 0) msg = '압력이 차오르고 있어요… 가득 차면 펑! 터져요 (압력 ' + v.press + '%)';
+      else msg = '땅속 깊은 곳은 아주 뜨거워 돌이 녹아 있어요(마그마). 🔥 압력을 키워 봐요!';
+    } else if (v.erupting) {
+      const SM = { quiet: '💧 묽은 용암이 조용히 넓게 흘러요 — 넓적한 순상 화산이 만들어져요',
+                   boom: '🍯 갇혔던 압력이 한꺼번에 뻥! 대폭발 — 뾰족한 종상 화산이 만들어져요',
+                   mega: '🫧 빠질 곳 없던 압력이 산을 통째로 날렸어요 — 압력은 사라지지 않고 쌓여요!' };
+      msg = '<span style="color:#FF9E7A">' + (SM[v.style] || '🌋 분출 중! 분출물 라벨을 눌러 보고, 식혀서 암석도 만들어 봐요') + '</span>';
+    }
+    else if (v.press >= 100 && thr > 100)
+      msg = '<span style="color:#FFB08A">' + (st.sealed ? '🫧 구멍이 꽉 막혔어요! 압력이 계속 쌓여요… ' : '🍯 끈적한 마그마가 통로를 막았어요! ') + '압력 ' + v.press + '% (한계 ' + thr + '%)</span>';
+    else if (v.press > 0) msg = '압력 ' + v.press + '% — ' + thr + '%가 되면 분출해요!';
+    else msg = '땅속 마그마 방에 🔥 압력을 키워 봐요';
+  } else {
+    const q = st.qk;
+    if (q.broken) msg = '<span style="color:#FF9E7A">' + (st.qforce <= 0.3
+      ? '약한 힘도 쌓이면 결국 우지끈! 힘의 크기가 아니라 쌓인 양이 지진을 정해요'
+      : '땅이 큰 힘을 오래 받으면 끊어지면서 지진이 나요') + '</span>';
+    else msg = '➡️ 양쪽에서 미는 힘을 계속 가해 봐요 (쌓인 힘 ' + q.stress + '%' + (mode === 'free' && G.v2 ? ' · ' + q.pushes + '번' : '') + ')';
+  }
+  statusEl.innerHTML = msg;
+  // 검증 관측점(dataset)
+  const s = $('stage');
+  s.dataset.press = String(st.vol.press); s.dataset.thr = String(sim.thrOf());
+  s.dataset.erupt = st.vol.erupting ? '1' : '0'; s.dataset.style = st.vol.style || '';
+  s.dataset.stress = String(st.qk.stress); s.dataset.broken = st.qk.broken ? '1' : '0';
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = Sim.QUIZ[quizIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (quizLock) return; quizLock = true;
+    const ok = +b.dataset.v === q.a;
+    quizCount++; if (ok) quizScore++;
+    K3.sound.play(ok ? 'chime' : 'fail');
+    K3.toast(ok ? '🎉 정답! ' + q.ch[q.a] : '아쉬워요 — 정답은 「' + q.ch[q.a] + '」', !ok, T(1300));
+    setTimeout(() => { newQuiz(); renderAll(); }, T(1450));
+  }));
+}
+function newQuiz() {
+  if (quizUsed.length >= Sim.QUIZ.length) quizUsed = [];
+  const cand = []; for (let i = 0; i < Sim.QUIZ.length; i++) if (!quizUsed.includes(i)) cand.push(i);
+  quizIdx = cand[Math.floor(Math.random() * cand.length)]; quizUsed.push(quizIdx); quizLock = false;
+}
+
+function renderWifPick() {
+  if (mode !== 'whatif' || wifKey) { wifpick.style.display = 'none'; return; }
+  wifpick.style.display = '';
+  wifpick.innerHTML = '<div class="ti">🌀 만약에… 하나를 골라 실험해 봐요</div>' +
+    sim.G().wif.map(k => `<button data-w="${k}">${Sim.WHATIF[k].icon} ${Sim.WHATIF[k].title}</button>`).join('');
+  wifpick.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => startWif(b.dataset.w)));
+}
+
+async function startWif(key) {
+  wifKey = key; wifChoice = -1; wifRevealed = false; wifPlaying = false;
+  const W = Sim.WHATIF[key];
+  renderWifPick();
+  K3.sound.play('select');
+  wifChoice = await K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: i, label: c })));
+  W.play(sim);
+  wifPlaying = true;
+  syncExpScene();
+  renderAll();
+  K3.toast(W.icon + ' ' + W.tip, false, T(4200));
+}
+function wifResolve() {
+  if (!wifKey || wifRevealed || !wifPlaying) return;
+  const W = Sim.WHATIF[wifKey];
+  if (!W.cond(sim.state)) return;
+  wifRevealed = true;
+  sim.wifChip(wifKey, wifChoice);
+  const hit = wifChoice === W.a;
+  K3.sound.play(hit ? 'chime' : 'pop');
+  chipToast();
+  setTimeout(() => {
+    K3.cards.result(
+      `<h3 style="color:${hit ? '#0d7a5c' : '#B9522F'}">${hit ? '🎯 예측 적중!' : '🤔 예측과 달랐죠?'}</h3>
+       <p style="font-size:13px;line-height:1.7;color:#41546a">${W.reveal}</p>`,
+      [{ label: '계속 실험', cls: 'pri', value: 0 }, { label: '🌀 다른 만약에', value: 1 }]
+    ).then(v => { if (v === 1) act('wifBack'); else renderAll(); });
+    renderChips();
+  }, T(1100));
+}
+
+/* 예측 무장 (free · v2) */
+async function armPred(kind) {
+  if (mode !== 'free' || !sim.G().v2) return;
+  if (!sim.predArm(kind)) return;
+  const P = Sim.PRED[kind];
+  K3.sound.play('select');
+  const ch = await K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: i, label: c })));
+  sim.predChoose(kind, ch);
+  K3.toast('📝 예측 접수! ' + P.tip, false, T(4200));
+}
+function resolvePreds() {
+  sim.checkPred().forEach(r => {
+    const msg = r.kind === 'visc'
+      ? (r.hit ? '✔ 예측 적중 — 끈적한 마그마가 훨씬 크게! 가스가 갇혀 압력이 폭발적으로 터져요.'
+               : '✘ 예측 빗나감 — 끈적할수록 크게 터져요! 가스가 못 빠져나가 압력이 갇혔다가 한꺼번에 터지거든요.')
+      : (r.hit ? '✔ 예측 적중 — 약해도 쌓이면 결국 끊어져요! 지진은 힘의 크기가 아니라 쌓인 양이 정해요.'
+               : '✘ 예측 빗나감 — 약한 힘도 계속 쌓이면 결국 우지끈! 쌓인 양이 지진을 정해요.');
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    K3.toast(msg, !r.hit, T(4600));
+  });
+  renderChips(); chipToast();
+}
+function chipToast() {
+  if (sim.chips.length === 5) setTimeout(() => { K3.sound.play('ting'); K3.toast('🌋 꼬마 화산학자 — 오늘 가설 5개를 실험했어요!'); }, T(600));
+}
+
+/* ── 조작 ── */
+let quakeShake = 0;
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'pump') {
+    const r = sim.pump();
+    if (r.act === 'already') { K3.toast('이미 분출 중이에요! ↺ 새 화산으로', true); return; }
+    if (r.act === 'erupt') {
+      const EM = { quiet: '🌋 스르륵~ 묽은 용암이 조용히 흘러넘쳐요 (넓적한 순상 화산)',
+                   boom: '💥 콰콰콰쾅!! 막혔던 통로가 뚫리며 대폭발! (뾰족한 종상 화산)',
+                   mega: '💥💥 빠질 곳 없던 압력이 산을 통째로 날렸어요!! 초대형 폭발!',
+                   normal: '🌋 콰과광! 화산이 분출했어요!' };
+      K3.sound.play('whoosh'); K3.sound.play('pop');
+      K3.toast(EM[r.style] || EM.normal, false, T(3800));
+      resolvePreds(); wifResolve();
+    } else K3.sound.play('charge');
+  }
+  else if (a === 'basalt' || a === 'granite') {
+    const r = sim.cool(a);
+    if (r.act === 'blocked') { K3.toast('먼저 화산을 분출시켜야 해요!', true); return; }
+    K3.sound.play('pop');
+    K3.toast(a === 'basalt' ? '🪨 표면에서 빨리 식어 현무암! 구멍이 송송' : '💎 땅속에서 천천히 식어 화강암! 알갱이가 커요');
+  }
+  else if (a === 'cut') {
+    st.cut = !st.cut;
+    controls.target.set(0, st.cut ? UG * 0.7 + 0.05 : 0.2, 0); controls.update();
+    K3.sound.play('select');
+    syncExpScene();
+  }
+  else if (a === 'volReset') { sim.volReset(); resetRivers(); K3.sound.play('tap'); }
+  else if (a === 'push') {
+    const r = sim.push();
+    if (r.act === 'already') { K3.toast('이미 끊어졌어요! ↺ 새 땅으로', true); return; }
+    if (r.act === 'broke') {
+      K3.sound.play('whoosh'); quakeShake = 1.1;
+      K3.toast('🌍 우지끈! 땅이 끊어지며 지진!', false, T(3400));
+      resolvePreds(); wifResolve();
+    } else K3.sound.play('charge');
+  }
+  else if (a === 'qkReset') { sim.qkReset(); quakeShake = 0; K3.sound.play('tap'); }
+  else if (a === 'wifBack') {
+    wifKey = null; wifPlaying = false; wifRevealed = false;
+    sim.resetAll(); sim.v2reset(); K3.cards.hide(); syncExpScene(); renderAll(); return;
+  }
+  if (mode === 'mission') missionTick();
+  renderCtrls(); renderStatus();
+}
+function doSee(k) {
+  sim.see(k);
+  K3.sound.play('tap');
+  const M = { lava: '🔥 용암 — 마그마가 땅 위로 흘러나온 것!', ash: '🌫️ 화산재 — 잘게 부서진 돌가루가 하늘 높이!', gas: '💨 화산 가스 — 수증기 등 여러 기체!' };
+  K3.toast(M[k]);
+  if (mode === 'mission') missionTick();
+}
+function missionTick() {
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  if (r.act === 'next') setTimeout(() => { resetRivers(); syncExpScene(); renderAll(); }, T(1300));
+  else setTimeout(() => renderAll(), T(1300));
+}
+
+function setGrade(g) {
+  sim.grade = g;
+  mode = 'free';
+  wifKey = null; wifPlaying = false;
+  sim.resetAll(); sim.v2reset(); sim.mStep = 0; sim.mDone = false;
+  K3.cards.hide(); resetRivers(); syncExpScene(); renderAll();
+}
+function setMode(m) {
+  mode = m;
+  wifKey = null; wifPlaying = false; wifRevealed = false;
+  sim.resetAll(); sim.v2reset(); K3.cards.hide(); resetRivers();
+  if (m === 'mission') sim.missionStart();
+  if (m === 'quiz') { quizScore = 0; quizCount = 0; quizUsed = []; newQuiz(); }
+  syncExpScene(); renderAll();
+}
+function setExp(e) {
+  sim.state.exp = e;
+  syncExpScene(); renderAll();
+}
+function resetRivers() { rivers.forEach(r => { r.tube.geometry.setDrawRange(0, 0); r.mat.color.copy(LAVA_HOT); }); }
+function syncExpScene() {
+  const st = sim.state;
+  const showExp = mode === 'quiz' ? Sim.QUIZ[quizIdx].pic : st.exp;
+  const vol = showExp === 'volcano';
+  volGroup.visible = vol && !(st.cut && sim.G().cut);
+  cutGroup.visible = vol && st.cut && sim.G().cut && mode !== 'quiz';
+  quakeGroup.visible = !vol;
+  if (!vol) { controls.target.set(0, 0.1, 0); controls.update(); }
+  else if (!st.cut) { controls.target.set(0, 0.2, 0); controls.update(); }
+}
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderV2(); renderQuiz(); renderWifPick(); renderChips(); renderStatus();
+  syncExpScene();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+let gI = 0, volShake = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const st = sim.state, v = st.vol;
+  sim.tick(dt);
+
+  const cooled = v.made.basalt || v.made.granite;
+  const styleMul = { quiet: 0.4, normal: 1, boom: 1.9, mega: 2.8 }[v.style] || 1;
+  const strength = v.erupting ? (cooled ? 0.18 : styleMul) : 0;
+
+  // 발광 램프
+  const gT = v.erupting ? (cooled ? 0.5 : 1.1) : (v.press / 100) * 0.4;
+  gI += (gT - gI) * Math.min(1, dt * 6);
+  lavaLight.intensity = gI * (1.2 + v.flowT) * (1 - v.hardT * 0.8);
+  throatMat.opacity += ((v.erupting ? 1 : v.press / 150) - throatMat.opacity) * Math.min(1, dt * 6);
+  craterGlowMat.opacity += ((v.erupting ? 0.9 : v.press / 200) - craterGlowMat.opacity) * Math.min(1, dt * 6);
+  throat.scale.setScalar(0.8 + gI * 0.3);
+  const eT = v.erupting ? (cooled ? 0.5 : 2.3) : (v.press / 100) * 1.3;
+  volMat.emissiveIntensity += (eT - volMat.emissiveIntensity) * Math.min(1, dt * 4);
+
+  // 🔴 용암 강 — 성장 + 굳음
+  rivers.forEach(r => {
+    r.tube.geometry.setDrawRange(0, Math.floor(r.total * Math.min(1, v.flowT / Math.max(0.001, r.stag)) * r.stag));
+    r.mat.color.copy(LAVA_HOT).lerp(LAVA_ROCK, v.hardT);
+  });
+
+  // 산체 흔들림
+  const trembling = (!v.erupting && v.press >= 60) || (v.erupting && !cooled);
+  const shakeCap = { quiet: 0.003, normal: 0.007, boom: 0.011, mega: 0.017 }[v.style] || 0.007;
+  volShake = trembling ? Math.min(shakeCap, volShake + dt * 0.02) : Math.max(0, volShake - dt * 0.03);
+  mountain.position.x = (Math.random() - 0.5) * volShake;
+  mountain.position.z = (Math.random() - 0.5) * volShake;
+
+  // 파티클
+  if (strength > 0) {
+    emit(sysLava, Math.round(5 * strength), spawnLava);
+    emit(sysAsh, Math.round(3 * strength), spawnAsh);
+    emit(sysGas, Math.round(2 * strength), spawnGas);
+  } else if (v.press > 0 && Math.random() < 0.35) emit(sysGas, 1, spawnGas);
+  stepSys(sysLava, dt, 1.15, fadeLava, 0.002);
+  stepSys(sysAsh, dt, 0.05, fadeAsh);
+  stepSys(sysGas, dt, 0.08, fadeGas);
+
+  // 단면
+  if (cutGroup.visible) {
+    const now = performance.now();
+    const pulse = 0.93 + Math.sin(now * 0.004) * 0.06 + gI * 0.06;
+    cutChamber.scale.set(1.7 * pulse, 1.0 * pulse, 0.5);
+    cutChamber.material.color.setRGB(1, 0.30 + 0.12 * (0.5 + 0.5 * Math.sin(now * 0.006)), 0.09);
+    cutHalo.material.opacity = 0.45 + 0.32 * (v.press / 100) + (v.erupting ? 0.18 : 0);
+    cutConduit.material.opacity = 0.45 + 0.5 * (v.erupting ? 1 : v.press / 100);
+    cutPool.material.opacity = v.erupting ? 1 : Math.min(1, 0.3 + v.press / 150);
+    cutGranite.visible = !!v.made.granite;
+    cutBasalt.visible = !!v.made.basalt;
+    if ((v.press > 0 || v.erupting) && Math.random() < 0.4) emit(cutBubbles, 1, spawnBubble);
+    stepSys(cutBubbles, dt, 0, fadeBubble);
+  }
+
+  // 지진 판
+  if (quakeGroup.visible) {
+    const q = st.qk;
+    const bend = q.broken ? 0 : q.stress * 0.0009;
+    plateL.rotation.z = bend; plateR.rotation.z = -bend;
+    plateL.position.y = q.broken ? 0.028 : 0.06;
+    crackMesh.visible = q.broken;
+    arrowL.visible = arrowR.visible = !q.broken;
+    const tremQ = (!q.broken && q.stress >= 60) ? 0.003 : 0;
+    quakeShake = Math.max(tremQ, quakeShake - dt * 0.9);
+    quakeGroup.position.x = (Math.random() - 0.5) * quakeShake * (quakeShake > 0.01 ? 1 : 0.4);
+    quakeGroup.position.z = (Math.random() - 0.5) * quakeShake * (quakeShake > 0.01 ? 1 : 0.4);
+    const pulse = 1 + Math.sin(performance.now() * 0.005) * 0.06;
+    arrowL.scale.setScalar(pulse); arrowR.scale.setScalar(pulse);
+  }
+
+  // 라벨 투영
+  const showChips = volGroup.visible && v.erupting && sim.G().ejecta && mode !== 'quiz';
+  projectAnno(chipLava, mountain, _tmp.set(0.19, 0.12, 0.12), showChips);
+  projectAnno(chipAsh, mountain, _tmp2.set(0, VOL.rimY + 0.3, 0), showChips);
+  projectAnno(chipGas, mountain, _tmp3.set(0.14, VOL.rimY + 0.13, 0.05), showChips);
+  if (showChips) {
+    chipLava.innerHTML = '🔥 용암' + (v.seen.lava ? ' ✓' : '');
+    chipAsh.innerHTML = '🌫️ 화산재' + (v.seen.ash ? ' ✓' : '');
+    chipGas.innerHTML = '💨 화산 가스' + (v.seen.gas ? ' ✓' : '');
+  }
+  const cutOn = cutGroup.visible;
+  projectAnno(labMag, cutGroup, _tmp4.set(0, -0.155, CUT_D / 2), cutOn);
+  projectAnno(labCon, cutGroup, _tmp5.set(0, 0.04, CUT_D / 2), cutOn);
+  projectAnno(labCra, cutGroup, _tmp6.set(0, VOL.craterY + 0.03, CUT_D / 2), cutOn);
+  projectAnno(labBas, cutGroup, _tmp7.set(0.135, 0.17, CUT_D / 2), cutOn && v.made.basalt);
+  projectAnno(labGra, cutGroup, _tmp8.set(0.115, -0.1, CUT_D / 2), cutOn && v.made.granite);
+  // 암석 결과 카드
+  $('rockBas').style.display = (volGroup.visible && v.made.basalt) ? '' : 'none';
+  $('rockGra').style.display = (volGroup.visible && v.made.granite) ? '' : 'none';
+
+  updateGauge();
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+const _tmp = new THREE.Vector3(), _tmp2 = new THREE.Vector3(), _tmp3 = new THREE.Vector3(),
+      _tmp4 = new THREE.Vector3(), _tmp5 = new THREE.Vector3(), _tmp6 = new THREE.Vector3(),
+      _tmp7 = new THREE.Vector3(), _tmp8 = new THREE.Vector3();
+
+renderer.domElement.addEventListener('pointerdown', hideHint, { once: true });
+
+if (mode === 'mission') sim.missionStart();
+if (mode === 'quiz') { newQuiz(); }
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast('화산 모형을 돌려 보고 🔥 압력을 키워 봐요');
+animate();
+
+/* 테스트용 앱 훅 */
+window.VolcanoApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, setExp, act, doSee,
+  rivers, volGroup, cutGroup, quakeGroup, mountain, crack: crackMesh
+};
+</script>
+</body>
+</html>
