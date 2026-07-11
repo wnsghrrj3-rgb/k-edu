@@ -334,8 +334,10 @@ function answer(btn,idx){if(answered[currentSlide])return;const slide=document.q
 let sortCount=0;
 function sortTk(tk,type){if(tk.classList.contains('correct'))return;playClick();tk.classList.add('correct');document.getElementById(type==='sp'?'spZone':'pcZone').appendChild(tk);sortCount++;if(sortCount>=6){addScore(50);setFB('fb9','✅ 완벽 분류! +50점',true);answered[9]=true;}}
 function restart(){score=0;combo=0;answered={};sortCount=0;document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.token').forEach(t=>t.className='token');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));const ft=document.getElementById('sortTokens');document.querySelectorAll('#spZone .token,#pcZone .token').forEach(t=>ft.appendChild(t));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
-:prevSlide()}});
 updateUI();
+
+/* swipe (재주입, 대점검 2026-07-11) */
+;(function(){if(typeof prevSlide!=='function'||typeof nextSlide!=='function')return;var _tx=0;document.addEventListener('touchstart',function(e){_tx=e.touches[0].clientX;},{passive:true});document.addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-_tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});})();
 </script>
 </body>
 </html>
