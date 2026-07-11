@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <!--
-K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 4차시(l11)
+K-edu 사회 4-1 · 1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 5차시(l12)
 영역 1 본 차시 (자기주도) · 18슬 · 사회 탐구 5단계(들어가기·살펴보기·확인·적용·정리) · 만점 100
-성취기준 [4사05-02] · 교과서 p.43~46 · 지도서(대단원1 지도안, 12~13차시) 근거
-직접조작: 지역 비교표 채우기(지리 정보 5항목 클릭 → 두 지역 값 나란히 채워 비교) + 효과음. l10 구조 100% 복제.
-지도서 근거: 역할 나눠 조사·비교(디지털 영상 지도·통계·기상청). 사회톡톡 독도 p.45(노랫말 변화=지리 정보는 변한다). 진로 지리 정보 전문가 p.46.
-정직 원칙: 두 비교 지역·수치는 '예시 자료'(특정 실제 지역 아님). 앞 l08~l10(위치·지형·면적·인구·기온) 종합 차시.
+성취기준 [4사05-02] · 교과서 p.47~49 · 지도서(대단원1, 14차시 [생각을 펼쳐요]) 근거
+[생각을 펼쳐요] 창의·융합 활동. 직접조작: 픽셀 지도 색칠(지역 클릭 → 범례 색으로 픽셀 채움 + 면적=칸 수 확인/비교) + 효과음. l11 구조 100% 복제.
+지도서 근거: 범례에서 숫자별 색을 정해 픽셀 아트 완성 → 색칠한 지역 확인 → 지역별 위치·면적 비교.
+정직 원칙: 픽셀 지도·지역은 '예시 자료'(실제 지역 아님). 앞 l08~l11 지리정보 종합·마무리.
 -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우리 지역과 다른 지역의 지리 정보를 비교해 볼까요 · 사회 4-1</title>
+<title>[생각을 펼쳐요] 픽셀 아트로 확인해요 · 사회 4-1</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -113,7 +113,7 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 .check.on .box{background:var(--green);border-color:var(--green)}
 .check.on .box::after{content:'✓';color:#fff;font-weight:800;font-size:14px}
 
-/* 지역 비교표 채우기 조작 */
+/* 픽셀 지도 색칠 조작 */
 .contour-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .contour-legend{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
 .cl-chip{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#475569;background:#fff;border:1px solid var(--line);border-radius:20px;padding:3px 9px}
@@ -184,130 +184,133 @@ body{background:var(--bg);font-family:'Noto Sans KR',sans-serif;color:var(--ink)
 <script>
 /* ===== 시각 자료(SVG 씬) — 도식, 이모지 대신 도형 ===== */
 const SVG = {
-  // 지리 정보(위치·지형·면적·인구·기후 아이콘 모음)
+  // 픽셀 아트란(작은 사각형 모음)
+  pixel:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
+    ${(()=>{const c=['#86C28B','#5AA9E6','#FBBF24','#EC4899','#A78BFA'];let s='';for(let r=0;r<5;r++)for(let q=0;q<8;q++){s+=`<rect x="${40+q*10}" y="${18+r*11}" width="9" height="10" fill="${c[(r+q)%5]}" opacity="${((r*8+q)%3)?0.9:0.35}"/>`;}return s;})()}
+    <text x="80" y="90" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">픽셀 아트</text></svg>`,
+  // 범례(숫자↔색)
+  legend:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
+    ${['#86C28B','#5AA9E6','#FBBF24','#EC4899'].map((c,i)=>`<rect x="30" y="${16+i*17}" width="14" height="14" fill="${c}" stroke="#64748B" stroke-width="1"/><text x="52" y="${27+i*17}" font-size="10" fill="#334155" font-weight="700">${i+1} 번 지역</text>`).join('')}
+    <text x="80" y="92" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">범례 = 숫자별 색</text></svg>`,
+  // 면적 비교(넓은/좁은 픽셀)
+  area:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FEF9F3"/>
+    ${(()=>{let s='';for(let r=0;r<3;r++)for(let q=0;q<3;q++)s+=`<rect x="${16+q*13}" y="${24+r*13}" width="12" height="12" fill="#86C28B" stroke="#fff"/>`;return s;})()}
+    <text x="35" y="86" font-size="8" fill="#166534" text-anchor="middle" font-weight="800">넓은 지역</text>
+    ${(()=>{let s='';for(let r=0;r<2;r++)for(let q=0;q<2;q++)s+=`<rect x="${108+q*13}" y="${34+r*13}" width="12" height="12" fill="#E39A4A" stroke="#fff"/>`;return s;})()}
+    <text x="121" y="86" font-size="8" fill="#B45309" text-anchor="middle" font-weight="800">좁은 지역</text></svg>`,
+  // 우리나라 지역(단순 지도)
+  korea:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
+    <path d="M70 10 L92 16 L96 34 L110 44 L104 70 L86 86 L72 78 L64 58 L58 38Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
+    <rect x="72" y="30" width="10" height="10" fill="#5AA9E6" opacity=".5"/><rect x="82" y="40" width="10" height="10" fill="#FBBF24" opacity=".5"/><rect x="74" y="52" width="10" height="10" fill="#EC4899" opacity=".5"/>
+    <text x="82" y="94" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">지역별로 나뉜 지도</text></svg>`,
+  // 완성 축하
+  done:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFF8E1"/>
+    ${(()=>{const c=['#86C28B','#5AA9E6','#FBBF24','#EC4899','#A78BFA'];let s='';for(let r=0;r<4;r++)for(let q=0;q<6;q++)s+=`<rect x="${44+q*12}" y="${22+r*12}" width="11" height="11" fill="${c[(r*6+q)%5]}"/>`;return s;})()}
+    <text x="80" y="90" font-size="9" fill="#B45309" text-anchor="middle" font-weight="800">완성!</text></svg>`,
+  // 지리 정보 종합
   geoinfo:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F0FDF4"/>
-    <circle cx="30" cy="34" r="13" fill="#fff" stroke="#64748B" stroke-width="1.4"/><path d="M30 26 L32 34 L30 42 L28 34Z" fill="#DC2626"/>
-    <path d="M56 46 L66 30 L76 46Z" fill="#86C28B"/><rect x="88" y="30" width="18" height="16" fill="#DCFCE7" stroke="#8FBF6A"/>
-    <circle cx="122" cy="34" r="6" fill="#5AA9E6"/><circle cx="136" cy="34" r="6" fill="#5AA9E6"/>
-    <text x="80" y="72" font-size="10" fill="#166534" text-anchor="middle" font-weight="800">지리 정보</text>
-    <text x="80" y="86" font-size="8" fill="#475569" text-anchor="middle">위치·지형·면적·인구·기후</text></svg>`,
-  // 두 지역 비교
-  compare:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#FFFDF5"/>
-    <rect x="10" y="16" width="60" height="64" rx="6" fill="#DBEAFE" stroke="#5AA9E6" stroke-width="1.5"/>
-    <text x="40" y="32" font-size="9" fill="#1D4ED8" text-anchor="middle" font-weight="800">우리 지역</text>
-    <rect x="90" y="16" width="60" height="64" rx="6" fill="#DCFCE7" stroke="#8FBF6A" stroke-width="1.5"/>
-    <text x="120" y="32" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">다른 지역</text>
-    <text x="80" y="54" font-size="16" fill="#F57F17" text-anchor="middle" font-weight="800">↔</text>
-    <text x="80" y="92" font-size="8" fill="#B45309" text-anchor="middle" font-weight="700">견주어 비교해요</text></svg>`,
-  // 조사 방법(지도·통계·기상청)
-  research:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#EFF6FF"/>
-    <rect x="12" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><path d="M18 44 L28 34 L36 42 L46 30" fill="none" stroke="#86C28B" stroke-width="2"/><text x="32" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">영상 지도</text>
-    <rect x="60" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><rect x="66" y="40" width="6" height="10" fill="#86C28B"/><rect x="76" y="34" width="6" height="16" fill="#86C28B"/><rect x="86" y="44" width="6" height="6" fill="#86C28B"/><text x="80" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">통계</text>
-    <rect x="108" y="24" width="40" height="30" rx="4" fill="#fff" stroke="#5AA9E6" stroke-width="1.4"/><circle cx="122" cy="38" r="6" fill="#FBBF24"/><path d="M132 46 q6 -8 12 0" fill="none" stroke="#7CC4E8" stroke-width="2"/><text x="128" y="66" font-size="7" fill="#1D4ED8" text-anchor="middle" font-weight="700">기상청</text>
-    <text x="80" y="86" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">여러 곳에서 조사해요</text></svg>`,
-  // 독도(사회톡톡 — 지리 정보는 변한다)
-  dokdo:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#7CC4E8"/>
-    <ellipse cx="54" cy="60" rx="26" ry="12" fill="#86C28B"/><path d="M40 60 L54 38 L68 60Z" fill="#6FB578"/>
-    <ellipse cx="104" cy="64" rx="20" ry="9" fill="#86C28B"/><path d="M92 64 L104 46 L116 64Z" fill="#6FB578"/>
-    <path d="M20 82 q16 -5 28 0" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/>
-    <text x="80" y="20" font-size="11" fill="#1D4ED8" text-anchor="middle" font-weight="800">독도</text>
-    <text x="80" y="92" font-size="8" fill="#0C4A6E" text-anchor="middle" font-weight="700">지리 정보는 변해요</text></svg>`,
-  // 지리 정보 전문가(진로)
-  expert:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#F5F3FF"/>
-    <circle cx="80" cy="36" r="14" fill="#C4B5FD"/><circle cx="80" cy="32" r="7" fill="#EDE9FE"/><path d="M62 66 q18 -16 36 0Z" fill="#A78BFA"/>
-    <rect x="104" y="26" width="22" height="18" rx="2" fill="#fff" stroke="#7C3AED" stroke-width="1.4"/><path d="M108 40 L114 32 L118 38 L122 30" fill="none" stroke="#86C28B" stroke-width="1.6"/>
-    <text x="80" y="88" font-size="9" fill="#6D28D9" text-anchor="middle" font-weight="800">지리 정보 전문가</text></svg>`,
-  // 지도(종합)
-  map:`<svg viewBox="0 0 160 96"><rect width="160" height="96" fill="#DBEAFE"/>
-    <path d="M18 20 L96 12 L128 34 L118 74 L60 84 L26 60Z" fill="#DCFCE7" stroke="#86C28B" stroke-width="2"/>
-    <circle cx="30" cy="30" r="7" fill="#fff" stroke="#64748B" stroke-width="1"/><path d="M30 25 L31 30 L30 35 L29 30Z" fill="#DC2626"/>
-    <path d="M56 54 L64 42 L72 54Z" fill="#86C28B"/><circle cx="90" cy="52" r="5" fill="#5AA9E6"/>
-    <text x="88" y="30" font-size="8" fill="#166534" text-anchor="middle" font-weight="700">우리 지역</text></svg>`
+    <circle cx="30" cy="34" r="12" fill="#fff" stroke="#64748B" stroke-width="1.4"/><path d="M30 27 L32 34 L30 41 L28 34Z" fill="#DC2626"/>
+    <path d="M56 46 L66 30 L76 46Z" fill="#86C28B"/><rect x="88" y="30" width="16" height="14" fill="#DCFCE7" stroke="#8FBF6A"/>
+    <circle cx="122" cy="34" r="5" fill="#5AA9E6"/><circle cx="134" cy="34" r="5" fill="#5AA9E6"/>
+    <text x="80" y="72" font-size="9" fill="#166534" text-anchor="middle" font-weight="800">위치·지형·면적·인구·기후</text>
+    <text x="80" y="86" font-size="8" fill="#475569" text-anchor="middle">= 지리 정보</text></svg>`
 };
 function sceneCard(key,cap){return `<div class="scene">${SVG[key]}<div class="cap">${cap}</div></div>`;}
 
-/* ===== 지역 비교표 채우기(직접 조작) ===== */
-// 지리 정보 5항목을 누르면 두 지역(예시) 값이 나란히 채워져 비교 — l10 filled 패턴 재사용.
-// ⚠️ 정직 원칙: 두 지역·값은 실제 특정 지역이 아닌 '예시 자료'(대비가 뚜렷한 가상 지역).
-const GEOINFO = [
-  {k:'loc',  icon:'📍', name:'위치',   ours:'동쪽 바닷가',      other:'가운데 내륙'},
-  {k:'land', icon:'⛰️', name:'지형',   ours:'바다·넓은 들',    other:'높은 산·강'},
-  {k:'area', icon:'🟩', name:'면적',   ours:'보통',           other:'넓음'},
-  {k:'pop',  icon:'👥', name:'인구',   ours:'많음',           other:'적음'},
-  {k:'clim', icon:'🌡️', name:'기후',   ours:'여름 덥고 비 많음', other:'겨울 춥고 눈 많음'}
+/* ===== 픽셀 지도 색칠(직접 조작) ===== */
+// 범례의 지역을 누르면 그 지역 픽셀이 색칠되고 면적(칸 수)이 표시됨 — l11 filled 패턴 재사용.
+// ⚠️ 정직 원칙: 픽셀 지도·지역은 실제가 아닌 '예시 자료'. 지도서 근거: 범례 색으로 픽셀 아트 완성→위치·면적 확인.
+const GRID_COLS=6, GRID_ROWS=5;
+const PIXELS = [
+  {k:'r1', name:'1번 지역', color:'#4F9E57', cells:[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]]}, // 6칸(넓음)
+  {k:'r2', name:'2번 지역', color:'#3E8CD4', cells:[[4,0],[5,0],[5,1]]},                    // 3칸
+  {k:'r3', name:'3번 지역', color:'#F59E0B', cells:[[0,3],[1,3],[0,4],[1,4],[2,4]]},        // 5칸
+  {k:'r4', name:'4번 지역', color:'#EC4899', cells:[[4,4],[5,4]]},                          // 2칸(좁음)
+  {k:'r5', name:'5번 지역', color:'#A78BFA', cells:[[3,2],[4,2],[3,3],[4,3]]}               // 4칸
 ];
-function climateInteractive(st){ return compareInteractive(st); } // 슬라이드 호출 호환
-function compareInteractive(st){
+function cellOwner(c,r){ for(const p of PIXELS){ if(p.cells.some(([x,y])=>x===c&&y===r)) return p; } return null; }
+function climateInteractive(st){ return pixelInteractive(st); } // 슬라이드 호출 호환
+function compareInteractive(st){ return pixelInteractive(st); } // 호환
+function pixelInteractive(st){
   const filled = st.filled || {};
   const cnt = Object.keys(filled).length;
-  const rows = GEOINFO.map(g=>{
-    const on = !!filled[g.k];
-    return `<div onclick="paintBand('${g.k}')" style="cursor:pointer;display:grid;grid-template-columns:74px 1fr 1fr;gap:6px;align-items:stretch;margin-bottom:6px">
-      <div style="display:flex;align-items:center;gap:5px;font-weight:800;color:#166534;background:#F0FDF4;border-radius:8px;padding:7px 8px;font-size:.9em">${g.icon} ${g.name}</div>
-      <div style="border-radius:8px;padding:7px 8px;font-size:.9em;background:${on?'#DBEAFE':'#F1F5F9'};color:${on?'#1D4ED8':'#94A3B8'};font-weight:${on?'700':'400'}">${on?g.ours:'눌러요'}</div>
-      <div style="border-radius:8px;padding:7px 8px;font-size:.9em;background:${on?'#DCFCE7':'#F1F5F9'};color:${on?'#166534':'#94A3B8'};font-weight:${on?'700':'400'}">${on?g.other:'눌러요'}</div>
+  const cw=44, gap=3, ox=8, oy=8;
+  let cells='';
+  for(let r=0;r<GRID_ROWS;r++) for(let c=0;c<GRID_COLS;c++){
+    const owner=cellOwner(c,r); if(!owner){ continue; }
+    const on=!!filled[owner.k];
+    cells+=`<rect x="${ox+c*(cw+gap)}" y="${oy+r*(cw+gap)}" width="${cw}" height="${cw}" rx="4" fill="${on?owner.color:'#E7ECF1'}" stroke="${on?'#fff':'#CBD5E1'}" stroke-width="2"/>`;
+  }
+  // 범례(지역 버튼)
+  const legend = PIXELS.map(p=>{
+    const on=!!filled[p.k];
+    return `<div onclick="paintBand('${p.k}')" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:9px;border:2px solid ${on?p.color:'#E2E8F0'};background:${on?'#F8FFFB':'#fff'};font-size:.86em;font-weight:700">
+      <span style="width:15px;height:15px;border-radius:4px;background:${p.color};display:inline-block"></span>
+      <span style="color:${on?p.color:'#64748B'}">${p.name}</span>
+      ${on?`<span style="margin-left:auto;color:#475569;font-weight:800">${p.cells.length}칸</span>`:'<span style="margin-left:auto;color:#94A3B8">눌러요</span>'}
     </div>`;
   }).join('');
-  const head = `<div style="display:grid;grid-template-columns:74px 1fr 1fr;gap:6px;margin-bottom:6px">
-    <div style="font-weight:800;color:#475569;font-size:.85em;display:flex;align-items:center;padding-left:8px">지리 정보</div>
-    <div style="text-align:center;font-weight:800;color:#1D4ED8;background:#DBEAFE;border-radius:8px;padding:5px;font-size:.85em">우리 지역</div>
-    <div style="text-align:center;font-weight:800;color:#166534;background:#DCFCE7;border-radius:8px;padding:5px;font-size:.85em">다른 지역</div></div>`;
-  const counter = `<div class="note" style="font-weight:700;color:#15803D">비교한 항목 ${cnt} / ${GEOINFO.length}</div>`;
-  const done = cnt>=GEOINFO.length;
+  const counter = `<div class="note" style="font-weight:700;color:#15803D">색칠한 지역 ${cnt} / ${PIXELS.length}</div>`;
+  const done = cnt>=PIXELS.length;
   const info = done
-    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">다 비교했어요! 같은 항목끼리 <b>견주어</b> 보니 두 지역의 <span class="ka-emph">지리 정보가 서로 다르네요</span>. 이렇게 우리 지역과 다른 지역을 비교하면 각 지역의 <b>특징</b>을 잘 알 수 있어요. <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
-    : `<div class="note">지리 정보 항목을 눌러 <b style="color:#1D4ED8">우리 지역</b>과 <b style="color:#166534">다른 지역</b>을 <b>비교</b>해 봐요.</div>`;
-  return `<div style="width:min(560px,98%);margin:0 auto">${head}${rows}${counter}</div>${info}`;
+    ? `<div class="ka-bub" style="text-align:center;border-left-color:#F57F17;background:#FFF8E1;max-width:600px">완성했어요! 지역마다 <b>칸 수(면적)</b>가 달라요 \u2014 칸이 <b>많을수록 면적이 넓어요</b>. 색칠한 자리를 보면 각 지역의 <span class="ka-emph">위치</span>도 알 수 있어요. (1번 6칸이 가장 넓고, 4번 2칸이 가장 좁아요.) <span style="color:#94A3B8;font-size:.9em">(예시 자료)</span></div>`
+    : `<div class="note">아래 <b style="color:#15803D">범례</b>에서 지역을 눌러 픽셀 지도를 색칠해 봐요.</div>`;
+  const gw = ox*2 + GRID_COLS*(cw+gap);
+  const gh = oy*2 + GRID_ROWS*(cw+gap);
+  return `<div class="contour-wrap"><svg viewBox="0 0 ${gw} ${gh}" style="width:min(300px,88%);height:auto">
+    <rect width="${gw}" height="${gh}" fill="#FFFDF5" rx="10"/>${cells}
+  </svg>${counter}</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:420px;margin:8px auto 0">${legend}</div>${info}`;
 }
 
 /* ===== 차시 데이터 ===== */
 const POINTS_BASIC=10, POINTS_APPLY=15;
-const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 4차시";
+const META = "1단원 지도로 만나는 우리 지역 · ② 우리 지역의 위치와 특성 · 5차시";
 
-// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [1,0,2,3,2,0,1,3]
+// 문제 정의(확인 4 + 적용 4) — 정답 위치 다양화 [2,0,3,1,3,0,2,1]
 const Q = [
   // 3단계 확인 (+10)
-  {stem:"위치·지형·면적·인구·기후처럼 <b>어떤 지역에 관한 여러 정보</b>를 무엇이라고 할까요?",
-   opts:["날씨 정보","지리 정보","교통 정보","가격 정보"], correct:1, pts:POINTS_BASIC,
-   reason:"위치·지형·면적·인구·기후처럼 지역에 관한 정보를 지리 정보라고 해요.",
-   h1:"\u2018지리\u2019는 땅과 지역에 관한 것이에요.",
-   h2:"오늘 두 지역을 비교할 때 사용한 위치·지형·면적·인구·기후가 모두 지리 정보예요."},
-  {stem:"우리 지역과 다른 지역을 비교할 때 <b>바르게</b> 하는 방법은 무엇일까요?",
-   opts:["같은 항목끼리 견주어 본다","서로 다른 항목을 아무렇게나 비교한다","한 지역만 살펴본다","이름만 비교한다"], correct:0, pts:POINTS_BASIC,
-   reason:"위치는 위치끼리, 인구는 인구끼리 \u2014 같은 항목끼리 견주어야 바르게 비교할 수 있어요.",
-   h1:"인구를 지형과 비교하면 알맞을까요?",
-   h2:"같은 종류의 정보끼리 나란히 놓고 견주어야 해요."},
-  {stem:"우리 지역의 지리 정보를 <b>조사하는 방법</b>으로 알맞지 <u>않은</u> 것은?",
-   opts:["디지털 영상 지도로 위치·지형 살펴보기","통계 자료로 인구·면적 찾기","기상청에서 기온·강수량 찾기","친구 얼굴을 살펴보기"], correct:3, pts:POINTS_BASIC,
-   reason:"위치·지형은 영상 지도, 인구·면적은 통계, 기온·강수량은 기상청에서 조사해요. 친구 얼굴은 지리 정보가 아니에요.",
-   h1:"지리 정보를 어디서 찾는지 떠올려 봐요.",
-   h2:"영상 지도·통계·기상청은 맞고, 나머지 하나는 지역 정보와 관계없어요."},
-  {stem:"<b>[사회톡톡]</b> \u2018독도는 우리 땅\u2019 노랫말이 세월이 흐르며 바뀐 까닭은 무엇일까요?", scene:"dokdo",
-   opts:["노래가 유행이 지나서","가수가 바뀌어서","글자 수를 줄이려고","독도의 지리 정보가 변했기 때문에"], correct:3, pts:POINTS_BASIC,
-   reason:"독도의 우편번호·주소 같은 지리 정보가 바뀌면서 노랫말도 바뀌었어요. 지리 정보는 시간이 지나며 변할 수 있어요.",
-   h1:"노랫말 속에는 독도의 위치·주소 같은 정보가 담겨 있어요.",
-   h2:"지리 정보는 \u2018변하지 않는 것\u2019이 아니라 시간에 따라 바뀔 수 있어요."},
+  {stem:"작은 <b>사각형(픽셀)</b>을 여러 개 모아 그림이나 지도를 나타내는 것을 무엇이라고 할까요?",
+   opts:["일기","편지","픽셀 아트","노래"], correct:2, pts:POINTS_BASIC,
+   reason:"작은 사각형(픽셀)을 모아 나타낸 그림을 픽셀 아트라고 해요.",
+   h1:"오늘 색칠해서 지도를 완성한 방법이에요.",
+   h2:"작은 네모 칸을 색칠해 모으는 방법이에요."},
+  {stem:"픽셀 지도에서 <b>칸을 색칠</b>할 때, 무엇에 맞추어 색을 정할까요?",
+   opts:["범례(숫자별 색)","내 마음대로","날씨에 따라","글자 수에 따라"], correct:0, pts:POINTS_BASIC,
+   reason:"범례에서 지역(숫자)마다 색을 정한 뒤, 범례에 맞추어 픽셀을 색칠해요.",
+   h1:"지도에서 색·기호의 뜻을 알려 주는 것을 무엇이라 했나요?(l03)",
+   h2:"숫자별로 어떤 색을 칠할지 정해 둔 \u2018범례\u2019에 맞춰요."},
+  {stem:"픽셀 지도에서 한 지역의 <b>칸 수가 많을수록</b> 무엇을 뜻할까요?",
+   opts:["인구가 적다","날씨가 춥다","위치가 북쪽이다","면적이 넓다"], correct:3, pts:POINTS_BASIC,
+   reason:"칸(픽셀) 수가 많을수록 그 지역의 면적이 넓다는 뜻이에요.",
+   h1:"칸 하나하나가 넓이를 나타내요.",
+   h2:"칸이 많다 = 차지하는 넓이가 크다 = 면적이 넓다예요."},
+  {stem:"픽셀 아트로 완성한 지도를 보면 무엇을 확인할 수 있을까요?",
+   opts:["친구의 이름","지역별 위치와 면적","오늘의 날씨","시간"], correct:1, pts:POINTS_BASIC,
+   reason:"색칠한 자리로 지역의 위치를, 칸 수로 면적을 확인하고 비교할 수 있어요.",
+   h1:"색칠한 곳이 어디인지, 칸이 몇 개인지 보면 알 수 있어요.",
+   h2:"위치(어디)와 면적(넓이)을 함께 확인할 수 있어요."},
   // 4단계 적용 (+15)
-  {stem:"두 지역의 <b>지형</b>을 비교했더니 한 곳은 \u2018바다·들\u2019, 다른 곳은 \u2018높은 산\u2019이었어요. 이를 통해 알 수 있는 것은?", scene:"compare",
-   opts:["두 지역의 인구가 같다","두 지역의 지형이 서로 다르다","두 지역이 똑같은 곳이다","지형은 비교할 수 없다"], correct:1, pts:POINTS_APPLY,
-   reason:"바다·들이 있는 곳과 높은 산이 있는 곳은 지형이 서로 달라요. 비교로 지역의 특징을 알 수 있어요.",
-   h1:"바닷가 지역과 산이 많은 지역, 땅의 모습이 같을까요?",
-   h2:"서로 다른 지형을 가졌다는 뜻이에요."},
-  {stem:"영상 지도·통계·기상청 자료를 모아 지역의 지리 정보를 조사하고 다루는 일을 하는 <b>직업</b>은?", scene:"expert",
-   opts:["지리 정보 전문가","요리사","운동선수","성악가"], correct:0, pts:POINTS_APPLY,
-   reason:"지리 정보 전문가는 여러 지리 정보를 모으고 분석해 지도·자료로 만드는 일을 해요.",
-   h1:"오늘 배운 지리 정보를 다루는 일과 관련된 직업이에요.",
-   h2:"\u2018지리 정보\u2019를 전문으로 다루는 사람이에요."},
-  {stem:"우리 지역과 다른 지역의 지리 정보를 비교하면 <b>좋은 점</b>은 무엇일까요?",
-   opts:["모든 지역이 같아진다","각 지역의 특징과 다른 점을 잘 알 수 있다","비교는 아무 도움이 안 된다","한 지역만 좋아진다"], correct:1, pts:POINTS_APPLY,
-   reason:"지역을 비교하면 우리 지역과 다른 지역이 어떻게 다른지, 각 지역의 특징이 무엇인지 잘 알 수 있어요.",
-   h1:"비교는 \u2018다른 점\u2019과 \u2018같은 점\u2019을 드러내 줘요.",
-   h2:"각 지역의 특징을 더 뚜렷이 이해하는 데 도움이 돼요."},
-  {stem:"지금까지 배운 <b>지리 정보 5가지</b>를 모두 바르게 묶은 것은?",
-   opts:["색·냄새·소리·맛·무게","위치·지형·면적·인구·기후","봄·여름·가을·겨울·눈","동·서·남·북·중앙"], correct:1, pts:POINTS_APPLY,
-   reason:"우리가 배운 지리 정보는 위치·지형·면적·인구·기후예요. 이 정보들로 지역을 이해하고 비교해요.",
-   h1:"l08~l11에서 하나씩 배운 것들을 떠올려 봐요.",
-   h2:"어디에(위치)·어떤 땅(지형)·얼마나 넓고(면적)·몇 명(인구)·어떤 날씨(기후)예요."}
+  {stem:"픽셀 지도에서 <b>1번 지역은 6칸</b>, <b>4번 지역은 2칸</b>이에요. 두 지역에 대해 알맞은 것은?", scene:"area",
+   opts:["두 지역 면적이 같다","1번이 4번보다 면적이 넓다","4번이 1번보다 면적이 넓다","면적은 알 수 없다"], correct:1, pts:POINTS_APPLY,
+   reason:"6칸인 1번이 2칸인 4번보다 칸이 많으므로 면적이 더 넓어요.",
+   h1:"칸 수가 많을수록 면적이 넓어요.",
+   h2:"6칸 > 2칸이니 1번 지역이 더 넓어요."},
+  {stem:"픽셀 지도에서 지역이 <b>색칠된 자리</b>를 보면 무엇을 알 수 있을까요?", scene:"korea",
+   opts:["그 지역의 위치","그 지역의 이름 뜻","오늘 날짜","좋아하는 색"], correct:0, pts:POINTS_APPLY,
+   reason:"색칠된 칸이 어느 쪽에 있는지 보면 그 지역의 위치를 알 수 있어요.",
+   h1:"지도에서 \u2018어디에 있는지\u2019를 무엇이라 했나요?",
+   h2:"색칠한 칸의 자리 = 그 지역의 위치예요."},
+  {stem:"픽셀 아트를 친구들과 함께 하며 <b>기를 수 있는 힘</b>으로 알맞은 것은?", scene:"done",
+   opts:["달리기 실력","서로 이야기하고 협력하는 힘","글씨를 예쁘게 쓰는 힘","노래 실력"], correct:1, pts:POINTS_APPLY,
+   reason:"완성한 픽셀 아트를 보며 지역을 비교하고 이야기하는 과정에서 의사소통·협업 능력을 기를 수 있어요.",
+   h1:"친구들과 \u2018함께\u2019 하면 무엇이 늘까요?",
+   h2:"서로 이야기하고 힘을 모으는 협력하는 힘이에요."},
+  {stem:"이번 주제에서 배운 <b>지리 정보</b>를 픽셀 아트로 확인했어요. 지리 정보가 <u>아닌</u> 것은?",
+   opts:["위치","면적","좋아하는 음식","인구"], correct:2, pts:POINTS_APPLY,
+   reason:"위치·지형·면적·인구·기후가 지리 정보예요. 좋아하는 음식은 지리 정보가 아니에요.",
+   h1:"지역에 관한 정보만 지리 정보예요.",
+   h2:"음식 취향은 지역 정보가 아니라 개인의 취향이에요."}
 ];
 
 /* ===== 슬라이드 구성 (18) ===== */
@@ -315,53 +318,53 @@ const slides = [];
 // 1 표지
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">우리 지역과 다른 지역을 비교해 볼까요?</h2>
-  <div class="ka-bub">지금까지 우리 지역의 <b>위치·지형·면적·인구·기후</b>를 알아봤어요. 이런 정보를 <b>다른 지역</b>과 견주어 보면 무엇을 알 수 있을까요?</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('compare','우리 지역 ↔ 다른 지역')}</div>
-    <div class="note">오늘은 두 지역의 <b style="color:#15803D">지리 정보</b>를 <b>비교</b>해 봐요.</div>
+  <h2 class="ka-t">[생각을 펼쳐요] 픽셀 아트로 확인해요</h2>
+  <div class="ka-bub">작은 사각형을 색칠해 지도를 완성해 볼까요? 색칠하다 보면 지역의 <b>위치</b>와 <b>면적</b>을 재미있게 확인할 수 있어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pixel','작은 사각형 = 픽셀')}</div>
+    <div class="note">오늘은 <b style="color:#15803D">픽셀 아트</b>로 지역별 위치와 면적을 확인해요.</div>
   </div>`});
 // 2 발문(관찰)
 slides.push({stage:1,badge:"생각 열기",render:()=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">위치·지형·면적·인구·기후… 이걸 뭐라고 부를까요? \uD83E\uDD14</h2>
-  <div class="ka-bub">우리가 배운 위치·지형·면적·인구·기후는 모두 우리 지역에 관한 정보예요. 이런 정보를 한데 묶어 부르는 말이 있어요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('geoinfo','지역에 관한 여러 정보')}</div>
-  <div class="note">이런 정보들을 통틀어 무엇이라고 할까요?</div></div>`});
+  <h2 class="ka-t">작은 네모를 모으면 무엇이 될까요? \uD83E\uDD14</h2>
+  <div class="ka-bub">작은 사각형 하나하나를 <b>픽셀</b>이라고 해요. 이 픽셀을 색칠해 모으면 그림이나 지도가 돼요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pixel','픽셀을 모아 만든 그림')}</div>
+  <div class="note">이렇게 픽셀로 나타낸 그림을 무엇이라고 할까요?</div></div>`});
 // 3 발문 답
 slides.push({stage:1,badge:"생각 열기",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg">${star()} 들어가기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지역에 관한 여러 정보 =?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('geoinfo','지리 정보')}</div>
-  ${st.revealed?`<div class="answer-box">위치·지형·면적·인구·기후처럼 지역에 관한 정보를 <span class="ka-emph">지리 정보</span>라고 해요. 이 지리 정보를 <b>다른 지역과 비교</b>하면 우리 지역의 특징을 더 잘 알 수 있어요.</div>`
+  <h2 class="ka-t">픽셀을 모으면 =?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('pixel','픽셀 아트')}</div>
+  ${st.revealed?`<div class="answer-box">작은 사각형(픽셀)을 모아 나타낸 그림을 <span class="ka-emph">픽셀 아트</span>라고 해요. 픽셀 지도를 색칠하면 지역의 <b>위치</b>와 <b>면적</b>을 눈으로 확인할 수 있어요.</div>`
     :`<button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 4 살펴보기: 조사 방법
+// 4 살펴보기: 범례에 맞춰 색칠
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">지리 정보는 어떻게 조사할까요?</h2>
-  <div class="ka-bub"><b>위치·지형</b>은 디지털 영상 지도로, <b>인구·면적</b>은 통계 자료로, <b>기온·강수량</b>은 기상청 자료로 조사해요. 역할을 나누어 조사하면 더 쉬워요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('research','영상 지도·통계·기상청')}</div>
-  <div class="note">알맞은 곳에서 지리 정보를 <b style="color:#15803D">조사</b>해 비교표를 채워요.</div></div>`});
-// 5 살펴보기: 지역 비교표 채우기(직접 조작)
+  <h2 class="ka-t">범례에 맞춰 색칠해요</h2>
+  <div class="ka-bub">픽셀 지도를 색칠할 때는 <b>범례</b>를 봐요. 지역(숫자)마다 색을 정한 뒤, 범례에 맞추어 칸을 칠하면 지역이 구분돼요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('legend','숫자별 색 = 범례')}</div>
+  <div class="note">앞에서 배운 <b style="color:#9A3412">범례</b>(l03)를 여기서도 똑같이 활용해요.</div></div>`});
+// 5 살펴보기: 픽셀 지도 색칠(직접 조작)
 slides.push({stage:2,badge:"개념",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">두 지역을 직접 비교해 봐요</h2>
-  <div class="ka-grp">${compareInteractive(st)}</div>`});
-// 6 살펴보기: 사회톡톡 독도(지리 정보는 변한다)
+  <h2 class="ka-t">픽셀 지도를 직접 색칠해 봐요</h2>
+  <div class="ka-grp">${pixelInteractive(st)}</div>`});
+// 6 살펴보기: 면적 비교(발문)
 slides.push({stage:2,badge:"개념",reveal:true,render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">[사회톡톡] 지리 정보는 변할까요?</h2>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('dokdo','독도')}</div>
-  ${st.revealed?`<div class="answer-box"><b>\u2018독도는 우리 땅\u2019</b> 노랫말은 세월이 흐르며 조금씩 바뀌었어요. 독도의 <b>주소·우편번호</b> 같은 지리 정보가 바뀌었기 때문이에요. 이처럼 지리 정보는 <b>고정된 것이 아니라 변할 수 있어요</b>.</div>`
-    :`<div class="note">노랫말 속 독도의 정보가 왜 바뀌었을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
+  <h2 class="ka-t">칸 수가 다르면 무엇이 다를까요?</h2>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('area','칸이 많은 지역 / 적은 지역')}</div>
+  ${st.revealed?`<div class="answer-box">칸(픽셀)이 <b>많은</b> 지역은 면적이 <b>넓고</b>, <b>적은</b> 지역은 면적이 <b>좁아요</b>. 픽셀 지도의 칸 수를 세어 보면 지역별 <b>면적</b>을 쉽게 비교할 수 있어요.</div>`
+    :`<div class="note">칸이 6개인 지역과 2개인 지역, 어느 쪽이 더 넓을까요?</div><button class="reveal-btn" onclick="reveal()">답 보기</button>`}
   </div>`});
-// 7 살펴보기: 진로 지리 정보 전문가 + 다음 연결
+// 7 살펴보기: 지리정보 종합 + 다음 연결
 slides.push({stage:2,badge:"개념",render:()=>`
   <div class="ka-tags"><div class="ka-bg s2">${star()} 살펴보기</div><div class="ka-meta">${META}</div></div>
-  <h2 class="ka-t">[별별 직업] 지리 정보 전문가</h2>
-  <div class="ka-bub"><b>지리 정보 전문가</b>는 영상 지도·통계·기상 자료처럼 여러 지리 정보를 모으고 분석해 <b>지도와 자료</b>로 만드는 일을 해요. 우리가 오늘 한 조사·비교가 바로 그 일의 첫걸음이에요.</div>
-  <div class="ka-grp"><div class="scene-row">${sceneCard('expert','지리 정보 전문가')}</div>
-  <div class="note">다음 시간에는 <b style="color:#15803D">픽셀 아트</b>로 지역을 재미있게 확인하고 1단원을 정리해요.</div></div>`});
+  <h2 class="ka-t">지금까지 배운 것을 모아 보면</h2>
+  <div class="ka-bub">이번 주제에서 <b>위치·지형·면적·인구·기후</b>를 배웠어요. 픽셀 아트로 위치와 면적을 확인하며, 우리 지역의 <b>지리 정보</b>를 한 번에 정리했어요.</div>
+  <div class="ka-grp"><div class="scene-row">${sceneCard('geoinfo','지리 정보 = 위치·지형·면적·인구·기후')}</div>
+  <div class="note">다음 시간에는 <b style="color:#15803D">1단원 전체</b>를 재미있게 정리해요.</div></div>`});
 // 8~15 문제 (확인 4 + 적용 4)
 Q.forEach((q,i)=>{
   const apply = i>=4;
@@ -372,18 +375,18 @@ slides.push({stage:5,badge:"정리",render:()=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">오늘 배운 것</h2>
   <div class="ka-grp"><div class="sum-list">
-    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">지리 정보</b>는 위치·지형·면적·인구·기후처럼 지역에 관한 여러 정보예요.</div></div>
-    <div class="sum-item"><span class="n">2</span><div>지리 정보는 <b>영상 지도·통계·기상청</b>에서 조사하고, <b>같은 항목끼리</b> 견주어 비교해요.</div></div>
-    <div class="sum-item"><span class="n">3</span><div>지역을 비교하면 각 지역의 <b>특징</b>을 잘 알 수 있어요. 지리 정보는 <b>시간에 따라 변할 수</b> 있어요(독도).</div></div>
+    <div class="sum-item"><span class="n">1</span><div><b style="color:#15803D">픽셀 아트</b>는 작은 사각형(픽셀)을 모아 나타낸 그림이에요. <b>범례</b>에 맞춰 색칠해요.</div></div>
+    <div class="sum-item"><span class="n">2</span><div>픽셀 지도에서 <b>칸 수가 많을수록 면적이 넓어요</b>. 색칠한 자리로 <b>위치</b>도 알 수 있어요.</div></div>
+    <div class="sum-item"><span class="n">3</span><div>픽셀 아트로 지역별 <b>위치·면적</b>을 확인하며, 이번 주제의 <b>지리 정보</b>를 정리했어요.</div></div>
   </div></div>`});
 // 17 정리: 자기 평가
 slides.push({stage:5,badge:"정리",render:(st)=>`
   <div class="ka-tags"><div class="ka-bg s5">${star()} 정리</div><div class="ka-meta">${META}</div></div>
   <h2 class="ka-t">스스로 돌아봐요</h2>
   <div class="ka-grp"><div class="sum-list">
-    ${selfCheck(0,"지리 정보가 무엇인지 말할 수 있어요",st)}
-    ${selfCheck(1,"두 지역의 지리 정보를 비교할 수 있어요",st)}
-    ${selfCheck(2,"지역을 비교하면 좋은 점을 알아요",st)}
+    ${selfCheck(0,"픽셀 아트가 무엇인지 말할 수 있어요",st)}
+    ${selfCheck(1,"칸 수로 지역별 면적을 비교할 수 있어요",st)}
+    ${selfCheck(2,"픽셀 지도로 위치와 면적을 확인할 수 있어요",st)}
   </div><div class="note">잘 떠오르지 않는 곳은 다시 살펴봐도 좋아요.</div></div>`});
 // 18 종료
 slides.push({stage:5,badge:"정리",end:true,render:()=>{
@@ -393,7 +396,7 @@ slides.push({stage:5,badge:"정리",end:true,render:()=>{
   <div class="ka-grp">
     <div class="end-score">\u2B50 ${s} <span style="font-size:.5em;color:#94A3B8">/ 100</span></div>
     <div class="end-msg">${msg}</div>
-    <div class="note">우리 지역과 다른 지역을 비교해 봤어요. 다음 시간엔 \u2018픽셀 아트\u2019로 1단원을 정리해요.</div>
+    <div class="note">픽셀 아트로 지역을 확인했어요. 다음 시간엔 \u20181단원 전체\u2019를 재미있게 정리해요.</div>
   </div>`;
 }});
 
@@ -426,7 +429,7 @@ function selfCheck(k,label,st){
 }
 
 /* ===== 상태·엔진 ===== */
-const LS_KEY = "kedu_progress_g4_social_u1_l11";
+const LS_KEY = "kedu_progress_g4_social_u1_l12";
 const state = {
   idx:0, score:0,
   q: Q.map(()=>({done:false,hint:0,wrongPick:null,wrongCount:0})),
@@ -466,17 +469,17 @@ function render(){
 function next(){ if(state.idx<slides.length-1){ state.idx++; render(); } }
 function prev(){ if(state.idx>0){ state.idx--; render(); } }
 function reveal(){ const s=slides[state.idx]; s._revealed=true; state.revealed=true; main.innerHTML=s.render(state); }
-/* 지역 비교표 채우기 + 효과음(브라우저에서만, jsdom 안전 가드) */
+/* 픽셀 지도 색칠 + 효과음(브라우저에서만, jsdom 안전 가드) */
 let _actx=null;
 function _ac(){ try{ if(typeof window==='undefined') return null; const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; if(!_actx) _actx=new C(); return _actx; }catch(e){ return null; } }
 function playBlip(){ const a=_ac(); if(!a) return; try{ const o=a.createOscillator(),g=a.createGain(); o.type='sine'; o.frequency.value=680; g.gain.value=.06; o.connect(g); g.connect(a.destination); const t=a.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(.0001,t+.18); o.stop(t+.2);}catch(e){} }
 function playChime(){ const a=_ac(); if(!a) return; try{ [523,659,784].forEach((f,i)=>{ const o=a.createOscillator(),g=a.createGain(); o.type='triangle'; o.frequency.value=f; o.connect(g); g.connect(a.destination); const t=a.currentTime+i*.12; o.start(t); g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.stop(t+.25);});}catch(e){} }
 function paintBand(k){
-  if(!GEOINFO.some(b=>b.k===k)) return;
+  if(!PIXELS.some(b=>b.k===k)) return;
   if(!state.filled) state.filled={};
   const wasNew = !state.filled[k];
   state.filled[k]=true; state._lastBand=k;
-  const total=GEOINFO.length, cnt=Object.keys(state.filled).length;
+  const total=PIXELS.length, cnt=Object.keys(state.filled).length;
   if(wasNew){ (cnt>=total) ? playChime() : playBlip(); }
   main.innerHTML=slides[state.idx].render(state);
 }
@@ -516,7 +519,7 @@ function showEndButtons(){
   saveProgress();
 }
 function removeEndButtons(){ const e=document.getElementById('end3'); if(e) e.remove(); }
-function goNextLesson(e){ location.href='g4_social_u1_l12_픽셀아트.html'; }
+function goNextLesson(e){ location.href='../index.html'; }
 function goHub(){ location.href='../index.html'; }
 
 function saveProgress(){
