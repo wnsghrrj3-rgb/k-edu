@@ -238,7 +238,10 @@ function addScore(pts){const bonus=combo>=3?Math.floor(pts*0.5):0;score+=pts+bon
 function answer(btn,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+currentSlide,'✅ 정답! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+currentSlide,'글의 논지 방향을 다시 확인! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 function answerOX(btn,si,idx){if(answered[currentSlide])return;const slide=document.querySelectorAll('.slide')[currentSlide];const correct=parseInt(slide.dataset.correct),pts=parseInt(slide.dataset.score)||50;playClick();if(idx===correct){btn.classList.add('correct');playCorrect();addScore(pts);setFB('fb'+si,'✅ enhance는 보통 긍정적 의미! +'+pts+'점',true);answered[currentSlide]=true;}else{btn.classList.add('wrong');playWrong();combo=0;setFB('fb'+si,'enhance의 뉘앙스를 생각해보세요! 💪',false);setTimeout(()=>btn.classList.remove('wrong'),500)}}
 function restart(){score=0;combo=0;answered={};document.querySelectorAll('.choice-btn').forEach(b=>b.className='choice-btn');document.querySelectorAll('.ox-btn').forEach(b=>b.className='ox-btn');document.querySelectorAll('.feedback').forEach(f=>{f.textContent='';f.className='feedback'});document.querySelectorAll('.slide').forEach(s=>s.classList.remove('active','out'));currentSlide=0;document.querySelectorAll('.slide')[0].classList.add('active');updateUI()}
-:nextSlide()}});updateUI();
+updateUI();
+
+/* swipe (재주입, 대점검 2026-07-11) */
+;(function(){if(typeof prevSlide!=='function'||typeof nextSlide!=='function')return;var _tx=0;document.addEventListener('touchstart',function(e){_tx=e.touches[0].clientX;},{passive:true});document.addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-_tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});})();
 </script>
 </body>
 </html>

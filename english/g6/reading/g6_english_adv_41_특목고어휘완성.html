@@ -198,7 +198,6 @@ let soundOn=true,audioCtx;function getAudioCtx(){if(!audioCtx)audioCtx=new(windo
 const slides=document.querySelectorAll('.slide');let cur=0,score=0,answered={};
 function showSlide(n){slides.forEach((s,i)=>s.classList.toggle('active',i===n));cur=n;document.getElementById('prevBtn').disabled=n===0;document.getElementById('nextBtn').textContent=n===slides.length-1?'완료':'다음 →';document.getElementById('nextBtn').disabled=n===slides.length-1;document.getElementById('progressFill').style.width=((n+1)/slides.length*100)+'%';document.getElementById('progressText').textContent=(n+1)+' / '+slides.length}
 function nextSlide(){if(cur<slides.length-1){showSlide(cur+1);if(slides[cur+1].dataset.type==='result')showResult()}}function prevSlide(){if(cur>0)showSlide(cur-1)}
-else if(d<-50)nextSlide()});
 function addScore(pts,qId){if(answered[qId])return false;answered[qId]=true;score+=pts;document.getElementById('scoreSpan').textContent=score;return true}
 function showFeedback(id,ok,msg){const fb=document.getElementById(id);fb.className='feedback show '+(ok?'correct-fb':'wrong-fb');fb.textContent=msg}
 
@@ -235,6 +234,9 @@ function checkQ7(){if(answered['q7'])return;const rows=document.querySelectorAll
 
 function showResult(){const max=700,pct=Math.round(score/max*100);document.getElementById('finalScore').textContent=score+'점';let g='',d='';if(pct>=90){g='🏆 Vocabulary Master!';d='어원 학습법을 완벽히 익혔습니다. 이제 모르는 단어도 추론할 수 있어요!'}else if(pct>=70){g='👏 Word Detective!';d='어근·접두사를 잘 활용하고 있습니다!'}else if(pct>=50){g='💪 Growing Vocabulary!';d='핵심 어근과 접두사를 다시 복습하세요.'}else{g='📚 Keep Learning!';d='개념 슬라이드를 다시 읽고 어근 카드를 만들어보세요.'}document.getElementById('finalGrade').textContent=g;document.getElementById('finalDetail').textContent=d+' ('+pct+'%)'}
 showSlide(0);
+
+/* swipe (재주입, 대점검 2026-07-11) */
+;(function(){if(typeof prevSlide!=='function'||typeof nextSlide!=='function')return;var _tx=0;document.addEventListener('touchstart',function(e){_tx=e.touches[0].clientX;},{passive:true});document.addEventListener('touchend',function(e){var d=e.changedTouches[0].clientX-_tx;if(d>50)prevSlide();else if(d<-50)nextSlide();});})();
 </script>
 </body>
 </html>
