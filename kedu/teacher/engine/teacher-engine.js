@@ -539,6 +539,8 @@
         return (d.title ? `<h2>${md(d.title)}</h2>` : '') + `<div class="klab-mount" data-tool="${d.tool || ''}" data-config="${encodeURIComponent(JSON.stringify(d.config || {}))}" style="width:100%;"></div>`;
       case 'quiz_gen':
         return (d.title ? `<h2>${md(d.title)}</h2>` : '') + `<div class="kquiz-mount" data-lesson="${d.lesson || ''}" data-config="${encodeURIComponent(JSON.stringify({ n: d.count || 5, difficulty: d.difficulty || [1, 2] }))}" style="width:100%;"></div>`;
+      case 'activity':
+        return `<div class="kact-mount" data-config="${encodeURIComponent(JSON.stringify(d || {}))}" style="width:100%;"></div>`;
       case 'card_arrange':
         return renderCardArrange(d, slide.id);
       case 'offline_activity':
@@ -1118,6 +1120,14 @@
         } else { _mountQuiz(); }
       } else { _mountQuiz(); }
     }
+    const _ka = document.querySelector('#slide-content .kact-mount');
+    if (_ka && window.KActivity) {
+      try {
+        const _kac = JSON.parse(decodeURIComponent(_ka.dataset.config || '%7B%7D'));
+        const _kaCl = window.KActivity.mount(_ka, _kac);
+        if (_kaCl) renderCurrentSlide._cleanup = _kaCl;
+      } catch (e) { _ka.textContent = '활동 로드 오류'; }
+    }
     const visibleSlides = slides.filter(s => s.included);
     const visIdx = visibleSlides.indexOf(cur);
     document.getElementById('cur-pos').textContent = visIdx + 1;
@@ -1250,6 +1260,17 @@
 
     updateSidebarHeader(currentLessonMeta);
 
+    if (window.KActivity) {
+      const _m = (SUBJECT_INFO.slug || '').match(/^g(\d)_(\w+)$/);
+      const _lk = key.match(/^u(\d+)_(.+)$/);
+      window.KActivity.setContext({
+        grade: _m ? parseInt(_m[1], 10) : null,
+        subject: _m ? _m[2] : null,
+        unit: _lk ? parseInt(_lk[1], 10) : null,
+        lessons: _lk ? _lk[2].split('_').map(x => 'l' + x.replace(/^l/, '')) : []
+      });
+    }
+
     document.getElementById('home-view').classList.remove('active');
     document.getElementById('show-view').classList.add('active');
     if (!inShow) { try { history.pushState({ kt: 'lesson' }, ''); } catch (e) {} }
@@ -1378,6 +1399,17 @@
         openBlockEditor(curIdx); // 추가 직후 바로 내용 채우기
       });
     });
+
+    // 활동 삽입 훅 (§6-3 카탈로그 탭 → activity-host.js가 호출)
+    global.KEDU_INSERT_ACTIVITY = (data) => {
+      slides.splice(curIdx + 1, 0, {
+        stage: '응용문제', block: 'activity', data,
+        id: 'u' + Date.now(), included: true,
+        attached_extras: [], suggested_extras: [], user_added: true
+      });
+      curIdx++;
+      rebuild();
+    };
 
     // 사용자 추가 슬라이드 삭제
     document.getElementById('delete-slide-btn').addEventListener('click', () => {

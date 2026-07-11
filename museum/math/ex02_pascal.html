@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>숨은 그림 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:6vh; gap:22px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(20px,3vw,30px); letter-spacing:.10em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--ink-faint); letter-spacing:.10em; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(360px,70vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="pascal-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumPascal=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  function parity(n,k){                                     // 뤼카 정리: binom(n,k) 홀수 ⇔ (n&k)===k
+    if(k<0||k>n) return 0;
+    return ((n & k)===k) ? 1 : 0;
+  }
+  function rowParity(n){
+    var out=[];
+    for(var k=0;k<=n;k++) out.push(parity(n,k));
+    return out;
+  }
+  function popcount(n){ var c=0; while(n){ c+=n&1; n>>>=1; } return c; }
+  function oddCount(n){ return 1<<popcount(n); }            // 행 n의 홀수 개수 = 2^popcount(n)
+  function oddTotal(rows){                                  // 행 0..rows-1 홀수 총수 — oddTotal(2^m)=3^m
+    var t=0;
+    for(var n=0;n<rows;n++) t+=oddCount(n);
+    return t;
+  }
+  function binomSmall(n,k){                                 // n<p≤11 소이항계수(정수 안전)
+    if(k<0||k>n) return 0;
+    var r=1;
+    for(var i=0;i<k;i++) r=r*(n-i)/(i+1);
+    return Math.round(r);
+  }
+  function modP(n,k,p){                                     // 뤼카 일반형(p 소수)
+    if(k<0||k>n) return 0;
+    var r=1;
+    while(n>0||k>0){
+      var ni=n%p, ki=k%p;
+      if(ki>ni) return 0;
+      r=(r*binomSmall(ni,ki))%p;
+      n=Math.floor(n/p); k=Math.floor(k/p);
+    }
+    return r;
+  }
+  return { parity:parity, rowParity:rowParity, popcount:popcount,
+           oddCount:oddCount, oddTotal:oddTotal, modP:modP };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">벽돌 하나에 수가 하나 &mdash; 위 두 벽돌을 더한 수입니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="16" max="256" value="128" step="16" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumPascal;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;                       // 1600 × 900 논리좌표
+
+  // ── 색(순백 금지·악센트=분필 상아 1색, 놋쇠는 크롬만) ────────────
+  var C_INK='#f2ead8', C_INK_D='#a89e88', C_INK_F='#5f584a',
+      C_BRICK='#151422', C_EDGE='#8a733f';
+
+  // ── 상수 ─────────────────────────────────────────────────────────
+  var ROWS_PAUSE=8, ROWS_MAX=128, PAINT_NEED=6;
+  var CW=44, CH=30;                                   // 월드 셀 크기
+  var TRI_TOP=120;                                    // 월드 삼각형 상단 y
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'grow1',            // grow1→paint→wave→surge→hold→pull→betrayed→after
+    rows:0,                   // 도착한 줄 수
+    growT:0, growIv:0.9,
+    painted:{},               // "n_k" → true (분필 먹은 벽돌)
+    paintedCount:0,
+    breathing:false,          // 6칠 이후 남은 홀수 숨쉼
+    wave:null,                // {cells:[{n,k,at}], t}
+    holdT:0,
+    pull:null,                // {t, dur, s0,s1, f0,f1}
+    betrayed:false,
+    view:{ rows:ROWS_MAX },   // 여운 슬라이더 뷰
+    time:0
+  };
+  var cam = { s:1.55, fy:TRI_TOP + ROWS_PAUSE*CH*0.5, ax:W*0.5, ay:H*0.47 };
+  var nums = [[1]];                                   // 표시용 파스칼 수(행 0..11만 사용)
+  for(var r=1;r<=11;r++){
+    var prev=nums[r-1], row=[1];
+    for(var c=1;c<r;c++) row.push(prev[c-1]+prev[c]);
+    row.push(1); nums.push(row);
+  }
+
+  // ── 기하 ─────────────────────────────────────────────────────────
+  function cellX(n,k){ return W*0.5 + (k - n*0.5)*CW; }
+  function cellY(n){ return TRI_TOP + n*CH; }
+  function toScreen(wx,wy){ return { x:(wx - W*0.5)*cam.s + cam.ax, y:(wy - cam.fy)*cam.s + cam.ay }; }
+  function toWorld(sx,sy){ return { x:(sx - cam.ax)/cam.s + W*0.5, y:(sy - cam.ay)/cam.s + cam.fy }; }
+  function key(n,k){ return n+'_'+k; }
+  function isPainted(n,k){ return !!S.painted[key(n,k)]; }
+  function paint(n,k){
+    var kk=key(n,k);
+    if(S.painted[kk]) return false;
+    S.painted[kk]=true; S.paintedCount++;
+    return true;
+  }
+
+  // ── 분필 결 스프라이트(1회 생성 재사용) ──────────────────────────
+  var chalkSprite=(function(){
+    var s=document.createElement('canvas'); s.width=44; s.height=30;
+    var c=s.getContext('2d');
+    if(!c) return s;
+    c.fillStyle='rgba(242,234,216,.82)'; c.fillRect(2,2,40,26);
+    c.strokeStyle='rgba(242,234,216,.5)'; c.lineWidth=1.5;
+    for(var i=-2;i<7;i++){ c.beginPath(); c.moveTo(i*8,30); c.lineTo(i*8+12,0); c.stroke(); }
+    c.fillStyle='rgba(13,13,22,.18)';
+    c.fillRect(5,7,6,3); c.fillRect(24,17,8,3); c.fillRect(14,23,5,2);
+    return s;
+  })();
+
+  // ── 오프스크린 전체 삼각형(4막·여운 전용) ────────────────────────
+  var off=null, offRows=0;
+  function renderOff(rows, usePaintedSet){
+    var px=Math.max(3, Math.floor(1000/rows));        // 셀당 px(하한 3)
+    var w=(rows+1)*px, h=rows*px;
+    off=document.createElement('canvas'); off.width=w; off.height=h;
+    var c=off.getContext('2d');
+    if(!c){ offRows=rows; return; }
+    c.fillStyle='rgba(21,20,34,.55)';
+    for(var n=0;n<rows;n++){
+      var x0=(rows - n)*px*0.5;
+      c.fillRect(x0, n*px, (n+1)*px, px);             // 벽돌 띠(희미한 벽)
+    }
+    c.fillStyle='rgba(242,234,216,.88)';
+    for(var n2=0;n2<rows;n2++){
+      var x1=(rows - n2)*px*0.5;
+      for(var k2=0;k2<=n2;k2++){
+        var on = usePaintedSet ? isPainted(n2,k2) : PURE.parity(n2,k2)===1;
+        if(on) c.fillRect(x1 + k2*px, n2*px, Math.max(1,px-1), Math.max(1,px-1));
+      }
+    }
+    offRows=rows;
+  }
+  function drawOff(ctx, fitScaleMul){
+    if(!off) return;
+    var fit=Math.min((W-140)/off.width, (H-180)/off.height)*(fitScaleMul||1);
+    var dw=off.width*fit, dh=off.height*fit;
+    ctx.drawImage(off, W*0.5-dw*0.5, H*0.5-dh*0.5-16, dw, dh);
+  }
+
+  // ── 진동(짝수 거부) ──────────────────────────────────────────────
+  var shudder=null;                                   // {n,k,t}
+
+  // ── 물결 전파 ─────────────────────────────────────────────────────
+  function beginWave(n0,k0){
+    var cells=[];
+    for(var n=0;n<ROWS_PAUSE;n++) for(var k=0;k<=n;k++){
+      if(PURE.parity(n,k)===1 && !isPainted(n,k)){
+        var dx=cellX(n,k)-cellX(n0,k0), dy=cellY(n)-cellY(n0);
+        cells.push({n:n,k:k,at:Math.sqrt(dx*dx+dy*dy)*0.004});
+      }
+    }
+    cells.sort(function(a,b){ return a.at-b.at; });
+    S.wave={cells:cells,t:0,i:0};
+    S.phase='wave';
+  }
+
+  // ── 4막 줌아웃 ────────────────────────────────────────────────────
+  function beginPull(){
+    renderOff(ROWS_MAX, true);
+    var sFit=Math.min((W-140)/(ROWS_MAX*CW), (H-180)/(ROWS_MAX*CH));
+    S.pull={ t:0, dur:2.2, s0:cam.s, s1:sFit,
+             f0:cam.fy, f1:TRI_TOP + ROWS_MAX*CH*0.5 };
+    S.phase='pull';
+    document.getElementById('premise').classList.remove('is-in');
+  }
+  function easeCurtain(t){                            // cubic-bezier(.77,0,.18,1) 근사
+    return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+  }
+
+  // ── 배반 → 여운 ──────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    Museum.betray({x:0.5,y:0.45}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='숫자를 쌓았을 뿐인데 &mdash; 그림이 숨어 있었다'
+      +'<span class="small">파스칼의 삼각형(1654) &middot; 시에르핀스키의 삼각형(1915) &mdash; 홀수가 앉은 자리</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'숨은 그림',
+      story:'이백 년 뒤의 수학자가 그린 그림이, 이백 년 전의 삼각형 안에 이미 앉아 있었다.',
+      fine:'PASCAL 1654 · SIERPINSKI 1915' });
+    Museum.ticket.grant({ id:'m2_sierpinski', title:'숨은 그림', fine:'패턴의 방',
+      drawFn:function(c,w,h){
+        var R=16, px=Math.min(w/(R+1), h/R);
+        c.fillStyle='rgba(242,234,216,.9)';
+        for(var n=0;n<R;n++){ var x0=(R-n)*px*0.5;
+          for(var k=0;k<=n;k++) if(PURE.parity(n,k)) c.fillRect(x0+k*px, n*px, px-0.5, px-0.5); }
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 깊이 재체험(언제나 같은 그림) ────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    S.view.rows=parseInt(slider.value,10)||ROWS_MAX;
+    renderOff(S.view.rows, false);
+    Museum.sound.play('clack');
+  });
+
+  // ── 입력 ─────────────────────────────────────────────────────────
+  function hitCell(sx,sy){
+    var wpt=toWorld(sx,sy);
+    var n=Math.floor((wpt.y - TRI_TOP)/CH);
+    if(n<0||n>=S.rows) return null;
+    var k=Math.round((wpt.x - W*0.5)/CW + n*0.5);
+    if(k<0||k>n) return null;
+    if(Math.abs(wpt.x - cellX(n,k)) > CW*0.5) return null;
+    return {n:n,k:k};
+  }
+  function tapCell(n,k){
+    if(Museum.isLocked()) return;
+    if(S.phase!=='paint') return;
+    if(PURE.parity(n,k)===1){
+      if(paint(n,k)){
+        Museum.sound.play('chalk');
+        if(S.paintedCount>=PAINT_NEED && !S.breathing) S.breathing=true;
+        else if(S.breathing) beginWave(n,k);
+      } else if(S.breathing){ beginWave(n,k); }
+    } else {
+      shudder={n:n,k:k,t:0};
+      Museum.sound.play('creak',{pitch:-0.25});
+    }
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var c=hitCell(p.x,p.y);
+    if(c) tapCell(c.n,c.k);
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked() && S.phase!=='betrayed') return;
+      S.time+=dt;
+      if(shudder){ shudder.t+=dt; if(shudder.t>0.18) shudder=null; }
+
+      if(S.phase==='grow1'){
+        S.growT+=dt;
+        if(S.growT>=S.growIv){
+          S.growT=0; S.rows++;
+          S.growIv=Math.max(0.6, S.growIv-0.05);
+          Museum.sound.play('clack');
+          if(S.rows===1){ document.getElementById('premise').classList.add('is-in'); }
+          if(S.rows>=ROWS_PAUSE){ S.phase='paint'; }
+        }
+      }
+      else if(S.phase==='wave'){
+        var w=S.wave; w.t+=dt;
+        while(w.i<w.cells.length && w.cells[w.i].at<=w.t){
+          var c=w.cells[w.i++];
+          if(paint(c.n,c.k)) Museum.sound.play('chalk');
+        }
+        if(w.i>=w.cells.length){
+          S.wave=null; S.phase='surge'; S.growT=0; S.growIv=0.5;
+        }
+      }
+      else if(S.phase==='surge'){
+        S.growT+=dt;
+        while(S.growT>=S.growIv && S.rows<ROWS_MAX){
+          S.growT-=S.growIv; S.rows++;
+          S.growIv=Math.max(0.06, S.growIv*0.93);
+          Museum.sound.play('clack');
+          var n=S.rows-1;
+          for(var k=0;k<=n;k++) if(PURE.parity(n,k)===1) paint(n,k);
+        }
+        // 카메라: 최근 줄 창을 따라 물러남
+        var vis=Math.min(S.rows, 26);
+        var sT=Math.min(1.55, 620/(vis*CH));
+        var fT=cellY(Math.max(0,S.rows-1)) - vis*CH*0.5 + CH*0.5;
+        cam.s+= (sT-cam.s)*Math.min(1,dt*3);
+        cam.fy+=(fT-cam.fy)*Math.min(1,dt*3);
+        if(S.rows>=ROWS_MAX){ S.phase='hold'; S.holdT=0; }
+      }
+      else if(S.phase==='hold'){
+        S.holdT+=dt;
+        if(S.holdT>=0.7) beginPull();
+      }
+      else if(S.phase==='pull'){
+        var p=S.pull; p.t+=dt;
+        var u=easeCurtain(Math.min(1,p.t/p.dur));
+        cam.s = p.s0 + (p.s1-p.s0)*u;
+        cam.fy= p.f0 + (p.f1-p.f0)*u;
+        if(p.t>=p.dur) triggerBetray();
+      }
+    },
+    draw:function(ctx){
+      // 4막 완료 후·여운: 오프스크린 blit만
+      if(S.phase==='betrayed' || S.phase==='after'){
+        drawOff(ctx, 1);
+        return;
+      }
+      if(S.phase==='pull'){
+        // 줌아웃 동안 오프스크린을 카메라에 실어 blit(외곽선은 이미 녹아 있음)
+        var px=off ? off.width/(ROWS_MAX+1) : 1;
+        var scl=cam.s*CW/px;
+        var wTop=toScreen(W*0.5,TRI_TOP);
+        ctx.drawImage(off, wTop.x - off.width*scl*0.5, wTop.y, off.width*scl, off.height*scl);
+        return;
+      }
+      // 1~3막: 보이는 줄만 직접 렌더
+      var breath=0.5+0.5*Math.sin(S.time*2.2);
+      var topN=Math.max(0, Math.floor((toWorld(0,-40).y - TRI_TOP)/CH)),
+          botN=Math.min(S.rows-1, Math.ceil((toWorld(0,H+40).y - TRI_TOP)/CH));
+      for(var n=topN;n<=botN;n++){
+        for(var k=0;k<=n;k++){
+          var sp=toScreen(cellX(n,k), cellY(n));
+          var bw=CW*cam.s, bh=CH*cam.s;
+          var x=sp.x-bw*0.5, y=sp.y;
+          if(shudder && shudder.n===n && shudder.k===k){
+            x += Math.sin(shudder.t*90)*3*cam.s;
+          }
+          ctx.fillStyle=C_BRICK;
+          ctx.fillRect(x+1, y+1, bw-2, bh-2);
+          if(cam.s>0.5){
+            ctx.strokeStyle='rgba(138,115,63,'+(0.35*Math.min(1,cam.s)).toFixed(2)+')';
+            ctx.lineWidth=1;
+            ctx.strokeRect(x+1, y+1, bw-2, bh-2);
+          }
+          if(isPainted(n,k)){
+            ctx.drawImage(chalkSprite, x+1, y+1, bw-2, bh-2);
+          } else if(S.breathing && S.phase==='paint' && PURE.parity(n,k)===1){
+            ctx.fillStyle='rgba(242,234,216,'+(0.05+0.09*breath).toFixed(3)+')';
+            ctx.fillRect(x+2, y+2, bw-4, bh-4);
+          } else if(S.phase==='paint' && n===0 && k===0 && S.paintedCount===0){
+            ctx.fillStyle='rgba(242,234,216,'+(0.06+0.10*breath).toFixed(3)+')';
+            ctx.fillRect(x+2, y+2, bw-4, bh-4);
+          }
+          // 수 표기: 행 0..11 Jua, 12..15 잉크 얼룩, 이후 0
+          if(n<=11 && bh>16 && !isPainted(n,k)){
+            ctx.fillStyle=C_INK_D;
+            ctx.font=Math.floor(bh*0.5)+'px Jua, sans-serif';
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(String(nums[n][k]), sp.x, y+bh*0.52);
+          } else if(n>=12 && n<=15 && bh>12 && !isPainted(n,k)){
+            ctx.fillStyle='rgba(95,88,74,.5)';
+            ctx.fillRect(sp.x-bw*0.22, y+bh*0.38, bw*0.44, bh*0.2);
+          }
+        }
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__M2 = {
+    S:S, PURE:PURE, cam:cam,
+    tapCell:tapCell, isPainted:isPainted,
+    forceGrow:function(){ while(S.phase==='grow1'){ S.rows++; if(S.rows>=ROWS_PAUSE) S.phase='paint'; } },
+    forceSurge:function(){
+      while(S.rows<ROWS_MAX){
+        S.rows++; var n=S.rows-1;
+        for(var k=0;k<=n;k++) if(PURE.parity(n,k)===1) paint(n,k);
+      }
+      S.phase='hold'; S.holdT=0;
+    },
+    beginPull:beginPull, triggerBetray:triggerBetray,
+    ROWS_PAUSE:ROWS_PAUSE, ROWS_MAX:ROWS_MAX, PAINT_NEED:PAINT_NEED
+  };
+})();
+</script>
+</body>
+</html>
