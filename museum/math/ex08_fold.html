@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>접어서 달까지 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #premise{ position:fixed; left:50%; bottom:11vh; transform:translateX(-50%) translateY(8px);
+            opacity:0; transition:opacity 1.6s ease, transform 1.6s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(14px,1.9vw,20px);
+            letter-spacing:.12em; color:var(--ink-faint); text-align:center; white-space:nowrap;
+            pointer-events:none; z-index:40; }
+  #premise.is-in{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #premise.is-out{ opacity:0; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(19px,2.7vw,30px); letter-spacing:.09em;
+            color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .num{ font-family:'Jua',sans-serif; color:var(--brass); }
+  #formula .small{ display:block; margin-top:12px; font-size:clamp(13px,1.6vw,17px);
+                   color:var(--ink-faint); letter-spacing:.05em; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:9px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .whisper{ font-family:'Gowun Dodum',sans-serif; font-size:clamp(13px,1.6vw,16px);
+                   color:var(--ink-dim); letter-spacing:.08em; }
+  #reexp .whisper .num{ font-family:'Jua',sans-serif; color:var(--brass); }
+  #reexp .track{ position:relative; width:min(380px,72vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px;
+     background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 로직 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="fold-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumFold=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var UM0=100n;                              // 0.1mm = 100μm
+  function thicknessMicrons(n){ return UM0 * (2n ** BigInt(n)); }
+  function fmt(b){                            // 천 단위 표기(BigInt)
+    var s=b.toString(), out='', c=0;
+    for(var i=s.length-1;i>=0;i--){ out=s[i]+out; if(++c%3===0&&i>0) out=','+out; }
+    return out;
+  }
+  function toKmParts(n){                      // μm → {km, rem(μm)} 정확 분해
+    var um=thicknessMicrons(n);
+    return { km: um/1000000000n, rem: um%1000000000n };
+  }
+  function foldsToReach(targetUm){            // 두께가 처음 목표 이상이 되는 접기 수
+    var n=0, t=UM0;
+    while(t<targetUm){ t*=2n; n++; }
+    return n;
+  }
+  var EVEREST_UM = 8849n   * 1000000n;        // 8,849 m
+  var MOON_UM    = 384400n * 1000000000n;     // 384,400 km
+  var SUN_UM     = 149600000n * 1000000000n;  // 1억 4,960만 km
+  var MAX_HAND   = 7;                         // 손 접기의 실세계 한계
+  return { thicknessMicrons:thicknessMicrons, fmt:fmt, toKmParts:toKmParts,
+           foldsToReach:foldsToReach,
+           EVEREST_UM:EVEREST_UM, MOON_UM:MOON_UM, SUN_UM:SUN_UM, MAX_HAND:MAX_HAND };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">종이 한 장 — 반으로 접으면, 두께는 두 배가 됩니다</div>
+
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp">
+    <div class="whisper" id="reexp-whisper"></div>
+    <div class="track"><input type="range" id="reexp-range" min="1" max="51" step="1" value="42"></div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var B = window.KMuseumFold;
+  var canvas = document.getElementById('stage-canvas');
+  var stage = Museum.stage(canvas);
+  var rnd = Museum.rng(Date.now() % 2147483647);
+
+  var NIGHT0='#050508', NIGHT2='#0d0d16', NIGHT3='#151422';
+  var BRASS='#c9a961', BRASS_DIM='rgba(201,169,97,.16)';
+  var PAPER='#d8cfb8', PAPER_EDGE='#b3a888';
+  var FLAME_CORE='#f2e3bd', INKF='#5f584a';
+
+  /* ── 참조물(고도 km) — 수치 표기 없이 실루엣으로만 목격 ───────────── */
+  var REFS=[
+    { km:0.0017,    name:'사람' },
+    { km:0.012,     name:'집' },
+    { km:0.3,       name:'빌딩' },
+    { km:8.849,     name:'에베레스트' },
+    { km:12,        name:'구름' },
+    { km:400,       name:'우주정거장' },
+    { km:384400,    name:'달' },
+    { km:149600000, name:'태양' }
+  ];
+  function altKm(n){ return Math.pow(2,n)*1e-7; }   // 연출용 근사(정확값은 E1)
+
+  /* ── 상태 ────────────────────────────────────────────────────────── */
+  var S = {
+    phase:'enter',            // enter → fold → machine → betrayed → after
+    introT:0,
+    n:0,                      // 접은 횟수
+    refusals:0,
+    drag:null,                // {startX, prog}
+    tremble:0,
+    springT:0,
+    machT:0, machBeat:1.0,
+    pressT:0,
+    camLog:-4,                // 카메라 = 기둥 끝 고도 log10(km)
+    stars:[],
+    viewN:-1,                 // 여운 슬라이더 고도
+    frozen:false, time:0
+  };
+  for(var i=0;i<130;i++) S.stars.push({ x:rnd()*1600, y:rnd()*900, a:0.15+rnd()*0.5, s:rnd()*6.28 });
+  window.addEventListener('museum:freeze',   function(){ S.frozen=true; });
+  window.addEventListener('museum:unfreeze', function(){ S.frozen=false; });
+
+  function requiredDrag(n){ return 170*Math.pow(1.30, n); }  // 저항 = 노동의 실물
+
+  /* ── 접기 ────────────────────────────────────────────────────────── */
+  function completeFold(){
+    S.n++;
+    Museum.sound.play('creak', Math.min(0.3, -0.3+S.n*0.08));
+    Museum.sound.play('clack');
+  }
+  function refuse(){
+    S.refusals++; S.tremble=1; S.springT=0.5;
+    Museum.sound.play('creak', -0.45);
+    if(S.refusals>=2) setTimeout(beginMachine, 900);
+  }
+  function attemptFold(){                     // 테스트 훅 겸 전체 제스처 요약
+    if(S.phase!=='fold' || Museum.isLocked()) return false;
+    if(S.n < B.MAX_HAND){ completeFold(); return true; }
+    refuse(); return false;
+  }
+
+  function beginPlay(){
+    if(S.phase!=='enter') return;
+    S.phase='fold';
+    var pm=document.getElementById('premise');
+    pm.classList.remove('is-in'); pm.classList.add('is-out');
+  }
+  function beginMachine(){
+    if(S.phase!=='fold') return;
+    S.phase='machine'; S.machT=0; S.machBeat=1.0; S.pressT=0;
+    Museum.sound.play('boom');
+  }
+  function machineFold(){
+    S.n++;
+    Museum.sound.play('clack');
+    if(S.n>=42) triggerBetray();
+  }
+  function triggerBetray(){
+    S.phase='betrayed';
+    var my=moonY();
+    var box=canvas.getBoundingClientRect(), sc=stage._scale||1;
+    var px=(box.width-1600*sc)/2 + 800*sc;
+    var py=(box.height-900*sc)/2 + my*sc;
+    Museum.betray({ x: box.width? px/box.width:0.5, y: box.height? Math.max(0.08,py/box.height):0.3 })
+          .then(showAfterglow);
+  }
+  function showAfterglow(){
+    S.phase='after';
+    var km=B.fmt(B.toKmParts(42).km);
+    var f=document.getElementById('formula');
+    f.innerHTML='마흔두 번 — <span class="num">0.1</span>mm의 종이가 달을 지났다'+
+                '<span class="small">0.1mm × 2<sup>42</sup> = '+km+'km — 달까지 384,400km. 손은 일곱 번이 한계였다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'접어서 달까지',
+                    story:'접을 수 없던 종이가, 닿을 수 없는 곳을 지났다.', small:false });
+    Museum.ticket.grant({ id:'m8_fold', title:'접어서 달까지', drawFn:ticketArt });
+    document.getElementById('reexp').classList.add('is-in');
+    var r=document.getElementById('reexp-range');
+    updateWhisper(parseInt(r.value,10));
+  }
+  function ticketArt(c,w,h){
+    c.fillStyle=NIGHT0; c.fillRect(0,0,w,h);
+    c.fillStyle=PAPER;
+    c.fillRect(w/2-3, h*0.35, 6, h*0.45);
+    var g=c.createRadialGradient(w/2,h*0.22,2,w/2,h*0.22,22);
+    g.addColorStop(0,BRASS); g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g; c.fillRect(w/2-22,h*0.22-22,44,44);
+    c.fillStyle='#ddd6c4'; c.font='12px sans-serif'; c.textAlign='center';
+    c.fillText('42', w/2, h*0.9);
+  }
+
+  /* ── 재체험 슬라이더 — 정확 두께 + 지나친 참조물 ──────────────────── */
+  function thickStr(n){
+    var um=B.thicknessMicrons(n);
+    if(um<10000n){ return (Number(um)/1000)+'mm'; }
+    if(um<100000000000n){ return B.fmt(um/1000000n)+'m'; }   // 100km까지는 미터의 감각으로
+    return B.fmt(um/1000000000n)+'km';
+  }
+  function passedRef(n){
+    var umKm=Math.pow(2,n)*1e-7, last=null;
+    for(var i=0;i<REFS.length;i++) if(umKm>=REFS[i].km) last=REFS[i];
+    return last;
+  }
+  function updateWhisper(n){
+    S.viewN=n;
+    var ref=passedRef(n);
+    var tail= ref ? ' — '+ref.name+(ref.name==='달'||ref.name==='태양'||ref.name==='에베레스트'?'을':'를')+' 지난다' : ' — 아직 책상 위';
+    document.getElementById('reexp-whisper').innerHTML=
+      '<span class="num">'+n+'</span>번 접으면 <span class="num">'+thickStr(n)+'</span>'+tail;
+  }
+  document.getElementById('reexp-range').addEventListener('input', function(e){
+    updateWhisper(parseInt(e.target.value,10));
+    Museum.sound.play('click_light', (parseInt(e.target.value,10)-1)/50-0.5);
+  });
+
+  /* ── 입력 — 종이를 접는 손 ───────────────────────────────────────── */
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked()) return;
+    if(S.phase==='enter'){ beginPlay(); return; }
+    if(S.phase!=='fold') return;
+    var p=stage.toLogical(e.clientX, e.clientY);
+    S.drag={ startX:p.x, prog:0 };
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!S.drag || S.phase!=='fold') return;
+    var p=stage.toLogical(e.clientX, e.clientY);
+    var raw=Math.max(0, S.drag.startX-p.x);
+    var cap = S.n<B.MAX_HAND ? 1 : 0.5;                 // 8번째: 절반에서 막힌다
+    S.drag.prog=Math.min(cap, raw/requiredDrag(S.n));
+    if(S.n>=B.MAX_HAND && S.drag.prog>0.45) S.tremble=Math.min(1, S.tremble+0.1);
+  });
+  canvas.addEventListener('pointerup', function(){
+    if(!S.drag || S.phase!=='fold'){ S.drag=null; return; }
+    var prog=S.drag.prog; S.drag=null;
+    if(S.n<B.MAX_HAND){
+      if(prog>=0.6) completeFold();                     // 60% 자동 완주(M1 문법)
+      else S.springT=0.3;
+    } else if(prog>=0.25){ refuse(); }
+  });
+
+  /* ── 갱신 ────────────────────────────────────────────────────────── */
+  function tick(dt){
+    if(S.frozen) return;
+    S.time+=dt;
+    if(S.tremble>0) S.tremble=Math.max(0, S.tremble-dt*1.6);
+    if(S.springT>0) S.springT=Math.max(0, S.springT-dt);
+
+    if(S.phase==='enter'){
+      S.introT+=dt;
+      if(S.introT>2.2 && !S._premised){
+        S._premised=true;
+        document.getElementById('premise').classList.add('is-in');
+      }
+      return;
+    }
+    if(S.phase==='machine'){
+      S.pressT=Math.min(1, S.pressT+dt*1.4);
+      S.machT+=dt;
+      if(S.machT>=S.machBeat && S.pressT>=1){
+        S.machT=0;
+        S.machBeat=Math.max(0.3, S.machBeat*0.94);
+        machineFold();
+      }
+    }
+    // 카메라 — 로그 상승(기둥 끝 고정, 세계 낙하)
+    var targetN = (S.phase==='after' && S.viewN>0) ? S.viewN : S.n;
+    var targetLog = Math.log10(Math.max(1e-4, altKm(targetN)));
+    S.camLog += (targetLog - S.camLog) * Math.min(1, dt*2.2);
+  }
+
+  /* ── 그리기 ──────────────────────────────────────────────────────── */
+  var TIP_Y=300, PXDEC=88;                     // 로그 10배당 88px
+  function yOf(km){ return TIP_Y + (S.camLog - Math.log10(Math.max(1e-5,km)))*PXDEC; }
+  function moonY(){ return yOf(384400); }
+
+  function drawGroundScene(c){
+    // 받침대·종이 단면(접을수록 폭 절반·두께 배가)
+    var baseY=590, w=Math.max(90, 560/Math.pow(2, Math.min(4,S.n)));
+    var th=Math.min(96, 5*Math.pow(1.9, Math.min(7,S.n)));
+    var jx=(S.tremble>0? (rnd()-0.5)*7*S.tremble : 0);
+    c.fillStyle=NIGHT3;
+    c.fillRect(800-190, baseY+th/2, 380, 26);
+    c.strokeStyle=BRASS_DIM; c.strokeRect(800-190, baseY+th/2, 380, 26);
+    // 접는 중 진행 표현 — 오른쪽 가장자리가 일어나 왼쪽으로 넘어간다
+    var prog=S.drag? S.drag.prog : (S.springT>0? S.springT*0.5 : 0);
+    c.fillStyle=PAPER;
+    c.fillRect(800-w/2+jx, baseY-th/2, w, th);
+    c.fillStyle=PAPER_EDGE;
+    c.fillRect(800-w/2+jx, baseY-th/2, w, 2);
+    if(prog>0){
+      var lift=prog*Math.PI;
+      var fx=800+w/2-Math.sin(lift)*w*0.5+jx, fy=baseY-th/2-Math.abs(Math.sin(lift))*w*0.35;
+      c.strokeStyle=PAPER; c.lineWidth=Math.max(2,th*0.5);
+      c.beginPath(); c.moveTo(800+w/2+jx, baseY-th/2);
+      c.quadraticCurveTo(800+w/2+jx, fy, fx, fy);
+      c.stroke(); c.lineWidth=1;
+    }
+    // 스포트(주광원 1)
+    var g=c.createRadialGradient(800, baseY-160, 10, 800, baseY-160, 340);
+    g.addColorStop(0,'rgba(201,169,97,.11)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    c.fillStyle=g; c.fillRect(800-340, baseY-460, 680, 620);
+  }
+
+  function drawAscent(c){
+    // 별 — 고도에 비례해 짙어진다
+    var starA=Math.min(1, Math.max(0,(S.camLog+1)/4));
+    for(var i=0;i<S.stars.length;i++){
+      var st=S.stars[i];
+      c.fillStyle='rgba(242,234,216,'+(st.a*starA*(0.7+0.3*Math.sin(S.time*2+st.s)))+')';
+      c.fillRect(st.x, st.y, 1.6, 1.6);
+    }
+    // 참조물 실루엣(수치 0)
+    for(var r=0;r<REFS.length;r++){
+      var ref=REFS[r], y=yOf(ref.km);
+      if(y<-140||y>1040) continue;
+      if(ref.name==='달'){
+        var prox=Math.max(0, 1-Math.abs(S.camLog-Math.log10(384400))/2.4);
+        var rad=16+64*prox;
+        c.drawImage(stage.glow(Math.round(rad*1.7),'rgba(201,169,97,.25)'), 800-rad*1.7, y-rad*1.7);
+        c.fillStyle='#b7a06a';
+        c.beginPath(); c.arc(800, y, rad, 0, 6.29); c.fill();
+        c.fillStyle='rgba(13,13,22,.35)';
+        c.beginPath(); c.arc(800-rad*0.3, y-rad*0.2, rad*0.28, 0, 6.29); c.fill();
+        c.beginPath(); c.arc(800+rad*0.35, y+rad*0.3, rad*0.2, 0, 6.29); c.fill();
+      } else if(ref.name==='태양'){
+        c.drawImage(stage.glow(90,'rgba(232,194,122,.3)'), 800-90, y-90);
+        c.fillStyle='#d9b36a';
+        c.beginPath(); c.arc(800, y, 34, 0, 6.29); c.fill();
+      } else if(ref.name==='에베레스트'){
+        c.strokeStyle=INKF; c.lineWidth=2;
+        c.beginPath(); c.moveTo(420,y+60); c.lineTo(660,y-8); c.lineTo(760,y+26);
+        c.lineTo(900,y-22); c.lineTo(1060,y+40); c.lineTo(1180,y+60); c.stroke();
+      } else if(ref.name==='구름'){
+        c.fillStyle='rgba(168,158,136,.16)';
+        c.beginPath(); c.ellipse(560,y,110,20,0,0,6.29); c.fill();
+        c.beginPath(); c.ellipse(1080,y+14,140,24,0,0,6.29); c.fill();
+      } else if(ref.name==='우주정거장'){
+        c.fillStyle=BRASS;
+        c.fillRect(1150,y-2,26,4); c.fillRect(1159,y-9,8,18);
+      } else if(ref.name==='사람'){
+        c.fillStyle=INKF;
+        c.beginPath(); c.arc(640,y-14,6,0,6.29); c.fill();
+        c.fillRect(637,y-8,6,18);
+      } else if(ref.name==='집'){
+        c.strokeStyle=INKF;
+        c.strokeRect(980,y-16,42,20);
+        c.beginPath(); c.moveTo(974,y-16); c.lineTo(1001,y-32); c.lineTo(1028,y-16); c.stroke();
+      } else if(ref.name==='빌딩'){
+        c.fillStyle='rgba(95,88,74,.7)';
+        c.fillRect(500,y-64,30,66); c.fillRect(1120,y-44,24,46);
+      }
+    }
+    // 두께 기둥 — 끝 고정, 아래로 무한
+    var colW=Math.min(56, 22+S.n*0.8);
+    var grd=c.createLinearGradient(0,TIP_Y,0,TIP_Y+700);
+    grd.addColorStop(0,PAPER); grd.addColorStop(1,'rgba(216,207,184,.12)');
+    c.fillStyle=grd;
+    c.fillRect(800-colW/2, TIP_Y, colW, 900-TIP_Y+80);
+    c.fillStyle=PAPER_EDGE; c.fillRect(800-colW/2, TIP_Y, colW, 3);
+    c.drawImage(stage.glow(34,'rgba(232,194,122,.3)'), 800-34, TIP_Y-34);
+    // 프레스(기계의 밤)
+    if(S.phase==='machine'){
+      var py2=TIP_Y-90+S.pressT*46+Math.max(0,Math.sin(S.time*9))*(S.machBeat<0.5?7:3);
+      c.fillStyle=NIGHT3;
+      c.fillRect(800-64, py2-30, 128, 34);
+      c.strokeStyle=BRASS; c.strokeRect(800-64, py2-30, 128, 34);
+      c.fillStyle=BRASS; c.fillRect(800-5, py2-84, 10, 56);
+    }
+  }
+
+  stage.add({
+    update:tick,
+    draw:function(c){
+      c.fillStyle=NIGHT2; c.fillRect(-1600,-900,4800,2700);
+      var ground = S.phase==='enter' || S.phase==='fold';
+      if(ground) drawGroundScene(c); else drawAscent(c);
+      var vg=c.createRadialGradient(800,430,240,800,430,980);
+      vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(5,5,8,.8)');
+      c.fillStyle=vg; c.fillRect(-1600,-900,4800,2700);
+    }
+  });
+
+  Museum.sound.roomtone();
+  Museum.curtainIn();
+  stage.start();
+
+  window.__M8 = {
+    S:S, B:B, tick:tick, skipIntro:beginPlay,
+    attemptFold:attemptFold, machineFold:machineFold, beginMachine:beginMachine,
+    requiredDrag:requiredDrag, thickStr:thickStr, passedRef:passedRef, REFS:REFS
+  };
+})();
+</script>
+</body>
+</html>
