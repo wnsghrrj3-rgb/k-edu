@@ -1,5 +1,10 @@
-/* core/bridge.js — 케이티처 활동 시스템 브리지 v1.0.0 (Phase 0 동결)
- * 헌법: handoff/kedu/activities/케이티처_활동시스템_설계.md §3·§4·§20
+/* core/bridge.js — 케이티처 활동 시스템 브리지 v1.1.0
+ * 헌법: handoff/kedu/activities/케이티처_활동시스템_설계.md §3·§4·§8
+ * v1.0.0 프로토콜(§4 postMessage)은 동결 유지 — 변경 없음.
+ * v1.1.0 추가: assign 재제출 병합(§8-4, M3 해소). cw_submit이 upsert(last-write-wins)이므로
+ *   시도 이력이 서버에 쌓이지 않는다 → 브리지가 제출 직전에 이전 제출을 읽어 정책대로 병합한다.
+ *   정책 sc = best(기본, D4) | first(D10 성향) | last. 조회 원천은 RPC cw_open_bundle(서버) >
+ *   localStorage 백업(기기) > 없음(첫 시도). 조회 실패해도 제출은 반드시 수행한다(유실 0 우선).
  *
  * 프로토콜(§4): 상행 ACTIVITY_READY / PROGRESS / RESULT / EXIT, 하행 ACTIVITY_CONFIG / CLOSE. v:1 고정.
  * 모드 판정(§20-2): URL에 cwb+cwi(케이박스 딥링크)가 있으면 무조건 assign. 그 외 ?mode=, 기본 solo.
@@ -16,13 +21,16 @@
  *   KBridge.progress({ q, total, ok, type })
  *   KBridge.finish({ score, total, durationSec, byType, detail, onSubmit })  → true | false(중복)
  *   KBridge.exit(reason, progress)
- *   KBridge.mode / .seed / .rng() / .version
+ *   KBridge.mode / .seed / .scoring / .rng() / .version
  */
 (function () {
   'use strict';
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var MODES = ['class', 'solo', 'assign'];
+  var SCORING = ['best', 'first', 'last'];
   var PKEY = 'kbridge_pending_v1';
+  var BKEY = 'kbridge_best_v1';        // 서버 조회 실패 대비 기기 백업 (§8-4)
+  var PREV_WAIT_MS = 1500;             // 이전 제출 조회 상한 — 넘으면 병합 없이 제출
 
   var q = new URLSearchParams(location.search);
   var isLocal = location.protocol === 'file:' ||
@@ -54,6 +62,7 @@
     aid: q.get('aid') || null,
     sid: (q.get('sid') != null && q.get('sid') !== '') ? parseInt(q.get('sid'), 10) : null,
     mute: q.get('mute') === '1',
+    sc: (SCORING.indexOf(q.get('sc')) >= 0 ? q.get('sc') : 'best'),   // §8-4 재시도 채점 정책
     startedAt: Date.now(),
     finished: false,
     closed: false
@@ -109,10 +118,119 @@
   }
 
   // ── 재진입 시 보류분 자동 재제출 (init에서 호출)
+  // 보류 봉투는 detail.attempt(이번 시도 raw)를 품고 있으므로 재병합해서 보낸다 —
+  // 다른 기기에서 그 사이에 제출이 있었어도 정책(best/first)이 깨지지 않는다.
   function flushPending() {
     if (!(window.KBox && window.KBox.active)) return;
     loadPending().forEach(function (p) {
-      kboxSubmit(p.env, 0, p.ts, null);
+      var at = p.env && p.env.detail && p.env.detail.attempt;
+      if (at) submitAssign(at, p.env.detail.activityId, p.ts, null);
+      else kboxSubmit(p.env, 0, p.ts, null);   // v1.0.0 봉투 호환 (attempt 없음)
+    });
+  }
+
+  // ── 재제출 병합 (§8-4) ────────────────────────────────────────────────────
+  function itemKey() {
+    var KB = window.KBox;
+    return (KB && KB.bundleId && KB.itemId) ? (KB.bundleId + ':' + KB.itemId) : null;
+  }
+  function loadBackup() {
+    var k = itemKey(); if (!k) return null;
+    try { return (JSON.parse(localStorage.getItem(BKEY) || '{}'))[k] || null; } catch (e) { return null; }
+  }
+  function saveBackup(payload) {
+    var k = itemKey(); if (!k) return;
+    try {
+      var all = JSON.parse(localStorage.getItem(BKEY) || '{}');
+      all[k] = payload;
+      localStorage.setItem(BKEY, JSON.stringify(all));
+    } catch (e) { /* 시크릿 모드 등 — 서버가 원천이므로 무해 */ }
+  }
+  function sbClient() {
+    if (window.sb && window.sb.rpc) return window.sb;
+    if (typeof window.getKeduDb === 'function') { try { return window.getKeduDb(); } catch (e) { return null; } }
+    return (window.supabase && window.supabase.rpc) ? window.supabase : null;
+  }
+  // 이전 제출 payload 조회: 서버(cw_open_bundle) > 기기 백업 > null. 실패해도 절대 막지 않는다.
+  function readPrev(cb) {
+    var KB = window.KBox;
+    if (!(KB && KB.active && KB.bundleId && KB.itemId)) { cb(null); return; }
+    var sb = sbClient();
+    if (!sb || !sb.rpc) { cb(loadBackup()); return; }
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return; settled = true; cb(loadBackup());
+    }, PREV_WAIT_MS);
+    var p;
+    try { p = Promise.resolve(sb.rpc('cw_open_bundle', { p_bundle_id: KB.bundleId })); }
+    catch (e) { clearTimeout(timer); settled = true; cb(loadBackup()); return; }
+    p.then(function (res) {
+      if (settled) return; settled = true; clearTimeout(timer);
+      var d = res && res.data, mine = null;
+      var items = d && d.items;
+      if (Array.isArray(items)) {
+        for (var i = 0; i < items.length; i++) {
+          if (items[i] && items[i].id === KB.itemId) { mine = items[i].payload || null; break; }
+        }
+      }
+      cb((mine && mine.tool === 'activity') ? mine : loadBackup());
+    }).catch(function () {
+      if (settled) return; settled = true; clearTimeout(timer); cb(loadBackup());
+    });
+  }
+  function rate(s, m) { return (m > 0) ? (s || 0) / m : 0; }
+
+  // prev(이전 payload) + attempt(이번 시도) → 정책대로 병합된 KEDU_RESULT 봉투
+  function mergeEnv(prev, attempt, activityId) {
+    var pd = (prev && prev.detail) || null;
+    var policy = state.sc;
+    var mine = { score: attempt.score, max: attempt.max, at: attempt.at };
+    var attempts = (pd && pd.attempts | 0) || 0;
+    attempts += 1;
+
+    var chosen;                                   // 채택된 시도 (최상위 score/max·byType·items의 원천)
+    if (!prev || !pd) chosen = attempt;
+    else if (policy === 'last') chosen = attempt;
+    else if (policy === 'first') {
+      chosen = {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0,
+        at: (pd.first && pd.first.at) || mine.at
+      };
+    } else {                                      // best (기본, D4) — 동률이면 이전 기록 존중
+      chosen = (rate(attempt.score, attempt.max) > rate(prev.score, prev.max)) ? attempt : {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0, at: mine.at
+      };
+    }
+
+    var history = ((pd && pd.history) || []).concat([mine]).slice(-10);
+    return {
+      tool: 'activity', kind: 'auto',
+      score: chosen.score, max: chosen.max,
+      detail: {
+        activityId: activityId,
+        byType: chosen.byType || {},
+        durationSec: chosen.durationSec,
+        items: chosen.items || [],
+        policy: policy,
+        attempts: attempts,
+        attempt: attempt,                          // 이번 시도 raw (보류 재제출 시 재병합용)
+        first: (pd && pd.first) || mine,
+        last: mine,
+        history: history
+      }
+    };
+  }
+
+  // assign 제출 진입점: 이전 제출 조회 → 병합 → 제출(+실패 시 보류·재시도)
+  function submitAssign(attempt, activityId, pendingTs, done) {
+    readPrev(function (prev) {
+      var env = mergeEnv(prev, attempt, activityId);
+      kboxSubmit(env, 0, pendingTs, function (res) {
+        if (res && (res.status === 'ok' || res.status === 'dup')) saveBackup(env);
+        if (done) done(res);
+      });
     });
   }
 
@@ -127,6 +245,8 @@
     });
     var tRaw = q.get('t');                          // 예약 파라미터 t(제한 시간)
     if (tRaw != null && tRaw !== '' && !isNaN(+tRaw)) params.t = parseInt(tRaw, 10);
+    if (hostCfg && hostCfg.params && SCORING.indexOf(hostCfg.params.sc) >= 0) state.sc = hostCfg.params.sc;
+    params.sc = state.sc;                           // 예약 파라미터 sc(재시도 채점 정책, §8-4)
 
     var meta = { sid: state.sid, aid: state.aid, mute: state.mute, teamNames: null };
     if (hostCfg) {
@@ -149,6 +269,7 @@
     version: VERSION,
     get mode() { return state.mode; },
     get seed() { return seed; },
+    get scoring() { return state.sc; },
     rng: rng,
 
     // 부팅 시 1회 (§4-5)
@@ -216,15 +337,11 @@
       }
       post(msg);
 
-      if (state.mode === 'assign') {                 // §20-2: KBox.submit 직결
-        kboxSubmit({
-          tool: 'activity', kind: 'auto',
-          score: r.score, max: r.total,
-          detail: {
-            activityId: state.activityId, byType: byType,
-            durationSec: durationSec, items: detail || []
-          }
-        }, 0, null, r.onSubmit || null);
+      if (state.mode === 'assign') {                 // §8: KBox.submit 직결 + §8-4 정책 병합
+        submitAssign({
+          score: r.score, max: r.total, byType: byType,
+          items: detail || [], durationSec: durationSec, at: Date.now()
+        }, state.activityId, null, r.onSubmit || null);
       }
       return true;
     },

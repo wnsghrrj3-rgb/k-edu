@@ -304,6 +304,7 @@ const KINDS = {
   kmake:    {n:'케이메이커',i:'🎨', cl:'#E3EDFF', hex:'#5B8EF8', hint:'디자인 작품'},
   english:  {n:'영어',     i:'🔤', cl:'#F5ECD8', hex:'#B7791F', hint:'영어 활동'},
   quiz:     {n:'케이퀴즈', i:'🧩', cl:'#E7F0FF', hex:'#4C82F7', hint:'자동 채점 문제'},
+  activity: {n:'활동',     i:'🎲', cl:'#FEF3C7', hex:'#F59E0B', hint:'게임형 활동 (유형별 채점)'},
   link:     {n:'링크',     i:'🔗', cl:'#EEF1F6', hex:'#94A3B8', hint:'외부 자료'},
 };
 
@@ -642,8 +643,110 @@ async function openGrading(id){
       .eq('bundle_id', id).order('submitted_at', { ascending:true });
     grSubs = data || [];
   } catch(e){ grSubs = []; }
+  if(grSubs.some(s=> s.payload && s.payload.tool === 'activity')) await loadActCatalog();
   renderGrading();
 }
+
+/* ===== 활동(케이티처 활동 시스템) 제출 뷰 =====
+ * 봉투: payload = {tool:'activity', score, max, detail:{activityId, byType, attempts, policy, first, last, ...}}
+ * 반 전체 byType 합산 = "다시 가르칠 것"이 한눈에 (설계 §8-2).
+ * 유형 라벨은 활동 카탈로그의 types에서 — 실패해도 키를 그대로 보여주고 화면은 뜬다.
+ */
+let actCatalog = null;
+async function loadActCatalog(){
+  if(actCatalog) return actCatalog;
+  try {
+    const r = await fetch('/kedu/activities/_CATALOG.json');
+    const arr = await r.json();
+    actCatalog = {}; arr.forEach(a=>{ actCatalog[a.id] = a; });
+  } catch(e){ actCatalog = {}; }
+  return actCatalog;
+}
+const SC_KO = { best:'최고 기록', first:'첫 시도', last:'마지막 시도' };
+function actPct(ok, miss){ const t = ok+miss; return t ? Math.round(ok/t*100) : 0; }
+
+function renderActivitySummary(){
+  const acts = grSubs.filter(s => s.payload && s.payload.tool === 'activity');
+  if(!acts.length) return '';
+  const groups = {};
+  acts.forEach(s=>{
+    const id = (s.payload.detail && s.payload.detail.activityId) || s.cw_items?.title || 'activity';
+    (groups[id] = groups[id] || []).push(s);
+  });
+  return Object.keys(groups).map(id=>{
+    const subs = groups[id];
+    const cat = (actCatalog && actCatalog[id]) || null;
+    const types = (cat && cat.types) || {};
+    const title = (cat && cat.title) || subs[0].cw_items?.title || id;
+
+    // 반 전체 유형 합산
+    const agg = {};
+    subs.forEach(s=>{
+      const by = (s.payload.detail && s.payload.detail.byType) || {};
+      Object.keys(by).forEach(k=>{
+        agg[k] = agg[k] || {ok:0, miss:0};
+        agg[k].ok  += (by[k].ok|0);
+        agg[k].miss += (by[k].miss|0);
+      });
+    });
+    const rows = Object.keys(agg).map(k=>({k, label: types[k] || k, ...agg[k]}))
+      .sort((a,b)=> b.miss - a.miss);
+    const top = rows.slice(0,3);
+
+    const scored = subs.filter(s=> s.payload.max > 0);
+    const avg = scored.length
+      ? Math.round(scored.reduce((n,s)=> n + s.payload.score / s.payload.max, 0) / scored.length * 100)
+      : null;
+    const policy = SC_KO[subs[0].payload.detail?.policy] || '최고 기록';
+
+    const bars = !top.length
+      ? '<div style="color:#94A3B8;font-size:13px;padding:6px 0">유형 분석이 없는 활동이에요</div>'
+      : top.map(r=>{
+          const pct = actPct(r.ok, r.miss);
+          const col = pct>=80 ? '#3BAB72' : (pct>=50 ? '#F59E0B' : '#E5484D');
+          return `<div style="display:flex;align-items:center;gap:10px;margin:7px 0">
+            <div style="flex:0 0 44%;font-size:13px;color:#334155">${esc(r.label)}</div>
+            <div style="flex:1;height:10px;background:#EEF1F6;border-radius:99px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${col}"></div></div>
+            <div style="flex:0 0 78px;text-align:right;font-size:12px;color:#64748B">${pct}% · ✗${r.miss}</div>
+          </div>`;
+        }).join('');
+
+    const who = subs.slice().sort((a,b)=>{
+      const ra = a.payload.max ? a.payload.score/a.payload.max : 0;
+      const rb = b.payload.max ? b.payload.score/b.payload.max : 0;
+      return ra - rb;   // 낮은 순 — 도움이 필요한 학생이 위로
+    }).map(s=>{
+      const d = s.payload.detail || {};
+      const n = d.attempts || 1;
+      const worst = Object.keys(d.byType||{}).map(k=>({k, miss:(d.byType[k].miss|0)}))
+        .sort((x,y)=>y.miss-x.miss)[0];
+      const wl = (worst && worst.miss>0) ? (types[worst.k] || worst.k) + ' ✗' + worst.miss : '—';
+      return `<tr>
+        <td style="padding:6px 8px;font-size:13px">🐾 ${esc(s.student_profiles?.nickname || '학생')}</td>
+        <td style="padding:6px 8px;font-size:13px;text-align:center;font-weight:700">${s.payload.score ?? '-'} / ${s.payload.max ?? '-'}</td>
+        <td style="padding:6px 8px;font-size:12px;color:#64748B;text-align:center">${n}회</td>
+        <td style="padding:6px 8px;font-size:12px;color:#E5484D">${esc(wl)}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="grader-section">🎲 ${esc(title)} · 제출 ${subs.length}명${avg!=null? ' · 반 평균 '+avg+'%':''} <span style="font-weight:400;color:#94A3B8;font-size:12px">채점 기준 ${esc(policy)}</span></div>
+      <div style="background:#FFFBF5;border:1.5px solid #FDE68A;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:13px;color:#92400E;margin-bottom:6px">많이 틀린 유형 — 여기부터 다시 가르치면 돼요</div>
+        ${bars}
+        <table style="width:100%;border-collapse:collapse;margin-top:12px">
+          <tr style="border-bottom:1px solid #FDE68A">
+            <th style="text-align:left;padding:4px 8px;font-size:12px;color:#B45309">학생</th>
+            <th style="padding:4px 8px;font-size:12px;color:#B45309">점수</th>
+            <th style="padding:4px 8px;font-size:12px;color:#B45309">시도</th>
+            <th style="text-align:left;padding:4px 8px;font-size:12px;color:#B45309">약한 유형</th>
+          </tr>
+          ${who}
+        </table>
+      </div>`;
+  }).join('');
+}
+
 function renderGrading(){
   const body = document.getElementById('gr-body');
   if(grSubs.length === 0){
@@ -651,11 +754,15 @@ function renderGrading(){
     return;
   }
   const graded = grSubs.filter(s=>s.status==='graded').length;
-  let html = `<div class="grader-section">📊 제출 ${grSubs.length}개 · 채점 완료 ${graded}개</div>`;
+  let html = renderActivitySummary();
+  html += `<div class="grader-section">📊 제출 ${grSubs.length}개 · 채점 완료 ${graded}개</div>`;
   html += grSubs.map((s,idx)=>{
     const k = KINDS[s.cw_items?.kind] || KINDS.link;
     const who = s.student_profiles?.nickname || '학생';
-    const comment = s.payload?.comment;
+    const isAct = s.payload?.tool === 'activity';
+    const comment = isAct
+      ? `자동 채점 ${s.payload.score ?? '-'} / ${s.payload.max ?? '-'} · 시도 ${(s.payload.detail?.attempts)||1}회`
+      : s.payload?.comment;
     const isG = s.status==='graded';
     return `<div class="sub ${isG?'graded':''}">
       <div class="sub-top">

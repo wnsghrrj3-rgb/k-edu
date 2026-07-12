@@ -67,7 +67,15 @@
     '.kp-item{border:1.5px solid #fbbf24;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}',
     '.kp-item .pk-t{font-size:16px;color:#92400e}.kp-item .pk-s{font-size:12px;color:#b45309;margin:2px 0 8px}',
     '.kp-item .kact-btns{gap:8px}',
-    '.kp-item .kact-btn{font-size:15px;padding:9px 14px;border-radius:10px}'
+    '.kp-item .kact-btn{font-size:15px;padding:9px 14px;border-radius:10px}',
+    // 케이박스 전송 다이얼로그 (§8-2)
+    '#kact-send-ov{position:fixed;inset:0;background:rgba(28,25,23,.72);z-index:9200;display:none;align-items:center;justify-content:center;padding:20px}',
+    '#kact-send-ov.active{display:flex}',
+    '.kact-send-card{background:#fffbf5;border-radius:22px;max-width:520px;width:100%;padding:26px 28px;font-family:Jua,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.35);max-height:86vh;overflow:auto}',
+    '.kact-send-card h4{margin:0 0 4px;font-size:22px;color:#92400e}',
+    '.kact-send-card .ks-sub{font-size:14px;color:#b45309;margin-bottom:14px}',
+    '.ks-sec{font-size:15px;color:#78350f;margin:12px 0 4px}',
+    '.ks-hint{font-size:13px;color:#b45309;margin-top:2px}'
   ].join('\n');
   var st = document.createElement('style');
   st.textContent = css;
@@ -118,17 +126,20 @@
         '<div class="kact-btns">' +
         '<button class="kact-btn primary" data-kact-start>시작</button>' +
         '<button class="kact-btn" disabled title="Phase 3에서 열려요">활동지</button>' +
-        '<button class="kact-btn" disabled title="Phase 2에서 열려요">케이박스로 보내기</button>' +
+        sendBtnHtml('data-kact-send') +
         '</div></div>';
       el.querySelector('[data-kact-start]').addEventListener('click', function () {
         launch(a, d.params || {});
       });
+      var sb = el.querySelector('[data-kact-send]');
+      if (sb && !sb.disabled) sb.addEventListener('click', function () { openSend(a, d.params || {}, null); });
     });
     return function cleanup() { closeAll(); };
   }
 
   // ─────────────────────────── iframe 호스트 (§4 시퀀스) ───────────────────────────
   var ov = null, noteOv = null, session = null;
+  var lastParams = {};        // 직전 실행 파라미터 — 수첩에서 그대로 과제로 보내기 위해 보존
 
   function ensureOverlays() {
     if (!ov) {
@@ -151,6 +162,7 @@
     Object.keys(params || {}).forEach(function (k) { merged[k] = params[k]; });
 
     session = { a: a, params: merged, readyTimer: null, result: null, iframe: null };
+    lastParams = merged;
     ov.innerHTML = '<button class="kact-x" data-kact-close>활동 닫기 ✕</button>' +
       '<div class="kact-wait"><div>🎲</div><div>활동을 불러오고 있어요…</div></div>';
     ov.classList.add('active');
@@ -270,11 +282,15 @@
       '<div class="kn-score">' + teamHtml + '</div></div></div>' +
       body +
       '<div class="kn-btns">' +
-      '<button class="kact-btn" disabled title="Phase 2에서 열려요">케이박스로 복습 보내기</button>' +
+      sendBtnHtml('data-kn-send', '케이박스로 복습 보내기') +
       '<button class="kact-btn primary" data-kn-retry>다시 하기</button>' +
       '<button class="kact-btn" data-kn-close>닫기</button>' +
       '</div></div>';
     noteOv.classList.add('active');
+    var snd = noteOv.querySelector('[data-kn-send]');
+    if (snd && !snd.disabled) snd.addEventListener('click', function () {
+      openSend(a, lastParams || {}, rows);   // 수첩: 방금 한 설정 + 많이 틀린 유형을 힌트로
+    });
     noteOv.querySelector('[data-kn-close]').addEventListener('click', function () { noteOv.classList.remove('active'); });
     noteOv.querySelector('[data-kn-retry]').addEventListener('click', function () {
       noteOv.classList.remove('active');
@@ -283,9 +299,94 @@
     });
   }
 
+  // ─────────────────────────── 케이박스 전송 (§8-2) ───────────────────────────
+  // boxbar(kedu_boxbar.js)가 로드된 교사 페이지에서만 활선. 학생 기기엔 훅 자체가 없다.
+  function boxbarReady() { return typeof window.KEDU_BOXBAR_ADDACTIVITY === 'function'; }
+
+  function sendBtnHtml(attr, label) {
+    var on = boxbarReady();
+    return '<button class="kact-btn"' + (on ? ' ' + attr : ' disabled title="케이박스는 교사 로그인 후 사용할 수 있어요"') + '>' +
+      (label || '케이박스로 보내기') + '</button>';
+  }
+
+  var SC_KO = { best: '최고 기록', first: '첫 시도', last: '마지막 시도' };
+  var SEED_KO = { per_student: '학생마다 다른 문제', fixed: '모두 같은 문제' };
+
+  function openSend(a, params, missRows) {
+    var ov2 = document.getElementById('kact-send-ov');
+    if (!ov2) {
+      ov2 = document.createElement('div');
+      ov2.id = 'kact-send-ov';
+      document.body.appendChild(ov2);
+    }
+    var chosen = {};
+    if (a.paramsSchema) Object.keys(a.paramsSchema).forEach(function (k) { chosen[k] = a.paramsSchema[k].default; });
+    Object.keys(params || {}).forEach(function (k) { if (chosen.hasOwnProperty(k)) chosen[k] = params[k]; });
+    var sc = 'best', seedMode = 'per_student';   // D4·D5 기본값
+
+    function chips(key, opts, cur, labelFn) {
+      return '<div class="kact-chiprow" data-k="' + esc(key) + '">' + opts.map(function (o) {
+        return '<button class="kact-chip' + (o === cur ? ' on' : '') + '" data-v="' + esc(JSON.stringify(o)) + '">' +
+          esc(labelFn ? labelFn(o) : String(o)) + '</button>';
+      }).join('') + '</div>';
+    }
+
+    var missHint = '';
+    if (missRows && missRows.length && missRows[0].miss > 0) {
+      missHint = '<div class="kact-note">📝 오늘 많이 틀린 유형 — ' +
+        missRows.filter(function (r) { return r.miss > 0; }).map(function (r) {
+          return esc(r.label) + ' ✗' + r.miss;
+        }).join(' · ') + '</div>';
+    }
+
+    var body = '<div class="kact-send-card"><h4>📦 ' + esc(a.title) + ' — 케이박스로</h4>' +
+      '<div class="ks-sub">과제로 내면 학생이 풀고 자동 채점돼요. 발송은 케이박스에서.</div>' + missHint;
+
+    Object.keys(a.paramsSchema || {}).forEach(function (k) {
+      var p = a.paramsSchema[k];
+      body += '<div class="ks-sec">' + esc(p.label) + '</div>' + chips(k, p.options, chosen[k]);
+    });
+    body += '<div class="ks-sec">채점 기준 (여러 번 풀었을 때)</div>' +
+      chips('__sc', ['best', 'first', 'last'], sc, function (o) { return SC_KO[o]; }) +
+      '<div class="ks-hint">기본은 최고 기록 — 다시 도전하는 것이 곧 공부예요.</div>' +
+      '<div class="ks-sec">문제 뽑기</div>' +
+      chips('__seed', ['per_student', 'fixed'], seedMode, function (o) { return SEED_KO[o]; }) +
+      '<div class="ks-hint">학생마다 다른 문제면 베끼기가 어렵고, 같은 문제면 반 전체를 나란히 볼 수 있어요.</div>' +
+      '<div class="kn-btns"><button class="kact-btn primary" data-ks-add>케이박스에 담기</button>' +
+      '<button class="kact-btn" data-ks-cancel>취소</button></div></div>';
+
+    ov2.innerHTML = body;
+    ov2.classList.add('active');
+
+    ov2.querySelectorAll('.kact-chiprow').forEach(function (row) {
+      row.querySelectorAll('.kact-chip').forEach(function (ch) {
+        ch.addEventListener('click', function () {
+          row.querySelectorAll('.kact-chip').forEach(function (c) { c.classList.remove('on'); });
+          ch.classList.add('on');
+          var v = JSON.parse(ch.dataset.v);
+          var k = row.dataset.k;
+          if (k === '__sc') sc = v;
+          else if (k === '__seed') seedMode = v;
+          else chosen[k] = v;
+        });
+      });
+    });
+    ov2.querySelector('[data-ks-cancel]').addEventListener('click', function () { ov2.classList.remove('active'); });
+    ov2.querySelector('[data-ks-add]').addEventListener('click', function () {
+      if (!boxbarReady()) return;
+      window.KEDU_BOXBAR_ADDACTIVITY({
+        id: a.id, title: a.title, params: chosen, sc: sc, seedMode: seedMode,
+        seed: (seedMode === 'fixed') ? Math.floor(Math.random() * 1e9) : null
+      });
+      ov2.classList.remove('active');
+    });
+  }
+
   function closeAll() {
     if (session) endSession(false);
     if (noteOv) noteOv.classList.remove('active');
+    var s = document.getElementById('kact-send-ov');
+    if (s) s.classList.remove('active');
   }
 
   // ─────────────────────────── 카탈로그 탭 (§6-3) ───────────────────────────

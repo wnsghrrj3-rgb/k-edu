@@ -202,6 +202,34 @@
     setTimeout(function () { window.KEDU_BOXBAR_CTX = null; }, 100);
   };
 
+  // ── 케이티처 "이 활동 담기" 훅 (활동 시스템 설계 §8-2) ────────────────────
+  // cfg = { id, title, params, sc, seedMode, seed }
+  //  params  : 활동 파라미터(범위·문제 수 등) → 딥링크 쿼리로 직렬화
+  //  sc      : 재시도 채점 정책 best|first|last (기본 best, D4)
+  //  seedMode: 'per_student'(기본, D5 — seed 미고정 = 학생마다 다른 문제) | 'fixed'
+  window.KEDU_BOXBAR_ADDACTIVITY = function (cfg) {
+    cfg = cfg || {};
+    var qs = [];
+    var p = cfg.params || {};
+    Object.keys(p).forEach(function (k) {
+      if (p[k] == null || p[k] === '') return;
+      qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(p[k]));
+    });
+    qs.push('sc=' + (cfg.sc || 'best'));
+    if (cfg.seedMode === 'fixed' && cfg.seed != null) qs.push('seed=' + (cfg.seed | 0));
+    window.KEDU_BOXBAR_CTX = {
+      kind: 'activity',
+      title: '활동 · ' + (cfg.title || cfg.id),
+      url: '/kedu/activities/' + cfg.id + '.html?' + qs.join('&'),
+      config: {
+        activityId: cfg.id, params: p, sc: cfg.sc || 'best',
+        seedMode: cfg.seedMode || 'per_student', seed: (cfg.seedMode === 'fixed' ? cfg.seed : null)
+      }
+    };
+    addCurrent();
+    setTimeout(function () { window.KEDU_BOXBAR_CTX = null; }, 100);
+  };
+
   // ── 공개 API ─────────────────────────────────────────────────────────────
   window.KeduBoxbar = {
     markTeacher: markTeacher,        // 교사 페이지가 세션 확인 후 호출
