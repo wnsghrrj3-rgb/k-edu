@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 달의 위상 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 달의 위상 (2026-07-13 · 페이블) · 천체 통합 재건 2호
+  v2 engine/tools/moon.js(603줄 · 탐구 표준 v2 4층 완료본) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 우주 무대(별 900 · 실사 지구/달 · 태양 코로나 · 궤도 링)
+    ② 실물 질감(텍스처 승급 로더 + 캔버스 폴백 · 🔴 지구조 광원)
+    ③ 직접 조작(🔴 달을 궤도 위에서 집어 끌기 · 궤도 회전 · 시각/속도 슬라이더)
+    ④ 즉각 반응(3D 달 위치 → 「지구에서 본 달」 2D 원반 · 저녁 하늘 · 상태줄이 한 몸으로)
+    ⑤ 탐구 구조(미션 6 · 퀴즈 5 · 만약에 4 · 예측 칩 · 와우=동주기 자전 반증)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 궤도 평면 레이캐스트 달 끌기 — 화면을 끄는 게 아니라 «달을 직접 집어» 궤도 평면(y=0)에
+       투영, phase=atan2(z,x)로 역산. 어디에 놓느냐가 곧 위상이 됨 = 「모양이 변하는 게 아니라
+       보는 각도가 변한다」를 손으로 체득. (earth의 자전각 역산 계보)
+    ② 지구조(earthshine) — 원점(지구)에 푸른 PointLight, 강도 ∝ (1-illum). 삭 근처일수록 강함
+       = 달에서 본 지구가 「보름지구」라 밝음. 초승달의 어두운 원반이 희미하게 떠오름(다빈치의 설명).
+  v2 무손실: 학년칸 저(슬라이더만·미션3)/중(재생·달잡기·미션5·⏩)/고(속도·스스로빛·관측시각·만약에4·미션6)
+    ·미션 6단계(make+think 혼합, mIdx 학년 스왑)·퀴즈 5문(장면 세팅·무반복 순환)
+    ·만약에 4종(💡스스로빛 ⏸공전멈춤 ⏩2배공전 🌗같은평면=일식·월식)
+    ·예측 노트(🌙보름자리·💡빛토글)·칩 5개=꼬마 과학자 토스트·상태줄 문구 전부
+    ·「지구에서 본 달」 위상 path(limb+terminator 합성)·저녁 하늘 창(남중 시각 물리 배치·날마다 동쪽으로)
+    ·일식/월식 배너·텍스처 승급 로더(moon.png + earth_day.png 재사용)
+  v3 추가: 만약에 조작 게이트(wifActed — 카드 열자마자 자동 해소 차단 = light·earth 교훈)
+    · 🐰 와우 신설(동주기 자전 — v2에 와우 없음 → 신설. ratio SPEC 선례)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?phase=0~360
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .mn-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .mn-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .mn-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .mn-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .mn-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:214px;max-height:calc(100vh - 130px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  .mn-slider{width:100%;accent-color:#9B7BF5;height:24px;cursor:pointer}
+  .mn-age{font-family:'Gowun Dodum';font-size:19px;color:#FFD79A;text-align:center;letter-spacing:.5px}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(560px,82vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(520px,52vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:mnPulse 1.2s ease-in-out infinite}
+  @keyframes mnPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 132px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:198px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #texlab{position:fixed;left:12px;top:calc(50px + 94px);z-index:20;font-family:'Gowun Dodum';font-size:11px;
+    color:#9fb0c4;background:var(--hud);border:1px solid var(--hudline);border-radius:11px;
+    backdrop-filter:blur(8px);padding:5px 9px}
+  #moonp{position:fixed;left:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:7px 8px 5px;width:132px;text-align:center}
+  #moonp .cap{font-family:'Gowun Dodum';font-size:11px;color:#cdd6e6;margin-top:2px}
+  #sky{position:fixed;right:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:7px 8px 5px;width:216px;text-align:center}
+  #sky .cap{font-family:'Gowun Dodum';font-size:11px;color:#cdd6e6;margin-top:2px;line-height:1.35}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:21;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  #ecl{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);z-index:19;display:none;
+    font-family:'Gowun Dodum';font-size:22px;padding:12px 20px;border-radius:16px;
+    background:rgba(8,12,26,.86);border:1.5px solid rgba(255,212,59,.5);pointer-events:none;white-space:nowrap}
+  .mn-anno{position:absolute;pointer-events:none;font-family:'Gowun Dodum';font-size:12.5px;padding:3px 9px;
+    border-radius:10px;background:rgba(8,12,20,.82);border:1.5px solid #F59F00;color:#FFE8A3;
+    white-space:nowrap;transform:translate(-50%,-50%);display:none}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🌙 케이랩 · 달의 위상</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="mn-panel" id="hudL"></div>
+<div class="mn-panel" id="ctrls"></div>
+<div class="mn-panel" id="mbar" style="display:none"></div>
+<div id="texlab">🎨 기본 그림 달</div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+<div id="ecl"></div>
+
+<div id="moonp">
+  <svg id="m2d" viewBox="-58 -58 116 116" width="116" height="116">
+    <circle cx="0" cy="0" r="50" fill="#1A2440" stroke="#3a4a6a" stroke-width="2"/>
+    <path id="mlit" d="" fill="#FDF6D8"/>
+    <circle id="mearthshine" cx="0" cy="0" r="50" fill="#5C7CFA" opacity="0"/>
+    <text id="mrabbit" x="0" y="6" text-anchor="middle" font-size="20" style="display:none">🐰</text>
+  </svg>
+  <div class="cap" id="mcap">지구에서 본 달</div>
+</div>
+
+<div id="sky">
+  <svg id="skysvg" viewBox="-78 -46 156 84" width="200" height="105">
+    <defs><linearGradient id="mnEv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16224a"/><stop offset="1" stop-color="#41356b"/>
+    </linearGradient></defs>
+    <rect x="-78" y="-46" width="156" height="76" fill="url(#mnEv)" rx="6"/>
+    <g id="spg"></g>
+    <line x1="-74" y1="30" x2="74" y2="30" stroke="#6b8a4a" stroke-width="3"/>
+    <rect x="-74" y="30" width="148" height="4" fill="#3f5a28"/>
+    <text x="-66" y="27" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">동</text>
+    <text x="0" y="27" text-anchor="middle" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">남</text>
+    <text x="66" y="27" text-anchor="end" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">서</text>
+  </svg>
+  <div class="cap" id="skycap">저녁 7시, 남쪽 하늘</div>
+</div>
+
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>달을 잡아서 궤도 위에 놓아 봐요</b> — 어디에 놓느냐가 달의 모양을 정해요</div>
+<div class="k3-loading" id="loading"><div class="ic">🌙</div><div>달 띄우는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.MoonSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var ORBIT_R = 4.2;                       /* 달 궤도 반지름(무대 단위) */
+  var SYNODIC = 29.5;                      /* 삭망월(일) */
+
+  function wrapDeg(d){ return ((d % 360) + 360) % 360; }
+  function degDiff(a, b){                  /* 최단 각차 (부호 없음) */
+    var d = Math.abs(wrapDeg(a) - wrapDeg(b));
+    return d > 180 ? 360 - d : d;
+  }
+
+  /* ── 천문 수리 (v2 무손실) ── */
+  function illum(phi){ return (1 - Math.cos(wrapDeg(phi) * Math.PI / 180)) / 2; }
+  function phaseInfo(phi){
+    phi = wrapDeg(phi);
+    if(phi < 11 || phi > 349) return { k:'new',     nm:'삭 (신월)',   emo:'🌑' };
+    if(phi < 79)              return { k:'wax_cre', nm:'초승달',       emo:'🌒' };
+    if(phi < 101)             return { k:'first',   nm:'상현달',       emo:'🌓' };
+    if(phi < 169)             return { k:'wax_gib', nm:'상현~보름',    emo:'🌔' };
+    if(phi < 191)             return { k:'full',    nm:'보름달 (망)',  emo:'🌕' };
+    if(phi < 259)             return { k:'wan_gib', nm:'보름~하현',    emo:'🌖' };
+    if(phi < 281)             return { k:'last',    nm:'하현달',       emo:'🌗' };
+    return                           { k:'wan_cre', nm:'그믐달',       emo:'🌘' };
+  }
+  /* 2D 위상 path — limb 반원 + terminator 타원 합성 (v2 litPath 무손실) */
+  function litPath(R, phi){
+    phi = wrapDeg(phi);
+    var rx = Math.abs(R * Math.cos(phi * Math.PI / 180)).toFixed(2);
+    var limbSweep = (phi < 180) ? 1 : 0;
+    var termSweep;
+    if(phi < 90) termSweep = 1; else if(phi < 180) termSweep = 0;
+    else if(phi < 270) termSweep = 1; else termSweep = 0;
+    return 'M 0 ' + (-R) + ' A ' + R + ' ' + R + ' 0 0 ' + limbSweep + ' 0 ' + R
+         + ' A ' + rx + ' ' + R + ' 0 0 ' + termSweep + ' 0 ' + (-R) + ' Z';
+  }
+  function ageStr(phi){ return '약 ' + (wrapDeg(phi) / 360 * SYNODIC).toFixed(1) + '일'; }
+  function evAge(phi){ var a = Math.round(wrapDeg(phi) / 12); return a === 0 ? 30 : a; }
+  function hourLabel(h){
+    h = +h;
+    if(h <= 20) return '저녁 ' + (h - 12) + '시';
+    if(h < 24)  return '밤 ' + (h - 12) + '시';
+    if(h === 24) return '자정';
+    return '새벽 ' + (h - 24) + '시';
+  }
+  /* 저녁 하늘 — 남중 시각 T = 12h + 위상/360×24h · 시간각 HA = (h−T)×15° (v2 evPos 무손실) */
+  function evPos(pp, h){
+    var Tt = 12 + wrapDeg(pp) / 360 * 24;
+    var dh = h - Tt; dh = ((dh % 24) + 24) % 24; if(dh > 12) dh -= 24;
+    var HA = dh * 15;
+    if(Math.abs(HA) >= 88) return { vis:false, HA:HA };
+    return { vis:true, x:HA / 90 * 70, y:28 - Math.cos(HA * Math.PI / 180) * 40, HA:HA };
+  }
+
+  /* ── 🔴 궤도 평면 역산 (달 잡아 끌기의 심장) ── */
+  function moonXZ(phase){                     /* 위상 → 궤도 위 좌표 (v2 render 무손실) */
+    var r = wrapDeg(phase) * Math.PI / 180;
+    return { x: Math.cos(r) * ORBIT_R, z: Math.sin(r) * ORBIT_R };
+  }
+  function phaseFromXZ(x, z){                 /* 궤도 평면 위 한 점 → 위상 */
+    return wrapDeg(Math.atan2(z, x) * 180 / Math.PI);
+  }
+  /* ── 🔴 지구조: 달에서 본 지구의 밝기 ∝ (1 − 달의 밝기). 삭에서 최대 ── */
+  function earthshine(phase){ return 1 - illum(phase); }
+
+  /* ── 🐰 동주기 자전 (와우) ── */
+  function tidalRotY(phase){                  /* 앞면이 늘 지구를 향하는 자전각 */
+    return Math.PI - wrapDeg(phase) * Math.PI / 180;
+  }
+  function rabbitDot(phase, tidalOff){        /* 앞면 무늬가 지구를 향한 정도 (>0 = 보임) */
+    return tidalOff ? Math.cos(wrapDeg(phase) * Math.PI / 180) : 1;
+  }
+
+  /* ── 학년 칸 (v2 GRADES 무손실 — 노출·미션·만약에만 스왑) ── */
+  var GRADES = {
+    low:  { modes:['free','mission','quiz'], showPlay:false, mIdx:[0,2,3],
+            wif:[], wow:false, v2:{ grab:false, spd:false, glow:false, hour:false },
+            hint:'슬라이더를 움직여 날마다 달 모양이 어떻게 바뀌는지 봐요.' },
+    mid:  { modes:['free','mission','quiz'], showPlay:true,  mIdx:[0,1,2,3,5],
+            wif:['fastm'], wow:false, v2:{ grab:true, spd:false, glow:false, hour:false },
+            hint:'▶ 공전 재생으로 달 모양이 규칙적으로 돌아오는 걸 봐요.' },
+    high: { modes:['free','mission','quiz'], showPlay:true,  mIdx:[0,1,2,3,4,5],
+            wif:['glow','stopm','fastm','plane'], wow:true, v2:{ grab:true, spd:true, glow:true, hour:true },
+            hint:'💡 만약에로 위상의 비밀(반사광)을 파헤쳐 봐요.' }
+  };
+
+  /* ── 미션 6단계 (v2 문구·판정 무손실 · mIdx로 학년 스왑) ── */
+  var MISSIONS = [
+    { type:'make', text:'🌒 달을 움직여 <b>초승달</b>(오른쪽 가는 낫)을 만들어 봐요 — 삭 직후예요!',
+      check:function(s){ return phaseInfo(s.phase).k === 'wax_cre'; } },
+    { type:'think', text:'🤔 방금 만든 초승달의 밝은 부분 — 저 빛은 <b>무엇 때문에</b> 빛날까요?',
+      ch:['태양 빛을 반사해서','달이 스스로 빛나서','지구 빛을 받아서'], a:0,
+      why:'달은 스스로 빛나지 않아요 — 거대한 거울처럼 태양 빛을 반사할 뿐! 그래서 태양 쪽 면만 밝아요.' },
+    { type:'make', text:'🌓 달의 나이 약 7일 — <b>상현달</b>(오른쪽 반달)을 만들어 봐요!',
+      check:function(s){ return phaseInfo(s.phase).k === 'first'; } },
+    { type:'make', text:'🌕 약 15일 — <b>보름달(망)</b>! 달이 태양 반대편으로 가면?',
+      check:function(s){ return phaseInfo(s.phase).k === 'full'; } },
+    { type:'think', set:function(s){ s.phase = 0; },
+      text:'🤔 지금 달은 <b>삭</b>(태양과 지구 사이) 위치예요. 달이 안 보이는 까닭은?',
+      ch:['빛 받는 면이 태양 쪽이라 우리에겐 그늘진 면만 보여서','달이 잠시 사라져서','구름이 가려서'], a:0,
+      why:'삭일 때도 달은 그 자리에! 다만 밝은 면이 전부 태양 쪽이라 지구에서는 깜깜한 뒷면만 보여요.' },
+    { type:'make', text:'🌗 약 22일 — <b>하현달</b>(왼쪽 반달)까지 만들면 한 달 완성!',
+      check:function(s){ return phaseInfo(s.phase).k === 'last'; } }
+  ];
+
+  /* ── 퀴즈 (v2 무손실 — 장면 세팅형) ── */
+  var QUIZ = [
+    { phase:180, q:'왼쪽 아래 \'지구에서 본 달\'처럼 꽉 찬 달의 이름은?', ch:['보름달 (망)','초승달','하현달'], a:0 },
+    { phase:90,  q:'오른쪽이 밝은 반달 — 이 달의 이름은?', ch:['상현달','하현달','그믐달'], a:0 },
+    { phase:40,  q:'오른쪽 가는 낫 모양 — 이 달의 이름은?', ch:['초승달','보름달','하현달'], a:0 },
+    { phase:180, q:'달의 모양이 날마다 변하는 까닭은?', ch:['태양 빛 받는 면을 보는 각도가 달라져서','달이 실제로 커졌다 작아져서','구름이 달을 가려서'], a:0 },
+    { phase:0,   q:'달이 태양과 지구 사이에 있어 거의 안 보일 때를 뭐라고 할까요?', ch:['삭 (신월)','망 (보름)','상현'], a:0 }
+  ];
+
+  /* ── 만약에 4종 (v2 무손실 + v3 조작 게이트) ── */
+  var WHATIF = {
+    glow: { icon:'💡', title:'달이 스스로 빛난다면?',
+      q:'달이 전구처럼 스스로 빛나면, 달의 모양 변화는 어떻게 될까요?',
+      ch:['항상 보름달 — 모양 변화가 사라져요','지금처럼 변해요','항상 초승달이에요'], a:0,
+      tip:'▶ 공전 재생 — 달이 어디로 가도 \'지구에서 본 달\'이 늘 꽉 차 있어요!',
+      reveal:'위상의 비밀 = 반사! 스스로 빛나면 어느 위치에서 봐도 둥근 보름달이에요. 모양이 변하는 건 태양 빛을 받는 면을 보는 각도가 달라지기 때문이었던 거죠.',
+      chip:'💡 스스로빛 → 늘 보름달', need:120, phase0:45 },
+    stopm:{ icon:'⏸', title:'달이 공전을 멈춘다면?',
+      q:'달이 그 자리에 딱 멈추면, 밤마다 보는 달의 모양은?',
+      ch:['매일 밤 같은 모양이에요','계속 변해요','달이 안 보이게 돼요'], a:0,
+      tip:'▶ 시간 흐르기 — 날짜가 흘러도 달 모양이 그대로예요!',
+      reveal:'달 모양이 변하는 건 달이 지구를 공전하기 때문! 멈추면 평생 같은 달만 봐요 — 보름달에서 멈췄다면 매일 밤 보름달!',
+      chip:'⏸ 공전멈춤 → 늘 같은 달', need:6, phase0:180 },
+    fastm:{ icon:'⏩', title:'달이 2배 빨리 공전한다면?',
+      q:'보름달에서 다음 보름달까지, 얼마나 걸릴까요?',
+      ch:['보름(약 15일)으로 짧아져요','한 달 그대로예요','두 달이 걸려요'], a:0,
+      tip:'▶ 공전 재생 — 위상이 두 배 빨리 휙휙 바뀌어요!',
+      reveal:'\'한 달\'의 길이는 달의 공전이 정해요! 2배 빨리 돌면 보름달→보름달이 15일 — 달력이 완전히 달라지겠죠?',
+      chip:'⏩ 2배공전 → 한 달이 보름', need:300, phase0:45 },
+    plane:{ icon:'🌗', title:'달 궤도가 지구 궤도와 같은 평면이라면?',
+      q:'달·지구·태양이 언제나 딱 같은 평면에 있다면, 삭과 망 때 무슨 일이 벌어질까요?',
+      ch:['매달 삭마다 일식, 망마다 월식이 일어나요','지금과 똑같아요','달이 아예 안 보이게 돼요'], a:0,
+      tip:'▶ 공전 재생 — 삭 자리를 지날 때 🌞 일식!, 망 자리를 지날 때 🔴 월식!',
+      reveal:'같은 평면이면 매달 삭=일식·망=월식! 실제 달 궤도는 약 5° 기울어 있어 그림자가 대부분 위아래로 비껴가요 — 삭인데도 일식이 드문 까닭이에요.',
+      chip:'🌗 같은평면 → 매달 일식·월식', need:1, phase0:150 }
+  };
+  var WIF_KEYS = ['glow','stopm','fastm','plane'];
+
+  /* ── 예측 노트 (v2 3층 무손실) ── */
+  var PRED = {
+    grab: { q:'🔮 예측 먼저! 달을 궤도 어디에 두면 보름달이 될까요?',
+      ch:['☀️ 태양 쪽에 두면 보름달','🌙 태양 반대쪽에 두면 보름달','🌗 어디에 둬도 반달'], a:1,
+      tip:'달을 집어 궤도 위를 옮기며 보름달을 만들어 봐요!',
+      hitMsg:'✔ 예측 적중 — 보름달 자리는 태양 반대쪽(망)! 밝은 면을 지구에서 정면으로 보는 자리예요.',
+      missMsg:'✘ 예측 빗나감 — 보름달 자리는 태양 반대쪽이에요! 태양 쪽(삭)에 두면 그늘진 뒷면만 보여 거의 안 보여요.',
+      chip:'🌙 보름자리' },
+    glowp:{ q:'🔮 예측 먼저! 달이 스스로 빛나면 달의 모양은 어떻게 될까요?',
+      ch:['더 밝아질 뿐 모양은 지금처럼 변해요','어느 위치에 있든 늘 보름달이 돼요','달이 안 보이게 돼요'], a:1,
+      tip:'켠 채로 달을 옮기며 \'지구에서 본 달\'을 지켜봐요!',
+      hitMsg:'✔ 예측 적중 — 스스로 빛나면 어느 위치든 보름달! 모양 변화의 비밀이 반사광이라는 증거예요.',
+      missMsg:'✘ 예측 빗나감 — 어느 위치에 둬도 꽉 찬 보름달이 됐죠? 위상은 태양 빛 받는 면을 보는 각도가 만들어요.',
+      chip:'💡 빛토글' }
+  };
+
+  /* ── 🐰 와우: 동주기 자전 (v3 신설) ── */
+  var WOW = {
+    q:'달은 늘 <b>같은 면</b>만 지구에 보여줘요 — 토끼 무늬가 언제나 이쪽! 왜 그럴까요?',
+    ch:['🚫 달이 자전을 하지 않아서','🔄 달의 자전 주기 = 공전 주기라서','🧲 지구가 달을 꽉 붙잡고 있어서'], a:1,
+    chip:'🐰 동주기 자전', need:300
+  };
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    sim.phase0 = (typeof opts.phase === 'number' && !isNaN(opts.phase)) ? wrapDeg(opts.phase) : 180;
+
+    sim.state = {
+      phase: sim.phase0,
+      spd: 1, glow: false, hour: 19,
+      playing: false, moveAcc: 0, dayCnt: 0,
+      wif: null, wifPred: null, wifActed: false, wifDone: false, eclSeen: false,
+      wowArmed: false, wowPred: null, wowDone: false, tidalOff: false,
+      pred: { grab:{ asked:false, ch:-1, done:false, acc0:0 },
+              glowp:{ asked:false, ch:-1, done:false, acc0:0 } },
+      chips: [], chipToast: false,
+      acted: false
+    };
+
+    /* ── 위상 변경 (모든 조작의 단일 관문 — moveAcc 누적) ── */
+    sim.setPhase = function(v){
+      var st = sim.state, nv = wrapDeg(v);
+      st.moveAcc += degDiff(nv, st.phase);
+      st.phase = nv;
+      st.acted = true;
+      if(st.wif) st.wifActed = true;       /* 만약에 중 «직접 끌기»도 조작으로 인정 (재생 전용 아님) */
+      if(sim.planeOn()) sim.eclipse();     /* 끌어서 삭·망을 지나도 일식·월식 목격 기록 */
+      return st.phase;
+    };
+    /* 🔴 달 잡아 끌기: 궤도 평면 위 한 점 → 위상 역산 */
+    sim.grabTo = function(x, z){ return sim.setPhase(phaseFromXZ(x, z)); };
+    sim.canGrab = function(mode){ return mode !== 'quiz' && sim.G().v2.grab; };
+
+    sim.setSpd  = function(v){ sim.state.spd = Math.max(0.5, Math.min(4, v)); sim.state.acted = true; return sim.state.spd; };
+    sim.setHour = function(v){ sim.state.hour = Math.max(18, Math.min(30, Math.round(v))); return sim.state.hour; };
+    sim.toggleGlow = function(){
+      var st = sim.state;
+      st.glow = !st.glow; st.acted = true;
+      return st.glow;
+    };
+    sim.togglePlay = function(){ sim.state.playing = !sim.state.playing; sim.state.acted = true; return sim.state.playing; };
+    sim.dayStep = function(){ return sim.setPhase(sim.state.phase + 12); };   /* 📅 하루 뒤 (v2) */
+
+    /* 스스로 빛 = 상시 변수 OR 만약에 glow (v2 effGlow) */
+    sim.effGlow = function(){ return sim.state.glow || sim.state.wif === 'glow'; };
+    sim.planeOn = function(){ return sim.state.wif === 'plane'; };
+    /* 지구에서 보이는 위상 (스스로 빛나면 늘 보름) */
+    sim.seenPhase = function(){ return sim.effGlow() ? 180 : sim.state.phase; };
+
+    /* 공전 속도 (v2 loop 무손실 — 만약에가 덮어씀) */
+    sim.orbitSpeed = function(){
+      var st = sim.state;
+      if(st.wif === 'stopm') return 0;
+      if(st.wif === 'fastm') return 60;
+      return 30 * st.spd;
+    };
+    sim.tick = function(dt){
+      var st = sim.state;
+      if(!st.playing) return;
+      dt = Math.min(dt, 0.05);
+      if(st.wif === 'stopm'){ st.dayCnt += dt * 8; st.wifActed = true; return; }
+      var spd = sim.orbitSpeed();
+      st.phase = wrapDeg(st.phase + dt * spd);
+      st.moveAcc += dt * spd;
+      if(st.wif) st.wifActed = true;
+      if(sim.planeOn()) sim.eclipse();       /* 일식·월식 목격 기록 */
+    };
+
+    /* ── 일식·월식 (v2 renderEclipse 무손실) ── */
+    sim.eclipse = function(){
+      if(!sim.planeOn()) return '';
+      var pp = wrapDeg(sim.state.phase), cur = '';
+      if(pp < 12 || pp > 348) cur = 'sun';
+      else if(Math.abs(pp - 180) < 12) cur = 'moon';
+      if(cur) sim.state.eclSeen = true;
+      return cur;
+    };
+
+    /* ── 예측 노트 (v2 3층 무손실) ── */
+    sim.predArm = function(kind, mode){
+      var p = sim.state.pred[kind];
+      if(mode !== 'free' || p.asked) return false;
+      p.asked = true;
+      return true;
+    };
+    sim.predPick = function(kind, i){
+      var p = sim.state.pred[kind];
+      p.ch = (typeof i === 'number' && i >= 0 && i <= 2) ? i : -1;
+      p.acc0 = sim.state.moveAcc;        /* 예측 시점 = 조작 게이트 기준선 */
+      return p.ch;
+    };
+    /* 해소 조건 (v3 조작 게이트) — 예측 «이후» 25° 이상 실제로 옮겨봤을 때만.
+       grab: 옮겨서 보름달 도달 · glowp: 켠 채로 옮김. 이미 보름인 채로 예측만 하면 해소 없음. */
+    sim.predResolved = function(kind, mode){
+      var st = sim.state, p = st.pred[kind];
+      if(mode !== 'free' || p.done || p.ch < 0) return false;
+      var moved = st.moveAcc - p.acc0;
+      if(kind === 'grab')  return moved >= 25 && phaseInfo(st.phase).k === 'full';
+      if(kind === 'glowp') return st.glow && moved >= 25;
+      return false;
+    };
+    sim.predResolve = function(kind, mode){
+      if(!sim.predResolved(kind, mode)) return null;
+      var st = sim.state, p = st.pred[kind], P = PRED[kind];
+      p.done = true;
+      var hit = (p.ch === P.a);
+      st.chips.push({ k:kind, hit:hit, label:P.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { kind:kind, hit:hit, msg:hit ? P.hitMsg : P.missMsg, chipToast:toast };
+    };
+
+    /* ── 만약에 (v3 조작 게이트: 예측만으론 해소 없음) ── */
+    sim.canWhatif = function(mode){ return mode === 'free' && sim.G().wif.length > 0; };
+    sim.wifList = function(){ return sim.G().wif.slice(); };
+    sim.wifStart = function(key){
+      if(sim.G().wif.indexOf(key) < 0) return null;
+      var st = sim.state;
+      st.wif = key; st.wifPred = null; st.wifActed = false; st.wifDone = false; st.eclSeen = false;
+      st.playing = false; st.moveAcc = 0; st.dayCnt = 0;
+      st.phase = WHATIF[key].phase0;         /* v2 onSelect 무손실 */
+      st.wowArmed = false; st.wowPred = null; st.tidalOff = false;
+      return key;
+    };
+    sim.wifPredict = function(i){
+      sim.state.wifPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wifPred;
+    };
+    sim.wifResolved = function(){
+      var st = sim.state;
+      if(!st.wif || st.wifDone || st.wifPred === null || !st.wifActed) return false;
+      if(st.wif === 'stopm') return st.dayCnt >= WHATIF.stopm.need;
+      if(st.wif === 'plane') return st.eclSeen;
+      return st.moveAcc >= WHATIF[st.wif].need;
+    };
+    sim.wifResolve = function(){
+      var st = sim.state;
+      if(!sim.wifResolved()) return null;
+      st.wifDone = true;
+      var W = WHATIF[st.wif], hit = (st.wifPred === W.a);
+      st.chips.push({ k:st.wif, hit:hit, label:W.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { key:st.wif, hit:hit, reveal:W.reveal, chipToast:toast };
+    };
+    sim.wifExit = function(){
+      var st = sim.state;
+      st.wif = null; st.wifPred = null; st.wifActed = false; st.wifDone = false; st.eclSeen = false;
+      st.playing = false; st.phase = 180; st.moveAcc = 0; st.dayCnt = 0;
+      return true;
+    };
+
+    /* ── 🐰 와우: 동주기 자전 (v3 신설) ── */
+    sim.canWow = function(mode){ return mode === 'free' && sim.G().wow && !sim.state.wif && !sim.state.wowDone; };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.wowArmed = true; st.wowPred = null; st.tidalOff = false;
+      st.playing = false; st.phase = 90; st.moveAcc = 0; st.glow = false;
+      return st.phase;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    sim.wowUnlock = function(){                 /* 🔒 자전 꺼보기 (조작 게이트 진입) */
+      if(!sim.state.wowArmed || sim.state.wowPred === null) return false;
+      sim.state.tidalOff = true;
+      sim.state.moveAcc = 0;
+      return true;
+    };
+    sim.wowResolved = function(){
+      var st = sim.state;
+      return st.wowArmed && !st.wowDone && st.tidalOff && st.wowPred !== null && st.moveAcc >= WOW.need;
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true; st.playing = false;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null; st.tidalOff = false; st.playing = false;
+      return true;
+    };
+    sim.rabbitSeen = function(){ return rabbitDot(sim.state.phase, sim.state.tidalOff) > 0; };
+    /* 직접 조작 시 무장 해제 (예측→확인 구조 보호) */
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.tidalOff) return false;
+      st.wowArmed = false; st.wowPred = null;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){ return sim.G().mIdx.map(function(i){ return MISSIONS[i]; }); };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.phase = 180; st.playing = false; st.moveAcc = 0; st.dayCnt = 0;
+      st.spd = 1; st.glow = false; st.hour = 19;
+      st.wif = null; st.wifPred = null; st.wowArmed = false; st.wowPred = null; st.tidalOff = false;
+      st.acted = false;
+    };
+    sim.missionCur = function(){ return sim.missionList()[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var M = sim.missionList(), m = M[sim.mStep];
+      if(m.type !== 'make') return { act:'none' };
+      if(!sim.state.acted) return { act:'none' };            /* 자동달성 없음 */
+      if(!m.check(sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      var M = sim.missionList();
+      sim.state.acted = false; sim.state.moveAcc = 0;
+      if(sim.mStep < M.length - 1){
+        sim.mStep++;
+        var nx = M[sim.mStep];
+        if(nx.set) nx.set(sim.state);                        /* think 시드 (삭 배치) */
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환 무손실 — rand 주입 순수화) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      sim.state.phase = QUIZ[sim.qIdx].phase;                /* 장면 세팅 */
+      sim.state.playing = false;
+      sim.state.glow = false;
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, out = { lines:[], warn:false };
+      if(mode === 'quiz'){
+        out.lines.push('왼쪽 아래 \'지구에서 본 달\'과 달의 위치를 보고 답을 골라요!');
+        return out;
+      }
+      if(st.wowArmed){
+        out.warn = true;
+        if(st.tidalOff){
+          out.lines.push('<span class="big">🔒 자전 꺼짐</span>');
+          out.lines.push('<span class="hold">▶ 공전 재생 — 🐰 토끼 무늬가 지구에서 보였다 사라졌다 하나요?</span>');
+        } else {
+          out.lines.push('🐰 달의 앞면(토끼 무늬)이 늘 지구를 향해 있어요 — 예측을 골라 봐요!');
+        }
+        return out;
+      }
+      if(st.wif){
+        var W = WHATIF[st.wif];
+        out.warn = true;
+        if(st.wif === 'stopm'){
+          out.lines.push('<span class="big">📅 +' + Math.floor(st.dayCnt) + '일</span>');
+          out.lines.push('날짜가 흘러도 달 모양은 그대로 — 위상은 공전이 만들어요!');
+        } else if(st.wif === 'glow'){
+          out.lines.push('💡 스스로 빛나는 달 — 어느 위치든 \'지구에서 본 달\'이 꽉 차 있죠?');
+        } else if(st.wif === 'plane'){
+          out.lines.push('🌗 같은 평면 — 삭 자리에서 🌞 일식, 망 자리에서 🔴 월식! ▶ 재생으로 궤도를 돌려 봐요.');
+        } else {
+          out.lines.push('⏩ 2배 공전 — 초승→보름→그믐이 두 배 빨리! 한 달이 보름이 됐어요.');
+        }
+        if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + W.tip + '</span>');
+        return out;
+      }
+      var info = phaseInfo(st.phase), pct = Math.round(illum(st.phase) * 100), sub;
+      if(info.k === 'new') sub = '달이 태양과 지구 사이에 있어요. 밝은 면이 태양 쪽(반대편)이라 지구에선 거의 안 보여요.';
+      else if(info.k === 'full') sub = '달이 태양 반대편에 있어요. 밝은 면을 지구에서 정면으로 봐서 꽉 찬 달이에요.';
+      else if(info.k === 'first' || info.k === 'last') sub = '달이 옆쪽에 있어요. 밝은 면의 절반만 지구에서 보여 반달이에요.';
+      else if(info.k.indexOf('cre') >= 0) sub = '밝은 면이 거의 태양 쪽이라, 지구에선 가느다란 낫 모양만 보여요.';
+      else sub = '밝은 면 대부분이 지구를 향해 불룩하게 보여요.';
+      out.lines.push('<span class="big">' + info.emo + ' ' + info.nm + ' · 밝기 ' + pct + '%</span>');
+      out.lines.push(sub);
+      out.lines.push('달은 스스로 빛나지 않아요. 태양 빛 받는 면을 지구에서 보는 각도가 달라져 모양이 변해요.');
+      if(mode === 'free' && sim.G().v2.grab){
+        out.lines.push('🌙 달을 집어 궤도 위에서 직접 옮겨요!');
+      }
+      if(mode === 'free' && st.glow){
+        out.lines.push('💡 스스로 빛 ON — 위치를 바꿔도 \'지구에서 본 달\'이 변하는지 봐요!');
+      }
+      if(mode === 'free' && !st.glow && earthshine(st.phase) >= 0.72){
+        out.lines.push('🌍 초승달의 어두운 부분이 희미하게 보여요 — 지구가 반사한 빛(지구조)이에요!');
+      }
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    ORBIT_R:ORBIT_R, SYNODIC:SYNODIC, wrapDeg:wrapDeg, degDiff:degDiff,
+    illum:illum, phaseInfo:phaseInfo, litPath:litPath, ageStr:ageStr, evAge:evAge,
+    hourLabel:hourLabel, evPos:evPos, moonXZ:moonXZ, phaseFromXZ:phaseFromXZ,
+    earthshine:earthshine, tidalRotY:tidalRotY, rabbitDot:rabbitDot,
+    GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, WIF_KEYS:WIF_KEYS,
+    PRED:PRED, WOW:WOW, createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.MoonSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.MoonSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const cfgPhase = parseFloat(Q.get('phase'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  phase: isNaN(cfgPhase) ? undefined : cfgPhase
+});
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+
+/* ═══════════ 우주 무대 (위에서 내려다본 공전 배치) ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [2.8, 11.0, 4.0], target: [0, 0, 0], fov: 42,
+  minDist: 5, maxDist: 22, maxPolar: Math.PI - 0.02, exposure: 1.0
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.fog = null;
+scene.background = new THREE.Color(0x03060F);
+/* 태양광 = 한 방향 평행광(+X) — 달의 절반은 늘 태양 쪽이 밝음 (v2 무손실) */
+sun.position.set(40, 0, 0);
+sun.intensity = 3.0;
+sun.castShadow = false;
+scene.traverse(o => { if (o.isHemisphereLight) o.intensity = 0.03; });
+scene.add(new THREE.AmbientLight(0xffffff, 0.10));
+
+/* 🔴 지구조 — 원점(지구)에서 나오는 푸른 반사광. 강도 ∝ (1−달의 밝기) */
+const earthShineLight = new THREE.PointLight(0x86ABFF, 0, 14, 2);
+earthShineLight.position.set(0, 0, 0);
+scene.add(earthShineLight);
+
+/* 별 900 */
+{
+  const N = 900, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = Math.acos(2 * Math.random() - 1), p = Math.random() * Math.PI * 2;
+    const r = 16 + Math.random() * 8;
+    pos[i * 3] = r * Math.sin(t) * Math.cos(p);
+    pos[i * 3 + 1] = r * Math.cos(t);
+    pos[i * 3 + 2] = r * Math.sin(t) * Math.sin(p);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0xE8EEFF, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false
+  })));
+}
+
+/* ── 지구 (earth_day.png 재사용 승급 · 폴백 캔버스) ── */
+function earthFallback() {
+  return canvasTexture(512, 256, g => {
+    g.fillStyle = '#12518F'; g.fillRect(0, 0, 512, 256);
+    g.fillStyle = '#2F9E44';
+    [[60,80,70,55],[150,70,90,70],[250,150,80,50],[150,170,60,45],[360,90,70,60],[420,150,55,40]]
+      .forEach(b => { g.beginPath(); g.ellipse(b[0], b[1], b[2], b[3], 0, 0, 7); g.fill(); });
+  });
+}
+/* ── 달 (moon.png 승급 · 폴백 = 크레이터 캔버스, v2 moonTexture 무손실) ── */
+function moonFallback() {
+  return canvasTexture(512, 256, g => {
+    g.fillStyle = '#D5D8DE'; g.fillRect(0, 0, 512, 256);
+    g.fillStyle = '#AEB4BF';
+    [[120,90,58,40],[300,140,70,44],[400,70,42,30]]
+      .forEach(b => { g.beginPath(); g.ellipse(b[0], b[1], b[2], b[3], 0, 0, 7); g.fill(); });
+    g.fillStyle = '#BFC5CF';
+    [[60,50,13],[200,180,16],[350,200,10],[460,150,12],[90,190,9],[250,60,11],[430,40,8],[160,130,7]]
+      .forEach(b => {
+        g.beginPath(); g.arc(b[0], b[1], b[2], 0, 7); g.fill();
+        g.strokeStyle = '#9AA1AE'; g.lineWidth = 2; g.stroke();
+      });
+  });
+}
+const earthMat = new THREE.MeshStandardMaterial({ map: earthFallback(), roughness: 0.92, metalness: 0, envMapIntensity: 0.3 });
+const moonMat  = new THREE.MeshStandardMaterial({ map: moonFallback(),  roughness: 1.0,  metalness: 0, envMapIntensity: 0.15 });
+let texReal = false;
+new THREE.TextureLoader().load(
+  '/kedu/teacher/engine/tools/assets/textures/moon/moon.png',
+  tex => { tex.colorSpace = THREE.SRGBColorSpace; moonMat.map = tex; moonMat.needsUpdate = true; texReal = true; renderTexLabel(); },
+  undefined,
+  () => { texReal = false; renderTexLabel(); }
+);
+new THREE.TextureLoader().load(
+  '/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png',
+  tex => { tex.colorSpace = THREE.SRGBColorSpace; earthMat.map = tex; earthMat.needsUpdate = true; },
+  undefined, () => {}
+);
+
+const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(1.05, 48, 32), earthMat);
+scene.add(earthMesh);
+
+/* 궤도 링 */
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(Sim.ORBIT_R - 0.035, Sim.ORBIT_R + 0.035, 96),
+  new THREE.MeshBasicMaterial({ color: 0x5C7CFA, side: THREE.DoubleSide, transparent: true, opacity: 0.35, depthWrite: false })
+);
+ring.rotation.x = Math.PI / 2;
+scene.add(ring);
+
+/* 달 + 🐰 앞면 마커 + 잡기 프록시 */
+const moonGrp = new THREE.Group();
+scene.add(moonGrp);
+const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 40, 28), moonMat);
+moonGrp.add(moonMesh);
+const rabbit = new THREE.Mesh(
+  new THREE.SphereGeometry(0.085, 14, 10),
+  new THREE.MeshStandardMaterial({ color: 0xF59F00, emissive: 0xF59F00, emissiveIntensity: 0.7, roughness: 0.6 })
+);
+rabbit.position.set(0.42, 0, 0);            /* 달 로컬 +X = 앞면 */
+moonMesh.add(rabbit);
+const moonProxy = new THREE.Mesh(
+  new THREE.SphereGeometry(0.78, 12, 10),
+  new THREE.MeshBasicMaterial({ visible: false })
+);
+moonGrp.add(moonProxy);
+
+/* 태양 코로나 스프라이트 (+X) */
+const sunSpr = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: canvasTexture(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+    gr.addColorStop(0, '#FFFDF0'); gr.addColorStop(0.35, '#FFD43B');
+    gr.addColorStop(1, 'rgba(255,180,40,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }),
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
+}));
+sunSpr.position.set(9.2, 0, 0);
+sunSpr.scale.set(3.6, 3.6, 1);
+scene.add(sunSpr);
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), skyEl = $('sky'), moonpEl = $('moonp'),
+      eclEl = $('ecl'), annoHost = $('anno'), texlabEl = $('texlab');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const rabAnno = document.createElement('div');
+rabAnno.className = 'mn-anno';
+rabAnno.textContent = '🐰 달의 앞면';
+annoHost.appendChild(rabAnno);
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderTexLabel() { texlabEl.textContent = texReal ? '🖼️ 실사 달 텍스처' : '🎨 기본 그림 달'; }
+renderTexLabel();
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="mn-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="mn-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state, g2 = sim.G().v2;
+  const frozen = (st.wif === 'stopm');
+  const info = Sim.phaseInfo(st.phase);
+  let h = `<div class="mn-age" id="age">${info.emo} ${Sim.ageStr(st.phase)}</div>`;
+  if (sim.G().showPlay) {
+    h += `<button class="k3-btn ${st.playing ? '' : 'fire'}" data-a="play">${st.playing ? '■ 멈춤' : (frozen ? '▶ 시간 흐르기' : '▶ 공전 재생')}</button>`;
+  }
+  if (!frozen) {
+    h += `<div class="mn-lab">달의 나이 (위상)</div><input class="mn-slider" id="phSlider" type="range" min="0" max="360" step="1" value="${Math.round(st.phase)}">`;
+    h += '<button class="k3-btn" data-a="day">📅 하루 뒤</button>';
+  }
+  if (g2.spd && mode === 'free' && !st.wif && !st.wowArmed) {
+    h += `<div class="mn-lab">공전 속도 <b>${st.spd}×</b></div><input class="mn-slider" id="spdSlider" type="range" min="0.5" max="4" step="0.25" value="${st.spd}">`;
+  }
+  if (g2.glow && mode === 'free' && !st.wif && !st.wowArmed) {
+    h += `<button class="k3-btn ${st.glow ? 'accent' : ''}" data-a="glow">${st.glow ? '💡 스스로 빛 ON' : '💡 스스로 빛 OFF'}</button>`;
+  }
+  if (g2.hour && mode !== 'quiz') {
+    h += `<div class="mn-lab">🕖 관측 시각 <b>${Sim.hourLabel(st.hour)}</b></div><input class="mn-slider" id="hrSlider" type="range" min="18" max="30" step="1" value="${st.hour}">`;
+  }
+  if (sim.canWow(mode)) {
+    h += '<button class="k3-btn accent" data-a="wowarm">🐰 왜 늘 같은 면만 보일까?</button>';
+  }
+  if (st.wowArmed) {
+    if (!st.tidalOff && st.wowPred !== null) h += '<button class="k3-btn fire" data-a="wowunlock">🔒 달의 자전 꺼보기</button>';
+    h += '<button class="k3-btn" data-a="wowexit">↩ 원래 달로</button>';
+  }
+  if (sim.canWhatif(mode) && !st.wif && !st.wowArmed) {
+    h += '<button class="k3-btn accent" data-a="whatif">🌀 만약에…</button>';
+  }
+  if (st.wif) {
+    h += '<button class="k3-btn" data-a="wifexit">↩ 원래 달로</button>';
+  }
+  h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+
+  const ps = $('phSlider');
+  if (ps) ps.addEventListener('input', () => {
+    hideHint(); sim.clearWow();
+    if (sim.state.playing) sim.togglePlay();
+    sim.setPhase(+ps.value);
+    syncScene(); renderStatus(); renderCtrls();
+    afterAct();
+  });
+  const ss = $('spdSlider');
+  if (ss) ss.addEventListener('input', () => { hideHint(); sim.setSpd(+ss.value); renderCtrls(); });
+  const hs = $('hrSlider');
+  if (hs) hs.addEventListener('input', () => { hideHint(); sim.setHour(+hs.value); renderSky(); renderCtrls(); });
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 달을 옮겨 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const st = $('stage');
+  st.dataset.phase = sim.state.phase.toFixed(1);
+  st.dataset.pk = Sim.phaseInfo(sim.state.phase).k;
+  st.dataset.wif = sim.state.wif || '';
+  st.dataset.tidal = sim.state.tidalOff ? 'off' : 'on';
+  const a = $('age');
+  if (a) a.textContent = Sim.phaseInfo(sim.state.phase).emo + ' ' + Sim.ageStr(sim.state.phase);
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} · ${c.hit ? '✔예측적중' : '✘예측빗나감'}</div>`
+  ).join('');
+}
+
+/* ── 「지구에서 본 달」 2D 원반 (v2 무손실 + 지구조·🐰) ── */
+function renderMoonPanel() {
+  const lit = $('mlit'), es = $('mearthshine'), rb = $('mrabbit'), cap = $('mcap');
+  if (!lit) return;
+  const pp = sim.seenPhase();
+  const ecl = sim.eclipse();
+  lit.setAttribute('d', Sim.litPath(50, pp));
+  lit.setAttribute('fill', ecl === 'moon' ? '#D9480F' : '#FDF6D8');   /* 월식 = 구릿빛 달 */
+  /* 🔴 지구조 — 어두운 원반이 희미하게 떠오름 (스스로 빛 켜면 없음) */
+  const sh = sim.effGlow() ? 0 : Sim.earthshine(sim.state.phase);
+  es.setAttribute('opacity', (sh >= 0.6 ? (sh - 0.6) * 0.42 : 0).toFixed(3));
+  /* 🐰 앞면 무늬 — 동주기면 늘 보임, 자전 끄면 절반만 */
+  rb.style.display = (sim.state.wowArmed && sim.rabbitSeen()) ? '' : 'none';
+  cap.textContent = '지구에서 본 달 · ' + Sim.evAge(sim.state.phase) + '일';
+}
+
+/* ── 저녁 하늘 창 (v2 renderEvening 무손실) ── */
+const NS = 'http://www.w3.org/2000/svg';
+function renderSky() {
+  const g = $('spg'), cap = $('skycap');
+  if (!g) return;
+  if (mode === 'quiz') { skyEl.style.display = 'none'; return; }
+  skyEl.style.display = '';
+  while (g.firstChild) g.removeChild(g.firstChild);
+  const S = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const st = sim.state;
+  const pp = sim.seenPhase();
+  cap.textContent = Sim.hourLabel(st.hour) + ', 남쪽 하늘 · 달 나이 ' + Sim.evAge(st.phase) + '일';
+  const msg = txt => {
+    const t = S('text', { x: 0, y: -4, 'text-anchor': 'middle', fill: '#9fb6e6', 'font-size': 10, 'font-family': 'Gowun Dodum' });
+    t.textContent = txt; g.appendChild(t);
+  };
+  if (pp < 15 || pp > 345) { msg('삭 무렵 — 달이 보이지 않아요'); return; }
+  const ev = Sim.evPos(pp, st.hour);
+  if (!ev.vis) { msg(ev.HA < 0 ? '이 시각엔 아직 안 떴어요 (더 늦게 떠요)' : '이 시각엔 이미 졌어요 (다음에 다시 떠요)'); return; }
+  for (let d = -2; d <= 2; d++) {                    /* 며칠 전후 자취 — '날마다 동쪽으로' */
+    if (d === 0) continue;
+    const p2 = Sim.wrapDeg(pp + d * 12);
+    if (p2 < 15 || p2 > 345) continue;
+    const e2 = Sim.evPos(p2, st.hour);
+    if (!e2.vis) continue;
+    g.appendChild(S('circle', { cx: e2.x.toFixed(1), cy: e2.y.toFixed(1), r: 2.2, fill: '#8d9dc8', opacity: 0.45, class: 'sptrace' }));
+  }
+  const grp = S('g', { transform: `translate(${ev.x.toFixed(1)},${ev.y.toFixed(1)}) scale(0.17)`, id: 'spmoon' });
+  grp.appendChild(S('circle', { cx: 0, cy: 0, r: 50, fill: '#1A2440', stroke: '#3a4a6a', 'stroke-width': 3 }));
+  const lp = S('path', { fill: '#FDF6D8' });
+  lp.setAttribute('d', Sim.litPath(50, pp));
+  grp.appendChild(lp);
+  g.appendChild(grp);
+  if (pp > 40 && pp < 196 && st.hour <= 20) {
+    const ar = S('text', { x: Math.min(ev.x + 14, 46), y: Math.max(ev.y - 9, -38), fill: '#FFD43B', 'font-size': 9, 'font-family': 'Gowun Dodum' });
+    ar.textContent = '← 날마다 동쪽으로';
+    g.appendChild(ar);
+  }
+}
+
+/* ── 일식·월식 배너 (v2 무손실) ── */
+let eclLast = '';
+function renderEcl() {
+  const cur = sim.eclipse();
+  if (cur !== eclLast) { if (cur) K3.sound.play('whoosh'); eclLast = cur; }
+  if (cur === 'sun') {
+    eclEl.style.display = ''; eclEl.style.color = '#FFD43B';
+    eclEl.textContent = '🌞→🌑 일식! 달이 태양을 가려요';
+  } else if (cur === 'moon') {
+    eclEl.style.display = ''; eclEl.style.color = '#FF8787';
+    eclEl.textContent = '🔴 월식! 지구 그림자가 달을 가려요';
+  } else eclEl.style.display = 'none';
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      syncScene(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderMoonPanel(); renderSky(); renderEcl();
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+function syncScene() {
+  const st = sim.state;
+  const p = Sim.moonXZ(st.phase);
+  moonGrp.position.set(p.x, 0, p.z);
+  /* 🐰 동주기 자전 — 앞면이 늘 지구를 향함. 와우에서 끄면 고정 */
+  moonMesh.rotation.y = st.tidalOff ? Math.PI : Sim.tidalRotY(st.phase);
+  rabbit.visible = st.wowArmed;
+  /* 🔴 지구조 — 삭 근처일수록 강함 (스스로 빛 켜면 꺼짐) */
+  earthShineLight.intensity = sim.effGlow() ? 0 : Sim.earthshine(st.phase) * 1.5;
+  /* 스스로 빛 = 달 자체 발광 (v2 effGlow) */
+  moonMat.emissive = moonMat.emissive || new THREE.Color(0x000000);
+  moonMat.emissive.setHex(sim.effGlow() ? 0xFFF6D8 : 0x000000);
+  moonMat.emissiveIntensity = sim.effGlow() ? 0.85 : 0;
+  renderMoonPanel(); renderSky(); renderEcl();
+}
+syncScene();
+
+/* ── 조작 ── */
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'play') {
+    sim.clearWow();
+    sim.togglePlay();
+    K3.sound.play(st.playing ? 'whoosh' : 'select');
+    renderCtrls(); renderStatus();
+  } else if (a === 'day') {
+    sim.clearWow();
+    if (st.playing) sim.togglePlay();
+    sim.dayStep();
+    K3.sound.play('tap');
+    syncScene(); renderAll(); afterAct();
+  } else if (a === 'glow') {
+    const on = sim.toggleGlow();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+    if (on && sim.predArm('glowp', mode)) askPred('glowp');
+    else predTick();
+  } else if (a === 'reset') {
+    sim.wifExit(); sim.wowExit();
+    st.spd = 1; st.glow = false; st.hour = 19; st.phase = sim.phase0;
+    K3.sound.play('tap');
+    syncScene(); renderAll();
+  } else if (a === 'whatif') {
+    K3.cards.result('<h3>🌀 만약에… 무엇을 바꿔 볼까요?</h3>',
+      sim.wifList().map(k => ({ label: Sim.WHATIF[k].icon + ' ' + Sim.WHATIF[k].title, value: k }))
+    ).then(k => { if (k) startWhatif(k); });
+  } else if (a === 'wifexit') {
+    sim.wifExit();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    syncScene(); renderAll();
+    K3.cards.predict(Sim.WOW.q.replace(/<[^>]+>/g, ''),
+      Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c }))
+    ).then(v => {
+      sim.setWowPred(+v);
+      K3.sound.play('charge');
+      K3.toast('🔒 「달의 자전 꺼보기」를 누르고 ▶ 공전 재생 — 토끼 무늬를 지켜봐요!', false, T(3800));
+      renderCtrls(); renderStatus();
+    });
+  } else if (a === 'wowunlock') {
+    if (!sim.wowUnlock()) return;
+    K3.sound.play('whoosh');
+    renderCtrls(); renderStatus(); syncScene();
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  }
+}
+
+/* ── 만약에 (v3 조작 게이트) ── */
+function startWhatif(key) {
+  sim.wifStart(key);
+  K3.sound.play('whoosh');
+  syncScene(); renderAll();
+  const W = Sim.WHATIF[key];
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.wifPredict(+v);
+      K3.sound.play('charge');
+      K3.toast(W.icon + ' ' + W.tip, false, T(3600));
+      renderStatus();
+    });
+}
+function wifTick() {
+  if (!sim.wifResolved()) return;
+  const r = sim.wifResolve();
+  if (!r) return;
+  K3.sound.play(r.hit ? 'chime' : 'pop');
+  if (r.hit) K3.sound.play('ting');
+  const W = Sim.WHATIF[r.key];
+  K3.toast(
+    '<b>' + W.icon + ' ' + W.title + '</b><br>' + W.reveal +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘'),
+    !r.hit, T(6000)
+  );
+  sim.state.playing = false;
+  renderChips(); renderCtrls(); renderStatus();
+  if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(6200));
+}
+
+/* ── 🐰 와우 해소 ── */
+function wowTick() {
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>🐰 달의 앞면, 뒷면</h3>' +
+    '<div style="font-size:13px;line-height:1.55;color:#243043">자전을 끄니 토끼 무늬가 <b>보였다 사라졌다</b> 했죠? ' +
+    '달의 <b>모든 면</b>이 지구에 보인 거예요.<br>실제 달은 한 바퀴 공전하는 동안 <b>정확히 한 바퀴 자전</b>해요 — ' +
+    '이게 <b>동주기 자전</b>! 달은 자전을 «안 하는» 게 아니라, 공전에 <b>딱 맞춰서</b> 하고 있어요. ' +
+    '그래서 우리는 평생 달의 앞면만 봐요.' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 「자전을 안 한다」가 가장 흔한 오해예요! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    syncScene(); renderAll();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(400));
+  });
+  renderChips();
+}
+
+/* ── 예측 노트 (v2 3층) ── */
+function askPred(kind) {
+  const P = Sim.PRED[kind];
+  K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.predPick(kind, +v);
+      K3.sound.play('charge');
+      K3.toast('📝 예측 접수! ' + P.tip, false, T(3400));
+      renderStatus();
+    });
+}
+function predTick() {
+  ['grab', 'glowp'].forEach(kind => {
+    if (!sim.predResolved(kind, mode)) return;
+    const r = sim.predResolve(kind, mode);
+    if (!r) return;
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    if (r.hit) K3.sound.play('ting');
+    K3.toast(r.msg, !r.hit, T(5000));
+    renderChips(); renderStatus();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(5200));
+  });
+}
+
+/* ── 조작 후처리 (한 곳으로 모음: 어떤 조작이든 예측·미션·만약에·와우가 함께 판정된다.
+      ★ 재생 루프에서만 판정하면 「끌어서 확인」이 해소되지 않는다 = 배선 구멍) ── */
+function afterAct() {
+  predTick();
+  if (mode === 'mission') missionTick();
+  if (sim.state.wif) wifTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+/* ── 🔴 달 잡아 끌기 (궤도 평면 레이캐스트 역산) ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const orbitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const hitPt = new THREE.Vector3();
+let grabbing = false;
+function castOrbit(cx, cy) {
+  ptr.x = (cx / innerWidth) * 2 - 1;
+  ptr.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  return ray.ray.intersectPlane(orbitPlane, hitPt) ? hitPt : null;
+}
+function pickMoon(cx, cy) {
+  ptr.x = (cx / innerWidth) * 2 - 1;
+  ptr.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  return ray.intersectObject(moonProxy, false).length > 0;
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  hideHint();
+  if (!sim.canGrab(mode)) return;
+  if (!pickMoon(e.clientX || 0, e.clientY || 0)) return;
+  grabbing = true;
+  controls.enabled = false;
+  if (sim.state.playing) { sim.togglePlay(); renderCtrls(); }
+  sim.clearWow();
+  K3.sound.play('tap');
+  if (sim.predArm('grab', mode)) askPred('grab');
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!grabbing) return;
+  const p = castOrbit(e.clientX || 0, e.clientY || 0);
+  if (!p) return;
+  sim.grabTo(p.x, p.z);
+  syncScene(); renderStatus(); renderCtrls();
+  afterAct();
+});
+function endGrab() {
+  if (!grabbing) return;
+  grabbing = false;
+  controls.enabled = true;
+  K3.sound.play('select');
+}
+renderer.domElement.addEventListener('pointerup', endGrab);
+renderer.domElement.addEventListener('pointercancel', endGrab);
+
+/* ── 미션 ── */
+let thinkOpen = false;
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const cur = sim.missionCur();
+  if (cur.type === 'think') { openThink(cur); return; }
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { syncScene(); renderAll(); missionTick(); }, T(1300));
+}
+function openThink(m) {
+  if (thinkOpen) return;
+  thinkOpen = true;
+  K3.cards.predict(m.text.replace(/<[^>]+>/g, ''), m.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      thinkOpen = false;
+      if (+v === m.a) {
+        K3.sound.play('chime'); K3.sound.play('ting');
+        K3.toast('🎉 정답!<br>' + m.why, false, T(4200));
+        sim.missionAdvance();
+        setTimeout(() => { syncScene(); renderAll(); if (!sim.mDone) missionTick(); }, T(1400));
+      } else {
+        K3.sound.play('fail');
+        K3.toast('음… 다시 생각해 볼까요? 달이 어디에 있는지 봐요!', true, T(2600));
+        setTimeout(() => missionTick(), T(2700));
+      }
+    });
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wifExit(); sim.wowExit();
+  const st = sim.state;
+  st.spd = 1; st.glow = false; st.hour = 19; st.moveAcc = 0; st.dayCnt = 0;
+  st.pred.grab = { asked:false, ch:-1, done:false, acc0:0 };
+  st.pred.glowp = { asked:false, ch:-1, done:false, acc0:0 };
+  st.wowDone = false;
+  controls.enabled = true;
+  qLock = false;
+}
+function setGrade(g) {
+  sim.grade = g;
+  if (!sim.G().modes.includes(mode)) mode = 'free';
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  else sim.state.phase = sim.phase0;
+  syncScene(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  else sim.state.phase = 180;
+  syncScene(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+const _wp = new THREE.Vector3();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+
+  if (sim.state.playing) {
+    sim.tick(dt);
+    syncScene();
+    renderStatus();
+    const ps = $('phSlider');
+    if (ps) ps.value = Math.round(sim.state.phase);
+    afterAct();
+  }
+
+  /* 🐰 앞면 라벨 투영 (와우 중에만) */
+  if (sim.state.wowArmed && mode !== 'quiz') {
+    rabbit.getWorldPosition(_wp);
+    const wp = _wp.clone();
+    _wp.project(camera);
+    const facing = wp.clone().sub(camera.position).normalize()
+      .dot(wp.clone().sub(moonGrp.position).normalize());
+    if (_wp.z < 1 && facing < 0.35) {
+      rabAnno.style.left = ((_wp.x * 0.5 + 0.5) * innerWidth) + 'px';
+      rabAnno.style.top = ((-_wp.y * 0.5 + 0.5) * innerHeight - 20) + 'px';
+      rabAnno.style.display = '';
+    } else rabAnno.style.display = 'none';
+  } else rabAnno.style.display = 'none';
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+syncScene();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast(sim.G().v2.grab
+  ? '달을 <b>잡아서 궤도 위에 놓아 봐요</b> — 어디에 놓느냐가 달의 모양을 정해요!'
+  : '슬라이더를 움직여 <b>날마다 달 모양이 어떻게 바뀌는지</b> 봐요!');
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.MoonApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWhatif,
+  moonGrp, moonMesh, rabbit, moonProxy, earthMesh, ring, sunSpr, earthShineLight,
+  moonMat, earthMat, camera, sun, controls,
+  get texReal() { return texReal; },
+  syncScene, renderAll, missionTick, wifTick, wowTick, predTick,
+  setPhase(v) { sim.setPhase(v); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  grabTo(x, z) { sim.grabTo(x, z); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  runFor(sec) {
+    sim.state.playing = true;
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncScene(); renderStatus(); renderCtrls();
+    afterAct();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
