@@ -437,6 +437,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   <div class="dock">
     <button class="tool on" id="t-brush" data-tool="brush">🖌️<span class="tn">붓</span></button>
     <button class="tool" id="t-eraser" data-tool="eraser">🧽<span class="tn">지우개</span></button>
+    <button class="tool" id="t-stamp" data-tool="stamp">🐾<span class="tn">도장</span></button>
     <button class="tool" id="t-clear" data-tool="clear">🗑️<span class="tn">비우기</span></button>
     <div class="dock-div"></div>
     <div class="pal" id="pal"></div>
@@ -445,6 +446,26 @@ button{font-family:inherit;cursor:pointer;color:inherit}
       <div class="size-dot" id="sizeDot" style="width:16px;height:16px"></div>
       <input type="range" class="size-range" id="size" min="2" max="46" value="8">
     </div>
+  </div>
+
+  <!-- 도장 서랍 — 케이아트 빌더 동물 에셋 재사용 (2026-07-12, 기본 디자인 도장) -->
+  <style id="stamp-style">
+    .stamp-drawer{display:none;position:fixed;left:78px;top:70px;z-index:60;width:308px;max-height:70vh;overflow:auto;
+      background:var(--hud);border:1px solid var(--hud-bd);border-radius:16px;padding:12px;backdrop-filter:blur(10px)}
+    .stamp-drawer h4{font-family:var(--kedu-title);font-size:15px;margin:2px 4px 10px;color:var(--ink);font-weight:400}
+    .stamp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .stamp-card{border:2px solid transparent;border-radius:12px;background:var(--glass);padding:7px 4px 5px;
+      display:flex;flex-direction:column;align-items:center;gap:3px;transition:all .14s;color:var(--mut)}
+    .stamp-card img{width:44px;height:44px;object-fit:contain}
+    .stamp-card span{font-size:10px}
+    .stamp-card:hover{background:rgba(255,255,255,.12)}
+    .stamp-card.on{border-color:var(--accent)}
+    .stamp-hint{font-size:11px;color:var(--mut);margin-top:9px;line-height:1.5;padding:0 4px}
+  </style>
+  <div class="stamp-drawer" id="stampDrawer">
+    <h4>🐾 도장 — 골라서 캔버스를 콕!</h4>
+    <div class="stamp-grid" id="stampGrid"></div>
+    <div class="stamp-hint">같은 도장을 다음 장에 조금 옮겨 찍으면 → 움직여요. 크기는 굵기 막대로 조절.</div>
   </div>
 
   <div class="stage">
@@ -575,9 +596,50 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   function setTool(t){
     if(t==='clear'){ clearCurrent(); return; }
     tool=t;
-    ['brush','eraser'].forEach(function(k){
-      document.getElementById('t-'+k).classList.toggle('on', k===t);
+    ['brush','eraser','stamp'].forEach(function(k){
+      var el=document.getElementById('t-'+k); if(el) el.classList.toggle('on', k===t);
     });
+    if(t==='stamp'){ stampDrawer.style.display='block'; }
+    else { stampDrawer.style.display='none'; }
+  }
+
+  // ── 도장 (케이아트 빌더 동물 에셋 재사용 — /draw/assets/builder/animal/) 2026-07-12
+  var STAMPS=[['dog','강아지'],['cat','고양이'],['rabbit','토끼'],['bear','곰'],
+    ['fox','여우'],['tiger','호랑이'],['lion','사자'],['panda','판다'],
+    ['frog','개구리'],['pig','돼지'],['hamster','햄스터'],['penguin','펭귄'],
+    ['koala','코알라'],['sheep','양'],['monkey','원숭이'],['raccoon','너구리']];
+  var STAMP_BASE='/draw/assets/builder/animal/';
+  var stampDrawer=document.getElementById('stampDrawer');
+  var stampGrid=document.getElementById('stampGrid');
+  var curStamp=null, stampCache={};
+  stampGrid.innerHTML = STAMPS.map(function(a){
+    return '<button class="stamp-card" data-s="'+a[0]+'">'
+      + '<img loading="lazy" src="'+STAMP_BASE+a[0]+'.png" alt="'+a[1]+'"><span>'+a[1]+'</span></button>';
+  }).join('');
+  stampGrid.addEventListener('click', function(e){
+    var b=e.target.closest('.stamp-card'); if(!b) return;
+    curStamp=b.dataset.s;
+    [].forEach.call(stampGrid.children, function(c){ c.classList.toggle('on', c.dataset.s===curStamp); });
+    stampImg(curStamp);                       // 프리로드
+    stampDrawer.style.display='none';
+    toast('캔버스를 콕 찍어 보세요!');
+  });
+  function stampImg(slug){
+    if(!stampCache[slug]){ var im=new Image(); im.src=STAMP_BASE+slug+'.png'; stampCache[slug]=im; }
+    return stampCache[slug];
+  }
+  function placeStampAt(p){
+    if(!curStamp){ stampDrawer.style.display='block'; return; }
+    var im=stampImg(curStamp);
+    var doDraw=function(){
+      var w=Math.max(60, size*6);             // 굵기 슬라이더(2~46) → 60~276px
+      var h=w*(im.height/im.width||1);
+      drawCtx.globalCompositeOperation='source-over';
+      drawCtx.drawImage(im, p.x-w/2, p.y-h/2, w, h);
+      commitToFrame(); refreshMission();
+    };
+    if(im.complete && im.naturalWidth) doDraw();
+    else im.onload=doDraw;
   }
   document.querySelector('.dock').addEventListener('click', function(e){
     var b=e.target.closest('.tool'); if(!b) return; setTool(b.dataset.tool);
@@ -600,7 +662,9 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   }
   function startDraw(ev){
     if(play.isPlaying()) return;
-    ev.preventDefault(); drawing=true;
+    ev.preventDefault();
+    if(tool==='stamp'){ placeStampAt(toLocal(ev)); return; }   // 도장 = 1회 찍기 (드래그 없음)
+    drawing=true;
     var p=toLocal(ev); lastX=p.x; lastY=p.y;
     applyBrush(); stamp(drawCtx,p.x,p.y);
   }
