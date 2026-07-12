@@ -33,7 +33,8 @@ window.KLAB_MAP = {
   ],
   /* ---------------- 2단원 — 여러 가지 모양 ---------------- */
   u2: [
-    { tool: 'shape3d', label: '입체 모양 굴리기', desc: '상자·둥근기둥·공 모양을 굴리고 세우며 어떤 모양이 잘 구르는지 탐구', cfg: { shapes: ['box', 'cylinder', 'ball'], actions: ['roll', 'flip'], terms: 'daily' } }
+    { tool: 'shape3d', label: '입체 모양 굴리기', desc: '상자·둥근기둥·공 모양을 굴리고 세우며 어떤 모양이 잘 구르는지 탐구', cfg: { shapes: ['box', 'cylinder', 'ball'], actions: ['roll', 'flip'], terms: 'daily' } },
+    { tool: 'kart', url: '/draw/', label: '🎨 케이아트 — 모양으로 꾸미기', desc: '여러 가지 모양 도장·도형 도구로 모양 그림 만들기 (새 탭)' }
   ],
   /* ---------------- 3단원 — 덧셈과 뺄셈 (차시 키 0패딩: u3_l08·u3_l11) ---------------- */
   u3: [

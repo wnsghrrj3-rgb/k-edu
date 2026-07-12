@@ -1949,6 +1949,7 @@
   }
 
   function klabDeepUrl(rec) {
+    if (rec.url) return rec.url;  // 케이랩 외 도구(케이아트 등) — rec.url 직접 링크 (2026-07-12 교과 다리)
     let q = '?tool=' + encodeURIComponent(rec.tool) + '&from=kteacher';
     if (rec.cfg) q += '&cfg=' + encodeURIComponent(JSON.stringify(rec.cfg));
     if (rec.label) q += '&label=' + encodeURIComponent(rec.label);
