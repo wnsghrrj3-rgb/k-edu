@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 소리와 진동 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 6호 — 소리·진동 (2026-07-12 · 페이블)
+  v2 engine/tools/sound.js(471줄) 전면 재건 · r185 + klab3 코어.
+  🔴 신기술(페이블 몫) 이행: «파형 ↔ 실시간 오디오 합성 연동»
+     — Web Audio 오실레이터 → 게인 → AnalyserNode 그래프에서 뽑은 «진짜 소리 신호»가
+       유리관 속 파형 리본의 버텍스를 매 프레임 직접 그림 = 지금 보는 곡선이 지금 듣는 소리 그 자체.
+     — 스피커 콘도 같은 신호로 실제 떨림(진폭 크면 크게, 진동수 높으면 빠르게).
+     — 만약에 🦇 메아리: 펄스가 벽을 왕복해 돌아오는 «그 순간» 진짜 메아리 소리가 재생됨.
+     — 만약에 ⚡ 번개: 번쩍(빛·즉시)은 조용하고, km×30프레임 뒤 진짜 우르릉(저역 노이즈)이 옴.
+  스튜디오 5요소: ① 다크 스튜디오 실험대 위 음향 벤치
+    ② 실물 질감(원목 캐비닛 스피커·금속 콘·유리 파형관, PMREM 광택)
+    ③ 직접 조작(진폭·진동수 슬라이더 = 소리 빚기 · 궤도 회전 · 만약에 야호/번개)
+    ④ 즉각 반응(슬라이더 → 실제 음 + 리본 + 콘 떨림 + 파동 링이 한 몸으로 변함)
+    ⑤ 탐구 구조 = v2 4층 무손실
+  v2 무손실: 학년칸(저=떨림이 소리·미션2 / 중=크기·높이 분리·미션4·만약에2종 / 고=매질4종·미션6·만약에3종)
+    · 미션(acted 게이트=v3 표준) · 퀴즈 5문(장면 amp/freq 세팅·상태 숨김·무반복 순환)
+    · 만약에 3종(💧 물속대화 / 🦇 메아리 / ⚡ 번개천둥 — 진공 무음은 라이브가 이미 교습, 재탕 금지 원칙)
+    · 매질 4종(💨공기 343 · 💧물 1,500 · 🔩철 5,100 · 🌌진공 0 m/s — 파동 링 배속)
+    · 예측 무장 2종(med·vac) · 예측 노트 칩 + 5칩 «🎵 꼬마 소리탐정»
+    · 상태줄 문구 · 관측 dataset(amp/freq/medium/spd/playing/ecwall/ecphase/ecframes/thkm/thphase/thf)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz|whatif · ?amp=1~5 · ?freq=1~8
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .sn-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .sn-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .sn-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .sn-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .sn-seg button.on.med{background:rgba(77,171,247,.30);border-color:rgba(77,171,247,.62)}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:7px;align-items:stretch;max-width:210px}
+  #ctrls .k3-btn{font-size:14px;text-align:left}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(640px,86vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#d9c7ff;margin-top:3px}
+  #mbar b{color:#B197FC}
+  #v2row{position:fixed;z-index:20;left:50%;transform:translateX(-50%);bottom:104px;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:14px;backdrop-filter:blur(8px);
+    padding:8px 14px;color:#e8eef4;font-size:13.5px;display:flex;flex-direction:column;gap:6px;align-items:center;max-width:94vw}
+  #v2row .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+  #v2row input[type=range]{width:150px;accent-color:#9B7BF5}
+  #v2row .vl{font-size:12px;color:#CBB7FF;min-width:32px;text-align:center}
+  #v2row .lb{font-size:13px;color:#CBB7FF}
+  #wifpick{top:96px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;min-width:min(340px,88vw)}
+  #wifpick .ti{font-size:14px;color:#CBB7FF;text-align:center}
+  #wifpick button{font-family:'Gowun Dodum';font-size:14px;padding:11px 13px;border-radius:12px;cursor:pointer;text-align:left;
+    border:1.5px solid rgba(155,123,245,.5);background:rgba(20,16,28,.9);color:#E6DBFF}
+  #wifpick button:active{transform:scale(.97)}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:min(780px,94vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(155,123,245,.4);border-radius:13px;backdrop-filter:blur(8px);
+    padding:8px 14px;font-size:13.5px;line-height:1.45;text-align:center;color:#E2D6FF}
+  #chips{position:fixed;right:12px;bottom:14px;z-index:20;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:44vw}
+  #chips .chip{font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;border:1.5px solid;
+    background:rgba(14,18,24,.85);backdrop-filter:blur(6px)}
+  #chips .chip.hit{border-color:#12B886;color:#7CF0C9}
+  #chips .chip.miss{border-color:#E8590C;color:#FFB08A}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #choices button{font-family:'Gowun Dodum';font-size:15px;padding:11px 18px;border-radius:13px;cursor:pointer;min-width:110px;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,16,28,.9);color:#E6DBFF}
+  #choices button:active{transform:scale(.96)}
+  .sn-anno{position:absolute;pointer-events:none;font-weight:800;font-size:13.5px;padding:5px 11px;border-radius:11px;
+    background:rgba(10,10,16,.84);white-space:nowrap;transform:translate(-50%,-50%);display:none;border:2px solid;line-height:1.35;text-align:center}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🔊 케이랩 · 소리와 진동</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="sn-panel" id="hudL"></div>
+<div class="sn-panel" id="ctrls"></div>
+<div class="sn-panel" id="mbar" style="display:none"></div>
+<div class="sn-panel" id="wifpick" style="display:none"></div>
+<div id="v2row" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="status"></div>
+<div id="chips"></div>
+
+<div class="k3-hint" id="hint">🔊 <b>슬라이더로 소리를 빚고 ▶ 를 눌러</b> 봐요 — 유리관 속 파형이 지금 듣는 소리 그 자체예요</div>
+<div class="k3-loading" id="loading"><div class="ic">🔊</div><div>음향 벤치 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.SoundSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 논리 좌표계 (v2 무손실): 900×460 ── */
+  var VBW=900, VBH=460, TOP=45, BOT=415, SPK={x:135,y:230}, X0=235, X1=850, MID=230;
+
+  /* ── 매질 4종 (v2 1층 무손실 — 전달 속도 = 매질의 지문) ── */
+  var MEDIA={ air:{nm:'공기',ic:'💨',v:343,spd:1}, water:{nm:'물',ic:'💧',v:1500,spd:2.1},
+              iron:{nm:'철',ic:'🔩',v:5100,spd:3.4}, vacuum:{nm:'진공',ic:'🌌',v:0,spd:1} };
+
+  /* ── 미션 풀 (v2 문구·판정 무손실 · acted 게이트=v3 표준)
+     0~3 = 중·고 기본 4종 / 4~5 = 저학년 2종 / 6~7 = 고학년 매질 2종 ── */
+  var MISSIONS=[
+    { text:'🔊 진폭 슬라이더로 <b>가장 큰 소리</b>를 만들어 봐요!',
+      check:function(st){ return st.amp>=5; } },
+    { text:'🔉 이번엔 <b>가장 작은 소리</b> — 파형이 어떻게 변하나요?',
+      check:function(st){ return st.amp<=1; } },
+    { text:'⬆️ 진동수 슬라이더로 <b>가장 높은 소리</b>를 만들어 봐요!',
+      check:function(st){ return st.freq>=8; } },
+    { text:'⬇️ 마지막 — <b>가장 낮은 소리</b>! 파형이 느긋해져요.',
+      check:function(st){ return st.freq<=1; } },
+    { text:'🥁 ▶ <b>소리 듣기</b>를 눌러, 소리가 날 때 파형이 떨리는 걸 봐요! 떨림이 곧 소리예요.',
+      check:function(st){ return st.playing; } },
+    { text:'🔊 <b>진폭(크기) 슬라이더</b>를 올려 큰 소리를 만들어 봐요 — 떨림이 더 커져요!',
+      check:function(st){ return st.amp>=4; } },
+    { text:'🌌 <b>매질을 진공</b>으로 바꾸고 ▶ 소리를 들어봐요 — 소리가 들릴까요?',
+      check:function(st){ return st.medium==='vacuum' && st.triedVacuum; } },
+    { text:'💨 다시 <b>공기</b>로 바꿔 봐요 — 소리는 공기(매질)를 타고 우리 귀에 와요!',
+      check:function(st){ return st.medium==='air' && st.triedVacuum; } }
+  ];
+
+  /* ── 학년 칸 (v2 무손실) —
+     저=떨림이 소리 / 중=크기·높이 분리 / 고=매질·진공(소리는 무엇을 타고 오나) ── */
+  var GRADES={
+    low:  { mIdx:[4,5],             modes:['free','mission'],                 showMedium:false, wif:[] },
+    mid:  { mIdx:[0,1,2,3],         modes:['free','mission','quiz','whatif'], showMedium:false, wif:['echo','thunder'] },
+    high: { mIdx:[0,1,2,3,6,7],     modes:['free','mission','quiz','whatif'], showMedium:true,  wif:['water','echo','thunder'] }
+  };
+
+  /* ── 퀴즈 5문 (v2 무손실 — 장면 amp/freq 세팅 = 파형을 보고·들어 보고 답하기) ── */
+  var QUIZ=[
+    { amp:5, freq:3, q:'파형이 이렇게 크게 떨리면 어떤 소리일까요?', ch:['큰 소리','작은 소리','높은 소리'], a:0 },
+    { amp:1, freq:3, q:'파형이 이렇게 작게 떨리면 어떤 소리일까요?', ch:['작은 소리','큰 소리','낮은 소리'], a:0 },
+    { amp:3, freq:8, q:'파형이 이렇게 촘촘하면 어떤 소리일까요?', ch:['높은 소리','낮은 소리','큰 소리'], a:0 },
+    { amp:3, freq:1, q:'파형이 이렇게 느긋하면 어떤 소리일까요?', ch:['낮은 소리','높은 소리','작은 소리'], a:0 },
+    { amp:3, freq:3, q:'소리는 무엇 때문에 생길까요?', ch:['물체의 떨림(진동)','물체의 색깔','물체의 무게'], a:0 }
+  ];
+
+  /* ── 만약에 3종 (v2 무손실 — 진공 무음은 라이브·미션이 이미 교습 → 재탕 금지 원칙) ── */
+  var WHATIF={
+    water:{ icon:'💧', title:'물속에서 친구와 말한다면?',
+      q:'물속에서 친구가 말하면 소리가 들릴까요?',
+      ch:['물이 막아서 안 들려요','들려요 — 공기보다 더 잘 전달돼요','물 밖으로만 들려요'], a:1,
+      reveal:'소리는 매질이 촘촘할수록 잘 전달돼요! 물속에선 공기보다 4배(약 1,500m/s), 쇠 속에선 15배(약 5,100m/s) 빨라요. 고래가 수백 km 밖 친구와 노래로 대화하고, 기찻길에 귀를 대면 기차 소리를 먼저 듣는 비밀이에요.',
+      tip:'💨💧🔩 매질을 바꿔 ▶ 들어 봐요 — 물결(파동)의 빠르기를 비교!',
+      play:function(sim){ var st=sim.state; st.medium='water'; st.amp=3; st.freq=3; st.playing=false; },
+      cond:function(sim){ var st=sim.state; return st.wifActed && st.playing && (st.medium==='water'||st.medium==='iron'); } },
+    echo:{ icon:'🦇', title:'소리로 앞을 볼 수 있다면?',
+      q:'캄캄한 동굴에서 "야호!" 외치면 소리는 어떻게 될까요?',
+      ch:['벽을 그냥 통과해요','벽에 부딪혀 되돌아와요 (메아리)','벽에 스며들어 사라져요'], a:1,
+      reveal:'소리는 벽에 부딪히면 빛처럼 튕겨 돌아와요 — 메아리! 박쥐와 돌고래는 이 되돌아오는 시간으로 캄캄한 곳의 거리를 "봐요"(초음파). 병원 초음파 검사, 배가 바다 깊이를 재는 소나도 모두 이 원리랍니다.',
+      tip:'📢 야호! 를 누르고 — 벽 거리를 바꿔 되돌아오는 시간을 비교해 봐요!',
+      play:function(sim){ sim.ecReset(); sim.state.medium='air'; sim.state.playing=false; },
+      cond:function(sim){ return sim.state.wifActed && sim.state.ec.done>0; } },
+    thunder:{ icon:'⚡', title:'번개는 번쩍! 천둥은 왜 늦게 올까?',
+      q:'번개가 치면 번쩍(빛)과 우르릉(소리)은 어떻게 도착할까요?',
+      ch:['동시에 도착해요','빛이 먼저, 소리는 한참 뒤에 와요','소리가 먼저 와요'], a:1,
+      reveal:'빛은 1초에 지구 7바퀴 반 — 사실상 순간! 소리는 1초에 약 340m뿐이에요. 그래서 번쩍 후 우르릉까지 3초면 번개는 약 1km 밖. 번쩍~우르릉 초를 세면 번개까지 거리를 잴 수 있어요 — 폭풍이 다가오는지 아는 안전 지혜!',
+      tip:'⚡ 번개! 를 누르고 초를 세 봐요 — 거리를 바꾸면 어떻게 될까요?',
+      play:function(sim){ sim.thReset(); sim.state.playing=false; },
+      cond:function(sim){ return sim.state.wifActed && sim.state.th.phase==='boom'; } }
+  };
+
+  /* ── 예측 무장 2종 (v2 3층 무손실 — 정답 선택지=1) ── */
+  var PRED={
+    med:{ q:'🔮 예측 먼저! 물속·쇠 속에서 소리는 어떻게 될까요?',
+      ch:['막혀서 안 들린다','공기보다 오히려 잘 전달된다','공기와 똑같다'],
+      tip:'💧물·🔩철을 고르고 ▶ 들어 봐요 — 물결 빠르기도 지켜봐요!' },
+    vac:{ q:'🔮 예측 먼저! 아무것도 없는 진공에서 소리는?',
+      ch:['그대로 들린다','안 들린다 — 전달할 것이 없다','더 크게 들린다'],
+      tip:'🌌 진공에서 ▶ 를 눌러 봐요!' }
+  };
+  var CHIPNM={water:'💧 물속대화',echo:'🦇 메아리',thunder:'⚡ 번개천둥',med:'🔩 매질예측',vac:'🌌 진공예측'};
+
+  /* ── 시뮬 생성 ── */
+  function createSim(grade){
+    grade=(['low','mid','high'].indexOf(grade)>=0)?grade:'high';
+    var sim={};
+    sim.grade=grade;
+    sim.G=function(){ return GRADES[sim.grade]; };
+    sim.state=null;
+    sim.reset=function(){
+      sim.state={ amp:3, freq:3, medium:'air', playing:false, triedVacuum:false, lastK:null,
+        ec:{ wall:620, p:-1, phase:'idle', f:0, done:0 },
+        th:{ km:2, phase:'idle', f:0 },
+        acted:false, wifActed:false };
+    };
+    sim.reset();
+    sim.ecReset=function(){ sim.state.ec={wall:620,p:-1,phase:'idle',f:0,done:0}; };
+    sim.thReset=function(){ sim.state.th={km:2,phase:'idle',f:0}; };
+
+    /* 파생 수치 (v2 무손실) */
+    sim.hz=function(){ return 200+sim.state.freq*80; };
+    sim.vol=function(){ return sim.state.medium==='vacuum'?0:sim.state.amp*0.04; };
+
+    /* 조작 (전부 acted 게이트 세움 — v3 표준) */
+    sim.setAmp=function(v){ var st=sim.state;
+      st.amp=Math.max(1,Math.min(5,Math.round(v))); st.lastK='amp';
+      st.acted=true; st.wifActed=true; };
+    sim.setFreq=function(v){ var st=sim.state;
+      st.freq=Math.max(1,Math.min(8,Math.round(v))); st.lastK='freq';
+      st.acted=true; st.wifActed=true; };
+    sim.setMedium=function(m){ var st=sim.state;
+      if(!MEDIA[m]||st.medium===m)return false;
+      st.medium=m;
+      if(st.playing&&m==='vacuum')st.triedVacuum=true;
+      st.acted=true; st.wifActed=true; return true; };
+    sim.togglePlay=function(){ var st=sim.state;
+      st.playing=!st.playing;
+      if(st.playing&&st.medium==='vacuum')st.triedVacuum=true;
+      st.acted=true; st.wifActed=true; return st.playing; };
+
+    /* 만약에 🦇 메아리 — 펄스 7px/프레임 왕복 (v2 물리 무손실) */
+    sim.yell=function(){ var ec=sim.state.ec;
+      if(ec.phase==='go'||ec.phase==='back')return false;
+      ec.p=210; ec.phase='go'; ec.f=0;
+      sim.state.wifActed=true; return true; };
+    sim.setWall=function(w){ var ec=sim.state.ec;
+      ec.wall=Math.max(420,Math.min(800,w));
+      if(ec.phase!=='go'&&ec.phase!=='back'){ ec.phase='idle'; ec.done=0; }
+      sim.state.wifActed=true; };
+    sim.stepEcho=function(){ var ec=sim.state.ec;
+      if(ec.phase==='go'){ ec.p+=7; ec.f++;
+        if(ec.p>=ec.wall-4){ ec.p=ec.wall-4; ec.phase='back'; return 'hit'; } return null; }
+      if(ec.phase==='back'){ ec.p-=7; ec.f++;
+        if(ec.p<=210){ ec.phase='done'; ec.done=ec.f; return 'done'; } return null; }
+      return null; };
+
+    /* 만약에 ⚡ 번개 — 번쩍 즉시, 우르릉은 1km=30프레임 뒤 (v2 물리 무손실) */
+    sim.bolt=function(){ var th=sim.state.th;
+      th.phase='wait'; th.f=0; sim.state.wifActed=true; };
+    sim.setKm=function(k){ var th=sim.state.th;
+      th.km=Math.max(1,Math.min(5,Math.round(k)));
+      th.phase='idle'; th.f=0; sim.state.wifActed=true; };
+    sim.stepThunder=function(){ var th=sim.state.th;
+      if(th.phase!=='wait')return null;
+      th.f++;
+      if(th.f>=th.km*30){ th.phase='boom'; return 'boom'; }
+      return null; };
+
+    /* 파형 표본 (합성 프리뷰 — 진짜 오디오 신호가 없을 때의 폴백) */
+    sim.waveSamples=function(n,ph){ var st=sim.state, out=[];
+      var cyc=st.freq*1.1;
+      for(var i=0;i<n;i++){ var u=i/(n-1);
+        out.push(st.amp*15*Math.sin(u*cyc*2*Math.PI-(ph||0))); }
+      return out; };
+
+    /* 미션 러너 (학년칸 mIdx · acted 게이트) */
+    sim.mStep=0; sim.mDone=false;
+    sim.missionList=function(){ return sim.G().mIdx.map(function(i){return MISSIONS[i];}); };
+    sim.missionStart=function(){
+      sim.mStep=0; sim.mDone=false; sim.reset();
+    };
+    sim.missionCheck=function(){
+      if(sim.mDone) return {act:'none'};
+      var M=sim.missionList();
+      if(!sim.state.acted) return {act:'none'};
+      if(!M[sim.mStep].check(sim.state)) return {act:'none'};
+      if(sim.mStep<M.length-1){
+        sim.mStep++;
+        sim.state.acted=false;
+        return {act:'next', step:sim.mStep};
+      }
+      sim.mDone=true;
+      return {act:'done'};
+    };
+
+    /* 퀴즈 (rand 주입 순수화 · v2 무반복 순환 무손실 · 장면 amp/freq 세팅) */
+    sim.qUsed=[];
+    sim.newQuiz=function(rand){
+      rand=rand||Math.random;
+      if(sim.qUsed.length>=QUIZ.length)sim.qUsed=[];
+      var cand=[]; for(var i=0;i<QUIZ.length;i++)if(sim.qUsed.indexOf(i)<0)cand.push(i);
+      var idx=cand[Math.floor(rand()*cand.length)];
+      sim.qUsed.push(idx);
+      var keep={triedVacuum:sim.state.triedVacuum};
+      sim.reset();
+      sim.state.triedVacuum=keep.triedVacuum;
+      sim.state.amp=QUIZ[idx].amp; sim.state.freq=QUIZ[idx].freq;
+      return idx;
+    };
+
+    /* 예측 무장/해소 + 칩 (v2 3층 무손실) */
+    sim.chips=[];
+    sim.pred={ med:{asked:false,ch:-1,done:false}, vac:{asked:false,ch:-1,done:false} };
+    sim.predArm=function(kind){ if(sim.pred[kind].asked)return false; sim.pred[kind].asked=true; return true; };
+    sim.predChoose=function(kind,i){ sim.pred[kind].ch=i; };
+    sim.checkPred=function(){
+      var out=[], st=sim.state;
+      ['med','vac'].forEach(function(kind){
+        var p=sim.pred[kind]; if(p.done||p.ch<0)return;
+        var hitCond = kind==='med'
+          ? (st.playing && (st.medium==='water'||st.medium==='iron'))
+          : (st.playing && st.medium==='vacuum');
+        if(!hitCond)return;
+        p.done=true;
+        var hit=(p.ch===1);
+        sim.chips.push({k:kind,hit:hit});
+        out.push({kind:kind,hit:hit});
+      });
+      return out;
+    };
+    sim.wifChip=function(key,choice){ sim.chips.push({k:key,hit:(choice===WHATIF[key].a)}); };
+
+    /* 상태줄 문구 (v2 무손실) */
+    sim.statusText=function(wifKey){
+      var st=sim.state;
+      if(wifKey==='echo'){
+        return st.ec.phase==='done'
+          ? '벽 거리를 바꿔 다시 야호! — 왕복 시간이 어떻게 변하나요?'
+          : '소리는 벽에 부딪히면 되돌아와요 — 되돌아오는 시간이 거리의 단서!';
+      }
+      if(wifKey==='thunder'){
+        return st.th.phase==='boom'
+          ? '거리를 바꿔 다시 ⚡ — 멀수록 우르릉이 늦게 와요! (1km ≈ 3초)'
+          : '빛은 순간, 소리는 1초에 약 340m — 번쩍과 우르릉 사이를 세어 봐요.';
+      }
+      if(st.medium==='vacuum'){
+        return '🌌 진공 — 소리가 안 들려요! 소리는 공기 같은 매질이 있어야 떨림이 전달돼요. 진공에는 전달할 것이 없어요.';
+      }
+      if(st.medium==='water'||st.medium==='iron'){
+        var M=MEDIA[st.medium];
+        return M.ic+' '+M.nm+' 속 — 소리가 공기보다 '+(st.medium==='water'?'4배':'15배')
+          +' 빨리(약 '+M.v.toLocaleString()+'m/s) 전달돼요! '
+          +(st.medium==='water'?'고래는 물속 노래로 수백 km 밖 친구와 대화해요.':'기찻길에 귀를 대면 기차 소리를 먼저 들을 수 있어요.');
+      }
+      if(sim.grade==='low'){
+        return '🥁 소리가 날 때 파형이 떨려요(진동) — 이 떨림이 바로 소리예요! 크게 떨릴수록 큰 소리.';
+      }
+      var big=st.amp>=4?'큰':(st.amp<=2?'작은':'보통'), high=st.freq>=6?'높은':(st.freq<=2?'낮은':'보통');
+      var base='파형이 '+(st.amp>=4?'크게':(st.amp<=2?'작게':'적당히'))+' '
+        +(st.freq>=6?'촘촘하게':(st.freq<=2?'천천히':'적당히'))+' 떨려요 — '+big+' 소리·'+high+' 소리. 진폭은 소리 크기, 진동수는 소리 높이예요.';
+      if(st.lastK==='amp')return base+' ✨ 크기(진폭)만 바꿨더니 파형 높이만 달라지고 촘촘함은 그대로예요.';
+      if(st.lastK==='freq')return base+' ✨ 높이(진동수)만 바꿨더니 촘촘함만 달라지고 파형 높이는 그대로예요.';
+      return base;
+    };
+
+    return sim;
+  }
+
+  var API={ GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, PRED:PRED, CHIPNM:CHIPNM, MEDIA:MEDIA,
+    VBW:VBW, VBH:VBH, TOP:TOP, BOT:BOT, SPK:SPK, X0:X0, X1:X1, MID:MID,
+    createSim:createSim };
+  if(typeof window!=='undefined') window.SoundSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.SoundSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high');
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+  const a = +Q.get('amp'), f = +Q.get('freq');
+  if (a >= 1 && a <= 5) sim.state.amp = Math.round(a);
+  if (f >= 1 && f <= 8) sim.state.freq = Math.round(f);
+}
+let wifKey = null, wifChoice = -1, wifRevealed = false, wifPlaying = false;
+let quizIdx = 0, quizScore = 0, quizCount = 0, quizLock = false;
+
+/* ── 씬 (다크 스튜디오 — 음향 벤치 정면) ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0.1, 0.6, 1.6], target: [0.08, 0.32, 0], fov: 44,
+  minDist: 0.7, maxDist: 3.0, maxPolar: 1.5, exposure: 1.08
+});
+const { renderer, scene, camera, controls, sun } = app;
+sun.intensity = 1.6;
+const MAT = makeMaterials();
+makeStage(scene, {});
+
+/* 논리 ↔ 세계 좌표 (900×460 평면 → 무대 위 수직 음향면 z=0) */
+const S = 1 / 500;
+const wx = x => (x - 450) * S;
+const wy = y => (Sim.BOT - y) * S;
+
+function paintedWood(tint) {
+  return canvasTexture(256, 256, g => {
+    g.fillStyle = tint; g.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 5) {
+      const a = 0.06 + Math.abs(Math.sin(y * 0.33)) * 0.13;
+      g.fillStyle = `rgba(50,28,12,${a})`;
+      g.fillRect(0, y, 256, 2 + Math.random() * 2);
+    }
+    for (let i = 0; i < 380; i++) {
+      g.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
+      g.fillRect(Math.random() * 256, Math.random() * 256, 2, 1);
+    }
+  });
+}
+
+/* ═══════════ 기본 무대 — 스피커 실물 + 유리 파형관 ═══════════ */
+const mainG = new THREE.Group(); scene.add(mainG);
+
+/* ── 스피커 (원목 캐비닛 + 금속 콘 — 콘이 진짜 신호로 떨림) ── */
+const spkG = new THREE.Group();
+const coneVibG = new THREE.Group();           // 진동부 (콘+더스트캡)
+{
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.46, 0.3),
+    new THREE.MeshStandardMaterial({ map: paintedWood('#7A5233'), roughness: 0.62, envMapIntensity: 0.6 }));
+  cab.position.y = 0.23; cab.castShadow = cab.receiveShadow = true;
+  const baffle = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.42, 0.26),
+    new THREE.MeshStandardMaterial({ color: 0x2A2E36, roughness: 0.85 }));
+  baffle.position.set(0.125, 0.23, 0);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.095, 0.012, 12, 36),
+    new THREE.MeshStandardMaterial({ color: 0x1c1f26, roughness: 0.9 }));
+  ring.rotation.y = Math.PI / 2; ring.position.set(0.132, wy(Sim.MID), 0);
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.088, 0.05, 30, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0x9aa2ad, metalness: 0.55, roughness: 0.42, side: THREE.DoubleSide, envMapIntensity: 1.0 }));
+  cone.rotation.z = Math.PI / 2;              // 꼭짓점이 -x(안쪽)
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.026, 18, 12),
+    new THREE.MeshStandardMaterial({ color: 0x555b63, metalness: 0.85, roughness: 0.45 }));
+  cap.position.x = 0.02;
+  coneVibG.add(cone, cap);
+  coneVibG.position.set(0.128, wy(Sim.MID), 0);
+  const tweet = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.012, 20), MAT.DARKMETAL.clone());
+  tweet.rotation.z = Math.PI / 2; tweet.position.set(0.132, 0.56, 0);
+  spkG.add(cab, baffle, ring, coneVibG, tweet);
+  spkG.position.x = wx(Sim.SPK.x);
+  mainG.add(spkG);
+}
+
+/* ── 유리 파형관 (블렌딩 유리 — 규칙 §2-A) + 금속 받침 ── */
+const TUBE_R = 0.165;
+{
+  const len = (Sim.X1 - Sim.X0) * S;
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(TUBE_R, TUBE_R, len, 36, 1, true), MAT.GLASS.clone());
+  glass.rotation.z = Math.PI / 2;
+  glass.position.set(wx((Sim.X0 + Sim.X1) / 2), wy(Sim.MID), 0);
+  const capM = MAT.METAL.clone();
+  [Sim.X0, Sim.X1].forEach(x => {
+    const cap = new THREE.Mesh(new THREE.TorusGeometry(TUBE_R, 0.012, 12, 40), capM);
+    cap.rotation.y = Math.PI / 2; cap.position.set(wx(x), wy(Sim.MID), 0); cap.castShadow = true;
+    mainG.add(cap);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.013, wy(Sim.MID) - TUBE_R, 10), MAT.DARKMETAL.clone());
+    leg.position.set(wx(x), (wy(Sim.MID) - TUBE_R) / 2, 0); leg.castShadow = true;
+    mainG.add(leg);
+  });
+  mainG.add(glass);
+}
+
+/* ═══════════ 🔴 신기술 — 파형 리본 (진짜 오디오 신호가 버텍스를 그림) ═══════════ */
+const RIB_N = 96;
+const ribGeo = new THREE.BufferGeometry();
+{
+  const pos = new Float32Array(RIB_N * 2 * 3);
+  ribGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const idx = [];
+  for (let i = 0; i < RIB_N - 1; i++) {
+    const a = i * 2, b = i * 2 + 1, c = i * 2 + 2, d = i * 2 + 3;
+    idx.push(a, b, c, b, d, c);
+  }
+  ribGeo.setIndex(idx);
+}
+const ribbon = new THREE.Mesh(ribGeo, new THREE.MeshBasicMaterial({
+  color: 0x9B7BF5, transparent: true, opacity: 0.85, side: THREE.DoubleSide,
+  blending: THREE.AdditiveBlending, depthWrite: false
+}));
+mainG.add(ribbon);
+const RIB_W = 0.006;
+const sigBuf = new Float32Array(RIB_N);         // 리본에 그릴 신호 (px 단위 y 오프셋)
+function ribbonUpdate() {
+  const p = ribGeo.attributes.position.array;
+  const y0 = wy(Sim.MID);
+  for (let i = 0; i < RIB_N; i++) {
+    const x = wx(Sim.X0 + (Sim.X1 - Sim.X0) * i / (RIB_N - 1));
+    const y = y0 + Math.max(-78, Math.min(78, sigBuf[i])) * S;
+    p[i * 6] = x;     p[i * 6 + 1] = y + RIB_W; p[i * 6 + 2] = 0;
+    p[i * 6 + 3] = x; p[i * 6 + 4] = y - RIB_W; p[i * 6 + 5] = 0;
+  }
+  ribGeo.attributes.position.needsUpdate = true;
+}
+
+/* ── 파동 링 (매질 배속 — 진공이면 소멸) ── */
+const RING_N = 4;
+const rings = [];
+for (let i = 0; i < RING_N; i++) {
+  const r = new THREE.Mesh(new THREE.TorusGeometry(1, 0.006, 8, 40),
+    new THREE.MeshBasicMaterial({ color: 0xB197FC, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false }));
+  r.rotation.y = Math.PI / 2;
+  r.position.set(wx(Sim.SPK.x + 45), wy(Sim.MID), 0);
+  r.visible = false;
+  mainG.add(r); rings.push(r);
+}
+
+/* ═══════════ 만약에 🦇 — 동굴 메아리 디오라마 ═══════════ */
+const echoG = new THREE.Group(); echoG.visible = false; scene.add(echoG);
+function buildPeg(x) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.046, 0.15, 18),
+    new THREE.MeshStandardMaterial({ map: paintedWood('#B0622F'), roughness: 0.6 }));
+  body.position.y = 0.075; body.castShadow = true;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.036, 18, 14),
+    new THREE.MeshStandardMaterial({ color: 0xF0DDC2, roughness: 0.7 }));
+  head.position.y = 0.185; head.castShadow = true;
+  g.add(body, head);
+  g.position.x = wx(x);
+  return g;
+}
+const ecKid = buildPeg(150); echoG.add(ecKid);
+const rockTex = canvasTexture(256, 256, g => {
+  g.fillStyle = '#4A5568'; g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 1500; i++) {
+    const v = 55 + Math.random() * 50 | 0;
+    g.fillStyle = `rgba(${v},${v + 6},${v + 14},${0.25 + Math.random() * 0.3})`;
+    g.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 4, 2 + Math.random() * 3);
+  }
+});
+const ecWall = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.6, 0.44),
+  new THREE.MeshStandardMaterial({ map: rockTex, roughness: 0.92 }));
+ecWall.position.y = 0.3; ecWall.castShadow = ecWall.receiveShadow = true;
+echoG.add(ecWall);
+const ecPulse = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xFFD43B, transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false }));
+ecPulse.visible = false; echoG.add(ecPulse);
+const ecTrail = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10),
+  new THREE.MeshBasicMaterial({ color: 0xFFD43B, transparent: true, opacity: 0.25,
+    blending: THREE.AdditiveBlending, depthWrite: false }));
+ecTrail.visible = false; echoG.add(ecTrail);
+
+/* ═══════════ 만약에 ⚡ — 번개·천둥 디오라마 ═══════════ */
+const thG = new THREE.Group(); thG.visible = false; scene.add(thG);
+{
+  const cm = new THREE.MeshStandardMaterial({ color: 0x39404d, roughness: 0.95 });
+  [[-0.09, 0, 0.10], [0.02, 0.03, 0.12], [0.13, -0.01, 0.09], [-0.01, -0.05, 0.08]].forEach(c => {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(c[2], 18, 14), cm);
+    s.position.set(wx(180) + c[0], wy(90) + c[1], 0);
+    thG.add(s);
+  });
+}
+const boltG = new THREE.Group(); thG.add(boltG);
+{
+  const bm = new THREE.MeshBasicMaterial({ color: 0xFFD43B, transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false });
+  const segs = [[180, 140, 158, 210], [158, 210, 186, 206], [186, 206, 150, 300]];
+  segs.forEach(sg => {
+    const x1 = wx(sg[0]), y1 = wy(sg[1]), x2 = wx(sg[2]), y2 = wy(sg[3]);
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, len, 6), bm);
+    m.position.set((x1 + x2) / 2, (y1 + y2) / 2, 0);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx / len, dy / len, 0));
+    boltG.add(m);
+  });
+  boltG.visible = false;
+}
+const flash = new THREE.PointLight(0xFFF3C4, 0, 2.4, 2);
+flash.position.set(wx(180), wy(120), 0.15); thG.add(flash);
+const thKid = buildPeg(720); thG.add(thKid);
+
+/* ═══════════ 🔴 신기술 — 실시간 오디오 엔진 (파형 ↔ 소리 한 몸) ═══════════ */
+let actx = null, tone = null, tGain = null, analyser = null, aBuf = null;
+const audioEvents = [];                          // 관측점 (테스트·디버그)
+function aev(t) { audioEvents.push({ t, at: Date.now() }); }
+function ensureCtx() {
+  try {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === 'suspended' && actx.resume) actx.resume();
+  } catch (e) { actx = null; }
+  return actx;
+}
+function startTone() {
+  aev('start');
+  const c = ensureCtx(); if (!c) return;
+  try {
+    tone = c.createOscillator(); tGain = c.createGain(); analyser = c.createAnalyser();
+    analyser.fftSize = 512;
+    aBuf = new Float32Array(analyser.fftSize);
+    tone.type = 'sine';
+    tone.frequency.value = sim.hz();
+    tGain.gain.value = sim.vol();
+    tone.connect(tGain); tGain.connect(analyser); analyser.connect(c.destination);
+    tone.start();
+  } catch (e) { tone = null; analyser = null; }
+}
+function stopTone() {
+  aev('stop');
+  try { if (tone) { tone.stop(); tone.disconnect(); } } catch (e) {}
+  tone = null; tGain = null; analyser = null;
+}
+function updateTone() {
+  try {
+    if (tone) tone.frequency.value = sim.hz();
+    if (tGain) tGain.gain.value = sim.vol();
+  } catch (e) {}
+}
+function blip(f0, f1, dur, peak) {
+  const c = ensureCtx(); if (!c) return;
+  try {
+    const t0 = c.currentTime + 0.01;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f0, t0);
+    o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  } catch (e) {}
+}
+function rumble() {
+  aev('boom');
+  const c = ensureCtx(); if (!c) return;
+  try {
+    const t0 = c.currentTime + 0.01;
+    const b = c.createBuffer(1, Math.floor(c.sampleRate * 1.2), c.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const s = c.createBufferSource(); s.buffer = b;
+    const f = c.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(170, t0);
+    f.frequency.exponentialRampToValueAtTime(46, t0 + 1.1);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.5, t0 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.15);
+    s.connect(f); f.connect(g); g.connect(c.destination);
+    s.start(t0); s.stop(t0 + 1.25);
+  } catch (e) {}
+}
+
+/* ═══════════ DOM 주석 (매질·메아리·번개 라벨 투영) ═══════════ */
+const annoHost = document.getElementById('anno');
+function mkAnno(color) {
+  const d = document.createElement('div');
+  d.className = 'sn-anno';
+  d.style.color = color; d.style.borderColor = color;
+  annoHost.appendChild(d);
+  return d;
+}
+const annoMed = mkAnno('#B9C8FF');
+const annoMute = mkAnno('#8FA6FF');
+const annoEc = mkAnno('#FFE08A');
+const annoEcSub = mkAnno('#B9C8E6');
+const annoTh = mkAnno('#FFE08A');
+const annoThSec = mkAnno('#B9C8E6');
+const annoThDist = mkAnno('#9AA9C4');
+const _pv = new THREE.Vector3();
+function placeAnno(el2, x, y, html, on) {
+  if (!on) { el2.style.display = 'none'; return; }
+  _pv.set(wx(x), wy(y), 0).project(camera);
+  if (_pv.z > 1) { el2.style.display = 'none'; return; }
+  if (html != null) el2.innerHTML = html;
+  el2.style.left = ((_pv.x * 0.5 + 0.5) * innerWidth) + 'px';
+  el2.style.top = ((-_pv.y * 0.5 + 0.5) * innerHeight) + 'px';
+  el2.style.display = '';
+}
+
+/* ═══════════ 장면 동기화 ═══════════ */
+function updDS() {
+  const st = sim.state, sEl = document.getElementById('stage');
+  sEl.dataset.amp = String(st.amp); sEl.dataset.freq = String(st.freq);
+  sEl.dataset.medium = st.medium; sEl.dataset.spd = String(Sim.MEDIA[st.medium].v);
+  sEl.dataset.playing = st.playing ? '1' : '0';
+  sEl.dataset.hz = String(sim.hz()); sEl.dataset.vol = sim.vol().toFixed(2);
+  sEl.dataset.ecwall = String(st.ec.wall); sEl.dataset.ecphase = st.ec.phase; sEl.dataset.ecframes = String(st.ec.done);
+  sEl.dataset.thkm = String(st.th.km); sEl.dataset.thphase = st.th.phase; sEl.dataset.thf = String(st.th.f);
+}
+function syncScene() {
+  const st = sim.state;
+  const ecOn = wifKey === 'echo', thOn = wifKey === 'thunder';
+  mainG.visible = !ecOn && !thOn;
+  echoG.visible = ecOn;
+  thG.visible = thOn;
+
+  if (ecOn) {
+    ecWall.position.x = wx(st.ec.wall + 13);
+  }
+
+  /* 매질 라벨 (고학년 또는 물속대화) */
+  const showMed = mainG.visible && (sim.G().showMedium || wifKey === 'water');
+  const M = Sim.MEDIA[st.medium];
+  placeAnno(annoMed, 700, 70,
+    M.ic + ' ' + M.nm + ' — ' + (M.v ? ('약 ' + M.v.toLocaleString() + 'm/s') : '전달 안 됨'), showMed);
+  placeAnno(annoMute, 500, 130, '🌌 진공 — 파형은 떨려도 소리는 못 와요',
+    mainG.visible && st.medium === 'vacuum' && st.playing);
+
+  updDS();
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), v2row = $('v2row'),
+      wifpick = $('wifpick'), choicesEl = $('choices'), chipsEl = $('chips'), statusEl = $('status');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈', whatif: '🌀 만약에' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+const MED_ORDER = ['air', 'water', 'iron', 'vacuum'];
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="sn-seg">' + ['low', 'mid', 'high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="sn-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  ctrls.style.display = '';
+  let h = '';
+  if (wifKey === 'echo') {
+    h += '<button class="k3-btn accent" data-a="yell">📢 야호!</button>';
+  } else if (wifKey === 'thunder') {
+    h += '<button class="k3-btn fire" data-a="bolt">⚡ 번개!</button>';
+  } else {
+    h += `<button class="k3-btn accent" data-a="play">${sim.state.playing ? '■ 멈춤' : '▶ 소리 듣기'}</button>`;
+  }
+  if (mode !== 'quiz') h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  if (mode === 'whatif' && wifKey) h += '<button class="k3-btn" data-a="wifBack">🌀 다른 만약에</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 소리를 마음껏 빚어 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    mbar.innerHTML = `${Sim.QUIZ[quizIdx].q}<div class="st">점수 ${quizScore} / ${quizCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function medBtnsHTML(keys) {
+  return '<div class="row">' + keys.map(k => {
+    const M = Sim.MEDIA[k], on = sim.state.medium === k;
+    return `<button class="k3-btn sn-medbtn ${on ? 'accent' : ''}" data-med="${k}" style="font-size:13px;padding:7px 11px">${M.ic} ${M.nm}</button>`;
+  }).join('') + '</div>';
+}
+function bindMed() {
+  v2row.querySelectorAll('[data-med]').forEach(b => b.addEventListener('click', () => {
+    hideHint();
+    if (!sim.setMedium(b.dataset.med)) return;
+    K3.sound.play('select');
+    updateTone();
+    if (mode === 'free' && sim.G().showMedium) {
+      if (b.dataset.med === 'water' || b.dataset.med === 'iron') armPred('med');
+      else if (b.dataset.med === 'vacuum') armPred('vac');
+    }
+    resolvePreds();
+    if (mode === 'mission') missionTick();
+    wifResolve();
+    syncScene(); renderV2(); renderCtrls(); renderStatus();
+  }));
+}
+
+/* 슬라이더·매질·만약에 보조 조작 (하단 패널) */
+function renderV2() {
+  const st = sim.state;
+  if (mode === 'quiz') { v2row.style.display = 'none'; return; }
+  v2row.style.display = '';
+  if (wifKey === 'echo') {
+    v2row.innerHTML = `<div class="row"><span class="lb">동굴 벽 거리</span>
+      <input id="slWall" type="range" min="420" max="800" step="10" value="${st.ec.wall}">
+      <span class="vl" id="slWallLb">${st.ec.wall}</span></div>`;
+    $('slWall').addEventListener('input', e => {
+      sim.setWall(+e.target.value);
+      $('slWallLb').textContent = String(st.ec.wall);
+      syncScene(); renderStatus();
+    });
+    return;
+  }
+  if (wifKey === 'thunder') {
+    v2row.innerHTML = `<div class="row"><span class="lb">번개까지 거리</span>
+      <input id="slKm" type="range" min="1" max="5" step="1" value="${st.th.km}">
+      <span class="vl" id="slKmLb">${st.th.km}km</span></div>`;
+    $('slKm').addEventListener('input', e => {
+      sim.setKm(+e.target.value);
+      $('slKmLb').textContent = st.th.km + 'km';
+      syncScene(); renderStatus();
+    });
+    return;
+  }
+  let h = `<div class="row">
+      <span class="lb">소리 크기(진폭)</span><input id="slAmp" type="range" min="1" max="5" step="1" value="${st.amp}"><span class="vl" id="slAmpLb">${st.amp}/5</span>
+      <span class="lb">소리 높이(진동수)</span><input id="slFreq" type="range" min="1" max="8" step="1" value="${st.freq}"><span class="vl" id="slFreqLb">${st.freq}/8</span>
+    </div>`;
+  if (wifKey === 'water') h += medBtnsHTML(['air', 'water', 'iron']);
+  else if (mode !== 'whatif' && sim.G().showMedium) h += medBtnsHTML(MED_ORDER);
+  v2row.innerHTML = h;
+  $('slAmp').addEventListener('input', e => {
+    hideHint(); sim.setAmp(+e.target.value);
+    $('slAmpLb').textContent = st.amp + '/5';
+    updateTone();
+    if (mode === 'mission') missionTick();
+    syncScene(); renderStatus();
+  });
+  $('slFreq').addEventListener('input', e => {
+    hideHint(); sim.setFreq(+e.target.value);
+    $('slFreqLb').textContent = st.freq + '/8';
+    updateTone();
+    if (mode === 'mission') missionTick();
+    syncScene(); renderStatus();
+  });
+  bindMed();
+}
+
+/* 상태 카드 (퀴즈에선 숨김 = 정답 누설 차단) */
+function renderStatus() {
+  if (mode === 'quiz') { statusEl.style.display = 'none'; return; }
+  statusEl.style.display = '';
+  statusEl.innerHTML = `<div class="card">${sim.statusText(wifKey)}</div>`;
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.chips.map(c =>
+    `<span class="chip ${c.hit ? 'hit' : 'miss'}">${Sim.CHIPNM[c.k] || c.k} · ${c.hit ? '✔적중' : '✘빗나감'}</span>`).join('');
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = Sim.QUIZ[quizIdx];
+  const order = q.ch.map((c, i) => ({ c, i })).sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(o => `<button data-v="${o.i}">${o.c}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (quizLock) return; quizLock = true;
+    const ok = +b.dataset.v === q.a;
+    quizCount++; if (ok) quizScore++;
+    K3.sound.play(ok ? 'chime' : 'fail');
+    K3.toast(ok ? '🎉 정답! ' + q.ch[q.a] : '아쉬워요 — 정답은 「' + q.ch[q.a] + '」', !ok, T(1300));
+    setTimeout(() => {
+      quizIdx = sim.newQuiz();
+      if (sim.state.playing !== !!tone) { /* 상태·오디오 동기 */ }
+      stopTone();
+      quizLock = false; syncScene(); renderAll();
+    }, T(1450));
+  }));
+}
+
+/* 만약에 고르기 패널 */
+function renderWifPick() {
+  if (mode !== 'whatif' || wifKey) { wifpick.style.display = 'none'; return; }
+  wifpick.style.display = '';
+  wifpick.innerHTML = '<div class="ti">🌀 만약에… 하나를 골라 실험해 봐요</div>' +
+    sim.G().wif.map(k => `<button data-w="${k}">${Sim.WHATIF[k].icon} ${Sim.WHATIF[k].title}</button>`).join('');
+  wifpick.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => startWif(b.dataset.w)));
+}
+async function startWif(key) {
+  wifKey = key; wifChoice = -1; wifRevealed = false; wifPlaying = false;
+  stopTone(); sim.state.playing = false;
+  const W = Sim.WHATIF[key];
+  renderWifPick(); renderCtrls();
+  K3.sound.play('charge');
+  wifChoice = await K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: i, label: c })));
+  W.play(sim);
+  sim.state.wifActed = false;
+  wifPlaying = true;
+  K3.toast('🧪 ' + W.tip, false, T(4600));
+  syncScene(); renderCtrls(); renderV2(); renderStatus();
+}
+function wifResolve() {
+  if (!wifKey || wifRevealed || !wifPlaying) return;
+  const W = Sim.WHATIF[wifKey];
+  if (!W.cond(sim)) return;
+  wifRevealed = true;
+  sim.wifChip(wifKey, wifChoice);
+  const hit = wifChoice === W.a;
+  K3.sound.play(hit ? 'chime' : 'pop'); K3.sound.play('ting');
+  setTimeout(() => {
+    K3.cards.result(
+      `<h3 style="color:${hit ? '#0d7a5c' : '#B9522F'}">${hit ? '🎯 예측 적중!' : '🤔 예측과 달랐죠?'}</h3>
+       <p style="font-size:13px;line-height:1.7;color:#41546a">${W.reveal}</p>`,
+      [{ label: '계속 실험', cls: 'pri', value: 0 }, { label: '🌀 다른 만약에', value: 1 }]
+    ).then(v => { if (v === 1) act('wifBack'); else renderAll(); });
+    renderChips(); chipToast();
+  }, T(1100));
+}
+
+/* 예측 무장 (free · 고학년) */
+async function armPred(kind) {
+  if (mode !== 'free' || !sim.G().showMedium) return;
+  if (!sim.predArm(kind)) return;
+  const P = Sim.PRED[kind];
+  K3.sound.play('select');
+  const ch = await K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: i, label: c })));
+  sim.predChoose(kind, ch);
+  K3.toast('📝 예측 접수! ' + P.tip, false, T(4200));
+  resolvePreds();                                  // light 교훈: 선택 직후에도 해소 검사 (이미 조건 충족 상태 대비)
+}
+function resolvePreds() {
+  if (mode !== 'free') return;
+  sim.checkPred().forEach(r => {
+    const msg = r.kind === 'med'
+      ? (r.hit ? '✔ 예측 적중 — 물속에선 4배, 쇠 속에선 15배 빨리 전달돼요! 매질이 촘촘할수록 떨림이 잘 옮아가요.'
+               : '✘ 예측 빗나감 — 물·쇠는 공기보다 오히려 잘 전달해요! 고래의 노래·기찻길 귀 대기의 비밀이에요.')
+      : (r.hit ? '✔ 예측 적중 — 진공엔 떨림을 옮겨 줄 것이 없어 소리가 못 가요! 소리는 매질이 꼭 필요해요.'
+               : '✘ 예측 빗나감 — 진공에선 안 들려요! 소리는 공기 같은 매질을 타고 오거든요. 우주는 완전한 고요예요.');
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    K3.toast(msg, !r.hit, T(4600));
+  });
+  renderChips(); chipToast();
+}
+function chipToast() {
+  if (sim.chips.length === 5) setTimeout(() => { K3.sound.play('ting'); K3.toast('🎵 꼬마 소리탐정 — 오늘 가설 5개를 실험했어요!'); }, T(600));
+}
+
+/* ── 조작 ── */
+function act(a) {
+  hideHint();
+  if (a === 'play') {
+    const on = sim.togglePlay();
+    if (on) startTone(); else stopTone();
+    K3.sound.play('tap');
+    resolvePreds();
+    if (mode === 'mission') missionTick();
+    wifResolve();
+  }
+  else if (a === 'yell') {
+    if (sim.yell()) { aev('yell'); blip(520, 330, 0.35, 0.4); K3.sound.play('tap'); }
+  }
+  else if (a === 'bolt') {
+    sim.bolt();
+    K3.sound.play('charge');
+  }
+  else if (a === 'reset') {
+    stopTone();
+    const g = sim.grade;
+    sim.reset();
+    if (wifKey) { Sim.WHATIF[wifKey].play(sim); sim.state.wifActed = false; }
+    K3.sound.play('tap');
+    renderV2();
+  }
+  else if (a === 'wifBack') {
+    wifKey = null; wifPlaying = false; wifRevealed = false;
+    stopTone(); sim.reset(); K3.cards.hide(); syncScene(); renderAll(); return;
+  }
+  syncScene(); renderCtrls(); renderStatus();
+}
+function missionTick() {
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { syncScene(); renderAll(); }, T(1300));
+}
+
+function setGrade(g) {
+  sim.grade = g;
+  mode = 'free';
+  wifKey = null; wifPlaying = false; wifRevealed = false;
+  stopTone(); sim.reset(); sim.mStep = 0; sim.mDone = false;
+  K3.cards.hide(); syncScene(); renderAll();
+}
+function setMode(m) {
+  mode = m;
+  wifKey = null; wifPlaying = false; wifRevealed = false;
+  stopTone(); sim.reset(); K3.cards.hide();
+  if (m === 'mission') sim.missionStart();
+  if (m === 'quiz') { quizScore = 0; quizCount = 0; sim.qUsed = []; quizIdx = sim.newQuiz(); }
+  syncScene(); renderAll();
+}
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderV2(); renderQuiz(); renderWifPick(); renderChips(); renderStatus();
+}
+
+/* ═══════════ 루프 — 🔴 진짜 신호 → 리본·콘·링이 한 몸으로 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 12 : 1;
+let tAcc = 0, ph = 0, ringT = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  tAcc += dt;
+  const st = sim.state;
+
+  /* 신호 채우기: 재생 중 + 아날라이저 = 진짜 오디오 신호 / 아니면 합성 프리뷰 */
+  let coneSig = 0;
+  if (st.playing && analyser && sim.vol() > 0) {
+    try {
+      analyser.getFloatTimeDomainData(aBuf);
+      const stepN = aBuf.length / RIB_N;
+      for (let i = 0; i < RIB_N; i++) sigBuf[i] = aBuf[Math.floor(i * stepN)] * 375;   // 0.04·amp → 15·amp px
+      coneSig = aBuf[8] * 375;                     // 살아 있는 표본 (0번은 늘 위상 시작점이라 편향)
+    } catch (e) { analyser = null; }
+  } else {
+    ph += (0.05 + st.freq * 0.02) * (st.playing ? 1 : 0.3) * (dt * 60);
+    const w = sim.waveSamples(RIB_N, ph);
+    const dim = st.playing ? 1 : 0.45;
+    for (let i = 0; i < RIB_N; i++) sigBuf[i] = w[i] * dim;
+    coneSig = st.playing ? Math.sin(ph * 3) * st.amp * 12 : 0;
+  }
+  ribbonUpdate();
+  ribbon.material.opacity = st.playing ? 0.9 : 0.4;
+
+  /* 콘 떨림 (검수 포인트) */
+  coneVibG.position.x = 0.128 + Math.max(-0.022, Math.min(0.022, coneSig * S * 0.9));
+
+  /* 파동 링 — 매질 배속, 진공·정지 시 소멸 */
+  const spd = Sim.MEDIA[st.medium].spd;
+  ringT += dt * 60 * 0.05;
+  const ringsOn = mainG.visible && st.playing && st.medium !== 'vacuum';
+  for (let i = 0; i < RING_N; i++) {
+    const r = rings[i];
+    r.visible = ringsOn;
+    if (!ringsOn) continue;
+    const prog = ((ringT * 8 * spd + i * 40) % 160) / 160;
+    r.scale.setScalar(Math.max(0.01, prog * 0.4));
+    r.material.opacity = 0.5 * (1 - prog) * (st.amp / 5);
+  }
+
+  /* 만약에 🦇 메아리 — 프레임 스텝 + 도착 «그 순간» 진짜 메아리 */
+  if (wifKey === 'echo') {
+    const ev = sim.stepEcho();
+    if (ev === 'hit') K3.sound.play('select');
+    if (ev === 'done') {
+      aev('echoBack'); blip(500, 320, 0.3, 0.16);
+      K3.sound.play('pop');
+      wifResolve(); renderStatus();
+    }
+    const flying = st.ec.phase === 'go' || st.ec.phase === 'back';
+    ecPulse.visible = ecTrail.visible = flying;
+    if (flying) {
+      ecPulse.position.set(wx(st.ec.p), wy(280), 0);
+      ecTrail.position.copy(ecPulse.position);
+      ecPulse.material.color.setHex(st.ec.phase === 'back' ? 0xFF922B : 0xFFD43B);
+      ecTrail.material.color.copy(ecPulse.material.color);
+    }
+    placeAnno(annoEc, 450, 110,
+      st.ec.phase === 'idle' ? '📢 야호! 를 눌러 소리를 쏘아 봐요'
+        : st.ec.phase === 'go' ? '야호──!'
+        : st.ec.phase === 'back' ? '…야호… (되돌아와요!)'
+        : '메아리 도착! 왕복 ' + (st.ec.done / 10).toFixed(1) + '초', true);
+    placeAnno(annoEcSub, 450, 152,
+      st.ec.phase === 'done' ? '벽이 멀수록 오래 걸려요 — 박쥐는 이 시간으로 거리를 재요!' : '', st.ec.phase === 'done');
+    updDS();
+  } else { annoEc.style.display = 'none'; annoEcSub.style.display = 'none'; }
+
+  /* 만약에 ⚡ 번개 — 번쩍 즉시(빛), 우르릉은 진짜 지연 재생 */
+  if (wifKey === 'thunder') {
+    const ev = sim.stepThunder();
+    if (ev === 'boom') { rumble(); wifResolve(); renderStatus(); }
+    const flashOn = st.th.phase === 'wait' && st.th.f < 7;
+    boltG.visible = flashOn;
+    flash.intensity = flashOn ? 3.2 : (st.th.phase === 'boom' ? 0 : 0);
+    placeAnno(annoTh, 470, 180,
+      st.th.phase === 'idle' ? '⚡ 번개! 를 눌러 봐요'
+        : st.th.phase === 'wait' ? '번쩍…! (빛은 벌써 도착)'
+        : '우르르릉──!! (' + (st.th.km * 3) + '초 뒤 도착)', true);
+    placeAnno(annoThSec, 470, 222,
+      st.th.phase === 'wait' ? '⏱ ' + (st.th.f / 10).toFixed(1) + '초… 소리가 오는 중'
+        : (st.th.phase === 'boom' ? '소리는 1초에 약 340m — 번쩍~우르릉 3초 = 약 1km!' : ''),
+      st.th.phase !== 'idle');
+    placeAnno(annoThDist, 470, 400, '번개까지 거리: ' + st.th.km + 'km', true);
+    updDS();
+  } else { annoTh.style.display = 'none'; annoThSec.style.display = 'none'; annoThDist.style.display = 'none'; }
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+syncScene(); renderAll();
+if (mode === 'mission') sim.missionStart();
+if (mode === 'quiz') { quizIdx = sim.newQuiz(); renderAll(); syncScene(); }
+document.getElementById('loading').classList.add('hide');
+K3.toast('🔊 슬라이더로 소리를 빚어 봐요 — 파형·콘·소리가 한 몸으로 움직여요');
+animate();
+
+/* 테스트용 앱 훅 */
+window.SoundApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWif,
+  get wifKey() { return wifKey; },
+  get quizIdx() { return quizIdx; }, get quizScore() { return quizScore; },
+  syncScene, renderAll,
+  spkG, coneVibG, ribbon, ribGeo, rings, mainG, echoG, thG, ecWall, ecPulse, boltG, flash,
+  get tone() { return tone; }, get tGain() { return tGain; }, get analyser() { return analyser; },
+  audioEvents,
+  setAmp(v) { sim.setAmp(v); updateTone(); if (mode === 'mission') missionTick(); syncScene(); renderStatus(); },
+  setFreq(v) { sim.setFreq(v); updateTone(); if (mode === 'mission') missionTick(); syncScene(); renderStatus(); },
+  setMedium(m) {
+    if (!sim.setMedium(m)) return;
+    updateTone();
+    if (mode === 'free' && sim.G().showMedium) {
+      if (m === 'water' || m === 'iron') armPred('med'); else if (m === 'vacuum') armPred('vac');
+    }
+    resolvePreds();
+    if (mode === 'mission') missionTick();
+    wifResolve(); syncScene(); renderV2(); renderStatus();
+  }
+};
+</script>
+</body>
+</html>
