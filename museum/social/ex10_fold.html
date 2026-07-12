@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>한반도를 접는 방 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:default; }
+  #stage-canvas.is-over{ cursor:grab; }
+  #stage-canvas.is-dragging{ cursor:grabbing; }
+  #premise{ position:fixed; top:6vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+     font-family:'Gowun Batang',serif; font-size:clamp(15px,2.1vw,22px); color:var(--ink-dim);
+     opacity:0; transition:opacity 1.6s ease; letter-spacing:.02em; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+     display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:5vh; gap:14px; }
+  #overlay > *{ pointer-events:auto; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(340px,66vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp .cap{ font-family:'Gowun Dodum',sans-serif; font-size:14px; color:var(--ink-dim); letter-spacing:.02em; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+     font-family:'Gowun Batang',serif; font-size:clamp(16px,2.2vw,23px); color:var(--ink);
+     text-align:center; letter-spacing:.02em; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+     font-size:14px; color:var(--ink-dim); line-height:1.7; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변).
+     윤곽 = Natural Earth 50m(퍼블릭 도메인) Douglas-Peucker 단순화 · 0.1도 양자화. 연출용 변형 0.
+     소요시간 = 실측 기록(한국경제 60년사 / 영남대로 도보 통설). 보간·지어내기 0.
+     국토의 수축 = 서울을 고정점으로 한 닮음 변환 — 축척은 오직 소요시간의 비.
+     땅은 줄지 않는다. 줄어드는 것은 시간뿐이다. -->
+<script id="fold-pure">
+(function(global){
+  'use strict';
+
+  // ── 실측 상수 ────────────────────────────────────────────────────
+  // 서울(한양) ↔ 부산(동래) 편도 소요시간. 단위 = 분.
+  //  · 조선 도보  = 영남대로 960리, 보름 남짓(통설) → 14일
+  //  · 1905 융희호 = 경부선 개통, 14시간      [한국경제 60년사]
+  //  · 1955 통일호 = 디젤 투입, 7시간          [한국경제 60년사]
+  //  · 1985 새마을호 = 4시간 10분              [한국경제 60년사]
+  //  · 2004 KTX 개통 = 2시간 40분
+  //  · 2010 KTX 완전개통 = 1시간 56분          [한국경제 60년사]
+  var ERAS = [
+    { key:'walk',  era:'조선',  ko:'걸어서',       min:14*24*60 },
+    { key:'yung',  era:'1905',  ko:'융희호',       min:14*60    },
+    { key:'tong',  era:'1955',  ko:'통일호',       min:7*60     },
+    { key:'saema', era:'1985',  ko:'새마을호',     min:4*60+10  },
+    { key:'ktx',   era:'2004',  ko:'KTX',          min:2*60+40  },
+    { key:'ktx2',  era:'2010',  ko:'KTX',          min:60+56    }
+  ];
+  var N = ERAS.length;
+
+  function minutesOf(i){ return ERAS[i].min; }
+  function scaleOf(i){ return ERAS[i].min / ERAS[0].min; }   // 국토의 축척 = 시간의 비
+  function foldOf(i){ return ERAS[0].min / ERAS[i].min; }    // 몇 겹으로 접혔나
+
+  // 분 → {일, 시, 분} 정확 분해 (여운 전용 — 관람 중엔 쓰이지 않는다)
+  function partsOf(min){
+    var d=Math.floor(min/1440), r=min-d*1440;
+    var h=Math.floor(r/60), m=r-h*60;
+    return { day:d, hour:h, min:m };
+  }
+
+  // ── 지형 (Natural Earth 50m · 퍼블릭 도메인) ─────────────────────
+  var SOUTH = "126.6 37.8,126.7 37.9,127.1 38.3,128 38.3,128.2 38.4,128.4 38.6,128.6 38.2,129.3 37.3,129.4 37.1,129.5 36.7,129.4 36.3,129.4 36.1,129.5 36,129.6 36.1,129.6 35.9,129.4 35.5,129.2 35.2,129 35.1,128.5 35.1,128.4 35,128.4 34.9,128.1 34.9,128 35,127.7 35,127.6 34.9,127.7 34.8,127.7 34.7,127.6 34.7,127.5 34.8,127.4 34.8,127.4 34.7,127.5 34.6,127.3 34.5,127.2 34.5,127.3 34.7,127.2 34.8,127 34.6,126.9 34.4,126.8 34.5,126.6 34.4,126.6 34.3,126.5 34.4,126.5 34.5,126.3 34.7,126.5 34.7,126.5 34.8,126.6 34.8,126.4 34.8,126.3 35.2,126.5 35.5,126.6 35.6,126.5 35.6,126.7 35.8,126.8 35.9,126.6 35.9,126.7 36,126.5 36.2,126.5 36.5,126.5 36.7,126.4 36.7,126.2 36.7,126.2 36.8,126.2 36.9,126.5 37,126.8 36.9,126.9 36.8,127 36.9,126.9 37,126.7 37.2,126.8 37.3,126.7 37.4,126.7 37.6,126.6 37.7,126.6 37.8,126.6 37.8|126.3 33.2,126.2 33.2,126.2 33.3,126.2 33.4,126.3 33.5,126.7 33.5,126.9 33.5,126.9 33.4,126.9 33.3,126.6 33.2,126.3 33.2,126.3 33.2|128.7 34.8,128.6 34.7,128.5 34.9,128.7 35,128.7 34.8,128.7 34.8|128.1 34.8,128.1 34.7,128 34.7,127.9 34.8,127.9 34.7,127.8 34.9,127.9 34.9,128 34.9,128.1 34.8,128.1 34.8|126.2 34.4,126.1 34.4,126.2 34.5,126.3 34.5,126.4 34.5,126.2 34.4,126.2 34.4|126.5 37.7,126.5 37.6,126.4 37.6,126.4 37.8,126.5 37.7,126.5 37.7";
+  var NORTH = "128.4 38.6,128.2 38.4,128 38.3,127.1 38.3,126.7 37.9,126.6 37.8,126.4 37.9,126.2 37.8,126.1 37.7,126.1 37.9,125.9 37.9,125.8 38,125.4 37.7,125.3 37.8,125 37.9,125.2 38.1,124.7 38.1,124.9 38.2,124.9 38.3,125.1 38.6,125.3 38.7,125.6 38.7,125.2 38.8,125.2 38.9,125.4 39.3,125.4 39.5,125.1 39.6,124.8 39.8,124.7 39.7,124.6 39.6,124.6 39.8,124.3 39.9,124.4 40.1,124.9 40.5,125 40.5,125.1 40.5,125.4 40.7,125.7 40.9,126 40.9,126.5 41.4,126.6 41.6,126.7 41.7,126.9 41.8,127.1 41.7,127.2 41.5,127.7 41.4,128 41.4,128.1 41.4,128.3 41.6,128 41.9,128 42,128.9 42,129.2 42.2,129.3 42.4,129.4 42.4,129.5 42.4,129.7 42.4,129.8 42.8,129.9 43,130.1 43,130.2 42.9,130.2 42.7,130.5 42.6,130.7 42.3,130.5 42.3,130.2 42.2,129.8 41.7,129.7 41.6,129.7 41.5,129.8 41.3,129.7 41.1,129.7 40.9,129.3 40.7,129.1 40.5,128.7 40.3,128.5 40.1,128.3 40,128 40,127.9 39.9,127.6 39.8,127.5 39.7,127.5 39.5,127.5 39.4,127.4 39.4,127.4 39.2,127.8 39.1,128 38.9,128.2 38.7,128.4 38.6,128.4 38.6";
+  var _rings = null;
+  function decode(s){
+    return s.split('|').map(function(r){
+      return r.split(',').map(function(p){
+        var t=p.split(' ');
+        return [parseFloat(t[0]), parseFloat(t[1])];
+      });
+    });
+  }
+  function rings(){
+    if(!_rings) _rings = { south: decode(SOUTH), north: decode(NORTH) };
+    return _rings;
+  }
+
+  // ── 도시 (실좌표) ────────────────────────────────────────────────
+  var SEOUL = [126.9780, 37.5665];
+  var BUSAN = [129.0756, 35.1796];
+
+  // ── 투영 (등거리 원통 · 위도 36도 기준) ──────────────────────────
+  var LAT0 = 36, KX = Math.cos(LAT0*Math.PI/180);
+  function proj(p){ return [ p[0]*KX, p[1] ]; }          // 경도 압축만 — 면적 왜곡 최소
+
+  // ── 접힘: 서울을 고정점으로 한 닮음 변환 ─────────────────────────
+  // 국토의 모든 점이 서울 쪽으로 s배 당겨진다. 서울은 움직이지 않는다.
+  function fold(p, s){
+    var a=proj(p), o=proj(SEOUL);
+    return [ o[0] + (a[0]-o[0])*s, o[1] + (a[1]-o[1])*s ];
+  }
+
+  // ── 대권 거리 (여운의 정직 — 땅은 줄지 않았다) ───────────────────
+  function havKm(a, b){
+    var R=6371, t=function(x){ return x*Math.PI/180; };
+    var dp=t(b[1]-a[1]), dl=t(b[0]-a[0]), p1=t(a[1]), p2=t(b[1]);
+    var h=Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+
+  // 여행자의 위치 — 서울에서 부산까지 u∈[0,1]
+  function travelerAt(u){
+    var k=Math.max(0, Math.min(1, u));
+    return [ SEOUL[0] + (BUSAN[0]-SEOUL[0])*k, SEOUL[1] + (BUSAN[1]-SEOUL[1])*k ];
+  }
+
+  global.KMuseumFold = {
+    ERAS:ERAS, N:N, SEOUL:SEOUL, BUSAN:BUSAN, LAT0:LAT0,
+    minutesOf:minutesOf, scaleOf:scaleOf, foldOf:foldOf, partsOf:partsOf,
+    rings:rings, proj:proj, fold:fold, havKm:havKm, travelerAt:travelerAt,
+    WALK_DAYS:14
+  };
+})(typeof window!=='undefined'? window : global);
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise"></div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp">
+    <div class="track"><input id="era" type="range" min="0" max="5" step="1" value="5"></div>
+    <div class="cap" id="cap"></div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumFold;
+  var canvas = document.getElementById('stage-canvas');
+  var stage  = Museum.stage(canvas, 1600, 900);
+  var W=1600, H=900;
+
+  // ── 무대 좌표계 ──────────────────────────────────────────────────
+  // 한반도 전체가 무대에 눕는다. 유령(실축척)은 여기 고정되어 끝까지 움직이지 않는다.
+  var LON0=124.4, LON1=131.2, LAT0=33.0, LAT1=43.2;
+  var P0=PURE.proj([LON0,LAT1]), P1=PURE.proj([LON1,LAT0]);
+  var MAPH=760, MAPY=(H-MAPH)/2;
+  var PXY=MAPH/(P0[1]-P1[1]);
+  var MAPW=(P1[0]-P0[0])*PXY, MAPX=(W-MAPW)/2 + 40;
+  function toXY(pp){ return [ MAPX+(pp[0]-P0[0])*PXY, MAPY+(P0[1]-pp[1])*PXY ]; }
+  function screenOf(p, s){ return toXY(PURE.fold(p, s)); }
+
+  var SEOUL_XY = screenOf(PURE.SEOUL, 1);
+
+  // ── 걸음의 노동 ──────────────────────────────────────────────────
+  // 서울→부산은 화면에서 190px뿐이다. 그 위를 끄는 것으로는 열나흘이 손에 오지 않는다.
+  // 그래서 여행자의 전진과 손의 노동을 분리한다 — 손은 많이 끌고, 여행자는 조금 간다.
+  // 이 어긋남이 곧 막막함이다(M1 문법).
+  var DAY_PX = 180;                 // 하루치 손목
+  var DAYS   = PURE.WALK_DAYS;      // 열나흘
+
+  var S = {
+    phase:'boot',        // boot→walk→arrive→rail→machine→betrayed→after
+    time:0,
+    toil:0,              // 누적 보행 노동(px) — 되돌아가지 않는다
+    day:0,               // 지나온 밤
+    grabbed:false, grabOff:0, hover:false,
+    inns:[],             // 주막 등불(지나온 자리)
+    night:0,             // 하루의 위상 0..1
+    era:0,               // 지금 몇 번째 시대인가
+    scale:1, scaleFrom:1, scaleTo:1, sT:0, sDur:1.2,
+    railT:0, trainT:-1,
+    autoT:0, autoStep:1.5,
+    pause:0,
+    betrayed:false, picked:5
+  };
+
+  function uOf(){ return Math.max(0, Math.min(1, (S.toil/DAY_PX)/DAYS)); }
+  function travelerXY(){ return screenOf(PURE.travelerAt(uOf()), S.scale); }
+
+  // ── 손 ───────────────────────────────────────────────────────────
+  function handsFree(){
+    return !Museum.isLocked() && (S.phase==='boot' || S.phase==='walk');
+  }
+  function hitTraveler(p){
+    var t=travelerXY();
+    return Math.hypot(p.x-t[0], p.y-t[1]) < 34;
+  }
+  function walkBy(dy){
+    if(dy<=0) return;                                    // 걸은 것은 걸은 것 — 되돌아가지 않는다
+    S.toil += dy;
+    var d=Math.floor(S.toil/DAY_PX);
+    if(d>S.day && d<=DAYS){
+      for(var k=S.day; k<d; k++){
+        var u=Math.min(1,(k+1)/DAYS);
+        S.inns.push({ u:u, t:S.time });                  // 주막 하나 — 오늘도 여기서 잔다
+      }
+      S.day=d;
+      Museum.sound.play('clack');
+    }
+    if(S.day>=DAYS && S.phase!=='arrive'){
+      S.toil=DAY_PX*DAYS;
+      S.phase='arrive'; S.pause=S.time+1.1;              // 열나흘 만에, 동래
+      S.grabbed=false; canvas.classList.remove('is-dragging');
+      Museum.sound.play('chime');
+    }
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if(!handsFree()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(!hitTraveler(p)) return;
+    S.grabbed=true; S.grabOff=p.y-travelerXY()[1];       // 잡은 자리가 손에 붙는다
+    if(S.phase==='boot') S.phase='walk';
+    canvas.classList.add('is-dragging');
+    Museum.sound.play('creak',{pitch:0.1});
+    S.lastY=p.y;
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.grabbed){
+      var dy=p.y-S.lastY; S.lastY=p.y;
+      walkBy(dy);
+      return;
+    }
+    S.hover = handsFree() && hitTraveler(p);
+    canvas.classList.toggle('is-over', !!S.hover);
+  });
+  function release(){
+    if(!S.grabbed) return;
+    S.grabbed=false; canvas.classList.remove('is-dragging');
+    Museum.sound.play('paper');
+  }
+  canvas.addEventListener('pointerleave', function(){ S.hover=false; canvas.classList.remove('is-over'); });
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+
+  // ── 기계의 밤 — 철길이 놓이고, 국토가 접힌다 ─────────────────────
+  function startRail(){
+    S.phase='rail'; S.railT=0; S.trainT=-1;
+    Museum.sound.play('curtain');
+  }
+  function foldTo(i, dur){
+    S.era=i; S.picked=i;
+    S.scaleFrom=S.scale; S.scaleTo=PURE.scaleOf(i);
+    S.sT=0; S.sDur=dur;
+  }
+  function railTick(dt){
+    S.railT+=dt;
+    if(S.railT>=1.0 && S.trainT<0){ S.trainT=0; Museum.sound.play('creak',{pitch:0.7}); }
+    if(S.trainT>=0){
+      S.trainT+=dt/0.9;
+      if(S.trainT>=1){
+        S.trainT=1;
+        Museum.sound.play('clack');
+        S.phase='machine'; S.autoT=0; S.autoStep=1.5;
+        foldTo(1, 1.4);                                   // 1905 — 하루가 한 시간이 된다
+      }
+    }
+  }
+  function machineTick(dt){
+    if(S.sT<S.sDur) return;                               // 접히는 동안엔 기다린다
+    S.autoT+=dt;
+    if(S.autoT<S.autoStep) return;
+    S.autoT=0;
+    S.autoStep=Math.max(0.45, S.autoStep*0.78);
+    if(S.era+1 < PURE.N){
+      foldTo(S.era+1, Math.max(0.45, S.sDur*0.82));
+      Museum.sound.play('clack');
+    } else {
+      triggerBetray();
+    }
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var b=screenOf(PURE.BUSAN, S.scale);
+    Museum.betray({ x:b[0]/W, y:b[1]/H }).then(function(){ enterAfter(); });
+  }
+
+  // ── 여운 ─────────────────────────────────────────────────────────
+  function chalkOf(i){
+    var p=PURE.partsOf(PURE.minutesOf(i));
+    var t = p.day>0 ? (p.day+'일') : (p.hour>0 ? (p.hour+'시간'+(p.min?' '+p.min+'분':'')) : (p.min+'분'));
+    return PURE.ERAS[i].era+' · '+PURE.ERAS[i].ko+' — 서울에서 부산까지 '+t;
+  }
+  function enterAfter(){
+    S.phase='after';
+    document.getElementById('premise').classList.remove('is-in');
+    var km=Math.round(PURE.havKm(PURE.SEOUL, PURE.BUSAN)*10)/10;
+    var f=document.getElementById('formula');
+    f.innerHTML='국토는 한 치도 줄지 않았다 &mdash; 접힌 것은 시간이다'
+      +'<span class="small">걸어서 열나흘(20,160분) &middot; KTX 1시간 56분(116분) &mdash; 174겹으로 접혔다'
+      +'<br>1905년, 열나흘이 열네 시간이 되었다 &mdash; 하루가 한 시간이 된 것이다'
+      +'<br>그동안 서울과 부산 사이의 땅은 '+km+'km 그대로였다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'한반도를 접는 방',
+      story:'부산은 늘 그 자리에 있었다. 가까워진 것은 땅이 아니라, 하루다. 손잡이로 시대를 짚어 보세요 — 국토가 그 시대의 시간만큼 접힙니다.',
+      fine:'한국경제 60년사 · 영남대로 960리' });
+    Museum.ticket.grant({ id:'s10_fold', title:'한반도를 접는 방', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.45)'; c.lineWidth=0.9;
+        c.beginPath();                                    // 펼쳐진 국토(유령)
+        c.moveTo(w*0.34,h*0.16); c.lineTo(w*0.52,h*0.22); c.lineTo(w*0.58,h*0.62);
+        c.lineTo(w*0.44,h*0.84); c.lineTo(w*0.32,h*0.56); c.closePath(); c.stroke();
+        c.strokeStyle='rgba(242,234,216,.95)'; c.lineWidth=1.3;
+        c.beginPath();                                    // 접힌 국토
+        c.moveTo(w*0.34,h*0.16); c.lineTo(w*0.40,h*0.18); c.lineTo(w*0.42,h*0.31);
+        c.lineTo(w*0.37,h*0.38); c.lineTo(w*0.33,h*0.29); c.closePath(); c.stroke();
+        c.fillStyle='rgba(201,169,97,.95)';               // 서울 — 움직이지 않는 점
+        c.beginPath(); c.arc(w*0.34,h*0.16, 1.8, 0, Math.PI*2); c.fill();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+    setLatByEra(5);
+  }
+  var slider=document.getElementById('era'), cap=document.getElementById('cap');
+  function setLatByEra(i){
+    S.picked=i;
+    S.scaleFrom=S.scale; S.scaleTo=PURE.scaleOf(i); S.sT=0; S.sDur=0.7;
+    cap.textContent=chalkOf(i);
+  }
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    setLatByEra(parseInt(slider.value,10));
+    Museum.sound.play('paper');
+  });
+
+  // ── 무대 ─────────────────────────────────────────────────────────
+  function drawRings(ctx, rs, s, fill, stroke, lw, dash){
+    ctx.lineWidth=lw;
+    if(dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+    for(var k=0;k<rs.length;k++){
+      var r=rs[k];
+      if(r.length<3) continue;
+      ctx.beginPath();
+      var q=screenOf(r[0], s);
+      ctx.moveTo(q[0], q[1]);
+      for(var i=1;i<r.length;i++){ var w=screenOf(r[i], s); ctx.lineTo(w[0], w[1]); }
+      ctx.closePath();
+      if(fill){ ctx.fillStyle=fill; ctx.fill(); }
+      if(stroke){ ctx.strokeStyle=stroke; ctx.stroke(); }
+    }
+    ctx.setLineDash([]);
+  }
+  function lamp(ctx, xy, r, a){
+    var g=ctx.createRadialGradient(xy[0],xy[1],0, xy[0],xy[1], r*4);
+    g.addColorStop(0,'rgba(201,169,97,'+a.toFixed(2)+')');
+    g.addColorStop(1,'rgba(201,169,97,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(xy[0],xy[1],r*4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(242,234,216,'+Math.min(1,a+0.3).toFixed(2)+')';
+    ctx.beginPath(); ctx.arc(xy[0],xy[1],r,0,Math.PI*2); ctx.fill();
+  }
+
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.sT<S.sDur){
+        S.sT=Math.min(S.sDur, S.sT+dt);
+        var k=S.sT/S.sDur, e=k<0.5? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+        S.scale=S.scaleFrom+(S.scaleTo-S.scaleFrom)*e;
+      }
+      if(S.phase==='walk' || S.phase==='boot'){
+        S.night=(S.toil/DAY_PX)%1;                       // 하루의 위상 — 해가 지고, 뜬다
+      }
+      if(S.phase==='arrive' && S.time>=S.pause) startRail();
+      if(S.phase==='rail') railTick(dt);
+      if(S.phase==='machine') machineTick(dt);
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var R=PURE.rings();
+
+      // 하늘 — 걷는 동안에만 해가 돌고, 아주 옅게만 밝아진다(밤의 박물관)
+      if(S.phase==='walk'||S.phase==='boot'){
+        var day=Math.max(0, Math.sin(S.night*Math.PI));
+        if(day>0.01){
+          ctx.fillStyle='rgba(201,169,97,'+(0.020*day).toFixed(3)+')';
+          ctx.fillRect(0,0,W,H);
+        }
+      }
+
+      // 유령 국토 — 실축척. 처음부터 끝까지 한 치도 움직이지 않는다.
+      if(S.scale < 0.985){
+        drawRings(ctx, R.north, 1, null, 'rgba(168,158,136,.22)', 1, [4,6]);
+        drawRings(ctx, R.south, 1, null, 'rgba(168,158,136,.30)', 1, [4,6]);
+      }
+
+      // 접힌 국토 — 축척은 오직 시간의 비
+      drawRings(ctx, R.north, S.scale, 'rgba(242,234,216,.06)', 'rgba(168,158,136,.34)', 1.2);
+      drawRings(ctx, R.south, S.scale, 'rgba(242,234,216,.13)', 'rgba(201,169,97,.62)', 1.6);
+
+      // 철길 — 1905년에 놓인다
+      if(S.phase==='rail' || S.phase==='machine' || S.phase==='betrayed' || S.phase==='after'){
+        var a=screenOf(PURE.SEOUL, S.scale), b=screenOf(PURE.BUSAN, S.scale);
+        var k=(S.phase==='rail') ? Math.min(1, S.railT/1.0) : 1;
+        ctx.strokeStyle='rgba(201,169,97,.50)'; ctx.lineWidth=2;
+        ctx.setLineDash([7,6]);
+        ctx.beginPath(); ctx.moveTo(a[0],a[1]);
+        ctx.lineTo(a[0]+(b[0]-a[0])*k, a[1]+(b[1]-a[1])*k);
+        ctx.stroke(); ctx.setLineDash([]);
+        if(S.trainT>=0 && S.phase==='rail'){
+          var t=S.trainT, e=t<0.5? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+          lamp(ctx, [a[0]+(b[0]-a[0])*e, a[1]+(b[1]-a[1])*e], 4, 0.85);
+        }
+      }
+
+      // 주막 — 지나온 밤들
+      for(var i=0;i<S.inns.length;i++){
+        var inn=S.inns[i];
+        var q=screenOf(PURE.travelerAt(inn.u), S.scale);
+        var age=Math.min(1,(S.time-inn.t)/0.6);
+        lamp(ctx, q, 2.0, 0.16+0.10*age);
+      }
+
+      // 서울 · 부산
+      lamp(ctx, screenOf(PURE.SEOUL, S.scale), 3.4, 0.55);
+      lamp(ctx, screenOf(PURE.BUSAN, S.scale), 3.4, 0.55);
+
+      // 여행자 — 손이 잡는 유일한 것
+      if(S.phase==='boot' || S.phase==='walk' || S.phase==='arrive'){
+        var t=travelerXY();
+        var glow = S.grabbed ? 0.95 : S.hover ? 0.80 : (0.40+0.35*breath);
+        lamp(ctx, t, 4.2, glow);
+        if(!S.grabbed && S.phase==='boot'){
+          ctx.strokeStyle='rgba(242,234,216,'+(0.20+0.40*breath).toFixed(2)+')';
+          ctx.lineWidth=1.6;
+          ctx.beginPath(); ctx.arc(t[0],t[1], 16+3*breath, 0, Math.PI*2); ctx.stroke();
+        }
+      }
+
+      // 여운의 분필
+      if(S.phase==='after'){
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
+        ctx.fillText(chalkOf(S.picked), W*0.5, 44);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  document.getElementById('premise').textContent='한양에서 동래까지 — 구백육십 리입니다.';
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S10 = {
+    S:S, PURE:PURE, toXY:toXY, screenOf:screenOf, travelerXY:travelerXY, uOf:uOf,
+    walkBy:walkBy, startRail:startRail, foldTo:foldTo, triggerBetray:triggerBetray,
+    setLatByEra:setLatByEra, chalkOf:chalkOf, hitTraveler:hitTraveler, enterAfter:enterAfter,
+    DAY_PX:DAY_PX, DAYS:DAYS, SEOUL_XY:SEOUL_XY
+  };
+})();
+</script>
+</body>
+</html>
