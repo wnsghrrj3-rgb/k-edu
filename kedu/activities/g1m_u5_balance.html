@@ -43,7 +43,7 @@
   #hud { position:fixed; top:8px; right:var(--kb-safe-right, 12px); display:flex; gap:10px; align-items:center; z-index:5; }
   #hud .pill { background:#fff; border:2px solid #f3e2c4; border-radius:999px; padding:5px 14px;
                font-size:clamp(14px,1.8vw,18px); }
-  #quit-btn,#mute-btn { background:#fff; border:2px solid #f3e2c4; border-radius:12px; cursor:pointer;
+  #quit-btn,#mute-btn,#skip-btn { background:#fff; border:2px solid #f3e2c4; border-radius:12px; cursor:pointer;
               font-size:17px; padding:6px 12px; min-height:40px; font-family:'Jua',sans-serif; color:var(--deep); }
   #teams { display:none; width:100%; max-width:900px; justify-content:space-between; }
   .team { border-radius:14px; padding:6px 20px; color:#fff; font-size:clamp(18px,2.6vw,26px); }
@@ -121,6 +121,7 @@
     <div class="pill" id="prog"></div>
     <div class="pill num" id="score-pill">0점</div>
     <button id="mute-btn" title="소리 켜기/끄기">🔊</button>
+    <button id="skip-btn" title="이 문제는 넘기기">넘기기 ⏭</button>
     <button id="quit-btn">그만하기</button>
   </div>
   <div id="teams">
@@ -673,10 +674,15 @@
         $('.ansgrp.A').setAttribute('data-label', $('#tA-name').textContent);
         $('.ansgrp.B').setAttribute('data-label', $('#tB-name').textContent);
       }
-      if (cfg.hosted) $('#quit-btn').style.display = 'none';   // §21-4: 호스트 [활동 닫기]가 단일 출구
+      if (cfg.hosted) $('#quit-btn').style.display = 'none';   // §6-6: 호스트 [활동 닫기]가 단일 출구
+      if (mode === 'assign') $('#skip-btn').style.display = 'none';   // 과제는 넘기기 없음 (§6-8)
       if (mode === 'solo') refreshBest();
     },
-    onClose: function () { /* 진행 중 CLOSE → 브리지가 EXIT 자동 발신 */ },
+    onClose: function () {
+      // §6-8 부분 결과도 결과다: 한 문제라도 판정했으면 수첩이 뜨도록 RESULT로 마감.
+      // 한 문제도 안 했으면 브리지가 EXIT를 자동 발신한다 (수첩 없음).
+      if (G && G.judged > 0) endGame();
+    },
     getProgress: function () { return G ? { q: G.i, total: G.n } : null; }
   });
 
@@ -703,9 +709,17 @@
   $('#mute-btn').addEventListener('click', function () {
     muted = !muted; $('#mute-btn').textContent = muted ? '🔇' : '🔊';
   });
+  // §6-8 넘기기: 판정 없이 다음 문항으로. 채점 분모에 안 들어간다 (안 푼 문제는 틀린 게 아니다)
+  $('#skip-btn').addEventListener('click', function () {
+    if (!G || G.lockAll || G.phase !== 'main') return;
+    G.skipped++;
+    nextQ();
+  });
+
   $('#quit-btn').addEventListener('click', function () {
     if (!G) return;
     if (confirm('활동을 그만할까요?')) {
+      if (G.judged > 0) { endGame(); return; }     // §6-8: 여기까지의 결과로 마감
       KBridge.exit('user', { q: G.i, total: G.n });
       show('#scr-start');
       G = null;
@@ -718,6 +732,7 @@
       i: 0, n: settings.n, score: 0,
       teams: [{ name: $('#tA-name').textContent, score: 0 }, { name: $('#tB-name').textContent, score: 0 }],
       byType: {}, detail: [], cur: null, qT0: 0, lockAll: false,
+      judged: 0, skipped: 0,                       // §6-8: 채점 분모 = 판정된 문항 수
       teamLocked: [false, false], phase: 'main'   // main | why
     };
     show('#scr-game');
@@ -763,7 +778,7 @@
     if (mode === 'assign') G.detail.push({ q: c.a + ' vs ' + c.b, a: c.answer, pick: pick, ok: ok, type: c.type, ms: ms });
 
     if (ok) {
-      G.lockAll = true;
+      G.lockAll = true; G.judged++;                       // 문항 종결 = 채점 분모 +1 (§6-8)
       if (G.firstTry) { G.score++; tally(c.type, true); } // 첫 시도 정답만 득점·ok
       if (mode === 'class' && teamIdx != null) {
         G.teams[teamIdx].score++;
@@ -785,7 +800,7 @@
         G.teamLocked[teamIdx] = true;
         lockTeam(teamIdx);
         if (G.teamLocked[0] && G.teamLocked[1]) {      // 양팀 오답 → 정답 공개, 무득점 진행
-          G.lockAll = true;
+          G.lockAll = true; G.judged++;
           tilt(c.answer); showExplain(false); hideAnswers();
           setTimeout(nextQ, 2200);
         }
@@ -839,7 +854,13 @@
 
   // ───── 종료 ─────
   function endGame() {
-    var total = G.n * (settings.why === 1 && mode !== 'class' ? 2 : 1);
+    if (!G) return;
+    if (G.judged === 0) {                    // 한 문제도 판정 안 함 → 결과 없음 (§6-8)
+      KBridge.exit('user', { q: G.i, total: G.n });
+      show('#scr-start'); G = null; return;
+    }
+    // 채점 분모 = 판정된 문항 수. 넘긴 문항·중도 종료가 그대로 반영된다 (§6-8)
+    var total = G.judged * (settings.why === 1 && mode !== 'class' ? 2 : 1);
     show('#scr-end'); sfx.win();
 
     if (mode === 'class') {
