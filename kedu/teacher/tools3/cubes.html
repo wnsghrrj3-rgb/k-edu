@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 쌓기나무 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 쌓기나무·부피 (2026-07-12 · 페이블)
+  v2 engine/tools/cubes.js(386줄 · 와우 main ea56579) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 다크 스튜디오 + 원목 책상 위 격자 작업판
+    ② 실물 질감(칠한 원목 쌓기나무 · 나뭇결/옹이 · 모서리 선 · PMREM 광택 · 그림자)
+    ③ 직접 조작(궤도 회전 · 면을 탭해 쌓기 · 탭해 빼기 · 바닥 칸 탭 · 시점 4종)
+    ④ 즉각 반응(블록 낙하 이징 · 빼기 축소 · 드러난 면 보라 발광 맥동 · 시점 전환 이징)
+    ⑤ 와우 = «같은 개수, 다르게» — 8개 그대로 펼치면 겉넓이 24 → 34
+       («개수가 같으면 겉넓이도 같다» 오개념 반증 · mid/high · v2 무손실)
+       + 🔮 예측 카드(늘어난다/줄어든다/똑같다 — v2 유도 문구의 K3 카드 승격)
+  v2 무손실: 학년칸(저=자유·미션2·개수만 / 중=+퀴즈3·시점·부피 / 고=미션4·퀴즈5)
+    ·미션 저2(5개→8개)/중3/고4(5개→ㄴ자→2층→직육면체 12개)·퀴즈 풀 5(중=개수 3문 지정)
+    ·exposedFaces=6N−맞닿은면(구 수식 그대로)·SURF 24↔34·상태줄 문구·최대 80개·config
+  v2 라이브 버그 실측·수정 3건(§순수 로직 주석):
+    ① 미션2 판정이 «4개·전부 바닥»만 봐서 일렬 4개도 통과 → 문구(ㄴ자)를 배신 → v3 = 진짜 ㄴ자 판정
+    ② 미션 단계 넘어갈 때 씬 재빌드로 학생이 쌓은 모양이 처음 모양으로 소실 → v3 = 모양 유지
+    ③ 미션4가 원점(0,0,0) 고정 12칸만 인정 → 격자 어디에 쌓아도 3×2×2면 인정(평행이동 불변)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?shape=0,0,0;1,0,0 · ?max=80 · ?edit=0
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .cb-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .cb-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .cb-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .cb-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .cb-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:1px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;max-width:206px}
+  #ctrls .k3-btn{font-size:14px;text-align:left}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(620px,86vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:min(760px,94vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.35);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:9px 16px;font-size:14.5px;line-height:1.4;text-align:center}
+  #status .card b{font-size:22px;color:#FFC98A}
+  #status .card.surf{border-color:rgba(155,123,245,.6);color:#DCCBFF}
+  #status .card.surf b{color:#CBB7FF}
+  #status .card .hold{display:inline-block;animation:cbPulse 1.1s ease both}
+  @keyframes cbPulse{0%{transform:scale(1)}25%{transform:scale(1.16)}55%{transform:scale(.94)}100%{transform:scale(1)}}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #choices button{font-family:'Gowun Dodum';font-size:16px;padding:11px 20px;border-radius:13px;cursor:pointer;min-width:96px;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.88);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+
+<div class="k3-topbar">
+  <span class="title">🧱 케이랩 · 쌓기나무</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="cb-panel" id="hudL"></div>
+<div class="cb-panel" id="ctrls"></div>
+<div class="cb-panel" id="mbar" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="status"></div>
+
+<div class="k3-hint" id="hint">블록 <b>면을 탭하면</b> 그 방향으로 쌓여요 — 끌면 돌려 볼 수 있어요</div>
+<div class="k3-loading" id="loading"><div class="ic">🧱</div><div>쌓기나무 꺼내는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.CubesSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 학년 칸 (v2 GRADES 무손실 — views·volume·quiz 게이팅) ── */
+  var GRADES={
+    low:  { modes:['free','mission'],        views:false, quiz:false, volume:false, missionN:2, quizN:0 },
+    mid:  { modes:['free','mission','quiz'], views:true,  quiz:true,  volume:true,  missionN:3, quizN:3 },
+    high: { modes:['free','mission','quiz'], views:true,  quiz:true,  volume:true,  missionN:4, quizN:5 }
+  };
+
+  var DEFAULT_SHAPE=[[0,0,0],[1,0,0],[2,0,0],[0,0,1],[1,0,1],[0,1,0],[1,1,0],[0,2,0]];
+  /* 와우 자산 (v2 무손실 — 8개로 24면 ↔ 34면).
+     spread는 격자 작업판 안에 들어오도록 평행이동만 함(겉면 수는 평행이동 불변 = 34). */
+  var SURF_COMPACT=[[0,0,0],[1,0,0],[0,0,1],[1,0,1],[0,1,0],[1,1,0],[0,1,1],[1,1,1]];  /* 2×2×2 → 24 */
+  var SURF_SPREAD =[[-4,0,0],[-3,0,0],[-2,0,0],[-1,0,0],[0,0,0],[1,0,0],[2,0,0],[3,0,0]]; /* 1×8 → 34 */
+
+  var MAXN=80;          /* v2 maxCount 기본값 */
+  var LIM=5, HMAX=9;    /* v3 추가: 격자 작업판 물리 범위 */
+
+  function key3(x,y,z){ return x+','+y+','+z; }
+  function cellOf(k){ var p=k.split(','); return [+p[0],+p[1],+p[2]]; }
+  function inBoard(x,y,z){ return Math.abs(x)<=LIM && Math.abs(z)<=LIM && y>=0 && y<=HMAX; }
+
+  /* 드러난 면 = 6N − 맞닿은 면 (v2 수식 그대로 — 맞닿은 면쌍은 양쪽에서 2번 세짐) */
+  var DIRS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+  function exposedFaces(cells){
+    if(!cells) return 0;
+    var keys=Object.keys(cells), touch=0;
+    keys.forEach(function(k){
+      var c=cellOf(k);
+      DIRS.forEach(function(d){ if(cells[key3(c[0]+d[0],c[1]+d[1],c[2]+d[2])]) touch++; });
+    });
+    return keys.length*6 - touch;
+  }
+  /* 한 면이 드러났는가 (발광 배선용 — DIRS 순서 = BoxGeometry 면 순서 px nx py ny pz nz) */
+  function faceOpen(cells,c,di){
+    var d=DIRS[di];
+    return !cells[key3(c[0]+d[0],c[1]+d[1],c[2]+d[2])];
+  }
+  function bbox(cells){
+    var ks=Object.keys(cells);
+    if(!ks.length) return null;
+    var mn=[1e9,1e9,1e9], mx=[-1e9,-1e9,-1e9];
+    ks.forEach(function(k){
+      var c=cellOf(k);
+      for(var i=0;i<3;i++){ if(c[i]<mn[i])mn[i]=c[i]; if(c[i]>mx[i])mx[i]=c[i]; }
+    });
+    return { min:mn, max:mx, size:[mx[0]-mn[0]+1, mx[1]-mn[1]+1, mx[2]-mn[2]+1] };
+  }
+  function topAt(cells,x,z){
+    var top=-1;
+    for(var y=0;y<=HMAX;y++) if(cells[key3(x,y,z)]) top=y;
+    return top;
+  }
+
+  /* ── 미션 판정 ──────────────────────────────────────────────────────────
+     v2 라이브 버그 ①: 미션2 문구는 «위에서 본 모양이 ㄴ자(3칸+1칸)»인데
+       판정은 «4개 & 전부 바닥»뿐이라 일렬 4칸도 통과했음(문구를 배신).
+       v3 = 진짜 ㄴ자 판정 — 3연속 줄 + 그 «끝» 칸에 수직으로 1칸(회전·대칭 전부 인정).
+     v2 라이브 버그 ③: 미션4가 원점(0,0,0) 고정 12칸만 인정 → 학생이 격자 다른 자리에
+       똑같은 직육면체를 쌓으면 오답. v3 = 평행이동 불변 판정(어디에 쌓아도 3×2×2면 인정). */
+  function allFlat(cells){
+    return Object.keys(cells).every(function(k){ return cellOf(k)[1]===0; });
+  }
+  function lShapeOK(cells){
+    var ks=Object.keys(cells);
+    if(ks.length!==4 || !allFlat(cells)) return false;
+    var pts=ks.map(function(k){ var c=cellOf(k); return [c[0],c[2]]; });
+    var b=bbox(cells);
+    var w=b.size[0], d=b.size[2];
+    if(!((w===3&&d===2)||(w===2&&d===3))) return false;
+    var set={};
+    pts.forEach(function(p){ set[p[0]+','+p[1]]=1; });
+    var AX=[[1,0],[0,1]];
+    for(var a=0;a<2;a++){
+      var dx=AX[a][0], dz=AX[a][1], px=AX[1-a][0], pz=AX[1-a][1];
+      for(var i=0;i<pts.length;i++){
+        var s=pts[i];
+        if(!(set[(s[0]+dx)+','+(s[1]+dz)] && set[(s[0]+2*dx)+','+(s[1]+2*dz)])) continue;
+        var line=[[s[0],s[1]],[s[0]+dx,s[1]+dz],[s[0]+2*dx,s[1]+2*dz]];
+        var lk={};
+        line.forEach(function(p){ lk[p[0]+','+p[1]]=1; });
+        var rest=pts.filter(function(p){ return !lk[p[0]+','+p[1]]; });
+        if(rest.length!==1) continue;
+        var r=rest[0], ends=[line[0],line[2]];
+        for(var e=0;e<2;e++){
+          var E=ends[e];
+          if((r[0]===E[0]+px && r[1]===E[1]+pz) || (r[0]===E[0]-px && r[1]===E[1]-pz)) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function twoLayerOK(cells){
+    var ys={};
+    Object.keys(cells).forEach(function(k){ ys[cellOf(k)[1]]=true; });
+    var b=bbox(cells);
+    if(!b) return false;
+    var y0=b.min[1];
+    return !!(ys[y0] && ys[y0+1]);   /* 바닥 위에 한 칸 더 (v2 판정 의미 유지) */
+  }
+  function boxOK(cells){
+    var n=Object.keys(cells).length;
+    if(n!==12) return false;
+    var b=bbox(cells), w=b.size[0], h=b.size[1], d=b.size[2];
+    if(h!==2) return false;                             /* 높이 2 */
+    if(!((w===3&&d===2)||(w===2&&d===3))) return false; /* 가로3×세로2 (보는 방향 무관) */
+    return w*h*d===12;                                  /* 빈칸 없이 꽉 참 */
+  }
+
+  /* ── 시점 (v2 setView 각도 무손실) ── */
+  function viewAngles(v){
+    if(v==='top')   return { theta:0, phi:0.02 };
+    if(v==='front') return { theta:0, phi:Math.PI/2 };
+    if(v==='side')  return { theta:Math.PI/2, phi:Math.PI/2 };
+    return null;   /* free = 사용자 궤도 */
+  }
+
+  function createSim(grade, opts){
+    grade=(['low','mid','high'].indexOf(grade)>=0)?grade:'high';
+    opts=opts||{};
+    var sim={};
+    sim.grade=grade;
+    sim.G=function(){ return GRADES[sim.grade]; };
+    sim.maxCount=(typeof opts.max==='number' && opts.max>0)?opts.max:MAXN;
+    sim.editable=(opts.editable===false)?false:true;
+    sim.startShape=(Array.isArray(opts.shape)&&opts.shape.length)?opts.shape:DEFAULT_SHAPE;
+
+    sim.state={ cells:{}, surf:null, pred:null, acted:false, view:'free', edit:'add' };
+
+    sim.count=function(){ return Object.keys(sim.state.cells).length; };
+    sim.exposed=function(){ return exposedFaces(sim.state.cells); };
+
+    sim.add=function(x,y,z){
+      var st=sim.state;
+      if(!inBoard(x,y,z)) return false;
+      var k=key3(x,y,z);
+      if(st.cells[k]) return false;
+      if(sim.count()>=sim.maxCount) return false;
+      st.cells[k]=true; st.acted=true;
+      return true;
+    };
+    sim.remove=function(x,y,z){
+      var st=sim.state, k=key3(x,y,z);
+      if(!st.cells[k]) return false;
+      delete st.cells[k]; st.acted=true;
+      return true;
+    };
+    /* 바닥 칸 탭 = 그 열의 맨 위에 얹기 (v2 무손실) */
+    sim.stackAt=function(x,z){
+      return sim.add(x, topAt(sim.state.cells,x,z)+1, z);
+    };
+    sim.buildShape=function(arr){
+      sim.state.cells={};
+      arr.forEach(function(c){ 
+        var k=key3(c[0], c[1]||0, c[2]||0);
+        if(inBoard(c[0], c[1]||0, c[2]||0) && Object.keys(sim.state.cells).length<sim.maxCount) sim.state.cells[k]=true;
+      });
+      return sim.count();
+    };
+    sim.reset=function(){
+      sim.buildShape(sim.startShape);
+      sim.state.surf=null; sim.state.pred=null;
+      sim.state.view='free'; sim.state.acted=true;   /* 리셋도 학생 조작 */
+      return sim.count();
+    };
+    sim.setView=function(v){
+      sim.state.view=(['free','top','front','side'].indexOf(v)>=0 && (v==='free'||sim.G().views))?v:'free';
+      return sim.state.view;
+    };
+    sim.setEdit=function(e){ sim.state.edit=(e==='del')?'del':'add'; return sim.state.edit; };
+
+    /* ── 와우: 같은 개수, 다르게 (v2 surf 무손실 + 🔮 예측 카드 승격) ── */
+    sim.canSurf=function(mode){ return mode==='free' && sim.G().views; };  /* v2 게이팅: 자유탐구 + 중·고 */
+    sim.surfArm=function(){
+      sim.buildShape(SURF_COMPACT);
+      sim.state.surf='compact'; sim.state.pred=null; sim.state.acted=true;
+      return exposedFaces(sim.state.cells);   /* 24 */
+    };
+    sim.surfToggle=function(){
+      var prev=exposedFaces(sim.state.cells);
+      var to=(sim.state.surf==='compact')?'spread':'compact';
+      sim.buildShape(to==='spread'?SURF_SPREAD:SURF_COMPACT);
+      sim.state.surf=to; sim.state.acted=true;
+      return { kind:to, prev:prev, now:exposedFaces(sim.state.cells), n:sim.count() };
+    };
+    sim.clearSurf=function(){ sim.state.surf=null; sim.state.pred=null; };
+    sim.setPred=function(v){
+      sim.state.pred=(['more','less','same'].indexOf(v)>=0)?v:null;
+      return sim.state.pred;
+    };
+    /* v2 flash 문구 무손실 */
+    sim.surfArmText=function(){
+      return '쌓기나무 8개를 뭉쳐 놨어요. 펼치면 드러난 면(겉넓이)이 늘까요, 줄까요? 버튼을 한 번 더 눌러 봐요!';
+    };
+    sim.surfText=function(r){
+      return (r.kind==='spread')
+        ? '쌓기나무는 똑같이 '+r.n+'개인데 드러난 면이 '+r.prev+'개 → '+r.now+'개! 개수가 같아도 펼치면 겉넓이가 늘어나요'
+        : '다시 뭉치니 드러난 면이 '+r.prev+'개 → '+r.now+'개! 같은 '+r.n+'개라도 쌓는 모양에 따라 겉넓이가 달라요';
+    };
+    sim.predLine=function(r){
+      if(r.kind!=='spread' || !sim.state.pred) return '';
+      if(sim.state.pred==='more') return '<br>🔮 「늘어난다」 — 네 예측이 딱 맞았어요!';
+      return '<br>🔮 「'+(sim.state.pred==='less'?'줄어든다':'똑같다')+'」고 예측했지만 — 예측이 빗나갔어요!';
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText=function(mode){
+      if(mode==='quiz') return { text:'시점을 돌려 보고 개수를 세어 선택하세요!', surf:null };
+      var n=sim.count();
+      var base=(!sim.G().volume)
+        ? '모두 <b>'+n+'</b>개!'
+        : '쌓기나무 <b>'+n+'</b>개 ＝ 부피 <b>'+n+'</b> 세제곱';
+      var surf=(sim.state.surf!==null && mode==='free')
+        ? '드러난 면 <b class="hold">'+sim.exposed()+'</b>개'
+        : null;
+      return { text:base, surf:surf };
+    };
+
+    /* ── 미션 (v2 문구·판정 무손실 + v3 수정 ①③ + acted 게이트) ── */
+    var LOW_MISSIONS=[
+      { text:'쌓기나무를 <b>5개</b> 쌓아 봐요! (블록 면이나 바닥 칸을 탭하세요)',
+        check:function(c){ return Object.keys(c).length===5; } },
+      { text:'이번엔 <b>8개</b>를 쌓아 봐요! 모두 몇 개인지 세어 봐요!',
+        check:function(c){ return Object.keys(c).length===8; } }
+    ];
+    var BASE_MISSIONS=[
+      { text:'쌓기나무를 <b>5개</b> 쌓아 봐요! (블록 면이나 바닥 칸을 탭하세요)',
+        check:function(c){ return Object.keys(c).length===5; } },
+      { text:'이번엔 <b>↺ 처음으로</b> 누른 뒤, <b>위에서 본 모양</b>이 ㄴ자(3칸+1칸)가 되게 쌓아 봐요!',
+        check:lShapeOK },
+      { text:'<b>앞에서 본 모양</b>이 2층으로 보이게 쌓아 봐요! (바닥 위에 한 칸 더)',
+        check:twoLayerOK },
+      { text:'가로 3×세로 2×높이 2인 <b>직육면체(12개)</b>를 쌓아 봐요!',
+        check:boxOK }
+    ];
+    sim.mStep=0; sim.mDone=false;
+    sim.missionList=function(){
+      return (sim.grade==='low') ? LOW_MISSIONS.slice() : BASE_MISSIONS.slice(0, sim.G().missionN);
+    };
+    sim.missionStart=function(){
+      sim.mStep=0; sim.mDone=false;
+      sim.buildShape(sim.startShape);
+      sim.state.surf=null; sim.state.pred=null;
+      sim.state.acted=false;             /* 진입 직후 자동달성 없음 (v3 표준) */
+    };
+    sim.missionCheck=function(){
+      if(sim.mDone || !sim.state.acted) return { act:'none' };
+      var M=sim.missionList();
+      if(!M[sim.mStep].check(sim.state.cells)) return { act:'none' };
+      if(sim.mStep<M.length-1){
+        sim.mStep++;
+        sim.state.acted=false;           /* 다음 단계도 «조작 후» 판정 · 모양은 유지(v3 수정 ②) */
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone=true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 풀 무손실 — 중학년=개수 세기 3문 지정) ── */
+    var QUIZ_POOL=[
+      { q:'쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[2,0,0],[0,1,0],[0,0,1]], answer:'5', choices:['4','5','6','7'] },
+      { q:'쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1]], answer:'6', choices:['5','6','7','8'] },
+      { q:'위에서 보면 몇 칸이 보일까요?', shape:[[0,0,0],[1,0,0],[0,0,1],[0,1,0]], answer:'3', choices:['2','3','4','5'] },
+      { q:'쌓기나무는 몇 개일까요?', shape:[[0,0,0],[1,0,0],[2,0,0],[1,1,0],[1,0,1]], answer:'5', choices:['4','5','6','8'] },
+      { q:'앞에서 보면 최대 층 높이는?', shape:[[0,0,0],[1,0,0],[0,1,0],[0,2,0],[1,1,0]], answer:'3층', choices:['1층','2층','3층','4층'] }
+    ];
+    sim.quizPool=function(){
+      return (sim.grade==='mid') ? [QUIZ_POOL[0],QUIZ_POOL[1],QUIZ_POOL[3]] : QUIZ_POOL.slice();
+    };
+    /* 무반복 순환 셔플 (v3 표준 — rand 주입 순수화) */
+    sim.newQuiz=function(rand){
+      rand=rand||Math.random;
+      var list=sim.quizPool().slice();
+      for(var i=list.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=list[i]; list[i]=list[j]; list[j]=t; }
+      return list;
+    };
+
+    sim.buildShape(sim.startShape);
+    sim.state.acted=false;
+    return sim;
+  }
+
+  var API={ GRADES:GRADES, DEFAULT_SHAPE:DEFAULT_SHAPE, SURF_COMPACT:SURF_COMPACT, SURF_SPREAD:SURF_SPREAD,
+    MAXN:MAXN, LIM:LIM, HMAX:HMAX, DIRS:DIRS,
+    key3:key3, cellOf:cellOf, inBoard:inBoard, exposedFaces:exposedFaces, faceOpen:faceOpen,
+    bbox:bbox, topAt:topAt, lShapeOK:lShapeOK, twoLayerOK:twoLayerOK, boxOK:boxOK,
+    viewAngles:viewAngles, createSim:createSim };
+  if(typeof window!=='undefined') window.CubesSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.CubesSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+function parseShape(s) {
+  if (!s) return null;
+  const arr = s.split(';').map(t => t.split(',').map(Number)).filter(c => c.length === 3 && c.every(v => !isNaN(v)));
+  return arr.length ? arr : null;
+}
+const cfgMax = parseInt(Q.get('max'), 10);
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  shape: parseShape(Q.get('shape')),
+  max: isNaN(cfgMax) ? undefined : cfgMax,
+  editable: Q.get('edit') !== '0'
+});
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+let qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+
+/* ── 씬 ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0.62, 0.68, 0.86], target: [0, 0.12, 0], fov: 42,
+  minDist: 0.5, maxDist: 3.2, maxPolar: 1.55
+});
+const { renderer, scene, camera, controls } = app;
+makeMaterials();
+makeStage(scene, { deskStyle: 'wood' });
+
+/* ═══════════ 격자 작업판 + 원목 쌓기나무 ═══════════ */
+const U = 0.13;                       /* 쌓기나무 한 변 */
+const BOARD_W = (Sim.LIM * 2 + 1) * U + 0.14;
+
+/* 격자 작업판 (아이보리 보드 · 연필선 격자) */
+const boardTex = canvasTexture(512, 512, g => {
+  g.fillStyle = '#EFE7D8'; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 2600; i++) {           /* 종이 섬유 노이즈 */
+    g.fillStyle = `rgba(120,96,64,${Math.random() * 0.07})`;
+    g.fillRect(Math.random() * 512, Math.random() * 512, 1.6, 1.2);
+  }
+  const N = Sim.LIM * 2 + 1, step = 512 / N;
+  g.strokeStyle = 'rgba(90,70,44,0.30)'; g.lineWidth = 1.6;
+  for (let i = 0; i <= N; i++) {
+    g.beginPath(); g.moveTo(i * step, 0); g.lineTo(i * step, 512); g.stroke();
+    g.beginPath(); g.moveTo(0, i * step); g.lineTo(512, i * step); g.stroke();
+  }
+  g.strokeStyle = 'rgba(90,70,44,0.16)'; g.lineWidth = 5;
+  g.strokeRect(3, 3, 506, 506);
+});
+const board = new THREE.Mesh(
+  new THREE.BoxGeometry(BOARD_W, 0.014, BOARD_W),
+  [
+    new THREE.MeshStandardMaterial({ color: 0xD8CDB8, roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ color: 0xD8CDB8, roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.72, metalness: 0, envMapIntensity: 0.5 }),
+    new THREE.MeshStandardMaterial({ color: 0xC9BCA4, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: 0xD8CDB8, roughness: 0.85 }),
+    new THREE.MeshStandardMaterial({ color: 0xD8CDB8, roughness: 0.85 })
+  ]
+);
+board.position.y = 0.007;
+board.receiveShadow = true; board.castShadow = true;
+scene.add(board);
+
+/* 칠한 원목 쌓기나무 (나뭇결 + 옹이) */
+function woodTex(tint) {
+  return canvasTexture(256, 256, g => {
+    g.fillStyle = tint; g.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 5) {
+      const a = 0.06 + Math.abs(Math.sin(y * 0.35)) * 0.12;
+      g.fillStyle = `rgba(70,40,16,${a})`;
+      g.fillRect(0, y, 256, 2 + Math.random() * 2);
+    }
+    for (let i = 0; i < 480; i++) {
+      g.fillStyle = `rgba(255,255,255,${Math.random() * 0.07})`;
+      g.fillRect(Math.random() * 256, Math.random() * 256, 2, 1);
+    }
+    for (let k = 0; k < 3; k++) {
+      const x = Math.random() * 256, y = Math.random() * 256;
+      g.strokeStyle = 'rgba(70,40,16,0.32)'; g.lineWidth = 2;
+      for (let r = 3; r < 13; r += 3.4) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); }
+    }
+    g.strokeStyle = 'rgba(40,22,8,0.22)'; g.lineWidth = 6;
+    g.strokeRect(3, 3, 250, 250);      /* 칠한 모서리 눌린 자국 */
+  });
+}
+const WOOD_MAP = woodTex('#E89A4E');
+const MAT_WOOD = new THREE.MeshStandardMaterial({ map: WOOD_MAP, roughness: 0.66, metalness: 0.02, envMapIntensity: 0.7 });
+/* 드러난 면 발광 (와우 «겉넓이» 시각화 — 맥동 intensity는 루프에서) */
+const MAT_GLOW = new THREE.MeshStandardMaterial({
+  map: WOOD_MAP, roughness: 0.6, metalness: 0.02, envMapIntensity: 0.7,
+  emissive: new THREE.Color(0x9B7BF5), emissiveIntensity: 0
+});
+const boxGeom = new THREE.BoxGeometry(U, U, U);
+const edgeGeom = new THREE.EdgesGeometry(boxGeom);
+const EDGE_MAT = new THREE.LineBasicMaterial({ color: 0x6B3F17, transparent: true, opacity: 0.55 });
+
+const root = new THREE.Group();
+root.position.y = 0.014;
+scene.add(root);
+
+const meshes = {};                     /* key → mesh */
+function makeCube(k) {
+  const c = Sim.cellOf(k);
+  const m = new THREE.Mesh(boxGeom, [MAT_WOOD, MAT_WOOD, MAT_WOOD, MAT_WOOD, MAT_WOOD, MAT_WOOD]);
+  m.castShadow = m.receiveShadow = true;
+  m.position.set(c[0] * U, (c[1] + 0.5) * U, c[2] * U);
+  m.userData = { key: k, cell: c, dropT: 1, tapT: 0 };
+  m.add(new THREE.LineSegments(edgeGeom, EDGE_MAT));
+  root.add(m);
+  meshes[k] = m;
+  return m;
+}
+function dropMesh(k) {
+  const m = meshes[k];
+  if (m) { root.remove(m); m.geometry = boxGeom; delete meshes[k]; }
+}
+/* 셀 ↔ 메시 동기화 (순수 상태가 원본) */
+function syncMeshes(anim) {
+  const cells = sim.state.cells;
+  Object.keys(cells).forEach(k => { if (!meshes[k]) { const m = makeCube(k); m.userData.dropT = anim ? 1 : 0; } });
+  Object.keys(meshes).forEach(k => { if (!cells[k]) dropMesh(k); });
+  refitTarget();
+  refreshGlow();
+}
+/* 드러난 면 발광 배선 (surf 활성 시에만 — 면 순서 = Sim.DIRS 순서) */
+let glowOn = false;
+function refreshGlow() {
+  glowOn = (sim.state.surf !== null && mode === 'free');
+  Object.keys(meshes).forEach(k => {
+    const m = meshes[k], c = m.userData.cell;
+    for (let i = 0; i < 6; i++) {
+      m.material[i] = (glowOn && Sim.faceOpen(sim.state.cells, c, i)) ? MAT_GLOW : MAT_WOOD;
+    }
+  });
+  if (!glowOn) MAT_GLOW.emissiveIntensity = 0;
+}
+
+/* ── 카메라 프레이밍 (검수 항목 승계: 1×8 펼침이 프레임에 들어와야) ──
+   모양의 bbox 중심을 무대 중앙으로 상쇄 + 크기에 맞춰 거리 하한 확대. */
+const camTarget = new THREE.Vector3(0, 0.12, 0);
+const rootTarget = new THREE.Vector3(0, 0.014, 0);
+let fitDist = 0.86;
+function refitTarget() {
+  const b = Sim.bbox(sim.state.cells);
+  if (!b) return;
+  const cx = (b.min[0] + b.max[0]) / 2, cz = (b.min[2] + b.max[2]) / 2;
+  rootTarget.set(-cx * U, 0.014, -cz * U);
+  camTarget.set(0, ((b.min[1] + b.max[1]) / 2 + 0.5) * U + 0.014, 0);
+  const rad = 0.5 * Math.max(b.size[0], b.size[1], b.size[2]) * U + U;
+  fitDist = Math.max(0.62, rad * 3.15);
+}
+/* 시점 전환 = 목표 카메라 자리 (v2 setView 각도 · 원근 약화로 정사영 감) */
+let viewLerp = 0;
+const viewPos = new THREE.Vector3();
+let fovTarget = 42;
+function aimView() {
+  const a = Sim.viewAngles(sim.state.view);
+  if (!a) { viewLerp = 0; fovTarget = 42; return; }
+  fovTarget = 22;                                   /* 원근 약화 = 「위에서 본 모양」이 정확히 읽힘 */
+  const R = fitDist * (Math.tan(42 * Math.PI / 360) / Math.tan(fovTarget * Math.PI / 360));
+  viewPos.set(
+    camTarget.x + R * Math.sin(a.phi) * Math.sin(a.theta),
+    camTarget.y + R * Math.cos(a.phi),
+    camTarget.z + R * Math.sin(a.phi) * Math.cos(a.theta)
+  );
+  viewLerp = 1;
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'), statusEl = $('status');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+const VIEW_NM = { free: '자유', top: '위에서', front: '앞에서', side: '옆에서' };
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="cb-seg">' + ['low', 'mid', 'high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="cb-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  let h = '';
+  if (sim.G().views) {                       /* 시점 = 중·고 (퀴즈에서도 필요) */
+    h += '<div class="cb-lab">시점</div><div class="cb-seg" id="viewSeg">'
+      + ['free', 'top', 'front', 'side'].map(v =>
+        `<button data-v="${v}" class="${sim.state.view === v ? 'on' : ''}">${VIEW_NM[v]}</button>`).join('')
+      + '</div>';
+  }
+  if (sim.editable && mode !== 'quiz') {
+    h += '<div class="cb-lab">손으로</div><div class="cb-seg" id="editSeg">'
+      + `<button data-e="add" class="${sim.state.edit === 'add' ? 'on' : ''}">＋ 쌓기</button>`
+      + `<button data-e="del" class="${sim.state.edit === 'del' ? 'on' : ''}">－ 빼기</button>`
+      + '</div>';
+    h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+    if (sim.canSurf(mode)) h += '<button class="k3-btn accent" data-a="surf">🔭 같은 개수, 다르게</button>';
+  }
+  ctrls.style.display = h ? '' : 'none';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => setView(b.dataset.v)));
+  ctrls.querySelectorAll('[data-e]').forEach(b => b.addEventListener('click', () => {
+    hideHint(); sim.setEdit(b.dataset.e); K3.sound.play('tap'); renderCtrls();
+  }));
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 쌓아 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    mbar.innerHTML = `${qList[qIdx].q}<div class="st">점수 ${qScore} / ${qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+/* 상태줄 (v2 문구 무손실 · 퀴즈에선 개수 숨김 = 정답 누설 차단) */
+function renderStatus() {
+  const s = sim.statusText(mode);
+  let h = `<div class="card">${s.text}</div>`;
+  if (s.surf) h += `<div class="card surf">${s.surf}</div>`;
+  statusEl.innerHTML = h;
+  const st = $('stage');
+  st.dataset.count = String(sim.count());
+  st.dataset.exposed = String(sim.exposed());
+  st.dataset.surf = sim.state.surf || '';
+  st.dataset.view = sim.state.view;
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = qList[qIdx];
+  choicesEl.innerHTML = q.choices.map(c => `<button data-v="${c}">${c}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const ok = b.dataset.v === String(q.answer);
+    qCount++; if (ok) qScore++;
+    K3.sound.play(ok ? 'chime' : 'fail');
+    K3.toast(ok ? '🎉 정답! ' + q.answer : '아쉬워요 — 정답은 「' + q.answer + '」', !ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      qIdx++; if (qIdx >= qList.length) shuffleQuiz();
+      qLock = false; loadQuizShape(); renderAll();
+    }, T(1450));
+  }));
+}
+function shuffleQuiz() {
+  qList = sim.newQuiz(Math.random);
+  qIdx = 0; qScore = 0; qCount = 0; qLock = false;
+}
+function loadQuizShape() {
+  if (mode !== 'quiz') return;
+  sim.buildShape((qList[qIdx] || qList[0]).shape);
+  sim.state.surf = null;
+  syncMeshes(true);
+}
+
+function renderAll() { renderHUD(); renderCtrls(); renderBar(); renderQuiz(); renderStatus(); }
+
+/* ── 조작 ── */
+function act(a) {
+  hideHint();
+  if (a === 'reset') {
+    sim.reset();
+    K3.sound.play('select');
+    syncMeshes(true); renderAll();
+    missionTick();
+  } else if (a === 'surf') {
+    if (sim.state.surf === null) {
+      /* 1단계: 8개를 뭉쳐 놓고 예측 유도 (v2 flash → 🔮 K3 예측 카드 승격) */
+      sim.surfArm();
+      K3.sound.play('select');
+      syncMeshes(true); renderAll();
+      K3.toast(sim.surfArmText(), false, T(4200));
+      K3.cards.predict('8개를 그대로 «펼치면» 드러난 면(겉넓이)은?', [
+        { id: 'more', label: '📈 늘어난다' },
+        { id: 'less', label: '📉 줄어든다' },
+        { id: 'same', label: '🟰 똑같다' }
+      ]).then(v => { sim.setPred(v); K3.sound.play('charge'); });
+      return;
+    }
+    /* 2단계: 뭉침 ↔ 펼침 토글 = 마법모먼트 (반복 가능 · v2 무손실) */
+    const r = sim.surfToggle();
+    syncMeshes(true); renderAll();
+    K3.sound.play('whoosh');
+    setTimeout(() => { K3.sound.play('chime'); K3.sound.play('ting'); }, T(260));
+    K3.toast(sim.surfText(r) + sim.predLine(r), false, T(4600));
+  }
+}
+function setView(v) {
+  hideHint();
+  sim.setView(v);
+  K3.sound.play('select');
+  aimView();
+  renderCtrls(); renderStatus();
+}
+function setGrade(g) {
+  sim.grade = g;
+  if (!sim.G().modes.includes(mode)) mode = 'free';
+  if (!sim.G().views) sim.setView('free');
+  sim.clearSurf();
+  sim.missionStart();
+  if (mode === 'quiz') { shuffleQuiz(); loadQuizShape(); }
+  syncMeshes(true); aimView(); renderAll();
+}
+function setMode(m) {
+  mode = m;
+  sim.clearSurf();
+  sim.missionStart();
+  if (m === 'quiz') { shuffleQuiz(); loadQuizShape(); }
+  syncMeshes(true); renderAll();
+}
+
+/* ── 직접 조작: 면 탭 = 쌓기 / 빼기 (v2 레이캐스트 무손실) ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let downXY = null;
+function pickAt(cx, cy) {
+  ptr.x = (cx / innerWidth) * 2 - 1;
+  ptr.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects(Object.keys(meshes).map(k => meshes[k]), false);
+  if (hits.length) return { type: 'cube', hit: hits[0] };
+  const g = ray.intersectObject(board, false);
+  if (g.length) return { type: 'board', hit: g[0] };
+  return null;
+}
+function tapAt(cx, cy) {
+  if (!sim.editable || mode === 'quiz') return;
+  const r = pickAt(cx, cy);
+  if (!r) return;
+  if (sim.state.edit === 'del') {
+    if (r.type !== 'cube') return;
+    const c = r.hit.object.userData.cell;
+    if (sim.remove(c[0], c[1], c[2])) { K3.sound.play('tap'); syncMeshes(true); renderStatus(); missionTick(); }
+    return;
+  }
+  if (r.type === 'cube') {
+    const c = r.hit.object.userData.cell;
+    const n = r.hit.face.normal;
+    const nx = Math.round(n.x), ny = Math.round(n.y), nz = Math.round(n.z);
+    if (sim.add(c[0] + nx, c[1] + ny, c[2] + nz)) {
+      K3.sound.play('pop'); syncMeshes(true); renderStatus(); missionTick();
+    }
+  } else {
+    const p = r.hit.point.clone();
+    root.worldToLocal(p);
+    const gx = Math.round(p.x / U), gz = Math.round(p.z / U);
+    if (sim.stackAt(gx, gz)) { K3.sound.play('pop'); syncMeshes(true); renderStatus(); missionTick(); }
+  }
+}
+renderer.domElement.addEventListener('pointerdown', e => { downXY = [e.clientX || 0, e.clientY || 0]; hideHint(); });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY) return;
+  const moved = Math.hypot((e.clientX || 0) - downXY[0], (e.clientY || 0) - downXY[1]);
+  downXY = null;
+  if (moved > 8) { sim.setView('free'); renderCtrls(); return; }   /* 끌면 자유 시점으로 */
+  tapAt(e.clientX || 0, e.clientY || 0);
+});
+
+function missionTick() {
+  if (mode !== 'mission') return;
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast(r.act === 'done' ? '🎉 미션 완주!' : '🎉 좋아요!', false, T(1200));
+  setTimeout(() => renderAll(), T(900));
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 12 : 1;
+const _dir = new THREE.Vector3();
+let elapsed = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  elapsed += dt;
+
+  /* 무대 중앙 상쇄 이징 (어떤 모양이든 프레임 안) */
+  root.position.lerp(rootTarget, Math.min(1, dt * 6));
+
+  /* 시점 전환 이징 (원근 약화) */
+  if (viewLerp > 0) {
+    camera.position.lerp(viewPos, Math.min(1, dt * 5.5));
+    if (camera.position.distanceTo(viewPos) < 0.004) viewLerp = 0;
+  }
+  controls.target.lerp(camTarget, Math.min(1, dt * 5));
+  /* 자유 시점: 모양이 커지면 카메라를 뒤로 밀어 프레임 확보 (1×8 펼침 대비 · 가까이는 안 당김) */
+  if (viewLerp === 0) {
+    const d = camera.position.distanceTo(controls.target);
+    if (d < fitDist - 0.008) {
+      _dir.copy(camera.position).sub(controls.target).normalize();
+      camera.position.copy(controls.target)
+        .addScaledVector(_dir, d + (fitDist - d) * Math.min(1, dt * 4));
+    }
+  }
+  if (Math.abs(camera.fov - fovTarget) > 0.05) {
+    camera.fov += (fovTarget - camera.fov) * Math.min(1, dt * 5);
+    camera.updateProjectionMatrix();
+  }
+
+  /* 블록 낙하 이징 · 탭 통통 */
+  Object.keys(meshes).forEach(k => {
+    const m = meshes[k], d = m.userData;
+    if (d.dropT > 0) {
+      d.dropT = Math.max(0, d.dropT - dt * 4.4);
+      const e = d.dropT * d.dropT;
+      m.position.y = (d.cell[1] + 0.5) * U + e * U * 1.5;
+      m.scale.setScalar(1 - e * 0.12);
+    } else {
+      m.position.y = (d.cell[1] + 0.5) * U;
+      m.scale.setScalar(1);
+    }
+  });
+
+  /* 드러난 면 보라 발광 맥동 (겉넓이 시각화) */
+  if (glowOn) {
+    MAT_GLOW.emissiveIntensity = (Math.sin(elapsed * 4.2) * 0.5 + 0.5) * 0.26 + 0.16;
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+shuffleQuiz();
+if (mode === 'quiz') loadQuizShape();
+syncMeshes(false);
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast('블록 면을 탭하면 그 방향으로 쌓여요 — 몇 개인지 세어 봐요!');
+animate();
+
+/* 테스트용 앱 훅 */
+window.CubesApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, setView, act, tapAt,
+  meshes, root, board, camera,
+  get glowOn() { return glowOn; },
+  get glowMat() { return MAT_GLOW; },
+  get fitDist() { return fitDist; },
+  get rootTarget() { return rootTarget; },
+  U,
+  addCell(x, y, z) { if (sim.add(x, y, z)) { syncMeshes(true); renderStatus(); missionTick(); return true; } return false; },
+  delCell(x, y, z) { if (sim.remove(x, y, z)) { syncMeshes(true); renderStatus(); missionTick(); return true; } return false; },
+  putShape(arr) { sim.buildShape(arr); sim.state.acted = true; syncMeshes(true); renderStatus(); missionTick(); }
+};
+</script>
+</body>
+</html>
