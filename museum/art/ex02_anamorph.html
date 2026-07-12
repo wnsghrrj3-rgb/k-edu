@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>엉망진창의 정체 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-walking{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--art); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="anam-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumAnam=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var A=100, ROT=0.5;                       // 정육면체 반변(한 변 200)·바닥 회전
+  var R_PATH=820, EYE_H=430, FOCAL=760;     // 관람 원호·눈높이·화면 초점
+  var TH_MIN=0.35, TH_MAX=2.79;             // 걸을 수 있는 호
+  var TOL_LOCK=14;                          // 잠금 문턱(화면 단위)
+  var TARGET={x:0,y:0,z:A};                 // 모든 눈은 그림의 심장을 본다
+  function vertices(){                      // 바닥에 선 정육면체 8꼭짓점(월드)
+    var vs=[], c=Math.cos(ROT), s=Math.sin(ROT);
+    [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(function(q){
+      var x=q[0]*A, y=q[1]*A;
+      var rx=x*c-y*s, ry=x*s+y*c;
+      vs.push({x:rx,y:ry,z:0});
+    });
+    for(var i=0;i<4;i++) vs.push({x:vs[i].x, y:vs[i].y, z:2*A});
+    return vs;
+  }
+  function edges(){                         // 12모서리(꼭짓점 인덱스 쌍)
+    return [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  }
+  function eyeAt(th){ return {x:Math.cos(th)*R_PATH, y:Math.sin(th)*R_PATH, z:EYE_H}; }
+  function floorFrom(E,P){                  // 설계 시점 E가 입체점 P를 바닥에 눕힌 자리
+    if(P.z===0) return {x:P.x, y:P.y, z:0};
+    var t=E.z/(E.z-P.z);
+    return {x:E.x+t*(P.x-E.x), y:E.y+t*(P.y-E.y), z:0};
+  }
+  function artwork(thE){                    // 바닥 낙서 = 12모서리의 투영 선분(월드 고정)
+    var E=eyeAt(thE), vs=vertices();
+    return edges().map(function(e){
+      return { a:floorFrom(E,vs[e[0]]), b:floorFrom(E,vs[e[1]]) };
+    });
+  }
+  function screenOf(C,P){                   // 핀홀 C(TARGET 주시)의 화면 투영
+    var fx=TARGET.x-C.x, fy=TARGET.y-C.y, fz=TARGET.z-C.z;
+    var fl=Math.sqrt(fx*fx+fy*fy+fz*fz); fx/=fl; fy/=fl; fz/=fl;
+    var rl=Math.sqrt(fx*fx+fy*fy);
+    var rx=fy/rl, ry=-fx/rl;                // right = f×up(0,0,1)
+    var ux=ry*fz, uy=-rx*fz, uz=rx*fy-ry*fx;// up = r×f
+    var dx=P.x-C.x, dy=P.y-C.y, dz=P.z-C.z;
+    var zc=dx*fx+dy*fy+dz*fz;
+    return { x:(dx*rx+dy*ry)/zc*FOCAL, y:-(dx*ux+dy*uy+dz*uz)/zc*FOCAL, z:zc };
+  }
+  function misalign(th,thE){                // 낙서 투영 ↔ 이상 정육면체의 화면 거리(평균)
+    var E=eyeAt(thE), C=eyeAt(th), vs=vertices(), sum=0;
+    for(var i=0;i<vs.length;i++){
+      var sF=screenOf(C, floorFrom(E,vs[i]));
+      var sP=screenOf(C, vs[i]);
+      var ddx=sF.x-sP.x, ddy=sF.y-sP.y;
+      sum+=Math.sqrt(ddx*ddx+ddy*ddy);
+    }
+    return sum/vs.length;
+  }
+  function lockWindow(thE,step){            // misalign<TOL 잠금창(연속 구간)
+    step=step||0.002;
+    var lo=null, hi=null, contiguous=true, inWin=false, closed=false;
+    for(var th=TH_MIN; th<=TH_MAX+1e-9; th+=step){
+      var inside=misalign(th,thE)<TOL_LOCK;
+      if(inside){
+        if(closed) contiguous=false;
+        if(lo===null) lo=th;
+        hi=th; inWin=true;
+      } else if(inWin){ closed=true; inWin=false; }
+    }
+    return { lo:lo, hi:hi, contiguous:contiguous };
+  }
+  return { A:A, ROT:ROT, R_PATH:R_PATH, EYE_H:EYE_H, FOCAL:FOCAL,
+           TH_MIN:TH_MIN, TH_MAX:TH_MAX, TOL_LOCK:TOL_LOCK, TARGET:TARGET,
+           vertices:vertices, edges:edges, eyeAt:eyeAt, floorFrom:floorFrom,
+           artwork:artwork, screenOf:screenOf, misalign:misalign, lockWindow:lockWindow };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">바닥에, 엉망인 낙서가 흩어져 있습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="40" max="270" value="210" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumAnam;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var TH0 = 0.75;                            // 첫 자리(설계 자리에서 멀리)
+  var S = {
+    phase:'boot',                            // boot→walk→settle→betrayed→after
+    thE:2.10, th:TH0,
+    walked:0, invite:false, docking:false,
+    betrayed:false, arrived:false,
+    lastMoveT:0, time:0
+  };
+  var ART = PURE.artwork(S.thE);             // 낙서는 월드에 고정 — 다시 만들 때만 교체
+  var jit=[];                                // 선분별 분필 지터(렌더 전용)
+  (function(){ var r=Museum.rng(41); for(var i=0;i<12;i++) jit.push((r()-0.5)*1.6); })();
+
+  // ── 화면 배치 ────────────────────────────────────────────────────
+  var SCX=W*0.5, SCY=H*0.55;
+  function toScreen(p, C){
+    var s=PURE.screenOf(C,p);
+    return { x:SCX+s.x, y:SCY+s.y, z:s.z };
+  }
+
+  // ── 바닥 격자(월드 고정 — 투시의 바닥 감각) ─────────────────────
+  var GRID=[];
+  (function(){
+    for(var g=-1200; g<=1200; g+=300){
+      GRID.push({a:{x:g,y:-1200,z:0}, b:{x:g,y:1200,z:0}});
+      GRID.push({a:{x:-1200,y:g,z:0}, b:{x:1200,y:g,z:0}});
+    }
+  })();
+
+  function drawSeg(ctx, a, b, C, style, lw){
+    var sa=toScreen(a,C), sb=toScreen(b,C);
+    if(sa.z<40 || sb.z<40) return;
+    ctx.strokeStyle=style; ctx.lineWidth=lw; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(sa.x,sa.y); ctx.lineTo(sb.x,sb.y); ctx.stroke();
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function beginLock(){
+    if(S.phase!=='walk' && S.phase!=='after') return;
+    if(S.phase==='after'){                    // 재도착: 딸깍 한 번, 재배반 없음
+      if(!S.arrived){ S.arrived=true; Museum.sound.play('click_light'); }
+      return;
+    }
+    S.phase='settle'; S.settleFrom=S.th; S.settleT=0;
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    S.docking=false; S.invite=false;
+    Museum.sound.play('click_light');
+    var heart=toScreen(PURE.TARGET, PURE.eyeAt(S.thE));
+    Museum.betray({x:heart.x/W, y:heart.y/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after'; S.arrived=true;
+    var f=document.getElementById('formula');
+    f.innerHTML='낙서는 한 조각도 움직이지 않았다 &mdash; 당신이, 그 자리에 섰을 뿐이다'
+      +'<span class="small">아나모포시스 &middot; 그림은 한 자리에서만 완성된다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'엉망진창의 정체',
+      story:'홀바인의 대사들(1533)에도 이런 그림이 숨어 있다. 닿을 수 없어 보이는 그림은, 단 한 자리에 선 사람에게만 온전히 나타난다. 손잡이를 밀면 숨은 자리가 옮겨간다 — 다시 찾아 나서 보세요.',
+      fine:'ANAMORPHOSIS 1533 · POINT OF VIEW' });
+    Museum.ticket.grant({ id:'a2_anamorph', title:'엉망진창의 정체', fine:'그림의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        var cx=w*0.5, cy=h*0.52, u=w*0.16;
+        c.strokeRect(cx-u*0.9, cy-u*0.4, u*1.2, u*1.2);       // 정육면체 앞면
+        c.beginPath(); c.moveTo(cx-u*0.9, cy-u*0.4); c.lineTo(cx-u*0.4, cy-u*0.9);
+        c.lineTo(cx+u*0.8, cy-u*0.9); c.lineTo(cx+u*0.3, cy-u*0.4); c.stroke();
+        c.beginPath(); c.moveTo(cx+u*0.8, cy-u*0.9); c.lineTo(cx+u*0.8, cy+u*0.3);
+        c.lineTo(cx+u*0.3, cy+u*0.8); c.stroke();
+        c.beginPath(); c.ellipse(cx, h*0.85, u*0.6, u*0.24, 0, 0, Math.PI*2); c.stroke();  // 눈
+        c.beginPath(); c.arc(cx, h*0.85, u*0.1, 0, Math.PI*2); c.stroke();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 숨은 자리 옮기기 ─────────────────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.thE=(parseInt(slider.value,10)||210)/100;
+    ART=PURE.artwork(S.thE);
+    S.invite=false; S.docking=false; S.walked=0; S.arrived=false;
+    Museum.sound.play('paper');
+  });
+
+  // ── 입력: 서다(옆으로 끌면 걷는다) ───────────────────────────────
+  var walking=false, lastX=0, stepAcc=0, lastClack=0;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.docking || S.phase==='settle' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.phase==='boot'){ S.phase='walk'; }
+    walking=true; canvas.classList.add('is-walking');
+    lastX=p.x; S.lastMoveT=S.time;
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!walking || Museum.isLocked() || S.docking) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var dx=p.x-lastX; lastX=p.x;
+    walkBy(-dx*0.0016);
+  });
+  window.addEventListener('pointerup', function(){
+    walking=false; canvas.classList.remove('is-walking');
+  });
+  function walkBy(dth){
+    if(S.docking || (S.phase!=='walk' && S.phase!=='after')) return;
+    var prev=S.th;
+    S.th=Math.max(PURE.TH_MIN, Math.min(PURE.TH_MAX, S.th+dth));
+    var moved=Math.abs(S.th-prev);
+    if(moved>0){
+      S.walked+=moved; S.lastMoveT=S.time;
+      if(S.phase==='after' && S.arrived && PURE.misalign(S.th,S.thE)>=PURE.TOL_LOCK) S.arrived=false;
+      stepAcc+=moved;
+      if(stepAcc>0.05 && S.time-lastClack>0.13){
+        Museum.sound.play('clack'); stepAcc=0; lastClack=S.time;
+      }
+    }
+  }
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.phase==='settle'){                            // 철컥 안착 400ms
+        S.settleT+=dt;
+        var u=Math.min(1, S.settleT/0.4);
+        var k=1-(1-u)*(1-u);
+        S.th=S.settleFrom+(S.thE-S.settleFrom)*k;
+        if(u>=1){ S.th=S.thE; triggerBetray(); }
+        return;
+      }
+      if(S.phase!=='walk' && S.phase!=='after') return;
+      // 3막 초대·이양(첫 항해만)
+      if(S.phase==='walk' && !S.betrayed){
+        if(!S.invite && S.walked>=2.4){ S.invite=true; S.lastMoveT=S.time; }
+        if(S.invite && !S.docking && S.time-S.lastMoveT>2.5) S.docking=true;
+        if(S.docking){
+          S.th+=(S.thE-S.th)*Math.min(1, dt*0.9);
+          if(Math.abs(S.th-S.thE)<0.004) S.th=S.thE;
+        }
+      }
+      // 잠금 판정 — 손이든 방이든, 자리에 서면
+      if(PURE.misalign(S.th,S.thE)<PURE.TOL_LOCK) beginLock();
+    },
+    draw:function(ctx){
+      var C=PURE.eyeAt(S.th);
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      // 바닥 격자 — 아주 희미하게
+      for(var g=0; g<GRID.length; g++)
+        drawSeg(ctx, GRID[g].a, GRID[g].b, C, 'rgba(95,88,74,.16)', 1);
+      // 낙서 12선분 — 분필
+      var lit = S.betrayed || S.phase==='settle' || S.phase==='betrayed'
+              || (S.phase==='after' && S.arrived);
+      for(var i=0; i<ART.length; i++){
+        var a=(lit ? 0.95 : 0.62+0.06*Math.sin(S.time*1.4+i));
+        drawSeg(ctx, ART[i].a, ART[i].b, C,
+          'rgba(242,234,216,'+a.toFixed(2)+')', lit?4:(3+jit[i]*0.4));
+      }
+      // 1막 숨쉼 — 첫 선분 하나가 초대
+      if(S.phase==='boot'){
+        drawSeg(ctx, ART[0].a, ART[0].b, C,
+          'rgba(242,234,216,'+(0.10+0.18*breath).toFixed(2)+')', 7);
+      }
+      // 3막 놋쇠 발자국 초대(설계 자리 발밑)
+      if(S.invite && !S.betrayed){
+        var E=PURE.eyeAt(S.thE);
+        var foot=toScreen({x:E.x, y:E.y, z:0}, C);
+        if(foot.z>40){
+          var fa=0.35+0.45*breath;
+          ctx.strokeStyle='rgba(201,169,97,'+fa.toFixed(2)+')';
+          ctx.lineWidth=2;
+          [-11,11].forEach(function(off){
+            ctx.beginPath();
+            ctx.ellipse(foot.x+off, foot.y, 6, 12, off*0.012, 0, Math.PI*2);
+            ctx.stroke();
+          });
+        }
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__A2 = {
+    S:S, PURE:PURE,
+    art:function(){ return ART; },
+    setTheta:function(t){ S.th=t; },
+    walkBy:walkBy,
+    beginWalk:function(){ if(S.phase==='boot') S.phase='walk'; },
+    forceInvite:function(){ S.invite=true; S.lastMoveT=S.time-9; }
+  };
+})();
+</script>
+</body>
+</html>
