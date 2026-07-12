@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>무역 없는 방 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:default; }
+  #stage-canvas.is-over{ cursor:pointer; }
+  #premise{ position:fixed; top:6vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+     font-family:'Gowun Batang',serif; font-size:clamp(15px,2.1vw,22px); color:var(--ink-dim);
+     opacity:0; transition:opacity 1.6s ease; letter-spacing:.02em; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+     display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:5vh; gap:14px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+     font-family:'Gowun Batang',serif; font-size:clamp(16px,2.2vw,23px); color:var(--ink);
+     text-align:center; letter-spacing:.02em; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+     font-size:14px; color:var(--ink-dim); line-height:1.7; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(340px,66vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp .cap{ font-family:'Gowun Dodum',sans-serif; font-size:14px; color:var(--ink-dim); letter-spacing:.02em; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변).
+     자급률 = 공표 통계 상수(2024 양곡연도 · 2025 농림축산식품 통계연보 / 에너지경제연구원).
+     물건이 남는 정도 = 그 물건의 자급률. 그대로다. 여기에 연출은 없다. -->
+<script id="room-pure">
+(function(global){
+  'use strict';
+
+  // ── 실측 상수 (2024 양곡연도 · 2025 농림축산식품 통계연보 / 에너지경제연구원) ──
+  // rate = 자급률(%). 물건이 남는 정도는 이 수를 그대로 쓴다. 보정 0.
+  //  · 쌀 96.0  · 콩 37.4  · 보리 22.0  · 옥수수 4.3  · 밀 1.5
+  //  · 식용유·설탕·커피(원료) = 사실상 0
+  //  · 전기 = 에너지 수입의존도 94% → 자급 6
+  var ITEMS = [
+    { id:'rice',   ko:'밥 한 공기', from:'쌀',        rate:96.0, x:0.24, y:0.62 },
+    { id:'tofu',   ko:'두부',       from:'콩',        rate:37.4, x:0.40, y:0.70 },
+    { id:'barley', ko:'보리차',     from:'보리',      rate:22.0, x:0.56, y:0.66 },
+    { id:'corn',   ko:'옥수수',     from:'옥수수',    rate:4.3,  x:0.70, y:0.72 },
+    { id:'ramen',  ko:'라면',       from:'밀',        rate:1.5,  x:0.32, y:0.44 },
+    { id:'bread',  ko:'빵',         from:'밀',        rate:1.5,  x:0.48, y:0.40 },
+    { id:'oil',    ko:'식용유',     from:'기름작물',  rate:0.0,  x:0.63, y:0.46 },
+    { id:'sugar',  ko:'설탕',       from:'원당',      rate:0.0,  x:0.76, y:0.52 },
+    { id:'coffee', ko:'커피',       from:'커피콩',    rate:0.0,  x:0.19, y:0.46 },
+    { id:'lamp',   ko:'전등',       from:'에너지',    rate:6.0,  x:0.50, y:0.16 }
+  ];
+  var LAMP='lamp';
+  var HAND = ['rice','tofu','ramen','coffee'];        // 손이 먼저 집는 넷 — 예측을 심고, 깨뜨린다
+
+  // 공표 지표 (여운 전용)
+  var PUBLISHED = {
+    grain: 21.6,      // 곡물자급률(사료 포함)
+    food: 47.9,       // 식량자급률
+    energyImport: 94  // 에너지 수입의존도
+  };
+
+  function byId(id){
+    for(var i=0;i<ITEMS.length;i++) if(ITEMS[i].id===id) return ITEMS[i];
+    return null;
+  }
+  function rateOf(id){ var it=byId(id); return it? it.rate : 0; }
+
+  // 물건이 남는 정도 = 자급률. 이것이 전부다 — 여기에 연출은 없다.
+  function remainOf(id){ return rateOf(id)/100; }
+
+  // 밖에서 온 몫
+  function importedOf(id){ return 1 - remainOf(id); }
+
+  // 이 방에서 절반이라도 남는 물건
+  function survivors(){
+    return ITEMS.filter(function(it){ return it.rate >= 50; }).map(function(it){ return it.id; });
+  }
+  // 흔적도 없이 사라지는 물건
+  function vanished(){
+    return ITEMS.filter(function(it){ return it.rate === 0; }).map(function(it){ return it.id; });
+  }
+
+  global.KMuseumRoom = {
+    ITEMS:ITEMS, LAMP:LAMP, HAND:HAND, PUBLISHED:PUBLISHED,
+    byId:byId, rateOf:rateOf, remainOf:remainOf, importedOf:importedOf,
+    survivors:survivors, vanished:vanished
+  };
+})(typeof window!=='undefined'? window : global);
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise"></div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp">
+    <div class="track"><input id="pick" type="range" min="0" max="9" step="1" value="0"></div>
+    <div class="cap" id="cap"></div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumRoom;
+  var canvas = document.getElementById('stage-canvas');
+  var stage  = Museum.stage(canvas, 1600, 900);
+  var W=1600, H=900;
+
+  var S = {
+    phase:'boot',          // boot→hand→machine→betrayed→after
+    time:0,
+    taken:{},              // id → 걷힌 정도 0..1
+    lifting:null,          // 지금 들려 있는 물건
+    liftT:0,
+    handCount:0,
+    hover:null,
+    autoQueue:[], autoT:0, autoStep:1.1,
+    betrayed:false, picked:0,
+    dust:[]                // 스러지는 재
+  };
+  PURE.ITEMS.forEach(function(it){ S.taken[it.id]=0; });
+
+  function xyOf(it){ return [ it.x*W, it.y*H ]; }
+  function isDone(id){ return S.taken[id]>=1; }
+  function nextHand(){
+    for(var i=0;i<PURE.HAND.length;i++){ if(!isDone(PURE.HAND[i])) return PURE.HAND[i]; }
+    return null;
+  }
+
+  // ── 손 ───────────────────────────────────────────────────────────
+  function handsFree(){ return !Museum.isLocked() && (S.phase==='boot'||S.phase==='hand') && !S.lifting; }
+  function hit(p){
+    for(var i=0;i<PURE.ITEMS.length;i++){
+      var it=PURE.ITEMS[i];
+      if(it.id===PURE.LAMP) continue;                       // 전등은 손에 잡히지 않는다 — 방의 몫이다
+      if(isDone(it.id)) continue;
+      var q=xyOf(it);
+      if(Math.hypot(p.x-q[0], p.y-q[1]) < 52) return it.id;
+    }
+    return null;
+  }
+  function lift(id){
+    S.lifting=id; S.liftT=0;
+    if(S.phase==='boot') S.phase='hand';
+    Museum.sound.play('creak',{pitch:0.2});
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if(!handsFree()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var id=hit(p);
+    if(id) lift(id);
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(Museum.isLocked() || S.lifting) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    S.hover = handsFree()? hit(p) : null;
+    canvas.classList.toggle('is-over', !!S.hover);
+  });
+  canvas.addEventListener('pointerleave', function(){ S.hover=null; canvas.classList.remove('is-over'); });
+
+  // 들어올린 물건에서 밖에서 온 몫이 걷힌다 — 남는 것은 자급률뿐이다
+  function liftTick(dt){
+    S.liftT += dt/1.3;
+    var id=S.lifting;
+    var k=Math.min(1, S.liftT);
+    var e=k<0.5? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+    S.taken[id]=e;
+    if(Math.random()<0.5*PURE.importedOf(id)){
+      var it=PURE.byId(id), q=xyOf(it);
+      S.dust.push({ x:q[0]+(Math.random()-0.5)*54, y:q[1]-30-Math.random()*40,
+                    vx:(Math.random()-0.5)*14, vy:-18-Math.random()*22, t:0, life:0.9+Math.random()*0.5 });
+    }
+    if(k>=1){
+      S.taken[id]=1;
+      S.lifting=null; S.liftT=0;
+      Museum.sound.play(PURE.remainOf(id)>0.5 ? 'clack' : 'paper');
+      if(PURE.HAND.indexOf(id)>=0) S.handCount++;
+      if(S.phase==='hand' && S.handCount>=PURE.HAND.length) startMachine();
+    }
+  }
+
+  // ── 기계의 밤 — 방이 스스로 걷어낸다 ─────────────────────────────
+  function startMachine(){
+    S.phase='machine';
+    S.autoQueue = PURE.ITEMS.filter(function(it){
+      return it.id!==PURE.LAMP && !isDone(it.id);
+    }).map(function(it){ return it.id; });
+    S.autoQueue.push(PURE.LAMP);                            // 마지막은 전등
+    S.autoT=0; S.autoStep=1.1;
+    Museum.sound.play('curtain');
+  }
+  function machineTick(dt){
+    if(S.lifting){ liftTick(dt); return; }
+    S.autoT+=dt;
+    if(S.autoT < S.autoStep) return;
+    S.autoT=0;
+    if(S.autoQueue.length===0){ triggerBetray(); return; }
+    var id=S.autoQueue.shift();
+    S.lifting=id; S.liftT=0;
+    S.autoStep=Math.max(0.42, S.autoStep*0.84);
+    Museum.sound.play('creak',{pitch:0.45});
+    if(id===PURE.LAMP) S.autoStep=1.6;
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var lamp=PURE.byId(PURE.LAMP);
+    Museum.betray({ x:lamp.x, y:lamp.y }).then(function(){ enterAfter(); });
+  }
+
+  // ── 여운 ─────────────────────────────────────────────────────────
+  function chalkOf(i){
+    var it=PURE.ITEMS[i];
+    var r=it.rate;
+    var tail = r===0 ? '흔적도 없다'
+             : r>=50 ? '거의 그대로 남는다'
+             : '이만큼만 남는다';
+    return it.ko+' — '+it.from+' 자급률 '+r.toFixed(1)+'% · '+tail;
+  }
+  function enterAfter(){
+    S.phase='after';
+    document.getElementById('premise').classList.remove('is-in');
+    var P=PURE.PUBLISHED;
+    var f=document.getElementById('formula');
+    f.innerHTML='남은 것은 밥 한 공기 &mdash; 그 밥을 지을 불은, 남지 않았다'
+      +'<span class="small">쌀 96.0% &middot; 콩 37.4% &middot; 보리 22.0% &middot; 옥수수 4.3% &middot; 밀 1.5% &middot; 커피 &middot; 설탕 &middot; 식용유 0%'
+      +'<br>곡물자급률 '+P.grain+'% &mdash; 우리가 먹는 곡물의 열에 여덟은 바다를 건너온다'
+      +'<br>에너지 수입의존도 '+P.energyImport+'% &mdash; 그래서 마지막에 꺼진 것은 불이었다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'무역 없는 방',
+      story:'이 방의 물건들은 모두 여기 있었다. 다만, 여기서 온 것은 아니었다. 손잡이로 물건을 짚어 보세요 — 그것이 어디서 왔는지 적혀 있습니다.',
+      fine:'2024 양곡연도 · 2025 농림축산식품 통계연보 · 에너지경제연구원' });
+    Museum.ticket.grant({ id:'s6_room', title:'무역 없는 방', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.35)'; c.lineWidth=0.9;
+        c.strokeRect(w*0.18, h*0.18, w*0.64, h*0.64);        // 빈 방
+        c.fillStyle='rgba(242,234,216,.95)';                  // 남은 밥 한 공기
+        c.beginPath(); c.arc(w*0.5, h*0.66, w*0.10, Math.PI, 0); c.fill();
+        c.strokeStyle='rgba(201,169,97,.55)'; c.lineWidth=1;
+        c.beginPath(); c.moveTo(w*0.5, h*0.18); c.lineTo(w*0.5, h*0.30); c.stroke();
+        c.beginPath(); c.arc(w*0.5, h*0.34, w*0.045, 0, Math.PI*2); c.stroke();   // 꺼진 전등
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+    setPick(0);
+  }
+  var slider=document.getElementById('pick'), cap=document.getElementById('cap');
+  function setPick(i){ S.picked=i; cap.textContent=chalkOf(i); }
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    setPick(parseInt(slider.value,10));
+    Museum.sound.play('paper');
+  });
+
+  // ── 무대 — 물건은 캔버스의 분필 실루엣이다 ───────────────────────
+  function shape(ctx, it, x, y, a){
+    ctx.save();
+    ctx.strokeStyle='rgba(242,234,216,'+a.toFixed(2)+')';
+    ctx.fillStyle='rgba(242,234,216,'+(a*0.16).toFixed(2)+')';
+    ctx.lineWidth=1.7;
+    ctx.beginPath();
+    switch(it.id){
+      case 'rice':                                            // 밥 한 공기 — 그릇과 봉긋한 밥
+        ctx.arc(x, y, 34, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 22, Math.PI, 0, true); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-40,y); ctx.lineTo(x+40,y); ctx.stroke();
+        break;
+      case 'tofu':                                            // 두부 — 네모
+        ctx.rect(x-30,y-22,60,44); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-30,y-6); ctx.lineTo(x+30,y-6); ctx.stroke();
+        break;
+      case 'barley':                                          // 보리차 — 주전자
+        ctx.rect(x-24,y-20,48,40); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+24,y-8); ctx.quadraticCurveTo(x+40,y, x+24,y+10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-8,y-20); ctx.lineTo(x-2,y-32); ctx.lineTo(x+8,y-32); ctx.stroke();
+        break;
+      case 'corn':                                            // 옥수수
+        ctx.ellipse(x, y, 15, 32, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        for(var r=-2;r<=2;r++){ ctx.beginPath(); ctx.moveTo(x-12, y+r*11); ctx.lineTo(x+12, y+r*11); ctx.stroke(); }
+        break;
+      case 'ramen':                                           // 라면 — 봉지
+        ctx.rect(x-30,y-26,60,52); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI*2); ctx.stroke();
+        break;
+      case 'bread':                                           // 빵
+        ctx.moveTo(x-32,y+18); ctx.quadraticCurveTo(x-34,y-22, x, y-24);
+        ctx.quadraticCurveTo(x+34,y-22, x+32,y+18); ctx.closePath(); ctx.fill(); ctx.stroke();
+        break;
+      case 'oil':                                             // 식용유 — 병
+        ctx.rect(x-16,y-14,32,38); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.rect(x-6,y-32,12,18); ctx.stroke();
+        break;
+      case 'sugar':                                           // 설탕 — 각설탕 셋
+        ctx.rect(x-26,y-4,24,22); ctx.rect(x+2,y-4,24,22); ctx.rect(x-12,y-26,24,22);
+        ctx.fill(); ctx.stroke();
+        break;
+      case 'coffee':                                          // 커피 — 잔
+        ctx.moveTo(x-22,y-18); ctx.lineTo(x-16,y+20); ctx.lineTo(x+16,y+20); ctx.lineTo(x+22,y-18);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x+28, y-2, 10, -Math.PI/2, Math.PI/2); ctx.stroke();
+        break;
+      case 'lamp':                                            // 전등 — 갓과 알
+        ctx.moveTo(x-34,y+18); ctx.lineTo(x-14,y-16); ctx.lineTo(x+14,y-16); ctx.lineTo(x+34,y+18);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y-16); ctx.lineTo(x,y-64); ctx.stroke();
+        break;
+    }
+    ctx.restore();
+  }
+
+  // 밖에서 온 몫은 위에서부터 걷힌다 — 남는 것은 아래의 자급률뿐이다
+  function drawItem(ctx, it){
+    var q=xyOf(it), x=q[0], y=q[1];
+    var t=S.taken[it.id];                                     // 0=아직, 1=다 걷혔다
+    var keep=PURE.remainOf(it.id);
+    var cut = 1 - (1-keep)*t;                                 // 남아 있는 세로 비율
+    var held = (S.lifting===it.id);
+    var lifted = held ? -18*Math.sin(Math.min(1,S.liftT)*Math.PI) : 0;
+    var over = (S.hover===it.id && !S.lifting);
+    var a = held ? 0.92 : over ? 0.80 : 0.58;
+
+    ctx.save();
+    ctx.beginPath();
+    var top = y-70, hgt=140;
+    ctx.rect(x-70, top + hgt*(1-cut), 140, hgt*cut);          // 아래쪽 cut 만큼만 살아 있다
+    ctx.clip();
+    shape(ctx, it, x, y+lifted, a);
+    ctx.restore();
+
+    if(cut>0.02 && cut<0.99){                                 // 걷힌 자리 — 분필 자국
+      ctx.strokeStyle='rgba(168,158,136,.30)';
+      ctx.setLineDash([3,5]); ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(x-42, top+hgt*(1-cut)); ctx.lineTo(x+42, top+hgt*(1-cut));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.lifting && S.phase!=='machine') liftTick(dt);
+      if(S.phase==='machine') machineTick(dt);
+      for(var i=S.dust.length-1;i>=0;i--){
+        var d=S.dust[i]; d.t+=dt;
+        d.x+=d.vx*dt; d.y+=d.vy*dt; d.vy+=8*dt;
+        if(d.t>=d.life) S.dust.splice(i,1);
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+
+      // 방의 불 — 전등이 남은 만큼만 밝다
+      var lampKeep = 1 - (1-PURE.remainOf(PURE.LAMP))*S.taken[PURE.LAMP];
+      var lamp=PURE.byId(PURE.LAMP), lq=xyOf(lamp);
+      var g=ctx.createRadialGradient(lq[0],lq[1],0, lq[0],lq[1], 900);
+      g.addColorStop(0,'rgba(201,169,97,'+(0.10*lampKeep).toFixed(3)+')');
+      g.addColorStop(1,'rgba(201,169,97,0)');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+      // 탁자 — 무대 소품
+      ctx.strokeStyle='rgba(168,158,136,'+(0.22*Math.max(0.25,lampKeep)).toFixed(2)+')';
+      ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(W*0.10, H*0.80); ctx.lineTo(W*0.90, H*0.80); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.14, H*0.32); ctx.lineTo(W*0.86, H*0.32); ctx.stroke();
+
+      // 물건들
+      for(var i=0;i<PURE.ITEMS.length;i++) drawItem(ctx, PURE.ITEMS[i]);
+
+      // 초대 — 손이 아직 닿지 않은 물건 하나가 숨쉰다
+      if(S.phase==='boot' || S.phase==='hand'){
+        var inv=nextHand();
+        if(inv && !S.lifting){
+          var it=PURE.byId(inv), q=xyOf(it);
+          ctx.strokeStyle='rgba(242,234,216,'+(0.22+0.42*breath).toFixed(2)+')';
+          ctx.lineWidth=1.6;
+          ctx.beginPath(); ctx.arc(q[0], q[1], 50+4*breath, 0, Math.PI*2); ctx.stroke();
+        }
+      }
+
+      // 걷혀 나가는 재
+      for(var k=0;k<S.dust.length;k++){
+        var d=S.dust[k], al=(1-d.t/d.life)*0.5;
+        ctx.fillStyle='rgba(242,234,216,'+al.toFixed(2)+')';
+        ctx.fillRect(d.x, d.y, 1.8, 1.8);
+      }
+
+      // 여운의 분필
+      if(S.phase==='after'){
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
+        ctx.fillText(chalkOf(S.picked), W*0.5, 44);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  document.getElementById('premise').textContent='당신의 방입니다.';
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S6 = {
+    S:S, PURE:PURE, xyOf:xyOf, hit:hit, lift:lift, liftTick:liftTick,
+    startMachine:startMachine, triggerBetray:triggerBetray, enterAfter:enterAfter,
+    setPick:setPick, chalkOf:chalkOf, nextHand:nextHand, isDone:isDone
+  };
+})();
+</script>
+</body>
+</html>
