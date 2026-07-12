@@ -141,6 +141,7 @@
       gen: { template_id: tpl.id, seed: ctx.seed }
     };
     if (tpl.explain) item.explain = tpl.explain(p, ans);
+    if (tpl.concept) item.concept = tpl.concept;   // 소비처(케이배틀 answers)의 개념 축. 없으면 단원명으로 대체됨.
 
     if (type === 'choice') {
       var raw = tpl.distractors ? tpl.distractors(p, ans, rng) : [];

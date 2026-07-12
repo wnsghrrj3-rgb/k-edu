@@ -67,6 +67,7 @@
 <script src="kb-xp.js"></script>
 <script src="kb-store.js"></script>
 <script src="kb-answers.js"></script>
+<script src="kb-kquiz.js"></script>
 <script src="kb-bank.js"></script>
 <script src="kb-solo.js"></script>
 <script>
@@ -97,8 +98,16 @@
       if (!nm) { document.getElementById('er').textContent = '이름을 적어요'; return; }
       var code = (cc.value || '').trim().toUpperCase() || null;
       if (code) KBStore.use('supabase');           // 학급 코드가 있으면 공용 프로필
-      KBStore.create({ name: nm, classCode: code }).then(home);
+      KBStore.create({ name: nm, classCode: code }).then(enter);
     };
+  }
+
+  /* ---- 홈 진입 ----
+     교과 오답(케이퀴즈)은 qid 만으로 되살아나지만, 그 단원 템플릿이 먼저 로드돼야 한다.
+     그래서 홈을 그리기 전에 오답이 가리키는 단원들을 준비한다(제10조 9번). 실패해도 홈은 뜬다. */
+  function enter(p) {
+    return KBank.prepare(KBAnswers.wrongQids())
+      .then(function () { home(p); }, function () { home(p); });
   }
 
   /* ---- 허브 홈 ---- */
@@ -189,8 +198,8 @@
         }).then(function (out) {
           if (!out) return;
           setTimeout(function () {
-            if (out.rank.promoted) promo(out.rank.after, function () { home(out.profile); });
-            else home(out.profile);
+            if (out.rank.promoted) promo(out.rank.after, function () { enter(out.profile); });
+            else enter(out.profile);
           }, 1400);
         });
       }
@@ -222,14 +231,14 @@
         '<button data-new="1"><span class="kb-m-emoji">➕</span><span class="kb-m-t">새로 시작</span></button>' +
         '</div></div>';
       [].forEach.call(hub.querySelectorAll('[data-id]'), function (b) {
-        b.onclick = function () { KBStore.switchTo(b.getAttribute('data-id')).then(home); };
+        b.onclick = function () { KBStore.switchTo(b.getAttribute('data-id')).then(enter); };
       });
       hub.querySelector('[data-new]').onclick = gate;
     });
   }
 
   /* ---- 시작 ---- */
-  KBStore.me().then(function (p) { if (p) home(p); else gate(); })
+  KBStore.me().then(function (p) { if (p) enter(p); else gate(); })
     .catch(function (e) { conn.textContent = String(e.message || e); gate(); });
 })();
 </script>

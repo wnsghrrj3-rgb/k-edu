@@ -12,39 +12,114 @@
 <body>
 <button id="kedu-home" title="케이에듀 시작 화면으로" style="position:fixed;top:14px;left:14px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:12px;border:none;background:#fff;color:#1a2540;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:inherit;">🏠 케이에듀로 가기</button>
 
-<div class="kb-app" id="app">
-  <div class="kb-stage">
-    <div class="kb-big">케이<span style="color:var(--kb-yellow)">배틀</span></div>
-    <div class="kb-dim" style="font-size:18px;margin-bottom:26px;">모드를 고르고 방을 만드세요</div>
-    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-      <button class="kb-btn" data-mode="race">🏇 레이스 <span style="font-weight:700;font-size:15px;">정답마다 전진 · ⭐칸 2배</span></button>
-      <button class="kb-btn" data-mode="" style="background:rgba(255,255,255,.12);color:#fff;">📋 문제만 풀기</button>
-    </div>
-    <div class="kb-dim" style="margin-top:26px;">학생은 <b>keduclass.com/kbattle/play.html</b> 로 들어와요</div>
-    <div style="margin-top:18px;">
-      <a href="class.html" style="color:var(--kb-mint);font-weight:800;font-size:15px;text-decoration:none;">
-        👩‍🏫 우리 반 명부 · 어려워하는 개념 보기 →</a>
-    </div>
-  </div>
-</div>
+<div class="kb-app" id="app"></div>
 <div class="kb-conn" id="conn">연결 준비…</div>
 
 <script src="../kple/kple-core.js"></script>
+<script src="../kple/kple-deck.js"></script>
 <script src="kb-questions.js"></script>
+<script src="kb-kquiz.js"></script>
+<script src="kb-bank.js"></script>
 <script src="kb-battle.js"></script>
 <script src="kb-mode-race.js"></script>
 <script>
+/* 전자칠판 — 교사가 방을 여는 자리.
+   ① 무엇으로 겨룰지 (교과 단원 = 케이퀴즈 / 놀이 문제)
+   ② 어떤 모드로 (레이스 / 문제만 풀기)
+   → 방 개설.
+   교과 단원을 고르면 그 단원 템플릿만 그때 내려받는다(폰·저속 보호 — 제0조).
+   문제는 seed 로 매번 새로 생성된다 — 같은 단원을 다시 해도 같은 문제가 안 나온다. */
 (function () {
   var app = document.getElementById('app');
   var conn = document.getElementById('conn');
-  var pickHTML = app.innerHTML;
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kb-conn' + (cls ? ' ' + cls : ''); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  // 문제 = 지금은 샘플(PoC). 차시 문제.json 주입은 헌법 제10조 4번(문제 뱅크)에서.
+  var picked = { questions: null, label: '' };   // 고른 문제 묶음
+  var QN = 10;                                   // 한 판 문제 수
+
+  /* ── 1단계: 무엇으로 겨루나 ── */
+  function pickQuestions() {
+    app.innerHTML =
+      '<div class="kb-stage">' +
+        '<div class="kb-big">케이<span style="color:var(--kb-yellow)">배틀</span></div>' +
+        '<div class="kb-dim" style="font-size:18px;margin-bottom:24px;">무엇으로 겨룰까요?</div>' +
+        '<div id="units" class="kb-unit-wrap"><div class="kb-dim">단원 불러오는 중…</div></div>' +
+        '<div style="margin-top:24px;">' +
+          '<button class="kb-btn" id="play" style="background:rgba(255,255,255,.12);color:#fff;">🎲 놀이 문제로 하기</button>' +
+        '</div>' +
+        '<div style="margin-top:26px;">' +
+          '<a href="class.html" style="color:var(--kb-mint);font-weight:800;font-size:15px;text-decoration:none;">' +
+            '👩‍🏫 우리 반 명부 · 어려워하는 개념 보기 →</a>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('play').onclick = function () {
+      var qs = KBank.all();
+      if (!qs.length) qs = KBQ.SAMPLE;
+      picked = { questions: shuffle(qs).slice(0, QN), label: '놀이 문제' };
+      pickMode();
+    };
+
+    KBKQuiz.catalog().then(function (units) {
+      var box = document.getElementById('units');
+      if (!box) return;
+      if (!units.length) { box.innerHTML = '<div class="kb-dim">교과 단원을 못 불러왔어요 (놀이 문제로 할 수 있어요)</div>'; return; }
+      var byGrade = {};
+      units.forEach(function (u) { (byGrade[u.grade] || (byGrade[u.grade] = [])).push(u); });
+      box.innerHTML = Object.keys(byGrade).sort().map(function (g) {
+        return '<div class="kb-unit-row">' +
+          '<span class="kb-unit-grade">' + g + '학년</span>' +
+          '<span class="kb-unit-list">' + byGrade[g].map(function (u) {
+            return '<button class="kb-unit" data-key="' + esc(u.key) + '" data-name="' + esc(u.subjectKo + ' ' + u.unitNo + '. ' + u.name) + '">' +
+              esc(u.subjectKo) + ' ' + u.unitNo + '. ' + esc(u.name) + '</button>';
+          }).join('') + '</span></div>';
+      }).join('');
+
+      [].forEach.call(box.querySelectorAll('.kb-unit'), function (b) {
+        b.onclick = function () {
+          var key = b.getAttribute('data-key');
+          b.textContent = '불러오는 중…';
+          KBKQuiz.load(key).then(function () {
+            var qs = KBank.lesson(key, { n: QN, seed: (Date.now() % 1000000) });  // 매번 새 문제
+            if (!qs.length) throw new Error('문제 없음');
+            picked = { questions: qs, label: b.getAttribute('data-name') };
+            pickMode();
+          }).catch(function () {
+            b.textContent = '아직 준비 중이에요';
+            setTimeout(pickQuestions, 1200);
+          });
+        };
+      });
+    });
+  }
+
+  /* ── 2단계: 모드 ── */
+  function pickMode() {
+    app.innerHTML =
+      '<div class="kb-stage">' +
+        '<div class="kb-big">' + esc(picked.label) + '</div>' +
+        '<div class="kb-dim" style="font-size:18px;margin-bottom:26px;">문제 ' + picked.questions.length + '개 · 모드를 골라요</div>' +
+        '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">' +
+          '<button class="kb-btn" data-mode="race">🏇 레이스 <span style="font-weight:700;font-size:15px;">정답마다 전진 · ⭐칸 2배</span></button>' +
+          '<button class="kb-btn" data-mode="" style="background:rgba(255,255,255,.12);color:#fff;">📋 문제만 풀기</button>' +
+        '</div>' +
+        '<div class="kb-dim" style="margin-top:26px;">학생은 <b>keduclass.com/kbattle/play.html</b> 로 들어와요</div>' +
+        '<button class="kb-back" id="back">← 문제 다시 고르기</button>' +
+      '</div>';
+    [].forEach.call(app.querySelectorAll('[data-mode]'), function (b) {
+      b.onclick = function () { start(b.getAttribute('data-mode')); };
+    });
+    document.getElementById('back').onclick = pickQuestions;
+  }
+
+  /* ── 3단계: 방 개설 ── */
   function start(mode) {
     var ctx;
     try {
-      ctx = Kple.host('kbattle', { el: app, config: { questions: KBQ.SAMPLE, mode: mode || undefined } });
+      ctx = Kple.host('kbattle', { el: app, config: {
+        questions: picked.questions, mode: mode || undefined } });
     } catch (e) { setConn(String(e.message || e), 'err'); return; }
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
@@ -54,19 +129,21 @@
     try { history.pushState({ kb: 'game' }, ''); } catch (e) {}
   }
 
-  function bindPick() {
-    [].forEach.call(app.querySelectorAll('[data-mode]'), function (b) {
-      b.onclick = function () { start(b.getAttribute('data-mode')); };
-    });
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
   }
-  bindPick();
 
-  window.addEventListener('popstate', function () {   // 뒤로가기 → 게임 선택으로
-    app.innerHTML = pickHTML; bindPick(); setConn('연결 준비…');
-  });
+  window.addEventListener('popstate', function () { pickQuestions(); setConn('연결 준비…'); });
 
   var home = document.getElementById('kedu-home');
   if (home) home.onclick = function () { location.href = '/'; };
+
+  pickQuestions();
 })();
 </script>
 </body>

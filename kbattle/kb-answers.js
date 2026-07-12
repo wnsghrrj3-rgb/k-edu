@@ -131,12 +131,17 @@
   }
 
   // 뱅크에서 실제 문제 객체로 복원 (문제 본문은 저장 안 하므로 뱅크에서 다시 찾는다)
+  //  교과 문제(케이퀴즈)는 qid 만으로 결정적 재생성된다 — KBank.byIds 가 처리.
+  //  ⚠️ 교과 오답을 되살리려면 먼저 KBank.prepare(KBAnswers.wrongQids()) 를 await 해야 한다.
   function wrongSet(n) {
     var KBank = root.KBank;
     if (!KBank) return [];
-    var want = {};
-    wrongQids().forEach(function (q) { want[q] = 1; });
-    var out = KBank.all().filter(function (q) { return want[q.id]; });
+    var qids = wrongQids();
+    var out = KBank.byIds ? KBank.byIds(qids) : (function () {
+      var want = {};
+      qids.forEach(function (q) { want[q] = 1; });
+      return KBank.all().filter(function (q) { return want[q.id]; });
+    })();
     return out.slice(0, n || 10);
   }
 

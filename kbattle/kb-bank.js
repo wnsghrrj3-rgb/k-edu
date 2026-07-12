@@ -115,8 +115,42 @@
     return picked;
   }
 
+  /* ---------------- 교과 문제 (케이퀴즈 어댑터 · 헌법 제10조 9번) ----------------
+     kb-kquiz.js 가 있으면 교과 단원이 뱅크에 합류한다. 없으면 놀이덱만으로 돈다. */
+  function lesson(unitKey, opts) {
+    var K = root.KBKQuiz;
+    return K ? K.set(unitKey, opts) : [];
+  }
+  function loadLesson(unitKey) {
+    var K = root.KBKQuiz;
+    return K ? K.load(unitKey) : Promise.reject(new Error('kb-kquiz.js 없음'));
+  }
+
+  /* qid → 문제 복원 (오답 재편성의 뿌리).
+     answers 엔 qid 만 저장하는데(제8조), 교과 문제는 **결정적 생성**이라 qid 만으로 되살아난다.
+     놀이덱 문제는 뱅크에서 찾는다. 저장은 최소, 복원은 완전. */
+  function byIds(qids) {
+    var want = {};
+    (qids || []).forEach(function (q) { want[q] = 1; });
+    var K = root.KBKQuiz;
+    var out = K ? K.byIds(Object.keys(want).filter(K.isKQ)) : [];
+    var rest = Object.keys(want).filter(function (q) { return !(K && K.isKQ(q)); });
+    if (rest.length) {
+      var got = {};
+      rest.forEach(function (q) { got[q] = 1; });
+      out = out.concat(all().filter(function (q) { return got[q.id]; }));
+    }
+    return out;
+  }
+  // 오답 qid 들이 가리키는 교과 단원을 먼저 로드해 둔다 (byIds 가 온전해진다)
+  function prepare(qids) {
+    var K = root.KBKQuiz;
+    return K ? K.prepare(qids) : Promise.resolve([]);
+  }
+
   root.KBank = {
     all: all, daily: daily, fromKpleDeck: fromKpleDeck,
+    lesson: lesson, loadLesson: loadLesson, byIds: byIds, prepare: prepare,
     PLAY_IDS: PLAY_IDS,
     _rng: rng, _hash: hash, _toKBQ: toKBQ
   };
