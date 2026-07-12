@@ -122,6 +122,9 @@
   var BX=W*0.12, BY=H*0.05, BW=W*0.76, BH=H*0.235;
   var BOARD = PURE.ITEMS.filter(function(it){ return it.id!==PURE.LAMP; });   // 전등은 방의 몫
   var BASE = BY+BH-26, MAXH = BH-76;
+  // 여운에서는 명판이 좌상단을 차지한다 — 칠판은 무대 한가운데로 내려와 답이 된다
+  var AFTER_DY = H*0.26;
+  function boardDY(){ return (S && S.phase==='after') ? AFTER_DY*S.boardMove : 0; }
   function slotX(i){ return BX + BW*(0.075 + i*0.1063); }
   function slotOf(id){ for(var i=0;i<BOARD.length;i++) if(BOARD[i].id===id) return i; return -1; }
 
@@ -136,7 +139,8 @@
     hover:null,
     autoQueue:[], autoT:0, autoStep:1.1,
     betrayed:false, picked:0,
-    dust:[]                // 스러지는 재
+    dust:[],               // 스러지는 재
+    boardMove:0            // 칠판이 무대 한가운데로 내려오는 정도
   };
   PURE.ITEMS.forEach(function(it){ S.taken[it.id]=0; S.written[it.id]=0; });
 
@@ -205,7 +209,7 @@
   function flightOf(id, e){
     var it=PURE.byId(id), q=xyOf(it), i=slotOf(id);
     if(i<0) return q;
-    var tx=slotX(i), ty=BASE-24;
+    var tx=slotX(i), ty=BASE-24+boardDY();
     var arc=-70*Math.sin(e*Math.PI);
     return [ q[0]+(tx-q[0])*e, q[1]+(ty-q[1])*e + arc ];
   }
@@ -372,15 +376,19 @@
 
   // ── 칠판 — 문제 한 줄과, 아홉 개의 자리 ──────────────────────────
   function drawBoard(ctx){
+    var dy=boardDY();
+    ctx.save();
+    ctx.translate(0, dy);
     ctx.fillStyle='rgba(12,14,18,.55)';
     ctx.fillRect(BX, BY, BW, BH);
     ctx.strokeStyle='rgba(201,169,97,.34)'; ctx.lineWidth=1.4;
     ctx.strokeRect(BX, BY, BW, BH);
 
-    // 문제 — 이 방에서 답해야 할 것
+    // 문제 — 이 방에서 답해야 할 것. 끝까지 무대에 남는다.
     ctx.font='20px "Gowun Batang", serif';
     ctx.fillStyle='rgba(242,234,216,.72)'; ctx.textAlign='center';
-    ctx.fillText('이 물건들 중에서 — 우리 것은, 얼마나 될까요?', W*0.5, BY+34);
+    ctx.fillText(S.phase==='after' ? '이 물건들 중에서 — 우리 것은, 이만큼이었다'
+                                   : '이 물건들 중에서 — 우리 것은, 얼마나 될까요?', W*0.5, BY+34);
 
     // 바닥선
     ctx.strokeStyle='rgba(168,158,136,.34)'; ctx.lineWidth=1;
@@ -389,6 +397,7 @@
     for(var i=0;i<BOARD.length;i++){
       var it=BOARD[i], cx=slotX(i);
       var w=S.written[it.id];
+      var lit = (S.phase==='after' && BOARD[i].id===PURE.ITEMS[S.picked].id);
       // 자리 — 아직 답하지 않은 칸
       ctx.strokeStyle='rgba(168,158,136,'+(w>0?0.18:0.30).toFixed(2)+')';
       ctx.setLineDash([3,5]); ctx.lineWidth=1;
@@ -398,9 +407,10 @@
       // 적힌 것 — 남은 몫만큼. 수치는 없다. 높이가 전부다.
       if(w>0){
         var hgt=MAXH*PURE.remainOf(it.id)*w;
-        ctx.fillStyle='rgba(242,234,216,.80)';
+        ctx.fillStyle='rgba(242,234,216,'+(lit?0.95:0.80)+')';
         ctx.fillRect(cx-22, BASE-hgt, 44, hgt);
-        ctx.strokeStyle='rgba(242,234,216,.95)'; ctx.lineWidth=1.2;
+        ctx.strokeStyle= lit ? 'rgba(201,169,97,.95)' : 'rgba(242,234,216,.95)';
+        ctx.lineWidth= lit ? 2.2 : 1.2;
         ctx.strokeRect(cx-22, BASE-hgt, 44, hgt);
         if(hgt<3){                                            // 아무것도 남지 않은 자리 — 분필 한 획
           ctx.strokeStyle='rgba(242,234,216,.55)'; ctx.lineWidth=2;
@@ -412,6 +422,7 @@
       ctx.textAlign='center';
       ctx.fillText(it.ko, cx, BASE+20);
     }
+    ctx.restore();
   }
 
   stage.add({
@@ -420,6 +431,7 @@
       S.time+=dt;
       if(S.lifting && S.phase!=='machine') liftTick(dt);
       if(S.phase==='machine') machineTick(dt);
+      if(S.phase==='after' && S.boardMove<1) S.boardMove=Math.min(1, S.boardMove+dt/1.1);
       for(var i=S.dust.length-1;i>=0;i--){
         var d=S.dust[i]; d.t+=dt;
         d.x+=d.vx*dt; d.y+=d.vy*dt; d.vy+=8*dt;
@@ -466,12 +478,6 @@
         ctx.fillRect(d.x, d.y, 1.8, 1.8);
       }
 
-      // 여운의 분필
-      if(S.phase==='after'){
-        ctx.font='19px "Gowun Dodum", sans-serif';
-        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
-        ctx.fillText(chalkOf(S.picked), W*0.5, 44);
-      }
     }
   });
   stage.start();
@@ -485,7 +491,7 @@
     S:S, PURE:PURE, xyOf:xyOf, hit:hit, lift:lift, liftTick:liftTick,
     startMachine:startMachine, triggerBetray:triggerBetray, enterAfter:enterAfter,
     setPick:setPick, chalkOf:chalkOf, nextHand:nextHand, isDone:isDone,
-    BOARD:BOARD, slotX:slotX, slotOf:slotOf, flightOf:flightOf, BASE:BASE, MAXH:MAXH
+    BOARD:BOARD, slotX:slotX, slotOf:slotOf, flightOf:flightOf, BASE:BASE, MAXH:MAXH, boardDY:boardDY
   };
 })();
 </script>

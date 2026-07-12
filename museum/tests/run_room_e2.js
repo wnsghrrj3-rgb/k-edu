@@ -180,6 +180,17 @@ setTimeout(function(){
   M.setPick(0); tick(0.5); M.setPick(9); tick(0.5);
   ok('여운에서 물건을 짚어도 재배반은 없다', S.betrayed===bc && S.phase==='after');
 
+  // ── ★가림 방어 (준호 실기기: "글씨가 가려진다") ────────────────
+  // 여운에는 명판이 좌상단을 차지한다. 칠판이 그 자리에 있으면 문제가 덮인다.
+  tick(2.0);
+  ok('★여운에서 칠판이 명판을 피해 내려온다', M.boardDY() > 200);
+  ok('★내려온 칠판이 화면 밖으로 나가지 않는다', M.BASE + M.boardDY() < 900);
+  ok('★칠판이 여운 자막과 겹치지 않는다', M.BASE + M.boardDY() < 900*0.72);
+  ok('★관람 중에는 칠판이 제자리(위)에 있다', (function(){
+     var keep=S.phase; S.phase='hand';
+     var dy=M.boardDY(); S.phase=keep; return dy===0;
+  })());
+
   // ── ★남는 정도 = 자급률. 무대는 E1을 한 자도 고치지 않았다 ────
   ok('★무대의 남은 몫 = E1 자급률 (전수 정합)',
      P.ITEMS.every(function(it){
