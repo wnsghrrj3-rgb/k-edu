@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 지층과 화석 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 지층과 화석 (2026-07-12 · 페이블)
+  v2 engine/tools/strata.js(569줄 + 와우 27호 impl 08f6517) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 다크 스튜디오 + 실험대 위 유리 수조(강 하구 모형) 디오라마
+    ② 실물 질감(유리 수조·굴절 물·역암/사암/이암 절차 텍스처·원목 받침)
+    ③ 직접 조작(궤도 회전·퇴적물 붓기·층 탭·생물 두기·융기·비바람 깎기·양옆 밀기)
+    ④ 즉각 반응(층 낙하 가라앉음·물살 흐름선·습곡 휨·단층 어긋남·물 빠짐)
+    ⑤ 와우 = 「몽땅 섞어 부으면?」 분급(graded bedding) — 예측→반전(와우 27호 이식)
+  v2 무손실: 학년칸(저/중/고)·미션(2/4/4)·퀴즈 5문·만약에 3종(침식·습곡단층·거센바다)
+    ·변수 슬라이더(물살·쌓는 시간)·예측 무장/해소·예측 노트 칩(5칩 토스트)
+    ·화석 3종(조개·고사리·물고기)·융기(산에서 조개 서사)·층 순서 번호·강 하구 분급 모형.
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz|whatif
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .st-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .st-seg{display:flex;gap:5px}
+  .st-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .st-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:7px;align-items:stretch;max-width:222px}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls .st-lb{font-size:11.5px;color:#9fb3c8;margin:2px 0 -2px 2px}
+  #ctrls .st-row{display:flex;gap:5px}
+  #ctrls .st-row .k3-btn{flex:1;text-align:center;padding:9px 4px;font-size:15px}
+  #ctrls .k3-btn.wow{background:rgba(155,123,245,.24);border:1px solid rgba(155,123,245,.55);color:#E8DEFF}
+  #ctrls .k3-btn.wow.go{background:rgba(18,184,134,.22);border-color:rgba(18,184,134,.55);color:#B8F5DE}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(620px,86vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:14px;backdrop-filter:blur(8px);
+    padding:9px 15px;font-size:14px;line-height:1.55;color:#e6edf5;max-width:min(720px,92vw);text-align:center}
+  #status .t1{font-size:15px}
+  #status .t2{font-size:12.5px;color:#9fb3c8;margin-top:2px}
+  #status .hold{animation:stPulse 1s ease-in-out infinite;display:inline-block}
+  @keyframes stPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;z-index:20;display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:92vw}
+  .st-chip{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;border:1.5px solid #12B886;color:#8CF0CD;background:rgba(10,14,18,.7)}
+  .st-chip.miss{border-color:#FF8A3D;color:#FFC49C}
+  #v2row{bottom:104px;left:12px;display:flex;flex-direction:column;gap:5px;font-size:12.5px}
+  #v2row input[type=range]{width:150px;accent-color:#5B9BF0}
+  #v2row .vl{color:#8AC2FF;font-weight:700}
+  #v2row .vl.dur{color:#FFB08A}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #choices button{font-family:'Gowun Dodum';font-size:15px;padding:11px 16px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.88);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  #wifpick{top:96px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:7px;min-width:min(340px,88vw)}
+  #wifpick .ti{font-size:14px;color:#CBB7FF;text-align:center}
+  #wifpick button{font-family:'Gowun Dodum';font-size:14px;padding:11px 13px;border-radius:12px;cursor:pointer;text-align:left;
+    border:1px solid rgba(155,123,245,.45);background:rgba(255,255,255,.06);color:#EDE9FF}
+  .st-anno{position:absolute;pointer-events:none;font-weight:800;font-size:12.5px;padding:4px 9px;border-radius:10px;
+    background:rgba(8,12,20,.8);white-space:nowrap;transform:translate(-50%,-50%);display:none;border:1.5px solid;line-height:1.35;text-align:center}
+  .st-anno.click{pointer-events:auto;cursor:pointer}
+  .st-anno.big{font-size:14px;padding:6px 12px}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🪨 케이랩 · 지층과 화석</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="st-panel" id="hudL"></div>
+<div class="st-panel" id="ctrls"></div>
+<div class="st-panel" id="mbar" style="display:none"></div>
+<div class="st-panel" id="v2row" style="display:none"></div>
+<div class="st-panel" id="wifpick" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+<div id="status"></div>
+
+<div class="k3-hint" id="hint">수조를 <b>끌어서</b> 돌려 보고, 퇴적물을 차곡차곡 부어 봐요</div>
+<div class="k3-loading" id="loading"><div class="ic">🪨</div><div>수조 모형 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.StrataSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 데이터 (v2 무손실) ── */
+  var TYPES={ gravel:{nm:'자갈'}, sand:{nm:'모래'}, mud:{nm:'진흙'} };
+  var FOSSILS={ shell:{nm:'조개',ic:'🐚',env:'바다'}, fern:{nm:'고사리',ic:'🌿',env:'따뜻하고 습한 곳'}, fish:{nm:'물고기',ic:'🐟',env:'물속'} };
+  var MAXL=7, MAXTH=8;
+
+  /* ── 학년 칸 (v2 GRADES + 와우 27호 wow 플래그 무손실) ── */
+  var GRADES={
+    low:  { modes:['free','mission'],                 low:true,  v2:null,                 wif:[],                          wow:false },
+    mid:  { modes:['free','mission','quiz','whatif'], low:false, v2:{dur:true},           wif:['erosion','storm'],         wow:true  },
+    high: { modes:['free','mission','quiz','whatif'], low:false, v2:{flow:true,dur:true}, wif:['erosion','fold','storm'],  wow:true  }
+  };
+
+  /* ── 미션 (v2 문구·판정 무손실 — check는 상태 st를 받는 순수 함수) ── */
+  function fossilCount(st){ var n=0,i; for(i=0;i<st.layers.length;i++)if(st.layers[i].fossil)n++; return n; }
+  function stripes(st){ var t={},i; for(i=0;i<st.layers.length;i++)t[st.layers[i].type]=1;
+    return st.layers.length>=3 && Object.keys(t).length>=2; }
+  var LOW_MISSIONS=[
+    { text:'🪨🟡🟤 <b>서로 다른 퇴적물을 3층 이상</b> 차곡차곡 쌓아 줄무늬를 만들어요!',
+      keep:false, check:function(st){ return stripes(st); } },
+    { text:'🐚 <b>조개를 두고 위에 퇴적물을 덮어</b> 화석을 만들어요!',
+      keep:true, check:function(st){ return fossilCount(st)>0; } }
+  ];
+  var MAIN_MISSIONS=[
+    { text:'퇴적물을 <b>서로 다른 종류로 3층 이상</b> 쌓아 줄무늬 지층을 만들어요!',
+      keep:false, check:function(st){ return stripes(st); } },
+    { text:'<b>가장 먼저 쌓인(가장 오래된) 층</b>을 클릭해 찾아요!',
+      keep:true, check:function(st){ return st.clickedOldest; } },
+    { text:'🐚 <b>조개를 두고 위에 퇴적물을 덮어</b> 화석을 만들어요!',
+      keep:true, check:function(st){ return fossilCount(st)>0; } },
+    { text:'⛰️ <b>융기!</b> 화석이 든 지층을 땅 위로 — 산에서 조개가 나오는 까닭을 확인해요!',
+      keep:true, check:function(st){ return st.up>=1 && fossilCount(st)>0; } }
+  ];
+  var MISSIONS={ low:LOW_MISSIONS, mid:MAIN_MISSIONS, high:MAIN_MISSIONS };
+
+  /* ── 퀴즈 5문 (v2 무손실) ── */
+  var QUIZ=[
+    { q:'지층에서 가장 먼저 쌓인 층은 어디에 있을까요?', ch:['맨 아래','맨 위','가운데'], a:0 },
+    { q:'지층은 주로 어디에서 만들어질까요?', ch:['바다나 호수의 물 밑','뜨거운 사막 위','구름 속'], a:0 },
+    { q:'죽은 생물이 화석이 되려면 어떻게 되어야 할까요?', ch:['퇴적물이 빨리 덮어야 해요','햇빛에 오래 말라야 해요','바람에 날려가야 해요'], a:0 },
+    { q:'산에서 조개 화석이 발견되면 알 수 있는 것은?', ch:['옛날에 그곳이 바다였다','조개가 산을 좋아했다','누가 조개를 버렸다'], a:0 },
+    { q:'지층에 줄무늬가 생기는 까닭은?', ch:['종류가 다른 퇴적물이 차례로 쌓여서','누가 줄을 그어서','비가 많이 와서'], a:0 }
+  ];
+
+  /* ── 만약에 3종 (v2 무손실) — play(sim)=상태 세팅, cond(st)=해소 조건 ── */
+  function preLayers(n){
+    return ['gravel','sand','mud','sand','gravel'].slice(0,n).map(function(t){ return {type:t,fossil:null,th:1}; });
+  }
+  var WHATIF={
+    erosion:{ icon:'🏜️', title:'융기한 뒤 비바람이 아주 오래 깎는다면?',
+      q:'땅 위로 올라온 지층 — 맨 아래(가장 오래된) 층은 영영 못 볼까요?',
+      ch:['맨 아래층은 영영 못 봐요','위부터 깎여 옛 층이 드러나요','지층이 통째로 사라져요'], a:1,
+      reveal:'위층부터 깎여 나가며 깊은 옛 층이 오히려 드러나요! 계곡 절벽의 줄무늬(그랜드캐니언)가 바로 그 모습 — 쌓임의 기록을 침식이 펼쳐 보여 주는 거예요.',
+      tip:'🌬 비바람 깎기를 계속 눌러 봐요 — 위층부터 사라지면…!',
+      play:function(sim){ sim.reset(); sim.v2reset(); sim.state.layers=preLayers(5); sim.state.up=1; },
+      cond:function(st){ return st.erodeN>0 && st.layers.length===1; } },
+    fold:{ icon:'↔️', title:'굳은 지층을 양옆에서 계속 민다면?',
+      q:'돌처럼 딱딱하게 굳은 지층을 아주 오래 밀면 어떻게 될까요?',
+      ch:['와장창 부서져 가루가 돼요','엿가락처럼 휘거나 우지끈 끊어져요','아무 일도 없어요'], a:1,
+      reveal:'오랜 시간 큰 힘을 받으면 딱딱한 지층도 엿가락처럼 휘고(습곡), 더 밀면 우지끈 끊어져 어긋나요(단층)! 교과서의 휘어진 지층·끊어진 지층 사진이 이렇게 생겼어요 — 지진(끊어짐)과 같은 힘 이야기예요.',
+      tip:'↔️ 밀기를 계속 눌러 봐요 — 휘다가… 결국!',
+      play:function(sim){ sim.reset(); sim.v2reset(); sim.state.layers=preLayers(4); sim.state.up=1; },
+      cond:function(st){ return st.foldN>=3; } },
+    storm:{ icon:'🌊', title:'물살이 늘 거세기만 한 바다라면?',
+      q:'물살이 늘 거센 곳에서도 줄무늬 지층이 잘 쌓일까요?',
+      ch:['어디서나 잘 쌓여요','가벼운 알갱이가 못 가라앉아 줄무늬가 잘 안 생겨요','오히려 더 빨리 쌓여요'], a:1,
+      reveal:'거센 물살에선 진흙·모래가 가라앉지 못하고 떠내려가요 — 무거운 자갈만 남죠. 고운 줄무늬 지층은 잔잔한 물속이 주는 선물이에요!',
+      tip:'거센 물살이에요. 🟤 진흙과 🟡 모래를 부어 봐요 — 어라?',
+      play:function(sim){ sim.reset(); sim.v2reset(); sim.state.flow=1; },
+      cond:function(st){ return st.awayN>=1; } }
+  };
+
+  /* ── 예측 무장 2종 (v2 3층 무손실) — 정답 선택지=1 ── */
+  var PRED={
+    flow:{ q:'예측 먼저! 물살이 거세지면 퇴적물은 어디에 쌓일까요?',
+      ch:['어디든 똑같이 쌓인다','무거운 것부터 가까이 가라앉는다','가벼운 것부터 가까이 가라앉는다'],
+      tip:'물살을 🌊 거셈까지 올리고 자갈·모래·진흙을 하나씩 부어 봐요!' },
+    dur:{ q:'예측 먼저! 오래오래 쌓으면 층은 어떻게 될까요?',
+      ch:['두께는 그대로다','층이 더 두꺼워진다','층 개수만 늘어난다'],
+      tip:'쌓는 시간을 오래 끝까지 올리고 한 층 부어 봐요!' }
+  };
+  var CHIPNM={erosion:'🏜️ 침식',fold:'↔️ 습곡단층',storm:'🌊 거센바다',flow:'🌀 물살실험',dur:'⏳ 시간실험'};
+
+  /* ── 와우(27호): 분급 입자 시드 (v2 makeMixParticles 무손실 — 자갈9·모래12·진흙14) ── */
+  function mixSeed(){
+    var arr=[], seq=['gravel','sand','mud'], id=0, t, i;
+    for(t=0;t<seq.length;t++){ var ty=seq[t], n=(ty==='gravel'?9:(ty==='sand'?12:14));
+      for(i=0;i<n;i++){
+        var s=Math.sin((id+1)*12.9898)*43758.5453; s-=Math.floor(s);
+        var s2=Math.sin((id+7)*78.233)*43758.5453; s2-=Math.floor(s2);
+        arr.push({ type:ty, rx:s, ry:s2, id:id++ });
+      }
+    }
+    return arr;
+  }
+
+  /* ── 시뮬 생성 ── */
+  function createSim(grade){
+    grade=(['low','mid','high'].indexOf(grade)>=0)?grade:'high';
+    var sim={};
+    sim.grade=grade;
+    sim.G=function(){ return GRADES[sim.grade]; };
+    sim.state={ layers:[], farLayers:[], pending:null, up:0, sel:-1, clickedOldest:false,
+                flow:0.2, dur:0.5, erodeN:0, foldN:0, awayN:0, mixArmed:false, mixSettled:false };
+
+    sim.reset=function(){ var st=sim.state;
+      st.layers=[]; st.farLayers=[]; st.pending=null; st.up=0; st.sel=-1; st.clickedOldest=false;
+      sim.clearMix(); };
+    sim.v2reset=function(){ var st=sim.state; st.flow=0.2; st.dur=0.5; st.erodeN=0; st.foldN=0; st.awayN=0; };
+    sim.resetAll=function(){ sim.reset(); sim.v2reset(); };
+
+    /* v2 변수 물리 (무손실): 층 두께 = 시간, 가라앉는 자리 = 무게 × 물살 */
+    sim.thOf=function(){ return 0.4+sim.state.dur*1.2; };
+    sim.zoneOf=function(type){ var f=sim.state.flow;
+      if(f<0.35)return 'near';
+      if(f<0.7)return type==='mud'?'far':'near';
+      return type==='gravel'?'near':(type==='sand'?'far':'away');
+    };
+    sim.flowName=function(){ var f=sim.state.flow; return (f>=0.7?'🌊 거셈':(f<0.35?'🫧 잔잔':'중간')); };
+    sim.durName=function(){ var d=sim.state.dur; return (d>=0.8?'오래':(d<0.25?'짧게':'보통'))+' · 두께 ×'+sim.thOf().toFixed(1); };
+    sim.sumTh=function(list){ var s=0,i; for(i=0;i<list.length;i++)s+=list[i].th; return s; };
+    sim.embeddedFossils=function(){ var r=[],i,L=sim.state.layers; for(i=0;i<L.length;i++)if(L[i].fossil)r.push(L[i].fossil); return r; };
+
+    /* 조작 (v2 판정 무손실 — 직접 조작 = clearMix) */
+    sim.deposit=function(type,useFlow){
+      var st=sim.state; sim.clearMix();
+      if(st.up>0) return {act:'dry'};
+      var zone=useFlow?sim.zoneOf(type):'near';
+      if(zone==='away'){ st.awayN++; return {act:'away',type:type,preds:sim.checkPred(zone)}; }
+      var list=(zone==='far')?st.farLayers:st.layers;
+      if(list.length>=MAXL||sim.sumTh(list)+sim.thOf()>MAXTH) return {act:'full'};
+      var f=null;
+      if(zone==='near'&&st.pending){ f=st.pending; st.pending=null; }
+      list.push({ type:type, fossil:f, th:sim.thOf() });
+      st.sel=-1;
+      return {act:'deposit',zone:zone,fossilized:!!f,preds:sim.checkPred(zone)};
+    };
+    sim.placeFossil=function(kind){
+      var st=sim.state; sim.clearMix();
+      if(st.up>0) return {act:'dry'};
+      if(st.layers.length>=MAXL) return {act:'full'};
+      st.pending=kind; return {act:'pending',kind:kind};
+    };
+    sim.uplift=function(){
+      var st=sim.state; sim.clearMix();
+      if(st.up>0) return {act:'already'};
+      if(st.layers.length===0) return {act:'empty'};
+      var lost=false;
+      if(st.pending){ st.pending=null; lost=true; }
+      st.up=1;
+      return {act:'uplift',lost:lost};
+    };
+    sim.clickLayer=function(i){
+      var st=sim.state; sim.clearMix();
+      if(i<0||i>=st.layers.length) return {act:'none'};
+      st.sel=i;
+      var oldest=(st.layers.length>=3&&i===0);
+      if(oldest)st.clickedOldest=true;
+      return {act:'sel',i:i,oldest:oldest};
+    };
+    sim.erode=function(){
+      var st=sim.state; sim.clearMix();
+      if(st.layers.length<=1) return {act:st.layers.length?'bottom':'none'};
+      st.layers.pop(); st.erodeN++; st.sel=-1;
+      return {act:'erode',left:st.layers.length,bottomReached:st.layers.length===1};
+    };
+    sim.pushFold=function(){
+      var st=sim.state; sim.clearMix();
+      if(st.foldN>=3) return {act:'max'};
+      st.foldN++;
+      return {act:(st.foldN===3?'fault':'fold'),n:st.foldN};
+    };
+
+    /* 와우 27호 — 몽땅 섞어 부으면? (분급) */
+    sim.wowArm=function(){
+      if(!sim.G().wow) return {act:'no'};
+      sim.reset(); sim.v2reset();
+      sim.state.mixArmed=true; sim.state.mixSettled=false;
+      return {act:'arm'};
+    };
+    sim.wowReveal=function(){
+      if(!sim.state.mixArmed) return {act:'nudge'};
+      sim.state.mixSettled=true;
+      return {act:'magic'};
+    };
+    sim.clearMix=function(){
+      var st=sim.state;
+      if(!st.mixArmed&&!st.mixSettled) return false;
+      st.mixArmed=false; st.mixSettled=false;
+      return true;
+    };
+
+    /* 미션 러너 (v2 keep 규칙 무손실) */
+    sim.mStep=0; sim.mDone=false;
+    sim.missionList=function(){ return MISSIONS[sim.grade]; };
+    sim.missionStart=function(){ sim.mStep=0; sim.mDone=false; sim.resetAll(); };
+    sim.missionCheck=function(){
+      if(sim.mDone) return {act:'none'};
+      var M=sim.missionList();
+      if(!M[sim.mStep].check(sim.state)) return {act:'none'};
+      if(sim.mStep<M.length-1){
+        sim.mStep++;
+        if(!M[sim.mStep].keep) sim.reset();
+        return {act:'next',step:sim.mStep};
+      }
+      sim.mDone=true;
+      return {act:'done'};
+    };
+
+    /* 예측 무장/해소 + 칩 (v2 3층 무손실 — flow: 거셈+비하구 / dur: 오래+비유실) */
+    sim.chips=[];
+    sim.pred={ flow:{asked:false,ch:-1,done:false}, dur:{asked:false,ch:-1,done:false} };
+    sim.predArm=function(kind){ if(sim.pred[kind].asked) return false; sim.pred[kind].asked=true; return true; };
+    sim.predChoose=function(kind,i){ sim.pred[kind].ch=i; };
+    sim.checkPred=function(zone){
+      var out=[], st=sim.state;
+      var pf=sim.pred.flow;
+      if(pf.ch>=0&&!pf.done&&st.flow>=0.7&&zone!=='near'){
+        pf.done=true; var h1=(pf.ch===1); sim.chips.push({k:'flow',hit:h1}); out.push({kind:'flow',hit:h1});
+      }
+      var pd=sim.pred.dur;
+      if(pd.ch>=0&&!pd.done&&st.dur>=0.8&&zone!=='away'){
+        pd.done=true; var h2=(pd.ch===1); sim.chips.push({k:'dur',hit:h2}); out.push({kind:'dur',hit:h2});
+      }
+      return out;
+    };
+    sim.wifChip=function(key,choice){ sim.chips.push({k:key,hit:(choice===WHATIF[key].a)}); };
+
+    return sim;
+  }
+
+  var API={ GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, PRED:PRED, CHIPNM:CHIPNM,
+            TYPES:TYPES, FOSSILS:FOSSILS, mixSeed:mixSeed, preLayers:preLayers, createSim:createSim };
+  if(typeof window!=='undefined') window.StrataSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.StrataSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high');
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+let quizIdx = 0, quizScore = 0, quizCount = 0, quizLock = false, quizUsed = [];
+let wifKey = null, wifChoice = -1, wifRevealed = false, wifPlaying = false;
+
+/* ── 씬 ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0.5, 0.52, 1.22], target: [0, 0.22, 0], fov: 42,
+  minDist: 0.5, maxDist: 2.7, maxPolar: 1.42
+});
+const { renderer, scene, camera, controls } = app;
+const MAT = makeMaterials();
+makeStage(scene, {});
+
+/* ═══════════ 유리 수조(강 하구 모형) 디오라마 ═══════════ */
+const TANK = { W: 0.82, D: 0.34, H: 0.36, y0: 0.045 };  // 내벽 기준
+const BASE_H = 0.05, BASE_TOP = TANK.y0 + BASE_H;        // 기반암 윗면
+const WL = TANK.y0 + 0.30;                               // 수면 높이
+const NX = -0.11, NW = 0.46;                             // 하구(near) 스택
+const FXc = 0.255, FW = 0.15;                            // 먼바다(far) 스택
+const LD = 0.26;                                         // 지층 깊이
+const TH_UNIT = 0.03;                                    // 두께 1.0 = 3cm
+
+/* 원목 받침 */
+{
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.54), MAT.WOOD.clone());
+  plinth.position.y = 0.02; plinth.castShadow = plinth.receiveShadow = true; scene.add(plinth);
+}
+
+/* 유리 수조 (유리=블렌딩 — §2-A 함정 방지) */
+{
+  const g = MAT.GLASS;
+  const t = 0.008;
+  const mk = (w, h, d, x, y, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), g);
+    m.position.set(x, y, z); m.renderOrder = 5; scene.add(m); return m;
+  };
+  mk(TANK.W + t * 2, TANK.H, t, 0, TANK.y0 + TANK.H / 2, TANK.D / 2 + t / 2);   // 앞
+  mk(TANK.W + t * 2, TANK.H, t, 0, TANK.y0 + TANK.H / 2, -TANK.D / 2 - t / 2);  // 뒤
+  mk(t, TANK.H, TANK.D, -TANK.W / 2 - t / 2, TANK.y0 + TANK.H / 2, 0);          // 좌
+  mk(t, TANK.H, TANK.D, TANK.W / 2 + t / 2, TANK.y0 + TANK.H / 2, 0);           // 우
+  const bot = new THREE.Mesh(new THREE.BoxGeometry(TANK.W + t * 2, t, TANK.D + t * 2),
+    new THREE.MeshStandardMaterial({ color: 0x3a424c, roughness: 0.4, metalness: 0.2 }));
+  bot.position.y = TANK.y0 - t / 2; bot.receiveShadow = true; scene.add(bot);
+}
+
+/* 물 (액체=transmission — 굴절) · 융기하면 빠짐 · 와우 흙탕물 탁해짐 */
+const waterMat = MAT.liquid(0x2f7fbb);
+waterMat.attenuationDistance = 0.5;
+const CLEAR_C = new THREE.Color(0x2f7fbb), MURK_C = new THREE.Color(0x6b5136);
+const water = new THREE.Mesh(new THREE.BoxGeometry(TANK.W - 0.012, WL - TANK.y0, TANK.D - 0.012), waterMat);
+water.position.y = (WL + TANK.y0) / 2;
+scene.add(water);
+let murkT = 0;
+
+/* 기반암 + 지층 스택 그룹 (융기 시 함께 상승) */
+const liftGrp = new THREE.Group(); scene.add(liftGrp);
+{
+  const rockTex = canvasTexture(256, 128, g => {
+    g.fillStyle = '#4c3a2a'; g.fillRect(0, 0, 256, 128);
+    for (let i = 0; i < 1400; i++) {
+      const v = 58 + Math.random() * 30 | 0;
+      g.fillStyle = `rgba(${v},${v * 0.76 | 0},${v * 0.55 | 0},.5)`;
+      g.fillRect(Math.random() * 256, Math.random() * 128, 2, 2);
+    }
+  });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(TANK.W - 0.02, BASE_H, TANK.D - 0.02),
+    new THREE.MeshStandardMaterial({ map: rockTex, roughness: 1 }));
+  base.position.y = TANK.y0 + BASE_H / 2;
+  base.castShadow = base.receiveShadow = true;
+  liftGrp.add(base);
+}
+
+/* 퇴적물 절차 텍스처 3종 (역암·사암·이암) */
+function sedTex(type) {
+  return canvasTexture(256, 128, g => {
+    if (type === 'gravel') {
+      g.fillStyle = '#aab6be'; g.fillRect(0, 0, 256, 128);
+      for (let i = 0; i < 46; i++) {
+        g.fillStyle = Math.random() < 0.6 ? '#78909C' : '#cdd6db';
+        g.beginPath(); g.arc(Math.random() * 256, Math.random() * 128, 3 + Math.random() * 6, 0, 7); g.fill();
+      }
+    } else if (type === 'sand') {
+      g.fillStyle = '#E9CE84'; g.fillRect(0, 0, 256, 128);
+      for (let i = 0; i < 900; i++) {
+        g.fillStyle = Math.random() < 0.5 ? '#C9A44E' : '#F7E6AE';
+        g.fillRect(Math.random() * 256, Math.random() * 128, 1.6, 1.6);
+      }
+    } else {
+      g.fillStyle = '#9b8378'; g.fillRect(0, 0, 256, 128);
+      for (let y = 8; y < 128; y += 11) {
+        g.strokeStyle = 'rgba(90,70,60,0.55)'; g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(4, y);
+        for (let x = 4; x < 252; x += 16) g.lineTo(x, y + (Math.random() - 0.5) * 2.4);
+        g.stroke();
+      }
+    }
+  });
+}
+const sedMats = {};
+['gravel', 'sand', 'mud'].forEach(t => {
+  sedMats[t] = new THREE.MeshStandardMaterial({ map: sedTex(t), roughness: 1 });
+});
+const SED_COL = { gravel: 0x78909C, sand: 0xD9B45B, mud: 0x8D6E63 };
+
+/* 화석 이모지 스프라이트 텍스처 */
+function emojiTex(ch) {
+  return canvasTexture(64, 64, g => {
+    g.font = '46px sans-serif'; g.textAlign = 'center'; g.fillText(ch, 32, 48);
+  });
+}
+const fossilTex = { shell: emojiTex('🐚'), fern: emojiTex('🌿'), fish: emojiTex('🐟') };
+
+/* ── 지층 메시 재구성 (near: 습곡·단층 대응 좌/우 반쪽 + 화석 판) ── */
+const nearGrp = new THREE.Group(); nearGrp.position.x = NX; liftGrp.add(nearGrp);
+const farGrp = new THREE.Group(); farGrp.position.x = FXc; liftGrp.add(farGrp);
+const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.24, LD + 0.004),
+  new THREE.MeshStandardMaterial({ color: 0x241812, roughness: 1 }));
+crackMesh.visible = false; nearGrp.add(crackMesh);
+let nearVis = [];   // [{grp, halves:[L,R], h, cy, dropT, fossil}]
+let farVis = [];
+let lastNear = 0, lastFar = 0;
+
+function makeLayer(parent, type, w, h, cy, drop) {
+  const grp = new THREE.Group(); grp.position.y = cy;
+  const halves = [];
+  [-1, 1].forEach(s => {
+    const geo = new THREE.BoxGeometry(w / 2, h, LD, 10, 2, 1);
+    geo.userData.base = geo.attributes.position.array.slice();
+    const m = new THREE.Mesh(geo, sedMats[type]);
+    m.position.x = s * w / 4;
+    m.castShadow = m.receiveShadow = true;
+    m.userData.side = s;
+    grp.add(m); halves.push(m);
+  });
+  parent.add(grp);
+  return { grp, halves, h, cy, dropT: drop ? 0 : 1, type };
+}
+function rebuildStacks() {
+  const st = sim.state;
+  nearVis.forEach(v => nearGrp.remove(v.grp));
+  farVis.forEach(v => farGrp.remove(v.grp));
+  nearVis = []; farVis = [];
+  let acc = 0;
+  st.layers.forEach((L, i) => {
+    const h = L.th * TH_UNIT;
+    const v = makeLayer(nearGrp, L.type, NW, h, BASE_TOP + acc + h / 2, i === st.layers.length - 1 && st.layers.length > lastNear);
+    v.li = i;
+    if (L.fossil) {
+      const fg = new THREE.Group();
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.026, 20),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+      fg.add(disc);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: fossilTex[L.fossil], transparent: true, depthTest: false }));
+      sp.scale.setScalar(0.046); sp.position.z = 0.004; fg.add(sp);
+      const fx = (i % 2) ? 0.1 : -0.1;
+      const host = v.halves[fx > 0 ? 1 : 0];
+      fg.position.set(fx - host.position.x, 0, LD / 2 + 0.004);
+      host.add(fg);
+      v.fossil = { kind: L.fossil, grp: fg, host };
+    }
+    nearVis.push(v);
+    acc += h;
+  });
+  acc = 0;
+  st.farLayers.forEach((L, i) => {
+    const h = L.th * TH_UNIT;
+    farVis.push(makeLayer(farGrp, L.type, FW, h, BASE_TOP + acc + h / 2, i === st.farLayers.length - 1 && st.farLayers.length > lastFar));
+    acc += h;
+  });
+  lastNear = st.layers.length; lastFar = st.farLayers.length;
+  applyTectonics();
+}
+/* 습곡(휨)·단층(어긋남) — v2 layerShape의 3D 대응 */
+function applyTectonics() {
+  const fn = sim.state.foldN;
+  const A = fn >= 3 ? 0 : (fn === 2 ? 0.042 : (fn === 1 ? 0.022 : 0));
+  nearVis.forEach(v => {
+    v.halves.forEach(m => {
+      const pos = m.geometry.attributes.position, base = m.geometry.userData.base;
+      for (let i = 0; i < pos.count; i++) {
+        const bx = base[i * 3], by = base[i * 3 + 1];
+        const rel = (m.position.x + bx) / (NW / 2);
+        pos.setY(i, by + A * Math.max(0, 1 - rel * rel));
+      }
+      pos.needsUpdate = true;
+      m.geometry.computeVertexNormals();
+      const s = m.userData.side;
+      m.position.x = s * NW / 4 + (fn >= 3 ? s * 0.006 : 0);
+      m.position.y = (fn >= 3 && s > 0) ? -0.045 : 0;
+    });
+  });
+  crackMesh.visible = fn >= 3;
+  if (fn >= 3) {
+    const top = BASE_TOP + sim.sumTh(sim.state.layers) * TH_UNIT;
+    crackMesh.position.y = (BASE_TOP + top) / 2 - 0.02;
+    crackMesh.scale.y = Math.max(0.3, (top - BASE_TOP) / 0.24);
+  }
+}
+
+/* 기다리는 생물(아직 안 덮임) 스프라이트 */
+const pendingSp = new THREE.Sprite(new THREE.SpriteMaterial({ map: fossilTex.shell, transparent: true, depthTest: false }));
+pendingSp.scale.setScalar(0.06); pendingSp.visible = false; liftGrp.add(pendingSp);
+
+/* 융기 후 풀·새 */
+const grassGrp = new THREE.Group(); grassGrp.visible = false; liftGrp.add(grassGrp);
+{
+  const gm = new THREE.MeshStandardMaterial({ color: 0x2F9E44, roughness: 0.9 });
+  for (let i = 0; i < 7; i++) {
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.008, 0.03, 6), gm);
+    c.position.x = NX - NW / 2 + 0.05 + i * (NW - 0.1) / 6;
+    grassGrp.add(c);
+  }
+}
+const birdSp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('🐦'), transparent: true, depthTest: false }));
+birdSp.scale.setScalar(0.06); birdSp.visible = false; scene.add(birdSp);
+
+/* 하구/먼바다 구분선 (물살 켜짐일 때) */
+const divGrp = new THREE.Group(); divGrp.visible = false; scene.add(divGrp);
+{
+  const dm = new THREE.MeshBasicMaterial({ color: 0x5B9BF0, transparent: true, opacity: 0.55 });
+  for (let i = 0; i < 6; i++) {
+    const d = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.028, 0.005), dm);
+    d.position.set(0.16, TANK.y0 + 0.05 + i * 0.045, LD / 2 + 0.02);
+    divGrp.add(d);
+  }
+}
+
+/* ── 와우 분급 입자 (자갈9·모래12·진흙14 — v2 시드 무손실) ── */
+const MIX = { gravel: { r: 0.012, g: 0.16, band: BASE_TOP + 0.014 },
+              sand:   { r: 0.007, g: 0.095, band: BASE_TOP + 0.038 },
+              mud:    { r: 0.005, g: 0.05, band: BASE_TOP + 0.058 } };
+const mixGrp = new THREE.Group(); mixGrp.visible = false; scene.add(mixGrp);
+let mixPts = [];
+function armMixParticles() {
+  mixPts.forEach(p => mixGrp.remove(p.m));
+  mixPts = [];
+  Sim.mixSeed().forEach(seed => {
+    const cfg = MIX[seed.type];
+    const m = new THREE.Mesh(new THREE.SphereGeometry(cfg.r, 8, 6),
+      new THREE.MeshStandardMaterial({ color: SED_COL[seed.type], roughness: 0.9 }));
+    const x = NX - NW / 2 + 0.03 + seed.rx * (NW - 0.06);
+    const y = BASE_TOP + 0.06 + seed.ry * (WL - BASE_TOP - 0.1);
+    m.position.set(x, y, (seed.id % 5 - 2) * 0.04);
+    mixGrp.add(m);
+    mixPts.push({ m, type: seed.type, id: seed.id, x, y0: y });
+  });
+  mixGrp.visible = true;
+}
+
+/* ── 낙하 퇴적 입자 · 물살 흐름선 · 비바람 (CPU Points) ── */
+function spriteDot(col) {
+  return canvasTexture(32, 32, g => {
+    const rg = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    rg.addColorStop(0, col); rg.addColorStop(0.5, col); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = rg; g.beginPath(); g.arc(16, 16, 16, 0, 7); g.fill();
+  });
+}
+function makeSys(n, tex, size, blend) {
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    size, map: tex, blending: blend || THREE.NormalBlending, transparent: true,
+    depthWrite: false, vertexColors: true, sizeAttenuation: true
+  }));
+  pts.frustumCulled = false; pts.renderOrder = 8; scene.add(pts);
+  const P = [];
+  for (let i = 0; i < n; i++) { P.push({ life: 0, max: 1, vx: 0, vy: 0, vz: 0, x: 0, y: 0, z: 0, r: 1, g: 1, b: 1 }); pos[i * 3] = NaN; }
+  return { n, P, pos, col, geo, pts };
+}
+function emit(sys, count, spawn) { let got = 0; for (let i = 0; i < sys.n && got < count; i++) if (sys.P[i].life <= 0) { spawn(sys.P[i]); got++; } }
+function stepSys(sys, dt, grav, floorY) {
+  const { P, pos, col } = sys;
+  for (let i = 0; i < sys.n; i++) {
+    const q = P[i];
+    if (q.life > 0) {
+      q.vy -= grav * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.life -= dt;
+      if (floorY !== undefined && q.y < floorY) q.life = 0;
+    }
+    if (q.life <= 0) { pos[i * 3] = NaN; }
+    else { pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z; col[i * 3] = q.r; col[i * 3 + 1] = q.g; col[i * 3 + 2] = q.b; }
+  }
+  sys.geo.attributes.position.needsUpdate = true;
+  sys.geo.attributes.color.needsUpdate = true;
+}
+const sysSed = makeSys(80, spriteDot('rgba(230,220,200,0.95)'), 0.016);
+const sysFlow = makeSys(40, spriteDot('rgba(220,240,255,0.85)'), 0.02, THREE.AdditiveBlending);
+const sysRain = makeSys(60, spriteDot('rgba(140,190,250,0.9)'), 0.014);
+const sysSpark = makeSys(30, spriteDot('rgba(255,235,160,1)'), 0.026, THREE.AdditiveBlending);
+const C3 = new THREE.Color();
+function sedSpawn(type, cx, w) {
+  return p => {
+    p.x = cx - w / 2 + Math.random() * w; p.y = WL - 0.01; p.z = (Math.random() - 0.5) * (LD - 0.04);
+    p.vx = 0; p.vz = 0; p.vy = -0.06 - Math.random() * 0.08; p.life = p.max = 2.4;
+    C3.set(SED_COL[type]); p.r = C3.r; p.g = C3.g; p.b = C3.b;
+  };
+}
+const flowSpawn = p => {
+  p.x = -TANK.W / 2 + 0.03; p.y = TANK.y0 + 0.1 + Math.random() * (WL - TANK.y0 - 0.14);
+  p.z = (Math.random() - 0.5) * (LD - 0.02);
+  p.vx = 0.12 + sim.state.flow * 0.4; p.vy = 0; p.vz = 0; p.life = p.max = 1.6;
+  p.r = 0.7; p.g = 0.85; p.b = 1;
+};
+const rainSpawn = p => {
+  p.x = NX - NW / 2 + Math.random() * NW; p.y = WL + 0.16 + Math.random() * 0.08; p.z = (Math.random() - 0.5) * LD;
+  p.vx = -0.05; p.vy = -0.6; p.vz = 0; p.life = p.max = 0.8;
+  p.r = 0.55; p.g = 0.75; p.b = 0.98;
+};
+const sparkSpawn0 = { x: 0, y: 0, z: 0 };
+const sparkSpawn = p => {
+  const a = Math.random() * Math.PI * 2;
+  p.x = sparkSpawn0.x; p.y = sparkSpawn0.y; p.z = sparkSpawn0.z;
+  p.vx = Math.cos(a) * 0.08; p.vz = Math.sin(a) * 0.04; p.vy = 0.1 + Math.random() * 0.1;
+  p.life = p.max = 0.7; p.r = 1; p.g = 0.9; p.b = 0.55;
+};
+let sedBurst = null; // {type, cx, w, t}
+
+/* ═══════════ DOM 주석 레이어 ═══════════ */
+const annoHost = document.getElementById('anno');
+function mkAnno(html, color, click, big) {
+  const d = document.createElement(click ? 'button' : 'div');
+  d.className = 'st-anno' + (click ? ' click' : '') + (big ? ' big' : '');
+  d.style.color = color; d.style.borderColor = color;
+  d.innerHTML = html;
+  if (click) { d.style.background = 'rgba(8,12,20,.86)'; d.addEventListener('click', click); }
+  annoHost.appendChild(d);
+  return d;
+}
+const ordAnnos = [];
+for (let i = 0; i < 7; i++) ordAnnos.push(mkAnno((i + 1) + '번째', '#8fa3b8'));
+const fosAnnos = [];
+for (let i = 0; i < 3; i++) {
+  const idx = i;
+  fosAnnos.push(mkAnno('🐚', '#FFD8A8', () => digFossil(idx)));
+}
+const zoneNear = mkAnno('⬅ 하구 (강이 흘러드는 곳)', '#8AC2FF');
+const zoneFar = mkAnno('먼바다 ➡', '#8AC2FF');
+const upLab = mkAnno('⛰️ 땅 위로 드러난 지층!', '#7CF0C9', null, true);
+const mixLab = mkAnno('', '#CBB7FF', null, true);
+const _pv = new THREE.Vector3();
+function projectAnno(el2, obj, local, on) {
+  if (!on) { el2.style.display = 'none'; return; }
+  _pv.copy(local); obj.localToWorld(_pv); _pv.project(camera);
+  if (_pv.z > 1) { el2.style.display = 'none'; return; }
+  el2.style.left = ((_pv.x * 0.5 + 0.5) * innerWidth) + 'px';
+  el2.style.top = ((-_pv.y * 0.5 + 0.5) * innerHeight) + 'px';
+  el2.style.display = '';
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), v2row = $('v2row'),
+      wifpick = $('wifpick'), choicesEl = $('choices'), chipsEl = $('chips'), statusEl = $('status');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈', whatif: '🌀 만약에' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+const DEPO = [['gravel', '🪨 자갈'], ['sand', '🟡 모래'], ['mud', '🟤 진흙']];
+const FOSB = [['shell', '🐚'], ['fern', '🌿'], ['fish', '🐟']];
+
+function flowActive() {
+  return (mode === 'free' && sim.G().v2 && sim.G().v2.flow && !sim.state.mixArmed && !sim.state.mixSettled)
+      || (mode === 'whatif' && wifKey === 'storm' && wifPlaying);
+}
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="st-seg">' + ['low', 'mid', 'high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="st-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const G = sim.G();
+  let h = '';
+  if (mode === 'whatif' && wifKey === 'erosion') {
+    h += '<button class="k3-btn fire" data-a="erode">🌬 비바람 깎기</button>';
+    h += '<button class="k3-btn" data-a="wifBack">🌀 다른 만약에</button>';
+  } else if (mode === 'whatif' && wifKey === 'fold') {
+    h += '<button class="k3-btn accent" data-a="fold">↔️ 밀기</button>';
+    h += '<button class="k3-btn" data-a="wifBack">🌀 다른 만약에</button>';
+  } else if (mode === 'whatif' && wifKey === 'storm') {
+    h += '<div class="st-lb">붓기</div><div class="st-row">'
+      + DEPO.map(x => `<button class="k3-btn" data-a="d-${x[0]}">${x[1]}</button>`).join('') + '</div>';
+    h += '<button class="k3-btn" data-a="wifBack">🌀 다른 만약에</button>';
+  } else if (mode === 'whatif') {
+    h = '';
+  } else {
+    if (mode === 'free' && G.wow) {
+      h += '<button class="k3-btn wow" data-a="wowArm">🔮 몽땅 섞어 부으면?</button>';
+      h += '<button class="k3-btn wow go" data-a="wowReveal">🌀 한꺼번에 쏟기</button>';
+    }
+    h += '<div class="st-lb">쌓기</div><div class="st-row">'
+      + DEPO.map(x => `<button class="k3-btn" data-a="d-${x[0]}">${x[1]}</button>`).join('') + '</div>';
+    h += '<div class="st-lb">생물 두기</div><div class="st-row">'
+      + FOSB.map(x => `<button class="k3-btn" data-a="f-${x[0]}">${x[1]}</button>`).join('') + '</div>';
+    if (!G.low) h += `<button class="k3-btn accent" data-a="uplift" ${sim.state.up > 0 ? 'style="opacity:.45"' : ''}>⛰️ 융기!</button>`;
+    h += '<button class="k3-btn" data-a="reset">↺ 처음부터</button>';
+  }
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 나만의 지층을 만들어 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    mbar.innerHTML = `${Sim.QUIZ[quizIdx].q}<div class="st">점수 ${quizScore} / ${quizCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderV2() {
+  const G = sim.G(), st = sim.state;
+  if (mode !== 'free' || !G.v2) { v2row.style.display = 'none'; return; }
+  v2row.style.display = '';
+  let h = '';
+  if (G.v2.flow) h += `<div>🫧 잔잔 <input id="slFlow" type="range" min="0" max="1" step="0.01" value="${st.flow}"> 🌊 거셈</div>
+    <div class="vl" id="slFlowLb">${sim.flowName()}</div>`;
+  if (G.v2.dur) h += `<div>⏳ 짧게 <input id="slDur" type="range" min="0" max="1" step="0.01" value="${st.dur}"> 오래</div>
+    <div class="vl dur" id="slDurLb">${sim.durName()}</div>`;
+  v2row.innerHTML = h;
+  const sf = $('slFlow');
+  if (sf) sf.addEventListener('input', e => {
+    st.flow = +e.target.value; sim.clearMix(); syncMixScene();
+    $('slFlowLb').textContent = sim.flowName();
+    renderStatus(); armPred('flow');
+  });
+  const sd = $('slDur');
+  if (sd) sd.addEventListener('input', e => {
+    st.dur = +e.target.value; sim.clearMix(); syncMixScene();
+    $('slDurLb').textContent = sim.durName();
+    renderStatus(); armPred('dur');
+  });
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.chips.map(c =>
+    `<span class="st-chip ${c.hit ? '' : 'miss'}">${Sim.CHIPNM[c.k] || c.k} · ${c.hit ? '✔예측적중' : '✘예측빗나감'}</span>`).join('');
+  chipsEl.style.display = (mode === 'free' || mode === 'whatif') ? '' : 'none';
+}
+
+/* 상태줄 (v2 문구 무손실) */
+function renderStatus() {
+  const st = sim.state, fos = sim.embeddedFossils();
+  let h;
+  const t1 = (txt, col, hold) => `<div class="t1${hold ? ' hold' : ''}" style="color:${col}">${txt}</div>`;
+  const t2 = txt => `<div class="t2">${txt}</div>`;
+  if (st.mixArmed && !st.mixSettled) {
+    h = t1('🌀 흙탕물이 가라앉는 중… 뒤죽박죽일까요, 줄무늬일까요?', '#CBB7FF', true)
+      + t2('무거운 알갱이와 가벼운 알갱이는 <b>가라앉는 빠르기</b>가 다를까요?');
+  } else if (st.mixSettled) {
+    h = t1('✨ 저절로 줄무늬! 아래는 굵은 자갈, 위는 고운 진흙', '#7CF0C9')
+      + t2('한 종류씩 안 쌓았는데도 — 알갱이 크기가 다르면 <b>가라앉는 빠르기</b>가 달라 <b>저절로 층</b>이 나뉘어요.');
+  } else if (mode === 'quiz') {
+    h = t2('지층을 쌓아 본 걸 떠올리며 답을 골라요');
+  } else if (mode === 'whatif' && wifPlaying && wifKey === 'erosion') {
+    h = st.layers.length === 1
+      ? t1('🏜️ 가장 오래된 맨 아래층이 드러났어요!', '#7CF0C9')
+        + t2('깎여 나간 층 ' + st.erodeN + '개 — 침식이 쌓임의 기록을 펼쳐 보여 줘요.')
+      : t1('🌬 비바람이 위층부터 깎아 내요 (깎인 층 ' + st.erodeN + '개)', '#CBB7FF')
+        + t2('지금 맨 위 = ' + st.layers.length + '번째 층 — 깎을수록 더 옛날 층이 나와요');
+  } else if (mode === 'whatif' && wifPlaying && wifKey === 'fold') {
+    h = st.foldN >= 3 ? t1('우지끈! 끊어져 어긋났어요 — <b>단층</b>', '#CBB7FF') + t2('화산 교구의 지진과 같은 힘 이야기예요.')
+      : st.foldN > 0 ? t1('엿가락처럼 휘어요 — <b>습곡</b> (밀기 ' + st.foldN + '번)', '#CBB7FF') + t2('더 밀면…?')
+      : t1('돌처럼 굳은 지층이에요', '#e6edf5') + t2('↔️ 밀기로 양옆에서 큰 힘을 가해 봐요!');
+  } else if (mode === 'whatif' && wifPlaying && wifKey === 'storm') {
+    h = t1('🌊 물살이 아주 거센 바다예요', '#8AC2FF')
+      + t2('무엇이 가라앉고 무엇이 떠내려갈까요? 자갈·모래·진흙을 부어 봐요! (하구 ' + st.layers.length + '층 · 먼바다 ' + st.farLayers.length + '층)');
+  } else if (st.up >= 1) {
+    h = t1('⛰️ 융기 — 물속 지층이 땅 위로 솟아올랐어요!', '#7CF0C9')
+      + t2(fos.length ? ('산에서 ' + Sim.FOSSILS[fos[0]].nm + ' 화석이 — <b>옛날에 이곳이 ' + Sim.FOSSILS[fos[0]].env + '였다는 증거</b>예요!')
+        : '오랜 시간 눌려 굳은 줄무늬가 그대로 보여요. ↺로 새 바다에서 다시!');
+  } else if (st.pending) {
+    h = t1(Sim.FOSSILS[st.pending].ic + ' ' + Sim.FOSSILS[st.pending].nm + '가 바닥에 가라앉았어요', '#CBB7FF')
+      + t2('썩기 전에 <b>퇴적물이 빨리 덮어야</b> 화석이 돼요 — 위에 한 층 쌓아 봐요!');
+  } else if (st.layers.length === 0 && st.farLayers.length === 0) {
+    h = t1('🌊 여기는 바다 밑 — 퇴적물 단추로 차곡차곡 쌓아 봐요!', '#e6edf5')
+      + t2('자갈·모래·진흙이 물에 실려 와 가라앉아요. 생물을 두고 덮으면 화석도!');
+  } else if (st.sel >= 0 && st.layers[st.sel]) {
+    const i = st.sel;
+    const extra = (i === 0 ? ' — <b>가장 먼저 쌓인, 가장 오래된 층!</b>' : (i === st.layers.length - 1 ? ' — <b>가장 나중에 쌓인, 가장 새로운 층!</b>' : ''));
+    h = t1((i + 1) + '번째로 쌓인 ' + Sim.TYPES[st.layers[i].type].nm + ' 층' + extra, '#CBB7FF')
+      + t2('아래에 있을수록 먼저 쌓인 층이에요 — 지층의 순서로 옛날을 알 수 있어요.');
+  } else if (flowActive() && mode === 'free') {
+    h = t1('하구 ' + st.layers.length + '층 · 먼바다 ' + st.farLayers.length + '층 (' + sim.flowName() + ')', '#e6edf5')
+      + t2('물살이 거셀수록 <b>무거운 알갱이만 가까이</b> 가라앉아요 — 종류를 바꿔 부어 봐요!');
+  } else {
+    h = t1(st.layers.length + '층 지층' + (fos.length ? ' · 화석 ' + fos.length + '개' : ''), '#e6edf5')
+      + t2('종류가 다른 퇴적물이 차례로 쌓여 <b>줄무늬</b>가 생겨요. 층을 클릭해 순서를 확인해 봐요!');
+  }
+  statusEl.innerHTML = h;
+  /* 검증 관측점(dataset) — v2 규약 무손실 */
+  const s = $('stage');
+  s.dataset.near = String(st.layers.length); s.dataset.far = String(st.farLayers.length);
+  s.dataset.flow = st.flow.toFixed(2); s.dataset.dur = st.dur.toFixed(2);
+  s.dataset.up = st.up.toFixed(2); s.dataset.erode = String(st.erodeN); s.dataset.fold = String(st.foldN);
+  s.dataset.pend = st.pending ? '1' : '0'; s.dataset.fossils = String(fos.length);
+  s.dataset.lastth = st.layers.length ? st.layers[st.layers.length - 1].th.toFixed(1) : '0';
+  s.dataset.mixarmed = st.mixArmed ? '1' : '0'; s.dataset.mixsettled = st.mixSettled ? '1' : '0';
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = Sim.QUIZ[quizIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (quizLock) return; quizLock = true;
+    const ok = +b.dataset.v === q.a;
+    quizCount++; if (ok) quizScore++;
+    K3.sound.play(ok ? 'chime' : 'fail');
+    K3.toast(ok ? '🎉 정답! ' + q.ch[q.a] : '아쉬워요 — 정답은 「' + q.ch[q.a] + '」', !ok, T(1300));
+    setTimeout(() => { newQuiz(); renderAll(); }, T(1450));
+  }));
+}
+function newQuiz() {
+  if (quizUsed.length >= Sim.QUIZ.length) quizUsed = [];
+  const cand = []; for (let i = 0; i < Sim.QUIZ.length; i++) if (!quizUsed.includes(i)) cand.push(i);
+  quizIdx = cand[Math.floor(Math.random() * cand.length)]; quizUsed.push(quizIdx); quizLock = false;
+}
+
+function renderWifPick() {
+  if (mode !== 'whatif' || wifKey) { wifpick.style.display = 'none'; return; }
+  wifpick.style.display = '';
+  wifpick.innerHTML = '<div class="ti">🌀 만약에… 하나를 골라 실험해 봐요</div>' +
+    sim.G().wif.map(k => `<button data-w="${k}">${Sim.WHATIF[k].icon} ${Sim.WHATIF[k].title}</button>`).join('');
+  wifpick.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => startWif(b.dataset.w)));
+}
+
+async function startWif(key) {
+  wifKey = key; wifChoice = -1; wifRevealed = false; wifPlaying = false;
+  const W = Sim.WHATIF[key];
+  renderWifPick();
+  K3.sound.play('select');
+  wifChoice = await K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: i, label: c })));
+  W.play(sim);
+  wifPlaying = true;
+  rebuildStacks(); syncMixScene();
+  renderAll();
+  K3.toast(W.icon + ' ' + W.tip, false, T(4200));
+}
+function wifResolve() {
+  if (!wifKey || wifRevealed || !wifPlaying) return;
+  const W = Sim.WHATIF[wifKey];
+  if (!W.cond(sim.state)) return;
+  wifRevealed = true;
+  sim.wifChip(wifKey, wifChoice);
+  const hit = wifChoice === W.a;
+  K3.sound.play(hit ? 'chime' : 'pop');
+  chipToast();
+  setTimeout(() => {
+    K3.cards.result(
+      `<h3 style="color:${hit ? '#0d7a5c' : '#B9522F'}">${hit ? '🎯 예측 적중!' : '🤔 예측과 달랐죠?'}</h3>
+       <p style="font-size:13px;line-height:1.7;color:#41546a">${W.reveal}</p>`,
+      [{ label: '계속 실험', cls: 'pri', value: 0 }, { label: '🌀 다른 만약에', value: 1 }]
+    ).then(v => { if (v === 1) act('wifBack'); else renderAll(); });
+    renderChips();
+  }, T(1100));
+}
+
+/* 예측 무장 (free · v2 변수) */
+async function armPred(kind) {
+  if (mode !== 'free' || !sim.G().v2) return;
+  if (kind === 'flow' && !sim.G().v2.flow) return;
+  if (kind === 'dur' && !sim.G().v2.dur) return;
+  if (!sim.predArm(kind)) return;
+  const P = Sim.PRED[kind];
+  K3.sound.play('select');
+  const ch = await K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: i, label: c })));
+  sim.predChoose(kind, ch);
+  K3.toast('📝 예측 접수! ' + P.tip, false, T(4200));
+}
+function resolvePreds(list) {
+  (list || []).forEach(r => {
+    const msg = r.kind === 'flow'
+      ? (r.hit ? '✔ 예측 적중 — 무거운 자갈은 가까이, 가벼운 진흙은 멀리 가거나 떠내려가요! 알갱이 크기가 가라앉는 자리를 정해요.'
+               : '✘ 예측 빗나감 — 무거운 것부터 가까이 가라앉아요! 가벼운 진흙은 멀리 떠가거나 아예 못 가라앉죠.')
+      : (r.hit ? '✔ 예측 적중 — 오래 쌓일수록 층이 두꺼워요! 줄무늬의 굵기는 시간의 기록이에요.'
+               : '✘ 예측 빗나감 — 오래 쌓으면 층이 두꺼워져요! 줄무늬의 굵기가 곧 시간의 기록이거든요.');
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    K3.toast(msg, !r.hit, T(4600));
+  });
+  if (list && list.length) { renderChips(); chipToast(); }
+}
+function chipToast() {
+  if (sim.chips.length === 5) setTimeout(() => { K3.sound.play('ting'); K3.toast('🪨 꼬마 지질학자 — 오늘 가설 5개를 실험했어요!'); }, T(600));
+}
+
+/* ── 조작 ── */
+let upT = 0;
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a.indexOf('d-') === 0) {
+    const type = a.slice(2);
+    const r = sim.deposit(type, flowActive());
+    if (r.act === 'dry') { K3.toast('🌊 지층은 물속에서 쌓여요 — ↺ 처음부터!', true); return; }
+    if (r.act === 'away') {
+      K3.sound.play('whoosh');
+      K3.toast('🌊 가벼운 ' + Sim.TYPES[type].nm + '은(는) 거센 물살에 떠내려가 여기엔 못 쌓여요!', true, T(3200));
+      sedBurst = { type, cx: 0.1, w: 0.5, t: 0.5, sweep: true };
+      syncMixScene(); resolvePreds(r.preds); wifResolve();
+    } else if (r.act === 'full') {
+      K3.toast('층이 가득! 이만하면 멋진 지층이에요');
+    } else {
+      K3.sound.play('tap');
+      if (r.fossilized) { K3.sound.play('pop'); K3.toast(Sim.FOSSILS[sim.state.layers[sim.state.layers.length - 1].fossil].ic + ' 퇴적물이 덮었어요 — 오랜 시간이 지나면 화석이 돼요!'); }
+      sedBurst = { type, cx: r.zone === 'far' ? FXc : NX, w: r.zone === 'far' ? FW : NW, t: 0.9 };
+      rebuildStacks(); syncMixScene();
+      resolvePreds(r.preds); wifResolve();
+    }
+  }
+  else if (a.indexOf('f-') === 0) {
+    const r = sim.placeFossil(a.slice(2));
+    if (r.act === 'dry') { K3.toast('물이 빠진 뒤엔 생물이 가라앉지 못해요 — ↺ 처음부터!', true); return; }
+    if (r.act === 'full') { K3.toast('덮을 자리가 없어요!', true); return; }
+    K3.sound.play('select');
+    pendingSp.material.map = fossilTex[r.kind];
+    syncMixScene();
+  }
+  else if (a === 'uplift') {
+    const r = sim.uplift();
+    if (r.act === 'already') return;
+    if (r.act === 'empty') { K3.toast('먼저 지층을 쌓아야 들어 올리죠!', true); return; }
+    if (r.lost) K3.toast('덮이지 못한 생물은 화석이 못 돼요…', true, T(2600));
+    K3.sound.play('whoosh');
+    K3.toast('땅이 솟아오르는 중… (실제로는 아주아주 오랜 시간!)', false, T(3000));
+    syncMixScene();
+  }
+  else if (a === 'erode') {
+    const r = sim.erode();
+    if (r.act === 'none') { K3.toast('깎을 층이 없어요', true); return; }
+    if (r.act === 'bottom') { K3.toast('🏜️ 가장 오래된 층까지 다 드러났어요!', true); return; }
+    K3.sound.play('pop');
+    K3.toast(r.bottomReached ? '🏜️ 맨 아래 — 가장 오래된 층이 드러났어요!' : '🌬 위층이 깎여 나갔어요 — 더 옛날 층이 보여요!', false, T(2200));
+    rebuildStacks(); wifResolve();
+  }
+  else if (a === 'fold') {
+    const r = sim.pushFold();
+    if (r.act === 'max') { K3.toast('이미 끊어졌어요 — ↺ 새 지층으로!', true); return; }
+    if (r.act === 'fault') { K3.sound.play('whoosh'); K3.sound.play('pop'); K3.toast('우지끈! 끊어져 어긋났어요 (단층)!', false, T(2600)); }
+    else { K3.sound.play('pop'); K3.toast(r.n === 1 ? '으으… 딱딱한 지층이 휘기 시작해요 (습곡)' : '더 크게 휘어요 — 엿가락처럼!', false, T(2200)); }
+    applyTectonics(); wifResolve();
+  }
+  else if (a === 'reset') {
+    sim.reset(); upT = 0; K3.sound.play('tap');
+    rebuildStacks(); syncMixScene();
+  }
+  else if (a === 'wowArm') {
+    const r = sim.wowArm();
+    if (r.act !== 'arm') return;
+    upT = 0;
+    K3.sound.play('charge');
+    K3.toast('🌀 자갈·모래·진흙을 <b>몽땅 섞어</b> 잔잔한 물에 부었어요. 이대로 가라앉으면 — <b>뒤죽박죽 섞인 덩어리</b>가 될까요, <b>줄무늬</b>가 생길까요? 예상해 봐요!', false, T(4600));
+    armMixParticles();
+    rebuildStacks(); syncMixScene();
+  }
+  else if (a === 'wowReveal') {
+    const r = sim.wowReveal();
+    if (r.act === 'nudge') {
+      K3.sound.play('select');
+      K3.toast('먼저 🔮 <b>몽땅 섞어 부으면?</b> 버튼으로 예상부터 해 봐요!', true, T(2600));
+      return;
+    }
+    K3.sound.play('whoosh'); K3.sound.play('ting');
+    K3.toast('✨ 한꺼번에 부었는데 <b>저절로 줄무늬</b>가 생겼어요! 무거운 <b>자갈이 먼저</b> 가라앉고, 그 위에 <b>모래</b>, 맨 위에 고운 <b>진흙</b> — 알갱이 크기가 다르면 가라앉는 빠르기가 달라 <b>아래는 굵고 위는 고운</b> 층이 저절로 나뉘어요!', false, T(7200));
+    syncMixScene();
+  }
+  else if (a === 'wifBack') {
+    wifKey = null; wifPlaying = false; wifRevealed = false;
+    sim.resetAll(); upT = 0; K3.cards.hide();
+    rebuildStacks(); syncMixScene(); renderAll(); return;
+  }
+  if (mode === 'mission') missionTick();
+  renderCtrls(); renderStatus();
+}
+
+function clickLayer(i) {
+  const r = sim.clickLayer(i);
+  if (r.act !== 'sel') return;
+  K3.sound.play('select');
+  if (mode === 'mission') missionTick();
+  renderStatus();
+}
+function digFossil(slot) {
+  const fos = sim.embeddedFossils();
+  const kind = fos[slot];
+  if (!kind) return;
+  K3.sound.play('ting');
+  const F = Sim.FOSSILS[kind];
+  K3.toast(F.ic + ' ' + F.nm + ' 화석 — 옛날에 이곳이 <b>' + F.env + '</b>였다는 증거예요!', false, T(3200));
+  const fs = fossilSlots[slot];
+  if (fs) { fs.grp.getWorldPosition(_pv); sparkSpawn0.x = _pv.x; sparkSpawn0.y = _pv.y; sparkSpawn0.z = _pv.z; emit(sysSpark, 12, sparkSpawn); }
+}
+function missionTick() {
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { upT = sim.state.up; rebuildStacks(); syncMixScene(); renderAll(); }, T(1300));
+}
+
+function setGrade(g) {
+  sim.grade = g;
+  mode = 'free';
+  wifKey = null; wifPlaying = false; wifRevealed = false;
+  sim.resetAll(); sim.mStep = 0; sim.mDone = false; upT = 0;
+  K3.cards.hide(); rebuildStacks(); syncMixScene(); renderAll();
+}
+function setMode(m) {
+  mode = m;
+  wifKey = null; wifPlaying = false; wifRevealed = false;
+  sim.resetAll(); upT = 0; K3.cards.hide();
+  if (m === 'mission') sim.missionStart();
+  if (m === 'quiz') { quizScore = 0; quizCount = 0; quizUsed = []; newQuiz(); }
+  rebuildStacks(); syncMixScene(); renderAll();
+}
+function syncMixScene() {
+  const st = sim.state;
+  if (!st.mixArmed && !st.mixSettled) mixGrp.visible = false;
+}
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderV2(); renderQuiz(); renderWifPick(); renderChips(); renderStatus();
+}
+
+/* ── 층·화석 탭 (레이캐스트) ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown', e => {
+  hideHint();
+  if (mode === 'quiz') return;
+  ptr.x = (e.clientX / innerWidth) * 2 - 1;
+  ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  const meshes = [];
+  nearVis.forEach(v => v.halves.forEach(m => { m.userData.li = v.li; meshes.push(m); }));
+  const hit = ray.intersectObjects(meshes, false)[0];
+  if (hit) clickLayer(hit.object.userData.li);
+});
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 12 : 1;   // 하니스 가속(연출 트윈만 — 물리 판정은 Sim 즉시)
+let fossilSlots = [];
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  const st = sim.state;
+
+  /* 융기 트윈 + 물 빠짐 */
+  upT += (st.up - upT) * Math.min(1, dt * (st.up > upT ? 0.9 : 4));
+  if (st.up >= 1 && upT > 0.995) upT = 1;
+  liftGrp.position.y = upT * 0.075;
+  liftGrp.rotation.z = upT * 0.035;
+  const wh = Math.max(0.015, (1 - upT) * (WL - TANK.y0));
+  water.scale.y = wh / (WL - TANK.y0);
+  water.position.y = TANK.y0 + wh / 2;
+  water.visible = upT < 0.99;
+
+  /* 와우 흙탕물 탁해짐 */
+  const murkTarget = (st.mixArmed && !st.mixSettled) ? 1 : 0;
+  murkT += (murkTarget - murkT) * Math.min(1, dt * 2.5);
+  waterMat.attenuationColor.copy(CLEAR_C).lerp(MURK_C, murkT);
+  waterMat.attenuationDistance = 0.5 - murkT * 0.36;
+
+  /* 층 낙하 가라앉음 */
+  [nearVis, farVis].forEach(arr => arr.forEach(v => {
+    if (v.dropT < 1) {
+      v.dropT = Math.min(1, v.dropT + dt * 1.6);
+      const e = 1 - Math.pow(1 - v.dropT, 3);
+      v.grp.position.y = v.cy + (1 - e) * 0.16;
+    } else v.grp.position.y = v.cy;
+  }));
+
+  /* 낙하 퇴적 입자 */
+  if (sedBurst && sedBurst.t > 0) {
+    sedBurst.t -= dt;
+    emit(sysSed, 3, sedSpawn(sedBurst.type, sedBurst.cx, sedBurst.w));
+    if (sedBurst.sweep) sysSed.P.forEach(q => { if (q.life > 0) q.vx = 0.3; });
+  }
+  stepSys(sysSed, dt, 0.02, TANK.y0 + 0.02);
+
+  /* 물살 흐름선 */
+  const fOn = flowActive() && st.up < 1;
+  divGrp.visible = fOn;
+  if (fOn && st.flow > 0.05 && Math.random() < 0.3 + st.flow * 0.5) emit(sysFlow, 1, flowSpawn);
+  stepSys(sysFlow, dt, 0);
+
+  /* 만약에 침식 — 비바람 */
+  if (mode === 'whatif' && wifPlaying && wifKey === 'erosion' && st.erodeN > 0) emit(sysRain, 2, rainSpawn);
+  stepSys(sysRain, dt, 0.3, TANK.y0);
+  stepSys(sysSpark, dt, 0.15);
+
+  /* 와우 분급 입자 물리 */
+  if ((st.mixArmed || st.mixSettled) && mixGrp.visible) {
+    const now = performance.now();
+    mixPts.forEach(p => {
+      if (st.mixSettled) {
+        const band = MIX[p.type].band;
+        if (p.m.position.y > band) p.m.position.y = Math.max(band, p.m.position.y - MIX[p.type].g * dt);
+      } else {
+        p.m.position.y = p.y0 + Math.sin(now * 0.002 + p.id) * 0.008;
+      }
+    });
+  }
+
+  /* 기다리는 생물 */
+  const topY = BASE_TOP + sim.sumTh(st.layers) * TH_UNIT;
+  pendingSp.visible = !!st.pending && !st.mixArmed && !st.mixSettled;
+  if (pendingSp.visible) {
+    pendingSp.position.set(NX, topY + 0.035 + Math.sin(performance.now() * 0.003) * 0.006, 0.02);
+  }
+
+  /* 융기 후 풀·새 (v2: up>0.65 · foldN 0 · 비만약에) */
+  const grassOn = upT > 0.65 && st.layers.length > 0 && st.foldN === 0 && mode !== 'whatif';
+  grassGrp.visible = grassOn;
+  if (grassOn) {
+    const gs = Math.max(0.001, (upT - 0.65) / 0.35);
+    grassGrp.scale.set(1, gs, 1);
+    grassGrp.position.y = topY;
+    grassGrp.children.forEach(c => { c.position.y = 0.015; });
+  }
+  birdSp.visible = grassOn;
+  if (birdSp.visible) {
+    const t = performance.now() * 0.0008;
+    birdSp.position.set(Math.sin(t) * 0.3, WL + 0.16 + Math.sin(t * 2.3) * 0.02, Math.cos(t) * 0.1);
+  }
+
+  /* 주석 투영 */
+  const showOrd = st.sel >= 0 && !st.mixArmed && !st.mixSettled && mode !== 'quiz';
+  for (let i = 0; i < 7; i++) {
+    const v = nearVis[i];
+    if (showOrd && v && v.dropT >= 1) {
+      ordAnnos[i].style.color = ordAnnos[i].style.borderColor = (i === st.sel ? '#CBB7FF' : '#8fa3b8');
+      projectAnno(ordAnnos[i], v.grp, _t1.set(-NW / 2 - 0.07, 0, LD / 2), true);
+    } else ordAnnos[i].style.display = 'none';
+  }
+  fossilSlots = [];
+  nearVis.forEach(v => { if (v.fossil) fossilSlots.push(v.fossil); });
+  for (let i = 0; i < 3; i++) {
+    const fs = fossilSlots[i];
+    if (fs && !st.mixArmed && !st.mixSettled && mode !== 'quiz') {
+      fosAnnos[i].innerHTML = Sim.FOSSILS[fs.kind].ic + ' ' + Sim.FOSSILS[fs.kind].nm;
+      projectAnno(fosAnnos[i], fs.grp, _t2.set(0, 0.038, 0), true);
+    } else fosAnnos[i].style.display = 'none';
+  }
+  projectAnno(zoneNear, scene, _t3.set(NX, TANK.y0 - 0.05, LD / 2), fOn);
+  projectAnno(zoneFar, scene, _t4.set(FXc, TANK.y0 - 0.05, LD / 2), fOn);
+  projectAnno(upLab, liftGrp, _t5.set(NX, topY + 0.09, 0), grassOn);
+  if (st.mixArmed || st.mixSettled) {
+    mixLab.innerHTML = st.mixSettled ? '⬇ 무거운 자갈부터 가라앉아 아래 · 고운 진흙은 맨 위' : '🌀 섞인 흙탕물 — 🌀 한꺼번에 쏟기를 눌러 봐요!';
+    mixLab.style.color = mixLab.style.borderColor = st.mixSettled ? '#CBB7FF' : '#8AC2FF';
+    projectAnno(mixLab, scene, _t6.set(NX, WL + 0.09, 0), true);
+  } else mixLab.style.display = 'none';
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+const _t1 = new THREE.Vector3(), _t2 = new THREE.Vector3(), _t3 = new THREE.Vector3(),
+      _t4 = new THREE.Vector3(), _t5 = new THREE.Vector3(), _t6 = new THREE.Vector3();
+
+if (mode === 'mission') sim.missionStart();
+if (mode === 'quiz') { newQuiz(); }
+rebuildStacks();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast('수조를 돌려 보고, 퇴적물을 차곡차곡 부어 봐요');
+animate();
+
+/* 테스트용 앱 훅 */
+window.StrataApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, clickLayer, digFossil,
+  get nearVis() { return nearVis; }, get farVis() { return farVis; },
+  get upT() { return upT; },
+  mixGrp, water, grassGrp, crackMesh, liftGrp
+};
+</script>
+</body>
+</html>
