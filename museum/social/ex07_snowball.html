@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>눈덩이의 방 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-rolling{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--social); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="snow-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumSnow=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var P0=50000n;                             // 세뱃돈(원)
+  var RATE=7;                                // 기본 이율(%) — 장기 통용값
+  function compoundNum(n,r){                 // 분자: 50000·(100+r)ⁿ
+    return P0 * (100n+BigInt(r))**BigInt(n);
+  }
+  function compoundDen(n){ return 100n**BigInt(n); }
+  function compoundWon(n,r){                 // ⌊정확분수⌋ 원
+    return Number(compoundNum(n,r)/compoundDen(n));
+  }
+  function simpleWon(n,r){                   // 원금 + 매년 같은 이자(정수 정확)
+    return Number(P0) + 500*r*n;
+  }
+  function interestWon(n,r){                 // n번째 해에 태어난 이자(복리)
+    return compoundWon(n,r)-compoundWon(n-1,r);
+  }
+  function ratioPermille(n,r){               // 복리/단리 ×1000 (BigInt 정확 내림)
+    return Number(compoundNum(n,r)*1000n/(BigInt(simpleWon(n,r))*compoundDen(n)));
+  }
+  function doubleYear(r){                    // 원금 2배 도달 해
+    var n=0;
+    while(compoundNum(n,r) < 2n*P0*compoundDen(n)) n++;
+    return n;
+  }
+  return { P0:Number(P0), RATE:RATE,
+           compoundNum:compoundNum, compoundDen:compoundDen,
+           compoundWon:compoundWon, simpleWon:simpleWon, interestWon:interestWon,
+           ratioPermille:ratioPermille, doubleYear:doubleYear };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">두 항아리에, 같은 세뱃돈을 넣었습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="12" value="7" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumSnow;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var TAU = Math.PI*2;
+
+  // ── 무대 배치 ────────────────────────────────────────────────────
+  var JAR_L={x:W*0.5-250}, JAR_R={x:W*0.5+250};
+  var JAR_BASE=790, JAR_H=310, JAR_W=170;
+  var FULL_MULT=8;                            // 항아리 만수위 = 원금의 8배
+  var PX_PER_MULT_JAR=JAR_H/FULL_MULT;        // 항아리 안 수위
+  var PX_PER_MULT_PILLAR=4.0;                 // 만수위 초과 기둥
+  var CRANK={x:W*0.5, y:640, r:56};
+  var END_YEAR=70, HAND_YEARS=15;
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',              // boot→roll→auto→betrayed→after
+    years:0, rate:PURE.RATE,
+    crankA:0, handYears:0, autoAt:0, autoV:1.5,
+    drops:[], marks:0,
+    betrayed:false, time:0
+  };
+  function totals(){ return { L:PURE.simpleWon(S.years,S.rate), R:PURE.compoundWon(S.years,S.rate) }; }
+  function mult(v){ return v/PURE.P0; }
+
+  function yearPass(){
+    if(S.years>=END_YEAR) return;
+    S.years++;
+    S.marks=S.years;
+    var iL=500*S.rate;                        // 왼쪽 방울 — 늘 같은 크기
+    var iR=PURE.interestWon(S.years,S.rate);  // 오른쪽 방울 — 제 몸에 비례
+    S.drops.push({jar:'L', r:5.5, y:JAR_BASE-JAR_H-70, life:1});
+    S.drops.push({jar:'R', r:Math.min(26, 4+Math.sqrt(iR/iL)*3.2), y:JAR_BASE-JAR_H-70, life:1});
+    Museum.sound.play('clack');
+    if(S.phase==='roll' && S.handYears>=HAND_YEARS && !S.autoAt) S.autoAt=S.time+1.0;
+    if(S.years>=END_YEAR) triggerBetray();
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function pillarTopY(){
+    var m=mult(totals().R);
+    if(m<=FULL_MULT) return JAR_BASE-m*PX_PER_MULT_JAR;
+    return JAR_BASE-JAR_H-(m-FULL_MULT)*PX_PER_MULT_PILLAR;
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    Museum.betray({x:JAR_R.x/W, y:Math.max(0.06, pillarTopY()/H)}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var t=totals();
+    var f=document.getElementById('formula');
+    f.innerHTML='왼쪽도 성실했다 &mdash; 오른쪽은, 이자가 이자를 낳았다'
+      +'<span class="small">세뱃돈 5만원 &middot; 일흔 해 &mdash; 단리 '+Math.round(t.L/10000)+'만원(6배) &middot; 복리 약 '+Math.round(t.R/10000)+'만원(114배)</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'눈덩이의 방',
+      story:'성실한 항아리는 여섯 배가 되었고, 기다린 항아리는 백 배가 되었다 — 시간이 돈을 굴린다. 손잡이로 이율을 바꿔 보세요. 72를 이율로 나누면, 두 배가 되는 해가 나옵니다.',
+      fine:'COMPOUND INTEREST · RULE OF 72' });
+    Museum.ticket.grant({ id:'s7_snow', title:'눈덩이의 방', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        c.strokeRect(w*0.2, h*0.5, w*0.2, h*0.34);          // 왼 항아리
+        c.strokeRect(w*0.58, h*0.5, w*0.2, h*0.34);         // 오른 항아리
+        c.strokeRect(w*0.63, h*0.12, w*0.1, h*0.38);        // 기둥
+        c.beginPath(); c.moveTo(w*0.2, h*0.72); c.lineTo(w*0.4, h*0.72); c.stroke();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 이율의 손잡이(72의 법칙을 몸으로) ────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.rate=parseInt(slider.value,10)||7;
+    Museum.sound.play('paper');
+  });
+  function chalk72(){
+    return '이율 '+S.rate+'% — 두 배까지 '+PURE.doubleYear(S.rate)+'해';
+  }
+
+  // ── 입력: 굴리다(크랭크 원운동) ──────────────────────────────────
+  var rolling=false, lastAng=0, acc=0;
+  function angAt(p){ return Math.atan2(p.y-CRANK.y, p.x-CRANK.x); }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.phase==='auto' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var dx=p.x-CRANK.x, dy=p.y-CRANK.y;
+    if(dx*dx+dy*dy>CRANK.r*CRANK.r*6) return;
+    if(S.phase==='boot'){ S.phase='roll'; }
+    rolling=true; lastAng=angAt(p);
+    canvas.classList.add('is-rolling');
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!rolling || Museum.isLocked() || S.phase==='auto') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var a=angAt(p), d=a-lastAng;
+    if(d>Math.PI) d-=TAU; if(d<-Math.PI) d+=TAU;
+    if(d>0){
+      S.crankA+=d; acc+=d;
+      if(acc>=TAU){                            // 한 바퀴 = 한 해
+        acc-=TAU;
+        if(S.phase==='roll'){ S.handYears++; }
+        yearPass();
+        Museum.sound.play('creak',{pitch:Math.min(0.3,S.years/200)});
+      }
+    }
+    lastAng=a;
+  });
+  window.addEventListener('pointerup', function(){
+    rolling=false; canvas.classList.remove('is-rolling');
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      for(var i=S.drops.length-1;i>=0;i--){
+        var d=S.drops[i];
+        d.y+=520*dt; d.life-=dt*1.4;
+        if(d.life<=0) S.drops.splice(i,1);
+      }
+      if(S.phase==='roll' && S.autoAt && S.time>=S.autoAt){
+        S.phase='auto'; Museum.sound.play('curtain');
+      }
+      if(S.phase==='auto' && !S.betrayed){
+        S.autoV=Math.min(7, S.autoV+dt*0.5);   // 시간은 손 없이도, 점점 빨리
+        S.crankA+=S.autoV*dt*2.2;
+        acc+=S.autoV*dt*2.2;
+        while(acc>=TAU && !S.betrayed){ acc-=TAU; yearPass(); }
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var t=totals();
+      // 선반
+      ctx.strokeStyle='rgba(95,88,74,.5)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(W*0.12, JAR_BASE); ctx.lineTo(W*0.88, JAR_BASE); ctx.stroke();
+      // 항아리 + 수위
+      [ {j:JAR_L, v:t.L}, {j:JAR_R, v:t.R} ].forEach(function(o){
+        var m=mult(o.v);
+        var lvl=Math.min(m,FULL_MULT)*PX_PER_MULT_JAR;
+        ctx.strokeStyle='rgba(201,169,97,.65)'; ctx.lineWidth=2;
+        ctx.strokeRect(o.j.x-JAR_W/2, JAR_BASE-JAR_H, JAR_W, JAR_H);
+        ctx.fillStyle='rgba(242,234,216,.34)';
+        ctx.fillRect(o.j.x-JAR_W/2+4, JAR_BASE-lvl, JAR_W-8, lvl-2);
+        if(m>FULL_MULT){                       // 항아리가 모자라다 — 기둥
+          var ph=(m-FULL_MULT)*PX_PER_MULT_PILLAR;
+          ctx.strokeStyle='rgba(201,169,97,.45)'; ctx.lineWidth=1.5;
+          ctx.strokeRect(o.j.x-JAR_W*0.22, JAR_BASE-JAR_H-ph, JAR_W*0.44, ph);
+          ctx.fillStyle='rgba(242,234,216,.42)';
+          ctx.fillRect(o.j.x-JAR_W*0.22+3, JAR_BASE-JAR_H-ph+3, JAR_W*0.44-6, ph-4);
+        }
+      });
+      // 이자 방울
+      S.drops.forEach(function(d){
+        var x=(d.jar==='L'?JAR_L.x:JAR_R.x);
+        ctx.fillStyle='rgba(242,234,216,'+(0.6*Math.max(0,d.life)).toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(x, d.y, d.r, 0, TAU); ctx.fill();
+      });
+      // 크랭크
+      ctx.strokeStyle='rgba(201,169,97,.8)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(CRANK.x, CRANK.y, CRANK.r, 0, TAU); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(CRANK.x, CRANK.y);
+      ctx.lineTo(CRANK.x+Math.cos(S.crankA)*CRANK.r, CRANK.y+Math.sin(S.crankA)*CRANK.r);
+      ctx.stroke();
+      ctx.fillStyle='rgba(201,169,97,.9)';
+      ctx.beginPath();
+      ctx.arc(CRANK.x+Math.cos(S.crankA)*CRANK.r, CRANK.y+Math.sin(S.crankA)*CRANK.r, 8, 0, TAU);
+      ctx.fill();
+      if(S.phase==='boot'){
+        ctx.strokeStyle='rgba(242,234,216,'+(0.10+0.2*breath).toFixed(2)+')';
+        ctx.lineWidth=6;
+        ctx.beginPath(); ctx.arc(CRANK.x, CRANK.y, CRANK.r+10, 0, TAU); ctx.stroke();
+      }
+      // 벽의 분필 빗금(햇수 — 다섯 해 묶음, 소품)
+      ctx.strokeStyle='rgba(168,158,136,.4)'; ctx.lineWidth=1.5;
+      var mx=W*0.14, my=200;
+      for(var y5=0; y5<S.marks; y5++){
+        var g=Math.floor(y5/5), k=y5%5;
+        var gx=mx+(g%9)*54, gy=my+Math.floor(g/9)*46;
+        ctx.beginPath();
+        if(k<4){ ctx.moveTo(gx+k*9, gy); ctx.lineTo(gx+k*9, gy+26); }
+        else   { ctx.moveTo(gx-4, gy+22); ctx.lineTo(gx+32, gy+6); }
+        ctx.stroke();
+      }
+      // 여운: 72의 법칙 분필
+      if(S.phase==='after'){
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
+        ctx.fillText(chalk72(), W*0.5, 150);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S7 = {
+    S:S, PURE:PURE,
+    yearPass:yearPass, totals:totals, chalk72:chalk72,
+    beginRoll:function(){ if(S.phase==='boot') S.phase='roll'; },
+    handYear:function(){ if(S.phase==='roll'){ S.handYears++; yearPass(); } },
+    pillarTopY:pillarTopY, END_YEAR:END_YEAR, HAND_YEARS:HAND_YEARS
+  };
+})();
+</script>
+</body>
+</html>
