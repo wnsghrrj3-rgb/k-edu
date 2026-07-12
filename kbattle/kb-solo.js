@@ -34,6 +34,7 @@
 
     var i = -1;
     var score = 0, correct = 0, hardCorrect = 0, streak = 0, bestStreak = 0;
+    var rows = [];   // answers 층 소스 (제9조) — 문제 본문·정답은 안 싣는다
 
     function head() {
       return '<div class="kb-solo-head">' +
@@ -57,6 +58,8 @@
         var gained = KBQ.score({ correct: ok, difficulty: q.difficulty, remainRatio: remain, streak: streak });
         score += gained;
         if (ok) { correct++; if (q.difficulty === 3) hardCorrect++; }
+        rows.push({ qid: q.id, concept: q.concept, difficulty: q.difficulty,
+                    type: q.type, correct: ok, ms: a.elapsedMs | 0 });
         feedback(ok, gained);
       });
     }
@@ -76,7 +79,7 @@
 
     function done() {
       var r = { correct: correct, hardCorrect: hardCorrect, bestStreak: bestStreak,
-                score: score, total: qs.length, kind: opts.kind || 'daily' };
+                score: score, total: qs.length, kind: opts.kind || 'daily', rows: rows };
       el.innerHTML =
         '<div class="kb-my-result kb-final">' +
           '<div class="kb-mark">🏁 오늘 도전 끝!</div>' +

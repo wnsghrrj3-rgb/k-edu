@@ -39,6 +39,10 @@
     border-bottom: 1px solid rgba(255,255,255,.07); font-weight: 700; font-size: 14px; }
   .kb-hist li:last-child { border-bottom: 0; }
   .kb-hist .kb-h-xp { color: var(--kb-yellow); font-weight: 900; }
+  .kb-cpt { margin-bottom: 14px; }
+  .kb-cpt:last-child { margin-bottom: 0; }
+  .kb-cpt-h { display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-bottom: 6px; }
+  .kb-cpt-n { color: var(--kb-dim); }
   .kb-sec { font-weight: 900; font-size: 15px; color: var(--kb-dim); margin: 4px 0 10px; }
   .kb-tiny { background: none; border: 0; color: var(--kb-dim); font-family: inherit;
     font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0; }
@@ -62,6 +66,7 @@
 <script src="kb-questions.js"></script>
 <script src="kb-xp.js"></script>
 <script src="kb-store.js"></script>
+<script src="kb-answers.js"></script>
 <script src="kb-bank.js"></script>
 <script src="kb-solo.js"></script>
 <script>
@@ -103,6 +108,8 @@
     var doneToday = p.daily && p.daily.date === dayKey;
     var stage = p.partner && p.partner.stage ? p.partner.stage : 0;
     var egg = stage === 0 ? '🥚' : r.emoji;        // 파트너 미부화 = 알 (제6조, 5번에서 채움)
+    var wrong = KBAnswers.wrongSet(10);            // 오답 재편성 — 아이가 만지는 건 무료(제1조 ①)
+    var concepts = KBAnswers.byConcept().slice(0, 4);   // 약한 개념 위로
 
     hub.innerHTML =
       '<div class="kb-card">' +
@@ -123,6 +130,8 @@
           '<span class="kb-m-emoji">🎯</span><span><span class="kb-m-t">오늘의 도전</span>' +
           '<span class="kb-m-s">' + (doneToday ? '오늘 ' + (p.daily.score || 0) + '점 · 내일 또 만나요' : '매일 10문제 · 친구랑 같은 문제') + '</span></span>' +
         '</button>' +
+        (wrong.length ? '<button id="wrong"><span class="kb-m-emoji">🔁</span><span><span class="kb-m-t">틀린 문제 다시</span>' +
+          '<span class="kb-m-s">' + wrong.length + '문제 · 한 번 더 만나면 내 것</span></span></button>' : '') +
         '<button id="room"><span class="kb-m-emoji">🏇</span><span><span class="kb-m-t">방 들어가기</span>' +
           '<span class="kb-m-s">선생님·친구가 만든 방코드로</span></span></button>' +
         '<button id="host"><span class="kb-m-emoji">🎪</span><span><span class="kb-m-t">방 만들기</span>' +
@@ -138,25 +147,46 @@
                    '<span><span style="opacity:.6">' + h.score + '점</span> <span class="kb-h-xp">+' + h.xp + ' XP</span></span></li>';
           }).join('') + '</ul></div>' : '') +
 
+      (concepts.length ?
+        '<div class="kb-card" style="margin-top:18px">' +
+          '<div class="kb-sec">내가 배운 것</div>' +
+          concepts.map(function (c) {
+            var pct = Math.round(c.rate * 100);
+            return '<div class="kb-cpt">' +
+              '<div class="kb-cpt-h"><span>' + esc(c.concept) + '</span>' +
+              '<span class="kb-cpt-n">' + c.ok + '/' + c.n + '</span></div>' +
+              '<div class="kb-xp-bar"><i style="width:' + pct + '%;background:' +
+                (pct >= 80 ? 'var(--kb-mint)' : pct >= 50 ? 'var(--kb-sky)' : 'var(--kb-coral)') + '"></i></div>' +
+            '</div>';
+          }).join('') +
+        '</div>' : '') +
+
       '<div style="text-align:center;margin-top:22px">' +
         '<button class="kb-tiny" id="who">다른 사람이에요</button></div>';
 
     document.getElementById('daily').onclick = daily;
+    var wb = document.getElementById('wrong');
+    if (wb) wb.onclick = function () { solo(wrong, 'wrongset'); };
     document.getElementById('room').onclick = function () { location.href = 'play.html'; };
     document.getElementById('host').onclick = function () { location.href = 'host.html'; };
     document.getElementById('who').onclick = switcher;
   }
 
   /* ---- 일일 도전 (트랙 C — 방 없음, 케이플 실시간 없음) ---- */
-  function daily() {
-    var day = KBStore.todayKey();
-    var qs = KBank.daily(day, 10);
-    if (!qs.length) { conn.textContent = '문제를 불러오지 못했어요'; return; }
+  function daily() { solo(KBank.daily(KBStore.todayKey(), 10), 'daily'); }
+
+  function solo(qs, kind) {
+    if (!qs || !qs.length) { conn.textContent = '문제를 불러오지 못했어요'; return; }
     hub.innerHTML = '<div id="solo"></div>';
     KBSolo.play(document.getElementById('solo'), {
-      questions: qs, kind: 'daily',
+      questions: qs, kind: kind,
       onDone: function (r) {
-        KBStore.record(r).then(function (out) {
+        KBStore.me().then(function (p) {
+          // answers 층(제9조) — 교사 통계·학부모 리포트·오답 재편성이 전부 여기서 파생
+          return KBAnswers.log(r.rows, { kind: kind, profileId: p && p.id, classCode: p && p.classCode });
+        }).then(function () {
+          return KBStore.record(r);
+        }).then(function (out) {
           if (!out) return;
           setTimeout(function () {
             if (out.rank.promoted) promo(out.rank.after, function () { home(out.profile); });
