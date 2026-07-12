@@ -135,6 +135,30 @@
   var B = window.KMuseumMonty;
   var canvas = document.getElementById('stage-canvas');
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '문 하나 뒤에만 상이 있습니다 — 빈 문이 열린 뒤, 바꾸는 게 나을까요?';
+  var BA = '처음의 문은 끝까지 — 셋 중 하나였다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'keep', label:'지킨 밤'}, {id:'switch', label:'바꾼 밤'}],
+    tick: function(b){
+      var k=0, sw=0, kn=0, sn=0;
+      try{
+        var L=S.log||[];
+        for(var i=0;i<L.length;i++){
+          var e=L[i];
+          var switched = (e.mode==='ghostSwitch') || (e.mode==='manual' && e.final!==e.pick);
+          if(switched){ sn++; if(e.win) sw++; } else { kn++; if(e.win) k++; }
+        }
+      }catch(e){}
+      var m=Math.max(1, kn, sn);
+      b.mark('keep',   Math.min(1, k/m));
+      b.mark('switch', Math.min(1, sw/m));
+      if(sw>k) b.lit('switch');
+      if((S.phase==='after'||S.phase==='afterglow'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var rnd = Museum.rng(Date.now() % 2147483647);
 
   var NIGHT0='#050508', NIGHT2='#0d0d16', NIGHT3='#151422';
@@ -465,6 +489,9 @@
     skipIntro:beginPlay, ghostRound:ghostRound,
     forcePrizes:function(arr){ S.forcePrizes=arr.slice(); }
   };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

@@ -89,6 +89,22 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '같은 세뱃돈, 같은 이자 — 일흔 해 뒤 두 항아리는, 얼마나 다를까요?';
+  var BA = '왼쪽도 성실했다 — 오른쪽은, 이자가 이자를 낳았다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'simple', label:'이자를 밖에 둔 항아리'}, {id:'comp', label:'이자를 제 몸에 붙인 항아리'}],
+    tick: function(b){
+      var y=Math.max(0, Math.round(S.years));
+      var top = PURE.compoundWon(70, S.rate) || 1;
+      b.mark('simple', Math.max(0, Math.min(1, PURE.simpleWon(y, S.rate)/top)));
+      b.mark('comp',   Math.max(0, Math.min(1, PURE.compoundWon(y, S.rate)/top)));
+      if(S.betrayed) b.lit('comp');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
   var TAU = Math.PI*2;
 
@@ -297,6 +313,9 @@
     handYear:function(){ if(S.phase==='roll'){ S.handYears++; yearPass(); } },
     pillarTopY:pillarTopY, END_YEAR:END_YEAR, HAND_YEARS:HAND_YEARS
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

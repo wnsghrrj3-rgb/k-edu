@@ -297,6 +297,162 @@ function buildTicketCard(o){
   return t;
 }
 
+/* ── §8.6 칠판 — 문제는 무대에 상주한다 ───────────────────────────
+   칠판 문법(M1 v2가 세우고 S6가 검증):
+   ① 문제 한 줄이 1막부터 여운까지 무대에 상주한다(증발 금지)
+   ② 노동의 결과가 문제 위에 쌓인다(노동과 문제가 한 시야)
+   ③ 기록은 수치가 아니라 크기로만(§8.5 원칙3 유지 — 이 부품은 수치를 그리지 않는다)
+   ④ 배반 전에 칠판이 이미 답을 말한다(막대 하나만 우뚝한 그림)
+   ⑤ 여운에서 칠판이 무대 한가운데로 내려와 답이 된다
+   전시는 mark()만 부르면 된다. 칠판을 손으로 그리지 않는다. */
+function board(o){
+  o = o || {};
+  var W=1600, H=900;
+  var BX = (o.x!=null? o.x : W*0.12),
+      BY = (o.y!=null? o.y : H*0.05),
+      BW = (o.w!=null? o.w : W*0.76),
+      BH = (o.h!=null? o.h : H*0.235);
+  var slots = (o.slots||[]).map(function(s){
+    return { id:s.id, label:s.label||'', v:0, lit:false };
+  });
+  var BASE = BY+BH-26, MAXH = BH-76;
+  var AFTER_DY = (o.afterDy!=null? o.afterDy : H*0.26);
+  var gauge = (o.gauge!=null? o.gauge : null);      // 기준 눈금(0..1) — 점선만, 라벨 없음
+  var half = Math.max(28, Math.min(30, BW/(slots.length*2.6||1)));   // 막대 반폭
+  var st = { question:String(o.question||''), answer:String(o.answer!=null? o.answer : (o.question||'')),
+             after:false, move:0, alpha:0, time:0, chalk:'', chalkT:0 };
+
+  function idx(id){ for(var i=0;i<slots.length;i++) if(slots[i].id===id) return i; return -1; }
+  function slotX(i){
+    if(slots.length===1) return BX+BW*0.5;
+    var pad = BW*0.09;
+    return BX + pad + (BW-2*pad) * (i/(slots.length-1));
+  }
+  function dy(){ return st.after ? AFTER_DY*st.move : 0; }
+
+  var api = {
+    x:BX, y:BY, w:BW, h:BH, base:BASE, maxh:MAXH,
+    // 노동의 결과를 크기로 적는다(0..1). 수치는 적지 않는다.
+    mark:function(id, v){
+      var i=idx(id); if(i<0) return api;
+      slots[i].v = Math.max(0, Math.min(1, v||0));
+      return api;
+    },
+    value:function(id){ var i=idx(id); return i<0?0:slots[i].v; },
+    // 배반 직전·여운에서 답이 되는 자리 하나가 우뚝해진다
+    lit:function(id){
+      for(var i=0;i<slots.length;i++) slots[i].lit = (slots[i].id===id);
+      return api;
+    },
+    // 막이 바뀌면 문제도 바뀐다(두 세계를 견주는 전시) — 답은 여전히 숨어 있다
+    ask:function(q, a){
+      if(q!=null) st.question=String(q);
+      if(a!=null) st.answer=String(a);
+      return api;
+    },
+    // 막대가 맞지 않는 전시(배가·누적형)는 분필로 쓴다 — 노동이 문제 아래 쌓인다
+    write:function(text){
+      var t = (text==null? '' : String(text));
+      if(t!==st.chalk){ st.chalk=t; st.chalkT=0; }
+      return api;
+    },
+    chalk:function(){ return st.chalk; },
+    // 여운 — 문제가 답이 되고, 칠판이 무대 한가운데로 내려온다
+    resolve:function(){ st.after = true; return api; },
+    // 물건이 칠판 제 자리로 날아갈 목적지(전시가 비행 궤적에 쓴다)
+    slotXY:function(id){
+      var i=idx(id); if(i<0) return [BX+BW*0.5, BASE+dy()];
+      return [ slotX(i), BASE-24+dy() ];
+    },
+    isAfter:function(){ return st.after; },
+    _state:st, _slots:slots,
+    scene:{
+      update:function(dt){
+        st.time += dt;
+        if(o.tick){ try{ o.tick(api, dt); }catch(e){} }               // 전시가 제 노동을 칠판에 적는다
+        st.chalkT = Math.min(1, st.chalkT + dt/0.35);                 // 분필이 그어지는 시간
+        if(st.alpha<1) st.alpha = Math.min(1, st.alpha + dt/1.2);     // 1막에 스스로 떠오른다
+        if(st.after && st.move<1) st.move = Math.min(1, st.move + dt/1.1);
+      },
+      draw:function(ctx){
+        var d=dy(), a=st.alpha;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(0, d);
+        ctx.fillStyle='rgba(12,14,18,.55)';
+        ctx.fillRect(BX, BY, BW, BH);
+        ctx.strokeStyle='rgba(201,169,97,.34)'; ctx.lineWidth=1.4;
+        ctx.strokeRect(BX, BY, BW, BH);
+
+        // 문제 — 끝까지 무대에 남는다. 여운에서만 답이 된다.
+        ctx.font='20px "Gowun Batang", serif';
+        ctx.fillStyle='rgba(242,234,216,.72)'; ctx.textAlign='center';
+        ctx.fillText(st.after ? st.answer : st.question, BX+BW*0.5, BY+34);
+
+        // 바닥선
+        ctx.strokeStyle='rgba(168,158,136,.34)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(BX+22, BASE); ctx.lineTo(BX+BW-22, BASE); ctx.stroke();
+
+        // 기준 눈금 — 소품일 뿐, 수치는 없다
+        if(gauge!=null){
+          var gy = BASE - MAXH*gauge;
+          ctx.strokeStyle='rgba(201,169,97,.30)'; ctx.lineWidth=1;
+          ctx.setLineDash([4,6]);
+          ctx.beginPath(); ctx.moveTo(BX+22, gy); ctx.lineTo(BX+BW-22, gy); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // 분필 줄 — 노동의 기록. 칠판이 감당 못 할 만큼 길어지면, 그 사실이 이미 답이다.
+        if(st.chalk){
+          var size=34, maxW=BW-64;
+          ctx.font=size+'px "Gowun Batang", serif';
+          var wid=ctx.measureText(st.chalk).width;
+          while(wid>maxW && size>15){
+            size-=2; ctx.font=size+'px "Gowun Batang", serif';
+            wid=ctx.measureText(st.chalk).width;
+          }
+          ctx.textAlign='center';
+          ctx.fillStyle='rgba(242,234,216,'+(0.55+0.35*st.chalkT).toFixed(2)+')';
+          ctx.fillText(st.chalk, BX+BW*0.5, BY + BH*(slots.length? 0.62 : 0.72));
+        }
+
+        for(var i=0;i<slots.length;i++){
+          var s=slots[i], cx=slotX(i), v=s.v;
+          // 아직 답하지 않은 자리
+          ctx.strokeStyle='rgba(168,158,136,'+(v>0?0.18:0.30).toFixed(2)+')';
+          ctx.setLineDash([3,5]); ctx.lineWidth=1;
+          ctx.beginPath();
+          ctx.moveTo(cx-half, BASE); ctx.lineTo(cx-half, BASE-MAXH);
+          ctx.moveTo(cx+half, BASE); ctx.lineTo(cx+half, BASE-MAXH);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // 적힌 것 — 크기가 전부다
+          if(v>0){
+            var hgt = MAXH*v;
+            ctx.fillStyle='rgba(242,234,216,'+(s.lit?0.95:0.80)+')';
+            ctx.fillRect(cx-half, BASE-hgt, half*2, hgt);
+            ctx.strokeStyle = s.lit ? 'rgba(201,169,97,.95)' : 'rgba(242,234,216,.95)';
+            ctx.lineWidth   = s.lit ? 2.2 : 1.2;
+            ctx.strokeRect(cx-half, BASE-hgt, half*2, hgt);
+            if(hgt<3){                                  // 아무것도 남지 않은 자리 — 분필 한 획
+              ctx.strokeStyle='rgba(242,234,216,.55)'; ctx.lineWidth=2;
+              ctx.beginPath(); ctx.moveTo(cx-half, BASE); ctx.lineTo(cx+half, BASE); ctx.stroke();
+            }
+          }
+          if(s.label){
+            ctx.font='13px "Gowun Dodum", sans-serif';
+            ctx.fillStyle='rgba(168,158,136,'+(v>0?0.72:0.42).toFixed(2)+')';
+            ctx.textAlign='center';
+            ctx.fillText(s.label, cx, BASE+20);
+          }
+        }
+        ctx.restore();
+      }
+    }
+  };
+  return api;
+}
+
 /* ── §5 stage — 1600×900 캔버스 헬퍼 ─────────────────────────────── */
 function stage(canvas){
   var LW=1600, LH=900, DPR=Math.min(window.devicePixelRatio||1, 1.5);
@@ -369,6 +525,7 @@ window.Museum = {
   curtainIn:curtainIn,
   rng:rng,
   stage:stage,
+  board:board,                         // §8.6 칠판 — 문제는 무대에 상주한다
   buildTicketCard:buildTicketCard,     // 티켓북 UI가 재사용
   _locked:false,
   isLocked:function(){ return _inputLocked; }

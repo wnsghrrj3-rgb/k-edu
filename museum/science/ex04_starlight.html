@@ -110,6 +110,16 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '지금 막 도착한 저 별빛 — 언제 출발했을까요?';
+  var BA = '밤하늘은 지금이 아니다 — 밤하늘은, 도착한 옛날들이다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    tick: function(b){
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
   var sky = PURE.make(2026);
   var NS = sky.STARS.length, DENEB = NS-1;
@@ -334,6 +344,9 @@
     fastForward:function(){ S.rewT+=S.rewDur; },
     holdSkip:function(){ S.arrivedHold+=5; }
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

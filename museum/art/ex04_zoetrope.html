@@ -83,6 +83,23 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '열두 장의 그림은 전부 멈춰 있습니다 — 돌리면, 어떻게 될까요?';
+  var BA = '그림은 한 장도 움직이지 않았다 — 당신의 눈이, 이어 붙였다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'fps', label:'눈이 이어 붙이는 빠르기'}],
+    gauge: 0.5,
+    tick: function(b){
+      // 눈금은 소품일 뿐 — 수치는 없다. 다만 손이 어디를 향해야 하는지는 알 수 있다.
+      var f=0;
+      try { f = PURE.fpsOf(S.omega, S.F); } catch(e){ f=0; }
+      b.mark('fps', Math.max(0, Math.min(1, f/24)));
+      if(S.betrayed) b.lit('fps');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
   var TAU = PURE.TAU;
 
@@ -342,6 +359,9 @@
     addStroke:function(pts){ if(S.edit>=0) strokes[S.edit].push({pts:pts}); },
     build:build, ALIVE_HOLD:ALIVE_HOLD
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

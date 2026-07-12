@@ -95,6 +95,21 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = 'A 칸과 B 칸 — 같은 색일까요, 다른 색일까요?';
+  var BA = '다르게 본 것은 판이 아니라 — 그림자를 빼고 계산한, 당신의 눈이었다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'A', label:'A'}, {id:'B', label:'B'}],
+    tick: function(b){
+      // 칠판은 처음부터 진실을 적고 있다 — 두 막대는 정확히 같은 높이다.
+      // 그런데도 눈은 두 칸을 다르게 본다. 그것이 이 전시의 낙차다.
+      b.mark('A', board.lum(A.i, A.j));
+      b.mark('B', board.lum(B.i, B.j));
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
   var board = PURE.make();
   var N = board.N, A = board.A, B = board.B;
@@ -322,6 +337,9 @@
     cylAlpha:function(){ return cylA; },
     AC:AC, BC:BC
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

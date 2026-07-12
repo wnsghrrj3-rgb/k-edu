@@ -68,6 +68,23 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '첫 칸에 쌀 한 톨 — 칸마다 두 배입니다. 예순네 칸이면, 얼마나 될까요?';
+  var BA = '왕은 소원을 들어줄 수 없었다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    tick: function(b){
+      // 이 칸의 낟알 수가 칠판에 적힌다 — 곧 칠판이 감당하지 못한다. 그것이 이미 답이다.
+      var c=Math.max(0, S.col);
+      if(c<=0){ b.write(''); }
+      else {
+        var g = PURE.grains(c).toString();
+        b.write(g.length>28 ? (g.slice(0,4)+'…'+g.slice(-3)+'  ('+g.length+'자리)') : g);
+      }
+      if((S.phase==='after'||S.phase==='afterglow') && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;             // 1600 × 900 논리좌표
   var GROUND = H*0.865;                      // 지면 화면 y(카메라 후퇴와 무관한 시각 기준선)
 
@@ -384,6 +401,11 @@
 
   // 테스트/외부 훅
   window.__M7={ S:S, advance:advance, start:start, triggerBetray:triggerBetray, moundOf:moundOf, PURE:PURE };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
+
+  stage.start();                   // ★렌더 루프 기동 — 이 호출이 없어 무대가 정지해 있었다
 })();
 </script>
 </body>

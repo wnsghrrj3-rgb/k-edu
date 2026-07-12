@@ -104,6 +104,20 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '나선으로 감은 낙서 — 소수에만 불이 켜집니다. 소수는 아무 자리에나 앉을까요?';
+  var BA = '낙서에 줄무늬가 나타났다 — 왜인지는, 아직 아무도 모른다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    tick: function(b){
+      // 켜진 소수들이 칠판에 분필로 흘러간다 — 무엇이 켜지는지 관람자가 알아야 한다
+      var n=Math.floor(S.n), out=[], c=0;
+      for(var i=n;i>=2 && c<9;i--){ if(PURE.isPrime(i)){ out.unshift(i); c++; } }
+      b.write(out.length? (n>60?'… ':'') + out.join('  ') : '');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
 
   // ── 색(순백 금지·악센트=분필 상아 1색) ───────────────────────────
@@ -353,6 +367,9 @@
     beginSweep:beginSweep, triggerBetray:triggerBetray,
     N_MANUAL:N_MANUAL, N_MAX:N_MAX
   };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

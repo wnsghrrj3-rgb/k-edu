@@ -71,6 +71,20 @@
 var PURE = window.KMuseumNines;
 var canvas = document.getElementById('stage-canvas');
 var stage = Museum.stage(canvas);
+
+// ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+var BQ = '9를 아무리 붙여도 — 1에 닿을 수 있을까요?';
+var BA = '9가 무한히 계속된다면 — 간극이 있을 자리가 없다';
+var kboard = Museum.board({
+  question: BQ, answer: BA,
+  tick: function(b){
+    // 관람자가 만든 수가 그대로 칠판에 자란다
+    var n=Math.max(1, Math.floor(S.n));
+    var nines = new Array(Math.min(n,24)+1).join('9');
+    b.write('0.' + nines + (n>24 ? '…' : '') + (S.betrayed||S.phase==='after' ? ' = 1' : ''));
+    if((S.phase==='after'||S.phase==='afterglow') && !b.isAfter()) b.resolve();
+  }
+});
 var W = stage.W, H = stage.H;
 
 /* ── 팔레트(무대미술 표준 토큰 원문) ─────────────────────────── */
@@ -352,6 +366,9 @@ stage.start();
 // 테스트/외부 훅
 window.__M6={ S:S, start:start, setPhase:setPhase, advance:advance, onForward:onForward,
               startCascade:startCascade, partialU:partialU, PURE:PURE };
+
+stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+window.__BOARD = kboard;
 })();
 </script>
 </body>

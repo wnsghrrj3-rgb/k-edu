@@ -68,6 +68,20 @@
 var PURE = window.KMuseumHotel;
 var canvas = document.getElementById('stage-canvas');
 var stage = Museum.stage(canvas);
+
+// ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+var BQ = '방은 전부 찼습니다 — 새 손님이 왔습니다. 빈방이 있을까요?';
+var BA = '아무도 나가지 않았다 — 그런데 방이 생겼다';
+var kboard = Museum.board({
+  question: BQ, answer: BA,
+  slots: [{id:'guest', label:'손님'}, {id:'empty', label:'빈방'}],
+  tick: function(b){
+    b.mark('guest', 1);
+    b.mark('empty', S.vacatedK>0 ? Math.min(1, S.vacatedK/1) : 0);
+    if(S.vacatedK>0) b.lit('empty');
+    if((S.phase==='after'||S.phase==='afterglow') && !b.isAfter()) b.resolve();
+  }
+});
 var W = stage.W, H = stage.H;
 
 /* ── 팔레트(무대미술 표준 토큰 원문) ─────────────────────────── */
@@ -480,6 +494,9 @@ stage.start();
 // 테스트/외부 훅
 window.__M5={ S:S, start:start, setPhase:setPhase, doShift:doShift, bellCall:bellCall,
               knock:knock, zDoor:zDoor, lampPos:lampPos, PURE:PURE };
+
+stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+window.__BOARD = kboard;
 })();
 </script>
 </body>

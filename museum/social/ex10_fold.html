@@ -147,6 +147,21 @@
   var PURE = window.KMuseumFold;
   var canvas = document.getElementById('stage-canvas');
   var stage  = Museum.stage(canvas, 1600, 900);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '서울에서 부산까지 — 조선의 걸음으로, 며칠일까요?';
+  var BA = '국토는 한 치도 줄지 않았다 — 접힌 것은, 시간이다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'trip', label:'서울에서 부산까지 걸리는 시간'}],
+    tick: function(b){
+      var e=Math.max(0, Math.min(PURE.N-1, S.era|0));
+      var top = PURE.minutesOf(0) || 1;
+      b.mark('trip', Math.max(0, Math.min(1, PURE.minutesOf(e)/top)));
+      if(S.betrayed) b.lit('trip');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W=1600, H=900;
 
   // ── 무대 좌표계 ──────────────────────────────────────────────────
@@ -460,6 +475,9 @@
     setLatByEra:setLatByEra, chalkOf:chalkOf, hitTraveler:hitTraveler, enterAfter:enterAfter,
     DAY_PX:DAY_PX, DAYS:DAYS, SEOUL_XY:SEOUL_XY
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

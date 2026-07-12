@@ -206,6 +206,28 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '그린란드와 콩고민주공화국 — 실제로는, 어느 쪽이 클까요?';
+  var BA = '그린란드는 한 뼘도 줄지 않았다 — 지도가, 부풀렸을 뿐이다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'greenland', label:'그린란드'}, {id:'congo', label:'콩고민주공화국'}],
+    tick: function(b){
+      // 지도 위에서 두 나라가 차지하는 크기 — 끌어내리면 칠판에서 줄어든다.
+      // 이 전시가 세 번 죽은 이유는 무엇을 견주는지 관람자가 몰랐기 때문이다.
+      var g=0, c=0;
+      try {
+        g = PURE.planarArea(PURE.landAt('greenland', S.lat['greenland']));
+        c = PURE.planarArea(PURE.landAt('congo',     S.lat['congo']));
+      } catch(e){}
+      var top = Math.max(g, c, 1e-9);
+      b.mark('greenland', Math.min(1, g/top));
+      b.mark('congo',     Math.min(1, c/top));
+      if(S.betrayed || S.phase==='after') b.lit('congo');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
 
   // ── 무대 = 지도 ──────────────────────────────────────────────────
@@ -510,6 +532,9 @@
     setLatBySlider:setLatBySlider, homeLimit:homeLimit,
     AUTO_IDS:AUTO_IDS, HAND_NEEDED:HAND_NEEDED
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

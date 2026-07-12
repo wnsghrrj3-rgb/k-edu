@@ -88,6 +88,22 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '길이가 조금씩 다른 진자 열다섯 — 흩어지고 나면, 다시 모일까요?';
+  var BA = '부서진 게 아니었다 — 모두 제 박자로, 돌아오고 있었다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'order', label:'한 줄로 선 정도'}],
+    tick: function(b){
+      // 진자들이 얼마나 한 줄인지 — 흩어지면 무너지고, 돌아오면 다시 찬다(쿠라모토 질서도)
+      var r=0;
+      try { r = S.wave ? S.wave.order(S.t) : 0; } catch(e){ r=0; }
+      b.mark('order', Math.max(0, Math.min(1, r)));
+      if(S.betrayed) b.lit('order');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;
 
   // ── 무대 상수 ────────────────────────────────────────────────────
@@ -295,6 +311,9 @@
     },
     build:build, GAMMA:GAMMA, TH_MAX:TH_MAX
   };
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

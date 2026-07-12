@@ -96,6 +96,26 @@
   var canvas = document.getElementById('stage-canvas');
   if(!canvas || !window.Museum){ return; }
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '위 두 수를 더해 쌓은 벽 — 홀수만 남기면, 무엇이 될까요?';
+  var BA = '숫자를 쌓았을 뿐인데 — 그림이 숨어 있었다';
+  var BOARD_ROWS = 8;
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: (function(){ var s=[]; for(var i=0;i<BOARD_ROWS;i++) s.push({id:'r'+i, label:''}); return s; })(),
+    tick: function(b){
+      // 줄마다 홀수가 몇 개인지 — 관람자가 칠한 만큼만 적힌다(1,2,2,4,2,4,4,8: 규칙이 크기로 먼저 온다)
+      for(var r=0;r<BOARD_ROWS;r++){
+        var got=0;
+        for(var k=0;k<=r;k++) if(S.painted[r+'_'+k]) got++;
+        var odd = PURE.oddCount ? PURE.oddCount(r) : 0;
+        if(S.phase==='surge'||S.phase==='hold'||S.phase==='pull'||S.phase==='betrayed'||S.phase==='after') got=odd;
+        b.mark('r'+r, odd? Math.min(1, got/8) : 0);
+      }
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var W = stage.W, H = stage.H;                       // 1600 × 900 논리좌표
 
   // ── 색(순백 금지·악센트=분필 상아 1색, 놋쇠는 크롬만) ────────────
@@ -414,6 +434,9 @@
     beginPull:beginPull, triggerBetray:triggerBetray,
     ROWS_PAUSE:ROWS_PAUSE, ROWS_MAX:ROWS_MAX, PAINT_NEED:PAINT_NEED
   };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

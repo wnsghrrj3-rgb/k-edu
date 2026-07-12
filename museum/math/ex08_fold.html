@@ -96,6 +96,23 @@
   var B = window.KMuseumFold;
   var canvas = document.getElementById('stage-canvas');
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '종이 한 장 — 접을 때마다 두 배입니다. 달까지, 몇 번이면 될까요?';
+  var BA = '마흔두 번 — 0.1mm의 종이가 달을 지났다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    tick: function(b){
+      var n=Math.max(0, S.n);
+      if(n<=0){ b.write(''); }
+      else {
+        var k=Math.min(n,10), s='0.1mm';
+        for(var i=0;i<k;i++) s += ' ×2';
+        b.write(s + (n>10 ? ' … ×2 (' + n + '번)' : ''));
+      }
+      if((S.phase==='after'||S.phase==='afterglow') && !b.isAfter()) b.resolve();
+    }
+  });
   var rnd = Museum.rng(Date.now() % 2147483647);
 
   var NIGHT0='#050508', NIGHT2='#0d0d16', NIGHT3='#151422';
@@ -405,6 +422,9 @@
     attemptFold:attemptFold, machineFold:machineFold, beginMachine:beginMachine,
     requiredDrag:requiredDrag, thickStr:thickStr, passedRef:passedRef, REFS:REFS
   };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>

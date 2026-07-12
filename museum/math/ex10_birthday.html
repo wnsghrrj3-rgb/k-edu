@@ -124,6 +124,20 @@
   var B = window.KMuseumBirthday;
   var canvas = document.getElementById('stage-canvas');
   var stage = Museum.stage(canvas);
+
+  // ── §8.6 칠판 — 문제는 무대에 상주한다(칠판 문법) ───────────────
+  var BQ = '촛대는 삼백예순다섯 — 몇 사람이면, 같은 날에 두 불이 켜질까요?';
+  var BA = '벽은 넓었고 — 우연은, 좁았다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{id:'lit', label:'불이 켜진 촛대'}, {id:'dark', label:'빈 촛대'}],
+    tick: function(b){
+      var lit = S.litCount||0;
+      b.mark('lit',  Math.min(1, lit/365));
+      b.mark('dark', Math.min(1, (365-lit)/365));
+      if((S.phase==='after'||S.phase==='afterglow'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
   var rnd = Museum.rng(Date.now() % 2147483647);
 
   /* ── 팔레트(토큰 원문과 동일 계열 — 순백 금지) ─────────────────── */
@@ -435,6 +449,9 @@
     skipIntro:beginParty, dayToCell:dayToCell,
     forceDays:function(arr){ S.forceQueue=arr.slice(); }
   };
+
+  stage.add(kboard.scene);          // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
 })();
 </script>
 </body>
