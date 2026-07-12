@@ -66,8 +66,19 @@ if(!M){ console.error('무대 훅 없음 — 부팅 실패'); process.exit(1); }
 var S=M.S, P=M.PURE;
 
 ok('부팅: 방이 섰다', S.phase==='boot');
-ok('전제 한 줄: 당신의 방입니다', /당신의 방입니다/.test(win.document.getElementById('premise').textContent));
 ok('물건은 아직 아무것도 걷히지 않았다', P.ITEMS.every(function(it){ return S.taken[it.id]===0; }));
+
+// ── ★칠판 — 문제가 무대에 있는가 (M1 교훈: 전제가 증발하면 전시가 죽는다) ──
+ok('★칠판에 아홉 자리가 있다 (전등 제외)',
+   M.BOARD.length===9 && M.BOARD.every(function(it){ return it.id!=='lamp'; }));
+ok('★칠판 자리는 물건마다 하나씩', P.ITEMS.filter(function(it){ return it.id!=='lamp'; })
+   .every(function(it){ return M.slotOf(it.id)>=0; }));
+ok('★칠판은 아직 비어 있다 (아무도 답하지 않았다)',
+   M.BOARD.every(function(it){ return S.written[it.id]===0; }));
+ok('★칠판 자리가 겹치지 않는다', (function(){
+   for(var i=1;i<M.BOARD.length;i++){ if(!(M.slotX(i) > M.slotX(i-1)+40)) return false; }
+   return true;
+})());
 ok('불은 켜져 있다', S.taken.lamp===0);
 ok('초대는 밥 한 공기', M.nextHand()==='rice');
 
@@ -95,6 +106,8 @@ ok('★집으면 물건이 들린다', S.lifting==='rice' && S.phase==='hand');
 tick(2.0);
 ok('★밥은 거의 그대로 남는다 (예측 심기 — "우리 자급 잘하네")',
    M.isDone('rice') && Math.abs(P.remainOf('rice')-0.96)<1e-9);
+ok('★집은 물건은 칠판에 적힌다 (노동이 문제 위에 쌓인다)', S.written.rice===1);
+ok('★칠판의 밥은 거의 꽉 찬다', P.remainOf('rice')*S.written.rice > 0.9);
 ok('밥을 집어도 배반은 오지 않는다', !S.betrayed);
 
 var tq=M.xyOf(P.byId('tofu'));
@@ -109,6 +122,10 @@ ok('★라면은 밑동만 남는다 (밀 1.5% — 첫 균열)',
 var cq=M.xyOf(P.byId('coffee'));
 pdown(cq[0], cq[1]); tick(2.2);
 ok('★커피는 흔적도 없다 (0%)', M.isDone('coffee') && P.remainOf('coffee')===0);
+ok('★칠판의 커피 자리는 텅 빈 채로 남는다', S.written.coffee===1 && P.remainOf('coffee')*S.written.coffee===0);
+ok('★칠판이 이미 말하고 있다: 밥만 높고 나머지는 바닥',
+   P.remainOf('rice') > 0.9 &&
+   ['tofu','ramen','coffee'].every(function(id){ return P.remainOf(id) < 0.4; }));
 
 // ── 3막: 방이 스스로 ────────────────────────────────────────────
 ok('★손이 넷을 집으면 방이 스스로 걷어낸다', S.phase==='machine');
@@ -134,8 +151,12 @@ setTimeout(function(){
   ok('★betray 후 여운 진입(700ms 정지 후 해제)', S.phase==='after' && !win.Museum.isLocked());
 
   var f=win.document.getElementById('formula');
-  ok('★여운: 남은 것은 밥 한 공기', /남은 것은 밥 한 공기/.test(f.textContent));
-  ok('★여운: 그 밥을 지을 불은 남지 않았다', /지을 불은, 남지 않았다/.test(f.textContent));
+  ok('★여운: 아홉 중 하나 — 우리 것은 밥 한 공기뿐이었다',
+     /아홉 중 하나/.test(f.textContent) && /밥 한 공기뿐이었다/.test(f.textContent));
+  ok('★칠판이 답을 다 채웠다 — 아홉 자리 전부 기록됨',
+     M.BOARD.every(function(it){ return S.written[it.id]>=1; }));
+  ok('★칠판의 답: 절반을 넘긴 자리는 밥 하나뿐',
+     M.BOARD.filter(function(it){ return P.remainOf(it.id) >= 0.5; }).length===1);
   ok('★여운 수치 해금: 쌀 96.0 · 밀 1.5 · 곡물자급률 21.6',
      /96\.0/.test(f.textContent) && /1\.5/.test(f.textContent) && /21\.6/.test(f.textContent));
   ok('★여운: 에너지 수입의존도 94%', /94/.test(f.textContent));
@@ -146,7 +167,7 @@ setTimeout(function(){
   // ── 물건 손잡이 ────────────────────────────────────────────────
   M.setPick(0);
   ok('★손잡이: 밥 — 쌀 96.0% · 거의 그대로 남는다',
-     /밥 한 공기/.test(M.chalkOf(0)) && /96\.0%/.test(M.chalkOf(0)) && /거의 그대로/.test(M.chalkOf(0)));
+     /밥/.test(M.chalkOf(0)) && /96\.0%/.test(M.chalkOf(0)) && /거의 그대로/.test(M.chalkOf(0)));
   M.setPick(8);
   ok('★손잡이: 커피 — 0% · 흔적도 없다',
      /커피/.test(M.chalkOf(8)) && /0\.0%/.test(M.chalkOf(8)) && /흔적도 없다/.test(M.chalkOf(8)));
