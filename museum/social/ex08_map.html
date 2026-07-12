@@ -225,7 +225,7 @@
   var S = {
     phase:'boot',            // boot→drag→settled→auto→betrayed→after
     lat:{}, moved:{}, handMoves:0,
-    invited:false, grabbed:null, grabOff:0, hover:null,
+    invited:false, grabbed:null, grabOff:0, hover:null, wallAt:-9, wallId:null,
     settleAt:0, autoAt:0, autoIdx:0, autoStep:0.9, autoFrom:0, autoTo:0, autoT:0,
     picked:'greenland', betrayed:false, time:0
   };
@@ -240,13 +240,23 @@
     return shapeCache[key];
   }
   function homeLimit(id){ return PURE.DATA[id].lat0; }
-  var BAND=25;                                                       // 2·3막 손의 밴드(±25° — sec²25=1.22배, 눈에 띄지 않는다)
+  // 손의 밴드 — 위도가 아니라 **화면 배율**로 잡는다.
+  // 홈 대비 1.25배 이내면 눈에 띄지 않는다(예측 심기 유지) — 그 한도까지 남북 양방향을 연다.
+  // 위도로만 잡으면 호주는 남쪽 0px, 브라질은 32px에서 벽에 박는다(조작이 죽는다).
+  var MAXGAIN=1.25, _band={};
+  function bandOf(id){
+    if(_band[id]!=null) return _band[id];
+    var a=Math.abs(homeLimit(id))*Math.PI/180;
+    var g0=1/(Math.cos(a)*Math.cos(a));                             // 홈의 화면 배율 sec²
+    var L=Math.acos(1/Math.sqrt(g0*MAXGAIN))*180/Math.PI;
+    _band[id]=Math.min(45, L);
+    return _band[id];
+  }
   function clampLat(id, lat){
-    var h=homeLimit(id);
-    if(S.phase==='after') return PURE.clampSafe(id, lat);            // 여운 = 위도 해금(극 안전 구간까지)
-    if(id==='greenland') return Math.max(0, Math.min(h, lat));       // 그린란드 = 제 위도와 적도 사이(배반의 축)
-    var lo=Math.min(h, -BAND), hi=Math.max(h, BAND);                 // 적도권 = 남북 양방향 — 어디로 끌어도 그대로다(예측 심기)
-    return Math.max(lo, Math.min(hi, PURE.clampSafe(id, lat)));
+    if(S.phase==='after') return PURE.clampSafe(id, lat);           // 여운 = 위도 해금(극 안전 구간까지)
+    if(id==='greenland') return Math.max(0, Math.min(homeLimit(id), lat));  // 그린란드 = 제 위도와 적도 사이(배반의 축)
+    var L=bandOf(id);
+    return Math.max(-L, Math.min(L, PURE.clampSafe(id, lat)));
   }
 
   // ── 배반 ─────────────────────────────────────────────────────────
@@ -338,7 +348,12 @@
   function dragTo(lat){
     if(!S.grabbed) return;
     var id=S.grabbed;
-    S.lat[id]=clampLat(id, lat);
+    var c=clampLat(id, lat);
+    if(Math.abs(lat-c)>0.8 && S.time-S.wallAt>0.40){        // 벽에 밀어붙인다 — 지도가 거부한다(고장이 아니라 벽이다)
+      S.wallAt=S.time; S.wallId=id;
+      Museum.sound.play('creak',{pitch:0.55});
+    }
+    S.lat[id]=c;
     if(!S.moved[id] && Math.abs(S.lat[id]-homeLimit(id))>4){
       S.moved[id]=true;
       if(AUTO_IDS.indexOf(id)<0 && id!=='greenland'){ S.handMoves++; }
@@ -437,8 +452,11 @@
         ctx.strokeStyle='rgba(95,88,74,.32)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(MAPX, sy(la)); ctx.lineTo(MAPX+MAPW, sy(la)); ctx.stroke();
       });
-      ctx.strokeStyle='rgba(201,169,97,.34)'; ctx.lineWidth=1.4;
+      var lit = (S.grabbed||S.hover) && S.phase!=='after';   // 나라를 잡으면 적도가 살아난다
+      ctx.strokeStyle = lit ? 'rgba(201,169,97,'+(0.52+0.26*breath).toFixed(2)+')' : 'rgba(201,169,97,.34)';
+      ctx.lineWidth = lit ? 2.4 : 1.4;
       ctx.beginPath(); ctx.moveTo(MAPX, sy(0)); ctx.lineTo(MAPX+MAPW, sy(0)); ctx.stroke();
+      ctx.lineWidth=1;
 
       // 배경 육지
       drawRings(ctx, PURE.bgRings(), 'rgba(242,234,216,.07)', 'rgba(168,158,136,.20)', 1);
@@ -453,9 +471,12 @@
       PURE.ORDER.forEach(function(id){
         var away=Math.abs(S.lat[id]-homeLimit(id))>0.5;
         var held=(S.grabbed===id), over=(S.hover===id && !S.grabbed);
+        var wall=(S.wallId===id) ? Math.max(0, 1-(S.time-S.wallAt)/0.30) : 0;   // 벽의 잔향
         var a = held ? .46 : over ? .40 : away ? .36 : .30;
-        var st = held ? 'rgba(201,169,97,.95)' : over ? 'rgba(201,169,97,.80)' : 'rgba(201,169,97,.58)';
-        drawRings(ctx, shapeOf(id), 'rgba(242,234,216,'+a.toFixed(2)+')', st, (held||over)?1.9:1.4);
+        var st = wall>0 ? 'rgba(201,169,97,'+(0.95).toFixed(2)+')'
+               : held ? 'rgba(201,169,97,.95)' : over ? 'rgba(201,169,97,.80)' : 'rgba(201,169,97,.58)';
+        drawRings(ctx, shapeOf(id), 'rgba(242,234,216,'+(a+0.10*wall).toFixed(2)+')', st,
+                  (held||over)?1.9+1.6*wall:1.4);
       });
 
       // 초대의 숨결

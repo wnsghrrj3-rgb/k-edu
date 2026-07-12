@@ -77,27 +77,6 @@ try{
        return M.hit({x:M.sx(c[0]), y:M.sy(c[1])})!==id;
      }));
 
-  // ── ★2막 손의 촉감 — 잡은 자리가 손에 붙는다(오프셋) ─────────────
-  // 회귀 방어: 오프셋 없이 커서 위도를 나라 위도에 대입하면
-  //   브라질 남반부를 잡을 때 클램프에 걸려 제자리(무반응), 북반부를 잡으면 순간이동한다.
-  var bHome=M.homeLimit('brazil');                       // -14.3
-  M.grab('brazil', -30);                                 // 남단을 잡았다(중심보다 한참 남쪽)
-  ok('★잡는 순간 나라가 튀지 않는다', Math.abs(S.lat.brazil-bHome)<1e-9);
-  M.dragTo(-30 + S.grabOff); tick(1);                    // 손이 그 자리 그대로
-  ok('★손이 멈추면 나라도 멈춘다', Math.abs(S.lat.brazil-bHome)<1e-9);
-  M.dragTo(-20 + S.grabOff); tick(1);                    // 손을 정확히 10도 북쪽으로
-  ok('★손이 간 만큼만 나라가 간다 (오프셋 보존)', Math.abs(S.lat.brazil-(bHome+10))<1e-6);
-  M.release(); tick(1);
-
-  // ── ★2막 손의 밴드 — 끌리는 폭이 실제로 있다 ────────────────────
-  // 회귀 방어: "제 위도↔적도"로만 묶으면 콩고는 4도(수십 px)뿐이라 조작이 성립하지 않는다.
-  M.grab('congo', 0);
-  M.dragTo(60); tick(1);  var cHi=S.lat.congo;
-  M.dragTo(-60); tick(1); var cLo=S.lat.congo;
-  M.release(); tick(1);
-  ok('★적도권 나라는 남북 양방향으로 끌린다 (콩고 스팬 '+(cHi-cLo).toFixed(0)+'° ≥ 40°)', (cHi-cLo)>=40);
-  ok('★밴드 안에서만 — 배반은 새어나가지 않는다', cHi<=25.001 && cLo>=-25.001);
-
   // ── ★잡을 수 있는 것은 손이 먼저 안다(hover) ────────────────────
   var canvasEl=win.document.getElementById('stage-canvas');
   function toClient(lx,ly){
@@ -115,6 +94,60 @@ try{
   ok('★빈 바다에서는 손이 닫힌다', S.hover===null && !canvasEl.classList.contains('is-over'));
   pmove(M.sx(-42), M.sy(72));                            // 그린란드 — 초대 전
   ok('★초대 전 그린란드는 손에 안 잡힌다', S.hover===null);
+
+  // ── ★2막 손의 촉감 — 잡은 자리가 손에 붙는다(오프셋) ─────────────
+  // 회귀 방어: 오프셋 없이 커서 위도를 나라 위도에 대입하면
+  //   브라질 남반부를 잡을 때 클램프에 걸려 제자리(무반응), 북반부를 잡으면 순간이동한다.
+  var bHome=M.homeLimit('brazil');                       // -14.3
+  M.grab('brazil', -30);                                 // 남단을 잡았다(중심보다 한참 남쪽)
+  ok('★잡는 순간 나라가 튀지 않는다', Math.abs(S.lat.brazil-bHome)<1e-9);
+  M.dragTo(-30 + S.grabOff); tick(1);                    // 손이 그 자리 그대로
+  ok('★손이 멈추면 나라도 멈춘다', Math.abs(S.lat.brazil-bHome)<1e-9);
+  M.dragTo(-20 + S.grabOff); tick(1);                    // 손을 정확히 10도 북쪽으로
+  ok('★손이 간 만큼만 나라가 간다 (오프셋 보존)', Math.abs(S.lat.brazil-(bHome+10))<1e-6);
+  M.release(); tick(1);
+
+  // ── ★2막 손의 밴드 — 끌리는 폭이 실제로 있다 ────────────────────
+  // 회귀 방어: "제 위도↔적도"로만 묶으면 콩고는 4도(수십 px)뿐이라 조작이 성립하지 않는다.
+  // 손이 실제로 끌 수 있는 화면 거리 — 위도가 아니라 px가 진실이다.
+  // 회귀 방어: 밴드를 위도로만 잡으면 호주는 남쪽 0px, 브라질은 32px에서 벽에 박아 조작이 죽는다.
+  var PXR=1200/(2*Math.PI), SC=1366/1600;
+  function screenPx(id, a, b){ return Math.abs(M.PURE.mercY(b)-M.PURE.mercY(a))*PXR*SC; }
+  var reach={};
+  ['congo','brazil','australia','india'].forEach(function(id){
+    var home=M.homeLimit(id);
+    M.grab(id, home);
+    M.dragTo(80);  tick(1); var hi=S.lat[id];
+    M.dragTo(-80); tick(1); var lo=S.lat[id];
+    M.release(); tick(1);
+    reach[id]={ lo:lo, hi:hi, up:screenPx(id,home,hi), dn:screenPx(id,home,lo) };
+  });
+  var worstReach=Math.min.apply(null, Object.keys(reach).map(function(id){
+    return Math.min(reach[id].up, reach[id].dn);
+  }));
+  ok('★어느 방향으로 끌어도 손에 잡힌다 (각 방향 최소 '+worstReach.toFixed(0)+'px ≥ 30px)', worstReach>=30);
+  var worstSpan=Math.min.apply(null, Object.keys(reach).map(function(id){
+    return reach[id].up+reach[id].dn;
+  }));
+  ok('★끌 수 있는 총 거리 (최소 '+worstSpan.toFixed(0)+'px ≥ 120px)', worstSpan>=120);
+
+  // 배반은 새어나가지 않는다 — 밴드 끝에서도 화면 배율은 홈 대비 1.25배 이내
+  var worstGain=1;
+  Object.keys(reach).forEach(function(id){
+    var g0=M.PURE.areaScaleAt(M.homeLimit(id));
+    [reach[id].lo, reach[id].hi].forEach(function(la){
+      var g=M.PURE.areaScaleAt(la)/g0;
+      if(g>worstGain) worstGain=g;
+    });
+  });
+  ok('★밴드 끝에서도 예측 심기는 살아 있다 (최대 배율 '+worstGain.toFixed(2)+'배 ≤ 1.26배)', worstGain<=1.26);
+
+  // 벽은 고장이 아니라 벽이다 — 밀어붙이면 지도가 거부한다
+  S.wallAt=-9; S.wallId=null;
+  M.grab('australia', M.homeLimit('australia'));
+  M.dragTo(-80); tick(1);
+  ok('★벽에 밀어붙이면 거부가 온다', S.wallId==='australia' && S.wallAt>-9);
+  M.release(); tick(1);
 
   // ── 2막: 예측 심기 — 적도권은 끌어내려도 거의 그대로 ─────────────
   var plant=['brazil','australia','india'];
