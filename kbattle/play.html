@@ -10,58 +10,177 @@
 <script src="/kedu_gate.js"></script>
 </head>
 <body>
-<div class="kb-phone" id="root">
-  <div class="kb-gate" id="gate">
-    <div class="kb-logo">케이<span>배틀</span></div>
-    <div class="kb-sub">방코드를 입력하고 들어가요</div>
-    <div class="kb-field">
-      <label>방코드</label>
-      <input class="kb-input code" id="code" maxlength="4" autocomplete="off" placeholder="ABCD">
-    </div>
-    <div class="kb-field">
-      <label>내 이름(별명)</label>
-      <input class="kb-input" id="name" maxlength="10" autocomplete="off" placeholder="예: 햇살이">
-    </div>
-    <button class="kb-btn kb-enter" id="enter">들어가기 ▶</button>
-    <div class="kb-err" id="err"></div>
-  </div>
-</div>
+<div class="kb-phone" id="root"></div>
 <div class="kb-conn" id="conn">연결 준비…</div>
 
 <script src="../kple/kple-core.js"></script>
 <script src="kb-questions.js"></script>
+<script src="kb-xp.js"></script>
+<script src="kb-store.js"></script>
+<script src="kb-answers.js"></script>
+<script src="kb-roster.js"></script>
 <script src="kb-battle.js"></script>
 <script src="kb-mode-race.js"></script>
 <script>
+/* 학생 폰 — 들어가는 문.
+   헌법 제7조: 신원 = 학급 명부(비밀번호 없음). 아이는 자기 이름을 탭할 뿐이다.
+   제0조: 서버가 죽어도 캐시된 명부로 들어가고, 손님 입장으로도 게임은 돈다.
+   엣지 ①: 중간 이탈 → 같은 방코드·같은 이름으로 재입장하면 점수·스트릭이 살아있다.
+           (호스트가 이름으로 점수를 들고 있다 — kb-battle.js) */
 (function () {
   var root = document.getElementById('root');
   var conn = document.getElementById('conn');
-  var err = document.getElementById('err');
+  var SESSION_KEY = 'kb.lastRoom';
+  var SESSION_TTL = 60 * 60 * 1000;    // 1시간 — 한 교시 안에서의 복귀
+
   function setConn(t, cls) { conn.textContent = t; conn.className = 'kb-conn' + (cls ? ' ' + cls : ''); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  var gateHTML = root.innerHTML;
-  var codeEl = document.getElementById('code');
-  codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+  function saveSession(code, name) {
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify({ code: code, name: name, at: Date.now() })); } catch (e) {}
+  }
+  function lastSession() {
+    try {
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if (!s || !s.code || !s.name) return null;
+      if (Date.now() - (s.at || 0) > SESSION_TTL) return null;
+      return s;
+    } catch (e) { return null; }
+  }
 
-  document.getElementById('enter').onclick = function () {
-    var code = (codeEl.value || '').trim().toUpperCase();
-    var name = (document.getElementById('name').value || '').trim();
-    if (code.length < 4) { err.textContent = '방코드 4자리를 입력해요'; return; }
-    if (!name) { err.textContent = '이름을 입력해요'; return; }
-    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
-    err.textContent = '';
+  var pendingCode = '';   // 방코드 (신원 고르기 전에 받아둠)
 
+  /* ── 1단계: 방코드 ── */
+  function gate() {
+    var s = lastSession();
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-logo">케이<span>배틀</span></div>' +
+        '<div class="kb-sub">선생님이 알려준 방코드를 넣어요</div>' +
+        (s ? '<button class="kb-btn kb-again" id="again">방 ' + esc(s.code) + '(으)로 다시 들어가기 ▶<br>' +
+             '<small>' + esc(s.name) + ' · 점수는 그대로예요</small></button>' : '') +
+        '<div class="kb-field">' +
+          '<label>방코드</label>' +
+          '<input class="kb-input code" id="code" maxlength="4" autocomplete="off" placeholder="ABCD">' +
+        '</div>' +
+        '<button class="kb-btn kb-enter" id="next">다음 ▶</button>' +
+        '<div class="kb-err" id="err"></div>' +
+      '</div>';
+
+    var codeEl = document.getElementById('code');
+    codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+    if (s) document.getElementById('again').onclick = function () { start(s.code, s.name); };
+    document.getElementById('next').onclick = function () {
+      var code = (codeEl.value || '').trim().toUpperCase();
+      if (code.length < 4) { document.getElementById('err').textContent = '방코드 4자리를 입력해요'; return; }
+      pendingCode = code;
+      who();
+    };
+  }
+
+  /* ── 2단계: 나는 누구 ──
+     ① 이 기기에 프로필이 있으면 그대로 (학급 프로필이면 XP가 이어진다)
+     ② 학급 코드로 명부 → 이름 탭
+     ③ 손님(이름만) — 프로필 없이도 게임은 돈다 */
+  function who() {
+    root.innerHTML = '<div class="kb-gate"><div class="kb-sub">불러오는 중…</div></div>';
+    KBStore.me().then(function (p) {
+      var mine = p ? '<button class="kb-btn kb-enter" id="asMe">나는 <b>' + esc(p.name) + '</b> ▶</button>' : '';
+      root.innerHTML =
+        '<div class="kb-gate">' +
+          '<div class="kb-logo">방 <span>' + esc(pendingCode) + '</span></div>' +
+          mine +
+          '<button class="kb-btn kb-ghost" id="byClass">우리 반 명부에서 찾기</button>' +
+          '<button class="kb-btn kb-ghost" id="asGuest">이름만 넣고 들어가기</button>' +
+          '<div class="kb-err" id="err"></div>' +
+          '<button class="kb-back" id="back">← 방코드 다시</button>' +
+        '</div>';
+      if (p) document.getElementById('asMe').onclick = function () { start(pendingCode, p.name); };
+      document.getElementById('byClass').onclick = byClass;
+      document.getElementById('asGuest').onclick = guest;
+      document.getElementById('back').onclick = gate;
+    });
+  }
+
+  /* ── 2-②: 학급 명부 ── */
+  function byClass() {
+    var saved = '';
+    try { saved = localStorage.getItem('kb.classCode') || ''; } catch (e) {}
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-sub">선생님이 알려준 학급 코드를 넣어요</div>' +
+        '<div class="kb-field"><label>학급 코드</label>' +
+          '<input class="kb-input code" id="cls" maxlength="12" autocomplete="off" value="' + esc(saved) + '"></div>' +
+        '<button class="kb-btn kb-enter" id="load">명부 보기 ▶</button>' +
+        '<div class="kb-err" id="err"></div>' +
+        '<div id="names"></div>' +
+        '<button class="kb-back" id="back">←</button>' +
+      '</div>';
+    var clsEl = document.getElementById('cls');
+    clsEl.addEventListener('input', function () { clsEl.value = clsEl.value.toUpperCase(); });
+    document.getElementById('back').onclick = who;
+    document.getElementById('load').onclick = function () {
+      var code = (clsEl.value || '').trim().toUpperCase();
+      if (!code) { document.getElementById('err').textContent = '학급 코드를 넣어요'; return; }
+      try { localStorage.setItem('kb.classCode', code); } catch (e) {}
+      var box = document.getElementById('names');
+      box.innerHTML = '<div class="kb-sub">불러오는 중…</div>';
+      KBRoster.list(code).then(function (rows) {
+        if (!rows.length) {
+          box.innerHTML = '<div class="kb-err">명부가 비어 있어요. 선생님께 물어봐요.</div>';
+          return;
+        }
+        box.innerHTML = '<div class="kb-namegrid">' + rows.map(function (r) {
+          return '<button class="kb-name" data-n="' + esc(r.name) + '">' + esc(r.name) + '</button>';
+        }).join('') + '</div>';
+        Array.prototype.forEach.call(box.querySelectorAll('.kb-name'), function (b) {
+          b.onclick = function () {
+            var nm = b.getAttribute('data-n');
+            box.innerHTML = '<div class="kb-sub">들어가는 중…</div>';
+            KBRoster.enter(code, nm).then(function () { start(pendingCode, nm); })
+              .catch(function () { start(pendingCode, nm); });   // 서버 실패해도 게임은 돈다(제0조)
+          };
+        });
+      });
+    };
+  }
+
+  /* ── 2-③: 손님 ── */
+  function guest() {
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-sub">이름(별명)을 넣어요</div>' +
+        '<div class="kb-field"><label>내 이름</label>' +
+          '<input class="kb-input" id="nm" maxlength="10" autocomplete="off" placeholder="예: 햇살이"></div>' +
+        '<button class="kb-btn kb-enter" id="go">들어가기 ▶</button>' +
+        '<div class="kb-err" id="err"></div>' +
+        '<button class="kb-back" id="back">←</button>' +
+      '</div>';
+    document.getElementById('back').onclick = who;
+    document.getElementById('go').onclick = function () {
+      var nm = (document.getElementById('nm').value || '').trim();
+      if (!nm) { document.getElementById('err').textContent = '이름을 넣어요'; return; }
+      start(pendingCode, nm);
+    };
+  }
+
+  /* ── 3단계: 입장 ── */
+  function start(code, name) {
+    if (!window.supabase) { setConn('망 연결을 확인해요', 'err'); return; }
+    saveSession(code, name);
     root.innerHTML = '<div id="play"></div>';
-    var playEl = document.getElementById('play');
     var ctx;
-    try { ctx = Kple.join(code, name, { el: playEl, game: 'kbattle' }); }
-    catch (e) { setConn(String(e.message || e), 'err'); root.innerHTML = gateHTML; return; }
+    try { ctx = Kple.join(code, name, { el: document.getElementById('play'), game: 'kbattle' }); }
+    catch (e) { setConn(String(e.message || e), 'err'); gate(); return; }
     ctx.on('status', function (s) {
-      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code + ' · ' + name, 'ok');
       else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
       else setConn(s);
     });
-  };
+  }
+
+  gate();
 })();
 </script>
 </body>

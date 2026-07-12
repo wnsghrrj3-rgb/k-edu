@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이배틀 — 우리 반</title>
+<link rel="stylesheet" href="kbattle.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="kb-app" id="root">
+  <div class="kb-host-bar">
+    <span class="kb-code" id="clsLabel">우리 반</span>
+    <span class="kb-join-url">케이배틀 · 선생님</span>
+  </div>
+  <div id="body"></div>
+</div>
+
+<script src="kb-questions.js"></script>
+<script src="kb-xp.js"></script>
+<script src="kb-store.js"></script>
+<script src="kb-bank.js"></script>
+<script src="kb-answers.js"></script>
+<script src="kb-roster.js"></script>
+<script>
+/* 교사 화면 — 헌법 제1조 ③(교사 영원 무료) · 제7조(명부) · 제9조(answers)
+   여기서 하는 일은 딱 두 가지:
+     ① 명부 만들기 — 이름만 적으면 끝. 아이는 목록에서 자기 이름을 탭한다(비밀번호 없음).
+     ② 우리 반이 뭘 어려워하는지 보기 — 새로 모으는 데이터는 없다.
+        아이가 푼 answers 를 KBAnswers.byConcept 로 볼 뿐이다. 아이 화면·학부모 리포트와 같은 함수.
+   ⛔ 개인 점수 순위표는 만들지 않는다(제5조 · KB-2). 보이는 건 '반이 어려워하는 개념'뿐. */
+(function () {
+  var body = document.getElementById('body');
+  var label = document.getElementById('clsLabel');
+  var KEY = 'kb.classCode';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function saved() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function save(c) { try { localStorage.setItem(KEY, c); } catch (e) {} }
+
+  /* ── 학급 코드 ── */
+  function gate() {
+    body.innerHTML =
+      '<div class="kb-panel">' +
+        '<h2>학급 코드</h2>' +
+        '<div class="kb-hint">반마다 하나. 아이들에게 알려주는 열쇠예요 (예: 6-3-2026).<br>' +
+          '이 코드를 아는 사람만 우리 반 명부에 닿아요. 비밀번호는 쓰지 않아요.</div>' +
+        '<div class="kb-field"><input class="kb-input" id="cls" maxlength="12" value="' + esc(saved()) + '" placeholder="예: 6-3"></div>' +
+        '<button class="kb-btn kb-enter" id="go">열기 ▶</button>' +
+      '</div>';
+    var el = document.getElementById('cls');
+    el.addEventListener('input', function () { el.value = el.value.toUpperCase(); });
+    document.getElementById('go').onclick = function () {
+      var c = (el.value || '').trim().toUpperCase();
+      if (!c) return;
+      save(c); home(c);
+    };
+  }
+
+  /* ── 본화면 ── */
+  function home(code) {
+    label.textContent = code;
+    body.innerHTML =
+      '<div class="kb-panel">' +
+        '<h2>① 명부</h2>' +
+        '<div class="kb-hint">이름만 넣으면 돼요. 한 줄에 한 명.<br>' +
+          '이미 있는 아이를 다시 넣어도 그 아이의 기록·XP는 그대로예요.</div>' +
+        '<textarea class="kb-area" id="names" placeholder="김하늘&#10;박바다&#10;이햇살"></textarea>' +
+        '<button class="kb-btn kb-enter" id="add" style="margin-top:12px">명부에 넣기</button>' +
+        '<div class="kb-err" id="err"></div>' +
+        '<div class="kb-list" id="list"></div>' +
+      '</div>' +
+      '<div class="kb-panel">' +
+        '<h2>② 우리 반이 어려워하는 것</h2>' +
+        '<div class="kb-hint">아이들이 푼 문제에서 바로 나와요. 따로 검사하지 않아요.<br>' +
+          '위에 있을수록 반이 어려워하는 개념이에요. (개인 순위는 만들지 않아요)</div>' +
+        '<div id="dash"><div class="kb-hint">불러오는 중…</div></div>' +
+      '</div>' +
+      '<div class="kb-panel">' +
+        '<h2>③ 방 열기</h2>' +
+        '<div class="kb-hint">전자칠판에서 방을 열고, 아이들은 폰으로 방코드를 넣어요.</div>' +
+        '<a class="kb-btn" href="host.html" style="display:inline-block;text-decoration:none">전자칠판 열기 ▶</a>' +
+      '</div>' +
+      '<div class="kb-panel">' +
+        '<h2>학년말 정리</h2>' +
+        '<div class="kb-hint">응답 기록만 지워요. 아이들의 XP·파트너는 남아서 다음 학년으로 따라가요.</div>' +
+        '<button class="kb-btn kb-danger" id="wipe">우리 반 응답 기록 지우기</button>' +
+        '<div class="kb-err" id="werr"></div>' +
+      '</div>' +
+      '<button class="kb-back" id="back">← 다른 학급 코드</button>';
+
+    document.getElementById('back').onclick = gate;
+    document.getElementById('add').onclick = function () {
+      var raw = document.getElementById('names').value || '';
+      var names = raw.split(/[\n,]/).map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!names.length) return;
+      var err = document.getElementById('err');
+      err.textContent = '';
+      KBRoster.add(code, names).then(function (rows) {
+        document.getElementById('names').value = '';
+        paintList(code, rows);
+      }).catch(function (e) { err.textContent = '등록 실패: ' + (e.message || e); });
+    };
+    document.getElementById('wipe').onclick = function () {
+      var b = this;
+      if (b.getAttribute('data-armed') !== '1') {
+        b.setAttribute('data-armed', '1');
+        b.textContent = '정말 지울까요? 한 번 더 누르면 지워져요';
+        setTimeout(function () {
+          b.removeAttribute('data-armed'); b.textContent = '우리 반 응답 기록 지우기';
+        }, 5000);
+        return;
+      }
+      KBRoster.clearAnswers(code).then(function () {
+        document.getElementById('werr').textContent = '지웠어요. (XP·파트너는 그대로예요)';
+        dash(code);
+      }).catch(function (e) { document.getElementById('werr').textContent = '실패: ' + (e.message || e); });
+    };
+
+    KBRoster.list(code).then(function (rows) { paintList(code, rows); });
+    dash(code);
+  }
+
+  function paintList(code, rows) {
+    var box = document.getElementById('list');
+    if (!box) return;
+    if (!rows.length) { box.innerHTML = '<div class="kb-hint">아직 아무도 없어요.</div>'; return; }
+    box.innerHTML = rows.map(function (r) {
+      return '<span class="kb-chip">' + esc(r.name) +
+             '<button class="kb-x" data-n="' + esc(r.name) + '" title="명부에서 빼기">✕</button></span>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.kb-x'), function (b) {
+      b.onclick = function () {
+        KBRoster.remove(code, b.getAttribute('data-n')).then(function (rows2) { paintList(code, rows2); });
+      };
+    });
+  }
+
+  /* ── 대시보드 = answers 의 한 뷰 (제9조) ── */
+  function dash(code) {
+    var box = document.getElementById('dash');
+    KBRoster.classAnswers(code).then(function (rows) {
+      if (!rows.length) {
+        box.innerHTML = '<div class="kb-hint">아직 푼 문제가 없어요. 아이들이 케이배틀을 하면 여기가 채워져요.</div>';
+        return;
+      }
+      var ok = rows.filter(function (r) { return r.correct; }).length;
+      var concepts = KBAnswers.byConcept(rows).slice(0, 12);   // 약한 개념이 위로
+      box.innerHTML =
+        '<div class="kb-hint">응답 ' + rows.length + '개 · 반 평균 정답률 ' +
+          Math.round(ok / rows.length * 100) + '%</div>' +
+        '<div class="kb-bars">' + concepts.map(function (c) {
+          var pct = Math.round(c.rate * 100);
+          return '<div class="kb-bar-row">' +
+            '<span class="kb-bar-name" title="' + esc(c.concept) + '">' + esc(c.concept) + '</span>' +
+            '<span class="kb-bar-track"><i class="kb-bar-fill' + (pct < 60 ? ' weak' : '') +
+              '" style="width:' + pct + '%"></i></span>' +
+            '<span class="kb-bar-num">' + pct + '% · ' + c.n + '</span>' +
+          '</div>';
+        }).join('') + '</div>';
+    });
+  }
+
+  var c = saved();
+  if (c) home(c); else gate();
+})();
+</script>
+</body>
+</html>

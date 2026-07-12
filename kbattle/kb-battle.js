@@ -31,8 +31,9 @@
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
   // KP-1: 참가자에게 보내도 되는 필드만 추림 (answer 절대 미포함)
+  //  concept 는 정답이 아니다 — 참가자가 자기 answers 를 기록하려면 개념 이름이 필요하다(제9조).
   function pubQ(q) {
-    return { id: q.id, type: q.type, difficulty: q.difficulty,
+    return { id: q.id, type: q.type, difficulty: q.difficulty, concept: q.concept || '',
              prompt: q.prompt, payload: q.payload, timeLimit: q.timeLimit };
   }
 
@@ -182,14 +183,43 @@
                   get streaks() { return streaks; }, get mode() { return mode; } };
   }
 
-  /* ---------------- 참가자(학생 폰) ---------------- */
+  /* ---------------- 참가자(학생 폰) ----------------
+     명부로 들어온 아이는 여기서 자기 프로필에 이어진다(제7조 · kb-roster.js):
+       - 매 문제 응답 → rows 축적 (문제 본문·정답 안 실림 — 제8조)
+       - 판 끝 → KBAnswers.log(교실 answers = 교사 대시보드의 뿌리, 제9조)
+                 KBStore.record(교실에서 번 XP도 같은 프로필로 — 제5조)
+     프로필 없이(손님 닉네임) 들어와도 게임은 그대로 돈다. 기록만 로컬에 남는다. */
   function joinView(ctx) {
     var el = ctx.el;
-    var myTotal = 0;
     var lastQi = -1;
+    var lastReveal = -1;
+    var recorded = false;
+
+    var pend = null;    // 이번 문제 응답 메타 { qi, qid, concept, difficulty, type, ms }
+    var rows = [];      // 이 판의 응답 행 (answers 소스)
+    var tally = { correct: 0, hardCorrect: 0, bestStreak: 0 };
 
     function waitScreen(msg) {
       if (el) el.innerHTML = '<div class="kb-wait">' + esc(msg) + '</div>';
+    }
+
+    // 판이 끝나면 한 번만: 교실 answers 저장 + XP 적립. 모듈이 없으면 조용히 건너뛴다.
+    function finish(s, total) {
+      if (recorded) return Promise.resolve(null);
+      recorded = true;
+      var KBAnswers = window.KBAnswers, KBStore = window.KBStore;
+      if (!KBStore || !KBStore.me) return Promise.resolve(null);
+      var kind = (s.mode && s.mode.id) ? s.mode.id : 'battle';
+      return KBStore.me().then(function (p) {
+        if (KBAnswers && rows.length) {
+          KBAnswers.log(rows, { kind: kind, profileId: p && p.id, classCode: p && p.classCode });
+        }
+        if (!p) return null;                                   // 손님 입장 → XP 없음
+        return KBStore.record({
+          kind: kind, correct: tally.correct, hardCorrect: tally.hardCorrect,
+          bestStreak: tally.bestStreak, score: total
+        });
+      }).catch(function () { return null; });
     }
 
     // 모드 바 = 본인 칸·부스트만 (KB-2: 타인 위치·점수 폰에 안 그림)
@@ -218,6 +248,9 @@
         var slot = document.createElement('div');
         el.appendChild(slot);
         KBQ.render(s.q, slot, function (a) {
+          // 정오는 아직 모른다(호스트 권위 · KP-4). 메타만 챙겨두고 reveal 에서 확정.
+          pend = { qi: s.qi, qid: s.q.id, concept: s.q.concept || '',
+                   difficulty: s.q.difficulty | 0, type: s.q.type, ms: a.elapsedMs | 0 };
           ctx.answer({ qi: s.qi, response: a.response, elapsedMs: a.elapsedMs });
           waitScreen('제출 완료! 친구들을 기다려요');
         });
@@ -225,8 +258,20 @@
 
       } else if (s.phase === 'reveal') {
         var mine = s.results && s.results[ctx.name];   // 본인 것만 (KB-2)
+        if (s.qi !== lastReveal) {                     // resync 중복 집계 방지
+          lastReveal = s.qi;
+          if (mine && pend && pend.qi === s.qi) {
+            rows.push({ qid: pend.qid, concept: pend.concept, difficulty: pend.difficulty,
+                        type: pend.type, correct: !!mine.correct, ms: pend.ms });
+            if (mine.correct) {
+              tally.correct++;
+              if (pend.difficulty >= 3) tally.hardCorrect++;
+            }
+            tally.bestStreak = Math.max(tally.bestStreak, mine.streak | 0);
+          }
+          pend = null;
+        }
         if (mine) {
-          myTotal += 0; // 누적은 gained 반영 아래에서
           if (el) el.innerHTML =
             '<div class="kb-my-result ' + (mine.correct ? 'kb-good' : 'kb-soft') + '">' +
               '<div class="kb-mark">' + (mine.correct ? '⭕ 정답!' : '조금 아쉬워요') + '</div>' +
@@ -245,7 +290,19 @@
           '<div class="kb-my-result kb-final">' +
             '<div class="kb-mark">🏁 수고했어요!</div>' +
             '<div class="kb-gained">내 점수 ' + total + '</div>' +
+            '<div class="kb-xp-slot" id="kbXpSlot"></div>' +
           '</div>';
+        finish(s, total).then(function (r) {
+          if (!r || !el) return;
+          var slot = el.querySelector('#kbXpSlot');
+          if (!slot) return;
+          // 본인 XP·등급만(KB-2: 타인에게 안 보임 — 여긴 내 폰이다)
+          var html = '<div class="kb-xp-gain">+' + (r.gain.total | 0) + ' XP</div>';
+          if (r.rank && r.rank.promoted) {
+            html += '<div class="kb-promote">⬆️ ' + esc(r.rank.after.label || '') + ' 승급!</div>';
+          }
+          slot.innerHTML = html;
+        });
       }
     });
 
