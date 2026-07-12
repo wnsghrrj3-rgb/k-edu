@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이배틀</title>
+<link rel="stylesheet" href="kbattle.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="/kedu_gate.js"></script>
+<style>
+  /* 허브 전용 (코어 css 불변 — 허브 스킨은 여기서만) */
+  .kb-hub { max-width: 560px; margin: 0 auto; padding: 22px 16px 60px; }
+  .kb-card { background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.1);
+    border-radius: 22px; padding: 20px; margin-bottom: 16px; }
+  .kb-rank-row { display: flex; align-items: center; gap: 14px; }
+  .kb-partner-slot { font-size: 46px; line-height: 1; }
+  .kb-rank-name { font-weight: 900; font-size: 24px; }
+  .kb-rank-sub { color: var(--kb-dim); font-weight: 700; font-size: 14px; margin-top: 3px; }
+  .kb-xp-bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.1);
+    overflow: hidden; margin-top: 14px; }
+  .kb-xp-bar i { display: block; height: 100%; background: var(--kb-yellow);
+    transition: width .6s cubic-bezier(.22,1,.36,1); }
+  .kb-xp-txt { display: flex; justify-content: space-between; color: var(--kb-dim);
+    font-weight: 800; font-size: 13px; margin-top: 7px; }
+  .kb-menu { display: grid; gap: 12px; }
+  .kb-menu button { font-family: inherit; text-align: left; display: flex; align-items: center; gap: 14px;
+    padding: 18px 20px; border: 0; border-radius: 18px; cursor: pointer;
+    background: rgba(255,255,255,.08); color: var(--kb-paper); }
+  .kb-menu button:active { transform: translateY(2px); }
+  .kb-menu .kb-m-emoji { font-size: 30px; }
+  .kb-menu .kb-m-t { font-weight: 900; font-size: 19px; }
+  .kb-menu .kb-m-s { color: var(--kb-dim); font-weight: 700; font-size: 13px; margin-top: 2px; }
+  .kb-menu .kb-hot { background: linear-gradient(135deg, #ffd23f, #ff9f1c); color: #2a2200; }
+  .kb-menu .kb-hot .kb-m-s { color: rgba(42,34,0,.65); }
+  .kb-menu button:disabled { opacity: .55; cursor: default; }
+  .kb-hist { list-style: none; margin: 0; padding: 0; }
+  .kb-hist li { display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,.07); font-weight: 700; font-size: 14px; }
+  .kb-hist li:last-child { border-bottom: 0; }
+  .kb-hist .kb-h-xp { color: var(--kb-yellow); font-weight: 900; }
+  .kb-sec { font-weight: 900; font-size: 15px; color: var(--kb-dim); margin: 4px 0 10px; }
+  .kb-tiny { background: none; border: 0; color: var(--kb-dim); font-family: inherit;
+    font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; padding: 0; }
+  /* 승급 풀스크린 (제5조: 승급 = 마법모먼트) */
+  .kb-promo { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px; text-align: center;
+    background: radial-gradient(600px 400px at 50% 40%, rgba(255,210,63,.25), rgba(21,22,46,.97));
+    animation: kbPop .35s ease; }
+  .kb-promo .kb-p-emoji { font-size: 92px; animation: kbFloat 1.6s ease-in-out infinite; }
+  .kb-promo .kb-p-t { font-weight: 900; font-size: 34px; color: var(--kb-yellow); }
+  .kb-promo .kb-p-s { color: #fff; font-weight: 800; font-size: 18px; }
+  @keyframes kbFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+</style>
+</head>
+<body>
+<div class="kb-hub" id="hub"><div class="kb-wait">불러오는 중…</div></div>
+<div class="kb-conn" id="conn"></div>
+
+<!-- 케이플 덱 = 문제 소스(읽기 전용 재사용). 실시간 코어는 안 씀 — 허브는 케이플 없이 돈다. -->
+<script src="../kple/kple-deck.js"></script>
+<script src="kb-questions.js"></script>
+<script src="kb-xp.js"></script>
+<script src="kb-store.js"></script>
+<script src="kb-bank.js"></script>
+<script src="kb-solo.js"></script>
+<script>
+(function () {
+  var hub = document.getElementById('hub');
+  var conn = document.getElementById('conn');
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* ---- 첫 방문: 이름 짓기 (비밀번호 없음 — 헌법 제7조·제8조) ---- */
+  function gate() {
+    hub.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-logo">케이<span>배틀</span></div>' +
+        '<div class="kb-sub">이름을 정하면 바로 시작해요</div>' +
+        '<div class="kb-field"><label>내 이름(별명)</label>' +
+          '<input class="kb-input" id="nm" maxlength="10" placeholder="예: 햇살이"></div>' +
+        '<div class="kb-field"><label>학급 코드 <span style="opacity:.6">(선생님이 준 게 있으면)</span></label>' +
+          '<input class="kb-input code" id="cc" maxlength="6" placeholder="없어도 돼요"></div>' +
+        '<button class="kb-btn kb-enter" id="go">시작하기 ▶</button>' +
+        '<div class="kb-err" id="er"></div>' +
+      '</div>';
+    var cc = document.getElementById('cc');
+    cc.addEventListener('input', function () { cc.value = cc.value.toUpperCase(); });
+    document.getElementById('go').onclick = function () {
+      var nm = (document.getElementById('nm').value || '').trim();
+      if (!nm) { document.getElementById('er').textContent = '이름을 적어요'; return; }
+      var code = (cc.value || '').trim().toUpperCase() || null;
+      if (code) KBStore.use('supabase');           // 학급 코드가 있으면 공용 프로필
+      KBStore.create({ name: nm, classCode: code }).then(home);
+    };
+  }
+
+  /* ---- 허브 홈 ---- */
+  function home(p) {
+    var r = KBXP.rank(p.xp);
+    var dayKey = KBStore.todayKey();
+    var doneToday = p.daily && p.daily.date === dayKey;
+    var stage = p.partner && p.partner.stage ? p.partner.stage : 0;
+    var egg = stage === 0 ? '🥚' : r.emoji;        // 파트너 미부화 = 알 (제6조, 5번에서 채움)
+
+    hub.innerHTML =
+      '<div class="kb-card">' +
+        '<div class="kb-rank-row">' +
+          '<div class="kb-partner-slot">' + egg + '</div>' +
+          '<div style="flex:1">' +
+            '<div class="kb-rank-name">' + esc(p.name) + '</div>' +
+            '<div class="kb-rank-sub">' + r.emoji + ' ' + esc(r.label) + ' · ' + r.step + '계단</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kb-xp-bar"><i style="width:' + (r.ratio * 100) + '%"></i></div>' +
+        '<div class="kb-xp-txt"><span>' + r.xp + ' XP</span>' +
+          '<span>' + (r.max ? '최고 계단!' : '다음 계단까지 ' + (r.need - r.into) + ' XP') + '</span></div>' +
+      '</div>' +
+
+      '<div class="kb-menu">' +
+        '<button id="daily" class="' + (doneToday ? '' : 'kb-hot') + '"' + (doneToday ? ' disabled' : '') + '>' +
+          '<span class="kb-m-emoji">🎯</span><span><span class="kb-m-t">오늘의 도전</span>' +
+          '<span class="kb-m-s">' + (doneToday ? '오늘 ' + (p.daily.score || 0) + '점 · 내일 또 만나요' : '매일 10문제 · 친구랑 같은 문제') + '</span></span>' +
+        '</button>' +
+        '<button id="room"><span class="kb-m-emoji">🏇</span><span><span class="kb-m-t">방 들어가기</span>' +
+          '<span class="kb-m-s">선생님·친구가 만든 방코드로</span></span></button>' +
+        '<button id="host"><span class="kb-m-emoji">🎪</span><span><span class="kb-m-t">방 만들기</span>' +
+          '<span class="kb-m-s">전자칠판·큰 화면에서</span></span></button>' +
+      '</div>' +
+
+      (p.history && p.history.length ?
+        '<div class="kb-card" style="margin-top:18px">' +
+          '<div class="kb-sec">내 기록</div><ul class="kb-hist">' +
+          p.history.slice(0, 5).map(function (h) {
+            var nm = h.kind === 'daily' ? '오늘의 도전' : (h.kind === 'race' ? '레이스' : '배틀');
+            return '<li><span>' + esc(h.date) + ' · ' + nm + '</span>' +
+                   '<span><span style="opacity:.6">' + h.score + '점</span> <span class="kb-h-xp">+' + h.xp + ' XP</span></span></li>';
+          }).join('') + '</ul></div>' : '') +
+
+      '<div style="text-align:center;margin-top:22px">' +
+        '<button class="kb-tiny" id="who">다른 사람이에요</button></div>';
+
+    document.getElementById('daily').onclick = daily;
+    document.getElementById('room').onclick = function () { location.href = 'play.html'; };
+    document.getElementById('host').onclick = function () { location.href = 'host.html'; };
+    document.getElementById('who').onclick = switcher;
+  }
+
+  /* ---- 일일 도전 (트랙 C — 방 없음, 케이플 실시간 없음) ---- */
+  function daily() {
+    var day = KBStore.todayKey();
+    var qs = KBank.daily(day, 10);
+    if (!qs.length) { conn.textContent = '문제를 불러오지 못했어요'; return; }
+    hub.innerHTML = '<div id="solo"></div>';
+    KBSolo.play(document.getElementById('solo'), {
+      questions: qs, kind: 'daily',
+      onDone: function (r) {
+        KBStore.record(r).then(function (out) {
+          if (!out) return;
+          setTimeout(function () {
+            if (out.rank.promoted) promo(out.rank.after, function () { home(out.profile); });
+            else home(out.profile);
+          }, 1400);
+        });
+      }
+    });
+  }
+
+  /* ---- 승급 풀스크린 (제5조: 마법모먼트) ---- */
+  function promo(after, cb) {
+    var d = document.createElement('div');
+    d.className = 'kb-promo';
+    d.innerHTML = '<div class="kb-p-emoji">' + after.emoji + '</div>' +
+      '<div class="kb-p-t">' + esc(after.label) + '</div>' +
+      '<div class="kb-p-s">' + after.step + '계단으로 올라섰어요!</div>' +
+      '<button class="kb-btn" style="margin-top:20px">좋아! ▶</button>';
+    document.body.appendChild(d);
+    d.querySelector('button').onclick = function () { d.remove(); cb(); };
+  }
+
+  /* ---- 기기 안 프로필 전환 (가족 공용 태블릿) ---- */
+  function switcher() {
+    KBStore.listLocal().then(function (list) {
+      hub.innerHTML = '<div class="kb-card"><div class="kb-sec">누구예요?</div><div class="kb-menu">' +
+        list.map(function (p) {
+          var r = KBXP.rank(p.xp);
+          return '<button data-id="' + p.id + '"><span class="kb-m-emoji">' + r.emoji + '</span>' +
+            '<span><span class="kb-m-t">' + esc(p.name) + '</span>' +
+            '<span class="kb-m-s">' + esc(r.label) + '</span></span></button>';
+        }).join('') +
+        '<button data-new="1"><span class="kb-m-emoji">➕</span><span class="kb-m-t">새로 시작</span></button>' +
+        '</div></div>';
+      [].forEach.call(hub.querySelectorAll('[data-id]'), function (b) {
+        b.onclick = function () { KBStore.switchTo(b.getAttribute('data-id')).then(home); };
+      });
+      hub.querySelector('[data-new]').onclick = gate;
+    });
+  }
+
+  /* ---- 시작 ---- */
+  KBStore.me().then(function (p) { if (p) home(p); else gate(); })
+    .catch(function (e) { conn.textContent = String(e.message || e); gate(); });
+})();
+</script>
+</body>
+</html>
