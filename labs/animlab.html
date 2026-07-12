@@ -306,8 +306,54 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   box-shadow:0 18px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);
   max-width:100%;max-height:100%}
 .canvas-wrap canvas{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#onion{background:var(--paper)}   /* 종이는 밝게 — 다크 무대 위 밝은 재료(v3 의도된 예외) */
+#bg{background:var(--paper)}      /* 종이는 밝게 — 다크 무대 위 밝은 재료(v3 의도된 예외). 배경 레이어 v2에서 onion→bg 이관 */
+#onion{background:transparent}
 #draw{background:transparent}
+/* ── 도장 서랍 v2 ── */
+.stamp-drawer{display:none;position:fixed;left:78px;top:64px;z-index:60;width:342px;max-height:74vh;overflow:hidden;
+  flex-direction:column;background:var(--hud);border:1px solid var(--hud-bd);border-radius:16px;backdrop-filter:blur(10px)}
+.stamp-drawer.show{display:flex}
+.sd-head{display:flex;align-items:center;gap:8px;padding:12px 14px 8px}
+.sd-head h4{font-family:var(--kedu-title);font-size:15px;color:var(--ink);font-weight:400;flex:1;margin:0}
+.sd-close{border:none;background:var(--glass);color:var(--mut);border-radius:9px;width:26px;height:26px;font-size:13px}
+.sd-tabs{display:flex;gap:5px;padding:0 12px 9px;flex-wrap:wrap}
+.sd-tab{border:1.5px solid var(--glass-bd);background:var(--glass);color:var(--mut);border-radius:20px;
+  padding:5px 11px;font-size:12px;font-family:inherit;transition:all .13s}
+.sd-tab.on{border-color:var(--accent);color:var(--ink)}
+.sd-body{overflow:auto;padding:2px 12px 12px}
+.stamp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stamp-card{border:2px solid transparent;border-radius:12px;background:rgba(255,255,255,.9);padding:6px 3px 4px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .13s;color:#3a4a5c}
+.stamp-card img{width:46px;height:46px;object-fit:contain}
+.stamp-card span{font-size:9.5px}
+.stamp-card:hover{transform:translateY(-2px)}
+.stamp-card.on{border-color:var(--accent)}
+.sd-foot{padding:9px 12px 12px;border-top:1px solid var(--glass-bd)}
+.sd-import{width:100%;border:1.5px dashed var(--glass-bd);background:transparent;color:var(--mut);
+  border-radius:11px;padding:9px;font-size:12.5px;font-family:inherit}
+.sd-import:hover{color:var(--ink);border-color:var(--accent)}
+/* ── 붙이기 전 도장(선택 상태) ── */
+.pend{position:absolute;z-index:8;transform:translate(-50%,-50%);touch-action:none}
+.pend img{display:block;width:100%;pointer-events:none;filter:drop-shadow(0 4px 14px rgba(0,0,0,.35))}
+.pend .pbox{position:absolute;inset:-6px;border:2px dashed var(--accent);border-radius:8px;pointer-events:none}
+.ph{position:absolute;width:30px;height:30px;border-radius:50%;background:var(--hud);border:1.5px solid var(--accent);
+  color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;touch-action:none;cursor:grab}
+.ph-rot{left:50%;top:-46px;transform:translateX(-50%)}
+.ph-size{right:-20px;bottom:-20px;cursor:nwse-resize}
+.pend-bar{display:none;position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:9;gap:6px;
+  background:var(--hud);border:1px solid var(--hud-bd);border-radius:14px;padding:6px;
+  box-shadow:0 8px 26px rgba(0,0,0,.4)}
+.pend-bar.show{display:flex}
+.pend-bar button{border:none;border-radius:8px;background:var(--glass);color:var(--ink);font-family:inherit;
+  font-size:13px;padding:6px 10px;white-space:nowrap}
+.pend-bar .pok{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#26141f;font-weight:700}
+/* ── 배경 편집 리본 ── */
+.bg-ribbon{display:none;position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:6;
+  background:var(--hud);border:1px solid var(--accent2);color:var(--ink);font-size:12px;
+  padding:5px 14px;border-radius:20px;pointer-events:none}
+body.bgmode .bg-ribbon{display:block}
+body.bgmode #draw{opacity:.45}
+body.bgmode #onion{opacity:0}
 .canvas-wrap .frame-badge{position:absolute;top:10px;left:12px;font-size:12px;color:var(--mut);
   background:var(--hud);padding:3px 10px;border-radius:20px;pointer-events:none;z-index:5}
 
@@ -437,6 +483,9 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   <div class="dock">
     <button class="tool on" id="t-brush" data-tool="brush">🖌️<span class="tn">붓</span></button>
     <button class="tool" id="t-eraser" data-tool="eraser">🧽<span class="tn">지우개</span></button>
+    <button class="tool" id="t-stamp" data-tool="stamp">🐾<span class="tn">도장</span></button>
+    <button class="tool" id="t-again" data-tool="again" disabled style="opacity:.35">👣<span class="tn">이어찍기</span></button>
+    <button class="tool" id="t-bg" data-tool="bg">🏞️<span class="tn">배경</span></button>
     <button class="tool" id="t-clear" data-tool="clear">🗑️<span class="tn">비우기</span></button>
     <div class="dock-div"></div>
     <div class="pal" id="pal"></div>
@@ -447,12 +496,33 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     </div>
   </div>
 
+  <div class="stamp-drawer" id="stampDrawer">
+    <div class="sd-head"><h4>🐾 도장 서랍</h4><button class="sd-close" id="sdClose">✕</button></div>
+    <div class="sd-tabs" id="sdTabs"></div>
+    <div class="sd-body"><div class="stamp-grid" id="stampGrid"></div></div>
+    <div class="sd-foot"><button class="sd-import" id="sdImport">📥 내 그림·사진 불러오기 (케이아트 저장 그림 OK)</button>
+      <input type="file" id="sdFile" accept="image/*" style="display:none"></div>
+  </div>
+
   <div class="stage">
     <div class="canvas-wrap" id="wrap">
+      <canvas id="bg"></canvas>
       <canvas id="onion"></canvas>
       <canvas id="draw"></canvas>
       <div class="frame-badge" id="badge">1 / 1</div>
       <div class="guide-band" id="guideBand"></div>
+      <div class="bg-ribbon">🏞️ 배경(무대) 편집 중 — 모든 장 뒤에 깔려요</div>
+      <div class="pend" id="pend" style="display:none">
+        <img id="pendImg" draggable="false" alt="">
+        <div class="pbox"></div>
+        <div class="ph ph-rot" id="phRot" title="돌리기">🔄</div>
+        <div class="ph ph-size" id="phSize" title="크기">↘</div>
+      </div>
+      <div class="pend-bar" id="pendBar">
+        <button id="pFlip" title="좌우 뒤집기">↔ 뒤집기</button>
+        <button id="pCancel" title="취소">✕ 취소</button>
+        <button id="pOk" class="pok">✓ 붙이기</button>
+      </div>
     </div>
   </div>
   <div class="side"></div>
@@ -550,6 +620,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     var pad=36, availW=window.innerWidth-74-pad, availH=window.innerHeight-56-190;
     var s=Math.min(availW/W, availH/H, 1.15);
     wrap.style.width=(W*s)+'px'; wrap.style.height=(H*s)+'px';
+    if(typeof layoutPend==='function') layoutPend();
   }
   window.addEventListener('resize', fit); fit();
 
@@ -574,14 +645,240 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   });
   function setTool(t){
     if(t==='clear'){ clearCurrent(); return; }
+    if(t==='bg'){ toggleBgMode(); return; }
+    if(t==='again'){ placeAgain(); return; }
+    if(t==='stamp'){ openDrawer(); }
     tool=t;
-    ['brush','eraser'].forEach(function(k){
-      document.getElementById('t-'+k).classList.toggle('on', k===t);
+    ['brush','eraser','stamp'].forEach(function(k){
+      var el=document.getElementById('t-'+k); if(el) el.classList.toggle('on', k===t);
     });
   }
   document.querySelector('.dock').addEventListener('click', function(e){
-    var b=e.target.closest('.tool'); if(!b) return; setTool(b.dataset.tool);
+    var b=e.target.closest('.tool'); if(!b||b.disabled) return; setTool(b.dataset.tool);
   });
+  function targetCtx(){ return bgMode? bgCtx : drawCtx; }  // 배경 모드면 붓·지우개·도장이 무대에
+
+  // ══════════════════════════════════════════════════════════════════
+  // 배경 무대 레이어 + 도장 2.0 (2026-07-12 v2 — 준호 "제대로" 재설계)
+  //  · 무대(bg) = 스토어 밖 단일 캔버스, 모든 장 뒤에 깔림. 내보내기·썸네일 합성.
+  //  · 도장 = 찍기 전 "선택 상태"(옮기기·크기·돌리기·반전) → ✓ 붙이기로 확정.
+  //  · 에셋 = 케이아트 빌더 재사용(동물 16 + _meta.json 파츠) — 신규 이미지 제작 0.
+  // ══════════════════════════════════════════════════════════════════
+  var bgMode=false;
+  var bgCv=document.getElementById('bg'), bgCtx=bgCv.getContext('2d');
+  bgCv.width=W; bgCv.height=H;
+  function toggleBgMode(){
+    bgMode=!bgMode;
+    document.body.classList.toggle('bgmode', bgMode);
+    document.getElementById('t-bg').classList.toggle('on', bgMode);
+    toast(bgMode? '🏞️ 무대(배경)를 꾸며요 — 모든 장 뒤에 깔려요' : '다시 장을 그려요');
+  }
+  function bgFilled(){
+    var sCv=document.createElement('canvas'); sCv.width=48; sCv.height=32;
+    var g=sCv.getContext('2d'); g.drawImage(bgCv,0,0,48,32);
+    var d=g.getImageData(0,0,48,32).data;
+    for(var i=3;i<d.length;i+=4) if(d[i]>8) return true;
+    return false;
+  }
+  function refreshBgViews(){ buildStrip(); }     // 무대가 바뀌면 썸네일 전 장 갱신
+
+  // ── 도장 서랍 (탭 = 동물 + 빌더 파츠) ──
+  var ANIMALS=[['dog','강아지'],['cat','고양이'],['rabbit','토끼'],['bear','곰'],
+    ['fox','여우'],['tiger','호랑이'],['lion','사자'],['panda','판다'],
+    ['frog','개구리'],['pig','돼지'],['hamster','햄스터'],['penguin','펭귄'],
+    ['koala','코알라'],['sheep','양'],['monkey','원숭이'],['raccoon','너구리']];
+  var BUILDER='/draw/assets/builder/';
+  var TABS=[ {id:'animal',label:'동물'} ];       // 파츠 탭은 _meta.json 로드 후 채움
+  var TAB_MAP={ face:'얼굴', eye:'눈', mouth:'입', hair:'머리',
+                glasses:'안경', hat:'모자', ear:'귀', brow:'눈썹' };
+  var partsMeta=null, curTab='animal';
+  fetch(BUILDER+'_meta.json').then(function(r){ return r.json(); }).then(function(m){
+    partsMeta=m.categories||{};
+    Object.keys(TAB_MAP).forEach(function(k){
+      if(partsMeta[k] && (partsMeta[k].parts||[]).length) TABS.push({id:k,label:TAB_MAP[k]});
+    });
+    buildTabs();
+  }).catch(function(){ buildTabs(); });          // 메타 실패해도 동물 탭은 동작
+
+  var stampDrawer=document.getElementById('stampDrawer');
+  var stampGrid=document.getElementById('stampGrid');
+  var sdTabs=document.getElementById('sdTabs');
+  function buildTabs(){
+    sdTabs.innerHTML=TABS.map(function(t){
+      return '<button class="sd-tab'+(t.id===curTab?' on':'')+'" data-t="'+t.id+'">'+t.label+'</button>';
+    }).join('');
+    buildGrid();
+  }
+  function buildGrid(){
+    var cards='';
+    if(curTab==='animal'){
+      cards=ANIMALS.map(function(a){
+        return card(BUILDER+'animal/'+a[0]+'.png', a[1], 200);
+      }).join('');
+    } else if(partsMeta && partsMeta[curTab]){
+      cards=(partsMeta[curTab].parts||[]).map(function(pt){
+        return card(BUILDER+pt.file, '', Math.min(240, pt.w||200));
+      }).join('');
+    }
+    stampGrid.innerHTML=cards;
+  }
+  function card(src,label,w0){
+    return '<button class="stamp-card" data-src="'+src+'" data-w="'+w0+'">'
+      + '<img loading="lazy" src="'+src+'" alt="'+label+'">'
+      + (label?'<span>'+label+'</span>':'') + '</button>';
+  }
+  sdTabs.addEventListener('click', function(e){
+    var b=e.target.closest('.sd-tab'); if(!b) return;
+    curTab=b.dataset.t;
+    [].forEach.call(sdTabs.children, function(c){ c.classList.toggle('on', c===b); });
+    buildGrid();
+  });
+  stampGrid.addEventListener('click', function(e){
+    var b=e.target.closest('.stamp-card'); if(!b) return;
+    closeDrawer();
+    newPend(b.dataset.src, +b.dataset.w || 200);
+  });
+  function openDrawer(){ stampDrawer.classList.add('show'); }
+  function closeDrawer(){ stampDrawer.classList.remove('show'); }
+  document.getElementById('sdClose').addEventListener('click', closeDrawer);
+
+  // 내 그림·사진 불러오기 → 도장으로 (케이아트 저장 PNG·사진 모두)
+  var sdFile=document.getElementById('sdFile');
+  document.getElementById('sdImport').addEventListener('click', function(){ sdFile.click(); });
+  sdFile.addEventListener('change', function(){
+    var f=sdFile.files && sdFile.files[0]; if(!f) return;
+    var url=URL.createObjectURL(f);
+    var im=new Image();
+    im.onload=function(){
+      var w=Math.min(420, W*0.55, im.width);
+      closeDrawer(); newPend(url, w);
+    };
+    im.src=url; sdFile.value='';
+  });
+
+  // ── 붙이기 전 도장(선택 상태) ──
+  var pendEl=document.getElementById('pend'), pendImg=document.getElementById('pendImg');
+  var pend={ on:false, src:null, im:null, x:W/2, y:H/2, w:200, rot:0, flip:false };
+  var lastStamp=null;
+  var againBtn=document.getElementById('t-again');
+  function newPend(src, w0){
+    confirmPend();                              // 이전 대기 도장은 먼저 붙임 (작업 유실 0)
+    var im=new Image();
+    im.onload=function(){
+      pend.on=true; pend.src=src; pend.im=im;
+      pend.x=W/2; pend.y=H/2; pend.w=Math.max(50,w0||200); pend.rot=0; pend.flip=false;
+      setTool('stamp'); renderPend();
+      toast('끌어서 옮기고 🔄로 돌려요 — ✓ 붙이기로 확정!');
+    };
+    im.onerror=function(){ toast('도장을 불러오지 못했어요'); };
+    im.src=src;
+  }
+  function pendH(){ return pend.im? pend.w*(pend.im.height/pend.im.width) : pend.w; }
+  function cssScale(){ return wrap.clientWidth/W; }
+  function layoutPend(){
+    if(!pendEl) return;                        // 초기 fit()이 서브시스템 할당 전에 불릴 수 있음
+    var bar=document.getElementById('pendBar');
+    if(bar) bar.classList.toggle('show', !!pend.on);
+    if(!pend.on){ pendEl.style.display='none'; return; }
+    var sc=cssScale();
+    pendEl.style.display='block';
+    pendEl.style.width=(pend.w*sc)+'px';
+    pendEl.style.left=(pend.x*sc)+'px';
+    pendEl.style.top=(pend.y*sc)+'px';
+    pendEl.style.transform='translate(-50%,-50%) rotate('+pend.rot+'rad)';
+    pendImg.style.transform=pend.flip? 'scaleX(-1)':'none';
+  }
+  function renderPend(){ if(pend.on){ pendImg.src=pend.src; } layoutPend(); }
+  function pendTo(x,y){
+    pend.x=Math.max(30, Math.min(W-30, x));
+    pend.y=Math.max(56, Math.min(H-30, y));    // 위 여백 = 🔄 핸들 자리
+    layoutPend();
+  }
+
+  // 본체 드래그 = 옮기기
+  var pdrag=null;
+  pendEl.addEventListener('pointerdown', function(ev){
+    if(ev.target.closest('.ph')||ev.target.closest('.pend-bar')) return;
+    ev.preventDefault(); ev.stopPropagation();
+    var q=toLocal(ev);
+    pdrag={ dx:pend.x-q.x, dy:pend.y-q.y };
+    pendEl.setPointerCapture(ev.pointerId);
+  });
+  pendEl.addEventListener('pointermove', function(ev){
+    if(!pdrag) return; ev.preventDefault();
+    var q=toLocal(ev); pendTo(q.x+pdrag.dx, q.y+pdrag.dy);
+  
+  });
+  pendEl.addEventListener('pointerup', function(){ pdrag=null; });
+
+  // 🔄 돌리기 핸들
+  var phRot=document.getElementById('phRot'), rdrag=false;
+  phRot.addEventListener('pointerdown', function(ev){
+    ev.preventDefault(); ev.stopPropagation(); rdrag=true; phRot.setPointerCapture(ev.pointerId);
+  });
+  phRot.addEventListener('pointermove', function(ev){
+    if(!rdrag) return; ev.preventDefault();
+    var q=toLocal(ev);
+    pend.rot=Math.atan2(q.y-pend.y, q.x-pend.x)+Math.PI/2;
+    var snap=Math.round(pend.rot/(Math.PI/12))*(Math.PI/12);   // 15° 자석
+    if(Math.abs(snap-pend.rot)<0.06) pend.rot=snap;
+    layoutPend();
+  });
+  phRot.addEventListener('pointerup', function(){ rdrag=false; });
+
+  // ↘ 크기 핸들
+  var phSize=document.getElementById('phSize'), sdrag=false;
+  phSize.addEventListener('pointerdown', function(ev){
+    ev.preventDefault(); ev.stopPropagation(); sdrag=true; phSize.setPointerCapture(ev.pointerId);
+  });
+  phSize.addEventListener('pointermove', function(ev){
+    if(!sdrag) return; ev.preventDefault();
+    var q=toLocal(ev);
+    var d=Math.hypot(q.x-pend.x, q.y-pend.y);
+    pend.w=Math.max(50, Math.min(700, d*1.55));
+    layoutPend();
+  });
+  phSize.addEventListener('pointerup', function(){ sdrag=false; });
+
+  document.getElementById('pFlip').addEventListener('click', function(){ pend.flip=!pend.flip; layoutPend(); });
+  document.getElementById('pCancel').addEventListener('click', cancelPend);
+  document.getElementById('pOk').addEventListener('click', confirmPend);
+  window.addEventListener('keydown', function(e){
+    if(!pend.on) return;
+    if(e.key==='Enter'){ confirmPend(); }
+    else if(e.key==='Escape'){ cancelPend(); }
+  });
+
+  function cancelPend(){ pend.on=false; layoutPend(); }
+  function confirmPend(){                        // 도장 확정 → 프레임(또는 무대)에 굽기
+    if(!pend.on || !pend.im) return;
+    var c=targetCtx();
+    c.save();
+    c.globalCompositeOperation='source-over';
+    c.translate(pend.x, pend.y); c.rotate(pend.rot);
+    if(pend.flip) c.scale(-1,1);
+    c.drawImage(pend.im, -pend.w/2, -pendH()/2, pend.w, pendH());
+    c.restore();
+    lastStamp={ src:pend.src, x:pend.x, y:pend.y, w:pend.w, rot:pend.rot, flip:pend.flip };
+    againBtn.disabled=false; againBtn.style.opacity='';
+    pend.on=false; layoutPend();
+    if(bgMode){ refreshBgViews(); } else { commitToFrame(); }
+    refreshMission();
+  }
+  function placeAgain(){                         // 👣 지난 도장, 지난 자리 그대로 — 살짝 밀고 붙이면 움직임!
+    if(!lastStamp) return;
+    confirmPend();
+    var im=new Image();
+    im.onload=function(){
+      pend.on=true; pend.src=lastStamp.src; pend.im=im;
+      pend.x=lastStamp.x; pend.y=lastStamp.y; pend.w=lastStamp.w;
+      pend.rot=lastStamp.rot; pend.flip=lastStamp.flip;
+      setTool('stamp'); renderPend();
+      toast('👣 지난 자리 그대로 — 조금만 옮기고 ✓ 붙이면 움직여요');
+    };
+    im.src=lastStamp.src;
+  }
+
 
   // ── 그리기 (dab: 두 점 사이를 촘촘히 스탬프)
   var drawing=false, lastX=0, lastY=0;
@@ -600,23 +897,31 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   }
   function startDraw(ev){
     if(play.isPlaying()) return;
-    ev.preventDefault(); drawing=true;
+    ev.preventDefault();
+    if(tool==='stamp'){                       // 도장 = 대기 중인 도장을 그 자리로
+      var q=toLocal(ev);
+      if(pend.on){ pendTo(q.x,q.y); } else { openDrawer(); }
+      return;
+    }
+    drawing=true;
     var p=toLocal(ev); lastX=p.x; lastY=p.y;
-    applyBrush(); stamp(drawCtx,p.x,p.y);
+    applyBrush(); stamp(targetCtx(),p.x,p.y);
   }
   function moveDraw(ev){
     if(!drawing) return; ev.preventDefault();
-    var p=toLocal(ev); line(drawCtx,lastX,lastY,p.x,p.y); lastX=p.x; lastY=p.y;
+    var p=toLocal(ev); line(targetCtx(),lastX,lastY,p.x,p.y); lastX=p.x; lastY=p.y;
   }
   function endDraw(){
     if(!drawing) return; drawing=false;
-    drawCtx.globalCompositeOperation='source-over';
-    commitToFrame();                  // 현재 프레임 픽셀 저장 + 썸네일 갱신
+    targetCtx().globalCompositeOperation='source-over';
+    if(bgMode){ refreshBgViews(); }           // 무대는 스토어 밖 — 썸네일만 다시
+    else { commitToFrame(); }                 // 현재 프레임 픽셀 저장 + 썸네일 갱신
     refreshMission();
   }
   function applyBrush(){
-    if(tool==='eraser'){ drawCtx.globalCompositeOperation='destination-out'; drawCtx.fillStyle='#000'; }
-    else { drawCtx.globalCompositeOperation='source-over'; drawCtx.fillStyle=color; }
+    var c=targetCtx();
+    if(tool==='eraser'){ c.globalCompositeOperation='destination-out'; c.fillStyle='#000'; }
+    else { c.globalCompositeOperation='source-over'; c.fillStyle=color; }
   }
   drawCv.addEventListener('pointerdown', startDraw);
   drawCv.addEventListener('pointermove', moveDraw);
@@ -634,6 +939,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     updateThumb(store.current());
   }
   function clearCurrent(){
+    if(bgMode){ bgCtx.clearRect(0,0,W,H); refreshBgViews(); toast('무대를 비웠어요'); return; }
     drawCtx.clearRect(0,0,W,H); commitToFrame();
     toast('이 장을 비웠어요');
   }
@@ -691,6 +997,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     el.appendChild(ta);
     // 썸네일 픽셀
     var g=tc.getContext('2d'); g.fillStyle='#FCFAF5'; g.fillRect(0,0,76,58);
+    g.drawImage(bgCv,0,0,76,58);
     g.drawImage(frameCanvas(f),0,0,76,58);
     // 이벤트
     el.addEventListener('click', function(e){
@@ -720,6 +1027,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     var el=framesEl.children[i]; if(!el||!el.classList.contains('thumb')) { buildStrip(); return; }
     var tc=el.querySelector('canvas'), g=tc.getContext('2d');
     g.fillStyle='#FCFAF5'; g.fillRect(0,0,76,58);
+    g.drawImage(bgCv,0,0,76,58);
     g.drawImage(frameCanvas(store.frameAt(i)),0,0,76,58);
   }
   function markCurrent(){
@@ -729,15 +1037,15 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   }
 
   // ── 프레임 조작 (commit 먼저 → 스토어 변경 → load)
-  function gotoFrame(i){ commitToFrame(); store.setCurrent(i); loadFrame(); markCurrent(); }
+  function gotoFrame(i){ confirmPend(); commitToFrame(); store.setCurrent(i); loadFrame(); markCurrent(); }
   function doAdd(){
-    commitToFrame();
+    confirmPend(); commitToFrame();
     var r=store.add();
     if(!r.ok){ toast('한 편은 최대 '+store.max+'장까지예요'); return; }
     loadFrame(); buildStrip();
   }
   function doDup(i){
-    commitToFrame();
+    confirmPend(); commitToFrame();
     var r=store.duplicate(i);
     if(!r.ok){ toast('한 편은 최대 '+store.max+'장까지예요'); return; }
     // 픽셀 복사
@@ -752,7 +1060,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     loadFrame(); buildStrip();
   }
   function doMove(from,to){
-    commitToFrame();
+    confirmPend(); commitToFrame();
     var r=store.move(from, Math.max(0,Math.min(store.count()-1,to)));
     if(!r.ok) return;
     loadFrame(); buildStrip();
@@ -763,6 +1071,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   var rafId=null, lastT=0;
   function setPlaying(on){
     if(on){
+      confirmPend(); if(bgMode) toggleBgMode();
       commitToFrame();
       play.seek(store.current()); play.play();
       playBtn.textContent='⏸ 멈춤'; onCtx.clearRect(0,0,W,H);
@@ -842,7 +1151,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   }
   function selectMission(id){
     var M=L.findMission(id); if(!M) return;
-    commitToFrame();
+    confirmPend(); commitToFrame();
     activeMission=M; missionRun=L.createMissionRun(M);
     while(store.count()<M.frames){ if(!store.add().ok) break; }
     store.setCurrent(0); loadFrame(); buildStrip();
@@ -886,7 +1195,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   var exportBg=document.getElementById('exportBg'), exportPanel=document.getElementById('exportPanel');
   var expNote=document.getElementById('expNote');
   function openExport(){
-    commitToFrame();
+    confirmPend(); commitToFrame();
     var n=store.count();
     expNote.textContent = n+'장 · '+play.fps()+'fps 애니메이션을 내보냅니다.';
     if(!supportsWebm()){ document.getElementById('expWebm').disabled=true; }
@@ -905,6 +1214,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
   function flatFrame(i){               // 종이 배경 합성한 한 장 (내보내기·썸네일용)
     var ec=document.createElement('canvas'); ec.width=W; ec.height=H;
     var g=ec.getContext('2d'); g.fillStyle='#FCFAF5'; g.fillRect(0,0,W,H);
+    g.drawImage(bgCv,0,0);
     g.drawImage(frameCanvas(store.frameAt(i)),0,0);
     return ec;
   }
@@ -933,6 +1243,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
     for(var l=0;l<loops;l++){
       for(var i=0;i<n;i++){
         g.fillStyle='#FCFAF5'; g.fillRect(0,0,W,H);
+        g.drawImage(bgCv,0,0);
         g.drawImage(frameCanvas(store.frameAt(i)),0,0);
         await sleep(spf);
       }
@@ -969,7 +1280,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
       id: activeMission? activeMission.id : ('free_'+Date.now()),
       title: activeMission? activeMission.title : '자유 애니메이션',
       meta:{ frames:store.count(), fps:play.fps(), mode:play.mode(),
-             grade: activeMission? activeMission.grade : null },
+             grade: activeMission? activeMission.grade : null, hasBg: bgFilled() },
       thumb: bestThumb(), at:Date.now()
     });
     toast(ok ? '📦 케이박스에 담았어요' : '케이박스에 담지 못했어요 (저장 공간 확인)');
