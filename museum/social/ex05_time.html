@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>짜장면 타임머신 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-hold{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--social); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="price-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumPrice=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  // 짜장면 한 그릇 값 — 한국물가정보 공표 실측 앵커만(원 단위 그대로).
+  // 앵커 사이 = 마지막 기록 유지(계단) — 지어내지 않는다.
+  var ANCHORS=[
+    [1970,100],[1980,350],[1990,1000],[1995,2000],[2000,2500],
+    [2003,3000],[2011,4000],[2013,4300],[2018,5011],[2023,6361],[2026,7000]
+  ];
+  var YEAR_MIN=1970, YEAR_MAX=2026;
+  var NOTE=7000;                              // 오늘의 지폐(오늘 한 그릇 값)
+  function clampYear(y){
+    y=Math.floor(y);
+    return y<YEAR_MIN?YEAR_MIN:(y>YEAR_MAX?YEAR_MAX:y);
+  }
+  function anchorIndexAt(year){               // 그 해에 유효한 마지막 기록
+    var y=clampYear(year), i=0;
+    for(var k=0;k<ANCHORS.length;k++){
+      if(ANCHORS[k][0]<=y) i=k; else break;
+    }
+    return i;
+  }
+  function priceAt(year){ return ANCHORS[anchorIndexAt(year)][1]; }
+  function bowlsFor(won,year){                // ⌊돈 ÷ 그 해 가격⌋ — 보정 0
+    if(!(won>0)) return 0;
+    return Math.floor(won/priceAt(year));
+  }
+  return { ANCHORS:ANCHORS, YEAR_MIN:YEAR_MIN, YEAR_MAX:YEAR_MAX, NOTE:NOTE,
+           clampYear:clampYear, anchorIndexAt:anchorIndexAt,
+           priceAt:priceAt, bowlsFor:bowlsFor };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">짜장면 한 그릇 &mdash; 오늘은, 지폐 한 장입니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1970" max="2026" value="1970" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumPrice;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var TAU = Math.PI*2;
+
+  // ── 무대 배치 ────────────────────────────────────────────────────
+  var COUNTER_Y=760;                          // 카운터 상판
+  var PLATE={x:640, y:COUNTER_Y-8, r:74};     // 카운터 접시
+  var BILL_HOME={x:340, y:COUNTER_Y-34};      // 지폐 제자리
+  var BILL={w:150, h:66};
+  var CLOCK={x:1210, y:300, r:92};            // 놋쇠 괘종시계
+  var MENU={x:940, y:160, w:190, h:430};      // 벽 세로 메뉴판
+  var CAL={x:1400, y:190, w:120, h:150};      // 벽 달력
+  var HAND_ANCHORS=3, FEAST_N=70;
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→pay→rewind→auto→arrived→feast→betrayed→after
+    year:PURE.YEAR_MAX, paid:0, invite:false,
+    bill:{x:BILL_HOME.x, y:BILL_HOME.y, held:false, onPlate:false},
+    served:null,             // 2막의 한 그릇 {t}
+    handAnchors:0, autoV:0,
+    menuInk:1, menuPrice:PURE.priceAt(PURE.YEAR_MAX),  // 메뉴판 분필(지움→다시 씀)
+    pile:[], feastAt:0, feastGap:0.26,
+    betrayed:false, time:0
+  };
+  function fmtWon(v){ return v.toLocaleString('ko-KR')+'원'; }
+
+  // ── 메뉴판 다시 쓰기(앵커에 닿을 때만) ───────────────────────────
+  function syncEra(){
+    var p=PURE.priceAt(S.year);
+    if(p!==S.menuPrice){
+      S.menuPrice=p; S.menuInk=0;             // 지워졌다 → draw에서 서서히 다시 씀
+      Museum.sound.play('chalk');
+      Museum.sound.play('paper');             // 달력 장
+      return true;
+    }
+    return false;
+  }
+
+  // ── 2막: 지폐 한 장 = 한 그릇 ────────────────────────────────────
+  function serveOnce(){
+    if(S.served || S.phase==='feast' || S.phase==='betrayed') return;
+    S.served={t:0};
+    S.paid++;
+    Museum.sound.play('clack');
+    if(S.paid>=3) S.invite=true;              // 괘종시계 숨쉼(무설명 초대)
+  }
+
+  // ── 4막: 일흔 그릇 ───────────────────────────────────────────────
+  function pilePos(i){                        // 카운터 → 바닥, 층층이
+    var perRow=14, row=Math.floor(i/perRow), col=i%perRow;
+    var jx=((i*137)%23-11)*1.1, jy=((i*71)%13-6)*0.8;
+    var bx=180+col*92+ (row%2)*46 + jx;
+    var by=(row<2? COUNTER_Y-14-row*46 : H-40-(row-2)*44) + jy;
+    return {x:bx, y:by};
+  }
+  function feastDrop(){
+    var i=S.pile.length;
+    var p=pilePos(i);
+    S.pile.push({x:p.x, y:-60-((i*53)%80), tx:p.x, ty:p.y, land:false});
+    Museum.sound.play('clack',{pitch:((i*29)%9-4)*0.01});
+    if(S.pile.length>=FEAST_N) S.feastAt=-1;  // 마지막 — 착지 감시로 전환
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var top=pilePos(FEAST_N-1);
+    Museum.betray({x:top.x/W, y:Math.max(0.08, (top.y-60)/H)}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='지폐는 같은 한 장이었다 &mdash; 세상의 값이 달라졌을 뿐이다'
+      +'<span class="small">1970년 한 그릇 100원 &middot; 오늘 7,000원 &mdash; 같은 지폐로, 일흔 그릇</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'짜장면 타임머신',
+      story:'돈의 크기는 적힌 숫자가 아니라, 바꿀 수 있는 것의 수다. 손잡이로 아무 해나 짚어 보세요 — 그 해의 메뉴판이 답합니다.',
+      fine:'PRICE OF JJAJANGMYEON · 자료 한국물가정보(1970~)' });
+    Museum.ticket.grant({ id:'s5_time', title:'짜장면 타임머신', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        c.beginPath(); c.arc(w*0.32, h*0.62, w*0.15, 0, Math.PI); c.stroke();   // 그릇
+        c.beginPath(); c.moveTo(w*0.17, h*0.62); c.lineTo(w*0.47, h*0.62); c.stroke();
+        c.strokeRect(w*0.56, h*0.28, w*0.3, h*0.16);                            // 지폐
+        c.beginPath(); c.arc(w*0.71, h*0.36, w*0.045, 0, TAU); c.stroke();
+      }});
+    Museum.sound.play('paper');
+    var sl=document.querySelector('#reexp input');
+    sl.value=String(S.year);
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 아무 해나 짚기(E1 정합) ──────────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.year=PURE.clampYear(parseInt(slider.value,10)||PURE.YEAR_MIN);
+    syncEra();
+  });
+  function chalkEra(){
+    var p=PURE.priceAt(S.year), n=PURE.bowlsFor(PURE.NOTE,S.year);
+    return S.year+'년 — 한 그릇 '+fmtWon(p)+' · 지폐 한 장이면 '
+      +(n>0? n+'그릇':'빈손');
+  }
+
+  // ── 입력 ─────────────────────────────────────────────────────────
+  var holdBill=false, holdClock=false, lastAng=0, backAcc=0;
+  function angAt(p){ return Math.atan2(p.y-CLOCK.y, p.x-CLOCK.x); }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.phase==='auto' || S.phase==='arrived' || S.phase==='feast' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var bdx=p.x-S.bill.x, bdy=p.y-S.bill.y;
+    var cdx=p.x-CLOCK.x, cdy=p.y-CLOCK.y;
+    if(S.phase!=='after' && Math.abs(bdx)<BILL.w*0.7 && Math.abs(bdy)<BILL.h*0.9){
+      if(S.phase==='boot') S.phase='pay';
+      holdBill=true; S.bill.held=true; canvas.classList.add('is-hold');
+      return;
+    }
+    if(cdx*cdx+cdy*cdy < CLOCK.r*CLOCK.r*2.6){
+      if(S.phase==='boot') S.phase='pay';
+      if(S.phase==='pay') S.phase='rewind';
+      holdClock=true; lastAng=angAt(p); canvas.classList.add('is-hold');
+    }
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(holdBill && S.bill.held){
+      S.bill.x=p.x; S.bill.y=Math.min(p.y, COUNTER_Y-20);
+      return;
+    }
+    if(holdClock && (S.phase==='rewind' || S.phase==='after')){
+      var a=angAt(p), d=a-lastAng;
+      if(d>Math.PI) d-=TAU; if(d<-Math.PI) d+=TAU;
+      lastAng=a;
+      var dy=d/TAU*8;                         // 한 바퀴 = 8해
+      if(S.phase==='after'){                  // 자유 돌림 — 앞뒤, 재배반 없음
+        S.year=PURE.clampYear(S.year - dy);
+        slider.value=String(S.year);
+        syncEra();
+        return;
+      }
+      if(d<0){                                // 거스르다 — 역회전만 시간이 된다
+        backAcc+=-d;
+        var before=PURE.anchorIndexAt(S.year);
+        S.year=Math.max(PURE.YEAR_MIN, S.year+dy);
+        Museum.sound.play('creak',{pitch:Math.min(0.3,(PURE.YEAR_MAX-S.year)/220)});
+        if(syncEra() && PURE.anchorIndexAt(S.year)!==before){
+          S.handAnchors++;
+          if(S.handAnchors>=HAND_ANCHORS && S.phase==='rewind'){
+            S.phase='auto'; S.autoV=2.0;      // 시계가 스스로 돈다
+            holdClock=false; canvas.classList.remove('is-hold');
+            Museum.sound.play('curtain');
+          }
+        }
+      }
+    }
+  });
+  window.addEventListener('pointerup', function(){
+    if(holdBill){
+      holdBill=false; S.bill.held=false; canvas.classList.remove('is-hold');
+      var dx=S.bill.x-PLATE.x, dy=S.bill.y-(PLATE.y-30);
+      if(dx*dx+dy*dy < PLATE.r*PLATE.r*1.6){ serveOnce(); }
+      S.bill.x=BILL_HOME.x; S.bill.y=BILL_HOME.y;   // 지폐 귀환(무대 순환)
+      return;
+    }
+    holdClock=false; canvas.classList.remove('is-hold');
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.menuInk<1) S.menuInk=Math.min(1, S.menuInk+dt*1.6);
+      if(S.served){
+        S.served.t+=dt;
+        if(S.served.t>1.5) S.served=null;     // 그릇 치워짐 — 늘 한 그릇
+      }
+      if(S.phase==='auto'){
+        S.autoV=Math.min(26, S.autoV+dt*7);
+        S.year=Math.max(PURE.YEAR_MIN, S.year-S.autoV*dt);
+        syncEra();
+        if(S.year<=PURE.YEAR_MIN){
+          S.year=PURE.YEAR_MIN; S.phase='arrived'; S.feastAt=S.time+1.1;
+          Museum.sound.play('click_light');
+        }
+      }
+      if(S.phase==='arrived' && S.time>=S.feastAt){
+        S.phase='feast'; S.feastAt=S.time+0.2; S.feastGap=0.26;
+      }
+      if(S.phase==='feast'){
+        if(S.feastAt>0 && S.time>=S.feastAt && S.pile.length<FEAST_N){
+          feastDrop();
+          S.feastGap=Math.max(0.055, S.feastGap*0.94);
+          S.feastAt=S.time+S.feastGap;
+        }
+        var allLand=S.pile.length>=FEAST_N;
+        for(var i=0;i<S.pile.length;i++){
+          var b=S.pile[i];
+          if(!b.land){
+            b.y+=980*dt;
+            if(b.y>=b.ty){ b.y=b.ty; b.land=true; }
+            else allLand=false;
+          }
+        }
+        if(S.pile.length>=FEAST_N && allLand && !S.betrayed) triggerBetray();
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      // 카운터
+      ctx.strokeStyle='rgba(95,88,74,.55)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(W*0.06, COUNTER_Y); ctx.lineTo(W*0.94, COUNTER_Y); ctx.stroke();
+      // 접시
+      ctx.strokeStyle='rgba(201,169,97,.55)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(PLATE.x, PLATE.y, PLATE.r, PLATE.r*0.28, 0, 0, TAU); ctx.stroke();
+      // 메뉴판(무대 소품 — 그 해의 기록)
+      ctx.strokeStyle='rgba(201,169,97,.5)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(MENU.x, MENU.y, MENU.w, MENU.h);
+      ctx.fillStyle='rgba(242,234,216,'+(0.88*S.menuInk).toFixed(2)+')';
+      ctx.font='34px "Gowun Batang", serif'; ctx.textAlign='center';
+      var chs='짜장면';
+      for(var c=0;c<chs.length;c++) ctx.fillText(chs[c], MENU.x+MENU.w/2, MENU.y+86+c*62);
+      ctx.font='40px Jua, sans-serif';
+      ctx.fillText(fmtWon(S.menuPrice), MENU.x+MENU.w/2, MENU.y+MENU.h-46);
+      // 달력(무대 소품 — 지금이 몇 해인가)
+      ctx.strokeStyle='rgba(95,88,74,.6)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(CAL.x, CAL.y, CAL.w, CAL.h);
+      ctx.fillStyle='rgba(168,158,136,.8)';
+      ctx.font='34px Jua, sans-serif';
+      ctx.fillText(String(Math.round(S.year)), CAL.x+CAL.w/2, CAL.y+CAL.h/2+12);
+      // 괘종시계
+      var handA=-((PURE.YEAR_MAX-S.year)*0.35)-Math.PI/2;
+      ctx.strokeStyle='rgba(201,169,97,.8)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(CLOCK.x, CLOCK.y, CLOCK.r, 0, TAU); ctx.stroke();
+      ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(CLOCK.x, CLOCK.y);
+      ctx.lineTo(CLOCK.x+Math.cos(handA)*CLOCK.r*0.72, CLOCK.y+Math.sin(handA)*CLOCK.r*0.72); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CLOCK.x, CLOCK.y);
+      ctx.lineTo(CLOCK.x+Math.cos(handA*0.6)*CLOCK.r*0.46, CLOCK.y+Math.sin(handA*0.6)*CLOCK.r*0.46); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CLOCK.x, CLOCK.y+CLOCK.r);       // 추
+      ctx.lineTo(CLOCK.x+Math.sin(S.time*2.4)*16, CLOCK.y+CLOCK.r+58); ctx.stroke();
+      if(S.invite && (S.phase==='pay' || S.phase==='rewind')){
+        ctx.strokeStyle='rgba(242,234,216,'+(0.10+0.2*breath).toFixed(2)+')';
+        ctx.lineWidth=6;
+        ctx.beginPath(); ctx.arc(CLOCK.x, CLOCK.y, CLOCK.r+12, 0, TAU); ctx.stroke();
+      }
+      // 지폐(같은 한 장)
+      if(S.phase!=='feast' && S.phase!=='betrayed'){
+        var bb=(S.phase==='boot')?(0.10+0.22*breath):0.16;
+        ctx.strokeStyle='rgba(242,234,216,.85)'; ctx.lineWidth=1.5;
+        ctx.strokeRect(S.bill.x-BILL.w/2, S.bill.y-BILL.h/2, BILL.w, BILL.h);
+        ctx.beginPath(); ctx.arc(S.bill.x+BILL.w*0.22, S.bill.y, 16, 0, TAU); ctx.stroke();
+        ctx.fillStyle='rgba(242,234,216,'+bb.toFixed(2)+')';
+        ctx.fillRect(S.bill.x-BILL.w/2+4, S.bill.y-BILL.h/2+4, BILL.w-8, BILL.h-8);
+      }
+      // 2막의 한 그릇
+      if(S.served){ drawBowl(ctx, PLATE.x, PLATE.y-26, 1, Math.min(1,S.served.t*3)); }
+      // 4막 그릇 산
+      for(var i=0;i<S.pile.length;i++){ var b=S.pile[i]; drawBowl(ctx, b.x, b.y, 0.62, 1); }
+      // 여운 분필(그 해의 기록 — E1이 즉석에서 답한다)
+      if(S.phase==='after'){
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
+        ctx.fillText(chalkEra(), W*0.5, 130);
+      }
+    }
+  });
+  function drawBowl(ctx,x,y,s,a){
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.globalAlpha=a;
+    ctx.fillStyle='rgba(13,13,22,.9)'; ctx.strokeStyle='rgba(201,169,97,.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,38,0,Math.PI); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='rgba(242,234,216,.45)'; ctx.lineWidth=1.2;   // 김
+    ctx.beginPath(); ctx.moveTo(-10,-8); ctx.quadraticCurveTo(-16,-26,-8,-40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10,-8); ctx.quadraticCurveTo(16,-28,8,-44); ctx.stroke();
+    ctx.restore(); ctx.globalAlpha=1;
+  }
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S5 = {
+    S:S, PURE:PURE,
+    serveOnce:serveOnce, syncEra:syncEra, chalkEra:chalkEra,
+    beginPay:function(){ if(S.phase==='boot') S.phase='pay'; },
+    beginRewind:function(){ if(S.phase==='pay'||S.phase==='boot') S.phase='rewind'; },
+    handRewind:function(years){                // 손 거스름 모사(앵커 계수 동일 로직)
+      if(S.phase!=='rewind') return;
+      var before=PURE.anchorIndexAt(S.year);
+      S.year=Math.max(PURE.YEAR_MIN, S.year-years);
+      if(syncEra() && PURE.anchorIndexAt(S.year)!==before){
+        S.handAnchors++;
+        if(S.handAnchors>=HAND_ANCHORS){ S.phase='auto'; S.autoV=2.0; }
+      }
+    },
+    pilePos:pilePos, FEAST_N:FEAST_N, HAND_ANCHORS:HAND_ANCHORS
+  };
+})();
+</script>
+</body>
+</html>
