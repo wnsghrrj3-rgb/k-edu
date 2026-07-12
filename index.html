@@ -295,10 +295,10 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
   <div class="screen" id="s-semester">
     <div class="bc">
       <span>K-edu</span><span class="bc-sep">›</span>
-      <button class="bc-btn" onclick="goTo('s-grade')">학년 선택</button>
+      <button class="bc-btn" onclick="nav('s-grade')">학년 선택</button>
       <span class="bc-sep">›</span><span id="bc-grade">1학년</span>
     </div>
-    <button class="back-btn" onclick="goTo('s-grade')">← 학년 다시 선택</button>
+    <button class="back-btn" onclick="nav('s-grade')">← 학년 다시 선택</button>
     <div class="page-title"><span class="accent">몇 학기</span>를 공부하고 있나요?</div>
     <div class="sem-grid">
       <div class="sem-card" onclick="pickSemester(1)">
@@ -318,12 +318,12 @@ footer{text-align:center;padding:18px 24px;border-top:1px solid #E2E8F0;backgrou
   <div class="screen" id="s-subject">
     <div class="bc">
       <span>K-edu</span><span class="bc-sep">›</span>
-      <button class="bc-btn" onclick="goTo('s-grade')">학년 선택</button>
+      <button class="bc-btn" onclick="nav('s-grade')">학년 선택</button>
       <span class="bc-sep">›</span>
-      <button class="bc-btn" onclick="goTo('s-semester')">학기 선택</button>
+      <button class="bc-btn" onclick="nav('s-semester')">학기 선택</button>
       <span class="bc-sep">›</span><span>과목 선택</span>
     </div>
-    <button class="back-btn" onclick="goTo('s-semester')">← 학기 다시 선택</button>
+    <button class="back-btn" onclick="nav('s-semester')">← 학기 다시 선택</button>
     <div id="grade-badge" class="grade-badge"></div>
     <div class="page-title">어떤 <span class="accent">과목</span>을 공부할까요?</div>
     <div class="subject-grid" id="subject-grid"></div>
@@ -504,17 +504,22 @@ let currentProfile = null; // student_profiles row
 //   /?role=student → 학생 학년 선택
 // =============================================
 function applyEntryRoute(){
-  let role = new URLSearchParams(location.search).get('role');
-  if(!role && location.hash){
-    const h = location.hash.replace('#','');
-    if(h === 'teacher' || h === 'student') role = h;
+  const target = screenFromURL();
+  // 깊은 화면으로 직접 진입(콘텐츠에서 홈 복귀 등)해도
+  // 기기 뒤로가기가 단계별로 동작하도록 history 스택을 미리 쌓는다.
+  const CHAIN = {
+    's-role':     ['s-role'],
+    's-teacher':  ['s-role','s-teacher'],
+    's-grade':    ['s-role','s-grade'],
+    's-semester': ['s-role','s-grade','s-semester'],
+    's-subject':  ['s-role','s-grade','s-semester','s-subject']
+  };
+  const shown = show(target);              // 데이터 없으면 얕은 화면으로 자동 강등
+  const chain = CHAIN[shown] || ['s-role'];
+  history.replaceState({screen: chain[0]}, '', SCREEN_URL[chain[0]]);
+  for(let i=1; i<chain.length; i++){
+    history.pushState({screen: chain[i]}, '', SCREEN_URL[chain[i]]);
   }
-  if(role === 'teacher'){
-    goTo('s-teacher');
-  } else if(role === 'student'){
-    goTo('s-grade');
-  }
-  // 그 외 → 역할 선택(s-role)이 기본 활성 그대로
 }
 
 // =============================================
@@ -679,30 +684,89 @@ async function doLogout(){
 }
 
 // =============================================
-// 화면 전환
+// 화면 전환 — history 연동
+//   show(id)  : 화면 표시만 (history 건드리지 않음 — popstate·초기 진입용)
+//   nav(id)   : history.pushState 후 표시 (사용자 이동용)
+//   기기·브라우저 뒤로가기 = popstate → 직전 화면으로 한 단계 복귀
 // =============================================
-function goTo(id){
+const SCREEN_URL = {
+  's-role':     '/',
+  's-teacher':  '/?role=teacher',
+  's-grade':    '/?role=student',
+  's-semester': '/?role=student&step=semester',
+  's-subject':  '/?view=subject'
+};
+const GRADE_META = {
+  1:{c:'#FF85A1',e:'🌸'}, 2:{c:'#FFB347',e:'🌻'}, 3:{c:'#3BAB72',e:'🍀'},
+  4:{c:'#FF7043',e:'🔥'}, 5:{c:'#3D90F0',e:'🌊'}, 6:{c:'#7E57C2',e:'🚀'}
+};
+
+// localStorage에 저장된 학년·학기로 상태 변수 복원 (직접 진입·홈 복귀 시)
+function restoreGradeState(){
+  const g = +localStorage.getItem('kedu_grade');
+  if(GRADE_META[g]){
+    grade = g; gradeColor = GRADE_META[g].c; gradeEmoji = GRADE_META[g].e;
+  }
+  const s = +localStorage.getItem('kedu_semester');
+  if(s === 1 || s === 2) semester = s;
+}
+
+// 화면별 표시 준비 (진입 경로와 무관하게 항상 올바른 데이터로 그리기)
+function prepScreen(id){
+  if(id === 's-semester'){
+    if(!grade) restoreGradeState();
+    if(!grade) return 's-grade';
+    document.getElementById('bc-grade').textContent = grade + '학년';
+    [1,2].forEach(n => document.getElementById('saved-'+n).style.display='none');
+    const s = localStorage.getItem('kedu_semester');
+    if(s) document.getElementById('saved-'+s).style.display='inline-flex';
+  }
+  if(id === 's-subject'){
+    if(!grade || !semester) restoreGradeState();
+    if(!grade) return 's-grade';
+    if(!semester) return 's-semester';
+    renderSubject();
+  }
+  return id;
+}
+
+function show(id){
+  id = prepScreen(id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  return id;
+}
+
+function nav(id){
+  const shown = show(id);
+  history.pushState({screen: shown}, '', SCREEN_URL[shown] || '/');
+}
+
+window.addEventListener('popstate', function(e){
+  const id = (e.state && e.state.screen) ? e.state.screen : screenFromURL();
+  show(id);
+});
+
+// URL → 화면 (state 없는 진입·복귀 대비)
+function screenFromURL(){
+  const p = new URLSearchParams(location.search);
+  if(p.get('view') === 'subject') return 's-subject';
+  const role = p.get('role') || (location.hash ? location.hash.replace('#','') : '');
+  if(role === 'teacher') return 's-teacher';
+  if(role === 'student') return p.get('step') === 'semester' ? 's-semester' : 's-grade';
+  return 's-role';
 }
 
 // =============================================
-// 역할 선택 (학생 / 선생님) — URL도 함께 갱신
+// 역할 선택 (학생 / 선생님)
 // =============================================
 function pickRole(role){
-  if(role === 'teacher'){
-    history.replaceState(null,'','/?role=teacher');
-    goTo('s-teacher');
-  } else {
-    history.replaceState(null,'','/?role=student');
-    goTo('s-grade');
-  }
+  nav(role === 'teacher' ? 's-teacher' : 's-grade');
 }
 
-// 처음(역할 선택)으로 — URL 초기화
+// 처음(역할 선택)으로
 function goHome(){
-  history.replaceState(null,'','/');
-  goTo('s-role');
+  nav('s-role');
 }
 
 // =============================================
@@ -711,11 +775,7 @@ function goHome(){
 function pickGrade(g, c, e){
   grade=+g; gradeColor=c; gradeEmoji=e;
   localStorage.setItem('kedu_grade', g);
-  document.getElementById('bc-grade').textContent = g+'학년';
-  [1,2].forEach(n => document.getElementById('saved-'+n).style.display='none');
-  const s = localStorage.getItem('kedu_semester');
-  if(s) document.getElementById('saved-'+s).style.display='inline-flex';
-  goTo('s-semester');
+  nav('s-semester');
 }
 
 // =============================================
@@ -724,13 +784,13 @@ function pickGrade(g, c, e){
 function pickSemester(s){
   semester = s;
   localStorage.setItem('kedu_semester', s);
-  showSubject();
+  nav('s-subject');
 }
 
 // =============================================
-// 과목 화면
+// 과목 화면 그리기 (표시는 show/nav가 담당)
 // =============================================
-function showSubject(){
+function renderSubject(){
   const badge = document.getElementById('grade-badge');
   badge.textContent = gradeEmoji + ' ' + grade + '학년 ' + semester + '학기';
   badge.style.background = gradeColor;
@@ -744,7 +804,6 @@ function showSubject(){
       (ready?'':'<div class="soon-badge">준비 중</div>') +
     '</div>';
   }).join('');
-  goTo('s-subject');
 }
 
 // =============================================
