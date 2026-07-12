@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>케이배틀 — 들어가기</title>
+<link rel="stylesheet" href="kbattle.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="kb-phone" id="root">
+  <div class="kb-gate" id="gate">
+    <div class="kb-logo">케이<span>배틀</span></div>
+    <div class="kb-sub">방코드를 입력하고 들어가요</div>
+    <div class="kb-field">
+      <label>방코드</label>
+      <input class="kb-input code" id="code" maxlength="4" autocomplete="off" placeholder="ABCD">
+    </div>
+    <div class="kb-field">
+      <label>내 이름(별명)</label>
+      <input class="kb-input" id="name" maxlength="10" autocomplete="off" placeholder="예: 햇살이">
+    </div>
+    <button class="kb-btn kb-enter" id="enter">들어가기 ▶</button>
+    <div class="kb-err" id="err"></div>
+  </div>
+</div>
+<div class="kb-conn" id="conn">연결 준비…</div>
+
+<script src="../kple/kple-core.js"></script>
+<script src="kb-questions.js"></script>
+<script src="kb-battle.js"></script>
+<script src="kb-mode-race.js"></script>
+<script>
+(function () {
+  var root = document.getElementById('root');
+  var conn = document.getElementById('conn');
+  var err = document.getElementById('err');
+  function setConn(t, cls) { conn.textContent = t; conn.className = 'kb-conn' + (cls ? ' ' + cls : ''); }
+
+  var gateHTML = root.innerHTML;
+  var codeEl = document.getElementById('code');
+  codeEl.addEventListener('input', function () { codeEl.value = codeEl.value.toUpperCase(); });
+
+  document.getElementById('enter').onclick = function () {
+    var code = (codeEl.value || '').trim().toUpperCase();
+    var name = (document.getElementById('name').value || '').trim();
+    if (code.length < 4) { err.textContent = '방코드 4자리를 입력해요'; return; }
+    if (!name) { err.textContent = '이름을 입력해요'; return; }
+    if (!window.supabase) { setConn('Supabase 로드 실패 (망 확인)', 'err'); return; }
+    err.textContent = '';
+
+    root.innerHTML = '<div id="play"></div>';
+    var playEl = document.getElementById('play');
+    var ctx;
+    try { ctx = Kple.join(code, name, { el: playEl, game: 'kbattle' }); }
+    catch (e) { setConn(String(e.message || e), 'err'); root.innerHTML = gateHTML; return; }
+    ctx.on('status', function (s) {
+      if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + code, 'ok');
+      else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') setConn('연결 오류: ' + s, 'err');
+      else setConn(s);
+    });
+  };
+})();
+</script>
+</body>
+</html>
