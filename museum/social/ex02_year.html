@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>지구의 1년 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-tearing{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--social); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="year-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumYear=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var AGE=4567000000;                        // 지구의 나이(년) — 통용값
+  var MONTH_DAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+  var SEC_DAY=86400, SEC_YEAR=365*SEC_DAY;   // 31,536,000
+  var CUM=[0];                               // 월 시작 누적일
+  for(var i=0;i<12;i++) CUM.push(CUM[i]+MONTH_DAYS[i]);
+  function secOf(yearsAgo){                  // n년 전 → 달력 초(0=1/1 00:00)
+    return SEC_YEAR - Math.round(yearsAgo/AGE*SEC_YEAR);
+  }
+  function yearsAgoOf(sec){                  // 달력 초 → n년 전
+    return (SEC_YEAR-sec)/SEC_YEAR*AGE;
+  }
+  function calOf(sec){                       // 달력 초 → {m,d,hh,mm,ss}
+    if(sec<0) sec=0;
+    if(sec>=SEC_YEAR) return {m:12,d:31,hh:23,mm:59,ss:59, midnight:true};
+    var day=Math.floor(sec/SEC_DAY), rem=sec-day*SEC_DAY;
+    var m=0; while(CUM[m+1]<=day) m++;
+    return { m:m+1, d:day-CUM[m]+1,
+             hh:Math.floor(rem/3600), mm:Math.floor(rem%3600/60), ss:rem%60 };
+  }
+  function dayOf(m,d){ return CUM[m-1]+(d-1); }          // 0-based 연중 일
+  var EVENTS=[                               // 지질 연대 — 과학적 정설 통용값(동결)
+    { id:'earth',    y:4567000000, kind:'cosmos', line:'불덩이 하나가, 식기 시작한다' },
+    { id:'moon',     y:4500000000, kind:'cosmos', line:'달이 태어난다' },
+    { id:'life',     y:3800000000, kind:'life',   line:'바다에, 보이지 않는 첫 점' },
+    { id:'oxygen',   y:2400000000, kind:'life',   line:'작은 것들이, 공기를 만들기 시작한다' },
+    { id:'eukary',   y:1800000000, kind:'life',   line:'점 속에, 방이 생긴다' },
+    { id:'multi',    y: 600000000, kind:'burst',  line:'점들이, 처음으로 모여 산다' },
+    { id:'cambrian', y: 541000000, kind:'burst',  line:'바다가, 갑자기 붐빈다' },
+    { id:'landplant',y: 470000000, kind:'burst',  line:'초록이 뭍으로 올라온다' },
+    { id:'dino',     y: 230000000, kind:'burst',  line:'거대한 것들의 시대' },
+    { id:'dinoend',  y:  66000000, kind:'burst',  line:'돌 하나가 떨어지고 — 조용해진다' },
+    { id:'sapiens',  y:    300000, kind:'human',  line:'누군가, 처음으로 뒤를 돌아본다' },
+    { id:'farm',     y:     10000, kind:'human',  line:'씨앗을 심는 손' },
+    { id:'writing',  y:      5000, kind:'record', line:'기록이 시작된다' },
+    { id:'hangul',   y:       583, kind:'record', line:'스물여덟 글자' }
+  ];
+  function eventSec(e){ return secOf(e.y); }
+  return { AGE:AGE, MONTH_DAYS:MONTH_DAYS, SEC_DAY:SEC_DAY, SEC_YEAR:SEC_YEAR, CUM:CUM,
+           secOf:secOf, yearsAgoOf:yearsAgoOf, calOf:calOf, dayOf:dayOf,
+           EVENTS:EVENTS, eventSec:eventSec };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">지구의 시간을, 1년짜리 달력에 담았습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="1" max="365" value="134" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumYear;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var SEC_YEAR=PURE.SEC_YEAR, SEC_DAY=PURE.SEC_DAY;
+  var MONTH_KO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+  // 사건 시각(초) — E1 단일 원천
+  var EV = PURE.EVENTS.map(function(e){ return { id:e.id, sec:PURE.eventSec(e), line:e.line, kind:e.kind }; })
+                      .sort(function(a,b){ return a.sec-b.sec; });
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',              // boot→tear→auto→betrayed→after
+    sec:0, handTears:0,
+    evIdx:0, holdT:0, lastEvent:null, eventFade:0,
+    autoAt:0, betrayed:false, time:0,
+    torn:[]                    // 떨어지는 낱장(연출)
+  };
+  function nextPendingEvent(){ return S.evIdx<EV.length ? EV[S.evIdx] : null; }
+
+  // ── 속도 계보(자동 넘김) — 남을수록 빠르고, 끝에 다가갈수록 시간이 쪼개진다
+  function speedOf(sec){
+    var remain=SEC_YEAR-sec;
+    if(remain>40*SEC_DAY)  return 16*SEC_DAY;   // 한 해의 허리 — 촤르륵
+    if(remain>6*SEC_DAY)   return 5*SEC_DAY;    // 12월 — 느려진다
+    if(remain>SEC_DAY)     return 1.4*SEC_DAY;  // 마지막 주
+    if(remain>3600)        return 7200;         // 마지막 하루 = 시간의 장
+    if(remain>60)          return 320;          // 마지막 시간 = 분의 장
+    return 11;                                  // 마지막 1분 = 초의 장
+  }
+  function labelOf(sec){
+    var c=PURE.calOf(Math.min(sec, SEC_YEAR-1));
+    var remain=SEC_YEAR-sec;
+    if(remain>SEC_DAY) return { big:MONTH_KO[c.m-1], small:c.d+'일', tiny:null };
+    if(remain>3600)    return { big:'12월 31일', small:c.hh+'시', tiny:null };
+    if(remain>60)      return { big:'12월 31일', small:'밤 '+c.hh+'시 '+c.mm+'분', tiny:null };
+    return { big:'12월 31일', small:c.hh+'시 '+c.mm+'분 '+c.ss+'초', tiny:null };
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed'; S.sec=SEC_YEAR;
+    Museum.betray({x:0.5, y:0.42}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='달력의 밤들은 비어 있었다 &mdash; 당신이 아는 모든 이야기는, 마지막 4초에 있다'
+      +'<span class="small">46억 년 = 1년 &middot; 하루 = 1,250만 년 &middot; 1초 = 145년</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'지구의 1년',
+      story:'인간은 12월 31일 밤 11시 25분에 도착했다. 손잡이로 아무 날짜나 짚어 보세요 — 그날이 몇 년 전인지, 달력이 알려줍니다.',
+      fine:'GEOLOGIC CALENDAR · 4.567 GA = 365 DAYS' });
+    Museum.ticket.grant({ id:'s2_year', title:'지구의 1년', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        var x=w*0.28, y=h*0.2, cw=w*0.44, ch=h*0.62;
+        c.strokeRect(x,y,cw,ch);
+        c.beginPath(); c.moveTo(x,y+ch*0.22); c.lineTo(x+cw,y+ch*0.22); c.stroke();
+        c.beginPath(); c.arc(x+cw*0.3,y,2.6,0,Math.PI*2); c.stroke();
+        c.beginPath(); c.arc(x+cw*0.7,y,2.6,0,Math.PI*2); c.stroke();
+        c.font='10px Jua'; c.fillStyle='rgba(242,234,216,.9)'; c.textAlign='center';
+        c.fillText('12·31', x+cw*0.5, y+ch*0.62);
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 아무 날짜나 짚기(E1 즉석 환산) ──────────────
+  var slider=document.querySelector('#reexp input');
+  var pickDay=null;
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    pickDay=parseInt(slider.value,10)||134;
+    S.sec=Math.min(SEC_YEAR-1, (pickDay-1)*SEC_DAY+SEC_DAY*0.5);
+    Museum.sound.play('paper');
+  });
+  function pickText(){
+    if(pickDay===null) return null;
+    var mid=(pickDay-1)*SEC_DAY+SEC_DAY*0.5;
+    var ya=PURE.yearsAgoOf(mid);
+    var t;
+    if(ya>=1e8) t='약 '+(ya/1e8).toFixed(1).replace(/\.0$/,'')+'억 년 전';
+    else if(ya>=1e4) t='약 '+Math.round(ya/1e4)+'만 년 전';
+    else t='약 '+Math.round(ya)+'년 전';
+    return t;
+  }
+
+  // ── 입력: 찢다(아래로 끌기) — 여운엔 자유 넘김 ───────────────────
+  var press=null;
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.phase==='auto' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.phase==='boot'){ S.phase='tear'; }
+    press={y:p.y, moved:0};
+    canvas.classList.add('is-tearing');
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!press || Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var dy=p.y-press.y;
+    if(S.phase==='tear' && dy>90){ press.y=p.y; tear(); }
+    else if(S.phase==='after'){ S.sec=Math.max(0, Math.min(SEC_YEAR-1, S.sec+dy*SEC_DAY*0.06)); press.y=p.y; pickDay=null; }
+  });
+  window.addEventListener('pointerup', function(){
+    press=null; canvas.classList.remove('is-tearing');
+  });
+  function tear(){
+    if(S.phase!=='tear') return;                          // 이양 뒤 손 무시
+    S.handTears++;
+    S.sec=Math.min(S.sec+SEC_DAY, 30*SEC_DAY);
+    while(S.evIdx<EV.length && EV[S.evIdx].sec<=S.sec){   // 손 찢기 중 지나친 장의 사건
+      S.lastEvent=EV[S.evIdx]; S.evIdx++; S.eventFade=1;
+    }
+    S.torn.push({x:W*0.5,y:360,vx:(Museum.rng(S.handTears)()-0.5)*120,vy:60,rot:0,life:1});
+    Museum.sound.play('paper');
+    if(S.handTears>=10) S.autoAt=S.time+1.2;              // 열 장 — 달력이 손을 이어받는다
+  }
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  var lastFlip=0;
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      // 낱장 낙하
+      for(var i=S.torn.length-1;i>=0;i--){
+        var t=S.torn[i];
+        t.x+=t.vx*dt; t.y+=t.vy*dt; t.vy+=420*dt; t.rot+=dt*2.2; t.life-=dt*0.7;
+        if(t.life<=0) S.torn.splice(i,1);
+      }
+      if(S.phase==='tear' && S.autoAt && S.time>=S.autoAt){
+        S.phase='auto'; Museum.sound.play('curtain');
+      }
+      if(S.phase!=='auto') return;
+      // 사건의 장 — 잠깐 멈춰 분필 한 줄
+      if(S.holdT>0){ S.holdT-=dt; S.eventFade=Math.min(1,S.eventFade+dt*3); return; }
+      S.eventFade=Math.max(0, S.eventFade-dt*0.8);
+      var adv=speedOf(S.sec)*dt;
+      var ev=nextPendingEvent();
+      while(ev && ev.sec<S.sec){ S.evIdx++; ev=nextPendingEvent(); } // 지나간 사건은 되감지 않는다
+      if(ev && S.sec+adv>=ev.sec){
+        S.sec=ev.sec; S.evIdx++;
+        S.lastEvent=ev; S.holdT=(ev.kind==='human'||ev.kind==='record')?1.5:1.1;
+        S.eventFade=0;
+        Museum.sound.play('clack');
+        return;
+      }
+      S.sec+=adv;
+      if(S.time-lastFlip>0.09){ Museum.sound.play('clack'); lastFlip=S.time; }
+      if(S.sec>=SEC_YEAR) triggerBetray();
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var cx=W*0.5, top=170, pw=460, ph=430;
+      var remain=SEC_YEAR-S.sec;
+      // 스탠드
+      ctx.strokeStyle='rgba(138,115,63,.6)'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(cx-pw*0.62, top-26); ctx.lineTo(cx+pw*0.62, top-26); ctx.stroke();
+      ctx.fillStyle='rgba(201,169,97,.85)';
+      [-0.3,0.3].forEach(function(o){ ctx.beginPath(); ctx.arc(cx+pw*o, top-26, 6, 0, Math.PI*2); ctx.fill(); });
+      // 재귀 펼침 — 마지막 하루·시간·분은 장이 겹으로
+      var depth = remain<=60 ? 3 : (remain<=3600 ? 2 : (remain<=SEC_DAY ? 1 : 0));
+      for(var d=depth; d>=1; d--){
+        var off=d*14;
+        ctx.strokeStyle='rgba(138,115,63,'+(0.25-0.05*d)+')'; ctx.lineWidth=1;
+        ctx.strokeRect(cx-pw/2-off, top-off, pw+off*2, ph+off*2);
+      }
+      // 달력 장
+      ctx.fillStyle='rgba(21,20,34,.96)';
+      ctx.fillRect(cx-pw/2, top, pw, ph);
+      ctx.strokeStyle='rgba(201,169,97,.55)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-pw/2, top, pw, ph);
+      ctx.strokeStyle='rgba(138,115,63,.5)';
+      ctx.beginPath(); ctx.moveTo(cx-pw/2, top+86); ctx.lineTo(cx+pw/2, top+86); ctx.stroke();
+      var lb=labelOf(S.sec);
+      ctx.fillStyle='rgba(242,234,216,.92)'; ctx.textAlign='center';
+      ctx.font='34px "Gowun Batang", serif';
+      ctx.fillText(lb.big, cx, top+58);
+      ctx.font=(remain>SEC_DAY? '120px' : '76px')+' Jua';
+      ctx.fillText(lb.small, cx, top+ (remain>SEC_DAY? 285 : 265));
+      // 배반 직전 마지막 장
+      if(S.phase==='betrayed' || (S.phase==='after' && S.sec>=SEC_YEAR-1 && pickDay===null)){
+        ctx.font='30px "Gowun Batang", serif';
+        ctx.fillStyle='rgba(242,234,216,.95)';
+        ctx.fillText('그리고, 당신', cx, top+352);
+      }
+      // 사건 분필 한 줄
+      if(S.lastEvent && (S.eventFade>0.02 || S.holdT>0)){
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,'+(0.85*Math.max(S.eventFade, S.holdT>0?1:0)).toFixed(2)+')';
+        ctx.fillText(S.lastEvent.line, cx, top+ph+52);
+      }
+      // 여운 짚기 환산
+      if(S.phase==='after' && pickDay!==null){
+        var pt=pickText();
+        ctx.font='19px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)';
+        ctx.fillText(pt, cx, top+ph+52);
+      }
+      // 1막 숨쉼 — 장 귀퉁이
+      if(S.phase==='boot'){
+        ctx.fillStyle='rgba(242,234,216,'+(0.06+0.14*breath).toFixed(2)+')';
+        ctx.beginPath(); ctx.moveTo(cx+pw/2, top+ph); ctx.lineTo(cx+pw/2-64, top+ph); ctx.lineTo(cx+pw/2, top+ph-64); ctx.closePath(); ctx.fill();
+      }
+      // 찢긴 낱장
+      S.torn.forEach(function(t){
+        ctx.save(); ctx.translate(t.x,t.y); ctx.rotate(t.rot);
+        ctx.globalAlpha=Math.max(0,t.life);
+        ctx.strokeStyle='rgba(201,169,97,.5)'; ctx.lineWidth=1;
+        ctx.strokeRect(-26,-32,52,64);
+        ctx.restore(); ctx.globalAlpha=1;
+      });
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S2 = {
+    S:S, PURE:PURE, EV:EV,
+    tear:tear,
+    skipTo:function(sec){                     // 자동 항해 중 시간 도약(사건 인덱스 정렬)
+      S.sec=sec;
+      S.evIdx=0; while(S.evIdx<EV.length && EV[S.evIdx].sec<sec) S.evIdx++;
+      S.holdT=0;
+    },
+    labelOf:labelOf, pickText:pickText
+  };
+})();
+</script>
+</body>
+</html>
