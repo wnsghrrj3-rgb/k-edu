@@ -10,7 +10,8 @@
 <link rel="stylesheet" href="../core/museum.css">
 <style>
   html,body{ background:var(--night-1); }
-  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:default; }
+  #stage-canvas.is-over{ cursor:grab; }
   #stage-canvas.is-dragging{ cursor:grabbing; }
   #premise{ position:fixed; top:6vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
             font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
@@ -224,7 +225,7 @@
   var S = {
     phase:'boot',            // boot→drag→settled→auto→betrayed→after
     lat:{}, moved:{}, handMoves:0,
-    invited:false, grabbed:null,
+    invited:false, grabbed:null, grabOff:0, hover:null,
     settleAt:0, autoAt:0, autoIdx:0, autoStep:0.9, autoFrom:0, autoTo:0, autoT:0,
     picked:'greenland', betrayed:false, time:0
   };
@@ -239,11 +240,13 @@
     return shapeCache[key];
   }
   function homeLimit(id){ return PURE.DATA[id].lat0; }
+  var BAND=25;                                                       // 2·3막 손의 밴드(±25° — sec²25=1.22배, 눈에 띄지 않는다)
   function clampLat(id, lat){
-    var h=homeLimit(id), sgn=h>=0?1:-1;
+    var h=homeLimit(id);
     if(S.phase==='after') return PURE.clampSafe(id, lat);            // 여운 = 위도 해금(극 안전 구간까지)
-    if(h>=0) return Math.max(0, Math.min(h, lat));                   // 2·3막 = 제 위도와 적도 사이
-    return Math.min(0, Math.max(h, lat));
+    if(id==='greenland') return Math.max(0, Math.min(h, lat));       // 그린란드 = 제 위도와 적도 사이(배반의 축)
+    var lo=Math.min(h, -BAND), hi=Math.max(h, BAND);                 // 적도권 = 남북 양방향 — 어디로 끌어도 그대로다(예측 심기)
+    return Math.max(lo, Math.min(hi, PURE.clampSafe(id, lat)));
   }
 
   // ── 배반 ─────────────────────────────────────────────────────────
@@ -324,8 +327,10 @@
     }
     return inside;
   }
-  function grab(id){
+  function grab(id, atLat){
     S.grabbed=id; S.picked=id;
+    // 잡은 자리가 손에 붙는다 — 나라가 커서로 순간이동하지 않는다
+    S.grabOff = (typeof atLat==='number') ? (S.lat[id]-atLat) : 0;
     if(S.phase==='boot') S.phase='drag';
     canvas.classList.add('is-dragging');
     Museum.sound.play('creak',{pitch:0.1});
@@ -342,7 +347,7 @@
   }
   function release(){
     if(!S.grabbed) return;
-    var id=S.grabbed; S.grabbed=null;
+    var id=S.grabbed; S.grabbed=null; S.grabOff=0;
     canvas.classList.remove('is-dragging');
     if(S.phase==='after') return;
     if(id==='greenland' && Math.abs(S.lat[id])<3.0){    // 적도에 눌러앉는다 — 스프링 복귀 없음
@@ -354,18 +359,28 @@
     S.lat[id]=homeLimit(id);                             // 스프링 복귀
     Museum.sound.play('paper');
   }
+  function handsFree(){
+    return !Museum.isLocked() && S.phase!=='auto' && S.phase!=='settled' && S.phase!=='betrayed';
+  }
   canvas.addEventListener('pointerdown', function(e){
-    if(Museum.isLocked() || S.phase==='auto' || S.phase==='settled' || S.phase==='betrayed') return;
+    if(!handsFree()) return;
     var p=stage.toLogical(e.clientX,e.clientY);
     var id=hit(p);
-    if(id) grab(id);
+    if(id){
+      grab(id, latAtY(p.y));
+      if(canvas.setPointerCapture && e.pointerId!=null){ try{ canvas.setPointerCapture(e.pointerId); }catch(_){} }
+    }
   });
   canvas.addEventListener('pointermove', function(e){
-    if(!S.grabbed || Museum.isLocked()) return;
+    if(Museum.isLocked()) return;
     var p=stage.toLogical(e.clientX,e.clientY);
-    dragTo(latAtY(p.y));
+    if(S.grabbed){ dragTo(latAtY(p.y)+S.grabOff); return; }
+    S.hover = handsFree() ? hit(p) : null;                       // 잡을 수 있는 것은 손이 먼저 안다
+    canvas.classList.toggle('is-over', !!S.hover);
   });
+  canvas.addEventListener('pointerleave', function(){ S.hover=null; canvas.classList.remove('is-over'); });
   window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
 
   // ── 기계의 밤 — 북쪽이 스스로 내려온다 ───────────────────────────
   function startAuto(){
@@ -426,7 +441,7 @@
       ctx.beginPath(); ctx.moveTo(MAPX, sy(0)); ctx.lineTo(MAPX+MAPW, sy(0)); ctx.stroke();
 
       // 배경 육지
-      drawRings(ctx, PURE.bgRings(), 'rgba(242,234,216,.13)', 'rgba(168,158,136,.30)', 1);
+      drawRings(ctx, PURE.bgRings(), 'rgba(242,234,216,.07)', 'rgba(168,158,136,.20)', 1);
 
       // 떠난 자리 — 분필 유령 윤곽
       PURE.ORDER.forEach(function(id){
@@ -437,18 +452,19 @@
       // 나라들
       PURE.ORDER.forEach(function(id){
         var away=Math.abs(S.lat[id]-homeLimit(id))>0.5;
-        var a=(S.grabbed===id) ? .40 : away ? .34 : .26;
-        drawRings(ctx, shapeOf(id), 'rgba(242,234,216,'+a.toFixed(2)+')',
-                  (S.grabbed===id)?'rgba(201,169,97,.85)':'rgba(201,169,97,.50)', 1.4);
+        var held=(S.grabbed===id), over=(S.hover===id && !S.grabbed);
+        var a = held ? .46 : over ? .40 : away ? .36 : .30;
+        var st = held ? 'rgba(201,169,97,.95)' : over ? 'rgba(201,169,97,.80)' : 'rgba(201,169,97,.58)';
+        drawRings(ctx, shapeOf(id), 'rgba(242,234,216,'+a.toFixed(2)+')', st, (held||over)?1.9:1.4);
       });
 
       // 초대의 숨결
       var inv=null;
-      if(S.phase==='boot') inv='brazil';
-      else if(S.phase==='drag' && S.invited && !S.moved.greenland) inv='greenland';
-      if(inv){
+      if(S.phase==='drag' && S.invited && !S.moved.greenland) inv='greenland';
+      else if(S.handMoves===0 && !S.moved.brazil && (S.phase==='boot'||S.phase==='drag')) inv='brazil';
+      if(inv && S.grabbed!==inv){
         drawRings(ctx, shapeOf(inv), null,
-          'rgba(242,234,216,'+(0.20+0.45*breath).toFixed(2)+')', 2.6);
+          'rgba(242,234,216,'+(0.34+0.50*breath).toFixed(2)+')', 3.0);
       }
 
       // 여운의 분필
