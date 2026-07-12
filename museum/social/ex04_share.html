@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>만 원의 해부 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:default; }
+  #stage-canvas.is-over{ cursor:grab; }
+  #stage-canvas.is-dragging{ cursor:grabbing; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+     display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:5vh; gap:14px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+     font-family:'Gowun Batang',serif; font-size:clamp(16px,2.2vw,23px); color:var(--ink);
+     text-align:center; letter-spacing:.02em; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+     font-size:14px; color:var(--ink-dim); line-height:1.7; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(340px,66vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp .cap{ font-family:'Gowun Dodum',sans-serif; font-size:14px; color:var(--ink-dim); letter-spacing:.02em; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변).
+     유통비용률 = aT(한국농수산식품유통공사) 2023년 유통실태 종합. 공표값 상수. 보정·안분 0.
+     조각의 크기 = 그 몫의 비율 그대로. 여기에 연출은 없다. -->
+<script id="share-pure">
+(function(global){
+  'use strict';
+
+  // ── 실측 상수 (aT 2023년 유통실태 종합) ─────────────────────────
+  // cost = 유통비용률(%). 농가 몫 = 100 - cost.
+  //  · 식량작물(쌀) 35.9  · 과채류(토마토) 51.0
+  //  · 엽근채소(배추) 64.3  · 양파 72.4  · 월동무 78.1
+  var GOODS = [
+    { id:'rice',   ko:'쌀',     cost:35.9, x:0.18 },
+    { id:'tomato', ko:'토마토', cost:51.0, x:0.34 },
+    { id:'cabbage',ko:'배추',   cost:64.3, x:0.50 },
+    { id:'onion',  ko:'양파',   cost:72.4, x:0.66 },
+    { id:'radish', ko:'무',     cost:78.1, x:0.82 }
+  ];
+  var PRICE = 10000;                                  // 손님이 낸 돈
+
+  // 평균 — 유통은 세 단계를 지난다(합 = 평균 유통비용률)
+  var STAGES = [
+    { key:'ship',   ko:'출하',  pct: 9.5 },
+    { key:'whole',  ko:'도매',  pct:14.5 },
+    { key:'retail', ko:'가게',  pct:25.2 }
+  ];
+  var AVG_COST = 49.2;                                // aT 공표 평균 유통비용률
+
+  function byId(id){
+    for(var i=0;i<GOODS.length;i++) if(GOODS[i].id===id) return GOODS[i];
+    return null;
+  }
+  function costOf(id){ var g=byId(id); return g? g.cost : 0; }
+  function farmOf(id){ return 100 - costOf(id); }     // 농가 몫(%)
+  function farmWon(id){ return Math.round(PRICE * farmOf(id) / 100); }
+  function costWon(id){ return PRICE - farmWon(id); }
+
+  // 절반이라도 가져가는 농부
+  function halfOrMore(){
+    return GOODS.filter(function(g){ return farmOf(g.id) >= 50; }).map(function(g){ return g.id; });
+  }
+  // 가장 적게 가져가는 농부
+  function worst(){
+    var w=GOODS[0];
+    GOODS.forEach(function(g){ if(farmOf(g.id) < farmOf(w.id)) w=g; });
+    return w.id;
+  }
+  var STAGE_SUM = STAGES.reduce(function(a,s){ return a+s.pct; }, 0);
+
+  global.KMuseumShare = {
+    GOODS:GOODS, STAGES:STAGES, PRICE:PRICE, AVG_COST:AVG_COST, STAGE_SUM:STAGE_SUM,
+    byId:byId, costOf:costOf, farmOf:farmOf, farmWon:farmWon, costWon:costWon,
+    halfOrMore:halfOrMore, worst:worst
+  };
+})(typeof window!=='undefined'? window : global);
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp">
+    <div class="track"><input id="pick" type="range" min="0" max="4" step="1" value="0"></div>
+    <div class="cap" id="cap"></div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumShare;
+  var canvas = document.getElementById('stage-canvas');
+  var stage  = Museum.stage(canvas, 1600, 900);
+  var W=1600, H=900;
+
+  // ── 칠판 — 문제는 여기 있고, 가른 결과가 여기 쌓인다 ─────────────
+  var BX=W*0.14, BY=H*0.05, BW=W*0.72, BH=H*0.235;
+  var BASE=BY+BH-26, MAXH=BH-76;
+  var AFTER_DY=H*0.27;
+  function boardDY(){ return (S && S.phase==='after') ? AFTER_DY*S.boardMove : 0; }
+  function slotX(i){ return BX + BW*(0.10 + i*0.20); }
+
+  var STALL_Y = H*0.62;                                 // 좌판
+  function xyOf(g){ return [ g.x*W, STALL_Y ]; }
+
+  var S = {
+    phase:'boot',          // boot→hand→machine→betrayed→after
+    time:0,
+    split:{},              // id → 갈라진 정도 0..1
+    cutting:null, cutT:0, cutFrom:0,
+    handCount:0, hover:null,
+    autoQueue:[], autoT:0, autoStep:1.2,
+    betrayed:false, picked:0, boardMove:0
+  };
+  PURE.GOODS.forEach(function(g){ S.split[g.id]=0; });
+
+  var HAND = ['rice','tomato','cabbage'];               // 손으로 셋 — 예측을 심고, 기울인다
+  function isDone(id){ return S.split[id]>=1; }
+  function nextHand(){
+    for(var i=0;i<HAND.length;i++){ if(!isDone(HAND[i])) return HAND[i]; }
+    return null;
+  }
+  function slotOf(id){
+    for(var i=0;i<PURE.GOODS.length;i++) if(PURE.GOODS[i].id===id) return i;
+    return -1;
+  }
+
+  // ── 손 — 가르다 ──────────────────────────────────────────────────
+  function handsFree(){ return !Museum.isLocked() && (S.phase==='boot'||S.phase==='hand') && !S.cutting; }
+  function hit(p){
+    for(var i=0;i<PURE.GOODS.length;i++){
+      var g=PURE.GOODS[i];
+      if(isDone(g.id)) continue;
+      var q=xyOf(g);
+      if(Math.hypot(p.x-q[0], p.y-q[1]) < 58) return g.id;
+    }
+    return null;
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    if(!handsFree()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    var id=hit(p);
+    if(!id) return;
+    S.cutting=id; S.cutT=0; S.cutFrom=p.y;
+    if(S.phase==='boot') S.phase='hand';
+    canvas.classList.add('is-dragging');
+    Museum.sound.play('creak',{pitch:0.3});
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.cutting && S.phase==='hand'){
+      var dy=Math.max(0, p.y-S.cutFrom);                // 아래로 당겨 가른다
+      S.split[S.cutting]=Math.min(1, dy/220);           // 220px에 다 갈라진다
+      if(S.split[S.cutting]>=1) finishCut();
+      return;
+    }
+    S.hover = handsFree()? hit(p) : null;
+    canvas.classList.toggle('is-over', !!S.hover);
+  });
+  function releaseHand(){
+    if(!S.cutting || S.phase!=='hand') return;
+    if(S.split[S.cutting] < 1) S.split[S.cutting]=0;    // 끝까지 가르지 않으면 도로 붙는다
+    S.cutting=null;
+    canvas.classList.remove('is-dragging');
+  }
+  canvas.addEventListener('pointerleave', function(){ S.hover=null; canvas.classList.remove('is-over'); });
+  window.addEventListener('pointerup', releaseHand);
+  window.addEventListener('pointercancel', releaseHand);
+
+  function finishCut(){
+    var id=S.cutting;
+    S.split[id]=1; S.cutting=null;
+    canvas.classList.remove('is-dragging');
+    Museum.sound.play(PURE.farmOf(id)>=50 ? 'clack' : 'paper');
+    if(HAND.indexOf(id)>=0) S.handCount++;
+    if(S.phase==='hand' && S.handCount>=HAND.length) startMachine();
+  }
+
+  // ── 기계의 밤 — 좌판이 스스로 갈라진다 ───────────────────────────
+  function startMachine(){
+    S.phase='machine';
+    S.autoQueue = PURE.GOODS.filter(function(g){ return !isDone(g.id); }).map(function(g){ return g.id; });
+    S.autoT=0; S.autoStep=1.3;
+    Museum.sound.play('curtain');
+  }
+  function machineTick(dt){
+    if(S.cutting){
+      S.cutT += dt/1.0;
+      S.split[S.cutting]=Math.min(1, S.cutT);
+      if(S.cutT>=1){
+        Museum.sound.play('paper');
+        S.cutting=null;
+      }
+      return;
+    }
+    S.autoT+=dt;
+    if(S.autoT < S.autoStep) return;
+    S.autoT=0;
+    if(S.autoQueue.length===0){ triggerBetray(); return; }
+    S.cutting=S.autoQueue.shift(); S.cutT=0;
+    S.autoStep=Math.max(0.6, S.autoStep*0.86);
+    Museum.sound.play('creak',{pitch:0.5});
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var g=PURE.byId(PURE.worst()), q=xyOf(g);
+    Museum.betray({ x:q[0]/W, y:q[1]/H }).then(function(){ enterAfter(); });
+  }
+
+  // ── 여운 ─────────────────────────────────────────────────────────
+  function chalkOf(i){
+    var g=PURE.GOODS[i];
+    return g.ko+' — 만 원 중 농부에게 '+PURE.farmWon(g.id).toLocaleString()+'원 · 유통 '+PURE.costOf(g.id).toFixed(1)+'%';
+  }
+  function enterAfter(){
+    S.phase='after';
+    var w=PURE.byId(PURE.worst());
+    var f=document.getElementById('formula');
+    f.innerHTML='만 원을 냈는데 &mdash; 무를 기른 사람에게는, '+PURE.farmWon(w.id).toLocaleString()+'원이 갔다'
+      +'<span class="small">쌀 6,410원 &middot; 토마토 4,900원 &middot; 배추 3,570원 &middot; 양파 2,760원 &middot; 무 2,190원'
+      +'<br>농산물 유통비용률 평균 '+PURE.AVG_COST+'% &mdash; 출하 9.5% &middot; 도매 14.5% &middot; 가게 25.2%'
+      +'<br>절반이라도 가져가는 농부는, 다섯 중 쌀 하나뿐이었다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'만 원의 해부',
+      story:'값은 손님이 치르고, 몫은 길에서 갈린다. 손잡이로 물건을 짚어 보세요 — 그것을 기른 사람에게 얼마가 갔는지 적혀 있습니다.',
+      fine:'한국농수산식품유통공사(aT) 2023년 유통실태 종합' });
+    Museum.ticket.grant({ id:'s4_share', title:'만 원의 해부', fine:'사람들의 밤',
+      drawFn:function(c,w2,h){
+        c.strokeStyle='rgba(242,234,216,.55)'; c.lineWidth=1;
+        c.strokeRect(w2*0.20, h*0.30, w2*0.60, h*0.34);
+        c.fillStyle='rgba(242,234,216,.92)';
+        c.fillRect(w2*0.20, h*0.30, w2*0.60*0.219, h*0.34);      // 농부의 몫
+        c.strokeStyle='rgba(201,169,97,.75)';
+        c.beginPath(); c.moveTo(w2*0.20+w2*0.60*0.219, h*0.26);
+        c.lineTo(w2*0.20+w2*0.60*0.219, h*0.68); c.stroke();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+    setPick(4);
+  }
+  var slider=document.getElementById('pick'), cap=document.getElementById('cap');
+  function setPick(i){ S.picked=i; cap.textContent=chalkOf(i); slider.value=String(i); }
+  slider.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    setPick(parseInt(slider.value,10));
+    Museum.sound.play('paper');
+  });
+
+  // ── 무대 ─────────────────────────────────────────────────────────
+  function drawBoard(ctx){
+    var dy=boardDY();
+    ctx.save(); ctx.translate(0, dy);
+    ctx.fillStyle='rgba(12,14,18,.55)';
+    ctx.fillRect(BX, BY, BW, BH);
+    ctx.strokeStyle='rgba(201,169,97,.34)'; ctx.lineWidth=1.4;
+    ctx.strokeRect(BX, BY, BW, BH);
+
+    ctx.font='20px "Gowun Batang", serif';
+    ctx.fillStyle='rgba(242,234,216,.72)'; ctx.textAlign='center';
+    ctx.fillText(S.phase==='after' ? '만 원을 냈습니다 — 농부에게는, 이만큼이 갔습니다'
+                                   : '만 원을 냈습니다 — 농부에게는, 얼마가 갈까요?', W*0.5, BY+34);
+
+    ctx.strokeStyle='rgba(168,158,136,.34)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(BX+22, BASE); ctx.lineTo(BX+BW-22, BASE); ctx.stroke();
+
+    for(var i=0;i<PURE.GOODS.length;i++){
+      var g=PURE.GOODS[i], cx=slotX(i);
+      var w=S.split[g.id];
+      var lit=(S.phase==='after' && i===S.picked);
+      ctx.strokeStyle='rgba(168,158,136,'+(w>0?0.18:0.30).toFixed(2)+')';
+      ctx.setLineDash([3,5]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx-30, BASE); ctx.lineTo(cx-30, BASE-MAXH);
+      ctx.moveTo(cx+30, BASE); ctx.lineTo(cx+30, BASE-MAXH); ctx.stroke();
+      ctx.setLineDash([]);
+      if(w>0){
+        var hgt=MAXH*(PURE.farmOf(g.id)/100)*w;          // 농부의 몫만 칠판에 오른다
+        ctx.fillStyle='rgba(242,234,216,'+(lit?0.95:0.80)+')';
+        ctx.fillRect(cx-30, BASE-hgt, 60, hgt);
+        ctx.strokeStyle= lit ? 'rgba(201,169,97,.95)' : 'rgba(242,234,216,.95)';
+        ctx.lineWidth= lit ? 2.2 : 1.2;
+        ctx.strokeRect(cx-30, BASE-hgt, 60, hgt);
+      }
+      // 절반 눈금 — 만 원의 반. 소품일 뿐, 수치는 없다.
+      ctx.strokeStyle='rgba(201,169,97,.26)';
+      ctx.setLineDash([2,4]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cx-34, BASE-MAXH*0.5); ctx.lineTo(cx+34, BASE-MAXH*0.5); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font='14px "Gowun Dodum", sans-serif';
+      ctx.fillStyle='rgba(168,158,136,'+(w>0?0.75:0.45).toFixed(2)+')';
+      ctx.textAlign='center';
+      ctx.fillText(g.ko, cx, BASE+22);
+    }
+    ctx.restore();
+  }
+
+  // 만 원짜리 한 덩이. 가르면 농부의 몫과, 길에서 갈린 몫으로 나뉜다.
+  function drawGood(ctx, g, i){
+    var q=xyOf(g), x=q[0], y=q[1];
+    var t=S.split[g.id];
+    var farm=PURE.farmOf(g.id)/100;
+    var over=(S.hover===g.id && !S.cutting);
+    var held=(S.cutting===g.id);
+    var a = held?0.92 : over?0.80 : 0.62;
+    var BWID=104, BHGT=132;
+
+    var gap = 74*t;                                     // 갈라진 틈
+    var fh = BHGT*farm;                                 // 농부의 몫(위쪽)
+    var ch = BHGT-fh;                                   // 길에서 갈린 몫(아래쪽)
+
+    // 농부의 몫 — 갈라지면 위로 남는다
+    ctx.fillStyle='rgba(242,234,216,'+(a*0.20).toFixed(2)+')';
+    ctx.strokeStyle='rgba(242,234,216,'+a.toFixed(2)+')';
+    ctx.lineWidth=1.8;
+    ctx.beginPath(); ctx.rect(x-BWID/2, y-BHGT/2 - gap*0.35, BWID, fh); ctx.fill(); ctx.stroke();
+
+    // 길에서 갈린 몫 — 아래로 떨어져 나간다
+    ctx.fillStyle='rgba(168,158,136,'+(a*0.10).toFixed(2)+')';
+    ctx.strokeStyle='rgba(168,158,136,'+(a*0.70).toFixed(2)+')';
+    ctx.setLineDash(t>0.02?[5,5]:[]);
+    ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.rect(x-BWID/2, y-BHGT/2+fh + gap*0.65, BWID, ch); ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if(t>0.35){                                          // 갈린 몫에 이름이 붙는다 — 길의 세 사람
+      ctx.font='12px "Gowun Dodum", sans-serif';
+      ctx.fillStyle='rgba(168,158,136,'+(0.55*Math.min(1,(t-0.35)/0.4)).toFixed(2)+')';
+      ctx.textAlign='center';
+      var yy=y-BHGT/2+fh+gap*0.65;
+      ctx.fillText('출하 · 도매 · 가게', x, yy + ch/2 + 4);
+    }
+    ctx.font='15px "Gowun Dodum", sans-serif';
+    ctx.fillStyle='rgba(242,234,216,'+(over||held?0.85:0.55).toFixed(2)+')';
+    ctx.textAlign='center';
+    ctx.fillText(g.ko, x, y+BHGT/2+gap*0.65+26);
+  }
+
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.phase==='machine') machineTick(dt);
+      if(S.phase==='after' && S.boardMove<1) S.boardMove=Math.min(1, S.boardMove+dt/1.1);
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+
+      drawBoard(ctx);
+
+      // 좌판
+      ctx.strokeStyle='rgba(168,158,136,.24)'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(W*0.08, STALL_Y+96); ctx.lineTo(W*0.92, STALL_Y+96); ctx.stroke();
+
+      for(var i=0;i<PURE.GOODS.length;i++) drawGood(ctx, PURE.GOODS[i], i);
+
+      // 초대 — 아직 가르지 않은 첫 물건이 숨쉰다
+      if(S.phase==='boot' || S.phase==='hand'){
+        var inv=nextHand();
+        if(inv && !S.cutting){
+          var g=PURE.byId(inv), q=xyOf(g);
+          ctx.strokeStyle='rgba(242,234,216,'+(0.22+0.42*breath).toFixed(2)+')';
+          ctx.lineWidth=1.6;
+          ctx.beginPath(); ctx.arc(q[0], q[1], 74+4*breath, 0, Math.PI*2); ctx.stroke();
+        }
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+
+  window.__S4 = {
+    S:S, PURE:PURE, xyOf:xyOf, hit:hit, slotX:slotX, slotOf:slotOf, boardDY:boardDY,
+    startMachine:startMachine, machineTick:machineTick, triggerBetray:triggerBetray,
+    enterAfter:enterAfter, setPick:setPick, chalkOf:chalkOf, nextHand:nextHand,
+    isDone:isDone, finishCut:finishCut, HAND:HAND, BASE:BASE, MAXH:MAXH
+  };
+})();
+</script>
+</body>
+</html>
