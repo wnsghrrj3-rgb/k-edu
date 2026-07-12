@@ -49,8 +49,11 @@
 - `space_window.html` (hub/klab)
 
 **외부 참조 없음 (보관 후보 — 단 직접 URL 공유 이력 있을 수 있어 이동은 준호 결정 필요)**
-- `animlab.html`, `artlab_crown.html`, `artlab_proto.html`
+- `artlab_crown.html`, `artlab_proto.html`
 - `class_lens.html` + `classlab-proto.js`
+
+**신작 — 링크 배선 대기 (보관 후보 아님, 이동 금지)**
+- `animlab.html` = 애니메이션 공방 (H4a 완성 2026-07-09, 케이아트 index→링크 배선은 준호 검수 후. STATUS-kedu-draw 참조)
 
 ## 루트 공용 스크립트
 
