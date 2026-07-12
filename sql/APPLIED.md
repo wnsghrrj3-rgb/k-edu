@@ -24,7 +24,7 @@
 | 14 | setup_classwork.sql | 2026-06-16 | 케이박스(classwork) 본체 |
 | 15 | setup_classwork3.sql | 2026-07-09 | 케이박스 증분 3 — 케이퀴즈 편입 |
 | 16 | setup_seats_select_lockdown.sql | 2026-07-11 | student_seats 공개 SELECT 잠금 (대점검 3차) |
-| 17 | setup_classwork4.sql | 2026-07-13 | 케이박스 증분 4 — 활동 시스템 편입 (cw_items.kind에 'activity') **⚠️ 실행 대기** |
+| 17 | setup_classwork4.sql | 2026-07-13 | 케이박스 증분 4 — 활동 시스템 편입 (cw_items.kind에 'activity') |
 
 ## 새 SQL 추가 룰
 
