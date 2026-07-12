@@ -14,6 +14,8 @@
  *   지수 백오프 재시도(기본 [2000,6000,18000]ms, window.__KBRIDGE_RETRY_MS__로 오버라이드) +
  *   재진입 시 자동 재제출. 학생 결과는 절대 유실하지 않는다(§4-4). 어댑터는 무수정(전 도구 공용).
  * detail(§13-3): 문항 수준 기록은 assign 모드에서만 발신·제출. 최대 100항목.
+ * 안전 여백(§6-6): hosted면 <html>에 .kb-hosted + --kb-safe-right=128px. 도구 우상단 HUD는
+ *   right: var(--kb-safe-right, 12px)로 선언한다 — 호스트 [활동 닫기]와 겹치지 않는다.
  * 시드(§3-1): ?seed= 있으면 고정(mulberry32), 없으면 랜덤. KBridge.rng로 노출.
  *
  * API(§4-5):
@@ -286,6 +288,17 @@
         settled = true;
         if (timer) clearTimeout(timer);
         var cfg = resolveConfig(hostCfg, opts.defaults);
+        // §6-6 우상단은 호스트 구역: hosted면 도구 HUD가 피할 여백을 알려준다.
+        // 도구는 right: var(--kb-safe-right, 12px) 만 쓰면 된다 (표준).
+        try {
+          var de = document.documentElement;
+          if (cfg.hosted) {
+            de.classList.add('kb-hosted');
+            de.style.setProperty('--kb-safe-right', '128px');
+          } else {
+            de.style.setProperty('--kb-safe-right', '12px');
+          }
+        } catch (e) { /* DOM 없는 환경 무해 */ }
         if (typeof opts.onConfig === 'function') opts.onConfig(cfg);
       }
 
