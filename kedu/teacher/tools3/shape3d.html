@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 입체도형 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 입체도형 (2026-07-12 · 페이블)
+  v2 engine/tools/shape3d.js(459줄 · 와우 main 2703daf) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 다크 스튜디오 + 실험대 위 원목 장난감 블록 3종
+    ② 실물 질감(칠한 원목 나뭇결·PMREM 광택·그림자)
+    ③ 직접 조작(궤도 회전 · 기둥을 탭해서 눕히기/세우기 · 블록 탭 반응)
+    ④ 즉각 반응(굴러감/안 굴러감/흔들림 물리 이징)
+    ⑤ 와우 = «세운 원기둥은 둥근데 안 굴러가요» — "둥글면 다 구른다" 오개념 반증(전 학년 · v2 무손실)
+  v2 무손실: 학년칸(저=자유·미션2 / 중=+퀴즈3 / 고=미션4·퀴즈5)·미션 4(굴리기→눕히기→눕혀 굴리기→처음으로)
+    ·퀴즈 풀 5·canRoll 물리(공=항상·상자=안·기둥=눕혀야)·용어 사다리(daily 상자/기둥/공 ↔ math 직육면체/원기둥/구)
+    ·와우 2방향(세움=보라 반증 / 눕힘=초록 해소)·기둥 상태 펄스·config(shapes/actions/terms).
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode= · ?shapes=box,cylinder,ball · ?actions=roll,flip · ?terms=daily|math
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .s3-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .s3-seg{display:flex;gap:5px}
+  .s3-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .s3-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:7px;align-items:stretch;max-width:200px}
+  #ctrls .k3-btn{font-size:14px;text-align:left}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(620px,86vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:min(760px,94vw)}
+  #status .card{background:var(--hud);border:1.5px solid;border-radius:13px;backdrop-filter:blur(8px);
+    padding:8px 13px;font-size:13.5px;line-height:1.4;text-align:center}
+  #status .card .hold{display:inline-block;animation:s3Pulse 1.1s ease both}
+  @keyframes s3Pulse{0%{transform:scale(1)}25%{transform:scale(1.14)}55%{transform:scale(.95)}100%{transform:scale(1)}}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #choices button{font-family:'Gowun Dodum';font-size:15px;padding:11px 18px;border-radius:13px;cursor:pointer;min-width:110px;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.88);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  .s3-anno{position:absolute;pointer-events:none;font-weight:800;font-size:13.5px;padding:5px 11px;border-radius:11px;
+    background:rgba(8,12,20,.82);white-space:nowrap;transform:translate(-50%,-50%);display:none;border:2px solid;line-height:1.35;text-align:center}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🧊 케이랩 · 입체도형</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="s3-panel" id="hudL"></div>
+<div class="s3-panel" id="ctrls"></div>
+<div class="s3-panel" id="mbar" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="status"></div>
+
+<div class="k3-hint" id="hint">블록을 <b>끌어서</b> 돌려 보고, ▶ 굴려보기를 눌러 봐요 — 기둥은 <b>탭하면</b> 눕힐 수 있어요</div>
+<div class="k3-loading" id="loading"><div class="ic">🧊</div><div>블록 준비 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.Shape3dSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 용어 사다리 (v2 무손실) ── */
+  var LABELS={
+    daily:{ box:'상자 모양', cylinder:'기둥 모양', ball:'공 모양' },
+    math: { box:'직육면체', cylinder:'원기둥', ball:'구' }
+  };
+  var SHORT={
+    daily:{ box:'상자', cylinder:'기둥', ball:'공' },
+    math: { box:'직육면체', cylinder:'원기둥', ball:'구' }
+  };
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var GRADES={
+    low:  { modes:['free','mission'],        quiz:false, missionN:2, quizN:0 },
+    mid:  { modes:['free','mission','quiz'], quiz:true,  missionN:4, quizN:3 },
+    high: { modes:['free','mission','quiz'], quiz:true,  missionN:4, quizN:5 }
+  };
+
+  /* ── 굴러감 물리 (v2 canRoll 무손실) ── */
+  function canRoll(kind, cylUp){
+    if(kind==='ball') return true;
+    if(kind==='box') return false;
+    if(kind==='cylinder') return !cylUp;
+    return false;
+  }
+  /* 와우 판정 (v2 무손실): 세운 기둥에 굴리기=보라 반증(stop) / 눕힌 기둥=초록 해소(roll) */
+  function rollOutcome(shapes, cylUp){
+    var hasCyl=shapes.indexOf('cylinder')>=0;
+    var anyRoll=shapes.some(function(k){ return canRoll(k,cylUp); });
+    var magic=hasCyl ? (cylUp?'stop':'roll') : null;
+    return { magic:magic, anyRoll:anyRoll };
+  }
+
+  function createSim(grade, opts){
+    grade=(['low','mid','high'].indexOf(grade)>=0)?grade:'high';
+    opts=opts||{};
+    var sim={};
+    sim.grade=grade;
+    sim.G=function(){ return GRADES[sim.grade]; };
+    sim.shapes=(opts.shapes&&opts.shapes.length)?opts.shapes:['box','cylinder','ball'];
+    sim.actions=(opts.actions&&opts.actions.length)?opts.actions:['roll','flip'];
+    /* 용어: config 우선, 없으면 고학년 잠금일 때만 수학 용어 (v2 무손실) */
+    sim.terms=(opts.terms&&LABELS[opts.terms])?opts.terms:((opts.lockedHigh)?'math':'daily');
+    var L=LABELS[sim.terms], LS=SHORT[sim.terms];
+    sim.L=L; sim.LS=LS;
+
+    sim.state={ cylUp:true, rolling:false,
+      flags:{ rolled:false, laid:false, rolledLying:false, resetDone:false } };
+    sim.canRoll=function(kind){ return canRoll(kind, sim.state.cylUp); };
+
+    /* 상태 문구 (v2 무손실) */
+    sim.statusText=function(kind){
+      if(kind==='ball') return L.ball+' — 어느 쪽으로든 잘 굴러가요';
+      if(kind==='box') return L.box+' — 안 굴러가요, 대신 잘 쌓여요';
+      if(kind==='cylinder') return L.cylinder+(sim.state.cylUp?' — 세우면 안 굴러가요':' — 눕히면 잘 굴러가요');
+      return '';
+    };
+
+    /* 조작 */
+    sim.doRoll=function(){
+      var st=sim.state;
+      st.rolling=true;
+      st.flags.rolled=true;
+      if(!st.cylUp) st.flags.rolledLying=true;
+      return rollOutcome(sim.shapes, st.cylUp);
+    };
+    sim.doFlip=function(){
+      var st=sim.state;
+      st.cylUp=!st.cylUp;
+      if(!st.cylUp) st.flags.laid=true;
+      return { cylUp:st.cylUp };
+    };
+    sim.doReset=function(missionFinal){
+      var st=sim.state;
+      st.rolling=false; st.cylUp=true;
+      if(missionFinal) st.flags.resetDone=true;
+      return { act:'reset' };
+    };
+
+    /* 미션 (v2 문구·판정 무손실 — 관찰 행동 4단계, 학년칸 missionN slice) */
+    var MISSIONS=[
+      { text:'▶ <b>굴려보기</b>를 눌러 봐요! 누가 굴러가고 누가 안 굴러갈까요?',
+        check:function(st){ return st.flags.rolled; } },
+      { text:'<b>기둥 눕히기</b>를 눌러 '+LS.cylinder+'을(를) 눕혀 봐요!',
+        check:function(st){ return st.flags.laid; } },
+      { text:'눕힌 채로 다시 ▶ <b>굴려보기</b> — 이제 '+LS.cylinder+'도 굴러가요!',
+        check:function(st){ return st.flags.rolledLying; } },
+      { text:'↺ <b>처음으로</b>를 눌러 모두 제자리로 되돌려 봐요!',
+        check:function(st){ return st.flags.resetDone; } }
+    ];
+    sim.mStep=0; sim.mDone=false;
+    sim.missionList=function(){ return MISSIONS.slice(0, sim.G().missionN); };
+    sim.missionStart=function(){
+      sim.mStep=0; sim.mDone=false;
+      sim.state.cylUp=true; sim.state.rolling=false;
+      sim.state.flags={ rolled:false, laid:false, rolledLying:false, resetDone:false };
+    };
+    sim.missionCheck=function(){
+      if(sim.mDone) return {act:'none'};
+      var M=sim.missionList();
+      if(!M[sim.mStep].check(sim.state)) return {act:'none'};
+      if(sim.mStep<M.length-1){ sim.mStep++; return {act:'next',step:sim.mStep}; }
+      sim.mDone=true;
+      return {act:'done'};
+    };
+
+    /* 퀴즈 풀 (v2 무손실 — 학년칸 quizN slice) */
+    var QUIZ_POOL=[
+      { q:'셋 중에서 어느 쪽으로든 잘 굴러가는 모양은?', answer:LS.ball, choices:[LS.ball,LS.box,LS.cylinder] },
+      { q:'잘 굴러가지 않고, 대신 잘 쌓을 수 있는 모양은?', answer:LS.box, choices:[LS.box,LS.ball,LS.cylinder] },
+      { q:LS.cylinder+' 모양을 눕히면 어떻게 될까요?', answer:'잘 굴러가요', choices:['잘 굴러가요','안 굴러가요','공이 돼요'] },
+      { q:LS.box+' 모양이 잘 굴러가지 않는 까닭은?', answer:'평평한 면이 있어서', choices:['평평한 면이 있어서','너무 작아서','색깔 때문에'] },
+      { q:'축구공처럼 어디로든 굴러가야 하는 물건은 어떤 모양이 좋을까요?', answer:LS.ball, choices:[LS.ball,LS.box,LS.cylinder] }
+    ];
+    sim.quizPool=function(){ return QUIZ_POOL.slice(0, sim.G().quizN||QUIZ_POOL.length); };
+
+    return sim;
+  }
+
+  var API={ GRADES:GRADES, LABELS:LABELS, SHORT:SHORT, canRoll:canRoll, rollOutcome:rollOutcome, createSim:createSim };
+  if(typeof window!=='undefined') window.Shape3dSim=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, makeMaterials, makeStage, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.Shape3dSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const cfgShapes = (Q.get('shapes') || '').split(',').filter(s => ['box','cylinder','ball'].includes(s));
+const cfgActions = (Q.get('actions') || '').split(',').filter(s => ['roll','flip'].includes(s));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  shapes: cfgShapes, actions: cfgActions, terms: Q.get('terms'),
+  lockedHigh: lockedGrade && Q.get('grade') === 'high'
+});
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+const canRollAction = sim.actions.includes('roll');
+const canFlipAction = sim.actions.includes('flip');
+let qList = [], qIdx = 0, qScore = 0, qCount = 0, qLock = false;
+
+/* ── 씬 ── */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0.35, 0.55, 1.15], target: [0, 0.14, 0], fov: 42,
+  minDist: 0.5, maxDist: 2.6, maxPolar: 1.42
+});
+const { renderer, scene, camera, controls } = app;
+makeMaterials();
+makeStage(scene, {});
+
+/* ═══════════ 원목 장난감 블록 3종 (칠한 원목 나뭇결) ═══════════ */
+const SZ = { BOX: 0.19, CYL_R: 0.095, CYL_H: 0.24, BALL_R: 0.11 };
+const SPREAD = 0.42;
+const TINT = { box: '#E8703A', cylinder: '#1FB88A', ball: '#8A76F0' };
+const TINT_HEX = { box: 0xE8703A, cylinder: 0x1FB88A, ball: 0x8A76F0 };
+function woodTex(tint) {
+  return canvasTexture(256, 256, g => {
+    g.fillStyle = tint; g.fillRect(0, 0, 256, 256);
+    for (let y = 0; y < 256; y += 5) {
+      const a = 0.06 + Math.abs(Math.sin(y * 0.35)) * 0.12;
+      g.fillStyle = `rgba(60,34,16,${a})`;
+      g.fillRect(0, y, 256, 2 + Math.random() * 2);
+    }
+    for (let i = 0; i < 500; i++) {
+      g.fillStyle = `rgba(255,255,255,${Math.random() * 0.06})`;
+      g.fillRect(Math.random() * 256, Math.random() * 256, 2, 1);
+    }
+    for (let k = 0; k < 4; k++) { // 옹이
+      const x = Math.random() * 256, y = Math.random() * 256;
+      g.strokeStyle = 'rgba(60,34,16,0.35)'; g.lineWidth = 2;
+      g.beginPath(); g.ellipse(x, y, 6 + Math.random() * 6, 3 + Math.random() * 3, 0, 0, 7); g.stroke();
+    }
+  });
+}
+function blockMat(kind) {
+  return new THREE.MeshStandardMaterial({ map: woodTex(TINT[kind]), roughness: 0.55, metalness: 0.02, envMapIntensity: 0.7 });
+}
+const groups = {};
+{
+  const n = sim.shapes.length;
+  sim.shapes.forEach((kind, i) => {
+    const x = (i - (n - 1) / 2) * SPREAD;
+    let geo, y;
+    if (kind === 'ball') { geo = new THREE.SphereGeometry(SZ.BALL_R, 40, 28); y = SZ.BALL_R; }
+    else if (kind === 'cylinder') { geo = new THREE.CylinderGeometry(SZ.CYL_R, SZ.CYL_R, SZ.CYL_H, 44); y = SZ.CYL_H / 2; }
+    else { geo = new THREE.BoxGeometry(SZ.BOX, SZ.BOX, SZ.BOX); y = SZ.BOX / 2; }
+    const mesh = new THREE.Mesh(geo, blockMat(kind));
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.userData.kind = kind;
+    const g = new THREE.Group();
+    g.position.set(x, y, 0);
+    g.add(mesh);
+    scene.add(g);
+    g.userData = { homeX: x, kind, phase: 0, wobble: -1, mesh, tapT: 0 };
+    groups[kind] = g;
+  });
+}
+/* 기둥 눕히기/세우기 (v2 applyCyl 무손실 — 물리 이징으로 flipT 트윈) */
+let flipT = 0; // 0=세움 1=눕힘 (시각)
+function cylTargetY() { return sim.state.cylUp ? SZ.CYL_H / 2 : SZ.CYL_R; }
+
+/* ═══════════ DOM 주석 (도형 이름 라벨 — v2 Sprite 라벨의 v3 대응) ═══════════ */
+const annoHost = document.getElementById('anno');
+function mkAnno(html, color) {
+  const d = document.createElement('div');
+  d.className = 's3-anno';
+  d.style.color = color; d.style.borderColor = color;
+  d.innerHTML = html;
+  annoHost.appendChild(d);
+  return d;
+}
+const CSSC = { box: '#FFB08A', cylinder: '#7CF0C9', ball: '#CBB7FF' };
+const labelAnnos = {};
+sim.shapes.forEach(k => { labelAnnos[k] = mkAnno(sim.LS[k], CSSC[k]); });
+const _pv = new THREE.Vector3();
+function projectAnno(el2, obj, local, on) {
+  if (!on) { el2.style.display = 'none'; return; }
+  _pv.copy(local); obj.localToWorld(_pv); _pv.project(camera);
+  if (_pv.z > 1) { el2.style.display = 'none'; return; }
+  el2.style.left = ((_pv.x * 0.5 + 0.5) * innerWidth) + 'px';
+  el2.style.top = ((-_pv.y * 0.5 + 0.5) * innerHeight) + 'px';
+  el2.style.display = '';
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'), statusEl = $('status');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+let holdCyl = false;
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="s3-seg">' + ['low', 'mid', 'high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="s3-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  let h = '';
+  if (canRollAction) h += '<button class="k3-btn fire" data-a="roll">▶ 굴려보기</button>';
+  if (canFlipAction && groups.cylinder) h += `<button class="k3-btn accent" data-a="flip">${sim.state.cylUp ? '기둥 눕히기' : '기둥 세우기'}</button>`;
+  h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 굴려 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    mbar.innerHTML = `${qList[qIdx].q}<div class="st">점수 ${qScore} / ${qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+/* 상태 카드 (v2 무손실 — 퀴즈에선 숨김=정답 누설 차단, 마법 시 기둥 펄스) */
+function renderStatus() {
+  if (mode === 'quiz') { statusEl.style.display = 'none'; }
+  else {
+    statusEl.style.display = '';
+    statusEl.innerHTML = sim.shapes.map(k => {
+      let t = sim.statusText(k);
+      if (holdCyl && k === 'cylinder') t = '<span class="hold">' + t + '</span>';
+      return `<div class="card" style="color:${CSSC[k]};border-color:${CSSC[k]}55">${t}</div>`;
+    }).join('');
+  }
+  const s = $('stage');
+  s.dataset.cylup = sim.state.cylUp ? '1' : '0';
+  s.dataset.rolling = sim.state.rolling ? '1' : '0';
+  s.dataset.rolled = sim.state.flags.rolled ? '1' : '0';
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = qList[qIdx];
+  const order = q.choices.slice().sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(c => `<button data-v="${c}">${c}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const ok = b.dataset.v === String(q.answer);
+    qCount++; if (ok) qScore++;
+    K3.sound.play(ok ? 'chime' : 'fail');
+    K3.toast(ok ? '🎉 정답! ' + q.answer : '아쉬워요 — 정답은 「' + q.answer + '」', !ok, T(1300));
+    setTimeout(() => {
+      qIdx++; if (qIdx >= qList.length) shuffleQuiz();
+      qLock = false; renderAll();
+    }, T(1450));
+  }));
+}
+function shuffleQuiz() {
+  qList = sim.quizPool().slice();
+  for (let i = qList.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = qList[i]; qList[i] = qList[j]; qList[j] = t; }
+  qIdx = 0; qScore = 0; qCount = 0; qLock = false;
+}
+
+function renderAll() { renderHUD(); renderCtrls(); renderBar(); renderQuiz(); renderStatus(); }
+
+/* ── 조작 ── */
+function act(a) {
+  hideHint();
+  if (a === 'roll') {
+    const r = sim.doRoll();
+    sim.shapes.forEach(k => {
+      const g = groups[k];
+      g.userData.phase = 0;
+      g.userData.wobble = sim.canRoll(k) ? -1 : 0;
+    });
+    /* 와우 (v2 무손실 — 게이팅 없음 · 전 학년) */
+    holdCyl = false;
+    if (r.magic === 'stop') {
+      K3.sound.play('tick'); K3.sound.play('ting');
+      K3.toast(sim.LS.cylinder + '은 둥근데 세우니까 <b>안 굴러가요!</b> 🤔<br>바닥에 닿은 면이 평평해서예요 — 둥글다고 다 굴러가는 건 아니에요', false, T(3400));
+      holdCyl = true;
+    } else {
+      if (r.anyRoll) K3.sound.play('whoosh');
+      if (r.magic === 'roll') { K3.sound.play('chime'); K3.toast('이번엔 눕혔더니 <b>데구르르!</b> ✨<br>닿는 면이 둥그니까 굴러가요', false, T(2800)); }
+      if (!r.anyRoll) K3.sound.play('tick');
+    }
+  }
+  else if (a === 'flip') {
+    if (!groups.cylinder || !canFlipAction) return;
+    sim.doFlip();
+    K3.sound.play('select');
+    const g = groups.cylinder;
+    g.rotation.z = 0; g.userData.phase = 0;
+    g.userData.wobble = (sim.state.rolling && !sim.canRoll('cylinder')) ? 0 : -1;
+    holdCyl = false;
+  }
+  else if (a === 'reset') {
+    sim.doReset(mode === 'mission' && sim.mStep === 3);
+    K3.sound.play('tap');
+    holdCyl = false;
+    sim.shapes.forEach(k => {
+      const g = groups[k];
+      g.position.x = g.userData.homeX; g.rotation.set(0, 0, 0);
+      g.userData.phase = 0; g.userData.wobble = -1;
+    });
+  }
+  if (mode === 'mission') missionTick();
+  renderCtrls(); renderStatus();
+}
+/* 블록 탭 = 직접 조작 (기둥 탭=눕히기/세우기 · 그 외=통통) */
+function tapShape(kind) {
+  hideHint();
+  if (mode === 'quiz') return;
+  if (kind === 'cylinder' && canFlipAction) { act('flip'); return; }
+  const g = groups[kind];
+  if (g) g.userData.tapT = 1;
+  K3.sound.play('tap');
+}
+function missionTick() {
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => renderAll(), T(1300));
+}
+
+function setGrade(g) {
+  sim.grade = g;
+  if (!sim.G().modes.includes(mode)) mode = 'free';
+  sim.missionStart(); sim.mStep = 0; sim.mDone = false;
+  sim.state.rolling = false; sim.state.cylUp = true;
+  holdCyl = false;
+  resetBlocks();
+  if (mode === 'quiz') shuffleQuiz();
+  renderAll();
+}
+function setMode(m) {
+  mode = m;
+  sim.missionStart();
+  holdCyl = false;
+  resetBlocks();
+  if (m === 'quiz') shuffleQuiz();
+  renderAll();
+}
+function resetBlocks() {
+  sim.shapes.forEach(k => {
+    const g = groups[k];
+    g.position.x = g.userData.homeX; g.rotation.set(0, 0, 0);
+    g.userData.phase = 0; g.userData.wobble = -1; g.userData.tapT = 0;
+  });
+}
+
+/* 블록 탭 레이캐스트 */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let downXY = null;
+renderer.domElement.addEventListener('pointerdown', e => { downXY = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY) return;
+  const moved = Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]);
+  downXY = null;
+  if (moved > 8) return; // 드래그(궤도 회전)와 구분
+  ptr.x = (e.clientX / innerWidth) * 2 - 1;
+  ptr.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  const meshes = sim.shapes.map(k => groups[k].userData.mesh);
+  const hit = ray.intersectObjects(meshes, false)[0];
+  if (hit) tapShape(hit.object.userData.kind);
+});
+renderer.domElement.addEventListener('pointerdown', hideHint, { once: true });
+
+/* ═══════════ 루프 (v2 굴림·흔들림 물리 무손실 + 눕히기 이징) ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 12 : 1;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  const st = sim.state;
+
+  /* 기둥 눕히기 이징 */
+  const flipTarget = st.cylUp ? 0 : 1;
+  flipT += (flipTarget - flipT) * Math.min(1, dt * 7);
+  const cyl = groups.cylinder;
+  if (cyl) {
+    cyl.userData.mesh.rotation.x = flipT * Math.PI / 2;
+    cyl.position.y = SZ.CYL_H / 2 + (SZ.CYL_R - SZ.CYL_H / 2) * flipT;
+  }
+
+  if (st.rolling) {
+    sim.shapes.forEach(k => {
+      const g = groups[k];
+      const r = k === 'ball' ? SZ.BALL_R : (k === 'cylinder' ? SZ.CYL_R : SZ.BOX / 2);
+      if (sim.canRoll(k)) {
+        g.userData.phase += dt * 1.1;
+        const x = g.userData.homeX + Math.sin(g.userData.phase) * 0.17;
+        g.position.x = x;
+        g.rotation.z = (g.userData.homeX - x) / r;
+      } else if (g.userData.wobble >= 0) {
+        g.userData.wobble += dt;
+        const w = g.userData.wobble;
+        g.rotation.z = Math.sin(w * 10) * 0.13 * Math.max(0, 1 - w * 0.8);
+        if (w > 1.6) { g.rotation.z = 0; g.userData.wobble = -1; }
+      }
+    });
+  }
+  /* 탭 통통 */
+  sim.shapes.forEach(k => {
+    const g = groups[k];
+    if (g.userData.tapT > 0) {
+      g.userData.tapT = Math.max(0, g.userData.tapT - dt * 3);
+      const s = 1 + Math.sin(g.userData.tapT * Math.PI) * 0.08;
+      g.scale.setScalar(s);
+    } else g.scale.setScalar(1);
+  });
+
+  /* 이름 라벨 투영 */
+  sim.shapes.forEach(k => {
+    const g = groups[k];
+    const topY = k === 'cylinder'
+      ? (st.cylUp ? SZ.CYL_H / 2 + 0.09 : SZ.CYL_R + 0.09)
+      : (k === 'ball' ? SZ.BALL_R + 0.09 : SZ.BOX / 2 + 0.09);
+    projectAnno(labelAnnos[k], g, _t1.set(0, topY, 0), true);
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+const _t1 = new THREE.Vector3();
+
+if (mode === 'mission') sim.missionStart();
+shuffleQuiz();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast('블록을 돌려 보고 ▶ 굴려보기 — 기둥은 탭하면 눕힐 수 있어요');
+animate();
+
+/* 테스트용 앱 훅 */
+window.Shape3dApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, tapShape,
+  groups, get holdCyl() { return holdCyl; }, get flipT() { return flipT; }
+};
+</script>
+</body>
+</html>
