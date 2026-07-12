@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>빛은 거꾸로 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #stage-canvas.is-holding{ cursor:grabbing; }
+  #premise{ position:fixed; top:7vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(18px,2.6vw,26px); letter-spacing:.09em; color:var(--ink); text-align:center; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--art); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="light-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumLight=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  var LUM=[0.2126,0.7152,0.0722];           // Rec.709 — 눈의 저울
+  var LIGHTS={ R:[1,0,0], G:[0,1,0], B:[0,0,1] };
+  var PAINTS={ R:[0.86,0.10,0.07],          // 실물 안료 — 바닥 반사율이 있다
+               G:[0.10,0.80,0.12],
+               B:[0.09,0.12,0.82] };
+  function clamp01(v){ return v<0?0:(v>1?1:v); }
+  function lum(c){ return LUM[0]*c[0]+LUM[1]*c[1]+LUM[2]*c[2]; }
+  function addMix(a,b){                     // 빛은 보탠다
+    return [clamp01(a[0]+b[0]), clamp01(a[1]+b[1]), clamp01(a[2]+b[2])];
+  }
+  function paintMix(a,b){                   // 물감은 거른다(반사율 곱)
+    return [a[0]*b[0], a[1]*b[1], a[2]*b[2]];
+  }
+  function mixAll(fn, list){
+    var c=list[0];
+    for(var i=1;i<list.length;i++) c=fn(c,list[i]);
+    return c;
+  }
+  function hueColor(h){                     // 색상환 h(라디안) → 순색 RGB
+    var TAU=Math.PI*2;
+    h=h-Math.floor(h/TAU)*TAU;
+    var x=h/TAU*6, i=Math.floor(x), f=x-i;
+    var q=1-f;
+    switch(i%6){
+      case 0: return [1,f,0];
+      case 1: return [q,1,0];
+      case 2: return [0,1,f];
+      case 3: return [0,q,1];
+      case 4: return [f,0,1];
+      default: return [1,0,q];
+    }
+  }
+  function paintOf(h){                      // 같은 색상의 실물 안료판
+    var c=hueColor(h);
+    return [0.06+0.88*c[0], 0.06+0.88*c[1], 0.06+0.88*c[2]];
+  }
+  return { LUM:LUM, LIGHTS:LIGHTS, PAINTS:PAINTS,
+           clamp01:clamp01, lum:lum, addMix:addMix, paintMix:paintMix,
+           mixAll:mixAll, hueColor:hueColor, paintOf:paintOf };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">물감 세 가지 &mdash; 접시에 부어 보세요.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="0" max="360" value="20" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumLight;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var TAU = Math.PI*2;
+
+  // ── 무대 배치 ────────────────────────────────────────────────────
+  var DISH={x:W*0.5, y:460, r:120};
+  var BOWLS=[ {id:'R', hx:W*0.5-280, hy:770}, {id:'G', hx:W*0.5, hy:790}, {id:'B', hx:W*0.5+280, hy:770} ];
+  var SLOTS={ R:{x:W*0.5-105, y:330}, G:{x:W*0.5+105, y:330}, B:{x:W*0.5, y:470} };
+  var DISC_R=185;
+  var LAMPS=[ {id:'R', hx:W*0.5-280, hy:800}, {id:'G', hx:W*0.5, hy:820}, {id:'B', hx:W*0.5+280, hy:800} ];
+  var VENN={x:W*0.5, y:(330+330+470)/3};    // 세 원의 심장
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S = {
+    phase:'boot',            // boot→paint→shift→light→betrayed→after
+    poured:{R:false,G:false,B:false}, dish:null,
+    hung:{R:false,G:false,B:false},
+    hue:20*TAU/360,
+    betrayed:false, shiftAt:0, calmAt:0, shiftT:0, time:0
+  };
+  function pouredList(){
+    var l=[]; ['R','G','B'].forEach(function(k){ if(S.poured[k]) l.push(PURE.PAINTS[k]); });
+    return l;
+  }
+  function pour(id){
+    if(S.phase!=='paint' || S.poured[id]) return;
+    S.poured[id]=true;
+    S.dish=PURE.mixAll(PURE.paintMix, pouredList());
+    Museum.sound.play('clack');
+    if(S.poured.R && S.poured.G && S.poured.B) S.shiftAt=S.time+0.9;   // 정적 후 전환
+  }
+  function hang(id){
+    if(S.phase!=='light' && S.phase!=='after') return;
+    if(S.hung[id]) return;
+    S.hung[id]=true;
+    Museum.sound.play('click_light');
+    if(S.phase==='light' && S.hung.R && S.hung.G && S.hung.B && !S.betrayed)
+      S.calmAt=S.time+0.5;                                             // 정적 후 배반
+  }
+  function unhang(id){
+    if(S.phase!=='after') return;
+    if(S.hung[id]){ S.hung[id]=false; Museum.sound.play('clack'); }
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    Museum.betray({x:VENN.x/W, y:VENN.y/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='같은 섞음이, 두 세계에서 거꾸로 흘렀다'
+      +'<span class="small">물감은 빛을 거르고 &mdash; 빛은 빛을 보탠다</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'빛은 거꾸로',
+      story:'화면의 모든 색은 세 가지 빛이 보태져 태어나고, 인쇄의 모든 색은 세 가지 잉크가 걸러져 태어난다. 두 세계는 거울처럼 마주 본다. 손잡이를 돌려 어떤 두 색이든 골라 보세요 — 빛은 늘 밝아지고, 물감은 늘 어두워집니다.',
+      fine:'ADDITIVE · SUBTRACTIVE — RGB · CMY' });
+    Museum.ticket.grant({ id:'a3_light', title:'빛은 거꾸로', fine:'그림의 밤',
+      drawFn:function(c,w,h){
+        c.strokeStyle='rgba(242,234,216,.9)'; c.lineWidth=1.2;
+        var cx=w*0.5, r=w*0.19;
+        [[cx-r*0.55,h*0.42],[cx+r*0.55,h*0.42],[cx,h*0.62]].forEach(function(p){
+          c.beginPath(); c.arc(p[0],p[1],r,0,TAU); c.stroke();
+        });
+        c.fillStyle='rgba(242,234,216,.85)';
+        c.beginPath(); c.arc(cx,h*0.49,r*0.22,0,TAU); c.fill();       // 한가운데 하양
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+  }
+
+  // ── 여운 슬라이더 — 색의 고리(거울 정리를 몸으로) ────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    S.hue=(parseInt(slider.value,10)||0)*TAU/360;
+    Museum.sound.play('paper');
+  });
+  function huePair(){ return [S.hue, S.hue+TAU/3]; }
+
+  // ── 입력: 붓다(종지→접시 · 등→벽) ───────────────────────────────
+  var drag=null;
+  function near(p,x,y,r){ var dx=p.x-x, dy=p.y-y; return dx*dx+dy*dy<=r*r; }
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.phase==='shift' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.phase==='boot'){ S.phase='paint'; }
+    if(S.phase==='paint'){
+      for(var i=0;i<BOWLS.length;i++)
+        if(!S.poured[BOWLS[i].id] && near(p,BOWLS[i].hx,BOWLS[i].hy,78)){
+          drag={kind:'bowl', id:BOWLS[i].id, x:p.x, y:p.y}; break;
+        }
+    } else if(S.phase==='light' || S.phase==='after'){
+      for(var j=0;j<LAMPS.length;j++){
+        var L=LAMPS[j];
+        if(!S.hung[L.id] && near(p,L.hx,L.hy,78)){ drag={kind:'lamp', id:L.id, x:p.x, y:p.y}; break; }
+        if(S.phase==='after' && S.hung[L.id] && near(p,SLOTS[L.id].x,SLOTS[L.id].y,70)){
+          unhang(L.id); break;                                         // 여운: 내려서 다시
+        }
+      }
+    }
+    if(drag) canvas.classList.add('is-holding');
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!drag || Museum.isLocked()) return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    drag.x=p.x; drag.y=p.y;
+    if(drag.kind==='bowl'){
+      Museum.sound.play('creak',{pitch:(DISH.y-p.y)/900});
+      if(near(p,DISH.x,DISH.y,DISH.r)){ pour(drag.id); drag=null; canvas.classList.remove('is-holding'); }
+    } else if(drag.kind==='lamp' && p.y<560){
+      hang(drag.id); drag=null; canvas.classList.remove('is-holding');
+    }
+  });
+  window.addEventListener('pointerup', function(){
+    drag=null; canvas.classList.remove('is-holding');
+  });
+
+  // ── 그리기 부품 ──────────────────────────────────────────────────
+  function css(c,a){ return 'rgba('+Math.round(c[0]*255)+','+Math.round(c[1]*255)+','+Math.round(c[2]*255)+','+a+')'; }
+  function drawBowl(ctx,b,breath){
+    if(S.poured[b.id]) return;
+    var x=(drag && drag.kind==='bowl' && drag.id===b.id)? drag.x : b.hx;
+    var y=(drag && drag.kind==='bowl' && drag.id===b.id)? drag.y : b.hy;
+    ctx.strokeStyle='rgba(201,169,97,.6)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(x,y,48,20,0,0,TAU); ctx.stroke();
+    ctx.fillStyle=css(PURE.PAINTS[b.id], 0.85);
+    ctx.beginPath(); ctx.ellipse(x,y,40,15,0,0,TAU); ctx.fill();
+    if(breath!==undefined){
+      ctx.strokeStyle='rgba(242,234,216,'+(0.08+0.16*breath).toFixed(2)+')';
+      ctx.lineWidth=5;
+      ctx.beginPath(); ctx.ellipse(x,y,52,23,0,0,TAU); ctx.stroke();
+    }
+  }
+  function drawDish(ctx,cx,cy,r){
+    ctx.strokeStyle='rgba(201,169,97,.7)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,r,r*0.42,0,0,TAU); ctx.stroke();
+    if(S.dish){
+      ctx.fillStyle=css(S.dish, 0.95);
+      ctx.beginPath(); ctx.ellipse(cx,cy,r*0.86,r*0.36,0,0,TAU); ctx.fill();
+    }
+  }
+  function drawLamp(ctx,L){
+    if(S.hung[L.id]) return;
+    var x=(drag && drag.kind==='lamp' && drag.id===L.id)? drag.x : L.hx;
+    var y=(drag && drag.kind==='lamp' && drag.id===L.id)? drag.y : L.hy;
+    ctx.strokeStyle='rgba(201,169,97,.75)'; ctx.lineWidth=2;
+    ctx.strokeRect(x-26,y-34,52,58);
+    ctx.fillStyle=css(PURE.LIGHTS[L.id], 0.8);
+    ctx.fillRect(x-16,y-22,32,36);
+  }
+  function drawDisc(ctx,x,y,c,r){
+    ctx.globalCompositeOperation='lighter';
+    var a=0.62;
+    ctx.fillStyle=css(c,a);
+    ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill();
+    ctx.globalCompositeOperation='source-over';
+  }
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.phase==='paint' && S.shiftAt && S.time>=S.shiftAt){
+        S.phase='shift'; S.shiftT=0; Museum.sound.play('click_light');
+      }
+      if(S.phase==='shift'){
+        S.shiftT+=dt;
+        if(S.shiftT>=1.2){ S.phase='light'; Museum.sound.play('curtain'); }
+      }
+      if(S.phase==='light' && S.calmAt && S.time>=S.calmAt) triggerBetray();
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      var dim=(S.phase==='shift')? Math.max(0,1-S.shiftT/0.7) : (S.phase==='boot'||S.phase==='paint'? 1:0);
+      var lit=(S.phase==='shift')? Math.max(0,(S.shiftT-0.5)/0.7) : (S.phase==='boot'||S.phase==='paint'? 0:1);
+
+      // ── 물감의 세계(탁자) ──
+      if(dim>0){
+        ctx.globalAlpha=dim;
+        ctx.strokeStyle='rgba(95,88,74,.5)'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(W*0.14,640); ctx.lineTo(W*0.86,640); ctx.stroke();
+        drawDish(ctx, DISH.x, DISH.y+120, DISH.r);
+        BOWLS.forEach(function(b,i){ drawBowl(ctx,b, (S.phase==='boot'&&i===0)? breath : undefined); });
+        ctx.globalAlpha=1;
+      }
+      // ── 빛의 세계(벽·등) ──
+      if(lit>0){
+        ctx.globalAlpha=lit;
+        ['R','G','B'].forEach(function(k){
+          if(S.hung[k]) drawDisc(ctx, SLOTS[k].x, SLOTS[k].y, PURE.LIGHTS[k], DISC_R);
+        });
+        LAMPS.forEach(function(L){ drawLamp(ctx,L); });
+        // 레일
+        ctx.strokeStyle='rgba(138,115,63,.35)'; ctx.lineWidth=1;
+        LAMPS.forEach(function(L){
+          ctx.beginPath(); ctx.moveTo(L.hx, L.hy-40); ctx.lineTo(SLOTS[L.id].x, SLOTS[L.id].y+40); ctx.stroke();
+        });
+        // 여운: 아래 접시가 거울로 돌아온다(색의 고리)
+        if(S.phase==='after'){
+          var hp=huePair();
+          var c1=PURE.hueColor(hp[0]), c2=PURE.hueColor(hp[1]);
+          drawDisc(ctx, W*0.5-60, 760, c1, 70);
+          drawDisc(ctx, W*0.5+60, 760, c2, 70);
+          var pm=PURE.paintMix(PURE.paintOf(hp[0]), PURE.paintOf(hp[1]));
+          ctx.fillStyle=css(pm,0.95);
+          ctx.beginPath(); ctx.ellipse(W*0.5, 852, 74, 26, 0, 0, TAU); ctx.fill();
+          ctx.strokeStyle='rgba(201,169,97,.6)'; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.ellipse(W*0.5, 852, 80, 30, 0, 0, TAU); ctx.stroke();
+        }
+        ctx.globalAlpha=1;
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__A3 = {
+    S:S, PURE:PURE,
+    pour:pour, hang:hang, unhang:unhang,
+    dish:function(){ return S.dish; },
+    huePair:huePair, VENN:VENN
+  };
+})();
+</script>
+</body>
+</html>
