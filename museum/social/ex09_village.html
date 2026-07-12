@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>100명의 마을 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  html,body{ background:var(--night-1); }
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:pointer; }
+  #premise{ position:fixed; top:6vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+            font-family:'Gowun Batang',serif; font-size:16px; letter-spacing:.12em; color:var(--ink-dim);
+            opacity:0; transition:opacity 1.6s ease; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+            display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+            padding-bottom:5vh; gap:20px; }
+  #overlay > *{ pointer-events:auto; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+            font-family:'Gowun Batang',serif; font-size:clamp(17px,2.4vw,24px); letter-spacing:.09em; color:var(--ink); text-align:center;
+            padding:0 6vw; line-height:1.8; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+                   font-size:clamp(12px,1.5vw,15px); color:var(--social); letter-spacing:.10em; opacity:.9; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(320px,64vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변). -->
+<script id="village-pure">
+(function(root,factory){
+  if(typeof module==='object'&&module.exports) module.exports=factory();
+  else root.KMuseumVillage=factory();
+})(typeof self!=='undefined'?self:this,function(){
+  'use strict';
+  // 통용값 상수(2022~2024 국제기구 반올림) — 연출 보정 0
+  var WORLD_BILLION=82;        // 세계 인구 약 82억 (UN WPP)
+  var KOREAN_MILLION=81;       // 한국어 화자 약 8,100만 → 100명 환산 1명
+  var STATS=[                  // 이항 카드 — yes = 100명 중 몇 명
+    { id:'read',   yes:87 },   // 글을 읽을 수 있다 (UNESCO 성인 문해 통용값)
+    { id:'power',  yes:91 },   // 전기가 들어온다 (World Bank)
+    { id:'net',    yes:67 },   // 인터넷을 쓴다 (ITU)
+    { id:'water',  yes:73 },   // 안전하게 관리되는 식수 (WHO/UNICEF JMP)
+    { id:'city',   yes:57 },   // 도시에 산다 (World Bank)
+    { id:'child',  yes:25 },   // 열다섯 살 미만 (UN WPP)
+    { id:'korean', yes:1  }    // 한국어로 말한다 (약 8,100만/82억)
+  ];
+  var CONTINENTS=[             // 6분할 카드 — 합계 정확히 100 (UN WPP 반올림)
+    { id:'asia',    yes:59 },
+    { id:'africa',  yes:18 },
+    { id:'europe',  yes:9  },
+    { id:'latam',   yes:8  },
+    { id:'noram',   yes:5  },
+    { id:'oceania', yes:1  }
+  ];
+  var PROVABLE={ read:true, power:true, net:true, korean:true }; // 목격자 원리:
+  // 읽기=이 문장을 읽는 중 · 전기=화면이 켜져 있음 · 인터넷=전시가 인터넷으로 도착 · 한국어=이 전시가 한국어
+  var YOU=0;                   // 당신 등불의 고정 인덱스
+  function statOf(id){
+    for(var i=0;i<STATS.length;i++) if(STATS[i].id===id) return STATS[i];
+    return null;
+  }
+  function split(id){
+    var s=statOf(id); if(!s) return null;
+    return { yes:s.yes, no:100-s.yes };
+  }
+  function provable(id){ return !!PROVABLE[id]; }
+  function youSide(id){ return provable(id) ? 'yes' : null; } // 모르는 것은 배치하지 않는다
+  function mulberry32(a){
+    return function(){
+      a|=0; a=(a+0x6D2B79F5)|0;
+      var t=Math.imul(a^(a>>>15),1|a);
+      t=(t+Math.imul(t^(t>>>7),61|t))^t;
+      return ((t^(t>>>14))>>>0)/4294967296;
+    };
+  }
+  function seedOf(id){
+    var h=0;
+    for(var i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))|0;
+    return (h^0x5909)>>>0;
+  }
+  function membership(id){     // 길이 100 결정론 배정 — 트루 개수 = yes 정확
+    var s=statOf(id); if(!s) return null;
+    var arr=new Array(100), i;
+    for(i=0;i<100;i++) arr[i]=false;
+    var need=s.yes, pool=[];
+    if(provable(id)){ arr[YOU]=true; need--; }
+    for(i=0;i<100;i++) if(i!==YOU || !provable(id)) pool.push(i);
+    var rnd=mulberry32(seedOf(id));
+    for(i=pool.length-1;i>0;i--){
+      var j=Math.floor(rnd()*(i+1));
+      var tmp=pool[i]; pool[i]=pool[j]; pool[j]=tmp;
+    }
+    for(i=0;i<need;i++) arr[pool[i]]=true;
+    return arr;
+  }
+  function continentOf(){      // 길이 100 결정론 6분할 배정 — 구획 크기 정확
+    var arr=new Array(100), idx=[], i;
+    for(i=0;i<100;i++) idx.push(i);
+    var rnd=mulberry32(seedOf('continents'));
+    for(i=idx.length-1;i>0;i--){
+      var j=Math.floor(rnd()*(i+1));
+      var t=idx[i]; idx[i]=idx[j]; idx[j]=t;
+    }
+    var k=0;
+    for(var c=0;c<CONTINENTS.length;c++)
+      for(var n=0;n<CONTINENTS[c].yes;n++) arr[idx[k++]]=CONTINENTS[c].id;
+    return arr;
+  }
+  return { WORLD_BILLION:WORLD_BILLION, KOREAN_MILLION:KOREAN_MILLION,
+           STATS:STATS, CONTINENTS:CONTINENTS, YOU:YOU,
+           statOf:statOf, split:split, provable:provable, youSide:youSide,
+           membership:membership, continentOf:continentOf };
+});
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">세계를, 100명이 사는 마을로 줄였습니다.</div>
+<div id="overlay">
+  <div id="formula"></div>
+  <div id="reexp"><div class="track"><input type="range" min="0" max="7" value="7" step="1" aria-hidden="true"></div></div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumVillage;
+  var canvas = document.getElementById('stage-canvas');
+  if(!canvas || !window.Museum){ return; }
+  var stage = Museum.stage(canvas);
+  var W = stage.W, H = stage.H;
+  var TAU = Math.PI*2;
+
+  // ── 카드 대본 (관람 순서 — 라벨은 무대의 것, 수치는 E1의 것) ────────
+  var CARDS=[
+    { id:'continents', label:'아시아에 삽니다',            reason:null },
+    { id:'read',   label:'이 문장을 읽을 수 있습니다',      reason:'지금, 읽으셨으니까요.' },
+    { id:'power',  label:'전기가 들어옵니다',               reason:'화면이 켜져 있으니까요.' },
+    { id:'net',    label:'인터넷을 씁니다',                 reason:'이 마을엔, 인터넷으로 오셨으니까요.' },
+    { id:'city',   label:'도시에 삽니다',                   reason:null },
+    { id:'water',  label:'안전한 물을 마십니다',            reason:null },
+    { id:'child',  label:'열다섯 살이 되지 않았습니다',     reason:null },
+    { id:'korean', label:'한국어로 말합니다',               reason:'이 마을의 말이, 한국어니까요.' }
+  ];
+  var HAND_CARDS=4;                 // 넷째 카드까지는 손으로, 이후 기계의 밤
+  var CARD={x:W*0.5, y:150, w:560, h:96};
+  var PLAZA={cy:560};
+  var GROUP_L={x:W*0.34}, GROUP_R={x:W*0.72}, GROUP_MID={x:W*0.53, y:820};
+
+  // ── 등불(100명) ──────────────────────────────────────────────────
+  var rnd=Museum.rng(5909);
+  var folk=[];
+  (function(){
+    for(var i=0;i<100;i++){
+      var a=rnd()*TAU, r=Math.sqrt(rnd());
+      folk.push({
+        x:W*0.5+Math.cos(a)*r*430, y:PLAZA.cy+Math.sin(a)*r*200,
+        tx:0, ty:0, lit:true, brass:false, ph:rnd()*TAU
+      });
+      folk[i].tx=folk[i].x; folk[i].ty=folk[i].y;
+    }
+  })();
+
+  // ── 상태 ─────────────────────────────────────────────────────────
+  var S={
+    phase:'boot',                // boot→flip→auto→final→betrayed→after
+    cardIdx:-1, flipT:1,         // flipT: 0→1 뒤집힘 진행
+    reasonTxt:'', reasonA:0, shadowNote:false,
+    autoAt:0, autoWait:0, offCount:0, offAt:0,
+    betrayed:false, time:0, lastClack:0
+  };
+  function youDot(){ return folk[PURE.YOU]; }
+
+  // ── 무리 재정렬 ──────────────────────────────────────────────────
+  function scatterTargets(){
+    var r2=Museum.rng(77);
+    folk.forEach(function(f){
+      var a=r2()*TAU, r=Math.sqrt(r2());
+      f.tx=W*0.5+Math.cos(a)*r*430; f.ty=PLAZA.cy+Math.sin(a)*r*200;
+    });
+  }
+  function clusterTarget(cx, k, count, spreadX, spreadY){
+    var cols=Math.ceil(Math.sqrt(count*1.6));
+    var col=k%cols, row=Math.floor(k/cols);
+    var jx=(Museum.rng(k*13+1)()-0.5)*14, jy=(Museum.rng(k*17+3)()-0.5)*10;
+    return { x:cx+(col-(cols-1)/2)*(spreadX/cols)+jx,
+             y:PLAZA.cy-60+row*(spreadY)+jy };
+  }
+  function applyCard(id){
+    S.shadowNote=false;
+    if(id==='continents'){
+      var cont=PURE.continentOf();
+      var lanes={asia:W*0.18, africa:W*0.36, europe:W*0.50, latam:W*0.62, noram:W*0.74, oceania:W*0.86};
+      var counters={};
+      folk.forEach(function(f,i){
+        var c=cont[i]; counters[c]=(counters[c]||0);
+        var t=clusterTarget(lanes[c], counters[c]++, 60, 150, 26);
+        f.tx=t.x; f.ty=t.y; f.lit=true;
+      });
+      youDot().brass=false;      // 증명 불가 — 당신은 아직 없다
+      return;
+    }
+    var mem=PURE.membership(id);
+    var ky=0, kn=0;
+    folk.forEach(function(f,i){
+      f.lit=true;
+      if(i===PURE.YOU && !PURE.provable(id) && youDot().brass){
+        // 모르는 것은 배치하지 않는다 — 무리 사이 그림자로
+        f.tx=GROUP_MID.x; f.ty=GROUP_MID.y; S.shadowNote=true;
+        if(mem[i]) ky++; else kn++;
+        return;
+      }
+      var t=mem[i] ? clusterTarget(GROUP_L.x, ky++, PURE.split(id).yes, 400, 30)
+                   : clusterTarget(GROUP_R.x, kn++, PURE.split(id).no, 340, 30);
+      f.tx=t.x; f.ty=t.y;
+    });
+    if(PURE.provable(id)) youDot().brass=true;   // 마을이 당신을 안다
+  }
+
+  // ── 카드 진행 ────────────────────────────────────────────────────
+  function nextCard(){
+    if(S.cardIdx>=CARDS.length-1) return;
+    S.cardIdx++;
+    S.flipT=0; S.reasonA=0;
+    var c=CARDS[S.cardIdx];
+    S.reasonTxt=c.reason||'';
+    Museum.sound.play('paper');
+    applyCard(c.id);
+    if(S.cardIdx===CARDS.length-1){ S.phase='final'; }
+  }
+
+  // ── 배반 ─────────────────────────────────────────────────────────
+  function beginDarkening(){                     // 아흔아홉이 차례로 어두워진다
+    S.offCount=0; S.offAt=S.time+0.9;
+  }
+  function triggerBetray(){
+    if(S.betrayed) return;
+    S.betrayed=true; S.phase='betrayed';
+    var y=youDot();
+    Museum.betray({x:y.x/W, y:y.y/H}).then(function(){ enterAfter(); });
+  }
+  function enterAfter(){
+    S.phase='after';
+    var f=document.getElementById('formula');
+    f.innerHTML='백 명 중, 당신 하나였습니다 &mdash; 당신에게 보통인 것이,<br>이 마을에선 가장 드문 것이기도 합니다.'
+      +'<span class="small">세계 약 '+PURE.WORLD_BILLION+'억 명 &middot; 한국어 화자 약 '+PURE.KOREAN_MILLION+'00만 명 = 100명 중 1명</span>';
+    f.classList.add('is-in');
+    Museum.plaque({ title:'100명의 마을',
+      story:'이 마을에 "보통 사람"은 살지 않는다 — 아흔아홉도, 저마다 백에 하나다. 손잡이로 카드 서가를 넘겨 보세요.',
+      fine:'IF THE WORLD WERE 100 PEOPLE' });
+    Museum.ticket.grant({ id:'s9_village', title:'100명의 마을', fine:'사람들의 밤',
+      drawFn:function(c,w,h){
+        var rr=Museum.rng(9);
+        c.fillStyle='rgba(242,234,216,.55)';
+        for(var i=0;i<99;i++){
+          var x=w*0.12+rr()*w*0.76, y=h*0.16+rr()*h*0.68;
+          c.fillRect(x,y,1.6,1.6);
+        }
+        c.fillStyle='rgba(201,169,97,.95)';
+        c.beginPath(); c.arc(w*0.62,h*0.44,3.2,0,Math.PI*2); c.fill();
+      }});
+    Museum.sound.play('paper');
+    document.getElementById('reexp').classList.add('is-in');
+    folk.forEach(function(f){ f.lit=true; });
+  }
+
+  // ── 여운 슬라이더 — 카드 서가(수치 해금·E1 정합) ─────────────────
+  var slider=document.querySelector('#reexp input');
+  slider.addEventListener('input', function(){
+    if(!S.betrayed || S.phase!=='after') return;
+    var i=parseInt(slider.value,10)||0;
+    S.cardIdx=i; S.flipT=0; S.reasonA=0; S.reasonTxt='';
+    applyCard(CARDS[i].id);
+    Museum.sound.play('paper');
+  });
+  function shelfChalk(){
+    var c=CARDS[S.cardIdx]; if(!c) return '';
+    if(c.id==='continents'){
+      return '아시아 59 · 아프리카 18 · 유럽 9 · 라틴아메리카 8 · 북아메리카 5 · 오세아니아 1';
+    }
+    return c.label+' — 100명 중 '+PURE.split(c.id).yes+'명';
+  }
+
+  // ── 입력: 뒤집다(카드 탭) ────────────────────────────────────────
+  canvas.addEventListener('pointerdown', function(e){
+    if(Museum.isLocked() || S.phase==='auto' || S.phase==='final' || S.phase==='betrayed') return;
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(S.phase==='after'){ return; }
+    if(Math.abs(p.x-CARD.x)>CARD.w*0.75 || Math.abs(p.y-CARD.y)>CARD.h*1.4) return;
+    if(S.phase==='boot') S.phase='flip';
+    if(S.flipT<1) return;                        // 뒤집히는 중엔 대기
+    if(S.cardIdx>=HAND_CARDS-1) return;          // 손 카드는 넷까지 — 이후는 줄의 몫
+    nextCard();
+    if(S.cardIdx>=HAND_CARDS-1 && S.phase==='flip'){
+      S.autoAt=S.time+2.6;                       // 줄이 스스로 — 기계의 밤 예약
+    }
+  });
+
+  // ── 무대 씬 ──────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      if(Museum.isLocked()) return;
+      S.time+=dt;
+      if(S.flipT<1) S.flipT=Math.min(1, S.flipT+dt*2.4);
+      if(S.flipT>0.6 && S.reasonA<1) S.reasonA=Math.min(1, S.reasonA+dt*1.2);
+      // 등불 보행
+      var moving=0;
+      folk.forEach(function(f){
+        var dx=f.tx-f.x, dy=f.ty-f.y;
+        f.x+=dx*Math.min(1,dt*2.6); f.y+=dy*Math.min(1,dt*2.6);
+        if(dx*dx+dy*dy>9) moving++;
+      });
+      if(moving>0 && S.time-S.lastClack>0.09){
+        S.lastClack=S.time; Museum.sound.play('clack');
+      }
+      // 기계의 밤 — 줄이 스스로 카드를 건다
+      if(S.phase==='flip' && S.autoAt && S.time>=S.autoAt){
+        S.phase='auto'; S.autoWait=S.time+1.4; Museum.sound.play('curtain');
+      }
+      if(S.phase==='auto' && S.time>=S.autoWait){
+        if(S.cardIdx<CARDS.length-2){
+          nextCard();
+          S.autoWait=S.time+Math.max(1.0, 2.0-(S.cardIdx-HAND_CARDS)*0.35);
+        }else{
+          S.autoWait=S.time+2.2;                 // 마지막 카드는 천천히
+          nextCard();                            // → phase='final'
+          beginDarkening();
+        }
+      }
+      // 4막 — 아흔아홉이 차례로 어두워진다
+      if(S.phase==='final' && S.offAt && S.time>=S.offAt && !S.betrayed){
+        while(S.time>=S.offAt && S.offCount<100){
+          if(S.offCount!==PURE.YOU) folk[S.offCount].lit=false;
+          S.offCount++;
+          S.offAt+=Math.max(0.018, 0.10-S.offCount*0.0008);
+          if(S.offCount%7===0) Museum.sound.play('click_light');
+        }
+        if(S.offCount>=100) triggerBetray();
+      }
+    },
+    draw:function(ctx){
+      var breath=0.5+0.5*Math.sin(S.time*2.0);
+      // 광장 바닥선
+      ctx.strokeStyle='rgba(95,88,74,.35)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(W*0.08, 840); ctx.lineTo(W*0.92, 840); ctx.stroke();
+      // 줄
+      ctx.strokeStyle='rgba(138,115,63,.5)'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.moveTo(W*0.12, CARD.y-70); ctx.lineTo(W*0.88, CARD.y-70); ctx.stroke();
+      // 카드
+      var flip=S.cardIdx<0 ? 1 : Math.abs(1-2*Math.min(1,S.flipT));
+      var showFront=S.cardIdx>=0 && S.flipT>=0.5;
+      var cw=CARD.w*Math.max(0.06,flip);
+      ctx.save();
+      ctx.translate(CARD.x, CARD.y);
+      ctx.strokeStyle='rgba(201,169,97,.75)'; ctx.lineWidth=2;
+      ctx.fillStyle='rgba(13,13,22,.92)';
+      ctx.fillRect(-cw/2,-CARD.h/2,cw,CARD.h);
+      ctx.strokeRect(-cw/2,-CARD.h/2,cw,CARD.h);
+      ctx.beginPath(); ctx.moveTo(0,-CARD.h/2); ctx.lineTo(0,-70); ctx.stroke();
+      if(showFront && flip>0.4){
+        ctx.font='26px "Gowun Batang", serif';
+        ctx.fillStyle='rgba(242,234,216,.92)'; ctx.textAlign='center';
+        ctx.fillText(CARDS[S.cardIdx].label, 0, 9);
+      }else if(!showFront && flip>0.4){
+        ctx.fillStyle='rgba(201,169,97,'+(0.25+0.25*breath*(S.phase==='boot'?1:0.3)).toFixed(2)+')';
+        ctx.beginPath(); ctx.arc(0,0,7,0,TAU); ctx.fill();
+      }
+      ctx.restore();
+      // 분필 소문 — 목격자 원리의 문장
+      if(S.reasonTxt && S.reasonA>0 && S.phase!=='after'){
+        ctx.font='17px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(168,158,136,'+(0.85*S.reasonA).toFixed(2)+')';
+        ctx.textAlign='center';
+        ctx.fillText(S.reasonTxt, W*0.5, CARD.y+92);
+      }
+      if(S.shadowNote && S.phase!=='after'){
+        ctx.font='15px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(95,88,74,.8)'; ctx.textAlign='center';
+        ctx.fillText('당신의 자리는, 당신만 압니다.', GROUP_MID.x, GROUP_MID.y+40);
+      }
+      // 등불 100
+      folk.forEach(function(f,i){
+        if(!f.lit && !(i===PURE.YOU)) {
+          ctx.fillStyle='rgba(95,88,74,.25)';
+          ctx.fillRect(f.x-1.2, f.y-1.2, 2.4, 2.4);
+          return;
+        }
+        if(f.brass){
+          var g=0.55+0.35*Math.sin(S.time*2.4+f.ph);
+          ctx.fillStyle='rgba(201,169,97,'+g.toFixed(2)+')';
+          ctx.beginPath(); ctx.arc(f.x, f.y, 6.5, 0, TAU); ctx.fill();
+          ctx.strokeStyle='rgba(201,169,97,.4)'; ctx.lineWidth=1;
+          ctx.beginPath(); ctx.arc(f.x, f.y, 11+2*breath, 0, TAU); ctx.stroke();
+        }else{
+          var a=0.42+0.16*Math.sin(S.time*1.6+f.ph);
+          ctx.fillStyle='rgba(242,234,216,'+a.toFixed(2)+')';
+          ctx.beginPath(); ctx.arc(f.x, f.y, 3.1, 0, TAU); ctx.fill();
+        }
+      });
+      // 여운: 카드 서가 분필
+      if(S.phase==='after'){
+        ctx.font='18px "Gowun Dodum", sans-serif';
+        ctx.fillStyle='rgba(242,234,216,.85)'; ctx.textAlign='center';
+        ctx.fillText(shelfChalk(), W*0.5, CARD.y+92);
+      }
+    }
+  });
+  stage.start();
+  Museum.sound.roomtone(true);
+  Museum.curtainIn();
+  setTimeout(function(){ document.getElementById('premise').classList.add('is-in'); }, 900);
+
+  // ── 테스트 훅 ─────────────────────────────────────────────────────
+  window.__S9 = {
+    S:S, PURE:PURE, CARDS:CARDS, folk:folk,
+    nextCard:nextCard, applyCard:applyCard, shelfChalk:shelfChalk,
+    beginFlip:function(){ if(S.phase==='boot') S.phase='flip'; },
+    youDot:youDot, beginDarkening:beginDarkening,
+    HAND_CARDS:HAND_CARDS
+  };
+})();
+</script>
+</body>
+</html>
