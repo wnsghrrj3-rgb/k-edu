@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>50까지 줄 세우기 — K✦edu</title>
+<title>묶음의 비밀 — K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
-     원본: src/g1m_u5_seq50.js (+ src/g1m_u5_seq50.css) · core/activity-core.* · core/genre/sequence.js · gens/math/number_line.js -->
+     원본: src/g2m_u6_multiply.js (+ src/g2m_u6_multiply.css) · core/activity-core.* · core/genre/stream.js · gens/math/multiply.js -->
 <style>
 /* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
  * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
@@ -98,23 +98,15 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 }
 
 /* ── 무대 스타일 ── */
-/* 무대 — 흩어진 수 카드 */
-#line { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,2vh,18px); width:100%; }
-#hint { font-size:clamp(16px,2.2vw,24px); color:var(--amber-d); background:#fef3c7; border-radius:12px; padding:6px 18px; }
-#hint.turn { color:#fff; }
-#hint.turn.t0 { background:var(--teamA); }
-#hint.turn.t1 { background:var(--teamB); }
-#cards { display:flex; flex-wrap:wrap; gap:clamp(8px,1.6vw,16px); justify-content:center; max-width:min(94vw,900px); }
-.ncard { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(24px,4vw,46px);
-         background:#fff; color:var(--deep); border:4px solid var(--amber); border-radius:18px;
-         min-width:clamp(62px,9vw,104px); min-height:clamp(62px,9vh,104px); cursor:pointer;
-         box-shadow:0 5px 0 #e7c890; position:relative; }
-.ncard:active { transform:translateY(3px); box-shadow:none; }
-.ncard.got { background:#dcfce7; border-color:var(--good); color:#166534; cursor:default; }
-.ncard.got::after { content:attr(data-order); position:absolute; top:-8px; left:-8px;
-  background:var(--good); color:#fff; font-size:14px; border-radius:999px;
-  min-width:22px; height:22px; line-height:22px; text-align:center; padding:0 5px; }
-.ncard.bad { border-color:var(--bad); animation:shake .42s; }
+/* 무대 — 묶음판. 곱셈이 "같은 묶음의 되풀이"로 보이게 */
+#mul { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,2vh,16px); width:100%; }
+#groups { display:flex; flex-wrap:wrap; gap:clamp(6px,1.4vw,14px); justify-content:center; max-width:min(94vw,880px); }
+.grp { background:#fff; border:3px solid var(--amber); border-radius:14px; padding:6px 8px;
+       display:flex; flex-wrap:wrap; gap:2px; max-width:clamp(76px,11vw,130px); justify-content:center;
+       box-shadow:0 4px 0 #e7c890; transition:border-color .25s; }
+#mul.ok .grp { border-color:var(--good); }
+.md { font-size:clamp(14px,2vw,24px); line-height:1; }
+#mq { font-size:clamp(19px,2.8vw,30px); color:var(--deep); background:#fef3c7; border-radius:14px; padding:8px 22px; }
 </style>
 </head>
 <body>
@@ -877,187 +869,245 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 })();
 </script>
 <script>
-/* genre/sequence.js — 순서 잇기 장르 엔진 v1.0.0 (§10-4, 무대형)
- * 흩어진 카드를 순서대로 탭한다. Stream(선다형)과 달리 답 버튼이 없고 무대가 곧 답이다.
+/* genre/stream.js — 문제 스트림형 장르 엔진 v1.0.0 (§9-3)
+ * 대상 장르: balance · duel_quiz · relay (한 문제씩 흘러가는 형태 전부)
+ * 이 파일이 게임 루프의 전부다. 활동은 "무대를 어떻게 그리는가"만 쓰면 된다.
  *
  * 규칙(헌법):
- *  §9-4 score = 첫 시도에 바르게 짚은 카드 수 (되짚어 맞춘 건 득점 아님)
- *  §10-4 byType = 카드 단위가 아니라 문항 단위 (decade_cross · skip · mid) — 경계 넘김 오개념 검출
- *  §6-8 [넘기기] = 판정 없이 다음. 중도 종료 시 판정분으로 마감
- *  class = 팀 교대(홀수 문항 A, 짝수 B). 오탭 2회면 턴이 상대 팀으로 넘어간다 (칠판 앞 교대의 현실)
- *  D18 시간은 점수가 아니라 durationSec로만 기록 (느린 아이에게 낙인을 찍지 않는다 — D6 정신)
+ *  §9-4 score = 첫 시도 정답 수 (재도전으로 맞춘 건 득점 아님 — "처음에 아는가"가 신호)
+ *  §6-8 [넘기기]는 판정 없이 다음 문항. 채점 분모(judged)에 안 들어간다.
+ *  §6-8 중도 종료 시 판정분으로 마감 (core가 처리)
+ *  class 선점제: 먼저 맞힌 팀 득점. 오답 팀은 잠금. 양팀 오답 → 정답 공개·무득점 진행.
+ *  solo/assign: 오답이면 재도전 가능 (첫 시도 실패는 byType.miss로 남는다)
  *
- * spec = { cardLabel(v), waits:{correct} }
+ * spec = {
+ *   render(app, p)            무대에 문제 반영 (필수)
+ *   options(p)                답 버튼 [{pick, label}] (필수)
+ *   reveal(app, p, ok)        정답 공개 연출 (선택)
+ *   reset(app)                문항 시작 시 초기화 (선택)
+ *   waits: { correct, wrongAll }   기본 class 2000/2200, solo 1500
+ *   why: { question, options, answerOf(p) }   왜 그럴까 보너스 (선택, class 제외)
+ * }
  */
 (function () {
   'use strict';
 
   function run(app, gen, spec) {
     spec = spec || {};
-    var W_OK = (spec.waits && spec.waits.correct) || (app.mode === 'class' ? 1800 : 1200);
-    var N = app.settings.n || 5;
-    var i = 0, S = null;
+    var waits = spec.waits || {};
+    var W_OK = waits.correct != null ? waits.correct : (app.mode === 'class' ? 2000 : 1500);
+    var W_ALL = waits.wrongAll != null ? waits.wrongAll : 2200;
+    var whyOn = !!(spec.why && app.settings.why === 1 && app.mode !== 'class');
 
-    function render() {
-      var html = S.q.cards.map(function (v) {
-        return '<button class="ncard" data-v="' + v + '">' + (spec.cardLabel ? spec.cardLabel(v) : v) + '</button>';
-      }).join('');
-      app.el('#cards').innerHTML = html;
-      app.els('#cards .ncard').forEach(function (b) {
-        b.addEventListener('click', function () { tap(b); });
-      });
-      app.el('#hint').textContent = S.q.prompt + (app.mode === 'class' ? ' — ' + app.teams[S.turn].name + ' 차례!' : '');
-      app.el('#hint').className = app.mode === 'class' ? ('turn t' + S.turn) : '';
-    }
+    var S = { i: 0, n: app.settings.n || 10, cur: null, phase: 'main',
+              firstTry: true, lockAll: false, teamLocked: [false, false], t0: 0 };
 
-    function tap(b) {
-      if (!S || S.done) return;
-      var v = +b.dataset.v;
-      if (v === S.q.seq[S.at]) {                       // 정답 카드
-        b.classList.add('got');
-        b.disabled = true;
-        b.setAttribute('data-order', S.at + 1);
-        app.sfx.tick();
-        S.at++;
-        if (S.at >= S.q.seq.length) {                  // 완주
-          S.done = true;
-          app.markJudged();
-          if (S.firstTry) {
-            app.tally(S.q.type, true);
-            if (app.mode !== 'class') app.addScore(1);
-          }
-          if (app.mode === 'class') app.teamScore(S.turn, 1);
-          app.sfx.win();
-          app.explain(S.q.explain, true);
-          setTimeout(next, W_OK);
-        }
-        return;
-      }
-      // 오탭
-      S.firstTry = false;
-      S.miss++;
-      app.tally(S.q.type, false);
-      app.sfx.bad();
-      app.shake(b);
-      b.classList.add('bad');
-      setTimeout(function () { b.classList.remove('bad'); }, 420);
-      if (app.mode === 'class' && S.miss % 2 === 0) {  // 오탭 2회 → 상대 팀으로 턴 이동
-        S.turn = 1 - S.turn;
-        app.el('#hint').textContent = app.teams[S.turn].name + ' 차례로 넘어갑니다!';
-        app.el('#hint').className = 'turn t' + S.turn;
-      }
-    }
+    app.onSkip(function () {      // §6-8 넘기기 = 판정 없이 다음
+      if (S.lockAll || S.phase !== 'main') return;
+      next();
+    });
 
     function next() {
-      if (i >= N) return app.finish({});
-      S = { q: gen.next(), at: 0, miss: 0, done: false, firstTry: true, turn: (i % 2) };
-      i++;
-      app.setProg(i, N);
+      if (S.i >= S.n) return app.finish({});
+      S.cur = gen.next();
+      S.i++; S.t0 = Date.now(); S.firstTry = true;
+      S.lockAll = false; S.teamLocked = [false, false]; S.phase = 'main';
+      app.setProg(S.i, S.n);
       app.clearExplain();
-      app.hideAnswers();
-      render();
+      app.hideWhy();
+      if (typeof spec.reset === 'function') spec.reset(app);
+      spec.render(app, S.cur);
+      app.answers(spec.options(S.cur), onPick);
+      app.unlockAnswers();
     }
 
-    app.onSkip(function () { if (S && !S.done) next(); });
+    function onPick(pick, teamIdx, btn) {
+      if (S.lockAll || S.phase !== 'main') return;
+      var p = S.cur;
+      var ok = gen.check ? gen.check(pick, p) : (pick === p.answer);
+      if (app.mode === 'assign') {
+        app.detail.push({ q: p.prompt, a: p.answer, pick: pick, ok: ok, type: p.type, ms: Date.now() - S.t0 });
+      }
+
+      if (ok) {
+        S.lockAll = true;
+        app.markJudged();                              // §6-8 문항 종결 = 분모 +1
+        if (S.firstTry) { app.tally(p.type, true); if (app.mode !== 'class') app.addScore(1); }
+        if (app.mode === 'class' && teamIdx != null) app.teamScore(teamIdx, 1);
+        app.sfx.good();
+        if (typeof spec.reveal === 'function') spec.reveal(app, p, true);
+        if (p.explain) app.explain(p.explain, true);
+        app.hideAnswers();
+        setTimeout(function () {
+          if (whyOn) startWhy();
+          else next();
+        }, W_OK);
+        return;
+      }
+
+      // 오답
+      S.firstTry = false;
+      app.tally(p.type, false);
+      app.sfx.bad();
+      if (app.mode === 'class' && teamIdx != null) {
+        S.teamLocked[teamIdx] = true;
+        app.lockTeam(teamIdx);
+        if (S.teamLocked[0] && S.teamLocked[1]) {      // 양팀 오답 → 정답 공개, 무득점 진행
+          S.lockAll = true;
+          app.markJudged();
+          if (typeof spec.reveal === 'function') spec.reveal(app, p, false);
+          if (p.explain) app.explain(p.explain, false);
+          app.hideAnswers();
+          setTimeout(next, W_ALL);
+        }
+      } else {
+        app.shake(btn);                                 // solo/assign — 재도전 허용
+      }
+    }
+
+    // ── 왜 그럴까 보너스 (§10-2, solo·assign 전용 — D12)
+    function startWhy() {
+      S.phase = 'why';
+      var wt0 = Date.now(), whyFirst = true;
+      var ansKey = spec.why.answerOf(S.cur);
+      app.why(spec.why.question, spec.why.options, function (pick, btn) {
+        if (S.phase !== 'why') return;
+        var ok = (pick === ansKey);
+        if (app.mode === 'assign') {
+          app.detail.push({ q: 'why:' + S.cur.prompt, a: ansKey, pick: pick, ok: ok,
+                            type: ok ? 'reason_ok' : 'reason_miss', ms: Date.now() - wt0 });
+        }
+        if (ok) {
+          if (whyFirst) { app.tally('reason_ok', true); app.addScore(1); }
+          app.sfx.good();
+          S.phase = 'done';
+          app.hideWhy();
+          setTimeout(next, 300);
+        } else {
+          whyFirst = false;
+          app.tally('reason_miss', false);
+          app.sfx.bad();
+          btn.classList.add('locked');
+          app.shake(btn);
+        }
+      });
+    }
+
+    // 왜 그럴까가 켜지면 만점이 문항당 2점 — 분모도 2배 (core finish의 기본 분모를 덮어쓴다)
+    var coreFinish = app.finish;
+    app.finish = function (o) {
+      o = o || {};
+      if (o.total == null && whyOn) o.total = app.judged * 2;
+      return coreFinish(o);
+    };
+
     next();
   }
 
-  window.Sequence = { run: run, version: '1.0.0' };
+  window.Stream = { run: run, version: '1.0.0' };
 })();
 </script>
 <script>
-/* gens/math/number_line.js — 수의 순서·뛰어 세기 (1단원 9까지의 수 / 5단원 50까지의 수)
- * 순수 함수·DOM 무관 (§9-3). 게임(순서 탭)·활동지(빈칸) 공유.
- * params: { from, to, step: 1|2|5|10, count: 카드 수, desc: 0|1 }
- * next() → { seq:[정답 순서], cards:[섞인 카드], typeOf(v), prompt, type }
- * type(카드 단위): decade_cross(x9→x0 경계) · mid — §10-4 경계 넘김 오개념 검출
+/* gens/math/multiply.js — 곱셈 (2학년 수학 6단원)
+ * 순수 함수·DOM 무관 (§9-3).
+ * params: { max: 5|9, qmode: 'group'(몇씩 몇 묶음) | 'times'(곱셈식) | 'mix' }
+ * type: times_2_5(2·5단 — 뛰어 세기로 닿는다) · times_3_4(3·4단) · times_hard(6~9단)
+ *       · repeated_add(같은 수를 여러 번 더하기 = 곱셈의 뿌리)
  */
 (function (root, factory) {
   var g = factory();
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
-  root.GENS['number_line'] = g;
+  root.GENS['multiply'] = g;
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
   return {
-    id: 'number_line',
-    title: '수의 순서 잇기',
+    id: 'multiply',
+    title: '곱셈',
     create: function (params, rng) {
       var p = params || {};
-      var from = +p.from || 1, to = +p.to || 9;
-      // 뛰어 세기 폭: 1~10. 2학년 곱셈이 3씩·4씩을 쓰므로 화이트리스트를 두지 않는다
-      var step = (+p.step >= 1 && +p.step <= 10) ? Math.floor(+p.step) : 1;
-      var count = +p.count || 6;
-      var desc = +p.desc === 1;
+      var max = [5, 9].indexOf(+p.max) >= 0 ? +p.max : 9;
+      var m = p.qmode || 'mix';
       return {
         next: function () {
-          var span = (count - 1) * step;
-          var start = (to - span > from) ? ri(rng, from, to - span) : from;
-          var seq = [];
-          for (var i = 0; i < count; i++) seq.push(start + i * step);
-          if (desc) seq.reverse();
+          var a = ri(rng, 2, max);           // 몇씩
+          var b = ri(rng, 2, max);           // 몇 묶음
+          var ans = a * b;
+          var kind = (m === 'mix') ? (rng() < 0.5 ? 'group' : 'times') : m;
+          var prompt, explain;
+          if (kind === 'group') {
+            prompt = a + '씩 ' + b + '묶음은 모두 몇 개?';
+            explain = a + '씩 ' + b + '묶음 = ' + Array(b + 1).join(a + '+').slice(0, -1) + ' = ' + ans +
+                      '  →  ' + a + ' × ' + b + ' = ' + ans;
+          } else {
+            prompt = a + ' × ' + b + ' = ?';
+            explain = a + '을(를) ' + b + '번 더한 것과 같아요 = ' + ans;
+          }
+          var type = (a === 2 || a === 5) ? 'times_2_5'
+            : (a === 3 || a === 4) ? 'times_3_4'
+            : (kind === 'group' ? 'repeated_add' : 'times_hard');
 
-          var cards = seq.slice();
-          for (var j = cards.length - 1; j > 0; j--) {          // 섞기
-            var k = Math.floor(rng() * (j + 1)), t = cards[j]; cards[j] = cards[k]; cards[k] = t;
+          var opts = [String(ans)];
+          while (opts.length < 4) {
+            var c = String(Math.max(2, ans + ri(rng, -9, 9)));
+            if (opts.indexOf(c) < 0 && +c !== ans) opts.push(c);
           }
-          // 카드 하나라도 십의 경계를 넘으면(예: 19→20) 그 문항은 decade_cross
-          var cross = false;
-          for (var m = 1; m < seq.length; m++) {
-            if (Math.floor(Math.min(seq[m - 1], seq[m]) / 10) !== Math.floor(Math.max(seq[m - 1], seq[m]) / 10)) cross = true;
+          for (var i = opts.length - 1; i > 0; i--) {
+            var j = Math.floor(rng() * (i + 1)), x = opts[i]; opts[i] = opts[j]; opts[j] = x;
           }
-          var type = cross ? 'decade_cross' : (step > 1 ? 'skip' : 'mid');
-          return {
-            seq: seq, cards: cards, step: step, desc: desc, type: type,
-            prompt: (desc ? '큰 수부터' : '작은 수부터') + (step > 1 ? ' ' + step + '씩 뛰어' : '') + ' 순서대로 짚어요',
-            answer: seq.join(','),
-            explain: seq.join(' → ') +
-              (cross ? '  (십의 자리가 바뀌는 곳을 조심!)' : (step > 1 ? '  (' + step + '씩 커져요)' : ''))
-          };
+          return { a: a, b: b, kind: kind, prompt: prompt, answer: String(ans),
+                   options: opts, type: type, explain: explain };
         },
-        check: function (pick, q) { return +pick === q.seq[0]; }
+        check: function (pick, q) { return pick === q.answer; }
       };
     },
     printRender: function (q) {
-      // 활동지: 순서 중 일부를 빈칸으로
-      var hide = [1, 3];
-      return q.seq.map(function (v, i) {
-        return (hide.indexOf(i) >= 0)
-          ? '<span class="w-box"> </span>'
-          : '<span class="w-num">' + v + '</span>';
-      }).join('<span style="margin:0 4px;color:#cbb894">›</span>');
+      return '<span class="w-num">' + q.a + ' × ' + q.b + ' =</span><span class="w-box"> </span>';
     },
-    printAnswer: function (q) { return q.seq.join(' '); },
-    printHead: '수의 순서에 맞게 □ 안에 알맞은 수를 쓰세요.'
+    printAnswer: function (q) { return q.answer; },
+    printHead: '곱셈을 해 □ 안에 알맞은 수를 쓰세요.'
   };
 }));
 </script>
 <script>
-/* src/g1m_u5_seq50.js — 50까지 줄 세우기 (1학년 수학 5단원, 수128-129)
- * 장르: sequence(무대형) · 생성기: number_line
- * 무대 = 흩어진 수 카드. 순서대로 짚으면 번호가 켜진다.
+/* src/g2m_u6_multiply.js — 묶음의 비밀 (2학년 수학 6단원, 곱셈)
+ * 장르: duel_quiz(stream) · 생성기: multiply
+ * 무대 = 묶음판. "3씩 4묶음"이 실제 도토리 묶음으로 보인다 —
+ * 곱셈은 규칙이 아니라 같은 수의 되풀이라는 것을 눈으로 먼저.
  */
 (function () {
   'use strict';
   ACore.create({
-    activityId: 'g1m_u5_seq50',
-    title: '🪜 50까지 줄 세우기',
-    subtitle: '뛰어 세기도 해봐요 — 십의 자리가 바뀌는 곳을 조심!',
-    defaults: { n: 5, count: 6, step: 1, desc: 0 },
+    activityId: 'g2m_u6_multiply',
+    title: '✖️ 묶음의 비밀',
+    subtitle: '몇씩 몇 묶음? 곱셈은 같은 수의 되풀이예요',
+    defaults: { qmode: 'mix', max: 9, n: 10 },
     settings: [
-      { key: 'step', label: '뛰어 세기', options: [{ v: 1, label: '1씩' }, { v: 2, label: '2씩' }, { v: 5, label: '5씩' }, { v: 10, label: '10씩' }] },
-      { key: 'desc', label: '순서', options: [{ v: 0, label: '작은 수부터' }, { v: 1, label: '큰 수부터' }] },
-      { key: 'n', label: '문제 수', options: [{ v: 3, label: '3' }, { v: 5, label: '5' }, { v: 8, label: '8' }] }
+      { key: 'qmode', label: '문제 종류', options: [
+        { v: 'group', label: '몇씩 몇 묶음' }, { v: 'times', label: '곱셈식' }, { v: 'mix', label: '섞기' }] },
+      { key: 'max', label: '수 범위', options: [{ v: 5, label: '5까지' }, { v: 9, label: '9까지' }] },
+      { key: 'n', label: '문제 수', options: [{ v: 5, label: '5' }, { v: 10, label: '10' }, { v: 15, label: '15' }] }
     ],
-    stageHtml: '<div id="line"><div id="hint"></div><div id="cards"></div></div>',
+    stageHtml: '<div id="mul"><div id="groups"></div><div id="mq"></div></div>',
     onStart: function (app) {
-      var gen = GENS['number_line'].create({
-        from: 1, to: 50, step: app.settings.step || 1,
-        count: app.settings.count || 6, desc: app.settings.desc || 0
-      }, app.rng);
-      Sequence.run(app, gen, {});
+      var gen = GENS['multiply'].create({ qmode: app.settings.qmode, max: app.settings.max }, app.rng);
+      Stream.run(app, gen, {
+        render: function (app, q) {
+          var html = '';
+          for (var g = 0; g < q.b; g++) {
+            var dots = '';
+            for (var i = 0; i < q.a; i++) dots += '<span class="md">🌰</span>';
+            html += '<div class="grp">' + dots + '</div>';
+          }
+          app.el('#groups').innerHTML = html;
+          app.el('#mq').textContent = q.prompt;
+        },
+        reset: function (app) { app.el('#mul').classList.remove('ok'); },
+        options: function (q) { return q.options.map(function (o) { return { pick: o, label: o }; }); },
+        reveal: function (app) { app.el('#mul').classList.add('ok'); }
+      });
     }
   });
 })();
