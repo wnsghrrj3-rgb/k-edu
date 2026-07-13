@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 태양계 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 태양계 (2026-07-13 · 페이블) · 천체 통합 재건 4호
+  v2 engine/tools/solar.js(639줄 · 탐구 표준 v2 4층 완료본) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 우주 무대(별 1200 · 태양 · 8행성 · 궤도 링 · 토성 고리 · 🟢 골디락스 띠)
+    ② 실물 질감(sun/jupiter/saturn/saturn_ring + earth_day 승급 로더 · 폴백 절대 안 깨짐)
+    ③ 직접 조작(🔴 지구를 궤도째 «집어» 끌기 · 🔭 비율 연속 슬라이더 · 행성 선택 · 지구에서 보기)
+    ④ 즉각 반응(비율을 당길수록 행성이 점이 되고 우주가 비어 감 · 골디락스 이탈 = 끓음/얼음)
+    ⑤ 탐구 구조(미션 6 · 퀴즈 5 · 만약에 4+저1 · 예측 칩 · 와우=🚀 빛의 여행)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 지구 궤도째 잡아 끌기 — 지구를 레이캐스트로 집고 궤도 평면에 투영, 무대 반지름을 «AU로 역산»
+       (auFromDist = auToDist의 역함수, 이진 탐색). v2의 「가로 드래그 = 지수 스케일」을 승격 —
+       이제 골디락스 띠(초록 링)를 손으로 넘나든다. 띠 밖 = 바다가 끓거나 꽁꽁.
+    ② 🚀 빛의 여행 — 태양에서 출발한 빛 껍질이 «실제 광행시 비율»로 퍼져 나간다(1 AU = 499초).
+       무대 1초 = 실제 10분. 지구 도달 = 8분 19초, 해왕성 = 4시간 10분. 빛조차 아직도 못 닿는
+       그 시간이 흐르는 동안, 태양계가 얼마나 «크고 텅 비었는지»가 몸으로 들어온다.
+       「지금 네가 보는 햇빛은 8분 19초 전의 태양이다.」
+  v2 무손실: 학년칸 저(낮과 밤 닻 = 지구 자전 클로즈업·미션3·🛑자전멈춤)/중(행성 선택·지구 잡기·미션4·🔥🧊)
+    /고(비율·속도·시점 풀·미션6·만약에4)
+    ·미션 6단계(make+think) ·저학년 미션 3단계 ·퀴즈 5문
+    ·만약에 4종(🔥수성자리 · 🧊해왕성자리 · 🕳공전멈춤=나선 추락 · ☀️태양소멸=관성 직선 이탈)
+    ·저학년 만약에(🛑자전멈춤=끝없는 낮/밤) ·예측 노트(🔭실제 비율) ·5칩 토스트
+    ·🟢 골디락스 띠(0.85~1.4 AU)·끓음/얼음 틴트 ·👁 지구에서 보기 ·상태줄 문구 전부
+  v3 추가: 만약에 조작 게이트(wifActed) · 판정 후처리 일원화(afterAct)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?ratio=0~1 · ?au=0.39~30.1
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .so-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .so-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .so-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .so-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .so-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:216px;max-height:calc(100vh - 130px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  .so-slider{width:100%;accent-color:#9B7BF5;height:24px;cursor:pointer}
+  #planets{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:5px;
+    flex-wrap:wrap;justify-content:center;max-width:min(700px,88vw);background:var(--hud);
+    border:1px solid var(--hudline);border-radius:15px;backdrop-filter:blur(8px);padding:8px 10px}
+  #planets button{font-family:'Gowun Dodum';font-size:13px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  #planets button.on{background:rgba(255,212,59,.28);border-color:rgba(255,212,59,.7);color:#fff}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(560px,82vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(600px,72vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:soPulse 1.2s ease-in-out infinite}
+  @keyframes soPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 132px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:204px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #texlab{position:fixed;left:12px;top:calc(50px + 94px);z-index:20;font-family:'Gowun Dodum';font-size:11px;
+    color:#9fb0c4;background:var(--hud);border:1px solid var(--hudline);border-radius:11px;
+    backdrop-filter:blur(8px);padding:5px 9px}
+  #lightbar{position:fixed;left:50%;transform:translateX(-50%);top:104px;z-index:21;display:none;
+    background:rgba(8,12,26,.88);border:1.5px solid rgba(255,212,59,.55);border-radius:14px;
+    backdrop-filter:blur(8px);padding:9px 16px;text-align:center;font-family:'Gowun Dodum';white-space:nowrap}
+  #lightbar .t{font-size:22px;color:#FFE066}
+  #lightbar .s{font-size:12px;color:#cdd6e6;margin-top:3px}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:22;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  .so-anno{position:absolute;pointer-events:none;font-family:'Gowun Dodum';font-size:12px;padding:3px 8px;
+    border-radius:10px;background:rgba(8,12,20,.85);border:1.5px solid #FFD43B;color:#FFF3BF;
+    white-space:nowrap;transform:translate(-50%,-50%);display:none}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">☀️ 케이랩 · 태양계</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="so-panel" id="hudL"></div>
+<div class="so-panel" id="ctrls"></div>
+<div class="so-panel" id="mbar" style="display:none"></div>
+<div id="texlab">🎨 기본 그림</div>
+<div id="lightbar"><div class="t" id="ltime">0초</div><div class="s" id="lsub">빛이 태양을 떠났어요</div></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+<div id="planets"></div>
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>지구를 잡아 궤도째 옮겨 봐요</b> — 초록 띠(골디락스) 밖으로 나가면 어떻게 될까요?</div>
+<div class="k3-loading" id="loading"><div class="ic">☀️</div><div>태양계 펼치는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.SolarSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── 8행성 (v2 무손실) ── */
+  var PL = [
+    { k:'mer', nm:'수성',   au:0.39, r:0.38, col:0x9c8a7a, yr:0.24, desc:'태양에서 가장 가깝고 가장 작은 행성' },
+    { k:'ven', nm:'금성',   au:0.72, r:0.95, col:0xe6c47a, yr:0.62, desc:'두꺼운 구름에 싸인 가장 뜨거운 행성' },
+    { k:'ear', nm:'지구',   au:1.00, r:1.00, col:0x2b6cb0, yr:1.00, desc:'생명이 사는 우리 행성' },
+    { k:'mar', nm:'화성',   au:1.52, r:0.53, col:0xc1440e, yr:1.88, desc:'붉게 보이는 행성' },
+    { k:'jup', nm:'목성',   au:5.20, r:11.2, col:0xc99039, yr:11.9, desc:'태양계에서 가장 큰 행성' },
+    { k:'sat', nm:'토성',   au:9.50, r:9.40, col:0xe0c884, yr:29.5, desc:'아름다운 고리를 가진 행성' },
+    { k:'ura', nm:'천왕성', au:19.2, r:4.00, col:0x9fd8e0, yr:84,   desc:'옆으로 누워 자전하는 행성' },
+    { k:'nep', nm:'해왕성', au:30.1, r:3.90, col:0x3b5bdb, yr:165,  desc:'태양에서 가장 먼 행성' }
+  ];
+  var AU_MIN = 0.39, AU_MAX = 30.1;
+  var GOLD_LO = 0.85, GOLD_HI = 1.4;
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  /* ── 스케일 (v2 무손실): 보기 좋게(t=0) ↔ 실제 비율(t=1) 연속 보간 ── */
+  function auIdx(au){                        /* 임의 AU → 「보기 좋게」 간격의 가상 순번 (조각별 선형) */
+    if(au <= PL[0].au) return 0;
+    for(var i = 0; i < PL.length - 1; i++){
+      if(au <= PL[i + 1].au) return i + (au - PL[i].au) / (PL[i + 1].au - PL[i].au);
+    }
+    return PL.length - 1;
+  }
+  function auToDist(au, t){
+    var p = 3.4 + auIdx(au) * 2.0;           /* 보기 좋게 = 순번 등간격 */
+    var r = 3 + au * 3.4;                    /* 실제 = AU 비례 */
+    return p + (r - p) * t;
+  }
+  /* 🔴 역함수 — 무대 반지름 → AU (auToDist가 au에 대해 단조증가 → 이진 탐색) */
+  function auFromDist(d, t){
+    var lo = AU_MIN, hi = AU_MAX;
+    if(d <= auToDist(lo, t)) return lo;
+    if(d >= auToDist(hi, t)) return hi;
+    for(var i = 0; i < 40; i++){
+      var mid = (lo + hi) / 2;
+      if(auToDist(mid, t) < d) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  function dist(i, t){ return auToDist(PL[i].au, t); }
+  function prad(i, t){
+    var p = 0.34 + Math.log(PL[i].r + 1) * 0.42;
+    var r = Math.max(0.08, PL[i].r * 0.28);
+    return p + (r - p) * t;
+  }
+  function band(au){ return au < GOLD_LO ? 'hot' : (au > GOLD_HI ? 'cold' : 'ok'); }
+
+  /* ── 🚀 빛의 여행 (와우의 심장) ── */
+  var LIGHT_SEC_PER_AU = 499;                /* 1 AU를 빛이 가는 데 499초 (8분 19초) */
+  var LIGHT_AU_PER_SEC = 1.204;              /* 무대 진행 속도: 해왕성(30.1 AU)까지 25초 */
+  function lightSec(au){ return au * LIGHT_SEC_PER_AU; }
+  function lightTimeStr(sec){
+    sec = Math.round(sec);
+    if(sec < 60) return sec + '초';
+    if(sec < 3600){
+      var m = Math.floor(sec / 60), s = sec % 60;
+      return m + '분' + (s ? ' ' + s + '초' : '');
+    }
+    var h = Math.floor(sec / 3600), mm = Math.round((sec % 3600) / 60);
+    return h + '시간' + (mm ? ' ' + mm + '분' : '');
+  }
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var GRADES = {
+    low:  { showReal:false, showPlanets:false, mIdx:[], lowScene:true,
+            wif:['stopspin'], wow:false, v2:{ grab:false, ratio:false, spd:false, view:false },
+            hint:'🌞 하루 돌리기로 지구를 돌려, 낮과 밤이 어떻게 생기는지 봐요.' },
+    mid:  { showReal:false, showPlanets:true,  mIdx:[0,1,2,5], lowScene:false,
+            wif:['mer','nep'], wow:false, v2:{ grab:true, ratio:false, spd:false, view:false },
+            hint:'행성을 골라 보고, 🌍 지구를 잡아 궤도를 옮기면 어떻게 될지 봐요.' },
+    high: { showReal:true,  showPlanets:true,  mIdx:[0,1,2,3,4,5], lowScene:false,
+            wif:['mer','nep','stopo','sunoff'], wow:true, v2:{ grab:true, ratio:true, spd:true, view:true },
+            hint:'🔭 비율 슬라이더를 스르륵 당겨 진짜 거리·크기를 봐요.' }
+  };
+
+  /* ── 미션 6단계 (v2 무손실) ── */
+  var MISSIONS = [
+    { type:'make', text:'🌍 행성 버튼에서 <b>우리가 사는 지구</b>를 찾아 골라 봐요!',
+      check:function(s){ return s.sel === 'ear'; } },
+    { type:'think', text:'🤔 태양에서 <b>멀리 있는 행성일수록</b> 어떻게 될까요?',
+      ch:['더 춥고, 공전도 더 느려요','더 뜨겁고 빨라요','거리와 상관없이 똑같아요'], a:0,
+      why:'태양에서 멀수록 받는 빛과 열이 적어 춥고, 한 바퀴 도는 길도 길어 공전이 오래 걸려요. 해왕성의 1년은 지구의 165년!' },
+    { type:'make', text:'🪐 태양계에서 <b>가장 큰 행성</b>은 누구일까요? 골라 봐요!',
+      check:function(s){ return s.sel === 'jup'; } },
+    { type:'make', text:'🔭 <b>실제 비율</b>을 켜서 진짜 거리·크기를 봐요!',
+      check:function(s){ return s.real === true; } },
+    { type:'think', text:'🤔 실제 비율에서 행성들이 <b>점처럼 작아 보인</b> 까닭은?',
+      ch:['우주가 그만큼 어마어마하게 텅 비어 있어서','화면이 고장 나서','행성이 진짜로 줄어들어서'], a:0,
+      why:'태양계는 거의 다 빈 공간! 태양을 농구공이라 하면 지구는 30m쯤 떨어진 콩알이에요.' },
+    { type:'make', text:'🌀 <b>태양에서 가장 먼 행성</b>을 찾아 골라 봐요!',
+      check:function(s){ return s.sel === 'nep'; } }
+  ];
+  /* 저학년 전용 — 낮과 밤(지구 자전) 닻 (v2 무손실) */
+  var LOW_MISSIONS = [
+    { type:'make', text:'🌞 <b>하루 돌리기</b>를 눌러 지구를 빙글 돌려 봐요!',
+      check:function(s){ return s.playing === true; } },
+    { type:'think', text:'🤔 내가 사는 곳(<b>빨간 점</b>)이 <b>밝은 쪽</b>에 오면 지금은?',
+      ch:['낮','밤','겨울'], a:0,
+      why:'태양 빛을 받는 쪽이 낮이에요! 지구가 돌면서 빨간 점이 밝은 쪽으로 오면 낮이 돼요.' },
+    { type:'think', text:'🤔 빨간 점이 <b>어두운 쪽</b>으로 넘어가면?',
+      ch:['밤이 돼요','낮이 그대로예요','계절이 바뀌어요'], a:0,
+      why:'태양 빛을 못 받는 쪽이 밤! 지구가 하루에 한 바퀴 돌며 낮과 밤이 번갈아 와요.' }
+  ];
+
+  /* ── 퀴즈 (v2 무손실) ── */
+  var QUIZ = [
+    { q:'태양에서 가장 가까운 행성은?', ch:['수성','금성','지구'], a:0 },
+    { q:'태양계에서 가장 큰 행성은?', ch:['목성','토성','지구'], a:0 },
+    { q:'우리가 사는 지구는 태양에서 몇 번째 행성일까요?', ch:['세 번째','첫 번째','다섯 번째'], a:0 },
+    { q:'아름다운 고리를 가진 행성은?', ch:['토성','화성','수성'], a:0 },
+    { q:'태양에서 가장 먼 행성은?', ch:['해왕성','천왕성','목성'], a:0 }
+  ];
+
+  /* ── 만약에 (v2 무손실 + v3 조작 게이트) ── */
+  var WHATIF = {
+    mer:   { icon:'🔥', title:'지구가 수성 자리에 있다면?',
+      q:'지구를 태양 바로 옆(수성 자리)으로 옮기면 어떻게 될까요?',
+      ch:['너무 뜨거워 바다가 펄펄 끓어요','지금과 똑같아요','오히려 추워져요'], a:0,
+      tip:'▶ 공전 재생 — 태양 바로 옆을 도는 지구를 봐요. 너무 가깝죠?',
+      reveal:'수성 자리는 햇빛이 지구의 7배! 바다는 끓어 사라지고 낮 기온은 400°C — 생명이 살 수 없어요. 지구가 지금 자리에 있는 건 큰 행운이에요.',
+      chip:'🔥 수성자리 → 바다가 끓음', need:3 },
+    nep:   { icon:'🧊', title:'지구가 해왕성 자리라면?',
+      q:'지구를 가장 먼 해왕성 자리로 옮기면?',
+      ch:['햇빛이 약해 모든 게 꽁꽁 얼어요','따뜻해져요','지금과 비슷해요'], a:0,
+      tip:'▶ 공전 재생 — 까마득히 먼 궤도를 천천히 도는 지구를 봐요.',
+      reveal:'해왕성 자리의 햇빛은 지구의 1/900! 바다도 공기도 꽁꽁 — 영하 200°C의 얼음 세상이에요. 태양과의 거리가 행성의 운명을 정해요.',
+      chip:'🧊 해왕성자리 → 얼음 세상', need:3 },
+    stopo: { icon:'🕳', title:'지구가 공전을 멈춘다면?',
+      q:'지구가 도는 걸 딱 멈추면 어떻게 될까요?',
+      ch:['태양 쪽으로 끌려 들어가요','그 자리에 가만히 떠 있어요','우주 밖으로 날아가요'], a:0,
+      tip:'지구가 태양으로 끌려가는 걸 봐요…! ↩ 원래 태양계로 다시 궤도에 올려요.',
+      reveal:'공전은 태양이 당기는 힘과 균형을 이루는 운동이에요! 멈추는 순간 태양의 중력에 끌려 떨어져요. 빙글빙글 도는 것이 곧 떠 있는 비결!',
+      chip:'🕳 공전멈춤 → 태양으로 추락', need:0 },
+    sunoff:{ icon:'☀️', title:'태양이 갑자기 사라진다면?',
+      q:'태양이 뿅 사라지면, 돌고 있던 행성들은 어떻게 될까요?',
+      ch:['그 자리에 딱 멈춰요','태양이 있던 곳으로 떨어져요','돌던 방향 그대로 직선으로 날아가요'], a:2,
+      tip:'행성들이 궤도를 벗어나 곧게 날아가는 걸 봐요! ↩ 원래 태양계로 태양을 되돌려요.',
+      reveal:'행성은 원래 곧게 가려는 성질(관성)이 있는데, 태양이 당겨서 휘어 도는 거예요! 당기는 힘이 사라지면 돌던 방향 그대로 곧게 날아가요 — 공전 궤도 = 당기는 힘과 도는 운동의 균형!',
+      chip:'☀️ 태양소멸 → 관성 직선', need:0 }
+  };
+  /* 저학년 전용 만약에 (v2 무손실) */
+  var LOW_WHATIF = {
+    stopspin:{ icon:'🛑', title:'지구가 자전을 멈추면?',
+      q:'지구가 도는 걸 멈추면 내가 사는 곳은 어떻게 될까요?',
+      ch:['한쪽은 끝없는 낮, 반대쪽은 끝없는 밤','아무 일도 없어요','계속 낮이에요'], a:0,
+      tip:'자전을 멈춰 봐요 — 빨간 점이 낮(또는 밤)에 딱 멈춰 더는 바뀌지 않아요.',
+      reveal:'지구가 멈추면 태양을 향한 쪽은 영원한 낮, 반대쪽은 영원한 밤이 돼요! 지구가 빙글빙글 돌기 때문에 낮과 밤이 번갈아 찾아오는 거예요.',
+      chip:'🛑 자전멈춤 → 끝없는 낮·밤', need:3 }
+  };
+  var WIF_KEYS = ['mer','nep','stopo','sunoff'];
+
+  /* ── 예측 노트 (v2 3층 무손실) ── */
+  var PRED = {
+    ratio:{ q:'🔮 예측 먼저! 진짜 비율이 되면 행성들은 어떻게 퍼져 있을까요?',
+      ch:['다들 고르게 늘어서 있다','안쪽은 다닥, 바깥은 까마득하다','다 비슷한 거리다'], a:1,
+      tip:'슬라이더를 끝(실제 100%)까지 스르륵 당겨 확인해 봐요!',
+      hitMsg:'✔ 예측 적중 — 안쪽 4행성은 태양 옆에 다닥, 바깥 행성은 까마득! 태양계는 거의 텅 비어 있어요.',
+      missMsg:'✘ 예측 빗나감 — 고르게 있지 않아요! 안쪽 4행성은 태양 옆에 다닥 붙고, 바깥 행성은 까마득히 멀어 그 사이는 거의 텅 비어 있어요.',
+      chip:'🔭 실제비율 → 텅 빈 우주' }
+  };
+
+  /* ── 🚀 와우: 빛의 여행 (v3 신설 — v2에 와우 없음) ── */
+  var WOW = {
+    q:'🚀 태양에서 «지금» 출발한 빛이 지구에 닿는 데 얼마나 걸릴까요?',
+    ch:['눈 깜짝할 사이 — 빛은 바로 도착해요','약 8분','약 8시간'], a:1,
+    chip:'🚀 빛의 여행 → 지구 8분 19초'
+  };
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    sim.ratio0 = (typeof opts.ratio === 'number' && !isNaN(opts.ratio)) ? clamp(opts.ratio, 0, 1) : 0;
+    sim.au0 = (typeof opts.au === 'number' && !isNaN(opts.au)) ? clamp(opts.au, AU_MIN, AU_MAX) : 1;
+
+    sim.state = {
+      sel: null, real: false, ratioT: sim.ratio0, spd: 1, auV: sim.au0, viewE: false,
+      playing: false, ang: PL.map(function(_, i){ return i * 0.7; }), orbAcc: 0,
+      dayAngle: 0.6, lowObs: 0,                     /* 저학년 낮밤 */
+      wif: null, wifPred: null, wifActed: false, wifDone: false,
+      fallF: 1, sunGone: false, escT: 0, escBase: null,
+      wowArmed: false, wowPred: null, wowDone: false, lightOn: false, lightAU: 0, lightHit: -1,
+      pred: { ratio:{ asked:false, ch:-1, done:false } },
+      chips: [], chipToast: false,
+      acted: false
+    };
+
+    /* ── 파생 ── */
+    sim.effT = function(mode){
+      var st = sim.state;
+      if(sim.G().lowScene) return 0;
+      if(st.wowArmed) return 1;                     /* 🚀 빛의 여행은 «실제 비율»에서만 뜻이 있다 */
+      if(mode === 'free' && sim.G().v2.ratio) return st.ratioT;
+      return st.real ? 1 : 0;
+    };
+    /* 지구의 유효 AU: 만약에(수성·해왕성 자리) > 잡아 끈 auV > 기본 1 (v2 earAu) */
+    sim.earAu = function(){
+      var st = sim.state;
+      if(st.wif === 'mer') return 0.39;
+      if(st.wif === 'nep') return 30.1;
+      return st.auV;
+    };
+    sim.band = function(){ return band(sim.earAu()); };
+    sim.inGold = function(){ return sim.band() === 'ok'; };
+    sim.planetDist = function(i, mode){
+      var t = sim.effT(mode);
+      return (i === 2) ? auToDist(sim.earAu(), t) : dist(i, t);
+    };
+
+    /* ── 조작 ── */
+    sim.select = function(k){
+      if(PL.map(function(p){ return p.k; }).indexOf(k) < 0) return null;
+      sim.state.sel = k;
+      sim.state.acted = true;
+      return k;
+    };
+    sim.planetOf = function(k){
+      for(var i = 0; i < PL.length; i++) if(PL[i].k === k) return { p:PL[i], idx:i };
+      return null;
+    };
+    sim.toggleReal = function(){ sim.state.real = !sim.state.real; sim.state.acted = true; return sim.state.real; };
+    sim.setRatio = function(v){ sim.state.ratioT = clamp(v, 0, 1); sim.state.acted = true; return sim.state.ratioT; };
+    sim.setSpd = function(v){ sim.state.spd = clamp(v, 0.5, 8); return sim.state.spd; };
+    sim.toggleView = function(){ sim.state.viewE = !sim.state.viewE; return sim.state.viewE; };
+    sim.togglePlay = function(){ sim.state.playing = !sim.state.playing; sim.state.acted = true; return sim.state.playing; };
+    /* 🔴 지구 궤도째 잡아 끌기 — 무대 반지름 → AU 역산 */
+    sim.setAU = function(au){
+      sim.state.auV = clamp(au, AU_MIN, AU_MAX);
+      sim.state.acted = true;
+      return sim.state.auV;
+    };
+    sim.grabTo = function(d, mode){ return sim.setAU(auFromDist(d, sim.effT(mode))); };
+    sim.canGrab = function(mode){ return mode === 'free' && sim.G().v2.grab && !sim.state.wif && !sim.state.wowArmed; };
+
+    /* ── 공전 tick (v2 loop 무손실) ── */
+    sim.orbSpeed = function(i){ return 0.9 / Math.sqrt(PL[i].au); };
+    sim.tick = function(dt){
+      var st = sim.state;
+      dt = Math.min(dt, 0.05);
+
+      /* 저학년 = 지구 자전 (낮과 밤) */
+      if(sim.G().lowScene){
+        if(st.wif === 'stopspin'){ st.lowObs += dt; st.wifActed = true; return; }
+        if(st.playing){ st.dayAngle = (st.dayAngle + dt * 0.7) % (2 * Math.PI); st.lowObs += dt; }
+        return;
+      }
+
+      /* 🕳 공전 멈춤 = 나선 추락 */
+      if(st.wif === 'stopo'){
+        if(st.fallF > 0.13){
+          st.fallF = Math.max(st.fallF - dt * 0.22, 0.12);
+          st.ang[2] += dt * 0.25;
+          st.wifActed = true;
+        }
+        return;
+      }
+      /* ☀️ 태양 소멸 = 관성 직선 이탈 */
+      if(st.sunGone){
+        st.escT += dt * 1.6;
+        st.wifActed = true;
+        return;
+      }
+      /* 🚀 빛의 여행 */
+      if(st.lightOn){
+        st.lightAU = Math.min(AU_MAX, st.lightAU + dt * LIGHT_AU_PER_SEC);
+      }
+      if(!st.playing) return;
+      var d = 0;
+      for(var i = 0; i < PL.length; i++){
+        st.ang[i] = (st.ang[i] + dt * st.spd * sim.orbSpeed(i)) % (2 * Math.PI);
+      }
+      d = dt * st.spd * sim.orbSpeed(2);
+      st.orbAcc += d;
+      if(st.wif) st.wifActed = true;
+    };
+
+    /* 낮/밤 판정 (v2: cos(dayAngle) < 0 → 낮) */
+    sim.isDay = function(){ return Math.cos(sim.state.dayAngle) < 0; };
+
+    /* ── 만약에 (v3 조작 게이트) ── */
+    sim.wifSrc = function(){ return sim.G().lowScene ? LOW_WHATIF : WHATIF; };
+    sim.wifList = function(){ return sim.G().wif.slice(); };
+    sim.canWhatif = function(mode){ return mode === 'free' && sim.G().wif.length > 0; };
+    sim.wifStart = function(key){
+      if(sim.G().wif.indexOf(key) < 0) return null;
+      var st = sim.state;
+      st.wif = key; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.real = false; st.sel = null; st.viewE = false;
+      st.fallF = 1; st.sunGone = false; st.escT = 0; st.escBase = null;
+      st.auV = 1; st.orbAcc = 0; st.lowObs = 0;
+      st.wowArmed = false; st.wowPred = null; st.lightOn = false; st.lightAU = 0;
+      if(key === 'stopspin') st.dayAngle = Math.PI;      /* 낮에 딱 멈춤 (v2 onPlay) */
+      return key;
+    };
+    sim.wifPredict = function(i){
+      sim.state.wifPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wifPred;
+    };
+    /* ☀️ 태양 소멸 — 현재 위치·접선 방향을 굳혀 두고 직선 이탈 (v2 armEscape 무손실) */
+    sim.armEscape = function(mode){
+      var st = sim.state, t = sim.effT(mode);
+      st.escBase = PL.map(function(p, i){
+        var d = (i === 2) ? auToDist(sim.earAu(), t) : dist(i, t);
+        var a = st.ang[i], v = sim.orbSpeed(i) * d;
+        return { x:Math.cos(a) * d, z:Math.sin(a) * d, tx:-Math.sin(a) * v, tz:Math.cos(a) * v };
+      });
+      st.sunGone = true; st.escT = 0.55; st.playing = false;
+      return st.escBase;
+    };
+    /* 행성 위치 (만약에 변형 포함) */
+    sim.planetPos = function(i, mode){
+      var st = sim.state;
+      if(st.sunGone && st.escBase){
+        var b = st.escBase[i];
+        return { x: b.x + b.tx * st.escT, z: b.z + b.tz * st.escT };
+      }
+      var d = sim.planetDist(i, mode);
+      if(i === 2 && st.wif === 'stopo') d = Math.max(d * st.fallF, 0.9);
+      return { x: Math.cos(st.ang[i]) * d, z: Math.sin(st.ang[i]) * d };
+    };
+    sim.fallen = function(){ return sim.state.wif === 'stopo' && sim.state.fallF <= 0.13; };
+    sim.wifResolved = function(){
+      var st = sim.state;
+      if(!st.wif || st.wifDone || st.wifPred === null || !st.wifActed) return false;
+      if(st.wif === 'stopo')  return sim.fallen();
+      if(st.wif === 'sunoff') return st.escT >= 1.6;
+      if(st.wif === 'stopspin') return st.lowObs >= LOW_WHATIF.stopspin.need;
+      return st.orbAcc >= WHATIF[st.wif].need;
+    };
+    sim.wifResolve = function(){
+      var st = sim.state;
+      if(!sim.wifResolved()) return null;
+      st.wifDone = true; st.playing = false;
+      var W = sim.wifSrc()[st.wif], hit = (st.wifPred === W.a);
+      st.chips.push({ k:st.wif, hit:hit, label:W.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { key:st.wif, hit:hit, reveal:W.reveal, chipToast:toast };
+    };
+    sim.wifExit = function(){
+      var st = sim.state;
+      st.wif = null; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.fallF = 1; st.sunGone = false; st.escT = 0; st.escBase = null;
+      st.auV = 1; st.orbAcc = 0; st.lowObs = 0; st.dayAngle = 0.6;
+      return true;
+    };
+
+    /* ── 예측 노트 (v2 3층) ── */
+    sim.predArm = function(kind, mode){
+      var p = sim.state.pred[kind];
+      if(mode !== 'free' || p.asked) return false;
+      p.asked = true;
+      return true;
+    };
+    sim.predPick = function(kind, i){
+      sim.state.pred[kind].ch = (typeof i === 'number' && i >= 0 && i <= 2) ? i : -1;
+      return sim.state.pred[kind].ch;
+    };
+    sim.predResolved = function(kind, mode){
+      var st = sim.state, p = st.pred[kind];
+      if(mode !== 'free' || p.done || p.ch < 0) return false;
+      if(kind === 'ratio') return st.ratioT >= 0.999;      /* 끝까지 당겨야 (v2 무손실) */
+      return false;
+    };
+    sim.predResolve = function(kind, mode){
+      if(!sim.predResolved(kind, mode)) return null;
+      var st = sim.state, p = st.pred[kind], P = PRED[kind];
+      p.done = true;
+      var hit = (p.ch === P.a);
+      st.chips.push({ k:kind, hit:hit, label:P.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { kind:kind, hit:hit, msg:hit ? P.hitMsg : P.missMsg, chipToast:toast };
+    };
+
+    /* ── 🚀 와우: 빛의 여행 (v3 신설) ── */
+    sim.canWow = function(mode){ return mode === 'free' && sim.G().wow && !sim.state.wif && !sim.state.wowDone; };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.wowArmed = true; st.wowPred = null;
+      st.playing = false; st.sel = null; st.viewE = false; st.auV = 1; st.real = true;
+      st.lightOn = false; st.lightAU = 0; st.lightHit = -1;
+      return true;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    /* 빛 발사 — 예측 후에만 (조작 게이트) */
+    sim.lightFire = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred === null) return false;
+      st.lightOn = true; st.lightAU = 0; st.lightHit = -1;
+      return true;
+    };
+    sim.lightElapsed = function(){ return lightSec(sim.state.lightAU); };
+    /* 빛이 방금 «새로» 지난 행성 (도달 이벤트) */
+    sim.lightPass = function(){
+      var st = sim.state, hit = -1;
+      for(var i = 0; i < PL.length; i++) if(st.lightAU >= PL[i].au) hit = i;
+      if(hit > st.lightHit){
+        st.lightHit = hit;
+        return { idx:hit, p:PL[hit], sec:lightSec(PL[hit].au) };
+      }
+      return null;
+    };
+    sim.wowResolved = function(){
+      var st = sim.state;
+      return st.wowArmed && !st.wowDone && st.wowPred !== null && st.lightAU >= AU_MAX;
+    };
+    sim.wowReveal = function(){
+      return {
+        earthSec: lightSec(1), earthStr: lightTimeStr(lightSec(1)),
+        nepSec: lightSec(AU_MAX), nepStr: lightTimeStr(lightSec(AU_MAX)),
+        merStr: lightTimeStr(lightSec(0.39)), jupStr: lightTimeStr(lightSec(5.2))
+      };
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true; st.lightOn = false;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast, data:sim.wowReveal() };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null; st.lightOn = false; st.lightAU = 0; st.lightHit = -1;
+      st.real = false;
+      return true;
+    };
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred !== null) return false;
+      st.wowArmed = false; st.real = false;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){
+      if(sim.G().lowScene) return LOW_MISSIONS.slice();
+      return sim.G().mIdx.map(function(i){ return MISSIONS[i]; });
+    };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.sel = null; st.real = false; st.ratioT = 0; st.auV = 1; st.viewE = false;
+      st.playing = false; st.spd = 1; st.orbAcc = 0; st.dayAngle = 0.6; st.lowObs = 0;
+      st.wif = null; st.wifPred = null; st.wowArmed = false; st.wowPred = null;
+      st.fallF = 1; st.sunGone = false; st.escT = 0; st.escBase = null;
+      st.lightOn = false; st.lightAU = 0;
+      st.acted = false;
+    };
+    sim.missionCur = function(){ return sim.missionList()[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var M = sim.missionList(), m = M[sim.mStep];
+      if(m.type !== 'make') return { act:'none' };
+      if(!sim.state.acted) return { act:'none' };
+      if(!m.check(sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      var M = sim.missionList();
+      sim.state.acted = false;
+      if(sim.mStep < M.length - 1){
+        sim.mStep++;
+        var nx = M[sim.mStep];
+        if(nx.set) nx.set(sim.state);
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      sim.state.sel = null;
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, out = { lines:[], warn:false };
+
+      /* 저학년 = 낮과 밤 */
+      if(sim.G().lowScene){
+        if(st.wif === 'stopspin'){
+          out.warn = true;
+          out.lines.push('<span class="big">🛑 자전이 멈춘 지구 — 태양 쪽은 끝없는 낮, 반대쪽은 끝없는 밤!</span>');
+          if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + LOW_WHATIF.stopspin.tip + '</span>');
+          return out;
+        }
+        if(mode === 'quiz'){ out.lines.push('태양계 그림을 보면서 답을 골라요!'); return out; }
+        var day = sim.isDay();
+        out.lines.push('<span class="big">' + (day ? '☀️ 지금 빨간 점이 있는 곳은 낮!' : '🌙 지금 빨간 점이 있는 곳은 밤!') + '</span>');
+        out.lines.push(GRADES.low.hint);
+        return out;
+      }
+
+      if(mode === 'quiz'){
+        out.lines.push('태양계 그림을 보면서 답을 골라요! (화면을 끌어 돌려볼 수 있어요)');
+        return out;
+      }
+
+      /* 🚀 와우 */
+      if(st.wowArmed){
+        out.warn = true;
+        if(!st.lightOn && st.lightAU === 0){
+          out.lines.push('<span class="big">🚀 빛의 여행</span>');
+          out.lines.push('태양에서 빛을 «지금» 쏘아 봐요. 실제 비율의 태양계를 빛이 가로지릅니다.');
+          if(st.wowPred !== null) out.lines.push('<span class="hold">🔦 「빛 쏘기」를 눌러 출발!</span>');
+        } else {
+          var pass = [];
+          for(var i = 0; i < PL.length; i++) if(st.lightAU >= PL[i].au) pass.push(PL[i].nm);
+          out.lines.push('<span class="big">🚀 빛이 달린 시간 — ' + lightTimeStr(sim.lightElapsed()) + '</span>');
+          out.lines.push(pass.length ? ('지나온 행성: ' + pass.join(' · ')) : '아직 아무 행성에도 닿지 못했어요…');
+          if(st.lightAU < AU_MAX) out.lines.push('<span class="hold">빛은 우주에서 가장 빠른데도 — 아직 해왕성까지 못 갔어요!</span>');
+        }
+        return out;
+      }
+
+      /* 🌀 만약에 */
+      if(st.wif){
+        var W = WHATIF[st.wif];
+        out.warn = true;
+        if(st.wif === 'mer'){
+          out.lines.push('<span class="big">🔥 수성 자리의 지구</span>');
+          out.lines.push('햇빛 7배, 낮 400°C! 바다가 남아날까요?');
+        } else if(st.wif === 'nep'){
+          out.lines.push('<span class="big">🧊 해왕성 자리의 지구</span>');
+          out.lines.push('햇빛 1/900, 영하 200°C 얼음 세상!');
+        } else if(st.wif === 'sunoff'){
+          out.lines.push('<span class="big">☀️ 태양이 사라졌다!</span>');
+          out.lines.push('행성들이 돌던 방향 그대로 곧게 날아가요 — 멈추지도, 가운데로 떨어지지도 않아요. 곧게 가려는 성질(관성)!');
+        } else {
+          if(sim.fallen()){
+            out.lines.push('<span class="big">🕳 풍덩! 공전이 멈추면 태양의 중력에 끌려 들어가요</span>');
+            out.lines.push('빙글빙글 도는 것이 곧 떠 있는 비결!');
+          } else {
+            out.lines.push('<span class="big">🕳 공전을 멈춘 지구가… 어디로 가는지 지켜봐요!</span>');
+          }
+        }
+        if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + W.tip + '</span>');
+        return out;
+      }
+
+      /* 자유탐구 — 잡기·시점·비율 안내 우선 (v2 순서 무손실) */
+      if(mode === 'free' && st.auV !== 1){
+        var b = sim.band();
+        out.lines.push('<span class="big">🌍 지구가 ' + st.auV.toFixed(2) + ' AU 자리에 있어요</span>');
+        out.lines.push(b === 'hot'  ? '🔥 태양이 너무 가까워 바다가 펄펄 끓어요!'
+                     : b === 'cold' ? '🧊 햇빛이 약해 온 세상이 꽁꽁 얼어요!'
+                     :                '🟢 골디락스 띠 안 — 물이 얼지도 끓지도 않는 자리!');
+        return out;
+      }
+      if(mode === 'free' && st.viewE){
+        out.lines.push('<span class="big">👁 지구에서 본 하늘 — 수성·금성은 태양 근처에서만 보여요</span>');
+        out.lines.push('그래서 금성은 해 뜰 녘·해 질 녘에만 반짝 — 샛별이라 불려요!');
+        return out;
+      }
+      var t = sim.effT(mode);
+      if(mode === 'free' && sim.G().v2.ratio && st.ratioT > 0.12 && st.ratioT < 0.88){
+        out.lines.push('<span class="big">스르륵… 행성들이 점이 되고 우주가 비어 가요 🔭 (실제 ' + Math.round(st.ratioT * 100) + '%)</span>');
+        out.lines.push('끝까지 당기면 진짜 태양계 — 얼마나 텅 비어 있을까요?');
+        return out;
+      }
+      if(st.sel){
+        var f = sim.planetOf(st.sel);
+        out.lines.push('<span class="big">' + f.p.nm + ' — 태양에서 ' + (f.idx + 1) + '번째</span>');
+        out.lines.push(f.p.desc);
+        out.lines.push('태양까지 거리 약 ' + f.p.au + 'AU · 크기(지구=1) 약 ' + f.p.r + '배');
+        return out;
+      }
+      if(t >= 0.999){
+        out.lines.push('<span class="big">실제 비율로 보는 중 🔭</span>');
+        out.lines.push('안쪽 4행성은 태양 가까이 다닥, 바깥 행성은 까마득히 멀어요. 행성 사이는 거의 텅 비어 있어요.');
+        return out;
+      }
+      out.lines.push('<span class="big">☀️ 태양계</span>');
+      out.lines.push(sim.G().hint);
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    PL:PL, AU_MIN:AU_MIN, AU_MAX:AU_MAX, GOLD_LO:GOLD_LO, GOLD_HI:GOLD_HI, clamp:clamp,
+    auIdx:auIdx, auToDist:auToDist, auFromDist:auFromDist, dist:dist, prad:prad, band:band,
+    LIGHT_SEC_PER_AU:LIGHT_SEC_PER_AU, LIGHT_AU_PER_SEC:LIGHT_AU_PER_SEC,
+    lightSec:lightSec, lightTimeStr:lightTimeStr,
+    GRADES:GRADES, MISSIONS:MISSIONS, LOW_MISSIONS:LOW_MISSIONS, QUIZ:QUIZ,
+    WHATIF:WHATIF, LOW_WHATIF:LOW_WHATIF, WIF_KEYS:WIF_KEYS, PRED:PRED, WOW:WOW,
+    createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.SolarSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.SolarSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+const PL = Sim.PL;
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const cfgRatio = parseFloat(Q.get('ratio'));
+const cfgAu = parseFloat(Q.get('au'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  ratio: isNaN(cfgRatio) ? undefined : cfgRatio,
+  au: isNaN(cfgAu) ? undefined : cfgAu
+});
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (['free','mission','quiz'].includes(m)) mode = m;
+}
+
+/* ═══════════ 우주 무대 ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [10, 12, 14], target: [0, 0, 0], fov: 45,
+  minDist: 3, maxDist: 400, maxPolar: Math.PI - 0.02, exposure: 1.0
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.fog = null;
+scene.background = new THREE.Color(0x03060F);
+sun.visible = false;
+scene.traverse(o => { if (o.isHemisphereLight) o.intensity = 0.05; });
+const sunLight = new THREE.PointLight(0xFFF6E0, 6, 0, 0);   /* 감쇠 없음 = 먼 행성도 보임 (v2 decay 0) */
+scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+
+/* 별 1200 */
+{
+  const N = 1200, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = Math.acos(2 * Math.random() - 1), p = Math.random() * Math.PI * 2;
+    const r = 260 + Math.random() * 140;
+    pos[i * 3] = r * Math.sin(t) * Math.cos(p);
+    pos[i * 3 + 1] = r * Math.cos(t);
+    pos[i * 3 + 2] = r * Math.sin(t) * Math.sin(p);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0xE8EEFF, size: 1.2, sizeAttenuation: true, transparent: true, opacity: 0.8, depthWrite: false
+  })));
+}
+
+/* ── 텍스처 승급 로더 (v2 4층 무손실) ── */
+const TEXDEF = [
+  { key:'sun',  src:'/kedu/teacher/engine/tools/assets/textures/solar/sun.png' },
+  { key:'ear',  src:'/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png' },
+  { key:'jup',  src:'/kedu/teacher/engine/tools/assets/textures/solar/jupiter.png' },
+  { key:'sat',  src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn.png' },
+  { key:'ring', src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png' }
+];
+const texOK = {};
+
+/* 태양 */
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(1.5, 48, 32),
+  new THREE.MeshBasicMaterial({ color: 0xFFD43B })
+);
+scene.add(sunMesh);
+const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: canvasTexture(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 8, 64, 64, 62);
+    gr.addColorStop(0, '#FFFBEA'); gr.addColorStop(0.4, '#FFD43B');
+    gr.addColorStop(1, 'rgba(255,170,40,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }),
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
+}));
+sunGlow.scale.set(5.2, 5.2, 1);
+scene.add(sunGlow);
+
+/* 행성 + 궤도 링 */
+const planets = [], rings = [];
+PL.forEach((p, i) => {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 24),
+    new THREE.MeshStandardMaterial({ color: p.col, roughness: 1, metalness: 0 })
+  );
+  scene.add(m); planets.push(m);
+  const rg = new THREE.Mesh(
+    new THREE.RingGeometry(1, 1.004, 128),
+    new THREE.MeshBasicMaterial({ color: 0x4A5A80, side: THREE.DoubleSide, transparent: true, opacity: 0.45, depthWrite: false })
+  );
+  rg.rotation.x = Math.PI / 2;
+  scene.add(rg); rings.push(rg);
+});
+/* 지구 잡기 프록시 */
+const earthProxy = new THREE.Mesh(
+  new THREE.SphereGeometry(1.6, 12, 10),
+  new THREE.MeshBasicMaterial({ visible: false })
+);
+planets[2].add(earthProxy);
+
+/* 토성 고리 (자식 → 크기 보간을 함께 탄다 · v2 무손실) */
+function ringFallback() {
+  return canvasTexture(256, 256, g => {
+    const cols = ['#E7D9A8','#D9C58C','#EFE6C2','#CBB57A'];
+    let n = 0;
+    for (let r = 127; r > 72; r -= 7) {
+      g.beginPath(); g.arc(128, 128, r, 0, 7);
+      g.strokeStyle = cols[n++ % cols.length]; g.lineWidth = 6; g.globalAlpha = 0.9; g.stroke();
+    }
+  });
+}
+const satRing = new THREE.Mesh(
+  new THREE.RingGeometry(1.28, 2.25, 96),
+  new THREE.MeshBasicMaterial({ map: ringFallback(), color: 0xE0C884, side: THREE.DoubleSide, transparent: true, opacity: 0.92, depthWrite: false })
+);
+satRing.rotation.x = Math.PI / 2 + 0.42;
+planets[5].add(satRing);
+
+/* 🟢 골디락스 띠 (v2 무손실) */
+const goldMat = new THREE.MeshBasicMaterial({
+  color: 0x12B886, side: THREE.DoubleSide, transparent: true, opacity: 0.15, depthWrite: false
+});
+let goldRing = new THREE.Mesh(new THREE.RingGeometry(1, 2, 96), goldMat);
+goldRing.rotation.x = Math.PI / 2;
+scene.add(goldRing);
+
+/* 저학년 낮밤 — 내 위치 마커 (지구 자식) */
+const marker = new THREE.Mesh(
+  new THREE.SphereGeometry(0.16, 14, 10),
+  new THREE.MeshBasicMaterial({ color: 0xff5252 })
+);
+marker.position.set(1, 0.18, 0);
+planets[2].add(marker);
+marker.visible = false;
+
+/* 🚀 빛 껍질 (와우) */
+const lightShell = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 48, 32),
+  new THREE.MeshBasicMaterial({
+    color: 0xFFF3BF, transparent: true, opacity: 0.16, side: THREE.BackSide,
+    depthWrite: false, blending: THREE.AdditiveBlending
+  })
+);
+lightShell.visible = false;
+scene.add(lightShell);
+const lightRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.98, 1.0, 128),
+  new THREE.MeshBasicMaterial({ color: 0xFFE066, side: THREE.DoubleSide, transparent: true, opacity: 0.9, depthWrite: false })
+);
+lightRing.rotation.x = Math.PI / 2;
+lightRing.visible = false;
+scene.add(lightRing);
+
+/* 텍스처 로드 */
+const loader = new THREE.TextureLoader();
+TEXDEF.forEach(d => loader.load(d.src, tex => {
+  tex.colorSpace = THREE.SRGBColorSpace;
+  texOK[d.key] = true;
+  if (d.key === 'sun') { sunMesh.material.map = tex; sunMesh.material.color.setHex(0xffffff); sunMesh.material.needsUpdate = true; }
+  if (d.key === 'ear') { planets[2].material.map = tex; planets[2].material.needsUpdate = true; }
+  if (d.key === 'jup') { planets[4].material.map = tex; planets[4].material.color.setHex(0xffffff); planets[4].material.needsUpdate = true; }
+  if (d.key === 'sat') { planets[5].material.map = tex; planets[5].material.color.setHex(0xffffff); planets[5].material.needsUpdate = true; }
+  if (d.key === 'ring') { satRing.material.map = tex; satRing.material.color.setHex(0xffffff); satRing.material.needsUpdate = true; }
+  renderTexLabel(); earthTint();
+}, undefined, () => { renderTexLabel(); }));
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), planetsEl = $('planets'),
+      lightbar = $('lightbar'), annoHost = $('anno'), texlabEl = $('texlab');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const selAnno = document.createElement('div');
+selAnno.className = 'so-anno';
+annoHost.appendChild(selAnno);
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderTexLabel() {
+  const n = ['sun','ear','jup','sat'].filter(k => texOK[k]).length;
+  texlabEl.textContent = n > 0 ? ('🖼️ 실사 텍스처 ' + n + '종') : '🎨 기본 그림';
+}
+renderTexLabel();
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="so-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="so-seg">' + ['free','mission','quiz'].map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state, G = sim.G(), g2 = G.v2;
+  const low = G.lowScene;
+  let h = '';
+  if (st.wowArmed) {
+    if (st.wowPred !== null && !st.lightOn && st.lightAU === 0) {
+      h += '<button class="k3-btn fire" data-a="fire">🔦 빛 쏘기</button>';
+    }
+    h += '<button class="k3-btn" data-a="wowexit">↩ 원래 태양계로</button>';
+  } else {
+    if (!st.sunGone && !(st.wif === 'stopo')) {
+      h += `<button class="k3-btn ${st.playing ? '' : 'fire'}" data-a="play">${st.playing ? '■ 멈춤' : (low ? '🌞 하루 돌리기' : '▶ 공전 재생')}</button>`;
+    }
+    if (G.showReal && !(mode === 'free' && g2.ratio) && !st.wif) {
+      h += `<button class="k3-btn ${st.real ? 'accent' : ''}" data-a="real">🔭 ${st.real ? '보기 좋게' : '실제 비율'}</button>`;
+    }
+    if (g2.ratio && mode === 'free' && !st.wif) {
+      h += `<div class="so-lab">🔭 실제 <b>${Math.round(st.ratioT * 100)}%</b></div><input class="so-slider" id="ratioSlider" type="range" min="0" max="1" step="0.01" value="${st.ratioT}">`;
+    }
+    if (g2.spd && mode === 'free' && !st.wif) {
+      h += `<div class="so-lab">공전 속도 <b>${st.spd}×</b></div><input class="so-slider" id="spdSlider" type="range" min="0.5" max="8" step="0.5" value="${st.spd}">`;
+    }
+    if (sim.canGrab(mode)) {
+      h += `<div class="so-lab">🌍 지구를 집어 궤도를 옮겨요 <b>${st.auV.toFixed(2)} AU</b></div>`;
+    }
+    if (g2.view && mode === 'free' && !st.wif) {
+      h += `<button class="k3-btn ${st.viewE ? 'accent' : ''}" data-a="view">${st.viewE ? '🛰 위에서 보기' : '👁 지구에서 보기'}</button>`;
+    }
+    if (sim.canWow(mode)) {
+      h += '<button class="k3-btn accent" data-a="wowarm">🚀 태양 빛은 언제 도착할까?</button>';
+    }
+    if (sim.canWhatif(mode) && !st.wif) {
+      h += '<button class="k3-btn accent" data-a="whatif">🌀 만약에…</button>';
+    }
+    if (st.wif) {
+      h += '<button class="k3-btn" data-a="wifexit">↩ 원래 태양계로</button>';
+    }
+  }
+  h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+  const rs = $('ratioSlider');
+  if (rs) rs.addEventListener('input', () => {
+    hideHint();
+    if (sim.predArm('ratio', mode)) askPred('ratio');
+    sim.setRatio(+rs.value);
+    fitCam(); syncScene(); renderStatus(); renderCtrls(); afterAct();
+  });
+  const ss = $('spdSlider');
+  if (ss) ss.addEventListener('input', () => { hideHint(); sim.setSpd(+ss.value); renderCtrls(); });
+}
+
+function renderPlanets() {
+  const G = sim.G();
+  if (!G.showPlanets || mode === 'quiz' || sim.state.wowArmed || sim.state.wif) {
+    planetsEl.style.display = 'none';
+    return;
+  }
+  planetsEl.style.display = '';
+  planetsEl.innerHTML = PL.map(p =>
+    `<button data-k="${p.k}" class="${sim.state.sel === p.k ? 'on' : ''}">${p.nm}</button>`).join('');
+  planetsEl.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    hideHint();
+    sim.select(b.dataset.k);
+    K3.sound.play('tap');
+    renderPlanets(); renderStatus(); afterAct();
+  }));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 태양계를 살펴봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const st = $('stage');
+  st.dataset.t = sim.effT(mode).toFixed(3);
+  st.dataset.au = sim.earAu().toFixed(2);
+  st.dataset.band = sim.band();
+  st.dataset.sel = sim.state.sel || '';
+  st.dataset.wif = sim.state.wif || '';
+  st.dataset.light = sim.state.lightAU.toFixed(2);
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} ${c.hit ? '✔예측적중' : '✘예측빗나감'}</div>`
+  ).join('');
+}
+
+function renderLightBar() {
+  const st = sim.state;
+  if (!st.wowArmed || (!st.lightOn && st.lightAU === 0)) { lightbar.style.display = 'none'; return; }
+  lightbar.style.display = '';
+  $('ltime').textContent = '🚀 ' + Sim.lightTimeStr(sim.lightElapsed());
+  const reached = PL.filter(p => st.lightAU >= p.au);
+  $('lsub').textContent = reached.length
+    ? ('빛이 ' + reached[reached.length - 1].nm + '까지 왔어요 · ' + st.lightAU.toFixed(2) + ' AU')
+    : '빛이 태양을 떠났어요…';
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      syncScene(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderPlanets(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderLightBar();
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+function earthTint() {
+  const m = planets[2].material;
+  const b = sim.band();
+  if (b === 'hot') m.color.setHex(0xFF8A50);
+  else if (b === 'cold') m.color.setHex(0x9AD9FF);
+  else m.color.setHex(texOK.ear ? 0xffffff : 0x2b6cb0);
+}
+function fitCam() {
+  const st = sim.state;
+  if (sim.G().lowScene) return;
+  const t = sim.effT(mode);
+  const far = Sim.dist(PL.length - 1, t);
+  const want = far * (1.15 + 0.40 * t);
+  const d = camera.position.length();
+  if (d < 1e-6) return;
+  camera.position.multiplyScalar(want / d);
+}
+function syncScene() {
+  const st = sim.state;
+  const G = sim.G();
+  const t = sim.effT(mode);
+
+  /* 저학년 = 지구 클로즈업 낮밤 장면 (v2 layout 무손실) */
+  if (G.lowScene) {
+    planets.forEach((m, i) => { m.visible = (i === 2); m.scale.setScalar(i === 2 ? 2.4 : 0.001); });
+    rings.forEach(r => { r.visible = false; });
+    satRing.visible = false;
+    goldRing.visible = false;
+    marker.visible = true;
+    sunMesh.visible = true; sunGlow.visible = true;
+    sunMesh.scale.setScalar(1.4);
+    planets[2].position.set(8, 0, 0);
+    planets[2].rotation.y = st.dayAngle;
+    lightShell.visible = false; lightRing.visible = false;
+    return;
+  }
+
+  planets.forEach(m => { m.visible = true; });
+  rings.forEach(r => { r.visible = !st.sunGone; });
+  satRing.visible = true;
+  marker.visible = false;
+  sunMesh.visible = !st.sunGone;
+  sunGlow.visible = !st.sunGone;
+  sunMesh.scale.setScalar(1.0);
+
+  planets.forEach((m, i) => {
+    const p = sim.planetPos(i, mode);
+    m.position.set(p.x, 0, p.z);
+    m.scale.setScalar(Sim.prad(i, t));
+    const d = sim.planetDist(i, mode);
+    rings[i].scale.set(d, d, 1);
+  });
+  earthTint();
+
+  /* 🟢 골디락스 띠 — t에 따라 폭 자체가 변하니 지오메트리 갱신 (v2 무손실) */
+  const showGold = sim.canGrab(mode);
+  goldRing.visible = showGold;
+  if (showGold) {
+    goldRing.geometry.dispose();
+    goldRing.geometry = new THREE.RingGeometry(Sim.auToDist(Sim.GOLD_LO, t), Sim.auToDist(Sim.GOLD_HI, t), 128);
+  }
+
+  /* 🚀 빛 껍질 */
+  const lightOn = st.wowArmed && (st.lightOn || st.lightAU > 0);
+  lightShell.visible = lightOn;
+  lightRing.visible = lightOn;
+  if (lightOn) {
+    const r = Sim.auToDist(Math.max(st.lightAU, 0.001), 1) - 3;   /* 태양 표면 기준 */
+    const rr = Math.max(r, 0.05);
+    lightShell.scale.setScalar(rr);
+    lightRing.scale.set(rr, rr, 1);
+  }
+
+  /* 👁 지구에서 보기 (v2 camPos 무손실) */
+  if (st.viewE && mode === 'free') {
+    const p = sim.planetPos(2, mode);
+    const len = Math.hypot(p.x, p.z) || 1;
+    camera.position.set(p.x * (1 + 0.22 / len), 0.5, p.z * (1 + 0.22 / len));
+    controls.target.set(0, 0, 0);
+    controls.enabled = false;
+  } else if (!grabbing) {
+    controls.enabled = true;
+  }
+}
+
+/* ── 조작 후처리 (moon 교훈: 판정을 한 곳에 모은다) ── */
+function afterAct() {
+  predTick();
+  if (mode === 'mission') missionTick();
+  if (sim.state.wif) wifTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'play') {
+    sim.clearWow();
+    sim.togglePlay();
+    K3.sound.play(st.playing ? 'whoosh' : 'select');
+    renderCtrls(); renderStatus(); afterAct();
+  } else if (a === 'real') {
+    sim.toggleReal();
+    K3.sound.play('whoosh');
+    fitCam(); syncScene(); renderAll(); afterAct();
+  } else if (a === 'view') {
+    sim.toggleView();
+    K3.sound.play('whoosh');
+    if (!st.viewE) { controls.enabled = true; fitCam(); }
+    syncScene(); renderAll();
+  } else if (a === 'reset') {
+    sim.wifExit(); sim.wowExit();
+    st.sel = null; st.real = false; st.ratioT = sim.ratio0; st.spd = 1;
+    st.auV = sim.au0; st.viewE = false;
+    controls.enabled = true;
+    K3.sound.play('tap');
+    fitCam(); syncScene(); renderAll();
+  } else if (a === 'whatif') {
+    const SRC = sim.wifSrc();
+    K3.cards.result('<h3>🌀 만약에… 무엇을 바꿔 볼까요?</h3>',
+      sim.wifList().map(k => ({ label: SRC[k].icon + ' ' + SRC[k].title, value: k }))
+    ).then(k => { if (k) startWhatif(k); });
+  } else if (a === 'wifexit') {
+    sim.wifExit();
+    K3.sound.play('select');
+    fitCam(); syncScene(); renderAll();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    fitCam(); syncScene(); renderAll();
+    K3.cards.predict(Sim.WOW.q, Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c })))
+      .then(v => {
+        sim.setWowPred(+v);
+        K3.sound.play('charge');
+        K3.toast('🔦 「빛 쏘기」를 눌러 태양에서 빛을 출발시켜 봐요!', false, T(3600));
+        renderCtrls(); renderStatus();
+      });
+  } else if (a === 'fire') {
+    if (!sim.lightFire()) return;
+    K3.sound.play('whoosh');
+    lightHitLast = -1;
+    renderCtrls(); renderStatus(); renderLightBar();
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    K3.sound.play('select');
+    fitCam(); syncScene(); renderAll();
+  }
+}
+
+/* ── 만약에 ── */
+function startWhatif(key) {
+  sim.wifStart(key);
+  K3.sound.play('whoosh');
+  const W = sim.wifSrc()[key];
+  fitCam(); syncScene(); renderAll();
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.wifPredict(+v);
+      K3.sound.play('charge');
+      /* ☀️ 태양 소멸·🕳 공전 멈춤은 예측 직후 «자동 시작» (v2 onPlay 무손실) */
+      if (key === 'sunoff') { sim.armEscape(mode); K3.sound.play('whoosh'); }
+      else if (key === 'stopo') { sim.state.playing = false; }
+      else if (key !== 'stopspin') { sim.state.playing = true; }
+      K3.toast(W.icon + ' ' + W.tip, false, T(3800));
+      syncScene(); renderCtrls(); renderStatus();
+    });
+}
+function wifTick() {
+  if (!sim.wifResolved()) return;
+  const r = sim.wifResolve();
+  if (!r) return;
+  K3.sound.play(r.hit ? 'chime' : 'pop');
+  if (r.hit) K3.sound.play('ting');
+  const W = sim.wifSrc()[r.key];
+  K3.toast(
+    '<b>' + W.icon + ' ' + W.title + '</b><br>' + W.reveal +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘'),
+    !r.hit, T(6800)
+  );
+  renderChips(); renderCtrls(); renderStatus();
+  if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(7000));
+}
+
+/* ── 🚀 와우: 빛의 여행 ── */
+let lightHitLast = -1;
+function wowTick() {
+  const st = sim.state;
+  /* 행성 도달 이벤트 */
+  const hit = sim.lightPass();
+  if (hit) {
+    K3.sound.play(hit.idx === 2 ? 'ting' : 'tap');
+    K3.toast('🚀 빛이 <b>' + hit.p.nm + '</b>에 닿았어요 — <b>' + Sim.lightTimeStr(hit.sec) + '</b> 걸렸어요' +
+      (hit.idx === 2 ? '<br>지금 네가 보는 햇빛은 <b>8분 19초 전</b>의 태양이에요!' : ''),
+      false, T(hit.idx === 2 ? 3600 : 1800));
+  }
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  const d = r.data;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>🚀 빛조차 오래 걸린다</h3>' + lightTable(d) +
+    '<div style="font-size:13px;line-height:1.55;color:#243043">우주에서 가장 빠른 빛도 지구까지 <b>' + d.earthStr + '</b>, ' +
+    '해왕성까지는 <b>' + d.nepStr + '</b>이 걸려요.<br>' +
+    '지금 네가 창밖에서 보는 햇빛은 <b>' + d.earthStr + ' 전</b>에 태양을 떠난 빛이에요. ' +
+    '태양이 방금 사라졌더라도 우리는 <b>' + d.earthStr + '</b> 동안 그걸 모릅니다.<br>' +
+    '태양계가 이토록 <b>크고 텅 비어 있다</b>는 뜻이에요.' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 빛도 「즉시」는 아니에요! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    fitCam(); syncScene(); renderAll();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(400));
+  });
+  renderChips(); renderCtrls();
+}
+function lightTable(d) {
+  const rows = [
+    ['☿ 수성', d.merStr], ['🌍 지구', d.earthStr], ['🪐 목성', d.jupStr], ['🔵 해왕성', d.nepStr]
+  ];
+  return '<div style="margin:8px 0 6px;font-family:Gowun Dodum">' + rows.map(r =>
+    '<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 8px;border-bottom:1px solid #E7E1D6">'
+    + '<span style="color:#5a7894">' + r[0] + '</span><b style="color:#C24106">' + r[1] + '</b></div>').join('') + '</div>';
+}
+
+/* ── 예측 노트 ── */
+function askPred(kind) {
+  const P = Sim.PRED[kind];
+  K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.predPick(kind, +v);
+      K3.sound.play('charge');
+      K3.toast('📝 예측 접수! ' + P.tip, false, T(3600));
+      renderStatus();
+    });
+}
+function predTick() {
+  ['ratio'].forEach(kind => {
+    if (!sim.predResolved(kind, mode)) return;
+    const r = sim.predResolve(kind, mode);
+    if (!r) return;
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    if (r.hit) K3.sound.play('ting');
+    K3.toast(r.msg, !r.hit, T(5400));
+    renderChips(); renderStatus();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(5600));
+  });
+}
+
+/* ── 🔴 지구 궤도째 잡아 끌기 (레이캐스트 → 궤도 평면 → AU 역산) ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const orbitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const hitPt = new THREE.Vector3();
+let grabbing = false;
+function setPtr(cx, cy) {
+  ptr.x = (cx / innerWidth) * 2 - 1;
+  ptr.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  hideHint();
+  if (!sim.canGrab(mode)) return;
+  setPtr(e.clientX || 0, e.clientY || 0);
+  if (!ray.intersectObject(earthProxy, false).length) return;
+  grabbing = true;
+  controls.enabled = false;
+  if (sim.state.playing) { sim.togglePlay(); renderCtrls(); }
+  K3.sound.play('tap');
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!grabbing) return;
+  setPtr(e.clientX || 0, e.clientY || 0);
+  if (!ray.ray.intersectPlane(orbitPlane, hitPt)) return;
+  const d = Math.hypot(hitPt.x, hitPt.z);
+  const before = sim.inGold();
+  sim.grabTo(d, mode);
+  sim.state.ang[2] = Math.atan2(hitPt.z, hitPt.x);       /* 잡은 방향으로 지구가 따라온다 */
+  if (before !== sim.inGold()) K3.sound.play(sim.inGold() ? 'chime' : 'fail');
+  syncScene(); renderStatus(); renderCtrls();
+  afterAct();
+});
+function endGrab() {
+  if (!grabbing) return;
+  grabbing = false;
+  controls.enabled = !(sim.state.viewE && mode === 'free');
+  K3.sound.play('select');
+}
+renderer.domElement.addEventListener('pointerup', endGrab);
+renderer.domElement.addEventListener('pointercancel', endGrab);
+
+/* ── 미션 ── */
+let thinkOpen = false;
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const cur = sim.missionCur();
+  if (cur.type === 'think') { openThink(cur); return; }
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { syncScene(); renderAll(); missionTick(); }, T(1300));
+}
+function openThink(m) {
+  if (thinkOpen) return;
+  thinkOpen = true;
+  K3.cards.predict(m.text.replace(/<[^>]+>/g, ''), m.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      thinkOpen = false;
+      if (+v === m.a) {
+        K3.sound.play('chime'); K3.sound.play('ting');
+        K3.toast('🎉 정답!<br>' + m.why, false, T(4600));
+        sim.missionAdvance();
+        setTimeout(() => { syncScene(); renderAll(); if (!sim.mDone) missionTick(); }, T(1400));
+      } else {
+        K3.sound.play('fail');
+        K3.toast('음… 다시 생각해 볼까요? 태양계를 잘 살펴봐요!', true, T(2600));
+        setTimeout(() => missionTick(), T(2700));
+      }
+    });
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wifExit(); sim.wowExit();
+  const st = sim.state;
+  st.sel = null; st.real = false; st.ratioT = 0; st.spd = 1; st.auV = 1; st.viewE = false;
+  st.ang = PL.map((_, i) => i * 0.7);
+  st.orbAcc = 0; st.dayAngle = 0.6; st.lowObs = 0;
+  st.pred.ratio = { asked:false, ch:-1, done:false };
+  st.wowDone = false;
+  controls.enabled = true;
+  qLock = false;
+  lightHitLast = -1;
+}
+function setGrade(g) {
+  sim.grade = g;
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  if (sim.G().lowScene) { camera.position.set(3.6, 2.4, 5.4); controls.target.set(8, 0, 0); }
+  else { camera.position.set(10, 12, 14); controls.target.set(0, 0, 0); fitCam(); }
+  syncScene(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  fitCam(); syncScene(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+const _sp = new THREE.Vector3();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+
+  const st = sim.state;
+  const active = st.playing || st.wif === 'stopo' || st.sunGone || st.lightOn ||
+                 (sim.G().lowScene && st.wif === 'stopspin');
+  if (active) {
+    sim.tick(dt);
+    syncScene();
+    renderStatus();
+    renderLightBar();
+    afterAct();
+  }
+
+  /* 선택 행성 라벨 투영 */
+  if (sim.state.sel && mode !== 'quiz' && !sim.G().lowScene) {
+    const f = sim.planetOf(sim.state.sel);
+    planets[f.idx].getWorldPosition(_sp);
+    _sp.project(camera);
+    if (_sp.z < 1) {
+      selAnno.textContent = f.p.nm + ' · ' + f.p.au + ' AU';
+      selAnno.style.left = ((_sp.x * 0.5 + 0.5) * innerWidth) + 'px';
+      selAnno.style.top = ((-_sp.y * 0.5 + 0.5) * innerHeight - 22) + 'px';
+      selAnno.style.display = '';
+    } else selAnno.style.display = 'none';
+  } else selAnno.style.display = 'none';
+
+  if (controls.enabled) controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+if (sim.G().lowScene) { camera.position.set(3.6, 2.4, 5.4); controls.target.set(8, 0, 0); }
+else fitCam();
+syncScene();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast(sim.G().lowScene
+  ? '<b>🌞 하루 돌리기</b>를 눌러 지구를 돌려 봐요 — 낮과 밤이 생겨요!'
+  : (sim.G().v2.grab
+    ? '<b>지구를 잡아 궤도째 옮겨 봐요</b> — 초록 띠(골디락스) 밖으로 나가면?'
+    : '<b>행성 버튼</b>을 눌러 태양계 식구들을 만나 봐요!'));
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.SolarApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWhatif,
+  planets, rings, satRing, goldRing, sunMesh, marker, lightShell, lightRing, earthProxy,
+  camera, controls, sunLight,
+  get texOK() { return texOK; },
+  syncScene, renderAll, afterAct, fitCam, missionTick, wifTick, wowTick, predTick,
+  select(k) { sim.select(k); renderPlanets(); renderStatus(); afterAct(); },
+  setRatio(v) { sim.setRatio(v); fitCam(); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  setAU(v) { sim.setAU(v); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  grabTo(d) { sim.grabTo(d, mode); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  armPred(kind) { if (sim.predArm(kind, mode)) askPred(kind); },
+  runFor(sec) {
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncScene(); renderStatus(); renderLightBar(); renderCtrls();
+    afterAct();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
