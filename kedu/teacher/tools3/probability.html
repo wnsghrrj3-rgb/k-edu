@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 가능성 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 9호 — 가능성 (2026-07-14) · 셸 = clock 계보 (graph 자매 — 같은 아크릴 막대 언어)
+  SPEC = handoff/klab/designs3/SPEC_probability.md (도면=정답)
+  v2(engine/tools/probability.js 268줄) 콘텐츠 무손실 이식:
+    학년칸(저 동전만·20번·개수 비교 일상어 닻 / 중 ＋주사위·%·퀴즈 3문 / 고 ＋와우·퀴즈 5문)
+    미션 저2·중3·고4 · 퀴즈 문항·보기·정답·preset 그대로 · 와우(도박사 오류 F칸) 그대로
+  ★ 랜덤이 핵심 로직인 유일한 B트랙 도구 — §2-R rand 스텁 계약:
+    Math.random 직접 호출 0. 모든 난수 = App.rand(주입 가능 · window.__K3_RAND 우선).
+    난수 규칙 두 가지 공존(§6-3): roll = faces[floor(r*len)] 인덱스 / 100번 반증 = r<0.5 임계. 통합 금지.
+  v3 질감: 다크 스튜디오 + 원목 매트 위 아이보리 트레이 — 금속 주화(양면 각인·밀링 테)와
+    상아 주사위(음각 눈)가 놓이고, 아래에 유광 아크릴 막대(graph와 같은 재질 언어).
+  와우:
+    A 굴리는 물성 — 한 번 = 주화가 튀어올라 8회 플립 후 착지(whoosh→tap) /
+      N번 = 주화가 우수수 쏟아져 좌우로 갈라짐(whoosh→pop). 쏟아짐 = 대수의 법칙을 눈이 먼저 안다.
+    B 🔮 도박사 오류 예측 카드(v3 신설·1회 가드·고학년) — 🎯 첫 실행 직전
+      「다음 100번은?」 3지선다 → 100회 → 결과 카드. ↺·토글·학년/모드 전환 시 재무장.
+    C 저학년 닻 — 20번 뒤 「(여러 번 하니 비슷해지죠?)」 개수 비교 일상어. %·와우 없음.
+  ⚠️ v2 라이브 버그 수정(§6-1): 미션 문구의 batch가 모듈 로드 시점 문자열로 굳어
+    학년 전환 시 문구 「50번」·판정 20 불일치 → missionsFor(grade,batch) 호출 시점 템플릿 생성.
+  ⚠️ §6-2: v2 snd('success')는 존재하지 않는 사운드(무음) → chime으로 매핑.
+  ⚠️ §6-4: 🎯 반증은 누적이 아니라 «다음 100번»으로 덮는다(total=100). 문구 정합. 유지.
+  config: ?grade= & mode= & type=coin|dice & batch=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 20px;cursor:pointer;min-width:126px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 가능성 도구 전용 ── */
+  /* 원목 매트 위 아이보리 트레이 — 주화·주사위·아크릴 막대가 놓인다 */
+  .pb-paper{position:relative;border-radius:14px;padding:6px;
+    background:linear-gradient(170deg,#FBF7EE 0%,#F1EAD9 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 10px 26px -8px rgba(0,0,0,.55)}
+  .pb-tg{font-family:'Gowun Dodum';font-size:14px;font-weight:700;color:#C9B8FF;
+    background:rgba(155,123,245,.12);border:1.5px solid rgba(155,123,245,.42);border-radius:999px;
+    padding:9px 15px;cursor:pointer;line-height:1;transition:all .15s}
+  .pb-tg.on{background:rgba(155,123,245,.42);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(201,184,255,.6), 0 0 18px -4px #9B7BF5}
+  .pb-wow{font-family:'Gowun Dodum';font-size:14px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s}
+  .pb-wow:active{transform:translateY(2px)}
+  .pb-wow[data-wow="arm"]{color:#C9B8FF;background:rgba(155,123,245,.12);
+    border:1.5px solid rgba(155,123,245,.5)}
+  .pb-wow[data-wow="reveal"]{color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  /* 막대 = 유광 아크릴 (graph와 같은 재질 언어) — 자람은 트랜지션 */
+  .pb-bar{transition:all .25s ease}
+  /* 와우A① — 한 번 굴리기 : 주화·주사위가 튀어올라 8회 플립 후 착지, 결과 면이 잠깐 커진다 */
+  .pb-flip{animation:pbFlip .52s cubic-bezier(.3,.7,.4,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes pbFlip{
+    0%{transform:translateY(0) scaleX(1)}
+    8%{transform:translateY(-26px) scaleX(.12)} 16%{transform:translateY(-44px) scaleX(1)}
+    24%{transform:translateY(-56px) scaleX(.12)} 32%{transform:translateY(-60px) scaleX(1)}
+    40%{transform:translateY(-56px) scaleX(.12)} 48%{transform:translateY(-46px) scaleX(1)}
+    56%{transform:translateY(-32px) scaleX(.12)} 64%{transform:translateY(-16px) scaleX(1)}
+    72%{transform:translateY(0) scaleX(.2)}
+    82%{transform:translateY(0) scale(1.16)}
+    100%{transform:translateY(0) scale(1)}}
+  /* 와우A② — N번 굴리기 : 주화가 우수수 쏟아져 면별 기둥으로 갈라진다 */
+  .pb-drop{animation:pbDrop .5s ease-in both;transform-origin:center;transform-box:fill-box}
+  @keyframes pbDrop{0%{opacity:0;transform:translateY(-140px) scale(.7)}
+    18%{opacity:1}82%{opacity:1;transform:translateY(0) scale(1)}
+    100%{opacity:0;transform:translateY(0) scale(1)}}
+  /* 5연속 무장 — 줄지어 놓인 앞면 주화 */
+  .pb-run{animation:pbRun .3s cubic-bezier(.2,1.3,.4,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes pbRun{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
+  /* 무대 배너 (v2 pb-flash 계보) */
+  .pb-flash,.pb-flash-magic,.pb-nudge{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:pbPop .26s ease-out}
+  .pb-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab);color:#fff}
+  .pb-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8);color:#fff}
+  .pb-nudge{background:#FFF3CD;color:#7a5b00;border:2px solid #F3C969}
+  @keyframes pbPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .pb-hold{display:inline-block;animation:pbHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes pbHold{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🪙 케이랩 · 가능성</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* 면 색 — graph PALETTE 계보(앞=파랑 각인 / 뒤=초록 각인 · 주사위 6색) */
+  var COL=['#5B9BF0','#3EE6B0','#FFA75E','#FF6FA5','#9B7BF5','#FFD05E'];
+  var GRADES={
+    low:  { modes:['free','mission'],        dice:false, percent:false, quiz:false, batch:20, showWow:false },
+    mid:  { modes:['free','mission','quiz'], dice:true,  percent:true,  quiz:true,  batch:50, showWow:false },
+    high: { modes:['free','mission','quiz'], dice:true,  percent:true,  quiz:true,  batch:50, showWow:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function facesOf(type){ return (type==='dice')?[1,2,3,4,5,6]:['앞','뒤']; }
+  function zeroCounts(faces){
+    var c={}; faces.forEach(function(f){ c[f]=0; }); return c;
+  }
+  /* §2-R 난수 규칙 ① — roll = 인덱스 방식 faces[floor(r*len)] (v2 roll 그대로) */
+  function rollN(faces,n,rand){
+    var counts=zeroCounts(faces), last=null;
+    for(var i=0;i<n;i++){
+      var f=faces[Math.floor(rand()*faces.length)];
+      counts[f]++; last=f;
+    }
+    return { counts:counts, total:n, last:last };
+  }
+  /* §2-R 난수 규칙 ② — 100번 반증 = 임계 방식 r<0.5 (v2 wowReveal 그대로 · ①과 통합 금지) */
+  function gamblerReveal(rand){
+    var h=0,t=0;
+    for(var i=0;i<100;i++){ if(rand()<0.5)h++; else t++; }
+    return { h:h, t:t };
+  }
+  /* ★ §6-1 수정 — 미션 문구를 «호출 시점»에 생성(v2는 로드 시점 문자열로 굳어
+     학년 전환 시 문구 50번·판정 20 불일치). 문구·판정식 형식은 v2 그대로. */
+  function missionsFor(grade,batch){
+    var M1={ text:'🪙 동전을 <b>한 번</b> 굴려 봐요! 앞일까 뒤일까?',
+      check:function(s){ return s.type==='coin'&&s.total>=1; } };
+    var M2={ text:'🪙 <b>'+batch+'번 굴리기</b>로 한꺼번에! 앞·뒤 막대가 비슷해지나요?',
+      check:function(s){ return s.type==='coin'&&s.total>=batch; } };
+    var M3={ text:'🎲 <b>주사위</b>로 바꿔 한 번 굴려 봐요!',
+      check:function(s){ return s.type==='dice'&&s.total>=1; } };
+    var M4={ text:'🎲 주사위를 <b>100번 넘게</b> 굴려 여섯 눈이 고르게 나오는지 봐요!',
+      check:function(s){ return s.type==='dice'&&s.total>=100; } };
+    return (grade==='low')?[M1,M2]:(grade==='mid')?[M1,M2,M3]:[M1,M2,M3,M4];
+  }
+
+  /* 퀴즈 — v2 문항·보기·정답·preset 그대로 */
+  var MID_QUIZ=[
+    { type:'coin', preset:{'앞':1}, q:'동전을 한 번 던질 때 앞면이 나올 가능성은?', answer:'반반이에요', choices:['반반이에요','항상 나와요','절대 안 나와요'] },
+    { type:'dice', preset:{1:1,3:1,6:1}, q:'주사위에서 눈 7이 나올 가능성은?', answer:'불가능해요', choices:['불가능해요','반반이에요','확실해요'] },
+    { type:'dice', preset:{2:1,4:1,5:1}, q:'주사위에서 6 이하의 눈이 나올 가능성은?', answer:'확실해요', choices:['확실해요','불가능해요','반반이에요'] }
+  ];
+  var HIGH_QUIZ=MID_QUIZ.concat([
+    { type:'coin', preset:{'앞':48,'뒤':52}, q:'동전을 아주 여러 번 던지면 앞면의 비율은 어디에 가까워질까요?', answer:'절반 (50%)', choices:['절반 (50%)','100%','0%'] },
+    { type:'dice', preset:{1:2,2:3,3:2,4:3,5:2,6:3}, q:'주사위에서 짝수 눈이 나올 가능성은?', answer:'반반이에요', choices:['반반이에요','확실해요','불가능해요'] }
+  ]);
+  function quizPoolFor(grade){ return (grade==='mid')?MID_QUIZ.slice():HIGH_QUIZ.slice(); }
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var a=arr.slice();
+    for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  /* 퀴즈 preset은 counts를 «직접 채운다» — 결과 그림을 먼저 보여 주고 묻는 구조(§1 유지) */
+  function applyQuizPreset(q){
+    var faces=facesOf(q.type), counts=zeroCounts(faces), total=0;
+    for(var k in q.preset){ counts[k]=q.preset[k]; total+=q.preset[k]; }
+    return { type:q.type, faces:faces, counts:counts, total:total, last:null };
+  }
+  /* 막대 — mx = max(counts,1) «상대» 정규화(§6-6 · 절대 축으로 바꾸지 말 것) */
+  function barHeights(counts,faces,plotH){
+    var mx=1;
+    faces.forEach(function(f){ if(counts[f]>mx)mx=counts[f]; });
+    return faces.map(function(f){
+      var h=counts[f]/mx*plotH;
+      return { f:f, h:h, pct:0 };
+    });
+  }
+  /* 상태줄 문구 (v2 그대로 · 순수 문자열) */
+  function statusText(grade,type,counts,total,batch,last,armed){
+    if(grade==='low'&&type==='coin'){
+      var fr=counts['앞']||0, bk=counts['뒤']||0;
+      var cmp=(total===0)?'동전을 굴려 봐요!'
+        :(fr>bk?'앞이 더 많이 나왔어요!':(bk>fr?'뒤가 더 많이 나왔어요!':'딱 같아요!'));
+      return '앞 '+fr+'번, 뒤 '+bk+'번 — '+cmp+(total>=batch?' (여러 번 하니 비슷해지죠?)':'');
+    }
+    var s='모두 '+total+'번'+(last!=null?' (방금: '+last+')':'');
+    if(armed) s+=' — 🎲 한 번 한 번은 서로 무관, 연속과 상관없이 늘 반반';
+    return s;
+  }
+
+  var API={ COL:COL, GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            facesOf:facesOf, zeroCounts:zeroCounts, rollN:rollN, gamblerReveal:gamblerReveal,
+            missionsFor:missionsFor, quizPoolFor:quizPoolFor, shuffled:shuffled,
+            applyQuizPreset:applyQuizPreset, barHeights:barHeights, statusText:statusText };
+  if(typeof window!=='undefined') window.ProbCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var PC=window.ProbCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return PC.GRADES[grade]; }
+
+  var cfgBatch=(+Q.get('batch')>0)?+Q.get('batch'):null;
+  function curBatch(){ return cfgBatch || G().batch; }
+
+  /* §2-R — 모든 난수는 이 rand를 통과한다. Math.random 직접 호출 0. */
+  var rand=window.__K3_RAND || Math.random;
+
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var type=(G().dice&&Q.get('type')==='dice')?'dice':'coin';
+  var batch=curBatch();
+  var faces=PC.facesOf(type);
+  var counts=PC.zeroCounts(faces);
+  var total=0, last=null;
+  var gamblerArmed=false, magicShown=false, pred=null, revealing=false;
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  var fxFlip=false, fxPour=0, fxRun=false;   /* 1회성 연출 플래그 — 다음 render에서 자동 해제 */
+
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var FLIP_MS=window.__K3_FAST?60:520;
+  var CARD_MS=window.__K3_FAST?60:1100;
+  var FLASH_MS=window.__K3_FAST?400:2600;
+  var MAGIC_MS=window.__K3_FAST?400:3000;
+
+  function snd(n){ K3.sound.play(n); }
+  function state(){ return { type:type, total:total }; }
+  function curMissions(){ return PC.missionsFor(grade,batch); }
+  function shuffleQuiz(){ qList=PC.shuffled(PC.quizPoolFor(grade),rand); qIdx=0; qScore=0; qCount=0; qLock=false; }
+
+  function setType(t){
+    type=(G().dice||t==='coin')?t:'coin';
+    faces=PC.facesOf(type);
+    counts=PC.zeroCounts(faces);
+    total=0; last=null;
+    gamblerArmed=false;         /* 토글·학년·모드 전환 = 와우 무장 해제 (v2) */
+    magicShown=false; pred=null;/* 와우B 예측 카드 재무장 (§3) */
+    clearFlash();
+  }
+
+  /* ── 무대 배너 (v2 pb-flash 계보 · desk에 absolute 주입 + 자동 제거) ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.pb-flash,.pb-flash-magic,.pb-nudge').forEach(function(n){ n.remove(); });
+  }
+  function flash(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── 굴리기 (와우A 물성) ── */
+  function act(a){
+    if(revealing||mode==='quiz') return;
+    if(a==='reset'){
+      counts=PC.zeroCounts(faces); total=0; last=null;
+      gamblerArmed=false; magicShown=false; pred=null;  /* ↺ = 재무장 (§3) */
+      clearFlash(); snd('select'); render();
+      return;
+    }
+    var n=(a==='one')?1:batch;
+    var r=PC.rollN(faces,n,rand);
+    faces.forEach(function(f){ counts[f]+=r.counts[f]; });
+    total+=r.total; last=r.last;
+    snd('whoosh');
+    if(a==='one'){
+      fxFlip=true; render();
+      setTimeout(function(){ snd('tap'); }, FLIP_MS);
+    } else {
+      fxPour=Math.min(n,24); render();
+      setTimeout(function(){ snd('pop'); }, window.__K3_FAST?40:560);
+    }
+    if(mode==='mission') checkMission();
+  }
+
+  /* ── 와우 F칸 — 도박사 오류 (고학년·동전·자유탐구 3중 게이팅 §6-5) ── */
+  function wowOn(){ return G().showWow && type==='coin' && mode==='free'; }
+  function wowArm(){
+    if(!wowOn())return;
+    counts={'앞':5,'뒤':0}; total=5; last='앞';
+    gamblerArmed=true; fxRun=true;
+    snd('charge'); render();
+    flash('pb-flash','🔮 앞면이 <b>5번 연속!</b> 이제 뒷면 나올 차례일까요? 다음을 예상해 봐요',FLASH_MS);
+  }
+  function doReveal(){
+    var r=PC.gamblerReveal(rand);
+    counts={'앞':r.h,'뒤':r.t}; total=100; last=(r.h>=r.t)?'앞':'뒤';
+    /* §6-4 — 앞 5회를 버리고 «다음 100번»으로 덮는다. 누적 금지(문구 정합). */
+    fxPour=24;
+    snd('whoosh'); snd('chime');   /* §6-2: v2 success(무음 버그) → chime */
+    render();
+    flash('pb-flash-magic','앞 5연속 뒤에도 다음 100번 중 <b>앞 '+r.h+'</b> · <b>뒤 '+r.t
+      +'</b>, 거의 반반! 🪙 동전은 과거를 기억 못 해요',MAGIC_MS);
+    return r;
+  }
+  function wowReveal(){
+    if(!wowOn()||revealing)return;
+    if(!gamblerArmed){
+      snd('select');
+      flash('pb-nudge','먼저 <b>🔮 앞면 5번 연속</b>으로 예상부터 해 봐요!',FLASH_MS);
+      return;
+    }
+    /* 와우B — 첫 실행 «직전» 예측 카드 (1회 가드 · 5개의 앞면 주화가 줄지어 놓인 채 묻는다) */
+    if(!magicShown){
+      magicShown=true; revealing=true;
+      snd('charge');
+      K3.cards.predict('앞면이 5번 연속 나왔어요. <b>다음 100번</b>은 어떨까요?',
+        [{id:'tails', label:'① 뒷면이 더 많이 나온다'},
+         {id:'half',  label:'② 거의 반반'},
+         {id:'heads', label:'③ 앞면이 더 많이 나온다'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        var r=doReveal();
+        setTimeout(function(){
+          var okP=(pred==='half');
+          K3.cards.result(
+            '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞혔어요!':'🤔 거의 반반이었어요!')+'</h3>'
+            +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+            +(okP
+              ?'동전은 과거를 기억하지 못해요 — 앞이 몇 번 연속 나왔든, <b>매번 새로 반반</b>이에요.<br>'
+              :'앞 <b>'+r.h+'</b> · 뒤 <b>'+r.t+'</b> — 거의 반반이었어요. «이제 뒷면 차례»라는 느낌은 <b>우리 머릿속에만</b> 있어요.<br>')
+            +'한 번 한 번의 굴리기는 <b>서로 무관</b>해요. 그래서 다시 눌러 봐도 매번 반반 근처랍니다.</p>',
+            [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+          );
+        }, CARD_MS);
+      });
+      return;
+    }
+    doReveal();   /* 이후로는 v2 그대로 — 배너만. arm 유지 = 몇 번이고 반복(반복이 학습) */
+  }
+
+  /* ── 퀴즈 ── */
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false; mStep++;
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; }
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+PC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+PC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 굴려 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      /* 퀴즈 preset이 counts를 직접 채운다 — «이런 결과가 나왔을 때»의 그림 (§1) */
+      var st=PC.applyQuizPreset(q);
+      type=st.type; faces=st.faces; counts=st.counts; total=st.total; last=null;
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      s=PC.shuffled(qq.choices,rand).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else {
+      if(G().dice){
+        s+='<button class="pb-tg'+(type==='coin'?' on':'')+'" data-type="coin">🪙 동전</button>'
+          +'<button class="pb-tg'+(type==='dice'?' on':'')+'" data-type="dice">🎲 주사위</button>';
+      }
+      s+='<button class="ck-btn" data-act="one" style="--c1:#3f77d8;--c2:#2a56ab">한 번 굴리기</button>'
+        +'<button class="ck-btn" data-act="many" style="--c1:#4b5c72;--c2:#334052">'+batch+'번 굴리기</button>'
+        +'<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺</button>';
+      if(wowOn()){
+        s+='<button class="pb-wow" data-wow="arm">🔮 앞면 5번 연속! 다음은?</button>'
+          +'<button class="pb-wow" data-wow="reveal">🎯 다음 100번 던지기</button>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.pb-tg').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(type!==b.dataset.type){ snd('select'); setType(b.dataset.type); build(); }
+      });
+    });
+    ct.querySelectorAll('[data-act]').forEach(function(b){
+      b.addEventListener('click',function(){ act(b.dataset.act); });
+    });
+    ct.querySelectorAll('.pb-wow').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.wow==='arm')wowArm(); else wowReveal(); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+  function setGrade(g){
+    grade=g; snd('select');
+    batch=curBatch();
+    if(G().modes.indexOf(mode)<0) mode='free';
+    setType('coin');
+    mStep=0; mDone=false; mLock=false;
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    setType('coin');    /* §6-7 — 퀴즈 preset이 자유탐구로 새지 않게 판을 비운다 */
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 — 트레이 위 주화·주사위 + 유광 아크릴 막대 ═══ */
+  var VBW=720, VBH=380;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+  function txt(svg,x,y,s,o){
+    o=o||{};
+    var t=svgEl('text',{ x:x, y:y, 'text-anchor':o.anchor||'middle',
+      'font-family':o.font||'var(--kedu-title)', 'font-size':o.size||18, 'font-weight':800,
+      fill:o.fill||'#2B3E52' });
+    if(o.cls) t.setAttribute('class',o.cls);
+    t.textContent=s; svg.appendChild(t); return t;
+  }
+  var PIPS={1:[[0,0]],2:[[-1,-1],[1,1]],3:[[-1,-1],[0,0],[1,1]],
+            4:[[-1,-1],[1,-1],[-1,1],[1,1]],5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+            6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]};
+  function faceColor(f){
+    if(type==='coin') return (f==='앞')?PC.COL[0]:PC.COL[1];
+    return PC.COL[(f-1)%6];
+  }
+  /* 금속 주화 — 밀링 테·양면 각인·스펙큘러 링 */
+  function drawCoin(svg,cx,cy,r,face,cls,delay){
+    var g=svgEl('g',{ class:cls||'' });
+    if(delay!=null) g.setAttribute('style','animation-delay:'+delay+'ms');
+    g.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:r, fill:'url(#pbMetal)',
+      stroke:'#9a8f7c', 'stroke-width':r*0.05, filter:'url(#pbSh)' }));
+    g.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:r*0.985, fill:'none',
+      stroke:'#7d735f', 'stroke-width':r*0.055, 'stroke-dasharray':(r*0.09)+' '+(r*0.09) }));
+    g.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:r*0.8, fill:'url(#pbMetalIn)',
+      stroke:'rgba(120,108,86,.55)', 'stroke-width':1.5 }));
+    if(face!=null){
+      var t=svgEl('text',{ x:cx, y:cy+r*0.3, 'text-anchor':'middle',
+        'font-family':'var(--kedu-title)', 'font-size':r*0.86, 'font-weight':800,
+        fill:faceColor(face), stroke:'rgba(60,50,30,.35)', 'stroke-width':r*0.02 });
+      t.textContent=face; g.appendChild(t);
+    }
+    g.appendChild(svgEl('ellipse',{ cx:cx-r*0.34, cy:cy-r*0.4, rx:r*0.42, ry:r*0.2,
+      fill:'rgba(255,255,255,.4)', 'pointer-events':'none' }));
+    svg.appendChild(g);
+    return g;
+  }
+  /* 상아 주사위 — 라운드 모서리·음각 눈 */
+  function drawDie(svg,cx,cy,s,face,cls){
+    var g=svgEl('g',{ class:cls||'' });
+    g.appendChild(svgEl('rect',{ x:cx-s/2, y:cy-s/2, width:s, height:s, rx:s*0.2,
+      fill:'url(#pbIvory)', stroke:'#c9bfa6', 'stroke-width':2, filter:'url(#pbSh)' }));
+    g.appendChild(svgEl('rect',{ x:cx-s/2+4, y:cy-s/2+4, width:s-8, height:s*0.28, rx:s*0.12,
+      fill:'rgba(255,255,255,.55)', 'pointer-events':'none' }));
+    (PIPS[face]||[]).forEach(function(p){
+      var px=cx+p[0]*s*0.24, py=cy+p[1]*s*0.24;
+      g.appendChild(svgEl('circle',{ cx:px, cy:py, r:s*0.085, fill:'#384657',
+        stroke:'rgba(0,0,0,.35)', 'stroke-width':1 }));
+      g.appendChild(svgEl('circle',{ cx:px-s*0.02, cy:py-s*0.02, r:s*0.03,
+        fill:'rgba(255,255,255,.35)' }));
+    });
+    svg.appendChild(g);
+    return g;
+  }
+
+  function render(){
+    var desk=$('desk');
+    var flip=fxFlip; fxFlip=false;
+    var pour=fxPour; fxPour=0;
+    var run=fxRun; fxRun=false;
+
+    var wrap=document.createElement('div');
+    wrap.className='pb-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'pbSvg',
+      style:'display:block;width:min(88vw,760px);height:auto;max-height:'+(mode==='quiz'?'38vh':'46vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="pbSh" x="-20%" y="-20%" width="140%" height="150%">'
+      +'<feDropShadow dx="0" dy="3" stdDeviation="3.5" flood-color="#20364d" flood-opacity="0.3"/></filter>'
+      +'<linearGradient id="pbGloss" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="rgba(255,255,255,0.5)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>'
+      +'<radialGradient id="pbMetal" cx="0.35" cy="0.3" r="0.95">'
+      +'<stop offset="0" stop-color="#F4E9CF"/><stop offset="0.55" stop-color="#D9C79E"/><stop offset="1" stop-color="#B7A277"/></radialGradient>'
+      +'<radialGradient id="pbMetalIn" cx="0.4" cy="0.32" r="0.9">'
+      +'<stop offset="0" stop-color="#EFE3C6"/><stop offset="1" stop-color="#CBB88E"/></radialGradient>'
+      +'<linearGradient id="pbIvory" x1="0" y1="0" x2="0.7" y2="1">'
+      +'<stop offset="0" stop-color="#FDFAF1"/><stop offset="1" stop-color="#E9E0C8"/></linearGradient>';
+    svg.appendChild(d);
+
+    /* ① 위 = 실물 존 — 주화/주사위 */
+    var objY=86;
+    if(gamblerArmed && type==='coin'){
+      /* 5연속 무장 — 앞면 주화 5닢이 줄지어 놓인다(시각적 압박이 예측을 유도) */
+      for(var i5=0;i5<5;i5++){
+        drawCoin(svg, VBW/2+(i5-2)*84, objY, 34, '앞', run?'pb-run':'', run?i5*45:null);
+      }
+    } else if(type==='coin'){
+      var cg=drawCoin(svg, VBW/2, objY, 46, last||'앞', flip?'pb-flip':'');
+      if(!last) cg.setAttribute('opacity','0.55');
+    } else {
+      var dg=drawDie(svg, VBW/2, objY, 84, last||1, flip?'pb-flip':'');
+      if(!last) dg.setAttribute('opacity','0.55');
+    }
+
+    /* ② 아래 = 유광 아크릴 막대 (graph와 같은 재질 언어 · mx 상대 정규화) */
+    var padT=168, padB=(G().percent?76:56), plotH=VBH-padT-padB, yBase=padT+plotH;
+    var n=faces.length, slot=(VBW-80)/n;
+    svg.appendChild(svgEl('line',{ x1:40, y1:yBase, x2:VBW-40, y2:yBase,
+      stroke:'#8aa6c4', 'stroke-width':3 }));
+    var bars=PC.barHeights(counts,faces,plotH);
+    bars.forEach(function(b,i){
+      var cx=40+slot*(i+0.5), h=b.h, topY=yBase-h;
+      var col=faceColor(b.f);
+      if(h>0){
+        var bw=Math.min(slot*0.56,64);
+        svg.appendChild(svgEl('rect',{ x:cx-bw/2, y:topY, width:bw, height:h, rx:7,
+          fill:col, stroke:'#ffffff', 'stroke-width':2, filter:'url(#pbSh)',
+          class:'pb-bar', 'data-f':b.f }));
+        svg.appendChild(svgEl('rect',{ x:cx-bw/2+4, y:topY+4, width:Math.max(2,bw-8),
+          height:Math.min(12,h*0.3), rx:4, fill:'url(#pbGloss)', 'pointer-events':'none' }));
+        txt(svg,cx,topY-8,counts[b.f],{ size:19, fill:col, cls:'pb-vlabel' });
+      }
+      txt(svg,cx,yBase+26,(type==='dice'?'⚂ ':'')+b.f,{ size:18, cls:'pb-flabel' });
+      if(G().percent){
+        var pct=total?Math.round(counts[b.f]/total*100):0;
+        txt(svg,cx,yBase+50,pct+'%',{ size:15, fill:'#5a7894', cls:'pb-pct' });
+      }
+      /* 와우A② — 쏟아지는 주화(면별 기둥으로 갈라진다 · 순수 연출) */
+      if(pour>0){
+        var per=Math.max(1,Math.round(pour/n));
+        for(var j=0;j<per;j++){
+          var dy=topY-14-j*7, dx=cx+((j%3)-1)*10;
+          var c=svgEl('circle',{ cx:dx, cy:Math.max(dy,padT-6), r:8,
+            fill:'url(#pbMetal)', stroke:'#9a8f7c', 'stroke-width':1,
+            class:'pb-drop', 'pointer-events':'none' });
+          c.setAttribute('style','animation-delay:'+((i*per+j)*8)+'ms');
+          svg.appendChild(c);
+        }
+      }
+    });
+
+    wrap.appendChild(svg);
+    /* 배너는 desk 직속(absolute)이라 트레이 교체에도 살아남는다 */
+    var keep=[];
+    desk.querySelectorAll('.pb-flash,.pb-flash-magic,.pb-nudge').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">'
+        +(type==='dice'?'주사위 눈은 1~6, 여섯 가지!':'동전은 앞 아니면 뒤, 두 가지!')
+        +' 잘 생각하고 답을 골라요.</div>';
+      return;
+    }
+    if(grade==='low' && type==='coin'){
+      var fr=counts['앞']||0, bk=counts['뒤']||0;
+      var cmp=(total===0)?'동전을 굴려 봐요!'
+        :(fr>bk?'앞이 더 많이 나왔어요!':(bk>fr?'뒤가 더 많이 나왔어요!':'딱 같아요!'));
+      st.innerHTML='<div class="hint" style="font-size:15px">'
+        +'앞 <b style="font-family:var(--kedu-title);font-size:24px;color:#9CC4FA">'+fr+'</b>번, '
+        +'뒤 <b style="font-family:var(--kedu-title);font-size:24px;color:#3EE6B0">'+bk+'</b>번'
+        +'<br><span class="grabline">'+cmp+(total>=batch?' (여러 번 하니 비슷해지죠?)':'')+'</span></div>';
+      return;
+    }
+    var s='모두 <b style="font-family:var(--kedu-title);font-size:22px;color:#9CC4FA">'+total+'</b>번'
+      +(last!=null?' <span class="go">(방금: '+last+')</span>':'');
+    var pulse=(gamblerArmed && type==='coin' && mode==='free')
+      ?'<br><span class="pb-hold">🎲 한 번 한 번은 서로 무관 — 연속과 상관없이 늘 반반</span>':'';
+    st.innerHTML='<div class="hint">'+s+pulse+'</div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  build();
+
+  window.ProbApp={
+    get grade(){return grade;}, get mode(){return mode;}, get type(){return type;},
+    get faces(){return faces.slice();},
+    get counts(){var c={};faces.forEach(function(f){c[f]=counts[f];});return c;},
+    get total(){return total;}, get last(){return last;}, get batch(){return batch;},
+    get gamblerArmed(){return gamblerArmed;}, get magicShown(){return magicShown;},
+    get pred(){return pred;}, get revealing(){return revealing;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode,
+    setType:function(t){ if(type!==t){ setType(t); build(); } },
+    act:act, wow:function(w){ if(w==='arm')wowArm(); else wowReveal(); },
+    answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
