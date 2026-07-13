@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 전기 회로 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 전기 회로 (2026-07-13 · 페이블) · A트랙 14호
+  v2 engine/tools/circuit.js(336줄 · 2D SVG 회로도) → «실물 3D 실험대»로 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 실험대 무대(원목 상판 · 실물 전지/전구/스위치 · 구리 전선)
+    ② 실물 질감(유리 전구+필라멘트+금속 베이스 · 전지 원통 ＋－ 극 · 레버 스위치 · 발광 후광)
+    ③ 직접 조작(🔴 부품을 «집어» 슬롯에 놓기 · 전지 탭 = ＋－ 뒤집기 · 스위치 탭 = 여닫기)
+    ④ 즉각 반응(🔴 전선 속 «전자»가 흐른다 — 빠르기가 곧 전류. 전구를 늘리면 눈에 띄게 느려진다)
+    ⑤ 탐구 구조(미션 4(학년별 2/2/4) · 퀴즈 5 · 와우=🔭 전구를 늘리면 더 밝다?)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 실물 부품 집어 놓기 — 팔레트에서 부품을 고르고 슬롯을 탭하면 «실물»이 놓인다. 레이캐스트로
+       슬롯을 집고, 전지를 다시 탭하면 ＋－가 뒤집혀 직렬에서 상쇄(netB=0)가 «보인다».
+    ② 전자 흐름 — 전류를 화살표가 아니라 «전자 알갱이»로 그린다. 속도 ∝ 전류.
+       직렬 전구 1개: 빠름 → 2개: 정확히 절반 속도(1/N). 「전압을 나눠 쓴다」가 눈에 보인다.
+       병렬: 각 가지에 «같은 속도»로 흐르고, 본선에서는 가지 수만큼 «합류»해 더 빨리 흐른다.
+  v2 무손실: 학년칸 저(불 켜기 = 닫힌 회로)/중(스위치·끊긴 곳 = 직렬 전체 영향)/고(직렬·병렬 풀)
+    ·물리(직렬 netB=|Σ전지방향| · 밝기 netB/전구수 · 전구0=합선 / 병렬 가지 독립·밝기 netB)
+    ·미션(저 2 · 중 2 · 고 4) ·퀴즈 5문 ·팔레트 4종(전지·전구·스위치·지우기) ·상태줄 문구 전부
+    ·와우(🔭 전구 늘리면 더 밝다? → 오히려 1/N로 어두워짐) = v3에서 예측 카드·조작 게이트로 정식 승격
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?circ=series|parallel
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .ci-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .ci-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .ci-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .ci-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .ci-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:216px;max-height:calc(100vh - 130px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  #palette{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:21;display:flex;gap:6px;
+    flex-wrap:wrap;justify-content:center;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:16px;backdrop-filter:blur(8px);padding:9px 12px}
+  #palette button{font-family:'Gowun Dodum';font-size:14px;padding:9px 14px;border-radius:12px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  #palette button.on{background:rgba(255,146,43,.32);border-color:rgba(255,146,43,.75);color:#fff}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(580px,84vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:82px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(600px,72vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(224,49,49,.65);color:#FFC9C9}
+  #status .card .hold{display:inline-block;animation:ciPulse 1.2s ease-in-out infinite}
+  @keyframes ciPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 132px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:210px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #meter{position:fixed;right:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:9px 12px;width:174px;text-align:center;
+    font-family:'Gowun Dodum'}
+  #meter .t{font-size:12px;color:#93a3b4}
+  #meter .v{font-size:22px;color:#FFD79A;margin-top:2px}
+  #meter .s{font-size:11.5px;color:#cdd6e6;margin-top:4px;line-height:1.35}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:22;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+
+<div class="k3-topbar">
+  <span class="title">⚡ 케이랩 · 전기 회로</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="ci-panel" id="hudL"></div>
+<div class="ci-panel" id="ctrls"></div>
+<div class="ci-panel" id="mbar" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+<div id="palette"></div>
+
+<div id="meter">
+  <div class="t">⚡ 전류 (전자의 빠르기)</div>
+  <div class="v" id="mval">0.0</div>
+  <div class="s" id="msub">회로가 열려 있어요</div>
+</div>
+
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>부품을 고르고 빈 자리를 눌러 놓아요</b> — 전지를 다시 누르면 ＋－가 뒤집혀요</div>
+<div class="k3-loading" id="loading"><div class="ic">⚡</div><div>실험대 차리는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.CircuitSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var TOOLS = [
+    { k:'battery', l:'🔋 전지' }, { k:'bulb', l:'💡 전구' },
+    { k:'switch', l:'⏻ 스위치' }, { k:'erase', l:'✖ 지우기' }
+  ];
+
+  /* ── 기본 배치 (v2 무손실) ── */
+  function defS(){
+    return [{ t:'battery', dir:1 }, { t:'wire' }, { t:'bulb' }, { t:'wire' },
+            { t:'switch', open:false }, { t:'wire' }, { t:'bulb' }, { t:'wire' }];
+  }
+  function defP(){
+    /* 0 = 본선 전지 · 1 = 본선 스위치 · 2~4 = 가지 (v2 무손실) */
+    return [{ t:'battery', dir:1 }, { t:'switch', open:false },
+            { t:'bulb' }, { t:'bulb' }, { t:'wire' }];
+  }
+
+  /* ── 회로 해석 (v2 calc 무손실) ── */
+  function calcSeries(slots){
+    var net = 0, L = 0, openSw = false;
+    slots.forEach(function(s){
+      if(s.t === 'battery') net += (s.dir || 1);
+      else if(s.t === 'bulb') L++;
+      else if(s.t === 'switch' && s.open) openSw = true;
+    });
+    net = Math.abs(net);
+    var flow = net >= 1 && L >= 1 && !openSw;
+    return {
+      circ:'series', net:net, L:L, openSw:openSw, flow:flow,
+      short: net >= 1 && L === 0 && !openSw,
+      bright: flow ? net / L : 0
+    };
+  }
+  function calcParallel(slots){
+    var net = 0, openSw = false, bb = 0;
+    /* 본선 두 자리 = 어느 쪽에 전지/스위치가 와도 인식 (v2 무손실) */
+    if(slots[0].t === 'battery') net += (slots[0].dir || 1);
+    if(slots[1].t === 'battery') net += (slots[1].dir || 1);
+    if(slots[0].t === 'switch' && slots[0].open) openSw = true;
+    if(slots[1].t === 'switch' && slots[1].open) openSw = true;
+    net = Math.abs(net);
+    for(var i = 2; i < slots.length; i++) if(slots[i].t === 'bulb') bb++;
+    var mainFlow = net >= 1 && !openSw;
+    return {
+      circ:'parallel', net:net, openSw:openSw, mainFlow:mainFlow, bb:bb,
+      bright: mainFlow ? net : 0,
+      short: net >= 1 && !openSw && bb === 0,
+      flow: mainFlow && bb >= 1
+    };
+  }
+
+  /* ── 🔴 전자 흐름 (전류 = 전자의 빠르기) ──
+     직렬: 전류 = 밝기 = net/L (전구가 늘면 «느려진다» = 1/N)
+     병렬: 각 가지 = net (독립·동일 속도) · 본선 = net × 가지수 («합류»해서 더 빨리) */
+  function branchCurrent(r){
+    if(!r) return 0;
+    if(r.circ === 'series') return r.flow ? r.bright : 0;
+    return r.mainFlow && r.bb >= 1 ? r.bright : 0;
+  }
+  function mainCurrent(r){
+    if(!r) return 0;
+    if(r.circ === 'series') return branchCurrent(r);
+    return r.mainFlow ? r.bright * r.bb : 0;
+  }
+  /* 전자 속도(무대 단위/초) — 전류에 비례 */
+  var ELECTRON_K = 0.42;
+  function electronSpeed(current){ return current * ELECTRON_K; }
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var LOW_MISSIONS = [
+    { circ:'series', setup:function(s){ s.sSlots = defS(); s.sSlots[4] = { t:'switch', open:true }; },
+      text:'💡 <b>스위치를 닫아</b> 전구에 불을 켜 봐요! 전기가 도는 길이 빙 둘러 이어져야 불이 켜져요.',
+      check:function(r){ return r.flow; } },
+    { circ:'series', setup:function(s){ s.sSlots = defS(); },
+      text:'🔋 이번엔 <b>전구를 하나 더</b> 놓아 봐요 — 길 위에 전구가 둘이어도 불이 들어와요!',
+      check:function(r){ return r.flow && r.L >= 2; } }
+  ];
+  var MID_MISSIONS = [
+    { circ:'series', setup:function(s){ s.sSlots = defS(); },
+      text:'🔌 <b>스위치를 열어</b> 불을 꺼 봐요! 직렬은 한 줄이라, 한 곳만 끊겨도 전구가 전부 꺼져요.',
+      check:function(r){ return r.openSw && !r.flow; } },
+    { circ:'series', setup:function(s){ s.sSlots = defS(); s.sSlots[4] = { t:'switch', open:true }; },
+      text:'✅ 다시 <b>스위치를 닫아</b> 불을 켜 봐요 — 끊긴 길이 이어지면 전류가 다시 흘러요!',
+      check:function(r){ return r.flow; } }
+  ];
+  var HIGH_MISSIONS = [
+    { circ:'series',
+      text:'🔋 <b>전지를 한 개 더</b> 놓아 전구를 더 밝게 만들어 봐요!',
+      check:function(r, s){ return s.circ === 'series' && r.flow && r.net >= 2; } },
+    { circ:'series',
+      text:'전지 하나를 <b>거꾸로(＋－ 바꾸기)</b> 끼우면 어떻게 되는지 봐요!',
+      check:function(r, s){
+        if(s.circ !== 'series') return false;
+        var nb = 0;
+        s.sSlots.forEach(function(x){ if(x.t === 'battery') nb++; });
+        return nb >= 2 && r.net === 0;
+      } },
+    { circ:'parallel',
+      text:'🔀 병렬 — <b>세 가지 모두 전구</b>를 놓아 다 켜 봐요!',
+      check:function(r, s){ return s.circ === 'parallel' && r.mainFlow && r.bb >= 3; } },
+    { circ:'parallel',
+      text:'✖ 가지 전구 <b>하나를 빼도</b> 나머지가 켜져 있는지 확인해 봐요!',
+      check:function(r, s){ return s.circ === 'parallel' && r.mainFlow && r.bb === 2; } }
+  ];
+  var GRADES = {
+    low:  { showCirc:false, wow:false, missions:LOW_MISSIONS,
+            hint:'부품을 골라 빈 자리를 눌러 놓아요. 스위치를 누르면 여닫을 수 있어요.' },
+    mid:  { showCirc:false, wow:false, missions:MID_MISSIONS,
+            hint:'스위치를 눌러 여닫아 보세요. 직렬은 한 곳만 끊겨도 전부 꺼져요.' },
+    high: { showCirc:true,  wow:true,  missions:HIGH_MISSIONS,
+            hint:'직렬·병렬을 바꿔 가며 밝기와 독립성을 비교해 보세요. 스위치=여닫기, 전지=＋－ 방향.' }
+  };
+
+  /* ── 퀴즈 (v2 무손실) ── */
+  var QUIZ = [
+    { circ:'series',   q:'켜져 있는 이 스위치를 열면 어떻게 될까요?', ch:['모든 전구가 꺼져요','전구 하나만 꺼져요','더 밝아져요'], a:0 },
+    { circ:'series',   q:'이 직렬 회로에 전구를 더 놓으면 밝기는?', ch:['어두워져요','밝아져요','변화 없어요'], a:0 },
+    { circ:'parallel', q:'가지 전구 한 개를 빼면 나머지 전구는?', ch:['그대로 켜져 있어요','모두 꺼져요','더 어두워져요'], a:0 },
+    { circ:'series',   q:'전지를 한 개 더 같은 방향으로 놓으면?', ch:['전구가 더 밝아져요','전구가 꺼져요','어두워져요'], a:0 },
+    { circ:'series',   q:'전구를 모두 빼고 전지만 한 줄로 이으면?', ch:['합선되어 위험해요','더 밝아져요','아무 일 없어요'], a:0 }
+  ];
+
+  /* ── 🔭 와우: 전구를 늘리면 더 밝다? (v2 승격 — 예측 카드·조작 게이트) ── */
+  var WOW = {
+    q:'🔭 직렬 회로에 전구가 <b>1개</b> 환하게 켜져 있어요. 여기에 전구를 <b>하나 더</b> 달면 밝기는?',
+    ch:['더 밝아져요 — 전구가 늘었으니까','오히려 반으로 어두워져요','그대로예요'], a:1,
+    chip:'🔭 직렬 전구↑ → 밝기 1/N'
+  };
+  /* 와우 시작 배치 = 전구 딱 1개 (v2 wowSetup 무손실) */
+  function wowSlots(){
+    return [{ t:'battery', dir:1 }, { t:'wire' }, { t:'bulb' }, { t:'wire' },
+            { t:'switch', open:false }, { t:'wire' }, { t:'wire' }, { t:'wire' }];
+  }
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    sim.circ0 = (opts.circ === 'parallel' && GRADES[grade].showCirc) ? 'parallel' : 'series';
+
+    sim.state = {
+      circ: sim.circ0, sSlots: defS(), pSlots: defP(), tool: 'bulb',
+      phase: 0,                                        /* 전자 위상 (0~1) */
+      wowArmed: false, wowPred: null, wowDone: false, wowBase: 0,
+      chips: [], chipToast: false,
+      acted: false
+    };
+
+    /* ── 해석 ── */
+    sim.slots = function(){ return sim.state.circ === 'series' ? sim.state.sSlots : sim.state.pSlots; };
+    sim.calc = function(){
+      return sim.state.circ === 'series'
+        ? calcSeries(sim.state.sSlots)
+        : calcParallel(sim.state.pSlots);
+    };
+    sim.branchCurrent = function(){ return branchCurrent(sim.calc()); };
+    sim.mainCurrent = function(){ return mainCurrent(sim.calc()); };
+    sim.speed = function(){ return electronSpeed(sim.mainCurrent()); };
+
+    /* ── 조작 (v2 팔레트 무손실) ── */
+    sim.canCirc = function(){ return sim.G().showCirc; };
+    sim.setCirc = function(c){
+      if(!sim.canCirc()) return sim.state.circ;
+      if(c !== 'series' && c !== 'parallel') return sim.state.circ;
+      sim.state.circ = c;
+      sim.state.acted = true;
+      sim.state.wowArmed = false; sim.state.wowPred = null;
+      return c;
+    };
+    sim.setTool = function(t){
+      if(TOOLS.map(function(x){ return x.k; }).indexOf(t) < 0) return sim.state.tool;
+      sim.state.tool = t;
+      return t;
+    };
+    /* 🔴 슬롯 탭 — 전지는 다시 누르면 ＋－ 뒤집기, 스위치는 여닫기 (v2 무손실) */
+    sim.tap = function(i){
+      var arr = sim.slots();
+      if(i < 0 || i >= arr.length) return null;
+      var s = arr[i], tool = sim.state.tool;
+      if(tool === 'erase'){ s.t = 'wire'; delete s.open; delete s.dir; }
+      else if(tool === 'switch'){
+        if(s.t === 'switch') s.open = !s.open;
+        else { s.t = 'switch'; s.open = false; }
+      }
+      else if(tool === 'battery'){
+        if(s.t === 'battery') s.dir = (s.dir || 1) * -1;      /* 재탭 = 극 뒤집기 */
+        else { s.t = 'battery'; s.dir = 1; }
+      }
+      else { s.t = 'bulb'; }
+      sim.state.acted = true;
+      return s;
+    };
+    sim.reset = function(){
+      var st = sim.state;
+      st.sSlots = defS(); st.pSlots = defP(); st.tool = 'bulb';
+      st.wowArmed = false; st.wowPred = null;
+      return true;
+    };
+    /* 전자 위상 진행 */
+    sim.tick = function(dt){
+      var st = sim.state;
+      dt = Math.min(dt, 0.05);
+      st.phase = (st.phase + dt * sim.speed()) % 1;
+      return st.phase;
+    };
+
+    /* ── 🔭 와우 ── */
+    sim.canWow = function(mode){
+      return mode === 'free' && sim.G().wow && sim.state.circ === 'series' && !sim.state.wowDone;
+    };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.circ = 'series';
+      st.sSlots = wowSlots();
+      st.wowArmed = true; st.wowPred = null;
+      st.wowBase = calcSeries(st.sSlots).bright;             /* 전구 1개일 때 밝기 = 1 */
+      return st.wowBase;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    /* 첫 빈 자리(wire)에 전구 하나 더 (v2 firstWire 무손실) */
+    sim.wowAdd = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred === null) return false;
+      for(var i = 0; i < st.sSlots.length; i++){
+        if(st.sSlots[i].t === 'wire'){
+          st.sSlots[i] = { t:'bulb' };
+          st.acted = true;
+          return true;
+        }
+      }
+      return false;
+    };
+    /* 해소 = 전구가 실제로 2개 이상이 되어 밝기가 «떨어져야» */
+    sim.wowResolved = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowDone || st.wowPred === null) return false;
+      var r = calcSeries(st.sSlots);
+      return r.flow && r.L >= 2 && r.bright < st.wowBase - 1e-9;
+    };
+    sim.wowReveal = function(){
+      var r = calcSeries(sim.state.sSlots);
+      return {
+        before: sim.state.wowBase, after: r.bright, L: r.L, net: r.net,
+        ratio: sim.state.wowBase > 0 ? r.bright / sim.state.wowBase : 0,
+        speedBefore: electronSpeed(sim.state.wowBase),
+        speedAfter: electronSpeed(r.bright)
+      };
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast, data:sim.wowReveal() };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null;
+      return true;
+    };
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred !== null) return false;
+      st.wowArmed = false;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){ return sim.G().missions; };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.sSlots = defS(); st.pSlots = defP(); st.tool = 'bulb';
+      st.wowArmed = false; st.wowPred = null;
+      st.acted = false;
+      var m = sim.missionList()[0];
+      st.circ = m.circ;
+      if(m.setup) m.setup(st);
+    };
+    sim.missionCur = function(){ return sim.missionList()[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var m = sim.missionCur();
+      if(!sim.state.acted) return { act:'none' };            /* 자동달성 없음 */
+      if(!m.check(sim.calc(), sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      var M = sim.missionList(), st = sim.state;
+      st.acted = false;
+      if(sim.mStep < M.length - 1){
+        sim.mStep++;
+        var nx = M[sim.mStep];
+        if(nx.circ !== st.circ){ st.circ = nx.circ; st.sSlots = defS(); st.pSlots = defP(); }
+        if(nx.setup) nx.setup(st);
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      var st = sim.state;
+      st.circ = QUIZ[sim.qIdx].circ;                          /* 장면 세팅 */
+      st.sSlots = defS(); st.pSlots = defP();
+      st.wowArmed = false;
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, r = sim.calc(), out = { lines:[], warn:false };
+      if(mode === 'quiz'){
+        out.lines.push('실험대의 회로를 보고 답을 골라요!');
+        return out;
+      }
+      if(st.wowArmed && st.wowPred !== null && !st.wowDone){
+        var rr = calcSeries(st.sSlots);
+        if(rr.L < 2){
+          out.lines.push('<span class="big">🔭 전구 1개 — 밝기 ' + rr.bright.toFixed(2) + '</span>');
+          out.lines.push('<span class="hold">💡 「전구 하나 더 달기」를 눌러 확인해 봐요!</span>');
+          return out;
+        }
+      }
+      var msg, sub;
+      if(st.circ === 'series'){
+        if(r.short){ out.warn = true; msg = '⚠ 합선됐어요'; sub = '전구 없이 전지만 이으면 위험해요.'; }
+        else if(r.net === 0){ msg = '전류가 안 흘러요'; sub = '전지를 놓거나, 거꾸로 끼운 전지의 방향을 맞춰 보세요.'; }
+        else if(r.openSw){ msg = '스위치가 열렸어요'; sub = '직렬은 한 줄이라 스위치 하나만 열려도 전부 꺼져요.'; }
+        else if(r.L === 0){ msg = '전구가 없어요'; sub = '전구를 놓아 보세요.'; }
+        else {
+          msg = '불이 들어왔어요 ✨';
+          sub = '직렬 — 전지 ' + r.net + '칸·전구 ' + r.L + '개. 전지가 많으면 밝고, 전구가 많으면 나눠 써서 어두워요.';
+        }
+      } else {
+        if(r.short){ out.warn = true; msg = '⚠ 합선됐어요'; sub = '가지에 전구를 넣어요.'; }
+        else if(r.net === 0){ msg = '전류가 안 흘러요'; sub = '본선에 전지를 놓거나 방향을 맞춰 보세요.'; }
+        else if(r.openSw){ msg = '본선 스위치가 열렸어요'; sub = '본선이 끊기면 모든 가지가 함께 꺼져요.'; }
+        else if(r.bb === 0){ msg = '가지에 전구가 없어요'; sub = '가지 자리에 전구를 놓아 보세요.'; }
+        else {
+          msg = '가지마다 따로 켜짐 ✨';
+          sub = '병렬 — 가지가 독립이라 한 가지 전구를 빼도 나머지는 그대로 켜지고, 전구가 많아도 밝기가 유지돼요.';
+        }
+      }
+      out.lines.push('<span class="big">' + msg + '</span>');
+      out.lines.push(sub);
+      /* 🔴 전자 흐름 안내 */
+      if(r.flow){
+        if(st.circ === 'series' && r.L >= 2){
+          out.lines.push('⚡ 전자가 ' + sim.mainCurrent().toFixed(2) + '의 빠르기로 흘러요 — 전구 ' + r.L + '개니까 각 전구는 <b>1/' + r.L + '</b> 밝기예요.');
+        } else if(st.circ === 'parallel' && r.bb >= 2){
+          out.lines.push('⚡ 가지마다 전자가 <b>같은 빠르기</b>로 흐르고, 본선에서는 ' + r.bb + '갈래가 <b>합류</b>해 ' + sim.mainCurrent().toFixed(1) + '배로 흘러요.');
+        }
+      }
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    TOOLS:TOOLS, ELECTRON_K:ELECTRON_K,
+    defS:defS, defP:defP, calcSeries:calcSeries, calcParallel:calcParallel,
+    branchCurrent:branchCurrent, mainCurrent:mainCurrent, electronSpeed:electronSpeed,
+    GRADES:GRADES, LOW_MISSIONS:LOW_MISSIONS, MID_MISSIONS:MID_MISSIONS, HIGH_MISSIONS:HIGH_MISSIONS,
+    QUIZ:QUIZ, WOW:WOW, wowSlots:wowSlots, createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.CircuitSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.CircuitSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', { circ: Q.get('circ') });
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (['free','mission','quiz'].includes(m)) mode = m;
+}
+
+/* ═══════════ 실험대 무대 ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0, 7.6, 6.4], target: [0, 0, 0], fov: 42,
+  minDist: 4, maxDist: 16, maxPolar: Math.PI / 2 - 0.06, exposure: 1.05
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.background = new THREE.Color(0x1A1410);
+sun.position.set(4, 9, 5);
+sun.intensity = 2.2;
+scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+
+/* 원목 상판 */
+const desk = new THREE.Mesh(
+  new THREE.BoxGeometry(11, 0.35, 8),
+  new THREE.MeshStandardMaterial({
+    map: canvasTexture(512, 384, g => {
+      g.fillStyle = '#8A5A34'; g.fillRect(0, 0, 512, 384);
+      for (let i = 0; i < 60; i++) {
+        g.strokeStyle = `rgba(${90 + Math.random() * 40 | 0},${58 + Math.random() * 24 | 0},32,0.28)`;
+        g.lineWidth = 1 + Math.random() * 2.4;
+        g.beginPath();
+        const y = Math.random() * 384;
+        g.moveTo(0, y);
+        g.bezierCurveTo(170, y + (Math.random() - 0.5) * 22, 340, y + (Math.random() - 0.5) * 22, 512, y);
+        g.stroke();
+      }
+    }),
+    roughness: 0.82, metalness: 0.04
+  })
+);
+desk.position.y = -0.18;
+desk.receiveShadow = true;
+scene.add(desk);
+
+/* ── 슬롯 좌표 (v2 SSLOT/pslot 배치를 3D로) ── */
+const SX = 3.4, SZ = 2.0;
+const S_POS = [
+  [-SX * 0.55, -SZ], [0, -SZ], [SX * 0.55, -SZ], [SX, 0],
+  [SX * 0.55, SZ], [0, SZ], [-SX * 0.55, SZ], [-SX, 0]
+];
+function pPos(i) {
+  if (i === 0) return [-SX, -0.62];
+  if (i === 1) return [-SX, 0.62];
+  const n = sim.state.pSlots.length - 2, k = i - 2;
+  const x0 = -SX + 1.55, x1 = SX - 0.35;
+  return [x0 + (x1 - x0) * (n <= 1 ? 0.5 : k / (n - 1)), 0];
+}
+function slotPos(i) {
+  return sim.state.circ === 'series' ? S_POS[i] : pPos(i);
+}
+
+/* ── 부품 팩토리 ── */
+const MAT = {
+  brass: new THREE.MeshStandardMaterial({ color: 0xC8A253, roughness: 0.34, metalness: 0.86 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0xB9C4CE, roughness: 0.32, metalness: 0.78 }),
+  dark:  new THREE.MeshStandardMaterial({ color: 0x36434F, roughness: 0.55, metalness: 0.35 }),
+  red:   new THREE.MeshStandardMaterial({ color: 0xC0392B, roughness: 0.5, metalness: 0.2 }),
+  gold:  new THREE.MeshStandardMaterial({ color: 0xFFD43B, roughness: 0.4, metalness: 0.5 }),
+  lever: new THREE.MeshStandardMaterial({ color: 0xFF9500, roughness: 0.4, metalness: 0.3 })
+};
+const COPPER = new THREE.MeshStandardMaterial({ color: 0x9A6B3F, roughness: 0.42, metalness: 0.72 });
+const COPPER_ON = new THREE.MeshStandardMaterial({ color: 0xFF9500, roughness: 0.3, metalness: 0.6, emissive: 0xFF7A00, emissiveIntensity: 0.25 });
+
+function makeBulb() {
+  const g = new THREE.Group();
+  const glassMat = new THREE.MeshPhysicalMaterial({
+    color: 0xFFFDF2, roughness: 0.08, metalness: 0, transmission: 0.72,
+    transparent: true, opacity: 0.62, emissive: 0xFFC53D, emissiveIntensity: 0
+  });
+  const glass = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 24), glassMat);
+  glass.position.y = 0.62;
+  g.add(glass);
+  const fil = new THREE.Mesh(
+    new THREE.TorusGeometry(0.16, 0.028, 8, 20, Math.PI * 1.6),
+    new THREE.MeshStandardMaterial({ color: 0x9AB0C5, roughness: 0.4, metalness: 0.6, emissive: 0xFF7A00, emissiveIntensity: 0 })
+  );
+  fil.position.y = 0.6;
+  fil.rotation.x = Math.PI / 2;
+  g.add(fil);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.36, 16), MAT.brass);
+  base.position.y = 0.2;
+  g.add(base);
+  for (let i = 0; i < 3; i++) {
+    const rr = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.022, 6, 16), MAT.brass);
+    rr.position.y = 0.1 + i * 0.09;
+    rr.rotation.x = Math.PI / 2;
+    g.add(rr);
+  }
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: canvasTexture(128, 128, c => {
+      const gr = c.createRadialGradient(64, 64, 4, 64, 64, 62);
+      gr.addColorStop(0, 'rgba(255,224,102,0.95)');
+      gr.addColorStop(0.5, 'rgba(255,212,59,0.35)');
+      gr.addColorStop(1, 'rgba(255,212,59,0)');
+      c.fillStyle = gr; c.fillRect(0, 0, 128, 128);
+    }),
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+  }));
+  halo.position.y = 0.62;
+  halo.scale.set(0, 0, 1);
+  g.add(halo);
+  const light = new THREE.PointLight(0xFFD98A, 0, 3.4, 2);
+  light.position.y = 0.62;
+  g.add(light);
+  g.userData = { kind: 'bulb', glassMat, fil, halo, light };
+  return g;
+}
+function makeBattery() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.15, 24), MAT.dark);
+  body.rotation.z = Math.PI / 2;
+  body.position.y = 0.3;
+  g.add(body);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.2, 24), MAT.gold);
+  band.rotation.z = Math.PI / 2;
+  band.position.y = 0.3;
+  g.add(band);
+  /* ＋극 (돌출 단자) — dir에 따라 좌/우 */
+  const plus = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.18, 14), MAT.steel);
+  plus.rotation.z = Math.PI / 2;
+  plus.position.set(0.66, 0.3, 0);
+  g.add(plus);
+  /* －극 (빨간 링) */
+  const minus = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.14, 24), MAT.red);
+  minus.rotation.z = Math.PI / 2;
+  minus.position.set(-0.56, 0.3, 0);
+  g.add(minus);
+  g.userData = { kind: 'battery' };
+  return g;
+}
+function makeSwitch() {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.16, 0.5), new THREE.MeshStandardMaterial({ color: 0xE3EAF2, roughness: 0.7 }));
+  base.position.y = 0.08;
+  g.add(base);
+  [-0.4, 0.4].forEach(x => {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 12), MAT.brass);
+    post.position.set(x, 0.22, 0);
+    g.add(post);
+  });
+  const lever = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.09, 0.14), MAT.lever);
+  lever.position.set(0, 0.3, 0);
+  const pivot = new THREE.Group();
+  pivot.position.set(-0.4, 0.3, 0);
+  lever.position.set(0.4, 0, 0);
+  pivot.add(lever);
+  g.add(pivot);
+  g.userData = { kind: 'switch', pivot };
+  return g;
+}
+function makeEmpty() {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.24, 0.035, 8, 24),
+    new THREE.MeshStandardMaterial({ color: 0x9AB7D4, roughness: 0.6, transparent: true, opacity: 0.7 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.05;
+  g.add(ring);
+  g.userData = { kind: 'wire' };
+  return g;
+}
+
+/* 슬롯 컨테이너 + 히트 프록시 */
+const slotGrps = [], hitBoxes = [];
+const boardGrp = new THREE.Group();
+scene.add(boardGrp);
+function rebuildSlots() {
+  slotGrps.forEach(g => boardGrp.remove(g));
+  hitBoxes.forEach(h => boardGrp.remove(h));
+  slotGrps.length = 0; hitBoxes.length = 0;
+  const arr = sim.slots();
+  arr.forEach((s, i) => {
+    const p = slotPos(i);
+    let m;
+    if (s.t === 'bulb') m = makeBulb();
+    else if (s.t === 'battery') m = makeBattery();
+    else if (s.t === 'switch') m = makeSwitch();
+    else m = makeEmpty();
+    m.position.set(p[0], 0, p[1]);
+    boardGrp.add(m);
+    slotGrps.push(m);
+    const hb = new THREE.Mesh(
+      new THREE.BoxGeometry(1.15, 1.5, 1.15),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hb.position.set(p[0], 0.5, p[1]);
+    hb.userData = { slot: i };
+    boardGrp.add(hb);
+    hitBoxes.push(hb);
+  });
+}
+
+/* ── 전선 (구리 튜브) + 🔴 전자 ── */
+let wireMeshes = [], curves = [], electrons = [];
+const ELEC_MAT = new THREE.MeshStandardMaterial({
+  color: 0x74C0FC, emissive: 0x4DABF7, emissiveIntensity: 1.1, roughness: 0.3
+});
+function clearWires() {
+  wireMeshes.forEach(m => scene.remove(m));
+  electrons.forEach(e => scene.remove(e.mesh));
+  wireMeshes = []; curves = []; electrons = [];
+}
+function addWire(pts, closed, kind) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], 0.13, p[1])), !!closed, 'catmullrom', 0.1);
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 140, 0.07, 10, !!closed), COPPER.clone());
+  scene.add(tube);
+  wireMeshes.push(tube);
+  curves.push({ curve, kind, tube });
+  return curves.length - 1;
+}
+function buildWires() {
+  clearWires();
+  if (sim.state.circ === 'series') {
+    /* 8슬롯을 잇는 닫힌 루프 */
+    addWire(S_POS, true, 'main');
+    /* 전자 24개 */
+    for (let i = 0; i < 24; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), ELEC_MAT);
+      m.visible = false;
+      scene.add(m);
+      electrons.push({ mesh: m, ci: 0, off: i / 24 });
+    }
+  } else {
+    const n = sim.state.pSlots.length - 2;
+    const TOPZ = -SZ, BOTZ = SZ;
+    /* 본선: 왼쪽 세로(전지·스위치) + 위/아래 가로 버스 */
+    addWire([[-SX, BOTZ], [-SX, 0.62], [-SX, -0.62], [-SX, TOPZ], [SX - 0.35, TOPZ]], false, 'main');
+    addWire([[SX - 0.35, BOTZ], [-SX, BOTZ]], false, 'main');
+    /* 가지: 각 전구 자리를 세로로 */
+    for (let i = 2; i < sim.state.pSlots.length; i++) {
+      const px = pPos(i)[0];
+      addWire([[px, TOPZ], [px, 0], [px, BOTZ]], false, 'branch:' + i);
+    }
+    for (let i = 0; i < 30; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), ELEC_MAT);
+      m.visible = false;
+      scene.add(m);
+      electrons.push({ mesh: m, ci: 0, off: i / 30 });
+    }
+  }
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), paletteEl = $('palette'), meterEl = $('meter');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="ci-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="ci-seg">' + ['free','mission','quiz'].map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderPalette() {
+  if (mode === 'quiz') { paletteEl.style.display = 'none'; return; }
+  paletteEl.style.display = 'flex';
+  paletteEl.innerHTML = Sim.TOOLS.map(t =>
+    `<button data-t="${t.k}" class="${sim.state.tool === t.k ? 'on' : ''}">${t.l}</button>`).join('')
+    + '<button data-t="reset">↺ 처음</button>';
+  paletteEl.querySelectorAll('[data-t]').forEach(b => b.addEventListener('click', () => {
+    hideHint();
+    if (b.dataset.t === 'reset') {
+      sim.reset();
+      K3.sound.play('select');
+      rebuildAll(); renderAll(); afterAct();
+      return;
+    }
+    sim.setTool(b.dataset.t);
+    K3.sound.play('select');
+    renderPalette();
+  }));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state;
+  let h = '';
+  if (sim.canCirc() && !st.wowArmed) {
+    h += '<div class="ci-lab">회로 종류</div>';
+    h += `<button class="k3-btn ${st.circ === 'series' ? 'accent' : ''}" data-a="series">⚡ 직렬</button>`;
+    h += `<button class="k3-btn ${st.circ === 'parallel' ? 'accent' : ''}" data-a="parallel">🔀 병렬</button>`;
+  }
+  if (st.wowArmed) {
+    if (st.wowPred !== null && !st.wowDone) {
+      h += '<button class="k3-btn fire" data-a="wowadd">💡 정말 전구 하나 더 달기</button>';
+    }
+    h += '<button class="k3-btn" data-a="wowexit">↩ 원래 회로로</button>';
+  } else if (sim.canWow(mode)) {
+    h += '<button class="k3-btn accent" data-a="wowarm">🔭 전구를 늘리면 더 밝다?</button>';
+  }
+  ctrls.innerHTML = h || '<div class="ci-lab">' + sim.G().hint + '</div>';
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 회로를 꾸며 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const r = sim.calc();
+  const st = $('stage');
+  st.dataset.circ = sim.state.circ;
+  st.dataset.flow = r.flow ? '1' : '0';
+  st.dataset.bright = (r.bright || 0).toFixed(3);
+  st.dataset.current = sim.mainCurrent().toFixed(3);
+  st.dataset.short = r.short ? '1' : '0';
+  st.dataset.net = String(r.net);
+}
+
+function renderMeter() {
+  if (mode === 'quiz') { meterEl.style.display = 'none'; return; }
+  meterEl.style.display = '';
+  const r = sim.calc();
+  const c = sim.mainCurrent();
+  $('mval').textContent = c.toFixed(2);
+  $('msub').textContent = r.short ? '⚠ 합선 — 전구를 넣어요'
+    : (!r.flow ? '전자가 멈춰 있어요'
+    : (sim.state.circ === 'series'
+      ? ('전구 ' + r.L + '개 → 각 ' + r.bright.toFixed(2) + ' 밝기')
+      : ('가지마다 ' + r.bright.toFixed(1) + ' · 본선은 ' + c.toFixed(1))));
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} ${c.hit ? '✔예측적중' : '✘예측빗나감'}</div>`
+  ).join('');
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      rebuildAll(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderPalette(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderMeter();
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+function rebuildAll() {
+  rebuildSlots();
+  buildWires();
+  syncScene();
+}
+function syncScene() {
+  const st = sim.state;
+  const r = sim.calc();
+  const arr = sim.slots();
+
+  arr.forEach((s, i) => {
+    const g = slotGrps[i];
+    if (!g) return;
+    if (s.t === 'battery') {
+      /* 🔴 ＋－ 방향 = 전지를 통째로 뒤집는다 (v2 dir 무손실) */
+      g.rotation.y = (s.dir === -1) ? Math.PI : 0;
+    } else if (s.t === 'switch') {
+      /* 열림 = 레버가 들린다 */
+      g.userData.pivot.rotation.z = s.open ? 0.72 : 0;
+    } else if (s.t === 'bulb') {
+      /* 밝기: 직렬 = net/L · 병렬 = net (가지 독립) */
+      let br = 0;
+      if (st.circ === 'series') br = r.flow ? r.bright : 0;
+      else br = (i >= 2 && r.mainFlow) ? r.bright : 0;
+      const k = Math.min(br, 2);
+      g.userData.glassMat.emissiveIntensity = k * 0.95;
+      g.userData.fil.material.emissiveIntensity = k * 2.2;
+      g.userData.halo.scale.set(k * 2.4, k * 2.4, 1);
+      g.userData.light.intensity = k * 3.4;
+    }
+  });
+
+  /* 전선 색 (전류가 흐르면 달아오른다) */
+  curves.forEach(c => {
+    let on = false;
+    if (st.circ === 'series') on = r.flow;
+    else if (c.kind === 'main') on = r.mainFlow;
+    else {
+      const bi = +c.kind.split(':')[1];
+      on = r.mainFlow && arr[bi] && arr[bi].t === 'bulb';
+    }
+    c.tube.material.color.setHex(on ? 0xFF9500 : 0x9A6B3F);
+    c.tube.material.emissive.setHex(on ? 0xFF7A00 : 0x000000);
+    c.tube.material.emissiveIntensity = on ? 0.3 : 0;
+    c.tube.material.needsUpdate = true;
+    c.on = on;
+  });
+
+  syncElectrons();
+}
+
+/* 🔴 전자 배치 — 위상 + 경로 */
+const _ep = new THREE.Vector3();
+function syncElectrons() {
+  const st = sim.state;
+  const r = sim.calc();
+  const arr = sim.slots();
+  const flowing = st.circ === 'series' ? r.flow : (r.mainFlow && r.bb >= 1);
+
+  if (!flowing) {
+    electrons.forEach(e => { e.mesh.visible = false; });
+    return;
+  }
+
+  if (st.circ === 'series') {
+    const c = curves[0];
+    electrons.forEach((e, i) => {
+      e.mesh.visible = true;
+      const t = (st.phase + e.off) % 1;
+      c.curve.getPointAt(t, _ep);
+      e.mesh.position.copy(_ep);
+    });
+    return;
+  }
+
+  /* 병렬 — 본선(2곡선) + 켜진 가지 */
+  const live = curves.filter(c => c.on);
+  if (!live.length) { electrons.forEach(e => { e.mesh.visible = false; }); return; }
+  electrons.forEach((e, i) => {
+    const c = live[i % live.length];
+    e.mesh.visible = true;
+    const t = (st.phase + e.off) % 1;
+    c.curve.getPointAt(t, _ep);
+    e.mesh.position.copy(_ep);
+  });
+}
+
+/* ── 조작 후처리 ── */
+function afterAct() {
+  if (mode === 'mission') missionTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'series' || a === 'parallel') {
+    if (st.circ === a) return;
+    sim.setCirc(a);
+    K3.sound.play('select');
+    rebuildAll(); renderAll(); afterAct();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    rebuildAll(); renderAll();
+    K3.cards.predict(Sim.WOW.q.replace(/<[^>]+>/g, ''),
+      Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c })))
+      .then(v => {
+        sim.setWowPred(+v);
+        K3.sound.play('charge');
+        K3.toast('💡 「정말 전구 하나 더 달기」를 눌러 확인해 봐요!', false, T(3600));
+        renderCtrls(); renderStatus();
+      });
+  } else if (a === 'wowadd') {
+    if (!sim.wowAdd()) return;
+    K3.sound.play('whoosh');
+    rebuildAll(); renderAll();
+    afterAct();
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    sim.reset();
+    K3.sound.play('select');
+    rebuildAll(); renderAll();
+  }
+}
+
+/* ── 🔭 와우 해소 ── */
+function wowTick() {
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  const d = r.data;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>💡 전구를 늘렸는데 어두워졌다</h3>' + brightBars(d) +
+    '<div style="font-size:13px;line-height:1.55;color:#243043">전구를 하나 더 달았더니 밝기가 ' +
+    '<b>' + d.before.toFixed(2) + ' → ' + d.after.toFixed(2) + '</b>, 정확히 <b>1/' + d.L + '</b>이 됐어요.<br>' +
+    '직렬은 전지의 힘을 전구들이 <b>나눠 씁니다</b>. 전선 속 전자를 봐요 — <b>흐르는 속도가 절반으로 느려졌죠?</b> ' +
+    '전자가 천천히 흐르니 전구도 그만큼 덜 밝은 거예요.<br>' +
+    '「전구가 많으면 더 밝다」는 가장 흔한 오해예요. 병렬로 바꾸면 이야기가 완전히 달라집니다.' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    renderAll();
+  });
+  renderChips(); renderCtrls();
+}
+function brightBars(d) {
+  const w = v => Math.max(6, v * 190);
+  return '<svg viewBox="0 0 300 80" width="100%" height="80" style="margin:6px 0 4px">'
+    + '<text x="2" y="12" font-size="11" fill="#C24106" font-family="Gowun Dodum">💡 전구 1개 — 전자 속도 ' + d.speedBefore.toFixed(2) + '</text>'
+    + '<rect x="18" y="17" width="' + w(d.before).toFixed(0) + '" height="12" rx="6" fill="#FFD43B"/>'
+    + '<text x="' + (24 + w(d.before)).toFixed(0) + '" y="27" font-size="11" fill="#5a7894" font-family="Gowun Dodum">' + d.before.toFixed(2) + '</text>'
+    + '<text x="2" y="52" font-size="11" fill="#1565C0" font-family="Gowun Dodum">💡💡 전구 ' + d.L + '개 — 전자 속도 ' + d.speedAfter.toFixed(2) + '</text>'
+    + '<rect x="18" y="57" width="' + w(d.after).toFixed(0) + '" height="12" rx="6" fill="#8FA4CC"/>'
+    + '<text x="' + (24 + w(d.after)).toFixed(0) + '" y="67" font-size="11" fill="#5a7894" font-family="Gowun Dodum">' + d.after.toFixed(2) + '</text>'
+    + '</svg>';
+}
+
+/* ── 🔴 슬롯 탭 (레이캐스트) ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let downXY = null;
+renderer.domElement.addEventListener('pointerdown', e => {
+  downXY = [e.clientX || 0, e.clientY || 0];
+});
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY) return;
+  const x = e.clientX || 0, y = e.clientY || 0;
+  const moved = Math.hypot(x - downXY[0], y - downXY[1]);
+  downXY = null;
+  if (moved > 6) return;                                /* 궤도 회전과 구분 */
+  if (mode === 'quiz') return;
+  hideHint();
+  ptr.x = (x / innerWidth) * 2 - 1;
+  ptr.y = -(y / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects(hitBoxes, false);
+  if (!hits.length) return;
+  const i = hits[0].object.userData.slot;
+  sim.clearWow();
+  sim.tap(i);
+  K3.sound.play('tap');
+  rebuildAll(); renderAll();
+  afterAct();
+});
+
+/* ── 미션 ── */
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { rebuildAll(); renderAll(); missionTick(); }, T(1300));
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wowExit();
+  sim.state.wowDone = false;
+  sim.state.chips = sim.state.chips;
+  sim.reset();
+  if (!sim.canCirc()) sim.state.circ = 'series';
+  qLock = false;
+}
+function setGrade(g) {
+  sim.grade = g;
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  rebuildAll(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  rebuildAll(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  sim.tick(dt);
+  syncElectrons();
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+rebuildAll();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast('부품을 고르고 <b>빈 자리를 눌러</b> 놓아요 — 전지를 다시 누르면 <b>＋－가 뒤집혀요</b>!');
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.CircuitApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act,
+  slotGrps, hitBoxes, curves, electrons, desk, boardGrp,
+  get wireMeshes() { return wireMeshes; },
+  camera, controls,
+  rebuildAll, syncScene, syncElectrons, renderAll, afterAct, missionTick, wowTick,
+  tap(i) { sim.clearWow(); sim.tap(i); rebuildAll(); renderAll(); afterAct(); },
+  setTool(t) { sim.setTool(t); renderPalette(); },
+  reset() { sim.reset(); rebuildAll(); renderAll(); afterAct(); },
+  runFor(sec) {
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncElectrons();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
