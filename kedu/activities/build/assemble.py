@@ -28,7 +28,7 @@ GENRE_ENGINE = {
     'duel_quiz': 'stream',
     'relay': 'stream',
     'sequence': 'sequence',      # 무대형 — 카드를 순서대로 탭 (§10-4)
-    # bundle · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
+    # bundle · sort · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
 }
 
 SHELL = """<!doctype html>

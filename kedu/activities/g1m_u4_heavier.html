@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>무엇이 더 무거울까? — K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
+     원본: src/g1m_u4_heavier.js (+ src/g1m_u4_heavier.css) · core/activity-core.* · core/genre/stream.js · gens/math/compare_weight.js -->
+<style>
+/* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
+ * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
+ *   §6-2 답 버튼은 가로 일렬 (.ansgrp = row 고정)
+ *   §6-3 판독 우선 (숫자·핵심 정보는 고대비 카드 위)
+ *   §6-6 우상단은 호스트 구역 (#hud right: var(--kb-safe-right))
+ *   §6-8 [넘기기]·[그만하기]는 HUD 상설
+ * 빌드가 이 파일을 <style>로 인라인한다 (단일 HTML 원칙 D1).
+ */
+:root {
+  --cream:#fffbf5; --ink:#78350f; --deep:#92400e; --amber:#f59e0b; --amber-d:#d97706;
+  --good:#22c55e; --bad:#f87171; --teamA:#f59e0b; --teamB:#10b981;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body { background:var(--cream); font-family:'Jua',sans-serif; color:var(--ink);
+       display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.num { font-family:'Nunito',sans-serif; font-weight:800; }
+.screen { display:none; width:100%; height:100%; padding:clamp(10px,2vw,28px);
+          flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,2vh,22px); }
+.screen.active { display:flex; }
+h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:center; }
+.brand { position:fixed; top:10px; left:14px; font-size:15px; color:var(--amber-d); z-index:5; }
+.btn { font-family:'Jua',sans-serif; border:none; border-radius:16px; cursor:pointer;
+       min-height:44px; min-width:44px; font-size:clamp(18px,2.6vw,26px); padding:12px 28px;
+       background:var(--amber); color:#fff; box-shadow:0 4px 0 var(--amber-d); }
+.btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--amber-d); }
+.btn.ghost { background:#fff; color:var(--deep); box-shadow:0 4px 0 #e7d9c4; border:2px solid #f3e2c4; }
+
+/* ── 시작 화면 ── */
+#scr-start .sub { font-size:clamp(16px,2.4vw,24px); color:var(--amber-d); text-align:center; }
+.setrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.setrow + .setrow { margin-top:8px; }
+.setrow .lb { font-size:clamp(15px,2vw,20px); }
+.chip { border:2px solid var(--amber); background:#fff; color:var(--deep); border-radius:999px;
+        padding:8px 18px; font-size:clamp(15px,2vw,20px); font-family:'Jua',sans-serif; cursor:pointer; min-height:44px; }
+.chip.on { background:var(--amber); color:#fff; }
+#sid-badge { display:none; background:var(--deep); color:#fff; border-radius:999px;
+             padding:6px 18px; font-size:clamp(16px,2.2vw,22px); }
+#best-line { display:none; font-size:clamp(15px,2vw,20px); color:var(--amber-d); }
+#start-btn { font-size:clamp(22px,3.4vw,32px); padding:16px 44px; }
+
+/* ── 게임 화면 ── */
+#scr-game { justify-content:space-between; padding-top:clamp(40px,6vh,60px); }
+#hud { position:fixed; top:8px; right:var(--kb-safe-right, 12px); display:flex; gap:10px; align-items:center; z-index:5; }
+#hud .pill { background:#fff; border:2px solid #f3e2c4; border-radius:999px; padding:5px 14px;
+             font-size:clamp(14px,1.8vw,18px); }
+#quit-btn,#mute-btn,#skip-btn { background:#fff; border:2px solid #f3e2c4; border-radius:12px; cursor:pointer;
+            font-size:17px; padding:6px 12px; min-height:40px; font-family:'Jua',sans-serif; color:var(--deep); }
+#teams { display:none; width:100%; max-width:900px; justify-content:space-between; }
+.team { border-radius:14px; padding:6px 20px; color:#fff; font-size:clamp(18px,2.6vw,26px); }
+.team.A { background:var(--teamA); } .team.B { background:var(--teamB); }
+
+/* 무대: 장르가 채우는 영역 */
+#stage { flex:1; display:flex; align-items:center; justify-content:center; width:100%; min-height:0; }
+
+#explain { min-height:clamp(34px,5vh,52px); font-size:clamp(17px,2.6vw,26px); color:var(--deep);
+           background:#fef3c7; border-radius:14px; padding:8px 22px; opacity:0; transition:opacity .3s;
+           text-align:center; max-width:92vw; }
+#explain.show { opacity:1; }
+#explain .mark { font-size:1.1em; }
+
+/* 답 버튼 — §6-2: 그룹 내부는 언제나 가로 일렬 */
+#answers-solo { display:none; gap:clamp(10px,2vw,18px); width:100%; max-width:640px; justify-content:center; }
+#answers-class { display:none; width:100%; max-width:960px; justify-content:space-between; gap:12px; }
+.ansgrp { display:flex; gap:10px; flex-direction:row; align-items:center; }
+.ansgrp::before { content:attr(data-label); font-size:clamp(15px,1.8vw,20px); color:#fff;
+  padding:6px 12px; border-radius:10px; margin-right:2px; }
+.ansgrp.A::before { background:var(--teamA); } .ansgrp.B::before { background:var(--teamB); }
+.abtn { font-family:'Jua',sans-serif; font-size:clamp(19px,3vw,28px); border:none; border-radius:16px;
+        padding:clamp(12px,2vh,18px) clamp(18px,3vw,34px); cursor:pointer; min-height:52px;
+        background:#fff; color:var(--deep); border:3px solid var(--amber); box-shadow:0 4px 0 #e7c890; }
+.abtn:active { transform:translateY(3px); box-shadow:none; }
+.ansgrp.A .abtn { border-color:var(--teamA); } .ansgrp.B .abtn { border-color:var(--teamB); }
+.abtn.locked { opacity:.45; pointer-events:none; }
+.abtn.shake { animation:shake .45s; border-color:var(--bad); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-9px)} 40%,80%{transform:translateX(9px)} }
+#why-box { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; }
+#why-box .wq { font-size:clamp(18px,2.6vw,26px); color:var(--deep); }
+#why-box .whyrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+/* ── 종료 화면 ── */
+#scr-end .big { font-size:clamp(40px,8vw,84px); color:var(--deep); }
+#scr-end .line { font-size:clamp(18px,3vw,30px); color:var(--amber-d); text-align:center; }
+#submit-line { font-size:clamp(15px,2.2vw,20px); }
+
+@media (orientation:portrait) {
+  #answers-class { flex-direction:column; align-items:center; }  /* 그룹 간 상하, 그룹 내부는 가로 (§6-2) */
+}
+
+/* ── 무대 스타일 ── */
+/* 무대 — 저울(무게). balance와 같은 저울, 접시에 물건이 올라간다 */
+#scale { width:min(92vw,640px); max-height:52vh; }
+#beam-g { transition:transform .8s cubic-bezier(.34,1.4,.64,1); transform-origin:320px 84px; }
+.thing-ico { font-size:56px; }
+.thing-name { font-family:'Jua',sans-serif; font-size:22px; fill:var(--deep); }
+</style>
+</head>
+<body>
+<div id="a-root"></div>
+
+<!-- 케이박스 스택 (assign 제출용 — 없으면 조용히 무시됨) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_config.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+
+<script>
+/* core/bridge.js — 케이티처 활동 시스템 브리지 v1.1.0
+ * 헌법: handoff/kedu/activities/케이티처_활동시스템_설계.md §3·§4·§8
+ * v1.0.0 프로토콜(§4 postMessage)은 동결 유지 — 변경 없음.
+ * v1.1.0 추가: assign 재제출 병합(§8-4, M3 해소). cw_submit이 upsert(last-write-wins)이므로
+ *   시도 이력이 서버에 쌓이지 않는다 → 브리지가 제출 직전에 이전 제출을 읽어 정책대로 병합한다.
+ *   정책 sc = best(기본, D4) | first(D10 성향) | last. 조회 원천은 RPC cw_open_bundle(서버) >
+ *   localStorage 백업(기기) > 없음(첫 시도). 조회 실패해도 제출은 반드시 수행한다(유실 0 우선).
+ *
+ * 프로토콜(§4): 상행 ACTIVITY_READY / PROGRESS / RESULT / EXIT, 하행 ACTIVITY_CONFIG / CLOSE. v:1 고정.
+ * 모드 판정(§20-2): URL에 cwb+cwi(케이박스 딥링크)가 있으면 무조건 assign. 그 외 ?mode=, 기본 solo.
+ * 설정 우선순위(§3-3): CONFIG > URL 파라미터 > init defaults(카탈로그 기본값) > 코드 기본값.
+ * 핸드셰이크(§4-1): 선택적. CONFIG 800ms 미도착 = standalone 진행. 실패가 도구를 멈추게 하지 않는다.
+ * 케이박스 제출(§20-2): finish 시 assign이면 KBox.submit 직결. 실패 시 localStorage 보관 +
+ *   지수 백오프 재시도(기본 [2000,6000,18000]ms, window.__KBRIDGE_RETRY_MS__로 오버라이드) +
+ *   재진입 시 자동 재제출. 학생 결과는 절대 유실하지 않는다(§4-4). 어댑터는 무수정(전 도구 공용).
+ * detail(§13-3): 문항 수준 기록은 assign 모드에서만 발신·제출. 최대 100항목.
+ * 안전 여백(§6-6): hosted면 <html>에 .kb-hosted + --kb-safe-right=128px. 도구 우상단 HUD는
+ *   right: var(--kb-safe-right, 12px)로 선언한다 — 호스트 [활동 닫기]와 겹치지 않는다.
+ * 시드(§3-1): ?seed= 있으면 고정(mulberry32), 없으면 랜덤. KBridge.rng로 노출.
+ *
+ * API(§4-5):
+ *   KBridge.init({ activityId, defaults, onConfig(cfg), onClose, getProgress, configWaitMs })
+ *   KBridge.progress({ q, total, ok, type })
+ *   KBridge.finish({ score, total, durationSec, byType, detail, onSubmit })  → true | false(중복)
+ *   KBridge.exit(reason, progress)
+ *   KBridge.mode / .seed / .scoring / .rng() / .version
+ */
+(function () {
+  'use strict';
+  var VERSION = '1.1.0';
+  var MODES = ['class', 'solo', 'assign'];
+  var SCORING = ['best', 'first', 'last'];
+  var PKEY = 'kbridge_pending_v1';
+  var BKEY = 'kbridge_best_v1';        // 서버 조회 실패 대비 기기 백업 (§8-4)
+  var PREV_WAIT_MS = 1500;             // 이전 제출 조회 상한 — 넘으면 병합 없이 제출
+
+  var q = new URLSearchParams(location.search);
+  var isLocal = location.protocol === 'file:' ||
+    location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  var TARGET = isLocal ? '*' : location.origin;
+
+  // ── 모드 판정: 케이박스 딥링크(cwb+cwi) = assign 강제 (§20-2)
+  var kboxDeep = !!(q.get('cwb') && q.get('cwi'));
+  var urlMode = q.get('mode');
+  var mode = kboxDeep ? 'assign' : (MODES.indexOf(urlMode) >= 0 ? urlMode : 'solo');
+
+  // ── 시드 난수 (mulberry32)
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var seedRaw = q.get('seed');
+  var seed = (seedRaw != null && seedRaw !== '' && !isNaN(+seedRaw))
+    ? (+seedRaw | 0) : Math.floor(Math.random() * 2147483647);
+  var rng = mulberry32(seed);
+
+  var state = {
+    activityId: null,
+    mode: mode,
+    aid: q.get('aid') || null,
+    sid: (q.get('sid') != null && q.get('sid') !== '') ? parseInt(q.get('sid'), 10) : null,
+    mute: q.get('mute') === '1',
+    sc: (SCORING.indexOf(q.get('sc')) >= 0 ? q.get('sc') : 'best'),   // §8-4 재시도 채점 정책
+    startedAt: Date.now(),
+    finished: false,
+    closed: false
+  };
+
+  function post(msg) {
+    try { (window.parent || window).postMessage(msg, TARGET); } catch (e) { /* 발신 실패는 무해 */ }
+  }
+  function validOrigin(ev) { return isLocal || ev.origin === location.origin; }
+
+  // ── localStorage 보류 큐 (§4-4 유실 방지; 시크릿 모드 등 불가 환경은 조용히 무시 §14-10)
+  function loadPending() {
+    try { return JSON.parse(localStorage.getItem(PKEY) || '[]'); } catch (e) { return []; }
+  }
+  function savePending(arr) {
+    try { localStorage.setItem(PKEY, JSON.stringify(arr)); } catch (e) { /* no-op */ }
+  }
+  function addPending(env) {
+    var arr = loadPending();
+    arr.push({ ts: Date.now(), env: env });
+    savePending(arr);
+  }
+  function removePendingByTs(ts) {
+    savePending(loadPending().filter(function (p) { return p.ts !== ts; }));
+  }
+  function retryDelays() {
+    return (typeof window !== 'undefined' && window.__KBRIDGE_RETRY_MS__) || [2000, 6000, 18000];
+  }
+
+  // ── 케이박스 제출 (어댑터 직결 §20-2). done(res)는 최종 1회.
+  function kboxSubmit(env, attempt, pendingTs, done) {
+    var KB = window.KBox;
+    if (!(KB && KB.active)) { if (done) done({ status: 'inactive' }); return; }
+    var p;
+    try { p = Promise.resolve(KB.submit(env)); }
+    catch (e) { p = Promise.resolve({ status: 'error', message: String(e) }); }
+    p.then(function (res) {
+      var st = res && res.status;
+      var fail = (st === 'error' || st === 'no_client' || st === 'no_session');
+      if (!fail) { // ok·dup·inactive = 종결 (dup: 어댑터 이중 가드 통과 = 이미 제출됨)
+        if (pendingTs != null) removePendingByTs(pendingTs);
+        if (done) done(res || { status: 'ok' });
+        return;
+      }
+      var delays = retryDelays();
+      if (attempt < delays.length) {
+        setTimeout(function () { kboxSubmit(env, attempt + 1, pendingTs, done); }, delays[attempt]);
+      } else {
+        if (pendingTs == null) addPending(env); // 최초 실패분만 보관 (재진입분은 이미 큐에 있음)
+        if (done) done({ status: 'pending' });
+      }
+    });
+  }
+
+  // ── 재진입 시 보류분 자동 재제출 (init에서 호출)
+  // 보류 봉투는 detail.attempt(이번 시도 raw)를 품고 있으므로 재병합해서 보낸다 —
+  // 다른 기기에서 그 사이에 제출이 있었어도 정책(best/first)이 깨지지 않는다.
+  function flushPending() {
+    if (!(window.KBox && window.KBox.active)) return;
+    loadPending().forEach(function (p) {
+      var at = p.env && p.env.detail && p.env.detail.attempt;
+      if (at) submitAssign(at, p.env.detail.activityId, p.ts, null);
+      else kboxSubmit(p.env, 0, p.ts, null);   // v1.0.0 봉투 호환 (attempt 없음)
+    });
+  }
+
+  // ── 재제출 병합 (§8-4) ────────────────────────────────────────────────────
+  function itemKey() {
+    var KB = window.KBox;
+    return (KB && KB.bundleId && KB.itemId) ? (KB.bundleId + ':' + KB.itemId) : null;
+  }
+  function loadBackup() {
+    var k = itemKey(); if (!k) return null;
+    try { return (JSON.parse(localStorage.getItem(BKEY) || '{}'))[k] || null; } catch (e) { return null; }
+  }
+  function saveBackup(payload) {
+    var k = itemKey(); if (!k) return;
+    try {
+      var all = JSON.parse(localStorage.getItem(BKEY) || '{}');
+      all[k] = payload;
+      localStorage.setItem(BKEY, JSON.stringify(all));
+    } catch (e) { /* 시크릿 모드 등 — 서버가 원천이므로 무해 */ }
+  }
+  function sbClient() {
+    if (window.sb && window.sb.rpc) return window.sb;
+    if (typeof window.getKeduDb === 'function') { try { return window.getKeduDb(); } catch (e) { return null; } }
+    return (window.supabase && window.supabase.rpc) ? window.supabase : null;
+  }
+  // 이전 제출 payload 조회: 서버(cw_open_bundle) > 기기 백업 > null. 실패해도 절대 막지 않는다.
+  function readPrev(cb) {
+    var KB = window.KBox;
+    if (!(KB && KB.active && KB.bundleId && KB.itemId)) { cb(null); return; }
+    var sb = sbClient();
+    if (!sb || !sb.rpc) { cb(loadBackup()); return; }
+    var settled = false;
+    var timer = setTimeout(function () {
+      if (settled) return; settled = true; cb(loadBackup());
+    }, PREV_WAIT_MS);
+    var p;
+    try { p = Promise.resolve(sb.rpc('cw_open_bundle', { p_bundle_id: KB.bundleId })); }
+    catch (e) { clearTimeout(timer); settled = true; cb(loadBackup()); return; }
+    p.then(function (res) {
+      if (settled) return; settled = true; clearTimeout(timer);
+      var d = res && res.data, mine = null;
+      var items = d && d.items;
+      if (Array.isArray(items)) {
+        for (var i = 0; i < items.length; i++) {
+          if (items[i] && items[i].id === KB.itemId) { mine = items[i].payload || null; break; }
+        }
+      }
+      cb((mine && mine.tool === 'activity') ? mine : loadBackup());
+    }).catch(function () {
+      if (settled) return; settled = true; clearTimeout(timer); cb(loadBackup());
+    });
+  }
+  function rate(s, m) { return (m > 0) ? (s || 0) / m : 0; }
+
+  // prev(이전 payload) + attempt(이번 시도) → 정책대로 병합된 KEDU_RESULT 봉투
+  function mergeEnv(prev, attempt, activityId) {
+    var pd = (prev && prev.detail) || null;
+    var policy = state.sc;
+    var mine = { score: attempt.score, max: attempt.max, at: attempt.at };
+    var attempts = (pd && pd.attempts | 0) || 0;
+    attempts += 1;
+
+    var chosen;                                   // 채택된 시도 (최상위 score/max·byType·items의 원천)
+    if (!prev || !pd) chosen = attempt;
+    else if (policy === 'last') chosen = attempt;
+    else if (policy === 'first') {
+      chosen = {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0,
+        at: (pd.first && pd.first.at) || mine.at
+      };
+    } else {                                      // best (기본, D4) — 동률이면 이전 기록 존중
+      chosen = (rate(attempt.score, attempt.max) > rate(prev.score, prev.max)) ? attempt : {
+        score: prev.score, max: prev.max, byType: pd.byType || {},
+        items: pd.items || [], durationSec: pd.durationSec || 0, at: mine.at
+      };
+    }
+
+    var history = ((pd && pd.history) || []).concat([mine]).slice(-10);
+    return {
+      tool: 'activity', kind: 'auto',
+      score: chosen.score, max: chosen.max,
+      detail: {
+        activityId: activityId,
+        byType: chosen.byType || {},
+        durationSec: chosen.durationSec,
+        items: chosen.items || [],
+        policy: policy,
+        attempts: attempts,
+        attempt: attempt,                          // 이번 시도 raw (보류 재제출 시 재병합용)
+        first: (pd && pd.first) || mine,
+        last: mine,
+        history: history
+      }
+    };
+  }
+
+  // assign 제출 진입점: 이전 제출 조회 → 병합 → 제출(+실패 시 보류·재시도)
+  function submitAssign(attempt, activityId, pendingTs, done) {
+    readPrev(function (prev) {
+      var env = mergeEnv(prev, attempt, activityId);
+      kboxSubmit(env, 0, pendingTs, function (res) {
+        if (res && (res.status === 'ok' || res.status === 'dup')) saveBackup(env);
+        if (done) done(res);
+      });
+    });
+  }
+
+  // ── 설정 병합 (§3-3): CONFIG > URL > defaults
+  function resolveConfig(hostCfg, defaults) {
+    var params = {};
+    var d = defaults || {};
+    Object.keys(d).forEach(function (k) { params[k] = d[k]; });
+    Object.keys(d).forEach(function (k) {           // URL 오버라이드 (defaults 선언 키만 — §3-1 미지 파라미터 무시)
+      var v = q.get(k);
+      if (v != null && v !== '') params[k] = isNaN(+v) ? v : +v;
+    });
+    var tRaw = q.get('t');                          // 예약 파라미터 t(제한 시간)
+    if (tRaw != null && tRaw !== '' && !isNaN(+tRaw)) params.t = parseInt(tRaw, 10);
+    if (hostCfg && hostCfg.params && SCORING.indexOf(hostCfg.params.sc) >= 0) state.sc = hostCfg.params.sc;
+    params.sc = state.sc;                           // 예약 파라미터 sc(재시도 채점 정책, §8-4)
+
+    var meta = { sid: state.sid, aid: state.aid, mute: state.mute, teamNames: null };
+    if (hostCfg) {
+      if (hostCfg.mode && MODES.indexOf(hostCfg.mode) >= 0 && !kboxDeep) state.mode = hostCfg.mode; // 딥링크 assign은 불가침
+      if (hostCfg.params && typeof hostCfg.params === 'object') {
+        Object.keys(hostCfg.params).forEach(function (k) { params[k] = hostCfg.params[k]; });
+      }
+      var hm = hostCfg.meta;
+      if (hm && typeof hm === 'object') {
+        if (hm.sid != null) { state.sid = hm.sid; meta.sid = hm.sid; }
+        if (hm.aid != null) { state.aid = hm.aid; meta.aid = hm.aid; }
+        if (hm.mute != null) { state.mute = !!hm.mute; meta.mute = state.mute; }
+        if (hm.teamNames) meta.teamNames = hm.teamNames;
+      }
+    }
+    return { mode: state.mode, params: params, meta: meta, seed: seed, hosted: !!hostCfg };
+  }
+
+  var KBridge = {
+    version: VERSION,
+    get mode() { return state.mode; },
+    get seed() { return seed; },
+    get scoring() { return state.sc; },
+    rng: rng,
+
+    // 부팅 시 1회 (§4-5)
+    init: function (opts) {
+      opts = opts || {};
+      state.activityId = opts.activityId || 'unknown';
+      post({ t: 'ACTIVITY_READY', v: 1, activityId: state.activityId, coreVersion: VERSION });
+      flushPending();
+
+      var settled = false;
+      var timer = null;
+      function settle(hostCfg) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        var cfg = resolveConfig(hostCfg, opts.defaults);
+        // §6-6 우상단은 호스트 구역: hosted면 도구 HUD가 피할 여백을 알려준다.
+        // 도구는 right: var(--kb-safe-right, 12px) 만 쓰면 된다 (표준).
+        try {
+          var de = document.documentElement;
+          if (cfg.hosted) {
+            de.classList.add('kb-hosted');
+            de.style.setProperty('--kb-safe-right', '128px');
+          } else {
+            de.style.setProperty('--kb-safe-right', '12px');
+          }
+        } catch (e) { /* DOM 없는 환경 무해 */ }
+        if (typeof opts.onConfig === 'function') opts.onConfig(cfg);
+      }
+
+      window.addEventListener('message', function (ev) {
+        if (!validOrigin(ev)) return;
+        var m = ev.data;
+        if (!m || m.v !== 1) return;
+        if (m.t === 'ACTIVITY_CONFIG') {
+          settle(m);
+        } else if (m.t === 'ACTIVITY_CLOSE') {       // §4-2 ⑥: 현재 상태로 EXIT/RESULT 후 정지
+          if (state.finished || state.closed) return;
+          if (typeof opts.onClose === 'function') opts.onClose();       // 도구가 RESULT로 마감할 기회
+          if (!state.finished && !state.closed) {
+            KBridge.exit('host_close', typeof opts.getProgress === 'function' ? opts.getProgress() : null);
+          }
+        }
+      });
+
+      timer = setTimeout(function () { settle(null); }, opts.configWaitMs || 800); // §4-1 standalone 진행
+    },
+
+    // 판정마다 (선택, §4-2 ②)
+    progress: function (p) {
+      p = p || {};
+      post({
+        t: 'ACTIVITY_PROGRESS', v: 1, activityId: state.activityId,
+        q: p.q, total: p.total, ok: !!p.ok, type: p.type
+      });
+    },
+
+    // 종료 시 1회 (§4-2 ③). 중복 호출 = false 반환 (이중 가드)
+    finish: function (r) {
+      if (state.finished) return false;
+      state.finished = true;
+      r = r || {};
+      var durationSec = (r.durationSec != null) ? r.durationSec
+        : Math.round((Date.now() - state.startedAt) / 1000);
+      var byType = r.byType || {};
+      var msg = {
+        t: 'ACTIVITY_RESULT', v: 1,
+        activityId: state.activityId, mode: state.mode,
+        score: r.score, total: r.total, durationSec: durationSec, byType: byType
+      };
+      var detail = null;
+      if (state.mode === 'assign') {                 // §13-3: detail은 assign에서만
+        if (state.aid) msg.aid = state.aid;
+        if (state.sid != null) msg.sid = state.sid;
+        if (Array.isArray(r.detail)) { detail = r.detail.slice(0, 100); msg.detail = detail; }
+      }
+      post(msg);
+
+      if (state.mode === 'assign') {                 // §8: KBox.submit 직결 + §8-4 정책 병합
+        submitAssign({
+          score: r.score, max: r.total, byType: byType,
+          items: detail || [], durationSec: durationSec, at: Date.now()
+        }, state.activityId, null, r.onSubmit || null);
+      }
+      return true;
+    },
+
+    // 중도 이탈 (§4-2 ④)
+    exit: function (reason, progress) {
+      if (state.finished || state.closed) return;
+      state.closed = true;
+      post({
+        t: 'ACTIVITY_EXIT', v: 1, activityId: state.activityId,
+        mode: state.mode, reason: reason || 'user', progress: progress || null
+      });
+    }
+  };
+
+  window.KBridge = KBridge;
+})();
+</script>
+<script>
+/* activity-core.js — 케이티처 활동 공통 프레임 v1.0.0 (Phase 3)
+ * 헌법: 설계 §9-2. 여기 있는 것은 모든 활동이 공짜로 얻는다. 도구는 다시 만들지 않는다.
+ *
+ * core가 하는 일: 셸 DOM(3막 화면·HUD·팀 점수판·설정 칩·답 버튼·explain) · 효과음 ·
+ *   점수/byType/judged 집계 · [넘기기]/[그만하기] · 부분 마감(§6-8) · 브리지 연동 · solo 최고 기록.
+ * core가 하지 않는 일: 문제 렌더 · 게임 루프 · 승패 판정 — 그건 장르(genre/*.js)의 일.
+ *
+ * 사용:
+ *   var app = ACore.create({
+ *     activityId, title, subtitle, defaults, settings: [{key,label,options:[{v,label}]}],
+ *     stageHtml, onConfig(app,cfg), onStart(app)
+ *   });
+ *   app.mode / app.cfg / app.settings / app.sfx / app.rng
+ *   app.el(sel) / app.setStage(html)
+ *   app.begin()                      // 게임 화면 진입 (장르가 호출)
+ *   app.setProg(i, n) / app.addScore(delta) / app.teamScore(idx, delta)
+ *   app.tally(type, ok) / app.markJudged()
+ *   app.answers(list, onPick)        // §6-2 가로 일렬. class면 2팀 그룹 자동
+ *   app.lockAnswers() / app.lockTeam(idx) / app.shake(idx, pick)
+ *   app.explain(text, ok) / app.clearExplain()
+ *   app.onSkip(fn) / app.finish(opts) / app.judged
+ */
+(function () {
+  'use strict';
+
+  var SHELL =
+    '<div class="brand">K✦edu 놀이터</div>' +
+    '<div class="screen active" id="scr-start">' +
+      '<h1 id="a-title"></h1>' +
+      '<div class="sub" id="a-sub"></div>' +
+      '<div id="sid-badge"></div>' +
+      '<div id="settings"></div>' +
+      '<div id="best-line"></div>' +
+      '<button class="btn" id="start-btn">시작!</button>' +
+    '</div>' +
+    '<div class="screen" id="scr-game">' +
+      '<div id="hud">' +
+        '<div class="pill" id="prog"></div>' +
+        '<div class="pill num" id="score-pill">0점</div>' +
+        '<button id="mute-btn" title="소리 켜기/끄기">🔊</button>' +
+        '<button id="skip-btn" title="이 문제는 넘기기">넘기기 ⏭</button>' +
+        '<button id="quit-btn">그만하기</button>' +
+      '</div>' +
+      '<div id="teams">' +
+        '<div class="team A"><span id="tA-name">케이팀</span> <span class="num" id="tA-score">0</span></div>' +
+        '<div class="team B"><span id="tB-name">듀팀</span> <span class="num" id="tB-score">0</span></div>' +
+      '</div>' +
+      '<div id="stage"></div>' +
+      '<div id="explain"></div>' +
+      '<div id="answers-solo"></div>' +
+      '<div id="answers-class">' +
+        '<div class="ansgrp A" data-team="0" data-label="케이팀"></div>' +
+        '<div class="ansgrp B" data-team="1" data-label="듀팀"></div>' +
+      '</div>' +
+      '<div id="why-box"><div class="wq" id="why-q">🦉 어떻게 알았어?</div><div class="whyrow" id="why-opts"></div></div>' +
+    '</div>' +
+    '<div class="screen" id="scr-end">' +
+      '<div class="big" id="end-big">🎉</div>' +
+      '<div class="line" id="end-line"></div>' +
+      '<div class="line" id="end-best" style="display:none"></div>' +
+      '<div class="line" id="submit-line" style="display:none"></div>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="btn" id="again-btn">다시 하기</button>' +
+      '</div>' +
+    '</div>';
+
+  function create(opts) {
+    opts = opts || {};
+    var doc = document;
+    var host = doc.getElementById('a-root') || doc.body;
+    host.innerHTML = SHELL + host.innerHTML;
+
+    var $ = function (s) { return doc.querySelector(s); };
+    var $$ = function (s) { return Array.prototype.slice.call(doc.querySelectorAll(s)); };
+
+    // ── 효과음 (mute 반영, 시작 제스처 뒤 생성)
+    var AC = null, muted = false;
+    function sfxInit() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    function tone(f, dur, type, vol) {
+      if (muted || !AC) return;
+      try {
+        var o = AC.createOscillator(), g = AC.createGain();
+        o.type = type || 'sine'; o.frequency.value = f;
+        g.gain.value = vol || .12;
+        o.connect(g); g.connect(AC.destination);
+        o.start(); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + (dur || .15));
+        o.stop(AC.currentTime + (dur || .15) + .02);
+      } catch (e) {}
+    }
+    var sfx = {
+      good: function () { tone(660, .12); setTimeout(function () { tone(880, .18); }, 90); },
+      bad: function () { tone(200, .2, 'triangle', .08); },
+      tick: function () { tone(440, .06, 'square', .05); },
+      win: function () { [523, 659, 784, 1046].forEach(function (f, i) { setTimeout(function () { tone(f, .22); }, i * 130); }); }
+    };
+
+    var app = {
+      activityId: opts.activityId || 'unknown',
+      mode: 'solo', cfg: null, settings: {},
+      sfx: sfx,
+      rng: function () { return Math.random(); },
+      judged: 0, skipped: 0, score: 0, i: 0, n: 0,
+      byType: {}, detail: [], teams: [{ name: '케이팀', score: 0 }, { name: '듀팀', score: 0 }],
+      started: false, over: false,
+      el: $, els: $$
+    };
+
+    // ── 설정 칩 (solo 전용 노출 — §3-2)
+    function renderSettings() {
+      var box = $('#settings');
+      if (!opts.settings || !opts.settings.length) { box.style.display = 'none'; return; }
+      box.innerHTML = opts.settings.map(function (s) {
+        return '<div class="setrow"><span class="lb">' + s.label + '</span>' +
+          s.options.map(function (o) {
+            var on = (app.settings[s.key] === o.v) ? ' on' : '';
+            return '<button class="chip' + on + '" data-set="' + s.key + '" data-v="' + o.v + '">' + o.label + '</button>';
+          }).join('') + '</div>';
+      }).join('');
+      $$('.chip').forEach(function (c) {
+        c.addEventListener('click', function () {
+          $$('.chip[data-set="' + c.dataset.set + '"]').forEach(function (x) { x.classList.remove('on'); });
+          c.classList.add('on');
+          app.settings[c.dataset.set] = +c.dataset.v;
+        });
+      });
+    }
+
+    // ── solo 최고 기록
+    var BEST_KEY = 'kedu_act_best_' + app.activityId;
+    var LEGACY_KEYS = opts.legacyRecordKeys || [];      // 구 단일파일 시절 키 (D13: 마이그레이션은 코드가 한다)
+    app.record = {
+      get: function () {
+        try {
+          var v = JSON.parse(localStorage.getItem(BEST_KEY) || 'null');
+          if (v) return v;
+          for (var i = 0; i < LEGACY_KEYS.length; i++) {
+            var old = JSON.parse(localStorage.getItem(LEGACY_KEYS[i]) || 'null');
+            if (old) { localStorage.setItem(BEST_KEY, JSON.stringify(old)); return old; }
+          }
+        } catch (e) {}
+        return null;
+      },
+      set: function (v) { try { localStorage.setItem(BEST_KEY, JSON.stringify(v)); } catch (e) {} }
+    };
+    function refreshBest() {
+      var b = app.record.get();
+      if (b) {
+        $('#best-line').style.display = 'block';
+        $('#best-line').textContent = '🏅 나의 최고 기록: ' + b.score + '점 / ' + b.total;
+      }
+    }
+
+    // ── 화면
+    function show(id) {
+      $$('.screen').forEach(function (s) { s.classList.remove('active'); });
+      $(id).classList.add('active');
+    }
+    app.show = show;
+    app.setStage = function (html) { $('#stage').innerHTML = html; };
+
+    // ── HUD
+    app.setProg = function (i, n) { app.i = i; app.n = n; $('#prog').textContent = i + ' / ' + n; };
+    app.addScore = function (d) { app.score += (d || 0); $('#score-pill').textContent = app.score + '점'; };
+    app.teamScore = function (idx, d) {
+      app.teams[idx].score += (d || 0);
+      $(idx === 0 ? '#tA-score' : '#tB-score').textContent = app.teams[idx].score;
+    };
+    app.tally = function (type, ok) {
+      if (!type) return;
+      var t = app.byType[type] || (app.byType[type] = { ok: 0, miss: 0 });
+      if (ok) t.ok++; else t.miss++;
+    };
+    app.markJudged = function () { app.judged++; };   // §6-8 채점 분모
+
+    // ── 답 버튼 (§6-2 가로 일렬. class = 2팀 그룹)
+    app.answers = function (list, onPick) {
+      var mk = function (o, teamIdx) {
+        return '<button class="abtn" data-pick="' + o.pick + '"' +
+          (teamIdx != null ? ' data-team="' + teamIdx + '"' : '') + '>' + o.label + '</button>';
+      };
+      if (app.mode === 'class') {
+        $('#answers-class').style.display = 'flex';
+        $('#answers-solo').style.display = 'none';
+        [0, 1].forEach(function (t) {
+          var g = $('.ansgrp' + (t === 0 ? '.A' : '.B'));
+          g.innerHTML = list.map(function (o) { return mk(o, t); }).join('');
+        });
+      } else {
+        $('#answers-solo').style.display = 'flex';
+        $('#answers-class').style.display = 'none';
+        $('#answers-solo').innerHTML = list.map(function (o) { return mk(o, null); }).join('');
+      }
+      $$('.abtn[data-pick]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          if (b.classList.contains('locked')) return;
+          var t = b.dataset.team;
+          onPick(b.dataset.pick, (t == null || t === '') ? null : +t, b);
+        });
+      });
+    };
+    app.hideAnswers = function () {
+      $('#answers-solo').style.display = 'none';
+      $('#answers-class').style.display = 'none';
+      $('#why-box').style.display = 'none';
+    };
+    app.unlockAnswers = function () {
+      $$('.abtn').forEach(function (b) { b.classList.remove('locked', 'shake'); });
+    };
+    app.lockAnswers = function () { $$('.abtn').forEach(function (b) { b.classList.add('locked'); }); };
+    app.lockTeam = function (idx) {
+      $$('.ansgrp[data-team="' + idx + '"] .abtn').forEach(function (b) { b.classList.add('locked'); });
+    };
+    app.shake = function (btn) {
+      if (!btn) return;
+      btn.classList.add('shake');
+      setTimeout(function () { btn.classList.remove('shake'); }, 460);
+    };
+
+    // ── explain (정답 근거 — §10-2에서 규약으로 승격)
+    app.explain = function (text, ok) {
+      var e = $('#explain');
+      e.innerHTML = '<span class="mark">' + (ok ? '⭕' : '❌') + '</span> ' + text;
+      e.classList.add('show');
+    };
+    app.clearExplain = function () { $('#explain').classList.remove('show'); };
+
+    // ── why 보너스 (선택)
+    app.why = function (question, list, onPick) {
+      $('#why-q').textContent = question;
+      $('#why-opts').innerHTML = list.map(function (o) {
+        return '<button class="abtn" data-why="' + o.v + '">' + o.label + '</button>';
+      }).join('');
+      $('#answers-solo').style.display = 'none';
+      $('#answers-class').style.display = 'none';
+      $('#why-box').style.display = 'flex';
+      $$('#why-opts .abtn').forEach(function (b) {
+        b.addEventListener('click', function () { onPick(b.dataset.why, b); });
+      });
+    };
+    app.hideWhy = function () { $('#why-box').style.display = 'none'; };
+
+    // ── 넘기기 (§6-8)
+    var skipFn = null;
+    app.onSkip = function (fn) { skipFn = fn; };
+    $('#skip-btn').addEventListener('click', function () {
+      if (!app.started || app.over || !skipFn) return;
+      app.skipped++;
+      skipFn();
+    });
+
+    // ── 마감 (§6-8: judged 0이면 결과 없음)
+    app.finish = function (o) {
+      o = o || {};
+      if (app.over) return false;
+      if (app.judged === 0) {                       // 판정 0 → 빈 수첩 금지
+        KBridge.exit('user', { q: app.i, total: app.n });
+        app.over = true;
+        show('#scr-start');
+        return false;
+      }
+      app.over = true;
+      var total = (o.total != null) ? o.total : app.judged;
+      var score = (o.score != null) ? o.score
+        : (app.mode === 'class' ? app.teams[0].score + app.teams[1].score : app.score);
+
+      show('#scr-end'); sfx.win();
+      if (app.mode === 'class') {
+        var A = app.teams[0], B = app.teams[1];
+        $('#end-big').textContent = A.score === B.score ? '🤝' : '🏆';
+        $('#end-line').innerHTML =
+          (A.score === B.score ? '무승부! ' : (A.score > B.score ? A.name : B.name) + ' 승리! ') +
+          '<br><span class="num">' + A.name + ' ' + A.score + ' : ' + B.score + ' ' + B.name + '</span>';
+      } else {
+        $('#end-big').textContent = score >= total * 0.8 ? '🎉' : '💪';
+        $('#end-line').innerHTML = '<span class="num" style="font-size:1.4em">' + score + '</span> / ' + total + '점';
+        if (app.mode === 'solo') {
+          var b = app.record.get();
+          var isNew = !b || score > b.score;
+          if (isNew) app.record.set({ score: score, total: total });
+          $('#end-best').style.display = 'block';
+          $('#end-best').textContent = isNew ? '🏅 최고 기록 갱신!' : ('🏅 최고 기록: ' + b.score + '점');
+        }
+      }
+      if (app.mode === 'assign') {
+        var sl = $('#submit-line');
+        sl.style.display = 'block'; sl.textContent = '제출하는 중…';
+        $('#again-btn').style.display = 'none';    // 재시도는 과제 정책 소관 (케이박스가 결정)
+      }
+      KBridge.finish({
+        score: score, total: total, byType: app.byType, detail: app.detail,
+        onSubmit: function (res) {
+          var sl2 = $('#submit-line');
+          if (!sl2) return;
+          if (!res || res.status === 'pending') sl2.textContent = '📮 제출 대기 중 — 인터넷이 연결되면 자동으로 전달돼요';
+          else if (res.status === 'inactive') sl2.textContent = '';
+          else sl2.textContent = '✅ 선생님께 전달됐어요!';
+        }
+      });
+      return true;
+    };
+
+    // ── 브리지 부팅
+    KBridge.init({
+      activityId: app.activityId,
+      defaults: opts.defaults || {},
+      onConfig: function (cfg) {
+        app.cfg = cfg; app.mode = cfg.mode; app.rng = KBridge.rng;
+        Object.keys(opts.defaults || {}).forEach(function (k) { app.settings[k] = cfg.params[k]; });
+        muted = !!(cfg.meta && cfg.meta.mute);
+        $('#mute-btn').textContent = muted ? '🔇' : '🔊';
+        $('#a-title').textContent = opts.title || '';
+        $('#a-sub').textContent = opts.subtitle || '';
+        if (opts.stageHtml) app.setStage(opts.stageHtml);
+
+        if (app.mode !== 'solo') $('#settings').style.display = 'none';   // §3-2
+        else renderSettings();
+        if (app.mode === 'assign') {
+          $('#skip-btn').style.display = 'none';                          // §6-8 과제는 완주가 제출 조건
+          if (cfg.meta.sid != null) {
+            $('#sid-badge').style.display = 'block';
+            $('#sid-badge').textContent = cfg.meta.sid + '번';
+          }
+        }
+        if (app.mode === 'class' && cfg.meta.teamNames) {
+          app.teams[0].name = cfg.meta.teamNames[0] || '케이팀';
+          app.teams[1].name = cfg.meta.teamNames[1] || '듀팀';
+          $('#tA-name').textContent = app.teams[0].name;
+          $('#tB-name').textContent = app.teams[1].name;
+          $('.ansgrp.A').setAttribute('data-label', app.teams[0].name);
+          $('.ansgrp.B').setAttribute('data-label', app.teams[1].name);
+        }
+        if (cfg.hosted) $('#quit-btn').style.display = 'none';            // §6-6 출구는 하나
+        if (app.mode === 'solo') refreshBest();
+        if (typeof opts.onConfig === 'function') opts.onConfig(app, cfg);
+      },
+      onClose: function () {
+        if (app.started && !app.over && app.judged > 0) app.finish({});   // §6-8 부분 결과도 결과다
+      },
+      getProgress: function () { return app.started ? { q: app.i, total: app.n } : null; }
+    });
+
+    // ── 시작 / 다시 / 음소거 / 그만하기
+    $('#start-btn').addEventListener('click', function () {
+      sfxInit();
+      app.started = true; app.over = false;
+      app.judged = 0; app.skipped = 0; app.score = 0;
+      app.byType = {}; app.detail = [];
+      app.teams[0].score = 0; app.teams[1].score = 0;
+      $('#tA-score').textContent = '0'; $('#tB-score').textContent = '0';
+      $('#score-pill').textContent = '0점';
+      show('#scr-game');
+      if (app.mode === 'class') { $('#teams').style.display = 'flex'; $('#score-pill').style.display = 'none'; }
+      if (typeof opts.onStart === 'function') opts.onStart(app);
+    });
+    $('#again-btn').addEventListener('click', function () { location.reload(); });
+    $('#mute-btn').addEventListener('click', function () {
+      muted = !muted;
+      $('#mute-btn').textContent = muted ? '🔇' : '🔊';
+    });
+    $('#quit-btn').addEventListener('click', function () {
+      if (!app.started || app.over) return;
+      if (!confirm('활동을 그만할까요?')) return;
+      if (app.judged > 0) { app.finish({}); return; }   // §6-8 여기까지의 결과로 마감
+      KBridge.exit('user', { q: app.i, total: app.n });
+      app.started = false;
+      show('#scr-start');
+    });
+
+    return app;
+  }
+
+  window.ACore = { create: create, version: '1.0.0' };
+})();
+</script>
+<script>
+/* genre/stream.js — 문제 스트림형 장르 엔진 v1.0.0 (§9-3)
+ * 대상 장르: balance · duel_quiz · relay (한 문제씩 흘러가는 형태 전부)
+ * 이 파일이 게임 루프의 전부다. 활동은 "무대를 어떻게 그리는가"만 쓰면 된다.
+ *
+ * 규칙(헌법):
+ *  §9-4 score = 첫 시도 정답 수 (재도전으로 맞춘 건 득점 아님 — "처음에 아는가"가 신호)
+ *  §6-8 [넘기기]는 판정 없이 다음 문항. 채점 분모(judged)에 안 들어간다.
+ *  §6-8 중도 종료 시 판정분으로 마감 (core가 처리)
+ *  class 선점제: 먼저 맞힌 팀 득점. 오답 팀은 잠금. 양팀 오답 → 정답 공개·무득점 진행.
+ *  solo/assign: 오답이면 재도전 가능 (첫 시도 실패는 byType.miss로 남는다)
+ *
+ * spec = {
+ *   render(app, p)            무대에 문제 반영 (필수)
+ *   options(p)                답 버튼 [{pick, label}] (필수)
+ *   reveal(app, p, ok)        정답 공개 연출 (선택)
+ *   reset(app)                문항 시작 시 초기화 (선택)
+ *   waits: { correct, wrongAll }   기본 class 2000/2200, solo 1500
+ *   why: { question, options, answerOf(p) }   왜 그럴까 보너스 (선택, class 제외)
+ * }
+ */
+(function () {
+  'use strict';
+
+  function run(app, gen, spec) {
+    spec = spec || {};
+    var waits = spec.waits || {};
+    var W_OK = waits.correct != null ? waits.correct : (app.mode === 'class' ? 2000 : 1500);
+    var W_ALL = waits.wrongAll != null ? waits.wrongAll : 2200;
+    var whyOn = !!(spec.why && app.settings.why === 1 && app.mode !== 'class');
+
+    var S = { i: 0, n: app.settings.n || 10, cur: null, phase: 'main',
+              firstTry: true, lockAll: false, teamLocked: [false, false], t0: 0 };
+
+    app.onSkip(function () {      // §6-8 넘기기 = 판정 없이 다음
+      if (S.lockAll || S.phase !== 'main') return;
+      next();
+    });
+
+    function next() {
+      if (S.i >= S.n) return app.finish({});
+      S.cur = gen.next();
+      S.i++; S.t0 = Date.now(); S.firstTry = true;
+      S.lockAll = false; S.teamLocked = [false, false]; S.phase = 'main';
+      app.setProg(S.i, S.n);
+      app.clearExplain();
+      app.hideWhy();
+      if (typeof spec.reset === 'function') spec.reset(app);
+      spec.render(app, S.cur);
+      app.answers(spec.options(S.cur), onPick);
+      app.unlockAnswers();
+    }
+
+    function onPick(pick, teamIdx, btn) {
+      if (S.lockAll || S.phase !== 'main') return;
+      var p = S.cur;
+      var ok = gen.check ? gen.check(pick, p) : (pick === p.answer);
+      if (app.mode === 'assign') {
+        app.detail.push({ q: p.prompt, a: p.answer, pick: pick, ok: ok, type: p.type, ms: Date.now() - S.t0 });
+      }
+
+      if (ok) {
+        S.lockAll = true;
+        app.markJudged();                              // §6-8 문항 종결 = 분모 +1
+        if (S.firstTry) { app.tally(p.type, true); if (app.mode !== 'class') app.addScore(1); }
+        if (app.mode === 'class' && teamIdx != null) app.teamScore(teamIdx, 1);
+        app.sfx.good();
+        if (typeof spec.reveal === 'function') spec.reveal(app, p, true);
+        if (p.explain) app.explain(p.explain, true);
+        app.hideAnswers();
+        setTimeout(function () {
+          if (whyOn) startWhy();
+          else next();
+        }, W_OK);
+        return;
+      }
+
+      // 오답
+      S.firstTry = false;
+      app.tally(p.type, false);
+      app.sfx.bad();
+      if (app.mode === 'class' && teamIdx != null) {
+        S.teamLocked[teamIdx] = true;
+        app.lockTeam(teamIdx);
+        if (S.teamLocked[0] && S.teamLocked[1]) {      // 양팀 오답 → 정답 공개, 무득점 진행
+          S.lockAll = true;
+          app.markJudged();
+          if (typeof spec.reveal === 'function') spec.reveal(app, p, false);
+          if (p.explain) app.explain(p.explain, false);
+          app.hideAnswers();
+          setTimeout(next, W_ALL);
+        }
+      } else {
+        app.shake(btn);                                 // solo/assign — 재도전 허용
+      }
+    }
+
+    // ── 왜 그럴까 보너스 (§10-2, solo·assign 전용 — D12)
+    function startWhy() {
+      S.phase = 'why';
+      var wt0 = Date.now(), whyFirst = true;
+      var ansKey = spec.why.answerOf(S.cur);
+      app.why(spec.why.question, spec.why.options, function (pick, btn) {
+        if (S.phase !== 'why') return;
+        var ok = (pick === ansKey);
+        if (app.mode === 'assign') {
+          app.detail.push({ q: 'why:' + S.cur.prompt, a: ansKey, pick: pick, ok: ok,
+                            type: ok ? 'reason_ok' : 'reason_miss', ms: Date.now() - wt0 });
+        }
+        if (ok) {
+          if (whyFirst) { app.tally('reason_ok', true); app.addScore(1); }
+          app.sfx.good();
+          S.phase = 'done';
+          app.hideWhy();
+          setTimeout(next, 300);
+        } else {
+          whyFirst = false;
+          app.tally('reason_miss', false);
+          app.sfx.bad();
+          btn.classList.add('locked');
+          app.shake(btn);
+        }
+      });
+    }
+
+    // 왜 그럴까가 켜지면 만점이 문항당 2점 — 분모도 2배 (core finish의 기본 분모를 덮어쓴다)
+    var coreFinish = app.finish;
+    app.finish = function (o) {
+      o = o || {};
+      if (o.total == null && whyOn) o.total = app.judged * 2;
+      return coreFinish(o);
+    };
+
+    next();
+  }
+
+  window.Stream = { run: run, version: '1.0.0' };
+})();
+</script>
+<script>
+/* gens/math/compare_weight.js — 무게 비교 (1학년 수학 4단원, 비교하기)
+ * 순수 함수·DOM 무관 (§9-3). balance 장르 재사용 검증용 생성기 (§10-2 확장 기준).
+ * next() → { L, R, answer:'L'|'E'|'R', type, explain }  ← compare50과 동일한 계약
+ * type: obvious(차이 큼) · close(비슷함) · size_trap(큰데 가벼움 — 부피≠무게 오개념)
+ *   size_trap이 유독 약하면 "크면 무겁다"는 오개념이 남아 있다는 신호.
+ */
+(function (root, factory) {
+  var g = factory();
+  if (typeof module === 'object' && module.exports) module.exports = g;
+  root.GENS = root.GENS || {};
+  root.GENS['compare_weight'] = g;
+}(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  // { 이름, 아이콘, 무게(g), 보이는 크기(1~5) }
+  var THINGS = [
+    { n: '지우개', i: '🧽', w: 20, s: 2 }, { n: '연필', i: '✏️', w: 10, s: 2 },
+    { n: '사과', i: '🍎', w: 250, s: 3 }, { n: '가위', i: '✂️', w: 90, s: 2 },
+    { n: '책', i: '📕', w: 500, s: 4 }, { n: '가방', i: '🎒', w: 900, s: 5 },
+    { n: '돌', i: '🪨', w: 800, s: 2 }, { n: '풍선', i: '🎈', w: 5, s: 5 },
+    { n: '수박', i: '🍉', w: 4000, s: 5 }, { n: '깃털', i: '🪶', w: 1, s: 3 },
+    { n: '우유갑', i: '🥛', w: 300, s: 3 }, { n: '베개', i: '🛏️', w: 400, s: 5 },
+    { n: '동전', i: '🪙', w: 8, s: 1 }, { n: '망치', i: '🔨', w: 600, s: 3 },
+    { n: '스티커', i: '🏷️', w: 2, s: 1 }, { n: '물통', i: '🍶', w: 1200, s: 4 }
+  ];
+  function pickIdx(rng, n) { return Math.floor(rng() * n); }
+
+  return {
+    id: 'compare_weight',
+    title: '무게 비교',
+    create: function (params, rng) {
+      return {
+        next: function () {
+          var L, R, type, r = rng();
+          if (r < 0.3) {
+            // size_trap — 큰데 가벼운 것 vs 작은데 무거운 것 (부피 ≠ 무게)
+            var light = THINGS.filter(function (t) { return t.s >= 4 && t.w <= 400; });
+            var heavy = THINGS.filter(function (t) { return t.s <= 3 && t.w >= 250; });
+            L = light[pickIdx(rng, light.length)];
+            R = heavy[pickIdx(rng, heavy.length)];
+            if (rng() < 0.5) { var t0 = L; L = R; R = t0; }
+            type = 'size_trap';
+          } else {
+            do {
+              L = THINGS[pickIdx(rng, THINGS.length)];
+              R = THINGS[pickIdx(rng, THINGS.length)];
+            } while (L.n === R.n);
+            var ratio = Math.max(L.w, R.w) / Math.min(L.w, R.w);
+            type = (ratio >= 4) ? 'obvious' : 'close';
+          }
+          var ans = (L.w === R.w) ? 'E' : (L.w > R.w ? 'L' : 'R');
+          var heavyOne = (L.w > R.w) ? L : R, lightOne = (L.w > R.w) ? R : L;
+          var explain = (type === 'size_trap')
+            ? heavyOne.n + '이(가) 더 무거워요. ' + lightOne.n + '은(는) 커 보여도 가벼워요 — 크다고 무거운 게 아니에요!'
+            : heavyOne.n + '이(가) ' + lightOne.n + '보다 무거워요. 저울이 무거운 쪽으로 내려가요';
+          return {
+            L: L, R: R, prompt: L.n + ' vs ' + R.n, answer: ans, type: type, explain: explain
+          };
+        },
+        check: function (pick, q) { return pick === q.answer; }
+      };
+    },
+    printRender: function (q) {
+      return '<span style="font-size:26px">' + q.L.i + '</span><span class="w-box">◯</span>' +
+             '<span style="font-size:26px">' + q.R.i + '</span>';
+    },
+    printAnswer: function (q) { return q.answer === 'E' ? '=' : (q.answer === 'L' ? '>' : '<'); },
+    printHead: '어느 것이 더 무거울까요? ◯ 안에 >, =, < 를 쓰세요.'
+  };
+}));
+</script>
+<script>
+/* src/g1m_u4_heavier.js — 무엇이 더 무거울까? (1학년 수학 4단원, 비교하기)
+ * 장르: balance(stream) · 생성기: compare_weight
+ * §10-2 확장 검증: 저울 무대는 그대로, **생성기만 교체**해서 수 비교 → 무게 비교가 되는가. → 된다.
+ * 달라진 것은 접시에 올라가는 것뿐(숫자 카드 → 물건). 루프·판정·수첩·제출은 손대지 않았다.
+ */
+(function () {
+  'use strict';
+
+  var STAGE =
+    '<svg id="scale" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg" aria-label="저울">' +
+      '<rect x="304" y="84" width="32" height="252" rx="10" fill="#b45309"/>' +
+      '<rect x="225" y="330" width="190" height="26" rx="13" fill="#92400e"/>' +
+      '<g id="beam-g">' +
+        '<rect x="90" y="76" width="460" height="16" rx="8" fill="#d97706"/>' +
+        '<circle cx="320" cy="84" r="15" fill="#78350f"/>' +
+        '<g id="pan-left">' +
+          '<line x1="110" y1="90" x2="70" y2="196" stroke="#92400e" stroke-width="5"/>' +
+          '<line x1="110" y1="90" x2="150" y2="196" stroke="#92400e" stroke-width="5"/>' +
+          '<rect x="40" y="196" width="140" height="14" rx="7" fill="#f59e0b"/>' +
+          '<text x="110" y="170" text-anchor="middle" class="thing-ico" id="icoL">?</text>' +
+          '<text x="110" y="236" text-anchor="middle" class="thing-name" id="nameL"></text>' +
+        '</g>' +
+        '<g id="pan-right">' +
+          '<line x1="530" y1="90" x2="490" y2="196" stroke="#92400e" stroke-width="5"/>' +
+          '<line x1="530" y1="90" x2="570" y2="196" stroke="#92400e" stroke-width="5"/>' +
+          '<rect x="460" y="196" width="140" height="14" rx="7" fill="#f59e0b"/>' +
+          '<text x="530" y="170" text-anchor="middle" class="thing-ico" id="icoR">?</text>' +
+          '<text x="530" y="236" text-anchor="middle" class="thing-name" id="nameR"></text>' +
+        '</g>' +
+      '</g>' +
+    '</svg>';
+
+  ACore.create({
+    activityId: 'g1m_u4_heavier',
+    title: '⚖️ 무엇이 더 무거울까?',
+    subtitle: '커 보인다고 무거운 건 아니에요 — 저울에게 물어봐요',
+    defaults: { n: 10, why: 0 },
+    settings: [
+      { key: 'n', label: '문제 수', options: [{ v: 5, label: '5' }, { v: 10, label: '10' }, { v: 15, label: '15' }] }
+    ],
+    stageHtml: STAGE,
+    onStart: function (app) {
+      var gen = GENS['compare_weight'].create({}, app.rng);
+      Stream.run(app, gen, {
+        render: function (app, q) {
+          app.el('#icoL').textContent = q.L.i;
+          app.el('#icoR').textContent = q.R.i;
+          app.el('#nameL').textContent = q.L.n;
+          app.el('#nameR').textContent = q.R.n;
+          // 보이는 크기 — size_trap이 성립하려면 "커 보이는 것"이 실제로 커 보여야 한다
+          app.el('#icoL').setAttribute('font-size', 26 + q.L.s * 9);
+          app.el('#icoR').setAttribute('font-size', 26 + q.R.s * 9);
+        },
+        reset: function (app) { app.el('#beam-g').style.transform = 'rotate(0deg)'; },
+        options: function () {
+          return [{ pick: 'L', label: '⬅ 왼쪽' }, { pick: 'E', label: '🟰 같아요' }, { pick: 'R', label: '오른쪽 ➡' }];
+        },
+        reveal: function (app, q) {
+          var deg = q.answer === 'E' ? 0 : (q.answer === 'L' ? -9 : 9);   // 무거운 쪽이 내려간다
+          app.el('#beam-g').style.transform = 'rotate(' + deg + 'deg)';
+        }
+      });
+    }
+  });
+})();
+</script>
+</body>
+</html>
