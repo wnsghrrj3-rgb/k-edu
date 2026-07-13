@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 자릿값 수모형 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 2호 — 자릿값 수모형 (2026-07-13) · 셸 = clock.html/tenframe.html 계보
+  SPEC = handoff/klab/designs3/SPEC_place_value.md (도면=정답)
+  v2(engine/tools/place_value.js 434줄) 콘텐츠 무손실 이식:
+    학년칸(저 cap29·분해X·교환X / 중 cap50·분해O / 고 cap99·분해O·교환O)
+    미션 3×3(묶기·풀기·16 / 13·24·30 / 묶기·31·47) · 퀴즈 2종(value/tens)
+    와우A(빈 낱개 칸 직접 탭 채우기 · 꽉 찬 십틀 자체 탭 = 묶기 ·
+          bundle 2단계 마법 = 낱개 10개가 빨려들어가고(pop) → 430ms → 십막대가 솟는다(whoosh)
+          + 「🔁 낱개 10개가 십 한 묶음으로 올라갔어요! (10 : 1 교환)」 플래시)
+  v3 질감: 다크 스튜디오 + 원목 매트, 초록 칠 원목 십막대(나뭇결·눈금 9줄),
+          주황 원목 낱개 큐브(윗면 하이라이트), 유리 트레이 십틀, 금속 자 점선 구분선.
+  v3 신설 — 와우B(🔮 예측 카드: 「낱개 10개를 한 묶음으로 묶으면 수가 커질까?」
+          → 묶는 순간을 목격 → 결과 카드: 개수는 그대로 10, 바뀐 건 «세는 방법»뿐. 반복 가능)
+          ※ tenframe 와우B(9→10 받아올림)와 각도가 다르다: 이쪽은 «교환해도 양은 보존» 오개념.
+  v2 라이브 결함 2건 수정:
+    ① 학년을 바꿔도 퀴즈 문항이 그대로 남았다 — 고(max 99)에서 뽑힌 79가 중(max 50)으로 내려와도
+       무대에 막대 7개가 그대로. 그 학년에서 다룰 수 없는 수를 묻는 문항이 된다 → 범위가 바뀌면 재출제.
+    ② 퀴즈 보기 부족분 채우기(ans+1+rand*5)에 범위 검사가 없어 max를 넘는 보기가 섞였다
+       (max=50, 정답 50 → 51~55가 답 후보로) → hi 상한 + 인접 수 채움으로 4개 계약 유지.
+  config: ?grade= & mode= & start= & max=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(3vh,22px) min(3.4vw,28px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:#fff;border:none;
+    border-radius:14px;padding:12px 18px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-btn.minus{background:linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+    color:var(--c1);border:1.5px solid var(--c1)}
+  .ck-btn.ghost{background:linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    color:#9fb2c6;border:1.5px solid rgba(255,255,255,.22);font-size:18px;padding:12px 14px}
+  .ck-btn.wow{background:linear-gradient(145deg,#8a67ee,#6d43d8);font-size:15px}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 22px;cursor:pointer;min-width:76px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .timeread{font-family:var(--kedu-title);font-size:min(5.6vh,38px);color:#EAF2FB;
+    text-shadow:0 0 22px rgba(91,155,240,.45), 0 2px 8px rgba(0,0,0,.5)}
+  .timeread .b{color:#7FB2F5} .timeread .o{color:#FFA75E} .timeread .u{font-size:.62em;color:#c9d6e4}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 자릿값 수모형 도구 전용 ── */
+  .timeread .g{color:#3EE6B0}                      /* 십묶음 수 = 초록(십막대 색) */
+  .ck-btn.pv-ready{animation:pvPulse 1s ease-in-out infinite}
+  @keyframes pvPulse{0%{box-shadow:0 0 0 0 rgba(255,212,59,.75)}
+    70%{box-shadow:0 0 0 16px rgba(255,212,59,0)}100%{box-shadow:0 0 0 0 rgba(255,212,59,0)}}
+  .pv-cube{transform-origin:center;transform-box:fill-box}
+  .pv-pop{animation:pvPop .32s cubic-bezier(.2,1.5,.4,1) both;transform-origin:center;transform-box:fill-box}
+  @keyframes pvPop{0%{transform:scale(0)}100%{transform:scale(1)}}
+  .pv-suck{animation:pvSuck .42s ease-in both;transform-origin:center;transform-box:fill-box}
+  @keyframes pvSuck{0%{transform:scale(1);opacity:1}100%{transform:scale(.2) translateY(-30px);opacity:0}}
+  .pv-bar-pop{animation:pvBarPop .4s cubic-bezier(.2,1.4,.4,1) both;transform-origin:bottom center;transform-box:fill-box}
+  @keyframes pvBarPop{0%{transform:scaleY(0);opacity:0}100%{transform:scaleY(1);opacity:1}}
+  .pv-fcell.pv-fillable{cursor:pointer}
+  .pv-fcell.pv-fillable:hover{fill:rgba(255,169,94,0.18)}
+  .pv-frameglow .pv-fcell{stroke:#FFD43B;stroke-width:3.5;stroke-dasharray:none}
+  .pv-bundleable{cursor:pointer}
+  .pv-bundleable:hover{filter:brightness(1.12)}
+  @keyframes pvFlashKf{0%{opacity:0;transform:translateY(8px)}18%{opacity:1;transform:translateY(0)}
+    78%{opacity:1}100%{opacity:0}}
+  .pv-flash{animation:pvFlashKf 1.6s ease both}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🧮 케이랩 · 자릿값 수모형</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* SPEC §1 — GRADES 전문 보존 */
+  var GRADES={
+    low:  { modes:['free','mission'],        cap:29, decompose:false, exchange:false },
+    mid:  { modes:['free','mission','quiz'], cap:50, decompose:true,  exchange:false },
+    high: { modes:['free','mission','quiz'], cap:99, decompose:true,  exchange:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function capFor(grade,cfgMax){
+    return (typeof cfgMax==='number'&&cfgMax>0)?cfgMax:GRADES[grade].cap;
+  }
+  function value(t,o){ return t*10+o; }
+
+  /* 미션 — v2 텍스트·판정 무손실. check(act,tens,ones)로 시그니처 통일(SPEC §1 주의) */
+  var MISSIONS={
+    low:[
+      { need:10, text:'낱개를 <b>10개</b> 모아 <b class="gr">📦 10개 묶기</b>로 한 묶음(십)을 만들어요!',
+        check:function(act,t,o){ return act==='bundle'; } },
+      { need:10, text:'이번엔 <b class="gr">묶음 풀기</b>로 묶음을 도로 낱개 10개로 풀어 봐요!',
+        check:function(act,t,o){ return act==='unbundle'; } },
+      { need:16, text:'<b>16</b>을 만들어요 — 십 <b>1묶음</b>과 낱개 <b>6개</b>!',
+        check:function(act,t,o){ return t===1&&o===6; } }
+    ],
+    mid:[
+      { need:13, text:'<b>13</b>을 만들어 봐요 — 묶음 1개와 낱개 3개! (13 = 10 + 3)',
+        check:function(act,t,o){ return t===1&&o===3; } },
+      { need:24, text:'<b>24</b>를 만들어요 — 자리값으로 펼치면 20 + 4!',
+        check:function(act,t,o){ return t===2&&o===4; } },
+      { need:30, text:'<b>30</b>을 만들어요 — 같은 3이지만 여긴 십의 자리, 값은 30!',
+        check:function(act,t,o){ return t===3&&o===0; } }
+    ],
+    high:[
+      { need:10, text:'낱개 <b>10개</b>를 묶는 순간 = 십 한 묶음으로 <b class="or">10:1 교환</b>! 직접 묶어 봐요!',
+        check:function(act,t,o){ return act==='bundle'; } },
+      { need:31, text:'<b>31</b>을 만들어 봐요!',
+        check:function(act,t,o){ return t===3&&o===1; } },
+      { need:47, text:'<b>47</b>을 만들어요 — 십 몇 묶음, 낱개 몇 개? 자리마다 10배인 까닭을 떠올리며!',
+        check:function(act,t,o){ return t===4&&o===7; } }
+    ]
+  };
+  function missionsFor(grade,max){
+    var pool=MISSIONS[grade];
+    var f=pool.filter(function(m){ return m.need<=max; });
+    return f.length?f:pool.slice(0,1);
+  }
+
+  /* 퀴즈 — v2 로직 그대로, rand 주입으로 순수화 */
+  function newQuiz(max,rand){
+    rand=rand||Math.random;
+    var maxT=Math.min(Math.floor(max/10),5);
+    var qT=(maxT>0)?Math.floor(rand()*(maxT+1)):0;
+    var qO=Math.floor(rand()*10);
+    if(qT*10+qO>max) qT=Math.max(0,qT-1);
+    if(qT===0&&qO<3) qO=3+Math.floor(rand()*7);
+    var kind=(rand()<0.6)?'value':'tens';
+    return { t:qT, o:qO, kind:kind };
+  }
+  function qAnswer(q){ return q.kind==='value'?(q.t*10+q.o):q.t; }
+  function qQuestion(q){ return q.kind==='value'?'이 수모형이 나타내는 수는 얼마일까요?':'10개씩 묶음은 몇 개일까요?'; }
+  function quizChoices(q,max,rand){
+    rand=rand||Math.random;
+    var ans=qAnswer(q), set={}, out=[ans], hi=Math.max(max,9); set[ans]=1;
+    var step=(q.kind==='value')?[10,-10,1,-1,9,11]:[1,-1,2,-2,3];
+    for(var i=0;i<step.length&&out.length<4;i++){
+      var d=ans+step[i];
+      if(d>=0&&d<=hi&&!set[d]){ set[d]=1; out.push(d); }
+    }
+    /* 보기 4개 계약 — rand가 한 값에 갇혀도(테스트 스텁) 무한루프 없이 채운다.
+       ★ v2 버그② 수정: v2의 부족분 채우기(ans+1+rand*5)에는 범위 검사가 없어, 정답이 max 근처면
+         max를 넘는 보기(예: max=50인데 51~55)가 섞였다 — «이 학년에선 나올 수 없는 수»가 답 후보로.
+         hi 상한을 걸고, 그래도 모자라면 0부터 인접 수로 채워 4개 계약을 지킨다. */
+    var guard=0;
+    while(out.length<4&&guard++<200){ var r=ans+1+Math.floor(rand()*5); if(r>=0&&r<=hi&&!set[r]){ set[r]=1; out.push(r); } }
+    for(var d2=0; out.length<4 && d2<=hi; d2++){ if(!set[d2]){ set[d2]=1; out.push(d2); } }
+    out.sort(function(a,b){ return a-b; });
+    return out;
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            capFor:capFor, value:value, MISSIONS:MISSIONS, missionsFor:missionsFor,
+            newQuiz:newQuiz, qAnswer:qAnswer, qQuestion:qQuestion, quizChoices:quizChoices };
+  if(typeof window!=='undefined') window.PvCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var PC=window.PvCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return PC.GRADES[grade]; }
+  var cfgStart=(Q.get('start')!=null)?+Q.get('start'):null;
+  var cfgMax=(Q.get('max')!=null)?+Q.get('max'):null;
+
+  var max=PC.capFor(grade,cfgMax);
+  function startVal(){ var s=(cfgStart!=null&&cfgStart>=0)?cfgStart:0; return Math.min(s,max); }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var tens=Math.floor(startVal()/10), ones=startVal()-Math.floor(startVal()/10)*10;
+  var busy=false;
+  var mStep=0, mDone=false, mLock=false;
+  var quiz=null, qScore=0, qCount=0, qLock=false;
+  var revealing=false, prediction=null;
+  var BUNDLE_MS=window.__K3_FAST?60:430;   /* 빨림 → 솟음 2단계 간격 */
+  var STEP_MS=window.__K3_FAST?60:1500;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return PC.missionsFor(grade,max); }
+  function value(){ return PC.value(tens,ones); }
+  function resetState(){ tens=(mode==='mission')?0:Math.floor(startVal()/10);
+                         ones=(mode==='mission')?0:startVal()-Math.floor(startVal()/10)*10; }
+
+  /* ── 동작 (v2 무손실) ── */
+  function plus(){
+    if(busy||revealing||value()>=max) return;
+    ones+=1; snd('tap');
+    render({ newOne:ones-1, glow:ones>=10 });
+  }
+  function minus(){
+    if(busy||revealing||ones<=0) return;
+    ones-=1;
+    render({ glow:ones>=10 });
+  }
+  /* 핵심 마법 — 낱개 10개가 빨려들어가고(pop) → 430ms → 십막대가 솟는다(whoosh) + 10:1 플래시 */
+  function bundle(silent){
+    if(busy||ones<10) return;
+    busy=true; if(!silent) snd('pop');
+    render({ suckFrame:0, glow:false });
+    setTimeout(function(){
+      tens+=1; ones-=10;
+      busy=false; snd('whoosh');
+      render({ newBar:tens-1, glow:ones>=10, act:'bundle', flash:true });
+    }, BUNDLE_MS);
+  }
+  function unbundle(){
+    if(busy||revealing||tens<1) return;
+    busy=true; snd('select');
+    tens-=1; ones+=10;
+    busy=false;
+    render({ glow:ones>=10, act:'unbundle' });
+  }
+  function reset(){
+    if(busy||revealing) return;
+    snd('select'); resetState();
+    render({ glow:ones>=10 });
+  }
+
+  /* ── 와우B(v3 신설) — 🔮 「묶으면 수가 커질까?」 → 묶는 순간 목격 → 보존 결과 카드 ── */
+  function startReveal(){
+    if(revealing) return;
+    revealing=true;
+    tens=0; ones=10;                       /* 무대 세팅(무음): 낱개 딱 10개 */
+    render({ glow:true });
+    setTimeout(function(){
+      bundle();                            /* 여기서 10:1 교환이 눈앞에서 터진다 */
+      setTimeout(function(){
+        revealing=false;
+        var okP=(prediction==='same');
+        K3.cards.result(
+          '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'🎯 예측 적중!':'🤔 예측과 달랐죠?')+'</h3>'
+          +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+          +'묶기 전에도 <b>10개</b>, 묶은 뒤에도 <b>10개</b>. 양은 하나도 늘거나 줄지 않았어요.<br>'
+          +'바뀐 건 <b>세는 방법</b>뿐이에요 — 낱개로 «열 개»던 것을 <b>십 한 묶음</b>으로 다시 본 것.<br>'
+          +'막대 <b>하나</b>가 값 <b>10</b>을 갖는 것, 이게 <b>자릿값</b>이에요. 그래서 <b>10 : 1</b>로 바꿔도 값은 같아요.</p>',
+          [{label:'🔁 다시 보기', value:'again'},{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+        ).then(function(v){ if(v==='again') startReveal(); });
+      }, BUNDLE_MS+STEP_MS);
+    }, STEP_MS);
+  }
+  function askPredict(){
+    if(revealing||busy) return;
+    snd('charge');
+    K3.cards.predict('낱개 <b>10개</b>를 한 묶음으로 묶으면, 수는 어떻게 될까요?',
+      [{id:'more', label:'① 묶으면 더 커진다'},
+       {id:'same', label:'② 그대로 10이다 — 세는 방법만 바뀐다'},
+       {id:'less', label:'③ 막대 1개니까 1이 된다'}]
+    ).then(function(id){ prediction=id; startReveal(); });
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+PC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(b.dataset.g===grade)return;
+          grade=b.dataset.g; snd('select');
+          max=PC.capFor(grade,cfgMax);
+          if(G().modes.indexOf(mode)<0) mode='free';
+          mStep=0; mDone=false; mLock=false; busy=false; revealing=false;
+          resetState();
+          /* ★ v2 버그① 수정: v2는 학년을 바꿔도 출제된 문항을 그대로 뒀다. 고(99)에서 뽑힌 79가
+             중(50)으로 내려와도 무대에 남아, 그 학년에서 다룰 수 없는 수를 묻는 문항이 됐다.
+             학년 = 다루는 수의 범위이므로, 범위가 바뀌면 문항도 새로 뽑는다. */
+          if(mode==='quiz'){ qScore=0; qCount=0; quiz=PC.newQuiz(max); }
+          build();
+        });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+PC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(b.dataset.m===mode)return;
+        mode=b.dataset.m; snd('select');
+        mStep=0; mDone=false; mLock=false; busy=false; revealing=false;
+        if(mode==='quiz'){ qScore=0; qCount=0; quiz=PC.newQuiz(max); }
+        resetState();
+        build();
+      });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 묶고 풀어 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      bar.innerHTML='<div class="k3bar"><span>❓ '+PC.qQuestion(quiz)+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode!=='quiz'){
+      s='<button class="ck-btn minus" data-act="minus" style="--c1:#FFA75E;--c2:#D97B33">－ 낱개</button>'
+       +'<button class="ck-btn" data-act="plus" style="--c1:#FFA75E;--c2:#D97B33">＋ 낱개</button>'
+       +'<button class="ck-btn" data-act="bundle" style="--c1:#3EE6B0;--c2:#1F9E75">📦 10개 묶기</button>'
+       +'<button class="ck-btn minus" data-act="unbundle" style="--c1:#3EE6B0;--c2:#1F9E75">묶음 풀기</button>'
+       +'<button class="ck-btn ghost" data-act="reset" title="처음으로">↺</button>';
+      if(mode==='free'&&max>=10) s+='<button class="ck-btn wow" id="wowBtn">🔮 묶으면 수가 커질까?</button>';
+    } else {
+      s=PC.quizChoices(quiz,max).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    }
+    ct.innerHTML=s;
+    var acts={ plus:plus, minus:minus, bundle:function(){ bundle(); }, unbundle:unbundle, reset:reset };
+    ct.querySelectorAll('[data-act]').forEach(function(b){
+      b.addEventListener('click',function(){ acts[b.dataset.act](); });
+    });
+    var wb=$('wowBtn'); if(wb) wb.addEventListener('click',askPredict);
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(qLock)return; qLock=true; qCount++;
+        var ans=PC.qAnswer(quiz), okA=(+b.dataset.v===ans);
+        if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+ans+'</b>'); }
+        else { snd('fail'); K3.toast('🤔 아까워요! 정답은 <b>'+ans+'</b>', true); }
+        setTimeout(function(){ quiz=PC.newQuiz(max); qLock=false; build(); }, STEP_MS);
+      });
+    });
+
+    render({ glow:ones>=10 });
+  }
+
+  /* ── 무대 그리기 (SPEC §3 좌표 · v2 레이아웃 보존) ── */
+  var VBW=860, VBH=380;
+  var BAR_X=40, BAR_W=50, BAR_GAP=14, BAR_H=280, BAR_TOP=50;
+  var CELL=50, CELL_GAP=8, FRAME_GAP=26;
+  var FRAME_W=CELL*2+CELL_GAP, FRAME_H=CELL*5+CELL_GAP*4;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+  function defs(){
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="pvSh" x="-30%" y="-30%" width="160%" height="160%">'
+      +'<feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter>'
+      /* 십막대 = 초록 칠 원목(나뭇결 결이 비치는 칠) */
+      +'<linearGradient id="pvWoodBar" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(10)">'
+      +'<stop offset="0" stop-color="#43D98B"/><stop offset=".55" stop-color="#2FBF71"/><stop offset="1" stop-color="#1F8F52"/></linearGradient>'
+      +'<pattern id="pvGrain" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(94)">'
+      +'<rect width="9" height="9" fill="none"/><rect width="2" height="9" fill="rgba(20,60,35,0.18)"/></pattern>'
+      /* 낱개 = 주황 칠 원목 큐브 */
+      +'<linearGradient id="pvCube" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(10)">'
+      +'<stop offset="0" stop-color="#FFB169"/><stop offset=".55" stop-color="#FF8A3D"/><stop offset="1" stop-color="#D65E12"/></linearGradient>'
+      +'<linearGradient id="pvGloss" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="rgba(255,255,255,0.4)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>';
+    return d;
+  }
+
+  function drawBars(svg,T,opts){
+    for(var t=0;t<T;t++){
+      var bx=BAR_X+t*(BAR_W+BAR_GAP);
+      var g=svgEl('g',{ class:'pv-bar'+(opts.newBar===t?' pv-bar-pop':'') });
+      g.appendChild(svgEl('rect',{ x:bx, y:BAR_TOP, width:BAR_W, height:BAR_H, rx:8,
+        fill:'url(#pvWoodBar)', stroke:'rgba(10,50,25,0.55)', 'stroke-width':2.5, filter:'url(#pvSh)' }));
+      g.appendChild(svgEl('rect',{ x:bx, y:BAR_TOP, width:BAR_W, height:BAR_H, rx:8,
+        fill:'url(#pvGrain)', 'pointer-events':'none' }));
+      for(var seg=1;seg<10;seg++){
+        var ly=BAR_TOP+(BAR_H/10)*seg;
+        g.appendChild(svgEl('line',{ x1:bx, y1:ly, x2:bx+BAR_W, y2:ly,
+          stroke:'rgba(10,50,25,0.6)', 'stroke-width':2 }));
+      }
+      g.appendChild(svgEl('rect',{ x:bx+4, y:BAR_TOP+4, width:14, height:BAR_H-8, rx:7,
+        fill:'url(#pvGloss)', 'pointer-events':'none' }));
+      var lbl=svgEl('text',{ x:bx+BAR_W/2, y:BAR_TOP-14, 'text-anchor':'middle',
+        'font-family':'var(--kedu-title)', 'font-size':30, 'font-weight':800, fill:'#BFF3D6' });
+      lbl.textContent='10';
+      g.appendChild(lbl);
+      svg.appendChild(g);
+    }
+  }
+
+  function render(opts){
+    opts=opts||{};
+    var desk=$('desk');
+    var T=(mode==='quiz')?quiz.t:tens;
+    var O=(mode==='quiz')?quiz.o:ones;
+    var tappable=(mode!=='quiz'&&!busy&&!revealing);
+
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'pvSvg',
+      style:'display:block;width:min(88vw,780px);height:auto;max-height:52vh' });
+    svg.appendChild(defs());
+
+    drawBars(svg,T,opts);
+
+    var oneX=BAR_X+Math.max(T,0)*(BAR_W+BAR_GAP)+30;
+    if(T>0){   /* 금속 자 느낌 점선 구분선 — 십의 자리 | 일의 자리 */
+      svg.appendChild(svgEl('line',{ x1:oneX-22, y1:BAR_TOP-10, x2:oneX-22, y2:BAR_TOP+BAR_H+10,
+        stroke:'rgba(255,255,255,0.25)', 'stroke-width':2.5, 'stroke-dasharray':'8 8' }));
+    }
+
+    var framesNeeded=Math.max(1,Math.ceil(O/10));
+    var fTop=BAR_TOP+(BAR_H-FRAME_H)/2;
+
+    for(var f=0;f<framesNeeded;f++){
+      var fx=oneX+f*(FRAME_W+FRAME_GAP);
+      var inThis=Math.min(10,O-f*10);
+      var full=(inThis===10);
+      var cls='pv-frame'+(full&&opts.glow?' pv-frameglow':'')+(full&&ones>=10&&tappable?' pv-bundleable':'');
+      var fg=svgEl('g',{ class:cls, 'data-frame':f });
+      /* 유리 트레이 */
+      fg.appendChild(svgEl('rect',{ x:fx-10, y:fTop-10, width:FRAME_W+20, height:FRAME_H+20, rx:16,
+        fill:'rgba(255,255,255,0.06)', stroke:'rgba(255,255,255,0.28)', 'stroke-width':1.5, filter:'url(#pvSh)' }));
+      fg.appendChild(svgEl('rect',{ x:fx-4, y:fTop-7, width:(FRAME_W+8)*0.45, height:9, rx:5,
+        fill:'url(#pvGloss)', 'pointer-events':'none' }));
+      for(var r=0;r<5;r++){
+        for(var c=0;c<2;c++){
+          var idx=r*2+c;
+          var cx=fx+c*(CELL+CELL_GAP), cy=fTop+r*(CELL+CELL_GAP);
+          var gk=f*10+idx;
+          var empty=(idx>=inThis);
+          fg.appendChild(svgEl('rect',{ x:cx, y:cy, width:CELL, height:CELL, rx:9,
+            fill:'rgba(255,255,255,0.05)', stroke:'rgba(255,255,255,0.22)', 'stroke-width':1.5,
+            'stroke-dasharray':'5 5',
+            class:'pv-fcell'+(empty&&tappable?' pv-fillable':''), 'data-one':gk }));
+          if(idx<inThis){
+            var isNew=(opts.newOne!=null&&gk===opts.newOne);
+            var isSuck=(opts.suckFrame===f);
+            var cube=svgEl('rect',{ x:cx+4, y:cy+4, width:CELL-8, height:CELL-8, rx:7,
+              fill:'url(#pvCube)', stroke:'rgba(120,50,10,0.55)', 'stroke-width':2, filter:'url(#pvSh)',
+              class:'pv-cube'+(isNew?' pv-pop':'')+(isSuck?' pv-suck':''), 'data-cube':gk });
+            fg.appendChild(cube);
+            fg.appendChild(svgEl('rect',{ x:cx+8, y:cy+8, width:CELL-24, height:7, rx:4,
+              fill:'rgba(255,255,255,0.5)', 'pointer-events':'none',
+              class:(isSuck?'pv-suck':'') }));
+          }
+        }
+      }
+      svg.appendChild(fg);
+    }
+
+    if(opts.flash){
+      var fl=svgEl('text',{ x:VBW/2, y:30, 'text-anchor':'middle',
+        'font-family':'var(--kedu-title)', 'font-size':26, 'font-weight':800,
+        fill:'#BCA7FF', class:'pv-flash' });
+      fl.textContent='🔁 낱개 10개가 십 한 묶음으로 올라갔어요! (10 : 1 교환)';
+      svg.appendChild(fl);
+    }
+
+    desk.innerHTML=''; desk.appendChild(svg);
+
+    /* 와우A 직접조작 — 빈 칸 탭(거기까지 채움) / 꽉 찬 십틀 탭(= 바로 묶기) */
+    if(tappable){
+      svg.querySelectorAll('.pv-fcell.pv-fillable').forEach(function(rc){
+        rc.addEventListener('click',function(){
+          var gi=+rc.dataset.one, cap=max-tens*10, nv=Math.min(gi+1,cap);
+          if(nv>ones){ ones=nv; snd('tap'); render({ newOne:nv-1, glow:ones>=10 }); }
+        });
+      });
+      svg.querySelectorAll('.pv-bundleable').forEach(function(fr){
+        fr.addEventListener('click',function(){ if(ones>=10&&!busy) bundle(); });
+      });
+    }
+
+    updateStatus();
+    updateButtons();
+    checkMission(opts.act);
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){ st.innerHTML='<div class="hint">아래에서 답을 골라 누르세요</div>'; return; }
+    var v=value();
+    var head='<div class="timeread"><span class="u">10개씩 묶음 </span><span class="g">'+tens+'</span><span class="u">개 와 낱개 </span>'
+      +'<span class="o">'+ones+'</span><span class="u">개 ＝ </span><span class="b">'+v+'</span></div>';
+    var sub='';
+    if(G().decompose&&tens>0){
+      sub+='<span class="go">'+(tens*10)+'</span> ＋ <b>'+ones+'</b> ＝ <b>'+v+'</b>';
+    }
+    if(G().exchange&&ones>=10){
+      sub+=(sub?'<br>':'')+'<span class="grabline">🔁 낱개 10개 = 십 1묶음 — <b>10 : 1</b>로 바꿔요!</span>';
+    }
+    st.innerHTML=head+'<div class="hint">'+sub
+      +(sub?'<br>':'')+'<span class="grabline">✋ 빈 칸을 누르면 거기까지 채워져요 · 꽉 찬 판을 누르면 바로 묶여요</span></div>';
+  }
+
+  function updateButtons(){
+    var ct=$('ctrlSlot');
+    var b=function(a){ return ct.querySelector('[data-act="'+a+'"]'); };
+    var v=value(), lock=busy||revealing;
+    if(b('plus')) b('plus').disabled=lock||v>=max;
+    if(b('minus')) b('minus').disabled=lock||ones<=0;
+    if(b('unbundle')) b('unbundle').disabled=lock||tens<1;
+    if(b('reset')) b('reset').disabled=lock;
+    var bd=b('bundle');
+    if(bd){
+      bd.disabled=busy||ones<10;
+      bd.classList.toggle('pv-ready',!busy&&ones>=10);
+    }
+    var wb=$('wowBtn'); if(wb) wb.disabled=lock;
+  }
+
+  function checkMission(act){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(M[mStep].check(act,tens,ones)){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<curMissions().length-1){ mStep++; tens=0; ones=0; }
+        else mDone=true;
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz') quiz=PC.newQuiz(max);
+  if(mode==='mission'){ tens=0; ones=0; }
+  build();
+
+  window.PvApp={
+    get grade(){return grade;}, get mode(){return mode;}, get tens(){return tens;}, get ones(){return ones;},
+    get max(){return max;}, get busy(){return busy;}, get revealing(){return revealing;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qScore(){return qScore;}, get qCount(){return qCount;}, get quiz(){return quiz;},
+    get value(){return value();},
+    plus:plus, minus:minus, bundle:function(){ bundle(); }, unbundle:unbundle, reset:reset, build:build,
+    askPredict:askPredict, startReveal:startReveal,
+    _set:function(o){ if(o.prediction!==undefined) prediction=o.prediction; }
+  };
+})();
+</script>
+</body>
+</html>
