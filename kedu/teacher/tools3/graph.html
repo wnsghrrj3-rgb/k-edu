@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 그래프 메이커 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 8호 — 그래프 메이커 (2026-07-13) · 셸 = clock 계보
+  SPEC = handoff/klab/designs3/SPEC_graph.md (도면=정답)
+  v2(engine/tools/graph.js 407줄) 콘텐츠 무손실 이식:
+    학년칸(저 막대·그림·👑 닻·퀴즈 숨김 / 중 ＋꺾은선·퀴즈 3문 / 고 ＋원·띠·미션 4·퀴즈 5문)
+    미션 저2·중3·고4 · 퀴즈 문항·보기·정답 그대로 · 5종 그리기 명세(수치 그대로)
+  ★ 이 도구의 존재 이유 = 종이로 못 하는 두 가지:
+    ① 같은 자료를 막대·꺾은선·그림·원·띠로 «즉시 갈아끼우기» ② 값 ±에 «즉시 다시 그려지기»
+    → 그래서 v3의 와우는 «그래프 종류 전환»이다.
+  v3 질감: 다크 스튜디오 + 원목 매트 위에 «모눈 방안지», 그 위에 유광 아크릴 그래프.
+  와우:
+    A 종류 모핑 — 형태가 0.6s 동안 흘러간다(막대가 녹아 점이 되고, 스티커로 분해되고, 원판으로 말린다).
+      «자료는 그대로, 옷만 갈아입는다»가 요점이라 값 라벨은 전환 내내 붙어 있다. whoosh→select
+    B 🔮 표상 불변성 예측(v3 신설·중고·1회) — 처음 종류를 바꿀 때 「모양을 바꾸면 값도 바뀔까요?」
+    C ✨ 0의 얼굴 — 어떤 항목이 0이 되는 순간, 그래프마다 0이 «다르게 보인다»는 걸 짚어 준다(ting)
+  ⚠️ v2 라이브 버그 3건 수정:
+    ① 미션이 config.types를 안 봤다 — 차시가 types:['picto']처럼 좁게 주면 bar를 요구하는 미션①로
+       가는 «수단 자체가 없어» 미션이 영원히 안 끝났다(진행 불능) → 요구 그래프가 types에 없으면 제외.
+    ② 퀴즈가 커스텀 data와 충돌 — 라벨은 config 것(봄/여름/…)을 두고 값만 퀴즈 preset으로 덮어서,
+       「가장 많은 항목은?」 정답이 '포도'인데 «화면엔 포도가 없는» 문항이 나왔다
+       → 퀴즈 동안은 표준 예시 자료(사과/바나나/포도/딸기·명)로 고정. 자유탐구로 나오면 config 복귀.
+    ③ 미션 문구의 항목 이름이 DEFAULT_DATA에 굳어 있었다 — config.data를 줘도 「사과를 10까지」라고
+       말하면서 판정은 data[0](커스텀 첫 항목) → 문구를 런타임 라벨로 생성.
+  config: ?grade= & mode= & types= & max= & unit= & title= & editable=false & data=(라벨:값,…)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 20px;cursor:pointer;min-width:126px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 그래프 메이커 도구 전용 ── */
+  /* 원목 매트 위에 «모눈 방안지»가 놓인다 */
+  .gr-paper{position:relative;border-radius:14px;padding:6px;
+    background:
+      repeating-linear-gradient(0deg, rgba(120,160,200,.22) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(90deg, rgba(120,160,200,.22) 0 1px, transparent 1px 22px),
+      linear-gradient(170deg,#FBF7EE 0%,#F1EAD9 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 10px 26px -8px rgba(0,0,0,.55)}
+  .gr-title{font-family:var(--kedu-title);font-size:min(3vh,22px);color:#2B3E52;
+    text-align:center;padding:2px 0 4px}
+  .gr-tab{font-family:'Gowun Dodum';font-size:14px;font-weight:700;color:#9CC4FA;
+    background:rgba(91,155,240,.12);border:1.5px solid rgba(91,155,240,.42);border-radius:999px;
+    padding:9px 15px;cursor:pointer;line-height:1;transition:all .15s}
+  .gr-tab.on{background:rgba(91,155,240,.42);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(156,196,250,.6), 0 0 18px -4px #5B9BF0}
+  .gr-card{display:flex;align-items:center;gap:5px;background:var(--glass);
+    border:1px solid var(--line);border-radius:13px;padding:6px 9px;backdrop-filter:blur(8px)}
+  .gr-chip{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .gr-name{font-family:'Gowun Dodum';font-size:13.5px;font-weight:700;color:#e6eef7;
+    min-width:38px;text-align:center}
+  .gr-val{font-family:var(--kedu-title);font-size:20px;min-width:26px;text-align:center}
+  .gr-vbtn{font-family:'Gowun Dodum';font-size:18px;font-weight:800;width:34px;height:34px;
+    border-radius:10px;border:1.5px solid rgba(255,255,255,.28);color:#e6eef7;
+    background:rgba(255,255,255,.08);cursor:pointer;line-height:1}
+  .gr-vbtn:active{transform:translateY(2px)}
+  .gr-vbtn:disabled{opacity:.32;cursor:not-allowed}
+  /* 값 변화 = 막대가 자라고 줄어든다 */
+  .gr-bar,.gr-slice,.gr-dot,.gr-seg{transition:all .25s ease}
+  /* 와우A — 종류 모핑 */
+  .gr-morph{animation:grMorph .6s cubic-bezier(.25,1.05,.35,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes grMorph{0%{opacity:0;transform:scale(.72) translateY(16px)}
+    55%{opacity:1}100%{opacity:1;transform:none}}
+  .gr-stick{animation:grStick .5s cubic-bezier(.2,1.5,.4,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes grStick{0%{opacity:0;transform:scale(0)}100%{opacity:1;transform:scale(1)}}
+  .gr-crown{animation:grCrown .35s cubic-bezier(.2,1.3,.4,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes grCrown{0%{transform:translateY(-16px) scale(.5);opacity:0}100%{transform:none;opacity:1}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">📊 케이랩 · 그래프 메이커</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  var PALETTE=['#5B9BF0','#3EE6B0','#FFA75E','#FF6FA5','#9B7BF5','#FFD05E','#4FD1A5','#5FD8E8'];
+  var TYPE_LABEL={ bar:'막대그래프', line:'꺾은선그래프', picto:'그림그래프', pie:'원그래프', band:'띠그래프' };
+  var DEFAULT_DATA=[
+    { label:'사과', value:6 }, { label:'바나나', value:4 },
+    { label:'포도', value:8 }, { label:'딸기', value:3 }
+  ];
+  var GRADES={
+    low:  { modes:['free','mission'],        allow:['bar','picto'],                     quiz:false, anchor:true  },
+    mid:  { modes:['free','mission','quiz'], allow:['bar','line','picto'],              quiz:true,  anchor:false },
+    high: { modes:['free','mission','quiz'], allow:['bar','line','picto','pie','band'], quiz:true,  anchor:false }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function allowedTypesFor(grade,configTypes){
+    var allow=GRADES[grade].allow;
+    var base=(configTypes&&configTypes.length)
+      ? configTypes.filter(function(t){ return TYPE_LABEL[t]; })
+      : ['bar','line','picto','pie'];
+    var out=base.filter(function(t){ return allow.indexOf(t)>=0; });
+    if(!out.length) out=[allow[0]];
+    return out;
+  }
+  function freshData(configData,max){
+    var src=(Array.isArray(configData)&&configData.length)?configData:DEFAULT_DATA;
+    return src.map(function(d,i){
+      return { label:d.label, value:Math.max(0,Math.min(d.value||0,max)),
+               color:d.color||PALETTE[i%PALETTE.length] };
+    });
+  }
+  function maxIndexOf(data){
+    var mv=-1, mi=-1;
+    data.forEach(function(d,i){ if(d.value>mv){ mv=d.value; mi=i; } });   /* 동점이면 첫 번째 */
+    return mi;
+  }
+  function axisTicks(max){
+    var step=(max<=10)?1:((max<=20)?2:5), out=[];
+    for(var v=0;v<=max;v+=step) out.push(v);
+    return out;
+  }
+  function pieSlices(data){
+    var total=data.reduce(function(s,d){ return s+d.value; },0);
+    if(total===0) return [];
+    var acc=0, out=[];
+    data.forEach(function(d){
+      if(d.value<=0) return;
+      var a0=(acc/total)*360, a1=((acc+d.value)/total)*360;
+      acc+=d.value;
+      out.push({ label:d.label, color:d.color, a0:a0, a1:a1,
+                 pct:Math.round((d.value/total)*100) });
+    });
+    return out;
+  }
+  function bandSegs(data,w){
+    var total=data.reduce(function(s,d){ return s+d.value; },0);
+    if(total===0) return [];
+    var acc=0, out=[];
+    data.forEach(function(d){
+      if(d.value<=0) return;
+      var x=(acc/total)*w, bw=(d.value/total)*w;
+      acc+=d.value;
+      out.push({ label:d.label, color:d.color, x:x, w:bw,
+                 pct:Math.round((d.value/total)*100) });
+    });
+    return out;
+  }
+
+  /* 미션 — v2 판정식 그대로. ★ 버그③: 문구의 항목 이름은 «런타임 data»에서 뽑는다 */
+  function missionsFor(grade,types,data){
+    var L0=(data&&data[0])?data[0].label:DEFAULT_DATA[0].label;
+    var L3=(data&&data[3])?data[3].label:DEFAULT_DATA[3].label;
+    var LOW=[
+      { need:'bar', text:'＋ 버튼으로 <b>'+L0+'</b>를 <b>가장 많게</b> 만들어 봐요! (👑이 떠요)',
+        check:function(s){ return s.type==='bar'&&s.data[0].value>0
+          &&s.data.every(function(d,i){ return i===0||d.value<s.data[0].value; }); } },
+      { need:'picto', text:'<b>그림그래프</b>로 바꿔 봐요 — 동그라미로 하나씩 세어 봐요!',
+        check:function(s){ return s.type==='picto'; } }
+    ];
+    var MID=[
+      { need:'bar', text:'＋ 버튼으로 <b>'+L0+'</b>를 <b>10</b>까지 키워 봐요 — 막대가 쑥쑥!',
+        check:function(s){ return s.type==='bar'&&s.data[0].value===10; } },
+      { need:'line', text:'<b>꺾은선그래프</b>로 바꿔 봐요 — 같은 자료가 다르게 보여요!',
+        check:function(s){ return s.type==='line'; } },
+      { need:null, needIdx:3, text:'<b>'+L3+'</b>를 <b>0</b>으로 줄여 봐요 — 그래프에서 어떻게 보일까요?',
+        check:function(s){ return s.data[3]&&s.data[3].value===0; } }
+    ];
+    var HIGH=MID.concat([
+      { need:'pie', text:'<b>원그래프</b>로 바꿔 전체에 대한 비율을 봐요!',
+        check:function(s){ return s.type==='pie'; } }
+    ]);
+    var pool=(grade==='low')?LOW:(grade==='mid')?MID:HIGH;
+    /* ★ 버그① 수정 — 그 그래프로 갈 «수단»이 없으면 미션에서 뺀다(진행 불능 차단).
+       항목 인덱스를 요구하는 미션도 자료가 짧으면 뺀다. */
+    var f=pool.filter(function(m){
+      if(m.need&&types.indexOf(m.need)<0) return false;
+      if(m.needIdx!=null&&(!data||!data[m.needIdx])) return false;
+      return true;
+    });
+    return f.length?f:pool.slice(0,1);
+  }
+
+  /* 퀴즈 — v2 문항·보기·정답 그대로 */
+  var MID_QUIZ=[
+    { type:'bar',  preset:[6,4,8,3], q:'막대그래프에서 가장 많은 항목은?', answer:'포도', choices:['포도','사과','딸기'] },
+    { type:'bar',  preset:[6,4,8,3], q:'사과는 바나나보다 몇 명 더 많을까요?', answer:'2명', choices:['2명','4명','6명'] },
+    { type:'line', preset:[2,4,7,9], q:'시간에 따라 변하는 모습을 보기 좋은 그래프는?', answer:'꺾은선그래프', choices:['꺾은선그래프','원그래프','그림그래프'] }
+  ];
+  var HIGH_QUIZ=[
+    MID_QUIZ[0], MID_QUIZ[1],
+    { type:'pie',  preset:[5,5,5,5], q:'원그래프에서 한 항목이 차지하는 비율은?', answer:'25%', choices:['25%','50%','10%'] },
+    MID_QUIZ[2],
+    { type:'band', preset:[6,4,8,3], q:'전체에 대한 비율을 가로 띠로 나타낸 이 그래프의 이름은?', answer:'띠그래프', choices:['띠그래프','막대그래프','꺾은선그래프'] }
+  ];
+  function quizPoolFor(grade){ return (grade==='mid')?MID_QUIZ.slice():HIGH_QUIZ.slice(); }
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var a=arr.slice();
+    for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  /* ★ 버그② 수정 — 퀴즈 자료는 «항상 표준 예시»(사과/바나나/포도/딸기).
+     v2는 config.data의 라벨을 두고 값만 덮어서, 정답이 '포도'인데 화면엔 포도가 없는 문항이 나왔다. */
+  function applyQuizData(q,max){
+    return DEFAULT_DATA.map(function(d,i){
+      return { label:d.label, value:Math.max(0,Math.min(q.preset[i]!=null?q.preset[i]:d.value,max)),
+               color:PALETTE[i%PALETTE.length] };
+    });
+  }
+
+  var API={ PALETTE:PALETTE, TYPE_LABEL:TYPE_LABEL, DEFAULT_DATA:DEFAULT_DATA, GRADES:GRADES,
+            GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            allowedTypesFor:allowedTypesFor, freshData:freshData, maxIndexOf:maxIndexOf,
+            axisTicks:axisTicks, pieSlices:pieSlices, bandSegs:bandSegs,
+            missionsFor:missionsFor, quizPoolFor:quizPoolFor, shuffled:shuffled,
+            applyQuizData:applyQuizData, QUIZ_UNIT:'명' };
+  if(typeof window!=='undefined') window.GraphCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var GC=window.GraphCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return GC.GRADES[grade]; }
+
+  var cfgTypes=Q.get('types')?Q.get('types').split(',').filter(Boolean):null;
+  var max=(+Q.get('max')>0)?+Q.get('max'):10;
+  var unit=(Q.get('unit')!=null)?Q.get('unit'):'명';
+  var title=(Q.get('title')!=null)?Q.get('title'):'';
+  var editable=(Q.get('editable')!=='false');
+  var cfgData=null;
+  if(Q.get('data')){
+    cfgData=Q.get('data').split(',').map(function(p){
+      var kv=p.split(':');
+      return { label:kv[0], value:+kv[1]||0 };
+    }).filter(function(d){ return d.label; });
+    if(!cfgData.length) cfgData=null;
+  }
+
+  var types=GC.allowedTypesFor(grade,cfgTypes);
+  var type=types[0];
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var data=GC.freshData(cfgData,max);
+  var curUnit=unit;
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  var magicShown=false, pred=null, revealing=false;
+  var fxMorph=false, fxCrown=-1;
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+
+  function snd(n){ K3.sound.play(n); }
+  function state(){ return { type:type, data:data }; }
+  function curMissions(){ return GC.missionsFor(grade,types,data); }
+  function shuffleQuiz(){ qList=GC.shuffled(GC.quizPoolFor(grade)); qIdx=0; qScore=0; qCount=0; qLock=false; }
+
+  /* ── 종류 전환 (와우A/B) ── */
+  function applyType(t){
+    var prevMax=GC.maxIndexOf(data);
+    type=t; fxMorph=true;
+    snd('whoosh');
+    build();
+    setTimeout(function(){ snd('select'); }, window.__K3_FAST?20:340);
+    if(mode==='mission') checkMission();
+  }
+  function setType(t){
+    if(revealing) return;
+    if(mode!=='quiz'&&types.indexOf(t)<0) return;   /* 노출되지 않은 종류로는 못 간다 */
+    if(type===t){
+      /* 같은 종류를 다시 눌러도 미션 판정은 돈다(v2 동작) — types가 1종뿐인 차시에서
+         「그림그래프로 바꿔 봐요」 미션이 진행 불능이 되지 않게 하는 마지막 안전핀 */
+      if(mode==='mission') checkMission();
+      return;
+    }
+    /* 🔮 와우B — 처음 종류를 바꿀 때, «보기 전에» 값이 바뀔지부터 묻는다 */
+    if(!magicShown&&grade!=='low'&&mode==='free'){
+      magicShown=true; revealing=true;
+      snd('charge');
+      var before=data.map(function(d){ return d.label+' '+d.value+curUnit; }).join(' · ');
+      K3.cards.predict('같은 자료인데 <b>그래프 모양</b>을 바꾸면 — <b>값도 바뀔까요?</b>'
+        +'<br><span style="font-size:12px;color:#6b7c90">지금: '+before+'</span>',
+        [{id:'change', label:'① 값도 바뀐다'},
+         {id:'same',   label:'② 값은 그대로다 — 모양만 바뀐다'}]
+      ).then(function(id){
+        pred=id; revealing=false;
+        applyType(t);
+        setTimeout(function(){
+          var okP=(pred==='same');
+          var d0=data[0];
+          K3.cards.result(
+            '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞아요!':'🤔 값은 하나도 안 바뀌었어요!')+'</h3>'
+            +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+            +'<b>'+d0.label+'</b>는 여전히 <b>'+d0.value+curUnit+'</b>이에요. 자료는 그대로고, '
+            +'<b>보여 주는 방법</b>만 달라졌어요.<br>'
+            +'그럼 왜 여러 그래프가 있을까요? — <b>무엇을 보여 주고 싶은지</b>가 다르기 때문이에요. '
+            +'많고 적음은 막대, 변해 가는 모습은 꺾은선, 전체에 대한 몫은 원그래프.<br>'
+            +'어떤 옷을 입힐지는 <b>우리가 고르는 것</b>이랍니다.</p>',
+            [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+          );
+        }, window.__K3_FAST?60:1100);
+      });
+      return;
+    }
+    applyType(t);
+  }
+
+  /* ── 값 조절 (와우C — 0의 얼굴) ── */
+  function bump(i,d){
+    if(revealing||!editable||mode==='quiz') return;
+    var old=data[i].value;
+    var nv=Math.max(0,Math.min(old+d,max));
+    if(nv===old) return;
+    var prevMaxI=GC.maxIndexOf(data);
+    data[i].value=nv;
+    snd('tick');
+    var newMaxI=GC.maxIndexOf(data);
+    fxCrown=(G().anchor&&newMaxI!==prevMaxI)?newMaxI:-1;
+    if(fxCrown>=0) snd('whoosh');
+    /* ✨ 0의 얼굴 — 0은 그래프마다 다르게 보인다 */
+    if(old===1&&nv===0){
+      snd('ting');
+      K3.toast('✨ <b>0</b>은 그래프마다 다르게 보여요 — 막대는 사라지고, 꺾은선은 바닥을 찍고, 원그래프에선 아예 조각이 없어요');
+    }
+    render();
+    if(mode==='mission') checkMission();
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+GC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+GC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 바꿔 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      /* ★ 버그② — 퀴즈 동안은 표준 예시 자료로 고정(정답이 화면에 반드시 존재) */
+      data=GC.applyQuizData(q,max);
+      curUnit=GC.QUIZ_UNIT;
+      type=q.type;
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      s=GC.shuffled(qq.choices).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else {
+      s=types.map(function(t){
+        return '<button class="gr-tab'+(t===type?' on':'')+'" data-type="'+t+'">'+GC.TYPE_LABEL[t]+'</button>';
+      }).join('');
+      if(editable){
+        s+=data.map(function(d,i){
+          return '<div class="gr-card">'
+            +'<span class="gr-chip" style="background:'+d.color+'"></span>'
+            +'<span class="gr-name">'+d.label+'</span>'
+            +'<button class="gr-vbtn" data-i="'+i+'" data-d="-1">－</button>'
+            +'<span class="gr-val" data-i="'+i+'" style="color:'+d.color+'">'+d.value+'</span>'
+            +'<button class="gr-vbtn" data-i="'+i+'" data-d="1">＋</button>'
+            +'</div>';
+        }).join('');
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('[data-type]').forEach(function(b){
+      b.addEventListener('click',function(){ setType(b.dataset.type); });
+    });
+    ct.querySelectorAll('.gr-vbtn').forEach(function(b){
+      b.addEventListener('click',function(){ bump(+b.dataset.i,+b.dataset.d); });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    types=GC.allowedTypesFor(grade,cfgTypes);
+    if(types.indexOf(type)<0) type=types[0];
+    data=GC.freshData(cfgData,max); curUnit=unit;
+    mStep=0; mDone=false; mLock=false;
+    magicShown=false; pred=null; revealing=false;
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    data=GC.freshData(cfgData,max); curUnit=unit; type=types[0];
+    magicShown=false; pred=null; revealing=false;
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 — 방안지 위 아크릴 그래프 ═══ */
+  var VBW=720, VBH=360;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+  function pt(cx,cy,r,deg){ var a=(deg-90)*Math.PI/180; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; }
+  function txt(svg,x,y,s,o){
+    o=o||{};
+    var t=svgEl('text',{ x:x, y:y, 'text-anchor':o.anchor||'middle',
+      'font-family':o.font||'var(--kedu-title)', 'font-size':o.size||18, 'font-weight':800,
+      fill:o.fill||'#2B3E52' });
+    if(o.cls) t.setAttribute('class',o.cls);
+    t.textContent=s; svg.appendChild(t); return t;
+  }
+
+  function render(){
+    var desk=$('desk');
+    var morph=fxMorph; fxMorph=false;
+    var crown=fxCrown; fxCrown=-1;
+
+    var wrap=document.createElement('div');
+    wrap.className='gr-paper';
+    if(title&&mode!=='quiz'){
+      var tt=document.createElement('div');
+      tt.className='gr-title'; tt.textContent=title;
+      wrap.appendChild(tt);
+    }
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'grSvg',
+      style:'display:block;width:min(88vw,760px);height:auto;max-height:46vh' });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="grSh" x="-20%" y="-20%" width="140%" height="150%">'
+      +'<feDropShadow dx="0" dy="3" stdDeviation="3.5" flood-color="#20364d" flood-opacity="0.3"/></filter>'
+      +'<linearGradient id="grGloss" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="rgba(255,255,255,0.5)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>';
+    svg.appendChild(d);
+
+    if(type==='bar') drawAxis(svg,'bar',morph,crown);
+    else if(type==='line') drawAxis(svg,'line',morph,crown);
+    else if(type==='picto') drawPicto(svg,morph);
+    else if(type==='pie') drawPie(svg,morph);
+    else if(type==='band') drawBand(svg,morph);
+
+    wrap.appendChild(svg);
+    desk.innerHTML=''; desk.appendChild(wrap);
+
+    var ct=$('ctrlSlot');
+    ct.querySelectorAll('.gr-val').forEach(function(s){ s.textContent=data[+s.dataset.i].value; });
+    ct.querySelectorAll('.gr-vbtn').forEach(function(b){
+      var i=+b.dataset.i, dd=+b.dataset.d;
+      b.disabled=revealing||((dd>0)?data[i].value>=max:data[i].value<=0);
+    });
+    updateStatus();
+  }
+
+  function drawAxis(svg,kind,morph,crown){
+    var padL=60, padR=30, padT=30, padB=60;
+    var plotW=VBW-padL-padR, plotH=VBH-padT-padB;
+    var x0=padL, y0=padT, yBase=padT+plotH;
+    GC.axisTicks(max).forEach(function(v){
+      var gy=yBase-(v/max)*plotH;
+      svg.appendChild(svgEl('line',{ x1:x0, y1:gy, x2:x0+plotW, y2:gy,
+        stroke:'#8aa6c4', 'stroke-width':(v===0?3:1.5),
+        'stroke-dasharray':(v===0?'':'4 5') }));
+      txt(svg,x0-12,gy+6,v,{ anchor:'end', size:16, fill:'#5a7894' });
+    });
+    svg.appendChild(svgEl('line',{ x1:x0, y1:y0-6, x2:x0, y2:yBase, stroke:'#5a7894', 'stroke-width':3 }));
+
+    var n=data.length, slot=plotW/n, pts=[];
+    data.forEach(function(d,i){
+      var cx=x0+slot*(i+0.5);
+      var h=(d.value/max)*plotH, topY=yBase-h;
+      pts.push([cx,topY]);
+      if(kind==='bar'){
+        var bw=Math.min(slot*0.6,70);
+        var g=svgEl('g',{ class:morph?'gr-morph':'' });
+        if(h>0){
+          g.appendChild(svgEl('rect',{ x:cx-bw/2, y:topY, width:bw, height:h, rx:7,
+            fill:d.color, stroke:'#ffffff', 'stroke-width':2, filter:'url(#grSh)',
+            class:'gr-bar', 'data-i':i }));
+          g.appendChild(svgEl('rect',{ x:cx-bw/2+4, y:topY+4, width:Math.max(2,bw-8), height:Math.min(12,h*0.3), rx:4,
+            fill:'url(#grGloss)', 'pointer-events':'none' }));
+        } else {
+          /* ✨ 0의 얼굴 — 막대는 «사라지고» 바닥에 0만 남는다 */
+          txt(svg,cx,yBase-8,'0',{ size:17, fill:'#8aa6c4', cls:'gr-zero' });
+        }
+        svg.appendChild(g);
+        if(d.value>0) txt(svg,cx,topY-8,d.value,{ size:19, fill:d.color, cls:'gr-vlabel' });
+      }
+      txt(svg,cx,yBase+26,d.label,{ size:18 });
+    });
+    if(kind==='line'){
+      var dpath=pts.map(function(p,i){ return (i?'L':'M')+p[0]+' '+p[1]; }).join(' ');
+      svg.appendChild(svgEl('path',{ d:dpath, fill:'none', stroke:'#2E62B8', 'stroke-width':4,
+        'stroke-linejoin':'round', 'stroke-linecap':'round', class:'gr-line'+(morph?' gr-morph':'') }));
+      pts.forEach(function(p,i){
+        svg.appendChild(svgEl('circle',{ cx:p[0], cy:p[1], r:8, fill:data[i].color,
+          stroke:'#fff', 'stroke-width':3, filter:'url(#grSh)',
+          class:'gr-dot'+(morph?' gr-morph':''), 'data-i':i }));
+        if(data[i].value>0) txt(svg,p[0],p[1]-16,data[i].value,{ size:18, fill:data[i].color, cls:'gr-vlabel' });
+      });
+    }
+    /* ★ 저학년 닻 👑 — 최댓값이 바뀌면 왕관이 새 막대로 «날아간다» */
+    if(kind==='bar'&&G().anchor){
+      var mi=GC.maxIndexOf(data);
+      if(mi>=0&&data[mi].value>0){
+        var ccx=x0+slot*(mi+0.5), ch=(data[mi].value/max)*plotH, ctopY=yBase-ch;
+        var cg=svgEl('g',{ class:(crown===mi?'gr-crown':'')+' gr-crownwrap' });
+        var c1=svgEl('text',{ x:ccx, y:ctopY-30, 'text-anchor':'middle',
+          'font-family':'var(--kedu-title)', 'font-size':26, 'font-weight':800, fill:'#2B3E52' });
+        c1.textContent='👑'; cg.appendChild(c1);
+        var c2=svgEl('text',{ x:ccx, y:ctopY-52, 'text-anchor':'middle',
+          'font-family':'var(--kedu-title)', 'font-size':15, 'font-weight':800, fill:'#D9480F' });
+        c2.textContent='가장 많아요'; cg.appendChild(c2);
+        svg.appendChild(cg);
+      }
+    }
+  }
+
+  function drawPicto(svg,morph){
+    var padL=90, padT=30, rowH=(VBH-padT-20)/data.length;
+    var icon=Math.min(rowH*0.55,34);
+    data.forEach(function(d,i){
+      var cy=padT+rowH*(i+0.5);
+      txt(svg,padL-14,cy+6,d.label,{ anchor:'end', size:18 });
+      for(var j=0;j<d.value;j++){
+        var cx=padL+8+j*(icon+8)+icon/2;
+        var st=svgEl('circle',{ cx:cx, cy:cy, r:icon/2, fill:d.color, stroke:'#fff', 'stroke-width':2,
+          filter:'url(#grSh)', class:'gr-dot'+(morph?' gr-stick':''), 'data-i':i });
+        if(morph) st.setAttribute('style','animation-delay:'+(j*24)+'ms');
+        svg.appendChild(st);
+      }
+      txt(svg,VBW-16,cy+6,d.value+curUnit,{ anchor:'end', size:17, fill:d.color, cls:'gr-vlabel' });
+    });
+  }
+
+  function drawPie(svg,morph){
+    var cx=VBW/2-70, cy=VBH/2, r=130;
+    var slices=GC.pieSlices(data);
+    if(!slices.length){ txt(svg,cx,cy,'값을 넣어 주세요',{ size:22, fill:'#7a93ac' }); drawLegend(svg); return; }
+    slices.forEach(function(s){
+      var p0=pt(cx,cy,r,s.a0), p1=pt(cx,cy,r,s.a1);
+      var large=(s.a1-s.a0>180)?1:0;
+      var el2;
+      if(Math.abs(s.a1-s.a0-360)<0.001){
+        el2=svgEl('circle',{ cx:cx, cy:cy, r:r, fill:s.color, stroke:'#fff', 'stroke-width':3,
+          filter:'url(#grSh)', class:'gr-slice'+(morph?' gr-morph':'') });
+      } else {
+        var dd='M '+cx+' '+cy+' L '+p0[0]+' '+p0[1]+' A '+r+' '+r+' 0 '+large+' 1 '+p1[0]+' '+p1[1]+' Z';
+        el2=svgEl('path',{ d:dd, fill:s.color, stroke:'#fff', 'stroke-width':3,
+          filter:'url(#grSh)', class:'gr-slice'+(morph?' gr-morph':'') });
+      }
+      svg.appendChild(el2);
+      var mid=pt(cx,cy,r*0.62,(s.a0+s.a1)/2);
+      if(s.pct>=6) txt(svg,mid[0],mid[1]+6,s.pct+'%',{ size:18, fill:'#fff', cls:'gr-pct' });
+    });
+    drawLegend(svg);
+  }
+  function drawLegend(svg){
+    var lx=VBW-150, ly=50;
+    data.forEach(function(d,i){
+      var y=ly+i*36;
+      svg.appendChild(svgEl('rect',{ x:lx, y:y-14, width:22, height:22, rx:5, fill:d.color, class:'gr-leg' }));
+      txt(svg,lx+32,y+3,d.label+' '+d.value+curUnit,{ anchor:'start', size:17, cls:'gr-vlabel' });
+    });
+  }
+
+  function drawBand(svg,morph){
+    var x0=50, w=VBW-100, y0=VBH/2-40, h=80;
+    svg.appendChild(svgEl('rect',{ x:x0, y:y0, width:w, height:h, rx:8,
+      fill:'rgba(255,255,255,0.6)', stroke:'#5a7894', 'stroke-width':2 }));
+    var segs=GC.bandSegs(data,w);
+    if(!segs.length){ txt(svg,VBW/2,y0+h/2+6,'값을 넣어 주세요',{ size:22, fill:'#7a93ac' }); return; }
+    segs.forEach(function(s){
+      svg.appendChild(svgEl('rect',{ x:x0+s.x, y:y0, width:s.w, height:h,
+        fill:s.color, stroke:'#fff', 'stroke-width':2,
+        class:'gr-seg'+(morph?' gr-morph':'') }));
+      if(s.w>44){
+        txt(svg,x0+s.x+s.w/2,y0+h/2-4,s.label,{ size:16, fill:'#fff' });
+        txt(svg,x0+s.x+s.w/2,y0+h/2+18,s.pct+'%',{ size:16, fill:'#fff', cls:'gr-pct' });
+      }
+    });
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">그래프를 보고 답을 골라요</div>';
+      return;
+    }
+    var total=data.reduce(function(s,d){ return s+d.value; },0);
+    var mi=GC.maxIndexOf(data);
+    var head='<span class="go">'+GC.TYPE_LABEL[type]+'</span> · 모두 <b>'+total+curUnit+'</b>';
+    if(mi>=0&&data[mi].value>0) head+=' · 가장 많은 것은 <b>'+data[mi].label+'</b>';
+    st.innerHTML='<div class="hint">'+head
+      +'<br><span class="grabline">✋ 그래프 종류를 바꿔도 «자료는 그대로» — 보여 주는 방법만 달라져요</span></div>';
+  }
+
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false; mStep++;
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; }
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  build();
+
+  window.GraphApp={
+    get grade(){return grade;}, get mode(){return mode;}, get type(){return type;},
+    get types(){return types.slice();}, get data(){return data.map(function(d){ return {label:d.label,value:d.value,color:d.color}; });},
+    get values(){return data.map(function(d){ return d.value; });},
+    get max(){return max;}, get unit(){return curUnit;}, get editable(){return editable;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();},
+    get qScore(){return qScore;}, get qCount(){return qCount;}, get quiz(){return qList[qIdx];},
+    get magicShown(){return magicShown;}, get pred(){return pred;}, get revealing(){return revealing;},
+    setGrade:setGrade, setMode:setMode, setType:setType, bump:bump, answer:answer,
+    setValue:function(i,v){ data[i].value=Math.max(0,Math.min(v,max)); render(); if(mode==='mission') checkMission(); },
+    build:build
+  };
+})();
+</script>
+</body>
+</html>
