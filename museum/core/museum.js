@@ -515,8 +515,62 @@ function stage(canvas){
   return api;
 }
 
+/* ── §5.5 grip — 손을 놓치지 않는다 (전자칠판 표준) ────────────────
+   드래그·홀드 전시의 라이브 결함 3종을 코어가 한자리에서 막는다.
+   E2는 무대 훅(window.__XX)을 직접 찔러 막을 넘기므로, 아래 셋은
+   테스트가 전부 초록이어도 실기기에서만 죽는다(M4·M7 정지화면과 같은 계열):
+
+     ① 놓친 손    — 손이 캔버스를 벗어나면 pointermove가 끊긴다 → "끌다가 만다"
+     ② 굳은 손    — pointerup을 canvas에 건 전시는 밖에서 뗀 손을 영영 못 받는다
+                     → dragging이 참인 채로 남아, 이후 스치는 손에도 세계가 끌려간다
+     ③ 취소된 손  — 전자칠판 팜 리젝션·제스처 가로채기는 pointerup 없이
+                     pointercancel만 보낸다 → 역시 굳는다
+
+   grip은 pointerdown에서 포인터를 캡처하고(①·② 해소),
+   취소·캡처상실 시 마지막 좌표로 pointerup을 재발행한다(③ 해소).
+   재발행은 버블링되므로 전시의 up 핸들러가 canvas에 걸렸든 window에 걸렸든
+   그대로 살아난다 — 전시 코드는 `Museum.grip(canvas)` 한 줄이면 끝. */
+function synthUp(id, x, y){
+  var ev;
+  try{
+    ev = new PointerEvent('pointerup', { pointerId:id, clientX:x, clientY:y, bubbles:true, cancelable:true });
+  }catch(_){                                   // PointerEvent 미지원 환경(jsdom 등)
+    ev = document.createEvent('Event');
+    ev.initEvent('pointerup', true, true);
+    try{
+      Object.defineProperty(ev,'pointerId',{value:id});
+      Object.defineProperty(ev,'clientX', {value:x});
+      Object.defineProperty(ev,'clientY', {value:y});
+    }catch(__){ ev.pointerId=id; ev.clientX=x; ev.clientY=y; }
+  }
+  ev._museumSynth = true;
+  return ev;
+}
+function grip(canvas){
+  var live = {};                               // 살아 있는 포인터 → 마지막 좌표
+  function track(e){ live[e.pointerId] = { x:e.clientX, y:e.clientY }; }
+
+  canvas.addEventListener('pointerdown', function(e){
+    if(canvas.setPointerCapture){ try{ canvas.setPointerCapture(e.pointerId); }catch(_){} }
+    track(e);
+  }, true);                                    // 캡처 단계 — 전시 핸들러보다 먼저 손을 잡는다
+  canvas.addEventListener('pointermove', function(e){ if(live[e.pointerId]) track(e); }, true);
+  canvas.addEventListener('pointerup',   function(e){ delete live[e.pointerId]; }, true);
+
+  function rescue(e){
+    var last = live[e.pointerId];
+    if(!last) return;                          // 이미 정상적으로 뗀 손 — 재발행 없음
+    delete live[e.pointerId];
+    canvas.dispatchEvent(synthUp(e.pointerId, last.x, last.y));   // 버블링 → window 핸들러도 받는다
+  }
+  canvas.addEventListener('pointercancel',      rescue);
+  canvas.addEventListener('lostpointercapture', rescue);
+  return canvas;
+}
+
 /* ── 공개 API 조립 ───────────────────────────────────────────────── */
 window.Museum = {
+  grip:grip,                           // §5.5 손을 놓치지 않는다
   sound:{ play:play, roomtone:roomtone, mute:mute },
   betray:betray,
   plaque:plaque,
