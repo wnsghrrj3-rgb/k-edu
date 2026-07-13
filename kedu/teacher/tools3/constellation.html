@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 계절별 별자리 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 계절별 별자리 (2026-07-13 · 페이블) · 천체 통합 재건 5호 (천체군 마감)
+  v2 engine/tools/constellation.js(709줄 · 3층 골든 샘플) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 우주 무대(천구 별 1600 · 지구 공전 · 별자리 4군 · 북극성)
+    ② 실물 질감(별 발광 · 별자리 선 · 하늘 돔 낮/밤 그라데이션)
+    ③ 직접 조작(🔴 지구에 «내려서» 하늘을 올려다보기 · 시선 드래그 · 공전 위치 · 별 놓기)
+    ④ 즉각 반응(시선을 태양 쪽으로 돌리면 하늘이 파래지고 별이 사라진다)
+    ⑤ 탐구 구조(미션 6 · 퀴즈 8 · 만약에 3 · 예측 칩 · 와우=⭐ 일주운동 · ✨ 내 별자리 창작)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 1인칭 밤하늘 — 우주 시점에서 «지구 표면으로 내려가» 하늘을 직접 올려다본다.
+       지평좌표계(천정·북·동 프레임)를 실제로 세우고, 시선을 태양 쪽으로 돌리면 하늘이
+       파래지며 별이 사라진다. 「낮에도 별은 떠 있다」가 말이 아니라 «장면»이 된다.
+    ② ⭐ 일주운동(와우) — 자전을 돌리면 모든 별이 «북극성을 중심으로» 원을 그린다(궤적 실시간).
+       북극성만 제자리 — 그 고도가 정확히 관측 위도(37.5°)와 같다. 자전축이 가리키는
+       방향이 곧 회전의 중심이기 때문. 순수 로직이 이걸 좌표로 단언한다.
+  v2 무손실: 학년칸 저(별 잇기 놀이 = 밤하늘+내 별자리)/중(계절 별자리·🔄거꾸로 공전)/고(연주운동 풀)
+    ·미션 6단계(만들기↔생각 교차 · 거꾸로 추리 · 북극성 원리)
+    ·퀴즈 8문(장면 관찰형 · 이름 가림 · 거꾸로 추리)
+    ·만약에 3종(☀️태양 꺼짐=낮에도 별 · 🔄거꾸로 공전 · ⏸공전 멈춤)
+    ·✨ 내 별자리(별 12개까지 놓고 이름 짓기 · 🔗 링크 공유 · 받은 친구는 감상→이름 공개)
+    ·2D 밤하늘 패널(남쪽/북쪽 · 북극성 5배 포인터) ·별자리 4종 데이터·상태줄 문구 전부
+  v3 추가: 만약에 조작 게이트(wifActed) · 판정 후처리 일원화(afterAct)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz|mystar · ?orb=0~360
+          · ?stars=x,y;x,y;… · ?name=… (내 별자리 공유 링크 수신)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .cn-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .cn-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .cn-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .cn-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .cn-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:216px;max-height:calc(100vh - 130px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  .cn-slider{width:100%;accent-color:#9B7BF5;height:24px;cursor:pointer}
+  .cn-sea{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .cn-sea button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 4px;border-radius:10px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer}
+  .cn-sea button.on{background:rgba(255,146,43,.3);border-color:rgba(255,146,43,.7);color:#fff}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(600px,84vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(520px,50vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:cnPulse 1.2s ease-in-out infinite}
+  @keyframes cnPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 130px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:210px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #sky{position:fixed;right:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:7px 8px 5px;width:206px;text-align:center}
+  #sky .cap{font-family:'Gowun Dodum';font-size:11px;color:#cdd6e6;margin-top:2px}
+  #fpvhud{position:fixed;left:50%;transform:translateX(-50%);top:104px;z-index:19;display:none;
+    font-family:'Gowun Dodum';font-size:12.5px;color:#cdd6e6;background:rgba(8,12,26,.72);
+    border:1px solid var(--hudline);border-radius:12px;padding:6px 14px;white-space:nowrap}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:22;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  .cn-anno{position:absolute;pointer-events:none;font-family:'Gowun Dodum';font-size:12.5px;padding:3px 9px;
+    border-radius:10px;background:rgba(8,12,20,.8);border:1.5px solid #FFD43B;color:#FFF3BF;
+    white-space:nowrap;transform:translate(-50%,-50%);display:none}
+  /* ✨ 내 별자리 */
+  #mystar{position:fixed;inset:0;z-index:18;display:none;background:#05081a}
+  #mysvg{width:100%;height:100%;display:block;cursor:crosshair}
+  #mytools{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:21;display:none;
+    gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;background:var(--hud);
+    border:1px solid var(--hudline);border-radius:16px;backdrop-filter:blur(8px);padding:10px 14px}
+  #myname{font-family:'Gowun Dodum';font-size:15px;padding:9px 13px;border-radius:12px;
+    border:1.5px solid var(--hudline);background:rgba(255,255,255,.07);color:#F0EADE;width:min(46vw,220px)}
+  #myname::placeholder{color:#8a97a8}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div id="mystar">
+  <svg id="mysvg" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="myBg" cx="50%" cy="0%" r="120%">
+        <stop offset="0" stop-color="#16224a"/><stop offset="0.6" stop-color="#0b1230"/><stop offset="1" stop-color="#05081a"/>
+      </radialGradient>
+      <filter id="myGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="1.4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <rect x="0" y="0" width="200" height="120" fill="url(#myBg)"/>
+    <g id="mydust"></g>
+    <g id="myg"></g>
+  </svg>
+</div>
+<div id="mytools"></div>
+
+<div class="k3-topbar">
+  <span class="title">✨ 케이랩 · 계절별 별자리</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="cn-panel" id="hudL"></div>
+<div class="cn-panel" id="ctrls"></div>
+<div class="cn-panel" id="mbar" style="display:none"></div>
+<div id="fpvhud"></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+
+<div id="sky">
+  <svg id="skysvg" viewBox="-70 -46 140 84" width="190" height="114">
+    <defs><linearGradient id="cnSkyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1733"/><stop offset="1" stop-color="#27406e"/>
+    </linearGradient></defs>
+    <rect x="-70" y="-46" width="140" height="80" fill="url(#cnSkyG)" rx="6"/>
+    <g id="skyg"></g>
+    <line x1="-66" y1="30" x2="66" y2="30" stroke="#6b8a4a" stroke-width="3"/>
+    <rect x="-66" y="30" width="132" height="4" fill="#3f5a28"/>
+  </svg>
+  <div class="cap" id="skycap">지금 밤, 남쪽 하늘</div>
+</div>
+
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>👁 밤하늘로 내려가 봐요</b> — 지구에 서서 하늘을 직접 올려다볼 수 있어요</div>
+<div class="k3-loading" id="loading"><div class="ic">✨</div><div>밤하늘 여는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.ConstSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var ORBIT_R = 5;        /* 지구 궤도 반지름 */
+  var FAR_R = 9.2;        /* 별자리 천구 반지름 (v2 무손실) */
+  var LAT = 37.5;         /* 관측 위도 (우리나라) */
+  var D2R = Math.PI / 180, R2D = 180 / Math.PI;
+
+  function wrapDeg(d){ return ((d % 360) + 360) % 360; }
+  function degDiff(a, b){
+    var d = Math.abs(wrapDeg(a) - wrapDeg(b));
+    return d > 180 ? 360 - d : d;
+  }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  /* ── 벡터 (순수) ── */
+  function V(x, y, z){ return { x:x, y:y, z:z }; }
+  function vsub(a, b){ return V(a.x - b.x, a.y - b.y, a.z - b.z); }
+  function vadd(a, b){ return V(a.x + b.x, a.y + b.y, a.z + b.z); }
+  function vscale(a, s){ return V(a.x * s, a.y * s, a.z * s); }
+  function vdot(a, b){ return a.x * b.x + a.y * b.y + a.z * b.z; }
+  function vcross(a, b){
+    return V(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+  }
+  function vlen(a){ return Math.sqrt(vdot(a, a)); }
+  function vnorm(a){ var L = vlen(a); return L < 1e-9 ? V(0, 0, 0) : vscale(a, 1 / L); }
+
+  /* ── 계절·별자리 판정 (v2 무손실) ── */
+  function nearestConst(orb){ return Math.round(wrapDeg(orb) / 90) % 4; }
+  function visState(orb, i){
+    var d = Math.abs(wrapDeg(orb - i * 90));
+    if(d > 180) d = 360 - d;
+    if(d < 60) return 'night';
+    if(d > 120) return 'day';
+    return 'edge';
+  }
+  function seasonName(orb){
+    var i = nearestConst(orb);
+    return [{ nm:'봄', emo:'🌸', col:'#F06595' }, { nm:'여름', emo:'☀️', col:'#FF922B' },
+            { nm:'가을', emo:'🍂', col:'#E8590C' }, { nm:'겨울', emo:'❄️', col:'#4DABF7' }][i];
+  }
+
+  /* ── 별자리 데이터 (v2 무손실) ── */
+  var CONSTS = [
+    { k:'leo', nm:'사자자리', sea:'봄',
+      st:[[-34,-22],[-40,-8],[-34,4],[-22,8],[-16,-2],[-20,-14],[14,10],[36,2],[20,-12]],
+      ln:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[4,8],[8,7],[7,6],[6,4]] },
+    { k:'cyg', nm:'백조자리', sea:'여름',
+      st:[[0,-28],[0,-10],[0,4],[0,18],[-22,-4],[-40,2],[22,-4],[40,2]],
+      ln:[[0,1],[1,2],[2,3],[4,1],[5,4],[6,1],[7,6]] },
+    { k:'peg', nm:'페가수스자리', sea:'가을',
+      st:[[-20,-18],[18,-20],[20,12],[-18,14],[-34,2],[-44,-12],[34,-28]],
+      ln:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[1,6]] },
+    { k:'ori', nm:'오리온자리', sea:'겨울',
+      st:[[-16,-22],[16,-20],[-6,-2],[0,0],[6,2],[-18,20],[14,22]],
+      ln:[[0,1],[0,2],[1,4],[2,3],[3,4],[2,5],[4,6],[5,6]] }
+  ];
+  var NORTH = {
+    st:[[-58,16],[-46,22],[-34,20],[-24,12],[-36,2],[-48,4],[-25,-1],
+        [22,-26],[32,-18],[40,-26],[50,-20],[58,-30],[2,-26]],
+    dip:[[0,1],[1,2],[2,3],[3,6],[6,4],[4,5],[5,3]],
+    cas:[[7,8],[8,9],[9,10],[10,11]],
+    polaris: 12
+  };
+
+  /* ── 궤도·천구 기하 ── */
+  function earthPos(orb){
+    var ph = (orb + 90) * D2R;
+    return V(ORBIT_R * Math.cos(ph), 0, ORBIT_R * Math.sin(ph));
+  }
+  /* 별자리 i의 천구 중심 (v2 배치 무손실: ph = i*90 + 90) */
+  function constCenter(i){
+    var ph = (i * 90 + 90) * D2R;
+    return V(FAR_R * Math.cos(ph), 0, FAR_R * Math.sin(ph));
+  }
+  /* 지구에서 본 별자리 i의 방향 */
+  function constDir(orb, i){ return vnorm(vsub(constCenter(i), earthPos(orb))); }
+  /* 지구에서 본 태양 방향 (태양 = 원점) */
+  function sunDir(orb){ return vnorm(vscale(earthPos(orb), -1)); }
+  /* ⭐ 북극성 = 자전축(+Y) 방향 — 무한히 멀어 «방향»이 고정 */
+  var POLARIS = V(0, 1, 0);
+
+  /* ── 🔴 지평좌표계 (1인칭 밤하늘의 심장) ──
+     관측자: 위도 LAT · 경도(자전각) spin.
+     천정(up) = 자전축(Y) 기준 spin 회전한 위도 LAT의 지표 법선.
+     북(north) = 자전축에서 천정 성분을 뺀 방향 → 자전해도 「북」은 늘 북극성 쪽. */
+  function zenith(spin, lat){
+    lat = (lat == null) ? LAT : lat;
+    var la = lat * D2R;
+    return V(Math.cos(la) * Math.cos(spin), Math.sin(la), Math.cos(la) * Math.sin(spin));
+  }
+  function frame(spin, lat){
+    var up = zenith(spin, lat);
+    var n = vnorm(vsub(POLARIS, vscale(up, vdot(POLARIS, up))));   /* 자전축의 지평 성분 = 북 */
+    var e = vnorm(vcross(n, up));                                   /* 동 = 북 × 천정 */
+    return { up:up, north:n, east:e };
+  }
+  /* 천체 방향 → 지평좌표(고도·방위). 방위 = 북 0° → 동 90° */
+  function altAz(dir, spin, lat){
+    var f = frame(spin, lat);
+    var d = vnorm(dir);
+    var alt = Math.asin(clamp(vdot(d, f.up), -1, 1)) * R2D;
+    var az = wrapDeg(Math.atan2(vdot(d, f.east), vdot(d, f.north)) * R2D);
+    return { alt:alt, az:az };
+  }
+  /* 지평좌표(고도·방위) → 월드 방향 (1인칭 시선) */
+  function lookDir(alt, az, spin, lat){
+    var f = frame(spin, lat);
+    var a = alt * D2R, z = az * D2R;
+    var h = Math.cos(a);
+    return vnorm(vadd(vscale(f.up, Math.sin(a)),
+      vadd(vscale(f.north, h * Math.cos(z)), vscale(f.east, h * Math.sin(z)))));
+  }
+  /* ⭐ 북극성의 지평좌표 — 자전과 무관하게 「고도 = 관측 위도」 (와우의 반증) */
+  function polarisAltAz(spin, lat){ return altAz(POLARIS, spin, lat); }
+
+  /* ── 낮/밤 (자전이 만든다) ── */
+  function sunAlt(orb, spin, lat){ return altAz(sunDir(orb), spin, lat).alt; }
+  /* 하늘 밝기 0(칠흑) ~ 1(대낮) — 태양 고도 기반 (박명 −12° ~ +12°) */
+  function skyBright(orb, spin, lat, sunOff){
+    if(sunOff) return 0;
+    var a = sunAlt(orb, spin, lat);
+    return clamp((a + 12) / 24, 0, 1);
+  }
+  function isNight(orb, spin, lat, sunOff){ return skyBright(orb, spin, lat, sunOff) < 0.08; }
+  /* 별 보임 정도 = 1 − 하늘 밝기 (낮엔 별이 「사라진다」 — 실은 밝기에 묻힌다) */
+  function starVis(orb, spin, lat, sunOff){
+    return clamp(1 - skyBright(orb, spin, lat, sunOff) * 1.35, 0, 1);
+  }
+  /* 밤이 되는 자전각 (자유탐구 진입 시 밤으로 세팅) */
+  function nightSpin(orb){
+    /* 태양이 지평 아래로 깊이 내려가는 자전각 = 태양 반대편 경도 */
+    var s = sunDir(orb);
+    return Math.atan2(-s.z, -s.x);
+  }
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var GRADES = {
+    low:  { modes:['free','mystar'],                     wif:[], wow:false,
+            hint:'밤하늘 별을 이어 나만의 별자리를 만들어 봐요!' },
+    mid:  { modes:['free','mission','quiz','mystar'],     wif:['reverse'], wow:false,
+            hint:'계절 버튼을 눌러 계절마다 다른 별자리를 만나 봐요.' },
+    high: { modes:['free','mission','quiz','mystar'],     wif:['sunoff','reverse','freeze'], wow:true,
+            hint:'👁 밤하늘로 내려가 하늘을 직접 올려다봐요.' }
+  };
+
+  /* ── 미션 6단계 (v2 무손실 · 만들기 ↔ 생각 교차) ── */
+  var MISSIONS = [
+    { type:'make', text:'❄️ <b>겨울</b> 위치로 가서 남쪽 하늘에 <b>오리온자리</b>를 띄워 봐요!',
+      check:function(s){ return s.view === 'south' && nearestConst(s.orb) === 3; } },
+    { type:'think', text:'🤔 방금 본 오리온자리처럼, <b>한밤 남쪽 하늘에 잘 보이는 별자리</b>는 지구에서 봤을 때 어느 쪽에 있을까요?',
+      ch:['태양 반대쪽','태양과 같은 쪽','지구 바로 위'], a:0,
+      why:'밤 = 태양을 등진 쪽! 그래서 태양 반대쪽 별자리가 밤하늘에 잘 보여요.' },
+    { type:'make', text:'🦁 거꾸로 추리! 밤하늘에 <b>사자자리</b>가 보였대요. 사자자리가 무슨 계절 별자리인지 생각해서, 지구를 <b>그 계절 위치</b>로 옮겨 봐요!',
+      check:function(s){ return s.view === 'south' && nearestConst(s.orb) === 0; } },
+    { type:'think', set:function(s){ s.orb = 180; s.view = 'south'; s.pointer = false; },
+      text:'🤔 지금 지구는 <b>가을</b> 위치예요. 그럼 <b>태양 쪽에 있어서 볼 수 없는</b> 별자리는 무엇일까요?',
+      ch:['봄 별자리 (사자자리)','가을 별자리 (페가수스자리)','북쪽 별자리 (북두칠성)'], a:0,
+      why:'가을의 반대편 = 봄! 사자자리는 태양과 같은 쪽(낮 하늘)에 숨어 있어요. 반년 뒤에 다시 만나요.' },
+    { type:'make', text:'⭐ <b>북쪽 하늘</b>로 가서 <b>북극성 찾기</b>를 눌러요 — 국자 끝 두 별 사이를 5배!',
+      check:function(s){ return s.view === 'north' && s.pointer === true; } },
+    { type:'think', set:function(s){ s.view = 'north'; s.pointer = true; },
+      text:'🤔 마지막 질문! 북극성은 <b>왜 일 년 내내 같은 자리</b>에 있을까요?',
+      ch:['지구 자전축이 가리키는 방향이라서','북극성이 지구를 따라다녀서','태양보다 밝아서'], a:0,
+      why:'북극성은 지구 자전축의 연장선 위! 지구가 돌고 공전해도 축이 가리키는 방향은 그대로예요.' }
+  ];
+
+  /* ── 퀴즈 8문 (v2 무손실 · 장면 세팅형) ── */
+  var QUIZ = [
+    { orb:270, view:'south', ptr:false, q:'겨울 밤하늘 — 오른쪽 패널의 이 별자리는?', ch:['오리온자리','백조자리','사자자리'], a:0 },
+    { orb:90,  view:'south', ptr:false, q:'여름 밤하늘 — 이 별자리의 이름은?', ch:['백조자리','오리온자리','페가수스자리'], a:0 },
+    { orb:270, view:'north', ptr:false, q:'일 년 내내 북쪽 같은 자리에서 빛나는 별(물음표 자리)은?', ch:['북극성','오리온자리의 별','태양'], a:0 },
+    { orb:0,   view:'south', ptr:false, q:'계절마다 보이는 별자리가 다른 까닭은?', ch:['지구가 공전해서','별이 빠르게 움직여서','달이 별을 가려서'], a:0 },
+    { orb:270, view:'north', ptr:true,  q:'북극성을 찾을 때 국자 끝 두 별을 이용하는 별자리는?', ch:['북두칠성','오리온자리','사자자리'], a:0 },
+    { orb:180, view:'south', ptr:false, q:'거꾸로 추리! 밤하늘에 이 별자리(페가수스)가 보여요. 지금 지구는 어느 계절 위치일까요?', ch:['가을','봄','여름'], a:0 },
+    { orb:90,  view:'south', ptr:false, q:'낮에는 왜 별자리가 안 보일까요?', ch:['태양 빛이 너무 밝아서','낮에는 별이 사라져서','별이 너무 멀어져서'], a:0 },
+    { orb:0,   view:'south', ptr:false, q:'봄에 잘 보이는 사자자리 — 반년 뒤 가을엔 어떻게 될까요?', ch:['태양 쪽에 있어 보이지 않아요','밤하늘 한가운데 보여요','북쪽 하늘로 옮겨 가요'], a:0 }
+  ];
+
+  /* ── 만약에 3종 (v2 무손실 + v3 조작 게이트) ── */
+  var WHATIF = {
+    sunoff: { icon:'☀️', title:'태양이 꺼진다면?',
+      q:'태양이 갑자기 꺼져서 빛이 사라지면, 별자리는 어떻게 보일까요?',
+      ch:['사방의 별자리를 다 볼 수 있어요','별도 같이 다 사라져요','지금과 똑같아요'], a:0,
+      tip:'슬라이더를 움직여 봐요 — 지구가 어디에 있든 별자리 네 개가 전부 보여요!',
+      reveal:'별은 늘 떠 있었어요! 태양 빛이 너무 밝아서 낮 하늘의 별이 안 보였을 뿐이에요. 태양을 끄니 네 별자리가 한꺼번에 보이죠?',
+      chip:'☀️ 태양꺼짐 → 낮에도 별', need:120 },
+    reverse:{ icon:'🔄', title:'지구가 거꾸로 공전한다면?',
+      q:'지구가 반대 방향으로 공전하면, 봄 별자리(사자) 다음엔 어느 계절 별자리가 올까요?',
+      ch:['겨울 별자리 (오리온)','여름 별자리 (백조)','계속 사자자리'], a:0,
+      tip:'▶ 1년 재생을 눌러 봐요 — 계절 별자리가 거꾸로 흘러가요!',
+      reveal:'공전 방향이 반대면 별자리 달력도 거꾸로 넘어가요! 봄 → 겨울 → 가을 → 여름 순서가 돼요.',
+      chip:'🔄 거꾸로 공전 → 달력 역행', need:100 },
+    freeze: { icon:'⏸', title:'지구가 공전을 멈춘다면?',
+      q:'지구가 공전을 딱 멈추면, 밤하늘 별자리는 어떻게 될까요?',
+      ch:['일 년 내내 같은 별자리만 보여요','그래도 계절마다 바뀌어요','별이 다 사라져요'], a:0,
+      tip:'▶ 시간 흐르기를 눌러 봐요 — 날짜는 흘러도 하늘은 그대로!',
+      reveal:'이게 바로 계절별 별자리의 비밀! 별자리가 바뀌는 건 별이 움직여서가 아니라 지구가 공전하기 때문이에요. 멈추면 매일 밤 똑같은 하늘이죠.',
+      chip:'⏸ 공전멈춤 → 같은 하늘', need:120 }
+  };
+  var WIF_KEYS = ['sunoff','reverse','freeze'];
+
+  /* ── ⭐ 와우: 일주운동 (v3 신설 — v2에 와우 없음) ── */
+  var WOW = {
+    q:'⭐ 밤새 하늘을 지켜보면, 별들은 어떻게 움직일까요?',
+    ch:['북극성을 중심으로 «원»을 그려요','모두 같은 방향으로 나란히 흘러가요','별은 움직이지 않아요'], a:0,
+    chip:'⭐ 일주운동 → 북극성이 중심',
+    need: 2 * Math.PI                  /* 자전 한 바퀴 */
+  };
+
+  /* ── ✨ 내 별자리 (v2 무손실) ── */
+  var MY_MAX = 12;
+  function parseStars(s){
+    if(typeof s !== 'string' || !s) return [];
+    return s.split(';').map(function(p){
+      var xy = p.split(',');
+      var x = parseFloat(xy[0]), y = parseFloat(xy[1]);
+      if(isNaN(x) || isNaN(y)) return null;
+      return [clamp(x, 4, 196), clamp(y, 4, 108)];
+    }).filter(Boolean).slice(0, MY_MAX);
+  }
+  function starsParam(list){
+    return list.map(function(p){ return Math.round(p[0]) + ',' + Math.round(p[1]); }).join(';');
+  }
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    sim.orb0 = (typeof opts.orb === 'number' && !isNaN(opts.orb)) ? wrapDeg(opts.orb) : 270;
+
+    sim.state = {
+      orb: sim.orb0, view: 'south', pointer: false, fpv: false,
+      spin: 0, spinAcc: 0, orbAcc: 0,
+      playing: false, spinning: false, dayCnt: 0,
+      alt: 32, az: 180,                    /* 1인칭 시선 (고도·방위) — 기본 남쪽 하늘 */
+      wif: null, wifPred: null, wifActed: false, wifDone: false,
+      wowArmed: false, wowPred: null, wowDone: false, trail: [],
+      chips: [], chipToast: false,
+      acted: false,
+      myStars: parseStars(opts.stars), myName: (typeof opts.name === 'string') ? opts.name.slice(0, 12) : '',
+      myGift: false, myRevealed: false
+    };
+    sim.state.myGift = sim.state.myStars.length > 0;
+    sim.state.spin = nightSpin(sim.state.orb);   /* 진입 = 밤 */
+
+    /* ── 파생 ── */
+    sim.sunOff = function(){ return sim.state.wif === 'sunoff'; };
+    sim.frozen = function(){ return sim.state.wif === 'freeze'; };
+    sim.rev = function(){ return sim.state.wif === 'reverse'; };
+    sim.nearest = function(){ return nearestConst(sim.state.orb); };
+    sim.opposite = function(){ return (sim.nearest() + 2) % 4; };
+    sim.season = function(){ return seasonName(sim.state.orb); };
+    sim.visOf = function(i){ return sim.sunOff() ? 'night' : visState(sim.state.orb, i); };
+    /* 별자리 밝기 (3D 무대) */
+    sim.constOpacity = function(i){
+      if(sim.sunOff()) return 1;
+      var v = visState(sim.state.orb, i);
+      return v === 'night' ? 1 : (v === 'edge' ? 0.55 : 0.18);
+    };
+    /* 🔴 1인칭 파생 */
+    sim.zenith = function(){ return zenith(sim.state.spin, LAT); };
+    sim.frame = function(){ return frame(sim.state.spin, LAT); };
+    sim.look = function(){ return lookDir(sim.state.alt, sim.state.az, sim.state.spin, LAT); };
+    sim.sunAlt = function(){ return sunAlt(sim.state.orb, sim.state.spin, LAT); };
+    sim.skyBright = function(){ return skyBright(sim.state.orb, sim.state.spin, LAT, sim.sunOff()); };
+    sim.starVis = function(){ return starVis(sim.state.orb, sim.state.spin, LAT, sim.sunOff()); };
+    sim.isNight = function(){ return isNight(sim.state.orb, sim.state.spin, LAT, sim.sunOff()); };
+    sim.polaris = function(){ return polarisAltAz(sim.state.spin, LAT); };
+    sim.constAltAz = function(i){ return altAz(constDir(sim.state.orb, i), sim.state.spin, LAT); };
+    /* 시선이 태양을 향하는가 (낮 하늘을 보고 있는가) */
+    sim.facingSun = function(){
+      if(sim.sunOff()) return false;
+      var d = vdot(sim.look(), sunDir(sim.state.orb));
+      return d > 0.45 && sim.sunAlt() > -6;
+    };
+
+    /* ── 조작 ── */
+    sim.setOrb = function(v){
+      var st = sim.state;
+      if(sim.frozen()) return st.orb;                  /* 공전 멈춤 = 잠금 (v2) */
+      var nv = wrapDeg(v);
+      st.orbAcc += degDiff(nv, st.orb);
+      st.orb = nv;
+      st.acted = true;
+      if(st.wif) st.wifActed = true;
+      return st.orb;
+    };
+    sim.setView = function(v){
+      sim.state.view = (v === 'north') ? 'north' : 'south';
+      sim.state.acted = true;
+      return sim.state.view;
+    };
+    sim.togglePointer = function(){
+      var st = sim.state;
+      st.pointer = !st.pointer;
+      if(st.pointer) st.view = 'north';                /* v2: 포인터 켜면 북쪽 하늘로 */
+      st.acted = true;
+      return st.pointer;
+    };
+    sim.toggleFpv = function(){
+      var st = sim.state;
+      st.fpv = !st.fpv;
+      if(st.fpv){
+        st.spin = nightSpin(st.orb);                   /* 내려가면 밤 */
+        st.alt = 32; st.az = 180;
+      }
+      return st.fpv;
+    };
+    sim.canFpv = function(mode){ return mode === 'free' || mode === 'mission'; };
+    sim.aim = function(dAlt, dAz){
+      var st = sim.state;
+      st.alt = clamp(st.alt + dAlt, -8, 88);
+      st.az = wrapDeg(st.az + dAz);
+      return { alt:st.alt, az:st.az };
+    };
+    sim.setSpin = function(v){
+      var st = sim.state;
+      st.spinAcc += Math.abs(v - st.spin);
+      st.spin = v;
+      st.acted = true;
+      return st.spin;
+    };
+    sim.togglePlay = function(){ sim.state.playing = !sim.state.playing; sim.state.acted = true; return sim.state.playing; };
+    sim.toggleSpin = function(){ sim.state.spinning = !sim.state.spinning; sim.state.acted = true; return sim.state.spinning; };
+
+    /* ── tick (v2 loop 무손실: 1년 = 10초 · 36°/s) ── */
+    sim.tick = function(dt){
+      var st = sim.state;
+      dt = Math.min(dt, 0.05);
+      /* ⏸ 공전 멈춤 = 날짜만 흐름 (v2) */
+      if(st.playing && sim.frozen()){
+        st.dayCnt += dt * 120;
+        st.wifActed = true;
+        return;
+      }
+      if(st.playing){
+        var dir = sim.rev() ? -1 : 1;
+        var d = dt * 36;
+        st.orb = wrapDeg(st.orb + d * dir);
+        st.orbAcc += d;
+        if(st.wif) st.wifActed = true;
+      }
+      /* ⭐ 자전 (일주운동) */
+      if(st.spinning){
+        var ds = dt * 0.9;
+        st.spin += ds;
+        st.spinAcc += ds;
+        if(st.wowArmed){
+          st.trail.push(st.spin);
+          if(st.trail.length > 400) st.trail.shift();
+        }
+      }
+    };
+
+    /* ── 만약에 (v3 조작 게이트) ── */
+    sim.canWhatif = function(mode){ return mode === 'free' && sim.G().wif.length > 0; };
+    sim.wifList = function(){ return sim.G().wif.slice(); };
+    sim.wifStart = function(key){
+      if(sim.G().wif.indexOf(key) < 0) return null;
+      var st = sim.state;
+      st.wif = key; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.spinning = false; st.dayCnt = 0; st.orbAcc = 0;
+      st.view = 'south'; st.pointer = false;
+      st.orb = (key === 'reverse') ? 0 : 270;          /* v2 onSelect 무손실 */
+      st.spin = nightSpin(st.orb);
+      st.wowArmed = false; st.wowPred = null; st.trail = [];
+      return key;
+    };
+    sim.wifPredict = function(i){
+      sim.state.wifPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wifPred;
+    };
+    sim.wifResolved = function(){
+      var st = sim.state;
+      if(!st.wif || st.wifDone || st.wifPred === null || !st.wifActed) return false;
+      if(st.wif === 'freeze') return st.dayCnt >= WHATIF.freeze.need;
+      return st.orbAcc >= WHATIF[st.wif].need;
+    };
+    sim.wifResolve = function(){
+      var st = sim.state;
+      if(!sim.wifResolved()) return null;
+      st.wifDone = true; st.playing = false;
+      var W = WHATIF[st.wif], hit = (st.wifPred === W.a);
+      st.chips.push({ k:st.wif, hit:hit, label:W.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { key:st.wif, hit:hit, reveal:W.reveal, chipToast:toast };
+    };
+    sim.wifExit = function(){
+      var st = sim.state;
+      st.wif = null; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.spinning = false; st.dayCnt = 0; st.orbAcc = 0;
+      st.orb = 270; st.spin = nightSpin(270);
+      return true;
+    };
+
+    /* ── ⭐ 와우: 일주운동 (v3 신설) ── */
+    sim.canWow = function(mode){ return mode === 'free' && sim.G().wow && !sim.state.wif && !sim.state.wowDone; };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.wowArmed = true; st.wowPred = null;
+      st.playing = false; st.spinning = false;
+      st.fpv = true;                                   /* 하늘을 직접 봐야 알 수 있다 */
+      st.spin = nightSpin(st.orb);
+      st.spinAcc = 0; st.trail = [];
+      st.alt = 40; st.az = 0;                          /* 북쪽 하늘(북극성)을 향해 */
+      return true;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    sim.wowStart = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred === null) return false;
+      st.spinning = true;
+      st.spinAcc = 0; st.trail = [];
+      return true;
+    };
+    sim.wowResolved = function(){
+      var st = sim.state;
+      return st.wowArmed && !st.wowDone && st.wowPred !== null && st.spinAcc >= WOW.need;
+    };
+    sim.wowReveal = function(){
+      var p = polarisAltAz(sim.state.spin, LAT);
+      /* 자전각을 바꿔가며 북극성 고도가 «변하지 않음»을 확인 (반증 데이터) */
+      var samples = [0, 1.2, 2.6, 4.1, 5.7].map(function(s){
+        return polarisAltAz(s, LAT).alt;
+      });
+      return {
+        lat: LAT,
+        polarisAlt: p.alt, polarisAz: p.az,
+        samples: samples,
+        fixed: samples.every(function(a){ return Math.abs(a - LAT) < 1e-6; })
+      };
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true; st.spinning = false;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast, data:sim.wowReveal() };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null; st.spinning = false; st.trail = [];
+      return true;
+    };
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred !== null) return false;
+      st.wowArmed = false;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){ return MISSIONS.slice(); };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.orb = 0; st.view = 'south'; st.pointer = false; st.fpv = false;   /* v2: 미션 진입 orb=0 */
+      st.playing = false; st.spinning = false; st.orbAcc = 0; st.dayCnt = 0;
+      st.wif = null; st.wifPred = null; st.wowArmed = false; st.wowPred = null;
+      st.spin = nightSpin(0);
+      st.acted = false;
+    };
+    sim.missionCur = function(){ return MISSIONS[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var m = MISSIONS[sim.mStep];
+      if(m.type !== 'make') return { act:'none' };
+      if(!sim.state.acted) return { act:'none' };
+      if(!m.check(sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      sim.state.acted = false;
+      if(sim.mStep < MISSIONS.length - 1){
+        sim.mStep++;
+        var nx = MISSIONS[sim.mStep];
+        if(nx.set) nx.set(sim.state);
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      var q = QUIZ[sim.qIdx];
+      sim.state.orb = q.orb; sim.state.view = q.view; sim.state.pointer = q.ptr;
+      sim.state.playing = false; sim.state.spinning = false; sim.state.fpv = false;
+      sim.state.spin = nightSpin(q.orb);
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── ✨ 내 별자리 (v2 무손실) ── */
+    sim.myAdd = function(x, y){
+      var st = sim.state;
+      if(st.myGift || st.myStars.length >= MY_MAX) return false;
+      st.myStars.push([clamp(x, 4, 196), clamp(y, 4, 108)]);
+      return true;
+    };
+    sim.myUndo = function(){ return sim.state.myStars.pop() || null; };
+    sim.myClear = function(){ sim.state.myStars = []; return true; };
+    sim.mySetName = function(n){ sim.state.myName = String(n || '').slice(0, 12); return sim.state.myName; };
+    sim.myCanShare = function(){ return !sim.state.myGift && sim.state.myStars.length >= 3; };
+    sim.myShareQuery = function(){
+      return '?mode=mystar&stars=' + encodeURIComponent(starsParam(sim.state.myStars)) +
+             '&name=' + encodeURIComponent(sim.state.myName || '이름 없는 별자리');
+    };
+    sim.myReveal = function(){ sim.state.myRevealed = true; return sim.state.myName || '이름 없는 별자리'; };
+    sim.myMakeMine = function(){
+      var st = sim.state;
+      st.myGift = false; st.myRevealed = false; st.myStars = []; st.myName = '';
+      return true;
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, out = { lines:[], warn:false };
+      var i = sim.nearest(), opp = sim.opposite(), sea = sim.season();
+
+      if(mode === 'quiz'){
+        out.lines.push('오른쪽 밤하늘 패널과 지구의 위치를 보고 답을 골라요!');
+        return out;
+      }
+      if(mode === 'mystar'){
+        if(st.myGift && !st.myRevealed){
+          out.lines.push('별을 이어 보고 무엇을 닮았는지 상상한 다음, ✨ 이름 공개를 눌러요!');
+        } else if(st.myGift && st.myRevealed){
+          out.lines.push('<span class="big">⭐ 「' + (st.myName || '이름 없는 별자리') + '」</span>');
+          out.lines.push('옛날 사람들도 이렇게 밤하늘 별을 이어 사자·백조 이야기를 만들었어요. 별자리는 상상에서 태어났답니다!');
+        } else {
+          out.lines.push('⭐ 별 ' + st.myStars.length + '개 / ' + MY_MAX + ' — 하늘을 누르면 별이 놓이고 차례대로 이어져요'
+            + (sim.myCanShare() ? ' · 이름 짓고 🔗 친구에게 보내요!' : ''));
+        }
+        return out;
+      }
+
+      /* ⭐ 와우 */
+      if(st.wowArmed){
+        out.warn = true;
+        var p = sim.polaris();
+        if(!st.spinning && st.spinAcc === 0){
+          out.lines.push('<span class="big">⭐ 밤새 별을 지켜보기</span>');
+          out.lines.push('북쪽 하늘을 보고 있어요. 🔭 「밤새 지켜보기」를 누르면 시간이 흘러요.');
+          if(st.wowPred !== null) out.lines.push('<span class="hold">🔭 「밤새 지켜보기」를 눌러 시작!</span>');
+        } else {
+          out.lines.push('<span class="big">⭐ 북극성 고도 ' + p.alt.toFixed(1) + '° — 꿈쩍도 안 해요</span>');
+          out.lines.push('다른 별들은 북극성을 중심으로 원을 그리며 도는데, 북극성만 제자리예요.');
+          if(st.spinAcc < WOW.need) out.lines.push('<span class="hold">한 바퀴(하룻밤)를 다 지켜봐요!</span>');
+        }
+        return out;
+      }
+
+      /* 🌀 만약에 */
+      if(st.wif){
+        var W = WHATIF[st.wif];
+        out.warn = true;
+        if(st.wif === 'freeze'){
+          out.lines.push('<span class="big">📅 +' + Math.floor(st.dayCnt) + '일</span>');
+          out.lines.push('날짜가 흘러도 밤하늘은 ' + CONSTS[i].nm + ' 그대로!');
+        } else if(st.wif === 'sunoff'){
+          out.lines.push('<span class="big">☀️ 태양이 꺼졌어요</span>');
+          out.lines.push('지금 네 별자리가 모두 보여요 — 별은 원래 늘 그 자리에!');
+        } else {
+          out.lines.push('<span class="big">🔄 거꾸로 공전 — ' + sea.emo + ' ' + sea.nm + ' 위치</span>');
+          out.lines.push('다음엔 어느 계절 별자리가 올까요?');
+        }
+        if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + W.tip + '</span>');
+        return out;
+      }
+
+      /* 🔴 1인칭 밤하늘 */
+      if(st.fpv){
+        var pol = sim.polaris();
+        if(sim.facingSun()){
+          out.lines.push('<span class="big">☀️ 낮 하늘 — 별이 안 보여요</span>');
+          out.lines.push('별이 사라진 게 아니에요! 태양 빛이 너무 밝아 <b>묻혀서</b> 안 보일 뿐이에요. 시선을 태양 반대쪽으로 돌려 봐요.');
+          return out;
+        }
+        out.lines.push('<span class="big">👁 ' + sea.emo + ' ' + sea.nm + ' 밤하늘 — ' + CONSTS[i].nm + '</span>');
+        out.lines.push('지구에 서서 하늘을 올려다보고 있어요. 화면을 끌어 사방을 둘러봐요 — 북쪽엔 ⭐ 북극성(고도 ' + pol.alt.toFixed(0) + '°)!');
+        out.lines.push(CONSTS[opp].nm + '는 지금 태양과 같은 쪽(낮 하늘)에 있어 보이지 않아요.');
+        return out;
+      }
+
+      /* 우주 시점 (v2 무손실) */
+      var sub;
+      if(st.view === 'north'){
+        sub = '북극성은 지구 자전축이 가리키는 방향에 있어요. 그래서 계절이 바뀌어도, 밤새 별이 돌아도 북쪽 같은 자리예요. 북두칠성 국자 끝 두 별 사이를 5배 늘이면 찾을 수 있어요.';
+      } else {
+        sub = '지구가 공전해서 밤에 바라보는 하늘 방향이 바뀌어요. 그래서 ' + sea.nm + ' 밤엔 ' + CONSTS[i].nm
+            + '가 잘 보이고, ' + CONSTS[opp].nm + '는 태양과 같은 쪽(낮 하늘)에 있어 보이지 않아요.';
+      }
+      out.lines.push('<span class="big">' + sea.emo + ' ' + sea.nm
+        + (st.view === 'south' ? ' · 밤하늘: ' + CONSTS[i].nm : ' · 북쪽 하늘') + '</span>');
+      out.lines.push(sub);
+      out.lines.push('별자리가 계절마다 다른 건 별이 움직여서가 아니라, 지구가 공전하기 때문이에요.');
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    ORBIT_R:ORBIT_R, FAR_R:FAR_R, LAT:LAT, MY_MAX:MY_MAX,
+    wrapDeg:wrapDeg, degDiff:degDiff, clamp:clamp,
+    V:V, vsub:vsub, vadd:vadd, vscale:vscale, vdot:vdot, vcross:vcross, vlen:vlen, vnorm:vnorm,
+    nearestConst:nearestConst, visState:visState, seasonName:seasonName,
+    CONSTS:CONSTS, NORTH:NORTH, POLARIS:POLARIS,
+    earthPos:earthPos, constCenter:constCenter, constDir:constDir, sunDir:sunDir,
+    zenith:zenith, frame:frame, altAz:altAz, lookDir:lookDir, polarisAltAz:polarisAltAz,
+    sunAlt:sunAlt, skyBright:skyBright, isNight:isNight, starVis:starVis, nightSpin:nightSpin,
+    GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, WIF_KEYS:WIF_KEYS, WOW:WOW,
+    parseStars:parseStars, starsParam:starsParam, createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.ConstSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.ConstSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+const CONSTS = Sim.CONSTS, NORTH = Sim.NORTH;
+
+/* ── config (v2 무손실 + 내 별자리 공유 링크 수신) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const cfgOrb = parseFloat(Q.get('orb'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  orb: isNaN(cfgOrb) ? undefined : cfgOrb,
+  stars: Q.get('stars'), name: Q.get('name')
+});
+let mode = sim.G().modes[0];
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+if (sim.state.myGift) mode = 'mystar';
+
+/* ═══════════ 우주 무대 ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [7, 9, 10], target: [0, 0, 0], fov: 46,
+  minDist: 0.1, maxDist: 30, maxPolar: Math.PI - 0.02, exposure: 1.0
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.fog = null;
+scene.background = new THREE.Color(0x03060F);
+sun.visible = false;
+scene.traverse(o => { if (o.isHemisphereLight) o.intensity = 0.05; });
+const sunLight = new THREE.PointLight(0xFFF6E0, 5, 0, 0);
+scene.add(sunLight);
+const ambLight = new THREE.AmbientLight(0xffffff, 0.34);
+scene.add(ambLight);
+
+/* 배경 잔별 (천구) */
+const bgStarMat = new THREE.PointsMaterial({
+  color: 0xCDD6FF, size: 0.14, sizeAttenuation: true, transparent: true, opacity: 0.5, depthWrite: false
+});
+{
+  const N = 1600, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = Math.acos(2 * Math.random() - 1), p = Math.random() * Math.PI * 2;
+    const r = 24 + Math.random() * 4;
+    pos[i * 3] = r * Math.sin(t) * Math.cos(p);
+    pos[i * 3 + 1] = r * Math.cos(t);
+    pos[i * 3 + 2] = r * Math.sin(t) * Math.sin(p);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, bgStarMat));
+}
+
+/* 태양 */
+const sunSpr = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: canvasTexture(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+    gr.addColorStop(0, '#FFFBEA'); gr.addColorStop(0.45, '#FFD43B');
+    gr.addColorStop(1, 'rgba(255,170,40,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }),
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
+}));
+sunSpr.scale.set(2.6, 2.6, 1);
+scene.add(sunSpr);
+
+/* 궤도 링 */
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(Sim.ORBIT_R - 0.03, Sim.ORBIT_R + 0.03, 96),
+  new THREE.MeshBasicMaterial({ color: 0x5C7CFA, side: THREE.DoubleSide, transparent: true, opacity: 0.3, depthWrite: false })
+);
+ring.rotation.x = Math.PI / 2;
+scene.add(ring);
+
+/* 지구 */
+const earthMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(0.5, 40, 28),
+  new THREE.MeshStandardMaterial({
+    map: canvasTexture(256, 128, g => {
+      g.fillStyle = '#1565C0'; g.fillRect(0, 0, 256, 128);
+      g.fillStyle = '#2F9E44';
+      [[40,42,34,26],[95,38,42,30],[150,72,40,24],[200,46,34,28]]
+        .forEach(b => { g.beginPath(); g.ellipse(b[0], b[1], b[2], b[3], 0, 0, 7); g.fill(); });
+    }),
+    roughness: 1, metalness: 0
+  })
+);
+scene.add(earthMesh);
+
+/* ── 별자리 4군 (천구 위, v2 배치 무손실) ── */
+const SC = 0.034;
+const constGrps = [];
+CONSTS.forEach((cd, i) => {
+  const c = Sim.constCenter(i);
+  const ph = (i * 90 + 90) * Math.PI / 180;
+  const tx = -Math.sin(ph), tz = Math.cos(ph);
+  const grp = new THREE.Group();
+  const sMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 1 });
+  const lMat = new THREE.LineBasicMaterial({ color: 0x9FB6FF, transparent: true, opacity: 0.85 });
+  const pts = cd.st.map(p => new THREE.Vector3(c.x + tx * p[0] * SC, -p[1] * SC, c.z + tz * p[0] * SC));
+  pts.forEach(v => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 8), sMat);
+    m.position.copy(v);
+    grp.add(m);
+  });
+  cd.ln.forEach(L => {
+    grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pts[L[0]], pts[L[1]]]), lMat));
+  });
+  grp.userData = { sMat, lMat, center: new THREE.Vector3(c.x, 0, c.z) };
+  scene.add(grp);
+  constGrps.push(grp);
+});
+
+/* ⭐ 북극성 — 자전축 방향, 아주 멀리 */
+const polaris = new THREE.Mesh(
+  new THREE.SphereGeometry(0.16, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xFFE066 })
+);
+polaris.position.set(0, 22, 0);
+scene.add(polaris);
+
+/* 🔴 1인칭 하늘 돔 (낮/밤 그라데이션) */
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(21, 32, 20),
+  new THREE.MeshBasicMaterial({ color: 0x6FA8DC, transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false })
+);
+skyDome.visible = false;
+scene.add(skyDome);
+/* 지평선 원반 */
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(20, 64),
+  new THREE.MeshBasicMaterial({ color: 0x14261A, transparent: true, opacity: 0.92, side: THREE.DoubleSide })
+);
+ground.visible = false;
+scene.add(ground);
+
+/* ⭐ 일주운동 궤적 (와우) */
+const trailGeo = new THREE.BufferGeometry();
+const TRAIL_MAX = 400 * 4;                            /* 별자리 4군 × 최대 400점 */
+const trailPos = new Float32Array(TRAIL_MAX * 3);
+trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+const trailPts = new THREE.Points(trailGeo, new THREE.PointsMaterial({
+  color: 0xFFE066, size: 0.14, sizeAttenuation: true, transparent: true, opacity: 0.55, depthWrite: false
+}));
+trailPts.visible = false;
+scene.add(trailPts);
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), skyEl = $('sky'), fpvhud = $('fpvhud'),
+      annoHost = $('anno'), mystarEl = $('mystar'), mytoolsEl = $('mytools'), mysvg = $('mysvg');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const polAnno = document.createElement('div');
+polAnno.className = 'cn-anno';
+polAnno.textContent = '⭐ 북극성';
+annoHost.appendChild(polAnno);
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈', mystar: '✨ 내 별자리' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+const SEASONS = [{ o: 0, l: '🌸 봄' }, { o: 90, l: '☀️ 여름' }, { o: 180, l: '🍂 가을' }, { o: 270, l: '❄️ 겨울' }];
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="cn-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="cn-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz' || mode === 'mystar') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state;
+  const frozen = sim.frozen();
+  let h = '';
+  if (st.wowArmed) {
+    if (st.wowPred !== null && !st.spinning && st.spinAcc === 0) {
+      h += '<button class="k3-btn fire" data-a="wowstart">🔭 밤새 지켜보기</button>';
+    }
+    h += '<button class="k3-btn" data-a="wowexit">↩ 원래 하늘로</button>';
+  } else {
+    /* 계절 버튼 4종 (v2 무손실) */
+    h += '<div class="cn-sea">' + SEASONS.map(s => {
+      const on = Sim.degDiff(st.orb, s.o) < 45;
+      return `<button data-o="${s.o}" class="${on ? 'on' : ''}">${s.l}</button>`;
+    }).join('') + '</div>';
+    h += `<button class="k3-btn ${st.playing ? '' : 'fire'}" data-a="play">${st.playing ? '■ 멈춤' : (frozen ? '▶ 시간 흐르기' : '▶ 1년 재생')}</button>`;
+    if (!frozen) {
+      h += `<div class="cn-lab">공전 위치</div><input class="cn-slider" id="orbSlider" type="range" min="0" max="360" step="1" value="${Math.round(st.orb)}">`;
+    }
+    if (sim.canFpv(mode) && !st.wif) {
+      h += `<button class="k3-btn ${st.fpv ? 'accent' : ''}" data-a="fpv">${st.fpv ? '🛰 우주에서 보기' : '👁 밤하늘로 내려가기'}</button>`;
+    }
+    if (!st.fpv && !st.wif) {
+      h += `<button class="k3-btn ${st.view === 'south' ? 'accent' : ''}" data-a="south">🌌 남쪽 하늘</button>`;
+      h += `<button class="k3-btn ${st.view === 'north' ? 'accent' : ''}" data-a="north">🧭 북쪽 하늘</button>`;
+      h += `<button class="k3-btn ${st.pointer ? 'accent' : ''}" data-a="polaris">⭐ 북극성 찾기</button>`;
+    }
+    if (sim.canWow(mode)) {
+      h += '<button class="k3-btn accent" data-a="wowarm">⭐ 밤새 별은 어떻게 움직일까?</button>';
+    }
+    if (sim.canWhatif(mode) && !st.wif) {
+      h += '<button class="k3-btn accent" data-a="whatif">🌀 만약에…</button>';
+    }
+    if (st.wif) {
+      h += '<button class="k3-btn" data-a="wifexit">↩ 원래 하늘로</button>';
+    }
+  }
+  h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+  ctrls.querySelectorAll('[data-o]').forEach(b => b.addEventListener('click', () => {
+    hideHint(); sim.clearWow();
+    if (sim.state.playing) sim.togglePlay();
+    sim.setOrb(+b.dataset.o);
+    K3.sound.play('tap');
+    syncScene(); renderAll(); afterAct();
+  }));
+  const os = $('orbSlider');
+  if (os) os.addEventListener('input', () => {
+    hideHint(); sim.clearWow();
+    if (sim.state.playing) sim.togglePlay();
+    sim.setOrb(+os.value);
+    if (sim.state.fpv) sim.state.spin = Sim.nightSpin(sim.state.orb);
+    syncScene(); renderStatus(); renderCtrls(); afterAct();
+  });
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 밤하늘을 마음껏 둘러봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else if (mode === 'mystar') {
+    mbar.style.display = '';
+    mbar.innerHTML = sim.state.myGift
+      ? '<b>🎁 친구가 보낸 별자리예요!</b> 무엇처럼 보이나요?'
+      : '<b>✨ 밤하늘을 눌러 별을 놓고, 나만의 별자리를 만들어요!</b><div class="st">별 3개부터 별자리 · 최대 ' + Sim.MY_MAX + '개</div>';
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const st = $('stage');
+  st.dataset.orb = sim.state.orb.toFixed(1);
+  st.dataset.const = CONSTS[sim.nearest()].k;
+  st.dataset.view = sim.state.view;
+  st.dataset.fpv = sim.state.fpv ? '1' : '0';
+  st.dataset.wif = sim.state.wif || '';
+  st.dataset.bright = sim.skyBright().toFixed(3);
+  st.dataset.polalt = sim.polaris().alt.toFixed(2);
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} ${c.hit ? '✔예측적중' : '✘예측빗나감'}</div>`
+  ).join('');
+}
+
+function renderFpvHud() {
+  const st = sim.state;
+  if (!st.fpv || mode === 'quiz' || mode === 'mystar') { fpvhud.style.display = 'none'; return; }
+  fpvhud.style.display = '';
+  const dirs = ['북','북동','동','남동','남','남서','서','북서'];
+  const d = dirs[Math.round(Sim.wrapDeg(st.az) / 45) % 8];
+  fpvhud.textContent = `👁 ${d}쪽 하늘 · 고도 ${Math.round(st.alt)}° · ` +
+    (sim.isNight() ? '🌙 밤' : (sim.skyBright() > 0.5 ? '☀️ 낮' : '🌆 어스름'));
+}
+
+/* ── 2D 밤하늘 패널 (v2 무손실) ── */
+const NS = 'http://www.w3.org/2000/svg';
+const S = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+function drawConst(g, st, ln, op, col) {
+  ln.forEach(L => g.appendChild(S('line', {
+    x1: st[L[0]][0], y1: st[L[0]][1], x2: st[L[1]][0], y2: st[L[1]][1],
+    stroke: col || '#9fb6ff', 'stroke-width': 1.5, opacity: op
+  })));
+  st.forEach(p => g.appendChild(S('circle', { cx: p[0], cy: p[1], r: 2.4, fill: '#fff', opacity: op, class: 'cstar' })));
+}
+function renderPanel() {
+  const g = $('skyg'), cap = $('skycap');
+  if (!g) return;
+  if (mode === 'mystar') { skyEl.style.display = 'none'; return; }
+  skyEl.style.display = '';
+  while (g.firstChild) g.removeChild(g.firstChild);
+  const stt = sim.state;
+  const sunOff = sim.sunOff();
+  if (stt.view === 'south') {
+    const i = sim.nearest(), cd = CONSTS[i];
+    drawConst(g, cd.st.map(p => [p[0], p[1] - 8]), cd.ln, 1);
+    if (sunOff) {
+      const opp = CONSTS[sim.opposite()];
+      drawConst(g, opp.st.map(p => [p[0] * 0.42 + 44, p[1] * 0.42 - 28]), opp.ln, 0.85, '#FFD8A8');
+    }
+    const t = S('text', { x: 0, y: -38, 'text-anchor': 'middle', fill: '#FFE08A', 'font-size': 11, 'font-family': 'Gowun Dodum', id: 'cname' });
+    t.textContent = (mode === 'quiz') ? '이 별자리는 무엇일까요?' : (cd.nm + ' (' + cd.sea + ')');
+    g.appendChild(t);
+    cap.textContent = sunOff ? '태양 없는 하늘 — 어디든 별!'
+      : (sim.frozen() ? ('📅 +' + Math.floor(stt.dayCnt) + '일째 같은 하늘') : '지금 밤, 남쪽 하늘');
+  } else {
+    const st = NORTH.st.map(p => [p[0] * 0.92, p[1] * 0.92 - 2]);
+    NORTH.dip.forEach(L => g.appendChild(S('line', { x1: st[L[0]][0], y1: st[L[0]][1], x2: st[L[1]][0], y2: st[L[1]][1], stroke: '#9fb6ff', 'stroke-width': 1.5 })));
+    NORTH.cas.forEach(L => g.appendChild(S('line', { x1: st[L[0]][0], y1: st[L[0]][1], x2: st[L[1]][0], y2: st[L[1]][1], stroke: '#9fb6ff', 'stroke-width': 1.5 })));
+    st.forEach((p, idx) => { if (idx === NORTH.polaris) return; g.appendChild(S('circle', { cx: p[0], cy: p[1], r: 2.4, fill: '#fff' })); });
+    const P = st[NORTH.polaris];
+    if (stt.pointer) {
+      g.appendChild(S('line', { x1: st[5][0], y1: st[5][1], x2: P[0], y2: P[1], stroke: '#FFD43B', 'stroke-width': 1.8, 'stroke-dasharray': '4 3', id: 'ptr' }));
+      const t5 = S('text', { x: (st[5][0] + P[0]) / 2, y: (st[5][1] + P[1]) / 2 - 5, 'text-anchor': 'middle', fill: '#FFD43B', 'font-size': 10, 'font-family': 'Gowun Dodum' });
+      t5.textContent = '5배!'; g.appendChild(t5);
+    }
+    g.appendChild(S('circle', { cx: P[0], cy: P[1], r: stt.pointer ? 4 : 2.6, fill: stt.pointer ? '#FFD43B' : '#fff', id: 'pol' }));
+    const tn = S('text', { x: P[0], y: P[1] - 8, 'text-anchor': 'middle', fill: '#FFE08A', 'font-size': 10, 'font-family': 'Gowun Dodum', id: 'polname' });
+    tn.textContent = stt.pointer ? '⭐ 북극성!' : '?'; g.appendChild(tn);
+    const t2 = S('text', { x: -32, y: -36, 'text-anchor': 'middle', fill: '#cdd6e6', 'font-size': 9, 'font-family': 'Gowun Dodum' });
+    t2.textContent = '북두칠성'; g.appendChild(t2);
+    const t3 = S('text', { x: 38, y: -36, 'text-anchor': 'middle', fill: '#cdd6e6', 'font-size': 9, 'font-family': 'Gowun Dodum' });
+    t3.textContent = '카시오페이아'; g.appendChild(t3);
+    cap.textContent = '북쪽 하늘 (일 년 내내)';
+  }
+}
+
+/* ── ✨ 내 별자리 (v2 무손실) ── */
+function renderMyStar() {
+  const st = sim.state;
+  if (mode !== 'mystar') { mystarEl.style.display = 'none'; mytoolsEl.style.display = 'none'; return; }
+  mystarEl.style.display = '';
+  mytoolsEl.style.display = 'flex';
+  mysvg.style.cursor = st.myGift ? 'default' : 'crosshair';
+  /* 잔별 배경 (1회) */
+  const dust = $('mydust');
+  if (!dust.childNodes.length) {
+    for (let i = 0; i < 46; i++) {
+      const c = S('circle', {
+        cx: (Math.random() * 196 + 2).toFixed(1), cy: (Math.random() * 112 + 2).toFixed(1),
+        r: (Math.random() * 0.7 + 0.3).toFixed(2), fill: '#cdd6ff',
+        opacity: (0.18 + Math.random() * 0.3).toFixed(2)
+      });
+      dust.appendChild(c);
+    }
+  }
+  drawMyStars();
+  /* 도구 바 */
+  if (st.myGift) {
+    mytoolsEl.innerHTML =
+      `<button class="k3-btn ${st.myRevealed ? '' : 'fire'}" data-my="reveal" ${st.myRevealed ? 'disabled' : ''}>✨ 이름 공개</button>` +
+      '<button class="k3-btn" data-my="mine">🖌 나도 만들기</button>';
+  } else {
+    mytoolsEl.innerHTML =
+      `<input id="myname" maxlength="12" placeholder="별자리 이름을 지어 줘요" value="${(st.myName || '').replace(/"/g, '&quot;')}">` +
+      `<button class="k3-btn" data-my="undo" ${st.myStars.length ? '' : 'disabled'}>↩ 하나 지우기</button>` +
+      `<button class="k3-btn" data-my="clear" ${st.myStars.length ? '' : 'disabled'}>🗑 처음부터</button>` +
+      `<button class="k3-btn ${sim.myCanShare() ? 'fire' : ''}" data-my="share" ${sim.myCanShare() ? '' : 'disabled'}>🔗 친구에게 링크 보내기</button>`;
+  }
+  mytoolsEl.querySelectorAll('[data-my]').forEach(b => b.addEventListener('click', () => myAct(b.dataset.my, b)));
+  const inp = $('myname');
+  if (inp) inp.addEventListener('input', () => { sim.mySetName(inp.value); drawMyStars(); });
+}
+function drawMyStars() {
+  const g = $('myg');
+  if (!g) return;
+  while (g.firstChild) g.removeChild(g.firstChild);
+  const st = sim.state;
+  for (let i = 1; i < st.myStars.length; i++) {
+    g.appendChild(S('line', {
+      x1: st.myStars[i - 1][0], y1: st.myStars[i - 1][1], x2: st.myStars[i][0], y2: st.myStars[i][1],
+      stroke: '#9fb6ff', 'stroke-width': 1.4, opacity: 0.9, filter: 'url(#myGlow)'
+    }));
+  }
+  st.myStars.forEach((p, i) => {
+    g.appendChild(S('circle', {
+      cx: p[0], cy: p[1], r: i === 0 ? 3.2 : 2.6, fill: '#FFE08A', filter: 'url(#myGlow)', class: 'mystar'
+    }));
+  });
+  if (st.myStars.length >= 3 && (st.myName || st.myGift)) {
+    const show = st.myGift
+      ? (st.myRevealed ? ('⭐ ' + (st.myName || '이름 없는 별자리')) : '❔ 이름이 숨겨져 있어요')
+      : ('⭐ ' + st.myName);
+    const t = S('text', { x: 100, y: 12, 'text-anchor': 'middle', fill: '#FFE08A', 'font-size': 8.5, 'font-family': 'Gowun Dodum', opacity: 0.95, id: 'myname-label' });
+    t.textContent = show;
+    g.appendChild(t);
+  }
+}
+mysvg.addEventListener('click', e => {
+  if (mode !== 'mystar' || sim.state.myGift) return;
+  const box = mysvg.getBoundingClientRect();
+  if (!box.width || !box.height) return;
+  /* preserveAspectRatio="slice" 보정 없이 단순 매핑 (테스트는 setStar 훅 사용) */
+  const x = ((e.clientX || 0) - box.left) * (200 / box.width);
+  const y = ((e.clientY || 0) - box.top) * (120 / box.height);
+  if (!sim.myAdd(x, y)) { K3.toast('별은 최대 ' + Sim.MY_MAX + '개까지!', true, T(1600)); return; }
+  K3.sound.play('tap');
+  drawMyStars(); renderMyStar(); renderStatus();
+});
+function myAct(a, btn) {
+  const st = sim.state;
+  if (a === 'undo') { sim.myUndo(); K3.sound.play('pop'); }
+  else if (a === 'clear') { sim.myClear(); K3.sound.play('pop'); }
+  else if (a === 'share') {
+    const url = location.href.split('?')[0] + sim.myShareQuery();
+    const done = () => {
+      const o = btn.textContent;
+      btn.textContent = '✓ 복사됐어요! 친구에게 붙여 보내요';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = o; btn.disabled = false; }, T(1800));
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, () => window.prompt('링크를 복사하세요', url));
+    } else window.prompt('링크를 복사하세요', url);
+    K3.sound.play('chime');
+    return;
+  } else if (a === 'reveal') {
+    const nm = sim.myReveal();
+    K3.sound.play('chime'); K3.sound.play('ting');
+    K3.toast('⭐ 「' + nm + '」!', false, T(2600));
+  } else if (a === 'mine') {
+    sim.myMakeMine();
+    K3.sound.play('select');
+  }
+  renderMyStar(); renderStatus();
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      syncScene(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderPanel(); renderFpvHud(); renderMyStar();
+  $('stage').style.display = (mode === 'mystar') ? 'none' : '';
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+const _v = new THREE.Vector3();
+function syncScene() {
+  const st = sim.state;
+  if (mode === 'mystar') return;
+
+  const ep = Sim.earthPos(st.orb);
+  earthMesh.position.set(ep.x, 0, ep.z);
+  earthMesh.rotation.y = st.spin;
+
+  const sunOff = sim.sunOff();
+  sunSpr.material.opacity = sunOff ? 0.06 : 1;
+  sunLight.intensity = sunOff ? 0.3 : 5;
+  ambLight.intensity = sunOff ? 0.62 : 0.34;
+  bgStarMat.opacity = sunOff ? 0.95 : 0.5;
+
+  /* 별자리 밝기 (v2 visState 무손실) */
+  constGrps.forEach((grp, i) => {
+    const op = sim.constOpacity(i);
+    grp.userData.sMat.opacity = op;
+    grp.userData.lMat.opacity = op * 0.85;
+  });
+
+  /* 🔴 1인칭 밤하늘 */
+  if (st.fpv) {
+    controls.enabled = false;
+    skyDome.visible = true;
+    ground.visible = true;
+    camera.position.set(ep.x, 0, ep.z);
+    const z = sim.zenith();
+    const l = sim.look();
+    camera.up.set(z.x, z.y, z.z);
+    camera.lookAt(ep.x + l.x * 10, l.y * 10, ep.z + l.z * 10);
+    /* 하늘 돔·지평선 = 관측자 로컬 */
+    skyDome.position.set(ep.x, 0, ep.z);
+    const b = sim.skyBright();
+    skyDome.material.opacity = b * 0.92;
+    ground.position.set(ep.x, 0, ep.z);
+    ground.up.set(z.x, z.y, z.z);
+    ground.lookAt(ep.x + z.x, z.y, ep.z + z.z);
+    /* 낮이면 별이 묻힌다 */
+    const vis = sim.starVis();
+    bgStarMat.opacity = (sunOff ? 0.95 : 0.5) * vis;
+    constGrps.forEach((grp, i) => {
+      grp.userData.sMat.opacity = sim.constOpacity(i) * vis;
+      grp.userData.lMat.opacity = sim.constOpacity(i) * 0.85 * vis;
+    });
+    polaris.visible = vis > 0.15;
+    earthMesh.visible = false;
+  } else {
+    controls.enabled = true;
+    skyDome.visible = false;
+    ground.visible = false;
+    polaris.visible = true;
+    earthMesh.visible = true;
+    camera.up.set(0, 1, 0);
+  }
+
+  /* ⭐ 일주운동 궤적 */
+  const showTrail = st.wowArmed && st.trail.length > 1;
+  trailPts.visible = showTrail;
+  if (showTrail) {
+    let n = 0;
+    const step = Math.max(1, Math.floor(st.trail.length / 100));
+    for (let t = 0; t < st.trail.length; t += step) {
+      const sp = st.trail[t];
+      for (let i = 0; i < 4; i++) {
+        if (n >= TRAIL_MAX) break;
+        /* 그 순간 별자리 i가 «관측자 하늘의 어디»에 있었나 → 월드로 되돌림 */
+        const aa = Sim.altAz(Sim.constDir(st.orb, i), sp, Sim.LAT);
+        const d = Sim.lookDir(aa.alt, aa.az, st.spin, Sim.LAT);   /* 현재 프레임 기준 재투영 */
+        trailPos[n * 3] = ep.x + d.x * 18;
+        trailPos[n * 3 + 1] = d.y * 18;
+        trailPos[n * 3 + 2] = ep.z + d.z * 18;
+        n++;
+      }
+    }
+    trailGeo.setDrawRange(0, n);
+    trailGeo.attributes.position.needsUpdate = true;
+  }
+
+  renderPanel();
+}
+
+/* ── 조작 후처리 ── */
+function afterAct() {
+  if (mode === 'mission') missionTick();
+  if (sim.state.wif) wifTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'play') {
+    sim.clearWow();
+    sim.togglePlay();
+    K3.sound.play(st.playing ? 'whoosh' : 'select');
+    renderCtrls(); renderStatus();
+  } else if (a === 'fpv') {
+    sim.toggleFpv();
+    K3.sound.play('whoosh');
+    syncScene(); renderAll();
+    if (st.fpv) K3.toast('👁 화면을 <b>끌어서</b> 사방을 둘러봐요 — 태양 쪽을 보면 하늘이 밝아져요!', false, T(4000));
+  } else if (a === 'south' || a === 'north') {
+    sim.setView(a);
+    K3.sound.play('tap');
+    syncScene(); renderAll(); afterAct();
+  } else if (a === 'polaris') {
+    sim.togglePointer();
+    K3.sound.play(st.pointer ? 'chime' : 'tap');
+    syncScene(); renderAll(); afterAct();
+  } else if (a === 'reset') {
+    sim.wifExit(); sim.wowExit();
+    st.fpv = false; st.view = 'south'; st.pointer = false; st.orb = sim.orb0;
+    st.spin = Sim.nightSpin(st.orb);
+    controls.enabled = true;
+    K3.sound.play('tap');
+    syncScene(); renderAll();
+  } else if (a === 'whatif') {
+    K3.cards.result('<h3>🌀 만약에… 무엇을 바꿔 볼까요?</h3>',
+      sim.wifList().map(k => ({ label: Sim.WHATIF[k].icon + ' ' + Sim.WHATIF[k].title, value: k }))
+    ).then(k => { if (k) startWhatif(k); });
+  } else if (a === 'wifexit') {
+    sim.wifExit();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    syncScene(); renderAll();
+    K3.cards.predict(Sim.WOW.q, Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c })))
+      .then(v => {
+        sim.setWowPred(+v);
+        K3.sound.play('charge');
+        K3.toast('🔭 「밤새 지켜보기」를 눌러 하룻밤을 흘려보내요!', false, T(3600));
+        renderCtrls(); renderStatus();
+      });
+  } else if (a === 'wowstart') {
+    if (!sim.wowStart()) return;
+    K3.sound.play('whoosh');
+    renderCtrls(); renderStatus();
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    st.fpv = false;
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  }
+}
+
+/* ── 만약에 ── */
+function startWhatif(key) {
+  sim.wifStart(key);
+  K3.sound.play('whoosh');
+  syncScene(); renderAll();
+  const W = Sim.WHATIF[key];
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.wifPredict(+v);
+      K3.sound.play('charge');
+      K3.toast(W.icon + ' ' + W.tip, false, T(3800));
+      renderStatus();
+    });
+}
+function wifTick() {
+  if (!sim.wifResolved()) return;
+  const r = sim.wifResolve();
+  if (!r) return;
+  K3.sound.play(r.hit ? 'chime' : 'pop');
+  if (r.hit) K3.sound.play('ting');
+  const W = Sim.WHATIF[r.key];
+  K3.toast(
+    '<b>' + W.icon + ' ' + W.title + '</b><br>' + W.reveal +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘'),
+    !r.hit, T(6800)
+  );
+  renderChips(); renderCtrls(); renderStatus();
+  if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(7000));
+}
+
+/* ── ⭐ 와우: 일주운동 ── */
+function wowTick() {
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  const d = r.data;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>⭐ 하늘의 못, 북극성</h3>' + polarisTable(d) +
+    '<div style="font-size:13px;line-height:1.55;color:#243043">하룻밤 사이 모든 별이 <b>북극성을 중심으로 원</b>을 그렸어요. ' +
+    '그런데 북극성만은 <b>고도 ' + d.polarisAlt.toFixed(1) + '°에서 꿈쩍도 안 했죠</b>.<br>' +
+    '북극성은 <b>지구 자전축이 가리키는 방향</b>에 있어요. 회전축 위에 있으니 <b>회전의 중심</b>이 되어 제자리인 거예요. ' +
+    '팽이의 꼭지가 안 움직이는 것과 같아요.<br>' +
+    '놀라운 사실 하나 더 — 북극성의 <b>고도가 곧 우리가 선 곳의 위도</b>예요(' + d.lat + '°). ' +
+    '옛 뱃사람들은 이걸로 자기가 어디쯤 있는지 알아냈답니다.' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 별은 「나란히」가 아니라 「원」을 그려요! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    sim.state.fpv = false;
+    syncScene(); renderAll();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(400));
+  });
+  renderChips(); renderCtrls();
+}
+function polarisTable(d) {
+  return '<div style="margin:8px 0 6px;font-family:Gowun Dodum">'
+    + '<div style="font-size:12px;color:#5a7894;margin-bottom:4px">자전각을 바꿔가며 잰 북극성 고도</div>'
+    + d.samples.map((a, i) =>
+      '<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 8px;border-bottom:1px solid #E7E1D6">'
+      + '<span style="color:#5a7894">밤 ' + (i + 1) + '번째 잼</span><b style="color:#C24106">' + a.toFixed(1) + '°</b></div>').join('')
+    + '<div style="font-size:12px;color:#0B7A5C;margin-top:5px">→ 전부 똑같아요! (= 관측 위도 ' + d.lat + '°)</div></div>';
+}
+
+/* ── 🔴 1인칭 시선 드래그 · 우주 시점 궤도 회전 ── */
+let dragging = false, lastXY = null;
+renderer.domElement.addEventListener('pointerdown', e => {
+  hideHint();
+  if (!sim.state.fpv || mode === 'quiz' || mode === 'mystar') return;
+  dragging = true;
+  lastXY = [e.clientX || 0, e.clientY || 0];
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const x = e.clientX || 0, y = e.clientY || 0;
+  sim.aim((y - lastXY[1]) * 0.14, (x - lastXY[0]) * -0.16);
+  lastXY = [x, y];
+  syncScene(); renderStatus(); renderFpvHud();
+});
+function endDrag() { dragging = false; }
+renderer.domElement.addEventListener('pointerup', endDrag);
+renderer.domElement.addEventListener('pointercancel', endDrag);
+
+/* ── 미션 ── */
+let thinkOpen = false;
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const cur = sim.missionCur();
+  if (cur.type === 'think') { openThink(cur); return; }
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { syncScene(); renderAll(); missionTick(); }, T(1300));
+}
+function openThink(m) {
+  if (thinkOpen) return;
+  thinkOpen = true;
+  K3.cards.predict(m.text.replace(/<[^>]+>/g, ''), m.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      thinkOpen = false;
+      if (+v === m.a) {
+        K3.sound.play('chime'); K3.sound.play('ting');
+        K3.toast('🎉 정답!<br>' + m.why, false, T(4600));
+        sim.missionAdvance();
+        setTimeout(() => { syncScene(); renderAll(); if (!sim.mDone) missionTick(); }, T(1400));
+      } else {
+        K3.sound.play('fail');
+        K3.toast('음… 다시 생각해 볼까요? 지구와 별자리의 위치를 봐요!', true, T(2600));
+        setTimeout(() => missionTick(), T(2700));
+      }
+    });
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wifExit(); sim.wowExit();
+  const st = sim.state;
+  st.fpv = false; st.view = 'south'; st.pointer = false;
+  st.orbAcc = 0; st.spinAcc = 0; st.dayCnt = 0;
+  st.wowDone = false;
+  controls.enabled = true;
+  camera.up.set(0, 1, 0);
+  qLock = false;
+}
+function setGrade(g) {
+  sim.grade = g;
+  if (!sim.G().modes.includes(mode)) mode = sim.G().modes[0];
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  else if (mode === 'free') { sim.state.orb = sim.orb0; sim.state.spin = Sim.nightSpin(sim.orb0); }
+  camera.position.set(7, 9, 10);
+  controls.target.set(0, 0, 0);
+  syncScene(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  else if (m === 'free') { sim.state.orb = 270; sim.state.spin = Sim.nightSpin(270); }
+  camera.position.set(7, 9, 10);
+  controls.target.set(0, 0, 0);
+  syncScene(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+
+  const st = sim.state;
+  if ((st.playing || st.spinning) && mode !== 'mystar') {
+    sim.tick(dt);
+    syncScene();
+    renderStatus();
+    renderFpvHud();
+    const os = $('orbSlider');
+    if (os) os.value = Math.round(st.orb);
+    afterAct();
+  }
+
+  /* ⭐ 북극성 라벨 투영 */
+  if (mode !== 'quiz' && mode !== 'mystar' && polaris.visible) {
+    polaris.getWorldPosition(_v);
+    _v.project(camera);
+    if (_v.z < 1) {
+      polAnno.style.left = ((_v.x * 0.5 + 0.5) * innerWidth) + 'px';
+      polAnno.style.top = ((-_v.y * 0.5 + 0.5) * innerHeight - 20) + 'px';
+      polAnno.style.display = '';
+    } else polAnno.style.display = 'none';
+  } else polAnno.style.display = 'none';
+
+  if (controls.enabled) controls.update();
+  if (mode !== 'mystar') renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+syncScene();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast(sim.state.myGift
+  ? '🎁 <b>친구가 보낸 별자리</b>예요! 무엇처럼 보이는지 상상한 다음 이름을 열어 봐요.'
+  : (sim.G().wow
+    ? '<b>👁 밤하늘로 내려가기</b> — 지구에 서서 하늘을 직접 올려다볼 수 있어요!'
+    : '<b>계절 버튼</b>을 눌러 계절마다 다른 별자리를 만나 봐요!'));
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.ConstApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWhatif,
+  earthMesh, constGrps, polaris, skyDome, ground, trailPts, sunSpr, sunLight, ambLight, bgStarMat,
+  camera, controls,
+  syncScene, renderAll, afterAct, missionTick, wifTick, wowTick, drawMyStars, renderMyStar,
+  setOrb(v) { sim.setOrb(v); if (sim.state.fpv) sim.state.spin = Sim.nightSpin(sim.state.orb); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  aim(dAlt, dAz) { sim.aim(dAlt, dAz); syncScene(); renderStatus(); renderFpvHud(); },
+  addStar(x, y) { const r = sim.myAdd(x, y); drawMyStars(); renderMyStar(); renderStatus(); return r; },
+  myAct,
+  runFor(sec) {
+    if (!sim.state.wowArmed) sim.state.playing = true;   /* 와우(자전)는 spinning으로 흐른다 */
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncScene(); renderStatus(); renderCtrls(); renderFpvHud();
+    afterAct();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
