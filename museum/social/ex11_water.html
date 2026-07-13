@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>물 한 방울의 여정 — 케이뮤지엄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../core/museum.css">
+<style>
+  #stage-canvas{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:default; }
+  #stage-canvas.is-over{ cursor:grab; }
+  #stage-canvas.is-dragging{ cursor:grabbing; }
+  #premise{ position:fixed; top:6vh; left:0; right:0; text-align:center; z-index:40; pointer-events:none;
+     font-family:'Gowun Batang',serif; font-size:clamp(15px,2.1vw,22px); color:var(--ink-dim);
+     opacity:0; transition:opacity 1.6s ease; letter-spacing:.02em; }
+  #premise.is-in{ opacity:1; }
+  #overlay{ position:fixed; inset:0; z-index:50; pointer-events:none;
+     display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:5vh; gap:14px; }
+  #overlay > *{ pointer-events:auto; }
+  #reexp{ opacity:0; transition:opacity 1s ease; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  #reexp.is-in{ opacity:1; }
+  #reexp .track{ position:relative; width:min(340px,66vw); }
+  #reexp input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--brass-dim); outline:none; }
+  #reexp input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp input[type=range]::-moz-range-thumb{ width:16px; height:16px; border:none; border-radius:50%;
+     background:var(--brass); box-shadow:0 0 12px var(--brass-glow); cursor:pointer; }
+  #reexp .cap{ font-family:'Gowun Dodum',sans-serif; font-size:14px; color:var(--ink-dim); letter-spacing:.02em; }
+  #formula{ opacity:0; transform:translateY(8px); transition:opacity 1.2s ease, transform 1.2s var(--ease-rise);
+     font-family:'Gowun Batang',serif; font-size:clamp(16px,2.2vw,23px); color:var(--ink);
+     text-align:center; letter-spacing:.02em; }
+  #formula.is-in{ opacity:1; transform:translateY(0); }
+  #formula .small{ display:block; margin-top:10px; font-family:'Gowun Dodum',sans-serif;
+     font-size:14px; color:var(--ink-dim); line-height:1.7; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     E1 순수 원리 — 렌더 0줄. 이 블록은 동결(바이트 불변).
+
+     실데이터 헌법:
+       · 물길 = Natural Earth 10m rivers_lake_centerlines(퍼블릭 도메인) 원본 무변형.
+         남한강 + 한강을 이어 174점 — 검룡소측 [128.8789,37.4051] → 서울측 [126.7555,37.6379].
+       · ★정직 정리 — 길이는 물길에서 재지 않는다.
+         이 폴리라인의 대권 길이는 약 324.7km지만 한강의 실측 길이는 514.4km다.
+         원본 데이터의 단순화 결과이며 우리가 만든 오차가 아니다.
+         그러므로 표시되는 모든 거리는 실측 상수(RIVER_KM)에서만 나온다.
+       · 발원 표지 = 물길의 최상류 끝점(s=0). 검룡소 실좌표와 약 5.7km 떨어져 있는데,
+         이는 원본이 남한강 상류를 그 지점에서 자른 결과다. 점을 보태 늘이지 않는다 —
+         그것이 데이터 변형이다.
+
+     배반의 순수 표현:
+       CYCLE — 여정의 마지막 노드가 첫 노드로 되돌아온다. 고리는 닫힌다.
+       물은 오지 않았다. 돌고 있었다.
+     ═══════════════════════════════════════════════════════════════════ -->
+<script id="water-pure">
+(function(global){
+  'use strict';
+
+  /* ── 물길 — Natural Earth 원본(무변형) ────────────────────────────── */
+  var PATH=[
+    [128.8789,37.4051],[128.8624,37.4048],[128.8528,37.4252],[128.8421,37.47],[128.8252,37.4831],
+    [128.7991,37.4901],[128.7714,37.4915],[128.7498,37.4874],[128.6827,37.4639],[128.6791,37.462],
+    [128.6741,37.4579],[128.6718,37.4548],[128.6694,37.4505],[128.6668,37.4466],[128.6636,37.4449],
+    [128.6465,37.4403],[128.6553,37.4296],[128.6882,37.4108],[128.6721,37.3955],[128.6587,37.3882],
+    [128.6192,37.3829],[128.6139,37.3836],[128.6128,37.3862],[128.6122,37.389],[128.6087,37.3903],
+    [128.6038,37.3882],[128.5997,37.3835],[128.5986,37.3788],[128.6103,37.3716],[128.6103,37.3602],
+    [128.605,37.3419],[128.6079,37.3341],[128.6124,37.3253],[128.6176,37.3181],[128.6227,37.3152],
+    [128.6327,37.3115],[128.6274,37.3034],[128.6171,37.296],[128.6124,37.2941],[128.5986,37.2716],
+    [128.5951,37.2674],[128.5737,37.2698],[128.5659,37.2681],[128.5571,37.26],[128.5549,37.2792],
+    [128.5429,37.2877],[128.5294,37.2849],[128.523,37.2706],[128.5288,37.2526],[128.5307,37.2435],
+    [128.5268,37.2395],[128.5051,37.2321],[128.4998,37.2296],[128.4965,37.2225],[128.5045,37.2136],
+    [128.5032,37.2053],[128.4981,37.1988],[128.4861,37.1882],[128.4773,37.1777],[128.4727,37.1751],
+    [128.4712,37.1722],[128.4758,37.1644],[128.4826,37.1587],[128.5099,37.1433],[128.5224,37.1292],
+    [128.5294,37.1136],[128.5258,37.1011],[128.5056,37.096],[128.4981,37.0896],[128.4907,37.0755],
+    [128.4802,37.0614],[128.4643,37.055],[128.4324,37.0572],[128.4215,37.0519],[128.4059,37.0352],
+    [128.3838,37.005],[128.3693,36.9957],[128.3517,36.9999],[128.3556,36.9821],[128.3246,36.9695],
+    [128.2373,36.9561],[128.2254,36.9571],[128.2143,36.9617],[128.2024,36.9742],[128.1777,37.0073],
+    [128.1622,37.0141],[128.1367,37.0106],[128.1187,37.0013],[128.0906,36.9731],[128.0474,36.9527],
+    [128.0134,36.973],[127.9822,37.0053],[127.9473,37.0215],[127.9265,37.0128],[127.9107,36.9969],
+    [127.895,36.9873],[127.8749,36.997],[127.8634,37.0213],[127.8722,37.0409],[127.8833,37.0585],
+    [127.8783,37.0767],[127.8683,37.0814],[127.8437,37.0821],[127.834,37.0864],[127.8093,37.1089],
+    [127.7615,37.1653],[127.7549,37.1755],[127.752,37.1973],[127.7436,37.2137],[127.7276,37.224],
+    [127.7032,37.2276],[127.6899,37.2379],[127.6724,37.2865],[127.6518,37.3027],[127.6455,37.2952],
+    [127.5862,37.337],[127.5724,37.3518],[127.5536,37.3616],[127.5493,37.3673],[127.5466,37.3758],
+    [127.5283,37.4119],[127.5203,37.4213],[127.5024,37.4364],[127.4942,37.4461],[127.4917,37.4566],
+    [127.4909,37.4702],[127.4876,37.482],[127.4532,37.4986],[127.4429,37.5007],[127.4088,37.4941],
+    [127.3985,37.4945],[127.3828,37.5025],[127.3718,37.5138],[127.3579,37.5237],[127.3336,37.528],
+    [127.3234,37.5236],[127.3132,37.5149],[127.3028,37.5086],[127.2925,37.5115],[127.2823,37.5195],
+    [127.2545,37.5355],[127.2426,37.5477],[127.2309,37.5634],[127.2183,37.5769],[127.2033,37.5826],
+    [127.1831,37.5803],[127.1629,37.5741],[127.1446,37.5655],[127.131,37.5559],[127.125,37.5463],
+    [127.1118,37.517],[127.1043,37.5081],[127.088,37.5057],[127.0747,37.5131],[127.0632,37.523],
+    [127.0523,37.528],[127.0455,37.5301],[127.032,37.5395],[127.0248,37.5416],[127.0171,37.5397],
+    [127.0099,37.5355],[126.9933,37.5225],[126.9878,37.5162],[126.9819,37.5108],[126.9734,37.5081],
+    [126.9647,37.5108],[126.9585,37.5177],[126.9539,37.5248],[126.9495,37.528],[126.9094,37.5458],
+    [126.8811,37.5519],[126.8672,37.559],[126.7729,37.6263],[126.7555,37.6379]
+  ];
+
+  /* ── 실측 상수 — 표시되는 모든 수는 여기서만 나온다 ────────────────── */
+  var FACT = {
+    RIVER_KM: 514.4,          // 한강 길이(검룡소~서해) — 통용 실측
+    SPRING: '검룡소',          // 1987년 국립지리원 공식 인정 발원지
+    SPRING_TONS: 2000,        // 하루 용출량(톤)
+    SPRING_TEMP: 9,           // 사계절 수온(℃)
+    PEAK_M: 1418,             // 금대봉
+    INTAKE_KM: 25,            // 서울 취수 구간(팔당댐~잠실수중보)
+    INTAKES: 5,               // 취수장(팔당·강북·암사·풍납·자양)
+    PLANTS: 6,                // 아리수정수센터
+    FIRST_YEAR: 1908          // 뚝도정수장 — 서울 수돗물의 시작
+  };
+
+  /* ── 이정표 — 물길 위 스냅점(s 단조 증가) ─────────────────────────── */
+  var MARKS = [
+    { id:'spring',  s:0.0000, name:'검룡소',        note:'발원' },
+    { id:'jeongseon', s:0.1151, name:'정선 조양강',  note:'' },
+    { id:'yeongwol',  s:0.2558, name:'영월 동강',    note:'' },
+    { id:'chungju',   s:0.5058, name:'충주',        note:'' },
+    { id:'yeoju',     s:0.6634, name:'여주',        note:'' },
+    { id:'dumul',     s:0.7914, name:'두물머리',     note:'북한강이 합쳐진다' },
+    { id:'paldang',   s:0.8184, name:'팔당댐',      note:'' },
+    { id:'gangbuk',   s:0.8299, name:'강북취수장',   note:'' },
+    { id:'amsa',      s:0.8623, name:'암사취수장',   note:'' },
+    { id:'ttukdo',    s:0.8972, name:'뚝도정수센터', note:'1908' }
+  ];
+
+  /* ── ★고리 — 여정의 끝이 출발점이다 ──────────────────────────────── */
+  var CYCLE = ['수도꼭지','뚝도정수센터','암사취수장','강북취수장','팔당댐','두물머리',
+               '여주','충주','영월 동강','정선 조양강','검룡소',
+               '땅속','비','구름','바다','서해','한강 하구','서울','하수구','수도꼭지'];
+
+  /* ── 기하 ────────────────────────────────────────────────────────── */
+  var R = 6371.0088;
+  function rad(d){ return d*Math.PI/180; }
+  function haversine(a,b){                                  // km
+    var la1=rad(a[1]), lo1=rad(a[0]), la2=rad(b[1]), lo2=rad(b[0]);
+    var h=Math.sin((la2-la1)/2); h=h*h;
+    h += Math.cos(la1)*Math.cos(la2)*Math.pow(Math.sin((lo2-lo1)/2),2);
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+  /* 누적 호길이 — 폴리라인 내부 좌표계. 표시에는 절대 쓰지 않는다(정직 정리). */
+  var CUM=[0], i;
+  for(i=0;i<PATH.length-1;i++) CUM.push(CUM[i] + haversine(PATH[i], PATH[i+1]));
+  var POLY_KM = CUM[CUM.length-1];
+
+  /* s ∈ [0,1] — 0=발원(검룡소측), 1=서울측 */
+  function at(s){
+    if(!(s>=0)) s=0; if(s>1) s=1;
+    var t = s*POLY_KM, lo=0, hi=CUM.length-1;
+    while(lo<hi-1){ var m=(lo+hi)>>1; if(CUM[m]<=t) lo=m; else hi=m; }
+    var seg = CUM[hi]-CUM[lo];
+    var u = seg>0 ? (t-CUM[lo])/seg : 0;
+    var a=PATH[lo], b=PATH[hi];
+    return [ a[0]+(b[0]-a[0])*u, a[1]+(b[1]-a[1])*u ];
+  }
+  /* 임의의 좌표에서 가장 가까운 물길 위 s — 되짚는 손이 물길에 붙는다 */
+  function sNear(p){
+    var best=Infinity, bs=0;
+    for(var i=0;i<PATH.length;i++){
+      var d = haversine(p, PATH[i]);
+      if(d<best){ best=d; bs=CUM[i]/POLY_KM; }
+    }
+    return bs;
+  }
+  /* 점-선분 거리 — 물길은 꼭짓점이 아니라 선(線)이다.
+     소영역이므로 위도 보정한 평면에서 재고 km로 되돌린다. */
+  function segDist(p, a, b){
+    var k = Math.cos(rad(37.3)) * 111.19492664455873;   // 경도 1도의 km(위도 37.3)
+    var ky = 111.19492664455873;                        // 위도 1도의 km
+    var px=(p[0]-a[0])*k, py=(p[1]-a[1])*ky;
+    var bx=(b[0]-a[0])*k, by=(b[1]-a[1])*ky;
+    var L=bx*bx+by*by;
+    var t = L>0 ? (px*bx+py*by)/L : 0;
+    if(t<0) t=0; if(t>1) t=1;
+    var dx=px-bx*t, dy=py-by*t;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function distTo(p){
+    var best=Infinity;
+    for(var i=0;i<PATH.length-1;i++){
+      var d=segDist(p, PATH[i], PATH[i+1]);
+      if(d<best) best=d;
+    }
+    return best;
+  }
+
+  /* ── 되짚다 — s는 줄어들기만 하고, 발원에서 멈춘다 ─────────────────── */
+  function retrace(s, ds){
+    var n = s - Math.abs(ds);
+    return n<0 ? 0 : n;
+  }
+  /* 지금 s에서 이미 지나온(=되짚어 올라간) 이정표들 — 하류에서 상류 순 */
+  function passed(s){
+    var out=[];
+    for(var i=MARKS.length-1;i>=0;i--) if(MARKS[i].s >= s - 1e-9) out.push(MARKS[i]);
+    return out;
+  }
+  /* 아무 지점이나 짚으면 — 그곳의 이름(가장 가까운 이정표) */
+  function nameAt(s){
+    var best=MARKS[0], bd=Infinity;
+    for(var i=0;i<MARKS.length;i++){
+      var d=Math.abs(MARKS[i].s - s);
+      if(d<bd){ bd=d; best=MARKS[i]; }
+    }
+    return best;
+  }
+  /* 발원에서 여기까지 — 실측 길이로만 환산한다(정직 정리) */
+  function kmFromSpring(s){ return FACT.RIVER_KM * s; }
+
+  /* ── 등장방형 투영 — 소영역이라 위도 보정만 ───────────────────────── */
+  var LAT_MID = 37.3;
+  function proj(p){ return [ p[0]*Math.cos(rad(LAT_MID)), p[1] ]; }
+
+  global.KMuseumWater = {
+    PATH:PATH, MARKS:MARKS, CYCLE:CYCLE, FACT:FACT,
+    POLY_KM:POLY_KM,
+    haversine:haversine, at:at, sNear:sNear, distTo:distTo, segDist:segDist,
+    retrace:retrace, passed:passed, nameAt:nameAt,
+    kmFromSpring:kmFromSpring, proj:proj
+  };
+})(typeof window!=='undefined'? window : global);
+</script>
+
+<canvas id="stage-canvas"></canvas>
+<div id="premise">수도꼭지에서, 물 한 방울이 맺혔습니다.</div>
+
+<div id="overlay">
+  <div id="formula">
+    물은 오지 않았다 — 돌고 있었다
+    <span class="small">
+      한강 514.4km · 발원 검룡소 — 하루 2,000톤, 사철 9℃<br>
+      팔당댐에서 잠실까지 25km에 취수장 다섯 · 정수센터 여섯 · 1908년 뚝도에서 시작
+    </span>
+  </div>
+  <div id="reexp">
+    <div class="track"><input id="sl" type="range" min="0" max="1000" value="897"></div>
+    <div class="cap" id="slcap">물길을 짚어 보세요</div>
+  </div>
+</div>
+
+<script src="../core/museum.js"></script>
+<script>
+(function(){
+  'use strict';
+  var PURE = window.KMuseumWater;
+  var canvas = document.getElementById('stage-canvas');
+  var stage  = Museum.stage(canvas);
+  Museum.grip(canvas);            // §5.5 손을 놓치지 않는다 — 캔버스 밖·취소된 포인터 방어
+  var W=1600, H=900;
+
+  // ── §8.6 칠판 — 되짚어 올라간 길이 분필선으로 자란다 ────────────────
+  var BQ = '이 물은 — 어디서 왔을까요?';
+  var BA = '물은 오지 않았다 — 돌고 있었다';
+  var kboard = Museum.board({
+    question: BQ, answer: BA,
+    slots: [{ id:'trace', label:'되짚어 올라간 길' }],
+    tick: function(b){
+      b.mark('trace', Math.max(0, Math.min(1, (START_S - S.s) / START_S)));
+      if(S.closed) b.lit('trace');
+      if((S.phase==='after'||S.betrayed) && !b.isAfter()) b.resolve();
+    }
+  });
+
+  // ── 무대 좌표 — 한강 유역이 무대에 눕는다. 지도는 끝까지 움직이지 않는다 ──
+  var LON0=126.60, LON1=129.00, LAT0=36.88, LAT1=37.72;
+  var A=PURE.proj([LON0,LAT1]), B=PURE.proj([LON1,LAT0]);
+  var MAPW=1280, MAPX=(W-MAPW)/2, PXY=MAPW/(B[0]-A[0]);
+  var MAPH=(A[1]-B[1])*PXY, MAPY=(H-MAPH)/2 + 40;
+  function toXY(p){ var q=PURE.proj(p); return [ MAPX+(q[0]-A[0])*PXY, MAPY+(A[1]-q[1])*PXY ]; }
+  function fromXY(x,y){
+    var qx = A[0] + (x-MAPX)/PXY, qy = A[1] - (y-MAPY)/PXY;
+    return [ qx/Math.cos(37.3*Math.PI/180), qy ];
+  }
+
+  var START_S = 0.8972;                        // 뚝도정수센터 — 수도꼭지의 물이 나온 곳
+  var TAP = [ MAPX+MAPW-60, MAPY+MAPH+70 ];    // 놋쇠 수도꼭지 — 지도 밖 무대 소품
+
+  var S = {
+    phase:'boot',                              // boot→hand→auto→spring→sky→sea→closed→after
+    s: START_S, t:0, hold:0,
+    dragging:false, hover:false, grabDS:0,
+    marks:{}, litOrder:[], handMarks:0,
+    betrayed:false, closed:false,
+    ring:0,                                    // 고리가 닫히는 정도 0..1
+    rain:0, cloud:0, sea:0, sewer:0,
+    still:0, pick:null
+  };
+
+  var premise=document.getElementById('premise');
+  var formula=document.getElementById('formula');
+  var reexp=document.getElementById('reexp');
+  var sl=document.getElementById('sl'), slcap=document.getElementById('slcap');
+  setTimeout(function(){ premise.classList.add('is-in'); }, 700);
+
+  function lightMark(m){
+    if(S.marks[m.id]) return;
+    S.marks[m.id]=1; S.litOrder.push(m.id);
+    Museum.sound.play('clack',{pitch:0.9+S.litOrder.length*0.04});
+  }
+  function syncMarks(){
+    var ps = PURE.passed(S.s);
+    for(var i=0;i<ps.length;i++){
+      if(ps[i].s <= START_S + 1e-9 && ps[i].s >= S.s - 1e-9) lightMark(ps[i]);
+    }
+  }
+
+  // ── 무대 ────────────────────────────────────────────────────────────
+  stage.add({
+    update:function(dt){
+      S.t += dt;
+      if(S.phase==='auto'){
+        S.s = PURE.retrace(S.s, dt*0.14*(1+S.t*0.05));
+        syncMarks();
+        if(S.s<=0){ S.s=0; S.phase='spring'; S.still=0; Museum.sound.play('chime'); }
+      }
+      else if(S.phase==='spring'){
+        S.still += dt;
+        if(S.still>0.9){ S.phase='sky'; Museum.sound.play('paper'); }
+      }
+      else if(S.phase==='sky'){
+        S.rain = Math.min(1, S.rain + dt*0.55);
+        if(S.rain>=1){ S.cloud = Math.min(1, S.cloud + dt*0.6); }
+        if(S.cloud>=1){ S.phase='sea'; Museum.sound.play('creak',{pitch:0.5}); }
+      }
+      else if(S.phase==='sea'){
+        S.sea = Math.min(1, S.sea + dt*0.55);
+        if(S.sea>=1) S.sewer = Math.min(1, S.sewer + dt*0.7);
+        if(S.sewer>=1){ S.phase='closing'; }
+      }
+      else if(S.phase==='closing'){
+        S.ring = Math.min(1, S.ring + dt*0.8);
+        if(S.ring>=1 && !S.betrayed){
+          S.betrayed=true; S.closed=true;
+          // 배반의 중심 = 수도꼭지. 여정의 끝이 출발점이었다.
+          Museum.betray({ x:TAP[0]/W, y:TAP[1]/H }).then(function(){ enterAfter(); });
+        }
+      }
+    },
+    draw:function(c){ paint(c); }
+  });
+
+  // ── 그림 ────────────────────────────────────────────────────────────
+  function riverPath(c, from, to){
+    c.beginPath();
+    var n=Math.max(2, Math.round(Math.abs(to-from)*220));
+    for(var i=0;i<=n;i++){
+      var s=from+(to-from)*i/n, p=toXY(PURE.at(s));
+      if(i===0) c.moveTo(p[0],p[1]); else c.lineTo(p[0],p[1]);
+    }
+  }
+  function paint(c){
+    // 물길 — 어둠 속에 희미하게 누워 있다
+    c.lineWidth=3; c.lineCap='round'; c.lineJoin='round';
+    c.strokeStyle='rgba(200,214,224,0.14)';
+    riverPath(c, 0, 1); c.stroke();
+
+    // 되짚어 올라온 구간 — 밝아진다
+    if(S.s < START_S - 1e-6){
+      c.lineWidth=4.5;
+      c.strokeStyle='rgba(176,208,228,'+(0.42+0.24*Math.sin(S.t*1.6))+')';
+      riverPath(c, S.s, START_S); c.stroke();
+    }
+
+    // 이정표
+    for(var i=0;i<PURE.MARKS.length;i++){
+      var m=PURE.MARKS[i], p=toXY(PURE.at(m.s)), on=!!S.marks[m.id];
+      if(on){
+        c.drawImage(stage.glow(26,'rgba(201,169,97,0.30)'), p[0]-26, p[1]-26);
+        c.fillStyle='#c9a961';
+        c.beginPath(); c.arc(p[0],p[1],4.2,0,6.2832); c.fill();
+        c.font='15px "Gowun Dodum", sans-serif';
+        c.fillStyle='rgba(228,222,208,0.82)'; c.textAlign='center';
+        c.fillText(m.name, p[0], p[1]-14);
+      } else {
+        c.fillStyle='rgba(201,169,97,0.20)';
+        c.beginPath(); c.arc(p[0],p[1],2.6,0,6.2832); c.fill();
+      }
+    }
+
+    // 놋쇠 수도꼭지 — 여정의 출발점(이자, 끝점)
+    c.strokeStyle='#c9a961'; c.lineWidth=5; c.lineCap='round';
+    c.beginPath(); c.moveTo(TAP[0], TAP[1]-46); c.lineTo(TAP[0], TAP[1]-16);
+    c.lineTo(TAP[0]-26, TAP[1]-16); c.stroke();
+    if(S.sewer>0){
+      c.drawImage(stage.glow(40,'rgba(201,169,97,'+(0.30*S.sewer)+')'), TAP[0]-40, TAP[1]-40);
+    }
+
+    // 방울 — 되짚는 손이 잡는 것
+    var d = toXY(PURE.at(S.s));
+    var br = 7 + 1.6*Math.sin(S.t*2.4);
+    c.drawImage(stage.glow(30,'rgba(176,208,228,0.34)'), d[0]-30, d[1]-30);
+    c.fillStyle='#b0d0e4';
+    c.beginPath(); c.arc(d[0], d[1], br, 0, 6.2832); c.fill();
+
+    // 4막 — 비·구름·바다
+    if(S.rain>0){
+      var sp=toXY(PURE.at(0));
+      c.strokeStyle='rgba(176,208,228,'+(0.36*S.rain)+')'; c.lineWidth=1.6;
+      for(var k=0;k<14;k++){
+        var rx=sp[0]-70+ (k*11), ry=sp[1]-40-((S.t*180+k*37)%150)*S.rain;
+        c.beginPath(); c.moveTo(rx,ry); c.lineTo(rx-3, ry+14); c.stroke();
+      }
+    }
+    if(S.cloud>0){
+      var sp2=toXY(PURE.at(0));
+      c.drawImage(stage.glow(120,'rgba(200,214,224,'+(0.16*S.cloud)+')'), sp2[0]-120, sp2[1]-210);
+    }
+    if(S.sea>0){
+      c.fillStyle='rgba(176,208,228,'+(0.10*S.sea)+')';
+      c.fillRect(0, MAPY, MAPX*S.sea, MAPH);
+    }
+
+    // ★고리 — 칠판의 분필선이 원이 되어 출발점에 닿는다
+    if(S.ring>0){
+      var cx=(MAPX+MAPW/2), cy=MAPY+MAPH/2, rr=Math.min(MAPW,MAPH)*0.52;
+      c.strokeStyle='rgba(228,222,208,'+(0.30+0.34*S.ring)+')';
+      c.lineWidth=2; c.setLineDash([7,9]);
+      c.beginPath(); c.arc(cx, cy, rr, -Math.PI/2, -Math.PI/2 + 6.2832*S.ring); c.stroke();
+      c.setLineDash([]);
+    }
+  }
+
+  function enterAfter(){
+    S.phase='after';
+    formula.classList.add('is-in');
+    reexp.classList.add('is-in');
+    premise.classList.remove('is-in');
+    Museum.plaque('서해의 이무기는 용이 되려고 한강을 거슬러 올랐다. 당신도 방금, 같은 길을 되짚었다.');
+    Museum.ticket.grant({ id:'s11_water', title:'물 한 방울의 여정', drawFn:drawTicket });
+    slide();
+  }
+
+  function drawTicket(c,w,h){
+    c.strokeStyle='#c9a961'; c.lineWidth=1.6;
+    c.beginPath(); c.arc(w/2, h/2, Math.min(w,h)*0.30, 0, 6.2832); c.stroke();
+    c.fillStyle='#b0d0e4';
+    c.beginPath(); c.arc(w/2, h/2-Math.min(w,h)*0.30, 3.4, 0, 6.2832); c.fill();
+  }
+
+  // ── 되짚다 ──────────────────────────────────────────────────────────
+  function handsFree(){ return !Museum.isLocked() && (S.phase==='boot' || S.phase==='hand'); }
+  function dropXY(){ return toXY(PURE.at(S.s)); }
+
+  canvas.addEventListener('pointerdown', function(e){
+    if(!handsFree()) return;
+    var p=stage.toLogical(e.clientX,e.clientY), d=dropXY();
+    if(Math.hypot(p.x-d[0], p.y-d[1]) > 40) return;        // 히트 반경 40px
+    S.dragging=true;
+    S.grabDS = S.s - PURE.sNear(fromXY(p.x,p.y));          // 잡은 자리가 손에 붙는다
+    canvas.classList.add('is-dragging');
+    if(S.phase==='boot'){ S.phase='hand'; premise.classList.remove('is-in'); }
+    Museum.sound.play('creak',{pitch:0.3});
+  });
+  canvas.addEventListener('pointermove', function(e){
+    var p=stage.toLogical(e.clientX,e.clientY);
+    if(!S.dragging){
+      if(handsFree()){
+        var d=dropXY();
+        S.hover = Math.hypot(p.x-d[0], p.y-d[1]) <= 40;
+        canvas.classList.toggle('is-over', S.hover);
+      }
+      return;
+    }
+    var want = PURE.sNear(fromXY(p.x,p.y)) + S.grabDS;      // 물길에 붙는다
+    if(want < S.s) {                                        // 되짚기 — 거스르는 방향으로만
+      S.s = PURE.retrace(S.s, S.s - want);
+      syncMarks();
+      S.handMarks = S.litOrder.length;
+      if(S.handMarks >= 5 && S.phase==='hand'){             // 다섯을 지나면 물길이 스스로 당긴다
+        S.phase='auto'; S.dragging=false;
+        canvas.classList.remove('is-dragging','is-over');
+        Museum.sound.play('creak',{pitch:0.7});
+      }
+    }
+  });
+  window.addEventListener('pointerup', function(){
+    S.dragging=false; canvas.classList.remove('is-dragging');
+  });
+
+  // ── 여운 — 물길 짚기 ────────────────────────────────────────────────
+  function slide(){
+    var v=parseInt(sl.value,10)/1000;
+    var m=PURE.nameAt(v);
+    slcap.textContent = m.name + ' — 발원에서 ' + Math.round(PURE.kmFromSpring(v)) + 'km';
+    S.pick=v;
+  }
+  sl.addEventListener('input', function(){
+    if(S.phase!=='after') return;
+    slide(); Museum.sound.play('chalk',{pitch:0.8});
+  });
+
+  stage.add(kboard.scene);         // 칠판은 무대 위에 상주한다
+  window.__BOARD = kboard;
+  stage.start();
+
+  // ── 테스트 훅 ───────────────────────────────────────────────────────
+  window.__WATER = {
+    S:S, PURE:PURE, board:kboard, START_S:START_S,
+    stage:stage, canvas:canvas,
+    toXY:toXY, fromXY:fromXY, dropXY:dropXY,
+    slide:function(v){ sl.value=String(Math.round(v*1000)); slide(); return slcap.textContent; },
+    capText:function(){ return slcap.textContent; }
+  };
+})();
+</script>
+</body>
+</html>

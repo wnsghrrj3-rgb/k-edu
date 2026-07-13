@@ -38,7 +38,8 @@ var DRAG = [
   ['social/ex05_time.html','S5 짜장면 타임머신'],
   ['social/ex07_snowball.html','S7 눈덩이의 방'],
   ['social/ex08_map.html','S8 거짓말하는 지도'],
-  ['social/ex10_fold.html','S10 한반도를 접는 방']
+  ['social/ex10_fold.html','S10 한반도를 접는 방'],
+  ['social/ex11_water.html','S11 물 한 방울의 여정']
 ];
 
 /* 탭 전시 — 누르는 순간 끝난다(드래그 없음). grip 불필요, 손이 닿기만 하면 된다. */

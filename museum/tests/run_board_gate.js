@@ -35,7 +35,8 @@ var EXHIBITS = [
   ['social/ex07_snowball.html','S7 눈덩이의 방'],
   ['social/ex08_map.html','S8 거짓말하는 지도'],
   ['social/ex09_village.html','S9 100명의 마을'],
-  ['social/ex10_fold.html','S10 한반도를 접는 방']
+  ['social/ex10_fold.html','S10 한반도를 접는 방'],
+  ['social/ex11_water.html','S11 물 한 방울의 여정']
 ];
 
 // 진행도 어휘 — 칠판에 있으면 §8.5 원칙3 위반
