@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 비와 비율 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 10호 — 비와 비율 (2026-07-14) · 셸 = clock 계보 (graph·probability 자매 = 같은 아크릴 언어)
+  SPEC = handoff/klab/designs3/SPEC_ratio.md (도면=정답)
+  v2(engine/tools/ratio.js 193줄) 콘텐츠 무손실 이식:
+    학년칸(저 비기호·%·퀴즈 숨김·「더 많아요」 일상어 닻 / 중 비기호·%·퀴즈 4문 / 고 비율값·퀴즈 5문)
+    미션 저2·중3·고4(문구·판정식 그대로) · 퀴즈 문항·보기·정답 그대로 · 상태줄 문구 그대로
+  ★ 이 도구의 존재 이유 = 와우A 동치비 모핑 (v2에 와우 없음 → v3 신설):
+    ⚖ ×2 / ×3 / ÷ 간단히. 누르면 «띠 전체 길이는 고정»된 채 타일만 k등분으로 쪼개진다.
+    초록·주황 경계선은 미동도 없다 → 보라 실선이 「여기가 안 움직였어요」를 못 박는다.
+    ⚠️ SPEC §6-7 — 띠 길이를 고정하지 않으면 「수가 커졌다 = 비도 커졌다」는 오개념을 도구가 직접 가르치는 셈.
+    구현: 기준 칸 수 bandN을 상태로 분리. ±·↺·학년/모드 전환에서만 bandN=a+b 갱신, ⚖ 에서는 «불변».
+      unit = bandLen/(a+b) · bandLen = min(56,(VBW-160)/bandN)*bandN
+      → 2:3(bandN=5) unit=56 (v2 동일) · ⚖×2 → 4:6에서 bandLen 280 그대로, unit만 28로 반감.
+  와우B 🔮 오개념 예측 카드(v3 신설·1회 가드·중고·자유탐구 전용 = decimal 선례):
+    ⚖ ×2 첫 클릭 «직전» 「둘 다 2배로 하면 초록이 차지하는 부분은?」 → 모핑 목격 → 결과 카드.
+    ↺·학년/모드 전환 시 재무장. 미션·퀴즈 흐름은 가로막지 않는다.
+  ⚠️ v2 라이브 버그 수정(§6-1): ↺(리셋)만으로 미션이 통과됐다.
+    미션 시드가 1:1인데 LOW②·MID③·HIGH③ 판정이 a===b → 미션③에서 ↺ 한 번 = 즉시 달성.
+    → acted 게이트(division 선례): 미션 시작·단계 전환마다 acted=false, ±·⚖ 만 acted=true(리셋 제외).
+  ⚠️ §6-3: config.max가 작으면 불가능해지는 미션(MID② 4:6 → max≥6 필요)은 missionsFor(grade,max)가 풀에서 제외.
+  ⚠️ §6-2: 「더 많아요!」 중복 → 무대는 👑 아이콘, 상태줄은 개수+문장으로 역할 분리(문구는 그대로).
+  config: ?grade= & mode= & a= & b= & max=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 20px;cursor:pointer;min-width:126px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 비와 비율 도구 전용 ── */
+  /* 원목 매트 위 아이보리 트레이 — 유광 아크릴 타일 띠와 금속 백분율 자가 놓인다 */
+  .rt-paper{position:relative;border-radius:14px;padding:6px;
+    background:linear-gradient(170deg,#FBF7EE 0%,#F1EAD9 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 10px 26px -8px rgba(0,0,0,.55)}
+  /* ⚖ 같은 비 버튼 — 보라 계열(와우 언어) */
+  .rt-eq{font-family:'Gowun Dodum';font-size:14.5px;font-weight:700;border-radius:13px;
+    padding:10px 14px;cursor:pointer;line-height:1;transition:transform .1s;
+    color:#fff;border:none;
+    background:linear-gradient(145deg,#8f6ef2,#6b47d8);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3), inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4)}
+  .rt-eq:active{transform:translateY(2px)}
+  .rt-eq:disabled{opacity:.32;cursor:not-allowed;transform:none}
+  .rt-lab{font-family:'Gowun Dodum';font-size:14.5px;font-weight:700;align-self:center;
+    padding:0 2px;line-height:1}
+  /* 와우A — 동치비 모핑 : 띠 길이는 그대로, 이음새가 «스르륵 갈라진다» */
+  .rt-split{animation:rtSplit var(--sp,.6s) cubic-bezier(.25,.9,.35,1) both}
+  @keyframes rtSplit{
+    0%{stroke-width:0;stroke-opacity:0}
+    38%{stroke-opacity:1}
+    100%{stroke-width:3;stroke-opacity:1}}
+  /* ÷ 간단히 = 역방향 : 옛 이음새가 «사라진다»(유령 seam 소멸) */
+  .rt-ghost{animation:rtGhost .5s ease-in both;pointer-events:none}
+  @keyframes rtGhost{0%{opacity:1}70%{opacity:.5}100%{opacity:0}}
+  /* 경계선 보라 실선 — 「여기가 안 움직였어요」 */
+  .rt-edge{animation:rtEdge 1s ease-out both;pointer-events:none}
+  @keyframes rtEdge{0%{opacity:0}14%{opacity:1}66%{opacity:1}100%{opacity:0}}
+  /* 저학년 👑 — 우열이 뒤집히면 반대편으로 날아간다 */
+  .rt-crownfly{animation:rtCrownFly .35s cubic-bezier(.3,.9,.4,1) both}
+  @keyframes rtCrownFly{from{transform:translateX(var(--dx,0px))}to{transform:translateX(0)}}
+  /* 백분율 자 — 눈금이 정수 %에 딱 맞으면 잠깐 빛난다 */
+  .rt-tickglow{animation:rtTick .8s ease-out both}
+  @keyframes rtTick{0%{stroke:#FFD05E;stroke-width:5}70%{stroke:#FFD05E;stroke-width:5}
+    100%{stroke:#5a6a7d;stroke-width:2}}
+  /* 타일 슬라이드 — ± 로 칸이 옆에서 들어오고 나감 */
+  .rt-in{animation:rtIn .22s ease-out both;transform-origin:center;transform-box:fill-box}
+  @keyframes rtIn{0%{opacity:0;transform:translateX(18px) scaleX(.4)}
+    100%{opacity:1;transform:translateX(0) scaleX(1)}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">⚖ 케이랩 · 비와 비율</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* v2 색 정체성 그대로 — A=초록 / B=주황 */
+  var COL_A='#12B886', EDGE_A='#0B7A5C';
+  var COL_B='#FF8A3D', EDGE_B='#C24E0E';
+
+  var GRADES={
+    low:  { modes:['free','mission'],        ratioSign:false, percent:false, ratioVal:false, quiz:false },
+    mid:  { modes:['free','mission','quiz'], ratioSign:true,  percent:true,  ratioVal:false, quiz:true  },
+    high: { modes:['free','mission','quiz'], ratioSign:true,  percent:true,  ratioVal:true,  quiz:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function gcd(x,y){ return y?gcd(y,x%y):x; }
+  function clampAB(a,b,max){
+    return { a:Math.max(1,Math.min(a,max)), b:Math.max(1,Math.min(b,max)) };
+  }
+  function simplify(a,b){
+    var g=gcd(a,b);
+    return { g:g, ra:a/g, rb:b/g };
+  }
+  function percentA(a,b){ return Math.round(a/(a+b)*100); }
+  function ratioValue(a,b){ return +(a/b).toFixed(2); }
+
+  /* ⚖ 배수 변환 — k=2|3 배수 / 'simplify' 기약비. 넘치거나 할 게 없으면 ok:false (a,b 불변) */
+  function scaleBy(a,b,k,max){
+    if(k==='simplify'){
+      var s=simplify(a,b);
+      if(s.g<=1) return { a:a, b:b, ok:false };
+      return { a:s.ra, b:s.rb, ok:true };
+    }
+    var na=a*k, nb=b*k;
+    if(na>max||nb>max) return { a:a, b:b, ok:false };
+    return { a:na, b:nb, ok:true };
+  }
+  function canScale(a,b,k,max){ return scaleBy(a,b,k,max).ok; }
+
+  /* ★ §6-7 — 띠 전체 길이는 «기준 칸 수 bandN»이 정한다.
+     ±·↺·전환에서만 bandN=a+b 갱신, ⚖ 에서는 불변 → 배수 변환에도 띠 길이가 안 변한다.
+     bandN=a+b 인 평시에는 v2 공식과 완전히 동일: unit = min(56,(VBW-160)/(a+b)). */
+  function layout(a,b,bandN,VBW){
+    var n=Math.max(1,bandN||(a+b));
+    var base=Math.min(56,(VBW-160)/n);
+    var bandLen=base*n;
+    var unit=bandLen/(a+b);
+    return { unit:unit, bandLen:bandLen, x0:(VBW-bandLen)/2 };
+  }
+
+  /* 미션 — 문구·판정식 v2 그대로. need = 판정에 필요한 최댓값(§6-3 max 필터용) */
+  function missionsFor(grade,max){
+    max=max||12;
+    var LOW=[
+      { need:2, text:'초록(A)을 주황(B)보다 <b class="gr">많게</b> 만들어 봐요!',
+        check:function(s){ return s.a>s.b; } },
+      { need:1, text:'초록과 주황을 <b>똑같이</b> 만들어 봐요!',
+        check:function(s){ return s.a===s.b; } }
+    ];
+    var M1={ need:3, text:'＋/－ 버튼으로 비 <b>2 : 3</b>을 만들어 봐요!',
+      check:function(s){ return s.a===2&&s.b===3; } };
+    var M2={ need:6, text:'이번엔 <b>4 : 6</b>! 2:3과 <b>같은 비</b>예요 (둘 다 2배)',
+      check:function(s){ return s.a===4&&s.b===6; } };
+    var M3={ need:1, text:'A와 B를 <b>똑같이</b> 만들어 봐요 — A가 전체의 50%!',
+      check:function(s){ return s.a===s.b; } };
+    var M4={ need:3, text:'A가 전체의 <b>25%</b>가 되게 만들어 봐요! (B가 A의 3배)',
+      check:function(s){ return s.b===3*s.a; } };
+    var pool=(grade==='low')?LOW:(grade==='mid')?[M1,M2,M3]:[M1,M2,M3,M4];
+    return pool.filter(function(m){ return m.need<=max; });
+  }
+
+  /* 퀴즈 — v2 문항·보기·정답 그대로 (배열 순서도 그대로 · 어차피 셔플) */
+  var MID_QUIZ=[
+    { a:2,b:3, q:'띠가 나타내는 비 A : B는?', answer:'2 : 3', choices:['2 : 3','3 : 2','2 : 5'] },
+    { a:4,b:6, q:'이 비(4:6)를 가장 간단히 나타내면?', answer:'2 : 3', choices:['2 : 3','4 : 6','1 : 2'] },
+    { a:5,b:5, q:'A(초록)는 전체의 몇 %일까요?', answer:'50%', choices:['50%','25%','100%'] },
+    { a:3,b:3, q:'비 3 : 3과 같은 비는 무엇일까요?', answer:'1 : 1', choices:['1 : 1','3 : 1','1 : 3'] }
+  ];
+  var HIGH_QUIZ=[
+    { a:2,b:3, q:'띠가 나타내는 비 A : B는?', answer:'2 : 3', choices:['2 : 3','3 : 2','2 : 5'] },
+    { a:4,b:6, q:'이 비(4:6)를 가장 간단히 나타내면?', answer:'2 : 3', choices:['2 : 3','4 : 6','1 : 2'] },
+    { a:5,b:5, q:'A(초록)는 전체의 몇 %일까요?', answer:'50%', choices:['50%','25%','100%'] },
+    { a:1,b:3, q:'A(초록)는 전체의 몇 %일까요?', answer:'25%', choices:['25%','33%','75%'] },
+    { a:3,b:3, q:'비 3 : 3과 같은 비는 무엇일까요?', answer:'1 : 1', choices:['1 : 1','3 : 1','1 : 3'] }
+  ];
+  function quizPoolFor(grade){ return (grade==='mid')?MID_QUIZ.slice():HIGH_QUIZ.slice(); }
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var c=arr.slice();
+    for(var i=c.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=c[i]; c[i]=c[j]; c[j]=t; }
+    return c;
+  }
+  function shuffleQuizPool(grade,rand){ return shuffled(quizPoolFor(grade),rand); }
+
+  /* 상태줄 문구 (v2 그대로 · 순수 문자열) */
+  function statusText(grade,a,b){
+    var G=GRADES[grade]||GRADES.high;
+    if(!G.ratioSign){
+      var cmp=(a>b)?'초록이 더 많아요!':((a<b)?'주황이 더 많아요!':'똑같아요!');
+      return '초록 '+a+'칸, 주황 '+b+'칸 — '+cmp;
+    }
+    var s=simplify(a,b);
+    var t='비 '+a+' : '+b+(s.g>1?'  (가장 간단히 '+s.ra+':'+s.rb+')':'');
+    if(G.percent){
+      t+=' — A는 전체의 '+percentA(a,b)+'%';
+      if(G.ratioVal) t+=' · 비율 A/B = '+(a/b).toFixed(2);
+    }
+    return t;
+  }
+
+  var API={ COL_A:COL_A, COL_B:COL_B, EDGE_A:EDGE_A, EDGE_B:EDGE_B,
+            GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            gcd:gcd, clampAB:clampAB, simplify:simplify, percentA:percentA, ratioValue:ratioValue,
+            scaleBy:scaleBy, canScale:canScale, layout:layout,
+            missionsFor:missionsFor, quizPoolFor:quizPoolFor, shuffled:shuffled,
+            shuffleQuizPool:shuffleQuizPool, statusText:statusText };
+  if(typeof window!=='undefined') window.RatioCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var RC=window.RatioCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return RC.GRADES[grade]; }
+
+  var max=(+Q.get('max')>0)?+Q.get('max'):12;
+  var seed=RC.clampAB((+Q.get('a'))||2,(+Q.get('b'))||3,max);
+  var sa=seed.a, sb=seed.b;
+
+  var rand=window.__K3_RAND || Math.random;
+
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  /* v2 모드 시드 규칙 — 미션은 1:1에서 시작. v2는 «탭 전환»에만 적용했지만 SPEC §1은
+     미션 진입 자체의 계약으로 정의한다 → ?mode=mission 직접 부팅에도 동일하게 적용. */
+  var a=(mode==='mission')?1:sa, b=(mode==='mission')?1:sb;
+  var bandN=a+b;                      /* ★ §6-7 — 띠 길이를 정하는 기준 칸 수. ⚖ 에서는 «불변» */
+  var prevMore=moreOf(a,b), prevPa=RC.percentA(a,b);
+  var magicShown=false, pred=null, morphing=false;
+  var acted=false;                    /* ★ §6-1 — 미션 자동달성/리셋 통과 차단 게이트 */
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  /* 1회성 연출 플래그 — 다음 render에서 자동 해제 (양산설계 §6-8) */
+  var fxScale=null, fxCrown=false, fxSnap=false, fxIn=null;
+
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var MORPH_MS=window.__K3_FAST?60:600;
+  var CARD_MS=window.__K3_FAST?60:1100;
+
+  function snd(n){ K3.sound.play(n); }
+  function moreOf(x,y){ return (x>y)?'a':((x<y)?'b':null); }
+  function state(){ return { a:a, b:b }; }
+  function curMissions(){ return RC.missionsFor(grade,max); }
+  function shuffleQuiz(){ qList=RC.shuffleQuizPool(grade,rand); qIdx=0; qScore=0; qCount=0; qLock=false; }
+  function scaleOn(){ return G().ratioSign && mode!=='quiz'; }
+
+  /* ── 조작 ── */
+  function act(x){
+    if(mode==='quiz'||morphing) return;
+    if(x==='reset'){
+      a=(mode==='mission')?1:sa; b=(mode==='mission')?1:sb;
+      bandN=a+b; prevMore=moreOf(a,b); prevPa=RC.percentA(a,b);
+      magicShown=false; pred=null;      /* ↺ = 와우B 재무장 (§3) */
+      /* ★ §6-1 — 리셋은 «조작»이 아니다. acted를 켜지 않는다 → ↺만으로 미션 통과 불가 */
+      snd('select'); build();
+      return;
+    }
+    var na=a, nb=b;
+    if(x==='ap'&&a<max) na=a+1;
+    else if(x==='am'&&a>1) na=a-1;
+    else if(x==='bp'&&b<max) nb=b+1;
+    else if(x==='bm'&&b>1) nb=b-1;
+    else return;                        /* 클램프 — 변화 없음 */
+
+    fxIn=(na>a)?'a':((nb>b)?'b':null);  /* 새 타일이 옆에서 슬라이드해 들어옴 */
+    a=na; b=nb; bandN=a+b; acted=true;
+    snd('tick');
+    crownCheck(); snapCheck();
+    build();
+    if(mode==='mission') checkMission();
+  }
+
+  /* ── 와우A — 동치비 모핑 ── */
+  function doScale(k){
+    var r=RC.scaleBy(a,b,k,max);
+    if(!r.ok) return;
+    fxScale={ kind:(k==='simplify')?'merge':'split', from:{a:a,b:b} };
+    a=r.a; b=r.b; acted=true;           /* ⚖ 는 «조작»이다 */
+    /* bandN 갱신 안 함 = 띠 전체 길이 고정 (§6-7 — 이 도구에서 가장 중요한 한 줄) */
+    morphing=true;
+    snd('whoosh');
+    build();
+    if(mode==='mission') checkMission();
+    setTimeout(function(){ snd('ting'); morphing=false; }, MORPH_MS);
+  }
+  function scale(k){
+    if(!scaleOn()||morphing) return;
+    if(!RC.canScale(a,b,k,max)) return;
+    /* 와우B — ×2 첫 클릭 «직전» 예측 카드 (1회 가드 · 자유탐구 전용 = decimal 선례) */
+    if(k===2 && !magicShown && mode==='free'){
+      magicShown=true; morphing=true;
+      snd('charge');
+      K3.cards.predict(
+        '초록과 주황을 <b>둘 다 2배</b>로 하면 — <b>초록이 차지하는 부분</b>은 어떻게 될까요?',
+        [{id:'up',   label:'① 커진다'},
+         {id:'down', label:'② 작아진다'},
+         {id:'same', label:'③ 그대로다'}]
+      ).then(function(id){
+        pred=id; morphing=false;
+        doScale(2);
+        setTimeout(resultCard, CARD_MS);
+      });
+      return;
+    }
+    doScale(k);
+  }
+  function resultCard(){
+    var okP=(pred==='same');
+    K3.cards.result(
+      '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞혔어요!':'🤔 경계선을 보세요')+'</h3>'
+      +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+      +(okP
+        ?'둘 다 2배 = <b>같은 비</b>. 칸은 잘게 나뉘었지만 <b>초록 자리는 그대로</b>예요.<br>'
+        :'경계선이 <b>하나도 안 움직였죠?</b> 2:3과 4:6은 <b>같은 비</b>예요.<br>')
+      +'수가 커졌다고 비가 커지는 게 아니에요 — <b>같은 띠를 더 잘게 나눈 것</b>뿐이랍니다.</p>',
+      [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+    );
+  }
+
+  /* prevMore = «마지막으로 우세했던 쪽». 동점(null)은 기록하지 않는다 —
+     3:1 → 1:1 → 1:3 처럼 동점을 거쳐 뒤집혀도 왕관이 반대편으로 날아가야 하기 때문. */
+  function crownCheck(){
+    var m=moreOf(a,b);
+    if(!m) return;
+    if(!G().ratioSign && prevMore && m!==prevMore) fxCrown=true;
+    prevMore=m;
+  }
+  function snapCheck(){
+    if(!G().percent) return;
+    var pa=RC.percentA(a,b);
+    if(pa!==prevPa && pa%10===0){ fxSnap=true; snd('ting'); }
+    prevPa=pa;
+  }
+
+  /* ── 퀴즈 ── */
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  /* ── 미션 ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    if(!acted) return;                  /* ★ §6-1 게이트 */
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false; mStep++;
+        acted=false;                    /* 단계 전환마다 게이트 닫기 */
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; }
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+RC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(bt){
+        bt.addEventListener('click',function(){ if(bt.dataset.g!==grade) setGrade(bt.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+RC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(bt){
+      bt.addEventListener('click',function(){ if(bt.dataset.m!==mode) setMode(bt.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 만들어 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      a=q.a; b=q.b; bandN=a+b;          /* 퀴즈 문항이 무대를 세팅 */
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      s=RC.shuffled(qq.choices,rand).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else {
+      s+='<span class="rt-lab" style="color:#3EE6B0">A(초록)</span>'
+        +'<button class="ck-btn" data-act="am" style="--c1:#2f8f6f;--c2:#1f6b52">－</button>'
+        +'<button class="ck-btn" data-act="ap" style="--c1:#19c491;--c2:#0f8e69">＋</button>'
+        +'<span class="rt-lab" style="color:#FFB27A">B(주황)</span>'
+        +'<button class="ck-btn" data-act="bm" style="--c1:#a3603a;--c2:#7d4626">－</button>'
+        +'<button class="ck-btn" data-act="bp" style="--c1:#ff9450;--c2:#d2662c">＋</button>'
+        +'<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺</button>';
+      if(scaleOn()){
+        s+='<button class="rt-eq" data-k="2"'+(RC.canScale(a,b,2,max)?'':' disabled')+'>⚖ ×2</button>'
+          +'<button class="rt-eq" data-k="3"'+(RC.canScale(a,b,3,max)?'':' disabled')+'>⚖ ×3</button>'
+          +'<button class="rt-eq" data-k="simplify"'+(RC.canScale(a,b,'simplify',max)?'':' disabled')+'>⚖ ÷ 간단히</button>';
+      }
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('[data-act]').forEach(function(bt){
+      bt.addEventListener('click',function(){ act(bt.dataset.act); });
+    });
+    ct.querySelectorAll('.rt-eq').forEach(function(bt){
+      bt.addEventListener('click',function(){
+        var k=bt.dataset.k;
+        scale(k==='simplify'?'simplify':+k);
+      });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(bt){
+      bt.addEventListener('click',function(){ answer(bt.dataset.v); });
+    });
+
+    render();
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    a=sa; b=sb; bandN=a+b;
+    prevMore=moreOf(a,b); prevPa=RC.percentA(a,b);
+    mStep=0; mDone=false; mLock=false; acted=false;
+    magicShown=false; pred=null;
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false; acted=false;
+    magicShown=false; pred=null;
+    a=(m==='mission')?1:sa; b=(m==='mission')?1:sb;   /* v2 시드 규칙 그대로 */
+    bandN=a+b; prevMore=moreOf(a,b); prevPa=RC.percentA(a,b);
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 — 트레이 위 유광 아크릴 타일 띠 + 금속 백분율 자 ═══ */
+  var VBW=860, VBH=300;
+  function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in at)e.setAttribute(k,at[k]); return e; }
+  function txt(svg,x,y,s,o){
+    o=o||{};
+    var t=svgEl('text',{ x:x, y:y, 'text-anchor':o.anchor||'middle',
+      'font-family':o.font||'var(--kedu-title)', 'font-size':o.size||18, 'font-weight':800,
+      fill:o.fill||'#2B3E52' });
+    if(o.cls) t.setAttribute('class',o.cls);
+    t.textContent=s; svg.appendChild(t); return t;
+  }
+
+  function render(){
+    var desk=$('desk');
+    var fs=fxScale; fxScale=null;
+    var fc=fxCrown; fxCrown=false;
+    var fsnap=fxSnap; fxSnap=false;
+    var fin=fxIn; fxIn=null;
+
+    var wrap=document.createElement('div');
+    wrap.className='rt-paper';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'rtSvg',
+      style:'display:block;width:min(90vw,860px);height:auto;max-height:'+(mode==='quiz'?'38vh':'46vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="rtSh" x="-15%" y="-20%" width="130%" height="150%">'
+      +'<feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#13315C" flood-opacity="0.28"/></filter>'
+      +'<linearGradient id="rtGloss" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="rgba(255,255,255,0.55)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>'
+      +'<linearGradient id="rtSteel" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#EDF2F7"/><stop offset="0.45" stop-color="#CBD6E2"/>'
+      +'<stop offset="1" stop-color="#A9B7C7"/></linearGradient>';
+    svg.appendChild(d);
+
+    var L=RC.layout(a,b,bandN,VBW);
+    var unit=L.unit, x0=L.x0, bandLen=L.bandLen;
+    var yTop=100, hBand=90, yBot=yTop+hBand;
+    var edgeX=x0+unit*a;                 /* 초록↔주황 경계선 — ⚖ 에도 «미동도 없다» */
+
+    /* ① 타일 띠 — 유광 아크릴 (흰 3px 이음새 = v2 정체성) */
+    var g=svgEl('g',{ filter:'url(#rtSh)' });
+    var i;
+    for(i=0;i<a+b;i++){
+      var isA=(i<a);
+      var cls=[];
+      if(fs&&fs.kind==='split') cls.push('rt-split');
+      if(fin&&((fin==='a'&&i===a-1)||(fin==='b'&&i===a+b-1))) cls.push('rt-in');
+      var rc=svgEl('rect',{ x:x0+i*unit, y:yTop, width:unit, height:hBand,
+        fill:isA?RC.COL_A:RC.COL_B, stroke:'#ffffff', 'stroke-width':3,
+        'data-t':isA?'a':'b' });
+      if(cls.length){
+        rc.setAttribute('class',cls.join(' '));
+        if(fs&&fs.kind==='split') rc.setAttribute('style','animation-delay:'+(i*24)+'ms;--sp:'+(MORPH_MS/1000)+'s');
+      }
+      g.appendChild(rc);
+    }
+    svg.appendChild(g);
+    /* 유광 하이라이트 띠 (아크릴) */
+    svg.appendChild(svgEl('rect',{ x:x0+3, y:yTop+4, width:Math.max(2,bandLen-6), height:14, rx:6,
+      fill:'url(#rtGloss)', 'pointer-events':'none' }));
+
+    /* ② ÷ 간단히 = 옛 이음새가 «사라진다» (유령 seam) */
+    if(fs&&fs.kind==='merge'){
+      var oldN=fs.from.a+fs.from.b, oldUnit=bandLen/oldN;
+      for(i=1;i<oldN;i++){
+        svg.appendChild(svgEl('line',{ x1:x0+i*oldUnit, y1:yTop, x2:x0+i*oldUnit, y2:yBot,
+          stroke:'#ffffff', 'stroke-width':3, class:'rt-ghost' }));
+      }
+    }
+
+    /* ③ 경계선 보라 실선 — 모핑 중 「여기가 안 움직였어요」 */
+    if(fs){
+      svg.appendChild(svgEl('line',{ x1:edgeX, y1:yTop-14, x2:edgeX, y2:yBot+14,
+        stroke:'#7048E8', 'stroke-width':4, 'stroke-linecap':'round', class:'rt-edge' }));
+    }
+
+    /* ④ 칸 라벨 */
+    txt(svg,x0+unit*a/2,90,'A '+a,{ size:20, fill:RC.EDGE_A, cls:'rt-la' });
+    txt(svg,x0+unit*a+unit*b/2,90,'B '+b,{ size:20, fill:RC.EDGE_B, cls:'rt-lb' });
+
+    /* ⑤ 저학년 닻 — 👑 더 많아요! (§6-2 — 무대는 아이콘, 상태줄은 문장) */
+    if(!G().ratioSign && mode!=='quiz' && a!==b){
+      var more=(a>b), mx=more?(x0+unit*a/2):(x0+unit*a+unit*b/2);
+      var ox=more?(x0+unit*a+unit*b/2):(x0+unit*a/2);
+      var cg=svgEl('g',{ class:'rt-crown'+(fc?' rt-crownfly':'') });
+      if(fc) cg.setAttribute('style','--dx:'+(ox-mx)+'px');
+      var ct2=svgEl('text',{ x:mx, y:52, 'text-anchor':'middle', 'font-size':30 });
+      ct2.textContent='👑'; cg.appendChild(ct2);
+      var lt=svgEl('text',{ x:mx, y:75, 'text-anchor':'middle',
+        'font-family':'var(--kedu-title)', 'font-size':18, 'font-weight':800,
+        fill:more?RC.EDGE_A:RC.EDGE_B });
+      lt.textContent='더 많아요!'; cg.appendChild(lt);
+      svg.appendChild(cg);
+    }
+
+    /* ⑥ 백분율 자 (중·고) — A 구간 끝이 자의 어디를 가리키는지 점선 수선으로 읽는다 */
+    if(G().percent){
+      var yR=232, hR=22, pa=RC.percentA(a,b);
+      svg.appendChild(svgEl('rect',{ x:x0-10, y:yR, width:bandLen+20, height:hR, rx:5,
+        fill:'url(#rtSteel)', stroke:'#8fa1b4', 'stroke-width':1.5, filter:'url(#rtSh)' }));
+      for(var p=0;p<=100;p+=10){
+        var tx=x0+bandLen*p/100;
+        var major=(p%50===0);
+        var tk=svgEl('line',{ x1:tx, y1:yR, x2:tx, y2:yR+(major?15:9),
+          stroke:'#5a6a7d', 'stroke-width':2, 'data-p':p });
+        if(fsnap && p===pa) tk.setAttribute('class','rt-tickglow');
+        svg.appendChild(tk);
+      }
+      txt(svg,x0,yR+34,'0%',{ size:13, fill:'#8aa0b6' });
+      txt(svg,x0+bandLen/2,yR+34,'50%',{ size:13, fill:'#8aa0b6' });
+      txt(svg,x0+bandLen,yR+34,'100%',{ size:13, fill:'#8aa0b6' });
+      /* 점선 수선 — 값이 바뀌면 미끄러진다 */
+      svg.appendChild(svgEl('line',{ x1:edgeX, y1:yBot, x2:edgeX, y2:yR,
+        stroke:'#7048E8', 'stroke-width':3, 'stroke-dasharray':'6 5', id:'rtDrop' }));
+      /* 값 알약 */
+      var px=Math.max(x0+34,Math.min(edgeX,x0+bandLen-34));
+      svg.appendChild(svgEl('rect',{ x:px-34, y:200, width:68, height:26, rx:13,
+        fill:'#7048E8', filter:'url(#rtSh)' }));
+      txt(svg,px,219,pa+'%',{ size:17, fill:'#ffffff', cls:'rt-pa' });
+    }
+
+    wrap.appendChild(svg);
+    desk.innerHTML='';
+    desk.appendChild(wrap);
+
+    updateStatus();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">초록 칸과 주황 칸을 세어 보고 답을 골라요!</div>';
+      return;
+    }
+    if(!G().ratioSign){
+      var cmp=(a>b)?'초록이 더 많아요!':((a<b)?'주황이 더 많아요!':'똑같아요!');
+      st.innerHTML='<div class="hint" style="font-size:15px">'
+        +'초록 <b style="font-family:var(--kedu-title);font-size:26px;color:#3EE6B0">'+a+'</b>칸, '
+        +'주황 <b style="font-family:var(--kedu-title);font-size:26px;color:#FFB27A">'+b+'</b>칸'
+        +'<br><span class="grabline">'+cmp+'</span></div>';
+      return;
+    }
+    var s=RC.simplify(a,b), pa=RC.percentA(a,b);
+    var line='비 <b style="font-family:var(--kedu-title);font-size:28px;color:#3EE6B0">'+a+'</b>'
+      +' <span style="font-size:20px">:</span> '
+      +'<b style="font-family:var(--kedu-title);font-size:28px;color:#FFB27A">'+b+'</b>'
+      +(s.g>1?'<span class="go" style="font-size:13.5px">  (가장 간단히 '+s.ra+':'+s.rb+')</span>':'');
+    if(G().percent){
+      line+='<br><span style="color:#BCA7FF">A는 전체의 <b style="color:#BCA7FF">'+pa+'</b>%</span>'
+        +(G().ratioVal?'<span style="color:#8fa3b8"> · 비율 A/B = '+(a/b).toFixed(2)+'</span>':'');
+    }
+    st.innerHTML='<div class="hint">'+line+'</div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  build();
+
+  window.RatioApp={
+    get grade(){return grade;}, get mode(){return mode;},
+    get a(){return a;}, get b(){return b;}, get max(){return max;},
+    get sa(){return sa;}, get sb(){return sb;},
+    get bandN(){return bandN;},
+    get bandLen(){return RC.layout(a,b,bandN,VBW).bandLen;},
+    get unit(){return RC.layout(a,b,bandN,VBW).unit;},
+    get edgeX(){var L=RC.layout(a,b,bandN,VBW);return L.x0+L.unit*a;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get acted(){return acted;}, get morphing(){return morphing;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode,
+    act:act, scale:scale, answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
