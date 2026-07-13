@@ -67,6 +67,7 @@
                days: 0,      // 케이배틀에 온 날 수 → ✨ 별가루 꼬리
                lastDay: null },
       daily: { date: null, score: 0 },
+      linkCode: null,        // 학부모 연결 코드 (아이가 만들어 부모에게 준다 — 제1조 ②)
       history: []            // [{ date, kind, score, xp }] 최근 20판
     };
   }

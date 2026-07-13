@@ -70,6 +70,8 @@
 <script src="kb-kquiz.js"></script>
 <script src="kb-bank.js"></script>
 <script src="kb-badges.js"></script>
+<script src="kb-report.js"></script>
+<script src="kb-roster.js"></script>
 <script src="kb-solo.js"></script>
 <script>
 (function () {
@@ -214,6 +216,7 @@
         '</div>' : '') +
 
       '<div style="text-align:center;margin-top:22px">' +
+        (p.classCode ? '<button class="kb-tiny" id="link">🏠 우리 집에 보여주기</button> · ' : '') +
         '<button class="kb-tiny" id="who">다른 사람이에요</button></div>';
 
     document.getElementById('daily').onclick = daily;
@@ -222,6 +225,34 @@
     document.getElementById('room').onclick = function () { location.href = 'play.html'; };
     document.getElementById('host').onclick = function () { location.href = 'friend.html'; };
     document.getElementById('who').onclick = switcher;
+    var lb = document.getElementById('link');
+    if (lb) lb.onclick = function () { linkHome(p); };
+  }
+
+  /* 우리 집에 보여주기 — 아이가 코드를 만들어 부모에게 준다 (제1조 ② · 제8조).
+     ⛔ 부모 계정·이메일 없음. 아이가 주지 않으면 부모도 못 본다. */
+  function linkHome(p) {
+    var d = document.createElement('div');
+    d.className = 'kb-promo';
+    d.innerHTML = '<div class="kb-p-emoji">🏠</div>' +
+      '<div class="kb-p-t">코드 만드는 중…</div>' +
+      '<button class="kb-btn" style="margin-top:20px">닫기</button>';
+    document.body.appendChild(d);
+    d.querySelector('button').onclick = function () { d.remove(); };
+
+    KBRoster.linkTo(p).then(function (code) {
+      d.innerHTML = '<div class="kb-p-emoji">🏠</div>' +
+        '<div class="kb-p-t" style="letter-spacing:.2em">' + esc(code) + '</div>' +
+        '<div class="kb-p-s">이 코드를 집에 알려 주면<br>내가 배운 것을 볼 수 있어요</div>' +
+        '<div class="kb-p-s" style="font-size:14px;opacity:.7">keduclass.com/kbattle/report.html</div>' +
+        '<button class="kb-btn" style="margin-top:20px">좋아! ▶</button>';
+      d.querySelector('button').onclick = function () { d.remove(); };
+    }).catch(function (e) {
+      d.innerHTML = '<div class="kb-p-emoji">🏠</div>' +
+        '<div class="kb-p-s">' + esc(e.message || '지금은 만들 수 없어요') + '</div>' +
+        '<button class="kb-btn" style="margin-top:20px">닫기</button>';
+      d.querySelector('button').onclick = function () { d.remove(); };
+    });
   }
 
   /* ---- 일일 도전 (트랙 C — 방 없음, 케이플 실시간 없음) ---- */

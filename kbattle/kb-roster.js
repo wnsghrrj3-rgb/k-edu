@@ -191,9 +191,63 @@
     });
   }
 
+  /* ---------------- 학부모 연결 (제1조 ② · 제8조) ----------------
+     아이가 코드를 만들어 부모에게 준다. 부모 계정·이메일·전화 없음 — 코드 하나가 전부.
+     ⛔ 아이가 주지 않으면 부모도 못 본다. 그게 맞다. */
+  function linkTo(profile) {
+    var KBReport = root.KBReport;
+    if (!KBReport) return Promise.reject(new Error('kb-report.js 먼저 로드'));
+    if (!profile || !profile.classCode) {
+      return Promise.reject(new Error('학급 코드로 시작한 경우에만 집에서 볼 수 있어요'));
+    }
+    var code = profile.linkCode || KBReport.linkCode();
+    var q;
+    try {
+      q = db().from('kb_profiles').update({ link_code: code })
+        .eq('class_code', profile.classCode).eq('name', profile.name);
+    } catch (e) { return Promise.reject(e); }
+    return Promise.resolve(q).then(function (r) {
+      if (r && r.error) throw new Error(r.error.message || '연결 실패');
+      profile.linkCode = code;
+      var KBStore = root.KBStore;
+      if (KBStore) KBStore.save(profile);
+      return code;
+    });
+  }
+
+  // 부모가 코드로 아이의 기록을 연다. 여기서도 가져오는 건 answers 뿐(제9조).
+  function byLink(code) {
+    var c = String(code || '').trim().toUpperCase();
+    if (c.length !== 6) return Promise.reject(new Error('코드 6자리를 넣어 주세요'));
+    var q;
+    try {
+      q = db().from('kb_profiles').select('id,name,xp,badges,stats,class_code')
+        .eq('link_code', c).maybeSingle();
+    } catch (e) { return Promise.reject(e); }
+
+    return Promise.resolve(q).then(function (r) {
+      if (!r || r.error || !r.data) throw new Error('그런 코드를 찾지 못했어요');
+      var prof = { id: r.data.id, name: r.data.name, xp: r.data.xp | 0,
+                   badges: r.data.badges || [], stats: r.data.stats || {},
+                   classCode: r.data.class_code };
+      var q2 = db().from('kb_answers')
+        .select('qid,concept,difficulty,type,correct,ms,at,kind')
+        .eq('profile_id', prof.id).order('at', { ascending: false }).limit(ANSWERS_LIMIT);
+      return Promise.resolve(q2).then(function (r2) {
+        var rows = (r2 && r2.data ? r2.data : []).map(function (x) {
+          return { qid: x.qid, concept: x.concept || '', difficulty: x.difficulty | 0,
+                   type: x.type || '', correct: !!x.correct, ms: x.ms | 0,
+                   at: x.at ? new Date(x.at).getTime() : Date.now(), kind: x.kind || 'battle' };
+        });
+        return { profile: prof, rows: rows };
+      });
+    });
+  }
+
   root.KBRoster = {
     list: list, cached: cached, add: add, remove: remove, enter: enter,
     classAnswers: classAnswers, clearAnswers: clearAnswers,
+    linkTo: linkTo, byLink: byLink,
     _norm: { code: normCode, name: normName }
   };
 })();

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이배틀 — 우리 아이 기록</title>
+<link rel="stylesheet" href="kbattle.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+</head>
+<body>
+<div class="kb-app" id="root"></div>
+
+<script src="kb-questions.js"></script>
+<script src="kb-xp.js"></script>
+<script src="kb-store.js"></script>
+<script src="kb-answers.js"></script>
+<script src="kb-badges.js"></script>
+<script src="kb-report.js"></script>
+<script src="kb-roster.js"></script>
+<script>
+/* 학부모 화면 (헌법 제1조 ②) — 이 화면에 없는 것들이 있는 것보다 중요하다.
+     ⛔ 반 평균·석차·순위 없음 (다른 아이와 비교하는 순간 성적표가 된다)
+     ⛔ 점수·XP·등급 없음 (게임 안의 보상은 아이 것이다)
+     ⛔ 문제별 정오 목록 없음 (감시가 된다)
+   있는 것은 전부 아이 자신의 변화다. 그리고 부모가 할 일은 딱 하나만 준다. */
+(function () {
+  var root = document.getElementById('root');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function gate(msg) {
+    root.innerHTML =
+      '<div class="kb-rep-wrap">' +
+        '<div class="kb-rep-head"><h1>우리 아이 기록</h1>' +
+          '<p>아이가 케이배틀에서 만든 <b>연결 코드 6자리</b>를 넣어 주세요.<br>' +
+          '아이가 알려주지 않으면 볼 수 없어요. 그게 맞다고 생각해요.</p></div>' +
+        '<div class="kb-panel" style="max-width:420px;margin:0 auto">' +
+          '<div class="kb-field"><label>연결 코드</label>' +
+            '<input class="kb-input code" id="code" maxlength="6" placeholder="ABC123"></div>' +
+          '<button class="kb-btn kb-enter" id="go">기록 보기 ▶</button>' +
+          '<div class="kb-err" id="err">' + (msg ? esc(msg) : '') + '</div>' +
+        '</div>' +
+        '<div class="kb-rep-note">' +
+          '아이가 하는 모든 것은 <b>영원히 무료</b>예요. 이 화면은 부모님이 <b>보는</b> 자리일 뿐이에요.<br>' +
+          '케이배틀은 아이의 점수·등수를 부모님께 보여주지 않아요. 아이를 다른 아이와 비교하지 않아요.' +
+        '</div>' +
+      '</div>';
+    var el = document.getElementById('code');
+    el.addEventListener('input', function () { el.value = el.value.toUpperCase(); });
+    document.getElementById('go').onclick = function () {
+      var c = (el.value || '').trim().toUpperCase();
+      var err = document.getElementById('err');
+      err.textContent = '';
+      if (c.length !== 6) { err.textContent = '코드 6자리를 넣어 주세요'; return; }
+      root.innerHTML = '<div class="kb-rep-wrap"><div class="kb-rep-head"><p>불러오는 중…</p></div></div>';
+      KBRoster.byLink(c).then(function (d) {
+        show(KBReport.build(d.profile, d.rows));
+      }).catch(function (e) { gate(e.message || '불러오지 못했어요'); });
+    };
+  }
+
+  function bar(pctv, color) {
+    return '<span class="kb-rep-bar"><i style="width:' + pctv + '%;background:' + color + '"></i></span>';
+  }
+
+  function show(r) {
+    var pct = Math.round(r.rate * 100);
+    var weakHtml = r.weak.length
+      ? r.weak.map(function (c) {
+          return '<div class="kb-rep-row"><span>' + esc(c.concept) + '</span>' +
+            bar(Math.round(c.rate * 100), 'var(--kb-sky)') +
+            '<span class="kb-rep-n">' + c.ok + ' / ' + c.n + '</span></div>';
+        }).join('')
+      : '<div class="kb-rep-empty">지금은 특별히 어려워하는 개념이 보이지 않아요.</div>';
+
+    var strongHtml = r.strong.length
+      ? r.strong.map(function (c) {
+          return '<div class="kb-rep-row"><span>' + esc(c.concept) + '</span>' +
+            bar(Math.round(c.rate * 100), 'var(--kb-mint)') +
+            '<span class="kb-rep-n">' + c.ok + ' / ' + c.n + '</span></div>';
+        }).join('')
+      : '<div class="kb-rep-empty">조금 더 풀면 잘하는 개념이 보일 거예요.</div>';
+
+    var gr = r.growth.slice(-6);
+    var growthHtml = gr.length >= 2
+      ? '<div class="kb-rep-growth">' + gr.map(function (w) {
+          var h = Math.max(6, Math.round(w.rate * 100));
+          return '<div class="kb-rep-g"><i style="height:' + h + '%"></i>' +
+                 '<span>' + w.week.slice(5) + '</span></div>';
+        }).join('') + '</div>'
+      : '<div class="kb-rep-empty">두 주 이상 하면 변화가 보여요.</div>';
+
+    root.innerHTML =
+      '<div class="kb-rep-wrap">' +
+        '<div class="kb-rep-head">' +
+          '<h1>' + esc(r.name) + '</h1>' +
+          '<p class="kb-rep-line">' + esc(r.line) + '</p>' +
+        '</div>' +
+
+        '<div class="kb-rep-cards">' +
+          '<div class="kb-rep-card"><b>' + r.days + '일</b><span>케이배틀에 온 날</span></div>' +
+          '<div class="kb-rep-card"><b>' + r.solved + '문제</b><span>지금까지 푼 문제</span></div>' +
+          '<div class="kb-rep-card"><b>' + (r.enough ? pct + '%' : '—') + '</b><span>맞힌 비율</span></div>' +
+          '<div class="kb-rep-card"><b>' + r.badges + '개</b><span>모은 배지</span></div>' +
+        '</div>' +
+
+        '<div class="kb-panel">' +
+          '<h2>👀 부모님이 할 수 있는 일 한 가지</h2>' +
+          '<div class="kb-rep-todo"><b>' + esc(r.todo.head) + '</b><p>' + esc(r.todo.body) + '</p></div>' +
+        '</div>' +
+
+        '<div class="kb-panel">' +
+          '<h2>아직 익숙해지는 중인 개념</h2>' +
+          '<div class="kb-hint">못하는 게 아니라 <b>아직 만나는 중</b>이에요. 한두 개만 골라 뒀어요.</div>' +
+          weakHtml +
+        '</div>' +
+
+        '<div class="kb-panel">' +
+          '<h2>잘 알고 있는 개념</h2>' +
+          '<div class="kb-hint">여기는 칭찬할 자리예요.</div>' +
+          strongHtml +
+        '</div>' +
+
+        '<div class="kb-panel">' +
+          '<h2>주마다 어떻게 달라졌나</h2>' +
+          '<div class="kb-hint">다른 아이가 아니라 <b>지난주의 우리 아이</b>와 비교해요.</div>' +
+          growthHtml +
+        '</div>' +
+
+        '<div class="kb-rep-note">' +
+          '케이배틀은 아이의 <b>점수·등수·석차를 만들지 않아요.</b> 반에서 몇 등인지도 보여드리지 않아요.<br>' +
+          '아이가 "엄마가 볼까 봐" 게임을 피하게 되면, 그때부터 이 도구는 아무 쓸모가 없어져요.' +
+        '</div>' +
+        '<div style="text-align:center"><button class="kb-back" id="out">← 다른 코드</button></div>' +
+      '</div>';
+    document.getElementById('out').onclick = function () { gate(); };
+  }
+
+  gate();
+})();
+</script>
+</body>
+</html>
