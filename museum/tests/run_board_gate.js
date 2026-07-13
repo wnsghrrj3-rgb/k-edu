@@ -129,6 +129,18 @@ EXHIBITS.forEach(function(row){
   ok(name, '④ 문제가 무대에 상주한다(그려진다)', b.drawn.indexOf(q)>=0);
   ok(name, '⑤ 칠판은 진행도를 적지 않는다', !PROGRESS.test(q) && !PROGRESS.test(board._state.answer||'') && !PROGRESS.test(board.chalk()||''));
 
+  /* ★⑤-2 문제는 혼자 읽힌다 (2026-07-13 준호 실기기 확진 — 게이트가 놓쳤던 자리).
+     칠판을 일괄 부착하면서, 전시들이 상단(top:6~7vh)에 두고 있던 DOM 전제 한 줄이
+     칠판의 문제와 화면 같은 높이에서 정면충돌했다 — 두 문장이 겹쳐 읽혔다.
+     게이트는 "문제가 그려지는가"만 보았지 "문제가 혼자 그려지는가"를 보지 않았다.
+     칠판이 전제를 인수했으므로, DOM 전제는 무대 위에 떠 있으면 안 된다. */
+  var pre = b.win.document.getElementById('premise');
+  ok(name, '⑤-2 문제는 혼자 읽힌다(DOM 전제가 칠판을 덮지 않는다)',
+     !pre || pre.style.display === 'none');
+  if(pre){
+    ok(name, '⑤-3 칠판이 전제를 인수했다', !!board._state.note && board._state.note.length>4);
+  }
+
   // 여운 — 문제가 답이 되고, 칠판이 무대 한가운데로 내려온다
   var before = board._state.move;
   board.resolve();

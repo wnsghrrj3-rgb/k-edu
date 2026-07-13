@@ -320,7 +320,27 @@ function board(o){
   var gauge = (o.gauge!=null? o.gauge : null);      // 기준 눈금(0..1) — 점선만, 라벨 없음
   var half = Math.max(28, Math.min(30, BW/(slots.length*2.6||1)));   // 막대 반폭
   var st = { question:String(o.question||''), answer:String(o.answer!=null? o.answer : (o.question||'')),
-             after:false, move:0, alpha:0, time:0, chalk:'', chalkT:0 };
+             after:false, move:0, alpha:0, time:0, chalk:'', chalkT:0,
+             note:'', noteOn:false, noteA:0 };
+
+  /* ★전제 한 줄을 칠판이 인수한다 (§8.6 보강 — 2026-07-13 준호 실기기 확진).
+     전시들은 전제를 DOM(#premise, top:6~7vh)에 두고 있었는데, 칠판을 일괄 부착하면서
+     칠판의 문제(BY+34)와 화면 같은 높이에서 정면충돌했다 — 두 문장이 겹쳐 읽혔다.
+     전제(이야기의 도입)와 문제(무엇을 보는가)는 둘 다 필요하고, 겹친 것은 자리뿐이다.
+     칠판은 비어 있으므로 칠판이 둘 다 맡는다 — 이야기와 질문이 한 시야에 놓인다.
+     DOM은 물러나고, 전시가 켜고 끄던 .is-in은 그대로 존중한다(전시 코드 수정 0줄). */
+  var _readPre = null;
+  var preEl = (typeof document!=='undefined') ? document.getElementById('premise') : null;
+  if(preEl){
+    preEl.style.display = 'none';                 // 칠판이 맡았으므로 DOM은 물러난다
+    // 전제를 나중에 JS로 채우는 전시가 있다(S10) — 칠판은 계속 지켜본다.
+    var readPre = function(){
+      st.note   = (preEl.textContent||'').replace(/\s+/g,' ').trim();
+      st.noteOn = preEl.classList.contains('is-in');
+    };
+    readPre();
+    _readPre = readPre;
+  }
 
   function idx(id){ for(var i=0;i<slots.length;i++) if(slots[i].id===id) return i; return -1; }
   function slotX(i){
@@ -372,6 +392,8 @@ function board(o){
         if(o.tick){ try{ o.tick(api, dt); }catch(e){} }               // 전시가 제 노동을 칠판에 적는다
         st.chalkT = Math.min(1, st.chalkT + dt/0.35);                 // 분필이 그어지는 시간
         if(st.alpha<1) st.alpha = Math.min(1, st.alpha + dt/1.2);     // 1막에 스스로 떠오른다
+        if(_readPre) _readPre();                                       // 전제는 늦게 도착할 수도 있다
+        st.noteA += ((st.noteOn && !st.after ? 1 : 0) - st.noteA) * Math.min(1, dt*2.2);  // 전제는 여운에서 물러난다
         if(st.after && st.move<1) st.move = Math.min(1, st.move + dt/1.1);
       },
       draw:function(ctx){
@@ -388,6 +410,13 @@ function board(o){
         ctx.font='20px "Gowun Batang", serif';
         ctx.fillStyle='rgba(242,234,216,.72)'; ctx.textAlign='center';
         ctx.fillText(st.after ? st.answer : st.question, BX+BW*0.5, BY+34);
+
+        // 전제 한 줄 — 이야기의 도입. 문제 바로 아래에서, 문제보다 낮은 목소리로.
+        if(st.note && st.noteA > 0.01){
+          ctx.font='16px "Gowun Dodum", sans-serif';
+          ctx.fillStyle='rgba(168,158,136,'+(0.66*st.noteA).toFixed(3)+')';
+          ctx.fillText(st.note, BX+BW*0.5, BY+66);
+        }
 
         // 바닥선
         ctx.strokeStyle='rgba(168,158,136,.34)'; ctx.lineWidth=1;
