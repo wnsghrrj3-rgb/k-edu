@@ -86,7 +86,8 @@
     if (!resp) return false;
     if (q.type === 'mcq') return resp.index === q.answer.index;
     if (q.type === 'ox') return resp.value === q.answer.value;
-    if (q.type === 'numpad') return Number(resp.value) === q.answer.value;
+    // 소수 답은 부동소수점 오차가 낀다 (0.1+0.2 = 0.30000000000000004). 아이 잘못이 아니다.
+    if (q.type === 'numpad') return Math.abs(Number(resp.value) - q.answer.value) < 1e-9;
     if (q.type === 'order') {
       var a = q.answer.sequence, r = resp.sequence;
       if (!Array.isArray(r) || r.length !== a.length) return false;
@@ -162,23 +163,36 @@
     }
   }
 
+  // 소수점 키(⑤ numpad 확장): payload.allowDecimal 일 때만 뜬다.
+  //   6학년 「소수의 나눗셈」의 답은 3.5 같은 소수다 — 4지선다로 내면 찍기가 되므로 입력이어야 한다.
+  //   ⛔ 제2조(타이핑 없음)는 그대로다. 소수점도 **탭**이지 타이핑이 아니다.
+  //   ⚠️ 마이너스와 소수점은 자리를 다툰다(패드 한 칸) — 둘 다 필요하면 마이너스가 우선.
   function renderNumpad(q, el, done) {
     var allowMinus = !!(q.payload && q.payload.allowMinus);
+    var allowDecimal = !!(q.payload && q.payload.allowDecimal);
     var buf = '';
+    var sideKey = allowMinus ? '<button class="kb-key" data-k="-">−</button>'
+                : allowDecimal ? '<button class="kb-key" data-k=".">·</button>'
+                : '<button class="kb-key kb-key-blank" disabled></button>';
     el.innerHTML = promptHtml(q) +
       '<div class="kb-num-display" id="kbNumDisp">&nbsp;</div>' +
       '<div class="kb-numpad">' +
         [1,2,3,4,5,6,7,8,9].map(function (d) { return '<button class="kb-key" data-k="' + d + '">' + d + '</button>'; }).join('') +
-        (allowMinus ? '<button class="kb-key" data-k="-">−</button>' : '<button class="kb-key kb-key-blank" disabled></button>') +
+        sideKey +
         '<button class="kb-key" data-k="0">0</button>' +
         '<button class="kb-key kb-key-del" data-k="del">⌫</button>' +
       '</div>' +
+      (allowMinus && allowDecimal ? '<button class="kb-key kb-key-dot" data-k=".">· (소수점)</button>' : '') +
       '<button class="kb-confirm" id="kbConfirm" disabled>확인</button>';
     var disp = el.querySelector('#kbNumDisp');
     var confirm = el.querySelector('#kbConfirm');
+    function ok() {
+      if (!buf || buf === '-' || buf === '.' || buf === '-.') return false;
+      return buf.charAt(buf.length - 1) !== '.';       // "3." 상태로는 못 낸다
+    }
     function refresh() {
       disp.textContent = buf || '\u00a0';
-      confirm.disabled = !(buf && buf !== '-');
+      confirm.disabled = !ok();
     }
     var keys = el.querySelectorAll('.kb-key');
     for (var i = 0; i < keys.length; i++) {
@@ -186,7 +200,8 @@
         var k = this.getAttribute('data-k');
         if (k === 'del') buf = buf.slice(0, -1);
         else if (k === '-') { if (!buf) buf = '-'; }
-        else if (buf.replace('-', '').length < 7) buf += k; // 자릿수 상한
+        else if (k === '.') { if (allowDecimal && buf.indexOf('.') < 0 && buf !== '-') buf += '.'; }
+        else if (buf.replace(/[-.]/g, '').length < 7) buf += k;   // 자릿수 상한
         refresh();
       };
     }

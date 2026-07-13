@@ -107,9 +107,13 @@
     }
     if (item.type === 'short') {
       if (!isNum(item.answer)) return null;                   // ⛔ 글자 입력 = 타이핑 (제2조)
+      var v = Number(item.answer);
       base.type = 'numpad';
-      base.payload = { allowMinus: Number(item.answer) < 0 };
-      base.answer = { value: Number(item.answer) };
+      base.payload = {
+        allowMinus: v < 0,
+        allowDecimal: !Number.isInteger(v)                    // 소수 답 → 소수점 키를 켠다(6학년 소수의 나눗셈)
+      };
+      base.answer = { value: v };
       base.timeLimit = 30;
       return base;
     }
