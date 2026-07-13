@@ -25,9 +25,25 @@
 }
 @keyframes gate-breathe{ 0%,100%{opacity:.35;} 50%{opacity:.75;} }
 #gate.is-gone{ opacity:0; pointer-events:none; }
+  /* ── 나가는 문 — 박물관에는 출구가 있어야 한다 ─────────────────
+     들어온 사람은 나갈 수 있어야 한다. 뒤로가기는 출구가 아니다.
+     전시 관람 중에는 보이지 않는다(로비에만 있다 — 무대를 침범하지 않는다). */
+  #exit-door{ position:fixed; left:22px; top:20px; z-index:70;
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Gowun Dodum',sans-serif; font-size:13px; letter-spacing:.04em;
+    color:rgba(201,169,97,.52); text-decoration:none;
+    padding:9px 15px; border:1px solid rgba(201,169,97,.20); border-radius:999px;
+    background:rgba(7,7,12,.55); backdrop-filter:blur(3px);
+    opacity:0; transition:opacity 1.4s ease, color .3s ease, border-color .3s ease; }
+  #exit-door.is-in{ opacity:1; }
+  #exit-door:hover{ color:rgba(201,169,97,.95); border-color:rgba(201,169,97,.62); }
+  @media(max-width:600px){ #exit-door{ left:14px; top:14px; font-size:12px; padding:8px 13px; } }
 </style>
 </head>
 <body>
+
+<!-- 나가는 문 -->
+<a href="/" id="exit-door">← 케이에듀로 나가기</a>
 
 <!-- 벽 -->
 <div id="wall"></div>
@@ -254,6 +270,7 @@
       title.style.opacity = '.25';
       title.style.transform = 'translateY(-12px)';
       document.getElementById('walk-hint').classList.add('is-in');
+      document.getElementById('exit-door').classList.add('is-in');   // 나가는 문 — 점등이 끝난 뒤에야 보인다
     }, 3800*SP);
     sessionStorage.setItem('kmuseum.entered','1');
   }
