@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>활동 모아보기 — K✦edu</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<!-- index.html — 교사용 활동 인덱스 (설계 §7 진입로 T0)
+     카탈로그가 단일 원천. 여기서 활동을 3모드로 바로 열고, 활동지를 뽑고, 검수 상태를 본다.
+     학생용 아님 — 배포권은 교사에게 (D14). -->
+<style>
+  :root { --cream:#fffbf5; --ink:#78350f; --deep:#92400e; --amber:#f59e0b; --amber-d:#d97706;
+          --good:#22c55e; --line:#f3e2c4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--cream); font-family:'Jua',sans-serif; color:var(--ink); }
+  .num { font-family:'Nunito',sans-serif; font-weight:800; }
+
+  header { background:#fff; border-bottom:3px solid var(--amber); padding:16px 20px; position:sticky; top:0; z-index:9; }
+  header h1 { margin:0; font-size:clamp(20px,3vw,28px); color:var(--deep); }
+  header .sub { font-size:13px; color:var(--amber-d); margin-top:3px; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center; }
+  .fgrp { display:flex; gap:5px; align-items:center; }
+  .fgrp .lb { font-size:12px; color:var(--amber-d); margin-right:2px; }
+  .chip { border:2px solid var(--amber); background:#fff; color:var(--deep); border-radius:999px;
+          padding:5px 13px; font-size:13px; font-family:'Jua',sans-serif; cursor:pointer; min-height:34px; }
+  .chip.on { background:var(--amber); color:#fff; }
+  .count { margin-left:auto; font-size:13px; color:var(--amber-d); }
+
+  main { padding:18px 20px 60px; max-width:1200px; margin:0 auto; }
+  .unit-h { font-size:15px; color:var(--deep); margin:22px 0 10px; padding-bottom:6px; border-bottom:2px solid var(--line); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .card { background:#fff; border:2px solid var(--line); border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; }
+  .card.draft { border-style:dashed; }
+  .card .top { display:flex; align-items:flex-start; gap:8px; }
+  .card h3 { margin:0; font-size:18px; color:var(--deep); flex:1; }
+  .badge { font-size:11px; padding:2px 9px; border-radius:999px; color:#fff; white-space:nowrap; }
+  .badge.intro { background:#3b82f6; } .badge.practice { background:#22c55e; } .badge.wrapup { background:#8b5cf6; }
+  .badge.draft { background:#94a3b8; } .badge.live { background:#16a34a; }
+  .card .short { font-size:13px; color:var(--ink); opacity:.85; }
+  .card .meta { display:flex; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--amber-d); }
+  .card .modes { display:flex; gap:6px; flex-wrap:wrap; }
+  .btn { font-family:'Jua',sans-serif; border:none; border-radius:10px; cursor:pointer; min-height:36px;
+         font-size:13px; padding:7px 12px; background:#fff; color:var(--deep); border:2px solid var(--amber); }
+  .btn.primary { background:var(--amber); color:#fff; }
+  .btn:hover { transform:translateY(-1px); }
+  .btn.ghost { border-color:var(--line); color:var(--amber-d); }
+  .types { font-size:11px; color:#94a3b8; line-height:1.5; }
+  .types b { color:var(--amber-d); font-weight:400; }
+
+  /* 검수 보드 */
+  .review { background:#fff7e8; border:2px dashed var(--amber); border-radius:16px; padding:14px 18px; margin-bottom:18px; }
+  .review h2 { margin:0 0 6px; font-size:16px; color:var(--deep); }
+  .review ol { margin:6px 0 0; padding-left:20px; font-size:13px; line-height:1.9; color:var(--ink); }
+  .review .hint { font-size:12px; color:var(--amber-d); margin-top:8px; }
+  .empty { text-align:center; color:#94a3b8; padding:50px 0; font-size:15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎲 활동 모아보기</h1>
+  <div class="sub">교사용 — 수업에서 바로 열고, 과제로 보내고, 활동지를 뽑아요</div>
+  <div class="filters">
+    <div class="fgrp"><span class="lb">학년</span><span id="f-grade"></span></div>
+    <div class="fgrp"><span class="lb">과목</span><span id="f-subject"></span></div>
+    <div class="fgrp"><span class="lb">상태</span><span id="f-status"></span></div>
+    <span class="count" id="count"></span>
+  </div>
+</header>
+
+<main>
+  <div class="review">
+    <h2>🔍 실기기 검수 체크리스트</h2>
+    <div style="font-size:13px;color:var(--ink)">활동 하나하나가 아니라 <b>부품</b>을 봅니다. 아래가 통과하면 나머지 활동이 같은 품질을 물려받아요.</div>
+    <ol>
+      <li><b>전자칠판(수업 모드)</b> — 답 버튼이 손에 닿는 높이인가? 숫자·도형이 뒤에서도 읽히는가?</li>
+      <li><b>조작형</b>(굴비 엮기·분류하기) — 손가락으로 집을 만한 크기인가? 탭이 헛도는가?</li>
+      <li><b>[넘기기]·[활동 닫기]</b> — 중간에 끊어도 수첩(결과)이 뜨는가?</li>
+      <li><b>수첩</b> — 많이 틀린 유형이 한눈에 보이는가? [케이박스로 보내기]가 되는가?</li>
+      <li><b>폰(과제 모드)</b> — 세로 화면에서 버튼이 겹치지 않는가? 제출이 되는가?</li>
+      <li><b>릴레이</b> — 반 인원 설정·바통 흐름이 교실 운영에 맞는가?</li>
+    </ol>
+    <div class="hint">막히는 곳을 알려주면 부품에 반영합니다 — 한 번 고치면 모든 활동에 적용돼요.</div>
+  </div>
+
+  <div id="list"></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var CAT = [];
+  var GRADE_KO = { 1: '1학년', 2: '2학년', 3: '3학년', 4: '4학년' };
+  var SUBJ_KO = { math: '수학', korean: '국어' };
+  var GENRE_KO = { duel_quiz: '선다 대결', balance: '저울', bundle: '묶어 세기',
+                   sequence: '순서 잇기', relay: '릴레이', explore: '탐험', sort: '분류' };
+  var PHASE_KO = { intro: '도입', practice: '익힘', wrapup: '정리' };
+  var MODE_KO = { class: '수업', solo: '연습', assign: '과제' };
+  var f = { grade: 0, subject: '', status: '' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function genIdOf(a) {
+    if (!a.gen) return null;
+    var m = String(a.gen).match(/([^/]+)\.js$/);
+    return m ? m[1] : null;
+  }
+  function urlOf(a, mode) {
+    return '/kedu/' + a.src + '?mode=' + mode;
+  }
+
+  fetch('_CATALOG.json').then(function (r) { return r.json(); }).then(function (arr) {
+    CAT = arr;
+    chips();
+    render();
+  }).catch(function () {
+    document.getElementById('list').innerHTML = '<div class="empty">활동 목록을 불러오지 못했어요.</div>';
+  });
+
+  function chips() {
+    var grades = [], subs = [];
+    CAT.forEach(function (a) {
+      if (grades.indexOf(a.map.grade) < 0) grades.push(a.map.grade);
+      if (subs.indexOf(a.map.subject) < 0) subs.push(a.map.subject);
+    });
+    grades.sort();
+    var mk = function (host, key, opts, koMap) {
+      document.getElementById(host).innerHTML =
+        '<button class="chip' + (!f[key] ? ' on' : '') + '" data-k="' + key + '" data-v="">전체</button>' +
+        opts.map(function (v) {
+          return '<button class="chip' + (f[key] === v ? ' on' : '') + '" data-k="' + key + '" data-v="' + v + '">' +
+            (koMap ? (koMap[v] || v) : v) + '</button>';
+        }).join('');
+    };
+    mk('f-grade', 'grade', grades, GRADE_KO);
+    mk('f-subject', 'subject', subs, SUBJ_KO);
+    mk('f-status', 'status', ['draft', 'live'], { draft: '검수 대기', live: '검수 완료' });
+    [].forEach.call(document.querySelectorAll('.chip'), function (c) {
+      c.addEventListener('click', function () {
+        var k = c.dataset.k, v = c.dataset.v;
+        f[k] = (k === 'grade') ? (v ? +v : 0) : v;
+        chips(); render();
+      });
+    });
+  }
+
+  function render() {
+    var list = CAT.filter(function (a) {
+      if (a.status === 'retired') return false;
+      if (f.grade && a.map.grade !== f.grade) return false;
+      if (f.subject && a.map.subject !== f.subject) return false;
+      if (f.status && a.status !== f.status) return false;
+      return true;
+    });
+    document.getElementById('count').textContent = list.length + '개 활동';
+    if (!list.length) {
+      document.getElementById('list').innerHTML = '<div class="empty">해당하는 활동이 없어요.</div>';
+      return;
+    }
+    // 학년 → 단원으로 묶기
+    var groups = {};
+    list.forEach(function (a) {
+      var k = a.map.grade + '-' + a.map.subject + '-' + a.map.unit;
+      (groups[k] = groups[k] || []).push(a);
+    });
+    var keys = Object.keys(groups).sort(function (x, y) {
+      var a = x.split('-'), b = y.split('-');
+      return (+a[0] - +b[0]) || a[1].localeCompare(b[1]) || (+a[2] - +b[2]);
+    });
+
+    document.getElementById('list').innerHTML = keys.map(function (k) {
+      var p = k.split('-');
+      var head = (GRADE_KO[p[0]] || p[0]) + ' ' + (SUBJ_KO[p[1]] || p[1]) + ' · ' + p[2] + '단원';
+      return '<div class="unit-h">' + esc(head) + '</div><div class="grid">' +
+        groups[k].map(card).join('') + '</div>';
+    }).join('');
+
+    [].forEach.call(document.querySelectorAll('[data-open]'), function (b) {
+      b.addEventListener('click', function () { window.open(b.dataset.open, '_blank'); });
+    });
+  }
+
+  function card(a) {
+    var types = Object.keys(a.types || {});
+    var g = genIdOf(a);
+    var wsUrl = g ? ('/kedu/activities/worksheet.html?gen=' + encodeURIComponent(g)) : null;
+
+    return '<div class="card ' + esc(a.status) + '">' +
+      '<div class="top"><h3>' + esc(a.title) + '</h3>' +
+        '<span class="badge ' + esc(a.phase) + '">' + (PHASE_KO[a.phase] || a.phase) + '</span>' +
+        '<span class="badge ' + esc(a.status) + '">' + (a.status === 'live' ? '검수 완료' : '검수 대기') + '</span>' +
+      '</div>' +
+      '<div class="short">' + esc(a.short) + '</div>' +
+      '<div class="meta">' +
+        (a.pages ? '<span>📖 ' + esc(a.pages) + '</span>' : '') +
+        '<span>🎮 ' + (GENRE_KO[a.genre] || a.genre) + '</span>' +
+        (a.minutesClass ? '<span>⏱ ' + a.minutesClass + '분</span>' : '') +
+        '<span>📚 ' + (a.map.lessons || []).join(', ') + '</span>' +
+      '</div>' +
+      (types.length ? '<div class="types"><b>유형</b> ' +
+        types.map(function (t) { return esc(a.types[t]); }).join(' · ') + '</div>' : '') +
+      '<div class="modes">' +
+        (a.modes || []).map(function (m) {
+          return '<button class="btn' + (m === 'class' ? ' primary' : '') + '" data-open="' + esc(urlOf(a, m)) + '">' +
+            (MODE_KO[m] || m) + ' 열기</button>';
+        }).join('') +
+        (wsUrl ? '<button class="btn ghost" data-open="' + esc(wsUrl) + '">활동지</button>' : '') +
+      '</div>' +
+    '</div>';
+  }
+})();
+</script>
+</body>
+</html>

@@ -549,7 +549,9 @@
         '<button class="kact-btn" data-kp-ins>슬라이드에 넣기</button>' +
         '</div></div>';
     }
-    pop.innerHTML = '<div class="kp-h">' + head + '</div>' + list.map(item).join('');
+    pop.innerHTML = '<div class="kp-h">' + head + '</div>' + list.map(item).join('') +
+      '<div style="text-align:right;margin-top:4px">' +
+      '<a href="/kedu/activities/" target="_blank" style="font-size:13px;color:#b45309;text-decoration:none">전체 활동 모아보기 →</a></div>';
     var rect = btn.getBoundingClientRect();
     pop.style.top = (rect.bottom + 8) + 'px';
     pop.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
