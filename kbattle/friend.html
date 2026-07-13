@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>케이배틀 — 친구 방</title>
+<link rel="stylesheet" href="kbattle.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../kedu_config.js"></script>
+<script src="/kedu_gate.js"></script>
+</head>
+<body>
+<div class="kb-phone" id="root"></div>
+<div class="kb-conn" id="conn">연결 준비…</div>
+
+<script src="../kple/kple-core.js"></script>
+<script src="../kple/kple-deck.js"></script>
+<script src="kb-questions.js"></script>
+<script src="kb-xp.js"></script>
+<script src="kb-store.js"></script>
+<script src="kb-answers.js"></script>
+<script src="kb-kquiz.js"></script>
+<script src="kb-bank.js"></script>
+<script src="kb-roster.js"></script>
+<script src="kb-battle.js"></script>
+<script src="kb-mode-race.js"></script>
+<script src="kb-mode-puzzle.js"></script>
+<script src="kb-mode-tower.js"></script>
+<script>
+/* 친구 방 (헌법 제7조 트랙 B) — 아이가 아이를 부르는 유일한 통로.
+   교실(트랙 A)과 결정적으로 다른 두 가지:
+
+     ① **방장도 문제를 푼다.** 교실에선 교사가 진행만 하지만, 친구 방의 방장은 친구다.
+        방장만 구경하는 방은 아무도 안 연다. → 같은 페이지에서 host + join 을 동시에 세운다.
+        (케이플 채널 하나에 두 인스턴스가 붙는다. 코어는 한 줄도 안 건드림.)
+
+     ② **어른이 없다.** 진행 버튼의 주인이 없으니 판이 스스로 굴러가야 한다.
+        → `auto: true` — 전원 응답하면 자동 공개, 아무도 안 풀어도 제한시간 지나면 공개,
+          공개 후 자동으로 다음 문제. (kb-battle 코어의 자동 진행 옵션)
+
+   방장 화면 = 방코드(친구에게 불러줄 것) + 내 문제. 진행 버튼은 안 보여준다 —
+   버튼이 보이면 방장이 자기 유리하게 넘길 수 있고, 그건 친구 사이를 깨뜨린다. */
+(function () {
+  var root = document.getElementById('root');
+  var conn = document.getElementById('conn');
+  function setConn(t, cls) { conn.textContent = t; conn.className = 'kb-conn' + (cls ? ' ' + cls : ''); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  var me = null;
+  var picked = { questions: null, label: '' };
+  var QN = 8;                       // 친구 방은 짧게 (쉬는 시간 한 판)
+
+  /* ── 1. 문제 고르기 ── */
+  function pickQuestions() {
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-logo">친구 <span>방</span></div>' +
+        '<div class="kb-sub">무슨 문제로 놀까요?</div>' +
+        '<button class="kb-btn kb-enter" id="play">🎲 놀이 문제</button>' +
+        '<div id="units" style="margin-top:16px"><div class="kb-sub">단원 불러오는 중…</div></div>' +
+        '<button class="kb-back" id="back">← 돌아가기</button>' +
+      '</div>';
+    document.getElementById('back').onclick = function () { location.href = 'index.html'; };
+    document.getElementById('play').onclick = function () {
+      var qs = KBank.all();
+      if (!qs.length) qs = KBQ.SAMPLE;
+      picked = { questions: shuffle(qs).slice(0, QN), label: '놀이 문제' };
+      pickMode();
+    };
+
+    KBKQuiz.catalog().then(function (units) {
+      var box = document.getElementById('units');
+      if (!box) return;
+      if (!units.length) { box.innerHTML = ''; return; }
+      box.innerHTML = '<div class="kb-sub" style="margin-bottom:8px">교과 문제로 하기</div>' +
+        '<div class="kb-namegrid">' + units.map(function (u) {
+          return '<button class="kb-name" data-key="' + esc(u.key) + '" data-name="' + esc(u.subjectKo + ' ' + u.unitNo + '단원') + '">' +
+            u.grade + '학년<br>' + esc(u.subjectKo) + ' ' + u.unitNo + '</button>';
+        }).join('') + '</div>';
+      [].forEach.call(box.querySelectorAll('.kb-name'), function (b) {
+        b.onclick = function () {
+          var key = b.getAttribute('data-key');
+          b.textContent = '…';
+          KBKQuiz.load(key).then(function () {
+            var qs = KBank.lesson(key, { n: QN, seed: (Date.now() % 1000000) });
+            if (!qs.length) throw new Error('없음');
+            picked = { questions: qs, label: b.getAttribute('data-name') };
+            pickMode();
+          }).catch(function () { pickQuestions(); });
+        };
+      });
+    });
+  }
+
+  /* ── 2. 모드 ── */
+  function pickMode() {
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-logo">' + esc(picked.label) + '</div>' +
+        '<div class="kb-sub">문제 ' + picked.questions.length + '개 · 어떻게 놀까요?</div>' +
+        '<button class="kb-btn kb-enter" data-mode="race">🏇 레이스<br><small style="font-weight:700;font-size:13px;opacity:.8">정답마다 앞으로</small></button>' +
+        '<button class="kb-btn kb-ghost" data-mode="puzzle">🧩 퍼즐 완성 — 같이 걷어요</button>' +
+        '<button class="kb-btn kb-ghost" data-mode="tower">🏗 타워 쌓기 — 팀으로</button>' +
+        '<button class="kb-back" id="back">←</button>' +
+      '</div>';
+    [].forEach.call(root.querySelectorAll('[data-mode]'), function (b) {
+      b.onclick = function () { open(b.getAttribute('data-mode')); };
+    });
+    document.getElementById('back').onclick = pickQuestions;
+  }
+
+  /* ── 3. 방 열기 — 방장도 푼다 ── */
+  function open(mode) {
+    if (!window.supabase) { setConn('망 연결을 확인해요', 'err'); return; }
+    root.innerHTML =
+      '<div class="kb-friend">' +
+        '<div class="kb-friend-code"><span class="kb-sub">친구에게 알려줘요</span>' +
+          '<b id="code">····</b>' +
+          '<span class="kb-sub">keduclass.com/kbattle/play.html</span></div>' +
+        '<div id="board"></div>' +          // 조용한 진행 상황(참가자 수·문제 번호)
+        '<div id="play"></div>' +           // 방장의 문제 화면 — 방장도 푼다
+      '</div>';
+
+    var hostCtx, joinCtx;
+    var boardEl = document.getElementById('board');
+
+    try {
+      hostCtx = Kple.host('kbattle', { el: boardEl, config: {
+        questions: picked.questions, mode: mode || undefined,
+        auto: true,                        // 어른이 없다 → 판이 스스로 굴러간다
+        teams: 2
+      } });
+    } catch (e) { setConn(String(e.message || e), 'err'); pickMode(); return; }
+
+    document.getElementById('code').textContent = hostCtx.roomCode;
+
+    // 방장도 참가자로 같은 방에 들어간다 (같은 채널, 다른 인스턴스)
+    setTimeout(function () {
+      try {
+        joinCtx = Kple.join(hostCtx.roomCode, me.name, {
+          el: document.getElementById('play'), game: 'kbattle' });
+        joinCtx.on('status', function (s) {
+          if (s === 'SUBSCRIBED') setConn('방 ' + hostCtx.roomCode + ' · ' + me.name, 'ok');
+        });
+      } catch (e) { setConn('내 자리 열기 실패', 'err'); }
+    }, 350);
+
+    // 진행 버튼은 방장에게도 안 보여준다 — 자기 유리하게 넘길 수 있으면 친구 사이가 깨진다.
+    var hide = setInterval(function () {
+      ['#kbStart', '#kbReveal', '#kbNext'].forEach(function (sel) {
+        var b = boardEl.querySelector(sel);
+        if (!b) return;
+        if (sel === '#kbStart') {                     // 시작만 방장 몫 (친구를 기다려야 하니까)
+          b.textContent = '다 모였어! 시작 ▶';
+          b.style.display = '';
+        } else { b.style.display = 'none'; }
+      });
+    }, 300);
+    window.addEventListener('beforeunload', function () { clearInterval(hide); });
+  }
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ── 부트: 프로필이 있어야 XP·파트너가 쌓인다 ── */
+  KBStore.me().then(function (p) {
+    if (p) { me = p; pickQuestions(); return; }
+    root.innerHTML =
+      '<div class="kb-gate">' +
+        '<div class="kb-logo">케이<span>배틀</span></div>' +
+        '<div class="kb-sub">먼저 이름을 정해요</div>' +
+        '<div class="kb-field"><label>내 이름</label>' +
+          '<input class="kb-input" id="nm" maxlength="10" placeholder="예: 햇살이"></div>' +
+        '<button class="kb-btn kb-enter" id="go">시작 ▶</button>' +
+      '</div>';
+    document.getElementById('go').onclick = function () {
+      var nm = (document.getElementById('nm').value || '').trim();
+      if (!nm) return;
+      KBStore.create({ name: nm }).then(function (p2) { me = p2; pickQuestions(); });
+    };
+  });
+})();
+</script>
+</body>
+</html>

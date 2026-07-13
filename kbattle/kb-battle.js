@@ -49,6 +49,17 @@
     var scores = {};     // { name: 누적 점수 }
     var streaks = {};    // { name: 연속 정답 수 }
 
+    /* 자동 진행 (트랙 B 친구 방 — 방에 어른이 없다).
+       교실(트랙 A)에서는 교사가 속도를 잡는다 → auto 없음이 기본.
+       친구 방에서는 아무도 진행 버튼의 주인이 아니므로 판이 스스로 굴러가야 한다.
+         전원 응답 → 잠시 뒤 자동 공개 / 아무도 안 풀어도 제한시간 지나면 공개 / 공개 후 자동 다음. */
+    var auto = !!ctx.config.auto;
+    var T_REVEAL = ctx.config.autoReveal || 800;    // 전원 응답 후 공개까지
+    var T_NEXT = ctx.config.autoNext || 2600;       // 공개 후 다음 문제까지
+    var autoT = null;
+    function clearAuto() { if (autoT) { clearTimeout(autoT); autoT = null; } }
+    function later(fn, ms) { clearAuto(); autoT = setTimeout(function () { autoT = null; fn(); }, ms); }
+
     // 모드 플러그인 (헌법 제4조) — 없으면 민짜 그대로. 훅은 전부 optional.
     var modeFactory = ctx.config.mode && window.KBModes && window.KBModes[ctx.config.mode];
     var mode = modeFactory ? modeFactory({
@@ -123,16 +134,20 @@
     }
 
     function next() {
+      clearAuto();
       qi++;
       if (qi >= questions.length) { end(); return; }
       phase = 'question';
       answered = {};
       ctx.sendState({ phase: 'question', qi: qi, q: pubQ(curQ()), mode: modeState() }); // KP-1
       render();
+      // 아무도 안 풀어도 판이 멈추지 않는다 (친구 방에 재촉할 어른이 없다)
+      if (auto) later(reveal, (curQ().timeLimit || 20) * 1000 + 500);
     }
 
     function reveal() {
       if (phase !== 'question') return;
+      clearAuto();
       phase = 'reveal';
       // 미응답자 스트릭 리셋(오답 취급, 점수 0 — 감점 없음)
       ctx.getRoster().forEach(function (n) { if (!answered[n]) streaks[n] = 0; });
@@ -144,9 +159,11 @@
         mode: modeState()
       });
       render();
+      if (auto) later(next, T_NEXT);
     }
 
     function end() {
+      clearAuto();
       phase = 'end';
       ctx.sendState({ phase: 'end', totals: scores, mode: modeState() }); // 참가자는 본인 것만 표시
       render();
@@ -177,6 +194,9 @@
       // 모드는 "정답 이벤트 스트림"만 구독한다 (헌법 제4조) — 채점·배점 권위는 코어 단독
       if (mode && mode.onAnswer) mode.onAnswer({ name: p.name, correct: correct, gained: gained, streak: streak, qi: qi });
       render();
+      // 전원 응답 → 잠깐 뜸 들이고 공개 (기다리는 시간이 곧 지루함이다)
+      var roster = ctx.getRoster();
+      if (auto && roster.length && Object.keys(answered).length >= roster.length) later(reveal, T_REVEAL);
     });
 
     render();
