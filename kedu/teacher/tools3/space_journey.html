@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 우주 창문 — 천체 여행</title>
+<!--
+  케이랩 v3 · C트랙 시그니처 — 우주 창문 / 천체 여행 (2026-07-13 · 페이블)
+  v2 engine/tools/space_journey.js(905줄) 전면 재건 · r185 + klab3 코어.
+
+  ★ 이 도구의 정체성 —
+    earth·moon·season·solar·constellation 5종은 각 «개념»을 깊게 판다.
+    space_journey는 그 다섯이 «사실은 하나의 우주»임을 증명한다.
+    아이는 자전을 배우고, 공전을 배우고, 계절을 배우고, 별자리를 배운다.
+    그런데 그게 서로 상관없는 지식 다섯 덩어리로 남는다.
+    여기서는 «지구 하나가 하는 일»로 다시 묶인다.
+
+  🔴 신기술 2종(페이블 몫 이행):
+    ① «다섯 창» — 한 손잡이, 다섯 얼굴.
+       renderer.setScissorTest + 5카메라로 «같은 씬»을 한 프레임에 다섯 번 그린다.
+       화면 = 큰 창 1 + 작은 창 4. 시간 손잡이(날짜·시각)는 오직 하나.
+       그 하나를 끌면 태양계·자전·남중고도·공전·별자리가 «동시에» 반응한다.
+       개별 도구 다섯은 이걸 할 수 없다. 이게 space_journey의 존재 이유다.
+    ② «컷 없는 비행» — 정거장 전환이 페이드 컷이 아니라 Catmull-Rom 카메라 궤적.
+       우주에서 지구로 날아 내려가 지표에 «착지»하고, 다시 떠오른다.
+       화면이 한 번도 검게 끊기지 않는다 = 「이게 다 같은 세계」의 물증.
+
+  🌟 와우 신설: «누가 움직여서?»
+    「계절마다 밤하늘 별자리가 바뀌는 건 — 별이 움직여서일까, 우리가 움직여서일까?」
+    예측 → 다섯 창에서 시간을 1년 돌린다 → 별자리 천구는 «한 발짝도» 안 움직이고
+    지구만 태양 둘레를 돈다. 그런데 밤하늘 창의 별자리는 바뀐다.
+    조작 게이트: 공전 1바퀴를 «실제로» 돌려야 해소된다.
+
+  v2 무손실: 우주 창문 자유 탐험(자이로 360° + 드래그) · 행성 8종 팩트·도장 수집·완주 축하 ·
+    🧭 천체 여행 5정거장(태양계·자전·남중고도·공전·별자리) · 이전/다음/자유 탐험 ·
+    지구 착륙 → 밤하늘 → 계절 바꾸기 → 위에서 보기(교과서 그림) → 우주 복귀 ·
+    계절별 별자리 4종 + 계절 도착 배너 · 남중고도 막대·그림자(교과서 수치) · 읽어주기 토글
+  v3 추가: 시간축 일원화(날짜·시각 → 공전각·자전각) · 판정 후처리 일원화(afterAct) · 와우 조작 게이트
+
+  config: ?stop=solar|spin|noon|orbit|stars · ?day=1~365 · ?hour=0~24 · ?five=1(다섯 창으로 시작)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .sj-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+
+  /* 정거장 레일 */
+  #rail{top:50px;left:50%;transform:translateX(-50%);display:flex;gap:5px;flex-wrap:wrap;
+    justify-content:center;max-width:min(700px,92vw)}
+  #rail button{font-family:'Gowun Dodum';font-size:13px;padding:8px 12px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  #rail button.on{background:rgba(155,123,245,.34);border-color:rgba(155,123,245,.7);color:#fff}
+  #rail button.free{border-color:rgba(255,212,59,.5);color:#FFE9A8}
+  #rail button.free.on{background:rgba(255,212,59,.28);border-color:rgba(255,212,59,.8)}
+
+  /* 시간 손잡이 — 이 도구의 심장 */
+  #timebar{left:50%;transform:translateX(-50%);bottom:14px;width:min(660px,94vw);
+    display:flex;flex-direction:column;gap:6px}
+  #timebar .row{display:flex;align-items:center;gap:9px}
+  #timebar .lab{font-family:'Gowun Dodum';font-size:12px;color:#9fb0c4;width:52px;flex:0 0 52px}
+  #timebar .val{font-family:'Gowun Dodum';font-size:13px;color:#FFD43B;width:82px;flex:0 0 82px;text-align:right}
+  #timebar input[type=range]{flex:1;accent-color:#9B7BF5;height:26px;cursor:pointer}
+  #timebar .btns{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:1px}
+  #timebar .btns button{font-family:'Gowun Dodum';font-size:12.5px;padding:6px 11px;border-radius:10px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  #timebar .btns button.on{background:rgba(45,212,160,.28);border-color:rgba(45,212,160,.7);color:#fff}
+
+  /* 좌측 읽음 패널 */
+  #readout{top:104px;left:12px;max-width:min(240px,58vw);display:flex;flex-direction:column;gap:5px}
+  #readout .t{font-family:'Gowun Dodum';font-size:14px;color:#CBB7FF}
+  #readout .d{font-family:'Gowun Dodum';font-size:12px;color:#a9b8c8;line-height:1.5}
+  #readout .r{font-family:'Gowun Dodum';font-size:15px;color:#FFD43B;margin-top:2px}
+
+  /* 우측 컨트롤 */
+  #ctrls{top:104px;right:12px;display:flex;flex-direction:column;gap:6px;max-width:190px}
+  #ctrls .k3-btn{font-size:13px;text-align:left}
+
+  /* 우상단 아이콘 토글 */
+  #icons{position:fixed;top:12px;right:12px;z-index:24;display:flex;gap:6px}
+  #icons button{width:40px;height:40px;border-radius:12px;font-size:18px;cursor:pointer;
+    border:1px solid var(--hudline);background:var(--hud);backdrop-filter:blur(8px);color:#cfdae6}
+  #icons button.on{background:rgba(255,212,59,.26);border-color:rgba(255,212,59,.7);color:#fff}
+
+  /* 다섯 창 라벨 (스시저 뷰포트 위에 얹는 DOM) */
+  .vwlab{position:fixed;z-index:18;pointer-events:none;font-family:'Gowun Dodum';font-size:11.5px;
+    padding:3px 8px;border-radius:9px;background:rgba(8,12,20,.82);border:1px solid rgba(155,123,245,.45);
+    color:#DCCBFF;white-space:nowrap}
+  .vwlab.big{font-size:13px;border-color:rgba(255,212,59,.55);color:#FFE9A8}
+  .vwlab.hit{pointer-events:auto;cursor:pointer}
+
+  /* 행성 도장 */
+  #stamp{position:fixed;left:12px;top:50px;z-index:20;font-family:'Gowun Dodum';font-size:12.5px;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:12px;
+    backdrop-filter:blur(8px);padding:6px 11px;color:#cfdae6}
+  #stamp b{color:#FFD43B}
+
+  /* 행성 접근 카드 */
+  #pcard{position:fixed;left:50%;transform:translateX(-50%);bottom:104px;z-index:26;display:none;
+    background:rgba(8,12,26,.9);border:1.5px solid rgba(255,212,59,.5);border-radius:16px;
+    backdrop-filter:blur(8px);padding:13px 18px;text-align:center;max-width:min(420px,90vw)}
+  #pcard .nm{font-family:'Gowun Dodum';font-size:21px;color:#FFE066}
+  #pcard .ft{font-family:'Gowun Dodum';font-size:13.5px;color:#c8d4e4;line-height:1.55;margin-top:5px}
+  #pcard .bs{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  #pcard button{font-family:'Gowun Dodum';font-size:13.5px;padding:8px 15px;border-radius:11px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+
+  /* 계절 배너 */
+  #banner{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:25;
+    font-family:'Gowun Dodum';font-size:38px;color:#FFD43B;white-space:nowrap;
+    text-shadow:0 0 24px rgba(255,212,59,.6);opacity:0;transition:opacity .45s;pointer-events:none}
+
+  /* 완주 */
+  #fin{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;background:rgba(3,6,15,.92);text-align:center;padding:24px;
+    font-family:'Gowun Dodum';color:#fff}
+  #fin h2{font-size:30px;color:#FFD43B}
+  #fin p{font-size:16px;color:#c2d0e4;line-height:1.65}
+
+  /* 상태 카드 */
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:112px;z-index:19;
+    display:flex;flex-direction:column;gap:7px;align-items:center;max-width:min(600px,84vw);pointer-events:none}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.3);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-family:'Gowun Dodum';font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:sjPulse 1.2s ease-in-out infinite}
+  @keyframes sjPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  @media(max-width:560px){
+    #readout{max-width:44vw;font-size:11px;top:98px}
+    #ctrls{max-width:130px;top:98px}
+    #ctrls .k3-btn{font-size:11.5px;padding:6px 8px}
+    #rail button{font-size:11.5px;padding:6px 9px}
+    #timebar .lab{width:40px;flex:0 0 40px;font-size:11px}
+    #timebar .val{width:66px;flex:0 0 66px;font-size:11.5px}
+    #banner{font-size:26px}
+  }
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🪐 케이랩 · 우주 창문</span>
+  <span class="badge">천체 여행</span>
+</div>
+
+<div id="icons">
+  <button id="icRead" title="읽어주기">🔊</button>
+  <button id="icFive" title="다섯 창">🪟</button>
+</div>
+
+<div id="stamp">행성 도장 <b id="stampN">0</b>/8</div>
+<div class="sj-panel" id="rail"></div>
+<div class="sj-panel" id="readout"></div>
+<div class="sj-panel" id="ctrls"></div>
+<div class="sj-panel" id="timebar"></div>
+<div id="status"></div>
+<div id="pcard"></div>
+<div id="banner"></div>
+
+<div id="fin">
+  <h2>🏆 태양계 탐험 완료!</h2>
+  <p>여덟 행성을 모두 만났어요.<br>태양에서 가까운 순서를 기억하나요?<br>
+     <b style="color:#fff">수성 · 금성 · 지구 · 화성 · 목성 · 토성 · 천왕성 · 해왕성</b></p>
+  <button class="k3-btn" id="finBtn">우주로 돌아가기</button>
+</div>
+
+<div class="k3-hint" id="hint"><b>시간 손잡이 하나로 우주 전체가 움직여요</b> — 🪟 다섯 창을 켜 보세요</div>
+<div class="k3-loading" id="loading"><div class="ic">🪐</div><div>우주 여는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.SpaceSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ────────────────────────────────────────────────────────────────
+   *  천문 상수 — 교과서 정합
+   *  자전축 23.5° 기울기는 «우주 공간에 고정»된 방향(TILT_DIR = +X쪽).
+   *  지구 공전각 θ: 0°=동지(겨울) · 90°=춘분(봄) · 180°=하지(여름) · 270°=추분(가을)
+   *  → 태양 적위 dec(θ) = asin( −sin(23.5°) · cos θ )
+   *      θ=180(하지) → dec = +23.5°   θ=0(동지) → dec = −23.5°   θ=90·270 → dec = 0
+   *  → 남중고도 alt = 90 − 위도 + dec
+   *      위도 37.5°N: 하지 76.0° · 춘추분 52.5° · 동지 29.0°  (천체군 v3 위도 통일값)
+   * ──────────────────────────────────────────────────────────────── */
+  var TILT = 23.5;          /* 자전축 기울기(°) */
+  var LAT = 37.5;           /* 관측 위도(°N) — constellation·season과 통일 */
+  var DAY_WINTER = 356;     /* 동지 ≈ 12/22 */
+  var YEAR = 365.25;
+
+  var D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  function norm360(a) { return ((a % 360) + 360) % 360; }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+  /* 날짜(1~365) → 공전각(°) */
+  function orbitAngle(day) {
+    return norm360((day - DAY_WINTER) / YEAR * 360);
+  }
+  /* 공전각(°) → 날짜(1~365) — 역함수 */
+  function dayFromOrbit(ang) {
+    var d = norm360(ang) / 360 * YEAR + DAY_WINTER;
+    d = ((d - 1) % 365 + 365) % 365 + 1;
+    return d;
+  }
+  /* 태양 적위(°) */
+  function declination(ang) {
+    return Math.asin(clamp(-Math.sin(TILT * D2R) * Math.cos(norm360(ang) * D2R), -1, 1)) * R2D;
+  }
+  /* 남중고도(°) */
+  function noonAlt(ang, lat) {
+    if (lat === undefined) lat = LAT;
+    return 90 - lat + declination(ang);
+  }
+  /* 막대 그림자 길이 비 (막대 높이 1 기준) — 남중고도의 여각 tan */
+  function shadowRatio(ang, lat) {
+    var alt = noonAlt(ang, lat);
+    if (alt <= 0.5) return 12;                       /* 극야에 가까우면 그림자가 무한히 길어짐 */
+    return clamp(1 / Math.tan(alt * D2R), 0, 12);
+  }
+
+  /* 계절 — 0 봄 · 1 여름 · 2 가을 · 3 겨울 */
+  var SEASONS = ['봄', '여름', '가을', '겨울'];
+  var SEASON_ICON = ['🌸', '☀️', '🍂', '❄️'];
+  function seasonIdx(ang) {
+    return Math.floor(norm360(norm360(ang) - 45) / 90);
+  }
+  /* 계절 → 그 계절의 «대표 공전각»(춘분·하지·추분·동지) */
+  function seasonAngle(si) { return [90, 180, 270, 0][((si % 4) + 4) % 4]; }
+
+  /* 자전 — 시각(0~24) → 자전각(°). 12시 = 관측지가 태양 정면(정오) */
+  function spinAngle(hour) { return norm360((hour - 12) / 24 * 360); }
+  function hourFromSpin(ang) {
+    var h = norm360(ang) / 360 * 24 + 12;
+    return ((h % 24) + 24) % 24;
+  }
+  /* 낮/밤 — 관측지 법선과 태양 방향의 내적 부호.
+     하루 안에서는 자전각이 지배적이므로 정오 기준 ±6시간이 낮(적위 보정은 sunHeight로 별도 제공) */
+  function isDay(hour) { var h = ((hour % 24) + 24) % 24; return h >= 6 && h < 18; }
+
+  /* 관측지에서 본 «지금 이 순간»의 태양 고도(°) — 시각·계절 둘 다 반영
+     h = asin( sin φ sin δ + cos φ cos δ cos H ),  H = 시간각 = (hour−12)×15° */
+  function sunHeight(day, hour, lat) {
+    if (lat === undefined) lat = LAT;
+    var dec = declination(orbitAngle(day)) * D2R;
+    var phi = lat * D2R;
+    var H = (hour - 12) * 15 * D2R;
+    var s = Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H);
+    return Math.asin(clamp(s, -1, 1)) * R2D;
+  }
+
+  /* ── 별자리 4종 — 황도 경도에 못 박혀 있다(움직이지 않는다) ──
+     밤하늘 = 태양 반대쪽 = 지구 위치 방향. 그래서 «그 계절의 공전각»에 놓인 별자리가 보인다. */
+  var CONSTS = [
+    { key:'leo',  nm:'사자자리',    lon: 90, si:0, fact:'봄철 밤하늘의 주인공이에요' },
+    { key:'cyg',  nm:'백조자리',    lon:180, si:1, fact:'여름 은하수 한가운데를 날아가요' },
+    { key:'peg',  nm:'페가수스자리', lon:270, si:2, fact:'가을 하늘의 큰 사각형이에요' },
+    { key:'ori',  nm:'오리온자리',  lon:  0, si:3, fact:'겨울 밤하늘에서 가장 찾기 쉬워요' }
+  ];
+  function angDiff(a, b) { var d = norm360(a - b); return d > 180 ? 360 - d : d; }
+  /* 지금 밤하늘에 잘 보이는 별자리(태양 반대쪽 ±60°) */
+  function visibleConsts(ang) {
+    return CONSTS.filter(function (c) { return angDiff(c.lon, ang) <= 60; });
+  }
+
+  /* ── 행성 8종 (v2 무손실 팩트) ── */
+  var PLANETS = [
+    { key:'mer', nm:'수성', au:0.39, r:0.38, col:0x9E9E9E, fact:'태양에 가장 가까워요. 낮은 430℃, 밤은 −180℃!' },
+    { key:'ven', nm:'금성', au:0.72, r:0.95, col:0xE6C27A, fact:'두꺼운 구름이 열을 가둬 태양계에서 가장 뜨거워요' },
+    { key:'ear', nm:'지구', au:1.00, r:1.00, col:0x4A90D9, fact:'우리가 사는 곳. 물이 흐르고 생명이 살아요' },
+    { key:'mar', nm:'화성', au:1.52, r:0.53, col:0xC1440E, fact:'붉은 흙의 행성. 태양계에서 가장 높은 산이 있어요' },
+    { key:'jup', nm:'목성', au:5.20, r:3.20, col:0xD8A87B, fact:'가장 큰 행성. 대적점은 수백 년째 부는 폭풍이에요' },
+    { key:'sat', nm:'토성', au:9.58, r:2.80, col:0xE3CFA0, fact:'고리는 수많은 얼음과 돌 조각이에요' },
+    { key:'ura', nm:'천왕성', au:19.2, r:1.80, col:0x8FD3E8, fact:'거의 누워서 굴러가듯 자전해요' },
+    { key:'nep', nm:'해왕성', au:30.1, r:1.75, col:0x3F63C9, fact:'가장 먼 행성. 초속 600m 바람이 불어요' }
+  ];
+  function planetIdx(key) {
+    for (var i = 0; i < PLANETS.length; i++) if (PLANETS[i].key === key) return i;
+    return -1;
+  }
+
+  /* ── 정거장 5 (v2 무손실 · 프레지 문법) ── */
+  var STOPS = [
+    { id:'solar', t:'태양계',            d:'여덟 행성이 태양 둘레를 돌아요' },
+    { id:'spin',  t:'지구의 자전 — 하루', d:'지구가 스스로 돌아서 낮과 밤이 생겨요' },
+    { id:'noon',  t:'태양의 남중고도',    d:'계절마다 한낮의 태양 높이가 달라요' },
+    { id:'orbit', t:'지구의 공전 — 1년',  d:'지구가 태양 둘레를 돌아서 계절이 생겨요' },
+    { id:'stars', t:'계절별 별자리',      d:'밤하늘은 태양 반대쪽 — 계절마다 별자리가 달라져요' }
+  ];
+  function stopIdx(id) {
+    for (var i = 0; i < STOPS.length; i++) if (STOPS[i].id === id) return i;
+    return -1;
+  }
+
+  /* ── 🌟 와우: «누가 움직여서?» ── */
+  var WOW = {
+    q: '계절마다 밤하늘 별자리가 바뀌어요. 누가 움직여서일까요?',
+    ch: ['별자리가 하늘에서 움직여서', '지구가 태양 둘레를 돌아서', '태양이 별자리를 밀어내서'],
+    ans: 1,
+    tip: '🪟 다섯 창을 켜고, 날짜 손잡이로 «1년»을 돌려 보세요. 별자리는 정말 움직일까요?',
+    need: 340   /* 해소 조건: 공전각을 누적 340° 이상 돌려야(≈1년) — 조작 게이트 */
+  };
+
+  /* ═══════════════ 시뮬레이터 ═══════════════ */
+  function createSim(cfg) {
+    cfg = cfg || {};
+    var st = {
+      day: cfg.day !== undefined ? clamp(cfg.day, 1, 365) : 172,   /* 기본 = 하지(여름) */
+      hour: cfg.hour !== undefined ? clamp(cfg.hour, 0, 24) : 12,
+      stop: cfg.stop && stopIdx(cfg.stop) >= 0 ? cfg.stop : null,  /* null = 자유 탐험 */
+      five: !!cfg.five,
+      playDay: false,      /* 날짜 자동 흐름(공전) */
+      playHour: false,     /* 시각 자동 흐름(자전) */
+      stamps: [],          /* 방문한 행성 key */
+      focus: null,         /* 접근 중인 행성 key */
+      landed: false,       /* 지구에 착륙했는가 */
+      orbitAcc: 0,         /* 공전각 누적 이동량(°) — 와우 조작 게이트 */
+      wowArmed: false, wowPick: -1, wowDone: false, wowHit: false
+    };
+
+    function ang() { return orbitAngle(st.day); }
+
+    /* 날짜 이동 — 누적량을 «항상» 기록(와우 게이트의 근거) */
+    function setDay(d, opt) {
+      var before = ang();
+      var nd = clamp(d, 1, 365);
+      if (opt && opt.wrap) { nd = ((d - 1) % 365 + 365) % 365 + 1; }
+      st.day = nd;
+      var after = orbitAngle(st.day);
+      var delta = Math.abs(norm360(after - before));
+      if (delta > 180) delta = 360 - delta;
+      st.orbitAcc += delta;
+      return st.day;
+    }
+    function setHour(h, opt) {
+      var nh = (opt && opt.wrap) ? ((h % 24) + 24) % 24 : clamp(h, 0, 24);
+      st.hour = nh;
+      return st.hour;
+    }
+    /* 시간 흐름 — dt(초) */
+    function tick(dt) {
+      dt = clamp(dt, 0, 0.1);
+      if (st.playHour) setHour(st.hour + dt * 6, { wrap: true });        /* 4초 = 하루 */
+      if (st.playDay)  setDay(st.day + dt * 36.5, { wrap: true });        /* 10초 = 1년 */
+      return { day: st.day, hour: st.hour };
+    }
+
+    /* 다음 계절로 (v2 무손실) */
+    function nextSeason() {
+      var si = (seasonIdx(ang()) + 1) % 4;
+      setDay(dayFromOrbit(seasonAngle(si)));
+      return { si: si, nm: SEASONS[si], icon: SEASON_ICON[si] };
+    }
+
+    /* 행성 접근 — 도장 (v2 무손실) */
+    function visit(key) {
+      var i = planetIdx(key);
+      if (i < 0) return null;
+      st.focus = key;
+      var fresh = st.stamps.indexOf(key) < 0;
+      if (fresh) st.stamps.push(key);
+      return {
+        planet: PLANETS[i], fresh: fresh, n: st.stamps.length,
+        complete: st.stamps.length === PLANETS.length,
+        canLand: key === 'ear'
+      };
+    }
+    function leave() { st.focus = null; st.landed = false; }
+    function land() {
+      if (st.focus !== 'ear') return false;
+      st.landed = true;
+      return true;
+    }
+
+    /* 정거장 */
+    function goStop(id) {
+      if (id === null || stopIdx(id) < 0) {
+        /* 자유 탐험(우주 창문) — 시간을 «세운다».
+           흐르는 채로 나오면 행성이 계속 움직여서 탭으로 잡히지 않는다(실부팅이 잡은 버그). */
+        st.stop = null;
+        st.playDay = false; st.playHour = false;
+        st.landed = false;
+        return null;
+      }
+      st.stop = id;
+      st.focus = null;
+      /* 정거장별 진입 세팅 — v2 applyStop 무손실 */
+      if (id === 'spin')  { st.playHour = true;  st.playDay = false; st.landed = false; }
+      if (id === 'noon')  { st.playHour = false; st.playDay = false; st.hour = 12; st.landed = true; }
+      if (id === 'orbit') { st.playDay = true;   st.playHour = false; st.landed = false; }
+      if (id === 'stars') { st.playHour = false; st.playDay = false; st.hour = 0; st.landed = true; }
+      if (id === 'solar') { st.playDay = false;  st.playHour = false; st.landed = false; }
+      return STOPS[stopIdx(id)];
+    }
+    function stepStop(dir) {
+      var i = st.stop ? stopIdx(st.stop) : -1;
+      var n = clamp(i + dir, 0, STOPS.length - 1);
+      return goStop(STOPS[n].id);
+    }
+
+    /* 다섯 창 */
+    function toggleFive() { st.five = !st.five; return st.five; }
+
+    /* 🌟 와우 */
+    function armWow() {
+      if (st.wowDone) return false;
+      st.wowArmed = true;
+      st.orbitAcc = 0;              /* 예측 시점부터 다시 셈 = 「예측만 하고 안 돌리면 해소 안 됨」 */
+      return true;
+    }
+    function pickWow(i) {
+      if (!st.wowArmed) return false;
+      st.wowPick = i;
+      return true;
+    }
+    /* 해소 판정 — 공전 1바퀴를 «실제로» 돌렸는가 (조작 게이트) */
+    function checkWow() {
+      if (!st.wowArmed || st.wowDone || st.wowPick < 0) return null;
+      if (st.orbitAcc < WOW.need) return null;
+      st.wowDone = true;
+      st.wowArmed = false;
+      st.wowHit = (st.wowPick === WOW.ans);
+      return {
+        hit: st.wowHit,
+        answer: WOW.ch[WOW.ans],
+        picked: WOW.ch[st.wowPick],
+        turned: Math.round(st.orbitAcc)
+      };
+    }
+    function clearWow() {
+      if (st.wowDone) return false;
+      st.wowArmed = false; st.wowPick = -1;
+      return true;
+    }
+
+    /* ── 후처리 일원화 (moon 교훈: 조작 경로가 여럿인 도구는 판정을 루프에 두지 않는다) ── */
+    function afterAct() {
+      return { wow: checkWow() };
+    }
+
+    /* ── 읽음(정거장별 계기판 수치) — v2 jRead 무손실 승격 ── */
+    function readout() {
+      var a = ang(), si = seasonIdx(a);
+      var id = st.stop;
+      if (id === 'noon') {
+        var alt = noonAlt(a);
+        return SEASONS[si] + ' 남중고도 ' + alt.toFixed(1) + '° · 그림자 ' +
+               shadowRatio(a).toFixed(2) + '배';
+      }
+      if (id === 'spin') {
+        var h = Math.floor(st.hour), m = Math.round((st.hour - h) * 60);
+        if (m === 60) { h = (h + 1) % 24; m = 0; }
+        return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m) + ' — ' +
+               (isDay(st.hour) ? '☀️ 낮' : '🌙 밤');
+      }
+      if (id === 'orbit') {
+        return SEASONS[si] + ' · 공전각 ' + Math.round(a) + '°';
+      }
+      if (id === 'stars') {
+        var vs = visibleConsts(a);
+        return vs.length ? vs.map(function (c) { return c.nm; }).join(' · ') : '—';
+      }
+      if (id === 'solar') {
+        return '행성 ' + PLANETS.length + '개 · 도장 ' + st.stamps.length + '/8';
+      }
+      return SEASONS[si] + ' · ' + Math.round(st.hour) + '시';
+    }
+
+    /* ── 상태줄 (v2 문구 무손실 + 계기 승격) ── */
+    function statusCards() {
+      var a = ang(), si = seasonIdx(a), out = [];
+      var dateStr = dateLabel(st.day);
+
+      out.push({
+        cls: '',
+        html: '<span class="big">' + SEASON_ICON[si] + ' ' + SEASONS[si] + '</span> · ' +
+              dateStr + ' · ' + hourLabel(st.hour)
+      });
+
+      if (st.stop === 'noon') {
+        out.push({
+          cls: '',
+          html: '한낮의 태양 높이 <span class="big">' + noonAlt(a).toFixed(1) + '°</span>' +
+                ' — 그림자는 막대의 <b>' + shadowRatio(a).toFixed(2) + '배</b>'
+        });
+      }
+      if (st.stop === 'stars' || st.landed) {
+        var vs = visibleConsts(a);
+        out.push({
+          cls: '',
+          html: '오늘 밤 잘 보이는 별자리 — <b>' +
+                (vs.length ? vs.map(function (c) { return c.nm; }).join(' · ') : '—') + '</b>'
+        });
+      }
+      if (st.wowArmed) {
+        out.push({
+          cls: 'warnc',
+          html: '<span class="hold">🌟 날짜 손잡이로 1년을 돌려 보세요 — 별자리가 정말 움직이는지</span>'
+        });
+      }
+      if (st.wowDone) {
+        out.push({
+          cls: 'warnc',
+          html: '⭐ 별은 <b>한 발짝도</b> 움직이지 않았어요 — 움직인 건 <b>우리</b>였어요'
+        });
+      }
+      return out;
+    }
+
+    function dateLabel(day) {
+      var d = Math.round(clamp(day, 1, 365));
+      var MD = [31,28,31,30,31,30,31,31,30,31,30,31], m = 0, r = d;
+      while (m < 12 && r > MD[m]) { r -= MD[m]; m++; }
+      return (m + 1) + '월 ' + r + '일';
+    }
+    function hourLabel(hour) {
+      var h = Math.floor(((hour % 24) + 24) % 24);
+      var mm = Math.round((hour - Math.floor(hour)) * 60);
+      if (mm === 60) { h = (h + 1) % 24; mm = 0; }
+      return (h < 10 ? '0' + h : h) + ':' + (mm < 10 ? '0' + mm : mm);
+    }
+
+    return {
+      st: st,
+      ang: ang, setDay: setDay, setHour: setHour, tick: tick,
+      nextSeason: nextSeason,
+      visit: visit, leave: leave, land: land,
+      goStop: goStop, stepStop: stepStop, toggleFive: toggleFive,
+      armWow: armWow, pickWow: pickWow, checkWow: checkWow, clearWow: clearWow,
+      afterAct: afterAct,
+      readout: readout, statusCards: statusCards,
+      dateLabel: dateLabel, hourLabel: hourLabel
+    };
+  }
+
+  var API = {
+    TILT: TILT, LAT: LAT, YEAR: YEAR, DAY_WINTER: DAY_WINTER,
+    SEASONS: SEASONS, SEASON_ICON: SEASON_ICON,
+    CONSTS: CONSTS, PLANETS: PLANETS, STOPS: STOPS, WOW: WOW,
+    norm360: norm360, clamp: clamp, angDiff: angDiff,
+    orbitAngle: orbitAngle, dayFromOrbit: dayFromOrbit,
+    declination: declination, noonAlt: noonAlt, shadowRatio: shadowRatio,
+    seasonIdx: seasonIdx, seasonAngle: seasonAngle,
+    spinAngle: spinAngle, hourFromSpin: hourFromSpin, isDay: isDay, sunHeight: sunHeight,
+    visibleConsts: visibleConsts, planetIdx: planetIdx, stopIdx: stopIdx,
+    createSim: createSim
+  };
+
+  if (typeof window !== 'undefined') window.SpaceSim = API;
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.SpaceSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+const D2R = Math.PI / 180;
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const cfgDay  = parseFloat(Q.get('day'));
+const cfgHour = parseFloat(Q.get('hour'));
+const sim = Sim.createSim({
+  day:  isNaN(cfgDay)  ? undefined : cfgDay,
+  hour: isNaN(cfgHour) ? undefined : cfgHour,
+  stop: Q.get('stop') || undefined,
+  five: Q.get('five') === '1'
+});
+const st = sim.st;
+
+/* ═══════════════════ 무대 상수 ═══════════════════ */
+const R_E    = 18;      /* 지구 궤도 반지름 */
+const R_EARTH = 0.9;    /* 지구 반지름 */
+const R_SUN  = 2.6;
+const R_SKY  = 620;     /* 별자리 천구 — 지구에서 봐도 우주에서 봐도 «그 자리» */
+const AXIS = new THREE.Vector3(Math.sin(Sim.TILT * D2R), Math.cos(Sim.TILT * D2R), 0).normalize();
+const _Y = new THREE.Vector3(0, 1, 0);
+
+/* AU → 무대 거리 (로그 압축 — 해왕성도 화면에) */
+const auToDist = au => 12 * Math.pow(au, 0.42) + 6;
+
+/* ═══════════════════ 씬 ═══════════════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0, 14, 46], target: [0, 0, 0], fov: 62,
+  minDist: 1, maxDist: 900, exposure: 1.0
+});
+const { renderer, scene, camera, controls, sun } = app;
+controls.enabled = false;          /* 시선은 커스텀(자이로·드래그·비행)이 몰고 간다 */
+scene.fog = null;
+scene.background = new THREE.Color(0x03060F);
+sun.visible = false;
+scene.traverse(o => { if (o.isHemisphereLight) o.intensity = 0.04; });
+scene.add(new THREE.AmbientLight(0xffffff, 0.30));
+const sunLight = new THREE.PointLight(0xFFF6E0, 5.2, 0, 0);   /* 감쇠 0 = 해왕성까지 닿음 */
+scene.add(sunLight);
+
+/* ── 배경 별 4000 ── */
+{
+  const N = 4000, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const c1 = new THREE.Color(0xffffff), c2 = new THREE.Color(0xB8D0FF), c3 = new THREE.Color(0xFFE3BC);
+  for (let i = 0; i < N; i++) {
+    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u), r = 900 + Math.random() * 200;
+    pos[i*3] = r*s*Math.cos(th); pos[i*3+1] = r*u; pos[i*3+2] = r*s*Math.sin(th);
+    const c = Math.random() < 0.76 ? c1 : (Math.random() < 0.5 ? c2 : c3);
+    const dim = 0.5 + Math.random() * 0.5;
+    col[i*3] = c.r*dim; col[i*3+1] = c.g*dim; col[i*3+2] = c.b*dim;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    size: 2.0, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false
+  })));
+}
+
+/* ── 태양 ── */
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(R_SUN, 48, 32),
+  new THREE.MeshBasicMaterial({ color: 0xFFD43B })
+);
+scene.add(sunMesh);
+const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: canvasTexture(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+    gr.addColorStop(0, '#FFFDF2'); gr.addColorStop(0.35, '#FFD43B');
+    gr.addColorStop(1, 'rgba(255,160,30,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }),
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+}));
+sunGlow.scale.set(R_SUN * 5, R_SUN * 5, 1);
+scene.add(sunGlow);
+
+/* ── 텍스처 승급 로더 (solar 계보 · 실패해도 절대 안 깨짐) ── */
+const TEXDEF = [
+  { key:'sun',  src:'/kedu/teacher/engine/tools/assets/textures/solar/sun.png' },
+  { key:'ear',  src:'/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png' },
+  { key:'jup',  src:'/kedu/teacher/engine/tools/assets/textures/solar/jupiter.png' },
+  { key:'sat',  src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn.png' },
+  { key:'ring', src:'/kedu/teacher/engine/tools/assets/textures/solar/saturn_ring.png' }
+];
+
+/* ── 행성 8종 + 궤도 링 ── */
+const planetMesh = {}, orbitRing = {};
+Sim.PLANETS.forEach(p => {
+  const d = auToDist(p.au);
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(p.key === 'ear' ? R_EARTH : Math.max(0.42, p.r * 0.42), 40, 26),
+    new THREE.MeshStandardMaterial({ color: p.col, roughness: 0.88, metalness: 0.02 })
+  );
+  m.userData = { key: p.key, au: p.au, dist: d, hit: true };
+  scene.add(m);
+  planetMesh[p.key] = m;
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(d - 0.045, d + 0.045, 200),
+    new THREE.MeshBasicMaterial({ color: 0x4A6E9E, transparent: true, opacity: 0.34, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  scene.add(ring);
+  orbitRing[p.key] = ring;
+
+  if (p.key === 'sat') {
+    const rg = new THREE.Mesh(
+      new THREE.RingGeometry(1.5, 2.5, 64),
+      new THREE.MeshBasicMaterial({ color: 0xE3CFA0, transparent: true, opacity: 0.72, side: THREE.DoubleSide })
+    );
+    rg.rotation.x = -Math.PI / 2.35;
+    m.add(rg);
+  }
+});
+/* 지구 궤도만 도드라지게 */
+orbitRing.ear.material.color.set(0x7FC7FF);
+orbitRing.ear.material.opacity = 0.55;
+
+/* ── 지구 자전축 (공간 고정 · 계절이 생기는 «이유») ── */
+const axisLine = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.028, 0.028, R_EARTH * 4.4, 8),
+  new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.62 })
+);
+axisLine.quaternion.setFromUnitVectors(_Y, AXIS);
+scene.add(axisLine);
+
+/* ── 지표 무대: 관측지 · 막대 · 그림자 (남중고도 정거장) ── */
+const groundGroup = new THREE.Group();
+groundGroup.visible = false;
+scene.add(groundGroup);
+{
+  const ground = new THREE.Mesh(
+    new THREE.CircleGeometry(0.44, 40),
+    new THREE.MeshStandardMaterial({ color: 0x2E6B3E, roughness: 0.95, side: THREE.DoubleSide })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  groundGroup.add(ground);
+
+  const stick = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.008, 0.011, 0.13, 10),
+    new THREE.MeshStandardMaterial({ color: 0x8B5A2B, roughness: 0.8 })
+  );
+  stick.position.y = 0.065;
+  groundGroup.add(stick);
+
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 0.022),
+    new THREE.MeshBasicMaterial({ color: 0x0E2A18, transparent: true, opacity: 0.88, side: THREE.DoubleSide })
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = 0.002;
+  groundGroup.add(shadow);
+  groundGroup.userData = { shadow, stick, H: 0.13 };
+}
+
+/* ── 관측지 핀 (우주에서 볼 때 «우리가 어디에 서 있는지») ── */
+const pin = new THREE.Mesh(
+  new THREE.SphereGeometry(0.055, 12, 10),
+  new THREE.MeshBasicMaterial({ color: 0xFF5252 })
+);
+scene.add(pin);
+
+/* ── ✨ 별자리 천구 — 못 박혀 있다 ── */
+const constGroup = new THREE.Group();
+scene.add(constGroup);
+const STAR_PAT = {
+  leo: [[0,0.12],[0.09,0.05],[0.16,-0.02],[0.05,-0.08],[-0.06,-0.05],[-0.11,0.04]],
+  cyg: [[0,0.16],[0,0.04],[0,-0.10],[-0.13,0.02],[0.13,0.02],[0,-0.18]],
+  peg: [[-0.09,0.09],[0.09,0.09],[0.09,-0.09],[-0.09,-0.09],[0.17,0.15]],
+  ori: [[-0.09,0.14],[0.09,0.14],[-0.04,0.01],[0,0],[0.04,-0.01],[-0.08,-0.14],[0.08,-0.14]]
+};
+const constObj = {};
+Sim.CONSTS.forEach(c => {
+  const grp = new THREE.Group();
+  const dir = new THREE.Vector3(Math.cos(c.lon * D2R), 0.19, Math.sin(c.lon * D2R)).normalize();
+  const center = dir.clone().multiplyScalar(R_SKY);
+  /* 천구 접평면 기저 */
+  const e1 = new THREE.Vector3().crossVectors(dir, _Y).normalize();
+  const e2 = new THREE.Vector3().crossVectors(e1, dir).normalize();
+  const S = R_SKY * 0.42;
+
+  const pts = STAR_PAT[c.key].map(([u, v]) =>
+    center.clone().add(e1.clone().multiplyScalar(u * S)).add(e2.clone().multiplyScalar(v * S))
+  );
+  const pg = new THREE.BufferGeometry().setFromPoints(pts);
+  const stars = new THREE.Points(pg, new THREE.PointsMaterial({
+    color: 0xFFF6D8, size: 9, sizeAttenuation: false, transparent: true, depthWrite: false
+  }));
+  grp.add(stars);
+
+  const lg = new THREE.BufferGeometry().setFromPoints(pts.concat([pts[0]]));
+  grp.add(new THREE.Line(lg, new THREE.LineBasicMaterial({
+    color: 0x9BC4FF, transparent: true, opacity: 0.42, depthWrite: false
+  })));
+
+  constGroup.add(grp);
+  constObj[c.key] = { grp, stars, center, lon: c.lon };
+});
+
+/* ═══════════════════ 매 프레임 물리 ═══════════════════ */
+const _e1 = new THREE.Vector3(), _e2 = new THREE.Vector3(), _s = new THREE.Vector3();
+
+/* 지구 위치 — 공전각 θ */
+function earthPos(ang) {
+  const a = ang * D2R;
+  return new THREE.Vector3(Math.cos(a) * R_E, 0, Math.sin(a) * R_E);
+}
+/* 관측지 법선(up) — 위도 37.5°, 자전각(태양시) 기준 정규직교 프레임
+   ★ hour=12 → 관측지가 태양 정면 = 정오. 순수 로직 sunHeight와 좌표가 «같은 값»을 내야 한다. */
+function obsFrame(ang, hour) {
+  const E = earthPos(ang);
+  _s.copy(E).negate().normalize();                                  /* 지구 → 태양 */
+  _e1.copy(_s).addScaledVector(AXIS, -_s.dot(AXIS)).normalize();    /* 적도면에 투영 = 정오 방향 */
+  _e2.crossVectors(AXIS, _e1).normalize();
+  const phi = Sim.spinAngle(hour) * D2R;
+  const lat = Sim.LAT * D2R;
+  const up = _e1.clone().multiplyScalar(Math.cos(phi) * Math.cos(lat))
+    .addScaledVector(_e2, Math.sin(phi) * Math.cos(lat))
+    .addScaledVector(AXIS, Math.sin(lat)).normalize();
+  const obs = E.clone().addScaledVector(up, R_EARTH * 1.02);
+  return { E, up, obs, sunDir: _s.clone() };
+}
+
+function syncWorld() {
+  const ang = sim.ang();
+
+  /* 행성 — 공전 위치. 지구는 시간축과 한 몸, 나머지는 각자 주기(보기용) */
+  Sim.PLANETS.forEach(p => {
+    const m = planetMesh[p.key];
+    const a = (p.key === 'ear')
+      ? ang * D2R
+      : (ang / Math.pow(p.au, 1.5) + p.au * 47) * D2R;   /* 케플러 3법칙 느낌 + 위상 분산 */
+    m.position.set(Math.cos(a) * m.userData.dist, 0, Math.sin(a) * m.userData.dist);
+    m.rotation.y += 0.004;
+  });
+
+  /* 지구는 «시간축이 정한 자리»에 정확히 */
+  const F = obsFrame(ang, st.hour);
+  planetMesh.ear.position.copy(F.E);
+
+  /* 지구 자전 — 축 AXIS 기준, 자전각 phi */
+  {
+    const qTilt = new THREE.Quaternion().setFromUnitVectors(_Y, AXIS);
+    const qSpin = new THREE.Quaternion().setFromAxisAngle(_Y, Sim.spinAngle(st.hour) * D2R);
+    planetMesh.ear.quaternion.copy(qTilt).multiply(qSpin);
+  }
+
+  axisLine.position.copy(F.E);
+  pin.position.copy(F.obs);
+
+  /* 지표 무대 — 관측지에 세우고 up 방향으로 정렬 */
+  groundGroup.position.copy(F.obs);
+  groundGroup.quaternion.setFromUnitVectors(_Y, F.up);
+  {
+    const sh = groundGroup.userData.shadow;
+    const H = groundGroup.userData.H;
+    const alt = Sim.sunHeight(st.day, st.hour);
+    const len = alt > 0.5 ? Math.min(H / Math.tan(alt * D2R), H * 12) : H * 12;
+    sh.scale.set(len / 1, 1, 1);
+    /* 그림자는 태양 반대쪽으로 눕는다 — 지표 로컬 평면에 투영 */
+    const sLocal = F.sunDir.clone().addScaledVector(F.up, -F.sunDir.dot(F.up));
+    if (sLocal.lengthSq() > 1e-6) {
+      sLocal.normalize().applyQuaternion(groundGroup.quaternion.clone().invert());
+      const yaw = Math.atan2(sLocal.z, sLocal.x);
+      sh.rotation.set(-Math.PI / 2, 0, yaw + Math.PI);   /* 태양 «반대» 방향 */
+      sh.position.set(-Math.cos(yaw) * len / 2, 0.002, -Math.sin(yaw) * len / 2);
+    }
+    sh.visible = alt > 0.5;
+  }
+  groundGroup.visible = (st.stop === 'noon');
+
+  /* 태양광 */
+  sunLight.position.set(0, 0, 0);
+  sunMesh.rotation.y += 0.0015;
+
+  /* ✨ 별자리 — 낮이면 묻히고, 밤이면 드러난다(태양 고도로 판정) */
+  const alt = Sim.sunHeight(st.day, st.hour);
+  const nightK = THREE.MathUtils.clamp((-alt + 6) / 12, 0, 1);
+  Sim.CONSTS.forEach(c => {
+    const o = constObj[c.key];
+    const vis = Sim.visibleConsts(sim.ang()).some(x => x.key === c.key);
+    const k = vis ? 1 : 0.30;                       /* 반대쪽 별자리도 «있다» — 안 보일 뿐 */
+    const onGround = (st.stop === 'stars' || st.stop === 'noon' || st.landed);
+    const g = onGround ? nightK : 1;
+    o.stars.material.opacity = 0.28 + 0.72 * k * g;
+    o.stars.material.size = vis ? 10 : 6;
+    o.grp.children[1].material.opacity = 0.10 + 0.40 * k * g;
+  });
+
+  return F;
+}
+
+/* ═══════════════════ 🔴 신기술 ② 컷 없는 비행 ═══════════════════
+ * 정거장 전환 = 페이드 컷이 아니라 «카메라가 실제로 날아간다».
+ * CatmullRom 궤적(현재 위치 → 우회점 → 목표)으로 이동하며 화면이 한 번도 끊기지 않는다.
+ * = 「태양계도 자전도 남중고도도 별자리도, 전부 같은 하나의 세계」의 물증. */
+let flight = null;   /* { curve, from, to, t, dur, lookFrom, lookTo } */
+
+function stopCamera(id) {
+  const ang = sim.ang();
+  const F = obsFrame(ang, st.hour);
+
+  if (id === 'solar') {
+    return { pos: new THREE.Vector3(0, 34, 46), look: new THREE.Vector3(0, 0, 0), fov: 58 };
+  }
+  if (id === 'spin') {
+    /* 태양-지구 축에 직각인 옆 + 살짝 위 = 낮/밤 경계가 «절반»으로 또렷이 */
+    const side = F.sunDir.clone().cross(_Y).normalize();
+    const pos = F.E.clone()
+      .addScaledVector(side, R_EARTH * 4.6)
+      .addScaledVector(_Y, R_EARTH * 1.7)
+      .addScaledVector(F.sunDir, -R_EARTH * 1.4);
+    return { pos, look: F.E.clone(), fov: 46 };
+  }
+  if (id === 'noon') {
+    /* 관측지 옆 — 막대와 그림자, 그리고 하늘의 태양이 한 프레임에 */
+    const side = F.sunDir.clone().cross(F.up).normalize();
+    const pos = F.obs.clone()
+      .addScaledVector(side, 0.30)
+      .addScaledVector(F.up, 0.16)
+      .addScaledVector(F.sunDir, -0.30);
+    const look = F.obs.clone().addScaledVector(F.up, 0.05).addScaledVector(F.sunDir, 0.10);
+    return { pos, look, fov: 56 };
+  }
+  if (id === 'orbit') {
+    /* 교과서 그림 — 궤도면을 수직으로 내려다본다 */
+    return { pos: new THREE.Vector3(0, 52, 0.01), look: new THREE.Vector3(0, 0, 0), fov: 54 };
+  }
+  if (id === 'stars') {
+    /* 지표에서 밤하늘을 올려다본다 */
+    const pos = F.obs.clone().addScaledVector(F.up, 0.02);
+    const away = F.sunDir.clone().negate();                      /* 태양 반대 = 밤하늘 */
+    const look = pos.clone().addScaledVector(away, 40).addScaledVector(F.up, 26);
+    return { pos, look, fov: 72 };
+  }
+  /* 자유 탐험(우주 창문) — 지구 궤도 바깥에 «떠 있는 창문» */
+  return { pos: new THREE.Vector3(0, 9, R_E + 26), look: new THREE.Vector3(0, 0, 0), fov: 66 };
+}
+
+function flyTo(id, dur) {
+  const tgt = stopCamera(id);
+  const from = camera.position.clone();
+  const lookFrom = curLook.clone();
+
+  /* 우회점 — 직선으로 뚫고 가면 태양·행성을 관통한다. 살짝 들어올려 «날아가는» 궤적으로 */
+  const mid = from.clone().add(tgt.pos).multiplyScalar(0.5);
+  const lift = Math.max(4, from.distanceTo(tgt.pos) * 0.22);
+  mid.addScaledVector(_Y, lift);
+
+  flight = {
+    curve: new THREE.CatmullRomCurve3([from, mid, tgt.pos.clone()]),
+    lookFrom, lookTo: tgt.look.clone(),
+    fovFrom: camera.fov, fovTo: tgt.fov,
+    t: 0, dur: (dur === undefined ? (window.__K3_FAST ? 0.08 : 1.35) : dur)
+  };
+}
+const curLook = new THREE.Vector3(0, 0, 0);
+
+/* 비행 중이 아닐 때 카메라를 정거장에 «붙들어 둔다»(지구가 움직이니 매 프레임 갱신) */
+function holdCamera() {
+  if (flight) return;
+  if (st.stop === null && !st.focus) {
+    /* 자유 탐험 = 우주 창문. 위치는 고정, 시선만 자이로·드래그가 몬다 */
+    const home = stopCamera(null);
+    camera.position.lerp(home.pos, 0.06);
+    applyLook();
+    return;
+  }
+  const tgt = st.focus ? focusCamera(st.focus) : stopCamera(st.stop);
+  camera.position.lerp(tgt.pos, 0.10);
+  curLook.lerp(tgt.look, 0.12);
+  camera.up.copy(upForStop());
+  camera.lookAt(curLook);
+  camera.fov += (tgt.fov - camera.fov) * 0.10;
+  camera.updateProjectionMatrix();
+}
+function upForStop() {
+  if (st.stop === 'noon' || st.stop === 'stars') {
+    return obsFrame(sim.ang(), st.hour).up;      /* 지표에 «서 있으면» 위는 발밑 반대 */
+  }
+  return _Y;
+}
+/* 행성 접근 시점 */
+function focusCamera(key) {
+  const m = planetMesh[key];
+  const R = m.geometry.parameters.radius;
+  const dir = m.position.clone().normalize();
+  const pos = m.position.clone()
+    .addScaledVector(dir, R * 4.5 + 1.2)
+    .addScaledVector(_Y, R * 1.6 + 0.6);
+  return { pos, look: m.position.clone(), fov: 50 };
+}
+
+/* ── 자유 탐험 시선: 자이로 360°(폰·태블릿) + 드래그(전자칠판) — v2 무손실 ── */
+let gyroOn = false, gyro = { a: 0, b: 0, g: 0 }, gyroZero = 0, gyroCalib = false;
+let dragLon = 0, dragLat = 0, dragging = false, lastX = 0, lastY = 0;
+const _eul = new THREE.Euler(), _q = new THREE.Quaternion();
+const _qz = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+
+addEventListener('deviceorientation', e => {
+  if (e.alpha === null && e.beta === null) return;
+  gyroOn = true;
+  gyro.a = e.alpha || 0; gyro.b = e.beta || 0; gyro.g = e.gamma || 0;
+  if (!gyroCalib) { gyroCalib = true; gyroZero = gyro.a; }
+});
+function applyLook() {
+  if (st.stop !== null || st.focus) return;
+  if (gyroOn) {
+    _eul.set((gyro.b) * D2R, (gyro.a - gyroZero) * D2R, -(gyro.g) * D2R, 'YXZ');
+    _q.setFromEuler(_eul).multiply(_qz);
+    camera.quaternion.copy(_q);
+    camera.up.copy(_Y);
+  } else {
+    const la = dragLat * D2R, lo = dragLon * D2R;
+    const d = new THREE.Vector3(
+      Math.cos(la) * Math.sin(lo), Math.sin(la), -Math.cos(la) * Math.cos(lo)
+    );
+    camera.up.copy(_Y);
+    curLook.copy(camera.position).addScaledVector(d, 60);
+    camera.lookAt(curLook);
+  }
+  camera.fov += (66 - camera.fov) * 0.10;
+  camera.updateProjectionMatrix();
+}
+
+const stageEl = document.getElementById('stage');
+stageEl.addEventListener('pointerdown', e => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+  stageEl.setPointerCapture(e.pointerId);
+});
+stageEl.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+  if (st.stop === null && !st.focus && !gyroOn) {
+    dragLon += dx * 0.18;
+    dragLat = THREE.MathUtils.clamp(dragLat - dy * 0.18, -84, 84);
+  } else if (st.stop === 'stars') {
+    /* 밤하늘 정거장 = 고개를 돌려 사방을 둘러본다 */
+    skyLon += dx * 0.16;
+    skyLat = THREE.MathUtils.clamp(skyLat + dy * 0.16, -10, 86);
+  } else if (st.stop === 'solar' || st.stop === 'orbit') {
+    orbitLon += dx * 0.22;
+    orbitLat = THREE.MathUtils.clamp(orbitLat - dy * 0.16, -84, 84);
+  }
+});
+stageEl.addEventListener('pointerup', e => {
+  dragging = false;
+  if (!moved) tapAt(e.clientX, e.clientY);
+  moved = false;
+});
+let moved = false, skyLon = 0, skyLat = 34, orbitLon = 0, orbitLat = 0;
+
+/* ── 행성 탭 → 접근 (v2 무손실) ── */
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function tapAt(px, py) {
+  if (st.stop !== null) return;
+  ndc.set((px / innerWidth) * 2 - 1, -(py / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(Object.values(planetMesh), false);
+  if (!hits.length) return;
+  approach(hits[0].object.userData.key);
+}
+
+/* ═══════════════════ 🔴 신기술 ① «다섯 창» ═══════════════════
+ * renderer.setScissorTest + 5개 카메라로 «같은 씬»을 한 프레임에 다섯 번 그린다.
+ * 시간 손잡이는 오직 «하나». 그 하나를 끌면 다섯 창이 동시에 반응한다.
+ *   태양계 · 자전 · 남중고도 · 공전 · 별자리 — 같은 시간의 다섯 얼굴.
+ * 개별 도구 다섯 개는 이걸 할 수 없다. 이게 space_journey의 존재 이유다. */
+const fiveCams = Sim.STOPS.map(() => new THREE.PerspectiveCamera(50, 1, 0.05, 3000));
+const vwLabels = Sim.STOPS.map((s, i) => {
+  const el = document.createElement('div');
+  el.className = 'vwlab' + (i === 0 ? ' big' : '') + ' hit';
+  el.textContent = s.t;
+  el.style.display = 'none';
+  el.addEventListener('click', () => { bigIdx = i; K3.sound.play('tap'); });
+  document.body.appendChild(el);
+  return el;
+});
+let bigIdx = 0;   /* 큰 창에 걸린 정거장 */
+
+/* 뷰포트 배치 — 가로면 [큰창 왼 68% | 작은창 4 오른쪽 세로], 세로면 [큰창 위 58% | 작은창 2×2] */
+function fiveLayout() {
+  const W = innerWidth, H = innerHeight;
+  const wide = W >= H * 1.05;
+  const out = [];
+  if (wide) {
+    const bw = Math.round(W * 0.68), sw = W - bw, sh = Math.round(H / 4);
+    out.push({ x: 0, y: 0, w: bw, h: H, big: true });
+    for (let i = 0; i < 4; i++) out.push({ x: bw, y: H - sh * (i + 1), w: sw, h: sh, big: false });
+  } else {
+    /* 세로 화면 — 큰 창 위 58%, 작은 창 2×2 아래. 원점이 좌하단이므로 큰 창의 y가 «작은 창 높이» */
+    const bh = Math.round(H * 0.58), sh = H - bh, sw = Math.round(W / 2);
+    const row = Math.round(sh / 2);          /* 작은 창 윗줄의 높이 */
+    out.push({ x: 0,  y: sh,  w: W,      h: bh,      big: true  });
+    out.push({ x: 0,  y: row, w: sw,     h: sh - row, big: false });
+    out.push({ x: sw, y: row, w: W - sw, h: sh - row, big: false });
+    out.push({ x: 0,  y: 0,   w: sw,     h: row,      big: false });
+    out.push({ x: sw, y: 0,   w: W - sw, h: row,      big: false });
+  }
+  return out;
+}
+/* 창 i에 걸 정거장 순서 — 큰 창이 bigIdx, 나머지는 순서대로 */
+function fiveOrder() {
+  const rest = Sim.STOPS.map((_, i) => i).filter(i => i !== bigIdx);
+  return [bigIdx].concat(rest);
+}
+
+function renderFive() {
+  const slots = fiveLayout();
+  const order = fiveOrder();
+  const dpr = renderer.getPixelRatio();
+
+  renderer.setScissorTest(true);
+  for (let k = 0; k < 5; k++) {
+    const s = slots[k], si = order[k];
+    const cam = fiveCams[si];
+    const tgt = stopCamera(Sim.STOPS[si].id);
+
+    cam.position.copy(tgt.pos);
+    cam.up.copy(
+      (Sim.STOPS[si].id === 'noon' || Sim.STOPS[si].id === 'stars')
+        ? obsFrame(sim.ang(), st.hour).up : _Y
+    );
+    cam.lookAt(tgt.look);
+    cam.fov = tgt.fov;
+    cam.aspect = s.w / Math.max(1, s.h);
+    cam.updateProjectionMatrix();
+
+    /* WebGL 뷰포트 원점은 좌하단 */
+    renderer.setViewport(s.x, s.y, s.w, s.h);
+    renderer.setScissor(s.x, s.y, s.w, s.h);
+    renderer.render(scene, cam);
+
+    /* 라벨은 DOM 좌표(좌상단 원점)로 환산 */
+    const lab = vwLabels[si];
+    lab.style.display = 'block';
+    lab.className = 'vwlab hit' + (s.big ? ' big' : '');
+    lab.style.left = (s.x + 8) + 'px';
+    lab.style.top = (innerHeight - s.y - s.h + 8) + 'px';
+    lab.textContent = (s.big ? '🔍 ' : '') + Sim.STOPS[si].t;
+  }
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, innerWidth, innerHeight);
+}
+function hideFiveLabels() { vwLabels.forEach(l => (l.style.display = 'none')); }
+
+/* ═══════════════════ UI ═══════════════════ */
+const $ = id => document.getElementById(id);
+const railEl = $('rail'), timeEl = $('timebar'), readEl = $('readout'),
+      ctrlEl = $('ctrls'), statusEl = $('status'), pcardEl = $('pcard'), bannerEl = $('banner');
+
+/* 읽어주기 (아이콘 토글만 — 단어 노출 없음) */
+let speakOn = false;
+function say(text) {
+  if (!speakOn || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 0.98;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+$('icRead').addEventListener('click', () => {
+  speakOn = !speakOn;
+  $('icRead').classList.toggle('on', speakOn);
+  K3.sound.play('select');
+  if (speakOn) say('읽어드릴게요.');
+  else if (window.speechSynthesis) { try { speechSynthesis.cancel(); } catch (e) {} }
+});
+$('icFive').addEventListener('click', () => {
+  const on = sim.toggleFive();
+  $('icFive').classList.toggle('on', on);
+  K3.sound.play(on ? 'whoosh' : 'select');
+  if (!on) hideFiveLabels();
+  else K3.toast('🪟 시간 손잡이 하나가 다섯 창을 «동시에» 움직여요', false, T(3600));
+  renderRail(); renderTime();
+});
+
+/* ── 정거장 레일 ── */
+function renderRail() {
+  let h = '<button class="free' + (st.stop === null ? ' on' : '') + '" data-stop="free">🧭 자유 탐험</button>';
+  Sim.STOPS.forEach(s => {
+    h += '<button' + (st.stop === s.id ? ' class="on"' : '') + ' data-stop="' + s.id + '">' + s.t + '</button>';
+  });
+  railEl.innerHTML = h;
+}
+railEl.addEventListener('click', e => {
+  const b = e.target.closest('button[data-stop]');
+  if (!b) return;
+  const id = b.dataset.stop === 'free' ? null : b.dataset.stop;
+  goStop(id);
+});
+
+function goStop(id) {
+  closePcard();
+  const s = sim.goStop(id);
+  K3.sound.play('whoosh');
+  flyTo(id);
+  if (s) {
+    say(s.t + '. ' + s.d);
+    K3.toast('🧭 ' + s.t + ' — ' + s.d, false, T(3000));
+    if (id === 'stars') { skyLon = 0; skyLat = 34; }
+  } else {
+    say('자유 탐험이에요. 행성을 눌러 가까이 가 보세요.');
+  }
+  renderAll();
+}
+
+/* ── 시간 손잡이 — 이 도구의 심장 ── */
+function renderTime() {
+  timeEl.innerHTML =
+    '<div class="row"><span class="lab">📅 날짜</span>' +
+    '<input type="range" id="tDay" min="1" max="365" step="1" value="' + Math.round(st.day) + '">' +
+    '<span class="val" id="vDay">' + sim.dateLabel(st.day) + '</span></div>' +
+    '<div class="row"><span class="lab">🕐 시각</span>' +
+    '<input type="range" id="tHour" min="0" max="24" step="0.1" value="' + st.hour.toFixed(1) + '">' +
+    '<span class="val" id="vHour">' + sim.hourLabel(st.hour) + '</span></div>' +
+    '<div class="btns">' +
+      '<button id="bDay" class="' + (st.playHour ? 'on' : '') + '">▶ 하루</button>' +
+      '<button id="bYear" class="' + (st.playDay ? 'on' : '') + '">▶ 1년</button>' +
+      '<button id="bSeason">⏩ 다음 계절</button>' +
+      '<button id="bWow">🌟 누가 움직여서?</button>' +
+    '</div>';
+
+  $('tDay').addEventListener('input', e => {
+    sim.setDay(+e.target.value);
+    st.playDay = false;
+    afterAct();
+  });
+  $('tHour').addEventListener('input', e => {
+    sim.setHour(+e.target.value);
+    st.playHour = false;
+    afterAct();
+  });
+  $('bDay').addEventListener('click', () => {
+    st.playHour = !st.playHour;
+    if (st.playHour) st.playDay = false;
+    K3.sound.play(st.playHour ? 'whoosh' : 'select');
+    renderTime();
+  });
+  $('bYear').addEventListener('click', () => {
+    st.playDay = !st.playDay;
+    if (st.playDay) st.playHour = false;
+    K3.sound.play(st.playDay ? 'whoosh' : 'select');
+    renderTime();
+  });
+  $('bSeason').addEventListener('click', () => {
+    const r = sim.nextSeason();
+    K3.sound.play('chime');
+    banner(r.icon + ' ' + r.nm + '이 왔어요!');
+    say(r.nm + '이 왔어요.');
+    afterAct();
+    renderAll();
+  });
+  $('bWow').addEventListener('click', openWow);
+}
+/* 슬라이더 값만 갱신(재렌더 없이 — 드래그 중 끊김 방지) */
+function syncTimeInputs() {
+  const dEl = $('tDay'), hEl = $('tHour');
+  if (!dEl) return;
+  if (document.activeElement !== dEl) dEl.value = Math.round(st.day);
+  if (document.activeElement !== hEl) hEl.value = st.hour.toFixed(1);
+  $('vDay').textContent = sim.dateLabel(st.day);
+  $('vHour').textContent = sim.hourLabel(st.hour);
+}
+
+/* ── 좌측 계기판 ── */
+function renderReadout() {
+  const s = st.stop ? Sim.STOPS[Sim.stopIdx(st.stop)] : null;
+  readEl.innerHTML =
+    '<div class="t">' + (s ? s.t : '🧭 자유 탐험') + '</div>' +
+    '<div class="d">' + (s ? s.d : '행성을 눌러 가까이 가 보세요') + '</div>' +
+    '<div class="r">' + sim.readout() + '</div>';
+}
+
+/* ── 우측 컨트롤 ── */
+function renderCtrls() {
+  let h = '';
+  if (st.stop !== null) {
+    h += '<button class="k3-btn" id="cPrev">◀ 이전 정거장</button>';
+    h += '<button class="k3-btn" id="cNext">다음 정거장 ▶</button>';
+    h += '<button class="k3-btn" id="cFree">✖ 자유 탐험</button>';
+  } else {
+    h += '<button class="k3-btn" id="cGo">🧭 천체 여행 시작</button>';
+  }
+  ctrlEl.innerHTML = h;
+  if ($('cPrev')) $('cPrev').addEventListener('click', () => { sim.stepStop(-1); goStop(st.stop); });
+  if ($('cNext')) $('cNext').addEventListener('click', () => { sim.stepStop(1);  goStop(st.stop); });
+  if ($('cFree')) $('cFree').addEventListener('click', () => goStop(null));
+  if ($('cGo'))   $('cGo').addEventListener('click', () => goStop('solar'));
+}
+
+/* ── 상태 카드 ── */
+function renderStatus() {
+  statusEl.innerHTML = sim.statusCards()
+    .map(c => '<div class="card ' + c.cls + '">' + c.html + '</div>').join('');
+}
+function renderStamp() { $('stampN').textContent = st.stamps.length; }
+
+function renderAll() {
+  renderRail(); renderReadout(); renderCtrls(); renderStatus(); renderStamp();
+  syncTimeInputs();
+}
+
+/* ── 계절 배너 ── */
+let bannerT = null;
+function banner(text) {
+  bannerEl.textContent = text;
+  bannerEl.style.opacity = '1';
+  clearTimeout(bannerT);
+  bannerT = setTimeout(() => (bannerEl.style.opacity = '0'), T(1900));
+}
+
+/* ── 행성 접근 카드 (v2 무손실) ── */
+function approach(key) {
+  const r = sim.visit(key);
+  if (!r) return;
+  K3.sound.play(r.fresh ? 'chime' : 'tap');
+  if (r.fresh) K3.sound.play('ting');
+  flyTo(null, window.__K3_FAST ? 0.08 : 1.1);
+  flight = null;                       /* 접근은 holdCamera가 focusCamera로 몰고 간다 */
+  pcardEl.style.display = 'block';
+  pcardEl.innerHTML =
+    '<div class="nm">' + r.planet.nm + '</div>' +
+    '<div class="ft">' + r.planet.fact + '</div>' +
+    '<div class="bs">' +
+      (r.canLand ? '<button id="pLand">🌍 지구에 내려서 하늘 보기</button>' : '') +
+      '<button id="pBack">제자리로 돌아가기</button>' +
+    '</div>';
+  if ($('pLand')) $('pLand').addEventListener('click', () => {
+    sim.land();
+    closePcard();
+    sim.goStop('stars');
+    K3.sound.play('whoosh');
+    flyTo('stars');
+    say('지구에 내려왔어요. 밤하늘은 태양 반대쪽이라, 계절마다 보이는 별자리가 달라져요.');
+    renderAll();
+  });
+  $('pBack').addEventListener('click', () => {
+    sim.leave(); closePcard(); flyTo(null); K3.sound.play('select'); renderAll();
+  });
+  say(r.planet.nm + '. ' + r.planet.fact);
+  renderStamp();
+  renderReadout();
+
+  if (r.complete) {
+    setTimeout(() => {
+      $('fin').style.display = 'flex';
+      K3.sound.play('chime');
+      say('태양계 탐험 완료! 여덟 행성을 모두 만났어요.');
+    }, T(900));
+  }
+}
+function closePcard() { pcardEl.style.display = 'none'; }
+$('finBtn').addEventListener('click', () => {
+  $('fin').style.display = 'none';
+  sim.leave(); closePcard(); flyTo(null); renderAll();
+});
+
+/* ── 🌟 와우: «누가 움직여서?» ── */
+function openWow() {
+  if (st.wowDone) {
+    K3.toast('⭐ 별은 한 발짝도 움직이지 않았어요 — 움직인 건 우리였어요', false, T(3200));
+    return;
+  }
+  K3.sound.play('charge');
+  const W = Sim.WOW;
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(pick => {
+      if (pick === null || pick === undefined) { sim.clearWow(); return; }
+      sim.armWow();
+      sim.pickWow(+pick);
+      K3.sound.play('select');
+      /* 다섯 창을 켜 준다 — 「별은 그 자리, 지구만 돈다」는 다섯 창에서 가장 또렷하다 */
+      if (!st.five) { sim.toggleFive(); $('icFive').classList.add('on'); }
+      if (st.stop === null) goStop('orbit');
+      K3.toast('🌟 ' + W.tip, false, T(4200));
+      say('날짜 손잡이로 1년을 돌려 보세요. 별자리가 정말 움직이는지.');
+      renderAll();
+    });
+}
+/* 🌟 와우 결과 카드 — K3.cards.result(html, buttons) 시그니처. HTML은 «한 덩어리»로 넘긴다. */
+function wowCardHtml(w, full) {
+  let h = '<h3>' + (w.hit ? '🎉 맞았어요!' : '🤔 아쉬워요') + ' — 움직인 건 «우리»였어요</h3>';
+  h += '<p>지구가 태양 둘레를 <b>' + w.turned + '°</b> 돌았어요. ' +
+       '그동안 별자리는 <b>한 발짝도</b> 움직이지 않았어요.</p>';
+  if (full) {
+    h += '<p>봄에 사자자리가 보이는 건, 봄에 지구가 <b>사자자리 쪽 밤</b>을 향하고 서 있기 때문이에요. ' +
+         '여름이 되면 지구가 궤도 반대편으로 옮겨 가서, 이번엔 백조자리 쪽 밤을 보게 되고요.</p>';
+  }
+  h += '<p style="color:#B9522F">밤하늘이 바뀐 게 아니라 — <b>우리가 옮겨 다닌 거예요.</b></p>';
+  return h;
+}
+
+function afterAct() {
+  const r = sim.afterAct();
+  if (r.wow) {
+    K3.sound.play(r.wow.hit ? 'chime' : 'pop');
+    if (r.wow.hit) K3.sound.play('ting');
+    K3.cards.result(wowCardHtml(r.wow, true));
+    say(r.wow.hit ? '맞았어요. 움직인 건 우리였어요.' : '별은 움직이지 않았어요. 움직인 건 우리였어요.');
+    renderAll();
+  }
+  syncTimeInputs();
+  renderReadout();
+  renderStatus();
+}
+
+/* ═══════════════════ 루프 ═══════════════════ */
+let last = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+
+  /* 시간 흐름 */
+  if (st.playDay || st.playHour) {
+    const before = st.day;
+    sim.tick(dt);
+    syncTimeInputs();
+    renderReadout();
+    renderStatus();
+    if (Math.abs(st.day - before) > 0.001) afterActQuiet();
+  }
+
+  syncWorld();
+
+  /* 비행 */
+  if (flight) {
+    flight.t += dt / flight.dur;
+    const t = Math.min(1, flight.t);
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;   /* easeInOutQuad */
+    camera.position.copy(flight.curve.getPoint(e));
+    curLook.lerpVectors(flight.lookFrom, flight.lookTo, e);
+    camera.up.copy(_Y).lerp(upForStop(), e);
+    camera.lookAt(curLook);
+    camera.fov = flight.fovFrom + (flight.fovTo - flight.fovFrom) * e;
+    camera.updateProjectionMatrix();
+    if (t >= 1) flight = null;
+  } else {
+    holdCamera();
+    /* 정거장에서의 시선 드래그 (v2 무손실) */
+    if (st.stop === 'stars') {
+      const F = obsFrame(sim.ang(), st.hour);
+      const fwd = F.sunDir.clone().negate();
+      const right = new THREE.Vector3().crossVectors(fwd, F.up).normalize();
+      const la = skyLat * D2R, lo = skyLon * D2R;
+      const d = fwd.clone().multiplyScalar(Math.cos(la) * Math.cos(lo))
+        .addScaledVector(right, Math.cos(la) * Math.sin(lo))
+        .addScaledVector(F.up, Math.sin(la)).normalize();
+      curLook.copy(camera.position).addScaledVector(d, 60);
+      camera.up.copy(F.up);
+      camera.lookAt(curLook);
+    } else if ((st.stop === 'solar' || st.stop === 'orbit') && (orbitLon || orbitLat)) {
+      const base = stopCamera(st.stop);
+      const r = base.pos.length();
+      const la = THREE.MathUtils.clamp(Math.asin(base.pos.y / r) / D2R + orbitLat, -84, 84) * D2R;
+      const lo = Math.atan2(base.pos.z, base.pos.x) + orbitLon * D2R;
+      camera.position.set(
+        r * Math.cos(la) * Math.cos(lo), r * Math.sin(la), r * Math.cos(la) * Math.sin(lo)
+      );
+      camera.up.copy(_Y);
+      camera.lookAt(base.look);
+    }
+  }
+
+  app.tickQuality();
+
+  /* 🔴 다섯 창 vs 단일 창 */
+  if (st.five) renderFive();
+  else { hideFiveLabels(); renderer.render(scene, camera); }
+}
+
+/* 시간이 «흐르는» 동안에도 와우 게이트는 계속 판정된다 (afterAct 일원화) */
+function afterActQuiet() {
+  const r = sim.afterAct();
+  if (r.wow) {
+    K3.sound.play(r.wow.hit ? 'chime' : 'pop');
+    K3.cards.result(wowCardHtml(r.wow, false));
+    st.playDay = false;
+    renderAll();
+  }
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ═══════════════════ 부팅 ═══════════════════ */
+{
+  const loader = new THREE.TextureLoader();
+  let done = 0;
+  const finish = () => {
+    if (++done < TEXDEF.length) return;
+    $('loading').style.display = 'none';
+  };
+  TEXDEF.forEach(t => {
+    loader.load(t.src, tex => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      if (t.key === 'sun') sunMesh.material = new THREE.MeshBasicMaterial({ map: tex });
+      else if (t.key === 'ear') planetMesh.ear.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+      else if (t.key === 'jup') planetMesh.jup.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
+      else if (t.key === 'sat') planetMesh.sat.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 });
+      finish();
+    }, undefined, () => finish());      /* 실패해도 절대 안 깨진다 — 절차 색 폴백 */
+  });
+  setTimeout(() => ($('loading').style.display = 'none'), T(2600));
+}
+
+$('icFive').classList.toggle('on', st.five);
+renderTime();
+renderAll();
+if (st.stop) flyTo(st.stop, 0.01); else flyTo(null, 0.01);
+requestAnimationFrame(loop);
+
+/* 테스트 훅 */
+window.SpaceApp = {
+  sim, camera, scene, planetMesh, constObj, groundGroup, pin, axisLine,
+  fiveCams, vwLabels,
+  state: () => ({
+    day: st.day, hour: st.hour, stop: st.stop, five: st.five, landed: st.landed,
+    stamps: st.stamps.slice(), wowArmed: st.wowArmed, wowDone: st.wowDone,
+    orbitAcc: st.orbitAcc, bigIdx
+  }),
+  go: goStop, approach, openWow, afterAct,
+  setDay: d => { sim.setDay(d); afterAct(); },
+  setHour: h => { sim.setHour(h); afterAct(); },
+  toggleFive: () => $('icFive').click(),
+  fiveLayout, fiveOrder, obsFrame, stopCamera, earthPos,
+  flying: () => !!flight,
+  finishFlight: () => { flight = null; },
+  tapAt
+};
+</script>
+</body>
+</html>
