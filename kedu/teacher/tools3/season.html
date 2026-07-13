@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 계절의 변화 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 계절의 변화 (2026-07-13 · 페이블) · 천체 통합 재건 3호
+  v2 engine/tools/season.js(630줄 · 탐구 표준 v2 4층 완료본) 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 우주 무대(별 900 · 태양 중심 · 궤도 링 + 4계절 마커 · 실사 지구)
+    ② 실물 질감(텍스처 승급 로더 + 캔버스 폴백 · 자전축 금색 실린더 · 북극 손잡이)
+    ③ 직접 조작(🔴 자전축을 «잡아 돌리기» · 지구를 궤도 위에서 끌기 · 계절 버튼 · 슬라이더)
+    ④ 즉각 반응(기울기 → 남중고도·낮 길이·태양의 길·그림자·계절이 한 몸으로)
+    ⑤ 탐구 구조(미션 6 · 퀴즈 5 · 만약에 4 · 예측 칩 · 와우=🔦 햇빛 다발 밀도)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 자전축 잡아 돌리기 — 북극 손잡이를 레이캐스트로 집고 끌면, 후보 기울기들의 «화면 투영점»을
+       스캔해 마우스에 가장 가까운 각을 역산(tiltFromScreen). 슬라이더가 아니라 축 자체를 손으로
+       세웠다 눕혔다 하는 것 = 「계절을 만드는 건 이 각도」를 손이 먼저 안다.
+    ② 🔦 햇빛 다발 밀도 — 같은 굵기의 평행 광선 다발이 지표에 «비스듬히» 닿으면 타원으로 퍼진다.
+       퍼짐 배율 = 1/sin(남중고도). 위도 37.5°·기울기 23.5°에서 여름 1.03배 ↔ 겨울 2.06배 =
+       정확히 «2배». 여름이 더운 건 가까워서가 아니라 다발이 좁게 모이기 때문 — 미션② think의 물증.
+  v2 무손실: 학년칸 저(계절 버튼만·미션3)/중(재생·공전·위도·🦘)/고(기울기·거리·지구잡기·만약에4·미션6)
+    ·미션 6단계(make+think · mIdx 스왑) ·퀴즈 5문(장면 세팅·무반복 순환)
+    ·만약에 4종(🪐기울기90=천왕성 · 🦘남반구 반전 · ⏸공전멈춤 · 🥚타원 궤도)
+    ·예측 노트(📏거리 실험=양 끝 다 가봐야 해소 · 🧭위도 실험) ·🌐기울기 0 확인 칩 ·5칩 토스트
+    ·2D 패널 2종(우리나라 정오의 태양 = 남중고도 호 / 하루 동안 태양의 길과 막대 그림자)
+    ·남반구 계절 반전표 ·백야·극야 ·상태줄 문구 전부 ·텍스처 승급(earth_day.png 재사용)
+  v3 추가: 만약에 조작 게이트(wifActed) · 판정 후처리 일원화(afterAct — moon 교훈)
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?orb=0~360 · ?tilt=0~35 · ?lat=-90~90
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .se-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .se-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .se-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .se-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .se-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:214px;max-height:calc(100vh - 130px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  .se-slider{width:100%;accent-color:#9B7BF5;height:24px;cursor:pointer}
+  .se-slider.tilt{accent-color:#FF922B}
+  .se-tval{font-family:'Gowun Dodum';font-size:19px;color:#FFB870;text-align:center}
+  .se-sea{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .se-sea button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 4px;border-radius:10px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer}
+  .se-sea button.on{background:rgba(255,146,43,.3);border-color:rgba(255,146,43,.7);color:#fff}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(560px,82vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(500px,48vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:sePulse 1.2s ease-in-out infinite}
+  @keyframes sePulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 132px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:204px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #texlab{position:fixed;left:12px;top:calc(50px + 94px);z-index:20;font-family:'Gowun Dodum';font-size:11px;
+    color:#9fb0c4;background:var(--hud);border:1px solid var(--hudline);border-radius:11px;
+    backdrop-filter:blur(8px);padding:5px 9px}
+  #noon{position:fixed;right:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:7px 8px 5px;width:158px;text-align:center}
+  #noon .cap{font-family:'Gowun Dodum';font-size:11px;color:#cdd6e6;margin-top:2px}
+  #path{position:fixed;left:12px;bottom:14px;z-index:20;background:var(--hud);border:1px solid var(--hudline);
+    border-radius:14px;backdrop-filter:blur(8px);padding:7px 8px 5px;width:230px;text-align:center}
+  #path .cap{font-family:'Gowun Dodum';font-size:11px;color:#cdd6e6;margin-top:2px;line-height:1.35}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:21;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  .se-anno{position:absolute;pointer-events:none;font-family:'Gowun Dodum';font-size:12.5px;padding:3px 9px;
+    border-radius:10px;background:rgba(8,12,20,.82);border:1.5px solid #FFD43B;color:#FFF3BF;
+    white-space:nowrap;transform:translate(-50%,-50%);display:none}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🌍 케이랩 · 계절의 변화</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="se-panel" id="hudL"></div>
+<div class="se-panel" id="ctrls"></div>
+<div class="se-panel" id="mbar" style="display:none"></div>
+<div id="texlab">🎨 기본 그림 지구</div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+
+<div id="noon">
+  <svg id="noonsvg" viewBox="-65 -52 130 78" width="142" height="85">
+    <defs><linearGradient id="seSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2e54"/><stop offset="1" stop-color="#4a6aa0"/>
+    </linearGradient></defs>
+    <rect x="-65" y="-52" width="130" height="76" fill="url(#seSky)" rx="6"/>
+    <path id="narc" d="" fill="none" stroke="#FFE08A" stroke-width="2" stroke-dasharray="3 3" opacity="0.7"/>
+    <line x1="-60" y1="22" x2="60" y2="22" stroke="#6b8a4a" stroke-width="3"/>
+    <rect x="-60" y="22" width="120" height="6" fill="#3f5a28"/>
+    <line x1="0" y1="22" x2="0" y2="11" stroke="#cdd6e6" stroke-width="2.5"/>
+    <circle id="nsun" cx="0" cy="0" r="6" fill="#FFD43B"/>
+    <text id="nalt" x="0" y="-44" text-anchor="middle" fill="#FFF3BF" font-size="11" font-family="Gowun Dodum"></text>
+  </svg>
+  <div class="cap">우리나라 정오의 태양</div>
+</div>
+
+<div id="path">
+  <svg id="pathsvg" viewBox="-84 -50 168 92" width="222" height="120">
+    <defs><linearGradient id="seSp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2a52"/><stop offset="1" stop-color="#314a86"/>
+    </linearGradient></defs>
+    <rect x="-84" y="-50" width="168" height="84" fill="url(#seSp)" rx="6"/>
+    <g id="pathg"></g>
+    <line x1="-80" y1="26" x2="80" y2="26" stroke="#6b8a4a" stroke-width="3"/>
+    <rect x="-80" y="26" width="160" height="8" fill="#3f5a28"/>
+    <text x="-72" y="23" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">동</text>
+    <text x="0" y="-40" text-anchor="middle" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">남</text>
+    <text x="72" y="23" text-anchor="end" fill="#9fb6e6" font-size="9" font-family="Gowun Dodum">서</text>
+  </svg>
+  <div class="cap" id="pathcap">하루 동안 태양의 길과 막대 그림자</div>
+</div>
+
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>자전축(금색 막대)의 북극을 잡아 돌려 봐요</b> — 이 각도가 계절을 만들어요</div>
+<div class="k3-loading" id="loading"><div class="ic">🌍</div><div>계절 무대 만드는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.SeasonSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var ORBIT_R = 5;
+  var ELL_E = 0.55;                        /* 만약에 🥚 타원 이심률 (v2 무손실) */
+
+  function wrapDeg(d){ return ((d % 360) + 360) % 360; }
+  function degDiff(a, b){
+    var d = Math.abs(wrapDeg(a) - wrapDeg(b));
+    return d > 180 ? 360 - d : d;
+  }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  /* ── 천문 수리 (v2 무손실) ── */
+  /* 태양 적위 δ = ε·sin(공전각). 0=춘분 · 90=하지 · 180=추분 · 270=동지 */
+  function decl(orb, tilt){ return tilt * Math.sin(orb * Math.PI / 180); }
+  /* 남중고도 = 90 − |위도 − δ| */
+  function noonAlt(orb, tilt, lat){ return 90 - Math.abs(lat - decl(orb, tilt)); }
+  /* 낮 길이: cosH = −tan(위도)·tan(δ) · 낮 = 2H/15 */
+  function dayHours(orb, tilt, lat){
+    var d = decl(orb, tilt) * Math.PI / 180, la = lat * Math.PI / 180;
+    var c = clamp(-Math.tan(la) * Math.tan(d), -1, 1);
+    var H = Math.acos(c) * 180 / Math.PI;
+    return 2 * H / 15;
+  }
+  /* 계절 판정 — 기울기 0이면 계절이 없다 (v2 무손실) */
+  function seasonOf(orb, tilt){
+    if(tilt <= 1) return { k:'none', nm:'계절 없음', emo:'⚪', col:'#9DB2C8' };
+    orb = wrapDeg(orb);
+    if(orb >= 45  && orb < 135) return { k:'summer', nm:'여름', emo:'☀️', col:'#FF922B' };
+    if(orb >= 225 && orb < 315) return { k:'winter', nm:'겨울', emo:'❄️', col:'#4DABF7' };
+    if(orb >= 135 && orb < 225) return { k:'fall',   nm:'가을', emo:'🍂', col:'#E8590C' };
+    return                             { k:'spring', nm:'봄',   emo:'🌸', col:'#F06595' };
+  }
+  var FLIP = { summer:['❄️','겨울'], winter:['☀️','여름'], spring:['🍂','가을'],
+               fall:['🌸','봄'], none:['⚪','계절 없음'] };
+
+  /* ── 🔴 햇빛 다발 밀도 (와우의 심장) ──
+     같은 굵기의 평행 광선 다발이 지표에 «비스듬히» 닿으면 타원으로 퍼진다.
+     퍼짐 배율 = 1/sin(남중고도). 해가 지평선에 붙으면 무한대로 퍼진다(=열이 안 모임). */
+  function sunSpread(orb, tilt, lat){
+    var a = noonAlt(orb, tilt, lat);
+    if(a <= 0.5) return Infinity;
+    return 1 / Math.sin(a * Math.PI / 180);
+  }
+  /* 단위 면적당 열 = 1/퍼짐 = sin(고도) */
+  function heatDensity(orb, tilt, lat){
+    var s = sunSpread(orb, tilt, lat);
+    return (s === Infinity) ? 0 : 1 / s;
+  }
+
+  /* ── 궤도 기하 (v2 무손실: 거리 슬라이더=원 스케일 · 🥚=타원, 태양=초점) ── */
+  function orbGeom(distAU, ell){
+    if(ell){ var a = ORBIT_R, b = a * Math.sqrt(1 - ELL_E * ELL_E); return { a:a, b:b, cx:-a * ELL_E }; }
+    var r = ORBIT_R * distAU;
+    return { a:r, b:r, cx:0 };
+  }
+  function earthPos(orb, distAU, ell){
+    var g = orbGeom(distAU, ell), ph = (orb + 90) * Math.PI / 180;
+    return { x: g.cx + g.a * Math.cos(ph), z: g.b * Math.sin(ph) };
+  }
+  function sunDistAU(orb, distAU, ell){
+    var p = earthPos(orb, distAU, ell);
+    return Math.sqrt(p.x * p.x + p.z * p.z) / ORBIT_R;
+  }
+
+  var SEASONS = [ { k:'spring', o:0,   l:'🌸 봄(춘분)' }, { k:'summer', o:90,  l:'☀️ 여름(하지)' },
+                  { k:'fall',   o:180, l:'🍂 가을(추분)' }, { k:'winter', o:270, l:'❄️ 겨울(동지)' } ];
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var GRADES = {
+    low:  { modes:['free','mission','quiz'], showPlay:false, showOrb:false, showTilt:false, mIdx:[0,1,2],
+            wif:[], wow:false, v2:{ lat:false, dist:false, grab:false },
+            hint:'계절 버튼을 눌러 봄·여름·가을·겨울 해의 높이를 비교해 봐요.' },
+    mid:  { modes:['free','mission','quiz'], showPlay:true,  showOrb:true,  showTilt:false, mIdx:[0,1,2],
+            wif:['south'], wow:false, v2:{ lat:true, dist:false, grab:false },
+            hint:'▶ 1년 재생으로 계절마다 해 높이·낮 길이가 달라지는 걸 봐요.' },
+    high: { modes:['free','mission','quiz'], showPlay:true,  showOrb:true,  showTilt:true,  mIdx:[0,1,2,3,4,5],
+            wif:['ura','south','stops','ell'], wow:true, v2:{ lat:true, dist:true, grab:true },
+            hint:'🌐 자전축 기울기를 0으로 내려 보세요 — 계절이 사라질까요?' }
+  };
+
+  /* ── 미션 6단계 (v2 문구·판정 무손실) ── */
+  var MISSIONS = [
+    { type:'make', text:'☀️ <b>여름(하지)</b> 위치로! 남중고도가 가장 높아지는 곳을 찾아요!',
+      check:function(s){ return s.tilt > 5 && decl(s.orb, s.tilt) >= s.tilt * 0.93; } },
+    { type:'think', text:'🤔 여름이 더 <b>더운 까닭</b>은 무엇일까요?',
+      ch:['남중고도가 높아 햇빛이 곧게(세게) 들어와서','지구가 태양에 더 가까워져서','여름엔 바람이 안 불어서'], a:0,
+      why:'거리가 아니라 각도! 햇빛이 높이서 곧게 내리쬐면 같은 땅에 더 많은 열이 모여요. 손전등을 바닥에 똑바로 vs 비스듬히 비춰 보면 알 수 있죠.' },
+    { type:'make', text:'❄️ 이번엔 <b>겨울(동지)</b> — 남중고도가 가장 낮아져요!',
+      check:function(s){ return s.tilt > 5 && decl(s.orb, s.tilt) <= -s.tilt * 0.93; } },
+    { type:'make', text:'🔭 자전축 <b>기울기를 0°</b>으로! 계절이 사라지는지 확인해요!',
+      check:function(s){ return s.tilt <= 1; } },
+    { type:'think', text:'🤔 기울기가 0°이 되니 계절이 사라졌어요. <b>왜</b>일까요?',
+      ch:['공전해도 햇빛 받는 각도가 일 년 내내 똑같아져서','태양이 멀어져서','지구가 자전을 멈춰서'], a:0,
+      why:'계절의 진짜 원인 = 기울어진 채 공전! 축이 똑바로 서면 어디를 돌아도 남중고도와 낮 길이가 그대로예요.' },
+    { type:'make', text:'🌐 기울기를 다시 <b>20° 넘게</b> 올려 계절을 되살려 봐요!',
+      check:function(s){ return s.tilt >= 20; } }
+  ];
+
+  /* ── 퀴즈 (v2 무손실 — 장면 세팅형) ── */
+  var QUIZ = [
+    { orb:90,  tilt:23.5, q:'북반구(북극 쪽)가 태양 쪽으로 기울어 있어요. 우리나라는 어떤 계절일까요?', ch:['여름','겨울','가을'], a:0 },
+    { orb:270, tilt:23.5, q:'북반구가 태양 반대쪽으로 기울었어요. 지금 우리나라는?', ch:['겨울','여름','봄'], a:0 },
+    { orb:90,  tilt:23.5, q:'계절이 생기는 진짜 까닭은 무엇일까요?', ch:['자전축이 기울어진 채 공전해서','태양과의 거리가 변해서','달이 지구를 끌어당겨서'], a:0 },
+    { orb:90,  tilt:0,    q:'자전축 기울기가 0°이 되면 어떻게 될까요?', ch:['계절이 사라져요','여름만 계속돼요','겨울만 계속돼요'], a:0 },
+    { orb:90,  tilt:23.5, q:'여름에 낮이 더 긴 까닭은?', ch:['남중고도가 높아 태양이 오래 떠 있어서','지구가 태양에 가까워져서','달이 늦게 떠서'], a:0 }
+  ];
+
+  /* ── 만약에 4종 (v2 무손실 + v3 조작 게이트) ── */
+  var WHATIF = {
+    ura:  { icon:'🪐', title:'기울기가 90°라면? (진짜 천왕성!)',
+      q:'자전축이 아예 옆으로 누우면(90°), 계절은 어떻게 될까요?',
+      ch:['반년 낮·반년 밤의 어마어마한 계절이 돼요','계절이 사라져요','지금과 비슷해요'], a:0,
+      tip:'공전 위치를 돌려 봐요 — 남중고도가 0°에서 꼭대기까지 널뛰어요!',
+      reveal:'이건 상상이 아니라 진짜 천왕성 이야기! 옆으로 누워 도는 천왕성은 한쪽 극이 42년 낮, 42년 밤이에요. 기울기가 클수록 계절도 극단이 돼요.',
+      chip:'🪐 기울기90 → 극단 계절', need:120 },
+    south:{ icon:'🦘', title:'남반구(호주)에 산다면?',
+      q:'호주의 12월 크리스마스는 어떤 계절일까요?',
+      ch:['한여름이에요!','한겨울이에요','봄이에요'], a:0,
+      tip:'☀️ 여름 / ❄️ 겨울 버튼을 눌러 봐요 — 호주 기준으로는 계절이 뒤집혀 나와요!',
+      reveal:'북반구가 태양 반대로 기울 때, 남반구는 태양 쪽으로 기울어요! 그래서 계절이 정반대 — 호주의 산타는 서핑보드를 타요. 🏄',
+      chip:'🦘 남반구 → 계절 반전', need:120 },
+    stops:{ icon:'⏸', title:'공전을 멈춘다면?',
+      q:'지구가 공전을 딱 멈추면, 계절은 어떻게 될까요?',
+      ch:['한 계절이 영원히 계속돼요','지금처럼 돌아요','계절이 더 빨라져요'], a:0,
+      tip:'▶ 시간 흐르기 — 날짜가 흘러도 남중고도·계절이 그대로!',
+      reveal:'계절이 바뀌는 건 기울어진 채 공전하기 때문! 멈추면 그 위치의 계절이 영원히 — 여름에서 멈췄다면 끝나지 않는 여름이에요.',
+      chip:'⏸ 공전 멈춤 → 계절 고정', need:6 },
+    ell:  { icon:'🥚', title:'궤도가 심하게 찌그러진 타원이라면?',
+      q:'궤도가 찌그러져 태양에 바짝 가까워지는 때가 생기면, 그때가 여름이 될까요?',
+      ch:['네! 가까우면 여름이 돼요','아니요 — 계절은 자전축 기울기가 정해요','궤도가 찌그러지면 계절이 사라져요'], a:1,
+      tip:'▶ 1년 재생 — 지구가 태양에 바짝 붙어도 남중고도 숫자가 그대로인 걸 확인해요!',
+      reveal:'지구가 태양에 바짝 다가와도 남중고도는 꿈쩍 안 해요 — 계절은 거리가 아니라 기울기가 정해요! 놀라운 사실 하나 더: 진짜 지구 궤도도 살짝 타원인데, 태양에 가장 가까운 날은 오히려 북반구의 한겨울(1월 초)이에요. 「여름=가까워서」는 진짜 지구가 스스로 반증하는 오개념!',
+      chip:'🥚 타원 궤도 → 계절 그대로', need:180 }
+  };
+  var WIF_KEYS = ['ura','south','stops','ell'];
+
+  /* ── 예측 노트 (v2 3층 무손실) ── */
+  var PRED = {
+    dist:{ q:'🔮 예측 먼저! 태양까지 거리를 바꾸면 계절은 어떻게 될까요?',
+      ch:['가까우면 여름이 된다','지구가 받는 빛만 달라질 뿐, 계절(남중고도·낮 길이)은 그대로','아무 변화 없다'],
+      tip:'이제 슬라이더를 양 끝(0.8 ↔ 1.2 AU)까지 움직여 확인해 봐요!',
+      chip:'📏 거리 실험 → 계절 그대로' },
+    lat: { q:'🔮 예측 먼저! 남반구(위도 −)로 내려가면 계절은 어떻게 될까요?',
+      ch:['남반구도 같은 계절','정반대 계절','남반구엔 계절이 없다'],
+      tip:'위도를 −20° 아래로 내려 남반구에서 확인해 봐요!',
+      chip:'🧭 위도 실험 → 계절 반전' }
+  };
+  var TILT0_CHIP = '🌐 기울기 0 → 계절 소멸';
+
+  /* ── 🔦 와우: 햇빛 다발 밀도 (v3 신설 — v2에 와우 없음) ── */
+  var WOW = {
+    q:'🔦 같은 굵기의 햇빛 다발이 «땅에 닿는 넓이»는 여름과 겨울에 어떻게 다를까요?',
+    ch:['여름에 더 넓게 퍼져요','겨울에 더 넓게 퍼져요 — 그래서 덜 뜨거워요','여름이나 겨울이나 똑같아요'], a:1,
+    chip:'🔦 햇빛 다발 → 겨울엔 2배 퍼짐'
+  };
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    sim.orb0  = (typeof opts.orb  === 'number' && !isNaN(opts.orb))  ? wrapDeg(opts.orb) : 90;
+    sim.tilt0 = (typeof opts.tilt === 'number' && !isNaN(opts.tilt)) ? clamp(opts.tilt, 0, 35) : 23.5;
+    sim.lat0  = (typeof opts.lat  === 'number' && !isNaN(opts.lat))  ? clamp(opts.lat, -90, 90) : 37.5;
+
+    sim.state = {
+      orb: sim.orb0, tilt: sim.tilt0, lat: sim.lat0, distAU: 1,
+      playing: false, orbAcc: 0, dayCnt: 0,
+      wif: null, wifPred: null, wifActed: false, wifDone: false,
+      wowArmed: false, wowPred: null, wowDone: false, seenSummer: false, seenWinter: false,
+      pred: { dist:{ asked:false, ch:-1, lo:false, hi:false, done:false },
+              lat: { asked:false, ch:-1, done:false } },
+      tilt0Chip: false,
+      chips: [], chipToast: false,
+      acted: false
+    };
+
+    /* ── 조작 ── */
+    sim.setOrb = function(v){
+      var st = sim.state;
+      if(st.wif === 'stops') return st.orb;                 /* 공전 멈춤 = 잠금 (v2) */
+      var nv = wrapDeg(v);
+      st.orbAcc += degDiff(nv, st.orb);
+      st.orb = nv;
+      st.acted = true;
+      if(st.wif) st.wifActed = true;
+      sim.markSeason();
+      return st.orb;
+    };
+    /* 🔴 자전축 잡아 돌리기 — 각도 자체가 조작 대상 */
+    sim.setTilt = function(v){
+      var st = sim.state;
+      if(st.wif === 'stops' || st.wif === 'ura') return st.tilt;   /* 만약에가 기울기를 점유 (v2) */
+      st.tilt = clamp(v, 0, 35);
+      st.acted = true;
+      if(st.wif) st.wifActed = true;
+      /* 🌐 기울기 0 도달 = 계절 소멸 확인 칩 (v2 무손실 · 자유탐구 1회) */
+      var fired = false;
+      if(st.tilt <= 1 && !st.tilt0Chip){
+        st.tilt0Chip = true;
+        st.chips.push({ k:'tilt0', hit:true, confirm:true, label:TILT0_CHIP });
+        if(st.chips.length === 5 && !st.chipToast){ st.chipToast = true; fired = true; }
+      }
+      sim.markSeason();
+      return st.tilt;
+    };
+    sim.tiltChipFired = function(){ return sim.state.tilt0Chip; };
+    sim.setLat = function(v){
+      var st = sim.state;
+      st.lat = clamp(v, -90, 90);
+      st.acted = true;
+      return st.lat;
+    };
+    sim.setDist = function(v){
+      var st = sim.state;
+      st.distAU = clamp(v, 0.8, 1.2);
+      st.acted = true;
+      if(st.distAU <= 0.82) st.pred.dist.lo = true;
+      if(st.distAU >= 1.18) st.pred.dist.hi = true;
+      return st.distAU;
+    };
+    sim.togglePlay = function(){ sim.state.playing = !sim.state.playing; sim.state.acted = true; return sim.state.playing; };
+    sim.canGrab = function(mode){ return mode !== 'quiz' && sim.G().v2.grab; };
+    sim.canTilt = function(mode){ return mode !== 'quiz' && sim.G().showTilt; };
+
+    /* 여름·겨울 방문 기록 (🔦 와우 조작 게이트) */
+    sim.markSeason = function(){
+      var st = sim.state, k = seasonOf(st.orb, st.tilt).k;
+      if(k === 'summer') st.seenSummer = true;
+      if(k === 'winter') st.seenWinter = true;
+    };
+
+    /* ── 파생값 ── */
+    sim.ell = function(){ return sim.state.wif === 'ell'; };
+    sim.effTilt = function(){ return sim.state.wif === 'ura' ? 90 : sim.state.tilt; };
+    sim.south = function(){ return sim.state.lat < 0 || sim.state.wif === 'south'; };
+    sim.alt  = function(){ return noonAlt(sim.state.orb, sim.effTilt(), sim.state.lat); };
+    sim.day  = function(){ return dayHours(sim.state.orb, sim.effTilt(), sim.state.lat); };
+    sim.season = function(){ return seasonOf(sim.state.orb, sim.effTilt()); };
+    /* 남반구면 계절 표시 반전 (v2 FLIP) */
+    sim.seasonDisp = function(){
+      var s = sim.season();
+      if(!sim.south() || s.k === 'none') return { emo:s.emo, nm:s.nm, col:s.col, k:s.k };
+      var f = FLIP[s.k];
+      return { emo:f[0], nm:f[1], col:s.col, k:s.k };
+    };
+    sim.pos = function(){ return earthPos(sim.state.orb, sim.state.distAU, sim.ell()); };
+    sim.dist = function(){ return sunDistAU(sim.state.orb, sim.state.distAU, sim.ell()); };
+    sim.spread = function(){ return sunSpread(sim.state.orb, sim.effTilt(), sim.state.lat); };
+
+    /* ── 공전 tick (v2 loop 무손실 — 약 10초에 1년) ── */
+    sim.tick = function(dt){
+      var st = sim.state;
+      if(!st.playing) return;
+      dt = Math.min(dt, 0.05);
+      if(st.wif === 'stops'){ st.dayCnt += dt * 8; st.wifActed = true; return; }
+      var d = dt * 36;
+      st.orb = wrapDeg(st.orb + d);
+      st.orbAcc += d;
+      if(st.wif) st.wifActed = true;
+      sim.markSeason();
+    };
+
+    /* ── 예측 노트 (v2 3층) ── */
+    sim.predArm = function(kind, mode){
+      var p = sim.state.pred[kind];
+      if(mode !== 'free' || p.asked) return false;
+      p.asked = true;
+      return true;
+    };
+    sim.predPick = function(kind, i){
+      sim.state.pred[kind].ch = (typeof i === 'number' && i >= 0 && i <= 2) ? i : -1;
+      return sim.state.pred[kind].ch;
+    };
+    /* 해소: dist = 양 끝(0.8·1.2) «둘 다» 가봐야 · lat = 남반구(−20° 이하) 도달 */
+    sim.predResolved = function(kind, mode){
+      var st = sim.state, p = st.pred[kind];
+      if(mode !== 'free' || p.done || p.ch < 0) return false;
+      if(kind === 'dist') return p.lo && p.hi;
+      if(kind === 'lat')  return st.lat <= -20;
+      return false;
+    };
+    sim.predResolve = function(kind, mode){
+      if(!sim.predResolved(kind, mode)) return null;
+      var st = sim.state, p = st.pred[kind], P = PRED[kind];
+      p.done = true;
+      var hit, msg;
+      if(kind === 'dist'){
+        hit = (p.ch !== 0);                                  /* v2: 1·2번 모두 적중 처리 */
+        msg = (p.ch === 1)
+          ? '✔ 예측 적중 — 거리를 아무리 바꿔도 남중고도·낮 길이는 그대로! 거리는 계절의 원인이 아니에요.'
+          : (p.ch === 2)
+          ? '✔ 절반 적중 — 계절은 그대로 맞아요! 다만 「아무 변화 없음」은 아니에요. 지구 전체가 받는 빛의 양은 달라져요(온 지구가 더워지거나 추워짐). 계절의 원인이 아닐 뿐!'
+          : '✘ 예측 빗나감 — 가까워져도 여름이 되지 않았죠? 계절은 거리가 아니라 자전축 기울기가 정해요.';
+      } else {
+        hit = (p.ch === 1);
+        msg = hit
+          ? '✔ 예측 적중 — 남반구는 계절이 정반대! 북반구가 태양 쪽으로 기울 때 남반구는 반대쪽으로 기울어요.'
+          : '✘ 예측 빗나감 — 남반구는 계절이 정반대예요! 호주의 크리스마스가 한여름인 까닭이죠.';
+      }
+      st.chips.push({ k:kind, hit:hit, label:P.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { kind:kind, hit:hit, msg:msg, chipToast:toast };
+    };
+
+    /* ── 만약에 (v3 조작 게이트) ── */
+    sim.canWhatif = function(mode){ return mode === 'free' && sim.G().wif.length > 0; };
+    sim.wifList = function(){ return sim.G().wif.slice(); };
+    sim.wifStart = function(key){
+      if(sim.G().wif.indexOf(key) < 0) return null;
+      var st = sim.state;
+      st.wif = key; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.orbAcc = 0; st.dayCnt = 0;
+      st.orb = 90; st.tilt = 23.5; st.distAU = 1;              /* v2 onSelect 무손실 */
+      st.wowArmed = false; st.wowPred = null;
+      return key;
+    };
+    sim.wifPredict = function(i){
+      sim.state.wifPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wifPred;
+    };
+    sim.wifResolved = function(){
+      var st = sim.state;
+      if(!st.wif || st.wifDone || st.wifPred === null || !st.wifActed) return false;
+      if(st.wif === 'stops') return st.dayCnt >= WHATIF.stops.need;
+      return st.orbAcc >= WHATIF[st.wif].need;
+    };
+    sim.wifResolve = function(){
+      var st = sim.state;
+      if(!sim.wifResolved()) return null;
+      st.wifDone = true;
+      var W = WHATIF[st.wif], hit = (st.wifPred === W.a);
+      st.chips.push({ k:st.wif, hit:hit, label:W.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { key:st.wif, hit:hit, reveal:W.reveal, chipToast:toast };
+    };
+    sim.wifExit = function(){
+      var st = sim.state;
+      st.wif = null; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false; st.orb = 90; st.tilt = 23.5; st.distAU = 1;
+      st.orbAcc = 0; st.dayCnt = 0;
+      return true;
+    };
+
+    /* ── 🔦 와우: 햇빛 다발 밀도 (v3 신설) ── */
+    sim.canWow = function(mode){ return mode === 'free' && sim.G().wow && !sim.state.wif && !sim.state.wowDone; };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.wowArmed = true; st.wowPred = null;
+      st.playing = false; st.orb = 90; st.tilt = 23.5; st.lat = sim.lat0; st.distAU = 1;
+      st.seenSummer = false; st.seenWinter = false;
+      sim.markSeason();                                        /* orb=90 → 여름 방문 기록 */
+      return st.orb;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    /* 해소 = 여름·겨울을 «둘 다» 가봐야 (한쪽만 보면 비교가 안 된다) */
+    sim.wowResolved = function(){
+      var st = sim.state;
+      return st.wowArmed && !st.wowDone && st.wowPred !== null && st.seenSummer && st.seenWinter;
+    };
+    sim.wowReveal = function(){
+      var st = sim.state, t = st.tilt, la = st.lat;
+      var sAlt = noonAlt(90, t, la),  wAlt = noonAlt(270, t, la);
+      var sSpd = sunSpread(90, t, la), wSpd = sunSpread(270, t, la);
+      return {
+        summerAlt: sAlt, winterAlt: wAlt,
+        summerSpread: sSpd, winterSpread: wSpd,
+        ratio: (sSpd > 0 && sSpd !== Infinity && wSpd !== Infinity) ? wSpd / sSpd : Infinity,
+        summerHeat: heatDensity(90, t, la), winterHeat: heatDensity(270, t, la)
+      };
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true; st.playing = false;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast, data:sim.wowReveal() };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null; st.playing = false;
+      return true;
+    };
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred !== null) return false;   /* 예측 전 이탈만 무장 해제 */
+      st.wowArmed = false;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){ return sim.G().mIdx.map(function(i){ return MISSIONS[i]; }); };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.orb = 0; st.tilt = 23.5; st.lat = sim.lat0; st.distAU = 1;   /* v2: 미션 진입 orb=0(춘분) */
+      st.playing = false; st.orbAcc = 0; st.dayCnt = 0;
+      st.wif = null; st.wifPred = null; st.wowArmed = false; st.wowPred = null;
+      st.acted = false;
+    };
+    sim.missionCur = function(){ return sim.missionList()[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var M = sim.missionList(), m = M[sim.mStep];
+      if(m.type !== 'make') return { act:'none' };
+      if(!sim.state.acted) return { act:'none' };
+      if(!m.check(sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      var M = sim.missionList();
+      sim.state.acted = false; sim.state.orbAcc = 0;
+      if(sim.mStep < M.length - 1){
+        sim.mStep++;
+        var nx = M[sim.mStep];
+        if(nx.set) nx.set(sim.state);
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환 무손실) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      sim.state.orb = QUIZ[sim.qIdx].orb;
+      sim.state.tilt = QUIZ[sim.qIdx].tilt;                   /* 장면 세팅 */
+      sim.state.lat = sim.lat0; sim.state.distAU = 1;
+      sim.state.playing = false;
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, out = { lines:[], warn:false };
+      if(mode === 'quiz'){
+        out.lines.push('기울어진 지구와 \'우리나라 정오의 태양\' 패널을 보고 답을 골라요!');
+        return out;
+      }
+      if(st.wowArmed){
+        out.warn = true;
+        var sp = sim.spread();
+        out.lines.push('<span class="big">🔦 햇빛 다발이 ' + (sp === Infinity ? '한없이' : sp.toFixed(2) + '배') + ' 퍼졌어요</span>');
+        out.lines.push('같은 굵기의 빛이 땅에 «얼마나 넓게» 깔리는지 봐요 — 넓게 퍼질수록 한 뼘이 받는 열은 적어져요.');
+        if(st.wowPred !== null && !(st.seenSummer && st.seenWinter)){
+          out.lines.push('<span class="hold">☀️ 여름과 ❄️ 겨울을 «둘 다» 가봐야 비교할 수 있어요!</span>');
+        }
+        return out;
+      }
+      if(st.wif){
+        var W = WHATIF[st.wif], sea = sim.season();
+        out.warn = true;
+        if(st.wif === 'stops'){
+          out.lines.push('<span class="big">📅 +' + Math.floor(st.dayCnt) + '일</span>');
+          out.lines.push('날짜가 흘러도 ' + sea.emo + ' ' + sea.nm + ' 그대로 — 계절은 공전이 만들어요!');
+        } else if(st.wif === 'south'){
+          var d = sim.seasonDisp();
+          out.lines.push('🦘 호주 기준: 지금은 ' + d.emo + ' <b>' + d.nm + '</b>! (우리나라는 ' + sea.emo + ' ' + sea.nm + ')');
+          out.lines.push('북반구와 남반구는 기우는 방향이 반대 — 계절도 정반대예요.');
+        } else if(st.wif === 'ell'){
+          out.lines.push('🥚 거리 ' + sim.dist().toFixed(2) + ' AU · 남중고도 ' + Math.round(sim.alt()) + '° <b>그대로</b>');
+          out.lines.push('가까워져도 계절은 기울기가 정해요. 진짜 지구도 한겨울(1월 초)에 태양과 가장 가까워요!');
+        } else {
+          out.lines.push('🪐 기울기 90° — 진짜 천왕성처럼! 남중고도 ' + Math.round(sim.alt()) + '°');
+          out.lines.push('공전 위치에 따라 해가 안 뜨거나, 종일 떠 있는 극단의 계절이에요.');
+        }
+        if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + W.tip + '</span>');
+        return out;
+      }
+      var alt = sim.alt(), dh = sim.day(), sea2 = sim.season(), disp = sim.seasonDisp(), sub;
+      if(sea2.k === 'none')
+        sub = '자전축이 똑바로 서 있어요(기울기 0°). 공전 위치를 아무리 바꿔도 남중고도·낮 길이 그대로 — 계절이 생기지 않아요.';
+      else if(sea2.k === 'summer')
+        sub = '북반구가 태양 쪽으로 기울어 태양을 정면에 가깝게 받아요. 그래서 남중고도가 높고 낮이 길어 더워요.';
+      else if(sea2.k === 'winter')
+        sub = '북반구가 태양 반대쪽으로 기울어 태양을 비스듬히 받아요. 그래서 남중고도가 낮고 낮이 짧아 추워요.';
+      else
+        sub = '북반구가 태양 쪽도 반대쪽도 아니에요. 남중고도와 낮 길이가 여름·겨울의 중간이에요.';
+      out.lines.push('<span class="big">' + disp.emo + ' ' + disp.nm
+        + (sea2.k !== 'none' ? ' · 남중고도 ' + Math.round(alt) + '° · 낮 ' + dh.toFixed(1) + '시간' : '')
+        + (sim.south() ? ' (남반구 기준)' : '') + '</span>');
+      out.lines.push(sub);
+      out.lines.push('계절이 생기는 건 지구-태양 거리 때문이 아니라, 자전축이 기울어진 채 공전하기 때문이에요.');
+      if(mode === 'free' && st.distAU !== 1){
+        out.lines.push('📏 거리 ' + st.distAU.toFixed(2) + ' AU — 남중고도·낮 길이는 그대로! 거리는 계절의 원인이 아니에요.');
+      }
+      if(mode === 'free' && st.lat < 0){
+        out.lines.push('🧭 남반구 관측 — 북반구와 계절이 정반대예요.');
+      }
+      if(mode === 'free' && st.tilt > 1 && dh >= 23.5){
+        out.lines.push('🧊 백야 — 하루 종일 해가 지지 않아요! (극지방 × 기울어진 지구)');
+      }
+      if(mode === 'free' && st.tilt > 1 && dh <= 0.5){
+        out.lines.push('🌑 극야 — 하루 종일 해가 뜨지 않아요! (극지방 × 기울어진 지구)');
+      }
+      if(mode === 'free' && sim.G().showTilt){
+        out.lines.push('🌐 자전축(금색 막대)의 북극을 잡아 돌려 봐요 — 이 각도가 계절을 만들어요!');
+      }
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    ORBIT_R:ORBIT_R, ELL_E:ELL_E, wrapDeg:wrapDeg, degDiff:degDiff, clamp:clamp,
+    decl:decl, noonAlt:noonAlt, dayHours:dayHours, seasonOf:seasonOf, FLIP:FLIP,
+    sunSpread:sunSpread, heatDensity:heatDensity,
+    orbGeom:orbGeom, earthPos:earthPos, sunDistAU:sunDistAU, SEASONS:SEASONS,
+    GRADES:GRADES, MISSIONS:MISSIONS, QUIZ:QUIZ, WHATIF:WHATIF, WIF_KEYS:WIF_KEYS,
+    PRED:PRED, WOW:WOW, TILT0_CHIP:TILT0_CHIP, createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.SeasonSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.SeasonSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+
+/* ── config (v2 무손실) ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const cfgOrb = parseFloat(Q.get('orb'));
+const cfgTilt = parseFloat(Q.get('tilt'));
+const cfgLat = parseFloat(Q.get('lat'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', {
+  orb: isNaN(cfgOrb) ? undefined : cfgOrb,
+  tilt: isNaN(cfgTilt) ? undefined : cfgTilt,
+  lat: isNaN(cfgLat) ? undefined : cfgLat
+});
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (sim.G().modes.includes(m)) mode = m;
+}
+
+/* ═══════════ 우주 무대 (태양 중심 · 대각선 위에서) ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [5.4, 8.2, 6.4], target: [0, 0, 0], fov: 42,
+  minDist: 5, maxDist: 24, maxPolar: Math.PI - 0.02, exposure: 1.0
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.fog = null;
+scene.background = new THREE.Color(0x03060F);
+/* 태양 = 원점 점광원 (v2 무손실) */
+sun.visible = false;
+scene.traverse(o => { if (o.isHemisphereLight) o.intensity = 0.03; });
+const sunLight = new THREE.PointLight(0xFFF6E0, 260, 0, 2);
+sunLight.position.set(0, 0, 0);
+scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+
+/* 별 900 */
+{
+  const N = 900, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const t = Math.acos(2 * Math.random() - 1), p = Math.random() * Math.PI * 2;
+    const r = 18 + Math.random() * 9;
+    pos[i * 3] = r * Math.sin(t) * Math.cos(p);
+    pos[i * 3 + 1] = r * Math.cos(t);
+    pos[i * 3 + 2] = r * Math.sin(t) * Math.sin(p);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0xE8EEFF, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false
+  })));
+}
+
+/* 태양 코로나 */
+const sunSpr = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: canvasTexture(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+    gr.addColorStop(0, '#FFFBEA'); gr.addColorStop(0.45, '#FFD43B');
+    gr.addColorStop(1, 'rgba(255,170,40,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  }),
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
+}));
+sunSpr.scale.set(3.0, 3.0, 1);
+scene.add(sunSpr);
+
+/* 궤도 그룹 (링 + 4계절 마커) — 거리·타원 변형을 그룹 스케일/오프셋으로 (v2 무손실) */
+const orbGrp = new THREE.Group();
+scene.add(orbGrp);
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(Sim.ORBIT_R - 0.03, Sim.ORBIT_R + 0.03, 96),
+  new THREE.MeshBasicMaterial({ color: 0x5C7CFA, side: THREE.DoubleSide, transparent: true, opacity: 0.32, depthWrite: false })
+);
+ring.rotation.x = Math.PI / 2;
+orbGrp.add(ring);
+Sim.SEASONS.forEach(s => {
+  const p = Sim.earthPos(s.o, 1, false);
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.11, 12, 8),
+    new THREE.MeshBasicMaterial({ color: 0x8FA4CC })
+  );
+  m.position.set(p.x, 0, p.z);
+  orbGrp.add(m);
+});
+
+/* ── 지구 pivot (자전축 기울기는 월드 고정 방향 = pivot.rotation.z) ── */
+function earthFallback() {
+  return canvasTexture(512, 256, g => {
+    g.fillStyle = '#12518F'; g.fillRect(0, 0, 512, 256);
+    g.fillStyle = '#2F9E44';
+    [[60,80,70,55],[150,70,90,70],[250,150,80,50],[150,170,60,45],[360,90,70,60],[420,150,55,40]]
+      .forEach(b => { g.beginPath(); g.ellipse(b[0], b[1], b[2], b[3], 0, 0, 7); g.fill(); });
+    g.strokeStyle = 'rgba(255,255,255,0.16)'; g.lineWidth = 1;
+    for (let la = 0; la <= 256; la += 32) { g.beginPath(); g.moveTo(0, la); g.lineTo(512, la); g.stroke(); }
+  });
+}
+const earthMat = new THREE.MeshStandardMaterial({ map: earthFallback(), roughness: 0.92, metalness: 0, envMapIntensity: 0.25 });
+let texReal = false;
+new THREE.TextureLoader().load(
+  '/kedu/teacher/engine/tools/assets/textures/earth/earth_day.png',
+  tex => { tex.colorSpace = THREE.SRGBColorSpace; earthMat.map = tex; earthMat.needsUpdate = true; texReal = true; renderTexLabel(); },
+  undefined,
+  () => { texReal = false; renderTexLabel(); }
+);
+
+const R = 0.62;
+const earthPivot = new THREE.Group();
+scene.add(earthPivot);
+const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 48, 32), earthMat);
+earthPivot.add(earthMesh);
+
+/* 자전축 (금색 막대) + 🧲 북극 손잡이 + 잡기 프록시 */
+const axisRod = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.022, 0.022, 2.0, 10),
+  new THREE.MeshStandardMaterial({ color: 0xFFD43B, emissive: 0xFFB700, emissiveIntensity: 0.45, roughness: 0.5 })
+);
+earthPivot.add(axisRod);
+const npole = new THREE.Mesh(
+  new THREE.SphereGeometry(0.10, 16, 12),
+  new THREE.MeshStandardMaterial({ color: 0xFFE08A, emissive: 0xFFD43B, emissiveIntensity: 0.75, roughness: 0.45 })
+);
+npole.position.set(0, 1.0, 0);
+earthPivot.add(npole);
+const npoleProxy = new THREE.Mesh(
+  new THREE.SphereGeometry(0.32, 10, 8),
+  new THREE.MeshBasicMaterial({ visible: false })
+);
+npole.add(npoleProxy);
+
+/* 우리나라 핀 (자전 따라감 → earthMesh 자식) */
+const pin = new THREE.Mesh(
+  new THREE.SphereGeometry(0.07, 16, 12),
+  new THREE.MeshStandardMaterial({ color: 0xE03131, emissive: 0xE03131, emissiveIntensity: 0.5, roughness: 0.5 })
+);
+earthMesh.add(pin);
+function placePin() {
+  const latr = sim.state.lat * Math.PI / 180, pr = R * 1.03;
+  pin.position.set(Math.cos(latr) * pr, Math.sin(latr) * pr, 0);
+}
+placePin();
+
+/* 지구 잡기 프록시 (궤도 위 끌기) */
+const earthProxy = new THREE.Mesh(
+  new THREE.SphereGeometry(0.9, 12, 10),
+  new THREE.MeshBasicMaterial({ visible: false })
+);
+earthPivot.add(earthProxy);
+
+/* ── 🔦 햇빛 다발 (와우 전용) — 같은 굵기의 빛이 땅에 «얼마나 넓게» 깔리는가 ── */
+const beamGrp = new THREE.Group();
+beamGrp.visible = false;
+scene.add(beamGrp);
+const BEAM_R = 0.18;                                     /* 다발 굵기(고정!) */
+const beamMat = new THREE.MeshBasicMaterial({
+  color: 0xFFE066, transparent: true, opacity: 0.30, depthWrite: false, side: THREE.DoubleSide
+});
+const beamRod = new THREE.Mesh(new THREE.CylinderGeometry(BEAM_R, BEAM_R, 1, 20, 1, true), beamMat);
+beamGrp.add(beamRod);
+const patchMat = new THREE.MeshBasicMaterial({
+  color: 0xFF922B, transparent: true, opacity: 0.75, depthWrite: false, side: THREE.DoubleSide
+});
+const patch = new THREE.Mesh(new THREE.CircleGeometry(BEAM_R, 32), patchMat);
+beamGrp.add(patch);
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), noonEl = $('noon'), pathEl = $('path'),
+      annoHost = $('anno'), texlabEl = $('texlab');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const axisAnno = document.createElement('div');
+axisAnno.className = 'se-anno';
+annoHost.appendChild(axisAnno);
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+
+function renderTexLabel() { texlabEl.textContent = texReal ? '🖼️ 실사 지구 텍스처' : '🎨 기본 그림 지구'; }
+renderTexLabel();
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="se-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="se-seg">' + sim.G().modes.map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state, G = sim.G(), g2 = G.v2;
+  const frozen = (st.wif === 'stops');
+  const uraOn = (st.wif === 'ura');
+  let h = '';
+  /* 계절 버튼 4종 (v2 무손실 · 전 학년) */
+  h += '<div class="se-sea">' + Sim.SEASONS.map(s => {
+    const on = Sim.degDiff(st.orb, s.o) < 8;
+    return `<button data-o="${s.o}" class="${on ? 'on' : ''}">${s.l}</button>`;
+  }).join('') + '</div>';
+  if (G.showPlay) {
+    h += `<button class="k3-btn ${st.playing ? '' : 'fire'}" data-a="play">${st.playing ? '■ 멈춤' : (frozen ? '▶ 시간 흐르기' : '▶ 1년 재생')}</button>`;
+  }
+  if (G.showOrb && !frozen) {
+    h += `<div class="se-lab">공전 위치</div><input class="se-slider" id="orbSlider" type="range" min="0" max="360" step="1" value="${Math.round(st.orb)}">`;
+  }
+  if (G.showTilt) {
+    h += `<div class="se-tval" id="tval">🌐 ${sim.effTilt().toFixed(1)}°</div>`;
+    h += `<input class="se-slider tilt" id="tiltSlider" type="range" min="0" max="35" step="0.5" value="${Math.min(st.tilt, 35)}" ${(frozen || uraOn) ? 'disabled' : ''}>`;
+  }
+  if (g2.lat && mode === 'free' && !st.wif && !st.wowArmed) {
+    h += `<div class="se-lab">🧭 관측 위도 <b>${Math.round(st.lat)}°</b></div><input class="se-slider" id="latSlider" type="range" min="-90" max="90" step="1" value="${Math.round(st.lat)}">`;
+  }
+  if (g2.dist && mode === 'free' && !st.wif && !st.wowArmed) {
+    h += `<div class="se-lab">📏 태양까지 거리 <b>${st.distAU.toFixed(2)} AU</b></div><input class="se-slider" id="distSlider" type="range" min="0.8" max="1.2" step="0.01" value="${st.distAU}">`;
+  }
+  if (sim.canWow(mode)) {
+    h += '<button class="k3-btn accent" data-a="wowarm">🔦 여름이 더운 진짜 까닭은?</button>';
+  }
+  if (st.wowArmed) {
+    h += '<button class="k3-btn" data-a="wowexit">↩ 손전등 끄기</button>';
+  }
+  if (sim.canWhatif(mode) && !st.wif && !st.wowArmed) {
+    h += '<button class="k3-btn accent" data-a="whatif">🌀 만약에…</button>';
+  }
+  if (st.wif) {
+    h += '<button class="k3-btn" data-a="wifexit">↩ 원래 지구로</button>';
+  }
+  h += '<button class="k3-btn" data-a="reset">↺ 처음으로</button>';
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+  ctrls.querySelectorAll('[data-o]').forEach(b => b.addEventListener('click', () => {
+    hideHint(); sim.clearWow();
+    if (sim.state.playing) sim.togglePlay();
+    sim.setOrb(+b.dataset.o);
+    K3.sound.play('tap');
+    syncScene(); renderAll(); afterAct();
+  }));
+  const os = $('orbSlider');
+  if (os) os.addEventListener('input', () => {
+    hideHint(); sim.clearWow();
+    if (sim.state.playing) sim.togglePlay();
+    sim.setOrb(+os.value);
+    syncScene(); renderStatus(); renderCtrls(); afterAct();
+  });
+  const ts = $('tiltSlider');
+  if (ts) ts.addEventListener('input', () => {
+    hideHint(); sim.clearWow();
+    sim.setTilt(+ts.value);
+    syncScene(); renderStatus(); renderCtrls(); renderChips(); afterAct();
+  });
+  const ls = $('latSlider');
+  if (ls) ls.addEventListener('input', () => {
+    hideHint();
+    if (sim.predArm('lat', mode)) askPred('lat');
+    sim.setLat(+ls.value);
+    placePin();
+    syncScene(); renderStatus(); renderCtrls(); afterAct();
+  });
+  const ds = $('distSlider');
+  if (ds) ds.addEventListener('input', () => {
+    hideHint();
+    if (sim.predArm('dist', mode)) askPred('dist');
+    sim.setDist(+ds.value);
+    syncScene(); renderStatus(); renderCtrls(); afterAct();
+  });
+}
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 자전축을 돌려 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const st = $('stage');
+  st.dataset.orb = sim.state.orb.toFixed(1);
+  st.dataset.tilt = sim.effTilt().toFixed(1);
+  st.dataset.lat = String(Math.round(sim.state.lat));
+  st.dataset.season = sim.season().k;
+  st.dataset.alt = sim.alt().toFixed(1);
+  st.dataset.wif = sim.state.wif || '';
+  const tv = $('tval');
+  if (tv) tv.textContent = '🌐 ' + sim.effTilt().toFixed(1) + '°';
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} ${c.confirm ? '✔확인' : (c.hit ? '✔예측적중' : '✘예측빗나감')}</div>`
+  ).join('');
+}
+
+/* ── 「우리나라 정오의 태양」 패널 (v2 무손실) ── */
+function renderNoon() {
+  const arc = $('narc'), s2 = $('nsun'), t2 = $('nalt');
+  if (!arc) return;
+  const alt = Math.max(0, sim.alt());
+  const altH = alt / 90 * 60;
+  arc.setAttribute('d', 'M -55 22 Q 0 ' + (22 - 2 * altH).toFixed(1) + ' 55 22');
+  s2.setAttribute('cy', (22 - altH).toFixed(1));
+  t2.textContent = '남중고도 ' + Math.round(alt) + '°';
+}
+
+/* ── 「하루 동안 태양의 길과 막대 그림자」 패널 (v2 renderSunPath 무손실) ── */
+const NS = 'http://www.w3.org/2000/svg';
+function renderPath() {
+  const g = $('pathg'), cap = $('pathcap');
+  if (!g) return;
+  while (g.firstChild) g.removeChild(g.firstChild);
+  const S = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const st = sim.state;
+  const alt = Math.max(0, sim.alt());
+  const dh = Math.max(0.5, sim.day());
+  const half = Math.min(76, dh / 24 * 152 / 2 + 18);
+  const peak = 26 - (alt / 90) * 62;
+  /* 참조: 기울기 0°(계절 없음) 경로 — 점선 */
+  const alt0 = 90 - Math.abs(st.lat), peak0 = 26 - (alt0 / 90) * 62, half0 = Math.min(76, 12 / 24 * 152 / 2 + 18);
+  g.appendChild(S('path', { d: `M ${-half0} 26 Q 0 ${peak0.toFixed(1)} ${half0} 26`, stroke: '#7d8db5', 'stroke-width': 1.4, fill: 'none', 'stroke-dasharray': '4 4', opacity: 0.65 }));
+  /* 현재 경로 */
+  g.appendChild(S('path', { d: `M ${-half} 26 Q 0 ${peak.toFixed(1)} ${half} 26`, stroke: '#FFD43B', 'stroke-width': 2.6, fill: 'none', id: 'sparc' }));
+  g.appendChild(S('circle', { cx: 0, cy: peak.toFixed(1), r: 5, fill: '#FFD43B', id: 'spsun' }));
+  /* 해 뜨고 지는 시각 */
+  const rise = 12 - dh / 2, set = 12 + dh / 2;
+  const hm = h => { let H = Math.floor(h), M = Math.round((h - H) * 60); if (M === 60) { H++; M = 0; } return H + '시' + (M ? ' ' + M + '분' : ''); };
+  const tr = S('text', { x: -half, y: 14, 'text-anchor': 'middle', fill: '#FFE08A', 'font-size': 8, 'font-family': 'Gowun Dodum' });
+  tr.textContent = '↑' + hm(rise); g.appendChild(tr);
+  const tset = S('text', { x: half, y: 14, 'text-anchor': 'middle', fill: '#FFE08A', 'font-size': 8, 'font-family': 'Gowun Dodum' });
+  tset.textContent = '↓' + hm(set); g.appendChild(tset);
+  /* 막대와 그림자 — 그림자 길이 = 막대 ÷ tan(남중고도) */
+  const sx = 44, h2 = 13;
+  const shadow = (alt > 2) ? Math.min(h2 / Math.tan(alt * Math.PI / 180), 52) : 52;
+  g.appendChild(S('line', { x1: sx, y1: 30, x2: sx - shadow, y2: 30, stroke: '#0e1426', 'stroke-width': 5, 'stroke-linecap': 'round', opacity: 0.85, id: 'spshadow' }));
+  g.appendChild(S('line', { x1: sx, y1: 30, x2: sx, y2: 30 - h2, stroke: '#D9A066', 'stroke-width': 3.2, 'stroke-linecap': 'round' }));
+  cap.textContent = (sim.effTilt() <= 1)
+    ? '기울기 0° — 일 년 내내 같은 길, 같은 그림자'
+    : ('남중고도 ' + Math.round(alt) + '° → 그림자가 ' + (alt >= 60 ? '짧아요' : (alt <= 35 ? '길어요' : '중간이에요')) + ' · 낮 ' + dh.toFixed(1) + '시간');
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      placePin(); syncScene(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderNoon(); renderPath();
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+const _pinW = new THREE.Vector3();
+const _up = new THREE.Vector3(0, 1, 0);
+function syncScene() {
+  const st = sim.state;
+  /* 궤도 그룹 = 거리(원 스케일) 또는 🥚 타원 (v2 무손실) */
+  const og = Sim.orbGeom(st.distAU, sim.ell());
+  orbGrp.scale.set(og.a / Sim.ORBIT_R, 1, og.b / Sim.ORBIT_R);
+  orbGrp.position.x = og.cx;
+  /* 지구 = 궤도 위 위치 · 자전축은 «월드 고정 방향»으로 기울어진 채 (v2 핵심) */
+  const p = sim.pos();
+  earthPivot.position.set(p.x, 0, p.z);
+  earthPivot.rotation.z = sim.effTilt() * Math.PI / 180;
+  placePin();
+  renderBeam();
+  renderNoon(); renderPath();
+}
+
+/* 🔦 햇빛 다발 — 핀 위치에 «고정 굵기» 다발을 태양 방향에서 쏘고, 지표 패치를 1/sin(입사각)로 늘린다 */
+const _sunDir = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+function renderBeam() {
+  const st = sim.state;
+  beamGrp.visible = st.wowArmed && mode !== 'quiz';
+  if (!beamGrp.visible) return;
+  earthMesh.updateMatrixWorld(true);
+  pin.getWorldPosition(_pinW);
+  /* 태양(원점) → 핀 방향 */
+  _sunDir.copy(_pinW).normalize();
+  /* 다발 = 태양 쪽에서 핀으로 오는 원기둥 */
+  const L = 2.6;
+  const start = _pinW.clone().addScaledVector(_sunDir, -L);
+  beamRod.scale.set(1, L, 1);
+  beamRod.position.copy(start).addScaledVector(_sunDir, L / 2);
+  _q.setFromUnitVectors(_up, _sunDir);
+  beamRod.quaternion.copy(_q);
+  /* 지표 패치 — 입사각이 얕을수록 넓게 퍼진다 (퍼짐 배율 = 1/sin(고도)) */
+  const spread = sim.spread();
+  const sc = (spread === Infinity) ? 6 : Math.min(spread, 6);
+  patch.position.copy(_pinW).addScaledVector(_sunDir, -0.02);
+  /* 패치는 지표에 눕는다: 법선 = 핀의 지표 법선 */
+  const nrm = _pinW.clone().sub(earthPivot.position).normalize();
+  _q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nrm);
+  patch.quaternion.copy(_q);
+  patch.scale.set(sc, 1, 1);                       /* 한 방향으로만 늘어난다 = 타원 */
+  patchMat.opacity = Math.max(0.18, 0.78 / sc);    /* 넓게 퍼질수록 옅다 = 열이 안 모임 */
+}
+
+syncScene();
+
+/* ── 조작 후처리 (moon 교훈: 판정을 루프에 두지 말고 한 곳에 모은다) ── */
+function afterAct() {
+  predTick();
+  if (mode === 'mission') missionTick();
+  if (sim.state.wif) wifTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'play') {
+    sim.clearWow();
+    sim.togglePlay();
+    K3.sound.play(st.playing ? 'whoosh' : 'select');
+    renderCtrls(); renderStatus();
+  } else if (a === 'reset') {
+    sim.wifExit(); sim.wowExit();
+    st.lat = sim.lat0; st.distAU = 1; st.orb = sim.orb0; st.tilt = sim.tilt0;
+    K3.sound.play('tap');
+    placePin(); syncScene(); renderAll();
+  } else if (a === 'whatif') {
+    K3.cards.result('<h3>🌀 만약에… 무엇을 바꿔 볼까요?</h3>',
+      sim.wifList().map(k => ({ label: Sim.WHATIF[k].icon + ' ' + Sim.WHATIF[k].title, value: k }))
+    ).then(k => { if (k) startWhatif(k); });
+  } else if (a === 'wifexit') {
+    sim.wifExit();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    syncScene(); renderAll();
+    K3.cards.predict(Sim.WOW.q, Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c })))
+      .then(v => {
+        sim.setWowPred(+v);
+        K3.sound.play('charge');
+        K3.toast('🔦 ☀️ 여름과 ❄️ 겨울 버튼을 «둘 다» 눌러 다발이 얼마나 퍼지는지 비교해 봐요!', false, T(4000));
+        renderCtrls(); renderStatus();
+        afterAct();
+      });
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    K3.sound.play('select');
+    syncScene(); renderAll();
+  }
+}
+
+/* ── 만약에 ── */
+function startWhatif(key) {
+  sim.wifStart(key);
+  K3.sound.play('whoosh');
+  syncScene(); renderAll();
+  const W = Sim.WHATIF[key];
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.wifPredict(+v);
+      K3.sound.play('charge');
+      K3.toast(W.icon + ' ' + W.tip, false, T(3600));
+      renderStatus();
+    });
+}
+function wifTick() {
+  if (!sim.wifResolved()) return;
+  const r = sim.wifResolve();
+  if (!r) return;
+  K3.sound.play(r.hit ? 'chime' : 'pop');
+  if (r.hit) K3.sound.play('ting');
+  const W = Sim.WHATIF[r.key];
+  K3.toast(
+    '<b>' + W.icon + ' ' + W.title + '</b><br>' + W.reveal +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘'),
+    !r.hit, T(6500)
+  );
+  sim.state.playing = false;
+  renderChips(); renderCtrls(); renderStatus();
+  if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(6700));
+}
+
+/* ── 🔦 와우 해소 ── */
+function wowTick() {
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  const d = r.data;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>🔦 같은 햇빛, 다른 넓이</h3>' + spreadBars(d) +
+    '<div style="font-size:13px;line-height:1.55;color:#243043">같은 굵기의 햇빛 다발이 ' +
+    '<b>여름엔 ' + d.summerSpread.toFixed(2) + '배</b>, <b>겨울엔 ' + d.winterSpread.toFixed(2) + '배</b>로 퍼졌어요 — ' +
+    '겨울이 <b>' + d.ratio.toFixed(1) + '배 넓게</b>! 같은 열을 넓은 땅에 나눠 깔았으니, 한 뼘이 받는 열은 그만큼 <b>적어요</b>.<br>' +
+    '여름이 더운 건 태양에 <b>가까워서가 아니라</b>, 햇빛이 <b>곧게 내리쬐어 좁게 모이기</b> 때문이에요.' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 「가까워서」가 가장 흔한 오해예요! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    syncScene(); renderAll();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(400));
+  });
+  renderChips(); renderCtrls();
+}
+function spreadBars(d) {
+  const w = s => Math.min(268, 34 * s);
+  return '<svg viewBox="0 0 300 76" width="100%" height="76" style="margin:6px 0 4px">'
+    + '<text x="2" y="12" font-size="11" fill="#C24106" font-family="Gowun Dodum">☀️ 여름 — 남중고도 ' + Math.round(d.summerAlt) + '°</text>'
+    + '<rect x="18" y="17" width="' + w(d.summerSpread).toFixed(0) + '" height="10" rx="5" fill="#FF922B"/>'
+    + '<text x="' + (22 + w(d.summerSpread)).toFixed(0) + '" y="26" font-size="10" fill="#5a7894" font-family="Gowun Dodum">' + d.summerSpread.toFixed(2) + '배</text>'
+    + '<text x="2" y="50" font-size="11" fill="#1565C0" font-family="Gowun Dodum">❄️ 겨울 — 남중고도 ' + Math.round(d.winterAlt) + '°</text>'
+    + '<rect x="18" y="55" width="' + w(d.winterSpread).toFixed(0) + '" height="10" rx="5" fill="#5C7CFA"/>'
+    + '<text x="' + (22 + w(d.winterSpread)).toFixed(0) + '" y="64" font-size="10" fill="#5a7894" font-family="Gowun Dodum">' + d.winterSpread.toFixed(2) + '배</text>'
+    + '</svg>';
+}
+
+/* ── 예측 노트 ── */
+function askPred(kind) {
+  const P = Sim.PRED[kind];
+  K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.predPick(kind, +v);
+      K3.sound.play('charge');
+      K3.toast('📝 예측 접수! ' + P.tip, false, T(3600));
+      renderStatus();
+    });
+}
+function predTick() {
+  ['dist', 'lat'].forEach(kind => {
+    if (!sim.predResolved(kind, mode)) return;
+    const r = sim.predResolve(kind, mode);
+    if (!r) return;
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    if (r.hit) K3.sound.play('ting');
+    K3.toast(r.msg, !r.hit, T(5200));
+    renderChips(); renderStatus();
+    if (r.chipToast) setTimeout(() => K3.toast('🔭 꼬마 과학자 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(5400));
+  });
+}
+
+/* ── 🔴 자전축 잡아 돌리기 · 지구 궤도 위 끌기 ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const orbitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const hitPt = new THREE.Vector3();
+let grab = null;
+function setPtr(cx, cy) {
+  ptr.x = (cx / innerWidth) * 2 - 1;
+  ptr.y = -(cy / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+}
+function pick(cx, cy) {
+  setPtr(cx, cy);
+  if (sim.canTilt(mode) && ray.intersectObject(npoleProxy, false).length) return 'axis';
+  if (sim.canGrab(mode) && ray.intersectObject(earthProxy, false).length) return 'earth';
+  return null;
+}
+/* 🔴 화면 좌표 → 자전축 기울기 역산.
+   후보 각을 0.5° 간격으로 스캔하며 «북극이 화면 어디에 찍히는지»를 투영해 마우스와 가장 가까운 각을 고른다.
+   (축은 pivot.rotation.z만 쓰므로 1자유도 — 스캔이 정확하고 카메라 각도에 무관하다) */
+const _cand = new THREE.Vector3();
+function tiltFromScreen(cx, cy) {
+  const mx = (cx / innerWidth) * 2 - 1;
+  const my = -(cy / innerHeight) * 2 + 1;
+  const base = earthPivot.position;
+  let best = sim.state.tilt, bestD = Infinity;
+  for (let t = 0; t <= 35.0001; t += 0.5) {
+    const r = t * Math.PI / 180;
+    /* 로컬 +Y(0,1,0)를 rotation.z = r 로 돌린 월드 방향 */
+    _cand.set(-Math.sin(r) * 1.0, Math.cos(r) * 1.0, 0).add(base);
+    _cand.project(camera);
+    const d = (_cand.x - mx) * (_cand.x - mx) + (_cand.y - my) * (_cand.y - my);
+    if (d < bestD) { bestD = d; best = t; }
+  }
+  return best;
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  hideHint();
+  const p = pick(e.clientX || 0, e.clientY || 0);
+  if (!p) return;
+  grab = p;
+  controls.enabled = false;
+  if (sim.state.playing) { sim.togglePlay(); renderCtrls(); }
+  sim.clearWow();
+  K3.sound.play('tap');
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!grab) return;
+  const cx = e.clientX || 0, cy = e.clientY || 0;
+  if (grab === 'axis') {
+    sim.setTilt(tiltFromScreen(cx, cy));
+  } else {
+    setPtr(cx, cy);
+    if (!ray.ray.intersectPlane(orbitPlane, hitPt)) return;
+    sim.setOrb(Math.atan2(hitPt.z, hitPt.x) * 180 / Math.PI - 90);   /* earthPos 역산 (φ=orb+90) */
+  }
+  syncScene(); renderStatus(); renderCtrls(); renderChips();
+  afterAct();
+});
+function endGrab() {
+  if (!grab) return;
+  grab = null;
+  controls.enabled = true;
+  K3.sound.play('select');
+}
+renderer.domElement.addEventListener('pointerup', endGrab);
+renderer.domElement.addEventListener('pointercancel', endGrab);
+
+/* ── 미션 ── */
+let thinkOpen = false;
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const cur = sim.missionCur();
+  if (cur.type === 'think') { openThink(cur); return; }
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { syncScene(); renderAll(); missionTick(); }, T(1300));
+}
+function openThink(m) {
+  if (thinkOpen) return;
+  thinkOpen = true;
+  K3.cards.predict(m.text.replace(/<[^>]+>/g, ''), m.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      thinkOpen = false;
+      if (+v === m.a) {
+        K3.sound.play('chime'); K3.sound.play('ting');
+        K3.toast('🎉 정답!<br>' + m.why, false, T(4600));
+        sim.missionAdvance();
+        setTimeout(() => { syncScene(); renderAll(); if (!sim.mDone) missionTick(); }, T(1400));
+      } else {
+        K3.sound.play('fail');
+        K3.toast('음… 다시 생각해 볼까요? 자전축이 어느 쪽으로 기울었는지 봐요!', true, T(2600));
+        setTimeout(() => missionTick(), T(2700));
+      }
+    });
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wifExit(); sim.wowExit();
+  const st = sim.state;
+  st.lat = sim.lat0; st.distAU = 1; st.orbAcc = 0; st.dayCnt = 0;
+  st.pred.dist = { asked:false, ch:-1, lo:false, hi:false, done:false };
+  st.pred.lat = { asked:false, ch:-1, done:false };
+  st.tilt0Chip = false;
+  st.wowDone = false; st.seenSummer = false; st.seenWinter = false;
+  controls.enabled = true;
+  qLock = false;
+}
+function setGrade(g) {
+  sim.grade = g;
+  if (!sim.G().modes.includes(mode)) mode = 'free';
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  else { sim.state.orb = sim.orb0; sim.state.tilt = sim.tilt0; }
+  placePin(); syncScene(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  else { sim.state.orb = 90; sim.state.tilt = 23.5; }
+  placePin(); syncScene(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+let spin = 0;
+const _np = new THREE.Vector3();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+
+  spin += dt * 0.9;
+  earthMesh.rotation.y = spin;                    /* 자전 (시각 디테일) */
+
+  if (sim.state.playing) {
+    sim.tick(dt);
+    syncScene();
+    renderStatus();
+    const os = $('orbSlider');
+    if (os) os.value = Math.round(sim.state.orb);
+    afterAct();
+  }
+
+  if (sim.state.wowArmed) renderBeam();
+
+  /* 자전축 라벨 투영 */
+  if (mode !== 'quiz' && sim.G().showTilt) {
+    npole.getWorldPosition(_np);
+    _np.project(camera);
+    if (_np.z < 1) {
+      axisAnno.textContent = '🧲 자전축 ' + sim.effTilt().toFixed(1) + '°';
+      axisAnno.style.left = ((_np.x * 0.5 + 0.5) * innerWidth) + 'px';
+      axisAnno.style.top = ((-_np.y * 0.5 + 0.5) * innerHeight - 24) + 'px';
+      axisAnno.style.display = '';
+    } else axisAnno.style.display = 'none';
+  } else axisAnno.style.display = 'none';
+
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+placePin();
+syncScene();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast(sim.G().showTilt
+  ? '자전축(금색 막대)의 <b>북극을 잡아 돌려 봐요</b> — 이 각도가 계절을 만들어요!'
+  : '<b>계절 버튼</b>을 눌러 봄·여름·가을·겨울의 해 높이를 비교해 봐요!');
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.SeasonApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWhatif,
+  earthPivot, earthMesh, npole, npoleProxy, earthProxy, axisRod, pin, orbGrp, ring, sunSpr,
+  beamGrp, beamRod, patch, patchMat, earthMat, camera, controls, sunLight,
+  get texReal() { return texReal; },
+  syncScene, renderAll, afterAct, missionTick, wifTick, wowTick, predTick, tiltFromScreen,
+  setOrb(v) { sim.setOrb(v); syncScene(); renderStatus(); renderCtrls(); renderChips(); afterAct(); },
+  setTilt(v) { sim.setTilt(v); syncScene(); renderStatus(); renderCtrls(); renderChips(); afterAct(); },
+  setLat(v) { sim.setLat(v); placePin(); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  setDist(v) { sim.setDist(v); syncScene(); renderStatus(); renderCtrls(); afterAct(); },
+  armPred(kind) { if (sim.predArm(kind, mode)) askPred(kind); },
+  runFor(sec) {
+    sim.state.playing = true;
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncScene(); renderStatus(); renderCtrls();
+    afterAct();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
