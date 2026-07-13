@@ -26,7 +26,7 @@ KEDU = ROOT.parent                                      # kedu
 GENRE_ENGINE = {
     'balance': 'stream',
     'duel_quiz': 'stream',
-    'relay': 'stream',
+    'relay': 'relay',        # 반 전체 릴레이 — 승패 없는 협력형 (§10-5)
     'sequence': 'sequence',      # 무대형 — 카드를 순서대로 탭 (§10-4)
     # bundle · sort · explore는 활동 자체 루프 — 엔진 없이 core만 쓴다
 }
