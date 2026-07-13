@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 소수 모형 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 6호 — 소수 모형 (2026-07-13) · 셸 = clock 계보
+  SPEC = handoff/klab/designs3/SPEC_decimal.md (도면=정답)
+  v2(engine/tools/decimal.js 257줄) 콘텐츠 무손실 이식:
+    학년칸(저 0.1 단위만·칸 클릭=줄 스냅·0.01/분수/퀴즈 숨김 / 중 0.01+분수+퀴즈 4문 / 고 퀴즈 5문)
+    미션 저3·중고4 · 퀴즈 5문 풀(셔플) · 상태줄 2형 · 단일 상태 hund(0~100)
+  ★ place_value(10:1 교환)의 «소수판» — 두 도구의 교환 마법은 같은 연출 언어를 쓴다
+    (황금 글로우 · whoosh→chime · 보라 배너). 학생이 「같은 원리」임을 알아보게 하는 게 목적.
+  v3 질감: 다크 스튜디오 + 원목 매트, 10×10 유광 타일판.
+    빈 칸 = 무광 타일 / 낱칸(0.01) = 민트 유리 타일 / 완성된 줄(0.1) = 진한 파랑 타일로 «승격»
+    (이 색 승격이 「10칸 = 한 줄 = 0.1」의 시각 닻 — 반드시 유지)
+  와우:
+    ① 빈 칸 어포던스(hover) ② applyHund 단일 진입 ③ 효과음
+    ④ 10:1 교환 마법 — 100칸이 차는 순간 타일 seam이 «사라지며 한 판으로 합쳐진다»(0.35s)
+       + 황금 글로우(0.8s) + 보라 배너 + whoosh→chime. **1회 가드 없음이 의도된 설계**
+       (99↔100을 오갈 때마다 다시 본다 — 교환은 볼 때마다 즐겁다)
+    ⑤ 🔮 예측 카드(v3 신설·중고만·1회 가드) — 합체 «직전에» 「0.1짜리 줄이 10개가 되면?」
+       ① 0.10 / ② 1 / ③ 10 → 합체 목격 → 「0.1이 10개면 1 — 자릿수가 하나 올라가요」
+  ⚠️ v2 죽은 코드 정리: `rr%1===0 ? 2 : 1` 삼항은 항상 참(모든 가로선이 0.1 경계) → 2px 고정.
+  ※ 저학년 초기값이 0.4로 보이는 것은 «버그가 아니라» snap01(0.37→0.4) — 학년별 초기값이 다른 게 정상.
+  config: ?grade= & mode= & value=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(3vh,22px) min(3.4vw,28px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:#fff;border:none;
+    border-radius:14px;padding:12px 18px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-btn.minus{background:linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+    color:var(--c1);border:1.5px solid var(--c1)}
+  .ck-btn.ghost{background:linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    color:#9fb2c6;border:1.5px solid rgba(255,255,255,.22);font-size:18px;padding:12px 14px}
+  .ck-choice{font-family:'Gowun Dodum';font-size:18px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 22px;cursor:pointer;min-width:112px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .timeread{font-family:var(--kedu-title);font-size:min(5.6vh,38px);color:#EAF2FB;
+    text-shadow:0 0 22px rgba(91,155,240,.45), 0 2px 8px rgba(0,0,0,.5)}
+  .timeread .b{color:#7FB2F5} .timeread .o{color:#FFA75E} .timeread .u{font-size:.62em;color:#c9d6e4}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 소수 모형 도구 전용 ── */
+  .timeread .big{font-size:1.35em;color:#7FB2F5}
+  .dc-frac{display:inline-block;vertical-align:middle;text-align:center;line-height:1;
+    font-family:var(--kedu-title);margin:0 2px}
+  .dc-frac .n{display:block;font-size:min(3.2vh,26px);color:#3EE6B0}
+  .dc-frac .bar{display:block;height:4px;background:#EAF2FB;border-radius:2px;margin:2px 0}
+  .dc-frac .d{display:block;font-size:min(3.2vh,26px);color:#7FB2F5}
+  .dc-cell{transition:fill .14s}
+  .dc-fillable{cursor:pointer}
+  .dc-fillable:hover{fill:rgba(155,123,245,0.28) !important}
+  /* 와우④ — 100칸의 seam이 사라지며 «한 판»으로 합쳐진다 */
+  .dc-seam{transition:stroke-opacity .35s ease}
+  .dc-merged .dc-seam{stroke-opacity:0}
+  .dc-merge{animation:dcMergeKf .8s ease both}
+  @keyframes dcMergeKf{0%{opacity:0;stroke-width:5}40%{opacity:1;stroke-width:13}100%{opacity:0;stroke-width:5}}
+  @keyframes dcFlashKf{0%{opacity:0;transform:translateY(-6px)}15%{opacity:1;transform:translateY(0)}
+    80%{opacity:1}100%{opacity:0}}
+  .dc-flash{animation:dcFlashKf 1.6s ease both}
+  .dc-chip{animation:dcChip .34s cubic-bezier(.2,1.5,.4,1) both;
+    transform-origin:center;transform-box:fill-box}
+  @keyframes dcChip{0%{transform:scale(0) translateX(-14px);opacity:0}100%{transform:none;opacity:1}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🔢 케이랩 · 소수 모형</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  /* SPEC §1 — GRADES 전문 보존 */
+  var GRADES={
+    low:  { modes:['free','mission'],        steps:[10],   frac:false, snap:true  },
+    mid:  { modes:['free','mission','quiz'], steps:[10,1], frac:true,  snap:false },
+    high: { modes:['free','mission','quiz'], steps:[10,1], frac:true,  snap:false }
+  };
+  var STEP_STYLE={ 10:{ c:'#5B9BF0', label:'0.1' }, 1:{ c:'#3EE6B0', label:'0.01' } };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function snap01(h){ return Math.round(h/10)*10; }
+  function initialHund(grade,value){
+    var h=Math.max(0,Math.min(Math.round((value!=null?value:0.37)*100),100));
+    return (grade==='low')?snap01(h):h;   /* ※ 저학년 0.37 → 0.4 (버그 아님) */
+  }
+  /* v2 23~30 — 모든 변경의 단일 진입(사운드·렌더는 App에서) */
+  function applyHundPure(hund,next){
+    var h=Math.max(0,Math.min(100,next));
+    if(h===hund) return { hund:h, event:'none' };
+    if(h===100&&hund<100) return { hund:h, event:'merge' };
+    return { hund:h, event:'fill' };
+  }
+  /* v2 221~222 — 저학년은 «그 줄까지» 스냅(토글 아님 — 아래를 누르면 줄어들기도 한다) */
+  function cellTarget(grade,k){
+    return (grade==='low')?(Math.floor(k/10)+1)*10:(k+1);
+  }
+  function readout(grade,hund){
+    var tenths=Math.floor(hund/10), ones=hund%10;
+    if(grade==='low') return { value:(hund/100).toFixed(1), tenths:tenths, ones:ones, frac:null };
+    return { value:(hund/100).toFixed(2), tenths:tenths, ones:ones, frac:{ n:hund, d:100 } };
+  }
+
+  /* 미션 — v2 텍스트·판정식 무손실. check(hund) */
+  var LOW_MISSIONS=[
+    { text:'＋0.1 버튼으로 <b>0.3</b>을 만들어 봐요! (한 줄이 0.1 — 세 줄!)', check:function(h){ return h===30; } },
+    { text:'한 줄씩 더 채워 <b>0.5</b>(절반)을 만들어요! (다섯 줄!)',        check:function(h){ return h===50; } },
+    { text:'모눈을 꽉 채워 <b>1</b>을 만들어요 — 0.1짜리 줄이 10개면 1!',   check:function(h){ return h===100; } }
+  ];
+  var MID_MISSIONS=[
+    { text:'＋0.1 버튼으로 <b>0.3</b>을 만들어 봐요! (한 줄 = 0.1)',        check:function(h){ return h===30; } },
+    { text:'이제 ＋0.01로 <b>0.34</b>까지! (한 칸 = 0.01)',                 check:function(h){ return h===34; } },
+    { text:'모눈 칸을 직접 눌러 <b>0.5</b>(절반)를 만들어 봐요!',           check:function(h){ return h===50; } },
+    { text:'모눈을 꽉 채워 <b>1</b>을 만들어요 — 0.01이 100개면 1!',        check:function(h){ return h===100; } }
+  ];
+  var HIGH_MISSIONS=MID_MISSIONS;
+  function missionsFor(grade){
+    return (grade==='low')?LOW_MISSIONS:(grade==='mid')?MID_MISSIONS:HIGH_MISSIONS;
+  }
+
+  /* 퀴즈 — v2 풀 그대로(순서·문구·보기) */
+  var QUIZ_POOL=[
+    { hund:37, q:'색칠한 모눈이 나타내는 소수는?',            answer:'0.37',   choices:['0.37','3.7','0.07'],      g:'mid' },
+    { hund:50, q:'모눈의 절반이 색칠됐어요. 소수로 나타내면?', answer:'0.5',    choices:['0.5','0.05','5'],         g:'mid' },
+    { hund:3,  q:'세 칸만 색칠됐어요. 소수로 나타내면?',       answer:'0.03',   choices:['0.03','0.3','3'],         g:'mid' },
+    { hund:70, q:'색칠한 부분을 분수로 나타내면?',            answer:'70/100', choices:['70/100','7/100','70/10'], g:'mid' },
+    { hund:25, q:'0.1이 2개, 0.01이 5개인 수는?',             answer:'0.25',   choices:['0.25','0.52','2.5'],      g:'high' }
+  ];
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var a=arr.slice();
+    for(var i=a.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+  function quizFor(grade,rand){
+    var pool=(grade==='high')?QUIZ_POOL.slice():QUIZ_POOL.filter(function(q){ return q.g==='mid'; });
+    return shuffled(pool,rand);
+  }
+  function gradeAnswer(q,v){ return String(v)===String(q.answer); }
+
+  var API={ GRADES:GRADES, STEP_STYLE:STEP_STYLE, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            snap01:snap01, initialHund:initialHund, applyHundPure:applyHundPure,
+            cellTarget:cellTarget, readout:readout,
+            LOW_MISSIONS:LOW_MISSIONS, MID_MISSIONS:MID_MISSIONS, missionsFor:missionsFor,
+            QUIZ_POOL:QUIZ_POOL, quizFor:quizFor, shuffled:shuffled, gradeAnswer:gradeAnswer };
+  if(typeof window!=='undefined') window.DecCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var DC=window.DecCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return DC.GRADES[grade]; }
+  var cfgValue=(Q.get('value')!=null)?+Q.get('value'):null;
+
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var hund=DC.initialHund(grade,cfgValue);
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  var magicShown=false, pred=null, revealing=false;
+  var flashOn=false;                 /* 이 렌더에서 교환 마법을 터뜨릴지(1회성) */
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var BEAT_MS=window.__K3_FAST?60:900;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return DC.missionsFor(grade); }
+  function seedHund(){ return (mode==='mission')?0:DC.initialHund(grade,cfgValue); }
+  function shuffleQuiz(){ qList=DC.quizFor(grade); qIdx=0; qScore=0; qCount=0; qLock=false; }
+
+  /* ── 와우② — 모든 변경의 단일 진입 ── */
+  function applyHund(next){
+    var prevRow=Math.floor(hund/10);
+    var r=DC.applyHundPure(hund,next);
+    var ev=r.event;
+
+    /* 와우⑤ — 합체 «직전»에 예측을 묻는다(중·고 · 1회) */
+    if(ev==='merge'&&!magicShown&&G().frac&&mode==='free'&&!revealing){
+      magicShown=true; revealing=true;
+      snd('charge');
+      K3.cards.predict('모눈이 꽉 차려고 해요. <b>0.1짜리 줄이 10개</b>가 되면 얼마가 될까요?',
+        [{id:'p010', label:'① 0.10'},
+         {id:'one',  label:'② 1'},
+         {id:'ten',  label:'③ 10'}]
+      ).then(function(id){
+        pred=id;
+        revealing=false;
+        doApply(r,prevRow);
+        setTimeout(function(){
+          var okP=(pred==='one');
+          K3.cards.result(
+            '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞아요!':'🤔 0.1이 10개면 1이에요!')+'</h3>'
+            +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+            +'0.1짜리 줄이 <b>10개</b> 모이자 100칸이 한 판으로 합쳐졌어요 — 이 판 전체가 <b>1</b>이에요.<br>'
+            +'소수점 아래에서도 <b>10칸이 차면 한 자리 위로</b> 올라가요. '
+            +'낱개 10개가 십 한 묶음이 되던 것과 <b>똑같은 10 : 1 교환</b>이에요.</p>',
+            [{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+          );
+        }, window.__K3_FAST?60:1100);
+      });
+      return;
+    }
+    doApply(r,prevRow);
+  }
+  function doApply(r,prevRow){
+    hund=r.hund;
+    if(r.event==='merge'){
+      snd('whoosh'); flashOn=true;
+      setTimeout(function(){ snd('chime'); }, window.__K3_FAST?20:400);   /* 합체 완료 */
+    } else if(r.event==='fill'){
+      var nowRow=Math.floor(hund/10);
+      snd(nowRow>prevRow?'pop':'tap');    /* 줄이 완성되면 pop */
+    }
+    render();
+    if(mode==='mission') checkMission();
+  }
+  function act(d){
+    if(revealing) return;
+    if(d==='reset'){ snd('select'); hund=seedHund(); magicShown=false; pred=null; render(); if(mode==='mission') checkMission(); return; }
+    applyHund(hund+d);
+  }
+  function tapCell(k){
+    if(revealing||mode==='quiz') return;
+    applyHund(DC.cellTarget(grade,k));
+  }
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=DC.gradeAnswer(q,v);
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+DC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){ if(b.dataset.g!==grade) setGrade(b.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+DC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){ if(b.dataset.m!==mode) setMode(b.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 채워 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      hund=q.hund;                        /* 퀴즈는 hund를 덮어쓴다 */
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      s=DC.shuffled(qq.choices).map(function(v){    /* 보기는 매 렌더 셔플 = 찍기 방지(v2) */
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else {
+      G().steps.forEach(function(d){
+        var sty=DC.STEP_STYLE[d];
+        s+='<button class="ck-btn minus" data-d="-'+d+'" style="--c1:'+sty.c+'">－'+sty.label+'</button>'
+          +'<button class="ck-btn" data-d="'+d+'" style="--c1:'+sty.c+';--c2:'+sty.c+'99">＋'+sty.label+'</button>';
+      });
+      s+='<button class="ck-btn ghost" data-d="reset" title="처음으로">↺</button>';
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('[data-d]').forEach(function(b){
+      b.addEventListener('click',function(){
+        act(b.dataset.d==='reset'?'reset':(+b.dataset.d));
+      });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){ answer(b.dataset.v); });
+    });
+
+    render();
+  }
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    mStep=0; mDone=false; mLock=false; magicShown=false; pred=null; revealing=false;
+    hund=seedHund();
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false; magicShown=false; pred=null; revealing=false;
+    hund=seedHund();                    /* 퀴즈에서 나오면 반드시 재시드(퀴즈 hund 누수 방지) */
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 — 유광 타일 모눈판 ═══ */
+  var VBW=820, VBH=400;
+  function svgEl(t,a){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in a)e.setAttribute(k,a[k]); return e; }
+
+  function render(){
+    var desk=$('desk');
+    var fx=flashOn; flashOn=false;      /* 1회성 스냅샷 */
+    var merged=(hund===100);
+
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'dcSvg',
+      class:(merged?'dc-merged':''),
+      style:'display:block;width:min(90vw,780px);height:auto;max-height:54vh' });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="dcSh" x="-15%" y="-15%" width="130%" height="130%">'
+      +'<feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.42"/></filter>'
+      +'<linearGradient id="dcOne" x1="0" y1="0" x2="0.3" y2="1">'
+      +'<stop offset="0" stop-color="#8FF3C9"/><stop offset=".55" stop-color="#3EE6B0"/><stop offset="1" stop-color="#12B886"/></linearGradient>'
+      +'<linearGradient id="dcTen" x1="0" y1="0" x2="0.3" y2="1">'
+      +'<stop offset="0" stop-color="#9CC4FA"/><stop offset=".55" stop-color="#5B9BF0"/><stop offset="1" stop-color="#2E62B8"/></linearGradient>'
+      +'<linearGradient id="dcGloss" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="rgba(255,255,255,0.42)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>';
+    svg.appendChild(d);
+
+    var grid=Math.min(VBH-60,360), cell=grid/10;
+    var x0=(VBW-grid)/2-60, y0=(VBH-grid)/2;
+    var g=svgEl('g',{ filter:'url(#dcSh)' });
+
+    var k=0;
+    for(var r=0;r<10;r++){
+      for(var c=0;c<10;c++){
+        var on=k<hund;
+        var rowFull=(Math.floor(hund/10)>r);   /* ★ 완성된 줄 = 진한 파랑으로 «승격» */
+        var fill=on?(rowFull?'url(#dcTen)':'url(#dcOne)'):'rgba(255,255,255,0.07)';
+        g.appendChild(svgEl('rect',{ x:x0+c*cell, y:y0+r*cell, width:cell, height:cell,
+          fill:fill, stroke:'rgba(255,255,255,0.3)', 'stroke-width':1.5,
+          'data-k':k, 'data-on':(on?'1':'0'), 'data-row':(rowFull?'1':'0'),
+          class:'dc-cell dc-seam'+(!on&&mode!=='quiz'?' dc-fillable':'') }));
+        if(on) g.appendChild(svgEl('rect',{ x:x0+c*cell+3, y:y0+r*cell+2.5, width:cell-6, height:cell*0.24, rx:3,
+          fill:'url(#dcGloss)', 'pointer-events':'none' }));
+        k++;
+      }
+    }
+    /* 판 테 + 0.1 경계선 (v2 죽은 삼항 제거 — 전부 2px) */
+    for(var rr=1;rr<10;rr++){
+      g.appendChild(svgEl('line',{ x1:x0, y1:y0+rr*cell, x2:x0+grid, y2:y0+rr*cell,
+        stroke:'rgba(255,255,255,0.45)', 'stroke-width':2, 'pointer-events':'none', class:'dc-seam' }));
+    }
+    g.appendChild(svgEl('rect',{ x:x0, y:y0, width:grid, height:grid, rx:6,
+      fill:'none', stroke:'#EAF2FB', 'stroke-width':5, 'pointer-events':'none' }));
+    svg.appendChild(g);
+
+    /* ★ 저학년 닻 — 채워진 0.1 줄마다 오른쪽에 「0.1」 금속 칩을 쌓는다 */
+    if(grade==='low'){
+      var rows=Math.floor(hund/10), cx=x0+grid+26, cw=66, ch=cell*0.74;
+      for(var ri=0;ri<rows;ri++){
+        var cy=y0+ri*cell+(cell-ch)/2;
+        var chip=svgEl('g',{ class:'dc-chip0'+(ri===rows-1?' dc-chip':'') });
+        chip.appendChild(svgEl('rect',{ x:cx, y:cy, width:cw, height:ch, rx:8,
+          fill:'url(#dcTen)', stroke:'rgba(255,255,255,0.35)', 'stroke-width':1.5, filter:'url(#dcSh)' }));
+        var lt=svgEl('text',{ x:cx+cw/2, y:cy+ch/2, 'text-anchor':'middle', 'dominant-baseline':'central',
+          'font-family':'var(--kedu-title)', 'font-size':23, 'font-weight':800, fill:'#fff' });
+        lt.textContent='0.1'; chip.appendChild(lt);
+        svg.appendChild(chip);
+      }
+    }
+
+    /* 와우④ — 10:1 교환 마법 (1회 가드 없음 = 볼 때마다 다시 즐겁다) */
+    if(fx){
+      svg.appendChild(svgEl('rect',{ x:x0-5, y:y0-5, width:grid+10, height:grid+10, rx:8,
+        fill:'none', stroke:'#FFD43B', 'stroke-width':6, 'pointer-events':'none', class:'dc-merge' }));
+      var fg=svgEl('g',{ class:'dc-flash', 'pointer-events':'none' });
+      fg.appendChild(svgEl('rect',{ x:VBW/2-296, y:2, width:592, height:34, rx:17,
+        fill:'#7048E8', opacity:'0.96', filter:'url(#dcSh)' }));
+      var fl=svgEl('text',{ x:VBW/2, y:20, 'text-anchor':'middle', 'dominant-baseline':'central',
+        'font-family':'var(--kedu-title)', 'font-size':21, 'font-weight':800, fill:'#fff' });
+      fl.textContent='🔁 0.1이 10개 = 1! 소수점 아래도 10칸이 차면 1로 합쳐져요 (10 : 1 교환)';
+      fg.appendChild(fl); svg.appendChild(fg);
+    }
+
+    desk.innerHTML=''; desk.appendChild(svg);
+
+    if(mode!=='quiz'){
+      svg.querySelectorAll('.dc-cell').forEach(function(p){
+        p.addEventListener('click',function(){ tapCell(+p.dataset.k); });
+      });
+    }
+    updateStatus();
+    updateButtons();
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">한 줄(10칸)=0.1, 한 칸=0.01! 색칠된 칸을 세어 답을 골라요.</div>';
+      return;
+    }
+    var R=DC.readout(grade,hund);
+    if(!G().frac){
+      /* ★ 저학년 — 분수 표시 없음 */
+      st.innerHTML='<div class="timeread"><span class="big">'+R.value+'</span></div>'
+        +'<div class="hint">(0.1짜리 줄이 <b>'+R.tenths+'</b>개!)'
+        +'<br><span class="grabline">✋ 빈 칸을 누르면 그 줄까지 채워져요</span></div>';
+      return;
+    }
+    st.innerHTML='<div class="timeread"><span class="big">'+R.value+'</span>'
+      +'<span class="u"> ＝ </span>'
+      +'<span class="dc-frac"><span class="n">'+R.frac.n+'</span><span class="bar"></span><span class="d">'+R.frac.d+'</span></span>'
+      +'</div>'
+      +'<div class="hint">(0.1이 <b>'+R.tenths+'</b>개, 0.01이 <b>'+R.ones+'</b>개)'
+      +'<br><span class="grabline">✋ 빈 칸을 직접 눌러도 채워져요</span></div>';
+  }
+
+  function updateButtons(){
+    var ct=$('ctrlSlot');
+    G().steps.forEach(function(dd){
+      var p=ct.querySelector('[data-d="'+dd+'"]'), m=ct.querySelector('[data-d="-'+dd+'"]');
+      if(p) p.disabled=revealing||(hund+dd>100);
+      if(m) m.disabled=revealing||(hund-dd<0);
+    });
+    var rb=ct.querySelector('[data-d="reset"]'); if(rb) rb.disabled=revealing;
+  }
+
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(M[mStep].check(hund)){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false; mStep++;
+        if(mStep>=M.length){ mStep=M.length-1; mDone=true; }
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  if(mode==='mission') hund=0;
+  build();
+
+  window.DecApp={
+    get grade(){return grade;}, get mode(){return mode;}, get hund(){return hund;},
+    get value(){return hund/100;}, get revealing(){return revealing;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qScore(){return qScore;}, get qCount(){return qCount;},
+    get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    setGrade:setGrade, setMode:setMode, act:act, tapCell:tapCell, answer:answer,
+    setHund:function(h){ applyHund(h); }, build:build
+  };
+})();
+</script>
+</body>
+</html>
