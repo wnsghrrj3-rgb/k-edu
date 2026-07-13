@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-edu | 케이에듀</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<style id="kedu-title-font">/* 제목 폰트 토큰 — 학교안심 모험가 (허브 계승, 생태계설계 §4) */
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+</style>
+<style id="kedu-hub-tokens">
+/* ══════════════════════════════════════════════════════════════
+   허브 표준 v1 시안 — 「박물관의 밤」 확장 (생태계설계 §4)
+   계승: museum/무대미술_표준.md §1 토큰 (밤 4단계·놋쇠·상아·이징)
+   분기: 허브는 전시가 아니라 도구다. 아래 3개는 의도적 예외 —
+     ① 동사 버튼 UI 허용 (쉬움 헌법 §0-5가 상위 규범)
+     ② 색지 6색 동시 노출 (저학년 학년 식별 — 뮤지엄 §2-4 예외)
+     ③ 카드 radius 16px (뮤지엄 8px 상한 예외 — 저학년 가드)
+   준수: 순백 0 · 그림문자 0 · 성취표기 0 · 축포 0
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  /* 밤 — 4단계 (뮤지엄 그대로) */
+  --night-0:#050508;
+  --night-1:#07070c;
+  --night-2:#0d0d16;
+  --night-3:#151422;
+
+  /* 놋쇠 — 유일한 금속 */
+  --brass:#c9a961;
+  --brass-dim:#8a733f;
+  --brass-glow:rgba(201,169,97,.30);
+
+  /* 상아 — 순백 금지 */
+  --ink:#f2ead8;
+  --ink-dim:#a89e88;
+  --ink-faint:#5f584a;
+
+  /* 원목 — 허브 신설(선반·문짝) */
+  --wood-1:#2a2118;
+  --wood-2:#3a2d1f;
+  --wood-edge:rgba(201,169,97,.18);
+
+  /* 색지 6 — 허브 신설. 물 빠진 색지(밤에서 은은히 뜬다) */
+  --paper-1:#b8695f;  /* 1학년 살구 */
+  --paper-2:#b9834a;  /* 2학년 호박 */
+  --paper-3:#6f9464;  /* 3학년 이끼 */
+  --paper-4:#5a9a95;  /* 4학년 청록 */
+  --paper-5:#5f7fae;  /* 5학년 쪽빛 */
+  --paper-6:#8a6fa8;  /* 6학년 자주 */
+
+  /* 과목 악센트 (뮤지엄 관 색 계승 + 국어 신설) */
+  --korean:#e0857a; --math:#7c8cff; --social:#9b7bf5; --science:#5ad1c0;
+
+  /* 빛 */
+  --spot-warm:rgba(242,234,216,.10);
+
+  /* 모션 */
+  --ease-curtain:cubic-bezier(.77,0,.18,1);
+  --ease-rise:cubic-bezier(.2,.9,.25,1);
+  --ease-settle:cubic-bezier(.3,1.4,.4,1);
+
+  --title:'Hakgyoansim Moheomga','Jua',sans-serif;
+  --serif:'Gowun Batang',serif;
+  --body:'Gowun Dodum',sans-serif;
+  --num:'Jua',sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+::selection{background:var(--brass-glow);color:var(--ink)}
+:focus-visible{outline:1px solid var(--ink);outline-offset:3px}
+
+body{
+  font-family:var(--body);
+  background:var(--night-1);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  -webkit-tap-highlight-color:transparent;
+}
+/* 천장 스포트 — 무대는 어둡고 위에서 빛이 내린다 */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--spot-warm), transparent 60%),
+    radial-gradient(100% 100% at 50% 50%, transparent 45%, var(--night-0) 100%);
+}
+
+/* ── 상단바 (한 지붕 한 상단바 — §0-7) ─────────────────── */
+.bar{
+  position:relative;z-index:2;height:60px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;border-bottom:1px solid rgba(201,169,97,.14);
+}
+.bar-logo{
+  font-family:var(--title);font-size:22px;letter-spacing:.06em;
+  color:var(--ink);background:none;border:none;cursor:pointer;
+  padding:8px 6px;display:flex;align-items:center;gap:8px;
+}
+.bar-logo .dot{width:6px;height:6px;border-radius:50%;background:var(--brass);box-shadow:0 0 10px var(--brass-glow)}
+.bar-right{display:flex;align-items:center;gap:6px}
+.bar-btn{
+  min-height:44px;padding:0 14px;display:inline-flex;align-items:center;gap:7px;
+  background:none;border:1px solid rgba(201,169,97,.22);border-radius:8px;
+  color:var(--ink-dim);font-family:var(--body);font-size:14px;cursor:pointer;
+  text-decoration:none;transition:color .18s,border-color .18s,background .18s;
+}
+.bar-btn:hover{color:var(--ink);border-color:var(--brass);background:rgba(201,169,97,.06)}
+.bar-btn svg{width:17px;height:17px}
+
+main{flex:1;position:relative;z-index:1;width:100%;max-width:940px;margin:0 auto;padding:38px 20px 60px}
+
+/* ── 화면 전환 ─────────────────────────────────────────── */
+.screen{display:none}
+.screen.on{display:block;animation:rise .5s var(--ease-rise) both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ── 표제 ──────────────────────────────────────────────── */
+.stage-title{
+  font-family:var(--serif);font-weight:700;
+  font-size:clamp(21px,3.2vw,28px);letter-spacing:.12em;
+  color:var(--ink);text-align:center;margin-bottom:8px;
+}
+.stage-sub{
+  font-family:var(--body);font-size:14px;letter-spacing:.08em;
+  color:var(--ink-faint);text-align:center;margin-bottom:34px;
+}
+
+/* ── H0: 두 문 (§1 — 교사와 학생은 대등하다) ───────────── */
+.doors{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:680px;margin:0 auto}
+.door{
+  position:relative;overflow:hidden;
+  min-height:230px;padding:30px 22px 26px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:linear-gradient(168deg,var(--wood-2),var(--wood-1) 62%,var(--night-2));
+  border:1px solid var(--wood-edge);border-radius:16px;
+  cursor:pointer;text-align:center;
+  transition:transform .32s var(--ease-rise),border-color .32s,box-shadow .32s;
+  box-shadow:0 14px 40px rgba(0,0,0,.55);
+}
+/* 문틈으로 새는 빛 */
+.door::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(90% 55% at 50% 0%,rgba(242,234,216,.09),transparent 68%);
+  opacity:.55;transition:opacity .32s;
+}
+.door:hover,.door:focus-visible{transform:translateY(-4px);border-color:var(--brass);box-shadow:0 22px 56px rgba(0,0,0,.65),0 0 0 1px var(--brass-glow)}
+.door:hover::after{opacity:1}
+.door-ic{width:56px;height:56px;color:var(--brass);flex-shrink:0}
+.door-ic svg{width:100%;height:100%}
+.door-name{font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.16em;color:var(--ink)}
+/* 라벨은 명사가 아니라 동사 (§0-5) */
+.door-verb{
+  font-family:var(--title);font-size:19px;letter-spacing:.02em;color:var(--brass);
+  padding-top:4px;
+}
+.door-again{
+  position:absolute;top:12px;right:12px;
+  font-family:var(--body);font-size:11px;letter-spacing:.14em;
+  color:var(--night-1);background:var(--brass);
+  padding:3px 9px;border-radius:6px;display:none;
+}
+.door.last .door-again{display:block}
+
+/* 조용한 옆문들 */
+.side-doors{max-width:680px;margin:22px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.side-door{
+  min-height:56px;padding:14px 18px;display:flex;align-items:center;gap:12px;
+  background:var(--night-2);border:1px solid rgba(201,169,97,.14);border-radius:10px;
+  text-decoration:none;color:var(--ink-dim);
+  transition:color .2s,border-color .2s,background .2s;
+}
+.side-door:hover{color:var(--ink);border-color:var(--brass-dim);background:var(--night-3)}
+.side-door svg{width:19px;height:19px;flex-shrink:0;color:var(--brass-dim)}
+.side-door b{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:.1em;color:var(--ink);display:block}
+.side-door span{font-size:12px;color:var(--ink-faint)}
+
+/* ── 되돌아가기 (§0-7 공통 복귀) ───────────────────────── */
+.back{
+  min-height:44px;padding:0 12px 0 6px;margin-bottom:22px;
+  display:inline-flex;align-items:center;gap:7px;
+  background:none;border:none;cursor:pointer;
+  font-family:var(--body);font-size:14px;color:var(--ink-faint);
+  transition:color .18s;
+}
+.back:hover{color:var(--ink)}
+.back svg{width:15px;height:15px}
+
+/* ── H1: 학년 색지 6 ───────────────────────────────────── */
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grade{
+  position:relative;overflow:hidden;
+  min-height:132px;padding:20px 12px 16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  border:1px solid rgba(0,0,0,.35);border-radius:16px;cursor:pointer;
+  background:linear-gradient(160deg,var(--pc),color-mix(in srgb,var(--pc) 72%,#000));
+  box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(242,234,216,.14);
+  transition:transform .28s var(--ease-rise),box-shadow .28s;
+}
+/* 색지 질감 */
+.grade::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(112deg,rgba(0,0,0,.06) 0 2px,transparent 2px 5px);
+}
+.grade:hover,.grade:focus-visible{transform:translateY(-5px);box-shadow:0 20px 46px rgba(0,0,0,.6),inset 0 1px 0 rgba(242,234,216,.22),0 0 0 1px var(--brass-glow)}
+.grade-n{font-family:var(--num);font-size:52px;line-height:1;color:var(--night-1);text-shadow:0 1px 0 rgba(242,234,216,.28)}
+.grade-l{font-family:var(--title);font-size:17px;color:var(--night-1);opacity:.86}
+.grade-last{
+  position:absolute;top:9px;right:9px;font-family:var(--body);font-size:10.5px;letter-spacing:.12em;
+  color:var(--night-1);background:rgba(242,234,216,.72);padding:2px 8px;border-radius:5px;display:none;
+}
+.grade.last .grade-last{display:block}
+
+/* ── H2: 과목 ──────────────────────────────────────────── */
+.crumb{
+  display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;
+}
+.crumb-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 15px;border-radius:8px;
+  background:linear-gradient(160deg,var(--pc,var(--wood-2)),color-mix(in srgb,var(--pc,var(--wood-1)) 70%,#000));
+  font-family:var(--title);font-size:16px;color:var(--night-1);
+}
+.sem-tabs{display:flex;gap:6px;margin-left:auto}
+.sem-tab{
+  min-height:38px;padding:0 15px;border-radius:8px;cursor:pointer;
+  background:none;border:1px solid rgba(201,169,97,.22);
+  font-family:var(--body);font-size:13.5px;color:var(--ink-faint);transition:all .18s;
+}
+.sem-tab:hover{color:var(--ink);border-color:var(--brass-dim)}
+.sem-tab.on{background:rgba(201,169,97,.12);border-color:var(--brass);color:var(--brass)}
+
+.subjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
+.subject{
+  position:relative;overflow:hidden;
+  min-height:150px;padding:24px 14px 20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:var(--night-2);border:1px solid rgba(201,169,97,.16);border-radius:16px;
+  cursor:pointer;
+  transition:transform .28s var(--ease-rise),border-color .28s,box-shadow .28s,background .28s;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+/* 과목 스포트 — 화면당 악센트 1색, 카드 내부에만 */
+.subject::after{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .28s;
+  background:radial-gradient(80% 60% at 50% 0%,color-mix(in srgb,var(--sc) 26%,transparent),transparent 70%);
+}
+.subject:hover,.subject:focus-visible{transform:translateY(-5px);border-color:var(--sc);background:var(--night-3);box-shadow:0 20px 46px rgba(0,0,0,.6)}
+.subject:hover::after{opacity:1}
+.subject-ic{width:46px;height:46px;color:var(--sc);position:relative;z-index:1}
+.subject-ic svg{width:100%;height:100%}
+.subject-n{font-family:var(--title);font-size:20px;color:var(--ink);position:relative;z-index:1}
+.subject.dim{opacity:.34;filter:saturate(.4);cursor:default}
+.subject.dim:hover{transform:none;border-color:rgba(201,169,97,.16);background:var(--night-2);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.subject.dim:hover::after{opacity:0}
+.subject-soon{font-family:var(--body);font-size:11.5px;letter-spacing:.1em;color:var(--ink-faint);position:relative;z-index:1}
+
+/* ── H3: 선생님 선반 ───────────────────────────────────── */
+.shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.tool{
+  min-height:88px;padding:18px 20px;display:flex;align-items:center;gap:16px;
+  background:linear-gradient(160deg,var(--night-3),var(--night-2));
+  border:1px solid rgba(201,169,97,.16);border-radius:16px;
+  text-decoration:none;color:var(--ink);
+  transition:transform .26s var(--ease-rise),border-color .26s,box-shadow .26s;
+  box-shadow:0 8px 26px rgba(0,0,0,.45);
+}
+.tool:hover{transform:translateY(-3px);border-color:var(--brass);box-shadow:0 16px 40px rgba(0,0,0,.6)}
+.tool-ic{width:34px;height:34px;flex-shrink:0;color:var(--brass)}
+.tool-ic svg{width:100%;height:100%}
+.tool-n{font-family:var(--title);font-size:18px;color:var(--ink);margin-bottom:3px}
+.tool-d{font-size:12.5px;color:var(--ink-faint);line-height:1.5}
+
+/* ── 알림(토스트) ──────────────────────────────────────── */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,14px);
+  padding:13px 22px;border-radius:10px;
+  background:var(--night-3);border:1px solid var(--brass-dim);
+  color:var(--ink);font-size:14px;
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:20;
+  box-shadow:0 12px 36px rgba(0,0,0,.7);
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+footer{
+  position:relative;z-index:1;flex-shrink:0;
+  padding:26px 20px 30px;text-align:center;
+  border-top:1px solid rgba(201,169,97,.1);
+}
+footer p{font-size:11.5px;color:var(--ink-faint);line-height:1.9;letter-spacing:.03em}
+footer a{color:var(--ink-faint);text-decoration:none;margin:0 7px}
+footer a:hover{color:var(--ink-dim)}
+
+/* ── 세로 화면 ─────────────────────────────────────────── */
+@media(max-width:640px){
+  main{padding:26px 16px 44px}
+  .doors{grid-template-columns:1fr;gap:14px}
+  .door{min-height:150px;flex-direction:row;justify-content:flex-start;gap:18px;text-align:left;padding:22px}
+  .door-ic{width:44px;height:44px}
+  .door-txt{display:flex;flex-direction:column;gap:4px}
+  .side-doors{grid-template-columns:1fr}
+  .grades{grid-template-columns:repeat(2,1fr);gap:12px}
+  .grade{min-height:112px}
+  .grade-n{font-size:44px}
+  .subjects{grid-template-columns:repeat(2,1fr)}
+  .sem-tabs{margin-left:0;width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- 라인 심볼 정의 (이모지 0 — 무대미술 표준 §2-2 준수) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <g id="i-teacher" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M7 9h7M7 12.5h4"/><path d="M12 17v3M9 20h6"/>
+  </g>
+  <g id="i-student" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 8.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1Z"/>
+    <path d="M9 8.5V6a3 3 0 0 1 6 0v2.5"/><path d="M4 13.5h16"/><path d="M11 13.5v2.5h2v-2.5"/>
+  </g>
+  <g id="i-korean" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 6.5C10 5 7.5 4.5 4 4.8v13.5c3.5-.3 6 .2 8 1.7 2-1.5 4.5-2 8-1.7V4.8c-3.5-.3-6 .2-8 1.7Z"/><path d="M12 6.5v13.5"/>
+  </g>
+  <g id="i-math" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 7h6M7 4v6"/><path d="M14 7h6"/><path d="M14 15.5h6M17 12.5v6"/><path d="M4 14l4.5 4.5M8.5 14L4 18.5"/>
+  </g>
+  <g id="i-social" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="3.6" ry="8.5"/><path d="M3.8 9.2h16.4M3.8 14.8h16.4"/>
+  </g>
+  <g id="i-science" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.5 3.5h5M10.5 3.5v6L5.2 18.2A1.6 1.6 0 0 0 6.6 20.5h10.8a1.6 1.6 0 0 0 1.4-2.3L13.5 9.5v-6"/><path d="M7.7 14.5h8.6"/>
+  </g>
+  <g id="i-museum" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 9.5 12 4l8 5.5"/><path d="M6 9.5v9M10 9.5v9M14 9.5v9M18 9.5v9"/><path d="M3.5 20.5h17"/>
+  </g>
+  <g id="i-game" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2.5" y="7.5" width="19" height="10" rx="4"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="16" cy="11.8" r=".9" fill="currentColor"/><circle cx="18.4" cy="14.2" r=".9" fill="currentColor"/>
+  </g>
+  <g id="i-lesson" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="3.5" width="16" height="17" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h5"/>
+  </g>
+  <g id="i-lab" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 8.5 12 4.5l7 4v7l-7 4-7-4Z"/><path d="M12 12.5 5 8.5M12 12.5l7-4M12 12.5v7"/>
+  </g>
+  <g id="i-make" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.5 4.5 19.5 9.5 9 20H4v-5Z"/><path d="M12.5 6.5 17.5 11.5"/>
+  </g>
+  <g id="i-box" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3.5 7.5 12 4l8.5 3.5v9L12 20l-8.5-3.5Z"/><path d="M3.5 7.5 12 11l8.5-3.5M12 11v9"/>
+  </g>
+  <g id="i-art" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-.9 2-1.8s-.7-1.7-.7-2.5c0-.8.7-1.4 1.6-1.4h1.6a4 4 0 0 0 4-4c0-4-4-7.3-8.5-7.3Z"/>
+    <circle cx="8" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor"/><circle cx="16" cy="10" r="1.1" fill="currentColor"/>
+  </g>
+  <g id="i-back" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.5 5 8 12l6.5 7"/>
+  </g>
+</defs>
+</svg>
+
+<div class="bar">
+  <button class="bar-logo" onclick="goHome()" aria-label="케이에듀 처음으로"><span class="dot"></span>K-edu</button>
+  <div class="bar-right">
+    <a class="bar-btn" href="/kple/play.html"><svg><use href="#i-game"/></svg>게임 참가</a>
+    <a class="bar-btn" href="/auth/" id="bar-login">로그인</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- ══ H0 · 두 문 ══════════════════════════════════════ -->
+  <section class="screen on" id="h-door">
+    <div class="stage-title">케이에듀</div>
+    <div class="stage-sub">문을 고르세요</div>
+
+    <div class="doors">
+      <div class="door" id="door-teacher" tabindex="0" role="button" onclick="pickRole('teacher')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('teacher')}">
+        <span class="door-again">지난번 이 문</span>
+        <span class="door-ic"><svg viewBox="0 0 24 24"><use href="#i-teacher"/></svg></span>
+        <span class="door-txt">
+          <span class="door-name">선생님</span>
+          <span class="door-verb">수업 시작하기</span>
+        </span>
+      </div>
+      <div class="door" id="door-student" tabindex="0" role="button" onclick="pickRole('student')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('student')}">
+        <span class="door-again">지난번 이 문</span>
+        <span class="door-ic"><svg viewBox="0 0 24 24"><use href="#i-student"/></svg></span>
+        <span class="door-txt">
+          <span class="door-name">학생</span>
+          <span class="door-verb">공부하러 가기</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="side-doors">
+      <a class="side-door" href="/museum/">
+        <svg viewBox="0 0 24 24"><use href="#i-museum"/></svg>
+        <span><b>케이뮤지엄</b><span>배우는 곳이 아니라, 반하는 곳</span></span>
+      </a>
+      <a class="side-door" href="/kple/play.html">
+        <svg viewBox="0 0 24 24"><use href="#i-game"/></svg>
+        <span><b>방코드로 참가</b><span>선생님이 연 게임에 들어가기</span></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ══ H1 · 학년 ═══════════════════════════════════════ -->
+  <section class="screen" id="h-grade">
+    <button class="back" onclick="goHome()"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>처음으로</button>
+    <div class="stage-title">몇 학년인가요</div>
+    <div class="stage-sub">고르면 바로 시작해요</div>
+    <div class="grades" id="grade-grid"></div>
+  </section>
+
+  <!-- ══ H2 · 과목 ═══════════════════════════════════════ -->
+  <section class="screen" id="h-subject">
+    <button class="back" onclick="nav('h-grade')"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>학년 다시 고르기</button>
+    <div class="crumb">
+      <span class="crumb-badge" id="crumb-badge"></span>
+      <div class="sem-tabs" id="sem-tabs">
+        <button class="sem-tab" data-sem="1" onclick="pickSemester(1)">1학기</button>
+        <button class="sem-tab" data-sem="2" onclick="pickSemester(2)">2학기</button>
+      </div>
+    </div>
+    <div class="stage-title">무엇을 공부할까요</div>
+    <div class="stage-sub">과목을 고르세요</div>
+    <div class="subjects" id="subject-grid"></div>
+  </section>
+
+  <!-- ══ H3 · 선생님 선반 ════════════════════════════════ -->
+  <section class="screen" id="h-teacher">
+    <button class="back" onclick="goHome()"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>처음으로</button>
+    <div class="stage-title">수업 시작하기</div>
+    <div class="stage-sub">쓸 것을 고르세요</div>
+    <div class="shelf">
+      <a class="tool" href="/kedu/teacher/">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-lesson"/></svg></span>
+        <span><span class="tool-n">케이티처</span><span class="tool-d">차시를 열어 수업을 진행해요</span></span>
+      </a>
+      <a class="tool" href="/kedu/teacher/klab_preview.html">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-lab"/></svg></span>
+        <span><span class="tool-n">케이랩</span><span class="tool-d">만지는 교구 · 과학과 수학</span></span>
+      </a>
+      <a class="tool" href="/classwork/">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-box"/></svg></span>
+        <span><span class="tool-n">케이박스</span><span class="tool-d">아이들에게 보내고 다시 받아요</span></span>
+      </a>
+      <a class="tool" href="/kple/host.html">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-game"/></svg></span>
+        <span><span class="tool-n">케이플</span><span class="tool-d">다 같이 하는 퀴즈 게임</span></span>
+      </a>
+      <a class="tool" href="/kmake/">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-make"/></svg></span>
+        <span><span class="tool-n">케이메이커</span><span class="tool-d">상장 · 학습지 · 카드를 만들어요</span></span>
+      </a>
+      <a class="tool" href="/draw/">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-art"/></svg></span>
+        <span><span class="tool-n">케이아트</span><span class="tool-d">자유롭게 그리는 캔버스</span></span>
+      </a>
+      <a class="tool" href="/museum/">
+        <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-museum"/></svg></span>
+        <span><span class="tool-n">케이뮤지엄</span><span class="tool-d">반하는 전시 · 평가도 미션도 없어요</span></span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    Copyright © 2025 <strong>K-edu</strong> · Developed by Choe Jun-ho (Kumsung Elementary School)
+    <br>
+    <a href="/privacy/">개인정보 처리방침</a><a href="/terms/">서비스 이용약관</a>
+  </p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// 케이에듀 새 허브 v1 (생태계설계 P1-a 황금샘플)
+// 규약: 순수 로직 함수 → window 노출 → jsdom 하니스가 그대로 검사
+// ══════════════════════════════════════════════════════════
+
+// ── 데이터 ────────────────────────────────────────────────
+var GRADES = [1,2,3,4,5,6];
+var SUBJECTS = {
+  korean : {n:'국어', ic:'i-korean',  c:'var(--korean)'},
+  math   : {n:'수학', ic:'i-math',    c:'var(--math)'},
+  social : {n:'사회', ic:'i-social',  c:'var(--social)'},
+  science: {n:'과학', ic:'i-science', c:'var(--science)'}
+};
+// 학년별 과목 편성 (저학년은 국어·수학만)
+function subjectsFor(g){ return g<=2 ? ['korean','math'] : ['korean','math','social','science']; }
+
+// [중요] 새 학년·학기·과목 라이브 시 여기만 갱신 (허브 404 가드 — 라이브 index.html과 동일 계약)
+var CONTENT_MAP = {
+  '1-1': ['korean','math'],
+  '2-1': ['korean','math'],
+  '3-1': ['korean','math','science','social'],
+  '4-1': ['math','social']
+};
+function hasContent(g, s, subject){
+  var list = CONTENT_MAP[g+'-'+s];
+  return !!(list && list.indexOf(subject) !== -1);
+}
+function contentUrl(g, s, subject){
+  return '/grade'+g+'/semester'+s+'/'+subject+'/index.html';
+}
+
+// ── 상태 ──────────────────────────────────────────────────
+var state = { grade:null, semester:1, role:null };
+
+var LS = {
+  grade:'kedu_grade', semester:'kedu_semester', role:'kedu_last_role'
+};
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+
+// ── 라우팅 (§0-7 pushState 표준 — 2026-07-12 루트 허브 패턴 계승) ──
+var SCREEN_URL = {
+  'h-door'    : '/hub2/',
+  'h-teacher' : '/hub2/?role=teacher',
+  'h-grade'   : '/hub2/?role=student',
+  'h-subject' : '/hub2/?role=student&view=subject'
+};
+var CHAIN = {
+  'h-door'    : ['h-door'],
+  'h-teacher' : ['h-door','h-teacher'],
+  'h-grade'   : ['h-door','h-grade'],
+  'h-subject' : ['h-door','h-grade','h-subject']
+};
+
+// URL → 화면 id (순수)
+function screenFromSearch(search){
+  var p = new URLSearchParams(search || '');
+  var role = p.get('role');
+  if(role === 'teacher') return 'h-teacher';
+  if(role === 'student') return p.get('view') === 'subject' ? 'h-subject' : 'h-grade';
+  return 'h-door';
+}
+// 데이터 없으면 얕은 화면으로 강등 (순수)
+function demote(id, st){
+  if(id === 'h-subject' && !st.grade) return 'h-grade';
+  return id;
+}
+
+// ── 그리기 ────────────────────────────────────────────────
+function renderGrades(){
+  var last = +lsGet(LS.grade);
+  document.getElementById('grade-grid').innerHTML = GRADES.map(function(g){
+    return '<div class="grade'+(g===last?' last':'')+'" style="--pc:var(--paper-'+g+')" tabindex="0" role="button"'+
+      ' onclick="pickGrade('+g+')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();pickGrade('+g+')}">'+
+      '<span class="grade-last">지난번</span>'+
+      '<span class="grade-n">'+g+'</span><span class="grade-l">학년</span></div>';
+  }).join('');
+}
+
+function renderSubjects(){
+  var g = state.grade, s = state.semester;
+  var badge = document.getElementById('crumb-badge');
+  badge.textContent = g + '학년 ' + s + '학기';
+  badge.style.setProperty('--pc', 'var(--paper-'+g+')');
+
+  Array.prototype.forEach.call(document.querySelectorAll('.sem-tab'), function(t){
+    t.classList.toggle('on', +t.dataset.sem === s);
+  });
+
+  document.getElementById('subject-grid').innerHTML = subjectsFor(g).map(function(id){
+    var sub = SUBJECTS[id];
+    var ready = hasContent(g, s, id);
+    return '<div class="subject'+(ready?'':' dim')+'" style="--sc:'+sub.c+'"'+
+      (ready ? ' tabindex="0" role="button" onclick="goContent(\''+id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();goContent(\''+id+'\')}"' : '')+'>'+
+      '<span class="subject-ic"><svg viewBox="0 0 24 24"><use href="#'+sub.ic+'"/></svg></span>'+
+      '<span class="subject-n">'+sub.n+'</span>'+
+      (ready ? '' : '<span class="subject-soon">준비 중</span>')+
+    '</div>';
+  }).join('');
+}
+
+function prep(id){
+  id = demote(id, state);
+  if(id === 'h-grade')   renderGrades();
+  if(id === 'h-subject') renderSubjects();
+  if(id === 'h-door'){
+    var last = lsGet(LS.role);
+    var dt = document.getElementById('door-teacher'), ds = document.getElementById('door-student');
+    dt.classList.toggle('last', last === 'teacher');
+    ds.classList.toggle('last', last === 'student');
+  }
+  return id;
+}
+
+function show(id){
+  id = prep(id);
+  Array.prototype.forEach.call(document.querySelectorAll('.screen'), function(s){ s.classList.remove('on'); });
+  document.getElementById(id).classList.add('on');
+  return id;
+}
+function nav(id){
+  var shown = show(id);
+  history.pushState({screen:shown}, '', SCREEN_URL[shown] || '/hub2/');
+  window.scrollTo(0,0);
+}
+window.addEventListener('popstate', function(e){
+  show((e.state && e.state.screen) ? e.state.screen : screenFromSearch(location.search));
+});
+
+// ── 동작 ──────────────────────────────────────────────────
+function pickRole(role){
+  state.role = role;
+  lsSet(LS.role, role);
+  nav(role === 'teacher' ? 'h-teacher' : 'h-grade');
+}
+function goHome(){ nav('h-door'); }
+
+function pickGrade(g){
+  state.grade = g;
+  lsSet(LS.grade, g);
+  nav('h-subject');
+}
+function pickSemester(s){
+  state.semester = s;
+  lsSet(LS.semester, s);
+  renderSubjects();
+}
+function goContent(subject){
+  if(!hasContent(state.grade, state.semester, subject)){
+    toast('아직 준비 중이에요');
+    return;
+  }
+  location.href = contentUrl(state.grade, state.semester, subject);
+}
+
+var toastTimer;
+function toast(msg){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove('on'); }, 2600);
+}
+
+// ── 진입 ──────────────────────────────────────────────────
+function boot(){
+  // 저장값 복원 (값만 — 자동 점프는 URL이 시킬 때만)
+  var g = +lsGet(LS.grade); if(GRADES.indexOf(g) !== -1) state.grade = g;
+  var s = +lsGet(LS.semester); if(s === 1 || s === 2) state.semester = s;
+  state.role = lsGet(LS.role);
+
+  var target = screenFromSearch(location.search);
+  var shown = show(target);
+  var chain = CHAIN[shown] || ['h-door'];
+  history.replaceState({screen:chain[0]}, '', SCREEN_URL[chain[0]]);
+  for(var i=1;i<chain.length;i++){
+    history.pushState({screen:chain[i]}, '', SCREEN_URL[chain[i]]);
+  }
+}
+
+// 하니스 노출 (순수 로직 — jsdom에서 그대로 검사)
+window.KHub = {
+  GRADES:GRADES, SUBJECTS:SUBJECTS, CONTENT_MAP:CONTENT_MAP, CHAIN:CHAIN, SCREEN_URL:SCREEN_URL,
+  subjectsFor:subjectsFor, hasContent:hasContent, contentUrl:contentUrl,
+  screenFromSearch:screenFromSearch, demote:demote,
+  state:state, show:show, nav:nav, pickRole:pickRole, pickGrade:pickGrade,
+  pickSemester:pickSemester, goContent:goContent, boot:boot
+};
+
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+</script>
+</body>
+</html>
