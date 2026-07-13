@@ -254,6 +254,72 @@ main{flex:1;position:relative;z-index:1;width:100%;max-width:940px;margin:0 auto
 .subject.dim:hover::after{opacity:0}
 .subject-soon{font-family:var(--body);font-size:11.5px;letter-spacing:.1em;color:var(--ink-faint);position:relative;z-index:1}
 
+/* ── H2.5: 단원·차시 지도 ──────────────────────────────── */
+.map-subject{font-family:var(--body);font-size:14px;color:var(--ink-faint);letter-spacing:.08em}
+.units{display:flex;flex-direction:column;gap:26px}
+
+/* 단원 = 원목 선반 하나 */
+.unit{
+  background:linear-gradient(168deg,var(--night-2),var(--night-1));
+  border:1px solid rgba(201,169,97,.14);border-radius:16px;
+  overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+.unit-head{
+  display:flex;align-items:center;gap:14px;padding:16px 20px;
+  background:linear-gradient(160deg,var(--wood-2),var(--wood-1));
+  border-bottom:1px solid var(--wood-edge);
+}
+.unit-no{
+  width:34px;height:34px;flex-shrink:0;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--brass);color:var(--night-1);
+  font-family:var(--num);font-size:17px;
+}
+.unit-no.extra{background:none;border:1px solid var(--brass-dim);color:var(--brass)}
+.unit-no.extra svg{width:18px;height:18px}
+.unit-name{font-family:var(--title);font-size:19px;color:var(--ink)}
+.unit-count{margin-left:auto;font-size:12px;color:var(--ink-faint);letter-spacing:.06em;white-space:nowrap}
+
+.sub-name{
+  padding:13px 20px 6px;font-family:var(--serif);font-weight:700;
+  font-size:14px;letter-spacing:.1em;color:var(--brass-dim);
+}
+
+/* 차시 = 한 줄 */
+.lesson{
+  display:flex;align-items:center;gap:14px;
+  min-height:56px;padding:11px 20px;
+  border-top:1px solid rgba(201,169,97,.07);
+  text-decoration:none;color:var(--ink);cursor:pointer;
+  transition:background .16s,padding-left .16s;
+}
+.lesson:hover{background:rgba(201,169,97,.06);padding-left:25px}
+.lesson-n{
+  min-width:38px;flex-shrink:0;text-align:center;
+  font-family:var(--num);font-size:15px;color:var(--brass-dim);
+}
+.lesson-t{flex:1;font-size:14.5px;line-height:1.5;color:var(--ink-dim)}
+.lesson:hover .lesson-t{color:var(--ink)}
+.lesson-go{flex-shrink:0;width:15px;height:15px;color:var(--ink-faint);transform:rotate(180deg);transition:color .16s}
+.lesson:hover .lesson-go{color:var(--brass)}
+
+/* 차시에 걸린 도구·전시 (KEDU_LINK 슬롯 — 데이터가 붙으면 자동으로 뜬다) */
+.lesson-links{display:flex;gap:6px;flex-shrink:0}
+.lesson-link{
+  display:inline-flex;align-items:center;gap:5px;
+  min-height:32px;padding:0 10px;border-radius:7px;
+  background:rgba(201,169,97,.08);border:1px solid rgba(201,169,97,.24);
+  font-size:12px;color:var(--brass);text-decoration:none;white-space:nowrap;
+  transition:background .16s,border-color .16s;
+}
+.lesson-link:hover{background:rgba(201,169,97,.18);border-color:var(--brass)}
+.lesson-link svg{width:13px;height:13px}
+
+/* 아직 안 지은 차시 */
+.lesson.soon{opacity:.3;cursor:default;pointer-events:none}
+.lesson.soon .lesson-go{display:none}
+.lesson-soon{font-size:11px;color:var(--ink-faint);letter-spacing:.08em;flex-shrink:0}
+
 /* ── H3: 선생님 선반 ───────────────────────────────────── */
 .shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .tool{
@@ -303,6 +369,13 @@ footer a:hover{color:var(--ink-dim)}
   .grade-n{font-size:44px}
   .subjects{grid-template-columns:repeat(2,1fr)}
   .sem-tabs{margin-left:0;width:100%}
+  /* 지도: 차시 줄이 좁아지면 도구 슬롯을 아래로 내린다 */
+  .lesson{flex-wrap:wrap;padding:12px 16px;gap:10px}
+  .lesson-t{flex:1 1 60%;font-size:14px}
+  .lesson-links{flex:1 1 100%;padding-left:52px;flex-wrap:wrap}
+  .lesson:hover{padding-left:16px}
+  .unit-head{padding:14px 16px}
+  .unit-name{font-size:17px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -430,6 +503,18 @@ footer a:hover{color:var(--ink-dim)}
     <div class="subjects" id="subject-grid"></div>
   </section>
 
+  <!-- ══ H2.5 · 단원·차시 지도 (자기주도 L1) ═══════════════ -->
+  <section class="screen" id="h-map">
+    <button class="back" onclick="nav('h-subject')"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>과목 다시 고르기</button>
+    <div class="crumb">
+      <span class="crumb-badge" id="map-badge"></span>
+      <span class="map-subject" id="map-subject"></span>
+    </div>
+    <div class="stage-title" id="map-title"></div>
+    <div class="stage-sub">위에서부터 순서대로 하면 돼요</div>
+    <div class="units" id="unit-list"></div>
+  </section>
+
   <!-- ══ H3 · 선생님 선반 ════════════════════════════════ -->
   <section class="screen" id="h-teacher">
     <button class="back" onclick="goHome()"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>처음으로</button>
@@ -512,10 +597,10 @@ function contentUrl(g, s, subject){
 }
 
 // ── 상태 ──────────────────────────────────────────────────
-var state = { grade:null, semester:1, role:null };
+var state = { grade:null, semester:1, subject:null, role:null };
 
 var LS = {
-  grade:'kedu_grade', semester:'kedu_semester', role:'kedu_last_role'
+  grade:'kedu_grade', semester:'kedu_semester', subject:'kedu_subject', role:'kedu_last_role'
 };
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
@@ -525,13 +610,15 @@ var SCREEN_URL = {
   'h-door'    : '/hub2/',
   'h-teacher' : '/hub2/?role=teacher',
   'h-grade'   : '/hub2/?role=student',
-  'h-subject' : '/hub2/?role=student&view=subject'
+  'h-subject' : '/hub2/?role=student&view=subject',
+  'h-map'     : '/hub2/?role=student&view=map'
 };
 var CHAIN = {
   'h-door'    : ['h-door'],
   'h-teacher' : ['h-door','h-teacher'],
   'h-grade'   : ['h-door','h-grade'],
-  'h-subject' : ['h-door','h-grade','h-subject']
+  'h-subject' : ['h-door','h-grade','h-subject'],
+  'h-map'     : ['h-door','h-grade','h-subject','h-map']
 };
 
 // URL → 화면 id (순수)
@@ -539,11 +626,18 @@ function screenFromSearch(search){
   var p = new URLSearchParams(search || '');
   var role = p.get('role');
   if(role === 'teacher') return 'h-teacher';
-  if(role === 'student') return p.get('view') === 'subject' ? 'h-subject' : 'h-grade';
+  if(role === 'student'){
+    var v = p.get('view');
+    if(v === 'map')     return 'h-map';
+    if(v === 'subject') return 'h-subject';
+    return 'h-grade';
+  }
   return 'h-door';
 }
 // 데이터 없으면 얕은 화면으로 강등 (순수)
 function demote(id, st){
+  if(id === 'h-map' && !st.subject) return st.grade ? 'h-subject' : 'h-grade';
+  if(id === 'h-map' && !st.grade)   return 'h-grade';
   if(id === 'h-subject' && !st.grade) return 'h-grade';
   return id;
 }
@@ -581,10 +675,95 @@ function renderSubjects(){
   }).join('');
 }
 
+// ── 지도 (KEDU_MAP 지연 로드) ─────────────────────────────
+// 데이터 정본 = /kedu_map/*.js (handoff/scripts/build_kedu_map.js가 과목 index에서 추출)
+// 차시 키 = KEDU_LINK 문법 → 도구·전시 슬롯이 그대로 걸린다
+var mapCache = {};
+function mapKey(g, s, subject){ return 'g'+g+'_'+s+'_'+subject; }
+
+function loadMap(key, cb){
+  if(mapCache[key]) { cb(mapCache[key]); return; }
+  if(window.KEDU_MAP && window.KEDU_MAP[key]){ mapCache[key] = window.KEDU_MAP[key]; cb(mapCache[key]); return; }
+  var sc = document.createElement('script');
+  sc.src = '/kedu_map/' + key + '.js';
+  sc.onload = function(){
+    mapCache[key] = (window.KEDU_MAP || {})[key] || null;
+    cb(mapCache[key]);
+  };
+  sc.onerror = function(){ cb(null); };
+  document.head.appendChild(sc);
+}
+
+// 차시에 걸린 도구·전시 (없으면 빈 배열 — G0 후 KEDU_LINK 데이터만 채우면 자동으로 뜬다)
+function linksFor(key){
+  if(!key || !window.KEDU_LINK) return [];
+  return window.KEDU_LINK[key] || [];
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderMap(){
+  var g = state.grade, s = state.semester, subject = state.subject;
+  var sub = SUBJECTS[subject];
+  if(!sub) return;
+
+  var badge = document.getElementById('map-badge');
+  badge.textContent = g + '학년 ' + s + '학기';
+  badge.style.setProperty('--pc', 'var(--paper-'+g+')');
+  document.getElementById('map-subject').textContent = sub.n;
+  document.getElementById('map-title').textContent = sub.n;
+
+  var box = document.getElementById('unit-list');
+  box.innerHTML = '';
+
+  loadMap(mapKey(g, s, subject), function(data){
+    if(!data){ box.innerHTML = '<div class="stage-sub">지도를 불러오지 못했어요</div>'; return; }
+    box.innerHTML = data.units.map(function(u){
+      var ready = u.lessons.filter(function(l){ return l.ready; }).length;
+      var lastSub = null;
+      var rows = u.lessons.map(function(l){
+        var head = '';
+        if(l.sub && l.sub !== lastSub){ head = '<div class="sub-name">'+esc(l.sub)+'</div>'; lastSub = l.sub; }
+
+        if(!l.ready){
+          return head + '<div class="lesson soon">'+
+            '<span class="lesson-n">'+esc(l.n)+'</span>'+
+            '<span class="lesson-t">'+esc(l.title)+'</span>'+
+            '<span class="lesson-soon">준비 중</span></div>';
+        }
+        var links = linksFor(l.key).map(function(k){
+          return '<a class="lesson-link" href="'+esc(k.url)+'" onclick="event.stopPropagation()">'+
+            '<svg viewBox="0 0 24 24"><use href="#i-lab"/></svg>'+esc(k.label)+'</a>';
+        }).join('');
+        // 줄 전체가 링크지만 <a>로 감싸지 않는다 — 안에 도구 <a>가 들어가면 파서가 바깥을 닫아버린다
+        var go = "location.href='"+esc(l.url).replace(/'/g,"\\'")+"'";
+        return head + '<div class="lesson" role="link" tabindex="0" data-href="'+esc(l.url)+'"'+(l.key ? ' data-key="'+esc(l.key)+'"' : '')+
+          ' onclick="'+go+'" onkeydown="if(event.key===\'Enter\'){'+go+'}">'+
+          '<span class="lesson-n">'+esc(l.n)+'</span>'+
+          '<span class="lesson-t">'+esc(l.title)+'</span>'+
+          (links ? '<span class="lesson-links">'+links+'</span>' : '')+
+          '<svg class="lesson-go" viewBox="0 0 24 24"><use href="#i-back"/></svg></div>';
+      }).join('');
+
+      var no = (u.kind === 'extra')
+        ? '<span class="unit-no extra"><svg viewBox="0 0 24 24"><use href="#i-game"/></svg></span>'
+        : '<span class="unit-no">'+u.num+'</span>';
+      return '<div class="unit">'+
+        '<div class="unit-head">'+ no +
+          '<span class="unit-name">'+esc(u.name)+'</span>'+
+          '<span class="unit-count">'+ready+'차시</span>'+
+        '</div>'+ rows +'</div>';
+    }).join('');
+  });
+}
+
 function prep(id){
   id = demote(id, state);
   if(id === 'h-grade')   renderGrades();
   if(id === 'h-subject') renderSubjects();
+  if(id === 'h-map')     renderMap();
   if(id === 'h-door'){
     var last = lsGet(LS.role);
     var dt = document.getElementById('door-teacher'), ds = document.getElementById('door-student');
@@ -627,12 +806,15 @@ function pickSemester(s){
   lsSet(LS.semester, s);
   renderSubjects();
 }
+// 과목 → 단원·차시 지도 (콘텐츠로 직행하지 않는다 — 순서 있는 경로를 먼저 보여준다)
 function goContent(subject){
   if(!hasContent(state.grade, state.semester, subject)){
     toast('아직 준비 중이에요');
     return;
   }
-  location.href = contentUrl(state.grade, state.semester, subject);
+  state.subject = subject;
+  lsSet(LS.subject, subject);
+  nav('h-map');
 }
 
 var toastTimer;
@@ -649,6 +831,7 @@ function boot(){
   // 저장값 복원 (값만 — 자동 점프는 URL이 시킬 때만)
   var g = +lsGet(LS.grade); if(GRADES.indexOf(g) !== -1) state.grade = g;
   var s = +lsGet(LS.semester); if(s === 1 || s === 2) state.semester = s;
+  var sub = lsGet(LS.subject); if(SUBJECTS[sub]) state.subject = sub;
   state.role = lsGet(LS.role);
 
   var target = screenFromSearch(location.search);
@@ -665,6 +848,7 @@ window.KHub = {
   GRADES:GRADES, SUBJECTS:SUBJECTS, CONTENT_MAP:CONTENT_MAP, CHAIN:CHAIN, SCREEN_URL:SCREEN_URL,
   subjectsFor:subjectsFor, hasContent:hasContent, contentUrl:contentUrl,
   screenFromSearch:screenFromSearch, demote:demote,
+  mapKey:mapKey, loadMap:loadMap, linksFor:linksFor, renderMap:renderMap,
   state:state, show:show, nav:nav, pickRole:pickRole, pickGrade:pickGrade,
   pickSemester:pickSemester, goContent:goContent, boot:boot
 };
