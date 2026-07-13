@@ -22,6 +22,7 @@
 <script src="kb-bank.js"></script>
 <script src="kb-battle.js"></script>
 <script src="kb-mode-race.js"></script>
+<script src="kb-mode-puzzle.js"></script>
 <script>
 /* 전자칠판 — 교사가 방을 여는 자리.
    ① 무엇으로 겨룰지 (교과 단원 = 케이퀴즈 / 놀이 문제)
@@ -103,23 +104,49 @@
         '<div class="kb-dim" style="font-size:18px;margin-bottom:26px;">문제 ' + picked.questions.length + '개 · 모드를 골라요</div>' +
         '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">' +
           '<button class="kb-btn" data-mode="race">🏇 레이스 <span style="font-weight:700;font-size:15px;">정답마다 전진 · ⭐칸 2배</span></button>' +
+          '<button class="kb-btn" data-mode="puzzle" style="background:var(--kb-mint);color:#05302b;">🧩 퍼즐 완성 <span style="font-weight:700;font-size:15px;">반이 함께 · 줄 안 세움</span></button>' +
           '<button class="kb-btn" data-mode="" style="background:rgba(255,255,255,.12);color:#fff;">📋 문제만 풀기</button>' +
         '</div>' +
+        '<div id="pzOpt" class="kb-pz-opt"></div>' +
         '<div class="kb-dim" style="margin-top:26px;">학생은 <b>keduclass.com/kbattle/play.html</b> 로 들어와요</div>' +
         '<button class="kb-back" id="back">← 문제 다시 고르기</button>' +
       '</div>';
     [].forEach.call(app.querySelectorAll('[data-mode]'), function (b) {
-      b.onclick = function () { start(b.getAttribute('data-mode')); };
+      b.onclick = function () {
+        var m = b.getAttribute('data-mode');
+        if (m === 'puzzle') { puzzleOpt(); return; }   // 숨은 문구를 먼저 정한다
+        start(m);
+      };
     });
     document.getElementById('back').onclick = pickQuestions;
   }
 
+  /* 퍼즐 — 조각 아래 숨길 문구. 아이들은 다 걷어야 볼 수 있다. */
+  function puzzleOpt() {
+    var box = document.getElementById('pzOpt');
+    if (!box) return;
+    box.innerHTML =
+      '<div class="kb-hint" style="margin-top:20px;color:var(--kb-dim);font-weight:700;">' +
+        '조각 아래 숨길 한마디 (아이들은 다 걷어야 볼 수 있어요)</div>' +
+      '<div style="display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap;">' +
+        '<input class="kb-input" id="pzText" maxlength="40" placeholder="우리 반 최고!" ' +
+          'style="max-width:340px;text-align:center;">' +
+        '<button class="kb-btn" id="pzGo">방 만들기 ▶</button>' +
+      '</div>';
+    var inp = document.getElementById('pzText');
+    inp.focus();
+    document.getElementById('pzGo').onclick = function () {
+      start('puzzle', (inp.value || '').trim() || undefined);
+    };
+    inp.onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('pzGo').onclick(); };
+  }
+
   /* ── 3단계: 방 개설 ── */
-  function start(mode) {
+  function start(mode, puzzleText) {
     var ctx;
     try {
       ctx = Kple.host('kbattle', { el: app, config: {
-        questions: picked.questions, mode: mode || undefined } });
+        questions: picked.questions, mode: mode || undefined, puzzleText: puzzleText } });
     } catch (e) { setConn(String(e.message || e), 'err'); return; }
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');

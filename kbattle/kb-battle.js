@@ -52,7 +52,8 @@
     // 모드 플러그인 (헌법 제4조) — 없으면 민짜 그대로. 훅은 전부 optional.
     var modeFactory = ctx.config.mode && window.KBModes && window.KBModes[ctx.config.mode];
     var mode = modeFactory ? modeFactory({
-      getRoster: ctx.getRoster, questions: questions, roomCode: ctx.roomCode
+      getRoster: ctx.getRoster, questions: questions, roomCode: ctx.roomCode,
+      config: ctx.config                      // 모드가 방 설정을 읽는다 (예: 퍼즐의 숨은 문구)
     }) : null;
     var modeEl = null;   // 노드 재사용(재생성 금지) → 모드의 CSS transition 유지
 
@@ -217,7 +218,8 @@
         if (!p) return null;                                   // 손님 입장 → XP 없음
         return KBStore.record({
           kind: kind, correct: tally.correct, hardCorrect: tally.hardCorrect,
-          bestStreak: tally.bestStreak, score: total
+          bestStreak: tally.bestStreak, score: total,
+          coopCleared: !!(s.mode && s.mode.cleared)   // 협동 모드를 반이 함께 깼다 (제5조)
         });
       }).catch(function () { return null; });
     }
@@ -231,6 +233,8 @@
       var bar = document.createElement('div');
       el.insertBefore(bar, el.firstChild);
       inst.playerLayer(bar, {
+        name: ctx.name,
+        state: ms,                            // 모드가 알아서 자기 필드를 꺼낸다 (코어는 모드를 모른다)
         pos: (ms.pos && ms.pos[ctx.name]) || 0,
         total: ms.total,
         boost: !!(ms.boost && ms.boost[ctx.name])
