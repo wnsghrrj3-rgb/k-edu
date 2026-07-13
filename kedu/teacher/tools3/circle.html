@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 원 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 11호 — 원 (2026-07-14) · 셸 = clock 계보
+  SPEC = handoff/klab/designs3/SPEC_circle.md (도면=정답)
+  v2(engine/tools/circle.js 263줄) 콘텐츠 무손실 이식:
+    학년칸(저 원그리기만·「지름은 반지름 두 개」 닻 / 중 ＋원주·퀴즈 4문 / 고 ＋원의 넓이·🔭·퀴즈 5문)
+    미션 저2·중3·고4(문구·판정식 그대로) · 퀴즈 문항·보기·정답 그대로 · 와우 2종(직사각형·반지름2배) 그대로
+    PI = 3.14 (교과서 근삿값 — Math.PI로 «수치»를 바꾸지 말 것. 퀴즈 정답 12.56·18.84가 여기 묶여 있다)
+  ★ 와우A 🧵 원주율 실 풀기 (v3 신설 · 이 도구의 최대 구멍을 메움):
+    v2는 「원주 = 지름 × 3.14」를 «글자로만» 알려 준다 — 3.14가 어디서 왔는지가 아무 데도 없다.
+    → 원 둘레에 빨간 실을 감고 → 풀어서 자 위에 눕히고 → 지름 막대를 하나씩 놓아 본다.
+      3개를 놓고도 «조금 남는다». 그 자투리가 0.14 — 그래서 3.14.
+    ★ 어떤 r로 해도 «항상 3개하고 조금 더». r을 바꿔 다시 눌러 보게 하는 게 핵심(실 풀기는 반복 가능·카드만 1회).
+    실 길이는 «진짜 원둘레»(2π·rr)로 그린다 = 기하학적으로 정직. 문구·수치는 3.14.
+  ⚠️⚠️ v2 라이브 버그(치명 · §6-1) — 마법모먼트가 화면을 깬다:
+    drawCircle UNIT=26 · cy=200 → r=7에서 저학년 라벨 y=412 > 400 잘림 / r=8에서 원 상단 y=-8 잘림
+    drawArea rr=r*16+30 · startX=460 → r=8에서 원 상단 -8 · 펼친 줄 우단 ≈956 > 860 넘침
+    그런데 고학년 와우 버튼 「🔭 반지름 2배」가 r=4 → r=8을 만든다 = «누르는 순간 원이 잘린다».
+    → v3: drawGeom UNIT=20 (r=8 → 상단 40 · 저학년 라벨 390) / areaGeom rr=r*12+24 (r=8 → 상단 30 · 줄 우단 ≤837)
+       + 펼친 줄 세로 이탈까지 수정(baseY=210 — v2는 baseY=330이라 줄 아래가 잘렸다).
+       하니스가 r=1..8 × N=4·8·16·24 «전 구간»을 실측 고정.
+  ⚠️ §6-2: v2 snd('success')는 존재하지 않는 사운드(무음) → chime으로 매핑 (pattern·probability와 같은 사안).
+  ⚠️ §6-5: 🔭가 못 키울 때 r=2로 되돌리는 건 버그가 아니라 «다시 해 볼 수 있게» 하는 리암 장치. 유지(배너 없이 pop).
+  config: ?grade= & mode= & view=draw|area & r= & pieces=   (구 mode:'draw'|'area' 호환)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸 · 변경 금지) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(2.4vh,18px) min(2.6vw,20px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:15.5px;font-weight:700;color:#fff;border:none;
+    border-radius:13px;padding:10px 15px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 20px;cursor:pointer;min-width:130px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 원 도구 전용 ── */
+  /* 제도판 — 방안지 위에서 컴퍼스로 원을 그린다 (graph와 같은 언어) */
+  .cr-board{position:relative;border-radius:14px;padding:6px;
+    background:
+      repeating-linear-gradient(0deg, rgba(90,120,150,.12) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(90deg, rgba(90,120,150,.12) 0 1px, transparent 1px 22px),
+      linear-gradient(170deg,#F7FAFD 0%,#E6EEF6 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.6), 0 10px 26px -8px rgba(0,0,0,.55)}
+  .cr-tg{font-family:'Gowun Dodum';font-size:14px;font-weight:700;color:#C9B8FF;
+    background:rgba(155,123,245,.12);border:1.5px solid rgba(155,123,245,.42);border-radius:999px;
+    padding:9px 15px;cursor:pointer;line-height:1;transition:all .15s}
+  .cr-tg.on{background:rgba(155,123,245,.42);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(201,184,255,.6), 0 0 18px -4px #9B7BF5}
+  .cr-lab{font-family:'Gowun Dodum';font-size:14.5px;font-weight:700;align-self:center;
+    color:#9CC4FA;padding:0 2px;line-height:1}
+  /* 컴퍼스로 원 그리기 — 연필 다리가 한 바퀴 돌며 호가 그려진다 */
+  .cr-ink{animation:crInk var(--dw,.5s) ease-out both}
+  @keyframes crInk{from{stroke-dashoffset:var(--circ,1000)}to{stroke-dashoffset:0}}
+  .cr-pencil{animation:crOrbit var(--dw,.5s) ease-out both}
+  @keyframes crOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .cr-fill{animation:crFill var(--dw,.5s) ease-out both}
+  @keyframes crFill{0%{opacity:0}70%{opacity:0}100%{opacity:.5}}
+  /* 저학년 — 두 반지름 막대가 가운데에서 딱 붙는 순간 */
+  .cr-snap{animation:crSnap .45s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes crSnap{0%{opacity:.2}60%{opacity:1;stroke-width:9}100%{stroke-width:6}}
+  /* 부채꼴 펼치기 */
+  .cr-piece{animation:crDrop .7s cubic-bezier(.25,.9,.35,1) both}
+  @keyframes crDrop{0%{opacity:0;transform:translateY(-40px)}100%{opacity:1;transform:translateY(0)}}
+  /* 🧵 원주율 실 — 감기 → 풀려서 눕기 → 지름 막대 비교 */
+  .cr-wind{animation:crWind var(--t1,.4s) linear both}
+  @keyframes crWind{from{stroke-dashoffset:var(--circ,900)}to{stroke-dashoffset:0}}
+  .cr-lay{animation:crLay var(--t2,.8s) cubic-bezier(.3,.8,.4,1) both;animation-delay:var(--d2,.4s)}
+  @keyframes crLay{from{stroke-dashoffset:var(--circ,900)}to{stroke-dashoffset:0}}
+  .cr-bar{animation:crBar .28s cubic-bezier(.2,1.3,.4,1) both;transform-origin:left center;
+    transform-box:fill-box}
+  @keyframes crBar{0%{opacity:0;transform:scaleX(0)}100%{opacity:1;transform:scaleX(1)}}
+  .cr-rest{animation:crRest .5s ease-out both}
+  @keyframes crRest{0%{opacity:0}40%{opacity:1}70%{opacity:.35}100%{opacity:1}}
+  /* 무대 배너 (v2 cr-flash 계보) */
+  .cr-flash,.cr-flash-magic{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:6;max-width:92%;text-align:center;padding:11px 18px;border-radius:16px;
+    font-family:'Gowun Dodum';font-weight:700;font-size:15.5px;line-height:1.5;color:#fff;
+    box-shadow:0 10px 28px rgba(0,0,0,.35);animation:crPop .26s ease-out}
+  .cr-flash{background:linear-gradient(150deg,#3f77d8,#2a56ab)}
+  .cr-flash-magic{background:linear-gradient(150deg,#8f6ef2,#6b47d8)}
+  @keyframes crPop{from{opacity:0;transform:translate(-50%,-9px) scale(.95)}
+    to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .cr-hold{display:inline-block;animation:crHold 1.1s ease-in-out infinite;color:#C9B8FF}
+  @keyframes crHold{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.18)}}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">⭕ 케이랩 · 원</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ★ §6-3 — 교과서 근삿값. 이 상수를 Math.PI로 바꾸면 퀴즈 정답(12.56·18.84)이 전부 깨진다. */
+  var PI=3.14;
+  var VBW=860, VBH=400;
+  /* ★ §6-1 v3 수정 스케일 — v2의 UNIT=26 / rr=r*16+30 은 r=7~8에서 화면을 깬다 */
+  var UNIT=20;                 /* draw : r=8 → rr=160 · 상단 y=40 · 저학년 라벨 y=390 */
+  var A_CX=200, A_CY=150;      /* area : 원 */
+  var A_STARTX=460, A_BASEY=210;
+  var T_UNIT=15;               /* thread: r=8 → rr=120 → 실 길이 2π·120 ≈ 754 ≤ 860 */
+
+  var GRADES={
+    low:  { modes:['free','mission'],        areaView:false, circumf:false, twoRadius:true,  quiz:false, dbl:false },
+    mid:  { modes:['free','mission','quiz'], areaView:false, circumf:true,  twoRadius:false, quiz:true,  dbl:false },
+    high: { modes:['free','mission','quiz'], areaView:true,  circumf:true,  twoRadius:false, quiz:true,  dbl:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function clampR(r){ return Math.max(1,Math.min(r,8)); }
+  function clampPieces(p){ p=Math.max(4,Math.min(p,24)); if(p%2)p++; return Math.min(p,24); }
+  function diameter(r){ return 2*r; }
+  function circumference(r){ return +(2*r*PI).toFixed(2); }
+  function area(r){ return +(PI*r*r).toFixed(2); }
+
+  /* 🔭 반지름 2배 — 못 키우면 r=2로 되돌린다(§6-5 리암 장치 · 버그 아님) */
+  function dblResult(r){ return (r*2<=8)?{ r:r*2, flash:'dbl' }:{ r:2, flash:null }; }
+  /* 조각 ＋ — 16을 «처음 넘는 순간»만 마법 배너 (1회 가드 없음 = 의도) */
+  function piecesUp(p){
+    var next=Math.min(24,p+2);
+    return { pieces:next, flash:(p<16&&next>=16)?'rect':null };
+  }
+  function piecesDown(p){ return Math.max(4,p-2); }
+
+  /* ★ §6-1 — draw 기하. 전 구간(r=1..8) 화면 안. */
+  function drawGeom(r){
+    return { rr:r*UNIT, cx:VBW/2, cy:VBH/2, unit:UNIT };
+  }
+  /* ★ §6-1 — area 기하. rr=r*12+24 (r=1→36 · r=8→120).
+     rowW = 펼친 줄의 «실제 최대 우단 폭» = arc*(N/2−0.5) + rr·sin(θ/2).
+     N을 늘려도 폭은 rr·π 근처에서 변하지 않는다(반원 호 길이 항등) — 윗변만 평평해진다. */
+  function areaGeom(r,N){
+    var rr=r*12+24, theta=2*Math.PI/N, arc=rr*theta;
+    var half=theta/2;
+    var rowW=arc*(N/2-0.5)+rr*Math.sin(half);
+    var rowH=rr*Math.cos(half);
+    return { rr:rr, theta:theta, arc:arc, rowW:rowW, rowH:rowH,
+             cx:A_CX, cy:A_CY, startX:A_STARTX, baseY:A_BASEY };
+  }
+  /* 🧵 실 풀기 기하 — 실 길이는 «진짜 원둘레»(2π·rr) = 기하학적으로 정직.
+     지름 막대 길이 = 2·rr. 3개를 놓으면 (π−3)·d ≈ 0.14·d 가 남는다. */
+  function threadGeom(r){
+    var rrT=r*T_UNIT, dPx=2*rrT, circPx=Math.PI*dPx;
+    var x0=(VBW-circPx)/2;
+    var restPx=circPx-3*dPx;
+    return { rrT:rrT, dPx:dPx, circPx:circPx, restPx:restPx, x0:x0,
+             cx:VBW/2, cy:125, rulerY:275, barY:310 };
+  }
+
+  /* 미션 — 문구·판정식 v2 그대로 (s = {view, r, pieces}) */
+  function missionsFor(grade){
+    var m5={ text:'반지름을 <b>5</b>로 키워 봐요 — 지름은 얼마가 될까요?',
+      check:function(s){ return s.view==='draw'&&s.r===5; } };
+    var LOW=[ m5,
+      { text:'반지름 <b>3</b>으로! 지름은 반지름 <b>두 개</b>랑 같아요!',
+        check:function(s){ return s.view==='draw'&&s.r===3; } } ];
+    var m3c={ text:'반지름 <b>3</b>으로! 원주(둘레)는 지름×3.14예요!',
+      check:function(s){ return s.view==='draw'&&s.r===3; } };
+    var MID=[ m5, m3c,
+      { text:'반지름을 <b>6</b>으로 키워 원주를 확인해 봐요!',
+        check:function(s){ return s.view==='draw'&&s.r===6; } } ];
+    var HIGH=[ m5, m3c,
+      { text:'<b>원의 넓이</b> 보기로 바꿔 봐요!',
+        check:function(s){ return s.view==='area'; } },
+      { text:'조각 수를 <b>16 이상</b>으로! 직사각형에 가까워지는 게 보이나요?',
+        check:function(s){ return s.view==='area'&&s.pieces>=16; } } ];
+    return (grade==='low')?LOW:(grade==='mid')?MID:HIGH;
+  }
+
+  /* 퀴즈 — v2 문항·보기·정답 그대로 */
+  var MID_QUIZ=[
+    { view:'draw', r:4, q:'반지름이 4일 때 지름은 얼마일까요?', answer:'8', choices:['8','4','16'] },
+    { view:'draw', r:2, q:'반지름 2인 원의 원주는? (지름×3.14)', answer:'12.56', choices:['12.56','6.28','3.14'] },
+    { view:'draw', r:3, q:'반지름 3인 원의 원주는? (지름×3.14)', answer:'18.84', choices:['18.84','9.42','6.28'] },
+    { view:'draw', r:5, q:'한 원에서 지름은 반지름의 몇 배일까요?', answer:'2배', choices:['2배','3배','3.14배'] }
+  ];
+  var HIGH_QUIZ=[
+    { view:'draw', r:4, q:'반지름이 4일 때 지름은 얼마일까요?', answer:'8', choices:['8','4','16'] },
+    { view:'draw', r:2, q:'반지름 2인 원의 원주는? (지름×3.14)', answer:'12.56', choices:['12.56','6.28','3.14'] },
+    { view:'area', r:4, q:'원을 잘게 잘라 번갈아 펼치면 어떤 모양에 가까워질까요?', answer:'직사각형', choices:['직사각형','삼각형','원'] },
+    { view:'draw', r:3, q:'원의 넓이를 구하는 식은 무엇일까요?', answer:'3.14×반지름×반지름', choices:['3.14×반지름×반지름','3.14×지름','반지름×반지름'] },
+    { view:'draw', r:5, q:'한 원에서 지름은 반지름의 몇 배일까요?', answer:'2배', choices:['2배','3배','3.14배'] }
+  ];
+  function quizPoolFor(grade){ return (grade==='mid')?MID_QUIZ.slice():HIGH_QUIZ.slice(); }
+  function shuffled(arr,rand){
+    rand=rand||Math.random;
+    var c=arr.slice();
+    for(var i=c.length-1;i>0;i--){ var j=Math.floor(rand()*(i+1)); var t=c[i]; c[i]=c[j]; c[j]=t; }
+    return c;
+  }
+  function shuffleQuizPool(grade,rand){ return shuffled(quizPoolFor(grade),rand); }
+
+  /* 상태줄 문구 (v2 그대로 · 순수 문자열) */
+  function statusText(grade,view,r,pieces){
+    var G=GRADES[grade]||GRADES.high;
+    if(view==='area'){
+      return '조각이 많을수록 직사각형! 넓이 ≈ 3.14 × '+r+' × '+r+' ＝ '+area(r).toFixed(2);
+    }
+    if(G.twoRadius){
+      return '반지름 '+r+'   지름 '+diameter(r)+' — 반지름 두 개를 이으면 지름이에요!';
+    }
+    return '반지름 '+r+'   지름 '+diameter(r)
+      +(G.circumf?'   원주 ≈ 지름×3.14 ＝ '+circumference(r).toFixed(2):'');
+  }
+
+  var API={ PI:PI, VBW:VBW, VBH:VBH, UNIT:UNIT, T_UNIT:T_UNIT,
+            GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            clampR:clampR, clampPieces:clampPieces,
+            diameter:diameter, circumference:circumference, area:area,
+            dblResult:dblResult, piecesUp:piecesUp, piecesDown:piecesDown,
+            drawGeom:drawGeom, areaGeom:areaGeom, threadGeom:threadGeom,
+            missionsFor:missionsFor, quizPoolFor:quizPoolFor, shuffled:shuffled,
+            shuffleQuizPool:shuffleQuizPool, statusText:statusText };
+  if(typeof window!=='undefined') window.CircleCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var CC=window.CircleCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return CC.GRADES[grade]; }
+
+  var rand=window.__K3_RAND || Math.random;
+
+  /* 구 config 호환 — mode:'draw'|'area' 는 «보기»였다 (§5-14) */
+  var qm=Q.get('mode');
+  var legacy=(qm==='draw'||qm==='area')?qm:null;
+  var mode=(G().modes.indexOf(qm)>=0)?qm:'free';
+
+  var sr=CC.clampR((+Q.get('r'))||4);
+  var pieces=CC.clampPieces((+Q.get('pieces'))||8);
+  var view=(G().areaView&&(Q.get('view')==='area'||legacy==='area'))?'area':'draw';
+  /* v2 모드 시드 규칙 — 미션은 r=2·draw·pieces=8 에서 시작(이 시드가 어떤 미션 조건과도
+     불일치해 «자동달성 없음»이 성립한다). v2는 «탭 전환»에만 적용했지만 SPEC §1은
+     미션 진입 자체의 계약으로 정의 → ?mode=mission 직접 부팅에도 동일 적용.
+     ★ 차시 링크가 ?mode=mission 으로 들어오는 케이랩 허브 구조에선 이게 실사용 경로다. */
+  if(mode==='mission'){ view='draw'; pieces=8; }
+  var r=(mode==='mission')?2:sr;
+
+  var mStep=0, mDone=false, mLock=false;
+  var qList=[], qIdx=0, qScore=0, qCount=0, qLock=false;
+  var magicShown=false, pred=null, threading=false, busy=false;
+  /* 1회성 연출 플래그 — 다음 render에서 자동 해제 (양산설계 §6-8) */
+  var flash=null, fxInk=false, fxPieces=false;
+
+  var STEP_MS=window.__K3_FAST?60:1500;
+  var QUIZ_MS=window.__K3_FAST?60:1400;
+  var DRAW_MS=window.__K3_FAST?60:500;
+  var FLASH_MS=window.__K3_FAST?400:2200;
+  var CARD_MS=window.__K3_FAST?60:1100;
+  /* 🧵 실 풀기 타임라인 */
+  var T_WIND=window.__K3_FAST?40:400;
+  var T_LAY=window.__K3_FAST?60:800;
+  var T_BAR=window.__K3_FAST?30:250;
+  var T_BANNER=window.__K3_FAST?80:2200;   /* 배너까지의 총 지연 */
+
+  function snd(n){ K3.sound.play(n); }
+  function state(){ return { view:view, r:r, pieces:pieces }; }
+  function curMissions(){ return CC.missionsFor(grade); }
+  function shuffleQuiz(){ qList=CC.shuffleQuizPool(grade,rand); qIdx=0; qScore=0; qCount=0; qLock=false; }
+  function threadOn(){ return G().circumf && view==='draw' && mode!=='quiz'; }
+
+  /* ── 무대 배너 ── */
+  function clearFlash(){
+    var d=$('desk'); if(!d)return;
+    d.querySelectorAll('.cr-flash,.cr-flash-magic').forEach(function(n){ n.remove(); });
+  }
+  function banner(cls,html,ms){
+    var d=$('desk'); if(!d)return;
+    clearFlash();
+    var e=document.createElement('div');
+    e.className=cls; e.innerHTML=html;
+    d.appendChild(e);
+    setTimeout(function(){ if(e.parentNode)e.parentNode.removeChild(e); }, ms);
+  }
+
+  /* ── 조작 ── */
+  function act(x){
+    if(mode==='quiz'||busy) return;
+    if(x!=='reset') threading=false;   /* 실은 다른 조작을 하면 걷힌다 */
+    if(x==='reset'){
+      r=(mode==='mission')?2:sr; pieces=8; threading=false;
+      magicShown=false; pred=null; flash=null;
+      clearFlash(); snd('select'); build();
+      return;
+    }
+    if(x==='rp'||x==='rm'){
+      if(view!=='draw') return;
+      var nr=(x==='rp')?r+1:r-1;
+      if(nr<1||nr>8) return;
+      r=nr; flash=null; fxInk=true;
+      snd('tick');
+      build();
+      setTimeout(function(){ snd('ting'); }, DRAW_MS);
+    } else if(x==='pp'||x==='pm'){
+      if(view!=='area') return;
+      if(x==='pp'){
+        if(pieces>=24) return;
+        var up=CC.piecesUp(pieces);
+        pieces=up.pieces; flash=up.flash; fxPieces=true;
+        if(up.flash==='rect'){
+          snd('chime');   /* ★ §6-2 — v2 snd('success')는 목록에 없는 사운드라 «무음»이었다 */
+          banner('cr-flash-magic','✨ 조각을 잘게 펴니 매끈한 <b>직사각형</b>! 이 직사각형이 곧 <b>원의 넓이</b>예요',FLASH_MS);
+        } else snd('pop');
+      } else {
+        if(pieces<=4) return;
+        pieces=CC.piecesDown(pieces); flash=null; fxPieces=true;
+        snd('pop');
+      }
+      build();
+    } else if(x==='dbl'){
+      if(!G().dbl||view!=='draw') return;
+      var d=CC.dblResult(r);
+      r=d.r; flash=d.flash; fxInk=true;
+      if(d.flash==='dbl'){
+        snd('whoosh');
+        banner('cr-flash-magic','✋ 반지름을 <b>2배</b>로! 둘레(원주)는 <b>2배</b>인데 넓이는 <b>4배</b>! 넓이는 반지름을 <b>두 번</b> 곱하니까요',FLASH_MS);
+      } else {
+        snd('pop');       /* §6-5 — 되돌림. 배너 없음 = «다시 해 보라»는 신호 */
+        clearFlash();
+      }
+      build();
+    } else return;
+    if(mode==='mission') checkMission();
+  }
+
+  function setView(v){
+    if(!G().areaView||view===v) return;
+    view=v; threading=false; flash=null; clearFlash();
+    if(v==='area') fxPieces=true; else fxInk=true;
+    snd('select'); build();
+    if(mode==='mission') checkMission();
+  }
+
+  /* ── 와우A — 🧵 원주율 실 풀기 ── */
+  function runThread(){
+    threading=true; busy=true;
+    snd('whoosh');
+    build();
+    setTimeout(function(){
+      snd('chime');
+      var t=CC.threadGeom(r);
+      banner('cr-flash-magic',
+        '🧵 둘레는 지름 <b>3개하고 조금 더</b>! 그 «조금 더»가 바로 <b>0.14</b> — 그래서 <b class="cr-hold">3.14</b>예요',
+        FLASH_MS);
+      busy=false;
+      return t;
+    }, T_BANNER);
+  }
+  function thread(){
+    if(!threadOn()||busy) return;
+    /* 예측 카드 — 실을 풀기 «직전» · 1회 가드 · 자유탐구 전용(미션 흐름을 안 막는다) */
+    if(!magicShown && mode==='free'){
+      magicShown=true; busy=true;
+      snd('charge');
+      K3.cards.predict(
+        '원의 둘레를 쭉 펴면 — <b>지름 몇 개</b>쯤 될까요?',
+        [{id:'two',   label:'① 2개쯤'},
+         {id:'three', label:'② 3개쯤'},
+         {id:'five',  label:'③ 5개쯤'}]
+      ).then(function(id){
+        pred=id; busy=false;
+        runThread();
+        setTimeout(resultCard, T_BANNER+CARD_MS);
+      });
+      return;
+    }
+    runThread();
+  }
+  function resultCard(){
+    var okP=(pred==='three');
+    K3.cards.result(
+      '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'✨ 맞혔어요!':'🤔 3개하고 조금 더예요')+'</h3>'
+      +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+      +(okP
+        ?'정확히는 <b>3개하고 조금 더</b> = <b>3.14배</b>.<br>'
+        :'둘레는 지름 <b>3개</b>를 놓고도 <b>조금</b> 남아요.<br>')
+      +'<b>어떤 크기의 원이든 언제나 3.14배</b>예요. 그래서 이 수에 이름이 붙었어요 — <b>원주율</b>.<br>'
+      +'믿기지 않으면 <b>반지름을 바꿔서 다시</b> 🧵 를 눌러 봐요. 몇 번을 해도 똑같답니다.</p>',
+      [{label:'좋아, 다른 원으로 해 볼래', cls:'pri', value:'done'}]
+    );
+  }
+
+  /* ── 퀴즈 ── */
+  function answer(v){
+    if(qLock) return;
+    qLock=true; qCount++;
+    var q=qList[qIdx];
+    var okA=(String(v)===String(q.answer));
+    if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+q.answer+'</b>'); }
+    else { snd('fail'); K3.toast('🤔 정답은 <b>'+q.answer+'</b>', true); }
+    setTimeout(function(){
+      qIdx++;
+      if(qIdx>=qList.length) shuffleQuiz();
+      qLock=false;
+      build();
+    }, QUIZ_MS);
+  }
+
+  /* ── 미션 (v2: 시드 r=2·draw·pieces=8 이 어떤 미션 조건과도 불일치 → 자동달성 안전) ── */
+  function checkMission(){
+    if(mode!=='mission'||mDone||mLock) return;
+    var M=curMissions();
+    if(mStep>=M.length) return;
+    if(M[mStep].check(state())){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false; mStep++;
+        if(mStep>=curMissions().length){ mStep=curMissions().length-1; mDone=true; }
+        build();
+      }, STEP_MS);
+    }
+  }
+
+  /* ── 빌드 ── */
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+CC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(bt){
+        bt.addEventListener('click',function(){ if(bt.dataset.g!==grade) setGrade(bt.dataset.g); });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+CC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(bt){
+      bt.addEventListener('click',function(){ if(bt.dataset.m!==mode) setMode(bt.dataset.m); });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      if(mStep>=M.length) mStep=M.length-1;
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 그려 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      var q=qList[qIdx]||qList[0];
+      view=q.view; r=q.r; threading=false; flash=null;
+      bar.innerHTML='<div class="k3bar"><span>❓ '+q.q+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode==='quiz'){
+      var qq=qList[qIdx]||qList[0];
+      s=CC.shuffled(qq.choices,rand).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    } else {
+      if(G().areaView){
+        s+='<button class="cr-tg'+(view==='draw'?' on':'')+'" data-view="draw">⭕ 원 그리기</button>'
+          +'<button class="cr-tg'+(view==='area'?' on':'')+'" data-view="area">🍕 원의 넓이</button>';
+      }
+      if(view==='draw'){
+        s+='<span class="cr-lab">반지름</span>'
+          +'<button class="ck-btn" data-act="rm" style="--c1:#4b5c72;--c2:#334052"'+(r<=1?' disabled':'')+'>－</button>'
+          +'<button class="ck-btn" data-act="rp" style="--c1:#3f77d8;--c2:#2a56ab"'+(r>=8?' disabled':'')+'>＋</button>';
+        if(G().dbl) s+='<button class="ck-btn" data-act="dbl" style="--c1:#8f6ef2;--c2:#6b47d8">🔭 반지름 2배</button>';
+        if(G().circumf) s+='<button class="ck-btn" data-act="thread" style="--c1:#e05a5a;--c2:#b03a3a">🧵 둘레를 펴 보기</button>';
+      } else {
+        s+='<span class="cr-lab">조각 수</span>'
+          +'<button class="ck-btn" data-act="pm" style="--c1:#4b5c72;--c2:#334052"'+(pieces<=4?' disabled':'')+'>－</button>'
+          +'<button class="ck-btn" data-act="pp" style="--c1:#3f77d8;--c2:#2a56ab"'+(pieces>=24?' disabled':'')+'>＋</button>';
+      }
+      s+='<button class="ck-btn" data-act="reset" style="--c1:#5a6675;--c2:#3d4653">↺</button>';
+    }
+    ct.innerHTML=s;
+    ct.querySelectorAll('.cr-tg').forEach(function(bt){
+      bt.addEventListener('click',function(){ setView(bt.dataset.view); });
+    });
+    ct.querySelectorAll('[data-act]').forEach(function(bt){
+      bt.addEventListener('click',function(){
+        if(bt.dataset.act==='thread') thread(); else act(bt.dataset.act);
+      });
+    });
+    ct.querySelectorAll('.ck-choice').forEach(function(bt){
+      bt.addEventListener('click',function(){ answer(bt.dataset.v); });
+    });
+
+    render();
+  }
+
+  function setGrade(g){
+    grade=g; snd('select');
+    if(G().modes.indexOf(mode)<0) mode='free';
+    if(!G().areaView) view='draw';          /* §6-8 — 학년을 내리면 넓이 보기 강제 해제 */
+    r=sr; pieces=8; threading=false;
+    mStep=0; mDone=false; mLock=false;
+    magicShown=false; pred=null; flash=null;
+    clearFlash();
+    if(mode==='quiz') shuffleQuiz();
+    build();
+  }
+  function setMode(m){
+    mode=m; snd('select');
+    mStep=0; mDone=false; mLock=false;
+    view='draw'; r=(m==='mission')?2:sr; pieces=8;   /* v2 모드 시드 규칙 그대로 */
+    threading=false; magicShown=false; pred=null; flash=null;
+    clearFlash();
+    if(m==='quiz') shuffleQuiz();
+    build();
+  }
+
+  /* ═══ 무대 — 제도판 위 컴퍼스 ═══ */
+  var VBW=CC.VBW, VBH=CC.VBH;
+  function svgEl(t,at){ var e=document.createElementNS('http://www.w3.org/2000/svg',t); for(var k in at)e.setAttribute(k,at[k]); return e; }
+  function txt(svg,x,y,s,o){
+    o=o||{};
+    var t=svgEl('text',{ x:x, y:y, 'text-anchor':o.anchor||'middle',
+      'font-family':o.font||'var(--kedu-title)', 'font-size':o.size||18, 'font-weight':800,
+      fill:o.fill||'#2B3E52' });
+    if(o.cls) t.setAttribute('class',o.cls);
+    if(o.tf) t.setAttribute('transform',o.tf);
+    t.textContent=s; svg.appendChild(t); return t;
+  }
+
+  function render(){
+    var desk=$('desk');
+    var ink=fxInk; fxInk=false;
+    var fp=fxPieces; fxPieces=false;
+
+    var wrap=document.createElement('div');
+    wrap.className='cr-board';
+    var svg=svgEl('svg',{ viewBox:'0 0 '+VBW+' '+VBH, id:'crSvg',
+      style:'display:block;width:min(90vw,860px);height:auto;max-height:'+(mode==='quiz'?'40vh':'50vh') });
+    var d=svgEl('defs',{});
+    d.innerHTML=
+      '<filter id="crSh" x="-20%" y="-20%" width="140%" height="140%">'
+      +'<feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#13315C" flood-opacity="0.22"/></filter>'
+      +'<radialGradient id="crGlass" cx="0.35" cy="0.28" r="0.95">'
+      +'<stop offset="0" stop-color="#B2F2E5"/><stop offset="0.6" stop-color="#63E6BE"/>'
+      +'<stop offset="1" stop-color="#38D9A9"/></radialGradient>'
+      +'<linearGradient id="crSteel" x1="0" y1="0" x2="0" y2="1">'
+      +'<stop offset="0" stop-color="#EDF2F7"/><stop offset="0.45" stop-color="#CBD6E2"/>'
+      +'<stop offset="1" stop-color="#A9B7C7"/></linearGradient>';
+    svg.appendChild(d);
+
+    if(threading) drawThread(svg);
+    else if(view==='draw') drawCircle(svg, ink);
+    else drawArea(svg, fp);
+
+    wrap.appendChild(svg);
+    /* 배너는 desk 직속(absolute)이라 무대 교체에도 살아남는다 */
+    var keep=[];
+    desk.querySelectorAll('.cr-flash,.cr-flash-magic').forEach(function(e){ keep.push(e); });
+    desk.innerHTML=''; desk.appendChild(wrap);
+    keep.forEach(function(e){ desk.appendChild(e); });
+
+    updateStatus();
+  }
+
+  /* ── draw 보기 — 유리 디스크 + 컴퍼스 ── */
+  function drawCircle(svg, ink){
+    var g=CC.drawGeom(r), cx=g.cx, cy=g.cy, rr=g.rr;
+    var circ=2*Math.PI*rr;
+
+    /* 컴퍼스 — 다리가 반지름만큼 벌어진다 */
+    var pivX=90, pivY=48, legL=88, spread=Math.atan2(rr, 300)*3.2+0.18;
+    var cg=svgEl('g',{ 'pointer-events':'none', opacity:0.9 });
+    cg.appendChild(svgEl('line',{ x1:pivX, y1:pivY, x2:pivX-Math.sin(spread)*legL, y2:pivY+Math.cos(spread)*legL,
+      stroke:'#8fa1b4', 'stroke-width':6, 'stroke-linecap':'round' }));
+    cg.appendChild(svgEl('line',{ x1:pivX, y1:pivY, x2:pivX+Math.sin(spread)*legL, y2:pivY+Math.cos(spread)*legL,
+      stroke:'#c98a4b', 'stroke-width':6, 'stroke-linecap':'round' }));
+    cg.appendChild(svgEl('circle',{ cx:pivX, cy:pivY, r:7, fill:'url(#crSteel)', stroke:'#7d8b9a', 'stroke-width':2 }));
+    txt(svg,pivX,pivY-16,'컴퍼스',{ size:13, fill:'#8aa0b6' });
+    svg.appendChild(cg);
+
+    /* 유리 디스크 */
+    var disk=svgEl('circle',{ cx:cx, cy:cy, r:rr, fill:'url(#crGlass)', 'fill-opacity':0.5,
+      filter:'url(#crSh)', id:'crDisk' });
+    if(ink) disk.setAttribute('class','cr-fill');
+    if(ink) disk.setAttribute('style','--dw:'+(DRAW_MS/1000)+'s');
+    svg.appendChild(disk);
+
+    /* 잉크 외곽선 — 컴퍼스가 한 바퀴 도는 동안 그려진다 */
+    var line=svgEl('circle',{ cx:cx, cy:cy, r:rr, fill:'none', stroke:'#0B7A5C', 'stroke-width':5, id:'crInk' });
+    if(ink){
+      line.setAttribute('class','cr-ink');
+      line.setAttribute('stroke-dasharray',circ);
+      line.setAttribute('style','--circ:'+circ+';--dw:'+(DRAW_MS/1000)+'s');
+    }
+    svg.appendChild(line);
+
+    /* 연필 다리가 원주를 따라 한 바퀴 */
+    if(ink){
+      var pen=svgEl('circle',{ cx:cx+rr, cy:cy, r:6, fill:'#c98a4b', stroke:'#8a5a2b', 'stroke-width':2,
+        class:'cr-pencil' });
+      pen.setAttribute('style','transform-origin:'+cx+'px '+cy+'px;--dw:'+(DRAW_MS/1000)+'s');
+      svg.appendChild(pen);
+    }
+
+    if(G().twoRadius){
+      /* ★ 저학년 닻 — 지름을 «두 개의 반지름 막대»로 분리 (v2 무손실) */
+      var l1=svgEl('line',{ x1:cx-rr, y1:cy, x2:cx, y2:cy, stroke:'#FF8A3D', 'stroke-width':6,
+        'stroke-linecap':'round', 'data-half':'left' });
+      var l2=svgEl('line',{ x1:cx, y1:cy, x2:cx+rr, y2:cy, stroke:'#1565C0', 'stroke-width':6,
+        'stroke-linecap':'round', 'data-half':'right' });
+      if(ink){ l1.setAttribute('class','cr-snap'); l2.setAttribute('class','cr-snap'); }
+      svg.appendChild(l1); svg.appendChild(l2);
+      txt(svg,cx-rr/2,cy-14,'반지름',{ size:17, fill:'#E8590C', cls:'cr-rlab' });
+      txt(svg,cx+rr/2,cy-14,'반지름',{ size:17, fill:'#1565C0', cls:'cr-rlab' });
+      txt(svg,cx,cy+rr+30,'반지름 ＋ 반지름 ＝ 지름',{ size:19, fill:'#0CA678', cls:'cr-sum' });
+    } else {
+      svg.appendChild(svgEl('line',{ x1:cx-rr, y1:cy, x2:cx+rr, y2:cy, stroke:'#0CA678',
+        'stroke-width':3, 'stroke-dasharray':'7 5', 'data-dia':'1' }));
+      svg.appendChild(svgEl('line',{ x1:cx, y1:cy, x2:cx+rr, y2:cy, stroke:'#1565C0',
+        'stroke-width':4, 'data-rad':'1' }));
+      txt(svg,cx+rr/2,cy-14,'반지름 '+r,{ size:18, fill:'#1565C0', cls:'cr-rlab' });
+    }
+    svg.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:7, fill:'#1B3A57' }));   /* 중심 핀 */
+  }
+
+  /* ── 🧵 원주율 실 풀기 ── */
+  function drawThread(svg){
+    var t=CC.threadGeom(r);
+    var cx=t.cx, cy=t.cy, rr=t.rrT, circ=t.circPx;
+
+    /* 원 + 지름 (실이 감길 대상) */
+    svg.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:rr, fill:'url(#crGlass)', 'fill-opacity':0.32 }));
+    svg.appendChild(svgEl('line',{ x1:cx-rr, y1:cy, x2:cx+rr, y2:cy, stroke:'#0CA678',
+      'stroke-width':4, 'data-dia':'1' }));
+    txt(svg,cx,cy-rr-12,'지름',{ size:15, fill:'#0CA678' });
+
+    /* ① 실이 감긴다 */
+    var wind=svgEl('circle',{ cx:cx, cy:cy, r:rr, fill:'none', stroke:'#E03131', 'stroke-width':5,
+      'stroke-linecap':'round', class:'cr-wind', id:'crWind' });
+    wind.setAttribute('stroke-dasharray',circ);
+    wind.setAttribute('style','--circ:'+circ+';--t1:'+(T_WIND/1000)+'s');
+    svg.appendChild(wind);
+    svg.appendChild(svgEl('circle',{ cx:cx, cy:cy, r:5, fill:'#1B3A57' }));
+
+    /* ② 실이 풀려 자 위에 눕는다 — 길이 = 진짜 원둘레 2π·rr */
+    svg.appendChild(svgEl('rect',{ x:t.x0-10, y:t.rulerY-4, width:circ+20, height:20, rx:5,
+      fill:'url(#crSteel)', stroke:'#8fa1b4', 'stroke-width':1.2, filter:'url(#crSh)' }));
+    var lay=svgEl('line',{ x1:t.x0, y1:t.rulerY+6, x2:t.x0+circ, y2:t.rulerY+6,
+      stroke:'#E03131', 'stroke-width':6, 'stroke-linecap':'round', class:'cr-lay', id:'crLay' });
+    lay.setAttribute('stroke-dasharray',circ);
+    lay.setAttribute('style','--circ:'+circ+';--t2:'+(T_LAY/1000)+'s;--d2:'+(T_WIND/1000)+'s');
+    svg.appendChild(lay);
+    txt(svg,t.x0+circ/2,t.rulerY-12,'원의 둘레(원주)',{ size:15, fill:'#C92A2A' });
+
+    /* ③ 지름 막대를 하나씩 놓아 본다 — 3개를 놓고도 «조금» 남는다 */
+    var base=T_WIND+T_LAY;
+    for(var i=0;i<3;i++){
+      var bx=t.x0+i*t.dPx;
+      var b=svgEl('rect',{ x:bx, y:t.barY, width:t.dPx-3, height:20, rx:5,
+        fill:'#0CA678', stroke:'#087F5B', 'stroke-width':2, class:'cr-bar', 'data-bar':(i+1) });
+      b.setAttribute('style','animation-delay:'+(base+i*T_BAR)+'ms');
+      svg.appendChild(b);
+      txt(svg,bx+t.dPx/2,t.barY+15,'지름',{ size:13, fill:'#fff' });
+    }
+    /* 자투리 = (π − 3)·지름 ≈ 0.14·지름 */
+    var rx=t.x0+3*t.dPx;
+    var rest=svgEl('rect',{ x:rx, y:t.barY, width:t.restPx, height:20, rx:5,
+      fill:'#FF8A3D', stroke:'#C24E0E', 'stroke-width':2, class:'cr-rest', id:'crRest' });
+    rest.setAttribute('style','animation-delay:'+(base+3*T_BAR)+'ms');
+    svg.appendChild(rest);
+    txt(svg,rx+t.restPx/2,t.barY+42,'조금 더!',{ size:15, fill:'#E8590C', cls:'cr-restlab' });
+    txt(svg,t.x0+1.5*t.dPx,t.barY+42,'지름 3개',{ size:15, fill:'#087F5B' });
+  }
+
+  /* ── area 보기 — 부채꼴 펼치기 (고학년) ── */
+  function drawArea(svg, fp){
+    var g=CC.areaGeom(r,pieces);
+    var N=pieces, rr=g.rr, theta=g.theta, cx=g.cx, cy=g.cy;
+
+    /* 원을 N조각 피자로 */
+    for(var i=0;i<N;i++){
+      var a0=i*theta, a1=(i+1)*theta;
+      var p0=[cx+rr*Math.cos(a0), cy+rr*Math.sin(a0)];
+      var p1=[cx+rr*Math.cos(a1), cy+rr*Math.sin(a1)];
+      svg.appendChild(svgEl('path',{ d:'M'+cx+' '+cy+' L'+p0[0]+' '+p0[1]+' A'+rr+' '+rr+' 0 0 1 '+p1[0]+' '+p1[1]+' Z',
+        fill:(i%2?'#63E6BE':'#38D9A9'), stroke:'#fff', 'stroke-width':1.5, class:'cr-slice' }));
+    }
+    txt(svg,cx,cy+rr+28,'원을 '+N+'조각으로',{ size:17, fill:'#5a7894' });
+
+    /* 번갈아 펼쳐 지그재그로 맞물린다 */
+    var half=theta/2, ly=g.rowH, lx=-rr*Math.sin(half), rx2=rr*Math.sin(half);
+    var path='M0 0 L'+lx+' '+ly+' A'+rr+' '+rr+' 0 0 1 '+rx2+' '+ly+' Z';
+    for(var j=0;j<N;j++){
+      var up=(j%2===0);
+      var bx=g.startX+Math.floor(j/2)*g.arc+(up?0:g.arc*0.5);
+      var gg=svgEl('g',{ class:(fp?'cr-piece':''), 'data-fan':j });
+      gg.setAttribute('transform', up
+        ? 'translate('+bx+','+g.baseY+')'
+        : 'translate('+bx+','+(g.baseY+ly)+') rotate(180)');
+      if(fp) gg.setAttribute('style','animation-delay:'+(j*30)+'ms');
+      gg.appendChild(svgEl('path',{ d:path, fill:(j%2?'#63E6BE':'#38D9A9'), stroke:'#fff', 'stroke-width':1.2 }));
+      svg.appendChild(gg);
+    }
+
+    /* ★ v3 추가 — 치수선: 「넓이 = 원주÷2 × 반지름」이 그림에서 읽힌다 */
+    var left=g.startX+lx, right=g.startX+g.rowW, bY=g.baseY+ly;
+    svg.appendChild(svgEl('line',{ x1:left, y1:bY+16, x2:right, y2:bY+16,
+      stroke:'#7048E8', 'stroke-width':2.5, 'stroke-dasharray':'6 4', id:'crBase' }));
+    txt(svg,(left+right)/2,bY+36,'밑변 ＝ 원주 ÷ 2',{ size:15, fill:'#7048E8', cls:'cr-dimw' });
+    var hx=left-26;
+    svg.appendChild(svgEl('line',{ x1:hx, y1:g.baseY, x2:hx, y2:bY,
+      stroke:'#1565C0', 'stroke-width':2.5, 'stroke-dasharray':'6 4', id:'crHeight' }));
+    txt(svg,hx-9,(g.baseY+bY)/2,'높이 ＝ 반지름',{ size:14, fill:'#1565C0', cls:'cr-dimh',
+      tf:'rotate(-90 '+(hx-9)+' '+((g.baseY+bY)/2)+')' });
+  }
+
+  function updateStatus(){
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">그림 속 반지름을 잘 보고 답을 골라요!</div>';
+      return;
+    }
+    var big=function(v,c){ return '<b style="font-family:var(--kedu-title);font-size:26px;color:'+c+'">'+v+'</b>'; };
+    if(view==='area'){
+      st.innerHTML='<div class="hint">조각이 많을수록 직사각형! 넓이 ≈ '
+        +big('3.14 × '+r+' × '+r+' ＝ '+CC.area(r).toFixed(2),'#FFB27A')+'</div>';
+      return;
+    }
+    var line='반지름 '+big(r,'#9CC4FA')+'   지름 '+big(CC.diameter(r),'#3EE6B0');
+    if(G().twoRadius){
+      line+='<br><span class="grabline">반지름 두 개를 이으면 지름이에요!</span>';
+    } else if(G().circumf){
+      line+='   원주 ≈ 지름×3.14 ＝ '+big(CC.circumference(r).toFixed(2),'#FFB27A');
+    }
+    if(flash==='dbl'){
+      var prev=CC.area(r/2), now=CC.area(r);
+      line+='<br><span style="color:#BCA7FF">둘레는 <b style="color:#FFB27A">2배</b>인데 넓이는 '
+        +'<span class="cr-hold" style="font-size:22px">4배</span>! '
+        +'<span style="font-size:12.5px;color:#8fa3b8">(넓이 '+prev.toFixed(2)+' → '+now.toFixed(2)+')</span></span>';
+    }
+    st.innerHTML='<div class="hint">'+line+'</div>';
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  shuffleQuiz();
+  build();
+
+  window.CircleApp={
+    get grade(){return grade;}, get mode(){return mode;}, get view(){return view;},
+    get r(){return r;}, get pieces(){return pieces;}, get sr(){return sr;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qIdx(){return qIdx;}, get qList(){return qList.slice();}, get quiz(){return qList[qIdx];},
+    get qScore(){return qScore;}, get qCount(){return qCount;},
+    get magicShown(){return magicShown;}, get pred(){return pred;},
+    get threading(){return threading;}, get flash(){return flash;}, get busy(){return busy;},
+    get rand(){return rand;}, set rand(fn){rand=fn;},
+    setGrade:setGrade, setMode:setMode, setView:setView,
+    act:act, thread:thread, answer:answer, build:build
+  };
+})();
+</script>
+</body>
+</html>
