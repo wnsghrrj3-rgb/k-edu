@@ -92,11 +92,13 @@
   var state = {
     n: +(q.get('n') || 10),
     range: +(q.get('range') || 50),
+    max: +(q.get('max') || 9),
     qmode: q.get('qmode') || 'mix',
     seed: +(q.get('seed') || Math.floor(Math.random() * 100000)),
     answers: q.get('answers') === '1',
     title: q.get('title') || ''
   };
+  var schema = {};      // 카탈로그의 paramsSchema — 어떤 칩을 보일지는 이게 정한다
 
   function mulberry32(a) {
     return function () {
@@ -117,6 +119,7 @@
     var item = cat.filter(function (a) { return a.gen && a.gen.indexOf('/' + genId + '.js') >= 0; })[0];
     if (!item) throw new Error('카탈로그에 생성기가 없어요: ' + genId);
     if (!state.title) state.title = item.title;
+    schema = item.paramsSchema || {};
     document.getElementById('ws-meta').textContent =
       (item.map ? item.map.grade + '학년 ' + item.map.unit + '단원' : '') + (item.pages ? ' · ' + item.pages : '');
     return new Promise(function (res, rej) {
@@ -134,7 +137,7 @@
   function render() {
     var G = (window.GENS || {})[genId];
     if (!G) { document.getElementById('err').textContent = '생성기를 찾을 수 없어요'; return; }
-    var gen = G.create({ range: state.range, qmode: state.qmode }, mulberry32(state.seed));
+    var gen = G.create({ range: state.range, max: state.max, qmode: state.qmode }, mulberry32(state.seed));
 
     document.body.classList.toggle('answers', state.answers);
     document.getElementById('ws-title').textContent = state.title;
@@ -159,9 +162,16 @@
         return '<button class="chip' + (state[key] === v ? ' on' : '') + '" data-k="' + key + '" data-v="' + v + '">' + v + '</button>';
       }).join('');
     };
-    mk('chips-n', 'n', [10, 16, 20]);
-    mk('chips-range', 'range', [20, 50, 100]);
-    document.getElementById('grp-range').style.display = (genId === 'compare50') ? 'flex' : 'none';
+    mk('chips-n', 'n', [10, 16, 20]);                    // 활동지 문항 수는 종이 기준 (게임과 별개)
+    // 수 범위 칩: 생성기가 range(또는 max)를 받을 때만 — 카탈로그가 알려준다
+    var rk = schema.range ? 'range' : (schema.max ? 'max' : null);
+    if (rk) {
+      mk('chips-range', rk, schema[rk].options);
+      document.getElementById('grp-range').style.display = 'flex';
+      document.querySelector('#grp-range .lb').textContent = schema[rk].label || '수 범위';
+    } else {
+      document.getElementById('grp-range').style.display = 'none';
+    }
     [].forEach.call(document.querySelectorAll('.chip'), function (c) {
       c.addEventListener('click', function () {
         state[c.dataset.k] = +c.dataset.v;
