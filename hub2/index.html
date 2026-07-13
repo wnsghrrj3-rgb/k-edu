@@ -320,6 +320,79 @@ main{flex:1;position:relative;z-index:1;width:100%;max-width:940px;margin:0 auto
 .lesson.soon .lesson-go{display:none}
 .lesson-soon{font-size:11px;color:var(--ink-faint);letter-spacing:.08em;flex-shrink:0}
 
+/* ── H3: 우리 반 (교사 첫 화면) ────────────────────────── */
+.room{
+  background:linear-gradient(168deg,var(--night-2),var(--night-1));
+  border:1px solid rgba(201,169,97,.18);border-radius:16px;
+  overflow:hidden;margin-bottom:18px;
+  box-shadow:0 12px 34px rgba(0,0,0,.5);
+}
+.room-head{
+  display:flex;align-items:center;gap:12px;padding:15px 20px;
+  background:linear-gradient(160deg,var(--wood-2),var(--wood-1));
+  border-bottom:1px solid var(--wood-edge);
+}
+.room-title{font-family:var(--serif);font-weight:700;font-size:18px;letter-spacing:.14em;color:var(--ink)}
+.room-code{
+  margin-left:auto;font-family:var(--num);font-size:15px;letter-spacing:.16em;
+  color:var(--brass);padding:5px 12px;border:1px solid var(--brass-dim);border-radius:8px;
+  cursor:pointer;transition:background .16s;
+}
+.room-code:hover{background:rgba(201,169,97,.12)}
+.room-code:empty{display:none}
+.room-body{padding:6px 0}
+.room-quiet{padding:22px 20px;text-align:center;font-size:14px;color:var(--ink-faint)}
+.room-quiet a{color:var(--brass);text-decoration:none;border-bottom:1px solid var(--brass-dim)}
+
+/* 보낸 것 한 줄 = 돌아온 수가 바로 보인다 */
+.sent{
+  display:flex;align-items:center;gap:14px;
+  min-height:56px;padding:12px 20px;
+  border-top:1px solid rgba(201,169,97,.07);
+  text-decoration:none;color:var(--ink);
+  transition:background .16s;
+}
+.sent:first-child{border-top:none}
+.sent:hover{background:rgba(201,169,97,.06)}
+.sent-t{flex:1;font-size:14.5px;color:var(--ink-dim);line-height:1.5}
+.sent:hover .sent-t{color:var(--ink)}
+.sent-back{
+  flex-shrink:0;font-family:var(--num);font-size:14px;
+  padding:5px 12px;border-radius:8px;white-space:nowrap;
+  background:rgba(201,169,97,.1);border:1px solid rgba(201,169,97,.28);color:var(--brass);
+}
+.sent-back.none{background:none;border-color:rgba(201,169,97,.14);color:var(--ink-faint)}
+.sent-go{flex-shrink:0;width:14px;height:14px;color:var(--ink-faint);transform:rotate(180deg)}
+.room-more{
+  display:block;padding:13px 20px;text-align:center;
+  border-top:1px solid rgba(201,169,97,.07);
+  font-size:13px;color:var(--ink-faint);text-decoration:none;transition:color .16s;
+}
+.room-more:hover{color:var(--brass)}
+
+/* 오늘 수업 = 가장 큰 동사 (§0-1 교사 3클릭의 두 번째) */
+.today{
+  display:flex;align-items:center;gap:16px;
+  min-height:78px;padding:18px 22px;margin-bottom:26px;
+  background:linear-gradient(160deg,var(--wood-2),var(--wood-1) 70%,var(--night-2));
+  border:1px solid var(--brass-dim);border-radius:16px;
+  text-decoration:none;
+  box-shadow:0 12px 34px rgba(0,0,0,.5);
+  transition:transform .26s var(--ease-rise),border-color .26s,box-shadow .26s;
+}
+.today:hover{transform:translateY(-3px);border-color:var(--brass);box-shadow:0 20px 46px rgba(0,0,0,.62)}
+.today-ic{width:34px;height:34px;flex-shrink:0;color:var(--brass)}
+.today-ic svg{width:100%;height:100%}
+.today-txt{flex:1;display:flex;flex-direction:column;gap:3px}
+.today-verb{font-family:var(--title);font-size:21px;color:var(--ink)}
+.today-sub{font-size:12.5px;color:var(--ink-faint)}
+.today-go{flex-shrink:0;width:16px;height:16px;color:var(--brass);transform:rotate(180deg)}
+
+.shelf-label{
+  font-family:var(--body);font-size:12.5px;letter-spacing:.14em;
+  color:var(--ink-faint);margin-bottom:12px;padding-left:2px;
+}
+
 /* ── H3: 선생님 선반 ───────────────────────────────────── */
 .shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .tool{
@@ -518,8 +591,28 @@ footer a:hover{color:var(--ink-dim)}
   <!-- ══ H3 · 선생님 선반 ════════════════════════════════ -->
   <section class="screen" id="h-teacher">
     <button class="back" onclick="goHome()"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg>처음으로</button>
-    <div class="stage-title">수업 시작하기</div>
-    <div class="stage-sub">쓸 것을 고르세요</div>
+
+    <!-- 우리 반 — 보낸 것과 돌아온 것 (§0-3 받기 0노동: 교사가 걷으러 다니지 않는다) -->
+    <div class="room" id="room">
+      <div class="room-head">
+        <span class="room-title">우리 반</span>
+        <span class="room-code" id="room-code"></span>
+      </div>
+      <div class="room-body" id="room-body">
+        <div class="room-quiet">불러오는 중</div>
+      </div>
+    </div>
+
+    <a class="today" href="/kedu/teacher/">
+      <span class="today-ic"><svg viewBox="0 0 24 24"><use href="#i-lesson"/></svg></span>
+      <span class="today-txt">
+        <span class="today-verb">오늘 수업 시작하기</span>
+        <span class="today-sub">차시를 열어 바로 진행해요</span>
+      </span>
+      <svg class="today-go" viewBox="0 0 24 24"><use href="#i-back"/></svg>
+    </a>
+
+    <div class="shelf-label">그 밖에 쓸 것</div>
     <div class="shelf">
       <a class="tool" href="/kedu/teacher/">
         <span class="tool-ic"><svg viewBox="0 0 24 24"><use href="#i-lesson"/></svg></span>
@@ -759,11 +852,104 @@ function renderMap(){
   });
 }
 
+// ── 우리 반 (교사 화면) ───────────────────────────────────
+// §0-3 받기 0노동: 교사가 아무것도 안 눌러도 「돌아온 것」이 보인다.
+// §0-9 3초 화면: supabase는 «교사 문에 들어왔을 때만» 지연 로드한다. 학생 경로는 네트워크 0.
+var roomLoaded = false;
+
+function loadScript(src){
+  return new Promise(function(res){
+    var s = document.createElement('script');
+    s.onload = function(){ res(true); };
+    s.onerror = function(){ res(false); };
+    s.src = src;
+    document.head.appendChild(s);
+  });
+}
+
+function roomQuiet(html){
+  document.getElementById('room-body').innerHTML = '<div class="room-quiet">' + html + '</div>';
+}
+
+async function loadRoom(){
+  if(roomLoaded) return;
+  roomLoaded = true;
+
+  if(typeof window.getKeduDb !== 'function'){
+    if(!await loadScript('/kedu_config.js')) return roomQuiet('연결하지 못했어요');
+  }
+  if(!window.supabase){
+    if(!await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2')) return roomQuiet('연결하지 못했어요');
+  }
+
+  var db;
+  try { db = getKeduDb(); } catch(e){ return roomQuiet('연결하지 못했어요'); }
+  if(!db) return roomQuiet('연결하지 못했어요');
+
+  var session;
+  try { session = (await db.auth.getSession()).data.session; }
+  catch(e){ session = null; }
+  if(!session || !session.user){
+    return roomQuiet('선생님으로 <a href="/auth/">로그인</a>하면 보낸 것과 돌아온 것이 여기 모여요');
+  }
+
+  var teacher;
+  try {
+    teacher = (await db.from('teachers').select('id,name').eq('user_id', session.user.id).maybeSingle()).data;
+  } catch(e){ teacher = null; }
+  if(!teacher) return roomQuiet('선생님 계정이 아니에요');
+
+  // 학급 코드
+  try {
+    var codes = (await db.from('class_codes').select('code,label')
+      .eq('teacher_id', teacher.id).eq('is_active', true)
+      .order('created_at', {ascending:false})).data || [];
+    if(codes[0] && codes[0].code){
+      var el = document.getElementById('room-code');
+      el.textContent = codes[0].code;
+      el.title = '눌러서 복사';
+      el.onclick = function(){
+        try { navigator.clipboard.writeText(codes[0].code); toast('학급 코드를 복사했어요'); } catch(e){}
+      };
+    }
+  } catch(e){}
+
+  // 보낸 것 + 돌아온 것 (한 번에 — 교사는 아무것도 안 누른다)
+  var bundles = [];
+  try {
+    bundles = (await db.from('cw_bundles').select('id,title,status')
+      .eq('teacher_id', teacher.id).eq('status','sent')
+      .order('created_at', {ascending:false}).limit(5)).data || [];
+  } catch(e){ bundles = []; }
+
+  if(!bundles.length){
+    return roomQuiet('아직 보낸 것이 없어요 · <a href="/classwork/">케이박스에서 보내기</a>');
+  }
+
+  var back = {};
+  try {
+    var ids = bundles.map(function(b){ return b.id; });
+    var subs = (await db.from('cw_submissions').select('bundle_id,student_profile_id').in('bundle_id', ids)).data || [];
+    subs.forEach(function(s){
+      (back[s.bundle_id] = back[s.bundle_id] || {})[s.student_profile_id] = 1;
+    });
+  } catch(e){}
+
+  document.getElementById('room-body').innerHTML = bundles.map(function(b){
+    var n = back[b.id] ? Object.keys(back[b.id]).length : 0;
+    return '<a class="sent" href="/classwork/?box='+encodeURIComponent(b.id)+'">'+
+      '<span class="sent-t">'+esc(b.title || '이름 없는 박스')+'</span>'+
+      '<span class="sent-back'+(n ? '' : ' none')+'">'+(n ? n+'명 돌아옴' : '아직')+'</span>'+
+      '<svg class="sent-go" viewBox="0 0 24 24"><use href="#i-back"/></svg></a>';
+  }).join('') + '<a class="room-more" href="/classwork/">케이박스 전부 보기</a>';
+}
+
 function prep(id){
   id = demote(id, state);
   if(id === 'h-grade')   renderGrades();
   if(id === 'h-subject') renderSubjects();
   if(id === 'h-map')     renderMap();
+  if(id === 'h-teacher') { try { loadRoom(); } catch(e){} }
   if(id === 'h-door'){
     var last = lsGet(LS.role);
     var dt = document.getElementById('door-teacher'), ds = document.getElementById('door-student');
@@ -849,6 +1035,7 @@ window.KHub = {
   subjectsFor:subjectsFor, hasContent:hasContent, contentUrl:contentUrl,
   screenFromSearch:screenFromSearch, demote:demote,
   mapKey:mapKey, loadMap:loadMap, linksFor:linksFor, renderMap:renderMap,
+  loadRoom:loadRoom,
   state:state, show:show, nav:nav, pickRole:pickRole, pickGrade:pickGrade,
   pickSemester:pickSemester, goContent:goContent, boot:boot
 };
