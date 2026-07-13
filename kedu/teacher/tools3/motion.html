@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 물체의 운동과 속력 — 스튜디오</title>
+<!--
+  케이랩 v3 · A트랙 — 물체의 운동과 속력 (2026-07-13 · 페이블) · A트랙 15호 = A트랙 완주
+  v2 engine/tools/motion.js(704줄 · 2D SVG) → «실물 3D 트랙»으로 전면 재건 · r185 + klab3 코어.
+  스튜디오 5요소: ① 100m 트랙 무대(레인 3 · 20m 마커 · 결승선 · 실물 사람/자전거/자동차)
+    ② 실물 질감(트랙 고무 바닥 · 차체 금속 · 자취 디스크 발광)
+    ③ 직접 조작(🔴 시간을 «앞뒤로» 끌기 · 🔴 자취 점 두 개를 집어 자로 재기 · 속력/지연 슬라이더)
+    ④ 즉각 반응(자취 점 간격이 곧 속력 — 속력을 올리면 간격이 눈앞에서 벌어진다)
+    ⑤ 탐구 구조(미션 저2/중3/고5 · 퀴즈 5 · 만약에 3 · 예측 칩 · 와우=🚀 가속의 역전)
+  🔴 신기술 2종(페이블 몫 이행):
+    ① 시간 스크럽 — v2는 「1초 지나기」로 «앞으로만» 갔다. v3는 시간을 «앞뒤로 자유롭게» 끈다.
+       어느 순간이든 멈춰 세 물체를 나란히 비교. 「시간을 멈춰 가며 자취를 남긴다」는
+       이 도구의 디지털 우위를 완성한다.
+    ② 🎯 자취 자(measure) — 트랙에 찍힌 자취 점 «두 개를 집으면» 3D 줄자가 나타나
+       거리 · 걸린 시간 · 속력(거리÷시간)을 즉석에서 계산해 준다. 「속력 = 거리 ÷ 시간」이
+       공식이 아니라 «내가 잰 값»이 된다.
+  v2 무손실: 학년칸 저(빠르다·느리다 · race만 · 미션2)/중(거리·시간 함께 · 미션3 · 🌀2)/고(속력 계산·등속가속 · 미션5 · 🌀3)
+    ·3실험(🏁 빠르기 비교 · 🧮 속력 계산 · 🚀 등속·가속) ·100m 트랙·1초 자취 점
+    ·만약에 3종(🚴 멀리 간 자전거 vs 가까이 간 자동차 · 🧊 마찰이 없다면 · 🐘 무거우면 빨리 떨어질까=아폴로 15호)
+    ·예측 노트(🚗 속력→점 간격 · ⏱ 지각 출발 역전) ·5칩 = 🏎 꼬마 속력탐정 ·퀴즈 5문 ·상태줄 문구 전부
+  config: ?grade=low|mid|high(지정 시 잠금) · ?mode=free|mission|quiz · ?exp=race|calc|accel
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  .mt-panel{position:fixed;z-index:20;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:15px;padding:9px 11px;color:#fff}
+  .mt-seg{display:flex;gap:5px;flex-wrap:wrap}
+  .mt-seg button{font-family:'Gowun Dodum';font-size:12.5px;padding:7px 11px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  .mt-seg button.on{background:rgba(155,123,245,.32);border-color:rgba(155,123,245,.65);color:#fff}
+  .mt-lab{font-family:'Gowun Dodum';font-size:11.5px;color:#93a3b4;margin:2px 0 3px 2px}
+  #hudL{top:50px;left:12px;display:flex;flex-direction:column;gap:7px;max-width:66vw}
+  #ctrls{top:50px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch;
+    max-width:218px;max-height:calc(100vh - 200px);overflow-y:auto}
+  #ctrls .k3-btn{font-size:13.5px;text-align:left}
+  #ctrls::-webkit-scrollbar{display:none}
+  .mt-slider{width:100%;accent-color:#9B7BF5;height:24px;cursor:pointer}
+  #timebar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:21;
+    background:var(--hud);border:1px solid var(--hudline);border-radius:16px;backdrop-filter:blur(8px);
+    padding:10px 16px;display:flex;gap:10px;align-items:center;width:min(680px,88vw)}
+  #timebar .clk{font-family:'Gowun Dodum';font-size:20px;color:#FFD79A;min-width:74px;text-align:center}
+  #tscrub{flex:1;accent-color:#FF922B;height:26px;cursor:pointer}
+  #timebar button{font-family:'Gowun Dodum';font-size:13px;padding:8px 12px;border-radius:11px;
+    border:1px solid var(--hudline);background:rgba(255,255,255,.07);color:#cfdae6;cursor:pointer;white-space:nowrap}
+  #timebar button.on{background:rgba(255,146,43,.32);border-color:rgba(255,146,43,.75);color:#fff}
+  #mbar{top:50px;left:50%;transform:translateX(-50%);max-width:min(600px,84vw);text-align:center;font-size:14px;line-height:1.5}
+  #mbar .st{font-size:11.5px;color:#b9a7f2;margin-top:3px}
+  #mbar b{color:#CBB7FF}
+  #status{position:fixed;left:50%;transform:translateX(-50%);bottom:82px;z-index:20;display:flex;gap:8px;
+    flex-direction:column;align-items:center;max-width:min(620px,74vw)}
+  #status .card{background:var(--hud);border:1.5px solid rgba(240,234,222,.32);color:#F0EADE;border-radius:13px;
+    backdrop-filter:blur(8px);padding:8px 15px;font-size:13.5px;line-height:1.45;text-align:center}
+  #status .card .big{font-size:18px;font-weight:800}
+  #status .card.warnc{border-color:rgba(190,160,255,.6);color:#DCCBFF}
+  #status .card .hold{display:inline-block;animation:mtPulse 1.2s ease-in-out infinite}
+  @keyframes mtPulse{0%,100%{opacity:1}50%{opacity:.45}}
+  #chips{position:fixed;left:12px;top:calc(50px + 132px);z-index:20;display:flex;flex-direction:column;gap:4px;max-width:214px}
+  #chips .chip{font-family:'Gowun Dodum';font-size:11.5px;padding:4px 9px;border-radius:999px;
+    background:rgba(12,16,24,.8);border:1.5px solid;white-space:nowrap}
+  #ruler{position:fixed;right:12px;bottom:96px;z-index:20;background:var(--hud);border:1.5px solid rgba(255,212,59,.55);
+    border-radius:14px;backdrop-filter:blur(8px);padding:9px 12px;width:196px;text-align:center;
+    font-family:'Gowun Dodum';display:none}
+  #ruler .t{font-size:12px;color:#93a3b4}
+  #ruler .v{font-size:19px;color:#FFD79A;margin-top:3px}
+  #ruler .f{font-size:13px;color:#7CF0C9;margin-top:5px;line-height:1.4}
+  #choices{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:22;display:flex;gap:8px;
+    flex-wrap:wrap;justify-content:center;max-width:92vw}
+  #choices button{font-family:'Gowun Dodum';font-size:14.5px;padding:11px 17px;border-radius:13px;cursor:pointer;
+    border:1.5px solid rgba(155,123,245,.55);background:rgba(20,25,32,.9);color:#E4DCFF}
+  #choices button:active{transform:scale(.96)}
+  .mt-anno{position:absolute;pointer-events:none;font-family:'Gowun Dodum';font-size:12.5px;padding:3px 9px;
+    border-radius:10px;background:rgba(8,12,20,.84);border:1.5px solid #FFD43B;color:#FFF3BF;
+    white-space:nowrap;transform:translate(-50%,-50%);display:none}
+</style>
+</head>
+<body class="k3">
+<div id="stage" style="position:fixed;inset:0;touch-action:none"></div>
+<div id="anno" style="position:fixed;inset:0;pointer-events:none;z-index:19"></div>
+
+<div class="k3-topbar">
+  <span class="title">🏁 케이랩 · 물체의 운동과 속력</span>
+  <span class="badge">STUDIO</span>
+</div>
+
+<div class="mt-panel" id="hudL"></div>
+<div class="mt-panel" id="ctrls"></div>
+<div class="mt-panel" id="mbar" style="display:none"></div>
+<div id="choices" style="display:none"></div>
+<div id="chips"></div>
+
+<div id="ruler">
+  <div class="t">🎯 자취 자</div>
+  <div class="v" id="rval">두 점을 집어 봐요</div>
+  <div class="f" id="rform"></div>
+</div>
+
+<div id="timebar">
+  <button id="tstep">⏭ 1초</button>
+  <button id="tplay">▶ 재생</button>
+  <input id="tscrub" type="range" min="0" max="60" step="0.1" value="0">
+  <div class="clk" id="tclk">⏱ 0.0초</div>
+  <button id="treset">↺ 출발선</button>
+</div>
+
+<div id="status"></div>
+
+<div class="k3-hint" id="hint"><b>시간 막대를 앞뒤로 끌어 봐요</b> — 어느 순간이든 멈춰서 비교할 수 있어요</div>
+<div class="k3-loading" id="loading"><div class="ic">🏁</div><div>트랙 까는 중…</div></div>
+
+<!-- ═══ 순수 로직 (window.MotionSim · node 테스트 대상 · DOM/THREE 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+
+  var DIST = 100;                 /* 결승선 (m) */
+  var ACC_A = 1.3;                /* 가속 로켓 가속도 (s = ½at²) */
+  var ACC_V = 8;                  /* 등속 자동차 속력 */
+  var T_MAX = 60;                 /* 시간 스크럽 상한 — 사람(2m/s)이 100m 완주 50초 + 지연 5초 여유 */
+
+  var OBJ = [
+    { k:'walk', ic:'🚶', nm:'사람',   v:2,  col:0x12B886 },
+    { k:'bike', ic:'🚲', nm:'자전거', v:5,  col:0x1565C0 },
+    { k:'car',  ic:'🚗', nm:'자동차', v:10, col:0xFF8A3D }
+  ];
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+  function r1(v){ return Math.round(v * 10) / 10; }
+
+  /* ── 운동 수리 (v2 무손실) ── */
+  function vOf(o, carV){ return (o.k === 'car') ? carV : o.v; }
+  function elapsedOf(o, t, carDelay){ return (o.k === 'car') ? Math.max(0, t - carDelay) : t; }
+  function dOf(o, t, carV, carDelay){
+    return Math.min(DIST, vOf(o, carV) * elapsedOf(o, t, carDelay));
+  }
+  function finT(o, carV, carDelay){
+    var f = DIST / vOf(o, carV) + ((o.k === 'car') ? carDelay : 0);
+    return r1(f);
+  }
+  /* 자취 점 = 1초마다 찍은 위치 (v2 무손실 — «간격이 곧 속력») */
+  function trail(o, t, carV, carDelay){
+    var out = [];
+    for(var k = 1; k <= Math.floor(t); k++){
+      var e = elapsedOf(o, k, carDelay);
+      if(e <= 0) continue;
+      var d = Math.min(DIST, vOf(o, carV) * e);
+      out.push({ t:k, d:d });
+      if(d >= DIST) break;
+    }
+    return out;
+  }
+  /* 🎯 자취 자 — 두 점 사이 거리·시간·속력 */
+  function measure(p1, p2){
+    var dd = Math.abs(p2.d - p1.d), dt = Math.abs(p2.t - p1.t);
+    return { dist:r1(dd), time:r1(dt), speed: dt > 0 ? r1(dd / dt) : 0 };
+  }
+
+  /* ── 🚀 등속 vs 가속 (와우의 심장) ── */
+  function accCar(t){ return Math.min(DIST, ACC_V * t); }
+  function accRocket(t){ return Math.min(DIST, 0.5 * ACC_A * t * t); }
+  /* 로켓이 자동차를 «추월»하는 시각: ½at² = vt → t = 2v/a */
+  function overtakeT(){ return 2 * ACC_V / ACC_A; }
+  function accFinCar(){ return r1(DIST / ACC_V); }
+  function accFinRocket(){ return r1(Math.sqrt(DIST * 2 / ACC_A)); }
+  function accTrail(fn, t){
+    var out = [];
+    for(var k = 1; k <= Math.floor(t); k++){
+      var d = fn(k);
+      out.push({ t:k, d:d });
+      if(d >= DIST) break;
+    }
+    return out;
+  }
+
+  /* ── 🧮 속력 계산 카드 (v2 무손실) ── */
+  var CALC = { walk:{ d:10, t:5 }, bike:{ d:25, t:5 }, car:{ d:50, t:5 } };
+
+  /* ── 만약에 3종 물리 (v2 무손실) ── */
+  /* 🚴 자전거 30m/6초(5m/s) vs 자동차 16m/2초(8m/s) */
+  function fbBike(t){ return Math.min(30, 5 * Math.min(6, t)); }
+  function fbCar(t){ return Math.min(16, 8 * Math.min(2, t)); }
+  /* 🧊 잔디(마찰 1.2 m/s² 감속) vs 얼음(등속 6 m/s · 영원히) */
+  function grassStep(gx, gv, dt){
+    var nv = Math.max(0, r1((gv - 1.2 * dt) * 100) / 100);
+    return { gx: Math.round((gx + nv * dt) * 100) / 100, gv: nv };
+  }
+  function iceX(t){ return Math.round(6 * t * 100) / 100; }
+  var ICE_LAP = 60;
+  /* 🐘 볼링공(자유낙하 g=10) vs 깃털(공기=종단 2m/s · 진공=자유낙하) */
+  var DROP_H = 8;
+  function ballY(t){ return Math.min(DROP_H, 0.5 * 10 * t * t); }
+  function featherY(t, air){ return air ? Math.min(DROP_H, 2 * t) : ballY(t); }
+  function ballLand(){ return r1(Math.sqrt(2 * DROP_H / 10)); }              /* 1.3초 */
+  function featherLand(air){ return air ? r1(DROP_H / 2) : ballLand(); }     /* 공기 4초 · 진공 1.3초 */
+
+  /* ── 학년 칸 (v2 GRADES 무손실) ── */
+  var LOW_MISSIONS = [
+    { exp:'race', text:'⏭ <b>1초 지나기</b>를 눌러 봐요 — 셋이 함께 출발해요! 누가 가장 빠른가요?',
+      check:function(s){ return s.exp === 'race' && s.t >= 3; } },
+    { exp:'race', text:'가장 <b>빠른 🚗 자동차</b>를 콕 눌러 봐요! 제일 멀리 가 있죠?',
+      check:function(s){ return s.exp === 'race' && s.clickedFastest; } }
+  ];
+  var MID_MISSIONS = [
+    { exp:'race', text:'⏭ <b>1초 지나기</b>로 시간을 보내 봐요 — 위치가 변하죠? 이게 <b>운동</b>이에요!',
+      check:function(s){ return s.exp === 'race' && s.t >= 2; } },
+    { exp:'race', text:'<b>같은 시간</b> 동안 가장 <b>멀리</b> 간 물체를 클릭! 멀리 갔다 = 빠르다.',
+      check:function(s){ return s.exp === 'race' && s.clickedFastest; } },
+    { exp:'race', text:'셋 다 <b>100m 결승선</b>을 통과시켜 봐요 — 같은 거리면 <b>시간이 짧은</b> 쪽이 빠른 거예요!',
+      check:function(s){ return s.exp === 'race' && s.fin.walk !== null && s.fin.bike !== null && s.fin.car !== null; } }
+  ];
+  var HIGH_MISSIONS = [
+    { exp:'race', text:'⏭ <b>1초 지나기</b>를 눌러 봐요 — 시간이 가면 <b>위치가 변하죠</b>? 이게 운동!',
+      check:function(s){ return s.exp === 'race' && s.t >= 2; } },
+    { exp:'race', text:'<b>5초</b>가 넘었을 때, <b>같은 시간</b> 동안 가장 멀리 간 물체를 클릭!',
+      check:function(s){ return s.exp === 'race' && s.clickedFastest; } },
+    { exp:'race', text:'시간을 계속 보내 셋 모두 <b>100m 결승선</b>을 통과시키고 기록을 비교해 봐요!',
+      check:function(s){ return s.exp === 'race' && s.fin.walk !== null && s.fin.bike !== null && s.fin.car !== null; } },
+    { exp:'calc', text:'🧮 카드 셋을 모두 눌러 <b>속력 = 거리 ÷ 시간</b> 계산을 확인해 봐요!',
+      check:function(s){ return s.exp === 'calc' && s.seen.walk && s.seen.bike && s.seen.car; } },
+    { exp:'accel', text:'🚀 시간을 보내며 <b>자취 점 간격</b>을 봐요 — 점점 벌어지는 쪽이 <b>점점 빨라지는(가속)</b> 거예요!',
+      check:function(s){ return s.exp === 'accel' && s.t >= 8; } }
+  ];
+  var GRADES = {
+    low:  { exps:['race'],                 missions:LOW_MISSIONS,  wif:[],                          wow:false, v2:false },
+    mid:  { exps:['race'],                 missions:MID_MISSIONS,  wif:['farbike','drop'],          wow:false, v2:false },
+    high: { exps:['race','calc','accel'],  missions:HIGH_MISSIONS, wif:['farbike','nofric','drop'], wow:true,  v2:true }
+  };
+
+  /* ── 만약에 3종 (v2 무손실 + v3 조작 게이트) ── */
+  var WHATIF = {
+    farbike:{ icon:'🚴', title:'멀리 간 자전거 vs 가까이 간 자동차',
+      q:'자전거는 30m, 자동차는 16m를 갔어요. 누가 더 빠를까요?',
+      ch:['멀리 간 자전거가 빠르다','시간까지 봐야 안다 — 자동차가 빠를 수도','간 거리가 다르니 비교할 수 없다'], a:1,
+      tip:'▶ 둘 다 출발시키고, 끝나면 🧮 속력 재보기로 1초 거리를 비교해요!',
+      reveal:'자전거는 6초 동안 30m(1초에 5m), 자동차는 2초 동안 16m(1초에 8m)! 멀리 갔다고 빠른 게 아니에요 — 거리와 시간을 함께 봐야 진짜 빠르기가 보여요.',
+      chip:'🚴 멀리간자전거' },
+    nofric: { icon:'🧊', title:'마찰이 없다면?',
+      q:'마찰이 하나도 없는 얼음 세상에서 공을 한 번 밀면 어떻게 될까요?',
+      ch:['조금 가다가 저절로 멈춘다','멈추지 않고 같은 빠르기로 계속 간다','점점 빨라진다'], a:1,
+      tip:'🖐 공 밀기 — 잔디 공과 얼음 공의 자취를 비교해요!',
+      reveal:'공이 멈추는 건 마찰이 붙잡아서예요! 마찰이 없으면 한 번 민 공은 영원히 같은 빠르기로 가요. 우주 탐사선이 엔진을 꺼도 계속 날아가는 이유죠.',
+      chip:'🧊 마찰제로' },
+    drop:   { icon:'🐘', title:'무거우면 빨리 떨어질까?',
+      q:'무거운 볼링공과 가벼운 깃털을 같은 높이에서 동시에 떨어뜨리면?',
+      ch:['무거운 볼링공이 먼저 떨어진다','공기가 없으면 둘이 똑같이 떨어진다','가벼운 깃털이 먼저 떨어진다'], a:1,
+      tip:'🪂 떨어뜨려 보고, 🌌 진공으로 바꿔 다시 떨어뜨려 봐요!',
+      reveal:'떨어지는 빠르기는 무게와 상관없어요! 깃털이 늦는 건 공기가 방해해서예요. 공기가 없는 달에서 망치와 깃털은 동시에 떨어졌답니다(아폴로 15호 실험).',
+      chip:'🐘 낙하실험' }
+  };
+  var WIF_KEYS = ['farbike','nofric','drop'];
+
+  /* ── 예측 노트 (v2 3층 무손실) ── */
+  var PRED = {
+    spd:  { q:'🔮 예측 먼저! 자동차를 훨씬 빠르게 하면 자취 점 간격은?',
+      ch:['더 촘촘해진다','그대로다','더 넓어진다'], a:2,
+      tip:'속력을 16 이상으로 올리고 ⏭ 시간을 보내며 점 간격을 봐요!',
+      hitMsg:'✔ 예측 적중 — 빠를수록 1초 동안 더 멀리 가니 점 간격이 넓어져요! 자취 점 간격이 곧 속력이에요.',
+      missMsg:'✘ 예측 빗나감 — 점 간격이 확 넓어졌죠? 1초마다 찍히는 점이니, 빠를수록 간격이 넓어요. 간격 = 속력!',
+      chip:'🚗 속력예측' },
+    delay:{ q:'🔮 예측 먼저! 몇 초 늦게 출발한 자동차, 자전거보다 먼저 도착할까요?',
+      ch:['늦게 출발했으니 늦게 도착한다','속력이 빠르면 따라잡아 먼저 도착한다','반드시 동시에 도착한다'], a:1,
+      tip:'지연을 2초 이상으로 두고 셋 다 결승선까지 보내 봐요!',
+      hitMsg:'✔ 예측 적중 — 늦게 출발해도 속력이 빠르면 따라잡아요! 「먼저 도착 = 항상 더 빠름」이 아니에요 — 출발 시각까지 봐야죠.',
+      missMsg:'✘ 예측 빗나감 — 자동차가 따라잡아 먼저 도착했어요! 도착 순서만으로 빠르기를 판단하면 안 돼요. 출발이 달랐으니까요.',
+      chip:'⏱ 지각출발' }
+  };
+
+  /* ── 🚀 와우: 가속의 역전 (v3 신설) ── */
+  var WOW = {
+    q:'🚀 등속 자동차(8m/s)와 «점점 빨라지는» 가속 로켓이 함께 출발했어요. 처음엔 자동차가 앞서는데 — 끝까지 어떻게 될까요?',
+    ch:['자동차가 계속 앞서서 먼저 도착해요','로켓이 따라잡아 «역전»해요','둘이 동시에 도착해요'], a:1,
+    chip:'🚀 가속 역전'
+  };
+
+  /* ── 퀴즈 (v2 무손실) ── */
+  var QUIZ = [
+    { pic:'race', q:'시간이 지남에 따라 물체의 위치가 변하는 것을 무엇이라고 할까요?', ch:['운동','정지','속력'], a:0 },
+    { pic:'race', q:'같은 거리를 이동했을 때 더 빠른 물체는?', ch:['걸린 시간이 짧은 물체','걸린 시간이 긴 물체','늦게 출발한 물체'], a:0 },
+    { pic:'race', q:'같은 시간 동안 더 빠른 물체는?', ch:['더 긴 거리를 간 물체','더 짧은 거리를 간 물체','제자리에 있던 물체'], a:0 },
+    { pic:'calc', q:'30m를 5초 동안 이동한 물체의 속력은?', ch:['6 m/s','25 m/s','35 m/s'], a:0 },
+    { pic:'race', q:'속력이 빠른 차가 다니는 도로 주변에서 올바른 행동은?', ch:['공놀이를 하지 않아요','도로에서 술래잡기를 해요','차 사이로 뛰어가요'], a:0 }
+  ];
+
+  function createSim(grade, opts){
+    grade = (['low','mid','high'].indexOf(grade) >= 0) ? grade : 'high';
+    opts = opts || {};
+    var sim = {};
+    sim.grade = grade;
+    sim.G = function(){ return GRADES[sim.grade]; };
+    var e0 = opts.exp;
+    sim.exp0 = (GRADES[grade].exps.indexOf(e0) >= 0) ? e0 : 'race';
+
+    sim.state = {
+      exp: sim.exp0, t: 0, playing: false,
+      carV: 10, carDelay: 0,
+      fin: { walk:null, bike:null, car:null }, clickedFastest: false,
+      seen: { walk:false, bike:false, car:false },
+      pick: [],                                   /* 🎯 자취 자로 집은 점 (최대 2) */
+      wif: null, wifPred: null, wifActed: false, wifDone: false,
+      fb: { run:false, t:0, calc:false },
+      nf: { run:false, gx:0, gv:0, ix:0, laps:0 },
+      dr: { run:false, air:true, t:0, bl:null, fl:null },
+      wowArmed: false, wowPred: null, wowDone: false, wowSeen: false,
+      pred: { spd:{ asked:false, ch:-1, done:false }, delay:{ asked:false, ch:-1, done:false } },
+      chips: [], chipToast: false,
+      acted: false
+    };
+
+    /* ── 파생 ── */
+    sim.exps = function(){ return sim.G().exps.slice(); };
+    sim.canExp = function(e){ return sim.G().exps.indexOf(e) >= 0; };
+    sim.canV2 = function(mode){ return mode === 'free' && sim.G().v2 && sim.state.exp === 'race' && !sim.state.wif && !sim.state.wowArmed; };
+    sim.dOf = function(o){ return dOf(o, sim.state.t, sim.state.carV, sim.state.carDelay); };
+    sim.trailOf = function(o){ return trail(o, sim.state.t, sim.state.carV, sim.state.carDelay); };
+    sim.finOf = function(o){ return finT(o, sim.state.carV, sim.state.carDelay); };
+    sim.accCarD = function(){ return accCar(sim.state.t); };
+    sim.accRocketD = function(){ return accRocket(sim.state.t); };
+    /* ★ 역전 판정은 «클램프 없는 원 경로»로 — 둘 다 결승(100m)에 갇히면 대소 비교가 죽는다 */
+    sim.overtaken = function(){ return sim.state.t > overtakeT(); };
+    sim.allFinished = function(){
+      var f = sim.state.fin;
+      return f.walk !== null && f.bike !== null && f.car !== null;
+    };
+
+    /* ── 🔴 시간 스크럽 (앞뒤 자유) ── */
+    sim.setTime = function(v){
+      var st = sim.state;
+      st.t = clamp(r1(v), 0, T_MAX);
+      st.acted = true;
+      sim.syncFin();
+      if(st.wif) st.wifActed = true;
+      if(st.wowArmed && sim.overtaken()) st.wowSeen = true;
+      return st.t;
+    };
+    sim.step = function(dt){ return sim.setTime(sim.state.t + (dt == null ? 1 : dt)); };
+    sim.togglePlay = function(){ sim.state.playing = !sim.state.playing; sim.state.acted = true; return sim.state.playing; };
+    sim.resetTime = function(){
+      var st = sim.state;
+      st.t = 0; st.playing = false;
+      st.fin = { walk:null, bike:null, car:null };
+      st.clickedFastest = false;
+      st.pick = [];
+      return true;
+    };
+    /* 결승 기록 갱신 (v2 무손실 — 스크럽으로 되감아도 재계산) */
+    sim.syncFin = function(){
+      var st = sim.state;
+      OBJ.forEach(function(o){
+        var d = dOf(o, st.t, st.carV, st.carDelay);
+        st.fin[o.k] = (d >= DIST) ? finT(o, st.carV, st.carDelay) : null;
+      });
+    };
+    sim.tick = function(dt){
+      var st = sim.state;
+      dt = Math.min(dt, 0.1);
+      if(st.wif){ sim.wifTickPhys(dt); return; }
+      if(!st.playing) return;
+      if(st.exp === 'accel'){
+        if(accCar(st.t) >= DIST && accRocket(st.t) >= DIST){ st.playing = false; return; }
+      } else if(sim.allFinished()){ st.playing = false; return; }
+      sim.setTime(st.t + dt * 2);                    /* 실제 1초 = 시뮬 2초 (v2 무손실) */
+    };
+
+    /* ── 조작 ── */
+    sim.setExp = function(e){
+      if(!sim.canExp(e)) return sim.state.exp;
+      sim.state.exp = e;
+      sim.resetTime();
+      sim.state.seen = { walk:false, bike:false, car:false };
+      sim.state.acted = true;
+      return e;
+    };
+    sim.setCarV = function(v){
+      sim.state.carV = clamp(Math.round(v), 3, 20);
+      sim.syncFin();
+      sim.state.acted = true;
+      return sim.state.carV;
+    };
+    sim.setDelay = function(v){
+      sim.state.carDelay = clamp(Math.round(v), 0, 5);
+      sim.syncFin();
+      sim.state.acted = true;
+      return sim.state.carDelay;
+    };
+    /* 물체 클릭 (v2 clickObj 무손실) */
+    sim.clickObj = function(k, mode){
+      var st = sim.state;
+      if(st.exp === 'calc'){
+        if(!CALC[k]) return null;
+        st.seen[k] = true;
+        st.acted = true;
+        return { kind:'calc', k:k, d:CALC[k].d, t:CALC[k].t, v:CALC[k].d / CALC[k].t };
+      }
+      if(st.exp !== 'race') return null;
+      if(st.t <= 0) return { kind:'early' };
+      var o = OBJ.filter(function(x){ return x.k === k; })[0];
+      if(!o) return null;
+      var ela = (st.fin[k] !== null)
+        ? (st.fin[k] - ((k === 'car') ? st.carDelay : 0))
+        : elapsedOf(o, st.t, st.carDelay);
+      if(k === 'car' && ela <= 0) return { kind:'waiting' };
+      var d = sim.dOf(o);
+      var thr = (sim.grade === 'low') ? 3 : 5;
+      if(k === 'car' && st.t >= thr) st.clickedFastest = true;
+      st.acted = true;
+      return { kind:'info', k:k, ic:o.ic, d:Math.round(d), v:r1(d / Math.max(0.1, ela)) };
+    };
+
+    /* ── 🎯 자취 자 (v3 신설) ── */
+    sim.canRuler = function(mode){
+      return mode !== 'quiz' && !sim.state.wif && (sim.state.exp === 'race' || sim.state.exp === 'accel');
+    };
+    sim.pickPoint = function(key, idx){
+      var st = sim.state;
+      var same = st.pick.findIndex(function(p){ return p.key === key && p.idx === idx; });
+      if(same >= 0){ st.pick.splice(same, 1); return null; }     /* 다시 집으면 해제 */
+      var pt = sim.pointOf(key, idx);
+      if(!pt) return null;
+      /* 다른 물체의 점을 집으면 기존 선택 비움 (같은 물체끼리만 비교) */
+      if(st.pick.length && st.pick[0].key !== key) st.pick = [];
+      st.pick.push({ key:key, idx:idx, t:pt.t, d:pt.d });
+      if(st.pick.length > 2) st.pick.shift();
+      st.acted = true;
+      return st.pick.slice();
+    };
+    sim.pointOf = function(key, idx){
+      var st = sim.state, list;
+      if(st.exp === 'accel'){
+        list = (key === 'rocket') ? accTrail(accRocket, st.t) : accTrail(accCar, st.t);
+      } else {
+        var o = OBJ.filter(function(x){ return x.k === key; })[0];
+        if(!o) return null;
+        list = sim.trailOf(o);
+      }
+      return list[idx] || null;
+    };
+    sim.ruler = function(){
+      var st = sim.state;
+      if(st.pick.length < 2) return null;
+      var m = measure(st.pick[0], st.pick[1]);
+      return { key:st.pick[0].key, dist:m.dist, time:m.time, speed:m.speed };
+    };
+    sim.clearRuler = function(){ sim.state.pick = []; return true; };
+
+    /* ── 예측 노트 (v2 3층) ── */
+    sim.predArm = function(kind, mode){
+      var p = sim.state.pred[kind];
+      if(mode !== 'free' || sim.grade !== 'high' || p.asked) return false;
+      p.asked = true;
+      return true;
+    };
+    sim.predPick = function(kind, i){
+      sim.state.pred[kind].ch = (typeof i === 'number' && i >= 0 && i <= 2) ? i : -1;
+      return sim.state.pred[kind].ch;
+    };
+    /* 해소 (v2 checkPredV2 무손실) */
+    sim.predResolved = function(kind, mode){
+      var st = sim.state, p = st.pred[kind];
+      if(mode !== 'free' || p.done || p.ch < 0 || st.exp !== 'race') return false;
+      if(kind === 'spd')   return st.carV >= 16 && st.t >= 3;
+      if(kind === 'delay') return st.carDelay >= 2 && st.fin.car !== null && st.fin.bike !== null && st.fin.car < st.fin.bike;
+      return false;
+    };
+    sim.predResolve = function(kind, mode){
+      if(!sim.predResolved(kind, mode)) return null;
+      var st = sim.state, p = st.pred[kind], P = PRED[kind];
+      p.done = true;
+      var hit = (p.ch === P.a);
+      st.chips.push({ k:kind, hit:hit, label:P.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { kind:kind, hit:hit, msg:hit ? P.hitMsg : P.missMsg, chipToast:toast };
+    };
+
+    /* ── 만약에 (v3 조작 게이트) ── */
+    sim.canWhatif = function(mode){ return mode === 'free' && sim.G().wif.length > 0; };
+    sim.wifList = function(){ return sim.G().wif.slice(); };
+    sim.wifStart = function(key){
+      if(sim.G().wif.indexOf(key) < 0) return null;
+      var st = sim.state;
+      st.wif = key; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.playing = false;
+      st.fb = { run:false, t:0, calc:false };
+      st.nf = { run:false, gx:0, gv:0, ix:0, laps:0 };
+      st.dr = { run:false, air:true, t:0, bl:null, fl:null };
+      st.wowArmed = false; st.wowPred = null;
+      st.pick = [];
+      return key;
+    };
+    sim.wifPredict = function(i){
+      sim.state.wifPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wifPred;
+    };
+    /* 만약에 무대 조작 */
+    sim.fbGo = function(){ var st = sim.state; st.fb = { run:true, t:0, calc:false }; st.wifActed = true; return true; };
+    sim.fbCalc = function(){ var st = sim.state; if(st.fb.t < 6) return false; st.fb.calc = !st.fb.calc; return st.fb.calc; };
+    sim.nfGo = function(){ var st = sim.state; st.nf = { run:true, gx:0, gv:6, ix:0, laps:0 }; st.wifActed = true; return true; };
+    sim.drGo = function(){ var st = sim.state; st.dr.run = true; st.dr.t = 0; st.dr.bl = null; st.dr.fl = null; st.wifActed = true; return true; };
+    sim.drAir = function(air){
+      var st = sim.state;
+      st.dr = { run:false, air:!!air, t:0, bl:null, fl:null };
+      st.wifActed = true;
+      return st.dr.air;
+    };
+    var WDT = 0.05;
+    sim.wifTickPhys = function(dt){
+      var st = sim.state, k = st.wif;
+      if(k === 'farbike' && st.fb.run){
+        st.fb.t = Math.min(6, Math.round((st.fb.t + WDT) * 100) / 100);
+        if(st.fb.t >= 6) st.fb.run = false;
+      } else if(k === 'nofric' && st.nf.run){
+        var g = grassStep(st.nf.gx, st.nf.gv, WDT);
+        st.nf.gx = g.gx; st.nf.gv = g.gv;
+        st.nf.ix = Math.round((st.nf.ix + 6 * WDT) * 100) / 100;
+        if(st.nf.ix >= ICE_LAP){ st.nf.ix = Math.round((st.nf.ix - ICE_LAP) * 100) / 100; st.nf.laps++; }
+      } else if(k === 'drop' && st.dr.run){
+        st.dr.t = Math.round((st.dr.t + WDT) * 100) / 100;
+        var by = ballY(st.dr.t), fy = featherY(st.dr.t, st.dr.air);
+        if(st.dr.bl === null && by >= DROP_H) st.dr.bl = st.dr.t;
+        if(st.dr.fl === null && fy >= DROP_H) st.dr.fl = st.dr.t;
+        if(st.dr.bl !== null && st.dr.fl !== null) st.dr.run = false;
+      }
+    };
+    /* 해소 게이트 — 각 만약에의 «핵심 장면»을 봐야 */
+    sim.wifResolved = function(){
+      var st = sim.state;
+      if(!st.wif || st.wifDone || st.wifPred === null || !st.wifActed) return false;
+      if(st.wif === 'farbike') return st.fb.t >= 6 && st.fb.calc;          /* 속력 재보기까지 */
+      if(st.wif === 'nofric')  return st.nf.laps >= 1 && st.nf.gv <= 0;    /* 잔디는 멈추고 얼음은 한 바퀴 */
+      if(st.wif === 'drop')    return st.dr.air === false && st.dr.bl !== null && st.dr.fl !== null
+                                      && Math.abs(st.dr.bl - st.dr.fl) < 0.001;   /* 진공에서 동시 착지 */
+      return false;
+    };
+    sim.wifResolve = function(){
+      var st = sim.state;
+      if(!sim.wifResolved()) return null;
+      st.wifDone = true;
+      var W = WHATIF[st.wif], hit = (st.wifPred === W.a);
+      st.chips.push({ k:st.wif, hit:hit, label:W.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { key:st.wif, hit:hit, reveal:W.reveal, chipToast:toast };
+    };
+    sim.wifExit = function(){
+      var st = sim.state;
+      st.wif = null; st.wifPred = null; st.wifActed = false; st.wifDone = false;
+      st.fb = { run:false, t:0, calc:false };
+      st.nf = { run:false, gx:0, gv:0, ix:0, laps:0 };
+      st.dr = { run:false, air:true, t:0, bl:null, fl:null };
+      return true;
+    };
+
+    /* ── 🚀 와우: 가속의 역전 (v3 신설) ── */
+    sim.canWow = function(mode){ return mode === 'free' && sim.G().wow && !sim.state.wif && !sim.state.wowDone; };
+    sim.wowArm = function(){
+      var st = sim.state;
+      st.exp = 'accel';
+      sim.resetTime();
+      st.wowArmed = true; st.wowPred = null; st.wowSeen = false;
+      return true;
+    };
+    sim.setWowPred = function(i){
+      sim.state.wowPred = (typeof i === 'number' && i >= 0 && i <= 2) ? i : null;
+      return sim.state.wowPred;
+    };
+    /* 해소 = «역전 순간»을 실제로 지나가야 */
+    sim.wowResolved = function(){
+      var st = sim.state;
+      return st.wowArmed && !st.wowDone && st.wowPred !== null && st.wowSeen;
+    };
+    sim.wowReveal = function(){
+      return {
+        overtake: r1(overtakeT()),
+        finCar: accFinCar(), finRocket: accFinRocket(),
+        carV: ACC_V, acc: ACC_A,
+        dAtOvertake: r1(accCar(overtakeT()))
+      };
+    };
+    sim.wowResolve = function(){
+      var st = sim.state;
+      if(!sim.wowResolved()) return null;
+      st.wowDone = true; st.playing = false;
+      var hit = (st.wowPred === WOW.a);
+      st.chips.push({ k:'wow', hit:hit, label:WOW.chip });
+      var toast = (st.chips.length === 5 && !st.chipToast);
+      if(toast) st.chipToast = true;
+      return { hit:hit, chipToast:toast, data:sim.wowReveal() };
+    };
+    sim.wowExit = function(){
+      var st = sim.state;
+      st.wowArmed = false; st.wowPred = null; st.wowSeen = false;
+      return true;
+    };
+    sim.clearWow = function(){
+      var st = sim.state;
+      if(!st.wowArmed || st.wowPred !== null) return false;
+      st.wowArmed = false;
+      return true;
+    };
+
+    /* ── 미션 (v2 무손실 + acted 게이트) ── */
+    sim.missionList = function(){ return sim.G().missions; };
+    sim.mStep = 0; sim.mDone = false;
+    sim.missionStart = function(){
+      sim.mStep = 0; sim.mDone = false;
+      var st = sim.state;
+      st.exp = sim.missionList()[0].exp;
+      sim.resetTime();
+      st.carV = 10; st.carDelay = 0;
+      st.seen = { walk:false, bike:false, car:false };
+      st.wif = null; st.wowArmed = false; st.wowPred = null;
+      st.acted = false;
+    };
+    sim.missionCur = function(){ return sim.missionList()[sim.mStep]; };
+    sim.missionCheck = function(){
+      if(sim.mDone) return { act:'none' };
+      var m = sim.missionCur();
+      if(!sim.state.acted) return { act:'none' };
+      if(!m.check(sim.state)) return { act:'none' };
+      return sim.missionAdvance();
+    };
+    sim.missionAdvance = function(){
+      var M = sim.missionList(), st = sim.state;
+      st.acted = false;
+      if(sim.mStep < M.length - 1){
+        sim.mStep++;
+        var nx = M[sim.mStep];
+        if(nx.exp !== st.exp){
+          st.exp = nx.exp;
+          sim.resetTime();
+          st.seen = { walk:false, bike:false, car:false };
+        }
+        return { act:'next', step:sim.mStep };
+      }
+      sim.mDone = true;
+      return { act:'done' };
+    };
+
+    /* ── 퀴즈 (v2 무반복 순환) ── */
+    sim.qIdx = 0; sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+    sim.quizList = function(){ return QUIZ.slice(); };
+    sim.newQuiz = function(rand){
+      rand = rand || Math.random;
+      if(sim.qUsed.length >= QUIZ.length) sim.qUsed = [];
+      var cand = [];
+      for(var i = 0; i < QUIZ.length; i++) if(sim.qUsed.indexOf(i) < 0) cand.push(i);
+      sim.qIdx = cand[Math.floor(rand() * cand.length)];
+      sim.qUsed.push(sim.qIdx);
+      sim.state.exp = QUIZ[sim.qIdx].pic;            /* 장면 세팅 */
+      sim.resetTime();
+      return sim.qIdx;
+    };
+    sim.quizAnswer = function(i){
+      var q = QUIZ[sim.qIdx], ok = (i === q.a);
+      sim.qCount++;
+      if(ok) sim.qScore++;
+      return { ok:ok, correct:q.ch[q.a] };
+    };
+    sim.quizReset = function(rand){
+      sim.qScore = 0; sim.qCount = 0; sim.qUsed = [];
+      sim.newQuiz(rand);
+    };
+
+    /* ── 상태줄 (v2 문구 무손실) ── */
+    sim.statusText = function(mode){
+      var st = sim.state, out = { lines:[], warn:false };
+      if(mode === 'quiz'){
+        out.lines.push('트랙과 자취 점을 보고 답을 골라요!');
+        return out;
+      }
+
+      /* 🌀 만약에 */
+      if(st.wif){
+        var W = WHATIF[st.wif];
+        out.warn = true;
+        if(st.wif === 'farbike'){
+          if(st.fb.calc){
+            out.lines.push('<span class="big">🧮 1초 거리로 비교하니 자동차(8m)가 자전거(5m)보다 빨라요</span>');
+            out.lines.push('거리와 시간을 «함께» 봐야 진짜 빠르기가 보여요!');
+          } else if(st.fb.t >= 6){
+            out.lines.push('<span class="big">둘 다 도착 — 자전거 30m·6초, 자동차 16m·2초</span>');
+            out.lines.push('🚲가 «멀리» 갔네요… 그런데 걸린 시간이 달라요! 🧮 속력 재보기를 눌러 봐요.');
+          } else if(st.fb.t > 0){
+            out.lines.push('자동차는 2초 만에 멈추고, 자전거는 계속 가요 — 걸린 시간이 달라요!');
+          } else {
+            out.lines.push('▶ 둘 다 출발을 눌러 봐요 — 멀리 간 쪽이 정말 빠른 걸까요?');
+          }
+        } else if(st.wif === 'nofric'){
+          if(st.nf.laps > 0){
+            out.lines.push('<span class="big">🧊 얼음 공은 ' + st.nf.laps + '바퀴째 등속으로!</span>');
+            out.lines.push('밀어 주지 않아도 멈추지 않아요 — 멈추게 하는 건 마찰이었어요.');
+          } else if(st.nf.gv <= 0 && st.nf.gx > 0){
+            out.lines.push('잔디 공은 ' + st.nf.gx.toFixed(0) + 'm에서 멈췄는데, 얼음 공은 아직도 같은 빠르기예요!');
+          } else if(st.nf.gx > 0){
+            out.lines.push('잔디 공은 점점 느려지고(자취 촘촘), 얼음 공은 간격이 일정해요!');
+          } else {
+            out.lines.push('🖐 공 밀기 — 두 공을 같은 빠르기로 밀어요!');
+          }
+        } else {
+          if(st.dr.bl !== null && st.dr.fl !== null){
+            if(Math.abs(st.dr.bl - st.dr.fl) < 0.001){
+              out.lines.push('<span class="big">🌟 진공에선 완전히 동시!</span>');
+              out.lines.push('떨어지는 빠르기는 무게와 상관없어요 — 아폴로 15호가 달에서 증명했죠.');
+            } else {
+              out.lines.push('<span class="big">⏱ 깃털이 늦었어요 — 공기 때문!</span>');
+              out.lines.push('깃털이 늦은 건 무거움이 아니라 공기의 방해 때문 — 🌌 진공으로 바꿔 다시 떨어뜨려 봐요!');
+            }
+          } else if(st.dr.run){
+            out.lines.push('떨어지는 중… 누가 먼저 닿을까요?');
+          } else {
+            out.lines.push('🪂 떨어뜨리기 — ' + (st.dr.air ? '공기 있는 세상에서' : '진공에서') + ' 실험해요!');
+          }
+        }
+        if(!st.wifDone && st.wifPred !== null) out.lines.push('<span class="hold">' + W.tip + '</span>');
+        return out;
+      }
+
+      /* 🚀 와우 */
+      if(st.wowArmed){
+        out.warn = true;
+        var cd = accCar(st.t), rd = accRocket(st.t);
+        if(st.t === 0){
+          out.lines.push('<span class="big">🚀 등속 자동차 vs 가속 로켓</span>');
+          out.lines.push('자동차는 늘 8m/s. 로켓은 «점점» 빨라져요 — 자취 점 간격을 봐요!');
+          if(st.wowPred !== null) out.lines.push('<span class="hold">⏭ 시간을 보내며 끝까지 지켜봐요!</span>');
+        } else if(!sim.overtaken()){
+          out.lines.push('<span class="big">' + st.t.toFixed(1) + '초 — 🚗 ' + cd.toFixed(0) + 'm · 🚀 ' + rd.toFixed(0) + 'm</span>');
+          out.lines.push('아직 자동차가 앞서요. 그런데 로켓의 자취 점 간격이 «점점 벌어지고» 있어요!');
+          out.lines.push('<span class="hold">계속 지켜봐요 — 로켓이 따라잡을까요?</span>');
+        } else {
+          out.lines.push('<span class="big">🚀 역전! ' + st.t.toFixed(1) + '초 — 로켓 ' + rd.toFixed(0) + 'm · 자동차 ' + cd.toFixed(0) + 'm</span>');
+          out.lines.push('점점 빨라지는 쪽이 결국 앞질러요!');
+        }
+        return out;
+      }
+
+      /* 🚀 등속·가속 실험 */
+      if(st.exp === 'accel'){
+        var finC = accCar(st.t) >= DIST, finR = accRocket(st.t) >= DIST;
+        if(finC && finR){
+          out.lines.push('<span class="big">🚀 가속 로켓이 역전!</span>');
+          out.lines.push('<b>등속</b>은 자취 점 간격이 일정, <b>가속</b>은 점점 벌어져요 — 점점 빨라진다는 뜻!');
+        } else if(st.t > 0){
+          out.lines.push('<span class="big">' + Math.floor(st.t) + '초</span>');
+          out.lines.push('자취 점을 봐요! 🚗는 간격 일정, 🚀는 점점 벌어지죠?');
+        } else {
+          out.lines.push('⏭ 시간을 보내며 두 자취의 <b>점 간격</b>을 비교해 봐요 — 일정 vs 벌어짐!');
+        }
+        return out;
+      }
+
+      /* 🧮 속력 계산 */
+      if(st.exp === 'calc'){
+        var n = (st.seen.walk ? 1 : 0) + (st.seen.bike ? 1 : 0) + (st.seen.car ? 1 : 0);
+        if(n === 3){
+          out.lines.push('<span class="big">같은 시간(5초)이면 거리만 비교해도 빠르기를 알 수 있어요!</span>');
+          out.lines.push('속력 = 이동 거리 ÷ 걸린 시간');
+        } else {
+          out.lines.push('카드를 눌러 속력을 계산해 봐요 (' + n + '/3)');
+        }
+        return out;
+      }
+
+      /* 🏁 빠르기 비교 */
+      var fin = OBJ.filter(function(o){ return st.fin[o.k] !== null; }).length;
+      if(sim.grade === 'low'){
+        if(fin === 3){
+          out.lines.push('<span class="big">🚗 자동차가 가장 빨라요</span>');
+          out.lines.push('가장 멀리, 가장 빨리 도착했죠?');
+        } else if(st.t > 0){
+          out.lines.push('<span class="big">' + Math.floor(st.t) + '초</span>');
+          out.lines.push('🚗 자동차가 제일 앞서가요! 가장 빠른 거예요.');
+        } else {
+          out.lines.push('⏭ 시간을 보내면 셋이 달려요 — 누가 빠를까요?');
+        }
+      } else {
+        if(fin === 3){
+          out.lines.push('<span class="big">기록 비교 — 같은 거리(100m), 시간이 짧을수록 빠른 거예요!</span>');
+          out.lines.push('🚶 ' + sim.finOf(OBJ[0]) + '초 · 🚲 ' + sim.finOf(OBJ[1]) + '초 · 🚗 ' + sim.finOf(OBJ[2]) + '초');
+        } else if(st.t > 0){
+          out.lines.push('<span class="big">' + Math.floor(st.t) + '초</span>');
+          out.lines.push('같은 시간인데 간 거리가 다르죠? 거리와 시간을 함께 봐요!');
+        } else {
+          out.lines.push('⏭ 시간을 보내면 위치가 변해요 — 이게 바로 운동!');
+        }
+      }
+      if(mode === 'free' && st.carV !== 10){
+        out.lines.push('🚗 속력 ' + st.carV + ' m/s — 자취 점 간격이 곧 속력이에요!');
+      }
+      if(mode === 'free' && st.carDelay > 0){
+        out.lines.push('⏱ ' + st.carDelay + '초 늦게 출발 — 그래도 따라잡을 수 있을까요?');
+      }
+      return out;
+    };
+
+    return sim;
+  }
+
+  var API = {
+    DIST:DIST, ACC_A:ACC_A, ACC_V:ACC_V, T_MAX:T_MAX, OBJ:OBJ, CALC:CALC, ICE_LAP:ICE_LAP, DROP_H:DROP_H,
+    clamp:clamp, r1:r1,
+    vOf:vOf, elapsedOf:elapsedOf, dOf:dOf, finT:finT, trail:trail, measure:measure,
+    accCar:accCar, accRocket:accRocket, overtakeT:overtakeT, accFinCar:accFinCar, accFinRocket:accFinRocket, accTrail:accTrail,
+    fbBike:fbBike, fbCar:fbCar, grassStep:grassStep, iceX:iceX,
+    ballY:ballY, featherY:featherY, ballLand:ballLand, featherLand:featherLand,
+    GRADES:GRADES, LOW_MISSIONS:LOW_MISSIONS, MID_MISSIONS:MID_MISSIONS, HIGH_MISSIONS:HIGH_MISSIONS,
+    WHATIF:WHATIF, WIF_KEYS:WIF_KEYS, PRED:PRED, WOW:WOW, QUIZ:QUIZ, createSim:createSim
+  };
+  if(typeof window !== 'undefined') window.MotionSim = API;
+  if(typeof module !== 'undefined' && module.exports) module.exports = API;
+})();
+</script>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "/labs/vendor/three185/three.module.min.js",
+    "three/addons/": "/labs/vendor/three185/addons/"
+  }
+}
+</script>
+
+<script type="module">
+import { THREE, initScene, canvasTexture } from '/kedu/teacher/engine3/klab3-core.js';
+
+const Sim = window.MotionSim;
+const K3 = window.K3;
+const T = ms => (window.__K3_FAST ? 60 : ms);
+const OBJ = Sim.OBJ;
+
+/* ── config ── */
+const Q = new URLSearchParams(location.search);
+const lockedGrade = ['low','mid','high'].includes(Q.get('grade'));
+const sim = Sim.createSim(lockedGrade ? Q.get('grade') : 'high', { exp: Q.get('exp') });
+let mode = 'free';
+{
+  const m = Q.get('mode');
+  if (['free','mission','quiz'].includes(m)) mode = m;
+}
+
+/* ═══════════ 트랙 무대 ═══════════ */
+const app = initScene(document.getElementById('stage'), {
+  camPos: [0, 15, 26], target: [0, 0, 0], fov: 44,
+  minDist: 8, maxDist: 60, maxPolar: Math.PI / 2 - 0.05, exposure: 1.05
+});
+const { renderer, scene, camera, controls, sun } = app;
+scene.background = new THREE.Color(0x0E1626);
+sun.position.set(12, 22, 14);
+sun.intensity = 2.1;
+scene.add(new THREE.AmbientLight(0xffffff, 0.48));
+
+/* 무대 단위: 100m → 40 유닛 */
+const MX = 0.4;
+const X0 = -20;                                  /* 0m 위치 */
+const xOf = d => X0 + d * MX;
+const LANE_Z = [-3.4, 0, 3.4];
+
+/* 트랙 바닥 */
+const ground = new THREE.Mesh(
+  new THREE.BoxGeometry(48, 0.3, 14),
+  new THREE.MeshStandardMaterial({
+    map: canvasTexture(512, 160, g => {
+      g.fillStyle = '#B24A38'; g.fillRect(0, 0, 512, 160);
+      for (let i = 0; i < 900; i++) {
+        g.fillStyle = `rgba(${140 + Math.random() * 40 | 0},${64 + Math.random() * 24 | 0},50,0.3)`;
+        g.fillRect(Math.random() * 512, Math.random() * 160, 2, 2);
+      }
+    }),
+    roughness: 0.92, metalness: 0.02
+  })
+);
+ground.position.y = -0.15;
+scene.add(ground);
+
+/* 레인 구분선 + 20m 마커 + 결승선 */
+const marks = new THREE.Group();
+scene.add(marks);
+function buildMarks() {
+  marks.clear();
+  for (let d = 0; d <= 100; d += 20) {
+    const line = new THREE.Mesh(
+      new THREE.BoxGeometry(0.09, 0.02, 12),
+      new THREE.MeshBasicMaterial({ color: d === 100 ? 0xFFFFFF : 0x7E93AB, transparent: true, opacity: d === 100 ? 0.95 : 0.42 })
+    );
+    line.position.set(xOf(d), 0.02, 0);
+    marks.add(line);
+  }
+  /* 결승 체커 */
+  for (let i = 0; i < 12; i++) {
+    const c = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.03, 1),
+      new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffffff : 0x1B1B1B })
+    );
+    c.position.set(xOf(100) + 0.3, 0.03, -6 + i);
+    marks.add(c);
+  }
+}
+buildMarks();
+
+/* ── 물체 3종 (실물) ── */
+function makeWalker(col) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.6, 6, 12), mat);
+  body.position.y = 0.75;
+  g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), new THREE.MeshStandardMaterial({ color: 0xF6D6BE, roughness: 0.7 }));
+  head.position.y = 1.4;
+  g.add(head);
+  const legs = [];
+  [-0.16, 0.16].forEach(z => {
+    const l = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.4, 4, 8), mat);
+    l.position.set(0, 0.28, z);
+    g.add(l); legs.push(l);
+  });
+  g.userData = { legs };
+  return g;
+}
+function makeBike(col) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.42, metalness: 0.35 });
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.1, 0.1), mat);
+  frame.position.y = 0.62;
+  g.add(frame);
+  const wheels = [];
+  [-0.55, 0.55].forEach(x => {
+    const w = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.07, 8, 20), new THREE.MeshStandardMaterial({ color: 0x2B3440, roughness: 0.5 }));
+    w.position.set(x, 0.42, 0);
+    g.add(w); wheels.push(w);
+  });
+  const rider = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.44, 6, 10), new THREE.MeshStandardMaterial({ color: 0xE8590C, roughness: 0.6 }));
+  rider.position.set(-0.05, 1.14, 0);
+  g.add(rider);
+  g.userData = { wheels };
+  return g;
+}
+function makeCar(col) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(2.1, 0.5, 1.0),
+    new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.55 })
+  );
+  body.position.y = 0.52;
+  g.add(body);
+  const cabin = new THREE.Mesh(
+    new THREE.BoxGeometry(1.1, 0.42, 0.86),
+    new THREE.MeshStandardMaterial({ color: 0x9FC6E8, roughness: 0.15, metalness: 0.2, transparent: true, opacity: 0.8 })
+  );
+  cabin.position.set(-0.1, 0.94, 0);
+  g.add(cabin);
+  const wheels = [];
+  [[-0.68, -0.52], [-0.68, 0.52], [0.68, -0.52], [0.68, 0.52]].forEach(([x, z]) => {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.18, 14), new THREE.MeshStandardMaterial({ color: 0x22282F, roughness: 0.6 }));
+    w.rotation.x = Math.PI / 2;
+    w.position.set(x, 0.3, z);
+    g.add(w); wheels.push(w);
+  });
+  g.userData = { wheels };
+  return g;
+}
+function makeRocket(col) {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.5 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 1.8, 16), mat);
+  body.rotation.z = -Math.PI / 2;
+  body.position.y = 0.6;
+  g.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.7, 16), mat);
+  nose.rotation.z = -Math.PI / 2;
+  nose.position.set(1.2, 0.6, 0);
+  g.add(nose);
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.26, 1.1, 12),
+    new THREE.MeshBasicMaterial({ color: 0xFF922B, transparent: true, opacity: 0.85 })
+  );
+  flame.rotation.z = Math.PI / 2;
+  flame.position.set(-1.35, 0.6, 0);
+  g.add(flame);
+  g.userData = { flame };
+  return g;
+}
+
+/* 물체 인스턴스 + 클릭 프록시 */
+const actors = {};
+const actorHits = [];
+const actorGrp = new THREE.Group();
+scene.add(actorGrp);
+function buildActors() {
+  actorGrp.clear();
+  actorHits.length = 0;
+  Object.keys(actors).forEach(k => delete actors[k]);
+  const st = sim.state;
+  if (st.exp === 'accel') {
+    const car = makeCar(0xFF8A3D);
+    car.position.z = LANE_Z[0];
+    actorGrp.add(car);
+    actors.acar = car;
+    const rk = makeRocket(0xE8590C);
+    rk.position.z = LANE_Z[2];
+    actorGrp.add(rk);
+    actors.rocket = rk;
+    return;
+  }
+  if (st.exp === 'calc') return;                 /* 계산 실험은 카드 UI */
+  const makers = { walk: makeWalker, bike: makeBike, car: makeCar };
+  OBJ.forEach((o, i) => {
+    const m = makers[o.k](o.col);
+    m.position.z = LANE_Z[i];
+    actorGrp.add(m);
+    actors[o.k] = m;
+    const hb = new THREE.Mesh(
+      new THREE.BoxGeometry(2.4, 2.2, 2.0),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hb.position.set(0, 1, LANE_Z[i]);
+    hb.userData = { obj: o.k };
+    actorGrp.add(hb);
+    actorHits.push(hb);
+  });
+}
+
+/* ── 🔴 자취 디스크 (1초마다) + 자 ── */
+const trailGrp = new THREE.Group();
+scene.add(trailGrp);
+const trailHits = [];
+const rulerGrp = new THREE.Group();
+scene.add(rulerGrp);
+function buildTrails() {
+  trailGrp.clear();
+  trailHits.length = 0;
+  const st = sim.state;
+  if (st.exp === 'calc' || st.wif) return;
+  const sets = [];
+  if (st.exp === 'accel') {
+    sets.push({ key: 'acar', col: 0xFF8A3D, z: LANE_Z[0], list: Sim.accTrail(Sim.accCar, st.t) });
+    sets.push({ key: 'rocket', col: 0xE8590C, z: LANE_Z[2], list: Sim.accTrail(Sim.accRocket, st.t) });
+  } else {
+    OBJ.forEach((o, i) => {
+      sets.push({ key: o.k, col: o.col, z: LANE_Z[i], list: sim.trailOf(o) });
+    });
+  }
+  sets.forEach(s => {
+    s.list.forEach((p, idx) => {
+      const picked = sim.state.pick.some(q => q.key === s.key && q.idx === idx);
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(picked ? 0.34 : 0.22, picked ? 0.34 : 0.22, 0.05, 18),
+        new THREE.MeshStandardMaterial({
+          color: picked ? 0xFFD43B : s.col,
+          emissive: picked ? 0xFFD43B : s.col,
+          emissiveIntensity: picked ? 0.9 : 0.45,
+          roughness: 0.4
+        })
+      );
+      disc.position.set(xOf(p.d), 0.06, s.z + 1.6);
+      trailGrp.add(disc);
+      const hb = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.8, 0.9),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hb.position.set(xOf(p.d), 0.3, s.z + 1.6);
+      hb.userData = { trail: true, key: s.key, idx: idx };
+      trailGrp.add(hb);
+      trailHits.push(hb);
+    });
+  });
+  buildRuler();
+}
+/* 🎯 자 — 집은 두 점을 잇는 줄자 */
+function buildRuler() {
+  rulerGrp.clear();
+  const st = sim.state;
+  if (st.pick.length < 2) return;
+  const a = st.pick[0], b = st.pick[1];
+  const zi = (st.exp === 'accel')
+    ? (a.key === 'rocket' ? LANE_Z[2] : LANE_Z[0])
+    : LANE_Z[OBJ.findIndex(o => o.k === a.key)];
+  const x1 = xOf(Math.min(a.d, b.d)), x2 = xOf(Math.max(a.d, b.d));
+  const bar = new THREE.Mesh(
+    new THREE.BoxGeometry(Math.max(0.05, x2 - x1), 0.06, 0.16),
+    new THREE.MeshStandardMaterial({ color: 0xFFD43B, emissive: 0xFFD43B, emissiveIntensity: 0.7 })
+  );
+  bar.position.set((x1 + x2) / 2, 0.28, zi + 1.6);
+  rulerGrp.add(bar);
+  [x1, x2].forEach(x => {
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.5, 0.16),
+      new THREE.MeshStandardMaterial({ color: 0xFFD43B, emissive: 0xFFD43B, emissiveIntensity: 0.7 })
+    );
+    post.position.set(x, 0.3, zi + 1.6);
+    rulerGrp.add(post);
+  });
+}
+
+/* ── 만약에 무대 ── */
+const wifGrp = new THREE.Group();
+scene.add(wifGrp);
+let wifObjs = {};
+function buildWif() {
+  wifGrp.clear();
+  wifObjs = {};
+  const k = sim.state.wif;
+  if (!k) { wifGrp.visible = false; return; }
+  wifGrp.visible = true;
+  if (k === 'farbike') {
+    const b = makeBike(0x1565C0); b.position.z = -3;
+    const c = makeCar(0xFF8A3D); c.position.z = 3;
+    wifGrp.add(b, c);
+    wifObjs = { bike: b, car: c, trail: new THREE.Group() };
+    wifGrp.add(wifObjs.trail);
+  } else if (k === 'nofric') {
+    /* 잔디 레인 + 얼음 레인 */
+    const grass = new THREE.Mesh(new THREE.BoxGeometry(46, 0.06, 5),
+      new THREE.MeshStandardMaterial({ color: 0x2B8A3E, roughness: 0.95 }));
+    grass.position.set(2, 0.05, -4);
+    const ice = new THREE.Mesh(new THREE.BoxGeometry(46, 0.06, 5),
+      new THREE.MeshPhysicalMaterial({ color: 0xD0EBFF, roughness: 0.06, metalness: 0.1, transmission: 0.35, transparent: true, opacity: 0.85 }));
+    ice.position.set(2, 0.05, 4);
+    const gb = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 16),
+      new THREE.MeshStandardMaterial({ color: 0x2B8A3E, roughness: 0.5 }));
+    const ib = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1971C2, roughness: 0.3, metalness: 0.3 }));
+    wifGrp.add(grass, ice, gb, ib);
+    wifObjs = { grassBall: gb, iceBall: ib, trail: new THREE.Group() };
+    wifGrp.add(wifObjs.trail);
+  } else {
+    /* 낙하 — 발판 + 볼링공 + 깃털 */
+    const plat = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 4),
+      new THREE.MeshStandardMaterial({ color: 0x5A6472, roughness: 0.7 }));
+    plat.position.set(0, 9.2, 0);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 6),
+      new THREE.MeshStandardMaterial({ color: 0x3A4450, roughness: 0.8 }));
+    floor.position.set(0, 0.1, 0);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18),
+      new THREE.MeshStandardMaterial({ color: 0x1B1B1B, roughness: 0.25, metalness: 0.4 }));
+    ball.position.set(-3.4, 9, 0);
+    const feather = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.7, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xF1F3F5, roughness: 0.9 }));
+    feather.position.set(3.4, 9, 0);
+    /* 진공 = 공기 입자 없음 */
+    const air = new THREE.Points(
+      (() => {
+        const N = 300, pos = new Float32Array(N * 3);
+        for (let i = 0; i < N; i++) {
+          pos[i * 3] = (Math.random() - 0.5) * 16;
+          pos[i * 3 + 1] = Math.random() * 9;
+          pos[i * 3 + 2] = (Math.random() - 0.5) * 5;
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        return g;
+      })(),
+      new THREE.PointsMaterial({ color: 0xB9E0FF, size: 0.09, transparent: true, opacity: 0.45 })
+    );
+    wifGrp.add(plat, floor, ball, feather, air);
+    wifObjs = { ball, feather, air };
+  }
+}
+
+/* ═══════════ UI ═══════════ */
+const $ = id => document.getElementById(id);
+const hudL = $('hudL'), ctrls = $('ctrls'), mbar = $('mbar'), choicesEl = $('choices'),
+      statusEl = $('status'), chipsEl = $('chips'), rulerEl = $('ruler'),
+      timebar = $('timebar'), annoHost = $('anno');
+let hintHidden = false;
+function hideHint() { if (!hintHidden) { hintHidden = true; $('hint').classList.add('hide'); } }
+
+const MODE_NM = { free: '🔭 자유탐구', mission: '🎯 미션', quiz: '❓ 퀴즈' };
+const GRADE_NM = { low: '🌱 저학년', mid: '🌿 중학년', high: '🌳 고학년' };
+const EXP_NM = { race: '🏁 빠르기 비교', calc: '🧮 속력 계산', accel: '🚀 등속·가속' };
+
+/* 🧮 속력 계산 카드 (DOM) */
+const calcHost = document.createElement('div');
+calcHost.id = 'calccards';
+calcHost.style.cssText = 'position:fixed;left:50%;top:52%;transform:translate(-50%,-50%);z-index:20;display:none;gap:14px';
+document.body.appendChild(calcHost);
+function renderCalc() {
+  if (sim.state.exp !== 'calc' || mode === 'quiz') { calcHost.style.display = 'none'; return; }
+  calcHost.style.display = 'flex';
+  calcHost.innerHTML = OBJ.map(o => {
+    const e = Sim.CALC[o.k];
+    const seen = sim.state.seen[o.k];
+    return `<div class="mt-panel" data-c="${o.k}" style="width:180px;text-align:center;cursor:pointer;border-color:${seen ? 'rgba(18,184,134,.8)' : 'var(--hudline)'}">
+      <div style="font-size:44px">${o.ic}</div>
+      <div style="font-family:Gowun Dodum;font-size:14px;color:#F0EADE;margin-top:4px">${e.d}m를 ${e.t}초에!</div>
+      ${seen
+        ? `<div style="margin-top:8px;padding:8px;border-radius:10px;background:rgba(18,184,134,.16)">
+             <div style="font-family:Gowun Dodum;font-size:14px;color:#F0EADE">${e.d} ÷ ${e.t} = ${e.d / e.t}</div>
+             <div style="font-family:Gowun Dodum;font-size:16px;color:#7CF0C9;margin-top:3px">속력 ${e.d / e.t} m/s</div>
+           </div>`
+        : `<div style="font-family:Gowun Dodum;font-size:13px;color:#93a3b4;margin-top:10px">눌러서 계산!</div>`}
+    </div>`;
+  }).join('');
+  calcHost.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => {
+    hideHint();
+    const r = sim.clickObj(b.dataset.c, mode);
+    if (r) { K3.sound.play('chime'); K3.toast(`${OBJ.find(o => o.k === b.dataset.c).ic} ${r.d} ÷ ${r.t} = <b>${r.v} m/s</b>`, false, T(1800)); }
+    renderCalc(); renderStatus(); afterAct();
+  }));
+}
+
+function renderHUD() {
+  let h = '';
+  if (!lockedGrade) {
+    h += '<div class="mt-seg">' + ['low','mid','high'].map(g =>
+      `<button data-g="${g}" class="${sim.grade === g ? 'on' : ''}">${GRADE_NM[g]}</button>`).join('') + '</div>';
+  }
+  h += '<div class="mt-seg">' + ['free','mission','quiz'].map(m =>
+    `<button data-m="${m}" class="${mode === m ? 'on' : ''}">${MODE_NM[m]}</button>`).join('') + '</div>';
+  hudL.innerHTML = h;
+  hudL.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => setGrade(b.dataset.g)));
+  hudL.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.m)));
+}
+
+function renderCtrls() {
+  if (mode === 'quiz') { ctrls.style.display = 'none'; return; }
+  ctrls.style.display = '';
+  const st = sim.state;
+  let h = '';
+  if (st.wif) {
+    const k = st.wif;
+    if (k === 'farbike') {
+      h += '<button class="k3-btn fire" data-a="fbgo">▶ 둘 다 출발</button>';
+      if (st.fb.t >= 6) h += `<button class="k3-btn ${st.fb.calc ? 'accent' : ''}" data-a="fbcalc">🧮 속력 재보기</button>`;
+    } else if (k === 'nofric') {
+      h += '<button class="k3-btn fire" data-a="nfgo">🖐 공 밀기</button>';
+    } else {
+      h += '<button class="k3-btn fire" data-a="drgo">🪂 떨어뜨리기</button>';
+      h += `<button class="k3-btn ${st.dr.air ? 'accent' : ''}" data-a="air1">🌬 공기 있는 세상</button>`;
+      h += `<button class="k3-btn ${!st.dr.air ? 'accent' : ''}" data-a="air0">🌌 진공(달)</button>`;
+    }
+    h += '<button class="k3-btn" data-a="wifexit">↩ 트랙으로</button>';
+  } else if (st.wowArmed) {
+    h += '<button class="k3-btn" data-a="wowexit">↩ 원래대로</button>';
+  } else {
+    if (sim.exps().length > 1) {
+      h += '<div class="mt-lab">실험</div>';
+      sim.exps().forEach(e => {
+        h += `<button class="k3-btn ${st.exp === e ? 'accent' : ''}" data-e="${e}">${EXP_NM[e]}</button>`;
+      });
+    }
+    if (sim.canV2(mode)) {
+      h += `<div class="mt-lab">🚗 자동차 속력 <b>${st.carV} m/s</b></div><input class="mt-slider" id="cvSlider" type="range" min="3" max="20" step="1" value="${st.carV}">`;
+      h += `<div class="mt-lab">⏱ 출발 지연 <b>${st.carDelay}초</b></div><input class="mt-slider" id="cdSlider" type="range" min="0" max="5" step="1" value="${st.carDelay}">`;
+    }
+    if (sim.canWow(mode)) {
+      h += '<button class="k3-btn accent" data-a="wowarm">🚀 가속 로켓이 따라잡을까?</button>';
+    }
+    if (sim.canWhatif(mode)) {
+      h += '<button class="k3-btn accent" data-a="whatif">🌀 만약에…</button>';
+    }
+    if (sim.canRuler(mode) && sim.state.pick.length) {
+      h += '<button class="k3-btn" data-a="clearruler">✖ 자 지우기</button>';
+    }
+  }
+  ctrls.innerHTML = h;
+  ctrls.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => act(b.dataset.a)));
+  ctrls.querySelectorAll('[data-e]').forEach(b => b.addEventListener('click', () => {
+    hideHint();
+    sim.setExp(b.dataset.e);
+    K3.sound.play('select');
+    rebuildAll(); renderAll(); afterAct();
+  }));
+  const cv = $('cvSlider');
+  if (cv) cv.addEventListener('input', () => {
+    hideHint();
+    if (sim.predArm('spd', mode)) askPred('spd');
+    sim.setCarV(+cv.value);
+    rebuildAll(); renderAll(); afterAct();
+  });
+  const cd = $('cdSlider');
+  if (cd) cd.addEventListener('input', () => {
+    hideHint();
+    if (sim.predArm('delay', mode)) askPred('delay');
+    sim.setDelay(+cd.value);
+    rebuildAll(); renderAll(); afterAct();
+  });
+}
+
+function renderTimebar() {
+  const st = sim.state;
+  const show = (mode !== 'quiz') && !st.wif && st.exp !== 'calc';
+  timebar.style.display = show ? 'flex' : 'none';
+  if (!show) return;
+  $('tclk').textContent = '⏱ ' + st.t.toFixed(1) + '초';
+  $('tscrub').value = st.t;
+  $('tplay').textContent = st.playing ? '⏸ 멈춤' : '▶ 재생';
+  $('tplay').classList.toggle('on', st.playing);
+}
+$('tstep').addEventListener('click', () => {
+  hideHint(); sim.clearWow();
+  sim.step(1);
+  K3.sound.play('tap');
+  rebuildAll(); renderAll(); afterAct();
+});
+$('tplay').addEventListener('click', () => {
+  hideHint(); sim.clearWow();
+  sim.togglePlay();
+  K3.sound.play(sim.state.playing ? 'whoosh' : 'select');
+  renderTimebar(); renderCtrls();
+});
+/* 🔴 시간 스크럽 — 앞뒤 자유 */
+$('tscrub').addEventListener('input', () => {
+  hideHint(); sim.clearWow();
+  if (sim.state.playing) sim.togglePlay();
+  sim.setTime(+$('tscrub').value);
+  rebuildAll(); renderAll(); afterAct();
+});
+$('treset').addEventListener('click', () => {
+  hideHint();
+  sim.resetTime();
+  K3.sound.play('select');
+  rebuildAll(); renderAll();
+});
+
+function renderBar() {
+  if (mode === 'mission') {
+    mbar.style.display = '';
+    const M = sim.missionList();
+    mbar.innerHTML = sim.mDone
+      ? '<b>🎉 미션 완주!</b> 자유탐구에서 마음껏 실험해 봐요<div class="st">완료 ' + M.length + ' / ' + M.length + '</div>'
+      : M[sim.mStep].text + `<div class="st">미션 ${sim.mStep + 1} / ${M.length}</div>`;
+  } else if (mode === 'quiz') {
+    mbar.style.display = '';
+    const q = sim.quizList()[sim.qIdx];
+    mbar.innerHTML = `${q.q}<div class="st">점수 ${sim.qScore} / ${sim.qCount}</div>`;
+  } else mbar.style.display = 'none';
+}
+
+function renderStatus() {
+  const s = sim.statusText(mode);
+  statusEl.innerHTML = s.lines.map(l => `<div class="card${s.warn ? ' warnc' : ''}">${l}</div>`).join('');
+  const st = $('stage');
+  st.dataset.exp = sim.state.exp;
+  st.dataset.t = sim.state.t.toFixed(1);
+  st.dataset.carv = String(sim.state.carV);
+  st.dataset.cdel = String(sim.state.carDelay);
+  st.dataset.card = sim.dOf(OBJ[2]).toFixed(1);
+  st.dataset.wif = sim.state.wif || '';
+  st.dataset.overtaken = sim.overtaken() ? '1' : '0';
+}
+
+function renderChips() {
+  chipsEl.innerHTML = sim.state.chips.map(c =>
+    `<div class="chip" style="border-color:${c.hit ? '#12B886' : '#E8590C'};color:${c.hit ? '#7CF0C9' : '#FFC078'}">${c.label} ${c.hit ? '✔예측적중' : '✘예측빗나감'}</div>`
+  ).join('');
+}
+
+function renderRuler() {
+  const r = sim.ruler();
+  if (!sim.canRuler(mode)) { rulerEl.style.display = 'none'; return; }
+  rulerEl.style.display = '';
+  if (!r) {
+    $('rval').textContent = sim.state.pick.length === 1 ? '한 점 더 집어요' : '두 점을 집어 봐요';
+    $('rform').textContent = '';
+    return;
+  }
+  $('rval').textContent = `${r.dist} m · ${r.time}초`;
+  $('rform').innerHTML = `속력 = ${r.dist} ÷ ${r.time} = <b>${r.speed} m/s</b>`;
+}
+
+function renderQuiz() {
+  if (mode !== 'quiz') { choicesEl.style.display = 'none'; return; }
+  choicesEl.style.display = '';
+  const q = sim.quizList()[sim.qIdx];
+  const order = [0, 1, 2].sort(() => Math.random() - 0.5);
+  choicesEl.innerHTML = order.map(i => `<button data-v="${i}">${q.ch[i]}</button>`).join('');
+  choicesEl.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    if (qLock) return; qLock = true;
+    const r = sim.quizAnswer(+b.dataset.v);
+    K3.sound.play(r.ok ? 'chime' : 'fail');
+    K3.toast(r.ok ? '🎉 정답!' : '아쉬워요 — 정답은 「' + r.correct + '」', !r.ok, T(1300));
+    renderBar();
+    setTimeout(() => {
+      sim.newQuiz(Math.random);
+      qLock = false;
+      rebuildAll(); renderAll();
+    }, T(1500));
+  }));
+}
+let qLock = false;
+
+function renderAll() {
+  renderHUD(); renderCtrls(); renderTimebar(); renderBar(); renderQuiz();
+  renderStatus(); renderChips(); renderRuler(); renderCalc();
+}
+
+/* ═══════════ 씬 동기 ═══════════ */
+function rebuildAll() {
+  buildActors();
+  buildTrails();
+  buildWif();
+  syncScene();
+}
+function syncScene() {
+  const st = sim.state;
+  const inWif = !!st.wif;
+  actorGrp.visible = !inWif && st.exp !== 'calc';
+  trailGrp.visible = !inWif && st.exp !== 'calc';
+  rulerGrp.visible = !inWif && st.exp !== 'calc';
+  marks.visible = !inWif;
+  ground.visible = !inWif || st.wif !== 'drop';
+
+  if (inWif) {
+    syncWif();
+    return;
+  }
+  if (st.exp === 'calc') return;
+
+  if (st.exp === 'accel') {
+    if (actors.acar) actors.acar.position.x = xOf(sim.accCarD());
+    if (actors.rocket) {
+      actors.rocket.position.x = xOf(sim.accRocketD());
+      const spd = Sim.ACC_A * st.t;
+      actors.rocket.userData.flame.scale.set(1, 0.4 + Math.min(spd / 12, 2.2), 1);
+    }
+    return;
+  }
+  OBJ.forEach(o => {
+    const a = actors[o.k];
+    if (!a) return;
+    const d = sim.dOf(o);
+    a.position.x = xOf(d);
+    const waiting = (o.k === 'car' && st.carDelay > 0 && st.t < st.carDelay);
+    a.visible = true;
+    a.position.y = waiting ? 0.06 : 0;
+    if (a.userData.wheels) a.userData.wheels.forEach(w => { w.rotation.z = -d * 1.4; });
+    if (a.userData.legs) a.userData.legs.forEach((l, i) => {
+      l.rotation.x = Math.sin(d * 1.6 + i * Math.PI) * 0.5;
+    });
+  });
+}
+function syncWif() {
+  const st = sim.state, k = st.wif;
+  if (k === 'farbike') {
+    const bd = Sim.fbBike(st.fb.t), cd = Sim.fbCar(st.fb.t);
+    wifObjs.bike.position.x = xOf(bd * 2.5);       /* 40m 스케일 → 100m 트랙 좌표 재활용 */
+    wifObjs.car.position.x = xOf(cd * 2.5);
+    /* 자취 */
+    wifObjs.trail.clear();
+    [[5, 6, 0x1565C0, -3], [8, 2, 0xFF8A3D, 3]].forEach(([v, stop, col, z]) => {
+      for (let kk = 1; kk <= Math.floor(Math.min(stop, st.fb.t)); kk++) {
+        const d = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 14),
+          new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.5 }));
+        d.position.set(xOf(v * kk * 2.5), 0.06, z + 1.5);
+        wifObjs.trail.add(d);
+      }
+    });
+  } else if (k === 'nofric') {
+    wifObjs.grassBall.position.set(xOf(Math.min(60, st.nf.gx) * 1.5), 0.6, -4);
+    wifObjs.iceBall.position.set(xOf(st.nf.ix * 1.5), 0.6, 4);
+    wifObjs.trail.clear();
+    for (let d = 6; d < Math.min(60, st.nf.gx); d += 6) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 12),
+        new THREE.MeshStandardMaterial({ color: 0x2B8A3E, emissive: 0x2B8A3E, emissiveIntensity: 0.4 }));
+      m.position.set(xOf(d * 1.5), 0.12, -6.2);
+      wifObjs.trail.add(m);
+    }
+    for (let d = 6; d < st.nf.ix; d += 6) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 12),
+        new THREE.MeshStandardMaterial({ color: 0x1971C2, emissive: 0x1971C2, emissiveIntensity: 0.4 }));
+      m.position.set(xOf(d * 1.5), 0.12, 6.2);
+      wifObjs.trail.add(m);
+    }
+  } else {
+    const H = Sim.DROP_H;
+    const by = Sim.ballY(st.dr.t), fy = Sim.featherY(st.dr.t, st.dr.air);
+    wifObjs.ball.position.y = 9 - (by / H) * 8.3;
+    wifObjs.feather.position.y = 9 - (fy / H) * 8.3;
+    wifObjs.air.visible = st.dr.air;
+  }
+}
+
+/* ── 조작 후처리 ── */
+function afterAct() {
+  predTick();
+  if (mode === 'mission') missionTick();
+  if (sim.state.wif) wifTick();
+  if (sim.state.wowArmed) wowTick();
+}
+
+function act(a) {
+  hideHint();
+  const st = sim.state;
+  if (a === 'whatif') {
+    K3.cards.result('<h3>🌀 만약에… 무엇을 확인해 볼까요?</h3>',
+      sim.wifList().map(k => ({ label: Sim.WHATIF[k].icon + ' ' + Sim.WHATIF[k].title, value: k }))
+    ).then(k => { if (k) startWhatif(k); });
+  } else if (a === 'wifexit') {
+    sim.wifExit();
+    K3.sound.play('select');
+    rebuildAll(); renderAll();
+  } else if (a === 'fbgo') { sim.fbGo(); K3.sound.play('whoosh'); renderAll(); }
+  else if (a === 'fbcalc') { sim.fbCalc(); K3.sound.play('chime'); renderAll(); afterAct(); }
+  else if (a === 'nfgo') { sim.nfGo(); K3.sound.play('whoosh'); renderAll(); }
+  else if (a === 'drgo') { sim.drGo(); K3.sound.play('whoosh'); renderAll(); }
+  else if (a === 'air1' || a === 'air0') {
+    sim.drAir(a === 'air1');
+    K3.sound.play('select');
+    rebuildAll(); renderAll();
+  } else if (a === 'wowarm') {
+    sim.wowArm();
+    K3.sound.play('charge');
+    rebuildAll(); renderAll();
+    K3.cards.predict(Sim.WOW.q.replace(/<[^>]+>/g, ''),
+      Sim.WOW.ch.map((c, i) => ({ id: String(i), label: c })))
+      .then(v => {
+        sim.setWowPred(+v);
+        K3.sound.play('charge');
+        K3.toast('⏭ 시간을 보내며 «자취 점 간격»을 지켜봐요!', false, T(3600));
+        renderCtrls(); renderStatus();
+      });
+  } else if (a === 'wowexit') {
+    sim.wowExit();
+    sim.setExp('race');
+    K3.sound.play('select');
+    rebuildAll(); renderAll();
+  } else if (a === 'clearruler') {
+    sim.clearRuler();
+    K3.sound.play('pop');
+    rebuildAll(); renderAll();
+  }
+}
+
+/* ── 만약에 ── */
+function startWhatif(key) {
+  sim.wifStart(key);
+  K3.sound.play('whoosh');
+  rebuildAll(); renderAll();
+  const W = Sim.WHATIF[key];
+  K3.cards.predict(W.q, W.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.wifPredict(+v);
+      K3.sound.play('charge');
+      K3.toast(W.icon + ' ' + W.tip, false, T(3800));
+      renderStatus();
+    });
+}
+function wifTick() {
+  if (!sim.wifResolved()) return;
+  const r = sim.wifResolve();
+  if (!r) return;
+  K3.sound.play(r.hit ? 'chime' : 'pop');
+  if (r.hit) K3.sound.play('ting');
+  const W = Sim.WHATIF[r.key];
+  K3.toast(
+    '<b>' + W.icon + ' ' + W.title + '</b><br>' + W.reveal +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 그래서 실험이 재밌죠! ✘'),
+    !r.hit, T(7000)
+  );
+  renderChips(); renderCtrls(); renderStatus();
+  if (r.chipToast) setTimeout(() => K3.toast('🏎 꼬마 속력탐정 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(7200));
+}
+
+/* ── 🚀 와우: 가속의 역전 ── */
+function wowTick() {
+  if (!sim.wowResolved()) return;
+  const r = sim.wowResolve();
+  if (!r) return;
+  const d = r.data;
+  K3.sound.play('whoosh');
+  setTimeout(() => K3.sound.play(r.hit ? 'ting' : 'pop'), T(240));
+  K3.cards.result(
+    '<h3>🚀 점점 빨라지는 쪽이 이긴다</h3>' +
+    '<div style="font-size:13px;line-height:1.6;color:#243043">등속 자동차는 <b>늘 ' + d.carV + 'm/s</b> — 자취 점 간격이 <b>일정</b>했죠. ' +
+    '로켓은 점점 빨라져 자취 점 간격이 <b>계속 벌어졌어요</b>.<br>' +
+    '출발할 땐 자동차가 앞섰지만, <b>' + d.overtake + '초</b>에 로켓이 <b>' + d.dAtOvertake + 'm 지점에서 역전</b>했어요.<br>' +
+    '결승 기록: 🚀 <b>' + d.finRocket + '초</b> · 🚗 ' + d.finCar + '초 — 아슬아슬한 승부!<br>' +
+    '<b>자취 점 간격이 곧 속력</b>이에요. 간격이 일정하면 등속, 점점 벌어지면 가속!' +
+    (r.hit ? '<br>🔮 네 예측이 딱 맞았어요! ✔' : '<br>🔮 예측이 빗나갔어요 — 「처음에 앞선다 = 이긴다」가 아니에요! ✘') +
+    '</div>',
+    [{ label: '알겠어요!', cls: 'pri', value: true }]
+  ).then(() => {
+    sim.wowExit();
+    renderAll();
+  });
+  renderChips(); renderCtrls();
+}
+
+/* ── 예측 노트 ── */
+function askPred(kind) {
+  const P = Sim.PRED[kind];
+  K3.cards.predict(P.q, P.ch.map((c, i) => ({ id: String(i), label: c })))
+    .then(v => {
+      sim.predPick(kind, +v);
+      K3.sound.play('charge');
+      K3.toast('📝 예측 접수! ' + P.tip, false, T(3800));
+      renderStatus();
+      afterAct();
+    });
+}
+function predTick() {
+  ['spd', 'delay'].forEach(kind => {
+    if (!sim.predResolved(kind, mode)) return;
+    const r = sim.predResolve(kind, mode);
+    if (!r) return;
+    K3.sound.play(r.hit ? 'chime' : 'pop');
+    if (r.hit) K3.sound.play('ting');
+    K3.toast(r.msg, !r.hit, T(5600));
+    renderChips(); renderStatus();
+    if (r.chipToast) setTimeout(() => K3.toast('🏎 꼬마 속력탐정 — 오늘 가설 5개를 실험했어요!', false, T(3000)), T(5800));
+  });
+}
+
+/* ── 🔴 클릭: 물체 정보 · 자취 점 집기 ── */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+let downXY = null;
+renderer.domElement.addEventListener('pointerdown', e => { downXY = [e.clientX || 0, e.clientY || 0]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY) return;
+  const x = e.clientX || 0, y = e.clientY || 0;
+  const moved = Math.hypot(x - downXY[0], y - downXY[1]);
+  downXY = null;
+  if (moved > 6) return;
+  if (mode === 'quiz' || sim.state.wif) return;
+  hideHint();
+  ptr.x = (x / innerWidth) * 2 - 1;
+  ptr.y = -(y / innerHeight) * 2 + 1;
+  ray.setFromCamera(ptr, camera);
+  /* 자취 점 먼저 (자) */
+  if (sim.canRuler(mode)) {
+    const th = ray.intersectObjects(trailHits, false);
+    if (th.length) {
+      const u = th[0].object.userData;
+      sim.pickPoint(u.key, u.idx);
+      K3.sound.play('tap');
+      rebuildAll(); renderAll();
+      const r = sim.ruler();
+      if (r) {
+        K3.sound.play('chime');
+        K3.toast(`🎯 <b>${r.dist}m</b>를 <b>${r.time}초</b>에 — 속력 = ${r.dist} ÷ ${r.time} = <b>${r.speed} m/s</b>`, false, T(3600));
+      }
+      afterAct();
+      return;
+    }
+  }
+  /* 물체 클릭 */
+  const ah = ray.intersectObjects(actorHits, false);
+  if (!ah.length) return;
+  const k = ah[0].object.userData.obj;
+  const r = sim.clickObj(k, mode);
+  if (!r) return;
+  if (r.kind === 'early') { K3.toast('아직 출발 전이에요 — ⏭ 시간을 보내 봐요!', true, T(1800)); return; }
+  if (r.kind === 'waiting') { K3.toast('🚗 아직 출발을 기다리는 중이에요!', true, T(1800)); return; }
+  K3.sound.play('chime');
+  if (sim.grade === 'low') K3.toast(`${r.ic} 지금 <b>${r.d}m</b> 갔어요!`, false, T(2200));
+  else K3.toast(`${r.ic} 지금까지 <b>${r.d}m</b> — <b>${r.v} m/s</b>`, false, T(2400));
+  renderAll();
+  afterAct();
+});
+
+/* ── 미션 ── */
+function missionTick() {
+  if (mode !== 'mission' || sim.mDone) return;
+  const r = sim.missionCheck();
+  if (r.act === 'none') return;
+  K3.sound.play('chime');
+  K3.toast('🎉 좋아요!', false, T(1200));
+  setTimeout(() => { rebuildAll(); renderAll(); missionTick(); }, T(1300));
+}
+
+/* ── 모드·학년 ── */
+function resetForMode() {
+  sim.wifExit(); sim.wowExit();
+  const st = sim.state;
+  st.carV = 10; st.carDelay = 0;
+  st.seen = { walk:false, bike:false, car:false };
+  st.pick = [];
+  st.wowDone = false;
+  st.pred.spd = { asked:false, ch:-1, done:false };
+  st.pred.delay = { asked:false, ch:-1, done:false };
+  sim.resetTime();
+  if (!sim.canExp(st.exp)) st.exp = 'race';
+  qLock = false;
+}
+function setGrade(g) {
+  sim.grade = g;
+  resetForMode();
+  if (mode === 'mission') sim.missionStart();
+  else if (mode === 'quiz') sim.quizReset(Math.random);
+  rebuildAll(); renderAll();
+  if (mode === 'mission') missionTick();
+}
+function setMode(m) {
+  mode = m;
+  resetForMode();
+  if (m === 'mission') sim.missionStart();
+  else if (m === 'quiz') sim.quizReset(Math.random);
+  rebuildAll(); renderAll();
+  if (m === 'mission') missionTick();
+}
+
+/* ═══════════ 루프 ═══════════ */
+const clock = new THREE.Clock();
+const FASTX = window.__K3_FAST ? 14 : 1;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta()) * FASTX;
+  const st = sim.state;
+  const active = st.playing || (st.wif && (st.fb.run || st.nf.run || st.dr.run));
+  if (active) {
+    sim.tick(dt);
+    if (st.wif) syncWif();
+    else { buildTrails(); syncScene(); }
+    renderStatus(); renderTimebar(); renderCtrls();
+    afterAct();
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  app.tickQuality();
+}
+
+if (mode === 'mission') sim.missionStart();
+else if (mode === 'quiz') sim.quizReset(Math.random);
+rebuildAll();
+renderAll();
+document.getElementById('loading').classList.add('hide');
+K3.toast(sim.G().v2
+  ? '<b>시간 막대를 앞뒤로 끌어</b> 봐요 — 자취 점 <b>두 개를 집으면</b> 속력을 재줘요!'
+  : '<b>⏭ 1초 지나기</b>를 눌러 봐요 — 누가 가장 빠를까요?');
+animate();
+if (mode === 'mission') missionTick();
+
+/* 테스트용 앱 훅 */
+window.MotionApp = {
+  sim, get mode() { return mode; }, setMode, setGrade, act, startWhatif,
+  actors, actorHits, trailHits, trailGrp, rulerGrp, wifGrp, get wifObjs() { return wifObjs; },
+  marks, ground, camera, controls, xOf,
+  rebuildAll, syncScene, renderAll, afterAct, missionTick, wifTick, wowTick, predTick,
+  setTime(v) { sim.setTime(v); rebuildAll(); renderAll(); afterAct(); },
+  step(n) { for (let i = 0; i < (n || 1); i++) sim.step(1); rebuildAll(); renderAll(); afterAct(); },
+  setExp(e) { sim.setExp(e); rebuildAll(); renderAll(); afterAct(); },
+  setCarV(v) { sim.setCarV(v); rebuildAll(); renderAll(); afterAct(); },
+  setDelay(v) { sim.setDelay(v); rebuildAll(); renderAll(); afterAct(); },
+  armPred(k) { if (sim.predArm(k, mode)) askPred(k); },
+  clickObj(k) { const r = sim.clickObj(k, mode); rebuildAll(); renderAll(); afterAct(); return r; },
+  pickPoint(key, idx) { sim.pickPoint(key, idx); rebuildAll(); renderAll(); afterAct(); return sim.ruler(); },
+  runWif(sec) {
+    for (let t = 0; t < sec; t += 0.05) sim.tick(0.05);
+    syncWif(); renderAll(); afterAct();
+  },
+  answerQuiz(i) { const bs = document.querySelectorAll('#choices button'); for (const b of bs) if (+b.dataset.v === i) { b.click(); return true; } return false; }
+};
+</script>
+</body>
+</html>
