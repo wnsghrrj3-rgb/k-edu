@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>도토리 저울 대결 — K✦edu</title>
+<title>10을 만들어라! — K✦edu</title>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800&display=swap" rel="stylesheet">
 <!-- 이 파일은 build/assemble.py가 조립했습니다. 직접 수정하지 마세요.
-     원본: src/g1m_u5_balance.js (+ src/g1m_u5_balance.css) · core/activity-core.* · core/genre/stream.js · gens/math/compare50.js -->
+     원본: src/g1m_u3_compose10.js (+ src/g1m_u3_compose10.css) · core/activity-core.* · core/genre/stream.js · gens/math/compose10.js -->
 <style>
 /* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
  * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
@@ -98,10 +98,14 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 }
 
 /* ── 무대 스타일 ── */
-/* 무대 스타일 — 저울 전용 (core가 모르는 것만) */
-#scale { width:min(92vw,640px); max-height:52vh; }
-#beam-g { transition:transform .8s cubic-bezier(.34,1.4,.64,1); transform-origin:320px 84px; }
-.pan-num { font-family:'Nunito',sans-serif; font-weight:800; font-size:76px; fill:var(--deep); }
+/* 무대 — 숫자 카드 한 장 (§6-3 판독 우선: 크고 고대비) */
+#card { background:#fff; border:6px solid var(--amber); border-radius:28px;
+        padding:clamp(24px,5vh,54px) clamp(30px,7vw,80px); text-align:center;
+        box-shadow:0 10px 0 #e7c890; transition:transform .25s, border-color .25s; }
+#card.ok { border-color:var(--good); transform:scale(1.04); }
+#card.no { border-color:var(--bad); }
+#q { font-family:'Nunito',sans-serif; font-weight:800; font-size:clamp(48px,11vw,124px); color:var(--deep); }
+#hands { font-size:clamp(28px,5vw,52px); margin-top:6px; }
 </style>
 </head>
 <body>
@@ -1003,152 +1007,98 @@ h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:cen
 })();
 </script>
 <script>
-/* gens/math/compare50.js — 두 수 크기 비교 생성기 (§9-3 규약)
- * 순수 함수·DOM 무관. 같은 파일을 게임(iframe)과 활동지(worksheet.html)가 공유한다.
- *
- * params: { range: 20|50|100 }
- * next() → { a, b, prompt, answer:'L'|'E'|'R', type, explain, whyAns }
- * type(형성평가 신호): same_tens · boundary · far · equal  (카탈로그 types와 일치해야 함)
+/* gens/math/compose10.js — 10 만들기 (1학년 수학 3단원, 수111쪽)
+ * 순수 함수·DOM 무관 (§9-3). 게임·활동지 공유.
+ * params: { mode: 'compose'(모으기 짝) | 'split'(가르기) | 'mix' }
+ * type: pair_small(1~4 짝) · pair_large(6~9 짝) · five(5+5) · split(가르기)
  */
 (function (root, factory) {
   var g = factory();
   if (typeof module === 'object' && module.exports) module.exports = g;
   root.GENS = root.GENS || {};
-  root.GENS['compare50'] = g;
+  root.GENS['compose10'] = g;
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-
   function ri(rng, lo, hi) { return lo + Math.floor(rng() * (hi - lo + 1)); }
 
-  function make(range, rng) {
-    var r = rng(), type, a, b;
-    if (r < 0.34) type = 'same_tens';
-    else if (r < 0.56) type = 'boundary';
-    else if (r < 0.88) type = 'far';
-    else type = 'equal';
-
-    if (type === 'same_tens') {
-      var t = ri(rng, 0, Math.floor((range - 1) / 10));
-      var maxOnes = (t * 10 + 9 <= range) ? 9 : range - t * 10;
-      var o1 = ri(rng, t === 0 ? 1 : 0, maxOnes), o2;
-      do { o2 = ri(rng, t === 0 ? 1 : 0, maxOnes); } while (o2 === o1);
-      a = t * 10 + o1; b = t * 10 + o2;
-    } else if (type === 'boundary') {
-      var d = ri(rng, 1, Math.floor(range / 10)) * 10;   // 10, 20, … range
-      a = d - 1; b = d;
-      if (rng() < 0.5) { var tmp = a; a = b; b = tmp; }
-    } else if (type === 'far') {
-      do { a = ri(rng, 1, range); b = ri(rng, 1, range); }
-      while (Math.floor(a / 10) === Math.floor(b / 10) || Math.abs(a - b) === 1);
-    } else { a = ri(rng, 1, range); b = a; }
-
-    var ans = (a === b) ? 'E' : (a > b ? 'L' : 'R');
-    var big = Math.max(a, b), small = Math.min(a, b);
-    var explain =
-      type === 'same_tens' ? '십의 자리가 같으니 낱개끼리 비교해요: ' + (a % 10) + (a > b ? ' > ' : ' < ') + (b % 10) :
-      type === 'boundary' ? small + ' 다음 수가 ' + big + '이에요. ' + big + '이(가) 1 더 커요' :
-      type === 'far' ? '십의 자리를 비교해요: ' + Math.floor(a / 10) + (a > b ? ' > ' : ' < ') + Math.floor(b / 10) + ' — 십의 자리가 크면 더 큰 수!' :
-      '두 수가 똑같아요!';
-    var whyAns = (type === 'same_tens') ? 'ones' : (type === 'equal' ? 'equal' : 'tens');
-
+  function make(kind, rng) {
+    var a = ri(rng, 1, 9);
+    if (kind === 'split') {                       // 10을 a와 □로 가르기
+      var b = 10 - a;
+      return {
+        a: a, b: b, prompt: '10 → ' + a + ' 과 □', answer: String(b),
+        type: 'split',
+        explain: '10은 ' + a + '와(과) ' + b + '로 갈라져요. 손가락 ' + a + '개를 접으면 ' + b + '개가 남아요!'
+      };
+    }
+    var need = 10 - a;                            // a와 무엇을 모으면 10?
+    var type = (a === 5) ? 'five' : (a <= 4 ? 'pair_small' : 'pair_large');
     return {
-      a: a, b: b, prompt: a + ' ◯ ' + b, answer: ans,
-      type: type, explain: explain, whyAns: whyAns
+      a: a, b: need, prompt: a + ' + □ = 10', answer: String(need),
+      type: type,
+      explain: a === 5 ? '5와 5를 모으면 10! 한 손씩 짝이에요'
+        : a + '에 ' + need + '을(를) 더하면 10이 돼요. ' + a + '·' + need + '은 10의 단짝!'
     };
   }
 
   return {
-    id: 'compare50',
-    title: '두 수의 크기 비교',
+    id: 'compose10',
+    title: '10 만들기',
     create: function (params, rng) {
-      var range = [20, 50, 100].indexOf(+((params || {}).range)) >= 0 ? +params.range : 50;
+      var m = ((params || {}).qmode) || 'mix';
       return {
-        next: function () { return make(range, rng); },
+        next: function () {
+          var kind = (m === 'mix') ? (rng() < 0.5 ? 'compose' : 'split') : m;
+          var p = make(kind, rng);
+          // 보기 4개: 정답 + 오답 3 (10 이하 자연수, 중복 없이)
+          var opts = [p.answer];
+          while (opts.length < 4) {
+            var c = String(ri(rng, 1, 9));
+            if (opts.indexOf(c) < 0) opts.push(c);
+          }
+          for (var i = opts.length - 1; i > 0; i--) {          // 셔플
+            var j = Math.floor(rng() * (i + 1)), t = opts[i]; opts[i] = opts[j]; opts[j] = t;
+          }
+          p.options = opts;
+          return p;
+        },
         check: function (pick, p) { return pick === p.answer; }
       };
     },
-    // 활동지 인쇄 렌더 (§11-2)
-    printRender: function (p) {
-      return '<span class="w-num">' + p.a + '</span><span class="w-box">◯</span><span class="w-num">' + p.b + '</span>';
-    },
-    printAnswer: function (p) { return p.answer === 'E' ? '=' : (p.answer === 'L' ? '>' : '<'); },
-    printHead: '두 수를 비교해 ◯ 안에 >, =, < 를 쓰세요.'
+    printRender: function (p) { return '<span class="w-num">' + p.prompt.replace('□', '<span class="w-box"> </span>') + '</span>'; },
+    printAnswer: function (p) { return p.answer; },
+    printHead: '□ 안에 알맞은 수를 쓰세요.'
   };
 }));
 </script>
 <script>
-/* src/g1m_u5_balance.js — 도토리 저울 대결 (1학년 수학 5단원, 수130-131)
- * 장르: stream · 생성기: compare50
- * 이 파일에 있는 것은 무대(저울)와 연출뿐이다. 루프·점수·수첩·제출은 core/stream이 처리한다.
+/* src/g1m_u3_compose10.js — 10을 만들어라! (1학년 수학 3단원, 수111쪽)
+ * 장르: duel_quiz(stream) · 생성기: compose10
+ * 무대 = 숫자 카드 한 장. 이것이 새 활동 1개의 전부다 (§17 Phase 3 DoD).
  */
 (function () {
   'use strict';
-
-  var STAGE =
-    '<svg id="scale" viewBox="0 0 640 380" xmlns="http://www.w3.org/2000/svg" aria-label="저울">' +
-      '<rect x="304" y="84" width="32" height="252" rx="10" fill="#b45309"/>' +
-      '<rect x="225" y="330" width="190" height="26" rx="13" fill="#92400e"/>' +
-      '<g id="beam-g">' +
-        '<rect x="90" y="76" width="460" height="16" rx="8" fill="#d97706"/>' +
-        '<circle cx="320" cy="84" r="15" fill="#78350f"/>' +
-        /* 왼쪽: 줄 → 접시 → 접시 위 대형 숫자 카드 (§6-3 판독 우선) */
-        '<g id="pan-left">' +
-          '<line x1="110" y1="90" x2="70" y2="196" stroke="#92400e" stroke-width="5"/>' +
-          '<line x1="110" y1="90" x2="150" y2="196" stroke="#92400e" stroke-width="5"/>' +
-          '<rect x="40" y="196" width="140" height="14" rx="7" fill="#f59e0b"/>' +
-          '<rect x="48" y="104" width="124" height="88" rx="16" fill="#ffffff" stroke="#d97706" stroke-width="4"/>' +
-          '<text x="110" y="170" text-anchor="middle" class="pan-num" id="numL">?</text>' +
-          '<text x="110" y="236" text-anchor="middle" font-size="24">🌰🌰🌰</text>' +
-        '</g>' +
-        '<g id="pan-right">' +
-          '<line x1="530" y1="90" x2="490" y2="196" stroke="#92400e" stroke-width="5"/>' +
-          '<line x1="530" y1="90" x2="570" y2="196" stroke="#92400e" stroke-width="5"/>' +
-          '<rect x="460" y="196" width="140" height="14" rx="7" fill="#f59e0b"/>' +
-          '<rect x="468" y="104" width="124" height="88" rx="16" fill="#ffffff" stroke="#d97706" stroke-width="4"/>' +
-          '<text x="530" y="170" text-anchor="middle" class="pan-num" id="numR">?</text>' +
-          '<text x="530" y="236" text-anchor="middle" font-size="24">🌰🌰🌰</text>' +
-        '</g>' +
-      '</g>' +
-    '</svg>';
-
   var app = ACore.create({
-    activityId: 'g1m_u5_balance',
-    title: '🌰 도토리 저울 대결',
-    subtitle: '어느 쪽 도토리 수가 더 클까? 저울로 판정해요!',
-    defaults: { range: 50, n: 10, why: 0 },
-    legacyRecordKeys: ['kedu_balance_best_v1'],   // 단일파일 시절 기록 승계
+    activityId: 'g1m_u3_compose10',
+    title: '🖐️ 10을 만들어라!',
+    subtitle: '빈칸에 들어갈 수는? 10의 단짝을 찾아요',
+    defaults: { qmode: 'mix', n: 10 },
     settings: [
-      { key: 'range', label: '수 범위', options: [{ v: 20, label: '20까지' }, { v: 50, label: '50까지' }, { v: 100, label: '100까지' }] },
-      { key: 'n', label: '문제 수', options: [{ v: 5, label: '5' }, { v: 10, label: '10' }, { v: 15, label: '15' }] },
-      { key: 'why', label: '왜 그럴까 보너스', options: [{ v: 0, label: '끄기' }, { v: 1, label: '켜기' }] }
+      { key: 'qmode', label: '문제 종류', options: [{ v: 'compose', label: '모으기' }, { v: 'split', label: '가르기' }, { v: 'mix', label: '섞기' }] },
+      { key: 'n', label: '문제 수', options: [{ v: 5, label: '5' }, { v: 10, label: '10' }, { v: 15, label: '15' }] }
     ],
-    stageHtml: STAGE,
+    stageHtml: '<div id="card"><div id="q">?</div><div id="hands">🖐️🖐️</div></div>',
     onStart: function (app) {
-      var gen = GENS['compare50'].create({ range: app.settings.range }, app.rng);
+      var gen = GENS['compose10'].create({ qmode: app.settings.qmode }, app.rng);
       Stream.run(app, gen, {
-        render: function (app, p) {
-          app.el('#numL').textContent = p.a;
-          app.el('#numR').textContent = p.b;
+        render: function (app, p) { app.el('#q').textContent = p.prompt; },
+        options: function (p) {
+          return p.options.map(function (o) { return { pick: o, label: o }; });
         },
-        reset: function (app) {
-          app.el('#beam-g').style.transform = 'rotate(0deg)';   // 판정 전엔 수평 — 저울이 답을 흘리지 않는다
+        reveal: function (app, p, ok) {
+          app.el('#card').classList.add(ok ? 'ok' : 'no');
         },
-        options: function () {
-          return [{ pick: 'L', label: '⬅ 왼쪽' }, { pick: 'E', label: '🟰 같아요' }, { pick: 'R', label: '오른쪽 ➡' }];
-        },
-        reveal: function (app, p) {
-          var deg = p.answer === 'E' ? 0 : (p.answer === 'L' ? -9 : 9);   // 큰 쪽이 내려간다
-          app.el('#beam-g').style.transform = 'rotate(' + deg + 'deg)';
-        },
-        why: {
-          question: '🦉 어떻게 알았어?',
-          options: [
-            { v: 'tens', label: '십의 자리가 달라요' },
-            { v: 'ones', label: '십의 자리가 같아서 낱개를 봤어요' },
-            { v: 'equal', label: '두 수가 같아요' }
-          ],
-          answerOf: function (p) { return p.whyAns; }
-        }
+        reset: function (app) { app.el('#card').classList.remove('ok', 'no'); }
       });
     }
   });

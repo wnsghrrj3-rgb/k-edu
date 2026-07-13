@@ -125,7 +125,7 @@
         (d.note ? '<div class="kact-note">📝 ' + esc(d.note) + '</div>' : '') +
         '<div class="kact-btns">' +
         '<button class="kact-btn primary" data-kact-start>시작</button>' +
-        '<button class="kact-btn" disabled title="Phase 3에서 열려요">활동지</button>' +
+        wsBtnHtml(a) +
         sendBtnHtml('data-kact-send') +
         '</div></div>';
       el.querySelector('[data-kact-start]').addEventListener('click', function () {
@@ -133,6 +133,8 @@
       });
       var sb = el.querySelector('[data-kact-send]');
       if (sb && !sb.disabled) sb.addEventListener('click', function () { openSend(a, d.params || {}, null); });
+      var wb = el.querySelector('[data-kact-ws]');
+      if (wb) wb.addEventListener('click', function () { openWorksheet(a, d.params || {}); });
     });
     return function cleanup() { closeAll(); };
   }
@@ -297,6 +299,27 @@
       var d = { id: a.id, params: null };
       launch(a, {});
     });
+  }
+
+  // ─────────────────────────── 활동지 (§11) ───────────────────────────
+  // 활동지는 독립 제작물이 아니라 같은 생성기의 인쇄 렌더다. 생성기가 있으면 자동으로 열린다.
+  function genIdOf(a) {
+    if (!a.gen) return null;
+    var m = String(a.gen).match(/([^/]+)\.js$/);
+    return m ? m[1] : null;
+  }
+  function wsBtnHtml(a) {
+    return genIdOf(a)
+      ? '<button class="kact-btn" data-kact-ws>활동지</button>'
+      : '<button class="kact-btn" disabled title="이 활동은 활동지가 없어요">활동지</button>';
+  }
+  function openWorksheet(a, params) {
+    var g = genIdOf(a); if (!g) return;
+    var qs = ['gen=' + encodeURIComponent(g)];
+    Object.keys(params || {}).forEach(function (k) {
+      if (params[k] != null && params[k] !== '') qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+    });
+    window.open('/kedu/activities/worksheet.html?' + qs.join('&'), '_blank');
   }
 
   // ─────────────────────────── 케이박스 전송 (§8-2) ───────────────────────────

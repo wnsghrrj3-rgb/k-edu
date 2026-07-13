@@ -1,0 +1,88 @@
+/* activity-core.css — 케이티처 활동 표준 셸 (Phase 3)
+ * 헌법: 설계 §6 현장 헌장이 여기 박혀 있다. 도구는 이 스타일을 다시 쓰지 않는다.
+ *   §6-2 답 버튼은 가로 일렬 (.ansgrp = row 고정)
+ *   §6-3 판독 우선 (숫자·핵심 정보는 고대비 카드 위)
+ *   §6-6 우상단은 호스트 구역 (#hud right: var(--kb-safe-right))
+ *   §6-8 [넘기기]·[그만하기]는 HUD 상설
+ * 빌드가 이 파일을 <style>로 인라인한다 (단일 HTML 원칙 D1).
+ */
+:root {
+  --cream:#fffbf5; --ink:#78350f; --deep:#92400e; --amber:#f59e0b; --amber-d:#d97706;
+  --good:#22c55e; --bad:#f87171; --teamA:#f59e0b; --teamB:#10b981;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body { background:var(--cream); font-family:'Jua',sans-serif; color:var(--ink);
+       display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.num { font-family:'Nunito',sans-serif; font-weight:800; }
+.screen { display:none; width:100%; height:100%; padding:clamp(10px,2vw,28px);
+          flex-direction:column; align-items:center; justify-content:center; gap:clamp(10px,2vh,22px); }
+.screen.active { display:flex; }
+h1 { font-size:clamp(30px,6vw,58px); color:var(--deep); margin:0; text-align:center; }
+.brand { position:fixed; top:10px; left:14px; font-size:15px; color:var(--amber-d); z-index:5; }
+.btn { font-family:'Jua',sans-serif; border:none; border-radius:16px; cursor:pointer;
+       min-height:44px; min-width:44px; font-size:clamp(18px,2.6vw,26px); padding:12px 28px;
+       background:var(--amber); color:#fff; box-shadow:0 4px 0 var(--amber-d); }
+.btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--amber-d); }
+.btn.ghost { background:#fff; color:var(--deep); box-shadow:0 4px 0 #e7d9c4; border:2px solid #f3e2c4; }
+
+/* ── 시작 화면 ── */
+#scr-start .sub { font-size:clamp(16px,2.4vw,24px); color:var(--amber-d); text-align:center; }
+.setrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+.setrow + .setrow { margin-top:8px; }
+.setrow .lb { font-size:clamp(15px,2vw,20px); }
+.chip { border:2px solid var(--amber); background:#fff; color:var(--deep); border-radius:999px;
+        padding:8px 18px; font-size:clamp(15px,2vw,20px); font-family:'Jua',sans-serif; cursor:pointer; min-height:44px; }
+.chip.on { background:var(--amber); color:#fff; }
+#sid-badge { display:none; background:var(--deep); color:#fff; border-radius:999px;
+             padding:6px 18px; font-size:clamp(16px,2.2vw,22px); }
+#best-line { display:none; font-size:clamp(15px,2vw,20px); color:var(--amber-d); }
+#start-btn { font-size:clamp(22px,3.4vw,32px); padding:16px 44px; }
+
+/* ── 게임 화면 ── */
+#scr-game { justify-content:space-between; padding-top:clamp(40px,6vh,60px); }
+#hud { position:fixed; top:8px; right:var(--kb-safe-right, 12px); display:flex; gap:10px; align-items:center; z-index:5; }
+#hud .pill { background:#fff; border:2px solid #f3e2c4; border-radius:999px; padding:5px 14px;
+             font-size:clamp(14px,1.8vw,18px); }
+#quit-btn,#mute-btn,#skip-btn { background:#fff; border:2px solid #f3e2c4; border-radius:12px; cursor:pointer;
+            font-size:17px; padding:6px 12px; min-height:40px; font-family:'Jua',sans-serif; color:var(--deep); }
+#teams { display:none; width:100%; max-width:900px; justify-content:space-between; }
+.team { border-radius:14px; padding:6px 20px; color:#fff; font-size:clamp(18px,2.6vw,26px); }
+.team.A { background:var(--teamA); } .team.B { background:var(--teamB); }
+
+/* 무대: 장르가 채우는 영역 */
+#stage { flex:1; display:flex; align-items:center; justify-content:center; width:100%; min-height:0; }
+
+#explain { min-height:clamp(34px,5vh,52px); font-size:clamp(17px,2.6vw,26px); color:var(--deep);
+           background:#fef3c7; border-radius:14px; padding:8px 22px; opacity:0; transition:opacity .3s;
+           text-align:center; max-width:92vw; }
+#explain.show { opacity:1; }
+#explain .mark { font-size:1.1em; }
+
+/* 답 버튼 — §6-2: 그룹 내부는 언제나 가로 일렬 */
+#answers-solo { display:none; gap:clamp(10px,2vw,18px); width:100%; max-width:640px; justify-content:center; }
+#answers-class { display:none; width:100%; max-width:960px; justify-content:space-between; gap:12px; }
+.ansgrp { display:flex; gap:10px; flex-direction:row; align-items:center; }
+.ansgrp::before { content:attr(data-label); font-size:clamp(15px,1.8vw,20px); color:#fff;
+  padding:6px 12px; border-radius:10px; margin-right:2px; }
+.ansgrp.A::before { background:var(--teamA); } .ansgrp.B::before { background:var(--teamB); }
+.abtn { font-family:'Jua',sans-serif; font-size:clamp(19px,3vw,28px); border:none; border-radius:16px;
+        padding:clamp(12px,2vh,18px) clamp(18px,3vw,34px); cursor:pointer; min-height:52px;
+        background:#fff; color:var(--deep); border:3px solid var(--amber); box-shadow:0 4px 0 #e7c890; }
+.abtn:active { transform:translateY(3px); box-shadow:none; }
+.ansgrp.A .abtn { border-color:var(--teamA); } .ansgrp.B .abtn { border-color:var(--teamB); }
+.abtn.locked { opacity:.45; pointer-events:none; }
+.abtn.shake { animation:shake .45s; border-color:var(--bad); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-9px)} 40%,80%{transform:translateX(9px)} }
+#why-box { display:none; flex-direction:column; align-items:center; gap:10px; width:100%; max-width:640px; }
+#why-box .wq { font-size:clamp(18px,2.6vw,26px); color:var(--deep); }
+#why-box .whyrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+/* ── 종료 화면 ── */
+#scr-end .big { font-size:clamp(40px,8vw,84px); color:var(--deep); }
+#scr-end .line { font-size:clamp(18px,3vw,30px); color:var(--amber-d); text-align:center; }
+#submit-line { font-size:clamp(15px,2.2vw,20px); }
+
+@media (orientation:portrait) {
+  #answers-class { flex-direction:column; align-items:center; }  /* 그룹 간 상하, 그룹 내부는 가로 (§6-2) */
+}
