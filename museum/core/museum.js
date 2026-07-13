@@ -515,6 +515,49 @@ function stage(canvas){
   return api;
 }
 
+/* ── §5.6 exit — 들어온 사람은 나갈 수 있어야 한다 ──────────────────
+   전시를 짓는 것과 사람이 오갈 수 있는 것은 다른 일이다.
+   스물여덟 전시가 라이브인 채로, 전시실에서 복도로 나가는 문이 하나도 없었다
+   (뒤로가기는 출구가 아니다 — 티켓을 받아도 티켓북이 있는 로비로 갈 수 없었다).
+
+   문법:
+     ① 전시 어디서든 로비로 나갈 수 있다(관람 중에도).
+     ② 무대를 침범하지 않는다 — 놋쇠 실선 하나, 평소엔 어둡고 손이 닿으면 밝아진다.
+     ③ 전제 한 줄이 먼저 읽히도록 1.6초 뒤에야 켜진다.
+     ④ ★배반의 700ms 정적은 침범하지 않는다(museum:freeze에 숨는다).
+     ⑤ 나갈 때는 커튼으로 — 문이 닫히듯. */
+function exitDoor(o){
+  o = o || {};
+  var url = o.url || '../index.html';
+  var el = document.createElement('a');
+  el.id = 'exit-door';
+  el.href = url;
+  el.textContent = o.label || '← 로비로';
+  el.style.cssText =
+    'position:fixed;left:22px;top:20px;z-index:70;'+
+    "font-family:'Gowun Dodum',sans-serif;font-size:13px;letter-spacing:.04em;"+
+    'color:rgba(201,169,97,.42);text-decoration:none;'+
+    'padding:9px 15px;border:1px solid rgba(201,169,97,.16);border-radius:999px;'+
+    'background:rgba(7,7,12,.5);'+
+    'opacity:0;transition:opacity .9s ease,color .3s ease,border-color .3s ease;';
+  el.addEventListener('mouseenter', function(){
+    el.style.color='rgba(201,169,97,.95)'; el.style.borderColor='rgba(201,169,97,.6)';
+  });
+  el.addEventListener('mouseleave', function(){
+    el.style.color='rgba(201,169,97,.42)'; el.style.borderColor='rgba(201,169,97,.16)';
+  });
+  el.addEventListener('click', function(e){
+    e.preventDefault();
+    curtainTo(url);                                  // 나갈 때는 커튼으로 — 문이 닫히듯
+  });
+  document.body.appendChild(el);
+  setTimeout(function(){ el.style.opacity='1'; }, o.delay!=null? o.delay : 1600);
+  // 배반의 정적은 침범하지 않는다
+  window.addEventListener('museum:freeze',   function(){ el.style.opacity='0'; });
+  window.addEventListener('museum:unfreeze', function(){ el.style.opacity='1'; });
+  return el;
+}
+
 /* ── §5.5 grip — 손을 놓치지 않는다 (전자칠판 표준) ────────────────
    드래그·홀드 전시의 라이브 결함 3종을 코어가 한자리에서 막는다.
    E2는 무대 훅(window.__XX)을 직접 찔러 막을 넘기므로, 아래 셋은
@@ -570,6 +613,7 @@ function grip(canvas){
 
 /* ── 공개 API 조립 ───────────────────────────────────────────────── */
 window.Museum = {
+  exit:exitDoor,                       // §5.6 들어온 사람은 나갈 수 있어야 한다
   grip:grip,                           // §5.5 손을 놓치지 않는다
   sound:{ play:play, roomtone:roomtone, mute:mute },
   betray:betray,
