@@ -15,6 +15,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": "g2_math_u1_l01",
+     "lessonId": "g2_math_u1_l01_v1",
      "n": "1",
      "title": "세 자리 수를 만나 볼까요",
      "sub": null,
@@ -24,6 +25,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l02",
+     "lessonId": "g2_math_u1_l02_v1",
      "n": "2",
      "title": "백을 알아볼까요",
      "sub": null,
@@ -33,6 +35,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l03",
+     "lessonId": "g2_math_u1_l03_v1",
      "n": "3",
      "title": "몇백을 알아볼까요",
      "sub": null,
@@ -42,6 +45,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l04",
+     "lessonId": "g2_math_u1_l04_v1",
      "n": "4",
      "title": "세 자리 수를 알아볼까요",
      "sub": null,
@@ -51,6 +55,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l05",
+     "lessonId": "g2_math_u1_l05_v1",
      "n": "5",
      "title": "각 자리의 숫자는 얼마를 나타낼까요",
      "sub": null,
@@ -60,6 +65,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l06",
+     "lessonId": "g2_math_u1_l06_v1",
      "n": "6",
      "title": "뛰어 세어 볼까요",
      "sub": null,
@@ -69,6 +75,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l07",
+     "lessonId": "g2_math_u1_l07_v1",
      "n": "7",
      "title": "수의 크기를 비교해 볼까요",
      "sub": null,
@@ -78,6 +85,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l08",
+     "lessonId": "g2_math_u1_l08_v1",
      "n": "8",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -87,6 +95,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u1_l09",
+     "lessonId": "g2_math_u1_l09_v1",
      "n": "9",
      "title": "수학이랑 만들어요",
      "sub": null,
@@ -103,6 +112,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": "g2_math_u2_l01",
+     "lessonId": "g2_math_u2_l01_v1",
      "n": "1",
      "title": "여러 가지 도형을 찾아볼까요",
      "sub": null,
@@ -112,6 +122,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l02",
+     "lessonId": "g2_math_u2_l02_v1",
      "n": "2",
      "title": "삼각형을 알아보고 찾아볼까요",
      "sub": null,
@@ -121,6 +132,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l03",
+     "lessonId": "g2_math_u2_l03_v1",
      "n": "3",
      "title": "사각형을 알아보고 찾아볼까요",
      "sub": null,
@@ -130,6 +142,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l04",
+     "lessonId": "g2_math_u2_l04_v1",
      "n": "4",
      "title": "원을 알아보고 찾아볼까요",
      "sub": null,
@@ -139,6 +152,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l05",
+     "lessonId": "g2_math_u2_l05_v1",
      "n": "5",
      "title": "칠교판으로 모양을 만들어 볼까요",
      "sub": null,
@@ -148,6 +162,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l06",
+     "lessonId": "g2_math_u2_l06_v1",
      "n": "6",
      "title": "쌓은 모양을 알아볼까요",
      "sub": null,
@@ -157,6 +172,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l07",
+     "lessonId": "g2_math_u2_l07_v1",
      "n": "7",
      "title": "여러 가지 모양으로 쌓아볼까요",
      "sub": null,
@@ -166,6 +182,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l08",
+     "lessonId": "g2_math_u2_l08_v1",
      "n": "8",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -175,6 +192,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u2_l09",
+     "lessonId": "g2_math_u2_l09_v1",
      "n": "9",
      "title": "수학이랑 만들어요",
      "sub": null,
@@ -191,6 +209,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": "g2_math_u3_l01",
+     "lessonId": "g2_math_u3_l01_v1",
      "n": "1",
      "title": "덧셈과 뺄셈을 만나 볼까요",
      "sub": null,
@@ -200,6 +219,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l02",
+     "lessonId": "g2_math_u3_l02_v1",
      "n": "2",
      "title": "여러 가지 방법으로 덧셈을 해 볼까요(1)",
      "sub": null,
@@ -209,6 +229,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l03",
+     "lessonId": "g2_math_u3_l03_v1",
      "n": "3",
      "title": "여러 가지 방법으로 덧셈을 해 볼까요(2)",
      "sub": null,
@@ -218,6 +239,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l04",
+     "lessonId": "g2_math_u3_l04_v1",
      "n": "4",
      "title": "덧셈을 해 볼까요",
      "sub": null,
@@ -227,6 +249,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l05",
+     "lessonId": "g2_math_u3_l05_v1",
      "n": "5",
      "title": "여러 가지 방법으로 뺄셈을 해 볼까요(1)",
      "sub": null,
@@ -236,6 +259,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l06",
+     "lessonId": "g2_math_u3_l06_v1",
      "n": "6",
      "title": "여러 가지 방법으로 뺄셈을 해 볼까요(2)",
      "sub": null,
@@ -245,6 +269,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l07",
+     "lessonId": "g2_math_u3_l07_v1",
      "n": "7",
      "title": "뺄셈을 해 볼까요",
      "sub": null,
@@ -254,6 +279,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l08",
+     "lessonId": "g2_math_u3_l08_v1",
      "n": "8",
      "title": "세 수의 계산을 해 볼까요",
      "sub": null,
@@ -263,6 +289,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l09",
+     "lessonId": "g2_math_u3_l09_v1",
      "n": "9",
      "title": "덧셈과 뺄셈의 관계를 식으로 나타내 볼까요",
      "sub": null,
@@ -272,6 +299,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l10",
+     "lessonId": "g2_math_u3_l10_v1",
      "n": "10",
      "title": "□가 사용된 식을 만들고 □의 값을 구해 볼까요",
      "sub": null,
@@ -281,6 +309,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l11",
+     "lessonId": "g2_math_u3_l11_v1",
      "n": "11",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -290,6 +319,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u3_l12",
+     "lessonId": "g2_math_u3_l12_v1",
      "n": "12",
      "title": "수학이랑 만들어요",
      "sub": null,
@@ -306,6 +336,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": null,
+     "lessonId": null,
      "n": "1",
      "title": "길이 재기를 만나 볼까요",
      "sub": null,
@@ -315,6 +346,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l02",
+     "lessonId": "g2_math_u4_l02_v1",
      "n": "2",
      "title": "길이를 비교하는 방법을 알아볼까요",
      "sub": null,
@@ -324,6 +356,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l03",
+     "lessonId": "g2_math_u4_l03_v1",
      "n": "3",
      "title": "여러 가지 단위로 길이를 재어 볼까요",
      "sub": null,
@@ -333,6 +366,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l04",
+     "lessonId": "g2_math_u4_l04_v1",
      "n": "4",
      "title": "1 cm를 알아볼까요",
      "sub": null,
@@ -342,6 +376,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l05",
+     "lessonId": "g2_math_u4_l05_v1",
      "n": "5",
      "title": "자로 길이를 재는 방법을 알아볼까요",
      "sub": null,
@@ -351,6 +386,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l06",
+     "lessonId": "g2_math_u4_l06_v1",
      "n": "6",
      "title": "자로 길이를 재어 볼까요",
      "sub": null,
@@ -360,6 +396,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u4_l07",
+     "lessonId": "g2_math_u4_l07_v1",
      "n": "7",
      "title": "길이를 어림하고 어떻게 어림했는지 말해 볼까요",
      "sub": null,
@@ -369,6 +406,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "8",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -378,6 +416,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "9",
      "title": "수학이랑 만들어요",
      "sub": null,
@@ -394,6 +433,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": "g2_math_u5_l01",
+     "lessonId": "g2_math_u5_l01_v1",
      "n": "1",
      "title": "분류하기를 만나 볼까요",
      "sub": null,
@@ -403,6 +443,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l02",
+     "lessonId": "g2_math_u5_l02_v1",
      "n": "2",
      "title": "분류는 어떻게 할까요",
      "sub": null,
@@ -412,6 +453,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l03",
+     "lessonId": "g2_math_u5_l03_v1",
      "n": "3",
      "title": "기준에 따라 분류해 볼까요",
      "sub": null,
@@ -421,6 +463,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l04",
+     "lessonId": "g2_math_u5_l04_v1",
      "n": "4",
      "title": "분류하고 세어 볼까요",
      "sub": null,
@@ -430,6 +473,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l05",
+     "lessonId": "g2_math_u5_l05_v1",
      "n": "5",
      "title": "분류한 결과를 말해 볼까요",
      "sub": null,
@@ -439,6 +483,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l06",
+     "lessonId": "g2_math_u5_l06_v1",
      "n": "6",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -448,6 +493,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u5_l07",
+     "lessonId": "g2_math_u5_l07_v1",
      "n": "7",
      "title": "수학이랑 만들어요",
      "sub": null,
@@ -464,6 +510,7 @@ window.KEDU_MAP["g2_1_math"] = {
    "lessons": [
     {
      "key": "g2_math_u6_l01",
+     "lessonId": "g2_math_u6_l01_v1",
      "n": "1",
      "title": "곱셈을 만나 볼까요",
      "sub": null,
@@ -473,6 +520,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l02",
+     "lessonId": "g2_math_u6_l02_v1",
      "n": "2",
      "title": "여러 가지 방법으로 세어 볼까요",
      "sub": null,
@@ -482,6 +530,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l03",
+     "lessonId": "g2_math_u6_l03_v1",
      "n": "3",
      "title": "묶어 세어 볼까요",
      "sub": null,
@@ -491,6 +540,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l04",
+     "lessonId": "g2_math_u6_l04_v1",
      "n": "4",
      "title": "몇의 몇 배를 알아볼까요",
      "sub": null,
@@ -500,6 +550,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l05",
+     "lessonId": "g2_math_u6_l05_v1",
      "n": "5",
      "title": "몇의 몇 배로 나타내 볼까요",
      "sub": null,
@@ -509,6 +560,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l06",
+     "lessonId": "g2_math_u6_l06_v1",
      "n": "6",
      "title": "곱셈을 알아볼까요",
      "sub": null,
@@ -518,6 +570,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l07",
+     "lessonId": "g2_math_u6_l07_v1",
      "n": "7",
      "title": "곱셈식으로 나타내 볼까요",
      "sub": null,
@@ -527,6 +580,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l08",
+     "lessonId": "g2_math_u6_l08_v1",
      "n": "8",
      "title": "수학이랑 확인해요 (단원 평가)",
      "sub": null,
@@ -536,6 +590,7 @@ window.KEDU_MAP["g2_1_math"] = {
     },
     {
      "key": "g2_math_u6_l09",
+     "lessonId": "g2_math_u6_l09_v1",
      "n": "9",
      "title": "수학이랑 만들어요",
      "sub": null,

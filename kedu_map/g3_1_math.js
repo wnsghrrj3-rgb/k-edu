@@ -15,6 +15,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u1_l01",
+     "lessonId": "g3_math_u1_l01_v1",
      "n": "1",
      "title": "덧셈과 뺄셈을 만나 볼까요",
      "sub": null,
@@ -24,6 +25,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l02",
+     "lessonId": "g3_math_u1_l02_v1",
      "n": "2",
      "title": "덧셈을 해 볼까요 (1)",
      "sub": null,
@@ -33,6 +35,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l03",
+     "lessonId": "g3_math_u1_l03_v1",
      "n": "3",
      "title": "덧셈을 해 볼까요 (2)",
      "sub": null,
@@ -42,6 +45,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l04",
+     "lessonId": "g3_math_u1_l04_v1",
      "n": "4",
      "title": "덧셈을 해 볼까요 (3)",
      "sub": null,
@@ -51,6 +55,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l05",
+     "lessonId": "g3_math_u1_l05_v1",
      "n": "5",
      "title": "뺄셈을 해 볼까요 (1)",
      "sub": null,
@@ -60,6 +65,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l06",
+     "lessonId": "g3_math_u1_l06_v1",
      "n": "6",
      "title": "뺄셈을 해 볼까요 (2)",
      "sub": null,
@@ -69,6 +75,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l07",
+     "lessonId": "g3_math_u1_l07_v1",
      "n": "7",
      "title": "뺄셈을 해 볼까요 (3)",
      "sub": null,
@@ -78,6 +85,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l08",
+     "lessonId": "g3_math_u1_l08_v1",
      "n": "8",
      "title": "덧셈과 뺄셈으로 비사치기를 해 볼까요",
      "sub": null,
@@ -87,6 +95,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u1_l09",
+     "lessonId": "g3_math_u1_l09_v1",
      "n": "9",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -103,6 +112,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u2_l01",
+     "lessonId": "g3_math_u2_l01_v1",
      "n": "1",
      "title": "평면도형을 만나 볼까요",
      "sub": null,
@@ -112,6 +122,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l02",
+     "lessonId": "g3_math_u2_l02_v1",
      "n": "2",
      "title": "선의 종류에는 어떤 것이 있을까요",
      "sub": null,
@@ -121,6 +132,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l03",
+     "lessonId": "g3_math_u2_l03_v1",
      "n": "3",
      "title": "각을 알아볼까요",
      "sub": null,
@@ -130,6 +142,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l04",
+     "lessonId": "g3_math_u2_l04_v1",
      "n": "4",
      "title": "직각을 알아볼까요",
      "sub": null,
@@ -139,6 +152,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l05",
+     "lessonId": "g3_math_u2_l05_v1",
      "n": "5",
      "title": "직각삼각형을 알아볼까요",
      "sub": null,
@@ -148,6 +162,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l06",
+     "lessonId": "g3_math_u2_l06_v1",
      "n": "6",
      "title": "직사각형과 정사각형을 알아볼까요",
      "sub": null,
@@ -157,6 +172,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l07",
+     "lessonId": "g3_math_u2_l07_v1",
      "n": "7",
      "title": "평면도형으로 그림을 그려요",
      "sub": null,
@@ -166,6 +182,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u2_l08",
+     "lessonId": "g3_math_u2_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -182,6 +199,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u3_l01",
+     "lessonId": "g3_math_u3_l01_v1",
      "n": "1",
      "title": "나눗셈을 만나 볼까요",
      "sub": null,
@@ -191,6 +209,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l02",
+     "lessonId": "g3_math_u3_l02_v1",
      "n": "2",
      "title": "똑같이 나누어 볼까요",
      "sub": null,
@@ -200,6 +219,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l03",
+     "lessonId": "g3_math_u3_l03_v1",
      "n": "3",
      "title": "똑같이 묶어 덜어 내요",
      "sub": null,
@@ -209,6 +229,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l04",
+     "lessonId": "g3_math_u3_l04_v1",
      "n": "4",
      "title": "나눗셈식으로 나타내요",
      "sub": null,
@@ -218,6 +239,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l05",
+     "lessonId": "g3_math_u3_l05_v1",
      "n": "5",
      "title": "곱셈과 나눗셈의 관계를 알아볼까요",
      "sub": null,
@@ -227,6 +249,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l06",
+     "lessonId": "g3_math_u3_l06_v1",
      "n": "6",
      "title": "곱셈구구로 몫을 구해요",
      "sub": null,
@@ -236,6 +259,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l07",
+     "lessonId": "g3_math_u3_l07_v1",
      "n": "7",
      "title": "나눗셈으로 문제를 해결해요",
      "sub": null,
@@ -245,6 +269,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u3_l08",
+     "lessonId": "g3_math_u3_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -261,6 +286,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u4_l01",
+     "lessonId": "g3_math_u4_l01_v1",
      "n": "1",
      "title": "곱셈을 만나 볼까요",
      "sub": null,
@@ -270,6 +296,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l02",
+     "lessonId": "g3_math_u4_l02_v1",
      "n": "2",
      "title": "(몇십)×(몇)을 구해 볼까요",
      "sub": null,
@@ -279,6 +306,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l03",
+     "lessonId": "g3_math_u4_l03_v1",
      "n": "3",
      "title": "(몇십몇)×(몇) — 올림 없음",
      "sub": null,
@@ -288,6 +316,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l04",
+     "lessonId": "g3_math_u4_l04_v1",
      "n": "4",
      "title": "(몇십몇)×(몇) — 십의 자리 올림",
      "sub": null,
@@ -297,6 +326,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l05",
+     "lessonId": "g3_math_u4_l05_v1",
      "n": "5",
      "title": "(몇십몇)×(몇) — 일의 자리 올림",
      "sub": null,
@@ -306,6 +336,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l06",
+     "lessonId": "g3_math_u4_l06_v1",
      "n": "6",
      "title": "(몇십몇)×(몇) — 두 번 올림",
      "sub": null,
@@ -315,6 +346,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l07",
+     "lessonId": "g3_math_u4_l07_v1",
      "n": "7",
      "title": "비즈로 열쇠고리를 만들어요",
      "sub": null,
@@ -324,6 +356,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u4_l08",
+     "lessonId": "g3_math_u4_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -340,6 +373,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u5_l01",
+     "lessonId": "g3_math_u5_l01_v1",
      "n": "1",
      "title": "길이와 시간을 만나 볼까요",
      "sub": null,
@@ -349,6 +383,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l02",
+     "lessonId": "g3_math_u5_l02_v1",
      "n": "2",
      "title": "cm보다 작은 단위는 무엇일까요",
      "sub": null,
@@ -358,6 +393,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l03",
+     "lessonId": "g3_math_u5_l03_v1",
      "n": "3",
      "title": "mm와 cm로 길이를 어림하고 재어 볼까요",
      "sub": null,
@@ -367,6 +403,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l04",
+     "lessonId": "g3_math_u5_l04_v1",
      "n": "4",
      "title": "m보다 큰 단위는 무엇일까요",
      "sub": null,
@@ -376,6 +413,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l05",
+     "lessonId": "g3_math_u5_l05_v1",
      "n": "5",
      "title": "m와 km로 거리를 어림하고 재어 볼까요",
      "sub": null,
@@ -385,6 +423,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l06",
+     "lessonId": "g3_math_u5_l06_v1",
      "n": "6",
      "title": "분보다 작은 단위는 무엇일까요",
      "sub": null,
@@ -394,6 +433,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l07",
+     "lessonId": "g3_math_u5_l07_v1",
      "n": "7",
      "title": "시간의 덧셈을 해 볼까요",
      "sub": null,
@@ -403,6 +443,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l08",
+     "lessonId": "g3_math_u5_l08_v1",
      "n": "8",
      "title": "시간의 뺄셈을 해 볼까요",
      "sub": null,
@@ -412,6 +453,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l09",
+     "lessonId": "g3_math_u5_l09_v1",
      "n": "9",
      "title": "누구일까요 (창의)",
      "sub": null,
@@ -421,6 +463,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u5_l10",
+     "lessonId": "g3_math_u5_l10_v1",
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -437,6 +480,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u6_l01",
+     "lessonId": "g3_math_u6_l01_v1",
      "n": "1",
      "title": "분수와 소수를 만나 볼까요",
      "sub": null,
@@ -446,6 +490,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l02",
+     "lessonId": "g3_math_u6_l02_v1",
      "n": "2",
      "title": "똑같이 나누어 볼까요",
      "sub": null,
@@ -455,6 +500,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l03",
+     "lessonId": "g3_math_u6_l03_v1",
      "n": "3",
      "title": "분수를 알아볼까요 (1)",
      "sub": null,
@@ -464,6 +510,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l04",
+     "lessonId": "g3_math_u6_l04_v1",
      "n": "4",
      "title": "분수를 알아볼까요 (2)",
      "sub": null,
@@ -473,6 +520,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l05",
+     "lessonId": "g3_math_u6_l05_v1",
      "n": "5",
      "title": "분모가 같은 분수의 크기를 비교해 볼까요",
      "sub": null,
@@ -482,6 +530,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l06",
+     "lessonId": "g3_math_u6_l06_v1",
      "n": "6",
      "title": "단위분수의 크기를 비교해 볼까요",
      "sub": null,
@@ -491,6 +540,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l07",
+     "lessonId": "g3_math_u6_l07_v1",
      "n": "7",
      "title": "분모가 10인 분수를 알아볼까요",
      "sub": null,
@@ -500,6 +550,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l08",
+     "lessonId": "g3_math_u6_l08_v1",
      "n": "8",
      "title": "소수를 알아볼까요",
      "sub": null,
@@ -509,6 +560,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l09",
+     "lessonId": "g3_math_u6_l09_v1",
      "n": "9",
      "title": "소수의 크기를 비교해 볼까요",
      "sub": null,
@@ -518,6 +570,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l10",
+     "lessonId": "g3_math_u6_l10_v1",
      "n": "10",
      "title": "두 피자의 크기가 왜 다를까요 (창의)",
      "sub": null,
@@ -527,6 +580,7 @@ window.KEDU_MAP["g3_1_math"] = {
     },
     {
      "key": "g3_math_u6_l11",
+     "lessonId": "g3_math_u6_l11_v1",
      "n": "11",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -543,6 +597,7 @@ window.KEDU_MAP["g3_1_math"] = {
    "lessons": [
     {
      "key": "g3_math_u7_l01",
+     "lessonId": "g3_math_u7_01_말판놀이로마무리해요",
      "n": "1",
      "title": "말판 놀이로 1학기를 마무리해요",
      "sub": null,

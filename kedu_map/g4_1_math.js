@@ -15,6 +15,7 @@ window.KEDU_MAP["g4_1_math"] = {
    "lessons": [
     {
      "key": "g4_math_u1_l01",
+     "lessonId": "g4_math_u1_l01_v1",
      "n": "1",
      "title": "큰 수를 만나 볼까요",
      "sub": null,
@@ -24,6 +25,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l02",
+     "lessonId": "g4_math_u1_l02_v1",
      "n": "2",
      "title": "10000을 알아볼까요",
      "sub": null,
@@ -33,6 +35,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l03",
+     "lessonId": "g4_math_u1_l03_v1",
      "n": "3",
      "title": "다섯 자리 수를 알아볼까요",
      "sub": null,
@@ -42,6 +45,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l04",
+     "lessonId": "g4_math_u1_l04_v1",
      "n": "4",
      "title": "십만·백만·천만을 알아볼까요",
      "sub": null,
@@ -51,6 +55,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l05",
+     "lessonId": "g4_math_u1_l05_v1",
      "n": "5",
      "title": "억과 조를 알아볼까요",
      "sub": null,
@@ -60,6 +65,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l06",
+     "lessonId": "g4_math_u1_l06_v1",
      "n": "6",
      "title": "큰 수를 뛰어 세어 볼까요",
      "sub": null,
@@ -69,6 +75,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l07",
+     "lessonId": "g4_math_u1_l07_v1",
      "n": "7",
      "title": "큰 수의 크기를 비교해 볼까요",
      "sub": null,
@@ -78,6 +85,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u1_l08",
+     "lessonId": "g4_math_u1_l08_v1",
      "n": "8",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,
@@ -94,6 +102,7 @@ window.KEDU_MAP["g4_1_math"] = {
    "lessons": [
     {
      "key": null,
+     "lessonId": null,
      "n": "1",
      "title": "각도를 만나 볼까요",
      "sub": null,
@@ -103,6 +112,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "2",
      "title": "각의 크기를 비교해 볼까요",
      "sub": null,
@@ -112,6 +122,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u2_l03",
+     "lessonId": "g4_math_u2_l03_v1",
      "n": "3",
      "title": "각의 크기를 재어 볼까요",
      "sub": null,
@@ -121,6 +132,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": "g4_math_u2_l04",
+     "lessonId": "g4_math_u2_l04_v1",
      "n": "4",
      "title": "직각보다 작은 각과 큰 각을 알아볼까요",
      "sub": null,
@@ -130,6 +142,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "5",
      "title": "각도를 어림하고 재어 볼까요",
      "sub": null,
@@ -139,6 +152,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "6",
      "title": "각도의 합과 차는 얼마일까요",
      "sub": null,
@@ -148,6 +162,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "7",
      "title": "삼각형의 세 각의 크기의 합을 알아볼까요",
      "sub": null,
@@ -157,6 +172,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "8",
      "title": "사각형의 네 각의 크기의 합을 알아볼까요",
      "sub": null,
@@ -166,6 +182,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "9",
      "title": "삼각자로 각도를 만들어 볼까요",
      "sub": null,
@@ -175,6 +192,7 @@ window.KEDU_MAP["g4_1_math"] = {
     },
     {
      "key": null,
+     "lessonId": null,
      "n": "10",
      "title": "스스로 마무리해요 (단원 평가)",
      "sub": null,

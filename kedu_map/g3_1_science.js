@@ -15,6 +15,7 @@ window.KEDU_MAP["g3_1_science"] = {
    "lessons": [
     {
      "key": "g3_science_u1_l01",
+     "lessonId": "g3_sci_u1_l01_v1",
      "n": "1",
      "title": "활짝! 과학 열기 — 공으로 페트병 넘어뜨리기",
      "sub": null,
@@ -24,6 +25,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l02",
+     "lessonId": "g3_sci_u1_l02_v1",
      "n": "2",
      "title": "우리 생활 속 힘을 찾아볼까요",
      "sub": null,
@@ -33,6 +35,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l03",
+     "lessonId": "g3_sci_u1_l03_v1",
      "n": "3",
      "title": "물체를 밀거나 당길 때의 힘",
      "sub": null,
@@ -42,6 +45,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l04",
+     "lessonId": "g3_sci_u1_l04_v1",
      "n": "4",
      "title": "수평 잡기로 물체의 무게를 비교해요",
      "sub": null,
@@ -51,6 +55,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l05",
+     "lessonId": "g3_sci_u1_l05_v1",
      "n": "5",
      "title": "저울로 물체의 무게를 비교해요",
      "sub": null,
@@ -60,6 +65,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l06",
+     "lessonId": "g3_sci_u1_l06_v1",
      "n": "6",
      "title": "도구를 이용할 때 드는 힘의 크기",
      "sub": null,
@@ -69,6 +75,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l07",
+     "lessonId": "g3_sci_u1_l07_v1",
      "n": "7~8",
      "title": "창의가 반짝! / 팡팡! 과학 놀이터",
      "sub": null,
@@ -78,6 +85,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l09",
+     "lessonId": "g3_sci_u1_l09_v1",
      "n": "9",
      "title": "톡톡! 과학 — 입는 로봇",
      "sub": null,
@@ -87,6 +95,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u1_l10",
+     "lessonId": "g3_sci_u1_l10_v1",
      "n": "10",
      "title": "단원 마무리",
      "sub": null,
@@ -103,6 +112,7 @@ window.KEDU_MAP["g3_1_science"] = {
    "lessons": [
     {
      "key": "g3_science_u2_l01",
+     "lessonId": "g3_sci_u2_l01_v1",
      "n": "1",
      "title": "활짝! 과학 열기 — 동물의 특징 표현하기",
      "sub": null,
@@ -112,6 +122,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l02",
+     "lessonId": "g3_sci_u2_l02_v1",
      "n": "2",
      "title": "특징에 따라 동물을 분류해요",
      "sub": null,
@@ -121,6 +132,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l03",
+     "lessonId": "g3_sci_u2_l03_v1",
      "n": "3",
      "title": "땅에 사는 동물",
      "sub": null,
@@ -130,6 +142,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l04",
+     "lessonId": "g3_sci_u2_l04_v1",
      "n": "4",
      "title": "날 수 있는 동물",
      "sub": null,
@@ -139,6 +152,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l05",
+     "lessonId": "g3_sci_u2_l05_v1",
      "n": "5",
      "title": "물에 사는 동물",
      "sub": null,
@@ -148,6 +162,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l06",
+     "lessonId": "g3_sci_u2_l06_v1",
      "n": "6",
      "title": "특별한 곳(사막·극지)에 사는 동물",
      "sub": null,
@@ -157,6 +172,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l07",
+     "lessonId": "g3_sci_u2_l07_v1",
      "n": "7",
      "title": "생활 속에서 동물의 특징 이용하기",
      "sub": null,
@@ -166,6 +182,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l08",
+     "lessonId": "g3_sci_u2_l08_v1",
      "n": "8~9",
      "title": "창의가 반짝! / 팡팡! 과학 놀이터",
      "sub": null,
@@ -175,6 +192,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l10",
+     "lessonId": "g3_sci_u2_l10_v1",
      "n": "10",
      "title": "톡톡! 과학 — 반려동물을 책임감 있게 돌보기",
      "sub": null,
@@ -184,6 +202,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u2_l11",
+     "lessonId": "g3_sci_u2_l11_v1",
      "n": "11",
      "title": "단원 마무리",
      "sub": null,
@@ -200,6 +219,7 @@ window.KEDU_MAP["g3_1_science"] = {
    "lessons": [
     {
      "key": "g3_science_u3_l01",
+     "lessonId": "g3_sci_u3_l01_v1",
      "n": "1",
      "title": "활짝! 과학 열기 — 식물로 작품 만들기",
      "sub": null,
@@ -209,6 +229,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l02",
+     "lessonId": "g3_sci_u3_l02_v1",
      "n": "2",
      "title": "잎의 특징에 따라 식물을 분류해요",
      "sub": null,
@@ -218,6 +239,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l03",
+     "lessonId": "g3_sci_u3_l03_v1",
      "n": "3",
      "title": "들과 산에 사는 식물",
      "sub": null,
@@ -227,6 +249,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l04",
+     "lessonId": "g3_sci_u3_l04_v1",
      "n": "4",
      "title": "강이나 호수에 사는 식물",
      "sub": null,
@@ -236,6 +259,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l05",
+     "lessonId": "g3_sci_u3_l05_v1",
      "n": "5",
      "title": "특별한 곳(사막)에 사는 식물",
      "sub": null,
@@ -245,6 +269,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l06",
+     "lessonId": "g3_sci_u3_l06_v1",
      "n": "6",
      "title": "생활 속에서 식물의 특징 이용하기 (식물 생체모방)",
      "sub": null,
@@ -254,6 +279,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l07",
+     "lessonId": "g3_sci_u3_l07_v1",
      "n": "7~8",
      "title": "창의가 반짝! / 팡팡! 과학 놀이터",
      "sub": null,
@@ -263,6 +289,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l09",
+     "lessonId": "g3_sci_u3_l09_v1",
      "n": "9",
      "title": "톡톡! 과학 — 벌레를 잡아먹는 식물",
      "sub": null,
@@ -272,6 +299,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u3_l10",
+     "lessonId": "g3_sci_u3_l10_v1",
      "n": "10",
      "title": "단원 마무리",
      "sub": null,
@@ -288,6 +316,7 @@ window.KEDU_MAP["g3_1_science"] = {
    "lessons": [
     {
      "key": "g3_science_u4_l01",
+     "lessonId": "g3_sci_u4_l01_v1",
      "n": "1",
      "title": "활짝! 과학 열기 — 숨은 생물 찾기",
      "sub": null,
@@ -297,6 +326,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l02",
+     "lessonId": "g3_sci_u4_l02_v1",
      "n": "2~3",
      "title": "배추흰나비의 한살이",
      "sub": null,
@@ -306,6 +336,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l03",
+     "lessonId": "g3_sci_u4_l03_v1",
      "n": "4",
      "title": "다양한 동물의 한살이",
      "sub": null,
@@ -315,6 +346,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l04",
+     "lessonId": "g3_sci_u4_l04_v1",
      "n": "5",
      "title": "씨가 싹 트는 데 필요한 조건",
      "sub": null,
@@ -324,6 +356,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l05",
+     "lessonId": "g3_sci_u4_l05_v1",
      "n": "6",
      "title": "식물이 자라는 데 필요한 조건",
      "sub": null,
@@ -333,6 +366,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l06",
+     "lessonId": "g3_sci_u4_l06_v1",
      "n": "7",
      "title": "여러 가지 식물의 한살이",
      "sub": null,
@@ -342,6 +376,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l07",
+     "lessonId": "g3_sci_u4_l07_v1",
      "n": "8~9",
      "title": "창의가 반짝! / 팡팡! 과학 놀이터",
      "sub": null,
@@ -351,6 +386,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l09",
+     "lessonId": "g3_sci_u4_l09_v1",
      "n": "10",
      "title": "톡톡! 과학 — 닮은 듯 다른 잠자리 애벌레",
      "sub": null,
@@ -360,6 +396,7 @@ window.KEDU_MAP["g3_1_science"] = {
     },
     {
      "key": "g3_science_u4_l10",
+     "lessonId": "g3_sci_u4_l10_v1",
      "n": "11",
      "title": "단원 마무리",
      "sub": null,
