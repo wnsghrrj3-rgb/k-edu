@@ -58,6 +58,14 @@
   --paper-6:#bda3e0;  /* 6학년 라일락 */
   --on-paper:#242c38; /* 색지 위 글자 */
 
+  /* 두 문 — 선생님 파랑 · 학생 초록 (시안 팔레트) */
+  --t-tint:#e3ecfb; --t-ink:#2f6fe0; --t-chip:#dbe8fc;
+  --s-tint:#e6f4e9; --s-ink:#1f9354; --s-chip:#dcefe2;
+
+  /* 옆문 칩 */
+  --chip-museum:#e3ecfb;  --chip-museum-ink:#2f6fe0;
+  --chip-play:#ece5fb;    --chip-play-ink:#7a4fc4;
+
   /* 과목 악센트 */
   --korean:#d4574a; --math:#2f6fe0; --social:#8154cc; --science:#0f8f80;
 
@@ -92,6 +100,11 @@ html[data-tone="sky"]{
   --shadow-lift:0 2px 6px rgba(28,70,110,.09), 0 18px 38px rgba(28,70,110,.16);
 
   --spot:rgba(255,255,255,.75);
+
+  --t-tint:#dbe8fb; --t-ink:#1a6fbe; --t-chip:#d2e3f8;
+  --s-tint:#ddeee2; --s-ink:#1c8a4e; --s-chip:#d3e8da;
+  --chip-museum:#dbe8fb;  --chip-museum-ink:#1a6fbe;
+  --chip-play:#e6ddf8;    --chip-play-ink:#7248bd;
 
   --korean:#cf5346; --math:#1d6fd0; --social:#7a4fc4; --science:#0d8a7c;
 }
@@ -159,50 +172,80 @@ main{flex:1;position:relative;z-index:1;width:100%;max-width:940px;margin:0 auto
 .doors{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:680px;margin:0 auto}
 .door{
   position:relative;overflow:hidden;
-  min-height:230px;padding:30px 22px 26px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  display:flex;flex-direction:column;
   background:var(--page-0);
   border:none;border-radius:20px;
-  cursor:pointer;text-align:center;
+  cursor:pointer;text-align:left;
   transition:transform .32s var(--ease-rise),box-shadow .32s;
   box-shadow:var(--shadow-card);
 }
-/* 문틈으로 새는 빛 */
-.door::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(90% 60% at 50% 0%,var(--accent-soft),transparent 72%);
-  opacity:.55;transition:opacity .32s;
-}
 .door:hover,.door:focus-visible{transform:translateY(-5px);box-shadow:var(--shadow-lift)}
-.door:hover::after{opacity:1}
-.door-ic{width:56px;height:56px;color:var(--accent);flex-shrink:0}
-.door-ic svg{width:100%;height:100%}
-.door-name{font-family:var(--serif);font-weight:700;font-size:22px;letter-spacing:.16em;color:var(--ink)}
-/* 라벨은 명사가 아니라 동사 (§0-5) */
-.door-verb{
-  font-family:var(--title);font-size:19px;letter-spacing:.02em;color:var(--accent);
-  padding-top:4px;
-}
-.door-again{
-  position:absolute;top:12px;right:12px;
-  font-family:var(--body);font-size:11px;letter-spacing:.14em;
-  color:var(--page-0);background:var(--accent);
-  padding:3px 9px;border-radius:6px;display:none;
-}
-.door.last .door-again{display:block}
 
-/* 조용한 옆문들 */
-.side-doors{max-width:680px;margin:22px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.side-door{
-  min-height:56px;padding:14px 18px;display:flex;align-items:center;gap:12px;
-  background:var(--page-0);border:none;border-radius:12px;box-shadow:var(--shadow-card);
-  text-decoration:none;color:var(--ink-dim);
-  transition:color .2s,border-color .2s,background .2s;
+/* 위: 파스텔 색면 — 3D 오브젝트가 놓이는 무대 */
+.door-art{
+  position:relative;
+  height:168px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--tint);
 }
-.side-door:hover{color:var(--ink);background:var(--page-0);box-shadow:var(--shadow-card)}
-.side-door svg{width:19px;height:19px;flex-shrink:0;color:var(--accent)}
-.side-door b{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:.1em;color:var(--ink);display:block}
-.side-door span{font-size:12px;color:var(--ink-faint)}
+.door-art::after{   /* 색면 아래로 스미는 빛 */
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 60%);
+}
+/* 3D 오브젝트 (있으면 이걸 쓴다) */
+.door-art img{
+  max-height:130px;max-width:78%;object-fit:contain;position:relative;z-index:1;
+  filter:drop-shadow(0 8px 16px rgba(38,60,95,.16));
+}
+/* 없으면 라인 심볼로 (지금) */
+.door-art > svg{width:78px;height:78px;color:var(--dink);opacity:.9;position:relative;z-index:1}
+
+/* 아래: 흰 바탕 — 누구인지, 무엇을 하는지, 그리고 화살표 */
+.door-foot{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 20px;
+}
+.door-chip{
+  width:44px;height:44px;flex-shrink:0;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--chip);color:var(--dink);
+}
+.door-chip svg{width:22px;height:22px}
+.door-txt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.door-name{font-family:var(--title);font-size:20px;color:var(--ink);letter-spacing:0}
+/* 라벨은 명사가 아니라 동사 (§0-5) */
+.door-verb{font-family:var(--body);font-size:13px;color:var(--ink-dim)}
+.door-go{
+  width:36px;height:36px;flex-shrink:0;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--chip);color:var(--dink);
+  transition:transform .26s var(--ease-rise);
+}
+.door-go svg{width:15px;height:15px;transform:rotate(180deg)}
+.door:hover .door-go{transform:translateX(3px)}
+
+.door-again{
+/* 조용한 옆문들 */
+.side-doors{max-width:680px;margin:16px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.side-door{
+  min-height:76px;padding:14px 16px;display:flex;align-items:center;gap:13px;
+  background:var(--page-0);border:none;border-radius:16px;
+  text-decoration:none;color:var(--ink);
+  box-shadow:var(--shadow-card);
+  transition:transform .26s var(--ease-rise),box-shadow .26s;
+}
+.side-door:hover{transform:translateY(-3px);box-shadow:var(--shadow-lift)}
+.side-chip{
+  width:40px;height:40px;flex-shrink:0;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--chip);color:var(--dink);
+}
+.side-chip svg{width:20px;height:20px}
+.side-txt{flex:1;min-width:0}
+.side-txt b{font-family:var(--title);font-weight:400;font-size:15.5px;color:var(--ink);display:block;margin-bottom:2px}
+.side-txt span{font-size:12.5px;color:var(--ink-dim);line-height:1.45;display:block}
+.side-go{width:13px;height:13px;flex-shrink:0;color:var(--ink-faint);transform:rotate(180deg)}
+.side-door:hover .side-go{color:var(--dink)}
 
 /* ── 되돌아가기 (§0-7 공통 복귀) ───────────────────────── */
 .back{
@@ -463,9 +506,11 @@ footer a:hover{color:var(--ink-dim)}
 @media(max-width:640px){
   main{padding:26px 16px 44px}
   .doors{grid-template-columns:1fr;gap:14px}
-  .door{min-height:150px;flex-direction:row;justify-content:flex-start;gap:18px;text-align:left;padding:22px}
-  .door-ic{width:44px;height:44px}
-  .door-txt{display:flex;flex-direction:column;gap:4px}
+  .door-art{height:120px}
+  .door-art img{max-height:96px}
+  .door-art > svg{width:58px;height:58px}
+  .door-foot{padding:15px 16px;gap:12px}
+  .door-name{font-size:18px}
   .side-doors{grid-template-columns:1fr}
   .grades{grid-template-columns:repeat(2,1fr);gap:12px}
   .grade{min-height:112px}
@@ -553,32 +598,52 @@ footer a:hover{color:var(--ink-dim)}
     <div class="stage-sub">문을 고르세요</div>
 
     <div class="doors">
-      <div class="door" id="door-teacher" tabindex="0" role="button" onclick="pickRole('teacher')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('teacher')}">
+      <div class="door" id="door-teacher" style="--tint:var(--t-tint);--dink:var(--t-ink);--chip:var(--t-chip)"
+           tabindex="0" role="button" onclick="pickRole('teacher')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('teacher')}">
         <span class="door-again">지난번 이 문</span>
-        <span class="door-ic"><svg viewBox="0 0 24 24"><use href="#i-teacher"/></svg></span>
-        <span class="door-txt">
-          <span class="door-name">선생님</span>
-          <span class="door-verb">수업 시작하기</span>
+        <span class="door-art">
+          <!-- 3D 오브젝트 슬롯: /hub2/art/teacher.png 을 두면 자동으로 뜬다 (아래 boot에서 확인) -->
+          <svg viewBox="0 0 24 24"><use href="#i-teacher"/></svg>
+        </span>
+        <span class="door-foot">
+          <span class="door-chip"><svg viewBox="0 0 24 24"><use href="#i-teacher"/></svg></span>
+          <span class="door-txt">
+            <span class="door-name">선생님</span>
+            <span class="door-verb">수업 시작하기</span>
+          </span>
+          <span class="door-go"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></span>
         </span>
       </div>
-      <div class="door" id="door-student" tabindex="0" role="button" onclick="pickRole('student')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('student')}">
+
+      <div class="door" id="door-student" style="--tint:var(--s-tint);--dink:var(--s-ink);--chip:var(--s-chip)"
+           tabindex="0" role="button" onclick="pickRole('student')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();pickRole('student')}">
         <span class="door-again">지난번 이 문</span>
-        <span class="door-ic"><svg viewBox="0 0 24 24"><use href="#i-student"/></svg></span>
-        <span class="door-txt">
-          <span class="door-name">학생</span>
-          <span class="door-verb">공부하러 가기</span>
+        <span class="door-art">
+          <svg viewBox="0 0 24 24"><use href="#i-student"/></svg>
+        </span>
+        <span class="door-foot">
+          <span class="door-chip"><svg viewBox="0 0 24 24"><use href="#i-student"/></svg></span>
+          <span class="door-txt">
+            <span class="door-name">학생</span>
+            <span class="door-verb">공부하러 가기</span>
+          </span>
+          <span class="door-go"><svg viewBox="0 0 24 24"><use href="#i-back"/></svg></span>
         </span>
       </div>
     </div>
 
     <div class="side-doors">
-      <a class="side-door" href="/museum/">
-        <svg viewBox="0 0 24 24"><use href="#i-museum"/></svg>
-        <span><b>케이뮤지엄</b><span>배우는 곳이 아니라, 반하는 곳</span></span>
+      <a class="side-door" href="/museum/" style="--chip:var(--chip-museum);--dink:var(--chip-museum-ink)">
+        <span class="side-chip"><svg viewBox="0 0 24 24"><use href="#i-museum"/></svg></span>
+        <span class="side-txt"><b>케이뮤지엄</b><span>배우는 곳이 아니라, 반하는 곳</span></span>
+        <svg class="side-go" viewBox="0 0 24 24"><use href="#i-back"/></svg>
       </a>
-      <a class="side-door" href="/kple/play.html">
-        <svg viewBox="0 0 24 24"><use href="#i-game"/></svg>
-        <span><b>방코드로 참가</b><span>선생님이 연 게임에 들어가기</span></span>
+      <a class="side-door" href="/kple/play.html" style="--chip:var(--chip-play);--dink:var(--chip-play-ink)">
+        <span class="side-chip"><svg viewBox="0 0 24 24"><use href="#i-game"/></svg></span>
+        <span class="side-txt"><b>방코드로 참가</b><span>선생님이 연 게임에 들어가기</span></span>
+        <svg class="side-go" viewBox="0 0 24 24"><use href="#i-back"/></svg>
       </a>
     </div>
   </section>
@@ -1043,6 +1108,23 @@ function toast(msg){
 }
 
 // ── 진입 ──────────────────────────────────────────────────
+// 3D 오브젝트 — /hub2/art/{teacher|student}.png 를 두면 자동으로 얹힌다.
+// 없으면 라인 심볼 그대로. 이미지 실패가 화면을 막지 않는다(§0-9).
+function dressDoors(){
+  [['door-teacher','teacher'],['door-student','student']].forEach(function(pair){
+    var host = document.querySelector('#'+pair[0]+' .door-art');
+    if(!host) return;
+    var img = new Image();
+    img.onload = function(){
+      host.innerHTML = '';
+      img.alt = '';
+      host.appendChild(img);
+    };
+    img.onerror = function(){};                 // 조용히 라인 심볼 유지
+    img.src = '/hub2/art/' + pair[1] + '.png';
+  });
+}
+
 function boot(){
   // 톤 시안 토글 (?tone=sky) — 준호 판정용. 채택 후 한쪽만 남긴다.
   try {
@@ -1055,6 +1137,8 @@ function boot(){
   var s = +lsGet(LS.semester); if(s === 1 || s === 2) state.semester = s;
   var sub = lsGet(LS.subject); if(SUBJECTS[sub]) state.subject = sub;
   state.role = lsGet(LS.role);
+
+  dressDoors();
 
   var target = screenFromSearch(location.search);
   var shown = show(target);
