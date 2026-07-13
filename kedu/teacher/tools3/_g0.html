@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>케이랩 v3 · A트랙 G0 검수 순회</title>
+<!--
+  케이랩 v3 · A트랙 G0 검수 순회 보드 (2026-07-13 · 페이블)
+  목적: 완성된 A트랙 15종을 준호가 «전자칠판 앞에서 한 판에» 몰아 검수하고,
+        판정·메모를 브라우저에 저장한 뒤 결과 텍스트를 통째로 복사해 베프에게 던지는 것.
+  - 도구를 새 탭으로 여는 링크(학년칸 3종·모드 3종) — 실제 수업 조건 그대로.
+  - 도구별 검수 항목(_V3_STATUS.md 원문) 체크박스.
+  - 판정 3종: ✅ 통과 / 🔧 수정 요청 / ⬜ 미검수.
+  - localStorage 저장(k-edu 실서비스 페이지이므로 사용 가능) — 새로고침·다음날에도 유지.
+  - 「📋 결과 복사」 = 수정 요청 도구·항목·메모만 뽑아 마크다운으로 클립보드에.
+  검수 통과분부터 허브(kedu/hub/klab.html) 링크를 tools3로 교체 → 라이브 투입.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1116; --bg2:#151A22; --card:#1A2029; --card2:#212936;
+    --line:#2C3542; --tx:#E8EDF3; --tx2:#9AA6B4; --tx3:#6B7787;
+    --ok:#2DD4A0; --fix:#FFB454; --wait:#5B6675;
+    --acc:#7C6BF5; --red:#FF6B6B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:radial-gradient(1200px 700px at 50% -10%,#1B2331 0%,var(--bg) 62%);
+    color:var(--tx); font-family:'Gowun Dodum',system-ui,-apple-system,sans-serif;
+    min-height:100vh; padding:0 0 90px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+
+  header{padding:34px 0 20px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  h1{font-size:26px;letter-spacing:-.5px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  h1 em{font-style:normal;font-size:12px;color:var(--acc);border:1px solid var(--acc);
+    border-radius:999px;padding:3px 10px;letter-spacing:0}
+  .sub{color:var(--tx2);font-size:14px;margin-top:9px;line-height:1.65}
+  .sub b{color:var(--tx)}
+
+  /* 진행 바 */
+  .prog{margin-top:18px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:14px 16px}
+  .pbar{height:9px;background:#0B0E13;border-radius:99px;overflow:hidden;display:flex}
+  .pbar i{display:block;height:100%;transition:width .35s ease}
+  .pbar .i-ok{background:linear-gradient(90deg,#2DD4A0,#3EE7B4)}
+  .pbar .i-fix{background:linear-gradient(90deg,#FFB454,#FFC97A)}
+  .pnum{display:flex;gap:16px;margin-top:10px;font-size:13px;color:var(--tx2);flex-wrap:wrap;align-items:center}
+  .pnum b{color:var(--tx);font-size:15px}
+  .dot{width:8px;height:8px;border-radius:99px;display:inline-block;margin-right:5px;vertical-align:1px}
+  .d-ok{background:var(--ok)} .d-fix{background:var(--fix)} .d-wait{background:var(--wait)}
+
+  /* 필터 */
+  .bar{display:flex;gap:8px;margin:20px 0 16px;flex-wrap:wrap;align-items:center}
+  .chip{background:var(--card);border:1px solid var(--line);color:var(--tx2);
+    border-radius:999px;padding:8px 15px;font-size:13px;cursor:pointer;
+    font-family:inherit;transition:.15s}
+  .chip:hover{border-color:var(--tx3);color:var(--tx)}
+  .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .spacer{flex:1}
+
+  /* 도구 카드 */
+  .tool{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    margin-bottom:14px;overflow:hidden;transition:.18s}
+  .tool.s-ok{border-color:rgba(45,212,160,.45)}
+  .tool.s-fix{border-color:rgba(255,180,84,.5)}
+  .tool.hide{display:none}
+
+  .thead{display:flex;align-items:center;gap:12px;padding:16px 18px;cursor:pointer;
+    user-select:none}
+  .thead:hover{background:var(--card2)}
+  .no{width:30px;height:30px;flex:0 0 30px;border-radius:9px;background:#0B0E13;
+    border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--tx3)}
+  .tool.s-ok .no{background:rgba(45,212,160,.14);border-color:rgba(45,212,160,.4);color:var(--ok)}
+  .tool.s-fix .no{background:rgba(255,180,84,.14);border-color:rgba(255,180,84,.45);color:var(--fix)}
+  .tinfo{flex:1;min-width:0}
+  .tnm{font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tnm code{font-size:11px;color:var(--tx3);background:#0B0E13;border:1px solid var(--line);
+    border-radius:6px;padding:2px 7px;font-family:ui-monospace,monospace}
+  .tds{color:var(--tx2);font-size:12.5px;margin-top:4px;line-height:1.5}
+  .tstat{font-size:12px;padding:5px 11px;border-radius:999px;white-space:nowrap;
+    border:1px solid var(--line);color:var(--tx3);background:#0B0E13}
+  .tool.s-ok .tstat{color:var(--ok);border-color:rgba(45,212,160,.4);background:rgba(45,212,160,.1)}
+  .tool.s-fix .tstat{color:var(--fix);border-color:rgba(255,180,84,.45);background:rgba(255,180,84,.1)}
+  .arw{color:var(--tx3);font-size:12px;transition:.2s}
+  .tool.open .arw{transform:rotate(90deg)}
+
+  .tbody{display:none;padding:2px 18px 18px;border-top:1px solid var(--line)}
+  .tool.open .tbody{display:block}
+
+  .sec{margin-top:16px}
+  .slab{font-size:12px;color:var(--tx3);margin-bottom:9px;letter-spacing:.4px}
+
+  /* 열기 링크 */
+  .links{display:flex;gap:7px;flex-wrap:wrap}
+  .lk{background:var(--card2);border:1px solid var(--line);color:var(--tx);
+    border-radius:10px;padding:9px 14px;font-size:13px;text-decoration:none;
+    display:inline-flex;align-items:center;gap:6px;transition:.15s}
+  .lk:hover{border-color:var(--acc);background:rgba(124,107,245,.14)}
+  .lk.main{background:linear-gradient(180deg,#8878FF,#6D5AE8);border-color:#8878FF;color:#fff;font-size:14px}
+  .lk.main:hover{filter:brightness(1.1)}
+
+  /* 신기술 */
+  .tech{background:#0B0E13;border:1px solid var(--line);border-left:3px solid var(--red);
+    border-radius:10px;padding:11px 13px;font-size:13px;color:var(--tx2);line-height:1.65}
+  .tech b{color:var(--tx)}
+  .tech + .tech{margin-top:7px}
+
+  /* 체크 항목 */
+  .ck{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-radius:9px;
+    cursor:pointer;transition:.12s;font-size:13.5px;line-height:1.6}
+  .ck:hover{background:var(--card2)}
+  .ck input{appearance:none;width:19px;height:19px;flex:0 0 19px;margin-top:1px;
+    border:1.5px solid var(--tx3);border-radius:6px;cursor:pointer;position:relative;transition:.12s}
+  .ck input:checked{background:var(--ok);border-color:var(--ok)}
+  .ck input:checked::after{content:'✓';position:absolute;inset:0;display:grid;place-items:center;
+    color:#0E1116;font-size:13px;font-weight:700}
+  .ck input:checked + span{color:var(--tx2)}
+  .ck span b{color:var(--tx)}
+
+  /* 판정 */
+  .judge{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .jb{flex:1;min-width:120px;background:var(--card2);border:1px solid var(--line);color:var(--tx2);
+    border-radius:11px;padding:12px;font-size:14px;cursor:pointer;font-family:inherit;transition:.15s}
+  .jb:hover{border-color:var(--tx3);color:var(--tx)}
+  .jb.on-ok{background:rgba(45,212,160,.16);border-color:var(--ok);color:var(--ok)}
+  .jb.on-fix{background:rgba(255,180,84,.16);border-color:var(--fix);color:var(--fix)}
+  .jb.on-wait{background:var(--card2);border-color:var(--tx3);color:var(--tx)}
+
+  textarea{width:100%;margin-top:10px;background:#0B0E13;border:1px solid var(--line);
+    color:var(--tx);border-radius:11px;padding:12px 13px;font-family:inherit;font-size:13.5px;
+    line-height:1.65;resize:vertical;min-height:64px;outline:none}
+  textarea:focus{border-color:var(--acc)}
+  textarea::placeholder{color:var(--tx3)}
+
+  /* 하단 고정 */
+  .foot{position:fixed;left:0;right:0;bottom:0;background:rgba(14,17,22,.94);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:12px 18px;z-index:20}
+  .fin{max-width:1180px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ftx{color:var(--tx2);font-size:13px;flex:1;min-width:150px}
+  .ftx b{color:var(--tx)}
+  .btn{background:var(--card);border:1px solid var(--line);color:var(--tx);border-radius:11px;
+    padding:11px 18px;font-size:14px;cursor:pointer;font-family:inherit;transition:.15s}
+  .btn:hover{border-color:var(--tx3)}
+  .btn.pri{background:linear-gradient(180deg,#8878FF,#6D5AE8);border-color:#8878FF;color:#fff}
+  .btn.pri:hover{filter:brightness(1.1)}
+  .btn.dim{color:var(--tx3)}
+
+  .toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,14px);
+    background:var(--acc);color:#fff;padding:12px 22px;border-radius:12px;font-size:14px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media(max-width:640px){
+    h1{font-size:21px} .wrap{padding:0 12px}
+    .thead{padding:14px 13px} .tbody{padding:2px 13px 15px}
+    .tstat{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>케이랩 v3 · A트랙 검수 <em>G0</em></h1>
+  <div class="sub">
+    실물 3D 재건 <b>15종 완주</b> — 여기서 통과시킨 도구부터 <b>허브 링크를 교체해 라이브에 투입</b>합니다.<br>
+    도구를 열어 <b>전자칠판·태블릿 실기기</b>에서 만져 보고, 항목을 체크한 뒤 판정하세요.
+    체크는 이 브라우저에 저장돼요 — 중간에 덮어도 됩니다.
+  </div>
+
+  <div class="prog">
+    <div class="pbar">
+      <i class="i-ok" id="bOk" style="width:0"></i>
+      <i class="i-fix" id="bFix" style="width:0"></i>
+    </div>
+    <div class="pnum">
+      <span><i class="dot d-ok"></i>통과 <b id="nOk">0</b></span>
+      <span><i class="dot d-fix"></i>수정 요청 <b id="nFix">0</b></span>
+      <span><i class="dot d-wait"></i>미검수 <b id="nWait">15</b></span>
+      <span style="color:var(--tx3)">· 검수 항목 <b id="nCk">0</b>/<b id="nCkT">0</b></span>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="chip on" data-f="all">전체</button>
+    <button class="chip" data-f="wait">⬜ 미검수만</button>
+    <button class="chip" data-f="fix">🔧 수정 요청만</button>
+    <button class="chip" data-f="ok">✅ 통과만</button>
+    <span class="spacer"></span>
+    <button class="chip" id="expAll">전부 펼치기</button>
+  </div>
+</header>
+
+<div id="list"></div>
+
+</div>
+
+<div class="foot">
+  <div class="fin">
+    <div class="ftx" id="ftx">도구를 열어 검수를 시작하세요.</div>
+    <button class="btn dim" id="reset">초기화</button>
+    <button class="btn pri" id="copy">📋 검수 결과 복사</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── 도구 데이터 (출처: handoff klab/_V3_STATUS.md 검수 항목 원문) ───────── */
+var TOOLS = [
+{ id:'magnet', nm:'🧲 자석·자기장', done:true,
+  ds:'A트랙 황금 샘플 1호 · 철가루 1,800 실시간 정렬 · 자르기 와우',
+  tech:[], grades:false,
+  ck:['철가루 정렬 감(ALIGN_K=260)','자르기 순간 무늬 변화 체감','태블릿 프레임'] },
+
+{ id:'volcano', nm:'🌋 화산과 지진',
+  ds:'v2 965줄 전면 재건 · 화산 디오라마 + 지진 판 · 순수 42 · 실부팅 11',
+  tech:['<b>🔴 용암 강 3줄기</b> — CatmullRom 튜브 setDrawRange 성장 + 식히면 현무암색으로 굳음'],
+  ck:['용암 강 3줄이 분화구→기슭으로 «자라는» 게 또렷한지 + 식히면 검게 굳는 전환',
+      '분출 형태 3종 구분 체감(quiet 흘러넘침 / boom 대폭발 / mega 산체 셰이크)',
+      '단면 모형 라벨 가독(전자칠판)',
+      '지진 판 휨→파단 임팩트',
+      '분출물 라벨 칩 터치 크기(태블릿)',
+      '파티클 프레임(저사양 기기에서 안 버벅이는지)'] },
+
+{ id:'strata', nm:'🪨 지층과 화석',
+  ds:'유리 수조 강 하구 디오라마 · 와우 27호 분급 부활 · 순수 36 · 실부팅 15',
+  tech:['<b>와우 = 몽땅 섞어 부으면?</b> — 무게별 침강 속도로 아래굵고 위고운 분급 밴드가 «저절로» 생김'],
+  ck:['유리 수조·물 굴절 때깔(전자칠판)',
+      '와우 침강이 «뒤죽박죽 → 줄무늬»로 또렷이 읽히는지',
+      '층 재질 3종 구분(역암 자갈알 · 사암 알갱이 · 이암 줄)',
+      '습곡 휨 · 단층 어긋남 임팩트',
+      '층 탭 · 화석 라벨 터치 크기(태블릿)',
+      '융기 물 빠짐 + 풀·새 연출'] },
+
+{ id:'shape3d', nm:'📦 입체도형',
+  ds:'칠한 원목 장난감 블록 3종 · 굴리기 와우 · 순수 15 · 실부팅 12',
+  tech:[],
+  ck:['원목 블록 때깔·색 구분(전자칠판)',
+      '굴림 물리감·흔들림(wobble)',
+      '기둥 탭 눕히기 반응성(태블릿)',
+      '와우 반증 순간 임팩트(「둥근데 안 굴러가요」 쿵+마법음)',
+      '이름 라벨 가독'] },
+
+{ id:'light', nm:'💡 빛·그림자·거울',
+  ds:'암실 광학 벤치 · spotlight 진짜 그림자 · 순수 64 · 실부팅 12',
+  tech:['<b>🔴 광선 실선</b> — 가산 발광 빔 48개. 거울 부채꼴 9줄 입사+반사 실시간 추적, 마주 거울 8바운스 지그재그',
+        '<b>진짜 그림자</b> — SVG 다각형이 아니라 spotlight 그림자맵. 전구를 끌면 렌더 물리로 크기가 변함'],
+  ck:['암실 분위기 · 손전등 원뿔 + 먼지 입자 때깔(전자칠판)',
+      '진짜 그림자 또렷함(전구를 끌 때 커지고 작아지는 체감 · penumbra 0.12)',
+      '광선 빔 9줄이 거울에서 튕기는 순간의 임팩트(반짝 맥동)',
+      '마주 거울 지그재그 왕복 가독',
+      '손전등·거울 집어 끌기 감도(태블릿)',
+      '휘는-빛 세상 전환(그림자 소멸 ↔ 복원) 체감'] },
+
+{ id:'sound', nm:'🔊 소리·진동',
+  ds:'음향 벤치 · Web Audio 실신호 연동 · 순수 60 · 실부팅 19',
+  tech:['<b>🔴 파형 ↔ 실시간 오디오</b> — AnalyserNode에서 뽑은 «진짜 소리 신호»가 유리관 리본 버텍스를 매 프레임 직접 그림. 지금 보는 곡선 = 지금 듣는 소리 그 자체',
+        '<b>메아리·번개 싱크</b> — 펄스가 벽에서 돌아오는 «그 순간» 진짜 메아리음 / 번쩍은 조용하고 거리×30프레임 «뒤에만» 우르릉'],
+  ck:['슬라이더를 움직일 때 «리본·콘·실제 음»이 정말 한 몸으로 변하는 체감(전자칠판 스피커 음량)',
+      '진공 전환 시 소리만 뚝 끊기고 파형은 떨리는 순간(무음 라벨 가독)',
+      '메아리 펄스 도착과 메아리 소리의 싱크',
+      '번개 번쩍 → 우르릉 지연이 «초 세기»로 읽히는지',
+      '유리관·리본 때깔(가산 보라 발광)',
+      '파동 링 매질 배속 구분 체감(공기/물/금속)'] },
+
+{ id:'net', nm:'📐 전개도·겨냥도',
+  ds:'마분지 공작 전개도 · 불량 전개도 와우 · 순수 26 · 실부팅 12',
+  tech:['<b>v2 라이브 기하 버그 수정</b> — 구판은 뚜껑이 천장이 아니라 상자 «속» 중간 높이에 걸렸음. 실부팅 하니스가 좌표로 포착'],
+  ck:['마분지 때깔 · 색지 6색 구분(전자칠판)',
+      '접힘 이징과 종이 그림자 체감',
+      '불량 전개도가 «펼친 상태에서도» 어딘가 이상해 보이는지',
+      '겹침 빨강 발광 가시성',
+      '예측 카드 위치·터치 크기(태블릿)',
+      '카메라 초기 구도(전개도 열이 길어짐)'] },
+
+{ id:'cubes', nm:'🧊 쌓기나무·부피',
+  ds:'격자 작업판 + 원목 쌓기나무 · 겉넓이 발광 와우 · 순수 89 · 실부팅 15',
+  tech:['<b>드러난 면만 보라 발광 맥동</b> — 같은 8개를 뭉치면 24면, 펼치면 34면. 「부피가 같으면 겉넓이도 같다」 오개념을 눈으로 반증',
+        '<b>v2 라이브 버그 3건 수정</b> — ① 미션2가 일렬 4칸도 통과(문구 배신) ② 단계 전환 시 학생이 쌓은 모양 소실 ③ 미션4가 원점 고정 12칸만 인정'],
+  ck:['원목 쌓기나무 때깔·모서리 선이 «세는 감»을 주는지(전자칠판)',
+      '드러난 면 보라 발광이 «겉넓이»로 읽히는지(24 vs 34의 시각 차이)',
+      '면 탭 쌓기 정확도·터치 크기(태블릿 — 작은 면 겨냥)',
+      '시점 「위에서」의 정사영 감(fov 22가 충분한지)',
+      '1×8 펼침 카메라 구도(자동 거리 확보 체감)',
+      '격자 작업판 격자선 가독'] },
+
+{ id:'earth', nm:'🌍 지구 자전·낮밤',
+  ds:'천체 통합 재건 1호 · 우주 무대 · 순수 99 · 실부팅 18',
+  tech:['<b>🔴 지구 잡아 돌리기</b> — 지구를 집어 끌면 자전각을 «시각»으로 역산. 시계·터미네이터·핀·하늘 창이 한 몸으로 따라옴',
+        '<b>🔴 대기 프레넬 림</b> — BackSide 셰이더로 낮 쪽 가장자리가 푸르게 타오름'],
+  ck:['지구를 잡아 돌릴 때의 손맛(0.0075rad/px — 태블릿에서 한 바퀴가 적당한 거리인지)',
+      '터미네이터 선명도(프레넬 림이 낮 쪽에서 타오르는 체감 · 밤면 어둡기)',
+      '실사 지구 텍스처 때깔(전자칠판)',
+      '핀 집기 터치 크기(프록시 0.16)',
+      '핀 위 1인칭 시점의 「우리가 돈다」 체감',
+      '하늘 창 가독(거꾸로 자전 시 방향 반전)',
+      '만약에 «조작 게이트»가 답답하지 않은지(예측만 하고 안 돌리면 해소 안 됨)'] },
+
+{ id:'moon', nm:'🌙 달의 위상',
+  ds:'천체 2호 · 지구조 · 동주기 자전 와우 · 순수 136 · 실부팅 29',
+  tech:['<b>🔴 달 직접 집어 끌기</b> — 어디에 «놓느냐»가 곧 위상 = 「모양이 변하는 게 아니라 보는 각도가 변한다」',
+        '<b>🔴 지구조(earthshine)</b> — 초승달의 어두운 원반이 희미하게 떠오름(다빈치의 설명)',
+        '<b>🐰 와우 신설</b> — 자전을 «꺼» 보면 토끼 무늬가 보였다 사라졌다. 「달은 자전을 안 해서 같은 면만 보인다」 오개념 반증'],
+  ck:['달을 집어 끄는 손맛(태블릿·전자칠판)',
+      '지구조 세기(초승달 어두운 면이 «보일락 말락»인가 — 과하면 위상 학습을 방해)',
+      '🐰 토끼 마커 크기·가독',
+      '와우 결과 카드 문구',
+      '저녁 하늘 창 자취 점 밀도',
+      '일식·월식 배너 타이밍'] },
+
+{ id:'season', nm:'🌗 계절의 변화',
+  ds:'천체 3호 · 자전축 조작 · 햇빛 다발 와우 · 순수 131 · 실부팅 35',
+  tech:['<b>🔴 자전축 잡아 돌리기</b> — 북극 손잡이를 집어 끌면 기울기 역산. 슬라이더가 아니라 «축 자체»를 세웠다 눕혔다',
+        '<b>🔴 🔦 햇빛 다발 밀도</b> — 여름 1.03배 ↔ 겨울 2.06배 = 정확히 2배. 「여름이 더운 건 가까워서가 아니라 다발이 좁게 모이기 때문」'],
+  ck:['자전축 잡아 돌리는 손맛(스캔 0.5° 해상도가 태블릿에서 뻑뻑하지 않은지)',
+      '🔦 다발 패치 크기·불투명도(겨울에 「옅어진다」가 눈에 보이는지)',
+      '다발 색·굵기(BEAM_R 0.18)',
+      '와우 결과 카드 막대 그래프 가독',
+      '태양의 길 패널 정보 밀도(그림자·해뜨는 시각까지 한 판에)',
+      '🥚 타원 궤도에서 지구가 화면 밖으로 나가지 않는지'] },
+
+{ id:'solar', nm:'☀️ 태양계',
+  ds:'천체 4호 · 골디락스 · 빛의 여행 와우 · 순수 147 · 실부팅 30',
+  tech:['<b>🔴 지구를 궤도째 잡아 끌기</b> — 무대 반지름을 AU로 역산. 🟢 골디락스 띠를 손으로 넘나든다(경계 넘는 순간 🔥끓음/🧊얼음 틴트)',
+        '<b>🔴 🚀 빛의 여행</b> — 실제 광행시 비율(1 AU = 499초). 지구 도달 8분 19초, 해왕성 4시간 10분. 「지금 보는 햇빛은 8분 19초 전에 떠난 빛」'],
+  ck:['지구 집어 끄는 손맛(골디락스 경계 넘을 때 효과음·틴트 전환이 체감되는지)',
+      '🚀 빛의 여행 25초가 «지루한지 vs 압도적인지»(속도 상수 1.204)',
+      '빛 껍질 밝기·링 두께',
+      '실제 비율에서 카메라 자동 줌아웃이 어지럽지 않은지',
+      '저학년 「낮과 밤」 장면의 빨간 위치 마커 크기',
+      '☀️ 태양 소멸 시 행성이 화면 밖으로 나가는 속도'] },
+
+{ id:'constellation', nm:'✨ 계절별 별자리',
+  ds:'천체 5호(천체군 마감) · 1인칭 밤하늘 · 일주운동 와우 · 순수 125 · 실부팅 34',
+  tech:['<b>🔴 1인칭 밤하늘</b> — 지구 표면으로 내려가 하늘을 직접 올려다봄. 시선을 태양 쪽으로 돌리면 별이 «묻힌다» = 「낮에도 별은 떠 있다」가 설명이 아니라 장면이 됨',
+        '<b>🔴 ⭐ 일주운동</b> — 모든 별이 북극성을 중심으로 원을 그리는데 북극성만 고도 37.5°에서 꿈쩍도 안 함. 「북극성의 고도 = 우리가 선 곳의 위도」'],
+  ck:['1인칭 시선 드래그 감도(태블릿에서 어지럽지 않은지 · 0.14/0.16)',
+      '낮 하늘 파랑·밝기 곡선이 「별이 묻힌다」로 읽히는지',
+      '일주운동 궤적 점 밀도·밝기',
+      '와우 결과 카드의 위도-고도 표',
+      '✨ 내 별자리 SVG 클릭 좌표가 태블릿에서 정확한지 (⚠️ 실기기 확인 필요 — 보정 없음)',
+      '링크 공유 클립보드 동작'] },
+
+{ id:'circuit', nm:'🔌 전기 회로',
+  ds:'실물 3D 실험대 · 전자 흐름 · 순수 93 · 실부팅 25',
+  tech:['<b>🔴 실물 부품 집어 놓기</b> — 전지를 다시 탭하면 3D로 180° 뒤집혀 ＋－가 바뀌고, 직렬에서 상쇄돼 «불이 꺼지는 게 눈에 보임»',
+        '<b>🔴 전자 흐름</b> — 전류를 화살표가 아니라 «전자 알갱이»로. 직렬 전구 1개 → 2개면 정확히 절반 속도. 「전압을 나눠 쓴다」가 숫자가 아니라 «눈에 보이는 느려짐»'],
+  ck:['부품 탭 정확도(전자칠판에서 슬롯이 잘 집히는지 · 히트박스 1.15×1.5×1.15)',
+      '전자 알갱이 크기·속도가 «전류»로 읽히는지',
+      '전구 유리 질감(transmission 0.72)',
+      '합선 경고가 충분히 눈에 띄는지',
+      '전류계 HUD 위치',
+      '병렬에서 본선 «합류»가 체감되는지'] },
+
+{ id:'motion', nm:'🏁 물체의 운동과 속력',
+  ds:'A트랙 15호(완주) · 100m 실물 트랙 · 순수 128 · 실부팅 31',
+  tech:['<b>🔴 시간 스크럽</b> — v2는 앞으로만 갔다. v3는 시간을 «앞뒤로» 끈다. 되감으면 기록이 취소되고 자취 점도 줄어듦',
+        '<b>🔴 🎯 자취 자</b> — 자취 점 두 개를 집으면 3D 줄자가 나타나 거리·시간·속력을 즉석 계산. 「속력 = 거리 ÷ 시간」이 공식이 아니라 «내가 잰 값»이 됨',
+        '<b>🚀 와우: 가속의 역전</b> — 등속 자동차 vs 가속 로켓. 12.3초에 98.5m에서 역전, 결승 12.4 vs 12.5초의 아슬아슬한 승부'],
+  ck:['자취 점 집기 정확도(전자칠판에서 작은 디스크가 잘 집히는지 · 히트박스 0.9³)',
+      '시간 스크럽 손맛(0.1초 단위가 너무 잘거나 굼뜨지 않은지)',
+      '자취 자 HUD 위치·가독',
+      '로켓 화염 크기가 「점점 빨라짐」으로 읽히는지',
+      '🐘 낙하 무대의 공기 입자가 「진공」 전환에서 체감되는지',
+      '카메라 기본 각도에서 100m 트랙 전체가 보이는지'] }
+];
+
+var KEY = 'klab_v3_g0_review';
+var st = {};
+try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e){ st = {}; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
+function S(id){ if(!st[id]) st[id] = { j:'wait', ck:[], memo:'' }; return st[id]; }
+
+/* magnet은 2026-07-04 이미 검수 통과 — 기본값 통과로 시드 */
+if(!st.magnet) { st.magnet = { j:'ok', ck:[0,1,2], memo:'2026-07-04 검수 통과 (준호: 철가루 대박)' }; save(); }
+
+var list = document.getElementById('list');
+var toastEl = document.getElementById('toast');
+var filter = 'all';
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function render(){
+  list.innerHTML = '';
+  TOOLS.forEach(function(t, i){
+    var s = S(t.id);
+    var el = document.createElement('div');
+    el.className = 'tool s-' + s.j;
+    el.dataset.id = t.id;
+
+    var stat = s.j==='ok' ? '✅ 통과' : s.j==='fix' ? '🔧 수정 요청' : '⬜ 미검수';
+
+    var links = '';
+    links += '<a class="lk main" href="'+t.id+'.html" target="_blank" rel="noopener">▶ 도구 열기</a>';
+    if(t.grades !== false){
+      links += '<a class="lk" href="'+t.id+'.html?grade=low"  target="_blank" rel="noopener">저학년</a>';
+      links += '<a class="lk" href="'+t.id+'.html?grade=mid"  target="_blank" rel="noopener">중학년</a>';
+      links += '<a class="lk" href="'+t.id+'.html?grade=high" target="_blank" rel="noopener">고학년</a>';
+      links += '<a class="lk" href="'+t.id+'.html?mode=mission" target="_blank" rel="noopener">미션</a>';
+      links += '<a class="lk" href="'+t.id+'.html?mode=quiz"    target="_blank" rel="noopener">퀴즈</a>';
+    }
+
+    var techH = t.tech.length
+      ? '<div class="sec"><div class="slab">이 도구의 핵심 장치</div>'
+        + t.tech.map(function(x){ return '<div class="tech">'+x+'</div>'; }).join('') + '</div>'
+      : '';
+
+    var ckH = t.ck.map(function(c, k){
+      var on = s.ck.indexOf(k) >= 0 ? ' checked' : '';
+      return '<label class="ck"><input type="checkbox" data-t="'+t.id+'" data-k="'+k+'"'+on+'>'
+           + '<span>'+esc(c)+'</span></label>';
+    }).join('');
+
+    el.innerHTML =
+      '<div class="thead">'
+      + '<span class="arw">▶</span>'
+      + '<div class="no">'+(i+1)+'</div>'
+      + '<div class="tinfo"><div class="tnm">'+t.nm+' <code>'+t.id+'.html</code></div>'
+      + '<div class="tds">'+esc(t.ds)+'</div></div>'
+      + '<div class="tstat">'+stat+'</div>'
+      + '</div>'
+      + '<div class="tbody">'
+      + '<div class="sec"><div class="slab">실기기에서 열기 (새 탭)</div><div class="links">'+links+'</div></div>'
+      + techH
+      + '<div class="sec"><div class="slab">검수 항목 '+t.ck.length+'개</div>'+ckH+'</div>'
+      + '<div class="sec"><div class="slab">판정</div><div class="judge">'
+      +   '<button class="jb'+(s.j==='ok'?' on-ok':'')+'"   data-j="ok"   data-t="'+t.id+'">✅ 통과 — 라이브로</button>'
+      +   '<button class="jb'+(s.j==='fix'?' on-fix':'')+'" data-j="fix"  data-t="'+t.id+'">🔧 수정 요청</button>'
+      +   '<button class="jb'+(s.j==='wait'?' on-wait':'')+'" data-j="wait" data-t="'+t.id+'">⬜ 미검수</button>'
+      + '</div>'
+      + '<textarea data-t="'+t.id+'" placeholder="고칠 점·느낌을 적어주세요. 여기 적은 건 「결과 복사」에 그대로 실려요.">'+esc(s.memo)+'</textarea>'
+      + '</div>'
+      + '</div>';
+
+    list.appendChild(el);
+  });
+  applyFilter();
+  stats();
+}
+
+function stats(){
+  var ok=0, fix=0, wait=0, ck=0, ckT=0;
+  TOOLS.forEach(function(t){
+    var s = S(t.id);
+    if(s.j==='ok') ok++; else if(s.j==='fix') fix++; else wait++;
+    ck += s.ck.length; ckT += t.ck.length;
+  });
+  var n = TOOLS.length;
+  document.getElementById('bOk').style.width  = (ok/n*100)+'%';
+  document.getElementById('bFix').style.width = (fix/n*100)+'%';
+  document.getElementById('nOk').textContent   = ok;
+  document.getElementById('nFix').textContent  = fix;
+  document.getElementById('nWait').textContent = wait;
+  document.getElementById('nCk').textContent   = ck;
+  document.getElementById('nCkT').textContent  = ckT;
+
+  var f = document.getElementById('ftx');
+  if(wait === 0 && fix === 0) f.innerHTML = '🎉 <b>15종 전부 통과</b> — 허브 링크 교체하고 라이브 투입할 수 있어요.';
+  else if(wait === 0)         f.innerHTML = '검수 완료 — <b>수정 요청 '+fix+'종</b>. 결과를 복사해 베프에게 던지세요.';
+  else                        f.innerHTML = '남은 도구 <b>'+wait+'종</b> · 통과 '+ok+' · 수정 요청 '+fix;
+}
+
+function applyFilter(){
+  Array.prototype.forEach.call(list.children, function(el){
+    var s = S(el.dataset.id);
+    el.classList.toggle('hide', filter !== 'all' && s.j !== filter);
+  });
+}
+
+/* ── 이벤트 위임 ────────────────────────────────────────── */
+list.addEventListener('click', function(e){
+  var head = e.target.closest('.thead');
+  if(head){ head.parentElement.classList.toggle('open'); return; }
+
+  var jb = e.target.closest('.jb');
+  if(jb){
+    var s = S(jb.dataset.t);
+    s.j = jb.dataset.j;
+    save();
+    var card = jb.closest('.tool');
+    var wasOpen = card.classList.contains('open');
+    render();
+    if(wasOpen){
+      var re = list.querySelector('[data-id="'+jb.dataset.t+'"]');
+      if(re) re.classList.add('open');
+    }
+    return;
+  }
+});
+
+list.addEventListener('change', function(e){
+  var cb = e.target;
+  if(cb.type !== 'checkbox') return;
+  var s = S(cb.dataset.t), k = +cb.dataset.k;
+  var i = s.ck.indexOf(k);
+  if(cb.checked && i < 0) s.ck.push(k);
+  if(!cb.checked && i >= 0) s.ck.splice(i, 1);
+  save(); stats();
+});
+
+list.addEventListener('input', function(e){
+  if(e.target.tagName !== 'TEXTAREA') return;
+  S(e.target.dataset.t).memo = e.target.value;
+  save();
+});
+
+document.querySelectorAll('.chip[data-f]').forEach(function(c){
+  c.addEventListener('click', function(){
+    document.querySelectorAll('.chip[data-f]').forEach(function(x){ x.classList.remove('on'); });
+    c.classList.add('on');
+    filter = c.dataset.f;
+    applyFilter();
+  });
+});
+
+document.getElementById('expAll').addEventListener('click', function(){
+  var anyClosed = Array.prototype.some.call(list.children, function(el){
+    return !el.classList.contains('hide') && !el.classList.contains('open');
+  });
+  Array.prototype.forEach.call(list.children, function(el){
+    if(el.classList.contains('hide')) return;
+    el.classList.toggle('open', anyClosed);
+  });
+  this.textContent = anyClosed ? '전부 접기' : '전부 펼치기';
+});
+
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('on');
+  setTimeout(function(){ toastEl.classList.remove('on'); }, 1900);
+}
+
+/* ── 결과 복사 ──────────────────────────────────────────── */
+document.getElementById('copy').addEventListener('click', function(){
+  var ok = [], fix = [], wait = [];
+  TOOLS.forEach(function(t){
+    var s = S(t.id);
+    if(s.j === 'ok') ok.push(t);
+    else if(s.j === 'fix') fix.push(t);
+    else wait.push(t);
+  });
+
+  var L = [];
+  L.push('# 케이랩 v3 · A트랙 G0 검수 결과');
+  L.push('');
+  L.push('통과 ' + ok.length + ' · 수정 요청 ' + fix.length + ' · 미검수 ' + wait.length + ' / 총 ' + TOOLS.length);
+  L.push('');
+
+  if(ok.length){
+    L.push('## ✅ 통과 — 허브 링크 교체 대상');
+    ok.forEach(function(t){
+      L.push('- **' + t.id + '** (' + t.nm + ')' + (S(t.id).memo ? ' — ' + S(t.id).memo.replace(/\n/g,' / ') : ''));
+    });
+    L.push('');
+  }
+
+  if(fix.length){
+    L.push('## 🔧 수정 요청');
+    fix.forEach(function(t){
+      var s = S(t.id);
+      L.push('');
+      L.push('### ' + t.id + ' (' + t.nm + ')');
+      var miss = t.ck.filter(function(c, k){ return s.ck.indexOf(k) < 0; });
+      if(miss.length){
+        L.push('체크되지 않은 항목:');
+        miss.forEach(function(c){ L.push('- ' + c); });
+      }
+      if(s.memo) { L.push('준호 메모:'); L.push('> ' + s.memo.replace(/\n/g,'\n> ')); }
+    });
+    L.push('');
+  }
+
+  if(wait.length){
+    L.push('## ⬜ 미검수');
+    L.push(wait.map(function(t){ return t.id; }).join(' · '));
+    L.push('');
+  }
+
+  var txt = L.join('\n');
+  navigator.clipboard.writeText(txt).then(function(){
+    toast('📋 검수 결과를 복사했어요 — 베프에게 붙여넣으세요');
+  }).catch(function(){
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('📋 복사 완료'); }
+    catch(e){ toast('복사 실패 — 직접 선택해 주세요'); }
+    document.body.removeChild(ta);
+  });
+});
+
+document.getElementById('reset').addEventListener('click', function(){
+  if(!confirm('검수 체크·판정·메모를 모두 지웁니다. 계속할까요?')) return;
+  st = {};
+  st.magnet = { j:'ok', ck:[0,1,2], memo:'2026-07-04 검수 통과 (준호: 철가루 대박)' };
+  save(); render(); toast('초기화했어요');
+});
+
+render();
+</script>
+</body>
+</html>
