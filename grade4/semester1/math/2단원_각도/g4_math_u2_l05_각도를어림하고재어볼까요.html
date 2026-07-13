@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<!--
+  g4_math_u2_l05 — 각도를 어림하고 재어 볼까요 [4학년 2단원 05차시, 단일 40분]
+  단원: 4학년 1학기 2단원 「각도」 / 지도서 수학 40~42, 익힘 28~29
+  base: g4_math_u2_l04(엔진·채점부·CSS 계승)
+  부품: angleFig(refs 다중 기준선) · estimateBar(어림↔잰값) · triRuler(삼각자) · protractor
+  학습목표: 어림 전략(90°·45° 기준)을 사용해 각도를 어림하고, 각도기로 재어 확인할 수 있다.
+  점수: 기본 4x10(q8~11) + 응용 4x15(q12~15) = 100 / v14 teal
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="kedu-lesson-id" content="g4_math_u2_l05_v1">
+<title>각도를 어림하고 재어 볼까요 · K-edu 4학년 수학</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Nunito:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FBF7F1; --ink:#243043; --ink-soft:#62708A;
+  --coral:#1FA8A0; --coral-deep:#147F79; --coral-soft:#D6F1EF;
+  --teal:#1FA8A0; --teal-deep:#147F79; --teal-soft:#D6F1EF;
+  --gold:#F6B526; --emph:#F0451F; --line:#ECE3D6; --mark:#FFE08A;
+  --f-title:'Jua',sans-serif; --f-body:'Gowun Dodum',sans-serif; --f-num:'Nunito',sans-serif;
+  --shadow:0 14px 34px -18px rgba(36,48,67,.4);
+  --fs-title: clamp(28px, 4.6vw, 52px);
+  --fs-heading: clamp(24px, 3.7vw, 37px);
+  --fs-body: clamp(21px, 3.2vw, 31px);
+  --fs-caption: clamp(19px, 2.9vw, 27px);
+  --fs-label: clamp(14px, 2.1vw, 18px);
+  --em-sm: clamp(30px, 4.5vw, 50px);
+  --em-md: clamp(44px, 7vw, 80px);
+  --em-lg: clamp(66px, 10vw, 122px);
+  --mw-sm: min(720px, 96vw);
+  --mw-md: min(760px, 96vw);
+  --mw-lg: min(840px, 96vw);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { background:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); color:var(--ink); touch-action:manipulation; -webkit-font-smoothing:antialiased; }
+
+@keyframes ka-fadeUp { from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;} }
+@keyframes ka-pop { 0%{opacity:0; transform:scale(.4);} 60%{opacity:1; transform:scale(1.12);} 100%{transform:scale(1);} }
+@keyframes ka-shake { 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+@keyframes ka-swap-r { 0%{transform:translateX(0); opacity:1;} 50%{transform:translateX(20px); opacity:.3;} 100%{transform:translateX(0); opacity:1;} }
+@keyframes ka-mark { from{background-size:0 100%;} to{background-size:100% 100%;} }
+
+/* ───── 컨테이너 ───── */
+.ka { background:var(--paper); width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; color:var(--ink); position:relative; overflow:hidden; }
+
+/* ───── 상단바 (topbar) ───── */
+.ka-h { display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); padding:clamp(11px,1.7vw,15px) clamp(16px,4vw,40px); background:#fff; border-bottom:2px solid var(--line); flex-shrink:0; }
+.ka-lb { background:#fff; border:2px solid var(--line); padding:clamp(5px,1vw,8px) clamp(10px,1.8vw,15px); border-radius:999px; cursor:pointer; font-family:var(--f-title); color:var(--ink-soft); flex-shrink:0; font-size:var(--fs-label); transition:transform .15s; }
+.ka-lb:hover { transform:translateY(-1px); }
+.ka-pill { font-family:var(--f-title); background:var(--coral); color:#fff; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-where { font-size:clamp(14px,1.6vw,18px); color:var(--ink-soft); flex-shrink:1; }
+.ka-where b { color:var(--ink); }
+.ka-bar { display:flex; gap:7px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; max-width:46vw; }
+.ka-dot { width:11px; height:11px; border-radius:50%; background:var(--line); cursor:pointer; transition:transform .2s, background .2s; }
+.ka-dot:hover { transform:scale(1.2); }
+.ka-dot.active { background:var(--coral); transform:scale(1.3); }
+.ka-dot.done { background:var(--teal); }
+.ka-score { font-family:var(--f-title); background:#FFF8E1; color:#F57F17; padding:6px 16px; border-radius:999px; font-size:clamp(15px,1.8vw,20px); flex-shrink:0; }
+.ka-mute { background:#fff; border:2px solid var(--line); padding:0; border-radius:50%; cursor:pointer; flex-shrink:0; color:var(--coral-deep); font-size:clamp(13px,2vw,16px); width:clamp(32px,4.5vw,38px); height:clamp(32px,4.5vw,38px); display:flex; align-items:center; justify-content:center; }
+
+/* ───── 본문 ───── */
+.ka-m { flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0; position:relative; overflow:hidden; }
+.slide { display:none; flex-direction:column; align-items:center; justify-content:center; gap:clamp(7px,1.3vw,12px); height:100%; width:100%; animation:ka-fadeUp .45s ease both; padding:clamp(8px,1.4vh,16px) clamp(16px,4vw,48px); overflow:hidden; }
+.slide.active { display:flex; }
+.slide-title { font-family:var(--f-title); font-size:var(--fs-title); margin:0; line-height:1.18; color:var(--ink); font-weight:400; text-align:center; flex-shrink:0; }
+.slide-sub { font-size:var(--fs-caption); color:var(--ink-soft); text-align:center; flex-shrink:0; }
+.stage-badge { position:absolute; top:clamp(10px,1.6vw,16px); left:clamp(16px,4vw,40px); font-family:var(--f-title); color:var(--coral); font-size:clamp(13px,1.9vw,18px); letter-spacing:.4px; z-index:5; }
+
+/* ───── 하단 내비 ───── */
+.ka-f { display:flex; justify-content:flex-end; gap:12px; padding:clamp(12px,1.7vw,16px) clamp(16px,4vw,40px); background:linear-gradient(to top, var(--paper) 62%, transparent); flex-shrink:0; }
+.ka-prev, .ka-hint, .ka-next { font-family:var(--f-title); font-size:clamp(15px,1.9vw,22px); border:2px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:clamp(10px,1.4vw,15px) clamp(20px,2.8vw,38px); cursor:pointer; transition:transform .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ka-prev:hover, .ka-hint:hover, .ka-next:hover { transform:translateY(-2px); }
+.ka-prev { margin-right:auto; }
+.ka-hint { color:#F57F17; border-color:#FFE08A; }
+.ka-next { background:var(--coral); color:#fff; border-color:var(--coral); }
+.ka-prev:disabled, .ka-next:disabled { opacity:.35; cursor:default; transform:none; }
+.ka-hint:disabled { opacity:.4; cursor:default; }
+
+/* ───── 공통 콘텐츠 ───── */
+.concept-box { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,18px) clamp(18px,2.8vw,28px); border-radius:20px; font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); text-align:center; line-height:1.5; box-shadow:var(--shadow); }
+.concept-box strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.big-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-lg); line-height:1; }
+.intro-q { font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; }
+.intro-q strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.goal-list { display:flex; flex-direction:column; gap:clamp(7px,1.4vw,11px); font-size:var(--fs-body); color:var(--ink); max-width:var(--mw-sm); }
+.goal-list li { background:#fff; border:2px solid var(--line); padding:clamp(8px,1.5vw,12px) clamp(14px,2.6vw,20px); border-radius:16px; list-style:none; box-shadow:var(--shadow); }
+.goal-list li strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+.recall-box { background:var(--teal-soft); padding:clamp(14px,2.8vw,22px) clamp(20px,3.6vw,30px); border-radius:22px; font-size:var(--fs-body); color:var(--teal-deep); max-width:var(--mw-sm); text-align:center; line-height:1.6; }
+.recall-box strong { color:var(--teal-deep); font-family:var(--f-title); font-weight:400; }
+.scene { background:#fff; border:3px solid var(--coral-soft); border-radius:28px; padding:clamp(18px,3.4vw,30px) clamp(22px,4.2vw,38px); display:flex; flex-direction:column; gap:clamp(10px,2vw,16px); align-items:center; min-width:clamp(280px,50vw,460px); box-shadow:0 6px 0 var(--coral-soft); }
+.pencil-row { display:flex; gap:clamp(4px,0.8vw,8px); font-size:var(--em-sm); flex-wrap:wrap; justify-content:center; max-width:var(--mw-sm); color:var(--ink); }
+
+/* ───── place_value_block (모형) ───── */
+.pv-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.pv-row { display:flex; gap:clamp(10px,2.2vw,20px); align-items:flex-end; justify-content:center; flex-wrap:wrap; }
+.pv-group { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vw,7px); }
+.pv-label { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.pv-block svg { display:block; }
+.swap-arrow { font-size:var(--em-sm); color:var(--coral); animation:ka-swap-r 1.6s ease-in-out infinite; }
+.exchange-eq { font-size:var(--fs-heading); color:var(--ink); display:flex; align-items:center; gap:clamp(8px,1.6vw,16px); flex-wrap:wrap; justify-content:center; }
+
+/* ───── number_line ───── */
+.nl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.nl-svg { width:min(760px,94vw); height:auto; }
+.nl-svg .nl-tick text { font-family:var(--f-num); font-weight:800; fill:var(--ink-soft); }
+.nl-pick { cursor:pointer; }
+.nl-pick:hover circle { fill:var(--coral-soft); }
+.nl-pick.correct circle { fill:var(--teal); }
+.nl-pick.wrong circle { fill:var(--coral-soft); }
+
+/* ───── 100의 여러 의미 ───── */
+.mean-grid { display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-sm); width:100%; }
+.mean-item { background:#fff; border:2px solid var(--line); padding:clamp(11px,2vw,17px) clamp(16px,3vw,24px); border-radius:18px; font-size:var(--fs-body); color:var(--ink); text-align:center; box-shadow:var(--shadow); }
+.mean-item strong { color:var(--coral-deep); font-family:var(--f-title); font-weight:400; }
+
+/* ───── 문제 공통 ───── */
+.q-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vw,14px); max-width:var(--mw-lg); width:100%; }
+.q-prompt { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); text-align:center; font-weight:400; }
+.q-display { font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--coral-deep); background:#fff; border:3px solid var(--coral-soft); border-radius:20px; padding:clamp(8px,1.6vw,14px) clamp(24px,4.6vw,44px); min-width:clamp(120px,22vw,200px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.q-pad { display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(6px,1.2vw,10px); max-width:clamp(280px,56vw,460px); }
+.q-key { background:#fff; border:2px solid var(--line); border-radius:14px; padding:clamp(7px,1.5vw,12px) 0; font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, background .15s, border-color .15s; box-shadow:0 4px 0 var(--line); }
+.q-key:hover { background:var(--coral-soft); border-color:var(--coral); }
+.q-key:active { transform:translateY(3px); box-shadow:none; }
+.q-key.fn { background:#FFF8E1; color:#F57F17; font-family:var(--f-title); font-size:var(--fs-body); border-color:#FFE08A; box-shadow:0 4px 0 #FFE08A; }
+.q-fb { font-family:var(--f-title); font-size:var(--fs-body); color:var(--teal-deep); min-height:1.4em; text-align:center; }
+.q-fb.wrong { color:var(--emph); }
+.mcq-opts { display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(8px,1.4vw,12px); width:100%; max-width:var(--mw-sm); }
+.mcq-opt { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,15px); font-family:var(--f-title); font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .2s; box-shadow:0 6px 0 var(--coral-soft); font-weight:400; }
+.mcq-opt:hover { border-color:var(--coral); }
+.mcq-opt:active { transform:translateY(4px); box-shadow:none; }
+.mcq-opt.correct { border-color:var(--teal-deep); background:var(--teal); color:#fff; box-shadow:0 6px 0 var(--teal-deep); animation:ka-pop .5s ease; }
+.mcq-opt.wrong { border-color:var(--emph); background:#FFE0DA; color:var(--coral-deep); animation:ka-shake .35s; }
+.mcq-hint { font-family:var(--f-title); font-size:var(--fs-body); color:#F57F17; background:#FFF8E1; border-radius:16px; padding:clamp(8px,1.6vw,12px) clamp(14px,2.6vw,20px); max-width:var(--mw-sm); text-align:center; display:none; }
+.mcq-hint.show { display:block; }
+
+/* ───── trace ───── */
+.trace-row { display:flex; gap:clamp(12px,2.4vw,22px); justify-content:center; flex-wrap:wrap; }
+.trace-cell { width:clamp(64px,12vw,110px); height:clamp(84px,16vw,150px); border:5px dashed var(--coral-soft); border-radius:20px; display:flex; align-items:center; justify-content:center; font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:#D8C4B8; cursor:pointer; transition:all .2s; background:#fff; }
+.trace-cell.done { color:var(--coral-deep); border-style:solid; border-color:var(--coral); background:var(--coral-soft); }
+
+/* ───── match ───── */
+.match-stage { display:flex; flex-direction:column; gap:clamp(8px,1.5vw,13px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.match-cols { display:flex; gap:clamp(20px,4vw,48px); }
+.match-col { display:flex; flex-direction:column; gap:clamp(6px,1.1vw,9px); }
+.match-card { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(16px,3vw,26px); font-family:var(--f-num); font-weight:800; font-size:var(--fs-heading); color:var(--ink); cursor:pointer; transition:transform .12s, border-color .15s; min-width:clamp(70px,13vw,108px); text-align:center; box-shadow:0 5px 0 var(--coral-soft); }
+.match-card:hover { border-color:var(--coral); }
+.match-card.sel { border-color:var(--gold); background:var(--mark); }
+.match-card.matched { border-color:var(--teal-deep); background:var(--teal); color:#fff; cursor:default; box-shadow:0 5px 0 var(--teal-deep); }
+
+/* ───── multi judge ───── */
+.judge-grid { display:flex; flex-direction:column; gap:clamp(6px,1.2vw,10px); max-width:var(--mw-sm); width:100%; }
+.judge-item { display:flex; align-items:center; gap:clamp(10px,2vw,16px); background:#fff; border:3px solid var(--coral-soft); border-radius:18px; padding:clamp(7px,1.5vw,12px) clamp(14px,2.6vw,20px); box-shadow:0 5px 0 var(--coral-soft); }
+.judge-text { flex:1; font-size:var(--fs-body); color:var(--ink); text-align:left; }
+.judge-text strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.judge-btns { display:flex; gap:clamp(6px,1.2vw,10px); }
+.judge-btn { border:3px solid var(--line); border-radius:14px; padding:clamp(6px,1.2vw,10px) clamp(12px,2.4vw,18px); font-family:var(--f-title); font-size:var(--fs-heading); cursor:pointer; background:#fff; color:var(--ink-soft); transition:transform .1s; }
+.judge-btn:active { transform:translateY(3px); }
+.judge-btn.pick-o { background:var(--teal-soft); color:var(--teal-deep); border-color:var(--teal); }
+.judge-btn.pick-x { background:var(--coral-soft); color:var(--coral-deep); border-color:var(--coral); }
+.judge-item.right { border-color:var(--teal-deep); box-shadow:0 5px 0 var(--teal-deep); }
+.judge-item.miss { border-color:var(--emph); animation:ka-shake .35s; }
+
+/* ───── 정리/자기평가/다음 ───── */
+.summary-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-lg); width:100%; }
+.summary-card { background:#fff; border:2px solid var(--line); border-radius:22px; padding:clamp(18px,3.4vw,30px); font-size:var(--fs-body); color:var(--ink); text-align:center; max-width:var(--mw-sm); line-height:1.6; box-shadow:var(--shadow); }
+.summary-card strong { color:var(--emph); font-family:var(--f-title); font-weight:400; }
+.wrap-msg { font-family:var(--f-title); font-size:var(--fs-heading); color:var(--coral-deep); }
+.self-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(14px,2.6vw,22px); }
+.self-row { display:flex; gap:clamp(12px,2.4vw,20px); flex-wrap:wrap; justify-content:center; }
+.self-btn { background:#fff; border:4px solid var(--coral-soft); border-radius:18px; padding:clamp(10px,2vw,16px) clamp(14px,2.8vw,22px); cursor:pointer; display:flex; flex-direction:column; gap:clamp(3px,0.7vw,6px); align-items:center; transition:transform .12s, border-color .15s; box-shadow:0 6px 0 var(--coral-soft); }
+.self-btn:hover { border-color:var(--coral); }
+.self-btn:active { transform:translateY(4px); box-shadow:none; }
+.self-btn.selected { border-color:var(--gold); background:var(--mark); }
+.self-btn-stars { font-size:var(--em-sm); color:var(--gold); }
+.self-btn-name { font-size:var(--fs-caption); color:var(--ink-soft); font-family:var(--f-title); }
+.next-stage { display:flex; flex-direction:column; gap:clamp(14px,2.6vw,22px); align-items:center; max-width:var(--mw-md); }
+.next-card { background:var(--teal-soft); border-radius:22px; padding:clamp(20px,3.8vw,32px); display:flex; flex-direction:column; gap:clamp(8px,1.6vw,14px); align-items:center; }
+.next-emojis { font-size:var(--em-md); }
+.next-label { font-size:var(--fs-body); color:var(--teal-deep); text-align:center; }
+.home-prompt { font-size:var(--fs-caption); color:var(--coral-deep); background:var(--coral-soft); border-radius:18px; padding:clamp(12px,2.4vw,18px) clamp(18px,3.4vw,28px); text-align:center; }
+
+
+  /* 세로셈 (3학년 덧셈·뺄셈) */
+  .vadd { display:inline-grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(2px,0.6vw,4px) clamp(8px,1.6vw,14px); font-family:var(--f-num); font-weight:800; font-size:var(--em-md); color:var(--ink); justify-items:center; align-items:center; background:#fff; border:2px solid var(--line); border-radius:18px; padding:clamp(12px,2vw,20px) clamp(18px,3vw,30px); box-shadow:var(--shadow); }
+  .vadd .op { color:var(--coral-deep); }
+  .vadd .ln { grid-column:1/-1; width:100%; height:3px; background:var(--ink); border-radius:2px; }
+  .vadd .sum { color:var(--coral-deep); }
+  .pv-sum-num { font-family:var(--f-num); font-weight:800; color:var(--coral-deep); font-size:var(--em-md); }
+
+/* ───── 부품 스테이지 (각도 단원) ───── */
+.pvc-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(10px,2vw,16px); max-width:var(--mw-lg); width:100%; }
+.pvc { display:flex; gap:clamp(4px,1vw,8px); }
+.pvc-col { display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.9vw,7px); }
+.pvc-head { font-family:var(--f-title); font-size:var(--fs-caption); color:var(--ink-soft); }
+.pvc-cell { width:clamp(46px,9.2vw,74px); height:clamp(56px,11vw,88px); display:flex; align-items:center; justify-content:center; border:3px solid var(--line); border-radius:14px; font-family:var(--f-num); font-weight:800; font-size:var(--em-sm); background:#fff; color:var(--ink); box-shadow:0 4px 0 var(--line); }
+.pvc-cell.on { color:#fff; background:var(--coral); border-color:var(--coral-deep); box-shadow:0 4px 0 var(--coral-deep); }
+.pvc-cell.zero { color:#C7CEDA; }
+/* ───── billRow (1000원 지폐) ───── */
+.bill-row { display:flex; flex-wrap:wrap; gap:clamp(4px,0.9vw,7px); justify-content:center; max-width:var(--mw-sm); }
+.bill { background:#E7F3EA; border:2px solid var(--coral-soft); border-radius:10px; padding:clamp(5px,1vw,8px) clamp(8px,1.6vw,12px); font-family:var(--f-title); font-size:var(--fs-label); color:var(--coral-deep); display:flex; flex-direction:column; align-items:center; gap:2px; }
+.bill .bem { font-size:var(--fs-body); line-height:1; }
+/* ───── bigLine (큰 수 수직선) ───── */
+.bl-stage { display:flex; flex-direction:column; align-items:center; gap:clamp(12px,2.4vw,20px); max-width:var(--mw-lg); width:100%; }
+.bl-svg { width:min(760px,94vw); height:auto; }
+.bl-svg text { font-family:var(--f-num); font-weight:800; }
+.pvc-stage svg{width:100%;height:auto;display:block;max-width:460px;margin:0 auto;}
+</style>
+</head>
+<body>
+<div class="ka">
+  <div class="ka-h">
+    <button class="ka-lb" onclick="goHub()">← 목록</button>
+    <span class="ka-pill">5차시</span>
+    <span class="ka-where">수학 4-1 · <b>2. 각도</b></span>
+    <div class="ka-bar" id="dots"></div>
+    <span class="ka-score" id="score">⭐ 0</span>
+    <button class="ka-mute" id="mute" onclick="toggleMute()">🔊</button>
+  </div>
+  <div class="ka-m">
+
+    <!-- 슬 1 도입: 흥미 -->
+    <div class="slide active" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">재기 전에, 먼저 짐작해 봐요</h2>
+      <div class="intro-q">축제장 놀이기구가 <strong>얼마나 기울었는지</strong> 궁금해요.<br>각도기를 대기 전에 <strong>"약 몇 도쯤일까?"</strong> 먼저 짐작하는 것을 <strong>어림</strong>이라고 해요.</div>
+    </div>
+
+    <!-- 슬 2 도입: 학습 목표 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입</div>
+      <h2 class="slide-title">이번 시간에 배울 것</h2>
+      <ul class="goal-list">
+        <li><strong>90°</strong>를 기준으로 어림해요</li>
+        <li><strong>45°</strong>(직각의 절반)를 기준으로 더 정확히 어림해요</li>
+        <li>어림한 뒤 <strong>각도기로 재어 확인</strong>해요</li>
+      </ul>
+    </div>
+
+    <!-- 슬 3 도입·복습 -->
+    <div class="slide" data-stage="도입">
+      <div class="stage-badge">도입 · 되돌아보기</div>
+      <h2 class="slide-title">예각·직각·둔각을 기억해요</h2>
+      <div style="display:flex;gap:6px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:6px 0">
+        <div id="m-r1" style="flex:1;max-width:200px"></div>
+        <div id="m-r2" style="flex:1;max-width:200px"></div>
+        <div id="m-r3" style="flex:1;max-width:200px"></div>
+      </div>
+      <div class="concept-box">각을 어림할 때도 <strong>직각(90°)</strong>이 가장 든든한 기준이 돼요.</div>
+    </div>
+
+    <!-- 슬 4 전개: 90° 기준 어림 (삼각자) -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 어림 전략 ①</div>
+      <h2 class="slide-title">먼저 90°와 비교해요</h2>
+      <div style="display:flex;gap:8px;justify-content:center;align-items:flex-end;flex-wrap:wrap;margin:4px 0">
+        <div id="m-ruler" style="flex:1;max-width:190px"></div>
+        <div id="m-e1" style="flex:1;max-width:250px"></div>
+      </div>
+      <div class="concept-box">삼각자의 <strong>직각 부분</strong>을 대어 봐요.<br>직각보다 <strong>좁으면(예각) 90°보다 작게</strong>, <strong>넓으면(둔각) 90°보다 크게</strong> 어림해요.</div>
+    </div>
+
+    <!-- 슬 5 전개: 45°는 직각의 절반 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 어림 전략 ②</div>
+      <h2 class="slide-title">45°는 직각의 절반이에요</h2>
+      <div class="pvc-stage">
+        <div id="m-e2"></div>
+        <div class="concept-box">직각을 <strong>똑같이 둘로 나누면</strong> 45°예요.<br><strong>90 ÷ 2 = 45</strong> — 이 45°가 두 번째 기준이 돼요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 6 전개: 45° 기준 세분 어림 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 어림 전략 ③</div>
+      <h2 class="slide-title">기준을 촘촘히 세우면 더 정확해요</h2>
+      <div class="pvc-stage">
+        <div id="m-e3"></div>
+        <div class="concept-box">45°·90°·135° 기준선 위에 각을 얹어 봐요.<br>이 각은 45°보다 크고 90°보다 작으니 <strong>약 60°</strong>쯤으로 어림할 수 있어요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 7 전개: 어림 → 재어 확인 -->
+    <div class="slide" data-stage="전개">
+      <div class="stage-badge">전개 · 확인</div>
+      <h2 class="slide-title">어림했으면 재어서 확인해요</h2>
+      <div class="pvc-stage">
+        <div id="m-e4"></div>
+        <div class="concept-box">어림값은 <strong>약</strong>을 붙여 말해요(약 60°).<br>각도기로 재니 <strong>65°</strong> — 어림값과 잰 값이 가까울수록 좋은 어림이에요.</div>
+      </div>
+    </div>
+
+    <!-- 슬 8 기본 q8 (10점) -->
+    <div class="slide" data-stage="기본문제" data-q-id="q8" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 각은 <strong>둔각</strong>이에요. 어떻게 어림해야 할까요?</div>
+        <div class="pvc-stage"><div id="m-q8"></div></div>
+        <div class="mcq-opts" id="q8-opts">
+          <button class="mcq-opt" data-correct="1">90°보다 크게 어림해요</button>
+          <button class="mcq-opt" data-correct="0">90°보다 작게 어림해요</button>
+          <button class="mcq-opt" data-correct="0">꼭 90°로 어림해요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["둔각은 직각보다 큰 각이에요.","그러니 어림값도 90°보다 커야 해요."]'></div>
+        <div class="q-fb" id="q8-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 9 기본 q9 (10점) 45 = 90/2 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q9" data-q-points="10" data-answer="45">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">직각을 <strong>똑같이 둘로 나눈</strong> 각은 몇 도일까요?</div>
+        <div class="q-display" id="q9-display">?</div>
+        <div class="q-pad" id="q9-pad"></div>
+        <div class="mcq-hint" data-hints='["직각의 크기는 90°예요.","90 ÷ 2 를 계산해 보세요."]'></div>
+        <div class="q-fb" id="q9-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 10 기본 q10 (10점) 어림값 고르기 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q10" data-q-points="10">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">이 각의 크기를 <strong>어림</strong>하면 얼마쯤일까요?</div>
+        <div class="pvc-stage"><div id="m-q10"></div></div>
+        <div class="mcq-opts" id="q10-opts">
+          <button class="mcq-opt" data-correct="0">약 10°</button>
+          <button class="mcq-opt" data-correct="1">약 30°</button>
+          <button class="mcq-opt" data-correct="0">약 80°</button>
+          <button class="mcq-opt" data-correct="0">약 150°</button>
+        </div>
+        <div class="mcq-hint" data-hints='["45° 기준선(점선)보다 좁아요.","45°의 절반에 가까우니 약 30°쯤이에요."]'></div>
+        <div class="q-fb" id="q10-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 11 기본 q11 (10점) 각도기로 재어 확인 -->
+    <div class="slide" data-stage="기본문제" data-q-id="q11" data-q-points="10" data-answer="70">
+      <div class="stage-badge">기본문제 · 10점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어림한 뒤 <strong>각도기로 재어</strong> 확인해요. 몇 도일까요?</div>
+        <div class="pvc-stage"><div id="m-q11"></div></div>
+        <div class="q-display" id="q11-display">?</div>
+        <div class="q-pad" id="q11-pad"></div>
+        <div class="mcq-hint" data-hints='["밑금이 0°인 쪽 눈금을 따라 읽어요.","0에서 시작해 세면 70°예요."]'></div>
+        <div class="q-fb" id="q11-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 12 응용 q12 (15점) 둔각 어림 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q12" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">기준선을 보고 이 각을 <strong>어림</strong>해 보세요.</div>
+        <div class="pvc-stage"><div id="m-q12"></div></div>
+        <div class="mcq-opts" id="q12-opts">
+          <button class="mcq-opt" data-correct="0">약 60°</button>
+          <button class="mcq-opt" data-correct="0">약 90°</button>
+          <button class="mcq-opt" data-correct="1">약 120°</button>
+          <button class="mcq-opt" data-correct="0">약 175°</button>
+        </div>
+        <div class="mcq-hint" data-hints='["90°보다 크고 135°보다 작아요.","그 사이 한가운데쯤이면 약 120°예요."]'></div>
+        <div class="q-fb" id="q12-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 13 응용 q13 (15점) 어림값-잰값 차이 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q13" data-q-points="15" data-answer="5">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">약 <strong>120°</strong>로 어림했는데 재어 보니 <strong>115°</strong>였어요.<br>어림값과 잰 값의 <strong>차이</strong>는 몇 도일까요?</div>
+        <div class="pvc-stage"><div id="m-q13"></div></div>
+        <div class="q-display" id="q13-display">?</div>
+        <div class="q-pad" id="q13-pad"></div>
+        <div class="mcq-hint" data-hints='["큰 수에서 작은 수를 빼요.","120 − 115 = 5"]'></div>
+        <div class="q-fb" id="q13-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 14 응용 q14 (15점) 어림 전략 판단 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q14" data-q-points="15">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">각도를 <strong>잘 어림하는 방법</strong>은 무엇일까요?</div>
+        <div class="mcq-opts" id="q14-opts">
+          <button class="mcq-opt" data-correct="0">아무 수나 마음대로 말해요</button>
+          <button class="mcq-opt" data-correct="1">90°·45° 같은 기준과 비교해요</button>
+          <button class="mcq-opt" data-correct="0">변이 길수록 큰 각이라고 해요</button>
+          <button class="mcq-opt" data-correct="0">항상 90°라고 말해요</button>
+        </div>
+        <div class="mcq-hint" data-hints='["어림에는 기준이 필요해요.","기준(90°·45°)과 비교할수록 잰 값에 가까워져요."]'></div>
+        <div class="q-fb" id="q14-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 15 응용 q15 (15점) 어림 → 각도기 확인 마무리 -->
+    <div class="slide" data-stage="응용문제" data-q-id="q15" data-q-points="15" data-answer="135">
+      <div class="stage-badge">응용문제 · 15점</div>
+      <div class="q-stage">
+        <div class="q-prompt">어림한 뒤 <strong>각도기로 재어</strong> 확인해요. 몇 도일까요?</div>
+        <div class="pvc-stage"><div id="m-q15"></div></div>
+        <div class="q-display" id="q15-display">?</div>
+        <div class="q-pad" id="q15-pad"></div>
+        <div class="mcq-hint" data-hints='["90°보다 크니 둔각이에요. 135° 근처를 살펴봐요.","0에서 시작하는 눈금을 따라 읽으면 135°예요."]'></div>
+        <div class="q-fb" id="q15-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 16 정리 + 점수 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 배운 것</h2>
+      <div class="summary-stage">
+        <div class="summary-card"><strong>90°</strong>와 <strong>45°</strong>를 기준으로 비교하면 각도를 잘 어림할 수 있어요.<br>어림값에는 <strong>약</strong>을 붙이고, 마지막엔 <strong>각도기로 재어 확인</strong>해요.</div>
+        <div class="wrap-msg" id="wrap-msg"></div>
+      </div>
+    </div>
+
+    <!-- 슬 17 자기 평가 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">오늘 학습은 어땠나요?</h2>
+      <div class="self-stage">
+        <div class="self-row">
+          <button class="self-btn"><div class="self-btn-stars">★</div><div class="self-btn-name">조금 어려웠어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★</div><div class="self-btn-name">잘 했어요</div></button>
+          <button class="self-btn"><div class="self-btn-stars">★★★</div><div class="self-btn-name">아주 잘 했어요</div></button>
+        </div>
+        <div class="q-fb" id="self-fb"></div>
+      </div>
+    </div>
+
+    <!-- 슬 18 다음 차시 -->
+    <div class="slide" data-stage="정리">
+      <div class="stage-badge">정리</div>
+      <h2 class="slide-title">다음 차시</h2>
+      <div class="next-stage">
+        <div class="next-card">
+          <div class="next-emojis">➕➖</div>
+          <div class="next-label"><strong>각도의 합과 차</strong>는 얼마일까요</div>
+        </div>
+        <div class="home-prompt">집에서 시계 바늘이 만든 각을 어림해 보세요!</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="ka-f">
+    <button class="ka-prev" id="prev" onclick="goPrev()">← 이전</button>
+    <button class="ka-hint" id="hint" onclick="showHint()">💡 힌트</button>
+    <button class="ka-next hl" id="next" onclick="goNext()">다음 →</button>
+  </div>
+</div>
+<script>
+const TOTAL = 18;
+const LESSON_ID = 'g4_math_u2_l05';
+const STORAGE_KEY = 'kedu_progress_' + LESSON_ID;
+const startedAt = Date.now();
+
+let cur = 0;
+let score = 0;
+let muted = false;
+const qState = {};
+
+function getQState(qid) {
+  if (!qState[qid]) qState[qid] = { solved: false, attempts: 0, wrongCount: 0, hintLevel: 0 };
+  return qState[qid];
+}
+function currentSlide() { return document.querySelectorAll('.slide')[cur]; }
+function currentQId() { const s = currentSlide(); return s ? s.dataset.qId : null; }
+
+function updateUI() {
+  document.querySelectorAll('.slide').forEach((s, i) => s.classList.toggle('active', i === cur));
+  document.querySelectorAll('#dots .ka-dot').forEach((d, i) => { d.classList.toggle('active', i === cur); d.classList.toggle('done', i < cur); });
+  document.getElementById('prev').disabled = cur === 0;
+
+  const qid = currentQId();
+  const hintBtn = document.getElementById('hint');
+  if (qid) { const st = getQState(qid); hintBtn.disabled = st.solved || st.hintLevel >= 2; }
+  else { hintBtn.disabled = true; }
+
+  if (cur === TOTAL - 1) { document.getElementById('next').textContent = '마치기 →'; saveProgress(true); }
+  else { document.getElementById('next').textContent = '다음 →'; }
+
+  if (cur === 15) { document.getElementById('wrap-msg').textContent = wrapMsg(score); }
+}
+
+function saveProgress(done) {
+  const data = { cur, score, done, startedAt, finishedAt: done ? Date.now() : null, qState };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function wrapMsg(s) {
+  if (s >= 100) return '완벽해요!';
+  if (s >= 80) return '정말 잘했어요!';
+  if (s >= 60) return '잘했어요!';
+  return '다시 해도 좋아요!';
+}
+function goNext() { if (cur < TOTAL - 1) { cur++; saveProgress(false); updateUI(); } }
+function goPrev() { if (cur > 0) { cur--; updateUI(); } }
+function goHub() { saveProgress(false); location.href = '../index.html'; }
+function toggleMute() { muted = !muted; document.getElementById('mute').textContent = muted ? '🔇' : '🔊'; }
+function addScore(n) { score += n; document.getElementById('score').textContent = '⭐ ' + score; }
+function showHint() {
+  const qid = currentQId(); if (!qid) return;
+  const st = getQState(qid); if (st.solved || st.hintLevel >= 2) return;
+  const slide = currentSlide();
+  const hintEl = slide.querySelector('.mcq-hint'); if (!hintEl) return;
+  const hints = JSON.parse(hintEl.dataset.hints || '[]');
+  st.hintLevel++;
+  hintEl.textContent = '💡 ' + hints[st.hintLevel - 1];
+  hintEl.classList.add('show');
+  document.getElementById('hint').disabled = st.hintLevel >= 2;
+}
+function pointsForQ(qid) {
+  const slide = document.querySelector(`[data-q-id="${qid}"]`);
+  const base = parseInt(slide.dataset.qPoints || '0', 10);
+  const st = getQState(qid);
+  if (st.hintLevel === 2) return Math.max(0, base - 5);
+  if (st.hintLevel === 1) return Math.max(0, base - 2);
+  return base;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 4-1 수학 2단원 「각도」 부품 라이브러리 v1
+//   - protractor(deg, opts): 반원 각도기 + 각 오버레이 (단원 시그니처)
+//   - angleFig(deg, opts):   각도기 없는 순수 각 (비교·분류·그리기용)
+//   좌표계: SVG (y 아래로 증가). 위치각 φ = 밑금 오른쪽 끝에서 반시계(위로).
+//   점(φ) = (cx + R·cosφ, cy − R·sinφ). φ=0 오른쪽, 90 위, 180 왼쪽.
+// ══════════════════════════════════════════════════════════════
+const INK='#243043', INKS='#62708A', TEAL='#1FA8A0', TEALD='#147F79',
+      EMPH='#F0451F', GOLD='#F6B526', LINE='#ECE3D6', ACUTE='#1FA8A0',
+      OBTUSE='#F0451F', RIGHTC='#7C6BF0', OK='#15803D';
+
+const P = (n)=>Math.round(n*100)/100;
+const pt = (cx,cy,R,phi)=>[ P(cx+R*Math.cos(phi*Math.PI/180)), P(cy-R*Math.sin(phi*Math.PI/180)) ];
+
+// ─── protractor ───────────────────────────────────────────────
+// opts: read(측정값 강조), baseSide('right'|'left'), label(꼭짓점 라벨),
+//       both(이중눈금 기본 true), title
+function protractor(deg, opts){
+  opts = opts || {};
+  const read = opts.read !== false;         // 기본: 측정 강조 O
+  const both = opts.both !== false;         // 기본: 이중 눈금 O
+  const baseSide = opts.baseSide || 'right';// 고정 0선의 위치
+  const warn = !!opts.warnBottom;           // 오개념(맨 아래서 재기) 교정 표시
+  const strip = 30;                          // 밑금 아래 투명 여백(실제 각도기 반영)
+  const W=460, H=warn?338:308, cx=230, cy=228, R=194, rInner=R*0.80;
+  const edgeY = cy+strip;                    // 각도기 맨 아래 끝(물리적 모서리)
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="prot" role="img" width="100%">`;
+
+  // 각도기 몸통 = 반원 + 밑금 아래 투명 스트립(맨 아래 끝까지)
+  s += `<path d="M ${P(cx-R)} ${edgeY} L ${P(cx-R)} ${cy} A ${R} ${R} 0 0 1 ${P(cx+R)} ${cy} L ${P(cx+R)} ${edgeY} Z" fill="rgba(31,168,160,.10)" stroke="${TEALD}" stroke-width="2.5"/>`;
+  s += `<path d="M ${P(cx-rInner)} ${cy} A ${rInner} ${rInner} 0 0 1 ${P(cx+rInner)} ${cy}" fill="none" stroke="${TEALD}" stroke-width="1.5" opacity=".55"/>`;
+
+  // 눈금 (1°단위 미세는 생략, 5°소·10°대)
+  for(let a=0;a<=180;a+=5){
+    const big = a%10===0;
+    const [x1,y1]=pt(cx,cy,R,a);
+    const [x2,y2]=pt(cx,cy, big?R-20:R-11, a);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${TEALD}" stroke-width="${big?1.8:1}" opacity="${big?.9:.5}"/>`;
+    if(big){
+      const [nx,ny]=pt(cx,cy,R-34,a);           // 바깥 눈금 = φ
+      s += `<text x="${nx}" y="${ny+5}" text-anchor="middle" font-size="14" font-family="Nunito,sans-serif" font-weight="800" fill="${INKS}">${a}</text>`;
+      if(both){                                  // 안쪽 눈금 = 180−φ
+        const [ix,iy]=pt(cx,cy,R-54,a);
+        s += `<text x="${ix}" y="${iy+5}" text-anchor="middle" font-size="12.5" font-family="Nunito,sans-serif" font-weight="800" fill="${TEAL}" opacity=".85">${180-a}</text>`;
+      }
+    }
+  }
+
+  // 맨 아래 끝(물리적 모서리) — 흐리게 (여기서 재면 안 됨)
+  s += `<line x1="${P(cx-R)}" y1="${edgeY}" x2="${P(cx+R)}" y2="${edgeY}" stroke="${INKS}" stroke-width="1.5" opacity=".45" stroke-dasharray="${warn?'0':'0'}"/>`;
+  // 밑금(0° 기준선) — 실제로 각을 재는 선 + 중심 노치
+  s += `<line x1="${P(cx-R-6)}" y1="${cy}" x2="${P(cx+R+6)}" y2="${cy}" stroke="${INK}" stroke-width="3"/>`;
+  s += `<line x1="${cx}" y1="${P(cy-8)}" x2="${cx}" y2="${P(cy+8)}" stroke="${INK}" stroke-width="2.5"/>`;
+
+  // 각 오버레이: 고정변(밑금) + 측정변(deg)  [tool 모드면 생략]
+  const fixedPhi = baseSide==='right' ? 0 : 180;
+  const openPhi  = baseSide==='right' ? deg : 180-deg;
+  if(!opts.tool){
+  const armR = R+2;
+  const [fx,fy]=pt(cx,cy,armR,fixedPhi);
+  const [ox,oy]=pt(cx,cy,armR,openPhi);
+  s += `<line x1="${cx}" y1="${cy}" x2="${fx}" y2="${fy}" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+  s += `<line x1="${cx}" y1="${cy}" x2="${ox}" y2="${oy}" stroke="${EMPH}" stroke-width="3.5" stroke-linecap="round"/>`;
+
+  // 측정 강조: 벌어진 호 + 읽는 눈금 강조 + 값
+  if(read){
+    const a0=Math.min(fixedPhi,openPhi), a1=Math.max(fixedPhi,openPhi);
+    const arcR=44, [ax,ay]=pt(cx,cy,arcR,a0), [bx,by]=pt(cx,cy,arcR,a1);
+    const large = (a1-a0)>180?1:0;
+    s += `<path d="M ${ax} ${ay} A ${arcR} ${arcR} 0 ${large} 0 ${bx} ${by}" fill="none" stroke="${EMPH}" stroke-width="2.5"/>`;
+    const [tx,ty]=pt(cx,cy,arcR+26,(a0+a1)/2);
+    s += `<text x="${tx}" y="${ty+6}" text-anchor="middle" font-size="20" font-family="Nunito,sans-serif" font-weight="800" fill="${EMPH}">${deg}°</text>`;
+    const [mx,my]=pt(cx,cy,R-34,openPhi);
+    s += `<circle cx="${mx}" cy="${my}" r="15" fill="none" stroke="${EMPH}" stroke-width="2"/>`;
+  }
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="${INK}"/>`;
+
+  // 오개념 교정: 밑금(O)에서 재요 vs 맨 아래 끝(X)에서 재면 안 돼요
+  if(warn){
+    const lx2=cx-118;
+    // O 밑금 기준선
+    s += `<circle cx="${lx2}" cy="${cy}" r="10" fill="none" stroke="${OK}" stroke-width="2.5"/>`;
+    s += `<line x1="${lx2}" y1="${cy}" x2="${P(lx2+58)}" y2="${cy}" stroke="${OK}" stroke-width="0.5" stroke-dasharray="3 3"/>`;
+    s += `<text x="${lx2}" y="${P(cy-16)}" text-anchor="middle" font-size="14.5" font-family="Gowun Dodum,sans-serif" fill="${OK}">밑금(0°선)에 맞춰요</text>`;
+    // X 맨 아래 끝
+    s += `<line x1="${P(lx2-7)}" y1="${P(edgeY-7)}" x2="${P(lx2+7)}" y2="${P(edgeY+7)}" stroke="${EMPH}" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<line x1="${P(lx2+7)}" y1="${P(edgeY-7)}" x2="${P(lx2-7)}" y2="${P(edgeY+7)}" stroke="${EMPH}" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<line x1="${lx2}" y1="${edgeY}" x2="${P(lx2+58)}" y2="${edgeY}" stroke="${EMPH}" stroke-width="0.5" stroke-dasharray="3 3"/>`;
+    s += `<text x="${lx2}" y="${P(edgeY+24)}" text-anchor="middle" font-size="14.5" font-family="Gowun Dodum,sans-serif" fill="${EMPH}">맨 아래 끝은 아니에요</text>`;
+  }
+  if(opts.label){ s += `<text x="${cx}" y="${H-9}" text-anchor="middle" font-size="15" font-family="Gowun Dodum,sans-serif" fill="${INKS}">${opts.label}</text>`; }
+  s += `</svg>`;
+  return s;
+}
+
+// ─── angleFig : 각도기 없는 순수 각 ───────────────────────────
+// opts: showArc, showDeg(값 표시), type(색: 'acute'|'right'|'obtuse'|auto),
+//       rot(전체 회전°, 방향 무관 시연용), label
+function angleFig(deg, opts){
+  opts = opts || {};
+  const W=300, H=210, cx=150, cy=182, armR=140;  // 꼭짓점 중앙 → 0~180° 전부 프레임 내
+  const rot = opts.rot||0;                    // 밑변 방향(수평 기준 회전)
+  const p1 = rot, p2 = rot+deg;
+  const [ax,ay]=pt(cx,cy,armR,p1), [bx,by]=pt(cx,cy,armR,p2);
+  let col = INK;
+  if(opts.type){
+    const t = opts.type==='auto' ? (deg<90?'acute':deg>90?'obtuse':'right') : opts.type;
+    col = t==='acute'?ACUTE : t==='obtuse'?OBTUSE : t==='right'?RIGHTC : INK;
+  }
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="angfig" role="img" width="100%">`;
+  // 기준선(연한 점선): refRight=직각 1개 / refs=[45,90,135...] 다중 어림 기준선
+  let refList = [];
+  if(opts.refRight) refList.push({d:90, t:'직각'});
+  if(opts.refs) opts.refs.forEach(d=>{
+    refList.push({d:d, t:(d===90?'90°':d+'°')});
+  });
+  refList.forEach(r=>{
+    const [rrx,rry]=pt(cx,cy,armR,rot+r.d);
+    const isR = r.d===90;
+    s += `<line x1="${cx}" y1="${cy}" x2="${rrx}" y2="${rry}" stroke="${isR?RIGHTC:INKS}" stroke-width="1.5" stroke-dasharray="5 5" opacity="${isR?.7:.5}"/>`;
+    const ax2 = r.d>100 ? P(rrx-6) : P(rrx+4), an = r.d>100 ? 'end' : 'start';
+    s += `<text x="${ax2}" y="${P(rry+4)}" text-anchor="${an}" font-size="12" font-family="Gowun Dodum,sans-serif" fill="${isR?RIGHTC:INKS}">${r.t}</text>`;
+  });
+  if(opts.showArc!==false){
+    const arcR=40, [ex,ey]=pt(cx,cy,arcR,p1), [gx,gy]=pt(cx,cy,arcR,p2);
+    if(Math.abs(deg-90)<0.5){                  // 직각 표시(ㄱ)
+      const [c1x,c1y]=pt(cx,cy,26,p1),[c2x,c2y]=pt(cx,cy,26*Math.SQRT2,p1+45),[c3x,c3y]=pt(cx,cy,26,p2);
+      s += `<path d="M ${c1x} ${c1y} L ${c2x} ${c2y} L ${c3x} ${c3y}" fill="none" stroke="${col}" stroke-width="2"/>`;
+    } else {
+      const large=deg>180?1:0;
+      s += `<path d="M ${ex} ${ey} A ${arcR} ${arcR} 0 ${large} 0 ${gx} ${gy}" fill="none" stroke="${col}" stroke-width="2.5"/>`;
+    }
+  }
+  s += `<line x1="${cx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+  s += `<line x1="${cx}" y1="${cy}" x2="${bx}" y2="${by}" stroke="${INK}" stroke-width="3.5" stroke-linecap="round"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="5" fill="${INK}"/>`;
+  if(opts.showDeg){
+    const [tx,ty]=pt(cx,cy,66,(p1+p2)/2);
+    s += `<text x="${tx}" y="${ty+6}" text-anchor="middle" font-size="19" font-family="Nunito,sans-serif" font-weight="800" fill="${col}">${deg}°</text>`;
+  }
+  if(opts.label){ s += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="15" font-family="Gowun Dodum,sans-serif" fill="${col}">${opts.label}</text>`; }
+  s += `</svg>`;
+  return s;
+}
+
+
+// ─── estimateBar : 어림한 각도 ↔ 각도기로 잰 각도 비교 (0~180 눈금 막대) ───
+// estimateBar(guess, real, opts{unit:'°', guessLabel, realLabel, showDiff})
+function estimateBar(guess, real, opts){
+  opts = opts || {};
+  const W=440, H=132, x0=40, x1=400, y=78, span=x1-x0;
+  const X = d => P(x0 + span*(d/180));
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="estbar" role="img" width="100%">`;
+  s += `<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${LINE}" stroke-width="9" stroke-linecap="round"/>`;
+  [0,45,90,135,180].forEach(d=>{
+    s += `<line x1="${X(d)}" y1="${y-9}" x2="${X(d)}" y2="${y+9}" stroke="${INKS}" stroke-width="1.6" opacity=".6"/>`;
+    s += `<text x="${X(d)}" y="${y+26}" text-anchor="middle" font-size="11.5" font-family="Nunito,sans-serif" font-weight="800" fill="${INKS}">${d}</text>`;
+  });
+  // 잰 각도(정답) — 아래쪽 teal 마커
+  s += `<path d="M ${X(real)} ${y+2} l -7 12 l 14 0 Z" fill="${TEALD}"/>`;
+  s += `<text x="${X(real)}" y="${y+44}" text-anchor="middle" font-size="13" font-family="Jua,sans-serif" fill="${TEALD}">${opts.realLabel||('잰 각도 '+real+'°')}</text>`;
+  // 어림 각도 — 위쪽 gold 마커
+  s += `<path d="M ${X(guess)} ${y-2} l -7 -12 l 14 0 Z" fill="${GOLD}"/>`;
+  s += `<text x="${X(guess)}" y="${y-20}" text-anchor="middle" font-size="13" font-family="Jua,sans-serif" fill="#B07A00">${opts.guessLabel||('어림 약 '+guess+'°')}</text>`;
+  if(opts.showDiff!==false){
+    const d = Math.abs(real-guess);
+    s += `<text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="13.5" font-family="Gowun Dodum,sans-serif" fill="${INK}">차이 <tspan font-family="Nunito,sans-serif" font-weight="800" fill="${EMPH}">${d}°</tspan></text>`;
+  }
+  s += `</svg>`;
+  return s;
+}
+
+// ─── triRuler : 삼각자 (a=45·45·90 / b=30·60·90) — 어림 기준 도구, 09차 재사용 ───
+function triRuler(kind, opts){
+  opts = opts || {};
+  const W=230, H=176;
+  const hl = opts.hl;                       // 강조할 각(도) — 예: 90, 45, 30, 60
+  const A45 = [[26,150],[204,150],[26,26]];             // 직각 = (26,150)
+  const A30 = [[26,150],[204,150],[26,44]];             // 직각 = (26,150), 30·60
+  const P3 = kind==='b' ? A30 : A45;
+  const angs = kind==='b' ? [{v:90,at:0},{v:30,at:1},{v:60,at:2}]
+                          : [{v:90,at:0},{v:45,at:1},{v:45,at:2}];
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="triruler" role="img" width="100%">`;
+  s += `<polygon points="${P3.map(p=>p.join(',')).join(' ')}" fill="rgba(31,168,160,.10)" stroke="${TEALD}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  // 직각 기호
+  s += `<path d="M 26 132 L 44 132 L 44 150" fill="none" stroke="${RIGHTC}" stroke-width="2"/>`;
+  angs.forEach(a=>{
+    const [px,py] = P3[a.at];
+    const on = hl===a.v;
+    // 라벨을 삼각형 안쪽으로 밀기
+    const cxm = (P3[0][0]+P3[1][0]+P3[2][0])/3, cym = (P3[0][1]+P3[1][1]+P3[2][1])/3;
+    const lx = P(px + (cxm-px)*0.30), ly = P(py + (cym-py)*0.30);
+    s += `<text x="${lx}" y="${ly+5}" text-anchor="middle" font-size="${on?17:14}" font-family="Nunito,sans-serif" font-weight="800" fill="${on?EMPH:INKS}">${a.v}°</text>`;
+  });
+  if(opts.label) s += `<text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="14" font-family="Gowun Dodum,sans-serif" fill="${TEALD}">${opts.label}</text>`;
+  s += `</svg>`;
+  return s;
+}
+
+
+(function renderModels(){
+  const $=id=>document.getElementById(id);
+  $('m-r1').innerHTML = angleFig(40,{type:'acute',label:'예각'});
+  $('m-r2').innerHTML = angleFig(90,{type:'right',label:'직각 90°'});
+  $('m-r3').innerHTML = angleFig(135,{type:'obtuse',label:'둔각'});
+  $('m-ruler').innerHTML = triRuler('a',{hl:90,label:'삼각자의 직각'});
+  $('m-e1').innerHTML = angleFig(115,{type:'obtuse',refRight:true,label:'직각보다 넓다 → 90°보다 크게'});
+  $('m-e2').innerHTML = angleFig(45,{type:'acute',showDeg:true,refs:[90],label:'45° = 직각의 절반'});
+  $('m-e3').innerHTML = angleFig(60,{refs:[45,90,135],label:'45°와 90° 사이 → 약 60°'});
+  $('m-e4').innerHTML = estimateBar(60,65);
+  $('m-q8').innerHTML  = angleFig(130,{refRight:true});
+  $('m-q10').innerHTML = angleFig(30,{refs:[45,90]});
+  $('m-q11').innerHTML = protractor(70);
+  $('m-q12').innerHTML = angleFig(120,{refs:[45,90,135]});
+  $('m-q13').innerHTML = estimateBar(120,115,{showDiff:false});
+  $('m-q15').innerHTML = protractor(135);
+})();
+
+function setupPad(qid, correct, padId, displayId, fbId, doneMsg, maxLen) {
+  maxLen = maxLen || 6;
+  const pad = document.getElementById(padId);
+  const display = document.getElementById(displayId);
+  const fb = document.getElementById(fbId);
+  let buf = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.className = 'q-key'; b.textContent = k;
+    b.addEventListener('click', () => {
+      const st = getQState(qid); if (st.solved) return;
+      if (buf.length < maxLen) { buf += k; display.textContent = buf; }
+    });
+    pad.appendChild(b);
+  });
+  const del = document.createElement('button');
+  del.className = 'q-key fn'; del.textContent = '지움';
+  del.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    buf = buf.slice(0, -1); display.textContent = buf || '?';
+  });
+  pad.appendChild(del);
+  const ok = document.createElement('button');
+  ok.className = 'q-key fn'; ok.textContent = '확인'; ok.style.gridColumn = 'span 4';
+  ok.addEventListener('click', () => {
+    const st = getQState(qid); if (st.solved) return;
+    st.attempts++;
+    if (parseInt(buf, 10) === correct) {
+      st.solved = true;
+      const earn = pointsForQ(qid); addScore(earn);
+      fb.classList.remove('wrong');
+      fb.textContent = (doneMsg || '정답이에요!') + ' +' + earn + '점';
+      updateUI();
+    } else {
+      st.wrongCount++;
+      fb.classList.add('wrong'); fb.textContent = '다시 한번 생각해 볼까요?';
+    }
+  });
+  pad.appendChild(ok);
+}
+
+function setupMcq(qid, doneMsg){
+  document.querySelectorAll('#'+qid+'-opts .mcq-opt').forEach(o=>{
+    o.addEventListener('click', ()=>{
+      const st=getQState(qid); if(st.solved) return;
+      st.attempts++;
+      const fb=document.getElementById(qid+'-fb');
+      if(o.dataset.correct==='1'){
+        st.solved=true; o.classList.add('correct');
+        const earn=pointsForQ(qid); addScore(earn);
+        fb.classList.remove('wrong'); fb.textContent=(doneMsg||'정답이에요!')+' +'+earn+'점';
+        updateUI();
+      } else {
+        st.wrongCount++; o.classList.add('wrong');
+        fb.classList.add('wrong'); fb.textContent='다시 골라 보세요';
+        setTimeout(()=>o.classList.remove('wrong'),500);
+      }
+    });
+  });
+}
+
+setupMcq('q8','맞아요! 둔각이니 90°보다 크게 어림해요');
+setupPad('q9', 45, 'q9-pad','q9-display','q9-fb','맞아요! 90 ÷ 2 = 45°', 3);
+setupMcq('q10','맞아요! 45°보다 좁으니 약 30°예요');
+setupPad('q11', 70, 'q11-pad','q11-display','q11-fb','맞아요! 각도기로 재니 70°예요', 3);
+setupMcq('q12','맞아요! 90°와 135° 사이라 약 120°예요');
+setupPad('q13', 5, 'q13-pad','q13-display','q13-fb','맞아요! 120 − 115 = 5°', 3);
+setupMcq('q14','맞아요! 기준과 비교하는 것이 좋은 어림 전략이에요');
+setupPad('q15', 135, 'q15-pad','q15-display','q15-fb','맞아요! 135°예요', 3);
+
+
+// ───── 슬17 자기 평가 ─────
+document.querySelectorAll('.self-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.self-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('self-fb').textContent = '응답이 기록됐어요. 다음 차시에서 만나요!';
+  });
+});
+
+// ───── 진도 복원 ─────
+(function restore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.cur != null) cur = Math.min(data.cur, TOTAL - 1);
+    if (data.score != null) score = data.score;
+    document.getElementById('score').textContent = '⭐ ' + score;
+  } catch(e) {}
+})();
+
+(function buildDots(){ const w=document.getElementById('dots'); for(let i=0;i<TOTAL;i++){ const d=document.createElement('div'); d.className='ka-dot'; d.onclick=()=>{ cur=i; saveProgress(false); updateUI(); }; w.appendChild(d); } })();
+
+updateUI();
+</script>
+
+<!-- 회수 (생태계 §2 모이다) — 차시 로직 무손상, 브리지가 완료를 낚아챈다 -->
+<script src="/kedu_config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/kedu_tracker.js"></script>
+<script src="/kedu_collect.js"></script>
+<script src="/kedu_kbox_adapter.js"></script>
+<script src="/kedu_lesson_bridge.js"></script>
+</body>
+</html>
