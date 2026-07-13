@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>케이랩 · 십 배열판 — 스튜디오</title>
+<!--
+  케이랩 v3 · B트랙 양산 1호 — 십 배열판 (2026-07-13) · 황금 샘플 clock.html 셸 기반
+  v2(tenframe v4 · engine/tools/tenframe.js 267줄) 콘텐츠 무손실 이식:
+    학년칸(저=한 판·보수 유령점·퀴즈숨김 / 중=두 판·가르기 / 고=config 우선·toTen 퀴즈)
+    미션 3~4(가르기·13=10과3) · 퀴즈 2종(count/toTen) · 와우A(빈 칸 직접 탭 채우기 +
+    10 완성→한 묶음이 십의 자리 선반으로 톡 올라감 = 받아올림 마법, pop+whoosh)
+  v3 질감: 다크 스튜디오 + 원목 매트, 유리 트레이 십틀, 유리알 점(파랑/주황), 보라 유리 10칩.
+  v3 신설 — 와우B(🔮 예측 카드 → 9에서 하나 더 → 받아올림 목격 → 결과 카드, 반복 가능).
+  v2 라이브 버그 2건 수정:
+    ① bundleFx가 다음 render에서 자동 해제되지 않아, 10을 채운 뒤 점을 탭하면
+       받아올림 연출·플래시가 다시 발동 → render 진입 시 스냅샷 후 즉시 해제(1회성 계약).
+    ② count 퀴즈 num이 max를 넘을 수 있음(3+rand*min(max,17) — frames=1이면 최대 12>10)
+       → 화면에 그려지지 않는 점을 세라고 하는 정답 불가 문항 → max로 클램프.
+  config: ?grade= & mode= & num= & frames= & max=
+-->
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum:wght@400&display=swap" rel="stylesheet">
+<style id="kedu-title-font">
+@font-face{font-family:'Hakgyoansim Moheomga';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2402_keris@main/TTHakgyoansimMoheomgaB.woff2') format('woff2');font-display:swap}
+:root{--kedu-title:'Hakgyoansim Moheomga','Gowun Dodum',sans-serif}
+</style>
+<link rel="stylesheet" href="/kedu/teacher/engine3/klab3-ui.css">
+<style>
+  /* ── 페이지 골격 (황금 샘플 clock 셸) ── */
+  #root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+    background:var(--studio);overflow:hidden}
+  #root::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 8%, transparent 55%, rgba(0,0,0,.4) 100%)}
+  .hudrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;
+    margin-top:52px;z-index:21}
+  .barslot{min-height:8px;z-index:21;width:min(720px,94vw);margin-top:8px}
+  .stagewrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;
+    min-height:0;z-index:2;padding:6px 0}
+  .ctrlslot{z-index:21;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+    padding:2px 10px;max-width:96vw}
+  .statusrow{z-index:21;text-align:center;padding:6px 12px 14px}
+  .seg{display:flex;gap:4px;background:var(--hud);backdrop-filter:blur(8px);
+    border:1px solid var(--hudline);border-radius:999px;padding:4px}
+  .seg button{font-family:'Gowun Dodum';font-size:13.5px;color:#c6d4e2;background:transparent;
+    border:none;border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .15s}
+  .seg button.on{background:rgba(91,155,240,.28);color:#fff;
+    box-shadow:0 0 0 1.5px rgba(91,155,240,.55), 0 0 18px -4px #5B9BF0}
+  .sndbtn{background:var(--hud);border:1px solid var(--hudline);border-radius:999px;
+    color:#c6d4e2;font-size:15px;padding:7px 12px;cursor:pointer}
+  .sndbtn.off{opacity:.45}
+  .k3bar{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);
+    border-radius:16px;padding:11px 16px;color:#e6eef7;font-size:15px;line-height:1.6;
+    display:flex;align-items:center;gap:12px}
+  .k3bar .prog{margin-left:auto;flex:0 0 auto;font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .k3bar b{color:#BCA7FF}
+  .k3bar b.or{color:#FFB27A} .k3bar b.gr{color:#3EE6B0}
+  .k3bar.done{border-color:rgba(18,184,134,.5);box-shadow:0 0 24px -8px #12B886}
+  .desk{position:relative;border-radius:30px;padding:min(3vh,22px) min(3.4vw,28px);
+    background:
+      radial-gradient(90% 70% at 50% 26%, rgba(255,240,214,.10), transparent 62%),
+      repeating-linear-gradient(94deg, rgba(46,28,12,.16) 0 2px, transparent 2px 9px),
+      linear-gradient(150deg,#8a5a34 0%,#77492a 52%,#63391f 100%);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.14),
+               inset -3px -5px 14px rgba(0,0,0,.38),
+               0 26px 60px -18px rgba(0,0,0,.75);
+    border:1px solid rgba(255,255,255,.07)}
+  .desk::before{content:'';position:absolute;inset:0;border-radius:30px;pointer-events:none;
+    background-image:var(--noise, none);opacity:.5;mix-blend-mode:overlay}
+  .ck-btn{font-family:'Gowun Dodum';font-size:16.5px;font-weight:700;color:#fff;border:none;
+    border-radius:14px;padding:12px 18px;cursor:pointer;position:relative;line-height:1;
+    background:linear-gradient(145deg, var(--c1), var(--c2));
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s, box-shadow .1s}
+  .ck-btn:active{transform:translateY(3px);
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.3),
+               inset -2px -3px 6px rgba(0,0,0,.25),
+               0 2px 6px rgba(0,0,0,.4)}
+  .ck-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .ck-btn.minus{background:linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+    color:var(--c1);border:1.5px solid var(--c1)}
+  .ck-btn.ghost{background:linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    color:#9fb2c6;border:1.5px solid rgba(255,255,255,.22);font-size:18px;padding:12px 14px}
+  .ck-btn.wow{background:linear-gradient(145deg,#8a67ee,#6d43d8);font-size:15px}
+  .ck-choice{font-family:'Gowun Dodum';font-size:17px;font-weight:700;color:var(--card-ink);
+    background:linear-gradient(160deg,#ffffff,#eef2f7);border:2px solid #d5dee9;border-radius:14px;
+    padding:13px 22px;cursor:pointer;min-width:76px;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.9), 0 6px 14px rgba(0,0,0,.4);
+    transition:transform .1s}
+  .ck-choice:active{transform:translateY(2px)}
+  .timeread{font-family:var(--kedu-title);font-size:min(5.6vh,38px);color:#EAF2FB;
+    text-shadow:0 0 22px rgba(91,155,240,.45), 0 2px 8px rgba(0,0,0,.5)}
+  .timeread .b{color:#7FB2F5} .timeread .o{color:#FFA75E} .timeread .u{font-size:.62em;color:#c9d6e4}
+  .hint{font-size:13.5px;color:var(--mut);margin-top:4px;line-height:1.6}
+  .hint b{color:#cfe0f2} .hint .go{color:#3EE6B0} .hint .grabline{color:#FFB27A}
+
+  /* ── 십 배열판 도구 전용 ── */
+  .tf-dot{cursor:pointer;transition:transform .18s cubic-bezier(.2,1.4,.4,1);
+    transform-origin:center;transform-box:fill-box}
+  .tf-dot:hover{transform:scale(1.1)}
+  .tf-cell.tf-fillable{cursor:pointer}
+  .tf-cell.tf-fillable:hover{fill:rgba(155,123,245,0.18)}
+  @keyframes tfRise{0%{transform:translateY(84px) scale(.55);opacity:0}55%{opacity:1}
+    100%{transform:translateY(0) scale(1);opacity:1}}
+  .tf-rise{animation:tfRise .6s cubic-bezier(.2,1.5,.35,1) both;transform-origin:center;transform-box:fill-box}
+  @keyframes tfFlash{0%{opacity:0;transform:translateY(8px)}18%{opacity:1;transform:translateY(0)}
+    78%{opacity:1}100%{opacity:0}}
+  .tf-flash{animation:tfFlash 1.5s ease both}
+</style>
+</head>
+<body class="k3">
+<div id="root">
+  <div class="k3-topbar">
+    <span class="title" style="font-family:var(--kedu-title)">🔟 케이랩 · 십 배열판</span>
+    <span class="badge">STUDIO</span>
+  </div>
+  <div class="hudrow">
+    <div class="seg" id="gradeSeg"></div>
+    <div class="seg" id="modeSeg"></div>
+    <button class="sndbtn" id="sndBtn" title="효과음">🔊</button>
+  </div>
+  <div class="barslot" id="barSlot"></div>
+  <div class="stagewrap"><div class="desk" id="desk"></div></div>
+  <div class="ctrlslot" id="ctrlSlot"></div>
+  <div class="statusrow" id="statusRow"></div>
+</div>
+
+<script src="/kedu/teacher/engine3/klab3-2d.js"></script>
+
+<!-- ═══ 순수 로직 (node/jsdom 테스트 대상 · DOM 무의존) ═══ -->
+<script>
+(function(){
+  'use strict';
+  var GRADES={
+    low:  { modes:['free','mission'],        frames:1,    cap:10,   ghost:true,  toTenQuiz:false },
+    mid:  { modes:['free','mission','quiz'], frames:2,    cap:20,   ghost:false, toTenQuiz:true  },
+    high: { modes:['free','mission','quiz'], frames:null, cap:null, ghost:false, toTenQuiz:true  }
+  };
+  var GRADE_LABEL={ low:'저학년', mid:'중학년', high:'고학년' };
+  var MODE_LABEL={ free:'자유탐구', mission:'미션', quiz:'퀴즈' };
+
+  function framesFor(grade,cfgFrames){
+    if(typeof cfgFrames==='number'&&cfgFrames>0) return Math.max(1,Math.min(cfgFrames,3));
+    return GRADES[grade].frames||2;
+  }
+  function capFor(grade,frames,cfgMax){
+    if(typeof cfgMax==='number'&&cfgMax>0) return Math.min(cfgMax,frames*10);
+    var c=GRADES[grade].cap;
+    return (c!=null)?Math.min(c,frames*10):frames*10;
+  }
+  /* 받아올림 마법 판정: 십의 자리 수가 늘었는가 */
+  function tensCrossed(oldN,newN){ return Math.floor(newN/10)>Math.floor(oldN/10); }
+
+  /* 미션 — v2 텍스트·판정 무손실 (b 색만 v3 토큰) */
+  var MISSIONS={
+    low:[
+      {text:'점을 정확히 <b>10개</b> 채워 한 판을 꽉 채워 봐요!', check:function(n,o){return n===10;}},
+      {text:'점을 <b>7개</b>만 채워 봐요 — 빈 자리를 보면 <b class="gr">3개</b>만 더 모으면 10!', check:function(n,o){return n===7;}},
+      {text:'점 <b>5개</b>를 만들고, 점을 눌러 <b class="or">주황 2개</b>로 갈라 봐요 (5 = 3과 2)', check:function(n,o){return n===5&&o===2;}}
+    ],
+    mid:[
+      {text:'<b>8</b>을 만들고, 점을 눌러 <b class="or">주황 3개</b>로 갈라 봐요 (8 = 5와 3)', check:function(n,o){return n===8&&o===3;}},
+      {text:'<b>13</b>을 만들어 봐요 — 한 판을 꽉 채우면 10, 다음 판에 3개! (13 = 10과 3)', check:function(n,o){return n===13;}},
+      {text:'<b>6</b>을 만들고 <b class="or">반(3개)</b>을 주황으로 갈라 봐요 (6 = 3과 3)', check:function(n,o){return n===6&&o===3;}}
+    ],
+    high:[
+      {text:'점을 정확히 <b>10개</b> 채워 봐요!', check:function(n,o){return n===10;}},
+      {text:'<b>8</b>을 만들고, 점을 눌러 <b class="or">주황 3개</b>로 갈라 봐요 (8 = 5와 3)', check:function(n,o){return n===8&&o===3;}},
+      {text:'<b>13</b>을 만들어 봐요 — 한 판을 꽉 채우면 10이에요!', check:function(n,o){return n===13;}},
+      {text:'<b>6</b>을 만들고 <b class="or">반(3개)</b>을 주황으로 갈라 봐요 (6 = 3과 3)', check:function(n,o){return n===6&&o===3;}}
+    ]
+  };
+  function missionsFor(grade,max){
+    var pool=MISSIONS[grade];
+    var f=pool.filter(function(m){ return m.text.indexOf('13')>=0 ? max>=13 : true; });
+    return f.length?f:pool.slice(0,1);
+  }
+
+  /* 퀴즈 — v2 2종(count/toTen) 무손실. rand 주입으로 순수화
+     ★ v2 버그② 수정: count의 num이 max를 넘을 수 있었다(3+rand*min(max,17) — frames=1이면
+       최대 12인데 판은 10칸뿐). 화면에 없는 점을 세라는 정답 불가 문항이 나온다 → max로 클램프.
+       기본 경로(두 판·max=20)에선 3~19라 클램프가 발동하지 않는다 = v2 무손실. */
+  function newQuiz(grade,max,rand){
+    rand=rand||Math.random;
+    var kind=(GRADES[grade].toTenQuiz&&rand()<0.5)?'toTen':'count';
+    var num=(kind==='toTen') ? 1+Math.floor(rand()*9)
+                             : Math.min(3+Math.floor(rand()*Math.min(max,17)), max);
+    return { kind:kind, num:num };
+  }
+  function quizAnswer(q){ return q.kind==='count'?q.num:(10-q.num); }
+  function quizQuestion(q){ return q.kind==='count'?'점이 모두 몇 개일까요?':'10이 되려면 몇 개 더 필요할까요?'; }
+  function quizChoices(ans,rand){
+    rand=rand||Math.random;
+    var set={},out=[ans],guard=0;set[ans]=1;
+    while(out.length<4&&guard++<200){ var d=ans+(Math.floor(rand()*7)-3); if(d>=0&&d<=20&&!set[d]){set[d]=1;out.push(d);} }
+    /* 보기 4개 계약 — rand가 한 값에 갇혀도(테스트 스텁 등) 인접 수로 채워 4개를 보장 */
+    for(var d2=0; out.length<4 && d2<=20; d2++){ if(!set[d2]){ set[d2]=1; out.push(d2); } }
+    out.sort(function(a,b){return a-b;});
+    return out;
+  }
+
+  var API={ GRADES:GRADES, GRADE_LABEL:GRADE_LABEL, MODE_LABEL:MODE_LABEL,
+            framesFor:framesFor, capFor:capFor, tensCrossed:tensCrossed,
+            MISSIONS:MISSIONS, missionsFor:missionsFor,
+            newQuiz:newQuiz, quizAnswer:quizAnswer, quizQuestion:quizQuestion, quizChoices:quizChoices };
+  if(typeof window!=='undefined') window.TenCore=API;
+  if(typeof module!=='undefined'&&module.exports) module.exports=API;
+})();
+</script>
+
+<!-- ═══ 앱 ═══ -->
+<script>
+(function(){
+  'use strict';
+  var TC=window.TenCore, K3=window.K3;
+  var $=function(id){ return document.getElementById(id); };
+  document.documentElement.style.setProperty('--noise','url("'+K3.NOISE+'")');
+
+  var Q=new URLSearchParams(location.search);
+  var grade=(['low','mid','high'].indexOf(Q.get('grade'))>=0)?Q.get('grade'):'high';
+  var locked=!!Q.get('grade');
+  function G(){ return TC.GRADES[grade]; }
+  var cfgNum=(Q.get('num')!=null)?+Q.get('num'):null;
+  var cfgFrames=(Q.get('frames')!=null)?+Q.get('frames'):null;
+  var cfgMax=(Q.get('max')!=null)?+Q.get('max'):null;
+
+  var frames=TC.framesFor(grade,cfgFrames);
+  var max=TC.capFor(grade,frames,cfgMax);
+  function defNum(){ return Math.max(0,Math.min(cfgNum!=null?cfgNum:7,max)); }
+  var mode=(G().modes.indexOf(Q.get('mode'))>=0)?Q.get('mode'):'free';
+  var num=defNum(), blue={}, bundleFx=false;
+  var mStep=0, mDone=false, mLock=false;
+  var quiz=null, qScore=0, qCount=0, qLock=false;
+  var revealing=false, prediction=null;
+  var REVEAL_MS=window.__K3_FAST?80:900;
+
+  function snd(n){ K3.sound.play(n); }
+  function curMissions(){ return TC.missionsFor(grade,max); }
+
+  /* 와우A 진입 — v2 setNum 무손실 (10을 넘기는 순간 = 받아올림) */
+  function setNum(nv){
+    nv=Math.max(0,Math.min(nv,max));
+    var up=nv>num, crossed=TC.tensCrossed(num,nv);
+    num=nv; bundleFx=false;
+    if(crossed){ bundleFx=true; snd('pop'); snd('whoosh'); }
+    else if(up){ snd('tap'); }
+    render();
+  }
+
+  /* ── 와우B(v3 신설) — 🔮 예측 → 9에서 하나 더 → 받아올림을 «목격» → 결과 카드 ── */
+  function startReveal(){
+    if(revealing) return;
+    revealing=true;
+    blue={}; num=9; bundleFx=false; render();      // 무대 세팅(무음): 빈 자리 딱 하나
+    setTimeout(function(){
+      setNum(10);                                   // 여기서 받아올림이 터진다(pop→whoosh·선반·플래시)
+      setTimeout(function(){
+        revealing=false;
+        var okP=(prediction==='bundle');
+        K3.cards.result(
+          '<h3 style="color:'+(okP?'#0d7a5c':'#B9522F')+'">'+(okP?'🎯 예측 적중!':'🤔 예측과 달랐죠?')+'</h3>'
+          +'<p style="font-size:13.5px;line-height:1.75;color:#41546a">'
+          +'빈 자리가 하나도 없어지는 순간, 점 10개는 흩어진 채 남지 않고 <b>한 묶음</b>이 되어 '
+          +'윗자리 선반으로 올라갔어요.<br>이게 <b>받아올림</b>이에요 — <b>10개가 모이면 «10이 하나»</b>가 됩니다.<br>'
+          +'그래서 10 다음 수는 <b>10 한 묶음과 낱개 1</b>, 곧 <b>11</b>이에요.</p>',
+          [{label:'🔁 다시 보기', value:'again'},{label:'좋아, 계속 탐구', cls:'pri', value:'done'}]
+        ).then(function(v){ if(v==='again') startReveal(); });
+      }, REVEAL_MS);
+    }, REVEAL_MS);
+  }
+  function askPredict(){
+    if(revealing) return;
+    snd('charge');
+    K3.cards.predict('점 <b>9개</b>가 놓인 판에 하나를 더 놓으면, 어떻게 될까요?',
+      [{id:'ten',    label:'① 그냥 점 10개가 된다'},
+       {id:'bundle', label:'② 10개가 한 묶음이 되어 윗자리로 올라간다'},
+       {id:'frame',  label:'③ 판이 하나 더 생긴다'}]
+    ).then(function(id){ prediction=id; startReveal(); });
+  }
+
+  function build(){
+    var gs=$('gradeSeg');
+    if(locked){ gs.style.display='none'; }
+    else{
+      gs.innerHTML=['low','mid','high'].map(function(g){
+        return '<button data-g="'+g+'" class="'+(g===grade?'on':'')+'">'+TC.GRADE_LABEL[g]+'</button>';
+      }).join('');
+      gs.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click',function(){
+          if(b.dataset.g===grade)return;
+          grade=b.dataset.g; snd('select');
+          frames=TC.framesFor(grade,cfgFrames); max=TC.capFor(grade,frames,cfgMax);
+          if(G().modes.indexOf(mode)<0) mode='free';
+          num=(mode==='mission')?0:defNum();
+          blue={}; mStep=0;mDone=false;mLock=false;bundleFx=false;
+          if(mode==='quiz'){ qScore=0;qCount=0;quiz=TC.newQuiz(grade,max); }
+          build();
+        });
+      });
+    }
+    var ms=$('modeSeg');
+    ms.innerHTML=G().modes.map(function(m){
+      return '<button data-m="'+m+'" class="'+(m===mode?'on':'')+'">'+TC.MODE_LABEL[m]+'</button>';
+    }).join('');
+    ms.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(b.dataset.m===mode)return;
+        mode=b.dataset.m; snd('select');
+        blue={}; mStep=0;mDone=false;mLock=false;bundleFx=false;
+        if(mode==='quiz'){ qScore=0;qCount=0;quiz=TC.newQuiz(grade,max); }
+        else num=(mode==='mission')?0:defNum();
+        build();
+      });
+    });
+
+    var bar=$('barSlot');
+    if(mode==='mission'){
+      var M=curMissions();
+      bar.innerHTML=mDone
+        ? '<div class="k3bar done">🎉 미션을 모두 해냈어요! 자유탐구에서 마음껏 가르고 모아 봐요.</div>'
+        : '<div class="k3bar"><span>'+M[mStep].text+'</span><span class="prog">'+(mStep+1)+' / '+M.length+'</span></div>';
+    } else if(mode==='quiz'){
+      bar.innerHTML='<div class="k3bar"><span>❓ '+TC.quizQuestion(quiz)+'</span><span class="prog">점수 '+qScore+' / '+qCount+'</span></div>';
+    } else bar.innerHTML='';
+
+    var ct=$('ctrlSlot'), s='';
+    if(mode!=='quiz'){
+      s='<button class="ck-btn minus" data-act="minus" style="--c1:#5B9BF0;--c2:#3E7BD4">－ 점</button>'
+       +'<button class="ck-btn" data-act="plus" style="--c1:#5B9BF0;--c2:#3E7BD4">＋ 점</button>'
+       +'<button class="ck-btn ghost" data-act="reset" title="처음으로">↺</button>';
+      if(mode==='free'&&max>=10) s+='<button class="ck-btn wow" id="wowBtn">🔮 하나만 더 놓으면?</button>';
+    } else {
+      s=TC.quizChoices(TC.quizAnswer(quiz)).map(function(v){
+        return '<button class="ck-choice" data-v="'+v+'">'+v+'</button>';
+      }).join('');
+    }
+    ct.innerHTML=s;
+    var p=ct.querySelector('[data-act="plus"]'), m=ct.querySelector('[data-act="minus"]'), r=ct.querySelector('[data-act="reset"]');
+    if(p)p.addEventListener('click',function(){ if(revealing)return; if(num<max)setNum(num+1); });
+    if(m)m.addEventListener('click',function(){ if(revealing)return; if(num>0){ delete blue[num-1]; setNum(num-1); } });
+    if(r)r.addEventListener('click',function(){ if(revealing)return; snd('select'); num=(mode==='mission')?0:defNum(); blue={}; bundleFx=false; render(); });
+    var wb=$('wowBtn'); if(wb) wb.addEventListener('click',askPredict);
+    ct.querySelectorAll('.ck-choice').forEach(function(b){
+      b.addEventListener('click',function(){
+        if(qLock)return; qLock=true; qCount++;
+        var ans=TC.quizAnswer(quiz), okA=(+b.dataset.v===ans);
+        if(okA){ qScore++; snd('chime'); K3.toast('🎉 정답! <b>'+ans+'</b>'); }
+        else { snd('fail'); K3.toast('🤔 아까워요! 정답은 <b>'+ans+'</b>', true); }
+        setTimeout(function(){ quiz=TC.newQuiz(grade,max); blue={}; qLock=false; build(); },
+          window.__K3_FAST?60:1500);
+      });
+    });
+
+    render();
+  }
+
+  /* ── 무대 그리기 ── */
+  var VBW=860,VBH=380;
+  function svgEl(t,a){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+
+  function drawShelf(svg,shownNum,fx){
+    var tens=Math.floor(shownNum/10);
+    if(tens<=0) return;
+    tens=Math.min(tens,frames);
+    var cw=88, gap=18, totalW=cw*tens+gap*(tens-1), sx=(VBW-totalW)/2, sy=12;
+    for(var t=0;t<tens;t++){
+      var bx=sx+t*(cw+gap), newest=(t===tens-1);
+      var g=svgEl('g',{class:'tf-chip'+(fx&&newest?' tf-rise':'')});
+      g.appendChild(svgEl('rect',{x:bx,y:sy,width:cw,height:56,rx:14,
+        fill:'rgba(155,123,245,0.18)',stroke:'#9B7BF5','stroke-width':2.5,filter:'url(#tfSh)'}));
+      g.appendChild(svgEl('rect',{x:bx+5,y:sy+4,width:cw-30,height:12,rx:6,fill:'url(#tfGloss)','pointer-events':'none'}));
+      for(var i=0;i<10;i++){
+        var mc=bx+15+(i%5)*12.6, mr=sy+22+Math.floor(i/5)*17;
+        g.appendChild(svgEl('circle',{cx:mc,cy:mr,r:4.4,fill:'#BCA7FF'}));
+      }
+      var tt=svgEl('text',{x:bx+cw-15,y:sy+34,'font-size':25,'font-weight':800,fill:'#D6C8FF',
+        'text-anchor':'middle','font-family':'var(--kedu-title)'});
+      tt.textContent='10'; g.appendChild(tt);
+      svg.appendChild(g);
+    }
+    if(fx){
+      var fl=svgEl('text',{x:VBW/2,y:100,'font-size':25,'font-weight':800,fill:'#BCA7FF',
+        'text-anchor':'middle','font-family':'inherit',class:'tf-flash'});
+      fl.textContent='받아올림! 10이 한 묶음으로 올라갔어요 ↑';
+      svg.appendChild(fl);
+    }
+  }
+
+  function render(){
+    var desk=$('desk');
+    /* ★ v2 버그① 수정 — 받아올림 연출은 «1회성». v2는 setNum 진입에서만 껐기 때문에
+       10을 채운 뒤 점을 탭(가르기)하면 render가 다시 돌며 tf-rise·플래시가 재발동했다.
+       진입 즉시 스냅샷하고 상태는 끈다 = 이 render 한 번만 연출한다. */
+    var fx=bundleFx; bundleFx=false;
+    var shownNum=(mode==='quiz')?quiz.num:num;
+    var shown=Math.max(1,Math.min(Math.ceil(shownNum/10)||1,frames)); if(shownNum===0)shown=1;
+    if(mode==='quiz'&&quiz.kind==='toTen')shown=1;
+    var ghost=(G().ghost && mode!=='quiz');
+    var fillable=(mode!=='quiz');
+
+    var svg=svgEl('svg',{viewBox:'0 0 '+VBW+' '+VBH,id:'tfSvg',
+      style:'display:block;width:min(88vw,760px);height:auto;max-height:52vh'});
+    var d=svgEl('defs',{});
+    d.innerHTML='<filter id="tfSh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.4"/></filter>'
+      +'<radialGradient id="tfBead" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#9CC4FA"/><stop offset=".55" stop-color="#5B9BF0"/><stop offset="1" stop-color="#2E62B8"/></radialGradient>'
+      +'<radialGradient id="tfBeadO" cx="34%" cy="28%" r="80%"><stop offset="0" stop-color="#FFC98F"/><stop offset=".55" stop-color="#FF8A3D"/><stop offset="1" stop-color="#D65E12"/></radialGradient>'
+      +'<linearGradient id="tfGloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,255,255,0.4)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>';
+    svg.appendChild(d);
+
+    var cell=58, fw=cell*5, fh=cell*2, gap=44;
+    var totalW=fw*shown+gap*(shown-1), x0=(VBW-totalW)/2, y0=(VBH-fh)/2+26, gk=0;
+    if(mode!=='quiz') drawShelf(svg,shownNum,fx);
+
+    for(var f=0;f<shown;f++){
+      var fx=x0+f*(fw+gap);
+      /* 유리 트레이(십틀) — §2-B 아크릴 프리셋을 SVG로 */
+      svg.appendChild(svgEl('rect',{x:fx-11,y:y0-11,width:fw+22,height:fh+22,rx:16,
+        fill:'rgba(255,255,255,0.06)',stroke:'rgba(255,255,255,0.28)','stroke-width':1.5,filter:'url(#tfSh)'}));
+      svg.appendChild(svgEl('rect',{x:fx-4,y:y0-8,width:(fw+8)*0.45,height:9,rx:5,fill:'url(#tfGloss)','pointer-events':'none'}));
+      for(var r=0;r<2;r++)for(var c=0;c<5;c++){
+        var cxp=fx+c*cell, cyp=y0+r*cell;
+        var empty=(gk>=shownNum);
+        svg.appendChild(svgEl('rect',{x:cxp+3,y:cyp+3,width:cell-6,height:cell-6,rx:9,
+          fill:'rgba(255,255,255,0.05)',stroke:'rgba(255,255,255,0.22)','stroke-width':1.5,
+          'stroke-dasharray':'5 5',class:'tf-cell'+(fillable&&empty?' tf-fillable':''),'data-cell':gk}));
+        if(gk<shownNum){
+          var orange=!!blue[gk];
+          var dot=svgEl('circle',{cx:cxp+cell/2,cy:cyp+cell/2,r:cell*0.35,
+            fill:orange?'url(#tfBeadO)':'url(#tfBead)','data-gk':gk,class:'tf-dot',filter:'url(#tfSh)'});
+          svg.appendChild(dot);
+          svg.appendChild(svgEl('ellipse',{cx:cxp+cell/2-6,cy:cyp+cell/2-8,rx:7,ry:4.5,
+            fill:'rgba(255,255,255,0.55)','pointer-events':'none'}));
+        } else if(ghost&&f===0&&gk<10){
+          svg.appendChild(svgEl('circle',{cx:cxp+cell/2,cy:cyp+cell/2,r:cell*0.29,fill:'none',
+            stroke:'rgba(210,228,246,0.4)','stroke-width':3,'stroke-dasharray':'4 5','data-ghost':gk,'pointer-events':'none'}));
+        }
+        gk++;
+      }
+    }
+    desk.innerHTML=''; desk.appendChild(svg);
+
+    if(mode!=='quiz'){
+      svg.querySelectorAll('.tf-dot').forEach(function(pd){
+        pd.addEventListener('click',function(){ var k=+pd.dataset.gk; blue[k]=!blue[k]; snd('select'); render(); });
+      });
+      svg.querySelectorAll('.tf-cell.tf-fillable').forEach(function(rc){
+        rc.addEventListener('click',function(){ var k=+rc.dataset.cell; if(k>=shownNum) setNum(k+1); });
+      });
+    }
+
+    var oc=0;for(var k in blue)if(blue[k]&&k<shownNum)oc++;var bc=shownNum-oc;
+    var st=$('statusRow');
+    if(mode==='quiz'){
+      st.innerHTML='<div class="hint">아래에서 답을 골라 누르세요</div>';
+    } else {
+      var toTen=(shownNum<10)?(10-shownNum):(shownNum<20?20-shownNum:0);
+      var head='<div class="timeread"><span class="b">'+shownNum+'</span><span class="u">개</span>'
+        +(oc>0?'<span class="u"> ＝ </span><span class="b">'+bc+'</span><span class="u">'+(G().ghost?'과 ':'(파랑) 와 ')+'</span><span class="o">'+oc+'</span><span class="u">'+(G().ghost?'을 모으면 '+shownNum:'(주황)')+'</span>':'')
+        +'</div>';
+      var sub;
+      if(G().ghost){
+        sub=(shownNum<10)?'<span class="go">빈 칸을 눌러 채워 봐요 — <b>'+toTen+'개</b>만 더 모으면 <b>10</b>!</span>'
+          :(shownNum===10?'<span class="go">한 판 꽉 찼어요 — 10이 한 묶음!</span>':'');
+      } else {
+        sub=(toTen>0)?'10까지 <b>'+toTen+'개</b> 더'
+          :((shownNum%10===0&&shownNum>0)?'<span class="go">꽉 찼어요 — 윗자리로 한 묶음!</span>':'');
+      }
+      st.innerHTML=head+'<div class="hint">'+sub
+        +'<br><span class="grabline">✋ 점을 누르면 주황으로 갈라져요 · 빈 칸을 누르면 거기까지 채워져요</span></div>';
+      var p=$('ctrlSlot').querySelector('[data-act="plus"]'), m=$('ctrlSlot').querySelector('[data-act="minus"]');
+      if(p)p.disabled=num>=max; if(m)m.disabled=num<=0;
+    }
+    checkMission(oc);
+  }
+
+  function checkMission(orangeCount){
+    if(mode!=='mission'||mDone||mLock)return;
+    var M=curMissions();
+    if(M[mStep].check(num,orangeCount)){
+      mLock=true; snd('chime');
+      K3.toast('🎉 참 잘했어요!');
+      setTimeout(function(){
+        mLock=false;
+        if(mStep<curMissions().length-1){ mStep++; num=0; blue={}; bundleFx=false; }
+        else mDone=true;
+        build();
+      }, window.__K3_FAST?60:1500);
+    }
+  }
+
+  $('sndBtn').addEventListener('click',function(){
+    K3.sound.setOn(!K3.sound.on);
+    this.textContent=K3.sound.on?'🔊':'🔇';
+    this.classList.toggle('off',!K3.sound.on);
+    if(K3.sound.on)snd('select');
+  });
+
+  if(mode==='quiz')quiz=TC.newQuiz(grade,max);
+  if(mode==='mission'){num=0;blue={};}
+  build();
+
+  window.TenApp={
+    get grade(){return grade;}, get mode(){return mode;}, get num(){return num;},
+    get max(){return max;}, get frames(){return frames;},
+    get mStep(){return mStep;}, get mDone(){return mDone;},
+    get qScore(){return qScore;}, get qCount(){return qCount;}, get quiz(){return quiz;},
+    get revealing(){return revealing;},
+    setNum:setNum, toggleDot:function(k){ blue[k]=!blue[k]; render(); }, build:build,
+    askPredict:askPredict, startReveal:startReveal,
+    _set:function(o){ if(o.prediction!==undefined) prediction=o.prediction; }
+  };
+})();
+</script>
+</body>
+</html>
