@@ -60,7 +60,12 @@
       xp: 0,
       partner: { species: null, stage: 0, parts: [], name: null },  // 제6조 (5번에서 채움)
       badges: [],
-      stats: { played: 0, correct: 0, bestStreak: 0 },
+      // stats = 배지 판정의 재료(제6조). 새로 모으는 게 아니라 판마다 이미 나오는 값의 합계다.
+      stats: { played: 0, correct: 0, bestStreak: 0,
+               hard: 0,      // ★3 정답 누적 → 🦄 뿔
+               coop: 0,      // 협동 성공 누적 → 🌟 빛 오라
+               days: 0,      // 케이배틀에 온 날 수 → ✨ 별가루 꼬리
+               lastDay: null },
       daily: { date: null, score: 0 },
       history: []            // [{ date, kind, score, xp }] 최근 20판
     };
@@ -188,12 +193,29 @@
       p.stats.played += 1;
       p.stats.correct += Math.max(0, result.correct | 0);
       p.stats.bestStreak = Math.max(p.stats.bestStreak | 0, result.bestStreak | 0);
+      p.stats.hard = (p.stats.hard | 0) + Math.max(0, result.hardCorrect | 0);
+      if (result.coopCleared) p.stats.coop = (p.stats.coop | 0) + 1;
+      if (p.stats.lastDay !== day) {                  // 오늘 처음 왔다 → 온 날 +1
+        p.stats.days = (p.stats.days | 0) + 1;
+        p.stats.lastDay = day;
+      }
       if (result.kind === 'daily') p.daily = { date: day, score: result.score | 0 };
       p.history.unshift({ date: day, kind: result.kind || 'battle',
                           score: result.score | 0, xp: g.total });
       if (p.history.length > HISTORY_MAX) p.history.length = HISTORY_MAX;
+
+      // 배지 판정 (제6조) — 새 데이터 없이 이미 쌓인 것으로만 본다.
+      var got = [];
+      var KBB = root.KBBadges;
+      if (KBB) {
+        var rows = (root.KBAnswers && root.KBAnswers.all()) || [];
+        got = KBB.newly(p, rows);
+        if (got.length) p.badges = KBB.evaluate(p, rows);
+      }
+
       return save(p).then(function () {
-        return { profile: p, gain: g, rank: step };   // rank.promoted → 풀스크린 승급 연출
+        // rank.promoted → 풀스크린 승급 / newBadges → 배지 획득 연출
+        return { profile: p, gain: g, rank: step, newBadges: got };
       });
     });
   }

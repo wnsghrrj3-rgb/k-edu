@@ -69,6 +69,7 @@
 <script src="kb-answers.js"></script>
 <script src="kb-kquiz.js"></script>
 <script src="kb-bank.js"></script>
+<script src="kb-badges.js"></script>
 <script src="kb-solo.js"></script>
 <script>
 (function () {
@@ -108,6 +109,44 @@
   function enter(p) {
     return KBank.prepare(KBAnswers.wrongQids())
       .then(function () { home(p); }, function () { home(p); });
+  }
+
+  /* ---- 배지 진열장 (제6조) ----
+     못 딴 배지도 보여준다. 단 "실패"라고 말하지 않는다 — 얼마나 왔는지만 보여준다(KB-1의 정신).
+     ⭐ 표시된 배지는 파트너의 모습을 바꾼다(제6조 진화 분기 — 7번에서 실물이 붙는다). */
+  function badgeWall(p) {
+    var rows = KBAnswers.all();
+    var have = {};
+    (p.badges || []).forEach(function (id) { have[id] = 1; });
+    return '<div class="kb-badges">' + KBBadges.CATALOG.map(function (b) {
+      var got = !!have[b.id];
+      var pct = Math.round(KBBadges.progress(b.id, p, rows) * 100);
+      return '<div class="kb-badge' + (got ? ' got' : '') + '" title="' + esc(b.desc) + '">' +
+        '<div class="kb-badge-e">' + b.emoji + '</div>' +
+        '<div class="kb-badge-n">' + esc(b.name) + (b.branch ? ' <span class="kb-badge-b">⭐</span>' : '') + '</div>' +
+        (got ? '<div class="kb-badge-s">받았어요</div>'
+             : '<div class="kb-badge-bar"><i style="width:' + pct + '%"></i></div>') +
+      '</div>';
+    }).join('') + '</div>' +
+    '<div class="kb-badge-hint">⭐ 표시된 배지는 나중에 <b>내 파트너의 모습</b>을 바꿔요</div>';
+  }
+
+  /* 배지 획득 — 판 끝 풀스크린 (승급 연출과 같은 자리·같은 마크업) */
+  function badgePop(ids, done) {
+    var b = KBBadges.get(ids[0]);
+    if (!b) { done(); return; }
+    var d = document.createElement('div');
+    d.className = 'kb-promo';
+    d.innerHTML = '<div class="kb-p-emoji">' + b.emoji + '</div>' +
+      '<div class="kb-p-t">' + esc(b.name) + '</div>' +
+      '<div class="kb-p-s">' + esc(b.desc) + '</div>' +
+      (b.branch ? '<div class="kb-p-s" style="color:var(--kb-mint);font-size:15px">⭐ 내 파트너의 모습이 달라져요</div>' : '') +
+      '<button class="kb-btn" style="margin-top:20px">좋아! ▶</button>';
+    document.body.appendChild(d);
+    d.querySelector('button').onclick = function () {
+      d.remove();
+      if (ids.length > 1) badgePop(ids.slice(1), done); else done();
+    };
   }
 
   /* ---- 허브 홈 ---- */
@@ -156,6 +195,10 @@
                    '<span><span style="opacity:.6">' + h.score + '점</span> <span class="kb-h-xp">+' + h.xp + ' XP</span></span></li>';
           }).join('') + '</ul></div>' : '') +
 
+      '<div class="kb-card" style="margin-top:18px">' +
+        '<div class="kb-sec">내 배지</div>' + badgeWall(p) +
+      '</div>' +
+
       (concepts.length ?
         '<div class="kb-card" style="margin-top:18px">' +
           '<div class="kb-sec">내가 배운 것</div>' +
@@ -198,8 +241,13 @@
         }).then(function (out) {
           if (!out) return;
           setTimeout(function () {
-            if (out.rank.promoted) promo(out.rank.after, function () { enter(out.profile); });
-            else enter(out.profile);
+            var after = function () {
+              var nb = out.newBadges || [];
+              if (nb.length) badgePop(nb, function () { enter(out.profile); });
+              else enter(out.profile);
+            };
+            if (out.rank.promoted) promo(out.rank.after, after);
+            else after();
           }, 1400);
         });
       }
