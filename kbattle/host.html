@@ -23,6 +23,7 @@
 <script src="kb-battle.js"></script>
 <script src="kb-mode-race.js"></script>
 <script src="kb-mode-puzzle.js"></script>
+<script src="kb-mode-tower.js"></script>
 <script>
 /* 전자칠판 — 교사가 방을 여는 자리.
    ① 무엇으로 겨룰지 (교과 단원 = 케이퀴즈 / 놀이 문제)
@@ -104,6 +105,7 @@
         '<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">' +
           '<button class="kb-btn" data-mode="race">🏇 레이스 <span style="font-weight:700;font-size:15px;">정답마다 전진 · ⭐칸 2배</span></button>' +
           '<button class="kb-btn" data-mode="puzzle" style="background:var(--kb-mint);color:#05302b;">🧩 퍼즐 완성 <span style="font-weight:700;font-size:15px;">반이 함께 · 줄 안 세움</span></button>' +
+          '<button class="kb-btn" data-mode="tower" style="background:var(--kb-sky);color:#04263a;">🏗 타워 쌓기 <span style="font-weight:700;font-size:15px;">팀전 · 오답에도 안 무너짐</span></button>' +
           '<button class="kb-btn" data-mode="" style="background:rgba(255,255,255,.12);color:#fff;">📋 문제만 풀기</button>' +
         '</div>' +
         '<div id="pzOpt" class="kb-pz-opt"></div>' +
@@ -114,6 +116,7 @@
       b.onclick = function () {
         var m = b.getAttribute('data-mode');
         if (m === 'puzzle') { puzzleOpt(); return; }   // 숨은 문구를 먼저 정한다
+        if (m === 'tower') { towerOpt(); return; }     // 팀 수를 먼저 정한다
         start(m);
       };
     });
@@ -140,12 +143,31 @@
     inp.onkeydown = function (e) { if (e.key === 'Enter') document.getElementById('pzGo').onclick(); };
   }
 
+  /* 타워 — 팀 수. 팀 배정은 입장 순서대로 자동(교사가 이름 나눌 일 없음). */
+  function towerOpt() {
+    var box = document.getElementById('pzOpt');
+    if (!box) return;
+    box.innerHTML =
+      '<div class="kb-hint" style="margin-top:20px;color:var(--kb-dim);font-weight:700;">' +
+        '몇 팀으로 나눌까요? (들어오는 순서대로 자동으로 나뉘어요)</div>' +
+      '<div style="display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap;">' +
+        [2, 3, 4].map(function (n) {
+          return '<button class="kb-btn" data-teams="' + n + '" style="background:var(--kb-sky);color:#04263a;">' +
+            n + '팀 ▶</button>';
+        }).join('') +
+      '</div>';
+    [].forEach.call(box.querySelectorAll('[data-teams]'), function (b) {
+      b.onclick = function () { start('tower', undefined, parseInt(b.getAttribute('data-teams'), 10)); };
+    });
+  }
+
   /* ── 3단계: 방 개설 ── */
-  function start(mode, puzzleText) {
+  function start(mode, puzzleText, teams) {
     var ctx;
     try {
       ctx = Kple.host('kbattle', { el: app, config: {
-        questions: picked.questions, mode: mode || undefined, puzzleText: puzzleText } });
+        questions: picked.questions, mode: mode || undefined,
+        puzzleText: puzzleText, teams: teams } });
     } catch (e) { setConn(String(e.message || e), 'err'); return; }
     ctx.on('status', function (s) {
       if (s === 'SUBSCRIBED') setConn('연결됨 · 방 ' + ctx.roomCode, 'ok');
