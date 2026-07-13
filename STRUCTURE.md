@@ -53,7 +53,8 @@
 - `class_lens.html` + `classlab-proto.js`
 
 **신작 — 링크 배선 대기 (보관 후보 아님, 이동 금지)**
-- `animlab.html` = 애니메이션 공방 (H4a 완성 2026-07-09, 케이아트 index→링크 배선은 준호 검수 후. STATUS-kedu-draw 참조)
+- `animlab.html` = 애니메이션 공방 (H4a 완성 2026-07-09, 케이아트 탑바 🎬 배선 완료 2026-07-12)
+- `livestage.html` = 살아나는 무대 (2026-07-13, 케이아트 탑바 🎪 배선 완료 — 그림 1장 → 무대 5종에서 자율 이동. STATUS-kedu-draw 참조)
 
 ## 루트 공용 스크립트
 
