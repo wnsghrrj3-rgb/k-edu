@@ -55,7 +55,6 @@
             '👩‍🏫 우리 반 명부 · 어려워하는 개념 보기 →</a>' +
         '</div>' +
       '</div>';
-
     document.getElementById('play').onclick = function () {
       var qs = KBank.all();
       if (!qs.length) qs = KBQ.SAMPLE;
@@ -170,7 +169,31 @@
   var home = document.getElementById('kedu-home');
   if (home) home.onclick = function () { location.href = '/'; };
 
-  pickQuestions();
+  /* ── 케이티처 도킹 (헌법 제7조 진입점 3구) ──
+     케이티처 단원 헤더의 「⚔️ 케이배틀로 열기」 → host.html?unit=g1_math_u5
+     교사는 수업하던 자리에서 한 번만 누르면 된다. 단원 고르기 화면을 건너뛴다.
+     (수업 중의 마찰 1회 = 안 쓰는 이유가 된다) */
+  function fromKteacher() {
+    var key = new URLSearchParams(location.search).get('unit');
+    if (!key) return false;
+    app.innerHTML = '<div class="kb-stage"><div class="kb-big">문제 준비 중…</div></div>';
+    KBKQuiz.load(key).then(function () {
+      var qs = KBank.lesson(key, { n: QN, seed: (Date.now() % 1000000) });
+      if (!qs.length) throw new Error('문제 없음');
+      return KBKQuiz.catalog().then(function (units) {
+        var u = units.filter(function (x) { return x.key === key; })[0];
+        picked = { questions: qs,
+                   label: u ? (u.subjectKo + ' ' + u.unitNo + '. ' + u.name) : key };
+        pickMode();
+      });
+    }).catch(function () {
+      setConn('그 단원 문제가 아직 없어요', 'err');
+      pickQuestions();                       // 폴백 — 교사를 빈 화면에 두지 않는다
+    });
+    return true;
+  }
+
+  if (!fromKteacher()) pickQuestions();
 })();
 </script>
 </body>

@@ -1220,6 +1220,11 @@
           <span class="unit-num">${unit.unit}단원</span>
           <h2>${unit.title}</h2>
           <span class="unit-meta">${unit.lesson_count}차시</span>
+          <button class="kb-open" data-kb="${(SUBJECT_INFO.slug || '')}_u${unit.unit}" hidden
+            title="이 단원 문제로 반 전체 대결(케이배틀)을 열어요"
+            style="margin-left:auto;display:none;align-items:center;gap:6px;padding:7px 14px;border:0;
+                   border-radius:10px;background:#15162e;color:#ffd23f;font-family:inherit;font-weight:800;
+                   font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18)">⚔️ 케이배틀로 열기</button>
         </div>
         <div class="lesson-grid">
           ${unit.lessons.map(l => `
@@ -1243,6 +1248,22 @@
         openShow(card.dataset.unit, card.dataset.lesson);
       });
     });
+
+    // 케이배틀 도킹 — 케이퀴즈에 문제가 있는 단원에만 버튼을 켠다(없는 단원에 버튼이 보이면 교사가 헛걸음).
+    fetch('/kedu/quiz/catalog.json').then(r => r.json()).then(j => {
+      const have = {};
+      (j.units || []).forEach(u => { have[u.key] = 1; });
+      container.querySelectorAll('.kb-open').forEach(b => {
+        const key = b.dataset.kb;
+        if (!have[key]) return;
+        b.hidden = false;
+        b.style.display = 'inline-flex';
+        b.addEventListener('click', e => {
+          e.stopPropagation();
+          window.open('/kbattle/host.html?unit=' + encodeURIComponent(key), '_blank');
+        });
+      });
+    }).catch(() => {});
   }
 
   function lessonKey(unit, lesson) {
